@@ -1,0 +1,116 @@
+<div class="varda-icon" [title]="iconTooltip" [ngClass]="getClasses()">
+  <ng-container [ngSwitch]="iconName">
+    <ng-container *ngSwitchCase="'edit'">
+        <svg xmlns="http://www.w3.org/2000/svg" 
+        viewBox="0 0 50 50" 
+        class="varda-icon-default action-icon" 
+        aria-labelledby="editTitle"
+        role="img">
+          <title id="editTitle">Edit</title>
+          <circle cx="25" cy="25" r="23" stroke-width="3"/>
+          <!--  LINE-->
+          <line x1="20" y1="31" x2="34" y2="17" stroke-width="10"/>
+          <!-- VERTICAL LINE-->
+          <polygon points="16,32 16,35 19,35"/>
+        </svg>
+    </ng-container>
+    <ng-container *ngSwitchCase="'addNew'">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" class="varda-icon-default varda-icon-addnew action-icon" aria-labelledby="addNewTitle" role="img">
+        <title id="addNewTitle">Add new</title>
+        <circle cx="25" cy="25" r="23" stroke-width="3"/>
+        <!-- HORIZONTAL LINE-->
+        <line x1="13" y1="25" x2="37" y2="25" stroke-width="6" class="line-horizontal" />
+        <!-- VERTICAL LINE-->
+        <line x1="25" y1="13" x2="25" y2="37" stroke-width="6" class="line-vertical"/>
+      </svg>
+    </ng-container>
+    <ng-container *ngSwitchCase="'attention'">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" class="varda-icon-default" aria-labelledby="attentionTitle" role="img">
+        <title id="attentionTitle">Attention</title>
+        <circle cx="25" cy="25" r="23" fill="#FFFFFF" stroke-width="3"/>
+        <!--  LINE-->
+        <line x1="25" y1="12" x2="25" y2="28" stroke-width="10"/>
+        <!--  LINE-->
+        <line x1="25" y1="32" x2="25" y2="38" stroke-width="8"/>
+      </svg>
+    </ng-container>
+    <ng-container *ngSwitchCase="'data'">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" class="varda-icon-default" aria-labelledby="dataTitle" role="img">
+        <title id="dataTitle">Data</title>
+        <circle cx="25" cy="25" r="23" fill="transparent" stroke-width="3"/>
+        <rect x="12" y="17" width="26" height="15" style="fill: transparent; "/>
+        <!-- HORIZONTAL LINES-->
+        <line x1="12" y1="19" x2="38" y2="19" style="stroke-width: 4" />
+        <line x1="12" y1="26" x2="38" y2="26"/>
+        <!-- VERTICAL LINES-->
+        <line x1="20" y1="17" x2="20" y2="32"/>
+        <line x1="30" y1="17" x2="30" y2="32"/>
+      </svg>
+    </ng-container>
+    <ng-container *ngSwitchCase="'moreinfo'">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" class="varda-icon-default varda-icon-moreinfo action-icon" aria-labelledby="moreInfoTitle" role="img">
+        <title id="moreInfoTitle">More info</title>
+        <circle cx="25" cy="25" r="23" class="white-circle" stroke-width="3"/>
+        <!-- DOT -->
+        <circle cx="15" cy="25" r="2" class="more-info-circle"/>
+        <!-- DOT -->
+        <circle cx="25" cy="25" r="2" class="more-info-circle"/>
+        <!-- DOT -->
+        <circle cx="35" cy="25" r="2" class="more-info-circle"/>
+      </svg>
+    </ng-container>
+    <ng-container *ngSwitchCase="'profile'">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" class="varda-icon-default" aria-labelledby="profileTitle" role="img">
+        <title id="profileTitle">Profile</title>
+        <circle cx="25" cy="25" r="23" fill="#FFFFFF" stroke-width="3"/>
+        <!-- HEAD-->
+        <circle cx="25" cy="18" r="6" fill="#000000"/>
+        <!-- SHOULDERS -->
+        <rect x="12" y="28" width="26" height="10" rx="5" ry="5" fill="#000000"/>
+      </svg>
+    </ng-container>
+    <ng-container *ngSwitchCase="'logout'">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" class="varda-icon-default" aria-labelledby="logoutTitle" role="img">
+        <title id="logoutTitle">Log out</title>
+        <circle cx="25" cy="25" r="23" fill="#FFFFFF" stroke-width="3"/>
+  		  <!--  LINE-->
+        <line x1="15" y1="25" x2="30" y2="25" stroke-width="8"/>
+        <!--  LINE-->
+        <polygon points="28,16 28,34 37,25"/>
+      </svg>
+    </ng-container>
+    <ng-container *ngSwitchCase="'close'">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" class="varda-icon-default varda-icon-close action-icon" role="img" style="transform: rotate(45deg);">
+        <circle cx="25" cy="25" r="23" class="white-circle" stroke-width="3"/>
+        <!-- HORIZONTAL LINE-->
+        <line x1="13" y1="25" x2="37" y2="25" stroke-width="6"/>
+        <!-- VERTICAL LINE-->
+        <line x1="25" y1="13" x2="25" y2="37" stroke-width="6"/>
+      </svg>
+    </ng-container>
+    <ng-container *ngSwitchCase="'finnishFlag'">
+      <div style="width: 30px; height: 30px;">
+        <svg viewBox="0 0 50 50" aria-labelledby="finnishLangTitle" role="img">
+          <title id="finnishLangTitle">Finnish</title>
+          <rect x="5" y="17" width="35" height="20" style="stroke:#000000; stroke-width: 2; fill:#FFFFFF; "/>
+          <!-- HORIZONTAL LINES-->
+          <line x1="6" y1="27" x2="39" y2="27" style="stroke-width: 5; stroke: #06367D;"/>
+          <!-- VERTICAL LINES-->
+          <line x1="17" y1="18" x2="17" y2="36" style="stroke-width: 5; stroke: #06367D;"/>
+        </svg>
+      </div>
+    </ng-container>
+    <ng-container *ngSwitchCase="'swedishFlag'">
+      <div style="width: 30px; height: 30px;">
+        <svg viewBox="0 0 50 50" aria-labelledby="swedishLangTitle" role="img">
+          <title id="swedishLangTitle">Swedish</title>
+          <rect x="5" y="17" width="35" height="20" style="stroke:#000000; stroke-width: 2; fill:#136AA4;"/>
+          <!-- HORIZONTAL LINES-->
+          <line x1="6" y1="27" x2="39" y2="27" style="stroke-width: 5; stroke: #FCCC37;"/>
+          <!-- VERTICAL LINES-->
+          <line x1="17" y1="18" x2="17" y2="36" style="stroke-width: 5; stroke: #FCCC37;"/>
+        </svg>
+      </div>
+    </ng-container>
+  </ng-container>
+</div>

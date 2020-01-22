@@ -1,0 +1,29 @@
+<div class="varda-haku-wrapper">
+  <div class="backend-error-container">
+    <div class="alert alert-danger varda-form-main-feedback" role="alert" aria-live="assertive" *ngIf="ui.formSaveErrorMsg || ui.formSaveErrors.length">
+      <div *ngIf="ui.formSaveErrorMsg">
+        {{ui.formSaveErrorMsg}}
+      </div>
+      <ul>
+        <li *ngFor="let error of ui.formSaveErrors">
+          {{error.key | translate}}. {{error.msg | translate}}
+        </li>
+      </ul>
+    </div>
+  </div>
+  <div>
+    <h2>{{'label.haku-condition.topic' | translate}}</h2>
+  </div>
+  <div>
+    <app-haku-condition [searchAction]="search.bind(this)"></app-haku-condition>
+  </div>
+  <div>
+    <app-haku-list [searchResult]="searchResult"></app-haku-list>
+    <div class="varda-reporting-search-more-btn-wrapper">
+      <button class="varda-button" type="button" (click)="searchMore()" *ngIf="nextSearchLink && !ui.isLoading">
+        {{'label.search-more' | translate}} +
+      </button>
+    </div>
+  </div>
+</div>
+<lib-loading-indicator *ngIf="ui.isLoading"></lib-loading-indicator>

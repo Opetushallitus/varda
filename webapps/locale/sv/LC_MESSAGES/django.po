@@ -1,0 +1,97 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-12-20 14:02+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: templates/500.html:7
+msgid "Internal Server Error"
+msgstr "Internt Serverfel"
+
+#: templates/500.html:9
+msgid ""
+"The system has encountered an internal error. We are clarifying the source "
+"and reason for this error."
+msgstr ""
+"Systemet har stött på ett internt fel. Vi klargör källan och orsaken till "
+"detta fel."
+
+#: templates/500.html:11
+msgid "Return"
+msgstr "Tillbaka"
+
+#: templates/500.html:11
+msgid "VARDA Main Page"
+msgstr "VARDA Huvudsida"
+
+#: templates/rest_framework/login_base.html:60
+msgid "'Kirjaudu sisään'"
+msgstr "'Logga in'"
+
+#: templates/rest_framework/login_base.html:64
+msgid "Unohditko käyttäjätunnuksesi tai salasanasi?"
+msgstr "Har du glömt ditt användarnamn eller lösenord?"
+
+#: templates/rest_framework/login_base.html:68
+msgid "Ei tiliä?"
+msgstr "Ingen konto?"
+
+#: templates/varda/base.html:6
+msgid "Varhaiskasvatuksen tietorakenteet"
+msgstr "Småbarnsfostran datastrukturer"
+
+#: templates/varda/base.html:8
+msgid "Selailtava REST API"
+msgstr "Bläddringsbar REST API"
+
+#: templates/varda/base.html:9
+msgid "Swagger REST API dokumentaatio"
+msgstr "Swagger REST API dokumentation"
+
+#: varda/views.py:37
+msgid "E-mail"
+msgstr "E-post"
+
+#: varda/views.py:38
+msgid "Organisaation Y-tunnus"
+msgstr "Organisationens företags-ID"
+
+#: varda/views.py:72
+msgid ""
+"Ns. ilmaiset sähköpostiosoitteet eivät käy. Ole hyvä ja käytä "
+"organisaatiosähköpostiosoitetta."
+msgstr ""
+"So kallad fri e-postadressen gäller inte. Var vänlig och använddin "
+"organisationens e-postadress."
+
+#: varda/views.py:79
+msgid "Tämä sähköpostiosoite on jo käytössä. Ole hyvä ja anna toinen osoite."
+msgstr "Den här e-postadress används redan. Var vänlig och ge en annan adress."
+
+#: webapps/settings.py:310
+msgid "Finnish"
+msgstr ""
+
+#: webapps/settings.py:311
+msgid "Swedish"
+msgstr ""
+
+#~ msgid "'Log in'"
+#~ msgstr "'Logga in'"
+
+#~ msgid "LOG IN"
+#~ msgstr "Logga in"

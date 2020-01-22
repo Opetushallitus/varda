@@ -1,0 +1,390 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "newProjectRoot": "projects",
+  "projects": {
+    "huoltaja-app": {
+      "root": "projects/huoltaja-app/",
+      "sourceRoot": "projects/huoltaja-app/src",
+      "projectType": "application",
+      "prefix": "app",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "baseHref": "/varda/",
+            "outputPath": "dist/huoltaja-app",
+            "index": "projects/huoltaja-app/src/index.html",
+            "main": "projects/huoltaja-app/src/main.ts",
+            "polyfills": "projects/huoltaja-app/src/polyfills.ts",
+            "tsConfig": "projects/huoltaja-app/tsconfig.app.json",
+            "assets": [
+              "projects/huoltaja-app/src/favicon.ico",
+              "projects/huoltaja-app/src/assets"
+            ],
+            "styles": [
+              "projects/huoltaja-app/src/styles.css"
+            ],
+            "scripts": [],
+            "es5BrowserSupport": true
+          },
+          "configurations": {
+            "local": {
+              "fileReplacements": [
+                {
+                  "replace": "projects/huoltaja-app/src/environments/environment.ts",
+                  "with": "projects/huoltaja-app/src/environments/environment.local.ts"
+                }
+              ]
+            },
+            "testing": {
+              "fileReplacements": [
+                {
+                  "replace": "projects/huoltaja-app/src/environments/environment.ts",
+                  "with": "projects/huoltaja-app/src/environments/environment.testing.ts"
+                }
+              ]
+            },
+            "production": {
+              "fileReplacements": [
+                {
+                  "replace": "projects/huoltaja-app/src/environments/environment.ts",
+                  "with": "projects/huoltaja-app/src/environments/environment.prod.ts"
+                }
+              ],
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false,
+              "extractCss": true,
+              "namedChunks": false,
+              "aot": true,
+              "extractLicenses": true,
+              "vendorChunk": false,
+              "buildOptimizer": true,
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "2mb",
+                  "maximumError": "5mb"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "browserTarget": "huoltaja-app:build"
+          },
+          "configurations": {
+            "local": {
+              "browserTarget": "huoltaja-app:build:local"
+            },
+            "testing": {
+              "browserTarget": "huoltaja-app:build:testing"
+            },
+            "production": {
+              "browserTarget": "huoltaja-app:build:production"
+            }
+          }
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "browserTarget": "huoltaja-app:build"
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "projects/huoltaja-app/src/test.ts",
+            "polyfills": "projects/huoltaja-app/src/polyfills.ts",
+            "tsConfig": "projects/huoltaja-app/tsconfig.spec.json",
+            "karmaConfig": "projects/huoltaja-app/karma.conf.js",
+            "styles": [
+              "projects/huoltaja-app/src/styles.css"
+            ],
+            "scripts": [],
+            "assets": [
+              "projects/huoltaja-app/src/favicon.ico",
+              "projects/huoltaja-app/src/assets"
+            ]
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "projects/huoltaja-app/tsconfig.app.json",
+              "projects/huoltaja-app/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**"
+            ]
+          }
+        }
+      }
+    },
+    "huoltaja-app-e2e": {
+      "root": "projects/huoltaja-app-e2e/",
+      "projectType": "application",
+      "prefix": "",
+      "architect": {
+        "e2e": {
+          "builder": "@angular-devkit/build-angular:protractor",
+          "options": {
+            "protractorConfig": "projects/huoltaja-app-e2e/protractor.conf.js",
+            "devServerTarget": "huoltaja-app:serve"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "huoltaja-app:serve:production"
+            }
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": "projects/huoltaja-app-e2e/tsconfig.e2e.json",
+            "exclude": [
+              "**/node_modules/**"
+            ]
+          }
+        }
+      }
+    },
+    "virkailija-app": {
+      "root": "projects/virkailija-app/",
+      "sourceRoot": "projects/virkailija-app/src",
+      "projectType": "application",
+      "prefix": "app",
+      "schematics": {},
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "baseHref": "/varda/",
+            "outputPath": "dist/virkailija-app",
+            "index": "projects/virkailija-app/src/index.html",
+            "main": "projects/virkailija-app/src/main.ts",
+            "polyfills": "projects/virkailija-app/src/polyfills.ts",
+            "tsConfig": "projects/virkailija-app/tsconfig.app.json",
+            "assets": [
+              "projects/virkailija-app/src/favicon.ico",
+              "projects/virkailija-app/src/assets"
+            ],
+            "styles": [
+              "node_modules/bootstrap/dist/css/bootstrap.min.css",
+              "projects/virkailija-app/src/styles.css",
+              "projects/virkailija-app/src/override.css",
+              "node_modules/cookieconsent/build/cookieconsent.min.css"
+            ],
+            "scripts": [
+              "node_modules/jquery/dist/jquery.min.js",
+              "node_modules/bootstrap/dist/js/bootstrap.min.js",
+              "node_modules/cookieconsent/build/cookieconsent.min.js"
+            ],
+            "es5BrowserSupport": true
+          },
+          "configurations": {
+            "local": {
+              "fileReplacements": [
+                {
+                  "replace": "projects/virkailija-app/src/environments/environment.ts",
+                  "with": "projects/virkailija-app/src/environments/environment.local.ts"
+                }
+              ]
+            },
+            "testing": {
+              "fileReplacements": [
+                {
+                  "replace": "projects/virkailija-app/src/environments/environment.ts",
+                  "with": "projects/virkailija-app/src/environments/environment.testing.ts"
+                }
+              ]
+            },
+            "production": {
+              "fileReplacements": [
+                {
+                  "replace": "projects/virkailija-app/src/environments/environment.ts",
+                  "with": "projects/virkailija-app/src/environments/environment.prod.ts"
+                },
+                {
+                  "replace": "projects/virkailija-app/src/index.html",
+                  "with": "projects/virkailija-app/src/index-prod.html"
+                }
+              ],
+              "baseHref": "/varda/",
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false,
+              "extractCss": true,
+              "namedChunks": false,
+              "aot": true,
+              "extractLicenses": true,
+              "vendorChunk": false,
+              "buildOptimizer": true,
+              "assets": [
+                "projects/virkailija-app/src/assets"
+              ],
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "2mb",
+                  "maximumError": "5mb"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "browserTarget": "virkailija-app:build"
+          },
+          "configurations": {
+            "local": {
+              "browserTarget": "virkailija-app:build:local"
+            },
+            "testing": {
+              "browserTarget": "virkailija-app:build:testing"
+            },
+            "localstorage": {
+              "browserTarget": "virkailija-app:build:localstorage"
+            },
+            "production": {
+              "browserTarget": "virkailija-app:build:production"
+            }
+          }
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "browserTarget": "virkailija-app:build"
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "projects/virkailija-app/src/test.ts",
+            "polyfills": "projects/virkailija-app/src/polyfills.ts",
+            "tsConfig": "projects/virkailija-app/tsconfig.spec.json",
+            "karmaConfig": "projects/virkailija-app/karma.conf.js",
+            "styles": [
+              "node_modules/bootstrap/dist/css/bootstrap.min.css",
+              "projects/virkailija-app/src/override.css",
+              "projects/virkailija-app/src/styles.css"
+            ],
+            "scripts": [
+              "node_modules/jquery/dist/jquery.min.js",
+              "node_modules/bootstrap/dist/js/bootstrap.min.js"
+            ],
+            "assets": [
+              "projects/virkailija-app/src/favicon.ico",
+              "projects/virkailija-app/src/assets"
+            ]
+          },
+          "configurations": {
+            "dev": {
+              "karmaConfig": "./projects/virkailija-app/karma.conf.js"
+            },
+            "prod": {
+              "karmaConfig": "./projects/virkailija-app/karma-prod.conf.js"
+            }
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "projects/virkailija-app/tsconfig.app.json",
+              "projects/virkailija-app/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**"
+            ]
+          }
+        }
+      }
+    },
+    "virkailija-app-e2e": {
+      "root": "projects/virkailija-app-e2e/",
+      "projectType": "application",
+      "prefix": "",
+      "architect": {
+        "e2e": {
+          "builder": "@angular-devkit/build-angular:protractor",
+          "options": {
+            "protractorConfig": "projects/virkailija-app-e2e/protractor.conf.js",
+            "devServerTarget": "virkailija-app:serve"
+          },
+          "configurations": {
+            "dev": {
+              "protractorConfig": "projects/virkailija-app-e2e/protractor.conf.js",
+              "devServerTarget": "virkailija-app:serve"
+            },
+            "prod": {
+              "protractorConfig": "projects/virkailija-app-e2e/protractor-prod.conf.js",
+              "devServerTarget": "virkailija-app:serve"
+            }
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": "projects/virkailija-app-e2e/tsconfig.e2e.json",
+            "exclude": [
+              "**/node_modules/**"
+            ]
+          }
+        }
+      }
+    },
+    "varda-shared": {
+      "root": "projects/varda-shared",
+      "sourceRoot": "projects/varda-shared/src",
+      "projectType": "library",
+      "prefix": "lib",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-ng-packagr:build",
+          "options": {
+            "tsConfig": "projects/varda-shared/tsconfig.lib.json",
+            "project": "projects/varda-shared/ng-package.json"
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "projects/varda-shared/src/test.ts",
+            "tsConfig": "projects/varda-shared/tsconfig.spec.json",
+            "karmaConfig": "projects/varda-shared/karma.conf.js"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "projects/varda-shared/tsconfig.lib.json",
+              "projects/varda-shared/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "defaultProject": "virkailija-app",
+  "schematics": {
+    "@schematics/angular:component": {
+      "prefix": "app",
+      "styleext": "css"
+    },
+    "@schematics/angular:directive": {
+      "prefix": "app"
+    }
+  }
+}

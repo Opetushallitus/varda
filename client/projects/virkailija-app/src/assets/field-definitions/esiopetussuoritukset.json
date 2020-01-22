@@ -1,0 +1,202 @@
+{
+   "fieldsets":[
+      {
+         "id":"esiopetussuoritus_perustiedot",
+         "title":"Esiopetussuoritukset tiedot",
+         "fields":[
+            {
+               "key":"e_perusteviittaus",
+               "displayName":{
+                  "displayNameFi":"ePerusteviittaus"
+               },
+               "widget":"string",
+               "instructionText":{
+
+               },
+               "placeholder":{
+                  "placeholderFi":""
+               },
+               "styles":{
+                  "width":"0.6"
+               },
+               "rules":{
+                    "required": {
+                    "acceptedValue": true,
+                    "errorText": {
+                        "errorTextFi": "ePerusteviittaus on pakollinen"
+                    }
+                }
+               }
+            },
+            {
+               "key":"suorituskieli_koodi",
+               "displayName":{
+                  "displayNameFi":"Suorituskieli"
+               },
+               "widget":"autocompleteone",
+               "instructionText":{
+
+               },
+               "placeholder":{
+                  "placeholderFi":""
+               },
+               "styles": {
+                   "width": "0.6"
+               },
+               "koodisto": "kielikoodisto",
+               "rules":{
+                  "required": {
+                     "acceptedValue": true,
+                     "errorText":{
+                        "errorTextFi":"Suorituskieli on pakollinen"
+                     }
+                  }
+               }
+            },
+            {
+               "key":"muut_suorituskielet_koodi",
+               "displayName":{
+                  "displayNameFi":"Muut suorituskielet"
+               },
+               "widget":"autocompletemany",
+               "instructionText":{
+
+               },
+               "placeholder":{
+                  "placeholderFi":""
+               },
+               "styles": {
+                "width": "0.6"
+               },
+               "koodisto": "kielikoodisto",
+               "rules":{
+                "required": {
+                    "acceptedValue": true,
+                    "errorText": {
+                        "errorTextFi": "Muut suorituskielet on pakollinen"
+                    }
+                }
+               }
+            },
+            {
+               "key":"tutkinto_koodi",
+               "displayName":{
+                  "displayNameFi":"Tutkintokoodi"
+               },
+               "widget":"string",
+               "instructionText":{
+
+               },
+               "placeholder":{
+                  "placeholderFi":""
+               },
+               "styles":{
+                  "width":"0.6"
+               },
+               "rules": {
+                "required": {
+                    "acceptedValue": true,
+                    "errorText": {
+                        "errorTextFi": "Tutkintokoodi on pakollinen"
+                    }
+                }
+               },
+               "isReadonly": true,
+               "value": "001102"
+            },
+            {
+                "key":"kuvaus_esiopetuksesta",
+                "displayName":{
+                   "displayNameFi":"Kuvaus esiopetuksesta"
+                },
+                "widget":"textarea",
+                "instructionText":{
+ 
+                },
+                "placeholder":{
+                   "placeholderFi":""
+                },
+                "styles":{},
+                "rules":{}
+             },
+             {
+                "key":"tutkinnon_myontaja",
+                "displayName":{
+                   "displayNameFi":"Tutkinnon myöntäjä"
+                },
+                "widget":"string",
+                "instructionText":{
+ 
+                },
+                "placeholder":{
+                   "placeholderFi":""
+                },
+                "styles":{
+                   "width":"0.6"
+                },
+                "rules":{
+                    "required": {
+                        "acceptedValue": true,
+                        "errorText": {
+                            "errorTextFi": "Tutkinnon myöntäjä on pakollinen"
+                        }
+                    }
+                }
+             },
+             {
+                "key": "tutkinnon_valmistumis_pvm",
+                "displayName": {
+                "displayNameFi": "Tutkinnon valmistumispäivämäärä"
+                },
+                "widget": "date",
+                "instructionText": {},
+                "placeholder": {
+                "placeholderFi": ""
+                },
+                "styles": {
+                "width": "0.8"
+                },
+                "rules": {
+                "required": {
+                    "acceptedValue": true,
+                    "errorText": {
+                    "errorTextFi": "Tutkinnon valmistumispäivämäärä on pakollinen"
+                    }
+                },
+                "vardaUIDate": {
+                    "acceptedValue": "dd.mm.yyyy",
+                    "errorText": {
+                        "errorTextFi": "Tutkinnon valmistumispäivämäärä tulee olla muodossa pp.kk.vvvv"
+                        }
+                    }
+                }
+            },
+            {
+               "key":"kielikylpykielet_koodi",
+               "displayName":{
+                  "displayNameFi":"Kielikylpykielet"
+               },
+               "widget":"autocompletemany",
+               "instructionText":{
+
+               },
+               "placeholder":{
+                  "placeholderFi":""
+               },
+               "styles":{
+                  "width":"0.6"
+               },
+               "koodisto": "kielikoodisto",
+               "rules":{
+                "required": {
+                    "acceptedValue": true,
+                    "errorText": {
+                        "errorTextFi": "Kielikylpykielet on pakollinen"
+                    }
+                }
+               }
+            }
+         ]
+      }
+   ]
+}

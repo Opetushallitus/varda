@@ -1,0 +1,146 @@
+.huoltaja-frontpage-container {
+    /* Color vars */
+    --huoltaja-green: #378703;
+    --huoltaja-even-row: #edf1f5;
+    --huoltaja-blue: #0041dc;
+    --huoltaja-black: #000a48;
+    --huoltaja-lightblue: #f6faff;
+    --huoltaja-header-focus: #a5cdff;
+
+    position: relative;
+    margin: 0 auto;
+    width: 75%;
+    padding: 20px 0 25px 0;
+    font-family: 'Roboto', sans-serif;
+    color: var(--huoltaja-black);
+}
+
+.huoltaja-frontpage-div-margin-bottom {
+    margin-bottom: 45px;
+}
+
+h1 {
+    font-size: 1.5rem;    /* 2 rem */
+}
+
+h2 {
+    font-size: 1.25rem;    /* 1.5 rem */
+}
+
+h3 {
+    font-size: 1rem;    /* 1.17 rem */
+}
+
+h4 {
+    font-size: 0.9rem;    /* 1 rem */
+}
+
+.voimassa-useita-vakapaatoksia-container {
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.voimassa-useita-vakapaatoksia-rectangle {
+    height: 50px;
+    width: 12px;
+    background-color: var(--huoltaja-green);
+    display: inline-block;
+    margin-right: 15px;
+}
+
+.voimassa-useita-vakapaatoksia-text-container {
+    display: inline-block;
+    height: 60px;
+    vertical-align: middle;
+    white-space: normal;
+}
+
+.huoltaja-table {
+    border-spacing: 0;
+    text-align: left;
+    width: 100%;
+}
+
+.huoltaja-vakapaatos-header-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.huoltaja-even-row {
+    background-color: var(--huoltaja-even-row);
+}
+
+.onko-tiedoissa-virhe {
+    color: var(--huoltaja-blue);
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+.huoltaja-blue {
+    color: var(--huoltaja-blue);
+}
+
+.vakapaatos-voimassa {
+    background-color: var(--huoltaja-lightblue);
+    border: 2px solid var(--huoltaja-blue);
+    border-radius: 5px;
+    margin-bottom: 25px;
+    padding: 15px;
+}
+
+.vakapaatos-voimassa-panel {
+    background-color: var(--huoltaja-lightblue);
+}
+
+.vakapaatos-ei-ole-voimassa {
+    border: 2px solid #b3b3b3;
+    border-radius: 5px;
+    margin-bottom: 25px;
+    padding: 15px;
+}
+
+@media (max-width: 465px) {
+  h1 {
+    font-size: 1.4rem;
+  }
+
+  h2 {
+    font-size: 1.15rem;
+  }
+
+  h3 {
+    font-size: 0.9rem;
+  }
+
+  h4 {
+    font-size: 0.8rem;
+  }
+}
+
+button {
+	background: none;
+	color: inherit;
+	border: none;
+	padding: 0;
+	font: inherit;
+	cursor: pointer;
+	outline: inherit;
+}
+
+.huoltaja-header:focus {
+    background: var(--huoltaja-header-focus) !important;
+}
+
+@media (max-width: 740px) {
+  .huoltaja-frontpage-container {
+    width: 95%;
+  }
+
+  .mat-expansion-panel-header {
+    padding: 0;
+  }
+
+  .voimassa-useita-vakapaatoksia-text-container {
+    height: 90px;
+  }
+}

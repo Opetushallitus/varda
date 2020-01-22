@@ -1,0 +1,19 @@
+<div class="varda-paos-hallinta-wrapper">
+  <div class="varda-paos-hallinta-flex-column varda-paos-hallinta-flex-column-big varda-paos-hallinta-background">
+    <h1>{{'label.paos-management.topic' | translate}}</h1>
+    <p>{{(isVakajarjestajaKunta ? 'label.paos-management.description' : 'label.paos-management.description.yksityinen') | translate}}</p>
+    <app-varda-error-alert [errorMessageKey$]="errorMessage$"></app-varda-error-alert>
+    <app-paos-add-paos-toiminta [isVakajarjestajaKunta]="isVakajarjestajaKunta"
+                                [selectedVakajarjestaja]="selectedVakajarjestaja"></app-paos-add-paos-toiminta>
+  </div>
+  <div class="varda-paos-hallinta-flex-column">
+    <div *ngIf="isVakajarjestajaKunta"
+         class="varda-paos-hallinta-background">
+      <app-paos-added-toimipaikat [selectedVakajarjestaja]=selectedVakajarjestaja></app-paos-added-toimipaikat>
+    </div>
+    <div class="varda-paos-hallinta-background">
+      <app-paos-added-toimijat [selectedVakajarjestaja]="selectedVakajarjestaja"></app-paos-added-toimijat>
+    </div>
+  </div>
+</div>
+<lib-loading-indicator *ngIf="isLoading()"></lib-loading-indicator>

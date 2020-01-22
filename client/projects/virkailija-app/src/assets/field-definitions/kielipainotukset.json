@@ -1,0 +1,110 @@
+{
+    "fieldsets": [
+      {
+        "id": "kielipainotus_perustiedot",
+        "title": {
+          "titleFi": "Kielipainotuksen tiedot",
+          "titleSv": "Uppgifter om språk som betonas"
+        },
+        "fields": [
+            {
+                "key": "kielipainotus_koodi",
+                "displayName": {
+                  "displayNameFi": "Kielipainotus",
+                  "displayNameSv": "Språk som betonas"
+                },
+                "widget": "select",
+                "instructionText": {
+                  "instructionTextFi": "Valitse listalta kielipainotus. Kielipainotuksella tarkoitetaan varhaiskasvatuksen toimipaikassa järjestettävää, muilla kuin asiointikielillä toteutettua kieleen liittyvää toimintaa, kuten kielikylpyä, kielirikasteista varhaiskasvatusta ja muuta laajamittaista kaksikielistä varhaiskasvatusta. Yhdellä toimipaikalla voi olla useampi kielipainotus. Tallenna tiedot jokaisesta kielellisestä painotuksesta erikseen.",
+                  "instructionTextSv": "Välj språk som betonas från menyn. Med ett språk som betonas avses det språk som betonas på verksamhetsstället i form av till exempel språkbad, språkberikad småbarnspedagogik eller annan omfattande småbarnspedagogik på två språk. Ett verksamhetsställe kan betona flera språk. Spara uppgifterna om olika språk som betonas separat."
+                },
+                "placeholder": {},
+                "styles": {
+                  "width": "0.6"
+                },
+                "koodisto": "kielikoodisto",
+                "rules": {
+                  "required": {
+                    "acceptedValue": true,
+                    "errorText": {
+                      "errorTextFi": "Kielipainotuksen koodi on pakollinen tieto",
+                      "errorTextSv": "Koden för språk som betonas är en obligatorisk uppgift."
+                    }
+                  }
+                }
+              },
+          {
+            "key": "alkamis_pvm",
+            "displayName": {
+              "displayNameFi": "Alkamispäivämäärä",
+              "displayNameSv": "Startdatum"
+            },
+            "widget": "date",
+            "instructionText": {
+              "instructionTextFi": "Syötä toimipaikan kielipainotuksen aloittamisen päivämäärä. Valitse oikea päivämäärä kalenterista tai syötä päivämäärä muodossa pp.kk.vvvv.",
+              "instructionTextSv": "Ange startdatum för språket som betonas på verksamhetsstället. Om det exakta datumet inte är känt, ange åtminstone rätt årtal (t.ex. 1.1. 2007). Välj rätt datum i kalendern eller ange datumet i formatet dd.mm.åååå."
+            },
+            "placeholder": {},
+            "styles": {
+              "width": "0.6"
+            },
+            "rules": {
+              "required": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Alkamispäivämäärä on pakollinen",
+                  "errorTextSv": "Startdatumet är obligatoriskt"
+                }
+              },
+              "vardaUIDate": {
+                "acceptedValue": "dd.mm.yyyy",
+                "errorText": {
+                  "errorTextFi": "Alkamispäivämäärä tulee olla muodossa pp.kk.vvvv",
+                  "errorTextSv": "Startdatumet ska ha formatet dd.mm.åååå"
+                }
+              },
+              "isBefore": {
+                "key": "paattymis_pvm",
+                "errorText": {
+                    "errorTextFi": "Alkamispäivämäärän tulee olla ennen päättymispäivämäärää",
+                    "errorTextSv": "Startdatumet ska infalla före slutdatumet"
+                }
+              }
+            }
+          },
+          {
+            "key": "paattymis_pvm",
+            "displayName": {
+              "displayNameFi": "Päättymispäivämäärä (jos tiedossa)",
+              "displayNameSv": "Slutdatum (om det är känt)"
+            },
+            "widget": "date",
+            "instructionText": {
+              "instructionTextFi": "Syötä toimipaikan kielipainotuksen loppumisen päivämäärä, mikäli se on tiedossa. Valitse oikea päivämäärä kalenterista tai syötä päivämäärä muodossa pp.kk.vvvv.",
+              "instructionTextSv": "Ange slutdatum för språket som betonas på verksamhetsstället, om datumet är känt. Välj rätt datum i kalendern eller ange datumet i formatet dd.mm.åååå"
+            },
+            "placeholder": {},
+            "styles": {
+              "width": "0.6"
+            },
+            "rules": {
+              "vardaUIDate": {
+                "acceptedValue": "dd.mm.yyyy",
+                "errorText": {
+                  "errorTextFi": "Päättymispäivämäärä tulee olla muodossa pp.kk.vvvv",
+                  "errorTextSv": "Slutdatumet ska ha formatet dd.mm.åååå"
+                }
+              },
+              "isAfter": {
+                "key": "alkamis_pvm",
+                "errorText": {
+                  "errorTextFi": "Päättymispäivämäärän tulee olla alkamispäivämäärän jälkeen",
+                  "errorTextSv": "Slutdatumet ska infalla efter startdatumet"
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+}

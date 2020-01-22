@@ -1,0 +1,48 @@
+.varda-vakatoimija-wrapper {
+    padding-top: 40px;
+}
+
+.varda-vakatoimija-content {
+    display: flex;
+    justify-content: center;
+}
+
+.varda-vakatoimija-form-wrapper {
+    background-color: #fff;
+    padding: 20px 10px 20px 10px;
+    width: 620px;
+    border-radius: 4px;
+}
+
+.varda-vakatoimija-form-save-btn-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 10px;
+}
+
+.varda-vakatoimija-form-save-btn-wrapper > div:first-child {
+    width: 150px;
+}
+.varda-fieldset-legend-toimijan-tiedot {
+    font-size: 1rem;
+    color: #4A4A4A;
+    margin: 0;
+    font-weight: normal;
+    line-height: normal;
+    font-weight: bold;
+    padding-bottom: 10px;
+}
+.varda-fieldset {
+  padding-left: 0px;
+}
+.varda-fieldset-content {
+  padding-left: 0px;
+}
+
+@media (max-width: 680px) {
+
+    .varda-vakatoimija-form-wrapper {
+        width: 90%;
+    }
+
+}

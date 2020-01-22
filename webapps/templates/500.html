@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+
+{% block content %}
+<h1> {% trans "Internal Server Error" %}</h1>
+
+<p>{% trans "The system has encountered an internal error. We are clarifying the source and reason for this error."%}</p>
+
+<p>{% trans "Return" %} : <a href="/"> {% trans "VARDA Main Page" %}</a></p>
+
+{% endblock %}

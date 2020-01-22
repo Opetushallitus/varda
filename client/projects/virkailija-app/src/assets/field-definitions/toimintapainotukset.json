@@ -1,0 +1,196 @@
+{
+    "fieldsets": [
+      {
+        "id": "toimintapainotus_perustiedot",
+        "title": {
+          "titleFi": "Toimintapainotuksen tiedot",
+          "titleSv": "Uppgifter om verksamhet som betonas"
+        },
+        "fields": [
+          {
+            "key": "toimintapainotus_koodi",
+            "displayName": {
+              "displayNameFi": "Toimintapainotus",
+              "displayNameSv": "Verksamhet som betonas"
+            },
+            "widget": "select",
+            "instructionText": {
+              "instructionTextFi": "Valitse listalta toiminnallinen painotus. Toimipaikan toiminnallisella painotuksella tarkoitetaan\nniitä painotuksia, joita toimipaikassa käytetään varhaiskasvatuksen yhteydessä. Näitä ovat muun\nmuassa musiikki, liikunta ja kuvataide. Yhdellä toimipaikalla voi olla useampi toiminnallinen painotus. Tallenna tiedot jokaisesta toiminnallisesta painotuksesta erikseen.",
+              "instructionTextSv": "Ange verksamhet som betonas från menyn. Med verksamhet som betonas avses de former av verksamhet som betonas i samband med småbarnspedagogiken. Dessa är bland annat musik, gymnastik och bildkonst. Ett verksamhetsställe kan betona flera former av verksamhet. Varje enskild verksamhet som betonas ska anges separat."
+            },
+            "placeholder": {},
+            "styles": {
+              "width": "0.6"
+            },
+            "options": [
+              {
+                "code": "tp01",
+                "displayName": {
+                  "displayNameFi": "Musiikki",
+                  "displayNameSv": "Musik"
+                }
+              },
+              {
+                "code": "tp02",
+                "displayName": {
+                  "displayNameFi": "Liikunta",
+                  "displayNameSv": "Gymnastik"
+                }
+              },
+              {
+                "code": "tp03",
+                "displayName": {
+                  "displayNameFi": "Kuvataide",
+                  "displayNameSv": "Bildkonst"
+                }
+              },
+              {
+                "code": "tp04",
+                "displayName": {
+                  "displayNameFi": "Tiede",
+                  "displayNameSv": "Vetenskap"
+                }
+              },
+              {
+                "code": "tp05",
+                "displayName": {
+                  "displayNameFi": "Draama",
+                  "displayNameSv": "Drama"
+                }
+              },
+              {
+                "code": "tp06",
+                "displayName": {
+                  "displayNameFi": "Ympäristö ja luonto",
+                  "displayNameSv": "Miljö och natur"
+                }
+              },
+              {
+                "code": "tp07",
+                "displayName": {
+                  "displayNameFi": "Seikkailu",
+                  "displayNameSv": "Äventyr"
+                }
+              },
+              {
+                "code": "tp08",
+                "displayName": {
+                  "displayNameFi": "Media",
+                  "displayNameSv": "Media"
+                }
+              },
+              {
+                "code": "tp09",
+                "displayName": {
+                  "displayNameFi": "Maailmankatsomuksellinen",
+                  "displayNameSv": "Världsåskådning"
+                }
+              },
+              {
+                "code": "tp98",
+                "displayName": {
+                  "displayNameFi": "Ei painotusta",
+                  "displayNameSv": "Ingen betoning"
+                }
+              },
+              {
+                "code": "tp99",
+                "displayName": {
+                  "displayNameFi": "Muu",
+                  "displayNameSv": "Övrig betoning"
+                }
+              }
+            ],
+            "rules": {
+              "required": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Toiminnallisen painotuksen koodi on pakollinen tieto",
+                  "errorTextSv": "Koden för verksamhet som betonas är en obligatorisk uppgift."
+                }
+              },
+              "maxlength": {
+                "acceptedValue": 50,
+                "errorText": {
+                  "errorTextFi": "Maksimipituus on 50 merkkiä.",
+                  "errorTextSv": "Största tillåtna antalet tecken är 50"
+                }
+              },
+              "regex": {}
+            }
+          },
+          {
+            "key": "alkamis_pvm",
+            "displayName": {
+              "displayNameFi": "Alkamispäivämäärä",
+              "displayNameSv": "Startdatum"
+            },
+            "widget": "date",
+            "instructionText": {
+              "instructionTextFi": "Syötä toimipaikan toimintapainotuksen aloittamisen päivämäärä. Valitse oikea päivämäärä kalenterista tai syötä päivämäärä muodossa pp.kk.vvvv.",
+              "instructionTextSv": "Ange datum då verksamheten som betonas trätt i kraft. Välj datum i kalendern eller skriv in det i formen dd.mm.åååå."
+            },
+            "placeholder": {},
+            "styles": {
+              "width": "0.6"
+            },
+            "rules": {
+              "required": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Alkamispäivämäärä on pakollinen",
+                  "errorTextSv": "Startdatumet är obligatoriskt"
+                }
+              },
+              "vardaUIDate": {
+                "acceptedValue": "dd.mm.yyyy",
+                "errorText": {
+                  "errorTextFi": "Alkamispäivämäärä tulee olla muodossa pp.kk.vvvv",
+                  "errorTextSv": "Startdatumet ska ha formatet dd.mm.åååå"
+                }
+              },
+              "isBefore": {
+                "key": "paattymis_pvm",
+                "errorText": {
+                    "errorTextFi": "Alkamispäivämäärän tulee olla ennen päättymispäivämäärää",
+                    "errorTextSv": "Startdatumet ska infalla före slutdatumet"
+                }
+              }
+            }
+          },
+          {
+            "key": "paattymis_pvm",
+            "displayName": {
+              "displayNameFi": "Päättymispäivämäärä (jos tiedossa)",
+              "displayNameSv": "Slutdatum (om det är känt)"
+            },
+            "widget": "date",
+            "instructionText": {
+              "instructionTextFi": "Syötä toimipaikan toimintapainotuksen loppumisen päivämäärä, jos se on tiedossa. Valitse oikea päivämäärä kalenterista tai syötä päivämäärä muodossa pp.kk.vvvv.",
+              "instructionTextSv": "Ange slutdatum för verksamheten som betonas i fall du känner till datumet. Välj datum i kalendern eller skriv in det i formen dd.mm.åååå."
+            },
+            "placeholder": {},
+            "styles": {
+              "width": "0.6"
+            },
+            "rules": {
+              "vardaUIDate": {
+                "acceptedValue": "dd.mm.yyyy",
+                "errorText": {
+                  "errorTextFi": "Päättymispäivämäärä tulee olla muodossa pp.kk.vvvv",
+                  "errorTextSv": "Slutdatumet ska ha formatet dd.mm.åååå"
+                }
+              },
+              "isAfter": {
+                "key": "alkamis_pvm",
+                "errorText": {
+                  "errorTextFi": "Päättymispäivämäärän tulee olla alkamispäivämäärän jälkeen",
+                  "errorTextSv": "Slutdatumet ska infalla efter slutdatumet"
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+}

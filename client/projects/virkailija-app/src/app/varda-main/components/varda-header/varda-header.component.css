@@ -1,0 +1,106 @@
+a {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.varda-header-navigation-wrapper {
+  display: flex;
+  width: 80%;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  margin-top: 10px;
+}
+.varda-header-wrapper {
+  border-bottom: 2px solid #eee;
+  width: 100%;
+  background-color: #fff;
+  color: #2A2A2A;
+}
+
+.varda-header-wrapper a {
+  color: #2A2A2A;
+}
+
+.varda-header-grid {
+  display: grid;
+  grid-template-columns: repeat(12, [col-start] 1fr);
+  width: 100vw;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.varda-header-section {
+  grid-column: col-start 1 / span 12;
+}
+
+.site-title {
+  font-size: 1.2rem;
+  flex: 0 1 80px;
+  text-decoration: none;
+  cursor: pointer;
+  text-align: center;
+}
+
+.site-caption {
+  margin-top: 0;
+  margin-bottom: 0;
+  color: #2A2A2A;
+  font-size: 0.7rem;
+  letter-spacing: 0.3px
+}
+
+.varda-header-lang-selection-section {
+  flex: 0 1 50px;
+  position: relative;
+}
+
+.varda-header-navigation-container {
+  display: flex;
+  justify-content: center;
+}
+
+.varda-header-vakajarjestaja-info {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-bottom: 2px;
+}
+
+.varda-header-nav-group-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  background-color: #fff;
+}
+
+.varda-header-nav-item-container {
+  display: flex;
+  justify-content: center;
+  height: 50px;
+  align-items: center;
+  padding-left: 26px;
+  padding-right: 26px;
+}
+
+.active-nav-item {
+  border-bottom: 2px solid #159ecb;
+  font-weight: bold;
+}
+@media (max-width: 914px) {
+  .varda-header-navigation-container {
+    padding-top: 12px;
+  }
+}
+
+@media (min-width: 1400px) {
+  .varda-header-navigation-wrapper {
+    width: 70%;
+  }
+}
+@media (min-width: 1800px) {
+  .varda-header-navigation-wrapper {
+    width: 50%;
+  }
+}

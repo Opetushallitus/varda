@@ -1,0 +1,42 @@
+<div class="huoltaja-frontpage-container">
+
+  <div class="huoltaja-frontpage-div-margin-bottom">
+    <h1>{{'label.varhaiskasvatustiedot' | translate}}</h1>
+    <p>{{'text.varhaiskasvatustiedot' | translate}}</p>
+  </div>
+
+  <div class="huoltaja-frontpage-div-margin-bottom">
+    <h2>{{'label.henkilotiedot' | translate}}: {{frontpageDto.lapsi.etunimet}} {{frontpageDto.lapsi.sukunimi}} ({{'label.katsot-tietoja-huoltajana' | translate}})</h2>
+
+    <app-huoltaja-frontpage-lapsi
+      [lapsiDto]="frontpageDto.lapsi">
+    </app-huoltaja-frontpage-lapsi>
+  </div>
+
+  <div>
+    <h2>{{'label.varhaiskasvatustiedot-toimipaikoittain' | translate}}</h2>
+    <div class="voimassa-useita-vakapaatoksia-container" *ngIf="frontpageDto.voimassa_useita_vakapaatoksia">
+      <div class="voimassa-useita-vakapaatoksia-rectangle"></div>
+      <div class="voimassa-useita-vakapaatoksia-text-container">
+        <span>{{'text.voimassa-useita-vakapaatoksia' | translate}}</span>
+      </div>
+    </div>
+  </div>
+
+  <ng-container *ngFor="let toimipaikka of frontpageDto.toimipaikat">
+    <div [ngClass]="vakasuhde.vakapaatos_voimassa ? 'vakapaatos-voimassa' : 'vakapaatos-ei-ole-voimassa'" *ngFor="let vakasuhde of toimipaikka.vakasuhteet">
+      <h3>
+        <table class="huoltaja-vakapaatos-header-table">
+          <tr>
+            <td>{{toimipaikka.nimi}}</td>
+            <td>{{vakasuhde.alkamis_pvm | date:'d.M.yyyy'}} - {{vakasuhde.paattymis_pvm | date:'d.M.yyyy'}}</td>
+          </tr>
+        </table>
+      </h3>
+
+      <app-huoltaja-frontpage-vakasuhde
+        [vakasuhde]="vakasuhde">
+      </app-huoltaja-frontpage-vakasuhde>
+    </div>
+  </ng-container>
+</div>

@@ -1,0 +1,45 @@
+<h3>{{'label.paos-toimijat.topic' | translate}} ({{paosToiminnat.length}})</h3>
+<div>
+  <p>{{'label.paos-toimijat.description' | translate}}</p>
+  <p *ngIf="!paosToiminnat.length"
+     class="paos-list-toimijat-search-empty">{{'label.paos-toimijat.list.empty' | translate}}</p>
+</div>
+<div *ngIf="showSuccess"
+     class="oph-alert oph-alert-success"
+     [@fadeOut]>
+  {{'label.paos-toimijat.created-notification' | translate}}
+</div>
+<div *ngIf="paosToiminnat.length">
+  <div [class.scrollable]="paosToiminnat.length > 3">
+    <div *ngFor="let paosToiminta of paosToiminnat"
+         class="oph-alert oph-alert-info small-text"
+         [class.varda-paos-list-toimintainfo-highlight]="highlighted.indexOf(paosToiminta.vakajarjestaja_url) !== -1">
+      <div>
+        <div>
+          <h4>{{paosToiminta.vakajarjestaja_nimi}}</h4>
+        </div>
+        <div>
+          {{'label.oid' | translate}}: {{paosToiminta.vakajarjestaja_organisaatio_oid}}
+          <app-varda-toggle-button [isUp]="openToimija !== paosToiminta.vakajarjestaja_id"
+                                   (click)="toggleToimija(paosToiminta.vakajarjestaja_id)"></app-varda-toggle-button>
+          <br/>
+          {{'label.id' | translate}}: {{paosToiminta.vakajarjestaja_id}}
+        </div>
+      </div>
+      <div *ngIf="openToimija === paosToiminta.vakajarjestaja_id">
+        <div>
+          {{'label.paos-toimipaikat.list.tallennusvastuu' | translate}}: {{getCurrentTallentajaTranslateKey(paosToiminta.paos_oikeus) | translate}}
+          <div>
+            <app-varda-delete-button (click)="showDeleteConfirm(paosToiminta)">
+              {{'label.delete' | translate}}
+            </app-varda-delete-button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<app-varda-prompt-modal [show$]="showConfirmModal$"
+                        (saveEvent)="deletePaosToiminta()">
+  {{'label.paos-toimijat.list.delete-confirm' | translate}}
+</app-varda-prompt-modal>

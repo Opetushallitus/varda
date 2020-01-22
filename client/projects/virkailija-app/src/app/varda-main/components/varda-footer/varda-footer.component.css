@@ -1,0 +1,118 @@
+.varda-footer-wrapper {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #fff;
+    font-size: 0.75rem;
+    border-top: 2px solid #eee;
+}
+
+.varda-footer-grid {
+    display: grid;
+    grid-template-columns: repeat(12, [col-start] 1fr);
+    width: 100vw;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.varda-footer-section {
+    grid-column: col-start 1 / span 12
+}
+
+.varda-footer-section-content p {
+    margin-bottom: 0;
+}
+
+.varda-high-contrast .varda-footer-section-content a {
+    text-decoration: none;
+}
+
+.varda-footer-link-item {
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding-left: 30px;
+    padding-right: 30px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    text-decoration: none;
+    color: #000000;
+    font-size: 0.75rem;
+}
+
+.varda-footer-link-item.varda-active-footer-link-item {
+    border-color: #000;
+    font-weight: bold;
+}
+
+.varda-footer-nav-link-wrapper .varda-footer-link-item:hover,
+.varda-footer-active-item {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #000000;
+}
+
+.varda-footer-nav-link-wrapper.varda-footer-active-item .varda-footer-link-item:hover {
+    background-color: #fff;
+    font-weight: bold;
+    color: #000;
+}
+
+.varda-footer-active-item a {
+    color: #fff;
+}
+
+.varda-footer-nav-link-wrapper .varda-footer-link-item:active {
+    background-color: #fff;
+    font-weight: bold;
+    color: #000;
+}
+
+.footer-nav-link-wrapper {
+    height: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.varda-footer-section-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 54px;
+    padding: 5px;
+}
+
+.varda-footer-section-content > div {
+    flex: 0 1 20%;
+}
+
+.varda-footer-section-content > div:first-child .varda-footer-link {
+    justify-content: flex-end;
+}
+
+.varda-footer-section-content > div:nth-child(2) .varda-footer-link {
+    justify-content: center;
+}
+
+.varda-footer-section-content > div:nth-child(3) .varda-footer-link {
+    justify-content: flex-start;
+}
+
+.varda-footer-link {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.varda-footer-block {
+    display: block;
+}
+
+.varda-button.change-contrast {
+    width: 65%;
+}
+
+.site-version {
+    color: #A2A2A2;
+}

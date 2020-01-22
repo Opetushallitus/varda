@@ -1,0 +1,97 @@
+
+.varda-icon-default {
+    stroke: #000;
+    stroke-width: 1.4;
+}
+
+.varda-icon-default.action-icon {
+    -webkit-filter: drop-shadow( 0px 2px 2px #9B9B9B ); 
+            filter: drop-shadow( 0px 2px 2px #9B9B9B );
+}
+
+.varda-icon-default:active {
+    filter: none;
+}
+
+.white-circle {
+    fill: #FFFFFF;
+}
+
+.more-info-circle {
+    fill: #000;
+}
+
+.varda-icon-default.varda-icon-addnew circle {
+    fill: #4B9FFF;
+    stroke: #fff;
+}
+
+.varda-icon-default.varda-icon-addnew line {
+    stroke: #fff;
+}
+
+.varda-icon-default.varda-icon-close.action-icon:hover circle {
+    fill: #000;
+    stroke: #000;
+}
+
+.varda-icon-default.varda-icon-close.action-icon:hover line {
+    stroke: #fff;
+    stroke-width: 6;
+}
+
+.varda-icon-default.varda-icon-close.action-icon:hover line {
+    stroke: #fff ;
+    stroke-width: 6 ;
+}
+
+.varda-icon-default.varda-icon-close.action-icon:hover line {
+    stroke: #fff ;
+    stroke-width: 6;
+}
+
+.varda-icon-default.varda-icon-close.action-icon circle,
+.varda-high-contrast .varda-icon-default.varda-icon-close.action-icon circle {
+    fill: #fff;
+    stroke: #000;
+    stroke-width: 1.4;
+}
+
+.varda-icon-default.varda-icon-close.action-icon line,
+.varda-high-contrast .varda-icon-default.varda-icon-close.action-icon line {
+    stroke: #000;
+    stroke-width: 6;
+}
+
+.varda-icon-default.varda-icon-close.action-icon line,
+.varda-high-contrast .varda-icon-default.varda-icon-close.action-icon line {
+    stroke: #000;
+    stroke-width: 6;
+}
+
+.varda-icon-default.varda-icon-moreinfo.action-icon:hover .white-circle {
+    fill: #000;
+    stroke: #000;
+    stroke-width: 3;
+}
+
+.varda-icon-default.varda-icon-moreinfo.action-icon:hover .more-info-circle {
+    stroke: #fff;
+    fill: #fff;
+}
+
+.varda-icon-default.varda-icon-moreinfo.action-icon .white-circle,
+.varda-high-contrast .varda-icon-default.varda-icon-moreinfo.action-icon .white-circle {
+    fill: #fff;
+    stroke: #000;
+}
+
+.varda-icon-default.varda-icon-moreinfo.action-icon .more-info-circle,
+.varda-high-contrast .varda-icon-default.varda-icon-moreinfo.action-icon .more-info-circle {
+    stroke: #000;
+}
+
+.varda-icon-default.varda-icon-moreinfo.action-icon .more-info-circle,
+.varda-high-contrast .varda-icon-default.varda-icon-moreinfo.action-icon .more-info-circle {
+    stroke: #000;
+}

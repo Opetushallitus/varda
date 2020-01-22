@@ -1,0 +1,157 @@
+.varda-main-frame-vakajarjestaja-title-section {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.varda-main-frame-vakajarjestaja-title-section > div:nth-child(2) {
+    margin-top: 20px;
+}
+
+.varda-main-frame-vakajarjestaja-title-section > div div:first-child {
+    flex: 0 1 150px;
+}
+
+.varda-main-frame-vakajarjestaja-title-section > div div:nth-child(2) {
+    padding-top: 2px;
+}
+
+.varda-main-frame-vakajarjestaja-section-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    align-items: center;
+    grid-column-gap: 20px;
+}
+
+.varda-main-frame-vakajarjestaja-section,
+.varda-main-frame-toimipaikka-section,
+.varda-main-frame-henkilo-section-container,
+.varda-main-frame-toimipaikka-section-container {
+    grid-column: col-start 1 / span 12;
+}
+
+.varda-main-frame-grid-gap {
+    grid-column: col-start 1 / span 12;
+    height: 20px;
+}
+
+.varda-main-frame-toimipaikka-title-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.varda-main-frame-toimipaikka-section,
+.varda-main-frame-toimipaikka-title-section div,
+.varda-main-frame-henkilo-section-container,
+.varda-main-frame-toimipaikka-section-container,
+.toimipaikka-vakajarjestaja-info,
+.varda-main-frame-vakajarjestaja-title-section > div,
+.varda-main-frame-vakajarjestaja-title-section > div div:first-child {
+    display: flex;
+    justify-content: center;
+}
+
+.varda-main-frame-henkilo-section-container > div:first-child {
+    min-width: 620px;
+    background-color: #fff;
+    margin-bottom: 50px;
+    min-height: 200px;
+    border-radius: 2px;
+    padding: 20px 10px 20px 10px;
+}
+
+.varda-main-frame-toimipaikka-section-container > div:first-child {
+    background-color: #fff;
+    max-height: 65vh;
+    border-radius: 4px;
+    padding: 20px 10px 20px 10px;
+}
+
+#toimipaikkaSelectorPanel {
+    box-shadow: none;
+    border-radius: 40px;
+}
+
+.varda-main-frame-toimipaikka-section > div:first-child {
+    min-width: 600px;
+    background-color: #fff;
+}
+
+.varda-main-frame-toimipaikka-title-section div:first-child {
+    margin-bottom: 20px;
+}
+
+.varda-main-frame-toimipaikka-title-section div button {
+    width: 160px;
+}
+
+.varda-main-frame-organization-selectors {
+    display: grid;
+    grid-template-columns: repeat(12, [col-start] 1fr);
+    grid-row-gap: 20px;
+    grid-column: col-start 1 / span 12;
+}
+
+.jarjestajan-nimi {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin: 0;
+}
+
+.toimipaikka-vakajarjestaja-info {
+    margin-bottom: 25px;
+    margin-top: 25px;
+}
+
+.toimipaikka-settings-panel-title {
+    font-weight: bold;
+}
+
+.toimipaikka-settings-panel-container {
+    justify-content: center;
+    position: relative;
+}
+
+.toimipaikat-empty-header {
+    background-color: #fff;
+}
+
+.toimipaikat-empty-header mat-panel-title div span.toimipaikka-settings-panel-title {
+    color: #000;
+}
+
+mat-expansion-panel-header.toimipaikat-empty-header:hover, mat-expansion-panel-header.toimipaikat-empty-header:focus {
+    background-color: #fff !important;
+}
+
+.varda-main-frame-toimipaikka-selector-panel mat-expansion-panel-header {
+    border-radius: 40px;
+}
+
+.toimipaikka-settings-info {
+    position: absolute;
+    right: 0;
+    top: -1px;
+}
+
+.toimipaikka-settings-info p {
+    margin-bottom: 0;
+    font-size: 0.8rem;
+    color: #0378F9;
+}
+
+@media (max-width: 1200px) {
+    .varda-main-frame-henkilo-section-container > div:first-child,
+    .varda-main-frame-toimipaikka-section-container > div:first-child {
+    }
+}
+
+@media (max-width: 680px) {
+  .varda-main-frame-toimipaikka-section > div:first-child {
+      min-width: 100%;
+      background-color: #fff;
+  }
+  .varda-main-frame-henkilo-section-container > div:first-child {
+    min-width: 100%;
+  }
+}

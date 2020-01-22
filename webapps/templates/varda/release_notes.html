@@ -1,0 +1,452 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+<title>VARDA</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+</head>
+<body background="{% static 'varda/images/gradient-bg.png' %}">
+{% load i18n %}
+
+<div class="container">
+  <div class="row">
+    <h1> {% trans "VARDA - Release notes" %}</h1><br>
+  </div>
+
+  <div class="row">
+    <ul><b>1.3.3</b> (17.01.2020)
+      <li>{% trans "Bugikorjauksia" %}</li>
+      <ul>
+        <li>{% trans "Lapsi lomakkeen käyttämään rajapintaan lisätty syntymäpäivämäärä ja oppijanumero" %}</li>
+        <li>Logitusta paranneltu (CSCVARDA-1425)</li>
+      </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.3.2</b> (03.01.2020)
+      <li>{% trans "Kooste lapsen tiedoista saatavilla: <b>/api/v1/lapset/xx/kooste</b>" %}</li>
+      <li>{% trans "Suorituskykyoptimointeja" %}</li>
+      <li>{% trans "Bugikorjauksia" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.3.1</b> (31.12.2019)
+      <li>{% trans "Bugikorjauksia" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.3.0</b> (19.12.2019)
+      <li>{% trans "Yksityisten varhaiskasvatusjärjestäjien kirjautuminen" %}</li>
+      <li>{% trans "Palveluseteli- ja ostopalvelukokonaisuus" %}</li>
+      <li>{% trans "Bugikorjauksia" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.2.9</b> (3.12.2019)
+      <li>{% trans "Salli yhden päivän maksutiedot" %}</li>
+      <li>{% trans "JM02 ja JM03 koodien päivitys" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.2.8</b> (25.11.2019)
+      <li>{% trans "PAOS-kokonaisuutta tukeva alustava toiminnallisuus" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.2.7</b> (18.11.2019)
+      <li>{% trans "Sallitaan hetullisen henkilön syöttäminen vardaan oppijanumerolla" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.2.6</b> (30.10.2019)
+      <li>{% trans "POST /api/v1/maksutiedot/ palauttaa nyt response-viestissä <b>henkilotunnus</b>-parametrin jos maksutieto on syötetty käyttäen huoltajan henkilötunnusta. Jos huoltaja on syötetty käyttäen <b>henkilo_oid</b> tietoa, ei <b>henkilotunnus</b>-parametria palauteta." %}</li>
+      <ul>
+        <li>{% trans "<b>Huom!</b> GET /api/v1/maksutiedot/{id}/ ei edelleenkään palauta huoltajien <b>henkilotunnus</b>-parametria." %}</li>
+      </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.2.5</b> (15.10.2019)
+      <li>{% trans "Termistömuutos:" %}</li>
+      <ul>
+        <li>{% trans "/api/v1/vakajarjestajat/xx/yhteenveto/" %}</li>
+        <ul>
+          <li>{% trans "aktiivinen termit vaihdettu voimassaoleva-termeihin" %}</li>
+        </ul>
+      </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.2.4</b> (11.10.2019)
+      <li>{% trans "Pieniä bugikorjauksia" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.2.3</b> (30.09.2019)
+      <li>{% trans "Bugikorjauksia" %}</li>
+      <ul>
+        <li>{% trans "Rajapinnan viiveitä on pienennetty huomattavasti" %}</li>
+        <li>{% trans "Varhaiskasvatussuhteen syöttäminen on epäonnistunut joissain harvinaisissa tilanteissa" %}</li>
+      </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.2.2</b> (20.09.2019)
+      <li>{% trans "Bugikorjaus (maksutietojen muutos ei onnistunut aikaisemmin)" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.2.1</b> (16.09.2019)
+      <li>{% trans "Bugikorjauksia" %}</li>
+      <li>{% trans "Maksutiedot:" %}</li>
+        <ul>
+          <li>{% trans "Koodiarvot MP02, MP03: Lisätty mahdollisuus luoda maksutietoja, joissa sekä asiakasmaksu että palvelusetelin arvo ovat 0" %}</li>
+          <li>{% trans "Parannettu validointeja" %}</li>
+        </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.2.0</b> (27.08.2019)
+      <li>{% trans "Maksutiedot lisätty" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.1.5</b> (01.08.2019)
+      <li>{% trans "Hakee huoltajatiedot oppijanumerorekisteristä" %}</li>
+      <li>{% trans "Parantaa maksutietojen validointia." %}</li>
+      <li>{% trans "Tarjoa aktiiviset maksutiedot yhteenveto rajapinnasta." %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.1.4</b> (15.07.2019)
+      <li>{% trans "Varhaiskasvatussuhde ei voi alkaa tai päättyä toimipaikan päättymisen jälkeen" %}</li>
+      <li>{% trans "Palvelun sisäisiä parannuksia" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.1.3</b> (01.07.2019)
+      <li><b>{% trans "Henkilön syöttäminen oppijanumerolla (hetuton henkilö): Tähän vaaditaan nimitiedot jatkossa mukaan, samaan tapaan kuin hetullisen henkilön syöttäminen on jo ollut." %}</b></li>
+      <li>{% trans "POST /api/v1/henkilot/ palauttaa" %}</li>
+        <ul>
+          <li>{% trans "HTTP 400 jos validointi ei onnistu" %}</li>
+          <li>{% trans "HTTP 201 jos henkilön luonti onnistui" %}</li>
+          <li>{% trans "HTTP 409 jos henkilö on jo Vardassa. Tällöin Varda palauttaa henkilön perustiedot, jonka jälkeen /api/v1/hae-henkilo/ kutsua ei tarvitse enää suorittaa." %}</li>
+        </ul>
+      <li>{% trans "Varhaiskasvatuspäätöksen tuntimäärä oltava jatkossa minimissään 1h" %}</li>
+      <li>{% trans "Validointeja päivitetty" %}</li>
+      <li>{% trans "Bugikorjauksia" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.1.2</b> (12.06.2019)
+      <li>{% trans "Uusi rajapinta /api/v1/varhaiskasvatuspaatokset/xx/varhaiskasvatussuhteet/ lisätty" %}</li>
+      <li>{% trans "Tietoturvapäivityksiä" %}</li>
+      <li>{% trans "Validointeja kehitetty" %}</li>
+        <ul>
+          <li>{% trans "Toimipaikan osoitteen (kayntiosoite, postiosoite) pituus oltava 3-100 merkkiä." %}</li>
+          <li>{% trans "Ns. tilapäiset henkilötunnukset ei sallittuja enää tuotannossa. Eli järjestysnumero 9:llä alkavat." %}</li>
+        </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.1.1</b> (16.05.2019)
+      <li>{% trans "/api/v1/vakajarjestajat/ sivun pituus muutettu 200 -> 20" %}</li>
+      <li>{% trans "Bugikorjaus" %}</li>
+        <ul>
+          <li>{% trans "varhaiskasvatuspaatoksen ja vakasuhteen paivamaarien synkkaus." %}</li>
+        </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.1.0</b> (15.05.2019)
+      <li>{% trans "Uudet api-throttle rajat" %}</li>
+        <ul>
+          <li>{% trans "15 req/s" %}</li>
+          <li>{% trans "GET: 10 000 req/päivä" %}</li>
+          <li>{% trans "POST, PUT, PATCH, DELETE: 50 000 req/päivä" %}</li>
+        </ul>
+      <li>{% trans "Rajapintatulosten sorttaukset" %}</li>
+        <ul>
+          <li>{% trans "/api/v1/vakajarjestajat/xx/toimipaikat/ toimipaikan nimen mukaan." %}</li>
+          <li>{% trans "/api/v1/toimipaikat/xx/lapset/ sukunimen ja etunimien mukaan." %}</li>
+        </ul>
+      <li>{% trans "Validointeja kehitetty" %}</li>
+        <ul>
+          <li>{% trans "alkamis- ja paattymis_pvm ei voi olla sama. Poikkeus: Tilapaisesti hoidossa olevien varhaiskasvatuspaatos ja -suhde voi kestaa yhden paivan." %}</li>
+          <li>{% trans "varhaiskasvatuspaatos ei voi päättyä ennen kuin varhaiskasvatussuhde on päättynyt." %}</li>
+        </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.0.3</b> (15.04.2019)
+      <li>{% trans "Varhaiskasvatuspäätös" %}</li>
+        <ul>
+          <li>{% trans "Vuorohoitokytkinten validointi." %}</li>
+            <ul>
+              <li>Mikäli lapsi on vuorohoidossa, kokoaikainen_vaka_kytkin ja paivittainen_vaka_kytkin merkitään tyhjäksi</li>
+              <li>Mikäli lapsi ei ole vuorohoidossa, vaaditaan sekä kokoaikainen_vaka_kytkin, että paivittainen_vaka_kytkin</li>
+            </ul>
+          <li>{% trans "Yhteenvetonäkymä." %}</li>
+            <ul>
+              <li>Jokaiselle varhaiskasvatustoimijalle tulossa yhteenvetonäkymä heidän organisaatioonsa syötetyistä tiedoista</li>
+            </ul>
+        </ul>
+      <li>{% trans "Nimi ja yhteystiedot menevät Organisaatiopalveluun kolmella kielellä (suomi, ruotsi ja englanti)" %}</li>
+      <li>{% trans "Bugikorjauksia" %}</li>
+        <ul>
+          <li>{% trans "Korjattu suuri viive toimipaikan muutoksissa / kieli- ja toiminnallisissa painotuksissa (lisäykset/muutokset)." %}</li>
+          <li>{% trans "Henkilön nimivalidointi: Aikaisemmin ei sallinut esim. merkkiä é." %}</li>
+        </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.0.2</b> (26.02.2019)
+      <li>{% trans "Bugikorjauksia" %}</li>
+        <ul>
+          <li>{% trans "Varhaiskasvatuspäätöksen muokkaaminen (PUT/PATCH) ei palauttanut kaikkia päätöksen tietoja, ainoastaan pvm-kentät." %}</li>
+        </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.0.1</b> (20.02.2019)
+      <li>{% trans "Bugikorjauksia" %}</li>
+        <ul>
+          <li>{% trans 'Yhden ja saman toimipaikan pystyi syöttämään "vahingossa" monta kertaa Vardan kautta Org.palveluun.' %}</li>
+        </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.0.0</b> (05.02.2019)
+      <li>{% trans "Varhaiskasvatussuhde" %}</li>
+        <ul>
+          <li>{% trans "Päätöslinkkiä ei voi muuttaa syötön jälkeen." %}</li>
+          <li>{% trans "Toimipaikkalinkkiä ei voi muuttaa syötön jälkeen." %}</li>
+        </ul>
+      <li>{% trans "Varhaiskasvatuspäätös" %}</li>
+        <ul>
+          <li>{% trans "Muita kuin päivämäärätietoja ei voi muokata." %}</li>
+        </ul>
+      <li>{% trans "Kielikoodisto" %}</li>
+        <ul>
+          <li>{% trans "Varda käyttää jatkossa kielikoodia: https://virkailija.testiopintopolku.fi/koodisto-service/rest/json/kielikoodistoopetushallinto/koodi" %}</li>
+          <li>{% trans 'HUOM! Edellisessä koodistossa arvoja, joita ei uudessa ole esim. koodiarvo "98" ja "se" poistuvat käytöstä' %}</li>
+            <ul>
+              <li>{% trans "https://virkailija.testiopintopolku.fi/koodisto-service/rest/json/kieli/koodi" %}</li>
+            </ul>
+        </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>0.9.5</b> (30.01.2019)
+      <li>{% trans "Hetullisen henkilön VTJ-yksilöinti" %}</li>
+        <ul>
+          <li>{% trans "Jos tämä epäonnistuu → Vardan ylläpito ottaa kuntaan yhteyttä asian ratkaisemiseksi." %}</li>
+        </ul>
+      <li>{% trans "Validointeja päivitetty" %}</li>
+        <ul>
+          <li>{% trans "Toimipaikan nimessä sallittu numeroiden ja kirjaimien lisäksi merkit: '/', '&', '+', '(', ')', '-', ','" %}</li>
+          <li>{% trans "Henkilön kutsumanimen tarkastamiseen tiukennuksia." %}</li>
+            <ul>
+              <li>{% trans "Esim. etunimi 'Liisa-Marjatta Tuulikki'. Tämän sallitut kutsumanimet: 'Liisa', 'Marjatta', 'Liisa-Marjatta' ja 'Tuulikki'. 'Marja' ei käy." %}</li>
+            </ul>
+        </ul>
+      <li>{% trans "Bugikorjauksia" %}</li>
+        <ul>
+          <li>{% trans "Varhaiskasvatuspäätöksen paattymis_pvm ei voinut asettaa ilman aloitus_pvm (PATCH-request)." %}</li>
+          <li>{% trans "Käyttöoikeusongelma liittyen PAOS-toimipaikkoihin korjattu." %}</li>
+        </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>0.9.0</b> (08.01.2019)
+      <li>{% trans "Toimipaikan painotusten päivittäminen Organisaatiopalveluun lisätty." %}</li>
+      <li>{% trans "Jokaiselle vakajärjestäjälle lisätty toimipaikka: <i>'Palveluseteli ja ostopalvelu' + vakajärjestäjän nimi</i>." %}</li>
+        <ul>
+          <li>{% trans "Esimerkki: Palveluseteli ja ostopalvelu Helsingin kaupunki." %}</li>
+        </ul>
+      <li>{% trans "Perhepäivähoitajia (toimipaikkoja) ei viedä Organisaatiopalveluun." %}</li>
+      <li>{% trans "Käyttöoikeuksia päivitetty virkailijoiden osalta." %}</li>
+      <li>{% trans "Tietomalli" %}</li>
+        <ul>
+          <li>{% trans "Vakapäätöksen tuntimaara_viikossa: max-arvo muutettu 168 → 120." %}</li>
+        </ul>
+      <li>{% trans "Bugikorjauksia." %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>0.8.5</b> (20.12.2018)
+      <li>{% trans "Tietomalliin muutos: toimipaikan kaikki osoitetiedot ovat nyt pakollisia." %}</li>
+        <ul>
+          <li>{% trans "Pakollisuus koskee siis jatkossa myös  kenttiä: Käyntiosoite, Käyntiosoitteen_postinumero ja Käyntiosoite_postitoimipaikka." %}</li>
+        </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>0.8.4</b> (19.12.2018)
+      <li>{% trans "Varhaiskasvatuspäätös: Pikakäsittely_kytkin tietoa ei voi jatkossa syöttää." %}</li>
+      <li>{% trans "PATCH-metodi poistettu /api/v1/toimipaikat/. Toimipaikka-muutokset jatkossa PUT-requestilla." %}</li>
+      <li>{% trans "Ratelimit asetettu basic auth-pyyntöihin (apikeyn nouto). Ei salli pyyntöjä kuin kerran 5 min sisällä." %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>0.8.3</b> (13.12.2018)
+      <li>{% trans "Korjaus: Palvelukäyttäjälle annettu oikeudet luoda toimipaikka." %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>0.8.2</b> (12.12.2018)
+      <li>{% trans "Käyttäjien oikeuksia toimipaikkojen luomiseen/muokkaamiseen päivitetty." %}</li>
+      <li>{% trans "Toimipaikan tietojen muokkaus päivittyy nyt myös Organisaatiopalveluun." %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>0.8.1</b> (12.12.2018)
+      <li>{% trans "Bugikorjaus liittyen palvelukäyttäjän henkilö-hakuun." %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>0.8.0</b> (11.12.2018)
+      <li>{% trans "Mittavia muutoksia liittyen" %}</li>
+        <ul>
+          <li>{% trans "käyttäjän/vaka-organisaation kirjautumiseen/rekisteröitymiseen" %}</li>
+          <li>{% trans "käyttöoikeuksiin" %}</li>
+        </ul>
+      <li>{% trans "Vakajarjestaja: mahdollisuus lisätä/muokata" %}</li>
+        <ul>
+          <li>{% trans "sähköpostiosoite" %}</li>
+          <li>{% trans "tilinumero" %}</li>
+          <li>{% trans "puhelinnumero" %}</li>
+        </ul>
+      <li>{% trans "Toimipaikan lisäys" %}</li>
+        <ul>
+          <li>{% trans "toimipaikka lisätään Organisaatiopalveluun, ja paluuviestissä toimitetaan organisaatio_oid." %}</li>
+        </ul>
+      <li>{% trans "Toimipaikan poisto" %}</li>
+        <ul>
+          <li>{% trans "tämä ei ole enää mahdollista. Käytä paattymis_pvm vanhentuneelle toimipaikalle." %}</li>
+        </ul>
+      <li>{% trans "Tietomallimuutokset" %}</li>
+        <ul>
+          <li>{% trans "Toimipaikan nimen max-pituus kasvatettu 200 merkkiin. Oli aikaisemmin 100 merkkiä." %}</li>
+          <li>{% trans "Varhaiskasvatuspaatos/jarjestamismuoto_koodi listamuodosta stringiksi." %}</li>
+          <li>{% trans "Toimipaikan asiointikieli muutettu stringistä listaksi." %}</li>
+          <li>{% trans "hoitopaikat => varhaiskasvatuspaikat" %}</li>
+          <li>{% trans "kokoaikainen_vaka_kytkin => kokopaivainen_vaka_kytkin" %}</li>
+          <li>{% trans "oppijanumero-kenttä poistettu henkilö-taulusta. Käytä henkilo_oid." %}</li>
+          <li>{% trans "id-kenttä lisätty rajapintaan eri näkymiin" %}</li>
+        </ul>
+      <li>{% trans "Koodistoa päivitetty" %}</li>
+      <li>{% trans "Validointeja päivitetty" %}</li>
+      <li>{% trans "Bugeja korjattu" %}</li>
+      <li>{% trans "Tietoturvapäivityksiä" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>0.6.0</b> (29.10.2018)
+      <li>{% trans "Päivämääräkentistä poistettu default-arvot" %}</li>
+      <li>{% trans "Kieli- ja toiminallinenpainotus: lista koodeja -> koodi-string" %}</li>
+      <li>{% trans "Tietomalli: toimipaikan osoitetiedot täydentyneet" %}</li>
+      <li>{% trans "Tietomalli: vakasuhde linkittyy nyt vakapäätökseen" %}</li>
+      <li>{% trans "Henkilön lisääminen Vardaan oid:lla (hetuton)" %}</li>
+      <li>{% trans "Henkilön haku-logiikkaa muutettu (GET -> POST)" %}</li>
+      <li>{% trans "Palvelukäyttäjän autentikointi" %}</li>
+      <li>{% trans "Esiopetustiedot poistettu" %}</li>
+      <li>{% trans "Rekisteröinti poistettu" %}</li>
+      <li>{% trans "Tietoturva-asioita paranneltu" %}</li>
+      <li>{% trans "Validointeja päivitetty" %}</li>
+      <li>{% trans "Bugi-korjauksia" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>0.3.4</b> (28.8.2018)
+      <li>{% trans "Kuntakoodi-validointeja päivitetty" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>0.3.3</b> (20.8.2018)
+      <li>{% trans "paivittainen_hoito_kytkin -> paivittainen_vaka_kytkin" %}</li>
+      <li>{% trans "kokoaikainen_hoito_kytkin -> kokoaikainen_vaka_kytkin" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>0.3.2</b> (15.8.2018)
+      <li>{% trans "Johtaja-kenttä poistettu Toimipaikka-taulusta" %}</li>
+      <li>{% trans "Rajapinnassa mahdollisuus tehdä apikey-refresh" %}</li>
+      <li>{% trans "Rajapinnassa mahdollisuus testidatan poistoon helposti" %}</li>
+      <li>{% trans "Rajapinnan bugeja korjattu, sekä tiedon validointeja kehitetty" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>0.3.1</b> (20.6.2018)
+      <li>{% trans "Rajapinnan bugeja korjattu" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>0.3.0</b> (29.5.2018)
+      <li>{% trans "Uusi tietomalli otettu käyttöön" %}
+        <ul>
+          <li>{% trans "Poistettu: Toimipiste, Ryhmä" %}</li>
+          <li>{% trans "Lisätty: Täydennyskoulutus, Esiopetussuhde, Esiopetus-suoritus" %}</li>
+        </ul>
+      </li>
+      <li>{% trans "IP-rajaus otettu käyttöön" %}</li>
+    </ul>
+  </div>
+
+  <br><br>
+  <div>
+    <a href="/" class="navbar-btn btn-info btn pull-left">
+      <span class="glyphicon glyphicon-arrow-left"></span> {% trans "Takaisin" %}</a>
+  </div>
+
+</div>
+
+<div class="navbar navbar-default navbar-fixed-bottom">
+    <div class="container">
+      <p class="navbar-text pull-left"><b>{% trans "Versio" %}: 1.3.3</b>
+      </p>
+
+      <a href="mailto:varda@oph.fi" class="navbar-btn btn-danger btn pull-right">
+      <span class="glyphicon glyphicon-envelope"></span> varda@oph.fi</a>
+    </div>
+</div>
+
+</body>
+</html>

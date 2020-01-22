@@ -1,0 +1,57 @@
+.varda-henkilo-item-content > div {
+    display: flex;
+}
+
+.varda-henkilo-name-wrapper {
+    display: flex;
+    width: 100%;
+    height: 30px;
+}
+
+.varda-henkilo-name-wrapper > div:first-child {
+    display: flex;
+    align-items: center;
+}
+
+.varda-henkilo-name-wrapper:hover .varda-henkilo-item-name,
+.varda-henkilo-item-name:hover {
+    background-color: #000;
+    color: #fff;
+}
+
+.varda-henkilo-name-wrapper p {
+    margin: 0;
+}
+
+.varda-henkilo-item-wrapper {
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: center;
+}
+
+.varda-henkilo-item-entry {
+    cursor: pointer;
+}
+
+.varda-henkilo-item-name {
+    margin-right: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    cursor: pointer;
+}
+
+@media (max-width: 800px) {
+
+    .varda-henkilo-item-name {
+        flex: 0 1 200px;
+    }
+
+    .varda-henkilo-name-wrapper {
+        flex: 0 1 100%;
+        padding-left: 0;
+    }
+    
+    .varda-henkilo-item-wrapper {
+        justify-content: flex-start;
+    }
+}

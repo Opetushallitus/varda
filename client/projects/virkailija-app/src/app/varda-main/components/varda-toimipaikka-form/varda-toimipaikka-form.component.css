@@ -1,0 +1,165 @@
+.kielipainotukset-enabled-wrapper,
+.toimintapainotukset-enabled-wrapper {
+    display: flex;
+    margin-bottom: 20px;
+    padding-left: 10px;
+}
+
+.kielipainotukset-enabled-wrapper > div,
+.toimintapainotukset-enabled-wrapper > div {
+    flex: 0 1 50%;
+}
+
+.kielipainotukset-enabled-wrapper > div:nth-child(2),
+.toimintapainotukset-enabled-wrapper > div:nth-child(2) {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.delete-all-btn {
+    flex: 0 1 200px;
+}
+
+.painotukset-instructions-msg-wrapper p {
+    font-style: italic;
+    font-size: 0.8rem;
+}
+
+.painotukset-instructions-msg-wrapper.painotus-error-text p {
+    color: #ff0000;
+}
+
+.toimipaikka-form-continues-text-wrapper {
+    position: absolute;
+    top: 78%;
+    right: 110px;
+}
+
+.toimipaikka-form-intro {
+  padding-left: 10px;
+  padding-bottom: 40px;
+}
+
+.toimipaikka-form-section-heading {
+    padding-left: 10px;
+    margin-bottom: 15px;
+    display: flex;
+    text-transform: uppercase;
+}
+
+.toimipaikka-form-section-heading h3 {
+    font-size: 1.0rem;
+    flex: 1 1 auto;
+}
+
+.toimipaikka-form-section-heading > div {
+    margin-right: 25px;
+    cursor: pointer;
+    display: none; /* REMOVE THIS LINE TO SHOW THE SHORTCUT */
+}
+
+.toimipaikka-form-form-wrapper {
+    margin-top: 20px;
+    margin-bottom: 80px;
+}
+
+
+
+#toimipaikkaFormSaveToimipaikkaBtn {
+    width: 200px;
+}
+
+.save-toimipaikka-form-btn-wrapper {
+    display: flex;
+    justify-content: flex-start;
+    padding-top: 20px;
+    padding-left: 10px;
+}
+
+.toimipaikka-form-content {
+    max-height: 80vh;
+    overflow: auto;
+}
+
+.delete-toimipaikka-panel-header {
+  border: none;
+  background-color: #fff;
+}
+
+.toimipaikka-form-delete-toimipaikka {
+  margin-left: 10px;
+}
+
+.toimipaikka-form-delete-section-wrapper > div:first-child {
+    width: 200px;
+}
+
+.mat-expansion-panel {
+  width: 60%;
+  box-shadow: none;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #a6dcee;
+  background-color: #def2ff;
+
+}
+
+.mat-expansion-panel-header {
+  background-color: #def2ff;
+  margin-bottom: 5px;
+  width: 100%;
+  color: #2a2a2a;
+  border-radius: 2px;
+
+}
+
+.mat-expansion-panel-delete-toimipaikka {
+  border: none;
+  background-color: #fff;
+}
+
+.mat-expansion-panel-header:focus {
+  border-width: 2px;
+  outline: 2px solid black;
+}
+.mat-expansion-panel-header:hover {
+  background-color: #00b5f0;
+  color: #fff;
+}
+
+.delete-toimipaikka-prompt {
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-bottom: 10px;
+}
+
+@media (max-width: 640px) {
+  .toimipaikka-form-continues-text-wrapper {
+      display: none;
+  }
+}
+
+
+@media (max-width: 740px) {
+  .mat-expansion-panel-header {
+    width: 90%;
+  }
+}
+
+@media (min-width: 900px) {
+  .mat-expansion-panel {
+    width: 60%;
+  }
+}
+
+@media (max-width: 1160px) {
+    .mat-expansion-panel {
+      width: 80%;
+    }
+  }
+@media (max-width: 800px) {
+    .mat-expansion-panel {
+      width: 95%;
+     }
+   }

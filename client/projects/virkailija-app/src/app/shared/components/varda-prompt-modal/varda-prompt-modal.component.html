@@ -1,0 +1,15 @@
+<div class="varda-prompt-modal"
+     *ngIf="showModal">
+  <div class="varda-prompt-modal-content promt-modal-content-wrapper">
+    <div>
+      <p><ng-content></ng-content></p>
+    </div>
+    <div class="promt-modal-button-wrapper">
+      <button class="varda-button varda-button-neutral"
+              (click)="showModal = false">
+        {{'label.cancel' | translate}}
+      </button>
+      <app-varda-delete-button (click)="saveAndHide()">{{'label.delete' | translate}}</app-varda-delete-button>
+    </div>
+  </div>
+</div>

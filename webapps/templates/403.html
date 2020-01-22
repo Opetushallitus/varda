@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+
+{% block content %}
+<h1> {% trans "Access not allowed" %}</h1>
+
+<p>{% trans "You are not allowed to log in."%}</p>
+
+<p>{% trans "Return" %} : <a href="/"> {% trans "VARDA Main Page" %}</a></p>
+
+{% endblock %}

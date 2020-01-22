@@ -1,0 +1,115 @@
+<div class="backend-error-container" #notificationContainer>
+  <div class="alert alert-success varda-form-main-feedback" role="alert" aria-live="polite" *ngIf="ui.formSaveSuccessMsg">
+    {{ui.formSaveSuccessMsg | translate}}
+  </div>
+  <div class="alert alert-danger varda-form-main-feedback" role="alert" aria-live="assertive" *ngIf="ui.formSaveErrorMsg || ui.formSaveErrors.length">
+    <div *ngIf="ui.formSaveErrorMsg">
+      {{ui.formSaveErrorMsg}}
+    </div>
+    <ul>
+      <li *ngFor="let error of ui.formSaveErrors">
+        {{error.key | translate}}. {{error.msg | translate}}
+      </li>
+    </ul>
+  </div>
+</div>
+<div *ngIf="!ui.noMaksutietoPrivileges">
+  <div class="lapsi-form-heading-and-delete-section">
+    <div class="maksutiedot-form-section-heading"><h3>{{'label.lapsi-stepper.maksutiedot'  | translate}}</h3></div>
+  </div>
+  <mat-accordion>
+    <form [formGroup]="formControl"
+          *ngFor="let formControl of maksutiedotFormArr.controls; let maksutietoFormArrayIdx = index;">
+      <mat-expansion-panel [expanded]="isExpanded(maksutietoFormArrayIdx)"
+                           (click)="onExpansionPanelClick($event, maksutietoFormArrayIdx)"
+                           #maksutietoPanels
+      >
+        <mat-expansion-panel-header>
+          <div style="padding: 10px"
+               #recurringMaksutietoEntityHeader>
+            <h5 tabindex="-1" class="recurring-maksutieto-entity-header">
+              {{getMaksutietoHeader(maksutietoFormArrayIdx) |async}}
+            </h5>
+          </div>
+        </mat-expansion-panel-header>
+
+        <app-huoltajat-container [initialHuoltajat]="getInitialHuoltajat(maksutietoFormArrayIdx)"
+                                 (huoltajat)="setHuoltajat($event, maksutietoFormArrayIdx)"
+                                 formControlName="huoltajat"
+                                 [isReadOnly]="ui.isKatselija"
+        ></app-huoltajat-container>
+
+        <fieldset *ngFor="let maksutietoFieldSet of maksutiedotFieldSetObj[maksutietoFormArrayIdx]"
+                  class="form-group varda-fieldset"
+                  [id]="maksutietoFieldSet.id + maksutietoFormArrayIdx"
+                  [formGroup]="getMaksutietoFormGroup(formControl, maksutietoFieldSet.id)">
+          <div *ngFor="let field of maksutietoFieldSet.fields; let fieldIdx = index">
+            <app-varda-form-question
+              [isReadOnly]="ui.isKatselija"
+              [field]="field"
+              [fieldIndex]="fieldIdx"
+              [partOfInline]="false"
+              [fieldSet]="maksutietoFieldSet"
+              [fieldSetIndex]="maksutietoFormArrayIdx"
+              [fieldSetName]="maksutietoFieldSet.id"
+              [form]="getMaksutietoFormGroup(formControl, maksutietoFieldSet.id)"
+              [formName]="'maksutieto'"></app-varda-form-question>
+          </div>
+        </fieldset>
+        <div *ngIf="!ui.isKatselija">
+          <div class="varda-step-save-btn-wrapper" [id]="'saveMaksutietoBtnWrapper' + maksutietoFormArrayIdx">
+            <div>
+              <button
+                class="varda-button varda-button-small recurring-save-btn"
+                type="button"
+                (click)="saveMaksutiedot(maksutietoFormArrayIdx)"
+                [ngClass]="{'varda-disabled-button': formControl.invalid || ui.isLoading || paattymisPvmIsUnchanged(maksutietoFormArrayIdx)}"
+                [disabled]="formControl.invalid || ui.isLoading || paattymisPvmIsUnchanged(maksutietoFormArrayIdx)"
+                *ngIf="ui.indexOfMaksutietoToDelete !== maksutietoFormArrayIdx">
+                {{'label.generic-save' | translate}}
+              </button>
+            </div>
+            <div>
+              <button class="varda-button varda-button-small varda-button-delete"
+                      type="button"
+                      [ngClass]="getDeleteButtonStyles(maksutietoFormArrayIdx)"
+                      [disabled]="ui.isLoading"
+                      (click)="displayDeleteWarning(maksutietoFormArrayIdx)"
+                      *ngIf="ui.indexOfMaksutietoToDelete !== maksutietoFormArrayIdx">
+                {{getDeleteText(maksutietoFormArrayIdx) | translate}}
+              </button>
+              <div *ngIf="ui.indexOfMaksutietoToDelete === maksutietoFormArrayIdx" role="alert" aria-live="assertive">
+                <p><b>{{'label.maksutieto.confirm-delete' | translate}}</b></p>
+                <div class="varda-delete-confirm-btn-wrapper">
+                  <div>
+                    <button #maksutietoCancelDeleteBtn
+                            [id]="'maksutietoCancelDeleteBtn' + maksutietoFormArrayIdx"
+                            class="varda-button varda-button-small varda-button-neutral"
+                            (click)="cancelDelete()"
+                            [disabled]="ui.isLoading"
+                            [ngClass]="{'varda-disabled-button': ui.isLoading}">
+                      {{'label.cancel' | translate}}
+                    </button>
+                  </div>
+                  <div>
+                    <button [id]="'maksutietoConfirmDeleteBtn' + maksutietoFormArrayIdx"
+                            class="varda-button varda-button-small varda-button-danger"
+                            (click)="doDeleteAction(maksutietoFormArrayIdx)"
+                            [disabled]="ui.isLoading"
+                            [ngClass]="{'varda-disabled-button': ui.isLoading}">
+                      {{'label.delete' | translate}}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-expansion-panel>
+    </form>
+  </mat-accordion>
+  <div class="varda-recurring-field-add-new-wrapper" *ngIf="isShowAddMaksutietoButton()">
+    <a [routerLink]="" class="" (click)="createNewMaksutietoForm()">
+      {{'label.maksutieto.uusi.lisaa' | translate}}</a>
+  </div>
+</div>

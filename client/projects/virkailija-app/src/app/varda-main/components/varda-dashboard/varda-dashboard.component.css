@@ -1,0 +1,14 @@
+.varda-main-frame-accessibility-settings-container {
+    position: fixed;
+    right: 40px;
+    bottom: 60px;
+}
+
+.varda-dashboard-initialization-error {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 30%;
+    margin-left: auto;
+    margin-right: auto;
+}

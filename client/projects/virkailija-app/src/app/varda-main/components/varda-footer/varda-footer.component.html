@@ -1,0 +1,32 @@
+<footer class="varda-footer-wrapper" appHighContrast>
+    <div class="varda-footer-grid">
+        <div class="varda-footer-section">
+            <div class="varda-footer-section-content">
+                <div>
+                    <div class="varda-footer-link">
+                        <div class="varda-footer-nav-link-wrapper">
+                            <p class="site-version">{{'label.version' | translate: {value: '1.3.3'} }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="varda-footer-link">
+                        <div class="varda-footer-nav-link-wrapper">
+
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="varda-footer-link varda-footer-block">
+                        <div class="varda-footer-nav-link-wrapper" (click)="toggleAccesibilitySettingsVisibility()">
+                            <a [routerLink]="" class="varda-footer-link-item">{{'label.accessibilitysettings' | translate}}</a>
+                        </div>
+                        <div class="varda-footer-nav-link-wrapper">
+                            <a href="{{'footer.url.accessibilityinfo' | translate}}" target="_blank" class="varda-footer-link-item">{{'label.accessibilityinfo' | translate}}</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>

@@ -1,0 +1,3 @@
+Generate patches by cloning source of the package,
+checkout the correct version and stage your changes.
+Then run `git diff --cached` to export a patch.

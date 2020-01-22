@@ -1,0 +1,17 @@
+.paos-add-toiminta-list-result-wrapper {
+  display: flex;
+}
+
+.paos-add-toiminta-list-result-column {
+  flex: 1 0 0 ;
+  border: 3px solid transparent;
+}
+
+.paos-add-toiminta-list-result-middle {
+  display: flex;
+  align-items: center;
+}
+
+.paos-add-toiminta-list-result-column-wide {
+  flex: 2 0 0 ;
+}

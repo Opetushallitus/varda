@@ -1,0 +1,32 @@
+<div class="varda-main-frame-wrapper">
+  <main class="varda-main-frame-section">
+    <section class="varda-main-login-title-section">
+      <div class="varda-main-login-title-section-content" appHighContrast>
+        <div></div>
+        <div class="varda-main-login-title-section-title">
+          <div><h2 class="section-title" *ngIf="!showLogOutMsg">{{'label.login' | translate}}</h2></div>
+        </div>
+        <div></div>
+        <div></div>
+      </div>
+    </section>
+    <section class="varda-main-login-opintopolku-section" #vardaMainLoginOpintopolkuSection appHighContrast>
+        <div class="varda-main-login-opintopolku-section-content">
+          <div class="varda-main-login-opintopolku-info-section">
+            <div>
+
+            </div>
+          </div>
+          <div class="varda-main-login-opintopolku-button-section">
+            <div aria-live="polite">
+                <p id="signOutInfo" *ngIf="showLogOutMsg">{{'logout-info' | translate}}</p>
+            </div>
+            <div>
+                <button class="varda-button" id="navigateToVardaLoginBtn" (click)="navigateToVardaLogin()">{{'label.action-login' | translate}}</button>
+            </div>
+          </div>
+        </div>
+    </section>
+  </main>
+</div>
+

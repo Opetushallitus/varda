@@ -1,0 +1,67 @@
+<mat-expansion-panel>
+  <mat-expansion-panel-header class="toimipaikan-lapset-header">
+    <mat-panel-title>
+      <h3 class="toimipaikan-lapset-font-blue">
+        <table class="toimipaikan-lapset-header-table">
+          <tr>
+            <td>
+              <span>{{'label.maksutieto' | translate}}</span>
+            </td>
+            <td>
+              <span *ngIf="maksutieto.paattymis_pvm">{{maksutieto.alkamis_pvm | date:'d.M.yyyy'}}-{{maksutieto.paattymis_pvm | date:'d.M.yyyy'}}</span>
+              <span *ngIf="!maksutieto.paattymis_pvm">{{'label.alkaen' | translate:{value: maksutieto.alkamis_pvm | date:'d.M.yyyy'} }}</span>
+            </td>
+          </tr>
+        </table>
+      </h3>
+    </mat-panel-title>
+  </mat-expansion-panel-header>
+
+  <div>
+    <h3 class="toimipaikan-lapset-font-bold toimipaikan-lapset-header-margin-bottom">
+      <span>{{'label.huoltajat' | translate}}</span>
+    </h3>
+
+    <table class="mat-table toimipaikan-lapset-table toimipaikan-lapset-huoltajat-table toimipaikan-lapset-vakatable" *ngFor="let huoltaja of maksutieto.huoltajat">
+      <tr class="mat-header-row">
+        <td class="mat-cell">{{'label.oppijanumero' | translate}}</td>
+        <td class="mat-cell">{{huoltaja.henkilo_oid}}</td>
+      </tr>
+      <tr class="mat-header-row">
+        <td class="mat-cell">{{'label.firstnamesbyseparated' | translate}}</td>
+        <td class="mat-cell">{{huoltaja.etunimet}}</td>
+      </tr>
+      <tr class="mat-header-row">
+        <td class="mat-cell">{{'label.lastname' | translate}}</td>
+        <td class="mat-cell">{{huoltaja.sukunimi}}</td>
+      </tr>
+    </table>
+  </div>
+
+  <table class="mat-table toimipaikan-lapset-table toimipaikan-lapset-vakatable">
+    <tr class="mat-header-row">
+      <td class="mat-cell">{{'label.maksutieto.maksunperuste' | translate}}</td>
+      <td class="mat-cell">{{formatMaksunperusteDisplayValue(maksutieto.maksun_peruste_koodi)}} ({{maksutieto.maksun_peruste_koodi}})</td>
+    </tr>
+    <tr class="mat-header-row">
+      <td class="mat-cell">{{'label.maksutieto.palvelusetelin_arvo_euroina' | translate}}</td>
+      <td class="mat-cell">{{maksutieto.palveluseteli_arvo}}</td>
+    </tr>
+    <tr class="mat-header-row">
+      <td class="mat-cell">{{'label.maksutieto.asiakasmaksu_euroina' | translate}}</td>
+      <td class="mat-cell">{{maksutieto.asiakasmaksu}}</td>
+    </tr>
+    <tr class="mat-header-row">
+      <td class="mat-cell">{{'label.maksutieto.perheen_koko' | translate}}</td>
+      <td class="mat-cell">{{maksutieto.perheen_koko}}</td>
+    </tr>
+    <tr class="mat-header-row">
+      <td class="mat-cell">{{'label.maksutieto.alkamis_pvm' | translate}}</td>
+      <td class="mat-cell">{{maksutieto.alkamis_pvm | date:'d.M.yyyy'}}</td>
+    </tr>
+    <tr class="mat-header-row">
+      <td class="mat-cell">{{'label.maksutieto.paattymis_pvm' | translate}}</td>
+      <td class="mat-cell">{{maksutieto.paattymis_pvm | date:'d.M.yyyy'}}</td>
+    </tr>
+  </table>
+</mat-expansion-panel>

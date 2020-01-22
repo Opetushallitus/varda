@@ -1,0 +1,866 @@
+{
+    "fieldsets": [
+      {
+        "id": "1",
+        "title": {
+          "titleFi": "Nimi",
+          "titleSv": "Namn"
+        },
+        "fields": [
+          {
+            "key": "nimi",
+            "displayName": {
+              "displayNameFi": "Toimipaikan nimi",
+              "displayNameSv": "Verksamhetsställets namn"
+            },
+            "widget": "string",
+            "instructionText": {
+              "instructionTextFi": "Varhaiskasvatuksen toimipaikka on päiväkoti, perhepäiväkoti tai ryhmäperhepäiväkoti, joka sijaitsee yhdessä katuosoitteessa. Esimerkki: \"Päiväkoti Kaarnalaiva\".",
+              "instructionTextSv": "Ett verksamhetsställe inom småbarnspedagogik är ett daghem, ett familjedaghem eller ett gruppfamiljedaghem som verkar på en gatuadress. Exempel: \"Blomsterby daghem\""
+            },
+            "placeholder": {
+              "placeholderFi": "Toimipaikan nimi",
+              "placeholderSv": "Verksamhetsställets namn"
+            },
+            "styles": {
+              "width": "0.8"
+            },
+            "rules": {
+              "required": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Nimi on pakollinen tieto",
+                  "errorTextSv": "Namnet är en obligatorisk uppgift"
+                }
+              },
+              "maxlength": {
+                "acceptedValue": 200,
+                "errorText": {
+                  "errorTextFi": "Nimi voi olla maksimissaan 200 merkkiä",
+                  "errorTextSv": "Namnet kan innehålla högst 200 tecken"
+                }
+              },
+              "regex": {},
+              "rejectSpecialCharsNames": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Erikoismerkit eivät ole sallittuja",
+                  "errorTextSv": "Specialtecken är inte tillåtna"
+                }
+              },
+              "disabledOnEdit": {
+                "acceptedValue": true
+              }
+            }
+          },
+          {
+            "key": "organisaatio_oid",
+            "displayName": {
+              "displayNameFi": "Toimipaikan OID",
+              "displayNameSv": "Verksamhetsställets OID"
+            },
+            "widget": "string",
+            "instructionText": {},
+            "placeholder": {
+              "placeholderFi": "",
+              "placeholderSv": ""
+            },
+            "styles": {
+              "width": "0.8"
+            },
+            "rules": {
+              "disabledOnEdit": {
+                "acceptedValue": true
+              },
+              "hiddenOnCreate": {
+                "acceptedValue": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "2",
+        "title": {
+          "titleFi": "Yhteystiedot",
+          "titleSv": "Kontaktuppgifter"
+        },
+        "fields": [
+            {
+            "key": "kayntiosoite",
+            "displayName": {
+              "displayNameFi": "Käyntiosoite",
+              "displayNameSv": "Besöksadress"
+            },
+            "widget": "string",
+            "instructionText": {
+              "instructionTextFi": "Syötä toimipaikan käyntiosoite. Esimerkki: \"Mallikatu 1 A\".",
+              "instructionTextSv": "Ange verksamhetsställets besöksadress. Exempel: \"Blomstergatan 3\""
+            },
+            "placeholder": {
+              "placeholderFi": "Mallikatu 1 A",
+              "placeholderSv": "Blomstergatan 3"
+            },
+            "styles": {
+              "width": "0.7"
+            },
+            "rules": {
+              "required": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Käyntiosoite on pakollinen tieto.",
+                  "errorTextSv": "Besöksadressen är en obligatorisk uppgift."
+                }
+              },
+              "maxlength": {
+                "acceptedValue": 100,
+                "errorText": {
+                  "errorTextFi": "Käyntiosoite voi olla maksimissaan 100 merkkiä pitkä",
+                  "errorTextSv": "Besöksadressen kan innehålla högst 100 tecken"
+                }
+              },
+              "regex": {},
+              "rejectSpecialChars": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Erikoismerkit eivät ole sallittuja",
+                  "errorTextSv": "Specialtecken är inte tillåtna"
+                }
+              }
+            }
+          },
+          {
+            "key": "kayntiosoite_postinumero",
+            "displayName": {
+              "displayNameFi": "Käyntiosoitteen postinumero",
+              "displayNameSv": "Besöksadressens postnummer"
+            },
+            "widget": "string",
+            "instructionText": {
+              "instructionTextFi": "Syötä toimipaikan postinumero. Postinumerossa voi olla vain numeroita. Esimerkki: \"02100\"",
+              "instructionTextSv": "Ange besöksadressens postnummer. Postnumret kan bestå endast av siffror. Exempel: \"00990\""
+            },
+            "placeholder": {
+              "placeholderFi": "02100",
+              "placeholderSv": "00990"
+            },
+            "styles": {
+              "width": "0.2"
+            },
+            "rules": {
+              "required": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Käyntiosoitteen postinumero on pakollinen tieto",
+                  "errorTextSv": "Besöksadressens postnummer är en obligatorisk uppgift."
+                }
+              },
+              "maxlength": {
+                "acceptedValue": 5,
+                "errorText": {
+                  "errorTextFi": "Käyntiosoitteen postinumero maksimipituus on 5 merkkiä",
+                  "errorTextSv": "Besöksadressens postnummer kan inte innehålla fler än 5 tecken"
+                }
+              },
+              "minlength": {
+                "acceptedValue": 5,
+                "errorText": {
+                  "errorTextFi": "Käyntiosoitteen postinumeron minimipituus on 5 merkkiä",
+                  "errorTextSv": "Besöksadressens postnummer kan inte innehålla färre än 5 tecken"
+                }
+              },
+              "regex": {
+                "acceptedValue": "^\\d+$",
+                "errorText": {
+                  "errorTextFi": "Käyntiosoitteen postinumeron voi olla vain numeroita",
+                  "errorTextSv": "Besöksadressens postnummer kan innehålla endast siffror"
+                }
+              },
+              "rejectSpecialChars": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Erikoismerkit eivät ole sallittuja",
+                  "errorTextSv": "Specialtecken är inte tillåtna"
+                }
+              }
+            }
+          },
+          {
+            "key": "kayntiosoite_postitoimipaikka",
+            "displayName": {
+              "displayNameFi": "Käyntiosoitteen postitoimipaikka",
+              "displayNameSv": "Besöksadressens postanstalt"
+            },
+            "widget": "string",
+            "instructionText": {
+              "instructionTextFi": "Syötä toimipaikan postitoimipaikka. Esimerkki: \"Espoo\".",
+              "instructionTextSv": "Ange verksamhetsställets postanstalt. Exempel: \"Blomsterby\""
+            },
+            "placeholder": {
+              "placeholderFi": "Espoo",
+              "placeholderSv": "Blomsterby"
+            },
+            "styles": {
+              "width": "0.7"
+            },
+            "rules": {
+              "required": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Käyntiosoitteen postitoimipaikka on pakollinen tieto",
+                  "errorTextSv": "Besöksadressens postanstalt är en obligatorisk uppgift."
+                }
+              },
+              "maxlength": {
+                "acceptedValue": 100,
+                "errorText": {
+                  "errorTextFi": "Käyntiosoitteen postitoimipaikka voi olla maksimissaan 100 merkkiä pitkä",
+                  "errorTextSv": "Besöksadressens postkontor kan innehålla högst 100 tecken"
+                }
+              },
+              "regex": {},
+              "rejectSpecialChars": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Erikoismerkit eivät ole sallittuja",
+                  "errorTextSv": "Specialtecken är inte tillåtna"
+                }
+              }
+            }
+          },
+          {
+            "key": "postiosoite",
+            "displayName": {
+              "displayNameFi": "Postiosoite",
+              "displayNameSv": "Postadress"
+            },
+            "widget": "string",
+            "instructionText": {
+              "instructionTextFi": "Syötä toimipaikan postiosoite. Esimerkki: \"PL 50\".",
+              "instructionTextSv": "Ange verksamhetsställets postadress. Till exempel \"PB 50\"."
+            },
+            "placeholder": {
+              "placeholderFi": "PL 50",
+              "placeholderSv": "PB 50"
+            },
+            "styles": {
+              "width": "0.7"
+            },
+            "rules": {
+              "required": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Postiosoite on pakollinen tieto",
+                  "errorTextSv": "Postadressen är en obligatorisk uppgift."
+                }
+              },
+              "maxlength": {
+                "acceptedValue": 100,
+                "errorText": {
+                  "errorTextFi": "Postiosoite voi olla maksimissaan 100 merkkiä pitkä",
+                  "errorTextSv": "Postadressen kan innehålla högst 100 tecken"
+                }
+              },
+              "regex": {},
+              "rejectSpecialChars": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Erikoismerkit eivät ole sallittuja",
+                  "errorTextSv": "Specialtecken är inte tillåtna"
+                }
+              }
+            }
+          },
+          {
+            "key": "postinumero",
+            "displayName": {
+              "displayNameFi": "Postinumero",
+              "displayNameSv": "Postnummer"
+            },
+            "widget": "string",
+            "instructionText": {
+              "instructionTextFi": "Syötä toimipaikan postinumero. Postinumerossa voi olla vain numeroita. Esimerkki: \"02120\".",
+              "instructionTextSv": "Ange verksamhetsställets postnummer. Postnumret kan endast bestå av siffror. Till exempel \"02120\"."
+            },
+            "placeholder": {
+              "placeholderFi": "02120",
+              "placeholderSv": "02120"
+            },
+            "styles": {
+              "width": "0.2"
+            },
+            "rules": {
+              "required": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Postinumero on pakollinen tieto",
+                  "errorTextSv": "Postnumret är en obligatorisk uppgift"
+                }
+              },
+              "maxlength": {
+                "acceptedValue": 5,
+                "errorText": {
+                  "errorTextFi": "Postinumeron maksimipituus on 5 merkkiä",
+                  "errorTextSv": "Postnumret kan inte innehålla fler än 5 tecken"
+                }
+              },
+              "minlength": {
+                "acceptedValue": 5,
+                "errorText": {
+                  "errorTextFi": "Postinumeron minimipituus on 5 merkkiä",
+                  "errorTextSv": "Postnumret kan inte innehålla färre än 5 tecken"
+                }
+              },
+              "regex": {
+                "acceptedValue": "^\\d+$",
+                "errorText": {
+                  "errorTextFi": "Postinumerossa voi olla vain numeroita",
+                  "errorTextSv": "Postnumret kan bestå endast av siffror"
+                }
+              },
+              "rejectSpecialChars": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Erikoismerkit eivät ole sallittuja",
+                  "errorTextSv": "Specialtecken är inte tillåtna"
+                }
+              }
+            }
+          },
+          {
+            "key": "postitoimipaikka",
+            "displayName": {
+              "displayNameFi": "Postitoimipaikka",
+              "displayNameSv": "Postanstalt"
+            },
+            "widget": "string",
+            "instructionText": {
+              "instructionTextFi": "Syötä toimipaikan postitoimipaikka. Esimerkki: \"Espoo\".",
+              "instructionTextSv": "Ange verksamhetsställets postanstalt. Exempel: \"Blomsterby\""
+            },
+            "placeholder": {
+              "placeholderFi": "Espoo",
+              "placeholderSv": "Blomsterby"
+            },
+            "styles": {
+              "width": "0.5"
+            },
+            "rules": {
+              "required": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Postitoimipaikka on pakollinen tieto",
+                  "errorTextSv": "Postanstalten är en obligatorisk uppgift"
+                }
+              },
+              "maxlength": {
+                "acceptedValue": 50,
+                "errorText": {
+                  "errorTextFi": "Postitoimipaikan nimi voi olla maksimissaan 50 merkkiä pitkä",
+                  "errorTextSv": "Postanstaltens namn kan innehålla högst 50 tecken"
+                }
+              },
+              "regex": {},
+              "rejectSpecialChars": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Erikoismerkit eivät ole sallittuja",
+                  "errorTextSv": "Specialtecken är inte tillåtna"
+                }
+              }
+            }
+          },
+          {
+            "key": "kunta_koodi",
+            "displayName": {
+              "displayNameFi": "Kunta",
+              "displayNameSv": "Kommun"
+            },
+            "widget": "select",
+            "instructionText": {
+              "instructionTextFi": "Valitse kunta pudotusvalikosta.",
+              "instructionTextSv": "Välj kommun i rullgardinsmenyn."
+            },
+            "placeholder": {
+              "placeholderFi": "",
+              "placeholderSv": ""
+            },
+            "styles": {
+              "width": "0.6"
+            },
+            "koodisto": "kuntakoodisto",
+            "rules": {
+              "required": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Kunta on pakollinen tieto",
+                  "errorTextSv": "Kommunen är en obligatorisk uppgift"
+                }
+              }
+            }
+          },
+          {
+            "key": "puhelinnumero",
+            "displayName": {
+              "displayNameFi": "Puhelinnumero",
+              "displayNameSv": "Telefonnummer"
+            },
+            "widget": "string",
+            "instructionText": {
+              "instructionTextFi": "Syötä toimipaikan yhteiskäyttöinen puhelinnumero 358-etuliitteellä. Jos yhteiskäyttöistä puhelinnumeroa ei ole, syötä vastaavan tahon puhelinnumero. Esimerkki: \"+358451112233\".",
+              "instructionTextSv": "Ange verksamhetsställets gemensamma telefonnummer, inklusive prefixet 358. Om inget gemensamt telefonnummer finns, ange telefonnummer till ansvarig instans. Exempel: \"+358451112233\""
+            },
+            "placeholder": {
+              "placeholderFi": "+358451112233",
+              "placeholderSv": "+358451112233"
+            },
+            "styles": {
+              "width": "0.4"
+            },
+            "rules": {
+              "required": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Puhelinnumero on pakollinen tieto",
+                  "errorTextSv": "Telefonnumret är en obligatorisk uppgift"
+                }
+              },
+              "maxlength": {
+                "acceptedValue": 20,
+                "errorText": {
+                  "errorTextFi": "Maksimipituus on 20 merkkiä",
+                  "errorTextSv": "Telefonnumret kan innehålla högst 20 tecken"
+                }
+              },
+              "regex": {
+                "acceptedValue": "^\\+358\\d+$",
+                "errorText": {
+                  "errorTextFi": "Syötä puhelinnumero +358-etuliitteellä ilman välilyöntejä",
+                  "errorTextSv": "Ange telefonnumret med prefixet +358 och utan mellanslag"
+                }
+              },
+              "rejectSpecialChars": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Erikoismerkit eivät ole sallittuja",
+                  "errorTextSv": "Specialtecken är inte tillåtna"
+                }
+              }
+            }
+          },
+          {
+            "key": "sahkopostiosoite",
+            "displayName": {
+              "displayNameFi": "Sähköpostiosoite",
+              "displayNameSv": "E-postadress"
+            },
+            "widget": "string",
+            "instructionText": {
+              "instructionTextFi": "Syötä toimipaikan yhteiskäyttöinen sähköpostiosoite. Jos yhteiskäyttöistä sähköpostiosoitetta ei ole, syötä vastaavan tahon sähköpostiosoite. Esimerkki: \"pk-kaarnalaiva@varhaiskasvatustoimija.fi\".",
+              "instructionTextSv": "Ange verksamhetsställets gemensamma e-postadress. Om det inte finns en gemensam e-postadress, ange då adressen till den ansvariga instansen för verksamhetsstället. Till exempel \"daghemmethallon@kommun.fi\"."
+            },
+            "placeholder": {
+              "placeholderFi": "pk-kaarnalaiva@varhaiskasvatustoimija.fi",
+              "placeholderSv": "daghemmethallon@kommun.fi"
+            },
+            "styles": {
+              "width": "0.8"
+            },
+            "rules": {
+              "required": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Sähköpostiosoite on pakollinen tieto",
+                  "errorTextSv": "E-postadressen är en obligatorisk uppgift"
+                }
+              },
+              "maxlength": {
+                "acceptedValue": 100,
+                "errorText": {
+                  "errorTextFi": "Maksimipituus on 100 merkkiä",
+                  "errorTextSv": "E-postadressen kan innehålla högst 100 tecken"
+                }
+              },
+              "regex": {
+                "acceptedValue": "^\\w+([\\.-]?\\w+)*@\\w+([\\.-]?\\w+)*(\\.\\w{2,3})+$",
+                "errorText": {
+                  "errorTextFi": "Sähköpostiosoitteessasi näyttäisi olevan kirjoitusvirhe",
+                  "errorTextSv": "E-postadressen har inte giltigt format"
+                }
+              },
+              "rejectSpecialCharsEmail": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Erikoismerkit eivät ole sallittuja",
+                  "errorTextSv": "Specialtecken är inte tillåtna"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "3",
+        "title": {
+          "titleFi": "Lisätiedot",
+          "titleSv": "Mer information"
+        },
+        "fields": [
+          {
+            "key": "toimintamuoto_koodi",
+            "displayName": {
+              "displayNameFi": "Toimintamuoto",
+              "displayNameSv": "Verksamhetsform"
+            },
+            "widget": "select",
+            "instructionText": {
+              "instructionTextFi": "Valitse toimipaikan toimintamuoto. Varhaiskasvatuksen toimintamuodolla viitataan varhaiskasvatustoimintaan, jossa varhaiskasvatusta toteuttaa säädetyn kelpoisuuden omaava henkilöstö päiväkotitoimintana, perhepäivähoitona tai ryhmäperhepäivähoitona.",
+              "instructionTextSv": "Välj verksamhetsform för verksamhetsstället. Med verksamhetsform avses verksamhet inom småbarnspedagogik som anordnas i daghem, familjedaghem eller gruppfamiljedaghem."
+            },
+            "placeholder": {},
+            "styles": {
+              "width": "0.8"
+            },
+            "options": [
+              {
+                "code": "tm01",
+                "displayName": {
+                  "displayNameFi": "Päiväkoti",
+                  "displayNameSv": "Daghem"
+                }
+              },
+              {
+                "code": "tm02",
+                "displayName": {
+                  "displayNameFi": "Perhepäivähoito",
+                  "displayNameSv": "Familjedaghem"
+                }
+              },
+              {
+                "code": "tm03",
+                "displayName": {
+                  "displayNameFi": "Ryhmäperhepäivähoito",
+                  "displayNameSv": "Gruppfamiljedaghem"
+                }
+              }
+            ],
+            "rules": {
+              "required": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Toimintamuoto on pakollinen",
+                  "errorTextSv": "Verksamhetsformen är obligatorisk"
+                }
+              },
+              "maxlength": {
+                "acceptedValue": 50,
+                "errorText": {
+                  "errorTextFi": "Maksimipituus on 50 merkkiä",
+                  "errorTextSv": "Största tillåtna antalet tecken är 50"
+                }
+              },
+              "regex": {},
+              "rejectSpecialChars": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Erikoismerkit eivät ole sallittuja",
+                  "errorTextSv": "Specialtecken är inte tillåtna"
+                }
+              },
+              "disabledOnEdit": {
+                "acceptedValue": true
+              }
+            }
+          },
+          {
+            "key": "jarjestamismuoto_koodi",
+            "displayName": {
+              "displayNameFi": "Järjestämismuoto",
+              "displayNameSv": "Form för anordnandet"
+            },
+            "widget": "chkgroup",
+            "instructionText": {
+              "instructionTextFi": "Valitse toimipaikan järjestämismuoto. Voit valita yhden tai useamman järjestämismuodon. Järjestämismuoto on pakollinen tieto.",
+              "instructionTextSv": "Välj verksamhetsställets verksamhetsform. Du kan välja en eller flera verksamhetsformer. Verksamhetsformen är en obligatorisk uppgift."
+            },
+            "placeholder": {},
+            "styles": {
+              "width": "0.8"
+            },
+            "options": [
+              {
+                "code": "jm01",
+                "displayName": {
+                  "displayNameFi": "Kunnan tai kuntayhtymän järjestämä",
+                  "displayNameSv": "Anordnas av kommunen eller samkommunen"
+                }
+              },
+              {
+                "code": "jm02",
+                "displayName": {
+                  "displayNameFi": "Ostopalvelu, kunnan tai kuntayhtymän järjestämä",
+                  "displayNameSv": "Anordnas som köpt tjänst av kommunen eller samkommunen"
+                }
+              },
+              {
+                "code": "jm03",
+                "displayName": {
+                  "displayNameFi": "Palveluseteli, kunnan tai kuntayhtymän järjestämä",
+                  "displayNameSv": "Anordnas med servicesedlar"
+                }
+              },
+              {
+                "code": "jm04",
+                "displayName": {
+                  "displayNameFi": "Yksityisen hoidon tuella järjestetty",
+                  "displayNameSv": "Anordnas med hjälp av stödet för privat vård av barn"
+                }
+              }
+            ],
+            "rules": {
+              "required": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Järjestämismuoto on pakollinen",
+                  "errorTextSv": "Formen för anordnandet är obligatorisk"
+                }
+              }
+            }
+          },
+          {
+            "key": "asiointikieli_koodi",
+            "displayName": {
+              "displayNameFi": "Asiointikieli",
+              "displayNameSv": "Kontaktspråk"
+            },
+            "widget": "selectArr",
+            "instructionText": {
+              "instructionTextFi": "Valitse yksi tai useampi asiointikieli. Asiointikieli on se kieli, jolla varhaiskasvatusta annetaan eli mitä kieltä henkilöstö lapsille pääsääntöisesti varhaiskasvatuksen toimipaikassa puhuu. Asiointikieli on usein myös sama, jolla vanhempien/huoltajien kanssa asioidaan. Asiointikieli on pakollinen tieto.",
+              "instructionTextSv": "Välj ett eller flera kontaktspråk. Kontaktspråket är det språk som på verksamhetsstället i huvudsak används i kommunikationen mellan barnen och personalen. Kontaktspråket är ofta samma språk som personalen talar med föräldrarna/vårdnadshavarna. Kontaktspråket är en obligatorisk uppgift."
+            },
+            "placeholder": {},
+            "styles": {
+              "width": "0.6"
+            },
+            "koodisto": "kielikoodisto",
+            "rules": {
+              "required": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Asiointikieli on pakollinen",
+                  "errorTextSv": "Kontaktspråket är obligatoriskt"
+                }
+              },
+              "selectArrMustHaveOneValue": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Vähintään yksi asiointikieli pitää valita",
+                  "errorTextSv": "Välj minst ett kontaktspråk"
+                }
+              }
+            }
+          },
+          {
+            "key": "kasvatusopillinen_jarjestelma_koodi",
+            "displayName": {
+              "displayNameFi": "Kasvatusopillinen järjestelmä",
+              "displayNameSv": "Pedagogisk inriktning"
+            },
+            "widget": "select",
+            "instructionText": {
+              "instructionTextFi": "Valitse toimipaikan kasvatusopillinen järjestelmä. Kasvatusopillisia järjestelmiä ovat Freinet-, Freireläinen, Montessori-pedagogiikka,  Reggio Emilia- ja Steiner-pedagogiikka. Voit myös valita vaihtoehdon Muu. Valitse Ei painotusta, mikäli toimipaikalla ei ole kasvatusopillista painotusta.",
+              "instructionTextSv": "Välj verksamhetsställets pedagogiska inriktning. Pedagogiska inriktningar är Freinet-pedagogik, Freire-pedagogik, Montessori-pedagogik, Reggio Emilia- och Steiner-pedagogik. Du kan även välja alternativet Övrig om verksamhetsstället inte har en pedagogisk inriktning."
+            },
+            "placeholder": {},
+            "styles": {
+              "width": "0.8"
+            },
+            "options": [
+              {
+                "code": "kj01",
+                "displayName": {
+                  "displayNameFi": "Steiner-pedagogiikka",
+                  "displayNameSv": "Steiner-pedagogik"
+                }
+              },
+              {
+                "code": "kj02",
+                "displayName": {
+                  "displayNameFi": "Montessori-pedagogiikka",
+                  "displayNameSv": "Montessori-pedagogik"
+                }
+              },
+              {
+                "code": "kj03",
+                "displayName": {
+                  "displayNameFi": "Freinet-pedagogiikka",
+                  "displayNameSv": "Freinet-pedagogik"
+                }
+              },
+              {
+                "code": "kj04",
+                "displayName": {
+                  "displayNameFi": "Reggio Emilia –pedagogiikka",
+                  "displayNameSv": "Reggio Emilia-pedagogik"
+                }
+              },
+              {
+                "code": "kj05",
+                "displayName": {
+                  "displayNameFi": "Freireläinen pedagogiikka",
+                  "displayNameSv": "Freire-pedagogik"
+                }
+              },
+              {
+                "code": "kj98",
+                "displayName": {
+                  "displayNameFi": "Ei painotusta",
+                  "displayNameSv": "Ingen inriktning"
+                }
+              },
+              {
+                "code": "kj99",
+                "displayName": {
+                  "displayNameFi": "Muu",
+                  "displayNameSv": "Övrig inriktning"
+                }
+              }
+            ],
+            "rules": {
+              "required": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Kasvatusopillinen järjestelmä on pakollinen tieto",
+                  "errorTextSv": "Pedagogisk inriktning är en obligatorisk uppgift"
+                }
+              },
+              "maxlength": {
+                "acceptedValue": 200,
+                "errorText": {
+                  "errorTextFi": "Maksimipituus on 100 merkkiä",
+                  "errorTextSv": "Största tillåtna antalet tecken är 100"
+                }
+              },
+              "regex": {},
+              "rejectSpecialChars": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Erikoismerkit eivät ole sallittuja",
+                  "errorTextSv": "Specialtecken är inte tillåtna"
+                }
+              }
+            }
+          },
+          {
+            "key": "varhaiskasvatuspaikat",
+            "displayName": {
+              "displayNameFi": "Varhaiskasvatuspaikat",
+              "displayNameSv": "Antal platser inom småbarnspedagogiken"
+            },
+            "widget": "string",
+            "instructionText": {
+              "instructionTextFi": "Syötä toimipaikan varhaiskasvatuspaikkojen määrä kokonaislukuna. Varhaiskasvatuspaikkojen määrä on niiden lasten määrä, joilla voi olla toimipaikkaan yhtäaikaisesti varhaiskasvatussuhde.",
+              "instructionTextSv": "Ange antalet platser inom småbarnspedagogiken på verksamhetsstället. Antalet platser är det antal barn som samtidigt kan delta i småbarnspedagogisk verksamhet på ett verksamhetsställe. "
+            },
+            "placeholder": {
+              "placeholderFi": "120",
+              "placeholderSv": "120"
+            },
+            "styles": {
+              "width": "0.3"
+            },
+            "rules": {
+              "required": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Varhaiskasvatuspaikkojen määrä on pakollinen tieto",
+                  "errorTextSv": "Antalet platser inom småbarnspedagogiken är en obligatorisk uppgift"
+                }
+              },
+              "min":{
+                "acceptedValue": 1,
+                "errorText":{
+                   "errorTextFi": "Arvon tulisi olla suurempi tai yhtä suuri kuin 1",
+                   "errorTextSv": "Värdet ska vara större eller lika med 1"
+                }
+              }
+            }
+          },
+          {
+            "key": "alkamis_pvm",
+            "displayName": {
+              "displayNameFi": "Alkamispäivämäärä",
+              "displayNameSv": "Startdatum"
+            },
+            "widget": "date",
+            "instructionText": {
+              "instructionTextFi": "Syötä toimipaikan toiminnan aloittamisen päivämäärä. Jos tarkka päivämäärä ei ole tiedossa, anna minimissään oikea vuosiluku (esim. 1.1.2007). Valitse oikea päivämäärä kalenterista tai syötä päivämäärä muodossa pp.kk.vvvv.",
+              "instructionTextSv": "Ange startdatum för verksamheten på verksamhetsstället. Om det exakta datumet inte är känt, ange åtminstone rätt årtal (t.ex. 1.1. 2007). Välj rätt datum i kalendern eller ange datumet i formatet dd.mm.åååå."
+            },
+            "placeholder": {
+              "placeholderFi": "pp.kk.vvvv",
+              "placeholderSv": "dd.mm.åååå"
+            },
+            "styles": {
+              "width": "0.4"
+            },
+            "rules": {
+              "required": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Alkamispäivämäärä on pakollinen",
+                  "errorTextSv": "Startdatumet är obligatoriskt"
+                }
+              },
+              "vardaUIDate": {
+                "acceptedValue": "dd.mm.yyyy",
+                "errorText": {
+                  "errorTextFi": "Alkamispäivämäärä tulee olla muodossa pp.kk.vvvv",
+                  "errorTextSv": "Startdatumet ska ha formatet dd.mm.åååå"
+                }
+              },
+              "isBefore": {
+                "key": "paattymis_pvm",
+                "errorText": {
+                    "errorTextFi": "Alkamispäivämäärän tulee olla ennen päättymispäivämäärää",
+                    "errorTextSv": "Startdatumet ska infalla före slutdatumet"
+                }
+              }
+            }
+          },
+          {
+            "key": "paattymis_pvm",
+            "displayName": {
+              "displayNameFi": "Päättymispäivämäärä (jos tiedossa)",
+              "displayNameSv": "Slutdatum (om det är känt)"
+            },
+            "instructionText": {
+              "instructionTextFi": "Syötä toimipaikan toiminnan loppumisen päivämäärä, jos se on tiedossa. Valitse oikea päivämäärä kalenterista tai syötä päivämäärä muodossa pp.kk.vvvv.",
+              "instructionTextSv": "Ange slutdatum för verksamheten på verksamhetsstället, om datumet är känt. Välj rätt datum i kalendern eller ange datumet i formatet dd.mm.åååå."
+            },
+            "widget": "date",
+            "placeholder": {},
+            "styles": {
+              "width": "0.4"
+            },
+            "rules": {
+              "vardaUIDate": {
+                "acceptedValue": "dd.mm.yyyy",
+                "errorText": {
+                  "errorTextFi": "Alkamispäivämäärä tulee olla muodossa pp.kk.vvvv",
+                  "errorTextSv": "Startdatumet ska ha formatet dd.mm.åååå"
+                }
+              },
+              "isAfter": {
+                "key": "alkamis_pvm",
+                "errorText": {
+                  "errorTextFi": "Päättymispäivämäärän tulee olla alkamispäivämäärän jälkeen",
+                  "errorTextSv": "Slutdatumet ska infalla efter startdatumet"
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+}

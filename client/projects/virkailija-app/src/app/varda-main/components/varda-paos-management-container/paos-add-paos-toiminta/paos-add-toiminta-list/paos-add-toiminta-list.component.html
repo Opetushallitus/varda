@@ -1,0 +1,37 @@
+<div>
+  <div *ngIf="toimipaikat && toimipaikat.length">
+    <mat-form-field>
+      <input type="text"
+             class="varda-input"
+             matInput
+             id="add-toiminta-list-search-input"
+             [placeholder]="'label.paos-add-toimipaikka-list.search-placeholder' | translate"
+             (keyup)="filterToimipaikat($event.target.value)" />
+    </mat-form-field>
+  </div>
+  <div *ngFor="let toimipaikka of filteredToimipaikat"
+       class="paos-add-toiminta-list-result-wrapper">
+    <div class="paos-add-toiminta-list-result-column paos-add-toiminta-list-result-column-wide small-text">
+      <div>
+        <h6>{{toimipaikka.nimi}}</h6>
+      </div>
+      <div>
+        {{'label.oid' | translate}}: {{toimipaikka.organisaatio_oid}}
+      </div>
+    </div>
+    <div class="paos-add-toiminta-list-result-column paos-add-toiminta-list-result-middle">
+      <button class="varda-button add-paos-toiminta-toimipaikka-add-button"
+              *ngIf="!ignoredIds.has(toimipaikka.id)"
+              (click)="addToimipaikka(toimipaikka)">
+        {{'label.paos-add-toimipaikka-list.add' | translate}}
+      </button>
+      <span *ngIf="ignoredIds.has(toimipaikka.id)">
+        {{'label.paos-add-toimipaikka-list.already-added' | translate}}
+      </span>
+
+    </div>
+  </div>
+  <div *ngIf="!filteredToimipaikat.length">
+    {{'label.paos-add-toimipaikka-list.search-empty' | translate}}
+  </div>
+</div>

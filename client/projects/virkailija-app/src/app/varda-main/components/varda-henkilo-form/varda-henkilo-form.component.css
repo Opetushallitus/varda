@@ -1,0 +1,79 @@
+.add-ssn-section,
+.henkilo-form-ssn-or-oid-fields-wrapper {
+    display: flex;
+    justify-content: space-between;
+}
+
+.choose-henkilo-entity-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-left: 10%;
+    margin-right: 10%;
+}
+
+.choose-henkilo-entity-buttons > div {
+    flex: 0 1 40%;
+}
+
+.add-ssn-section > div:first-child {
+    flex: 0 1 50%;
+}
+
+.add-ssn-section > div:nth-child(2) {
+    display: flex;
+    flex: 0 1 40%;
+}
+
+.add-ssn-section > div:nth-child(2) > button {
+    height: 35px;
+}
+
+.active-entity-selection {
+    background-color: #000;
+    color: #fff;
+}
+
+.henkilo-form-cancel-btn-wrapper {
+    display: flex;
+    justify-content: flex-end
+}
+
+.henkilo-form-cancel-btn-wrapper > div {
+    margin-right: 5px;
+}
+
+.varda-henkilo-form-instructions-section {
+    padding-left: 40px;
+    padding-top: 33px;
+}
+
+.varda-henkilo-form-add-btn-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+    padding-right: 62px;
+    height: 50px;
+}
+
+.varda-henkilo-form-add-btn-wrapper > div {
+    width: 200px;
+}
+
+.henkilo-form-ssn-or-oid-fields-wrapper > div:first-child {
+    flex: 0 1 50%;
+}
+
+.henkilo-form-ssn-or-oid-fields-wrapper > div:nth-child(2) {
+    flex: 0 1 40%;
+    display: flex;
+    align-items: center;
+}
+
+#lisaaHenkilotunnuksella {
+    margin-bottom: 10px;
+    margin-right: 15px;
+}
+
+.varda-fieldset-content .ssn-or-oid-radio-wrapper {
+    flex: 0 1 90%;
+}

@@ -1,0 +1,51 @@
+<div class="varda-header-wrapper" appHighContrast>
+  <div class="varda-header-navigation-container" *ngIf="isAuthenticated()">
+    <div class="varda-header-navigation-wrapper" *ngIf="!ui.isLoading">
+      <div class="varda-header-vakajarjestaja-info">
+        <ng-container *ngIf="vakajarjestajat && vakajarjestajat.length > 1">
+          <label for="vakajarjestajaSelectId">
+            {{'label.toimija' | translate}}:&nbsp;
+          </label>
+          <select class="varda-form-control form-control varda-select"
+                  name="vakajarjestajaSelect"
+                  id="vakajarjestajaSelectId"
+                  (change)="changeVakajarjestaja()"
+                  [(ngModel)]="selectedVakajarjestaja">
+            <option *ngFor="let vakajarjestaja of vakajarjestajat" [ngValue]="vakajarjestaja">{{vakajarjestaja.nimi}}</option>
+          </select>
+        </ng-container>
+        <ng-container *ngIf="vakajarjestajat && vakajarjestajat.length === 1">
+          <h1 class="">{{'label.toimija' | translate}}: {{selectedVakajarjestaja?.nimi}}</h1>
+        </ng-container>
+      </div>
+      <div class="varda-header-nav-group-container">
+        <div class="varda-header-nav-item-container"
+        [ngClass]="{'active-nav-item': activeNavItem === 'toimipaikatjalapset'}" *ngIf="!isKatselija">
+          <a [routerLink]="['/']" (click)="setActiveNavItem('toimipaikatjalapset')">{{'label.navi.syotto' | translate}}</a>
+        </div>
+        <div class="varda-header-nav-item-container"
+        [ngClass]="{'active-nav-item': activeNavItem === 'haku'}">
+          <a [routerLink]="['/haku']" (click)="setActiveNavItem('haku')">{{'label.navi.haku' | translate}}</a>
+        </div>
+        <div class="varda-header-nav-item-container"
+        [ngClass]="{'active-nav-item': activeNavItem === 'tietojen-katselu'}">
+          <a [routerLink]="['/tietojen-katselu']" (click)="setActiveNavItem('tietojen-katselu')">{{'label.navi.tietojen-katselu' | translate}}</a>
+        </div>
+        <div class="varda-header-nav-item-container">
+          |
+        </div>
+        <div class="varda-header-nav-item-container"
+             [ngClass]="{'active-nav-item': activeNavItem === 'vakatoimija'}"
+             *ngIf="canViewToimijanTiedot">
+          <app-varda-dropdown-menu topicKey="label.varhaiskasvatustoimija"
+                                   [routeMaps]="toimijanTiedotRouteMaps"
+                                   (navigationChange)="setActiveNavItem('vakatoimija')"></app-varda-dropdown-menu>
+        </div>
+        <div class="varda-header-nav-item-container"
+        [ngClass]="{'active-nav-item': activeNavItem === 'ohjeet'}">
+          <a [routerLink]="['/ohjeet']" (click)="setActiveNavItem('ohjeet')">{{'label.ohjeet' | translate}}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

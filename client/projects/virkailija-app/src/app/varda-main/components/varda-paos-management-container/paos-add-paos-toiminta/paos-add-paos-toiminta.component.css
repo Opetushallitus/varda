@@ -1,0 +1,43 @@
+.varda-paos-hallinta-result-flex {
+  display: flex;
+}
+
+.varda-paos-hallinta-result-wrapper {
+  max-height: 600px;
+  overflow: auto;
+}
+
+.varda-paos-hallinta-result-column {
+  flex: 1 0 0;
+  border: 3px solid transparent;
+}
+
+.varda-paos-hallinta-result-middle {
+  display: flex;
+  align-items: center;
+}
+
+.varda-paos-hallinta-result-column-wide {
+  flex: 3 0 0;
+}
+
+#add-paos-toiminta-toimija-search-input {
+  width: 40%;
+}
+
+.add-paos-toiminta-toimija-search-button {
+  width: auto;
+}
+
+.add-paos-toiminta-toimija-add-button {
+  white-space: nowrap;
+}
+
+#add-paos-toiminta-toimija-search-wrapper > * {
+  display: inline-block;
+  margin: 5px;
+}
+
+.varda-paos-hallinta-colored-background {
+  background-color: lightgray;
+}

@@ -1,0 +1,41 @@
+<div class="varda-henkilo-list-content" id="henkiloListScrollWrapper">
+    <div class="varda-henkilo-list-wrapper">
+        <div class="varda-henkilo-list-list-content">
+            <div class="varda-henkilo-list-no-results" *ngIf="henkilot && henkilot.length === 0 && henkiloSearchValue && henkiloSearchValue.searchValue !== ''">
+                <p>{{'alert.henkilo-search-not-found-in-toimipaikka' | translate}}</p>
+            </div>
+            <div class="varda-entity-list-item" *ngFor="let item of henkilot" aria-live="polite">
+                <app-varda-henkilo-item
+                [henkiloItem]="item"
+                [activeHenkiloItemId]="activeHenkiloItemId"
+                (editHenkiloItem)="editHenkilo($event)"></app-varda-henkilo-item>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="varda-henkilo-list-add-henkilo-section">
+    <div class="varda-henkilo-list-add-henkilo-btn-wrapper">
+        <button class="varda-button varda-add-henkilo-button"
+        (click)="addHenkilo()"
+        id="addHenkiloBtn">
+            <span>+</span> {{'label.add-lapsi' | translate}}
+        </button>
+    </div>
+</div>
+<app-varda-modal-form [identifier]="'henkiloModal'"
+                      [isLg]="true"
+                      [modalTitle]="activeHenkiloItemId"
+                      [openModal]="henkiloFormOpen"
+                      [closeWithoutConfirm]="confirmedHenkiloFormLeave"
+                      (events)="handleFormClose($event)">
+    <app-varda-henkilo-form
+      *ngIf="henkiloFormOpen"
+      [henkilo]="activeHenkiloItem"
+      (createHenkilo)="onHenkiloAdded($event)"
+      (updateLapsi)="onLapsiUpdated($event)"
+      (deleteLapsi)="onLapsiDeleted($event)"
+      (valuesChanged)="henkiloFormValuesChanged($event)"></app-varda-henkilo-form>
+</app-varda-modal-form>
+<app-varda-success-modal
+  [identifier]="'lapsiSuccessModal'"
+  [successTitle]="'alert.modal-generic-save-success'"></app-varda-success-modal>

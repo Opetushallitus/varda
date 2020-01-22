@@ -1,0 +1,61 @@
+<div *ngIf="toimipaikat && toimipaikat.length > 0" aria-live="polite">
+  <div class="toimipaikka-selector-wrapper">
+    <div><h2>{{'label.toimipaikka' | translate}}</h2></div>
+    <div class="toimipaikka-selector-items">
+      <div class="toimipaikka-flex-itemize-two-items">
+        <div class="toimipaikka-select-wrapper">
+          <select id="toimipaikkaSelectorSelect" class="varda-form-control form-control varda-select" aria-labelledby="toimipaikkaLabel" (change)="setToimipaikka()" [(ngModel)]="activeToimipaikka" [compareWith]="byEndpoint" *ngIf="toimipaikat.length > 1">
+            <option *ngFor="let toimipaikka of toimipaikat" [ngValue]="toimipaikka">{{toimipaikka.nimi}}</option>
+          </select>
+          <p *ngIf="toimipaikat.length === 1">{{activeToimipaikka?.nimi}}</p>
+        </div>
+        <div>
+          <div class="toimipaikka-edit-btn-wrapper" (click)="editToimipaikka()">
+            <button id="editToimipaikkaBtn"
+                    class="varda-button varda-button-small"
+                    [ngClass]="{'varda-disabled-button': !activeToimipaikka}"
+                    [disabled]="!activeToimipaikka">
+              {{ui.editLabelText | translate}}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="add-toimipaikka-btn-container">
+        <button id="addToimipaikkaBtn" class="varda-button add-toimipaikka-btn" (click)="addToimipaikka()" *ngIf="isOrganisationLevelTallentajaRole">+ {{'label.add-toimipaikka' | translate}}</button>
+      </div>
+    </div>
+    <div *ngIf="!!activeToimipaikka && activeToimipaikka.lahdejarjestelma !== lahdejarjestelmaTypes.VARDA">
+      <small class="text-danger" role="alert" aria-live="polite">{{'label.not-varda-toimipaikka' | translate}}</small>
+    </div>
+  </div>
+</div>
+<div class="varda-toimipaikka-selector-empty" *ngIf="toimipaikat && toimipaikat.length === 0" aria-live="polite">
+  <div>
+    <h2>{{'label.start-by-adding-toimipaikka' | translate}}</h2>
+  </div>
+  <div>
+    <button class="varda-button" (click)="addToimipaikka()">+ {{'label.add-toimipaikka' | translate}}</button>
+  </div>
+</div>
+
+<app-varda-modal-form [identifier]="'toimipaikkaModal'"
+                      [isLg]="true"
+                      [openModal]="toimipaikkaFormOpen"
+                      [closeWithoutConfirm]="confirmedToimipaikkaFormLeave"
+                      (events)="handleFormClose($event)">
+  <app-varda-toimipaikka-form
+    *ngIf="toimipaikkaFormOpen"
+    [toimipaikka]="toimipaikkaData"
+    [isEdit]="editToimipaikkaAction"
+    [isReadOnly]="!!activeToimipaikka && (activeToimipaikka.lahdejarjestelma !== lahdejarjestelmaTypes.VARDA || activeToimipaikka.paos_toimipaikka_kytkin)"
+    (saveToimipaikkaFormSuccess)="updateToimipaikat($event)"
+    (valuesChanged)="toimipaikkaFormValuesChanged($event)"></app-varda-toimipaikka-form>
+</app-varda-modal-form>
+
+<app-varda-success-modal
+  [identifier]="'toimipaikkaSuccessModal'"
+  [successTitle]="'Tallennus onnistui'"></app-varda-success-modal>
+
+<app-varda-success-modal
+  [identifier]="'toimipaikkaDeleteSuccessModal'"
+  [successTitle]="'Toimipaikan poisto onnistui'"></app-varda-success-modal>

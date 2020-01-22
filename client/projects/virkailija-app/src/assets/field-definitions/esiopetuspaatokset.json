@@ -1,0 +1,216 @@
+{
+   "fieldsets":[
+      {
+         "id":"esiopetuspaatos_perustiedot",
+         "title":"Esiopetuspäätöksen tiedot",
+         "fields":[
+            {
+               "key":"opiskeluoikeudentila_koodi",
+               "displayName":{
+                  "displayNameFi":"Opiskeluoikeuden tila"
+               },
+               "widget":"select",
+               "instructionText":{
+
+               },
+               "placeholder":{
+                  "placeholderFi":""
+               },
+               "styles":{
+                  "width":"0.8"
+               },
+               "options": [
+                    {
+                        "code": "eronnut",
+                        "displayName": {
+                        "displayNameFi": "Eronnut"
+                        }
+                    },
+                    {
+                        "code": "katsotaaneronneeksi",
+                        "displayName": {
+                        "displayNameFi": "Katsotaan eronneeksi"
+                        }
+                    },
+                    {
+                        "code": "lasna",
+                        "displayName": {
+                        "displayNameFi": "Läsnä"
+                        }
+                    },
+                    {
+                        "code": "mitatoity",
+                        "displayName": {
+                        "displayNameFi": "Mitätöity"
+                        }
+                    },
+                    {
+                        "code": "peruutettu",
+                        "displayName": {
+                        "displayNameFi": "Peruutettu"
+                        }
+                    },
+                    {
+                        "code": "valiaikaisestikeskeytynyt",
+                        "displayName": {
+                        "displayNameFi": "Väliaikaisesti keskeytynyt"
+                        }
+                    },
+                    {
+                        "code": "valmistunut",
+                        "displayName": {
+                        "displayNameFi": "Valmistunut"
+                        }
+                    }
+                ],
+               "rules":{
+                    "required": {
+                    "acceptedValue": true,
+                    "errorText": {
+                    "errorTextFi": "Opiskeluoikeuden tila on pakollinen"
+                    }
+                }
+               }
+            },
+            {
+               "key":"arvioitu_loppumis_pvm",
+               "displayName":{
+                  "displayNameFi":"Arvioitu loppumispäivämäärä"
+               },
+               "widget":"date",
+               "instructionText":{
+
+               },
+               "placeholder":{
+                  "placeholderFi":""
+               },
+               "styles":{
+                  "width":"0.6"
+               },
+               "rules":{
+                  "vardaUIDate": {
+                     "acceptedValue":"dd.mm.yyyy",
+                     "errorText":{
+                        "errorTextFi":"Arvioitu loppumispäivämäärä tulee olla muodossa pp.kk.vvvv"
+                     }
+                  }
+               }
+            },
+            {
+               "key":"alkamis_pvm",
+               "displayName":{
+                  "displayNameFi":"Alkamispäivämäärä"
+               },
+               "widget":"date",
+               "instructionText":{
+
+               },
+               "placeholder":{
+                  "placeholderFi":""
+               },
+               "styles":{
+                  "width":"0.6"
+               },
+               "rules":{
+                "required": {
+                        "acceptedValue": true,
+                        "errorText": {
+                        "errorTextFi": "Alkamispäivämäärä on pakollinen"
+                        }
+                    },    
+                  "vardaUIDate": {
+                     "acceptedValue":"dd.mm.yyyy",
+                     "errorText":{
+                        "errorTextFi":"Alkamispäivämäärä tulee olla muodossa pp.kk.vvvv"
+                     }
+                  },
+                  "isBefore": {
+                    "key": "paattymis_pvm",
+                    "errorText": {
+                        "errorTextFi": "Alkamispäivämäärän tulee olla ennen päättymispäivämäärää"
+                    }
+                  }
+               }
+            },
+            {
+               "key":"paattymis_pvm",
+               "displayName":{
+                  "displayNameFi":"Päättymispäivämäärä (jos tiedossa)"
+               },
+               "widget":"date",
+               "instructionText":{
+
+               },
+               "placeholder":{
+                  "placeholderFi":""
+               },
+               "styles":{
+                  "width":"0.6"
+               },
+               "rules": {
+                  "vardaUIDate":{
+                     "acceptedValue":"dd.mm.yyyy",
+                     "errorText":{
+                        "errorTextFi":"Päättymispäivämäärä tulee olla muodossa pp.kk.vvvv"
+                     }
+                  },
+                  "isAfter": {
+                    "key": "alkamis_pvm",
+                    "errorText": {
+                      "errorTextFi": "Päättymispäivämäärän tulee olla alkamispäivämäärän jälkeen"
+                    }
+                  }
+               }
+            },
+            {
+                "key":"pidennetty_oppivelvollisuus_alkamis_pvm",
+                "displayName":{
+                   "displayNameFi":"Pidennetyn oppivelvollisuuden alkamispäivämäärä"
+                },
+                "widget":"date",
+                "instructionText":{
+ 
+                },
+                "placeholder":{
+                   "placeholderFi":""
+                },
+                "styles":{
+                   "width":"0.6"
+                },
+                "rules":{
+                   "vardaUIDate": {
+                      "acceptedValue":"dd.mm.yyyy",
+                      "errorText":{
+                         "errorTextFi":"Pidennetty oppivelvollisuusalkamispäivämäärä tulee olla muodossa pp.kk.vvvv"
+                      }
+                   }
+                }
+             },
+             {
+                "key":"pidennetty_oppivelvollisuus_paattymis_pvm",
+                "displayName":{
+                   "displayNameFi":"Pidennetyn oppivelvollisuuden päättymispäivämäärä"
+                },
+                "widget":"date",
+                "instructionText":{
+ 
+                },
+                "placeholder":{
+                   "placeholderFi":""
+                },
+                "styles":{
+                   "width":"0.6"
+                },
+                "rules":{
+                   "vardaUIDate": {
+                      "acceptedValue":"dd.mm.yyyy",
+                      "errorText":{
+                         "errorTextFi":"Pidennetty oppivelvollisuuspäättymispäivämäärä tulee olla muodossa pp.kk.vvvv"
+                      }
+                   }
+                }
+             }
+         ]
+      }
+   ]
+}

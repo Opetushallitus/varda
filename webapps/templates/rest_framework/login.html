@@ -1,0 +1,13 @@
+{% extends "rest_framework/login_base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block bootstrap_theme %}
+    <link rel="stylesheet" href="{% static 'rest_framework/css/yeti.bootstrap.min.css' %}" type="text/css">
+{% endblock %}
+
+{% block title %}VARDA - {% trans "Log in" %}{% endblock %}
+
+{% block branding %}
+    <h3 style="margin: 0 0 20px;">VARDA - {% trans "Log in" %} </h3>
+{% endblock %}

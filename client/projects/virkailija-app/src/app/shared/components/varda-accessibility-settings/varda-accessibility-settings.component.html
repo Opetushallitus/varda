@@ -1,0 +1,35 @@
+<div class="varda-accessibility-settings-container" *ngIf="displayAccessibilitySettings">
+  <div class="varda-accessibility-settings-content">
+    <div class="varda-accessibility-settings-font-size-section">
+      <div id="closeAccessibilitySettingsIcon" tabindex="0"
+       (click)="closeAccessibilitySettings()" 
+       (keydown.enter)="closeAccessibilitySettings()" role="img" alt="Sulje saavutettavuusasetukset" aria-label="Sulje saavutettavuusasetukset"><i class="material-icons">close</i></div>
+      <div>
+        <h3>{{'label.text-size' | translate}}</h3>
+        <div class="varda-accessibility-settings-font-size-btn-wrapper">
+            <button (click)="increaseFontSize()" [id]="'increaseFontSizeBtn'">
+              +
+            </button>
+        </div>
+        <div class="varda-accessibility-settings-font-size-btn-wrapper">
+            <button (click)="decreaseFontSize()" [disabled]="(documentRootFontSize === 16)" [id]="'decreaseFontSizeBtn'">
+              -
+            </button>
+        </div>
+      </div>
+      <div id="fontSize" *ngIf="(documentRootFontSize > 16)">+ {{documentRootFontSize - 16}}</div>
+    </div>
+    <div class="varda-accessibility-settings-adjust-contrast-section">
+        <div class="varda-accessibility-settings-adjust-contrast-btn-wrapper">
+            <div class="varda-footer-link">
+                <button type="button" class="varda-button change-contrast" [id]="'addContrastBtn'" (click)="toggleContrast(true)" *ngIf="!highContrastEnabled">
+                    {{'label.increase-contrast' | translate}}
+                </button>
+                <button type="button" class="varda-button change-contrast" [id]="'decreaseContrastBtn'" (click)="toggleContrast(false)" *ngIf="highContrastEnabled">
+                    {{'label.decrease-contrast' | translate}}
+                </button>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,304 @@
+{
+   "fieldsets":[
+      {
+         "id":"varhaiskasvatuspaatos_hakemusjapaatostiedot",
+         "title": {
+            "titleFi": "Hakemus- ja päätöstiedot",
+            "titleSv": "Ansöknings- och beslutsuppgifter"
+          },
+         "fields":[
+            {
+               "key":"hakemus_pvm",
+               "displayName":{
+                  "displayNameFi":"Hakemuspäivämäärä",
+                  "displayNameSv":"Datum då ansökan lämnades in"
+               },
+               "widget":"date",
+               "instructionText": {
+                 "instructionTextFi": "Syötä lapselle tehdyn varhaiskasvatuspäätöksen tai sitä vastaavaan sopimukseen johtaneen hakemuksen toimittamispäivämäärä, eli se päivämäärä, jolloin hakemus on vastaanotettu. Valitse oikea päivämäärä kalenterista tai syötä se muodossa pp.kk.vvvv.",
+                 "instructionTextSv": "Ange det datum då ansökan som lett till barnets beslut om småbarnspedagogik eller motsvarande avtal lämnats in, det vill säga det datum då ansökan har tagits emot. Välj datum i kalendern eller skriv in det i formen dd.mm.åååå."
+               },
+               "placeholder": {},
+               "styles":{
+                  "width":"0.8"
+               },
+               "rules":{
+                    "required":{
+                        "acceptedValue":true,
+                        "errorText":{
+                            "errorTextFi":"Hakemuspäivämäärä on pakollinen tieto.",
+                            "errorTextSv": "Datum då ansökan lämnades in är en obligatorisk uppgift."
+                        }
+                  },
+                  "vardaUIDate":{
+                     "acceptedValue":"dd.mm.yyyy",
+                     "errorText":{
+                        "errorTextFi":"Hakemuspäivämäärä tulee olla muodossa pp.kk.vvvv",
+                        "errorTextSv": "Datum då ansökan lämnades in ska ha formatet dd.mm.åååå"
+                     }
+                  }
+               }
+            },
+            {
+               "key":"alkamis_pvm",
+               "displayName":{
+                  "displayNameFi":"Alkamispäivämäärä",
+                  "displayNameSv":"Startdatum"
+               },
+               "widget":"date",
+               "instructionText": {
+                 "instructionTextFi": "Syötä lapselle tehdyn varhaiskasvatuspäätöksen tai sitä vastaavan sopimuksen aloittamisen päivämäärä. Valitse oikea päivämäärä kalenterista tai syötä se muodossa pp.kk.vvvv.",
+                 "instructionTextSv": "Ange begynnelsedatumet för barnets beslut om småbarnspedagogik eller motsvarande avtal. Välj datum i kalendern eller skriv in det i formen dd.mm.åååå."
+               },
+               "placeholder": {},
+               "styles":{
+                  "width":"0.8"
+               },
+               "rules":{
+                  "required":{
+                     "acceptedValue":true,
+                     "errorText":{
+                        "errorTextFi":"Alkamispäivämäärä  on pakollinen tieto.",
+                        "errorTextSv": "Begynnelsedatumet är en obligatorisk uppgift."
+                     }
+                  },
+                  "vardaUIDate":{
+                     "acceptedValue":"dd.mm.yyyy",
+                     "errorText":{
+                        "errorTextFi":"Alkamispäivämäärä tulee olla muodossa pp.kk.vvvv",
+                        "errorTextSv": "Startdatumet ska ha formatet dd.mm.åååå"
+                     }
+                  },
+                  "isBefore": {
+                    "key": "paattymis_pvm",
+                    "errorText": {
+                        "errorTextFi": "Alkamispäivämäärän tulee olla ennen päättymispäivämäärää",
+                        "errorTextSv": "Startdatumet ska infalla före slutdatumet"
+                    }
+                  }
+               }
+            },
+            {
+               "key":"paattymis_pvm",
+               "displayName":{
+                  "displayNameFi":"Päättymispäivämäärä (jos tiedossa)",
+                  "displayNameSv":"Slutdatum (om det är känt)"
+               },
+               "widget":"date",
+               "instructionText": {
+                 "instructionTextFi":"Syötä lapselle tehdyn varhaiskasvatuspäätöksen tai sitä vastaavan sopimuksen loppumisen päivämäärä, mikäli se on tiedossa. Valitse oikea päivämäärä kalenterista tai syötä se muodossa pp.kk.vvvv.",
+                 "instructionTextSv": "Ange slutdatumet för barnets beslut om småbarnspedagogik eller motsvarande avtal om du känner till datumet. Välj datum i kalendern eller skriv in det i formen dd.mm.åååå."
+               },
+               "placeholder": {},
+               "styles":{
+                  "width":"0.8"
+               },
+               "rules":{
+                  "vardaUIDate":{
+                     "acceptedValue":"dd.mm.yyyy",
+                     "errorText":{
+                        "errorTextFi":"Päättymispäivämäärä tulee olla muodossa pp.kk.vvvv",
+                        "errorTextSv": "Slutdatumet ska ha formatet dd.mm.åååå"
+                     }
+                  },
+                  "isAfterOrSame": {
+                      "key": "alkamis_pvm",
+                      "errorText": {
+                        "errorTextFi": "Päättymispäivämäärän tulee olla alkamispäivämäärän jälkeen tai sama",
+                        "errorTextSv": "Slutdatumet ska infalla efter startdatumet eller samma"                      }
+                  }
+               }
+            }
+         ]
+      },
+      {
+          "id": "varhaiskasvatuspaatos_jarjestamismuoto",
+          "title": {
+            "titleFi": "Järjestämismuoto",
+            "titleSv": "Form för anordnandet"
+          },
+          "fields": [
+            {
+               "key":"jarjestamismuoto_koodi",
+               "displayName":{
+                  "displayNameFi":"Järjestämismuoto",
+                  "displayNameSv":"Form för anordnandet"
+               },
+               "widget":"select",
+               "instructionText": {
+                 "instructionTextFi": "Valitse varhaiskasvatuksen järjestämismuoto pudotusvalikosta. Varhaiskasvatustoiminta järjestetään kunnan tai kuntayhtymän järjestämänä, kunnan tai kuntayhtymän ostopalveluna, palvelusetelillä tai yksityisen hoidon tuella. Lapsen varhaiskasvatuksen järjestämismuoto on kirjattu varhaiskasvatuspäätökseen.",
+                 "instructionTextSv": "Välj form för anordnandet av småbarnspedagogik i rullgardinsmenyn. Småbarnspedagogisk verksamhet ordnas av kommunen eller samkommunen, som köpt tjänst av kommunen eller samkommunen, med servicesedlar eller med hjälp av stödet för privat vård av barn. Formen för anordnandet har angetts i beslutet om småbarnspedagogik."
+               },
+               "placeholder": {},
+               "styles":{
+                  "width":"0.8"
+               },
+               "options": [
+                    {
+                        "code": "jm01",
+                        "displayName": {
+                            "displayNameFi": "Kunnan tai kuntayhtymän järjestämä",
+                            "displayNameSv": "Anordnas av kommunen eller samkommunen"
+                        }
+                    },
+                    {
+                        "code": "jm02",
+                        "displayName": {
+                            "displayNameFi": "Ostopalvelu, kunnan tai kuntayhtymän järjestämä",
+                            "displayNameSv": "Anordnas som köpt tjänst av kommunen eller samkommunen"
+                        }
+                    },
+                    {
+                        "code": "jm03",
+                        "displayName": {
+                            "displayNameFi": "Palveluseteli, kunnan tai kuntayhtymän järjestämä",
+                            "displayNameSv": "Anordnas med servicesedlar"
+                        }
+                    },
+                    {
+                        "code": "jm04",
+                        "displayName": {
+                            "displayNameFi": "Yksityisen hoidon tuella järjestetty",
+                            "displayNameSv": "Anordnas med hjälp av stödet för privat vård av barn"
+                        }
+                    }
+                ],
+                "rules":{
+                    "required":{
+                        "acceptedValue":true,
+                        "errorText":{
+                            "errorTextFi":"Järjestämismuoto on pakollinen tieto.",
+                            "errorTextSv": "Verksamhetsformen är en obligatorisk uppgift."
+                        }
+                     },
+                     "disabledOnEdit": {
+                        "acceptedValue": true
+                     }
+                }
+            }
+          ]
+      },
+      {
+          "id": "varhaiskasvatuspaatos_varhaiskasvatusaika",
+          "title": {
+            "titleFi": "Varhaiskasvatusaika",
+            "titleSv": "Småbarnspedagogikens omfattning"
+          },
+          "fields": [
+            {
+               "key":"tuntimaara_viikossa",
+               "displayName":{
+                  "displayNameFi":"Tuntimäärä viikossa",
+                  "displayNameSv":"Timantal per vecka"
+               },
+               "widget":"string",
+               "instructionText": {
+                "instructionTextFi": "Syötä lapsen varhaiskasvatuspäätökseen tai sitä vastaavaan sopimukseen merkitty varhaiskasvatuksen viikottainen tuntimäärä- Tuntimäärän voi tarvittaessa syöttää desimaalilukuna. Esimerkki: \"32.5\".",
+                "instructionTextSv": "Ange det timantal per vecka inom småbarnspedagogiken som meddelats i barnets beslut om småbarnspedagogik eller i motsvarande avtal. Timantalet kan vid behov anges som decimaltal. Till exempel \"32.5\"."
+               },
+               "placeholder": {
+                  "placeholderFi": "32.5",
+                  "placeholderSv": "32.5"
+               },
+               "styles":{
+                  "width":"0.4"
+               },
+               "rules":{
+                    "required": {
+                            "acceptedValue": true,
+                            "errorText": {
+                            "errorTextFi": "Tuntimäärä viikossa on pakollinen tieto.",
+                            "errorTextSv": "Timantal per vecka är en obligatorisk uppgift."
+                        }
+                     },
+                     "min":{
+                        "acceptedValue": 1,
+                        "errorText":{
+                           "errorTextFi": "Arvon tulisi olla suurempi tai yhtä suuri kuin 1",
+                           "errorTextSv": "Värdet ska vara större eller lika med 1"
+                        }
+                     },
+                     "disabledOnEdit": {
+                        "acceptedValue": true
+                     }
+               }
+            },
+            {
+               "key":"vuorohoito_kytkin",
+               "displayName":{
+                  "displayNameFi":"Vuorohoito",
+                  "displayNameSv":"Skiftomsorg"
+               },
+               "widget":"booleanradio",
+               "instructionText": {
+                 "instructionTextFi": "Lapsi on vuorohoidossa, jos varhaiskasvatus tapahtuu ns. normaalien varhaiskasvatusaikojen (klo 6.00-18.00) ulkopuolella.",
+                 "instructionTextSv": "Barnet deltar i skiftomsorg om den småbarnspedagogiska verksamheten äger rum utanför så kallade ordinarie tider (kl. 6.00-18.00) för småbarnspedagogik."
+               },
+               "placeholder": {},
+               "styles":{
+                  "width":"0.4"
+               },
+               "rules": {
+                   "dependentFields": {
+                       "paivittainen_vaka_kytkin": {
+                           "notAllowedIfKeyHasBooleanValue": {
+                               "vuorohoito_kytkin": true
+                           }
+                       },
+                       "kokopaivainen_vaka_kytkin": {
+                           "notAllowedIfKeyHasBooleanValue": {
+                               "vuorohoito_kytkin": true
+                           }
+                       }
+                   },
+                   "disabledOnEdit": {
+                     "acceptedValue": true
+                   }
+               }
+            },
+            {
+               "key":"paivittainen_vaka_kytkin",
+               "displayName":{
+                  "displayNameFi":"Päivittäinen varhaiskasvatus",
+                  "displayNameSv":"Småbarnspedagogik som ordnas dagligen"
+               },
+               "widget":"checkbox",
+               "instructionText": {
+                 "instructionTextFi": "Lapsi on päivittäisessä varhaiskasvatuksessa, jos varhaiskasvatus jakautuu viidelle arkipäivälle (ma-pe).",
+                 "instructionTextSv": "Barnet deltar i småbarnspedagogik som ordnas dagligen, om småbarnspedagogiken är fördelad på fem vardagar (mån-fre)."
+               },
+               "placeholder": {},
+               "styles":{
+                  "width":"0.4"
+               },
+               "rules": {
+                  "disabledOnEdit": {
+                     "acceptedValue": true
+                  }
+               }
+            },
+            {
+               "key":"kokopaivainen_vaka_kytkin",
+               "displayName":{
+                  "displayNameFi":"Kokopäiväinen varhaiskasvatus",
+                  "displayNameSv":"Heldagsverksamhet inom småbarnspedagogiken"
+               },
+               "widget":"checkbox",
+               "instructionText": {
+                 "instructionTextFi": "Lapsi on kokopäiväisessä varhaiskasvatuksessa, jos varhaiskasvatusaika on yli viisi tuntia päivässä.",
+                 "instructionTextSv": "Barnet deltar i heldagsverksamhet inom småbarnspedagogiken, om tiden överstiger fem timmar per dag."
+               },
+               "placeholder": {},
+               "styles":{
+                  "width":"0.4"
+               },
+               "rules":{
+                  "disabledOnEdit": {
+                     "acceptedValue": true
+                  }
+               }
+            }
+          ]
+      }
+   ]
+}

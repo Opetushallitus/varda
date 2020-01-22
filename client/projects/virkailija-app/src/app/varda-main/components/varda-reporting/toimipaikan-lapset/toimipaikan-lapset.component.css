@@ -1,0 +1,72 @@
+.toimipaikan-lapset-container {
+  background-color: #ffffff;
+  position: relative;
+  margin-left: 40px;
+  padding: 20px 20px 25px 20px;
+}
+
+.toimipaikan-lapset-container-margin-bottom {
+  margin-bottom: 40px;
+}
+
+.toimipaikan-lapset-table {
+  border-spacing: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.toimipaikan-lapset-vakatable {
+  table-layout: fixed;
+  width: 97.5%;
+}
+
+.toimipaikan-lapset-huoltajat-table {
+  margin-bottom: 25px;
+}
+
+.toimipaikan-lapset-font-blue {
+  color: #159ecb;
+}
+
+.toimipaikan-lapset-font-bold {
+  font-weight: bold;
+}
+
+.toimipaikan-lapset-header-margin-bottom {
+  margin-bottom: 15px;
+}
+
+.toimipaikan-lapset-header:focus {
+  background: #def2ff !important;
+}
+
+.toimipaikan-lapset-header-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+h1 {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+h2 {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+h3 {
+  font-size: 1rem;
+}
+
+@media (max-width: 950px) {
+  .toimipaikan-lapset-container {
+    margin-left: 0;
+    padding: 20px 0 25px 0;
+  }
+
+  .toimipaikan-lapset-header {
+    padding: 0 5px;
+  }
+}

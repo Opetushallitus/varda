@@ -1,0 +1,99 @@
+<div class="modal fade" [id]="modalType" tabindex="-1" role="dialog" [attr.aria-labelledby]="'vardaInfoModalLabel' + modalType" aria-hidden="true">
+  <div class="modal-dialog" [ngClass]="{'modal-lg': isLg}" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" [id]="'vardaInfoModalLabel' + modalType">{{modalTitle}}</h2>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body varda-modal-body varda-info-modal-body">
+        <ng-container [ngSwitch]="modalType">
+          <ng-container *ngSwitchCase="'myprofile'">
+            <p>{{'label.username' | translate}}: {{userUsername}}</p>
+            <p>{{'label.email' | translate}}: {{userEmail}}</p>
+          </ng-container>
+          <ng-container *ngSwitchCase="'ohjeet'">
+            <mat-accordion>
+              <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                  <mat-panel-title>
+                    <div class="ohjeet-panel-title-wrapper">
+                      <span>{{'label.info-adding-new-lapsi' | translate}}</span>
+                    </div>
+                  </mat-panel-title>
+                </mat-expansion-panel-header>
+              </mat-expansion-panel>
+              <div class="ohjeet-section-gap"></div>
+              <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                  <div class="ohjeet-panel-title-wrapper">
+                    <span>{{'label.info-updating-lapsi' | translate}}</span>
+                  </div>
+                </mat-expansion-panel-header>
+                <p></p>
+              </mat-expansion-panel>
+              <div class="ohjeet-section-gap"></div>
+              <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                  <mat-panel-title>
+                    <div class="ohjeet-panel-title-wrapper">
+                      <span>{{'label.info-deleting-data' | translate}}</span>
+                    </div>
+                  </mat-panel-title>
+                </mat-expansion-panel-header>
+                <p></p>
+              </mat-expansion-panel>
+              <div class="ohjeet-section-gap"></div>
+              <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                  <mat-panel-title>
+                    <div class="ohjeet-panel-title-wrapper">
+                      <span>{{'label.info-adding-wrong-data' | translate}}</span>
+                    </div>
+                  </mat-panel-title>
+                </mat-expansion-panel-header>
+                <p></p>
+              </mat-expansion-panel>
+              <div class="ohjeet-section-gap"></div>
+              <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                  <mat-panel-title>
+                    <div class="ohjeet-panel-title-wrapper">
+                      <span>{{'label.info-my-userdata' | translate}}</span>
+                    </div>
+                  </mat-panel-title>
+                </mat-expansion-panel-header>
+              </mat-expansion-panel>
+              <div class="ohjeet-section-gap"></div>
+              <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                  <mat-panel-title>
+                    <div class="ohjeet-panel-title-wrapper">
+                      <span>{{'label.info-give-feedback' | translate}}</span>
+                    </div>
+                  </mat-panel-title>
+                </mat-expansion-panel-header>
+                <p></p>
+              </mat-expansion-panel>
+              <div class="ohjeet-section-gap"></div>
+              <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                  <mat-panel-title>
+                    <div class="ohjeet-panel-title-wrapper">
+                      <span>{{'label.info-selosteet' | translate}}</span>
+                    </div>
+                  </mat-panel-title>
+                </mat-expansion-panel-header>
+                <p></p>
+              </mat-expansion-panel>
+            </mat-accordion>            
+          </ng-container>
+        </ng-container>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="varda-info-modal-close-btn varda-button varda-button-neutral" data-dismiss="modal">{{'label.close' | translate}}</button>
+      </div>
+    </div>
+  </div>
+</div>

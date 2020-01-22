@@ -1,0 +1,30 @@
+ul {
+  list-style-type: none;
+}
+
+ul li {
+  padding: 5px;
+}
+
+ul li a {
+  display: inline-block;
+}
+
+a {
+  /* Duplicaet styles from varda-header component */
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #2A2A2A;
+
+  /* mat-menu-item overrides */
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  line-height: 1.25rem;
+  height: 100%;
+}
+

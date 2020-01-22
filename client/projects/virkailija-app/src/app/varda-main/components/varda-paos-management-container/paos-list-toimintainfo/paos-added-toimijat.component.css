@@ -1,0 +1,26 @@
+.varda-paos-list-toimintainfo-highlight {
+  border: #00B6E2 solid;
+}
+
+.scrollable {
+  overflow: auto;
+  max-height: 300px;
+}
+
+.paos-toimijat-list-tallennusvastuu-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.paos-toimipaikat-list-tallennusvastuu-column {
+  border: 3px solid transparent;
+}
+
+.paos-list-toimijat-search-empty {
+  font-style: italic;
+}
+
+.paos-toimijat-list-toimipaikka {
+  margin-bottom: 10px;
+  margin-top: 10px;
+}

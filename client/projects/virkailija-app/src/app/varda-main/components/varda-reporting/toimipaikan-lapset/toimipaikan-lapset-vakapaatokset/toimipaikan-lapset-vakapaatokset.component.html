@@ -1,0 +1,50 @@
+<mat-expansion-panel>
+  <mat-expansion-panel-header class="toimipaikan-lapset-header">
+    <mat-panel-title>
+      <h3 class="toimipaikan-lapset-font-blue">
+        <table class="toimipaikan-lapset-header-table">
+          <tr>
+            <td>
+              <span>{{'label.varhaiskasvatuspaatos' | translate}}</span>
+            </td>
+            <td>
+              <span *ngIf="vakapaatos.paattymis_pvm">{{vakapaatos.alkamis_pvm | date:'d.M.yyyy'}}-{{vakapaatos.paattymis_pvm | date:'d.M.yyyy'}}</span>
+              <span *ngIf="!vakapaatos.paattymis_pvm">{{'label.alkaen' | translate:{value: vakapaatos.alkamis_pvm | date:'d.M.yyyy'} }}</span>
+            </td>
+          </tr>
+        </table>
+      </h3>
+    </mat-panel-title>
+  </mat-expansion-panel-header>
+
+  <table class="mat-table toimipaikan-lapset-table toimipaikan-lapset-vakatable">
+    <tr class="mat-header-row">
+      <td class="mat-cell">{{'label.vaka_paatos_hakemus_pvm' | translate}}</td>
+      <td class="mat-cell">{{vakapaatos.hakemus_pvm | date:'d.M.yyyy'}}</td>
+    </tr>
+    <tr class="mat-header-row">
+      <td class="mat-cell">{{'label.vaka_paatos_tuntimaara_viikossa' | translate}}</td>
+      <td class="mat-cell">{{vakapaatos.tuntimaara_viikossa}}</td>
+    </tr>
+    <tr class="mat-header-row">
+      <td class="mat-cell">{{'label.vaka_paatos_jarjestamismuoto' | translate}}</td>
+      <td class="mat-cell">{{formatJarjestamismuotoDisplayValue(vakapaatos.jarjestamismuoto_koodi)}} ({{vakapaatos.jarjestamismuoto_koodi}})</td>
+    </tr>
+    <tr class="mat-header-row">
+      <td class="mat-cell">{{'label.vaka_paatos_paivittainen_vaka_kytkin' | translate}}</td>
+      <td class="mat-cell">{{vakapaatos.paivittainen_vaka_kytkin ? ('label.yes' | translate) : ('label.no' | translate)}}</td>
+    </tr>
+    <tr class="mat-header-row">
+      <td class="mat-cell">{{'label.vaka_paatos_kokopaivainen_vaka_kytkin' | translate}}</td>
+      <td class="mat-cell">{{vakapaatos.kokopaivainen_vaka_kytkin ? ('label.yes' | translate) : ('label.no' | translate)}}</td>
+    </tr>
+    <tr class="mat-header-row">
+      <td class="mat-cell">{{'label.vaka_paatos_vuorohoito_kytkin' | translate}}</td>
+      <td class="mat-cell">{{vakapaatos.vuorohoito_kytkin ? ('label.yes' | translate) : ('label.no' | translate)}}</td>
+    </tr>
+    <tr class="mat-header-row">
+      <td class="mat-cell">{{'label.vaka_paatos_pikakasittely' | translate}}</td>
+      <td class="mat-cell">{{vakapaatos.pikakasittely_kytkin ? ('label.yes' | translate) : ('label.no' | translate)}}</td>
+    </tr>
+  </table>
+</mat-expansion-panel>

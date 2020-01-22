@@ -1,0 +1,14 @@
+<div class="varda-henkilo-item-content">
+    <div class="varda-henkilo-item-wrapper">
+        <div class="varda-henkilo-name-wrapper">
+            <div class="varda-henkilo-item-name"
+            tabindex="0"
+            [ngClass]="{'active-henkilo-item': activeHenkiloItemId === henkiloItem.henkilo.url}"
+            (click)="editHenkilo()" (keydown.enter)="editHenkilo()">
+                <p class="varda-henkilo-item-entry">
+                    {{henkiloItem.henkilo.sukunimi + ', ' + henkiloItem.henkilo.etunimet}}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

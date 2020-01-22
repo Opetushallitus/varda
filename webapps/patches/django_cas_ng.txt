@@ -1,0 +1,3 @@
+Target: https://github.com/mingchen/django-cas-ng
+
+Adds functionality to accept proxy url from predefined header.

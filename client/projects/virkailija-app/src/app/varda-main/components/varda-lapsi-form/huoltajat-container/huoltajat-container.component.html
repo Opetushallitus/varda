@@ -1,0 +1,68 @@
+<div class="huoltaja-container-wrapper" [formGroup]="huoltajaFormGroup">
+  <fieldset class="">
+    <legend>{{'label.huoltaja.huoltajatiedot' | translate}}</legend>
+
+    <ng-container formArrayName="huoltajat">
+
+      <div *ngFor="let formControl of huoltajaFormArr.controls; let huoltajaFormControlIdx = index">
+
+        <div class="varda-fieldset-content">
+          <div>
+            <h5 tabindex="-1" class="recurring-huoltaja-entity-header varda-field-label">
+              {{'label.huoltaja.huoltaja' | translate}}
+            </h5>
+          </div>
+          <div class="huoltaja-delete-btn-container"
+               *ngIf="!isReadOnly && !isEditing && huoltajaFormArr.value.length > 1">
+            <button class="varda-button varda-button-small varda-button-danger huoltaja-delete-btn"
+                    (click)="deleteUnsavedHuoltaja(huoltajaFormControlIdx)" >
+              <span>&times;</span>
+            </button>
+            {{'label.huoltaja.poista-huoltaja' | translate}}
+          </div>
+        </div>
+        <div class="varda-fieldset-content">
+          <mat-radio-group (change)="setHuoltajavalinta($event, huoltajaFormControlIdx)"
+                           [disabled]="isEditing">
+            <mat-radio-button class="boolean-radio-yes"
+                              [value]="HuoltajaInputOption.Hetu"
+                              [checked]="!isEditing && huoltajaValinta[huoltajaFormControlIdx] === HuoltajaInputOption.Hetu">
+              {{'label.huoltaja.valinta.hetu' | translate}}
+            </mat-radio-button>
+            <mat-radio-button [value]="HuoltajaInputOption.Oppijanumero"
+                              [checked]="isEditing || huoltajaValinta[huoltajaFormControlIdx] === HuoltajaInputOption.Oppijanumero">
+              {{'label.huoltaja.valinta.oppijanumero' | translate}}
+            </mat-radio-button>
+          </mat-radio-group>
+        </div>
+        <ng-container *ngFor="let huoltajaFieldSet of huoltajaFieldsetObj[huoltajaFormControlIdx]; let huoltajaIdx = index">
+          <fieldset class="form-group varda-fieldset"
+                    [id]="huoltajaFieldSet.id + huoltajaFormControlIdx"
+                    [formGroup]="getHuoltajaFormGroup(formControl, huoltajaFieldSet.id)">
+            <div *ngFor="let field of huoltajaFieldSet.fields; let fieldIdx = index">
+              <app-varda-form-question
+                [isReadOnly]="isReadOnly"
+                [field]="field"
+                [fieldIndex]="fieldIdx"
+                [partOfInline]="false"
+                [fieldSet]="huoltajaFieldSet"
+                [fieldSetIndex]="huoltajaFormControlIdx"
+                [fieldSetName]="huoltajaFieldSet.id"
+                [form]="getHuoltajaFormGroup(formControl, huoltajaFieldSet.id)"
+                [formName]="'huoltaja'"></app-varda-form-question>
+            </div>
+          </fieldset>
+        </ng-container>
+      </div>
+
+    </ng-container>
+    <div class="varda-recurring-field-add-new-wrapper huoltaja-add-new-wrapper"
+         *ngIf="!isReadOnly && !isEditing">
+      <a [routerLink]=""
+         (click)="isAllowedAddNewHuoltaja() && addNewHuoltaja()"
+         [attr.href]="isAllowedAddNewHuoltaja() ? '#': null"
+         [class.disabled]="!isAllowedAddNewHuoltaja()">
+        {{'label.add-new-huoltaja' | translate}}</a>
+    </div>
+  </fieldset>
+</div>

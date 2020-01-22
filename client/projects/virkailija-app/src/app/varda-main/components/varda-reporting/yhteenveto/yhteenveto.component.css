@@ -1,0 +1,57 @@
+/* Takes parent width */
+:host {
+  width: 100%;
+}
+
+table {
+  width: 100%;
+}
+
+.mat-cell, .mat-footer-cell, .mat-header-cell {
+  font-size: inherit;
+}
+
+.varda-reporting-toimipaikka-header {
+  font-weight: bold;
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+}
+
+
+.varda-reporting-yhteenveto-card {
+  width: 50%;
+  margin-bottom: 3%;
+  margin-right: 5%;
+}
+
+.varda-reporting-yhteenveto-card-content {
+  display: flex;
+  min-height: 25px;
+}
+
+/* First column */
+.varda-reporting-yhteenveto-card-content > div:first-child {
+  flex: 0 1 25%;
+  text-align: left;
+}
+/* Other columns */
+.varda-reporting-yhteenveto-card-content > div {
+  flex: 0 1 20%;
+  text-align: center;
+}
+
+.varda-reporting-yhteenveto-card-content > div > p {
+  margin-bottom: 0;
+}
+
+.yhteenveto-table-wrapper {
+  margin-top: 30px;
+}
+
+.yhteenveto-table-wrapper > table {
+  box-shadow: 0 0 0;
+}
+
+.yhteenveto-column-center {
+  text-align: center;
+}

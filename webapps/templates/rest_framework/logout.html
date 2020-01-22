@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+
+{% block content %}
+<h1> {% trans "Logged out" %}</h1>
+
+<p>{% trans "You have been logged out."%}</p>
+
+<p>{% trans "Return" %} : <a href="/"> {% trans "VARDA Main Page" %}</a></p>
+
+{% endblock %}

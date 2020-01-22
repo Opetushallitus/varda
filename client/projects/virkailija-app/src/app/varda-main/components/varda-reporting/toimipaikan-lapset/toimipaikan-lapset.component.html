@@ -1,0 +1,72 @@
+<div class="toimipaikan-lapset-container">
+  <div class="toimipaikan-lapset-container-margin-bottom">
+    <h1>{{selectedToimipaikanLapsi.henkilo.etunimet + ' ' + selectedToimipaikanLapsi.henkilo.sukunimi}}</h1>
+  </div>
+
+  <div class="toimipaikan-lapset-container-margin-bottom">
+    <h2>{{'label.lapsi-stepper.lapsi-details' | translate}}</h2>
+
+    <table class="mat-table toimipaikan-lapset-table">
+      <tr class="mat-header-row">
+        <td class="mat-cell">{{'label.firstnamesbyseparated' | translate}}</td>
+        <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.etunimet}}</td>
+      </tr>
+      <tr class="mat-header-row">
+        <td class="mat-cell">{{'label.nickname' | translate}}</td>
+        <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.kutsumanimi}}</td>
+      </tr>
+      <tr class="mat-header-row">
+        <td class="mat-cell">{{'label.lastname' | translate}}</td>
+        <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.sukunimi}}</td>
+      </tr>
+      <tr class="mat-header-row">
+        <td class="mat-cell">{{'label.id' | translate}}</td>
+        <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.id}}</td>
+      </tr>
+      <tr class="mat-header-row">
+        <td class="mat-cell">{{'label.oppijanumero' | translate}}</td>
+        <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.henkilo_oid}}</td>
+      </tr>
+      <tr class="mat-header-row">
+        <td class="mat-cell">{{'label.birthday' | translate}}</td>
+        <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.syntyma_pvm | date:'d.M.yyyy'}}</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="toimipaikan-lapset-container-margin-bottom">
+    <h2>{{'label.lapsi-stepper.varhaiskasvatuspaatokset' | translate}}</h2>
+
+    <div *ngIf="selectedToimipaikanLapsi.varhaiskasvatuspaatokset && selectedToimipaikanLapsi.varhaiskasvatuspaatokset.length > 0">
+      <div *ngFor="let vakapaatos of selectedToimipaikanLapsi.varhaiskasvatuspaatokset">
+        <app-toimipaikan-lapset-vakapaatokset
+          [vakapaatos]="vakapaatos">
+        </app-toimipaikan-lapset-vakapaatokset>
+      </div>
+    </div>
+  </div>
+
+  <div class="toimipaikan-lapset-container-margin-bottom">
+    <h2>{{'label.lapsi-stepper.varhaiskasvatussuhteet' | translate}}</h2>
+
+    <div *ngIf="selectedToimipaikanLapsi.varhaiskasvatussuhteet && selectedToimipaikanLapsi.varhaiskasvatussuhteet.length > 0">
+      <div *ngFor="let vakasuhde of selectedToimipaikanLapsi.varhaiskasvatussuhteet">
+        <app-toimipaikan-lapset-vakasuhteet
+          [vakasuhde]="vakasuhde">
+        </app-toimipaikan-lapset-vakasuhteet>
+      </div>
+    </div>
+  </div>
+
+  <div class="toimipaikan-lapset-container-margin-bottom">
+    <h2>{{'label.lapsi-stepper.maksutiedot' | translate}}</h2>
+
+    <div *ngIf="selectedToimipaikanLapsi.maksutiedot && selectedToimipaikanLapsi.maksutiedot.length > 0">
+      <div *ngFor="let maksutieto of selectedToimipaikanLapsi.maksutiedot">
+        <app-toimipaikan-lapset-maksutiedot
+          [maksutieto]="maksutieto">
+        </app-toimipaikan-lapset-maksutiedot>
+      </div>
+    </div>
+  </div>
+</div>
