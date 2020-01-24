@@ -161,6 +161,13 @@
                             "displayNameFi": "Yksityisen hoidon tuella järjestetty",
                             "displayNameSv": "Anordnas med hjälp av stödet för privat vård av barn"
                         }
+                    },
+                    {
+                       "code": "jm05",
+                       "displayName": {
+                         "displayNameFi": "Yksityinen varhaiskasvatus ilman yksityisen hoidon tukea",
+                         "displayNameSv": "Privat småbarnspedagogik utan stöd för privat vård av barn"
+                       }
                     }
                 ],
                 "rules":{
