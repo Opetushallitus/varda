@@ -2,14 +2,17 @@
   font-size: inherit;
 }
 
+.mat-icon {
+  vertical-align: middle;
+}
+
 .varda-reporting-card-container {
     display: flex;
-    justify-content: flex-start;
     flex-wrap: wrap;
-    padding-left: 5%;
-    padding-right: 5%;
-    padding-top: 2%;
-    padding-bottom: 2%;
+    width: 95%;
+    margin: auto;
+    align-items: stretch;
+    padding-bottom: 10em;
 }
 
 .varda-reporting-search-wrapper {
@@ -38,9 +41,10 @@
 
 .varda-toimipaikan-lapset-scroller {
     background-color: #ffffff;
-    max-height: 550px;
+    min-height: 200px;
     overflow: auto;
-    margin-bottom: 30px;
+    flex: 1 0 300px;
+    margin: 0.5em;
 }
 
 .varda-toimipaikan-lapset-scroller-header {
@@ -62,7 +66,10 @@
 }
 
 .varda-toimipaikan-lapset-container {
-    width: 65%;
+  background-color: #ffffff;
+  padding: 0.5em;
+  flex: 2 2 450px;
+  margin: 0.5em;
 }
 
 .varda-reporting-search-form-content.toimipaikka-search-form > div:first-child {
@@ -78,33 +85,20 @@
     flex-wrap: wrap;
 }
 
-.varda-reporting-search-form-content.lapsi-search-form > div:first-child {
-    flex: 1 0 30%;
-    margin-right: 5px;
-}
-
-.varda-reporting-search-form-content.lapsi-search-form > div:nth-child(2) {
-    flex: 0 1 30%;
-    align-items: flex-end;
-    margin-right: 5px;
-}
-
-.varda-reporting-search-form-content.lapsi-search-form > div:nth-child(3) {
-    flex: 0 1 30%;
-    align-items: flex-end;
-}
-
-.varda-reporting-search-form-content.lapsi-search-form > div:nth-child(4) {
-    flex: 0 1 20%;
-    display: flex;
-    align-items: flex-end;
-    margin-top: 10px;
+.varda-reporting-search-form-content.lapsi-search-form > div {
+  padding: 0.5em;
 }
 
 .varda-reporting-card {
-    width: 40%;
-    margin-bottom: 3%;
-    margin-right: 5%;
+    flex-grow: 1;
+    flex-basis: 50%;
+    margin-bottom: 1em;
+    padding: 0.5em;
+
+}
+
+.varda-reporting-card > .mat-card {
+  height: 100%;
 }
 
 .varda-reporting-card-content {
@@ -138,10 +132,9 @@
 
 .varda-reporting-search-more-btn-wrapper {
     display: flex;
-    margin-bottom: 200px;
-    padding-left: 5%;
-    padding-right: 20%;
+    margin: 1em;
     justify-content: flex-end;
+    width: 100%;
 }
 
 .varda-reporting-search-more-btn-wrapper button {
@@ -175,10 +168,4 @@
 .varda-reporting-kielipainotus-koodi p,
 .varda-reporting-toimintapainotus-koodi p {
     margin: 0;
-}
-
-@media (max-width: 950px) {
-    .varda-toimipaikan-lapset-container {
-        width: 100%;
-    }
 }

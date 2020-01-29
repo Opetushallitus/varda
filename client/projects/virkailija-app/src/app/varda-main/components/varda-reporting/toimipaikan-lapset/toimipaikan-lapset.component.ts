@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnChanges, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnChanges, Output, ViewChild} from '@angular/core';
 import {VardaApiService} from '../../../../core/services/varda-api.service';
 import {ToimipaikanLapsi} from '../../../../utilities/models/dto/varda-henkilohaku-dto.model';
 
@@ -11,7 +11,7 @@ export class ToimipaikanLapsetComponent implements OnChanges {
 
   @Input() selectedToimipaikanLapsi: ToimipaikanLapsi;
   @Output() uiLoading: EventEmitter<boolean>;
-
+  @ViewChild('toimipaikanLapsetScrollTo') toimipaikanLapsetScrollTo: any;
   constructor(private vardaApiService: VardaApiService) {
     this.uiLoading = new EventEmitter<boolean>(true);
   }
@@ -34,6 +34,7 @@ export class ToimipaikanLapsetComponent implements OnChanges {
   fetchToimipaikanLapsi(): void {
     this.vardaApiService.getLapsiKooste(this.selectedToimipaikanLapsi.lapsi_id).subscribe((data) => {
       this.selectedToimipaikanLapsi = data;
+      this.toimipaikanLapsetScrollTo.nativeElement.scrollIntoView({behavior: 'smooth'})
     });
   }
 }

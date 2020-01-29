@@ -11,6 +11,10 @@ class AdminWithGuardianAndHistory(GuardedModelAdmin, SimpleHistoryAdmin):
     pass
 
 
+class HuoltajuussuhdeAdmin(AdminWithGuardianAndHistory):
+    raw_id_fields = ("lapsi", "huoltaja", )
+
+
 admin.site.register(VakaJarjestaja, AdminWithGuardianAndHistory)
 admin.site.register(Toimipaikka, AdminWithGuardianAndHistory)
 admin.site.register(ToiminnallinenPainotus, AdminWithGuardianAndHistory)
@@ -21,7 +25,7 @@ admin.site.register(Taydennyskoulutus, AdminWithGuardianAndHistory)
 admin.site.register(Ohjaajasuhde, AdminWithGuardianAndHistory)
 admin.site.register(Lapsi, AdminWithGuardianAndHistory)
 admin.site.register(Huoltaja, AdminWithGuardianAndHistory)
-admin.site.register(Huoltajuussuhde, AdminWithGuardianAndHistory)
+admin.site.register(Huoltajuussuhde, HuoltajuussuhdeAdmin)
 admin.site.register(Varhaiskasvatuspaatos, AdminWithGuardianAndHistory)
 admin.site.register(Varhaiskasvatussuhde, AdminWithGuardianAndHistory)
 admin.site.register(Maksutieto, AdminWithGuardianAndHistory)

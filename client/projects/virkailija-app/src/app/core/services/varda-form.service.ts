@@ -164,12 +164,10 @@ export class VardaFormService {
         validators.push(VardaFormValidators.validStringFormat.bind(null, {regex: rules.regex.acceptedValue}));
       }
 
-      if (rules.rejectSpecialChars) {
-        validators.push(VardaFormValidators.rejectSpecialChars);
-      }
-
       if (rules.rejectSpecialCharsEmail) {
         validators.push(VardaFormValidators.rejectSpecialCharsEmail);
+      } else if (rules.rejectSpecialChars) {
+        validators.push(VardaFormValidators.rejectSpecialChars);
       }
 
       if (rules.rejectSpecialCharsNames) {

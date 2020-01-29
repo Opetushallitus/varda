@@ -3,7 +3,7 @@
   width: 100%;
 }
 
-table {
+.mat-table, table {
   width: 100%;
 }
 
@@ -19,9 +19,11 @@ table {
 
 
 .varda-reporting-yhteenveto-card {
-  width: 50%;
+  width: 100%;
+  max-width: 800px;
   margin-bottom: 3%;
   margin-right: 5%;
+
 }
 
 .varda-reporting-yhteenveto-card-content {
@@ -46,6 +48,7 @@ table {
 
 .yhteenveto-table-wrapper {
   margin-top: 30px;
+  overflow-x: scroll;
 }
 
 .yhteenveto-table-wrapper > table {

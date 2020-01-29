@@ -1,6 +1,7 @@
 <div appHighContrast>
   <div class="varda-reporting-wrapper">
-    <div class="varda-reporting-initialization-error alert alert-danger" role="alert" *ngIf="ui.reportingInitializationError">
+    <div class="varda-reporting-initialization-error alert alert-danger" role="alert"
+      *ngIf="ui.reportingInitializationError">
       <p>{{'alert.error-occurred' | translate}}</p>
     </div>
     <div class="varda-reporting-search-wrapper" *ngIf="!ui.reportingInitializationError">
@@ -8,50 +9,51 @@
         <form>
           <div>
             <div class="reporting-search-entity-radio-btn-wrapper">
-              <mat-radio-group
-              [name]="'reportingEntitySelectorRadio'"
-              (change)="changeSearchEntity($event)">
-                <mat-radio-button [id]="'reportingToimipaikat'" [checked]="true" class="boolean-radio-yes" [value]="'toimipaikka'">{{'label.toimipaikat' | translate}}</mat-radio-button>
-                <mat-radio-button [id]="'reportingLapset'" class="boolean-radio-yes" [value]="'lapsi'">{{'label.lapset' | translate}}</mat-radio-button>
-                <mat-radio-button [id]="'reportingYhteenveto'" class="boolean-radio-yes" [value]="'yhteenveto'">{{'label.yhteenveto' | translate}}</mat-radio-button>
+              <mat-radio-group [name]="'reportingEntitySelectorRadio'" (change)="changeSearchEntity($event)">
+                <mat-radio-button [id]="'reportingToimipaikat'" [checked]="true" class="boolean-radio-yes"
+                  [value]="'toimipaikka'">{{'label.toimipaikat' | translate}}</mat-radio-button>
+                <mat-radio-button [id]="'reportingLapset'" class="boolean-radio-yes" [value]="'lapsi'">
+                  {{'label.lapset' | translate}}</mat-radio-button>
+                <mat-radio-button [id]="'reportingYhteenveto'" class="boolean-radio-yes" [value]="'yhteenveto'">
+                  {{'label.yhteenveto' | translate}}</mat-radio-button>
               </mat-radio-group>
             </div>
           </div>
-          <div class="varda-reporting-search-form-content toimipaikka-search-form" *ngIf="selectedSearchEntity === 'toimipaikka'">
+          <div class="varda-reporting-search-form-content toimipaikka-search-form"
+            *ngIf="selectedSearchEntity === 'toimipaikka'">
             <div>
               <label class="varda-field-label">{{getSearchInputLabel() | translate}}</label>
-              <input class="varda-form-control form-control varda-input"
-              name="reportingToimipaikkaSearchInput"
-              id="reportingToimipaikkaSearchInput" type="text" [(ngModel)]="toimipaikkaSearchValue" (keydown.enter)="searchToimipaikka()">
+              <input class="varda-form-control form-control varda-input" name="reportingToimipaikkaSearchInput"
+                id="reportingToimipaikkaSearchInput" type="text" [(ngModel)]="toimipaikkaSearchValue"
+                (keydown.enter)="searchToimipaikka()">
             </div>
             <div>
-              <button class="varda-button" type="button" (click)="searchToimipaikka()">{{'label.hae' | translate}}</button>
+              <button class="varda-button" type="button"
+                (click)="searchToimipaikka()">{{'label.hae' | translate}}</button>
             </div>
           </div>
           <div class="varda-reporting-search-form-content lapsi-search-form" *ngIf="selectedSearchEntity === 'lapsi'">
-            <div>
+            <div class="col-md-4">
               <label class="varda-field-label">{{getSearchInputLabel() | translate}}</label>
-              <select class="varda-form-control form-control varda-select" name="toimipaikkaSelect" (change)="searchLapsi()" [(ngModel)]="toimipaikanLapsetSelectedToimipaikka">
-                <option *ngFor="let toimipaikkaObj of vakajarjestajaToimipaikat" [ngValue]="toimipaikkaObj">{{toimipaikkaObj.nimi}}</option>
+              <select class="varda-form-control form-control varda-select" name="toimipaikkaSelect"
+                (change)="searchLapsi()" [(ngModel)]="toimipaikanLapsetSelectedToimipaikka">
+                <option *ngFor="let toimipaikkaObj of vakajarjestajaToimipaikat" [ngValue]="toimipaikkaObj">
+                  {{toimipaikkaObj.nimi}}</option>
               </select>
             </div>
-            <div>
+            <div class="col-md-4">
               <label class="varda-field-label">{{'label.sukunimi' | translate}}</label>
-              <input class="varda-form-control form-control varda-input"
-              name="reportingLapsiSukunimiSearchInput"
-              id="reportingLapsiSukunimiSearchInput" type="text"
-              [(ngModel)]="lapsiSukunimiSearchValue"
-              (keydown.enter)="searchLapsi()">
+              <input class="varda-form-control form-control varda-input" name="reportingLapsiSukunimiSearchInput"
+                id="reportingLapsiSukunimiSearchInput" type="text" [(ngModel)]="lapsiSukunimiSearchValue"
+                (keydown.enter)="searchLapsi()">
             </div>
-            <div>
+            <div class="col-md-4">
               <label class="varda-field-label">{{'label.etunimet' | translate}}</label>
-              <input class="varda-form-control form-control varda-input"
-              name="reportingLapsiEtunimetSearchInput"
-              id="reportingLapsiEtunimetSearchInput" type="text"
-              [(ngModel)]="lapsiEtunimetSearchValue"
-              (keydown.enter)="searchLapsi()">
+              <input class="varda-form-control form-control varda-input" name="reportingLapsiEtunimetSearchInput"
+                id="reportingLapsiEtunimetSearchInput" type="text" [(ngModel)]="lapsiEtunimetSearchValue"
+                (keydown.enter)="searchLapsi()">
             </div>
-            <div>
+            <div class="col-md-3">
               <button class="varda-button" type="button" (click)="searchLapsi()">{{'label.hae' | translate}}</button>
             </div>
           </div>
@@ -85,9 +87,11 @@
                 </p>
               </div>
             </div>
-            <div class="varda-reporting-kielipainotus-wrapper" *ngIf="toimipaikkaObj['kielipainotukset'] && toimipaikkaObj['kielipainotukset'].length > 0">
+            <div class="varda-reporting-kielipainotus-wrapper"
+              *ngIf="toimipaikkaObj['kielipainotukset'] && toimipaikkaObj['kielipainotukset'].length > 0">
               <p><b>{{'label.kielipainotukset' | translate}}</b></p>
-              <div class="varda-reporting-kielipainotus-item" *ngFor="let kielipainotus of toimipaikkaObj['kielipainotukset']">
+              <div class="varda-reporting-kielipainotus-item"
+                *ngFor="let kielipainotus of toimipaikkaObj['kielipainotukset']">
                 <div class="varda-reporting-kielipainotus-koodi">
                   <p>{{getKielikoodiDisplayValueByString(kielipainotus.kielipainotus_koodi)}}</p>
                 </div>
@@ -101,7 +105,7 @@
                     {{getDateDisplayValue(kielipainotus.alkamis_pvm)}}
                   </div>
                 </div>
-                <div  class="varda-reporting-card-content kielipainotus-card-content">
+                <div class="varda-reporting-card-content kielipainotus-card-content">
                   <div>
                     <p>
                       {{'label.paattymis_pvm' | translate}}
@@ -113,9 +117,11 @@
                 </div>
               </div>
             </div>
-            <div class="varda-reporting-toimintapainotus-wrapper" *ngIf="toimipaikkaObj['toimintapainotukset'] && toimipaikkaObj['toimintapainotukset'].length > 0">
+            <div class="varda-reporting-toimintapainotus-wrapper"
+              *ngIf="toimipaikkaObj['toimintapainotukset'] && toimipaikkaObj['toimintapainotukset'].length > 0">
               <p><b>{{'label.toimintapainotukset' | translate}}</b></p>
-              <div class="varda-reporting-toimintapainotus-item" *ngFor="let toimintapainotus of toimipaikkaObj['toimintapainotukset']">
+              <div class="varda-reporting-toimintapainotus-item"
+                *ngFor="let toimintapainotus of toimipaikkaObj['toimintapainotukset']">
                 <div class="varda-reporting-toimintapainotus-koodi">
                   <p>{{getToimintapainotusDisplayValue(toimintapainotus.toimintapainotus_koodi)}}</p>
                 </div>
@@ -129,7 +135,7 @@
                     {{getDateDisplayValue(toimintapainotus.alkamis_pvm)}}
                   </div>
                 </div>
-                <div  class="varda-reporting-card-content toimintapainotus-card-content">
+                <div class="varda-reporting-card-content toimintapainotus-card-content">
                   <div>
                     <p>
                       {{'label.paattymis_pvm' | translate}}
@@ -144,6 +150,10 @@
           </mat-card-content>
         </mat-card>
       </div>
+      <div class="varda-reporting-search-more-btn-wrapper" *ngIf="!ui.isLoading">
+        <button class="varda-button" type="button" (click)="searchMore()"
+          *ngIf="nextSearchLink">{{'label.search-more' | translate}} + </button>
+      </div>
     </div>
     <div class="varda-reporting-card-container" *ngIf="!ui.isLoading && selectedSearchEntity === 'lapsi'">
       <div class="varda-toimipaikan-lapset-scroller">
@@ -152,24 +162,39 @@
         </div>
         <ng-container *ngIf="toimipaikanLapset && toimipaikanLapset.length > 0">
           <div class="varda-toimipaikan-lapset-scroller-header">
-            <span>{{'label.haku-list.topic' | translate}}:</span>
+            <span>{{'label.haku-list.topic' | translate}} ({{ ui.noOfResults }}):</span>
           </div>
-          <div class="varda-toimipaikan-lapset-scroller-item" [class.varda-toimipaikan-lapset-scroller-item-selected]="selectedToimipaikanLapsi && lapsiObj.lapsi_id === selectedToimipaikanLapsi.lapsi_id"
-               *ngFor="let lapsiObj of toimipaikanLapset" aria-live="polite" (click)="showLapsi(lapsiObj.lapsi_id)">
+          <div class="varda-toimipaikan-lapset-scroller-item"
+            [class.varda-toimipaikan-lapset-scroller-item-selected]="selectedToimipaikanLapsi && lapsiObj.lapsi_id === selectedToimipaikanLapsi.lapsi_id"
+            *ngFor="let lapsiObj of toimipaikanLapset" aria-live="polite" (click)="showLapsi(lapsiObj.lapsi_id)">
             <p class="varda-henkilo-item-entry">
               {{lapsiObj.sukunimi + ', ' + lapsiObj.etunimet}}
             </p>
           </div>
+          <div *ngIf='!ui.isLoading'>
+            <button *ngIf='nextSearchLink' class="varda-button" type="button"
+              (click)="searchMore()">{{'label.seuraavat' | translate}}
+              <mat-icon>arrow_right</mat-icon>
+            </button>
+            <button *ngIf='prevSearchLink' class="varda-button varda-button-neutral" type="button"
+              (click)="searchMore(true)">
+              <mat-icon>arrow_left</mat-icon> {{'label.edelliset' | translate}}
+            </button>
+          </div>
         </ng-container>
       </div>
       <div class="varda-toimipaikan-lapset-container" *ngIf="selectedToimipaikanLapsi">
-        <app-toimipaikan-lapset [selectedToimipaikanLapsi]="selectedToimipaikanLapsi" (uiLoading)="updateUiLoading($event)"></app-toimipaikan-lapset>
+        <app-toimipaikan-lapset [selectedToimipaikanLapsi]="selectedToimipaikanLapsi"
+          (uiLoading)="updateUiLoading($event)"></app-toimipaikan-lapset>
       </div>
     </div>
     <div class="varda-reporting-card-container" *ngIf="selectedSearchEntity === 'yhteenveto'">
       <app-yhteenveto [toimipaikkaId]="getToimipaikkaId()" (uiLoading)="updateUiLoading($event)"></app-yhteenveto>
+      <div class="varda-reporting-search-more-btn-wrapper" *ngIf="!ui.isLoading">
+        <button class="varda-button" type="button" (click)="searchMore()"
+          *ngIf="nextSearchLink">{{'label.search-more' | translate}} + </button>
+      </div>
     </div>
-    <div class="varda-reporting-search-more-btn-wrapper"><button class="varda-button" type="button" (click)="searchMore()" *ngIf="nextSearchLink && !ui.isLoading">{{'label.search-more' | translate}} + </button></div>
   </div>
 </div>
 <lib-loading-indicator *ngIf="ui.isLoading"></lib-loading-indicator>

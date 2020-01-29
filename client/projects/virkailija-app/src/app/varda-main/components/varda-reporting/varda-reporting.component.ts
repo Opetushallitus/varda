@@ -34,6 +34,7 @@ export class VardaReportingComponent implements OnInit {
   lapsiEtunimetSearchValue: string;
   selectedSearchEntity: string;
   nextSearchLink: string;
+  prevSearchLink: string;
   toimipaikanLapsetSelectedToimipaikka: VardaToimipaikkaDTO;
 
   toimipaikkaFieldsToBeFormatted: Array<string>;
@@ -120,6 +121,7 @@ export class VardaReportingComponent implements OnInit {
   changeSearchEntity($event): any {
     this.selectedSearchEntity = $event.value;
     this.nextSearchLink = null;
+    this.prevSearchLink = null;
     this.lapsiEtunimetSearchValue = null;
     this.lapsiSukunimiSearchValue = null;
     this.ui.resultsEmpty = false;
@@ -387,12 +389,13 @@ export class VardaReportingComponent implements OnInit {
     this.getToimipaikanLapsetForReporting(searchParams, null).subscribe(this.updateToimipaikanLapset.bind(this));
   }
 
-  searchMore(): any {
-    if (this.nextSearchLink) {
+  searchMore(less: Boolean = false): any {
+    const searchLink = less ? this.prevSearchLink: this.nextSearchLink;
+    if (searchLink) {
       if (this.selectedSearchEntity === VardaEntityNames.TOIMIPAIKKA) {
-        this.getToimipaikatForReporting(null, this.nextSearchLink).subscribe((this.updateToimipaikat.bind(this)));
+        this.getToimipaikatForReporting(null, searchLink).subscribe((this.updateToimipaikat.bind(this)));
       } else if (this.selectedSearchEntity === VardaEntityNames.LAPSI) {
-        this.getToimipaikanLapsetForReporting(null, this.nextSearchLink).subscribe((this.updateToimipaikanLapset.bind(this)));
+        this.getToimipaikanLapsetForReporting(null, searchLink).subscribe((this.updateToimipaikanLapset.bind(this)));
       }
     }
   }
@@ -407,6 +410,10 @@ export class VardaReportingComponent implements OnInit {
         delete v.lapsi_url;
       });
     }
+
+    this.nextSearchLink = lapsetResp.next;
+    this.prevSearchLink = lapsetResp.previous;
+    this.ui.noOfResults = lapsetResp.count;
 
     if (this.selectedSearchEntity === VardaEntityNames.LAPSI && this.toimipaikanLapset.length === 0) {
       this.ui.resultsEmpty = true;

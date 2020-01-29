@@ -1,6 +1,11 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+## [1.3.4] (28.01.2020)
+- Uusi järjestämismuoto jm05
+- Vakajärjestäjän sähköpostiosoitteen validoinnin yhtenäistäminen
+- Katselunäkymän lasten ja toimipaikkojen sivutus
+
 ## [1.3.3] (20.01.2020)
 - Selkeytetty virheviestejä lasten tietojen lomakkeella Palveluseteli ja ostopalvelu -tapauksissa.
 

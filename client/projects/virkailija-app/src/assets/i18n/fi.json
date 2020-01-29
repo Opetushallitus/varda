@@ -103,6 +103,8 @@
     "click-yes-if-your-toimipaikka-has-toimintapainotus": "Klikkaa kyllä, jos toimipaikallasi on toimintapainotus.",
     "toimintapainotukset-missing": "Toimintapainotukset puuttuvat",
     "label.next": "Seuraava",
+    "label.seuraavat": "Seuraavat",
+    "label.edelliset": "Edelliset",
     "label.leave": "Poistu",
     "label.generic-save": "Tallenna",
     "label.generic-add": "Lisää",

@@ -103,7 +103,7 @@ export class VardaVakatoimijaComponent implements OnInit {
 
       this.vakatoimijaForm = new FormGroup({
         sahkopostiosoite: new FormControl(sahkopostiosoiteVal,
-          [Validators.required, VardaFormValidators.validStringFormat.bind(null, {regex: '^\\w+([\\.-]?\\w+)*@\\w+([\\.-]?\\w+)*(\\.\\w{2,3})+$'})]),
+          [Validators.required, VardaFormValidators.validStringFormat.bind(null, {regex: '^\\w+([-+.!]\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*$'})]),
         tilinumero: new FormControl(tilinumeroVal, VardaFormValidators.validOrEmptyIBAN),
         puhelinnumero: new FormControl(puhelinnumeroVal, [Validators.required, VardaFormValidators.validStringFormat.bind(null, {regex: '^\\+358\\d+$'})])
       });

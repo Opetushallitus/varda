@@ -103,7 +103,7 @@ def _fetch_henkilo_data_by_henkilotunnus(henkilo_id, henkilotunnus, etunimet, ku
         if henkilo_data is not None:
             save_henkilo_to_db(henkilo_id, henkilo_data)
     else:
-        logger.error('Failed to fetch henkilo_data for henkilo_id: {}.'.format(henkilo_id))
+        logger.error('Failed to fetch henkilo_data for henkilo_id: {}.'.format(henkilo_id))
 
 
 def fetch_henkilo_data_by_oid(henkilo_id, henkilo_oid, henkilo_data=None):
@@ -290,8 +290,6 @@ def update_huoltajuussuhde(lapsi_oid):
     try:
         with transaction.atomic():
             lapsi = Lapsi.objects.get(henkilo__henkilo_oid=lapsi_oid)
-
-            lapsi.huoltajuussuhteet.update(voimassa_kytkin=False)
             fetch_lapsen_huoltajat(lapsi.id)
     except Lapsi.DoesNotExist:
         logger.info("Skipped huoltajasuhde update for child with oid {} since he was not added to varda"
@@ -363,6 +361,8 @@ def fetch_lapsen_huoltajat(lapsi_id):
     reply_json = get_huoltajat_from_onr(lapsi_obj.henkilo.id)
     try:
         with transaction.atomic():
+            # Invalidate all current huoltajuussuhde and set ones returned valid
+            lapsi_obj.huoltajuussuhteet.update(voimassa_kytkin=False)
             for huoltaja in reply_json:
                 huoltaja_master_data = get_henkilo_data_by_oid(huoltaja["oidHenkilo"])
                 oid = huoltaja_master_data["oidHenkilo"]
@@ -396,10 +396,10 @@ def fetch_lapsen_huoltajat(lapsi_id):
                                                          huoltaja=huoltaja_obj,
                                                          defaults={
                                                              'changed_by': lapsi_obj.changed_by,
-                                                             'voimassa_kytkin': True,
+                                                             'voimassa_kytkin': True,  # ONR returns only valid huoltaja
                                                          })
 
-    except IntegrityError:
-        logger.warning("Could not create huoltajuussuhde. Lapsi-id: " + str(lapsi_id) + ".")
+    except IntegrityError as ie:
+        logger.error("Could not create or update huoltajuussuhde with lapsi-id {} and cause {}".format(lapsi_id, ie.__cause__))
     except Exception as e:
         logger.error(e)

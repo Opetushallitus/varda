@@ -98,6 +98,8 @@
     "click-yes-if-your-toimipaikka-has-toimintapainotus": "Klicka på Ja om ditt verksamhetsställe har verksamhet som betonas.",
     "toimintapainotukset-missing": "Verksamheter som betonas saknas",
     "label.next": "Följande",
+    "label.seuraavat": "Följande",
+    "label.edelliset": "Föregående",
     "label.leave": "Lämna",
     "label.generic-save": "Spara",
     "label.generic-add": "Lägg till",

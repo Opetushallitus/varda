@@ -1,7 +1,6 @@
 .toimipaikan-lapset-container {
   background-color: #ffffff;
   position: relative;
-  margin-left: 40px;
   padding: 20px 20px 25px 20px;
 }
 
@@ -60,13 +59,11 @@ h3 {
   font-size: 1rem;
 }
 
-@media (max-width: 950px) {
-  .toimipaikan-lapset-container {
-    margin-left: 0;
-    padding: 20px 0 25px 0;
+@media (max-width: 550px) {
+  h3 {
+    font-size: 2.6vw;
   }
-
-  .toimipaikan-lapset-header {
-    padding: 0 5px;
+  .mat-cell {
+    font-size: 2.4vw;
   }
 }

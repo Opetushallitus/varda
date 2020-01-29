@@ -482,10 +482,17 @@
                 }
               },
               "regex": {
-                "acceptedValue": "^\\w+([\\.-]?\\w+)*@\\w+([\\.-]?\\w+)*(\\.\\w{2,3})+$",
+                "acceptedValue": "^\\w+([-+.!]\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*$",
                 "errorText": {
                   "errorTextFi": "Sähköpostiosoitteessasi näyttäisi olevan kirjoitusvirhe",
                   "errorTextSv": "E-postadressen har inte giltigt format"
+                }
+              },
+              "rejectSpecialChars": {
+                "acceptedValue": true,
+                "errorText": {
+                  "errorTextFi": "Erikoismerkit eivät ole sallittuja",
+                  "errorTextSv": "Specialtecken är inte tillåtna"
                 }
               },
               "rejectSpecialCharsEmail": {
