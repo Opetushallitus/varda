@@ -126,7 +126,7 @@ class AllVakajarjestajaViewSet(GenericViewSet, ListModelMixin):
     permission_classes = (IsVardaPaakayttaja, )
     serializer_class = PaosVakaJarjestajaSerializer
     filter_backends = (SearchFilter, )
-    search_fields = ['nimi', '=organisaatio_oid', '=y_tunnus']
+    search_fields = ['nimi', '=postitoimipaikka', '=organisaatio_oid', '=y_tunnus']
 
     def get_queryset(self):
         queryset = VakaJarjestaja.objects.all()
