@@ -2,7 +2,7 @@ import { Component, Inject, OnInit } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { AuthService } from './core/auth/auth.service';
 import { VardaDomService } from './core/services/varda-dom.service';
-import { DOCUMENT } from '@angular/platform-browser';
+import { DOCUMENT } from '@angular/common';
 
 @Component({
   selector: 'app-root',

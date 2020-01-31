@@ -25,7 +25,7 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
   @Output() deleteLapsi: EventEmitter<any> = new EventEmitter<any>();
   @Output() closeHenkiloForm: EventEmitter<any> = new EventEmitter<any>();
   @Output() valuesChanged: EventEmitter<any> = new EventEmitter();
-  @ViewChild('henkiloStepper') henkiloStepper: MatStepper;
+  @ViewChild('henkiloStepper', { static: false }) henkiloStepper: MatStepper;
 
   currentHenkilo: VardaHenkiloDTO;
   vardaHenkiloForm: FormGroup;

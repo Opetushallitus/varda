@@ -236,6 +236,7 @@
     "label.paos-toimijat.created-notification": "Kunta lisätty.",
     "label.paos-toimijat.list.delete-confirm": "Oletko varma että haluat poistaa kunnan?",
     "label.paos-toimijat.list.empty": "Kuntia ei ole vielä lisätty.",
+    "label.paos-toimijat.added-each-other": "Molemmat toimijat ovat lisänneet toisensa",
     "label.paos-toimipaikat.list.show-toimipaikka": "Näytä toimipaikat",
     "label.paos-toimipaikat.list.hide-toimipaikka": "Piilota toimipaikat",
     "label.paos-toiminta.topic": "Lisää toimipaikka tai kunta ostopalvelu- tai palvelusetelitoimintaan",

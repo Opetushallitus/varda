@@ -27,7 +27,7 @@
   </div>
   <div *ngIf="vakajarjestajat.length" class="varda-paos-hallinta-result-wrapper">
     <div *ngFor="let vakajarjestaja of vakajarjestajat; let i = index"
-         [class.varda-paos-hallinta-colored-background]="i % 2">
+        [class.varda-paos-hallinta-colored-background]="i % 2">
       <ng-container *ngIf="vakajarjestaja.id !== selectedVakajarjestaja.id">
         <div class="varda-paos-hallinta-result-flex">
           <div class="varda-paos-hallinta-result-column varda-paos-hallinta-result-column-wide small-text">
@@ -41,29 +41,34 @@
               {{'label.oid' | translate}}: {{vakajarjestaja.organisaatio_oid}}
             </div>
           </div>
-          <div class="varda-paos-hallinta-result-column varda-paos-hallinta-result-middle">
-            <div *ngIf="vakajarjestaja.kunnallinen_kytkin"
-                 class="varda-paos-hallinta-result-button-wrapper">
-              <button class="varda-button add-paos-toiminta-toimija-add-button"
-                      *ngIf="!ignoredJarjestajaIds.has(vakajarjestaja.id)"
-                      (click)="addJarjestaja(vakajarjestaja)">
-                {{'label.paos-toiminta.result.add' | translate}}
-              </button>
-              <span *ngIf="ignoredJarjestajaIds.has(vakajarjestaja.id)">{{'label.paos-toiminta.result.already-added' | translate}}</span>
+          <ng-container *ngIf="isVardaPaakayttaja">
+            <div class="varda-paos-hallinta-result-column varda-paos-hallinta-result-middle">
+              <div *ngIf="vakajarjestaja.kunnallinen_kytkin"
+                  class="varda-paos-hallinta-result-button-wrapper">
+                <button class="varda-button add-paos-toiminta-toimija-add-button"
+                        *ngIf="!ignoredJarjestajaIds.has(vakajarjestaja.id)"
+                        (click)="addJarjestaja(vakajarjestaja)">
+                  {{'label.paos-toiminta.result.add' | translate}}
+                </button>
+                <span *ngIf="ignoredJarjestajaIds.has(vakajarjestaja.id)">{{'label.paos-toiminta.result.already-added' | translate}}</span>
+              </div>
             </div>
-          </div>
-          <div class="varda-paos-hallinta-result-column varda-paos-hallinta-result-middle">
-            <app-varda-toggle-button *ngIf="isVakajarjestajaKunta"
-                                     [isUp]="!isToimipaikkadata(vakajarjestaja.id)"
-                                     showTextKey="label.paos-toiminta.result.search-toimipaikka"
-                                     hideTextKey="label.paos-toiminta.result.clear-toimipaikka"
-                                     (click)="toggleSearchToimipaikat(vakajarjestaja)"></app-varda-toggle-button>
-          </div>
+          </ng-container>
+            <div class="varda-paos-hallinta-result-column varda-paos-hallinta-result-middle">
+              <app-varda-toggle-button *ngIf="isVakajarjestajaKunta"
+                                      [isUp]="!isToimipaikkadata(vakajarjestaja.id)"
+                                      showTextKey="label.paos-toiminta.result.search-toimipaikka"
+                                      hideTextKey="label.paos-toiminta.result.clear-toimipaikka"
+                                      (click)="toggleSearchToimipaikat(vakajarjestaja)"></app-varda-toggle-button>
+            </div>
+
         </div>
         <div *ngIf="isToimipaikkadata(vakajarjestaja.id)">
-          <app-paos-add-toiminta-list [selectedVakajarjestaja]="selectedVakajarjestaja"
-                                      [toimipaikat]="toimipaikatById[vakajarjestaja.id]"
-                                      [ignoredIds]="ignoredToimipaikkaIds"></app-paos-add-toiminta-list>
+          <app-paos-add-toiminta-list
+            [isVardaPaakayttaja]="isVardaPaakayttaja"
+            [selectedVakajarjestaja]="selectedVakajarjestaja"
+            [toimipaikat]="toimipaikatById[vakajarjestaja.id]"
+            [ignoredIds]="ignoredToimipaikkaIds"></app-paos-add-toiminta-list>
         </div>
       </ng-container>
     </div>

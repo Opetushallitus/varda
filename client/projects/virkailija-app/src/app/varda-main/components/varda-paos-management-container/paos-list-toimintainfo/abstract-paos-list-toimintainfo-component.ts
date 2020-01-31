@@ -7,6 +7,7 @@ import {PaosOikeusTieto, PaosToimintatietoDto, PaosToimipaikkatietoDto} from '..
 export abstract class AbstractPaosListToimintainfoComponent<T extends PaosToimipaikkatietoDto & PaosToimintatietoDto> implements OnInit {
   paosToiminnat: Array<T>;
   @Input() selectedVakajarjestaja: VardaVakajarjestaja;
+  @Input() isVardaPaakayttaja: boolean;
   showSuccess = false;
   showConfirmModal$ = new Subject<boolean>();
   paosToimintaToDelete: T;

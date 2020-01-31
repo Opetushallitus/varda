@@ -2,7 +2,8 @@
 <div>
   <p>{{'label.paos-toimipaikat.description' | translate}}</p>
   <p *ngIf="!paosToiminnat.length"
-     class="paos-list-toimijat-search-empty">{{'label.paos-toimipaikat.list.empty' | translate}}</p>
+     class="paos-list-toimijat-search-empty">
+    {{'label.paos-toimipaikat.list.empty' | translate}}</p>
 </div>
 <div *ngIf="showSuccess"
      class="oph-alert oph-alert-success"
@@ -22,68 +23,84 @@
     <div *ngFor="let paosToiminta of filteredToiminnat"
          class="oph-alert oph-alert-info small-text"
          [class.varda-paos-list-toimintainfo-highlight]="isToimijaHighlighted(highlighted, paosToiminta)">
-      <div>
-        <h4>{{paosToiminta.toimijaNimi}} ({{paosToiminta.toimipaikat.length}})</h4>
-      </div>
-      <div>
-        {{'label.ytunnus' | translate}}: {{paosToiminta.toimijaYTunnus}}
+      <h4>{{paosToiminta.toimijaNimi}} ({{paosToiminta.toimipaikat.length}})
+        <mat-icon *ngIf="paosToiminta.paosOikeus.voimassa_kytkin"
+                  title="{{'label.paos-toimijat.added-each-other' | translate }}">sync_alt</mat-icon>
+      </h4>
+      <div class="paos-list-flexbox">
+        <div>
+          <div>{{'label.ytunnus' | translate}}:
+            <span class='text-nowrap'>{{paosToiminta.toimijaYTunnus}}</span></div>
+          <div>{{'label.id' | translate}}: {{paosToiminta.toimijaId}}</div>
+        </div>
         <app-varda-toggle-button [isUp]="openToimija !== paosToiminta.toimijaId"
                                  [showTextKey]="'label.paos-toimipaikat.list.show-toimipaikka'"
                                  [hideTextKey]="'label.paos-toimipaikat.list.hide-toimipaikka'"
                                  (click)="toggleToimija(paosToiminta.toimijaId)"></app-varda-toggle-button>
-        <br/>
-        {{'label.id' | translate}}: {{paosToiminta.toimijaId}}
       </div>
+
+
       <div *ngIf="openToimija === paosToiminta.toimijaId">
-        <div class="paos-toimijat-list-tallennusvastuu-wrapper">
-          <div class="paos-toimipaikat-list-tallennusvastuu-column">
-            {{'label.paos-toimipaikat.list.tallennusvastuu' | translate}}:
+        <div class="paos-toimijat-list-tallennusvastuu-wrapper paos-list-flexbox">
+          <div class="paos-list-flexbox">
+            <div class="paos-toimipaikat-list-tallennusvastuu-column">
+              {{'label.paos-toimipaikat.list.tallennusvastuu' | translate}}:
+            </div>
+            <div class="paos-toimipaikat-list-tallennusvastuu-column"
+                 *ngIf="openTallennusvastuu !== paosToiminta.toimijaId">
+              {{getCurrentTallentajaTranslateKey(paosToiminta.paosOikeus) | translate}}
+            </div>
           </div>
-          <div class="paos-toimipaikat-list-tallennusvastuu-column"
-               *ngIf="openTallennusvastuu !== paosToiminta.toimijaId">
-            {{getCurrentTallentajaTranslateKey(paosToiminta.paosOikeus) | translate}}
-          </div>
-          <div class="paos-toimipaikat-list-tallennusvastuu-column"
-               *ngIf="openTallennusvastuu !== paosToiminta.toimijaId">
-            <button type="text"
-                    mat-button
-                    (click)="openTallennusvastuu = paosToiminta.toimijaId">
-              {{'label.vaihda' | translate}}
-            </button>
-          </div>
-          <div class="paos-toimipaikat-list-tallennusvastuu-column"
-               *ngIf="openTallennusvastuu === paosToiminta.toimijaId">
-            <select id="paos-toimijat-list-tallennusvastuu-select"
-                    [value]="getCurrentTallentajaTranslateKey(paosToiminta.paosOikeus)"
-                    (change)="changeTallennusvastuu($event.target.value, paosToiminta)"
-                    class="varda-select">
-              <option value="label.tallentaja">{{'label.tallentaja' | translate}}</option>
-              <option value="label.katselija">{{'label.katselija' | translate}}</option>
-            </select>
-          </div>
-          <div class="paos-toimipaikat-list-tallennusvastuu-column"
-               *ngIf="openTallennusvastuu === paosToiminta.toimijaId">
-            <button class="varda-button"
-                    (click)="saveTallennusvastuu(paosToiminta)"
-                    [class.varda-disabled-button]="isTallentajaChanged(paosToiminta)"
-                    [disabled]="isTallentajaChanged(paosToiminta)">
-              {{'label.generic-save' | translate}}
-            </button>
-          </div>
+          <ng-container *ngIf="isVardaPaakayttaja">
+            <div class="paos-toimipaikat-list-tallennusvastuu-column"
+                 *ngIf="openTallennusvastuu !== paosToiminta.toimijaId">
+              <button type="text"
+                      class="varda-button"
+                      mat-button
+                      (click)="openTallennusvastuu = paosToiminta.toimijaId">
+                {{'label.vaihda' | translate}}
+              </button>
+            </div>
+            <div class="paos-toimipaikat-list-tallennusvastuu-column"
+                 *ngIf="openTallennusvastuu === paosToiminta.toimijaId">
+              <select [value]="getCurrentTallentajaTranslateKey(paosToiminta.paosOikeus)"
+                      (change)="changeTallennusvastuu($event.target.value, paosToiminta)"
+                      class="varda-select">
+                <option value="label.tallentaja">{{'label.tallentaja' | translate}}</option>
+                <option value="label.katselija">{{'label.katselija' | translate}}</option>
+              </select>
+            </div>
+
+            <div class="paos-toimipaikat-list-tallennusvastuu-column"
+                 *ngIf="openTallennusvastuu === paosToiminta.toimijaId">
+              <button class="varda-button"
+                      (click)="saveTallennusvastuu(paosToiminta)"
+                      [class.varda-disabled-button]="isTallentajaChanged(paosToiminta)"
+                      [disabled]="isTallentajaChanged(paosToiminta)">
+                {{'label.generic-save' | translate}}
+              </button>
+            </div>
+          </ng-container>
         </div>
-        <h4>{{'label.toimipaikat' | translate}}</h4>
-        <div *ngFor="let toimipaikka of paosToiminta.toimipaikat" class="paos-toimijat-list-toimipaikka">
+        <h4 class="paos-toimijat-list-toimipaikat-text">{{'label.toimipaikat' | translate}}</h4>
+        <div *ngFor="let toimipaikka of paosToiminta.toimipaikat"
+             class="paos-toimijat-list-toimipaikka paos-list-flexbox">
           <div>
-            {{toimipaikka.toimipaikka_nimi}}
+            <div class="paos-toimijat-list-toimipaikka-header">
+              {{toimipaikka.toimipaikka_nimi}}
+            </div>
+            <div>
+              {{'label.oid' | translate}}:
+              <span class="text-nowrap">{{toimipaikka.toimipaikka_organisaatio_oid}}</span>
+            </div>
+            <div>
+              {{'label.id' | translate}}: {{toimipaikka.toimipaikka_id}}
+            </div>
           </div>
-          <div>
-            {{'label.oid' | translate}}: {{toimipaikka.toimipaikka_organisaatio_oid}}
-            <app-varda-delete-button (click)="showDeleteConfirm(toimipaikka)">
-              {{'label.delete' | translate}}
-            </app-varda-delete-button>
-            <br/>
-            {{'label.id' | translate}}: {{toimipaikka.toimipaikka_id}}
-          </div>
+          <app-varda-delete-button *ngIf="isVardaPaakayttaja"
+                                   (click)="showDeleteConfirm(toimipaikka)">
+            {{'label.delete' | translate}}
+          </app-varda-delete-button>
         </div>
       </div>
     </div>
@@ -91,5 +108,8 @@
 </div>
 <app-varda-prompt-modal [show$]="showConfirmModal$"
                         (saveEvent)="deletePaosToiminta()">
+  <div class="paos-prompt-modal-header"
+       *ngIf="paosToimintaToDelete">{{paosToimintaToDelete.toimipaikka_nimi }}, {{paosToimintaToDelete.toimija_nimi }}
+  </div>
   {{'label.paos-toimipaikat.list.delete-confirm' | translate}}
 </app-varda-prompt-modal>

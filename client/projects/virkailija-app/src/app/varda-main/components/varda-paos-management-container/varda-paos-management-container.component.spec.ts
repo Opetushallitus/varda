@@ -10,6 +10,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import {VardaApiService} from '../../../core/services/varda-api.service';
 import { EMPTY } from 'rxjs';
 import {PaosAddToimintaListComponent} from './paos-add-paos-toiminta/paos-add-toiminta-list/paos-add-toiminta-list.component';
+import {MatIconModule} from '@angular/material';
 import {PaosToimintaService} from './paos-toiminta.service';
 import {VardaVakajarjestajaUi} from '../../../utilities/models/varda-vakajarjestaja-ui.model';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -19,6 +20,8 @@ import {VardaErrorAlertComponent} from '../../../shared/components/varda-error-a
 import {VardaSharedModule} from 'varda-shared';
 import {HttpClient} from '@angular/common/http';
 import {VardaPromptModalComponent} from '../../../shared/components/varda-prompt-modal/varda-prompt-modal.component';
+import {AuthService} from '../../../core/auth/auth.service';
+import { TranslateService } from '@ngx-translate/core';
 
 @Pipe({name: 'translate'})
 export class TranslatePipe implements PipeTransform {
@@ -35,6 +38,7 @@ describe('VardaPaosManagementContainerComponent', () => {
         ReactiveFormsModule,
         MatFormFieldModule,
         VardaSharedModule,
+        MatIconModule
       ],
       declarations: [
         VardaPaosManagementContainerComponent,
@@ -58,9 +62,15 @@ describe('VardaPaosManagementContainerComponent', () => {
           }
         },
         {provide: HttpClient, useValue: {}},
+        {provide: AuthService, useValue: {
+          isCurrentUserSelectedVakajarjestajaRole: () => EMPTY
+        }},
+        { provide: TranslateService, useValue: {
+          get: () => EMPTY, use: () => {}, setDefaultLang: () => {}}}
       ]
     })
     .compileComponents();
+
   }));
 
   beforeEach(() => {

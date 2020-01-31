@@ -350,6 +350,12 @@ h1, h2, h3, h4, h5, h6, legend {
     display: none;
 }
 
+.varda-page-title {
+  display: block;
+  width: 100%;
+  margin: 1em 1em;
+}
+
 .varda-modal-form-wrapper {}
 
 .varda-modal-form-form {

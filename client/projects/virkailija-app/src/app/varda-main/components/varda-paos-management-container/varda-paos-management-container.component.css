@@ -1,12 +1,19 @@
 .varda-paos-hallinta-wrapper {
   margin: 30px auto;
-  width: 80%;
   display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
   align-items: flex-start;
+
 }
 
 .varda-paos-hallinta-flex-column {
-  flex: 2 0 0;
+  flex: 2 1 250px;
+  max-width: 100%;
+}
+
+.varda-paos-hallinta-flex-column-big {
+  flex: 3 1 300px;
 }
 
 .varda-paos-hallinta-background {
@@ -19,15 +26,4 @@
   margin-bottom: 20px;
 }
 
-.varda-paos-hallinta-flex-column-big {
-  flex: 3 0 0;
-}
 
-@media (max-width: 680px) {
-
-  .varda-paos-hallinta-wrapper {
-    width: 90%;
-    flex-wrap: wrap;
-  }
-
-}

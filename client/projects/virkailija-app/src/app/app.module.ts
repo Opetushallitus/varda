@@ -1,7 +1,6 @@
 import { BrowserModule, Title } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { VardaMainModule } from './varda-main/varda-main.module';
-import { HttpModule } from '@angular/http';
 import { CoreModule } from './core/core.module';
 import { SharedModule } from './shared/shared.module';
 import { RouterModule, Routes } from '@angular/router';
@@ -25,7 +24,6 @@ export function HttpLoaderFactory(http: HttpClient) {
   ],
   imports: [
     BrowserModule,
-    HttpModule,
     VardaMainModule,
     CoreModule,
     SharedModule,

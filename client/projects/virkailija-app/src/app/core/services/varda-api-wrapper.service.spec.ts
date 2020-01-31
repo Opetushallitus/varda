@@ -9,8 +9,8 @@ import {
     VardaVarhaiskasvatussuhdeDTO,
     VardaVakajarjestaja } from '../../utilities/models';
 import { VardaApiService } from './varda-api.service';
-import {MockBackend} from '@angular/http/testing';
-import {BaseRequestOptions, ConnectionBackend, RequestOptions} from '@angular/http';
+import {HttpTestingController} from '@angular/common/http/testing';
+import {HttpBackend} from '@angular/common/http';
 import {HttpClient, HttpHandler} from '@angular/common/http';
 
 describe('VardaApiWrapperService', () => {
@@ -39,8 +39,7 @@ describe('VardaApiWrapperService', () => {
         {provide: VardaVakajarjestajaService, useValue: {selectedVakajarjestaja: {url: ''}}},
         VardaDateService,
         VardaUtilityService,
-        {provide: ConnectionBackend, useClass: MockBackend},
-        {provide: RequestOptions, useClass: BaseRequestOptions},
+        {provide: HttpBackend, useClass: HttpTestingController},
         HttpClient,
         HttpHandler
       ]

@@ -57,6 +57,7 @@ export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoC
       },
       error: this.paosToimintaService.pushGenericErrorMessage,
     });
+
   }
 
   ngOnDestroy(): void {

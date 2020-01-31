@@ -14,6 +14,7 @@ export class PaosAddToimintaListComponent implements OnInit {
   @Input() toimipaikat: Array<PaosToimipaikkaDto>;
   @Input() selectedVakajarjestaja: VardaVakajarjestaja;
   @Input() ignoredIds: Set<string>;
+  @Input() isVardaPaakayttaja: boolean;
   filteredToimipaikat: Array<VardaToimipaikkaDTO>;
 
   constructor(private apiService: VardaApiService,

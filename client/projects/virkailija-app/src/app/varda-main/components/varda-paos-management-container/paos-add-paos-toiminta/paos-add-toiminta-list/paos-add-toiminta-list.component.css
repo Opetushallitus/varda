@@ -1,5 +1,6 @@
 .paos-add-toiminta-list-result-wrapper {
   display: flex;
+  flex-flow: wrap;
 }
 
 .paos-add-toiminta-list-result-column {

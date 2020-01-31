@@ -11,7 +11,7 @@ export class ToimipaikanLapsetComponent implements OnChanges {
 
   @Input() selectedToimipaikanLapsi: ToimipaikanLapsi;
   @Output() uiLoading: EventEmitter<boolean>;
-  @ViewChild('toimipaikanLapsetScrollTo') toimipaikanLapsetScrollTo: any;
+  @ViewChild('toimipaikanLapsetScrollTo', { static: false }) toimipaikanLapsetScrollTo: any;
   constructor(private vardaApiService: VardaApiService) {
     this.uiLoading = new EventEmitter<boolean>(true);
   }

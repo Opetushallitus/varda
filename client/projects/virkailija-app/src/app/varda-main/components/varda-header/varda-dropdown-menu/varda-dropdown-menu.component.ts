@@ -9,7 +9,7 @@ import {MatMenuTrigger} from '@angular/material/menu';
 export class VardaDropdownMenuComponent implements OnInit {
   @Input() topicKey: string;
   @Input() routeMaps: Array<{route: string, textKey: string, isHidden: boolean}>;
-  @ViewChild(MatMenuTrigger) trigger: MatMenuTrigger;
+  @ViewChild(MatMenuTrigger, { static: true }) trigger: MatMenuTrigger;
   @Output() navigationChange = new EventEmitter(true);
   showDropdown: boolean;
 

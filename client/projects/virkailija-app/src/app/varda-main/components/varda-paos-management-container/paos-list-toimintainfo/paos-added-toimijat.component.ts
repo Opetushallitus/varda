@@ -31,7 +31,7 @@ export class PaosAddedToimijatComponent extends AbstractPaosListToimintainfoComp
   pushToimintaOrganisaatioId = paosToiminta => this.paosToimintaService.pushToimintaOrganisaatio(paosToiminta.vakajarjestaja_id, PaosCreateEvent.Toimija);
 
   constructor(private apiService: VardaApiService,
-              private paosToimintaService: PaosToimintaService) {
+      private paosToimintaService: PaosToimintaService) {
     super();
   }
 

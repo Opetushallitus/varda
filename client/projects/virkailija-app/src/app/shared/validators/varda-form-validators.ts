@@ -1,5 +1,4 @@
-import { FormControl, FormGroup, FormArray, Validators } from '@angular/forms';
-import * as moment from 'moment';
+import { FormControl, FormGroup} from '@angular/forms';
 
 export class VardaFormValidators {
 

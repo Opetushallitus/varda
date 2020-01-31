@@ -15,6 +15,7 @@ import {Subscription} from 'rxjs';
 export class PaosAddPaosToimintaComponent implements OnInit, OnDestroy {
   @Input() isVakajarjestajaKunta: boolean;
   @Input() selectedVakajarjestaja: VardaVakajarjestaja;
+  @Input() isVardaPaakayttaja: boolean;
 
   paosToimijaForm: FormGroup;
   vakajarjestajat: Array<PaosVakajarjestajaDto>;

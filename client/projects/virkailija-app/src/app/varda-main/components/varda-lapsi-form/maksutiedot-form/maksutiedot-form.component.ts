@@ -26,7 +26,7 @@ export class MaksutiedotFormComponent implements OnInit {
   @ViewChildren('maksutietoPanels') maksutietoPanels: QueryList<MatExpansionPanel>;
   @ViewChildren('maksutietoCancelDeleteBtn') maksutietoCancelDeleteButtons: QueryList<HTMLButtonElement>;
   @ViewChildren('recurringMaksutietoEntityHeader') recurringMaksutietoEntityHeader: QueryList<HTMLDivElement>;
-  @ViewChild('notificationContainer') notificationContainer: ElementRef<HTMLDivElement>;
+  @ViewChild('notificationContainer', { static: false }) notificationContainer: ElementRef<HTMLDivElement>;
 
   maksutiedotFormGroup: FormGroup;
   ui: {

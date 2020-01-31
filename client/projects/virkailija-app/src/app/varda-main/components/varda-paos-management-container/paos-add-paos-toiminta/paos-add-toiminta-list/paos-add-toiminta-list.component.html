@@ -20,11 +20,13 @@
       </div>
     </div>
     <div class="paos-add-toiminta-list-result-column paos-add-toiminta-list-result-middle">
-      <button class="varda-button add-paos-toiminta-toimipaikka-add-button"
-              *ngIf="!ignoredIds.has(toimipaikka.id)"
-              (click)="addToimipaikka(toimipaikka)">
-        {{'label.paos-add-toimipaikka-list.add' | translate}}
-      </button>
+      <ng-container *ngIf="isVardaPaakayttaja">
+        <button class="varda-button add-paos-toiminta-toimipaikka-add-button"
+                *ngIf="!ignoredIds.has(toimipaikka.id)"
+                (click)="addToimipaikka(toimipaikka)">
+          {{'label.paos-add-toimipaikka-list.add' | translate}}
+        </button>
+      </ng-container>
       <span *ngIf="ignoredIds.has(toimipaikka.id)">
         {{'label.paos-add-toimipaikka-list.already-added' | translate}}
       </span>

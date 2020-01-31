@@ -29,9 +29,9 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
   @Output() saveToimipaikkaFormSuccess: EventEmitter<any> = new EventEmitter();
   @Output() valuesChanged: EventEmitter<boolean> = new EventEmitter();
 
-  @ViewChild('toimipaikkaStepper') toimipaikkaStepper: MatStepper;
-  @ViewChild('kielipainotuksetYes') kielipainotuksetYes: MatRadioButton;
-  @ViewChild('toimintapainotuksetYes') toimintapainotuksetYes: MatRadioButton;
+  @ViewChild('toimipaikkaStepper', { static: false }) toimipaikkaStepper: MatStepper;
+  @ViewChild('kielipainotuksetYes', { static: false }) kielipainotuksetYes: MatRadioButton;
+  @ViewChild('toimintapainotuksetYes', { static: false }) toimintapainotuksetYes: MatRadioButton;
   @ViewChildren('kielipainotuksetPanels') kielipainotuksetPanels: any;
   @ViewChildren('toimintapainotuksetPanels') toimintapainotuksetPanels: any;
 

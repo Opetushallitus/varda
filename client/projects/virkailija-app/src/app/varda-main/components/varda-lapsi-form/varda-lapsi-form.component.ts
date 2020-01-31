@@ -53,7 +53,7 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   @Output() updateLapsi: EventEmitter<any> = new EventEmitter();
   @Output() deleteLapsi: EventEmitter<any> = new EventEmitter();
   @Output() valuesChanged: EventEmitter<any> = new EventEmitter();
-  @ViewChild('lapsiStepper') lapsiStepper: MatStepper;
+  @ViewChild('lapsiStepper', { static: false }) lapsiStepper: MatStepper;
   @ViewChildren('varhaiskasvatuspaatosPanels') varhaiskasvatuspaatosPanels: any;
   @ViewChildren('varhaiskasvatussuhdePanels') varhaiskasvatussuhdePanels: any;
 

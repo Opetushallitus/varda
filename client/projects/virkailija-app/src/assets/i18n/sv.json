@@ -231,6 +231,7 @@
     "label.paos-toimijat.created-notification": "Kommunen har lagts till.",
     "label.paos-toimijat.list.delete-confirm": "Är du säker på att du vill ta bort kommunen?",
     "label.paos-toimijat.list.empty": "Inga kommuner har lagts till.",
+    "label.paos-toimijat.added-each-other": "Båda aktörerna har lagt till varandra",
     "label.paos-toimipaikat.list.show-toimipaikka": "Visa verksamhetsställen",
     "label.paos-toimipaikat.list.hide-toimipaikka": "Dölj verksamhetsställen",
     "label.paos-toiminta.topic": "Lägg till ett verksamhetsställe eller en kommun som ordnar verksamhet som köpt tjänst eller med servicesedel.",
