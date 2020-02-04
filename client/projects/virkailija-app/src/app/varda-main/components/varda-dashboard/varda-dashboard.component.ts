@@ -10,7 +10,7 @@ import {VardaKuntakoodistoService} from '../../../core/services/varda-kuntakoodi
 import {VardaApiWrapperService} from '../../../core/services/varda-api-wrapper.service';
 import {VardaVakajarjestajaService} from '../../../core/services/varda-vakajarjestaja.service';
 import {NgcCookieConsentService} from 'ngx-cookieconsent';
-import {VardaToimipaikkaDTO} from '../../../utilities/models';
+import {VardaToimipaikkaDTO, VardaVakajarjestajaUi} from '../../../utilities/models';
 import {Router} from '@angular/router';
 import {VardaMaksunPerusteKoodistoService} from '../../../core/services/varda-maksun-peruste-koodisto.service';
 import {LoginService, VardaUserDTO} from 'varda-shared';
@@ -85,12 +85,12 @@ export class VardaDashboardComponent implements OnInit {
     this.ui.isLoading = false;
   }
 
-  setSelectedVakajarjestaja(vakajarjestajat: any): void {
+  setSelectedVakajarjestaja(vakajarjestajat: Array<VardaVakajarjestajaUi>): void {
     let selectedVakajarjestaja = vakajarjestajat[0];
     const vakajarjestajaFoundInLocalStorage = localStorage.getItem('varda.selectedvakajarjestaja');
     if (vakajarjestajaFoundInLocalStorage) {
         const parsedVakajarjestaja = JSON.parse(vakajarjestajaFoundInLocalStorage);
-        selectedVakajarjestaja = this.vardaVakajarjestajaService.getVakajarjestajaByUrl(parsedVakajarjestaja.url, vakajarjestajat);
+        selectedVakajarjestaja = vakajarjestajat.find(vakajarjestaja => vakajarjestaja.id === parsedVakajarjestaja.id);
         if (!selectedVakajarjestaja) {
           selectedVakajarjestaja = vakajarjestajat[0];
         }

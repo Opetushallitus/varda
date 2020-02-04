@@ -979,7 +979,7 @@ class LapsiKoosteVarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSeri
 
     class Meta:
         model = Varhaiskasvatussuhde
-        exclude = ('url', 'luonti_pvm', 'muutos_pvm', 'changed_by')
+        exclude = ('url', 'luonti_pvm', 'changed_by')
 
 
 class LapsiKoosteHenkiloSerializer(serializers.HyperlinkedModelSerializer):
@@ -994,7 +994,7 @@ class LapsiKoosteVarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSer
 
     class Meta:
         model = Varhaiskasvatuspaatos
-        exclude = ('url', 'lapsi', 'luonti_pvm', 'muutos_pvm', 'changed_by')
+        exclude = ('url', 'lapsi', 'luonti_pvm', 'changed_by')
 
 
 class LapsiKoosteMaksutietoSerializer(serializers.HyperlinkedModelSerializer):
@@ -1008,7 +1008,7 @@ class LapsiKoosteMaksutietoSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Maksutieto
-        exclude = ('url', 'luonti_pvm', 'muutos_pvm', 'changed_by')
+        exclude = ('url', 'luonti_pvm', 'changed_by')
 
 
 class LapsiKoosteSerializer(serializers.Serializer):
