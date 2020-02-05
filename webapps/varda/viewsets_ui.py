@@ -163,12 +163,17 @@ class NestedToimipaikanLapsetViewSet(GenericViewSet, ListModelMixin):
         query_params = self.request.query_params
         filtering_etunimet = query_params.get('etunimet', '')
         filtering_sukunimi = query_params.get('sukunimi', '')
-        lapsi_object_ids_user_has_view_permissions = self.get_lapsi_object_ids_user_has_view_permissions()
+
+        toimipaikka_filter = Q(toimipaikka__id=kwargs['toimipaikka_pk'])
+        if self.request.user.is_superuser:
+            vakasuhde_filter = toimipaikka_filter
+        else:
+            lapsi_object_ids_user_has_view_permissions = self.get_lapsi_object_ids_user_has_view_permissions()
+            vakasuhde_filter = toimipaikka_filter & Q(varhaiskasvatuspaatos__lapsi__id__in=lapsi_object_ids_user_has_view_permissions)
 
         vakasuhde_queryset = (Varhaiskasvatussuhde.objects
                               .select_related('varhaiskasvatuspaatos__lapsi__henkilo')
-                              .filter(Q(toimipaikka__id=kwargs['toimipaikka_pk']) &
-                                      Q(varhaiskasvatuspaatos__lapsi__id__in=lapsi_object_ids_user_has_view_permissions))
+                              .filter(vakasuhde_filter)
                               .order_by('varhaiskasvatuspaatos__lapsi__henkilo__sukunimi',
                                         'varhaiskasvatuspaatos__lapsi__henkilo__etunimet')
                               )
