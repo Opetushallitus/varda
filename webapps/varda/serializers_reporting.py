@@ -39,3 +39,14 @@ class KelaRaporttiSerializer(serializers.Serializer):
 class KoodistoSerializer(serializers.Serializer):
     class Meta:
         model = Z2_Koodisto
+
+
+class TiedonsiirtotilastoSerializer(serializers.Serializer):
+    vakatoimijat = serializers.IntegerField()
+    toimipaikat = serializers.IntegerField()
+    vakasuhteet = serializers.IntegerField()
+    vakapaatokset = serializers.IntegerField()
+    lapset = serializers.IntegerField()
+    maksutiedot = serializers.IntegerField()
+    kielipainotukset = serializers.IntegerField()
+    toiminnalliset_painotukset = serializers.IntegerField()

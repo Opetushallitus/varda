@@ -1,14 +1,17 @@
 import datetime
 import math
 
+from django.db.models import Q
 from rest_framework import permissions
 from rest_framework.mixins import ListModelMixin
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-from varda.models import Henkilo, Varhaiskasvatuspaatos, Z2_Koodisto
-from varda.permissions import CustomReportingViewAccess
-from varda.serializers_reporting import KelaRaporttiSerializer, KoodistoSerializer
 
+from varda.enums.ytj import YtjYritysmuoto
+from varda.models import (Henkilo, KieliPainotus, Lapsi, Maksutieto, ToiminnallinenPainotus, Toimipaikka,
+                          VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z2_Koodisto)
+from varda.permissions import CustomReportingViewAccess
+from varda.serializers_reporting import KelaRaporttiSerializer, KoodistoSerializer, TiedonsiirtotilastoSerializer
 
 """
 Query-results for reports
@@ -36,7 +39,7 @@ class KelaRaporttiViewSet(GenericViewSet, ListModelMixin):
             ikavuosia = (now.date() - henkilo.syntyma_pvm).days / 365.2425
             vuosia = math.floor(ikavuosia)
             kuukausia = math.floor((ikavuosia - vuosia) * 12)
-            ika = "%d vuotta, %d kuukautta" % (vuosia, kuukausia)
+            ika = '%d vuotta, %d kuukautta' % (vuosia, kuukausia)
             if vakapaatos.paattymis_pvm:
                 if (now.date() - vakapaatos.paattymis_pvm).days > 0:
                     varhaiskasvatuksessa = False
@@ -45,16 +48,16 @@ class KelaRaporttiViewSet(GenericViewSet, ListModelMixin):
             else:
                 varhaiskasvatuksessa = True
             lapsen_tiedot = {
-                "henkilotunnus": henkilo.henkilotunnus,
-                "etunimet": henkilo.etunimet,
-                "sukunimi": henkilo.sukunimi,
-                "ika": ika,
-                "postinumero": henkilo.postinumero,
-                "kotikunta_koodi": henkilo.kotikunta_koodi,
-                "vaka_paatos_alkamis_pvm": vakapaatos.alkamis_pvm,
-                "vaka_paatos_paattymis_pvm": vakapaatos.paattymis_pvm,
-                "varhaiskasvatuksessa": varhaiskasvatuksessa,
-                "vaka_paatos_muutos_pvm": vakapaatos.muutos_pvm
+                'henkilotunnus': henkilo.henkilotunnus,
+                'etunimet': henkilo.etunimet,
+                'sukunimi': henkilo.sukunimi,
+                'ika': ika,
+                'postinumero': henkilo.postinumero,
+                'kotikunta_koodi': henkilo.kotikunta_koodi,
+                'vaka_paatos_alkamis_pvm': vakapaatos.alkamis_pvm,
+                'vaka_paatos_paattymis_pvm': vakapaatos.paattymis_pvm,
+                'varhaiskasvatuksessa': varhaiskasvatuksessa,
+                'vaka_paatos_muutos_pvm': vakapaatos.muutos_pvm
             }
             lapsien_tiedot.append(lapsen_tiedot)
         return lapsien_tiedot
@@ -78,25 +81,117 @@ class KoodistoViewSet(GenericViewSet, ListModelMixin):
     def get_queryset(self):
         koodisto = Z2_Koodisto.objects.filter(pk=1)[0]
         koodit = {
-            "kunta_koodit": koodisto.kunta_koodit,
-            "kieli_koodit": koodisto.kieli_koodit,
-            "jarjestamismuoto_koodit": koodisto.jarjestamismuoto_koodit,
-            "toimintamuoto_koodit": koodisto.toimintamuoto_koodit,
-            "kasvatusopillinen_jarjestelma_koodit": koodisto.kasvatusopillinen_jarjestelma_koodit,
-            "toiminnallinen_painotus_koodit": koodisto.toiminnallinen_painotus_koodit,
-            "tutkintonimike_koodit": koodisto.tutkintonimike_koodit,
-            "tyosuhde_koodit": koodisto.tyosuhde_koodit,
-            "tyoaika_koodit": koodisto.tyoaika_koodit,
-            "tyotehtava_koodit": koodisto.tyotehtava_koodit,
-            "sukupuoli_koodit": koodisto.sukupuoli_koodit,
-            "opiskeluoikeuden_tila_koodit": koodisto.opiskeluoikeuden_tila_koodit,
-            "tutkinto_koodit": koodisto.tutkinto_koodit
+            'kunta_koodit': koodisto.kunta_koodit,
+            'kieli_koodit': koodisto.kieli_koodit,
+            'jarjestamismuoto_koodit': koodisto.jarjestamismuoto_koodit,
+            'toimintamuoto_koodit': koodisto.toimintamuoto_koodit,
+            'kasvatusopillinen_jarjestelma_koodit': koodisto.kasvatusopillinen_jarjestelma_koodit,
+            'toiminnallinen_painotus_koodit': koodisto.toiminnallinen_painotus_koodit,
+            'tutkintonimike_koodit': koodisto.tutkintonimike_koodit,
+            'tyosuhde_koodit': koodisto.tyosuhde_koodit,
+            'tyoaika_koodit': koodisto.tyoaika_koodit,
+            'tyotehtava_koodit': koodisto.tyotehtava_koodit,
+            'sukupuoli_koodit': koodisto.sukupuoli_koodit,
+            'opiskeluoikeuden_tila_koodit': koodisto.opiskeluoikeuden_tila_koodit,
+            'tutkinto_koodit': koodisto.tutkinto_koodit
         }
         return koodit
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         return Response(queryset)
+
+
+class TiedonsiirtotilastoViewSet(GenericViewSet, ListModelMixin):
+    """
+    list:
+    Nouda raportti tiedonsiirtojen tilanteesta (toimijat, toimipaikat, lapset, päätökset, suhteet, maksutiedot,
+    kielipainotukset ja toiminnalliset painotukset) eroteltuna kunnallisesti ja yksityisesti
+
+    filter:
+    kunnat palauttaa tiedot kunnallisesta (true) tai yksityisestä varhaiskasvatuksesta (false)
+    esim. /?kunnat=true
+    """
+    queryset = None
+    serializer_class = TiedonsiirtotilastoSerializer
+    permission_classes = (permissions.IsAdminUser, )
+
+    kunnallinen = [YtjYritysmuoto.KUNTA.name, YtjYritysmuoto.KUNTAYHTYMA.name]
+
+    def get_vakatoimijat(self, kunnat_filter):
+        if kunnat_filter is None:
+            return VakaJarjestaja.objects.all()
+        elif kunnat_filter:
+            return VakaJarjestaja.objects.filter(yritysmuoto__in=self.kunnallinen)
+        else:
+            return VakaJarjestaja.objects.exclude(yritysmuoto__in=self.kunnallinen)
+
+    def get_toimipaikat(self, vakatoimijat):
+        return Toimipaikka.objects.filter(vakajarjestaja__in=vakatoimijat)
+
+    """
+    Ei oteta toimipaikkojen määrään mukaan ns. dummy-toimipaikkoja
+    """
+    def get_toimipaikat_ei_dummy_paos(self, vakatoimijat):
+        return Toimipaikka.objects.filter(~Q(nimi__icontains='Palveluseteli ja ostopalvelu') &
+                                          Q(vakajarjestaja__in=vakatoimijat))
+
+    def get_vakasuhteet(self, toimipaikat):
+        return Varhaiskasvatussuhde.objects.filter(toimipaikka__in=toimipaikat)
+
+    def get_vakapaatokset(self, vakasuhteet):
+        vakasuhde_id_list = vakasuhteet.values_list('varhaiskasvatuspaatos', flat=True)
+        return Varhaiskasvatuspaatos.objects.filter(id__in=vakasuhde_id_list)
+
+    def get_lapset(self, vakapaatokset):
+        vakapaatos_id_list = vakapaatokset.values_list('lapsi', flat=True)
+        return Lapsi.objects.filter(id__in=vakapaatos_id_list).distinct('henkilo__henkilo_oid')
+
+    def get_maksutiedot(self, kunnat_filter):
+        if kunnat_filter is None:
+            return Maksutieto.objects.all()
+        elif kunnat_filter:
+            return Maksutieto.objects.exclude(yksityinen_jarjestaja=True)
+        else:
+            return Maksutieto.objects.filter(yksityinen_jarjestaja=True)
+
+    def get_kielipainotukset(self, toimipaikat):
+        return KieliPainotus.objects.filter(toimipaikka__in=toimipaikat)
+
+    def get_toiminnalliset_painotukset(self, toimipaikat):
+        return ToiminnallinenPainotus.objects.filter(toimipaikka__in=toimipaikat)
+
+    def list(self, request, *args, **kwargs):
+        kunnat_request = self.request.query_params.get('kunnat', None)
+
+        if isinstance(kunnat_request, str):
+            kunnat_request = kunnat_request.lower()
+
+        if kunnat_request == 'true':
+            kunnat_filter = True
+        elif kunnat_request == 'false':
+            kunnat_filter = False
+        else:
+            kunnat_filter = None
+
+        vakatoimijat = self.get_vakatoimijat(kunnat_filter)
+        toimipaikat = self.get_toimipaikat(vakatoimijat)
+        vakasuhteet = self.get_vakasuhteet(toimipaikat)
+        vakapaatokset = self.get_vakapaatokset(vakasuhteet)
+
+        stats = {
+            'vakatoimijat': vakatoimijat.count(),
+            'toimipaikat': self.get_toimipaikat_ei_dummy_paos(vakatoimijat).count(),
+            'vakasuhteet': vakasuhteet.count(),
+            'vakapaatokset': vakapaatokset.count(),
+            'lapset': self.get_lapset(vakapaatokset).count(),
+            'maksutiedot': self.get_maksutiedot(kunnat_filter).count(),
+            'kielipainotukset': self.get_kielipainotukset(toimipaikat).count(),
+            'toiminnalliset_painotukset': self.get_toiminnalliset_painotukset(toimipaikat).count()
+        }
+
+        serializer = self.get_serializer(stats)
+        return Response(serializer.data)
 
 
 """

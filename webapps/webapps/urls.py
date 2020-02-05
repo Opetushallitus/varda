@@ -142,6 +142,8 @@ router_onr.register(r'external-permissions', viewsets.ExternalPermissionsViewSet
 
 router_reporting = routers.DefaultRouter()
 router_reporting.register(r'kelaraportti', viewsets_reporting.KelaRaporttiViewSet, 'kelaraportti')
+# /reporting/api/v1/tiedonsiirtotilasto/?kunnat=<true/false> (optional filter)
+router_reporting.register(r'tiedonsiirtotilasto', viewsets_reporting.TiedonsiirtotilastoViewSet, basename="tiedonsiirtotilasto")
 """
 router_reporting.register(r'lapset-ryhmittain', viewsets_reporting.LapsetRyhmittainViewSet, 'lapset-ryhmittain')
 """
