@@ -22,7 +22,20 @@ The maximum batch size is 1 048 576 bytes
 """
 AWS_LOG_BATCH_MAX_SIZE = 10000
 AWS_LOG_BATCH_MAX_BYTES = 1048576
+AWS_OVERHEAD_IN_BYTES_PER_EVENT = 26
 TWENTY_FOUR_HOURS_IN_MS = 1000 * 60 * 60 * 24
+
+
+def get_batch_size_in_bytes(audit_log_batch):
+    """
+    https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_PutLogEvents.html
+
+    The maximum batch size is 1,048,576 bytes, and this size is calculated as the
+    sum of all event messages in UTF-8, plus 26 bytes for each log event.
+
+    Note: sys.getsizeof measures list data structure size not actual json string size
+    """
+    return sys.getsizeof(audit_log_batch) + len(audit_log_batch) * AWS_OVERHEAD_IN_BYTES_PER_EVENT
 
 
 def get_batch_end_index_size_bytes(audit_log_events, start_index):
@@ -40,8 +53,8 @@ def get_batch_end_index_size_bytes(audit_log_events, start_index):
         else:
             audit_log_batch = audit_log_events[start_index:end_index]
 
-        # Note: This measures list data structure size not actual json string size
-        if sys.getsizeof(audit_log_batch) > AWS_LOG_BATCH_MAX_BYTES:
+        batch_size_in_bytes = get_batch_size_in_bytes(audit_log_batch)
+        if batch_size_in_bytes > AWS_LOG_BATCH_MAX_BYTES:
             if batch_size > 1000:
                 batch_size -= 1000
             elif 100 < batch_size <= 1000:
