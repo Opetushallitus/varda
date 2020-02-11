@@ -34,7 +34,6 @@ export class VardaDashboardComponent implements OnInit {
 
   constructor(
     private translateService: TranslateService,
-    private titleService: Title,
     private vardaApiService: VardaApiService,
     private authService: AuthService,
     private loginService: LoginService,
@@ -139,12 +138,12 @@ export class VardaDashboardComponent implements OnInit {
         error: this.onGetToimipaikatError.bind(this)},
     );
 
-    this.translateService.get(['label.varda-dashboard', 'cookie.message']).subscribe((translations) => {
+    this.translateService.get(['cookie.message']).subscribe((translations) => {
       this.handleCookies(translations);
     });
 
     this.translateService.onLangChange.pipe(
-      switchMap(() => this.translateService.get(['label.varda-dashboard', 'cookie.message']))
+      switchMap(() => this.translateService.get(['cookie.message']))
     ).subscribe((translations) => {
       this.handleCookies(translations);
     });
@@ -153,7 +152,6 @@ export class VardaDashboardComponent implements OnInit {
   }
 
   private handleCookies(translations) {
-    this.titleService.setTitle(translations['label.varda-dashboard']);
     this.ccService.getConfig().content = this.ccService.getConfig().content || {} ;
     // Override default messages with the translated ones
     this.ccService.getConfig().content.message = translations['cookie.message'];

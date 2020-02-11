@@ -1,11 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Title } from "@angular/platform-browser";
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
 import { Observable, Subscription } from 'rxjs';
 import { VardaVakajarjestaja } from '../../../utilities/models/varda-vakajarjestaja.model';
 import { LoadingHttpService } from 'varda-shared';
 import { PaosToimintaService } from './paos-toiminta.service';
-import { TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../../core/auth/auth.service';
 import { VardaKayttooikeusRoles } from '../../../utilities/models';
 
@@ -25,14 +23,9 @@ export class VardaPaosManagementContainerComponent implements OnInit, OnDestroy 
   constructor(private vakajarjestajaService: VardaVakajarjestajaService,
     private loadingHttpService: LoadingHttpService,
     private authService: AuthService,
-    private titleService: Title,
-    private translate: TranslateService,
     private paosToimintaService: PaosToimintaService) { }
 
   ngOnInit() {
-    this.translate.get('label.paos-management.topic').subscribe(title =>
-      this.titleService.setTitle(`${title} - Varda`)
-    );
     this.isVardaPaakayttaja = this.authService.isCurrentUserSelectedVakajarjestajaRole(VardaKayttooikeusRoles.VARDA_PAAKAYTTAJA)
     this.selectedVakajarjestaja = new VardaVakajarjestaja();
     this.errorMessage$ = this.paosToimintaService.errorMessage$;
@@ -54,8 +47,6 @@ export class VardaPaosManagementContainerComponent implements OnInit, OnDestroy 
   }
 
   ngOnDestroy(): void {
-    /* TODO: CSCVARDA-1491 -- poista kun title käytössä muuallakin */
-    this.titleService.setTitle(`Varda`);
     this.vakajarjestajaSubscription.unsubscribe();
   }
 

@@ -4,16 +4,19 @@ import os
 from django.db import migrations
 
 
+os_name = os.getenv('VARDA_MIGRATION_OS_OVERRIDE', os.name)
+
+
 def get_locale_name():
     # Windows uses utf8 with any locale in postgres
-    if os.name == 'nt':
+    if os_name == 'nt':
         return 'fi-FI'
     return 'fi_FI.utf8'
 
 
 def get_old_collation_name():
     # Windows uses utf8 with any locale in postgres
-    if os.name == 'nt':
+    if os_name == 'nt':
         return 'default'
     return 'en_US.utf8'
 

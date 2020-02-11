@@ -140,6 +140,7 @@ DATABASES = {
         'USER': os.getenv('POSTGRESQL_USER', 'varda_admin'),
         'PASSWORD': os.getenv('POSTGRESQL_PASSWORD', 'localhero'),
         'HOST': os.getenv('POSTGRESQL_SERVICE_HOST', 'localhost'),
+        'PORT': os.getenv('POSTGRESQL_SERVICE_PORT', '5432'),
         'TEST': {
             'NAME': get_test_db_name(),
         },

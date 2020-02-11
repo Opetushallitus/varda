@@ -12,8 +12,8 @@ import {
   VardaInstructionsComponent,
   VardaVakatoimijaComponent
 } from '../utilities/components';
-import {VardaHakuContainerComponent} from './components/varda-haku-container/varda-haku-container.component';
-import {VardaPaosManagementContainerComponent} from './components/varda-paos-management-container/varda-paos-management-container.component';
+import { VardaHakuContainerComponent } from './components/varda-haku-container/varda-haku-container.component';
+import { VardaPaosManagementContainerComponent } from './components/varda-paos-management-container/varda-paos-management-container.component';
 
 const routes: Routes = [
   {
@@ -21,21 +21,62 @@ const routes: Routes = [
     component: VardaDashboardComponent,
     canActivate: [AuthGuard],
     children: [
-      { path: '', component: VardaMainFrameComponent },
-      { path: 'vakatoimija', component: VardaVakatoimijaComponent },
-      { path: 'haku', component: VardaHakuContainerComponent },
-      { path: 'tietojen-katselu', component: VardaReportingComponent },
-      { path: 'ohjeet', component: VardaInstructionsComponent },
-      { path: 'ohjeet/:instructionName', component: VardaInstructionsComponent },
-      { path: 'paos-hallinta', component: VardaPaosManagementContainerComponent },
-    ]},
-  { path: 'login', component: VardaLoginComponent},
-  { path: 'logout', component: VardaLogoutComponent},
-  { path: '**', component: PageNotFoundComponent }
+      {
+        path: '',
+        component: VardaMainFrameComponent,
+        data: { title: 'label.navi.syotto' }
+      },
+      {
+        path: 'vakatoimija',
+        component: VardaVakatoimijaComponent,
+        data: { title: "label.varhaiskasvatustoimija" }
+      },
+      {
+        path: 'haku',
+        component: VardaHakuContainerComponent,
+        data: { title: 'label.navi.haku' }
+      },
+      {
+        path: 'tietojen-katselu',
+        component: VardaReportingComponent,
+        data: { title: 'label.navi.tietojen-katselu' }
+      },
+      {
+        path: 'ohjeet',
+        component: VardaInstructionsComponent,
+        data: { title: 'label.ohjeet' }
+      },
+      {
+        path: 'ohjeet/:instructionName',
+        component: VardaInstructionsComponent,
+        data: { title: 'label.ohjeet' }
+      },
+      {
+        path: 'paos-hallinta',
+        component: VardaPaosManagementContainerComponent,
+        data: { title: 'ohjeet.lisaaminen-ja-muokkaaminen.paos-hallinta' }
+      },
+    ]
+  },
+  {
+    path: 'login',
+    component: VardaLoginComponent,
+    data: { title: 'label.login' }
+  },
+  {
+    path: 'logout',
+    component: VardaLogoutComponent,
+    data: { title: 'label.logout' }
+  },
+  {
+    path: '**',
+    component: PageNotFoundComponent,
+    data: { title: 'page-not-found.page-not-found' }
+  }
 ];
 @NgModule({
-  imports: [ RouterModule.forChild(routes) ],
-  exports: [ RouterModule ]
+  imports: [RouterModule.forChild(routes)],
+  exports: [RouterModule]
 })
 
-export class VardaRoutingModule {}
+export class VardaRoutingModule { }

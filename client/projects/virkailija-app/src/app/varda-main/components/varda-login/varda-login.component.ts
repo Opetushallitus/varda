@@ -1,6 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { Title } from '@angular/platform-browser';
-import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-varda-login',
@@ -9,11 +7,7 @@ import { TranslateService } from '@ngx-translate/core';
 })
 export class VardaLoginComponent implements OnInit {
 
-  constructor(private titleService: Title, private translateService: TranslateService) {}
+  constructor() {}
 
-  ngOnInit() {
-    this.translateService.get('label.varda-login').subscribe((translation) => {
-      this.titleService.setTitle(translation);
-    });
-  }
+  ngOnInit() {}
 }
