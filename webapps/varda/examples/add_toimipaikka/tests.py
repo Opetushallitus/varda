@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 from django.test import LiveServerTestCase
 
@@ -21,7 +22,7 @@ class AddXToimipaikkaaTests(LiveServerTestCase):
         9/10 successful is correct because 1 same Toimipaikka is included in the load_testing_data() already.
         """
         self.assertEqual(subprocess.check_output(
-            ["python", "varda/examples/add_toimipaikka/add_x_toimipaikkaa.py", "--input", "varda/examples/add_toimipaikka/10_toimipaikkaa.json"])
+            [sys.executable, "varda/examples/add_toimipaikka/add_x_toimipaikkaa.py", "--input", "varda/examples/add_toimipaikka/10_toimipaikkaa.json"])
             .decode('ascii', 'ignore')
-            .split('\n', 1)[0],
+            .split(os.linesep, 1)[0],
             "Successful POST-requests: 0 / 10")  # TODO: Original: 9/10; Fix this when Org.palvelu-mocking is done!
