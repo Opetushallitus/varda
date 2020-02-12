@@ -365,18 +365,15 @@ def fetch_lapsen_huoltajat(lapsi_id):
             lapsi_obj.huoltajuussuhteet.update(voimassa_kytkin=False)
             for huoltaja in reply_json:
                 huoltaja_master_data = get_henkilo_data_by_oid(huoltaja["oidHenkilo"])
+                # Oid should be used alone as unique identifier in query since hetu can change
                 oid = huoltaja_master_data["oidHenkilo"]
-                henkilotunnus = huoltaja_master_data.get("hetu", "") or ""
                 default_henkilo = {
                     'henkilo_oid': oid,
                     'changed_by': lapsi_obj.changed_by,
                 }
-                huoltaja_query = Q(henkilo_oid=oid)
-                if henkilotunnus != "":
-                    huoltaja_query = (huoltaja_query | Q(henkilotunnus_unique_hash=hash_string(henkilotunnus)))
                 # Create henkilo stub
                 henkilo_huoltaja_obj, henkilo_huoltaja_created = (Henkilo.objects.select_for_update(nowait=True)
-                                                                  .filter(huoltaja_query)
+                                                                  .filter(henkilo_oid=oid)
                                                                   .get_or_create(defaults=default_henkilo)
                                                                   )
                 # Update henkilo

@@ -251,7 +251,7 @@ class TestOppijanumerorekisteriLogic(TestCase):
         self.assertEqual(all_huoltajat_before + 1, all_huoltajat_after)
 
     @responses.activate
-    def test_update_huoltajuussuhde_does_not_create_multiple_when_oid_changes(self):
+    def test_update_huoltajuussuhde_does_not_create_multiple_when_huoltaja_oid_changes(self):
         responses.add(responses.GET,
                       'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/huoltajasuhdemuutokset',
                       json=['1.2.246.562.24.6815981182311', '1.2.246.562.24.49084901393'],
@@ -272,3 +272,22 @@ class TestOppijanumerorekisteriLogic(TestCase):
         oppijanumerorekisteri.update_huoltajuussuhteet()
         all_huoltajat_after = Huoltaja.objects.all().count()
         self.assertEqual(all_huoltajat_before + 1, all_huoltajat_after)
+
+    @responses.activate
+    def test_update_huoltajuussuhde_not_create_duplicate_when_existing_huoltaja_hetu_changes(self):
+        responses.add(responses.GET,
+                      'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/huoltajasuhdemuutokset',
+                      json=['1.2.246.562.24.6815981182311'],
+                      status=status.HTTP_200_OK
+                      )
+        responses.add(responses.GET, 'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/1.2.246.562.24.6815981182311/huoltajat',
+                      json=[{"etunimet": "Arpa", "sukunimi": "Kuutio", "kutsumanimi": "Arpa", "oidHenkilo": "1.2.3.4.5"}],
+                      status=status.HTTP_200_OK
+                      )
+        responses.add(responses.GET, 'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/1.2.3.4.5/master',
+                      json={"etunimet": "Arpa", "sukunimi": "Kuutio", "kutsumanimi": "Arpa", "oidHenkilo": '1.2.987654321', "hetu": 'newHetu'},
+                      status=status.HTTP_200_OK)
+        all_huoltajat_before = Huoltaja.objects.all().count()
+        oppijanumerorekisteri.update_huoltajuussuhteet()
+        all_huoltajat_after = Huoltaja.objects.all().count()
+        self.assertEqual(all_huoltajat_before, all_huoltajat_after)
