@@ -1732,13 +1732,15 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
 
         self.validate_paivamaarat_varhaiskasvatussuhde_toimipaikka(validated_data, toimipaikka_obj.paattymis_pvm)
         if not validators.validate_paivamaara1_before_paivamaara2(varhaiskasvatuspaatos_obj.alkamis_pvm, validated_data['alkamis_pvm'], can_be_same=True):
-            raise ValidationError({'alkamis_pvm': ['varhaiskasvatussuhde.alkamis_pvm must be after varhaiskasvatuspaatos.alkamis_pvm']})
+            raise ValidationError({'alkamis_pvm': ['varhaiskasvatussuhde.alkamis_pvm must be after varhaiskasvatuspaatos.alkamis_pvm (or same)']})
+        if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], varhaiskasvatuspaatos_obj.paattymis_pvm, can_be_same=True):
+            raise ValidationError({'alkamis_pvm': ['varhaiskasvatussuhde.alkamis_pvm must be before varhaiskasvatuspaatos.paattymis_pvm (or same)']})
 
         if 'paattymis_pvm' in validated_data:
             if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm'], can_be_same=True):
                 raise ValidationError({'paattymis_pvm': ['paattymis_pvm must be after alkamis_pvm (or same)']})
             if not validators.validate_paivamaara1_before_paivamaara2(validated_data['paattymis_pvm'], varhaiskasvatuspaatos_obj.paattymis_pvm, can_be_same=True):
-                raise ValidationError({'paattymis_pvm': ['varhaiskasvatuspaatos.paattymis_pvm must be after varhaiskasvatussuhde.paattymis_pvm']})
+                raise ValidationError({'paattymis_pvm': ['varhaiskasvatuspaatos.paattymis_pvm must be after varhaiskasvatussuhde.paattymis_pvm (or same)']})
         related_object_validations.check_overlapping_varhaiskasvatus_object(validated_data, Varhaiskasvatussuhde)
         self.validate_lapsi_not_under_different_vakajarjestaja(lapsi_obj, vakajarjestaja_obj)
 
@@ -1810,7 +1812,9 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("User does not have permissions to change this object.")
 
         if not validators.validate_paivamaara1_before_paivamaara2(varhaiskasvatuspaatos_obj.alkamis_pvm, validated_data['alkamis_pvm'], can_be_same=True):
-            raise ValidationError({"alkamis_pvm": ["varhaiskasvatussuhde.alkamis_pvm must be after varhaiskasvatuspaatos.alkamis_pvm"]})
+            raise ValidationError({"alkamis_pvm": ["varhaiskasvatussuhde.alkamis_pvm must be after varhaiskasvatuspaatos.alkamis_pvm (or same)"]})
+        if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], varhaiskasvatuspaatos_obj.paattymis_pvm, can_be_same=True):
+            raise ValidationError({"alkamis_pvm": ["varhaiskasvatussuhde.alkamis_pvm must be before varhaiskasvatuspaatos.paattymis_pvm (or same)"]})
 
         if "varhaiskasvatuspaatos" in validated_data and varhaiskasvatussuhde_obj.varhaiskasvatuspaatos != validated_data["varhaiskasvatuspaatos"]:
             raise ValidationError({"varhaiskasvatuspaatos": ["Changing of varhaiskasvatuspaatos is not allowed"]})
