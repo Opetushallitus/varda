@@ -12,8 +12,8 @@ UI serializers
 class VakaJarjestajaUiSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = VakaJarjestaja
-        fields = ('nimi', 'id', 'organisaatio_oid', 'kunnallinen_kytkin')
-        read_only_fields = ('nimi', 'id', 'organisaatio_oid', 'kunnallinen_kytkin')
+        fields = ('nimi', 'id', 'organisaatio_oid', 'kunnallinen_kytkin', 'y_tunnus')
+        read_only_fields = ('nimi', 'id', 'organisaatio_oid', 'kunnallinen_kytkin', 'y_tunnus')
 
     @caching_to_representation('vakajarjestaja-ui')
     def to_representation(self, instance):

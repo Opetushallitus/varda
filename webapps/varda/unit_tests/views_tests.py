@@ -2617,25 +2617,29 @@ class VardaViewsTests(TestCase):
                 "nimi": "Frontti organisaatio",
                 "id": 4,
                 "organisaatio_oid": "1.2.246.562.10.93957375484",
-                "kunnallinen_kytkin": True
+                "kunnallinen_kytkin": True,
+                "y_tunnus": "2156233-6"
             },
             {
                 "nimi": "Tester2 organisaatio",
                 "id": 1,
                 "organisaatio_oid": "1.2.246.562.10.34683023489",
-                "kunnallinen_kytkin": True
+                "kunnallinen_kytkin": True,
+                "y_tunnus": "8500570-7"
             },
             {
                 "nimi": "Tester organisaatio",
                 "id": 2,
                 "organisaatio_oid": "1.2.246.562.10.93957375488",
-                "kunnallinen_kytkin": False
+                "kunnallinen_kytkin": False,
+                "y_tunnus": "1825748-8"
             },
             {
                 "nimi": "varda-testi organisaatio",
                 "id": 3,
                 "organisaatio_oid": "1.2.246.562.10.93957375486",
-                "kunnallinen_kytkin": False
+                "kunnallinen_kytkin": False,
+                "y_tunnus": "2617455-1"
             }
         ]
         self.assertCountEqual(json.loads(resp.content), admin_vakajarjestajat)
