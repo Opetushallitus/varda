@@ -361,7 +361,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp2 = client.post('/api/v1/henkilot/', henkilo)
-        self.assertEqual(resp2.status_code, 409)
+        self.assertEqual(resp2.status_code, 200)
         self.assertEqual(json.loads(resp2.content), expected_response)
 
     def test_api_push_non_unique_henkilo_etunimi_correct_sukunimi_wrong_small_letters(self):
@@ -384,7 +384,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp2 = client.post('/api/v1/henkilot/', henkilo)
-        self.assertEqual(resp2.status_code, 409)
+        self.assertEqual(resp2.status_code, 200)
         self.assertEqual(json.loads(resp2.content), expected_response)
 
     def test_api_push_non_unique_henkilo_etunimi_wrong_sukunimi_correct(self):
@@ -407,7 +407,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp2 = client.post('/api/v1/henkilot/', henkilo)
-        self.assertEqual(resp2.status_code, 409)
+        self.assertEqual(resp2.status_code, 200)
         self.assertEqual(json.loads(resp2.content), expected_response)
 
     def test_api_push_non_unique_henkilo_etunimi_wrong_sukunimi_correct_small_letters(self):
@@ -430,7 +430,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp2 = client.post('/api/v1/henkilot/', henkilo)
-        self.assertEqual(resp2.status_code, 409)
+        self.assertEqual(resp2.status_code, 200)
         self.assertEqual(json.loads(resp2.content), expected_response)
 
     def test_api_push_non_unique_henkilo_etunimi_wrong_sukunimi_wrong(self):
@@ -553,7 +553,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        self.assertEqual(resp.status_code, 409)
+        self.assertEqual(resp.status_code, 200)
         self.assertEqual(json.loads(resp.content), expected_response)
 
     def test_api_push_henkilo_oid_etunimi_wrong_sukunimi_correct(self):
@@ -576,7 +576,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        self.assertEqual(resp.status_code, 409)
+        self.assertEqual(resp.status_code, 200)
         self.assertEqual(json.loads(resp.content), expected_response)
 
     def test_api_push_henkilo_oid_etunimi_wrong_sukunimi_wrong(self):

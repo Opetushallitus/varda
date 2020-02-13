@@ -995,7 +995,7 @@ class HenkiloViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
         henkilo_etunimet_list = henkilo.etunimet.split(" ")
         henkilo_etunimet_list_lowercase = [x.lower() for x in henkilo_etunimet_list]
         if set(etunimet_list_lowercase) & set(henkilo_etunimet_list_lowercase) or sukunimi.lower() == henkilo.sukunimi.lower():
-            raise ConflictError(self.get_serializer(henkilo).data)
+            raise ConflictError(self.get_serializer(henkilo).data, status_code=status.HTTP_200_OK)
         else:
             raise ValidationError({"detail": "Person data does not match with the entered data"})
 
@@ -1017,7 +1017,7 @@ class HenkiloViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
             """
             We are ready to create a new henkilo, let's first create a unique hash so that we are sure every
             henkilotunnus exists in the DB only once, and definately not more often.
-            Return HTTP 409 if henkilo already exists in DB.
+            Return HTTP 200 if henkilo already exists in DB.
             After that, let's encrypt henkilotunnus due to security reasons.
             """
             henkilotunnus_unique_hash = hash_string(henkilotunnus)
@@ -1031,13 +1031,14 @@ class HenkiloViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
                 self.validate_henkilo_uniqueness_henkilotunnus(hash_string(henkilo_data["hetu"]), etunimet, sukunimi)
                 henkilotunnus_unique_hash = hash_string(henkilo_data["hetu"])
                 henkilotunnus_encrypted = encrypt_henkilotunnus(henkilo_data["hetu"])
+                serializer.validated_data['henkilo_oid'] = henkilo_data.get('oidHenkilo', None)
 
             serializer.validated_data["henkilotunnus_unique_hash"] = henkilotunnus_unique_hash
             serializer.validated_data["henkilotunnus"] = henkilotunnus_encrypted
 
         else:  # "henkilo_oid" in validated_data
             validators.validate_henkilo_oid(henkilo_oid)
-            self.validate_henkilo_uniqueness_oid(henkilo_oid, etunimet, sukunimi)  # checking we don't have this henkilo already (return HTTP 409 if so)
+            self.validate_henkilo_uniqueness_oid(henkilo_oid, etunimet, sukunimi)  # checking we don't have this henkilo already (return HTTP 200 if so)
             henkilo_data = get_henkilo_data_by_oid(henkilo_oid)
 
         self.validate_henkilo_data(henkilo_data)

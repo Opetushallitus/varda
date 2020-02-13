@@ -42,7 +42,7 @@ class VardaHenkiloViewSetTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        self.assertEqual(resp.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual('1.2.987654321', resp.json()["henkilo_oid"])
 
         henkilo_count = Henkilo.objects.filter(henkilo_oid='1.2.987654321').count()
@@ -63,7 +63,7 @@ class VardaHenkiloViewSetTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        self.assertEqual(resp.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual('1.2.987654321', resp.json()["henkilo_oid"])
 
         henkilo_count = Henkilo.objects.filter(henkilo_oid='1.2.987654321').count()
