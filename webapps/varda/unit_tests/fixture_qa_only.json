@@ -1,6 +1,42 @@
 [
   {
     "model": "auth.user",
+    "pk": 1,
+    "fields": {
+      "password": "!rdZXlJWhEGKJPy4bkZzd5vaaQ3A7YqYnhuIiself",
+      "last_login": null,
+      "is_superuser": false,
+      "username": "anonymous",
+      "first_name": "",
+      "last_name": "",
+      "email": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2020-02-05T08:36:04.980Z",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 2,
+    "fields": {
+      "password": "pbkdf2_sha256$150000$ikCYVXfbE0rM$Nlh+fJ8CHNOI4tSFyOwdraKoLlv+XT8BjHNWKr6Nlic=",
+      "last_login": "2020-02-05T10:39:19.522Z",
+      "is_superuser": true,
+      "username": "credadmin",
+      "first_name": "",
+      "last_name": "",
+      "email": "",
+      "is_staff": true,
+      "is_active": true,
+      "date_joined": "2020-02-05T08:36:05.195Z",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "auth.user",
     "pk": 3,
     "fields": {
       "password": "",

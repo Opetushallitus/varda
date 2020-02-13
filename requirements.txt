@@ -4,7 +4,7 @@ celery==4.4.0  # BSD-license
 coreapi==2.3.3  # BSD-license
 coreschema==0.0.4  # BSD-license
 cryptography==2.8  # BSD-license
-Django==2.2.9  # BSD-license
+Django==2.2.10  # BSD-license
 django-cas-ng==3.6.0  # BSD-license
 django-celery-beat==1.5.0  # BSD-license
 django-celery-results==1.1.2  # BSD-license
@@ -13,6 +13,7 @@ django-crispy-forms==1.8.1  # MIT-license
 django-csp==3.5  # BSD-license
 django-filter==2.2.0  # BSD-license
 django-guardian==1.5.1  # BSD-license
+django-pg-bulk-update==3.2.4  # BSD-license
 django-pylibmc==0.6.1  # BSD-license
 django-ratelimit==2.0.0  # Apache 2.0-license
 django-rest-swagger==2.2.0  # FreeBSD-license

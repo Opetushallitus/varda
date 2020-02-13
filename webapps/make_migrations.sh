@@ -15,12 +15,7 @@ then
 
   python manage.py makemigrations
   python manage.py migrate
-
-  python manage.py populate_history --auto
-
   python manage.py loaddata varda/unit_tests/fixture_basics.json
-  python manage.py load_test_data
-
   django-admin compilemessages  # To compile translation-messages (.mo files)
 
 fi

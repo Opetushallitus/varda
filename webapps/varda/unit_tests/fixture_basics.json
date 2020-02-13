@@ -8,13 +8,6 @@
     }
   },
   {
-    "model": "varda.z1_ophauthentication",
-    "pk": 1,
-    "fields": {
-      "ticketing_granting_ticket": ""
-    }
-  },
-  {
     "model": "django_celery_beat.intervalschedule",
     "pk": 1,
     "fields": {

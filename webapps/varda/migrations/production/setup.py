@@ -159,7 +159,7 @@ def load_paos_permissions():
 def load_initial_users():
     from django.contrib.auth.models import User
     User.objects.create(username='credadmin',
-                        password='pbkdf2_sha256$120000$Eo2P1ZkloMPY$AeIuRfQqZcr/aDIbUkkNfMsJR4dMPp+qaCgWLa7v4GQ=',
+                        password='pbkdf2_sha256$150000$ikCYVXfbE0rM$Nlh+fJ8CHNOI4tSFyOwdraKoLlv+XT8BjHNWKr6Nlic=',
                         is_superuser=True,
                         is_staff=True)
 

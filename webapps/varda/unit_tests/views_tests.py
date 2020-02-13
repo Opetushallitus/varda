@@ -1164,7 +1164,7 @@ class VardaViewsTests(TestCase):
             "detail": "A server error occurred. Team is investigating this."
         }
         post_data = {
-            "personOidsForSamePerson": ["1.2.246.562.24.49084901393", "1.2.246.562.24.47279942650"],
+            "personOidsForSamePerson": ["1.2.246.562.24.49084901392", "1.2.246.562.24.47279942650"],
             "organisationOids": ["string"],
             "loggedInUserRoles": ["string"],
             "loggedInUserOid": "1.2.345678910"
@@ -1336,7 +1336,7 @@ class VardaViewsTests(TestCase):
                 {
                     "etunimet": "Tuula-Testi",
                     "sukunimi": "Vanhanen",
-                    "henkilo_oid": "1.2.246.562.24.49084901393",
+                    "henkilo_oid": "1.2.246.562.24.49084901392",
                     "syntyma_pvm": "1934-03-17",
                     "lapsi_id": 3,
                     "lapsi_url": "http://testserver/api/v1/lapset/3/"

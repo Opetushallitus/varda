@@ -41,7 +41,7 @@ def get_new_ticketing_granting_ticket(username, password, external_request):
     if r.status_code == 201:  # successful
         ticket = r.headers["Location"]
         if not external_request:  # internal request -> save to DB
-            tgt = Z1_OphAuthentication.objects.get(id=1)
+            tgt = Z1_OphAuthentication.objects.get_or_create(id=1, defaults={'ticketing_granting_ticket': ''})[0]
             tgt.ticketing_granting_ticket = ticket
             tgt.save()
         return ticket
@@ -64,7 +64,7 @@ def get_service_ticket(service_suffix, username, password, external_request):
         if external_request:
             ticket_granting_ticket_location = get_new_ticketing_granting_ticket(username, password, external_request)
         else:
-            tgt = Z1_OphAuthentication.objects.get(id=1)
+            tgt = Z1_OphAuthentication.objects.get_or_create(id=1, defaults={'ticketing_granting_ticket': ''})[0]
             ticket_granting_ticket_location = tgt.ticketing_granting_ticket
             if not ticket_granting_ticket_location.startswith('http'):
                 ticket_granting_ticket_location = get_new_ticketing_granting_ticket(username, password, external_request)
@@ -87,7 +87,7 @@ def get_service_ticket(service_suffix, username, password, external_request):
         """
         Probably TGT is unvalid. Clear the one in DB, and fetch a new one.
         """
-        tgt = Z1_OphAuthentication.objects.get(id=1)
+        tgt = Z1_OphAuthentication.objects.get_or_create(id=1, defaults={'ticketing_granting_ticket': ''})[0]
         tgt.ticketing_granting_ticket = ''
         tgt.save()
         continue
