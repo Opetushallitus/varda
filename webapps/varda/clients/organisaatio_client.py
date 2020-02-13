@@ -30,6 +30,10 @@ def get_organisaatiopalvelu_info(y_tunnus):
     if "ytunnus" not in response.keys():
         logger.warning("Y-tunnus not found from Organisaatiopalvelu: " + y_tunnus)  # TODO: Send an email to VARDA-team?
         return result_info
+    return _parse_organisaatio_data(response, y_tunnus)
+
+
+def _parse_organisaatio_data(response, y_tunnus):
     if 'ytjkieli' in response:
         try:
             kieli = response["ytjkieli"].split('_')[1].split('#')[0]
@@ -40,13 +44,28 @@ def get_organisaatiopalvelu_info(y_tunnus):
     nimi = response['nimi'][kieli]
     kayntios = response["kayntiosoite"]
     postios = response["postiosoite"]
-    result_info = {"result_ok": True, "nimi": nimi, "ytunnus": response["ytunnus"], "organisaatio_oid": response["oid"],
-                   "kunta_koodi": response["kotipaikkaUri"].split("_")[1], "kayntiosoite": kayntios["osoite"],
-                   "kayntiosoite_postinumero": kayntios["postinumeroUri"].split("_")[1], "kayntiosoite_postitoimipaikka": kayntios["postitoimipaikka"],
-                   "postiosoite": postios["osoite"], "postinumero": postios["postinumeroUri"].split("_")[1], "postitoimipaikka": postios["postitoimipaikka"],
-                   "ytjkieli": kieli, "yritysmuoto": YtjYritysmuoto(response['yritysmuoto']).name, "alkamis_pvm": response["alkuPvm"],
-                   "paattymis_pvm": response.get("lakkautusPvm", '')}
-    return result_info
+    try:
+        return {
+            "result_ok": True,
+            "nimi": nimi,
+            "ytunnus": response["ytunnus"],
+            "organisaatio_oid": response["oid"],
+            "kunta_koodi": response["kotipaikkaUri"].split("_")[1],
+            "kayntiosoite": kayntios["osoite"],
+            "kayntiosoite_postinumero": kayntios["postinumeroUri"].split("_")[1],
+            "kayntiosoite_postitoimipaikka": kayntios["postitoimipaikka"],
+            "postiosoite": postios["osoite"],
+            "postinumero": postios["postinumeroUri"].split("_")[1],
+            "postitoimipaikka": postios["postitoimipaikka"],
+            "ytjkieli": kieli,
+            "yritysmuoto": YtjYritysmuoto(response['yritysmuoto']).name,
+            "alkamis_pvm": response["alkuPvm"],
+            "paattymis_pvm": response.get("lakkautusPvm", '')
+        }
+    except ValueError as ve:
+        logger.error('Could not parse organisaatio data for vakajarjestaja {} with cause {}'
+                     .format(response.get("oid") or y_tunnus, ve.__cause__))
+    return {"result_ok": False}
 
 
 def get_parent_oid(child_oid):
