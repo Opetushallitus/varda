@@ -1,6 +1,10 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+## [1.3.5] (18.02.2020)
+- CSCVARDA-1408: Lisätty tarkempi validointi varhaiskasvatussuhteen alkamis_pvm:ään.
+- CSCVARDA-1368: Sivujen otsikoiden ja asetteluiden johdonmukaisuus.
+
 ## [1.3.4] (28.01.2020)
 - Uusi järjestämismuoto jm05
 - Vakajärjestäjän sähköpostiosoitteen validoinnin yhtenäistäminen
