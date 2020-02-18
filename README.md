@@ -3,7 +3,7 @@
 ### Varda is built using the following open source technologies
 - Backend
   * Django web framework (https://www.djangoproject.com/)
-  * Postgreql database (https://www.postgresql.org/)
+  * Postgresql database (https://www.postgresql.org/)
 - Frontend
   * Angular UI framework (https://angular.io/)
 
