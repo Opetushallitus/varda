@@ -15,21 +15,26 @@ class TestUpdateChangedOrganisaatio(TestCase):
 
     @responses.activate
     def test_update_changed_organisaatios(self):
+        oid_with_changes = "1.2.246.562.10.9395737548810"
         responses.add(responses.GET,
                       'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v2/muutetut/oid',
-                      json={"oids": ["1.2.246.562.10.9395737548810"]},
+                      json={"oids": [oid_with_changes]},
                       status=200)
+        # Reuse data defined for another test.
+        # The organization service will fetch data for all organizations using this,
+        # and notice that the response doesn't match what is in the database.
+        # It should then update the data to match what we supplied, and we check to confirm.
         responses.add(responses.POST,
                       'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/findbyoids',
-                      json=[TestFetchAndSaveToimipaikkaData.get_organisaatio_json()],
+                      json=[TestFetchAndSaveToimipaikkaData.get_organisaatio_json(oid=oid_with_changes)],
                       status=200)
         update_all_organisaatio_service_organisations()
 
-        toimipaikka = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548810')
+        toimipaikka = Toimipaikka.objects.get(organisaatio_oid=oid_with_changes)
         self.assertEqual(toimipaikka.vakajarjestaja_id, 2)
         self.assertEqual(toimipaikka.nimi, 'Päiväkoti nallekarhu')
         self.assertEqual(toimipaikka.nimi_sv, '')
-        self.assertEqual(toimipaikka.organisaatio_oid, '1.2.246.562.10.9395737548810')
+        self.assertEqual(toimipaikka.organisaatio_oid, oid_with_changes)
         self.assertEqual(toimipaikka.kayntiosoite, 'Jokukatu 1')
         self.assertEqual(toimipaikka.kayntiosoite_postinumero, '00520')
         self.assertEqual(toimipaikka.kayntiosoite_postitoimipaikka, 'uusi_postitoimipaikka')

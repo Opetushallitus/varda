@@ -10,7 +10,7 @@ from django.db.models import F, DurationField, ExpressionWrapper
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError as ValidationErrorRest
 
-from varda.clients.organisaatio_client import get_organisaatiopalvelu_info, get_y_tunnus, get_parent_oid, \
+from varda.clients.organisaatio_client import get_organisaatiopalvelu_info, get_parent_oid, \
     check_if_toimipaikka_exists_by_name, get_organisaatio, create_organisaatio, update_organisaatio, get_changed_since, \
     get_multiple_organisaatio
 from varda.enums.aikaleima_avain import AikaleimaAvain
@@ -52,7 +52,7 @@ def update_vakajarjestaja(vakajarjestaja, result_organisaatiopalvelu):
     vakajarjestaja_original = copy.deepcopy(vakajarjestaja)
 
     vakajarjestaja.nimi = result_organisaatiopalvelu['nimi']
-    vakajarjestaja.organisaatio_oid = result_organisaatiopalvelu['organisaatio_oid']
+    vakajarjestaja.y_tunnus = result_organisaatiopalvelu.get('ytunnus', '')
     vakajarjestaja.kunta_koodi = result_organisaatiopalvelu['kunta_koodi']
     vakajarjestaja.postiosoite = result_organisaatiopalvelu['postiosoite']
     vakajarjestaja.postinumero = result_organisaatiopalvelu['postinumero']
@@ -95,8 +95,10 @@ def fetch_organisaatio_info(vakajarjestaja_id=None):
         vakajarjestajat = [VakaJarjestaja.objects.get(id=vakajarjestaja_id)]
 
     for vakajarjestaja in vakajarjestajat:
-        y_tunnus = vakajarjestaja.y_tunnus
-        result_organisaatiopalvelu = get_organisaatiopalvelu_info(y_tunnus)
+        organisaatio_oid = vakajarjestaja.organisaatio_oid
+        if organisaatio_oid is None:
+            continue  # TODO: Add error-logging here once every org. in Varda has an organisaatio_oid
+        result_organisaatiopalvelu = get_organisaatiopalvelu_info(organisaatio_oid)
         if result_organisaatiopalvelu['result_ok']:
             update_vakajarjestaja(vakajarjestaja, result_organisaatiopalvelu)
         else:
@@ -104,28 +106,26 @@ def fetch_organisaatio_info(vakajarjestaja_id=None):
 
 
 def create_vakajarjestaja_using_oid(organisaatio_oid, user_id, integraatio_organisaatio=False):
-    y_tunnus = get_y_tunnus(organisaatio_oid)
-    if y_tunnus is not None:
-        try:
-            user = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            logger.error('User does not exist: user_id' + str(user_id))
-            return
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        logger.error('User does not exist: user_id' + str(user_id))
+        return None
 
-        vakajarjestaja_tuple = VakaJarjestaja.objects.get_or_create(y_tunnus=y_tunnus,
-                                                                    defaults={
-                                                                        'changed_by': user,
-                                                                        'integraatio_organisaatio': integraatio_organisaatio
-                                                                    })
-        vajajarjestaja_obj = vakajarjestaja_tuple[0]
-        vakajarjestaja_created = vakajarjestaja_tuple[1]
+    vakajarjestaja_tuple = VakaJarjestaja.objects.get_or_create(organisaatio_oid=organisaatio_oid,
+                                                                defaults={
+                                                                    'changed_by': user,
+                                                                    'integraatio_organisaatio': integraatio_organisaatio
+                                                                })
+    vajajarjestaja_obj = vakajarjestaja_tuple[0]
+    vakajarjestaja_created = vakajarjestaja_tuple[1]
 
-        if vakajarjestaja_created:
-            fetch_organisaatio_info(vakajarjestaja_id=vajajarjestaja_obj.id)
-            create_permission_groups_for_organisaatio(organisaatio_oid)  # New organization, let's create pre-defined permission_groups for it
-            assign_permissions_to_vakajarjestaja_obj(organisaatio_oid)
-        else:
-            logger.warning('Vakajarjestaja was already created with organisaatio-oid: ' + organisaatio_oid)
+    if vakajarjestaja_created:
+        fetch_organisaatio_info(vakajarjestaja_id=vajajarjestaja_obj.id)
+        create_permission_groups_for_organisaatio(organisaatio_oid)  # New organization, let's create pre-defined permission_groups for it
+        assign_permissions_to_vakajarjestaja_obj(organisaatio_oid)
+    else:
+        logger.warning('Vakajarjestaja was already created with organisaatio-oid: ' + organisaatio_oid)
 
 
 def get_vakajarjestaja(organisaatio_oid, user_id):

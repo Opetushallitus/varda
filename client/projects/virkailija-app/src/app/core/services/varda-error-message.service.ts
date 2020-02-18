@@ -35,7 +35,8 @@ export class VardaErrorMessageService {
     'Maximum 2 consecutively repeating special characters are allowed.': 'alert.toimipaikka-maximum-repeating-special-characters',
     'Invalid code for paos-lapsi.': 'field.jarjestamismuoto_koodi.paos-lapsi-invalid-code',
     'There is no active paos-agreement to this toimipaikka.': 'alert.paos-lapsi-creation-failed',
-    'There is no active paos-agreement.': 'alert.paos-lapsi-creation-failed'
+    'There is no active paos-agreement.': 'alert.paos-lapsi-creation-failed',
+    'Vakajarjestaja is different than paos_organisaatio for lapsi.': 'alert.vakajarjestaja-eri-kuin-lapsen-paos-toimija'
   };
 
   dynamicErrorMessageKeys = {

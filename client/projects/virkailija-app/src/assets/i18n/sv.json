@@ -118,6 +118,7 @@
     "alert.haku.generic-error": "Det gick inte att söka personerna.",
     "alert.modal-generic-save-success": "Att spara lyckades",
     "alert.modal-generic-save-error": "Att spara misslyckades",
+    "alert.vakajarjestaja-eri-kuin-lapsen-paos-toimija": "Sparandet av ett nytt deltagande i småbarnspedagogisk verksamhet misslyckades. Om du vill lägga till ett nytt deltagande i småbarnspedagogisk verksamhet vid en annan aktörs verksamhetsställe, gör det med Lägg till barn -funktionen.",
     "label.lapsi-stepper.lapsi-details": "Grunduppgifter",
     "label.generic-name": "Namn",
     "label.birthday": "Födelsetid",

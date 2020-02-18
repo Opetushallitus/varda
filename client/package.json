@@ -34,6 +34,7 @@
     "mydatepicker": "^2.6.3",
     "ngx-cookie-service": "^2.2.0",
     "ngx-cookieconsent": "^2.2.1",
+    "oph-virkailija-style-guide": "github:Opetushallitus/virkailija-styles#master",
     "popper.js": "^1.14.1",
     "rxjs": "^6.5.4",
     "web-animations-js": "^2.3.1",

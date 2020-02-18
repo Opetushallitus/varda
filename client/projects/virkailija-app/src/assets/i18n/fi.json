@@ -123,6 +123,7 @@
     "alert.haku.generic-error": "Henkilöiden hakeminen epäonnistui.",
     "alert.modal-generic-save-success": "Tallennus onnistui",
     "alert.modal-generic-save-error": "Tallennus epäonnistui",
+    "alert.vakajarjestaja-eri-kuin-lapsen-paos-toimija": "Varhaiskasvatussuhteen lisäys epäonnistui. Mikäli haluat lisätä lapselle uuden varhaiskasvatussuhteen toisen toimijan toimipaikkaan, tee se Lisää lapsi -toiminnolla.",
     "label.lapsi-stepper.lapsi-details": "Perustiedot",
     "label.generic-name": "Nimi",
     "label.birthday": "Syntymäaika",

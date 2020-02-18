@@ -66,14 +66,14 @@ class TestFetchAndSaveToimipaikkaData(TestCase):
     @responses.activate
     def test_fetch_and_save_vakajarjestaja_data(self):
         responses.add(responses.GET,
-                      'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/8500570-7',
+                      'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/1.2.246.562.10.34683023489',
                       json=self.get_organisaatio_json(True),
                       status=200)
         vakajarjestaja_id = 1
         organisaatiopalvelu.fetch_organisaatio_info(vakajarjestaja_id)
         vakajarjestaja = VakaJarjestaja.objects.get(id=vakajarjestaja_id)
         self.assertEqual(vakajarjestaja.nimi, 'Päiväkoti nallekarhu')
-        self.assertEqual(vakajarjestaja.organisaatio_oid, '1.2.246.562.10.9395737548810')
+        self.assertEqual(vakajarjestaja.organisaatio_oid, '1.2.246.562.10.34683023489')
         self.assertEqual(vakajarjestaja.y_tunnus, '8500570-7')
         self.assertEqual(vakajarjestaja.kayntiosoite, 'Jokukatu 1')
         self.assertEqual(vakajarjestaja.kayntiosoite_postinumero, '00520')
@@ -89,7 +89,7 @@ class TestFetchAndSaveToimipaikkaData(TestCase):
     @responses.activate
     def test_fetch_and_save_vakajarjestaja_lakkautettu(self):
         responses.add(responses.GET,
-                      'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/8500570-7',
+                      'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/1.2.246.562.10.34683023489',
                       json=self.get_organisaatio_json(True, '2020-08-01'),
                       status=200)
         vakajarjestaja_id = 1
@@ -104,9 +104,9 @@ class TestFetchAndSaveToimipaikkaData(TestCase):
         return {"kielipainotus_koodi": kielipainotus_koodi, "alkamis_pvm": alkamis_pvm, "paattymis_pvm": paattymis_pvm, "changed_by_id": changed_by_id}
 
     @staticmethod
-    def get_organisaatio_json(vakajarjestaja=False, paattymis_pvm=None):
+    def get_organisaatio_json(vakajarjestaja=False, paattymis_pvm=None, oid="1.2.246.562.10.34683023489"):
         org_json = {
-            "oid": "1.2.246.562.10.9395737548810",
+            "oid": oid,
             "nimi": {
                 "fi": "Päiväkoti nallekarhu"
             },
