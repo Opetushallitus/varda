@@ -75,6 +75,8 @@ class ToimipaikanLapsetUISerializer(serializers.Serializer):
     sukunimi = serializers.ReadOnlyField()
     henkilo_oid = serializers.ReadOnlyField()
     syntyma_pvm = serializers.ReadOnlyField()
+    oma_organisaatio_nimi = serializers.ReadOnlyField()
+    paos_organisaatio_nimi = serializers.ReadOnlyField()
     lapsi_id = serializers.ReadOnlyField()
     lapsi_url = serializers.SerializerMethodField()
 

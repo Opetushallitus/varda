@@ -1330,6 +1330,8 @@ class VardaViewsTests(TestCase):
                     "sukunimi": "Kuutio",
                     "henkilo_oid": "1.2.246.562.24.6815981182311",
                     "syntyma_pvm": "1948-05-11",
+                    "oma_organisaatio_nimi": "Frontti organisaatio",
+                    "paos_organisaatio_nimi": "Tester organisaatio",
                     "lapsi_id": 4,
                     "lapsi_url": "http://testserver/api/v1/lapset/4/"
                 },
@@ -1338,6 +1340,8 @@ class VardaViewsTests(TestCase):
                     "sukunimi": "Vanhanen",
                     "henkilo_oid": "1.2.246.562.24.49084901392",
                     "syntyma_pvm": "1934-03-17",
+                    "oma_organisaatio_nimi": None,
+                    "paos_organisaatio_nimi": None,
                     "lapsi_id": 3,
                     "lapsi_url": "http://testserver/api/v1/lapset/3/"
                 }
@@ -1358,6 +1362,8 @@ class VardaViewsTests(TestCase):
                     "sukunimi": "Virtanen",
                     "henkilo_oid": "1.2.246.562.24.58672764848",
                     "syntyma_pvm": "2016-05-12",
+                    "oma_organisaatio_nimi": None,
+                    "paos_organisaatio_nimi": None,
                     "lapsi_id": 2,
                     "lapsi_url": "http://testserver/api/v1/lapset/2/"
                 }

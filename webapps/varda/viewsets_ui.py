@@ -189,6 +189,8 @@ class NestedToimipaikanLapsetViewSet(GenericViewSet, ListModelMixin):
                         sukunimi=F('varhaiskasvatuspaatos__lapsi__henkilo__sukunimi'),
                         henkilo_oid=F('varhaiskasvatuspaatos__lapsi__henkilo__henkilo_oid'),
                         syntyma_pvm=F('varhaiskasvatuspaatos__lapsi__henkilo__syntyma_pvm'),
+                        oma_organisaatio_nimi=F('varhaiskasvatuspaatos__lapsi__oma_organisaatio__nimi'),
+                        paos_organisaatio_nimi=F('varhaiskasvatuspaatos__lapsi__paos_organisaatio__nimi'),
                         lapsi_id=F('varhaiskasvatuspaatos__lapsi__id')
                         )
                 .distinct('varhaiskasvatuspaatos__lapsi__henkilo__sukunimi',

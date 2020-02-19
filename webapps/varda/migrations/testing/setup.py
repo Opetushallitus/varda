@@ -579,7 +579,7 @@ def create_henkilot():
 def create_lapset():
     from django.contrib.auth.models import User
     from varda.misc import hash_string
-    from varda.models import Henkilo, Lapsi, Toimipaikka, Varhaiskasvatuspaatos, Varhaiskasvatussuhde
+    from varda.models import Henkilo, Lapsi, Toimipaikka, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, VakaJarjestaja
     from varda.permission_groups import assign_object_level_permissions
 
     tester_user = User.objects.get(username='tester')
@@ -587,6 +587,10 @@ def create_lapset():
 
     vakajarjestaja_1_organisaatio_oid = '1.2.246.562.10.34683023489'
     vakajarjestaja_2_organisaatio_oid = '1.2.246.562.10.93957375488'
+    vakajarjestaja_4_organisaatio_oid = '1.2.246.562.10.93957375484'
+
+    vakajarjestaja_2 = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_2_organisaatio_oid)[0]
+    vakajarjestaja_4 = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_4_organisaatio_oid)[0]
 
     toimipaikka_1_organisaatio_oid = '1.2.246.562.10.9395737548810'
     toimipaikka_2_organisaatio_oid = '1.2.246.562.10.9395737548815'
@@ -615,6 +619,8 @@ def create_lapset():
     henkilo_9 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('120699-985W'))
     lapsi_4 = Lapsi.objects.create(
         henkilo=henkilo_9,
+        oma_organisaatio=vakajarjestaja_4,
+        paos_organisaatio=vakajarjestaja_2,
         changed_by=tester2_user
     )
 
