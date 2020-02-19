@@ -683,7 +683,6 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
       } else if (action === 'toimipaikka') {
         if (!this.isEdit) {
           this.isEdit = true;
-          this.formTitle = entity.nimi;
           const toimipaikanNimiFc = this.vardaFormService.findFormControlFromFormGroupByFieldKey('nimi', this.toimipaikkaForm);
           const toimipaikanToimintamuotoFc = this.vardaFormService.findFormControlFromFormGroupByFieldKey('toimintamuoto_koodi',
           this.toimipaikkaForm);
@@ -691,6 +690,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
           toimipaikanToimintamuotoFc.disable();
         }
 
+        this.formTitle = entity.nimi;
         this.toimipaikkaFormChanged = false;
 
         this.toimipaikka = entity;

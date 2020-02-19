@@ -674,8 +674,6 @@ class ToimipaikkaViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, P
         if not user.has_perm('change_toimipaikka', toimipaikka_obj):
             raise PermissionDenied("User does not have permissions to change this object.")
 
-        if validated_data['nimi'] != toimipaikka_obj.nimi:
-            raise ValidationError({"nimi": ["It is not allowed to change the name of a toimipaikka."]})
         if Lahdejarjestelma[toimipaikka_obj.lahdejarjestelma] is not Lahdejarjestelma.VARDA:
             raise ValidationError({"lahdejarjestelma": ["This toimipaikka should be modified in organisaatio-service."]})
         if validated_data['vakajarjestaja'] != toimipaikka_obj.vakajarjestaja:
