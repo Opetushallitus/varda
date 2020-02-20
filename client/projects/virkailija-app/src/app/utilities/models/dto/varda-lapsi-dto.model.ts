@@ -4,4 +4,6 @@ export class VardaLapsiDTO {
     id: number;
     oma_organisaatio?: string;
     paos_organisaatio?: string;
+    oma_organisaatio_nimi?: string;
+    paos_organisaatio_nimi?: string;
 }

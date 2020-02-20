@@ -1,9 +1,11 @@
-import {Injectable} from '@angular/core';
-import {VardaToimipaikkaDTO, VardaVakajarjestaja, VardaVakajarjestajaUi, VardaVarhaiskasvatussuhdeDTO} from '../../utilities/models';
-import {BehaviorSubject, Observable, Subject} from 'rxjs';
-import {AuthService} from '../auth/auth.service';
-import {VardaToimipaikkaMinimalDto} from '../../utilities/models/dto/varda-toimipaikka-dto.model';
+import { Injectable } from '@angular/core';
+import { VardaLapsiDTO, VardaToimipaikkaDTO, VardaVakajarjestaja, VardaVakajarjestajaUi,
+  VardaVarhaiskasvatussuhdeDTO } from '../../utilities/models';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { AuthService } from '../auth/auth.service';
+import { VardaToimipaikkaMinimalDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
 import {deprecate} from 'util';
+import { LapsiByToimipaikkaDTO } from '../../utilities/models/dto/varda-henkilohaku-dto.model';
 
 @Injectable()
 export class VardaVakajarjestajaService {
@@ -129,5 +131,17 @@ export class VardaVakajarjestajaService {
 
   getSelectedToimipaikkaOid() {
     return this.selectedToimipaikkaOid;
+  }
+
+  getVakaJarjestajaTextForLists(lapsi: VardaLapsiDTO | LapsiByToimipaikkaDTO) {
+    if (this.selectedVakajarjestaja.nimi === lapsi.oma_organisaatio_nimi
+      && lapsi.paos_organisaatio_nimi) {
+      return lapsi.paos_organisaatio_nimi;
+    } else if (this.selectedVakajarjestaja.nimi === lapsi.paos_organisaatio_nimi
+      && lapsi.oma_organisaatio_nimi) {
+      return lapsi.oma_organisaatio_nimi;
+    } else {
+      return null;
+    }
   }
 }

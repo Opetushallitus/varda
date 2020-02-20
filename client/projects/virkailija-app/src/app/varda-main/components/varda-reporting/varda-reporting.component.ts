@@ -463,6 +463,10 @@ export class VardaReportingComponent implements OnInit {
     }
   }
 
+  getVakaJarjestajaText(lapsi: LapsiByToimipaikkaDTO): string {
+    return this.vardaVakajarjestajaService.getVakaJarjestajaTextForLists(lapsi);
+  }
+
   ngOnInit() {
     this.ui.isLoading = true;
     setTimeout(() => {

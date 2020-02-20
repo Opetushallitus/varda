@@ -83,6 +83,7 @@ export class VardaMainFrameComponent implements OnInit {
         ))).map(lapsi => {
           const henkiloExtendedDto = new VardaExtendedHenkiloModel();
           const henkiloDto = new VardaHenkiloDTO();
+          const lapsiDto = new VardaLapsiDTO();
           henkiloDto.etunimet = lapsi.etunimet;
           henkiloDto.sukunimi = lapsi.sukunimi;
           henkiloDto.henkilo_oid = lapsi.henkilo_oid;
@@ -90,7 +91,10 @@ export class VardaMainFrameComponent implements OnInit {
           henkiloDto.lapsi = [lapsi.lapsi_url];
           henkiloDto.url = lapsi.lapsi_url;
           henkiloDto.id = lapsi.lapsi_id;
+          lapsiDto.oma_organisaatio_nimi = lapsi.oma_organisaatio_nimi;
+          lapsiDto.paos_organisaatio_nimi = lapsi.paos_organisaatio_nimi;
           henkiloExtendedDto.henkilo = henkiloDto;
+          henkiloExtendedDto.lapsi = lapsiDto;
           henkiloExtendedDto.isNew = false;
           return henkiloExtendedDto;
         });

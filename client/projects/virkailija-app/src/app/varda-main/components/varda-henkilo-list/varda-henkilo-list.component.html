@@ -4,12 +4,13 @@
             <div class="varda-henkilo-list-no-results" *ngIf="henkilot && henkilot.length === 0 && henkiloSearchValue && henkiloSearchValue.searchValue !== ''">
                 <p>{{'alert.henkilo-search-not-found-in-toimipaikka' | translate}}</p>
             </div>
-            <div class="varda-entity-list-item" *ngFor="let item of henkilot" aria-live="polite">
-                <app-varda-henkilo-item
-                [henkiloItem]="item"
-                [activeHenkiloItemId]="activeHenkiloItemId"
-                (editHenkiloItem)="editHenkilo($event)"></app-varda-henkilo-item>
-            </div>
+              <app-varda-henkilo-item
+              class="varda-entity-list-item"
+              aria-live="polite"
+              *ngFor="let item of henkilot"
+              [henkiloItem]="item"
+              [activeHenkiloItemId]="activeHenkiloItemId"
+              (editHenkiloItem)="editHenkilo($event)"></app-varda-henkilo-item>
         </div>
     </div>
 </div>

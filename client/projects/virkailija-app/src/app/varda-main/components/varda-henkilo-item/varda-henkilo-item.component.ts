@@ -1,5 +1,6 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
-import { VardaExtendedHenkiloModel } from '../../../utilities/models';
+import { VardaExtendedHenkiloModel, VardaLapsiDTO } from '../../../utilities/models';
+import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
 
 @Component({
   selector: 'app-varda-henkilo-item',
@@ -12,7 +13,7 @@ export class VardaHenkiloItemComponent implements OnInit {
   @Input() activeHenkiloItemId: string;
   @Output() editHenkiloItem: EventEmitter<any> = new EventEmitter();
 
-  constructor() { }
+  constructor(private vardaVakajarjestajaService: VardaVakajarjestajaService) { }
 
   editHenkilo(): void {
     setTimeout(() => {
@@ -23,4 +24,8 @@ export class VardaHenkiloItemComponent implements OnInit {
   }
 
   ngOnInit() {}
+
+  getVakaJarjestajaText(lapsi: VardaLapsiDTO): string {
+    return this.vardaVakajarjestajaService.getVakaJarjestajaTextForLists(lapsi);
+  }
 }

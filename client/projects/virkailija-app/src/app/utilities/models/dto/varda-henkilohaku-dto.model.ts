@@ -39,6 +39,8 @@ export class LapsiByToimipaikkaDTO {
   sukunimi: string;
   syntyma_pvm: string;
   henkilo_oid: string;
+  oma_organisaatio_nimi: string;
+  paos_organisaatio_nimi: string;
   lapsi_id: number;
   lapsi_url: string;
 }

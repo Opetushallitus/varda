@@ -164,12 +164,15 @@
           <div class="varda-toimipaikan-lapset-scroller-header">
             <span>{{'label.haku-list.topic' | translate}} ({{ ui.noOfResults }}):</span>
           </div>
-          <div class="varda-toimipaikan-lapset-scroller-item"
-            [class.varda-toimipaikan-lapset-scroller-item-selected]="selectedToimipaikanLapsi && lapsiObj.lapsi_id === selectedToimipaikanLapsi.lapsi_id"
-            *ngFor="let lapsiObj of toimipaikanLapset" aria-live="polite" (click)="showLapsi(lapsiObj.lapsi_id)">
-            <p class="varda-henkilo-item-entry">
-              {{lapsiObj.sukunimi + ', ' + lapsiObj.etunimet}}
-            </p>
+          <div class="varda-toimipaikan-lapset-scroller-container">
+            <div class="varda-toimipaikan-lapset-scroller-item"
+              [class.varda-toimipaikan-lapset-scroller-item-selected]="selectedToimipaikanLapsi && lapsiObj.lapsi_id === selectedToimipaikanLapsi.lapsi_id"
+              *ngFor="let lapsiObj of toimipaikanLapset" aria-live="polite" (click)="showLapsi(lapsiObj.lapsi_id)">
+              <p class="varda-henkilo-item-entry">
+                {{lapsiObj.sukunimi + ', ' + lapsiObj.etunimet}}
+              </p>
+              <i>{{getVakaJarjestajaText(lapsiObj)}}</i>
+            </div>
           </div>
           <div *ngIf='!ui.isLoading'>
             <button *ngIf='nextSearchLink' class="varda-button" type="button"

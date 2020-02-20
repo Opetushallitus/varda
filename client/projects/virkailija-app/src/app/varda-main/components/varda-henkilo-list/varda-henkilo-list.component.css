@@ -25,6 +25,13 @@
 .varda-henkilo-list-list-content {
     font-size: 0.87rem;
     width: 100%;
+    display: table;
+    border-collapse: separate;
+    border-spacing: 0 5px;
+}
+
+.varda-entity-list-item {
+  display: table-row-group;
 }
 
 .henkilo-list-group {
