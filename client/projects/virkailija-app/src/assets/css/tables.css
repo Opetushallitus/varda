@@ -1,0 +1,67 @@
+.varda-table-responsive {
+  overflow: auto;
+}
+.varda-table {
+  display: table;
+  width: 100%;
+}
+
+.varda-table-xs {
+  min-width: 400px;
+}
+
+.varda-table-sm {
+  min-width: var(--breakpoint-sm);
+}
+
+.varda-table-md {
+  min-width: var(--breakpoint-md);
+}
+
+.varda-table-scrollable {
+  min-height: 50px;
+  max-height: 300px;
+  overflow: auto;
+  margin-bottom: 1em;
+}
+
+.varda-table-caption {
+  display: table-caption;
+  font-size: var(--oph-h4);
+  font-weight: bold;
+}
+
+.varda-table-error {
+  color: var(--color-error);
+}
+
+.varda-table-body {
+  display: table-row-group;
+}
+
+.varda-table-row {
+  display: table-row;
+}
+
+.varda-table-row:hover {
+  background-color: var(--blue-darken-1) !important;
+  color: white;
+  cursor: pointer;
+}
+
+.varda-table-column {
+  display: table-column;
+}
+
+.varda-table-row:nth-child(even) {
+  background-color: var(--blue-lighten-4);
+}
+
+.varda-table-cell {
+  display: table-cell;
+  padding: 0.25em;
+}
+
+.varda-table-cell-wide {
+  width: 70%;
+}

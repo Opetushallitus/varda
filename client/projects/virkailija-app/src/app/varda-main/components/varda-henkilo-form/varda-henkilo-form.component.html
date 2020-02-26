@@ -1,198 +1,229 @@
 <div class="modal-header">
-  <h2 class="modal-title varda-modal-title"
-  [id]="'vardaModalTitleLabelhenkiloModal'">
-  {{ currentHenkilo ? currentHenkilo.sukunimi + ', ' + currentHenkilo.etunimet : 'label.add-lapsi-toimipaikka' | translate: {value: toimipaikka.nimi} }}
-  </h2>
-  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+  <div class="modal-title varda-modal-title"
+       [id]="'vardaModalTitleLabelhenkiloModal'">
+    {{ currentHenkilo ? currentHenkilo.sukunimi + ', ' + currentHenkilo.etunimet : 'label.add-lapsi-toimipaikka' | translate: {value: toimipaikka.nimi} }}
+  </div>
+  <button type="button"
+          class="close"
+          data-dismiss="modal"
+          aria-label="Close">
     <span aria-hidden="true">&times;</span>
   </button>
 </div>
-<div class="modal-body varda-modal-body">
-  <div class="alert alert-danger varda-form-main-feedback" role="alert" *ngIf="ui.henkiloAddRequestFailure">
-    <ul>
-      <li *ngFor="let errItem of ui.lapsiFormErrors">
-        <span *ngIf="errItem.msg; else defaultErrorMessage">{{errItem.key | translate}}. {{errItem.msg | translate}}</span>
-        <ng-template #defaultErrorMessage>{{'alert.add-henkilo-failed-check-henkilo-details' | translate}}</ng-template>
-      </li>
-    </ul>
-  </div>
+<div class="alert alert-danger varda-form-main-feedback"
+     role="alert"
+     *ngIf="ui.henkiloAddRequestFailure">
+  <ul>
+    <li *ngFor="let errItem of ui.lapsiFormErrors">
+      <span *ngIf="errItem.msg; else defaultErrorMessage">{{errItem.key | translate}}.
+        {{errItem.msg | translate}}</span>
+      <ng-template #defaultErrorMessage>{{'alert.add-henkilo-failed-check-henkilo-details' | translate}}</ng-template>
+    </li>
+  </ul>
+</div>
+
+<div class="form-continues-text-wrapper"
+     *ngIf="ui.showFormContinuesWarning">
+  <div class="form-continues-text">{{'alert.lomake-continues' | translate}}</div>
+  <i class="material-icons">arrow_downward</i>
+</div>
+<div #formContent
+     class="modal-body varda-modal-body"
+     id="henkiloFormContent">
   <div class="varda-modal-form-wrapper">
-    <div class="varda-modal-form-content" appHighContrast>
+    <div class="varda-modal-form-content">
       <div *ngIf="!henkilo">
-        <form class="varda-henkilo-form" [formGroup]="vardaHenkiloForm">
-          <fieldset class="form-group varda-fieldset" [id]="'setSSNFieldSet'" *ngIf="!currentHenkilo">
-            <p>{{'text.add-lapsi-form-info' | translate}}<br/>
+        <form class="varda-form"
+              autocomplete="off"
+              [formGroup]="vardaHenkiloForm">
+          <fieldset class="form-group varda-fieldset"
+                    [id]="'setSSNFieldSet'"
+                    *ngIf="!currentHenkilo">
+            <div>{{'text.add-lapsi-form-info' | translate}}<br />
               {{'text.add-lapsi-form-info-add' | translate}}
-              <a style="text-decoration: underline;" target="_blank" href="{{'ohjeet.url.confluence' | translate}}#{{'ohjeet.url.lisaaminen-ja-muokkaaminen.lapsen-lisaaminen' | translate}}">{{'label.taalta' | translate}}</a>.
-            </p>
+              <a style="text-decoration: underline;"
+                 target="_blank"
+                 href="{{'ohjeet.url.confluence' | translate}}#{{'ohjeet.url.lisaaminen-ja-muokkaaminen.lapsen-lisaaminen' | translate}}">{{'label.taalta' | translate}}</a>.
+            </div>
             <div class="varda-fieldset-content form-group">
               <div class="ssn-or-oid-radio-wrapper">
-                <mat-radio-group
-                [name]="'henkiloFormSsnOrOidRadioGroup'"
-                [formControlName]="'addWithSsnOrOid'"
-                (change)="addWithSsnOrOidChanged($event)">
-                  <mat-radio-button [id]="'lisaaHenkilotunnuksella'" class="boolean-radio-yes" [value]="true">{{'label.lisaa-henkilotunnuksella' | translate}}</mat-radio-button>
-                  <mat-radio-button
-                  [id]="'lisaaOppijanumerolla'"
-                  [value]="false">{{'label.lisaa-oppijanumerolla' | translate}}</mat-radio-button>
+                <mat-radio-group [name]="'henkiloFormSsnOrOidRadioGroup'"
+                                 [formControlName]="'addWithSsnOrOid'"
+                                 (change)="addWithSsnOrOidChanged($event)">
+                  <mat-radio-button [id]="'lisaaHenkilotunnuksella'"
+                                    [value]="true">{{'label.lisaa-henkilotunnuksella' | translate}}</mat-radio-button>
+                  <mat-radio-button [id]="'lisaaOppijanumerolla'"
+                                    [value]="false">{{'label.lisaa-oppijanumerolla' | translate}}</mat-radio-button>
                 </mat-radio-group>
-                <div>
-                  <label [for]="'henkiloFormSsnOrOid'" class="varda-field-label">{{getHenkiloSsnLabel() | translate}}</label>
-                  <div class="henkilo-form-ssn-or-oid-fields-wrapper">
-                    <div>
-                      <input id="henkiloFormSsnOrOid"
-                      type="text"
-                      [placeholder]="getSsnPlaceholderText()"
-                      class="varda-form-control form-control varda-input"
-                      (blur)="onBlur()"
-                      (focus)="onFocus('ssn')"
-                      [formControlName]="'ssn'"
-                      [attr.aria-describedby]="'henkiloFormSsnOrOidInstruction'"
-                      appHighlightElement>
+                <div class="oph-field">
+                  <div class="oph-field-inputs">
+                    <label [for]="'henkiloFormSsnOrOid'"
+                           class="oph-label">{{getHenkiloSsnLabel() | translate}}</label>
+                    <input id="henkiloFormSsnOrOid"
+                           type="text"
+                           [placeholder]="getSsnPlaceholderText()"
+                           class="oph-input"
+                           [ngClass]="{'oph-input-has-error': vardaHenkiloForm.get('ssn').invalid && vardaHenkiloForm.get('ssn').touched }"
+                           (blur)="onBlur()"
+                           (focus)="onFocus('ssn')"
+                           [formControlName]="'ssn'"
+                           [attr.aria-describedby]="'henkiloFormSsnOrOidInstruction'">
+                    <div class="oph-error"
+                         role="alert"
+                         *ngIf="vardaHenkiloForm.get('ssn').invalid && vardaHenkiloForm.get('addWithSsnOrOid').value && vardaHenkiloForm.get('ssn').touched">
+                      {{'alert.ssn-format-warning' | translate}}
+                    </div>
+                    <div class="oph-error"
+                         role="alert"
+                         *ngIf="vardaHenkiloForm.get('ssn').invalid && !vardaHenkiloForm.get('addWithSsnOrOid').value && vardaHenkiloForm.get('ssn').touched">
+                      {{'alert.oppijanumero-format-warning' | translate}}
                     </div>
                   </div>
-                  <div class="varda-error-message-block" role="alert" *ngIf="vardaHenkiloForm.get('ssn').invalid && vardaHenkiloForm.get('addWithSsnOrOid').value && vardaHenkiloForm.get('ssn').touched">
-                    <p>{{'alert.ssn-format-warning' | translate}}</p>
-                  </div>
-                  <div class="varda-error-message-block" role="alert" *ngIf="vardaHenkiloForm.get('ssn').invalid && !vardaHenkiloForm.get('addWithSsnOrOid').value && vardaHenkiloForm.get('ssn').touched">
-                    <p>{{'alert.oppijanumero-format-warning' | translate}}</p>
+                  <div class="oph-field-text">
+                    <small [id]="'henkiloFormSsnOrOidInstruction'"
+                           *ngIf="ui.activeInstructionText === 'ssn'">
+                      {{getHenkiloSsnInstructionText() | translate}}
+                    </small>
                   </div>
                 </div>
               </div>
-              <div class="varda-henkilo-form-instructions-section">
-                <small [id]="'henkiloFormSsnOrOidInstruction'" class="form-text text-muted" *ngIf="ui.activeInstructionText === 'ssn'">
-                    {{getHenkiloSsnInstructionText() | translate}}
-                </small>
-              </div>
             </div>
             <div class="varda-fieldset-content form-group">
-              <div>
-                <label [for]="'henkiloFormFirstnames'" class="varda-field-label">{{'label.firstnamesbyseparated' | translate}}</label>
-                <input id="henkiloFormFirstnames"
-                type="text"
-                [placeholder]="'Jukka-Pekka Matias'"
-                class="varda-form-control form-control varda-input"
-                (blur)="onBlur()"
-                (focus)="onFocus('firstnames')"
-                [formControlName]="'firstnames'"
-                [attr.aria-describedby]="'firstnamesInstruction'"
-                appHighlightElement>
-                <div class="varda-error-message-block" role="alert"
-                *ngIf="vardaHenkiloForm.get('firstnames').invalid &&
+              <div class="oph-field">
+                <div class="oph-field-inputs">
+                  <label [for]="'henkiloFormFirstnames'"
+                         class="oph-label">{{'label.firstnamesbyseparated' | translate}}</label>
+                  <input id="henkiloFormFirstnames"
+                         type="text"
+                         [placeholder]="'Jukka-Pekka Matias'"
+                         class="oph-input"
+                         [ngClass]="{'oph-input-has-error': vardaHenkiloForm.get('firstnames').invalid && vardaHenkiloForm.get('firstnames').touched }"
+                         (blur)="onBlur()"
+                         (focus)="onFocus('firstnames')"
+                         [formControlName]="'firstnames'"
+                         [attr.aria-describedby]="'firstnamesInstruction'"
+                         appHighlightElement>
+                  <div class="oph-error"
+                       role="alert"
+                       *ngIf="vardaHenkiloForm.get('firstnames').invalid &&
                 vardaHenkiloForm.get('firstnames').hasError('required') &&
                 vardaHenkiloForm.get('firstnames').touched">
-                  <p>{{'alert.firstnames-required' | translate}}</p>
-                </div>
-                <div class="varda-error-message-block" role="alert"
-                *ngIf="vardaHenkiloForm.get('firstnames').invalid &&
+                    {{'alert.firstnames-required' | translate}}
+                  </div>
+                  <div class="oph-error"
+                       role="alert"
+                       *ngIf="vardaHenkiloForm.get('firstnames').invalid &&
                 vardaHenkiloForm.get('firstnames').hasError('nameHasDisallowedCharacters') &&
                 vardaHenkiloForm.get('firstnames').touched">
-                  <p>{{'alert.firstnames-has-disallowed-characters' | translate}}</p>
+                    {{'alert.firstnames-has-disallowed-characters' | translate}}
+                  </div>
+                </div>
+                <div class="oph-field-text">
+                  <small [id]="'firstnamesInstruction'"
+                         *ngIf="ui.activeInstructionText === 'firstnames'">
+                    {{'henkiloform.firstnamesinstruction' | translate}}
+                  </small>
                 </div>
               </div>
-              <div class="varda-henkilo-form-instructions-section">
-                <small [id]="'firstnamesInstruction'" class="form-text text-muted" *ngIf="ui.activeInstructionText === 'firstnames'">
-                  {{'henkiloform.firstnamesinstruction' | translate}}
-                </small>
-              </div>
+
             </div>
             <div class="varda-fieldset-content form-group">
-              <div>
-                <label [for]="'henkiloFormNickname'" class="varda-field-label">{{'label.nickname' | translate}}</label>
-                <input id="henkiloFormNickname"
-                type="text"
-                [placeholder]="'Jukka-Pekka'"
-                class="varda-form-control form-control varda-input"
-                (blur)="onBlur()"
-                (focus)="onFocus('nickname')"
-                [formControlName]="'nickname'"
-                [attr.aria-describedby]="'nicknameInstruction'"
-                appHighlightElement>
-                <div class="varda-error-message-block" role="alert"
-                *ngIf="vardaHenkiloForm.get('nickname').invalid &&
-                vardaHenkiloForm.get('nickname').hasError('required') &&
-                vardaHenkiloForm.get('nickname').touched">
-                  <p>{{'alert.nickname-required' | translate}}</p>
+              <div class="oph-field">
+                <div class="oph-field-inputs">
+                  <label [for]="'henkiloFormNickname'"
+                         class="oph-label">{{'label.nickname' | translate}}</label>
+                  <input id="henkiloFormNickname"
+                         type="text"
+                         [placeholder]="'Jukka-Pekka'"
+                         class="oph-input"
+                         [ngClass]="{'oph-input-has-error': vardaHenkiloForm.get('nickname').invalid && vardaHenkiloForm.get('nickname').touched }"
+                         (blur)="onBlur()"
+                         (focus)="onFocus('nickname')"
+                         [formControlName]="'nickname'"
+                         [attr.aria-describedby]="'nicknameInstruction'"
+                         appHighlightElement>
+                  <div class="oph-error"
+                       role="alert"
+                       *ngIf="vardaHenkiloForm.get('nickname').invalid &&
+                  vardaHenkiloForm.get('nickname').hasError('required') &&
+                  vardaHenkiloForm.get('nickname').touched">
+                    {{'alert.nickname-required' | translate}}
+                  </div>
+                  <div class="oph-error"
+                       role="alert"
+                       *ngIf="vardaHenkiloForm.get('nickname').invalid &&
+                  vardaHenkiloForm.get('nickname').hasError('nameHasDisallowedCharacters') &&
+                  vardaHenkiloForm.get('nickname').touched">
+                    {{'alert.nickname-has-disallowed-characters' | translate}}
+                  </div>
+                  <div class="oph-error"
+                       role="alert"
+                       *ngIf="vardaHenkiloForm.hasError('nicknameNotPartOfFirstname') &&
+                  vardaHenkiloForm.get('nickname').touched">
+                    <p>{{'alert.nickname-must-be-part-of-firstnames' | translate}}
+                  </div>
+                  <div class="oph-error"
+                       role="alert"
+                       *ngIf="vardaHenkiloForm.hasError('nicknameMustBeOneName') &&
+                  vardaHenkiloForm.get('nickname').touched">
+                    {{'alert.nickname-must-be-one-name' | translate}}
+                  </div>
                 </div>
-                <div class="varda-error-message-block" role="alert"
-                *ngIf="vardaHenkiloForm.get('nickname').invalid &&
-                vardaHenkiloForm.get('nickname').hasError('nameHasDisallowedCharacters') &&
-                vardaHenkiloForm.get('nickname').touched">
-                  <p>{{'alert.nickname-has-disallowed-characters' | translate}}</p>
+
+                <div class="oph-field-text">
+                  <small [id]="'nicknameInstruction'"
+                         *ngIf="ui.activeInstructionText === 'nickname'">
+                    {{'henkiloform.nicknameinstruction' | translate}}
+                  </small>
                 </div>
-                <div class="varda-error-message-block" role="alert"
-                *ngIf="vardaHenkiloForm.hasError('nicknameNotPartOfFirstname') &&
-                vardaHenkiloForm.get('nickname').touched">
-                  <p>{{'alert.nickname-must-be-part-of-firstnames' | translate}}</p>
-                </div>
-                <div class="varda-error-message-block" role="alert"
-                *ngIf="vardaHenkiloForm.hasError('nicknameMustBeOneName') &&
-                vardaHenkiloForm.get('nickname').touched">
-                  <p>{{'alert.nickname-must-be-one-name' | translate}}</p>
-                </div>
-              </div>
-              <div class="varda-henkilo-form-instructions-section">
-                <small [id]="'nicknameInstruction'" class="form-text text-muted" *ngIf="ui.activeInstructionText === 'nickname'">
-                  {{'henkiloform.nicknameinstruction' | translate}}
-                </small>
               </div>
             </div>
+
             <div class="varda-fieldset-content form-group">
-              <div>
-                <label [for]="'henkiloFormLastname'" class="varda-field-label">{{'label.lastname' | translate}}</label>
-                <input id="henkiloFormLastname"
-                type="text"
-                [placeholder]="'Meikäläinen'"
-                class="varda-form-control form-control varda-input"
-                (blur)="onBlur()"
-                (focus)="onFocus('lastname')"
-                [formControlName]="'lastname'"
-                [attr.aria-describedby]="'lastnameInstruction'"
-                appHighlightElement>
-                <div class="varda-error-message-block" role="alert"
-                *ngIf="vardaHenkiloForm.get('lastname').invalid &&
+              <div class="oph-field">
+                <div class="oph-field-inputs">
+                  <label [for]="'henkiloFormLastname'"
+                         class="oph-label">{{'label.lastname' | translate}}</label>
+                  <input id="henkiloFormLastname"
+                         type="text"
+                         [placeholder]="'Meikäläinen'"
+                         class="oph-input"
+                         [ngClass]="{'oph-input-has-error': vardaHenkiloForm.get('lastname').invalid && vardaHenkiloForm.get('lastname').touched }"
+                         (blur)="onBlur()"
+                         (focus)="onFocus('lastname')"
+                         [formControlName]="'lastname'"
+                         [attr.aria-describedby]="'lastnameInstruction'"
+                         appHighlightElement>
+                  <div class="oph-error"
+                       role="alert"
+                       *ngIf="vardaHenkiloForm.get('lastname').invalid &&
                 vardaHenkiloForm.get('lastname').hasError('required') &&
                 vardaHenkiloForm.get('lastname').touched">
-                  <p>{{'alert.lastname-required' | translate}}</p>
-                </div>
-                <div class="varda-error-message-block" role="alert"
-                *ngIf="vardaHenkiloForm.get('lastname').invalid &&
+                    {{'alert.lastname-required' | translate}}
+                  </div>
+                  <div class="oph-error"
+                       role="alert"
+                       *ngIf="vardaHenkiloForm.get('lastname').invalid &&
                 vardaHenkiloForm.get('lastname').hasError('nameHasDisallowedCharacters') &&
                 vardaHenkiloForm.get('lastname').touched">
-                  <p>{{'alert.lastname-has-disallowed-characters' | translate}}</p>
+                    {{'alert.lastname-has-disallowed-characters' | translate}}
+                  </div>
                 </div>
-              </div>
-              <div class="varda-henkilo-form-instructions-section">
-                <small [id]="'lastnameInstruction'" class="form-text text-muted" *ngIf="ui.activeInstructionText === 'lastname'">
-                  {{'henkiloform.lastnamesinstruction' | translate}}
-                </small>
+
+                <div class="oph-field-text">
+                  <small [id]="'lastnameInstruction'"
+                         *ngIf="ui.activeInstructionText === 'lastname'">
+                    {{'henkiloform.lastnamesinstruction' | translate}}
+                  </small>
+                </div>
               </div>
             </div>
-            <div class="varda-henkilo-form-add-btn-wrapper">
-              <div>
-                <button
-                type="button"
-                class="varda-button varda-button-small add-lapsi-btn"
-                [ngClass]="{'varda-disabled-button': vardaHenkiloForm.invalid || ui.isFetchingHenkilo}"
-                [disabled]="vardaHenkiloForm.invalid || ui.isFetchingHenkilo"
-                (click)="searchHenkilo()">{{'label.generic-add' | translate}}</button>
-              </div>
-            </div>
-          </fieldset>
-          <fieldset class="form-group varda-fieldset" [id]="'chooseHenkiloEntityFieldSet'" *ngIf="currentHenkilo && !henkiloHasRole">
-            <legend class="varda-fieldset-legend">{{'label.kyseessa-on' | translate}}</legend>
-            <div>
-              <div class="choose-henkilo-entity-buttons">
-                <div>
-                    <button type="button" class="varda-button secondary selection-btn"
-                    [ngClass]="{'active-entity-selection': henkiloEntitySelection === 'lapsi'}"
-                    (click)="chooseHenkiloEntity('lapsi')">{{'label.lapsi' | translate}}</button>
-                </div>
-                <div>
-                  <button type="button" class="varda-button secondary selection-btn"
-                  [ngClass]="{'varda-disabled-button': true}">{{'label.tyontekija' | translate}}</button>
-                </div>
-              </div>
+            <div class="varda-form-btn-wrapper">
+              <button type="button"
+                      class="varda-button responsive-md"
+                      [ngClass]="{'varda-disabled-button': vardaHenkiloForm.invalid || ui.isFetchingHenkilo}"
+                      [disabled]="vardaHenkiloForm.invalid || ui.isFetchingHenkilo"
+                      (click)="searchHenkilo()">{{'label.generic-add' | translate}}</button>
             </div>
           </fieldset>
         </form>
@@ -200,18 +231,20 @@
       <div *ngIf="currentHenkilo">
         <ng-container *ngIf="currentHenkilo">
           <ng-container *ngIf="henkiloIsLapsi || henkiloEntitySelection === 'lapsi'">
-              <app-varda-lapsi-form
-              [henkilo]="currentHenkilo"
-              [isEdit]="henkiloIsLapsi"
-              (saveLapsiSuccess)="onSaveLapsiSuccess($event)"
-              (saveLapsiFailure)="onSaveLapsiFailure($event)"
-              (updateLapsi)="onUpdateLapsi($event)"
-              (deleteLapsi)="onDeleteLapsi($event)"
-              (valuesChanged)="lapsiFormValuesChanged($event)"></app-varda-lapsi-form>
+            <app-varda-lapsi-form [henkilo]="currentHenkilo"
+                                  [isEdit]="henkiloIsLapsi"
+                                  (saveLapsiSuccess)="onSaveLapsiSuccess($event)"
+                                  (saveLapsiFailure)="onSaveLapsiFailure($event)"
+                                  (updateLapsi)="onUpdateLapsi($event)"
+                                  (deleteLapsi)="onDeleteLapsi($event)"
+                                  (valuesChanged)="lapsiFormValuesChanged($event)"></app-varda-lapsi-form>
           </ng-container>
         </ng-container>
-        <div class="henkilo-form-cancel-btn-wrapper" *ngIf="!currentHenkilo">
-          <div><button class="varda-button secondary" type="button" data-dismiss="modal">{{'label.cancel' | translate}}</button></div>
+        <div class="henkilo-form-cancel-btn-wrapper"
+             *ngIf="!currentHenkilo">
+          <div><button class="varda-button secondary"
+                    type="button"
+                    data-dismiss="modal">{{'label.cancel' | translate}}</button></div>
         </div>
       </div>
     </div>

@@ -58,7 +58,7 @@ export abstract class AbstractPaosListToimintainfoComponent<T extends PaosToimip
   }
 
   getCurrentTallentajaTranslateKey(paosOikeus: PaosOikeusTieto) {
-    return paosOikeus.tallentaja_organisaatio_oid === this.selectedVakajarjestaja.organisaatio_oid ? 'label.tallentaja' : 'label.katselija';
+    return paosOikeus.tallentaja_organisaatio_oid === this.selectedVakajarjestaja.organisaatio_oid ? 'label.jarjestaja' : 'label.palveluntuottaja';
   }
 
 }

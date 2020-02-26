@@ -29,6 +29,11 @@
   font-style: italic;
 }
 
+.paos-yksikot {
+  text-align: left;
+  padding: 0.5em;
+}
+
 .paos-toimijat-list-toimipaikat-text {
   margin-top: 10px;
 }

@@ -1,32 +1,39 @@
-<div class="varda-main-frame-wrapper">
-  <main class="varda-main-frame-section">
-    <section class="varda-main-login-title-section">
-      <div class="varda-main-login-title-section-content" appHighContrast>
-        <div></div>
-        <div class="varda-main-login-title-section-title">
-          <div><h2 class="section-title" *ngIf="!showLogOutMsg">{{'label.login' | translate}}</h2></div>
-        </div>
-        <div></div>
-        <div></div>
-      </div>
-    </section>
-    <section class="varda-main-login-opintopolku-section" #vardaMainLoginOpintopolkuSection appHighContrast>
-        <div class="varda-main-login-opintopolku-section-content">
-          <div class="varda-main-login-opintopolku-info-section">
-            <div>
+<div class="varda-router-outlet-container"
+     appHighContrast>
+  <main class="varda-login-page">
+    <h1 class="oph-h2 oph-bold"
+        aria-live="polite">
+      <span *ngIf="!showLogOutMsg">{{'label.login' | translate}}</span>
+      <span *ngIf="showLogOutMsg">{{'logout-info' | translate}}</span>
+    </h1>
 
-            </div>
-          </div>
-          <div class="varda-main-login-opintopolku-button-section">
-            <div aria-live="polite">
-                <p id="signOutInfo" *ngIf="showLogOutMsg">{{'logout-info' | translate}}</p>
-            </div>
-            <div>
-                <button class="varda-button" id="navigateToVardaLoginBtn" (click)="navigateToVardaLogin()">{{'label.action-login' | translate}}</button>
-            </div>
-          </div>
-        </div>
-    </section>
+    <div class="varda-page-content">
+      <button class="varda-button responsive-md"
+              id="navigateToVardaLoginBtn"
+              (click)="navigateToVardaLogin()">
+        {{'label.action-login' | translate}}
+      </button>
+
+      <div class="oph-h4 varda-logout-clear"
+           *ngIf="showLogOutMsg">
+        {{'logout-close-and-clear' | translate}}
+      </div>
+
+      <ng-container *ngIf="tokenInput?.show">
+        <form (ngSubmit)="addLoginToken(tokenInput.value)"
+              class="varda-logout-clear oph-alert-error">
+          <div class="oph-h2 oph-bold">Tämä kenttä näkyy vain testiympäristössä</div>
+          <div><a target="_blank"
+               [attr.href]="tokenInput.backend">{{ tokenInput.backend }}</a></div>
+          <label class="oph-label">Tallenna login token tästä</label>
+          <input class="oph-input"
+                 [(ngModel)]='tokenInput.value'
+                 name='value'
+                 placeholder="login-token" />
+          <button type="submit"
+                  class="varda-button varda-button-success secondary">Tallenna</button>
+        </form>
+      </ng-container>
+    </div>
   </main>
 </div>
-

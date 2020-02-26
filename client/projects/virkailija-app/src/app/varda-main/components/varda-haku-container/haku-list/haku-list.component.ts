@@ -6,6 +6,7 @@ import {ModalEvent} from '../../../../shared/components/varda-modal-form/varda-m
 import {AuthService} from '../../../../core/auth/auth.service';
 import {VardaVakajarjestajaService} from '../../../../core/services/varda-vakajarjestaja.service';
 import {VardaKayttooikeusRoles} from '../../../../utilities/varda-kayttooikeus-roles';
+import { VardaPageDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-page-dto';
 
 class HenkiloHakuResultWithToimipaikka {
   lapsi: HenkilohakuResultDTO;
@@ -20,7 +21,7 @@ class HenkiloHakuResultWithToimipaikka {
 })
 export class HakuListComponent implements OnInit, OnChanges {
   @Input() searchResult: Array<HenkilohakuResultDTO>;
-
+  resultCount: number;
   searchResultByToimipaikka: Array<HenkiloHakuResultWithToimipaikka>;
   henkiloFormOpen: boolean;
   activeHenkilo: VardaHenkiloDTO;
@@ -31,7 +32,6 @@ export class HakuListComponent implements OnInit, OnChanges {
   constructor(private translateService: TranslateService,
               private authService: AuthService,
               private vardaVakajarjestajaService: VardaVakajarjestajaService) {
-    this.searchResult = [];
     this.henkiloFormOpen = false;
     this.closeHakuListFormWithoutConfirm = true;
   }
@@ -43,7 +43,8 @@ export class HakuListComponent implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     const searchResult: SimpleChange = changes.searchResult;
-    if (searchResult) {
+    if (searchResult.currentValue) {
+      this.resultCount = searchResult.currentValue.count;
       this.searchResultByToimipaikka = this.flatmapSearchResults(searchResult.currentValue);
     }
   }
@@ -54,7 +55,9 @@ export class HakuListComponent implements OnInit, OnChanges {
       : '';
   }
 
-  flatmapSearchResults(searchResult: Array<HenkilohakuResultDTO>): Array<HenkiloHakuResultWithToimipaikka> {
+  flatmapSearchResults(searchResult: VardaPageDto<HenkilohakuResultDTO>): Array<HenkiloHakuResultWithToimipaikka> {
+    if(!searchResult) return null;
+
     const flatMap = (mapFunc, array) =>
       array.reduce((acc, value) =>
         acc.concat(mapFunc(value)), []);
@@ -63,7 +66,7 @@ export class HakuListComponent implements OnInit, OnChanges {
         toimipaikkaName: this.getToimipaikkaNimiByLang(toimipaikka),
         toimipaikka_oid: toimipaikka.organisaatio_oid,
         lapsi: {...result},
-      })), searchResult);
+      })), searchResult.results);
   }
 
   getToimipaikkaNimiByLang(toimipaikka) {

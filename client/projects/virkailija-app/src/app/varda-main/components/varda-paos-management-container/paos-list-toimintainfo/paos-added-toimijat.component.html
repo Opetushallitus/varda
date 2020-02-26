@@ -13,7 +13,7 @@
 <div *ngIf="paosToiminnat.length">
   <div [class.scrollable]="paosToiminnat.length > 3">
     <div *ngFor="let paosToiminta of paosToiminnat"
-         class="oph-alert oph-alert-info small-text"
+         class="paos-yksikot oph-alert oph-alert-info small-text"
          [class.varda-paos-list-toimintainfo-highlight]="highlighted.indexOf(paosToiminta.vakajarjestaja_url) !== -1">
       <div>
         <h4>
@@ -40,7 +40,7 @@
         <div class="paos-toimijat-list-tallennusvastuu-wrapper paos-list-flexbox">
           <div class="paos-list-flexbox">
             <div class="paos-toimipaikat-list-tallennusvastuu-column">
-              {{'label.paos-toimipaikat.list.tallennusvastuu' | translate}}:
+              {{'label.paos-toimipaikat.list.tiedot-tallentaa' | translate}}:
             </div>
             <div class="paos-toimipaikat-list-tallennusvastuu-column">
               {{getCurrentTallentajaTranslateKey(paosToiminta.paos_oikeus) | translate}}
@@ -57,7 +57,8 @@
 </div>
 <app-varda-prompt-modal [show$]="showConfirmModal$"
                         (saveEvent)="deletePaosToiminta()">
-  <div class="paos-prompt-modal-header" *ngIf="paosToimintaToDelete">
+  <div class="paos-prompt-modal-header"
+       *ngIf="paosToimintaToDelete">
     {{paosToimintaToDelete.vakajarjestaja_nimi}}
   </div>
   {{'label.paos-toimijat.list.delete-confirm' | translate}}

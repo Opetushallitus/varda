@@ -1,5 +1,5 @@
 .varda-error-alert-wrapper {
-  background-color: #ffe9e9;
+  background-color: var(--red-lighten-2);
   margin: 8px;
   padding-left: 10px;
   padding-right: 10px;
@@ -27,5 +27,5 @@
   border: none;
   background-color: inherit;
   font-size: 2rem;
-  color: #999;
+  color: var(--gray-lighten-1);
 }

@@ -1,26 +1,22 @@
-<div class="varda-main-frame-wrapper">
-  <main class="varda-main-frame-section">
-      <section class="varda-main-logout-title-section">
-        <div class="varda-main-logout-title-section-content" appHighContrast>
-          <div></div>
-          <div class="varda-main-logout-title-section-title">
-            <div><h1 class="section-title">{{'Olet kirjautunut ulos'}}</h1></div>
-          </div>
-          <div></div>
-          <div></div>
-        </div>
-      </section>
-      <section class="varda-main-logout-form-section">
-          <div class="varda-main-logout-form-section-content" appHighContrast>
-            <div></div>
-            <div class="varda-main-logout-form-loginbtn-section">
-              <button class="varda-button" type="button" (click)="navigateToLogin($event)">Takaisin sisäänkirjautumiseen</button>
-            </div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div><p class="varda-main-logout-form-logout-info">Muista sulkea selaimesi ja tyhjentää selaimesi välimuisti.</p></div>
-          </div>
-      </section>
-  </main>
+<div class="varda-router-outlet-container"
+     appHighContrast>
+  <div class="varda-login-page">
+    <div class="oph-h2 oph-bold"
+         aria-live="polite">
+      {{'logout-info' | translate}}
+    </div>
+
+    <div class="varda-page-content">
+      <button class="varda-button responsive-md"
+              id="navigateToVardaLoginBtn"
+              (click)="navigateToLogin($event)">
+        {{'label.action-login' | translate}}
+      </button>
+
+      <div class="oph-h4 varda-logout-clear">
+        {{'logout-close-and-clear' | translate}}
+      </div>
+
+    </div>
+  </div>
 </div>

@@ -1,23 +1,30 @@
 <section class="varda-main-frame-henkilo-section">
-  <div class="varda-main-frame-henkilo-section-content">
-    <div class="varda-main-frame-henkilo-section-content-title">
-      <h3 id="toimipaikanLapset">{{'label.toimipaikan-lapset' | translate}}</h3>
+  <label class="oph-h4 oph-bold"
+         for="henkiloSearchInput">
+    {{'label.toimipaikan-lapset' | translate}}
+  </label>
+
+  <div class="varda-main-frame-henkilo-search">
+    <div class="varda-main-frame-henkilo-search-input-wrapper"
+         *ngIf="henkiloList && henkiloList.length > 1"
+         aria-live="polite">
+      <input id="henkiloSearchInput"
+             type="text"
+             class="varda-form-control form-control varda-input"
+             [(ngModel)]="currentSearchValue"
+             (keyup)="searchValueChanged($event)"
+             [placeholder]="getPlaceholderText()">
     </div>
-    <div class="varda-main-frame-henkilo-search">
-      <div class="varda-main-frame-henkilo-search-input-wrapper" *ngIf="henkiloList && henkiloList.length > 10" aria-live="polite">
-        <input id="henkiloSearchInput" type="text" class="varda-form-control form-control varda-input" [(ngModel)]="currentSearchValue" (keyup)="searchValueChanged($event)" [placeholder]="getPlaceholderText()">
-      </div>
-    </div>
+    <div class="flex-wrap-filler"></div>
   </div>
-  <p class="henkilo-list-empty" role="alert" aria-live="polite" *ngIf="henkiloList && henkiloList.length === 0">
-    {{'toimipaikka-no-lapsi-info' | translate}}
-    <br>
-    {{'toimipaikka-add-lapsi-info' | translate}}
-  </p>
-</section>
-<section class="varda-main-frame-henkilo-list-section">
-    <app-varda-henkilo-list
-    [henkiloList]="henkiloList"
-    [henkiloSearchValue]="henkiloSearchObj"
-    *ngIf="henkiloList"></app-varda-henkilo-list>
+  <div class="toimipaikka-empty oph-muted"
+       role="alert"
+       aria-live="polite"
+       *ngIf="henkiloList && henkiloList.length === 0">
+    <p>{{'toimipaikka-no-lapsi-info' | translate}}</p>
+    <p>{{'toimipaikka-add-lapsi-info' | translate}}</p>
+  </div>
+  <app-varda-henkilo-list [henkiloList]="henkiloList"
+                          [henkiloSearchValue]="henkiloSearchObj"
+                          *ngIf="henkiloList"></app-varda-henkilo-list>
 </section>

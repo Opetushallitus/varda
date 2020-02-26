@@ -1,0 +1,47 @@
+.varda-dropdown-filter {
+  padding: 0 0.25em;
+  user-select: none;
+  cursor: pointer;
+}
+
+.varda-dropdown-filter:hover {
+  cursor: pointer;
+}
+
+.no-pointer:hover {
+  cursor: default;
+}
+
+ul {
+  list-style-type: none;
+  padding-left: 0px;
+  margin-bottom: 0;
+}
+
+ul li {
+  margin: 0.25em 0;
+  padding: 0 1em;
+}
+
+ul li.dropdownFilterEmpty {
+  color: var(--red);
+}
+
+ul li.dropdownFilterSearch {
+  position: sticky;
+  background-color: var(--white);
+  top: 0;
+  padding: 0.25em;
+  z-index: 1;
+  display: block;
+}
+
+ul li.item:hover {
+  background-color: var(--blue-lighten-1);
+  color: var(--white);
+  cursor: pointer;
+}
+
+mat-menu-panel {
+  min-width: 200px;
+}

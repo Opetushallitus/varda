@@ -1,8 +1,7 @@
+<h1 class="varda-page-header">{{'label.paos-management.topic' | translate}}</h1>
 <div class="varda-paos-hallinta-wrapper">
-  <h1 class="varda-page-title">{{'label.paos-management.topic' | translate}}</h1>
-
-  <div *ngIf="isVardaPaakayttaja"
-       class="varda-paos-hallinta-flex-column varda-paos-hallinta-flex-column-big varda-paos-hallinta-background">
+  <main *ngIf="isVardaPaakayttaja"
+       class="varda-paos-hallinta-flex-column varda-paos-hallinta-flex-column-big varda-page-content">
     <h1>{{'label.paos-management.topic' | translate}}</h1>
     <p>
       {{(isVakajarjestajaKunta ? 'label.paos-management.description' : 'label.paos-management.description.yksityinen') | translate}}
@@ -11,20 +10,20 @@
     <app-paos-add-paos-toiminta [isVardaPaakayttaja]="isVardaPaakayttaja"
                                 [isVakajarjestajaKunta]="isVakajarjestajaKunta"
                                 [selectedVakajarjestaja]="selectedVakajarjestaja"></app-paos-add-paos-toiminta>
-  </div>
+  </main>
 
-  <div class="varda-paos-hallinta-flex-column">
-    <div *ngIf="isVakajarjestajaKunta"
-         class="varda-paos-hallinta-background">
+  <aside class="varda-paos-hallinta-flex-column m-y-2">
+    <section *ngIf="isVakajarjestajaKunta"
+         class="varda-page-content">
       <app-paos-added-toimipaikat [isVardaPaakayttaja]="isVardaPaakayttaja"
                                   [selectedVakajarjestaja]="selectedVakajarjestaja">
       </app-paos-added-toimipaikat>
-    </div>
-    <div class="varda-paos-hallinta-background">
+    </section>
+    <section class="varda-page-content">
       <app-paos-added-toimijat [isVardaPaakayttaja]="isVardaPaakayttaja"
                                [selectedVakajarjestaja]="selectedVakajarjestaja">
       </app-paos-added-toimijat>
-    </div>
-  </div>
+    </section>
+  </aside>
 </div>
 <lib-loading-indicator *ngIf="isLoading()"></lib-loading-indicator>

@@ -1,9 +1,13 @@
 <div *ngIf="isEdit">
   <div class="backend-error-container">
-    <div class="alert alert-danger" *ngIf="false">
+    <div class="alert alert-danger"
+         *ngIf="false">
       {{lapsiFormErrors | json}}
     </div>
-    <div class="alert alert-danger varda-form-main-feedback" role="alert" aria-live="assertive" *ngIf="ui.lapsiFormHasErrors">
+    <div class="alert alert-danger varda-form-main-feedback"
+         role="alert"
+         aria-live="assertive"
+         *ngIf="ui.lapsiFormHasErrors">
       <div *ngIf="ui.showErrorMessageInfo">
         {{this.ui.errorMessageInfo}}
       </div>
@@ -13,128 +17,138 @@
         </li>
       </ul>
     </div>
-    <div class="alert alert-success varda-form-main-feedback" role="alert" aria-live="polite" *ngIf="ui.lapsiFormSaveSuccess">
+    <div class="alert alert-success varda-form-main-feedback"
+         role="alert"
+         aria-live="polite"
+         *ngIf="ui.lapsiFormSaveSuccess">
       {{ui.formSaveSuccessMsg | translate}}
     </div>
   </div>
-  <div class="lapsi-form-content" id="lapsiFormContent">
-    <div class="lapsi-form-form-wrapper lapsi-form-perustiedot" *ngIf="!ui.isPerustiedotLoading">
-      <p>{{'text.add-lapsi-form-info' | translate}}<br/>
+  <div class="lapsi-form-content"
+       id="lapsiFormContent">
+    <div class="lapsi-form-perustiedot"
+         *ngIf="!ui.isPerustiedotLoading">
+      <div class="modal-form-intro">{{'text.add-lapsi-form-info' | translate}}<br />
         {{'text.add-lapsi-form-info-edit-varhaiskasvatustiedot' | translate}}
-        <a style="text-decoration: underline;" target="_blank" href="{{'ohjeet.url.confluence' | translate}}#{{'ohjeet.url.lisaaminen-ja-muokkaaminen.lapsen-tietojen-tarkastelu-ja-muokkaaminen' | translate}}">{{'label.taalta' | translate}}</a>.<br/>
+        <a target="_blank"
+           href="{{'ohjeet.url.confluence' | translate}}#{{'ohjeet.url.lisaaminen-ja-muokkaaminen.lapsen-tietojen-tarkastelu-ja-muokkaaminen' | translate}}">{{'label.taalta' | translate}}</a>.<br />
         {{'text.add-lapsi-form-info-edit-huoltaja-ja-maksutiedot' | translate}}
-        <a style="text-decoration: underline;" target="_blank" href="{{'ohjeet.url.confluence' | translate}}#{{'ohjeet.url.lisaaminen-ja-muokkaaminen.huoltaja-ja-maksutiedot' | translate}}">{{'label.taalta' | translate}}</a>.
-      </p>
-      <form [formGroup]="lapsiForm">
-        <fieldset class="form-group varda-fieldset" [id]="'lapsiFormFieldSet'">
-          <legend class="varda-fieldset-legend" style="text-transform: none;"><b>{{'label.lapsi-stepper.lapsi-details' | translate}}</b></legend>
-          <div class="form-group-details">
-            <label><b>{{'label.generic-name' | translate}}:</b> {{henkilo.sukunimi + ', ' + henkilo.etunimet}}</label>
+        <a target="_blank"
+           href="{{'ohjeet.url.confluence' | translate}}#{{'ohjeet.url.lisaaminen-ja-muokkaaminen.huoltaja-ja-maksutiedot' | translate}}">{{'label.taalta' | translate}}</a>.
+      </div>
+      <form [formGroup]="lapsiForm"
+            autocomplete="off">
+        <fieldset class="form-group varda-fieldset"
+                  [id]="'lapsiFormFieldSet'">
+          <legend class="varda-fieldset-legend">{{'label.lapsi-stepper.lapsi-details' | translate}}</legend>
+          <div class="oph-field oph-field-inline">
+            <label class="oph-label">{{'label.generic-name' | translate}}:</label>
+            <span>{{henkilo.sukunimi + ', ' + henkilo.etunimet}}</span>
           </div>
-          <div class="form-group-details">
-            <label><b>{{'label.birthday' | translate}}:</b> {{henkilo.syntyma_pvm | vardaDate}}</label>
+          <div class="oph-field oph-field-inline">
+            <label class="oph-label">{{'label.birthday' | translate}}:</label>
+            <span>{{henkilo.syntyma_pvm | vardaDate}}</span>
           </div>
-          <div class="form-group-details">
-            <label><b>{{'label.oppijanumero' | translate}}:</b> {{henkilo.henkilo_oid}}</label>
+          <div class="oph-field oph-field-inline">
+            <label class="oph-label">{{'label.oppijanumero' | translate}}:</label>
+            <span>{{henkilo.henkilo_oid}}</span>
           </div>
-          <div class="form-group-details" *ngIf="currentLapsi.oma_organisaatio">
-            <label><b>{{'label.oma-organisaatio' | translate}}:</b> {{currentLapsi.oma_organisaatio_nimi}}</label>
+          <div class="oph-field oph-field-inline"
+               *ngIf="currentLapsi.oma_organisaatio">
+            <label class="oph-label">{{'label.oma-organisaatio' | translate}}:</label>
+            <span>{{currentLapsi.oma_organisaatio_nimi}}</span>
           </div>
-          <div class="form-group-details" *ngIf="currentLapsi.paos_organisaatio">
-            <label><b>{{'label.paos-organisaatio' | translate}}:</b> {{currentLapsi.paos_organisaatio_nimi}}</label>
+          <div class="oph-field oph-field-inline"
+               *ngIf="currentLapsi.paos_organisaatio">
+            <label class="oph-label">{{'label.paos-organisaatio' | translate}}:</label>
+            <span>{{currentLapsi.paos_organisaatio_nimi}}</span>
           </div>
         </fieldset>
       </form>
     </div>
-    <div class="lapsi-form-form-wrapper lapsi-form-varhaiskasvatuspaatokset"
+    <div class="varda-painotukset lapsi-form-varhaiskasvatuspaatokset"
          *ngIf="!ui.isPerustiedotLoading && !ui.noVarhaiskasvatustietoPrivileges && (ui.isVakaTallentaja || ui.isVakaKatselija)">
-      <form [formGroup]="varhaiskasvatuspaatoksetForm">
-        <div class="lapsi-form-heading-and-delete-section">
-          <div class="lapsi-form-section-heading"><h3>{{'label.lapsi-stepper.varhaiskasvatuspaatokset' | translate}}</h3></div>
+      <form [formGroup]="varhaiskasvatuspaatoksetForm"
+            class="varda-painotukset-panel">
+        <div class="varda-painotukset-header">
+          {{'label.lapsi-stepper.varhaiskasvatuspaatokset' | translate}}
         </div>
-        <mat-accordion #lapsiFormAccordion *ngIf="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr')">
+        <mat-accordion #lapsiFormAccordion
+                       *ngIf="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr')">
           <mat-expansion-panel formArrayName="varhaiskasvatuspaatoksetFormArr"
-                               *ngFor="let item of varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr').controls; let k = index;"
+                               *ngFor="let item of varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr')['controls']; let k = index;"
                                [expanded]="false"
                                (click)="onExpansionPanelClick($event, k, 'varhaiskasvatuspaatos')"
                                #varhaiskasvatuspaatosPanels>
             <mat-expansion-panel-header>
-              <div style="padding: 10px">
-                <h5 tabindex="0" class="recurring-varhaiskasvatuspaatos-entity-header">
-                  {{getRecurringEntityHeader(k, 'varhaiskasvatuspaatos')}}
-                </h5>
+              <div class="oph-h4"
+                   tabindex="0">
+                {{getRecurringEntityHeader(k, 'varhaiskasvatuspaatos')}}
               </div>
             </mat-expansion-panel-header>
             <fieldset *ngFor="let varhaiskasvatuspaatosFieldSet of varhaiskasvatuspaatoksetFieldSets[k]; let i = index"
                       class="form-group varda-fieldset"
                       [id]="varhaiskasvatuspaatosFieldSet.id + k"
-                      [formGroup]="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr').controls[k].get(varhaiskasvatuspaatosFieldSet.id)">
+                      [formGroup]="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr')['controls'][k].get(varhaiskasvatuspaatosFieldSet.id)">
               <legend class="varda-fieldset-legend">{{getFieldsetTitle(varhaiskasvatuspaatosFieldSet)}}</legend>
               <div *ngFor="let field of varhaiskasvatuspaatosFieldSet.fields; let x = index">
-                <app-varda-form-question
-                  [isReadOnly]="ui.isVakaKatselija"
-                  [field]="field"
-                  [fieldIndex]="x"
-                  [partOfInline]="false"
-                  [fieldSet]="varhaiskasvatuspaatosFieldSet"
-                  [fieldSetIndex]="k"
-                  [fieldSetName]="varhaiskasvatuspaatosFieldSet.id"
-                  [form]="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr').controls[k].get(varhaiskasvatuspaatosFieldSet.id)"
-                  [formName]="'varhaiskasvatuspaatos'"
-                  (changedField)="onFieldChanged($event)"></app-varda-form-question>
+                <app-varda-form-question [isReadOnly]="ui.isVakaKatselija"
+                                         [field]="field"
+                                         [fieldIndex]="x"
+                                         [partOfInline]="false"
+                                         [fieldSet]="varhaiskasvatuspaatosFieldSet"
+                                         [fieldSetIndex]="k"
+                                         [fieldSetName]="varhaiskasvatuspaatosFieldSet.id"
+                                         [form]="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr')['controls'][k].get(varhaiskasvatuspaatosFieldSet.id)"
+                                         [formName]="'varhaiskasvatuspaatos'"
+                                         (changedField)="onFieldChanged($event)"></app-varda-form-question>
               </div>
             </fieldset>
-            <div class="varhaiskasvatuspaatos-form-continues-text-wrapper" *ngIf="ui.showVarhaiskasvatuspaatosFormContinuesTextWrapper">
-              <p class="form-continues-text">{{'alert.lomake-continues' | translate}}<br><i class="material-icons">arrow_downward</i></p>
-            </div>
-            <div *ngIf="!ui.isVakaKatselija">
-              <div class="varda-step-save-btn-wrapper" [id]="'saveVarhaiskasvatuspaatosBtnWrapper' + k">
-                <div><button
-                  class="varda-button varda-button-small recurring-save-btn"
-                  type="button"
-                  (click)="saveRecurringStructure(k, 'varhaiskasvatuspaatos')"
-                  [ngClass]="{'varda-disabled-button': varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr').controls[k].invalid}"
-                  [disabled]="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr').controls[k].invalid"
-                  *ngIf="ui.selectedVarhaiskasvatuspaatosIndexToDelete !== k">{{'label.generic-save' | translate}}</button></div>
-                <div>
-                  <button class="varda-button varda-button-small varda-button-delete"
-                          type="button"
-                          [ngClass]="getDeleteButtonStyles('varhaiskasvatuspaatos', k)"
+            <div *ngIf="!ui.isVakaKatselija"
+                 [id]="'saveVarhaiskasvatuspaatosBtnWrapper' + k">
+              <div *ngIf="ui.selectedVarhaiskasvatuspaatosIndexToDelete !== k"
+                   class="varda-form-btn-wrapper">
+                <button class="varda-button responsive"
+                        type="button"
+                        (click)="saveRecurringStructure(k, 'varhaiskasvatuspaatos')"
+                        [ngClass]="{'varda-disabled-button': varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr').controls[k].invalid}"
+                        [disabled]="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr')['controls'][k].invalid">
+                  {{'label.generic-save' | translate}}
+                </button>
+                <button class="varda-button responsive varda-button-delete"
+                        type="button"
+                        [ngClass]="getDeleteButtonStyles('varhaiskasvatuspaatos', k)"
+                        [disabled]="ui.isSubmitting"
+                        (click)="displayDeleteWarning('varhaiskasvatuspaatos', k)">
+                  {{getDeleteText('varhaiskasvatuspaatos', k) | translate}}
+                </button>
+              </div>
+              <div *ngIf="ui.selectedVarhaiskasvatuspaatosIndexToDelete === k"
+                   role="alert"
+                   aria-live="assertive">
+                <ng-container
+                              *ngIf="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr')['controls'].length === 1">
+                  <div class="oph-bold">{{'label.confirm-delete-last-varhaiskasvatuspaatos' | translate}}</div>
+                </ng-container>
+                <ng-container
+                              *ngIf="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr')['controls'].length > 1">
+                  <div class="oph-bold">{{'label.confirm-delete-varhaiskasvatuspaatos' | translate}}</div>
+                </ng-container>
+                <div class="varda-form-btn-wrapper">
+                  <button [id]="'varhaiskasvatuspaatosConfirmDeleteBtn' + k"
+                          class="varda-button responsive varda-button-danger"
+                          (click)="confirmDeleteAction('varhaiskasvatuspaatos', k, true)"
                           [disabled]="ui.isSubmitting"
-                          (click)="displayDeleteWarning('varhaiskasvatuspaatos', k)"
-                          *ngIf="ui.selectedVarhaiskasvatuspaatosIndexToDelete !== k">
-                    {{getDeleteText('varhaiskasvatuspaatos', k) | translate}}
+                          [ngClass]="{'varda-disabled-button': ui.isSubmitting}">
+                    {{'label.delete' | translate}}
                   </button>
-                  <div *ngIf="ui.selectedVarhaiskasvatuspaatosIndexToDelete === k" role="alert" aria-live="assertive">
-                    <p>
-                      <ng-container *ngIf="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr').controls.length === 1">
-                        <b>{{'label.confirm-delete-last-varhaiskasvatuspaatos' | translate}}</b>
-                      </ng-container>
-                      <ng-container *ngIf="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr').controls.length > 1">
-                        <b>{{'label.confirm-delete-varhaiskasvatuspaatos' | translate}}</b>
-                      </ng-container>
-                    </p>
-                    <div class="varda-delete-confirm-btn-wrapper">
-                      <div>
-                        <button [id]="'varhaiskasvatuspaatosCancelDeleteBtn' + k"
-                                class="varda-button varda-button-small varda-button-neutral"
-                                (click)="cancelDelete('varhaiskasvatuspaatos')"
-                                [disabled]="ui.isSubmitting"
-                                [ngClass]="{'varda-disabled-button': ui.isSubmitting}">
-                          {{'label.cancel' | translate}}
-                        </button>
-                      </div>
-                      <div>
-                        <button [id]="'varhaiskasvatuspaatosConfirmDeleteBtn' + k"
-                                class="varda-button varda-button-small varda-button-danger"
-                                (click)="confirmDeleteAction('varhaiskasvatuspaatos', k, true)"
-                                [disabled]="ui.isSubmitting"
-                                [ngClass]="{'varda-disabled-button': ui.isSubmitting}">
-                          {{'label.delete' | translate}}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  <button [id]="'varhaiskasvatuspaatosCancelDeleteBtn' + k"
+                          class="varda-button responsive varda-button-neutral"
+                          (click)="cancelDelete('varhaiskasvatuspaatos')"
+                          [disabled]="ui.isSubmitting"
+                          [ngClass]="{'varda-disabled-button': ui.isSubmitting}">
+                    {{'label.cancel' | translate}}
+                  </button>
                 </div>
               </div>
             </div>
@@ -142,127 +156,125 @@
         </mat-accordion>
         <div class="varda-recurring-field-add-new-wrapper"
              *ngIf="!ui.isVakaKatselija">
-          <a [routerLink]="" (click)="addNewRecurringStructure('varhaiskasvatuspaatos')">
+          <a [routerLink]=""
+             (click)="addNewRecurringStructure('varhaiskasvatuspaatos')">
             {{'label.add-new-varhaiskasvatuspaatos' | translate}}</a>
         </div>
       </form>
     </div>
-    <div class="lapsi-form-form-wrapper lapsi-form-varhaiskasvatussuhteet"
+    <div class="varda-painotukset lapsi-form-varhaiskasvatussuhteet"
          *ngIf="!ui.isPerustiedotLoading && !ui.noVarhaiskasvatustietoPrivileges && (ui.isVakaTallentaja || ui.isVakaKatselija)">
-      <form [formGroup]="varhaiskasvatussuhteetForm">
-        <div class="lapsi-form-heading-and-delete-section">
-          <div class="lapsi-form-section-heading"><h3>{{'label.lapsi-stepper.varhaiskasvatussuhteet'  | translate}}</h3></div>
+      <form [formGroup]="varhaiskasvatussuhteetForm"
+            class="varda-painotukset-panel">
+        <div class="varda-painotukset-header">
+          {{'label.lapsi-stepper.varhaiskasvatussuhteet'  | translate}}
         </div>
         <mat-accordion *ngIf="varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')">
           <mat-expansion-panel formArrayName="varhaiskasvatussuhteetFormArr"
-                               *ngFor="let item of varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr').controls; let k = index;"
+                               #varhaiskasvatussuhdePanels
+                               *ngFor="let item of varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls']; let k = index;"
                                [expanded]="false"
-                               (click)="onExpansionPanelClick($event, k, 'varhaiskasvatussuhde')" #varhaiskasvatussuhdePanels>
+                               (click)="onExpansionPanelClick($event, k, 'varhaiskasvatussuhde')">
             <mat-expansion-panel-header>
-              <div style="padding: 10px">
-                <h5 tabindex="-1" class="recurring-varhaiskasvatussuhde-entity-header">
-                  {{getRecurringEntityHeader(k, 'varhaiskasvatussuhde')}}
-                </h5>
-              </div>
+              <header class="oph-h4"
+                      tabindex="0">
+                {{getRecurringEntityHeader(k, 'varhaiskasvatussuhde')}}
+              </header>
             </mat-expansion-panel-header>
             <fieldset class="form-group varda-fieldset"
-                      [id]="'varhaiskasvatussuhde_perustiedot'" [formGroup]="varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr').controls[k]" style="margin-bottom: 20px">
-              <label class="varda-field-label">{{'label.toimipaikka' | translate}}</label>
+                      [id]="'varhaiskasvatussuhde_perustiedot'"
+                      [formGroup]="varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'][k]">
+              <label id="vakaFormToimipaikkaLabel"
+                     class="varda-field-label">{{'label.toimipaikka' | translate}}</label>
               <div class="varda-fieldset-content form-group">
                 <div>
                   <select class="varda-form-control form-control varda-select"
+                          aria-labelledby="vakaFormToimipaikkaLabel"
                           [formControlName]="'toimipaikka'"
                           [attr.name]="'toimipaikka'"
-                          [ngClass]="['varda-input-6']"
                           [compareWith]="byEndpoint"
                           [disabled]="isEdit">
-                    <option *ngFor="let toimipaikka of toimipaikkaOptions" [ngValue]="toimipaikka">{{toimipaikka.nimi}}</option>
+                    <option *ngFor="let toimipaikka of toimipaikkaOptions"
+                            [ngValue]="toimipaikka">{{toimipaikka.nimi}}</option>
                   </select>
                 </div>
               </div>
             </fieldset>
             <fieldset class="form-group varda-fieldset varda-fieldset-add-person"
-                      [id]="'varhaiskasvatussuhde_perustiedot'" [formGroup]="varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr').controls[k]">
-              <label class="varda-field-label">{{'label.varhaiskasvatuspaatos' | translate}}</label>
+                      [id]="'varhaiskasvatussuhde_perustiedot'"
+                      [formGroup]="varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'][k]">
+              <label id="vakaFormPaatosLabel"
+                     class="varda-field-label">{{'label.varhaiskasvatuspaatos' | translate}}</label>
               <div class="varda-fieldset-content form-group">
-                <div>
-                  <select class="varda-form-control form-control varda-select"
-                          [formControlName]="'varhaiskasvatuspaatos'"
-                          [attr.name]="'varhaiskasvatuspaatos'"
-                          [id]="'varhaiskasvatuspaatos' + k"
-                          [ngClass]="['varda-input-6']"
-                          [compareWith]="byEndpoint"
-                          [disabled]="isEdit">
-                    <option *ngFor="let varhaiskasvatuspaatos of varhaiskasvatuspaatokset; let y = index" [ngValue]="varhaiskasvatuspaatos">{{'label.varhaiskasvatuspaatos' | translate}} ({{varhaiskasvatuspaatos.alkamis_pvm | vardaDate}})</option>
-                  </select>
-                </div>
+                <select class="varda-form-control form-control varda-select"
+                        aria-labelledby="vakaFormPaatosLabel"
+                        [formControlName]="'varhaiskasvatuspaatos'"
+                        [attr.name]="'varhaiskasvatuspaatos'"
+                        [id]="'varhaiskasvatuspaatos' + k"
+                        [compareWith]="byEndpoint"
+                        [disabled]="isEdit">
+                  <option *ngFor="let varhaiskasvatuspaatos of varhaiskasvatuspaatokset; let y = index"
+                          [ngValue]="varhaiskasvatuspaatos">{{'label.varhaiskasvatuspaatos' | translate}}
+                    ({{varhaiskasvatuspaatos.alkamis_pvm | vardaDate}})</option>
+                </select>
               </div>
             </fieldset>
             <fieldset *ngFor="let varhaiskasvatussuhdeFieldSet of varhaiskasvatussuhteetFieldSets[k]; let i = index"
                       class="form-group varda-fieldset"
                       [id]="varhaiskasvatussuhdeFieldSet.id + k"
-                      [formGroup]="varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr').controls[k].get(varhaiskasvatussuhdeFieldSet.id)">
+                      [formGroup]="varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'][k].get(varhaiskasvatussuhdeFieldSet.id)">
               <div *ngFor="let field of varhaiskasvatussuhdeFieldSet.fields; let x = index">
-                <app-varda-form-question
-                  [isReadOnly]="ui.isVakaKatselija"
-                  [field]="field"
-                  [fieldIndex]="x"
-                  [partOfInline]="false"
-                  [fieldSet]="varhaiskasvatussuhdeFieldSet"
-                  [fieldSetIndex]="k"
-                  [fieldSetName]="varhaiskasvatussuhdeFieldSet.id"
-                  [form]="varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr').controls[k].get(varhaiskasvatussuhdeFieldSet.id)"
-                  [formName]="'varhaiskasvatussuhde'"></app-varda-form-question>
+                <app-varda-form-question [isReadOnly]="ui.isVakaKatselija"
+                                         [field]="field"
+                                         [fieldIndex]="x"
+                                         [partOfInline]="false"
+                                         [fieldSet]="varhaiskasvatussuhdeFieldSet"
+                                         [fieldSetIndex]="k"
+                                         [fieldSetName]="varhaiskasvatussuhdeFieldSet.id"
+                                         [form]="varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'][k].get(varhaiskasvatussuhdeFieldSet.id)"
+                                         [formName]="'varhaiskasvatussuhde'"></app-varda-form-question>
               </div>
             </fieldset>
-            <div class="varhaiskasvatussuhde-form-continues-text-wrapper" *ngIf="ui.showVarhaiskasvatussuhdeFormContinuesTextWrapper">
-              <p class="form-continues-text">{{'alert.lomake-continues' | translate}}<br><i class="material-icons">arrow_downward</i></p>
-            </div>
-            <div *ngIf="!ui.isVakaKatselija">
-              <div class="varda-step-save-btn-wrapper" [id]="'saveVarhaiskasvatussuhdeBtnWrapper' + k">
-                <div>
-                  <button
-                    class="varda-button varda-button-small recurring-save-btn"
-                    type="button"
-                    (click)="saveRecurringStructure(k, 'varhaiskasvatussuhde')"
-                    [ngClass]="{'varda-disabled-button': varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr').controls[k].invalid || ui.isSubmitting}"
-                    [disabled]="varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr').controls[k].invalid || ui.isSubmitting"
-                    *ngIf="ui.selectedVarhaiskasvatussuhdeIndexToDelete !== k">
-                    {{'label.generic-save' | translate}}
-                  </button>
-                </div>
-                <div>
-                  <button class="varda-button varda-button-small varda-button-delete"
-                          type="button"
-                          [ngClass]="getDeleteButtonStyles('varhaiskasvatussuhde', k)"
+            <div [id]="'saveVarhaiskasvatussuhdeBtnWrapper' + k"
+                 *ngIf="!ui.isVakaKatselija">
+              <div class="varda-form-btn-wrapper"
+                   *ngIf="ui.selectedVarhaiskasvatussuhdeIndexToDelete !== k">
+                <button class="varda-button responsive"
+                        type="button"
+                        (click)="saveRecurringStructure(k, 'varhaiskasvatussuhde')"
+                        [ngClass]="{'varda-disabled-button': varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr').controls[k].invalid || ui.isSubmitting}"
+                        [disabled]="varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'][k].invalid || ui.isSubmitting">
+                  {{'label.generic-save' | translate}}
+                </button>
+
+                <button class="varda-button responsive varda-button-delete"
+                        type="button"
+                        [ngClass]="getDeleteButtonStyles('varhaiskasvatussuhde', k)"
+                        [disabled]="ui.isSubmitting"
+                        (click)="displayDeleteWarning('varhaiskasvatussuhde', k)">
+                  {{getDeleteText('varhaiskasvatussuhde', k) | translate}}
+                </button>
+              </div>
+              <div *ngIf="ui.selectedVarhaiskasvatussuhdeIndexToDelete === k"
+                   role="alert"
+                   aria-live="assertive">
+                <div class="oph-bold">{{'label.confirm-delete-varhaiskasvatussuhde' | translate}}</div>
+                <div class="varda-form-btn-wrapper">
+                  <button [id]="'varhaiskasvatussuhdeConfirmDeleteBtn' + k"
+                          class="varda-button responsive varda-button-danger"
+                          (click)="confirmDeleteAction('varhaiskasvatussuhde', k, true)"
                           [disabled]="ui.isSubmitting"
-                          (click)="displayDeleteWarning('varhaiskasvatussuhde', k)"
-                          *ngIf="ui.selectedVarhaiskasvatussuhdeIndexToDelete !== k">
-                    {{getDeleteText('varhaiskasvatussuhde', k) | translate}}
+                          [ngClass]="{'varda-disabled-button': ui.isSubmitting}">
+                    {{'label.delete' | translate}}
                   </button>
-                  <div *ngIf="ui.selectedVarhaiskasvatussuhdeIndexToDelete === k" role="alert" aria-live="assertive">
-                    <p><b>{{'label.confirm-delete-varhaiskasvatussuhde' | translate}}</b></p>
-                    <div class="varda-delete-confirm-btn-wrapper">
-                      <div>
-                        <button [id]="'varhaiskasvatussuhdeCancelDeleteBtn' + k"
-                                class="varda-button varda-button-small varda-button-neutral"
-                                (click)="cancelDelete('varhaiskasvatussuhde')"
-                                [disabled]="ui.isSubmitting"
-                                [ngClass]="{'varda-disabled-button': ui.isSubmitting}">
-                          {{'label.cancel' | translate}}
-                        </button>
-                      </div>
-                      <div>
-                        <button [id]="'varhaiskasvatussuhdeConfirmDeleteBtn' + k"
-                                class="varda-button varda-button-small varda-button-danger"
-                                (click)="confirmDeleteAction('varhaiskasvatussuhde', k, true)"
-                                [disabled]="ui.isSubmitting"
-                                [ngClass]="{'varda-disabled-button': ui.isSubmitting}">
-                          {{'label.delete' | translate}}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+
+                  <button [id]="'varhaiskasvatussuhdeCancelDeleteBtn' + k"
+                          class="varda-button responsive varda-button-neutral"
+                          (click)="cancelDelete('varhaiskasvatussuhde')"
+                          [disabled]="ui.isSubmitting"
+                          [ngClass]="{'varda-disabled-button': ui.isSubmitting}">
+                    {{'label.cancel' | translate}}
+                  </button>
                 </div>
               </div>
             </div>
@@ -270,34 +282,36 @@
         </mat-accordion>
         <div class="varda-recurring-field-add-new-wrapper"
              *ngIf="!ui.isVakaKatselija">
-          <a [routerLink]="" class="" (click)="addNewRecurringStructure('varhaiskasvatussuhde')">
+          <a [routerLink]=""
+             class=""
+             (click)="addNewRecurringStructure('varhaiskasvatussuhde')">
             {{'label.add-new-varhaiskasvatussuhde' | translate}}</a>
         </div>
       </form>
     </div>
-    <div class="lapsi-form-form-wrapper lapsi-form-maksutiedot" *ngIf="!ui.isPerustiedotLoading">
+    <div class="varda-painotukset lapsi-form-maksutiedot"
+         *ngIf="!ui.isPerustiedotLoading">
       <app-maksutiedot-form [lapsiId]="currentLapsi.id"></app-maksutiedot-form>
     </div>
   </div>
-  <div class="varda-step-navigation" *ngIf="!ui.isPerustiedotLoading">
-    <div></div>
-    <div></div>
-  </div>
 </div>
-<div *ngIf="!ui.isPerustiedotLoading && !isEdit" id="newLapsiForm" class="lapsi-form-new-form">
+<div *ngIf="!ui.isPerustiedotLoading && !isEdit"
+     id="newLapsiForm"
+     class="lapsi-form-new-form">
   <div class="varda-fieldset-content form-group">
     <div>
-      <label class="varda-field-label">{{'label.kunnan-tai-kuntayhtyman-jarjestama-varhaiskasvatus' | translate}}</label>
+      <label
+             class="varda-field-label">{{'label.kunnan-tai-kuntayhtyman-jarjestama-varhaiskasvatus' | translate}}</label>
       <div class="varda-radio">
-        <mat-radio-group
-          [(ngModel)]="ui.kunnanJarjestamaVarhaiskasvatus">
-          <mat-radio-button class="boolean-radio-kunnanvirkailija-no" [value]="false">{{'label.no' | translate}}</mat-radio-button>
+        <mat-radio-group [(ngModel)]="ui.kunnanJarjestamaVarhaiskasvatus">
+          <mat-radio-button [value]="false">{{'label.no' | translate}}</mat-radio-button>
           <mat-radio-button [value]="true">{{'label.yes' | translate}}</mat-radio-button>
         </mat-radio-group>
       </div>
     </div>
   </div>
-  <div class="varda-fieldset-content form-group" *ngIf="ui.kunnanJarjestamaVarhaiskasvatus">
+  <div class="varda-fieldset-content form-group"
+       *ngIf="ui.kunnanJarjestamaVarhaiskasvatus">
     <div>
       <label class="varda-field-label">{{'label.jarjestava-kunta-tai-kuntayhtyma' | translate}}</label>
       <div>
@@ -305,8 +319,11 @@
                 name="jarjestavaKuntaSelect"
                 [disabled]="selectedVakajarjestajaGlobal.kunnallinen_kytkin"
                 [(ngModel)]="selectedVakajarjestaja">
-          <option *ngIf="selectedVakajarjestajaGlobal.kunnallinen_kytkin" [ngValue]="selectedVakajarjestaja" selected>{{selectedVakajarjestaja.nimi}}</option>
-          <option *ngFor="let vakajarjestaja of getTallentajaVakajarjestajat(vakajarjestajat)" [ngValue]="vakajarjestaja">{{vakajarjestaja.vakajarjestaja_nimi}}</option>
+          <option *ngIf="selectedVakajarjestajaGlobal.kunnallinen_kytkin"
+                  [ngValue]="selectedVakajarjestaja"
+                  selected>{{selectedVakajarjestaja.nimi}}</option>
+          <option *ngFor="let vakajarjestaja of getTallentajaVakajarjestajat(vakajarjestajat)"
+                  [ngValue]="vakajarjestaja">{{vakajarjestaja.vakajarjestaja_nimi}}</option>
         </select>
       </div>
     </div>
@@ -317,31 +334,33 @@
       <legend class="varda-fieldset-legend">{{'label.toimipaikka' | translate}}</legend>
       <div class="varda-fieldset-content form-group">
         <div>
-          <select class="varda-form-control form-control varda-select" (change)="setToimipaikka()"
+          <select class="varda-form-control form-control varda-select"
+                  (change)="setToimipaikka()"
                   [formControlName]="'toimipaikka'"
                   [attr.name]="'toimipaikka'"
-                  [ngClass]="['varda-input-6']"
                   [compareWith]="byEndpoint"
                   disabled>
-            <option *ngFor="let toimipaikka of toimipaikkaOptions" [ngValue]="toimipaikka">{{toimipaikka.nimi}}</option>
+            <option *ngFor="let toimipaikka of toimipaikkaOptions"
+                    [ngValue]="toimipaikka">{{toimipaikka.nimi}}</option>
           </select>
         </div>
       </div>
     </fieldset>
   </form>
-  <form [formGroup]="selectedSuhdeForm" style="display: none">
-    <fieldset class="form-group varda-fieldset varda-fieldset-add-person" [id]="'selectedsuhdefieldset'">
+  <form [formGroup]="selectedSuhdeForm"
+        style="display: none">
+    <fieldset class="form-group varda-fieldset varda-fieldset-add-person"
+              [id]="'selectedsuhdefieldset'">
       <legend class="varda-fieldset-legend">{{'label.suhteen-tyyppi' | translate}}</legend>
       <div class="varda-fieldset-content form-group">
         <div>
-          <mat-checkbox
-            [formControlName]="'addVarhaiskasvatussuhde'"
-            [attr.name]="'addVarhaiskasvatussuhde'"
-            [attr.aria-describedby]="'instructionBlock' + fieldIndex"
-            type="checkbox"
-            style="margin-right: 10px"
-            (change)="selectedSuhdeFieldChange('varhaiskasvatussuhde',$event)"
-            appHighlightElement>{{'label.varhaiskasvatussuhde' | translate}}</mat-checkbox>
+          <mat-checkbox [formControlName]="'addVarhaiskasvatussuhde'"
+                        [attr.name]="'addVarhaiskasvatussuhde'"
+                        [attr.aria-label]="'addVarhaiskasvatussuhde'"
+                        type="checkbox"
+                        style="margin-right: 10px"
+                        (change)="selectedSuhdeFieldChange('varhaiskasvatussuhde',$event)"
+                        appHighlightElement>{{'label.varhaiskasvatussuhde' | translate}}</mat-checkbox>
         </div>
       </div>
     </fieldset>
@@ -354,14 +373,14 @@
                 [formGroupName]="varhaiskasvatussuhdeFieldSet.id">
         <legend class="varda-fieldset-legend">{{'label.varhaiskasvatussuhteen-kesto' | translate}}</legend>
         <div *ngFor="let field of varhaiskasvatussuhdeFieldSet.fields; let x = index">
-          <app-varda-form-question
-            [field]="field"
-            [fieldIndex]="x"
-            [fieldSet]="varhaiskasvatussuhdeFieldSet"
-            [fieldSetIndex]="i"
-            [fieldSetName]="varhaiskasvatussuhdeFieldSet.id"
-            [formName]="'varhaiskasvatussuhde'"
-            [form]="varhaiskasvatussuhdeForm.controls[varhaiskasvatussuhdeFieldSet.id]"></app-varda-form-question>
+          <app-varda-form-question [field]="field"
+                                   [fieldIndex]="x"
+                                   [fieldSet]="varhaiskasvatussuhdeFieldSet"
+                                   [fieldSetIndex]="i"
+                                   [fieldSetName]="varhaiskasvatussuhdeFieldSet.id"
+                                   [formName]="'varhaiskasvatussuhde'"
+                                   [form]="varhaiskasvatussuhdeForm.controls[varhaiskasvatussuhdeFieldSet.id]">
+          </app-varda-form-question>
         </div>
       </fieldset>
     </form>
@@ -372,36 +391,29 @@
                 [formGroupName]="varhaiskasvatuspaatosFieldSet.id">
         <legend class="varda-fieldset-legend">{{getFieldsetTitle(varhaiskasvatuspaatosFieldSet)}}</legend>
         <div *ngFor="let field of varhaiskasvatuspaatosFieldSet.fields; let x = index">
-          <app-varda-form-question
-            [field]="field"
-            [fieldIndex]="x"
-            [fieldSet]="varhaiskasvatuspaatosFieldSet"
-            [fieldSetIndex]="0"
-            [fieldSetName]="varhaiskasvatuspaatosFieldSet.id"
-            [formName]="'varhaiskasvatuspaatos'"
-            [form]="varhaiskasvatuspaatosForm.controls[varhaiskasvatuspaatosFieldSet.id]"
-            (changedField)="onFieldChanged($event)"></app-varda-form-question>
+          <app-varda-form-question [field]="field"
+                                   [fieldIndex]="x"
+                                   [fieldSet]="varhaiskasvatuspaatosFieldSet"
+                                   [fieldSetIndex]="0"
+                                   [fieldSetName]="varhaiskasvatuspaatosFieldSet.id"
+                                   [formName]="'varhaiskasvatuspaatos'"
+                                   [form]="varhaiskasvatuspaatosForm.controls[varhaiskasvatuspaatosFieldSet.id]"
+                                   (changedField)="onFieldChanged($event)"></app-varda-form-question>
         </div>
       </fieldset>
     </form>
   </div>
-  <div class="varhaiskasvatuspaatos-form-continues-text-wrapper" *ngIf="ui.showVarhaiskasvatuspaatosFormContinuesTextWrapper">
-    <p class="form-continues-text">{{'alert.lomake-continues' | translate}}<br><i class="material-icons">arrow_downward</i></p>
-  </div>
-  <div>
-    <div class="lapsi-form-btn-wrapper" id="saveNewLapsiBtnWrapper">
-      <div><button class="varda-button secondary" type="button" data-dismiss="modal"
-                   [ngClass]="{'varda-disabled-button': ui.isSubmitting }"
-                   [disabled]="ui.isSubmitting">{{'label.cancel' | translate}}</button></div>
-      <div>
-        <button
-          class="varda-button"
-          type="button"
-          [ngClass]="{'varda-disabled-button': !addLapsiFormValid() || ui.isSubmitting }"
-          [disabled]="!addLapsiFormValid() || ui.isSubmitting"
-          (click)="saveLapsi()">{{ui.saveBtnText | translate}}</button>
-      </div>
-    </div>
+  <div class="varda-form-btn-wrapper">
+    <button class="varda-button varda-button-wide responsive-md secondary"
+            type="button"
+            data-dismiss="modal"
+            [ngClass]="{'varda-disabled-button': ui.isSubmitting }"
+            [disabled]="ui.isSubmitting">{{'label.cancel' | translate}}</button>
+    <button class="varda-button varda-button-wide responsive-md"
+            type="button"
+            [ngClass]="{'varda-disabled-button': !addLapsiFormValid() || ui.isSubmitting }"
+            [disabled]="!addLapsiFormValid() || ui.isSubmitting"
+            (click)="saveLapsi()">{{ui.saveBtnText | translate}}</button>
   </div>
 </div>
 <lib-loading-indicator *ngIf="ui.isPerustiedotLoading || ui.isSubmitting"></lib-loading-indicator>

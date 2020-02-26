@@ -1,208 +1,190 @@
 {
-    "fieldsets": [
-      {
-        "id": "huoltaja_henkilotunnuksella",
-        "title": {
-          "titleFi": "Huoltaja",
-          "titleSv": "Vårdnadshavare"
-        },
-        "fields": [
-          {
-            "key": "sukunimi",
-            "displayName": {
-              "displayNameFi": "Sukunimi",
-              "displayNameSv": "Efternamn"
-            },
-            "widget": "string",
-            "instructionText": {
-              "instructionTextFi": "Syötä huoltajan virallinen sukunimi. Esimerkki: ”Meikäläinen”.",
-              "instructionTextSv": "Ange vårdnadshavarens efternamn. Till exempel \"Testman\"."
-            },
-            "placeholder": {
-              "placeholderFi":  "Meikäläinen",
-              "placeholderSv": "Testman"
-            },
-            "styles": {
-              "width": "0.6"
-            },
-            "rules": {
-              "required": {
-                "acceptedValue": true,
-                "errorText": {
-                  "errorTextFi": "Sukunimi on pakollinen tieto",
-                  "errorTextSv": "Efternamnet är en obligatorisk uppgift"
-                }
-              },
-              "disabledOnEdit": {
-                "acceptedValue": true
-              }
-            }
-          },
-          {
-            "key": "etunimet",
-            "displayName": {
-              "displayNameFi": "Etunimet",
-              "displayNameSv": "Förnamn"
-            },
-            "widget": "string",
-            "instructionText": {
-              "instructionTextFi": "Syötä huoltajan viralliset etunimet. Esimerkki: \"Maija Helena\".",
-              "instructionTextSv": "Ange vårdnadshavarens samtliga förnamn. Till exempel \"Johan Mikael\"."
-            },
-            "placeholder": {
-              "placeholderFi":  "Maija Helena",
-              "placeholderSv": "Johan Mikael"
-            },
-            "styles": {
-              "width": "0.6"
-            },
-            "rules": {
-              "required": {
-                "acceptedValue": true,
-                "errorText": {
-                  "errorTextFi": "Etunimi on pakollinen tieto",
-                  "errorTextSv": "Förnamnen är en obligatorisk uppgift"
-                }
-              },
-              "disabledOnEdit": {
-                "acceptedValue": true
-              }
-            }
-          },
-          {
-            "key": "henkilotunnus",
-            "displayName": {
-              "displayNameFi": "Henkilötunnus",
-              "displayNameSv": "Personbeteckning"
-            },
-            "widget": "string",
-            "instructionText": {
-              "instructionTextFi": "Syötä huoltajan virallinen henkilötunnus. Henkilötunnus tulee olla muodossa ppkkvv-123X. Esimerkki: \"012345A678B\".",
-              "instructionTextSv": "Ange vårdnadshavarens personbeteckning. Personbeteckningen ska ha formen ddmmåå-123X. Exempel: \"012345A678B\"."
-            },
-            "placeholder": {
-              "placeholderFi":  "010101-123X",
-              "placeholderSv": "010101-123X"
-            },
-            "styles": {
-              "width": "0.6"
-            },
-            "rules": {
-              "required": {
-                "acceptedValue": true,
-                "errorText": {
-                  "errorTextFi": "Henkilötunnus on pakollinen tieto.",
-                  "errorTextSv": "Personbeteckningen är en obligatorisk uppgift."
-                }
-              },
-              "disabledOnEdit": {
-                "acceptedValue": true
-              }
-            }
-          }
-        ]
+  "fieldsets": [
+    {
+      "id": "huoltaja_henkilotunnuksella",
+      "title": {
+        "titleFi": "Huoltaja",
+        "titleSv": "Vårdnadshavare"
       },
-      {
-        "id": "huoltaja_oppijanumerolla",
-        "title": {
-          "titleFi": "Huoltaja",
-          "titleSv": "Vårdnadshavare"
-        },
-        "fields": [
-          {
-            "key": "sukunimi",
-            "displayName": {
-              "displayNameFi": "Sukunimi",
-              "displayNameSv": "Efternamn"
-            },
-            "widget": "string",
-            "instructionText": {
-              "instructionTextFi": "Syötä huoltajan virallinen sukunimi. Esimerkki: \"Meikäläinen\".",
-              "instructionTextSv": "Ange vårdnadshavarens efternamn. Till exempel \"Testman\"."
-            },
-            "placeholder": {
-              "placeholderFi":  "Meikäläinen",
-              "placeholderSv": "Testman"
-            },
-            "styles": {
-              "width": "0.6"
-            },
-            "rules": {
-              "required": {
-                "acceptedValue": true,
-                "errorText": {
-                  "errorTextFi": "Sukunimi on pakollinen tieto",
-                  "errorTextSv": "Efternamnet är en obligatorisk uppgift."
-                }
-              },
-              "disabledOnEdit": {
-                "acceptedValue": true
-              }
-            }
+      "fields": [
+        {
+          "key": "sukunimi",
+          "displayName": {
+            "displayNameFi": "Sukunimi",
+            "displayNameSv": "Efternamn"
           },
-          {
-            "key": "etunimet",
-            "displayName": {
-              "displayNameFi": "Etunimet",
-              "displayNameSv": "Förnamn"
-            },
-            "widget": "string",
-            "instructionText": {
-              "instructionTextFi": "Syötä huoltajan viralliset etunimet. Esimerkki: \"Maija Helena\".",
-              "instructionTextSv": "Ange vårdnadshavarens samtliga förnamn. Till exempel \"Johan Mikael\"."
-            },
-            "placeholder": {
-              "placeholderFi":  "Maija Helena",
-              "placeholderSv": "Johan Mikael"
-            },
-            "styles": {
-              "width": "0.6"
-            },
-            "rules": {
-              "required": {
-                "acceptedValue": true,
-                "errorText": {
-                  "errorTextFi": "Etunimi on pakollinen tieto.",
-                  "errorTextSv": "Förnamnen är en obligatorisk uppgift."
-                }
-              },
-              "disabledOnEdit": {
-                "acceptedValue": true
-              }
-            }
+          "widget": "string",
+          "instructionText": {
+            "instructionTextFi": "Syötä huoltajan virallinen sukunimi. Esimerkki: ”Meikäläinen”.",
+            "instructionTextSv": "Ange vårdnadshavarens efternamn. Till exempel \"Testman\"."
           },
-          {
-            "key": "henkilo_oid",
-            "displayName": {
-              "displayNameFi": "Oppijanumero",
-              "displayNameSv": "Studentnummer"
-            },
-            "widget": "string",
-            "instructionText": {
-              "instructionTextFi": "Syötä huoltajan oppijanumero muodossa 1.2.246.562.24.XXXXXXXXXXX. Huoltajan oppijanumeron saat Oppijanumerorekisteristä.",
-              "instructionTextSv": "Ange vårdnadshavarens studentnummer i formen 1.2.246.562.24.XXXXXXXXXXX. Vårdnadshavarens studentnummer fås från Studentnummerregistret."
-            },
-            "placeholder": {
-              "placeholderFi":  "1.2.246.562.24.XXXXXXXXXXX",
-              "placeholderSv": "1.2.246.562.24.XXXXXXXXXXX"
-            },
-            "styles": {
-              "width": "0.8"
-            },
-            "rules": {
-              "required": {
-                "acceptedValue": true,
-                "errorText": {
-                  "errorTextFi": "Oppijanumero on pakollinen tieto",
-                  "errorTextSv": "Studentnumret är en obligatorisk uppgift."
-                }
-              },
-              "disabledOnEdit": {
-                "acceptedValue": true
+          "placeholder": {
+            "placeholderFi": "Meikäläinen",
+            "placeholderSv": "Testman"
+          },
+          "rules": {
+            "required": {
+              "acceptedValue": true,
+              "errorText": {
+                "errorTextFi": "Sukunimi on pakollinen tieto",
+                "errorTextSv": "Efternamnet är en obligatorisk uppgift"
               }
+            },
+            "disabledOnEdit": {
+              "acceptedValue": true
             }
           }
-        ]
-      }
-    ]
+        },
+        {
+          "key": "etunimet",
+          "displayName": {
+            "displayNameFi": "Etunimet",
+            "displayNameSv": "Förnamn"
+          },
+          "widget": "string",
+          "instructionText": {
+            "instructionTextFi": "Syötä huoltajan viralliset etunimet. Esimerkki: \"Maija Helena\".",
+            "instructionTextSv": "Ange vårdnadshavarens samtliga förnamn. Till exempel \"Johan Mikael\"."
+          },
+          "placeholder": {
+            "placeholderFi": "Maija Helena",
+            "placeholderSv": "Johan Mikael"
+          },
+          "rules": {
+            "required": {
+              "acceptedValue": true,
+              "errorText": {
+                "errorTextFi": "Etunimi on pakollinen tieto",
+                "errorTextSv": "Förnamnen är en obligatorisk uppgift"
+              }
+            },
+            "disabledOnEdit": {
+              "acceptedValue": true
+            }
+          }
+        },
+        {
+          "key": "henkilotunnus",
+          "displayName": {
+            "displayNameFi": "Henkilötunnus",
+            "displayNameSv": "Personbeteckning"
+          },
+          "widget": "string",
+          "instructionText": {
+            "instructionTextFi": "Syötä huoltajan virallinen henkilötunnus. Henkilötunnus tulee olla muodossa ppkkvv-123X. Esimerkki: \"012345A678B\".",
+            "instructionTextSv": "Ange vårdnadshavarens personbeteckning. Personbeteckningen ska ha formen ddmmåå-123X. Exempel: \"012345A678B\"."
+          },
+          "placeholder": {
+            "placeholderFi": "010101-123X",
+            "placeholderSv": "010101-123X"
+          },
+          "rules": {
+            "required": {
+              "acceptedValue": true,
+              "errorText": {
+                "errorTextFi": "Henkilötunnus on pakollinen tieto.",
+                "errorTextSv": "Personbeteckningen är en obligatorisk uppgift."
+              }
+            },
+            "disabledOnEdit": {
+              "acceptedValue": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "huoltaja_oppijanumerolla",
+      "title": {
+        "titleFi": "Huoltaja",
+        "titleSv": "Vårdnadshavare"
+      },
+      "fields": [
+        {
+          "key": "sukunimi",
+          "displayName": {
+            "displayNameFi": "Sukunimi",
+            "displayNameSv": "Efternamn"
+          },
+          "widget": "string",
+          "instructionText": {
+            "instructionTextFi": "Syötä huoltajan virallinen sukunimi. Esimerkki: \"Meikäläinen\".",
+            "instructionTextSv": "Ange vårdnadshavarens efternamn. Till exempel \"Testman\"."
+          },
+          "placeholder": {
+            "placeholderFi": "Meikäläinen",
+            "placeholderSv": "Testman"
+          },
+          "rules": {
+            "required": {
+              "acceptedValue": true,
+              "errorText": {
+                "errorTextFi": "Sukunimi on pakollinen tieto",
+                "errorTextSv": "Efternamnet är en obligatorisk uppgift."
+              }
+            },
+            "disabledOnEdit": {
+              "acceptedValue": true
+            }
+          }
+        },
+        {
+          "key": "etunimet",
+          "displayName": {
+            "displayNameFi": "Etunimet",
+            "displayNameSv": "Förnamn"
+          },
+          "widget": "string",
+          "instructionText": {
+            "instructionTextFi": "Syötä huoltajan viralliset etunimet. Esimerkki: \"Maija Helena\".",
+            "instructionTextSv": "Ange vårdnadshavarens samtliga förnamn. Till exempel \"Johan Mikael\"."
+          },
+          "placeholder": {
+            "placeholderFi": "Maija Helena",
+            "placeholderSv": "Johan Mikael"
+          },
+          "rules": {
+            "required": {
+              "acceptedValue": true,
+              "errorText": {
+                "errorTextFi": "Etunimi on pakollinen tieto.",
+                "errorTextSv": "Förnamnen är en obligatorisk uppgift."
+              }
+            },
+            "disabledOnEdit": {
+              "acceptedValue": true
+            }
+          }
+        },
+        {
+          "key": "henkilo_oid",
+          "displayName": {
+            "displayNameFi": "Oppijanumero",
+            "displayNameSv": "Studentnummer"
+          },
+          "widget": "string",
+          "instructionText": {
+            "instructionTextFi": "Syötä huoltajan oppijanumero muodossa 1.2.246.562.24.XXXXXXXXXXX. Huoltajan oppijanumeron saat Oppijanumerorekisteristä.",
+            "instructionTextSv": "Ange vårdnadshavarens studentnummer i formen 1.2.246.562.24.XXXXXXXXXXX. Vårdnadshavarens studentnummer fås från Studentnummerregistret."
+          },
+          "placeholder": {
+            "placeholderFi": "1.2.246.562.24.XXXXXXXXXXX",
+            "placeholderSv": "1.2.246.562.24.XXXXXXXXXXX"
+          },
+          "rules": {
+            "required": {
+              "acceptedValue": true,
+              "errorText": {
+                "errorTextFi": "Oppijanumero on pakollinen tieto",
+                "errorTextSv": "Studentnumret är en obligatorisk uppgift."
+              }
+            },
+            "disabledOnEdit": {
+              "acceptedValue": true
+            }
+          }
+        }
+      ]
+    }
+  ]
 }

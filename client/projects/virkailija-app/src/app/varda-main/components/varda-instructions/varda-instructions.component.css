@@ -1,33 +1,20 @@
-.varda-instructions-wrapper {
-  padding-top: 40px;
-  display: flex;
-  justify-content: center;
-}
-
-.varda-instructions-content {
-  background-color: #fff;
-  padding: 20px 10px 20px 10px;
-  width: 620px;
-  border-radius: 4px;
-}
-
 .varda-instructions-item {
-  color: #159ecc;
+  color: var(--blue-lighten-1);
   display: block;
 }
 
 .varda-instructions-item-level1 {
-  margin-left: 15px;
+  margin-left: 1em;
 }
 
 .varda-instructions-item-level2 {
-  margin-left: 35px;
+  margin-left: 2em;
 }
 
 .varda-instructions-item-level3 {
-  margin-left: 55px;
+  margin-left: 3em;
 }
 
 .varda-instructions-item-level4 {
-  margin-left: 75px;
+  margin-left: 4em;
 }

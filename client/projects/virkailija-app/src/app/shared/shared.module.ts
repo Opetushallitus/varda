@@ -16,7 +16,8 @@ import {
   MatRadioModule,
   MatAutocompleteModule,
   MatListModule,
-  MatCardModule
+  MatCardModule,
+  MatMenuModule
  } from '@angular/material';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { PageNotFoundComponent,
@@ -37,6 +38,10 @@ import { VardaDeleteButtonComponent } from './components/varda-delete-button/var
 import { VardaToggleButtonComponent } from './components/varda-toggle-button/varda-toggle-button.component';
 import { VardaErrorAlertComponent } from './components/varda-error-alert/varda-error-alert.component';
 import { VardaPromptModalComponent } from './components/varda-prompt-modal/varda-prompt-modal.component';
+import { VardaDropdownFilterComponent } from './components/varda-dropdown-filter/varda-dropdown-filter.component';
+import { VardaListPaginationComponent } from './components/varda-list-pagination/varda-list-pagination.component';
+import { VardaRadioButtonGroupComponent } from './components/varda-radio-button-group/varda-radio-button-group.component';
+import { VardaRadioButtonComponent } from './components/varda-radio-button-group/varda-radio-button/varda-radio-button.component';
 
 
 const cookieConfig: NgcCookieConsentConfig = {
@@ -83,6 +88,7 @@ const cookieConfig: NgcCookieConsentConfig = {
     MatAutocompleteModule,
     MatListModule,
     MatCardModule,
+    MatMenuModule,
     TranslateModule,
     NgcCookieConsentModule.forRoot(cookieConfig)
   ],
@@ -104,7 +110,11 @@ const cookieConfig: NgcCookieConsentConfig = {
     VardaDeleteButtonComponent,
     VardaToggleButtonComponent,
     VardaErrorAlertComponent,
-    VardaPromptModalComponent],
+    VardaPromptModalComponent,
+    VardaDropdownFilterComponent,
+    VardaListPaginationComponent,
+    VardaRadioButtonGroupComponent,
+    VardaRadioButtonComponent],
   providers: [],
   exports: [
     HighlightElementDirective,
@@ -138,7 +148,11 @@ const cookieConfig: NgcCookieConsentConfig = {
     VardaDeleteButtonComponent,
     VardaToggleButtonComponent,
     VardaErrorAlertComponent,
-    VardaPromptModalComponent
+    VardaPromptModalComponent,
+    VardaDropdownFilterComponent,
+    VardaListPaginationComponent,
+    VardaRadioButtonGroupComponent,
+    VardaRadioButtonComponent
   ]
 })
 export class SharedModule { }

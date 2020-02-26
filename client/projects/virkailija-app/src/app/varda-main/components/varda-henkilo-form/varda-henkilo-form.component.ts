@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, ElementRef} from '@angular/core';
 import {VardaEntityNames, VardaHenkiloDTO, VardaToimipaikkaDTO} from '../../../utilities/models';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {MatStepper} from '@angular/material';
@@ -9,6 +9,8 @@ import {VardaFormValidators} from '../../../shared/validators/varda-form-validat
 import {VardaVakajarjestajaService} from '../../../core/services/varda-vakajarjestaja.service';
 import {TranslateService} from '@ngx-translate/core';
 import {VardaErrorMessageService} from '../../../core/services/varda-error-message.service';
+import { debounceTime } from 'rxjs/operators';
+import { fromEvent } from 'rxjs';
 
 declare var $: any;
 
@@ -26,6 +28,7 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
   @Output() closeHenkiloForm: EventEmitter<any> = new EventEmitter<any>();
   @Output() valuesChanged: EventEmitter<any> = new EventEmitter();
   @ViewChild('henkiloStepper', { static: false }) henkiloStepper: MatStepper;
+  @ViewChild('formContent', { static: true }) formContent: ElementRef;
 
   currentHenkilo: VardaHenkiloDTO;
   vardaHenkiloForm: FormGroup;
@@ -43,7 +46,8 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
     activeInstructionText: string,
     ssnInstructionText: string,
     firstnamesInsructionText: string,
-    lastnamesInstructionText: string
+    lastnamesInstructionText: string,
+    showFormContinuesWarning: boolean
   };
 
   constructor(private vardaHenkiloService: VardaHenkiloService,
@@ -58,6 +62,7 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
       lapsiFormErrors: [],
       isFetchingHenkilo: false,
       isLoading: false,
+      showFormContinuesWarning: false,
       activeInstructionText: '',
       ssnInstructionText: '',
       firstnamesInsructionText: '',
@@ -130,6 +135,15 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
 
       fc.updateValueAndValidity();
     }
+  }
+
+  bindScrollHandlers(): void {
+    fromEvent(this.formContent.nativeElement, 'scroll')
+      .pipe(debounceTime(300))
+      .subscribe((e: any) => {
+        const ct = e.target;
+        this.ui.showFormContinuesWarning = ct.scrollHeight - ct.clientHeight - ct.scrollTop > 200;
+      });
   }
 
   initExistingHenkiloForm(): void {
@@ -230,6 +244,9 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
         this.valuesChanged.emit(true);
       }
     });
+
+    this.bindScrollHandlers();
+
   }
 
 }

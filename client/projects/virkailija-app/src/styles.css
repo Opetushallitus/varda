@@ -1,633 +1,219 @@
 @import "~@angular/material/prebuilt-themes/indigo-pink.css";
+@import "~oph-virkailija-style-guide/src/index.css";
+@import "./assets/css/buttons.css";
+@import "./assets/css/forms.css";
+@import "./assets/css/modals.css";
+@import "./assets/css/lists.css";
+@import "./assets/css/tables.css";
+
+/* virkailija-raamifixit */
+:root {
+  --virkailija-raami-height: 100px;
+  --virkailija-z-index: 50;
+  --varda-navi-height: 50px;
+}
+
+app-varda-dashboard {
+  border: none;
+}
+
+app-varda-header {
+  position: relative;
+  top: -5px;
+  border: none;
+}
+
+
+#raamit_app_root {
+  position: sticky !important;
+  top: 0px;
+  z-index: var(--virkailija-z-index);
+}
+
+#virkailija-raamit-filleri {
+  position: sticky;
+  top: 0px;
+  height: var(--virkailija-raami-height);
+  width: 100%;
+  background-color: var(--blue-lighten-1);
+  z-index: calc(var(--virkailija-z-index) - 2);
+}
+
+@media (max-width: 1223px) {
+  :root {
+    --virkailija-raami-height: 55px;
+  }
+}
+
+/* </virkailijaraamit> */
 
 html {
-    font-size: 16px;
-    color: #4A4A4A;
+  font-size: 16px;
 }
 
 body {
-    margin: 0;
-    font-family: 'Roboto', sans-serif;
-    background-color: #fff;
-    color: #2A2A2A;
-    overflow: hidden;
+  background-color: #eeeeee;
 }
 
 /*Override Bootstrap .nav-link to get it work with Virkailijaraamit*/
 .nav-link {
-    display: initial;
-    padding: 0;
+  display: initial;
+  padding: 0;
 }
 
 a {
-    text-decoration: none;
-    color: #4A4A4A;
+  text-decoration: none;
+  color: #4A4A4A;
 }
 
-h1, h2, h3, h4, h5, h6, legend {
-    font-size: 1rem;
-    color: #4A4A4A;
-    margin: 0;
-    font-weight: normal;
-    line-height: normal;
+mat-icon {
+  vertical-align: middle;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+legend {
+  font-size: 1rem;
+  color: #4A4A4A;
+  margin: 0;
+  font-weight: normal;
+  line-height: normal;
 }
 
 .varda-app-wrapper {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background-color: #eeeeee;
+  width: 100%;
 }
 
 .varda-router-outlet-container {
-    display: block;
-    overflow: auto;
-    height: 90vh;
+  width: 90%;
+  max-width: 1450px;
+  margin-bottom: 55px;
+  margin-right: auto;
+  margin-left: auto;
+  padding: 1em 0;
 }
 
-.varda-router-outlet-container:after {
-    content: "";
-    display: block;
-    height: 150px;
-    width: 100%;
+.varda-page-header {
+  display: block;
+  font-size: var(--h3);
+  width: 100%;
+  margin: 1em 0;
 }
 
-.varda-main-frame-wrapper,
-.varda-reporting-wrapper {
-    width: 100vw;
-    margin-top: 40px;
-    min-height: 800px;
+.varda-page-content {
+  background-color: var(--white);
+  border-radius: 0.25em;
+  padding: 1em;
+  border: 2px solid transparent;
 }
 
-.varda-main-frame-section {
-    display: grid;
-    grid-template-columns: repeat(12, [col-start] 1fr);
-    grid-row-gap: 20px;
-    margin-left: auto;
-    margin-right: auto;
-    width: 80%;
+.varda-high-contrast .varda-page-content {
+  border-color: var(--black) !important;
 }
 
-.varda-icon {
-    height: 20px;
-    width: 20px;
-    cursor: pointer;
+.varda-page-content:not(:last-child) {
+  margin-bottom: 1em;
 }
 
-.varda-icon-lg {
-    height: 30px;
-    width: 30px;
-}
-
-.varda-button, .varda-input, .varda-select, .varda-checkbox, .varda-textarea {
-    cursor: pointer;
-    width: 100%;
-	padding: 6px;
-	border: 1px solid #ccc;
-	border-radius: 4px;
-	box-sizing: border-box;
-    resize: vertical;
-    font-size: 0.87rem;
-}
-
-.varda-modal-title {
-    font-size: 1.75rem;
-    flex: 0 1 90%;
-    margin-bottom: 10px;
-}
-
-.form-control::placeholder {
-    color: #C2C2C2;
-    opacity: 0.8;
-}
-
-.varda-disabled-button {
-    opacity: 0.5;
-}
-
-.varda-button {
-    background-color: #159ecb;
-    color: #fff;
-    border: none;
-    border-radius: 2px;
-    padding-left: 16px;
-    padding-right: 16px;
-    padding-bottom: 8px;
-    padding-top: 8px;
-}
-
-.varda-button.varda-button-danger {
-    background-color: #E4031F;
-    border-radius: 0;
-    box-shadow: none;
-}
-
-.varda-button.varda-button-danger:hover {
-    background-color: #ff4141;
-}
-
-.varda-button:hover {
-    background-color: #00b5f0;
-}
-
-.varda-button, .varda-input, .varda-select, .varda-checkbox, .varda-textarea {
-    outline: none;
-}
-
-.varda-button.varda-button-small {
-    padding-left: 16px;
-    padding-right: 16px;
-    padding-bottom: 8px;
-    padding-top: 8px;
-    font-size: 0.8rem;
-    border-radius: 2px;
-    color: #159ecb;
-    background-color: #FFF;
-    border: 1px solid #000;
-    box-shadow: none;
-    outline: none;
-}
-
-.varda-button.varda-button-small.varda-button-danger {
-    background-color: #e44e4e;
-    border-color: #e44e4e;
-    border-style: solid;
-    border-width: 2px;
-    color: #fff;
-    padding: 8px 16px 8px 16px;
-    border-radius: 2px;
-}
-
-.varda-button.varda-button-small.add-lapsi-btn {
-    color: #ffffff;
-    background-color: #0274f9;
-}
-
-.varda-button.varda-button-small.varda-button-lomake-cancel {
-    background-color: #E7E7E7;
-    color: #000;
-    padding-left: 16px;
-    padding-right: 16px;
-    border-radius: 2px;
-}
-
-.varda-button.varda-button-small.varda-button-neutral {
-    background-color: #666;
-    border-color: #666;
-    color: #FFF;
-    padding-left: 16px;
-    padding-right: 16px;
-    border-radius: 2px;
-}
-
-.varda-button.varda-button-neutral {
-    background-color: #666;
-    color: #FFF;
-    box-shadow: none;
-    border: 2px solid #666;
-    padding: 8px 16px 8px 16px;
-    border-radius: 2px;
-}
-
-.varda-button.varda-button-neutral:hover {
-    background-color: #000;
-    color: #fff;
-    padding: 8px 16px 8px 16px;
-    border-radius: 2px;
-}
-
-.varda-button.varda-button-small.recurring-save-btn {
-    color: #ffffff;
-    background-color: #159ecb;
-    border-color: #159ecb;
-    border-style: solid;
-    border-width: 2px;
-    padding: 8px 16px 8px 16px;
-    border-radius: 2px;
-}
-
-.varda-button.varda-button-small.varda-button-delete-all {
-    width: 110px;
-}
-
-.varda-delete-confirm-btn-wrapper {
-    display: flex
-}
-
-.varda-delete-confirm-btn-wrapper > div:first-child {
-    margin-right: 40px;
-}
-
-.varda-button.varda-button-small:hover {
-    background-color: #000;
-    color: #fff;
-    padding: 8px 16px 8px 16px;
-    border-radius: 2px;
-}
-
-.varda-button.secondary {
-    background-color: #fff;
-    color: #000;
-    border: 2px solid #000;
-    outline: none;
-}
-
-.varda-button.secondary.selection-btn {
-    border-radius: 0;
-    box-shadow: none;
-}
-
-.varda-button.secondary:hover {
-    background-color: #000;
-    color: #fff;
-}
-
-.varda-button:active,
-.varda-button.secondary:active {
-    box-shadow: none;
-}
-
-.varda-checkbox {
-    width: 50px;
-}
-
-.section-title {
-    font-size: 1.2rem;
-    font-weight: bold;
-    margin: 0;
-}
-
-.varda-form-control.form-control:focus {
-    border: 2px solid #444;
-    color: inherit;
-    background-color: #fff;
-    border-color: none;
-    box-shadow: none;
-}
 
 .varda-highlight-container {
-    border: 0;
-    -webkit-border-radius: 1px;
-    -moz-border-radius: 1px;
-    border-radius: 4px;
-    background-color: #f6f6f6;
+  border: 0;
+  -webkit-border-radius: 1px;
+  -moz-border-radius: 1px;
+  border-radius: 4px;
+  background-color: #f6f6f6;
 }
 
 .varda-high-contrast .varda-highlight-container {
-    background-color: #fff;
+  background-color: var(--white);
 }
 
 .varda-highlight-label {
-    font-weight: bold;
-}
-
-.varda-fieldset {
-    margin-bottom: 20px;
-}
-
-.varda-fieldset-add-person {
-    margin-bottom: 15px;
-}
-
-.varda-fieldset-content {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.87rem;
-    padding: 10px 20px 10px 50px;
-}
-
-.varda-fieldset-content > div:first-child {
-    flex: 0 1 50%;
-}
-
-.varda-fieldset-content > div:nth-child(2) {
-    flex: 0 1 50%;
-}
-
-.varda-fieldset-input-instructions-section {
-    padding-left: 10px;
-    position: relative;
-}
-
-.instruction-block-text {
-    position: absolute;
-    top: 0;
-}
-
-.varda-fieldset-legend {
-    font-size: 1.0rem;
-    width: auto;
-    margin-top: 30px;
-    margin-bottom: 10px;
-    position: relative;
-    left: 10px;
-}
-
-.varda-fieldset-save-fieldset {
-    display: flex;
-    justify-content: center;
-}
-
-.varda-field-label {
-    font-weight: bold;
-    margin-bottom: .7rem;
-}
-
-.varda-error-message-block {
-    display: block;
-    width: 100%;
-    margin-top: .25rem;
-    font-size: 0.75rem;
-    color: #dc3545;
-}
-
-.varda-error-message-block p {
-    margin-bottom: 5px;
-}
-
-.form-field-hidden {
-    display: none;
-}
-
-.varda-page-title {
-  display: block;
-  width: 100%;
-  margin: 1em 1em;
-}
-
-.varda-modal-form-wrapper {}
-
-.varda-modal-form-form {
-    width: 100%;
-}
-
-.varda-form-main-feedback {
-    flex: 1 1 100%;
-    margin-bottom: 10px;
-    margin-top: 0;
-    max-width: 600px;
-}
-
-.varda-modal-body {
-    overflow-y: auto;
-}
-
-.varda-modal-header {
-    flex-wrap: wrap;
-    background-color: #fff;
-}
-
-.varda-modal-content {
-}
-
-.varda-modal {
-    height: 99vh;
-}
-
-.varda-link-wrapper {
-    padding: 5px;
-    border: 1px solid transparent;
-}
-
-.varda-link-wrapper.varda-header-link-wrapper {
-    display: flex;
-    height: 30px;
-}
-
-.varda-step-container {
-    padding-left: 10px;
-    padding-top: 10px;
-    padding-right: 10px;
-}
-
-.varda-step-content {
-    padding-left: 10px;
-    padding-top: 10px;
-    padding-right: 10px;
-    overflow: auto;
-    padding-bottom: 30px;
-    max-height: 50vh;
-    min-height: 30vh;
-}
-
-.newToimipaikkaStepper .mat-horizontal-stepper-header {
-    pointer-events: none !important;
-}
-
-.active-step-label {
-    font-weight: bold;
-}
-
-.step-header {
-    color: #4A4A4A;
-    font-size: 0.9rem;
-    font-weight: bold;
-}
-
-.step-sub-header {
-    display: inline-block;
-    font-size: 0.9rem;
-    color: #4A4A4A;
-    margin-bottom: 0.5rem;
-    font-weight: bold;
-}
-
-.active-henkilo-item {
-    background-color: #4B9FFF;
-    color: #fff;
-}
-
-mat-step-header[ng-reflect-active="true"] .mat-step-icon {
-    background-color: #4e9fff;
-}
-
-mat-horizontal-stepper .mat-horizontal-content-container {
-    padding: 0;
-}
-
-
-.varda-step-save-btn-wrapper {
-    display: flex;
-    justify-content: flex-start;
-    padding-right: 30%;
-    padding-left: 10px;
-}
-
-.varda-step-save-btn-wrapper > div:first-child {
-    margin-right: 5px;
-    margin-bottom: 20px;
-}
-
-.varda-step-navigation {
-    display: flex;
-    justify-content: space-between;
-    padding-top: 15px;
-}
-
-.varda-step-navigation > div {
-    width: 200px;
-}
-
-.varda-step-navigation .stepper-next-btn {
-    width: 250px;
-}
-
-.varda-step-navigation .add-varhaiskasvatuspaatos-warning {
-    width: 700px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2px 20px 2px;
-    background-color: #F53EF2;
-    color: #FFFFFF;
-    margin-right: 20px;
-}
-
-.add-varhaiskasvatuspaatos-warning h2 {
-    font-size: 1.2rem;
-    font-style: italic;
-    margin-bottom: 0;
-    color: #fff;
+  font-weight: bold;
 }
 
 
 .varda-recurring-field-add-new-wrapper {
-    margin-top: 20px;
-    padding-left: 20px;
+  margin-top: 20px;
+  padding-left: 20px;
 }
 
 .varda-recurring-field-add-new-wrapper a {
-    display: flex;
-    color: #007bff;
-    outline: none;
+  display: flex;
+  color: #007bff;
+  outline: none;
 }
 
 .varda-recurring-field-add-new-wrapper a.varhaiskasvatuspaatos-highlight {
-    max-width: 320px;
-    padding: 10px;
-    background-color: #F148EE;
-    color: #fff;
+  max-width: 320px;
+  padding: 10px;
+  background-color: #F148EE;
+  color: var(--white);
 }
 
 .varda-recurring-field-add-new-wrapper app-varda-icon {
-   margin-right: 8px;
-   position: relative;
-   top: -2px;
-}
-
-.section-hr {
-    margin-bottom: 30px;
-}
-
-.confirm-delete-yes, .boolean-radio-yes, .boolean-radio-kunnanvirkailija-no {
-    margin-right: 5px;
-}
-
-.call-to-action {
-    border-radius: 15px;
-    background-color: #489BFB;
-    border-radius: 20px;
-    text-align: center;
-    height: 35px;
-    display: flex;
-    align-items: center;
-    font-size: 0.8rem;
-}
-
-.call-to-action:hover {
-    background-color: #0274F9;
-}
-
-.varda-add-henkilo-btn {
-    width: 190px;
-}
-
-.varda-add-henkilo-btn app-varda-icon {
-    margin-right: 10px;
-}
-
-#addHenkiloLink {
-    color: #fff;
-    padding: 8px 30px 8px 30px;
-    outline: 0;
-    text-decoration: none;
-    font-weight: bold;
+  margin-right: 8px;
+  position: relative;
+  top: -2px;
 }
 
 .varda-prompt-modal {
-    position: fixed;
-    z-index: 10000;
-    padding-top: 100px;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgb(0,0,0);
-    background-color: rgba(0,0,0,0.4);
+  position: fixed;
+  z-index: 10000;
+  padding-top: 100px;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgb(0, 0, 0);
+  background-color: rgba(0, 0, 0, 0.4);
 }
 
 .varda-prompt-modal h2 {
-    font-size: 1rem;
-    margin-bottom: 1rem;
+  font-size: 1rem;
+  margin-bottom: 1rem;
 }
 
 .varda-prompt-modal-content {
-    background-color: #fefefe;
-    margin: auto;
-    padding: 20px;
-    border: 1px solid #888;
-    border-radius: 8px;
-    max-width: 400px;
-    height: 180px;
-    position: relative;
-    text-align: center;
-}
-
-.prompt-yes, .prompt-no {
+  background-color: #fefefe;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #888;
+  border-radius: 8px;
+  max-width: 400px;
+  height: 180px;
+  position: relative;
+  text-align: center;
 }
 
 .varda-prompt-modal-btn-wrapper {
-    display: flex;
-    justify-content: center;
-    margin-top: 40px;
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
 }
 
-.varda-prompt-modal-btn-wrapper > div:first-child {
-    margin-right: 20px;
+.varda-prompt-modal-btn-wrapper>div:first-child {
+  margin-right: 20px;
 }
 
 .mat-nav-list .mat-list-item:hover,
 .mat-nav-list .mat-list-item:focus,
 .mat-selection-list .mat-list-item:hover,
 .mat-selection-list .mat-list-item:focus {
-    border: 1px solid #000;
-}
-
-.varda-autocompleteone-selection-list mat-pseudo-checkbox {
-    display: none;
+  border: 1px solid var(--black);
 }
 
 .varda-accessibility-settings-container {
-    box-shadow: 0px 7px 8px -2px #9B9B9B;
-    background-color: #fff;
-    border-radius: 10px;
-    padding: 20px;
-    border: 2px solid transparent;
-}
-
-label[for="henkiloFormAddWithHenkiloOid-input"] {
-    margin-bottom: 0;
-}
-
-.form-continues-text {
-    text-align: center;
-    font-weight: bold;
-}
-
-.varda-chkgroup-legend {
-    font-size: 0.87rem;
+  box-shadow: 0px 7px 8px -2px var(--gray-lighten-1);
+  background-color: var(--white);
+  border-radius: 10px;
+  padding: 20px;
+  border: 2px solid transparent;
 }
 
 /*HIGH CONTRAST DEFAULT STYLES*/
@@ -643,21 +229,16 @@ label[for="henkiloFormAddWithHenkiloOid-input"] {
 .varda-high-contrast .varda-main-frame-toimipaikka-section-content a,
 .varda-high-contrast .varda-main-frame-entity-section-content a,
 .varda-high-contrast .varda-fieldset-input-instructions-section small {
-    background-color: #fff !important;
-    color: #000 !important;
+  background-color: var(--white) !important;
+  color: var(--black) !important;
 }
 
-.varda-high-contrast .varda-main-frame-henkilo-section-container > div:first-child,
-.varda-high-contrast .varda-main-frame-toimipaikka-section-container > div:first-child {
-    border: 2px solid #000;
+.varda-high-contrast .varda-main-frame-henkilo-section-container>div:first-child,
+.varda-high-contrast .varda-main-frame-toimipaikka-section-container>div:first-child {
+  border: 2px solid var(--black);
 }
 
-.varda-high-contrast .varda-recurring-field-add-new-wrapper a.varhaiskasvatuspaatos-highlight,
-.varda-high-contrast .active-henkilo-item {
-    background-color: #000;
-}
-
-.varda-high-contrast .varda-henkilo-list-warning > i,
+.varda-high-contrast .varda-henkilo-list-warning>i,
 .varda-high-contrast .varda-error-message-block,
 .varda-high-contrast #logoutLinkIcon,
 .varda-high-contrast .toimipaikka-settings-info p,
@@ -672,171 +253,114 @@ label[for="henkiloFormAddWithHenkiloOid-input"] {
 .varda-high-contrast #addNewKielipainotusLink,
 .varda-high-contrast #addNewToimintapainotusLink,
 .varda-high-contrast .varda-henkilo-form-instructions-section small,
-.varda-high-contrast .step-sub-header,
-.varda-high-contrast .step-header,
 .varda-high-contrast .varda-modal-title {
-    color: #000 !important;
+  color: var(--black) !important;
 }
 
 .varda-high-contrast .varhaiskasvatuspaatos-highlight {
-    background-color: #000;
-}
-
-.varda-high-contrast .varda-step-navigation .add-varhaiskasvatuspaatos-warning {
-    background-color: #000;
-}
-
-.varda-high-contrast .header-nav-link-wrapper.varda-header-add-new-btn.call-to-action {
-    background-color: #000;
+  background-color: var(--black);
 }
 
 .varda-high-contrast ::placeholder {
-    color: #A2A2A2;
+  color: #A2A2A2;
 }
 
 .varda-high-contrast ::-ms-input-placeholder {
-    color: #A2A2A2;
+  color: #A2A2A2;
 }
 
 
-/*HIGH CONTRAST PRIMARY CTA-BUTTON STYLES*/
-.varda-high-contrast .varda-button,
-.varda-button.change-contrast {
-    background-color: #000 !important;
-    color: #fff !important;
-    box-shadow: 0 4px 5px 0px #9B9B9B;
-    border-radius: 4px;
-    padding-left: 30px;
-    padding-right: 30px;
-    padding-bottom: 8px;
-    padding-top: 8px;
-    border: 2px solid #000;
-    outline: none;
-}
 
-.varda-high-contrast .varda-button.varda-button-small {
-    padding-left: 10px;
-    padding-right: 10px;
-    padding-bottom: 3px;
-    padding-top: 3px;
-    font-size: 0.8rem;
-    border-radius: 0;
-}
 
-.varda-high-contrast .varda-button:hover,
-.varda-button.change-contrast:hover {
-    background-color: #fff !important;
-    color: #000 !important;
-    border-color: #000;
-    font-weight: bold;
-}
 
-.varda-high-contrast .varda-button:active,
-.varda-button.change-contrast:active {
-    box-shadow: none;
-}
 
-/*HIGH CONTRAST SECONDARY CTA-BUTTON STYLES*/
-.varda-high-contrast .varda-button.secondary {
-    background-color: #fff !important;
-    color: #000 !important;
-    border: 2px solid #000;
-    outline: none;
-}
 
-.varda-high-contrast .varda-button.secondary:hover {
-    background-color: #000 !important;
-    color: #fff !important;
-    font-weight: bold;
-}
 
-.varda-high-contrast .varda-button.secondary:active {
-    box-shadow: none;
-}
+
 
 /*HIGH CONTRAST LINK STYLES*/
 .varda-high-contrast .header-nav-link-wrapper .varda-header-link-item:hover {
-    border-color: #000;
+  border-color: var(--black);
 }
 
 .varda-high-contrast .header-nav-link-wrapper .varda-header-link-item:active {
-    background-color: #fff !important;
-    color: #000 !important;
-    border-color: #000;
+  background-color: var(--white) !important;
+  color: var(--black) !important;
+  border-color: var(--black);
 }
 
 .varda-high-contrast .varda-footer-nav-link-wrapper .varda-footer-link-item:active {
-    background-color: #fff !important;
-    color: #000 !important;
-    border-color: #000;
+  background-color: var(--white) !important;
+  color: var(--black) !important;
+  border-color: var(--black);
 }
 
 /*HIGH CONTRAST ICON STYLES*/
 
 /*HIGH CONTRAST ADDNEW ICON*/
 .varda-high-contrast .varda-icon-default.varda-icon-addnew circle {
-    fill: #000 !important;
-    stroke: #000 !important;
-    stroke-width: 1.4;
+  fill: var(--black) !important;
+  stroke: var(--black) !important;
+  stroke-width: 1.4;
 }
 
 .varda-high-contrast .varda-icon-default.varda-icon-addnew line {
-    stroke: #fff !important;
-    stroke-width: 6 !important;
+  stroke: var(--white) !important;
+  stroke-width: 6 !important;
 }
 
 .varda-high-contrast .varda-icon-default.varda-icon-addnew line {
-    stroke: #fff !important;
-    stroke-width: 6 !important;
+  stroke: var(--white) !important;
+  stroke-width: 6 !important;
 }
 
 .varda-high-contrast .varda-icon-default.varda-icon-addnew:hover circle {
-    fill: #fff !important;
-    stroke: #000 !important;
+  fill: var(--white) !important;
+  stroke: var(--black) !important;
 }
 
 .varda-high-contrast .varda-icon-default.varda-icon-addnew:hover line {
-    stroke: #000 !important;
-    stroke-width: 6 !important;
+  stroke: var(--black) !important;
+  stroke-width: 6 !important;
 }
 
 .varda-high-contrast .varda-icon-default.varda-icon-addnew:hover line {
-    stroke: #000 !important;
-    stroke-width: 6 !important;
+  stroke: var(--black) !important;
+  stroke-width: 6 !important;
 }
 
 .varda-high-contrast .varda-icon-default.varda-icon-addnew:hover line {
-    stroke: #000 !important;
-    stroke-width: 6;
+  stroke: var(--black) !important;
+  stroke-width: 6;
 }
 
 
 /*HIGH CONTRAST CLOSE ICON*/
 .varda-high-contrast .varda-icon-default.varda-icon-close.action-icon:hover circle {
-    fill: #fff !important;
-    stroke: #000;
-    stroke-width: 1.4;
+  fill: var(--white) !important;
+  stroke: var(--black);
+  stroke-width: 1.4;
 }
 
 .varda-high-contrast .varda-icon-default.varda-icon-close.action-icon:hover line {
-    stroke: #000 !important;
-    stroke-width: 6;
+  stroke: var(--black) !important;
+  stroke-width: 6;
 }
 
 
 /*HIGH CONTRAST MOREINFO ICON*/
 .varda-high-contrast .varda-icon-default.varda-icon-moreinfo.action-icon:hover .white-circle {
-    fill: #fff !important;
-    stroke: #000;
+  fill: var(--white) !important;
+  stroke: var(--black);
 }
 
 .varda-high-contrast .varda-icon-default.varda-icon-moreinfo.action-icon:hover .more-info-circle {
-    stroke: #000 !important;
-    fill: #000 !important;
+  stroke: var(--black) !important;
+  fill: var(--black) !important;
 }
 
 .varda-high-contrast .varda-accessibility-settings-container {
-    border-color: #000;
+  border-color: var(--black);
 }
 
 /*OUTLINE STYLES FOR ACCESSIBILITY ADJUSTMENTS*/
@@ -849,10 +373,9 @@ body:not(.user-is-tabbing) h5:focus {
   outline: none;
 }
 
-.user-is-tabbing .varda-language-selector-flag-wrapper > div > a:focus,
+.user-is-tabbing .varda-language-selector-flag-wrapper>div>a:focus,
 .user-is-tabbing #siteMenuWrapper:focus,
 .user-is-tabbing .varda-main-frame-toimipaikka-selector-panel mat-expansion-panel-header:focus,
-.user-is-tabbing .header-nav-link-wrapper.varda-header-add-new-btn.call-to-action:focus,
 .user-is-tabbing.overlay .menu-nav-link-wrapper .varda-menu-link-item:focus,
 .user-is-tabbing.overlay .menu-nav-link-wrapper.last-menu-item .varda-menu-link-item:focus,
 .user-is-tabbing .varda-button:focus,
@@ -877,120 +400,27 @@ body:not(.user-is-tabbing) h5:focus {
 .user-is-tabbing #myUsername:focus,
 .user-is-tabbing #logoutLink:focus,
 .user-is-tabbing .lapsi-form-esiopetus-link:focus {
-    outline: 3px solid #000 !important;
+  outline: 3px solid var(--black) !important;
 }
 
 .user-is-tabbing #addContrastBtn:focus,
 .user-is-tabbing #decreaseContrastBtn:focus {
-    outline: 3px solid #FFFF00 !important;
+  outline: 3px solid #FFFF00 !important;
 }
 
 
 .user-is-tabbing.overlay .menu-nav-link-wrapper .varda-menu-link-item:focus,
 .user-is-tabbing.overlay .menu-nav-link-wrapper.last-menu-item .varda-menu-link-item:focus {
-    border-bottom-color: #000;
-    background-color: #000;
-    font-weight: bold;
-    color: #fff;
+  border-bottom-color: var(--black);
+  background-color: var(--black);
+  font-weight: bold;
+  color: var(--white);
 }
 
 .user-is-tabbing .varda-button:focus {
-    border-radius: 0px;
+  border-radius: 0px;
 }
 
 .user-is-tabbing .selected-language:focus {
-    border-bottom: none;
-}
-
-/* Should be removed after real virkailija-styles are in use */
-.oph-alert {
-  padding: 10px 15px;
-  margin: 5px 0;
-}
-
-.oph-alert-info {
-  background-color: #def2ff;
-}
-
-.oph-alert-success {
-  background-color: #e6ffc1;
-}
-
-/*@media-QUERIES*/
-@media (max-width: 600px) {
-    .varda-fieldset-content {
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-        margin-bottom: 20px;
-    }
-
-    .varda-fieldset-content > div:first-child {
-        flex: 0 1 100%;
-    }
-
-    .varda-fieldset-content > div:nth-child(2) {
-        flex: 0 1 100%;
-    }
-
-    .varda-fieldset-input-instructions-section {
-        padding-top: 10px;
-        padding-left: 0;
-    }
-
-    .varda-error-message-block p {
-        margin-bottom: 5px;
-    }
-}
-
-@media (max-width: 800px) {
-    .modal-dialog {
-        max-width: 90vw;
-    }
-}
-
-@media (min-width: 576px) {
-  .modal-dialog {
-    max-width: 85vw;
-    margin: 1.75rem auto;
-  }
-}
-
-@media (min-width: 1200px) {
-  .modal-dialog {
-    max-width: 1000px;
-    margin: 1.75rem auto;
-  }
-}
-
-@media (max-width:460px) {
-    .varda-main-frame-section {
-        width: 85%;
-    }
-}
-
-@media (max-width: 350px) {
-
-    .varda-main-frame-section {
-        width: 95%;
-        margin-left: 4px;
-    }
-
-}
-
-/*@supports-QUERIES*/
-@supports (-webkit-padding-start: 10px) or (-moz-padding-start: 10px) {
-    .varda-fieldset-legend {
-        position: static;
-        left: 0;
-        text-transform: uppercase;
-    }
-    .varda-fieldset {
-        -webkit-padding-start: 10px;
-        -ms-padding-start: 10px;
-        -moz-padding-start: 10px;
-    }
-    .varda-fieldset-content {
-        padding: 10px 20px 5px 20px;
-    }
+  border-bottom: none;
 }

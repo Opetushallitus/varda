@@ -1,0 +1,21 @@
+<div class="varda-list-search-more">
+  <button *ngIf="prevLink"
+          class="varda-button secondary"
+          [disabled]="isLoading()"
+          type="button"
+          (click)="searchPrev()">
+    <mat-icon>arrow_left</mat-icon>
+    {{'label.edelliset' | translate}}
+  </button>
+  <span class="varda-list-page">
+    <span *ngIf="maxPages">{{ currentPage }} / {{ maxPages }}</span>
+  </span>
+  <button *ngIf="nextLink"
+          [disabled]="isLoading()"
+          class="varda-button"
+          type="button"
+          (click)="searchNext()">
+    {{'label.seuraavat' | translate}}
+    <mat-icon>arrow_right</mat-icon>
+  </button>
+</div>

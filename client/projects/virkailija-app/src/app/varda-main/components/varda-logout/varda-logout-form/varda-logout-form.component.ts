@@ -12,7 +12,7 @@ export class VardaLogoutFormComponent implements OnInit {
 
   navigateToLogin(event: any): void {
     event.preventDefault();
-    window.open(`/login`, '_blank');
+    window.open(`/varda/login`, '_self');
   }
 
   ngOnInit() {

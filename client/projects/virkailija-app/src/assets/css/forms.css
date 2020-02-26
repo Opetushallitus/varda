@@ -1,0 +1,261 @@
+.varda-form {
+  width: auto;
+  margin: auto;
+}
+
+.varda-form legend {
+  margin-bottom: 1em;
+}
+
+.oph-field {
+  display: flex;
+  flex-flow: wrap;
+  justify-content: space-between;
+}
+
+.oph-form-submit,
+.oph-field-inputs,
+.oph-field-text {
+  flex: 1 1 350px;
+  display: flex;
+  flex-direction: column;
+}
+
+.oph-field-inputs .mat-radio-group .mat-radio-button~.mat-radio-button {
+  margin-left: 0;
+}
+
+.mat-radio-group .mat-radio-button {
+  flex-basis: 1 1 300px;
+  margin: auto 0.5em !important;
+}
+
+
+.oph-field.oph-field-inline+.oph-field.oph-field-inline {
+  margin-top: 0px;
+}
+
+.oph-field-inline .oph-label:first-of-type {
+  margin-right: var(--space-1);
+}
+
+.oph-field.oph-field-inline {
+  justify-content: flex-start;
+}
+
+.oph-field-inline>.oph-field-inputs {
+  flex-direction: unset;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.oph-field-inline>.oph-field-inputs>* {
+  white-space: nowrap;
+  margin: 0.25em;
+  margin-bottom: 0.25em;
+  flex: 1 1 50px;
+}
+
+.oph-field-inline>.oph-field-inputs>.oph-label {
+  min-width: 160px;
+}
+
+.oph-field-inline>.oph-field-inputs>.mat-radio-group,
+.oph-field-inline>.oph-field-inputs>.oph-input {
+  flex: 10 1;
+}
+
+.oph-field-inline>.oph-field-inputs>.mat-radio-group {
+  position: relative;
+  top: 5px;
+  display: flex;
+}
+
+.oph-field-inline>.oph-field-inputs>.oph-input+button {
+  height: 42px;
+}
+
+
+
+.oph-field-text {
+  align-self: center;
+  padding: 0 0.5em;
+  margin-top: 0;
+
+}
+
+.oph-field-text>small {
+  margin: var(--space-1);
+
+}
+
+.oph-input[disabled],
+.oph-input[readonly] {
+  border: 0;
+  color: var(--black);
+}
+
+.oph-field label,
+.oph-field .oph-input,
+.oph-field .oph-error,
+.oph-field .oph-field-text {
+  max-width: 100%;
+}
+
+.oph-label {
+  font-weight: 500;
+}
+
+.varda-fieldset {
+  margin: 1em auto;
+  width: 100%;
+}
+
+.varda-fieldset-legend {
+  font-size: var(--h4);
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 0.5em;
+}
+
+.varda-fieldset-content {
+  margin: 0.5em 1em;
+}
+
+.varda-form-btn-wrapper {
+  margin: 1em 0;
+  padding: 0 0.5em;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.varda-form-btn-wrapper button {
+  margin: 0.5em;
+}
+
+.varda-form-main-feedback {
+  margin: 0.5em;
+}
+
+.varda-input,
+.varda-select,
+.varda-textarea {
+  cursor: pointer;
+  width: 100%;
+  padding: 6px;
+  border: 1px solid var(--gray-lighten-3);
+  border-radius: 4px;
+  box-sizing: border-box;
+  resize: vertical;
+  font-size: 0.87rem;
+}
+
+.varda-painotukset {
+  margin: 3em 1em;
+}
+
+.varda-painotukset .varda-painotukset-panel {}
+
+.varda-painotukset .varda-painotukset-wrapper {
+  margin: 1em;
+}
+
+.varda-painotukset .varda-painotukset-header {
+  font-weight: bold;
+  font-size: var(--h4);
+  margin-bottom: 0.5em;
+}
+
+.varda-painotukset .varda-painotukset-panel .mat-expansion-panel {
+  box-shadow: none;
+  border: 1px solid var(--blue-lighten-3);
+  background-color: var(--blue-lighten-4);
+}
+
+.form-continues-text-wrapper {
+  position: absolute;
+  bottom: 15%;
+  right: 15%;
+  z-index: 1;
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+  user-select: none;
+}
+
+.form-continues-text-wrapper .form-continues-text {
+  text-align: center;
+  font-weight: bold;
+}
+
+
+@media (max-width: 767px) {
+  .form-continues-text-wrapper {
+    display: none;
+  }
+
+  .oph-field-inline>.oph-field-inputs {
+    flex-wrap: wrap;
+  }
+
+  .oph-field-inline>.oph-field-inputs>* {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .oph-field .oph-field-text {
+    order: 1;
+  }
+
+  .oph-field .oph-field-inputs {
+    order: 2;
+  }
+
+  .oph-field .oph-field-inputs>* {
+    order: 3
+  }
+
+  .oph-field .oph-field-inputs .oph-label {
+    order: 1
+  }
+
+  .oph-field .oph-field-inputs .oph-error {
+    order: 2
+  }
+}
+
+@media (max-width: 578px) {}
+
+
+@media (max-width: 400px) {}
+
+.oph-field-text {}
+
+.oph-field-text>.slideOut {
+  animation: slideIn linear 8s;
+  animation-fill-mode: forwards;
+  animation-direction: reverse;
+  overflow: hidden;
+}
+
+@keyframes slideIn {
+  0% {
+    max-height: 0px;
+  }
+
+  40% { max-height: 50px;}
+
+  70% {
+    max-height: 100px;
+  }
+
+  90% {
+    max-height: 150px
+  }
+
+  100% {
+    max-height: 400px;
+  }
+}

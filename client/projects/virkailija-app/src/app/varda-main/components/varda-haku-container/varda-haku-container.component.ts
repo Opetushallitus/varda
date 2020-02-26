@@ -1,9 +1,9 @@
-import {Component, OnInit} from '@angular/core';
-import {HenkilohakuResultDTO, HenkilohakuSearchDTO, HenkilohakuType, FilterStatus, FilterObject} from '../../../utilities/models/dto/varda-henkilohaku-dto.model';
-import {VardaApiService} from '../../../core/services/varda-api.service';
-import {VardaVakajarjestajaService} from '../../../core/services/varda-vakajarjestaja.service';
-import {VardaErrorMessageService} from '../../../core/services/varda-error-message.service';
-import {TranslateService} from '@ngx-translate/core';
+import { Component, OnInit } from '@angular/core';
+import { HenkilohakuResultDTO, HenkilohakuSearchDTO, HenkilohakuType, FilterStatus, FilterObject } from '../../../utilities/models/dto/varda-henkilohaku-dto.model';
+import { VardaApiService } from '../../../core/services/varda-api.service';
+import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
+import { TranslateService } from '@ngx-translate/core';
+import { VardaPageDto } from '../../../utilities/models/dto/varda-page-dto';
 
 @Component({
   selector: 'app-varda-haku-container',
@@ -11,7 +11,7 @@ import {TranslateService} from '@ngx-translate/core';
   styleUrls: ['./varda-haku-container.component.css']
 })
 export class VardaHakuContainerComponent implements OnInit {
-  searchResult: Array<HenkilohakuResultDTO>;
+  searchResult: VardaPageDto<HenkilohakuResultDTO>;
   lastSearchDto: HenkilohakuSearchDTO;
   vakajarjestajaId: number;
   ui: {
@@ -20,12 +20,12 @@ export class VardaHakuContainerComponent implements OnInit {
     isLoading: boolean,
   };
   nextSearchLink: string;
+  prevSearchLink: string;
 
   constructor(private vardaApiService: VardaApiService,
-              private vardaVakajarjestajaService: VardaVakajarjestajaService,
-              private vardaErrorMessageService: VardaErrorMessageService,
-              private translate: TranslateService) {
-    this.searchResult = [];
+    private vardaVakajarjestajaService: VardaVakajarjestajaService,
+    private translate: TranslateService) {
+    this.searchResult = null;
     this.lastSearchDto = {
       search: '',
       type: HenkilohakuType.lapset,
@@ -38,6 +38,7 @@ export class VardaHakuContainerComponent implements OnInit {
       formSaveErrors: [],
     };
     this.nextSearchLink = null;
+    this.prevSearchLink = null;
   }
 
   ngOnInit() {
@@ -45,36 +46,33 @@ export class VardaHakuContainerComponent implements OnInit {
   }
 
   // If no searchDto we search more.
-  search(searchDto?: HenkilohakuSearchDTO) {
+  search(searchDto?: HenkilohakuSearchDTO, previous?: boolean) {
     this.ui.isLoading = true;
     if (searchDto) {
       this.nextSearchLink = null;
+      this.prevSearchLink = null;
       this.lastSearchDto.search = searchDto.search;
       this.lastSearchDto.type = searchDto.type || this.lastSearchDto.type;
       this.lastSearchDto.filter_status = searchDto.filter_status || this.lastSearchDto.filter_status;
       this.lastSearchDto.filter_object = searchDto.filter_object || this.lastSearchDto.filter_object;
     }
-    this.vardaApiService.getHenkilohaku(this.vakajarjestajaId, this.lastSearchDto, this.nextSearchLink)
+    const searchLink = previous ? this.prevSearchLink : this.nextSearchLink;
+    this.vardaApiService.getHenkilohaku(this.vakajarjestajaId, this.lastSearchDto, searchLink)
       .subscribe({
         next: searchresult => {
-          this.searchResult = !searchDto
-            ? [...this.searchResult, ...searchresult.results]
-            : searchresult.results;
+          this.searchResult = searchresult;
+          this.prevSearchLink = searchresult.previous;
           this.nextSearchLink = searchresult.next;
-          this.ui.isLoading = false;
           this.clearErrors();
+          this.ui.isLoading = false
         },
         error: () => {
           this.translate.get('alert.haku.generic-error').subscribe(hakuErrorMessage => {
-            this.ui.isLoading = false;
             this.ui.formSaveErrorMsg = hakuErrorMessage;
+            this.ui.isLoading = false
           });
-        },
-      });
-  }
-
-  searchMore() {
-    this.search();
+        }
+      })
   }
 
   clearErrors() {

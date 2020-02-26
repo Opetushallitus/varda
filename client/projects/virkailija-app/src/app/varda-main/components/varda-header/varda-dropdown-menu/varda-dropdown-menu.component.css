@@ -10,15 +10,27 @@ ul li a {
   display: inline-block;
 }
 
+.varda-dropdown-menu-wrapper {
+  height: 100%;
+}
+
+.varda-dropdown-menu-wrapper > a {
+  line-height: 3em;
+  height: 100%;
+  white-space: nowrap;
+  position: relative;
+  top: 1px;
+}
+
 a {
   /* Duplicaet styles from varda-header component */
   font-size: 0.75rem;
   text-transform: uppercase;
+  text-decoration: none;
   letter-spacing: 0.6px;
   display: flex;
-  justify-content: center;
   align-items: center;
-  color: #2A2A2A;
+  color: var(--black);
 
   /* mat-menu-item overrides */
   white-space: normal;
@@ -26,5 +38,10 @@ a {
   text-overflow: unset;
   line-height: 1.25rem;
   height: 100%;
+}
+
+a.mat-menu-item:hover,
+a:hover > span {
+  text-decoration: underline;
 }
 

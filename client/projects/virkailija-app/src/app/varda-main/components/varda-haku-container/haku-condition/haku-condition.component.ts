@@ -1,7 +1,7 @@
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
-import {HenkilohakuSearchDTO, HenkilohakuType, FilterStatus, FilterObject} from '../../../../utilities/models/dto/varda-henkilohaku-dto.model';
-import {FormControl, FormGroup} from '@angular/forms';
-import {Subscription} from 'rxjs';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { HenkilohakuSearchDTO, HenkilohakuType, FilterStatus, FilterObject } from '../../../../utilities/models/dto/varda-henkilohaku-dto.model';
+import { FormControl, FormGroup } from '@angular/forms';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-haku-condition',
@@ -10,6 +10,7 @@ import {Subscription} from 'rxjs';
 })
 export class HakuConditionComponent implements OnInit, OnDestroy {
   @Input() searchAction: (action) => void;
+  @Input() isLoading: boolean;
   hakuform: FormGroup;
   typeformSubsciption: Subscription;
   filterStatusFormSubsciption: Subscription;
@@ -29,7 +30,7 @@ export class HakuConditionComponent implements OnInit, OnDestroy {
     const searchForm = new FormControl('');
     const filterStatusForm = new FormControl('');
     const filterObjectForm = new FormControl('');
-    this.hakuform = new FormGroup({type: typeForm, search: searchForm, filter_status: filterStatusForm, filter_object: filterObjectForm});
+    this.hakuform = new FormGroup({ type: typeForm, search: searchForm, filter_status: filterStatusForm, filter_object: filterObjectForm });
     this.hakuform.controls.filter_object.setValue(FilterObject.vakapaatokset);
     this.typeformSubsciption = typeForm.valueChanges
       .subscribe(((typeValue) => this.searchType(typeValue)));
@@ -76,4 +77,6 @@ export class HakuConditionComponent implements OnInit, OnDestroy {
     }
     this.searchAction(searchDto);
   }
+
+
 }

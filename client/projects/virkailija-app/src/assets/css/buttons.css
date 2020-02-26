@@ -1,0 +1,197 @@
+.varda-button {
+  --btn-primary: var(--white);
+  --btn-secondary: var(--blue-lighten-1);
+  --btn-hover: var(--blue-lighten-2);
+  width: 100%;
+  font-weight: bold;
+  font-size: 0.87rem;
+  background-color: var(--btn-secondary);
+  color: var(--btn-primary);
+  border: 1px solid var(--btn-secondary);
+  border-radius: 2px;
+  padding: 0.5em 1em;
+  box-shadow: none;
+  user-select: none;
+}
+
+@media (min-width: 576px) {
+  .varda-button.responsive {
+    width: auto;
+  }
+}
+
+@media (min-width: 768px) {
+  .varda-button.responsive-md {
+    width: auto;
+  }
+}
+
+.varda-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.varda-button:hover {
+  background-color: var(--btn-hover);
+  border-color: var(--btn-hover);
+}
+
+.varda-button.varda-button-small {
+  font-size: 0.8rem;
+  padding: 0.25em 0.5em;
+  font-weight: 500;
+}
+
+.varda-button.varda-button-wide {
+  padding-left: 3em;
+  padding-right: 3em;
+}
+
+.varda-button.secondary {
+  background-color: var(--white);
+  color: var(--btn-secondary);
+  border-color: var(--btn-secondary);
+}
+
+.varda-button.secondary:hover {
+  background-color: var(--btn-hover);
+  color: var(--white);
+}
+
+
+
+.varda-button.varda-button-danger {
+  --btn-secondary: var(--red);
+  --btn-hover: var(--red-lighten-1)
+}
+
+.varda-button.varda-button-neutral {
+  --btn-secondary: var(--gray);
+  --btn-hover: var(--black)
+}
+
+.varda-button.varda-button-success {
+  --btn-secondary: var(--green);
+  --btn-hover: var(--green-lighten-1);
+}
+
+.varda-button.varda-button-warning:hover,
+.varda-button.varda-button-success:hover {
+  color: var(--black);
+}
+
+.varda-button.varda-button-warning {
+  --btn-secondary: var(--yellow);
+  --btn-hover: var(--yellow-lighten-1)
+}
+
+.varda-delete-confirm-btn-wrapper>div:first-child {
+  margin-right: 40px;
+}
+
+.varda-delete-confirm-btn-wrapper {
+  display: flex
+}
+
+.varda-disabled-button {
+  opacity: 0.5;
+}
+
+/*HIGH CONTRAST PRIMARY CTA-BUTTON STYLES*/
+.varda-high-contrast .varda-button,
+.varda-button.change-contrast {
+  --btn-primary: var(--white) !important;
+  --btn-secondary: var(--black) !important;
+  --btn-hover: var(--white) !important;
+}
+
+.varda-high-contrast .varda-button:hover,
+.varda-button.change-contrast:hover {
+  background-color: var(--btn-primary);
+  color: var(--btn-secondary);
+  border-color: var(--btn-secondary);
+}
+
+.oph-field .oph-radio-button-group,
+.oph-field .oph-radio-button-group app-varda-radio-button {
+  width: auto;
+  user-select: none;
+  overflow-x: hidden;
+  display: flex;
+}
+
+.oph-radio-button-group label {
+  margin-bottom: 0;
+}
+
+
+@media (max-width: 992px) {
+  .oph-radio-button-group.responsive-lg app-varda-radio-button,
+  .oph-radio-button-group.responsive-lg {
+    width: 100%;
+    text-align: center;
+  }
+
+  .oph-radio-button-group.responsive-lg label {
+    width: 100%;
+  }
+
+  .oph-radio-button-group.wrap-lg app-varda-radio-button,
+  .oph-radio-button-group.wrap-lg {
+    flex-direction: column;
+    text-align: left;
+  }
+}
+
+@media (max-width: 767px) {
+  .oph-radio-button-group.responsive-md app-varda-radio-button,
+  .oph-radio-button-group.responsive-md {
+    width: 100%;
+    text-align: center;
+  }
+
+  .oph-radio-button-group.responsive-md label {
+    width: 100%;
+  }
+
+  .oph-radio-button-group.wrap-md app-varda-radio-button,
+  .oph-radio-button-group.wrap-md {
+    flex-direction: column;
+    text-align: left;
+  }
+}
+
+@media (max-width: 578px) {
+
+  .oph-radio-button-group.responsive-sm app-varda-radio-button,
+  .oph-radio-button-group.responsive-sm {
+    width: 100%;
+    text-align: center;
+  }
+
+  .oph-radio-button-group.responsive-sm label {
+    width: 100%;
+  }
+
+  .oph-radio-button-group.wrap-sm app-varda-radio-button,
+  .oph-radio-button-group.wrap-sm {
+    flex-direction: column;
+    text-align: left;
+  }
+}
+
+
+@media (max-width: 400px) {
+
+  .oph-radio-button-group.responsive-xs,
+  .oph-radio-button-group.responsive-xs label {
+    width: 100%;
+    text-align: center;
+  }
+
+  .oph-radio-button-group.wrap-xs app-varda-radio-button,
+  .oph-radio-button-group.wrap-xs {
+    flex-direction: column;
+    text-align: left;
+  }
+}

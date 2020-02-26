@@ -1,106 +1,126 @@
+.varda-navbar {
+  border-bottom: 2px solid var(--gray-lighten-4);
+  padding: 0;
+  position: sticky;
+  top: var(--virkailija-raami-height);
+  z-index: calc(var(--virkailija-z-index) - 1);
+  align-items: stretch;
+  width: 100%;
+  min-height: var(--varda-navi-height);
+  user-select: none;
+}
+
+.varda-navbar>.navbar-toggler {
+  margin: 0.25em 0.5em;
+  padding: 0.0em 0.8em;
+  color: var(--black);
+}
+
+.varda-navbar>.navbar-toggler>.navbar-toggler-text {
+  font-size: 1rem;
+  text-transform: uppercase;
+}
+
+
+.varda-navbar-toimija {
+  flex: 2 1;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin: 0 0.5em;
+}
+
+.varda-navbar-toimija>label {
+  margin-bottom: 0;
+}
+
+.varda-navbar-toimija>.varda-select {
+  flex: 1 1;
+  min-width: 100px;
+  max-width: 250px;
+}
+
+.varda-navbar-toimija>h1 {
+  margin: 0.45em;
+}
+
+.varda-navbar-links {
+  flex: 2 1 520px;
+  height: 100%;
+  align-items: top;
+  overflow-y: hidden;
+}
+
+.varda-navbar-links>ul {
+  justify-content: space-around;
+  width: 100%;
+  height: 100%;
+}
+
+.varda-navbar-links>ul>li {
+  height: 3em;
+  line-height: 3em;
+  padding: 0 0.25em;
+}
+
+.varda-navbar-links a {
+  color: var(--black);
+}
+
+
+.varda-navbar-links .active-nav-item {
+  border-bottom: 2px solid var(--blue-lighten-1);
+}
+
+.varda-high-contrast .varda-navbar-links .active-nav-item {
+  border-color: var(--black);
+}
+
+
+
+@media (max-width: 767px) {
+  .varda-navbar-links {
+    flex: 1 1 100%;
+  }
+
+  .varda-navbar-links .active-nav-item {
+    border-bottom: none;
+    font-weight: bold;
+    background-color: var(--blue-lighten-1);
+  }
+
+  .varda-high-contrast .varda-navbar-links .active-nav-item {
+    background-color: var(--black);
+    color: var(--white) !important;
+  }
+
+  .varda-high-contrast .varda-navbar-links .active-nav-item a {
+    color: var(--white);
+  }
+
+
+  .varda-navbar-links>ul>li.divider {
+    height: 2px;
+    margin: 0.25em;
+    background-color: var(--gray-lighten-3)
+  }
+
+  .varda-navbar-links>ul>li {
+    padding: 0 1em;
+    height: 2em;
+    line-height: 2em;
+  }
+
+}
+
+@media (max-width: 450px) {
+  .varda-navbar-toimija>label {
+    display: none;
+  }
+}
+
 a {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-}
-.varda-header-navigation-wrapper {
-  display: flex;
-  width: 80%;
-  flex-wrap: wrap;
-  justify-content: space-around;
-  margin-top: 10px;
-}
-.varda-header-wrapper {
-  border-bottom: 2px solid #eee;
-  width: 100%;
-  background-color: #fff;
-  color: #2A2A2A;
-}
-
-.varda-header-wrapper a {
-  color: #2A2A2A;
-}
-
-.varda-header-grid {
-  display: grid;
-  grid-template-columns: repeat(12, [col-start] 1fr);
-  width: 100vw;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.varda-header-section {
-  grid-column: col-start 1 / span 12;
-}
-
-.site-title {
-  font-size: 1.2rem;
-  flex: 0 1 80px;
-  text-decoration: none;
-  cursor: pointer;
-  text-align: center;
-}
-
-.site-caption {
-  margin-top: 0;
-  margin-bottom: 0;
-  color: #2A2A2A;
-  font-size: 0.7rem;
-  letter-spacing: 0.3px
-}
-
-.varda-header-lang-selection-section {
-  flex: 0 1 50px;
-  position: relative;
-}
-
-.varda-header-navigation-container {
-  display: flex;
-  justify-content: center;
-}
-
-.varda-header-vakajarjestaja-info {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding-left: 20px;
-  padding-right: 20px;
-  padding-bottom: 2px;
-}
-
-.varda-header-nav-group-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  background-color: #fff;
-}
-
-.varda-header-nav-item-container {
-  display: flex;
-  justify-content: center;
-  height: 50px;
-  align-items: center;
-  padding-left: 26px;
-  padding-right: 26px;
-}
-
-.active-nav-item {
-  border-bottom: 2px solid #159ecb;
-  font-weight: bold;
-}
-@media (max-width: 914px) {
-  .varda-header-navigation-container {
-    padding-top: 12px;
-  }
-}
-
-@media (min-width: 1400px) {
-  .varda-header-navigation-wrapper {
-    width: 70%;
-  }
-}
-@media (min-width: 1800px) {
-  .varda-header-navigation-wrapper {
-    width: 50%;
-  }
 }

@@ -122,37 +122,6 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
     return rv;
   }
 
-  getClasses(field: VardaField): string {
-
-    if (this.partOfInline) {
-      return 'varda-input-full';
-    }
-
-    let classStr = 'varda-input-';
-    if (field.styles) {
-      if (field.styles.width === '0.1') {
-        classStr += '1';
-      } else if (field.styles.width === '0.2') {
-        classStr += '2';
-      } else if (field.styles.width === '0.3') {
-        classStr += '3';
-      } else if (field.styles.width === '0.4') {
-        classStr += '4';
-      } else if (field.styles.width === '0.5') {
-        classStr += '5';
-      } else if (field.styles.width === '0.6') {
-        classStr += '6';
-      } else if (field.styles.width === '0.7') {
-        classStr += '7';
-      } else if (field.styles.width === '0.8') {
-        classStr += '8';
-      } else if (field.styles.width === '0.9') {
-        classStr += '9';
-      }
-    }
-    return classStr;
-  }
-
   getErrorTexts(field: VardaField): Array<string> {
     const errorMessages = [];
     const fieldFormControl = this.form.get(field.key);

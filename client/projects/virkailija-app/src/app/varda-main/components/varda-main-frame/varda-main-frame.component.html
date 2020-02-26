@@ -1,26 +1,20 @@
-<div class="varda-main-frame-wrapper" appHighContrast>
-  <main class="varda-main-frame-section">
-    <div class="varda-main-frame-toimipaikka-section-container">
-      <div>
-        <div>
-          <section class="varda-main-frame-toimipaikka-section">
-            <div>
-              <app-varda-toimipaikka-selector
-              [entityType]="'toimipaikka'"
-              [toimipaikat]="toimipaikat"
-              [activeToimipaikka]="selectedToimipaikka"
-              (changeToimipaikka)="onToimipaikkaChanged($event)"
-              (updateToimipaikka)="onToimipaikkaUpdated($event)"></app-varda-toimipaikka-selector>
-            </div>
-          </section>
-        </div>
-      </div>
-    </div>
-    <div class="varda-main-frame-henkilo-section-container" *ngIf="toimipaikat && toimipaikat.length > 0 && selectedToimipaikka" aria-live="polite" role="region" aria-labelledby="toimipaikanLapset">
-      <div>
-        <app-varda-henkilo-section [henkilot]="henkilot"></app-varda-henkilo-section>
-      </div>
-    </div>
-  </main>
-</div>
+<h1 class="varda-page-header">
+  {{ 'label.navi.syotto' | translate }}
+</h1>
+<main class="varda-main-frame-wrapper">
+  <section class="varda-main-frame-toimipaikka-section-container varda-page-content">
+    <app-varda-toimipaikka-selector [entityType]="'toimipaikka'"
+                                    [toimipaikat]="toimipaikat"
+                                    [activeToimipaikka]="selectedToimipaikka"
+                                    (changeToimipaikka)="onToimipaikkaChanged($event)"
+                                    (updateToimipaikka)="onToimipaikkaUpdated($event)">
+    </app-varda-toimipaikka-selector>
+  </section>
+  <section class="varda-main-frame-henkilo-section-container varda-page-content"
+           *ngIf="toimipaikat && toimipaikat.length > 0 && selectedToimipaikka"
+           aria-live="polite"
+           role="region">
+    <app-varda-henkilo-section [henkilot]="henkilot"></app-varda-henkilo-section>
+  </section>
+</main>
 <lib-loading-indicator *ngIf="ui.isFetchingVarhaiskasvatussuhteet"></lib-loading-indicator>

@@ -1,13 +1,15 @@
-<div class="varda-fieldset-content form-group" *ngIf="!ui.isLoading">
-  <div [formGroup]="form">
+<div class="varda-fieldset-content oph-field"
+     *ngIf="!ui.isLoading">
+  <div [formGroup]="form"
+       class="oph-field-inputs">
     <ng-container [ngSwitch]="field.widget">
       <ng-container *ngSwitchCase="VardaWidgetNames.STRING">
-        <label [for]="field.key + fieldSetIndex" class="varda-field-label">{{getDisplayName(field)}} {{field.rules.required ? '*' : ''}}</label>
+        <label [for]="field.key + fieldSetIndex"
+               class="oph-label">{{getDisplayName(field)}} {{field.rules.required ? '*' : ''}}</label>
         <input type="text"
-               class="varda-form-control form-control varda-input"
+               class="oph-input"
                *ngIf="!isReadOnly"
                [id]="field.key + fieldSetIndex"
-               [ngClass]="getClasses(field)"
                [placeholder]="getPlaceholderText(field)"
                [formControlName]="field.key"
                [attr.name]="field.key"
@@ -15,61 +17,57 @@
                [attr.aria-describedby]="'instructionBlock' + fieldIndex + fieldSetIndex"
                [attr.data-parent-container]="fieldSetName + fieldSetIndex"
                (focus)="onFocus(field)"
-               (blur)="onBlur(field)"
-               appHighlightElement>
+               (blur)="onBlur(field)" />
         <div *ngIf="isReadOnly">
           <span>{{field.value}}</span>
         </div>
       </ng-container>
 
       <ng-container *ngSwitchCase="VardaWidgetNames.TEXTAREA">
-        <label [for]="field.key + fieldSetIndex" class="varda-field-label">{{getDisplayName(field)}} {{field.rules.required ? '*' : ''}}</label>
-        <textarea
-          class="varda-form-control form-control varda-input"
-          [id]="field.key + fieldSetIndex"
-          [ngClass]="getClasses(field)"
-          [readonly]="field.isReadonly"
-          [placeholder]="getPlaceholderText(field)"
-          [formControlName]="field.key"
-          [attr.name]="field.key"
-          [attr.aria-required]="isRequired"
-          [attr.aria-describedby]="'instructionBlock' + fieldIndex + fieldSetIndex"
-          [attr.data-parent-container]="fieldSetName + fieldSetIndex"
-          (focus)="onFocus(field)"
-          (blur)="onBlur(field)"
-          appHighlightElement></textarea>
+        <label [for]="field.key + fieldSetIndex"
+               class="oph-label">{{getDisplayName(field)}} {{field.rules.required ? '*' : ''}}</label>
+        <textarea class="varda-form-control form-control varda-input"
+                  [id]="field.key + fieldSetIndex"
+                  [readonly]="field.isReadonly"
+                  [placeholder]="getPlaceholderText(field)"
+                  [formControlName]="field.key"
+                  [attr.name]="field.key"
+                  [attr.aria-required]="isRequired"
+                  [attr.aria-describedby]="'instructionBlock' + fieldIndex + fieldSetIndex"
+                  [attr.data-parent-container]="fieldSetName + fieldSetIndex"
+                  (focus)="onFocus(field)"
+                  (blur)="onBlur(field)"></textarea>
       </ng-container>
 
       <ng-container *ngSwitchCase="VardaWidgetNames.CHECKBOX">
-        <mat-checkbox
-          [formControlName]="field.key"
-          [attr.name]="field.key"
-          [attr.aria-required]="isRequired"
-          [attr.aria-describedby]="'instructionBlock' + fieldIndex + fieldSetIndex"
-          [attr.data-parent-container]="'fieldset' + fieldSetIndex"
-          type="checkbox"
-          (change)="onInputValueChanged(field)"
-          class="varda-mat-checkbox"
-          [ngClass]="{'form-field-hidden': field.hidden}"
-          appHighlightElement>{{getDisplayName(field)}}</mat-checkbox>
+        <mat-checkbox [formControlName]="field.key"
+                      [attr.name]="field.key"
+                      [attr.aria-required]="isRequired"
+                      [attr.aria-describedby]="'instructionBlock' + fieldIndex + fieldSetIndex"
+                      [attr.data-parent-container]="'fieldset' + fieldSetIndex"
+                      type="checkbox"
+                      (change)="onInputValueChanged(field)"
+                      class="varda-mat-checkbox"
+                      [ngClass]="{'d-none': field.hidden}">{{getDisplayName(field)}}</mat-checkbox>
       </ng-container>
 
       <ng-container *ngSwitchCase="VardaWidgetNames.DATE">
-        <label [for]="field.key + fieldSetName + fieldSetIndex" class="varda-field-label">{{getDisplayName(field)}} {{field.rules.required ? '*' : ''}}</label>
-        <div class="varda-date" [ngClass]="getClasses(field)">
-          <my-date-picker
-            *ngIf="!isReadOnly"
-            [id]="field.key + fieldSetName + fieldSetIndex"
-            [options]="myDatePickerOptions"
-            [formControlName]="field.key"
-            [attr.name]="field.key + fieldSetName + fieldSetIndex"
-            [attr.data-fieldname]="field.key"
-            [attr.aria-required]="isRequired"
-            [attr.aria-describedby]="'instructionBlock' + fieldIndex + fieldSetIndex"
-            [attr.data-parent-container]="fieldSetName + fieldSetIndex"
-            (inputFieldChanged)="dateFieldChanged($event, fieldSet, field)"
-            (inputFocusBlur)="dateFieldFocus($event, fieldSet, field)"
-            (calendarToggle)="dateFieldToggle($event, fieldSet, field)"></my-date-picker>
+        <label [id]="field.key + fieldSetName + fieldSetIndex"
+               class="oph-label">{{getDisplayName(field)}} {{field.rules.required ? '*' : ''}}</label>
+        <div class="varda-date">
+          <my-date-picker *ngIf="!isReadOnly"
+                          [placeholder]="getPlaceholderText(field)"
+                          [attr.aria-labelledby]="field.key + fieldSetName + fieldSetIndex"
+                          [options]="myDatePickerOptions"
+                          [formControlName]="field.key"
+                          [attr.name]="field.key + fieldSetName + fieldSetIndex"
+                          [attr.data-fieldname]="field.key"
+                          [attr.aria-required]="isRequired"
+                          [attr.aria-describedby]="'instructionBlock' + fieldIndex + fieldSetIndex"
+                          [attr.data-parent-container]="fieldSetName + fieldSetIndex"
+                          (inputFieldChanged)="dateFieldChanged($event, fieldSet, field)"
+                          (inputFocusBlur)="dateFieldFocus($event, fieldSet, field)"
+                          (calendarToggle)="dateFieldToggle($event, fieldSet, field)"></my-date-picker>
         </div>
         <div *ngIf="isReadOnly">
           <span>{{field.value}}</span>
@@ -77,24 +75,25 @@
       </ng-container>
 
       <ng-container *ngSwitchCase="VardaWidgetNames.SELECT">
-        <label [for]="field.key + fieldSetIndex" class="varda-field-label">{{getDisplayName(field)}} {{field.rules.required ? '*' : ''}}</label>
-        <select
-          *ngIf="!isReadOnly"
-          [id]="field.key + fieldSetIndex"
-          [formControlName]="field.key"
-          [attr.name]="field.key"
-          [attr.aria-required]="isRequired"
-          [attr.aria-describedby]="'instructionBlock' + fieldIndex + fieldSetIndex"
-          [attr.data-parent-container]="fieldSetName + fieldSetIndex"
-          class="varda-form-control form-control varda-select"
-          [ngClass]="getClasses(field)"
-          (focus)="onFocus(field)"
-          (blur)="onBlur(field)"
-          (change)="onSelectValueChange($event, field)"
-          appHighlightElement>
-          <option disabled selected [ngValue]="null"> --Valitse-- </option>
+        <label [for]="field.key + fieldSetIndex"
+               class="oph-label">{{getDisplayName(field)}} {{field.rules.required ? '*' : ''}}</label>
+        <select *ngIf="!isReadOnly"
+                [id]="field.key + fieldSetIndex"
+                [formControlName]="field.key"
+                [attr.name]="field.key"
+                [attr.aria-required]="isRequired"
+                [attr.aria-describedby]="'instructionBlock' + fieldIndex + fieldSetIndex"
+                [attr.data-parent-container]="fieldSetName + fieldSetIndex"
+                class="oph-input oph-select"
+                (focus)="onFocus(field)"
+                (blur)="onBlur(field)"
+                (change)="onSelectValueChange($event, field)">
+          <option disabled
+                  selected
+                  [ngValue]="null"> --Valitse-- </option>
           <ng-container *ngFor="let option of selectOptions">
-            <option [ngValue]="option.code" [disabled]="!option.code">
+            <option [ngValue]="option.code"
+                    [disabled]="!option.code">
               <ng-container *ngIf="option.code">
                 {{getOptionDisplayName(option)}}
               </ng-container>
@@ -111,18 +110,20 @@
 
       <ng-container *ngSwitchCase="VardaWidgetNames.SELECTARR">
         <fieldset [formGroupName]="field.key">
-          <legend class="varda-field-label varda-chkgroup-legend">{{getDisplayName(field)}} {{field.rules.required ? '*' : ''}}</legend>
-          <div formArrayName="selectArr" *ngFor="let key of form.get(field.key).get('selectArr').controls; let m = index;">
-            <select
-              *ngIf="!isReadOnly"
-              [formControlName]="m.toString()"
-              [attr.aria-describedby]="'instructionBlock' + fieldIndex + fieldSetIndex"
-              [attr.data-parent-container]="fieldSetName + fieldSetIndex"
-              class="varda-form-control form-control varda-select"
-              appHighlightElement>
-              <option disabled selected [ngValue]="null"> --Valitse-- </option>
+          <legend class="oph-label">{{getDisplayName(field)}} {{field.rules.required ? '*' : ''}}</legend>
+          <div formArrayName="selectArr"
+               *ngFor="let key of form.get(field.key).get('selectArr')['controls']; let m = index;">
+            <select *ngIf="!isReadOnly"
+                    [formControlName]="m.toString()"
+                    [attr.aria-describedby]="'instructionBlock' + fieldIndex + fieldSetIndex"
+                    [attr.data-parent-container]="fieldSetName + fieldSetIndex"
+                    class="oph-input oph-select">
+              <option disabled
+                      selected
+                      [ngValue]="null"> --Valitse-- </option>
               <ng-container *ngFor="let option of selectOptions">
-                <option [ngValue]="option.code" [disabled]="!option.code">
+                <option [ngValue]="option.code"
+                        [disabled]="!option.code">
                   <ng-container *ngIf="option.code">
                     {{getOptionDisplayName(option)}}
                   </ng-container>
@@ -137,8 +138,12 @@
                 <span>{{getOptionDisplayNameByCode(code)}}</span>
               </div>
             </div>
-            <div class="varda-select-arr-remove-item-wrapper" *ngIf="!isReadOnly">
-              <a href="#" class="" (click)="removeSelectArrControl(m)" *ngIf="m > 0">{{'label.delete' | translate}}</a>
+            <div class="varda-select-arr-remove-item-wrapper"
+                 *ngIf="!isReadOnly">
+              <a href="#"
+                 class=""
+                 (click)="removeSelectArrControl(m)"
+                 *ngIf="m > 0">{{'label.delete' | translate}}</a>
             </div>
           </div>
         </fieldset>
@@ -152,18 +157,17 @@
 
       <ng-container *ngSwitchCase="VardaWidgetNames.CHECKBOXGROUP">
         <fieldset [formGroupName]="field.key">
-          <legend class="varda-field-label varda-chkgroup-legend">{{getDisplayName(field)}} {{field.rules.required ? '*' : ''}}</legend>
-          <div *ngIf="!isReadOnly">
+          <legend class="oph-label">{{getDisplayName(field)}} {{field.rules.required ? '*' : ''}}</legend>
+          <div class="modal-checkbox-group"
+               *ngIf="!isReadOnly">
             <div *ngFor="let option of field.options">
-              <mat-checkbox
-                [formControlName]="option.code"
-                [attr.name]="option.code"
-                [attr.aria-describedby]="'instructionBlock' + fieldIndex + fieldSetIndex"
-                [attr.data-parent-container]="'fieldset' + fieldSetIndex"
-                class="varda-mat-checkbox"
-                type="checkbox"
-                value="{{option.code}}"
-                appHighlightElement>
+              <mat-checkbox [formControlName]="option.code"
+                            [attr.name]="option.code"
+                            [attr.aria-describedby]="'instructionBlock' + fieldIndex + fieldSetIndex"
+                            [attr.data-parent-container]="'fieldset' + fieldSetIndex"
+                            class="varda-mat-checkbox"
+                            type="checkbox"
+                            value="{{option.code}}">
                 {{getOptionDisplayName(option)}}
               </mat-checkbox>
             </div>
@@ -178,29 +182,32 @@
       <ng-container *ngSwitchCase="VardaWidgetNames.BOOLEANRADIO">
         <label class="varda-field-label">{{getDisplayName(field)}} {{field.rules.required ? '*' : ''}}</label>
         <div class="varda-radio">
-          <mat-radio-group
-            [name]="field.key"
-            [formControlName]="field.key"
-            [attr.aria-required]="isRequired"
-            [attr.aria-describedby]="'instructionBlock' + fieldIndex + fieldSetIndex"
-            [attr.data-parent-container]="'fieldset' + fieldSetIndex"
-            (change)="onInputValueChanged(field)">
-            <mat-radio-button class="boolean-radio-yes" [value]="true">{{'label.yes' | translate}}</mat-radio-button>
+          <mat-radio-group [name]="field.key"
+                           [formControlName]="field.key"
+                           [attr.aria-required]="isRequired"
+                           [attr.aria-describedby]="'instructionBlock' + fieldIndex + fieldSetIndex"
+                           [attr.data-parent-container]="'fieldset' + fieldSetIndex"
+                           (change)="onInputValueChanged(field)">
+            <mat-radio-button [value]="true">{{'label.yes' | translate}}</mat-radio-button>
             <mat-radio-button [value]="false">{{'label.no' | translate}}</mat-radio-button>
           </mat-radio-group>
         </div>
       </ng-container>
 
     </ng-container>
-    <div class="varda-error-message-block" role="alert" aria-live="assertive" *ngIf="form && form.get(field.key) && form.get(field.key).invalid && form.get(field.key).touched">
+    <div class="oph-error"
+         role="alert"
+         aria-live="assertive"
+         *ngIf="form && form.get(field.key) && form.get(field.key).invalid && form.get(field.key).touched">
       <p *ngFor="let errorText of getErrorTexts(field)">
         {{errorText}}
       </p>
     </div>
   </div>
 
-  <div class="varda-fieldset-input-instructions-section">
-    <small [id]="'instructionBlock' + fieldIndex + fieldSetIndex" class="form-text text-muted instruction-block-text" *ngIf="showInstructionText">
+  <div class="oph-field-text">
+    <small [id]="'instructionBlock' + fieldIndex + fieldSetIndex"
+           *ngIf="showInstructionText">
       {{getInstructionText(field)}}
     </small>
   </div>

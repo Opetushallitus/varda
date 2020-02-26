@@ -1,9 +1,11 @@
-<div class="varda-henkilo-item-content"
+<div class="varda-list-item"
      tabindex="0"
-     [ngClass]="{'active-henkilo-item': activeHenkiloItemId === henkiloItem.henkilo.url}"
-     (click)="editHenkilo()" (keydown.enter)="editHenkilo()">
-      <p class="varda-henkilo-item-entry">
-          {{henkiloItem.henkilo.sukunimi + ', ' + henkiloItem.henkilo.etunimet}}
-      </p>
-      <i>{{getVakaJarjestajaText(henkiloItem.lapsi)}}</i>
+     (keydown.enter)="editHenkilo()"
+     (click)="editHenkilo()">
+  <div class="varda-list-item-column varda-henkilo-item-name">
+    {{henkiloItem.henkilo.sukunimi}}, {{henkiloItem.henkilo.etunimet}}
+  </div>
+  <div class="varda-list-item-column varda-henkilo-item-vakajarjestaja">
+      {{ getVakaJarjestajaText(henkiloItem.lapsi) }}
+  </div>
 </div>

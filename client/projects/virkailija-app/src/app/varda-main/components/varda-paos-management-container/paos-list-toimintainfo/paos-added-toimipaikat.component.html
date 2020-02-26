@@ -21,7 +21,7 @@
   </mat-form-field>
   <div [class.scrollable]="paosToiminnat.length > 3">
     <div *ngFor="let paosToiminta of filteredToiminnat"
-         class="oph-alert oph-alert-info small-text"
+         class="paos-yksikot oph-alert oph-alert-info small-text"
          [class.varda-paos-list-toimintainfo-highlight]="isToimijaHighlighted(highlighted, paosToiminta)">
       <h4>{{paosToiminta.toimijaNimi}} ({{paosToiminta.toimipaikat.length}})
         <mat-icon *ngIf="paosToiminta.paosOikeus.voimassa_kytkin"
@@ -44,7 +44,7 @@
         <div class="paos-toimijat-list-tallennusvastuu-wrapper paos-list-flexbox">
           <div class="paos-list-flexbox">
             <div class="paos-toimipaikat-list-tallennusvastuu-column">
-              {{'label.paos-toimipaikat.list.tallennusvastuu' | translate}}:
+              {{'label.paos-toimipaikat.list.tiedot-tallentaa' | translate}}:
             </div>
             <div class="paos-toimipaikat-list-tallennusvastuu-column"
                  *ngIf="openTallennusvastuu !== paosToiminta.toimijaId">
@@ -66,8 +66,8 @@
               <select [value]="getCurrentTallentajaTranslateKey(paosToiminta.paosOikeus)"
                       (change)="changeTallennusvastuu($event.target.value, paosToiminta)"
                       class="varda-select">
-                <option value="label.tallentaja">{{'label.tallentaja' | translate}}</option>
-                <option value="label.katselija">{{'label.katselija' | translate}}</option>
+                <option value="label.jarjestaja">{{'label.jarjestaja' | translate}}</option>
+                <option value="label.palveluntuottaja">{{'label.palveluntuottaja' | translate}}</option>
               </select>
             </div>
 

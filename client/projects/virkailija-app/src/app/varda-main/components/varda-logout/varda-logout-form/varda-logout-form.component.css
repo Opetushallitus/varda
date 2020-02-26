@@ -1,29 +1,19 @@
-.varda-main-logout-title-section {
-    grid-column: col-start 1 / span 12;
+
+.varda-login-page {
+  max-width: 600px;
+  margin: 2em auto;
+  text-align: center;
 }
 
-.varda-main-logout-title-section-content {
-    display: grid;
-    grid-template-columns: 35% 28% 13% 1fr;
-    align-items: center;
-    grid-column-gap: 20px;
+.varda-login-page > .varda-page-content {
+  margin-top: 1em;
+  padding: 3em;
 }
 
-.varda-main-logout-title-section-title {
-    display: flex;
-    justify-content: center;
+.varda-login-page > .varda-page-content > button {
+  min-width: 150px;
 }
 
-.varda-main-logout-form-section {
-    grid-column: col-start 1 / span 12;
-}
-
-.varda-main-logout-form-section-content {
-    display: grid;
-    grid-template-columns: 35% 28% 11% 16%;
-    align-items: center;
-    background-color: #fff;
-    padding: 10px;
-    grid-column-gap: 20px;
-    grid-row-gap: 40px;
+.varda-login-page > .varda-page-content > .varda-logout-clear {
+    margin-top: 1em;
 }

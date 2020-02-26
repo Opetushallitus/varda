@@ -1,112 +1,137 @@
-<div class="varda-vakatoimija-wrapper">
-  <div class="varda-vakatoimija-content">
-    <div class="varda-vakatoimija-form-wrapper" *ngIf="!ui.isLoading">
-      <form class="varda-vakatoimija-form" [formGroup]="vakatoimijaForm">
-        <div class="alert alert-danger varda-form-main-feedback" role="alert" aria-live="polite" *ngIf="ui.vakatoimijaSaveError">
-          {{ui.vakatoimijaSaveErrorMsg | translate}}
-          <ul>
-            <li *ngFor="let errItem of ui.vakatoimijaSaveErrors">
-              {{errItem.key | translate}}. {{errItem.msg | translate}}
-            </li>
-          </ul>
-        </div>
-        <div class="alert alert-success varda-form-main-feedback" role="alert" aria-live="polite" *ngIf="ui.vakatoimijaSaveSuccess">
-          {{ui.vakatoimijaSaveSuccessMsg | translate}}
-        </div>
-        <fieldset class="form-group varda-fieldset">
-          <legend class="varda-fieldset-legend-toimijan-tiedot">{{vakatoimijaNimi}} / {{'label.yhteystiedot' | translate}}</legend>
-          <div class="varda-fieldset-content form-group">
-            <div>
-              <label [for]="'sahkopostiosoite'" class="varda-field-label">{{'label.sahkopostiosoite' | translate}}</label>
-              <input type="text"
-                     class="varda-form-control form-control varda-input varda-vakatoimija-form-input"
-                     [id]="'sahkopostiosoite'"
-                     [placeholder]="'vakatoimija.sahkopostiosoite-placeholder' | translate"
-                     [formControlName]="'sahkopostiosoite'"
-                     [attr.name]="'sahkopostiosoite'"
-                     [attr.aria-describedby]="'sahkopostiosoiteInstruction'"
-                     (blur)="onBlur()"
-                     (focus)="onFocus('sahkopostiosoite')"
-                     [readonly]="isKatselija"
-                     appHighlightElement>
-              <div class="varda-error-message-block" role="alert" *ngIf="vakatoimijaForm &&
+<h1 class="varda-page-header">
+  {{ 'label.varhaiskasvatustoimija' | translate }}
+</h1>
+
+
+<main class="varda-page-content varda-vakatoimija-wrapper">
+  <div class="varda-vakatoimija-form-wrapper"
+       *ngIf="!ui.isLoading">
+    <form class="varda-form"
+          [formGroup]="vakatoimijaForm">
+      <div class="alert alert-danger varda-form-main-feedback"
+           role="alert"
+           aria-live="polite"
+           *ngIf="ui.vakatoimijaSaveError">
+        {{ui.vakatoimijaSaveErrorMsg | translate}}
+        <ul>
+          <li *ngFor="let errItem of ui.vakatoimijaSaveErrors">
+            {{errItem.key | translate}}. {{errItem.msg | translate}}
+          </li>
+        </ul>
+      </div>
+      <div class="alert alert-success varda-form-main-feedback"
+           role="alert"
+           aria-live="polite"
+           *ngIf="ui.vakatoimijaSaveSuccess">
+        {{ui.vakatoimijaSaveSuccessMsg | translate}}
+      </div>
+
+      <fieldset>
+        <legend class="oph-h4 oph-bold">{{vakatoimijaNimi}} / {{'label.yhteystiedot' | translate}}
+        </legend>
+
+        <div class="oph-field">
+          <div class="oph-field-inputs">
+            <label for="sahkopostiosoite"
+                   class="oph-label">{{'label.sahkopostiosoite' | translate}}</label>
+            <input type="text"
+                   class="oph-input"
+                   [ngClass]="{'oph-input-has-error': vakatoimijaForm.get('sahkopostiosoite').invalid && isTouched('sahkopostiosoite')}"
+                   id="sahkopostiosoite"
+                   [placeholder]="'vakatoimija.sahkopostiosoite-placeholder' | translate"
+                   formControlName="sahkopostiosoite"
+                   aria-describedby="sahkopostiosoiteInstruction"
+                   (blur)="onBlur()"
+                   (focus)="onFocus('sahkopostiosoite')"
+                   [readonly]="isKatselija">
+            <div class="oph-error"
+                 role="alert"
+                 *ngIf="vakatoimijaForm &&
               vakatoimijaForm.get('sahkopostiosoite').invalid &&
               isTouched('sahkopostiosoite')">
-                <p>{{'alert.sahkopostiosoite-format-warning' | translate}}</p>
-              </div>
-            </div>
-            <div class="varda-fieldset-input-instructions-section">
-              <small [id]="'sahkopostiosoiteInstruction'" class="form-text text-muted instruction-block-text" *ngIf="ui.activeInstructionText === 'sahkopostiosoite'">
-                {{'vakatoimija.sahkopostiosoite-instructiontext' | translate}}
-              </small>
+              {{'alert.sahkopostiosoite-format-warning' | translate}}
             </div>
           </div>
-          <div class="varda-fieldset-content form-group">
-            <div>
-              <label [for]="'puhelinnumero'" class="varda-field-label">{{'label.puhelinnumero' | translate}}</label>
-              <input type="text"
-                     class="varda-form-control form-control varda-input varda-vakatoimija-form-input"
-                     [id]="'puhelinnumero'"
-                     [placeholder]="'vakatoimija.puhelinnumero-placeholder' | translate"
-                     [formControlName]="'puhelinnumero'"
-                     [attr.name]="'puhelinnumero'"
-                     [attr.aria-describedby]="'puhelinnumeroInstruction'"
-                     (blur)="onBlur()"
-                     (focus)="onFocus('puhelinnumero')"
-                     [readonly]="isKatselija"
-                     appHighlightElement>
-              <div class="varda-error-message-block" role="alert" *ngIf="vakatoimijaForm &&
+          <div class="oph-field-text"
+               id="sahkopostiosoiteInstruction">
+            <small [class.slideOut]="ui.activeInstructionText !== 'sahkopostiosoite'">
+              {{'vakatoimija.sahkopostiosoite-instructiontext' | translate}}
+            </small>
+          </div>
+        </div>
+
+        <div class="oph-field">
+          <div class="oph-field-inputs">
+            <label for="puhelinnumero"
+                   class="oph-label">{{'label.puhelinnumero' | translate}}</label>
+            <input type="text"
+                   class="oph-input"
+                   [ngClass]="{'oph-input-has-error': vakatoimijaForm.get('puhelinnumero').invalid && isTouched('puhelinnumero')}"
+                   id="puhelinnumero"
+                   [placeholder]="'vakatoimija.puhelinnumero-placeholder' | translate"
+                   formControlName="puhelinnumero"
+                   aria-describedby="puhelinnumeroInstruction"
+                   (blur)="onBlur()"
+                   (focus)="onFocus('puhelinnumero')"
+                   [readonly]="isKatselija">
+            <div class="oph-error"
+                 role="alert"
+                 *ngIf="vakatoimijaForm &&
               vakatoimijaForm.get('puhelinnumero').invalid &&
               isTouched('puhelinnumero')">
-                <p>{{'alert.puhelinnumero-format-warning' | translate}}</p>
-              </div>
-            </div>
-            <div class="varda-fieldset-input-instructions-section">
-              <small [id]="'puhelinnumeroInstruction'" class="form-text text-muted instruction-block-text" *ngIf="ui.activeInstructionText === 'puhelinnumero'">
-                {{'vakatoimija.puhelinnumero-instructiontext' | translate}}
-              </small>
+              {{'alert.puhelinnumero-format-warning' | translate}}
             </div>
           </div>
-          <div class="varda-fieldset-content form-group">
-            <div>
-              <label [for]="'tilinumero'" class="varda-field-label">{{'label.tilinumero' | translate}}</label>
-              <input type="text"
-                     class="varda-form-control form-control varda-input varda-vakatoimija-form-input"
-                     [id]="'tilinumero'"
-                     [placeholder]="'vakatoimija.tilinumero-placeholder' | translate"
-                     [formControlName]="'tilinumero'"
-                     [attr.name]="'tilinumero'"
-                     [attr.aria-describedby]="'tilinumeroInstruction'"
-                     (blur)="onBlur()"
-                     (focus)="onFocus('tilinumero')"
-                     [readonly]="isKatselija"
-                     appHighlightElement>
-              <div class="varda-error-message-block" role="alert" *ngIf="vakatoimijaForm &&
+
+          <div class="oph-field-text"
+               id="puhelinnumeroInstruction">
+            <small [class.slideOut]="ui.activeInstructionText !== 'puhelinnumero'">
+              {{'vakatoimija.puhelinnumero-instructiontext' | translate}}
+            </small>
+
+          </div>
+        </div>
+        <div class="oph-field">
+          <div class="oph-field-inputs">
+            <label for="tilinumero"
+                   class="oph-label">{{'label.tilinumero' | translate}}</label>
+            <input class="oph-input"
+                   [ngClass]="{'oph-input-has-error': vakatoimijaForm.get('tilinumero').invalid && isTouched('tilinumero')}"
+                   id="tilinumero"
+                   [placeholder]="'vakatoimija.tilinumero-placeholder' | translate"
+                   formControlName="tilinumero"
+                   aria-describedby="tilinumeroInstruction"
+                   (blur)="onBlur()"
+                   (focus)="onFocus('tilinumero')"
+                   [readonly]="isKatselija">
+            <div class="oph-error"
+                 role="alert"
+                 *ngIf="vakatoimijaForm &&
               vakatoimijaForm.get('tilinumero').invalid &&
               isTouched('tilinumero')">
-                <p>{{'alert.tilinumero-format-warning' | translate}}</p>
-              </div>
-            </div>
-            <div class="varda-fieldset-input-instructions-section">
-              <small [id]="'tilinumeroInstruction'" class="form-text text-muted instruction-block-text" *ngIf="ui.activeInstructionText === 'tilinumero'">
-                {{'vakatoimija.tilinumero-instructiontext' | translate}}
-              </small>
+              {{'alert.tilinumero-format-warning' | translate}}
             </div>
           </div>
-          <div class="varda-vakatoimija-form-save-btn-wrapper">
-            <div>
-              <button
-              type="button"
-              class="varda-button varda-button-small recurring-save-btn"
-              [disabled]="!vakatoimijaForm.valid || ui.isSubmitting"
-              [ngClass]="{'varda-disabled-button': !vakatoimijaForm.valid || ui.isSubmitting}"
-              (click)="saveVakatoimijaForm()"
-              *ngIf="!isKatselija">{{'label.generic-save' | translate}}</button>
-            </div>
+          <div class="oph-field-text"
+               id="tilinumeroInstruction">
+            <small [class.slideOut]="ui.activeInstructionText !== 'tilinumero'">
+              {{'vakatoimija.tilinumero-instructiontext' | translate}}
+            </small>
           </div>
-        </fieldset>
-      </form>
-    </div>
+        </div>
+        <div class="oph-field">
+          <button type="button"
+                  class="varda-button responsive-md"
+                  [disabled]="!vakatoimijaForm.valid || ui.isSubmitting"
+                  [ngClass]="{'varda-disabled-button': !vakatoimijaForm.valid || ui.isSubmitting}"
+                  (click)="saveVakatoimijaForm()"
+                  *ngIf="!isKatselija">{{'label.generic-save' | translate}}</button>
+
+        </div>
+
+
+      </fieldset>
+    </form>
   </div>
-</div>
+</main>
 <lib-loading-indicator *ngIf="ui.isSubmitting || ui.isLoading"></lib-loading-indicator>

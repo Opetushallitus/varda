@@ -34,8 +34,7 @@ export class ToimipaikanLapsetComponent implements OnChanges {
   fetchToimipaikanLapsi(): void {
     this.vardaApiService.getLapsiKooste(this.selectedToimipaikanLapsi.lapsi_id).subscribe((data) => {
       this.selectedToimipaikanLapsi = data;
-      /* TODO: CSCVARDA-1457
-      this.toimipaikanLapsetScrollTo.nativeElement.scrollIntoView({behavior: 'smooth'}) */
+      this.toimipaikanLapsetScrollTo.nativeElement.scrollIntoView({behavior: 'smooth', block: 'start'});
     });
   }
 }

@@ -1,0 +1,41 @@
+<div role="button"
+     class="varda-dropdown-filter"
+     (keydown.enter)="trigger.openMenu()"
+     tabindex="0"
+     aria.has-popup="menu"
+     [ngClass]="{'no-pointer': list.length === 1 }"
+     [mat-menu-trigger-for]="dropdown">
+  <span>{{ label }}</span>
+  <mat-icon *ngIf="list.length > 1 && !trigger.menuOpen">arrow_drop_down</mat-icon>
+  <mat-icon *ngIf="trigger.menuOpen">arrow_drop_up</mat-icon>
+</div>
+<mat-menu #dropdown>
+  <ul role="menu"
+      (click)="$event.stopPropagation()"
+      (keydown.tab)="$event.stopPropagation()">
+    <li class="dropdownFilterSearch"
+      *ngIf="list.length > 10">
+      <input type="text"
+             #dropdownFilterInput
+             class="oph-input"
+             [attr.aria-label]="'label.haku-condition.filter' | translate"
+             placeholder="{{ 'label.paos-toiminta.search.placeholder' | translate}}"
+             [(ngModel)]="filterText"
+             (keyup)="filterList(filterText)"
+             (keyup.enter)="filterList(filterText, true)"
+             (change)="filterList(filterText)" />
+    </li>
+    <li mat-menu-item disabled *ngIf="filteredList?.length === 0"
+        class="dropdownFilterEmpty">
+      {{ 'label.paos-add-toimipaikka-list.search-empty' | translate }}
+    </li>
+    <ng-container *ngFor="let item of filteredList">
+      <li mat-menu-item
+          aria
+          [attr.aria-describedby]="item[filterBy[0]]"
+          class='item'
+          (click)='selectItem(item)'>{{ item[filterBy[0]] }}</li>
+    </ng-container>
+
+  </ul>
+</mat-menu>

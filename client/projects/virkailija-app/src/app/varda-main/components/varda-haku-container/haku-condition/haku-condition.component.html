@@ -1,57 +1,84 @@
-<form [formGroup]="hakuform" (ngSubmit)="searchType()">
-  <div class="haku-row">
-    <div class="haku-column1">
-      <label for="henkilo-haku-input">{{'label.haku-condition.hae-henkilo' | translate}}</label>
-    </div>
-    <div class="haku-column2">
-      <input type="text"
-             class="varda-form-control form-control varda-input"
-             id="henkilo-haku-input"
-             autofocus
-             formControlName="search"
-      >
-      <button type="submit" class="varda-button" id="henkilo-haku-search-button">{{'label.search' | translate | uppercase}}</button>
-      <div class="haku-instructions">
-        <span class="site-caption">{{'label.haku-condition.search-instruction' | translate}}</span>
-        <span class="site-caption">{{'label.haku-condition.search-instruction2' | translate}}</span>
+<form [formGroup]="hakuform"
+      class="haku-form"
+      (ngSubmit)="searchType()">
+  <fieldset>
+    <div class="oph-field">
+      <div class="oph-field-inputs">
+        <label class="oph-label"
+               id="condition-label">
+          {{'label.haku-condition.hae-henkiloita' | translate}}
+        </label>
+        <mat-radio-group [attr.aria-labelledby]="'condition-label'"
+                         [disabled]="isLoading"
+                         formControlName="type">
+          <mat-radio-button [value]="HenkilohakuType.lapset"
+                            checked>
+            {{'label.lapset' | translate}}
+          </mat-radio-button>
+          <mat-radio-button [value]="HenkilohakuType.tyontekija"
+                            disabled>
+            {{'label.tyontekija' | translate}}
+          </mat-radio-button>
+        </mat-radio-group>
       </div>
     </div>
-  </div>
-  <div class="haku-row">
-    <div class="haku-column1">
-      <label for="type-condition">{{'label.haku-condition.type-select' | translate}}</label>
+    <div class="oph-field">
+      <div class="oph-field-inputs">
+        <div class="modal-form-intro">
+          {{'label.haku-condition.search-instruction' | translate}}<br />
+          {{'label.haku-condition.search-instruction2' | translate}}
+        </div>
+      </div>
     </div>
-    <div class="haku-column2">
-      <mat-radio-group id="type-condition"
-                       formControlName="type">
-        <mat-radio-button [value]="HenkilohakuType.lapset"
-                          checked>
-          {{'label.lapset' | translate}}
-        </mat-radio-button>
-        <mat-radio-button [value]="HenkilohakuType.tyontekija"
-                          disabled>
-          {{'label.tyontekija' | translate}}
-        </mat-radio-button>
-      </mat-radio-group>
+
+    <div class="oph-field">
+      <div class="oph-field-inputs">
+        <label class="oph-label"
+               for="hakuFormSearch">
+          {{'label.haku-list.nimi-ssn-oid' | translate}}
+        </label>
+        <input type="text"
+               [disabled]="isLoading"
+               autocomplete="off"
+               class="oph-input"
+               formControlName="search"
+               id="hakuFormSearch"
+               placeholder="{{ 'label.generic-name' | translate}} / {{ 'label.ssn' | translate}} / {{ 'label.oppijanumero' | translate}}"
+               autofocus />
+      </div>
     </div>
-  </div>
-  <div class="haku-row">
-    <div class="haku-column1">
-      <label for="filter_status">{{'label.haku-condition.filter' | translate}}</label>
+    <div class="oph-field mt-1">
+      <button type="submit"
+              [disabled]="isLoading"
+              class="varda-button varda-button-wide responsive-md">
+        {{'label.search' | translate | uppercase}}
+      </button>
     </div>
-    <div class="haku-column2">
-      <div>
-        <select class="varda-form-control form-control varda-select"
-                id="filter_status"
+    <div class="oph-field mx-3">
+      <div class="oph-field-inputs">
+        <label class="oph-label"
+               id="hakuFormStatusLabel">
+          {{'label.haku-condition.filter' | translate}}
+        </label>
+        <select class="oph-select oph-input"
+                [disabled]="isLoading"
+                aria-labelledby="hakuFormStatusLabel"
+                id="hakuFormStatus"
                 formControlName="filter_status">
           <option [ngValue]="FilterStatus.kaikki">{{'label.haku.filter-status.kaikki' | translate}}</option>
-          <option [ngValue]="FilterStatus.voimassaOlevat" [selected]="true">{{'label.haku.filter-status.voimassa-olevat' | translate}}</option>
+          <option [ngValue]="FilterStatus.voimassaOlevat"
+                  [selected]="true">{{'label.haku.filter-status.voimassa-olevat' | translate}}</option>
           <option [ngValue]="FilterStatus.paattyneet">{{'label.haku.filter-status.paattyneet' | translate}}</option>
-          <option [ngValue]="FilterStatus.eiMaksutietoja">{{'label.haku.filter-status.ei-maksutietoja' | translate}}</option>
+          <option [ngValue]="FilterStatus.eiMaksutietoja">{{'label.haku.filter-status.ei-maksutietoja' | translate}}
+          </option>
         </select>
       </div>
-      <div>
-        <mat-radio-group id="filter_object"
+    </div>
+    <div class="oph-field mx-3">
+      <div class="oph-field-inputs">
+        <mat-radio-group [attr.aria-labelledby]="'hakuFormStatusLabel'"
+                         [disabled]="isLoading"
+                         class="responsive-md"
                          formControlName="filter_object">
           <mat-radio-button [value]="FilterObject.vakapaatokset"
                             [checked]="hakuform.controls.filter_status.value !== FilterStatus.eiMaksutietoja && hakuform.value.filter_object === FilterObject.vakapaatokset"
@@ -71,5 +98,5 @@
         </mat-radio-group>
       </div>
     </div>
-  </div>
+  </fieldset>
 </form>

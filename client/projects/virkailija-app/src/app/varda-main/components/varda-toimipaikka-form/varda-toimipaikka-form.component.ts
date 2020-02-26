@@ -1,11 +1,14 @@
-import { Component, OnInit, OnChanges, Input, Output, SimpleChanges, EventEmitter, ViewChild, ViewChildren } from '@angular/core';
+import { Component, OnInit, OnChanges, Input, Output, SimpleChanges, EventEmitter, ViewChild, ViewChildren, ElementRef } from '@angular/core';
 import { FormControl, FormGroup, FormArray } from '@angular/forms';
 import { MatStep, MatStepper, MatRadioButton } from '@angular/material';
-import { VardaToimipaikkaDTO, VardaFieldSet, VardaKielipainotusDTO, VardaToimintapainotusDTO,
-  VardaEntityNames } from '../../../utilities/models';
+import {
+  VardaToimipaikkaDTO, VardaFieldSet, VardaKielipainotusDTO, VardaToimintapainotusDTO,
+  VardaEntityNames
+} from '../../../utilities/models';
 import { VardaFormService } from '../../../core/services/varda-form.service';
 import { VardaApiWrapperService } from '../../../core/services/varda-api-wrapper.service';
-import { Observable, forkJoin, Subject } from 'rxjs';
+import { Observable, forkJoin, Subject, fromEvent } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 import { VardaUtilityService } from '../../../core/services/varda-utility.service';
 import { VardaModalService } from '../../../core/services/varda-modal.service';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
@@ -29,6 +32,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
   @Output() saveToimipaikkaFormSuccess: EventEmitter<any> = new EventEmitter();
   @Output() valuesChanged: EventEmitter<boolean> = new EventEmitter();
 
+  @ViewChild('formContent', { static: false }) formContent: ElementRef;
   @ViewChild('toimipaikkaStepper', { static: false }) toimipaikkaStepper: MatStepper;
   @ViewChild('kielipainotuksetYes', { static: false }) kielipainotuksetYes: MatRadioButton;
   @ViewChild('toimintapainotuksetYes', { static: false }) toimintapainotuksetYes: MatRadioButton;
@@ -74,7 +78,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
     toimintapainotusSwitchIncorrectMsg: string,
     openedKielipainotusIndex: number,
     openedToimintapainotusIndex: number,
-    showToimipaikkaFormContinuesWarning: boolean,
+    showFormContinuesWarning: boolean,
     showKielipainotusFormContinuesWarning: boolean,
     showToimintapainotusFormContinuesWarning: boolean,
     showErrorMessageInfo: boolean,
@@ -112,7 +116,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
       toimintapainotusSwitchIncorrectMsg: '',
       openedKielipainotusIndex: null,
       openedToimintapainotusIndex: null,
-      showToimipaikkaFormContinuesWarning: false,
+      showFormContinuesWarning: false,
       showKielipainotusFormContinuesWarning: false,
       showToimintapainotusFormContinuesWarning: false,
       showErrorMessageInfo: false,
@@ -121,10 +125,10 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
 
     this.vardaModalService.modalOpenObs('toimipaikkaSuccessModal').subscribe((isOpen: boolean) => {
       if (isOpen) {
-        $(`#toimipaikkaSuccessModal`).modal({keyboard: true, focus: true});
-          setTimeout(() => {
-            $(`#toimipaikkaSuccessModal`).modal('hide');
-          }, 2000);
+        $(`#toimipaikkaSuccessModal`).modal({ keyboard: true, focus: true });
+        setTimeout(() => {
+          $(`#toimipaikkaSuccessModal`).modal('hide');
+        }, 2000);
       }
     });
   }
@@ -161,7 +165,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
     this.vardaApiWrapperService.saveToimipaikka(true, this.toimipaikka, putData).subscribe(() => {
       painotusFormRadio.setValue(painotusValue);
       this.saveToimipaikkaFormSuccess.emit(true);
-    }, () => {}, () => {
+    }, () => { }, () => {
       if (entity === VardaEntityNames.KIELIPAINOTUS) {
         this.kielipainotuksetFormChanged = false;
       } else if (entity === VardaEntityNames.TOIMINTAPAINOTUS) {
@@ -175,12 +179,12 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
 
   confirmDeletePainotusEntity(formArrIndex: number, showMsg: boolean, entity: string): void {
     let painotusEntityToEdit,
-    painotusEntities,
-    painotusFormArr,
-    selectedPainotusIndexToDelete,
-    painotusFormRadio,
-    patchData,
-    successMsg;
+      painotusEntities,
+      painotusFormArr,
+      selectedPainotusIndexToDelete,
+      painotusFormRadio,
+      patchData,
+      successMsg;
     if (entity === VardaEntityNames.KIELIPAINOTUS) {
       painotusEntityToEdit = this.kielipainotukset[formArrIndex];
       painotusEntities = this.kielipainotukset;
@@ -359,7 +363,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
 
   getToimipaikkaFormData(): any {
     const data = {
-      toimipaikka: { formData: {}, fieldSets: {}}
+      toimipaikka: { formData: {}, fieldSets: {} }
     };
     const toimipaikkaFormData = this.toimipaikkaForm.getRawValue();
     const toimipaikkaFormDataKeys = Object.keys(toimipaikkaFormData);
@@ -375,7 +379,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
 
   getKielipainotusFormData(index: number): any {
     const data = {
-      kielipainotus: { formData: {}, fieldSets: {}}
+      kielipainotus: { formData: {}, fieldSets: {} }
     };
     const kielipainotusFormArr = <FormArray>this.kielipainotuksetForm.get('kielipainotusFormArr');
     const fg = kielipainotusFormArr.at(index);
@@ -386,7 +390,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
 
   getToimintapainotusFormData(index: number): any {
     const data = {
-      toimintapainotus: { formData: {}, fieldSets: {}}
+      toimintapainotus: { formData: {}, fieldSets: {} }
     };
 
     const toimintapainotusFormArr = <FormArray>this.toimintapainotuksetForm.get('toimintapainotusFormArr');
@@ -418,10 +422,10 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
       if (foundToimintapainotus) {
         rv += foundToimintapainotus.toimintapainotus_koodi;
         const toimintapainotusOptionsField = this.vardaFormService.findVardaFieldFromFieldSetsByFieldKey('toimintapainotus_koodi',
-        this.toimintapainotuksetFieldSets);
+          this.toimintapainotuksetFieldSets);
 
         const foundToimintapainotusCode = toimintapainotusOptionsField.options
-        .find((obj) => obj.code === foundToimintapainotus.toimintapainotus_koodi);
+          .find((obj) => obj.code === foundToimintapainotus.toimintapainotus_koodi);
         if (foundToimintapainotusCode) {
           const translatedDisplayNameProp = currentLang === 'SV' ? 'displayNameSv' : 'displayNameFi';
           rv = `${foundToimintapainotusCode.displayName[translatedDisplayNameProp]} (${foundToimintapainotusCode.code})`;
@@ -526,41 +530,12 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
   }
 
   bindScrollHandlers(): void {
-    setTimeout(() => {
-      $('#toimipaikkaFormContent').on('scroll', (e) => {
-
-        try {
-          const saveToimipaikkaBtnSelector = $('#toimipaikkaFormSaveToimipaikkaBtn');
-          const saveToimipaikkaBtnOffsetTop = saveToimipaikkaBtnSelector.offset().top;
-
-          if (saveToimipaikkaBtnOffsetTop > 800) {
-            this.ui.showToimipaikkaFormContinuesWarning = true;
-          } else {
-            this.ui.showToimipaikkaFormContinuesWarning = false;
-          }
-
-          if (this.ui.openedKielipainotusIndex !== null) {
-            const kielipainotusBtnSelector = $('#saveKielipainotusBtnWrapper' + this.ui.openedKielipainotusIndex);
-            const kielipainotusBtnOffsetTop = kielipainotusBtnSelector.offset().top;
-            if (kielipainotusBtnOffsetTop > 750 && kielipainotusBtnOffsetTop < 1000) {
-              this.ui.showKielipainotusFormContinuesWarning = true;
-            } else {
-              this.ui.showKielipainotusFormContinuesWarning = false;
-            }
-          }
-
-          if (this.ui.openedToimintapainotusIndex !== null) {
-            const toimintapainotusBtnSelector = $('#saveToimintapainotusBtnWrapper' + this.ui.openedToimintapainotusIndex);
-            const toimintapainotusBtnOffsetTop = toimintapainotusBtnSelector.offset().top;
-            if (toimintapainotusBtnOffsetTop > 750 && toimintapainotusBtnOffsetTop < 1000) {
-              this.ui.showToimintapainotusFormContinuesWarning = true;
-            } else {
-              this.ui.showToimintapainotusFormContinuesWarning = false;
-            }
-          }
-        } catch (e) {}
+    fromEvent(this.formContent.nativeElement, 'scroll')
+      .pipe(debounceTime(300))
+      .subscribe((e: any) => {
+        const ct = e.target;
+        this.ui.showFormContinuesWarning = ct.scrollHeight - ct.clientHeight - ct.scrollTop > 200;
       });
-    }, 1000);
   }
 
   checkIfAnyOfTheFormsHasChanged(): void {
@@ -594,7 +569,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
       this.vardaApiWrapperService.saveToimipaikka(true, this.toimipaikka, putData).subscribe(() => {
         painotusFormRadio.setValue(data['kielipainotus_kytkin']);
         this.saveToimipaikkaFormSuccess.emit(true);
-      }, () => {}, () => setTimeout(() => {
+      }, () => { }, () => setTimeout(() => {
         this.kielipainotuksetFormChanged = false;
         this.checkIfAnyOfTheFormsHasChanged();
       }, 500));
@@ -603,7 +578,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
       this.vardaApiWrapperService.saveToimipaikka(true, this.toimipaikka, putData).subscribe(() => {
         painotusFormRadio.setValue(data['toiminnallinenpainotus_kytkin']);
         this.saveToimipaikkaFormSuccess.emit(true);
-      }, () => {}, () => setTimeout(() => {
+      }, () => { }, () => setTimeout(() => {
         this.toimintapainotuksetFormChanged = false;
         this.checkIfAnyOfTheFormsHasChanged();
       }, 500));
@@ -634,7 +609,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
 
     this.vardaApiWrapperService.saveKielipainotus(isEdit, this.toimipaikka,
       kielipainotusToEdit, formData).subscribe(this.onSaveSuccess.bind(this, 'kielipainotus', formArrIndex, isEdit),
-      this.onSaveError.bind(this, formArrIndex, 'kielipainotus'));
+        this.onSaveError.bind(this, formArrIndex, 'kielipainotus'));
   }
 
   saveToimintapainotus(formArrIndex: number): void {
@@ -657,7 +632,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
     const formData = this.getToimipaikkaFormData();
     this.vardaApiWrapperService.saveToimipaikka(this.isEdit,
       this.toimipaikka, formData).subscribe(this.onSaveSuccess.bind(this, 'toimipaikka', null, null),
-      this.onSaveError.bind(this, null, null));
+        this.onSaveError.bind(this, null, null));
   }
 
   onSaveSuccess(...args): void {
@@ -685,7 +660,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
           this.isEdit = true;
           const toimipaikanNimiFc = this.vardaFormService.findFormControlFromFormGroupByFieldKey('nimi', this.toimipaikkaForm);
           const toimipaikanToimintamuotoFc = this.vardaFormService.findFormControlFromFormGroupByFieldKey('toimintamuoto_koodi',
-          this.toimipaikkaForm);
+            this.toimipaikkaForm);
           toimipaikanNimiFc.disable();
           toimipaikanToimintamuotoFc.disable();
         }
@@ -696,7 +671,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
         this.toimipaikka = entity;
         this.vardaVakajarjestajaService.setSelectedToimipaikka(entity);
         this.vardaLocalStorageWrapperService.saveToLocalStorage('varda.activeToimipaikka', JSON.stringify(entity));
-        this.saveToimipaikkaFormSuccess.emit({toimipaikka: entity});
+        this.saveToimipaikkaFormSuccess.emit({ toimipaikka: entity });
       }
 
       if (painotusArr && !isEdit) {

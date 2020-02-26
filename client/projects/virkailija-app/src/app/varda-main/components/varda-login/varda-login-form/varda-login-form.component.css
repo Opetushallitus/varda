@@ -1,49 +1,20 @@
-.varda-main-login-title-section {
-    grid-column: col-start 1 / span 12;
+
+.varda-login-page {
+  max-width: 600px;
+  margin: 2em auto;
+  text-align: center;
 }
 
-.varda-main-login-title-section-content {
-    display: grid;
-    grid-template-columns: 35% 28% 13% 1fr;
-    align-items: center;
-    grid-column-gap: 20px;
+.varda-login-page > .varda-page-content {
+  margin-top: 1em;
+  padding: 3em;
 }
 
-.varda-main-login-title-section-title {
-    display: flex;
-    justify-content: center;
+.varda-login-page > .varda-page-content > button {
+  min-width: 150px;
 }
 
-.varda-main-login-title-title-section div:first-child {
-    flex: 0 1 150px;
-}
-
-.varda-main-login-opintopolku-section, .varda-main-login-varda-section {
-    grid-column: col-start 1 / span 12;
-}
-
-.varda-main-login-opintopolku-info-section p {
-    margin-bottom: 0;
-}
-
-.varda-main-login-opintopolku-section-content, .varda-main-login-varda-section-content {
-    display: grid;
-    grid-template-columns: 35% 28% 11% 16%;
-    align-items: center;
-    background-color: #fff;
-    padding: 10px;
-    grid-column-gap: 20px;
-    min-height: 100px;
-}
-
-.varda-main-login-varda-login-form-content p {
-    font-weight: bold;
-}
-
-.varda-main-login-opintopolku-button-section div:nth-child(2) {
-    display: flex;
-}
-
-#signOutInfo {
-    font-style: italic;
+.varda-login-page > .varda-page-content > .varda-logout-clear {
+    margin-top: 2em;
+    padding: 0.5em;
 }

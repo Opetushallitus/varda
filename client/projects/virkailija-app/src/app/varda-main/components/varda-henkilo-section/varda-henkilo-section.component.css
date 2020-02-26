@@ -1,116 +1,26 @@
-.varda-main-frame-henkilo-section,
-.varda-main-frame-henkilo-list-section {
-    grid-column: col-start 1 / span 12;
-}
-
-.varda-main-frame-henkilo-section-content {
-    display: grid;
-    grid-template-columns: 1fr;
-    background-color: #fff;
-    grid-column-gap: 20px;
-    margin-bottom: 15px;
-    border-radius: 20px;
-}
-
-#henkiloSearchInput {
-    width: 75%;
-}
-
-#henkiloSearchInput:focus {
-    border: 1px solid #000;
-}
-
-.henkilo-search-title {
-    font-size: 1.1rem;
-    font-weight: bold;
-}
-
-.advanced-search-filter-wrapper,
-.varda-main-frame-henkilo-search-title,
-.varda-main-frame-henkilo-search-wrapper,
-.varda-main-frame-henkilo-add-new,
-.varda-henkilo-section-click-henkilo-infotext,
-.advanced-search-filter-container {
-    display: flex;
-    justify-content: center;
+.varda-main-frame-henkilo-search {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
 }
 
 .varda-main-frame-henkilo-search-input-wrapper {
-    display: flex;
-    justify-content: flex-start;
-    padding-left: 20px;
+  flex: 1 1 310px;
 }
 
-.varda-main-frame-henkilo-add-new {
-    height: 200px;
+.varda-main-frame-henkilo-search > .flex-wrap-filler {
+  flex: 1 1 180px;
 }
 
-.varda-main-frame-henkilo-add-new button {
-    height: 60px;
-    width: 160px;
+.varda-main-frame-henkilo-section > div {
+  margin-bottom: 1em;
 }
 
-.advanced-search-filter-container {
-    justify-content: flex-start;
-    padding-left: 20px;
+.varda-main-frame-henkilo-section > .toimipaikka-empty {
+  margin: auto 1em;
 }
 
-.advanced-search-filter-wrapper {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.75rem;
-    margin-bottom: 20px;
-    margin-top: 20px;
-    cursor: pointer;
-    width: 75%;
-}
 
-.advanced-search-filter-wrapper > div {
-    color: #656565;
-}
 
-.advanced-search-filter-wrapper > div.active-filter {
-    color: #000;
-    font-weight: bold;
-}
 
-.varda-henkilo-section-click-henkilo-infotext {
-    font-size: 0.87rem;
-    margin-top: 5px;
-}
 
-.varda-main-frame-henkilo-section-content-title {
-    margin-bottom: 10px;
-}
-
-.varda-main-frame-henkilo-section-content-title h3 {
-    font-size: 1rem;
-    width: 75%;
-    display: flex;
-    font-weight: bold;
-}
-
-.henkilo-list-empty {
-    font-size: 0.8rem;
-    color: #8A8A8A;
-    margin-top: 15px;
-    text-align: center;
-    font-style: italic;
-}
-
-@media (max-width: 800px) {
-    #henkiloSearchInput,
-    .advanced-search-filter-wrapper,
-    .varda-main-frame-henkilo-section-content-title h3 {
-        width: 100%;
-    }
-
-    .varda-main-frame-henkilo-section-content {
-    }
-
-    .varda-main-frame-henkilo-search-input-wrapper,
-    .advanced-search-filter-container,
-    .varda-main-frame-henkilo-section-content-title {
-        padding-left: 0;
-    }
-}

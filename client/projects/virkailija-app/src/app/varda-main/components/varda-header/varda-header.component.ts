@@ -23,6 +23,7 @@ export class VardaHeaderComponent implements OnInit, AfterViewInit {
   selectedVakajarjestaja: VardaVakajarjestajaUi;
   vakajarjestajat: Array<VardaVakajarjestajaUi>;
   activeNavItem: string;
+  virkailijaRaamit: boolean;
 
   $siteTitle;
   $siteMenuWrapper;
@@ -88,10 +89,12 @@ export class VardaHeaderComponent implements OnInit, AfterViewInit {
         this.initKayttooikeudet();
         this.ui.isLoading = false;
       });
+
+      this.virkailijaRaamit = environment.virkailijaRaamitScriptPath ? true : false;
   }
 
-  changeVakajarjestaja(): void {
-    this.vardaVakajarjestajaService.setSelectedVakajarjestaja(this.selectedVakajarjestaja, true);
+  changeVakajarjestaja(selectedVakajarjestaja:VardaVakajarjestajaUi): void {
+    this.vardaVakajarjestajaService.setSelectedVakajarjestaja(selectedVakajarjestaja, true);
   }
 
   initKayttooikeudet(): void {

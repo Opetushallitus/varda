@@ -1,7 +1,7 @@
 <div (click)="showDropdown = !showDropdown" class="varda-dropdown-menu-wrapper">
   <a [routerLink]=""
      [mat-menu-trigger-for]="dropdown">
-    {{topicKey | translate}}
+    <span>{{topicKey | translate}}</span>
     <mat-icon *ngIf="!showDropdown">arrow_drop_down</mat-icon>
     <mat-icon *ngIf="showDropdown">arrow_drop_up</mat-icon>
   </a>
