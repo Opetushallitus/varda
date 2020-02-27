@@ -207,7 +207,7 @@
 
   <div class="oph-field-text">
     <small [id]="'instructionBlock' + fieldIndex + fieldSetIndex"
-           *ngIf="showInstructionText">
+           [slideHide]="showInstructionText">
       {{getInstructionText(field)}}
     </small>
   </div>

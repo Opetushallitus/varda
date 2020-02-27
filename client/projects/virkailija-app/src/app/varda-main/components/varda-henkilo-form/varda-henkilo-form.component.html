@@ -81,7 +81,7 @@
                   </div>
                   <div class="oph-field-text">
                     <small [id]="'henkiloFormSsnOrOidInstruction'"
-                           *ngIf="ui.activeInstructionText === 'ssn'">
+                           [slideHide]="ui.activeInstructionText === 'ssn'">
                       {{getHenkiloSsnInstructionText() | translate}}
                     </small>
                   </div>
@@ -120,7 +120,7 @@
                 </div>
                 <div class="oph-field-text">
                   <small [id]="'firstnamesInstruction'"
-                         *ngIf="ui.activeInstructionText === 'firstnames'">
+                         [slideHide]="ui.activeInstructionText === 'firstnames'">
                     {{'henkiloform.firstnamesinstruction' | translate}}
                   </small>
                 </div>
@@ -172,7 +172,7 @@
 
                 <div class="oph-field-text">
                   <small [id]="'nicknameInstruction'"
-                         *ngIf="ui.activeInstructionText === 'nickname'">
+                         [slideHide]="ui.activeInstructionText === 'nickname'">
                     {{'henkiloform.nicknameinstruction' | translate}}
                   </small>
                 </div>
@@ -212,7 +212,7 @@
 
                 <div class="oph-field-text">
                   <small [id]="'lastnameInstruction'"
-                         *ngIf="ui.activeInstructionText === 'lastname'">
+                         [slideHide]="ui.activeInstructionText === 'lastname'">
                     {{'henkiloform.lastnamesinstruction' | translate}}
                   </small>
                 </div>

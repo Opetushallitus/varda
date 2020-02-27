@@ -27,11 +27,10 @@ export class AppComponent implements OnInit {
       this._document.documentElement.lang = selectedAsiointikieli;
       this.translateService.use(selectedAsiointikieli);
     });
-
-    this.translateService.setDefaultLang('fi');
-    this.translateService.use('fi');
+    const defaultLanguage = window.navigator.language.startsWith('sv') ? 'sv': 'fi';
+    this.translateService.setDefaultLang(defaultLanguage);
+    this.translateService.use(defaultLanguage);
     this.vardaDomService.bindTabAndClickEvents();
-
 
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
@@ -41,7 +40,6 @@ export class AppComponent implements OnInit {
         )
       }
     });
-
   }
 
   ngOnInit() { }

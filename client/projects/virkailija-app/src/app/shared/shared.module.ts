@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MyDatePickerModule } from 'mydatepicker';
 import { TranslateModule } from '@ngx-translate/core';
-import {NgcCookieConsentModule, NgcCookieConsentConfig} from 'ngx-cookieconsent';
+import { NgcCookieConsentModule, NgcCookieConsentConfig } from 'ngx-cookieconsent';
 import {
   MatButtonModule,
   MatCheckboxModule,
@@ -18,16 +18,17 @@ import {
   MatListModule,
   MatCardModule,
   MatMenuModule
- } from '@angular/material';
+} from '@angular/material';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { PageNotFoundComponent,
+import {
+  PageNotFoundComponent,
   VardaIconComponent,
   VardaAccessibilitySettingsComponent,
   VardaInfoModalComponent,
   VardaModalFormComponent,
   VardaFormQuestionComponent,
   VardaSuccessModalComponent
- } from '../utilities/components';
+} from '../utilities/components';
 import { HighlightElementDirective } from './directives/highlight-element.directive';
 import { HighContrastDirective } from './directives/high-contrast.directive';
 import { ClickOutsideDirective } from './directives/click-outside.directive';
@@ -42,6 +43,9 @@ import { VardaDropdownFilterComponent } from './components/varda-dropdown-filter
 import { VardaListPaginationComponent } from './components/varda-list-pagination/varda-list-pagination.component';
 import { VardaRadioButtonGroupComponent } from './components/varda-radio-button-group/varda-radio-button-group.component';
 import { VardaRadioButtonComponent } from './components/varda-radio-button-group/varda-radio-button/varda-radio-button.component';
+import { BrowserNotSupportedComponent } from './components/browser-not-supported/browser-not-supported.component';
+import { BrowserNotSupportedGuard } from './components/browser-not-supported/browser-not-supported.guard';
+import { SlideHideDirective } from './directives/slide-hide.directive';
 
 
 const cookieConfig: NgcCookieConsentConfig = {
@@ -114,8 +118,10 @@ const cookieConfig: NgcCookieConsentConfig = {
     VardaDropdownFilterComponent,
     VardaListPaginationComponent,
     VardaRadioButtonGroupComponent,
-    VardaRadioButtonComponent],
-  providers: [],
+    VardaRadioButtonComponent,
+    BrowserNotSupportedComponent,
+    SlideHideDirective],
+  providers: [BrowserNotSupportedGuard],
   exports: [
     HighlightElementDirective,
     HighContrastDirective,
@@ -152,7 +158,9 @@ const cookieConfig: NgcCookieConsentConfig = {
     VardaDropdownFilterComponent,
     VardaListPaginationComponent,
     VardaRadioButtonGroupComponent,
-    VardaRadioButtonComponent
+    VardaRadioButtonComponent,
+    BrowserNotSupportedComponent,
+    SlideHideDirective
   ]
 })
 export class SharedModule { }

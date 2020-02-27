@@ -54,7 +54,7 @@
           </div>
           <div class="oph-field-text"
                id="sahkopostiosoiteInstruction">
-            <small [class.slideOut]="ui.activeInstructionText !== 'sahkopostiosoite'">
+            <small [slideHide]="ui.activeInstructionText === 'sahkopostiosoite'">
               {{'vakatoimija.sahkopostiosoite-instructiontext' | translate}}
             </small>
           </div>
@@ -85,7 +85,7 @@
 
           <div class="oph-field-text"
                id="puhelinnumeroInstruction">
-            <small [class.slideOut]="ui.activeInstructionText !== 'puhelinnumero'">
+            <small [slideHide]="ui.activeInstructionText === 'puhelinnumero'">
               {{'vakatoimija.puhelinnumero-instructiontext' | translate}}
             </small>
 
@@ -114,7 +114,7 @@
           </div>
           <div class="oph-field-text"
                id="tilinumeroInstruction">
-            <small [class.slideOut]="ui.activeInstructionText !== 'tilinumero'">
+            <small [slideHide]="ui.activeInstructionText === 'tilinumero'">
               {{'vakatoimija.tilinumero-instructiontext' | translate}}
             </small>
           </div>

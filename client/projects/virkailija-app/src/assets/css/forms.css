@@ -230,32 +230,3 @@
 
 
 @media (max-width: 400px) {}
-
-.oph-field-text {}
-
-.oph-field-text>.slideOut {
-  animation: slideIn linear 8s;
-  animation-fill-mode: forwards;
-  animation-direction: reverse;
-  overflow: hidden;
-}
-
-@keyframes slideIn {
-  0% {
-    max-height: 0px;
-  }
-
-  40% { max-height: 50px;}
-
-  70% {
-    max-height: 100px;
-  }
-
-  90% {
-    max-height: 150px
-  }
-
-  100% {
-    max-height: 400px;
-  }
-}

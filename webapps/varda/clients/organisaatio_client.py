@@ -61,7 +61,7 @@ def _parse_organisaatio_data(response, organisaatio_oid):
         }
     except (KeyError, ValueError) as e:
         logger.error('Could not parse organisaatio data for vakajarjestaja {} with cause {}'
-                     .format(organisaatio_oid, e.__cause__))
+                     .format(organisaatio_oid, e.message))
     return {'result_ok': False}
 
 

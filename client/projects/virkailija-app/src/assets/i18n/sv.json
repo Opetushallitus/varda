@@ -369,8 +369,8 @@
     "field.tilinumero.label": "Fält: Kontonummer",
     "field.iban.invalid": "Kontonumret i IBAN-format innehåller ett fel.",
     "field.maxlength": {
-      "20": "Fältet får innehålla högst 20 tecken",
-      "200": "Fältet får innehålla högst 200 tecken"
+        "20": "Fältet får innehålla högst 20 tecken",
+        "200": "Fältet får innehålla högst 200 tecken"
     },
     "field.toimipaikka.label": "Fält: Verksamhetsställ",
     "alert.toimipaikka-has-disallowed-characters": "Verksamhetsställets namnet innehåller tecken, som inte är tillåtna",
@@ -481,4 +481,4 @@
     "label.paos-organisaatio": "Producent",
     "field.jarjestamismuoto_koodi.paos-lapsi-invalid-code": "Personen kunde inte läggas till. Kontrollera att formen för anordnandet är korrekt.",
     "alert.paos-lapsi-creation-failed": "Personen kunde inte läggas till. Kontrollera att uppgifterna om verksamhet som ordnas som köpt tjänst eller med servicesedel är korrekta. Att lägga till en person till detta verksamhetsställe förutsätter att både serviceproducenten och anordnaren sparat de behövliga uppgifterna om verksamheten."
-  }
+}
