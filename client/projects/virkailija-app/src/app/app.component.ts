@@ -26,26 +26,31 @@ export class AppComponent implements OnInit {
       const selectedAsiointikieli = (asiointikieli.toLocaleLowerCase() === 'sv') ? 'sv' : 'fi';
       this._document.documentElement.lang = selectedAsiointikieli;
       this.translateService.use(selectedAsiointikieli);
-    });
-    const defaultLanguage = window.navigator.language.startsWith('sv') ? 'sv': 'fi';
+      this.setTitle(router);
+    })
+
+    const defaultLanguage = this.translateService.getBrowserLang() === 'sv' ? 'sv' : 'fi'
     this.translateService.setDefaultLang(defaultLanguage);
     this.translateService.use(defaultLanguage);
     this.vardaDomService.bindTabAndClickEvents();
 
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
-        let title: string = this.getTitle(router.routerState, router.routerState.root).join('-');
-        this.translateService.get(title).subscribe(
-          translation => this.titleService.setTitle(`${translation} - Varda`)
-        )
+        this.setTitle(router)
       }
     });
   }
 
   ngOnInit() { }
 
+  setTitle(router: Router): void {
+    let title: string = this.getTitle(router.routerState, router.routerState.root).join('-');
+    this.translateService.get(title).subscribe(
+      translation => this.titleService.setTitle(`${translation} - Varda`)
+    )
+  }
 
-  getTitle(state: any, parent: any) {
+  getTitle(state: any, parent: any): string[] {
     var data = [];
     if (parent && parent.snapshot.data && parent.snapshot.data.title) {
       data.push(parent.snapshot.data.title);

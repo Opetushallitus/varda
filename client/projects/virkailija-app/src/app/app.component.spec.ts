@@ -4,12 +4,12 @@ import { AppComponent } from './app.component';
 import { TranslateService, LangChangeEvent } from '@ngx-translate/core';
 import { AuthService } from './core/auth/auth.service';
 import { VardaDomService } from './core/services/varda-dom.service';
-import {Observable, of} from 'rxjs';
+import {EMPTY, Observable, of} from 'rxjs';
 import { VardaApiService } from './core/services/varda-api.service';
 import { CookieService } from 'ngx-cookie-service';
 import { VardaVakajarjestajaService } from './core/services/varda-vakajarjestaja.service';
 import { Router } from '@angular/router';
-import {HttpService} from 'varda-shared';
+import { HttpService } from 'varda-shared';
 
 describe('AppComponent', () => {
   let component: AppComponent;
@@ -23,20 +23,20 @@ describe('AppComponent', () => {
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-    declarations: [AppComponent],
-    schemas: [ NO_ERRORS_SCHEMA ],
-    providers: [
+      declarations: [AppComponent],
+      schemas: [NO_ERRORS_SCHEMA],
+      providers: [
         AuthService,
         VardaVakajarjestajaService,
         VardaDomService,
-        {provide: Router, useValue: {events: { subscribe: () => {}}, navigate: () => {}}},
-        { provide: CookieService, useValue: {}},
-        { provide: VardaApiService, useValue: {}},
-        { provide: TranslateService, useValue: {use: () => {}, setDefaultLang: () => {}}},
-        { provide: HttpService, useValue: {}},
-    ]
+        { provide: Router, useValue: { events: { subscribe: () => { } }, navigate: () => { }, routerState: {} }},
+        { provide: CookieService, useValue: {} },
+        { provide: VardaApiService, useValue: {} },
+        { provide: TranslateService, useValue: { use: () => { }, getBrowserLang: () => { }, setDefaultLang: () => { }, get: () => EMPTY } },
+        { provide: HttpService, useValue: {} },
+      ]
     })
-    .compileComponents();
+      .compileComponents();
 
     vardaAuthService = TestBed.get(AuthService);
     httpService = TestBed.get(HttpService);

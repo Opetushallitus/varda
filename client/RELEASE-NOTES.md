@@ -1,6 +1,13 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+## [1.3.6] (28.02.2020)
+- CSCVARDA-1296: PAOS lapsen merkintätapa
+- CSCVARDA-1557: Hae ja muokkaa näkymän hae nappulan toiminnallisuuden parantaminen
+- CSCVARDA-1457: Responsiivinen käyttöliittymä, uusi navigaatiopalkki
+- CSCVARDA-1486: Toimijavalintaan tekstihaku laajoilla toimijamäärillä (nimi, y_tunnus, OID)
+- CSCVARDA-1558: Internet Explorer-esto
+
 ## [1.3.5] (18.02.2020)
 - CSCVARDA-1408: Lisätty tarkempi validointi varhaiskasvatussuhteen alkamis_pvm:ään.
 - CSCVARDA-1368: Sivujen otsikoiden ja asetteluiden johdonmukaisuus.

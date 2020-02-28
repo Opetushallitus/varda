@@ -44,7 +44,7 @@
         <div class="paos-toimijat-list-tallennusvastuu-wrapper paos-list-flexbox">
           <div class="paos-list-flexbox">
             <div class="paos-toimipaikat-list-tallennusvastuu-column">
-              {{'label.paos-toimipaikat.list.tiedot-tallentaa' | translate}}:
+              {{'label.paos-toimipaikat.list.tallennusvastuu' | translate}}:
             </div>
             <div class="paos-toimipaikat-list-tallennusvastuu-column"
                  *ngIf="openTallennusvastuu !== paosToiminta.toimijaId">
@@ -66,8 +66,8 @@
               <select [value]="getCurrentTallentajaTranslateKey(paosToiminta.paosOikeus)"
                       (change)="changeTallennusvastuu($event.target.value, paosToiminta)"
                       class="varda-select">
-                <option value="label.jarjestaja">{{'label.jarjestaja' | translate}}</option>
-                <option value="label.palveluntuottaja">{{'label.palveluntuottaja' | translate}}</option>
+                <option value="label.tallentaja">{{'label.tallentaja' | translate}}</option>
+                <option value="label.katselija">{{'label.katselija' | translate}}</option>
               </select>
             </div>
 

@@ -26,13 +26,13 @@ export class VardaKielikoodistoService {
 
   initKielikoodisto(): Observable<any> {
     return new Observable((observer) => {
-        this.vardaApiService.getKielikoodistoOptions().subscribe((data) => {
-            this.kielikoodistoOptions = data;
-            this.sortKielikoodistoOptions();
-            this.excludeOutDatedKielikoodistoOptions();
-            observer.next(true);
-            observer.complete();
-        }, () => observer.error({kielikoodistoUnavailable: true}));
+      this.vardaApiService.getKielikoodistoOptions().subscribe((data) => {
+        this.kielikoodistoOptions = data;
+        this.sortKielikoodistoOptions();
+        this.excludeOutDatedKielikoodistoOptions();
+        observer.next(true);
+        observer.complete();
+      }, () => observer.error({ kielikoodistoUnavailable: true }));
     });
   }
 
@@ -49,6 +49,7 @@ export class VardaKielikoodistoService {
 
   getKielikoodistoOptionIndexByLangAbbreviation(searchVal: string): any {
     const languageMatch = this.kielikoodistoOptions.findIndex((langOption) => {
+      if (!langOption) return false
       return langOption.koodiArvo.toUpperCase() === searchVal.toUpperCase();
     });
     return languageMatch;
@@ -87,19 +88,19 @@ export class VardaKielikoodistoService {
   }
 
   sortByLanguageName(a: any, b: any): number {
-    try  {
+    try {
       const metadataA = this.getKielikoodistoOptionMetadataByLang(
         a.metadata, this.currentLang);
       const metadataB = this.getKielikoodistoOptionMetadataByLang(
         b.metadata, this.currentLang);
 
-        if (!metadataA) {
-          console.log(a);
-        }
+      if (!metadataA) {
+        console.log(a);
+      }
 
-        if (!metadataB) {
-          console.log(b);
-        }
+      if (!metadataB) {
+        console.log(b);
+      }
 
       const nameA = metadataA.nimi.toUpperCase();
       const nameB = metadataB.nimi.toUpperCase();

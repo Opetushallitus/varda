@@ -123,7 +123,7 @@ export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoC
   }
 
   changeTallennusvastuu(tallennusvastuuKey: string, paosToiminta: PaosToimijaInternalDto) {
-    const newTallentaja = tallennusvastuuKey === 'label.jarjestaja' ? this.selectedVakajarjestaja.id : paosToiminta.toimijaId;
+    const newTallentaja = tallennusvastuuKey === 'label.tallentaja' ? this.selectedVakajarjestaja.id : paosToiminta.toimijaId;
     this.changedTallennusvastuu = {
       toimijaId: paosToiminta.toimijaId,
       newTallentaja: newTallentaja,
