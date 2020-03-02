@@ -30,7 +30,7 @@ class ToimipaikkaUiSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Toimipaikka
-        fields = ('lahdejarjestelma', 'nimi', 'url', 'paos_toimipaikka_kytkin', 'paos_oma_organisaatio_url',
+        fields = ('lahdejarjestelma', 'id', 'nimi', 'url', 'organisaatio_oid', 'paos_toimipaikka_kytkin', 'paos_oma_organisaatio_url',
                   'paos_organisaatio_url', 'paos_organisaatio_nimi')
 
     def get_nimi(self, toimipaikka_obj):
