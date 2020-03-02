@@ -1,9 +1,10 @@
 <div role="button"
      class="varda-dropdown-filter"
-     (keydown.enter)="trigger.openMenu()"
+     (keydown.enter)="list.length > 1 ? trigger.openMenu(): trigger.closeMenu()"
+     (click)="list.length > 1 ? trigger.openMenu(): trigger.closeMenu()"
+     [class.no-pointer]="list.length === 1"
      tabindex="0"
      aria.has-popup="menu"
-     [ngClass]="{'no-pointer': list.length === 1 }"
      [mat-menu-trigger-for]="dropdown">
   <span>{{ label }}</span>
   <mat-icon *ngIf="list.length > 1 && !trigger.menuOpen">arrow_drop_down</mat-icon>
@@ -14,7 +15,7 @@
       (click)="$event.stopPropagation()"
       (keydown.tab)="$event.stopPropagation()">
     <li class="dropdownFilterSearch"
-      *ngIf="list.length > 10">
+        *ngIf="list.length > 10">
       <input type="text"
              #dropdownFilterInput
              class="oph-input"
@@ -25,7 +26,9 @@
              (keyup.enter)="filterList(filterText, true)"
              (change)="filterList(filterText)" />
     </li>
-    <li mat-menu-item disabled *ngIf="filteredList?.length === 0"
+    <li mat-menu-item
+        disabled
+        *ngIf="filteredList?.length === 0"
         class="dropdownFilterEmpty">
       {{ 'label.paos-add-toimipaikka-list.search-empty' | translate }}
     </li>
@@ -36,6 +39,5 @@
           class='item'
           (click)='selectItem(item)'>{{ item[filterBy[0]] }}</li>
     </ng-container>
-
   </ul>
 </mat-menu>
