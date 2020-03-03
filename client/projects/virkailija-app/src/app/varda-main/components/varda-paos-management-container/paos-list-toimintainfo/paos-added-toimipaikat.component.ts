@@ -1,11 +1,11 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
-import {PaosToimijaInternalDto, PaosToimipaikkatietoDto} from '../../../../utilities/models/dto/varda-paos-dto';
-import {VardaApiService} from '../../../../core/services/varda-api.service';
-import {filter} from 'rxjs/operators';
-import {Subscription} from 'rxjs';
-import {AbstractPaosListToimintainfoComponent} from './abstract-paos-list-toimintainfo-component';
-import {PaosCreateEvent, PaosToimintaService} from '../paos-toiminta.service';
-import {animate, state, style, transition, trigger} from '@angular/animations';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { PaosToimijaInternalDto, PaosToimipaikkatietoDto } from '../../../../utilities/models/dto/varda-paos-dto';
+import { VardaApiService } from '../../../../core/services/varda-api.service';
+import { filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
+import { AbstractPaosListToimintainfoComponent } from './abstract-paos-list-toimintainfo-component';
+import { PaosCreateEvent, PaosToimintaService } from '../paos-toiminta.service';
+import { animate, state, style, transition, trigger } from '@angular/animations';
 
 @Component({
   selector: 'app-paos-added-toimipaikat',
@@ -27,7 +27,7 @@ export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoC
   filteredToiminnat: Array<PaosToimijaInternalDto>;
   openToimija: string;
   openTallennusvastuu: string;
-  changedTallennusvastuu: {toimijaId: string, newTallentaja: string, };
+  changedTallennusvastuu: { toimijaId: string, newTallentaja: string, };
 
   private _apiCallMethod = (page: number) => this.apiService.getPaosToimipaikat(this.selectedVakajarjestaja.id, page);
   apiServiceMethod = () => this.apiService.getAllPagesSequentially<PaosToimipaikkatietoDto>(this._apiCallMethod);
@@ -35,7 +35,7 @@ export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoC
   pushToimintaOrganisaatioId = (paosToiminta: PaosToimipaikkatietoDto) => this.paosToimintaService.pushToimintaOrganisaatio(paosToiminta.toimipaikka_id, PaosCreateEvent.Toimipaikka);
 
   constructor(private apiService: VardaApiService,
-              private paosToimintaService: PaosToimintaService) {
+    private paosToimintaService: PaosToimintaService) {
     super();
   }
 
@@ -45,7 +45,7 @@ export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoC
     this.filteredToiminnat = [];
     this.openToimija = '';
     this.openTallennusvastuu = '';
-    this.changedTallennusvastuu = {toimijaId: '', newTallentaja: ''};
+    this.changedTallennusvastuu = { toimijaId: '', newTallentaja: '' };
     super.ngOnInit();
     this.createEventSubscription = this.paosToimintaService.createEvents$.pipe(
       filter(event => event === PaosCreateEvent.Toimipaikka)
@@ -80,12 +80,19 @@ export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoC
         toimija.paosOikeus = currentToimipaikkatietoDto.paos_oikeus;
         accumulator[currentToimipaikkatietoDto.toimija_id] = toimija;
       }
-      const toimipaikka = {...currentToimipaikkatietoDto};
+      const toimipaikka = { ...currentToimipaikkatietoDto };
       accumulator[currentToimipaikkatietoDto.toimija_id].toimipaikat.push(toimipaikka);
       return accumulator;
     }), {});
+
     this.toimipaikatByToimija = Object.values(groupObject);
     this.filteredToiminnat = [...this.toimipaikatByToimija];
+    this.filteredToiminnat.sort((a: PaosToimijaInternalDto, b: PaosToimijaInternalDto) => a.toimijaNimi.localeCompare(b.toimijaNimi))
+    this.filteredToiminnat.forEach(toimija =>
+      toimija.toimipaikat.sort((a: PaosToimipaikkatietoDto, b: PaosToimipaikkatietoDto) =>
+        a.toimipaikka_nimi.localeCompare(b.toimipaikka_nimi)
+      )
+    )
   }
 
   filterToimintaInfo(searchText: string) {
@@ -145,7 +152,7 @@ export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoC
 
   private clearTallenusvastuu() {
     this.openTallennusvastuu = '';
-    this.changedTallennusvastuu = {toimijaId: '', newTallentaja: ''};
+    this.changedTallennusvastuu = { toimijaId: '', newTallentaja: '' };
   }
 
   isTallentajaChanged(paosToiminta: PaosToimijaInternalDto) {

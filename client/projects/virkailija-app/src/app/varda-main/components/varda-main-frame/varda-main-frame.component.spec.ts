@@ -1,5 +1,5 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
-import {Component, Input, NO_ERRORS_SCHEMA, Pipe, PipeTransform} from '@angular/core';
+import { Component, Input, NO_ERRORS_SCHEMA, Pipe, PipeTransform } from '@angular/core';
 import { VardaMainFrameComponent } from './varda-main-frame.component';
 import { VardaModalService } from '../../../core/services/varda-modal.service';
 import { VardaApiService } from '../../../core/services/varda-api.service';
@@ -13,29 +13,31 @@ import { VardaToimipaikkaDTO } from '../../../utilities/models';
 import { VardaKielikoodistoService } from '../../../core/services/varda-kielikoodisto.service';
 import { VardaKuntakoodistoService } from '../../../core/services/varda-kuntakoodisto.service';
 import { TranslateService } from '@ngx-translate/core';
-import {AuthService} from '../../../core/auth/auth.service';
-import {VardaToimipaikkaMinimalDto} from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
+import { AuthService } from '../../../core/auth/auth.service';
+import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
+import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 
-@Component({selector: 'app-varda-henkilo-section', template: ''})
+@Component({ selector: 'app-varda-henkilo-section', template: '' })
 class VardaHenkiloSectionComponent {
   @Input() henkilot: any;
 }
 
-@Component({selector: 'app-varda-accessibility-settings', template: ''})
+@Component({ selector: 'app-varda-accessibility-settings', template: '' })
 class VardaAccessibilitySettingsComponent { }
 
-@Component({selector: 'app-varda-modal-form', template: ''})
-class VardaModalFormComponent {}
+@Component({ selector: 'app-varda-modal-form', template: '' })
+class VardaModalFormComponent { }
 
-@Component({selector: 'lib-loading-indicator', template: ''})
-class VardaLoadingIndicatorComponent {}
+@Component({ selector: 'lib-loading-indicator', template: '' })
+class VardaLoadingIndicatorComponent { }
 
-@Component({selector: 'app-varda-toimipaikka-selector', template: ''})
-class VardaToimipaikkaSelectorComponent {}
+@Component({ selector: 'app-varda-toimipaikka-selector', template: '' })
+class VardaToimipaikkaSelectorComponent { }
 
-@Pipe({name: 'translate'})
+@Pipe({ name: 'translate' })
 export class TranslatePipe implements PipeTransform {
-  transform() {}
+  transform() { }
 }
 
 describe('VardaMainFrameComponent', () => {
@@ -52,38 +54,42 @@ describe('VardaMainFrameComponent', () => {
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-    declarations: [
+      declarations: [
         VardaMainFrameComponent,
         VardaHenkiloSectionComponent,
         VardaAccessibilitySettingsComponent,
         VardaModalFormComponent,
         TranslatePipe
-    ],
-    schemas: [ NO_ERRORS_SCHEMA ],
-    providers: [
+      ],
+      schemas: [NO_ERRORS_SCHEMA],
+      providers: [
         VardaModalService,
         VardaVakajarjestajaService,
         VardaUtilityService,
-        {provide: VardaApiWrapperService, useValue: vardaApiWrapperServiceStub},
+        { provide: VardaApiWrapperService, useValue: vardaApiWrapperServiceStub },
         VardaDateService,
-        {provide: VardaKielikoodistoService, useValue: {initKielikoodisto: () => {}, sortKielikoodistoOptions: () => {}}},
-        {provide: VardaKuntakoodistoService, useValue: {initKuntakoodisto: () => {}, sortKuntakoodistoOptions: () => {}}},
-        {provide: VardaApiService, useValue: {}},
-        {provide: TranslateService, useValue: {}},
-        {provide: AuthService, useValue: {}}
-    ]
+        { provide: VardaKielikoodistoService, useValue: { initKielikoodisto: () => { }, sortKielikoodistoOptions: () => { } } },
+        { provide: VardaKuntakoodistoService, useValue: { initKuntakoodisto: () => { }, sortKuntakoodistoOptions: () => { } } },
+        { provide: VardaApiService, useValue: {} },
+        { provide: TranslateService, useValue: {} },
+        { provide: AuthService, useValue: { getAuthorizedToimipaikat: () => { } } },
+        { provide: Router, useValue: { events: { subscribe: () => { } }, navigate: () => { }, routerState: {} } },
+        { provide: HttpClient, useValue: {} },
+      ]
     })
-    .compileComponents();
+      .compileComponents();
 
     vardaApiWrapperService = TestBed.get(VardaApiWrapperService);
     vardaVakajarjestajaService = TestBed.get(VardaVakajarjestajaService);
-    vardaVakajarjestajaService.setVakajarjestajat([{id : '111', nimi: 'Nimi'}]);
+    const selectedVaka = { id: '111', nimi: 'Nimi' };
+    vardaVakajarjestajaService.setVakajarjestajat([selectedVaka]);
+    vardaVakajarjestajaService.selectedVakajarjestaja = selectedVaka;
     vardaKieliKoodistoService = TestBed.get(VardaKielikoodistoService);
     vardaKuntaKoodistoService = TestBed.get(VardaKuntakoodistoService);
 
     apiWrapperMockFunction = spyOn(vardaApiWrapperService, 'getAllLapsetForToimipaikka').and.callThrough();
     setVakajarjestajatSpy = spyOn(vardaVakajarjestajaService, 'setVakajarjestajat').and.callThrough();
-    vardaVakajarjestajaService.setSelectedToimipaikka(<VardaToimipaikkaMinimalDto> toimipaikatStub[0]);
+    vardaVakajarjestajaService.setSelectedToimipaikka(<VardaToimipaikkaMinimalDto>toimipaikatStub[0]);
     vardaVakajarjestajaService.tallentajaToimipaikat = toimipaikatStub;
   }));
 

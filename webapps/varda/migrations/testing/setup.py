@@ -942,6 +942,7 @@ def create_tyontekijat():
 def create_paos_toiminta():
     from guardian.shortcuts import assign_perm
     from varda.models import PaosToiminta, VakaJarjestaja, User, Toimipaikka
+    from varda import permissions
 
     tester3_user = User.objects.get(username='tester3')
     tester4_user = User.objects.get(username='tester4')
@@ -953,6 +954,7 @@ def create_paos_toiminta():
     paos_toiminta_1 = PaosToiminta.objects.create(
         oma_organisaatio=vakajarjestaja_2,
         paos_organisaatio=vakajarjestaja_1,
+        voimassa_kytkin=True,
         changed_by=tester3_user
     )
 
@@ -960,6 +962,7 @@ def create_paos_toiminta():
     paos_toiminta_2 = PaosToiminta.objects.create(
         oma_organisaatio=vakajarjestaja_1,
         paos_toimipaikka=toimipaikka_5_under_vakajarjestaja_2,
+        voimassa_kytkin=True,
         changed_by=tester4_user
     )
 
@@ -967,6 +970,7 @@ def create_paos_toiminta():
     assign_perm('delete_paostoiminta', tester3_user, paos_toiminta_1)
     assign_perm('view_paostoiminta', tester4_user, paos_toiminta_2)
     assign_perm('delete_paostoiminta', tester4_user, paos_toiminta_2)
+    permissions.assign_object_level_permissions(vakajarjestaja_1.organisaatio_oid, Toimipaikka, toimipaikka_5_under_vakajarjestaja_2, paos_kytkin=True)
 
 
 def create_paos_oikeus():

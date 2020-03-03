@@ -21,7 +21,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 from rest_framework_guardian.filters import DjangoObjectPermissionsFilter
 
-from varda import filters, related_object_validations, validators
+from varda import filters, related_object_validations, validators, permission_groups
 from varda.cache import cached_list_response, cached_retrieve_response, delete_toimipaikan_lapset_cache,\
     delete_cache_keys_related_model, get_object_ids_user_has_permissions
 from varda.clients.oppijanumerorekisteri_client import get_henkilo_data_by_oid, \
@@ -2142,7 +2142,7 @@ class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cr
     """
     filter_backends = (DjangoFilterBackend, )
     filter_class = filters.PaosToimintaFilter
-    queryset = PaosToiminta.objects.all().order_by('id')
+    queryset = PaosToiminta.objects.filter(voimassa_kytkin=True).order_by('id')
     serializer_class = PaosToimintaSerializer
     permission_classes = (CustomObjectPermissions,)
 
@@ -2158,7 +2158,7 @@ class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cr
         return cached_retrieve_response(self, request.user, request.path)
 
     def get_paos_toiminta_is_active_q(self, validated_data):
-        paos_toiminta_is_active_q = ''
+        paos_toiminta_is_active_q = Q()
 
         if 'paos_organisaatio' in validated_data and validated_data['paos_organisaatio'] is not None:
             if validated_data['oma_organisaatio'] == validated_data['paos_organisaatio']:
@@ -2175,7 +2175,7 @@ class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cr
                                          Q(paos_organisaatio=validated_data['oma_organisaatio']))
 
             toimipaikka_jarjestamismuoto_koodit = validated_data['paos_toimipaikka'].jarjestamismuoto_koodi
-            [x.lower() for x in toimipaikka_jarjestamismuoto_koodit]
+            toimipaikka_jarjestamismuoto_koodit = [jarjestamismuoto_koodi.lower() for jarjestamismuoto_koodi in toimipaikka_jarjestamismuoto_koodit]
             toimipaikka_jarjestamismuoto_koodit_set = set(toimipaikka_jarjestamismuoto_koodit)
             paos_jarjestamismuoto_koodit_set = set(['jm02', 'jm03'])
             if len(toimipaikka_jarjestamismuoto_koodit_set.intersection(paos_jarjestamismuoto_koodit_set)) == 0:
@@ -2205,34 +2205,53 @@ class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cr
             return validated_data['paos_toimipaikka'].vakajarjestaja
         return validated_data['oma_organisaatio']
 
+    def get_existing_paos_toiminta_obj(self, validated_data):
+        if 'paos_toimipaikka' in validated_data:
+            paos_toiminta_query = (Q(oma_organisaatio=validated_data['oma_organisaatio']) &
+                                   Q(paos_toimipaikka=validated_data['paos_toimipaikka']))
+        else:
+            paos_toiminta_query = (Q(oma_organisaatio=validated_data['oma_organisaatio']) &
+                                   Q(paos_organisaatio=validated_data['paos_organisaatio']))
+        return PaosToiminta.objects.filter(paos_toiminta_query).first()
+
     def perform_create(self, serializer):
         user = self.request.user
         validated_data = serializer.validated_data
         check_if_user_has_paakayttaja_permissions(validated_data['oma_organisaatio'].organisaatio_oid, user)
         paos_toiminta_is_active_q = self.get_paos_toiminta_is_active_q(validated_data)
-        paos_toiminta_is_active = PaosToiminta.objects.filter(paos_toiminta_is_active_q)
+        paos_toiminta_is_active = PaosToiminta.objects.filter(Q(voimassa_kytkin=True) & Q(paos_toiminta_is_active_q))
         jarjestaja_kunta_organisaatio = self.get_jarjestaja_kunta_organisaatio(validated_data)
         tuottaja_organisaatio = self.get_tuottaja_organisaatio(validated_data)
+        serializer.instance = self.get_existing_paos_toiminta_obj(validated_data)
 
         with transaction.atomic():
             try:
-                saved_object = serializer.save(changed_by=user)
-                VARDA_PAAKAYTTAJA = Z4_CasKayttoOikeudet.PAAKAYTTAJA
-                group_name = Group.objects.filter(name=VARDA_PAAKAYTTAJA + '_' + validated_data['oma_organisaatio'].organisaatio_oid)
-                assign_perm('view_paostoiminta', group_name, saved_object)
-                assign_perm('delete_paostoiminta', group_name, saved_object)
+                if not serializer.instance:
+                    saved_object = serializer.save(changed_by=user)
+                    VARDA_PAAKAYTTAJA = Z4_CasKayttoOikeudet.PAAKAYTTAJA
+                    group_name = Group.objects.filter(name=VARDA_PAAKAYTTAJA + '_' + validated_data['oma_organisaatio'].organisaatio_oid)
+                    assign_perm('view_paostoiminta', group_name, saved_object)
+                    assign_perm('delete_paostoiminta', group_name, saved_object)
+                else:
+                    if serializer.instance.voimassa_kytkin:
+                        # This will cause IntegrityError to be raised on save
+                        serializer.instance = None
+                    else:
+                        serializer.instance.voimassa_kytkin = True
+                    serializer.save(changed_by=user)
 
                 paos_oikeus_old = PaosOikeus.objects.filter(
                     Q(jarjestaja_kunta_organisaatio=jarjestaja_kunta_organisaatio, tuottaja_organisaatio=tuottaja_organisaatio)
                 ).first()  # Either None or the actual paos-oikeus obj
 
-                if paos_oikeus_old and paos_toiminta_is_active.exists() and not paos_oikeus_old.voimassa_kytkin:
-                    paos_oikeus_old.voimassa_kytkin = True
-                    paos_oikeus_old.changed_by = user
-                    paos_oikeus_old.save()
-                elif paos_oikeus_old and paos_oikeus_old.voimassa_kytkin:
+                if paos_oikeus_old:
+                    if not paos_oikeus_old.voimassa_kytkin and paos_toiminta_is_active.exists():
+                        paos_oikeus_old.voimassa_kytkin = True
+                        paos_oikeus_old.changed_by = user
+                        paos_oikeus_old.save()
                     grant_or_deny_access_to_paos_toimipaikka(True, jarjestaja_kunta_organisaatio, tuottaja_organisaatio)
                 elif not paos_oikeus_old:
+                    # Only one half is accepted so no toimipaikka permissions will be granted here
                     tallentaja_organisaatio = self.get_default_tallentaja_organisaatio(validated_data)
                     paos_oikeus_new = PaosOikeus.objects.create(
                         jarjestaja_kunta_organisaatio=jarjestaja_kunta_organisaatio,
@@ -2266,6 +2285,7 @@ class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cr
         """
         user = self.request.user
         paos_oikeus_object = None
+        is_delete = False  # If toimipaikka permissions are removed instance should also be deleted
 
         if not user.has_perm('delete_paostoiminta', instance):
             raise PermissionDenied("User does not have permissions to delete this object.")
@@ -2275,8 +2295,16 @@ class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cr
                 paos_oikeus_object = PaosOikeus.objects.filter(
                     Q(jarjestaja_kunta_organisaatio=instance.paos_organisaatio, tuottaja_organisaatio=instance.oma_organisaatio)
                 ).first()
+                # Remove view access to all toimipaikka where tuottaja has not added any children
+                grant_or_deny_access_to_paos_toimipaikka(False, paos_oikeus_object.jarjestaja_kunta_organisaatio, paos_oikeus_object.tuottaja_organisaatio)
+                is_delete = True
             elif instance.paos_toimipaikka is not None:
+                # Remove view access to this toimipaikka if tuottaja has not added any children there
+                if not VakaJarjestaja.objects.filter(paos_lapsi_oma_organisaatio__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka=instance.paos_toimipaikka).exists():
+                    permission_groups.remove_object_level_permissions(instance.oma_organisaatio.organisaatio_oid, Toimipaikka, instance.paos_toimipaikka, paos_kytkin=True)
+                    is_delete = True
                 paos_toimipaikka_count = PaosToiminta.objects.filter(
+                    Q(voimassa_kytkin=True) &
                     Q(oma_organisaatio=instance.oma_organisaatio) &
                     Q(paos_toimipaikka__vakajarjestaja=instance.paos_toimipaikka.vakajarjestaja)
                 ).count()
@@ -2285,7 +2313,8 @@ class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cr
                         Q(jarjestaja_kunta_organisaatio=instance.oma_organisaatio, tuottaja_organisaatio=instance.paos_toimipaikka.vakajarjestaja)
                     ).first()
 
-            instance.delete()
+            instance.voimassa_kytkin = False
+            instance.delete() if is_delete else instance.save()
             if paos_oikeus_object:
                 paos_oikeus_object.voimassa_kytkin = False
                 paos_oikeus_object.save()  # we cannot use update since we need to catch the pre_save signal
@@ -2941,6 +2970,7 @@ class NestedVakajarjestajaPaosToimijatViewSet(GenericViewSet, ListModelMixin):
         vakajarjestaja_obj = self.get_vakajarjestaja(vakajarjestaja_pk=self.kwargs['vakajarjestaja_pk'])
 
         paos_toiminnat = PaosToiminta.objects.filter(
+            Q(voimassa_kytkin=True) &
             Q(oma_organisaatio=vakajarjestaja_obj, paos_organisaatio__isnull=False)
         ).order_by('id')
 
@@ -2989,6 +3019,7 @@ class NestedVakajarjestajaPaosToimipaikatViewSet(GenericViewSet, ListModelMixin)
 
         vakajarjestaja_obj = self.get_vakajarjestaja(vakajarjestaja_pk=self.kwargs['vakajarjestaja_pk'])
         paos_toiminta_qs = PaosToiminta.objects.filter(
+            Q(voimassa_kytkin=True) &
             Q(oma_organisaatio=vakajarjestaja_obj, paos_toimipaikka__isnull=False)
         ).select_related('paos_toimipaikka', 'paos_toimipaikka__vakajarjestaja')
 
@@ -3059,7 +3090,7 @@ class HenkilohakuLapset(GenericViewSet, ListModelMixin):
     def get_toimipaikka_ids(self):
         vakajarjestaja_id = self.kwargs.get('vakajarjestaja_pk', None)
         vakajarjestaja_obj = get_object_or_404(VakaJarjestaja, pk=vakajarjestaja_id)
-        paos_toimipaikat = get_paos_toimipaikat(vakajarjestaja_obj)
+        paos_toimipaikat = get_paos_toimipaikat(vakajarjestaja_obj, is_only_active_paostoiminta_included=False)
         qs_own_toimipaikat = Q(vakajarjestaja=vakajarjestaja_obj)
         qs_paos_toimipaikat = Q(id__in=paos_toimipaikat)
         return (Toimipaikka

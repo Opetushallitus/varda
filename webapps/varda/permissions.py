@@ -92,6 +92,7 @@ def throw_if_not_tallentaja_permissions(vakajarjestaja_organisaatio_oid, toimipa
 
         if toimipaikka_obj:
             paos_toiminta = PaosToiminta.objects.filter(
+                Q(voimassa_kytkin=True) &
                 Q(oma_organisaatio=oma_organisaatio, paos_toimipaikka=toimipaikka_obj)
             ).first()  # This is either None or the actual paos-toiminta object
             if not paos_toiminta:
@@ -197,16 +198,17 @@ def grant_or_deny_access_to_paos_toimipaikka(voimassa_kytkin, jarjestaja_kunta_o
                                              .filter(vakajarjestaja=tuottaja_organisaatio)
                                              .values_list('id', flat=True))
 
-    paos_toimipaikka_ids = (PaosToiminta
-                            .objects
-                            .filter(
-                                Q(oma_organisaatio=jarjestaja_kunta_organisaatio) &
-                                Q(paos_toimipaikka__id__in=tuottaja_organization_toimipaikka_ids))
-                            .values_list('paos_toimipaikka__id', flat=True))
+    paos_toimipaikka_qs = (PaosToiminta
+                           .objects
+                           .filter(Q(voimassa_kytkin=True) &
+                                   Q(oma_organisaatio=jarjestaja_kunta_organisaatio) &
+                                   Q(paos_toimipaikka__id__in=tuottaja_organization_toimipaikka_ids)
+                                   ))
+    # Allow removing toimipaikka access only if there are no children added by jarjestaja else access is left untouched.
+    if not voimassa_kytkin:
+        paos_toimipaikka_qs = paos_toimipaikka_qs.exclude(paos_toimipaikka__varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi__oma_organisaatio=jarjestaja_kunta_organisaatio)
 
-    paos_toimipaikat = Toimipaikka.objects.filter(id__in=paos_toimipaikka_ids)
-
-    for paos_toimipaikka in paos_toimipaikat:
+    for paos_toimipaikka in Toimipaikka.objects.filter(id__in=paos_toimipaikka_qs.values_list('paos_toimipaikka__id', flat=True)):
         if voimassa_kytkin:
             assign_object_level_permissions(jarjestaja_kunta_organisaatio.organisaatio_oid, Toimipaikka, paos_toimipaikka, paos_kytkin=True)
         else:

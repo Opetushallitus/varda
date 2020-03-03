@@ -1,11 +1,11 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
-import {AbstractPaosListToimintainfoComponent} from './abstract-paos-list-toimintainfo-component';
-import {VardaApiService} from '../../../../core/services/varda-api.service';
-import {PaosToimintatietoDto} from '../../../../utilities/models/dto/varda-paos-dto';
-import {PaosCreateEvent, PaosToimintaService} from '../paos-toiminta.service';
-import {Subscription} from 'rxjs';
-import {filter} from 'rxjs/operators';
-import {animate, state, style, transition, trigger} from '@angular/animations';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { AbstractPaosListToimintainfoComponent } from './abstract-paos-list-toimintainfo-component';
+import { VardaApiService } from '../../../../core/services/varda-api.service';
+import { PaosToimintatietoDto, PaosToimijaInternalDto } from '../../../../utilities/models/dto/varda-paos-dto';
+import { PaosCreateEvent, PaosToimintaService } from '../paos-toiminta.service';
+import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
+import { animate, state, style, transition, trigger } from '@angular/animations';
 
 @Component({
   selector: 'app-paos-added-toimijat',
@@ -24,14 +24,14 @@ export class PaosAddedToimijatComponent extends AbstractPaosListToimintainfoComp
   private createEventSubscription: Subscription;
   highlighted: Array<string>;
   openToimija: string;
-
+  filteredToiminnat: Array<PaosToimintatietoDto>
   private _apiCallMethod = (page: number) => this.apiService.getPaosToimijat(this.selectedVakajarjestaja.id, page);
   apiServiceMethod = () => this.apiService.getAllPagesSequentially<PaosToimintatietoDto>(this._apiCallMethod);
 
   pushToimintaOrganisaatioId = paosToiminta => this.paosToimintaService.pushToimintaOrganisaatio(paosToiminta.vakajarjestaja_id, PaosCreateEvent.Toimija);
 
   constructor(private apiService: VardaApiService,
-      private paosToimintaService: PaosToimintaService) {
+    private paosToimintaService: PaosToimintaService) {
     super();
   }
 
@@ -71,8 +71,19 @@ export class PaosAddedToimijatComponent extends AbstractPaosListToimintainfoComp
     this.openToimija = this.openToimija === id ? '' : id;
   }
 
+  getPaosToiminnatOnCompleteHook() {
+    this.paosToiminnat.sort((a: PaosToimintatietoDto, b: PaosToimintatietoDto) => a.vakajarjestaja_nimi.localeCompare(b.vakajarjestaja_nimi))
+    this.filteredToiminnat = [...this.paosToiminnat]
+  }
+
   getPaosToiminnatErrorHook(err) {
     this.paosToimintaService.pushGenericErrorMessage(err);
   }
 
+  filterToimintaInfo(searchText: string) {
+    this.filteredToiminnat = this.paosToiminnat.filter(paosToimija => {
+      const nimi = paosToimija.vakajarjestaja_nimi;
+      return nimi.toLowerCase().includes(searchText.toLowerCase());
+    });
+  }
 }

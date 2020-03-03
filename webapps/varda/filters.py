@@ -193,6 +193,7 @@ class PaosToimintaFilter(djangofilters.FilterSet):
     oma_organisaatio = djangofilters.NumberFilter(field_name='oma_organisaatio', lookup_expr='exact')
     paos_organisaatio = djangofilters.NumberFilter(field_name='paos_organisaatio', lookup_expr='exact')
     paos_toimipaikka = djangofilters.NumberFilter(field_name='paos_toimipaikka', lookup_expr='exact')
+    voimassa_kytkin = djangofilters.BooleanFilter(field_name='voimassa_kytkin', lookup_expr='exact')
 
     class Meta:
         model = PaosToiminta

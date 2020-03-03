@@ -2,6 +2,7 @@ import os
 
 from django.apps import AppConfig
 from django.db.models.signals import post_migrate, post_save, pre_save, pre_delete
+
 from varda.migrations.production.setup import load_initial_data, load_huoltajatiedot_permissions, load_paos_permissions
 from varda.migrations.testing.setup import load_testing_data
 
@@ -88,8 +89,6 @@ def receiver_auth_user(**kwargs):
 def receiver_pre_save(sender, **kwargs):
     from django.db import transaction
     from varda.enums.ytj import YtjYritysmuoto
-    from varda.models import PaosOikeus
-    from varda.permissions import grant_or_deny_access_to_paos_toimipaikka
     from varda.tasks import change_paos_tallentaja_organization_task
     model_name = sender._meta.model.__name__.lower()
     instance = kwargs['instance']
@@ -112,19 +111,9 @@ def receiver_pre_save(sender, **kwargs):
             else:
                 """
                 Update of an existing PaosOikeus-obj.
-                Either voimassa_kytkin or tallentaja_organization changed.
+                tallentaja_organization changed.
                 """
                 new_instance_voimassa_kytkin = instance.voimassa_kytkin
-                current_instance = PaosOikeus.objects.get(id=instance_id)
-                if new_instance_voimassa_kytkin == current_instance.voimassa_kytkin:
-                    pass  # voimassa_kytkin has not changed
-                else:  # voimassa_kytkin has changed
-                    grant_or_deny_access_to_paos_toimipaikka(
-                        new_instance_voimassa_kytkin,
-                        instance.jarjestaja_kunta_organisaatio,
-                        instance.tuottaja_organisaatio
-                    )
-
                 change_paos_tallentaja_organization_task.delay(instance.jarjestaja_kunta_organisaatio.id,
                                                                instance.tuottaja_organisaatio.id,
                                                                instance.tallentaja_organisaatio.id,

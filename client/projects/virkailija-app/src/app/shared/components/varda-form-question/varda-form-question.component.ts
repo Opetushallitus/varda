@@ -1,13 +1,14 @@
 import { Component, OnInit, Input, OnChanges, Output, EventEmitter } from '@angular/core';
 import { VardaFormService } from '../../../core/services/varda-form.service';
-import { FormControl, FormGroup, FormArray} from '@angular/forms';
+import { FormControl, FormGroup, FormArray } from '@angular/forms';
 import { IMyDpOptions, IMyInputFocusBlur } from 'mydatepicker';
 import { VardaFieldSet, VardaField, VardaWidgetNames, VardaKoodistot } from '../../../utilities/models';
 import { VardaKielikoodistoService } from '../../../core/services/varda-kielikoodisto.service';
 import { VardaKuntakoodistoService } from '../../../core/services/varda-kuntakoodisto.service';
 import { VardaDateService } from '../../../varda-main/services/varda-date.service';
 import { TranslateService, LangChangeEvent } from '@ngx-translate/core';
-import {VardaMaksunPerusteKoodistoService} from '../../../core/services/varda-maksun-peruste-koodisto.service';
+import { VardaMaksunPerusteKoodistoService } from '../../../core/services/varda-maksun-peruste-koodisto.service';
+import { VardaSelectOption } from '../../../utilities/models/varda-select-option.model';
 
 @Component({
   selector: 'app-varda-form-question',
@@ -85,7 +86,7 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
     return Object.keys(checkboxObj).filter(key => checkboxObj[key]);
   }
 
-  getOptionDisplayNameByCode(code: string, options?: Array<{code: string}>): string {
+  getOptionDisplayNameByCode(code: string, options?: Array<{ code: string }>): string {
     const selectOptions = options || this.selectOptions;
     const selectedOption = code && selectOptions.filter(option => option.code === code)[0];
     return selectedOption && this.getOptionDisplayName(selectedOption);
@@ -145,7 +146,7 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
   }
 
   onInputValueChanged(field: VardaField): void {
-    this.changedField.emit({field: field, form: this.form, formArrIndex: this.fieldSetIndex, formName: this.formName});
+    this.changedField.emit({ field: field, form: this.form, formArrIndex: this.fieldSetIndex, formName: this.formName });
   }
 
   onSelectValueChange($event: Event, field: VardaField) {
@@ -262,12 +263,12 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
     }
 
     this.vardaFormService.highlightDatepickerElement('focus', $eventObj.reason,
-    fieldset, field, this.fieldSetName, this.fieldIndex, this.fieldSetIndex);
+      fieldset, field, this.fieldSetName, this.fieldIndex, this.fieldSetIndex);
   }
 
   dateFieldToggle($eventObj: number, fieldset: VardaFieldSet, field: VardaField): void {
     this.vardaFormService.highlightDatepickerElement('toggle', $eventObj,
-    fieldset, field, this.fieldSetName, this.fieldIndex, this.fieldSetIndex);
+      fieldset, field, this.fieldSetName, this.fieldIndex, this.fieldSetIndex);
   }
 
   formatSelectOptions(): void {
@@ -338,7 +339,7 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
     } else {
       let selectOptions = [];
       this.field.options.forEach((opt) => {
-        selectOptions.push({displayName: opt.displayName, code: opt.code});
+        selectOptions.push({ displayName: opt.displayName, code: opt.code });
       });
 
       this.currentLang = this.translateService.currentLang;
@@ -353,18 +354,11 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
     }
   }
 
-  sortKoodistoOptions(options: Array<any>): Array<any> {
-    const sortByLang = this.currentLang === 'sv' ? 'displayNameSv' : 'displayNameFi';
-    options.sort((a, b) => {
-      const aOpt = a.displayName[sortByLang].toUpperCase();
-      const bOpt = b.displayName[sortByLang].toUpperCase();
-      return aOpt.localeCompare(bOpt, this.currentLang);
-    });
-
-    return options;
+  sortKoodistoOptions(options: Array<VardaSelectOption>): Array<VardaSelectOption> {
+    return options.sort((a, b) => { return a.code.localeCompare(b.code) });
   }
 
-  ngOnChanges() {}
+  ngOnChanges() { }
 
   ngOnInit() {
     try {
@@ -382,7 +376,7 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
       }
 
       if (this.field.isReadonly
-          && [VardaWidgetNames.TEXTAREA, VardaWidgetNames.CHECKBOX, VardaWidgetNames.BOOLEANRADIO].indexOf(this.field.widget) !== -1) {
+        && [VardaWidgetNames.TEXTAREA, VardaWidgetNames.CHECKBOX, VardaWidgetNames.BOOLEANRADIO].indexOf(this.field.widget) !== -1) {
         this.form.disable();
       }
 

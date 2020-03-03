@@ -903,6 +903,7 @@ class PaosToimintaSerializer(serializers.HyperlinkedModelSerializer):
     oma_organisaatio = VakaJarjestajaHLField(view_name='vakajarjestaja-detail', required=True)
     paos_organisaatio = VakaJarjestajaHLField(view_name='vakajarjestaja-detail', required=False)
     paos_toimipaikka = ToimipaikkaHLField(view_name='toimipaikka-detail', required=False)
+    voimassa_kytkin = serializers.ReadOnlyField()
 
     class Meta:
         model = PaosToiminta

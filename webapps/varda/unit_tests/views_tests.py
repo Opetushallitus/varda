@@ -4,8 +4,11 @@ import responses
 from django.contrib.auth.models import Group, User
 from django.core.exceptions import ValidationError
 from django.test import TestCase
+from guardian.core import ObjectPermissionChecker
 from rest_framework import status
 from rest_framework.test import APIClient
+
+from varda.models import Toimipaikka, PaosOikeus
 
 
 class SetUpTestClient:
@@ -205,7 +208,7 @@ class VardaViewsTests(TestCase):
         """
         client = SetUpTestClient('tester2').client()
         resp = client.get('/api/v1/toimipaikat/')
-        self.assertEqual(json.loads(resp.content)["count"], 2)
+        self.assertEqual(json.loads(resp.content)["count"], 3)
 
     def test_api_toimipaikat_permissions_3(self):
         client = SetUpTestClient('tester').client()
@@ -2220,9 +2223,19 @@ class VardaViewsTests(TestCase):
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(json.loads(resp.content), {'non_field_errors': ['oma_organisaatio and paos_toimipaikka pair already exists.']})
 
-    def test_push_correct_paos_toiminta_organisaatio(self):
+    def test_delete_paostoiminta_with_toimija_and_push_correct_paos_toiminta_organisaatio(self):
         client = SetUpTestClient('tester3').client()
-        client.delete('/api/v1/paos-toiminnat/1/')
+        vakajarjestaja_group = Group.objects.get(name='VARDA-PAAKAYTTAJA_1.2.246.562.10.34683023489')
+        toimipaikka = Toimipaikka.objects.get(id=5)
+        checker = ObjectPermissionChecker(vakajarjestaja_group)
+        self.assertTrue(checker.has_perm('view_toimipaikka', toimipaikka), 'Group should have view access to toimipaikka')
+        delete_resp = client.delete('/api/v1/paos-toiminnat/1/')
+        self.assertEqual(delete_resp.status_code, status.HTTP_204_NO_CONTENT)
+        # ObjectPermissionChecker caches results so we need to make sure we init a new one
+        checker = ObjectPermissionChecker(vakajarjestaja_group)
+        self.assertFalse(checker.has_perm('view_toimipaikka', toimipaikka), 'Group should no longer have view access to toimipaikka')
+        self.assertFalse(PaosOikeus.objects.get(id=1).voimassa_kytkin)
+
         paos_toiminta = {
             "oma_organisaatio": "http://localhost:8000/api/v1/vakajarjestajat/2/",
             "paos_organisaatio": "http://localhost:8000/api/v1/vakajarjestajat/1/"
@@ -2230,6 +2243,58 @@ class VardaViewsTests(TestCase):
         paos_toiminta = json.dumps(paos_toiminta)
         resp = client.post('/api/v1/paos-toiminnat/', data=paos_toiminta, content_type='application/json')
         self.assertEqual(resp.status_code, 201)
+
+    def test_delete_paostoiminta_with_toimija_view_access_stays_if_children_in_toimipaikka(self):
+        client = SetUpTestClient('tester5').client()
+        lapsi_json = {
+            'henkilo': '/api/v1/henkilot/9/',
+            'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
+            'paos_organisaatio': '/api/v1/vakajarjestajat/2/'
+        }
+        resp = client.post('/api/v1/lapset/', data=lapsi_json)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        varhaiskasvatuspaatos = {
+            "lapsi": json.loads(resp.content)['url'],
+            "tuntimaara_viikossa": "37.5",
+            "jarjestamismuoto_koodi": "jm02",
+            "hakemus_pvm": "2018-08-15",
+            "alkamis_pvm": "2018-09-30"
+        }
+        resp3 = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
+        self.assertEqual(resp3.status_code, status.HTTP_201_CREATED)
+        varhaiskasvatuspaatos_url = json.loads(resp3.content)['url']
+
+        varhaiskasvatussuhde = {
+            "toimipaikka": "http://testserver/api/v1/toimipaikat/5/",
+            "varhaiskasvatuspaatos": varhaiskasvatuspaatos_url,
+            "alkamis_pvm": "2018-10-01"
+        }
+        resp = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+        client = SetUpTestClient('tester3').client()
+        vakajarjestaja_group = Group.objects.get(name='VARDA-PAAKAYTTAJA_1.2.246.562.10.34683023489')
+        toimipaikka = Toimipaikka.objects.get(id=5)
+        checker = ObjectPermissionChecker(vakajarjestaja_group)
+        self.assertTrue(checker.has_perm('view_toimipaikka', toimipaikka), 'Group should have view access to toimipaikka')
+        delete_resp = client.delete('/api/v1/paos-toiminnat/1/')
+        self.assertEqual(delete_resp.status_code, status.HTTP_204_NO_CONTENT)
+        # ObjectPermissionChecker caches results so we need to make sure we init a new one
+        checker = ObjectPermissionChecker(vakajarjestaja_group)
+        self.assertTrue(checker.has_perm('view_toimipaikka', toimipaikka), 'Group should still have view access to toimipaikka with children')
+
+    def test_delete_paostoiminta_with_toimipaikka(self):
+        client = SetUpTestClient('tester4').client()
+        vakajarjestaja_group = Group.objects.get(name='VARDA-PAAKAYTTAJA_1.2.246.562.10.34683023489')
+        toimipaikka = Toimipaikka.objects.get(id=5)
+        checker = ObjectPermissionChecker(vakajarjestaja_group)
+        self.assertTrue(checker.has_perm('view_toimipaikka', toimipaikka), 'Group should have view access to toimipaikka')
+        delete_resp = client.delete('/api/v1/paos-toiminnat/2/')
+        self.assertEqual(delete_resp.status_code, status.HTTP_204_NO_CONTENT)
+        # ObjectPermissionChecker caches results so we need to make sure we init a new one
+        checker = ObjectPermissionChecker(vakajarjestaja_group)
+        self.assertFalse(checker.has_perm('view_toimipaikka', toimipaikka), 'Group should no longer have view access to toimipaikka')
+        self.assertFalse(PaosOikeus.objects.get(id=1).voimassa_kytkin)
 
     def test_push_incorrect_paos_toiminta_organisaatio(self):
         paos_toiminta = {

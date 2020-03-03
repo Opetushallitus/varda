@@ -11,8 +11,16 @@
   {{'label.paos-toimijat.created-notification' | translate}}
 </div>
 <div *ngIf="paosToiminnat.length">
+  <mat-form-field>
+    <input type="text"
+           matInput
+           id="paos-list-toimijat-search"
+           class="varda-input"
+           [placeholder]="'label.hae' | translate"
+           (keyup)="filterToimintaInfo($event.target.value)" />
+  </mat-form-field>
   <div [class.scrollable]="paosToiminnat.length > 3">
-    <div *ngFor="let paosToiminta of paosToiminnat"
+    <div *ngFor="let paosToiminta of filteredToiminnat"
          class="paos-yksikot oph-alert oph-alert-info small-text"
          [class.varda-paos-list-toimintainfo-highlight]="highlighted.indexOf(paosToiminta.vakajarjestaja_url) !== -1">
       <div>

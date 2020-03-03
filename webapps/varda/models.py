@@ -537,6 +537,7 @@ class PaosToiminta(models.Model):
                                           on_delete=models.PROTECT, null=True, blank=True)
     paos_toimipaikka = models.ForeignKey(Toimipaikka, related_name='paos_toiminnat_paos_toimipaikka',
                                          on_delete=models.PROTECT, null=True, blank=True)
+    voimassa_kytkin = models.BooleanField(default=True)
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
     changed_by = models.ForeignKey('auth.User', related_name='paos_toiminnat', on_delete=models.PROTECT)

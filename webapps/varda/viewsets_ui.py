@@ -76,7 +76,7 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
             raise Http404("Not found.")
 
         vakajarjestaja_obj = self.get_vakajarjestaja(request, vakajarjestaja_pk=kwargs['vakajarjestaja_pk'])
-        paos_toimipaikat = get_paos_toimipaikat(vakajarjestaja_obj)
+        paos_toimipaikat = get_paos_toimipaikat(vakajarjestaja_obj, is_only_active_paostoiminta_included=False)
         qs_own_toimipaikat = Q(vakajarjestaja=kwargs['vakajarjestaja_pk'])
         qs_paos_toimipaikat = Q(id__in=paos_toimipaikat)
         qs_all_toimipaikat = (Toimipaikka

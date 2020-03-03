@@ -1,11 +1,11 @@
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
-import {VardaApiService} from '../../../../core/services/varda-api.service';
-import {AllVakajarjestajaSearchDto, VardaVakajarjestaja} from '../../../../utilities/models/varda-vakajarjestaja.model';
-import {PaosToimintaCreateDto, PaosToimipaikkaDto, PaosVakajarjestajaDto} from '../../../../utilities/models/dto/varda-paos-dto';
-import {VardaToimipaikkaSearchDto} from '../../../../utilities/models/dto/varda-toimipaikka-dto.model';
-import {OrganisaatioIdentity, PaosCreateEvent, PaosToimintaService} from '../paos-toiminta.service';
-import {Subscription} from 'rxjs';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { VardaApiService } from '../../../../core/services/varda-api.service';
+import { AllVakajarjestajaSearchDto, VardaVakajarjestaja } from '../../../../utilities/models/varda-vakajarjestaja.model';
+import { PaosToimintaCreateDto, PaosToimipaikkaDto, PaosVakajarjestajaDto } from '../../../../utilities/models/dto/varda-paos-dto';
+import { VardaToimipaikkaSearchDto } from '../../../../utilities/models/dto/varda-toimipaikka-dto.model';
+import { OrganisaatioIdentity, PaosCreateEvent, PaosToimintaService } from '../paos-toiminta.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-paos-add-paos-toiminta',
@@ -23,13 +23,13 @@ export class PaosAddPaosToimintaComponent implements OnInit, OnDestroy {
   ignoredJarjestajaIds: Set<string>;
 
   isVakajarjestajatFetched: boolean;
-  toimipaikatById: {[key: string]: Array<PaosToimipaikkaDto>};
+  toimipaikatById: { [key: string]: Array<PaosToimipaikkaDto> };
 
   toimintaOrganisaatioSubscription: Subscription;
   toimintaOrganisaatioDeleteSubscription: Subscription;
 
   constructor(private apiService: VardaApiService,
-              private paosToimintaService: PaosToimintaService) { }
+    private paosToimintaService: PaosToimintaService) { }
 
   ngOnInit() {
     this.vakajarjestajat = [];
@@ -76,7 +76,7 @@ export class PaosAddPaosToimintaComponent implements OnInit, OnDestroy {
     this.apiService.getAllPagesSequentially(page => this.apiService.getAllPaosToimijat(searchDto, page))
       .subscribe({
         next: vakajarjestajat => {
-          this.vakajarjestajat = vakajarjestajat;
+          this.vakajarjestajat = vakajarjestajat.sort((a, b) => a.nimi.localeCompare(b.nimi));
           this.isVakajarjestajatFetched = true;
         },
         error: this.paosToimintaService.pushGenericErrorMessage,
@@ -87,13 +87,13 @@ export class PaosAddPaosToimintaComponent implements OnInit, OnDestroy {
     const searchDto = new VardaToimipaikkaSearchDto();
     this.apiService.getAllPagesSequentially(page => this.apiService.getAllPaosToimipaikat(vakajarjestaja.id, searchDto, page))
       .subscribe(toimipaikat => {
-        this.toimipaikatById = {[vakajarjestaja.id]: toimipaikat};
+        this.toimipaikatById = { [vakajarjestaja.id]: toimipaikat.sort((a, b) => a.nimi.localeCompare(b.nimi)) };
       });
   }
 
   toggleSearchToimipaikat(vakajarjestaja: VardaVakajarjestaja) {
     if (!this.isToimipaikkadata(vakajarjestaja.id)) {
-        this.searchToimipaikat(vakajarjestaja);
+      this.searchToimipaikat(vakajarjestaja);
     } else {
       this.toimipaikatById = {};
     }

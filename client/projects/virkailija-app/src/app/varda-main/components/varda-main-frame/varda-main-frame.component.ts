@@ -2,11 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { VardaApiWrapperService } from '../../../core/services/varda-api-wrapper.service';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
 import { VardaUtilityService } from '../../../core/services/varda-utility.service';
-import {VardaToimipaikkaDTO, VardaExtendedHenkiloModel, VardaHenkiloDTO, VardaLapsiDTO} from '../../../utilities/models';
+import { VardaToimipaikkaDTO, VardaExtendedHenkiloModel, VardaHenkiloDTO, VardaLapsiDTO } from '../../../utilities/models';
 import { of } from 'rxjs';
-import {AuthService} from '../../../core/auth/auth.service';
-import {LapsiByToimipaikkaDTO} from '../../../utilities/models/dto/varda-henkilohaku-dto.model';
-import {VardaToimipaikkaMinimalDto} from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
+import { AuthService } from '../../../core/auth/auth.service';
+import { LapsiByToimipaikkaDTO } from '../../../utilities/models/dto/varda-henkilohaku-dto.model';
+import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
 
 @Component({
   selector: 'app-varda-main-frame',
@@ -31,16 +31,20 @@ export class VardaMainFrameComponent implements OnInit {
     this.ui = {
       isFetchingVarhaiskasvatussuhteet: false
     };
-    this.vardaVakajarjestajaService.getTallentajaToimipaikatObs().subscribe(() => {
-      this.initToimipaikat();
-    });
+
+    this.vardaApiWrapperService.getAllToimipaikatForVakajarjestaja(this.vardaVakajarjestajaService.selectedVakajarjestaja.id).subscribe(
+      (toimipaikat) => {
+        this.vardaVakajarjestajaService.setToimipaikat(toimipaikat, this.authService)
+        this.initToimipaikat();
+      },
+      (error) => console.error(error)
+    );
   }
 
   onToimipaikkaChanged(data: any): void {
     if (!data) {
       return;
     }
-
     this.selectedToimipaikka = this.vardaVakajarjestajaService.getSelectedToimipaikka();
     this.getVarhaiskasvatussuhteetByToimipaikka();
   }
@@ -75,33 +79,33 @@ export class VardaMainFrameComponent implements OnInit {
     }
     const toimipaikkaId = this.vardaUtilityService.parseIdFromUrl(selectedTomipaikka.url);
     this.vardaApiWrapperService.getAllLapsetForToimipaikka(toimipaikkaId)
-    .subscribe({
-      next: (lapset: Array<LapsiByToimipaikkaDTO>) => {
-        // Filter duplicates since /toimipaikka/#/lapset api returns actually vakasuhde, not henkilo
-        this.henkilot = lapset.filter((lapsi, index, self) => index === self.findIndex((otherLapsi) => (
-          otherLapsi.henkilo_oid === lapsi.henkilo_oid && otherLapsi.lapsi_id === lapsi.lapsi_id
-        ))).map(lapsi => {
-          const henkiloExtendedDto = new VardaExtendedHenkiloModel();
-          const henkiloDto = new VardaHenkiloDTO();
-          const lapsiDto = new VardaLapsiDTO();
-          henkiloDto.etunimet = lapsi.etunimet;
-          henkiloDto.sukunimi = lapsi.sukunimi;
-          henkiloDto.henkilo_oid = lapsi.henkilo_oid;
-          henkiloDto.syntyma_pvm = lapsi.syntyma_pvm;
-          henkiloDto.lapsi = [lapsi.lapsi_url];
-          henkiloDto.url = lapsi.lapsi_url;
-          henkiloDto.id = lapsi.lapsi_id;
-          lapsiDto.oma_organisaatio_nimi = lapsi.oma_organisaatio_nimi;
-          lapsiDto.paos_organisaatio_nimi = lapsi.paos_organisaatio_nimi;
-          henkiloExtendedDto.henkilo = henkiloDto;
-          henkiloExtendedDto.lapsi = lapsiDto;
-          henkiloExtendedDto.isNew = false;
-          return henkiloExtendedDto;
-        });
-        this.ui.isFetchingVarhaiskasvatussuhteet = false;
-      },
-      error: () => this.ui.isFetchingVarhaiskasvatussuhteet = false,
-    });
+      .subscribe({
+        next: (lapset: Array<LapsiByToimipaikkaDTO>) => {
+          // Filter duplicates since /toimipaikka/#/lapset api returns actually vakasuhde, not henkilo
+          this.henkilot = lapset.filter((lapsi, index, self) => index === self.findIndex((otherLapsi) => (
+            otherLapsi.henkilo_oid === lapsi.henkilo_oid && otherLapsi.lapsi_id === lapsi.lapsi_id
+          ))).map(lapsi => {
+            const henkiloExtendedDto = new VardaExtendedHenkiloModel();
+            const henkiloDto = new VardaHenkiloDTO();
+            const lapsiDto = new VardaLapsiDTO();
+            henkiloDto.etunimet = lapsi.etunimet;
+            henkiloDto.sukunimi = lapsi.sukunimi;
+            henkiloDto.henkilo_oid = lapsi.henkilo_oid;
+            henkiloDto.syntyma_pvm = lapsi.syntyma_pvm;
+            henkiloDto.lapsi = [lapsi.lapsi_url];
+            henkiloDto.url = lapsi.lapsi_url;
+            henkiloDto.id = lapsi.lapsi_id;
+            lapsiDto.oma_organisaatio_nimi = lapsi.oma_organisaatio_nimi;
+            lapsiDto.paos_organisaatio_nimi = lapsi.paos_organisaatio_nimi;
+            henkiloExtendedDto.henkilo = henkiloDto;
+            henkiloExtendedDto.lapsi = lapsiDto;
+            henkiloExtendedDto.isNew = false;
+            return henkiloExtendedDto;
+          });
+          this.ui.isFetchingVarhaiskasvatussuhteet = false;
+        },
+        error: () => this.ui.isFetchingVarhaiskasvatussuhteet = false,
+      });
   }
 
   updateToimipaikatAndVakasuhteet(): void {
