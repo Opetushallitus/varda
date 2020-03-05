@@ -48,10 +48,10 @@
         <div class="paos-toimijat-list-tallennusvastuu-wrapper paos-list-flexbox">
           <div class="paos-list-flexbox">
             <div class="paos-toimipaikat-list-tallennusvastuu-column">
-              {{'label.paos-toimipaikat.list.tallennusvastuu' | translate}}:
+              {{'label.paos-toimipaikat.list.tiedot-tallentaa' | translate}}:
             </div>
             <div class="paos-toimipaikat-list-tallennusvastuu-column">
-              {{getCurrentTallentajaTranslateKey(paosToiminta.paos_oikeus) | translate}}
+              {{getCurrentTallentajaName(paosToiminta.paos_oikeus, paosToiminta.vakajarjestaja_nimi)}}
             </div>
           </div>
           <app-varda-delete-button *ngIf="isVardaPaakayttaja"

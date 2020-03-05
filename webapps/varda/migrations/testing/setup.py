@@ -863,82 +863,6 @@ def create_maksutiedot():
     Huoltajuussuhde.objects.get(pk=2).maksutiedot.add(mp3, mp1)
 
 
-def create_tyontekijat():
-    from django.contrib.auth.models import User
-    from guardian.shortcuts import assign_perm
-    from varda.misc import hash_string
-    from varda.models import Henkilo, Ohjaajasuhde, Taydennyskoulutus, Toimipaikka, Tyontekija
-    from varda.permission_groups import assign_object_level_permissions
-
-    tester_user = User.objects.get(username='tester')
-    tester2_user = User.objects.get(username='tester2')
-
-    toimipaikka_1_organisaatio_oid = '1.2.246.562.10.9395737548810'
-    toimipaikka_1 = Toimipaikka.objects.filter(organisaatio_oid=toimipaikka_1_organisaatio_oid)[0]
-
-    henkilo_tyontekija_1 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('120456-123C'))
-    henkilo_tyontekija_2 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('130266-915J'))
-
-    tyontekija_1 = Tyontekija.objects.create(
-        henkilo=henkilo_tyontekija_1,
-        tyosuhde_koodi='ts01',
-        tyoaika_koodi='ta01',
-        tutkintonimike_koodi=['tn01', 'tn03'],
-        alkamis_pvm='2017-02-13',
-        paattymis_pvm=None,
-        changed_by=tester_user
-    )
-
-    tyontekija_2 = Tyontekija.objects.create(
-        henkilo=henkilo_tyontekija_2,
-        tyosuhde_koodi='ts02',
-        tyoaika_koodi='ta02',
-        tutkintonimike_koodi=['tn01', 'tn02'],
-        alkamis_pvm='2017-04-21',
-        paattymis_pvm=None,
-        changed_by=tester_user
-    )
-
-    tyontekija_3 = Tyontekija.objects.create(
-        henkilo=henkilo_tyontekija_1,
-        tyosuhde_koodi='ts01',
-        tyoaika_koodi='ta01',
-        tutkintonimike_koodi=['tn01', 'tn03'],
-        alkamis_pvm='2017-08-12',
-        paattymis_pvm=None,
-        changed_by=tester2_user
-    )
-
-    taydennyskoulutus_1 = Taydennyskoulutus.objects.create(
-        tyontekija=tyontekija_1,
-        tuntimaara=33.5,
-        suoritus_pvm='2017-10-31',
-        changed_by=tester_user
-    )
-
-    ohjaajasuhde_1 = Ohjaajasuhde.objects.create(
-        tyontekija=tyontekija_1,
-        toimipaikka=toimipaikka_1,
-        tyotehtava_koodi='tt02',
-        tyoaika_viikossa=38.5,
-        alkamis_pvm='2017-02-13',
-        paattymis_pvm=None,
-        changed_by=tester_user
-    )
-
-    assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Tyontekija, tyontekija_1)
-    assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Taydennyskoulutus, taydennyskoulutus_1)
-    assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Ohjaajasuhde, ohjaajasuhde_1)
-
-    assign_perm('view_tyontekija', tester_user, tyontekija_2)
-    assign_perm('change_tyontekija', tester_user, tyontekija_2)
-    assign_perm('delete_tyontekija', tester_user, tyontekija_2)
-
-    assign_perm('view_tyontekija', tester2_user, tyontekija_3)
-    assign_perm('change_tyontekija', tester2_user, tyontekija_3)
-    assign_perm('delete_tyontekija', tester2_user, tyontekija_3)
-
-
 def create_paos_toiminta():
     from guardian.shortcuts import assign_perm
     from varda.models import PaosToiminta, VakaJarjestaja, User, Toimipaikka
@@ -1214,7 +1138,6 @@ def create_test_data():
     create_lapset()
     create_huoltajat()
     create_huoltajuussuhteet()
-    create_tyontekijat()
     create_user_data()
     create_maksutiedot()
     create_paos_toiminta()

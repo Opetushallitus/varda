@@ -30,9 +30,9 @@ from varda.enums.lahdejarjestelma import Lahdejarjestelma
 from varda.exceptions.conflict_error import ConflictError
 from varda.misc import CustomServerErrorException, decrypt_henkilotunnus, encrypt_henkilotunnus, hash_string
 from varda.misc_queries import get_paos_toimipaikat
-from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Tyontekija,
-                          Taydennyskoulutus, Ohjaajasuhde, PaosToiminta, Lapsi, Huoltaja, Huoltajuussuhde, Varhaiskasvatuspaatos,
-                          Varhaiskasvatussuhde, Maksutieto, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet)
+from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, PaosToiminta,
+                          Lapsi, Huoltaja, Huoltajuussuhde, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto,
+                          PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet)
 from varda.oppijanumerorekisteri import fetch_henkilo_with_oid, update_modified_henkilot_since_datetime, \
     save_henkilo_to_db
 from varda.organisaatiopalvelu import check_if_toimipaikka_exists_in_organisaatiopalvelu, \
@@ -50,7 +50,6 @@ from varda.serializers import (UserSerializer, ExternalPermissionsSerializer, Gr
                                AuthTokenSerializer, VakaJarjestajaSerializer, ToimipaikkaSerializer,
                                ToiminnallinenPainotusSerializer, KieliPainotusSerializer, HaeHenkiloSerializer,
                                HenkiloSerializer, HenkiloSerializerAdmin, HenkiloOppijanumeroSerializer,
-                               TyontekijaSerializer, TaydennyskoulutusSerializer, OhjaajasuhdeSerializer,
                                LapsiSerializer, LapsiSerializerAdmin, HuoltajaSerializer, HuoltajuussuhdeSerializer,
                                MaksutietoPostSerializer, MaksutietoUpdateSerializer, MaksutietoGetSerializer,
                                VarhaiskasvatuspaatosSerializer, VarhaiskasvatuspaatosPutSerializer,
@@ -1079,220 +1078,6 @@ class HenkiloViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
             if not is_hetullinen and not is_hetuton_yksiloity:
                 error_msg = "Unfortunately this henkilo cannot be added. Is the henkilo yksiloity?"
                 raise ValidationError({"henkilo_oid": [error_msg, ]})
-
-
-class TyontekijaViewSet(viewsets.ModelViewSet):
-    """
-    list:
-        Nouda kaikki työntekijät.
-
-    create:
-        Luo yksi uusi työntekijä.
-
-    delete:
-        Poista yksi työntekijä.
-
-    retrieve:
-        Nouda yksittäinen työntekijä.
-
-    partial_update:
-        Päivitä yksi tai useampi kenttä yhdestä työntekijästä.
-
-    update:
-        Päivitä yhden työntekijän kaikki kentät.
-    """
-    filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.TyontekijaFilter
-    queryset = Tyontekija.objects.all().order_by('id')
-    serializer_class = TyontekijaSerializer
-    permission_classes = (CustomObjectPermissions,)
-
-    def get_throttles(self):
-        if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
-            self.throttle_classes = [BurstRateThrottle, SustainedModifyRateThrottle]
-        return super(TyontekijaViewSet, self).get_throttles()
-
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
-
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path)
-
-    def perform_create(self, serializer):
-        user = self.request.user
-        validated_data = serializer.validated_data
-
-        related_object_validations.check_if_unique_within_vakajarjestaja(self.request.path, validated_data["henkilo"].id, user)
-
-        if "paattymis_pvm" in validated_data and validated_data["paattymis_pvm"] is not None:
-            if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm']):
-                raise ValidationError({"paattymis_pvm": ["paattymis_pvm must be after alkamis_pvm"]})
-        with transaction.atomic():
-            saved_object = serializer.save(changed_by=user)
-            delete_cache_keys_related_model('henkilo', saved_object.henkilo.id)
-            assign_perm('view_tyontekija', user, saved_object)
-
-    def perform_update(self, serializer):
-        user = self.request.user
-        validated_data = serializer.validated_data
-        if "henkilo" in validated_data:
-            related_object_validations.check_if_user_has_access_to_henkilo(validated_data["henkilo"], user)
-            related_object_validations.check_if_henkilo_is_changed(self.request.path, validated_data["henkilo"].id, user)
-        if "paattymis_pvm" in validated_data and validated_data["paattymis_pvm"] is not None:
-            if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm']):
-                raise ValidationError({"paattymis_pvm": ["paattymis_pvm must be after alkamis_pvm"]})
-
-        serializer.save(changed_by=user)
-        """
-        No need to delete the related-henkilo cache. It is not possible to change the identity for henkilo.
-        """
-
-    def perform_destroy(self, instance):
-        user = self.request.user
-        if not user.has_perm('delete_tyontekija', instance):
-            raise PermissionDenied("User does not have permissions to delete this object.")
-        try:
-            instance.delete()
-        except ProtectedError:
-            raise ValidationError({"detail": "Cannot delete tyontekija. There are objects referencing it that need to be deleted first."})
-        delete_cache_keys_related_model('henkilo', instance.henkilo.id)
-
-
-class TaydennyskoulutusViewSet(viewsets.ModelViewSet):
-    """
-    list:
-        Nouda kaikki täydennyskoulutukset.
-
-    create:
-        Luo yksi uusi täydennyskoulutus.
-
-    delete:
-        Poista yksi täydennyskoulutus.
-
-    retrieve:
-        Nouda yksittäinen täydennyskoulutus.
-
-    partial_update:
-        Päivitä yksi tai useampi kenttä yhdestä täydennyskoulutuksesta.
-
-    update:
-        Päivitä yhden täydennyskoulutuksen kaikki kentät.
-    """
-    filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.TaydennyskoulutusFilter
-    queryset = Taydennyskoulutus.objects.all().order_by('id')
-    serializer_class = TaydennyskoulutusSerializer
-    permission_classes = (CustomObjectPermissions,)
-
-    def get_throttles(self):
-        if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
-            self.throttle_classes = [BurstRateThrottle, SustainedModifyRateThrottle]
-        return super(TaydennyskoulutusViewSet, self).get_throttles()
-
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
-
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path)
-
-    def perform_create(self, serializer):
-        user = self.request.user
-        # validated_data = serializer.validated_data
-        # related_object_validations.check_if_tyontekija_owned_by_user(validated_data["tyontekija"], user)
-        with transaction.atomic():
-            saved_object = serializer.save(changed_by=user)
-            """
-            TODO: Cache-invalidation is not done yet.
-            Look example from already created functions.
-            Jira: CSCVARDA-1088
-            """
-            assign_perm('view_taydennyskoulutus', user, saved_object)
-        # group = Group.objects.get(name="group_view_taydennyskoulutukset")
-        # assign_perm('view_taydennyskoulutus', group, saved_object)
-
-    def perform_update(self, serializer):
-        user = self.request.user
-        # validated_data = serializer.validated_data
-        # if "tyontekija" in validated_data:
-        #     related_object_validations.check_if_tyontekija_owned_by_user(validated_data["tyontekija"], user)
-        serializer.save(changed_by=user)
-
-    def perform_destroy(self, instance):
-        user = self.request.user
-        if not user.has_perm('delete_taydennyskoulutus', instance):
-            raise PermissionDenied("User does not have permissions to delete this object.")
-        instance.delete()
-
-
-class OhjaajasuhdeViewSet(viewsets.ModelViewSet):
-    """
-    list:
-        Nouda kaikki ohjaajasuhteet.
-
-    create:
-        Luo yksi uusi ohjaajasuhde.
-
-    delete:
-        Poista yksi ohjaajasuhde.
-
-    retrieve:
-        Nouda yksittäinen ohjaajasuhde.
-
-    partial_update:
-        Päivitä yksi tai useampi kenttä yhdestä ohjaajasuhde-tietueesta.
-
-    update:
-        Päivitä yhden ohjaajasuhteen kaikki kentät.
-    """
-    filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.OhjaajasuhdeFilter
-    queryset = Ohjaajasuhde.objects.all().order_by('id')
-    serializer_class = OhjaajasuhdeSerializer
-    permission_classes = (CustomObjectPermissions,)
-
-    def get_throttles(self):
-        if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
-            self.throttle_classes = [BurstRateThrottle, SustainedModifyRateThrottle]
-        return super(OhjaajasuhdeViewSet, self).get_throttles()
-
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
-
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path)
-
-    def perform_create(self, serializer):
-        user = self.request.user
-        validated_data = serializer.validated_data
-        # related_object_validations.check_if_tyontekija_owned_by_user(validated_data["tyontekija"], user)
-        # related_object_validations.check_if_toimipaikka_owned_by_user(validated_data["toimipaikka"].id, user)
-        if "paattymis_pvm" in validated_data and validated_data["paattymis_pvm"] is not None:
-            if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm']):
-                raise ValidationError({"paattymis_pvm": ["paattymis_pvm must be after alkamis_pvm"]})
-        with transaction.atomic():
-            saved_object = serializer.save(changed_by=user)
-            assign_perm('view_ohjaajasuhde', user, saved_object)
-        # group = Group.objects.get(name="group_view_ohjaajasuhteet")
-        # assign_perm('view_ohjaajasuhde', group, saved_object)
-
-    def perform_update(self, serializer):
-        user = self.request.user
-        validated_data = serializer.validated_data
-        # if "tyontekija" in validated_data:
-        #     related_object_validations.check_if_tyontekija_owned_by_user(validated_data["tyontekija"], user)
-        # if "toimipaikka" in validated_data:
-        #     related_object_validations.check_if_toimipaikka_owned_by_user(validated_data["toimipaikka"].id, user)
-        if "paattymis_pvm" in validated_data and validated_data["paattymis_pvm"] is not None:
-            if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm']):
-                raise ValidationError({"paattymis_pvm": ["paattymis_pvm must be after alkamis_pvm"]})
-
-        serializer.save(changed_by=user)
-
-    def perform_destroy(self, instance):
-        user = self.request.user
-        if not user.has_perm('delete_ohjaajasuhde', instance):
-            raise PermissionDenied("User does not have permissions to delete this object.")
-        instance.delete()
 
 
 class LapsiViewSet(viewsets.ModelViewSet):
@@ -2555,36 +2340,6 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
                 )
 
 
-class NestedTaydennyskoulutusViewSet(GenericViewSet, ListModelMixin):
-    """
-    list:
-        nouda tietyn työntekijän kaikki täydennyskoulutukset
-    """
-    filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.TaydennyskoulutusFilter
-    queryset = Taydennyskoulutus.objects.none()
-    serializer_class = TaydennyskoulutusSerializer
-    permission_classes = (CustomObjectPermissions, )
-
-    def get_tyontekija(self, request, tyontekija_pk=None):
-        tyontekija = get_object_or_404(Tyontekija.objects.all(), pk=tyontekija_pk)
-        user = request.user
-        if user.has_perm("view_tyontekija", tyontekija):
-            return tyontekija
-        else:
-            raise Http404("Not found.")
-
-    @transaction.atomic
-    def list(self, request, *args, **kwargs):
-        if not kwargs['tyontekija_pk'].isdigit():
-            raise Http404("Not found.")
-
-        self.get_tyontekija(request, tyontekija_pk=kwargs['tyontekija_pk'])
-        self.queryset = Taydennyskoulutus.objects.filter(tyontekija=kwargs['tyontekija_pk']).order_by('id')
-
-        return cached_list_response(self, request.user, request.get_full_path())
-
-
 class NestedVarhaiskasvatussuhdeViewSet(GenericViewSet, ListModelMixin):
     """
     list:
@@ -2707,36 +2462,6 @@ class NestedKieliPainotusViewSet(GenericViewSet, ListModelMixin):
 
         self.get_toimipaikka(request, toimipaikka_pk=kwargs['toimipaikka_pk'])
         self.queryset = KieliPainotus.objects.filter(toimipaikka=kwargs['toimipaikka_pk']).order_by('id')
-
-        return cached_list_response(self, request.user, request.get_full_path())
-
-
-class NestedOhjaajasuhdeToimipaikkaViewSet(GenericViewSet, ListModelMixin):
-    """
-    list:
-        Nouda tietyn toimipaikan kaikki ohjaajasuhteet.
-    """
-    filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.OhjaajasuhdeFilter
-    queryset = Ohjaajasuhde.objects.none()
-    serializer_class = OhjaajasuhdeSerializer
-    permission_classes = (CustomObjectPermissions, )
-
-    def get_toimipaikka(self, request, toimipaikka_pk=None):
-        toimipaikka = get_object_or_404(Toimipaikka.objects.all(), pk=toimipaikka_pk)
-        user = request.user
-        if user.has_perm("view_toimipaikka", toimipaikka):
-            return toimipaikka
-        else:
-            raise Http404("Not found.")
-
-    @transaction.atomic
-    def list(self, request, *args, **kwargs):
-        if not kwargs['toimipaikka_pk'].isdigit():
-            raise Http404("Not found.")
-
-        self.get_toimipaikka(request, toimipaikka_pk=kwargs['toimipaikka_pk'])
-        self.queryset = Ohjaajasuhde.objects.filter(toimipaikka=kwargs['toimipaikka_pk']).order_by('id')
 
         return cached_list_response(self, request.user, request.get_full_path())
 
@@ -3038,36 +2763,6 @@ class NestedVakajarjestajaPaosToimipaikatViewSet(GenericViewSet, ListModelMixin)
 
         serializer = self.get_serializer(paos_toiminnat, many=True)
         return Response(serializer.data)
-
-
-class NestedOhjaajasuhdeTyontekijaViewSet(GenericViewSet, ListModelMixin):
-    """
-    list:
-        Nouda tietyn työntekijän kaikki ohjaajasuhteet.
-    """
-    filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.OhjaajasuhdeFilter
-    queryset = Ohjaajasuhde.objects.none()
-    serializer_class = OhjaajasuhdeSerializer
-    permission_classes = (CustomObjectPermissions, )
-
-    def get_tyontekija(self, request, tyontekija_pk=None):
-        tyontekija = get_object_or_404(Tyontekija.objects.all(), pk=tyontekija_pk)
-        user = request.user
-        if user.has_perm("view_tyontekija", tyontekija):
-            return tyontekija
-        else:
-            raise Http404("Not found.")
-
-    @transaction.atomic
-    def list(self, request, *args, **kwargs):
-        if not kwargs['tyontekija_pk'].isdigit():
-            raise Http404("Not found.")
-
-        self.get_tyontekija(request, tyontekija_pk=kwargs['tyontekija_pk'])
-        self.queryset = Ohjaajasuhde.objects.filter(tyontekija=kwargs['tyontekija_pk']).order_by('id')
-
-        return cached_list_response(self, request.user, request.get_full_path())
 
 
 class HenkilohakuLapset(GenericViewSet, ListModelMixin):

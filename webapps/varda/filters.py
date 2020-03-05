@@ -1,6 +1,5 @@
-from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo,
-                          Tyontekija, Taydennyskoulutus, Ohjaajasuhde, Lapsi, Huoltaja, Maksutieto, PaosToiminta,
-                          PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z2_Koodisto)
+from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
+                          Maksutieto, PaosToiminta, PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z2_Koodisto)
 from django.db.models import Q
 from django_filters import rest_framework as djangofilters
 
@@ -141,41 +140,6 @@ class HuoltajaFilter(djangofilters.FilterSet):
 
     class Meta:
         model = Huoltaja
-        fields = []
-
-
-class TyontekijaFilter(djangofilters.FilterSet):
-    tyosuhde_koodi = djangofilters.CharFilter(field_name='tyosuhde_koodi', lookup_expr='exact')
-    tyoaika_koodi = djangofilters.CharFilter(field_name='tyoaika_koodi', lookup_expr='exact')
-    tutkintonimike_koodi = CharArrayFilter(field_name='tutkintonimike_koodi', lookup_expr='contains')
-    alkamis_pvm = djangofilters.DateFilter(field_name='alkamis_pvm', lookup_expr='gte')
-    paattymis_pvm = djangofilters.DateFilter(field_name='paattymis_pvm', lookup_expr='gte')
-    muutos_pvm = djangofilters.DateTimeFilter(field_name='muutos_pvm', lookup_expr='gte')
-
-    class Meta:
-        model = Tyontekija
-        fields = []
-
-
-class TaydennyskoulutusFilter(djangofilters.FilterSet):
-    tuntimaara = djangofilters.NumberFilter(field_name='tuntimaara', lookup_expr='gte')
-    suoritus_pvm = djangofilters.DateTimeFilter(field_name='suoritus_pvm', lookup_expr='gte')
-    muutos_pvm = djangofilters.DateTimeFilter(field_name='muutos_pvm', lookup_expr='gte')
-
-    class Meta:
-        model = Taydennyskoulutus
-        fields = []
-
-
-class OhjaajasuhdeFilter(djangofilters.FilterSet):
-    tyotehtava_koodi = djangofilters.CharFilter(field_name='tyotehtava_koodi', lookup_expr='exact')
-    tyoaika_viikossa = djangofilters.NumberFilter(field_name='tyoaika_viikossa', lookup_expr='gte')
-    alkamis_pvm = djangofilters.DateFilter(field_name='alkamis_pvm', lookup_expr='gte')
-    paattymis_pvm = djangofilters.DateFilter(field_name='paattymis_pvm', lookup_expr='gte')
-    muutos_pvm = djangofilters.DateTimeFilter(field_name='muutos_pvm', lookup_expr='gte')
-
-    class Meta:
-        model = Ohjaajasuhde
         fields = []
 
 

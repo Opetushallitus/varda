@@ -22,7 +22,7 @@ class VardaPermissionsTests(TestCase):
     def test_permissions_root_url_authenticated(self):
         client = SetUpTestClient('tester2').client()
         resp = client.get('/api/v1/?format=json')
-        self.assertEqual(len(json.loads(resp.content)), 15)
+        self.assertEqual(len(json.loads(resp.content)), 12)
 
     """
     Everyone should see only one vakajarjestaja:
@@ -40,31 +40,40 @@ class VardaPermissionsTests(TestCase):
         self.assertEqual(json.loads(resp.content)["results"][0]["y_tunnus"], "8500570-7")
 
     """
-    Henkilo-object: reverse-relation (to Tyontekija, Lapsi, Huoltaja) permissions
-        - "tester" and "tester2" can see one tyontekija-relation each
-        - Admin can see two Tyontekija-relations.
+    Henkilo-object: reverse-relation (to Lapsi, Huoltaja) permissions
     """
     def test_permissions_henkilo_reverse_relations_1(self):
-        resp = self.client.get('/api/v1/henkilot/1/?format=json')
+        resp = self.client.get('/api/v1/henkilot/2/?format=json')
         self.assertEqual(resp.status_code, 403)
 
     def test_permissions_henkilo_reverse_relations_2(self):
         client = SetUpTestClient('tester').client()
-        resp = client.get('/api/v1/henkilot/1/?format=json')
-        self.assertEqual(len(json.loads(resp.content)["tyontekija"]), 1)
-        self.assertEqual(json.loads(resp.content)["tyontekija"][0], "http://testserver/api/v1/tyontekijat/1/")
+        resp = client.get('/api/v1/henkilot/2/?format=json')
+        self.assertEqual(len(json.loads(resp.content)["lapsi"]), 1)
+        self.assertEqual(json.loads(resp.content)["lapsi"][0], "http://testserver/api/v1/lapset/1/")
 
     def test_permissions_henkilo_reverse_relations_3(self):
         client = SetUpTestClient('tester2').client()
-        resp = client.get('/api/v1/henkilot/1/?format=json')
-        self.assertEqual(len(json.loads(resp.content)["tyontekija"]), 1)
-        self.assertEqual(json.loads(resp.content)["tyontekija"][0], "http://testserver/api/v1/tyontekijat/3/")
+        resp = client.get('/api/v1/henkilot/2/?format=json')
+        self.assertEqual(len(json.loads(resp.content)["lapsi"]), 0)
 
     def test_permissions_henkilo_reverse_relations_4(self):
         client = SetUpTestClient('credadmin').client()
-        resp = client.get('/api/v1/henkilot/1/?format=json')
-        self.assertEqual(len(json.loads(resp.content)["tyontekija"]), 2)
-        self.assertEqual(json.loads(resp.content)["tyontekija"][1], "http://testserver/api/v1/tyontekijat/3/")
+        resp = client.get('/api/v1/henkilot/2/?format=json')
+        self.assertEqual(len(json.loads(resp.content)["lapsi"]), 1)
+        self.assertEqual(json.loads(resp.content)["lapsi"][0], "http://testserver/api/v1/lapset/1/")
+
+    def test_permissions_henkilo_reverse_relations_5(self):
+        client = SetUpTestClient('tester').client()
+        resp = client.get('/api/v1/henkilot/4/?format=json')
+        self.assertNotIn('huoltaja', json.loads(resp.content))
+
+    def test_permissions_henkilo_reverse_relations_6(self):
+        client = SetUpTestClient('credadmin').client()
+        resp = client.get('/api/v1/henkilot/4/?format=json')
+        self.assertEqual(len(json.loads(resp.content)['huoltaja']), 1)
+        self.assertEqual(json.loads(resp.content)['huoltaja'][0], "http://testserver/api/admin/huoltajat/1/")
+
     """
     Making POST-requests:
     - If anonymous: never allowed
@@ -209,19 +218,15 @@ class VardaPermissionsTests(TestCase):
         self.assertEqual(resp.status_code, 201)
 
         new_henkilo_url = json.loads(resp.content)["url"]
-        tyontekija = {
-            "henkilo": new_henkilo_url,
-            "tyosuhde_koodi": "ts01",
-            "tyoaika_koodi": "ta02",
-            "tutkintonimike_koodi": ["tn01", "tn03"],
-            "alkamis_pvm": "2015-03-01"
+        lapsi = {
+            "henkilo": new_henkilo_url
         }
 
-        resp = client.post('/api/v1/tyontekijat/', tyontekija)
+        resp = client.post('/api/v1/lapset/', lapsi)
         self.assertEqual(resp.status_code, 201)
 
         client = SetUpTestClient('tester').client()
-        resp = client.post('/api/v1/tyontekijat/', tyontekija)
+        resp = client.post('/api/v1/lapset/', lapsi)
         self.assertEqual(resp.status_code, 201)
 
     """
@@ -411,18 +416,6 @@ class VardaPermissionsTests(TestCase):
         self.assertEqual(json.loads(resp.content), {'detail': 'Authentication credentials were not provided.'})
 
         resp = self.client.get('/api/v1/paos-toiminnat/')
-        self.assertEqual(resp.status_code, 403)
-        self.assertEqual(json.loads(resp.content), {'detail': 'Authentication credentials were not provided.'})
-
-        resp = self.client.get('/api/v1/tyontekijat/')
-        self.assertEqual(resp.status_code, 403)
-        self.assertEqual(json.loads(resp.content), {'detail': 'Authentication credentials were not provided.'})
-
-        resp = self.client.get('/api/v1/taydennyskoulutukset/')
-        self.assertEqual(resp.status_code, 403)
-        self.assertEqual(json.loads(resp.content), {'detail': 'Authentication credentials were not provided.'})
-
-        resp = self.client.get('/api/v1/ohjaajasuhteet/')
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(json.loads(resp.content), {'detail': 'Authentication credentials were not provided.'})
 

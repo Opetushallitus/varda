@@ -96,6 +96,6 @@ describe('VardaHenkiloService', () => {
 
   it('Should return henkilo list summary text correctly according to lapsi and tyontekija count', () => {
     const summaryText = vardaHenkiloService.getHenkiloCountText(henkilot);
-    expect(summaryText).toBe('2 Lasta, 1 Työntekijää');
+    expect(summaryText).toBe('2 Lasta, 0 Työntekijää');
   });
 });

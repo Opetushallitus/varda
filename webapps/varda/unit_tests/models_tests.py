@@ -6,8 +6,8 @@ from rest_framework.exceptions import ValidationError
 
 from varda import validators
 from varda.filters import VakaJarjestajaFilter, LapsiFilter
-from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Tyontekija, Taydennyskoulutus, Ohjaajasuhde,
-                          Huoltaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z2_Koodisto)
+from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Huoltaja,
+                          Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z2_Koodisto)
 
 
 class VardaModelsTests(TestCase):
@@ -38,30 +38,6 @@ class VardaModelsTests(TestCase):
     def test_henkilot(self):
         test_henkilo = Henkilo.objects.get(pk=2).henkilo_oid
         self.assertEqual(test_henkilo, '1.2.246.562.24.47279942650')
-
-    def test_tyontekijat(self):
-        test_tyontekija = Tyontekija.objects.get(pk=1).tyosuhde_koodi
-        self.assertEqual(test_tyontekija, "ts01")
-
-    def test_tyontekijat_2(self):
-        test_tyontekija_2 = Tyontekija.objects.get(pk=1).tutkintonimike_koodi
-        self.assertEqual(test_tyontekija_2, ['tn01', 'tn03'])
-
-    def test_tyontekijat_3(self):
-        test_tyontekija_3 = Tyontekija.objects.filter(tutkintonimike_koodi__contains=['tn03'])
-        self.assertEqual(test_tyontekija_3[0].id, 1)
-
-    def test_tyontekijat_non_existing_tutkintonimike_koodi(self):
-        test_tyontekija_4 = Tyontekija.objects.filter(tutkintonimike_koodi__contains=['dummycode'])
-        self.assertEqual(len(test_tyontekija_4), 0)
-
-    def test_taydennyskoulutus(self):
-        test_taydennyskoulutus = Taydennyskoulutus.objects.get(pk=1).tuntimaara
-        self.assertEqual(test_taydennyskoulutus, Decimal('33.5'))
-
-    def test_ohjaajasuhteet(self):
-        test_ohjaajasuhde = Ohjaajasuhde.objects.get(pk=1).tyoaika_viikossa
-        self.assertEqual(test_ohjaajasuhde, Decimal('38.5'))
 
     def test_varhaiskasvatussuhteet(self):
         test_varhaiskasvatussuhde = Varhaiskasvatussuhde.objects.get(pk=1).alkamis_pvm

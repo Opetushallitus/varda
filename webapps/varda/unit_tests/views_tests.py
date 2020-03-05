@@ -65,9 +65,6 @@ class VardaViewsTests(TestCase):
             "kielipainotukset": "http://testserver/api/v1/kielipainotukset/",
             "hae-henkilo": "http://testserver/api/v1/hae-henkilo/",
             "henkilot": "http://testserver/api/v1/henkilot/",
-            "tyontekijat": "http://testserver/api/v1/tyontekijat/",
-            "taydennyskoulutukset": "http://testserver/api/v1/taydennyskoulutukset/",
-            "ohjaajasuhteet": "http://testserver/api/v1/ohjaajasuhteet/",
             "lapset": "http://testserver/api/v1/lapset/",
             "maksutiedot": "http://testserver/api/v1/maksutiedot/",
             "varhaiskasvatuspaatokset": "http://testserver/api/v1/varhaiskasvatuspaatokset/",
@@ -255,26 +252,6 @@ class VardaViewsTests(TestCase):
         resp = client.get('/api/v1/kielipainotukset/?kielipainotus_koodi=EN&muutos_pvm=2017-02-10')
         self.assertEqual(json.loads(resp.content)["count"], 1)
 
-    def test_api_ohjaajasuhteet(self):
-        client = SetUpTestClient('tester').client()
-        resp = client.get('/api/v1/ohjaajasuhteet/')
-        self.assertEqual(resp.status_code, 200)
-
-    def test_api_ohjaajasuhteet_filtering(self):
-        client = SetUpTestClient('tester').client()
-        resp = client.get('/api/v1/ohjaajasuhteet/?tyoaika_viikossa=39')
-        self.assertEqual(json.loads(resp.content)["count"], 0)
-
-    def test_api_tyontekija(self):
-        client = SetUpTestClient('tester').client()
-        resp = client.get('/api/v1/tyontekijat/')
-        self.assertEqual(resp.status_code, 200)
-
-    def test_api_tyontekija_filtering(self):
-        client = SetUpTestClient('tester').client()
-        resp = client.get('/api/v1/tyontekijat/?tyosuhde_koodi=ts01&muutos_pvm=2017-04-12')
-        self.assertEqual(json.loads(resp.content)["count"], 1)
-
     def test_api_varhaiskasvatuspaatos_filtering(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/varhaiskasvatuspaatokset/?jarjestamismuoto_koodi=jm02')
@@ -305,45 +282,6 @@ class VardaViewsTests(TestCase):
             )
         self.assertIn('Yritysmuoto INVALID_OPTION is not one of the permitted values.', str(validation_error.exception))
 
-    @responses.activate
-    def test_api_push_correct_tyontekija(self):
-        responses.add(responses.POST,
-                      'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/',
-                      json='1.2.987654321',
-                      status=status.HTTP_201_CREATED
-                      )
-        henkilo = {
-            "henkilotunnus": "210669-043K",
-            "etunimet": "Tapio Matti",
-            "kutsumanimi": "Tapio",
-            "sukunimi": "Virtanen"
-        }
-        client = SetUpTestClient('tester').client()
-        resp = client.post('/api/v1/henkilot/', henkilo)
-        self.assertEqual(resp.status_code, 201)
-        henkilo_url = json.loads(resp.content)['url']
-
-        tyontekija = {
-            "henkilo": henkilo_url,
-            "tyosuhde_koodi": "ts01",
-            "tyoaika_koodi": "ta02",
-            "tutkintonimike_koodi": ["tn03"],
-            "alkamis_pvm": "2017-04-01"
-        }
-        resp2 = client.post('/api/v1/tyontekijat/', tyontekija)
-        self.assertEqual(resp2.status_code, 201)
-        tyontekija_url = json.loads(resp2.content)['url']
-
-        ohjaajasuhde = {
-            "tyontekija": tyontekija_url,
-            "toimipaikka": "http://testserver/api/v1/toimipaikat/1/",
-            "tyotehtava_koodi": "tt07",
-            "tyoaika_viikossa": 38,
-            "alkamis_pvm": "2017-02-13"
-        }
-        resp3 = client.post('/api/v1/ohjaajasuhteet/', ohjaajasuhde)
-        self.assertEqual(resp3.status_code, 201)
-
     def test_api_push_non_unique_henkilo_etunimi_correct_sukunimi_wrong(self):
         henkilo = {
             "henkilotunnus": "130266-915J",
@@ -359,8 +297,7 @@ class VardaViewsTests(TestCase):
             'sukunimi': 'Manner',
             'henkilo_oid': '',
             'syntyma_pvm': '1966-02-13',
-            'lapsi': [],
-            'tyontekija': []
+            'lapsi': []
         }
         client = SetUpTestClient('tester2').client()
         resp2 = client.post('/api/v1/henkilot/', henkilo)
@@ -382,8 +319,7 @@ class VardaViewsTests(TestCase):
             'sukunimi': 'Manner',
             'henkilo_oid': '',
             'syntyma_pvm': '1966-02-13',
-            'lapsi': [],
-            'tyontekija': []
+            'lapsi': []
         }
         client = SetUpTestClient('tester2').client()
         resp2 = client.post('/api/v1/henkilot/', henkilo)
@@ -405,8 +341,7 @@ class VardaViewsTests(TestCase):
             'sukunimi': 'Manner',
             'henkilo_oid': '',
             'syntyma_pvm': '1966-02-13',
-            'lapsi': [],
-            'tyontekija': []
+            'lapsi': []
         }
         client = SetUpTestClient('tester2').client()
         resp2 = client.post('/api/v1/henkilot/', henkilo)
@@ -428,8 +363,7 @@ class VardaViewsTests(TestCase):
             'sukunimi': 'Manner',
             'henkilo_oid': '',
             'syntyma_pvm': '1966-02-13',
-            'lapsi': [],
-            'tyontekija': []
+            'lapsi': []
         }
         client = SetUpTestClient('tester2').client()
         resp2 = client.post('/api/v1/henkilot/', henkilo)
@@ -551,8 +485,7 @@ class VardaViewsTests(TestCase):
             'sukunimi': 'Virtanen',
             'henkilo_oid': '1.2.246.562.24.58672764848',
             'syntyma_pvm': '2016-05-12',
-            'lapsi': ['http://testserver/api/v1/lapset/2/'],
-            'tyontekija': []
+            'lapsi': ['http://testserver/api/v1/lapset/2/']
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
@@ -574,8 +507,7 @@ class VardaViewsTests(TestCase):
             'sukunimi': 'Virtanen',
             'henkilo_oid': '1.2.246.562.24.58672764848',
             'syntyma_pvm': '2016-05-12',
-            'lapsi': ['http://testserver/api/v1/lapset/2/'],
-            'tyontekija': []
+            'lapsi': ['http://testserver/api/v1/lapset/2/']
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
@@ -691,42 +623,6 @@ class VardaViewsTests(TestCase):
         self.assertEqual(resp.status_code, 201)
         self.assertIn('http://testserver/api/v1/henkilot/', json.loads(resp.content)['url'])
 
-    def test_api_push_incorrect_tyosuhde_koodi(self):
-        tyontekija = {
-            "henkilo": 'http://testserver/api/v1/henkilot/4/',
-            "tyosuhde_koodi": "ts99",
-            "tyoaika_koodi": "ta02",
-            "tutkintonimike_koodi": ["tn03"],
-            "alkamis_pvm": "2013-06-01"
-        }
-        client = SetUpTestClient('tester').client()
-        resp = client.post('/api/v1/tyontekijat/', tyontekija)
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(json.loads(resp.content), {"tyosuhde_koodi": ["ts99 : Not a valid tyosuhde_koodi."]})
-
-    def test_api_push_incorrect_tyoaika_koodi(self):
-        tyontekija = {
-            "henkilo": 'http://testserver/api/v1/henkilot/4/',
-            "tyosuhde_koodi": "ts01",
-            "tyoaika_koodi": "ta00",
-            "tutkintonimike_koodi": ["tn03"],
-            "alkamis_pvm": "2013-06-01"
-        }
-        client = SetUpTestClient('tester').client()
-        resp = client.post('/api/v1/tyontekijat/', tyontekija)
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(json.loads(resp.content), {"tyoaika_koodi": ["ta00 : Not a valid tyoaika_koodi."]})
-
-    def test_api_taydennyskoulutus(self):
-        client = SetUpTestClient('tester').client()
-        resp = client.get('/api/v1/taydennyskoulutukset/')
-        self.assertEqual(resp.status_code, 200)
-
-    def test_api_taydennyskoulutus_filtering(self):
-        client = SetUpTestClient('tester').client()
-        resp = client.get('/api/v1/taydennyskoulutukset/?suoritus_pvm=2017-10-31')
-        self.assertEqual(json.loads(resp.content)["count"], 1)
-
     def test_api_varhaiskasvatussuhteet(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/varhaiskasvatussuhteet/')
@@ -795,17 +691,6 @@ class VardaViewsTests(TestCase):
         data = {'henkilotunnus': '020476-321F'}
         resp = self.client.post('/api/v1/hae-henkilo/', data)
         self.assertEqual(resp.status_code, 403)
-
-    def test_api_henkilot(self):
-        client = SetUpTestClient('tester').client()
-        resp = client.get('/api/v1/henkilot/1/')
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(json.loads(resp.content)["tyontekija"], ['http://testserver/api/v1/tyontekijat/1/'])
-
-        client = SetUpTestClient('credadmin').client()
-        resp = client.get('/api/v1/henkilot/1/')
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(json.loads(resp.content)["tyontekija"], ["http://testserver/api/v1/tyontekijat/1/", "http://testserver/api/v1/tyontekijat/3/"])
 
     def test_api_huoltajat(self):
         client = SetUpTestClient('tester').client()
@@ -1285,9 +1170,6 @@ class VardaViewsTests(TestCase):
             "kielipainotukset_top": [
                 "http://testserver/api/v1/kielipainotukset/1/?format=json"
             ],
-            "ohjaajasuhteet_top": [
-                "http://testserver/api/v1/ohjaajasuhteet/1/?format=json"
-            ],
             "varhaiskasvatussuhteet_top": [
                 "http://testserver/api/v1/varhaiskasvatussuhteet/1/?format=json",
                 "http://testserver/api/v1/varhaiskasvatussuhteet/2/?format=json"
@@ -1579,19 +1461,6 @@ class VardaViewsTests(TestCase):
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(json.loads(resp.content), {"toimintapainotus_koodi": ["noc : Not a valid toimintapainotus_koodi."]})
 
-    def test_push_api_incorrect_tutkintonimike_koodi(self):
-        tyontekija = {
-            "henkilo": "http://testserver/api/v1/henkilot/1/",
-            "tyosuhde_koodi": "ts01",
-            "tyoaika_koodi": "ta01",
-            "tutkintonimike_koodi": ["tn01", "no4code"],
-            "alkamis_pvm": "2013-06-01"
-        }
-        client = SetUpTestClient('tester').client()
-        resp = client.post('/api/v1/tyontekijat/', tyontekija)
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(json.loads(resp.content), {"tutkintonimike_koodi": {"1": ["no4code : Not a valid tutkintonimike_koodi."]}})
-
     def test_push_api_incorrect_kieli_koodi(self):
         kielipainotus = {
             "toimipaikka": "http://testserver/api/v1/toimipaikat/1/",
@@ -1646,39 +1515,6 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/toiminnallisetpainotukset/', toiminnallinenpainotus)
         self.assertEqual(resp.status_code, 201)
-
-    def test_push_incorrect_taydennyskoulutus(self):
-        taydennyskoulutus = {
-            "tyontekija": "http://testserver/api/v1/tyontekijat/1/",
-            "tuntimaara": -2.5,
-            "suoritus_pvm": "2018-09-14"
-        }
-        client = SetUpTestClient('tester').client()
-        resp = client.post('/api/v1/taydennyskoulutukset/', taydennyskoulutus)
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(json.loads(resp.content), {"tuntimaara": ["Ensure this value is greater than or equal to 0.0."]})
-
-    def test_relative_url_ok(self):
-        taydennyskoulutus = {
-            "tyontekija": "/api/v1/tyontekijat/1/",
-            "tuntimaara": 2.5,
-            "suoritus_pvm": "2018-09-14"
-        }
-        client = SetUpTestClient('tester').client()
-        resp = client.post('/api/v1/taydennyskoulutukset/', taydennyskoulutus)
-        self.assertEqual(resp.status_code, 201)
-
-    def test_faulty_relative_url(self):
-        # missing first slash '/'
-        taydennyskoulutus = {
-            "tyontekija": "api/v1/tyontekijat/1/",
-            "tuntimaara": 2.5,
-            "suoritus_pvm": "2018-09-14"
-        }
-        client = SetUpTestClient('tester').client()
-        resp = client.post('/api/v1/taydennyskoulutukset/', taydennyskoulutus)
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(json.loads(resp.content), {'tyontekija': ['Invalid hyperlink - No URL match.']})
 
     def test_push_incorrect_iban_1(self):
         vakajarjestaja = {
@@ -2494,33 +2330,6 @@ class VardaViewsTests(TestCase):
         self.assertEqual(resp_paos_oikeus.status_code, 400)
         self.assertEqual(resp_paos_oikeus_data, accepted_response)
 
-    def test_push_incorrect_ohjaajasuhde_tyoaika(self):
-        ohjaajasuhde = {
-            "tyontekija": "http://testserver/api/v1/tyontekijat/1/",
-            "toimipaikka": "http://testserver/api/v1/toimipaikat/1/",
-            "tyotehtava_koodi": "tt01",
-            "tyoaika_viikossa": 140,
-            "jarjestamismuoto_koodi": ["jm01"],
-            "alkamis_pvm": "2013-06-01"
-        }
-        client = SetUpTestClient('tester').client()
-        resp = client.post('/api/v1/ohjaajasuhteet/', ohjaajasuhde)
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(json.loads(resp.content), {"tyoaika_viikossa": ["Ensure this value is less than or equal to 100."]})
-
-    def test_push_incorrect_ohjaajasuhde_tyotehtava_koodi(self):
-        ohjaajasuhde = {
-            "tyontekija": "http://testserver/api/v1/tyontekijat/1/",
-            "toimipaikka": "http://testserver/api/v1/toimipaikat/1/",
-            "tyotehtava_koodi": "no4code",
-            "tyoaika_viikossa": 35,
-            "alkamis_pvm": "2013-06-01"
-        }
-        client = SetUpTestClient('tester').client()
-        resp = client.post('/api/v1/ohjaajasuhteet/', ohjaajasuhde)
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(json.loads(resp.content), {"tyotehtava_koodi": ["no4code : Not a valid tyotehtava_koodi."]})
-
     def test_push_incorrect_puhelinnumero(self):
         vakajarjestaja = {
             "nimi": "Testikylä",
@@ -2570,17 +2379,6 @@ class VardaViewsTests(TestCase):
         client.delete('/api/v1/varhaiskasvatussuhteet/3/')
         client.delete('/api/v1/varhaiskasvatuspaatokset/3/')
         resp = client.delete('/api/v1/lapset/3/')
-        self.assertEqual(resp.status_code, 204)
-
-    def test_api_delete_tyontekija_1(self):
-        client = SetUpTestClient('tester').client()
-        resp = client.delete('/api/v1/tyontekijat/1/')
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(json.loads(resp.content), {"detail": "Cannot delete tyontekija. There are objects referencing it that need to be deleted first."})
-
-    def test_api_delete_tyontekija_2(self):
-        client = SetUpTestClient('tester2').client()
-        resp = client.delete('/api/v1/tyontekijat/3/')
         self.assertEqual(resp.status_code, 204)
 
     def test_api_push_too_many_overlapping_varhaiskasvatuspaatos(self):

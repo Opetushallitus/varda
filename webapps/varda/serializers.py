@@ -13,9 +13,8 @@ from rest_framework.validators import UniqueTogetherValidator
 from varda.cache import caching_to_representation
 from varda.misc import list_of_dicts_has_duplicate_values
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Maksutieto, Henkilo,
-                          Tyontekija, Taydennyskoulutus,
-                          Ohjaajasuhde, Lapsi, Huoltaja, Huoltajuussuhde, PaosOikeus, PaosToiminta, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-                          Z3_AdditionalCasUserFields)
+                          Lapsi, Huoltaja, Huoltajuussuhde, PaosOikeus, PaosToiminta, Varhaiskasvatuspaatos,
+                          Varhaiskasvatussuhde, Z3_AdditionalCasUserFields)
 from varda.permissions import check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement
 from varda.validators import validate_henkilo_oid, validate_nimi, validate_henkilotunnus_or_oid_needed
 
@@ -256,16 +255,6 @@ class LapsiHLField(serializers.HyperlinkedRelatedField):
         return queryset
 
 
-class TyontekijaHLField(serializers.HyperlinkedRelatedField):
-    def get_queryset(self):
-        user = self.context['request'].user
-        if user.is_authenticated:
-            queryset = Tyontekija.objects.all().order_by('id')
-        else:
-            queryset = Tyontekija.objects.none()
-        return queryset
-
-
 class MaksutietoHLField(serializers.HyperlinkedRelatedField):
     def get_queryset(self):
         user = self.context['request'].user
@@ -318,7 +307,6 @@ class ToimipaikkaSerializer(serializers.HyperlinkedModelSerializer):
     postiosoite = serializers.CharField(min_length=3, max_length=100)
     toiminnallisetpainotukset_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='toiminnallinenpainotus-detail')
     kielipainotukset_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='kielipainotus-detail')
-    ohjaajasuhteet_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='ohjaajasuhde-detail')
     varhaiskasvatussuhteet_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='varhaiskasvatussuhde-detail')
     lahdejarjestelma = serializers.CharField(read_only=True)
 
@@ -393,7 +381,6 @@ class HenkiloSerializer(serializers.HyperlinkedModelSerializer):
     henkilo_oid = serializers.CharField(required=False)
     syntyma_pvm = serializers.DateField(read_only=True)
     lapsi = serializers.SerializerMethodField()
-    tyontekija = serializers.SerializerMethodField()
     henkilotunnus = serializers.CharField(required=False, write_only=True)
 
     class Meta:
@@ -418,20 +405,6 @@ class HenkiloSerializer(serializers.HyperlinkedModelSerializer):
         validate_henkilotunnus_or_oid_needed(data)
         return data
 
-    def get_tyontekija(self, obj):
-        request = self.context.get('request')
-        user = request.user
-
-        tyontekijat = []
-
-        qs = Tyontekija.objects.filter(henkilo=obj.pk).order_by('id')
-
-        for tyontekija in qs:
-            if user.has_perm("view_tyontekija", tyontekija):
-                tyontekijat.append(request.build_absolute_uri(reverse('tyontekija-detail', kwargs={'pk': tyontekija.pk})))
-
-        return tyontekijat
-
     def get_lapsi(self, obj):
         request = self.context.get('request')
         user = request.user
@@ -449,23 +422,6 @@ class HenkiloSerializer(serializers.HyperlinkedModelSerializer):
 class HenkiloSerializerAdmin(HenkiloSerializer):
     id = serializers.ReadOnlyField()
     huoltaja = serializers.SerializerMethodField()
-
-    def get_tyontekija(self, obj):
-        request = self.context.get('request')
-
-        """
-        Usually one tyontekija is one henkilo: This should be the case for all users.
-        However, we need an array here, since admin-user can see multiple of "tyontekijat" for one "henkilo".
-            E.g. if one tyontekija is working in several cities/municipalities.
-        """
-        tyontekijat = []
-
-        qs = Tyontekija.objects.filter(henkilo=obj.pk).order_by('id')
-
-        for tyontekija in qs:
-            tyontekijat.append(request.build_absolute_uri(reverse('tyontekija-detail', kwargs={'pk': tyontekija.pk})))
-
-        return tyontekijat
 
     def get_lapsi(self, obj):
         request = self.context.get('request')
@@ -616,46 +572,6 @@ class MaksutietoUpdateSerializer(serializers.HyperlinkedModelSerializer):
         read_only_fields = ['url', 'id', 'huoltajat', "lapsi", "alkamis_pvm", "perheen_koko", 'maksun_peruste_koodi',
                             "palveluseteli_arvo", "asiakasmaksu"]
         exclude = ('luonti_pvm', 'changed_by', 'yksityinen_jarjestaja',)
-
-
-class TyontekijaSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-    henkilo = HenkiloHLField(view_name='henkilo-detail')
-    ohjaajasuhteet_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='ohjaajasuhde-detail')
-    taydennyskoulutukset_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='taydennyskoulutus-detail')
-
-    class Meta:
-        model = Tyontekija
-        exclude = ('luonti_pvm', 'changed_by',)
-
-    def validate(self, data):
-        if 'henkilo' in data and not self.context['request'].user.has_perm('view_henkilo', data['henkilo']):
-            msg = {"henkilo": ["Invalid hyperlink - Object does not exist.", ]}
-            raise serializers.ValidationError(msg, code='invalid')
-        return data
-
-    @caching_to_representation('tyontekija')
-    def to_representation(self, instance):
-        return super(TyontekijaSerializer, self).to_representation(instance)
-
-
-class TaydennyskoulutusSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-    tyontekija = TyontekijaHLField(view_name='tyontekija-detail')
-
-    class Meta:
-        model = Taydennyskoulutus
-        exclude = ('luonti_pvm', 'changed_by')
-
-
-class OhjaajasuhdeSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-    tyontekija = TyontekijaHLField(view_name='tyontekija-detail')
-    toimipaikka = ToimipaikkaHLField(view_name='toimipaikka-detail')
-
-    class Meta:
-        model = Ohjaajasuhde
-        exclude = ('luonti_pvm', 'changed_by',)
 
 
 class LapsiSerializer(serializers.HyperlinkedModelSerializer):

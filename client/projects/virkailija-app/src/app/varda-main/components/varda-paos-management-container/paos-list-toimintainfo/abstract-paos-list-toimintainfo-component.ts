@@ -1,8 +1,8 @@
-import {OnInit, Input} from '@angular/core';
-import {VardaVakajarjestaja} from '../../../../utilities/models/varda-vakajarjestaja.model';
+import { OnInit, Input } from '@angular/core';
+import { VardaVakajarjestaja } from '../../../../utilities/models/varda-vakajarjestaja.model';
 import { flatMap } from 'rxjs/operators';
-import {from, Observable, Subject} from 'rxjs';
-import {PaosOikeusTieto, PaosToimintatietoDto, PaosToimipaikkatietoDto} from '../../../../utilities/models/dto/varda-paos-dto';
+import { from, Observable, Subject } from 'rxjs';
+import { PaosOikeusTieto, PaosToimintatietoDto, PaosToimipaikkatietoDto } from '../../../../utilities/models/dto/varda-paos-dto';
 
 export abstract class AbstractPaosListToimintainfoComponent<T extends PaosToimipaikkatietoDto & PaosToimintatietoDto> implements OnInit {
   paosToiminnat: Array<T>;
@@ -57,8 +57,7 @@ export abstract class AbstractPaosListToimintainfoComponent<T extends PaosToimip
     });
   }
 
-  getCurrentTallentajaTranslateKey(paosOikeus: PaosOikeusTieto) {
-    return paosOikeus.tallentaja_organisaatio_oid === this.selectedVakajarjestaja.organisaatio_oid ? 'label.tallentaja' : 'label.katselija';
+  getCurrentTallentajaName(paosOikeus: PaosOikeusTieto, organisaatioNimi: string) {
+    return paosOikeus.tallentaja_organisaatio_oid === this.selectedVakajarjestaja.organisaatio_oid ? this.selectedVakajarjestaja.nimi : organisaatioNimi;
   }
-
 }

@@ -195,7 +195,6 @@ export class VardaReportingComponent implements OnInit {
       'vakajarjestaja',
       'toiminnallisetpainotukset_top',
       'kielipainotukset_top',
-      'ohjaajasuhteet_top',
       'varhaiskasvatussuhteet_top',
       'esiopetussuhteet_top',
       'muutos_pvm',

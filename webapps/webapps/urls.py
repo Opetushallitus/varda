@@ -55,9 +55,6 @@ router.register(r'toiminnallisetpainotukset', viewsets.ToiminnallinenPainotusVie
 router.register(r'kielipainotukset', viewsets.KieliPainotusViewSet)
 router.register(r'hae-henkilo', viewsets.HaeHenkiloViewSet, 'hae-henkilo')
 router.register(r'henkilot', viewsets.HenkiloViewSet)
-router.register(r'tyontekijat', viewsets.TyontekijaViewSet)
-router.register(r'taydennyskoulutukset', viewsets.TaydennyskoulutusViewSet)
-router.register(r'ohjaajasuhteet', viewsets.OhjaajasuhdeViewSet)
 router.register(r'lapset', viewsets.LapsiViewSet)
 router.register(r'maksutiedot', viewsets.MaksutietoViewSet)
 router.register(r'varhaiskasvatuspaatokset', viewsets.VarhaiskasvatuspaatosViewSet)
@@ -97,9 +94,6 @@ nested_toimipaikka_router_1.register(r'toiminnallisetpainotukset', viewsets.Nest
 # /api/v1/toimipaikat/{id}/kielipainotukset/
 nested_toimipaikka_router_2 = nested_routers.NestedSimpleRouter(router, r'toimipaikat', lookup='toimipaikka')
 nested_toimipaikka_router_2.register(r'kielipainotukset', viewsets.NestedKieliPainotusViewSet)
-# /api/v1/toimipaikka/{id}/ohjaajasuhteet/
-nested_toimipaikka_router_3 = nested_routers.NestedSimpleRouter(router, r'toimipaikat', lookup='toimipaikka')
-nested_toimipaikka_router_3.register(r'ohjaajasuhteet', viewsets.NestedOhjaajasuhdeToimipaikkaViewSet)
 # /api/v1/toimipaikka/{id}/varhaiskasvatussuhteet/
 nested_toimipaikka_router_4 = nested_routers.NestedSimpleRouter(router, r'toimipaikat', lookup='toimipaikka')
 nested_toimipaikka_router_4.register(r'varhaiskasvatussuhteet', viewsets.NestedVarhaiskasvatussuhdeToimipaikkaViewSet)
@@ -119,12 +113,6 @@ nested_lapsi_router_3.register(r'kooste', viewsets.NestedLapsiKoosteViewSet)
 # /api/v1/huoltajat/{id}/lapset/
 nested_huoltaja_router = nested_routers.NestedSimpleRouter(router_admin, r'huoltajat', lookup='huoltaja')
 nested_huoltaja_router.register(r'lapset', viewsets.NestedLapsiViewSet)
-# /api/v1/tyontekijat/{id}/ohjaajasuhteet/
-nested_tyontekija_router_1 = nested_routers.NestedSimpleRouter(router, r'tyontekijat', lookup='tyontekija')
-nested_tyontekija_router_1.register(r'ohjaajasuhteet', viewsets.NestedOhjaajasuhdeTyontekijaViewSet)
-# /api/v1/tyontekijat/{id}/taydennyskoulutukset/
-nested_tyontekija_router_2 = nested_routers.NestedSimpleRouter(router, r'tyontekijat', lookup='tyontekija')
-nested_tyontekija_router_2.register(r'taydennyskoulutukset', viewsets.NestedTaydennyskoulutusViewSet)
 # /api/v1/varhaiskasvatuspaatokset/{id}/varhaiskasvatussuhteet/
 nested_varhaiskasvatuspaatos_router = nested_routers.NestedSimpleRouter(router, r'varhaiskasvatuspaatokset', lookup='varhaiskasvatuspaatos')
 nested_varhaiskasvatuspaatos_router.register(r'varhaiskasvatussuhteet', viewsets.NestedVarhaiskasvatussuhdeViewSet)
@@ -175,14 +163,11 @@ urlpatterns = [
     re_path(r'^api/v1/', include(nested_vakajarjestaja_router.urls), name='nested-vakajarjestaja-api-v1'),
     re_path(r'^api/v1/', include(nested_toimipaikka_router_1.urls), name='nested-toimipaikka-1-api-v1'),
     re_path(r'^api/v1/', include(nested_toimipaikka_router_2.urls), name='nested-toimipaikka-2-api-v1'),
-    re_path(r'^api/v1/', include(nested_toimipaikka_router_3.urls), name='nested-toimipaikka-3-api-v1'),
     re_path(r'^api/v1/', include(nested_toimipaikka_router_4.urls), name='nested-toimipaikka-4-api-v1'),
     re_path(r'^api/v1/', include(nested_lapsi_router_1.urls), name='nested-lapsi-1-api-v1'),
     re_path(r'^api/v1/', include(nested_lapsi_router_2.urls), name='nested-lapsi-2-api-v1'),
     re_path(r'^api/v1/', include(nested_lapsi_router_3.urls), name='nested-lapsi-3-api-v1'),
     re_path(r'^api/admin/', include(nested_huoltaja_router.urls), name='nested-huoltaja-admin'),
-    re_path(r'^api/v1/', include(nested_tyontekija_router_1.urls), name='nested-tyontekija-1-api-v1'),
-    re_path(r'^api/v1/', include(nested_tyontekija_router_2.urls), name='nested-tyontekija-2-api-v1'),
     re_path(r'^api/v1/', include(nested_varhaiskasvatuspaatos_router.urls), name='nested-varhaiskasvatuspaatos-api-v1'),
     re_path(r'^api/v1/schema/', schema_view, name='schema-v1'),
     re_path(r'^api-auth/', include('varda.custom_login_urls', namespace='rest_framework'), name='api-auth'),

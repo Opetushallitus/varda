@@ -34,7 +34,7 @@ export class VardaHenkiloService {
         return false;
       }
 
-      if (searchObj.displayTyontekijat && henkilo.tyontekija.length === 0) {
+      if (searchObj.displayTyontekijat && (henkilo.tyontekija === undefined || henkilo.tyontekija.length === 0)) {
         return false;
       }
 

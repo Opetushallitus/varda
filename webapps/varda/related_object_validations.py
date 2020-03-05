@@ -3,8 +3,8 @@ import logging
 
 from collections import namedtuple
 from rest_framework.exceptions import ValidationError
-from varda.models import (VakaJarjestaja, Henkilo, Tyontekija, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-                          Lapsi, Huoltaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet)
+from varda.models import (VakaJarjestaja, Henkilo, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Lapsi, Huoltaja,
+                          Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet)
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -97,35 +97,9 @@ def check_if_user_has_access_to_henkilo(url, user):
         raise ValidationError({"henkilo": ["Invalid hyperlink - Object does not exist.", ]})
 
 
-def check_if_tyontekija_owned_by_user(url, user):
-    model = Tyontekija
-    list_of_url_segments = url.split("/")
-    check_if_url_is_valid(list_of_url_segments, model)
-    check_if_is_owner_of_related_object(list_of_url_segments, user, model)
-
-
 def check_if_huoltaja_is_unique(henkilo_id):
     if Huoltaja.objects.filter(henkilo__id=henkilo_id).exists():
         raise ValidationError({"henkilo": ["Must be unique.", ]})
-
-
-def check_if_unique_within_vakajarjestaja(path, henkilo_id, user):
-    if "tyontekijat" in path:
-        qs = Tyontekija.objects.filter(henkilo=henkilo_id)
-        rooli = 'Tyontekija'
-    elif "huoltajat" in path:
-        qs = Huoltaja.objects.filter(henkilo=henkilo_id)
-        rooli = 'Huoltaja'
-    if qs.filter(changed_by=user).exists():
-        raise ValidationError({'henkilo': [rooli + ' is not unique within vakajarjestaja.', ]})
-
-
-def check_that_huoltaja_and_lapsi_are_different_henkilo(henkilo_id, lapsi_array):
-    for lapsi in lapsi_array:
-        lapsi_id = lapsi.id
-        lapsi_henkilo = Lapsi.objects.get(id=lapsi_id).henkilo.id
-        if lapsi_henkilo == henkilo_id:
-            raise ValidationError({'henkilo': ['Lapsi and Huoltaja are the same Henkilo', ]})
 
 
 def check_if_henkilo_is_changed(path, uusi_henkilo_id, user):
@@ -140,9 +114,7 @@ def check_if_henkilo_is_changed(path, uusi_henkilo_id, user):
     if user.is_superuser:
         pass
     else:
-        if "tyontekijat" in path:
-            nykyinen_henkilo_id = Tyontekija.objects.get(id=rooli_id).henkilo.id
-        elif "huoltajat" in path:
+        if "huoltajat" in path:
             nykyinen_henkilo_id = Huoltaja.objects.get(id=rooli_id).henkilo.id
         elif "lapset" in path:
             nykyinen_henkilo_id = Lapsi.objects.get(id=rooli_id).henkilo.id

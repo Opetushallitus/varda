@@ -129,11 +129,6 @@ class Toimipaikka(models.Model):
         self.changed_by = value
 
     @property
-    def ohjaajasuhteet_top(self):
-        items_to_show = 3
-        return self.ohjaajasuhteet.all().order_by('id')[:items_to_show]
-
-    @property
     def varhaiskasvatussuhteet_top(self):
         items_to_show = 3
         return self.varhaiskasvatussuhteet.all().order_by('id')[:items_to_show]
@@ -314,94 +309,6 @@ class Huoltaja(models.Model):
 
     class Meta:
         verbose_name_plural = "huoltajat"
-
-
-class Tyontekija(models.Model):
-    henkilo = models.ForeignKey(Henkilo, related_name='tyontekijat', on_delete=models.PROTECT)
-    tyosuhde_koodi = models.CharField(max_length=20, blank=False, validators=[validators.validate_tyosuhde_koodi])
-    tyoaika_koodi = models.CharField(max_length=20, blank=False, validators=[validators.validate_tyoaika_koodi])
-    tutkintonimike_koodi = ArrayField(models.CharField(max_length=50, validators=[validators.validate_tutkintonimike_koodi]), blank=False, validators=[validators.validate_arrayfield])
-    alkamis_pvm = models.DateField(blank=False, null=False)
-    paattymis_pvm = models.DateField(default=None, blank=True, null=True)
-    luonti_pvm = models.DateTimeField(auto_now_add=True)
-    muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='tyontekijat', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    def __str__(self):
-        return str(self.id)
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
-
-    @property
-    def ohjaajasuhteet_top(self):
-        items_to_show = 3
-        return self.ohjaajasuhteet.all().order_by('id')[:items_to_show]
-
-    @property
-    def taydennyskoulutukset_top(self):
-        items_to_show = 3
-        return self.taydennyskoulutukset.all().order_by('id')[:items_to_show]
-
-    class Meta:
-        verbose_name_plural = "työntekijät"
-
-
-class Taydennyskoulutus(models.Model):
-    tyontekija = models.ForeignKey(Tyontekija, related_name='taydennyskoulutukset', on_delete=models.PROTECT)
-    tuntimaara = models.DecimalField(max_digits=3, decimal_places=1, blank=False, null=False, validators=[MinValueValidator(0.0)])
-    suoritus_pvm = models.DateField(blank=False, null=False)
-    luonti_pvm = models.DateTimeField(auto_now_add=True)
-    muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='taydennyskoulutukset', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    def __str__(self):
-        return str(self.id)
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
-
-    class Meta:
-        verbose_name_plural = "täydennyskoulutukset"
-
-
-class Ohjaajasuhde(models.Model):
-    tyontekija = models.ForeignKey(Tyontekija, related_name='ohjaajasuhteet', on_delete=models.PROTECT)
-    toimipaikka = models.ForeignKey(Toimipaikka, related_name="ohjaajasuhteet", on_delete=models.PROTECT)
-    tyotehtava_koodi = models.CharField(max_length=50, blank=False, validators=[validators.validate_tyotehtava_koodi])
-    tyoaika_viikossa = models.DecimalField(max_digits=4, decimal_places=1, blank=False, null=False, validators=[MinValueValidator(0.0), MaxValueValidator(100)])
-    alkamis_pvm = models.DateField(blank=False, null=False)
-    paattymis_pvm = models.DateField(default=None, blank=True, null=True)
-    luonti_pvm = models.DateTimeField(auto_now_add=True)
-    muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='ohjaajasuhteet', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    def __str__(self):
-        return str(self.id)
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
-
-    class Meta:
-        verbose_name_plural = "ohjaajasuhteet"
 
 
 class Varhaiskasvatuspaatos(models.Model):

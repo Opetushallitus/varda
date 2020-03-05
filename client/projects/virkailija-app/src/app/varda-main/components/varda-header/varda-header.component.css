@@ -23,25 +23,12 @@
 
 
 .varda-navbar-toimija {
-  flex: 2 1;
+  flex: 4 2 250px;
   display: flex;
   justify-content: flex-start;
   align-items: center;
   margin: 0 0.5em;
-}
-
-.varda-navbar-toimija>label {
-  margin-bottom: 0;
-}
-
-.varda-navbar-toimija>.varda-select {
-  flex: 1 1;
-  min-width: 100px;
-  max-width: 250px;
-}
-
-.varda-navbar-toimija>h1 {
-  margin: 0.45em;
+  overflow-x: hidden;
 }
 
 .varda-navbar-links {

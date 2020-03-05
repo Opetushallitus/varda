@@ -147,15 +147,6 @@ UPDATE varda_toimipaikka SET paattymis_pvm = date(paattymis_pvm + trunc(random()
 
 
 
--- Table: varda_tyontekija
--- Columns: alkamis_pvm, paattymis_pvm
-
--- alkamis_pvm (subtract random number of days 0 - 365 from the existing date)
-UPDATE varda_tyontekija SET alkamis_pvm = date(alkamis_pvm - trunc(random() * 365) * '1 day'::interval * random()) WHERE alkamis_pvm IS NOT NULL;
-
-
--- paattymis_pvm (add random number of days 0 - 365 to the existing date)
-UPDATE varda_tyontekija SET paattymis_pvm = date(paattymis_pvm + trunc(random() * 365) * '1 day'::interval * random()) WHERE paattymis_pvm IS NOT NULL;
 
 
 
@@ -215,12 +206,6 @@ UPDATE varda_historicaltoimipaikka
 SET nimi = t.nimi, nimi_sv = t.nimi_sv, kayntiosoite = t.kayntiosoite, kayntiosoite_postinumero = t.kayntiosoite_postinumero, kayntiosoite_postitoimipaikka = t.kayntiosoite_postitoimipaikka, postiosoite = t.postiosoite, postinumero = t.postinumero, postitoimipaikka = t.postitoimipaikka, puhelinnumero = t.puhelinnumero, sahkopostiosoite = t.sahkopostiosoite
 FROM varda_toimipaikka t
 WHERE varda_historicaltoimipaikka.id = t.id;
-
--- Table: varda_historicaltyontekija
-UPDATE varda_historicaltyontekija
-SET alkamis_pvm = t.alkamis_pvm, paattymis_pvm = t.paattymis_pvm
-FROM varda_tyontekija t
-WHERE varda_historicaltyontekija.id = t.id;
 
 -- Table: varda_historicalvakajarjestaja
 UPDATE varda_historicalvakajarjestaja
