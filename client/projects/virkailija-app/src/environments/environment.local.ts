@@ -9,8 +9,8 @@ const vardaAppUrl = 'http://localhost:8000';
 const vardaFrontendUrl = 'http://localhost:4200';
 // Below variables are only for test environment / production use
 const virkailijaOpintopolkuUrl = '';
-const virkailijaTestiOpintopolkuUrl = '';
-const virkailijaRaamitScriptPath = '';
+const virkailijaTestiOpintopolkuUrl = 'https://virkailija.testiopintopolku.fi';
+const virkailijaRaamitScriptPath = '/virkailija-raamit/apply-raamit.js';
 
 export const environment = {
   vardaApiKeyUrl,

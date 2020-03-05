@@ -1,6 +1,14 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+## [1.3.7] (05.03.2020)
+- CSCVARDA-1530: Järjestämismuodot koodiarvon mukaiseen järjestykseen
+- CSCVARDA-1537: Paos-hallinnan kunnat ja toimipaikat aakkosjärjestykseen
+- CSCVARDA-1538: Paos-hallinnassa lisättyihin kuntiin haku-toiminto
+- CSCVARDA-1563: Paos-hallinnan toimipaikat päivittyvät syötä tietoja näkymään saman tien
+- CSCVARDA-1563: Paos-hallinnan tallentaja toimija paremmin näkyviin
+- CSCVARDA-1577: Lapsi lomakkeen parannuksia
+
 ## [1.3.6] (28.02.2020)
 - CSCVARDA-1296: PAOS lapsen merkintätapa
 - CSCVARDA-1557: Hae ja muokkaa näkymän hae nappulan toiminnallisuuden parantaminen

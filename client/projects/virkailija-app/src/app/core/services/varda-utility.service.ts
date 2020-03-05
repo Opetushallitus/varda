@@ -1,6 +1,6 @@
-import {Injectable} from '@angular/core';
-import {VardaFieldSet} from '../../utilities/models';
-import {environment} from '../../../environments/environment';
+import { Injectable } from '@angular/core';
+import { VardaFieldSet } from '../../utilities/models';
+import { environment } from '../../../environments/environment';
 
 @Injectable()
 export class VardaUtilityService {
@@ -24,15 +24,13 @@ export class VardaUtilityService {
 
   getVirkailijaRaamitUrl(locationHostname: string): string {
     let rv;
-    const hostname = locationHostname;
-    const domain = this.splitHostname(hostname);
+    const domain = this.splitHostname(locationHostname);
     if (domain === 'opintopolku') {
       rv = `${environment.virkailijaOpintopolkuUrl}${environment.virkailijaRaamitScriptPath}`;
-    } else if (domain === 'testiopintopolku') {
+    } else if (domain === 'testiopintopolku' || locationHostname === "localhost") {
       rv = `${environment.virkailijaTestiOpintopolkuUrl}${environment.virkailijaRaamitScriptPath}`;
-    } else {
-      rv = null;
     }
+
     return rv;
   }
 

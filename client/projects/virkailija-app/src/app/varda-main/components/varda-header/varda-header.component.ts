@@ -1,11 +1,11 @@
-import {AfterViewInit, ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
-import {AuthService} from '../../../core/auth/auth.service';
-import {NavigationEnd, Router} from '@angular/router';
-import {VardaVakajarjestajaService} from '../../../core/services/varda-vakajarjestaja.service';
-import {VardaKayttooikeusRoles, VardaVakajarjestajaUi} from '../../../utilities/models';
-import {environment} from '../../../../environments/environment';
-import {VardaUtilityService} from '../../../core/services/varda-utility.service';
-import {LoginService} from 'varda-shared';
+import { AfterViewInit, ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
+import { AuthService } from '../../../core/auth/auth.service';
+import { NavigationEnd, Router } from '@angular/router';
+import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
+import { VardaKayttooikeusRoles, VardaVakajarjestajaUi } from '../../../utilities/models';
+import { environment } from '../../../../environments/environment';
+import { VardaUtilityService } from '../../../core/services/varda-utility.service';
+import { LoginService } from 'varda-shared';
 
 declare var $: any;
 
@@ -44,56 +44,54 @@ export class VardaHeaderComponent implements OnInit, AfterViewInit {
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private ref: ChangeDetectorRef,
     private vardaUtilityService: VardaUtilityService) {
-      this.ui = {isLoading: false};
-      this.router.events.subscribe((s) => {
+    this.ui = { isLoading: false };
+    this.router.events.subscribe((s) => {
 
-        let activeNavItemStr = '';
-        if (s instanceof NavigationEnd) {
-          const url = s.url;
-          const urlParts = url.split('/');
+      let activeNavItemStr = '';
+      if (s instanceof NavigationEnd) {
+        const url = s.url;
+        const urlParts = url.split('/');
 
-          if (url === '/') {
-            activeNavItemStr = 'toimipaikatjalapset';
-          } else if (url === '/vakatoimija') {
-            activeNavItemStr = 'vakatoimija';
-          } else if (url === '/haku') {
-            activeNavItemStr = 'haku';
-          } else if (url === '/tietojen-katselu') {
-            activeNavItemStr = 'tietojen-katselu';
-          } else if (url === '/ohjeet') {
-            activeNavItemStr = 'ohjeet';
-          }
-
-          if (urlParts && urlParts[1] === 'ohjeet' && urlParts.length === 3) {
-            activeNavItemStr = 'ohjeet';
-          }
-
-          this.setActiveNavItem(activeNavItemStr);
+        if (url === '/') {
+          activeNavItemStr = 'toimipaikatjalapset';
+        } else if (url === '/vakatoimija') {
+          activeNavItemStr = 'vakatoimija';
+        } else if (url === '/haku') {
+          activeNavItemStr = 'haku';
+        } else if (url === '/tietojen-katselu') {
+          activeNavItemStr = 'tietojen-katselu';
+        } else if (url === '/ohjeet') {
+          activeNavItemStr = 'ohjeet';
         }
-      });
 
-      this.vardaVakajarjestajaService.getSelectedVakajarjestajaObs().subscribe((data) => {
-        this.selectedVakajarjestaja = data.vakajarjestaja;
-      });
-
-      this.vardaVakajarjestajaService.getVakajarjestajatObs().subscribe(() => {
-        this.vakajarjestajat = this.vardaVakajarjestajaService.getVakajarjestajat();
-        try {
-          this.vakajarjestajat.sort(this.sortVakajarjestajatByNimi);
-        } catch (e) {
-          console.log('Error on vakajarjestajat sorting', e);
+        if (urlParts && urlParts[1] === 'ohjeet' && urlParts.length === 3) {
+          activeNavItemStr = 'ohjeet';
         }
-      });
 
-      this.authService.loggedInUserKayttooikeudetSubject.asObservable().subscribe(() => {
-        this.initKayttooikeudet();
-        this.ui.isLoading = false;
-      });
+        this.setActiveNavItem(activeNavItemStr);
+      }
+    });
 
-      this.virkailijaRaamit = environment.virkailijaRaamitScriptPath ? true : false;
+    this.vardaVakajarjestajaService.getSelectedVakajarjestajaObs().subscribe((data) => {
+      this.selectedVakajarjestaja = data.vakajarjestaja;
+    });
+
+    this.vardaVakajarjestajaService.getVakajarjestajatObs().subscribe(() => {
+      this.vakajarjestajat = this.vardaVakajarjestajaService.getVakajarjestajat();
+      try {
+        this.vakajarjestajat.sort(this.sortVakajarjestajatByNimi);
+      } catch (e) {
+        console.log('Error on vakajarjestajat sorting', e);
+      }
+    });
+
+    this.authService.loggedInUserKayttooikeudetSubject.asObservable().subscribe(() => {
+      this.initKayttooikeudet();
+      this.ui.isLoading = false;
+    });
   }
 
-  changeVakajarjestaja(selectedVakajarjestaja:VardaVakajarjestajaUi): void {
+  changeVakajarjestaja(selectedVakajarjestaja: VardaVakajarjestajaUi): void {
     this.vardaVakajarjestajaService.setSelectedVakajarjestaja(selectedVakajarjestaja, true);
   }
 
@@ -121,7 +119,7 @@ export class VardaHeaderComponent implements OnInit, AfterViewInit {
 
   logout(): void {
     this.loginService.logout(environment.vardaAppUrl, 'varda');
-    this.router.navigate(['/login'], {skipLocationChange: true});
+    this.router.navigate(['/login'], { skipLocationChange: true });
   }
 
   moveToToimipaikkaSelector(e: any): void {
@@ -162,7 +160,7 @@ export class VardaHeaderComponent implements OnInit, AfterViewInit {
     setTimeout(() => {
       try {
         this.loggedInUserUsername = this.loginService.getUsername();
-      } catch (e) {}
+      } catch (e) { }
     }, 3000);
 
     this.$siteTitle = $('#siteTitle');
@@ -187,16 +185,18 @@ export class VardaHeaderComponent implements OnInit, AfterViewInit {
 
   ngOnInit() {
     this.ui.isLoading = true;
-    if (environment.production) {
-      const virkailijaRaamitUrl = this.vardaUtilityService.getVirkailijaRaamitUrl(window.location.hostname);
-      if (virkailijaRaamitUrl) {
-        const node = document.createElement('script');
-        node.src = virkailijaRaamitUrl;
-        node.type = 'text/javascript';
-        node.async = true;
-        node.charset = 'utf-8';
-        document.getElementsByTagName('head')[0].appendChild(node);
-      }
+    const virkailijaRaamitUrl = this.vardaUtilityService.getVirkailijaRaamitUrl(window.location.hostname);
+    if (virkailijaRaamitUrl) {
+      this.virkailijaRaamit = true;
+      const node = document.createElement('script');
+      node.src = virkailijaRaamitUrl;
+      node.type = 'text/javascript';
+      node.async = true;
+      node.charset = 'utf-8';
+      document.getElementsByTagName('head')[0].appendChild(node)
+
+      if (!window.location.hostname.includes('opintopolku.fi'))
+        setTimeout(() => window.document.dispatchEvent(new Event('DOMContentLoaded')), 500)
     }
   }
 
