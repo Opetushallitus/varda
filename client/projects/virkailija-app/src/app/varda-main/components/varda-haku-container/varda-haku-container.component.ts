@@ -3,7 +3,7 @@ import { HenkilohakuResultDTO, HenkilohakuSearchDTO, HenkilohakuType, FilterStat
 import { VardaApiService } from '../../../core/services/varda-api.service';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
 import { TranslateService } from '@ngx-translate/core';
-import { VardaPageDto } from '../../../utilities/models/dto/varda-page-dto';
+import {VardaPageDto} from '../../../utilities/models/dto/varda-page-dto';
 
 @Component({
   selector: 'app-varda-haku-container',
@@ -60,6 +60,8 @@ export class VardaHakuContainerComponent implements OnInit {
     this.vardaApiService.getHenkilohaku(this.vakajarjestajaId, this.lastSearchDto, searchLink)
       .subscribe({
         next: searchresult => {
+          const henkilohakuResults = searchresult.results;
+          henkilohakuResults.forEach(henkiloHakuResult => henkiloHakuResult.henkilo.lapsi = [henkiloHakuResult.url]);
           this.searchResult = searchresult;
           this.prevSearchLink = searchresult.previous;
           this.nextSearchLink = searchresult.next;

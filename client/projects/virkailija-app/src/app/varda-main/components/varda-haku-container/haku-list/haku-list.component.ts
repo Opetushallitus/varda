@@ -20,7 +20,7 @@ class HenkiloHakuResultWithToimipaikka {
   styleUrls: ['./haku-list.component.css']
 })
 export class HakuListComponent implements OnInit, OnChanges {
-  @Input() searchResult: Array<HenkilohakuResultDTO>;
+  @Input() searchResult: VardaPageDto<HenkilohakuResultDTO>;
   resultCount: number;
   searchResultByToimipaikka: Array<HenkiloHakuResultWithToimipaikka>;
   henkiloFormOpen: boolean;
@@ -56,7 +56,9 @@ export class HakuListComponent implements OnInit, OnChanges {
   }
 
   flatmapSearchResults(searchResult: VardaPageDto<HenkilohakuResultDTO>): Array<HenkiloHakuResultWithToimipaikka> {
-    if(!searchResult) return null;
+    if (!searchResult) {
+      return null;
+    }
 
     const flatMap = (mapFunc, array) =>
       array.reduce((acc, value) =>

@@ -20,7 +20,7 @@ Preserve the order of the tables (to keep the logical structure coherent):
 
 
 class VakaJarjestaja(models.Model):
-    nimi = models.CharField(max_length=100, blank=False)
+    nimi = models.CharField(max_length=400, blank=False)
     y_tunnus = models.CharField(max_length=20, unique=False, validators=[validators.validate_y_tunnus])
     organisaatio_oid = models.CharField(max_length=50, unique=True, blank=True, null=True, validators=[validators.validate_organisaatio_oid])
     kunta_koodi = models.CharField(max_length=20, blank=False, validators=[validators.validate_kunta_koodi])

@@ -865,6 +865,9 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
         this.ui.saveBtnText = 'label.generic-update';
 
         this.henkilo = changes.henkilo.currentValue;
+        if (this.henkilo.lapsi && this.henkilo.lapsi.length > 1) {
+          console.error('Multiple children on lapsi-form. This causes race condition. Using the first one.', this.henkilo.lapsi);
+        }
 
         forkJoin([
           this.initExistingLapsiFormData(this.henkilo.lapsi[0]),
