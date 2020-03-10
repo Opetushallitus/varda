@@ -61,7 +61,7 @@ export class ToimipaikkaFormPage {
     paatos_alkamis_pvm = element(by.id('alkamis_pvmvarhaiskasvatuspaatos_hakemusjapaatostiedot0')).all(by.css('div')).first().all(by.css('div')).first().all(by.css('input')).first();
     paatos_paattymis_pvm = element(by.id('paattymis_pvmvarhaiskasvatuspaatos_hakemusjapaatostiedot0')).all(by.css('div')).first().all(by.css('div')).first().all(by.css('input')).first();
     suhde_alkamis_pvm = element(by.id('alkamis_pvmvarhaiskasvatussuhde_perustiedot0')).all(by.css('div')).first().all(by.css('div')).first().all(by.css('input')).first();
-    suhde_paattymis_pvm = element(by.id('paattymis_pvmvarhaiskasvatussuhde_perustiedot0')).all(by.css('div')).first().all(by.css('div')).first().all(by.css('input')).first(); 
+    suhde_paattymis_pvm = element(by.id('paattymis_pvmvarhaiskasvatussuhde_perustiedot0')).all(by.css('div')).first().all(by.css('div')).first().all(by.css('input')).first();
 
     // Muokkaa lapsi toimipaikkaan form buttons
     savePaatosBtn = element(by.id('saveVarhaiskasvatuspaatosBtnWrapper0')).all(by.css('div')).first().all(by.css('button')).first();

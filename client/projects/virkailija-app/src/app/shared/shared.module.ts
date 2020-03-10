@@ -5,20 +5,18 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MyDatePickerModule } from 'mydatepicker';
 import { TranslateModule } from '@ngx-translate/core';
 import { NgcCookieConsentModule, NgcCookieConsentConfig } from 'ngx-cookieconsent';
-import {
-  MatButtonModule,
-  MatCheckboxModule,
-  MatStepperModule,
-  MatFormFieldModule,
-  MatInputModule,
-  MatIconModule,
-  MatExpansionModule,
-  MatRadioModule,
-  MatAutocompleteModule,
-  MatListModule,
-  MatCardModule,
-  MatMenuModule
-} from '@angular/material';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatListModule } from '@angular/material/list';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatRadioModule } from '@angular/material/radio';
+import { MatStepperModule } from '@angular/material/stepper';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import {
   PageNotFoundComponent,

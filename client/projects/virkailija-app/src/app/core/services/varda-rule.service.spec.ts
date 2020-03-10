@@ -11,7 +11,7 @@ describe('VardaRuleService', () => {
       providers: [VardaRuleService]
     });
 
-    vardaRuleService = TestBed.get(VardaRuleService);
+    vardaRuleService = TestBed.inject<VardaRuleService>(VardaRuleService);
   });
 
   it('Should return if field has boolean values', () => {

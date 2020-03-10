@@ -1,7 +1,7 @@
 import {Component, ElementRef, Input, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
 import {HuoltajaDTO, VardaCreateMaksutietoDTO, VardaMaksutietoDTO} from '../../../../utilities/models/dto/varda-maksutieto-dto.model';
-import {MatExpansionPanel} from '@angular/material';
+import { MatExpansionPanel } from '@angular/material/expansion';
 import {VardaFieldSet, VardaFieldsetArrayContainer} from '../../../../utilities/models/varda-fieldset.model';
 import {VardaApiWrapperService} from '../../../../core/services/varda-api-wrapper.service';
 import {VardaFormService} from '../../../../core/services/varda-form.service';
@@ -26,7 +26,7 @@ export class MaksutiedotFormComponent implements OnInit {
   @ViewChildren('maksutietoPanels') maksutietoPanels: QueryList<MatExpansionPanel>;
   @ViewChildren('maksutietoCancelDeleteBtn') maksutietoCancelDeleteButtons: QueryList<HTMLButtonElement>;
   @ViewChildren('recurringMaksutietoEntityHeader') recurringMaksutietoEntityHeader: QueryList<HTMLDivElement>;
-  @ViewChild('notificationContainer', { static: false }) notificationContainer: ElementRef<HTMLDivElement>;
+  @ViewChild('notificationContainer') notificationContainer: ElementRef<HTMLDivElement>;
 
   maksutiedotFormGroup: FormGroup;
   ui: {
@@ -146,11 +146,11 @@ export class MaksutiedotFormComponent implements OnInit {
   onExpansionPanelClick($event: Event, index: number): void {
     const entity = this.maksutiedot[index];
     this.ui.openedMaksutietoIndex = index;
-    this.preventClosingForUnsavedEntity(entity, this.maksutietoPanels, index);
+    this.preventClosingForUnsavedEntity($event, entity, this.maksutietoPanels, index);
   }
 
   // Stops from closing unsaved maksutieto form (unless other one is opened explicitly)
-  preventClosingForUnsavedEntity(entity: VardaMaksutietoDTO, panels: any, index: number) {
+  preventClosingForUnsavedEntity(event: Event, entity: VardaMaksutietoDTO, panels: any, index: number) {
     if (!entity || !entity.id) {
       event.stopPropagation();
       const currentPanels = panels.toArray();

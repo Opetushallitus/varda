@@ -21,7 +21,7 @@ describe('AppComponent', () => {
       ]
     }).compileComponents();
 
-    translateService = TestBed.get(TranslateService);
+    translateService = TestBed.inject<TranslateService>(TranslateService);
   }));
 
   it('should create the app', () => {

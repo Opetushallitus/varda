@@ -13,11 +13,11 @@ describe('HttpService', () => {
         {provide: HttpClient, useValue: {}}
       ]
     });
-    httpService = TestBed.get(HttpService);
+    httpService = TestBed.inject<HttpService>(HttpService);
   });
 
   it('should be created', () => {
-    const service: HttpService = TestBed.get(HttpService);
+    const service: HttpService = TestBed.inject<HttpService>(HttpService);
     expect(service).toBeTruthy();
   });
 

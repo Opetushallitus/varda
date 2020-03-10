@@ -1,11 +1,15 @@
 import { Injectable } from '@angular/core';
-import { VardaLapsiDTO, VardaToimipaikkaDTO, VardaVakajarjestaja, VardaVakajarjestajaUi,
-  VardaVarhaiskasvatussuhdeDTO } from '../../utilities/models';
+import {
+  VardaLapsiDTO, VardaToimipaikkaDTO, VardaVakajarjestaja, VardaVakajarjestajaUi,
+  VardaVarhaiskasvatussuhdeDTO
+} from '../../utilities/models';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
 import { VardaToimipaikkaMinimalDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
-import {deprecate} from 'util';
+import { deprecate } from 'util';
 import { LapsiByToimipaikkaDTO } from '../../utilities/models/dto/varda-henkilohaku-dto.model';
+import { SaveAccess } from '../../utilities/models/varda-user-access.model';
+import { VakajarjestajaToimipaikat } from '../../utilities/models/varda-vakajarjestaja-toimipaikat.model';
 
 @Injectable()
 export class VardaVakajarjestajaService {
@@ -20,6 +24,7 @@ export class VardaVakajarjestajaService {
   toimipaikat: Array<VardaToimipaikkaDTO>;
   tallentajaToimipaikatSubject = new Subject<Array<VardaToimipaikkaDTO>>();
   toimipaikkaVarhaiskasvatussuhteet: Array<VardaVarhaiskasvatussuhdeDTO>;
+  private selectedVakajarjestajaToimipaikat: VakajarjestajaToimipaikat;
   private selectedToimipaikkaOid = new BehaviorSubject<string>(null);
 
   constructor() { }
@@ -72,14 +77,14 @@ export class VardaVakajarjestajaService {
   }
 
   setSelectedVakajarjestajaSubject(vakajarjestaja: VardaVakajarjestajaUi, onVakajarjestajaChange?: boolean) {
-    this.selectedVakajarjestajaSubject.next({vakajarjestaja: vakajarjestaja, onVakajarjestajaChange: onVakajarjestajaChange});
+    this.selectedVakajarjestajaSubject.next({ vakajarjestaja: vakajarjestaja, onVakajarjestajaChange: onVakajarjestajaChange });
   }
 
   getSelectedVakajarjestajaObs(): Observable<any> {
     return this.selectedVakajarjestajaSubject.asObservable();
   }
 
-  getToimipaikat():  Array<VardaToimipaikkaDTO> {
+  getToimipaikat(): Array<VardaToimipaikkaDTO> {
     return this.toimipaikat;
   }
 
@@ -87,7 +92,21 @@ export class VardaVakajarjestajaService {
     this.toimipaikat = toimipaikat;
     if (authService) {
       this.setTallentajaToimipaikat(toimipaikat, authService);
+      this.setVakajarjestajaToimipaikat(toimipaikat, authService)
     }
+  }
+
+  setVakajarjestajaToimipaikat(toimipaikat: Array<VardaToimipaikkaMinimalDto>, authService: AuthService): void {
+    this.selectedVakajarjestajaToimipaikat = {
+      allToimipaikat: toimipaikat,
+      toimipaikat: toimipaikat,
+      katselijaToimipaikat: authService.getAuthorizedToimipaikat(toimipaikat),
+      tallentajaToimipaikat: authService.getAuthorizedToimipaikat(toimipaikat, SaveAccess.kaikki)
+    }
+  }
+
+  getVakajarjestajaToimipaikat(): VakajarjestajaToimipaikat {
+    return this.selectedVakajarjestajaToimipaikat;
   }
 
   /**

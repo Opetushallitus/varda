@@ -13,7 +13,7 @@ describe('VardaHenkiloService', () => {
       providers: [VardaHenkiloService]
     });
 
-    vardaHenkiloService = TestBed.get(VardaHenkiloService);
+    vardaHenkiloService = TestBed.inject<VardaHenkiloService>(VardaHenkiloService);
   });
 
   it('Should create henkiloSearchConfiguration object by search value and active filter', () => {

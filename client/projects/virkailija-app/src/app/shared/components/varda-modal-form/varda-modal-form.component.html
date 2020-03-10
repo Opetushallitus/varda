@@ -5,33 +5,40 @@
      role="dialog"
      [attr.aria-labelledby]="'vardaModalTitleLabel' + identifier"
      [attr.aria-hidden]="true">
-  <div class="modal-dialog" [ngClass]="{'modal-lg': isLg, 'modal-xl': isXl}" role="document">
-      <div class="modal-content varda-modal-content" appHighContrast>
-<!--        Can't ngIf openModal here because ng-content doens't by design reload the content -->
-        <ng-content></ng-content>
-      </div>
+  <div class="modal-dialog"
+       [ngClass]="{'modal-lg': isLg, 'modal-xl': isXl}"
+       role="document">
+    <div class="modal-content varda-modal-content"
+         appHighContrast>
+      <!-- ng-content needs to be visible on construct, so initial *ngIf="false" is invalid -->
+      <ng-content *ngIf="!showPrompt"></ng-content>
     </div>
-</div>
-<div [id]="'vardaPromptModal' + identifier"
-     *ngIf="showPrompt"
-     #vardaPromptModal
-     class="varda-prompt-modal"
-     role="alertdialog"
-     aria-describedby="vardaPromptModalDesc">
-  <div class="varda-prompt-modal-content">
-    <div><h2 id="vardaPromptModalDesc">{{'generic-modal-exit-prompt' | translate}}</h2></div>
-    <div class="varda-prompt-modal-btn-wrapper">
+  </div>
+  <div [id]="'vardaPromptModal' + identifier"
+       *ngIf="showPrompt"
+       #vardaPromptModal
+       class="varda-prompt-modal"
+       role="alertdialog"
+       aria-describedby="vardaPromptModalDesc">
+    <div class="varda-prompt-modal-content">
       <div>
-        <button class="varda-button varda-button-neutral prompt-no" id="vardaPromptModalStay"
-                (click)="stayOnForm()"
-                (keydown.tab)="moveToLeave($event)"
-                (keydown.shift.tab)="moveToLeave($event)">{{'label.cancel' | translate}}</button>
+        <h2 id="vardaPromptModalDesc">{{'generic-modal-exit-prompt' | translate}}</h2>
       </div>
-      <div>
-        <button class="varda-button varda-button-neutral prompt-yes" id="vardaPromptModalLeave"
-                (click)="leaveFormByPrompt()"
-                (keydown.tab)="moveToCancel($event)"
-                (keydown.shift.tab)="moveToCancel($event)">{{'label.leave-form' | translate}}</button>
+      <div class="varda-prompt-modal-btn-wrapper">
+        <div>
+          <button class="varda-button varda-button-neutral prompt-no"
+                  id="vardaPromptModalStay"
+                  (click)="stayOnForm()"
+                  (keydown.tab)="moveToLeave($event)"
+                  (keydown.shift.tab)="moveToLeave($event)">{{'label.cancel' | translate}}</button>
+        </div>
+        <div>
+          <button class="varda-button varda-button-neutral prompt-yes"
+                  id="vardaPromptModalLeave"
+                  (click)="leaveFormByPrompt()"
+                  (keydown.tab)="moveToCancel($event)"
+                  (keydown.shift.tab)="moveToCancel($event)">{{'label.leave-form' | translate}}</button>
+        </div>
       </div>
     </div>
   </div>

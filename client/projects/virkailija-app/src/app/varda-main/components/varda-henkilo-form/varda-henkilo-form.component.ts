@@ -1,7 +1,7 @@
 import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, ElementRef} from '@angular/core';
 import {VardaEntityNames, VardaHenkiloDTO, VardaToimipaikkaDTO} from '../../../utilities/models';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
-import {MatStepper} from '@angular/material';
+import { MatStepper } from '@angular/material/stepper';
 import {VardaHenkiloService} from '../../services/varda-henkilo.service';
 import {VardaApiWrapperService} from '../../../core/services/varda-api-wrapper.service';
 import {VardaModalService} from '../../../core/services/varda-modal.service';
@@ -27,7 +27,7 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
   @Output() deleteLapsi: EventEmitter<any> = new EventEmitter<any>();
   @Output() closeHenkiloForm: EventEmitter<any> = new EventEmitter<any>();
   @Output() valuesChanged: EventEmitter<any> = new EventEmitter();
-  @ViewChild('henkiloStepper', { static: false }) henkiloStepper: MatStepper;
+  @ViewChild('henkiloStepper') henkiloStepper: MatStepper;
   @ViewChild('formContent', { static: true }) formContent: ElementRef;
 
   currentHenkilo: VardaHenkiloDTO;

@@ -44,8 +44,8 @@ describe('VardaApiWrapperService', () => {
         HttpHandler
       ]
     });
-    vardaApiWrapperService = TestBed.get(VardaApiWrapperService);
-    vardaApiService = TestBed.get(VardaApiService);
+    vardaApiWrapperService = TestBed.inject<VardaApiWrapperService>(VardaApiWrapperService);
+    vardaApiService = TestBed.inject<VardaApiService>(VardaApiService);
 
     createHenkiloByHenkiloDetailsSpy = spyOn(vardaApiService, 'createHenkilo').and.returnValue({});
     createVarhaiskasvatussuhdeSpy = spyOn(vardaApiService, 'createVarhaiskasvatussuhde').and.returnValue({});

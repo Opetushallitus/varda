@@ -28,7 +28,7 @@ describe('LoginService', () => {
         }
         ]
     });
-    loginService = TestBed.get(LoginService);
+    loginService = TestBed.inject<LoginService>(LoginService);
     validTokenObj = JSON.stringify({token: '123918687ec3462b4a35d0c5c6da0dbeedf3', expiryTime: loginService.createExpiryTime()});
     expiredTokenObj = JSON.stringify({token: '123afdasfdsadf2b4a35d0c5c6da0dbeedf3', expiryTime: moment().subtract(1, 'd')});
   });

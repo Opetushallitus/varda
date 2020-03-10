@@ -12,7 +12,7 @@ import {
   ViewChildren
 } from '@angular/core';
 import { FormArray, FormControl, FormGroup } from '@angular/forms';
-import { MatStepper } from '@angular/material';
+import { MatStepper } from '@angular/material/stepper';
 import {
   VardaEntityNames,
   VardaFieldSet,
@@ -53,7 +53,7 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   @Output() updateLapsi: EventEmitter<any> = new EventEmitter();
   @Output() deleteLapsi: EventEmitter<any> = new EventEmitter();
   @Output() valuesChanged: EventEmitter<any> = new EventEmitter();
-  @ViewChild('lapsiStepper', { static: false }) lapsiStepper: MatStepper;
+  @ViewChild('lapsiStepper') lapsiStepper: MatStepper;
   @ViewChildren('varhaiskasvatuspaatosPanels') varhaiskasvatuspaatosPanels: any;
   @ViewChildren('varhaiskasvatussuhdePanels') varhaiskasvatussuhdePanels: any;
 
@@ -842,16 +842,16 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
     this.ui.lapsiFormSaveSuccess = false;
     if (entityName === VardaEntityNames.VARHAISKASVATUSPAATOS) {
       this.ui.openedVarhaiskasvatuspaatosIndex = index;
-      this.preventClosingForUnsavedEntity(entity, this.varhaiskasvatuspaatosPanels, index);
+      this.preventClosingForUnsavedEntity($event, entity, this.varhaiskasvatuspaatosPanels, index);
     } else if (entityName === VardaEntityNames.VARHAISKASVATUSSUHDE) {
       this.ui.openedVarhaiskasvatussuhdeIndex = index;
-      this.preventClosingForUnsavedEntity(entity, this.varhaiskasvatussuhdePanels, index);
+      this.preventClosingForUnsavedEntity($event, entity, this.varhaiskasvatussuhdePanels, index);
     }
   }
 
-  preventClosingForUnsavedEntity(entity: any, panels: any, index: number) {
+  preventClosingForUnsavedEntity($event: Event, entity: any, panels: any, index: number) {
     if (!entity) {
-      event.stopPropagation();
+      $event.stopPropagation();
       const currentPanels = panels.toArray();
       currentPanels[index].open();
     }

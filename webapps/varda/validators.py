@@ -3,7 +3,21 @@ import ipaddress
 import re
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from rest_framework.exceptions import ValidationError as ValidationErrorRest
+
+"""
+Taken from:
+https://github.com/Opetushallitus/organisaatio/blob/e708e36bf5d053b4d461257cbedc11420496befd/organisaatio-service/src/main/java/fi/vm/sade/organisaatio/model/Email.java#L37
+
+With an exception: domain name must start with [A-Za-z0-9]
+"""
+email_regex = ('^[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+(\\.[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+)*@[A-Za-z0-9][A-Za-z0-9-]+'
+               '(\\.[A-Za-z0-9-]+)*(\\.[A-Za-z]{2,})$')
+
+
+def validate_email(email):
+    RegexValidator(regex=email_regex, message=email + ' : Not a valid email address.')(email)
 
 
 def validate_henkilotunnus_or_oid_needed(validated_data):

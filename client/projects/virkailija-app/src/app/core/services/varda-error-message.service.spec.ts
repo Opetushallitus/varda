@@ -5,15 +5,15 @@ import { VardaErrorMessageService } from './varda-error-message.service';
 describe('VardaErrorMessageService', () => {
 
   let vardaErrorMessageService: VardaErrorMessageService;
-  let mockHttpErrorMessageObj = {error: {"kunta_koodi":["1231231231231 : Not a valid kunta_koodi."],
-  "puhelinnumero":["+311123123 : Not a valid Finnish phone number."]}};
+  const mockHttpErrorMessageObj = {error: {'kunta_koodi': ['1231231231231 : Not a valid kunta_koodi.'],
+  'puhelinnumero': ['+311123123 : Not a valid Finnish phone number.']}};
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [VardaErrorMessageService]
     });
 
-    vardaErrorMessageService = TestBed.get(VardaErrorMessageService);
+    vardaErrorMessageService = TestBed.inject<VardaErrorMessageService>(VardaErrorMessageService);
   });
 
   it('Should return error message object that has array of errormessages', () => {

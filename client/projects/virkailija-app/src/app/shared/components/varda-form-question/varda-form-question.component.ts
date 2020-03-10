@@ -151,7 +151,7 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
 
   onSelectValueChange($event: Event, field: VardaField) {
     // Does not take account the case if effected fields are disabled but the modifying field is changeable.
-    const target = <HTMLInputElement>event.target;
+    const target = <HTMLInputElement>$event.target;
     if (field.rules && field.rules.modifyExternalFields) {
       const dependentFields = Object.keys(field.rules.modifyExternalFields);
       dependentFields.forEach(dependentField => {

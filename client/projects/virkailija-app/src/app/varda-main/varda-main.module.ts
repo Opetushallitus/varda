@@ -34,7 +34,7 @@ import { ToimipaikanLapsetVakapaatoksetComponent } from './components/varda-repo
 import { ToimipaikanLapsetVakasuhteetComponent } from './components/varda-reporting/toimipaikan-lapset/toimipaikan-lapset-vakasuhteet/toimipaikan-lapset-vakasuhteet.component';
 import { ToimipaikanLapsetMaksutiedotComponent } from './components/varda-reporting/toimipaikan-lapset/toimipaikan-lapset-maksutiedot/toimipaikan-lapset-maksutiedot.component';
 import { YhteenvetoComponent } from './components/varda-reporting/yhteenveto/yhteenveto.component';
-import { MatTableModule } from '@angular/material';
+import { MatTableModule } from '@angular/material/table';
 import { MaksutiedotFormComponent } from './components/varda-lapsi-form/maksutiedot-form/maksutiedot-form.component';
 import { HuoltajatContainerComponent } from './components/varda-lapsi-form/huoltajat-container/huoltajat-container.component';
 import { VardaHakuContainerComponent } from './components/varda-haku-container/varda-haku-container.component';

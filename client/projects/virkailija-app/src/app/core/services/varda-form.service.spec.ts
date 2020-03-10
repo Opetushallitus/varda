@@ -39,7 +39,7 @@ describe('VardaFormService', () => {
         VardaDateService
       ]
     });
-    vardaFormService = TestBed.get(VardaFormService);
+    vardaFormService = TestBed.inject<VardaFormService>(VardaFormService);
     documentQuerySelectorSpy = spyOn(document, 'querySelector');
   });
 

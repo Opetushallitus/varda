@@ -3,7 +3,7 @@ import logging
 
 from rest_framework import status
 
-from varda.misc import hash_string, get_json_from_external_service, post_json_to_external_service
+from varda.misc import get_json_from_external_service, get_reply_json, hash_string, post_json_to_external_service
 from varda.models import Henkilo
 
 # Get an instance of a logger
@@ -230,3 +230,54 @@ def get_henkilo_data_by_oid(oid):
     else:
         logger.error("Couldn't fetch henkilo with oid: {}".format(oid))
         return None
+
+
+def get_huoltajasuhde_changed_child_oids(start_datetime, offset, amount=5000):
+    """
+    Fetch changed huoltajasuhteet from oppijanumerorekisteri.
+    :param start_datetime: Date time (in ISO 8601) since when we fetch changes
+    :param offset: position of the paginated (and ordered) dataset
+    :param amount: How many (max) are fetched
+    :return: Reply-json: ok and list of lapsi oids or not ok and None
+    """
+    url = '/henkilo/huoltajasuhdemuutokset/alkaen/{}?amount={}&offset={}'.format(start_datetime, amount, offset)
+    response = get_json_from_external_service(SERVICE_NAME, url, large_query=True)
+    return get_reply_json(is_ok=response["is_ok"], json_msg=response["json_msg"])
+
+
+def fetch_changed_huoltajuussuhteet(start_datetime):
+    """
+    Fetch changes in huoltajuussuhde.
+    :return: Reply-json: ok and list of lapsi oids or not ok and None
+    """
+    list_of_changed_lapsi_oids = []
+
+    amount = 5000  # This is how many lapsi_oids are fetched with one GET-request (max).
+    offset = 0     # With zero we fetch items 0-4999, offset 5000 -> items 5000 - 9999.
+    loop_number = 1
+    while True:
+        changed_lapsi_oids_msg = get_huoltajasuhde_changed_child_oids(start_datetime, offset, amount)
+        if not changed_lapsi_oids_msg['is_ok']:
+            """
+            Something went wrong. Cancel fetching, and return is_ok=False.
+            """
+            logger.error('Could not fetch the changed huoltajuussuhteet, {}, {}, {}.'
+                         .format(start_datetime, offset, amount))
+            return get_reply_json(is_ok=False, json_msg=None)
+
+        list_of_changed_lapsi_oids += changed_lapsi_oids_msg['json_msg']
+        len_of_fetched_lapsi_oids = len(changed_lapsi_oids_msg['json_msg'])
+
+        if len_of_fetched_lapsi_oids < amount:  # We got everything. Return the list of all changed lapsi oids
+            return get_reply_json(is_ok=True, json_msg=list_of_changed_lapsi_oids)
+        elif len_of_fetched_lapsi_oids == amount:
+            offset += amount
+            loop_number += 1
+            if loop_number % 20 == 0:
+                logger.warning('Very large queries to changed huoltajuussuhteet. Current amount: {}'
+                               .format(loop_number * amount))
+            continue  # We (probably) didn't get everything yet. Fetch another batch.
+        else:
+            logger.error('Changed huoltajuussuhteet: We got more than we requested. Received: {}, Requested: {}'
+                         .format(len_of_fetched_lapsi_oids, amount))
+            return get_reply_json(is_ok=False, json_msg=None)

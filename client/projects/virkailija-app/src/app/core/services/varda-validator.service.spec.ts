@@ -1,4 +1,4 @@
-import { TestBed, inject } from '@angular/core/testing';
+import { TestBed} from '@angular/core/testing';
 
 import { VardaValidatorService } from './varda-validator.service';
 import { VardaRuleService } from './varda-rule.service';
@@ -19,8 +19,8 @@ describe('VardaValidatorService', () => {
       providers: [VardaValidatorService, VardaRuleService, VardaFormService, VardaDateService, VardaVakajarjestajaService]
     });
 
-    vardaValidatorService = TestBed.get(VardaValidatorService);
-    vardaFormService = TestBed.get(VardaFormService);
+    vardaValidatorService = TestBed.inject<VardaValidatorService>(VardaValidatorService);
+    vardaFormService = TestBed.inject<VardaFormService>(VardaFormService);
   });
 
   it('Should run validators if field has dependent fields', () => {

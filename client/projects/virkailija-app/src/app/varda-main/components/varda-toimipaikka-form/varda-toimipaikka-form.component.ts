@@ -1,6 +1,7 @@
 import { Component, OnInit, OnChanges, Input, Output, SimpleChanges, EventEmitter, ViewChild, ViewChildren, ElementRef } from '@angular/core';
 import { FormControl, FormGroup, FormArray } from '@angular/forms';
-import { MatStep, MatStepper, MatRadioButton } from '@angular/material';
+import { MatRadioButton } from '@angular/material/radio';
+import { MatStep, MatStepper } from '@angular/material/stepper';
 import {
   VardaToimipaikkaDTO, VardaFieldSet, VardaKielipainotusDTO, VardaToimintapainotusDTO,
   VardaEntityNames
@@ -32,10 +33,10 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
   @Output() saveToimipaikkaFormSuccess: EventEmitter<any> = new EventEmitter();
   @Output() valuesChanged: EventEmitter<boolean> = new EventEmitter();
 
-  @ViewChild('formContent', { static: false }) formContent: ElementRef;
-  @ViewChild('toimipaikkaStepper', { static: false }) toimipaikkaStepper: MatStepper;
-  @ViewChild('kielipainotuksetYes', { static: false }) kielipainotuksetYes: MatRadioButton;
-  @ViewChild('toimintapainotuksetYes', { static: false }) toimintapainotuksetYes: MatRadioButton;
+  @ViewChild('formContent') formContent: ElementRef;
+  @ViewChild('toimipaikkaStepper') toimipaikkaStepper: MatStepper;
+  @ViewChild('kielipainotuksetYes') kielipainotuksetYes: MatRadioButton;
+  @ViewChild('toimintapainotuksetYes') toimintapainotuksetYes: MatRadioButton;
   @ViewChildren('kielipainotuksetPanels') kielipainotuksetPanels: any;
   @ViewChildren('toimintapainotuksetPanels') toimintapainotuksetPanels: any;
 
@@ -608,8 +609,10 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
     }
 
     this.vardaApiWrapperService.saveKielipainotus(isEdit, this.toimipaikka,
-      kielipainotusToEdit, formData).subscribe(this.onSaveSuccess.bind(this, 'kielipainotus', formArrIndex, isEdit),
-        this.onSaveError.bind(this, formArrIndex, 'kielipainotus'));
+      kielipainotusToEdit, formData).subscribe({
+      next: this.onSaveSuccess.bind(this, 'kielipainotus', formArrIndex, isEdit),
+      error: this.onSaveError.bind(this, formArrIndex, 'kielipainotus'),
+    });
   }
 
   saveToimintapainotus(formArrIndex: number): void {
@@ -621,18 +624,22 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
     if (toimintapainotusToEdit) {
       isEdit = true;
     }
-    this.vardaApiWrapperService.saveToimintapainotus(isEdit, this.toimipaikka, toimintapainotusToEdit,
-      formData).subscribe(this.onSaveSuccess.bind(this, 'toimintapainotus', formArrIndex, isEdit), this.onSaveError.bind(this,
-        formArrIndex, 'toimintapainotus'));
+    this.vardaApiWrapperService.saveToimintapainotus(isEdit, this.toimipaikka, toimintapainotusToEdit, formData)
+      .subscribe({
+        next: this.onSaveSuccess.bind(this, 'toimintapainotus', formArrIndex, isEdit),
+        error: this.onSaveError.bind(this, formArrIndex, 'toimintapainotus'),
+      });
   }
 
   saveToimipaikka(): void {
     this.ui.toimipaikkaFormHasErrors = false;
     this.ui.isSubmitting = true;
     const formData = this.getToimipaikkaFormData();
-    this.vardaApiWrapperService.saveToimipaikka(this.isEdit,
-      this.toimipaikka, formData).subscribe(this.onSaveSuccess.bind(this, 'toimipaikka', null, null),
-        this.onSaveError.bind(this, null, null));
+    this.vardaApiWrapperService.saveToimipaikka(this.isEdit, this.toimipaikka, formData)
+      .subscribe({
+        next: this.onSaveSuccess.bind(this, 'toimipaikka', null, null),
+        error: this.onSaveError.bind(this, null, null),
+      });
   }
 
   onSaveSuccess(...args): void {

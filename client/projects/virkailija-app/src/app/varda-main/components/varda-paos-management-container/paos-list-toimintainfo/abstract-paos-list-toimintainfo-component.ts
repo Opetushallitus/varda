@@ -1,9 +1,10 @@
-import { OnInit, Input } from '@angular/core';
+import { OnInit, Input, Directive } from '@angular/core';
 import { VardaVakajarjestaja } from '../../../../utilities/models/varda-vakajarjestaja.model';
 import { flatMap } from 'rxjs/operators';
 import { from, Observable, Subject } from 'rxjs';
 import { PaosOikeusTieto, PaosToimintatietoDto, PaosToimipaikkatietoDto } from '../../../../utilities/models/dto/varda-paos-dto';
 
+@Directive()
 export abstract class AbstractPaosListToimintainfoComponent<T extends PaosToimipaikkatietoDto & PaosToimintatietoDto> implements OnInit {
   paosToiminnat: Array<T>;
   @Input() selectedVakajarjestaja: VardaVakajarjestaja;

@@ -79,13 +79,13 @@ describe('VardaMainFrameComponent', () => {
     })
       .compileComponents();
 
-    vardaApiWrapperService = TestBed.get(VardaApiWrapperService);
-    vardaVakajarjestajaService = TestBed.get(VardaVakajarjestajaService);
+    vardaApiWrapperService = TestBed.inject<VardaApiWrapperService>(VardaApiWrapperService);
+    vardaVakajarjestajaService = TestBed.inject<VardaVakajarjestajaService>(VardaVakajarjestajaService);
     const selectedVaka = { id: '111', nimi: 'Nimi' };
     vardaVakajarjestajaService.setVakajarjestajat([selectedVaka]);
     vardaVakajarjestajaService.selectedVakajarjestaja = selectedVaka;
-    vardaKieliKoodistoService = TestBed.get(VardaKielikoodistoService);
-    vardaKuntaKoodistoService = TestBed.get(VardaKuntakoodistoService);
+    vardaKieliKoodistoService = TestBed.inject<VardaKielikoodistoService>(VardaKielikoodistoService);
+    vardaKuntaKoodistoService = TestBed.inject<VardaKuntakoodistoService>(VardaKuntakoodistoService);
 
     apiWrapperMockFunction = spyOn(vardaApiWrapperService, 'getAllLapsetForToimipaikka').and.callThrough();
     setVakajarjestajatSpy = spyOn(vardaVakajarjestajaService, 'setVakajarjestajat').and.callThrough();

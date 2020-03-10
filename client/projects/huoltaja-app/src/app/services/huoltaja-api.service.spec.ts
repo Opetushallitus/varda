@@ -11,7 +11,7 @@ describe('HuoltajaApiService', () => {
   }));
 
   it('should be created', () => {
-    const service: HuoltajaApiService = TestBed.get(HuoltajaApiService);
+    const service: HuoltajaApiService = TestBed.inject<HuoltajaApiService>(HuoltajaApiService);
     expect(service).toBeTruthy();
   });
 });

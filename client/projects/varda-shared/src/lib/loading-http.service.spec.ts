@@ -11,7 +11,7 @@ describe('LoadingHttpService', () => {
   }));
 
   it('should be created', () => {
-    const service: LoadingHttpService = TestBed.get(LoadingHttpService);
+    const service: LoadingHttpService = TestBed.inject<LoadingHttpService>(LoadingHttpService);
     expect(service).toBeTruthy();
   });
 });

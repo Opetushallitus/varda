@@ -6,20 +6,32 @@
       <div class="oph-field-inputs">
         <label class="oph-label"
                id="condition-label">
-          {{'label.haku-condition.hae-henkiloita' | translate}}
+          <span *ngIf="this.access.isTallentaja; else haeTietoja">
+            {{'label.haku-condition.hae-ja-muokkaa-tietoja' | translate}}
+          </span>
+          <ng-template #haeTietoja>{{'label.haku-condition.hae-tietoja' | translate}}</ng-template>
+
         </label>
-        <mat-radio-group [attr.aria-labelledby]="'condition-label'"
-                         [disabled]="isLoading"
-                         formControlName="type">
-          <mat-radio-button [value]="HenkilohakuType.lapset"
-                            checked>
-            {{'label.lapset' | translate}}
-          </mat-radio-button>
-          <mat-radio-button [value]="HenkilohakuType.tyontekija"
-                            disabled>
-            {{'label.tyontekija' | translate}}
-          </mat-radio-button>
-        </mat-radio-group>
+
+        <ng-container *ngIf="access.showHenkilosto && access.showLapset">
+          <app-varda-radio-button-group (change)="searchType($event.value)"
+                                        [responsive]="'md'"
+                                        [wrap]="'xs'"
+                                        [name]="'type'"
+                                        [attr.aria-labelledby]="'condition-label'">
+            <app-varda-radio-button [id]="'radioLapset'"
+                                    [value]="HenkilohakuType.lapset"
+                                    [checked]="this.access.showLapset">
+              {{'label.lapset' | translate}}
+            </app-varda-radio-button>
+            <app-varda-radio-button [id]="'radioTyontekija'"
+                                    [disabled]="true"
+                                    [checked]="this.access.showHenkilosto && !this.access.showLapset"
+                                    [value]="HenkilohakuType.tyontekija">
+              {{'label.tyontekija' | translate}}
+            </app-varda-radio-button>
+          </app-varda-radio-button-group>
+        </ng-container>
       </div>
     </div>
     <div class="oph-field">
@@ -69,8 +81,6 @@
           <option [ngValue]="FilterStatus.voimassaOlevat"
                   [selected]="true">{{'label.haku.filter-status.voimassa-olevat' | translate}}</option>
           <option [ngValue]="FilterStatus.paattyneet">{{'label.haku.filter-status.paattyneet' | translate}}</option>
-          <option [ngValue]="FilterStatus.eiMaksutietoja">{{'label.haku.filter-status.ei-maksutietoja' | translate}}
-          </option>
         </select>
       </div>
     </div>
@@ -80,19 +90,18 @@
                          [disabled]="isLoading"
                          class="responsive-md"
                          formControlName="filter_object">
-          <mat-radio-button [value]="FilterObject.vakapaatokset"
-                            [checked]="hakuform.controls.filter_status.value !== FilterStatus.eiMaksutietoja && hakuform.value.filter_object === FilterObject.vakapaatokset"
-                            [disabled]="hakuform.controls.filter_status.value === FilterStatus.eiMaksutietoja">
+          <mat-radio-button *ngIf="access.userAccess.lapsitiedot.katselija"
+                            [value]="FilterObject.vakapaatokset"
+                            [checked]="access.userAccess.lapsitiedot.katselija">
             {{'label.lapsi-stepper.varhaiskasvatuspaatokset' | translate}}
           </mat-radio-button>
-          <mat-radio-button [value]="FilterObject.vakasuhteet"
-                            [checked]="hakuform.controls.filter_status.value !== FilterStatus.eiMaksutietoja && hakuform.value.filter_object === FilterObject.vakasuhteet"
-                            [disabled]="hakuform.controls.filter_status.value === FilterStatus.eiMaksutietoja">
+          <mat-radio-button *ngIf="access.userAccess.lapsitiedot.katselija"
+                            [value]="FilterObject.vakasuhteet">
             {{'label.lapsi-stepper.varhaiskasvatussuhteet' | translate}}
           </mat-radio-button>
-          <mat-radio-button [value]="FilterObject.maksutiedot"
-                            [checked]="hakuform.controls.filter_status.value === FilterStatus.eiMaksutietoja"
-                            [disabled]="hakuform.controls.filter_status.value !== FilterStatus.eiMaksutietoja">
+          <mat-radio-button *ngIf="access.userAccess.huoltajatiedot.katselija"
+                            [value]="FilterObject.maksutiedot"
+                            [checked]="!access.userAccess.lapsitiedot.katselija && access.userAccess.huoltajatiedot.katselija">
             {{'label.lapsi-stepper.maksutiedot' | translate}}
           </mat-radio-button>
         </mat-radio-group>

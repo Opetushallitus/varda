@@ -123,7 +123,7 @@ export class VardaHeaderComponent implements OnInit, AfterViewInit {
   }
 
   moveToToimipaikkaSelector(e: any): void {
-    if (e.keyCode === 9 && this.$siteMenuWrapper.is(':focus') && !e.shiftKey) {
+    if (e.key === 'Tab' && this.$siteMenuWrapper.is(':focus') && !e.shiftKey) {
       setTimeout(() => {
         this.$toimipaikkaPanelSelectorHeader.focus();
       });
@@ -192,11 +192,11 @@ export class VardaHeaderComponent implements OnInit, AfterViewInit {
       node.src = virkailijaRaamitUrl;
       node.type = 'text/javascript';
       node.async = true;
-      node.charset = 'utf-8';
       document.getElementsByTagName('head')[0].appendChild(node)
 
-      if (!window.location.hostname.includes('opintopolku.fi'))
+      if (!window.location.hostname.includes('opintopolku.fi')) {
         setTimeout(() => window.document.dispatchEvent(new Event('DOMContentLoaded')), 500)
+      }
     }
   }
 

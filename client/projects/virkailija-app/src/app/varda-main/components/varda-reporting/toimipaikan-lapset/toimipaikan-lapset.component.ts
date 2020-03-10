@@ -11,17 +11,18 @@ export class ToimipaikanLapsetComponent implements OnChanges {
 
   @Input() selectedToimipaikanLapsi: ToimipaikanLapsi;
   @Output() uiLoading: EventEmitter<boolean>;
-  @ViewChild('toimipaikanLapsetScrollTo', { static: false }) toimipaikanLapsetScrollTo: any;
+  @ViewChild('toimipaikanLapsetScrollTo') toimipaikanLapsetScrollTo: any;
   constructor(private vardaApiService: VardaApiService) {
     this.uiLoading = new EventEmitter<boolean>(true);
   }
 
   ngOnChanges() {
+    this.uiLoading.emit(true);
     this.selectedToimipaikanLapsi.henkilo = {
       etunimet: '',
       kutsumanimi: '',
       sukunimi: '',
-      id: 0,
+      id: null,
       henkilo_oid: '',
       syntyma_pvm: '',
     };
@@ -32,9 +33,11 @@ export class ToimipaikanLapsetComponent implements OnChanges {
   }
 
   fetchToimipaikanLapsi(): void {
+
     this.vardaApiService.getLapsiKooste(this.selectedToimipaikanLapsi.lapsi_id).subscribe((data) => {
+      this.uiLoading.emit(false);
       this.selectedToimipaikanLapsi = data;
-      this.toimipaikanLapsetScrollTo.nativeElement.scrollIntoView({behavior: 'smooth', block: 'start'});
+      this.toimipaikanLapsetScrollTo.nativeElement.scrollIntoView({behavior: 'smooth', block: 'start'})
     });
   }
 }

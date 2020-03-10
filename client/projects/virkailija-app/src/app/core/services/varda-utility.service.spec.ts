@@ -11,7 +11,7 @@ describe('VardaUtilityService', () => {
       providers: [VardaUtilityService]
     });
 
-    vardaUtilityService = TestBed.get(VardaUtilityService);
+    vardaUtilityService = TestBed.inject<VardaUtilityService>(VardaUtilityService);
   });
 
   it('Should parse entity-id from url', () => {

@@ -1,8 +1,8 @@
 import datetime
 import json
 import logging
-
 import requests
+
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db import IntegrityError, transaction
@@ -11,12 +11,14 @@ from guardian.shortcuts import assign_perm
 from pytz import timezone
 from rest_framework.exceptions import NotFound
 
-from varda.clients.oppijanumerorekisteri_client import get_or_create_henkilo_by_henkilotunnus, get_henkilo_data_by_oid
+from varda.clients.oppijanumerorekisteri_client import (get_or_create_henkilo_by_henkilotunnus, get_henkilo_data_by_oid,
+                                                        fetch_changed_huoltajuussuhteet)
+
 from varda.enums.aikaleima_avain import AikaleimaAvain
 from varda.enums.yhteystieto import Yhteystietoryhmatyyppi, YhteystietoAlkupera, YhteystietoTyyppi
-from varda.misc import CustomServerErrorException, decrypt_henkilotunnus, encrypt_henkilotunnus, \
-    get_json_from_external_service, hash_string
-from varda.models import Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Aikaleima
+from varda.misc import (CustomServerErrorException, decrypt_henkilotunnus, encrypt_henkilotunnus,
+                        get_json_from_external_service, hash_string)
+from varda.models import Aikaleima, Henkilo, Huoltaja, Huoltajuussuhde, Lapsi
 from varda.oph_yhteiskayttopalvelu_autentikaatio import get_authentication_header
 
 # Get an instance of a logger
@@ -268,17 +270,21 @@ def update_huoltajuussuhteet():
     :return: None
     """
     aikaleima, created = Aikaleima.objects.get_or_create(avain=AikaleimaAvain.HUOLTAJASUHDEMUUTOS_LAST_UPDATE.name)
+
     # Oppijanumerorekisteri uses Finland's timezone. We use UTC internally.
     helsinki = timezone('Europe/Helsinki')
-    start_date = aikaleima.aikaleima.astimezone(helsinki).date().isoformat()
+    start_datetime = aikaleima.aikaleima.astimezone(helsinki).strftime('%Y-%m-%dT%H:%M:%S%z')  # e.g. 2020-02-18T18:23:11+0200
     end_datetime = datetime.datetime.now(tz=datetime.timezone.utc)
-    end_date = end_datetime.astimezone(helsinki).date().isoformat()
-    changed_lapsi_oids = get_huoltajasuhde_changed_child_oids(start_date, end_date)
 
-    [update_huoltajuussuhde(lapsi_oid) for lapsi_oid in changed_lapsi_oids]
+    changed_lapsi_oids = fetch_changed_huoltajuussuhteet(start_datetime)
 
-    aikaleima.aikaleima = end_datetime
-    aikaleima.save()
+    if changed_lapsi_oids['is_ok']:
+        [update_huoltajuussuhde(lapsi_oid) for lapsi_oid in changed_lapsi_oids['json_msg']]
+
+        aikaleima.aikaleima = end_datetime
+        aikaleima.save()
+    else:
+        pass  # We need to fetch the huoltajuussuhteet again later. Do not save the aikaleima.
 
 
 def update_huoltajuussuhde(lapsi_oid):
@@ -296,22 +302,6 @@ def update_huoltajuussuhde(lapsi_oid):
                     .format(lapsi_oid))
     except Exception as e:
         logger.error(e)
-
-
-def get_huoltajasuhde_changed_child_oids(start_date, end_date):
-    """
-    Fetch changed of huoltajasuhde from oppijanumerorekisteri.
-    :param start_date: Date since when we fetch changes in format 'YYYY-MM-dd'
-    :param end_date: Date for until we fetch changes in format 'YYYY-MM-dd'
-    :return: List of lapsi oids
-    """
-    url = '/henkilo/huoltajasuhdemuutokset?startdate={0}&enddate={1}'.format(start_date, end_date)
-    response = get_json_from_external_service(SERVICE_NAME, url, large_query=True)
-    if not response["is_ok"]:
-        logger.error("Invalid response from oppijanumerorekisteri for huoltajasuhdechanges")
-        return []
-    else:
-        return response["json_msg"]
 
 
 def get_huoltajat_from_onr(henkilo_id):

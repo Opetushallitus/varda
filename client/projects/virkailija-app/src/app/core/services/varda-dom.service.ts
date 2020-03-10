@@ -17,7 +17,7 @@ export class VardaDomService {
   }
 
   bindTabbing(e: any): void {
-    if (e.keyCode === 9) {
+    if (e.key === 'Tab') {
       document.body.classList.remove('user-is-clicking');
       document.body.classList.add('user-is-tabbing');
     }

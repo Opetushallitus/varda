@@ -38,9 +38,9 @@ describe('AppComponent', () => {
     })
       .compileComponents();
 
-    vardaAuthService = TestBed.get(AuthService);
-    httpService = TestBed.get(HttpService);
-    translateService = TestBed.get(TranslateService);
+    vardaAuthService = TestBed.inject<AuthService>(AuthService);
+    httpService = TestBed.inject<HttpService>(HttpService);
+    translateService = TestBed.inject<TranslateService>(TranslateService);
 
     translateServiceUseSpy = spyOn(translateService, 'use').and.returnValue(new Observable());
   }));

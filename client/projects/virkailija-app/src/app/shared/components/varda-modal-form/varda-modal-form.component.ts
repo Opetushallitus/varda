@@ -29,7 +29,7 @@ export class VardaModalFormComponent implements OnInit, OnChanges {
   @Output() events: EventEmitter<ModalEvent> = new EventEmitter(true);
 
   @ViewChild('vardamodal', { static: true }) vardaModal: ElementRef;
-  @ViewChild('vardaPromptModal', { static: false }) vardaModalPrompt: ElementRef;
+  @ViewChild('vardaPromptModal') vardaModalPrompt: ElementRef;
 
   constructor() {
     this.confirmedVardaFormLeave = false;

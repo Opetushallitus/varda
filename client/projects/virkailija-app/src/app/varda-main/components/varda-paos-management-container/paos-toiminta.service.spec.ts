@@ -6,7 +6,7 @@ describe('PaosToimintaService', () => {
   beforeEach(() => TestBed.configureTestingModule({}));
 
   it('should be created', () => {
-    const service: PaosToimintaService = TestBed.get(PaosToimintaService);
+    const service: PaosToimintaService = TestBed.inject<PaosToimintaService>(PaosToimintaService);
     expect(service).toBeTruthy();
   });
 });

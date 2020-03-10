@@ -10,7 +10,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import {VardaApiService} from '../../../core/services/varda-api.service';
 import { EMPTY } from 'rxjs';
 import {PaosAddToimintaListComponent} from './paos-add-paos-toiminta/paos-add-toiminta-list/paos-add-toiminta-list.component';
-import {MatIconModule} from '@angular/material';
+import { MatIconModule } from '@angular/material/icon';
 import {PaosToimintaService} from './paos-toiminta.service';
 import {VardaVakajarjestajaUi} from '../../../utilities/models/varda-vakajarjestaja-ui.model';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -74,7 +74,7 @@ describe('VardaPaosManagementContainerComponent', () => {
   }));
 
   beforeEach(() => {
-    const vardaVakajarjestajaService = TestBed.get(VardaVakajarjestajaService);
+    const vardaVakajarjestajaService = TestBed.inject<VardaVakajarjestajaService>(VardaVakajarjestajaService);
     vardaVakajarjestajaService.setVakajarjestajat([{id : '111', nimi: 'Nimi'}]);
     vardaVakajarjestajaService.setSelectedVakajarjestaja(new VardaVakajarjestajaUi());
     fixture = TestBed.createComponent(VardaPaosManagementContainerComponent);

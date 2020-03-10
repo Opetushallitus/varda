@@ -41,10 +41,10 @@ describe('AuthService', () => {
         ]
     });
 
-    vardaAuthService = TestBed.get(AuthService);
-    vardaApiService = TestBed.get(VardaApiService);
-    httpService = TestBed.get(HttpService);
-    vardaVakajarjestajaService = TestBed.get(VardaVakajarjestajaService);
+    vardaAuthService = TestBed.inject<AuthService>(AuthService);
+    vardaApiService = TestBed.inject<VardaApiService>(VardaApiService);
+    httpService = TestBed.inject<HttpService>(HttpService);
+    vardaVakajarjestajaService = TestBed.inject<VardaVakajarjestajaService>(VardaVakajarjestajaService);
     mockVakaJarjestajat = vakajarjestajatStub;
     vardaVakajarjestajaService.setVakajarjestajat(mockVakaJarjestajat);
   });
@@ -153,7 +153,7 @@ describe('AuthService', () => {
     expect(vardaAuthService.loggedInUserCurrentKayttooikeus).toEqual(VardaKayttooikeusRoles.VARDA_TALLENTAJA);
   });
 
-  it(`Should filter out toimipaikat that user has only katselija-role to`, () => {
+  it(`Should filter out toimipaikat that user has atleast katselija-role to`, () => {
     vardaVakajarjestajaService.setSelectedVakajarjestaja(vakajarjestajatStub[0]);
     vardaAuthService.loggedInUserKayttooikeudet = [
       {'organisaatio': '123123', 'kayttooikeus': VardaKayttooikeusRoles.VARDA_KATSELIJA},
@@ -166,10 +166,11 @@ describe('AuthService', () => {
     expect(vardaAuthService.loggedInUserCurrentKayttooikeus).toEqual(VardaKayttooikeusRoles.VARDA_KATSELIJA);
     expect(vardaAuthService.selectedOrganisationLevelKayttooikeusRole).toEqual(VardaKayttooikeusRoles.VARDA_KATSELIJA);
     expect(vardaAuthService.hasToimipaikkaLevelTallentajaRole).toBeUndefined();
-    expect(toimipaikat.length).toEqual(3);
+    expect(toimipaikat.length).toEqual(4);
     expect(toimipaikat[0].nimi).toEqual('Espoo');
-    expect(toimipaikat[1].nimi).toEqual('Kivelän päiväkoti');
-    expect(toimipaikat[2].nimi).toEqual('1111aggdgf554saf');
+    expect(toimipaikat[1].nimi).toEqual('Toimipaikka5');
+    expect(toimipaikat[2].nimi).toEqual('Kivelän päiväkoti');
+    expect(toimipaikat[3].nimi).toEqual('1111aggdgf554saf');
   });
 
   it(`Should deny access to Etusivu from toimipaikka-level Varda-Tallentaja

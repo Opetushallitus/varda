@@ -13,7 +13,7 @@ export class VardaDropdownFilterComponent implements OnInit {
   @Input() label: string;
   @Input() ariaLabel: string;
   @Output() onSelect = new EventEmitter(true);
-  @ViewChild("dropdownFilterInput", { static: false }) dropdownFilterInput: ElementRef;
+  @ViewChild("dropdownFilterInput") dropdownFilterInput: ElementRef;
   @ViewChild(MatMenuTrigger, { static: true }) trigger: MatMenuTrigger;
   showDropdown: boolean;
   filteredList: Array<object>;

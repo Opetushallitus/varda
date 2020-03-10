@@ -24,7 +24,7 @@
 - e.g run against local varda-backend service `ng serve --configuration=local` or against test-environment `ng serve`
 
 #### 2 Running against nginx-proxy through docker container
-- `docker build -t varda-fe .`
+- `docker build --build-arg NPM_TOKEN=${NPM_TOKEN} -t varda-fe .`
 - `docker run -it --rm -e VARDA_SESSION_SECURE='' -e VARDA_FRONTEND_PROTOCOL='http' -e VARDA_FRONTEND_HOSTNAME='localhost' -e VARDA_BACKEND_HOSTNAME='<backend host>' -e VARDA_BACKEND_PROTOCOL='http' --name varda-frontend varda-fe`
 - NOTE: live reload not available
 

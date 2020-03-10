@@ -1,5 +1,10 @@
 # Varda - National data warehouse for early childhood education data
 
+### Data model
+
+The data model for Varda is publicly available at suomi.fi
+- https://tietomallit.suomi.fi/model/varda/
+
 ### Varda is built using the following open source technologies
 - Backend
   * Django web framework (https://www.djangoproject.com/)

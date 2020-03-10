@@ -3,7 +3,16 @@ import { HenkilohakuResultDTO, HenkilohakuSearchDTO, HenkilohakuType, FilterStat
 import { VardaApiService } from '../../../core/services/varda-api.service';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
 import { TranslateService } from '@ngx-translate/core';
-import {VardaPageDto} from '../../../utilities/models/dto/varda-page-dto';
+import { VardaPageDto } from '../../../utilities/models/dto/varda-page-dto';
+import { AuthService } from '../../../core/auth/auth.service';
+import { UserAccess } from '../../../utilities/models/varda-user-access.model';
+
+export interface HakuAccess {
+  userAccess: UserAccess;
+  showLapset: boolean,
+  showHenkilosto: boolean,
+  isTallentaja: boolean,
+};
 
 @Component({
   selector: 'app-varda-haku-container',
@@ -14,6 +23,7 @@ export class VardaHakuContainerComponent implements OnInit {
   searchResult: VardaPageDto<HenkilohakuResultDTO>;
   lastSearchDto: HenkilohakuSearchDTO;
   vakajarjestajaId: number;
+  access: HakuAccess;
   ui: {
     formSaveErrors: Array<{ key: string, msg: string, }>;
     formSaveErrorMsg: string;
@@ -23,6 +33,7 @@ export class VardaHakuContainerComponent implements OnInit {
   prevSearchLink: string;
 
   constructor(private vardaApiService: VardaApiService,
+    private authService: AuthService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private translate: TranslateService) {
     this.searchResult = null;
@@ -39,6 +50,7 @@ export class VardaHakuContainerComponent implements OnInit {
     };
     this.nextSearchLink = null;
     this.prevSearchLink = null;
+    this.initUserAccess();
   }
 
   ngOnInit() {
@@ -80,5 +92,25 @@ export class VardaHakuContainerComponent implements OnInit {
   clearErrors() {
     this.ui.formSaveErrors = [];
     this.ui.formSaveErrorMsg = null;
+  }
+
+  initUserAccess(): void {
+    const userAccess = this.authService.getUserAccessIfAnyToimipaikka(this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().katselijaToimipaikat);
+
+    this.access = {
+      userAccess: userAccess,
+      showLapset: userAccess.huoltajatiedot.katselija || userAccess.lapsitiedot.katselija,
+      showHenkilosto: userAccess.henkilostotiedot.katselija || userAccess.taydennyskoulutustiedot.katselija,
+      isTallentaja: Object.keys(userAccess).some(key => userAccess[key].tallentaja)
+    };
+
+    if (this.access.showLapset) {
+      this.lastSearchDto.type = HenkilohakuType.lapset;
+      if (!this.access.userAccess.lapsitiedot.katselija)
+        this.lastSearchDto.filter_object = FilterObject.maksutiedot
+    }
+    else if (this.access.showHenkilosto) {
+      this.lastSearchDto.type = HenkilohakuType.tyontekija
+    }
   }
 }

@@ -16,7 +16,7 @@ import {
   ValidationErrors,
   Validator
 } from '@angular/forms';
-import {MatRadioChange} from '@angular/material';
+import { MatRadioChange } from '@angular/material/radio';
 
 enum HuoltajaInputOption {
   Hetu = 'hetu',
@@ -50,7 +50,7 @@ export class HuoltajatContainerComponent implements OnInit, ControlValueAccessor
   isEditing: boolean;
 
   huoltajaFieldSetTemplate: VardaFieldsetArrayContainer;
-  private huoltajaFieldsetObj: object;
+  huoltajaFieldsetObj: object;
   huoltajaFormGroup: FormGroup;
   huoltajaValinta: Array<string>;
   get huoltajaFormArr(): FormArray {

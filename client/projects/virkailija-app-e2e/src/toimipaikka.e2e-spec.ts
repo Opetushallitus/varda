@@ -220,7 +220,7 @@ describe('Toimipaikka e2e-tests', () => {
 
     // Close the modal
     utils.clickElement(element(by.css('button[class="close"]')));
-    const poistuLomakkeeltaButton = element(by.id('henkiloPromptModalLeave'))
+    const poistuLomakkeeltaButton = element(by.id('henkiloPromptModalLeave'));
     browser.wait(ec.elementToBeClickable(poistuLomakkeeltaButton), WAITDASHBOARD, 'Poistu lomakkeelta button ' + ELEMENT);
     utils.clickElement(poistuLomakkeeltaButton);
   });
@@ -282,7 +282,7 @@ describe('Toimipaikka e2e-tests', () => {
 
     // Close the modal
     utils.clickElement(element(by.css('button[class="close"]')));
-    const poistuLomakkeeltaButton = element(by.id('henkiloPromptModalLeave'))
+    const poistuLomakkeeltaButton = element(by.id('henkiloPromptModalLeave'));
     browser.wait(ec.elementToBeClickable(poistuLomakkeeltaButton), WAITDASHBOARD, 'Poistu lomakkeelta button ' + ELEMENT);
     utils.clickElement(poistuLomakkeeltaButton);
   });

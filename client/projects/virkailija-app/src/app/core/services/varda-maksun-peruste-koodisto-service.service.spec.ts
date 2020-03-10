@@ -20,7 +20,7 @@ describe('VardaMaksunPerusteKoodistoServiceService', () => {
   }));
 
   it('should be created', () => {
-    const service: VardaMaksunPerusteKoodistoService = TestBed.get(VardaMaksunPerusteKoodistoService);
+    const service: VardaMaksunPerusteKoodistoService = TestBed.inject<VardaMaksunPerusteKoodistoService>(VardaMaksunPerusteKoodistoService);
     expect(service).toBeTruthy();
   });
 });

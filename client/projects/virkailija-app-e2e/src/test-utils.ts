@@ -41,7 +41,7 @@ export const utils = {
     },
 
     searchByCssStyle(elementFinder, desiredText) {
-        let searchForStyle = function() {
+        const searchForStyle = function() {
             return elementFinder.getAttribute('style').then(function(actualStyleResultedFromAPromise) {
                 return actualStyleResultedFromAPromise && actualStyleResultedFromAPromise === desiredText;
             });
