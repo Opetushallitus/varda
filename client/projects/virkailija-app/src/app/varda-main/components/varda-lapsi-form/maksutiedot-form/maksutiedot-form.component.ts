@@ -13,7 +13,7 @@ import {TranslateService} from '@ngx-translate/core';
 import {VardaDateService} from '../../../services/varda-date.service';
 import {VardaErrorMessageService} from '../../../../core/services/varda-error-message.service';
 import {AuthService} from '../../../../core/auth/auth.service';
-import {VardaKayttooikeusRoles} from '../../../../utilities/varda-kayttooikeus-roles';
+import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 
 @Component({
   selector: 'app-maksutiedot-form',
@@ -22,6 +22,7 @@ import {VardaKayttooikeusRoles} from '../../../../utilities/varda-kayttooikeus-r
 })
 export class MaksutiedotFormComponent implements OnInit {
   @Input() lapsiId;
+  @Input() toimipaikkaAccess: UserAccess;
   // For accessing template reference variables
   @ViewChildren('maksutietoPanels') maksutietoPanels: QueryList<MatExpansionPanel>;
   @ViewChildren('maksutietoCancelDeleteBtn') maksutietoCancelDeleteButtons: QueryList<HTMLButtonElement>;
@@ -31,7 +32,6 @@ export class MaksutiedotFormComponent implements OnInit {
   maksutiedotFormGroup: FormGroup;
   ui: {
     noMaksutietoPrivileges: boolean;
-    isKatselija: boolean;
     formSaveErrors: Array<{ key: string, msg: string, }>;
     formSaveErrorMsg: string;
     formSaveSuccessMsg: string;
@@ -72,7 +72,6 @@ export class MaksutiedotFormComponent implements OnInit {
       formSaveErrors: [],
       scrollOnInit: null,
       noMaksutietoPrivileges: true,
-      isKatselija: false,
       showSaveButton: false
     };
   }
@@ -94,9 +93,8 @@ export class MaksutiedotFormComponent implements OnInit {
   }
 
   ngOnInit() {
-    const isTallentaja = this.authService.isCurrentUserSelectedVakajarjestajaRole(VardaKayttooikeusRoles.VARDA_HUOLTAJA_TALLENTAJA);
-    this.ui.isKatselija = this.authService.isCurrentUserSelectedVakajarjestajaRole(VardaKayttooikeusRoles.VARDA_HUOLTAJA_KATSELIJA);
-    if (this.ui.isKatselija || isTallentaja) {
+
+    if (this.toimipaikkaAccess.huoltajatiedot.katselija) {
       forkJoin([
         this.vardaApiWrapperService.getMaksutietoFormFieldSets(),
         this.vardaApiWrapperService.getLapsiMaksutiedot(this.lapsiId),
@@ -319,7 +317,7 @@ export class MaksutiedotFormComponent implements OnInit {
   }
 
   isShowAddMaksutietoButton() {
-    return !this.ui.isKatselija && this.maksutiedot.filter(maksutieto => !!maksutieto.id).length === this.maksutiedotFormArr.value.length;
+    return this.maksutiedot.filter(maksutieto => !!maksutieto.id).length === this.maksutiedotFormArr.value.length;
   }
 
   paattymisPvmIsUnchanged(idx) {

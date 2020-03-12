@@ -4,8 +4,10 @@ import { VardaModalService } from '../../../core/services/varda-modal.service';
 import {
   VardaHenkiloDTO,
   VardaHenkiloSearchConfiguration,
-  VardaExtendedHenkiloModel } from '../../../utilities/models';
-import {ModalEvent} from '../../../shared/components/varda-modal-form/varda-modal-form.component';
+  VardaExtendedHenkiloModel
+} from '../../../utilities/models';
+import { ModalEvent } from '../../../shared/components/varda-modal-form/varda-modal-form.component';
+import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 
 @Component({
   selector: 'app-varda-henkilo-list',
@@ -13,7 +15,7 @@ import {ModalEvent} from '../../../shared/components/varda-modal-form/varda-moda
   styleUrls: ['./varda-henkilo-list.component.css']
 })
 export class VardaHenkiloListComponent implements OnInit, OnChanges {
-
+  @Input() toimipaikkaAccess: UserAccess;
   @Input() henkiloList: Array<VardaExtendedHenkiloModel>;
   @Input() henkiloSearchValue: VardaHenkiloSearchConfiguration;
   @Output() henkiloListUpdated: EventEmitter<any> = new EventEmitter<any>();
@@ -48,7 +50,7 @@ export class VardaHenkiloListComponent implements OnInit, OnChanges {
   }
 
   addHenkilo(): void {
-    this.vardaModalService.openModal('henkiloForm', true, {isNew: true});
+    this.vardaModalService.openModal('henkiloForm', true, { isNew: true });
   }
 
   editHenkilo(data: any): void {

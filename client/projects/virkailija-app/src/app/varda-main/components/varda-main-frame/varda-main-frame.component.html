@@ -3,7 +3,8 @@
 </h1>
 <main class="varda-main-frame-wrapper">
   <section class="varda-main-frame-toimipaikka-section-container varda-page-content">
-    <app-varda-toimipaikka-selector [entityType]="'toimipaikka'"
+    <app-varda-toimipaikka-selector [userAccess]="userAccess"
+                                    [entityType]="'toimipaikka'"
                                     [toimipaikat]="toimipaikat"
                                     [activeToimipaikka]="selectedToimipaikka"
                                     (changeToimipaikka)="onToimipaikkaChanged($event)"
@@ -14,7 +15,8 @@
            *ngIf="toimipaikat && toimipaikat.length > 0 && selectedToimipaikka"
            aria-live="polite"
            role="region">
-    <app-varda-henkilo-section [henkilot]="henkilot"></app-varda-henkilo-section>
+    <app-varda-henkilo-section [toimipaikkaAccess]="toimipaikkaAccess"
+                               [henkilot]="henkilot"></app-varda-henkilo-section>
   </section>
 </main>
 <lib-loading-indicator *ngIf="ui.isFetchingVarhaiskasvatussuhteet"></lib-loading-indicator>

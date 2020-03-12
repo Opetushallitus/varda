@@ -6,7 +6,7 @@ from django.contrib.auth.models import Group, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
-from django.db.models import ProtectedError, Q, Count, Prefetch
+from django.db.models import ProtectedError, Q, Prefetch
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -2771,7 +2771,7 @@ class HenkilohakuLapset(GenericViewSet, ListModelMixin):
 
     Haettaessa hetulla hetun täytyy olla utf-8 enkoodatusta tekstistä sha256 hashatyssä hexadesimaali muodossa. Parametrit:
         search = henkilön nimi
-        filter_status = objektin tila, voi olla 'kaikki', 'voimassaolevat', 'paattyneet' tai 'eimaksutietoja'
+        filter_status = objektin tila, voi olla 'kaikki', 'voimassaolevat' tai 'paattyneet'
         filter_object = objekti, voi olla 'vakapaatokset', 'vakasuhteet' tai 'maksutiedot'
     """
     serializer_class = HenkilohakuLapsetSerializer
@@ -2835,25 +2835,14 @@ class HenkilohakuLapset(GenericViewSet, ListModelMixin):
                 .select_related('henkilo')
                 ).distinct()
 
-    def filter_vakapaatokset(self, varhaiskasvatuspaatokset_query, filter_status):
+    def filter_status_generic(self, query, filter_status):
         if filter_status == 'voimassaolevat':
-            varhaiskasvatuspaatokset_query = varhaiskasvatuspaatokset_query.filter(
+            query = query.filter(
                 Q(alkamis_pvm__lte=self.today) &
-                (Q(paattymis_pvm__isnull=True) | Q(paattymis_pvm__gte=self.today))
-            )
+                (Q(paattymis_pvm__isnull=True) | Q(paattymis_pvm__gte=self.today)))
         elif filter_status == 'paattyneet':
-            varhaiskasvatuspaatokset_query = varhaiskasvatuspaatokset_query.filter(Q(paattymis_pvm__lt=self.today))
-        return varhaiskasvatuspaatokset_query
-
-    def filter_vakasuhteet(self, varhaiskasvatussuhteet_query, filter_status):
-        if filter_status == 'voimassaolevat':
-            varhaiskasvatussuhteet_query = varhaiskasvatussuhteet_query.filter(
-                Q(alkamis_pvm__lte=self.today) &
-                (Q(paattymis_pvm__isnull=True) | Q(paattymis_pvm__gte=self.today))
-            )
-        elif filter_status == 'paattyneet':
-            varhaiskasvatussuhteet_query = varhaiskasvatussuhteet_query.filter(Q(paattymis_pvm__lt=self.today))
-        return varhaiskasvatussuhteet_query
+            query = query.filter(Q(paattymis_pvm__lt=self.today))
+        return query
 
     def get_lapsi_query(self, list_of_toimipaikka_ids):
         varhaiskasvatuspaatokset_query = (Varhaiskasvatuspaatos
@@ -2864,6 +2853,8 @@ class HenkilohakuLapset(GenericViewSet, ListModelMixin):
                                         .objects
                                         .filter(toimipaikka__id__in=list_of_toimipaikka_ids))
 
+        maksutiedot_query = None
+
         query_params = self.request.query_params
         filter_status = query_params.get('filter_status', "")
         filter_object = query_params.get('filter_object', "")
@@ -2872,22 +2863,33 @@ class HenkilohakuLapset(GenericViewSet, ListModelMixin):
 
             # Vakapaatokset
             if filter_object == 'vakapaatokset':
-                varhaiskasvatuspaatokset_query = self.filter_vakapaatokset(varhaiskasvatuspaatokset_query, filter_status)
+                varhaiskasvatuspaatokset_query = self.filter_status_generic(varhaiskasvatuspaatokset_query,
+                                                                            filter_status)
 
             # Vakasuhteet
             if filter_object == 'vakasuhteet':
-                varhaiskasvatussuhteet_query = self.filter_vakasuhteet(varhaiskasvatussuhteet_query, filter_status)
+                varhaiskasvatussuhteet_query = self.filter_status_generic(varhaiskasvatussuhteet_query, filter_status)
 
             # Maksutiedot
-            if filter_object == 'maksutiedot' and filter_status == 'eimaksutietoja':
-                varhaiskasvatuspaatokset_query = varhaiskasvatuspaatokset_query.annotate(
-                    maksutiedot_count=Count('lapsi__huoltajuussuhteet__maksutiedot')
-                ).filter(maksutiedot_count=0)
+            if filter_object == 'maksutiedot':
+                maksutiedot_query = (Maksutieto
+                                     .objects
+                                     .filter(**{'huoltajuussuhteet__lapsi__varhaiskasvatuspaatokset'
+                                                '__varhaiskasvatussuhteet__toimipaikka__id__in':
+                                                list_of_toimipaikka_ids}))
+                maksutiedot_query = self.filter_status_generic(maksutiedot_query, filter_status)
 
         self.kwargs['varhaiskasvatuspaatokset_query'] = varhaiskasvatuspaatokset_query
         self.kwargs['varhaiskasvatussuhteet_query'] = varhaiskasvatussuhteet_query
-        return (Q(varhaiskasvatuspaatokset__in=varhaiskasvatuspaatokset_query) &
-                Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__in=varhaiskasvatussuhteet_query))
+        self.kwargs['maksutiedot_query'] = maksutiedot_query
+
+        lapsi_filter = (Q(varhaiskasvatuspaatokset__in=varhaiskasvatuspaatokset_query) &
+                        Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__in=varhaiskasvatussuhteet_query))
+
+        if maksutiedot_query is not None:
+            lapsi_filter = lapsi_filter & Q(huoltajuussuhteet__maksutiedot__in=maksutiedot_query)
+
+        return lapsi_filter
 
     def add_order_by(self, query):
         return query.order_by('henkilo__sukunimi', 'henkilo__etunimet')

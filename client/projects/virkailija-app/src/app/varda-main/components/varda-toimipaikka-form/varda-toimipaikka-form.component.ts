@@ -17,6 +17,8 @@ import { VardaLocalstorageWrapperService } from '../../../core/services/varda-lo
 import { VardaErrorMessageService } from '../../../core/services/varda-error-message.service';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaKielikoodistoService } from '../../../core/services/varda-kielikoodisto.service';
+import { UserAccess } from '../../../utilities/models/varda-user-access.model';
+import { AuthService } from '../../../core/auth/auth.service';
 
 declare var $: any;
 
@@ -57,7 +59,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
   toimipaikkaFormChanged: boolean;
   kielipainotuksetFormChanged: boolean;
   toimintapainotuksetFormChanged: boolean;
-
+  toimipaikkaAccess: UserAccess;
   kielikoodistoOptions: any;
 
   ui: {
@@ -89,6 +91,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
   private saveToimipaikkaSubject = new Subject<any>();
 
   constructor(
+    private authService: AuthService,
     private vardaFormService: VardaFormService,
     private vardaApiWrapperService: VardaApiWrapperService,
     private vardaUtilityService: VardaUtilityService,
@@ -556,6 +559,8 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
       ]).subscribe((data) => {
         this.kielipainotukset = data[0];
         this.toimintapainotukset = data[1];
+        this.toimipaikkaAccess = this.authService.getUserAccess(this.toimipaikka.organisaatio_oid)
+        this.isReadOnly = this.isReadOnly || !this.toimipaikkaAccess.lapsitiedot.tallentaja;
         observer.next();
         observer.complete();
       });
@@ -610,9 +615,9 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
 
     this.vardaApiWrapperService.saveKielipainotus(isEdit, this.toimipaikka,
       kielipainotusToEdit, formData).subscribe({
-      next: this.onSaveSuccess.bind(this, 'kielipainotus', formArrIndex, isEdit),
-      error: this.onSaveError.bind(this, formArrIndex, 'kielipainotus'),
-    });
+        next: this.onSaveSuccess.bind(this, 'kielipainotus', formArrIndex, isEdit),
+        error: this.onSaveError.bind(this, formArrIndex, 'kielipainotus'),
+      });
   }
 
   saveToimintapainotus(formArrIndex: number): void {

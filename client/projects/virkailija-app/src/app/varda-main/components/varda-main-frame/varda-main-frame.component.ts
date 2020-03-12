@@ -7,6 +7,7 @@ import { of } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LapsiByToimipaikkaDTO } from '../../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
+import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 
 @Component({
   selector: 'app-varda-main-frame',
@@ -15,6 +16,8 @@ import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-
 })
 export class VardaMainFrameComponent implements OnInit {
 
+  userAccess: UserAccess;
+  toimipaikkaAccess: UserAccess;
   selectedToimipaikka: VardaToimipaikkaMinimalDto;
   toimipaikat: Array<VardaToimipaikkaMinimalDto>;
   henkilot: Array<VardaExtendedHenkiloModel>;
@@ -33,10 +36,7 @@ export class VardaMainFrameComponent implements OnInit {
     };
 
     this.vardaApiWrapperService.getAllToimipaikatForVakajarjestaja(this.vardaVakajarjestajaService.selectedVakajarjestaja.id).subscribe(
-      (toimipaikat) => {
-        this.vardaVakajarjestajaService.setToimipaikat(toimipaikat, this.authService)
-        this.initToimipaikat();
-      },
+      (toimipaikat) => this.initToimipaikat(),
       (error) => console.error(error)
     );
   }
@@ -45,6 +45,8 @@ export class VardaMainFrameComponent implements OnInit {
     if (!data) {
       return;
     }
+
+    this.toimipaikkaAccess = this.authService.getUserAccess(data.organisaatio_oid)
     this.selectedToimipaikka = this.vardaVakajarjestajaService.getSelectedToimipaikka();
     this.getVarhaiskasvatussuhteetByToimipaikka();
   }
@@ -73,11 +75,14 @@ export class VardaMainFrameComponent implements OnInit {
       this.ui.isFetchingVarhaiskasvatussuhteet = false;
       return;
     }
-    const selectedTomipaikka = this.vardaVakajarjestajaService.getSelectedToimipaikka();
-    if (!selectedTomipaikka) {
+    let selectedToimipaikka = this.vardaVakajarjestajaService.getSelectedToimipaikka();
+    if (!selectedToimipaikka) {
       throw Error('No toimipaikka selected. Unable to fetch lapset for toimipaikka.');
+    } else {
+      if (!this.toimipaikat.includes(selectedToimipaikka))
+        selectedToimipaikka = this.toimipaikat[0];
     }
-    const toimipaikkaId = this.vardaUtilityService.parseIdFromUrl(selectedTomipaikka.url);
+    const toimipaikkaId = this.vardaUtilityService.parseIdFromUrl(selectedToimipaikka.url);
     this.vardaApiWrapperService.getAllLapsetForToimipaikka(toimipaikkaId)
       .subscribe({
         next: (lapset: Array<LapsiByToimipaikkaDTO>) => {
@@ -118,10 +123,12 @@ export class VardaMainFrameComponent implements OnInit {
   }
 
   initToimipaikat(): void {
-    this.toimipaikat = this.vardaVakajarjestajaService.getTallentajaToimipaikat();
+    this.toimipaikat = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().katselijaToimipaikat
   }
 
   ngOnInit() {
+    this.userAccess = this.authService.getUserAccess();
+
     setTimeout(() => {
       this.initToimipaikat();
     });

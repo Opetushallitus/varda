@@ -3,6 +3,7 @@ import {VardaHenkiloService} from '../../services/varda-henkilo.service';
 import {VardaModalService} from '../../../core/services/varda-modal.service';
 import {VardaExtendedHenkiloModel, VardaHenkiloSearchConfiguration} from '../../../utilities/models';
 import {TranslateService} from '@ngx-translate/core';
+import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 
 @Component({
   selector: 'app-varda-henkilo-section',
@@ -10,7 +11,7 @@ import {TranslateService} from '@ngx-translate/core';
   styleUrls: ['./varda-henkilo-section.component.css']
 })
 export class VardaHenkiloSectionComponent implements OnInit, OnChanges {
-
+  @Input() toimipaikkaAccess: UserAccess;
   @Input() henkilot: Array<VardaExtendedHenkiloModel>;
 
   showLapset: boolean;

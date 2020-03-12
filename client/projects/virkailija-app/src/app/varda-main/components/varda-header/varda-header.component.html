@@ -30,9 +30,8 @@
   <div class="collapse navbar-collapse varda-navbar-links"
        id="navbarSupportedContent">
     <ul class="navbar-nav mr-auto">
-      <li class="varda-header-nav-item-container"
-          [ngClass]="{'active-nav-item': activeNavItem === 'toimipaikatjalapset'}"
-          *ngIf="!isKatselija">
+      <li class="varda-header-nav-item-container" *ngIf="!isKatselija"
+          [ngClass]="{'active-nav-item': activeNavItem === 'toimipaikatjalapset'}">
         <a [routerLink]="['/']"
            class=""
            (click)="setActiveNavItem('toimipaikatjalapset')">

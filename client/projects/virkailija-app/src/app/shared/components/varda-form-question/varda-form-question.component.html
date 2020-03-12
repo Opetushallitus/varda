@@ -183,13 +183,16 @@
         <label class="varda-field-label">{{getDisplayName(field)}} {{field.rules.required ? '*' : ''}}</label>
         <div class="varda-radio">
           <mat-radio-group [name]="field.key"
+                           [attr.robotkey]="field.key"
                            [formControlName]="field.key"
                            [attr.aria-required]="isRequired"
                            [attr.aria-describedby]="'instructionBlock' + fieldIndex + fieldSetIndex"
                            [attr.data-parent-container]="'fieldset' + fieldSetIndex"
                            (change)="onInputValueChanged(field)">
-            <mat-radio-button [value]="true">{{'label.yes' | translate}}</mat-radio-button>
-            <mat-radio-button [value]="false">{{'label.no' | translate}}</mat-radio-button>
+            <mat-radio-button robotkey="yes"
+                              [value]="true">{{'label.yes' | translate}}</mat-radio-button>
+            <mat-radio-button robotkey="no"
+                              [value]="false">{{'label.no' | translate}}</mat-radio-button>
           </mat-radio-group>
         </div>
       </ng-container>

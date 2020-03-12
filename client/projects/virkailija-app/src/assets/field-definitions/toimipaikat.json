@@ -44,9 +44,6 @@
                 "errorTextFi": "Erikoismerkit eivät ole sallittuja",
                 "errorTextSv": "Specialtecken är inte tillåtna"
               }
-            },
-            "disabledOnEdit": {
-              "acceptedValue": true
             }
           }
         },

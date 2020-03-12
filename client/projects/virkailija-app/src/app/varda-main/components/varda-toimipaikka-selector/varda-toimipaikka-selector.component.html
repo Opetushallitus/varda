@@ -1,7 +1,8 @@
 <div class="toimipaikka-selector-wrapper"
      *ngIf="toimipaikat && toimipaikat.length > 0"
      aria-live="polite">
-  <label for="toimipaikkaSelectorSelect" class="oph-h4 oph-bold">
+  <label for="toimipaikkaSelectorSelect"
+         class="oph-h4 oph-bold">
     {{'label.toimipaikka' | translate}}
     <span *ngIf="toimipaikat.length > 1">({{toimipaikat.length}})</span>
   </label>
@@ -27,11 +28,11 @@
       </button>
     </div>
 
-    <div class="toimipaikka-selector-add">
+    <div class="toimipaikka-selector-add"
+         *ngIf="userAccess.lapsitiedot.tallentaja">
       <button id="addToimipaikkaBtn"
               class="varda-button responsive"
-              (click)="addToimipaikka()"
-              *ngIf="isOrganisationLevelTallentajaRole">+ {{'label.add-toimipaikka' | translate}}</button>
+              (click)="addToimipaikka()">+ {{'label.add-toimipaikka' | translate}}</button>
     </div>
   </div>
   <div *ngIf="!!activeToimipaikka && activeToimipaikka.lahdejarjestelma !== lahdejarjestelmaTypes.VARDA">
@@ -47,7 +48,7 @@
   <div>
     <h2>{{'label.start-by-adding-toimipaikka' | translate}}</h2>
   </div>
-  <div>
+  <div *ngIf="userAccess.lapsitiedot.tallentaja">
     <button class="varda-button"
             (click)="addToimipaikka()">+ {{'label.add-toimipaikka' | translate}}</button>
   </div>

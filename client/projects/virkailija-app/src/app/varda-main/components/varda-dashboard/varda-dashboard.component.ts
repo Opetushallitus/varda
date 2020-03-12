@@ -30,7 +30,6 @@ export class VardaDashboardComponent implements OnInit {
   };
 
   private popupOpenSubscription: Subscription;
-  toimipaikat: Array<VardaToimipaikkaDTO>;
 
   constructor(
     private translateService: TranslateService,
@@ -65,10 +64,7 @@ export class VardaDashboardComponent implements OnInit {
 
   onGetToimipaikatSuccess(toimipaikat_: Array<VardaToimipaikkaMinimalDto>): void {
     this.vardaVakajarjestajaService.setToimipaikat(toimipaikat_, this.authService);
-    this.toimipaikat = this.vardaVakajarjestajaService.getTallentajaToimipaikat();
-    setTimeout(() => {
-      this.authService.initKayttooikeudet();
-    });
+    this.authService.initKayttooikeudet();
     this.ui.isLoading = false;
   }
 

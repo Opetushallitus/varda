@@ -67,7 +67,7 @@
       </form>
     </div>
     <div class="varda-painotukset lapsi-form-varhaiskasvatuspaatokset"
-         *ngIf="!ui.isPerustiedotLoading && !ui.noVarhaiskasvatustietoPrivileges && (ui.isVakaTallentaja || ui.isVakaKatselija)">
+         *ngIf="!ui.isPerustiedotLoading && !ui.noVarhaiskasvatustietoPrivileges && toimipaikkaAccess.lapsitiedot.katselija">
       <form [formGroup]="varhaiskasvatuspaatoksetForm"
             class="varda-painotukset-panel">
         <div class="varda-painotukset-header">
@@ -92,7 +92,7 @@
                       [formGroup]="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr')['controls'][k].get(varhaiskasvatuspaatosFieldSet.id)">
               <legend class="varda-fieldset-legend">{{getFieldsetTitle(varhaiskasvatuspaatosFieldSet)}}</legend>
               <div *ngFor="let field of varhaiskasvatuspaatosFieldSet.fields; let x = index">
-                <app-varda-form-question [isReadOnly]="ui.isVakaKatselija"
+                <app-varda-form-question [isReadOnly]="!toimipaikkaAccess.lapsitiedot.tallentaja"
                                          [field]="field"
                                          [fieldIndex]="x"
                                          [partOfInline]="false"
@@ -104,7 +104,7 @@
                                          (changedField)="onFieldChanged($event)"></app-varda-form-question>
               </div>
             </fieldset>
-            <div *ngIf="!ui.isVakaKatselija"
+            <div *ngIf="toimipaikkaAccess.lapsitiedot.tallentaja"
                  [id]="'saveVarhaiskasvatuspaatosBtnWrapper' + k">
               <div *ngIf="ui.selectedVarhaiskasvatuspaatosIndexToDelete !== k"
                    class="varda-form-btn-wrapper">
@@ -155,7 +155,7 @@
           </mat-expansion-panel>
         </mat-accordion>
         <div class="varda-recurring-field-add-new-wrapper"
-             *ngIf="!ui.isVakaKatselija">
+             *ngIf="toimipaikkaAccess.lapsitiedot.tallentaja">
           <a [routerLink]=""
              (click)="addNewRecurringStructure('varhaiskasvatuspaatos')">
             {{'label.add-new-varhaiskasvatuspaatos' | translate}}</a>
@@ -163,7 +163,7 @@
       </form>
     </div>
     <div class="varda-painotukset lapsi-form-varhaiskasvatussuhteet"
-         *ngIf="!ui.isPerustiedotLoading && !ui.noVarhaiskasvatustietoPrivileges && (ui.isVakaTallentaja || ui.isVakaKatselija)">
+         *ngIf="!ui.isPerustiedotLoading && !ui.noVarhaiskasvatustietoPrivileges && toimipaikkaAccess.lapsitiedot.katselija">
       <form [formGroup]="varhaiskasvatussuhteetForm"
             class="varda-painotukset-panel">
         <div class="varda-painotukset-header">
@@ -224,7 +224,7 @@
                       [id]="varhaiskasvatussuhdeFieldSet.id + k"
                       [formGroup]="varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'][k].get(varhaiskasvatussuhdeFieldSet.id)">
               <div *ngFor="let field of varhaiskasvatussuhdeFieldSet.fields; let x = index">
-                <app-varda-form-question [isReadOnly]="ui.isVakaKatselija"
+                <app-varda-form-question [isReadOnly]="!toimipaikkaAccess.lapsitiedot.tallentaja"
                                          [field]="field"
                                          [fieldIndex]="x"
                                          [partOfInline]="false"
@@ -236,7 +236,7 @@
               </div>
             </fieldset>
             <div [id]="'saveVarhaiskasvatussuhdeBtnWrapper' + k"
-                 *ngIf="!ui.isVakaKatselija">
+                 *ngIf="toimipaikkaAccess.lapsitiedot.tallentaja">
               <div class="varda-form-btn-wrapper"
                    *ngIf="ui.selectedVarhaiskasvatussuhdeIndexToDelete !== k">
                 <button class="varda-button responsive"
@@ -281,7 +281,7 @@
           </mat-expansion-panel>
         </mat-accordion>
         <div class="varda-recurring-field-add-new-wrapper"
-             *ngIf="!ui.isVakaKatselija">
+             *ngIf="toimipaikkaAccess.lapsitiedot.tallentaja">
           <a [routerLink]=""
              class=""
              (click)="addNewRecurringStructure('varhaiskasvatussuhde')">
@@ -290,8 +290,8 @@
       </form>
     </div>
     <div class="varda-painotukset lapsi-form-maksutiedot"
-         *ngIf="!ui.isPerustiedotLoading">
-      <app-maksutiedot-form [lapsiId]="currentLapsi.id"></app-maksutiedot-form>
+         *ngIf="!ui.isPerustiedotLoading && toimipaikkaAccess.huoltajatiedot.katselija">
+      <app-maksutiedot-form [toimipaikkaAccess]="toimipaikkaAccess" [lapsiId]="currentLapsi.id"></app-maksutiedot-form>
     </div>
   </div>
 </div>

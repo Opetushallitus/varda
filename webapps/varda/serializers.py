@@ -651,12 +651,19 @@ class HenkilohakuLapsetSerializer(serializers.HyperlinkedModelSerializer):
 
         varhaiskasvatuspaatokset_query = view.kwargs['varhaiskasvatuspaatokset_query']
         varhaiskasvatussuhteet_query = view.kwargs['varhaiskasvatussuhteet_query']
+        maksutiedot_query = view.kwargs['maksutiedot_query']
+
+        toimipaikka_filter = (Q(varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi=lapsi_obj) &
+                              Q(varhaiskasvatussuhteet__varhaiskasvatuspaatos__in=varhaiskasvatuspaatokset_query) &
+                              Q(varhaiskasvatussuhteet__in=varhaiskasvatussuhteet_query) &
+                              Q(id__in=list_of_toimipaikka_ids))
+
+        if maksutiedot_query is not None:
+            toimipaikka_filter = toimipaikka_filter & Q(**{'varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi'
+                                                           '__huoltajuussuhteet__maksutiedot__in': maksutiedot_query})
 
         toimipaikat_query = (Toimipaikka.objects
-                             .filter(varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi=lapsi_obj,
-                                     varhaiskasvatussuhteet__varhaiskasvatuspaatos__in=varhaiskasvatuspaatokset_query,
-                                     varhaiskasvatussuhteet__in=varhaiskasvatussuhteet_query,
-                                     id__in=list_of_toimipaikka_ids)
+                             .filter(toimipaikka_filter)
                              .distinct('id')
                              )
         return [{"nimi": toimipaikka.nimi, "nimi_sv": toimipaikka.nimi_sv, "organisaatio_oid": toimipaikka.organisaatio_oid}

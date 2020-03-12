@@ -77,7 +77,7 @@
                                        *ngFor="let field of toimipaikkaFieldSet.fields; let x = index">
               </app-varda-form-question>
             </fieldset>
-            <div class="varda-form-btn-wrapper">
+            <div class="varda-form-btn-wrapper" *ngIf="!isReadOnly">
               <button class="varda-button responsive"
                       type="button"
                       id="toimipaikkaFormSaveToimipaikkaBtn"

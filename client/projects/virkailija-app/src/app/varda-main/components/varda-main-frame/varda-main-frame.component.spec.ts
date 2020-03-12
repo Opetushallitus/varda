@@ -44,12 +44,14 @@ describe('VardaMainFrameComponent', () => {
   let component: VardaMainFrameComponent;
   let fixture: ComponentFixture<VardaMainFrameComponent>;
 
+  let authService: AuthService;
   let vardaApiWrapperService: VardaApiWrapperService;
   let vardaVakajarjestajaService: VardaVakajarjestajaService;
   let vardaKieliKoodistoService: VardaKielikoodistoService;
   let vardaKuntaKoodistoService: VardaKuntakoodistoService;
 
   let setVakajarjestajatSpy;
+  let setVakajarjestajaToimipaikatSpy;
   let apiWrapperMockFunction;
 
   beforeEach(async(() => {
@@ -72,13 +74,13 @@ describe('VardaMainFrameComponent', () => {
         { provide: VardaKuntakoodistoService, useValue: { initKuntakoodisto: () => { }, sortKuntakoodistoOptions: () => { } } },
         { provide: VardaApiService, useValue: {} },
         { provide: TranslateService, useValue: {} },
-        { provide: AuthService, useValue: { getAuthorizedToimipaikat: () => { } } },
+        { provide: AuthService, useValue: { getAuthorizedToimipaikat: () => { }, getUserAccess: () => { } } },
         { provide: Router, useValue: { events: { subscribe: () => { } }, navigate: () => { }, routerState: {} } },
         { provide: HttpClient, useValue: {} },
       ]
-    })
-      .compileComponents();
+    }).compileComponents();
 
+    authService = TestBed.inject<AuthService>(AuthService);
     vardaApiWrapperService = TestBed.inject<VardaApiWrapperService>(VardaApiWrapperService);
     vardaVakajarjestajaService = TestBed.inject<VardaVakajarjestajaService>(VardaVakajarjestajaService);
     const selectedVaka = { id: '111', nimi: 'Nimi' };
@@ -90,7 +92,7 @@ describe('VardaMainFrameComponent', () => {
     apiWrapperMockFunction = spyOn(vardaApiWrapperService, 'getAllLapsetForToimipaikka').and.callThrough();
     setVakajarjestajatSpy = spyOn(vardaVakajarjestajaService, 'setVakajarjestajat').and.callThrough();
     vardaVakajarjestajaService.setSelectedToimipaikka(<VardaToimipaikkaMinimalDto>toimipaikatStub[0]);
-    vardaVakajarjestajaService.tallentajaToimipaikat = toimipaikatStub;
+    vardaVakajarjestajaService.setVakajarjestajaToimipaikat(toimipaikatStub, authService)
   }));
 
   beforeEach(() => {

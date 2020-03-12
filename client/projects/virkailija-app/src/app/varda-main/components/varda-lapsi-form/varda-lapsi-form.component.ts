@@ -4,7 +4,6 @@ import {
   EventEmitter,
   Input,
   OnChanges,
-  OnDestroy,
   OnInit,
   Output,
   SimpleChanges,
@@ -36,6 +35,7 @@ import { VardaDateService } from '../../services/varda-date.service';
 import { TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../../core/auth/auth.service';
 import { PaosToimintatietoDto } from '../../../utilities/models/dto/varda-paos-dto';
+import { UserAccess, SaveAccess } from '../../../utilities/models/varda-user-access.model';
 
 declare var $: any;
 
@@ -44,7 +44,7 @@ declare var $: any;
   templateUrl: './varda-lapsi-form.component.html',
   styleUrls: ['./varda-lapsi-form.component.css']
 })
-export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
+export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() henkilo: VardaHenkiloDTO;
   @Input() isEdit: boolean;
   @Input() toimipaikka: VardaToimipaikkaDTO;
@@ -89,11 +89,10 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   selectedVakajarjestaja: VardaVakajarjestajaUi & PaosToimintatietoDto;
   selectedVakajarjestajaGlobal: VardaVakajarjestajaUi;
   vakajarjestajat: Array<PaosToimintatietoDto>;
+  toimipaikkaAccess: UserAccess;
 
   ui: {
-    isVakaTallentaja: boolean;
     noVarhaiskasvatustietoPrivileges: boolean;
-    isVakaKatselija: boolean;
     isPerustiedotLoading: boolean,
     isSubmitting: boolean,
     saveBtnText: string,
@@ -111,7 +110,6 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
     errorMessageInfo: string,
     kunnanJarjestamaVarhaiskasvatus: boolean
   };
-  private toimipaikkaOidSubscription: Subscription;
 
   constructor(
     private vardaFormService: VardaFormService,
@@ -124,8 +122,6 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
     private translateService: TranslateService,
     private authService: AuthService) {
     this.ui = {
-      isVakaKatselija: false,
-      isVakaTallentaja: false,
       noVarhaiskasvatustietoPrivileges: true,
       isPerustiedotLoading: false,
       isSubmitting: false,
@@ -438,7 +434,12 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
 
   initLapsiFormFields(): void {
     this.vardaApiWrapperService.getCreateLapsiFieldSets().subscribe((data) => {
-      this.toimipaikkaOptions = this.vardaVakajarjestajaService.getTallentajaToimipaikat();
+      if (this.toimipaikkaAccess.lapsitiedot.tallentaja) {
+        this.toimipaikkaOptions = this.authService.getAuthorizedToimipaikat(this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().tallentajaToimipaikat, SaveAccess.lapsitiedot)
+      }
+      else {
+        this.toimipaikkaOptions = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().allToimipaikat;
+      }
       this.toimipaikkaForm = new FormGroup({ toimipaikka: new FormControl(this.currentToimipaikka) });
       this.selectedSuhdeForm = new FormGroup({ addVarhaiskasvatussuhde: new FormControl() });
       this.setToimipaikka();
@@ -895,23 +896,13 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   }
 
   ngOnInit() {
-    this.toimipaikkaOidSubscription = this.vardaVakajarjestajaService.getSelectedToimipaikkaOid().subscribe({
-      next: toimipaikkaOid => {
-        this.ui.isVakaKatselija = this.authService.isCurrentUserKatselijaForToimipaikka(toimipaikkaOid);
-        this.ui.isVakaTallentaja = this.authService.isCurrentUserToimipaikkaRole(toimipaikkaOid, VardaKayttooikeusRoles.VARDA_TALLENTAJA)
-          || this.authService.isCurrentUserSelectedVakajarjestajaRole(VardaKayttooikeusRoles.VARDA_TALLENTAJA);
-      }
-    });
+    this.toimipaikkaAccess = this.authService.getUserAccess(this.currentToimipaikka.organisaatio_oid)
     this.ui.isPerustiedotLoading = true;
     this.lapsiForm = new FormGroup({});
     this.varhaiskasvatussuhteetForm = new FormGroup({});
     this.varhaiskasvatussuhdeForm = new FormGroup({});
     this.varhaiskasvatuspaatoksetForm = new FormGroup({});
     this.varhaiskasvatuspaatosForm = new FormGroup({});
-  }
-
-  ngOnDestroy(): void {
-    this.toimipaikkaOidSubscription.unsubscribe();
   }
 
   getTallentajaVakajarjestajat(vakajarjestajat: Array<PaosToimintatietoDto>) {

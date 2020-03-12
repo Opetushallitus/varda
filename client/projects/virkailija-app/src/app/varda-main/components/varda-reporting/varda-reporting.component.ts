@@ -12,6 +12,7 @@ import { VardaKielikoodistoService } from '../../../core/services/varda-kielikoo
 import { VardaKuntakoodistoService } from '../../../core/services/varda-kuntakoodisto.service';
 import { VardaPageDto } from '../../../utilities/models/dto/varda-page-dto';
 import { LapsiByToimipaikkaDTO } from '../../../utilities/models/dto/varda-henkilohaku-dto.model';
+import { VakajarjestajaToimipaikat } from '../../../utilities/models/varda-vakajarjestaja-toimipaikat.model';
 
 @Component({
   selector: 'app-varda-reporting',
@@ -23,7 +24,7 @@ export class VardaReportingComponent implements OnInit {
   toimipaikat: Array<VardaToimipaikkaDTO>;
   toimipaikanLapset: Array<any>;
   selectedToimipaikanLapsi: any;
-  vakajarjestajaToimipaikat: Array<VardaToimipaikkaDTO>;
+  vakajarjestajaToimipaikat: VakajarjestajaToimipaikat;
 
   toimipaikatFieldSets: Array<VardaFieldSet>;
   toimintapainotuksetFieldSets: Array<VardaFieldSet>;
@@ -62,7 +63,6 @@ export class VardaReportingComponent implements OnInit {
     private vardaKuntakoodistoService: VardaKuntakoodistoService) {
     this.toimipaikat = [];
     this.toimipaikanLapset = null;
-    this.vakajarjestajaToimipaikat = [];
     this.ui = {
       isLoading: false,
       reportingInitializationError: false,
@@ -388,7 +388,7 @@ export class VardaReportingComponent implements OnInit {
     this.toimipaikanLapset = null;
     this.getToimipaikanLapsetForReporting(searchParams, null).subscribe(
       this.updateToimipaikanLapset.bind(this),
-      () => this.updateToimipaikanLapset({results: [], count: 0})
+      () => this.updateToimipaikanLapset({ results: [], count: 0 })
     );
   }
 
@@ -473,8 +473,8 @@ export class VardaReportingComponent implements OnInit {
   ngOnInit() {
     this.ui.isLoading = true;
     setTimeout(() => {
-      this.vakajarjestajaToimipaikat = this.vardaVakajarjestajaService.getToimipaikat();
-      this.toimipaikanLapsetSelectedToimipaikka = this.vakajarjestajaToimipaikat[0];
+      this.vakajarjestajaToimipaikat = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat();
+      this.toimipaikanLapsetSelectedToimipaikka = this.vakajarjestajaToimipaikat.katselijaToimipaikat[0];
       forkJoin([
         this.vardaApiWrapperService.getToimipaikkaFormFieldSets(),
         this.vardaApiWrapperService.getVarhaiskasvatuspaatosFieldSets(),

@@ -14,7 +14,7 @@
                               (editHenkiloItem)="editHenkilo($event)"></app-varda-henkilo-item>
     </div>
   </div>
-  <div class="varda-henkilo-list-content-button-wrapper">
+  <div *ngIf="toimipaikkaAccess.lapsitiedot.tallentaja" class="varda-henkilo-list-content-button-wrapper">
     <button class="varda-button varda-button-wide responsive-md"
             (click)="addHenkilo()"
             id="addHenkiloBtn">

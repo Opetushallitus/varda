@@ -24,7 +24,8 @@
     <p>{{'toimipaikka-no-lapsi-info' | translate}}</p>
     <p>{{'toimipaikka-add-lapsi-info' | translate}}</p>
   </div>
-  <app-varda-henkilo-list [henkiloList]="henkiloList"
+  <app-varda-henkilo-list [toimipaikkaAccess]="toimipaikkaAccess"
+                          [henkiloList]="henkiloList"
                           [henkiloSearchValue]="henkiloSearchObj"
                           *ngIf="henkiloList"></app-varda-henkilo-list>
 </section>

@@ -58,7 +58,7 @@
                   id="toimipaikkaSelect"
                   (change)="searchLapsi()"
                   [(ngModel)]="toimipaikanLapsetSelectedToimipaikka">
-            <option *ngFor="let toimipaikkaObj of vakajarjestajaToimipaikat"
+            <option *ngFor="let toimipaikkaObj of vakajarjestajaToimipaikat.katselijaToimipaikat"
                     [ngValue]="toimipaikkaObj">
               {{toimipaikkaObj.nimi}}</option>
           </select>

@@ -83,6 +83,7 @@ export class AuthService {
       this.loggedInUserCurrentKayttooikeus = VardaKayttooikeusRoles.VARDA_KATSELIJA;
     } else {
       const vardaTallentajaRole = selectedOrganisationLevelKayttooikeusRole.find((kayttooikeus) => {
+
         return kayttooikeus.kayttooikeus === VardaKayttooikeusRoles.VARDA_TALLENTAJA;
       });
 
@@ -118,7 +119,8 @@ export class AuthService {
   private kayttooikeudetHasToimipaikkaLevelTallentajaRole(): boolean {
     let rv = false;
     const toimipaikkaLevelTallentajaRoles = this.loggedInUserToimipaikkaLevelKayttooikeudet.filter((kayttooikeus) => {
-      return kayttooikeus.kayttooikeus === VardaKayttooikeusRoles.VARDA_TALLENTAJA;
+      const tallentajaRoolit = [VardaKayttooikeusRoles.VARDA_HUOLTAJA_TALLENTAJA, VardaKayttooikeusRoles.VARDA_TALLENTAJA]
+      return tallentajaRoolit.includes(kayttooikeus.kayttooikeus)
     });
 
     if (toimipaikkaLevelTallentajaRoles && toimipaikkaLevelTallentajaRoles.length > 0) {

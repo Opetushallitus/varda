@@ -43,14 +43,14 @@
         <app-huoltajat-container [initialHuoltajat]="getInitialHuoltajat(maksutietoFormArrayIdx)"
                                  (huoltajat)="setHuoltajat($event, maksutietoFormArrayIdx)"
                                  formControlName="huoltajat"
-                                 [isReadOnly]="ui.isKatselija"></app-huoltajat-container>
+                                 [isReadOnly]="!toimipaikkaAccess.huoltajatiedot.tallentaja"></app-huoltajat-container>
 
         <fieldset *ngFor="let maksutietoFieldSet of maksutiedotFieldSetObj[maksutietoFormArrayIdx]"
                   class="form-group varda-fieldset"
                   [id]="maksutietoFieldSet.id + maksutietoFormArrayIdx"
                   [formGroup]="getMaksutietoFormGroup(formControl, maksutietoFieldSet.id)">
           <div *ngFor="let field of maksutietoFieldSet.fields; let fieldIdx = index">
-            <app-varda-form-question [isReadOnly]="ui.isKatselija"
+            <app-varda-form-question [isReadOnly]="!toimipaikkaAccess.huoltajatiedot.tallentaja"
                                      [field]="field"
                                      [fieldIndex]="fieldIdx"
                                      [partOfInline]="false"
@@ -61,7 +61,7 @@
                                      [formName]="'maksutieto'"></app-varda-form-question>
           </div>
         </fieldset>
-        <div *ngIf="!ui.isKatselija"
+        <div *ngIf="toimipaikkaAccess.huoltajatiedot.tallentaja"
              [id]="'saveMaksutietoBtnWrapper' + maksutietoFormArrayIdx">
           <div class="varda-form-btn-wrapper"
                *ngIf="ui.indexOfMaksutietoToDelete !== maksutietoFormArrayIdx">
@@ -107,7 +107,7 @@
     </form>
   </mat-accordion>
   <div class="varda-recurring-field-add-new-wrapper"
-       *ngIf="isShowAddMaksutietoButton()">
+       *ngIf="toimipaikkaAccess.huoltajatiedot.tallentaja && isShowAddMaksutietoButton()">
     <a [routerLink]=""
        class=""
        (click)="createNewMaksutietoForm()">
