@@ -1,6 +1,15 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+## [1.3.8] (12.03.2020)
+- CSCVARDA-1278: Hae ja muokkaa -sivun hakutulosten parannuksia
+- CSCVARDA-1523: Maksutietojen näyttäminen tilan mukaan hae ja muokkaa näkymässä
+- CSCVARDA-1567: Katsele tietoja näkymän lapsi osioon latausikoni
+- CSCVARDA-1583: Varhaiskasvatuspäätöksen mitätöintiä koskeven virheilmoituksen tarkennus
+- CSCVARDA-1588: Käytettävyysparannus lomakkeelta poistumiseen
+- CSCVARDA-1599: Bugikorjaus toimipaikan nimen muokkaamiseen
+- CSCVARDA-1539: Syötä tietoja avaaminen toimipaikka-tallentajille
+
 ## [1.3.7] (05.03.2020)
 - CSCVARDA-1530: Järjestämismuodot koodiarvon mukaiseen järjestykseen
 - CSCVARDA-1537: Paos-hallinnan kunnat ja toimipaikat aakkosjärjestykseen
