@@ -13,12 +13,16 @@ def add_groups_with_permissions():
         ('VARDA-KATSELIJA_1.2.246.562.10.9395737548815', get_vakajarjestaja_katselija_permissions()),
         ('VARDA-KATSELIJA_1.2.246.562.10.93957375488', get_vakajarjestaja_katselija_permissions()),
         ('VARDA-KATSELIJA_1.2.246.562.10.34683023489', get_vakajarjestaja_katselija_permissions()),
+        ('VARDA-KATSELIJA_1.2.246.562.10.9395737548810', get_vakajarjestaja_katselija_permissions()),  # toimipaikka_1
+        ('VARDA-KATSELIJA_1.2.246.562.10.9395737548817', get_vakajarjestaja_katselija_permissions()),  # toimipaikka_5
         ('VARDA-PAAKAYTTAJA_1.2.246.562.10.93957375488', get_vakajarjestaja_paakayttaja_permissions()),
         ('VARDA-PAAKAYTTAJA_1.2.246.562.10.34683023489', get_vakajarjestaja_paakayttaja_permissions()),
         ('VARDA-TALLENTAJA_1.2.246.562.10.93957375488', get_vakajarjestaja_palvelukayttaja_permissions()),
         ('VARDA-PALVELUKAYTTAJA_1.2.246.562.10.93957375488', get_vakajarjestaja_palvelukayttaja_permissions()),
         ('VARDA-TALLENTAJA_1.2.246.562.10.9395737548810', get_toimipaikka_tallentaja_permissions()),
         ('VARDA-TALLENTAJA_1.2.246.562.10.34683023489', get_vakajarjestaja_palvelukayttaja_permissions()),
+        ('VARDA-TALLENTAJA_1.2.246.562.10.9395737548815', get_toimipaikka_tallentaja_permissions()),  # toimipaikka_2
+        ('VARDA-TALLENTAJA_1.2.246.562.10.9395737548817', get_toimipaikka_tallentaja_permissions()),  # toimipaikka_5
         ('VARDA-PALVELUKAYTTAJA_1.2.246.562.10.34683023489', get_vakajarjestaja_palvelukayttaja_permissions()),
         ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.9395737548810', get_huoltajatiedot_tallentaja_permissions()),
         ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.34683023489', get_huoltajatiedot_tallentaja_permissions()),

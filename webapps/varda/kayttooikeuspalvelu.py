@@ -283,23 +283,23 @@ def select_highest_kayttooikeusrooli(kayttooikeusrooli_list, organization_oid, *
 
 
 def _get_organizations_and_perm_groups_of_user(service_name, henkilo_oid, user):
-    kayttooikeus_ryhma_url = "/kayttooikeus/kayttaja?oidHenkilo={}".format(henkilo_oid)
+    kayttooikeus_ryhma_url = '/kayttooikeus/kayttaja?oidHenkilo={}'.format(henkilo_oid)
     reply_msg = get_json_from_external_service(service_name, kayttooikeus_ryhma_url)
-    if not reply_msg["is_ok"]:
+    if not reply_msg['is_ok']:
         return {}, {}
 
-    reply_json = reply_msg["json_msg"]
+    reply_json = reply_msg['json_msg']
     first_user = next(iter(reply_json), {})
-    kayttooikeudet_by_organisaatio_oid = [item for item in first_user.get("organisaatiot", []) if len(item["kayttooikeudet"]) > 0]
-    organisaatio_oids = [item["organisaatioOid"] for item in kayttooikeudet_by_organisaatio_oid]
+    kayttooikeudet_by_organisaatio_oid = [item for item in first_user.get('organisaatiot', []) if len(item['kayttooikeudet']) > 0]
+    organisaatio_oids = [item['organisaatioOid'] for item in kayttooikeudet_by_organisaatio_oid]
     organisations = organisaatio_client.get_multiple_organisaatio(organisaatio_oids)
-    active_organisation_oids = [org["oid"] for org in organisations if organisaatio_client.is_active(org)]
+    active_organisation_oids = [org['oid'] for org in organisations if organisaatio_client.is_active(org)]
     if settings.OPETUSHALLITUS_ORGANISAATIO_OID in organisaatio_oids:
-        oph_staff_group = Group.objects.get(name="oph_staff")
+        oph_staff_group = Group.objects.get(name='oph_staff')
         oph_staff_group.user_set.add(user)
-    active_kayttooikeus_by_organisation_oid = dict((kayttooikeus["organisaatioOid"], kayttooikeus["kayttooikeudet"])
+    active_kayttooikeus_by_organisation_oid = dict((kayttooikeus['organisaatioOid'], kayttooikeus['kayttooikeudet'])
                                                    for kayttooikeus
                                                    in kayttooikeudet_by_organisaatio_oid
-                                                   if kayttooikeus["organisaatioOid"] in active_organisation_oids
+                                                   if kayttooikeus['organisaatioOid'] in active_organisation_oids
                                                    )
-    return active_kayttooikeus_by_organisation_oid, {org["oid"]: org for org in organisations}
+    return active_kayttooikeus_by_organisation_oid, {org['oid']: org for org in organisations}

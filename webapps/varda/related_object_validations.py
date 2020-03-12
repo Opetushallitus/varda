@@ -221,19 +221,18 @@ def get_alkamis_paattymis_pvm(data, original):
     return alkamis_pvm, paattymis_pvm
 
 
-def toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=None, toimintamuoto_koodi=None, nimi=None):
+def toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=None, nimi=None):
     """
     There are a few special cases currently, where the toimipaikka is not to be POSTed to Org.palvelu.
     """
     if toimipaikka_obj is None:
-        toimipaikan_toimintamuoto_koodi = toimintamuoto_koodi
         toimipaikan_nimi = nimi
+        toimipaikka_oid = None
     else:
-        toimipaikan_toimintamuoto_koodi = toimipaikka_obj.toimintamuoto_koodi
         toimipaikan_nimi = toimipaikka_obj.nimi
+        toimipaikka_oid = toimipaikka_obj.organisaatio_oid
 
-    perhepaivahoitaja_koodit = ["TM02", "TM03"]  # TODO: kytke koodistopalveluun
-    if toimipaikan_toimintamuoto_koodi.upper() in perhepaivahoitaja_koodit or toimipaikan_nimi.startswith("Palveluseteli ja ostopalvelu"):
+    if toimipaikka_oid is None or toimipaikan_nimi.startswith("Palveluseteli ja ostopalvelu"):
         return False
 
     return True

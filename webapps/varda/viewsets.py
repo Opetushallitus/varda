@@ -607,58 +607,40 @@ class ToimipaikkaViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, P
             if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm']):
                 raise ValidationError({"paattymis_pvm": ["paattymis_pvm must be after alkamis_pvm"]})
 
-        if related_object_validations.toimipaikka_is_valid_to_organisaatiopalvelu(toimintamuoto_koodi=validated_data["toimintamuoto_koodi"], nimi=validated_data['nimi']):
-            check_if_toimipaikka_exists_in_organisaatiopalvelu(vakajarjestaja_id, validated_data["nimi"])
+        check_if_toimipaikka_exists_in_organisaatiopalvelu(vakajarjestaja_id, validated_data["nimi"])
+        """
+        Toimipaikka was not found in Organisaatiopalvelu. We can POST it there.
+        """
+        try:
+            with transaction.atomic():
+                # Save first internally so we can catch possible IntegrityError before POSTing to Org.palvelu.
+                serializer.save(changed_by=user)
 
-            """
-            Toimipaikka was not found in Organisaatiopalvelu. We can POST it there.
-            """
-            try:
-                with transaction.atomic():
-                    # Save first internally so we can catch possible IntegrityError before POSTing to Org.palvelu.
-                    serializer.save(changed_by=user)
+                result = create_toimipaikka_in_organisaatiopalvelu(validated_data)
+                if result["toimipaikka_created"]:
+                    toimipaikka_organisaatio_oid = result["organisaatio_oid"]
+                else:
+                    # transaction.set_rollback(True)  This would be otherwise nice but the user wouldn't get an error-msg.
+                    raise IntegrityError('Org.palvelu-integration')
 
-                    result = create_toimipaikka_in_organisaatiopalvelu(validated_data)
-                    if result["toimipaikka_created"]:
-                        toimipaikka_organisaatio_oid = result["organisaatio_oid"]
-                    else:
-                        # transaction.set_rollback(True)  This would be otherwise nice but the user wouldn't get an error-msg.
-                        raise IntegrityError('Org.palvelu-integration')
+                serializer.validated_data['organisaatio_oid'] = toimipaikka_organisaatio_oid
+                saved_object = serializer.save(changed_by=user)
+                delete_cache_keys_related_model('vakajarjestaja', saved_object.vakajarjestaja.id)
+                cache.delete('vakajarjestaja_yhteenveto_' + str(saved_object.vakajarjestaja.id))
 
-                    serializer.validated_data['organisaatio_oid'] = toimipaikka_organisaatio_oid
-                    saved_object = serializer.save(changed_by=user)
-                    delete_cache_keys_related_model('vakajarjestaja', saved_object.vakajarjestaja.id)
-                    cache.delete('vakajarjestaja_yhteenveto_' + str(saved_object.vakajarjestaja.id))
+                """
+                New organization, let's create pre-defined permission_groups for it.
+                """
+                create_permission_groups_for_organisaatio(toimipaikka_organisaatio_oid, vakajarjestaja=False)
 
-                    """
-                    New organization, let's create pre-defined permission_groups for it.
-                    """
-                    create_permission_groups_for_organisaatio(toimipaikka_organisaatio_oid, vakajarjestaja=False)
-
-                    vakajarjestaja_obj = VakaJarjestaja.objects.get(id=vakajarjestaja_id)
-                    vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
-                    assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Toimipaikka, saved_object)
-                    assign_object_level_permissions(toimipaikka_organisaatio_oid, Toimipaikka, saved_object)
-            except IntegrityError as e:
-                logger.error('Could not create a toimipaikka in Org.Palvelu. Data: {}. Error: {}.'
-                             .format(validated_data, e.__cause__))
-                raise ValidationError({"toimipaikka": ["Could not create toimipaikka in Organisaatiopalvelu."]})
-
-        else:
-            try:
-                with transaction.atomic():
-                    saved_object = serializer.save(changed_by=user)
-                    cache.delete('vakajarjestaja_yhteenveto_' + str(saved_object.vakajarjestaja.id))
-                    delete_cache_keys_related_model('vakajarjestaja', saved_object.vakajarjestaja.id)
-
-                    """
-                    Perhepaivahoitaja-toimipaikka does not have organisaatio_oid. Let's give permissions on vakajarjestaja-level.
-                    """
-                    vakajarjestaja_obj = validated_data["vakajarjestaja"]
-                    vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
-                    assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Toimipaikka, saved_object)
-            except IntegrityError:
-                raise ValidationError({"toimipaikka": ["Could not create toimipaikka in Varda."]})
+                vakajarjestaja_obj = VakaJarjestaja.objects.get(id=vakajarjestaja_id)
+                vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
+                assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Toimipaikka, saved_object)
+                assign_object_level_permissions(toimipaikka_organisaatio_oid, Toimipaikka, saved_object)
+        except IntegrityError as e:
+            logger.error('Could not create a toimipaikka in Org.Palvelu. Data: {}. Error: {}.'
+                         .format(validated_data, e.__cause__))
+            raise ValidationError({"toimipaikka": ["Could not create toimipaikka in Organisaatiopalvelu."]})
 
     def perform_update(self, serializer):
         """
@@ -2550,13 +2532,15 @@ class NestedLapsiKoosteViewSet(GenericViewSet):
         if not kwargs['lapsi_pk'].isdigit():
             raise Http404("Not found.")
 
+        user = self.request.user
+
         lapsi = self.get_lapsi(request, lapsi_pk=kwargs['lapsi_pk'])
         save_audit_log(request.user, request.get_full_path())
         data = {
             "henkilo": self.get_henkilo(lapsi),
-            "varhaiskasvatuspaatokset": self.get_vakapaatokset(lapsi.id),
-            "varhaiskasvatussuhteet": self.get_vakasuhteet(lapsi.id),
-            "maksutiedot": self.get_maksutiedot(lapsi.id)
+            "varhaiskasvatuspaatokset": self.get_vakapaatokset(lapsi.id, user),
+            "varhaiskasvatussuhteet": self.get_vakasuhteet(lapsi.id, user),
+            "maksutiedot": self.get_maksutiedot(lapsi.id, user)
         }
 
         serializer = self.get_serializer(data, many=False)
@@ -2568,35 +2552,54 @@ class NestedLapsiKoosteViewSet(GenericViewSet):
         """
         return lapsi.henkilo
 
-    def get_vakapaatokset(self, lapsi_id):
+    def get_vakapaatokset(self, lapsi_id, user):
         """
         Return vakapaatokset for given lapsi_id
         """
-        vakapaatokset = Varhaiskasvatuspaatos.objects.filter(lapsi=lapsi_id).distinct().order_by('-alkamis_pvm')
-        if vakapaatokset.count() > 0 and self.request.user.has_perm("view_varhaiskasvatuspaatos", vakapaatokset[0]):
-            return vakapaatokset
+        if user.is_superuser or user.has_perm('oph_staff'):
+            user_vakapaatos_ids_q = Q()
         else:
-            return None
+            model_name = 'varhaiskasvatuspaatos'
+            content_type = ContentType.objects.get(model=model_name)
+            varhaiskasvatuspaatos_id_list = get_object_ids_user_has_permissions(user, model_name, content_type)
+            user_vakapaatos_ids_q = Q(id__in=varhaiskasvatuspaatos_id_list)
+        vakapaatokset = (Varhaiskasvatuspaatos.objects.filter(Q(lapsi=lapsi_id) & user_vakapaatos_ids_q)
+                                                      .distinct()
+                                                      .order_by('-alkamis_pvm'))
+        return vakapaatokset
 
-    def get_vakasuhteet(self, lapsi_id):
+    def get_vakasuhteet(self, lapsi_id, user):
         """
         Return vakasuhteet for given lapsi_id
         """
-        vakasuhteet = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=lapsi_id).select_related('toimipaikka').distinct().order_by('-alkamis_pvm')
-        if vakasuhteet.count() > 0 and self.request.user.has_perm("view_varhaiskasvatussuhde", vakasuhteet[0]):
-            return vakasuhteet
+        if user.is_superuser or user.has_perm('oph_staff'):
+            user_vakasuhde_ids_q = Q()
         else:
-            return None
+            model_name = 'varhaiskasvatussuhde'
+            content_type = ContentType.objects.get(model=model_name)
+            varhaiskasvatussuhde_id_list = get_object_ids_user_has_permissions(user, model_name, content_type)
+            user_vakasuhde_ids_q = Q(id__in=varhaiskasvatussuhde_id_list)
+        vakasuhteet = (Varhaiskasvatussuhde.objects.filter(Q(varhaiskasvatuspaatos__lapsi=lapsi_id) & user_vakasuhde_ids_q)
+                                                   .select_related('toimipaikka')
+                                                   .distinct()
+                                                   .order_by('-alkamis_pvm'))
+        return vakasuhteet
 
-    def get_maksutiedot(self, lapsi_id):
+    def get_maksutiedot(self, lapsi_id, user):
         """
         Return maksutiedot for given lapsi_id
         """
-        maksutiedot = Maksutieto.objects.filter(huoltajuussuhteet__lapsi=lapsi_id).distinct().order_by('-alkamis_pvm')
-        if maksutiedot.count() > 0 and self.request.user.has_perm('view_maksutieto', maksutiedot[0]):
-            return maksutiedot
+        if user.is_superuser or user.has_perm('oph_staff'):
+            user_maksutieto_ids_q = Q()
         else:
-            return None
+            model_name = 'maksutieto'
+            content_type = ContentType.objects.get(model=model_name)
+            maksutieto_id_list = get_object_ids_user_has_permissions(user, model_name, content_type)
+            user_maksutieto_ids_q = Q(id__in=maksutieto_id_list)
+        maksutiedot = (Maksutieto.objects.filter(Q(huoltajuussuhteet__lapsi=lapsi_id) & user_maksutieto_ids_q)
+                                         .distinct()
+                                         .order_by('-alkamis_pvm'))
+        return maksutiedot
 
 
 class NestedLapsenVarhaiskasvatussuhdeViewSet(GenericViewSet, ListModelMixin):

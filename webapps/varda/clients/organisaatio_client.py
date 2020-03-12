@@ -67,7 +67,7 @@ def _parse_organisaatio_data(response, organisaatio_oid):
 
 def get_parent_oid(child_oid):
     organisaatio_url = ORGANISAATIOPALVELU_API_V4 + 'hae?aktiiviset=true&oid=' + child_oid
-    reply_msg = get_json_from_external_service(SERVICE_NAME, organisaatio_url, auth=False)
+    reply_msg = get_json_from_external_service(SERVICE_NAME, organisaatio_url, auth=True)
     if not reply_msg['is_ok']:
         return None
 
@@ -100,7 +100,7 @@ def organization_is_not_active_vaka_organization(organisaatio_oid, must_be_vakaj
     If you need to check explicitly that the organization is not 'Varhaiskasvatuksen jarjestaja', set the must_be_vakajarjestaja to True.
     """
     organisaatio_url = ORGANISAATIOPALVELU_API_V4 + 'hae?aktiiviset=true&oid=' + organisaatio_oid
-    reply_msg = get_json_from_external_service(SERVICE_NAME, organisaatio_url, auth=False)
+    reply_msg = get_json_from_external_service(SERVICE_NAME, organisaatio_url, auth=True)
     if not reply_msg['is_ok']:
         return True
 
@@ -117,14 +117,14 @@ def organization_is_not_active_vaka_organization(organisaatio_oid, must_be_vakaj
         logger.error('Problem with organization: /' + SERVICE_NAME + organisaatio_url)
         return None
     if 'organisaatiotyypit' not in organization_data or 'status' not in organization_data:
-        logger.error('Organisaatio missing rquired data: /' + SERVICE_NAME + organisaatio_url)
+        logger.error('Organisaatio missing required data: /' + SERVICE_NAME + organisaatio_url)
         return True
     return is_not_active(organization_data, must_be_vakajarjestaja)
 
 
 def is_not_active(organization_data, must_be_vakajarjestaja=False):
     if 'organisaatiotyypit' not in organization_data and 'tyypit' not in organization_data or 'status' not in organization_data:
-        logger.error('Organisaatio missing rquired data: {}'.format(organization_data['oid']))
+        logger.error('Organisaatio missing required data: {}'.format(organization_data['oid']))
         return True
     if not is_of_type(organization_data, 'organisaatiotyyppi_07', 'organisaatiotyyppi_08'):
         return True
@@ -150,7 +150,7 @@ def is_of_type(organisation_data, *args):
 
 def organization_is_vakajarjestaja(organisaatio_oid):
     organisaatio_url = ORGANISAATIOPALVELU_API_V4 + 'hae?aktiiviset=true&oid=' + organisaatio_oid
-    reply_msg = get_json_from_external_service(SERVICE_NAME, organisaatio_url, auth=False)
+    reply_msg = get_json_from_external_service(SERVICE_NAME, organisaatio_url, auth=True)
     if not reply_msg['is_ok']:
         return True
 
@@ -167,7 +167,7 @@ def organization_is_vakajarjestaja(organisaatio_oid):
         return None
 
     if 'organisaatiotyypit' not in organization_data:
-        logger.error('Organisaatio missing rquired data: /' + SERVICE_NAME + organisaatio_url)
+        logger.error('Organisaatio missing required data: /' + SERVICE_NAME + organisaatio_url)
         return True
 
     return is_of_type(organization_data, 'organisaatiotyyppi_07')
@@ -195,7 +195,7 @@ def check_if_toimipaikka_exists_by_name(toimipaikka_name, parent_oid):
     """
     http_url_suffix = (ORGANISAATIOPALVELU_API_V4 + 'hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oidRestrictionList=' +
                        parent_oid + '&organisaatiotyyppi=organisaatiotyyppi_08&searchStr=' + toimipaikka_name)
-    reply_msg = get_json_from_external_service(SERVICE_NAME, http_url_suffix, auth=False)
+    reply_msg = get_json_from_external_service(SERVICE_NAME, http_url_suffix, auth=True)
 
     oids = []
     if not reply_msg['is_ok']:
@@ -226,7 +226,7 @@ def get_organisaatio(organisaatio_oid, internal_id=None):
     :return: json data from organisaatio service
     """
     url_path = ORGANISAATIOPALVELU_API_V4 + organisaatio_oid + '?includeImage=false'
-    reply_msg = get_json_from_external_service(SERVICE_NAME, url_path, auth=False)
+    reply_msg = get_json_from_external_service(SERVICE_NAME, url_path, auth=True)
 
     if reply_msg['is_ok']:
         return reply_msg['json_msg']
@@ -262,7 +262,7 @@ def get_changed_since(since):
     # Organisaatio-service formats: 'yyyy-MM-dd', 'yyyy-MM-dd HH:mm'
     formatted_time = since.strftime('%Y-%m-%d %H:%M')
     url_path_query = ORGANISAATIOPALVELU_API_V2 + 'muutetut/oid?lastModifiedSince=' + formatted_time
-    result = get_json_from_external_service(SERVICE_NAME, url_path_query, auth=False)
+    result = get_json_from_external_service(SERVICE_NAME, url_path_query, auth=True)
     oids = result['json_msg']['oids']
     return list(filter(lambda oid: oid != '', oids))
 
@@ -278,5 +278,5 @@ def get_multiple_organisaatio(organisaatio_oids):
         return []
     url_path = ORGANISAATIOPALVELU_API_V4 + 'findbyoids'
     data = json.dumps(list(organisaatio_oids))
-    response = post_json_to_external_service('organisaatio-service', url_path, data, 200, auth=False)
+    response = post_json_to_external_service('organisaatio-service', url_path, data, 200, auth=True)
     return response['json_msg']

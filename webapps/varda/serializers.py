@@ -326,6 +326,10 @@ class ToimipaikkaSerializer(serializers.HyperlinkedModelSerializer):
                 not self.context['request'].user.has_perm('view_vakajarjestaja', data['vakajarjestaja'])):
             msg = {"vakajarjestaja": ["Invalid hyperlink - Object does not exist.", ]}
             raise serializers.ValidationError(msg, code='invalid')
+        #  names that collide with temporary toimipaikka are not allowed
+        if 'nimi' in data and data['nimi'].lower().startswith('palveluseteli ja ostopalvelu'):
+            msg = {"nimi": ["toimipaikka with name palveluseteli ja ostopalvelu is reserved for system"]}
+            raise serializers.ValidationError(msg, code='invalid')
         return data
 
     @caching_to_representation('toimipaikka')
