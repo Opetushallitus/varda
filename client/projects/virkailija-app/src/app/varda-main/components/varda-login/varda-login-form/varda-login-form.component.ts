@@ -14,7 +14,7 @@ export class VardaLoginFormComponent implements OnInit {
   vardaBackendLoginUrl = `${environment.vardaAppUrl}/accounts/login?next=${this.next}`;
   showLogOutMsg = false;
   tokenInput = {
-    show: !environment.production && environment.vardaFrontendUrl == 'http://localhost:4200',
+    show: !environment.production && environment.vardaFrontendUrl === 'http://localhost:4200',
     value: null,
     backend: environment.vardaApiKeyUrl
   };
@@ -39,7 +39,7 @@ export class VardaLoginFormComponent implements OnInit {
     localStorage.setItem('varda.api.token', JSON.stringify({
       token: token,
       expiryTime: today.toISOString()
-    }))
+    }));
     this.router.navigate(['/']);
   }
 

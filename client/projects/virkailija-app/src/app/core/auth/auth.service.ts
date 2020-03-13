@@ -119,8 +119,8 @@ export class AuthService {
   private kayttooikeudetHasToimipaikkaLevelTallentajaRole(): boolean {
     let rv = false;
     const toimipaikkaLevelTallentajaRoles = this.loggedInUserToimipaikkaLevelKayttooikeudet.filter((kayttooikeus) => {
-      const tallentajaRoolit = [VardaKayttooikeusRoles.VARDA_HUOLTAJA_TALLENTAJA, VardaKayttooikeusRoles.VARDA_TALLENTAJA]
-      return tallentajaRoolit.includes(kayttooikeus.kayttooikeus)
+      const tallentajaRoolit = [VardaKayttooikeusRoles.VARDA_HUOLTAJA_TALLENTAJA, VardaKayttooikeusRoles.VARDA_TALLENTAJA];
+      return tallentajaRoolit.includes(kayttooikeus.kayttooikeus);
     });
 
     if (toimipaikkaLevelTallentajaRoles && toimipaikkaLevelTallentajaRoles.length > 0) {
@@ -153,20 +153,17 @@ export class AuthService {
     return toimipaikat.filter((toimipaikka: VardaToimipaikkaDTO) => {
       const access = this.getUserAccess(toimipaikka.organisaatio_oid);
       if (!hasSaveAccess) {
-        return (access.henkilostotiedot.katselija || access.huoltajatiedot.katselija || access.lapsitiedot.katselija)
+        return (access.henkilostotiedot.katselija || access.huoltajatiedot.katselija || access.lapsitiedot.katselija);
+      } else if (hasSaveAccess === SaveAccess.kaikki) {
+        return (access.henkilostotiedot.tallentaja || access.huoltajatiedot.tallentaja || access.lapsitiedot.tallentaja);
+      } else if (hasSaveAccess === SaveAccess.lapsitiedot) {
+        return (access.huoltajatiedot.tallentaja || access.lapsitiedot.tallentaja);
+      } else if (hasSaveAccess === SaveAccess.henkilostotiedot) {
+        return (access.henkilostotiedot.tallentaja);
       }
-      else if (hasSaveAccess === SaveAccess.kaikki) {
-        return (access.henkilostotiedot.tallentaja || access.huoltajatiedot.tallentaja || access.lapsitiedot.tallentaja)
-      }
-      else if (hasSaveAccess === SaveAccess.lapsitiedot) {
-        return (access.huoltajatiedot.tallentaja || access.lapsitiedot.tallentaja)
-      }
-      else if (hasSaveAccess === SaveAccess.henkilostotiedot) {
-        return (access.henkilostotiedot.tallentaja)
-      }
-      console.error("GetAuthorizedToimipaikat called with incorrect value", hasSaveAccess)
-      return false
-    })
+      console.error('GetAuthorizedToimipaikat called with incorrect value', hasSaveAccess);
+      return false;
+    });
   }
 
   loggedInUserAsiointikieliSet(): Observable<string> {
@@ -264,9 +261,9 @@ export class AuthService {
 
   getUserAccess(toimipaikkaOid?: string): UserAccess {
     const getRoles = (...roles: Array<VardaKayttooikeusRoles>): boolean => {
-      const toimipaikkaRole = !!(toimipaikkaOid && this.isCurrentUserToimipaikkaRole(toimipaikkaOid, ...roles))
-      return this.isCurrentUserSelectedVakajarjestajaRole(...roles) || toimipaikkaRole
-    }
+      const toimipaikkaRole = !!(toimipaikkaOid && this.isCurrentUserToimipaikkaRole(toimipaikkaOid, ...roles));
+      return this.isCurrentUserSelectedVakajarjestajaRole(...roles) || toimipaikkaRole;
+    };
 
     const access: UserAccess = {
       paakayttaja: getRoles(VardaKayttooikeusRoles.VARDA_PAAKAYTTAJA),
@@ -298,14 +295,14 @@ export class AuthService {
   getUserAccessIfAnyToimipaikka(toimipaikat: Array<VardaToimipaikkaMinimalDto>): UserAccess {
     const userAccess = this.getUserAccess();
     toimipaikat.forEach((toimipaikka: VardaToimipaikkaMinimalDto) => {
-      const toimipaikkaAccess = this.getUserAccess(toimipaikka.organisaatio_oid)
-      userAccess.paakayttaja = userAccess.paakayttaja || toimipaikkaAccess.paakayttaja
+      const toimipaikkaAccess = this.getUserAccess(toimipaikka.organisaatio_oid);
+      userAccess.paakayttaja = userAccess.paakayttaja || toimipaikkaAccess.paakayttaja;
       Object.keys(toimipaikkaAccess).filter((key: string) => key !== 'paakayttaja').forEach((key: string) => {
-        userAccess[key].katselija = userAccess[key].katselija || toimipaikkaAccess[key].katselija
-        userAccess[key].tallentaja = userAccess[key].tallentaja || toimipaikkaAccess[key].tallentaja
-      })
-    })
-    return userAccess
+        userAccess[key].katselija = userAccess[key].katselija || toimipaikkaAccess[key].katselija;
+        userAccess[key].tallentaja = userAccess[key].tallentaja || toimipaikkaAccess[key].tallentaja;
+      });
+    });
+    return userAccess;
   }
 
 }

@@ -31,7 +31,7 @@ const routes: Routes = [
       {
         path: 'vakatoimija',
         component: VardaVakatoimijaComponent,
-        data: { title: "label.varhaiskasvatustoimija" }
+        data: { title: 'label.varhaiskasvatustoimija' }
       },
       {
         path: 'haku',

@@ -46,7 +46,7 @@ export class VardaMainFrameComponent implements OnInit {
       return;
     }
 
-    this.toimipaikkaAccess = this.authService.getUserAccess(data.organisaatio_oid)
+    this.toimipaikkaAccess = this.authService.getUserAccess(data.organisaatio_oid);
     this.selectedToimipaikka = this.vardaVakajarjestajaService.getSelectedToimipaikka();
     this.getVarhaiskasvatussuhteetByToimipaikka();
   }
@@ -58,7 +58,7 @@ export class VardaMainFrameComponent implements OnInit {
       this.toimipaikat[toimipaikkaIndexToUpdate] = data;
     } else {
       isNew = true;
-      this.toimipaikkaAccess = this.authService.getUserAccess(data.organisaatio_oid)
+      this.toimipaikkaAccess = this.authService.getUserAccess(data.organisaatio_oid);
       this.toimipaikat.push(data);
     }
 
@@ -80,8 +80,9 @@ export class VardaMainFrameComponent implements OnInit {
     if (!selectedToimipaikka) {
       throw Error('No toimipaikka selected. Unable to fetch lapset for toimipaikka.');
     } else {
-      if (!this.toimipaikat.includes(selectedToimipaikka))
+      if (!this.toimipaikat.includes(selectedToimipaikka)) {
         selectedToimipaikka = this.toimipaikat[0];
+      }
     }
     const toimipaikkaId = this.vardaUtilityService.parseIdFromUrl(selectedToimipaikka.url);
     this.vardaApiWrapperService.getAllLapsetForToimipaikka(toimipaikkaId)
@@ -124,7 +125,7 @@ export class VardaMainFrameComponent implements OnInit {
   }
 
   initToimipaikat(): void {
-    this.toimipaikat = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().katselijaToimipaikat
+    this.toimipaikat = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().katselijaToimipaikat;
   }
 
   ngOnInit() {

@@ -9,7 +9,7 @@ import { LoadingHttpService } from 'varda-shared';
 export class VardaListPaginationComponent implements OnInit {
   @Input() prevLink: string | boolean;
   @Input() nextLink: string | boolean;
-  @Input() currentPage: number = 1;
+  @Input() currentPage = 1;
   @Input() maxPages: number;
   @Output() prevSearch = new EventEmitter(true);
   @Output() nextSearch = new EventEmitter(true);

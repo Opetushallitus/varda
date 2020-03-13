@@ -1,4 +1,4 @@
 export interface VardaSelectOption {
-  displayName: string,
-  code: string
+  displayName: string;
+  code: string;
 }

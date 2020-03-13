@@ -26,7 +26,7 @@ export class VardaPaosManagementContainerComponent implements OnInit, OnDestroy 
     private paosToimintaService: PaosToimintaService) { }
 
   ngOnInit() {
-    this.isVardaPaakayttaja = this.authService.isCurrentUserSelectedVakajarjestajaRole(VardaKayttooikeusRoles.VARDA_PAAKAYTTAJA)
+    this.isVardaPaakayttaja = this.authService.isCurrentUserSelectedVakajarjestajaRole(VardaKayttooikeusRoles.VARDA_PAAKAYTTAJA);
     this.selectedVakajarjestaja = new VardaVakajarjestaja();
     this.errorMessage$ = this.paosToimintaService.errorMessage$;
     this.vakajarjestajaSubscription = this.vakajarjestajaService.getSelectedVakajarjestajaObs()

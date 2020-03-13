@@ -435,9 +435,8 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   initLapsiFormFields(): void {
     this.vardaApiWrapperService.getCreateLapsiFieldSets().subscribe((data) => {
       if (this.toimipaikkaAccess.lapsitiedot.tallentaja) {
-        this.toimipaikkaOptions = this.authService.getAuthorizedToimipaikat(this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().tallentajaToimipaikat, SaveAccess.lapsitiedot)
-      }
-      else {
+        this.toimipaikkaOptions = this.authService.getAuthorizedToimipaikat(this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().tallentajaToimipaikat, SaveAccess.lapsitiedot);
+      } else {
         this.toimipaikkaOptions = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().allToimipaikat;
       }
       this.toimipaikkaForm = new FormGroup({ toimipaikka: new FormControl(this.currentToimipaikka) });
@@ -896,7 +895,7 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   }
 
   ngOnInit() {
-    this.toimipaikkaAccess = this.authService.getUserAccess(this.currentToimipaikka.organisaatio_oid)
+    this.toimipaikkaAccess = this.authService.getUserAccess(this.currentToimipaikka.organisaatio_oid);
     this.ui.isPerustiedotLoading = true;
     this.lapsiForm = new FormGroup({});
     this.varhaiskasvatussuhteetForm = new FormGroup({});

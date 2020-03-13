@@ -12,8 +12,8 @@ export class VardaDropdownFilterComponent implements OnInit {
   @Input() list: Array<object>;
   @Input() label: string;
   @Input() ariaLabel: string;
-  @Output() onSelect = new EventEmitter(true);
-  @ViewChild("dropdownFilterInput") dropdownFilterInput: ElementRef;
+  @Output() select = new EventEmitter(true);
+  @ViewChild('dropdownFilterInput') dropdownFilterInput: ElementRef;
   @ViewChild(MatMenuTrigger, { static: true }) trigger: MatMenuTrigger;
   showDropdown: boolean;
   filteredList: Array<object>;
@@ -39,19 +39,21 @@ export class VardaDropdownFilterComponent implements OnInit {
 
   filterList(text: string, enter: boolean = false) {
     setTimeout(() => this.dropdownFilterInput.nativeElement.focus(), 100);
-    if (!text || !text.length)
-      return this.filteredList = this.list
-    text = text.toLowerCase().trim()
+    if (!text || !text.length) {
+      return this.filteredList = this.list;
+    }
+    text = text.toLowerCase().trim();
     this.filteredList = this.list.filter(item => {
-      return this.filterBy.some(key => item[key] && item[key].toLowerCase().includes(text))
+      return this.filterBy.some(key => item[key] && item[key].toLowerCase().includes(text));
     });
 
-    if (this.filteredList.length === 1 && enter)
+    if (this.filteredList.length === 1 && enter) {
       setTimeout(() => this.selectItem(this.filteredList[0]), 500);
+    }
   }
 
   selectItem(item: any) {
-    this.onSelect.emit(item);
+    this.select.emit(item);
     this.trigger.closeMenu();
   }
 }

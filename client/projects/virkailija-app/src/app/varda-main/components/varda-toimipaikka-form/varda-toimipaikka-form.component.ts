@@ -559,7 +559,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
       ]).subscribe((data) => {
         this.kielipainotukset = data[0];
         this.toimintapainotukset = data[1];
-        this.toimipaikkaAccess = this.authService.getUserAccess(this.toimipaikka.organisaatio_oid)
+        this.toimipaikkaAccess = this.authService.getUserAccess(this.toimipaikka.organisaatio_oid);
         this.isReadOnly = this.isReadOnly || !this.toimipaikkaAccess.lapsitiedot.tallentaja;
         observer.next();
         observer.complete();

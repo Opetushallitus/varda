@@ -3,7 +3,7 @@ import { PaosToimijaInternalDto, PaosToimipaikkatietoDto } from '../../../../uti
 import { VardaApiService } from '../../../../core/services/varda-api.service';
 import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
-import { AbstractPaosListToimintainfoComponent } from './abstract-paos-list-toimintainfo-component';
+import { AbstractPaosListToimintainfoComponentDirective } from './abstract-paos-list-toimintainfo-component';
 import { PaosCreateEvent, PaosToimintaService } from '../paos-toiminta.service';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 
@@ -20,7 +20,7 @@ import { animate, state, style, transition, trigger } from '@angular/animations'
     ])
   ]
 })
-export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoComponent<PaosToimipaikkatietoDto> implements OnInit, OnDestroy {
+export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoComponentDirective<PaosToimipaikkatietoDto> implements OnInit, OnDestroy {
   private createEventSubscription: Subscription;
   highlighted: Array<string>;
   toimipaikatByToimija: Array<PaosToimijaInternalDto>;
@@ -87,12 +87,12 @@ export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoC
 
     this.toimipaikatByToimija = Object.values(groupObject);
     this.filteredToiminnat = [...this.toimipaikatByToimija];
-    this.filteredToiminnat.sort((a: PaosToimijaInternalDto, b: PaosToimijaInternalDto) => a.toimijaNimi.localeCompare(b.toimijaNimi))
+    this.filteredToiminnat.sort((a: PaosToimijaInternalDto, b: PaosToimijaInternalDto) => a.toimijaNimi.localeCompare(b.toimijaNimi));
     this.filteredToiminnat.forEach(toimija =>
       toimija.toimipaikat.sort((a: PaosToimipaikkatietoDto, b: PaosToimipaikkatietoDto) =>
         a.toimipaikka_nimi.localeCompare(b.toimipaikka_nimi)
       )
-    )
+    );
   }
 
   filterToimintaInfo(searchText: string) {

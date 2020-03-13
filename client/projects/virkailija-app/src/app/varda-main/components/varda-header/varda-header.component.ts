@@ -192,10 +192,10 @@ export class VardaHeaderComponent implements OnInit, AfterViewInit {
       node.src = virkailijaRaamitUrl;
       node.type = 'text/javascript';
       node.async = true;
-      document.getElementsByTagName('head')[0].appendChild(node)
+      document.getElementsByTagName('head')[0].appendChild(node);
 
       if (!window.location.hostname.includes('opintopolku.fi')) {
-        setTimeout(() => window.document.dispatchEvent(new Event('DOMContentLoaded')), 500)
+        setTimeout(() => window.document.dispatchEvent(new Event('DOMContentLoaded')), 500);
       }
     }
   }

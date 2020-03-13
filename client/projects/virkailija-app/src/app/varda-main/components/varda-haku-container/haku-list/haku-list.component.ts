@@ -8,6 +8,7 @@ import { VardaVakajarjestajaService } from '../../../../core/services/varda-vaka
 import { VardaKayttooikeusRoles } from '../../../../utilities/varda-kayttooikeus-roles';
 import { VardaPageDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-page-dto';
 import { VakajarjestajaToimipaikat } from 'projects/virkailija-app/src/app/utilities/models/varda-vakajarjestaja-toimipaikat.model';
+import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 
 class HenkiloHakuResultWithToimipaikka {
   lapsi: HenkilohakuResultDTO;
@@ -98,7 +99,7 @@ export class HakuListComponent implements OnInit, OnChanges {
     activeHenkilo.lapsi = lapsi.henkilo.lapsi;
     activeHenkilo.tyontekija = lapsi.henkilo.tyontekija;
     this.activeHenkilo = activeHenkilo;
-    const toimipaikka = this.vardaVakajarjestajaService.tallentajaToimipaikat.find(toimipaikka => toimipaikka.organisaatio_oid === result.toimipaikka_oid)
+    const toimipaikka = this.vardaVakajarjestajaService.tallentajaToimipaikat.find((_toimipaikka: VardaToimipaikkaMinimalDto) => _toimipaikka.organisaatio_oid === result.toimipaikka_oid);
     this.vardaVakajarjestajaService.setSelectedToimipaikka(toimipaikka);
   }
 

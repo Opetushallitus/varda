@@ -27,7 +27,7 @@ export class VardaUtilityService {
     const domain = this.splitHostname(locationHostname);
     if (domain === 'opintopolku') {
       rv = `${environment.virkailijaOpintopolkuUrl}${environment.virkailijaRaamitScriptPath}`;
-    } else if (domain === 'testiopintopolku' || locationHostname === "localhost") {
+    } else if (domain === 'testiopintopolku' || locationHostname === 'localhost') {
       rv = `${environment.virkailijaTestiOpintopolkuUrl}${environment.virkailijaRaamitScriptPath}`;
     }
 

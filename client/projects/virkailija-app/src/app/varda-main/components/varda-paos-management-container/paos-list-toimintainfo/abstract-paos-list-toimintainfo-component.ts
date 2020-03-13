@@ -5,7 +5,7 @@ import { from, Observable, Subject } from 'rxjs';
 import { PaosOikeusTieto, PaosToimintatietoDto, PaosToimipaikkatietoDto } from '../../../../utilities/models/dto/varda-paos-dto';
 
 @Directive()
-export abstract class AbstractPaosListToimintainfoComponent<T extends PaosToimipaikkatietoDto & PaosToimintatietoDto> implements OnInit {
+export abstract class AbstractPaosListToimintainfoComponentDirective<T extends PaosToimipaikkatietoDto & PaosToimintatietoDto> implements OnInit {
   paosToiminnat: Array<T>;
   @Input() selectedVakajarjestaja: VardaVakajarjestaja;
   @Input() isVardaPaakayttaja: boolean;

@@ -1,4 +1,3 @@
-declare var require: any
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
@@ -9,8 +8,9 @@ import { Router } from '@angular/router';
 })
 export class BrowserNotSupportedComponent implements OnInit {
   constructor(private router: Router) {
-    if (!/Trident\/|MSIE/.test(window.navigator.userAgent))
-      this.router.navigate(['/'])
+    if (!/Trident\/|MSIE/.test(window.navigator.userAgent)) {
+      this.router.navigate(['/']);
+    }
   }
 
   ngOnInit() { }

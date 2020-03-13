@@ -386,10 +386,10 @@ export class VardaReportingComponent implements OnInit {
     this.ui.isLoading = true;
     this.selectedToimipaikanLapsi = null;
     this.toimipaikanLapset = null;
-    this.getToimipaikanLapsetForReporting(searchParams, null).subscribe(
-      this.updateToimipaikanLapset.bind(this),
-      () => this.updateToimipaikanLapset({ results: [], count: 0 })
-    );
+    this.getToimipaikanLapsetForReporting(searchParams, null).subscribe({
+      next: this.updateToimipaikanLapset.bind(this),
+      error: (err) => this.updateToimipaikanLapset({ results: [], count: 0 })
+    });
   }
 
   searchMore(less: Boolean = false): any {

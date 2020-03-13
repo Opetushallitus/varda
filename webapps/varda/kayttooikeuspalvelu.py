@@ -8,6 +8,7 @@ from django.db.models import Q
 from guardian.models import UserObjectPermission
 from guardian.shortcuts import assign_perm
 
+from varda.cache import delete_cached_user_permissions_for_model
 from varda.clients import organisaatio_client
 from varda.exceptions.invalid_koodi_uri_exception import InvalidKoodiUriException
 from varda.misc import get_json_from_external_service, get_reply_json
@@ -58,6 +59,12 @@ def set_permissions_for_cas_user(user_id):
 
 
 def set_user_kayttooikeudet(service_name, henkilo_oid, user):
+    """
+    Clear vakajarjestaja-ui cache.
+    """
+    model_name = 'vakajarjestaja'
+    delete_cached_user_permissions_for_model(user.id, model_name)
+
     """
     If user is OPH-staff, let the permissions be as they are, and exit.
     """

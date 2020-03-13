@@ -81,7 +81,7 @@
                   </div>
                   <div class="oph-field-text">
                     <small [id]="'henkiloFormSsnOrOidInstruction'"
-                           [slideHide]="ui.activeInstructionText === 'ssn'">
+                           [appSlideHide]="ui.activeInstructionText === 'ssn'">
                       {{getHenkiloSsnInstructionText() | translate}}
                     </small>
                   </div>
@@ -120,7 +120,7 @@
                 </div>
                 <div class="oph-field-text">
                   <small [id]="'firstnamesInstruction'"
-                         [slideHide]="ui.activeInstructionText === 'firstnames'">
+                         [appSlideHide]="ui.activeInstructionText === 'firstnames'">
                     {{'henkiloform.firstnamesinstruction' | translate}}
                   </small>
                 </div>
@@ -172,7 +172,7 @@
 
                 <div class="oph-field-text">
                   <small [id]="'nicknameInstruction'"
-                         [slideHide]="ui.activeInstructionText === 'nickname'">
+                         [appSlideHide]="ui.activeInstructionText === 'nickname'">
                     {{'henkiloform.nicknameinstruction' | translate}}
                   </small>
                 </div>
@@ -212,7 +212,7 @@
 
                 <div class="oph-field-text">
                   <small [id]="'lastnameInstruction'"
-                         [slideHide]="ui.activeInstructionText === 'lastname'">
+                         [appSlideHide]="ui.activeInstructionText === 'lastname'">
                     {{'henkiloform.lastnamesinstruction' | translate}}
                   </small>
                 </div>

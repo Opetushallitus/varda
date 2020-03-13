@@ -49,7 +49,9 @@ export class VardaKielikoodistoService {
 
   getKielikoodistoOptionIndexByLangAbbreviation(searchVal: string): any {
     const languageMatch = this.kielikoodistoOptions.findIndex((langOption) => {
-      if (!langOption) return false
+      if (!langOption) {
+        return false;
+      }
       return langOption.koodiArvo.toUpperCase() === searchVal.toUpperCase();
     });
     return languageMatch;

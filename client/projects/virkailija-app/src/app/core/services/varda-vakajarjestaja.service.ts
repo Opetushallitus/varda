@@ -92,7 +92,7 @@ export class VardaVakajarjestajaService {
     this.toimipaikat = toimipaikat;
     if (authService) {
       this.setTallentajaToimipaikat(toimipaikat, authService);
-      this.setVakajarjestajaToimipaikat(toimipaikat, authService)
+      this.setVakajarjestajaToimipaikat(toimipaikat, authService);
     }
   }
 
@@ -102,7 +102,7 @@ export class VardaVakajarjestajaService {
       toimipaikat: toimipaikat,
       katselijaToimipaikat: authService.getAuthorizedToimipaikat(toimipaikat),
       tallentajaToimipaikat: authService.getAuthorizedToimipaikat(toimipaikat, SaveAccess.kaikki)
-    }
+    };
   }
 
   getVakajarjestajaToimipaikat(): VakajarjestajaToimipaikat {

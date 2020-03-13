@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { AbstractPaosListToimintainfoComponent } from './abstract-paos-list-toimintainfo-component';
+import { AbstractPaosListToimintainfoComponentDirective } from './abstract-paos-list-toimintainfo-component';
 import { VardaApiService } from '../../../../core/services/varda-api.service';
 import { PaosToimintatietoDto, PaosToimijaInternalDto } from '../../../../utilities/models/dto/varda-paos-dto';
 import { PaosCreateEvent, PaosToimintaService } from '../paos-toiminta.service';
@@ -20,11 +20,11 @@ import { animate, state, style, transition, trigger } from '@angular/animations'
     ])
   ]
 })
-export class PaosAddedToimijatComponent extends AbstractPaosListToimintainfoComponent<PaosToimintatietoDto> implements OnInit, OnDestroy {
+export class PaosAddedToimijatComponent extends AbstractPaosListToimintainfoComponentDirective<PaosToimintatietoDto> implements OnInit, OnDestroy {
   private createEventSubscription: Subscription;
   highlighted: Array<string>;
   openToimija: string;
-  filteredToiminnat: Array<PaosToimintatietoDto>
+  filteredToiminnat: Array<PaosToimintatietoDto>;
   private _apiCallMethod = (page: number) => this.apiService.getPaosToimijat(this.selectedVakajarjestaja.id, page);
   apiServiceMethod = () => this.apiService.getAllPagesSequentially<PaosToimintatietoDto>(this._apiCallMethod);
 
@@ -72,8 +72,8 @@ export class PaosAddedToimijatComponent extends AbstractPaosListToimintainfoComp
   }
 
   getPaosToiminnatOnCompleteHook() {
-    this.paosToiminnat.sort((a: PaosToimintatietoDto, b: PaosToimintatietoDto) => a.vakajarjestaja_nimi.localeCompare(b.vakajarjestaja_nimi))
-    this.filteredToiminnat = [...this.paosToiminnat]
+    this.paosToiminnat.sort((a: PaosToimintatietoDto, b: PaosToimintatietoDto) => a.vakajarjestaja_nimi.localeCompare(b.vakajarjestaja_nimi));
+    this.filteredToiminnat = [...this.paosToiminnat];
   }
 
   getPaosToiminnatErrorHook(err) {

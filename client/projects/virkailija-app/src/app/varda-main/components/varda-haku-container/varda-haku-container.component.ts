@@ -9,10 +9,10 @@ import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 
 export interface HakuAccess {
   userAccess: UserAccess;
-  showLapset: boolean,
-  showHenkilosto: boolean,
-  isTallentaja: boolean,
-};
+  showLapset: boolean;
+  showHenkilosto: boolean;
+  isTallentaja: boolean;
+}
 
 @Component({
   selector: 'app-varda-haku-container',
@@ -78,15 +78,15 @@ export class VardaHakuContainerComponent implements OnInit {
           this.prevSearchLink = searchresult.previous;
           this.nextSearchLink = searchresult.next;
           this.clearErrors();
-          this.ui.isLoading = false
+          this.ui.isLoading = false;
         },
         error: () => {
           this.translate.get('alert.haku.generic-error').subscribe(hakuErrorMessage => {
             this.ui.formSaveErrorMsg = hakuErrorMessage;
-            this.ui.isLoading = false
+            this.ui.isLoading = false;
           });
         }
-      })
+      });
   }
 
   clearErrors() {
@@ -106,11 +106,11 @@ export class VardaHakuContainerComponent implements OnInit {
 
     if (this.access.showLapset) {
       this.lastSearchDto.type = HenkilohakuType.lapset;
-      if (!this.access.userAccess.lapsitiedot.katselija)
-        this.lastSearchDto.filter_object = FilterObject.maksutiedot
-    }
-    else if (this.access.showHenkilosto) {
-      this.lastSearchDto.type = HenkilohakuType.tyontekija
+      if (!this.access.userAccess.lapsitiedot.katselija) {
+        this.lastSearchDto.filter_object = FilterObject.maksutiedot;
+      }
+    } else if (this.access.showHenkilosto) {
+      this.lastSearchDto.type = HenkilohakuType.tyontekija;
     }
   }
 }

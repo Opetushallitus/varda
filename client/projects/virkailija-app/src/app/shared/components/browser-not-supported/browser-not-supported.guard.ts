@@ -10,8 +10,8 @@ export class BrowserNotSupportedGuard implements CanActivate {
 
   canActivate(): Observable<boolean> | Promise<boolean> | boolean {
     if (/Trident\/|MSIE/.test(window.navigator.userAgent)) {
-      this.router.navigate(['/browser-not-supported'])
-      return false
+      this.router.navigate(['/browser-not-supported']);
+      return false;
     }
 
     return true;

@@ -17,7 +17,7 @@ export class VardaRadioButtonComponent implements OnInit {
   @Input() ariaDescribedby?: string;
   @Input() ariaLabel?: string;
   @Input() ariaLabelledby?: string;
-  @Output() onChange = new EventEmitter(true);
+  @Output() change = new EventEmitter(true);
 
   constructor() { }
 
@@ -25,6 +25,6 @@ export class VardaRadioButtonComponent implements OnInit {
   }
 
   _onChange(event) {
-    this.onChange.emit({ event: event, value: event.target.value });
+    this.change.emit({ event: event, value: event.target.value });
   }
 }

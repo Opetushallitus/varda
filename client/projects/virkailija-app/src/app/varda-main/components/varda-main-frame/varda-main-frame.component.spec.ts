@@ -29,7 +29,7 @@ class VardaAccessibilitySettingsComponent { }
 @Component({ selector: 'app-varda-modal-form', template: '' })
 class VardaModalFormComponent { }
 
-@Component({ selector: 'lib-loading-indicator', template: '' })
+@Component({ selector: 'app-loading-indicator', template: '' })
 class VardaLoadingIndicatorComponent { }
 
 @Component({ selector: 'app-varda-toimipaikka-selector', template: '' })
@@ -51,7 +51,6 @@ describe('VardaMainFrameComponent', () => {
   let vardaKuntaKoodistoService: VardaKuntakoodistoService;
 
   let setVakajarjestajatSpy;
-  let setVakajarjestajaToimipaikatSpy;
   let apiWrapperMockFunction;
 
   beforeEach(async(() => {
@@ -92,7 +91,7 @@ describe('VardaMainFrameComponent', () => {
     apiWrapperMockFunction = spyOn(vardaApiWrapperService, 'getAllLapsetForToimipaikka').and.callThrough();
     setVakajarjestajatSpy = spyOn(vardaVakajarjestajaService, 'setVakajarjestajat').and.callThrough();
     vardaVakajarjestajaService.setSelectedToimipaikka(<VardaToimipaikkaMinimalDto>toimipaikatStub[0]);
-    vardaVakajarjestajaService.setVakajarjestajaToimipaikat(toimipaikatStub, authService)
+    vardaVakajarjestajaService.setVakajarjestajaToimipaikat(toimipaikatStub, authService);
   }));
 
   beforeEach(() => {

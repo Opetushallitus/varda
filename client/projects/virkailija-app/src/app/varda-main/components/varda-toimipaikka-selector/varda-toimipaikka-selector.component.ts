@@ -91,10 +91,12 @@ export class VardaToimipaikkaSelectorComponent implements OnChanges {
     const activeToimipaikkaFromLocalStorage = this.vardaLocalStorageWrapperService.getFromLocalStorage('varda.activeToimipaikka');
     if (activeToimipaikkaFromLocalStorage) {
       const parsedToimipaikka = JSON.parse(activeToimipaikkaFromLocalStorage);
-      this.activeToimipaikka = this.toimipaikat.find(toimipaikka => toimipaikka.id === parsedToimipaikka.id)
+      this.activeToimipaikka = this.toimipaikat.find(toimipaikka => toimipaikka.id === parsedToimipaikka.id);
     }
-    if (!this.activeToimipaikka)
-      this.activeToimipaikka = this.toimipaikat[0]
+    if (!this.activeToimipaikka) {
+      this.activeToimipaikka = this.toimipaikat[0];
+    }
+
 
     this.vardaVakajarjestajaService.setSelectedToimipaikka(this.activeToimipaikka);
     this.vardaVakajarjestajaService.setSelectedToimipaikkaSubject(this.activeToimipaikka);

@@ -337,7 +337,7 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
         this.sortKoodistoOptions(this.selectOptions);
       });
     } else {
-      let selectOptions = [];
+      const selectOptions = [];
       this.field.options.forEach((opt) => {
         selectOptions.push({ displayName: opt.displayName, code: opt.code });
       });
@@ -355,7 +355,7 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
   }
 
   sortKoodistoOptions(options: Array<VardaSelectOption>): Array<VardaSelectOption> {
-    return options.sort((a, b) => { return a.code.localeCompare(b.code) });
+    return options.sort((a, b) => a.code.localeCompare(b.code));
   }
 
   ngOnChanges() { }

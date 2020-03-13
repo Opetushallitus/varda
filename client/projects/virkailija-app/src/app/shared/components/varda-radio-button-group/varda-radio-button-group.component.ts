@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter, ViewChildren, QueryList, ContentChildren, forwardRef } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, QueryList, ContentChildren, forwardRef, AfterContentInit } from '@angular/core';
 import { VardaRadioButtonComponent } from './varda-radio-button/varda-radio-button.component';
 
 enum Breakpoints {
@@ -11,7 +11,7 @@ enum Breakpoints {
 
 export interface RadioButtonResponse {
   event: Event;
-  value: any
+  value: any;
 }
 
 
@@ -20,7 +20,7 @@ export interface RadioButtonResponse {
   templateUrl: './varda-radio-button-group.component.html',
   styleUrls: ['./varda-radio-button-group.component.css']
 })
-export class VardaRadioButtonGroupComponent implements OnInit {
+export class VardaRadioButtonGroupComponent implements OnInit, AfterContentInit {
   @Input() name: string;
   @Input() class: string;
   @Input() responsive: Breakpoints;
@@ -37,13 +37,13 @@ export class VardaRadioButtonGroupComponent implements OnInit {
       this.class,
       this.wrap ? `wrap-${this.wrap}` : null,
       this.responsive ? `responsive-${this.responsive}` : null,
-    ].filter(c => c)
+    ].filter(c => c);
   }
 
   ngAfterContentInit() {
     this.radioButtons.forEach(radio => {
       radio.name = this.name;
-      radio.onChange = this.change;
+      radio.change = this.change;
     });
   }
 }

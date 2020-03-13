@@ -332,3 +332,8 @@ def delete_object_ids_user_has_permissions(user_id):
                 cache_key_objs_user_has_permissions = create_cache_key(user_id, model_name + '_obj_permissions')
                 cache_keys.append(cache_key_objs_user_has_permissions)
         cache.delete_many(cache_keys)
+
+
+def delete_cached_user_permissions_for_model(user_id, model_name):
+    cache_key_objs_user_has_permissions = create_cache_key(user_id, model_name + '_obj_permissions')
+    cache.delete(cache_key_objs_user_has_permissions)

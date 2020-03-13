@@ -11,7 +11,7 @@
       <app-varda-dropdown-filter [filterBy]="['nimi', 'organisaatio_oid', 'y_tunnus']"
                                  [label]="selectedVakajarjestaja?.nimi"
                                  [attr.aria-label]="'label.oma-organisaatio' | translate"
-                                 (onSelect)="changeVakajarjestaja($event)"
+                                 (select)="changeVakajarjestaja($event)"
                                  [list]="vakajarjestajat">
       </app-varda-dropdown-filter>
     </ng-container>
