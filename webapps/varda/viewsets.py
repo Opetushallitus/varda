@@ -1771,7 +1771,8 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         """
         Check if varhaiskasvatuspaatos is private or public for validations and end-users.
         """
-        vakapaatos = Varhaiskasvatuspaatos.objects.filter(lapsi=lapsi).order_by("-alkamis_pvm").first()
+        vakapaatokset = Varhaiskasvatuspaatos.objects.filter(lapsi=lapsi).order_by("-alkamis_pvm")
+        vakapaatos = vakapaatokset.first()
         if not vakapaatos:
             raise ValidationError({"Maksutieto": ["Lapsi has no Varhaiskasvatuspaatos. Add Varhaiskasvatuspaatos before adding maksutieto."]})
 
@@ -1803,7 +1804,11 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         serializer.validated_data.pop('huoltajat')
         serializer.validated_data.pop('lapsi')
 
-        # save maksutieto
+        self.validate_start_and_end_dates(vakapaatokset, serializer.validated_data['alkamis_pvm'], serializer.validated_data['paattymis_pvm'])
+
+        """
+        Save maksutieto
+        """
         with transaction.atomic():
             saved_object = serializer.save(changed_by=user)
             cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja.id))
@@ -1828,6 +1833,29 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(saved_object)
         return Response(return_maksutieto_to_user, status=status.HTTP_201_CREATED, headers=headers)
 
+    def validate_start_and_end_dates(self, vakapaatokset, start_date, end_date):
+        """
+        Validate the dates for the maksutieto:
+        * start date must be after the earliest vakapaatos start
+        * end date, if given, must be before the latest vakapaatos end
+        """
+        vakapaatos_earliest = vakapaatokset.last()
+        vakapaatos_latest = vakapaatokset.first()
+
+        if validators.validate_paivamaara1_before_paivamaara2(start_date, vakapaatos_earliest.alkamis_pvm, can_be_same=False):
+            msg = 'Maksupaatos alkamis_pvm ({}) must not be before earliest Varhaiskasvatuspaatos alkamis_pvm ({})'.format(start_date, vakapaatos_earliest.alkamis_pvm)
+            raise ValidationError({'alkamis_pvm': [msg]})
+
+        """
+        While it is possible to leave out the end date, it must fall within vakapaatokset if given.
+        Make this check only if all vakapaatokset have a paattymis_pvm.
+        """
+        if end_date is not None:
+            if all((v.paattymis_pvm is not None) for v in vakapaatokset):
+                if validators.validate_paivamaara1_after_paivamaara2(end_date, vakapaatos_latest.paattymis_pvm, can_be_same=False):
+                    msg = 'Maksupaatos paattymis_pvm ({}) must not be after latest Varhaiskasvatuspaatos paattymis_pvm ({}) as no open-ended vakapaatokset exist'.format(end_date, vakapaatos_latest.paattymis_pvm)
+                    raise ValidationError({'paattymis_pvm': [msg]})
+
     @transaction.atomic
     def perform_update(self, serializer):
         user = self.request.user
@@ -1839,7 +1867,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("User does not have permissions to change this object.")
 
         if "paattymis_pvm" in data and data['paattymis_pvm'] is not None:
-            if not validators.validate_paivamaara1_before_paivamaara2(maksutieto_obj.alkamis_pvm, data['paattymis_pvm'], can_be_same=True):
+            if validators.validate_paivamaara1_after_paivamaara2(maksutieto_obj.alkamis_pvm, data['paattymis_pvm'], can_be_same=False):
                 raise ValidationError({"paattymis_pvm": ["paattymis_pvm must be after alkamis_pvm (or same)"]})
             paattymis_pvm_q = Q(alkamis_pvm__lte=data['paattymis_pvm'])
 

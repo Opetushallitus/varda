@@ -1,7 +1,8 @@
 import unittest
 from django.conf import settings
 from rest_framework.exceptions import ErrorDetail, ValidationError as ValidationErrorRest
-from varda.validators import validate_henkilotunnus
+from varda.validators import validate_henkilotunnus, validate_paivamaara1_before_paivamaara2, \
+    validate_paivamaara1_after_paivamaara2
 
 
 class ValidatorsTests(unittest.TestCase):
@@ -31,3 +32,12 @@ class ValidatorsTests(unittest.TestCase):
             validate_henkilotunnus('180207-913F')
         except ValidationErrorRest:
             self.fail('ValidationErrorRest was raised unexpectedly!')
+
+    def test_validate_paivamaara(self):
+        self.assertEqual(validate_paivamaara1_before_paivamaara2('2019-10-14', '2019-10-15', True), True)
+        self.assertEqual(validate_paivamaara1_before_paivamaara2('2019-10-15', '2019-10-15', True), True)
+        self.assertEqual(validate_paivamaara1_before_paivamaara2('2019-10-15', '2019-10-15', False), False)
+
+        self.assertEqual(validate_paivamaara1_after_paivamaara2('2019-10-16', '2019-10-15', True), True)
+        self.assertEqual(validate_paivamaara1_after_paivamaara2('2019-10-15', '2019-10-15', True), True)
+        self.assertEqual(validate_paivamaara1_after_paivamaara2('2019-10-15', '2019-10-15', False), False)

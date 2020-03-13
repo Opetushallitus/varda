@@ -26,6 +26,11 @@ class SetUpTestClient:
 class VardaViewsTests(TestCase):
     fixtures = ['varda/unit_tests/fixture_basics.json']
 
+    def assert_status_code(self, response, expected_code):
+        if response.status_code != expected_code:
+            content = response.content.decode('utf-8')
+            raise AssertionError('Returned status code {} != {}'.format(response.status_code, expected_code), content)
+
     def test_index(self):
         resp = self.client.get('/')
         self.assertEqual(resp.status_code, 200)
@@ -1731,6 +1736,8 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester2').client()
         maksutieto = json.dumps(maksutieto)
         resp = client.post('/api/v1/maksutiedot/', data=maksutieto, content_type='application/json')
+        self.assert_status_code(resp, 201)
+
         returned_data = json.loads(resp.content)
         returned_id = returned_data['id']
         maksutieto_url = 'http://testserver/api/v1/maksutiedot/' + str(returned_id) + '/'
@@ -1754,7 +1761,6 @@ class VardaViewsTests(TestCase):
             'alkamis_pvm': '2020-01-02',
             'paattymis_pvm': '2021-01-01'
         }
-        self.assertEqual(resp.status_code, 201)
         self.assertEqual(json.loads(resp.content), accepted_response)
 
     def test_push_api_maksutieto_correct_format_2(self):
@@ -1774,13 +1780,15 @@ class VardaViewsTests(TestCase):
             'palveluseteli_arvo': 120,
             'asiakasmaksu': 0,
             'perheen_koko': 1,
-            'alkamis_pvm': '2020-01-02',
-            'paattymis_pvm': '2021-01-01'
+            'alkamis_pvm': '2018-02-23',
+            'paattymis_pvm': '2018-02-24'
         }
         client = SetUpTestClient('tester').client()
         maksutieto = json.dumps(maksutieto)
         client.delete('/api/v1/maksutiedot/1/')  # remove 1 maksutieto, otherwise error: more than two active maksutieto
         resp = client.post('/api/v1/maksutiedot/', data=maksutieto, content_type='application/json')
+        self.assert_status_code(resp, 201)
+
         returned_data = json.loads(resp.content)
         returned_id = returned_data['id']
         maksutieto_url = 'http://testserver/api/v1/maksutiedot/' + str(returned_id) + '/'
@@ -1806,11 +1814,182 @@ class VardaViewsTests(TestCase):
             'palveluseteli_arvo': 120.0,
             'asiakasmaksu': 0.0,
             'perheen_koko': 1,
-            'alkamis_pvm': '2020-01-02',
-            'paattymis_pvm': '2021-01-01'
+            'alkamis_pvm': '2018-02-23',
+            'paattymis_pvm': '2018-02-24'
         }
-        self.assertEqual(resp.status_code, 201)
         self.assertEqual(json.loads(resp.content), accepted_response)
+
+    def test_push_api_maksutieto_date_validation(self):
+        """
+        This test contains multiple individual date tests for maksutieto dates.
+        All of them share the same setup code:
+
+        For this we need a lapsi that doesn't already have any maksutiedot,
+        and that it has vakapaatokset suitable for testing date ranges.
+        As such data doesn't already exist, we must create it:
+        * Create a lapsi person and a lapsi object
+        * Create a huoltaja person and a huoltaja object
+        * Link the huoltaja to the lapsi with a Huoltajuussuhde
+        * Create a vakapaatosfor 2018-2019 and link to a toimipaikka
+        * Create a vakapaatos for 2021- and link to a toimipaikka
+        * Give permissions to each of these for the tester user's org
+        """
+
+        from varda.misc import hash_string, encrypt_henkilotunnus
+        from varda.models import Huoltaja, Huoltajuussuhde, Henkilo, Lapsi, Varhaiskasvatuspaatos,\
+            Varhaiskasvatussuhde, Toimipaikka, Maksutieto
+        from varda.permission_groups import assign_object_level_permissions
+
+        adminuser = User.objects.filter(username='credadmin')[0]
+        client = SetUpTestClient('tester').client()
+        oid_of_client = '1.2.246.562.10.9395737548810'
+
+        lapsi_hetu = '180210A9437'
+        huoltaja_hetu = '180200A941K'
+
+        lapsi_henkilo = Henkilo.objects.create(
+            henkilotunnus=encrypt_henkilotunnus(lapsi_hetu),
+            henkilotunnus_unique_hash=hash_string(lapsi_hetu),
+            henkilo_oid='1.2.246.562.24.158201550073654912',
+            etunimet='Juniori',
+            kutsumanimi='Juniori',
+            sukunimi='Nieminen',
+            changed_by=adminuser
+        )
+        lapsi = Lapsi.objects.create(
+            henkilo=lapsi_henkilo,
+            changed_by=adminuser
+        )
+        assign_object_level_permissions(oid_of_client, Henkilo, lapsi_henkilo)
+        assign_object_level_permissions(oid_of_client, Lapsi, lapsi)
+
+        huoltaja_henkilo = Henkilo.objects.create(
+            henkilotunnus=encrypt_henkilotunnus(huoltaja_hetu),
+            henkilotunnus_unique_hash=hash_string(huoltaja_hetu),
+            henkilo_oid='1.2.246.562.24.158201550073654911',
+            etunimet='Seniori',
+            kutsumanimi='Seniori',
+            sukunimi='Nieminen',
+            changed_by=adminuser
+        )
+        huoltaja_obj = {
+            'henkilotunnus': huoltaja_hetu,
+            'etunimet': huoltaja_henkilo.etunimet,
+            'sukunimi': huoltaja_henkilo.sukunimi,
+            'kutsumanimi': huoltaja_henkilo.kutsumanimi
+        }
+        assign_object_level_permissions(oid_of_client, Henkilo, huoltaja_henkilo)
+        huoltaja = Huoltaja.objects.create(
+            henkilo=huoltaja_henkilo,
+            changed_by=adminuser
+        )
+        assign_object_level_permissions(oid_of_client, Huoltaja, huoltaja)
+
+        hs = Huoltajuussuhde.objects.create(
+            huoltaja=huoltaja,
+            lapsi=lapsi,
+            voimassa_kytkin=True,
+            changed_by=adminuser
+        )
+        assign_object_level_permissions(oid_of_client, Huoltajuussuhde, hs)
+
+        toimipaikka_1 = Toimipaikka.objects.filter(organisaatio_oid='1.2.246.562.10.9395737548810')[0]
+
+        vakapaatos = Varhaiskasvatuspaatos.objects.create(
+            lapsi=lapsi,
+            tuntimaara_viikossa=45,
+            jarjestamismuoto_koodi='jm02',
+            alkamis_pvm='2018-01-01',
+            paattymis_pvm='2019-12-31',
+            hakemus_pvm='2017-11-01',
+            changed_by=adminuser
+        )
+        assign_object_level_permissions(oid_of_client, Varhaiskasvatuspaatos, vakapaatos)
+
+        vakasuhde = Varhaiskasvatussuhde.objects.create(
+            toimipaikka=toimipaikka_1,
+            varhaiskasvatuspaatos=vakapaatos,
+            alkamis_pvm='2018-01-01',
+            paattymis_pvm='2019-12-31',
+            changed_by=adminuser
+        )
+        assign_object_level_permissions(oid_of_client, Varhaiskasvatussuhde, vakasuhde)
+
+        vakapaatos = Varhaiskasvatuspaatos.objects.create(
+            lapsi=lapsi,
+            tuntimaara_viikossa=45,
+            jarjestamismuoto_koodi='jm02',
+            alkamis_pvm='2021-01-01',
+            hakemus_pvm='2017-11-01',
+            changed_by=adminuser
+        )
+        assign_object_level_permissions(oid_of_client, Varhaiskasvatuspaatos, vakapaatos)
+
+        vakasuhde = Varhaiskasvatussuhde.objects.create(
+            toimipaikka=toimipaikka_1,
+            varhaiskasvatuspaatos=vakapaatos,
+            alkamis_pvm='2021-01-01',
+            changed_by=adminuser
+        )
+        assign_object_level_permissions(oid_of_client, Varhaiskasvatussuhde, vakasuhde)
+
+        """
+        Now the test setup is finally done.
+        Try to add a maksutieto in following cases:
+        (And be sure to delete the added maksutieto after each success.)
+        """
+
+        ok_cases = [
+            ('2018-02-01', '2018-07-01'),  # Within first vaka
+            ('2018-01-01', '2018-12-31'),  # Exactly the first vaka
+            ('2018-02-01', '2021-02-01'),  # Within first and second vaka
+            ('2020-02-01', '2020-11-01'),  # Between vakas (move to fail cases after whenever stage 2 is implemented)
+            ('2021-02-01', None),          # Open-ended; within second(open-ended) vaka
+            ('2021-01-01', None),          # Open-ended; starting exactly from second vaka
+            ('2018-02-01', None),          # Open-ended; starting within first vaka
+        ]
+
+        fail_cases = [
+            ('2017-02-01', None),          # Before first vaka
+            ('2017-02-01', '2017-12-31'),  # Before first vaka
+            ('2017-02-01', '2017-02-01'),  # Start before first vaka
+            (None, '2018-07-01'),          # Start missing, end ok
+            (None, None),                  # Both missing
+        ]
+
+        maksutieto = {
+            'huoltajat': [
+                huoltaja_obj
+            ],
+            'lapsi': '/api/v1/lapset/{}/'.format(lapsi.id),
+            'maksun_peruste_koodi': 'mp02',
+            'palveluseteli_arvo': 120,
+            'asiakasmaksu': 0,
+            'perheen_koko': 1,
+        }
+
+        for (start, end) in ok_cases:
+            maksutieto.update(
+                alkamis_pvm=start,
+                paattymis_pvm=end
+            )
+
+            data = json.dumps(maksutieto)
+            resp = client.post('/api/v1/maksutiedot/', data=data, content_type='application/json')
+            self.assert_status_code(resp, 201)
+
+            id = json.loads(resp.content)['id']
+            Maksutieto.objects.get(id=id).delete()
+
+        for (start, end) in fail_cases:
+            maksutieto.update(
+                alkamis_pvm=start,
+                paattymis_pvm=end
+            )
+
+            data = json.dumps(maksutieto)
+            resp = client.post('/api/v1/maksutiedot/', data=data, content_type='application/json')
+            self.assertEqual(resp.status_code, 400)
 
     def test_push_api_maksutieto_too_many_active(self):
         maksutieto = {

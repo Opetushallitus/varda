@@ -58,6 +58,7 @@ export class VardaMainFrameComponent implements OnInit {
       this.toimipaikat[toimipaikkaIndexToUpdate] = data;
     } else {
       isNew = true;
+      this.toimipaikkaAccess = this.authService.getUserAccess(data.organisaatio_oid)
       this.toimipaikat.push(data);
     }
 

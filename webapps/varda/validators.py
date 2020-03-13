@@ -408,6 +408,10 @@ def validate_paivamaara1_before_paivamaara2(paivamaara1, paivamaara2, can_be_sam
         return True
 
 
+def validate_paivamaara1_after_paivamaara2(paivamaara1, paivamaara2, can_be_same=False):
+    return not validate_paivamaara1_before_paivamaara2(paivamaara1, paivamaara2, not can_be_same)
+
+
 def validate_oid(oid):
     oid_sections = oid.split('.')
     if len(oid_sections) != 6:
