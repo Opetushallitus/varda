@@ -264,7 +264,7 @@ def cached_retrieve_response(original_view, user, request_path):
 
     ct = ContentType.objects.get(model=model_name)
     try:
-        obj = ct.get_object_for_this_type(pk=object_id)
+        obj = ct.get_object_for_this_type(pk=str(object_id))
     except ct.model_class().DoesNotExist:
         raise NotFound
 

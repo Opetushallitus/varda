@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
-
-import { VarhaiskasvatussuhdeDTO, VarhaiskasvatuspaatosDTO } from '../../../../utilities/models/dto/huoltaja-frontpage-dto';
+import { VarhaiskasvatussuhdeDTO } from 'projects/huoltaja-app/src/app/utilities/models/dto/varhaiskasvatussuhde-dto';
+import { VarhaiskasvatuspaatosDTO } from 'projects/huoltaja-app/src/app/utilities/models/dto/varhaiskasvatuspaatos-dto';
 
 @Component({
   selector: 'app-huoltaja-frontpage-vakasuhde',

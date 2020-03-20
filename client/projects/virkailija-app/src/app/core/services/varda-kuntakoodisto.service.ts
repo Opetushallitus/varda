@@ -85,8 +85,7 @@ export class VardaKuntakoodistoService {
         }
 
         const today = moment();
-        const voimassaLoppuPvmUIDate = this.vardaDateService.vardaDateToUIDate(voimassaLoppuPvm);
-        const voimassaLoppuPvmMoment = this.vardaDateService.uiDateToMoment(voimassaLoppuPvmUIDate);
+        const voimassaLoppuPvmMoment = this.vardaDateService.vardaDateToMoment(voimassaLoppuPvm);
         const todayIsBeforeVoimassaLoppuPvm = this.vardaDateService.date1IsBeforeDate2(today, voimassaLoppuPvmMoment);
         return todayIsBeforeVoimassaLoppuPvm ? true : false;
       });

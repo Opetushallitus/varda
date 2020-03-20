@@ -12,6 +12,7 @@ import { VardaApiService } from './varda-api.service';
 import {HttpTestingController} from '@angular/common/http/testing';
 import {HttpBackend} from '@angular/common/http';
 import {HttpClient, HttpHandler} from '@angular/common/http';
+import * as moment from 'moment';
 
 describe('VardaApiWrapperService', () => {
 
@@ -182,7 +183,7 @@ describe('VardaApiWrapperService', () => {
     const data = {
         formData: {
             fieldset: {
-                alkamis_pvm: {date: {day: 15, month: 7, year: 2009}}
+                alkamis_pvm: moment('2009-07-15', VardaDateService.vardaApiDateFormat)
             }
         },
         fieldSets: [
@@ -210,7 +211,7 @@ describe('VardaApiWrapperService', () => {
   it('Should create VardaToimipaikkaDTO correctly', () => {
     const data = {
       1: {nimi: 'asdf', organisaatio_oid: 'nnnn'},
-      2: {vakajarjestaja: 'vaka', paattymis_pvm: {date: {year: 2018, month: 2, day: 5}}}
+      2: {vakajarjestaja: 'vaka', paattymis_pvm: moment('2018-02-05', VardaDateService.vardaApiDateFormat)}
     };
     const toimipaikkaDTO = vardaApiWrapperService
       .createDTOwithData<VardaToimipaikkaDTO>(data, new VardaToimipaikkaDTO(), toimipaikkaFieldSets);
@@ -263,11 +264,11 @@ describe('VardaApiWrapperService', () => {
   });
 
   it('Should get date-widget value for DTO correctly', () => {
-    const dateValue1 = vardaApiWrapperService.getValueForDto('hakemus_pvm', {date: {day: 26, month: 8, year: 2017}},
-    varhaiskasvatuspaatosFieldSets);
+    const dateValue1 = vardaApiWrapperService.getValueForDto('hakemus_pvm',
+      moment('2017-08-26,', VardaDateService.vardaApiDateFormat), varhaiskasvatuspaatosFieldSets);
 
-    const dateValue2 = vardaApiWrapperService.getValueForDto('alkamis_pvm', {date: {day: 1, month: 9, year: 2018}},
-    varhaiskasvatuspaatosFieldSets);
+    const dateValue2 = vardaApiWrapperService.getValueForDto('alkamis_pvm',
+      moment('2018-09-01', VardaDateService.vardaApiDateFormat), varhaiskasvatuspaatosFieldSets);
 
     expect(dateValue1).toEqual('2017-08-26');
     expect(dateValue2).toEqual('2018-09-01');

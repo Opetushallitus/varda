@@ -28,8 +28,12 @@
     "label.varhaiskasvatuspaatos.vuorohoito": "Vuorohoito",
     "label.varhaiskasvatuspaatos.varhaiskasvatusaika": "Varhaiskasvatusaika",
     "label.varhaiskasvatuspaatos.osaviikkoinen-varhaiskasvatus": "Osaviikkoinen varhaiskasvatus",
-    "label.varhaiskasvatuspaatos.osapaivainen-varhaiskasvatus": "Osa-päiväinen varhaiskasvatus",
+    "label.varhaiskasvatuspaatos.osaaikainen-varhaiskasvatus": "Osa-aikainen varhaiskasvatus",
+    "label.varhaiskasvatuspaatos.pikakasittely": "Pikakäsittely",
     "label.kylla": "Kyllä",
     "label.ei": "Ei",
-    "label.varhaiskasvatuspaatos.onko-tiedoissa-virhe": "Onko tiedoissa virhe?"
+    "label.varhaiskasvatuspaatos.onko-tiedoissa-virhe": "Onko tiedoissa virhe?",
+    "label.mies": "Mies",
+    "label.nainen": "Nainen",
+    "error.ei-henkilotietoja": "Henkilön tietoja ei löytynyt"
 }

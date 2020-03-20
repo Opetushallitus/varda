@@ -1,7 +1,6 @@
 import { Component, OnInit, Input, OnChanges, Output, EventEmitter } from '@angular/core';
 import { VardaFormService } from '../../../core/services/varda-form.service';
 import { FormControl, FormGroup, FormArray } from '@angular/forms';
-import { IMyDpOptions, IMyInputFocusBlur } from 'mydatepicker';
 import { VardaFieldSet, VardaField, VardaWidgetNames, VardaKoodistot } from '../../../utilities/models';
 import { VardaKielikoodistoService } from '../../../core/services/varda-kielikoodisto.service';
 import { VardaKuntakoodistoService } from '../../../core/services/varda-kuntakoodisto.service';
@@ -9,6 +8,7 @@ import { VardaDateService } from '../../../varda-main/services/varda-date.servic
 import { TranslateService, LangChangeEvent } from '@ngx-translate/core';
 import { VardaMaksunPerusteKoodistoService } from '../../../core/services/varda-maksun-peruste-koodisto.service';
 import { VardaSelectOption } from '../../../utilities/models/varda-select-option.model';
+import { VardaDatepickerEvent } from '../varda-datepicker/varda-datepicker.component';
 
 @Component({
   selector: 'app-varda-form-question',
@@ -39,11 +39,6 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
 
   ui: {
     isLoading: boolean
-  };
-
-  public myDatePickerOptions: IMyDpOptions = {
-    dateFormat: 'dd.mm.yyyy',
-    indicateInvalidDate: false
   };
 
   constructor(private vardaFormService: VardaFormService,
@@ -169,9 +164,8 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
     }
   }
 
-  dateFieldChanged($event: any, fieldset: VardaFieldSet, field: VardaField) {
-
-    if ($event.value === '' && !field.rules.required) {
+  dateFieldChanged($event: VardaDatepickerEvent, fieldset: VardaFieldSet, field: VardaField) {
+    if ($event.valid === true && !$event.value && !field.rules.required) {
       return;
     }
 
@@ -179,7 +173,7 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
       const fc = this.form.get(field.key);
       const dateInvalid = {};
       let hasErrors = false;
-      if ($event.value === '' && field.rules.required) {
+      if (!$event.value && field.rules.required) {
         dateInvalid['required'] = true;
         hasErrors = true;
       }
@@ -190,13 +184,10 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
       }
 
       if (field.rules && field.rules.isBefore && $event.valid) {
-        const currentDateFieldValue = fc.value;
-        const currentDateMoment = this.vardaDateService.uiDateToMoment(currentDateFieldValue);
         const isBeforeFieldKey = field.rules.isBefore.key;
         const isBeforeField = this.vardaFormService.findVardaFieldFromFieldSetsByFieldKey(isBeforeFieldKey, [fieldset]);
         const isBeforeFc = this.form.get(isBeforeFieldKey);
-        const isBeforeDateMoment = this.vardaDateService.uiDateToMoment(isBeforeFc.value);
-        const currentDateIsBefore = this.vardaDateService.date1IsBeforeDate2(currentDateMoment, isBeforeDateMoment);
+        const currentDateIsBefore = this.vardaDateService.date1IsBeforeDate2(fc.value, isBeforeFc.value);
 
         if (!currentDateIsBefore) {
           dateInvalid['isBefore'] = true;
@@ -208,14 +199,11 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
       }
 
       if (field.rules && field.rules.isAfter && $event.valid) {
-        const currentDateFieldValue = fc.value;
-        const currentDateMoment = this.vardaDateService.uiDateToMoment(currentDateFieldValue);
         const isAfterFieldKey = field.rules.isAfter.key;
         const isAfterField = this.vardaFormService.findVardaFieldFromFieldSetsByFieldKey(isAfterFieldKey, [fieldset]);
         const isAfterFc = this.form.get(isAfterFieldKey);
-        const isAfterDateMoment = this.vardaDateService.uiDateToMoment(isAfterFc.value);
 
-        const currentDateIsAfter = this.vardaDateService.date1IsAfterDate2(currentDateMoment, isAfterDateMoment);
+        const currentDateIsAfter = this.vardaDateService.date1IsAfterDate2(fc.value, isAfterFc.value);
 
         if (!currentDateIsAfter) {
           dateInvalid['isAfter'] = true;
@@ -227,14 +215,11 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
       }
 
       if (field.rules && field.rules.isAfterOrSame && $event.valid) {
-        const currentDateFieldValue = fc.value;
-        const currentDateMoment = this.vardaDateService.uiDateToMoment(currentDateFieldValue);
         const isAfterOrSameFieldKey = field.rules.isAfterOrSame.key;
         const isAfterOrSameField = this.vardaFormService.findVardaFieldFromFieldSetsByFieldKey(isAfterOrSameFieldKey, [fieldset]);
         const isAfterOrSameFc = this.form.get(isAfterOrSameFieldKey);
-        const isAfterOrSameDateMoment = this.vardaDateService.uiDateToMoment(isAfterOrSameFc.value);
 
-        const currentDateisAfterOrSame = this.vardaDateService.date1isAfterOrSameAsDate2(currentDateMoment, isAfterOrSameDateMoment);
+        const currentDateisAfterOrSame = this.vardaDateService.date1isAfterOrSameAsDate2(fc.value, isAfterOrSameFc.value);
 
         if (!currentDateisAfterOrSame) {
           dateInvalid['isAfterOrSame'] = true;
@@ -255,20 +240,8 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
     });
   }
 
-  dateFieldFocus($eventObj: IMyInputFocusBlur, fieldset: VardaFieldSet, field: VardaField): void {
-    if ($eventObj.reason === 1) {
-      this.showInstructionText = true;
-    } else {
-      this.showInstructionText = false;
-    }
-
-    this.vardaFormService.highlightDatepickerElement('focus', $eventObj.reason,
-      fieldset, field, this.fieldSetName, this.fieldIndex, this.fieldSetIndex);
-  }
-
-  dateFieldToggle($eventObj: number, fieldset: VardaFieldSet, field: VardaField): void {
-    this.vardaFormService.highlightDatepickerElement('toggle', $eventObj,
-      fieldset, field, this.fieldSetName, this.fieldIndex, this.fieldSetIndex);
+  dateFieldInstructions(focus: boolean): void {
+    this.showInstructionText = focus;
   }
 
   formatSelectOptions(): void {
@@ -365,10 +338,6 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
       this.ui.isLoading = true;
       if (this.field.widget === VardaWidgetNames.SELECT || this.field.widget === VardaWidgetNames.SELECTARR) {
         this.formatSelectOptions();
-      }
-
-      if (this.field.widget === VardaWidgetNames.DATE) {
-        this.myDatePickerOptions.ariaLabelInputField = this.getInstructionText(this.field);
       }
 
       if (this.field.rules && this.field.rules.required) {

@@ -40,7 +40,7 @@ export class VardaFormValidators {
         if (!fcValue) {
             return null;
         }
-        const matchAllowedChars = fcValue.match(/^[a-zA-Z0-9\u00c0-\u017e/&'’,+-.()`´\s-]+$/);
+        const matchAllowedChars = fcValue.match(/^[a-zA-Z0-9\u00c0-\u017e/&'’,+-.:()`´\s-]+$/);
         return matchAllowedChars ? null : { rejectSpecialCharsNames: true };
     }
 

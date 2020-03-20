@@ -1,0 +1,110 @@
+.varda-datepicker.mat-form-field {
+  width: 100%;
+}
+
+.varda-datepicker .mat-form-field-wrapper {
+  padding-bottom: 0;
+  box-shadow: inset 0 1px 4px var(--gray-lighten-3);
+  transition-property: box-shadow, background;
+  transition-duration: var(--transition-duration-base);
+  transition-timing-function: var(--transition-timing-function-base);
+  background-color: var(--white);
+}
+
+.varda-datepicker.mat-form-field.mat-form-field-invalid .mat-form-field-wrapper {
+  box-shadow: 0 0 0;
+  background-color: var(--red-lighten-2);
+}
+
+.varda-datepicker.mat-form-field.mat-form-field-disabled .mat-form-field-wrapper {
+  cursor: not-allowed;
+  box-shadow: 0 0 0;
+  background-color: var(--gray-lighten-5);
+}
+
+.varda-datepicker.mat-form-field.mat-form-field-disabled .mat-form-field-wrapper input {
+  cursor: not-allowed;
+}
+
+.varda-datepicker.mat-form-field.mat-form-field-disabled .mat-input-element {
+  color: var(--black);
+}
+
+.varda-datepicker .mat-form-field-flex {
+  align-items: center !important;
+  padding: .25em var(--space-1) 0 var(--space-1) !important;
+}
+
+.varda-datepicker .mat-form-field-outline {
+  color: var(--border-color-base);
+}
+
+.varda-datepicker .mat-form-field-outline-thick {
+  transition-property: color;
+  transition-duration: var(--transition-duration-base);
+  transition-timing-function: var(--transition-timing-function-base);
+}
+
+.varda-datepicker .mat-form-field-outline-start,
+.varda-datepicker .mat-form-field-outline-end,
+.varda-datepicker .mat-form-field-outline-gap {
+  border-width: 1px !important;
+}
+
+.varda-datepicker.mat-form-field-disabled .mat-form-field-outline-start,
+.varda-datepicker.mat-form-field-disabled .mat-form-field-outline-end,
+.varda-datepicker.mat-form-field-disabled .mat-form-field-outline-gap {
+  border: 0 !important;
+}
+
+app-varda-datepicker.ng-dirty .varda-datepicker.mat-form-field.mat-form-field-invalid .mat-form-field-outline-thick {
+  color: var(--red-lighten-1) !important;
+}
+
+.varda-datepicker.mat-form-field.mat-focused .mat-form-field-outline-thick {
+  color: var(--blue-lighten-1);
+}
+
+.varda-datepicker.mat-form-field:not(.mat-form-field-disabled):not(.mat-focused):not(.mat-form-field-invalid) .mat-form-field-flex:hover .mat-form-field-outline {
+  opacity: 1;
+}
+
+.varda-datepicker.mat-form-field:not(.mat-form-field-disabled):not(.mat-focused):not(.mat-form-field-invalid) .mat-form-field-flex:hover .mat-form-field-outline-thick {
+  opacity: 0;
+}
+
+.varda-datepicker .mat-form-field-outline-start {
+  border-radius: var(--border-radius-base) 0 0 var(--border-radius-base) !important;
+}
+
+.varda-datepicker .mat-form-field-outline-end {
+  border-radius: 0 var(--border-radius-base) var(--border-radius-base) 0 !important;
+}
+
+.varda-datepicker .mat-form-field-infix {
+  border-top: none;
+  padding: 0;
+  width: auto;
+}
+
+.varda-datepicker .mat-form-field-suffix {
+  padding: .15em 0;
+  top: initial !important;
+}
+
+.varda-datepicker.mat-form-field-disabled .mat-form-field-suffix {
+  visibility: hidden;
+}
+
+.varda-datepicker .mat-datepicker-toggle-active {
+  color: var(--blue-lighten-1) !important;
+}
+
+/* Calendar popup */
+.cdk-overlay-container {
+  z-index: 1050;
+}
+
+.mat-calendar-body-selected {
+  background-color: var(--blue-lighten-1) !important;
+}

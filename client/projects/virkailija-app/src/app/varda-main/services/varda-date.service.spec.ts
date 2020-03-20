@@ -1,6 +1,6 @@
 import { TestBed, inject } from '@angular/core/testing';
-
 import { VardaDateService } from './varda-date.service';
+import * as moment from 'moment';
 
 describe('VardaDateService', () => {
   beforeEach(() => {
@@ -9,27 +9,25 @@ describe('VardaDateService', () => {
     });
   });
 
-  it('Should convert datepicker date to vardaApiDate-style date YYYY-MM-DD', inject([VardaDateService],
+  it('Should convert Moment object to vardaApiDate-style date YYYY-MM-DD', inject([VardaDateService],
     (service: VardaDateService) => {
-    const datePickerDateObj = {date: {day: 15, month: 7, year: 2009}};
-    const vardaApiDate = service.uiDateToVardaDate(datePickerDateObj);
+    const vardaApiDate = service.momentToVardaDate(moment('2009-07-15', VardaDateService.vardaApiDateFormat));
     expect(vardaApiDate.length).toEqual(10);
     expect(vardaApiDate).toEqual('2009-07-15');
   }));
 
-  it('Should convert vardaApiDate-style date YYYY-MM-DD to datepicker date object', inject([VardaDateService],
+  it('Should convert vardaApiDate-style date YYYY-MM-DD to Moment object', inject([VardaDateService],
     (service: VardaDateService) => {
-    const datePickerDateObj = {date: {day: 15, month: 7, year: 2009}};
-    const vardaApiDate = service.uiDateToVardaDate(datePickerDateObj);
+    const vardaApiDate = service.momentToVardaDate(moment('2009-07-15', VardaDateService.vardaApiDateFormat));
     expect(vardaApiDate.length).toEqual(10);
     expect(vardaApiDate).toEqual('2009-07-15');
 
     const vardaApiDateStr = '2009-07-15';
-    const datepickerDateObj = service.vardaDateToUIDate(vardaApiDateStr);
+    const datepickerDateObj = service.vardaDateToMoment(vardaApiDateStr);
 
-    expect(datepickerDateObj.date.year).toEqual(2009);
-    expect(datepickerDateObj.date.month).toEqual(7);
-    expect(datepickerDateObj.date.day).toEqual(15);
+    expect(datepickerDateObj.year()).toEqual(2009);
+    expect(datepickerDateObj.month() + 1).toEqual(7);
+    expect(datepickerDateObj.date()).toEqual(15);
   }));
 
   it('Should convert vardaApiDate-style date YYYY-MM-DD to MM.DD.YYYY-style string', inject([VardaDateService],

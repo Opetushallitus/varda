@@ -1,11 +1,11 @@
 import { TestBed, async } from '@angular/core/testing';
 import { AppComponent } from './app.component';
 import { TranslateService } from '@ngx-translate/core';
-import { VardaSharedModule } from 'varda-shared';
+import { VardaSharedModule, LoadingHttpService } from 'varda-shared';
 import { RouterTestingModule } from '@angular/router/testing';
 
 describe('AppComponent', () => {
-  let translateService: TranslateService;
+  let loadingHttpService: LoadingHttpService;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
@@ -17,11 +17,12 @@ describe('AppComponent', () => {
         AppComponent
       ],
       providers: [
-        { provide: TranslateService, useValue: {use: () => {}, setDefaultLang: () => {}}}
+        { provide: LoadingHttpService, useValue: { isLoading: () => { } } },
+        { provide: TranslateService, useValue: { use: () => { }, setDefaultLang: () => { } } }
       ]
     }).compileComponents();
 
-    translateService = TestBed.inject<TranslateService>(TranslateService);
+    loadingHttpService = TestBed.inject<LoadingHttpService>(LoadingHttpService);
   }));
 
   it('should create the app', () => {

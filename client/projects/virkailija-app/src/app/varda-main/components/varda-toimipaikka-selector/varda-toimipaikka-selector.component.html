@@ -62,7 +62,7 @@
   <app-varda-toimipaikka-form *ngIf="toimipaikkaFormOpen"
                               [toimipaikka]="toimipaikkaData"
                               [isEdit]="editToimipaikkaAction"
-                              [isReadOnly]="!!activeToimipaikka && (activeToimipaikka.lahdejarjestelma !== lahdejarjestelmaTypes.VARDA || activeToimipaikka.paos_toimipaikka_kytkin)"
+                              [isReadOnly]="!!formToimipaikka && (formToimipaikka.lahdejarjestelma !== lahdejarjestelmaTypes.VARDA || formToimipaikka.paos_toimipaikka_kytkin)"
                               (saveToimipaikkaFormSuccess)="updateToimipaikat($event)"
                               (valuesChanged)="toimipaikkaFormValuesChanged($event)"></app-varda-toimipaikka-form>
 </app-varda-modal-form>

@@ -479,6 +479,7 @@
     "label.maksutieto.perheen_koko": "Perheen koko",
     "label.maksutieto.alkamis_pvm": "Alkamispäivämäärä",
     "label.maksutieto.paattymis_pvm": "Päättymispäivämäärä",
+    "label.date-placeholder": "pp.kk.vvvv",
     "alert.toimipaikan-lapset-not-found": "Toimipaikassa ei ole yhtään lasta",
     "label.kunnan-tai-kuntayhtyman-jarjestama-varhaiskasvatus": "Varhaiskasvatus toteutettu ostopalveluna tai palvelusetelillä",
     "label.jarjestava-kunta-tai-kuntayhtyma": "Järjestävä kunta tai kuntayhtymä",

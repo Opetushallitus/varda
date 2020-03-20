@@ -1,19 +1,23 @@
 import { Injectable } from '@angular/core';
-import {HttpService, VardaUserDTO} from 'varda-shared';
-import {environment} from '../../environments/environment';
+import { LoadingHttpService, VardaUserDTO } from 'varda-shared';
+import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class HuoltajaApiService {
-  huoltajaApi = `${environment.huoltajaAppUrl}/huoltaja-api`;
+  huoltajaApi = `${environment.huoltajaAppUrl}/oppija-api`;
   loginApi = `${environment.huoltajaAppUrl}/api/user`;
 
-  constructor(private client: HttpService) { }
+  constructor(private http: LoadingHttpService) { }
 
   getUserInfo(): Observable<VardaUserDTO> {
-    const url = `${this.loginApi}/data/`;
-    return this.client.get(url);
+    return this.http.get(`${this.loginApi}/data/`);
   }
+
+  getHuoltajanLapsi(lapsi_oid: string): Observable<any> {
+    return this.http.get(`${this.huoltajaApi}/v1/huoltajanlapsi/${lapsi_oid}/`);
+  }
+
 }

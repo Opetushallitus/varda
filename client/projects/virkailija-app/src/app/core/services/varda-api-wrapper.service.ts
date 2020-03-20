@@ -489,7 +489,7 @@ export class VardaApiWrapperService {
       fieldset.fields.forEach((field) => {
         if (field.key === key) {
           if (field.widget === VardaWidgetNames.DATE) {
-            rv = this.vardaDateService.uiDateToVardaDate(value);
+            rv = this.vardaDateService.momentToVardaDate(value);
           } else if (field.widget === VardaWidgetNames.CHECKBOX ||
             field.widget === VardaWidgetNames.BOOLEANRADIO) {
             rv = value ? true : false;

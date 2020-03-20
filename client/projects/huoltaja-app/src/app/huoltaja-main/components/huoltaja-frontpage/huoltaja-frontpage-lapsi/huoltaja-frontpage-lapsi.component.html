@@ -2,121 +2,170 @@
   <mat-expansion-panel-header class="huoltaja-header">
     <mat-panel-title (click)="toggleLapsi(lapsiDto)">
       <h3 class="huoltaja-blue">
-        <mat-icon *ngIf="!lapsiDto.toggle_expanded" style="vertical-align: middle;">chevron_right</mat-icon>
-        <mat-icon *ngIf="lapsiDto.toggle_expanded" style="vertical-align: middle;">expand_more</mat-icon>
+        <mat-icon *ngIf="!lapsiDto.toggle_expanded"
+                  style="vertical-align: middle;">chevron_right</mat-icon>
+        <mat-icon *ngIf="lapsiDto.toggle_expanded"
+                  style="vertical-align: middle;">expand_more</mat-icon>
         <span>{{'label.henkilotiedot-varjaiskasvatuksen-tietovarannossa' | translate}}</span>
       </h3>
     </mat-panel-title>
   </mat-expansion-panel-header>
 
   <table class="mat-table huoltaja-table">
-    <tr class="mat-header-row">
+    <tr class="mat-header-row"
+        tabindex="0">
       <th class="mat-cell">{{'label.lapsi.oppijanumero' | translate}}</th>
       <td class="mat-cell">{{lapsiDto.henkilo_oid}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.oppijanumero' | translate}}" #oppijanumero="matTooltip" (click)="oppijanumero.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
+        <button matTooltip="{{'label.lapsi.oppijanumero' | translate}}"
+                #oppijanumero="matTooltip"
+                (click)="oppijanumero.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row huoltaja-even-row">
+    <tr class="mat-header-row huoltaja-even-row"
+        tabindex="0">
       <th class="mat-cell">{{'label.lapsi.henkilotunnus' | translate}}</th>
       <td class="mat-cell">{{lapsiDto.henkilotunnus}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.henkilotunnus' | translate}}" #henkilotunnus="matTooltip" (click)="henkilotunnus.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
+        <button matTooltip="{{'label.lapsi.henkilotunnus' | translate}}"
+                #henkilotunnus="matTooltip"
+                (click)="henkilotunnus.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row">
+    <tr class="mat-header-row"
+        tabindex="0">
       <th class="mat-cell">{{'label.lapsi.etunimet' | translate}}</th>
       <td class="mat-cell">{{lapsiDto.etunimet}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.etunimet' | translate}}" #etunimet="matTooltip" (click)="etunimet.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
+        <button matTooltip="{{'label.lapsi.etunimet' | translate}}"
+                #etunimet="matTooltip"
+                (click)="etunimet.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row huoltaja-even-row">
+    <tr class="mat-header-row huoltaja-even-row"
+        tabindex="0">
       <th class="mat-cell">{{'label.lapsi.kutsumanimi' | translate}}</th>
       <td class="mat-cell">{{lapsiDto.kutsumanimi}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.kutsumanimi' | translate}}" #kutsumanimi="matTooltip" (click)="kutsumanimi.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
+        <button matTooltip="{{'label.lapsi.kutsumanimi' | translate}}"
+                #kutsumanimi="matTooltip"
+                (click)="kutsumanimi.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row">
+    <tr class="mat-header-row"
+        tabindex="0">
       <th class="mat-cell">{{'label.lapsi.sukunimi' | translate}}</th>
       <td class="mat-cell">{{lapsiDto.sukunimi}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.sukunimi' | translate}}" #sukunimi="matTooltip" (click)="sukunimi.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
+        <button matTooltip="{{'label.lapsi.sukunimi' | translate}}"
+                #sukunimi="matTooltip"
+                (click)="sukunimi.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row huoltaja-even-row">
+    <tr class="mat-header-row huoltaja-even-row"
+        tabindex="0">
       <th class="mat-cell">{{'label.lapsi.aidinkieli' | translate}}</th>
-      <td class="mat-cell">{{lapsiDto.aidinkieli}}</td>
+      <td class="mat-cell">{{lapsiDto.aidinkieli_koodi}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.aidinkieli' | translate}}" #aidinkieli="matTooltip" (click)="aidinkieli.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
+        <button matTooltip="{{'label.lapsi.aidinkieli' | translate}}"
+                #aidinkieli="matTooltip"
+                (click)="aidinkieli.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row">
+    <tr class="mat-header-row"
+        tabindex="0">
       <th class="mat-cell">{{'label.lapsi.syntymaaika' | translate}}</th>
-      <td class="mat-cell">{{lapsiDto.syntymaaika | date:'d.M.yyyy'}}</td>
+      <td class="mat-cell">{{lapsiDto.syntyma_pvm | date:'d.M.yyyy'}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.syntymaaika' | translate}}" #syntymaaika="matTooltip" (click)="syntymaaika.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
+        <button matTooltip="{{'label.lapsi.syntymaaika' | translate}}"
+                #syntymaaika="matTooltip"
+                (click)="syntymaaika.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row huoltaja-even-row">
+    <tr class="mat-header-row huoltaja-even-row"
+        tabindex="0">
       <th class="mat-cell">{{'label.lapsi.sukupuoli' | translate}}</th>
-      <td class="mat-cell">{{lapsiDto.sukupuoli}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.sukupuoli' | translate}}" #sukupuoli="matTooltip" (click)="sukupuoli.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
+        <span *ngIf="lapsiDto.sukupuoli_koodi == '1'">{{ "label.mies" | translate }}</span>
+        <span *ngIf="lapsiDto.sukupuoli_koodi == '2'">{{ "label.nainen" | translate }}</span>
+      </td>
+      <td class="mat-cell">
+        <button matTooltip="{{'label.lapsi.sukupuoli' | translate}}"
+                #sukupuoli="matTooltip"
+                (click)="sukupuoli.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row">
+    <tr class="mat-header-row"
+        tabindex="0">
       <th class="mat-cell">{{'label.lapsi.kotikunta' | translate}}</th>
-      <td class="mat-cell">{{lapsiDto.kotikunta}}</td>
+      <td class="mat-cell">{{lapsiDto.kotikunta_koodi}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.kotikunta' | translate}}" #kotikunta="matTooltip" (click)="kotikunta.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
+        <button matTooltip="{{'label.lapsi.kotikunta' | translate}}"
+                #kotikunta="matTooltip"
+                (click)="kotikunta.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row huoltaja-even-row">
+    <tr class="mat-header-row huoltaja-even-row"
+        tabindex="0">
       <th class="mat-cell">{{'label.lapsi.postinumero' | translate}}</th>
       <td class="mat-cell">{{lapsiDto.postinumero}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.postinumero' | translate}}" #postinumero="matTooltip" (click)="postinumero.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
+        <button matTooltip="{{'label.lapsi.postinumero' | translate}}"
+                #postinumero="matTooltip"
+                (click)="postinumero.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row">
+    <tr class="mat-header-row"
+        tabindex="0">
       <th class="mat-cell">{{'label.lapsi.postitoimipaikka' | translate}}</th>
       <td class="mat-cell">{{lapsiDto.postitoimipaikka}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.postitoimipaikka' | translate}}" #postitoimipaikka="matTooltip" (click)="postitoimipaikka.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
+        <button matTooltip="{{'label.lapsi.postitoimipaikka' | translate}}"
+                #postitoimipaikka="matTooltip"
+                (click)="postitoimipaikka.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>

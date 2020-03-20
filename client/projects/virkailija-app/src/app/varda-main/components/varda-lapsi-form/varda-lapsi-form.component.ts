@@ -614,11 +614,9 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   }
 
   sortRecurringEntityListsByDates(a: any, b: any): number {
-    const uiDateAlkamisPvmA = this.vardaDateService.vardaDateToUIDate(a.alkamis_pvm);
-    const alkamisPvmA = this.vardaDateService.uiDateToMoment(uiDateAlkamisPvmA);
+    const alkamisPvmA = this.vardaDateService.vardaDateToMoment(a.alkamis_pvm);
 
-    const uiDateB = this.vardaDateService.vardaDateToUIDate(b.alkamis_pvm);
-    const uiDateAlkamisPvmB = this.vardaDateService.uiDateToMoment(uiDateB);
+    const uiDateAlkamisPvmB = this.vardaDateService.vardaDateToMoment(b.alkamis_pvm);
 
     let aIsBeforeB = this.vardaDateService.date1IsAfterDate2(alkamisPvmA, uiDateAlkamisPvmB);
 
@@ -628,11 +626,9 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
       } else if (!a.paattymis_pvm && b.paattymis_pvm) {
         aIsBeforeB = true;
       } else if (a.paattymis_pvm && b.paattymis_pvm) {
-        const uiDatePaattymisPvmA = this.vardaDateService.vardaDateToUIDate(a.paattymis_pvm);
-        const paattymisPvmA = this.vardaDateService.uiDateToMoment(uiDatePaattymisPvmA);
+        const paattymisPvmA = this.vardaDateService.vardaDateToMoment(a.paattymis_pvm);
 
-        const uiDatePaattymisPvmB = this.vardaDateService.vardaDateToUIDate(b.paattymis_pvm);
-        const paattymisPvmB = this.vardaDateService.uiDateToMoment(uiDatePaattymisPvmB);
+        const paattymisPvmB = this.vardaDateService.vardaDateToMoment(b.paattymis_pvm);
 
         aIsBeforeB = this.vardaDateService.date1IsAfterDate2(paattymisPvmA, paattymisPvmB);
       }

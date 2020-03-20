@@ -1,6 +1,5 @@
 import { Component, Input } from '@angular/core';
-
-import { LapsiDTO } from '../../../../utilities/models/dto/huoltaja-frontpage-dto';
+import { HenkiloDTO } from 'projects/huoltaja-app/src/app/utilities/models/dto/henkilo-dto';
 
 @Component({
   selector: 'app-huoltaja-frontpage-lapsi',
@@ -9,9 +8,9 @@ import { LapsiDTO } from '../../../../utilities/models/dto/huoltaja-frontpage-dt
 })
 export class HuoltajaFrontpageLapsiComponent {
 
-  @Input() lapsiDto: LapsiDTO;
+  @Input() lapsiDto: HenkiloDTO;
 
-  toggleLapsi(lapsiDto: LapsiDTO) {
+  toggleLapsi(lapsiDto: HenkiloDTO) {
     lapsiDto.toggle_expanded = !lapsiDto.toggle_expanded;
   }
 }

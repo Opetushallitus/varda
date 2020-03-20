@@ -55,19 +55,19 @@
         <label [id]="field.key + fieldSetName + fieldSetIndex"
                class="oph-label">{{getDisplayName(field)}} {{field.rules.required ? '*' : ''}}</label>
         <div class="varda-date">
-          <my-date-picker *ngIf="!isReadOnly"
-                          [placeholder]="getPlaceholderText(field)"
-                          [attr.aria-labelledby]="field.key + fieldSetName + fieldSetIndex"
-                          [options]="myDatePickerOptions"
-                          [formControlName]="field.key"
-                          [attr.name]="field.key + fieldSetName + fieldSetIndex"
-                          [attr.data-fieldname]="field.key"
-                          [attr.aria-required]="isRequired"
-                          [attr.aria-describedby]="'instructionBlock' + fieldIndex + fieldSetIndex"
-                          [attr.data-parent-container]="fieldSetName + fieldSetIndex"
-                          (inputFieldChanged)="dateFieldChanged($event, fieldSet, field)"
-                          (inputFocusBlur)="dateFieldFocus($event, fieldSet, field)"
-                          (calendarToggle)="dateFieldToggle($event, fieldSet, field)"></my-date-picker>
+          <app-varda-datepicker *ngIf="!isReadOnly"
+                                 [formControlName]="field.key"
+                                 [placeholder]="getPlaceholderText(field)"
+                                 [attrAriaLabelledBy]="field.key + fieldSetName + fieldSetIndex"
+                                 [attrName]="field.key + fieldSetName + fieldSetIndex"
+                                 [attrDataFieldname]="field.key"
+                                 [required]="isRequired"
+                                 [attrAriaRequired]="isRequired"
+                                 [attrAriaDescribedBy]="'instructionBlock' + fieldIndex + fieldSetIndex"
+                                 [attrDataParentContainer]="fieldSetName + fieldSetIndex"
+                                 (dateInput)="dateFieldChanged($event, fieldSet, field)"
+                                 (focusChange)="dateFieldInstructions($event)"
+                                 (calendarChange)="dateFieldInstructions($event)"></app-varda-datepicker>
         </div>
         <div *ngIf="isReadOnly">
           <span>{{field.value}}</span>

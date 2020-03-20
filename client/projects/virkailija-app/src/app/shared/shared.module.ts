@@ -2,7 +2,6 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReactiveFormsModule } from '@angular/forms';
-import { MyDatePickerModule } from 'mydatepicker';
 import { TranslateModule } from '@ngx-translate/core';
 import { NgcCookieConsentModule, NgcCookieConsentConfig } from 'ngx-cookieconsent';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
@@ -17,6 +16,9 @@ import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatStepperModule } from '@angular/material/stepper';
+import { MatDatepickerModule, MatMultiYearView } from '@angular/material/datepicker';
+import { MatMomentDateModule, MAT_MOMENT_DATE_ADAPTER_OPTIONS } from '@angular/material-moment-adapter';
+import { MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import {
   PageNotFoundComponent,
@@ -44,6 +46,9 @@ import { VardaRadioButtonComponent } from './components/varda-radio-button-group
 import { BrowserNotSupportedComponent } from './components/browser-not-supported/browser-not-supported.component';
 import { BrowserNotSupportedGuard } from './components/browser-not-supported/browser-not-supported.guard';
 import { SlideHideDirective } from './directives/slide-hide.directive';
+import { VardaDatepickerComponent } from './components/varda-datepicker/varda-datepicker.component';
+import { VardaDateService } from '../varda-main/services/varda-date.service';
+import { VardaDatepickerHeaderComponent } from './components/varda-datepicker/varda-datepicker-header/varda-datepicker-header.component';
 
 
 const cookieConfig: NgcCookieConsentConfig = {
@@ -77,7 +82,6 @@ const cookieConfig: NgcCookieConsentConfig = {
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    MyDatePickerModule,
     MatButtonModule,
     MatCheckboxModule,
     BrowserAnimationsModule,
@@ -91,6 +95,8 @@ const cookieConfig: NgcCookieConsentConfig = {
     MatListModule,
     MatCardModule,
     MatMenuModule,
+    MatDatepickerModule,
+    MatMomentDateModule,
     TranslateModule,
     NgcCookieConsentModule.forRoot(cookieConfig)
   ],
@@ -118,8 +124,32 @@ const cookieConfig: NgcCookieConsentConfig = {
     VardaRadioButtonGroupComponent,
     VardaRadioButtonComponent,
     BrowserNotSupportedComponent,
-    SlideHideDirective],
-  providers: [BrowserNotSupportedGuard],
+    SlideHideDirective,
+    VardaDatepickerComponent,
+    VardaDatepickerHeaderComponent],
+  providers: [
+    BrowserNotSupportedGuard,
+    {
+      provide: MAT_DATE_LOCALE, useValue: 'fi-FI'
+    },
+    {
+      provide: MAT_DATE_FORMATS,
+      useValue: {
+        parse: {
+          dateInput: VardaDateService.vardaDefaultDateFormat,
+        },
+        display: {
+          dateInput: 'DD.MM.YYYY',
+          monthYearLabel: 'MMMM YYYY',
+          dateA11yLabel: 'LL',
+          monthYearA11yLabel: 'MMMM YYYY',
+        },
+      }
+    },
+    {
+      provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { strict: true }
+    }
+  ],
   exports: [
     HighlightElementDirective,
     HighContrastDirective,
@@ -135,7 +165,6 @@ const cookieConfig: NgcCookieConsentConfig = {
     KeysPipe,
     FormsModule,
     ReactiveFormsModule,
-    MyDatePickerModule,
     MatButtonModule,
     MatCheckboxModule,
     MatStepperModule,
@@ -159,6 +188,7 @@ const cookieConfig: NgcCookieConsentConfig = {
     VardaRadioButtonComponent,
     BrowserNotSupportedComponent,
     SlideHideDirective
-  ]
+  ],
+  entryComponents: [ VardaDatepickerHeaderComponent ]
 })
 export class SharedModule { }

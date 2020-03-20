@@ -4,9 +4,9 @@ import { VardaApiWrapperService } from './varda-api-wrapper.service';
 import { VardaVakajarjestajaService } from './varda-vakajarjestaja.service';
 import { VardaDateService } from '../../varda-main/services/varda-date.service';
 import { fieldsets } from '../../shared/testmocks/fieldsets';
-import { VardaFieldSet } from '../../utilities/models';
 import { FormGroup } from '@angular/forms';
 import { toimipaikatStub } from '../../shared/testmocks/toimipaikat-stub';
+import * as moment from 'moment';
 
 describe('VardaFormService', () => {
 
@@ -70,7 +70,7 @@ describe('VardaFormService', () => {
   it('Should set value for date-widget correctly', () => {
     const dateFc = vardaFormService.createControl(mockDateField);
     vardaFormService.setValue(dateFc, mockDateField, '2009-05-04');
-    expect(dateFc.value).toEqual({date: {year: 2009, month: 5, day: 4}});
+    expect(dateFc.value).toEqual(moment('2009-05-04', VardaDateService.vardaApiDateFormat));
   });
 
   it('Should set value for booleanradio-widget correctly', () => {
@@ -123,16 +123,6 @@ describe('VardaFormService', () => {
     vardaFormService.setValue(chkgroupFc2, mockChkgroupField, ['jm02']);
     expect(chkgroupFc1.value).toEqual({jm01: true, jm02: false, jm03: true, jm04: true});
     expect(chkgroupFc2.value).toEqual({jm01: false, jm02: true, jm03: false, jm04: false});
-  });
-
-  it('Should call getDatepickerWrapper with correct selector-string', () => {
-    const datepickerWrapper = vardaFormService.getDatepickerWrapper(mockDateField, 'kielipainotus', 3, 0);
-    expect(documentQuerySelectorSpy).toHaveBeenCalledWith(`my-date-picker[name="${mockDateField.key}kielipainotus${0}"] .mydp`);
-  });
-
-  it('Should call getDatepickerElem with correct selector-string', () => {
-    const datepickerElem = vardaFormService.getDatepickerElem(mockDateField, 'kielipainotus', 3, 0);
-    expect(documentQuerySelectorSpy).toHaveBeenCalledWith(`my-date-picker[name="${mockDateField.key}kielipainotus${0}"]`);
   });
 
   it('Should return correct field from fieldsets by fieldkey', () => {

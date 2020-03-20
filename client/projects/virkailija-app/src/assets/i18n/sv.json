@@ -474,6 +474,7 @@
     "label.maksutieto.perheen_koko": "Familjens storlek",
     "label.maksutieto.alkamis_pvm": "Startdatum",
     "label.maksutieto.paattymis_pvm": "Slutdatum",
+    "label.date-placeholder": "dd.mm.åååå",
     "alert.toimipaikan-lapset-not-found": "Verksamhetsstället har inga barn",
     "label.kunnan-tai-kuntayhtyman-jarjestama-varhaiskasvatus": "Verksamhet som ordnas som köpt tjänst eller med servicesedel",
     "label.jarjestava-kunta-tai-kuntayhtyma": "Anordnare (kommun eller samkommun)",

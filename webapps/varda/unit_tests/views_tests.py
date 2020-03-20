@@ -23,6 +23,13 @@ class SetUpTestClient:
         return api_c
 
 
+# Well known test organizations (name corresponds to id)
+test_org1 = "1.2.246.562.10.34683023489"  # "Tester2 organisaatio"
+test_org2 = "1.2.246.562.10.93957375488"  # "Tester organisaatio"
+test_org3 = "1.2.246.562.10.93957375486"  # "varda-testi organisaatio"
+test_org4 = "1.2.246.562.10.93957375484"  # "Frontti organisaatio"
+
+
 class VardaViewsTests(TestCase):
     fixtures = ['varda/unit_tests/fixture_basics.json']
 
@@ -722,8 +729,10 @@ class VardaViewsTests(TestCase):
             "url": "http://testserver/api/v1/lapset/1/?format=json",
             "id": 1,
             'oma_organisaatio': None,
+            'oma_organisaatio_oid': None,
             'paos_kytkin': False,
             'paos_organisaatio': None,
+            'paos_organisaatio_oid': None,
             "henkilo": "http://testserver/api/v1/henkilot/2/?format=json",
             "varhaiskasvatuspaatokset_top": [
                 "http://testserver/api/v1/varhaiskasvatuspaatokset/1/?format=json"
@@ -735,6 +744,169 @@ class VardaViewsTests(TestCase):
         content.pop('muutos_pvm', None)
         self.assertEqual(content, lapsi_json)
 
+    def test_api_oid_related_field_lapsi_nulls_allowed(self):
+        client = SetUpTestClient("tester2").client()
+
+        data = {
+            "url": "/api/v1/lapset/4/",
+            "henkilo": "/api/v1/henkilot/9/",
+            "id": 4,
+            "oma_organisaatio_oid": None,
+            "paos_organisaatio_oid": None,
+            "oma_organisaatio": "/api/v1/vakajarjestajat/4/",
+            "paos_organisaatio": "/api/v1/vakajarjestajat/2/",
+        }
+
+        resp = client.put("/api/v1/lapset/4/", data=json.dumps(data), content_type="application/json")
+        self.assertEqual(resp.status_code, 200)
+
+    def test_api_oid_related_field_lapsi_existing_oid_allowed(self):
+        client = SetUpTestClient("tester2").client()
+
+        data = {
+            "url": "/api/v1/lapset/4/",
+            "henkilo": "/api/v1/henkilot/9/",
+            "id": 4,
+            "oma_organisaatio_oid": test_org4,
+            "paos_organisaatio_oid": test_org2,
+        }
+
+        resp = client.put("/api/v1/lapset/4/", data=json.dumps(data), content_type="application/json")
+        self.assertEqual(resp.status_code, 200)
+
+    def test_api_oid_related_field_lapsi_change_denied(self):
+        client = SetUpTestClient("tester2").client()
+
+        data = {
+            "url": "/api/v1/lapset/4/",
+            "henkilo": "/api/v1/henkilot/9/",
+            "id": 4,
+            "oma_organisaatio_oid": test_org1,
+            "paos_organisaatio_oid": test_org2,
+        }
+
+        resp = client.put("/api/v1/lapset/4/", data=json.dumps(data), content_type="application/json")
+        self.assertEqual(resp.status_code, 400)
+
+    def test_api_oid_related_field_lapsi_no_paos_organisaatio(self):
+        client = SetUpTestClient("tester2").client()
+
+        data = {
+            "url": "/api/v1/lapset/4/",
+            "henkilo": "/api/v1/henkilot/9/",
+            "id": 4,
+            "oma_organisaatio_oid": test_org4,
+            # no paos_organisaatio_oid
+        }
+
+        resp = client.put("/api/v1/lapset/4/", data=json.dumps(data), content_type="application/json")
+        self.assertEqual(resp.status_code, 400)
+
+    def test_api_oid_related_field_lapsi_one_with_oid_one_with_url(self):
+        client = SetUpTestClient("tester2").client()
+
+        data = {
+            "url": "/api/v1/lapset/4/",
+            "henkilo": "/api/v1/henkilot/9/",
+            "id": 4,
+            "oma_organisaatio_oid": test_org4,
+            # no oma_organisaatio as it is via oid
+            "paos_organisaatio": "/api/v1/vakajarjestajat/2/",
+        }
+
+        resp = client.put("/api/v1/lapset/4/", data=json.dumps(data), content_type="application/json")
+        self.assertEqual(resp.status_code, 200)
+
+    def test_api_oid_related_field_lapsi_roundtrip(self):
+        client = SetUpTestClient("tester2").client()
+        resp = client.get("/api/v1/lapset/4/?format=json")
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.content)
+
+        resp = client.put("/api/v1/lapset/4/", data=json.dumps(data), content_type="application/json")
+        self.assertEqual(resp.status_code, 200)
+
+    def test_api_oid_related_field_lapsi_different_values_error(self):
+        client = SetUpTestClient("tester2").client()
+
+        data = {
+            "url": "/api/v1/lapset/4/",
+            "henkilo": "/api/v1/henkilot/9/",
+            "id": 4,
+            "oma_organisaatio_oid": test_org1,  # id=1
+            "paos_organisaatio_oid": None,
+            "oma_organisaatio": "/api/v1/vakajarjestajat/4/",  # id=4
+            "paos_organisaatio": "/api/v1/vakajarjestajat/2/",
+        }
+
+        resp = client.put("/api/v1/lapset/4/", data=json.dumps(data), content_type="application/json")
+        self.assertEqual(resp.status_code, 400)
+
+    def test_api_oid_related_field_lapsi_oid_invalid(self):
+        client = SetUpTestClient("tester2").client()
+
+        data = {
+            "url": "/api/v1/lapset/4/",
+            "henkilo": "/api/v1/henkilot/9/",
+            "id": 4,
+            "oma_organisaatio_oid": "some_invalid_oid",
+            "paos_organisaatio": "/api/v1/vakajarjestajat/2/",
+        }
+
+        resp = client.put("/api/v1/lapset/4/", data=json.dumps(data), content_type="application/json")
+        self.assertEqual(resp.status_code, 400)
+
+    @responses.activate
+    def test_api_oid_related_field_varhaiskasvatuspaatos_toimipaikka_field_required(self):
+        """
+        This test is copied from test_api_push_correct_lapsi, but henkilo ids changed.
+        At the end toimipaikka is omitted and that error verified.
+        """
+
+        responses.add(responses.POST,
+                      'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/',
+                      json='1.2.987654322',
+                      status=status.HTTP_201_CREATED
+                      )
+        henkilo = {
+            "henkilotunnus": "180315A901Y",
+            "etunimet": "Anton",
+            "kutsumanimi": "Anton",
+            "sukunimi": "Kivimäki"
+        }
+        client = SetUpTestClient('tester').client()
+        resp = client.post('/api/v1/henkilot/', henkilo)
+        self.assertEqual(resp.status_code, 201)
+        henkilo_url = json.loads(resp.content)['url']
+
+        lapsi = {
+            "henkilo": henkilo_url
+        }
+        resp2 = client.post('/api/v1/lapset/', lapsi)
+        self.assertEqual(resp2.status_code, 201)
+        lapsi_url = json.loads(resp2.content)['url']
+
+        varhaiskasvatuspaatos = {
+            "lapsi": lapsi_url,
+            "tuntimaara_viikossa": "37.5",
+            "jarjestamismuoto_koodi": "jm01",
+            "hakemus_pvm": "2018-08-15",
+            "alkamis_pvm": "2018-09-30"
+        }
+        resp3 = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
+        self.assertEqual(resp3.status_code, 201)
+        varhaiskasvatuspaatos_url = json.loads(resp3.content)['url']
+
+        varhaiskasvatussuhde = {
+            # no toimipaikka
+            "varhaiskasvatuspaatos": varhaiskasvatuspaatos_url,
+            "alkamis_pvm": "2018-10-01"
+        }
+        resp = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
+        self.assertEqual(resp.status_code, 400)
+        msg = json.loads(resp.content)['toimipaikka_oid']
+        self.assertIn('Either this field or toimipaikka is required', msg)
+
     def test_api_get_lapsi_json_admin(self):
         """
         TODO: Sort nested resources // CSCVARDA-1113
@@ -743,8 +915,10 @@ class VardaViewsTests(TestCase):
             "url": "http://testserver/api/v1/lapset/1/?format=json",
             "id": 1,
             'oma_organisaatio': None,
+            'oma_organisaatio_oid': None,
             'paos_kytkin': False,
             'paos_organisaatio': None,
+            'paos_organisaatio_oid': None,
             "henkilo": "http://testserver/api/v1/henkilot/2/?format=json",
             "varhaiskasvatuspaatokset_top": [
                 "http://testserver/api/v1/varhaiskasvatuspaatokset/1/?format=json"

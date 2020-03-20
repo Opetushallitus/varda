@@ -99,7 +99,7 @@ export class VardaFormService {
   setValue(fc: AbstractControl, field: VardaField, value: any): void {
     if (field.widget === VardaWidgetNames.DATE) {
       field.value = value && this.vardaDateService.vardaDateToUIStrDate(value);
-      value = value ? this.vardaDateService.vardaDateToUIDate(value) : null;
+      value = value ? this.vardaDateService.vardaDateToMoment(value) : null;
     } else if (field.widget === VardaWidgetNames.AUTOCOMPLETEONE) {
       value = value ? value : null;
     } else if (field.widget === VardaWidgetNames.AUTOCOMPLETEMANY) {
@@ -227,50 +227,6 @@ export class VardaFormService {
 
   getFieldSetFormGroup(fieldSet: VardaFieldSet, vardaForm: FormGroup): FormGroup {
     return <FormGroup> vardaForm.controls[fieldSet.id];
-  }
-
-  getDatepickerElem(field: VardaField, fieldSetName: string, fieldIndex: number, fieldSetIndex: number): Element {
-    return document.querySelector(`my-date-picker[name="${field.key}${fieldSetName}${fieldSetIndex}"]`);
-  }
-
-  getDatepickerWrapper(field: VardaField, fieldSetName: string, fieldIndex: number, fieldSetIndex: number): Element {
-    return document.querySelector(`my-date-picker[name="${field.key}${fieldSetName}${fieldSetIndex}"] .mydp`);
-  }
-
-  highlightDatepickerElement(type: string,
-    highlight: number,
-    fieldSet: VardaFieldSet,
-    field: VardaField,
-    fieldSetName: string,
-    fieldIndex: number,
-    fieldSetIndex: number): void {
-    this.removeHighlight(Array.from(this.getFieldSets()), this.highlightContainerSelector);
-    let condition = false;
-    if (type === 'focus') {
-      condition = (highlight === 1) ? true : false;
-    } else {
-      condition = (highlight === 1 || highlight === 2) ? true : false;
-    }
-    const datepickerWrapper = this.getDatepickerWrapper(field, fieldSetName, fieldIndex, fieldSetIndex);
-    const datepickerElem = this.getDatepickerElem(field, fieldSetName, fieldIndex,  fieldSetIndex);
-
-    this.addHighlightToContainer(datepickerElem['dataset']['parentContainer']);
-    if (condition) {
-      datepickerWrapper.classList.add(this.vardaDatepickerFocusSelector);
-    } else {
-      datepickerWrapper.classList.remove(this.vardaDatepickerFocusSelector);
-    }
-  }
-
-  addHighlightToContainer(parentContainerSelector: string): void {
-    if (parentContainerSelector) {
-      const parent = document.getElementById(`${parentContainerSelector}`);
-      parent.classList.add(this.highlightContainerSelector);
-    }
-  }
-
-  removeHighlight(elements: Array<Element>, cssClass: string): void {
-    elements.forEach((el: HTMLElement) => el.classList.remove(cssClass));
   }
 
   getFieldSets(): NodeListOf<Element> {

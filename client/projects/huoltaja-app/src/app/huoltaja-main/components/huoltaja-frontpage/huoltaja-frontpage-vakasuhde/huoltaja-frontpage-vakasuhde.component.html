@@ -1,16 +1,20 @@
-<mat-expansion-panel [ngClass]="{'vakapaatos-voimassa-panel' : vakasuhde.vakapaatos_voimassa}" hideToggle="true" *ngFor="let vakapaatos of vakasuhde.vakapaatokset">
+<mat-expansion-panel [ngClass]="{'vakapaatos-voimassa-panel' : vakasuhde}"
+                     hideToggle="true">
   <mat-expansion-panel-header class="huoltaja-header">
-    <mat-panel-title (click)="toggleVakapaatos(vakapaatos)">
+    <mat-panel-title (click)="toggleVakapaatos(vakasuhde.varhaiskasvatuspaatos)">
       <h4 class="huoltaja-blue">
         <table class="huoltaja-vakapaatos-header-table">
           <tr>
             <td>
-              <mat-icon *ngIf="!vakapaatos.toggle_expanded" style="vertical-align: middle;">chevron_right</mat-icon>
-              <mat-icon *ngIf="vakapaatos.toggle_expanded" style="vertical-align: middle;">expand_more</mat-icon>
+              <mat-icon *ngIf="!vakasuhde.varhaiskasvatuspaatos.toggle_expanded"
+                        style="vertical-align: middle;">chevron_right</mat-icon>
+              <mat-icon *ngIf="vakasuhde.varhaiskasvatuspaatos.toggle_expanded"
+                        style="vertical-align: middle;">expand_more</mat-icon>
               <span>{{'label.varhaiskasvatuspaatos' | translate}}</span>
             </td>
             <td>
-              <span>{{vakapaatos.alkamis_pvm | date:'d.M.yyyy'}} - {{vakapaatos.paattymis_pvm | date:'d.M.yyyy'}}</span>
+              <span>{{vakasuhde.varhaiskasvatuspaatos.alkamis_pvm | date:'d.M.yyyy'}} -
+                {{vakasuhde.varhaiskasvatuspaatos.paattymis_pvm | date:'d.M.yyyy'}}</span>
             </td>
           </tr>
         </table>
@@ -19,106 +23,127 @@
   </mat-expansion-panel-header>
 
   <table class="mat-table huoltaja-table">
-    <tr class="mat-header-row" [ngClass]="{'vakapaatos-voimassa-panel' : vakasuhde.vakapaatos_voimassa}">
+    <tr class="mat-header-row"
+        tabindex="0">
       <th class="mat-cell">{{'label.varhaiskasvatuspaatos.hakemus-pvm' | translate}}</th>
-      <td class="mat-cell">{{vakapaatos.hakemus_pvm | date:'d.M.yyyy'}}</td>
+      <td class="mat-cell">{{vakasuhde.varhaiskasvatuspaatos.hakemus_pvm | date:'d.M.yyyy'}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.varhaiskasvatuspaatos.hakemus-pvm' | translate}}" #hakemusPvm="matTooltip" (click)="hakemusPvm.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
+        <button matTooltip="{{'label.varhaiskasvatuspaatos.hakemus-pvm' | translate}}"
+                #hakemusPvm="matTooltip"
+                (click)="hakemusPvm.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row huoltaja-even-row">
-      <th class="mat-cell">{{'label.varhaiskasvatuspaatos.toimipaikkaan-sijoittuminen' | translate}}</th>
-      <td class="mat-cell">{{vakapaatos.toimipaikkaan_sijoittuminen}}</td>
-      <td class="mat-cell">
-        <button matTooltip="{{'label.varhaiskasvatuspaatos.toimipaikkaan-sijoittuminen' | translate}}" #toimipaikkaanSijoittuminen="matTooltip" (click)="toimipaikkaanSijoittuminen.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
-        </button>
-      </td>
-    </tr>
-    <tr class="mat-header-row" [ngClass]="{'vakapaatos-voimassa-panel' : vakasuhde.vakapaatos_voimassa}">
+    <tr class="mat-header-row"
+        tabindex="0">
       <th class="mat-cell">{{'label.varhaiskasvatuspaatos.tuntimaara-viikossa' | translate}}</th>
-      <td class="mat-cell">{{vakapaatos.tuntimaara_viikossa}}</td>
+      <td class="mat-cell">{{vakasuhde.varhaiskasvatuspaatos.tuntimaara_viikossa}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.varhaiskasvatuspaatos.tuntimaara-viikossa' | translate}}" #tuntimaaraViikossa="matTooltip" (click)="tuntimaaraViikossa.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
+        <button matTooltip="{{'label.varhaiskasvatuspaatos.tuntimaara-viikossa' | translate}}"
+                #tuntimaaraViikossa="matTooltip"
+                (click)="tuntimaaraViikossa.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row huoltaja-even-row">
+    <tr class="mat-header-row huoltaja-even-row"
+        tabindex="0">
       <th class="mat-cell">{{'label.varhaiskasvatuspaatos.jarjestamismuoto' | translate}}</th>
-      <td class="mat-cell">{{vakapaatos.jarjestamismuoto}}</td>
+      <td class="mat-cell">{{vakasuhde.varhaiskasvatuspaatos.jarjestamismuoto_koodi}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.varhaiskasvatuspaatos.jarjestamismuoto' | translate}}" #jarjestamismuoto="matTooltip" (click)="jarjestamismuoto.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
+        <button matTooltip="{{'label.varhaiskasvatuspaatos.jarjestamismuoto' | translate}}"
+                #jarjestamismuoto="matTooltip"
+                (click)="jarjestamismuoto.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row" [ngClass]="{'vakapaatos-voimassa-panel' : vakasuhde.vakapaatos_voimassa}">
+    <tr class="mat-header-row"
+        tabindex="0">
       <th class="mat-cell">{{'label.varhaiskasvatuspaatos.paivittainen-varhaiskasvatus' | translate}}</th>
-      <td class="mat-cell">{{vakapaatos.paivittainen_vaka_kytkin ? ('label.kylla' | translate) : ('label.ei' | translate)}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.varhaiskasvatuspaatos.paivittainen-varhaiskasvatus' | translate}}" #paivittainenVarhaiskasvatus="matTooltip" (click)="paivittainenVarhaiskasvatus.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
+        {{vakasuhde.varhaiskasvatuspaatos.paivittainen_vaka_kytkin ? ('label.kylla' | translate) : ('label.ei' | translate)}}
+      </td>
+      <td class="mat-cell">
+        <button matTooltip="{{'label.varhaiskasvatuspaatos.paivittainen-varhaiskasvatus' | translate}}"
+                #paivittainenVarhaiskasvatus="matTooltip"
+                (click)="paivittainenVarhaiskasvatus.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row huoltaja-even-row">
+    <tr class="mat-header-row huoltaja-even-row"
+        tabindex="0">
       <th class="mat-cell">{{'label.varhaiskasvatuspaatos.kokoaikainen-varhaiskasvatus' | translate}}</th>
-      <td class="mat-cell">{{vakapaatos.kokopaivainen_vaka_kytkin ? ('label.kylla' | translate) : ('label.ei' | translate)}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.varhaiskasvatuspaatos.kokoaikainen-varhaiskasvatus' | translate}}" #kokoaikainenVarhaiskasvatus="matTooltip" (click)="kokoaikainenVarhaiskasvatus.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
+        {{vakasuhde.varhaiskasvatuspaatos.kokopaivainen_vaka_kytkin ? ('label.kylla' | translate) : ('label.ei' | translate)}}
+      </td>
+      <td class="mat-cell">
+        <button matTooltip="{{'label.varhaiskasvatuspaatos.kokoaikainen-varhaiskasvatus' | translate}}"
+                #kokoaikainenVarhaiskasvatus="matTooltip"
+                (click)="kokoaikainenVarhaiskasvatus.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row" [ngClass]="{'vakapaatos-voimassa-panel' : vakasuhde.vakapaatos_voimassa}">
+    <tr class="mat-header-row"
+        tabindex="0">
       <th class="mat-cell">{{'label.varhaiskasvatuspaatos.vuorohoito' | translate}}</th>
-      <td class="mat-cell">{{vakapaatos.vuorohoito_kytkin ? ('label.kylla' | translate) : ('label.ei' | translate)}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.varhaiskasvatuspaatos.vuorohoito' | translate}}" #vuorohoito="matTooltip" (click)="vuorohoito.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
+        {{vakasuhde.varhaiskasvatuspaatos.vuorohoito_kytkin ? ('label.kylla' | translate) : ('label.ei' | translate)}}
+      </td>
+      <td class="mat-cell">
+        <button matTooltip="{{'label.varhaiskasvatuspaatos.vuorohoito' | translate}}"
+                #vuorohoito="matTooltip"
+                (click)="vuorohoito.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row huoltaja-even-row">
+    <tr class="mat-header-row huoltaja-even-row"
+        tabindex="0">
       <th class="mat-cell">{{'label.varhaiskasvatuspaatos.varhaiskasvatusaika' | translate}}</th>
-      <td class="mat-cell">{{vakapaatos.alkamis_pvm | date:'d.M.yyyy'}} - {{vakapaatos.paattymis_pvm | date:'d.M.yyyy'}}</td>
+      <td class="mat-cell">{{vakasuhde.varhaiskasvatuspaatos.alkamis_pvm | date:'d.M.yyyy'}} -
+        {{vakasuhde.varhaiskasvatuspaatos.paattymis_pvm | date:'d.M.yyyy'}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.varhaiskasvatuspaatos.varhaiskasvatusaika' | translate}}" #varhaiskasvatusaika="matTooltip" (click)="varhaiskasvatusaika.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
+        <button matTooltip="{{'label.varhaiskasvatuspaatos.varhaiskasvatusaika' | translate}}"
+                #varhaiskasvatusaika="matTooltip"
+                (click)="varhaiskasvatusaika.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row" [ngClass]="{'vakapaatos-voimassa-panel' : vakasuhde.vakapaatos_voimassa}">
-      <th class="mat-cell">{{'label.varhaiskasvatuspaatos.osaviikkoinen-varhaiskasvatus' | translate}}</th>
-      <td class="mat-cell">{{vakapaatos.osaviikkoinen_vaka_kytkin ? ('label.kylla' | translate) : ('label.ei' | translate)}}</td>
+    <tr class="mat-header-row huoltaja-even-row"
+        tabindex="0">
+      <th class="mat-cell">{{'label.varhaiskasvatuspaatos.pikakasittely' | translate}}</th>
       <td class="mat-cell">
-        <button matTooltip="{{'label.varhaiskasvatuspaatos.osaviikkoinen-varhaiskasvatus' | translate}}" #osaviikkoinenVarhaiskasvatus="matTooltip" (click)="osaviikkoinenVarhaiskasvatus.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-          <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
+        {{vakasuhde.varhaiskasvatuspaatos.pikakasittely_kytkin ? ('label.kylla' | translate) : ('label.ei' | translate)}}
+      </td>
+      <td class="mat-cell">
+        <button matTooltip="{{'label.varhaiskasvatuspaatos.pikakasittely' | translate}}"
+                #pikakasittely="matTooltip"
+                (click)="pikakasittely.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row huoltaja-even-row">
-      <th class="mat-cell">{{'label.varhaiskasvatuspaatos.osapaivainen-varhaiskasvatus' | translate}}</th>
-      <td class="mat-cell">{{vakapaatos.osapaivainen_vaka_kytkin ? ('label.kylla' | translate) : ('label.ei' | translate)}}</td>
-      <td class="mat-cell">
-        <button matTooltip="{{'label.varhaiskasvatuspaatos.osapaivainen-varhaiskasvatus' | translate}}" #osapaivanenVarhaiskasvatus="matTooltip" (click)="osapaivanenVarhaiskasvatus.toggle()"
-                (mouseenter)="$event.stopImmediatePropagation()" (mouseleave)="$event.stopImmediatePropagation()">
-           <mat-icon style="vertical-align: middle;">help_outline</mat-icon>
-        </button>
-      </td>
-     </tr>
   </table>
   <p class="onko-tiedoissa-virhe">{{'label.varhaiskasvatuspaatos.onko-tiedoissa-virhe' | translate}}</p>
 </mat-expansion-panel>

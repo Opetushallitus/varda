@@ -11,6 +11,7 @@ from django.db import transaction
 from rest_framework import status
 from rest_framework.exceptions import APIException
 from time import sleep
+from urllib.parse import urlparse
 
 from varda.models import Henkilo
 from varda.oph_yhteiskayttopalvelu_autentikaatio import get_authentication_header, get_contenttype_header
@@ -205,11 +206,12 @@ def put_json_to_external_service(service_name, http_url_suffix, data_json, expec
                                             data_json=data_json)
 
 
-def get_object_id_from_path(request_path):
+def get_object_id_from_path(url):
     """
     Parse object-id from request path. Eg.
     ['', 'api', 'v1', 'varhaiskasvatuspaatokset', '1', '']  --->  return 1
     """
+    request_path = urlparse(url).path
     splitted_path = request_path.split('/')
     if len(splitted_path) != 6:
         logger.error('request_path length invalid. Path: ' + request_path)
@@ -217,7 +219,7 @@ def get_object_id_from_path(request_path):
     object_id = splitted_path[4]
     if not object_id.isdigit():
         return None
-    return object_id
+    return int(object_id)
 
 
 def list_to_chunks(list_, size):

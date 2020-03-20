@@ -324,7 +324,7 @@ export class MaksutiedotFormComponent implements OnInit {
     const isEdit = this.maksutiedot[this.ui.openedMaksutietoIndex] && this.maksutiedot[this.ui.openedMaksutietoIndex].paattymis_pvm !== undefined;
     if (isEdit) {
       const paattymis_pvm_old = this.maksutiedot[this.ui.openedMaksutietoIndex].paattymis_pvm || '';
-      const paattymis_pvm_new = this.vardaDateService.uiDateToVardaDate(this.maksutiedotFormArr.value[idx].maksutieto_perustiedot.paattymis_pvm) || '';
+      const paattymis_pvm_new = this.vardaDateService.momentToVardaDate(this.maksutiedotFormArr.value[idx].maksutieto_perustiedot.paattymis_pvm) || '';
       return paattymis_pvm_old.localeCompare(paattymis_pvm_new) === 0;
     }
     return false;

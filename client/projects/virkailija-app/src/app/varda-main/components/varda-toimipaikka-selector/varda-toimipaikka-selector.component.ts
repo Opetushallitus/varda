@@ -28,6 +28,7 @@ export class VardaToimipaikkaSelectorComponent implements OnChanges {
   @Output() updateToimipaikka: EventEmitter<boolean> = new EventEmitter();
   @Output() closeToimipaikkaForm: EventEmitter<any> = new EventEmitter();
   @Output() toggleToimipaikkaSelectorVisibility: EventEmitter<any> = new EventEmitter();
+  formToimipaikka: VardaToimipaikkaMinimalDto;
   toimipaikkaData: VardaToimipaikkaDTO;
 
   toimipaikkaFieldSets: Array<VardaFieldSet>;
@@ -120,11 +121,13 @@ export class VardaToimipaikkaSelectorComponent implements OnChanges {
 
   addToimipaikka(): void {
     this.editToimipaikkaAction = false;
+    this.formToimipaikka = null;
     this.openToimipaikkaForm();
   }
 
   editToimipaikka(): void {
     this.editToimipaikkaAction = true;
+    this.formToimipaikka = this.activeToimipaikka;
     this.openToimipaikkaForm();
   }
 
@@ -139,10 +142,10 @@ export class VardaToimipaikkaSelectorComponent implements OnChanges {
     this.ui.isLoading = true;
 
     let obs;
-    if (!this.activeToimipaikka) {
+    if (!this.formToimipaikka) {
       obs = observableOf(null);
     } else {
-      obs = this.vardaApiWrapperService.getToimipaikkaById(this.activeToimipaikka.id);
+      obs = this.vardaApiWrapperService.getToimipaikkaById(this.formToimipaikka.id);
     }
 
     forkJoin([
