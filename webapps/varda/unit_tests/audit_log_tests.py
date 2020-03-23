@@ -1,5 +1,4 @@
 import ast
-import sys
 import unittest
 
 from varda.audit_log import audit_log
@@ -22,16 +21,16 @@ class VardaAuditLogTests(unittest.TestCase):
         end_index_size_bytes = audit_log.get_batch_end_index_size_bytes(data, 1000)
         self.assertEqual(end_index_size_bytes, 1245)
 
-        new_log_batch_limit_in_bytes = 10256
+        new_log_batch_limit_in_bytes = 9346
         audit_log.AWS_LOG_BATCH_MAX_BYTES = new_log_batch_limit_in_bytes
         end_index_size_bytes = audit_log.get_batch_end_index_size_bytes(data, 0)
-        self.assertEqual(end_index_size_bytes, 300)
+        self.assertEqual(end_index_size_bytes, 30)
 
-        end_index_size_bytes = audit_log.get_batch_end_index_size_bytes(data, 300)
-        self.assertEqual(end_index_size_bytes, 600)
+        end_index_size_bytes = audit_log.get_batch_end_index_size_bytes(data, 30)
+        self.assertEqual(end_index_size_bytes, 60)
 
-        new_batch = data[300:end_index_size_bytes]
-        batch_size = sys.getsizeof(new_batch) + len(new_batch) * audit_log.AWS_OVERHEAD_IN_BYTES_PER_EVENT
+        new_batch = data[30:end_index_size_bytes]
+        batch_size = audit_log.get_batch_size_in_bytes(new_batch)
         self.assertEqual(batch_size, new_log_batch_limit_in_bytes)
 
         """

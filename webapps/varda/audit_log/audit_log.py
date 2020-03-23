@@ -2,7 +2,6 @@ import datetime
 import json
 import logging
 import os
-import sys
 
 from django.apps import apps
 from django.conf import settings
@@ -26,16 +25,18 @@ AWS_OVERHEAD_IN_BYTES_PER_EVENT = 26
 TWENTY_FOUR_HOURS_IN_MS = 1000 * 60 * 60 * 24
 
 
+def get_size(event):
+    return (len(event['message']) if isinstance(event, dict) else 1) + AWS_OVERHEAD_IN_BYTES_PER_EVENT
+
+
 def get_batch_size_in_bytes(audit_log_batch):
     """
     https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_PutLogEvents.html
 
     The maximum batch size is 1,048,576 bytes, and this size is calculated as the
     sum of all event messages in UTF-8, plus 26 bytes for each log event.
-
-    Note: sys.getsizeof measures list data structure size not actual json string size
     """
-    return sys.getsizeof(audit_log_batch) + len(audit_log_batch) * AWS_OVERHEAD_IN_BYTES_PER_EVENT
+    return sum(get_size(event) for event in audit_log_batch)
 
 
 def get_batch_end_index_size_bytes(audit_log_events, start_index):
