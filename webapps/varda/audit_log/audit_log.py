@@ -194,6 +194,8 @@ def send_changed_model_log(aws_log_client, model_name, logs_since, logs_until, h
         log_data_state.log_seq += 1
         timestamp = get_epoch_time_in_ms(audit_log_event.history_date)
         change_url = "/api/v1/{}/{}/".format(api_endpoint, audit_log_event.id)
+        history_user = audit_log_event.history_user
+        username = history_user.username if history_user else 'None'
 
         if audit_log_event.history_type == "+":
             operation = "CREATE"
@@ -209,7 +211,7 @@ def send_changed_model_log(aws_log_client, model_name, logs_since, logs_until, h
                                                         timestamp,
                                                         operation,
                                                         change_url,
-                                                        audit_log_event.history_user.username)})
+                                                        username)})
 
     if audit_log_events:
         start_index = 0
