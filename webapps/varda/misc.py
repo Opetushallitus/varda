@@ -8,6 +8,7 @@ import requests
 from cryptography.fernet import Fernet, InvalidToken
 from django.conf import settings
 from django.db import transaction
+from requests.exceptions import RequestException, ConnectionError, Timeout
 from rest_framework import status
 from rest_framework.exceptions import APIException
 from time import sleep
@@ -129,12 +130,8 @@ def send_request_get_response(service_name, http_url_suffix, headers, request_ty
             response = requests.post(http_complete_url, headers=headers, data=data_json, timeout=DEFAULT_TIMEOUT_TUPLE)
         else:  # put
             response = requests.put(http_complete_url, headers=headers, data=data_json, timeout=DEFAULT_TIMEOUT_TUPLE)
-    except requests.exceptions.RequestException as e:
-        logger.error(e)
-    except requests.exceptions.ConnectionError as e:
-        logger.error(e)
-    except requests.exceptions.Timeout as e:
-        logger.error(e)
+    except (RequestException, ConnectionError, Timeout) as e:
+        logger.error('Failed to make a request. Url: {}, Error: {}'.format(http_complete_url, e))
 
     return response
 

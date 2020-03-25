@@ -4,6 +4,7 @@
 
 export * from './lib/http.service';
 export * from './lib/loading-http.service';
+export * from './lib/components/loading-indicator/loading-indicator.component';
 export * from './lib/login.service';
 export * from './lib/dto/user-dto';
 export * from './lib/varda-shared.module';

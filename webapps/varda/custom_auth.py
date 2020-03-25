@@ -128,7 +128,7 @@ class CustomBasicAuthentication(BasicAuthentication):
             omattiedot_url = settings.OPINTOPOLKU_DOMAIN + "/" + service_name + '/henkilo/current/omattiedot'
             r = requests.get(omattiedot_url, headers=get_authentication_header(service_name, userid, password))
         except requests.exceptions.RequestException as e:
-            logger.error(e)
+            logger.error('User could not log in. Username: {}, Error: {}.'.format(userid, e))
             msg = _('Connection problems. Please try again later.')
             raise exceptions.AuthenticationFailed(msg)
 

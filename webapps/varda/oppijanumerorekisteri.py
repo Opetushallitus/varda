@@ -176,7 +176,7 @@ def get_changed_since(date_and_time, amount, offset):
         try:
             r = requests.get(url, headers=headers)
         except requests.exceptions.RequestException as e:
-            logger.error(e)
+            logger.error('RequestException for Url: {}, Error: {}.'.format(url, e))
             return None
 
         if r.status_code == 200:
@@ -301,7 +301,7 @@ def update_huoltajuussuhde(lapsi_oid):
         logger.info("Skipped huoltajasuhde update for child with oid {} since he was not added to varda"
                     .format(lapsi_oid))
     except Exception as e:
-        logger.error(e)
+        logger.error('Could not update huoltajuussuhde for lapsi. Oid: {}, Error: {}'.format(lapsi_oid, e))
 
 
 def get_huoltajat_from_onr(henkilo_id):
@@ -387,6 +387,6 @@ def fetch_lapsen_huoltajat(lapsi_id):
                                                          })
 
     except IntegrityError as ie:
-        logger.error("Could not create or update huoltajuussuhde with lapsi-id {} and cause {}".format(lapsi_id, ie.__cause__))
+        logger.error('Could not create or update huoltajuussuhde with lapsi-id {} and cause {}'.format(lapsi_id, ie.__cause__))
     except Exception as e:
-        logger.error(e)
+        logger.error('Could not update huoltajuussuhteet with lapsi-id: {}, Error: {}.'.format(lapsi_id, e))

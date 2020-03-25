@@ -19,10 +19,7 @@ def get_organisaatiopalvelu_info(organisaatio_oid):
     try:
         r = requests.get(url)
         response = json.loads(r.content)
-    except (requests.exceptions.RequestException, json.decoder.JSONDecodeError) as e:
-        logger.error(e)
-        return result_info
-    except ValueError as e:
+    except (requests.exceptions.RequestException, json.decoder.JSONDecodeError, ValueError) as e:
         logger.error('Url: {}, Error: {}'.format(url, e))
         return result_info
     if not response:

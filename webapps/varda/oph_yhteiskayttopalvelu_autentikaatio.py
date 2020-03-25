@@ -35,7 +35,7 @@ def get_new_ticketing_granting_ticket(username, password, external_request):
     try:
         r = requests.post(settings.OPINTOPOLKU_DOMAIN + "/cas/v1/tickets", data=credentials, headers=headers)
     except requests.exceptions.RequestException as e:
-        logger.error(e)
+        logger.error('RequestException for /cas/v1/tickets. Error: {}.'.format(e))
         return None
 
     if r.status_code == 201:  # successful
@@ -75,7 +75,7 @@ def get_service_ticket(service_suffix, username, password, external_request):
         try:
             r = requests.post(ticket_granting_ticket_location, data=service_ticket_url, headers=headers)
         except requests.exceptions.RequestException as e:
-            logger.error(e)
+            logger.error('RequestException for ticket_granting_ticket_location. Error: {}.'.format(e))
             sleep(2)
             continue
 
