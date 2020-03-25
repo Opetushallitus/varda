@@ -9,6 +9,8 @@ export class VardaMaksutietoDTO {
   perheen_koko: number;
   alkamis_pvm: string; // YYYY-MM-dd
   paattymis_pvm?: string; // YYYY-MM-dd
+  tallennetut_huoltajat_count: number;
+  ei_tallennetut_huoltajat_count: number;
 }
 
 export class HuoltajaDTO {

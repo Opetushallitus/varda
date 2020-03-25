@@ -1933,7 +1933,9 @@ class VardaViewsTests(TestCase):
             'asiakasmaksu': 0.0,
             'perheen_koko': 1,
             'alkamis_pvm': '2020-01-02',
-            'paattymis_pvm': '2021-01-01'
+            'paattymis_pvm': '2021-01-01',
+            'tallennetut_huoltajat_count': 1,
+            'ei_tallennetut_huoltajat_count': 2,
         }
         self.assertEqual(json.loads(resp.content), accepted_response)
 
@@ -1989,7 +1991,9 @@ class VardaViewsTests(TestCase):
             'asiakasmaksu': 0.0,
             'perheen_koko': 1,
             'alkamis_pvm': '2018-02-23',
-            'paattymis_pvm': '2018-02-24'
+            'paattymis_pvm': '2018-02-24',
+            'tallennetut_huoltajat_count': 2,
+            'ei_tallennetut_huoltajat_count': 1,
         }
         self.assertEqual(json.loads(resp.content), accepted_response)
 

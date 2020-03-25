@@ -1725,7 +1725,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
 
         return vtj_huoltajuudet.filter(queryset_filter)
 
-    def get_maksutieto(self, saved_data, lapsi, huoltajat):
+    def get_maksutieto(self, saved_data, lapsi, huoltajat, inserted_huoltajat_count):
         return {
             "url": self.request.build_absolute_uri(reverse('maksutieto-detail', args=[saved_data.id])),
             "id": saved_data.id,
@@ -1736,7 +1736,9 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
             "asiakasmaksu": saved_data.asiakasmaksu,
             "perheen_koko": saved_data.perheen_koko,
             "alkamis_pvm": saved_data.alkamis_pvm,
-            "paattymis_pvm": saved_data.paattymis_pvm
+            "paattymis_pvm": saved_data.paattymis_pvm,
+            "tallennetut_huoltajat_count": len(huoltajat),
+            "ei_tallennetut_huoltajat_count": inserted_huoltajat_count - len(huoltajat),
         }
 
     def process_post_maksutieto_response(self, huoltajat, inserted_huoltaja_data):
@@ -1828,7 +1830,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         self.process_post_maksutieto_response(huoltajat, data["huoltajat"])
 
         # return saved object and related information
-        return_maksutieto_to_user = self.get_maksutieto(saved_object, lapsi, huoltajat)
+        return_maksutieto_to_user = self.get_maksutieto(saved_object, lapsi, huoltajat, len(data["huoltajat"]))
 
         headers = self.get_success_headers(saved_object)
         return Response(return_maksutieto_to_user, status=status.HTTP_201_CREATED, headers=headers)

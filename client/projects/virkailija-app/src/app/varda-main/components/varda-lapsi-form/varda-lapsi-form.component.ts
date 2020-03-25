@@ -856,7 +856,7 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   ngOnChanges(changes: SimpleChanges) {
     if (changes.isEdit && changes.henkilo) {
       this.currentLapsi = null;
-      this.currentToimipaikka = this.vardaVakajarjestajaService.getSelectedToimipaikka();
+      this.currentToimipaikka = this.vardaVakajarjestajaService.getSelectedToimipaikka() || {};
       if (changes.isEdit.currentValue) {
         this.ui.saveBtnText = 'label.generic-update';
 

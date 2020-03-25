@@ -14,6 +14,7 @@ import {VardaDateService} from '../../../services/varda-date.service';
 import {VardaErrorMessageService} from '../../../../core/services/varda-error-message.service';
 import {AuthService} from '../../../../core/auth/auth.service';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
+import {map} from 'rxjs/operators';
 
 @Component({
   selector: 'app-maksutiedot-form',
@@ -185,10 +186,14 @@ export class MaksutiedotFormComponent implements OnInit {
 
     this.doSaveMaksutieto(idx, isCreateNew)
       .subscribe((maksutieto: VardaMaksutietoDTO) => {
-        this.showSuccessAndHideAfterDelay('alert.maksutieto.success');
-        this.ui.openedMaksutietoIndex = null;
-        // Reload the component (at least partially) on success
-        this.ngOnInit();
+        this.getCreatedSuccessMessage(maksutieto, isCreateNew)
+          .subscribe(successMessage => {
+            const delay = !isCreateNew ? 5000 : 10000;
+            this.showSuccessAndHideAfterDelay(successMessage, delay);
+            this.ui.openedMaksutietoIndex = null;
+            // Reload the component (at least partially) on success
+            this.ngOnInit();
+          });
       }, this.onSaveError(idx))
       .add(() => {
         this.ui.isLoading = false;
@@ -196,7 +201,24 @@ export class MaksutiedotFormComponent implements OnInit {
       });
   }
 
-  doSaveMaksutieto(idx: number, isCreateNew: boolean): Observable<VardaMaksutietoDTO> {
+  private getCreatedSuccessMessage(maksutieto: VardaMaksutietoDTO, isCreateNew: boolean) {
+    const translationParams = {
+      savedHuoltajaCount: maksutieto.tallennetut_huoltajat_count,
+      notSavedHuoltajaCount: maksutieto.ei_tallennetut_huoltajat_count,
+    };
+    const translationKeys = ['alert.modal-generic-save-success', 'alert.maksutieto.success', 'alert.maksutieto.success-suffix'];
+    return this.translate.get(translationKeys, translationParams).pipe(
+      map(translations => {
+        if (!isCreateNew) {
+          return translations['alert.modal-generic-save-success'];
+        }
+        const successMessage = translations['alert.maksutieto.success'];
+        return !translationParams.notSavedHuoltajaCount ? successMessage : `${successMessage} ${translations['alert.maksutieto.success-suffix']}`;
+      }),
+    );
+  }
+
+  private doSaveMaksutieto(idx: number, isCreateNew: boolean): Observable<VardaMaksutietoDTO> {
     const lapsiUri = VardaApiService.getLapsiUrlFromId(this.lapsiId);
     const dto = this.vardaApiWrapperService.createDTOwithData<VardaCreateMaksutietoDTO>(
       this.maksutiedotFormArr.value[idx],
@@ -278,12 +300,12 @@ export class MaksutiedotFormComponent implements OnInit {
     this.ui.indexOfMaksutietoToDelete = null;
   }
 
-  private showSuccessAndHideAfterDelay(messageToShow: string) {
+  private showSuccessAndHideAfterDelay(messageToShow: string, delay = 5000) {
     this.clearErrorMessages();
     this.ui.formSaveSuccessMsg = messageToShow;
     setTimeout(() => {
       this.ui.formSaveSuccessMsg = null;
-    }, 3500);
+    }, delay);
   }
 
   private clearErrorMessages() {
