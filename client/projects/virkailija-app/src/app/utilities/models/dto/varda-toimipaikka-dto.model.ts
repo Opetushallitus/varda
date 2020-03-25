@@ -35,6 +35,7 @@ export class VardaToimipaikkaMinimalDto {
   lahdejarjestelma: Lahdejarjestelma;
   nimi: string;
   organisaatio_oid: string;
+  paos_tallentaja_organisaatio_id_list?: Array<number>;
   paos_oma_organisaatio_url?: string;
   paos_organisaatio_nimi?: string;
   paos_organisaatio_url?: string;

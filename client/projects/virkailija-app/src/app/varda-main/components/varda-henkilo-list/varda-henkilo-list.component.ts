@@ -8,6 +8,9 @@ import {
 } from '../../../utilities/models';
 import { ModalEvent } from '../../../shared/components/varda-modal-form/varda-modal-form.component';
 import { UserAccess } from '../../../utilities/models/varda-user-access.model';
+import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
+import { map } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-varda-henkilo-list',
@@ -31,9 +34,11 @@ export class VardaHenkiloListComponent implements OnInit, OnChanges {
   searchTimeout: any;
   showHenkiloCountText: boolean;
   confirmedHenkiloFormLeave: boolean;
+  paosKatselijaObservable: Observable<boolean>;
 
   constructor(private vardaHenkiloService: VardaHenkiloService,
-    private vardaModalService: VardaModalService) {
+    private vardaModalService: VardaModalService,
+    private vardaVakajarjestajaService: VardaVakajarjestajaService) {
     this.ui = {
       isLoading: false
     };
@@ -47,6 +52,17 @@ export class VardaHenkiloListComponent implements OnInit, OnChanges {
       }
       this.openHenkiloForm();
     });
+
+    this.paosKatselijaObservable = this.vardaVakajarjestajaService.getSelectedToimipaikkaObs()
+      .pipe(map(toimipaikka => {
+        if (toimipaikka.paos_toimipaikka_kytkin) {
+          const toimipaikkaTallentajaIdList = toimipaikka.paos_tallentaja_organisaatio_id_list;
+          return toimipaikkaTallentajaIdList &&
+            !toimipaikkaTallentajaIdList.includes(parseInt(this.vardaVakajarjestajaService.selectedVakajarjestaja.id));
+        } else {
+          return false;
+        }
+      }));
   }
 
   addHenkilo(): void {

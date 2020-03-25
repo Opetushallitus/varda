@@ -5,7 +5,6 @@
          *ngIf="henkilot && henkilot.length === 0 && henkiloSearchValue && henkiloSearchValue.searchValue !== ''">
       <p>{{'alert.henkilo-search-not-found-in-toimipaikka' | translate}}</p>
     </div>
-
     <div class="varda-list-item-outside"
          *ngFor="let item of henkilot"
          aria-live="polite">
@@ -14,7 +13,7 @@
                               (editHenkiloItem)="editHenkilo($event)"></app-varda-henkilo-item>
     </div>
   </div>
-  <div *ngIf="toimipaikkaAccess.lapsitiedot.tallentaja" class="varda-henkilo-list-content-button-wrapper">
+  <div *ngIf="toimipaikkaAccess.lapsitiedot.tallentaja && !(paosKatselijaObservable | async)" class="varda-henkilo-list-content-button-wrapper">
     <button class="varda-button varda-button-wide responsive-md"
             (click)="addHenkilo()"
             id="addHenkiloBtn">

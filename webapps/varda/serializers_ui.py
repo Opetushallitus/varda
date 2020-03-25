@@ -1,8 +1,9 @@
+from django.db.models import Q
 from django.urls import reverse
 from rest_framework import serializers
 
 from varda.cache import caching_to_representation
-from varda.models import VakaJarjestaja, Toimipaikka
+from varda.models import PaosOikeus, PaosToiminta, Toimipaikka, VakaJarjestaja
 
 """
 UI serializers
@@ -27,11 +28,12 @@ class ToimipaikkaUiSerializer(serializers.HyperlinkedModelSerializer):
     paos_oma_organisaatio_url = serializers.SerializerMethodField()
     paos_organisaatio_url = serializers.SerializerMethodField()
     paos_organisaatio_nimi = serializers.SerializerMethodField()
+    paos_tallentaja_organisaatio_id_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Toimipaikka
         fields = ('lahdejarjestelma', 'id', 'nimi', 'url', 'organisaatio_oid', 'paos_toimipaikka_kytkin', 'paos_oma_organisaatio_url',
-                  'paos_organisaatio_url', 'paos_organisaatio_nimi')
+                  'paos_organisaatio_url', 'paos_organisaatio_nimi', 'paos_tallentaja_organisaatio_id_list')
 
     def get_nimi(self, toimipaikka_obj):
         if self.get_paos_toimipaikka_kytkin(toimipaikka_obj):
@@ -67,6 +69,20 @@ class ToimipaikkaUiSerializer(serializers.HyperlinkedModelSerializer):
             return toimipaikka_obj['vakajarjestaja__nimi']
         else:
             return ''
+
+    # Haetaan kaikki vakajärjestäjät joilla tähän toimipaikkaan tallennusoikeus
+    def get_paos_tallentaja_organisaatio_id_list(self, toimipaikka_obj):
+        if self.get_paos_toimipaikka_kytkin(toimipaikka_obj):
+            oma_organisaatio_id_list = (PaosToiminta.objects.filter(Q(voimassa_kytkin=True) &
+                                                                    Q(paos_toimipaikka=toimipaikka_obj['id']))
+                                        .values_list('oma_organisaatio__id', flat=True))
+
+            return (PaosOikeus.objects.filter(Q(voimassa_kytkin=True) &
+                                              Q(jarjestaja_kunta_organisaatio__in=oma_organisaatio_id_list) &
+                                              Q(tuottaja_organisaatio=toimipaikka_obj['vakajarjestaja__id']))
+                    .values_list('tallentaja_organisaatio__id', flat=True))
+        else:
+            return []
 
 
 class ToimipaikanLapsetUISerializer(serializers.Serializer):
