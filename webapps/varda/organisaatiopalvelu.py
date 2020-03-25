@@ -661,13 +661,8 @@ def get_toiminnallisetpainotukset_in_toimipaikka(toimipaikka_id):
     return toiminnallisetpainotukset
 
 
-def create_toimipaikka_in_organisaatiopalvelu(toimipaikka_validated_data, vakajarjestaja_id=None):
-    """
-    TO-DO: Remove vakajarjestaja_id from input and the if condition. All vakajarjestaja_id can be fetched with
-    the same logic after the temporary job (create_toimipaikat_not_in_organisaatiopalvelu) has been removed.
-    """
-    if vakajarjestaja_id is None:
-        vakajarjestaja_id = toimipaikka_validated_data['vakajarjestaja'].id
+def create_toimipaikka_in_organisaatiopalvelu(toimipaikka_validated_data):
+    vakajarjestaja_id = toimipaikka_validated_data['vakajarjestaja'].id
     toimipaikka_json = get_toimipaikka_json(toimipaikka_validated_data, vakajarjestaja_id)
 
     return create_organisaatio(toimipaikka_json)
@@ -791,56 +786,3 @@ def _update_toimipaikka_chunk(oid_chunk):
         else:
             _fill_toimipaikka_data(organisaatio, toimipaikka)
             toimipaikka.save()
-
-
-def create_toimipaikat_not_in_organisaatiopalvelu(amount=100):
-    """
-    Temporary job for creating toimipaikat in organisaatiopalvelu that previously were not created
-    Will be removed after run twice in production
-    """
-    from varda.models import Varhaiskasvatussuhde, Varhaiskasvatuspaatos, Lapsi, KieliPainotus, Maksutieto
-    from django.db.models import Q
-    from varda.permission_groups import assign_object_level_permissions
-    from django.forms.models import model_to_dict
-
-    def assign_permissions_for_objects_in_qs(queryset, model, toimipaikka_organisaatio_oid):
-        for qs_object in queryset:
-            assign_object_level_permissions(toimipaikka_organisaatio_oid, model, qs_object)
-
-    toimipaikat_not_in_org_palvelu = (Toimipaikka.objects.filter((Q(organisaatio_oid=None) |
-                                                                 Q(organisaatio_oid='')) &
-                                                                 ~Q(nimi__startswith='Palveluseteli ja ostopalvelu'))
-                                                         .order_by('id')[:amount])
-    for toimipaikka in toimipaikat_not_in_org_palvelu:
-        toimipaikka_dict = model_to_dict(toimipaikka)
-        vakajarjestaja_id = toimipaikka.vakajarjestaja.id
-        result = create_toimipaikka_in_organisaatiopalvelu(toimipaikka_dict, vakajarjestaja_id)
-        if result["toimipaikka_created"]:
-            toimipaikka.organisaatio_oid = result["organisaatio_oid"]
-            toimipaikka_organisaatio_oid = result["organisaatio_oid"]
-            try:
-                toimipaikka.save()
-
-                create_permission_groups_for_organisaatio(toimipaikka_organisaatio_oid, vakajarjestaja=False)
-                assign_object_level_permissions(toimipaikka_organisaatio_oid, Toimipaikka, toimipaikka)
-
-                # We need to give permissions to existing objects based on the new groups
-                vakasuhteet = Varhaiskasvatussuhde.objects.filter(toimipaikka=toimipaikka)
-                vakapaatokset = Varhaiskasvatuspaatos.objects.filter(varhaiskasvatussuhteet__in=vakasuhteet)
-                lapset = Lapsi.objects.filter(varhaiskasvatuspaatokset__in=vakapaatokset)
-                kielipainotukset = KieliPainotus.objects.filter(toimipaikka=toimipaikka)
-                toiminnallisetpainotukset = ToiminnallinenPainotus.objects.filter(toimipaikka=toimipaikka)
-                maksutiedot = Maksutieto.objects.filter(huoltajuussuhteet__lapsi__in=lapset)
-
-                assign_permissions_for_objects_in_qs(maksutiedot, Maksutieto, toimipaikka_organisaatio_oid)
-                assign_permissions_for_objects_in_qs(vakasuhteet, Varhaiskasvatussuhde, toimipaikka_organisaatio_oid)
-                assign_permissions_for_objects_in_qs(vakapaatokset, Varhaiskasvatuspaatos, toimipaikka_organisaatio_oid)
-                assign_permissions_for_objects_in_qs(lapset, Lapsi, toimipaikka_organisaatio_oid)
-                assign_permissions_for_objects_in_qs(kielipainotukset, KieliPainotus, toimipaikka_organisaatio_oid)
-                assign_permissions_for_objects_in_qs(toiminnallisetpainotukset, ToiminnallinenPainotus, toimipaikka_organisaatio_oid)
-
-                logger.info('Org.palvelu-temp-job-created-toimipaikka {}'.format(result['organisaatio_oid']))
-            except Exception:
-                logger.error('Org.palvelu-temp-job error with toimipaikka {}'.format(toimipaikka.id))
-        else:
-            logger.error('Org.palvelu-integration-temp-job, unable to create toimipaikka in org.palvelu {}'.format(toimipaikka.id))

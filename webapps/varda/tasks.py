@@ -166,11 +166,3 @@ def delete_object_permissions_explicitly_task(content_type_id, instance_id):
     filters = Q(content_type=content_type, object_pk=str(instance_id))
     UserObjectPermission.objects.filter(filters).delete()
     GroupObjectPermission.objects.filter(filters).delete()
-
-
-@shared_task
-def create_toimipaikat_not_in_organisaatiopalvelu_task(amount=10):
-    """
-    This is a temporary task that will be removed after it has been run in production twice
-    """
-    organisaatiopalvelu.create_toimipaikat_not_in_organisaatiopalvelu(amount)
