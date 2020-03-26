@@ -1,6 +1,14 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+## [1.3.9] (26.03.2020)
+- CSCVARDA-1490: "Lisää lapsi"-napin piilotus jos käyttäjä on PAOS-katselija
+- CSCVARDA-1237: Maksutietojen tallennuksen yhteydessä ilmoitetaan tallennettujen ja tallentamattomien huoltajien määrä
+- CSCVARDA-1587: Uusi kalenterielementti
+- CSCVARDA-1596: Lapsilomakkeen bugikorjaus
+- CSCVARDA-1603: Bugikorjaus ensimmäisen toimipaikan luonnille
+- CSCVARDA-1566: Bugikorjaus toimipaikan lisäyksiin
+
 ## [1.3.8] (12.03.2020)
 - CSCVARDA-1278: Hae ja muokkaa -sivun hakutulosten parannuksia
 - CSCVARDA-1523: Maksutietojen näyttäminen tilan mukaan hae ja muokkaa näkymässä
