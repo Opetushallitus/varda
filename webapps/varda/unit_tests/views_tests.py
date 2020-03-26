@@ -744,7 +744,7 @@ class VardaViewsTests(TestCase):
         content.pop('muutos_pvm', None)
         self.assertEqual(content, lapsi_json)
 
-    def test_api_oid_related_field_lapsi_nulls_allowed(self):
+    def test_api_oid_related_field_lapsi_nulls_allowed_in_oids(self):
         client = SetUpTestClient("tester2").client()
 
         data = {
@@ -759,6 +759,47 @@ class VardaViewsTests(TestCase):
 
         resp = client.put("/api/v1/lapset/4/", data=json.dumps(data), content_type="application/json")
         self.assertEqual(resp.status_code, 200)
+
+    def test_api_oid_related_field_lapsi_nulls_allowed_in_urls(self):
+        client = SetUpTestClient("tester2").client()
+
+        data = {
+            "url": "/api/v1/lapset/4/",
+            "henkilo": "/api/v1/henkilot/9/",
+            "id": 4,
+            "oma_organisaatio_oid": test_org4,
+            "paos_organisaatio_oid": test_org2,
+            "oma_organisaatio": None,
+            "paos_organisaatio": None,
+        }
+
+        resp = client.put("/api/v1/lapset/4/", data=json.dumps(data), content_type="application/json")
+        self.assertEqual(resp.status_code, 200)
+
+    def test_api_oid_related_field_lapsi_nulls_allowed_in_creation(self):
+        responses.add(responses.POST,
+                      'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/',
+                      json='1.2.987654324',
+                      status=status.HTTP_201_CREATED
+                      )
+        henkilo = {
+            "henkilotunnus": "230315A943J",
+            "etunimet": "Pentti Jr",
+            "kutsumanimi": "Pentti",
+            "sukunimi": "Kivimäki"
+        }
+        client = SetUpTestClient('tester').client()
+        resp = client.post('/api/v1/henkilot/', henkilo)
+        self.assertEqual(resp.status_code, 201)
+        henkilo_url = json.loads(resp.content)['url']
+
+        lapsi = {
+            "henkilo": henkilo_url,
+            "oma_organisaatio": None,
+            "paos_organisaatio": None,
+        }
+        resp = client.post("/api/v1/lapset/", json.dumps(lapsi), content_type="application/json")
+        self.assertEqual(resp.status_code, 201)
 
     def test_api_oid_related_field_lapsi_existing_oid_allowed(self):
         client = SetUpTestClient("tester2").client()

@@ -52,7 +52,7 @@ class OidRelatedField(serializers.Field):
         return super().run_validation(data)
 
     def _get_parent_value_id(self):
-        if self.parent_field in self.parent.initial_data:
+        if self.parent_field in self.parent.initial_data and self.parent.initial_data[self.parent_field] is not None:
             parent_value = self.parent.initial_data[self.parent_field]
             parent_value_id = get_object_id_from_path(parent_value)
 
