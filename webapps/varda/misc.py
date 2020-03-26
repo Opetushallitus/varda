@@ -203,12 +203,28 @@ def put_json_to_external_service(service_name, http_url_suffix, data_json, expec
                                             data_json=data_json)
 
 
+def path_parse(request_full_path):
+    """
+    :param request_full_path: either string or bytes
+    :return request_full_path: string
+    """
+    request_full_path = urlparse(request_full_path).path
+    try:
+        request_full_path = request_full_path.decode()
+    except AttributeError:
+        pass  # request_full_path is already type:string
+    except ValueError:
+        logger.error('Failed to parse url: {}'.format(request_full_path))
+        raise CustomServerErrorException
+    return request_full_path
+
+
 def get_object_id_from_path(url):
     """
     Parse object-id from request path. Eg.
     ['', 'api', 'v1', 'varhaiskasvatuspaatokset', '1', '']  --->  return 1
     """
-    request_path = urlparse(url).path
+    request_path = path_parse(url)
     splitted_path = request_path.split('/')
     if len(splitted_path) != 6:
         logger.error('request_path length invalid. Path: ' + request_path)

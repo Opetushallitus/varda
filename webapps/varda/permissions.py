@@ -8,6 +8,7 @@ from guardian.models import UserObjectPermission, GroupObjectPermission
 from guardian.shortcuts import assign_perm, remove_perm
 from rest_framework import permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from varda.misc import path_parse
 from varda.models import (VakaJarjestaja, Toimipaikka, Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
                           PaosToiminta, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog)
 from varda.permission_groups import assign_object_level_permissions, remove_object_level_permissions
@@ -135,7 +136,8 @@ def check_if_user_has_paakayttaja_permissions(vakajarjestaja_organisaatio_oid, u
         raise PermissionDenied("User does not have paakayttaja-permissions.")
 
 
-def save_audit_log(user, path):
+def save_audit_log(user, url):
+    path = path_parse(url)
     Z5_AuditLog.objects.create(user=user, successful_get_request_path=path[:100])  # path max-length is 100 characters
 
 

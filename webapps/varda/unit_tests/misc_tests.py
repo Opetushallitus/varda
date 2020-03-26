@@ -71,3 +71,19 @@ class MiscTests(TestCase):
         resp = client.post('/api/v1/henkilot/', henkilo)
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         return resp.json()["id"]
+
+    def test_request_path_type(self):
+        request_path_string = '/api/v1/toimipaikat/55/'
+        request_path_bytes = b'/api/v1/toimipaikat/55/'
+        request_path_empty_string = ''
+        request_path_empty_byte = b''
+
+        object_id_string = misc.get_object_id_from_path(request_path_string)
+        object_id_bytes = misc.get_object_id_from_path(request_path_bytes)
+        object_id_empty_string = misc.get_object_id_from_path(request_path_empty_string)
+        object_id_empty_byte = misc.get_object_id_from_path(request_path_empty_byte)
+
+        self.assertEqual(object_id_string, 55)
+        self.assertEqual(object_id_bytes, 55)
+        self.assertEqual(object_id_empty_string, None)
+        self.assertEqual(object_id_empty_byte, None)

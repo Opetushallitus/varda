@@ -9,7 +9,7 @@ from functools import wraps
 from hashlib import sha1
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
-from varda.misc import get_object_id_from_path, intersection
+from varda.misc import get_object_id_from_path, intersection, path_parse
 from varda.pagination import CustomPagination, get_requested_page_and_query_params
 from varda.permissions import get_object_ids_user_has_view_permissions, save_audit_log
 
@@ -240,6 +240,7 @@ def cached_list_response(original_list_viewset, user, request_full_path,
     if user.is_superuser:  # No caching for superuser
         page = original_list_viewset.paginate_queryset(original_queryset)
     else:
+        request_full_path = path_parse(request_full_path)
         page = get_cached_page_for_non_superuser(original_list_viewset, user, request_full_path,
                                                  original_queryset, cached_time, order_by)
 
