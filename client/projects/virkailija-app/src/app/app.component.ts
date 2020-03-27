@@ -5,6 +5,9 @@ import { VardaDomService } from './core/services/varda-dom.service';
 import { DOCUMENT } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { Router, NavigationEnd } from '@angular/router';
+import { LoadingHttpService } from 'varda-shared';
+import { Observable } from 'rxjs/internal/Observable';
+import { delay } from 'rxjs/internal/operators/delay';
 
 @Component({
   selector: 'app-root',
@@ -13,6 +16,7 @@ import { Router, NavigationEnd } from '@angular/router';
 })
 export class AppComponent implements OnInit {
   title = 'app';
+  isLoading: Observable<boolean>;
 
   constructor(
     private titleService: Title,
@@ -20,6 +24,7 @@ export class AppComponent implements OnInit {
     private translateService: TranslateService,
     private auth: AuthService,
     private vardaDomService: VardaDomService,
+    private loadingHttpService: LoadingHttpService,
     @Inject(DOCUMENT) private _document: any) {
 
     this.auth.loggedInUserAsiointikieliSet().subscribe((asiointikieli: string) => {
@@ -39,6 +44,8 @@ export class AppComponent implements OnInit {
         this.setTitle(router);
       }
     });
+
+    this.isLoading = this.loadingHttpService.isLoading().pipe(delay(200));
   }
 
   ngOnInit() { }

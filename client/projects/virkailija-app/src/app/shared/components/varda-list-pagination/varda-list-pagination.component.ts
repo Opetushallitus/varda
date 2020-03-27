@@ -1,22 +1,24 @@
-import { Component, Input, EventEmitter, Output, OnInit } from '@angular/core';
+import { Component, Input, EventEmitter, Output } from '@angular/core';
 import { LoadingHttpService } from 'varda-shared';
+import { Subscription, Observable } from 'rxjs';
+import { delay } from 'rxjs/internal/operators/delay';
 
 @Component({
   selector: 'app-varda-list-pagination',
   templateUrl: './varda-list-pagination.component.html',
   styleUrls: ['./varda-list-pagination.component.css']
 })
-export class VardaListPaginationComponent implements OnInit {
+export class VardaListPaginationComponent {
   @Input() prevLink: string | boolean;
   @Input() nextLink: string | boolean;
   @Input() currentPage = 1;
   @Input() maxPages: number;
   @Output() prevSearch = new EventEmitter(true);
   @Output() nextSearch = new EventEmitter(true);
+  isLoading: Observable<boolean>;
 
-  constructor(private loadingHttpService: LoadingHttpService) { }
-
-  ngOnInit() {
+  constructor(private loadingHttpService: LoadingHttpService) {
+    this.isLoading = this.loadingHttpService.isLoading().pipe(delay(200));
   }
 
   searchPrev() {
@@ -26,12 +28,4 @@ export class VardaListPaginationComponent implements OnInit {
   searchNext() {
     this.nextSearch.emit();
   }
-
-  isLoading() {
-    /* for this to work use LoadingHttpService instead of HttpService
-      alternatively you can add *ngIf= to the component level to hide the buttons when wanted
-    */
-    return this.loadingHttpService.isLoading();
-  }
-
 }

@@ -1,29 +1,37 @@
 import { Injectable } from '@angular/core';
-import {AbstractHttpService, HttpService} from './http.service';
-import {HttpClient, HttpHeaders} from '@angular/common/http';
-import {Observable} from 'rxjs';
-import {finalize} from 'rxjs/operators';
+import { AbstractHttpService, HttpService } from './http.service';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, BehaviorSubject } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class LoadingHttpService extends AbstractHttpService {
-  private _loading: number;
+  private _loadingCount: number;
+  private _isLoading: BehaviorSubject<boolean>;
 
   constructor(private http: HttpService,
-              private client: HttpClient) {
+    private client: HttpClient) {
     super(client);
-    this._loading = 0;
+    this._loadingCount = 0;
+    this._isLoading = new BehaviorSubject<boolean>(false);
   }
 
-  // This could also return observable that pushes on when _loading changes from 0 to something or from something to 0.
-  isLoading(): boolean {
-    return !!this._loading;
+  isLoading(): Observable<boolean> {
+    return this._isLoading.asObservable();
   }
 
   addLoader<T>(obs: Observable<T>): Observable<T> {
-    this._loading++;
-    return obs.pipe(finalize(() => this._loading--));
+    this._loadingCount++;
+    this._isLoading.next(true);
+
+    return obs.pipe(finalize(() => {
+      this._loadingCount--;
+      if (this._loadingCount === 0) {
+        this._isLoading.next(false);
+      }
+    }));
   }
 
 

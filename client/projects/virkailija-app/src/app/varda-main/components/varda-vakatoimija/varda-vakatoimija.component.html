@@ -5,7 +5,7 @@
 
 <main class="varda-page-content varda-vakatoimija-wrapper">
   <div class="varda-vakatoimija-form-wrapper"
-       *ngIf="!ui.isLoading">
+       *ngIf="vakatoimijaForm">
     <form class="varda-form"
           [formGroup]="vakatoimijaForm">
       <div class="alert alert-danger varda-form-main-feedback"
@@ -128,10 +128,7 @@
                   *ngIf="!isKatselija">{{'label.generic-save' | translate}}</button>
 
         </div>
-
-
       </fieldset>
     </form>
   </div>
 </main>
-<lib-loading-indicator *ngIf="ui.isSubmitting || ui.isLoading"></lib-loading-indicator>

@@ -27,7 +27,6 @@ export class VardaHakuContainerComponent implements OnInit {
   ui: {
     formSaveErrors: Array<{ key: string, msg: string, }>;
     formSaveErrorMsg: string;
-    isLoading: boolean,
   };
   nextSearchLink: string;
   prevSearchLink: string;
@@ -44,7 +43,6 @@ export class VardaHakuContainerComponent implements OnInit {
       filter_object: FilterObject.vakapaatokset
     };
     this.ui = {
-      isLoading: false,
       formSaveErrorMsg: null,
       formSaveErrors: [],
     };
@@ -59,7 +57,6 @@ export class VardaHakuContainerComponent implements OnInit {
 
   // If no searchDto we search more.
   search(searchDto?: HenkilohakuSearchDTO, previous?: boolean) {
-    this.ui.isLoading = true;
     if (searchDto) {
       this.nextSearchLink = null;
       this.prevSearchLink = null;
@@ -78,12 +75,10 @@ export class VardaHakuContainerComponent implements OnInit {
           this.prevSearchLink = searchresult.previous;
           this.nextSearchLink = searchresult.next;
           this.clearErrors();
-          this.ui.isLoading = false;
         },
         error: () => {
           this.translate.get('alert.haku.generic-error').subscribe(hakuErrorMessage => {
             this.ui.formSaveErrorMsg = hakuErrorMessage;
-            this.ui.isLoading = false;
           });
         }
       });

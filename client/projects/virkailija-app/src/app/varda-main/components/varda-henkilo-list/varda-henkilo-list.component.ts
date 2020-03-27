@@ -27,9 +27,6 @@ export class VardaHenkiloListComponent implements OnInit, OnChanges {
   activeHenkiloItemId: string;
   activeHenkiloItem: VardaHenkiloDTO;
   previousSearchValue: string;
-  ui: {
-    isLoading: boolean
-  };
   henkiloFormOpen: boolean;
   searchTimeout: any;
   showHenkiloCountText: boolean;
@@ -39,9 +36,6 @@ export class VardaHenkiloListComponent implements OnInit, OnChanges {
   constructor(private vardaHenkiloService: VardaHenkiloService,
     private vardaModalService: VardaModalService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService) {
-    this.ui = {
-      isLoading: false
-    };
     this.henkiloFormOpen = false;
     this.showHenkiloCountText = true;
     this.confirmedHenkiloFormLeave = true;
@@ -112,9 +106,7 @@ export class VardaHenkiloListComponent implements OnInit, OnChanges {
   }
 
   openHenkiloForm(): void {
-    this.ui.isLoading = true;
     this.henkiloFormOpen = true;
-    this.ui.isLoading = false;
   }
 
   henkiloFormValuesChanged(hasChanged: boolean): void {

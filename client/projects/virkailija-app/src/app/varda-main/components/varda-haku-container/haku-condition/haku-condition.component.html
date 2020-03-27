@@ -50,7 +50,7 @@
           {{'label.haku-list.nimi-ssn-oid' | translate}}
         </label>
         <input type="text"
-               [disabled]="isLoading"
+               [disabled]="isLoading | async"
                autocomplete="off"
                class="oph-input"
                formControlName="search"
@@ -61,7 +61,7 @@
     </div>
     <div class="oph-field mt-1">
       <button type="submit"
-              [disabled]="isLoading"
+              [disabled]="isLoading | async"
               class="varda-button varda-button-wide responsive-md">
         {{'label.search' | translate | uppercase}}
       </button>
@@ -73,7 +73,7 @@
           {{'label.haku-condition.filter' | translate}}
         </label>
         <select class="oph-select oph-input"
-                [disabled]="isLoading"
+                [disabled]="isLoading | async"
                 aria-labelledby="hakuFormStatusLabel"
                 id="hakuFormStatus"
                 formControlName="filter_status">
@@ -87,7 +87,7 @@
     <div class="oph-field mx-3">
       <div class="oph-field-inputs">
         <mat-radio-group [attr.aria-labelledby]="'hakuFormStatusLabel'"
-                         [disabled]="isLoading"
+                         [disabled]="isLoading | async"
                          class="responsive-md"
                          formControlName="filter_object">
           <mat-radio-button *ngIf="access.userAccess.lapsitiedot.katselija"

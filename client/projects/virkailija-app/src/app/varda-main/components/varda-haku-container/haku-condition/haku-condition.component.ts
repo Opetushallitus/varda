@@ -1,8 +1,10 @@
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { HenkilohakuSearchDTO, HenkilohakuType, FilterStatus, FilterObject } from '../../../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { FormControl, FormGroup } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Subscription, Observable } from 'rxjs';
 import { HakuAccess } from '../varda-haku-container.component';
+import { LoadingHttpService } from 'varda-shared';
+import { delay } from 'rxjs/internal/operators/delay';
 
 @Component({
   selector: 'app-haku-condition',
@@ -11,7 +13,6 @@ import { HakuAccess } from '../varda-haku-container.component';
 })
 export class HakuConditionComponent implements OnInit, OnDestroy {
   @Input() searchAction: (action) => void;
-  @Input() isLoading: boolean;
   @Input() access: HakuAccess;
   hakuform: FormGroup;
   typeformSubsciption: Subscription;
@@ -23,8 +24,11 @@ export class HakuConditionComponent implements OnInit, OnDestroy {
   FilterObject: typeof FilterObject = FilterObject;
 
   searchData: HenkilohakuSearchDTO;
+  isLoading: Observable<boolean>;
 
-  constructor() { }
+  constructor(private loadingHttpService: LoadingHttpService) {
+    this.isLoading = loadingHttpService.isLoading().pipe(delay(200));
+  }
 
   ngOnInit() {
     this.searchData = new HenkilohakuSearchDTO();

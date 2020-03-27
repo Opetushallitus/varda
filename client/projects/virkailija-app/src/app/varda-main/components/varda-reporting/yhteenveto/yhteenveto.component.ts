@@ -1,9 +1,9 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {VardaToimipaikkaYhteenvetoDTO} from '../../../../utilities/models/dto/varda-toimipaikka-yhteenveto-dto.model';
-import {Observable} from 'rxjs';
-import {VardaApiWrapperService} from '../../../../core/services/varda-api-wrapper.service';
+import { Component, Input, OnInit } from '@angular/core';
+import { VardaToimipaikkaYhteenvetoDTO } from '../../../../utilities/models/dto/varda-toimipaikka-yhteenveto-dto.model';
+import { Observable } from 'rxjs';
+import { VardaApiWrapperService } from '../../../../core/services/varda-api-wrapper.service';
 
-interface YhteenvetoElement {tieto: string; lukumaara: number; status: string; }
+interface YhteenvetoElement { tieto: string; lukumaara: number; status: string; }
 
 @Component({
   selector: 'app-yhteenveto',
@@ -13,7 +13,6 @@ interface YhteenvetoElement {tieto: string; lukumaara: number; status: string; }
 export class YhteenvetoComponent implements OnInit {
 
   @Input() toimipaikkaId: string;
-  @Output() uiLoading: EventEmitter<boolean>;
 
   yhteenveto: VardaToimipaikkaYhteenvetoDTO;
 
@@ -22,9 +21,7 @@ export class YhteenvetoComponent implements OnInit {
 
   displayedColumns: string[];
 
-  constructor(private vardaApiWrapperService: VardaApiWrapperService) {
-    this.uiLoading = new EventEmitter<boolean>(true);
-  }
+  constructor(private vardaApiWrapperService: VardaApiWrapperService) { }
 
   ngOnInit() {
     this.datasourceLapset = [];
@@ -46,9 +43,8 @@ export class YhteenvetoComponent implements OnInit {
   }
 
   fetchYhteenveto(): void {
-    this.uiLoading.emit(true);
     this.getYhteenvetoForReporting().subscribe(resp => {
-      this.yhteenveto = {...resp};
+      this.yhteenveto = { ...resp };
       this.datasourceLapset = [
         this.createDatasourceElement('lapset_lkm'),
         this.createDatasourceElement('lapset_maksutieto_voimassaoleva'),
@@ -63,7 +59,7 @@ export class YhteenvetoComponent implements OnInit {
         this.createDatasourceElement('toimintapainotukset_maara'),
         this.createDatasourceElement('kielipainotukset_maara'),
       ];
-      this.uiLoading.emit(false);
+
     });
   }
 

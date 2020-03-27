@@ -104,7 +104,7 @@
   </div>
 
   <section class="varda-reporting-card-container"
-           *ngIf="!ui.isLoading && selectedSearchEntity === 'toimipaikka'">
+           *ngIf="selectedSearchEntity === 'toimipaikka'">
     <div class="varda-reporting-card"
          *ngFor="let toimipaikkaObj of toimipaikat">
       <mat-card>
@@ -186,8 +186,7 @@
         </mat-card-content>
       </mat-card>
     </div>
-    <div class="varda-reporting-search-more-btn-wrapper"
-         *ngIf="!ui.isLoading">
+    <div class="varda-reporting-search-more-btn-wrapper">
       <button class="varda-button"
               type="button"
               (click)="searchMore()"
@@ -232,16 +231,13 @@
     </div>
     <div class="varda-toimipaikan-lapset-container"
          *ngIf="selectedToimipaikanLapsi">
-      <app-toimipaikan-lapset [selectedToimipaikanLapsi]="selectedToimipaikanLapsi"
-                              (uiLoading)="updateUiLoading($event)"></app-toimipaikan-lapset>
+      <app-toimipaikan-lapset [selectedToimipaikanLapsi]="selectedToimipaikanLapsi"></app-toimipaikan-lapset>
     </div>
   </section>
   <section class="varda-reporting-card-container"
            *ngIf="selectedSearchEntity === 'yhteenveto'">
-    <app-yhteenveto [toimipaikkaId]="getToimipaikkaId()"
-                    (uiLoading)="updateUiLoading($event)"></app-yhteenveto>
-    <div class="varda-reporting-search-more-btn-wrapper"
-         *ngIf="!ui.isLoading">
+    <app-yhteenveto [toimipaikkaId]="getToimipaikkaId()"></app-yhteenveto>
+    <div class="varda-reporting-search-more-btn-wrapper">
       <button class="varda-button"
               type="button"
               (click)="searchMore()"
@@ -249,5 +245,3 @@
     </div>
   </section>
 </main>
-
-<lib-loading-indicator *ngIf="ui.isLoading"></lib-loading-indicator>

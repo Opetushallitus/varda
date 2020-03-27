@@ -19,7 +19,6 @@ export class VardaVakatoimijaComponent implements OnInit {
   vakatoimijaForm: FormGroup;
   vakatoimijaNimi: string;
   ui: {
-    isLoading: boolean,
     isSubmitting: boolean,
     activeInstructionText: string,
     vakatoimijaSaveSuccess: boolean,
@@ -41,7 +40,6 @@ export class VardaVakatoimijaComponent implements OnInit {
     private vardaErrorMessageService: VardaErrorMessageService) {
     this.vakatoimijaNimi = '';
     this.ui = {
-      isLoading: false,
       isSubmitting: false,
       activeInstructionText: '',
       vakatoimijaSaveSuccess: false,
@@ -61,7 +59,6 @@ export class VardaVakatoimijaComponent implements OnInit {
 
     this.authService.loggedInUserKayttooikeudetSubject.asObservable().subscribe(() => {
       this.initKayttooikeudet();
-      this.ui.isLoading = false;
     });
   }
 
@@ -86,7 +83,6 @@ export class VardaVakatoimijaComponent implements OnInit {
   }
 
   initVakatoimijaForm(): void {
-    this.ui.isLoading = true;
     const selectedVakajarjestaja = this.vakajarjestajaService.selectedVakajarjestaja;
     const selectedVakajarjestajaId = selectedVakajarjestaja.id;
 
@@ -109,7 +105,6 @@ export class VardaVakatoimijaComponent implements OnInit {
       });
 
       this.ui.hadValuesOnInit = Object.values(this.vakatoimijaForm.value).some((v) => v ? true : false);
-      this.ui.isLoading = false;
     });
   }
 

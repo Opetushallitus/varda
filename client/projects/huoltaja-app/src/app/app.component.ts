@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { Title } from '@angular/platform-browser';
 import { LoadingHttpService } from 'varda-shared';
+import { Observable } from 'rxjs/internal/Observable';
+import { delay } from 'rxjs/internal/operators/delay';
 
 @Component({
   selector: 'app-root',
@@ -10,7 +12,7 @@ import { LoadingHttpService } from 'varda-shared';
 })
 export class AppComponent implements OnInit {
   title = 'huoltaja-app';
-  initialized: boolean;
+  isLoading: Observable<boolean>;
 
   constructor(
     private translateService: TranslateService,
@@ -19,14 +21,10 @@ export class AppComponent implements OnInit {
   ) {
     this.translateService.setDefaultLang('fi');
     this.translateService.use('fi');
-  }
-
-  isLoading(): boolean {
-    return this.loadingHttpService.isLoading();
+    this.isLoading = this.loadingHttpService.isLoading().pipe(delay(200));
   }
 
   ngOnInit() {
-    this.initialized = true;
     this.translateService.get('page.title').subscribe(name => {
       this.titleService.setTitle(name);
     });

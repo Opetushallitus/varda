@@ -4,22 +4,22 @@ import { AppComponent } from './app.component';
 import { TranslateService, LangChangeEvent } from '@ngx-translate/core';
 import { AuthService } from './core/auth/auth.service';
 import { VardaDomService } from './core/services/varda-dom.service';
-import {EMPTY, Observable, of} from 'rxjs';
+import { EMPTY, Observable, of } from 'rxjs';
 import { VardaApiService } from './core/services/varda-api.service';
 import { CookieService } from 'ngx-cookie-service';
 import { VardaVakajarjestajaService } from './core/services/varda-vakajarjestaja.service';
 import { Router } from '@angular/router';
-import { HttpService } from 'varda-shared';
+import { LoadingHttpService } from 'varda-shared';
 
 describe('AppComponent', () => {
   let component: AppComponent;
   let fixture: ComponentFixture<AppComponent>;
 
   let vardaAuthService: AuthService;
-  let httpService;
+  let loadingHttpService;
   let translateService: TranslateService;
 
-  let loggedInUserAsiointikieliSetSpy, translateServiceUseSpy;
+  let loggedInUserAsiointikieliSetSpy, translateServiceUseSpy, loadingHttpServiceSpy;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
@@ -29,20 +29,21 @@ describe('AppComponent', () => {
         AuthService,
         VardaVakajarjestajaService,
         VardaDomService,
-        { provide: Router, useValue: { events: { subscribe: () => { } }, navigate: () => { }, routerState: {} }},
+        { provide: Router, useValue: { events: { subscribe: () => { } }, navigate: () => { }, routerState: {} } },
         { provide: CookieService, useValue: {} },
         { provide: VardaApiService, useValue: {} },
         { provide: TranslateService, useValue: { use: () => { }, getBrowserLang: () => { }, setDefaultLang: () => { }, get: () => EMPTY } },
-        { provide: HttpService, useValue: {} },
+        { provide: LoadingHttpService, useValue: { isLoading: () => { } } },
       ]
     })
       .compileComponents();
 
     vardaAuthService = TestBed.inject<AuthService>(AuthService);
-    httpService = TestBed.inject<HttpService>(HttpService);
+    loadingHttpService = TestBed.inject<LoadingHttpService>(LoadingHttpService);
     translateService = TestBed.inject<TranslateService>(TranslateService);
 
     translateServiceUseSpy = spyOn(translateService, 'use').and.returnValue(new Observable());
+    loadingHttpServiceSpy = spyOn(loadingHttpService, 'isLoading').and.returnValue(new Observable());
   }));
 
   beforeEach(() => {

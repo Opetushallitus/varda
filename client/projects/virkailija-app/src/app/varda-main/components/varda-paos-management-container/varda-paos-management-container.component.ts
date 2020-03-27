@@ -38,12 +38,6 @@ export class VardaPaosManagementContainerComponent implements OnInit, OnDestroy 
         },
         error: this.paosToimintaService.pushGenericErrorMessage,
       });
-
-
-  }
-
-  isLoading() {
-    return this.loadingHttpService.isLoading();
   }
 
   ngOnDestroy(): void {

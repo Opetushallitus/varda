@@ -1,12 +1,12 @@
-import {catchError, expand, map, mergeMap, reduce} from 'rxjs/operators';
+import { catchError, expand, map, mergeMap, reduce } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import {Observable, forkJoin, of, EMPTY} from 'rxjs';
+import { Observable, forkJoin, of, EMPTY } from 'rxjs';
 import { FormGroup } from '@angular/forms';
 import { VardaApiService } from './varda-api.service';
 import { VardaVakajarjestajaService } from './varda-vakajarjestaja.service';
 import { VardaUtilityService } from './varda-utility.service';
 import { VardaDateService } from '../../varda-main/services/varda-date.service';
-import {environment} from '../../../environments/environment';
+import { environment } from '../../../environments/environment';
 
 import {
   VardaFieldSet,
@@ -23,15 +23,16 @@ import {
   VardaVarhaiskasvatuspaatosDTO,
   VardaField,
   VardaKoodistot,
-  VardaEndpoints} from '../../utilities/models';
-import {VardaToimipaikkaYhteenvetoDTO} from '../../utilities/models/dto/varda-toimipaikka-yhteenveto-dto.model';
-import {VardaFieldsetArrayContainer} from '../../utilities/models/varda-fieldset.model';
-import {VardaMaksutietoDTO} from '../../utilities/models/dto/varda-maksutieto-dto.model';
-import {LapsiByToimipaikkaDTO} from '../../utilities/models/dto/varda-henkilohaku-dto.model';
-import {VardaPageDto} from '../../utilities/models/dto/varda-page-dto';
-import {HttpService} from 'varda-shared';
-import {VardaToimipaikkaMinimalDto} from '../../utilities/models/dto/varda-toimipaikka-dto.model';
-import {PaosToimintatietoDto} from '../../utilities/models/dto/varda-paos-dto';
+  VardaEndpoints
+} from '../../utilities/models';
+import { VardaToimipaikkaYhteenvetoDTO } from '../../utilities/models/dto/varda-toimipaikka-yhteenveto-dto.model';
+import { VardaFieldsetArrayContainer } from '../../utilities/models/varda-fieldset.model';
+import { VardaMaksutietoDTO } from '../../utilities/models/dto/varda-maksutieto-dto.model';
+import { LapsiByToimipaikkaDTO } from '../../utilities/models/dto/varda-henkilohaku-dto.model';
+import { VardaPageDto } from '../../utilities/models/dto/varda-page-dto';
+import { LoadingHttpService } from 'varda-shared';
+import { VardaToimipaikkaMinimalDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
+import { PaosToimintatietoDto } from '../../utilities/models/dto/varda-paos-dto';
 
 @Injectable()
 export class VardaApiWrapperService {
@@ -45,7 +46,7 @@ export class VardaApiWrapperService {
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private vardaDateService: VardaDateService,
     private vardaUtilityService: VardaUtilityService,
-    private http: HttpService) { }
+    private http: LoadingHttpService) { }
 
   createNewLapsi(henkilo: VardaHenkiloDTO, toimipaikka: VardaToimipaikkaDTO, suhteet: any, data: any): Observable<any> {
     const varhaiskasvatussuhdeAndPaatosData = {};
@@ -217,23 +218,23 @@ export class VardaApiWrapperService {
     lapsi: VardaLapsiDTO,
     varhaiskasvatuspaatos: VardaVarhaiskasvatuspaatosDTO,
     data: any): Observable<any> {
-      const varhaiskasvatuspaatosFormData = data.formData;
-      const varhaiskasvatuspaatosDTO = this.createDTOwithData<VardaVarhaiskasvatuspaatosDTO>(
-        varhaiskasvatuspaatosFormData,
-        new VardaVarhaiskasvatuspaatosDTO(),
-        data.fieldSets);
+    const varhaiskasvatuspaatosFormData = data.formData;
+    const varhaiskasvatuspaatosDTO = this.createDTOwithData<VardaVarhaiskasvatuspaatosDTO>(
+      varhaiskasvatuspaatosFormData,
+      new VardaVarhaiskasvatuspaatosDTO(),
+      data.fieldSets);
 
-      varhaiskasvatuspaatosDTO.lapsi = lapsi.url;
+    varhaiskasvatuspaatosDTO.lapsi = lapsi.url;
 
-      // Replace comma to dot for numeric values before saving
-      varhaiskasvatuspaatosDTO.tuntimaara_viikossa = varhaiskasvatuspaatosDTO.tuntimaara_viikossa.replace(',', '.');
+    // Replace comma to dot for numeric values before saving
+    varhaiskasvatuspaatosDTO.tuntimaara_viikossa = varhaiskasvatuspaatosDTO.tuntimaara_viikossa.replace(',', '.');
 
-      if (isEdit) {
-        return this.vardaApiService.editVarhaiskasvatuspaatos(
-          this.vardaUtilityService.parseIdFromUrl(varhaiskasvatuspaatos.url), varhaiskasvatuspaatosDTO);
-      } else {
-        return this.vardaApiService.createVarhaiskasvatuspaatos(varhaiskasvatuspaatosDTO);
-      }
+    if (isEdit) {
+      return this.vardaApiService.editVarhaiskasvatuspaatos(
+        this.vardaUtilityService.parseIdFromUrl(varhaiskasvatuspaatos.url), varhaiskasvatuspaatosDTO);
+    } else {
+      return this.vardaApiService.createVarhaiskasvatuspaatos(varhaiskasvatuspaatosDTO);
+    }
   }
 
   saveKielipainotus(isEdit: boolean, toimipaikka: VardaToimipaikkaDTO, kielipainotus: VardaKielipainotusDTO, data: any): Observable<any> {
@@ -318,7 +319,7 @@ export class VardaApiWrapperService {
         } else if (endpoint === VardaEndpoints.getAllMaksutiedotByLapsiByPageNo) {
           paginatedObservables.push(this.vardaApiService.getAllMaksutiedotByLapsiByPageNo(entityId, page));
         } else if (endpoint === VardaEndpoints.getAllLapsetByToimipaikkaByPageNo) {
-          paginatedObservables.push(this.vardaApiService.getLapsetForToimipaikka(entityId, {page}, null)
+          paginatedObservables.push(this.vardaApiService.getLapsetForToimipaikka(entityId, { page }, null)
             .pipe(map((resp: VardaPageDto<LapsiByToimipaikkaDTO>) => resp.results)));
         }
       }
@@ -338,16 +339,16 @@ export class VardaApiWrapperService {
     let entities = [];
     return new Observable((entitiesObserver) => {
       allObs.subscribe((data) => {
-          if (data.next) {
-            entities = data.results;
-            this.getByPageNo(data, paginatedEndpointName, entityId).subscribe((v) => {
-              entities = entities.concat(v);
-              entitiesObserver.next(entities);
-            });
-          } else {
-            entitiesObserver.next(data.results);
-            entitiesObserver.complete();
-          }
+        if (data.next) {
+          entities = data.results;
+          this.getByPageNo(data, paginatedEndpointName, entityId).subscribe((v) => {
+            entities = entities.concat(v);
+            entitiesObserver.next(entities);
+          });
+        } else {
+          entitiesObserver.next(data.results);
+          entitiesObserver.complete();
+        }
       }, (e) => {
         console.error(e);
         entitiesObserver.error();
@@ -420,9 +421,9 @@ export class VardaApiWrapperService {
 
   getToimipaikkaFormFieldSets(): any {
     return forkJoin([
-        this.vardaApiService.getToimipaikkaFields(),
-        this.vardaApiService.getKielipainotusFields(),
-        this.vardaApiService.getToimintapainotusFields()
+      this.vardaApiService.getToimipaikkaFields(),
+      this.vardaApiService.getKielipainotusFields(),
+      this.vardaApiService.getToimintapainotusFields()
     ]);
   }
 

@@ -1,7 +1,7 @@
 <div class="varda-list-search-more">
   <button *ngIf="prevLink"
           class="varda-button secondary"
-          [disabled]="isLoading()"
+          [disabled]="isLoading | async"
           type="button"
           (click)="searchPrev()">
     <mat-icon>arrow_left</mat-icon>
@@ -11,7 +11,7 @@
     <span *ngIf="maxPages">{{ currentPage }} / {{ maxPages }}</span>
   </span>
   <button *ngIf="nextLink"
-          [disabled]="isLoading()"
+          [disabled]="isLoading | async"
           class="varda-button"
           type="button"
           (click)="searchNext()">

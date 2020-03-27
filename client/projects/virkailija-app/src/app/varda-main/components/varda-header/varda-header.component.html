@@ -2,7 +2,7 @@
   <div id="virkailija-raamit-filleri"></div>
 </ng-container>
 <nav class="navbar navbar-expand-md navbar-light bg-light varda-navbar"
-     *ngIf="isAuthenticated() && !ui.isLoading"
+     *ngIf="isAuthenticated()"
      appHighContrast>
   <div class="navbar-brand varda-navbar-toimija"
        *ngIf="vakajarjestajat && vakajarjestajat.length">
@@ -29,7 +29,7 @@
 
   <div class="collapse navbar-collapse varda-navbar-links"
        id="navbarSupportedContent">
-    <ul class="navbar-nav mr-auto">
+    <ul class="navbar-nav mr-auto" *ngIf="vakajarjestajat">
       <li class="varda-header-nav-item-container" *ngIf="!isKatselija"
           [ngClass]="{'active-nav-item': activeNavItem === 'toimipaikatjalapset'}">
         <a [routerLink]="['/']"

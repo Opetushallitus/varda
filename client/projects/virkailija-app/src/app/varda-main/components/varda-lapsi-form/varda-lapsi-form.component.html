@@ -119,7 +119,7 @@
                 <button class="varda-button responsive"
                         type="button"
                         (click)="saveRecurringStructure(k, 'varhaiskasvatuspaatos')"
-                        [ngClass]="{'varda-disabled-button': varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr').controls[k].invalid}"
+                        [ngClass]="{'varda-disabled-button': varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr')['controls'][k].invalid}"
                         [disabled]="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr')['controls'][k].invalid">
                   {{'label.generic-save' | translate}}
                 </button>
@@ -250,7 +250,7 @@
                 <button class="varda-button responsive"
                         type="button"
                         (click)="saveRecurringStructure(k, 'varhaiskasvatussuhde')"
-                        [ngClass]="{'varda-disabled-button': varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr').controls[k].invalid || ui.isSubmitting}"
+                        [ngClass]="{'varda-disabled-button': varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'][k].invalid || ui.isSubmitting}"
                         [disabled]="varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'][k].invalid || ui.isSubmitting">
                   {{'label.generic-save' | translate}}
                 </button>
@@ -425,4 +425,3 @@
             (click)="saveLapsi()">{{ui.saveBtnText | translate}}</button>
   </div>
 </div>
-<lib-loading-indicator *ngIf="ui.isPerustiedotLoading || ui.isSubmitting"></lib-loading-indicator>

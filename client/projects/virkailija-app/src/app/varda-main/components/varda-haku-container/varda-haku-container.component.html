@@ -18,7 +18,7 @@
     </div>
   </div>
   <section>
-    <app-haku-condition [access]="access" [isLoading]="ui.isLoading" [searchAction]="search.bind(this)"></app-haku-condition>
+    <app-haku-condition [access]="access" [searchAction]="search.bind(this)"></app-haku-condition>
   </section>
   <section>
     <app-haku-list [searchResult]="searchResult"></app-haku-list>
@@ -28,4 +28,3 @@
                                (nextSearch)="search()"></app-varda-list-pagination>
   </section>
 </main>
-<lib-loading-indicator *ngIf="ui.isLoading"></lib-loading-indicator>

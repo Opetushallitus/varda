@@ -1,1 +1,4 @@
 <router-outlet></router-outlet>
+<ng-container *ngIf="isLoading | async">
+  <lib-loading-indicator></lib-loading-indicator>
+</ng-container>

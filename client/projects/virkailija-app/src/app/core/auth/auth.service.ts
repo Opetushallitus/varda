@@ -4,7 +4,6 @@ import { VardaApiService } from '../services/varda-api.service';
 import { VardaVakajarjestajaService } from '../services/varda-vakajarjestaja.service';
 import { NavigationEnd, Router } from '@angular/router';
 import { VardaKayttajatyyppi, VardaKayttooikeusRoles, VardaToimipaikkaDTO } from '../../utilities/models';
-import { HttpService } from 'varda-shared';
 import { VardaToimipaikkaMinimalDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { UserAccess, SaveAccess } from '../../utilities/models/varda-user-access.model';
 
@@ -35,8 +34,7 @@ export class AuthService {
 
   constructor(private vardaApiService: VardaApiService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
-    private router: Router,
-    private http: HttpService) {
+    private router: Router) {
     this.router.events.subscribe((s) => {
       if (s instanceof NavigationEnd) {
         const routeParts = s.url.split('?');

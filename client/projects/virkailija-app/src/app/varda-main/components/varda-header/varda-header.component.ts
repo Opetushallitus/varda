@@ -32,9 +32,6 @@ export class VardaHeaderComponent implements OnInit, AfterViewInit {
   isKatselija: boolean;
   canViewToimijanTiedot: boolean;
 
-  ui: {
-    isLoading: boolean;
-  };
   toimijanTiedotRouteMaps = [];
 
   constructor(
@@ -44,7 +41,6 @@ export class VardaHeaderComponent implements OnInit, AfterViewInit {
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private ref: ChangeDetectorRef,
     private vardaUtilityService: VardaUtilityService) {
-    this.ui = { isLoading: false };
     this.router.events.subscribe((s) => {
 
       let activeNavItemStr = '';
@@ -87,7 +83,6 @@ export class VardaHeaderComponent implements OnInit, AfterViewInit {
 
     this.authService.loggedInUserKayttooikeudetSubject.asObservable().subscribe(() => {
       this.initKayttooikeudet();
-      this.ui.isLoading = false;
     });
   }
 
@@ -184,7 +179,6 @@ export class VardaHeaderComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit() {
-    this.ui.isLoading = true;
     const virkailijaRaamitUrl = this.vardaUtilityService.getVirkailijaRaamitUrl(window.location.hostname);
     if (virkailijaRaamitUrl) {
       this.virkailijaRaamit = true;

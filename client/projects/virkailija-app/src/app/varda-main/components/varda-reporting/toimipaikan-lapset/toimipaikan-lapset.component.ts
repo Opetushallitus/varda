@@ -1,6 +1,6 @@
-import {Component, EventEmitter, Input, OnChanges, Output, ViewChild} from '@angular/core';
-import {VardaApiService} from '../../../../core/services/varda-api.service';
-import {ToimipaikanLapsi} from '../../../../utilities/models/dto/varda-henkilohaku-dto.model';
+import { Component, Input, OnChanges, ViewChild } from '@angular/core';
+import { VardaApiService } from '../../../../core/services/varda-api.service';
+import { ToimipaikanLapsi } from '../../../../utilities/models/dto/varda-henkilohaku-dto.model';
 
 @Component({
   selector: 'app-toimipaikan-lapset',
@@ -10,14 +10,10 @@ import {ToimipaikanLapsi} from '../../../../utilities/models/dto/varda-henkiloha
 export class ToimipaikanLapsetComponent implements OnChanges {
 
   @Input() selectedToimipaikanLapsi: ToimipaikanLapsi;
-  @Output() uiLoading: EventEmitter<boolean>;
   @ViewChild('toimipaikanLapsetScrollTo') toimipaikanLapsetScrollTo: any;
-  constructor(private vardaApiService: VardaApiService) {
-    this.uiLoading = new EventEmitter<boolean>(true);
-  }
+  constructor(private vardaApiService: VardaApiService) { }
 
   ngOnChanges() {
-    this.uiLoading.emit(true);
     this.selectedToimipaikanLapsi.henkilo = {
       etunimet: '',
       kutsumanimi: '',
@@ -35,9 +31,8 @@ export class ToimipaikanLapsetComponent implements OnChanges {
   fetchToimipaikanLapsi(): void {
 
     this.vardaApiService.getLapsiKooste(this.selectedToimipaikanLapsi.lapsi_id).subscribe((data) => {
-      this.uiLoading.emit(false);
       this.selectedToimipaikanLapsi = data;
-      this.toimipaikanLapsetScrollTo.nativeElement.scrollIntoView({behavior: 'smooth', block: 'start'});
+      this.toimipaikanLapsetScrollTo.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
 }

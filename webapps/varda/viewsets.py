@@ -1693,6 +1693,29 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
 
         return vtj_huoltajuudet
 
+    def validate_start_and_end_dates(self, vakapaatokset, start_date, end_date):
+        """
+        Validate the dates for the maksutieto:
+        * start date must be after the earliest vakapaatos start
+        * end date, if given, must be before the latest vakapaatos end
+        """
+        vakapaatos_earliest = vakapaatokset.last()
+        vakapaatos_latest = vakapaatokset.first()
+
+        if start_date is not None and validators.validate_paivamaara1_before_paivamaara2(start_date, vakapaatos_earliest.alkamis_pvm, can_be_same=False):
+            msg = 'Maksupaatos alkamis_pvm ({}) must not be before earliest Varhaiskasvatuspaatos alkamis_pvm ({})'.format(start_date, vakapaatos_earliest.alkamis_pvm)
+            raise ValidationError({'alkamis_pvm': [msg]})
+
+        """
+        While it is possible to leave out the end date, it must fall within vakapaatokset if given.
+        Make this check only if all vakapaatokset have a paattymis_pvm.
+        """
+        if end_date is not None:
+            if all((v.paattymis_pvm is not None) for v in vakapaatokset):
+                if validators.validate_paivamaara1_after_paivamaara2(end_date, vakapaatos_latest.paattymis_pvm, can_be_same=False):
+                    msg = 'Maksupaatos paattymis_pvm ({}) must not be after latest Varhaiskasvatuspaatos paattymis_pvm ({}) as no open-ended vakapaatokset exist'.format(end_date, vakapaatos_latest.paattymis_pvm)
+                    raise ValidationError({'paattymis_pvm': [msg]})
+
     def fetch_and_match_huoltajuudet(self, data):
         queryset_filter = Q()
 
@@ -1806,7 +1829,8 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         serializer.validated_data.pop('huoltajat')
         serializer.validated_data.pop('lapsi')
 
-        self.validate_start_and_end_dates(vakapaatokset, serializer.validated_data['alkamis_pvm'], serializer.validated_data['paattymis_pvm'])
+        self.validate_start_and_end_dates(vakapaatokset, serializer.validated_data['alkamis_pvm'],
+                                          serializer.validated_data.get('paattymis_pvm', None))
 
         """
         Save maksutieto
@@ -1835,29 +1859,6 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(saved_object)
         return Response(return_maksutieto_to_user, status=status.HTTP_201_CREATED, headers=headers)
 
-    def validate_start_and_end_dates(self, vakapaatokset, start_date, end_date):
-        """
-        Validate the dates for the maksutieto:
-        * start date must be after the earliest vakapaatos start
-        * end date, if given, must be before the latest vakapaatos end
-        """
-        vakapaatos_earliest = vakapaatokset.last()
-        vakapaatos_latest = vakapaatokset.first()
-
-        if validators.validate_paivamaara1_before_paivamaara2(start_date, vakapaatos_earliest.alkamis_pvm, can_be_same=False):
-            msg = 'Maksupaatos alkamis_pvm ({}) must not be before earliest Varhaiskasvatuspaatos alkamis_pvm ({})'.format(start_date, vakapaatos_earliest.alkamis_pvm)
-            raise ValidationError({'alkamis_pvm': [msg]})
-
-        """
-        While it is possible to leave out the end date, it must fall within vakapaatokset if given.
-        Make this check only if all vakapaatokset have a paattymis_pvm.
-        """
-        if end_date is not None:
-            if all((v.paattymis_pvm is not None) for v in vakapaatokset):
-                if validators.validate_paivamaara1_after_paivamaara2(end_date, vakapaatos_latest.paattymis_pvm, can_be_same=False):
-                    msg = 'Maksupaatos paattymis_pvm ({}) must not be after latest Varhaiskasvatuspaatos paattymis_pvm ({}) as no open-ended vakapaatokset exist'.format(end_date, vakapaatos_latest.paattymis_pvm)
-                    raise ValidationError({'paattymis_pvm': [msg]})
-
     @transaction.atomic
     def perform_update(self, serializer):
         user = self.request.user
@@ -1878,6 +1879,9 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
             logger.error("Error getting lapsi for maksutieto " + str(maksutieto_obj.id))
             raise CustomServerErrorException
         lapsi_object = lapsi_objects[0]
+
+        vakapaatokset = Varhaiskasvatuspaatos.objects.filter(lapsi=lapsi_object).order_by("-alkamis_pvm")
+        self.validate_start_and_end_dates(vakapaatokset, data.get('alkamis_pvm', None), data.get('paattymis_pvm', None))
 
         samanaikaiset_maksutiedot = Maksutieto.objects.filter(
             Q(huoltajuussuhteet__lapsi=lapsi_object) &

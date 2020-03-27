@@ -63,7 +63,6 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
   kielikoodistoOptions: any;
 
   ui: {
-    isLoading: boolean,
     isSubmitting: boolean,
     toimipaikkaFormSaveSuccess: boolean,
     toimipaikkaFormHasErrors: boolean,
@@ -102,7 +101,6 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
     private translateService: TranslateService,
     private vardaKielikoodistoService: VardaKielikoodistoService) {
     this.ui = {
-      isLoading: false,
       isSubmitting: false,
       toimipaikkaFormSaveSuccess: false,
       toimipaikkaFormHasErrors: false,
@@ -446,7 +444,6 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
   }
 
   initToimipaikkaFormFields(): void {
-    this.ui.isLoading = true;
     this.vardaApiWrapperService.getToimipaikkaFormFieldSets().subscribe((data) => {
       this.toimipaikkaFieldSets = data[0].fieldsets;
       this.toimipaikkaForm = this.vardaFormService.initFieldSetFormGroup(this.toimipaikkaFieldSets, this.toimipaikka);
@@ -515,11 +512,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
       });
 
       this.kielikoodistoOptions = this.vardaKielikoodistoService.kielikoodistoOptions;
-
-      this.ui.isLoading = false;
-
       this.bindHideSuccessMsg();
-
       this.bindScrollHandlers();
 
     });
@@ -761,7 +754,6 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
   }
 
   ngOnInit() {
-    this.ui.isLoading = true;
     this.toimipaikkaForm = new FormGroup({});
     this.kielipainotuksetForm = new FormGroup({});
     this.toimintapainotuksetForm = new FormGroup({});

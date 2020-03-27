@@ -3,9 +3,11 @@ import { AppComponent } from './app.component';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaSharedModule, LoadingHttpService } from 'varda-shared';
 import { RouterTestingModule } from '@angular/router/testing';
+import { Observable } from 'rxjs/internal/Observable';
 
 describe('AppComponent', () => {
   let loadingHttpService: LoadingHttpService;
+  let loadingHttpServiceSpy;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
@@ -23,6 +25,7 @@ describe('AppComponent', () => {
     }).compileComponents();
 
     loadingHttpService = TestBed.inject<LoadingHttpService>(LoadingHttpService);
+    loadingHttpServiceSpy = spyOn(loadingHttpService, 'isLoading').and.returnValue(new Observable());
   }));
 
   it('should create the app', () => {

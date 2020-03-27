@@ -44,7 +44,6 @@ export class VardaReportingComponent implements OnInit {
   toimipaikanLapsetBooleanFiels: Array<string>;
 
   ui: {
-    isLoading: boolean,
     reportingInitializationError: boolean,
     resultsEmpty: boolean,
     noOfResults: number
@@ -64,7 +63,6 @@ export class VardaReportingComponent implements OnInit {
     this.toimipaikat = [];
     this.toimipaikanLapset = null;
     this.ui = {
-      isLoading: false,
       reportingInitializationError: false,
       resultsEmpty: false,
       noOfResults: null
@@ -132,10 +130,6 @@ export class VardaReportingComponent implements OnInit {
     } else if (this.selectedSearchEntity === VardaEntityNames.YHTEENVETO) {
       // In yhteenveto component
     }
-  }
-
-  updateUiLoading(isUiLoading: boolean) {
-    this.ui.isLoading = isUiLoading;
   }
 
   formatToimipaikkaDisplayValue(key: string, val: any): string {
@@ -365,7 +359,6 @@ export class VardaReportingComponent implements OnInit {
       searchParams['nimi'] = this.toimipaikkaSearchValue;
     }
 
-    this.ui.isLoading = true;
     this.getToimipaikatForReporting(searchParams, null).subscribe(this.updateToimipaikat.bind(this));
   }
 
@@ -383,7 +376,6 @@ export class VardaReportingComponent implements OnInit {
       return;
     }
 
-    this.ui.isLoading = true;
     this.selectedToimipaikanLapsi = null;
     this.toimipaikanLapset = null;
     this.getToimipaikanLapsetForReporting(searchParams, null).subscribe({
@@ -421,8 +413,6 @@ export class VardaReportingComponent implements OnInit {
     if (this.selectedSearchEntity === VardaEntityNames.LAPSI && this.toimipaikanLapset.length === 0) {
       this.ui.resultsEmpty = true;
     }
-
-    this.ui.isLoading = false;
   }
 
   updateToimipaikat(toimipaikatResp: any): void {
@@ -446,8 +436,6 @@ export class VardaReportingComponent implements OnInit {
         this.ui.noOfResults = toimipaikatResp.count;
       }
     });
-
-    this.ui.isLoading = false;
   }
 
   updateLabelTranslations(): void {
@@ -471,7 +459,6 @@ export class VardaReportingComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.ui.isLoading = true;
     setTimeout(() => {
       this.vakajarjestajaToimipaikat = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat();
       this.toimipaikanLapsetSelectedToimipaikka = this.vakajarjestajaToimipaikat.katselijaToimipaikat[0];
@@ -487,7 +474,6 @@ export class VardaReportingComponent implements OnInit {
         next: this.updateToimipaikat.bind(this),
         error: () => {
           this.ui.reportingInitializationError = true;
-          this.ui.isLoading = false;
         },
       });
     });
