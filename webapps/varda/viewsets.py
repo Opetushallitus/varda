@@ -1703,8 +1703,13 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         vakapaatos_latest = vakapaatokset.first()
 
         if start_date is not None and validators.validate_paivamaara1_before_paivamaara2(start_date, vakapaatos_earliest.alkamis_pvm, can_be_same=False):
-            msg = 'Maksupaatos alkamis_pvm ({}) must not be before earliest Varhaiskasvatuspaatos alkamis_pvm ({})'.format(start_date, vakapaatos_earliest.alkamis_pvm)
+            msg = 'Maksutieto alkamis_pvm ({}) must not be before earliest Varhaiskasvatuspaatos alkamis_pvm ({})'.format(start_date, vakapaatos_earliest.alkamis_pvm)
             raise ValidationError({'alkamis_pvm': [msg]})
+
+        if all((v.paattymis_pvm is not None) for v in vakapaatokset):
+            if start_date is not None and not validators.validate_paivamaara1_before_paivamaara2(start_date, vakapaatos_latest.paattymis_pvm, can_be_same=False):
+                msg = 'Maksutieto alkamis_pvm ({}) must be before the latest varhaiskasvatuspaatos paattymis_pvm ({})'.format(start_date, vakapaatos_latest.paattymis_pvm)
+                raise ValidationError({'alkamis_pvm': [msg]})
 
         """
         While it is possible to leave out the end date, it must fall within vakapaatokset if given.
@@ -1713,7 +1718,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         if end_date is not None:
             if all((v.paattymis_pvm is not None) for v in vakapaatokset):
                 if validators.validate_paivamaara1_after_paivamaara2(end_date, vakapaatos_latest.paattymis_pvm, can_be_same=False):
-                    msg = 'Maksupaatos paattymis_pvm ({}) must not be after latest Varhaiskasvatuspaatos paattymis_pvm ({}) as no open-ended vakapaatokset exist'.format(end_date, vakapaatos_latest.paattymis_pvm)
+                    msg = 'Maksutieto paattymis_pvm ({}) must not be after latest Varhaiskasvatuspaatos paattymis_pvm ({}) as no open-ended vakapaatokset exist'.format(end_date, vakapaatos_latest.paattymis_pvm)
                     raise ValidationError({'paattymis_pvm': [msg]})
 
     def fetch_and_match_huoltajuudet(self, data):
