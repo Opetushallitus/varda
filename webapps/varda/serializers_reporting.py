@@ -50,3 +50,4 @@ class TiedonsiirtotilastoSerializer(serializers.Serializer):
     maksutiedot = serializers.IntegerField()
     kielipainotukset = serializers.IntegerField()
     toiminnalliset_painotukset = serializers.IntegerField()
+    paos_oikeudet = serializers.ReadOnlyField()

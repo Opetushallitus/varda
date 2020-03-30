@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from varda.enums.ytj import YtjYritysmuoto
-from varda.models import (Henkilo, KieliPainotus, Lapsi, Maksutieto, ToiminnallinenPainotus, Toimipaikka,
+from varda.models import (Henkilo, KieliPainotus, Lapsi, Maksutieto, PaosOikeus, ToiminnallinenPainotus, Toimipaikka,
                           VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z2_Koodisto)
 from varda.permissions import CustomReportingViewAccess
 from varda.serializers_reporting import KelaRaporttiSerializer, KoodistoSerializer, TiedonsiirtotilastoSerializer
@@ -105,90 +105,112 @@ class KoodistoViewSet(GenericViewSet, ListModelMixin):
 class TiedonsiirtotilastoViewSet(GenericViewSet, ListModelMixin):
     """
     list:
-    Nouda raportti tiedonsiirtojen tilanteesta (toimijat, toimipaikat, lapset, päätökset, suhteet, maksutiedot,
-    kielipainotukset ja toiminnalliset painotukset) eroteltuna kunnallisesti ja yksityisesti
+        Nouda raportti tiedonsiirtojen tilanteesta (toimijat, toimipaikat, lapset, päätökset, suhteet, maksutiedot,
+        kielipainotukset ja toiminnalliset painotukset) eroteltuna kunnallisesti ja yksityisesti
 
     filter:
-    kunnat palauttaa tiedot kunnallisesta (true) tai yksityisestä varhaiskasvatuksesta (false)
-    esim. /?kunnat=true
+        "kunnat" palauttaa tiedot kunnallisesta (true), yksityisestä varhaiskasvatuksesta (false)
+        "voimassa" palauttaa voimassa olevat varhaiskasvatustiedot (alkamis_pvm < now < paattymis_pvm)
+        Ilman filttereitä palautetaan tiedot kaikesta varhaiskasvatuksesta
+
+        kunnat=true/false
+        voimassa=true
     """
     queryset = None
     serializer_class = TiedonsiirtotilastoSerializer
     permission_classes = (permissions.IsAdminUser, )
 
-    kunnallinen = [YtjYritysmuoto.KUNTA.name, YtjYritysmuoto.KUNTAYHTYMA.name]
-
-    def get_vakatoimijat(self, kunnat_filter):
+    def get_vakatoimijat(self, kunnat_filter, voimassa_filter):
+        kunnallinen = [YtjYritysmuoto.KUNTA.name, YtjYritysmuoto.KUNTAYHTYMA.name]
         if kunnat_filter is None:
-            return VakaJarjestaja.objects.all()
+            return VakaJarjestaja.objects.filter(voimassa_filter)
         elif kunnat_filter:
-            return VakaJarjestaja.objects.filter(yritysmuoto__in=self.kunnallinen)
+            return VakaJarjestaja.objects.filter(voimassa_filter & Q(yritysmuoto__in=kunnallinen))
         else:
-            return VakaJarjestaja.objects.exclude(yritysmuoto__in=self.kunnallinen)
+            return VakaJarjestaja.objects.filter(voimassa_filter & ~Q(yritysmuoto__in=kunnallinen))
 
-    def get_toimipaikat(self, vakatoimijat):
-        return Toimipaikka.objects.filter(vakajarjestaja__in=vakatoimijat)
+    def get_toimipaikat(self, vakatoimijat, voimassa_filter):
+        return Toimipaikka.objects.filter(voimassa_filter & Q(vakajarjestaja__in=vakatoimijat))
 
-    """
-    Ei oteta toimipaikkojen määrään mukaan ns. dummy-toimipaikkoja
-    """
-    def get_toimipaikat_ei_dummy_paos(self, vakatoimijat):
-        return Toimipaikka.objects.filter(~Q(nimi__icontains='Palveluseteli ja ostopalvelu') &
+    # Don't include so called dummy-toimipaikat
+    def get_toimipaikat_ei_dummy_paos(self, vakatoimijat, voimassa_filter):
+        return Toimipaikka.objects.filter(voimassa_filter & ~Q(nimi__icontains='Palveluseteli ja ostopalvelu') &
                                           Q(vakajarjestaja__in=vakatoimijat))
 
-    def get_vakasuhteet(self, toimipaikat):
-        return Varhaiskasvatussuhde.objects.filter(toimipaikka__in=toimipaikat)
+    def get_vakasuhteet(self, toimipaikat, voimassa_filter):
+        return Varhaiskasvatussuhde.objects.filter(voimassa_filter & Q(toimipaikka__in=toimipaikat))
 
-    def get_vakapaatokset(self, vakasuhteet):
-        vakasuhde_id_list = vakasuhteet.values_list('varhaiskasvatuspaatos', flat=True)
-        return Varhaiskasvatuspaatos.objects.filter(id__in=vakasuhde_id_list)
+    def get_vakapaatokset(self, vakasuhteet, voimassa_filter, kunnat_filter):
+        if kunnat_filter is None:
+            vakapaatos_filter = voimassa_filter
+        else:
+            vakapaatos_id_list = vakasuhteet.values_list('varhaiskasvatuspaatos', flat=True)
+            vakapaatos_filter = voimassa_filter & Q(id__in=vakapaatos_id_list)
+        return Varhaiskasvatuspaatos.objects.filter(vakapaatos_filter)
 
     def get_lapset(self, vakapaatokset):
-        vakapaatos_id_list = vakapaatokset.values_list('lapsi', flat=True)
-        return Lapsi.objects.filter(id__in=vakapaatos_id_list).distinct('henkilo__henkilo_oid')
+        lapsi_id_list = vakapaatokset.values_list('lapsi', flat=True)
+        return Lapsi.objects.filter(id__in=lapsi_id_list).distinct('henkilo__henkilo_oid')
 
-    def get_maksutiedot(self, kunnat_filter):
+    def get_maksutiedot(self, kunnat_filter, voimassa_filter):
         if kunnat_filter is None:
-            return Maksutieto.objects.all()
+            return Maksutieto.objects.filter(voimassa_filter)
         elif kunnat_filter:
-            return Maksutieto.objects.exclude(yksityinen_jarjestaja=True)
+            return Maksutieto.objects.filter(voimassa_filter & Q(yksityinen_jarjestaja=False))
         else:
-            return Maksutieto.objects.filter(yksityinen_jarjestaja=True)
+            return Maksutieto.objects.filter(voimassa_filter & Q(yksityinen_jarjestaja=True))
 
-    def get_kielipainotukset(self, toimipaikat):
-        return KieliPainotus.objects.filter(toimipaikka__in=toimipaikat)
+    def get_kielipainotukset(self, toimipaikat, voimassa_filter):
+        return KieliPainotus.objects.filter(voimassa_filter & Q(toimipaikka__in=toimipaikat))
 
-    def get_toiminnalliset_painotukset(self, toimipaikat):
-        return ToiminnallinenPainotus.objects.filter(toimipaikka__in=toimipaikat)
+    def get_toiminnalliset_painotukset(self, toimipaikat, voimassa_filter):
+        return ToiminnallinenPainotus.objects.filter(voimassa_filter & Q(toimipaikka__in=toimipaikat))
+
+    def get_paos_oikeudet(self, voimassa_filter):
+        if voimassa_filter != Q():
+            return PaosOikeus.objects.filter(voimassa_kytkin=True)
+        else:
+            return PaosOikeus.objects.all()
+
+    def validate_boolean_parameter(self, parameter):
+        if isinstance(parameter, str):
+            parameter = parameter.lower()
+
+        if parameter == 'true':
+            return True
+        elif parameter == 'false':
+            return False
+        else:
+            return None
 
     def list(self, request, *args, **kwargs):
-        kunnat_request = self.request.query_params.get('kunnat', None)
-
-        if isinstance(kunnat_request, str):
-            kunnat_request = kunnat_request.lower()
-
-        if kunnat_request == 'true':
-            kunnat_filter = True
-        elif kunnat_request == 'false':
-            kunnat_filter = False
+        query_params = self.request.query_params
+        kunnat_filter = self.validate_boolean_parameter(query_params.get('kunnat', None))
+        if self.validate_boolean_parameter(query_params.get('voimassa', None)):
+            today = datetime.date.today()
+            voimassa_filter = Q(alkamis_pvm__lte=today) & (Q(paattymis_pvm__gte=today) | Q(paattymis_pvm=None))
         else:
-            kunnat_filter = None
+            voimassa_filter = Q()
 
-        vakatoimijat = self.get_vakatoimijat(kunnat_filter)
-        toimipaikat = self.get_toimipaikat(vakatoimijat)
-        vakasuhteet = self.get_vakasuhteet(toimipaikat)
-        vakapaatokset = self.get_vakapaatokset(vakasuhteet)
+        vakatoimijat = self.get_vakatoimijat(kunnat_filter, voimassa_filter)
+        toimipaikat = self.get_toimipaikat(vakatoimijat, voimassa_filter)
+        vakasuhteet = self.get_vakasuhteet(toimipaikat, voimassa_filter)
+        vakapaatokset = self.get_vakapaatokset(vakasuhteet, voimassa_filter, kunnat_filter)
 
         stats = {
             'vakatoimijat': vakatoimijat.count(),
-            'toimipaikat': self.get_toimipaikat_ei_dummy_paos(vakatoimijat).count(),
+            'toimipaikat': self.get_toimipaikat_ei_dummy_paos(vakatoimijat, voimassa_filter).count(),
             'vakasuhteet': vakasuhteet.count(),
             'vakapaatokset': vakapaatokset.count(),
             'lapset': self.get_lapset(vakapaatokset).count(),
-            'maksutiedot': self.get_maksutiedot(kunnat_filter).count(),
-            'kielipainotukset': self.get_kielipainotukset(toimipaikat).count(),
-            'toiminnalliset_painotukset': self.get_toiminnalliset_painotukset(toimipaikat).count()
+            'maksutiedot': self.get_maksutiedot(kunnat_filter, voimassa_filter).count(),
+            'kielipainotukset': self.get_kielipainotukset(toimipaikat, voimassa_filter).count(),
+            'toiminnalliset_painotukset': self.get_toiminnalliset_painotukset(toimipaikat, voimassa_filter).count(),
+            'paos_oikeudet': None
         }
+
+        if kunnat_filter is None:
+            stats['paos_oikeudet'] = self.get_paos_oikeudet(voimassa_filter).count()
 
         serializer = self.get_serializer(stats)
         return Response(serializer.data)
