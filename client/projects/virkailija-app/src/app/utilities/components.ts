@@ -23,5 +23,4 @@ export { VardaFormQuestionComponent } from '../shared/components/varda-form-ques
 export { VardaToimipaikkaFormComponent } from '../varda-main/components/varda-toimipaikka-form/varda-toimipaikka-form.component';
 export { VardaSuccessModalComponent } from '../shared/components/varda-success-modal/varda-success-modal.component';
 export { VardaReportingComponent } from '../varda-main/components/varda-reporting/varda-reporting.component';
-export { VardaInstructionsComponent } from '../varda-main/components/varda-instructions/varda-instructions.component';
 export { VardaVakatoimijaComponent } from '../varda-main/components/varda-vakatoimija/varda-vakatoimija.component';

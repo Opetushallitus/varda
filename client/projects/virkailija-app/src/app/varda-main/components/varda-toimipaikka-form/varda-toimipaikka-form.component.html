@@ -54,12 +54,12 @@
               <span *ngIf="!isEdit">
                 {{'label.toimipaikka-stepper.toimipaikka-details-add' | translate}}
                 <a target="_blank"
-                   href="{{'ohjeet.url.confluence' | translate}}#{{'ohjeet.url.lisaaminen-ja-muokkaaminen.toimipaikan-lisaaminen' | translate}}">{{'label.taalta' | translate}}</a>.
+                   [href]="'ohjeet.url.lisaaminen-ja-muokkaaminen.toimipaikan-lisaaminen' | translate">{{'label.taalta' | translate}}</a>.
               </span>
               <span *ngIf="isEdit">
                 {{'label.toimipaikka-stepper.toimipaikka-details-edit' | translate}}
                 <a target="_blank"
-                   href="{{'ohjeet.url.confluence' | translate}}#{{'ohjeet.url.lisaaminen-ja-muokkaaminen.toimipaikan-tietojen-muokkaaminen' | translate}}">{{'label.taalta' | translate}}</a>.
+                   [href]="'ohjeet.url.lisaaminen-ja-muokkaaminen.toimipaikan-tietojen-muokkaaminen' | translate">{{'label.taalta' | translate}}</a>.
               </span>
             </div>
             <fieldset *ngFor="let toimipaikkaFieldSet of toimipaikkaFieldSets; let i = index"

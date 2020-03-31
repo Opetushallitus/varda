@@ -9,7 +9,6 @@ import {
   VardaLogoutComponent,
   VardaReportingComponent,
   VardaMainFrameComponent,
-  VardaInstructionsComponent,
   VardaVakatoimijaComponent
 } from '../utilities/components';
 import { VardaHakuContainerComponent } from './components/varda-haku-container/varda-haku-container.component';
@@ -42,16 +41,6 @@ const routes: Routes = [
         path: 'tietojen-katselu',
         component: VardaReportingComponent,
         data: { title: 'label.navi.tietojen-katselu' }
-      },
-      {
-        path: 'ohjeet',
-        component: VardaInstructionsComponent,
-        data: { title: 'label.ohjeet' }
-      },
-      {
-        path: 'ohjeet/:instructionName',
-        component: VardaInstructionsComponent,
-        data: { title: 'label.ohjeet' }
       },
       {
         path: 'paos-hallinta',

@@ -39,10 +39,10 @@
       <div class="modal-form-intro">{{'text.add-lapsi-form-info' | translate}}<br />
         {{'text.add-lapsi-form-info-edit-varhaiskasvatustiedot' | translate}}
         <a target="_blank"
-           href="{{'ohjeet.url.confluence' | translate}}#{{'ohjeet.url.lisaaminen-ja-muokkaaminen.lapsen-tietojen-tarkastelu-ja-muokkaaminen' | translate}}">{{'label.taalta' | translate}}</a>.<br />
+           [href]="'ohjeet.url.lisaaminen-ja-muokkaaminen.lapsen-tietojen-tarkastelu-ja-muokkaaminen' | translate">{{'label.taalta' | translate}}</a>.<br />
         {{'text.add-lapsi-form-info-edit-huoltaja-ja-maksutiedot' | translate}}
         <a target="_blank"
-           href="{{'ohjeet.url.confluence' | translate}}#{{'ohjeet.url.lisaaminen-ja-muokkaaminen.huoltaja-ja-maksutiedot' | translate}}">{{'label.taalta' | translate}}</a>.
+           [href]="'ohjeet.url.lisaaminen-ja-muokkaaminen.huoltaja-ja-maksutiedot' | translate">{{'label.taalta' | translate}}</a>.
       </div>
       <form [formGroup]="lapsiForm"
             autocomplete="off">

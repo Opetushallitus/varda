@@ -21,7 +21,6 @@ import {
   VardaLapsiFormComponent,
   VardaToimipaikkaFormComponent,
   VardaReportingComponent,
-  VardaInstructionsComponent,
   VardaVakatoimijaComponent
 } from '../utilities/components';
 
@@ -76,7 +75,6 @@ import { VardaDropdownMenuComponent } from './components/varda-header/varda-drop
     VardaHenkiloFormComponent,
     VardaToimipaikkaFormComponent,
     VardaReportingComponent,
-    VardaInstructionsComponent,
     VardaVakatoimijaComponent,
     ToimipaikanLapsetComponent,
     ToimipaikanLapsetVakapaatoksetComponent,
@@ -112,7 +110,6 @@ import { VardaDropdownMenuComponent } from './components/varda-header/varda-drop
     VardaLapsiFormComponent,
     VardaToimipaikkaFormComponent,
     VardaReportingComponent,
-    VardaInstructionsComponent,
     VardaVakatoimijaComponent
   ],
   providers: [

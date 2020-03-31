@@ -29,8 +29,10 @@
 
   <div class="collapse navbar-collapse varda-navbar-links"
        id="navbarSupportedContent">
-    <ul class="navbar-nav mr-auto" *ngIf="vakajarjestajat">
-      <li class="varda-header-nav-item-container" *ngIf="!isKatselija"
+    <ul class="navbar-nav mr-auto"
+        *ngIf="vakajarjestajat">
+      <li class="varda-header-nav-item-container"
+          *ngIf="!isKatselija"
           [ngClass]="{'active-nav-item': activeNavItem === 'toimipaikatjalapset'}">
         <a [routerLink]="['/']"
            class=""
@@ -62,10 +64,9 @@
                                  [routeMaps]="toimijanTiedotRouteMaps"
                                  (navigationChange)="setActiveNavItem('vakatoimija')"></app-varda-dropdown-menu>
       </li>
-      <li class="varda-header-nav-item-container"
-          [ngClass]="{'active-nav-item': activeNavItem === 'ohjeet'}">
-        <a [routerLink]="['/ohjeet']"
-           (click)="setActiveNavItem('ohjeet')">
+      <li class="varda-header-nav-item-container">
+        <a [href]="'ohjeet.url.confluence' | translate"
+           target="_vardaGuides">
           {{'label.ohjeet' | translate}}</a>
       </li>
     </ul>

@@ -24,7 +24,6 @@ export class VardaHeaderComponent implements OnInit, AfterViewInit {
   vakajarjestajat: Array<VardaVakajarjestajaUi>;
   activeNavItem: string;
   virkailijaRaamit: boolean;
-
   $siteTitle;
   $siteMenuWrapper;
   $toimipaikkaPanelSelectorHeader;
@@ -56,8 +55,6 @@ export class VardaHeaderComponent implements OnInit, AfterViewInit {
           activeNavItemStr = 'haku';
         } else if (url === '/tietojen-katselu') {
           activeNavItemStr = 'tietojen-katselu';
-        } else if (url === '/ohjeet') {
-          activeNavItemStr = 'ohjeet';
         }
 
         if (urlParts && urlParts[1] === 'ohjeet' && urlParts.length === 3) {
