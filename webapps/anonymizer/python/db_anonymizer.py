@@ -95,7 +95,7 @@ def finalize_data_dump():
     from django.db.models.deletion import ProtectedError
 
     try:
-        User.objects.filter(Q(id=3) | Q(id=4) | Q(username='lhagen')).delete()
+        User.objects.filter(Q(id=3) | Q(id=4) | Q(id=5) | Q(username='lhagen') | Q(username='aroksa')).delete()
     except ProtectedError as e:
         print(e)
 

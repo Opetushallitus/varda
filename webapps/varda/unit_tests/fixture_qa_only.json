@@ -76,6 +76,26 @@
     }
   },
   {
+    "model": "auth.user",
+    "pk": 5,
+    "fields": {
+      "password": "",
+      "last_login": null,
+      "is_superuser": false,
+      "username": "aroksa",
+      "first_name": "",
+      "last_name": "",
+      "email": "",
+      "is_staff": true,
+      "is_active": true,
+      "date_joined": "2019-02-05T09:30:00Z",
+      "groups": [
+        7
+      ],
+      "user_permissions": []
+    }
+  },
+  {
     "model": "varda.z3_additionalcasuserfields",
     "pk": 4,
     "fields": {
@@ -84,6 +104,17 @@
       "asiointikieli_koodi": "fi",
       "approved_oph_staff": true,
       "last_modified": "2019-02-05 12:00:00+1459"
+    }
+  },
+  {
+    "model": "varda.z3_additionalcasuserfields",
+    "pk": 5,
+    "fields": {
+      "kayttajatyyppi": "VIRKAILIJA",
+      "henkilo_oid": "1.2.246.562.24.32147995017",
+      "asiointikieli_koodi": "fi",
+      "approved_oph_staff": true,
+      "last_modified": "2020-04-01 08:00:00+1459"
     }
   }
 ]
