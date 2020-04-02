@@ -503,6 +503,7 @@ def get_toimipaikka_update_json(saved_toimipaikka_obj, old_toimipaikka):
     new_toimipaikka_json['kotipaikkaUri'] = 'kunta_' + saved_toimipaikka_obj.kunta_koodi
     new_toimipaikka_json['alkuPvm'] = alkamis_pvm
     new_toimipaikka_json['lakkautusPvm'] = paattymis_pvm
+    new_toimipaikka_json['piilotettu'] = saved_toimipaikka_obj.toimintamuoto_koodi.lower() in ['tm02', 'tm03']
 
     update_nimet(new_toimipaikka_json, saved_toimipaikka_obj)
     update_vakatieto(new_toimipaikka_json, saved_toimipaikka_obj)

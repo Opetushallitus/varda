@@ -1,7 +1,9 @@
+import json
 from django.test import TestCase
+from django.forms.models import model_to_dict
 
 from varda.models import Toimipaikka
-from varda.organisaatiopalvelu import get_toimipaikka_update_json
+from varda.organisaatiopalvelu import get_toimipaikka_update_json, get_toimipaikka_json
 
 
 class VardaOrganisaatiopalveluTests(TestCase):
@@ -162,6 +164,7 @@ class VardaOrganisaatiopalveluTests(TestCase):
                 ]
             },
             "version": 32,
+            'piilotettu': False,
             "status": "AKTIIVINEN"
         }
 
@@ -354,6 +357,7 @@ class VardaOrganisaatiopalveluTests(TestCase):
                 ]
             },
             "version": 32,
+            'piilotettu': False,
             "status": "AKTIIVINEN",
             "lakkautusPvm": None
         }
@@ -362,3 +366,32 @@ class VardaOrganisaatiopalveluTests(TestCase):
         result_json = get_toimipaikka_update_json(toimipaikka_obj, old_toimipaikka_json)
 
         self.assertJSONEqual(result_json, expected_result_toimipaikka_json)
+
+    def test_organisaatio_update_toimintamuoto_to_hidden_json(self):
+        toimipaikka_obj = Toimipaikka.objects.get(id=1)
+        toimipaikka_dict = model_to_dict(toimipaikka_obj)
+
+        old_toimipaikka_json = json.loads(get_toimipaikka_json(toimipaikka_dict, toimipaikka_obj.vakajarjestaja.id))
+
+        old_piilotettu_kytkin = old_toimipaikka_json['piilotettu']
+        self.assertFalse(old_piilotettu_kytkin)
+
+        toimipaikka_obj.toimintamuoto_koodi = 'tm03'
+        result_json = get_toimipaikka_update_json(toimipaikka_obj, old_toimipaikka_json)
+        result_piilotettu_kytkin = json.loads(result_json)['piilotettu']
+        self.assertTrue(result_piilotettu_kytkin)
+
+    def test_organisaatio_update_toimintamuoto_to_public_json(self):
+        toimipaikka_obj = Toimipaikka.objects.get(id=1)
+        toimipaikka_obj.toimintamuoto_koodi = 'tm03'  # toimipaikka is public so need to mock it to private
+        toimipaikka_dict = model_to_dict(toimipaikka_obj)
+
+        old_toimipaikka_json = json.loads(get_toimipaikka_json(toimipaikka_dict, toimipaikka_obj.vakajarjestaja.id))
+
+        old_piilotettu_kytkin = old_toimipaikka_json['piilotettu']
+        self.assertTrue(old_piilotettu_kytkin)
+
+        toimipaikka_obj.toimintamuoto_koodi = 'tm01'  # return toimipaikka to public
+        result_json = get_toimipaikka_update_json(toimipaikka_obj, old_toimipaikka_json)
+        result_piilotettu_kytkin = json.loads(result_json)['piilotettu']
+        self.assertFalse(result_piilotettu_kytkin)

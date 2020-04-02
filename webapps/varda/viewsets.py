@@ -659,8 +659,8 @@ class ToimipaikkaViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, P
             raise ValidationError({"lahdejarjestelma": ["This toimipaikka should be modified in organisaatio-service."]})
         if validated_data['vakajarjestaja'] != toimipaikka_obj.vakajarjestaja:
             raise ValidationError({"vakajarjestaja": ["It is not allowed to change the vakajarjestaja where toimipaikka belongs to."]})
-        if validated_data['toimintamuoto_koodi'] != toimipaikka_obj.toimintamuoto_koodi:
-            raise ValidationError({"toiminatamuoto_koodi": ["It is not allowed to change the toimintamuoto_koodi of a toimipaikka."]})
+        if validated_data['toimintamuoto_koodi'] != toimipaikka_obj.toimintamuoto_koodi and toimipaikka_obj.organisaatio_oid is None:
+            raise ValidationError({"toimintamuoto_koodi": ["It is not allowed to change the toimintamuoto_koodi of a toimipaikka that has no organisaatio_oid."]})
         if "paattymis_pvm" in validated_data and validated_data["paattymis_pvm"] is not None:
             if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm']):
                 raise ValidationError({"paattymis_pvm": ["paattymis_pvm must be after alkamis_pvm"]})
