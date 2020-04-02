@@ -7,12 +7,13 @@
          [disabled]="disabled"
          [tabIndex]="tabIndex"
          [attr.name]="name"
-         [attr.value]="value"
+         [value]="value"
          [required]="required"
          [attr.aria-label]="ariaLabel"
          [attr.aria-labelledby]="ariaLabelledby"
          [attr.aria-describedby]="ariaDescribedby"
-         (change)="_onChange($event)">
+         (change)="_onChange($event)"
+         (click)="_onClick($event)">
 
   <span class="oph-radio-button-text">
     {{ ariaLabel }}

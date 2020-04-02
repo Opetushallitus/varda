@@ -97,6 +97,19 @@
   opacity: 0.5;
 }
 
+.varda-icon-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.varda-icon-button mat-icon {
+  line-height: 1em;
+  height: 20px;
+  width: 20px;
+  margin-right: 0.25em;
+}
+
 /*HIGH CONTRAST PRIMARY CTA-BUTTON STYLES*/
 .varda-high-contrast .varda-button,
 .varda-button.change-contrast {
@@ -120,10 +133,31 @@
   display: flex;
 }
 
+.oph-field .oph-radio-button-group app-varda-radio-button:focus-within {
+  overflow-x: initial;
+}
+
 .oph-radio-button-group label {
   margin-bottom: 0;
 }
 
+@media (max-width: 1200px) {
+  .oph-radio-button-group.responsive-xl app-varda-radio-button,
+  .oph-radio-button-group.responsive-xl {
+    width: 100%;
+    text-align: center;
+  }
+
+  .oph-radio-button-group.responsive-xl label {
+    width: 100%;
+  }
+
+  .oph-radio-button-group.wrap-xl app-varda-radio-button,
+  .oph-radio-button-group.wrap-xl {
+    flex-direction: column;
+    text-align: left;
+  }
+}
 
 @media (max-width: 992px) {
   .oph-radio-button-group.responsive-lg app-varda-radio-button,

@@ -1,0 +1,9 @@
+.oph-radio-button-text {
+  transition-property: color, background, box-shadow;
+  transition-duration: var(--transition-duration-base);
+  transition-timing-function: var(--transition-timing-function-base);
+}
+
+.oph-radio-button-input:checked:focus + .oph-radio-button-text {
+  box-shadow: 0 0 5px 3px var(--blue-lighten-3);
+}

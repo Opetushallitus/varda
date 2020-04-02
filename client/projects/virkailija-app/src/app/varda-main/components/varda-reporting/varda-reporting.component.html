@@ -1,5 +1,5 @@
 <h1 class="varda-page-header">
-  {{ 'label.navi.tietojen-katselu' | translate }}
+  {{'label.navi.tietojen-katselu' | translate}}
 </h1>
 <main class="varda-reporting-wrapper">
   <div class="varda-reporting-initialization-error alert alert-danger"
@@ -10,83 +10,192 @@
   <section class="varda-page-content"
            *ngIf="!ui.reportingInitializationError">
     <form>
-      <div class="mb-2">
-        <app-varda-radio-button-group name="'reportingEntitySelectorRadio'"
-                                      responsive="md"
-                                      wrap="sm"
-                                      (change)="changeSearchEntity($event)">
-          <app-varda-radio-button [id]="'reportingToimipaikat'"
-                                  [value]="'toimipaikka'"
-                                  [checked]="true">
-            {{'label.toimipaikat' | translate}}
-          </app-varda-radio-button>
-          <app-varda-radio-button [id]="'reportingLapset'"
-                                  [value]="'lapsi'">
-            {{'label.lapset' | translate}}
-          </app-varda-radio-button>
-          <app-varda-radio-button [id]="'reportingYhteenveto'"
-                                  [value]="'yhteenveto'">
-            {{'label.yhteenveto' | translate}}
-          </app-varda-radio-button>
-        </app-varda-radio-button-group>
+      <div class="varda-reporting-row-wrap">
+        <div class="col-md-6 col-lg-5">
+          <label class="oph-bold">{{'label.choose' | translate}}</label>
+          <app-varda-radio-button-group name="'reportingEntitySelectorRadio'"
+                                        responsive="md"
+                                        wrap="sm"
+                                        (change)="changeSearchEntity($event)">
+            <app-varda-radio-button [id]="'reportingToimipaikat'"
+                                    [value]="'toimipaikka'"
+                                    [checked]="true">
+              {{'label.toimipaikat' | translate}}
+            </app-varda-radio-button>
+            <app-varda-radio-button [id]="'reportingLapset'"
+                                    [value]="'lapsi'">
+              {{'label.lapset' | translate}}
+            </app-varda-radio-button>
+            <app-varda-radio-button [id]="'reportingYhteenveto'"
+                                    [value]="'yhteenveto'">
+              {{'label.yhteenveto' | translate}}
+            </app-varda-radio-button>
+          </app-varda-radio-button-group>
+        </div>
+        <div class="col-lg-7" *ngIf="selectedSearchEntity==='lapsi'">
+          <div class="modal-form-intro">
+            {{'label.haku-condition.search-instruction' | translate}}<br />
+            {{'label.haku-condition.search-instruction2' | translate}}
+          </div>
+        </div>
       </div>
-      <div class="varda-reporting-search-form-content toimipaikka-search-form"
+      <div class="varda-reporting-search-form-content toimipaikka-search-form varda-reporting-row-wrap"
            *ngIf="selectedSearchEntity === 'toimipaikka'">
-        <div>
+        <div class="col-sm col-md-6 col-lg-5">
           <label for="reportingToimipaikkaSearchInput"
-                 class="varda-field-label">{{getSearchInputLabel() | translate}}</label>
-          <input class="varda-form-control form-control varda-input"
+                 class="oph-bold">{{getSearchInputLabel() | translate}}</label>
+          <input class="oph-input"
                  name="reportingToimipaikkaSearchInput"
                  id="reportingToimipaikkaSearchInput"
                  type="text"
                  [(ngModel)]="toimipaikkaSearchValue"
                  (keydown.enter)="searchToimipaikka()">
         </div>
-        <div>
-          <button class="varda-button"
+        <div class="col-sm-auto">
+          <button class="varda-button varda-icon-button"
                   type="button"
-                  (click)="searchToimipaikka()">{{'label.hae' | translate}}</button>
+                  (click)="searchToimipaikka()">
+            <mat-icon>search</mat-icon>
+            {{'label.hae' | translate}}
+          </button>
         </div>
       </div>
-      <div class="varda-reporting-search-form-content lapsi-search-form"
+      <div class="varda-reporting-search-form-content varda-reporting-row-wrap"
            *ngIf="selectedSearchEntity === 'lapsi'">
-        <div class="col-md-4">
+        <div class="col-md-5 col-lg-5">
           <label for="toimipaikkaSelect"
-                 class="varda-field-label">{{getSearchInputLabel() | translate}}</label>
-          <select class="varda-form-control form-control varda-select"
-                  name="toimipaikkaSelect"
-                  id="toimipaikkaSelect"
-                  (change)="searchLapsi()"
-                  [(ngModel)]="toimipaikanLapsetSelectedToimipaikka">
-            <option *ngFor="let toimipaikkaObj of vakajarjestajaToimipaikat.katselijaToimipaikat"
-                    [ngValue]="toimipaikkaObj">
-              {{toimipaikkaObj.nimi}}</option>
-          </select>
+                 class="oph-bold">{{getSearchInputLabel() | translate}}</label>
+          <div class="oph-select-container">
+            <select class="oph-input oph-select"
+                    name="toimipaikkaSelect"
+                    id="toimipaikkaSelect"
+                    (change)="searchLapsi()"
+                    [(ngModel)]="toimipaikanLapsetSelectedToimipaikka">
+              <option *ngFor="let toimipaikkaObj of vakajarjestajaToimipaikat.katselijaToimipaikat"
+                      [ngValue]="toimipaikkaObj">
+                {{toimipaikkaObj.nimi}}</option>
+            </select>
+          </div>
         </div>
-        <div class="col-md-4">
-          <label for="reportingLapsiSukunimiSearchInput"
-                 class="varda-field-label">{{'label.sukunimi' | translate}}</label>
-          <input class="varda-form-control form-control varda-input"
-                 name="reportingLapsiSukunimiSearchInput"
-                 id="reportingLapsiSukunimiSearchInput"
+        <div class="col-md col-lg-4">
+          <label for="reportingLapsiSearchInput"
+                 class="oph-bold">{{'label.haku-list.nimi-ssn-oid' | translate}}</label>
+          <input class="oph-input"
+                 name="reportingLapsiSearchInput"
+                 id="reportingLapsiSearchInput"
                  type="text"
-                 [(ngModel)]="lapsiSukunimiSearchValue"
+                 placeholder="{{'label.haku-condition.hae-henkilo' | translate}}..."
+                 [(ngModel)]="lapsiSearchValue"
                  (keydown.enter)="searchLapsi()">
         </div>
-        <div class="col-md-4">
-          <label for="reportingLapsiEtunimetSearchInput"
-                 class="varda-field-label">{{'label.etunimet' | translate}}</label>
-          <input class="varda-form-control form-control varda-input"
-                 name="reportingLapsiEtunimetSearchInput"
-                 id="reportingLapsiEtunimetSearchInput"
-                 type="text"
-                 [(ngModel)]="lapsiEtunimetSearchValue"
-                 (keydown.enter)="searchLapsi()">
-        </div>
-        <div class="col-md-3">
-          <button class="varda-button"
+        <div class="col-md-auto">
+          <button class="varda-button varda-icon-button"
                   type="button"
-                  (click)="searchLapsi()">{{'label.hae' | translate}}</button>
+                  (click)="searchLapsi()">
+            <mat-icon>search</mat-icon>
+            {{'label.hae' | translate}}
+          </button>
+        </div>
+        <div class="oph-bg-gray-lighten-5 lapsi-filter-form" *ngIf="lapsiFiltersAreVisible">
+          <div class="col-md-auto">
+            <label class="varda-link varda-filter-close"
+                   *ngIf="isSmall"
+                   (click)="lapsiFiltersAreVisible = false; clearLapsiFilter()">
+              {{'label.close' | translate}}
+            </label>
+            <label class="oph-bold">{{'label.filter-content' | translate}}</label>
+            <app-varda-radio-button-group name="lapsiRajausButtonGroup"
+                                          responsive="lg"
+                                          wrap="lg"
+                                          (change)="filterLapset()"
+                                          [(ngModel)]="lapsiFilter.rajaus">
+              <app-varda-radio-button [id]="'filterVakapaatokset'"
+                                      [value]="lapsiRajaus.VAKAPAATOKSET">
+                {{'label.varhaiskasvatuspaatokset' | translate}}
+              </app-varda-radio-button>
+              <app-varda-radio-button [id]="'filterVakasuhteet'"
+                                      [value]="lapsiRajaus.VAKASUHTEET">
+                {{'label.varhaiskasvatussuhteet' | translate}}
+              </app-varda-radio-button>
+              <app-varda-radio-button [id]="'filterMaksutiedot'"
+                                      [value]="lapsiRajaus.MAKSUTIEDOT">
+                {{'label.maksutiedot' | translate}}
+              </app-varda-radio-button>
+              <app-varda-radio-button [id]="'filterNone'"
+                                      [value]="lapsiRajaus.NONE">
+                {{'label.no-filters' | translate}}
+              </app-varda-radio-button>
+            </app-varda-radio-button-group>
+          </div>
+          <div class="col-md-auto" *ngIf="!lapsiFilterInactive">
+            <label class="oph-bold">{{ 'label.filter-time' | translate }}</label>
+            <div class="row lapsi-filter-time-container">
+              <div class="col-md-auto">
+                <app-varda-radio-button-group name="lapsiVoimassaoloButtonGroup"
+                                              responsive="md"
+                                              wrap="xs"
+                                              (change)="filterLapset()"
+                                              [(ngModel)]="lapsiFilter.voimassaolo">
+                  <app-varda-radio-button [id]="'filterVoimassa'"
+                                          [value]="lapsiVoimassaolo.VOIMASSA">
+                    {{'label.voimassa' | translate}}
+                  </app-varda-radio-button>
+                  <app-varda-radio-button [id]="'filterAlkanut'"
+                                          [value]="lapsiVoimassaolo.ALKANUT">
+                    {{'label.alkanut' | translate}}
+                  </app-varda-radio-button>
+                  <app-varda-radio-button [id]="'filterPaattynyt'"
+                                          [value]="lapsiVoimassaolo.PAATTYNYT">
+                    {{'label.paattynyt' | translate}}
+                  </app-varda-radio-button>
+                </app-varda-radio-button-group>
+              </div>
+              <div class="col varda-date-range-container">
+                <div class="row varda-date-range-row">
+                  <div class="col">
+                    <app-varda-datepicker
+                      #alkamisPvm="ngModel"
+                      [name]="'filterAlkamisPvm'"
+                      [(ngModel)]="lapsiFilter.alkamisPvm"
+                      (dateInput)="filterLapset()"
+                      [required]="true">
+                    </app-varda-datepicker>
+                    <div aria-live="assertive" class="varda-error-message-block" role="alert" *ngIf="alkamisPvm.invalid">
+                      <p>{{'alert.date-format' | translate}}</p>
+                    </div>
+                  </div>
+                  <span class="varda-date-range-dash">–</span>
+                  <div class="col">
+                    <app-varda-datepicker
+                      #paattymisPvm="ngModel"
+                      [name]="'filterPaattymisPvm'"
+                      [(ngModel)]="lapsiFilter.paattymisPvm"
+                      (dateInput)="filterLapset()"
+                      [required]="true">
+                    </app-varda-datepicker>
+                    <div aria-live="assertive" class="varda-error-message-block" role="alert" *ngIf="paattymisPvm.invalid">
+                      <p>{{'alert.date-format' | translate}}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col lapsi-filter-clear-container">
+            <button class="varda-button varda-icon-button lapsi-filter-clear"
+                    type="button"
+                    (click)="clearLapsiFilter()"
+                    [disabled]="lapsiFilterInactive">
+              <mat-icon>delete</mat-icon>
+              {{'label.clear-filters' | translate}}
+            </button>
+          </div>
+        </div>
+        <div class="modal-form-intro lapsi-filter-instruction"  *ngIf="lapsiFiltersAreVisible">
+          {{'label.lapsi-filter.search-instruction' | translate}}
+        </div>
+        <div class="varda-link" *ngIf="!lapsiFiltersAreVisible" (click)="lapsiFiltersAreVisible = true">
+          {{'label.filter-results' | translate}}
         </div>
       </div>
     </form>
@@ -200,7 +309,9 @@
         <div class="varda-table-responsive">
           <div class="varda-table">
             <div class="varda-table-caption">
-              {{'label.haku-list.topic' | translate}} ({{ ui.noOfResults }}):
+              {{'label.haku-list.topic' | translate}} ({{ ui.noOfResults }})
+              <label class="varda-small-text varda-filter-summary"
+                     *ngIf="!lapsiFilterInactive">{{'label.selected-filters' | translate}}: {{lapsiFilterString}}</label>
             </div>
             <div class="varda-table-error"
                  *ngIf="toimipaikanLapset.length === 0">
@@ -216,7 +327,7 @@
                   {{result.sukunimi}}, {{result.etunimet}}
                 </div>
                 <div class="varda-table-cell">
-                  {{ getVakaJarjestajaText(result) }}
+                  {{getVakaJarjestajaText(result)}}
                 </div>
               </div>
             </div>

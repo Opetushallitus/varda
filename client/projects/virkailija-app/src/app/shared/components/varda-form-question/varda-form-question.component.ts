@@ -126,7 +126,10 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
     if (fieldFormControl.errors) {
       const errorKeys = Object.keys(fieldFormControl.errors);
       errorKeys.forEach((errorKey) => {
-        errorMessages.push(field.rules[errorKey]['errorText'][prop]);
+        // Skip mat-datepicker error
+        if (errorKey !== 'matDatepickerParse') {
+          errorMessages.push(field.rules[errorKey]['errorText'][prop]);
+        }
       });
     }
     return errorMessages;

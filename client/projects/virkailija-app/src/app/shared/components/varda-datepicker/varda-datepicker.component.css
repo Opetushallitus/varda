@@ -1,5 +1,6 @@
 .varda-datepicker.mat-form-field {
   width: 100%;
+  margin-top: -.25em;
 }
 
 .varda-datepicker .mat-form-field-wrapper {

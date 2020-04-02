@@ -1,6 +1,11 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+## [1.3.10] (02.04.2020)
+- CSCVARDA-1522: Salli toimipaikan toimintamuodon muokkaus
+- CSCVARDA-1518: Katsele tietoja: mahdollistettu lasten tietojen suodatus päivämäärän mukaan
+- CSCVARDA-1622: Parannuksia ohjeistusten toimivuuteen
+
 ## [1.3.9] (26.03.2020)
 - CSCVARDA-1490: "Lisää lapsi"-napin piilotus jos käyttäjä on PAOS-katselija
 - CSCVARDA-1237: Maksutietojen tallennuksen yhteydessä ilmoitetaan tallennettujen ja tallentamattomien huoltajien määrä

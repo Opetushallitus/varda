@@ -138,6 +138,8 @@ export class VardaApiService {
     let url = `${this.toimipaikanLapsetUiPath}${toimipaikkaId}/lapset/`;
 
     if (searchParams) {
+      searchParams.search = this.hashHetu(searchParams.search);
+
       url += '?';
       const searchParamKeys = Object.keys(searchParams);
       searchParamKeys.forEach((key) => {
@@ -399,10 +401,7 @@ export class VardaApiService {
                  searchDto: HenkilohakuSearchDTO,
                  nextUrl?: string): Observable<VardaPageDto<HenkilohakuResultDTO>> {
     const mutableSearchDto = {...searchDto};
-    const hetu_regex = /^\d{6}[A+\-]\d{3}[0-9A-FHJ-NPR-Y]$/;
-    if (mutableSearchDto.search && hetu_regex.test(mutableSearchDto.search)) {
-      mutableSearchDto.search = sha256.create().update(mutableSearchDto.search).hex();
-    }
+    mutableSearchDto.search = this.hashHetu(mutableSearchDto.search);
     const url = nextUrl && this.getVardaPrefixedUrl(nextUrl)
       || `${this.vakaJarjestajatApiPath}${vakajarjestajaId}/henkilohaku/${searchDto.type || HenkilohakuType.lapset}/`;
     // If getting next page query it as is
@@ -464,5 +463,13 @@ export class VardaApiService {
     const url = `${this.paosOikeusApiPath}${paosOikeusId}/`;
     const savingToimijaUrl = VardaApiService.getVakajarjestajaUrlFromId(`${savingToimijaId}`);
     return this.http.put(url, {tallentaja_organisaatio: savingToimijaUrl});
+  }
+
+  hashHetu(rawHetu: string) {
+    const hetu_regex = /^\d{6}[A+\-]\d{3}[0-9A-FHJ-NPR-Y]$/;
+    if (rawHetu && hetu_regex.test(rawHetu)) {
+      return sha256.create().update(rawHetu).hex();
+    }
+    return rawHetu;
   }
 }

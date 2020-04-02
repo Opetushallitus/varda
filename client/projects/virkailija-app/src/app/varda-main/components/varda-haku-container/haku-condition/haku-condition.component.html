@@ -55,7 +55,7 @@
                class="oph-input"
                formControlName="search"
                id="hakuFormSearch"
-               placeholder="{{ 'label.generic-name' | translate}} / {{ 'label.ssn' | translate}} / {{ 'label.oppijanumero' | translate}}"
+               placeholder="{{'label.haku-condition.hae-henkilo' | translate}}..."
                autofocus />
       </div>
     </div>
@@ -93,16 +93,16 @@
           <mat-radio-button *ngIf="access.userAccess.lapsitiedot.katselija"
                             [value]="FilterObject.vakapaatokset"
                             [checked]="access.userAccess.lapsitiedot.katselija">
-            {{'label.lapsi-stepper.varhaiskasvatuspaatokset' | translate}}
+            {{'label.varhaiskasvatuspaatokset' | translate}}
           </mat-radio-button>
           <mat-radio-button *ngIf="access.userAccess.lapsitiedot.katselija"
                             [value]="FilterObject.vakasuhteet">
-            {{'label.lapsi-stepper.varhaiskasvatussuhteet' | translate}}
+            {{'label.varhaiskasvatussuhteet' | translate}}
           </mat-radio-button>
           <mat-radio-button *ngIf="access.userAccess.huoltajatiedot.katselija"
                             [value]="FilterObject.maksutiedot"
                             [checked]="!access.userAccess.lapsitiedot.katselija && access.userAccess.huoltajatiedot.katselija">
-            {{'label.lapsi-stepper.maksutiedot' | translate}}
+            {{'label.maksutiedot' | translate}}
           </mat-radio-button>
         </mat-radio-group>
       </div>

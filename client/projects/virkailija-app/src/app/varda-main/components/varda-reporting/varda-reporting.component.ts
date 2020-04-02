@@ -1,8 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { VardaApiWrapperService } from '../../../core/services/varda-api-wrapper.service';
 import { VardaEntityNames, VardaFieldSet, VardaToimipaikkaDTO, VardaWidgetNames } from '../../../utilities/models';
 import { mergeMap } from 'rxjs/operators';
-import { forkJoin, Observable } from 'rxjs';
+import { forkJoin, Observable, Subscription } from 'rxjs';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
 import { VardaUtilityService } from '../../../core/services/varda-utility.service';
 import { VardaFormService } from '../../../core/services/varda-form.service';
@@ -13,13 +13,16 @@ import { VardaKuntakoodistoService } from '../../../core/services/varda-kuntakoo
 import { VardaPageDto } from '../../../utilities/models/dto/varda-page-dto';
 import { LapsiByToimipaikkaDTO } from '../../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { VakajarjestajaToimipaikat } from '../../../utilities/models/varda-vakajarjestaja-toimipaikat.model';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { Moment } from 'moment';
+import * as moment from 'moment';
 
 @Component({
   selector: 'app-varda-reporting',
   templateUrl: './varda-reporting.component.html',
   styleUrls: ['./varda-reporting.component.css']
 })
-export class VardaReportingComponent implements OnInit {
+export class VardaReportingComponent implements OnInit, OnDestroy {
 
   toimipaikat: Array<VardaToimipaikkaDTO>;
   toimipaikanLapset: Array<any>;
@@ -31,9 +34,8 @@ export class VardaReportingComponent implements OnInit {
   varhaiskasvatuspaatoksetFieldSets: Array<VardaFieldSet>;
 
   toimipaikkaSearchValue: string;
-  lapsiSukunimiSearchValue: string;
-  lapsiEtunimetSearchValue: string;
-  selectedSearchEntity: string;
+  lapsiSearchValue: string;
+  selectedSearchEntity: string = VardaEntityNames.TOIMIPAIKKA;
   nextSearchLink: string;
   prevSearchLink: string;
   toimipaikanLapsetSelectedToimipaikka: VardaToimipaikkaDTO;
@@ -52,22 +54,54 @@ export class VardaReportingComponent implements OnInit {
   labelYes: string;
   labelNo: string;
 
+  lapsiRajaus = {
+    VAKASUHTEET: 'vakasuhteet',
+    VAKAPAATOKSET: 'vakapaatokset',
+    MAKSUTIEDOT: 'maksutiedot',
+    NONE: null
+  };
+
+  lapsiVoimassaolo = {
+    ALKANUT: 'alkanut',
+    PAATTYNYT: 'paattynyt',
+    VOIMASSA: 'voimassa',
+  };
+
+  lapsiFilter: {
+    rajaus: string;
+    voimassaolo: string;
+    alkamisPvm: Moment;
+    paattymisPvm: Moment;
+  } = {
+    rajaus: this.lapsiRajaus.VAKAPAATOKSET,
+    voimassaolo: this.lapsiVoimassaolo.VOIMASSA,
+    alkamisPvm: moment(),
+    paattymisPvm: moment()
+  };
+  lapsiFilterInactive = false;
+  lapsiFilterString: string;
+  lapsiFiltersAreVisible: boolean;
+
+  resizeSubscription: Subscription;
+  isSmall: boolean;
+
   constructor(private vardaApiWrapperService: VardaApiWrapperService,
-    private vardaVakajarjestajaService: VardaVakajarjestajaService,
-    private vardaUtilityService: VardaUtilityService,
-    private vardaFormService: VardaFormService,
-    private translateService: TranslateService,
-    private vardaDateService: VardaDateService,
-    private vardaKielikoodistoService: VardaKielikoodistoService,
-    private vardaKuntakoodistoService: VardaKuntakoodistoService) {
+              private vardaVakajarjestajaService: VardaVakajarjestajaService,
+              private vardaUtilityService: VardaUtilityService,
+              private vardaFormService: VardaFormService,
+              private translateService: TranslateService,
+              private vardaDateService: VardaDateService,
+              private vardaKielikoodistoService: VardaKielikoodistoService,
+              private vardaKuntakoodistoService: VardaKuntakoodistoService,
+              private breakpointObserver: BreakpointObserver) {
     this.toimipaikat = [];
     this.toimipaikanLapset = null;
+
     this.ui = {
       reportingInitializationError: false,
       resultsEmpty: false,
       noOfResults: null
     };
-    this.selectedSearchEntity = VardaEntityNames.TOIMIPAIKKA;
 
     this.toimipaikkaFieldsToBeFormatted = [
       'toimintamuoto_koodi',
@@ -99,7 +133,6 @@ export class VardaReportingComponent implements OnInit {
     this.translateService.onLangChange.subscribe(() => {
       this.updateLabelTranslations();
     });
-
     this.updateLabelTranslations();
 
     // For administrative users who can switch between toimipaikkas
@@ -114,14 +147,20 @@ export class VardaReportingComponent implements OnInit {
         }
       }
     });
+
+    this.selectedSearchEntity = VardaEntityNames.TOIMIPAIKKA;
+    // Hide filters if screen size is small
+    this.resizeSubscription = this.breakpointObserver.observe('(min-width: 768px)').subscribe(data => {
+      this.lapsiFiltersAreVisible = this.lapsiFiltersAreFilled() || data.matches;
+      this.isSmall = !data.matches;
+    });
   }
 
   changeSearchEntity($event): any {
     this.selectedSearchEntity = $event.value;
     this.nextSearchLink = null;
     this.prevSearchLink = null;
-    this.lapsiEtunimetSearchValue = null;
-    this.lapsiSukunimiSearchValue = null;
+    this.lapsiSearchValue = null;
     this.ui.resultsEmpty = false;
     if (this.selectedSearchEntity === VardaEntityNames.TOIMIPAIKKA) {
       this.searchToimipaikka();
@@ -332,7 +371,7 @@ export class VardaReportingComponent implements OnInit {
     if (this.selectedSearchEntity === VardaEntityNames.TOIMIPAIKKA) {
       rv = 'label.toimipaikannimi';
     } else if (this.selectedSearchEntity === VardaEntityNames.LAPSI) {
-      rv = 'label.toimipaikan-lapset';
+      rv = 'label.toimipaikka';
     }
 
     return rv;
@@ -365,11 +404,15 @@ export class VardaReportingComponent implements OnInit {
   searchLapsi(): any {
     const searchParams = {};
 
-    const sukunimiSearchVal = this.lapsiSukunimiSearchValue;
-    searchParams['sukunimi'] = sukunimiSearchVal ? sukunimiSearchVal : '';
+    const searchVal = this.lapsiSearchValue;
+    searchParams['search'] = searchVal ? searchVal : '';
 
-    const etunimetSearchVal = this.lapsiEtunimetSearchValue;
-    searchParams['etunimet'] = etunimetSearchVal ? etunimetSearchVal : '';
+    if (this.lapsiFiltersAreFilled()) {
+      searchParams['rajaus'] = this.lapsiFilter.rajaus;
+      searchParams['voimassaolo'] = this.lapsiFilter.voimassaolo;
+      searchParams['alkamis_pvm'] = this.vardaDateService.momentToVardaDate(this.lapsiFilter.alkamisPvm);
+      searchParams['paattymis_pvm'] = this.vardaDateService.momentToVardaDate(this.lapsiFilter.paattymisPvm);
+    }
 
     if (!this.toimipaikanLapsetSelectedToimipaikka) {
       this.ui.resultsEmpty = true;
@@ -458,6 +501,86 @@ export class VardaReportingComponent implements OnInit {
     return this.vardaVakajarjestajaService.getVakaJarjestajaTextForLists(lapsi);
   }
 
+  fillLapsiFilter() {
+    this.lapsiFilter.voimassaolo = this.lapsiVoimassaolo.VOIMASSA;
+    this.lapsiFilter.alkamisPvm = moment();
+    this.lapsiFilter.paattymisPvm = moment();
+  }
+
+  filterLapset() {
+    // Filter was inactive
+    if (this.lapsiFilterInactive) {
+      this.lapsiFilterInactive = false;
+      this.fillLapsiFilter();
+    }
+
+    if (this.lapsiFilter.rajaus === this.lapsiRajaus.NONE) {
+      this.lapsiFilterInactive = true;
+      this.clearLapsiFilter();
+      return;
+    }
+
+    if (!this.lapsiFiltersAreFilled()) {
+      return;
+    }
+
+    this.updateLapsiFilterString();
+    this.searchLapsi();
+  }
+
+  updateLapsiFilterString() {
+    this.lapsiFilterString = '';
+
+    switch (this.lapsiFilter.rajaus) {
+      case this.lapsiRajaus.VAKASUHTEET:
+        this.lapsiFilterString += this.translateService.instant('label.varhaiskasvatussuhteet');
+        break;
+      case this.lapsiRajaus.VAKAPAATOKSET:
+        this.lapsiFilterString += this.translateService.instant('label.varhaiskasvatuspaatokset');
+        break;
+      case this.lapsiRajaus.MAKSUTIEDOT:
+        this.lapsiFilterString += this.translateService.instant('label.maksutiedot');
+        break;
+      default:
+        return;
+    }
+
+    this.lapsiFilterString += ', ';
+
+    switch (this.lapsiFilter.voimassaolo) {
+      case this.lapsiVoimassaolo.ALKANUT:
+        this.lapsiFilterString += this.translateService.instant('label.alkanut').toLowerCase();
+        break;
+      case this.lapsiVoimassaolo.PAATTYNYT:
+        this.lapsiFilterString += this.translateService.instant('label.paattynyt').toLowerCase();
+        break;
+      case this.lapsiVoimassaolo.VOIMASSA:
+        this.lapsiFilterString += this.translateService.instant('label.voimassa').toLowerCase();
+        break;
+      default:
+        return;
+    }
+
+    this.lapsiFilterString += ', ' + this.translateService.instant('label.aikavali').toLowerCase() + ' ';
+    this.lapsiFilterString += this.lapsiFilter.alkamisPvm.format(VardaDateService.vardaDefaultDateFormat) + ' - '
+      + this.lapsiFilter.paattymisPvm.format(VardaDateService.vardaDefaultDateFormat);
+  }
+
+  clearLapsiFilter() {
+    this.lapsiFilter.rajaus = this.lapsiRajaus.NONE;
+    this.lapsiFilter.voimassaolo = null;
+    this.lapsiFilter.alkamisPvm = null;
+    this.lapsiFilter.paattymisPvm = null;
+    this.lapsiFilterInactive = true;
+    this.searchLapsi();
+  }
+
+  lapsiFiltersAreFilled(): boolean {
+    return this.lapsiFilter.rajaus !== this.lapsiRajaus.NONE && this.lapsiFilter.rajaus !== null &&
+      this.lapsiFilter.voimassaolo !== null && this.lapsiFilter.alkamisPvm !== null &&
+      this.lapsiFilter.paattymisPvm !== null;
+  }
+
   ngOnInit() {
     setTimeout(() => {
       this.vakajarjestajaToimipaikat = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat();
@@ -477,5 +600,10 @@ export class VardaReportingComponent implements OnInit {
         },
       });
     });
+    this.filterLapset();
+  }
+
+  ngOnDestroy(): void {
+    this.resizeSubscription.unsubscribe();
   }
 }

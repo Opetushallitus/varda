@@ -79,7 +79,7 @@
       <form [formGroup]="varhaiskasvatuspaatoksetForm"
             class="varda-painotukset-panel">
         <div class="varda-painotukset-header">
-          {{'label.lapsi-stepper.varhaiskasvatuspaatokset' | translate}}
+          {{'label.varhaiskasvatuspaatokset' | translate}}
         </div>
         <mat-accordion #lapsiFormAccordion
                        *ngIf="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr')">
@@ -175,7 +175,7 @@
       <form [formGroup]="varhaiskasvatussuhteetForm"
             class="varda-painotukset-panel">
         <div class="varda-painotukset-header">
-          {{'label.lapsi-stepper.varhaiskasvatussuhteet'  | translate}}
+          {{'label.varhaiskasvatussuhteet'  | translate}}
         </div>
         <mat-accordion *ngIf="varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')">
           <mat-expansion-panel formArrayName="varhaiskasvatussuhteetFormArr"

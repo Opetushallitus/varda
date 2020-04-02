@@ -8,6 +8,10 @@
   vertical-align: middle;
 }
 
+.varda-field-label {
+  font-weight: bold;
+}
+
 .varda-reporting-card-container {
   display: flex;
   flex-wrap: wrap;
@@ -70,24 +74,57 @@
   margin: 0.5em;
 }
 
-.varda-reporting-search-form-content.toimipaikka-search-form>div:first-child {
-  flex: 0 1 50%;
-  margin-right: 5px;
-}
-
 .varda-reporting-search-form-content.toimipaikka-search-form>div:nth-child(2) {
-  flex: 0 1 20%;
-  display: flex;
-  align-items: flex-end;
+  align-self: flex-end;
 }
 
-.varda-reporting-search-form-content.lapsi-search-form {
+.varda-reporting-search-form-content.toimipaikka-search-form>div:nth-child(2) .varda-button {
+  margin-bottom: 3px
+}
+
+.varda-reporting-row-wrap {
   display: flex;
   flex-wrap: wrap;
 }
 
-.varda-reporting-search-form-content.lapsi-search-form>div {
+.varda-reporting-row-wrap>div:not(.lapsi-filter-instruction) {
   padding: 0.5em;
+}
+
+.varda-reporting-row-wrap>div:nth-child(3) {
+  align-self: flex-end;
+}
+
+.varda-reporting-row-wrap>div:nth-child(3) .varda-button {
+  margin-bottom: 3px;
+}
+
+.varda-reporting-row-wrap .modal-form-intro {
+  margin-bottom: 0;
+}
+
+.lapsi-filter-form {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  margin: 1em .5em .5em .5em;
+}
+
+.lapsi-filter-form > div {
+  margin: .5em 0 .5em 0;
+}
+
+.lapsi-filter-time-container {
+  margin-top: -1em;
+}
+
+.lapsi-filter-time-container > * {
+  margin-top: 1em;
+}
+
+.varda-date-range-dash {
+  font-weight: bold;
+  margin: .5em -10px 0 -10px;
 }
 
 .varda-reporting-card {
@@ -168,4 +205,84 @@
 .varda-reporting-kielipainotus-koodi p,
 .varda-reporting-toimintapainotus-koodi p {
   margin: 0;
+}
+
+.varda-date-range-container {
+  min-width: 320px;
+}
+
+.varda-date-range-container p {
+  margin-bottom: 0;
+}
+
+.varda-small-text {
+  font-size: .8em;
+}
+
+.varda-filter-summary {
+  font-weight: normal;
+  margin-right: .5em;
+}
+
+.varda-link {
+  cursor: pointer;
+  font-weight: normal;
+  color: var(--blue-lighten-1);
+}
+
+.varda-link:hover {
+  color: var(--blue);
+}
+
+.varda-filter-close {
+  display: block;
+  text-align: right;
+  margin: 0;
+}
+
+.lapsi-filter-clear-container {
+  align-self: flex-end;
+  margin-bottom: 1.25em !important;
+}
+
+.lapsi-filter-clear {
+  width: auto;
+  white-space: nowrap;
+  float: right;
+}
+
+.lapsi-filter-instruction {
+  margin: .5em;
+}
+
+@media (min-width: 768px) {
+  .varda-date-range-container {
+    max-width: 400px;
+  }
+}
+
+@media (max-width: 767px) {
+  .lapsi-filter-clear {
+    width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .varda-date-range-container {
+    min-width: initial;
+  }
+
+  .varda-date-range-container .varda-date-range-row {
+    justify-content: center;
+  }
+
+  .varda-date-range-container .varda-date-range-row > div {
+    width: 100%;
+    flex-basis: initial;
+    padding: 0 15px;
+  }
+
+  .varda-date-range-dash {
+    margin: 0;
+  }
 }

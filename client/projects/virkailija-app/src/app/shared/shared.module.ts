@@ -16,7 +16,7 @@ import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatStepperModule } from '@angular/material/stepper';
-import { MatDatepickerModule, MatMultiYearView } from '@angular/material/datepicker';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatMomentDateModule, MAT_MOMENT_DATE_ADAPTER_OPTIONS } from '@angular/material-moment-adapter';
 import { MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -187,7 +187,8 @@ const cookieConfig: NgcCookieConsentConfig = {
     VardaRadioButtonGroupComponent,
     VardaRadioButtonComponent,
     BrowserNotSupportedComponent,
-    SlideHideDirective
+    SlideHideDirective,
+    VardaDatepickerComponent
   ],
   entryComponents: [ VardaDatepickerHeaderComponent ]
 })

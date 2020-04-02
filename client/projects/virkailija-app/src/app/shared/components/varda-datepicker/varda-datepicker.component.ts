@@ -12,7 +12,7 @@ import { MatDatepickerInputEvent } from '@angular/material/datepicker';
 import { DateAdapter } from '@angular/material/core';
 import { Moment } from 'moment';
 import * as moment from 'moment';
-import { AbstractControl, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { AbstractControl, ControlValueAccessor, FormControl, NG_VALIDATORS, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../../core/auth/auth.service';
 import { VardaDatepickerHeaderComponent } from './varda-datepicker-header/varda-datepicker-header.component';
@@ -31,11 +31,16 @@ export interface VardaDatepickerEvent {
       provide: NG_VALUE_ACCESSOR,
       useExisting: forwardRef(() => VardaDatepickerComponent),
       multi: true
+    },
+    {
+      provide: NG_VALIDATORS,
+      useExisting: VardaDatepickerComponent,
+      multi: true
     }
   ],
   encapsulation: ViewEncapsulation.None
 })
-export class VardaDatepickerComponent implements OnInit {
+export class VardaDatepickerComponent implements OnInit, ControlValueAccessor {
   @Input() placeholder: string;
   @Input() required = false;
   @Input() attrAriaLabelledBy?: string;
@@ -112,19 +117,25 @@ export class VardaDatepickerComponent implements OnInit {
     this.calendarChange.emit(false);
   }
 
-  writeValue (value: any) {
+  writeValue(value: any) {
     this.matDateModel = value;
   }
 
-  registerOnChange (fn: any) {
+  registerOnChange(fn: any) {
     this.propagateChange = fn;
   }
 
-  registerOnTouched (fn: any) {
+  registerOnTouched(fn: any) {
     this.propagateTouch = fn;
   }
 
-  setDisabledState (isDisabled: boolean) {
+  setDisabledState(isDisabled: boolean) {
     this.disabled = isDisabled;
+  }
+
+  validate(control: FormControl) {
+    if (this.pickerControl) {
+      return this.pickerControl.validator(control);
+    }
   }
 }
