@@ -117,15 +117,6 @@ class HenkiloFilter(djangofilters.FilterSet):
         fields = []
 
 
-class HenkiloNimiFilter(djangofilters.FilterSet):
-    etunimet = CustomCharFilter(field_name='etunimet', lookup_expr='icontains')
-    sukunimi = CustomCharFilter(field_name='sukunimi', lookup_expr='icontains')
-
-    class Meta:
-        model = Henkilo
-        fields = []
-
-
 class LapsiFilter(djangofilters.FilterSet):
     paos_kytkin = djangofilters.BooleanFilter(field_name='paos_kytkin', lookup_expr='exact')
     muutos_pvm = djangofilters.DateTimeFilter(field_name='muutos_pvm', lookup_expr='gte')

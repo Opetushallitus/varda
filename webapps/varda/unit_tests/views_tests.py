@@ -1471,7 +1471,7 @@ class VardaViewsTests(TestCase):
             ]
         }
         client = SetUpTestClient('tester').client()
-        resp = client.get('/api/ui/toimipaikat/1/lapset/?etunimet=sUSa&sukunimi=TA&format=json')
+        resp = client.get('/api/ui/toimipaikat/1/lapset/?search=sUSa+TA&format=json')
         self.assertEqual(json.loads(resp.content), toimipaikan_lapset_henkilo_filter_json)
 
     def test_api_get_henkilo_syntyma_pvm(self):

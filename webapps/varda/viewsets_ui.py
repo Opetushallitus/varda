@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db.models import Q, F
@@ -12,9 +14,8 @@ from rest_framework.response import Response
 
 from varda.cache import create_cache_key, get_object_ids_user_has_permissions
 from varda.cas.varda_permissions import IsVardaPaakayttaja
-from varda import filters
 from varda.misc_queries import get_paos_toimipaikat
-from varda.models import Toimipaikka, VakaJarjestaja, Henkilo, Varhaiskasvatussuhde
+from varda.models import Toimipaikka, VakaJarjestaja, Varhaiskasvatussuhde
 from varda.permissions import CustomObjectPermissions, save_audit_log
 from varda.serializers import PaosToimipaikkaSerializer, PaosVakaJarjestajaSerializer
 from varda.serializers_ui import VakaJarjestajaUiSerializer, ToimipaikkaUiSerializer, ToimipaikanLapsetUISerializer
@@ -141,68 +142,117 @@ class NestedToimipaikanLapsetViewSet(GenericViewSet, ListModelMixin):
     """
     list:
         Nouda tietyn toimipaikan lapset
+    filter:
+        Lapsia voi suodattaa etu- ja sukunimien, OID:n tai henkilötunnuksen mukaan, sekä varhaiskasvatussuhteen,
+        varhaiskasvatuspäätöksen ja maksutietojen alkamis- ja päättymispäivämäärien perusteella
+
+        Henkilötunnus täytyy olla SHA-256 hash heksadesimaalimuodossa (utf-8 enkoodatusta tekstistä)
+
+        search=str (nimi/hetu/OID)
+        rajaus=str (vakasuhteet/vakapaatokset/maksutiedot)
+        voimassaolo=str (alkanut/paattynyt/voimassa)
+        alkamis_pvm=YYYY-mm-dd
+        paattymis_pvm=YYYY-mm-dd
     """
-    filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.HenkiloNimiFilter
-    queryset = Henkilo.objects.none()
+    filter_backends = (SearchFilter,)
+    # Same functionality as viewsets.HenkilohakuLapset
+    search_fields = ('varhaiskasvatuspaatos__lapsi__henkilo__etunimet',
+                     'varhaiskasvatuspaatos__lapsi__henkilo__sukunimi',
+                     '=varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus_unique_hash',
+                     '=varhaiskasvatuspaatos__lapsi__henkilo__henkilo_oid',)
     serializer_class = ToimipaikanLapsetUISerializer
     permission_classes = (CustomObjectPermissions,)
+    toimipaikka_pk = None
 
-    def get_toimipaikka(self, request, toimipaikka_pk=None):
-        toimipaikka = get_object_or_404(Toimipaikka.objects.all(), pk=toimipaikka_pk)
+    def get_toimipaikka(self, request):
+        toimipaikka = get_object_or_404(Toimipaikka.objects.all(), pk=self.toimipaikka_pk)
         user = request.user
-        if not user.has_perm("view_toimipaikka", toimipaikka):
-            raise Http404("Not found.")
+        if not user.has_perm('view_toimipaikka', toimipaikka):
+            raise Http404('Not found.')
 
     def get_lapsi_object_ids_user_has_view_permissions(self):
         model_name = 'lapsi'
         content_type = ContentType.objects.get(model=model_name)
         return get_object_ids_user_has_permissions(self.request.user, model_name, content_type)
 
-    def get_vakapaatokset_in_toimipaikka_queryset(self, *args, **kwargs):
+    def apply_filters(self, vakasuhde_filter):
         query_params = self.request.query_params
-        filtering_etunimet = query_params.get('etunimet', '')
-        filtering_sukunimi = query_params.get('sukunimi', '')
+        rajaus = query_params.get('rajaus', None)
+        voimassaolo = query_params.get('voimassaolo', None)
+        alkamis_pvm = query_params.get('alkamis_pvm', None)
+        paattymis_pvm = query_params.get('paattymis_pvm', None)
 
-        toimipaikka_filter = Q(toimipaikka__id=kwargs['toimipaikka_pk'])
+        if not rajaus or not voimassaolo or not alkamis_pvm or not paattymis_pvm:
+            return vakasuhde_filter
+
+        rajaus = str.lower(rajaus)
+        voimassaolo = str.lower(voimassaolo)
+
+        try:
+            alkamis_pvm = datetime.strptime(alkamis_pvm, '%Y-%m-%d').date()
+            paattymis_pvm = datetime.strptime(paattymis_pvm, '%Y-%m-%d').date()
+        except ValueError as e:
+            raise Http404(e)
+
+        if rajaus == 'vakasuhteet':
+            prefix = ''
+        elif rajaus == 'vakapaatokset':
+            prefix = 'varhaiskasvatuspaatos__'
+        elif rajaus == 'maksutiedot':
+            prefix = 'varhaiskasvatuspaatos__lapsi__huoltajuussuhteet__maksutiedot__'
+        else:
+            return vakasuhde_filter
+
+        if voimassaolo == 'alkanut':
+            vakasuhde_filter = (vakasuhde_filter & Q(**{prefix + 'alkamis_pvm__gte': alkamis_pvm}) &
+                                Q(**{prefix + 'alkamis_pvm__lte': paattymis_pvm}))
+        elif voimassaolo == 'paattynyt':
+            vakasuhde_filter = (vakasuhde_filter & Q(**{prefix + 'paattymis_pvm__gte': alkamis_pvm}) &
+                                Q(**{prefix + 'paattymis_pvm__lte': paattymis_pvm}))
+        elif voimassaolo == 'voimassa':
+            # First set of brackets enables multiline so we need double for query: x and (y or z)
+            vakasuhde_filter = (vakasuhde_filter & Q(**{prefix + 'alkamis_pvm__lte': alkamis_pvm}) &
+                                ((Q(**{prefix + 'paattymis_pvm__gte': paattymis_pvm})) |
+                                Q(**{prefix + 'paattymis_pvm__isnull': True})))
+
+        return vakasuhde_filter
+
+    def get_queryset(self):
+        toimipaikka_filter = Q(toimipaikka__id=self.toimipaikka_pk)
+        # Get all children for superuser
         if self.request.user.is_superuser:
             vakasuhde_filter = toimipaikka_filter
         else:
             lapsi_object_ids_user_has_view_permissions = self.get_lapsi_object_ids_user_has_view_permissions()
-            vakasuhde_filter = toimipaikka_filter & Q(varhaiskasvatuspaatos__lapsi__id__in=lapsi_object_ids_user_has_view_permissions)
+            vakasuhde_filter = (toimipaikka_filter &
+                                Q(varhaiskasvatuspaatos__lapsi__id__in=lapsi_object_ids_user_has_view_permissions))
 
-        vakasuhde_queryset = (Varhaiskasvatussuhde.objects
-                              .select_related('varhaiskasvatuspaatos__lapsi__henkilo')
-                              .filter(vakasuhde_filter)
-                              .order_by('varhaiskasvatuspaatos__lapsi__henkilo__sukunimi',
-                                        'varhaiskasvatuspaatos__lapsi__henkilo__etunimet')
-                              )
-        if filtering_etunimet != '':
-            vakasuhde_queryset = vakasuhde_queryset.filter(
-                varhaiskasvatuspaatos__lapsi__henkilo__etunimet__icontains=filtering_etunimet)
-        if filtering_sukunimi != '':
-            vakasuhde_queryset = vakasuhde_queryset.filter(
-                varhaiskasvatuspaatos__lapsi__henkilo__sukunimi__icontains=filtering_sukunimi)
+        vakasuhde_filter = self.apply_filters(vakasuhde_filter)
 
-        return (vakasuhde_queryset
+        return (Varhaiskasvatussuhde.objects
+                .select_related('varhaiskasvatuspaatos__lapsi__henkilo').filter(vakasuhde_filter)
+                .order_by('varhaiskasvatuspaatos__lapsi__henkilo__sukunimi',
+                          'varhaiskasvatuspaatos__lapsi__henkilo__etunimet'))
+
+    def get_vakapaatokset_in_toimipaikka_queryset(self):
+        return (self.filter_queryset(self.get_queryset())
                 .values(etunimet=F('varhaiskasvatuspaatos__lapsi__henkilo__etunimet'),
                         sukunimi=F('varhaiskasvatuspaatos__lapsi__henkilo__sukunimi'),
                         henkilo_oid=F('varhaiskasvatuspaatos__lapsi__henkilo__henkilo_oid'),
                         syntyma_pvm=F('varhaiskasvatuspaatos__lapsi__henkilo__syntyma_pvm'),
                         oma_organisaatio_nimi=F('varhaiskasvatuspaatos__lapsi__oma_organisaatio__nimi'),
                         paos_organisaatio_nimi=F('varhaiskasvatuspaatos__lapsi__paos_organisaatio__nimi'),
-                        lapsi_id=F('varhaiskasvatuspaatos__lapsi__id')
-                        )
+                        lapsi_id=F('varhaiskasvatuspaatos__lapsi__id'))
                 .distinct('varhaiskasvatuspaatos__lapsi__henkilo__sukunimi',
                           'varhaiskasvatuspaatos__lapsi__henkilo__etunimet',
-                          'varhaiskasvatuspaatos__lapsi__id')
-                )
+                          'varhaiskasvatuspaatos__lapsi__id'))
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
         if not kwargs['toimipaikka_pk'].isdigit():
             raise Http404('Not found.')
-        self.get_toimipaikka(request, toimipaikka_pk=kwargs['toimipaikka_pk'])
+        self.toimipaikka_pk = kwargs['toimipaikka_pk']
+        self.get_toimipaikka(request)
 
         """
         We can differentiate results based on e.g. user-id, and this is needed since queryset
@@ -213,7 +263,7 @@ class NestedToimipaikanLapsetViewSet(GenericViewSet, ListModelMixin):
         queryset = cache.get(toimipaikka_cache_key)
         if queryset is None:
 
-            key_for_list_of_all_toimipaikka_cache_keys = 'toimipaikan_lapset_' + kwargs['toimipaikka_pk']
+            key_for_list_of_all_toimipaikka_cache_keys = 'toimipaikan_lapset_' + self.toimipaikka_pk
             list_of_all_toimipaikka_cache_keys = cache.get(key_for_list_of_all_toimipaikka_cache_keys)
             if list_of_all_toimipaikka_cache_keys is None:
                 list_of_all_toimipaikka_cache_keys = []
@@ -222,7 +272,7 @@ class NestedToimipaikanLapsetViewSet(GenericViewSet, ListModelMixin):
             cache.set(key_for_list_of_all_toimipaikka_cache_keys, list_of_all_toimipaikka_cache_keys, 8 * 60 * 60)
 
             save_audit_log(request.user, request.get_full_path())
-            queryset = self.get_vakapaatokset_in_toimipaikka_queryset(toimipaikka_pk=kwargs['toimipaikka_pk'])
+            queryset = self.get_vakapaatokset_in_toimipaikka_queryset()
             cache.set(toimipaikka_cache_key, queryset, 8 * 60 * 60)
 
         page = self.paginate_queryset(queryset)
