@@ -17,6 +17,7 @@ def add_groups_with_permissions():
         ('VARDA-KATSELIJA_1.2.246.562.10.9395737548817', get_vakajarjestaja_katselija_permissions()),  # toimipaikka_5
         ('VARDA-PAAKAYTTAJA_1.2.246.562.10.93957375488', get_vakajarjestaja_paakayttaja_permissions()),
         ('VARDA-PAAKAYTTAJA_1.2.246.562.10.34683023489', get_vakajarjestaja_paakayttaja_permissions()),
+        ('VARDA-PAAKAYTTAJA_1.2.246.562.10.93957375484', get_vakajarjestaja_paakayttaja_permissions()),
         ('VARDA-TALLENTAJA_1.2.246.562.10.93957375488', get_vakajarjestaja_palvelukayttaja_permissions()),
         ('VARDA-PALVELUKAYTTAJA_1.2.246.562.10.93957375488', get_vakajarjestaja_palvelukayttaja_permissions()),
         ('VARDA-TALLENTAJA_1.2.246.562.10.9395737548810', get_toimipaikka_tallentaja_permissions()),
@@ -98,7 +99,7 @@ def create_vakajarjestajat():
     tester_user = User.objects.get(username='tester')
     tester2_user = User.objects.get(username='tester2')
     varda_testi_user = User.objects.get(username='varda-testi')
-    tester_e2e__user = User.objects.get(username='tester-e2e')
+    tester_e2e_user = User.objects.get(username='tester-e2e')
 
     VakaJarjestaja.objects.create(
         nimi='Tester2 organisaatio',
@@ -178,7 +179,7 @@ def create_vakajarjestajat():
         yritysmuoto='KUNTAYHTYMA',
         alkamis_pvm='2018-09-25',
         paattymis_pvm=None,
-        changed_by=tester_e2e__user
+        changed_by=tester_e2e_user
     )
 
     assign_permissions_to_vakajarjestaja_obj('1.2.246.562.10.34683023489')
@@ -195,9 +196,11 @@ def create_toimipaikat_and_painotukset():
 
     tester_user = User.objects.get(username='tester')
     tester2_user = User.objects.get(username='tester2')
+    tester_e2e_user = User.objects.get(username='tester-e2e')
 
     vakajarjestaja_tester_obj = VakaJarjestaja.objects.filter(nimi='Tester organisaatio')[0]
     vakajarjestaja_tester2_obj = VakaJarjestaja.objects.filter(nimi='Tester2 organisaatio')[0]
+    vakajarjestaja_4_obj = VakaJarjestaja.objects.get(id=4)
 
     toimipaikka_1 = Toimipaikka.objects.create(
         vakajarjestaja=vakajarjestaja_tester_obj,
@@ -330,10 +333,37 @@ def create_toimipaikat_and_painotukset():
         changed_by=tester_user
     )
 
+    Toimipaikka.objects.create(
+        vakajarjestaja=vakajarjestaja_4_obj,
+        nimi='Espoo_3',
+        nimi_sv='Esbo_3',
+        organisaatio_oid='1.2.246.562.10.9395737548812',
+        kayntiosoite='Espoonkeskus 5',
+        kayntiosoite_postitoimipaikka='Espoo',
+        kayntiosoite_postinumero='02100',
+        postiosoite='Espoonkeskus 5',
+        postitoimipaikka='Espoo',
+        postinumero='02100',
+        kunta_koodi='091',
+        puhelinnumero='+35810654321',
+        sahkopostiosoite='test3@espoo.fi',
+        kasvatusopillinen_jarjestelma_koodi='kj04',
+        toimintamuoto_koodi='tm03',
+        asiointikieli_koodi=['FI'],
+        jarjestamismuoto_koodi=['jm03'],
+        varhaiskasvatuspaikat=150,
+        toiminnallinenpainotus_kytkin=True,
+        kielipainotus_kytkin=True,
+        alkamis_pvm='2017-01-03',
+        paattymis_pvm=None,
+        changed_by=tester_e2e_user
+    )
+
     assign_permissions_to_toimipaikka_obj('1.2.246.562.10.9395737548810', '1.2.246.562.10.93957375488')
     assign_permissions_to_toimipaikka_obj('1.2.246.562.10.9395737548815', '1.2.246.562.10.34683023489')
     assign_permissions_to_toimipaikka_obj('1.2.246.562.10.9395737548811', '1.2.246.562.10.93957375488')
     assign_permissions_to_toimipaikka_obj('1.2.246.562.10.9395737548817', '1.2.246.562.10.93957375488')
+    assign_permissions_to_toimipaikka_obj('1.2.246.562.10.9395737548812', '1.2.246.562.10.93957375484')
 
     group_tallentaja_tester2_vakajarjestaja = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.34683023489')
     assign_perm('view_toimipaikka', group_tallentaja_tester2_vakajarjestaja, toimipaikka_3)
@@ -868,17 +898,27 @@ def create_maksutiedot():
 
 
 def create_paos_toiminta():
+    from django.contrib.auth.models import Group
     from guardian.shortcuts import assign_perm
     from varda.models import PaosToiminta, VakaJarjestaja, User, Toimipaikka
     from varda import permissions
 
+    vakajarjestaja_1 = VakaJarjestaja.objects.get(id=1)
+    vakajarjestaja_2 = VakaJarjestaja.objects.get(id=2)
+    vakajarjestaja_4 = VakaJarjestaja.objects.get(id=4)
+    toimipaikka_5_under_vakajarjestaja_2 = Toimipaikka.objects.get(id=5)
+    toimipaikka_6_under_vakajarjestaja_4 = Toimipaikka.objects.get(id=6)
     tester3_user = User.objects.get(username='tester3')
     tester4_user = User.objects.get(username='tester4')
-    vakajarjestaja_2 = VakaJarjestaja.objects.get(id=2)
-    vakajarjestaja_1 = VakaJarjestaja.objects.get(id=1)
-    toimipaikka_5_under_vakajarjestaja_2 = Toimipaikka.objects.get(id=5)
+    tester_e2e_user = User.objects.get(username='tester-e2e')
+    group_paakayttaja_vakajarjestaja_1 = Group.objects.get(name='VARDA-PAAKAYTTAJA_1.2.246.562.10.34683023489')
+    group_paakayttaja_vakajarjestaja_4 = Group.objects.get(name='VARDA-PAAKAYTTAJA_1.2.246.562.10.93957375484')
 
-    # vakajarjestaja2 gives permission to vakajarjestaja1 to add lapset under their toimipaikat
+    """
+    Toimipaikka_5 and toimipaikka_6 have identical names, but they are under different vakajarjestajat.
+    """
+
+    # vakajarjestaja_2 gives permission to vakajarjestaja_1 to add lapset under their toimipaikat
     paos_toiminta_1 = PaosToiminta.objects.create(
         oma_organisaatio=vakajarjestaja_2,
         paos_organisaatio=vakajarjestaja_1,
@@ -886,7 +926,7 @@ def create_paos_toiminta():
         changed_by=tester3_user
     )
 
-    # vakajarjestaja1 takes toimipaikka5 in use for PAOS-lapset
+    # vakajarjestaja_1 takes toimipaikka_5 in use for PAOS-lapset
     paos_toiminta_2 = PaosToiminta.objects.create(
         oma_organisaatio=vakajarjestaja_1,
         paos_toimipaikka=toimipaikka_5_under_vakajarjestaja_2,
@@ -900,17 +940,46 @@ def create_paos_toiminta():
     assign_perm('delete_paostoiminta', tester4_user, paos_toiminta_2)
     permissions.assign_object_level_permissions(vakajarjestaja_1.organisaatio_oid, Toimipaikka, toimipaikka_5_under_vakajarjestaja_2, paos_kytkin=True)
 
+    # vakajarjestaja_4 gives permission to vakajarjestaja_1 to add lapset under their toimipaikat
+    paos_toiminta_3 = PaosToiminta.objects.create(
+        oma_organisaatio=vakajarjestaja_4,
+        paos_organisaatio=vakajarjestaja_1,
+        voimassa_kytkin=True,
+        changed_by=tester_e2e_user
+    )
+
+    # vakajarjestaja_1 takes toimipaikka_6 in use for PAOS-lapset
+    paos_toiminta_4 = PaosToiminta.objects.create(
+        oma_organisaatio=vakajarjestaja_1,
+        paos_toimipaikka=toimipaikka_6_under_vakajarjestaja_4,
+        voimassa_kytkin=True,
+        changed_by=tester4_user
+    )
+
+    assign_perm('view_paostoiminta', group_paakayttaja_vakajarjestaja_4, paos_toiminta_3)
+    assign_perm('delete_paostoiminta', group_paakayttaja_vakajarjestaja_4, paos_toiminta_3)
+    assign_perm('view_paostoiminta', group_paakayttaja_vakajarjestaja_1, paos_toiminta_4)
+    assign_perm('delete_paostoiminta', group_paakayttaja_vakajarjestaja_1, paos_toiminta_4)
+    permissions.assign_object_level_permissions(vakajarjestaja_1.organisaatio_oid, Toimipaikka, toimipaikka_6_under_vakajarjestaja_4, paos_kytkin=True)
+
 
 def create_paos_oikeus():
+    from django.contrib.auth.models import Group
     from guardian.shortcuts import assign_perm
     from varda.models import PaosOikeus, VakaJarjestaja, User
 
-    vakajarjestaja_2 = VakaJarjestaja.objects.get(id=2)
     vakajarjestaja_1 = VakaJarjestaja.objects.get(id=1)
+    vakajarjestaja_2 = VakaJarjestaja.objects.get(id=2)
+    vakajarjestaja_4 = VakaJarjestaja.objects.get(id=4)
     tester3_user = User.objects.get(username='tester3')
     tester4_user = User.objects.get(username='tester4')
+    group_paakayttaja_vakajarjestaja_1 = Group.objects.get(name='VARDA-PAAKAYTTAJA_1.2.246.562.10.34683023489')
+    group_paakayttaja_vakajarjestaja_4 = Group.objects.get(name='VARDA-PAAKAYTTAJA_1.2.246.562.10.93957375484')
 
-    paos_oikeus = PaosOikeus.objects.create(
+    """
+    vakajarjestaja_1 <--> vakajarjestaja_2
+    """
+    paos_oikeus_1 = PaosOikeus.objects.create(
         jarjestaja_kunta_organisaatio=vakajarjestaja_1,
         tuottaja_organisaatio=vakajarjestaja_2,
         voimassa_kytkin=True,
@@ -918,9 +987,24 @@ def create_paos_oikeus():
         changed_by=tester4_user
     )
 
-    assign_perm('view_paosoikeus', tester3_user, paos_oikeus)
-    assign_perm('view_paosoikeus', tester4_user, paos_oikeus)
-    assign_perm('change_paosoikeus', tester4_user, paos_oikeus)
+    assign_perm('view_paosoikeus', tester3_user, paos_oikeus_1)
+    assign_perm('view_paosoikeus', tester4_user, paos_oikeus_1)
+    assign_perm('change_paosoikeus', tester4_user, paos_oikeus_1)
+
+    """
+    vakajarjestaja_1 <--> vakajarjestaja_4
+    """
+    paos_oikeus_2 = PaosOikeus.objects.create(
+        jarjestaja_kunta_organisaatio=vakajarjestaja_1,
+        tuottaja_organisaatio=vakajarjestaja_4,
+        voimassa_kytkin=True,
+        tallentaja_organisaatio=vakajarjestaja_1,
+        changed_by=tester4_user
+    )
+
+    assign_perm('view_paosoikeus', group_paakayttaja_vakajarjestaja_4, paos_oikeus_2)
+    assign_perm('view_paosoikeus', group_paakayttaja_vakajarjestaja_1, paos_oikeus_2)
+    assign_perm('change_paosoikeus', group_paakayttaja_vakajarjestaja_1, paos_oikeus_2)
 
 
 def create_user_data():

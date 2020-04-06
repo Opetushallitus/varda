@@ -204,7 +204,7 @@ class VardaViewsTests(TestCase):
     def test_api_toimipaikat_permissions_1(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/toimipaikat/')
-        self.assertEqual(json.loads(resp.content)["count"], 4)
+        self.assertEqual(json.loads(resp.content)["count"], 5)
 
     def test_api_toimipaikat_permissions_2(self):
         """
@@ -213,7 +213,7 @@ class VardaViewsTests(TestCase):
         """
         client = SetUpTestClient('tester2').client()
         resp = client.get('/api/v1/toimipaikat/')
-        self.assertEqual(json.loads(resp.content)["count"], 3)
+        self.assertEqual(json.loads(resp.content)["count"], 4)
 
     def test_api_toimipaikat_permissions_3(self):
         client = SetUpTestClient('tester').client()
@@ -2635,7 +2635,7 @@ class VardaViewsTests(TestCase):
 
         resp_paos_toiminnat = client.get('/api/v1/paos-toiminnat/?oma_organisaatio=1', content_type='application/json')
         resp_paos_toiminnat_count = json.loads(resp_paos_toiminnat.content)['count']
-        self.assertEqual(resp_paos_toiminnat_count, 1)
+        self.assertEqual(resp_paos_toiminnat_count, 2)
 
         resp_paos_toiminnat = client.get('/api/v1/paos-toiminnat/?oma_organisaatio=2', content_type='application/json')
         resp_paos_toiminnat_count = json.loads(resp_paos_toiminnat.content)['count']
@@ -2665,7 +2665,7 @@ class VardaViewsTests(TestCase):
 
         resp_paos_toimipaikat = client.get('/api/v1/vakajarjestajat/1/paos-toimipaikat/?toimipaikka_nimi=Espoo', content_type='application/json')
         resp_paos_toimipaikat_count = json.loads(resp_paos_toimipaikat.content)['count']
-        self.assertEqual(resp_paos_toimipaikat_count, 1)
+        self.assertEqual(resp_paos_toimipaikat_count, 2)
 
         resp_paos_toimipaikat = client.get('/api/v1/vakajarjestajat/1/paos-toimipaikat/?toimipaikka_nimi=JokuIhanMuu', content_type='application/json')
         resp_paos_toimipaikat_count = json.loads(resp_paos_toimipaikat.content)['count']
@@ -2683,7 +2683,7 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester4').client()
         resp_paos_oikeus = client.get('/api/v1/paos-oikeudet/?jarjestaja_kunta_organisaatio=1', content_type='application/json')
         resp_paos_oikeus_count = json.loads(resp_paos_oikeus.content)['count']
-        self.assertEqual(resp_paos_oikeus_count, 1)
+        self.assertEqual(resp_paos_oikeus_count, 2)
 
         resp_paos_oikeus = client.get('/api/v1/paos-oikeudet/?tuottaja_organisaatio=1', content_type='application/json')
         resp_paos_oikeus_count = json.loads(resp_paos_oikeus.content)['count']
@@ -2956,3 +2956,12 @@ class VardaViewsTests(TestCase):
         assert_status_code(resp, 200)
         self.assertEqual(json.loads(resp.content)["count"], 1)
     """
+
+    def test_paos_toiminnat_with_same_toimipaikka_names(self):
+        """
+        Move to paos-tests (commit still not merged, Gerrit 3245).
+        """
+        client = SetUpTestClient('tester4').client()
+        resp = client.get('/api/v1/vakajarjestajat/1/paos-toimipaikat/')
+        assert_status_code(resp, 200)
+        self.assertEqual(json.loads(resp.content)["count"], 2)

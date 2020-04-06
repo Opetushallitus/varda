@@ -6,7 +6,7 @@ from django.contrib.auth.models import Group, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
-from django.db.models import ProtectedError, Q, Prefetch
+from django.db.models import Prefetch, ProtectedError, Q, Subquery
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -2790,7 +2790,13 @@ class NestedVakajarjestajaPaosToimipaikatViewSet(GenericViewSet, ListModelMixin)
             Q(oma_organisaatio=vakajarjestaja_obj, paos_toimipaikka__isnull=False)
         ).select_related('paos_toimipaikka', 'paos_toimipaikka__vakajarjestaja')
 
-        paos_toiminnat = paos_toiminta_qs.distinct('paos_toimipaikka__nimi').order_by('paos_toimipaikka__nimi')
+        # Subquery, see the end of page: https://code.djangoproject.com/ticket/24218
+        paos_toiminnat = paos_toiminta_qs.filter(
+            pk__in=Subquery(
+                paos_toiminta_qs.distinct('paos_toimipaikka__id').values('pk')
+            )
+        ).order_by('paos_toimipaikka__nimi')
+
         if toimipaikka_nimi_filter is not None:
             paos_toiminnat = paos_toiminnat.filter(paos_toimipaikka__nimi__icontains=toimipaikka_nimi_filter)
         if organisaatio_oid_filter is not None:

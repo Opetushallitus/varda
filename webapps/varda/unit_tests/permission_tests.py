@@ -364,7 +364,7 @@ class VardaPermissionsTests(TestCase):
         client = SetUpTestClient('credadmin').client()
         resp = client.get('/api/v1/toimipaikat/')
         assert_status_code(resp, 200)
-        self.assertEqual(json.loads(resp.content)["count"], 5)
+        self.assertEqual(json.loads(resp.content)["count"], 6)
 
         """
         TODO:
