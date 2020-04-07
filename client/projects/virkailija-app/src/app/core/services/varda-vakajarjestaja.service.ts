@@ -101,7 +101,11 @@ export class VardaVakajarjestajaService {
       allToimipaikat: toimipaikat,
       toimipaikat: toimipaikat,
       katselijaToimipaikat: authService.getAuthorizedToimipaikat(toimipaikat),
-      tallentajaToimipaikat: authService.getAuthorizedToimipaikat(toimipaikat, SaveAccess.kaikki)
+      tallentajaToimipaikat: authService.getAuthorizedToimipaikat(
+        toimipaikat.filter(toimipaikka =>
+          !toimipaikka.paos_organisaatio_url ||
+          toimipaikka.paos_tallentaja_organisaatio_id_list.includes(parseInt(this.selectedVakajarjestaja.id))
+        ), SaveAccess.kaikki)
     };
   }
 

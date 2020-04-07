@@ -73,6 +73,7 @@ export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoC
       if (!accumulator[currentToimipaikkatietoDto.toimija_id]) {
         const toimija = new PaosToimijaInternalDto();
         toimija.toimijaId = currentToimipaikkatietoDto.toimija_id;
+        toimija.toimijaOID = currentToimipaikkatietoDto.toimija_organisaatio_oid;
         toimija.toimijaNimi = currentToimipaikkatietoDto.toimija_nimi;
         toimija.toimijaUrl = currentToimipaikkatietoDto.toimija_url;
         toimija.toimijaYTunnus = currentToimipaikkatietoDto.toimija_y_tunnus;

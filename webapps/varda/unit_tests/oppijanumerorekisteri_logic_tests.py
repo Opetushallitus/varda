@@ -70,8 +70,8 @@ class TestOppijanumerorekisteriLogic(TestCase):
             'voimassa_kytkin': False,
             'huoltaja__henkilo__henkilo_oid': '',
             'lapsi__henkilo__henkilo_oid': '1.2.246.562.24.6815981182311',
-            'huoltaja__henkilo__henkilotunnus': 'gAAAAABbo6WBxWFYoGcrNFHRrASpVO5w8srRrqkj34EaAwXz1rJm2kApH8aYc4E0o7SswHsMLtGeWrSgpHI0av3q7tKErR2d_Q==',
-            'huoltaja__henkilo__henkilotunnus_unique_hash': 'c4ca5208ff889171f704c288586833d902fb1286e638330975a66095dad6e9df',
+            'huoltaja__henkilo__henkilotunnus': 'gAAAAABbo6X6VW8yiNVQqpFKGl_4JS-VEA12mMn-ajatHro5RR1_fYyocLrV1197TvFU5J0Yz51LZ6_1TyU7Erb3UasXVtUR6Q==',
+            'huoltaja__henkilo__henkilotunnus_unique_hash': 'cb31a7a3d13fbb0e1419e5c4cdf8e93d6c67a2274659266a8d51c44896ddd292',
         }
         expected2 = {
             'voimassa_kytkin': True,
@@ -111,8 +111,8 @@ class TestOppijanumerorekisteriLogic(TestCase):
             'voimassa_kytkin': False,
             'huoltaja__henkilo__henkilo_oid': '',
             'lapsi__henkilo__henkilo_oid': '1.2.246.562.24.6815981182311',
-            'huoltaja__henkilo__henkilotunnus': 'gAAAAABbo6WBxWFYoGcrNFHRrASpVO5w8srRrqkj34EaAwXz1rJm2kApH8aYc4E0o7SswHsMLtGeWrSgpHI0av3q7tKErR2d_Q==',
-            'huoltaja__henkilo__henkilotunnus_unique_hash': 'c4ca5208ff889171f704c288586833d902fb1286e638330975a66095dad6e9df',
+            'huoltaja__henkilo__henkilotunnus': 'gAAAAABbo6X6VW8yiNVQqpFKGl_4JS-VEA12mMn-ajatHro5RR1_fYyocLrV1197TvFU5J0Yz51LZ6_1TyU7Erb3UasXVtUR6Q==',
+            'huoltaja__henkilo__henkilotunnus_unique_hash': 'cb31a7a3d13fbb0e1419e5c4cdf8e93d6c67a2274659266a8d51c44896ddd292',
         }
         expected2 = {
             'voimassa_kytkin': True,

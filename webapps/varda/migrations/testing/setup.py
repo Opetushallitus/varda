@@ -621,16 +621,17 @@ def create_lapset():
 
     vakajarjestaja_1_organisaatio_oid = '1.2.246.562.10.34683023489'
     vakajarjestaja_2_organisaatio_oid = '1.2.246.562.10.93957375488'
-    vakajarjestaja_4_organisaatio_oid = '1.2.246.562.10.93957375484'
 
+    vakajarjestaja_1 = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_1_organisaatio_oid)[0]
     vakajarjestaja_2 = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_2_organisaatio_oid)[0]
-    vakajarjestaja_4 = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_4_organisaatio_oid)[0]
 
     toimipaikka_1_organisaatio_oid = '1.2.246.562.10.9395737548810'
     toimipaikka_2_organisaatio_oid = '1.2.246.562.10.9395737548815'
+    toimipaikka_5_organisaatio_oid = '1.2.246.562.10.9395737548817'
 
     toimipaikka_1 = Toimipaikka.objects.filter(organisaatio_oid=toimipaikka_1_organisaatio_oid)[0]
     toimipaikka_2 = Toimipaikka.objects.filter(organisaatio_oid=toimipaikka_2_organisaatio_oid)[0]
+    toimipaikka_5 = Toimipaikka.objects.filter(organisaatio_oid=toimipaikka_5_organisaatio_oid)[0]
 
     henkilo_2 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('010114A0013'))
     lapsi_1 = Lapsi.objects.create(
@@ -653,7 +654,7 @@ def create_lapset():
     henkilo_9 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('120699-985W'))
     lapsi_4 = Lapsi.objects.create(
         henkilo=henkilo_9,
-        oma_organisaatio=vakajarjestaja_4,
+        oma_organisaatio=vakajarjestaja_1,
         paos_organisaatio=vakajarjestaja_2,
         changed_by=tester2_user
     )
@@ -707,7 +708,7 @@ def create_lapset():
         tuntimaara_viikossa=39.0,
         paivittainen_vaka_kytkin=True,
         kokopaivainen_vaka_kytkin=True,
-        jarjestamismuoto_koodi='jm01',
+        jarjestamismuoto_koodi='jm03',
         hakemus_pvm='2018-09-05',
         alkamis_pvm='2018-09-05',
         paattymis_pvm=None,
@@ -739,7 +740,7 @@ def create_lapset():
     )
 
     vakasuhde_4 = Varhaiskasvatussuhde.objects.create(
-        toimipaikka=toimipaikka_2,
+        toimipaikka=toimipaikka_5,
         varhaiskasvatuspaatos=vakapaatos_4,
         alkamis_pvm='2018-09-05',
         paattymis_pvm=None,
@@ -763,9 +764,13 @@ def create_lapset():
     assign_object_level_permissions(vakajarjestaja_1_organisaatio_oid, Lapsi, lapsi_3)
     assign_object_level_permissions(vakajarjestaja_1_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_3)
     assign_object_level_permissions(vakajarjestaja_1_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_3)
+
     assign_object_level_permissions(vakajarjestaja_1_organisaatio_oid, Lapsi, lapsi_4)
     assign_object_level_permissions(vakajarjestaja_1_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_4)
     assign_object_level_permissions(vakajarjestaja_1_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_4)
+    assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Lapsi, lapsi_4, paos_kytkin=True)
+    assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_4, paos_kytkin=True)
+    assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_4, paos_kytkin=True)
 
 
 def create_huoltajat():
@@ -804,15 +809,19 @@ def create_huoltajuussuhteet():
 
     henkilo_lapsi_1 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('010114A0013'))
     henkilo_lapsi_2 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('120516A123V'))
-    henkilo_lapsi_3 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('120699-985W'))
+    henkilo_lapsi_3 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('170334-130B'))
+    henkilo_lapsi_4 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('120699-985W'))
     lapsi_1 = Lapsi.objects.filter(henkilo=henkilo_lapsi_1).first()
     lapsi_2 = Lapsi.objects.filter(henkilo=henkilo_lapsi_2).first()
     lapsi_3 = Lapsi.objects.filter(henkilo=henkilo_lapsi_3).first()
+    lapsi_4 = Lapsi.objects.filter(henkilo=henkilo_lapsi_4).first()
 
     henkilo_huoltaja_1 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020476-321F'))
     henkilo_huoltaja_2 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('120386-109V'))
+    henkilo_huoltaja_3 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('110548-316P'))
     huoltaja_1 = Huoltaja.objects.filter(henkilo=henkilo_huoltaja_1).first()
     huoltaja_2 = Huoltaja.objects.filter(henkilo=henkilo_huoltaja_2).first()
+    huoltaja_3 = Huoltaja.objects.filter(henkilo=henkilo_huoltaja_3).first()
 
     Huoltajuussuhde.objects.create(
         huoltaja=huoltaja_1,
@@ -838,6 +847,13 @@ def create_huoltajuussuhteet():
     Huoltajuussuhde.objects.create(
         huoltaja=huoltaja_2,
         lapsi=lapsi_3,
+        voimassa_kytkin=True,
+        changed_by_id=admin_user.id
+    )
+
+    Huoltajuussuhde.objects.create(
+        huoltaja=huoltaja_3,
+        lapsi=lapsi_4,
         voimassa_kytkin=True,
         changed_by_id=admin_user.id
     )
@@ -938,7 +954,8 @@ def create_paos_toiminta():
     assign_perm('delete_paostoiminta', tester3_user, paos_toiminta_1)
     assign_perm('view_paostoiminta', tester4_user, paos_toiminta_2)
     assign_perm('delete_paostoiminta', tester4_user, paos_toiminta_2)
-    permissions.assign_object_level_permissions(vakajarjestaja_1.organisaatio_oid, Toimipaikka, toimipaikka_5_under_vakajarjestaja_2, paos_kytkin=True)
+    permissions.assign_object_level_permissions(vakajarjestaja_1.organisaatio_oid, Toimipaikka,
+                                                toimipaikka_5_under_vakajarjestaja_2, paos_kytkin=True)
 
     # vakajarjestaja_4 gives permission to vakajarjestaja_1 to add lapset under their toimipaikat
     paos_toiminta_3 = PaosToiminta.objects.create(
@@ -967,6 +984,7 @@ def create_paos_oikeus():
     from django.contrib.auth.models import Group
     from guardian.shortcuts import assign_perm
     from varda.models import PaosOikeus, VakaJarjestaja, User
+    from varda.permissions import change_paos_tallentaja_organization
 
     vakajarjestaja_1 = VakaJarjestaja.objects.get(id=1)
     vakajarjestaja_2 = VakaJarjestaja.objects.get(id=2)
@@ -1005,6 +1023,14 @@ def create_paos_oikeus():
     assign_perm('view_paosoikeus', group_paakayttaja_vakajarjestaja_4, paos_oikeus_2)
     assign_perm('view_paosoikeus', group_paakayttaja_vakajarjestaja_1, paos_oikeus_2)
     assign_perm('change_paosoikeus', group_paakayttaja_vakajarjestaja_1, paos_oikeus_2)
+
+    jarjestaja_kunta_organisaatio_id = 1
+    tuottaja_organisaatio_id = 2
+    tallentaja_organisaatio_id = 1
+    voimassa_kytkin = True
+
+    change_paos_tallentaja_organization(jarjestaja_kunta_organisaatio_id, tuottaja_organisaatio_id,
+                                        tallentaja_organisaatio_id, voimassa_kytkin)
 
 
 def create_user_data():

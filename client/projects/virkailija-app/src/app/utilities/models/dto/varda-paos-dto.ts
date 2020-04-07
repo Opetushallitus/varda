@@ -46,6 +46,7 @@ export class PaosToimijaInternalDto {
   paosOikeus: PaosOikeusTieto;
   toimijaUrl?: string;
   toimijaId?: string;
+  toimijaOID?: string;
   toimijaNimi?: string;
   toimijaYTunnus?: string;
   toimipaikat: Array<PaosToimipaikkatietoDto>;
