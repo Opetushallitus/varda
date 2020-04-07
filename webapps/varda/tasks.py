@@ -1,7 +1,6 @@
 import os
 
 from celery import shared_task
-from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command
 from django.db.models import Q
@@ -90,9 +89,9 @@ def update_modified_henkilot(periodic_task=False):
 
 
 @shared_task
-def update_toimipaikat_in_organisaatiopalvelu_task(periodic_task=False, changed_since_hours=settings.ORG_PALVELU_CHANGE_INTERVAL_IN_HOURS):
+def update_toimipaikat_in_organisaatiopalvelu_task(periodic_task=False):
     if not periodic_task or pod_ordinal_index_is_zero():
-        organisaatiopalvelu.update_toimipaikat_in_organisaatiopalvelu(changed_since_hours)
+        organisaatiopalvelu.update_toimipaikat_in_organisaatiopalvelu()
 
 
 @shared_task

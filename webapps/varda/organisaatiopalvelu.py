@@ -1,8 +1,8 @@
 import copy
+import datetime
 import json
 import logging
 import uuid
-from datetime import datetime, date, timedelta
 
 from django.contrib.auth.models import User
 from django.db import transaction
@@ -479,12 +479,12 @@ def get_toimipaikka_json(toimipaikka_validated_data, vakajarjestaja_id):
             'toimintamuoto': toimintamuoto,
             'kasvatusopillinenJarjestelma': kasvatusopillinen_jarjestelma,
             'varhaiskasvatuksenToiminnallinenpainotukset': [
-                {'toiminnallinenpainotus': 'vardatoiminnallinenpainotus_tp98', 'alkupvm': str(date.today())}
+                {'toiminnallinenpainotus': 'vardatoiminnallinenpainotus_tp98', 'alkupvm': str(datetime.date.today())}
             ],
             'paikkojenLukumaara': varhaiskasvatuspaikat,
             'varhaiskasvatuksenJarjestamismuodot': jarjestamismuoto,
             'varhaiskasvatuksenKielipainotukset': [
-                {'kielipainotus': 'kieli_99', 'alkupvm': str(date.today())}
+                {'kielipainotus': 'kieli_99', 'alkupvm': str(datetime.date.today())}
             ]
         },
         'piilotettu': piilotettu,
@@ -642,7 +642,7 @@ def get_kielipainotukset_in_toimipaikka(toimipaikka_id):
         kielipainotukset.append(painotus)
 
     if not kielipainotukset:  # Add default
-        kielipainotukset.append({'kielipainotus': 'kieli_99', 'alkupvm': str(date.today())})
+        kielipainotukset.append({'kielipainotus': 'kieli_99', 'alkupvm': str(datetime.date.today())})
     return kielipainotukset
 
 
@@ -658,7 +658,7 @@ def get_toiminnallisetpainotukset_in_toimipaikka(toimipaikka_id):
         toiminnallisetpainotukset.append(painotus)
 
     if not toiminnallisetpainotukset:  # Add default
-        toiminnallisetpainotukset.append({'toiminnallinenpainotus': 'vardatoiminnallinenpainotus_tp98', 'alkupvm': str(date.today())})
+        toiminnallisetpainotukset.append({'toiminnallinenpainotus': 'vardatoiminnallinenpainotus_tp98', 'alkupvm': str(datetime.date.today())})
     return toiminnallisetpainotukset
 
 
@@ -679,17 +679,20 @@ def update_toimipaikka_in_organisaatiopalvelu(toimipaikka_obj):
         update_organisaatio(toimipaikka_organisaatio_oid, toimipaikka_update_json, toimipaikka_id)
 
 
-def update_toimipaikat_in_organisaatiopalvelu(org_palvelu_change_interval_hours):
+def update_toimipaikat_in_organisaatiopalvelu():
     """
-    First, make a list of all the toimipaikka-objects which have been changed during the last n hours.
+    First, make a list of all the toimipaikka-objects which have been changed after the last aikaleima.
     Include also the changes (and removals via history) from relation of Kielipainotus and Toiminnallinenpainotus.
     """
-    CHANGED_SINCE_HOURS = org_palvelu_change_interval_hours + 1  # Add here 1 hour margin to be on the safe side
-    time_threshold = timezone.now() - timedelta(hours=CHANGED_SINCE_HOURS)  # TZ is UTC
+    aikaleima, created = Aikaleima.objects.get_or_create(avain=AikaleimaAvain.ORGANISAATIOS_VARDA_LAST_UPDATE.name)
+    end_datetime = datetime.datetime.now(tz=datetime.timezone.utc)
+    start_datetime = aikaleima.aikaleima
 
     """
     When a toimipaikka is created, the muutos_pvm and luonti_pvm are not the same.
     They have a very small time difference. See example below.
+
+
 
     # select nimi, luonti_pvm, muutos_pvm from varda_toimipaikka;
             nimi         |          luonti_pvm           |          muutos_pvm
@@ -707,17 +710,17 @@ def update_toimipaikat_in_organisaatiopalvelu(org_palvelu_change_interval_hours)
     querysets have exactly the same attributes (and same types).
     """
     toimipaikka_changed_qs = (Toimipaikka.objects
-                              .filter(muutos_pvm__gt=time_threshold)
+                              .filter(muutos_pvm__gt=start_datetime)
                               .annotate(update_time_difference=ExpressionWrapper(F('muutos_pvm') - F('luonti_pvm'), output_field=DurationField()))
-                              .filter(update_time_difference__gt=timedelta(microseconds=100 * 1000))  # greater than 100 mseconds difference
+                              .filter(update_time_difference__gt=datetime.timedelta(microseconds=100 * 1000))  # greater than 100 mseconds difference
                               )
 
     toimipaikka_kielipainotus_changed_qs = (Toimipaikka.objects
-                                            .filter(kielipainotukset__muutos_pvm__gt=time_threshold)
+                                            .filter(kielipainotukset__muutos_pvm__gt=start_datetime)
                                             .annotate(update_time_difference=ExpressionWrapper(F('muutos_pvm') - F('luonti_pvm'), output_field=DurationField()))
                                             )
     toimipaikka_toiminnallinenpainotus_changed_qs = (Toimipaikka.objects
-                                                     .filter(toiminnallisetpainotukset__muutos_pvm__gt=time_threshold)
+                                                     .filter(toiminnallisetpainotukset__muutos_pvm__gt=start_datetime)
                                                      .annotate(update_time_difference=ExpressionWrapper(F('muutos_pvm') - F('luonti_pvm'), output_field=DurationField()))
                                                      )
 
@@ -728,13 +731,13 @@ def update_toimipaikat_in_organisaatiopalvelu(org_palvelu_change_interval_hours)
     '-' deleted
     """
     history_kielipainotus_deleted_qs = (KieliPainotus.history
-                                        .filter(history_date__gt=time_threshold)
+                                        .filter(history_date__gt=start_datetime)
                                         .filter(history_type='-')
                                         .values_list('toimipaikka_id', flat=True)
                                         )
 
     history_toiminnallinenpainotus_deleted_qs = (ToiminnallinenPainotus.history
-                                                 .filter(history_date__gt=time_threshold)
+                                                 .filter(history_date__gt=start_datetime)
                                                  .filter(history_type='-')
                                                  .values_list('toimipaikka_id', flat=True)
                                                  )
@@ -755,6 +758,9 @@ def update_toimipaikat_in_organisaatiopalvelu(org_palvelu_change_interval_hours)
         if toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=toimipaikka_obj):
             update_toimipaikka_in_organisaatiopalvelu(toimipaikka_obj)
 
+    aikaleima.aikaleima = end_datetime
+    aikaleima.save()
+
 
 def update_all_organisaatio_service_organisations():
     """
@@ -764,7 +770,7 @@ def update_all_organisaatio_service_organisations():
     chunk_size = 100
     # Playing it safe with new update timestamp (could be the time last request was made). Expecting
     # organisaatio-service to use same timezone as varda.
-    aikaleima_now = datetime.now(tz=timezone.utc)
+    aikaleima_now = datetime.datetime.now(tz=timezone.utc)
     aikaleima, created = Aikaleima.objects.get_or_create(avain=AikaleimaAvain.ORGANISAATIOS_LAST_UPDATE.name)
     changed_oids = get_changed_since(aikaleima.aikaleima)
     # List might be long so we split it to avoid big 'in' queries.

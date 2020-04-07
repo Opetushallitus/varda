@@ -422,9 +422,6 @@ OPPIJA_CAS_APPLY_ATTRIBUTES_TO_USER = True
 CAS_ACCEPT_PROXY_URL_FROM_HEADER = 'CAS_NEXT'
 CAS_SALT = os.environ.get('VARDA_SALT', DEFAULT_CAS_SALT_FOR_TESTING_ONLY)
 
-# Time interval (in hours) of posting changed toimipaikka-data to Org.palvelu
-ORG_PALVELU_CHANGE_INTERVAL_IN_HOURS = 24
-
 """
 TODO: This does not currently work. Login fails with 403 forbidden.
 if "VARDA_HOSTNAME" in os.environ:
