@@ -1,7 +1,5 @@
 import datetime
-import json
 import logging
-import requests
 
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -12,14 +10,13 @@ from pytz import timezone
 from rest_framework.exceptions import NotFound
 
 from varda.clients.oppijanumerorekisteri_client import (get_or_create_henkilo_by_henkilotunnus, get_henkilo_data_by_oid,
-                                                        fetch_changed_huoltajuussuhteet)
+                                                        fetch_changed_henkilot, fetch_changed_huoltajuussuhteet)
 
 from varda.enums.aikaleima_avain import AikaleimaAvain
 from varda.enums.yhteystieto import Yhteystietoryhmatyyppi, YhteystietoAlkupera, YhteystietoTyyppi
 from varda.misc import (CustomServerErrorException, decrypt_henkilotunnus, encrypt_henkilotunnus,
                         get_json_from_external_service, hash_string)
 from varda.models import Aikaleima, Henkilo, Huoltaja, Huoltajuussuhde, Lapsi
-from varda.oph_yhteiskayttopalvelu_autentikaatio import get_authentication_header
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -110,10 +107,10 @@ def _fetch_henkilo_data_by_henkilotunnus(henkilo_id, henkilotunnus, etunimet, ku
 
 def fetch_henkilo_data_by_oid(henkilo_id, henkilo_oid, henkilo_data=None):
     """
-    Update henkilö master data from oppijanumerorekisteri by henkilo oid and save to database
-    :param henkilo_id: ID of existing henkilö
+    Update henkilo master data from oppijanumerorekisteri by henkilo oid and save to database
+    :param henkilo_id: ID of existing henkilo
     :param henkilo_oid: Henkilo OID to query oppijanumerorekisteri with
-    :param henkilo_data: Prefetched henkilö data
+    :param henkilo_data: Prefetched henkilo data
     :return: None
     """
     if not henkilo_data:
@@ -164,104 +161,45 @@ def fetch_henkilo_with_oid(henkilo_oid):
     fetch_henkilo_data_by_oid(henkilo.id, henkilo_oid)
 
 
-def get_changed_since(date_and_time, amount, offset):
-    url = (settings.OPINTOPOLKU_DOMAIN + '/' + SERVICE_NAME + '/s2s/changedSince/' +
-           date_and_time + '?amount=' + str(amount) + '&offset=' + str(offset))
-    headers = get_authentication_header(SERVICE_NAME, external_request=False)
+def fetch_and_update_modified_henkilot():
+    """
+    Updates changes in henkilot.
+    :return: None
+    """
 
-    LOOP_NUMBER = 0
-    MAX_TRIES = 2
-    while True:
-        LOOP_NUMBER += 1
-        try:
-            r = requests.get(url, headers=headers)
-        except requests.exceptions.RequestException as e:
-            logger.error('RequestException for Url: {}, Error: {}.'.format(url, e))
-            return None
-
-        if r.status_code == 200:
-            try:
-                list_of_oppijanumerot = json.loads(r.content)
-            except ValueError as e:
-                logger.error('Url: {}, Error: {}'.format(url, e))
-                return None
-            return list_of_oppijanumerot
-        elif r.status_code == 401:
-            if LOOP_NUMBER < MAX_TRIES:
-                continue
-            else:
-                break
-
-        logger.error("Could not fetch changed henkilot from Oppijanumerorekisteri. Status code: " + str(r.status_code))
-        return None
-
-
-def update_modified_henkilot_since_datetime(date_and_time):
     """
     Import here to avoid circular references.
     """
     from varda.tasks import update_henkilo_data_by_oid
 
-    """
-    Given time must be in ISO-8601/Coordinated Universal Time (UTC)-format.
-    E.g. 2018-10-23T16:00:00Z
+    aikaleima, created = Aikaleima.objects.get_or_create(avain=AikaleimaAvain.HENKILOMUUTOS_LAST_UPDATE.name)
 
-    /oppijanumerorekisteri-service/s2s/changedSince/2018-10-03T16:00:00Z?amount=1000&offset=0
-    ..returns a list of 'oppijanumerot', where:
-    Amount: How many are fetched
-    Offset: Starting position in the list where the results are collected
-    Above example would return changed henkilot 0-999  (if more than 1000 changed)
-    """
+    # Oppijanumerorekisteri uses Finland's timezone. We use UTC internally.
+    helsinki = timezone('Europe/Helsinki')
+    start_datetime = aikaleima.aikaleima.astimezone(helsinki).strftime('%Y-%m-%dT%H:%M:%S%z')  # e.g. 2020-02-18T18:23:11+0200
+    end_datetime = datetime.datetime.now(tz=datetime.timezone.utc)
 
-    """
-    Let's first get all the changed henkilot (oppijanumero) from Oppijanumerorekisteri.
-    """
-    list_of_all_changed_oppijanumerot = []
-    AMOUNT = 1000
-    offset = 0
-    loop_number = 0
-    while True:
-        loop_number += 1
-        if loop_number == 30:
-            logger.warning("Very many henkilot changed in Oppijanumerorekisteri.")
-        offset = (loop_number - 1) * AMOUNT
-        list_of_oppijanumerot = get_changed_since(date_and_time, AMOUNT, offset)
-        if list_of_oppijanumerot is None or len(list_of_oppijanumerot) == 0:
-            break  # We didn't get anything anymore
-        list_of_all_changed_oppijanumerot.extend(list_of_oppijanumerot)
+    changed_henkilo_oids = fetch_changed_henkilot(start_datetime)
 
-    """
-    Let's raise an alarm for the admins, to check if actions are needed to improve this logic/implementation.
-    This should be fairly rare.
-    """
-    if loop_number > 29:
-        logger.warning("Alarm: " + str(loop_number) + "000 henkilot changed in Oppijanumerorekisteri.")
+    if changed_henkilo_oids['is_ok']:
+        for oppijanumero in changed_henkilo_oids['json_msg']:
+            try:
+                henkilo = Henkilo.objects.get(henkilo_oid=oppijanumero)
+            except Henkilo.DoesNotExist:
+                continue  # This is ok. No further actions needed.
+            except Henkilo.MultipleObjectsReturned:  # This should never be possible
+                logger.error("Multiple of henkilot was found with henkilo_oid: " + oppijanumero)
+                continue
 
-    """
-    Now we have a list of henkilot (oppijanumerot). Let's go through the list, and update the possible henkilot in Varda.
-    """
-    for oppijanumero in list_of_all_changed_oppijanumerot:
-        try:
-            henkilo = Henkilo.objects.get(henkilo_oid=oppijanumero)
-        except Henkilo.DoesNotExist:
-            continue  # This is ok. No further actions needed.
-        except Henkilo.MultipleObjectsReturned:  # This should never be possible
-            logger.error("Multiple of henkilot was found with henkilo_oid: " + oppijanumero)
-            continue
+            """
+            We have a match. Finally update henkilo-data using the oppijanumero.
+            """
+            update_henkilo_data_by_oid.apply_async(args=[henkilo.id, oppijanumero], queue='low_prio_queue')
 
-        """
-        We have a match. Finally update henkilo-data using the oppijanumero.
-        """
-        update_henkilo_data_by_oid.apply_async(args=[henkilo.id, oppijanumero], queue='low_prio_queue')
-
-
-def fetch_and_update_modified_henkilot_during_past_two_hours():
-    """
-    Schedule this method to be run every two hours.
-    TODO: Take Aikaleima in use.
-    """
-    date_and_time = (datetime.datetime.now() - datetime.timedelta(minutes=122)).strftime('%Y-%m-%dT%H:%M:%SZ')  # use 2 minute margin (120 minutes + 2 minutes)
-    update_modified_henkilot_since_datetime(date_and_time)
+        aikaleima.aikaleima = end_datetime
+        aikaleima.save()
+    else:
+        pass  # We need to fetch the henkilot again later. Do not save the aikaleima.
 
 
 def update_huoltajuussuhteet():

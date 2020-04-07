@@ -232,6 +232,19 @@ def get_henkilo_data_by_oid(oid):
         return None
 
 
+def get_henkilot_changed_since(start_datetime, offset, amount=5000):
+    """
+    Fetch changed henkilot from oppijanumerorekisteri.
+    :param start_datetime: Date time (in ISO 8601) since when we fetch changes
+    :param offset: position of the paginated (and ordered) dataset
+    :param amount: How many (max) are fetched
+    :return: Reply-json: ok and list of henkilo oids or not ok and None
+    """
+    url = '/s2s/changedSince/{}?amount={}&offset={}'.format(start_datetime, amount, offset)
+    response = get_json_from_external_service(SERVICE_NAME, url, large_query=True)
+    return get_reply_json(is_ok=response["is_ok"], json_msg=response["json_msg"])
+
+
 def get_huoltajasuhde_changed_child_oids(start_datetime, offset, amount=5000):
     """
     Fetch changed huoltajasuhteet from oppijanumerorekisteri.
@@ -280,4 +293,42 @@ def fetch_changed_huoltajuussuhteet(start_datetime):
         else:
             logger.error('Changed huoltajuussuhteet: We got more than we requested. Received: {}, Requested: {}'
                          .format(len_of_fetched_lapsi_oids, amount))
+            return get_reply_json(is_ok=False, json_msg=None)
+
+
+def fetch_changed_henkilot(start_datetime):
+    """
+    Fetch changes in henkilot.
+    :return: Reply-json: ok and list of henkilo oids or not ok and None
+    """
+    list_of_all_changed_oppijanumerot = []
+
+    amount = 5000  # This is how many henkilo_oids are fetched with one GET-request (max).
+    offset = 0     # With zero we fetch items 0-4999, offset 5000 -> items 5000 - 9999.
+    loop_number = 1
+    while True:
+        changed_henkilo_oids_msg = get_henkilot_changed_since(start_datetime, offset, amount)
+        if not changed_henkilo_oids_msg['is_ok']:
+            """
+            Something went wrong. Cancel fetching, and return is_ok=False.
+            """
+            logger.error('Could not fetch the changed henkilot, {}, {}, {}.'
+                         .format(start_datetime, offset, amount))
+            return get_reply_json(is_ok=False, json_msg=None)
+
+        list_of_all_changed_oppijanumerot += changed_henkilo_oids_msg['json_msg']
+        len_of_fetched_henkilo_oids = len(changed_henkilo_oids_msg['json_msg'])
+
+        if len_of_fetched_henkilo_oids < amount:  # We got everything. Return the list of all changed henkilo oids
+            return get_reply_json(is_ok=True, json_msg=list_of_all_changed_oppijanumerot)
+        elif len_of_fetched_henkilo_oids == amount:
+            offset += amount
+            loop_number += 1
+            if loop_number % 20 == 0:
+                logger.warning('Very large queries to changed henkilot. Current amount: {}'
+                               .format(loop_number * amount))
+            continue  # We (probably) didn't get everything yet. Fetch another batch.
+        else:
+            logger.error('Changed henkilot: We got more than we requested. Received: {}, Requested: {}'
+                         .format(len_of_fetched_henkilo_oids, amount))
             return get_reply_json(is_ok=False, json_msg=None)

@@ -84,9 +84,9 @@ def update_oph_staff_to_vakajarjestaja_groups(periodic_task=False):
 
 
 @shared_task
-def update_modified_henkilot_since_two_hours(periodic_task=False):
+def update_modified_henkilot(periodic_task=False):
     if not periodic_task or pod_ordinal_index_is_zero():
-        oppijanumerorekisteri.fetch_and_update_modified_henkilot_during_past_two_hours()
+        oppijanumerorekisteri.fetch_and_update_modified_henkilot()
 
 
 @shared_task

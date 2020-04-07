@@ -210,8 +210,8 @@
     "model": "django_celery_beat.periodictask",
     "pk": 4,
     "fields": {
-      "name": "update_modified_henkilot_since_two_hours",
-      "task": "varda.tasks.update_modified_henkilot_since_two_hours",
+      "name": "update_modified_henkilot",
+      "task": "varda.tasks.update_modified_henkilot",
       "interval": 1,
       "crontab": null,
       "solar": null,

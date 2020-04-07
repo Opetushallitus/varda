@@ -33,8 +33,7 @@ from varda.misc_queries import get_paos_toimipaikat
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, PaosToiminta,
                           Lapsi, Huoltaja, Huoltajuussuhde, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto,
                           PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet)
-from varda.oppijanumerorekisteri import fetch_henkilo_with_oid, update_modified_henkilot_since_datetime, \
-    save_henkilo_to_db
+from varda.oppijanumerorekisteri import fetch_henkilo_with_oid, save_henkilo_to_db
 from varda.organisaatiopalvelu import check_if_toimipaikka_exists_in_organisaatiopalvelu, \
     create_toimipaikka_in_organisaatiopalvelu
 from varda.permission_groups import assign_object_level_permissions, create_permission_groups_for_organisaatio
@@ -45,18 +44,17 @@ from varda.permissions import (throw_if_not_tallentaja_permissions,
                                user_has_huoltajatieto_tallennus_permissions_to_correct_organization,
                                grant_or_deny_access_to_paos_toimipaikka)
 from varda.serializers import (UserSerializer, ExternalPermissionsSerializer, GroupSerializer,
-                               UpdateHenkiloWithOidSerializer, UpdateHenkilotChangedSinceSerializer,
-                               UpdateOphStaffSerializer, ClearCacheSerializer, ActiveUserSerializer,
-                               AuthTokenSerializer, VakaJarjestajaSerializer, ToimipaikkaSerializer,
-                               ToiminnallinenPainotusSerializer, KieliPainotusSerializer, HaeHenkiloSerializer,
-                               HenkiloSerializer, HenkiloSerializerAdmin, HenkiloOppijanumeroSerializer,
-                               LapsiSerializer, LapsiSerializerAdmin, HuoltajaSerializer, HuoltajuussuhdeSerializer,
-                               MaksutietoPostSerializer, MaksutietoUpdateSerializer, MaksutietoGetSerializer,
-                               VarhaiskasvatuspaatosSerializer, VarhaiskasvatuspaatosPutSerializer,
-                               VarhaiskasvatuspaatosPatchSerializer, VarhaiskasvatussuhdeSerializer,
-                               VakaJarjestajaYhteenvetoSerializer, HenkilohakuLapsetSerializer,
-                               PaosToimintaSerializer, PaosToimijatSerializer, PaosToimipaikatSerializer,
-                               PaosOikeusSerializer, LapsiKoosteSerializer)
+                               UpdateHenkiloWithOidSerializer, UpdateOphStaffSerializer, ClearCacheSerializer,
+                               ActiveUserSerializer, AuthTokenSerializer, VakaJarjestajaSerializer,
+                               ToimipaikkaSerializer, ToiminnallinenPainotusSerializer, KieliPainotusSerializer,
+                               HaeHenkiloSerializer, HenkiloSerializer, HenkiloSerializerAdmin,
+                               HenkiloOppijanumeroSerializer, LapsiSerializer, LapsiSerializerAdmin, HuoltajaSerializer,
+                               HuoltajuussuhdeSerializer, MaksutietoPostSerializer, MaksutietoUpdateSerializer,
+                               MaksutietoGetSerializer, VarhaiskasvatuspaatosSerializer,
+                               VarhaiskasvatuspaatosPutSerializer, VarhaiskasvatuspaatosPatchSerializer,
+                               VarhaiskasvatussuhdeSerializer, VakaJarjestajaYhteenvetoSerializer,
+                               HenkilohakuLapsetSerializer, PaosToimintaSerializer, PaosToimijatSerializer,
+                               PaosToimipaikatSerializer, PaosOikeusSerializer, LapsiKoosteSerializer)
 from varda.tasks import update_oph_staff_to_vakajarjestaja_groups
 from webapps.api_throttles import (BurstRateThrottle, BurstRateThrottleStrict, SustainedModifyRateThrottle,
                                    SustainedRateThrottleStrict)
@@ -135,31 +133,6 @@ class UpdateHenkiloWithOid(GenericViewSet, CreateModelMixin):
     def perform_create(self, serializer):
         fetch_henkilo_with_oid(serializer.validated_data["henkilo_oid"])
         return {"result": "Henkilo-data fetched."}
-
-
-class UpdateHenkilotChangedSince(GenericViewSet, CreateModelMixin):
-    """
-    create:
-        Päivitä henkilöt joiden tiedot muuttuneet Oppijanumerorekisterissä ajanhetken X jälkeen.
-    """
-    queryset = Henkilo.objects.none()
-    serializer_class = UpdateHenkilotChangedSinceSerializer
-    permission_classes = (permissions.IsAdminUser, )
-
-    def create(self, request, *args, **kwargs):
-        user = request.user
-        if user.is_anonymous:
-            raise NotAuthenticated("Not authenticated.")
-        else:
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            result = self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
-            return Response(result, status=status.HTTP_200_OK, headers=headers)
-
-    def perform_create(self, serializer):
-        update_modified_henkilot_since_datetime(serializer.validated_data["date_and_time"])
-        return {"result": "Henkilot updated."}
 
 
 class UpdateOphStaff(GenericViewSet, CreateModelMixin):

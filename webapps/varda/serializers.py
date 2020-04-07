@@ -1,4 +1,3 @@
-import datetime
 import logging
 
 from django.contrib.auth.models import User, Group
@@ -45,20 +44,6 @@ class UpdateHenkiloWithOidSerializer(serializers.Serializer):
     def validate(self, attrs):
         henkilo_oid = attrs.get('henkilo_oid')
         validate_henkilo_oid(henkilo_oid)
-        return attrs
-
-
-class UpdateHenkilotChangedSinceSerializer(serializers.Serializer):
-    date_and_time = serializers.CharField(write_only=True, required=True)
-
-    def validate(self, attrs):
-        date_and_time = attrs.get('date_and_time')
-
-        try:
-            datetime.datetime.strptime(date_and_time, '%Y-%m-%dT%H:%M:%SZ')
-        except ValueError:
-            msg = _('Incorrect data format. Should be e.g. YYYY-MM-DDT16:00:00Z')
-            raise serializers.ValidationError(msg, code='invalid')
         return attrs
 
 
