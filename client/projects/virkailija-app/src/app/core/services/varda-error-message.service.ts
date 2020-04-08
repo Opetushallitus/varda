@@ -36,7 +36,8 @@ export class VardaErrorMessageService {
     'Invalid code for paos-lapsi.': 'field.jarjestamismuoto_koodi.paos-lapsi-invalid-code',
     'There is no active paos-agreement to this toimipaikka.': 'alert.paos-lapsi-creation-failed',
     'There is no active paos-agreement.': 'alert.paos-lapsi-creation-failed',
-    'Vakajarjestaja is different than paos_organisaatio for lapsi.': 'alert.vakajarjestaja-eri-kuin-lapsen-paos-toimija'
+    'Vakajarjestaja is different than paos_organisaatio for lapsi.': 'alert.vakajarjestaja-eri-kuin-lapsen-paos-toimija',
+    'Arvo tulee olla vähintään 3 merkkiä pitkä.': 'field.postiosoite.invalid',
   };
 
   dynamicErrorMessageKeys = {
@@ -141,7 +142,6 @@ export class VardaErrorMessageService {
         let translatedErrorMsgObj;
 
         if (Array.isArray(errorObj[key])) {
-
           errorContent = this.handleArrayErrorMsg(errorEntry);
           translatedErrorMsgObj = this.createErrorObjEntry(key, errorContent);
           rv.push(translatedErrorMsgObj);
@@ -165,6 +165,6 @@ export class VardaErrorMessageService {
         console.log(e);
       }
     });
-    return {errorsArr: rv};
+    return { errorsArr: rv };
   }
 }

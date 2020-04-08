@@ -97,20 +97,29 @@ export class VardaVakajarjestajaService {
   }
 
   setVakajarjestajaToimipaikat(toimipaikat: Array<VardaToimipaikkaMinimalDto>, authService: AuthService): void {
+    // preset allToimipaikat, as getAuthorizedToimipaikat requires it
+    this.selectedVakajarjestajaToimipaikat = {
+      ...this.selectedVakajarjestajaToimipaikat,
+      allToimipaikat: toimipaikat
+    };
+
     this.selectedVakajarjestajaToimipaikat = {
       allToimipaikat: toimipaikat,
       toimipaikat: toimipaikat,
       katselijaToimipaikat: authService.getAuthorizedToimipaikat(toimipaikat),
-      tallentajaToimipaikat: authService.getAuthorizedToimipaikat(
-        toimipaikat.filter(toimipaikka =>
-          !toimipaikka.paos_organisaatio_url ||
-          toimipaikka.paos_tallentaja_organisaatio_id_list.includes(parseInt(this.selectedVakajarjestaja.id))
-        ), SaveAccess.kaikki)
+      tallentajaToimipaikat: authService.getAuthorizedToimipaikat(toimipaikat, SaveAccess.kaikki)
     };
   }
 
   getVakajarjestajaToimipaikat(): VakajarjestajaToimipaikat {
     return this.selectedVakajarjestajaToimipaikat;
+  }
+
+  getToimipaikkaAsMinimal(toimipaikka_oid: string): VardaToimipaikkaMinimalDto {
+    if (this.selectedVakajarjestajaToimipaikat) {
+      return this.selectedVakajarjestajaToimipaikat.allToimipaikat.find(toimipaikka => toimipaikka.organisaatio_oid === toimipaikka_oid);
+    }
+    return null;
   }
 
   /**

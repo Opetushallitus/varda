@@ -138,14 +138,15 @@ export class VardaApiService {
     let url = `${this.toimipaikanLapsetUiPath}${toimipaikkaId}/lapset/`;
 
     if (searchParams) {
-      searchParams.search = this.hashHetu(searchParams.search);
+      if (searchParams.search) {
+        searchParams.search = this.hashHetu(searchParams.search);
+      }
 
       url += '?';
-      const searchParamKeys = Object.keys(searchParams);
-      searchParamKeys.forEach((key) => {
-        const searchParamValue = searchParams[key];
-        url += key + '=' + searchParamValue + '&';
-      });
+      url += Object.keys(searchParams)
+        .filter(key => searchParams[key] !== null && searchParams[key] !== undefined)
+        .map(key => `${key}=${searchParams[key]}`)
+        .join('&');
     }
 
     if (nextLink) {

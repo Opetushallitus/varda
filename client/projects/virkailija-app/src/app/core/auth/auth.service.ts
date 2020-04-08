@@ -257,11 +257,13 @@ export class AuthService {
   }
 
 
-  getUserAccess(toimipaikkaOid?: string): UserAccess {
+  getUserAccess(toimipaikkaOID?: string): UserAccess {
     const getRoles = (...roles: Array<VardaKayttooikeusRoles>): boolean => {
-      const toimipaikkaRole = !!(toimipaikkaOid && this.isCurrentUserToimipaikkaRole(toimipaikkaOid, ...roles));
+      const toimipaikkaRole = !!(toimipaikkaOID && this.isCurrentUserToimipaikkaRole(toimipaikkaOID, ...roles));
       return this.isCurrentUserSelectedVakajarjestajaRole(...roles) || toimipaikkaRole;
     };
+
+    const toimipaikka = toimipaikkaOID ? this.vardaVakajarjestajaService.getToimipaikkaAsMinimal(toimipaikkaOID) : null;
 
     const access: UserAccess = {
       paakayttaja: getRoles(VardaKayttooikeusRoles.VARDA_PAAKAYTTAJA),
@@ -286,6 +288,17 @@ export class AuthService {
         tallentaja: false
       }
     };
+
+    // filter off TALLENTAJA rights from PAOS-toimipaikat without TALLENTAJA-responsibility
+    if (toimipaikka && toimipaikka.paos_organisaatio_nimi) {
+      if (!toimipaikka.paos_tallentaja_organisaatio_id_list.includes(parseInt(this.vardaVakajarjestajaService.selectedVakajarjestaja.id))) {
+        Object.keys(access).forEach(key => {
+          if (access[key].tallentaja) {
+            access[key].tallentaja = false;
+          }
+        });
+      }
+    }
 
     return access;
   }

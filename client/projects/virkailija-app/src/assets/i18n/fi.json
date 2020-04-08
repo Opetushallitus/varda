@@ -30,6 +30,8 @@
     "label.accessibilitysettings": "Tekstin koko ja kontrastit",
     "field.postitoimipaikka.label": "Kenttä: Postitoimipaikka",
     "field.sahkopostiosoite.label": "Kenttä: Sähköpostiosoite",
+    "field.postiosoite.label": "Kenttä: Postiosoite",
+    "field.postiosoite.invalid": "Toimipaikan postiosoitteessa on virhe",
     "field.kasvatusopillinen_jarjestelma_koodi.label": "Kenttä: Kasvatusopillinenjärjestelmä",
     "field.jarjestamismuoto_koodi.label": "Kenttä: Järjestämismuoto",
     "field.alkamis_pvm.label": "Kenttä: Alkamispäivämäärä",

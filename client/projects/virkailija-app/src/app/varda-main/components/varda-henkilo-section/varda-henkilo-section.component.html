@@ -22,7 +22,7 @@
        aria-live="polite"
        *ngIf="henkiloList && henkiloList.length === 0">
     <p>{{'toimipaikka-no-lapsi-info' | translate}}</p>
-    <p>{{'toimipaikka-add-lapsi-info' | translate}}</p>
+    <p *ngIf="toimipaikkaAccess.lapsitiedot.tallentaja">{{'toimipaikka-add-lapsi-info' | translate}}</p>
   </div>
   <app-varda-henkilo-list [toimipaikkaAccess]="toimipaikkaAccess"
                           [henkiloList]="henkiloList"

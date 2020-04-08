@@ -26,6 +26,8 @@
     "label.accessibilitysettings": "Textens storlek och kontraster",
     "field.postitoimipaikka.label": "Fält: Postkontor",
     "field.sahkopostiosoite.label": "Fält: E-postadress",
+    "field.postiosoite.label": "Fält: Postadress",
+    "field.postiosoite.invalid": "Verksamhetsställets postadress innehåller ett fel",
     "field.kasvatusopillinen_jarjestelma_koodi.label": "Fält: Pedagogisk inriktning",
     "field.jarjestamismuoto_koodi.label": "Fält: Form för anordnandet",
     "field.alkamis_pvm.label": "Fält: Startdatum",

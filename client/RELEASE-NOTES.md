@@ -1,6 +1,13 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+## [1.3.11] (08.04.2020)
+- CSCVARDA-1601 AuthService: Tallentaja toimipaikkojen PAOS tarkastelu
+- CSCVARDA-1626 Piilotetaan tarpeeton Lisää lapsi-ohjeteksti jos ei ole oikeuksia lisätä lasta toimipaikkaan
+- CSCVARDA-1642 Puuttuva virheilmoitus: Toimipaikan postiosoite
+- CSCVARDA-1643 Toimijan OID tunnus näkyviin PAOS-hallinnan sivulle järjestäjän näkymä
+- CSCVARDA-1650 Syötä tietoja-haku rikki mikäli lapsia yli 20
+
 ## [1.3.10] (02.04.2020)
 - CSCVARDA-1522: Salli toimipaikan toimintamuodon muokkaus
 - CSCVARDA-1518: Katsele tietoja: mahdollistettu lasten tietojen suodatus päivämäärän mukaan

@@ -720,6 +720,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
     const errorMessageObj = this.vardaErrorMessageService.getErrorMessages(eObj);
     this.toimipaikkaFormErrors = errorMessageObj.errorsArr;
     msgForAlert = errorMessageObj.alertMsg;
+
     $('#toimipaikkaModal .toimipaikka-form-content').scrollTop(0);
     this.ui.toimipaikkaFormHasErrors = true;
     this.ui.isSubmitting = false;
