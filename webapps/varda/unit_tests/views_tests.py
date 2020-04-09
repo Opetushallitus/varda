@@ -2937,12 +2937,3 @@ class VardaViewsTests(TestCase):
         assert_status_code(resp, 200)
         self.assertEqual(json.loads(resp.content)['count'], 1)
     """
-
-    def test_paos_toiminnat_with_same_toimipaikka_names(self):
-        """
-        Move to paos-tests (commit still not merged, Gerrit 3245).
-        """
-        client = SetUpTestClient('tester4').client()
-        resp = client.get('/api/v1/vakajarjestajat/1/paos-toimipaikat/')
-        assert_status_code(resp, 200)
-        self.assertEqual(json.loads(resp.content)["count"], 2)

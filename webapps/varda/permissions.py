@@ -132,7 +132,7 @@ def check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(oma_orga
 def check_if_user_has_paakayttaja_permissions(vakajarjestaja_organisaatio_oid, user):
     VARDA_PAAKAYTTAJA = Z4_CasKayttoOikeudet.PAAKAYTTAJA
     paakayttaja_group_name = VARDA_PAAKAYTTAJA + '_' + vakajarjestaja_organisaatio_oid
-    if not user.groups.filter(name=paakayttaja_group_name).exists():
+    if not user.is_superuser and not user.groups.filter(name=paakayttaja_group_name).exists():
         raise PermissionDenied("User does not have paakayttaja-permissions.")
 
 
