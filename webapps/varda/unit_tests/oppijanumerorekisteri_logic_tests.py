@@ -9,7 +9,7 @@ from varda.models import Lapsi, Huoltaja
 
 class TestOppijanumerorekisteriLogic(TestCase):
     fixtures = ['varda/unit_tests/fixture_basics.json']
-    date_time_regex = r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+0[2|3]00'  # E.g 2020-02-18T18:23:11+0200
+    date_time_regex = r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+0[2|3]00'  # E.g. 2020-02-18T18:23:11+0200
 
     @responses.activate
     def test_update_huoltajuussuhteet_uusi_huoltaja(self):
