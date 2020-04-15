@@ -20,7 +20,7 @@ from varda.models import (Henkilo, HistoricalHenkilo, Toimipaikka, VakaJarjestaj
 BATCH_SIZE = 50000
 DB_ANONYMIZER_SQL_FILE_PATH = 'anonymizer/sql/anonymizer.sql'
 DB_ANONYMIZER_ZIP_FILE_PATH = 'anonymizer/python/anonymized_data.zip'
-CORRECT_MD5SUM_OF_ZIP_FILE = '7b70c4ba6f259bf25fcd9cbda429e6d9'
+CORRECT_MD5SUM_OF_ZIP_FILE = '29f1090524810c54279399377ca4e22f'
 SAFETY_MARGIN_HENKILOT = 10
 
 
