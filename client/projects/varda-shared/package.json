@@ -2,8 +2,8 @@
   "name": "varda-shared",
   "version": "0.0.1",
   "peerDependencies": {
-    "@angular/common": "^9.0.5",
-    "@angular/core": "^9.0.5"
+    "@angular/common": "^9.1.1",
+    "@angular/core": "^9.1.1"
   },
   "types": "/dist/"
 }

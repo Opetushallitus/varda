@@ -1,0 +1,116 @@
+{
+  "henkilo": {
+    "henkilo_oid": "1.2.246.562.24.86012997950",
+    "henkilotunnus": "010215A951T",
+    "etunimet": "Teila Aamu Runelma",
+    "kutsumanimi": "Teila",
+    "sukunimi": "Testilä",
+    "aidinkieli_koodi": "FI",
+    "sukupuoli_koodi": "1",
+    "syntyma_pvm": "2018-03-11",
+    "kotikunta_koodi": "915",
+    "katuosoite": "Koivukuja 4",
+    "postinumero": "01230",
+    "postitoimipaikka": "Vantaa"
+  },
+  "voimassaolevia_varhaiskasvatuspaatoksia": 0,
+  "lapset": [
+    {
+      "id": 6,
+      "oma_organisaatio_sahkoposti": "aarre@laiva.laiva",
+      "varhaiskasvatuspaatokset": [
+        {
+          "id": 6,
+          "alkamis_pvm": "2019-02-11",
+          "hakemus_pvm": "2019-01-01",
+          "paattymis_pvm": "2019-10-24",
+          "paivittainen_vaka_kytkin": null,
+          "kokopaivainen_vaka_kytkin": null,
+          "jarjestamismuoto_koodi": "jm03",
+          "vuorohoito_kytkin": true,
+          "pikakasittely_kytkin": true,
+          "tuntimaara_viikossa": 37.5,
+          "varhaiskasvatussuhteet": [
+            {
+              "id": 6,
+              "alkamis_pvm": "2018-09-05",
+              "paattymis_pvm": "2019-04-20",
+              "toimipaikka": {
+                "toimipaikka_nimi": "Tester2 toimipaikka",
+                "toimipaikka_kunta_koodi": "091",
+                "toimipaikka_sahkoposti": "test2@domain.com"
+              }
+            },
+            {
+              "id": 7,
+              "alkamis_pvm": "2018-05-01",
+              "paattymis_pvm": "2019-10-24",
+              "toimipaikka": {
+                "toimipaikka_nimi": "Tester2 toimipaikka",
+                "toimipaikka_kunta_koodi": "091",
+                "toimipaikka_sahkoposti": "test2@domain.com"
+              }
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "alkamis_pvm": "2019-11-11",
+          "hakemus_pvm": "2019-11-01",
+          "paattymis_pvm": "2019-12-22",
+          "paivittainen_vaka_kytkin": true,
+          "kokopaivainen_vaka_kytkin": false,
+          "jarjestamismuoto_koodi": "jm03",
+          "vuorohoito_kytkin": false,
+          "pikakasittely_kytkin": true,
+          "tuntimaara_viikossa": 30.5,
+          "varhaiskasvatussuhteet": [
+            {
+              "id": 8,
+              "alkamis_pvm": "2019-11-11",
+              "paattymis_pvm": "2019-12-22",
+              "toimipaikka": {
+                "toimipaikka_nimi": "Tester2 toimipaikka",
+                "toimipaikka_kunta_koodi": "091",
+                "toimipaikka_sahkoposti": "test2@domain.com"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "varhaiskasvatuspaatokset": [
+        {
+          "id": 2,
+          "varhaiskasvatussuhteet": []
+        },
+        {
+          "id": 5,
+          "alkamis_pvm": "2018-02-11",
+          "hakemus_pvm": "2018-01-12",
+          "paattymis_pvm": "2019-02-24",
+          "paivittainen_vaka_kytkin": false,
+          "kokopaivainen_vaka_kytkin": false,
+          "jarjestamismuoto_koodi": "jm03",
+          "vuorohoito_kytkin": false,
+          "pikakasittely_kytkin": false,
+          "tuntimaara_viikossa": 37.5,
+          "varhaiskasvatussuhteet": [
+            {
+              "id": 5,
+              "alkamis_pvm": "2018-02-11",
+              "paattymis_pvm": "2019-02-24",
+              "toimipaikka": {
+                "toimipaikka_nimi": "Espoo",
+                "toimipaikka_kunta_koodi": "091",
+                "toimipaikka_sahkoposti": "test1@espoo.fi"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

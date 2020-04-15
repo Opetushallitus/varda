@@ -1,3 +1,5 @@
+import { VarhaiskasvatussuhdeDTO } from './varhaiskasvatussuhde-dto';
+
 export interface VarhaiskasvatuspaatosDTO {
   id: number;
   alkamis_pvm: string;
@@ -11,5 +13,7 @@ export interface VarhaiskasvatuspaatosDTO {
   vuorohoito_kytkin: boolean;
   pikakasittely_kytkin: boolean;
   tuntimaara_viikossa: number;
+  varhaiskasvatussuhteet: Array<VarhaiskasvatussuhdeDTO>;
   toggle_expanded?: boolean;
+
 }

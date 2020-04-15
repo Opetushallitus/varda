@@ -17,7 +17,7 @@
       <th class="mat-cell">{{'label.lapsi.oppijanumero' | translate}}</th>
       <td class="mat-cell">{{lapsiDto.henkilo_oid}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.oppijanumero' | translate}}"
+        <button [matTooltip]="'tooltip.henkilotiedot.oppijanumero' | translate"
                 #oppijanumero="matTooltip"
                 (click)="oppijanumero.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -31,7 +31,7 @@
       <th class="mat-cell">{{'label.lapsi.henkilotunnus' | translate}}</th>
       <td class="mat-cell">{{lapsiDto.henkilotunnus}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.henkilotunnus' | translate}}"
+        <button [matTooltip]="'tooltip.henkilotiedot.henkilotunnus' | translate"
                 #henkilotunnus="matTooltip"
                 (click)="henkilotunnus.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -45,7 +45,7 @@
       <th class="mat-cell">{{'label.lapsi.etunimet' | translate}}</th>
       <td class="mat-cell">{{lapsiDto.etunimet}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.etunimet' | translate}}"
+        <button [matTooltip]="'tooltip.henkilotiedot.etunimet' | translate"
                 #etunimet="matTooltip"
                 (click)="etunimet.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -59,7 +59,7 @@
       <th class="mat-cell">{{'label.lapsi.kutsumanimi' | translate}}</th>
       <td class="mat-cell">{{lapsiDto.kutsumanimi}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.kutsumanimi' | translate}}"
+        <button [matTooltip]="'tooltip.henkilotiedot.kutsumanimi' | translate"
                 #kutsumanimi="matTooltip"
                 (click)="kutsumanimi.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -73,7 +73,7 @@
       <th class="mat-cell">{{'label.lapsi.sukunimi' | translate}}</th>
       <td class="mat-cell">{{lapsiDto.sukunimi}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.sukunimi' | translate}}"
+        <button [matTooltip]="'tooltip.henkilotiedot.sukunimi' | translate"
                 #sukunimi="matTooltip"
                 (click)="sukunimi.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -87,7 +87,7 @@
       <th class="mat-cell">{{'label.lapsi.aidinkieli' | translate}}</th>
       <td class="mat-cell">{{lapsiDto.aidinkieli_koodi}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.aidinkieli' | translate}}"
+        <button [matTooltip]="'tooltip.henkilotiedot.aidinkieli' | translate"
                 #aidinkieli="matTooltip"
                 (click)="aidinkieli.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -101,7 +101,7 @@
       <th class="mat-cell">{{'label.lapsi.syntymaaika' | translate}}</th>
       <td class="mat-cell">{{lapsiDto.syntyma_pvm | date:'d.M.yyyy'}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.syntymaaika' | translate}}"
+        <button [matTooltip]="'tooltip.henkilotiedot.syntymaaika' | translate"
                 #syntymaaika="matTooltip"
                 (click)="syntymaaika.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -118,7 +118,7 @@
         <span *ngIf="lapsiDto.sukupuoli_koodi == '2'">{{ "label.nainen" | translate }}</span>
       </td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.sukupuoli' | translate}}"
+        <button [matTooltip]="'tooltip.henkilotiedot.sukupuoli' | translate"
                 #sukupuoli="matTooltip"
                 (click)="sukupuoli.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -132,7 +132,7 @@
       <th class="mat-cell">{{'label.lapsi.kotikunta' | translate}}</th>
       <td class="mat-cell">{{lapsiDto.kotikunta_koodi}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.kotikunta' | translate}}"
+        <button [matTooltip]="'tooltip.henkilotiedot.kotikunta' | translate"
                 #kotikunta="matTooltip"
                 (click)="kotikunta.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -146,7 +146,7 @@
       <th class="mat-cell">{{'label.lapsi.postinumero' | translate}}</th>
       <td class="mat-cell">{{lapsiDto.postinumero}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.postinumero' | translate}}"
+        <button [matTooltip]="'tooltip.henkilotiedot.postinumero' | translate"
                 #postinumero="matTooltip"
                 (click)="postinumero.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -160,7 +160,7 @@
       <th class="mat-cell">{{'label.lapsi.postitoimipaikka' | translate}}</th>
       <td class="mat-cell">{{lapsiDto.postitoimipaikka}}</td>
       <td class="mat-cell">
-        <button matTooltip="{{'label.lapsi.postitoimipaikka' | translate}}"
+        <button [matTooltip]="'tooltip.henkilotiedot.postitoimipaikka' | translate"
                 #postitoimipaikka="matTooltip"
                 (click)="postitoimipaikka.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -170,4 +170,7 @@
       </td>
     </tr>
   </table>
+  <div class="extension-info">
+    {{ 'info.henkilotiedot' | translate }}
+  </div>
 </mat-expansion-panel>

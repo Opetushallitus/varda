@@ -17,7 +17,7 @@ export class HuoltajaApiService {
   }
 
   getHuoltajanLapsi(lapsi_oid: string): Observable<any> {
+    return this.http.get('/varda/assets/testilapsi.json');
     return this.http.get(`${this.huoltajaApi}/v1/huoltajanlapsi/${lapsi_oid}/`);
   }
-
 }

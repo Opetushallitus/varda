@@ -1,0 +1,23 @@
+.huoltaja-dialog {
+
+}
+
+.dialog-content {
+  min-height: 200px;
+}
+
+.dialog-actions {
+  display: flex;
+  align-content: flex-end;
+  justify-content: flex-end;
+}
+.dialog-button {
+  padding: 1em;
+  border: 1px solid black;
+  border-radius: 4px;
+}
+
+address{
+  display: inline;
+  font-style: normal;
+}

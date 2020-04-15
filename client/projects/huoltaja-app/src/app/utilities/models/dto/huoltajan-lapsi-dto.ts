@@ -1,8 +1,8 @@
 import { HenkiloDTO } from './henkilo-dto';
-import { ToimipaikkaDTO } from './toimipaikka-dto';
+import { LapsiDTO } from './lapsi-dto';
 
 export interface HuoltajanLapsiDTO {
   henkilo: HenkiloDTO;
   voimassaolevia_varhaiskasvatuspaatoksia: number;
-  toimipaikat?: Array<ToimipaikkaDTO>;
+  lapset?: Array<LapsiDTO>;
 }

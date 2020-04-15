@@ -23,16 +23,21 @@
 
 
 .varda-navbar-toimija {
-  flex: 4 2 250px;
   display: flex;
   justify-content: flex-start;
   align-items: center;
   margin: 0 0.5em;
   overflow-x: hidden;
+  flex: 3 1 200px;
+}
+
+.varda-navbar-toimija > *:last-child {
+  width: calc(100% - 70px);
 }
 
 .varda-navbar-links {
-  flex: 2 1 520px;
+  min-width: 520px;
+  flex: 3 1 520px;
   height: 100%;
   align-items: top;
   overflow-y: hidden;
@@ -63,7 +68,11 @@
   border-color: var(--black);
 }
 
-
+@media (max-width: 992px) {
+  .varda-navbar-toimija > *:last-child {
+    width: 100%;
+  }
+}
 
 @media (max-width: 767px) {
   .varda-navbar-links {
@@ -101,7 +110,7 @@
 }
 
 @media (max-width: 450px) {
-  .varda-navbar-toimija>label {
+  .varda-navbar-toimija> label {
     display: none;
   }
 }

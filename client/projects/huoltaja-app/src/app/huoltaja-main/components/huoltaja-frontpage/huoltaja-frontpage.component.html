@@ -4,8 +4,11 @@
     <h1>{{'label.varhaiskasvatustiedot' | translate}}</h1>
     <p>{{'text.varhaiskasvatustiedot' | translate}}</p>
   </div>
-  <div *ngIf="fetchError" class="error-field">
-    {{ 'error.ei-henkilotietoja' | translate }}
+  <div *ngIf="fetchError"
+       class="error-field">
+    <p>{{ 'error.child-not-found-1' | translate }}</p>
+    <p>{{ 'error.child-not-found-2' | translate }}</p>
+    <p>{{ 'error.child-not-found-3' | translate }}</p>
   </div>
   <div *ngIf="lapsi?.henkilo">
     <div class="huoltaja-frontpage-div-margin-bottom">
@@ -17,8 +20,9 @@
     </div>
 
     <div>
-      <h2>{{'label.varhaiskasvatustiedot-toimipaikoittain' | translate}}</h2>
-      <div *ngIf="lapsi.voimassaolevia_varhaiskasvatuspaatoksia" class="voimassa-useita-vakapaatoksia-container">
+      <h2>{{'label.varhaiskasvatuspaatokset' | translate}}</h2>
+      <div *ngIf="lapsi.voimassaolevia_varhaiskasvatuspaatoksia"
+           class="voimassa-useita-vakapaatoksia-container">
         <div class="voimassa-useita-vakapaatoksia-rectangle"></div>
         <div class="voimassa-useita-vakapaatoksia-text-container">
           <span>{{'text.voimassa-useita-vakapaatoksia' | translate}}</span>
@@ -26,6 +30,15 @@
       </div>
     </div>
 
+    <ng-container *ngFor="let toimijanLapsi of lapsi.lapset">
+      <app-huoltaja-vakapaatos *ngFor="let vakapaatos of toimijanLapsi.varhaiskasvatuspaatokset"
+                               [oma_organisaatio_sahkoposti]="toimijanLapsi.oma_organisaatio_sahkoposti"
+                               [vakapaatos]="vakapaatos">
+      </app-huoltaja-vakapaatos>
+    </ng-container>
+
+
+    <!--
     <ng-container *ngFor="let toimipaikka of lapsi.toimipaikat">
       <div [ngClass]="onkoVakasuhdeVoimassa(vakasuhde) ? 'vakapaatos-voimassa' : 'vakapaatos-ei-ole-voimassa'"
            *ngFor="let vakasuhde of toimipaikka.varhaiskasvatussuhteet">
@@ -41,9 +54,7 @@
         <app-huoltaja-frontpage-vakasuhde [vakasuhde]="vakasuhde">
         </app-huoltaja-frontpage-vakasuhde>
       </div>
-    </ng-container>
+    </ng-container> -->
   </div>
 
 </div>
-
-

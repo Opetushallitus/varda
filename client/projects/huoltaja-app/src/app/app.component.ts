@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Inject } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { Title } from '@angular/platform-browser';
 import { LoadingHttpService } from 'varda-shared';
 import { Observable } from 'rxjs/internal/Observable';
 import { delay } from 'rxjs/internal/operators/delay';
+import { DOCUMENT } from '@angular/common';
 
 @Component({
   selector: 'app-root',
@@ -11,16 +12,18 @@ import { delay } from 'rxjs/internal/operators/delay';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
-  title = 'huoltaja-app';
   isLoading: Observable<boolean>;
 
   constructor(
     private translateService: TranslateService,
     private titleService: Title,
-    private loadingHttpService: LoadingHttpService
+    private loadingHttpService: LoadingHttpService,
+    @Inject(DOCUMENT) private _document: any
   ) {
-    this.translateService.setDefaultLang('fi');
-    this.translateService.use('fi');
+    const defaultLanguage = this.translateService.getBrowserLang() === 'sv' ? 'sv' : 'fi';
+    this.translateService.setDefaultLang(defaultLanguage);
+    this.translateService.use(defaultLanguage);
+    this._document.documentElement.lang = defaultLanguage;
     this.isLoading = this.loadingHttpService.isLoading().pipe(delay(200));
   }
 

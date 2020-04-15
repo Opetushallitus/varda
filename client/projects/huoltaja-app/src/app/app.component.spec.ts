@@ -20,7 +20,7 @@ describe('AppComponent', () => {
       ],
       providers: [
         { provide: LoadingHttpService, useValue: { isLoading: () => { } } },
-        { provide: TranslateService, useValue: { use: () => { }, setDefaultLang: () => { } } }
+        { provide: TranslateService, useValue: { use: () => { }, setDefaultLang: () => { }, getBrowserLang: () => { } } }
       ]
     }).compileComponents();
 
@@ -32,11 +32,5 @@ describe('AppComponent', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.debugElement.componentInstance;
     expect(app).toBeTruthy();
-  });
-
-  it(`should have as title 'huoltaja-app'`, () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.debugElement.componentInstance;
-    expect(app.title).toEqual('huoltaja-app');
   });
 });

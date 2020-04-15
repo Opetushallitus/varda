@@ -1,0 +1,22 @@
+<h2 mat-dialog-title
+    cdkFocusInitial>{{ 'label.contact-dialog.otsikko' | translate }}</h2>
+<mat-dialog-content class="mat-typography">
+  <div class="dialog-content"
+       role="dialog-content"
+       tabindex="0">
+    <ng-container *ngIf="data.email">
+      {{ 'label.contact-dialog.ota-yhteytta-osoitteeseen' | translate: { email: data.email } }}:
+      <address><a [href]="'mailto:'+data.email"
+           target="_blank">{{ data.email }}</a></address>
+      {{ 'label.contact-dialog.muista-mainita' | translate }}
+    </ng-container>
+
+    <ng-container *ngIf="!data.email">
+      {{ 'label.contact-dialog.ota-yhteytta-vakajarjestajaan' | translate }}
+    </ng-container>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button class="dialog-button"
+          mat-dialog-close>{{ 'label.poistu' | translate }}</button>
+</mat-dialog-actions>

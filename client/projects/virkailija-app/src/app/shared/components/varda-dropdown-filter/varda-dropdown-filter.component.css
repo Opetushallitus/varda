@@ -2,6 +2,21 @@
   padding: 0 0.25em;
   user-select: none;
   cursor: pointer;
+  overflow-x: hidden;
+  height: 100%;
+
+}
+
+.varda-dropdown-filter > span {
+  display: inline-block;
+  max-width: calc(100% - 30px);
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
+}
+
+.varda-dropdown-filter > mat-icon {
+  line-height: 0.9em;
 }
 
 .varda-dropdown-filter:hover {

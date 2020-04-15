@@ -5,6 +5,7 @@ import { HuoltajaApiService } from '../../../services/huoltaja-api.service';
 import { LoginService, LoadingHttpService } from 'varda-shared';
 import { VarhaiskasvatussuhdeDTO } from '../../../utilities/models/dto/varhaiskasvatussuhde-dto';
 import { HuoltajaFrontpageLapsiComponent } from './huoltaja-frontpage-lapsi/huoltaja-frontpage-lapsi.component';
+import { VarhaiskasvatuspaatosDTO } from '../../../utilities/models/dto/varhaiskasvatuspaatos-dto';
 
 @Component({
   selector: 'app-huoltaja-frontpage',
@@ -26,9 +27,9 @@ export class HuoltajaFrontpageComponent implements OnInit {
     });
   }
 
-  onkoVakasuhdeVoimassa(vakasuhde: VarhaiskasvatussuhdeDTO): boolean {
+  onkoVakasuhdeVoimassa(vakapaatos: VarhaiskasvatuspaatosDTO): boolean {
     const today = new Date();
-    return !(vakasuhde.paattymis_pvm < today.toISOString());
+    return !(vakapaatos.paattymis_pvm < today.toISOString());
   }
 
   isLoading() {

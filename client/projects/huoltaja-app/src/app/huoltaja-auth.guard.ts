@@ -37,7 +37,8 @@ export class HuoltajaAuthGuard implements CanActivate {
             this.apiService.getUserInfo().subscribe(userdata => {
               this.loginService.currentUserInfo = userdata;
               if (!userdata.henkilo_oid) {
-                authGuardObs.next(this.router.parseUrl('/ei-oikeuksia'));
+                // TODO: palauta kun CAS palauttaa oikeita tietoja
+                // authGuardObs.next(this.router.parseUrl('/ei-oikeuksia'));
               }
               authGuardObs.next(true);
               authGuardObs.complete();

@@ -37,6 +37,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     })
   ],
   providers: [CookieService],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
+  exports: []
 })
 export class AppModule { }

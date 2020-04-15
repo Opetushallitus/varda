@@ -6,7 +6,7 @@
      appHighContrast>
   <div class="navbar-brand varda-navbar-toimija"
        *ngIf="vakajarjestajat && vakajarjestajat.length">
-    <span class="d-none d-md-inline">{{'label.toimija' | translate}}:</span>
+    <span class="d-none d-lg-inline">{{'label.toimija' | translate}}:</span>
     <ng-container *ngIf="vakajarjestajat">
       <app-varda-dropdown-filter [filterBy]="['nimi', 'organisaatio_oid', 'y_tunnus']"
                                  [label]="selectedVakajarjestaja?.nimi"
