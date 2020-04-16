@@ -1,9 +1,17 @@
-export class VardaLapsiDTO {
-  url?: string;
+export class VardaLapsiCreateDto {
+  public constructor(init?: Partial<VardaLapsiCreateDto>) {
+    Object.assign(this, init);
+  }
+
   henkilo?: string;
-  id: number;
+  vakatoimija?: string;
   oma_organisaatio?: string;
-  oma_organisaatio_nimi?: string;
   paos_organisaatio?: string;
+}
+
+export class VardaLapsiDTO extends VardaLapsiCreateDto {
+  url?: string;
+  id: number;
+  oma_organisaatio_nimi?: string;
   paos_organisaatio_nimi?: string;
 }

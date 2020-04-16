@@ -7,8 +7,7 @@ from django.db.models import Q
 from guardian.shortcuts import assign_perm, remove_perm
 from time import sleep
 from varda.misc import get_json_from_external_service
-from varda.models import Toimipaikka, VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet
-
+from varda.models import Toimipaikka, VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Lapsi
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -201,6 +200,60 @@ def assign_or_remove_object_level_permissions(organisaatio_oid, model_name, mode
                 assign_perm(permission, permission_group, model_obj)
             else:
                 remove_perm(permission, permission_group, model_obj)
+
+
+def assign_lapsi_paos_permissions(oma_organisaatio_oid, paos_organisaatio_oid, tallentaja_organisaatio_oid, lapsi_obj, toimipaikka_organisaatio_oid=None):
+    # Huoltajatieto katselija and tallentaja need view permission for lapsi to be able to view/modify his maksutietos
+    extra_view_permissions = [Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA, Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA]
+    assign_paos_permissions(oma_organisaatio_oid, paos_organisaatio_oid, tallentaja_organisaatio_oid, Lapsi, lapsi_obj,
+                            extra_view_permissions=extra_view_permissions, toimipaikka_organisaatio_oid=toimipaikka_organisaatio_oid)
+
+
+def assign_paos_permissions(oma_organisaatio_oid, paos_organisaatio_oid, tallentaja_organisaatio_oid,
+                            model_name, saved_object, extra_view_permissions=None, toimipaikka_organisaatio_oid=None):
+    """
+    Assign view and modify permissions for permission groups of given paos organisations depending which one has
+    tallentaja role which receives modify permissions. Other one receives only view permissions.
+    :param oma_organisaatio_oid: oma_organisaatio oid
+    :param paos_organisaatio_oid: paos_organisaatio oid
+    :param tallentaja_organisaatio_oid: tallentaja_organisaatio oid
+    :param model_name: model class of permissions which type are assigned to organisations
+    :param saved_object: object the permissions are assigned to
+    :param extra_view_permissions: Z4_CasKayttoOikeudet permissions that should be also given view access in addition to
+    default ones
+    :param toimipaikka_organisaatio_oid: In case permissions should be assigned to toimipaikka groups as well
+    :return: None
+    """
+    if not extra_view_permissions:
+        extra_view_permissions = []
+    object_type_name = model_name._meta.model.__name__.lower()
+    group_organisation_oids = [oma_organisaatio_oid, paos_organisaatio_oid]
+    view_group_roles = [Z4_CasKayttoOikeudet.KATSELIJA,
+                        Z4_CasKayttoOikeudet.TALLENTAJA,
+                        Z4_CasKayttoOikeudet.PAAKAYTTAJA,
+                        Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                        ] + extra_view_permissions
+    view_groups = _get_permission_groups(group_organisation_oids, view_group_roles)
+
+    modify_group_roles = [Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA]
+    modify_groups = _get_permission_groups(group_organisation_oids, modify_group_roles, tallentaja_organisaatio_oid)
+
+    [assign_perm('view_' + object_type_name, group, saved_object) for group in view_groups]
+    [assign_perm('change_' + object_type_name, group, saved_object) for group in modify_groups]
+    [assign_perm('delete_' + object_type_name, group, saved_object) for group in modify_groups]
+
+    if toimipaikka_organisaatio_oid:
+        toimipaikka_view_group_roles = [Z4_CasKayttoOikeudet.KATSELIJA, Z4_CasKayttoOikeudet.TALLENTAJA]
+        toimipaikka_view_groups = _get_permission_groups([toimipaikka_organisaatio_oid], toimipaikka_view_group_roles)
+        [assign_perm('view_' + object_type_name, group, saved_object) for group in toimipaikka_view_groups]
+
+
+def _get_permission_groups(group_organisation_oids, group_roles, tallentaja_organisaatio_oid=None):
+    group_names = [group_role + "_" + group_organisation_oid
+                   for group_role in group_roles
+                   for group_organisation_oid in group_organisation_oids
+                   if not tallentaja_organisaatio_oid or tallentaja_organisaatio_oid == group_organisation_oid]
+    return Group.objects.filter(name__in=group_names)
 
 
 def assign_object_level_permissions(organisaatio_oid, model_name, model_obj, paos_kytkin=False):

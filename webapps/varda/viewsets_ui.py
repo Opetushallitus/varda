@@ -2,20 +2,21 @@ from datetime import datetime
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
-from django.db.models import Q, F
 from django.db import transaction
-from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Q, F
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import ListModelMixin
-from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet
 
 from varda.cache import create_cache_key, get_object_ids_user_has_permissions
 from varda.cas.varda_permissions import IsVardaPaakayttaja
 from varda.misc_queries import get_paos_toimipaikat
-from varda.models import Toimipaikka, VakaJarjestaja, Varhaiskasvatussuhde
+from varda.models import Toimipaikka, VakaJarjestaja, Varhaiskasvatussuhde, PaosToiminta, PaosOikeus
 from varda.permissions import CustomObjectPermissions, save_audit_log
 from varda.serializers import PaosToimipaikkaSerializer, PaosVakaJarjestajaSerializer
 from varda.serializers_ui import VakaJarjestajaUiSerializer, ToimipaikkaUiSerializer, ToimipaikanLapsetUISerializer
@@ -72,6 +73,14 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
         else:
             raise Http404("Not found.")
 
+    def get_toimipaikka(self, request, toimipaikka_pk=None):
+        toimipaikka = get_object_or_404(Toimipaikka.objects.all(), pk=toimipaikka_pk)
+        user = request.user
+        if user.has_perm("view_toimipaikka", toimipaikka):
+            return toimipaikka
+        else:
+            raise Http404("Not found.")
+
     def list(self, request, *args, **kwargs):
         if not kwargs['vakajarjestaja_pk'].isdigit():
             raise Http404("Not found.")
@@ -90,6 +99,28 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
 
         serializer = self.get_serializer(qs_all_toimipaikat, many=True)
         return Response(serializer.data)
+
+    @action(methods=['get'], detail=True, url_path='paos-jarjestajat', url_name='paos_jarjestajat')
+    def paos_jarjestajat(self, request, vakajarjestaja_pk=None, pk=None):
+        """
+        Nouda vakajärjestäjän paos-järjestäjät annettuun toimipaikkaan
+
+        Hakee ne paos toimintaa järjestävät kunnat joiden puolesta annettu toimija hoitaa tallennustehtäviä annettuun
+        paos-toimipaikkaan.
+        """
+        vakajarjestaja = self.get_vakajarjestaja(request, vakajarjestaja_pk)
+        toimipaikka = self.get_toimipaikka(request, pk)
+        kunta_qs = PaosToiminta.objects.filter(paos_toimipaikka=toimipaikka,
+                                               voimassa_kytkin=True).values_list('oma_organisaatio_id', flat=True)
+        jarjestaja_id_qs = (PaosOikeus.objects.filter(jarjestaja_kunta_organisaatio__in=kunta_qs,
+                                                      tallentaja_organisaatio=vakajarjestaja,
+                                                      voimassa_kytkin=True)
+                            .values_list('jarjestaja_kunta_organisaatio', flat=True)
+                            )
+        jarjestaja_qs = VakaJarjestaja.objects.filter(id__in=jarjestaja_id_qs).order_by('id')
+        page = self.paginate_queryset(jarjestaja_qs)
+        serializer = VakaJarjestajaUiSerializer(page, many=True, context={'request': request})
+        return self.get_paginated_response(serializer.data)
 
 
 class NestedAllToimipaikkaViewSet(GenericViewSet, ListModelMixin):

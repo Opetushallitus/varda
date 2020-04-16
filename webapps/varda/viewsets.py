@@ -11,7 +11,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
-from guardian.shortcuts import assign_perm, remove_perm
+from guardian.shortcuts import assign_perm, remove_perm, get_perms
 from rest_framework import permissions, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import (NotAuthenticated, NotFound, PermissionDenied, ValidationError)
@@ -36,13 +36,14 @@ from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, K
 from varda.oppijanumerorekisteri import fetch_henkilo_with_oid, save_henkilo_to_db
 from varda.organisaatiopalvelu import check_if_toimipaikka_exists_in_organisaatiopalvelu, \
     create_toimipaikka_in_organisaatiopalvelu
-from varda.permission_groups import assign_object_level_permissions, create_permission_groups_for_organisaatio
+from varda.permission_groups import assign_object_level_permissions, create_permission_groups_for_organisaatio, \
+    assign_paos_permissions, assign_lapsi_paos_permissions
 from varda.permissions import (throw_if_not_tallentaja_permissions,
                                check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement,
                                check_if_user_has_paakayttaja_permissions,
                                CustomObjectPermissions, save_audit_log,
                                user_has_huoltajatieto_tallennus_permissions_to_correct_organization,
-                               grant_or_deny_access_to_paos_toimipaikka)
+                               grant_or_deny_access_to_paos_toimipaikka, user_has_tallentaja_permission_in_organization)
 from varda.serializers import (UserSerializer, ExternalPermissionsSerializer, GroupSerializer,
                                UpdateHenkiloWithOidSerializer, UpdateOphStaffSerializer, ClearCacheSerializer,
                                ActiveUserSerializer, AuthTokenSerializer, VakaJarjestajaSerializer,
@@ -1078,7 +1079,7 @@ class LapsiViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         return cached_retrieve_response(self, request.user, request.path)
 
-    def return_lapsi_if_already_created(self, validated_data):
+    def save_or_return_lapsi_if_already_created(self, validated_data, serializer):
         user = self.request.user
         if 'paos_organisaatio' in validated_data and validated_data['paos_organisaatio'] is not None:
             q_obj = Q(henkilo=validated_data['henkilo'],
@@ -1104,40 +1105,57 @@ class LapsiViewSet(viewsets.ModelViewSet):
         lapsi_obj = Lapsi.objects.filter(q_obj).first()
         if lapsi_obj:
             raise ConflictError(self.get_serializer(lapsi_obj).data, status_code=status.HTTP_200_OK)
+        return serializer.save(changed_by=user)
 
     def perform_create(self, serializer):
         user = self.request.user
         validated_data = serializer.validated_data
 
-        if 'paos_organisaatio' in validated_data and validated_data['paos_organisaatio'] is not None:
-            """
-            This is a "PAOS-lapsi"
-            - oma_organisaatio must have permission to add this lapsi to PAOS-toimipaikka (under paos-organisaatio)
-            - user must have tallentaja-permission in oma_organisaatio (vakajarjestaja-level) or palvelukayttaja.
-            """
-            oma_organisaatio = validated_data['oma_organisaatio']
-            paos_organisaatio = validated_data['paos_organisaatio']
-            paos_organisaatio_oid = paos_organisaatio.organisaatio_oid
-            paos_toimipaikka = None
-
-            check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(oma_organisaatio, paos_organisaatio)
-            throw_if_not_tallentaja_permissions(paos_organisaatio_oid, paos_toimipaikka, user, oma_organisaatio)
-
-        self.return_lapsi_if_already_created(validated_data)
-
         try:
             with transaction.atomic():
-                saved_object = serializer.save(changed_by=user)
+                oma_organisaatio = validated_data.get('oma_organisaatio')
+                paos_organisaatio = validated_data.get('paos_organisaatio')
+                vakatoimija = validated_data.get('vakatoimija')
+                if paos_organisaatio:
+                    """
+                    This is a "PAOS-lapsi"
+                    - oma_organisaatio must have permission to add this lapsi to PAOS-toimipaikka (under paos-organisaatio)
+                    - user must have tallentaja-permission in oma_organisaatio (vakajarjestaja-level) or palvelukayttaja.
+                    """
+                    paos_organisaatio_oid = paos_organisaatio.organisaatio_oid
+                    paos_toimipaikka = None
+                    paos_oikeus = check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(oma_organisaatio, paos_organisaatio)
+                    throw_if_not_tallentaja_permissions(paos_organisaatio_oid, paos_toimipaikka, user, oma_organisaatio)
+                elif vakatoimija:
+                    # Limit vakatoimija user can use to the ones he has view permission
+                    if "view_vakajarjestaja" not in get_perms(user, vakatoimija):
+                        raise PermissionDenied('User does not have permissions for provided vakatoimija.')
+
+                # This can be performed only after all permission checks are done!
+                saved_object = self.save_or_return_lapsi_if_already_created(validated_data, serializer)
+                if paos_organisaatio:
+                    assign_paos_permissions(oma_organisaatio.organisaatio_oid,
+                                            paos_organisaatio.organisaatio_oid,
+                                            paos_oikeus.tallentaja_organisaatio.organisaatio_oid,
+                                            Lapsi,
+                                            saved_object)
+                elif vakatoimija:
+                    vakajarjestaja_organisaatio_oid = vakatoimija.organisaatio_oid
+                    assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Lapsi, saved_object)
+                    group_huoltajatieto_katselu_vaka = Group.objects.get(name='HUOLTAJATIETO_KATSELU_' + vakajarjestaja_organisaatio_oid)
+                    group_huoltajatieto_tallennus_vaka = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_' + vakajarjestaja_organisaatio_oid)
+                    assign_perm('view_lapsi', group_huoltajatieto_katselu_vaka, saved_object)
+                    assign_perm('view_lapsi', group_huoltajatieto_tallennus_vaka, saved_object)
+
                 delete_cache_keys_related_model('henkilo', saved_object.henkilo.id)
+
+                # Since vakatoimija is not mandatory field these need to be assigned for backward compatibility
                 assign_perm('view_lapsi', user, saved_object)
                 assign_perm('change_lapsi', user, saved_object)
                 assign_perm('delete_lapsi', user, saved_object)
         except IntegrityError as e:
-            if 'oma_organisaatio_is_not_paos_organisaatio' in str(e):
-                raise ValidationError({"detail": "oma_organisaatio cannot be same as paos_organisaatio."})
-            else:
-                logger.error('IntegrityError at LapsiViewSet: {}'.format(e))
-                raise CustomServerErrorException
+            logger.error('IntegrityError at LapsiViewSet: {}'.format(e))
+            raise CustomServerErrorException
 
     def perform_update(self, serializer):
         user = self.request.user
@@ -1153,6 +1171,8 @@ class LapsiViewSet(viewsets.ModelViewSet):
             related_object_validations.check_if_henkilo_is_changed(url, validated_data["henkilo"].id, user)
 
         msg = {}
+        if validated_data.get('vakatoimija') != lapsi_obj.vakatoimija:
+            msg = ({"vakatoimija": ["Changing of vakatoimija is not allowed"]})
         if 'oma_organisaatio' in validated_data and validated_data['oma_organisaatio'] != lapsi_obj.oma_organisaatio:
             msg = ({"oma_organisaatio": ["Changing of oma_organisaatio is not allowed"]})
         if 'paos_organisaatio' in validated_data and validated_data['paos_organisaatio'] != lapsi_obj.paos_organisaatio:
@@ -1231,6 +1251,9 @@ class VarhaiskasvatuspaatosViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = self.request.user
         validated_data = serializer.validated_data
+        lapsi = validated_data["lapsi"]
+        if "change_lapsi" not in get_perms(user, lapsi):
+            raise PermissionDenied('User does not have permissions.')
 
         if not validators.validate_paivamaara1_before_paivamaara2(validated_data['hakemus_pvm'], validated_data['alkamis_pvm'], can_be_same=True):
             raise ValidationError({"hakemus_pvm": ["hakemus_pvm must be before alkamis_pvm (or same)."]})
@@ -1248,10 +1271,23 @@ class VarhaiskasvatuspaatosViewSet(viewsets.ModelViewSet):
 
         with transaction.atomic():
             saved_object = serializer.save(changed_by=user)
-            delete_cache_keys_related_model('lapsi', saved_object.lapsi.id)
-            assign_perm('view_varhaiskasvatuspaatos', user, saved_object)
-            assign_perm('change_varhaiskasvatuspaatos', user, saved_object)
-            assign_perm('delete_varhaiskasvatuspaatos', user, saved_object)
+            delete_cache_keys_related_model('lapsi', lapsi.id)
+            if lapsi.paos_kytkin:
+                paos_oikeus = check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(lapsi.oma_organisaatio, lapsi.paos_organisaatio)
+                if not user_has_tallentaja_permission_in_organization(paos_oikeus.tallentaja_organisaatio.organisaatio_oid, user):
+                    raise PermissionDenied('User does not have permissions.')
+                oma_organisaatio_oid = lapsi.oma_organisaatio.organisaatio_oid
+                paos_organisaatio_oid = lapsi.paos_organisaatio.organisaatio_oid
+                tallentaja_organisaatio_oid = paos_oikeus.tallentaja_organisaatio.organisaatio_oid
+                assign_paos_permissions(oma_organisaatio_oid, paos_organisaatio_oid, tallentaja_organisaatio_oid,
+                                        Varhaiskasvatuspaatos, saved_object)
+            else:
+                if lapsi.vakatoimija:
+                    assign_object_level_permissions(lapsi.vakatoimija.organisaatio_oid, Varhaiskasvatuspaatos, saved_object)
+                # Since vakatoimija is not mandatory field these need to be assigned for backward compatibility
+                assign_perm('view_varhaiskasvatuspaatos', user, saved_object)
+                assign_perm('change_varhaiskasvatuspaatos', user, saved_object)
+                assign_perm('delete_varhaiskasvatuspaatos', user, saved_object)
 
     def perform_update(self, serializer):
         user = self.request.user
@@ -1396,44 +1432,26 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
             raise ValidationError({"non_field_errors": ["this lapsi is already under other vakajarjestaja. Please create a new one."]})
 
     def assign_paos_lapsi_permissions(self, lapsi_obj, varhaiskasvatussuhde_obj, varhaiskasvatuspaatos_obj,
-                                      vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid):
-        """
-        Permissions for "oma_organisaatio" (view & modify-permissions by default)
-        """
-        assign_object_level_permissions(lapsi_obj.oma_organisaatio.organisaatio_oid, Varhaiskasvatussuhde, varhaiskasvatussuhde_obj)
-        assign_object_level_permissions(lapsi_obj.oma_organisaatio.organisaatio_oid, Varhaiskasvatuspaatos, varhaiskasvatuspaatos_obj)
-        assign_object_level_permissions(lapsi_obj.oma_organisaatio.organisaatio_oid, Lapsi, lapsi_obj)
-        group_huoltajatieto_katselu_vaka = Group.objects.get(name='HUOLTAJATIETO_KATSELU_' + lapsi_obj.oma_organisaatio.organisaatio_oid)
-        group_huoltajatieto_tallennus_vaka = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_' + lapsi_obj.oma_organisaatio.organisaatio_oid)
-        assign_perm('view_lapsi', group_huoltajatieto_katselu_vaka, lapsi_obj)
-        assign_perm('view_lapsi', group_huoltajatieto_tallennus_vaka, lapsi_obj)
-
-        """
-        Permissions for "paos_organisaatio" (view-permissions by default)
-        """
-        group_varda_katselija_paos_organization = Group.objects.get(name='VARDA-KATSELIJA_' + vakajarjestaja_organisaatio_oid)
-        group_varda_paakayttaja_paos_organization = Group.objects.get(name='VARDA-PAAKAYTTAJA_' + vakajarjestaja_organisaatio_oid)
-        group_varda_tallentaja_paos_organization = Group.objects.get(name='VARDA-TALLENTAJA_' + vakajarjestaja_organisaatio_oid)
-        group_varda_palvelukayttaja_paos_organization = Group.objects.get(name='VARDA-PALVELUKAYTTAJA_' + vakajarjestaja_organisaatio_oid)
-        paos_organization_groups = [group_varda_katselija_paos_organization,
-                                    group_varda_paakayttaja_paos_organization,
-                                    group_varda_tallentaja_paos_organization,
-                                    group_varda_palvelukayttaja_paos_organization]
-
-        for paos_organization_group in paos_organization_groups:
-            assign_perm('view_varhaiskasvatussuhde', paos_organization_group, varhaiskasvatussuhde_obj)
-            assign_perm('view_varhaiskasvatuspaatos', paos_organization_group, varhaiskasvatuspaatos_obj)
-            assign_perm('view_lapsi', paos_organization_group, lapsi_obj)
-
-        if toimipaikka_organisaatio_oid != '':
-            group_varda_katselija_toimipaikka = Group.objects.get(name='VARDA-KATSELIJA_' + toimipaikka_organisaatio_oid)
-            group_varda_tallentaja_toimipaikka = Group.objects.get(name='VARDA-TALLENTAJA_' + toimipaikka_organisaatio_oid)
-            paos_toimipaikka_groups = [group_varda_katselija_toimipaikka, group_varda_tallentaja_toimipaikka]
-
-            for paos_toimipaikka_group in paos_toimipaikka_groups:
-                assign_perm('view_varhaiskasvatussuhde', paos_toimipaikka_group, varhaiskasvatussuhde_obj)
-                assign_perm('view_varhaiskasvatuspaatos', paos_toimipaikka_group, varhaiskasvatuspaatos_obj)
-                assign_perm('view_lapsi', paos_toimipaikka_group, lapsi_obj)
+                                      toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid):
+        oma_organisaatio_oid = lapsi_obj.oma_organisaatio.organisaatio_oid
+        paos_organisaatio_oid = lapsi_obj.paos_organisaatio.organisaatio_oid
+        assign_lapsi_paos_permissions(oma_organisaatio_oid,
+                                      paos_organisaatio_oid,
+                                      tallentaja_organisaatio_oid,
+                                      lapsi_obj,
+                                      toimipaikka_organisaatio_oid=toimipaikka_organisaatio_oid)
+        assign_paos_permissions(oma_organisaatio_oid,
+                                paos_organisaatio_oid,
+                                tallentaja_organisaatio_oid,
+                                Varhaiskasvatuspaatos,
+                                varhaiskasvatuspaatos_obj,
+                                toimipaikka_organisaatio_oid=toimipaikka_organisaatio_oid)
+        assign_paos_permissions(oma_organisaatio_oid,
+                                paos_organisaatio_oid,
+                                tallentaja_organisaatio_oid,
+                                Varhaiskasvatussuhde,
+                                varhaiskasvatussuhde_obj,
+                                toimipaikka_organisaatio_oid=toimipaikka_organisaatio_oid)
 
     def assign_non_paos_lapsi_permissions(self, lapsi_obj, varhaiskasvatussuhde_obj, varhaiskasvatuspaatos_obj,
                                           vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid):
@@ -1483,7 +1501,7 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
         related_object_validations.check_overlapping_varhaiskasvatus_object(validated_data, Varhaiskasvatussuhde)
         self.validate_lapsi_not_under_different_vakajarjestaja(lapsi_obj, vakajarjestaja_obj)
 
-        paos_lapsi = lapsi_obj.paos_kytkin
+        is_paos_lapsi = lapsi_obj.paos_kytkin
         toimipaikka_added_to_org_palvelu = related_object_validations.toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=toimipaikka_obj)
         toimipaikka_organisaatio_oid = ''
         if not toimipaikka_added_to_org_palvelu:
@@ -1494,12 +1512,10 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
             if vakajarjestaja_organisaatio_oid == '':
                 logger.error('Missing organisaatio_oid for vakajarjestaja: ' + str(vakajarjestaja_obj.id))
                 raise ValidationError({'non_field_errors': ['Organisaatio_oid missing for vakajarjestaja.']})
-            throw_if_not_tallentaja_permissions(vakajarjestaja_organisaatio_oid, toimipaikka_obj, user, lapsi_obj.oma_organisaatio)
-
         else:
             toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
             related_object_validations.check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
-            throw_if_not_tallentaja_permissions(vakajarjestaja_organisaatio_oid, toimipaikka_obj, user, lapsi_obj.oma_organisaatio)
+        throw_if_not_tallentaja_permissions(vakajarjestaja_organisaatio_oid, toimipaikka_obj, user, lapsi_obj.oma_organisaatio)
 
         with transaction.atomic():
             saved_object = serializer.save(changed_by=user)
@@ -1511,9 +1527,11 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
             varhaiskasvatussuhde_obj = saved_object
             varhaiskasvatuspaatos_obj = varhaiskasvatussuhde_obj.varhaiskasvatuspaatos
 
-            if paos_lapsi:
+            if is_paos_lapsi:
+                paos_oikeus = check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(lapsi_obj.oma_organisaatio, lapsi_obj.paos_organisaatio)
+                tallentaja_organisaatio_oid = paos_oikeus.tallentaja_organisaatio.organisaatio_oid
                 self.assign_paos_lapsi_permissions(lapsi_obj, varhaiskasvatussuhde_obj, varhaiskasvatuspaatos_obj,
-                                                   vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
+                                                   toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid)
                 cache.delete('vakajarjestaja_yhteenveto_' + str(lapsi_obj.oma_organisaatio.id))
 
             else:  # Not PAOS-lapsi (i.e. normal case)

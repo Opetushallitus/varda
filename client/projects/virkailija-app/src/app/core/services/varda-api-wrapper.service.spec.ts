@@ -68,41 +68,6 @@ describe('VardaApiWrapperService', () => {
     getToimipaikanLapsetSpy = spyOn(vardaApiService, 'getLapsetForToimipaikka').and.returnValue({});
   });
 
-  it('Should create lapsiDTO and call vardaApiService service with it', () => {
-
-    const henkiloData = {
-        url: 'https://varda-manual-testing-341.rahtiapp.fi/api/v1/henkilot/1/',
-        lapsi: [''],
-        etunimet: 'Matti',
-        sukunimi: 'Meikäläinen',
-        henkilo_oid: '1.2.246.562.24.19721053796',
-        oppijanumero: '1.2.246.562.24.19721053796'
-    };
-    const lapsiData = {
-        formData: {
-            fieldset: {
-                erityistuki: true
-            }
-        },
-        fieldSets: [
-            {
-                id: 'lapsi_perustiedot',
-                title: 'adffd',
-                fields: [
-                    {
-                        key: 'erityistuki',
-                        widget: 'checkbox'
-                    }
-                ]
-            }
-        ]
-    };
-    const result = vardaApiWrapperService.createLapsiDTO(henkiloData, null, null);
-    expect(result).not.toBeNull();
-    expect(result).not.toBeUndefined();
-    expect(result.henkilo).toEqual('https://varda-manual-testing-341.rahtiapp.fi/api/v1/henkilot/1/');
-  });
-
   it('Should call createHenkilo with ssn', () => {
     const ssn = '120456-123C';
     const firstnames = 'Matti Erik';

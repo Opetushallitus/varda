@@ -567,6 +567,8 @@ class MaksutietoUpdateSerializer(serializers.HyperlinkedModelSerializer):
 class LapsiSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     henkilo = HenkiloHLField(view_name='henkilo-detail')
+    vakatoimija = VakaJarjestajaHLField(allow_null=True, required=False, view_name='vakajarjestaja-detail')
+    vakatoimija_oid = OidRelatedField(object_type=VakaJarjestaja, parent_field="vakatoimija", prevalidator=validate_organisaatio_oid)
     oma_organisaatio_nimi = serializers.ReadOnlyField(source='oma_organisaatio.nimi')
     oma_organisaatio = VakaJarjestajaHLField(allow_null=True, required=False, view_name='vakajarjestaja-detail')
     oma_organisaatio_oid = OidRelatedField(object_type=VakaJarjestaja, parent_field="oma_organisaatio", prevalidator=validate_organisaatio_oid)
@@ -581,17 +583,28 @@ class LapsiSerializer(serializers.HyperlinkedModelSerializer):
         exclude = ('luonti_pvm', 'changed_by')
 
     def validate(self, data):
+        errors = []
         if 'henkilo' in data and not self.context['request'].user.has_perm('view_henkilo', data['henkilo']):
             msg = {"henkilo": ["Invalid hyperlink - Object does not exist.", ]}
-            raise serializers.ValidationError(msg, code='invalid')
+            errors.append(msg)
 
-        if (('oma_organisaatio' in data and data['oma_organisaatio'] is not None and
-             ('paos_organisaatio' not in data or data['paos_organisaatio'] is None)) or
-                ('paos_organisaatio' in data and data['paos_organisaatio'] is not None and
-                 ('oma_organisaatio' not in data or data['oma_organisaatio'] is None))):
+        vakatoimija = data.get('vakatoimija')
+        oma_organisaatio = data.get('oma_organisaatio')
+        paos_organisaatio = data.get('paos_organisaatio')
+        # We don't require vakatoimija for regular (non-paos) lapsi since this would change api signature. This can be
+        # changed when all users input vakatoimija or in v2 api.
+        if vakatoimija and oma_organisaatio or vakatoimija and paos_organisaatio:
+            msg = 'Lapsi cannot be paos and regular one same time.'
+            errors.append(msg)
+
+        if oma_organisaatio and not paos_organisaatio or paos_organisaatio and not oma_organisaatio:
             msg = 'For PAOS-lapsi both oma_organisaatio and paos_organisaatio are needed.'
-            raise serializers.ValidationError(msg, code='invalid')
-
+            errors.append(msg)
+        if oma_organisaatio and oma_organisaatio == paos_organisaatio:
+            msg = {"detail": "oma_organisaatio cannot be same as paos_organisaatio."}
+            errors.append(msg)
+        if errors:
+            raise serializers.ValidationError(errors, code='invalid')
         return data
 
     @caching_to_representation('lapsi')
@@ -608,6 +621,8 @@ class LapsiSerializerAdmin(serializers.HyperlinkedModelSerializer):
     henkilo = HenkiloHLField(view_name='henkilo-detail')
     varhaiskasvatuspaatokset_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='varhaiskasvatuspaatos-detail')
     huoltajuussuhteet = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='huoltajuussuhde-detail')
+    vakatoimija = VakaJarjestajaHLField(allow_null=True, required=False, view_name='vakajarjestaja-detail')
+    vakatoimija_oid = OidRelatedField(object_type=VakaJarjestaja, parent_field="vakatoimija", prevalidator=validate_organisaatio_oid)
     oma_organisaatio_oid = OidRelatedField(object_type=VakaJarjestaja, parent_field="oma_organisaatio", prevalidator=validate_organisaatio_oid)
     paos_organisaatio_oid = OidRelatedField(object_type=VakaJarjestaja, parent_field="paos_organisaatio", prevalidator=validate_organisaatio_oid)
 

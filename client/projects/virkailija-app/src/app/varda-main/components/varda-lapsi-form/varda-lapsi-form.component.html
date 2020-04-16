@@ -312,27 +312,26 @@
       <label
              class="varda-field-label">{{'label.kunnan-tai-kuntayhtyman-jarjestama-varhaiskasvatus' | translate}}</label>
       <div class="varda-radio">
-        <mat-radio-group [(ngModel)]="ui.kunnanJarjestamaVarhaiskasvatus">
-          <mat-radio-button [value]="false">{{'label.no' | translate}}</mat-radio-button>
+        <mat-radio-group (change)="fetchPaosOrganisaatiot($event)">
+          <mat-radio-button [value]="false" checked>{{'label.no' | translate}}</mat-radio-button>
           <mat-radio-button [value]="true">{{'label.yes' | translate}}</mat-radio-button>
         </mat-radio-group>
       </div>
     </div>
   </div>
   <div class="varda-fieldset-content form-group"
-       *ngIf="ui.kunnanJarjestamaVarhaiskasvatus">
+       *ngIf="paosJarjestajaKunnat !== undefined">
     <div>
       <label class="varda-field-label">{{'label.jarjestava-kunta-tai-kuntayhtyma' | translate}}</label>
       <div>
         <select class="varda-form-control form-control varda-select"
                 name="jarjestavaKuntaSelect"
-                [disabled]="selectedVakajarjestajaGlobal.kunnallinen_kytkin"
-                [(ngModel)]="selectedVakajarjestaja">
-          <option *ngIf="selectedVakajarjestajaGlobal.kunnallinen_kytkin"
-                  [ngValue]="selectedVakajarjestaja"
-                  selected>{{selectedVakajarjestaja.nimi}}</option>
-          <option *ngFor="let vakajarjestaja of getTallentajaVakajarjestajat(vakajarjestajat)"
-                  [ngValue]="vakajarjestaja">{{vakajarjestaja.vakajarjestaja_nimi}}</option>
+                (change)="setPaosOrganisaatiot($event)">
+          <option [value]=""></option>
+          <option *ngFor="let vakajarjestaja of paosJarjestajaKunnat"
+                  [value]="vakajarjestaja.url">
+            {{vakajarjestaja.nimi}}
+          </option>
         </select>
       </div>
     </div>

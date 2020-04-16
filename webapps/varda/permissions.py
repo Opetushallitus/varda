@@ -71,20 +71,14 @@ def user_has_tallentaja_permission_in_organization(organisaatio_oid, user):
 
 
 def throw_if_not_tallentaja_permissions(vakajarjestaja_organisaatio_oid, toimipaikka_obj, user, oma_organisaatio=None):
-    if user_has_tallentaja_permission_in_organization(vakajarjestaja_organisaatio_oid, user):
-        return None
+    if not oma_organisaatio:
+        if user_has_tallentaja_permission_in_organization(vakajarjestaja_organisaatio_oid, user):
+            return None
 
-    toimipaikan_organisaatio_oid = toimipaikka_obj.organisaatio_oid if toimipaikka_obj else ''
-    if toimipaikka_obj and user_has_tallentaja_permission_in_organization(toimipaikan_organisaatio_oid, user):
-        return None
-
-    """
-    Check possible PAOS-case, i.e. user might have permission to add lapsi to another organization.
-    """
-    if oma_organisaatio is not None:
-        """
-        This is PAOS-lapsi.
-        """
+        toimipaikan_organisaatio_oid = toimipaikka_obj.organisaatio_oid if toimipaikka_obj else ''
+        if toimipaikka_obj and user_has_tallentaja_permission_in_organization(toimipaikan_organisaatio_oid, user):
+            return None
+    else:  # PAOS-case, i.e. user might have permission to add lapsi to another organization.
         try:
             paos_organisaatio = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_organisaatio_oid)
         except VakaJarjestaja.DoesNotExist:
@@ -125,7 +119,7 @@ def check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(oma_orga
     ).first()  # This is either the actual PAOS-Oikeus object or None
 
     if paos_oikeus and paos_oikeus.voimassa_kytkin:
-        return None
+        return paos_oikeus
     raise PermissionDenied('There is no active paos-agreement.')
 
 

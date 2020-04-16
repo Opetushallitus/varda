@@ -21,11 +21,10 @@ export class VardaVakajarjestajaService {
   selectedToimipaikka: VardaToimipaikkaMinimalDto;
   selectedToimipaikkaSubject = new Subject<VardaToimipaikkaMinimalDto>();
   tallentajaToimipaikat: Array<VardaToimipaikkaMinimalDto>;
-  toimipaikat: Array<VardaToimipaikkaDTO>;
+  toimipaikat: Array<VardaToimipaikkaMinimalDto>;
   tallentajaToimipaikatSubject = new Subject<Array<VardaToimipaikkaDTO>>();
   toimipaikkaVarhaiskasvatussuhteet: Array<VardaVarhaiskasvatussuhdeDTO>;
   private selectedVakajarjestajaToimipaikat: VakajarjestajaToimipaikat;
-  private selectedToimipaikkaOid = new BehaviorSubject<string>(null);
 
   constructor() { }
 
@@ -155,14 +154,6 @@ export class VardaVakajarjestajaService {
 
   getVakajarjestajaByUrl(url: string, vakajarjestajat: Array<VardaVakajarjestaja>): VardaVakajarjestaja {
     return vakajarjestajat.find((t) => t.url === url);
-  }
-
-  setSelectedToimipaikkaOid(toimipaikka_oid: string) {
-    this.selectedToimipaikkaOid.next(toimipaikka_oid);
-  }
-
-  getSelectedToimipaikkaOid() {
-    return this.selectedToimipaikkaOid;
   }
 
   getVakaJarjestajaTextForLists(lapsi: VardaLapsiDTO | LapsiByToimipaikkaDTO) {

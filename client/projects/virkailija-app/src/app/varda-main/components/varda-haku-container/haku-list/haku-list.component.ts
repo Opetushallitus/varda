@@ -99,8 +99,10 @@ export class HakuListComponent implements OnInit, OnChanges {
     activeHenkilo.lapsi = lapsi.henkilo.lapsi;
     activeHenkilo.tyontekija = lapsi.henkilo.tyontekija;
     this.activeHenkilo = activeHenkilo;
-    const toimipaikka = this.vardaVakajarjestajaService.tallentajaToimipaikat.find((_toimipaikka: VardaToimipaikkaMinimalDto) => _toimipaikka.organisaatio_oid === result.toimipaikka_oid);
+    const toimipaikka = this.vardaVakajarjestajaService.tallentajaToimipaikat
+      .find((_toimipaikka: VardaToimipaikkaMinimalDto) => _toimipaikka.organisaatio_oid === result.toimipaikka_oid);
     this.vardaVakajarjestajaService.setSelectedToimipaikka(toimipaikka);
+    this.vardaVakajarjestajaService.setSelectedToimipaikkaSubject(toimipaikka);
   }
 
   henkiloHakuFormValuesChanged(hasChanged: boolean) {

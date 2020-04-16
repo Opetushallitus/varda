@@ -726,6 +726,8 @@ class VardaViewsTests(TestCase):
         lapsi_json = {
             "url": "http://testserver/api/v1/lapset/1/?format=json",
             "id": 1,
+            "vakatoimija": None,
+            "vakatoimija_oid": None,
             'oma_organisaatio': None,
             'oma_organisaatio_oid': None,
             'paos_kytkin': False,
@@ -945,6 +947,8 @@ class VardaViewsTests(TestCase):
         lapsi_json = {
             "url": "http://testserver/api/v1/lapset/1/?format=json",
             "id": 1,
+            "vakatoimija": None,
+            "vakatoimija_oid": None,
             'oma_organisaatio': None,
             'oma_organisaatio_oid': None,
             'paos_kytkin': False,
@@ -966,27 +970,27 @@ class VardaViewsTests(TestCase):
         self.assertEqual(content, lapsi_json)
 
     def test_api_post_paos_lapsi_and_test_filtering(self):
-        client = SetUpTestClient('tester5').client()
+        client = SetUpTestClient('tester2').client()
 
         resp = client.get('/api/v1/lapset/?paos_kytkin=False')
-        self.assertEqual(json.loads(resp.content)['count'], 2)
+        former_paos_false_count = json.loads(resp.content)['count']
 
         resp = client.get('/api/v1/lapset/?paos_kytkin=True')
-        self.assertEqual(json.loads(resp.content)['count'], 1)
+        former_paos_true_count = json.loads(resp.content)['count']
 
         lapsi_json = {
-            'henkilo': '/api/v1/henkilot/9/',
+            'henkilo': '/api/v1/henkilot/7/',
             'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
             'paos_organisaatio': '/api/v1/vakajarjestajat/2/'
         }
         resp = client.post('/api/v1/lapset/', data=lapsi_json)
-        assert_status_code(resp, status.HTTP_200_OK)  # already created
+        assert_status_code(resp, status.HTTP_201_CREATED)
 
         resp = client.get('/api/v1/lapset/?paos_kytkin=False')
-        self.assertEqual(json.loads(resp.content)['count'], 2)
+        self.assertEqual(json.loads(resp.content)['count'], former_paos_false_count)
 
         resp = client.get('/api/v1/lapset/?paos_kytkin=True')
-        self.assertEqual(json.loads(resp.content)['count'], 1)  # make sure this is always at least one
+        self.assertEqual(json.loads(resp.content)['count'], former_paos_true_count + 1)
 
     @responses.activate
     def test_api_push_correct_lapsi(self):
@@ -1046,7 +1050,7 @@ class VardaViewsTests(TestCase):
         self.assertEqual(json.loads(resp2.content), {'henkilo': ['Invalid hyperlink - Object does not exist.']})
 
     def test_api_push_lapsi_under_different_vakajarjestaja(self):
-        client = SetUpTestClient('tester').client()
+        client = SetUpTestClient('tester2').client()
 
         varhaiskasvatuspaatos = {
             "lapsi": "/api/v1/lapset/3/",
@@ -1097,7 +1101,7 @@ class VardaViewsTests(TestCase):
         self.assertEqual(json.loads(resp.content), {'detail': 'There is no active paos-agreement.'})
 
     def test_api_push_lapsi_correct_paos(self):
-        client = SetUpTestClient('tester5').client()
+        client = SetUpTestClient('tester2').client()
         lapsi = {
             'henkilo': '/api/v1/henkilot/9/',
             'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
@@ -2449,7 +2453,7 @@ class VardaViewsTests(TestCase):
         assert_status_code(resp, 201)
 
     def test_delete_paostoiminta_with_toimija_view_access_stays_if_children_in_toimipaikka(self):
-        client = SetUpTestClient('tester5').client()
+        client = SetUpTestClient('tester2').client()
         lapsi_json = {
             'henkilo': '/api/v1/henkilot/9/',
             'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
@@ -2860,27 +2864,31 @@ class VardaViewsTests(TestCase):
             {
                 "nimi": "Frontti organisaatio",
                 "id": 4,
+                "url": 'http://testserver/api/v1/vakajarjestajat/4/',
                 "organisaatio_oid": "1.2.246.562.10.93957375484",
                 "kunnallinen_kytkin": True,
                 "y_tunnus": "2156233-6"
             },
             {
-                "nimi": "Tester2 organisaatio",
-                "id": 1,
-                "organisaatio_oid": "1.2.246.562.10.34683023489",
-                "kunnallinen_kytkin": True,
-                "y_tunnus": "8500570-7"
-            },
-            {
                 "nimi": "Tester organisaatio",
                 "id": 2,
+                "url": 'http://testserver/api/v1/vakajarjestajat/2/',
                 "organisaatio_oid": "1.2.246.562.10.93957375488",
                 "kunnallinen_kytkin": False,
                 "y_tunnus": "1825748-8"
             },
             {
+                "nimi": "Tester2 organisaatio",
+                "id": 1,
+                "url": 'http://testserver/api/v1/vakajarjestajat/1/',
+                "organisaatio_oid": "1.2.246.562.10.34683023489",
+                "kunnallinen_kytkin": True,
+                "y_tunnus": "8500570-7"
+            },
+            {
                 "nimi": "varda-testi organisaatio",
                 "id": 3,
+                "url": 'http://testserver/api/v1/vakajarjestajat/3/',
                 "organisaatio_oid": "1.2.246.562.10.93957375486",
                 "kunnallinen_kytkin": False,
                 "y_tunnus": "2617455-1"

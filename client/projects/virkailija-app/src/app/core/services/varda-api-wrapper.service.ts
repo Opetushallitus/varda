@@ -25,14 +25,14 @@ import {
   VardaKoodistot,
   VardaEndpoints
 } from '../../utilities/models';
-import { VardaToimipaikkaYhteenvetoDTO } from '../../utilities/models/dto/varda-toimipaikka-yhteenveto-dto.model';
-import { VardaFieldsetArrayContainer } from '../../utilities/models/varda-fieldset.model';
-import { VardaMaksutietoDTO } from '../../utilities/models/dto/varda-maksutieto-dto.model';
-import { LapsiByToimipaikkaDTO } from '../../utilities/models/dto/varda-henkilohaku-dto.model';
-import { VardaPageDto } from '../../utilities/models/dto/varda-page-dto';
 import { LoadingHttpService } from 'varda-shared';
-import { VardaToimipaikkaMinimalDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
-import { PaosToimintatietoDto } from '../../utilities/models/dto/varda-paos-dto';
+import {VardaToimipaikkaYhteenvetoDTO} from '../../utilities/models/dto/varda-toimipaikka-yhteenveto-dto.model';
+import {VardaFieldsetArrayContainer} from '../../utilities/models/varda-fieldset.model';
+import {VardaMaksutietoDTO} from '../../utilities/models/dto/varda-maksutieto-dto.model';
+import {LapsiByToimipaikkaDTO} from '../../utilities/models/dto/varda-henkilohaku-dto.model';
+import {VardaPageDto} from '../../utilities/models/dto/varda-page-dto';
+import {VardaToimipaikkaMinimalDto} from '../../utilities/models/dto/varda-toimipaikka-dto.model';
+import {VardaLapsiCreateDto} from '../../utilities/models/dto/varda-lapsi-dto.model';
 
 @Injectable()
 export class VardaApiWrapperService {
@@ -61,7 +61,7 @@ export class VardaApiWrapperService {
       extendedHenkilo.henkilo = henkilo;
       let lapsiId, paatosId, lapsiExists = false;
 
-      this.createLapsi(henkilo, data.selectedVakajarjestaja).pipe(mergeMap((lapsi) => {
+      this.createLapsi(data.createLapsiDto).pipe(mergeMap((lapsi) => {
 
         if (!lapsi) {
           observer.error(null);
@@ -133,29 +133,13 @@ export class VardaApiWrapperService {
     return this.vardaApiService.createHenkilo(henkiloCreateObj);
   }
 
-  createLapsi(henkilo: VardaHenkiloDTO, omaOrganisaatio: string): Observable<any> {
+  createLapsi(lapsiDTO: VardaLapsiCreateDto): Observable<any> {
     return new Observable((henkiloObserver) => {
-      const paosOrganisaatio = omaOrganisaatio ? this.getPaosOrganisaatio() : null;
-      const lapsiDTO = this.createLapsiDTO(henkilo, paosOrganisaatio && omaOrganisaatio, paosOrganisaatio && paosOrganisaatio);
-
       this.vardaApiService.createLapsi(lapsiDTO).subscribe((lapsi) => {
         henkiloObserver.next(lapsi);
         henkiloObserver.complete();
       }, (e) => henkiloObserver.error(e));
     });
-  }
-
-  private getPaosOrganisaatio() {
-    return this.vardaVakajarjestajaService.getSelectedToimipaikka().paos_organisaatio_url
-      || VardaApiService.getVakajarjestajaUrlFromId(this.vardaVakajarjestajaService.getSelectedVakajarjestaja().id);
-  }
-
-  createLapsiDTO(henkilo: VardaHenkiloDTO, omaOrganisaatio: string, paosOrganisaatio: string): any {
-    const lapsiDTO = this.createDTOwithData<VardaLapsiDTO>({}, new VardaLapsiDTO(), []);
-    lapsiDTO.henkilo = henkilo.url;
-    lapsiDTO.oma_organisaatio = omaOrganisaatio;
-    lapsiDTO.paos_organisaatio = paosOrganisaatio;
-    return lapsiDTO;
   }
 
   createVarhaiskasvatussuhde(toimipaikka: VardaToimipaikkaDTO,
@@ -435,9 +419,9 @@ export class VardaApiWrapperService {
     return this.vardaApiService.getVakaJarjestajaById(id);
   }
 
-  getPaosJarjestajat(id: string): Observable<Array<PaosToimintatietoDto>> {
-    const _apiCallMethod = (page: number) => this.vardaApiService.getPaosToimijat(id, page);
-    return this.vardaApiService.getAllPagesSequentially<PaosToimintatietoDto>(_apiCallMethod);
+  getPaosJarjestajat(vakajarjestajaId: string, toimipaikkaId: string): Observable<Array<VardaVakajarjestajaUi>> {
+    const _apiCallMethod = (page: number) => this.vardaApiService.getPaosJarjestajat(vakajarjestajaId, toimipaikkaId, page);
+    return this.vardaApiService.getAllPagesSequentially<VardaVakajarjestajaUi>(_apiCallMethod);
   }
 
   getEntityReferenceByEndpoint(endpoint: string): Observable<any> {

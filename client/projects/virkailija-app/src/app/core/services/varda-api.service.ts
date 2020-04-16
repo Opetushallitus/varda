@@ -29,6 +29,7 @@ import {
   PaosToimipaikkatietoDto, PaosVakajarjestajaDto
 } from '../../utilities/models/dto/varda-paos-dto';
 import {VardaToimipaikkaSearchDto} from '../../utilities/models/dto/varda-toimipaikka-dto.model';
+import {VardaVakajarjestajaUi} from '../../utilities/models/varda-vakajarjestaja-ui.model';
 
 @Injectable()
 export class VardaApiService {
@@ -427,6 +428,11 @@ export class VardaApiService {
 
   getPaosToimijat(id: string, page: number): Observable<VardaPageDto<PaosToimintatietoDto>> {
     const url = `${this.vakaJarjestajatApiPath}${id}/paos-toimijat/`;
+    return this.http.get(url, {page});
+  }
+
+  getPaosJarjestajat(vakajarjestajaId: string, toimipaikkaId: string, page: number): Observable<VardaPageDto<VardaVakajarjestajaUi>> {
+    const url = `${this.vakaJarjestajatUiPath}${vakajarjestajaId}/toimipaikat/${toimipaikkaId}/paos-jarjestajat/`;
     return this.http.get(url, {page});
   }
 

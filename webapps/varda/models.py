@@ -253,6 +253,7 @@ class Henkilo(models.Model):
 
 class Lapsi(models.Model):
     henkilo = models.ForeignKey(Henkilo, related_name='lapsi', on_delete=models.PROTECT)
+    vakatoimija = models.ForeignKey(VakaJarjestaja, related_name='lapsi_vakatoimija', on_delete=models.PROTECT, null=True)
     oma_organisaatio = models.ForeignKey(VakaJarjestaja, related_name='paos_lapsi_oma_organisaatio', on_delete=models.PROTECT, null=True)
     paos_organisaatio = models.ForeignKey(VakaJarjestaja, related_name='paos_lapsi_paos_organisaatio', on_delete=models.PROTECT, null=True)
     paos_kytkin = models.BooleanField(default=False)
