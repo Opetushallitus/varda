@@ -1210,7 +1210,7 @@ def create_onr_lapsi_huoltajat(create_all_vakajarjestajat=False):
                 changed_by=admin_user
             )
             for permission_group in vakajarjestaja_permission_groups:
-                assign_perm('view_lapsi', permission_group, lapsi_1)
+                assign_perm('change_lapsi', permission_group, lapsi_1)
 
         if henkilo_2_created:
             assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_2)
