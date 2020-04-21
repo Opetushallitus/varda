@@ -1,0 +1,18 @@
+.toimipaikka-selector {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.toimipaikka-selector-dropdown {
+  flex: 1 1 310px;
+}
+
+.toimipaikka-selector-dropdown > button {
+  margin-top: 0.5em;
+  margin-bottom: 1em;
+}
+.toimipaikka-selector-add {
+  flex: 1 1 180px;
+  text-align: right;
+}

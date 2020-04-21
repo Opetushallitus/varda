@@ -7,16 +7,16 @@ from django.db import IntegrityError, transaction
 from django.db.models import Q
 from guardian.shortcuts import assign_perm
 from pytz import timezone
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, APIException
 
 from varda.clients.oppijanumerorekisteri_client import (get_or_create_henkilo_by_henkilotunnus, get_henkilo_data_by_oid,
                                                         fetch_changed_henkilot, fetch_changed_huoltajuussuhteet)
-
 from varda.enums.aikaleima_avain import AikaleimaAvain
+from varda.enums.batcherror_type import BatchErrorType
 from varda.enums.yhteystieto import Yhteystietoryhmatyyppi, YhteystietoAlkupera, YhteystietoTyyppi
 from varda.misc import (CustomServerErrorException, decrypt_henkilotunnus, encrypt_henkilotunnus,
                         get_json_from_external_service, hash_string)
-from varda.models import Aikaleima, Henkilo, Huoltaja, Huoltajuussuhde, Lapsi
+from varda.models import Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Aikaleima, BatchError
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -215,9 +215,14 @@ def update_huoltajuussuhteet():
     end_datetime = datetime.datetime.now(tz=datetime.timezone.utc)
 
     changed_lapsi_oids = fetch_changed_huoltajuussuhteet(start_datetime)
+    oids_to_retry = (BatchError.objects
+                     .filter(retry_time__lte=datetime.datetime.now(datetime.timezone.utc),
+                             type=BatchErrorType.LAPSI_HUOLTAJUUSSUHDE_UPDATE.name)
+                     .values_list('henkilo__henkilo_oid', flat=True)
+                     )
 
     if changed_lapsi_oids['is_ok']:
-        [update_huoltajuussuhde(lapsi_oid) for lapsi_oid in changed_lapsi_oids['json_msg']]
+        [update_huoltajuussuhde(lapsi_oid) for lapsi_oid in changed_lapsi_oids['json_msg'] + list(oids_to_retry)]
 
         aikaleima.aikaleima = end_datetime
         aikaleima.save()
@@ -225,24 +230,49 @@ def update_huoltajuussuhteet():
         pass  # We need to fetch the huoltajuussuhteet again later. Do not save the aikaleima.
 
 
-def update_huoltajuussuhde(lapsi_oid):
+def lapsi_batch_error_decorator(batch_error_type):
+    def decorator(function):
+        def wrap_decorator(*args):
+            henkilo_oid = args[0]
+            henkilo = Henkilo.objects.filter(henkilo_oid=henkilo_oid).first()
+            try:
+                with transaction.atomic():
+                    function(*args)
+                    if henkilo:
+                        BatchError.objects.filter(henkilo=henkilo, type=batch_error_type.name).delete()
+            except Exception as e:
+                if henkilo:
+                    _create_or_update_lapsi_batch_error(henkilo, e, batch_error_type)
+                else:
+                    logger.exception('Could not create batch error. Missing henkilo.')
+        return wrap_decorator
+    return decorator
+
+
+def _create_or_update_lapsi_batch_error(henkilo_obj, error, batch_error_type):
+    batch_error, is_new = BatchError.objects.get_or_create(henkilo=henkilo_obj, type=batch_error_type.name)
+    batch_error.update_next_retry()
+    batch_error.error_message = str(error)
+    batch_error.save()
+
+
+@lapsi_batch_error_decorator(BatchErrorType.LAPSI_HUOLTAJUUSSUHDE_UPDATE)
+def update_huoltajuussuhde(henkilo_oid):
     """
     Update huoltajasuhteet for lapsi
-    :param lapsi_oid: Henkilo oid of the child
+    :param henkilo_oid: Henkilo oid of the child
     :return: None
     """
     try:
         with transaction.atomic():
-            lapsi = Lapsi.objects.get(henkilo__henkilo_oid=lapsi_oid)
-            fetch_lapsen_huoltajat(lapsi.id)
-    except Lapsi.DoesNotExist:
+            henkilo = Henkilo.objects.get(henkilo_oid=henkilo_oid)
+            fetch_lapsen_huoltajat(henkilo.id)
+    except Henkilo.DoesNotExist:
         logger.info("Skipped huoltajasuhde update for child with oid {} since he was not added to varda"
-                    .format(lapsi_oid))
-    except Exception as e:
-        logger.error('Could not update huoltajuussuhde for lapsi. Oid: {}, Error: {}'.format(lapsi_oid, e))
+                    .format(henkilo_oid))
 
 
-def get_huoltajat_from_onr(henkilo_id):
+def _get_huoltajat_from_onr(henkilo_id):
     """
     We can run this in test environment only with a few selected oppijanumerot.
     """
@@ -257,7 +287,6 @@ def get_huoltajat_from_onr(henkilo_id):
                        '1.2.246.562.24.6815981182311',
                        '1.2.246.562.24.88057101673',
                        ]
-
     henkilo_lapsi_obj = Henkilo.objects.get(id=henkilo_id)
     if (henkilo_lapsi_obj.henkilo_oid == "" or
             (not settings.PRODUCTION_ENV and henkilo_lapsi_obj.henkilo_oid not in test_lapsi_oids)):
@@ -266,7 +295,7 @@ def get_huoltajat_from_onr(henkilo_id):
     huoltajat_url = "/henkilo/" + henkilo_lapsi_obj.henkilo_oid + "/huoltajat"
     reply_msg = get_json_from_external_service(SERVICE_NAME, huoltajat_url)
     if not reply_msg["is_ok"]:
-        return []
+        raise APIException('Could not fetch huoltajat from oppijanumerorekisteri for henkilo {}'.format(henkilo_id))
     return reply_msg["json_msg"]
 
 
@@ -274,57 +303,63 @@ def fetch_huoltajat():
     """
     Fetch missing huoltajat.
     """
-    lapset_without_huoltajuussuhteet = Lapsi.objects.filter(huoltajuussuhteet__isnull=True)
-    for lapsi_obj in lapset_without_huoltajuussuhteet:
-        if lapsi_obj.henkilo.henkilo_oid != "":
-            fetch_lapsen_huoltajat(lapsi_obj.id)
+    lapset_without_huoltajuussuhteet = Henkilo.objects.filter(lapsi__huoltajuussuhteet__isnull=True).exclude(lapsi=None)
+    for henkilo_obj in lapset_without_huoltajuussuhteet:
+        if henkilo_obj.henkilo_oid != "":
+            try:
+                fetch_lapsen_huoltajat(henkilo_obj.id)
+            except IntegrityError as ie:
+                logger.error('Could not create or update huoltajuussuhde with henkilo-id {} and cause {}'
+                             .format(henkilo_obj.id, ie.__cause__))
+            except Exception:
+                logger.exception('Could not update huoltajuussuhteet with henkilo-id {}'.format(henkilo_obj.id))
 
 
-def fetch_lapsen_huoltajat(lapsi_id):
-    try:
-        lapsi_obj = Lapsi.objects.get(id=lapsi_id)
-    except Lapsi.DoesNotExist:
-        return None
+def fetch_lapsen_huoltajat(henkilo_id):
+    """
+    Create or update huoltajat for all lapsi objects henkilo has. Throws exception on error.
+    :param henkilo_id: Henkilo object id
+    :return: None
+    """
+    lapsi_id_list = Henkilo.objects.filter(id=henkilo_id).exclude(lapsi=None).values_list('lapsi__id', flat=True)
+    huoltajat = _get_huoltajat_from_onr(henkilo_id)
+    huoltajat_master_data = [get_henkilo_data_by_oid(huoltaja["oidHenkilo"]) for huoltaja in huoltajat]
+    with transaction.atomic():
+        # Invalidate all current huoltajuussuhde and set ones returned valid
+        [Lapsi.objects.get(id=lapsi_id).huoltajuussuhteet.update(voimassa_kytkin=False) for lapsi_id in lapsi_id_list]
+        [_update_lapsi_huoltaja(lapsi_id, huoltaja) for lapsi_id in lapsi_id_list for huoltaja in huoltajat_master_data]
 
-    reply_json = get_huoltajat_from_onr(lapsi_obj.henkilo.id)
-    try:
-        with transaction.atomic():
-            # Invalidate all current huoltajuussuhde and set ones returned valid
-            lapsi_obj.huoltajuussuhteet.update(voimassa_kytkin=False)
-            for huoltaja in reply_json:
-                huoltaja_master_data = get_henkilo_data_by_oid(huoltaja["oidHenkilo"])
-                # Oid should be used alone as unique identifier in query since hetu can change
-                oid = huoltaja_master_data["oidHenkilo"]
-                default_henkilo = {
-                    'henkilo_oid': oid,
-                    'changed_by': lapsi_obj.changed_by,
-                }
-                # Create henkilo stub
-                henkilo_huoltaja_obj, henkilo_huoltaja_created = (Henkilo.objects.select_for_update(nowait=True)
-                                                                  .filter(henkilo_oid=oid)
-                                                                  .get_or_create(defaults=default_henkilo)
-                                                                  )
-                # Update henkilo
-                fetch_henkilo_data_by_oid(henkilo_huoltaja_obj.id, oid, huoltaja_master_data)
-                if henkilo_huoltaja_created:
-                    group = Group.objects.get(name="vakajarjestaja_view_henkilo")
-                    assign_perm('view_henkilo', group, henkilo_huoltaja_obj)
 
-                huoltaja_obj, huoltaja_created = (Huoltaja.objects
-                                                  .get_or_create(henkilo=henkilo_huoltaja_obj,
-                                                                 defaults={
-                                                                     'changed_by': lapsi_obj.changed_by,
-                                                                 })
-                                                  )
+@transaction.atomic
+def _update_lapsi_huoltaja(lapsi_id, huoltaja_master_data):
+    lapsi_obj = Lapsi.objects.get(id=lapsi_id)
+    # Oid should be used alone as unique identifier in query since hetu can change
+    oid = huoltaja_master_data["oidHenkilo"]
+    default_henkilo = {
+        'henkilo_oid': oid,
+        'changed_by': lapsi_obj.changed_by,
+    }
+    # Create henkilo stub for updating if not already exist
+    henkilo_huoltaja_obj, henkilo_huoltaja_created = (Henkilo.objects.select_for_update(nowait=True)
+                                                      .filter(henkilo_oid=oid)
+                                                      .get_or_create(defaults=default_henkilo)
+                                                      )
+    # Update henkilo
+    fetch_henkilo_data_by_oid(henkilo_huoltaja_obj.id, oid, huoltaja_master_data)
+    if henkilo_huoltaja_created:
+        group = Group.objects.get(name="vakajarjestaja_view_henkilo")
+        assign_perm('view_henkilo', group, henkilo_huoltaja_obj)
 
-                Huoltajuussuhde.objects.update_or_create(lapsi=lapsi_obj,
-                                                         huoltaja=huoltaja_obj,
-                                                         defaults={
-                                                             'changed_by': lapsi_obj.changed_by,
-                                                             'voimassa_kytkin': True,  # ONR returns only valid huoltaja
-                                                         })
+    huoltaja_obj, huoltaja_created = (Huoltaja.objects
+                                      .get_or_create(henkilo=henkilo_huoltaja_obj,
+                                                     defaults={
+                                                         'changed_by': lapsi_obj.changed_by,
+                                                     })
+                                      )
 
-    except IntegrityError as ie:
-        logger.error('Could not create or update huoltajuussuhde with lapsi-id {} and cause {}'.format(lapsi_id, ie.__cause__))
-    except Exception as e:
-        logger.error('Could not update huoltajuussuhteet with lapsi-id: {}, Error: {}.'.format(lapsi_id, e))
+    Huoltajuussuhde.objects.update_or_create(lapsi=lapsi_obj,
+                                             huoltaja=huoltaja_obj,
+                                             defaults={
+                                                 'changed_by': lapsi_obj.changed_by,
+                                                 'voimassa_kytkin': True,  # ONR returns only valid huoltaja
+                                             })

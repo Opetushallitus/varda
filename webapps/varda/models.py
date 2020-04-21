@@ -1,15 +1,22 @@
+import logging
+from datetime import datetime, timedelta, timezone
+
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.db.models import CheckConstraint, UniqueConstraint, F, Q
-from django.utils import timezone
+import django.utils.timezone
 from simple_history.models import HistoricalRecords
 
 from varda import validators
 from varda.enums.aikaleima_avain import AikaleimaAvain
+from varda.enums.batcherror_type import BatchErrorType
 from varda.enums.lahdejarjestelma import Lahdejarjestelma
 from varda.enums.ytj import YtjYritysmuoto
+
+# Get an instance of a logger
+logger = logging.getLogger(__name__)
 
 """
 Preserve the order of the tables (to keep the logical structure coherent):
@@ -518,7 +525,7 @@ class Aikaleima(models.Model):
     avain = models.TextField(choices=AikaleimaAvain.choices(),
                              null=False,
                              unique=True)
-    aikaleima = models.DateTimeField(default=timezone.now)
+    aikaleima = models.DateTimeField(default=django.utils.timezone.now)
 
     class Meta:
         verbose_name_plural = "aikaleimat"
@@ -533,6 +540,33 @@ class LogData(models.Model):
 
     class Meta:
         verbose_name_plural = "log data"
+
+
+class BatchError(models.Model):
+    """
+    For storing errors in scheduled batches and allowing retries.
+    """
+    type = models.TextField(choices=BatchErrorType.choices(),
+                            null=False)
+    henkilo = models.ForeignKey(Henkilo, related_name='batcherrors', on_delete=models.PROTECT)
+    retry_time = models.DateTimeField(default=django.utils.timezone.now)
+    retry_count = models.IntegerField(default=0)
+    error_message = models.TextField()
+
+    class Meta:
+        verbose_name_plural = "batcherrors"
+
+    def update_next_retry(self):
+        """
+        Updates object instance retry_time and retry_count to match the next retry
+        :return: None
+        """
+        next_retry_in_days = 2 ** self.retry_count  # 1,2,4,8,...
+        next_retry_time = datetime.now(tz=timezone.utc) + timedelta(days=next_retry_in_days)
+        self.retry_time = next_retry_time
+        self.retry_count += 1
+        if self.retry_count == 5:
+            logger.warning('Very high retry_count for BatchError {}'.format(self.id))
 
 
 """

@@ -1,0 +1,11 @@
+<div class="varda-list-item"
+     tabindex="0"
+     (keydown.enter)="editHenkilo()"
+     (click)="editHenkilo()">
+  <div class="varda-list-item-column varda-henkilo-item-name">
+    {{henkiloItem.henkilo.sukunimi}}, {{henkiloItem.henkilo.etunimet}}
+  </div>
+  <div class="varda-list-item-column varda-henkilo-item-vakajarjestaja">
+      {{ getVakaJarjestajaText(henkiloItem.lapsi) }}
+  </div>
+</div>

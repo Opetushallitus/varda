@@ -1,10 +1,14 @@
 import re
+from datetime import datetime, timezone, timedelta
+
+from django.utils import timezone as tz
 import responses
 from django.test import TestCase
 from rest_framework import status
 
 from varda import oppijanumerorekisteri
-from varda.models import Lapsi, Huoltaja
+from varda.enums.batcherror_type import BatchErrorType
+from varda.models import Lapsi, Huoltaja, BatchError, Henkilo
 
 
 class TestOppijanumerorekisteriLogic(TestCase):
@@ -293,3 +297,68 @@ class TestOppijanumerorekisteriLogic(TestCase):
         oppijanumerorekisteri.update_huoltajuussuhteet()
         all_huoltajat_after = Huoltaja.objects.all().count()
         self.assertEqual(all_huoltajat_before, all_huoltajat_after)
+
+    @responses.activate
+    def test_update_huoltajuussuhde_can_not_fetch_huoltajat_onr_error(self):
+        responses.add(responses.GET,
+                      re.compile('https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/huoltajasuhdemuutokset/alkaen/' + self.date_time_regex),
+                      json=['1.2.246.562.24.6815981182311'],
+                      status=status.HTTP_200_OK
+                      )
+        responses.add(responses.GET, 'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/1.2.246.562.24.6815981182311/huoltajat',
+                      json=[{'etunimet': 'Arpa', 'sukunimi': 'Kuutio', 'kutsumanimi': 'Arpa', 'oidHenkilo': '1.2.3.4.5'}],
+                      status=status.HTTP_404_NOT_FOUND
+                      )
+        henkilo = Henkilo.objects.get(henkilo_oid='1.2.246.562.24.6815981182311')
+        errors_before = BatchError.objects.filter(type=BatchErrorType.LAPSI_HUOLTAJUUSSUHDE_UPDATE.name, henkilo=henkilo).count()
+
+        # First try
+        oppijanumerorekisteri.update_huoltajuussuhteet()
+        errors_after = BatchError.objects.filter(type=BatchErrorType.LAPSI_HUOLTAJUUSSUHDE_UPDATE.name, henkilo=henkilo).count()
+        self.assertEqual(errors_before + 1, errors_after)
+        batch_error = BatchError.objects.last()
+        actual = BatchError.objects.values('type', 'henkilo', 'retry_count', 'error_message').last()
+        expected = {
+            'type': BatchErrorType.LAPSI_HUOLTAJUUSSUHDE_UPDATE.name,
+            'henkilo': 9,
+            'retry_count': 1,
+            'error_message': 'Could not fetch huoltajat from oppijanumerorekisteri for henkilo 9',
+        }
+        self.assertEqual(actual, expected)
+        expected_retry_time = datetime.now(tz=timezone.utc) + timedelta(days=1)
+        self.assertAlmostEqual(expected_retry_time, batch_error.retry_time, delta=tz.timedelta(seconds=100))
+
+        # Second try
+        oppijanumerorekisteri.update_huoltajuussuhteet()
+        updated_batch_error = BatchError.objects.last()
+        self.assertEqual(updated_batch_error, batch_error, msg='Should not create new BatchError')
+        actual = BatchError.objects.values('type', 'henkilo', 'retry_count', 'error_message').last()
+        expected = {
+            'type': BatchErrorType.LAPSI_HUOLTAJUUSSUHDE_UPDATE.name,
+            'henkilo': 9,
+            'retry_count': 2,
+            'error_message': 'Could not fetch huoltajat from oppijanumerorekisteri for henkilo 9',
+        }
+        self.assertEqual(actual, expected)
+        expected_retry_time = datetime.now(tz=timezone.utc) + timedelta(days=2)  # Should be 3 days but we don't wait 1 day here
+        self.assertAlmostEqual(expected_retry_time, updated_batch_error.retry_time, delta=tz.timedelta(seconds=100))
+
+        # Success
+        responses.reset()
+        responses.add(responses.GET,
+                      re.compile('https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/huoltajasuhdemuutokset/alkaen/' + self.date_time_regex),
+                      json=[],
+                      status=status.HTTP_200_OK
+                      )
+        responses.add(responses.GET, 'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/1.2.246.562.24.6815981182311/huoltajat',
+                      json=[{'etunimet': 'Arpa', 'sukunimi': 'Kuutio', 'kutsumanimi': 'Arpa', 'hetu': '120619A973V', 'oidHenkilo': '1.2.3.4.5'}],
+                      status=status.HTTP_200_OK
+                      )
+        responses.add(responses.GET, 'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/1.2.3.4.5/master',
+                      json={'etunimet': 'Arpa', 'sukunimi': 'Kuutio', 'kutsumanimi': 'Arpa', 'oidHenkilo': '1.2.3.4.5', 'hetu': '120619A973V'},
+                      status=status.HTTP_200_OK)
+        old_batch_error = BatchError.objects.last()
+        old_batch_error.retry_time = datetime.now(tz=timezone.utc) - timedelta(days=1)  # Move to past
+        old_batch_error.save()
+        oppijanumerorekisteri.update_huoltajuussuhteet()
+        self.assertEqual(BatchError.objects.all().count(), errors_before)

@@ -1,0 +1,31 @@
+<section class="varda-main-frame-henkilo-section">
+  <label class="oph-h4 oph-bold"
+         for="henkiloSearchInput">
+    {{'label.toimipaikan-lapset' | translate}}
+  </label>
+
+  <div class="varda-main-frame-henkilo-search">
+    <div class="varda-main-frame-henkilo-search-input-wrapper"
+         *ngIf="henkiloList && henkiloList.length > 1"
+         aria-live="polite">
+      <input id="henkiloSearchInput"
+             type="text"
+             class="varda-form-control form-control varda-input"
+             [(ngModel)]="currentSearchValue"
+             (keyup)="searchValueChanged($event)"
+             [placeholder]="getPlaceholderText()">
+    </div>
+    <div class="flex-wrap-filler"></div>
+  </div>
+  <div class="toimipaikka-empty oph-muted"
+       role="alert"
+       aria-live="polite"
+       *ngIf="henkiloList && henkiloList.length === 0">
+    <p>{{'toimipaikka-no-lapsi-info' | translate}}</p>
+    <p *ngIf="toimipaikkaAccess.lapsitiedot.tallentaja">{{'toimipaikka-add-lapsi-info' | translate}}</p>
+  </div>
+  <app-varda-henkilo-list [toimipaikkaAccess]="toimipaikkaAccess"
+                          [henkiloList]="henkiloList"
+                          [henkiloSearchValue]="henkiloSearchObj"
+                          *ngIf="henkiloList"></app-varda-henkilo-list>
+</section>

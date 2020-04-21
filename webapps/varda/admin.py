@@ -4,7 +4,7 @@ from simple_history.admin import SimpleHistoryAdmin
 
 from .models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo,
                      Maksutieto, Huoltajuussuhde, Lapsi, Huoltaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-                     Aikaleima, PaosToiminta, PaosOikeus)
+                     Aikaleima, PaosToiminta, PaosOikeus, BatchError)
 
 
 class AdminWithGuardianAndHistory(GuardedModelAdmin, SimpleHistoryAdmin):
@@ -27,5 +27,6 @@ admin.site.register(Varhaiskasvatuspaatos, AdminWithGuardianAndHistory)
 admin.site.register(Varhaiskasvatussuhde, AdminWithGuardianAndHistory)
 admin.site.register(Maksutieto, AdminWithGuardianAndHistory)
 admin.site.register(Aikaleima, AdminWithGuardianAndHistory)
+admin.site.register(BatchError, AdminWithGuardianAndHistory)
 admin.site.register(PaosToiminta, AdminWithGuardianAndHistory)
 admin.site.register(PaosOikeus, AdminWithGuardianAndHistory)

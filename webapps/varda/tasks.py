@@ -111,8 +111,8 @@ def fetch_huoltajat_task(periodic_task=False):
 
 
 @shared_task
-def fetch_lapsen_huoltajat_task(lapsi_id):
-    oppijanumerorekisteri.fetch_lapsen_huoltajat(lapsi_id)
+def fetch_lapsen_huoltajat_task(henkilo_id):
+    oppijanumerorekisteri.fetch_lapsen_huoltajat(henkilo_id)
 
 
 @shared_task
