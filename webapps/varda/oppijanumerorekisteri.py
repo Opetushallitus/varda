@@ -135,14 +135,20 @@ def fetch_henkilot_without_oid():
 
 def fetch_henkilot_with_oid():
     """
-    Warning: This is almost all the henkilot in DB. Use only if you need to.
+    Warning: This fetches almost all the henkilot in DB. Use only if you need to.
     TODO: Add warning to admin-view so that he/she knows what is about to do.
     """
-    henkilot = Henkilo.objects.filter(~Q(henkilo_oid=""))
+
+    """
+    Import here to avoid circular references.
+    """
+    from varda.tasks import update_henkilo_data_by_oid
+
+    henkilot = Henkilo.objects.filter(~Q(henkilo_oid=""))  # TODO: Use values_list
     for henkilo in henkilot:
         henkilo_id = henkilo.id
         henkilo_oid = henkilo.henkilo_oid
-        fetch_henkilo_data_by_oid(henkilo_id, henkilo_oid)
+        update_henkilo_data_by_oid.apply_async(args=[henkilo_id, henkilo_oid], queue='low_prio_queue')
 
 
 def fetch_henkilo_with_oid(henkilo_oid):

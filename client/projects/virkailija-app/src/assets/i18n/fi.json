@@ -472,6 +472,7 @@
     "label.choose": "Valitse",
     "label.lapsi-filter.search-instruction": "Voit rajata hakutuloksia sisällön ja ajankohdan mukaan. Oletuksena näytetään tänään voimassaolevat varhaiskasvatuspäätökset. Jos haluat hakea tiedon eri sisällöllä tai ajalta, voit muokata rajaustekijöitä.",
     "field.jarjestamismuoto_koodi.paos-lapsi-invalid-code": "Henkilön lisääminen epäonnistui. Tarkista, että järjestämismuoto on oikein.",
+    "alert.oma_organisaatio_same_as_paos": "Tarkista ostopalvelua ja palvelusetelitoimintaa koskevat tiedot.",
     "alert.paos-lapsi-creation-failed": "Henkilön lisääminen epäonnistui. Tarkista, että ostopalvelu- ja palvelusetelitoiminnan tiedot ovat oikein. Henkilön lisääminen tähän toimipaikkaan edellyttää, että sekä palveluntuottaja että järjestäjä ovat tallentaneet tarvittavat tiedot ostopalvelu- ja palvelusetelitoiminnasta.",
     "alert.date-format": "Päivämäärä tulee olla muodossa pp.kk.vvvv"
 }

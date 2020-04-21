@@ -16,8 +16,7 @@ export class VardaErrorMessageService {
     'Not a valid jarjestamismuoto_koodi.': 'field.jarjestamismuoto_koodi.invalid',
     'Not a valid opiskeluoikeudentila_koodi.': 'field.opiskeluoikeudentila_koodi.invalid',
     'paattymis_pvm must be after alkamis_pvm (or same).': 'paattymis_pvm must be after alkamis_pvm',
-    'Cannot delete varhaiskasvatuspaatos. There are objects referencing it that need to be deleted first.':
-    'field.vakapaatos_cannot_be_deleted',
+    'Cannot delete varhaiskasvatuspaatos. There are objects referencing it that need to be deleted first.': 'field.vakapaatos_cannot_be_deleted',
     'Postinumero is incorrect.': 'field.postinumero.invalid',
     'hakemus_pvm must be before alkamis_pvm (or same).': 'field.hakemus_pvm.before_alkamis_pvm',
     'Changing of varhaiskasvatuspaatos is not allowed': 'field.vakasuhde-vakapaatos-change-not-allowed',
@@ -38,6 +37,7 @@ export class VardaErrorMessageService {
     'There is no active paos-agreement.': 'alert.paos-lapsi-creation-failed',
     'Vakajarjestaja is different than paos_organisaatio for lapsi.': 'alert.vakajarjestaja-eri-kuin-lapsen-paos-toimija',
     'Arvo tulee olla vähintään 3 merkkiä pitkä.': 'field.postiosoite.invalid',
+    'oma_organisaatio cannot be same as paos_organisaatio.': 'alert.oma_organisaatio_same_as_paos'
   };
 
   dynamicErrorMessageKeys = {
@@ -83,7 +83,8 @@ export class VardaErrorMessageService {
 
   handleArrayErrorMsg(errorEntry: any): any {
     let translatedErrorMsg = '';
-    const errorContentsParts = errorEntry[0].split(':');
+
+    const errorContentsParts = typeof (errorEntry[0]) === 'string' ? errorEntry[0].split(':') : ['', errorEntry[0].detail];
     const errorMsgFirstPart = errorContentsParts[0];
     const errorMsgSecondPart = errorContentsParts[1];
 
@@ -147,12 +148,10 @@ export class VardaErrorMessageService {
           rv.push(translatedErrorMsgObj);
 
         } else if (typeof errorEntry === 'string') {
-
           translatedErrorMsgObj = this.createErrorObjEntry(key, this.errorMessageKeys[errorEntry]);
           rv.push(translatedErrorMsgObj);
 
         } else {
-
           const errorObjKeys = Object.keys(errorEntry);
           errorObjKeys.forEach((k) => {
             errorContent = this.handleArrayErrorMsg(errorEntry[k]);

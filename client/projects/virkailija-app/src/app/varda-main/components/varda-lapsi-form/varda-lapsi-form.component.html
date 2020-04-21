@@ -320,14 +320,14 @@
     </div>
   </div>
   <div class="varda-fieldset-content form-group"
-       *ngIf="paosJarjestajaKunnat !== undefined">
+       *ngIf="paosJarjestajaKunnat$ | async as paosJarjestajaKunnat">
     <div>
       <label class="varda-field-label">{{'label.jarjestava-kunta-tai-kuntayhtyma' | translate}}</label>
       <div>
         <select class="varda-form-control form-control varda-select"
                 name="jarjestavaKuntaSelect"
                 (change)="setPaosOrganisaatiot($event)">
-          <option [value]=""></option>
+          <option [value]="">-- {{'label.choose' | translate}} --</option>
           <option *ngFor="let vakajarjestaja of paosJarjestajaKunnat"
                   [value]="vakajarjestaja.url">
             {{vakajarjestaja.nimi}}

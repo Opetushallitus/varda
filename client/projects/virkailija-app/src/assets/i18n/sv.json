@@ -467,6 +467,7 @@
     "label.choose": "Välj",
     "label.lapsi-filter.search-instruction": "Du kan avgränsa sökresultaten enligt innehåll och tid. Beslut inom småbarnspedagogik som är gällande idag visas som standard.  Om du vill söka uppgifter med annat innehåll eller från en annan tidpunkt kan du ändra på avgränsningsfaktorerna.",
     "field.jarjestamismuoto_koodi.paos-lapsi-invalid-code": "Personen kunde inte läggas till. Kontrollera att formen för anordnandet är korrekt.",
+    "alert.oma_organisaatio_same_as_paos": "Kontrollera uppgifterna om servicesedelverksamhet och köptjänster.",
     "alert.paos-lapsi-creation-failed": "Personen kunde inte läggas till. Kontrollera att uppgifterna om verksamhet som ordnas som köpt tjänst eller med servicesedel är korrekta. Att lägga till en person till detta verksamhetsställe förutsätter att både serviceproducenten och anordnaren sparat de behövliga uppgifterna om verksamheten.",
     "alert.date-format": "Datumet ska ha formatet dd.mm.åååå"
 }
