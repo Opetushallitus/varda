@@ -20,13 +20,20 @@ class OidRelatedField(serializers.Field):
     either_required=True here. This field then makes sure that a value
     is provided in at least one of the fields.
 
-    parent_field should implement .organisaatio_oid
-    object_type should implement .DoesNotExist and .objects.get(organisaatio_oid=value), which returns .id
+    parent_field should implement parent_attribute
+    object_type should implement .DoesNotExist and .objects.get(parent_attribute=value), which returns .id
 
     Should something more elaborate be needed change this to an abstract class.
     """
-    def __init__(self, parent_field, object_type, prevalidator, either_required=False, **kwargs):
+    def __init__(self,
+                 parent_field,
+                 object_type,
+                 prevalidator,
+                 either_required=False,
+                 parent_attribute='organisaatio_oid',
+                 **kwargs):
         self.parent_field = parent_field
+        self.parent_attribute = parent_attribute
         self.object_type = object_type
         self.prevalidator = prevalidator
         self.either_required = either_required
@@ -77,7 +84,7 @@ class OidRelatedField(serializers.Field):
         self.prevalidator(value)
 
         try:
-            referenced_object = self.object_type.objects.get(organisaatio_oid=value)
+            referenced_object = self.object_type.objects.get(**{self.parent_attribute: value})
         except self.object_type.DoesNotExist:
             msg = {self.field_name: [f"Unknown oid", ]}
             raise serializers.ValidationError(msg, code='invalid')
@@ -95,5 +102,5 @@ class OidRelatedField(serializers.Field):
     def to_representation(self, obj):
         val = getattr(obj, self.parent_field)
         if val:
-            return val.organisaatio_oid
+            return getattr(val, self.parent_attribute)
         return None

@@ -2,9 +2,9 @@ from django.contrib import admin
 from guardian.admin import GuardedModelAdmin
 from simple_history.admin import SimpleHistoryAdmin
 
-from .models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo,
-                     Maksutieto, Huoltajuussuhde, Lapsi, Huoltaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-                     Aikaleima, PaosToiminta, PaosOikeus, BatchError)
+from .models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto,
+                     PaosOikeus, PaosToiminta, ToiminnallinenPainotus, Toimipaikka, Tyontekija, VakaJarjestaja,
+                     Varhaiskasvatuspaatos, Varhaiskasvatussuhde,)
 
 
 class AdminWithGuardianAndHistory(GuardedModelAdmin, SimpleHistoryAdmin):
@@ -30,3 +30,4 @@ admin.site.register(Aikaleima, AdminWithGuardianAndHistory)
 admin.site.register(BatchError, AdminWithGuardianAndHistory)
 admin.site.register(PaosToiminta, AdminWithGuardianAndHistory)
 admin.site.register(PaosOikeus, AdminWithGuardianAndHistory)
+admin.site.register(Tyontekija, AdminWithGuardianAndHistory)

@@ -4,6 +4,7 @@ import re
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
+from django.db.models import Q
 from rest_framework.exceptions import ValidationError as ValidationErrorRest
 
 """
@@ -192,172 +193,78 @@ def validate_koodi_in_general(koodi):
         raise ValidationError('Koodi has special characters. Not allowed.')
 
 
-def validate_maksun_peruste_koodi(maksun_peruste_koodi):
-    validate_koodi_in_general(maksun_peruste_koodi)
+def validate_z2_koodi(koodi, field_name, code_name):
+    validate_koodi_in_general(koodi)
     koodisto = get_koodisto()
-    if koodisto.maksun_peruste_koodit:
-        maksun_peruste_koodit = [koodi.lower() for koodi in koodisto.maksun_peruste_koodit]
+    if getattr(koodisto, field_name):
+        koodit = [z2_koodi.lower() for z2_koodi in getattr(koodisto, field_name)]
     else:
-        raise ValidationError('Problem getting maksun_peruste-codes')
-    if maksun_peruste_koodi.lower() not in maksun_peruste_koodit:
-        error_msg = maksun_peruste_koodi + " : Not a valid maksun_peruste_koodi"
+        raise ValidationError('Problem with ' + field_name + '-codes.')
+    if koodi.lower() not in koodit:
+        error_msg = koodi + ' : Not a valid ' + code_name + '.'
         raise ValidationError(error_msg)
+
+
+def validate_maksun_peruste_koodi(maksun_peruste_koodi):
+    validate_z2_koodi(maksun_peruste_koodi, 'maksun_peruste_koodit', 'maksun_peruste_koodi')
 
 
 def validate_kunta_koodi(kunta_koodi):
-    validate_koodi_in_general(kunta_koodi)
-    koodisto = get_koodisto()
-    if koodisto.kunta_koodit:
-        kunta_koodit = koodisto.kunta_koodit
-    else:
-        raise ValidationError('Problem with kunta_koodit-codes.')
-    if kunta_koodi not in kunta_koodit:
-        error_msg = kunta_koodi + " : Not a valid kunta_koodi."
-        raise ValidationError(error_msg)
+    validate_z2_koodi(kunta_koodi, 'kunta_koodit', 'kunta_koodi')
 
 
 def validate_jarjestamismuoto_koodi(jarjestamismuoto_koodi):
-    validate_koodi_in_general(jarjestamismuoto_koodi)
-    koodisto = get_koodisto()
-    if koodisto.jarjestamismuoto_koodit:
-        jarjestamismuoto_koodit = [koodi.lower() for koodi in koodisto.jarjestamismuoto_koodit]
-    else:
-        raise ValidationError('Problem with jarjestamismuoto_koodit-codes.')
-    if jarjestamismuoto_koodi.lower() not in jarjestamismuoto_koodit:
-        error_msg = jarjestamismuoto_koodi + " : Not a valid jarjestamismuoto_koodi."
-        raise ValidationError(error_msg)
+    validate_z2_koodi(jarjestamismuoto_koodi, 'jarjestamismuoto_koodit', 'jarjestamismuoto_koodi')
 
 
 def validate_toimintamuoto_koodi(toimintamuoto_koodi):
-    validate_koodi_in_general(toimintamuoto_koodi)
-    koodisto = get_koodisto()
-    if koodisto.toimintamuoto_koodit:
-        toimintamuoto_koodit = [koodi.lower() for koodi in koodisto.toimintamuoto_koodit]
-    else:
-        raise ValidationError('Problem with toimintamuoto_koodit-codes.')
-    if toimintamuoto_koodi.lower() not in toimintamuoto_koodit:
-        error_msg = toimintamuoto_koodi + " : Not a valid toimintamuoto_koodi."
-        raise ValidationError(error_msg)
+    validate_z2_koodi(toimintamuoto_koodi, 'toimintamuoto_koodit', 'toimintamuoto_koodi')
 
 
 def validate_kasvatusopillinen_jarjestelma_koodi(kasvatusopillinen_jarjestelma_koodi):
-    validate_koodi_in_general(kasvatusopillinen_jarjestelma_koodi)
-    koodisto = get_koodisto()
-    if koodisto.kasvatusopillinen_jarjestelma_koodit:
-        kasvatusopillinen_jarjestelma_koodit = [koodi.lower() for koodi in koodisto.kasvatusopillinen_jarjestelma_koodit]
-    else:
-        raise ValidationError('Problem with kasvatusopillinen_jarjestelma_koodit-codes.')
-    if kasvatusopillinen_jarjestelma_koodi.lower() not in kasvatusopillinen_jarjestelma_koodit:
-        error_msg = kasvatusopillinen_jarjestelma_koodi + " : Not a valid kasvatusopillinen_jarjestelma_koodi."
-        raise ValidationError(error_msg)
+    validate_z2_koodi(kasvatusopillinen_jarjestelma_koodi,
+                      'kasvatusopillinen_jarjestelma_koodit',
+                      'kasvatusopillinen_jarjestelma_koodi')
 
 
 def validate_toimintapainotus_koodi(toimintapainotus_koodi):
-    validate_koodi_in_general(toimintapainotus_koodi)
-    koodisto = get_koodisto()
-    if koodisto.toiminnallinen_painotus_koodit:
-        toimintapainotus_koodit = [koodi.lower() for koodi in koodisto.toiminnallinen_painotus_koodit]
-    else:
-        raise ValidationError('Problem with toimintapainotus_koodit-codes.')
-    if toimintapainotus_koodi.lower() not in toimintapainotus_koodit:
-        error_msg = toimintapainotus_koodi + " : Not a valid toimintapainotus_koodi."
-        raise ValidationError(error_msg)
+    validate_z2_koodi(toimintapainotus_koodi, 'toiminnallinen_painotus_koodit', 'toimintapainotus_koodi')
 
 
 def validate_tutkintonimike_koodi(tutkintonimike_koodi):
-    validate_koodi_in_general(tutkintonimike_koodi)
-    koodisto = get_koodisto()
-    if koodisto.tutkintonimike_koodit:
-        tutkintonimike_koodit = [koodi.lower() for koodi in koodisto.tutkintonimike_koodit]
-    else:
-        raise ValidationError('Problem with tutkintonimike_koodit-codes.')
-    if tutkintonimike_koodi.lower() not in tutkintonimike_koodit:
-        error_msg = tutkintonimike_koodi + " : Not a valid tutkintonimike_koodi."
-        raise ValidationError(error_msg)
+    validate_z2_koodi(tutkintonimike_koodi, 'tutkintonimike_koodit', 'tutkintonimike_koodi')
 
 
 def validate_tyosuhde_koodi(tyosuhde_koodi):
-    validate_koodi_in_general(tyosuhde_koodi)
-    koodisto = get_koodisto()
-    if koodisto.tyosuhde_koodit:
-        tyosuhde_koodit = [koodi.lower() for koodi in koodisto.tyosuhde_koodit]
-    else:
-        raise ValidationError('Problem with tyosuhde_koodit-codes.')
-    if tyosuhde_koodi.lower() not in tyosuhde_koodit:
-        error_msg = tyosuhde_koodi + " : Not a valid tyosuhde_koodi."
-        raise ValidationError(error_msg)
+    validate_z2_koodi(tyosuhde_koodi, 'tyosuhde_koodit', 'tyosuhde_koodi')
 
 
 def validate_tyoaika_koodi(tyoaika_koodi):
-    validate_koodi_in_general(tyoaika_koodi)
-    koodisto = get_koodisto()
-    if koodisto.tyoaika_koodit:
-        tyoaika_koodit = [koodi.lower() for koodi in koodisto.tyoaika_koodit]
-    else:
-        raise ValidationError('Problem with tyoaika_koodit-codes.')
-    if tyoaika_koodi.lower() not in tyoaika_koodit:
-        error_msg = tyoaika_koodi + " : Not a valid tyoaika_koodi."
-        raise ValidationError(error_msg)
+    validate_z2_koodi(tyoaika_koodi, 'tyoaika_koodit', 'tyoaika_koodi')
 
 
 def validate_tyotehtava_koodi(tyotehtava_koodi):
-    validate_koodi_in_general(tyotehtava_koodi)
-    koodisto = get_koodisto()
-    if koodisto.tyotehtava_koodit:
-        tyotehtava_koodit = [koodi.lower() for koodi in koodisto.tyotehtava_koodit]
-    else:
-        raise ValidationError('Problem with tyotehtava_koodit-codes.')
-    if tyotehtava_koodi.lower() not in tyotehtava_koodit:
-        error_msg = tyotehtava_koodi + " : Not a valid tyotehtava_koodi."
-        raise ValidationError(error_msg)
+    validate_z2_koodi(tyotehtava_koodi, 'tyotehtava_koodit', 'tyotehtava_koodi')
 
 
 def validate_kieli_koodi(kieli_koodi):
-    validate_koodi_in_general(kieli_koodi)
-    koodisto = get_koodisto()
-    if koodisto.kunta_koodit:
-        kieli_koodit = [koodi.lower() for koodi in koodisto.kieli_koodit]
-    else:
-        raise ValidationError('Problem with kieli_koodit-codes.')
-    if kieli_koodi.lower() not in kieli_koodit:
-        error_msg = kieli_koodi + " : Not a valid kieli_koodi."
-        raise ValidationError(error_msg)
+    validate_z2_koodi(kieli_koodi, 'kieli_koodit', 'kieli_koodi')
 
 
 def validate_sukupuoli_koodi(sukupuoli_koodi):
-    validate_koodi_in_general(sukupuoli_koodi)
-    koodisto = get_koodisto()
-    if koodisto.sukupuoli_koodit:
-        sukupuoli_koodit = [koodi.lower() for koodi in koodisto.sukupuoli_koodit]
-    else:
-        raise ValidationError('Problem with sukupuoli_koodit-codes.')
-    if sukupuoli_koodi.lower() not in sukupuoli_koodit:
-        error_msg = sukupuoli_koodi + " : Not a valid sukupuoli_koodi."
-        raise ValidationError(error_msg)
+    validate_z2_koodi(sukupuoli_koodi, 'sukupuoli_koodit', 'sukupuoli_koodi')
 
 
 def validate_opiskeluoikeudentila_koodi(opiskeluoikeudentila_koodi):
-    validate_koodi_in_general(opiskeluoikeudentila_koodi)
-    koodisto = get_koodisto()
-    if koodisto.opiskeluoikeuden_tila_koodit:
-        opiskeluoikeudentila_koodit = [koodi.lower() for koodi in koodisto.opiskeluoikeuden_tila_koodit]
-    else:
-        raise ValidationError('Problem with opiskeluoikeudentila_koodit-codes.')
-    if opiskeluoikeudentila_koodi.lower() not in opiskeluoikeudentila_koodit:
-        error_msg = opiskeluoikeudentila_koodi + " : Not a valid opiskeluoikeudentila_koodi."
-        raise ValidationError(error_msg)
+    validate_z2_koodi(opiskeluoikeudentila_koodi, 'opiskeluoikeuden_tila_koodit', 'opiskeluoikeudentila_koodi')
 
 
 def validate_tutkinto_koodi(tutkinto_koodi):
-    validate_koodi_in_general(tutkinto_koodi)
-    koodisto = get_koodisto()
-    if koodisto.tutkinto_koodit:
-        tutkinto_koodit = [koodi.lower() for koodi in koodisto.tutkinto_koodit]
-    else:
-        raise ValidationError('Problem with tutkinto_koodit-codes.')
-    if tutkinto_koodi.lower() not in tutkinto_koodit:
-        error_msg = tutkinto_koodi + " : Not a valid tutkinto_koodi."
-        raise ValidationError(error_msg)
+    validate_z2_koodi(tutkinto_koodi, 'tutkinto_koodit', 'tutkinto_koodi')
+
+
+def validate_lahdejarjestelma_koodi(lahdejarjestelma_koodi):
+    validate_z2_koodi(lahdejarjestelma_koodi, 'lahdejarjestelma_koodit', 'lahdejarjestelma_koodi')
 
 
 def validate_kieli_koodi_array(kieli_koodi):
@@ -473,3 +380,31 @@ def validate_toimipaikan_nimi(toimipaikan_nimi):
             toimipaikan_nimi.endswith(tuple(special_characters_partial)) or
             "  " in toimipaikan_nimi):
         raise ValidationErrorRest({"toimipaikka": "Incorrect format."})
+
+
+def validate_tunniste(tunniste):
+    # Validate that tunniste is not hetu
+    is_hetu = True
+    try:
+        validate_henkilotunnus(tunniste)
+    except ValidationErrorRest:
+        is_hetu = False
+
+    if is_hetu:
+        error_msg = tunniste + ' : Not a valid tunniste.'
+        raise ValidationError(error_msg)
+
+
+def validate_unique_lahdejarjestelma_tunniste_pair(self, model):
+    """
+    17.04.2020 UniqueConstraint with condition increments primary key on every validation check,
+    so implement custom unique validation for lahdejarjestelma tunniste pair
+    """
+
+    # Ignored if tunniste is not given
+    if not self.tunniste:
+        return
+
+    if model.objects.filter(~Q(pk=self.pk) & Q(lahdejarjestelma=self.lahdejarjestelma) &
+                            Q(tunniste=self.tunniste)).exists():
+        raise ValidationError({'non_field_errors': ['lahdejarjestelma and tunniste pair already exists.']})

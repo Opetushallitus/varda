@@ -125,6 +125,16 @@ def check_if_henkilo_is_changed(path, uusi_henkilo_id, user):
             raise ValidationError({"henkilo": ["This cannot be changed.", ]})
 
 
+def check_if_henkilo_is_changed_new(user, old_henkilo_id, new_henkilo_id):
+    if user.is_superuser:
+        pass
+    else:
+        if new_henkilo_id == old_henkilo_id:
+            pass
+        else:
+            raise ValidationError({'henkilo': ['This cannot be changed.', ]})
+
+
 def check_overlapping_koodi(validated_data, modelobj, *args):
     """
     Checks that there are no overlapping (same code at the overlapping time period) kielipainotus or

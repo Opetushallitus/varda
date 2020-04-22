@@ -205,6 +205,7 @@ class Z2_Koodisto(djangofilters.FilterSet):
     sukupuoli_koodit = CharArrayFilter(field_name='sukupuoli_koodit', lookup_expr='exact')
     opiskeluoikeuden_tila_koodit = CharArrayFilter(field_name='opiskeluoikeuden_tila_koodit', lookup_expr='exact')
     tutkinto_koodit = CharArrayFilter(field_name='tutkinto_koodit', lookup_expr='exact')
+    lahdejarjestelma_koodit = CharArrayFilter(field_name='lahdejarjestelma_koodit', lookup_expr='exact')
 
     class Meta:
         model = Z2_Koodisto

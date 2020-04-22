@@ -58,6 +58,10 @@ msgstr "Småbarnsfostran datastrukturer"
 msgid "Selailtava REST API"
 msgstr "Bläddringsbar REST API"
 
+#: templates/varda/base.html:29
+msgid "Selailtava REST API (henkilöstö)"
+msgstr "Bläddringsbar REST API (personal)"
+
 #: templates/varda/base.html:9
 msgid "Swagger REST API dokumentaatio"
 msgstr "Swagger REST API dokumentation"

@@ -21,7 +21,7 @@ from rest_framework import routers
 from rest_framework_nested import routers as nested_routers
 
 import varda.viewsets_ui
-from varda import views, viewsets, viewsets_reporting, viewsets_ui, viewsets_oppija
+from varda import views, viewsets, viewsets_reporting, viewsets_ui, viewsets_oppija, viewsets_henkilosto
 from varda.cas.oppija_cas_views import OppijaCasLoginView
 from rest_framework.renderers import CoreJSONRenderer
 from rest_framework.schemas import get_schema_view
@@ -141,6 +141,11 @@ router_koodisto.register(r'koodit', viewsets_reporting.KoodistoViewSet, 'koodist
 router_oppija = routers.DefaultRouter()
 router_oppija.register('test', viewsets_oppija.TestViewSet, 'test')
 
+# Routes for Henkilöstö-URLs
+
+router_henkilosto = routers.DefaultRouter()
+router_henkilosto.register(r'tyontekijat', viewsets_henkilosto.TyontekijaViewSet)
+
 urlpatterns = [
     re_path(r'^$', views.index, name='index'),
     re_path(r'^admin/', admin.site.urls),
@@ -175,4 +180,5 @@ urlpatterns = [
     re_path(r'^koodisto/api/v1/', include(router_koodisto.urls), name='koodisto'),
     re_path(r'^varda/', include('varda.urls'), name='varda'),
     re_path('oppija-api/v1/', include(router_oppija.urls), name='oppija-api-v1'),
+    re_path(r'^api/henkilosto/v1/', include(router_henkilosto.urls), name='api-henkilosto-v1')
 ]

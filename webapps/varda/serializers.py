@@ -13,7 +13,7 @@ from varda.cache import caching_to_representation
 from varda.misc import list_of_dicts_has_duplicate_values
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Maksutieto, Henkilo,
                           Lapsi, Huoltaja, Huoltajuussuhde, PaosOikeus, PaosToiminta, Varhaiskasvatuspaatos,
-                          Varhaiskasvatussuhde, Z3_AdditionalCasUserFields)
+                          Varhaiskasvatussuhde, Z3_AdditionalCasUserFields, Tyontekija)
 from varda.permissions import check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement
 from varda.serializers_common import OidRelatedField
 from varda.validators import validate_henkilo_oid, validate_nimi, validate_henkilotunnus_or_oid_needed, validate_organisaatio_oid
@@ -371,6 +371,7 @@ class HenkiloSerializer(serializers.HyperlinkedModelSerializer):
     henkilo_oid = serializers.CharField(required=False)
     syntyma_pvm = serializers.DateField(read_only=True)
     lapsi = serializers.SerializerMethodField()
+    tyontekija = serializers.SerializerMethodField()
     henkilotunnus = serializers.CharField(required=False, write_only=True)
 
     class Meta:
@@ -408,6 +409,20 @@ class HenkiloSerializer(serializers.HyperlinkedModelSerializer):
 
         return lapset
 
+    def get_tyontekija(self, obj):
+        request = self.context.get('request')
+        user = request.user
+        tyontekijat = []
+
+        qs = Tyontekija.objects.filter(henkilo=obj.pk).order_by('id')
+
+        for tyontekija in qs:
+            if user.has_perm('view_tyontekija', tyontekija):
+                tyontekijat.append(request.build_absolute_uri(reverse('tyontekija-detail',
+                                                                      kwargs={'pk': tyontekija.pk})))
+
+        return tyontekijat
+
 
 class HenkiloSerializerAdmin(HenkiloSerializer):
     id = serializers.ReadOnlyField()
@@ -423,6 +438,17 @@ class HenkiloSerializerAdmin(HenkiloSerializer):
             lapset.append(request.build_absolute_uri(reverse('lapsi-detail', kwargs={'pk': lapsi.pk})))
 
         return lapset
+
+    def get_tyontekija(self, obj):
+        request = self.context.get('request')
+        tyontekijat = []
+
+        qs = Tyontekija.objects.filter(henkilo=obj.pk).order_by('id')
+
+        for tyontekija in qs:
+            tyontekijat.append(request.build_absolute_uri(reverse('tyontekija-detail', kwargs={'pk': tyontekija.pk})))
+
+        return tyontekijat
 
     def get_huoltaja(self, obj):
         request = self.context.get('request')
@@ -568,13 +594,22 @@ class LapsiSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     henkilo = HenkiloHLField(view_name='henkilo-detail')
     vakatoimija = VakaJarjestajaHLField(allow_null=True, required=False, view_name='vakajarjestaja-detail')
-    vakatoimija_oid = OidRelatedField(object_type=VakaJarjestaja, parent_field="vakatoimija", prevalidator=validate_organisaatio_oid)
+    vakatoimija_oid = OidRelatedField(object_type=VakaJarjestaja,
+                                      parent_field='vakatoimija',
+                                      parent_attribute='organisaatio_oid',
+                                      prevalidator=validate_organisaatio_oid)
     oma_organisaatio_nimi = serializers.ReadOnlyField(source='oma_organisaatio.nimi')
     oma_organisaatio = VakaJarjestajaHLField(allow_null=True, required=False, view_name='vakajarjestaja-detail')
-    oma_organisaatio_oid = OidRelatedField(object_type=VakaJarjestaja, parent_field="oma_organisaatio", prevalidator=validate_organisaatio_oid)
+    oma_organisaatio_oid = OidRelatedField(object_type=VakaJarjestaja,
+                                           parent_field='oma_organisaatio',
+                                           parent_attribute='organisaatio_oid',
+                                           prevalidator=validate_organisaatio_oid)
     paos_organisaatio_nimi = serializers.ReadOnlyField(source='paos_organisaatio.nimi')
     paos_organisaatio = VakaJarjestajaHLField(allow_null=True, required=False, view_name='vakajarjestaja-detail')
-    paos_organisaatio_oid = OidRelatedField(object_type=VakaJarjestaja, parent_field="paos_organisaatio", prevalidator=validate_organisaatio_oid)
+    paos_organisaatio_oid = OidRelatedField(object_type=VakaJarjestaja,
+                                            parent_field='paos_organisaatio',
+                                            parent_attribute='organisaatio_oid',
+                                            prevalidator=validate_organisaatio_oid)
     paos_kytkin = serializers.BooleanField(read_only=True)
     varhaiskasvatuspaatokset_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='varhaiskasvatuspaatos-detail')
 
@@ -622,9 +657,18 @@ class LapsiSerializerAdmin(serializers.HyperlinkedModelSerializer):
     varhaiskasvatuspaatokset_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='varhaiskasvatuspaatos-detail')
     huoltajuussuhteet = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='huoltajuussuhde-detail')
     vakatoimija = VakaJarjestajaHLField(allow_null=True, required=False, view_name='vakajarjestaja-detail')
-    vakatoimija_oid = OidRelatedField(object_type=VakaJarjestaja, parent_field="vakatoimija", prevalidator=validate_organisaatio_oid)
-    oma_organisaatio_oid = OidRelatedField(object_type=VakaJarjestaja, parent_field="oma_organisaatio", prevalidator=validate_organisaatio_oid)
-    paos_organisaatio_oid = OidRelatedField(object_type=VakaJarjestaja, parent_field="paos_organisaatio", prevalidator=validate_organisaatio_oid)
+    vakatoimija_oid = OidRelatedField(object_type=VakaJarjestaja,
+                                      parent_field='vakatoimija',
+                                      parent_attribute='organisaatio_oid',
+                                      prevalidator=validate_organisaatio_oid)
+    oma_organisaatio_oid = OidRelatedField(object_type=VakaJarjestaja,
+                                           parent_field='oma_organisaatio',
+                                           parent_attribute='organisaatio_oid',
+                                           prevalidator=validate_organisaatio_oid)
+    paos_organisaatio_oid = OidRelatedField(object_type=VakaJarjestaja,
+                                            parent_field='paos_organisaatio',
+                                            parent_attribute='organisaatio_oid',
+                                            prevalidator=validate_organisaatio_oid)
 
     class Meta:
         model = Lapsi
@@ -803,7 +847,11 @@ class VarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     varhaiskasvatuspaatos = VarhaiskasvatuspaatosHLField(view_name='varhaiskasvatuspaatos-detail')
     toimipaikka = ToimipaikkaHLField(required=False, view_name='toimipaikka-detail')
-    toimipaikka_oid = OidRelatedField(either_required=True, object_type=Toimipaikka, parent_field="toimipaikka", prevalidator=validate_organisaatio_oid)
+    toimipaikka_oid = OidRelatedField(either_required=True,
+                                      object_type=Toimipaikka,
+                                      parent_field='toimipaikka',
+                                      parent_attribute='organisaatio_oid',
+                                      prevalidator=validate_organisaatio_oid)
 
     class Meta:
         model = Varhaiskasvatussuhde

@@ -223,13 +223,18 @@ def get_object_id_from_path(url):
     """
     Parse object-id from request path. Eg.
     ['', 'api', 'v1', 'varhaiskasvatuspaatokset', '1', '']  --->  return 1
+    ['', 'api', 'henkilosto', 'v1', 'tyontekijat', '1', ''] ---> return 1
     """
     request_path = path_parse(url)
     splitted_path = request_path.split('/')
-    if len(splitted_path) != 6:
+    if len(splitted_path) == 6:
+        object_id = splitted_path[4]
+    elif len(splitted_path) == 7 and splitted_path[1] == 'api' and splitted_path[2] == 'henkilosto':
+        object_id = splitted_path[5]
+    else:
         logger.error('request_path length invalid. Path: ' + request_path)
         return None
-    object_id = splitted_path[4]
+
     if not object_id.isdigit():
         return None
     return int(object_id)

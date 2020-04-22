@@ -518,6 +518,43 @@ class PaosOikeus(models.Model):
         ]
 
 
+class Tyontekija(models.Model):
+    henkilo = models.ForeignKey(Henkilo, related_name='tyontekijat', on_delete=models.PROTECT)
+    vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='tyontekijat', on_delete=models.PROTECT)
+    lahdejarjestelma = models.CharField(max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
+    tunniste = models.CharField(max_length=120, null=True, blank=True, validators=[validators.validate_tunniste])
+    luonti_pvm = models.DateTimeField(auto_now_add=True)
+    muutos_pvm = models.DateTimeField(auto_now=True)
+    changed_by = models.ForeignKey('auth.User', related_name='tyontekijat', on_delete=models.PROTECT)
+    history = HistoricalRecords()
+
+    def __str__(self):
+        return str(self.id)
+
+    @property
+    def audit_loggable(self):
+        return True
+
+    @property
+    def _history_user(self):
+        return self.changed_by
+
+    @_history_user.setter
+    def _history_user(self, value):
+        self.changed_by = value
+
+    def validate_unique(self, *args, **kwargs):
+        super(Tyontekija, self).validate_unique(*args, **kwargs)
+        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, Tyontekija)
+
+    def save(self, *args, **kwargs):
+        self.validate_unique()
+        super(Tyontekija, self).save(*args, **kwargs)
+
+    class Meta:
+        verbose_name_plural = 'tyontekijat'
+
+
 class Aikaleima(models.Model):
     """
     Simple state for regular tasks to hold last update information
@@ -592,6 +629,10 @@ def maksun_peruste_koodit_default():
     return ['mp01', 'mp02', 'mp03']
 
 
+def lahdejarjestelma_koodit_default():
+    return ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15']
+
+
 class Z2_Koodisto(models.Model):
     kunta_koodit = ArrayField(models.CharField(max_length=10))
     kieli_koodit = ArrayField(models.CharField(max_length=10))
@@ -607,6 +648,7 @@ class Z2_Koodisto(models.Model):
     opiskeluoikeuden_tila_koodit = ArrayField(models.CharField(max_length=30))
     tutkinto_koodit = ArrayField(models.CharField(max_length=10))
     maksun_peruste_koodit = ArrayField(models.CharField(max_length=10), default=maksun_peruste_koodit_default)
+    lahdejarjestelma_koodit = ArrayField(models.CharField(max_length=2), default=lahdejarjestelma_koodit_default)
 
     def __str__(self):
         return str(self.id)

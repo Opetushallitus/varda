@@ -50,6 +50,10 @@ msgstr ""
 msgid "Selailtava REST API"
 msgstr ""
 
+#: templates/varda/base.html:29
+msgid "Selailtava REST API (henkilöstö)"
+msgstr ""
+
 #: templates/varda/base.html:9
 #, fuzzy
 #| msgid "Swagger REST API documentation"

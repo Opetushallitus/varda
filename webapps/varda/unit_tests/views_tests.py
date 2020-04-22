@@ -307,7 +307,8 @@ class VardaViewsTests(TestCase):
             'sukunimi': 'Manner',
             'henkilo_oid': '',
             'syntyma_pvm': '1966-02-13',
-            'lapsi': []
+            'lapsi': [],
+            'tyontekija': []
         }
         client = SetUpTestClient('tester2').client()
         resp2 = client.post('/api/v1/henkilot/', henkilo)
@@ -329,7 +330,8 @@ class VardaViewsTests(TestCase):
             'sukunimi': 'Manner',
             'henkilo_oid': '',
             'syntyma_pvm': '1966-02-13',
-            'lapsi': []
+            'lapsi': [],
+            'tyontekija': []
         }
         client = SetUpTestClient('tester2').client()
         resp2 = client.post('/api/v1/henkilot/', henkilo)
@@ -351,7 +353,8 @@ class VardaViewsTests(TestCase):
             'sukunimi': 'Manner',
             'henkilo_oid': '',
             'syntyma_pvm': '1966-02-13',
-            'lapsi': []
+            'lapsi': [],
+            'tyontekija': []
         }
         client = SetUpTestClient('tester2').client()
         resp2 = client.post('/api/v1/henkilot/', henkilo)
@@ -373,7 +376,8 @@ class VardaViewsTests(TestCase):
             'sukunimi': 'Manner',
             'henkilo_oid': '',
             'syntyma_pvm': '1966-02-13',
-            'lapsi': []
+            'lapsi': [],
+            'tyontekija': []
         }
         client = SetUpTestClient('tester2').client()
         resp2 = client.post('/api/v1/henkilot/', henkilo)
@@ -495,7 +499,8 @@ class VardaViewsTests(TestCase):
             'sukunimi': 'Virtanen',
             'henkilo_oid': '1.2.246.562.24.58672764848',
             'syntyma_pvm': '2016-05-12',
-            'lapsi': ['http://testserver/api/v1/lapset/2/']
+            'lapsi': ['http://testserver/api/v1/lapset/2/'],
+            'tyontekija': []
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
@@ -517,7 +522,8 @@ class VardaViewsTests(TestCase):
             'sukunimi': 'Virtanen',
             'henkilo_oid': '1.2.246.562.24.58672764848',
             'syntyma_pvm': '2016-05-12',
-            'lapsi': ['http://testserver/api/v1/lapset/2/']
+            'lapsi': ['http://testserver/api/v1/lapset/2/'],
+            'tyontekija': []
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
