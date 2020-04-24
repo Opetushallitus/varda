@@ -1,18 +1,23 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+## [1.3.13] (24.04.2020)
+- CSCVARDA-1609: Varhaiskasvatuspäätösten validoinnin tarkentaminen
+  - Järjestämismuodot
+- CSCVARDA-1659: Komponenttien uudelleenjärjestelyjä (tulevien HR-tietojen takia)
+
 ## [1.3.12] (16.04.2020)
-- CSCVARDA-1484 Omaan toimipaikkaan ei pitäisi voida syöttää paos-lasta ilman oikeutta
-- CSCVARDA-1585 Ylipitkät toimijan nimet
-- CSCVARDA-1616 UI: Huoltajanäkymän yhteydenotto-kenttä
-- CSCVARDA-1630 Angular 9.1 minor päivitys
+- CSCVARDA-1484: Omaan toimipaikkaan ei pitäisi voida syöttää paos-lasta ilman oikeutta
+- CSCVARDA-1585: Ylipitkät toimijan nimet
+- CSCVARDA-1616: UI: Huoltajanäkymän yhteydenotto-kenttä
+- CSCVARDA-1630: Angular 9.1 minor päivitys
 
 ## [1.3.11] (08.04.2020)
-- CSCVARDA-1601 AuthService: Tallentaja toimipaikkojen PAOS tarkastelu
-- CSCVARDA-1626 Piilotetaan tarpeeton Lisää lapsi-ohjeteksti jos ei ole oikeuksia lisätä lasta toimipaikkaan
-- CSCVARDA-1642 Puuttuva virheilmoitus: Toimipaikan postiosoite
-- CSCVARDA-1643 Toimijan OID tunnus näkyviin PAOS-hallinnan sivulle järjestäjän näkymä
-- CSCVARDA-1650 Syötä tietoja-haku rikki mikäli lapsia yli 20
+- CSCVARDA-1601: AuthService: Tallentaja toimipaikkojen PAOS tarkastelu
+- CSCVARDA-1626: Piilotetaan tarpeeton Lisää lapsi-ohjeteksti jos ei ole oikeuksia lisätä lasta toimipaikkaan
+- CSCVARDA-1642: Puuttuva virheilmoitus: Toimipaikan postiosoite
+- CSCVARDA-1643: Toimijan OID tunnus näkyviin PAOS-hallinnan sivulle järjestäjän näkymä
+- CSCVARDA-1650: Syötä tietoja-haku rikki mikäli lapsia yli 20
 
 ## [1.3.10] (02.04.2020)
 - CSCVARDA-1522: Salli toimipaikan toimintamuodon muokkaus
