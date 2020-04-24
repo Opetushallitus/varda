@@ -255,7 +255,7 @@ def assign_toimipaikka_paos_permissions(paos_toimipaikka_organisaatio_oid, talle
     [assign_perm('view_' + model_name, group, saved_object) for group in toimipaikka_katselija_permission_groups]
 
     if tallentaja:
-        toimipaikka_tallentaja_permission_groups = _get_permission_groups([paos_toimipaikka_organisaatio_oid, toimipaikka_tallentaja_group_roles])
+        toimipaikka_tallentaja_permission_groups = _get_permission_groups([paos_toimipaikka_organisaatio_oid], toimipaikka_tallentaja_group_roles)
         [assign_perm('view_' + model_name, group, saved_object) for group in toimipaikka_tallentaja_permission_groups]
         [assign_perm('change_' + model_name, group, saved_object) for group in toimipaikka_tallentaja_permission_groups]
         [assign_perm('delete_' + model_name, group, saved_object) for group in toimipaikka_tallentaja_permission_groups]
