@@ -1107,6 +1107,19 @@ class LapsiViewSet(viewsets.ModelViewSet):
             raise ConflictError(self.get_serializer(lapsi_obj).data, status_code=status.HTTP_200_OK)
         return serializer.save(changed_by=user)
 
+    def copy_huoltajuussuhteet(self, saved_object):
+        for lapsi in saved_object.henkilo.lapsi.all():
+            huoltajuussuhteet_qs = lapsi.huoltajuussuhteet.all()
+            # If other lapsi has huoltajuussuhteet, copy them
+            if huoltajuussuhteet_qs:
+                for huoltajuussuhde in huoltajuussuhteet_qs:
+                    Huoltajuussuhde(lapsi=saved_object,
+                                    huoltaja=huoltajuussuhde.huoltaja,
+                                    voimassa_kytkin=huoltajuussuhde.voimassa_kytkin,
+                                    changed_by=self.request.user).save()
+                # huoltajuussuhteet copied, no need to loop through other lapset
+                break
+
     def perform_create(self, serializer):
         user = self.request.user
         validated_data = serializer.validated_data
@@ -1146,6 +1159,8 @@ class LapsiViewSet(viewsets.ModelViewSet):
                     group_huoltajatieto_tallennus_vaka = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_' + vakajarjestaja_organisaatio_oid)
                     assign_perm('view_lapsi', group_huoltajatieto_katselu_vaka, saved_object)
                     assign_perm('view_lapsi', group_huoltajatieto_tallennus_vaka, saved_object)
+
+                self.copy_huoltajuussuhteet(saved_object)
 
                 delete_cache_keys_related_model('henkilo', saved_object.henkilo.id)
 
