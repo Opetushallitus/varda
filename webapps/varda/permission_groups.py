@@ -210,14 +210,14 @@ def assign_lapsi_paos_permissions(oma_organisaatio_oid, paos_organisaatio_oid, t
 
 
 def assign_paos_permissions(oma_organisaatio_oid, paos_organisaatio_oid, tallentaja_organisaatio_oid,
-                            model_name, saved_object, extra_view_permissions=None, toimipaikka_organisaatio_oid=None):
+                            model_class, saved_object, extra_view_permissions=None, toimipaikka_organisaatio_oid=None):
     """
     Assign view and modify permissions for permission groups of given paos organisations depending which one has
     tallentaja role which receives modify permissions. Other one receives only view permissions.
     :param oma_organisaatio_oid: oma_organisaatio oid
     :param paos_organisaatio_oid: paos_organisaatio oid
     :param tallentaja_organisaatio_oid: tallentaja_organisaatio oid
-    :param model_name: model class of permissions which type are assigned to organisations
+    :param model_class: model class of permissions which type are assigned to organisations
     :param saved_object: object the permissions are assigned to
     :param extra_view_permissions: Z4_CasKayttoOikeudet permissions that should be also given view access in addition to
     default ones
@@ -226,26 +226,74 @@ def assign_paos_permissions(oma_organisaatio_oid, paos_organisaatio_oid, tallent
     """
     if not extra_view_permissions:
         extra_view_permissions = []
-    object_type_name = model_name._meta.model.__name__.lower()
+    model_name = model_class._meta.model.__name__.lower()
     group_organisation_oids = [oma_organisaatio_oid, paos_organisaatio_oid]
-    view_group_roles = [Z4_CasKayttoOikeudet.KATSELIJA,
-                        Z4_CasKayttoOikeudet.TALLENTAJA,
-                        Z4_CasKayttoOikeudet.PAAKAYTTAJA,
-                        Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
-                        ] + extra_view_permissions
-    view_groups = _get_permission_groups(group_organisation_oids, view_group_roles)
 
-    modify_group_roles = [Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA]
-    modify_groups = _get_permission_groups(group_organisation_oids, modify_group_roles, tallentaja_organisaatio_oid)
+    katselija_group_roles = _get_vakajarjestaja_katselija_permission_group_roles(model_name, extra_view_permissions)
+    katselija_permission_groups = _get_permission_groups(group_organisation_oids, katselija_group_roles)
 
-    [assign_perm('view_' + object_type_name, group, saved_object) for group in view_groups]
-    [assign_perm('change_' + object_type_name, group, saved_object) for group in modify_groups]
-    [assign_perm('delete_' + object_type_name, group, saved_object) for group in modify_groups]
+    tallentaja_group_roles = _get_vakajarjestaja_tallentaja_group_roles(model_name)
+    tallentaja_permission_groups = _get_permission_groups(group_organisation_oids, tallentaja_group_roles, tallentaja_organisaatio_oid)
+
+    [assign_perm('view_' + model_name, group, saved_object) for group in katselija_permission_groups]
+    [assign_perm('change_' + model_name, group, saved_object) for group in tallentaja_permission_groups]
+    [assign_perm('delete_' + model_name, group, saved_object) for group in tallentaja_permission_groups]
 
     if toimipaikka_organisaatio_oid:
-        toimipaikka_view_group_roles = [Z4_CasKayttoOikeudet.KATSELIJA, Z4_CasKayttoOikeudet.TALLENTAJA]
-        toimipaikka_view_groups = _get_permission_groups([toimipaikka_organisaatio_oid], toimipaikka_view_group_roles)
-        [assign_perm('view_' + object_type_name, group, saved_object) for group in toimipaikka_view_groups]
+        assign_toimipaikka_paos_permissions(toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid, model_class, saved_object)
+
+
+def assign_toimipaikka_paos_permissions(paos_toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid, model_class, saved_object):
+    model_name = model_class._meta.model.__name__.lower()
+    tallentaja = Toimipaikka.objects.filter(organisaatio_oid=paos_toimipaikka_organisaatio_oid,
+                                            vakajarjestaja__organisaatio_oid=tallentaja_organisaatio_oid).exists()
+
+    toimipaikka_katselija_group_roles = _get_toimipaikka_katselija_group_roles(model_name)
+    toimipaikka_tallentaja_group_roles = _get_toimipaikka_tallentaja_group_roles(model_name)
+
+    toimipaikka_katselija_permission_groups = _get_permission_groups([paos_toimipaikka_organisaatio_oid], toimipaikka_katselija_group_roles)
+    [assign_perm('view_' + model_name, group, saved_object) for group in toimipaikka_katselija_permission_groups]
+
+    if tallentaja:
+        toimipaikka_tallentaja_permission_groups = _get_permission_groups([paos_toimipaikka_organisaatio_oid, toimipaikka_tallentaja_group_roles])
+        [assign_perm('view_' + model_name, group, saved_object) for group in toimipaikka_tallentaja_permission_groups]
+        [assign_perm('change_' + model_name, group, saved_object) for group in toimipaikka_tallentaja_permission_groups]
+        [assign_perm('delete_' + model_name, group, saved_object) for group in toimipaikka_tallentaja_permission_groups]
+
+
+def _get_toimipaikka_katselija_group_roles(model_name):
+    if model_name == 'maksutieto':
+        return [Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA, Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA]
+    else:  # Vakatiedot
+        return [Z4_CasKayttoOikeudet.KATSELIJA, Z4_CasKayttoOikeudet.TALLENTAJA]
+
+
+def _get_toimipaikka_tallentaja_group_roles(model_name):
+    if model_name == 'maksutieto':
+        return [Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA]
+    else:  # Vakatiedot
+        return [Z4_CasKayttoOikeudet.TALLENTAJA]
+
+
+def _get_vakajarjestaja_katselija_permission_group_roles(model_name, extra_view_permissions):
+    if model_name == 'maksutieto':
+        return [Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
+                Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,
+                Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                ]
+    else:  # Vakatiedot
+        return [Z4_CasKayttoOikeudet.KATSELIJA,
+                Z4_CasKayttoOikeudet.TALLENTAJA,
+                Z4_CasKayttoOikeudet.PAAKAYTTAJA,
+                Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                ] + extra_view_permissions
+
+
+def _get_vakajarjestaja_tallentaja_group_roles(model_name):
+    if model_name == 'maksutieto':
+        return [Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA]
+    else:  # Vakatiedot
+        return [Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA]
 
 
 def _get_permission_groups(group_organisation_oids, group_roles, tallentaja_organisaatio_oid=None):

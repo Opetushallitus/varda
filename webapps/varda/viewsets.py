@@ -37,7 +37,7 @@ from varda.oppijanumerorekisteri import fetch_henkilo_with_oid, save_henkilo_to_
 from varda.organisaatiopalvelu import check_if_toimipaikka_exists_in_organisaatiopalvelu, \
     create_toimipaikka_in_organisaatiopalvelu
 from varda.permission_groups import assign_object_level_permissions, create_permission_groups_for_organisaatio, \
-    assign_paos_permissions, assign_lapsi_paos_permissions
+    assign_paos_permissions, assign_lapsi_paos_permissions, assign_toimipaikka_paos_permissions
 from varda.permissions import (throw_if_not_tallentaja_permissions,
                                check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement,
                                check_if_user_has_paakayttaja_permissions,
@@ -1652,7 +1652,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         save_audit_log(request.user, request.path)
-        return super(MaksutietoViewSet, self).retrieve(request, *args, **kwargs)
+        return cached_retrieve_response(self, request.user, request.path)
 
     def validate_user_data(self, data):
         # data validations
@@ -1782,6 +1782,27 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
             else:
                 huoltaja.pop('henkilotunnus')
 
+    def assign_permissions_for_maksutieto_obj(self, lapsi, vakajarjestaja_organisaatio_oid, toimipaikka_qs, saved_object):
+        """
+        Add group-level permissions (vakajarjestaja & toimipaikka)
+        In case of PAOS only oma_organisaatio (kunta/kuntayhtyma) has permissions to add, edit and delete
+        """
+        if lapsi.paos_kytkin:
+            oma_organisaatio_oid = lapsi.oma_organisaatio.organisaatio_oid
+            paos_organisaatio_oid = lapsi.paos_organisaatio.organisaatio_oid
+
+            assign_paos_permissions(oma_organisaatio_oid, paos_organisaatio_oid, oma_organisaatio_oid, Maksutieto,
+                                    saved_object)
+            for toimipaikka in toimipaikka_qs:
+                if related_object_validations.toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=toimipaikka):
+                    assign_toimipaikka_paos_permissions(toimipaikka.organisaatio_oid, oma_organisaatio_oid, Maksutieto, saved_object)
+
+        else:
+            assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Maksutieto, saved_object)
+            for toimipaikka in toimipaikka_qs:
+                if related_object_validations.toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=toimipaikka):
+                    assign_object_level_permissions(toimipaikka.organisaatio_oid, Maksutieto, saved_object)
+
     def create(self, request):
         user = self.request.user
         serializer = self.get_serializer(data=self.request.data)
@@ -1811,8 +1832,12 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         vakajarjestaja = toimipaikka_qs[0].vakajarjestaja
         vakajarjestaja_organisaatio_oid = vakajarjestaja.organisaatio_oid
 
-        if not user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, vakajarjestaja_organisaatio_oid, toimipaikka_qs):
-            raise PermissionDenied("User does not have permissions to add maksutieto to this lapsi.")
+        if lapsi.paos_kytkin:
+            if not user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, lapsi.oma_organisaatio.organisaatio_oid, toimipaikka_qs):
+                raise PermissionDenied("User does not have permissions to add maksutieto to this lapsi.")
+        else:
+            if not user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, vakajarjestaja_organisaatio_oid, toimipaikka_qs):
+                raise PermissionDenied("User does not have permissions to add maksutieto to this lapsi.")
 
         data = dict(serializer.validated_data)
         vtj_huoltajuudet = self.validate_user_data(data)
@@ -1834,13 +1859,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             saved_object = serializer.save(changed_by=user)
             cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja.id))
-            """
-            Add group-level permissions (vakajarjestaja & toimipaikka)
-            """
-            assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Maksutieto, saved_object)
-            for toimipaikka in toimipaikka_qs:
-                if related_object_validations.toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=toimipaikka):
-                    assign_object_level_permissions(toimipaikka.organisaatio_oid, Maksutieto, saved_object)
+            self.assign_permissions_for_maksutieto_obj(lapsi, vakajarjestaja_organisaatio_oid, toimipaikka_qs, saved_object)
 
         # make changes to huoltajuussuhteet
         [huoltajuussuhde.maksutiedot.add(saved_object.id) for huoltajuussuhde in vtj_huoltajuudet]
