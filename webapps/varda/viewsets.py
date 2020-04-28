@@ -45,6 +45,7 @@ from varda.permissions import (throw_if_not_tallentaja_permissions,
                                user_has_huoltajatieto_tallennus_permissions_to_correct_organization,
                                grant_or_deny_access_to_paos_toimipaikka, user_has_tallentaja_permission_in_organization)
 from varda.serializers import (UserSerializer, ExternalPermissionsSerializer, GroupSerializer,
+                               ChangeVakajarjestajaIntegrationOrgStatusSerializer,
                                UpdateHenkiloWithOidSerializer, UpdateOphStaffSerializer, ClearCacheSerializer,
                                ActiveUserSerializer, AuthTokenSerializer, VakaJarjestajaSerializer,
                                ToimipaikkaSerializer, ToiminnallinenPainotusSerializer, KieliPainotusSerializer,
@@ -109,6 +110,26 @@ class GroupViewSet(viewsets.ModelViewSet):
     queryset = Group.objects.all().order_by('id')
     serializer_class = GroupSerializer
     permission_classes = (permissions.IsAdminUser, )
+
+
+class ChangeVakajarjestajaIntegrationOrgStatus(GenericViewSet, CreateModelMixin):
+    """
+    create:
+        Muuta Vakajarjestajan integraatio_organisaatio status
+    """
+    queryset = VakaJarjestaja.objects.none()
+    serializer_class = ChangeVakajarjestajaIntegrationOrgStatusSerializer
+    permission_classes = (permissions.IsAdminUser, )
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(result, status=status.HTTP_200_OK, headers=headers)
+
+    def perform_create(self, serializer):
+        return {'result': 'Status was changed.'}
 
 
 class UpdateHenkiloWithOid(GenericViewSet, CreateModelMixin):

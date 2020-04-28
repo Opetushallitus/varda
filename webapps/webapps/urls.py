@@ -30,6 +30,8 @@ schema_view = get_schema_view(title='VARDA API', renderer_classes=[CoreJSONRende
 router_admin = routers.DefaultRouter()
 router_admin.register(r'users', viewsets.UserViewSet)
 router_admin.register(r'groups', viewsets.GroupViewSet)
+router_admin.register(r'integraatio-org-status', viewsets.ChangeVakajarjestajaIntegrationOrgStatus,
+                      basename='integraatio-org-status')
 router_admin.register(r'update-henkilo', viewsets.UpdateHenkiloWithOid, basename='update-henkilo')
 router_admin.register(r'update-oph-staff', viewsets.UpdateOphStaff, basename='update-oph-staff')
 router_admin.register(r'huoltajat', viewsets.HuoltajaViewSet)

@@ -38,6 +38,27 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url', 'name')
 
 
+class ChangeVakajarjestajaIntegrationOrgStatusSerializer(serializers.Serializer):
+    vakajarjestaja_id = serializers.IntegerField(required=True)
+    integraatio_organisaatio = serializers.BooleanField(required=True)
+
+    def validate(self, attrs):
+        provided_vakajarjestaja_id = attrs.get('vakajarjestaja_id')
+        provided_integraatio_organisaatio = attrs.get('integraatio_organisaatio')
+        try:
+            vakajarjestaja = VakaJarjestaja.objects.get(id=provided_vakajarjestaja_id)
+        except VakaJarjestaja.DoesNotExist:
+            raise serializers.ValidationError(
+                {'vakajarjestaja_id': 'Vakajarjestaja with id {} was not found.'.format(provided_vakajarjestaja_id)})
+        if provided_integraatio_organisaatio == vakajarjestaja.integraatio_organisaatio:
+            raise serializers.ValidationError(
+                {'integraatio_organisaatio': 'The provided value {} was already set.'.format(provided_integraatio_organisaatio)})
+
+        vakajarjestaja.integraatio_organisaatio = provided_integraatio_organisaatio
+        vakajarjestaja.save()
+        return attrs
+
+
 class UpdateHenkiloWithOidSerializer(serializers.Serializer):
     henkilo_oid = serializers.CharField(write_only=True, required=True)
 
