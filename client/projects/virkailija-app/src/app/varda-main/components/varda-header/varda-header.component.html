@@ -27,12 +27,13 @@
     <mat-icon>expand_more</mat-icon>
   </button>
 
-  <div class="collapse navbar-collapse varda-navbar-links"
+  <div *ngIf="toimipaikkaAccessIfAnyToimipaikka"
+       class="collapse navbar-collapse varda-navbar-links"
        id="navbarSupportedContent">
     <ul class="navbar-nav mr-auto"
         *ngIf="vakajarjestajat">
       <li class="varda-header-nav-item-container"
-          *ngIf="!isKatselija"
+          *ngIf="toimipaikkaAccessIfAnyToimipaikka.lapsitiedot.tallentaja"
           [ngClass]="{'active-nav-item': activeNavItem === 'toimipaikatjalapset'}">
         <a [routerLink]="['/']"
            class=""

@@ -8,6 +8,7 @@ import { VardaApiWrapperService } from '../../../core/services/varda-api-wrapper
 import { VardaUtilityService } from '../../../core/services/varda-utility.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { VardaErrorMessageService } from '../../../core/services/varda-error-message.service';
+import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 
 @Component({
   selector: 'app-varda-vakatoimija',
@@ -29,7 +30,7 @@ export class VardaVakatoimijaComponent implements OnInit {
     hadValuesOnInit: boolean
   };
 
-  isKatselija: boolean;
+  toimijaAccess: UserAccess;
 
   constructor(
     private translateService: TranslateService,
@@ -50,15 +51,8 @@ export class VardaVakatoimijaComponent implements OnInit {
       hadValuesOnInit: false
     };
 
-    this.vakajarjestajaService.getSelectedVakajarjestajaObs().subscribe((data) => {
-      if (data.onVakajarjestajaChange) {
-        this.initKayttooikeudet();
-        this.initVakatoimijaForm();
-      }
-    });
-
-    this.authService.loggedInUserKayttooikeudetSubject.asObservable().subscribe(() => {
-      this.initKayttooikeudet();
+    this.authService.getToimipaikkaAccessToAnyToimipaikka().subscribe(() => {
+      this.toimijaAccess = this.authService.getUserAccess();
     });
   }
 
@@ -71,15 +65,6 @@ export class VardaVakatoimijaComponent implements OnInit {
       rv = field.displayName[prop];
     }
     return rv;
-  }
-
-  initKayttooikeudet(): void {
-    const kayttooikeusToEvaluate = this.authService.loggedInUserCurrentKayttooikeus;
-    if (kayttooikeusToEvaluate === VardaKayttooikeusRoles.VARDA_TALLENTAJA) {
-      this.isKatselija = false;
-    } else {
-      this.isKatselija = true;
-    }
   }
 
   initVakatoimijaForm(): void {
@@ -99,9 +84,9 @@ export class VardaVakatoimijaComponent implements OnInit {
 
       this.vakatoimijaForm = new FormGroup({
         sahkopostiosoite: new FormControl(sahkopostiosoiteVal,
-          [Validators.required, VardaFormValidators.validStringFormat.bind(null, {regex: '^[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+(\\.[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+)*@[A-Za-z0-9][A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*(\\.[A-Za-z]{2,})$'})]),
+          [Validators.required, VardaFormValidators.validStringFormat.bind(null, { regex: '^[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+(\\.[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+)*@[A-Za-z0-9][A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*(\\.[A-Za-z]{2,})$' })]),
         tilinumero: new FormControl(tilinumeroVal, VardaFormValidators.validOrEmptyIBAN),
-        puhelinnumero: new FormControl(puhelinnumeroVal, [Validators.required, VardaFormValidators.validStringFormat.bind(null, {regex: '^\\+358\\d+$'})])
+        puhelinnumero: new FormControl(puhelinnumeroVal, [Validators.required, VardaFormValidators.validStringFormat.bind(null, { regex: '^\\+358\\d+$' })])
       });
 
       this.ui.hadValuesOnInit = Object.values(this.vakatoimijaForm.value).some((v) => v ? true : false);
@@ -147,7 +132,6 @@ export class VardaVakatoimijaComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.initKayttooikeudet();
     this.initVakatoimijaForm();
   }
 

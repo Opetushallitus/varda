@@ -34,7 +34,7 @@ export class HakuConditionComponent implements OnInit, OnDestroy {
     this.searchData = new HenkilohakuSearchDTO();
     const typeForm = new FormControl('');
     const searchForm = new FormControl('');
-    const filterStatusForm = new FormControl('');
+    const filterStatusForm = new FormControl(FilterStatus.voimassaOlevat);
     const filterObjectForm = new FormControl('');
     this.hakuform = new FormGroup({ type: typeForm, search: searchForm, filter_status: filterStatusForm, filter_object: filterObjectForm });
     this.typeformSubsciption = typeForm.valueChanges

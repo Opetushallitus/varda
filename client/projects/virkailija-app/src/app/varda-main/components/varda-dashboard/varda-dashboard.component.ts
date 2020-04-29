@@ -64,7 +64,6 @@ export class VardaDashboardComponent implements OnInit {
 
   onGetToimipaikatSuccess(toimipaikat_: Array<VardaToimipaikkaMinimalDto>): void {
     this.vardaVakajarjestajaService.setToimipaikat(toimipaikat_, this.authService);
-    this.authService.initKayttooikeudet();
     this.ui.isLoading = false;
   }
 

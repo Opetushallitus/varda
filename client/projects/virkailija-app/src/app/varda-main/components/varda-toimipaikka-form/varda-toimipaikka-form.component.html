@@ -77,7 +77,8 @@
                                        *ngFor="let field of toimipaikkaFieldSet.fields; let x = index">
               </app-varda-form-question>
             </fieldset>
-            <div class="varda-form-btn-wrapper" *ngIf="!isReadOnly">
+            <div class="varda-form-btn-wrapper"
+                 *ngIf="!isReadOnly">
               <button class="varda-button responsive"
                       type="button"
                       id="toimipaikkaFormSaveToimipaikkaBtn"
@@ -90,11 +91,13 @@
         <div class="varda-painotukset"
              *ngIf="isEdit">
           <form [formGroup]="kielipainotuksetForm">
-            <div class="form-section-heading">
+            <div class="form-section-heading"
+                 id="kielipainotuksetLabel">
               {{'label.toimipaikka-stepper.kielipainotukset' | translate}}
             </div>
             <div class="varda-painotukset-wrapper oph-field-inputs">
               <mat-radio-group [name]="'kielipainotukset_enabled'"
+                               aria-labelledby="kielipainotuksetLabel"
                                [formControlName]="'kielipainotukset_enabled'"
                                (change)="painotusFieldChange('kielipainotus', $event)">
                 <mat-radio-button [id]="'kielipainotuksetYes'"
@@ -200,11 +203,13 @@
         <div class="varda-painotukset"
              *ngIf="isEdit">
           <form [formGroup]="toimintapainotuksetForm">
-            <div class="form-section-heading">
+            <div class="form-section-heading"
+                 id="toimintapainotuksetLabel">
               {{'label.toimipaikka-stepper.toimintapainotukset' | translate}}
             </div>
             <div class="varda-painotukset-wrapper">
               <mat-radio-group [name]="'toimintapainotukset_enabled'"
+                               aria-labelledby="toimintapainotuksetLabel"
                                [formControlName]="'toimintapainotukset_enabled'"
                                (change)="painotusFieldChange('toimintapainotus', $event)">
                 <mat-radio-button #toimintapainotuksetYes

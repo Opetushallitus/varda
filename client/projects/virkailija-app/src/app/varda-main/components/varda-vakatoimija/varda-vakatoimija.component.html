@@ -43,7 +43,7 @@
                    aria-describedby="sahkopostiosoiteInstruction"
                    (blur)="onBlur()"
                    (focus)="onFocus('sahkopostiosoite')"
-                   [readonly]="isKatselija">
+                   [readonly]="!toimijaAccess.lapsitiedot.tallentaja">
             <div class="oph-error"
                  role="alert"
                  *ngIf="vakatoimijaForm &&
@@ -73,7 +73,7 @@
                    aria-describedby="puhelinnumeroInstruction"
                    (blur)="onBlur()"
                    (focus)="onFocus('puhelinnumero')"
-                   [readonly]="isKatselija">
+                   [readonly]="!toimijaAccess.lapsitiedot.tallentaja">
             <div class="oph-error"
                  role="alert"
                  *ngIf="vakatoimijaForm &&
@@ -103,7 +103,7 @@
                    aria-describedby="tilinumeroInstruction"
                    (blur)="onBlur()"
                    (focus)="onFocus('tilinumero')"
-                   [readonly]="isKatselija">
+                   [readonly]="!toimijaAccess.lapsitiedot.tallentaja">
             <div class="oph-error"
                  role="alert"
                  *ngIf="vakatoimijaForm &&
@@ -125,7 +125,7 @@
                   [disabled]="!vakatoimijaForm.valid || ui.isSubmitting"
                   [ngClass]="{'varda-disabled-button': !vakatoimijaForm.valid || ui.isSubmitting}"
                   (click)="saveVakatoimijaForm()"
-                  *ngIf="!isKatselija">{{'label.generic-save' | translate}}</button>
+                  *ngIf="toimijaAccess.lapsitiedot.tallentaja">{{'label.generic-save' | translate}}</button>
 
         </div>
       </fieldset>

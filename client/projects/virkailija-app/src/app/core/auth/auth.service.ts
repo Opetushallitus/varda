@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, BehaviorSubject } from 'rxjs';
 import { VardaApiService } from '../services/varda-api.service';
 import { VardaVakajarjestajaService } from '../services/varda-vakajarjestaja.service';
 import { NavigationEnd, Router } from '@angular/router';
 import { VardaKayttajatyyppi, VardaKayttooikeusRoles, VardaToimipaikkaDTO } from '../../utilities/models';
 import { VardaToimipaikkaMinimalDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { UserAccess, SaveAccess } from '../../utilities/models/varda-user-access.model';
+import { environment } from 'projects/huoltaja-app/src/environments/environment';
 
 class Kayttooikeus {
   kayttooikeus: VardaKayttooikeusRoles;
@@ -19,8 +20,6 @@ export class AuthService {
   loggedInUserAsiointikieli: string;
   loggedInUserAsiointikieliSubject = new Subject<string>();
   loggedInUserKayttooikeudet: Array<Kayttooikeus> = [];
-  loggedInUserKayttooikeudetSubject = new Subject<any>();
-  loggedInUserCurrentKayttooikeus: VardaKayttooikeusRoles;
   loggedInUserAfterAuthCheckUrl: string;
   selectedOrganisationLevelKayttooikeusRole: string;
   hasToimipaikkaLevelTallentajaRole: boolean;
@@ -31,120 +30,70 @@ export class AuthService {
 
   sessionInactivityTimeout: any = null;
 
+  toimipaikkaAccessToAnyToimipaikka$ = new BehaviorSubject<UserAccess>(null);
 
   constructor(private vardaApiService: VardaApiService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private router: Router) {
+
     this.router.events.subscribe((s) => {
       if (s instanceof NavigationEnd) {
         const routeParts = s.url.split('?');
         const route = routeParts[0];
         this.loggedInUserAfterAuthCheckUrl = (route === '/') ? '/haku' : route;
-        const currentKayttooikeusRole = this.loggedInUserCurrentKayttooikeus;
-        if (route === '/' &&
-          currentKayttooikeusRole &&
-          currentKayttooikeusRole !== VardaKayttooikeusRoles.VARDA_TALLENTAJA) {
+        const toimipaikkaAccessIfAny = this.toimipaikkaAccessToAnyToimipaikka$.getValue();
+
+        if (route === '/' && !toimipaikkaAccessIfAny?.lapsitiedot?.tallentaja) {
           this.router.navigate(['/haku']);
         }
       }
     });
 
-    this.vardaVakajarjestajaService.getSelectedVakajarjestajaObs().subscribe((data) => {
-      if (data.onVakajarjestajaChange) {
-        this.initKayttooikeudet();
-      }
+    this.vardaVakajarjestajaService.getTallentajaToimipaikatObs().subscribe((data) => {
+      this.initUserAccess(data);
     });
+
     this.isAdminUser = false;
   }
 
-  initKayttooikeudet(): void {
+  initUserAccess(toimipaikat: Array<VardaToimipaikkaDTO>): void {
     const selectedVakajarjestaja = this.vardaVakajarjestajaService.selectedVakajarjestaja;
-    const selectedVakajarjestajaOrganisaatioOid = selectedVakajarjestaja.organisaatio_oid;
-    this.loggedInUserVakajarjestajaLevelKayttooikeudet = [];
-    this.loggedInUserToimipaikkaLevelKayttooikeudet = [];
+    this.loggedInUserVakajarjestajaLevelKayttooikeudet = this.loggedInUserKayttooikeudet.filter(kayttooikeus => kayttooikeus.organisaatio === selectedVakajarjestaja.organisaatio_oid);
+    this.loggedInUserToimipaikkaLevelKayttooikeudet = this.loggedInUserKayttooikeudet.filter(
+      kayttooikeus => toimipaikat.some(toimipaikka => toimipaikka.organisaatio_oid === kayttooikeus.organisaatio)
+    );
 
-    const selectedOrganisationLevelKayttooikeusRole = this.loggedInUserKayttooikeudet.filter((kayttooikeus) => {
-      // Filter :: One user can have multiple permissions for one specific OrganisaatioOid
-      return kayttooikeus.organisaatio === selectedVakajarjestajaOrganisaatioOid;
+    const toimipaikkaAccessIfAny = this.getUserAccessIfAnyToimipaikka(toimipaikat);
+    this.toimipaikkaAccessToAnyToimipaikka$.next(toimipaikkaAccessIfAny);
+
+    const routeParts = this.router.url.split('?');
+    if (routeParts[0] === ('/') && !toimipaikkaAccessIfAny?.lapsitiedot?.tallentaja) {
+      this.router.navigate(['/haku']);
+    }
+
+    // these parts are just for simply printing your user access in the selected organization
+    const userAccessToConsole = {
+      [selectedVakajarjestaja.nimi]: this.loggedInUserVakajarjestajaLevelKayttooikeudet.map(kayttooikeus => kayttooikeus.kayttooikeus),
+      toimipaikat: {}
+    };
+
+    this.loggedInUserToimipaikkaLevelKayttooikeudet.forEach(kayttooikeus => {
+      const toimipaikka = toimipaikat.find(toimipaikkaDto => toimipaikkaDto.organisaatio_oid === kayttooikeus.organisaatio);
+      const key = `${toimipaikka.nimi}_${toimipaikka.organisaatio_oid}`;
+      userAccessToConsole.toimipaikat[key] = userAccessToConsole.toimipaikat[key] || [];
+      userAccessToConsole.toimipaikat[key].push(kayttooikeus.kayttooikeus);
     });
-
-    this.loggedInUserKayttooikeudet.forEach((kayttooikeus) => {
-      const isVakajarjestajaOrganisation = this.findVakajarjestajaOrganisationByKayttooikeus(kayttooikeus);
-      if (isVakajarjestajaOrganisation) {
-        this.loggedInUserVakajarjestajaLevelKayttooikeudet.push(kayttooikeus);
-      } else {
-        this.loggedInUserToimipaikkaLevelKayttooikeudet.push(kayttooikeus);
-      }
-    });
-
-    if (!selectedOrganisationLevelKayttooikeusRole) {
-      this.loggedInUserCurrentKayttooikeus = VardaKayttooikeusRoles.VARDA_KATSELIJA;
+    if (environment.production) {
+      setTimeout(() => console.log('USER ACCESS / KÄYTTÖOIKEUDET', JSON.stringify(userAccessToConsole, null, '\t')), 2000);
     } else {
-      const vardaTallentajaRole = selectedOrganisationLevelKayttooikeusRole.find((kayttooikeus) => {
-
-        return kayttooikeus.kayttooikeus === VardaKayttooikeusRoles.VARDA_TALLENTAJA;
-      });
-
-      if (vardaTallentajaRole) {
-        this.loggedInUserCurrentKayttooikeus = VardaKayttooikeusRoles.VARDA_TALLENTAJA;
-      } else {
-        this.loggedInUserCurrentKayttooikeus = VardaKayttooikeusRoles.VARDA_KATSELIJA;
-      }
+      console.log('USER ACCESS / KÄYTTÖOIKEUDET', userAccessToConsole);
     }
 
-    this.selectedOrganisationLevelKayttooikeusRole = this.loggedInUserCurrentKayttooikeus;
-
-    const hasToimipaikkaLevelTallentajaRole = this.kayttooikeudetHasToimipaikkaLevelTallentajaRole();
-
-    if (hasToimipaikkaLevelTallentajaRole || this.isAdminUser) {
-      this.loggedInUserCurrentKayttooikeus = VardaKayttooikeusRoles.VARDA_TALLENTAJA;
-      this.hasToimipaikkaLevelTallentajaRole = true;
-    }
-
-    if (this.loggedInUserCurrentKayttooikeus &&
-      (this.loggedInUserCurrentKayttooikeus === VardaKayttooikeusRoles.VARDA_KATSELIJA)) {
-      this.router.navigate([this.loggedInUserAfterAuthCheckUrl]);
-    }
-
-    setTimeout(() => {
-      this.loggedInUserKayttooikeudetSubject.next(this.loggedInUserCurrentKayttooikeus);
-    }, 1000);
   }
 
-  /**
-   * @deprecated Not working properly. getTallentajaToimipaikat() doesn't filter anything off. Returns always false.
-   */
-  private kayttooikeudetHasToimipaikkaLevelTallentajaRole(): boolean {
-    let rv = false;
-    const toimipaikkaLevelTallentajaRoles = this.loggedInUserToimipaikkaLevelKayttooikeudet.filter((kayttooikeus) => {
-      const tallentajaRoolit = [VardaKayttooikeusRoles.VARDA_HUOLTAJA_TALLENTAJA, VardaKayttooikeusRoles.VARDA_TALLENTAJA];
-      return tallentajaRoolit.includes(kayttooikeus.kayttooikeus);
-    });
 
-    if (toimipaikkaLevelTallentajaRoles && toimipaikkaLevelTallentajaRoles.length > 0) {
-      const toimipaikatInSelectedVakajarjestaja = this.vardaVakajarjestajaService.getTallentajaToimipaikat();
-      if (!toimipaikatInSelectedVakajarjestaja) {
-        return rv;
-      }
-      toimipaikkaLevelTallentajaRoles.forEach((role) => {
-        const foundInSelectedVakajarjestajaToimipaikat = toimipaikatInSelectedVakajarjestaja.find((toimipaikka: any) => {
-          return toimipaikka.organisaatio_oid === role.organisaatio;
-        });
-        if (foundInSelectedVakajarjestajaToimipaikat) {
-          // VardaToimipaikkaMinimalDto (toimipaikatInSelectedVakajarjestaja) doesn't have organisaatio_oid property so this is never reached
-          rv = true;
-          return;
-        }
-      });
-    }
-
-    return rv;
-  }
-
-  private findVakajarjestajaOrganisationByKayttooikeus(kayttooikeus: Kayttooikeus): any {
-    return this.vardaVakajarjestajaService.vakaJarjestajat.find((vj) => {
-      return kayttooikeus.organisaatio === vj.organisaatio_oid;
-    });
+  getToimipaikkaAccessToAnyToimipaikka(): Observable<UserAccess> {
+    return this.toimipaikkaAccessToAnyToimipaikka$.asObservable();
   }
 
   getAuthorizedToimipaikat(toimipaikat: Array<VardaToimipaikkaMinimalDto>, hasSaveAccess?: SaveAccess): Array<VardaToimipaikkaMinimalDto> {
@@ -204,7 +153,6 @@ export class AuthService {
     return new Observable((setUserKayttooikeudetObserver) => {
       this.precheckKayttajaTyyppi(userKayttooikeusData.kayttajatyyppi).subscribe(() => {
         this.loggedInUserKayttooikeudet = userKayttooikeusData.kayttooikeudet;
-        this.initKayttooikeudet();
         setUserKayttooikeudetObserver.next();
         setUserKayttooikeudetObserver.complete();
       }, (e) => {
@@ -303,9 +251,9 @@ export class AuthService {
     return access;
   }
 
-  getUserAccessIfAnyToimipaikka(toimipaikat: Array<VardaToimipaikkaMinimalDto>): UserAccess {
+  getUserAccessIfAnyToimipaikka(toimipaikat: Array<VardaToimipaikkaMinimalDto> | Array<VardaToimipaikkaDTO>): UserAccess {
     const userAccess = this.getUserAccess();
-    toimipaikat.forEach((toimipaikka: VardaToimipaikkaMinimalDto) => {
+    toimipaikat.forEach((toimipaikka: VardaToimipaikkaMinimalDto | VardaToimipaikkaDTO) => {
       const toimipaikkaAccess = this.getUserAccess(toimipaikka.organisaatio_oid);
       userAccess.paakayttaja = userAccess.paakayttaja || toimipaikkaAccess.paakayttaja;
       Object.keys(toimipaikkaAccess).filter((key: string) => key !== 'paakayttaja').forEach((key: string) => {

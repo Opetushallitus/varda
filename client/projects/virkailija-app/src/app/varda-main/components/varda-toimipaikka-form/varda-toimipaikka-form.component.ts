@@ -690,6 +690,9 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
       this.checkIfAnyOfTheFormsHasChanged();
       this.updatePainotusSwitchMessages(entity);
       this.ui.isSubmitting = false;
+
+      setTimeout(() => this.kielipainotuksetYes.focus(), 500);
+
     }, 1000);
   }
 

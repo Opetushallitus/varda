@@ -77,9 +77,9 @@
                 aria-labelledby="hakuFormStatusLabel"
                 id="hakuFormStatus"
                 formControlName="filter_status">
+          <option value="" disabled>-- {{ 'label.choose' | translate }} --</option>
           <option [ngValue]="FilterStatus.kaikki">{{'label.haku.filter-status.kaikki' | translate}}</option>
-          <option [ngValue]="FilterStatus.voimassaOlevat"
-                  [selected]="true">{{'label.haku.filter-status.voimassa-olevat' | translate}}</option>
+          <option [ngValue]="FilterStatus.voimassaOlevat">{{'label.haku.filter-status.voimassa-olevat' | translate}}</option>
           <option [ngValue]="FilterStatus.paattyneet">{{'label.haku.filter-status.paattyneet' | translate}}</option>
         </select>
       </div>

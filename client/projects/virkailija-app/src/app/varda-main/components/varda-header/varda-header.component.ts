@@ -6,6 +6,7 @@ import { VardaKayttooikeusRoles, VardaVakajarjestajaUi } from '../../../utilitie
 import { environment } from '../../../../environments/environment';
 import { VardaUtilityService } from '../../../core/services/varda-utility.service';
 import { LoginService } from 'varda-shared';
+import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 
 declare var $: any;
 
@@ -28,9 +29,8 @@ export class VardaHeaderComponent implements OnInit, AfterViewInit {
   $siteMenuWrapper;
   $toimipaikkaPanelSelectorHeader;
 
-  isKatselija: boolean;
+  toimipaikkaAccessIfAnyToimipaikka: UserAccess;
   canViewToimijanTiedot: boolean;
-
   toimijanTiedotRouteMaps = [];
 
   constructor(
@@ -78,8 +78,11 @@ export class VardaHeaderComponent implements OnInit, AfterViewInit {
       }
     });
 
-    this.authService.loggedInUserKayttooikeudetSubject.asObservable().subscribe(() => {
-      this.initKayttooikeudet();
+    this.authService.getToimipaikkaAccessToAnyToimipaikka().subscribe(toimipaikkaAccessIfAny => {
+      this.toimipaikkaAccessIfAnyToimipaikka = toimipaikkaAccessIfAny;
+      if (toimipaikkaAccessIfAny) {
+        this.initKayttooikeudet();
+      }
     });
   }
 
@@ -88,8 +91,6 @@ export class VardaHeaderComponent implements OnInit, AfterViewInit {
   }
 
   initKayttooikeudet(): void {
-    const kayttooikeusToEvaluate = this.authService.loggedInUserCurrentKayttooikeus;
-    this.isKatselija = kayttooikeusToEvaluate !== VardaKayttooikeusRoles.VARDA_TALLENTAJA;
     // All users are allowed to view these pages
     const vakatoimijaRoute = {
       route: '/vakatoimija',

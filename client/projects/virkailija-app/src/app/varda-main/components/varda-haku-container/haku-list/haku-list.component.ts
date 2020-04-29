@@ -28,7 +28,6 @@ export class HakuListComponent implements OnInit, OnChanges {
   henkiloFormOpen: boolean;
   activeHenkilo: VardaHenkiloDTO;
   toimipaikat: VakajarjestajaToimipaikat;
-  userRole: VardaKayttooikeusRoles;
   closeHakuListFormWithoutConfirm: boolean;
 
   constructor(private translateService: TranslateService,
@@ -40,7 +39,6 @@ export class HakuListComponent implements OnInit, OnChanges {
 
   ngOnInit() {
     this.searchResultByToimipaikka = [];
-    this.userRole = this.authService.loggedInUserCurrentKayttooikeus;
   }
 
   ngOnChanges(changes: SimpleChanges): void {
