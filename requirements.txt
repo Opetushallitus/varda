@@ -23,7 +23,6 @@ djangorestframework-guardian==0.3.0  # BSD-license
 drf-nested-routers==0.91  # Apache 2.0-license
 flake8==3.7.9  # MIT-license
 flower==0.9.3  # BSD-license
-gevent==1.4.0  # MIT-license
 gunicorn==20.0.4  # MIT-license
 itypes==1.1.0  # BSD-license
 Jinja2==2.11.1  # BSD-license
