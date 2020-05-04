@@ -457,6 +457,8 @@
     "alert.toimipaikan-lapset-not-found": "Toimipaikassa ei ole yhtään lasta",
     "label.kunnan-tai-kuntayhtyman-jarjestama-varhaiskasvatus": "Varhaiskasvatus toteutettu ostopalveluna tai palvelusetelillä",
     "label.jarjestava-kunta-tai-kuntayhtyma": "Järjestävä kunta tai kuntayhtymä",
+    "label.jarjestava-kunta-tai-kuntayhtyma.infotext": "Valitse kunta, joka toimii varhaiskasvatuksen järjestäjänä. Jos valikossa ei ole järjestävää kuntaa, lisää ensin vaaditut tiedot Ostopalvelu- ja palvelusetelitoiminnan hallinnassa.",
+    "label.jarjestava-kunta-tai-kuntayhtyma.required": "Kunta on pakollinen tieto.",
     "label.oma-organisaatio": "Järjestäjäorganisaatio",
     "label.paos-organisaatio": "Tuottajaorganisaatio",
     "label.no-filters": "Ei rajauksia",

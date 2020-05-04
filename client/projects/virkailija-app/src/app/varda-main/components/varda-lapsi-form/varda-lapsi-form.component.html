@@ -309,11 +309,13 @@
      class="lapsi-form-new-form">
   <div class="varda-fieldset-content form-group">
     <div>
-      <label
+      <label for="paosKytkin"
              class="varda-field-label">{{'label.kunnan-tai-kuntayhtyman-jarjestama-varhaiskasvatus' | translate}}</label>
       <div class="varda-radio">
-        <mat-radio-group (change)="fetchPaosOrganisaatiot($event)">
-          <mat-radio-button [value]="false" checked>{{'label.no' | translate}}</mat-radio-button>
+        <mat-radio-group id="paosKytkin"
+                         (change)="fetchPaosOrganisaatiot($event)">
+          <mat-radio-button [value]="false"
+                            checked>{{'label.no' | translate}}</mat-radio-button>
           <mat-radio-button [value]="true">{{'label.yes' | translate}}</mat-radio-button>
         </mat-radio-group>
       </div>
@@ -321,36 +323,58 @@
   </div>
   <div class="varda-fieldset-content form-group"
        *ngIf="paosJarjestajaKunnat$ | async as paosJarjestajaKunnat">
-    <div>
-      <label class="varda-field-label">{{'label.jarjestava-kunta-tai-kuntayhtyma' | translate}}</label>
-      <div>
-        <select class="varda-form-control form-control varda-select"
+    <div class="oph-field">
+      <div class="oph-field-inputs">
+        <label for="jarjestavaKuntaSelect"
+               class="oph-label">{{'label.jarjestava-kunta-tai-kuntayhtyma' | translate}}</label>
+        <select class="oph-input varda-form-control form-control varda-select"
+                aria-describedby="kuntaInstruction"
                 name="jarjestavaKuntaSelect"
+                id="jarjestavaKuntaSelect"
                 (change)="setPaosOrganisaatiot($event)">
-          <option [value]="">-- {{'label.choose' | translate}} --</option>
+          <option [value]=""
+                  disabled
+                  selected>-- {{'label.choose' | translate}} --</option>
           <option *ngFor="let vakajarjestaja of paosJarjestajaKunnat"
                   [value]="vakajarjestaja.url">
             {{vakajarjestaja.nimi}}
           </option>
         </select>
+        <div class="oph-error"
+             role="alert"
+             *ngIf="!lapsiCreateForm.get('paos_organisaatio').value">
+          {{'label.jarjestava-kunta-tai-kuntayhtyma.required' | translate}}
+        </div>
+      </div>
+      <div class="oph-field-text"
+           id="kuntaInstruction">
+        <small [appSlideHide]="!lapsiCreateForm.get('paos_organisaatio').value">
+          {{'label.jarjestava-kunta-tai-kuntayhtyma.infotext' | translate}}
+        </small>
       </div>
     </div>
   </div>
   <form [formGroup]="toimipaikkaForm">
-    <fieldset class="form-group varda-fieldset varda-fieldset-add-person"
-              [id]="'toimipaikkafieldset'">
-      <legend class="varda-fieldset-legend">{{'label.toimipaikka' | translate}}</legend>
+    <fieldset class="form-group varda-fieldset varda-fieldset-add-person">
+      <legend id="toimipaikkaListLabel"
+              class="varda-fieldset-legend">{{'label.toimipaikka' | translate}}</legend>
       <div class="varda-fieldset-content form-group">
-        <div>
-          <select class="varda-form-control form-control varda-select"
-                  (change)="setToimipaikka()"
-                  [formControlName]="'toimipaikka'"
-                  [attr.name]="'toimipaikka'"
-                  [compareWith]="byEndpoint"
-                  disabled>
-            <option *ngFor="let toimipaikka of toimipaikkaOptions"
-                    [ngValue]="toimipaikka">{{toimipaikka.nimi}}</option>
-          </select>
+        <div class="oph-field">
+          <div class="oph-field-inputs">
+            <select class="varda-form-control form-control oph-select"
+                    (change)="setToimipaikka()"
+                    aria-labelledby="toimipaikkaListLabel"
+                    [formControlName]="'toimipaikka'"
+                    [attr.name]="'toimipaikka'"
+                    [compareWith]="byEndpoint"
+                    disabled>
+              <option *ngFor="let toimipaikka of toimipaikkaOptions"
+                      [ngValue]="toimipaikka">{{toimipaikka.nimi}}</option>
+            </select>
+          </div>
+          <div class="oph-field-text"
+               id="toimipaikkaInstruction">
+          </div>
         </div>
       </div>
     </fieldset>

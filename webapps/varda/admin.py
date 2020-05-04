@@ -12,22 +12,50 @@ class AdminWithGuardianAndHistory(GuardedModelAdmin, SimpleHistoryAdmin):
 
 
 class HuoltajuussuhdeAdmin(AdminWithGuardianAndHistory):
-    raw_id_fields = ("lapsi", "huoltaja", )
+    raw_id_fields = ('lapsi', 'huoltaja', 'maksutiedot', )
+
+
+class LapsiAdmin(AdminWithGuardianAndHistory):
+    raw_id_fields = ('henkilo', )
+
+
+class HuoltajaAdmin(AdminWithGuardianAndHistory):
+    raw_id_fields = ('henkilo', )
+
+
+class VarhaiskasvatuspaatosAdmin(AdminWithGuardianAndHistory):
+    raw_id_fields = ('lapsi', )
+
+
+class VarhaiskasvatussuhdeAdmin(AdminWithGuardianAndHistory):
+    raw_id_fields = ('toimipaikka', 'varhaiskasvatuspaatos', )
+
+
+class ToiminnallinenPainotusAdmin(AdminWithGuardianAndHistory):
+    raw_id_fields = ('toimipaikka', )
+
+
+class KieliPainotusAdmin(AdminWithGuardianAndHistory):
+    raw_id_fields = ('toimipaikka', )
+
+
+class PaosToimintaAdmin(AdminWithGuardianAndHistory):
+    raw_id_fields = ('oma_organisaatio', 'paos_organisaatio', 'paos_toimipaikka', )
 
 
 admin.site.register(VakaJarjestaja, AdminWithGuardianAndHistory)
 admin.site.register(Toimipaikka, AdminWithGuardianAndHistory)
-admin.site.register(ToiminnallinenPainotus, AdminWithGuardianAndHistory)
-admin.site.register(KieliPainotus, AdminWithGuardianAndHistory)
+admin.site.register(ToiminnallinenPainotus, ToiminnallinenPainotusAdmin)
+admin.site.register(KieliPainotus, KieliPainotusAdmin)
 admin.site.register(Henkilo, AdminWithGuardianAndHistory)
-admin.site.register(Lapsi, AdminWithGuardianAndHistory)
-admin.site.register(Huoltaja, AdminWithGuardianAndHistory)
+admin.site.register(Lapsi, LapsiAdmin)
+admin.site.register(Huoltaja, HuoltajaAdmin)
 admin.site.register(Huoltajuussuhde, HuoltajuussuhdeAdmin)
-admin.site.register(Varhaiskasvatuspaatos, AdminWithGuardianAndHistory)
-admin.site.register(Varhaiskasvatussuhde, AdminWithGuardianAndHistory)
+admin.site.register(Varhaiskasvatuspaatos, VarhaiskasvatuspaatosAdmin)
+admin.site.register(Varhaiskasvatussuhde, VarhaiskasvatussuhdeAdmin)
 admin.site.register(Maksutieto, AdminWithGuardianAndHistory)
 admin.site.register(Aikaleima, AdminWithGuardianAndHistory)
 admin.site.register(BatchError, AdminWithGuardianAndHistory)
-admin.site.register(PaosToiminta, AdminWithGuardianAndHistory)
+admin.site.register(PaosToiminta, PaosToimintaAdmin)
 admin.site.register(PaosOikeus, AdminWithGuardianAndHistory)
 admin.site.register(Tyontekija, AdminWithGuardianAndHistory)

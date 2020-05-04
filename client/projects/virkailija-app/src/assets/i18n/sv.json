@@ -452,6 +452,8 @@
     "alert.toimipaikan-lapset-not-found": "Verksamhetsstället har inga barn",
     "label.kunnan-tai-kuntayhtyman-jarjestama-varhaiskasvatus": "Verksamhet som ordnas som köpt tjänst eller med servicesedel",
     "label.jarjestava-kunta-tai-kuntayhtyma": "Anordnare (kommun eller samkommun)",
+    "label.jarjestava-kunta-tai-kuntayhtyma.infotext": "Välj den kommun som anordnar den småbarnspedagogiska verksamheten. Om kommunen som anordnar den småbarnspedagogiska verksamheten inte finns i menyn, lägg först till uppgifterna i administrationsvyn för köptjänster och servicesedelverksamhet.",
+    "label.jarjestava-kunta-tai-kuntayhtyma.required": "Kommunen är en obligatorisk uppgift.",
     "label.oma-organisaatio": "Anordnare",
     "label.paos-organisaatio": "Producent",
     "label.no-filters": "Inga avgränsningar",

@@ -246,6 +246,13 @@ export class AuthService {
           }
         });
       }
+      if (!toimipaikka.paos_tallentaja_organisaatio_id_list.length) {
+        Object.keys(access).forEach(key => {
+          if (access[key].katselija) {
+            access[key].katselija = false;
+          }
+        });
+      }
     }
 
     return access;
