@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, Subject, BehaviorSubject } from 'rxjs';
+import { Observable, Subject, BehaviorSubject, combineLatest } from 'rxjs';
 import { VardaApiService } from '../services/varda-api.service';
 import { VardaVakajarjestajaService } from '../services/varda-vakajarjestaja.service';
 import { NavigationEnd, Router } from '@angular/router';
@@ -7,6 +7,7 @@ import { VardaKayttajatyyppi, VardaKayttooikeusRoles, VardaToimipaikkaDTO } from
 import { VardaToimipaikkaMinimalDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { UserAccess, SaveAccess } from '../../utilities/models/varda-user-access.model';
 import { environment } from 'projects/huoltaja-app/src/environments/environment';
+import { filter } from 'rxjs/operators';
 
 class Kayttooikeus {
   kayttooikeus: VardaKayttooikeusRoles;
@@ -36,14 +37,13 @@ export class AuthService {
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private router: Router) {
 
-    this.router.events.subscribe((s) => {
-      if (s instanceof NavigationEnd) {
-        const routeParts = s.url.split('?');
-        const route = routeParts[0];
-        this.loggedInUserAfterAuthCheckUrl = (route === '/') ? '/haku' : route;
-        const toimipaikkaAccessIfAny = this.toimipaikkaAccessToAnyToimipaikka$.getValue();
-
-        if (route === '/' && !toimipaikkaAccessIfAny?.lapsitiedot?.tallentaja) {
+    combineLatest(
+      (router.events).pipe(filter(event => event instanceof NavigationEnd)),
+      this.toimipaikkaAccessToAnyToimipaikka$.asObservable()
+    ).subscribe(([navigation, toimipaikkaAccessToAny]) => {
+      if (navigation instanceof NavigationEnd && toimipaikkaAccessToAny) {
+        const route = navigation.url.split('?').shift();
+        if (route === '/' && !toimipaikkaAccessToAny.lapsitiedot?.tallentaja) {
           this.router.navigate(['/haku']);
         }
       }

@@ -29,7 +29,7 @@ describe('AppComponent', () => {
         AuthService,
         VardaVakajarjestajaService,
         VardaDomService,
-        { provide: Router, useValue: { events: { subscribe: () => { } }, navigate: () => { }, routerState: {} } },
+        { provide: Router, useValue: { events: EMPTY, navigate: () => { }, routerState: {} } },
         { provide: CookieService, useValue: {} },
         { provide: VardaApiService, useValue: {} },
         { provide: TranslateService, useValue: { use: () => { }, getBrowserLang: () => { }, setDefaultLang: () => { }, get: () => EMPTY } },

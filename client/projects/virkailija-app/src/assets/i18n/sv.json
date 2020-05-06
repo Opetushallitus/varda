@@ -471,5 +471,6 @@
     "field.jarjestamismuoto_koodi.paos-lapsi-invalid-code": "Personen kunde inte läggas till. Kontrollera att formen för anordnandet är korrekt.",
     "alert.oma_organisaatio_same_as_paos": "Kontrollera uppgifterna om servicesedelverksamhet och köptjänster.",
     "alert.paos-lapsi-creation-failed": "Personen kunde inte läggas till. Kontrollera att uppgifterna om verksamhet som ordnas som köpt tjänst eller med servicesedel är korrekta. Att lägga till en person till detta verksamhetsställe förutsätter att både serviceproducenten och anordnaren sparat de behövliga uppgifterna om verksamheten.",
-    "alert.date-format": "Datumet ska ha formatet dd.mm.åååå"
+    "alert.date-format": "Datumet ska ha formatet dd.mm.åååå",
+    "field.date-after-1999": "Datumet måste infalla efter 1.1.2000"
 }

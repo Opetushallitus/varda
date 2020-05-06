@@ -37,7 +37,8 @@ export class VardaErrorMessageService {
     'There is no active paos-agreement.': 'alert.paos-lapsi-creation-failed',
     'Vakajarjestaja is different than paos_organisaatio for lapsi.': 'alert.vakajarjestaja-eri-kuin-lapsen-paos-toimija',
     'Arvo tulee olla vähintään 3 merkkiä pitkä.': 'field.postiosoite.invalid',
-    'oma_organisaatio cannot be same as paos_organisaatio.': 'alert.oma_organisaatio_same_as_paos'
+    'oma_organisaatio cannot be same as paos_organisaatio.': 'alert.oma_organisaatio_same_as_paos',
+    'Date must be greater than or equal to 2000-01-01.': 'field.date-after-1999',
   };
 
   dynamicErrorMessageKeys = {

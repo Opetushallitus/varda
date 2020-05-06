@@ -454,7 +454,9 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   initLapsiFormFields(): void {
     this.vardaApiWrapperService.getCreateLapsiFieldSets().subscribe((data) => {
       if (this.toimipaikkaAccess.lapsitiedot.tallentaja) {
-        this.toimipaikkaOptions = this.authService.getAuthorizedToimipaikat(this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().tallentajaToimipaikat, SaveAccess.lapsitiedot);
+        this.toimipaikkaOptions = this.authService.getAuthorizedToimipaikat(
+          this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().tallentajaToimipaikat, SaveAccess.lapsitiedot
+        ).filter(toimipaikka => this.currentToimipaikka.paos_organisaatio_url === toimipaikka.paos_organisaatio_url);
       } else {
         this.toimipaikkaOptions = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().allToimipaikat;
       }
@@ -961,13 +963,15 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
       fieldsetGroup[1].fieldsets[1].fields[0].options = fieldsetGroup[1].fieldsets[1].fields[0].options.filter(option => option.code !== 'jm01');
     }
 
-    if ((!this.currentLapsi && !this.paosJarjestajaKunnat$.getValue()) || (this.currentLapsi && !this.currentLapsi.paos_organisaatio_nimi)) { // jm02-03 voi käyttää ainoastaan PAOS-lapselle
+
+    if (this.paosJarjestajaKunnat$.getValue() || this.currentLapsi?.paos_organisaatio_nimi) { // paos-kytkin tarjoaa pelkkää JM02/03
+      fieldsetGroup[1].fieldsets[1].fields[0].options = fieldsetGroup[1].fieldsets[1].fields[0].options.filter(option => ['jm02', 'jm03'].includes(option.code));
+    } else if ((!this.currentLapsi && !this.paosJarjestajaKunnat$.getValue()) || !this.selectedToimipaikka.paos_organisaatio_url) {
+      // poistetaan eipaoskytkin uudelta lapselta jm02/03 tai jos selectedToimipaikka EI paostoimipaikka
       fieldsetGroup[1].fieldsets[1].fields[0].options = fieldsetGroup[1].fieldsets[1].fields[0].options.filter(option => !['jm02', 'jm03'].includes(option.code));
     }
 
     return fieldsetGroup;
   }
-
-
 
 }

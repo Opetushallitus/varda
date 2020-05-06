@@ -1852,11 +1852,108 @@ class VardaViewsTests(TestCase):
         assert_status_code(resp, 201)
         self.assertEqual(json_data['pikakasittely_kytkin'], False)
 
+    def test_push_api_varhaiskasvatuspaatos_date_validation(self):
+        client = SetUpTestClient('tester').client()
+
+        varhaiskasvatuspaatos = {
+            'lapsi': '/api/v1/lapset/2/',
+            'vuorohoito_kytkin': True,
+            'tuntimaara_viikossa': 30,
+            'jarjestamismuoto_koodi': 'jm01'
+        }
+
+        ok_cases = [
+            ('2018-01-01', '2018-02-01', None),          # no end date
+            ('2017-12-31', '2018-10-14', '2020-12-12'),  # all correct
+        ]
+
+        fail_cases = [
+            ('2017-02-01', '2016-02-01', None),          # application after start
+            ('2017-02-01', '2017-12-31', '2017-11-30'),  # end before start
+            ('1999-01-01', '2017-02-01', None),          # application before 2000
+            ('1998-01-01', '1998-02-02', '1999-02-02'),  # all before 2000
+            (None, '2018-07-01', None),                  # application missing, start ok
+            (None, None, None),                          # all missing
+        ]
+
+        for (application, start, end) in ok_cases:
+            varhaiskasvatuspaatos.update(
+                hakemus_pvm=application,
+                alkamis_pvm=start,
+                paattymis_pvm=end
+            )
+
+            data = json.dumps(varhaiskasvatuspaatos)
+            resp = client.post('/api/v1/varhaiskasvatuspaatokset/', data=data, content_type='application/json')
+            assert_status_code(resp, 201)
+
+            id = json.loads(resp.content)['id']
+            Varhaiskasvatuspaatos.objects.get(id=id).delete()
+
+        for (application, start, end) in fail_cases:
+            varhaiskasvatuspaatos.update(
+                hakemus_pvm=application,
+                alkamis_pvm=start,
+                paattymis_pvm=end
+            )
+
+            data = json.dumps(varhaiskasvatuspaatos)
+            resp = client.post('/api/v1/varhaiskasvatuspaatokset/', data=data, content_type='application/json')
+            assert_status_code(resp, 400)
+
     def test_delete_varhaiskasvatuspaatos(self):
         client = SetUpTestClient('tester').client()
         resp = client.delete('/api/v1/varhaiskasvatuspaatokset/1/')
         assert_status_code(resp, 400)
         self.assertEqual(json.loads(resp.content), {"detail": "Cannot delete varhaiskasvatuspaatos. There are objects referencing it that need to be deleted first."})
+
+    def test_push_api_varhaiskasvatussuhde_date_validation(self):
+        client = SetUpTestClient('tester').client()
+
+        varhaiskasvatussuhde = {
+            'varhaiskasvatuspaatos': '/api/v1/varhaiskasvatuspaatokset/1/',
+            'toimipaikka': '/api/v1/toimipaikat/1/'
+        }
+
+        # varhaiskasvatuspaatos with id 1: alkamis_pvm=2017-02-11, paattymis_pvm=2018-02-24
+
+        ok_cases = [
+            ('2017-04-01', None),          # No end date
+            ('2017-10-14', '2018-02-12'),  # All correct
+        ]
+
+        fail_cases = [
+            ('2016-02-01', None),          # start before vakapaatos start
+            ('2016-02-01', '2019-11-30'),  # start before vakapaatos start and end after vakapaatos end
+            ('2017-12-31', '2020-11-30'),  # end after vakapaatos end
+            ('1999-03-01', None),          # start before 2000
+            ('1998-02-02', '1999-02-02'),  # all before 2000
+            (None, '2018-01-01'),          # start missing
+            (None, None),                  # all missing
+        ]
+
+        for (start, end) in ok_cases:
+            varhaiskasvatussuhde.update(
+                alkamis_pvm=start,
+                paattymis_pvm=end
+            )
+
+            data = json.dumps(varhaiskasvatussuhde)
+            resp = client.post('/api/v1/varhaiskasvatussuhteet/', data=data, content_type='application/json')
+            assert_status_code(resp, 201)
+
+            id = json.loads(resp.content)['id']
+            Varhaiskasvatussuhde.objects.get(id=id).delete()
+
+        for (start, end) in fail_cases:
+            varhaiskasvatussuhde.update(
+                alkamis_pvm=start,
+                paattymis_pvm=end
+            )
+
+            data = json.dumps(varhaiskasvatussuhde)
+            resp = client.post('/api/v1/varhaiskasvatussuhteet/', data=data, content_type='application/json')
+            assert_status_code(resp, 400)
 
     def test_api_get_maksutieto(self):
         """
@@ -2154,6 +2251,7 @@ class VardaViewsTests(TestCase):
             ('2017-02-01', None),          # Before first vaka
             ('2017-02-01', '2017-12-31'),  # Before first vaka
             ('2017-02-01', '2017-02-01'),  # Start before first vaka
+            ('1998-02-02', '1999-02-02'),  # Start and end before 2000
             (None, '2018-07-01'),          # Start missing, end ok
             (None, None),                  # Both missing
         ]

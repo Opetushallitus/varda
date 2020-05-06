@@ -11,6 +11,7 @@ import { HttpService } from 'varda-shared';
 import { VardaToimipaikkaDTO, VardaVakajarjestaja } from '../../utilities/models';
 import { SaveAccess } from '../../utilities/models/varda-user-access.model';
 import { VardaToimipaikkaMinimalDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
+import { EMPTY } from 'rxjs';
 
 describe('AuthService', () => {
 
@@ -27,7 +28,7 @@ describe('AuthService', () => {
         AuthService,
         CookieService,
         VardaVakajarjestajaService,
-        { provide: Router, useValue: { events: { subscribe: () => { } }, navigate: () => { }, url: '/haku' } },
+        { provide: Router, useValue: { events: EMPTY, navigate: () => { }, url: '/haku' } },
         {
           provide: VardaApiService,
           useValue: {

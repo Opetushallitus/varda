@@ -9,6 +9,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import APIException
 from rest_framework.validators import UniqueTogetherValidator
 
+from varda import validators
 from varda.cache import caching_to_representation
 from varda.misc import list_of_dicts_has_duplicate_values
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Maksutieto, Henkilo,
@@ -498,7 +499,7 @@ class MaksutietoPostSerializer(serializers.HyperlinkedModelSerializer):
     url = serializers.ReadOnlyField()
     huoltajat = MaksutietoPostHuoltajaSerializer(required=True, allow_empty=False, many=True)
     lapsi = LapsiHLField(required=True, view_name='lapsi-detail')
-    alkamis_pvm = serializers.DateField(required=True)
+    alkamis_pvm = serializers.DateField(required=True, validators=[validators.validate_vaka_date])
 
     class Meta:
         model = Maksutieto
@@ -562,7 +563,7 @@ class MaksutietoUpdateSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     huoltajat = serializers.SerializerMethodField('get_huoltajat_for_maksutieto')
     lapsi = serializers.SerializerMethodField('get_lapsi_for_maksutieto')
-    paattymis_pvm = serializers.DateField(allow_null=True, required=True)
+    paattymis_pvm = serializers.DateField(allow_null=True, required=True, validators=[validators.validate_vaka_date])
 
     def get_huoltajat_for_maksutieto(self, obj):
         huoltajuussuhteet = obj.huoltajuussuhteet.all()
@@ -760,9 +761,8 @@ class VarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     lapsi = LapsiHLField(view_name='lapsi-detail')
     varhaiskasvatussuhteet_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='varhaiskasvatussuhde-detail')
-    alkamis_pvm = serializers.DateField()
-    hakemus_pvm = serializers.DateField()
-    paattymis_pvm = serializers.DateField(allow_null=True, required=False)
+    alkamis_pvm = serializers.DateField(validators=[validators.validate_vaka_date])
+    hakemus_pvm = serializers.DateField(validators=[validators.validate_vaka_date])
     vuorohoito_kytkin = serializers.BooleanField(required=True)
 
     class Meta:
@@ -813,9 +813,8 @@ class VarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSerializer):
 class VarhaiskasvatuspaatosPutSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     varhaiskasvatussuhteet_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='varhaiskasvatussuhde-detail')
-    alkamis_pvm = serializers.DateField(required=True)
-    hakemus_pvm = serializers.DateField(required=True)
-    paattymis_pvm = serializers.DateField(allow_null=True, required=False)
+    alkamis_pvm = serializers.DateField(required=True, validators=[validators.validate_vaka_date])
+    hakemus_pvm = serializers.DateField(required=True, validators=[validators.validate_vaka_date])
 
     class Meta:
         model = Varhaiskasvatuspaatos
@@ -827,9 +826,8 @@ class VarhaiskasvatuspaatosPutSerializer(serializers.HyperlinkedModelSerializer)
 class VarhaiskasvatuspaatosPatchSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     varhaiskasvatussuhteet_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='varhaiskasvatussuhde-detail')
-    alkamis_pvm = serializers.DateField(required=False)
-    hakemus_pvm = serializers.DateField(required=False)
-    paattymis_pvm = serializers.DateField(allow_null=True, required=False)
+    alkamis_pvm = serializers.DateField(required=False, validators=[validators.validate_vaka_date])
+    hakemus_pvm = serializers.DateField(required=False, validators=[validators.validate_vaka_date])
 
     class Meta:
         model = Varhaiskasvatuspaatos

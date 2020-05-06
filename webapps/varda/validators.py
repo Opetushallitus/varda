@@ -365,16 +365,16 @@ def validate_toimipaikan_nimi(toimipaikan_nimi):
     # Important to have dash "-" in the end of the regex below
     toimipaikan_nimi_clean = re.sub(r'[/&’\'`´+(),.-]', '', toimipaikan_nimi)
     if not toimipaikan_nimi_clean.replace(" ", "").isalnum():
-        raise ValidationErrorRest({"toimipaikka": "Toimipaikan nimi has disallowed characters."})
+        raise ValidationErrorRest({"toimipaikka": ["Toimipaikan nimi has disallowed characters."]})
 
     # Checking for name length (min 2)
     if len(toimipaikan_nimi) < 2:
-        raise ValidationErrorRest({"toimipaikka": "Name must have at least 2 characters."})
+        raise ValidationErrorRest({"toimipaikka": ["Name must have at least 2 characters."]})
 
     # Checking for consecutive repeating special characters (max 2)
     toimipaikan_nimi_simple = re.sub(r'[/&’\'`´+(),.-]', '0', toimipaikan_nimi)
     if "000" in toimipaikan_nimi_simple:
-        raise ValidationErrorRest({"toimipaikka": "Maximum 2 consecutively repeating special characters are allowed."})
+        raise ValidationErrorRest({"toimipaikka": ["Maximum 2 consecutively repeating special characters are allowed."]})
 
     if (toimipaikan_nimi.startswith(tuple(special_characters_full)) or
             toimipaikan_nimi.endswith(tuple(special_characters_partial)) or
@@ -408,3 +408,8 @@ def validate_unique_lahdejarjestelma_tunniste_pair(self, model):
     if model.objects.filter(~Q(pk=self.pk) & Q(lahdejarjestelma=self.lahdejarjestelma) &
                             Q(tunniste=self.tunniste)).exists():
         raise ValidationError({'non_field_errors': ['lahdejarjestelma and tunniste pair already exists.']})
+
+
+def validate_vaka_date(date):
+    if date < datetime.date(2000, 1, 1):
+        raise ValidationErrorRest({'date': ['Date must be greater than or equal to 2000-01-01.']})

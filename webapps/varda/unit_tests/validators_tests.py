@@ -1,8 +1,9 @@
+import datetime
 import unittest
 from django.conf import settings
 from rest_framework.exceptions import ErrorDetail, ValidationError as ValidationErrorRest
 from varda.validators import validate_henkilotunnus, validate_paivamaara1_before_paivamaara2, \
-    validate_paivamaara1_after_paivamaara2
+    validate_paivamaara1_after_paivamaara2, validate_vaka_date
 
 
 class ValidatorsTests(unittest.TestCase):
@@ -41,3 +42,12 @@ class ValidatorsTests(unittest.TestCase):
         self.assertEqual(validate_paivamaara1_after_paivamaara2('2019-10-16', '2019-10-15', True), True)
         self.assertEqual(validate_paivamaara1_after_paivamaara2('2019-10-15', '2019-10-15', True), True)
         self.assertEqual(validate_paivamaara1_after_paivamaara2('2019-10-15', '2019-10-15', False), False)
+
+    def test_validate_date(self):
+        self.assertRaises(ValidationErrorRest, validate_vaka_date, datetime.date(1999, 1, 1))
+
+        try:
+            validate_vaka_date(datetime.date(2000, 1, 1))
+            validate_vaka_date(datetime.date(2010, 1, 1))
+        except ValidationErrorRest:
+            self.fail('ValidationErrorRest was raised unexpectedly!')
