@@ -454,9 +454,7 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   initLapsiFormFields(): void {
     this.vardaApiWrapperService.getCreateLapsiFieldSets().subscribe((data) => {
       if (this.toimipaikkaAccess.lapsitiedot.tallentaja) {
-        this.toimipaikkaOptions = this.authService.getAuthorizedToimipaikat(
-          this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().tallentajaToimipaikat, SaveAccess.lapsitiedot
-        ).filter(toimipaikka => this.currentToimipaikka.paos_organisaatio_url === toimipaikka.paos_organisaatio_url);
+        this.toimipaikkaOptions = this.authService.getAuthorizedToimipaikat(this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().tallentajaToimipaikat, SaveAccess.lapsitiedot);
       } else {
         this.toimipaikkaOptions = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().allToimipaikat;
       }

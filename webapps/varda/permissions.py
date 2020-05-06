@@ -135,7 +135,7 @@ def save_audit_log(user, url):
     Z5_AuditLog.objects.create(user=user, successful_get_request_path=path[:100])  # path max-length is 100 characters
 
 
-def user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, vakajarjestaja_organisaatio_oid, toimipaikka_qs):
+def user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, vakajarjestaja_organisaatio_oid, toimipaikka_qs=None):
     """
     User must be "palvelukayttaja" or have HUOLTAJATIETO_TALLENNUS-permission under the vakajarjestaja/toimipaikka.
     This is needed since user can have permissions to multiple organizations.
@@ -146,15 +146,17 @@ def user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, v
         logger.error('Missing cas-user-details, user-id: {}'.format(user.id))
         return False
 
-    if user_details.kayttajatyyppi == "PALVELU":
-        return True
+    if user_details.kayttajatyyppi == 'PALVELU':
+        group_vakajarjestaja_palvelukayttaja = 'VARDA-PALVELUKAYTTAJA_' + vakajarjestaja_organisaatio_oid
+        if user.groups.filter(name=group_vakajarjestaja_palvelukayttaja).exists():
+            return True
 
-    # Kayttaja == "VIRKAILIJA"
-    group_vakajarjestaja_huoltaja_tallentaja = 'HUOLTAJATIETO_TALLENNUS_' + vakajarjestaja_organisaatio_oid
-    if user.groups.filter(name=group_vakajarjestaja_huoltaja_tallentaja).exists():
-        return True
+    if user_details.kayttajatyyppi == 'VIRKAILIJA':
+        group_vakajarjestaja_huoltaja_tallentaja = 'HUOLTAJATIETO_TALLENNUS_' + vakajarjestaja_organisaatio_oid
+        if user.groups.filter(name=group_vakajarjestaja_huoltaja_tallentaja).exists():
+            return True
 
-    for toimipaikka in toimipaikka_qs:
+    for toimipaikka in toimipaikka_qs or []:
         group_toimipaikka_huoltaja_tallentaja = 'HUOLTAJATIETO_TALLENNUS_' + toimipaikka.organisaatio_oid
         if user.groups.filter(name=group_toimipaikka_huoltaja_tallentaja).exists():
             return True

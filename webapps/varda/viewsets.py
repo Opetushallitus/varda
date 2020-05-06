@@ -36,8 +36,11 @@ from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, K
 from varda.oppijanumerorekisteri import fetch_henkilo_with_oid, save_henkilo_to_db
 from varda.organisaatiopalvelu import check_if_toimipaikka_exists_in_organisaatiopalvelu, \
     create_toimipaikka_in_organisaatiopalvelu
-from varda.permission_groups import assign_object_level_permissions, create_permission_groups_for_organisaatio, \
-    assign_paos_permissions, assign_lapsi_paos_permissions, assign_toimipaikka_paos_permissions
+from varda.permission_groups import (assign_object_level_permissions, create_permission_groups_for_organisaatio,
+                                     assign_toimipaikka_lapsi_paos_permissions, assign_vakajarjestaja_lapsi_paos_permissions,
+                                     assign_vakajarjestaja_maksutieto_paos_permissions, assign_toimipaikka_maksutieto_paos_permissions,
+                                     assign_vakajarjestaja_vakatiedot_paos_permissions,
+                                     assign_toimipaikka_vakatiedot_paos_permissions)
 from varda.permissions import (throw_if_not_tallentaja_permissions,
                                check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement,
                                check_if_user_has_paakayttaja_permissions,
@@ -1147,11 +1150,10 @@ class LapsiViewSet(viewsets.ModelViewSet):
                 # This can be performed only after all permission checks are done!
                 saved_object = self.save_or_return_lapsi_if_already_created(validated_data, serializer)
                 if paos_organisaatio:
-                    assign_paos_permissions(oma_organisaatio.organisaatio_oid,
-                                            paos_organisaatio.organisaatio_oid,
-                                            paos_oikeus.tallentaja_organisaatio.organisaatio_oid,
-                                            Lapsi,
-                                            saved_object)
+                    assign_vakajarjestaja_lapsi_paos_permissions(oma_organisaatio.organisaatio_oid,
+                                                                 paos_organisaatio.organisaatio_oid,
+                                                                 paos_oikeus.tallentaja_organisaatio.organisaatio_oid,
+                                                                 saved_object)
                 elif vakatoimija:
                     vakajarjestaja_organisaatio_oid = vakatoimija.organisaatio_oid
                     assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Lapsi, saved_object)
@@ -1294,8 +1296,8 @@ class VarhaiskasvatuspaatosViewSet(viewsets.ModelViewSet):
                 oma_organisaatio_oid = lapsi.oma_organisaatio.organisaatio_oid
                 paos_organisaatio_oid = lapsi.paos_organisaatio.organisaatio_oid
                 tallentaja_organisaatio_oid = paos_oikeus.tallentaja_organisaatio.organisaatio_oid
-                assign_paos_permissions(oma_organisaatio_oid, paos_organisaatio_oid, tallentaja_organisaatio_oid,
-                                        Varhaiskasvatuspaatos, saved_object)
+                assign_vakajarjestaja_vakatiedot_paos_permissions(oma_organisaatio_oid, paos_organisaatio_oid, tallentaja_organisaatio_oid,
+                                                                  Varhaiskasvatuspaatos, saved_object)
             else:
                 if lapsi.vakatoimija:
                     assign_object_level_permissions(lapsi.vakatoimija.organisaatio_oid, Varhaiskasvatuspaatos, saved_object)
@@ -1450,23 +1452,31 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
                                       toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid):
         oma_organisaatio_oid = lapsi_obj.oma_organisaatio.organisaatio_oid
         paos_organisaatio_oid = lapsi_obj.paos_organisaatio.organisaatio_oid
-        assign_lapsi_paos_permissions(oma_organisaatio_oid,
-                                      paos_organisaatio_oid,
-                                      tallentaja_organisaatio_oid,
-                                      lapsi_obj,
-                                      toimipaikka_organisaatio_oid=toimipaikka_organisaatio_oid)
-        assign_paos_permissions(oma_organisaatio_oid,
-                                paos_organisaatio_oid,
-                                tallentaja_organisaatio_oid,
-                                Varhaiskasvatuspaatos,
-                                varhaiskasvatuspaatos_obj,
-                                toimipaikka_organisaatio_oid=toimipaikka_organisaatio_oid)
-        assign_paos_permissions(oma_organisaatio_oid,
-                                paos_organisaatio_oid,
-                                tallentaja_organisaatio_oid,
-                                Varhaiskasvatussuhde,
-                                varhaiskasvatussuhde_obj,
-                                toimipaikka_organisaatio_oid=toimipaikka_organisaatio_oid)
+        assign_vakajarjestaja_lapsi_paos_permissions(oma_organisaatio_oid,
+                                                     paos_organisaatio_oid,
+                                                     tallentaja_organisaatio_oid,
+                                                     lapsi_obj)
+        assign_vakajarjestaja_vakatiedot_paos_permissions(oma_organisaatio_oid,
+                                                          paos_organisaatio_oid,
+                                                          tallentaja_organisaatio_oid,
+                                                          Varhaiskasvatuspaatos,
+                                                          varhaiskasvatuspaatos_obj)
+        assign_vakajarjestaja_vakatiedot_paos_permissions(oma_organisaatio_oid,
+                                                          paos_organisaatio_oid,
+                                                          tallentaja_organisaatio_oid,
+                                                          Varhaiskasvatussuhde,
+                                                          varhaiskasvatussuhde_obj)
+        assign_toimipaikka_lapsi_paos_permissions(toimipaikka_organisaatio_oid,
+                                                  tallentaja_organisaatio_oid,
+                                                  lapsi_obj)
+        assign_toimipaikka_vakatiedot_paos_permissions(toimipaikka_organisaatio_oid,
+                                                       tallentaja_organisaatio_oid,
+                                                       Varhaiskasvatuspaatos,
+                                                       varhaiskasvatuspaatos_obj)
+        assign_toimipaikka_vakatiedot_paos_permissions(toimipaikka_organisaatio_oid,
+                                                       tallentaja_organisaatio_oid,
+                                                       Varhaiskasvatussuhde,
+                                                       varhaiskasvatussuhde_obj)
 
     def assign_non_paos_lapsi_permissions(self, lapsi_obj, varhaiskasvatussuhde_obj, varhaiskasvatuspaatos_obj,
                                           vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid):
@@ -1806,11 +1816,11 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
             oma_organisaatio_oid = lapsi.oma_organisaatio.organisaatio_oid
             paos_organisaatio_oid = lapsi.paos_organisaatio.organisaatio_oid
 
-            assign_paos_permissions(oma_organisaatio_oid, paos_organisaatio_oid, oma_organisaatio_oid, Maksutieto,
-                                    saved_object)
+            assign_vakajarjestaja_maksutieto_paos_permissions(oma_organisaatio_oid, paos_organisaatio_oid, saved_object)
+
             for toimipaikka in toimipaikka_qs:
                 if related_object_validations.toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=toimipaikka):
-                    assign_toimipaikka_paos_permissions(toimipaikka.organisaatio_oid, oma_organisaatio_oid, Maksutieto, saved_object)
+                    assign_toimipaikka_maksutieto_paos_permissions(toimipaikka.organisaatio_oid, oma_organisaatio_oid, saved_object)
 
         else:
             assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Maksutieto, saved_object)
@@ -1848,7 +1858,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         vakajarjestaja_organisaatio_oid = vakajarjestaja.organisaatio_oid
 
         if lapsi.paos_kytkin:
-            if not user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, lapsi.oma_organisaatio.organisaatio_oid, toimipaikka_qs):
+            if not user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, lapsi.oma_organisaatio.organisaatio_oid):
                 raise PermissionDenied("User does not have permissions to add maksutieto to this lapsi.")
         else:
             if not user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, vakajarjestaja_organisaatio_oid, toimipaikka_qs):

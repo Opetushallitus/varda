@@ -1,10 +1,11 @@
+
 import json
 
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from guardian.models import GroupObjectPermission
-from varda.models import Toimipaikka, PaosOikeus
+from varda.models import Toimipaikka, PaosOikeus, Huoltaja, Huoltajuussuhde, Henkilo, Lapsi
 from varda.permissions import change_paos_tallentaja_organization
 from varda.unit_tests.test_utils import assert_status_code
 from varda.unit_tests.views_tests import SetUpTestClient
@@ -18,6 +19,204 @@ class VardaPaosTests(TestCase):
         resp = client.get('/api/v1/vakajarjestajat/1/paos-toimipaikat/')
         assert_status_code(resp, 200)
         self.assertEqual(json.loads(resp.content)["count"], 2)
+
+    def test_assign_organisaatio_paos_vaka_permissions(self):
+        client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja_1
+        client_tester5 = SetUpTestClient('tester5').client()  # tallentaja vakajarjestaja_2
+        client_palvelukayttaja_vakajarjestaja1 = SetUpTestClient('pkvakajarjestaja1').client()  # palvelukayttaja vakajarjestaja_1
+        client_tester6 = SetUpTestClient('tester6').client()  # huoltaja_tallentaja_vakajarjestaja_1
+        client_tester7 = SetUpTestClient('tester7').client()  # huoltaja_tallentaja_vakajarjestaja_2
+        client_tester8 = SetUpTestClient('tester8').client()  # tallentaja toimipaikka_5
+
+        data_henkilo = {
+            'henkilotunnus': '071119A884T',
+            'etunimet': 'Minna Maija',
+            'kutsumanimi': 'Maija',
+            'sukunimi': 'Suroinen'
+        }
+        resp_henkilo = client_tester2.post('/api/v1/henkilot/', data_henkilo)
+        assert_status_code(resp_henkilo, 200)
+        henkilo_url = json.loads(resp_henkilo.content)['url']
+
+        data_lapsi = {
+            'henkilo': henkilo_url,
+            'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
+            'paos_organisaatio': '/api/v1/vakajarjestajat/2/'
+        }
+        resp_lapsi = client_tester2.post('/api/v1/lapset/', data_lapsi)
+        assert_status_code(resp_lapsi, 201)
+
+        lapsi_url = json.loads(resp_lapsi.content)['url']
+
+        data_vakapaatos = {
+            'lapsi': lapsi_url,
+            'tuntimaara_viikossa': 45,
+            'jarjestamismuoto_koodi': 'jm03',
+            'vuorohoito': True,
+            'alkamis_pvm': '2020-01-05',
+            'hakemus_pvm': '2020-01-01'
+        }
+
+        resp_vakapaatos = client_tester2.post('/api/v1/varhaiskasvatuspaatokset/', data_vakapaatos)
+        assert_status_code(resp_vakapaatos, 201)
+
+        vakapaatos_url = json.loads(resp_vakapaatos.content)['url']
+
+        data_vakasuhde = {
+            'varhaiskasvatuspaatos': vakapaatos_url,
+            'toimipaikka': '/api/v1/toimipaikat/5/',
+            'alkamis_pvm': '2020-01-05',
+            'paattymis_pvm': '2021-01-01'
+        }
+
+        resp_vakasuhde = client_tester2.post('/api/v1/varhaiskasvatussuhteet/', data_vakasuhde)
+        assert_status_code(resp_vakasuhde, 201)
+
+        vakasuhde_url = json.loads(resp_vakasuhde.content)['url']
+
+        resp_vakapaatos_tester5 = client_tester5.get(vakapaatos_url)
+        assert_status_code(resp_vakapaatos_tester5, 200)
+
+        resp_vakasuhde_tester5 = client_tester5.get(vakasuhde_url)
+        assert_status_code(resp_vakasuhde_tester5, 200)
+
+        resp_vakapaatos_tester6 = client_tester6.get(vakapaatos_url)
+        assert_status_code(resp_vakapaatos_tester6, 403)
+
+        resp_vakasuhde_tester6 = client_tester6.get(vakasuhde_url)
+        assert_status_code(resp_vakasuhde_tester6, 403)
+
+        resp_vakapaatos_tester7 = client_tester7.get(vakapaatos_url)
+        assert_status_code(resp_vakapaatos_tester7, 403)
+
+        resp_vakasuhde_tester7 = client_tester7.get(vakasuhde_url)
+        assert_status_code(resp_vakasuhde_tester7, 403)
+
+        resp_vakapaatos_tester8 = client_tester8.get(vakapaatos_url)
+        assert_status_code(resp_vakapaatos_tester8, 200)
+
+        resp_vakasuhde_tester8 = client_tester8.get(vakasuhde_url)
+        assert_status_code(resp_vakasuhde_tester8, 200)
+
+        resp_vakapaatos_palvelukayttaja_vakajarjestaja1 = client_palvelukayttaja_vakajarjestaja1.get(vakapaatos_url)
+        assert_status_code(resp_vakapaatos_palvelukayttaja_vakajarjestaja1, 200)
+
+        resp_vakasuhde_palvelukayttaja_vakajarjestaja1 = client_palvelukayttaja_vakajarjestaja1.get(vakasuhde_url)
+        assert_status_code(resp_vakasuhde_palvelukayttaja_vakajarjestaja1, 200)
+
+    def test_assign_organisaatio_paos_maksutieto_permissions(self):
+        client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
+        client_tester6 = SetUpTestClient('tester6').client()  # huoltaja_tallentaja_vakajarjestaja_1
+        client_tester7 = SetUpTestClient('tester7').client()  # huoltaja_tallentaja_vakajarjestaja_2
+        client_tester9 = SetUpTestClient('tester9').client()  # huoltaja_tallentaja toimipaikka_5
+        client_pk_vakajarjestaja_1 = SetUpTestClient('pkvakajarjestaja1').client()  # vakajarjestaja_1 palvelukayttaja
+        client_pk_vakajarjestaja_2 = SetUpTestClient('pkvakajarjestaja2').client()  # vakajarjestaja_2 palvelukayttaja
+        user_admin = User.objects.get(username='credadmin')
+
+        data_henkilo = {
+            'henkilotunnus': '071119A884T',
+            'etunimet': 'Minna Maija',
+            'kutsumanimi': 'Maija',
+            'sukunimi': 'Suroinen'
+        }
+        resp_henkilo = client_tester2.post('/api/v1/henkilot/', data_henkilo)
+        assert_status_code(resp_henkilo, 200)
+        henkilo_url = json.loads(resp_henkilo.content)['url']
+
+        data_lapsi = {
+            'henkilo': henkilo_url,
+            'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
+            'paos_organisaatio': '/api/v1/vakajarjestajat/2/'
+        }
+        resp_lapsi = client_tester2.post('/api/v1/lapset/', data_lapsi)
+        assert_status_code(resp_lapsi, 201)
+
+        lapsi_url = json.loads(resp_lapsi.content)['url']
+        lapsi_id = json.loads(resp_lapsi.content)['id']
+
+        data_vakapaatos = {
+            'lapsi': lapsi_url,
+            'tuntimaara_viikossa': 45,
+            'jarjestamismuoto_koodi': 'jm03',
+            'vuorohoito': True,
+            'alkamis_pvm': '2020-01-05',
+            'hakemus_pvm': '2020-01-01'
+        }
+
+        resp_vakapaatos = client_tester2.post('/api/v1/varhaiskasvatuspaatokset/', data_vakapaatos)
+        assert_status_code(resp_vakapaatos, 201)
+
+        vakapaatos_url = json.loads(resp_vakapaatos.content)['url']
+
+        data_vakasuhde = {
+            'varhaiskasvatuspaatos': vakapaatos_url,
+            'toimipaikka': '/api/v1/toimipaikat/5/',
+            'alkamis_pvm': '2020-01-05',
+            'paattymis_pvm': '2021-01-01'
+        }
+
+        resp_vakasuhde = client_tester2.post('/api/v1/varhaiskasvatussuhteet/', data_vakasuhde)
+        assert_status_code(resp_vakasuhde, 201)
+
+        henkilo_huoltaja = Henkilo.objects.get(id=14)
+        lapsi_obj = Lapsi.objects.get(id=lapsi_id)
+
+        huoltaja_obj = Huoltaja.objects.create(henkilo=henkilo_huoltaja, changed_by=user_admin)
+
+        Huoltajuussuhde.objects.create(huoltaja=huoltaja_obj, lapsi=lapsi_obj, changed_by=user_admin)
+
+        data_maksutieto = {
+            'huoltajat': [
+                {'henkilotunnus': '291180-7071', 'etunimet': 'Jouni', 'sukunimi': 'Suroinen'},
+                {'henkilotunnus': '240780-717W', 'etunimet': 'Puuttuva', 'sukunimi': 'Huoltaja'}
+            ],
+            'lapsi': lapsi_url,
+            'maksun_peruste_koodi': 'mp02',
+            'palveluseteli_arvo': 120,
+            'asiakasmaksu': 0,
+            'perheen_koko': 1,
+            'alkamis_pvm': '2020-01-05',
+            'paattymis_pvm': '2021-05-05'
+        }
+
+        resp_maksutieto_tester7 = client_tester7.post('/api/v1/maksutiedot/', json.dumps(data_maksutieto), content_type='application/json')
+        assert_status_code(resp_maksutieto_tester7, 403)
+
+        resp_maksutieto_pk_vakajarjestaja_2 = client_pk_vakajarjestaja_2.post('/api/v1/maksutiedot/', json.dumps(data_maksutieto), content_type='application/json')
+        assert_status_code(resp_maksutieto_pk_vakajarjestaja_2, 403)
+
+        resp_maksutieto_pk_vakajarjestaja_1 = client_pk_vakajarjestaja_1.post('/api/v1/maksutiedot/', json.dumps(data_maksutieto), content_type='application/json')
+        assert_status_code(resp_maksutieto_pk_vakajarjestaja_1, 201)
+
+        resp_maksutieto_tester6 = client_tester6.post('/api/v1/maksutiedot/', json.dumps(data_maksutieto), content_type='application/json')
+        assert_status_code(resp_maksutieto_tester6, 201)
+
+        maksutieto_url = json.loads(resp_maksutieto_tester6.content)['url']
+
+        resp_maksutieto_tester7 = client_tester7.get(maksutieto_url)
+        assert_status_code(resp_maksutieto_tester7, 200)
+
+        resp_maksutieto_tester9 = client_tester9.get(maksutieto_url)
+        assert_status_code(resp_maksutieto_tester9, 200)
+
+        patch_maksutieto_data = {
+            'paattymis_pvm': '2021-02-10'
+        }
+
+        resp_maksutieto_tester7 = client_tester7.patch(maksutieto_url, json.dumps(patch_maksutieto_data), content_type='application/json')
+        assert_status_code(resp_maksutieto_tester7, 403)
+
+        resp_maksutieto_tester9 = client_tester9.patch(maksutieto_url, json.dumps(patch_maksutieto_data), content_type='application/json')
+        assert_status_code(resp_maksutieto_tester9, 403)
+
+        resp_maksutieto_pk_vakajarjestaja_2 = client_pk_vakajarjestaja_2.patch(maksutieto_url, json.dumps(patch_maksutieto_data), content_type='application/json')
+        assert_status_code(resp_maksutieto_pk_vakajarjestaja_2, 403)
+
+        resp_maksutieto_pk_vakajarjestaja_1 = client_pk_vakajarjestaja_1.patch(maksutieto_url, json.dumps(patch_maksutieto_data), content_type='application/json')
+        assert_status_code(resp_maksutieto_pk_vakajarjestaja_1, 200)
+
+        resp_maksutieto_tester6 = client_tester6.patch(maksutieto_url, json.dumps(patch_maksutieto_data), content_type='application/json')
+        assert_status_code(resp_maksutieto_tester6, 200)
 
     def test_paos_permissions_when_organization_link_disables(self):
         """

@@ -31,6 +31,7 @@ def add_groups_with_permissions():
         ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.34683023489', get_huoltajatiedot_tallentaja_permissions()),
         ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.93957375488', get_huoltajatiedot_tallentaja_permissions()),
         ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.93957375484', get_huoltajatiedot_tallentaja_permissions()),  # vakajarjestaja_4
+        ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.9395737548817', get_huoltajatiedot_tallentaja_permissions()),  # toimipaikka_5
         ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.9395737548810', get_huoltajatiedot_katselija_permissions()),
         ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.93957375488', get_huoltajatiedot_katselija_permissions()),
         ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.34683023489', get_huoltajatiedot_katselija_permissions()),
@@ -47,15 +48,20 @@ def add_test_users():
     from django.contrib.auth.models import Group, Permission, User
     from rest_framework.authtoken.models import Token
     group_palvelukayttaja = Group.objects.get(name='vakajarjestaja_palvelukayttaja')
+    group_palvelukayttaja_vakajarjestaja_1 = Group.objects.get(name='VARDA-PALVELUKAYTTAJA_1.2.246.562.10.34683023489')
+    group_palvelukayttaja_vakajarjestaja_2 = Group.objects.get(name='VARDA-PALVELUKAYTTAJA_1.2.246.562.10.93957375488')
     group_view_henkilo = Group.objects.get(name='vakajarjestaja_view_henkilo')
     group_tallentaja_vakajarjestaja_2 = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.93957375488')
     group_tallentaja_toimipaikka_1 = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.9395737548810')
     group_katselija_toimipaikka_4 = Group.objects.get(name='VARDA-KATSELIJA_1.2.246.562.10.9395737548811')
     group_tallentaja_vakajarjestaja_1 = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.34683023489')
+    group_tallentaja_toimipaikka_5 = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.9395737548817')
     group_paakayttaja_vakajarjestaja_1 = Group.objects.get(name='VARDA-PAAKAYTTAJA_1.2.246.562.10.34683023489')
     group_paakayttaja_vakajarjestaja_2 = Group.objects.get(name='VARDA-PAAKAYTTAJA_1.2.246.562.10.93957375488')
     group_huoltajatiedot_tallentaja_toimipaikka_1 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.9395737548810')
     group_huoltajatiedot_tallentaja_vakajarjestaja_1 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.34683023489')
+    group_huoltajatiedot_tallentaja_vakajarjestaja_2 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.93957375488')
+    group_huoltajatiedot_tallentaja_toimipaikka_5 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.9395737548817')
 
     user_tester = User.objects.create(username='tester', password='pbkdf2_sha256$120000$4IdDHxUJJSE6$N18zHZK02yA3KxNeTcDS4t6Ytsn2ZOLO6QLDXNT/8Yo=')
     Token.objects.create(user=user_tester, key='916b7ca8f1687ec3462b4a35d0c5c6da0dbeedf3')
@@ -91,6 +97,30 @@ def add_test_users():
     user_tester_e2e = User.objects.create(username='tester-e2e', password='pbkdf2_sha256$120000$6ihvwx47epob$a2xDB6OLThL4eeEuMVw8+3QB1QBxi5hU2gZxnMwA2nE=')
     user_tester_e2e.groups.add(group_palvelukayttaja)
     user_tester_e2e.groups.add(group_view_henkilo)
+
+    user_palvelukayttaja_vakajarjestaja_1 = User.objects.create(username='pkvakajarjestaja1', password='pbkdf2_sha256$150000$rBZO8vnXaxun$MhKN0NOCnasVgrMsIkYfIBXaBDdRiRy8J7WQM62bARY=')
+    user_palvelukayttaja_vakajarjestaja_1.groups.add(group_palvelukayttaja_vakajarjestaja_1)
+    user_palvelukayttaja_vakajarjestaja_1.groups.add(group_view_henkilo)
+
+    user_palvelukayttaja_vakajarjestaja_2 = User.objects.create(username='pkvakajarjestaja2', password='pbkdf2_sha256$150000$ptRhdza1ttgB$IJdKerCPdzhC/wDME/rUVzFTKflh2coUuaCGWomg+Lo=')
+    user_palvelukayttaja_vakajarjestaja_2.groups.add(group_palvelukayttaja_vakajarjestaja_2)
+    user_palvelukayttaja_vakajarjestaja_2.groups.add(group_view_henkilo)
+
+    user_tester6 = User.objects.create(username='tester6', password='pbkdf2_sha256$150000$S3mQ66CWYdSO$o9T08pdVyIZFqbdC8pK5cMk2O64d3xfQdw2x2vzr4M8=')
+    user_tester6.groups.add(group_huoltajatiedot_tallentaja_vakajarjestaja_1)
+    user_tester6.groups.add(group_view_henkilo)
+
+    user_tester7 = User.objects.create(username='tester7', password='pbkdf2_sha256$150000$9fuSiDHlpxu4$qpRt5+aPs8Fd9VsI0XPjOvMHCN7LF+VbSJLyIghrNks=')
+    user_tester7.groups.add(group_huoltajatiedot_tallentaja_vakajarjestaja_2)
+    user_tester7.groups.add(group_view_henkilo)
+
+    user_tester8 = User.objects.create(username='tester8', password='pbkdf2_sha256$150000$e5HLX1BadPnp$4H0r3yNEbiaTZ2yJ07HFK+8GsUM5JwKGNa/O727IOtI=')
+    user_tester8.groups.add(group_tallentaja_toimipaikka_5)
+    user_tester8.groups.add(group_view_henkilo)
+
+    user_tester9 = User.objects.create(username='tester9', password='pbkdf2_sha256$150000$ntAfCrXVuXnI$A63mBzAb7EzHDdR6jTSGZDmmYj0OtfbgetIFbtBZXBo=')
+    user_tester9.groups.add(group_huoltajatiedot_tallentaja_toimipaikka_5)
+    user_tester9.groups.add(group_view_henkilo)
 
     User.objects.create(username='tester-no-known-privileges', password='pbkdf2_sha256$120000$6ihvwx47epob$a2xDB6OLThL4eeEuMVw8+3QB1QBxi5hU2gZxnMwA2nE=')
 
@@ -640,6 +670,44 @@ def create_henkilot():
         changed_by=tester2_user
     )
 
+    # 071119A884T
+    henkilo_13 = Henkilo.objects.create(
+        henkilotunnus='gAAAAABeqDLLKoxnhplzrNEgkPbv0TUQvS2dx_ft0lsIBrhlMJX7VLkUhhnCEtERjW_bZZAbgjavc9GGvFIk-6_bzGQv9qIqCQ==',
+        henkilotunnus_unique_hash='c0a057089d3f1c7b5b6e03c07b8f9e3caea4a566aae3ba76b42509d47adcd55f',
+        syntyma_pvm='1990-10-29',
+        henkilo_oid='1.2.246.562.24.7777777777766',
+        etunimet='Minna Maija',
+        kutsumanimi='Maija',
+        sukunimi='Suroinen',
+        aidinkieli_koodi='FI',
+        kotikunta_koodi='049',
+        turvakielto=False,
+        sukupuoli_koodi=2,
+        katuosoite='Kannistokatu 14',
+        postinumero='02101',
+        postitoimipaikka='Espoo',
+        changed_by=tester2_user
+    )
+
+    # 291180-7071
+    henkilo_14 = Henkilo.objects.create(
+        henkilotunnus='gAAAAABeqDPZvYP3UiGMdjk3DUieipMnFY8yOQ0HgxkukZh9kTYvDmWjzvjZ2BcSQS9mMYWh2YAIQf8NQPkNCNmzmpir_ytkPA==',
+        henkilotunnus_unique_hash='da3d4187e11092380164be1feb310544671c1f36d9164db7202340195a91f0c3',
+        syntyma_pvm='1990-10-29',
+        henkilo_oid='1.2.246.562.24.7777777777755',
+        etunimet='Jouni Janne',
+        kutsumanimi='Jouni',
+        sukunimi='Suroinen',
+        aidinkieli_koodi='JP',
+        kotikunta_koodi='049',
+        turvakielto=False,
+        sukupuoli_koodi=2,
+        katuosoite='Kannistokatu 14',
+        postinumero='02101',
+        postitoimipaikka='Espoo',
+        changed_by=tester2_user
+    )
+
     assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_1)
     assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_2)
     assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_3)
@@ -652,14 +720,17 @@ def create_henkilot():
     assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_10)
     assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_11)
     assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_12)
+    assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_13)
+    assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_14)
 
 
 def create_lapset():
     from django.contrib.auth.models import User
     from varda.misc import hash_string
     from varda.models import Henkilo, Lapsi, Toimipaikka, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, VakaJarjestaja
-    from varda.permission_groups import (assign_object_level_permissions, assign_paos_permissions,
-                                         assign_lapsi_paos_permissions)
+    from varda.permission_groups import (assign_object_level_permissions, assign_toimipaikka_vakatiedot_paos_permissions,
+                                         assign_vakajarjestaja_lapsi_paos_permissions, assign_vakajarjestaja_vakatiedot_paos_permissions,
+                                         assign_toimipaikka_lapsi_paos_permissions)
 
     tester_user = User.objects.get(username='tester')
     tester2_user = User.objects.get(username='tester2')
@@ -843,19 +914,32 @@ def create_lapset():
     assign_object_level_permissions(vakajarjestaja_1_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_3)
     assign_object_level_permissions(vakajarjestaja_1_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_3)
 
-    assign_lapsi_paos_permissions(vakajarjestaja_1_organisaatio_oid, vakajarjestaja_2_organisaatio_oid,
-                                  vakajarjestaja_1_organisaatio_oid, lapsi_4, toimipaikka_5_organisaatio_oid)
-    assign_paos_permissions(vakajarjestaja_1_organisaatio_oid, vakajarjestaja_2_organisaatio_oid,
-                            vakajarjestaja_1_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_4, None, toimipaikka_5_organisaatio_oid)
-    assign_paos_permissions(vakajarjestaja_1_organisaatio_oid, vakajarjestaja_2_organisaatio_oid,
-                            vakajarjestaja_1_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_4, None, toimipaikka_5_organisaatio_oid)
+    assign_vakajarjestaja_lapsi_paos_permissions(vakajarjestaja_1_organisaatio_oid, vakajarjestaja_2_organisaatio_oid,
+                                                 vakajarjestaja_1_organisaatio_oid, lapsi_4)
+    assign_vakajarjestaja_vakatiedot_paos_permissions(vakajarjestaja_1_organisaatio_oid, vakajarjestaja_2_organisaatio_oid,
+                                                      vakajarjestaja_1_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_4)
+    assign_vakajarjestaja_vakatiedot_paos_permissions(vakajarjestaja_1_organisaatio_oid, vakajarjestaja_2_organisaatio_oid,
+                                                      vakajarjestaja_1_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_4)
 
-    assign_lapsi_paos_permissions(vakajarjestaja_4_organisaatio_oid, vakajarjestaja_2_organisaatio_oid,
-                                  vakajarjestaja_4_organisaatio_oid, lapsi_5, toimipaikka_5_organisaatio_oid)
-    assign_paos_permissions(vakajarjestaja_4_organisaatio_oid, vakajarjestaja_2_organisaatio_oid,
-                            vakajarjestaja_4_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_5, None, toimipaikka_5_organisaatio_oid)
-    assign_paos_permissions(vakajarjestaja_4_organisaatio_oid, vakajarjestaja_2_organisaatio_oid,
-                            vakajarjestaja_4_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_5, None, toimipaikka_5_organisaatio_oid)
+    assign_toimipaikka_lapsi_paos_permissions(toimipaikka_5_organisaatio_oid, vakajarjestaja_1_organisaatio_oid, lapsi_4)
+    assign_toimipaikka_vakatiedot_paos_permissions(toimipaikka_5_organisaatio_oid, vakajarjestaja_1_organisaatio_oid,
+                                                   Varhaiskasvatuspaatos, vakapaatos_4)
+    assign_toimipaikka_vakatiedot_paos_permissions(toimipaikka_5_organisaatio_oid, vakajarjestaja_1_organisaatio_oid,
+                                                   Varhaiskasvatussuhde, vakasuhde_4)
+
+    assign_vakajarjestaja_lapsi_paos_permissions(vakajarjestaja_4_organisaatio_oid, vakajarjestaja_2_organisaatio_oid,
+                                                 vakajarjestaja_4_organisaatio_oid, lapsi_5)
+    assign_vakajarjestaja_vakatiedot_paos_permissions(vakajarjestaja_4_organisaatio_oid, vakajarjestaja_2_organisaatio_oid,
+                                                      vakajarjestaja_4_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_5)
+    assign_vakajarjestaja_vakatiedot_paos_permissions(vakajarjestaja_4_organisaatio_oid, vakajarjestaja_2_organisaatio_oid,
+                                                      vakajarjestaja_4_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_5)
+
+    assign_toimipaikka_lapsi_paos_permissions(toimipaikka_5_organisaatio_oid, vakajarjestaja_4_organisaatio_oid,
+                                              lapsi_5)
+    assign_toimipaikka_vakatiedot_paos_permissions(toimipaikka_5_organisaatio_oid, vakajarjestaja_4_organisaatio_oid,
+                                                   Varhaiskasvatuspaatos, vakapaatos_5)
+    assign_toimipaikka_vakatiedot_paos_permissions(toimipaikka_5_organisaatio_oid, vakajarjestaja_4_organisaatio_oid,
+                                                   Varhaiskasvatussuhde, vakasuhde_5)
 
 
 def create_huoltajat():
@@ -966,8 +1050,9 @@ def create_huoltajuussuhteet():
 def create_maksutiedot():
     from django.contrib.auth.models import Group, User
     from guardian.shortcuts import assign_perm
-    from varda.models import Maksutieto, Huoltajuussuhde, VakaJarjestaja, Toimipaikka
-    from varda.permission_groups import assign_toimipaikka_paos_permissions, assign_paos_permissions
+    from varda.models import Maksutieto, Huoltajuussuhde
+    from varda.permission_groups import (assign_vakajarjestaja_maksutieto_paos_permissions,
+                                         assign_toimipaikka_maksutieto_paos_permissions)
 
     tester_user = User.objects.get(username='tester')
     tester2_user = User.objects.get(username='tester2')
@@ -975,6 +1060,11 @@ def create_maksutiedot():
     group_tester = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.9395737548810')
     group_tester2 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.34683023489')
     group_tester4 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.93957375484')
+
+    vakajarjestaja_2_organisaatio_oid = '1.2.246.562.10.93957375488'
+    vakajarjestaja_4_organisaatio_oid = '1.2.246.562.10.93957375484'
+
+    toimipaikka_5_organisaatio_oid = '1.2.246.562.10.9395737548817'
 
     mp1 = Maksutieto.objects.create(
         yksityinen_jarjestaja=False,
@@ -1033,17 +1123,8 @@ def create_maksutiedot():
     assign_perm('delete_maksutieto', group_tester4, mp4)
     Huoltajuussuhde.objects.get(pk=6).maksutiedot.add(mp4)
 
-    vakajarjestaja_4 = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.93957375484')
-    vakajarjestaja_4_organisaatio_oid = vakajarjestaja_4.organisaatio_oid
-
-    vakajarjestaja_2_organisaatio_oid = '1.2.246.562.10.93957375488'
-
-    toimipaikka_5 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548817')
-    toimipaikka_5_organisaatio_oid = toimipaikka_5.organisaatio_oid
-
-    assign_paos_permissions(vakajarjestaja_4_organisaatio_oid, vakajarjestaja_2_organisaatio_oid, vakajarjestaja_4_organisaatio_oid,
-                            Maksutieto, mp4)
-    assign_toimipaikka_paos_permissions(toimipaikka_5_organisaatio_oid, vakajarjestaja_4_organisaatio_oid, Maksutieto, mp4)
+    assign_vakajarjestaja_maksutieto_paos_permissions(vakajarjestaja_4_organisaatio_oid, vakajarjestaja_2_organisaatio_oid, mp4)
+    assign_toimipaikka_maksutieto_paos_permissions(toimipaikka_5_organisaatio_oid, vakajarjestaja_4_organisaatio_oid, mp4)
 
 
 def create_paos_toiminta():
@@ -1210,6 +1291,12 @@ def create_user_data():
 
     tester_user = User.objects.get(username='tester')
     tester2_user = User.objects.get(username='tester2')
+    tester6_user = User.objects.get(username='tester6')
+    tester7_user = User.objects.get(username='tester7')
+    tester9_user = User.objects.get(username='tester9')
+
+    pk_vakajarjestaja_1_user = User.objects.get(username='pkvakajarjestaja1')
+    pk_vakajarjestaja_2_user = User.objects.get(username='pkvakajarjestaja2')
 
     Z3_AdditionalCasUserFields.objects.create(
         user_id=tester_user.id,
@@ -1224,6 +1311,51 @@ def create_user_data():
         user_id=tester2_user.id,
         kayttajatyyppi='VIRKAILIJA',
         henkilo_oid='1.2.345678911',
+        asiointikieli_koodi='fi',
+        approved_oph_staff=False,
+        last_modified='2019-01-24 12:00:00+1459'
+    )
+
+    Z3_AdditionalCasUserFields.objects.create(
+        user_id=tester6_user.id,
+        kayttajatyyppi='VIRKAILIJA',
+        henkilo_oid='1.2.345678001',
+        asiointikieli_koodi='fi',
+        approved_oph_staff=False,
+        last_modified='2019-01-24 12:00:00+1459'
+    )
+
+    Z3_AdditionalCasUserFields.objects.create(
+        user_id=tester7_user.id,
+        kayttajatyyppi='VIRKAILIJA',
+        henkilo_oid='1.2.345679001',
+        asiointikieli_koodi='fi',
+        approved_oph_staff=False,
+        last_modified='2019-01-24 12:00:00+1459'
+    )
+
+    Z3_AdditionalCasUserFields.objects.create(
+        user_id=tester9_user.id,
+        kayttajatyyppi='VIRKAILIJA',
+        henkilo_oid='1.2.345680001',
+        asiointikieli_koodi='fi',
+        approved_oph_staff=False,
+        last_modified='2019-01-24 12:00:00+1459'
+    )
+
+    Z3_AdditionalCasUserFields.objects.create(
+        user_id=pk_vakajarjestaja_1_user.id,
+        kayttajatyyppi='PALVELU',
+        henkilo_oid='',
+        asiointikieli_koodi='fi',
+        approved_oph_staff=False,
+        last_modified='2019-01-24 12:00:00+1459'
+    )
+
+    Z3_AdditionalCasUserFields.objects.create(
+        user_id=pk_vakajarjestaja_2_user.id,
+        kayttajatyyppi='PALVELU',
+        henkilo_oid='',
         asiointikieli_koodi='fi',
         approved_oph_staff=False,
         last_modified='2019-01-24 12:00:00+1459'
