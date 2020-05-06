@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 from guardian.shortcuts import get_objects_for_user
 from rest_framework import serializers
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.validators import UniqueTogetherValidator
 
 from varda import validators
@@ -863,7 +863,37 @@ class VarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSerializer):
         elif data['varhaiskasvatuspaatos'].lapsi.paos_kytkin and data['varhaiskasvatuspaatos'].lapsi.paos_organisaatio != data['toimipaikka'].vakajarjestaja:
             msg = {'non_field_errors': ['Vakajarjestaja is different than paos_organisaatio for lapsi.']}
             raise serializers.ValidationError(msg, code='invalid')
+
+        self.validate_paivamaarat_varhaiskasvatussuhde_toimipaikka(data, data['toimipaikka'].paattymis_pvm)
+        self.validate_paivamaarat_varhaiskasvatussuhde_varhaiskasvatuspaatos(data, data['varhaiskasvatuspaatos'],
+                                                                             not (self.instance and self.instance.paattymis_pvm))
+
         return data
+
+    def validate_paivamaarat_varhaiskasvatussuhde_toimipaikka(self, data, toimipaikka_paattymis_pvm):
+        if toimipaikka_paattymis_pvm is not None:
+            if not validators.validate_paivamaara1_before_paivamaara2(data['alkamis_pvm'], toimipaikka_paattymis_pvm):
+                raise ValidationError({"non_field_errors": ['varhaiskasvatussuhde.alkamis_pvm cannot be same or after toimipaikka.paattymis_pvm.']})
+            if('paattymis_pvm' in data and
+                    data['paattymis_pvm'] is not None and
+                    not validators.validate_paivamaara1_before_paivamaara2(data['paattymis_pvm'], toimipaikka_paattymis_pvm, can_be_same=True)):
+                raise ValidationError({'non_field_errors': ['varhaiskasvatussuhde.paattymis_pvm cannot be after toimipaikka.paattymis_pvm.']})
+
+    def validate_paivamaarat_varhaiskasvatussuhde_varhaiskasvatuspaatos(self, data, varhaiskasvatuspaatos_obj, paattymis_pvm_is_none=True):
+        if not validators.validate_paivamaara1_before_paivamaara2(varhaiskasvatuspaatos_obj.alkamis_pvm, data['alkamis_pvm'], can_be_same=True):
+            raise ValidationError({'alkamis_pvm': ['varhaiskasvatussuhde.alkamis_pvm must be after varhaiskasvatuspaatos.alkamis_pvm (or same)']})
+        if not validators.validate_paivamaara1_before_paivamaara2(data['alkamis_pvm'], varhaiskasvatuspaatos_obj.paattymis_pvm, can_be_same=True):
+            raise ValidationError({'alkamis_pvm': ['varhaiskasvatussuhde.alkamis_pvm must be before varhaiskasvatuspaatos.paattymis_pvm (or same)']})
+
+        if 'paattymis_pvm' in data and data['paattymis_pvm']:
+            if not validators.validate_paivamaara1_before_paivamaara2(data['alkamis_pvm'], data['paattymis_pvm'], can_be_same=True):
+                raise ValidationError({'paattymis_pvm': ['paattymis_pvm must be after alkamis_pvm (or same)']})
+            if (not validators.validate_paivamaara1_before_paivamaara2(data['paattymis_pvm'], varhaiskasvatuspaatos_obj.paattymis_pvm, can_be_same=True) or
+                    (data['paattymis_pvm'] is None and varhaiskasvatuspaatos_obj.paattymis_pvm is not None)):
+                raise ValidationError({'paattymis_pvm': ['varhaiskasvatuspaatos.paattymis_pvm must be after varhaiskasvatussuhde.paattymis_pvm (or same)']})
+        elif (varhaiskasvatuspaatos_obj.paattymis_pvm and paattymis_pvm_is_none) or (varhaiskasvatuspaatos_obj.paattymis_pvm and 'paattymis_pvm' in data):
+            # Raise error if vakapaatos has paattymis_pvm and vakasuhde doesn't have paattymis_pvm (existing or in request)
+            raise ValidationError({'paattymis_pvm': ['varhaiskasvatussuhde must have paattymis_pvm because varhaiskasvatuspaatos has paattymis_pvm']})
 
 
 class PaosToimintaSerializer(serializers.HyperlinkedModelSerializer):

@@ -156,6 +156,7 @@
     "label.add-new-huoltaja": "+ Lägg till vårdnadshavare",
     "field.henkilotunnus.label": "Fält: Personbeteckning",
     "field.huoltajat.label": "Fält: Vårdnadshavare",
+    "field.varhaiskasvatussuhde_paattymis_pvm.required": "Lägg till ett slutdatum för deltagandet i småbarnspedagogisk verksamhet. Då beslutet om småbarnspedagogik har ett slutdatum ska också det deltagande som kopplats samman med beslutet ha ett slutdatum.",
     "label.generic-update": "Uppdatera",
     "label.suhteen-tyyppi": "Typ av deltagande i småbarnspedagogisk verksamhet",
     "label.varhaiskasvatussuhteen-kesto": "Längden på deltagandet i småbarnspedagogisk verksamhet",

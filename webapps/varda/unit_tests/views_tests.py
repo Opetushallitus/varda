@@ -1918,11 +1918,11 @@ class VardaViewsTests(TestCase):
         # varhaiskasvatuspaatos with id 1: alkamis_pvm=2017-02-11, paattymis_pvm=2018-02-24
 
         ok_cases = [
-            ('2017-04-01', None),          # No end date
             ('2017-10-14', '2018-02-12'),  # All correct
         ]
 
         fail_cases = [
+            ('2017-04-01', None),          # No end date (vakapaatos has end date)
             ('2016-02-01', None),          # start before vakapaatos start
             ('2016-02-01', '2019-11-30'),  # start before vakapaatos start and end after vakapaatos end
             ('2017-12-31', '2020-11-30'),  # end after vakapaatos end

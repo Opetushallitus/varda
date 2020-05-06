@@ -1426,15 +1426,6 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         return cached_retrieve_response(self, request.user, request.path)
 
-    def validate_paivamaarat_varhaiskasvatussuhde_toimipaikka(self, validated_data, toimipaikka_paattymis_pvm):
-        if toimipaikka_paattymis_pvm is not None:
-            if not validators.validate_paivamaara1_before_paivamaara2(validated_data["alkamis_pvm"], toimipaikka_paattymis_pvm):
-                raise ValidationError({"non_field_errors": ["varhaiskasvatussuhde.alkamis_pvm cannot be same or after toimipaikka.paattymis_pvm."]})
-            if("paattymis_pvm" in validated_data and
-               validated_data["paattymis_pvm"] is not None and
-               not validators.validate_paivamaara1_before_paivamaara2(validated_data["paattymis_pvm"], toimipaikka_paattymis_pvm, can_be_same=True)):
-                raise ValidationError({"non_field_errors": ["varhaiskasvatussuhde.paattymis_pvm cannot be after toimipaikka.paattymis_pvm."]})
-
     def validate_lapsi_not_under_different_vakajarjestaja(self, lapsi_obj, new_vakajarjestaja_obj):
         """
         Make sure lapsi will not end up under two different vakajarjestajat. Without this validation a virkailija
@@ -1509,20 +1500,8 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
         toimipaikka_obj = validated_data['toimipaikka']
         vakajarjestaja_obj = toimipaikka_obj.vakajarjestaja
         vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
-        varhaiskasvatuspaatos_obj = validated_data['varhaiskasvatuspaatos']
         lapsi_obj = validated_data['varhaiskasvatuspaatos'].lapsi
 
-        self.validate_paivamaarat_varhaiskasvatussuhde_toimipaikka(validated_data, toimipaikka_obj.paattymis_pvm)
-        if not validators.validate_paivamaara1_before_paivamaara2(varhaiskasvatuspaatos_obj.alkamis_pvm, validated_data['alkamis_pvm'], can_be_same=True):
-            raise ValidationError({'alkamis_pvm': ['varhaiskasvatussuhde.alkamis_pvm must be after varhaiskasvatuspaatos.alkamis_pvm (or same)']})
-        if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], varhaiskasvatuspaatos_obj.paattymis_pvm, can_be_same=True):
-            raise ValidationError({'alkamis_pvm': ['varhaiskasvatussuhde.alkamis_pvm must be before varhaiskasvatuspaatos.paattymis_pvm (or same)']})
-
-        if 'paattymis_pvm' in validated_data:
-            if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm'], can_be_same=True):
-                raise ValidationError({'paattymis_pvm': ['paattymis_pvm must be after alkamis_pvm (or same)']})
-            if not validators.validate_paivamaara1_before_paivamaara2(validated_data['paattymis_pvm'], varhaiskasvatuspaatos_obj.paattymis_pvm, can_be_same=True):
-                raise ValidationError({'paattymis_pvm': ['varhaiskasvatuspaatos.paattymis_pvm must be after varhaiskasvatussuhde.paattymis_pvm (or same)']})
         related_object_validations.check_overlapping_varhaiskasvatus_object(validated_data, Varhaiskasvatussuhde)
         self.validate_lapsi_not_under_different_vakajarjestaja(lapsi_obj, vakajarjestaja_obj)
 
@@ -1582,31 +1561,17 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
         toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
         vakajarjestaja_obj = toimipaikka_obj.vakajarjestaja
         vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
-
-        self.validate_paivamaarat_varhaiskasvatussuhde_toimipaikka(validated_data, toimipaikka_obj.paattymis_pvm)
-
         varhaiskasvatussuhde_id = url.split("/")[-2]
         varhaiskasvatussuhde_obj = Varhaiskasvatussuhde.objects.get(id=varhaiskasvatussuhde_id)
-        varhaiskasvatuspaatos_obj = Varhaiskasvatuspaatos.objects.get(id=varhaiskasvatussuhde_obj.varhaiskasvatuspaatos_id)
 
         related_object_validations.check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
         if not user.has_perm('change_varhaiskasvatussuhde', varhaiskasvatussuhde_obj):
             raise PermissionDenied("User does not have permissions to change this object.")
 
-        if not validators.validate_paivamaara1_before_paivamaara2(varhaiskasvatuspaatos_obj.alkamis_pvm, validated_data['alkamis_pvm'], can_be_same=True):
-            raise ValidationError({"alkamis_pvm": ["varhaiskasvatussuhde.alkamis_pvm must be after varhaiskasvatuspaatos.alkamis_pvm (or same)"]})
-        if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], varhaiskasvatuspaatos_obj.paattymis_pvm, can_be_same=True):
-            raise ValidationError({"alkamis_pvm": ["varhaiskasvatussuhde.alkamis_pvm must be before varhaiskasvatuspaatos.paattymis_pvm (or same)"]})
-
         if "varhaiskasvatuspaatos" in validated_data and varhaiskasvatussuhde_obj.varhaiskasvatuspaatos != validated_data["varhaiskasvatuspaatos"]:
             raise ValidationError({"varhaiskasvatuspaatos": ["Changing of varhaiskasvatuspaatos is not allowed"]})
         if "toimipaikka" in validated_data and varhaiskasvatussuhde_obj.toimipaikka != validated_data["toimipaikka"]:
             raise ValidationError({"toimipaikka": ["Changing of toimipaikka is not allowed"]})
-        if "paattymis_pvm" in validated_data:
-            if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm'], can_be_same=True):
-                raise ValidationError({"paattymis_pvm": ["paattymis_pvm must be after alkamis_pvm (or same)"]})
-            if not validators.validate_paivamaara1_before_paivamaara2(validated_data['paattymis_pvm'], varhaiskasvatuspaatos_obj.paattymis_pvm, can_be_same=True):
-                raise ValidationError({"paattymis_pvm": ["varhaiskasvatuspaatos.paattymis_pvm must be after varhaiskasvatussuhde.paattymis_pvm"]})
         related_object_validations.check_overlapping_varhaiskasvatus_object(validated_data, Varhaiskasvatussuhde, varhaiskasvatussuhde_id)
         saved_object = serializer.save(changed_by=user)
         """

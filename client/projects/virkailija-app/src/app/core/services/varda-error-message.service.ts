@@ -26,6 +26,7 @@ export class VardaErrorMessageService {
     'varhaiskasvatussuhde.alkamis_pvm must be after varhaiskasvatuspaatos.alkamis_pvm (or same)': 'varhaiskasvatussuhde.alkamis_pvm must be after varhaiskasvatuspaatos.alkamis_pvm',
     'varhaiskasvatuspaatos.paattymis_pvm must be after varhaiskasvatussuhde.paattymis_pvm (or same)': 'varhaiskasvatuspaatos.paattymis_pvm must be after varhaiskasvatussuhde.paattymis_pvm',
     'varhaiskasvatussuhde.alkamis_pvm must be before varhaiskasvatuspaatos.paattymis_pvm (or same)': 'varhaiskasvatussuhde.alkamis_pvm must be before varhaiskasvatuspaatos.paattymis_pvm',
+    'varhaiskasvatussuhde must have paattymis_pvm because varhaiskasvatuspaatos has paattymis_pvm': 'field.varhaiskasvatussuhde_paattymis_pvm.required',
     'Combination of nimi and vakajarjestaja fields should be unique': 'fields.unique.nimi-vakajarjestaja',
     'Tämän luvun on oltava vähintään 1.0.': 'field.minvalue.one',
     'varhaiskasvatussuhde.alkamis_pvm cannot be same or after toimipaikka.paattymis_pvm.': 'varhaiskasvatussuhde.paivamaarat cannot be after toimipaikka.paattymis_pvm',

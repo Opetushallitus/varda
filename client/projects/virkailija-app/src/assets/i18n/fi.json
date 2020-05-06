@@ -158,6 +158,7 @@
     "alert.maksutieto.success-suffix": "Ei tallennettu: {{notSavedHuoltajaCount}} kpl.",
     "field.maksutieto.label": "Lapsella on jo 2 voimassa olevaa maksutietoa annetulla aikavälillä",
     "field.maksun_peruste_koodi.label": "Kenttä: Maksun peruste",
+    "field.varhaiskasvatussuhde_paattymis_pvm.required": "Lisää varhaiskasvatussuhteelle päättymispäivämäärä. Kun varhaiskasvatuspäätöksellä on päättymispäivämäärä, täytyy päätökseen liittyvällä varhaiskasvatussuhteella olla päättymispäivämäärä.",
     "label.add-new-huoltaja": "+ Lisää seuraava huoltaja",
     "field.henkilotunnus.label": "Kenttä: Henkilötunnus",
     "field.huoltajat.label": "Kenttä: Huoltajat",
