@@ -1886,6 +1886,11 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         lapsi_object = lapsi_objects[0]
 
         vakapaatokset = Varhaiskasvatuspaatos.objects.filter(lapsi=lapsi_object).order_by("-alkamis_pvm")
+        if not vakapaatokset.exists():
+            raise ValidationError({"Maksutieto": ["Lapsi has no Varhaiskasvatuspaatos. Add Varhaiskasvatuspaatos before adding maksutieto."]})
+        if not Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__in=vakapaatokset).exists():
+            raise ValidationError({"Maksutieto": ["Lapsi has no Varhaiskasvatussuhde. Add Varhaiskasvatussuhde before adding maksutieto."]})
+
         self.validate_start_and_end_dates(vakapaatokset, data.get('alkamis_pvm', None), data.get('paattymis_pvm', None))
 
         samanaikaiset_maksutiedot = Maksutieto.objects.filter(
