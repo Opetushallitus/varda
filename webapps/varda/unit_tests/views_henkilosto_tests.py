@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from varda.models import VakaJarjestaja
+from varda.models import VakaJarjestaja, Henkilo
 from varda.unit_tests.test_utils import assert_status_code
 
 
@@ -450,3 +450,123 @@ class VardaHenkiloViewSetTests(TestCase):
         # Invalid format
         resp_filter_error = client.get('/api/henkilosto/v1/tilapainen-henkilosto/?kuukausi=2020-03-32')
         assert_status_code(resp_filter_error, 400)
+
+    def test_api_push_tutkinto_correct(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tutkinto = {
+            'henkilo': '/api/v1/henkilot/1/',
+            'tutkinto_koodi': '002'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tutkinnot/', tutkinto)
+        assert_status_code(resp, 201)
+
+    def test_api_push_tutkinto_correct_oid(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tutkinto = {
+            'henkilo_oid': '1.2.246.562.24.47279942650',
+            'tutkinto_koodi': '002'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tutkinnot/', tutkinto)
+        assert_status_code(resp, 201)
+
+    def test_api_push_tutkinto_twice(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tutkinto_1 = {
+            'henkilo': '/api/v1/henkilot/10/',
+            'tutkinto_koodi': '002'
+        }
+
+        resp_1 = client.post('/api/henkilosto/v1/tutkinnot/', tutkinto_1)
+        assert_status_code(resp_1, 201)
+
+        tutkinto_2 = {
+            'henkilo_oid': '1.2.246.562.24.6815481182312',
+            'tutkinto_koodi': '002'
+        }
+
+        resp_2 = client.post('/api/henkilosto/v1/tutkinnot/', tutkinto_2)
+        assert_status_code(resp_2, 200)
+
+    def test_api_push_tutkinto_missing_henkilo(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tutkinto = {
+            'tutkinto_koodi': '321901'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tutkinnot/', tutkinto)
+        assert_status_code(resp, 400)
+
+    def test_api_push_tutkinto_missing_tutkinto_koodi(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tutkinto = {
+            'henkilo_oid': '1.2.246.562.24.47279942650'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tutkinnot/', tutkinto)
+        assert_status_code(resp, 400)
+
+    def test_api_delete_tutkinto(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tutkinto = {
+            'henkilo': '/api/v1/henkilot/1/',
+            'tutkinto_koodi': '321901'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tutkinnot/', tutkinto)
+        assert_status_code(resp, 201)
+        resp_delete = client.delete('/api/henkilosto/v1/tutkinnot/delete/?henkilo_id=1&tutkinto_koodi=321901')
+        assert_status_code(resp_delete, 200)
+
+    def test_api_delete_tutkinto_by_oid(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tutkinto = {
+            'henkilo_oid': '1.2.246.562.24.47279942650',
+            'tutkinto_koodi': '001'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tutkinnot/', tutkinto)
+        assert_status_code(resp, 201)
+        resp_delete = client.delete('/api/henkilosto/v1/tutkinnot/delete/'
+                                    '?henkilo_oid=1.2.246.562.24.47279942650&tutkinto_koodi=001')
+        assert_status_code(resp_delete, 200)
+
+    def test_api_tutkinto_filter(self):
+        henkilo_oid = '1.2.246.562.24.47279942650'
+        henkilo_id = Henkilo.objects.get(henkilo_oid=henkilo_oid).id
+
+        tutkinto = {
+            'henkilo_oid': henkilo_oid,
+            'tutkinto_koodi': '001'
+        }
+
+        client = SetUpTestClient('credadmin').client()
+        resp = client.post('/api/henkilosto/v1/tutkinnot/', tutkinto)
+        assert_status_code(resp, 201)
+
+        correct_queries = ['?henkilo={0}'.format(henkilo_oid),
+                           '?henkilo={0}'.format(henkilo_id),
+                           '?henkilo={0}&tutkinto_koodi=001'.format(henkilo_id),
+                           '?henkilo={0}&tutkinto_koodi=001'.format(henkilo_oid),
+                           '?tutkinto_koodi=001']
+
+        incorrect_queries = ['?henkilo=999', '?henkilo=test', '?tutkinto_koodi=01',
+                             '?henkilo={0}&tutkinto_koodi=test'.format(henkilo_id)]
+
+        for query in correct_queries:
+            resp_filter_correct = client.get('/api/henkilosto/v1/tutkinnot/' + query)
+            assert_status_code(resp_filter_correct, 200)
+            self.assertEqual(json.loads(resp_filter_correct.content)['count'], 1)
+
+        for query in incorrect_queries:
+            resp_filter_incorrect = client.get('/api/henkilosto/v1/tutkinnot/' + query)
+            assert_status_code(resp_filter_incorrect, 200)
+            self.assertEqual(json.loads(resp_filter_incorrect.content)['count'], 0)

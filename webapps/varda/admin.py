@@ -3,8 +3,8 @@ from guardian.admin import GuardedModelAdmin
 from simple_history.admin import SimpleHistoryAdmin
 
 from .models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto,
-                     PaosOikeus, PaosToiminta, TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka, Tyontekija,
-                     VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,)
+                     PaosOikeus, PaosToiminta, TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka, Tutkinto,
+                     Tyontekija, VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,)
 
 
 class AdminWithGuardianAndHistory(GuardedModelAdmin, SimpleHistoryAdmin):
@@ -47,6 +47,10 @@ class TilapainenHenkilostoAdmin(AdminWithGuardianAndHistory):
     raw_id_fields = ('vakajarjestaja', )
 
 
+class TutkintoAdmin(AdminWithGuardianAndHistory):
+    raw_id_fields = ('henkilo', )
+
+
 admin.site.register(VakaJarjestaja, AdminWithGuardianAndHistory)
 admin.site.register(Toimipaikka, AdminWithGuardianAndHistory)
 admin.site.register(ToiminnallinenPainotus, ToiminnallinenPainotusAdmin)
@@ -64,3 +68,4 @@ admin.site.register(PaosToiminta, PaosToimintaAdmin)
 admin.site.register(PaosOikeus, AdminWithGuardianAndHistory)
 admin.site.register(Tyontekija, AdminWithGuardianAndHistory)
 admin.site.register(TilapainenHenkilosto, TilapainenHenkilostoAdmin)
+admin.site.register(Tutkinto, TutkintoAdmin)

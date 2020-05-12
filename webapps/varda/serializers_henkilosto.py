@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from varda import related_object_validations
 from varda.cache import caching_to_representation
-from varda.models import Henkilo, TilapainenHenkilosto, Tyontekija, VakaJarjestaja
+from varda.models import Henkilo, TilapainenHenkilosto, Tutkinto, Tyontekija, VakaJarjestaja
 from varda.serializers import HenkiloHLField, VakaJarjestajaHLField
 from varda.serializers_common import OidRelatedField
 from varda.validators import validate_henkilo_oid, validate_organisaatio_oid
@@ -94,3 +94,21 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
         if tilapainen_henkilosto_qs.exists():
             raise serializers.ValidationError({'kuukausi': ['tilapainen henkilosto already exists for this month.']},
                                               code='invalid')
+
+
+class TutkintoSerializer(serializers.HyperlinkedModelSerializer):
+    id = serializers.ReadOnlyField()
+    henkilo = HenkiloHLField(view_name='henkilo-detail', required=False)
+    henkilo_oid = OidRelatedField(object_type=Henkilo,
+                                  parent_field='henkilo',
+                                  parent_attribute='henkilo_oid',
+                                  prevalidator=validate_henkilo_oid,
+                                  either_required=True)
+
+    class Meta:
+        model = Tutkinto
+        exclude = ('changed_by', 'luonti_pvm')
+
+    @caching_to_representation('tutkinto')
+    def to_representation(self, instance):
+        return super(TutkintoSerializer, self).to_representation(instance)

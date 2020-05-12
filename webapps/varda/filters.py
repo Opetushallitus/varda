@@ -1,6 +1,6 @@
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
                           Maksutieto, PaosToiminta, PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-                          Z2_Koodisto, TilapainenHenkilosto)
+                          Z2_Koodisto, TilapainenHenkilosto, Tutkinto)
 from django.db.models import Q
 from django_filters import rest_framework as djangofilters
 
@@ -41,6 +41,16 @@ class VakaJarjestajaFieldFilter(djangofilters.CharFilter):
             return qs.filter(vakajarjestaja=int(value))
         elif value:
             return qs.filter(vakajarjestaja__organisaatio_oid=value)
+        else:
+            return qs
+
+
+class HenkiloFieldFilter(djangofilters.CharFilter):
+    def filter(self, qs, value):
+        if value.isdigit():
+            return qs.filter(henkilo=int(value))
+        elif value:
+            return qs.filter(henkilo__henkilo_oid=value)
         else:
             return qs
 
@@ -209,6 +219,15 @@ class TilapainenHenkilostoFilter(djangofilters.FilterSet):
 
     class Meta:
         model = TilapainenHenkilosto
+        fields = []
+
+
+class TutkintoFilter(djangofilters.FilterSet):
+    henkilo = HenkiloFieldFilter(field_name='henkilo')
+    tutkinto_koodi = djangofilters.CharFilter(field_name='tutkinto_koodi', lookup_expr='exact')
+
+    class Meta:
+        model = Tutkinto
         fields = []
 
 

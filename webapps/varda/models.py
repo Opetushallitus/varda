@@ -594,6 +594,33 @@ class TilapainenHenkilosto(models.Model):
         verbose_name_plural = 'tilapainen henkilosto'
 
 
+class Tutkinto(models.Model):
+    henkilo = models.ForeignKey(Henkilo, related_name='tutkinnot', on_delete=models.PROTECT)
+    tutkinto_koodi = models.CharField(max_length=10, validators=[validators.validate_tutkinto_koodi])
+    luonti_pvm = models.DateTimeField(auto_now_add=True)
+    muutos_pvm = models.DateTimeField(auto_now=True)
+    changed_by = models.ForeignKey('auth.User', related_name='tutkinnot', on_delete=models.PROTECT)
+    history = HistoricalRecords()
+
+    def __str__(self):
+        return str(self.id)
+
+    @property
+    def audit_loggable(self):
+        return True
+
+    @property
+    def _history_user(self):
+        return self.changed_by
+
+    @_history_user.setter
+    def _history_user(self, value):
+        self.changed_by = value
+
+    class Meta:
+        verbose_name_plural = 'tutkinnot'
+
+
 class Aikaleima(models.Model):
     """
     Simple state for regular tasks to hold last update information
@@ -670,6 +697,16 @@ def maksun_peruste_koodit_default():
 
 def lahdejarjestelma_koodit_default():
     return ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15']
+
+
+def tutkinto_koodit_default():
+    return ['001', '002', '003', '321901', '371101', '371168', '371169', '374114', '381204', '381241', '384246',
+            '511501', '571201', '571254', '612101', '612102', '612103', '612104', '612105', '612107', '612108',
+            '612199', '612201', '612202', '612203', '612204', '612205', '612299', '612999', '613101', '613201',
+            '613352', '613353', '613354', '613355', '613356', '613357', '613399', '613401', '613402', '613501',
+            '613652', '613952', '613999', '671201', '712101', '712102', '712104', '712105', '712108', '712109',
+            '712199', '712201', '712202', '712203', '712204', '712205', '712299', '719951', '719999', '771301',
+            '812101', '812102', '812103', '815101', '815102', '815103']
 
 
 class Z2_Koodisto(models.Model):
