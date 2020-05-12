@@ -13,5 +13,7 @@ export class VardaLapsiDTO extends VardaLapsiCreateDto {
   url?: string;
   id: number;
   oma_organisaatio_nimi?: string;
+  oma_organisaatio_oid?: string;
   paos_organisaatio_nimi?: string;
+  paos_organisaatio_oid?: string;
 }

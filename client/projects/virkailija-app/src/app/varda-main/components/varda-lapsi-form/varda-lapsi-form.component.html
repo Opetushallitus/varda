@@ -202,8 +202,18 @@
                           [attr.name]="'toimipaikka'"
                           [compareWith]="byEndpoint"
                           [disabled]="isEdit">
-                    <option *ngFor="let toimipaikka of toimipaikkaOptions"
-                            [ngValue]="toimipaikka">{{toimipaikka.nimi}}</option>
+                    <ng-container
+                                  *ngIf="varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'][k].controls['toimipaikka'].disabled">
+                      <option *ngFor="let toimipaikka of allToimipaikkaOptions"
+                              [ngValue]="toimipaikka">{{toimipaikka.nimi}}</option>
+                    </ng-container>
+                    <ng-container
+                                  *ngIf="!varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'][k].controls['toimipaikka'].disabled">
+                      <option value=""
+                              disabled>-- {{'label.choose' | translate}} --</option>
+                      <option *ngFor="let toimipaikka of tallentajaToimipaikkaOptions"
+                              [ngValue]="toimipaikka">{{toimipaikka.nimi}}</option>
+                    </ng-container>
                   </select>
                 </div>
               </div>
@@ -368,7 +378,7 @@
                     [attr.name]="'toimipaikka'"
                     [compareWith]="byEndpoint"
                     disabled>
-              <option *ngFor="let toimipaikka of toimipaikkaOptions"
+              <option *ngFor="let toimipaikka of tallentajaToimipaikkaOptions"
                       [ngValue]="toimipaikka">{{toimipaikka.nimi}}</option>
             </select>
           </div>

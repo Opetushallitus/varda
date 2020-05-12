@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from rest_framework.test import APIClient
 
+from varda.models import VakaJarjestaja
 from varda.unit_tests.test_utils import assert_status_code
 
 
@@ -184,3 +185,268 @@ class VardaHenkiloViewSetTests(TestCase):
 
         resp_edit = client.patch(json.loads(resp.content)['url'], tyontekija_edit)
         assert_status_code(resp_edit, 400)
+
+    def test_api_push_tilapainen_henkilosto_correct(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tilapainen_henkilosto_1 = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'kuukausi': '2020-03-31',
+            'tuntimaara': '47.53',
+            'tyontekijamaara': 5,
+            'tunniste': 'tunniste',
+            'lahdejarjestelma': '1'
+        }
+
+        resp_1 = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto_1)
+        assert_status_code(resp_1, 201)
+
+        tilapainen_henkilosto_2 = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'kuukausi': '2020-04-30',
+            'tuntimaara': '47.53',
+            'tyontekijamaara': 5,
+            'tunniste': 'tunniste2',
+            'lahdejarjestelma': '1'
+        }
+
+        resp_2 = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto_2)
+        assert_status_code(resp_2, 201)
+
+    def test_api_push_tilapainen_henkilosto_correct_oid(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tilapainen_henkilosto = {
+            'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
+            'kuukausi': '2020-03-31',
+            'tuntimaara': '47.53',
+            'tyontekijamaara': 5,
+            'tunniste': 'tunniste',
+            'lahdejarjestelma': '1'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+        assert_status_code(resp, 201)
+
+    def test_api_push_tilapainen_henkilosto_missing_vakajarjestaja(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tilapainen_henkilosto = {
+            'kuukausi': '2020-03-31',
+            'tuntimaara': '47.53',
+            'tyontekijamaara': 5,
+            'lahdejarjestelma': '1'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+        assert_status_code(resp, 400)
+
+    def test_api_push_tilapainen_henkilosto_missing_kuukausi(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tilapainen_henkilosto = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'tuntimaara': '47.53',
+            'tyontekijamaara': 5,
+            'lahdejarjestelma': '1',
+            'tunniste': 'tunniste'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+        assert_status_code(resp, 400)
+
+    def test_api_push_tilapainen_henkilosto_missing_tyontekijamaara(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tilapainen_henkilosto = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'tuntimaara': '47.53',
+            'kuukausi': '2020-03-31',
+            'lahdejarjestelma': '1',
+            'tunniste': 'tunniste'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+        assert_status_code(resp, 400)
+
+    def test_api_push_tilapainen_henkilosto_missing_lahdejarjestelma(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tilapainen_henkilosto = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'tuntimaara': '47.53',
+            'kuukausi': '2020-03-31',
+            'tyontekijamaara': 5,
+            'tunniste': 'tunniste'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+        assert_status_code(resp, 400)
+
+    def test_api_push_tilapainen_henkilosto_missing_tuntimaara(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tilapainen_henkilosto = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'kuukausi': '2020-03-31',
+            'tyontekijamaara': 5,
+            'lahdejarjestelma': '1',
+            'tunniste': 'tunniste'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+        assert_status_code(resp, 400)
+
+    def test_api_push_tilapainen_henkilosto_incorrect_tunniste(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tilapainen_henkilosto = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'kuukausi': '2020-03-31',
+            'tuntimaara': '50',
+            'tyontekijamaara': 99,
+            'tunniste': '070501A2296',
+            'lahdejarjestelma': '1'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+        assert_status_code(resp, 400)
+
+    def test_api_push_tilapainen_henkilosto_lahdejarjestelma_tunniste_not_unique(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tilapainen_henkilosto_1 = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'kuukausi': '2020-03-31',
+            'tuntimaara': '50',
+            'tyontekijamaara': 99,
+            'tunniste': 'tunniste',
+            'lahdejarjestelma': '1'
+        }
+
+        resp_1 = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto_1)
+        assert_status_code(resp_1, 201)
+
+        tilapainen_henkilosto_2 = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'kuukausi': '2020-04-30',
+            'tuntimaara': '47.53',
+            'tyontekijamaara': 5,
+            'tunniste': 'tunniste',
+            'lahdejarjestelma': '1'
+        }
+
+        resp_2 = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto_2)
+        assert_status_code(resp_2, 400)
+
+    def test_api_push_tilapainen_henkilosto_double_month(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tilapainen_henkilosto_1 = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'kuukausi': '2020-03-31',
+            'tuntimaara': '50',
+            'tyontekijamaara': 99,
+            'tunniste': 'tunniste',
+            'lahdejarjestelma': '1'
+        }
+
+        resp_1 = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto_1)
+        assert_status_code(resp_1, 201)
+
+        tilapainen_henkilosto_2 = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'kuukausi': '2020-03-31',
+            'tuntimaara': '47.53',
+            'tyontekijamaara': 5,
+            'tunniste': 'tunniste2',
+            'lahdejarjestelma': '1'
+        }
+
+        resp_2 = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto_2)
+        assert_status_code(resp_2, 400)
+
+    def test_api_put_tilapainen_henkilosto_vakajarjestaja_edit(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tilapainen_henkilosto = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'kuukausi': '2020-03-31',
+            'tuntimaara': '47.53',
+            'tyontekijamaara': 5,
+            'tunniste': 'tunniste',
+            'lahdejarjestelma': '2'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+        assert_status_code(resp, 201)
+
+        tilapainen_henkilosto_edit = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/2/'
+        }
+
+        resp_edit = client.patch(json.loads(resp.content)['url'], tilapainen_henkilosto_edit)
+        assert_status_code(resp_edit, 400)
+
+    def test_api_put_tilapainen_henkilosto_vakajarjestaja_edit_oid(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tilapainen_henkilosto = {
+            'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
+            'kuukausi': '2020-03-31',
+            'tuntimaara': '47.53',
+            'tyontekijamaara': 5,
+            'tunniste': 'tunniste',
+            'lahdejarjestelma': '2'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+        assert_status_code(resp, 201)
+
+        tilapainen_henkilosto_edit = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/2/'
+        }
+
+        resp_edit = client.patch(json.loads(resp.content)['url'], tilapainen_henkilosto_edit)
+        assert_status_code(resp_edit, 400)
+
+    def test_api_tilapainen_henkilosto_filter(self):
+        vakajarjestaja_oid = '1.2.246.562.10.34683023489'
+        vakajarjestaja_id = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid).id
+
+        tilapainen_henkilosto = {
+            'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
+            'kuukausi': '2020-03-31',
+            'tuntimaara': '47.53',
+            'tyontekijamaara': 5,
+            'tunniste': 'tunniste',
+            'lahdejarjestelma': '2'
+        }
+
+        client = SetUpTestClient('credadmin').client()
+        resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+        assert_status_code(resp, 201)
+
+        correct_queries = ['?vakajarjestaja={0}'.format(vakajarjestaja_oid),
+                           '?vakajarjestaja={0}'.format(vakajarjestaja_id),
+                           '?vakajarjestaja={0}&vuosi=2020&kuukausi=3'.format(vakajarjestaja_id),
+                           '?vakajarjestaja={0}&vuosi=2020&kuukausi=3'.format(vakajarjestaja_oid),
+                           '?vuosi=2020&kuukausi=3', '?vuosi=2020', '?kuukausi=3']
+
+        incorrect_queries = ['?vakajarjestaja=999', '?vakajarjestaja=test', '?vuosi=2020&kuukausi=4',
+                             '?vakajarjestaja={0}&vuosi=2020&kuukausi=2'.format(vakajarjestaja_id),
+                             '?vuosi=2019', '?kuukausi=5']
+
+        for query in correct_queries:
+            resp_filter_correct = client.get('/api/henkilosto/v1/tilapainen-henkilosto/' + query)
+            assert_status_code(resp_filter_correct, 200)
+            self.assertEqual(json.loads(resp_filter_correct.content)['count'], 1)
+
+        for query in incorrect_queries:
+            resp_filter_incorrect = client.get('/api/henkilosto/v1/tilapainen-henkilosto/' + query)
+            assert_status_code(resp_filter_incorrect, 200)
+            self.assertEqual(json.loads(resp_filter_incorrect.content)['count'], 0)
+
+        # Invalid format
+        resp_filter_error = client.get('/api/henkilosto/v1/tilapainen-henkilosto/?kuukausi=2020-03-32')
+        assert_status_code(resp_filter_error, 400)

@@ -1,5 +1,6 @@
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
-                          Maksutieto, PaosToiminta, PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z2_Koodisto)
+                          Maksutieto, PaosToiminta, PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
+                          Z2_Koodisto, TilapainenHenkilosto)
 from django.db.models import Q
 from django_filters import rest_framework as djangofilters
 
@@ -32,6 +33,16 @@ class KunnallinenKytkinFilter(djangofilters.BooleanFilter):
             return qs.filter(yritysmuoto__in=VakaJarjestaja.get_kuntatyypit())
         elif not value:
             return qs.filter(~Q(yritysmuoto__in=VakaJarjestaja.get_kuntatyypit()))
+
+
+class VakaJarjestajaFieldFilter(djangofilters.CharFilter):
+    def filter(self, qs, value):
+        if value.isdigit():
+            return qs.filter(vakajarjestaja=int(value))
+        elif value:
+            return qs.filter(vakajarjestaja__organisaatio_oid=value)
+        else:
+            return qs
 
 
 class VakaJarjestajaFilter(djangofilters.FilterSet):
@@ -188,6 +199,16 @@ class VarhaiskasvatussuhdeFilter(djangofilters.FilterSet):
 
     class Meta:
         model = Varhaiskasvatussuhde
+        fields = []
+
+
+class TilapainenHenkilostoFilter(djangofilters.FilterSet):
+    vakajarjestaja = VakaJarjestajaFieldFilter(field_name='vakajarjestaja')
+    vuosi = djangofilters.NumberFilter(field_name='kuukausi__year', lookup_expr='exact')
+    kuukausi = djangofilters.NumberFilter(field_name='kuukausi__month', lookup_expr='exact')
+
+    class Meta:
+        model = TilapainenHenkilosto
         fields = []
 
 

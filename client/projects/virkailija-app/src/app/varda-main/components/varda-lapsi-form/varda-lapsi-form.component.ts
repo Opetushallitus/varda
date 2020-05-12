@@ -75,7 +75,8 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   varhaiskasvatuspaatoksetFieldSets: { [key: string]: Array<VardaFieldSet> };
   varhaiskasvatuspaatoksetFieldSetsTemplate: Array<VardaFieldSet>;
 
-  toimipaikkaOptions: Array<VardaToimipaikkaDTO>;
+  allToimipaikkaOptions: Array<VardaToimipaikkaDTO>;
+  tallentajaToimipaikkaOptions: Array<VardaToimipaikkaDTO>;
   varhaiskasvatussuhteet: Array<VardaVarhaiskasvatussuhdeDTO>;
   varhaiskasvatuspaatokset: Array<VardaVarhaiskasvatuspaatosDTO>;
 
@@ -170,7 +171,7 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
     const fg = this.vardaFormService.initFieldSetFormGroup(fieldSetCopy, null);
     if (entityName === VardaEntityNames.VARHAISKASVATUSSUHDE) {
       fg.addControl('varhaiskasvatuspaatos', new FormControl(this.varhaiskasvatuspaatokset[0]));
-      fg.addControl('toimipaikka', new FormControl(this.currentToimipaikka));
+      fg.addControl('toimipaikka', new FormControl(this.currentToimipaikka.nimi ? this.currentToimipaikka : '', [Validators.required]));
     }
 
     formArr.push(fg);
@@ -453,10 +454,13 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
 
   initLapsiFormFields(): void {
     this.vardaApiWrapperService.getCreateLapsiFieldSets().subscribe((data) => {
+      const vakajarjestajaToimipaikat = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat();
+      this.allToimipaikkaOptions = vakajarjestajaToimipaikat.allToimipaikat;
+
       if (this.toimipaikkaAccess.lapsitiedot.tallentaja) {
-        this.toimipaikkaOptions = this.authService.getAuthorizedToimipaikat(this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().tallentajaToimipaikat, SaveAccess.lapsitiedot);
+        this.tallentajaToimipaikkaOptions = this.authService.getAuthorizedToimipaikat(vakajarjestajaToimipaikat.tallentajaToimipaikat, SaveAccess.lapsitiedot);
       } else {
-        this.toimipaikkaOptions = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().allToimipaikat;
+        this.tallentajaToimipaikkaOptions = vakajarjestajaToimipaikat.allToimipaikat;
       }
       this.toimipaikkaForm = new FormGroup({ toimipaikka: new FormControl(this.currentToimipaikka) });
       this.selectedSuhdeForm = new FormGroup({ addVarhaiskasvatussuhde: new FormControl() });
@@ -489,6 +493,7 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
           const varhaiskasvatuspaatosFc = new FormControl(selectedVarhaiskasvatuspaatos);
           toimipaikkaFc.disable();
           varhaiskasvatuspaatosFc.disable();
+
           varhaiskasvatussuhdeFg.addControl('toimipaikka', toimipaikkaFc);
           varhaiskasvatussuhdeFg.addControl('varhaiskasvatuspaatos', varhaiskasvatuspaatosFc);
           varhaiskasvatussuhteetFormArr.push(varhaiskasvatussuhdeFg);
@@ -548,7 +553,7 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   }
 
   getToimipaikkaByUrl(suhde: any): VardaToimipaikkaDTO {
-    return this.toimipaikkaOptions.find((toimipaikkaObj) => toimipaikkaObj.url === suhde.toimipaikka);
+    return this.allToimipaikkaOptions.find((toimipaikkaObj) => toimipaikkaObj.url === suhde.toimipaikka);
   }
 
   getVarhaiskasvatuspaatosByUrl(varhaiskasvatussuhde: VardaVarhaiskasvatussuhdeDTO): VardaVarhaiskasvatuspaatosDTO {
@@ -560,6 +565,7 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
     return new Observable((observer) => {
       return this.vardaApiWrapperService.getEntityReferenceByEndpoint(lapsiReference).subscribe((lapsi) => {
         this.currentLapsi = lapsi;
+        this.maksutietoToimijaTallentajalle(lapsi);
         const lapsiId = this.vardaUtilityService.parseIdFromUrl(lapsi.url);
         this.ui.isPerustiedotLoading = false;
         this.vardaApiWrapperService.getVarhaiskasvatussuhteetByLapsi(lapsiId).subscribe((vakasuhteet) => {
@@ -961,7 +967,6 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
       fieldsetGroup[1].fieldsets[1].fields[0].options = fieldsetGroup[1].fieldsets[1].fields[0].options.filter(option => option.code !== 'jm01');
     }
 
-
     if (this.paosJarjestajaKunnat$.getValue() || this.currentLapsi?.paos_organisaatio_nimi) { // paos-kytkin tarjoaa pelkkää JM02/03
       fieldsetGroup[1].fieldsets[1].fields[0].options = fieldsetGroup[1].fieldsets[1].fields[0].options.filter(option => ['jm02', 'jm03'].includes(option.code));
     } else if ((!this.currentLapsi && !this.paosJarjestajaKunnat$.getValue()) || !this.selectedToimipaikka.paos_organisaatio_url) {
@@ -972,4 +977,12 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
     return fieldsetGroup;
   }
 
+  maksutietoToimijaTallentajalle(lapsi: VardaLapsiDTO): void {
+    if (!this.toimipaikkaAccess.huoltajatiedot.tallentaja &&
+      (!lapsi.oma_organisaatio ||  lapsi.oma_organisaatio_oid === this.vardaVakajarjestajaService.selectedVakajarjestaja.organisaatio_oid)) {
+      const toimijaAccess = this.authService.getUserAccess();
+      this.toimipaikkaAccess.huoltajatiedot.tallentaja = toimijaAccess.huoltajatiedot.tallentaja;
+      this.toimipaikkaAccess.huoltajatiedot.katselija = this.toimipaikkaAccess.huoltajatiedot.katselija || toimijaAccess.huoltajatiedot.tallentaja;
+    }
+  }
 }

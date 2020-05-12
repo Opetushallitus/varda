@@ -1,6 +1,14 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+## [1.3.14] (11.05.2020)
+- CSCVARDA-1703: Lapsiformin järjestämismuotojen validointi
+- CSCVARDA-1667: Toimipaikkaform fokuksen siirto tallennuksen jälkeen ilmestyviin kenttiin
+- CSCVARDA-1665: Hae ja muokkaa oletusfiltteröintien näyttäminen
+- CSCVARDA-1661: Lapsilomakkeelle PAOS-virhetekstien ja validoinnin lisäyksiä
+- CSCVARDA-1653: Käyttöoikeuksettomien PAOS-toimipaikkojen piilotus toimipaikka-listoista
+- CSCVARDA-1680: UI:n käyttöoikeuksien käsittelyn parannuksia
+
 ## [1.3.13] (24.04.2020)
 - CSCVARDA-1609: Varhaiskasvatuspäätösten validoinnin tarkentaminen
   - Järjestämismuodot

@@ -3,16 +3,18 @@ import logging
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import ProtectedError, Q
+from django_filters.rest_framework import DjangoFilterBackend
 from guardian.shortcuts import assign_perm
 from rest_framework import status, permissions
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_guardian.filters import DjangoObjectPermissionsFilter
 
-from varda.cache import cached_retrieve_response, delete_cache_keys_related_model
+from varda import filters
+from varda.cache import cached_retrieve_response, delete_cache_keys_related_model, cached_list_response
 from varda.exceptions.conflict_error import ConflictError
-from varda.models import Tyontekija
-from varda.serializers_henkilosto import TyontekijaSerializer
+from varda.models import TilapainenHenkilosto, Tyontekija
+from varda.serializers_henkilosto import TilapainenHenkilostoSerializer, TyontekijaSerializer
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -92,3 +94,64 @@ class TyontekijaViewSet(ModelViewSet):
             except ProtectedError:
                 raise ValidationError({'detail': 'Cannot delete tyontekija. There are objects referencing it '
                                                  'that need to be deleted first.'})
+
+
+class TilapainenHenkilostoViewSet(ModelViewSet):
+    """
+    list:
+        Nouda kaikki tilapaiset henkilöstötiedot.
+
+    create:
+        Luo yksi uusi tilapäinen henkilöstötieto.
+
+    delete:
+        Poista yksi tilapäinen henkilöstötieto.
+
+    retrieve:
+        Nouda yksittäinen tilapäinen henkilöstötieto.
+
+    partial_update:
+        Päivitä yksi tai useampi kenttä yhdestä tilapäinen henkilöstö -tietueesta.
+
+    update:
+        Päivitä yhden tilapäinen henkilöstö -tietueen kaikki kentät.
+    """
+    serializer_class = TilapainenHenkilostoSerializer
+    permission_classes = (permissions.IsAdminUser, )
+    filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend, )
+    filterset_class = filters.TilapainenHenkilostoFilter
+    queryset = TilapainenHenkilosto.objects.all().order_by('id')
+
+    def list(self, request, *args, **kwargs):
+        return cached_list_response(self, request.user, request.get_full_path())
+
+    def retrieve(self, request, *args, **kwargs):
+        return cached_retrieve_response(self, request.user, request.path)
+
+    def perform_create(self, serializer):
+        with transaction.atomic():
+            user = self.request.user
+            try:
+                serializer.save(changed_by=user)
+            except DjangoValidationError as e:
+                raise ValidationError(dict(e))
+
+    def perform_update(self, serializer):
+        user = self.request.user
+        tilapainen_henkilosto_obj = self.get_object()
+
+        if not user.has_perm('change_tilapainenhenkilosto', tilapainen_henkilosto_obj):
+            raise PermissionDenied('User does not have permissions to change this object.')
+
+        with transaction.atomic():
+            try:
+                serializer.save(changed_by=user)
+            except DjangoValidationError as e:
+                raise ValidationError(dict(e))
+
+    def perform_destroy(self, instance):
+        user = self.request.user
+        if not user.has_perm('delete_tilapainenhenkilosto', instance):
+            raise PermissionDenied('User does not have permissions to delete this object.')
+
+        instance.delete()

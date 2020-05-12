@@ -555,6 +555,45 @@ class Tyontekija(models.Model):
         verbose_name_plural = 'tyontekijat'
 
 
+class TilapainenHenkilosto(models.Model):
+    vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='tilapainen_henkilosto', on_delete=models.PROTECT)
+    kuukausi = models.DateField()
+    tuntimaara = models.DecimalField(max_digits=6, decimal_places=2)
+    tyontekijamaara = models.IntegerField()
+    lahdejarjestelma = models.CharField(max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
+    tunniste = models.CharField(max_length=120, null=True, blank=True, validators=[validators.validate_tunniste])
+    luonti_pvm = models.DateTimeField(auto_now_add=True)
+    muutos_pvm = models.DateTimeField(auto_now=True)
+    changed_by = models.ForeignKey('auth.User', related_name='tilapainen_henkilosto', on_delete=models.PROTECT)
+    history = HistoricalRecords()
+
+    def __str__(self):
+        return str(self.id)
+
+    @property
+    def audit_loggable(self):
+        return True
+
+    @property
+    def _history_user(self):
+        return self.changed_by
+
+    @_history_user.setter
+    def _history_user(self, value):
+        self.changed_by = value
+
+    def validate_unique(self, *args, **kwargs):
+        super(TilapainenHenkilosto, self).validate_unique(*args, **kwargs)
+        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, TilapainenHenkilosto)
+
+    def save(self, *args, **kwargs):
+        self.validate_unique()
+        super(TilapainenHenkilosto, self).save(*args, **kwargs)
+
+    class Meta:
+        verbose_name_plural = 'tilapainen henkilosto'
+
+
 class Aikaleima(models.Model):
     """
     Simple state for regular tasks to hold last update information
