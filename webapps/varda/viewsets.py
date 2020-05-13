@@ -22,10 +22,11 @@ from rest_framework.viewsets import GenericViewSet
 from rest_framework_guardian.filters import DjangoObjectPermissionsFilter
 
 from varda import filters, related_object_validations, validators, permission_groups
-from varda.cache import cached_list_response, cached_retrieve_response, delete_toimipaikan_lapset_cache,\
-    delete_cache_keys_related_model, get_object_ids_user_has_permissions
-from varda.clients.oppijanumerorekisteri_client import get_henkilo_data_by_oid, \
-    add_henkilo_to_oppijanumerorekisteri, get_henkilo_by_henkilotunnus
+from varda.cache import (cached_list_response, cached_retrieve_response, delete_toimipaikan_lapset_cache,
+                         delete_cache_keys_related_model, get_object_ids_user_has_permissions)
+from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid,
+                                                        add_henkilo_to_oppijanumerorekisteri,
+                                                        get_henkilo_by_henkilotunnus)
 from varda.enums.lahdejarjestelma import Lahdejarjestelma
 from varda.exceptions.conflict_error import ConflictError
 from varda.misc import CustomServerErrorException, decrypt_henkilotunnus, encrypt_henkilotunnus, hash_string
@@ -34,13 +35,13 @@ from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, K
                           Lapsi, Huoltaja, Huoltajuussuhde, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto,
                           PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet)
 from varda.oppijanumerorekisteri import fetch_henkilo_with_oid, save_henkilo_to_db
-from varda.organisaatiopalvelu import check_if_toimipaikka_exists_in_organisaatiopalvelu, \
-    create_toimipaikka_in_organisaatiopalvelu
+from varda.organisaatiopalvelu import (check_if_toimipaikka_exists_in_organisaatiopalvelu,
+                                       create_toimipaikka_in_organisaatiopalvelu)
 from varda.permission_groups import (assign_object_level_permissions, create_permission_groups_for_organisaatio,
                                      assign_toimipaikka_lapsi_paos_permissions, assign_vakajarjestaja_lapsi_paos_permissions,
                                      assign_vakajarjestaja_maksutieto_paos_permissions, assign_toimipaikka_maksutieto_paos_permissions,
                                      assign_vakajarjestaja_vakatiedot_paos_permissions,
-                                     assign_toimipaikka_vakatiedot_paos_permissions)
+                                     assign_toimipaikka_vakatiedot_paos_permissions, assign_object_permissions_to_all_henkilosto_groups)
 from varda.permissions import (throw_if_not_tallentaja_permissions,
                                check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement,
                                check_if_user_has_paakayttaja_permissions,
@@ -613,7 +614,9 @@ class ToimipaikkaViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, P
                 vakajarjestaja_obj = VakaJarjestaja.objects.get(id=vakajarjestaja_id)
                 vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
                 assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Toimipaikka, saved_object)
+                assign_object_permissions_to_all_henkilosto_groups(toimipaikka_organisaatio_oid, Toimipaikka, saved_object)
                 assign_object_level_permissions(toimipaikka_organisaatio_oid, Toimipaikka, saved_object)
+                assign_object_permissions_to_all_henkilosto_groups(vakajarjestaja_organisaatio_oid, Toimipaikka, saved_object)
         except IntegrityError as e:
             logger.error('Could not create a toimipaikka in Org.Palvelu. Data: {}. Error: {}.'
                          .format(validated_data, e.__cause__))

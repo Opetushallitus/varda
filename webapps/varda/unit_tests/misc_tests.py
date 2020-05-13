@@ -1,23 +1,10 @@
 import responses
-from django.contrib.auth.models import User
 from django.test import TestCase
 from rest_framework import status
-from rest_framework.test import APIClient
 
 from varda import misc
 from varda.models import Henkilo
-
-
-class SetUpTestClient:
-
-    def __init__(self, name):
-        self.name = name
-
-    def client(self):
-        user = User.objects.filter(username=self.name)[0]
-        api_c = APIClient()
-        api_c.force_authenticate(user=user)
-        return api_c
+from varda.unit_tests.test_utils import SetUpTestClient
 
 
 class MiscTests(TestCase):

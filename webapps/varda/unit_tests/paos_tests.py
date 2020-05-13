@@ -7,8 +7,7 @@ from django.test import TestCase
 from guardian.models import GroupObjectPermission
 from varda.models import Toimipaikka, PaosOikeus, Huoltaja, Huoltajuussuhde, Henkilo, Lapsi
 from varda.permissions import change_paos_tallentaja_organization
-from varda.unit_tests.test_utils import assert_status_code
-from varda.unit_tests.views_tests import SetUpTestClient
+from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient
 
 
 class VardaPaosTests(TestCase):

@@ -3,7 +3,8 @@ import os
 from django.apps import AppConfig
 from django.db.models.signals import post_migrate, post_save, pre_save, pre_delete
 
-from varda.migrations.production.setup import load_initial_data, load_huoltajatiedot_permissions, load_paos_permissions
+from varda.migrations.production.setup import (load_initial_data, load_huoltajatiedot_permissions, load_paos_permissions,
+                                               load_henkilosto_permissions)
 from varda.migrations.testing.setup import load_testing_data
 
 
@@ -70,7 +71,10 @@ def run_post_migration_tasks(sender, **kwargs):
                 env_type = os.getenv('VARDA_ENVIRONMENT_TYPE', None)
                 if env_type is None or env_type != 'env-varda-prod':
                     load_testing_data()
-                break
+            elif (migration_plan_tuple[0].app_label == 'varda' and
+                  migration_plan_tuple[0].name == '0021_auto_20200512_1548' and
+                  not migration_plan_tuple[1]):
+                load_henkilosto_permissions()
 
 
 def receiver_auth_user(**kwargs):

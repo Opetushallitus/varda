@@ -6,8 +6,7 @@ from django.test import TestCase
 from rest_framework import status
 
 from varda.models import Z5_AuditLog
-from varda.unit_tests.test_utils import assert_status_code
-from varda.unit_tests.views_tests import SetUpTestClient
+from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient
 
 
 class VardaPermissionsTests(TestCase):

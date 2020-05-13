@@ -128,7 +128,10 @@ class ActiveUserSerializer(serializers.ModelSerializer):
 
     def get_kayttooikeudet(self, obj):
         kayttooikeudet = []
-        user_groups = obj.groups.filter(Q(name__startswith='VARDA-') | Q(name__startswith='HUOLTAJATIETO_'))
+        user_groups = obj.groups.filter(Q(name__startswith='VARDA-') |
+                                        Q(name__startswith='HUOLTAJATIETO_') |
+                                        Q(name__startswith='HENKILOSTO_')
+                                        )
         for user_group in user_groups:
             user_group_name = user_group.name.rsplit('_', maxsplit=1)
             kayttooikeus = user_group_name[0]

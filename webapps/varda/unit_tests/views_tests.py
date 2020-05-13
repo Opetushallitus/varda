@@ -6,26 +6,12 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from guardian.core import ObjectPermissionChecker
 from rest_framework import status
-from rest_framework.test import APIClient
 
 from varda.misc import hash_string, encrypt_henkilotunnus
 from varda.models import (VakaJarjestaja, Toimipaikka, PaosOikeus, Huoltaja, Huoltajuussuhde, Henkilo,
                           Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto)
 from varda.permission_groups import assign_object_level_permissions
-from varda.unit_tests.test_utils import assert_status_code
-
-
-class SetUpTestClient:
-
-    def __init__(self, name):
-        self.name = name
-
-    def client(self):
-        user = User.objects.filter(username=self.name)[0]
-        api_c = APIClient()
-        api_c.force_authenticate(user=user)
-        return api_c
-
+from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient
 
 # Well known test organizations (name corresponds to id)
 test_org1 = "1.2.246.562.10.34683023489"  # "Tester2 organisaatio"
@@ -141,7 +127,7 @@ class VardaViewsTests(TestCase):
                        'username': 'tester'
                        }
         assert_status_code(resp, 200)
-        self.assertEqual(json.loads(resp.content), result_json)
+        self.assertCountEqual(json.loads(resp.content), result_json)
 
     def test_api_get_token_anonymous(self):
         resp = self.client.get('/api/user/apikey/')

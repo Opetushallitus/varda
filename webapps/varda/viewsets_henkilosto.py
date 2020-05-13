@@ -6,7 +6,6 @@ from django.db.models import ProtectedError, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from guardian.shortcuts import assign_perm
 from rest_framework import status, permissions
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
@@ -19,6 +18,8 @@ from varda.cache import cached_retrieve_response, delete_cache_keys_related_mode
 from varda.exceptions.conflict_error import ConflictError
 from varda.models import TilapainenHenkilosto, Tutkinto, Tyontekija
 from varda.serializers_henkilosto import TilapainenHenkilostoSerializer, TutkintoSerializer, TyontekijaSerializer
+from varda.permission_groups import assign_object_permissions_to_tyontekija_groups
+from varda.permissions import CustomObjectPermissions
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -45,7 +46,7 @@ class TyontekijaViewSet(ModelViewSet):
         Päivitä yhden työntekijän kaikki kentät.
     """
     serializer_class = TyontekijaSerializer
-    permission_classes = (permissions.IsAdminUser, )
+    permission_classes = (CustomObjectPermissions,)
     filter_backends = (DjangoObjectPermissionsFilter,)
     queryset = Tyontekija.objects.all().order_by('id')
 
@@ -70,9 +71,8 @@ class TyontekijaViewSet(ModelViewSet):
                 raise ValidationError(dict(e))
 
             delete_cache_keys_related_model('henkilo', saved_object.henkilo.id)
-            assign_perm('view_tyontekija', user, saved_object)
-            assign_perm('change_tyontekija', user, saved_object)
-            assign_perm('delete_tyontekija', user, saved_object)
+            vakajarjestaja_oid = validated_data['vakajarjestaja'].organisaatio_oid
+            assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Tyontekija, saved_object)
 
     def perform_update(self, serializer):
         user = self.request.user

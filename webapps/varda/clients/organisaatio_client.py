@@ -120,6 +120,9 @@ def organization_is_not_active_vaka_organization(organisaatio_oid, must_be_vakaj
 
 
 def is_not_active(organization_data, must_be_vakajarjestaja=False):
+    if not organization_data:
+        logger.error('Organisaatio data not found')
+        return True
     if 'organisaatiotyypit' not in organization_data and 'tyypit' not in organization_data or 'status' not in organization_data:
         logger.error('Organisaatio missing required data: {}'.format(organization_data['oid']))
         return True

@@ -101,16 +101,16 @@ def set_user_kayttooikeudet(service_name, henkilo_oid, user):
                                                  varda_permissions)
 
 
-def set_user_permissions(user, organisation, role_vakatiedot):
+def set_user_permissions(user, organisation, role):
     organization_oid = organisation["oid"]
     organization_type_vakajarjestaja = organisaatio_client.is_vakajarjestaja(organisation)
     try:
-        Z4_CasKayttoOikeudet.objects.create(user=user, organisaatio_oid=organization_oid, kayttooikeus=role_vakatiedot)
+        Z4_CasKayttoOikeudet.objects.create(user=user, organisaatio_oid=organization_oid, kayttooikeus=role)
     except IntegrityError:
         logger.warning('User with id: ' + str(user.id) + ' is hitting an IntegrityError.')
         return None  # Shouldn't ever come here unless several people are using the same credentials.
 
-    organization_specific_permission_group = get_permission_group(role_vakatiedot, organization_oid)
+    organization_specific_permission_group = get_permission_group(role, organization_oid)
     if organization_specific_permission_group is not None:
         organization_specific_permission_group.user_set.add(user)  # Assign the user to this permission_group
 
@@ -162,7 +162,23 @@ def fetch_permissions_roles_for_organization(user_id, henkilo_oid, organisation,
     role_paakayttaja = select_highest_kayttooikeusrooli(permission_group_list,
                                                         organization_oid,
                                                         Z4_CasKayttoOikeudet.PAAKAYTTAJA)
-    roles = [role_vakatiedot, role_huoltajatiedot, role_paakayttaja]
+    # Henkilosto
+    role_tyontekija = select_highest_kayttooikeusrooli(permission_group_list,
+                                                       organization_oid,
+                                                       Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
+                                                       Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA)
+
+    role_taydennyskoulutus = select_highest_kayttooikeusrooli(permission_group_list,
+                                                              organization_oid,
+                                                              Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,
+                                                              Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA)
+
+    role_tilapainenhenkilosto = select_highest_kayttooikeusrooli(permission_group_list,
+                                                                 organization_oid,
+                                                                 Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA,
+                                                                 Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_KATSELIJA)
+
+    roles = [role_vakatiedot, role_huoltajatiedot, role_paakayttaja, role_tyontekija, role_taydennyskoulutus, role_tilapainenhenkilosto]
     if all(role is None for role in roles):
         return None
 
@@ -279,10 +295,15 @@ def select_highest_kayttooikeusrooli(kayttooikeusrooli_list, organization_oid, *
         except Toimipaikka.DoesNotExist:
             pass
 
-    # Give integraatio organisaatio always the lowest privilege.
+    henkilosto_tallentaja_role_list = [
+        Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
+        Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,
+        Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA,
+    ]
+    # Give integraatio organisaatio always the lowest privilege. Only affects vaka roles
     if (vakajarjestaja_obj and
             vakajarjestaja_obj.integraatio_organisaatio and
-            any(role in kayttooikeusrooli_list for role in args)):
+            any(role in kayttooikeusrooli_list for role in args if role not in henkilosto_tallentaja_role_list)):
         # Lowest priority should be katselija
         return args[-1]
 

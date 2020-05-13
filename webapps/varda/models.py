@@ -621,6 +621,14 @@ class Tutkinto(models.Model):
         verbose_name_plural = 'tutkinnot'
 
 
+class Taydennyskoulutus(models.Model):
+    def __str__(self):
+        return str(self.id)
+
+    class Meta:
+        verbose_name_plural = 'taydennyskoulutukset'
+
+
 class Aikaleima(models.Model):
     """
     Simple state for regular tasks to hold last update information
@@ -756,18 +764,30 @@ class Z4_CasKayttoOikeudet(models.Model):
     PALVELUKAYTTAJA = 'VARDA-PALVELUKAYTTAJA'
     HUOLTAJATIEDOT_TALLENTAJA = 'HUOLTAJATIETO_TALLENNUS'
     HUOLTAJATIEDOT_KATSELIJA = 'HUOLTAJATIETO_KATSELU'
+    HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA = 'HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA'
+    HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA = 'HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA'
+    HENKILOSTO_TILAPAISET_KATSELIJA = 'HENKILOSTO_TILAPAISET_KATSELIJA'
+    HENKILOSTO_TILAPAISET_TALLENTAJA = 'HENKILOSTO_TILAPAISET_TALLENTAJA'
+    HENKILOSTO_TYONTEKIJA_KATSELIJA = 'HENKILOSTO_TYONTEKIJA_KATSELIJA'
+    HENKILOSTO_TYONTEKIJA_TALLENTAJA = 'HENKILOSTO_TYONTEKIJA_TALLENTAJA'
     KAYTTOOIKEUSROOLIT = (
         (PAAKAYTTAJA, 'Varda-Pääkäyttäjä'),
         (TALLENTAJA, 'Varda-Tallentaja'),
         (KATSELIJA, 'Varda-Katselija'),
         (PALVELUKAYTTAJA, 'Varda-Palvelukäyttäjä'),
         (HUOLTAJATIEDOT_TALLENTAJA, 'Varda-Huoltajatietojen tallentaja'),
-        (HUOLTAJATIEDOT_KATSELIJA, 'Varda-Huoltajatietojen katselija')
+        (HUOLTAJATIEDOT_KATSELIJA, 'Varda-Huoltajatietojen katselija'),
+        (HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA, 'Varda-Täydennyskoulutustietojen katselija'),
+        (HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA, 'Varda-Täydennyskoulutustietojen tallentaja'),
+        (HENKILOSTO_TILAPAISET_KATSELIJA, 'Varda-Tilapäisen henkilöstön katselija'),
+        (HENKILOSTO_TILAPAISET_TALLENTAJA, 'Varda-Tilapäisen henkilöstön tallentaja'),
+        (HENKILOSTO_TYONTEKIJA_KATSELIJA, 'Varda-Työntekijätietojen katselija'),
+        (HENKILOSTO_TYONTEKIJA_TALLENTAJA, 'Varda-Työntekijätietojen tallentaja'),
     )
 
     user = models.ForeignKey(User, related_name='kayttooikeudet', on_delete=models.PROTECT)
     organisaatio_oid = models.CharField(max_length=50, blank=True, validators=[validators.validate_organisaatio_oid])
-    kayttooikeus = models.CharField(max_length=25, choices=KAYTTOOIKEUSROOLIT, blank=True)
+    kayttooikeus = models.CharField(max_length=50, choices=KAYTTOOIKEUSROOLIT, blank=True)
     last_modified = models.DateTimeField(auto_now=True)
 
     def __str__(self):

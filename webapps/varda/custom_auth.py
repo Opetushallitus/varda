@@ -122,7 +122,7 @@ class CustomBasicAuthentication(BasicAuthentication):
     Custom: allow basic authentication only for fetching token (apikey)
     This is used ONLY for palvelukayttaja-authentication.
     """
-    def authenticate_and_get_omattiedot(self, userid, password):
+    def _authenticate_and_get_omattiedot(self, userid, password):
         service_name = "kayttooikeus-service"
         try:
             omattiedot_url = settings.OPINTOPOLKU_DOMAIN + "/" + service_name + '/henkilo/current/omattiedot'
@@ -181,7 +181,7 @@ class CustomBasicAuthentication(BasicAuthentication):
         """
         Authenticate user via CAS, and get "omattiedot" for the user.
         """
-        omattiedot = self.authenticate_and_get_omattiedot(userid, password)
+        omattiedot = self._authenticate_and_get_omattiedot(userid, password)
         cas_henkilo_kayttajaTyyppi = omattiedot["kayttajaTyyppi"]
 
         cas_username = omattiedot["username"]
@@ -214,14 +214,14 @@ class CustomBasicAuthentication(BasicAuthentication):
         """
         Add/Update miscellaneous user-fields
         """
-        obj, created = Z3_AdditionalCasUserFields.objects.update_or_create(user=user, defaults={'kayttajatyyppi': cas_henkilo_kayttajaTyyppi, 'henkilo_oid': cas_henkilo_oid})
+        Z3_AdditionalCasUserFields.objects.update_or_create(user=user, defaults={'kayttajatyyppi': cas_henkilo_kayttajaTyyppi, 'henkilo_oid': cas_henkilo_oid})
 
         """
         We need to delete the "kayttooikeus" groups first (there might be removed access rights).
         After removal, let's update the access rights.
         """
         Z4_CasKayttoOikeudet.objects.filter(user=user).delete()
-        self.update_permission_groups(user, cas_henkilo_organisaatiot)
+        self._update_permission_groups(user, cas_henkilo_organisaatiot)
 
         return (user, None)
 
@@ -239,41 +239,20 @@ class CustomBasicAuthentication(BasicAuthentication):
                 available_in_seconds = int(settings.BASIC_AUTHENTICATION_LOGIN_INTERVAL_IN_SECONDS - time_difference_in_seconds)
                 raise exceptions.Throttled(wait=available_in_seconds)
 
-    def update_permission_groups(self, user, cas_henkilo_organisaatiot):
-        list_of_organizations_user_has_permissions = []  # PALVELUKAYTTAJA should have permissions only to one organization.
+    def _update_permission_groups(self, user, cas_henkilo_organisaatiot):
+        valid_cas_henkilo_organisaatiot = self._exclude_non_valid_permissions(cas_henkilo_organisaatiot)
 
-        for organisaatio in cas_henkilo_organisaatiot:
-            # For PALVELUKAYTTAJA, Varda is only interested about permissions on vaka-jarjestaja organization-level.
-            if organization_is_not_active_vaka_organization(organisaatio["organisaatioOid"], must_be_vakajarjestaja=True):
-                continue
-
-            for kayttooikeus in organisaatio["kayttooikeudet"]:
-                if kayttooikeus["palvelu"] == "VARDA" and kayttooikeus["oikeus"] == Z4_CasKayttoOikeudet.PALVELUKAYTTAJA:
-                    list_of_organizations_user_has_permissions.append((organisaatio["organisaatioOid"], kayttooikeus["oikeus"]))  # add tuple to list
-
-        if len(list_of_organizations_user_has_permissions) == 1:
-            organisaatio_tuple = list_of_organizations_user_has_permissions[0]
-            organisaatio_oid = organisaatio_tuple[0]
-            kayttooikeus = organisaatio_tuple[1]
-            k, created = Z4_CasKayttoOikeudet.objects.get_or_create(user=user, organisaatio_oid=organisaatio_oid, defaults={"kayttooikeus": kayttooikeus})
-            if not created:
-                logger.info("Already had kayttooikeudet for user: " + user.username + ", organisaatio_oid: " + organisaatio_oid)
-
-            vakajarjestaja = VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid)
-            if vakajarjestaja.exists():  # There is only one vakajarjestaja, organisaatio_oid is unique
-                vakajarjestaja_obj = vakajarjestaja[0]
-                if not vakajarjestaja_obj.integraatio_organisaatio:
-                    vakajarjestaja_obj.integraatio_organisaatio = True
-                    vakajarjestaja_obj.save()
-
-            else:
-                # VakaJarjestaja doesn't exist yet, let's create it.
-                create_vakajarjestaja_using_oid(organisaatio_oid, user.id, integraatio_organisaatio=True)
+        if len(valid_cas_henkilo_organisaatiot) == 1:  # PALVELUKAYTTAJA should have permissions only to one organization.
+            organisaatio = valid_cas_henkilo_organisaatiot[0]
+            organisaatio_oid = organisaatio['organisaatioOid']
+            kayttooikeus_list = [kayttooikeus['oikeus'] for kayttooikeus in organisaatio['kayttooikeudet']]
+            self._create_or_update_vakajarjestaja(kayttooikeus_list, organisaatio_oid, user)
 
             user.groups.clear()  # First remove the permission_groups from user
-            organization_specific_permission_group = get_permission_group(kayttooikeus, organisaatio_oid)
-            if organization_specific_permission_group is not None:
-                organization_specific_permission_group.user_set.add(user)  # Assign the user to this permission_group
+            for kayttooikeus in kayttooikeus_list:
+                organization_specific_permission_group = get_permission_group(kayttooikeus, organisaatio_oid)
+                if organization_specific_permission_group is not None:
+                    organization_specific_permission_group.user_set.add(user)  # Assign the user to this permission_group
 
             """
             Finally, add palvelukayttaja to the "vakajarjestaja_view_henkilo" group
@@ -288,3 +267,55 @@ class CustomBasicAuthentication(BasicAuthentication):
             """
             msg = _('Palvelukayttaja does not have Varda-permissions to just one active vaka-organization.')
             raise exceptions.AuthenticationFailed(msg)
+
+    def _create_or_update_vakajarjestaja(self, kayttooikeus_list, organisaatio_oid, user):
+        """
+        Creates vakajarjestaja if one does not exist yet. Marks vakajarjestaja integraatio organisaatio if needed.
+        :param kayttooikeus_list: List of permission strings user has for accessing varda
+        :param organisaatio_oid: Oid of the vakajarjestaja user has permissions to
+        :param user: user logging in
+        :return: None
+        """
+        # Having any of these permissions changes vakajarjestaja to integraatio organisaatio
+        integraatio_organisaatio_permissions = [Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                                                Z4_CasKayttoOikeudet.TALLENTAJA,
+                                                Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,
+                                                ]
+        for kayttooikeus in kayttooikeus_list:
+            k, created = Z4_CasKayttoOikeudet.objects.get_or_create(user=user,
+                                                                    organisaatio_oid=organisaatio_oid,
+                                                                    defaults={"kayttooikeus": kayttooikeus})
+            if not created:
+                logger.info('Already had kayttooikeus {} for user: {}, organisaatio_oid: {}'
+                            .format(kayttooikeus, user.username, organisaatio_oid))
+        vakajarjestaja = VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid)
+        is_integraatio_organisaatio = bool([kayttooikeus for kayttooikeus in kayttooikeus_list
+                                            if kayttooikeus in integraatio_organisaatio_permissions])
+        if vakajarjestaja.exists():  # There is only one vakajarjestaja, organisaatio_oid is unique
+            vakajarjestaja_obj = vakajarjestaja[0]
+            if not vakajarjestaja_obj.integraatio_organisaatio and is_integraatio_organisaatio:
+                vakajarjestaja_obj.integraatio_organisaatio = True
+                vakajarjestaja_obj.save()
+        else:
+            # VakaJarjestaja doesn't exist yet, let's create it.
+            create_vakajarjestaja_using_oid(organisaatio_oid, user.id, integraatio_organisaatio=is_integraatio_organisaatio)
+
+    def _exclude_non_valid_permissions(self, cas_henkilo_organisaatiot):
+        accepted_palvelukayttaja_permissions = [Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                                                Z4_CasKayttoOikeudet.TALLENTAJA,
+                                                Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,
+                                                Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
+                                                Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,
+                                                Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA,
+                                                ]
+        for organisaatio in cas_henkilo_organisaatiot:
+            # Filter out permissions we are not interested
+            organisaatio['kayttooikeudet'] = [kayttooikeus for kayttooikeus in organisaatio['kayttooikeudet']
+                                              if kayttooikeus['palvelu'] == 'VARDA' and
+                                              kayttooikeus['oikeus'] in accepted_palvelukayttaja_permissions
+                                              ]
+        valid_cas_henkilo_organisaatiot = [organisaatio for organisaatio in cas_henkilo_organisaatiot
+                                           if organisaatio['kayttooikeudet'] and
+                                           not organization_is_not_active_vaka_organization(organisaatio['organisaatioOid'], must_be_vakajarjestaja=True)
+                                           ]
+        return valid_cas_henkilo_organisaatiot

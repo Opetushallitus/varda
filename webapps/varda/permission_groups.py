@@ -5,7 +5,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Q
 from guardian.shortcuts import assign_perm, remove_perm
-from time import sleep
 from varda.misc import get_json_from_external_service
 from varda.models import Toimipaikka, VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Maksutieto, Lapsi
 
@@ -18,6 +17,7 @@ def assign_permissions_to_vakajarjestaja_obj(vakajarjestaja_organisaatio_oid):
     if len(vakajarjestaja_query) == 1:
         vakajarjestaja_obj = vakajarjestaja_query[0]
         assign_object_level_permissions(vakajarjestaja_organisaatio_oid, VakaJarjestaja, vakajarjestaja_obj)
+        assign_object_permissions_to_all_henkilosto_groups(vakajarjestaja_organisaatio_oid, VakaJarjestaja, vakajarjestaja_obj)
     else:
         logger.error('VakaJarjestaja: Could not assign obj-level permissions to: ' + vakajarjestaja_organisaatio_oid)
 
@@ -27,7 +27,9 @@ def assign_permissions_to_toimipaikka_obj(toimipaikka_organisaatio_oid, vakajarj
     if len(toimipaikka_query) == 1:
         toimipaikka_obj = toimipaikka_query[0]
         assign_object_level_permissions(toimipaikka_organisaatio_oid, Toimipaikka, toimipaikka_obj)
+        assign_object_permissions_to_all_henkilosto_groups(toimipaikka_organisaatio_oid, Toimipaikka, toimipaikka_obj)
         assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Toimipaikka, toimipaikka_obj)  # Remember also vakajarjestaja-level
+        assign_object_permissions_to_all_henkilosto_groups(vakajarjestaja_organisaatio_oid, Toimipaikka, toimipaikka_obj)
     else:
         logger.error('Toimipaikka: Could not assign obj-level permissions to: ' + toimipaikka_organisaatio_oid)
 
@@ -64,7 +66,7 @@ def get_organization_type(organisaatio_oid):
         return "organisaatiotyyppi_08"
 
 
-def create_permission_groups_for_organisaatio(organisaatio_oid, vakajarjestaja=True):
+def create_permission_groups_for_organisaatio(organisaatio_oid, vakajarjestaja=True, organisaatio_data=None):
     PAAKAYTTAJA = Z4_CasKayttoOikeudet.PAAKAYTTAJA
     TALLENTAJA = Z4_CasKayttoOikeudet.TALLENTAJA
     KATSELIJA = Z4_CasKayttoOikeudet.KATSELIJA
@@ -73,44 +75,57 @@ def create_permission_groups_for_organisaatio(organisaatio_oid, vakajarjestaja=T
     HUOLTAJATIEDOT_TALLENTAJA = Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA
     HUOLTAJATIEDOT_KATSELIJA = Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA
 
+    HENKILOSTO_TYONTEKIJA_TALLENTAJA = Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA
+    HENKILOSTO_TYONTEKIJA_KATSELIJA = Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA
+
+    HENKILOSTO_TILAPAISET_TALLENTAJA = Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA
+    HENKILOSTO_TILAPAISET_KATSELIJA = Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_KATSELIJA
+
+    HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA = Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA
+    HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA = Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA
+
     roles_vakajarjestaja = [PALVELUKAYTTAJA, PAAKAYTTAJA, TALLENTAJA, KATSELIJA,
-                            HUOLTAJATIEDOT_TALLENTAJA, HUOLTAJATIEDOT_KATSELIJA]
+                            HUOLTAJATIEDOT_TALLENTAJA, HUOLTAJATIEDOT_KATSELIJA,
+                            HENKILOSTO_TYONTEKIJA_TALLENTAJA, HENKILOSTO_TYONTEKIJA_KATSELIJA,
+                            HENKILOSTO_TILAPAISET_TALLENTAJA, HENKILOSTO_TILAPAISET_KATSELIJA,
+                            HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA, HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA]
 
     if vakajarjestaja:
         roles = roles_vakajarjestaja
-    else:  # toimipaikka -> drop PALVELUKAYTTAJA + PAAKAYTTAJA
-        roles = roles_vakajarjestaja.copy()
-        del roles[0:2]  # remove indexes 0-1 -> palvelukayttaja & paakayttaja
-
-    organization_type = get_organization_type(organisaatio_oid)
+    else:  # toimipaikka -> drop PALVELUKAYTTAJA + PAAKAYTTAJA + HENKILOSTO_TILAPAISET
+        excluded_roles = [PALVELUKAYTTAJA, PAAKAYTTAJA,
+                          HENKILOSTO_TILAPAISET_TALLENTAJA, HENKILOSTO_TILAPAISET_KATSELIJA]
+        roles = [role for role in roles_vakajarjestaja if role not in excluded_roles]
 
     for role in roles:
         group_name = role + "_" + organisaatio_oid
         try:
             Group.objects.get(name=group_name)  # group's name is unique
         except Group.DoesNotExist:
-            create_permission_group(role, organisaatio_oid, organization_type)
+            if organisaatio_data:
+                organization_type = 'organisaatiotyyppi_07' if 'organisaatiotyyppi_07' in organisaatio_data['tyypit'] else 'organisaatiotyyppi_08'
+            else:
+                organization_type = get_organization_type(organisaatio_oid)
+            if organization_type in ['organisaatiotyyppi_07', 'organisaatiotyyppi_08']:
+                create_permission_group(role, organisaatio_oid, organization_type)
+            else:
+                logger.warning('User tried to login to non-valid organisation {}. Not creating permission group {}.'
+                               .format(organisaatio_oid, group_name))
 
 
 def get_permission_group(role, organisaatio_oid):
     """
-    Sometimes group is not ready yet (creation happening asynchronously).
-    Let's wait then a few seconds.
+    Return permission group
+    :param role: permission group role eg. VARDA-PAAKAYTTAJA
+    :param organisaatio_oid: organisation where permission group is in
+    :return: Group object or None
     """
     group_name = role + "_" + organisaatio_oid
-    MAX_LOOPS = 5
-    loop_number = 0
-    while True:
-        loop_number += 1
-        try:
-            permission_group = Group.objects.get(name=group_name)  # group's name is unique
-            break
-        except Group.DoesNotExist:
-            logger.error('Did not find permission_group with name: ' + group_name)
-            if loop_number < MAX_LOOPS:
-                sleep(2)
-            else:
-                return None
+    try:
+        permission_group = Group.objects.get(name=group_name)  # group's name is unique
+    except Group.DoesNotExist:
+        logger.error('Did not find permission_group with name: ' + group_name)
+        return None
 
     return permission_group
 
@@ -127,13 +142,28 @@ def create_permission_group(role, organisaatio_oid, organization_type):
     HUOLTAJATIEDOT_TALLENTAJA = Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA
     HUOLTAJATIEDOT_KATSELIJA = Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA
 
+    HENKILOSTO_TYONTEKIJA_TALLENTAJA = Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA
+    HENKILOSTO_TYONTEKIJA_KATSELIJA = Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA
+
+    HENKILOSTO_TILAPAISET_TALLENTAJA = Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA
+    HENKILOSTO_TILAPAISET_KATSELIJA = Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_KATSELIJA
+
+    HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA = Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA
+    HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA = Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA
+
     group_templates_vakajarjestaja = {
         PAAKAYTTAJA: 'vakajarjestaja_paakayttaja',
         TALLENTAJA: 'vakajarjestaja_tallentaja',
         KATSELIJA: 'vakajarjestaja_katselija',
         PALVELUKAYTTAJA: 'vakajarjestaja_palvelukayttaja',
         HUOLTAJATIEDOT_TALLENTAJA: 'vakajarjestaja_huoltajatiedot_tallentaja',
-        HUOLTAJATIEDOT_KATSELIJA: 'vakajarjestaja_huoltajatiedot_katselija'
+        HUOLTAJATIEDOT_KATSELIJA: 'vakajarjestaja_huoltajatiedot_katselija',
+        HENKILOSTO_TYONTEKIJA_TALLENTAJA: 'vakajarjestaja_henkilosto_tyontekija_tallentaja',
+        HENKILOSTO_TYONTEKIJA_KATSELIJA: 'vakajarjestaja_henkilosto_tyontekija_katselija',
+        HENKILOSTO_TILAPAISET_TALLENTAJA: 'vakajarjestaja_henkilosto_tilapainen_tallentaja',
+        HENKILOSTO_TILAPAISET_KATSELIJA: 'vakajarjestaja_henkilosto_tilapainen_katselija',
+        HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA: 'vakajarjestaja_henkilosto_taydennyskoulutus_tallentaja',
+        HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA: 'vakajarjestaja_henkilosto_taydennyskoulutus_katselija',
     }
 
     group_templates_toimipaikka = {
@@ -141,7 +171,11 @@ def create_permission_group(role, organisaatio_oid, organization_type):
         TALLENTAJA: 'toimipaikka_tallentaja',
         KATSELIJA: 'toimipaikka_katselija',
         HUOLTAJATIEDOT_TALLENTAJA: 'toimipaikka_huoltajatiedot_tallentaja',
-        HUOLTAJATIEDOT_KATSELIJA: 'toimipaikka_huoltajatiedot_katselija'
+        HUOLTAJATIEDOT_KATSELIJA: 'toimipaikka_huoltajatiedot_katselija',
+        HENKILOSTO_TYONTEKIJA_TALLENTAJA: 'toimipaikka_henkilosto_tyontekija_tallentaja',
+        HENKILOSTO_TYONTEKIJA_KATSELIJA: 'toimipaikka_henkilosto_tyontekija_katselija',
+        HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA: 'toimipaikka_henkilosto_taydennyskoulutus_tallentaja',
+        HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA: 'toimipaikka_henkilosto_taydennyskoulutus_katselija',
     }
 
     """
@@ -187,14 +221,23 @@ def assign_organisation_group_permissions(model, instance, vakajarjestaja_oid, t
         assign_object_level_permissions(toimipaikka_oid, model, instance)
 
 
-def assign_or_remove_object_level_permissions(organisaatio_oid, model_name, model_obj, paos_kytkin, assign):
-    content_type_obj = ContentType.objects.get_for_model(model_name)
-    all_organization_permission_groups = get_permission_groups_for_organization(organisaatio_oid)
-
-    for permission_group in all_organization_permission_groups:
+def _assign_or_remove_object_level_permissions(model_class, model_obj, permission_groups, paos_kytkin=True, assign=True):
+    """
+    Assign or remove permissions for the permissions allowed in given permission groups. This depends on the template
+    used to create the permission group.
+    :param model_class: Type of the given model_obj eg. Lapsi
+    :param model_obj: Instance of the given model type
+    :param permission_groups: Permission groups that get/lose the permissions group template defines eg. katselija group
+    has only view permissions
+    :param paos_kytkin: skip other but view permissions
+    :param assign: boolean do we assign permissions. Otherwise remove.
+    :return: None
+    """
+    content_type_obj = ContentType.objects.get_for_model(model_class)
+    for permission_group in permission_groups:
         model_specific_permissions_for_group = permission_group.permissions.filter(content_type=content_type_obj.id)
         for permission in model_specific_permissions_for_group:
-            if paos_kytkin and permission.codename != 'view_' + model_name._meta.model.__name__.lower():
+            if paos_kytkin and permission.codename != 'view_' + model_class._meta.model.__name__.lower():
                 continue
             if assign:
                 assign_perm(permission, permission_group, model_obj)
@@ -323,12 +366,24 @@ def _get_permission_groups(group_organisation_oids, group_roles, tallentaja_orga
     return Group.objects.filter(name__in=group_names)
 
 
-def assign_object_level_permissions(organisaatio_oid, model_name, model_obj, paos_kytkin=False):
-    assign_or_remove_object_level_permissions(organisaatio_oid, model_name, model_obj, paos_kytkin, assign=True)
+def assign_object_permissions_to_all_henkilosto_groups(organisaatio_oid, model_class, model_obj):
+    henkilosto_groups = Group.objects.filter(name__startswith='HENKILOSTO_', name__contains=organisaatio_oid)
+    _assign_or_remove_object_level_permissions(model_class, model_obj, henkilosto_groups, paos_kytkin=False, assign=True)
 
 
-def remove_object_level_permissions(organisaatio_oid, model_name, model_obj, paos_kytkin=False):
-    assign_or_remove_object_level_permissions(organisaatio_oid, model_name, model_obj, paos_kytkin, assign=False)
+def assign_object_permissions_to_tyontekija_groups(organisaatio_oid, model_class, model_obj):
+    tyontekija_groups = Group.objects.filter(name__startswith='HENKILOSTO_TYONTEKIJA_', name__contains=organisaatio_oid)
+    _assign_or_remove_object_level_permissions(model_class, model_obj, tyontekija_groups, paos_kytkin=False, assign=True)
+
+
+def assign_object_level_permissions(organisaatio_oid, model_class, model_obj, paos_kytkin=False):
+    all_organization_permission_groups = get_permission_groups_for_organization(organisaatio_oid)
+    _assign_or_remove_object_level_permissions(model_class, model_obj, all_organization_permission_groups, paos_kytkin, assign=True)
+
+
+def remove_object_level_permissions(organisaatio_oid, model_class, model_obj, paos_kytkin=False):
+    all_organization_permission_groups = get_permission_groups_for_organization(organisaatio_oid)
+    _assign_or_remove_object_level_permissions(model_class, model_obj, all_organization_permission_groups, paos_kytkin, assign=False)
 
 
 def get_permission_groups_for_organization(organisaatio_oid):
