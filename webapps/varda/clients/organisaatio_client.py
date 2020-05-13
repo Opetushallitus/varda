@@ -35,9 +35,14 @@ def _parse_organisaatio_data(response, organisaatio_oid):
             kieli = 'fi'
     else:
         kieli = 'fi'  # current default value
-    nimi = response['nimi'][kieli]
-    kayntios = response['kayntiosoite']
-    postios = response['postiosoite']
+    try:
+        nimi = response['nimi'][kieli]
+        kayntios = response['kayntiosoite']
+        postios = response['postiosoite']
+    except (KeyError, ValueError) as e:
+        logger.error('Could not parse organisaatio data for vakajarjestaja {} with cause {}'
+                     .format(organisaatio_oid, e))
+        return {'result_ok': False}
     try:
         return {
             'result_ok': True,
