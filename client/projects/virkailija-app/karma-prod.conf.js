@@ -23,7 +23,7 @@ module.exports = function (config) {
       singleRun: true,
       customLaunchers: {
         ChromeHeadless: {
-          base: 'google-chrome-stable',
+          base: 'Chrome',
           flags: [
             '--headless',
             '--disable-gpu',
