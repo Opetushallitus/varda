@@ -30,7 +30,7 @@ module.exports = function (config) {
     restartOnFileChange: true,
     customLaunchers: {
       ChromeHeadless: {
-        base: 'Chrome',
+        base: 'google-chrome-stable',
         flags: [
           '--headless',
           '--disable-gpu',
