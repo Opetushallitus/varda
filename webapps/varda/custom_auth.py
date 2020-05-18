@@ -50,7 +50,7 @@ def _oppija_post_login_handler(user):
     :return:
     """
     if not hasattr(user, 'personOid') or not hasattr(user, 'impersonatorPersonOid'):
-        raise ValueError('User %s missing required argument personOid or impersonatorPersonOid received from CAS'
+        raise ValueError('User {} missing required argument personOid or impersonatorPersonOid received from CAS'
                          .format(user.username))
     lapsi_oid = user.personOid
     huoltaja_oid = user.impersonatorPersonOid

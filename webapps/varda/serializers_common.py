@@ -64,7 +64,7 @@ class OidRelatedField(serializers.Field):
             parent_value_id = get_object_id_from_path(parent_value)
 
             if parent_value_id is None:
-                msg = {self.parent_field: [f"Could not parse object id from URL", ]}
+                msg = {self.parent_field: ["Could not parse object id from URL", ]}
                 raise serializers.ValidationError(msg, code='invalid')
 
             return parent_value_id
@@ -77,7 +77,7 @@ class OidRelatedField(serializers.Field):
 
         # Not sure if this is required, but better be safe?
         if self.read_only:
-            msg = {self.field_name: [f"Field is read-only", ]}
+            msg = {self.field_name: ["Field is read-only", ]}
             raise serializers.ValidationError(msg, code='invalid')
 
         # Django validators work too late, so we use our own here
@@ -86,7 +86,7 @@ class OidRelatedField(serializers.Field):
         try:
             referenced_object = self.object_type.objects.get(**{self.parent_attribute: value})
         except self.object_type.DoesNotExist:
-            msg = {self.field_name: [f"Unknown oid", ]}
+            msg = {self.field_name: ["Unknown oid", ]}
             raise serializers.ValidationError(msg, code='invalid')
 
         # If the linked parent field has a value, make sure it equals to the one in this field
