@@ -717,18 +717,19 @@ class VardaViewsTests(TestCase):
 
     def test_api_get_lapsi_json(self):
         lapsi_json = {
-            "url": "http://testserver/api/v1/lapset/1/?format=json",
-            "id": 1,
-            "vakatoimija": None,
-            "vakatoimija_oid": None,
+            'url': 'http://testserver/api/v1/lapset/1/?format=json',
+            'id': 1,
+            'vakatoimija': None,
+            'vakatoimija_oid': None,
             'oma_organisaatio': None,
             'oma_organisaatio_oid': None,
             'paos_kytkin': False,
             'paos_organisaatio': None,
             'paos_organisaatio_oid': None,
-            "henkilo": "http://testserver/api/v1/henkilot/2/?format=json",
-            "varhaiskasvatuspaatokset_top": [
-                "http://testserver/api/v1/varhaiskasvatuspaatokset/1/?format=json"
+            'henkilo': 'http://testserver/api/v1/henkilot/2/?format=json',
+            'henkilo_oid': '1.2.246.562.24.47279942650',
+            'varhaiskasvatuspaatokset_top': [
+                'http://testserver/api/v1/varhaiskasvatuspaatokset/1/?format=json'
             ]
         }
         client = SetUpTestClient('tester').client()
@@ -933,27 +934,55 @@ class VardaViewsTests(TestCase):
         msg = json.loads(resp.content)['toimipaikka_oid']
         self.assertIn('Either this field or toimipaikka is required', msg)
 
+    def test_api_push_lapsi_valid_henkilo_oid(self):
+        henkilo_oid = '1.2.246.562.24.7777777777755'
+        henkilo_obj = Henkilo.objects.get(henkilo_oid=henkilo_oid)
+
+        client = SetUpTestClient('tester2').client()
+        lapsi = {
+            'henkilo_oid': henkilo_oid,
+            'vakatoimija_oid': '1.2.246.562.10.34683023489'
+        }
+
+        resp = client.post('/api/v1/lapset/', lapsi)
+        self.assertEqual(resp.status_code, 201)
+
+        url_pattern = 'http://testserver/api/v1/henkilot/{0}/'
+        resp_henkilo_url = json.loads(resp.content)['henkilo']
+        self.assertEqual(resp_henkilo_url, url_pattern.format(henkilo_obj.id))
+
+    def test_api_push_lapsi_invalid_henkilo_oid(self):
+        client = SetUpTestClient('tester2').client()
+        lapsi = {
+            'henkilo_oid': '1.2.246.562.24.77777777777555',
+            'vakatoimija_oid': '1.2.246.562.10.34683023489'
+        }
+
+        resp = client.post('/api/v1/lapset/', lapsi)
+        self.assertEqual(resp.status_code, 400)
+
     def test_api_get_lapsi_json_admin(self):
         """
         TODO: Sort nested resources // CSCVARDA-1113
         """
         lapsi_json = {
-            "url": "http://testserver/api/v1/lapset/1/?format=json",
-            "id": 1,
-            "vakatoimija": None,
-            "vakatoimija_oid": None,
+            'url': 'http://testserver/api/v1/lapset/1/?format=json',
+            'id': 1,
+            'vakatoimija': None,
+            'vakatoimija_oid': None,
             'oma_organisaatio': None,
             'oma_organisaatio_oid': None,
             'paos_kytkin': False,
             'paos_organisaatio': None,
             'paos_organisaatio_oid': None,
-            "henkilo": "http://testserver/api/v1/henkilot/2/?format=json",
-            "varhaiskasvatuspaatokset_top": [
-                "http://testserver/api/v1/varhaiskasvatuspaatokset/1/?format=json"
+            'henkilo': 'http://testserver/api/v1/henkilot/2/?format=json',
+            'henkilo_oid': '1.2.246.562.24.47279942650',
+            'varhaiskasvatuspaatokset_top': [
+                'http://testserver/api/v1/varhaiskasvatuspaatokset/1/?format=json'
             ],
-            "huoltajuussuhteet": [
-                "http://testserver/api/admin/huoltajuussuhteet/1/?format=json",
-                "http://testserver/api/admin/huoltajuussuhteet/2/?format=json"
+            'huoltajuussuhteet': [
+                'http://testserver/api/admin/huoltajuussuhteet/1/?format=json',
+                'http://testserver/api/admin/huoltajuussuhteet/2/?format=json'
             ]
         }
         client = SetUpTestClient('credadmin').client()

@@ -596,7 +596,12 @@ class MaksutietoUpdateSerializer(serializers.HyperlinkedModelSerializer):
 
 class LapsiSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
-    henkilo = HenkiloHLField(view_name='henkilo-detail')
+    henkilo = HenkiloHLField(view_name='henkilo-detail', required=False)
+    henkilo_oid = OidRelatedField(object_type=Henkilo,
+                                  parent_field='henkilo',
+                                  parent_attribute='henkilo_oid',
+                                  prevalidator=validate_henkilo_oid,
+                                  either_required=True)
     vakatoimija = VakaJarjestajaHLField(allow_null=True, required=False, view_name='vakajarjestaja-detail')
     vakatoimija_oid = OidRelatedField(object_type=VakaJarjestaja,
                                       parent_field='vakatoimija',
@@ -624,7 +629,7 @@ class LapsiSerializer(serializers.HyperlinkedModelSerializer):
     def validate(self, data):
         errors = []
         if 'henkilo' in data and not self.context['request'].user.has_perm('view_henkilo', data['henkilo']):
-            msg = {"henkilo": ["Invalid hyperlink - Object does not exist.", ]}
+            msg = {'henkilo': ['Invalid hyperlink - Object does not exist.', ]}
             errors.append(msg)
 
         vakatoimija = data.get('vakatoimija')
@@ -640,7 +645,7 @@ class LapsiSerializer(serializers.HyperlinkedModelSerializer):
             msg = 'For PAOS-lapsi both oma_organisaatio and paos_organisaatio are needed.'
             errors.append(msg)
         if oma_organisaatio and oma_organisaatio == paos_organisaatio:
-            msg = {"detail": "oma_organisaatio cannot be same as paos_organisaatio."}
+            msg = {'detail': 'oma_organisaatio cannot be same as paos_organisaatio.'}
             errors.append(msg)
         if errors:
             raise serializers.ValidationError(errors, code='invalid')
@@ -657,7 +662,12 @@ class LapsiSerializerAdmin(serializers.HyperlinkedModelSerializer):
     to_representation should not be run twice.
     """
     id = serializers.ReadOnlyField()
-    henkilo = HenkiloHLField(view_name='henkilo-detail')
+    henkilo = HenkiloHLField(view_name='henkilo-detail', required=False)
+    henkilo_oid = OidRelatedField(object_type=Henkilo,
+                                  parent_field='henkilo',
+                                  parent_attribute='henkilo_oid',
+                                  prevalidator=validate_henkilo_oid,
+                                  either_required=True)
     varhaiskasvatuspaatokset_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='varhaiskasvatuspaatos-detail')
     huoltajuussuhteet = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='huoltajuussuhde-detail')
     vakatoimija = VakaJarjestajaHLField(allow_null=True, required=False, view_name='vakajarjestaja-detail')
