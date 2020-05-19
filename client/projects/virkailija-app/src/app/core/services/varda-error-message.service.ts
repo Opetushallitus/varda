@@ -40,6 +40,10 @@ export class VardaErrorMessageService {
     'Arvo tulee olla vähintään 3 merkkiä pitkä.': 'field.postiosoite.invalid',
     'oma_organisaatio cannot be same as paos_organisaatio.': 'alert.oma_organisaatio_same_as_paos',
     'Date must be greater than or equal to 2000-01-01.': 'field.date-after-1999',
+    'maksutieto.alkamis_pvm must be after earliest varhaiskasvatuspaatos.alkamis_pvm': 'field.maksutieto_alkamis_pvm.before.varhaiskasvatuspaatos_alkamis_pvm',
+    'maksutieto.alkamis_pvm must be before the latest varhaiskasvatuspaatos.paattymis_pvm': 'field.maksutieto_alkamis_pvm.after.varhaiskasvatuspaatos_paattymis_pvm',
+    'maksutieto.paattymis_pvm must be before latest varhaiskasvatuspaatos.paattymis_pvm': 'field.maksutieto_paattymis_pvm.after.varhaiskasvatuspaatos_paattymis_pvm',
+    'lapsi already has 2 active maksutieto during that time period': 'field.two_maksutieto_during_time_period'
   };
 
   dynamicErrorMessageKeys = {
