@@ -138,8 +138,10 @@ router_reporting.register(r'lapset-ryhmittain', viewsets_reporting.LapsetRyhmitt
 router_koodisto = routers.DefaultRouter()
 router_koodisto.register(r'koodit', viewsets_reporting.KoodistoViewSet, 'koodisto')
 
+"""
+Routers for oppija
+"""
 router_oppija = routers.DefaultRouter()
-router_oppija.register('test', viewsets_oppija.TestViewSet, 'test')
 
 # Routes for Henkilöstö-URLs
 
@@ -181,6 +183,8 @@ urlpatterns = [
     re_path(r'^reporting/api/v1/', include(router_reporting.urls), name='api-v1-reporting'),
     re_path(r'^koodisto/api/v1/', include(router_koodisto.urls), name='koodisto'),
     re_path(r'^varda/', include('varda.urls'), name='varda'),
-    re_path('oppija-api/v1/', include(router_oppija.urls), name='oppija-api-v1'),
-    re_path(r'^api/henkilosto/v1/', include(router_henkilosto.urls), name='api-henkilosto-v1')
+    re_path(r'^api/henkilosto/v1/', include(router_henkilosto.urls), name='api-henkilosto-v1'),
+    re_path(r'^api/oppija/v1/', include(router_oppija.urls), name='oppija-api-v1'),
+    re_path(r'^api/oppija/v1/huoltajanlapsi/(?P<henkilo_oid>[.0-9]{26,})/$',
+            viewsets_oppija.HuoltajanLapsiViewSet.as_view({'get': 'retrieve'}), name='huoltajanlapsi'),
 ]

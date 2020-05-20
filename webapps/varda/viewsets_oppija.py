@@ -1,18 +1,70 @@
 from rest_framework import mixins
 from rest_framework.viewsets import GenericViewSet
 
-from varda import serializers
+import datetime
+import logging
+from rest_framework.response import Response
+from django.db.models import Q
+from django.http import Http404
 from varda.cas import varda_permissions
-from varda.models import Lapsi
+from varda.models import Varhaiskasvatuspaatos, Henkilo, Lapsi
+from varda.serializers_oppija import HuoltajanLapsiSerializer
+from varda.permissions import save_audit_log
+
+logger = logging.getLogger(__name__)
 
 
-class TestViewSet(GenericViewSet, mixins.RetrieveModelMixin):
+class HuoltajanLapsiViewSet(GenericViewSet, mixins.RetrieveModelMixin):
     """
-    Example viewset to confirm oppija-cas functionality. Can be removed after the first real viewset is implemented.
+    Returns data for Huoltaja
     """
-    queryset = Lapsi.objects
-    serializer_class = serializers.LapsiSerializer
-    permission_classes = (varda_permissions.HasHuoltajaRelation, )
+    queryset = Henkilo.objects.none()
+    serializer_class = HuoltajanLapsiSerializer
+    permission_classes = (varda_permissions.IsHuoltajaForChild, )
+    lookup_field = 'henkilo_oid'
 
-    def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
+    def retrieve(self, request, **kwargs):
+        henkilo_oid = kwargs['henkilo_oid']
+
+        data = self.get_queryset(henkilo_oid=henkilo_oid)
+        serializer = self.get_serializer(instance=data)
+
+        if data is not None:
+            save_audit_log(request.user, request.path)
+
+        return Response(serializer.data)
+
+    def get_queryset(self, henkilo_oid=None, *args, **kwargs):
+        """
+        Note: related permission handling is done in custom_auth.py oppija_post_login_handler function
+        """
+        today = datetime.datetime.now(datetime.timezone.utc)
+
+        try:
+            henkilo = Henkilo.objects.get(henkilo_oid=henkilo_oid)
+        except Henkilo.DoesNotExist:
+            raise Http404('Not found.')
+        except Henkilo.MultipleObjectsReturned:  # This should not be possible
+            logger.error("Multiple of henkilot was found with henkilo_oid: " + henkilo_oid)
+            raise Http404('Not found.')
+
+        if henkilo.turvakielto:
+            raise Http404('Not found.')
+
+        lapset = (Lapsi.objects.filter(henkilo=henkilo)
+                               .prefetch_related('varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja')
+                               .select_related('oma_organisaatio'))
+
+        voimassaolo_filter = (Q(alkamis_pvm__lte=today) & (Q(paattymis_pvm__gte=today) | Q(paattymis_pvm=None)))
+
+        voimassaolevat_vakapaatokset = (Varhaiskasvatuspaatos.objects
+                                        .filter(voimassaolo_filter & Q(lapsi__henkilo=henkilo))
+                                        .distinct('id')
+                                        .order_by('id', 'alkamis_pvm')
+                                        .count()
+                                        )
+
+        return {'henkilo': henkilo,
+                'lapset': lapset,
+                'voimassaolevia_varhaiskasvatuspaatoksia': voimassaolevat_vakapaatokset,
+                }

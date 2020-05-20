@@ -19,7 +19,7 @@ from rest_framework.authtoken.models import Token
 from varda import kayttooikeuspalvelu
 from varda.clients.organisaatio_client import organization_is_not_active_vaka_organization
 from varda.oph_yhteiskayttopalvelu_autentikaatio import get_authentication_header
-from varda.models import VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Huoltajuussuhde
+from varda.models import VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet
 from varda.permission_groups import get_permission_group
 from varda.organisaatiopalvelu import create_vakajarjestaja_using_oid
 from webapps.celery import app
@@ -54,19 +54,13 @@ def _oppija_post_login_handler(user):
                          .format(user.username))
     lapsi_oid = user.personOid
     huoltaja_oid = user.impersonatorPersonOid
-    huoltajuussuhteet = (Huoltajuussuhde.objects
-                         .filter(lapsi__henkilo__henkilo_oid=lapsi_oid,
-                                 huoltaja__henkilo__henkilo_oid=huoltaja_oid,
-                                 voimassa_kytkin=True))
-    # Check active parent relation exists before adding any privileges
-    if len(huoltajuussuhteet) > 0:
-        Z3_AdditionalCasUserFields.objects.update_or_create(user=user,
-                                                            defaults={
-                                                                "henkilo_oid": lapsi_oid,
-                                                                "huoltaja_oid": huoltaja_oid,
-                                                            })
-    else:
-        Z3_AdditionalCasUserFields.objects.filter(user=user, henkilo_oid=lapsi_oid, huoltaja_oid=huoltaja_oid).delete()
+
+    # external service validates permissions for user
+    Z3_AdditionalCasUserFields.objects.update_or_create(user=user,
+                                                        defaults={
+                                                            "henkilo_oid": lapsi_oid,
+                                                            "huoltaja_oid": huoltaja_oid,
+                                                        })
 
 
 def logout_handler(sender, user, request, **kwargs):

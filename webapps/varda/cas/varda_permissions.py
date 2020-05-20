@@ -2,10 +2,10 @@ from django.contrib.auth.models import Group
 from rest_framework.permissions import IsAdminUser
 from rest_framework.viewsets import GenericViewSet
 
-from varda.models import Lapsi, Z4_CasKayttoOikeudet
+from varda.models import Henkilo, Z4_CasKayttoOikeudet
 
 
-class HasHuoltajaRelation(IsAdminUser):
+class IsHuoltajaForChild(IsAdminUser):
     """
     Allow huoltaja access child data when impersonating the child. Basically the child has access to his own data and
     parent logs in as the child.
@@ -16,12 +16,10 @@ class HasHuoltajaRelation(IsAdminUser):
             return True
         if (not user.is_anonymous and
                 isinstance(view, GenericViewSet) and
-                view.queryset.model == Lapsi and
-                hasattr(user, 'additional_user_info')):
-            lapsi_id = view.kwargs.get('pk')
-            lapsi = view.queryset.filter(pk=lapsi_id,
-                                         henkilo__henkilo_oid=user.additional_user_info.henkilo_oid)
-            return lapsi.exists()
+                view.queryset.model == Henkilo and
+                getattr(user.additional_user_info, 'henkilo_oid', False) and
+                getattr(user.additional_user_info, 'huoltaja_oid', False)):
+            return True
         return False
 
 

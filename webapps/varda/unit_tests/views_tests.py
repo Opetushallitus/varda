@@ -633,7 +633,7 @@ class VardaViewsTests(TestCase):
     def test_api_varhaiskasvatussuhteet_filtering(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/varhaiskasvatussuhteet/?muutos_pvm=2017-04-12')
-        self.assertEqual(json.loads(resp.content)['count'], 2)
+        self.assertEqual(json.loads(resp.content)['count'], 4)
 
     def test_api_lapset(self):
         client = SetUpTestClient('tester').client()
@@ -703,7 +703,7 @@ class VardaViewsTests(TestCase):
         # TO-DO: fix filtering
         client = SetUpTestClient('credadmin').client()
         resp = client.get('/api/admin/huoltajat/?sukunimi=Virtane&kayntiosoite=Torikatu%2011&postitoimipaikka=Lappeenranta&kotikunta_koodi=034&muutos_pvm=2017-04-12')
-        self.assertEqual(json.loads(resp.content)['count'], 4)
+        self.assertEqual(json.loads(resp.content)['count'], 5)
 
     def test_api_varhaiskasvatuspaatokset(self):
         client = SetUpTestClient('tester').client()
@@ -713,7 +713,7 @@ class VardaViewsTests(TestCase):
     def test_api_varhaiskasvatuspaatokset_filtering(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/varhaiskasvatuspaatokset/?hakemus_pvm=2017-01-12')
-        self.assertEqual(json.loads(resp.content)['count'], 2)
+        self.assertEqual(json.loads(resp.content)['count'], 4)
 
     def test_api_get_lapsi_json(self):
         lapsi_json = {
@@ -1408,7 +1408,8 @@ class VardaViewsTests(TestCase):
             ],
             "varhaiskasvatussuhteet_top": [
                 "http://testserver/api/v1/varhaiskasvatussuhteet/1/?format=json",
-                "http://testserver/api/v1/varhaiskasvatussuhteet/2/?format=json"
+                "http://testserver/api/v1/varhaiskasvatussuhteet/2/?format=json",
+                "http://testserver/api/v1/varhaiskasvatussuhteet/8/?format=json"
             ],
             "nimi": "Espoo",
             "organisaatio_oid": "1.2.246.562.10.9395737548810",
@@ -1442,7 +1443,7 @@ class VardaViewsTests(TestCase):
 
     def test_api_get_toimipaikan_lapset_json(self):
         toimipaikan_lapset_json = {
-            "count": 1,
+            "count": 2,
             "next": None,
             "previous": None,
             "results": [
@@ -1455,6 +1456,16 @@ class VardaViewsTests(TestCase):
                     "paos_organisaatio_nimi": "Tester organisaatio",
                     "lapsi_id": 4,
                     "lapsi_url": "http://testserver/api/v1/lapset/4/"
+                },
+                {
+                    "etunimet": "Teila Aamu Runelma",
+                    "sukunimi": "Testilä",
+                    "henkilo_oid": "1.2.246.562.24.86012997950",
+                    "syntyma_pvm": "2018-03-11",
+                    "oma_organisaatio_nimi": "Tester2 organisaatio",
+                    "paos_organisaatio_nimi": "Tester organisaatio",
+                    "lapsi_id": 8,
+                    "lapsi_url": "http://testserver/api/v1/lapset/8/"
                 }
             ]
         }
@@ -2552,6 +2563,8 @@ class VardaViewsTests(TestCase):
         admin_client = SetUpTestClient('credadmin').client()
         resp = admin_client.delete('/api/v1/varhaiskasvatussuhteet/4/')
         assert_status_code(resp, status.HTTP_204_NO_CONTENT)
+        resp = admin_client.delete('/api/v1/varhaiskasvatussuhteet/9/')
+        assert_status_code(resp, status.HTTP_204_NO_CONTENT)
 
         client = SetUpTestClient('tester3').client()
         vakajarjestaja_group = Group.objects.get(name='VARDA-PAAKAYTTAJA_1.2.246.562.10.34683023489')
@@ -2621,6 +2634,8 @@ class VardaViewsTests(TestCase):
         assert_status_code(resp, status.HTTP_204_NO_CONTENT)
         resp2 = admin_client.delete('/api/v1/varhaiskasvatussuhteet/5/')
         assert_status_code(resp2, status.HTTP_204_NO_CONTENT)
+        resp3 = admin_client.delete('/api/v1/varhaiskasvatussuhteet/9/')
+        assert_status_code(resp3, status.HTTP_204_NO_CONTENT)
 
         client = SetUpTestClient('tester4').client()
         vakajarjestaja_group = Group.objects.get(name='VARDA-PAAKAYTTAJA_1.2.246.562.10.34683023489')
@@ -2917,11 +2932,11 @@ class VardaViewsTests(TestCase):
         resp = client.get('/api/v1/vakajarjestajat/2/yhteenveto/')
         accepted_response = {
             "vakajarjestaja_nimi": "Tester organisaatio",
-            "lapset_lkm": 3,
-            "lapset_vakapaatos_voimassaoleva": 3,
-            "lapset_vakasuhde_voimassaoleva": 3,
+            "lapset_lkm": 4,
+            "lapset_vakapaatos_voimassaoleva": 4,
+            "lapset_vakasuhde_voimassaoleva": 4,
             "lapset_vuorohoidossa": 0,
-            "lapset_palveluseteli_ja_ostopalvelu": 3,
+            "lapset_palveluseteli_ja_ostopalvelu": 4,
             "lapset_maksutieto_voimassaoleva": 3,
             "toimipaikat_voimassaolevat": 3,
             "toimipaikat_paattyneet": 0,
