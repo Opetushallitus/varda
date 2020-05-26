@@ -149,6 +149,7 @@ router_henkilosto = routers.DefaultRouter()
 router_henkilosto.register(r'tyontekijat', viewsets_henkilosto.TyontekijaViewSet)
 router_henkilosto.register(r'tilapainen-henkilosto', viewsets_henkilosto.TilapainenHenkilostoViewSet)
 router_henkilosto.register(r'tutkinnot', viewsets_henkilosto.TutkintoViewSet)
+router_henkilosto.register(r'palvelussuhteet', viewsets_henkilosto.PalvelussuhdeViewSet)
 
 urlpatterns = [
     re_path(r'^$', views.index, name='index'),

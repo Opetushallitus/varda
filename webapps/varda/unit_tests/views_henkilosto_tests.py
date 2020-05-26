@@ -555,3 +555,251 @@ class VardaHenkiloViewSetTests(TestCase):
             resp_filter_incorrect = client.get('/api/henkilosto/v1/tutkinnot/' + query)
             assert_status_code(resp_filter_incorrect, 200)
             self.assertEqual(json.loads(resp_filter_incorrect.content)['count'], 0)
+
+    def test_palvelussuhde_add_correct(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tyontekija = {
+            'henkilo': '/api/v1/henkilot/1/',
+            'vakajarjestaja': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post("/api/henkilosto/v1/tyontekijat/", json.dumps(tyontekija), content_type="application/json")
+        assert_status_code(resp, 201)
+        tyontekija_url = json.loads(resp.content)['url']
+
+        palvelussuhde = {
+            'tyontekija': tyontekija_url,
+            'tyosuhde_koodi': 'ts01',
+            'tyoaika_koodi': 'ta01',
+            'tutkinto_koodi': '321901',
+            'tyoaika_viikossa': '38.73',
+            'alkamis_pvm': '2020-03-01',
+            'paattymis_pvm': '2020-03-02',
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        assert_status_code(resp, 201)
+
+    def test_palvelussuhde_edit_allowed(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tyontekija = {
+            'henkilo': '/api/v1/henkilot/1/',
+            'vakajarjestaja': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post("/api/henkilosto/v1/tyontekijat/", json.dumps(tyontekija), content_type="application/json")
+        assert_status_code(resp, 201)
+        tyontekija_url = json.loads(resp.content)['url']
+
+        palvelussuhde = {
+            'tyontekija': tyontekija_url,
+            'tyosuhde_koodi': 'ts01',
+            'tyoaika_koodi': 'ta01',
+            'tutkinto_koodi': '321901',
+            'tyoaika_viikossa': '38.73',
+            'alkamis_pvm': '2020-03-01',
+            'paattymis_pvm': '2020-03-02',
+            'lahdejarjestelma': '1',
+            'tunniste': 'a'
+        }
+
+        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        assert_status_code(resp, 201)
+        palvelussuhde_id = json.loads(resp.content)['id']
+
+        # These are the fields that can be edited
+        palvelussuhde_edits = {
+            'tyosuhde_koodi': 'ts02',
+            'tyoaika_koodi': 'ta02',
+            'tutkinto_koodi': '613101',
+            'tyoaika_viikossa': '35.00',
+            'alkamis_pvm': '2020-01-01',
+            'paattymis_pvm': '2020-04-04',
+            'lahdejarjestelma': '2',
+            'tunniste': 'b'
+        }
+
+        # Change fields one by one and make sure we get a success
+        for key, value in palvelussuhde_edits.items():
+            palvelussuhde_edit = palvelussuhde.copy()
+            palvelussuhde_edit[key] = value
+            resp = client.put(f"/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_id}/", json.dumps(palvelussuhde_edit), content_type="application/json")
+            assert_status_code(resp, 200, key)
+
+            # Fetch object and ensure field was changed
+            resp = client.get(f"/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_id}/")
+            assert_status_code(resp, 200)
+            data = json.loads(resp.content)
+            self.assertEqual(value, data[key])
+
+    def test_palvelussuhde_edit_disallowed(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tyontekija = {
+            'henkilo': '/api/v1/henkilot/1/',
+            'vakajarjestaja': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post("/api/henkilosto/v1/tyontekijat/", json.dumps(tyontekija), content_type="application/json")
+        assert_status_code(resp, 201)
+        tyontekija_url = json.loads(resp.content)['url']
+
+        palvelussuhde = {
+            'tyontekija': tyontekija_url,
+            'tyosuhde_koodi': 'ts01',
+            'tyoaika_koodi': 'ta01',
+            'tutkinto_koodi': '321901',
+            'tyoaika_viikossa': '38.73',
+            'alkamis_pvm': '2020-03-01',
+            'paattymis_pvm': '2020-03-02',
+            'lahdejarjestelma': '1',
+            'tunniste': 'a'
+        }
+
+        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        assert_status_code(resp, 201)
+        palvelussuhde_id = json.loads(resp.content)['id']
+
+        # These are the fields that can't be edited
+        palvelussuhde_edits = {
+            'tyontekija': '/api/henkilosto/v1/tyontekijat/100000000/',
+        }
+
+        # Change fields one by one and make sure we get a fail
+        for key, value in palvelussuhde_edits.items():
+            palvelussuhde_edit = palvelussuhde.copy()
+            palvelussuhde_edit[key] = value
+            resp = client.put(f"/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_id}/", json.dumps(palvelussuhde_edit), content_type="application/json")
+            assert_status_code(resp, 400, key)
+
+    def test_palvelussuhde_add_correct_end_date_null(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tyontekija = {
+            'henkilo': '/api/v1/henkilot/1/',
+            'vakajarjestaja': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post("/api/henkilosto/v1/tyontekijat/", json.dumps(tyontekija), content_type="application/json")
+        assert_status_code(resp, 201)
+        tyontekija_url = json.loads(resp.content)['url']
+
+        palvelussuhde = {
+            'tyontekija': tyontekija_url,
+            'tyosuhde_koodi': 'ts01',
+            'tyoaika_koodi': 'ta01',
+            'tutkinto_koodi': '321901',
+            'tyoaika_viikossa': '38.73',
+            'alkamis_pvm': '2020-03-01',
+            'paattymis_pvm': None,
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        assert_status_code(resp, 201)
+
+    def test_palvelussuhde_add_incorrect_end_date(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tyontekija = {
+            'henkilo': '/api/v1/henkilot/1/',
+            'vakajarjestaja': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post("/api/henkilosto/v1/tyontekijat/", json.dumps(tyontekija), content_type="application/json")
+        assert_status_code(resp, 201)
+        tyontekija_url = json.loads(resp.content)['url']
+
+        palvelussuhde = {
+            'tyontekija': tyontekija_url,
+            'tyosuhde_koodi': 'ts01',
+            'tyoaika_koodi': 'ta01',
+            'tutkinto_koodi': '321901',
+            'tyoaika_viikossa': '38.73',
+            'alkamis_pvm': '2020-03-01',
+            'paattymis_pvm': '2020-03-01',
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        assert_status_code(resp, 400)
+        messages = json.loads(resp.content)
+        self.assertIn("paattymis_pvm must be after alkamis_pvm", ''.join(messages['paattymis_pvm']))
+
+    def test_palvelussuhde_add_too_many(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tyontekija = {
+            'henkilo': '/api/v1/henkilot/1/',
+            'vakajarjestaja': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post("/api/henkilosto/v1/tyontekijat/", json.dumps(tyontekija), content_type="application/json")
+        assert_status_code(resp, 201)
+        tyontekija_url = json.loads(resp.content)['url']
+
+        palvelussuhde = {
+            'tyontekija': tyontekija_url,
+            'tyosuhde_koodi': 'ts01',
+            'tyoaika_koodi': 'ta01',
+            'tutkinto_koodi': '321901',
+            'tyoaika_viikossa': '38.73',
+            'alkamis_pvm': '2020-03-01',
+            'paattymis_pvm': '2021-11-11',
+            'lahdejarjestelma': '1',
+        }
+
+        # Add as many as we can
+        for i in range(7):
+            resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+            assert_status_code(resp, 201)
+
+        # The next one will fail
+        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        assert_status_code(resp, 400)
+        messages = json.loads(resp.content)
+        self.assertIn('Already have 7 overlapping palvelussuhde on the defined time range.', ''.join(messages['palvelussuhde']))
+
+        # But later dates are ok
+        palvelussuhde.update(alkamis_pvm='2022-02-02', paattymis_pvm='2023-03-03')
+        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        assert_status_code(resp, 201)
+
+    def test_palvelussuhde_add_invalid_codes(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tyontekija = {
+            'henkilo': '/api/v1/henkilot/1/',
+            'vakajarjestaja': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post("/api/henkilosto/v1/tyontekijat/", json.dumps(tyontekija), content_type="application/json")
+        assert_status_code(resp, 201)
+        tyontekija_url = json.loads(resp.content)['url']
+
+        palvelussuhde = {
+            'tyontekija': tyontekija_url,
+            'tyosuhde_koodi': 'foo1',
+            'tyoaika_koodi': 'foo2',
+            'tutkinto_koodi': 'foo3',
+            'tyoaika_viikossa': '38.73',
+            'alkamis_pvm': '2020-03-01',
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        assert_status_code(resp, 400)
+        messages = json.loads(resp.content)
+        self.assertIn("Not a valid tyosuhde_koodi", ''.join(messages['tyosuhde_koodi']))
+        self.assertIn("Not a valid tyoaika_koodi", ''.join(messages['tyoaika_koodi']))
+        self.assertIn("Not a valid tutkinto_koodi", ''.join(messages['tutkinto_koodi']))

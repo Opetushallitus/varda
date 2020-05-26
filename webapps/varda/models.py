@@ -629,6 +629,49 @@ class Taydennyskoulutus(models.Model):
         verbose_name_plural = 'taydennyskoulutukset'
 
 
+class Palvelussuhde(models.Model):
+    tyontekija = models.ForeignKey(Tyontekija, related_name='palvelussuhteet', on_delete=models.PROTECT)
+    tyosuhde_koodi = models.CharField(max_length=50, validators=[validators.validate_tyosuhde_koodi])
+    tyoaika_koodi = models.CharField(max_length=50, validators=[validators.validate_tyoaika_koodi])
+    tutkinto_koodi = models.CharField(max_length=50, validators=[validators.validate_tutkinto_koodi])
+    tyoaika_viikossa = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(1.0)])
+    alkamis_pvm = models.DateField()
+    paattymis_pvm = models.DateField(default=None, blank=True, null=True)
+    lahdejarjestelma = models.CharField(max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
+    tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
+
+    luonti_pvm = models.DateTimeField(auto_now_add=True)
+    muutos_pvm = models.DateTimeField(auto_now=True)
+    changed_by = models.ForeignKey('auth.User', related_name='palvelussuhteet', on_delete=models.PROTECT)
+    history = HistoricalRecords()
+
+    def __str__(self):
+        return str(self.id)
+
+    @property
+    def audit_loggable(self):
+        return True
+
+    @property
+    def _history_user(self):
+        return self.changed_by
+
+    @_history_user.setter
+    def _history_user(self, value):
+        self.changed_by = value
+
+    def validate_unique(self, *args, **kwargs):
+        super(Palvelussuhde, self).validate_unique(*args, **kwargs)
+        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, Palvelussuhde)
+
+    def save(self, *args, **kwargs):
+        self.validate_unique()
+        super(Palvelussuhde, self).save(*args, **kwargs)
+
+    class Meta:
+        verbose_name_plural = 'palvelussuhteet'
+
+
 class Aikaleima(models.Model):
     """
     Simple state for regular tasks to hold last update information

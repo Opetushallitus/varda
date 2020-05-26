@@ -319,6 +319,20 @@ def validate_paivamaara1_after_paivamaara2(paivamaara1, paivamaara2, can_be_same
     return not validate_paivamaara1_before_paivamaara2(paivamaara1, paivamaara2, not can_be_same)
 
 
+def validate_paattymispvm_after_alkamispvm(validated_data):
+    """
+    If given, validate that the paattymispvm is after alkamispvm.
+    (Should a model have this date, they are always called the same by convention.)
+
+    :param validated_data: Django serializer validated data
+    """
+
+    if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
+        if not validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm'], can_be_same=False):
+            msg = {'paattymis_pvm': 'paattymis_pvm must be after alkamis_pvm.'}
+            raise ValidationErrorRest(msg)
+
+
 def validate_oid(oid):
     oid_sections = oid.split('.')
     if len(oid_sections) != 6:

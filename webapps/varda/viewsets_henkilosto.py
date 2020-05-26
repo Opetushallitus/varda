@@ -6,6 +6,9 @@ from django.db.models import ProtectedError, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+
+from guardian.shortcuts import assign_perm
+
 from rest_framework import status, permissions
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
@@ -13,15 +16,22 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_guardian.filters import DjangoObjectPermissionsFilter
 
+
 from varda import filters
 from varda.cache import cached_retrieve_response, delete_cache_keys_related_model, cached_list_response
 from varda.exceptions.conflict_error import ConflictError
-from varda.models import TilapainenHenkilosto, Tutkinto, Tyontekija
-from varda.serializers_henkilosto import TilapainenHenkilostoSerializer, TutkintoSerializer, TyontekijaSerializer
+from varda.filters import PalvelussuhdeFilter
+from varda.misc_viewsets import ViewSetValidator
+from varda.models import TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde
 from varda.permission_groups import assign_object_permissions_to_tyontekija_groups
 from varda.permissions import CustomObjectPermissions
+from varda.related_object_validations import check_overlapping_palvelussuhde_object
+from varda.serializers_henkilosto import TilapainenHenkilostoSerializer, TutkintoSerializer, TyontekijaSerializer, PalvelussuhdeSerializer
+
 
 # Get an instance of a logger
+from varda.validators import validate_paattymispvm_after_alkamispvm
+
 logger = logging.getLogger(__name__)
 
 
@@ -46,7 +56,7 @@ class TyontekijaViewSet(ModelViewSet):
         Päivitä yhden työntekijän kaikki kentät.
     """
     serializer_class = TyontekijaSerializer
-    permission_classes = (CustomObjectPermissions,)
+    permission_classes = (CustomObjectPermissions, )
     filter_backends = (DjangoObjectPermissionsFilter,)
     queryset = Tyontekija.objects.all().order_by('id')
 
@@ -245,3 +255,86 @@ class TutkintoViewSet(ModelViewSet):
         tutkinto_obj = get_object_or_404(Tutkinto.objects.all(), **henkilo_filter, tutkinto_koodi=tutkinto_koodi)
         self.perform_destroy(tutkinto_obj)
         return Response(status=status.HTTP_200_OK)
+
+
+class PalvelussuhdeViewSet(ModelViewSet):
+    """
+    list:
+        Nouda kaikki palvelussuhteet.
+
+    create:
+        Luo yksi uusi palvelussuhde.
+
+    delete:
+        Poista yksi palvelussuhde.
+
+    retrieve:
+        Nouda yksittäinen palvelussuhde.
+
+    partial_update:
+        Päivitä yksi tai useampi kenttä yhdestä palvelussuhde-tietueesta.
+
+    update:
+        Päivitä yhden palvelussuhteen kaikki kentät.
+    """
+    serializer_class = PalvelussuhdeSerializer
+    permission_classes = (permissions.IsAdminUser, )
+    filter_backends = (DjangoFilterBackend, )
+    filterset_class = PalvelussuhdeFilter
+    queryset = Palvelussuhde.objects.all().order_by('id')
+
+    def list(self, request, *args, **kwargs):
+        return cached_list_response(self, request.user, request.get_full_path())
+
+    def retrieve(self, request, *args, **kwargs):
+        return cached_retrieve_response(self, request.user, request.path)
+
+    def perform_create(self, serializer):
+        validated_data = serializer.validated_data
+
+        with ViewSetValidator() as validator:
+            with validator.wrap():
+                validate_paattymispvm_after_alkamispvm(validated_data)
+
+            with validator.wrap():
+                check_overlapping_palvelussuhde_object(validated_data, Palvelussuhde)
+
+        with transaction.atomic():
+            user = self.request.user
+            saved_object = serializer.save(changed_by=user)
+            delete_cache_keys_related_model('tyontekija', saved_object.tyontekija.id)
+            assign_perm('view_palvelussuhde', user, saved_object)
+            assign_perm('change_palvelussuhde', user, saved_object)
+            assign_perm('delete_palvelussuhde', user, saved_object)
+
+    def perform_update(self, serializer):
+        user = self.request.user
+        validated_data = serializer.validated_data
+        palvelussuhde = self.get_object()
+
+        if not user.has_perm('change_palvelussuhde', palvelussuhde):
+            raise PermissionDenied('User does not have permissions to change this object.')
+
+        with ViewSetValidator() as validator:
+            with validator.wrap():
+                validate_paattymispvm_after_alkamispvm(validated_data)
+
+            with validator.wrap():
+                check_overlapping_palvelussuhde_object(validated_data, Palvelussuhde, palvelussuhde.id)
+
+        saved_object = serializer.save(changed_by=user)
+        delete_cache_keys_related_model('palvelussuhde', saved_object.id)
+
+    def perform_destroy(self, instance):
+        user = self.request.user
+        if not user.has_perm('delete_palvelussuhde', instance):
+            raise PermissionDenied("User does not have permissions to delete this object.")
+
+        with transaction.atomic():
+            try:
+                instance.delete()
+            except ProtectedError:
+                raise ValidationError({'detail': 'Cannot delete palvelussuhde. There are objects referencing it '
+                                                 'that need to be deleted first.'})
+
+            delete_cache_keys_related_model('tyontekija', instance.tyontekija.id)

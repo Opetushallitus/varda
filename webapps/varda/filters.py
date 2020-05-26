@@ -1,6 +1,6 @@
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
                           Maksutieto, PaosToiminta, PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-                          Z2_Koodisto, TilapainenHenkilosto, Tutkinto)
+                          Z2_Koodisto, TilapainenHenkilosto, Tutkinto, Palvelussuhde)
 from django.db.models import Q
 from django_filters import rest_framework as djangofilters
 
@@ -228,6 +228,21 @@ class TutkintoFilter(djangofilters.FilterSet):
 
     class Meta:
         model = Tutkinto
+        fields = []
+
+
+class PalvelussuhdeFilter(djangofilters.FilterSet):
+    tyontekija = djangofilters.NumberFilter(field_name='tyontekija__id', lookup_expr='exact')
+    tyosuhde_koodi = djangofilters.CharFilter(field_name='tyosuhde_koodi', lookup_expr='exact')
+    tyoaika_koodi = djangofilters.CharFilter(field_name='tyoaika_koodi', lookup_expr='exact')
+    tutkinto_koodi = djangofilters.CharFilter(field_name='tutkinto_koodi', lookup_expr='exact')
+    alkamis_pvm = djangofilters.DateFilter(field_name='alkamis_pvm', lookup_expr='gte')
+    paattymis_pvm = djangofilters.DateFilter(field_name='paattymis_pvm', lookup_expr='gte')
+    lahdejarjestelma = djangofilters.CharFilter(field_name='lahdejarjestelma', lookup_expr='exact')
+    tunniste = djangofilters.CharFilter(field_name='tunniste', lookup_expr='exact')
+
+    class Meta:
+        model = Palvelussuhde
         fields = []
 
 

@@ -2,10 +2,23 @@ from rest_framework import serializers
 
 from varda import related_object_validations
 from varda.cache import caching_to_representation
-from varda.models import Henkilo, TilapainenHenkilosto, Tutkinto, Tyontekija, VakaJarjestaja
+from varda.models import Henkilo, TilapainenHenkilosto, Tutkinto, Tyontekija, VakaJarjestaja, Palvelussuhde
 from varda.serializers import HenkiloHLField, VakaJarjestajaHLField
 from varda.serializers_common import OidRelatedField
 from varda.validators import validate_henkilo_oid, validate_organisaatio_oid
+
+
+class TyontekijaHLField(serializers.HyperlinkedRelatedField):
+    """
+    https://medium.com/django-rest-framework/limit-related-data-choices-with-django-rest-framework-c54e96f5815e
+    """
+    def get_queryset(self):
+        user = self.context['request'].user
+        if user.is_authenticated:
+            queryset = Tyontekija.objects.all().order_by('id')
+        else:
+            queryset = Tyontekija.objects.none()
+        return queryset
 
 
 class TyontekijaSerializer(serializers.HyperlinkedModelSerializer):
@@ -112,3 +125,24 @@ class TutkintoSerializer(serializers.HyperlinkedModelSerializer):
     @caching_to_representation('tutkinto')
     def to_representation(self, instance):
         return super(TutkintoSerializer, self).to_representation(instance)
+
+
+class PalvelussuhdeSerializer(serializers.HyperlinkedModelSerializer):
+    id = serializers.ReadOnlyField()
+    tyontekija = TyontekijaHLField(view_name='tyontekija-detail')
+
+    class Meta:
+        model = Palvelussuhde
+        exclude = ('changed_by', 'luonti_pvm')
+
+    @caching_to_representation('palvelussuhde')
+    def to_representation(self, instance):
+        return super(PalvelussuhdeSerializer, self).to_representation(instance)
+
+    def validate(self, data):
+        # Validate only when updating existing
+        if self.context['request'].method in ['PUT', 'PATCH']:
+            instance = self.context['view'].get_object()
+            related_object_validations.check_if_immutable_object_is_changed(instance, data, 'tyontekija')
+
+        return data
