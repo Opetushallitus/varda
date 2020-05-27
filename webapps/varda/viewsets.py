@@ -195,7 +195,7 @@ class HaeYksiloimattomatHenkilotViewSet(viewsets.ModelViewSet):
         Nouda yksilöimättömat henkilot.
     """
     filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend)
-    filter_class = filters.HenkiloFilter
+    filterset_class = filters.HenkiloFilter
     queryset = Henkilo.objects.none()
     serializer_class = HenkiloOppijanumeroSerializer
     permission_classes = (permissions.IsAdminUser, )
@@ -226,7 +226,7 @@ class HuoltajaViewSet(viewsets.ModelViewSet):
         Hae yksittäinen huoltaja.
     """
     filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend)
-    filter_class = filters.HuoltajaFilter
+    filterset_class = filters.HuoltajaFilter
     queryset = Huoltaja.objects.none()
     serializer_class = HuoltajaSerializer
     permission_classes = (permissions.IsAdminUser, )
@@ -247,7 +247,7 @@ class NestedHuoltajaViewSet(GenericViewSet, ListModelMixin):
         Nouda tietyn lapsen kaikki huoltajat.
     """
     filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend)
-    filter_class = filters.HuoltajaFilter
+    filterset_class = filters.HuoltajaFilter
     queryset = Huoltaja.objects.none()
     serializer_class = HuoltajaSerializer
     permission_classes = (permissions.IsAdminUser, )
@@ -288,7 +288,7 @@ class HuoltajuussuhdeViewSet(viewsets.ModelViewSet):
         Hae yksittainen huoltajuussuhde.
     """
     filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend)
-    filter_class = None
+    filterset_class = None
     queryset = Huoltajuussuhde.objects.none()
     serializer_class = HuoltajuussuhdeSerializer
     permission_classes = (permissions.IsAdminUser, )
@@ -309,7 +309,7 @@ class NestedLapsiViewSet(GenericViewSet, ListModelMixin):
         Nouda tietyn huoltajan kaikki lapset.
     """
     filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend)
-    filter_class = filters.LapsiFilter
+    filterset_class = filters.LapsiFilter
     queryset = Lapsi.objects.none()
     serializer_class = LapsiSerializer
     permission_classes = (permissions.IsAdminUser, )
@@ -512,7 +512,7 @@ class VakaJarjestajaViewSet(viewsets.ModelViewSet):
         Päivitä yhden vakajarjestajan kaikki kentät.
     """
     filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.VakaJarjestajaFilter
+    filterset_class = filters.VakaJarjestajaFilter
     queryset = VakaJarjestaja.objects.all().order_by('id')
     serializer_class = VakaJarjestajaSerializer
     permission_classes = (CustomObjectPermissions,)
@@ -557,7 +557,7 @@ class ToimipaikkaViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, P
         Päivitä yhden toimipaikan kaikki kentät.
     """
     filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.ToimipaikkaFilter
+    filterset_class = filters.ToimipaikkaFilter
     queryset = Toimipaikka.objects.all().order_by('id')
     serializer_class = ToimipaikkaSerializer
     permission_classes = (CustomObjectPermissions,)
@@ -668,7 +668,7 @@ class ToiminnallinenPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveMo
         Päivitä yhden toiminnallisen painotuksen kaikki kentät.
     """
     filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.ToiminnallinenPainotusFilter
+    filterset_class = filters.ToiminnallinenPainotusFilter
     queryset = ToiminnallinenPainotus.objects.all().order_by('id')
     serializer_class = ToiminnallinenPainotusSerializer
     permission_classes = (CustomObjectPermissions,)
@@ -767,7 +767,7 @@ class KieliPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin,
         Päivitä yhden kielipainotuksen kaikki kentät.
     """
     filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.KieliPainotusFilter
+    filterset_class = filters.KieliPainotusFilter
     queryset = KieliPainotus.objects.all().order_by('id')
     serializer_class = KieliPainotusSerializer
     permission_classes = (CustomObjectPermissions,)
@@ -915,7 +915,7 @@ class HenkiloViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
         Luo yksi uusi henkilö.
     """
     filter_backends = ()
-    filter_class = None
+    filterset_class = None
     queryset = Henkilo.objects.all().order_by('id')
     serializer_class = None
     permission_classes = (CustomObjectPermissions,)
@@ -1063,7 +1063,7 @@ class LapsiViewSet(viewsets.ModelViewSet):
         Päivitä yhden lapsen kaikki kentät.
     """
     filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.LapsiFilter
+    filterset_class = filters.LapsiFilter
     queryset = Lapsi.objects.all().order_by('id')
     serializer_class = None
     permission_classes = (CustomObjectPermissions,)
@@ -1243,7 +1243,7 @@ class VarhaiskasvatuspaatosViewSet(viewsets.ModelViewSet):
         Päivitä yhden varhaiskasvatuspäätöksen kaikki kentät.
     """
     filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.VarhaiskasvatuspaatosFilter
+    filterset_class = filters.VarhaiskasvatuspaatosFilter
     queryset = Varhaiskasvatuspaatos.objects.all().order_by('id')
     serializer_class = None
     permission_classes = (CustomObjectPermissions,)
@@ -1413,7 +1413,7 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
         Päivitä yhden varhaiskasvatussuhteen kaikki kentät.
     """
     filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.VarhaiskasvatussuhdeFilter
+    filterset_class = filters.VarhaiskasvatussuhdeFilter
     queryset = Varhaiskasvatussuhde.objects.all().order_by('id')
     serializer_class = VarhaiskasvatussuhdeSerializer
     permission_classes = (CustomObjectPermissions,)
@@ -1621,7 +1621,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         poista maksutieto
     """
     filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.MaksutietoFilter
+    filterset_class = filters.MaksutietoFilter
     queryset = Maksutieto.objects.all().order_by('id')
     serializer_class = None
     permission_classes = (CustomObjectPermissions,)
@@ -1955,7 +1955,7 @@ class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cr
         poista palveluseteli- ja ostopalvelutoiminta
     """
     filter_backends = (DjangoFilterBackend, )
-    filter_class = filters.PaosToimintaFilter
+    filterset_class = filters.PaosToimintaFilter
     queryset = PaosToiminta.objects.filter(voimassa_kytkin=True).order_by('id')
     serializer_class = PaosToimintaSerializer
     permission_classes = (CustomObjectPermissions,)
@@ -2149,7 +2149,7 @@ class PaosOikeusViewSet(GenericViewSet, UpdateModelMixin, ListModelMixin, Retrie
         päivitä organisaatioiden välillä oleva tallentaja
     """
     filter_backends = (DjangoFilterBackend, )
-    filter_class = filters.PaosOikeusFilter
+    filterset_class = filters.PaosOikeusFilter
     queryset = PaosOikeus.objects.all().order_by('id')
     serializer_class = PaosOikeusSerializer
     permission_classes = (CustomObjectPermissions,)
@@ -2199,7 +2199,7 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
         Nouda varhaiskasvatustoimijan yhteenvetotiedot
     """
     filter_backends = (DjangoObjectPermissionsFilter, )
-    filter_class = None
+    filterset_class = None
     queryset = VakaJarjestaja.objects.none()
     serializer_class = VakaJarjestajaYhteenvetoSerializer
     permission_classes = (CustomObjectPermissions,)
@@ -2375,7 +2375,7 @@ class NestedVarhaiskasvatussuhdeViewSet(GenericViewSet, ListModelMixin):
         nouda tietyn varhaiskasvatuspaatoksen kaikki varhaiskasvatussuhteet
     """
     filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.VarhaiskasvatussuhdeFilter
+    filterset_class = filters.VarhaiskasvatussuhdeFilter
     queryset = Varhaiskasvatussuhde.objects.none()
     serializer_class = VarhaiskasvatussuhdeSerializer
     permission_classes = (CustomObjectPermissions, )
@@ -2405,7 +2405,7 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
         Nouda tietyn vaka-järjestäjän kaikki toimipaikat.
     """
     filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.ToimipaikkaFilter
+    filterset_class = filters.ToimipaikkaFilter
     queryset = Toimipaikka.objects.none()
     serializer_class = ToimipaikkaSerializer
     permission_classes = (CustomObjectPermissions, )
@@ -2441,7 +2441,7 @@ class NestedToiminnallinenPainotusViewSet(GenericViewSet, ListModelMixin):
         Nouda tietyn toimipaikan kaikki toiminnalliset painotukset.
     """
     filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.ToiminnallinenPainotusFilter
+    filterset_class = filters.ToiminnallinenPainotusFilter
     queryset = ToiminnallinenPainotus.objects.none()
     serializer_class = ToiminnallinenPainotusSerializer
     permission_classes = (CustomObjectPermissions, )
@@ -2471,7 +2471,7 @@ class NestedKieliPainotusViewSet(GenericViewSet, ListModelMixin):
         Nouda tietyn toimipaikan kaikki kielipainotukset.
     """
     filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.KieliPainotusFilter
+    filterset_class = filters.KieliPainotusFilter
     queryset = KieliPainotus.objects.none()
     serializer_class = KieliPainotusSerializer
     permission_classes = (CustomObjectPermissions, )
@@ -2501,7 +2501,7 @@ class NestedVarhaiskasvatussuhdeToimipaikkaViewSet(GenericViewSet, ListModelMixi
         Nouda tietyn toimipaikan kaikki varhaiskasvatussuhteet.
     """
     filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.VarhaiskasvatussuhdeFilter
+    filterset_class = filters.VarhaiskasvatussuhdeFilter
     queryset = Varhaiskasvatussuhde.objects.none()
     serializer_class = VarhaiskasvatussuhdeSerializer
     permission_classes = (CustomObjectPermissions, )
@@ -2531,7 +2531,7 @@ class NestedVarhaiskasvatuspaatosViewSet(GenericViewSet, ListModelMixin):
         Nouda tietyn lapsen kaikki varhaiskasvatuspäätökset.
     """
     filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.VarhaiskasvatuspaatosFilter
+    filterset_class = filters.VarhaiskasvatuspaatosFilter
     queryset = Varhaiskasvatuspaatos.objects.none()
     serializer_class = VarhaiskasvatuspaatosSerializer
     permission_classes = (CustomObjectPermissions, )
@@ -2561,7 +2561,7 @@ class NestedLapsiKoosteViewSet(GenericViewSet):
         Nouda kooste tietyn lapsen tiedoista.
     """
     filter_backends = (DjangoFilterBackend, )
-    filter_class = None
+    filterset_class = None
     queryset = Lapsi.objects.none()
     serializer_class = LapsiKoosteSerializer
     permission_classes = (CustomObjectPermissions, )
@@ -2655,7 +2655,7 @@ class NestedLapsenVarhaiskasvatussuhdeViewSet(GenericViewSet, ListModelMixin):
         Nouda tietyn lapsen kaikki varhaiskasvatussuhteet.
     """
     filter_backends = (DjangoFilterBackend,)
-    filter_class = filters.VarhaiskasvatussuhdeFilter
+    filterset_class = filters.VarhaiskasvatussuhdeFilter
     queryset = Varhaiskasvatussuhde.objects.none()
     serializer_class = VarhaiskasvatussuhdeSerializer
     permission_classes = (CustomObjectPermissions, )
@@ -2686,7 +2686,7 @@ class NestedLapsiMaksutietoViewSet(GenericViewSet, ListModelMixin):
         Nouda tietyn lapsen kaikki maksutiedot.
     """
     filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend)
-    filter_class = filters.MaksutietoFilter
+    filterset_class = filters.MaksutietoFilter
     queryset = Maksutieto.objects.none()
     serializer_class = MaksutietoGetSerializer
     permission_classes = (CustomObjectPermissions, )
@@ -2724,7 +2724,7 @@ class NestedVakajarjestajaPaosToimijatViewSet(GenericViewSet, ListModelMixin):
         Nouda varhaiskasvatustoimijan paos-järjestäjät
     """
     filter_backends = (DjangoObjectPermissionsFilter,)
-    filter_class = None
+    filterset_class = None
     queryset = VakaJarjestaja.objects.none()
     serializer_class = PaosToimijatSerializer
     permission_classes = (CustomObjectPermissions,)
@@ -2769,7 +2769,7 @@ class NestedVakajarjestajaPaosToimipaikatViewSet(GenericViewSet, ListModelMixin)
         toimija_nimi: suodata toimijan nimen perusteella
     """
     filter_backends = (DjangoObjectPermissionsFilter, )
-    filter_class = None
+    filterset_class = None
     queryset = VakaJarjestaja.objects.none()
     serializer_class = PaosToimipaikatSerializer
     permission_classes = (CustomObjectPermissions,)

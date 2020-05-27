@@ -49,7 +49,7 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
         Nouda tietyn vaka-järjestäjän kaikki toimipaikat. (dropdownia -varten)
     """
     filter_backends = (DjangoFilterBackend,)
-    filter_class = None
+    filterset_class = None
     queryset = Toimipaikka.objects.none()
     serializer_class = ToimipaikkaUiSerializer
     permission_classes = (CustomObjectPermissions, )
