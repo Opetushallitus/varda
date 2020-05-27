@@ -4,10 +4,10 @@ from django_filters import FilterSet
 from django.test import TestCase
 from rest_framework.exceptions import ValidationError
 
-from varda import validators
+from varda import validators, koodistopalvelu
 from varda.filters import VakaJarjestajaFilter, LapsiFilter
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Huoltaja,
-                          Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z2_Koodisto)
+                          Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z2_Koodisto, Z2_Code)
 
 
 class VardaModelsTests(TestCase):
@@ -52,8 +52,8 @@ class VardaModelsTests(TestCase):
         self.assertEqual(test_varhaiskasvatuspaatos, Decimal('37.5'))
 
     def test_koodistot(self):
-        test_koodistot = Z2_Koodisto.objects.get(pk=1).toiminnallinen_painotus_koodit
-        self.assertEqual(len(test_koodistot), 11)
+        test_koodisto = Z2_Koodisto.objects.get(name=koodistopalvelu.Koodistot.toiminnallinen_painotus_koodit.value)
+        self.assertEqual(Z2_Code.objects.filter(koodisto=test_koodisto).count(), 11)
 
     def test_VakaJarjestajaFilter_is_FilterSet(self):
         of = VakaJarjestajaFilter()

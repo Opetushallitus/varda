@@ -4,7 +4,7 @@ from django.core.management import call_command
 from django.db.models import Q
 from guardian.models import UserObjectPermission, GroupObjectPermission
 
-from varda import oppijanumerorekisteri
+from varda import oppijanumerorekisteri, koodistopalvelu
 from varda import organisaatiopalvelu
 from varda import permissions
 from varda import permission_groups
@@ -129,3 +129,8 @@ def delete_object_permissions_explicitly_task(content_type_id, instance_id):
     filters = Q(content_type=content_type, object_pk=str(instance_id))
     UserObjectPermission.objects.filter(filters).delete()
     GroupObjectPermission.objects.filter(filters).delete()
+
+
+@shared_task
+def update_koodistot_task():
+    koodistopalvelu.update_koodistot()

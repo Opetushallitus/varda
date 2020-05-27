@@ -21,7 +21,8 @@ from rest_framework import routers
 from rest_framework_nested import routers as nested_routers
 
 import varda.viewsets_ui
-from varda import views, viewsets, viewsets_reporting, viewsets_ui, viewsets_oppija, viewsets_henkilosto
+from varda import (views, viewsets, viewsets_reporting, viewsets_ui, viewsets_oppija, viewsets_henkilosto,
+                   viewsets_julkinen)
 from varda.cas.oppija_cas_views import OppijaCasLoginView
 from rest_framework.renderers import CoreJSONRenderer
 from rest_framework.schemas import get_schema_view
@@ -135,9 +136,6 @@ router_reporting.register(r'tiedonsiirtotilasto', viewsets_reporting.Tiedonsiirt
 router_reporting.register(r'lapset-ryhmittain', viewsets_reporting.LapsetRyhmittainViewSet, 'lapset-ryhmittain')
 """
 
-router_koodisto = routers.DefaultRouter()
-router_koodisto.register(r'koodit', viewsets_reporting.KoodistoViewSet, 'koodisto')
-
 """
 Routers for oppija
 """
@@ -150,6 +148,11 @@ router_henkilosto.register(r'tyontekijat', viewsets_henkilosto.TyontekijaViewSet
 router_henkilosto.register(r'tilapainen-henkilosto', viewsets_henkilosto.TilapainenHenkilostoViewSet)
 router_henkilosto.register(r'tutkinnot', viewsets_henkilosto.TutkintoViewSet)
 router_henkilosto.register(r'palvelussuhteet', viewsets_henkilosto.PalvelussuhdeViewSet)
+
+# Routes for Julkinen-URLs
+
+router_julkinen = routers.DefaultRouter()
+router_julkinen.register(r'koodistot/v1', viewsets_julkinen.KoodistotViewSet)
 
 urlpatterns = [
     re_path(r'^$', views.index, name='index'),
@@ -182,10 +185,10 @@ urlpatterns = [
     re_path(r'^api-auth/', include('varda.custom_login_urls', namespace='rest_framework'), name='api-auth'),
     re_path(r'^api/onr/', include(router_onr.urls), name='api-onr'),
     re_path(r'^reporting/api/v1/', include(router_reporting.urls), name='api-v1-reporting'),
-    re_path(r'^koodisto/api/v1/', include(router_koodisto.urls), name='koodisto'),
     re_path(r'^varda/', include('varda.urls'), name='varda'),
     re_path(r'^api/henkilosto/v1/', include(router_henkilosto.urls), name='api-henkilosto-v1'),
     re_path(r'^api/oppija/v1/', include(router_oppija.urls), name='oppija-api-v1'),
     re_path(r'^api/oppija/v1/huoltajanlapsi/(?P<henkilo_oid>[.0-9]{26,})/$',
             viewsets_oppija.HuoltajanLapsiViewSet.as_view({'get': 'retrieve'}), name='huoltajanlapsi'),
+    re_path(r'^api/julkinen/', include(router_julkinen.urls), name='julkinen'),
 ]

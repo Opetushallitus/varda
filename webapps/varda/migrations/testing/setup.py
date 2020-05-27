@@ -1,3 +1,5 @@
+import datetime
+
 from varda.migrations.production.setup import (get_vakajarjestaja_palvelukayttaja_permissions,
                                                get_vakajarjestaja_katselija_permissions,
                                                get_vakajarjestaja_paakayttaja_permissions,
@@ -1586,6 +1588,84 @@ def create_user_data():
     )
 
 
+def create_koodisto_data():
+    from varda.models import Z2_Koodisto, Z2_Code, Z2_CodeTranslation
+    from varda import koodistopalvelu
+
+    koodisto_codes = {
+        'kunta_koodit': ['005', '009', '010', '016', '018', '019', '020', '035', '043', '046', '047', '049', '050',
+                         '051', '052', '060', '061', '062', '065', '069', '071', '072', '074', '075', '076', '077',
+                         '078', '079', '081', '082', '086', '090', '091', '092', '097', '098', '099', '102', '103',
+                         '105', '106', '108', '109', '111', '139', '140', '142', '143', '145', '146', '148', '149',
+                         '151', '152', '153', '165', '167', '169', '170', '171', '172', '176', '177', '178', '179',
+                         '181', '182', '186', '202', '204', '205', '208', '211', '213', '214', '216', '217', '218',
+                         '224', '226', '230', '231', '232', '233', '235', '236', '239', '240', '241', '244', '245',
+                         '249', '250', '256', '257', '260', '261', '263', '265', '271', '272', '273', '275', '276',
+                         '280', '284', '285', '286', '287', '288', '290', '291', '295', '297', '300', '301', '304',
+                         '305', '309', '312', '316', '317', '318', '320', '322', '398', '399', '400', '402', '403',
+                         '405', '407', '408', '410', '416', '417', '418', '420', '421', '422', '423', '425', '426',
+                         '430', '433', '434', '435', '436', '438', '440', '441', '444', '445', '475', '478', '480',
+                         '481', '483', '484', '489', '491', '494', '495', '498', '499', '500', '503', '504', '505',
+                         '507', '508', '529', '531', '535', '536', '538', '541', '543', '545', '560', '561', '562',
+                         '563', '564', '576', '577', '578', '580', '581', '583', '584', '588', '592', '593', '595',
+                         '598', '599', '601', '604', '607', '608', '609', '611', '614', '615', '616', '619', '620',
+                         '623', '624', '625', '626', '630', '631', '635', '636', '638', '678', '680', '681', '683',
+                         '684', '686', '687', '689', '691', '694', '697', '698', '700', '702', '704', '707', '710',
+                         '729', '732', '734', '736', '738', '739', '740', '742', '743', '746', '747', '748', '749',
+                         '751', '753', '755', '758', '759', '761', '762', '765', '766', '768', '771', '777', '778',
+                         '781', '783', '785', '790', '791', '831', '832', '833', '834', '837', '844', '845', '846',
+                         '848', '849', '850', '851', '853', '854', '857', '858', '859', '886', '887', '889', '890',
+                         '892', '893', '895', '905', '908', '911', '915', '918', '921', '922', '924', '925', '927',
+                         '931', '934', '935', '936', '941', '946', '976', '977', '980', '981', '989', '992'],
+        'kieli_koodit': ['99', 'AA', 'AB', 'AE', 'AF', 'AK', 'AM', 'AN', 'AR', 'AS', 'AV', 'AY', 'AZ', 'BA', 'BE', 'BG',
+                         'BH', 'BI', 'BM', 'BN', 'BO', 'BR', 'BS', 'CA', 'CE', 'CH', 'CO', 'CR', 'CS', 'CU', 'CV', 'CY',
+                         'DA', 'DE', 'DR', 'DV', 'DZ', 'EE', 'EL', 'EN', 'EO', 'ES', 'ET', 'EU', 'FA', 'FF', 'FI', 'FJ',
+                         'FO', 'FR', 'FY', 'GA', 'GD', 'GG', 'GL', 'GN', 'GU', 'GV', 'HA', 'HE', 'HI', 'HO', 'HR', 'HT',
+                         'HU', 'HY', 'HZ', 'IA', 'ID', 'IE', 'IG', 'II', 'IK', 'IM', 'IO', 'IS', 'IT', 'IU', 'IW', 'JA',
+                         'JE', 'JV', 'KA', 'KE', 'KG', 'KI', 'KJ', 'KK', 'KL', 'KM', 'KN', 'KO', 'KR', 'KS', 'KU', 'KV',
+                         'KW', 'KY', 'LA', 'LB', 'LG', 'LI', 'LN', 'LO', 'LT', 'LU', 'LV', 'MG', 'MH', 'MI', 'MK', 'ML',
+                         'MN', 'MO', 'MR', 'MS', 'MT', 'MY', 'NA', 'NB', 'ND', 'NE', 'NG', 'NL', 'NN', 'NO', 'NR', 'NV',
+                         'NY', 'OC', 'OJ', 'OM', 'OR', 'OS', 'PA', 'PI', 'PL', 'PS', 'PT', 'QU', 'RI', 'RM', 'RN', 'RO',
+                         'RU', 'RW', 'SA', 'SC', 'SD', 'SEIN', 'SEKO', 'SEPO', 'SG', 'SH', 'SI', 'SK', 'SL', 'SM', 'SN',
+                         'SO', 'SQ', 'SR', 'SS', 'ST', 'SU', 'SV', 'SW', 'TA', 'TE', 'TG', 'TH', 'TI', 'TK', 'TL', 'TN',
+                         'TO', 'TR', 'TS', 'TT', 'TW', 'TY', 'UG', 'UK', 'UR', 'UZ', 'WA', 'VE', 'VI', 'VK', 'VO', 'WO',
+                         'XH', 'XX', 'YI', 'YO', 'ZA', 'ZH', 'ZU'],
+        'jarjestamismuoto_koodit': ['jm01', 'jm02', 'jm03', 'jm04', 'jm05'],
+        'toimintamuoto_koodit': ['tm01', 'tm02', 'tm03'],
+        'kasvatusopillinen_jarjestelma_koodit': ['kj01', 'kj02', 'kj03', 'kj04', 'kj05', 'kj98', 'kj99'],
+        'toiminnallinen_painotus_koodit': ['tp01', 'tp02', 'tp03', 'tp04', 'tp05', 'tp06', 'tp07', 'tp08', 'tp09',
+                                           'tp98', 'tp99'],
+        'tyosuhde_koodit': ['1', '2'],
+        'tyoaika_koodit': ['1', '2'],
+        'tehtavanimike_koodit': ['39407', '41712', '43525', '64212', '77826', '81787', '84053', '84724'],
+        'sukupuoli_koodit': ['1', '2', '-1'],
+        'tutkinto_koodit': ['001', '002', '003', '321901', '371101', '371168', '371169', '374114', '381204', '381241',
+                            '384246', '511501', '571201', '571254', '612101', '612102', '612103', '612104', '612105',
+                            '612107', '612108', '612199', '612201', '612202', '612203', '612204', '612205', '612299',
+                            '612999', '613101', '613201', '613352', '613353', '613354', '613355', '613356', '613357',
+                            '613399', '613401', '613402', '613501', '613652', '613952', '613999', '671201', '712101',
+                            '712102', '712104', '712105', '712108', '712109', '712199', '712201', '712202', '712203',
+                            '712204', '712205', '712299', '719951', '719999', '771301', '812101', '812102', '812103',
+                            '815101', '815102', '815103'],
+        'maksun_peruste_koodit': ['mp01', 'mp02', 'mp03'],
+        'lahdejarjestelma_koodit': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15']
+    }
+
+    update_datetime = datetime.datetime.strptime('2020-05-14', '%Y-%m-%d')
+    update_datetime = update_datetime.replace(tzinfo=datetime.timezone.utc)
+
+    for key, value in koodistopalvelu.KOODISTOPALVELU_DICT.items():
+        koodisto_obj = Z2_Koodisto.objects.create(name=key.value,
+                                                  name_koodistopalvelu=value,
+                                                  update_datetime=update_datetime,
+                                                  version=1)
+        for code in koodisto_codes[key.value]:
+            code_obj = Z2_Code.objects.create(koodisto=koodisto_obj, code_value=code)
+            for lang in koodistopalvelu.LANGUAGE_CODES:
+                Z2_CodeTranslation.objects.create(code=code_obj, language=lang, name='test nimi',
+                                                  description='test kuvaus', short_name='test lyhyt nimi')
+
+
 def get_vakajarjestaja_oids(create_all_vakajarjestajat):
     vakajarjestaja_oids = [
         '1.2.246.562.10.27580498759'        # Parikkalan kunta
@@ -1773,6 +1853,7 @@ def create_test_data():
     create_huoltajat()
     create_huoltajuussuhteet()
     create_user_data()
+    create_koodisto_data()
     create_maksutiedot()
     create_paos_toiminta()
     create_paos_oikeus()

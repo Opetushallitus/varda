@@ -338,3 +338,11 @@ def delete_object_ids_user_has_permissions(user_id):
 def delete_cached_user_permissions_for_model(user_id, model_name):
     cache_key_objs_user_has_permissions = create_cache_key(user_id, model_name + '_obj_permissions')
     cache.delete(cache_key_objs_user_has_permissions)
+
+
+def get_koodistot_cache(language):
+    return cache.get('koodistot.{}'.format(language.upper()))
+
+
+def set_koodistot_cache(language, data, cached_time=settings.DEFAULT_CACHE_INVALIDATION_TIME):
+    cache.set('koodistot.{}'.format(language.upper()), data, cached_time)

@@ -571,8 +571,8 @@ class VardaHenkiloViewSetTests(TestCase):
 
         palvelussuhde = {
             'tyontekija': tyontekija_url,
-            'tyosuhde_koodi': 'ts01',
-            'tyoaika_koodi': 'ta01',
+            'tyosuhde_koodi': '1',
+            'tyoaika_koodi': '1',
             'tutkinto_koodi': '321901',
             'tyoaika_viikossa': '38.73',
             'alkamis_pvm': '2020-03-01',
@@ -598,8 +598,8 @@ class VardaHenkiloViewSetTests(TestCase):
 
         palvelussuhde = {
             'tyontekija': tyontekija_url,
-            'tyosuhde_koodi': 'ts01',
-            'tyoaika_koodi': 'ta01',
+            'tyosuhde_koodi': '1',
+            'tyoaika_koodi': '1',
             'tutkinto_koodi': '321901',
             'tyoaika_viikossa': '38.73',
             'alkamis_pvm': '2020-03-01',
@@ -614,8 +614,8 @@ class VardaHenkiloViewSetTests(TestCase):
 
         # These are the fields that can be edited
         palvelussuhde_edits = {
-            'tyosuhde_koodi': 'ts02',
-            'tyoaika_koodi': 'ta02',
+            'tyosuhde_koodi': '2',
+            'tyoaika_koodi': '2',
             'tutkinto_koodi': '613101',
             'tyoaika_viikossa': '35.00',
             'alkamis_pvm': '2020-01-01',
@@ -652,8 +652,8 @@ class VardaHenkiloViewSetTests(TestCase):
 
         palvelussuhde = {
             'tyontekija': tyontekija_url,
-            'tyosuhde_koodi': 'ts01',
-            'tyoaika_koodi': 'ta01',
+            'tyosuhde_koodi': '1',
+            'tyoaika_koodi': '1',
             'tutkinto_koodi': '321901',
             'tyoaika_viikossa': '38.73',
             'alkamis_pvm': '2020-03-01',
@@ -693,8 +693,8 @@ class VardaHenkiloViewSetTests(TestCase):
 
         palvelussuhde = {
             'tyontekija': tyontekija_url,
-            'tyosuhde_koodi': 'ts01',
-            'tyoaika_koodi': 'ta01',
+            'tyosuhde_koodi': '1',
+            'tyoaika_koodi': '1',
             'tutkinto_koodi': '321901',
             'tyoaika_viikossa': '38.73',
             'alkamis_pvm': '2020-03-01',
@@ -720,8 +720,8 @@ class VardaHenkiloViewSetTests(TestCase):
 
         palvelussuhde = {
             'tyontekija': tyontekija_url,
-            'tyosuhde_koodi': 'ts01',
-            'tyoaika_koodi': 'ta01',
+            'tyosuhde_koodi': '1',
+            'tyoaika_koodi': '1',
             'tutkinto_koodi': '321901',
             'tyoaika_viikossa': '38.73',
             'alkamis_pvm': '2020-03-01',
@@ -749,8 +749,8 @@ class VardaHenkiloViewSetTests(TestCase):
 
         palvelussuhde = {
             'tyontekija': tyontekija_url,
-            'tyosuhde_koodi': 'ts01',
-            'tyoaika_koodi': 'ta01',
+            'tyosuhde_koodi': '1',
+            'tyoaika_koodi': '1',
             'tutkinto_koodi': '321901',
             'tyoaika_viikossa': '38.73',
             'alkamis_pvm': '2020-03-01',

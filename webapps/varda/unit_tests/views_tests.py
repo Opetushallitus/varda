@@ -3033,16 +3033,6 @@ class VardaViewsTests(TestCase):
         ]
         self.assertCountEqual(json.loads(resp.content), admin_vakajarjestajat)
 
-    """
-    Koodisto testit
-    """
-    def test_api_get_koodisto(self):
-        client = SetUpTestClient('tester').client()
-        resp = client.get('/koodisto/api/v1/koodit/')
-        assert_status_code(resp, 200)
-        self.assertEqual(len(json.loads(resp.content)), 13)
-        self.assertEqual(json.loads(resp.content)['tyoaika_koodit'], ['ta01', 'ta02'])
-
     # TODO: Reporting related view-tests
 
     """

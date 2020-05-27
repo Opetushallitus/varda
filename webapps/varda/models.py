@@ -761,27 +761,47 @@ def tutkinto_koodit_default():
 
 
 class Z2_Koodisto(models.Model):
-    kunta_koodit = ArrayField(models.CharField(max_length=10))
-    kieli_koodit = ArrayField(models.CharField(max_length=10))
-    jarjestamismuoto_koodit = ArrayField(models.CharField(max_length=10))
-    toimintamuoto_koodit = ArrayField(models.CharField(max_length=10))
-    kasvatusopillinen_jarjestelma_koodit = ArrayField(models.CharField(max_length=10))
-    toiminnallinen_painotus_koodit = ArrayField(models.CharField(max_length=10))
-    tutkintonimike_koodit = ArrayField(models.CharField(max_length=10))
-    tyosuhde_koodit = ArrayField(models.CharField(max_length=10))
-    tyoaika_koodit = ArrayField(models.CharField(max_length=10))
-    tyotehtava_koodit = ArrayField(models.CharField(max_length=10))
-    sukupuoli_koodit = ArrayField(models.CharField(max_length=10))
-    opiskeluoikeuden_tila_koodit = ArrayField(models.CharField(max_length=30))
-    tutkinto_koodit = ArrayField(models.CharField(max_length=10))
-    maksun_peruste_koodit = ArrayField(models.CharField(max_length=10), default=maksun_peruste_koodit_default)
-    lahdejarjestelma_koodit = ArrayField(models.CharField(max_length=2), default=lahdejarjestelma_koodit_default)
+    name = models.CharField(max_length=256, unique=True)
+    name_koodistopalvelu = models.CharField(max_length=256, unique=True)
+    version = models.IntegerField()
+    update_datetime = models.DateTimeField()
 
     def __str__(self):
         return str(self.id)
 
     class Meta:
-        verbose_name_plural = "VARDA koodistot"
+        verbose_name_plural = 'Varda koodistot'
+
+
+class Z2_Code(models.Model):
+    koodisto = models.ForeignKey(Z2_Koodisto, related_name='codes', on_delete=models.PROTECT)
+    code_value = models.CharField(max_length=256)
+
+    def __str__(self):
+        return str(self.id)
+
+    class Meta:
+        verbose_name_plural = 'Varda codes'
+        constraints = [
+            models.UniqueConstraint(fields=['koodisto', 'code_value'], name='koodisto_code_value_unique_constraint')
+        ]
+
+
+class Z2_CodeTranslation(models.Model):
+    code = models.ForeignKey(Z2_Code, related_name='translations', on_delete=models.PROTECT)
+    language = models.CharField(max_length=10)
+    name = models.CharField(max_length=256, blank=True)
+    description = models.CharField(max_length=2048, blank=True)
+    short_name = models.CharField(max_length=256, blank=True)
+
+    def __str__(self):
+        return str(self.id)
+
+    class Meta:
+        verbose_name_plural = 'Varda code translations'
+        constraints = [
+            models.UniqueConstraint(fields=['code', 'language'], name='code_language_unique_constraint')
+        ]
 
 
 class Z3_AdditionalCasUserFields(models.Model):

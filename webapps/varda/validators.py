@@ -176,15 +176,6 @@ def validate_ipv6_address(ip_address):
             raise ValidationError(err_msg)
 
 
-def get_koodisto():
-    from varda.models import Z2_Koodisto  # if import is on top of the file, it causes ImportError (probably due to circular references)
-    if Z2_Koodisto.objects.filter(pk=1).exists():
-        koodisto = Z2_Koodisto.objects.filter(pk=1)
-        return koodisto[0]
-    else:
-        raise ValidationError('Validation cannot be done right now. No access to codes (koodistot).')
-
-
 def validate_koodi_in_general(koodi):
     splitted_koodi = koodi.split(" ")
     if len(splitted_koodi) > 1:
@@ -194,15 +185,17 @@ def validate_koodi_in_general(koodi):
 
 
 def validate_z2_koodi(koodi, field_name, code_name):
+    from varda.models import Z2_Koodisto, Z2_Code
+
     validate_koodi_in_general(koodi)
-    koodisto = get_koodisto()
-    if getattr(koodisto, field_name):
-        koodit = [z2_koodi.lower() for z2_koodi in getattr(koodisto, field_name)]
+    koodisto_qs = Z2_Koodisto.objects.filter(name=field_name)
+    if koodisto_qs.exists:
+        koodi_qs = Z2_Code.objects.filter(koodisto=koodisto_qs.first(), code_value__iexact=koodi)
+        if not koodi_qs.exists():
+            error_msg = koodi + ' : Not a valid ' + code_name + '.'
+            raise ValidationError(error_msg)
     else:
         raise ValidationError('Problem with ' + field_name + '-codes.')
-    if koodi.lower() not in koodit:
-        error_msg = koodi + ' : Not a valid ' + code_name + '.'
-        raise ValidationError(error_msg)
 
 
 def validate_maksun_peruste_koodi(maksun_peruste_koodi):
@@ -247,16 +240,16 @@ def validate_tyotehtava_koodi(tyotehtava_koodi):
     validate_z2_koodi(tyotehtava_koodi, 'tyotehtava_koodit', 'tyotehtava_koodi')
 
 
+def validate_tehtavanimike_koodi(tehtavanimike_koodi):
+    validate_z2_koodi(tehtavanimike_koodi, 'tehtavanimike_koodit', 'tehtavanimike_koodi')
+
+
 def validate_kieli_koodi(kieli_koodi):
     validate_z2_koodi(kieli_koodi, 'kieli_koodit', 'kieli_koodi')
 
 
 def validate_sukupuoli_koodi(sukupuoli_koodi):
     validate_z2_koodi(sukupuoli_koodi, 'sukupuoli_koodit', 'sukupuoli_koodi')
-
-
-def validate_opiskeluoikeudentila_koodi(opiskeluoikeudentila_koodi):
-    validate_z2_koodi(opiskeluoikeudentila_koodi, 'opiskeluoikeuden_tila_koodit', 'opiskeluoikeudentila_koodi')
 
 
 def validate_tutkinto_koodi(tutkinto_koodi):

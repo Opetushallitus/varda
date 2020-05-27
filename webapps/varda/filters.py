@@ -1,6 +1,6 @@
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
                           Maksutieto, PaosToiminta, PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-                          Z2_Koodisto, TilapainenHenkilosto, Tutkinto, Palvelussuhde)
+                          TilapainenHenkilosto, Tutkinto, Palvelussuhde)
 from django.db.models import Q
 from django_filters import rest_framework as djangofilters
 
@@ -243,25 +243,4 @@ class PalvelussuhdeFilter(djangofilters.FilterSet):
 
     class Meta:
         model = Palvelussuhde
-        fields = []
-
-
-class Z2_Koodisto(djangofilters.FilterSet):
-    kunta_koodit = CharArrayFilter(field_name='kunta_koodit', lookup_expr='exact')
-    kieli_koodit = CharArrayFilter(field_name='kieli_koodit', lookup_expr='exact')
-    jarjestamismuoto_koodit = CharArrayFilter(field_name='jarjestamismuoto_koodis', lookup_expr='exact')
-    toimintamuoto_koodit = CharArrayFilter(field_name='toimintamuoto_koodit', lookup_expr='exact')
-    kasvatusopillinen_jarjestelma_koodit = CharArrayFilter(field_name='kasvatusopillimem_jarjestelma_koodi', lookup_expr='exact')
-    toiminnallinen_painotus_koodit = CharArrayFilter(field_name='toiminnallinen_painotus_koodit', lookup_expr='exact')
-    tutkintonimike_koodit = CharArrayFilter(field_name='tutkintonimike_koodit', lookup_expr='exact')
-    tyosuhde_koodit = CharArrayFilter(field_name='tyosuhde_koodit', lookup_expr='exact')
-    tyoaika_koodit = CharArrayFilter(field_name='tyoaika_koodit', lookup_expr='exact')
-    tyotehtava_koodit = CharArrayFilter(field_name='tyotehtava_koodit', lookup_expr='exact')
-    sukupuoli_koodit = CharArrayFilter(field_name='sukupuoli_koodit', lookup_expr='exact')
-    opiskeluoikeuden_tila_koodit = CharArrayFilter(field_name='opiskeluoikeuden_tila_koodit', lookup_expr='exact')
-    tutkinto_koodit = CharArrayFilter(field_name='tutkinto_koodit', lookup_expr='exact')
-    lahdejarjestelma_koodit = CharArrayFilter(field_name='lahdejarjestelma_koodit', lookup_expr='exact')
-
-    class Meta:
-        model = Z2_Koodisto
         fields = []

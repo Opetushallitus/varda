@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from varda.models import Z2_Koodisto
 
 """
 Serializers for query-results used in reports
@@ -34,11 +33,6 @@ class KelaRaporttiSerializer(serializers.Serializer):
     vaka_paatos_paattymis_pvm = serializers.DateField()
     varhaiskasvatuksessa = serializers.BooleanField()
     vaka_paatos_muutos_pvm = serializers.DateTimeField()
-
-
-class KoodistoSerializer(serializers.Serializer):
-    class Meta:
-        model = Z2_Koodisto
 
 
 class TiedonsiirtotilastoSerializer(serializers.Serializer):

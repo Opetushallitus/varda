@@ -1,4 +1,4 @@
-from rest_framework.throttling import UserRateThrottle
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 
 
 class BurstRateThrottle(UserRateThrottle):
@@ -19,3 +19,7 @@ class BurstRateThrottleStrict(UserRateThrottle):
 
 class SustainedRateThrottleStrict(UserRateThrottle):
     scope = 'sustained_strict'
+
+
+class KoodistotAnonThrottle(AnonRateThrottle):
+    scope = 'koodistot'

@@ -9,9 +9,9 @@ from rest_framework.viewsets import GenericViewSet
 
 from varda.enums.ytj import YtjYritysmuoto
 from varda.models import (Henkilo, KieliPainotus, Lapsi, Maksutieto, PaosOikeus, ToiminnallinenPainotus, Toimipaikka,
-                          VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z2_Koodisto)
+                          VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde)
 from varda.permissions import CustomReportingViewAccess
-from varda.serializers_reporting import KelaRaporttiSerializer, KoodistoSerializer, TiedonsiirtotilastoSerializer
+from varda.serializers_reporting import KelaRaporttiSerializer, TiedonsiirtotilastoSerializer
 
 """
 Query-results for reports
@@ -71,35 +71,6 @@ class KelaRaporttiViewSet(GenericViewSet, ListModelMixin):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-
-
-class KoodistoViewSet(GenericViewSet, ListModelMixin):
-    queryset = None
-    serializer_class = KoodistoSerializer
-    permission_classes = (permissions.IsAuthenticated, )
-
-    def get_queryset(self):
-        koodisto = Z2_Koodisto.objects.filter(pk=1)[0]
-        koodit = {
-            'kunta_koodit': koodisto.kunta_koodit,
-            'kieli_koodit': koodisto.kieli_koodit,
-            'jarjestamismuoto_koodit': koodisto.jarjestamismuoto_koodit,
-            'toimintamuoto_koodit': koodisto.toimintamuoto_koodit,
-            'kasvatusopillinen_jarjestelma_koodit': koodisto.kasvatusopillinen_jarjestelma_koodit,
-            'toiminnallinen_painotus_koodit': koodisto.toiminnallinen_painotus_koodit,
-            'tutkintonimike_koodit': koodisto.tutkintonimike_koodit,
-            'tyosuhde_koodit': koodisto.tyosuhde_koodit,
-            'tyoaika_koodit': koodisto.tyoaika_koodit,
-            'tyotehtava_koodit': koodisto.tyotehtava_koodit,
-            'sukupuoli_koodit': koodisto.sukupuoli_koodit,
-            'opiskeluoikeuden_tila_koodit': koodisto.opiskeluoikeuden_tila_koodit,
-            'tutkinto_koodit': koodisto.tutkinto_koodit
-        }
-        return koodit
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        return Response(queryset)
 
 
 class TiedonsiirtotilastoViewSet(GenericViewSet, ListModelMixin):
