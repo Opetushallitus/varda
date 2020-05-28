@@ -1,0 +1,12 @@
+<div class="main-wrapper">
+  <header class="main-header">
+    <app-public-header></app-public-header>
+  </header>
+  <main>
+    <router-outlet></router-outlet>
+  </main>
+  <footer class="main-footer"></footer>
+  <ng-container *ngIf="isLoading | async">
+    <lib-loading-indicator></lib-loading-indicator>
+  </ng-container>
+</div>

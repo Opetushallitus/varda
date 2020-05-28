@@ -412,6 +412,146 @@
           }
         }
       }
+    },
+    "public-app": {
+      "projectType": "application",
+      "schematics": {},
+      "root": "projects/public-app",
+      "sourceRoot": "projects/public-app/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "baseHref": "/varda/",
+            "outputPath": "dist/public-app",
+            "index": "projects/public-app/src/index.html",
+            "main": "projects/public-app/src/main.ts",
+            "polyfills": "projects/public-app/src/polyfills.ts",
+            "tsConfig": "projects/public-app/tsconfig.app.json",
+            "aot": true,
+            "assets": [
+              "projects/public-app/src/favicon.ico",
+              "projects/public-app/src/assets"
+            ],
+            "styles": [
+              "node_modules/bootstrap/dist/css/bootstrap.min.css",
+              "projects/public-app/src/styles.css"
+            ],
+            "scripts": []
+          },
+          "configurations": {
+            "local": {
+              "budgets": [
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "6kb"
+                }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "projects/public-app/src/environments/environment.ts",
+                  "with": "projects/public-app/src/environments/environment.local.ts"
+                }
+              ]
+            },
+            "testing": {
+              "budgets": [
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "6kb"
+                }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "projects/public-app/src/environments/environment.ts",
+                  "with": "projects/public-app/src/environments/environment.testing.ts"
+                }
+              ]
+            },
+            "production": {
+              "fileReplacements": [
+                {
+                  "replace": "projects/public-app/src/environments/environment.ts",
+                  "with": "projects/public-app/src/environments/environment.prod.ts"
+                }
+              ],
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false,
+              "extractCss": true,
+              "namedChunks": false,
+              "extractLicenses": true,
+              "vendorChunk": false,
+              "buildOptimizer": true,
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "2mb",
+                  "maximumError": "5mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "6kb",
+                  "maximumError": "10kb"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "browserTarget": "public-app:build"
+          },
+          "configurations": {
+            "local": {
+              "browserTarget": "public-app:build:local"
+            },
+            "testing": {
+              "browserTarget": "public-app:build:testing"
+            },
+            "production": {
+              "browserTarget": "public-app:build:production"
+            }
+          }
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "browserTarget": "public-app:build"
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "projects/public-app/src/test.ts",
+            "polyfills": "projects/public-app/src/polyfills.ts",
+            "tsConfig": "projects/public-app/tsconfig.spec.json",
+            "karmaConfig": "projects/public-app/karma.conf.js",
+            "assets": [
+              "projects/public-app/src/favicon.ico",
+              "projects/public-app/src/assets"
+            ],
+            "styles": [
+              "projects/public-app/src/styles.css"
+            ],
+            "scripts": []
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "projects/public-app/tsconfig.app.json",
+              "projects/public-app/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**"
+            ]
+          }
+        }
+      }
     }
   },
   "defaultProject": "virkailija-app",

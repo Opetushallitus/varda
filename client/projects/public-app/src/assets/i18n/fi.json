@@ -1,0 +1,14 @@
+{
+    "label.fi": "FI",
+    "label.sv": "SV",
+    "label.varda": "Varhaiskasvatuksen tietovaranto Varda",
+    "label.code": "Koodi",
+    "label.name": "Nimi",
+    "label.description": "Kuvaus",
+    "label.koodistot": "Vardan koodistot",
+    "label.version": "Versio",
+    "label.updated": "Päivitetty",
+    "alert.koodistot.invalid-koodisto-name": "Tällä nimellä ei löytynyt koodistoa.",
+    "title.koodistot": "Koodistot",
+    "prompt.koodistot.select-koodisto": "Valitse koodisto valikosta."
+}

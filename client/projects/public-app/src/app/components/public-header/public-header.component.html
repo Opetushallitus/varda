@@ -1,0 +1,23 @@
+<div class="public-header container">
+  <select *ngIf="isSmall | async"
+          [ngModel]="currentLang"
+          (ngModelChange)="changeLanguage($event)"
+          class="form-control">
+    <option [ngValue]="'fi'">{{'label.fi' | translate}}</option>
+    <option [ngValue]="'sv'">{{'label.sv' | translate}}</option>
+  </select>
+  <div *ngIf="!(isSmall | async)"
+       class="language-wrapper">
+    <a [routerLink]=""
+       (click)="changeLanguage('fi')"
+       [class.active-language]="currentLang === 'fi'">
+      {{'label.fi' | translate}}
+    </a>
+    /
+    <a [routerLink]=""
+       (click)="changeLanguage('sv')"
+       [class.active-language]="currentLang === 'sv'">
+      {{'label.sv' | translate}}
+    </a>
+  </div>
+</div>

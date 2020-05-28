@@ -1,0 +1,49 @@
+.koodistot-wrapper {
+  display: grid;
+  grid-template-columns: min-content auto;
+  grid-template-areas:
+    "header header"
+    "nav content";
+}
+
+.koodistot-header {
+  grid-area: header;
+  margin-bottom: 2em;
+}
+
+.koodistot-nav {
+  grid-area: nav;
+  margin-right: 4em;
+}
+
+.koodistot-content {
+  grid-area: content;
+  overflow: auto;
+}
+
+.koodistot-links a {
+  display: block;
+}
+
+.koodistot-links a.active-link {
+  font-weight: bold;
+  text-decoration: underline;
+  color: inherit;
+  cursor: default;
+  pointer-events: none;
+}
+
+@media (max-width: 991px) {
+  .koodistot-wrapper {
+    grid-template-columns: auto;
+    grid-template-areas:
+      "header"
+      "nav"
+      "content";
+  }
+
+  .koodistot-nav {
+    margin-right: initial;
+    margin-bottom: 2em;
+  }
+}

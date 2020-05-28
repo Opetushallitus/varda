@@ -1,0 +1,23 @@
+.public-header {
+  padding-top: 1em;
+  padding-bottom: 1em;
+  text-align: right;
+}
+
+.public-header .form-control {
+  display: inline;
+  width: auto;
+}
+
+.language-wrapper {
+  display: inline;
+  background-color: white;
+  padding: .15em .75em
+}
+
+a.active-language {
+  font-weight: bold;
+  color: inherit;
+  cursor: default;
+  pointer-events: none;
+}
