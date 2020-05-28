@@ -69,7 +69,7 @@ def run_post_migration_tasks(sender, **kwargs):
                 load_paos_permissions()
 
             elif (migration_plan_tuple[0].app_label == 'varda' and
-                  migration_plan_tuple[0].name == '0021_auto_20200512_1548' and
+                  migration_plan_tuple[0].name == '0021_auto_20200528_0732' and
                   not migration_plan_tuple[1]):
                 load_henkilosto_permissions()
 

@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+## [1.3.15] (28.05.2020)
+- CSCVARDA-1609: Virheilmoitusten täydennys maksutietojen syötössä
+
 ## [1.3.14] (11.05.2020)
 - CSCVARDA-1703: Lapsiformin järjestämismuotojen validointi
 - CSCVARDA-1667: Toimipaikkaform fokuksen siirto tallennuksen jälkeen ilmestyviin kenttiin
