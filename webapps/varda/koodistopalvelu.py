@@ -113,7 +113,8 @@ def update_koodistot():
 def parse_koodistopalvelu_datetime(input_datetime):
     # In testiopintopolku koodistopalvelu paivitysPvm is date-string, in opintopolku koodistopalvelu it's timestamp
     if isinstance(input_datetime, int):
-        result_datetime = datetime.datetime.fromtimestamp(input_datetime, datetime.timezone.utc)
+        # datetime.fromtimestamp takes seconds, koodistopalvelu has milliseconds
+        result_datetime = datetime.datetime.fromtimestamp(input_datetime / 1000, datetime.timezone.utc)
     else:
         result_datetime = datetime.datetime.strptime(input_datetime, '%Y-%m-%d')
         result_datetime = result_datetime.replace(tzinfo=datetime.timezone.utc)
