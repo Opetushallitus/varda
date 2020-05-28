@@ -22,7 +22,7 @@ The maximum batch size is 1 048 576 bytes
 AWS_LOG_BATCH_MAX_SIZE = 10000
 AWS_LOG_BATCH_MAX_BYTES = 1048576
 AWS_OVERHEAD_IN_BYTES_PER_EVENT = 26
-TWENTY_FOUR_HOURS_IN_MS = 1000 * 60 * 60 * 24
+TWENTY_FOUR_HOURS_IN_MS = 1000 * 60 * 60 * 22  # trying a quick fix for CSCVARDA-1662 (24 -> 22)
 
 
 def get_size(event):

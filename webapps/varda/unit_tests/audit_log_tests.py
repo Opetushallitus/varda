@@ -37,10 +37,10 @@ class VardaAuditLogTests(unittest.TestCase):
         Check against time
         """
         end_index_time = audit_log.get_batch_end_index_time(data, 0)
-        self.assertEqual(end_index_time, 200)
+        self.assertEqual(end_index_time, 100)
 
-        end_index_time = audit_log.get_batch_end_index_time(data, 300)
-        self.assertEqual(end_index_time, 350)
+        end_index_time = audit_log.get_batch_end_index_time(data, 200)
+        self.assertEqual(end_index_time, 300)
 
         end_index_time = audit_log.get_batch_end_index_time(data, 1163)
         self.assertEqual(end_index_time, 1245)
