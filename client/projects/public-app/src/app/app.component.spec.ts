@@ -1,6 +1,6 @@
 import { TestBed, async } from '@angular/core/testing';
 import { AppComponent } from './app.component';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { EMPTY } from 'rxjs';
 import { LoadingHttpService } from 'varda-shared';
 import { Router } from '@angular/router';
@@ -19,6 +19,7 @@ describe('AppComponent', () => {
     TestBed.configureTestingModule({
       imports: [
         RouterTestingModule,
+        TranslateModule.forRoot(),
       ],
       declarations: [
         AppComponent,

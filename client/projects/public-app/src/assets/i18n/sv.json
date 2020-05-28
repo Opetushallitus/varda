@@ -1,4 +1,5 @@
 {
+    "label.site-version": "Version {{value}}",
     "label.varda": "Informationsresursen inom småbarnspedagogiken Varda",
     "label.code": "Kod",
     "label.name": "Namn",

@@ -5,7 +5,11 @@
   <main>
     <router-outlet></router-outlet>
   </main>
-  <footer class="main-footer"></footer>
+  <footer class="main-footer">
+    <div class="container">
+      <span>{{'label.site-version' | translate: {value: '1.0.0'} }}</span>
+    </div>
+  </footer>
   <ng-container *ngIf="isLoading | async">
     <lib-loading-indicator></lib-loading-indicator>
   </ng-container>

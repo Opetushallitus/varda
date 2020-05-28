@@ -10,10 +10,11 @@ header.main-header {
 
 main {
     margin: 3em 0;
+    flex-grow: 1;
 }
 
 footer.main-footer {
-    flex-grow: 1;
     background-color: #f0f3f8;
-    min-height: 100px;
+    padding-top: 1em;
+    padding-bottom: 1em;
 }

@@ -1,4 +1,5 @@
 {
+    "label.site-version": "Versio {{value}}",
     "label.fi": "FI",
     "label.sv": "SV",
     "label.varda": "Varhaiskasvatuksen tietovaranto Varda",
