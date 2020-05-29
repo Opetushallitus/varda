@@ -423,7 +423,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "baseHref": "/varda/",
+            "baseHref": "/varda/julkinen/",
             "outputPath": "dist/public-app",
             "index": "projects/public-app/src/index.html",
             "main": "projects/public-app/src/main.ts",
