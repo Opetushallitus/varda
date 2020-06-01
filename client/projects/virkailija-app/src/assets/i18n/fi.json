@@ -200,6 +200,7 @@
     "alert.nickname-must-be-part-of-firstnames": "Kutsumanimi ei löydy etunimistä",
     "label.add-with-oppijanumero": "Syötä oppijanumerolla",
     "alert.oppijanumero-format-warning": "Oppijanumero on väärin. Oppijanumero tulee olla muodossa 1.2.246.562.24.XXXXXXXXXXX",
+    "alert.max-one-decimal": "Voit käyttää korkeintaan yhtä desimaalia.",
     "label.toimipaikat": "Toimipaikat",
     "label.lapset": "Lapset",
     "label.toimipaikannimi": "Toimipaikan nimi",

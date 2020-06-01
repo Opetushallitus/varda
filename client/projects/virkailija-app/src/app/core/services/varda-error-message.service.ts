@@ -43,7 +43,8 @@ export class VardaErrorMessageService {
     'maksutieto.alkamis_pvm must be after earliest varhaiskasvatuspaatos.alkamis_pvm': 'field.maksutieto_alkamis_pvm.before.varhaiskasvatuspaatos_alkamis_pvm',
     'maksutieto.alkamis_pvm must be before the latest varhaiskasvatuspaatos.paattymis_pvm': 'field.maksutieto_alkamis_pvm.after.varhaiskasvatuspaatos_paattymis_pvm',
     'maksutieto.paattymis_pvm must be before latest varhaiskasvatuspaatos.paattymis_pvm': 'field.maksutieto_paattymis_pvm.after.varhaiskasvatuspaatos_paattymis_pvm',
-    'lapsi already has 2 active maksutieto during that time period': 'field.two_maksutieto_during_time_period'
+    'lapsi already has 2 active maksutieto during that time period': 'field.two_maksutieto_during_time_period',
+    'Tässä luvussa saa olla enintään 1 desimaalia.': 'alert.max-one-decimal'
   };
 
   dynamicErrorMessageKeys = {

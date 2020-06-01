@@ -195,6 +195,7 @@
     "alert.nickname-must-be-part-of-firstnames": "Tilltalsnamnet finns inte bland förnamnen",
     "label.add-with-oppijanumero": "Ange studentnumret",
     "alert.oppijanumero-format-warning": "Studentnumret är felaktigt. Studentnumret ska anges i formen 1.2.246.562.24.XXXXXXXXXXX",
+    "alert.max-one-decimal": "Du kan använda högst en decimal.",
     "label.toimipaikat": "Verksamhetsställen",
     "label.lapset": "Barn",
     "label.toimipaikannimi": "Verksamhetsställets namn",

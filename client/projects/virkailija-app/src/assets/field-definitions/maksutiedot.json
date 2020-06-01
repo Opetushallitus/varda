@@ -59,6 +59,13 @@
             "placeholderSv": "250"
           },
           "rules": {
+            "regex": {
+              "acceptedValue": "^\\d+([,.]\\d{1,2})?$",
+              "errorText": {
+                "errorTextFi": "Palvelusetelin arvon voi ilmoittaa korkeintaan kahden desimaalin tarkkuudella.",
+                "errorTextSv": "Servicesedelns värde kan anges med högst två decimalers noggrannhet."
+              }
+            },
             "disabledOnEdit": {
               "acceptedValue": true
             }
@@ -85,6 +92,13 @@
               "errorText": {
                 "errorTextFi": "",
                 "errorTextSv": ""
+              }
+            },
+            "regex": {
+              "acceptedValue": "^\\d+([,.]\\d{1,2})?$",
+              "errorText": {
+                "errorTextFi": "Asiakasmaksun voi ilmoittaa korkeintaan kahden desimaalin tarkkuudella.",
+                "errorTextSv": "Kundavgiften kan anges med högst två decimalers noggrannhet."
               }
             },
             "disabledOnEdit": {
@@ -117,6 +131,20 @@
             },
             "disabledOnEdit": {
               "acceptedValue": true
+            },
+            "min": {
+              "acceptedValue": 2,
+              "errorText": {
+                "errorTextFi": "Perheen koon tulee olla vähintään kaksi henkilöä.",
+                "errorTextSv": "Familjens storlek ska vara minst två personer."
+              }
+            },
+            "regex": {
+              "acceptedValue": "^\\d+$",
+              "errorText": {
+                "errorTextFi": "Perheen koko ilmoitetaan kokonaislukuna.",
+                "errorTextSv": "Familjens storlek anges med ett heltal."
+              }
             }
           }
         },

@@ -198,8 +198,8 @@
           },
           "widget": "string",
           "instructionText": {
-            "instructionTextFi": "Syötä lapsen varhaiskasvatuspäätökseen tai sitä vastaavaan sopimukseen merkitty varhaiskasvatuksen viikottainen tuntimäärä- Tuntimäärän voi tarvittaessa syöttää desimaalilukuna. Esimerkki: \"32.5\".",
-            "instructionTextSv": "Ange det timantal per vecka inom småbarnspedagogiken som meddelats i barnets beslut om småbarnspedagogik eller i motsvarande avtal. Timantalet kan vid behov anges som decimaltal. Till exempel \"32.5\"."
+            "instructionTextFi": "Syötä lapsen varhaiskasvatuspäätökseen tai sitä vastaavaan sopimukseen merkitty varhaiskasvatuksen viikottainen tuntimäärä. Tuntimäärän voi tarvittaessa syöttää desimaalilukuna. Voit käyttää korkeintaan yhtä desimaalia. Esimerkki: \"32.5\".",
+            "instructionTextSv": "Ange det timantal per vecka inom småbarnspedagogiken som meddelats i barnets beslut om småbarnspedagogik eller i motsvarande avtal. Timantalet kan vid behov anges som decimaltal. Du kan använda högst en decimal. Till exempel \"32.5\"."
           },
           "placeholder": {
             "placeholderFi": "32.5",
@@ -218,6 +218,13 @@
               "errorText": {
                 "errorTextFi": "Arvon tulisi olla suurempi tai yhtä suuri kuin 1",
                 "errorTextSv": "Värdet ska vara större eller lika med 1"
+              }
+            },
+            "regex": {
+              "acceptedValue": "^\\d+([,.]\\d{1})?$",
+              "errorText": {
+                "errorTextFi": "Tuntimäärän voi ilmoittaa korkeintaan yhden desimaalin tarkkuudella. Esimerkki: \"32.5\".",
+                "errorTextSv": "Timantalet kan anges med högst en decimals noggrannhet. Till exempel \"32.5\"."
               }
             },
             "disabledOnEdit": {
