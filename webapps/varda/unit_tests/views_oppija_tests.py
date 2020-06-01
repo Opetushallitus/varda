@@ -51,6 +51,7 @@ class VardaOppijaViewsTests(TestCase):
                 {
                     "id": 8,
                     "yhteysosoite": "organization@domain.com",
+                    "varhaiskasvatuksen_jarjestaja": "Tester2 organisaatio",
                     "varhaiskasvatuspaatokset": [
                         {
                             "id": 9,
@@ -70,8 +71,7 @@ class VardaOppijaViewsTests(TestCase):
                                     "paattymis_pvm": None,
                                     "toimipaikka": {
                                         "toimipaikka_nimi": "Espoo_3",
-                                        "toimipaikka_kunta_koodi": "091",
-                                        "toimipaikka_vakajarjestaja": "Tester organisaatio"
+                                        "toimipaikka_kunta_koodi": "091"
                                     },
                                     "yhteysosoite": "organization@domain.com"
                                 }
@@ -82,6 +82,7 @@ class VardaOppijaViewsTests(TestCase):
                 {
                     "id": 7,
                     "yhteysosoite": "organization@domain.com",
+                    "varhaiskasvatuksen_jarjestaja": "Tester organisaatio",
                     "varhaiskasvatuspaatokset": [
                         {
                             "id": 8,
@@ -101,6 +102,7 @@ class VardaOppijaViewsTests(TestCase):
                 {
                     "id": 6,
                     "yhteysosoite": "organization@domain.com",
+                    "varhaiskasvatuksen_jarjestaja": "Tester2 organisaatio",
                     "varhaiskasvatuspaatokset": [
                         {
                             "id": 6,
@@ -120,8 +122,7 @@ class VardaOppijaViewsTests(TestCase):
                                     "paattymis_pvm": "2019-02-24",
                                     "toimipaikka": {
                                         "toimipaikka_nimi": "Tester2 toimipaikka",
-                                        "toimipaikka_kunta_koodi": "091",
-                                        "toimipaikka_vakajarjestaja": "Tester2 organisaatio"
+                                        "toimipaikka_kunta_koodi": "091"
                                     },
                                     "yhteysosoite": "test2@domain.com"
                                 }
@@ -145,8 +146,7 @@ class VardaOppijaViewsTests(TestCase):
                                     "paattymis_pvm": "2019-04-20",
                                     "toimipaikka": {
                                         "toimipaikka_nimi": "Espoo_2",
-                                        "toimipaikka_kunta_koodi": "091",
-                                        "toimipaikka_vakajarjestaja": "Tester organisaatio"
+                                        "toimipaikka_kunta_koodi": "091"
                                     },
                                     "yhteysosoite": "organization@domain.com"
                                 },
@@ -156,8 +156,7 @@ class VardaOppijaViewsTests(TestCase):
                                     "paattymis_pvm": "2019-10-24",
                                     "toimipaikka": {
                                         "toimipaikka_nimi": "Espoo",
-                                        "toimipaikka_kunta_koodi": "091",
-                                        "toimipaikka_vakajarjestaja": "Tester organisaatio"
+                                        "toimipaikka_kunta_koodi": "091"
                                     },
                                     "yhteysosoite": "test1@espoo.fi"
                                 }

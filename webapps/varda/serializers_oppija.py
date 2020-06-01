@@ -11,7 +11,6 @@ Huoltajanakyma serializers
 class HuoltajanLapsiToimipaikkaSerializer(serializers.Serializer):
     toimipaikka_nimi = serializers.ReadOnlyField(source='nimi')
     toimipaikka_kunta_koodi = serializers.ReadOnlyField(source='kunta_koodi')
-    toimipaikka_vakajarjestaja = serializers.ReadOnlyField(source='vakajarjestaja.nimi')
 
 
 class HuoltajanLapsiVarhaiskasvatussuhdeSerializer(serializers.ModelSerializer):
@@ -52,6 +51,7 @@ class HuoltajanLapsiVarhaiskasvatuspaatosSerializer(serializers.ModelSerializer)
 
 class HuoltajanLapsiLapsiSerializer(serializers.ModelSerializer):
     yhteysosoite = serializers.SerializerMethodField()
+    varhaiskasvatuksen_jarjestaja = serializers.SerializerMethodField()
     varhaiskasvatuspaatokset = HuoltajanLapsiVarhaiskasvatuspaatosSerializer(many=True)
 
     def get_yhteysosoite(self, obj):
@@ -59,6 +59,16 @@ class HuoltajanLapsiLapsiSerializer(serializers.ModelSerializer):
             return obj.vakatoimija.sahkopostiosoite
         if obj.oma_organisaatio is not None:
             return obj.oma_organisaatio.sahkopostiosoite
+
+    def get_varhaiskasvatuksen_jarjestaja(self, obj):
+        if obj.vakatoimija is not None:
+            return obj.vakatoimija.nimi
+        if obj.oma_organisaatio is not None:
+            return obj.oma_organisaatio.nimi
+        vakasuhde_first = obj.varhaiskasvatuspaatokset.first().varhaiskasvatussuhteet.first()
+        if vakasuhde_first is not None:
+            return vakasuhde_first.toimipaikka.vakajarjestaja.nimi
+        return None
 
     class Meta:
         model = Lapsi
