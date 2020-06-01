@@ -1853,7 +1853,6 @@ def create_test_data():
     create_huoltajat()
     create_huoltajuussuhteet()
     create_user_data()
-    create_koodisto_data()
     create_maksutiedot()
     create_paos_toiminta()
     create_paos_oikeus()

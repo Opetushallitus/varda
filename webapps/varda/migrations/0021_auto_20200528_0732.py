@@ -17,13 +17,20 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.DeleteModel(
+            name='Z2_Koodisto',
+        ),
         migrations.CreateModel(
-            name='Taydennyskoulutus',
+            name='Z2_Koodisto',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name', models.CharField(max_length=256, unique=True)),
+                ('name_koodistopalvelu', models.CharField(max_length=256, unique=True)),
+                ('update_datetime', models.DateTimeField()),
+                ('version', models.IntegerField()),
             ],
             options={
-                'verbose_name_plural': 'taydennyskoulutukset',
+                'verbose_name_plural': 'Varda koodistot',
             },
         ),
         migrations.CreateModel(
@@ -36,98 +43,10 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Varda codes',
             },
         ),
-        migrations.AlterModelOptions(
-            name='z2_koodisto',
-            options={'verbose_name_plural': 'Varda koodistot'},
-        ),
-        migrations.RemoveField(
-            model_name='z2_koodisto',
-            name='jarjestamismuoto_koodit',
-        ),
-        migrations.RemoveField(
-            model_name='z2_koodisto',
-            name='kasvatusopillinen_jarjestelma_koodit',
-        ),
-        migrations.RemoveField(
-            model_name='z2_koodisto',
-            name='kieli_koodit',
-        ),
-        migrations.RemoveField(
-            model_name='z2_koodisto',
-            name='kunta_koodit',
-        ),
-        migrations.RemoveField(
-            model_name='z2_koodisto',
-            name='lahdejarjestelma_koodit',
-        ),
-        migrations.RemoveField(
-            model_name='z2_koodisto',
-            name='maksun_peruste_koodit',
-        ),
-        migrations.RemoveField(
-            model_name='z2_koodisto',
-            name='opiskeluoikeuden_tila_koodit',
-        ),
-        migrations.RemoveField(
-            model_name='z2_koodisto',
-            name='sukupuoli_koodit',
-        ),
-        migrations.RemoveField(
-            model_name='z2_koodisto',
-            name='toiminnallinen_painotus_koodit',
-        ),
-        migrations.RemoveField(
-            model_name='z2_koodisto',
-            name='toimintamuoto_koodit',
-        ),
-        migrations.RemoveField(
-            model_name='z2_koodisto',
-            name='tutkinto_koodit',
-        ),
-        migrations.RemoveField(
-            model_name='z2_koodisto',
-            name='tutkintonimike_koodit',
-        ),
-        migrations.RemoveField(
-            model_name='z2_koodisto',
-            name='tyoaika_koodit',
-        ),
-        migrations.RemoveField(
-            model_name='z2_koodisto',
-            name='tyosuhde_koodit',
-        ),
-        migrations.RemoveField(
-            model_name='z2_koodisto',
-            name='tyotehtava_koodit',
-        ),
         migrations.AddField(
-            model_name='z2_koodisto',
-            name='name',
-            field=models.CharField(default='', max_length=256, unique=True),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='z2_koodisto',
-            name='name_koodistopalvelu',
-            field=models.CharField(default='', max_length=256, unique=True),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='z2_koodisto',
-            name='update_datetime',
-            field=models.DateTimeField(default=django.utils.timezone.now),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='z2_koodisto',
-            name='version',
-            field=models.IntegerField(default=0),
-            preserve_default=False,
-        ),
-        migrations.AlterField(
-            model_name='z4_caskayttooikeudet',
-            name='kayttooikeus',
-            field=models.CharField(blank=True, choices=[('VARDA-PAAKAYTTAJA', 'Varda-Pääkäyttäjä'), ('VARDA-TALLENTAJA', 'Varda-Tallentaja'), ('VARDA-KATSELIJA', 'Varda-Katselija'), ('VARDA-PALVELUKAYTTAJA', 'Varda-Palvelukäyttäjä'), ('HUOLTAJATIETO_TALLENNUS', 'Varda-Huoltajatietojen tallentaja'), ('HUOLTAJATIETO_KATSELU', 'Varda-Huoltajatietojen katselija'), ('HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA', 'Varda-Täydennyskoulutustietojen katselija'), ('HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA', 'Varda-Täydennyskoulutustietojen tallentaja'), ('HENKILOSTO_TILAPAISET_KATSELIJA', 'Varda-Tilapäisen henkilöstön katselija'), ('HENKILOSTO_TILAPAISET_TALLENTAJA', 'Varda-Tilapäisen henkilöstön tallentaja'), ('HENKILOSTO_TYONTEKIJA_KATSELIJA', 'Varda-Työntekijätietojen katselija'), ('HENKILOSTO_TYONTEKIJA_TALLENTAJA', 'Varda-Työntekijätietojen tallentaja')], max_length=50),
+            model_name='z2_code',
+            name='koodisto',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='codes', to='varda.Z2_Koodisto'),
         ),
         migrations.CreateModel(
             name='Z2_CodeTranslation',
@@ -143,10 +62,27 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Varda code translations',
             },
         ),
-        migrations.AddField(
+        migrations.AddConstraint(
+            model_name='z2_codetranslation',
+            constraint=models.UniqueConstraint(fields=('code', 'language'), name='code_language_unique_constraint'),
+        ),
+        migrations.AddConstraint(
             model_name='z2_code',
-            name='koodisto',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='codes', to='varda.Z2_Koodisto'),
+            constraint=models.UniqueConstraint(fields=('koodisto', 'code_value'), name='koodisto_code_value_unique_constraint'),
+        ),
+        migrations.CreateModel(
+            name='Taydennyskoulutus',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+            ],
+            options={
+                'verbose_name_plural': 'taydennyskoulutukset',
+            },
+        ),
+        migrations.AlterField(
+            model_name='z4_caskayttooikeudet',
+            name='kayttooikeus',
+            field=models.CharField(blank=True, choices=[('VARDA-PAAKAYTTAJA', 'Varda-Pääkäyttäjä'), ('VARDA-TALLENTAJA', 'Varda-Tallentaja'), ('VARDA-KATSELIJA', 'Varda-Katselija'), ('VARDA-PALVELUKAYTTAJA', 'Varda-Palvelukäyttäjä'), ('HUOLTAJATIETO_TALLENNUS', 'Varda-Huoltajatietojen tallentaja'), ('HUOLTAJATIETO_KATSELU', 'Varda-Huoltajatietojen katselija'), ('HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA', 'Varda-Täydennyskoulutustietojen katselija'), ('HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA', 'Varda-Täydennyskoulutustietojen tallentaja'), ('HENKILOSTO_TILAPAISET_KATSELIJA', 'Varda-Tilapäisen henkilöstön katselija'), ('HENKILOSTO_TILAPAISET_TALLENTAJA', 'Varda-Tilapäisen henkilöstön tallentaja'), ('HENKILOSTO_TYONTEKIJA_KATSELIJA', 'Varda-Työntekijätietojen katselija'), ('HENKILOSTO_TYONTEKIJA_TALLENTAJA', 'Varda-Työntekijätietojen tallentaja')], max_length=50),
         ),
         migrations.CreateModel(
             name='Tutkinto',
@@ -277,13 +213,5 @@ class Migration(migrations.Migration):
                 'get_latest_by': 'history_date',
             },
             bases=(simple_history.models.HistoricalChanges, models.Model),
-        ),
-        migrations.AddConstraint(
-            model_name='z2_codetranslation',
-            constraint=models.UniqueConstraint(fields=('code', 'language'), name='code_language_unique_constraint'),
-        ),
-        migrations.AddConstraint(
-            model_name='z2_code',
-            constraint=models.UniqueConstraint(fields=('koodisto', 'code_value'), name='koodisto_code_value_unique_constraint'),
         ),
     ]

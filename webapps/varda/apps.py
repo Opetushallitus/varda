@@ -5,7 +5,7 @@ from django.db.models.signals import post_migrate, post_save, pre_save, pre_dele
 
 from varda.migrations.production.setup import (load_initial_data, load_huoltajatiedot_permissions, load_paos_permissions,
                                                load_henkilosto_permissions)
-from varda.migrations.testing.setup import load_testing_data
+from varda.migrations.testing.setup import load_testing_data, create_koodisto_data
 
 
 def run_post_migration_tasks(sender, **kwargs):
@@ -72,6 +72,7 @@ def run_post_migration_tasks(sender, **kwargs):
                   migration_plan_tuple[0].name == '0021_auto_20200528_0732' and
                   not migration_plan_tuple[1]):
                 load_henkilosto_permissions()
+                create_koodisto_data()
 
                 # Note: If you are adding new permissions this might need to be moved to current migration block.
                 env_type = os.getenv('VARDA_ENVIRONMENT_TYPE', None)
