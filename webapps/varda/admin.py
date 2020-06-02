@@ -4,7 +4,8 @@ from simple_history.admin import SimpleHistoryAdmin
 
 from .models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto,
                      PaosOikeus, PaosToiminta, ToiminnallinenPainotus, Toimipaikka, Tyontekija, VakaJarjestaja,
-                     Varhaiskasvatuspaatos, Varhaiskasvatussuhde, TilapainenHenkilosto, Tutkinto, Palvelussuhde)
+                     Varhaiskasvatuspaatos, Varhaiskasvatussuhde, TilapainenHenkilosto, Tutkinto, Palvelussuhde,
+                     Tyoskentelypaikka)
 
 
 class AdminWithGuardianAndHistory(GuardedModelAdmin, SimpleHistoryAdmin):
@@ -55,6 +56,10 @@ class PalvelussuhdeAdmin(AdminWithGuardianAndHistory):
     raw_id_fields = ('tyontekija', )
 
 
+class TyoskentelypaikkaAdmin(AdminWithGuardianAndHistory):
+    raw_id_fields = ('palvelussuhde', 'toimipaikka', )
+
+
 admin.site.register(VakaJarjestaja, AdminWithGuardianAndHistory)
 admin.site.register(Toimipaikka, AdminWithGuardianAndHistory)
 admin.site.register(ToiminnallinenPainotus, ToiminnallinenPainotusAdmin)
@@ -74,3 +79,4 @@ admin.site.register(Tyontekija, AdminWithGuardianAndHistory)
 admin.site.register(TilapainenHenkilosto, TilapainenHenkilostoAdmin)
 admin.site.register(Tutkinto, TutkintoAdmin)
 admin.site.register(Palvelussuhde, PalvelussuhdeAdmin)
+admin.site.register(Tyoskentelypaikka, TyoskentelypaikkaAdmin)

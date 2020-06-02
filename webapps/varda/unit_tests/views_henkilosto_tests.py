@@ -1,8 +1,8 @@
 import json
-
 from django.test import TestCase
+
 from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient
-from varda.models import VakaJarjestaja, Henkilo
+from varda.models import VakaJarjestaja, Henkilo, Tyontekija, Palvelussuhde, Tyoskentelypaikka, Toimipaikka
 
 
 class VardaHenkiloViewSetTests(TestCase):
@@ -559,18 +559,10 @@ class VardaHenkiloViewSetTests(TestCase):
     def test_palvelussuhde_add_correct(self):
         client = SetUpTestClient('credadmin').client()
 
-        tyontekija = {
-            'henkilo': '/api/v1/henkilot/1/',
-            'vakajarjestaja': '/api/v1/vakajarjestajat/2/',
-            'lahdejarjestelma': '1',
-        }
-
-        resp = client.post("/api/henkilosto/v1/tyontekijat/", json.dumps(tyontekija), content_type="application/json")
-        assert_status_code(resp, 201)
-        tyontekija_url = json.loads(resp.content)['url']
+        tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija3')
 
         palvelussuhde = {
-            'tyontekija': tyontekija_url,
+            'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/',
             'tyosuhde_koodi': '1',
             'tyoaika_koodi': '1',
             'tutkinto_koodi': '321901',
@@ -586,31 +578,11 @@ class VardaHenkiloViewSetTests(TestCase):
     def test_palvelussuhde_edit_allowed(self):
         client = SetUpTestClient('credadmin').client()
 
-        tyontekija = {
-            'henkilo': '/api/v1/henkilot/1/',
-            'vakajarjestaja': '/api/v1/vakajarjestajat/2/',
-            'lahdejarjestelma': '1',
-        }
-
-        resp = client.post("/api/henkilosto/v1/tyontekijat/", json.dumps(tyontekija), content_type="application/json")
-        assert_status_code(resp, 201)
-        tyontekija_url = json.loads(resp.content)['url']
-
-        palvelussuhde = {
-            'tyontekija': tyontekija_url,
-            'tyosuhde_koodi': '1',
-            'tyoaika_koodi': '1',
-            'tutkinto_koodi': '321901',
-            'tyoaika_viikossa': '38.73',
-            'alkamis_pvm': '2020-03-01',
-            'paattymis_pvm': '2020-03-02',
-            'lahdejarjestelma': '1',
-            'tunniste': 'a'
-        }
-
-        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
-        assert_status_code(resp, 201)
-        palvelussuhde_id = json.loads(resp.content)['id']
+        # Get initial data as a dictionary
+        palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
+        resp = client.get(f"/api/henkilosto/v1/palvelussuhteet/{palvelussuhde.id}/")
+        assert_status_code(resp, 200)
+        palvelussuhde_dict = json.loads(resp.content)
 
         # These are the fields that can be edited
         palvelussuhde_edits = {
@@ -626,13 +598,13 @@ class VardaHenkiloViewSetTests(TestCase):
 
         # Change fields one by one and make sure we get a success
         for key, value in palvelussuhde_edits.items():
-            palvelussuhde_edit = palvelussuhde.copy()
+            palvelussuhde_edit = palvelussuhde_dict.copy()
             palvelussuhde_edit[key] = value
-            resp = client.put(f"/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_id}/", json.dumps(palvelussuhde_edit), content_type="application/json")
+            resp = client.put(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_dict["id"]}/', json.dumps(palvelussuhde_edit), content_type="application/json")
             assert_status_code(resp, 200, key)
 
             # Fetch object and ensure field was changed
-            resp = client.get(f"/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_id}/")
+            resp = client.get(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_dict["id"]}/')
             assert_status_code(resp, 200)
             data = json.loads(resp.content)
             self.assertEqual(value, data[key])
@@ -640,59 +612,33 @@ class VardaHenkiloViewSetTests(TestCase):
     def test_palvelussuhde_edit_disallowed(self):
         client = SetUpTestClient('credadmin').client()
 
-        tyontekija = {
-            'henkilo': '/api/v1/henkilot/1/',
-            'vakajarjestaja': '/api/v1/vakajarjestajat/2/',
-            'lahdejarjestelma': '1',
-        }
+        tyontekija_3 = Tyontekija.objects.get(tunniste='testing-tyontekija3')
 
-        resp = client.post("/api/henkilosto/v1/tyontekijat/", json.dumps(tyontekija), content_type="application/json")
-        assert_status_code(resp, 201)
-        tyontekija_url = json.loads(resp.content)['url']
-
-        palvelussuhde = {
-            'tyontekija': tyontekija_url,
-            'tyosuhde_koodi': '1',
-            'tyoaika_koodi': '1',
-            'tutkinto_koodi': '321901',
-            'tyoaika_viikossa': '38.73',
-            'alkamis_pvm': '2020-03-01',
-            'paattymis_pvm': '2020-03-02',
-            'lahdejarjestelma': '1',
-            'tunniste': 'a'
-        }
-
-        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
-        assert_status_code(resp, 201)
-        palvelussuhde_id = json.loads(resp.content)['id']
+        # Get initial data as a dictionary
+        palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
+        resp = client.get(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde.id}/')
+        assert_status_code(resp, 200)
+        palvelussuhde_dict = json.loads(resp.content)
 
         # These are the fields that can't be edited
         palvelussuhde_edits = {
-            'tyontekija': '/api/henkilosto/v1/tyontekijat/100000000/',
+            'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_3.id}/',
         }
 
         # Change fields one by one and make sure we get a fail
         for key, value in palvelussuhde_edits.items():
-            palvelussuhde_edit = palvelussuhde.copy()
+            palvelussuhde_edit = palvelussuhde_dict.copy()
             palvelussuhde_edit[key] = value
-            resp = client.put(f"/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_id}/", json.dumps(palvelussuhde_edit), content_type="application/json")
+            resp = client.put(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_dict["id"]}/', json.dumps(palvelussuhde_edit), content_type="application/json")
             assert_status_code(resp, 400, key)
 
     def test_palvelussuhde_add_correct_end_date_null(self):
         client = SetUpTestClient('credadmin').client()
 
-        tyontekija = {
-            'henkilo': '/api/v1/henkilot/1/',
-            'vakajarjestaja': '/api/v1/vakajarjestajat/2/',
-            'lahdejarjestelma': '1',
-        }
-
-        resp = client.post("/api/henkilosto/v1/tyontekijat/", json.dumps(tyontekija), content_type="application/json")
-        assert_status_code(resp, 201)
-        tyontekija_url = json.loads(resp.content)['url']
+        tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija3')
 
         palvelussuhde = {
-            'tyontekija': tyontekija_url,
+            'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/',
             'tyosuhde_koodi': '1',
             'tyoaika_koodi': '1',
             'tutkinto_koodi': '321901',
@@ -708,24 +654,16 @@ class VardaHenkiloViewSetTests(TestCase):
     def test_palvelussuhde_add_incorrect_end_date(self):
         client = SetUpTestClient('credadmin').client()
 
-        tyontekija = {
-            'henkilo': '/api/v1/henkilot/1/',
-            'vakajarjestaja': '/api/v1/vakajarjestajat/2/',
-            'lahdejarjestelma': '1',
-        }
-
-        resp = client.post("/api/henkilosto/v1/tyontekijat/", json.dumps(tyontekija), content_type="application/json")
-        assert_status_code(resp, 201)
-        tyontekija_url = json.loads(resp.content)['url']
+        tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija3')
 
         palvelussuhde = {
-            'tyontekija': tyontekija_url,
+            'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/',
             'tyosuhde_koodi': '1',
             'tyoaika_koodi': '1',
             'tutkinto_koodi': '321901',
             'tyoaika_viikossa': '38.73',
             'alkamis_pvm': '2020-03-01',
-            'paattymis_pvm': '2020-03-01',
+            'paattymis_pvm': '2020-03-01',  # Not after alkamis_pvm
             'lahdejarjestelma': '1',
         }
 
@@ -737,18 +675,10 @@ class VardaHenkiloViewSetTests(TestCase):
     def test_palvelussuhde_add_too_many(self):
         client = SetUpTestClient('credadmin').client()
 
-        tyontekija = {
-            'henkilo': '/api/v1/henkilot/1/',
-            'vakajarjestaja': '/api/v1/vakajarjestajat/2/',
-            'lahdejarjestelma': '1',
-        }
-
-        resp = client.post("/api/henkilosto/v1/tyontekijat/", json.dumps(tyontekija), content_type="application/json")
-        assert_status_code(resp, 201)
-        tyontekija_url = json.loads(resp.content)['url']
+        tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija3')
 
         palvelussuhde = {
-            'tyontekija': tyontekija_url,
+            'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/',
             'tyosuhde_koodi': '1',
             'tyoaika_koodi': '1',
             'tutkinto_koodi': '321901',
@@ -777,18 +707,10 @@ class VardaHenkiloViewSetTests(TestCase):
     def test_palvelussuhde_add_invalid_codes(self):
         client = SetUpTestClient('credadmin').client()
 
-        tyontekija = {
-            'henkilo': '/api/v1/henkilot/1/',
-            'vakajarjestaja': '/api/v1/vakajarjestajat/2/',
-            'lahdejarjestelma': '1',
-        }
-
-        resp = client.post("/api/henkilosto/v1/tyontekijat/", json.dumps(tyontekija), content_type="application/json")
-        assert_status_code(resp, 201)
-        tyontekija_url = json.loads(resp.content)['url']
+        tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija3')
 
         palvelussuhde = {
-            'tyontekija': tyontekija_url,
+            'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/',
             'tyosuhde_koodi': 'foo1',
             'tyoaika_koodi': 'foo2',
             'tutkinto_koodi': 'foo3',
@@ -803,3 +725,298 @@ class VardaHenkiloViewSetTests(TestCase):
         self.assertIn("Not a valid tyosuhde_koodi", ''.join(messages['tyosuhde_koodi']))
         self.assertIn("Not a valid tyoaika_koodi", ''.join(messages['tyoaika_koodi']))
         self.assertIn("Not a valid tutkinto_koodi", ''.join(messages['tutkinto_koodi']))
+
+    def test_palvelussuhde_add_wrong_tutkinto(self):
+        client = SetUpTestClient('credadmin').client()
+
+        tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija3')
+
+        palvelussuhde = {
+            'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/',
+            'tyosuhde_koodi': '1',
+            'tyoaika_koodi': '1',
+            'tutkinto_koodi': '003',
+            'tyoaika_viikossa': '38.73',
+            'alkamis_pvm': '2020-03-01',
+            'paattymis_pvm': '2020-03-02',
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        assert_status_code(resp, 400)
+        messages = json.loads(resp.content)
+        self.assertIn('tyontekija has tutkinnot other than just 003.', ''.join(messages['tutkinto_koodi']))
+
+    def test_tyoskentelypaikka_add_correct(self):
+        client = SetUpTestClient('credadmin').client()
+
+        palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
+        toimipaikka = Toimipaikka.objects.filter(organisaatio_oid='1.2.246.562.10.9395737548810')[0]
+
+        tyoskentelypaikka = {
+            'palvelussuhde': '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde.id),
+            'toimipaikka': '/api/v1/toimipaikat/{}/'.format(toimipaikka.id),
+            'alkamis_pvm': '2020-03-01',
+            'paattymis_pvm': '2020-05-02',
+            'tehtavanimike_koodi': '39407',
+            'kelpoisuus_kytkin': True,
+            'kiertava_tyontekija_kytkin': False,
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        assert_status_code(resp, 201)
+
+    def test_tyoskentelypaikka_add_too_many(self):
+        client = SetUpTestClient('credadmin').client()
+
+        palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
+        palvelussuhde_22 = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2-2')
+        palvelussuhde_url = '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde.id)
+        palvelussuhde_22_url = '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde_22.id)
+        toimipaikka = Toimipaikka.objects.filter(organisaatio_oid='1.2.246.562.10.9395737548810')[0]
+
+        # Tietoluettelosta: "Työntekijälle voi tallentaa enintään kolme pääasiallista toimipaikkaa, joissa työntekijä työskentelee."
+
+        tyoskentelypaikka = {
+            'palvelussuhde': palvelussuhde_url,
+            'toimipaikka': '/api/v1/toimipaikat/{}/'.format(toimipaikka.id),
+            'alkamis_pvm': '2021-03-01',
+            'paattymis_pvm': '2021-05-02',
+            'tehtavanimike_koodi': '39407',
+            'kelpoisuus_kytkin': True,
+            'kiertava_tyontekija_kytkin': False,
+            'lahdejarjestelma': '1',
+        }
+
+        # Add as many as we can
+        for i in range(3):
+            resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+            assert_status_code(resp, 201)
+
+        # The next one will fail
+        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        assert_status_code(resp, 400)
+        messages = json.loads(resp.content)
+        self.assertIn('Already have 3 overlapping tyoskentelypaikka on the defined time range.', ''.join(messages['palvelussuhde']))
+
+        # So does this: limit is global across all palvelussuhteet
+        tyoskentelypaikka.update(palvelussuhde=palvelussuhde_22_url)
+        assert_status_code(resp, 400)
+        messages = json.loads(resp.content)
+        self.assertIn('Already have 3 overlapping tyoskentelypaikka on the defined time range.', ''.join(messages['palvelussuhde']))
+
+        # But cases where kiertava_tyontekija_kytkin is True are ok
+        tyoskentelypaikka.update(kiertava_tyontekija_kytkin=True, toimipaikka=None)
+        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        assert_status_code(resp, 201)
+
+        # So are later dates
+        tyoskentelypaikka.update(kiertava_tyontekija_kytkin=False, toimipaikka='/api/v1/toimipaikat/1/', alkamis_pvm='2022-02-02', paattymis_pvm='2023-03-03')
+        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        assert_status_code(resp, 201)
+
+    def test_tyoskentelypaikka_edit_allowed(self):
+        client = SetUpTestClient('credadmin').client()
+
+        # Get initial data as a dictionary
+        tyoskentelypaikka = Tyoskentelypaikka.objects.get(tunniste='testing-tyoskentelypaikka1')
+        resp = client.get('/api/henkilosto/v1/tyoskentelypaikat/{}/'.format(tyoskentelypaikka.id))
+        assert_status_code(resp, 200)
+        tyoskentelypaikka_dict = json.loads(resp.content)
+
+        # These are the fields that can be edited
+        tyoskentelypaikka_edits = {
+            'alkamis_pvm': '2020-04-01',
+            'paattymis_pvm': '2022-12-31',
+            'tehtavanimike_koodi': '84724',
+            'lahdejarjestelma': '2',
+            'tunniste': 'tunniste2',
+            'kelpoisuus_kytkin': True,  # Change this last, otherwise it gets messed up due to downgrade disallow
+        }
+
+        # Change fields one by one and make sure we get a success
+        for key, value in tyoskentelypaikka_edits.items():
+            tyoskentelypaikka_edit = tyoskentelypaikka_dict.copy()
+            tyoskentelypaikka_edit[key] = value
+            resp = client.put('/api/henkilosto/v1/tyoskentelypaikat/{}/'.format(tyoskentelypaikka_dict["id"]), json.dumps(tyoskentelypaikka_edit), content_type="application/json")
+            assert_status_code(resp, 200, key)
+
+            # Fetch object and ensure field was changed
+            resp = client.get('/api/henkilosto/v1/tyoskentelypaikat/{}/'.format(tyoskentelypaikka_dict["id"]))
+            assert_status_code(resp, 200)
+            data = json.loads(resp.content)
+            self.assertEqual(value, data[key])
+
+    def test_tyoskentelypaikka_edit_ignored(self):
+        client = SetUpTestClient('credadmin').client()
+
+        palvelussuhde_2 = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
+        toimipaikka_2 = Toimipaikka.objects.filter(organisaatio_oid='1.2.246.562.10.9395737548815')[0]
+
+        # Get initial data as a dictionary
+        tyoskentelypaikka = Tyoskentelypaikka.objects.get(tunniste='testing-tyoskentelypaikka1')
+        tyoskentelypaikka_url = '/api/henkilosto/v1/tyoskentelypaikat/{}/'.format(tyoskentelypaikka.id)
+        resp = client.get(tyoskentelypaikka_url)
+        assert_status_code(resp, 200)
+        tyoskentelypaikka_dict = json.loads(resp.content)
+        tyoskentelypaikka_dict_original = tyoskentelypaikka_dict.copy()
+
+        # These need to be changed in unison, but we are changing them one by one, so just delete them
+        del tyoskentelypaikka_dict['toimipaikka']
+        del tyoskentelypaikka_dict['toimipaikka_oid']
+
+        # These are the basic fields that can't be edited
+        tyoskentelypaikka_edits = {
+            'palvelussuhde': '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde_2.id),
+            'toimipaikka': '/api/v1/toimipaikat/{}/'.format(toimipaikka_2.id),
+            'toimipaikka_oid': '1.2.246.562.10.9395737548815',
+        }
+
+        # Change fields one by one and make sure we get a fail
+        for key, value in tyoskentelypaikka_edits.items():
+            tyoskentelypaikka_edit = tyoskentelypaikka_dict.copy()
+            tyoskentelypaikka_edit[key] = value
+            resp = client.put(tyoskentelypaikka_url, json.dumps(tyoskentelypaikka_edit), content_type="application/json")
+            assert_status_code(resp, 200, key)
+
+            # Make sure that the so-called edit didn't do anything
+            resp = client.get(tyoskentelypaikka_url)
+            assert_status_code(resp, 200)
+            tyoskentelypaikka_dict2 = json.loads(resp.content)
+            self.assertEqual(tyoskentelypaikka_dict_original[key], tyoskentelypaikka_dict2[key])
+
+    def test_tyoskentelypaikka_kiertava_disallows_toimipaikka(self):
+        client = SetUpTestClient('credadmin').client()
+
+        palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
+        toimipaikka = Toimipaikka.objects.filter(organisaatio_oid='1.2.246.562.10.9395737548810')[0]
+
+        tyoskentelypaikka = {
+            'palvelussuhde': '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde.id),
+            'toimipaikka': '/api/v1/toimipaikat/{}/'.format(toimipaikka.id),
+            'alkamis_pvm': '2020-03-01',
+            'paattymis_pvm': '2020-05-02',
+            'tehtavanimike_koodi': '39407',
+            'kelpoisuus_kytkin': True,
+            'kiertava_tyontekija_kytkin': True,
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        assert_status_code(resp, 400)
+        messages = json.loads(resp.content)
+        self.assertIn('toimipaikka can\'t be specified with kiertava_tyontekija_kytkin.', messages.get('kiertava_tyontekija_kytkin', []))
+
+    def test_tyoskentelypaikka_kelpoisuus_downgrade_allowed(self):
+        client = SetUpTestClient('credadmin').client()
+
+        # Get initial data as a dictionary and adjust for kelpoisuus_kytkin
+        tyoskentelypaikka = Tyoskentelypaikka.objects.get(tunniste='testing-tyoskentelypaikka1')
+        tyoskentelypaikka.kelpoisuus_kytkin = True  # Downgrade is allowed
+        tyoskentelypaikka.save()
+        resp = client.get('/api/henkilosto/v1/tyoskentelypaikat/{}/'.format(tyoskentelypaikka.id))
+        assert_status_code(resp, 200)
+        tyoskentelypaikka_dict = json.loads(resp.content)
+
+        tyoskentelypaikka_dict.update(kelpoisuus_kytkin=False)
+
+        resp = client.put('/api/henkilosto/v1/tyoskentelypaikat/{}/'.format(tyoskentelypaikka_dict["id"]), json.dumps(tyoskentelypaikka_dict), content_type="application/json")
+        assert_status_code(resp, 200)
+
+    def test_tyoskentelypaikka_incorrect_date_validation(self):
+        client = SetUpTestClient('credadmin').client()
+
+        palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
+        toimipaikka = Toimipaikka.objects.filter(organisaatio_oid='1.2.246.562.10.9395737548810')[0]
+
+        # These are the fields that can be edited
+        tyoskentelypaikka = {
+            'palvelussuhde': '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde.id),
+            'toimipaikka': '/api/v1/toimipaikat/{}/'.format(toimipaikka.id),
+            'alkamis_pvm': '2020-03-01',
+            'paattymis_pvm': '2020-05-02',
+            'tehtavanimike_koodi': '39407',
+            'kelpoisuus_kytkin': True,
+            'kiertava_tyontekija_kytkin': False,
+            'lahdejarjestelma': '1',
+        }
+
+        # Palvelussuhde alkamis_pvm   2020-03-01
+        # Palvelussuhde paattymis_pvm 2030-03-01
+
+        cases = [
+            ('2020-03-01', '2020-01-01', 'paattymis_pvm', 'paattymis_pvm must be after alkamis_pvm.'),
+            ('2020-03-01', '2031-01-01', 'paattymis_pvm', 'paattymis_pvm must be before palvelussuhde paattymis_pvm (or same).'),
+            ('1999-03-01', '2021-01-01', 'alkamis_pvm', 'alkamis_pvm must be after palvelussuhde alkamis_pvm (or same).'),
+            ('2031-03-01', '2032-01-01', 'alkamis_pvm', 'alkamis_pvm must be before palvelussuhde paattymis_pvm.'),
+        ]
+
+        for (start, end, key, expected_message) in cases:
+            tyoskentelypaikka.update(alkamis_pvm=start, paattymis_pvm=end)
+            resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+            assert_status_code(resp, 400, f'{start}_{end}')
+            messages = json.loads(resp.content)
+            self.assertIn(expected_message, messages.get(key, []))
+
+    def test_tyoskentelypaikka_non_kiertava_overlaps_kiertava(self):
+        client = SetUpTestClient('credadmin').client()
+
+        palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
+        palvelussuhde_22 = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2-2')
+        palvelussuhde_url = '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde.id)
+        palvelussuhde_22_url = '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde_22.id)
+        toimipaikka = Toimipaikka.objects.filter(organisaatio_oid='1.2.246.562.10.9395737548810')[0]
+
+        # Mikäli on kiertävä työntekijä jollain ajanjaksolla (ko. palvelussuhteessa) ei voi
+        # lisätä työskentelypaikkaa jossa on toimipaikkatieto. Sama myös toisinpäin: jos on
+        # jo toimipaikkakohtanen tieto, niin työntekijästä ei voi tehdä kiertävää ko. ajanjaksolla.
+
+        tyoskentelypaikka = {
+            'palvelussuhde': palvelussuhde_url,
+            'toimipaikka': '/api/v1/toimipaikat/{}/'.format(toimipaikka.id),
+            'alkamis_pvm': '2025-01-01',
+            'paattymis_pvm': '2025-10-01',
+            'tehtavanimike_koodi': '39407',
+            'kelpoisuus_kytkin': True,
+            'kiertava_tyontekija_kytkin': False,
+            'lahdejarjestelma': '1',
+        }
+
+        # Add a tyoskentelypaikka on some date range with kiertava=False
+        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        assert_status_code(resp, 201)
+
+        # Try to add another on the same range with kiertava kiertava=True
+        # This should fail.
+        tyoskentelypaikka.update(toimipaikka=None, kiertava_tyontekija_kytkin=True, alkamis_pvm='2025-05-01', paattymis_pvm='2025-12-31')
+        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        assert_status_code(resp, 400)
+        messages = json.loads(resp.content)
+        self.assertIn('can\'t have different values of kiertava_tyontekija_kytkin on overlapping date ranges', messages.get('kiertava_tyontekija_kytkin', []))
+
+        # But works on a different palvelussuhde, on the same tyontekija
+        tyoskentelypaikka.update(palvelussuhde=palvelussuhde_22_url)
+        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        assert_status_code(resp, 201)
+
+    def test_tyoskentelypaikka_add_incorrect_toimipaikka(self):
+        client = SetUpTestClient('credadmin').client()
+
+        palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
+
+        tyoskentelypaikka = {
+            'palvelussuhde': '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde.id),
+            'toimipaikka_oid': '1.2.246.562.10.9395737548815',
+            'alkamis_pvm': '2020-03-01',
+            'paattymis_pvm': '2020-05-02',
+            'tehtavanimike_koodi': '39407',
+            'kelpoisuus_kytkin': True,
+            'kiertava_tyontekija_kytkin': False,
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        assert_status_code(resp, 400)
+        messages = json.loads(resp.content)
+        self.assertIn('Toimipaikka must have the same vakajarjestaja as tyontekija', messages.get('toimipaikka', []))

@@ -4,7 +4,7 @@ import logging
 from collections import namedtuple
 from rest_framework.exceptions import ValidationError
 from varda.models import (VakaJarjestaja, Henkilo, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Lapsi, Huoltaja,
-                          Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Palvelussuhde)
+                          Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Palvelussuhde, Tyoskentelypaikka)
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -73,7 +73,7 @@ def check_if_user_has_add_toimipaikka_permissions_under_vakajarjestaja(vakajarje
         raise ValidationError(validation_error_msg)
 
     if user_details.kayttajatyyppi == "PALVELU":
-        return
+        return None
 
     # Kayttaja == "VIRKAILIJA"
     vakajarjestaja = VakaJarjestaja.objects.get(id=vakajarjestaja_id)
@@ -112,7 +112,7 @@ def check_if_henkilo_is_changed(path, uusi_henkilo_id, user):
     rooli_id = list_of_path_segments[-2]
 
     if user.is_superuser:
-        return
+        return None
 
     if "huoltajat" in path:
         nykyinen_henkilo_id = Huoltaja.objects.get(id=rooli_id).henkilo.id
@@ -125,13 +125,18 @@ def check_if_henkilo_is_changed(path, uusi_henkilo_id, user):
 
 def check_if_admin_mutable_object_is_changed(user, instance, data, key):
     if user.is_superuser:
-        return
+        return None
 
     check_if_immutable_object_is_changed(instance, data, key)
 
 
-def check_if_immutable_object_is_changed(instance, data, key):
-    if key in data and data[key].id != getattr(instance, key).id:
+def check_if_immutable_object_is_changed(instance, data, key, attr=None):
+    if attr is None:
+        def get_id(x):
+            return x.id
+        attr = get_id
+
+    if key in data and attr(data[key]) != attr(getattr(instance, key)):
         msg = ({key: [f'Changing of {key} is not allowed']})
         raise ValidationError(msg, code='invalid')
 
@@ -232,6 +237,33 @@ def check_overlapping_palvelussuhde_object(validated_data, modelobj, *args):
                 counter += 1
     if counter > MAX_OVERLAPS:
         msg = f'Already have {counter - 1} overlapping palvelussuhde on the defined time range.'
+        raise ValidationError({'palvelussuhde': [msg]})
+
+
+def check_overlapping_tyoskentelypaikka_object(validated_data, modelobj, *args):
+    """
+    Checks that the number of tyoskentelypaikka during any time period is less than the maximum
+    """
+    if args:
+        model_id, original = get_model_id_and_original(modelobj, args[0])
+    else:
+        model_id, original = get_model_id_and_original(modelobj)
+
+    tyontekija_id = validated_data['palvelussuhde'].tyontekija.id if 'palvelussuhde' in validated_data else original.palvelussuhde.tyontekija.id
+    queryset = Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija_id)
+
+    alkamis_pvm, paattymis_pvm = get_alkamis_paattymis_pvm(validated_data, original)
+    daterange_new = create_daterange(alkamis_pvm, paattymis_pvm)
+    MAX_OVERLAPS = 3
+    counter = 1
+    for item in queryset:
+        if item.id != int(model_id):
+            daterange_existing = create_daterange(item.alkamis_pvm, item.paattymis_pvm)
+            overlap = daterange_overlap(daterange_existing, daterange_new)
+            if overlap:
+                counter += 1
+    if counter > MAX_OVERLAPS:
+        msg = f'Already have {counter - 1} overlapping tyoskentelypaikka on the defined time range.'
         raise ValidationError({'palvelussuhde': [msg]})
 
 

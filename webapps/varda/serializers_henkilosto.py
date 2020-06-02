@@ -1,9 +1,11 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from varda import related_object_validations
 from varda.cache import caching_to_representation
-from varda.models import Henkilo, TilapainenHenkilosto, Tutkinto, Tyontekija, VakaJarjestaja, Palvelussuhde
-from varda.serializers import HenkiloHLField, VakaJarjestajaHLField
+from varda.models import (Henkilo, TilapainenHenkilosto, Tutkinto, Tyontekija, VakaJarjestaja, Palvelussuhde,
+                          Tyoskentelypaikka, Toimipaikka)
+from varda.serializers import HenkiloHLField, VakaJarjestajaHLField, ToimipaikkaHLField
 from varda.serializers_common import OidRelatedField
 from varda.validators import validate_henkilo_oid, validate_organisaatio_oid
 
@@ -18,6 +20,16 @@ class TyontekijaHLField(serializers.HyperlinkedRelatedField):
             queryset = Tyontekija.objects.all().order_by('id')
         else:
             queryset = Tyontekija.objects.none()
+        return queryset
+
+
+class PalvelussuhdeHLField(serializers.HyperlinkedRelatedField):
+    def get_queryset(self):
+        user = self.context['request'].user
+        if user.is_authenticated:
+            queryset = Palvelussuhde.objects.all().order_by('id')
+        else:
+            queryset = Palvelussuhde.objects.none()
         return queryset
 
 
@@ -134,6 +146,7 @@ class PalvelussuhdeSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Palvelussuhde
         exclude = ('changed_by', 'luonti_pvm')
+        read_only_fields = ('muutos_pvm', )
 
     @caching_to_representation('palvelussuhde')
     def to_representation(self, instance):
@@ -146,3 +159,41 @@ class PalvelussuhdeSerializer(serializers.HyperlinkedModelSerializer):
             related_object_validations.check_if_immutable_object_is_changed(instance, data, 'tyontekija')
 
         return data
+
+
+class TyoskentelypaikkaSerializer(serializers.HyperlinkedModelSerializer):
+    id = serializers.ReadOnlyField()
+    palvelussuhde = PalvelussuhdeHLField(view_name='palvelussuhde-detail')
+    toimipaikka = ToimipaikkaHLField(required=False, allow_null=True, view_name='toimipaikka-detail')
+    toimipaikka_oid = OidRelatedField(object_type=Toimipaikka,
+                                      parent_field='toimipaikka',
+                                      parent_attribute='organisaatio_oid',
+                                      prevalidator=validate_organisaatio_oid,
+                                      either_required=False)
+    kiertava_tyontekija_kytkin = serializers.BooleanField(default=False)
+
+    class Meta:
+        model = Tyoskentelypaikka
+        exclude = ('changed_by', 'luonti_pvm')
+        read_only_fields = ('muutos_pvm', )
+
+    @caching_to_representation('tyoskentelypaikka')
+    def to_representation(self, instance):
+        return super(TyoskentelypaikkaSerializer, self).to_representation(instance)
+
+    def validate(self, data):
+        if data['kiertava_tyontekija_kytkin'] and data.get('toimipaikka', None):
+            msg = ({'kiertava_tyontekija_kytkin': ['toimipaikka can\'t be specified with kiertava_tyontekija_kytkin.']})
+            raise ValidationError(msg, code='invalid')
+
+        return data
+
+
+class TyoskentelypaikkaUpdateSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Tyoskentelypaikka
+        fields = ('tehtavanimike_koodi', 'kelpoisuus_kytkin', 'alkamis_pvm', 'paattymis_pvm', 'lahdejarjestelma', 'tunniste')
+
+    @caching_to_representation('tyoskentelypaikka')
+    def to_representation(self, instance):
+        return super(TyoskentelypaikkaUpdateSerializer, self).to_representation(instance)

@@ -148,6 +148,7 @@ router_henkilosto.register(r'tyontekijat', viewsets_henkilosto.TyontekijaViewSet
 router_henkilosto.register(r'tilapainen-henkilosto', viewsets_henkilosto.TilapainenHenkilostoViewSet)
 router_henkilosto.register(r'tutkinnot', viewsets_henkilosto.TutkintoViewSet)
 router_henkilosto.register(r'palvelussuhteet', viewsets_henkilosto.PalvelussuhdeViewSet)
+router_henkilosto.register(r'tyoskentelypaikat', viewsets_henkilosto.TyoskentelypaikkaViewSet)
 
 # Routes for Julkinen-URLs
 

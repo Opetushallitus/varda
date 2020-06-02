@@ -1,6 +1,6 @@
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
                           Maksutieto, PaosToiminta, PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-                          TilapainenHenkilosto, Tutkinto, Palvelussuhde)
+                          TilapainenHenkilosto, Tutkinto, Palvelussuhde, Tyoskentelypaikka)
 from django.db.models import Q
 from django_filters import rest_framework as djangofilters
 
@@ -243,4 +243,20 @@ class PalvelussuhdeFilter(djangofilters.FilterSet):
 
     class Meta:
         model = Palvelussuhde
+        fields = []
+
+
+class TyoskentelypaikkaFilter(djangofilters.FilterSet):
+    palvelussuhde = djangofilters.NumberFilter(field_name='palvelussuhde__id', lookup_expr='exact')
+    toimipaikka = djangofilters.NumberFilter(field_name='toimipaikka__id', lookup_expr='exact')
+    tehtavanimike_koodi = djangofilters.CharFilter(field_name='tehtavanimike_koodi', lookup_expr='exact')
+    kelpoisuus_kytkin = djangofilters.BooleanFilter(field_name='kelpoisuus_kytkin', lookup_expr='exact')
+    kiertava_tyontekija_kytkin = djangofilters.BooleanFilter(field_name='kiertava_tyontekija_kytkin', lookup_expr='exact')
+    alkamis_pvm = djangofilters.DateFilter(field_name='alkamis_pvm', lookup_expr='gte')
+    paattymis_pvm = djangofilters.DateFilter(field_name='paattymis_pvm', lookup_expr='gte')
+    lahdejarjestelma = djangofilters.CharFilter(field_name='lahdejarjestelma', lookup_expr='exact')
+    tunniste = djangofilters.CharFilter(field_name='tunniste', lookup_expr='exact')
+
+    class Meta:
+        model = Tyoskentelypaikka
         fields = []

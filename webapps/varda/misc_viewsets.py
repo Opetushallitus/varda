@@ -9,9 +9,9 @@ the error dictionary.
 The error dictionary itself is a context manager, making it easy to use and not forget
 to throw the potential validation errors:
 
->>> with ViewSetValidator() as validator:
->>>     if condition:
->>>         validator.error('some_field', 'Some message.')
+     with ViewSetValidator() as validator:
+        if condition:
+            validator.error('some_field', 'Some message.')
 """
 from rest_framework.exceptions import ValidationError
 
@@ -63,10 +63,10 @@ class ViewSetValidator:
         Returns a context handler that catches a ValidationError and
         adds its contents to the error dictionary.
 
-        >>> with validator.wrap():
-        >>>     raise ValidationError('foo')
-        >>> with validator.wrap():
-        >>>     raise ValidationError({'key': 'bar'})
+            with validator.wrap():
+                raise ValidationError('foo')
+            with validator.wrap():
+                raise ValidationError({'key': 'bar'})
         """
 
         return ValidationErrorWrapper(self)

@@ -322,7 +322,7 @@ def validate_paattymispvm_after_alkamispvm(validated_data):
 
     if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
         if not validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm'], can_be_same=False):
-            msg = {'paattymis_pvm': 'paattymis_pvm must be after alkamis_pvm.'}
+            msg = {'paattymis_pvm': ['paattymis_pvm must be after alkamis_pvm.']}
             raise ValidationErrorRest(msg)
 
 

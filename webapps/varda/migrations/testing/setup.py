@@ -447,6 +447,7 @@ def create_henkilot():
     from django.contrib.auth.models import Group, User
     from guardian.shortcuts import assign_perm
     from varda.models import Henkilo
+    from varda.misc import hash_string
 
     tester_user = User.objects.get(username='tester')
     tester2_user = User.objects.get(username='tester2')
@@ -748,22 +749,42 @@ def create_henkilot():
         changed_by=tester_user
     )
 
-    assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_1)
-    assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_2)
-    assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_3)
-    assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_4)
-    assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_5)
-    assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_6)
-    assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_7)
-    assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_8)
-    assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_9)
-    assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_10)
-    assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_11)
-    assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_12)
-    assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_13)
-    assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_14)
-    assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_15)
-    assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_16)
+    # Henkilo (020400A925B) that is a Tyontekija and has a Palvelussuhde and a Tyoskentelypaikka
+    henkilo_17 = Henkilo.objects.create(
+        henkilotunnus='gAAAAABe1MWYFHThAaVTNtD0e5eqLrILocRrHLcnWIT3wWY1Q9HL81fFBqT6ZsynVVpG66tY--pZAFVzLTiJkZpeY5ykZWNlYA==',
+        henkilotunnus_unique_hash=hash_string('020400A925B'),
+        etunimet='Aatu',
+        kutsumanimi='Aatu',
+        sukunimi='Uraputki',
+        changed_by=tester_user
+    )
+
+    # Henkilo (020400A926C) that is a Tyontekija and has two Palvelussuhde
+    henkilo_18 = Henkilo.objects.create(
+        henkilotunnus='gAAAAABe1MWYXUPykNlwVdEnV-RGUEIP5SbXSfIMku8S4feee__16334ZkaMohmiiuS0M93jrsgHHFHQHIH2ZG-Rg1bh8w5dqQ==',
+        henkilotunnus_unique_hash=hash_string('020400A926C'),
+        etunimet='Bella',
+        kutsumanimi='Bella',
+        sukunimi='Uraputki',
+        changed_by=tester2_user
+    )
+
+    #  Henkilo (020400A927D) that is a Tyontekija
+    henkilo_19 = Henkilo.objects.create(
+        henkilotunnus='gAAAAABe1MWYNPBAkDqIfzXfqNd4bSTi11R3Y8KfyxAlhj0BKnKd1Z0u9oxiIkJ6P-y4QhUHsHB2jo0bbz67-WLDf-HLZK7UOg==',
+        henkilotunnus_unique_hash=hash_string('020400A927D'),
+        etunimet='Calervo',
+        kutsumanimi='Calervo',
+        sukunimi='Uraputki',
+        changed_by=tester_user
+    )
+
+    henkilo_list = {
+        henkilo_1, henkilo_2, henkilo_3, henkilo_4, henkilo_5, henkilo_6, henkilo_7, henkilo_8, henkilo_9, henkilo_10,
+        henkilo_11, henkilo_12, henkilo_13, henkilo_14, henkilo_15, henkilo_16, henkilo_17, henkilo_18, henkilo_19
+    }
+    for henkilo in henkilo_list:
+        assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo)
 
 
 def create_lapset():
@@ -1842,6 +1863,107 @@ def create_onr_lapsi_huoltajat(create_all_vakajarjestajat=False):
     fetch_huoltajat_if_applicable()
 
 
+def create_henkilosto():
+    from django.contrib.auth.models import User
+    from varda.models import Henkilo, Tyontekija, Palvelussuhde, Tyoskentelypaikka, VakaJarjestaja, Toimipaikka, Tutkinto
+    from varda.misc import hash_string
+
+    admin_user = User.objects.get(username='credadmin')
+    vakajarjestaja_tester = VakaJarjestaja.objects.filter(nimi='Tester organisaatio')[0]
+    toimipaikka_1 = Toimipaikka.objects.filter(organisaatio_oid='1.2.246.562.10.9395737548810')[0]
+    henkilo_1 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A925B'))
+    henkilo_2 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A926C'))
+    henkilo_3 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A927D'))
+
+    def add_tutkinto(henkilo, *tutkinnot):
+        for tutkinto in tutkinnot:
+            Tutkinto.objects.create(
+                henkilo=henkilo,
+                tutkinto_koodi=tutkinto,
+                changed_by_id=admin_user.id
+            )
+
+    add_tutkinto(henkilo_1, '321901', '712104', '613101')
+    add_tutkinto(henkilo_2, '321901', '712104', '613101')
+    add_tutkinto(henkilo_3, '321901', '712104', '613101')
+
+    tyontekija_1 = Tyontekija.objects.create(
+        henkilo=henkilo_1,
+        vakajarjestaja=vakajarjestaja_tester,
+        lahdejarjestelma=1,
+        tunniste='testing-tyontekija1',
+        changed_by_id=admin_user.id
+    )
+
+    tyontekija_2 = Tyontekija.objects.create(
+        henkilo=henkilo_2,
+        vakajarjestaja=vakajarjestaja_tester,
+        lahdejarjestelma=1,
+        tunniste='testing-tyontekija2',
+        changed_by_id=admin_user.id
+    )
+
+    Tyontekija.objects.create(
+        henkilo=henkilo_3,
+        vakajarjestaja=vakajarjestaja_tester,
+        lahdejarjestelma=1,
+        tunniste='testing-tyontekija3',
+        changed_by_id=admin_user.id
+    )
+
+    palvelussuhde_1 = Palvelussuhde.objects.create(
+        tyontekija=tyontekija_1,
+        tyosuhde_koodi=1,
+        tyoaika_koodi=1,
+        tutkinto_koodi='321901',
+        tyoaika_viikossa='38.73',
+        alkamis_pvm='2020-03-01',
+        paattymis_pvm='2030-03-01',
+        lahdejarjestelma='1',
+        tunniste='testing-palvelussuhde1',
+        changed_by_id=admin_user.id
+    )
+
+    Palvelussuhde.objects.create(
+        tyontekija=tyontekija_2,
+        tyosuhde_koodi=1,
+        tyoaika_koodi=1,
+        tutkinto_koodi='321901',
+        tyoaika_viikossa='20.00',
+        alkamis_pvm='2020-03-01',
+        paattymis_pvm='2030-03-01',
+        lahdejarjestelma=1,
+        tunniste='testing-palvelussuhde2',
+        changed_by_id=admin_user.id
+    )
+
+    Palvelussuhde.objects.create(
+        tyontekija=tyontekija_2,
+        tyosuhde_koodi=1,
+        tyoaika_koodi=1,
+        tutkinto_koodi='712104',
+        tyoaika_viikossa='5.0',
+        alkamis_pvm='2020-03-01',
+        paattymis_pvm='2030-03-01',
+        lahdejarjestelma=1,
+        tunniste='testing-palvelussuhde2-2',
+        changed_by_id=admin_user.id
+    )
+
+    Tyoskentelypaikka.objects.create(
+        palvelussuhde=palvelussuhde_1,
+        toimipaikka=toimipaikka_1,
+        alkamis_pvm='2020-03-01',
+        paattymis_pvm='2020-05-02',
+        tehtavanimike_koodi='39407',
+        kelpoisuus_kytkin=False,
+        kiertava_tyontekija_kytkin=False,
+        lahdejarjestelma='1',
+        tunniste='testing-tyoskentelypaikka1',
+        changed_by_id=admin_user.id
+    )
+
+
 def create_test_data():
     from django.conf import settings
     import os
@@ -1856,6 +1978,7 @@ def create_test_data():
     create_maksutiedot()
     create_paos_toiminta()
     create_paos_oikeus()
+    create_henkilosto()
 
     """
     Currently do not populate lapset+huoltajat in db if
