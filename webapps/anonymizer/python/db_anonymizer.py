@@ -1,14 +1,17 @@
 import base64
+import datetime
 import hashlib
 import json
 import os
+import random
+import string
 import requests
 import zipfile
 
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.db import connection
-from django.db.models import Max, Q
+from django.db.models import Max
 from django_pg_bulk_update import bulk_update
 from pathlib import Path
 from timeit import default_timer as timer
@@ -92,12 +95,8 @@ def finalize_data_dump():
     toimipaikka_1.changed_by = user
     toimipaikka_1.save()
 
-    from django.db.models.deletion import ProtectedError
-
-    try:
-        User.objects.filter(Q(id=3) | Q(id=4) | Q(id=5) | Q(username='lhagen') | Q(username='aroksa')).delete()
-    except ProtectedError as e:
-        print(e)
+    user_qs = User.objects.all()
+    anonymize_users(user_qs)
 
     call_command('loaddata', 'varda/unit_tests/fixture_qa_only.json')
 
@@ -162,3 +161,39 @@ def read_lines_file(zip_ref, file):
     with zip_ref.open(file) as f:
         content = f.read()
     return content
+
+
+def anonymize_users(user_qs):
+    for user in user_qs:
+        # Get random username and make sure it doesn't exist
+        random_username = get_random_string(10)
+        while User.objects.filter(username=random_username).exists():
+            random_username = get_random_string(10)
+
+        user.username = random_username
+
+        # Set password unusable
+        user.set_unusable_password()
+
+        # Remove personal information
+        user.first_name = ''
+        user.last_name = ''
+        user.email = ''
+        user.last_login = None
+        user.date_joined = datetime.datetime.now(tz=datetime.timezone.utc)
+
+        # Remove superuser and staff status and set users as inactive
+        user.is_superuser = False
+        user.is_staff = False
+        user.is_active = False
+        user.save()
+
+
+def get_random_string(length):
+    characters = string.ascii_letters + string.digits + '_@+.-'
+
+    random_string = ''
+    for i in range(length):
+        random_string += random.choice(characters)
+
+    return random_string
