@@ -173,7 +173,7 @@ class VardaPaosTests(TestCase):
             'maksun_peruste_koodi': 'mp02',
             'palveluseteli_arvo': 120,
             'asiakasmaksu': 0,
-            'perheen_koko': 1,
+            'perheen_koko': 2,
             'alkamis_pvm': '2020-01-05',
             'paattymis_pvm': '2021-05-05'
         }

@@ -193,7 +193,7 @@ class VardaViewsTests(TestCase):
     def test_api_toimipaikat_permissions_1(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/toimipaikat/')
-        self.assertEqual(json.loads(resp.content)["count"], 5)
+        self.assertEqual(json.loads(resp.content)['count'], 6)
 
     def test_api_toimipaikat_permissions_2(self):
         """
@@ -633,7 +633,7 @@ class VardaViewsTests(TestCase):
     def test_api_varhaiskasvatussuhteet_filtering(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/varhaiskasvatussuhteet/?muutos_pvm=2017-04-12')
-        self.assertEqual(json.loads(resp.content)['count'], 5)
+        self.assertEqual(json.loads(resp.content)['count'], 6)
 
     def test_api_lapset(self):
         client = SetUpTestClient('tester').client()
@@ -703,7 +703,7 @@ class VardaViewsTests(TestCase):
         # TO-DO: fix filtering
         client = SetUpTestClient('credadmin').client()
         resp = client.get('/api/admin/huoltajat/?sukunimi=Virtane&kayntiosoite=Torikatu%2011&postitoimipaikka=Lappeenranta&kotikunta_koodi=034&muutos_pvm=2017-04-12')
-        self.assertEqual(json.loads(resp.content)['count'], 5)
+        self.assertEqual(json.loads(resp.content)['count'], 6)
 
     def test_api_varhaiskasvatuspaatokset(self):
         client = SetUpTestClient('tester').client()
@@ -713,7 +713,7 @@ class VardaViewsTests(TestCase):
     def test_api_varhaiskasvatuspaatokset_filtering(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/varhaiskasvatuspaatokset/?hakemus_pvm=2017-01-12')
-        self.assertEqual(json.loads(resp.content)['count'], 4)
+        self.assertEqual(json.loads(resp.content)['count'], 5)
 
     def test_api_get_lapsi_json(self):
         lapsi_json = {
@@ -2021,7 +2021,7 @@ class VardaViewsTests(TestCase):
             "maksun_peruste_koodi": "mp01",
             "palveluseteli_arvo": 120,
             "asiakasmaksu": 0,
-            "perheen_koko": 1,
+            "perheen_koko": 2,
             "alkamis_pvm": "2019-01-01",
             "paattymis_pvm": "2020-01-01"
         }
@@ -2037,7 +2037,7 @@ class VardaViewsTests(TestCase):
             "maksun_peruste_koodi": "mp01",
             "palveluseteli_arvo": 120,
             "asiakasmaksu": 0,
-            "perheen_koko": 1,
+            "perheen_koko": 2,
             "alkamis_pvm": "2019-01-01",
             "paattymis_pvm": "2020-01-01"
         }
@@ -2057,7 +2057,7 @@ class VardaViewsTests(TestCase):
             'maksun_peruste_koodi': 'mp02',
             'palveluseteli_arvo': 120,
             'asiakasmaksu': 0,
-            'perheen_koko': 1,
+            'perheen_koko': 2,
             'alkamis_pvm': '2020-01-02',
             'paattymis_pvm': '2021-01-01'
         }
@@ -2084,7 +2084,7 @@ class VardaViewsTests(TestCase):
             'maksun_peruste_koodi': 'mp02',
             'palveluseteli_arvo': 120.0,
             'asiakasmaksu': 0.0,
-            'perheen_koko': 1,
+            'perheen_koko': 2,
             'alkamis_pvm': '2020-01-02',
             'paattymis_pvm': '2021-01-01',
             'tallennetut_huoltajat_count': 1,
@@ -2108,7 +2108,7 @@ class VardaViewsTests(TestCase):
             'maksun_peruste_koodi': 'mp02',
             'palveluseteli_arvo': 120,
             'asiakasmaksu': 0,
-            'perheen_koko': 1,
+            'perheen_koko': 2,
             'alkamis_pvm': '2018-02-23',
             'paattymis_pvm': '2018-02-24'
         }
@@ -2141,13 +2141,41 @@ class VardaViewsTests(TestCase):
             'maksun_peruste_koodi': 'mp02',
             'palveluseteli_arvo': 120.0,
             'asiakasmaksu': 0.0,
-            'perheen_koko': 1,
+            'perheen_koko': 2,
             'alkamis_pvm': '2018-02-23',
             'paattymis_pvm': '2018-02-24',
             'tallennetut_huoltajat_count': 2,
             'ei_tallennetut_huoltajat_count': 1,
         }
         self.assertEqual(json.loads(resp.content), accepted_response)
+
+    def test_push_api_maksutieto_yksityinen(self):
+        lapsi_oid = '1.2.246.562.24.52864662677'
+        lapsi_obj = Lapsi.objects.get(henkilo__henkilo_oid=lapsi_oid)
+
+        maksutieto = {
+            'huoltajat': [
+                {'henkilotunnus': '260980-642C', 'etunimet': 'Maija', 'sukunimi': 'Mallikas'}
+            ],
+            'lapsi': f'/api/v1/lapset/{lapsi_obj.id}/',
+            'maksun_peruste_koodi': 'mp02',
+            'palveluseteli_arvo': 120,
+            'asiakasmaksu': 0,
+            'perheen_koko': 4,
+            'alkamis_pvm': '2020-05-25',
+            'paattymis_pvm': '2021-01-01'
+        }
+
+        client = SetUpTestClient('tester').client()
+        resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
+        assert_status_code(resp, 201)
+
+        resp_result = json.loads(resp.content)
+        self.assertEqual(resp_result['palveluseteli_arvo'], 0.00)
+        self.assertEqual(resp_result['perheen_koko'], None)
+
+        maksutieto_obj = Maksutieto.objects.get(id=resp_result['id'])
+        self.assertTrue(maksutieto_obj.yksityinen_jarjestaja)
 
     def test_push_api_maksutieto_date_validation(self):
         """
@@ -2290,7 +2318,7 @@ class VardaViewsTests(TestCase):
             'maksun_peruste_koodi': 'mp02',
             'palveluseteli_arvo': 120,
             'asiakasmaksu': 0,
-            'perheen_koko': 1,
+            'perheen_koko': 2,
         }
 
         for (start, end) in ok_cases:
@@ -2325,7 +2353,7 @@ class VardaViewsTests(TestCase):
             "maksun_peruste_koodi": "mp02",
             "palveluseteli_arvo": 120,
             "asiakasmaksu": 0,
-            "perheen_koko": 1,
+            "perheen_koko": 2,
             "alkamis_pvm": "2020-01-02",
             "paattymis_pvm": "2021-01-01"
         }
@@ -2347,7 +2375,7 @@ class VardaViewsTests(TestCase):
             "maksun_peruste_koodi": "mp02",
             "palveluseteli_arvo": 120,
             "asiakasmaksu": 0,
-            "perheen_koko": 1,
+            "perheen_koko": 2,
             "alkamis_pvm": "2020-01-02",
             "paattymis_pvm": "2021-01-01"
         }
@@ -2369,7 +2397,7 @@ class VardaViewsTests(TestCase):
             "maksun_peruste_koodi": "mp02",
             "palveluseteli_arvo": 120,
             "asiakasmaksu": 0,
-            "perheen_koko": 1,
+            "perheen_koko": 2,
             "alkamis_pvm": "2020-01-02",
             "paattymis_pvm": "2021-01-01"
         }
@@ -2391,7 +2419,7 @@ class VardaViewsTests(TestCase):
             "maksun_peruste_koodi": "mp02",
             "palveluseteli_arvo": 0,
             "asiakasmaksu": 0,
-            "perheen_koko": 1,
+            "perheen_koko": 2,
             "paattymis_pvm": "2021-01-01"
         }
         client = SetUpTestClient('tester').client()
@@ -2412,7 +2440,7 @@ class VardaViewsTests(TestCase):
             "maksun_peruste_koodi": "mp02",
             "palveluseteli_arvo": 0,
             "asiakasmaksu": 0,
-            "perheen_koko": 1,
+            "perheen_koko": 2,
             "alkamis_pvm": "2022-01-01",
             "paattymis_pvm": "2021-01-01"
         }
@@ -2434,7 +2462,7 @@ class VardaViewsTests(TestCase):
             'maksun_peruste_koodi': 'mp02',
             'palveluseteli_arvo': 120,
             'asiakasmaksu': 0,
-            'perheen_koko': 1,
+            'perheen_koko': 2,
             'alkamis_pvm': '2022-01-01',
             'paattymis_pvm': '2022-01-01'
         }
@@ -2451,7 +2479,7 @@ class VardaViewsTests(TestCase):
             "maksun_peruste_koodi": "mp02",
             "palveluseteli_arvo": 120,
             "asiakasmaksu": 0,
-            "perheen_koko": 1,
+            "perheen_koko": 2,
             "alkamis_pvm": "2008-01-02",
             "paattymis_pvm": "2021-01-01"
         }
@@ -2471,7 +2499,7 @@ class VardaViewsTests(TestCase):
             "maksun_peruste_koodi": "mp02",
             "palveluseteli_arvo": 120,
             "asiakasmaksu": 0,
-            "perheen_koko": 1,
+            "perheen_koko": 2,
             "alkamis_pvm": "2019-03-02",
             "paattymis_pvm": "2021-06-01"
         }
@@ -2489,7 +2517,7 @@ class VardaViewsTests(TestCase):
             "maksun_peruste_koodi": "mp02",
             "palveluseteli_arvo": 120,
             "asiakasmaksu": 0,
-            "perheen_koko": 1,
+            "perheen_koko": 2,
             "alkamis_pvm": "2019-01-01",
             "paattymis_pvm": "2020-01-01"
         }
@@ -2528,7 +2556,7 @@ class VardaViewsTests(TestCase):
             "maksun_peruste_koodi": "mp02",
             "palveluseteli_arvo": 120,
             "asiakasmaksu": 0,
-            "perheen_koko": 1,
+            "perheen_koko": 2,
             "alkamis_pvm": "2019-01-01",
             "paattymis_pvm": "2020-01-01"
         }
@@ -2932,13 +2960,13 @@ class VardaViewsTests(TestCase):
         resp = client.get('/api/v1/vakajarjestajat/2/yhteenveto/')
         accepted_response = {
             "vakajarjestaja_nimi": "Tester organisaatio",
-            "lapset_lkm": 4,
-            "lapset_vakapaatos_voimassaoleva": 4,
-            "lapset_vakasuhde_voimassaoleva": 4,
+            "lapset_lkm": 5,
+            "lapset_vakapaatos_voimassaoleva": 5,
+            "lapset_vakasuhde_voimassaoleva": 5,
             "lapset_vuorohoidossa": 0,
             "lapset_palveluseteli_ja_ostopalvelu": 4,
-            "lapset_maksutieto_voimassaoleva": 3,
-            "toimipaikat_voimassaolevat": 3,
+            "lapset_maksutieto_voimassaoleva": 4,
+            "toimipaikat_voimassaolevat": 4,
             "toimipaikat_paattyneet": 0,
             "toimintapainotukset_maara": 2,
             "kielipainotukset_maara": 2

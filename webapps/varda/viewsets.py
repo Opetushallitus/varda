@@ -1687,6 +1687,28 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
 
         return vtj_huoltajuudet
 
+    def validate_yksityinen_maksutieto(self, validated_data, vakapaatos):
+        """
+        If maksutieto is yksityinen, palveluseteli_arvo and perheen_koko are not stored.
+        :param vakapaatos: first vakapaatos of lapsi
+        :param validated_data: serializer.validated_data
+        :return:
+        """
+        if vakapaatos.jarjestamismuoto_koodi.lower() in ['jm04', 'jm05']:
+            validated_data['yksityinen_jarjestaja'] = True
+            validated_data['palveluseteli_arvo'] = 0.00
+            validated_data['perheen_koko'] = None
+
+    def validate_maksun_peruste(self, validated_data):
+        """
+        If maksun peruste is mp01, asiakasmaksu and palveluseteli_arvo are not stored
+        :param validated_data: serializer.validated_data
+        :return:
+        """
+        if validated_data['maksun_peruste_koodi'].lower() == 'mp01':
+            validated_data['asiakasmaksu'] = 0
+            validated_data['palveluseteli_arvo'] = 0.00
+
     def validate_start_and_end_dates(self, vakapaatokset, start_date, end_date):
         """
         Validate the dates for the maksutieto:
@@ -1813,16 +1835,12 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         lapsi = serializer.validated_data['lapsi']
         serializer.validated_data['yksityinen_jarjestaja'] = False
 
-        """
-        Check if varhaiskasvatuspaatos is private or public for validations and end-users.
-        """
-        vakapaatokset = Varhaiskasvatuspaatos.objects.filter(lapsi=lapsi).order_by("-alkamis_pvm")
+        vakapaatokset = Varhaiskasvatuspaatos.objects.filter(lapsi=lapsi).order_by('-alkamis_pvm')
         vakapaatos = vakapaatokset.first()
         if not vakapaatos:
-            raise ValidationError({"Maksutieto": ["Lapsi has no Varhaiskasvatuspaatos. Add Varhaiskasvatuspaatos before adding maksutieto."]})
+            raise ValidationError({'Maksutieto': ['Lapsi has no Varhaiskasvatuspaatos. Add Varhaiskasvatuspaatos before adding maksutieto.']})
 
-        if vakapaatos.jarjestamismuoto_koodi.lower() == "jm04":
-            serializer.validated_data['yksityinen_jarjestaja'] = True
+        self.validate_yksityinen_maksutieto(serializer.validated_data, vakapaatos)
 
         """
         In order to be able to add maksutieto to lapsi, we need to know the organizations
@@ -1845,9 +1863,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         data = dict(serializer.validated_data)
         vtj_huoltajuudet = self.validate_user_data(data)
 
-        if data['maksun_peruste_koodi'].lower() == "mp01":
-            serializer.validated_data['asiakasmaksu'] = 0
-            serializer.validated_data['palveluseteli_arvo'] = 0
+        self.validate_maksun_peruste(serializer.validated_data)
 
         # remove fields not directly in database
         serializer.validated_data.pop('huoltajat')

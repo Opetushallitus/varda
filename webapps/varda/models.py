@@ -393,7 +393,7 @@ class Maksutieto(models.Model):
     maksun_peruste_koodi = models.CharField(max_length=5, blank=False, validators=[validators.validate_maksun_peruste_koodi])
     palveluseteli_arvo = models.DecimalField(max_digits=6, decimal_places=2, default=0.00, blank=False, null=False, validators=[MinValueValidator(0.0)])
     asiakasmaksu = models.DecimalField(max_digits=6, decimal_places=2, blank=False, null=False, validators=[MinValueValidator(0.0)])
-    perheen_koko = models.IntegerField(blank=True, null=True, validators=[MinValueValidator(1), MaxValueValidator(50)])
+    perheen_koko = models.IntegerField(blank=True, null=True, validators=[MinValueValidator(2), MaxValueValidator(50)])
     alkamis_pvm = models.DateField(blank=True, null=True, validators=[validators.validate_vaka_date])
     paattymis_pvm = models.DateField(default=None, blank=True, null=True, validators=[validators.validate_vaka_date])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
