@@ -1,6 +1,10 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+## [1.3.16] (04.06.2020)
+- CSCVARDA-1652: Lapsiformin desimaali- ja kokonaisluku validointeja.
+- CSCVARDA-1591: Yksityisten toimijoiden maksutietolomakkeen päivitykset
+
 ## [1.3.15] (28.05.2020)
 - CSCVARDA-1609: Virheilmoitusten täydennys maksutietojen syötössä
 
