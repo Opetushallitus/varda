@@ -80,9 +80,9 @@ class VardaOppijaViewsTests(TestCase):
                     ]
                 },
                 {
-                    "id": 7,
-                    "yhteysosoite": "organization@domain.com",
-                    "varhaiskasvatuksen_jarjestaja": "Tester organisaatio",
+                    "id": 9,
+                    "yhteysosoite": "frontti@end.com",
+                    "varhaiskasvatuksen_jarjestaja": "Frontti organisaatio",
                     "varhaiskasvatuspaatokset": [
                         {
                             "id": 8,
@@ -100,34 +100,10 @@ class VardaOppijaViewsTests(TestCase):
                     ]
                 },
                 {
-                    "id": 6,
+                    "id": 7,
                     "yhteysosoite": "organization@domain.com",
-                    "varhaiskasvatuksen_jarjestaja": "Tester2 organisaatio",
+                    "varhaiskasvatuksen_jarjestaja": "Tester organisaatio",
                     "varhaiskasvatuspaatokset": [
-                        {
-                            "id": 6,
-                            "alkamis_pvm": "2019-02-11",
-                            "hakemus_pvm": "2019-01-01",
-                            "paattymis_pvm": "2019-10-24",
-                            "paivittainen_vaka_kytkin": None,
-                            "kokopaivainen_vaka_kytkin": None,
-                            "jarjestamismuoto_koodi": "jm03",
-                            "vuorohoito_kytkin": True,
-                            "pikakasittely_kytkin": True,
-                            "tuntimaara_viikossa": 37.5,
-                            "varhaiskasvatussuhteet": [
-                                {
-                                    "id": 6,
-                                    "alkamis_pvm": "2018-02-11",
-                                    "paattymis_pvm": "2019-02-24",
-                                    "toimipaikka": {
-                                        "toimipaikka_nimi": "Tester2 toimipaikka",
-                                        "toimipaikka_kunta_koodi": "091"
-                                    },
-                                    "yhteysosoite": "test2@domain.com"
-                                }
-                            ]
-                        },
                         {
                             "id": 7,
                             "alkamis_pvm": "2019-11-11",
@@ -159,6 +135,37 @@ class VardaOppijaViewsTests(TestCase):
                                         "toimipaikka_kunta_koodi": "091"
                                     },
                                     "yhteysosoite": "test1@espoo.fi"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": 6,
+                    "yhteysosoite": "organization@domain.com",
+                    "varhaiskasvatuksen_jarjestaja": "Tester2 organisaatio",
+                    "varhaiskasvatuspaatokset": [
+                        {
+                            "id": 6,
+                            "alkamis_pvm": "2019-02-11",
+                            "hakemus_pvm": "2019-01-01",
+                            "paattymis_pvm": "2019-10-24",
+                            "paivittainen_vaka_kytkin": None,
+                            "kokopaivainen_vaka_kytkin": None,
+                            "jarjestamismuoto_koodi": "jm03",
+                            "vuorohoito_kytkin": True,
+                            "pikakasittely_kytkin": True,
+                            "tuntimaara_viikossa": 37.5,
+                            "varhaiskasvatussuhteet": [
+                                {
+                                    "id": 6,
+                                    "alkamis_pvm": "2018-02-11",
+                                    "paattymis_pvm": "2019-02-24",
+                                    "toimipaikka": {
+                                        "toimipaikka_nimi": "Tester2 toimipaikka",
+                                        "toimipaikka_kunta_koodi": "091"
+                                    },
+                                    "yhteysosoite": "test2@domain.com"
                                 }
                             ]
                         }

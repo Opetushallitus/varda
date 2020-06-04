@@ -1091,6 +1091,11 @@ class LapsiViewSet(viewsets.ModelViewSet):
             q_obj = Q(henkilo=validated_data['henkilo'],
                       oma_organisaatio=validated_data['oma_organisaatio'],
                       paos_organisaatio=validated_data['paos_organisaatio'])
+        elif 'vakatoimija' in validated_data and validated_data['vakatoimija'] is not None:
+            q_obj = Q(Q(henkilo=validated_data['henkilo']) &
+                      Q(Q(vakatoimija=validated_data['vakatoimija']) |
+                      (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja=validated_data['vakatoimija'],
+                         paos_kytkin=False))))
         else:
             kayttajatyyppi = (Z3_AdditionalCasUserFields
                               .objects
@@ -1108,7 +1113,12 @@ class LapsiViewSet(viewsets.ModelViewSet):
                           paos_kytkin=False,
                           id__in=lapsi_ids)
 
-        lapsi_obj = Lapsi.objects.filter(q_obj).first()
+        lapsi_qs = Lapsi.objects.filter(q_obj).distinct()
+        if len(lapsi_qs) > 1:
+            logger.error('unable to fetch a single child for {} with henkilo {}'.format(user, validated_data['henkilo']))
+            raise ValidationError('Error while creating a lapsi', code='invalid')
+        else:
+            lapsi_obj = lapsi_qs.first()
         if lapsi_obj:
             raise ConflictError(self.get_serializer(lapsi_obj).data, status_code=status.HTTP_200_OK)
         return serializer.save(changed_by=user)

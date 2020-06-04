@@ -633,7 +633,7 @@ class VardaViewsTests(TestCase):
     def test_api_varhaiskasvatussuhteet_filtering(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/varhaiskasvatussuhteet/?muutos_pvm=2017-04-12')
-        self.assertEqual(json.loads(resp.content)['count'], 4)
+        self.assertEqual(json.loads(resp.content)['count'], 5)
 
     def test_api_lapset(self):
         client = SetUpTestClient('tester').client()

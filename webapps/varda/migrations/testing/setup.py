@@ -871,6 +871,12 @@ def create_lapset():
         changed_by=tester2_user
     )
 
+    lapsi_9 = Lapsi.objects.create(
+        henkilo=henkilo_16,
+        vakatoimija=vakajarjestaja_4,
+        changed_by=tester4_user
+    )
+
     vakapaatos_1 = Varhaiskasvatuspaatos.objects.create(
         lapsi=lapsi_1,
         vuorohoito_kytkin=False,
@@ -956,7 +962,7 @@ def create_lapset():
     )
 
     vakapaatos_7 = Varhaiskasvatuspaatos.objects.create(
-        lapsi=lapsi_6,
+        lapsi=lapsi_7,
         vuorohoito_kytkin=False,
         pikakasittely_kytkin=True,
         tuntimaara_viikossa=30.5,
@@ -971,7 +977,7 @@ def create_lapset():
 
     # no vakasuhde to test huoltajanlapsi error situations
     vakapaatos_8 = Varhaiskasvatuspaatos.objects.create(
-        lapsi=lapsi_7,
+        lapsi=lapsi_9,
         vuorohoito_kytkin=False,
         pikakasittely_kytkin=True,
         tuntimaara_viikossa=30.5,
@@ -1115,23 +1121,25 @@ def create_lapset():
     assign_toimipaikka_vakatiedot_paos_permissions(toimipaikka_5_organisaatio_oid, vakajarjestaja_4_organisaatio_oid,
                                                    Varhaiskasvatussuhde, vakasuhde_5)
 
-    assign_object_level_permissions(toimipaikka_2_organisaatio_oid, Lapsi, lapsi_6)
-    assign_object_level_permissions(vakajarjestaja_1_organisaatio_oid, Lapsi, lapsi_6)
-    assign_object_level_permissions(toimipaikka_2_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_6)
-    assign_object_level_permissions(toimipaikka_2_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_6)
-    assign_object_level_permissions(vakajarjestaja_1_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_6)
-    assign_object_level_permissions(vakajarjestaja_1_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_6)
+    assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Lapsi, lapsi_6)
+    assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Lapsi, lapsi_6)
+    assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_6)
+    assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_6)
+    assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_6)
+    assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_6)
 
     assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Lapsi, lapsi_7)
     assign_object_level_permissions(toimipaikka_4_organisaatio_oid, Lapsi, lapsi_7)
     assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Lapsi, lapsi_7)
     assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_7)
-    assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_8)
     assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_7)
     assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_7)
     assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_7)
     assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_8)
     assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_8)
+
+    assign_object_level_permissions(vakajarjestaja_4_organisaatio_oid, Lapsi, lapsi_9)
+    assign_object_level_permissions(vakajarjestaja_4_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_8)
 
     assign_vakajarjestaja_lapsi_paos_permissions(vakajarjestaja_1_organisaatio_oid, vakajarjestaja_2_organisaatio_oid,
                                                  vakajarjestaja_1_organisaatio_oid, lapsi_8)
