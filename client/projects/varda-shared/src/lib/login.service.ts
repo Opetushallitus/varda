@@ -75,7 +75,7 @@ export class LoginService {
           return;
         }
 
-        this.checkApiKey(apiKeyUrl).subscribe(() => {
+        this.getApiKey(apiKeyUrl).subscribe(() => {
           this.validApiToken = true;
           this.isValidApiTokenSubject.next(true);
           apiTokenValidityObs.next(true);
@@ -171,5 +171,7 @@ export class LoginService {
     return this.http.options(apiKeyUrl);
   }
 
-
+  private getApiKey(apiKeyUrl: string): Observable<any> {
+    return this.http.get(apiKeyUrl);
+  }
 }
