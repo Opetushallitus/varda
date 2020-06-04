@@ -155,7 +155,7 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
       dependentFields.forEach(dependentField => {
         const dependentFormGroup = this.form.get(dependentField);
         const rule = field.rules.modifyExternalFields[dependentField];
-        if (Object.keys(rule).indexOf('disableIfValue') !== -1) {
+        if (dependentFormGroup && Object.keys(rule).indexOf('disableIfValue') !== -1) {
           if (target.value && target.value.indexOf(rule['disableIfValue']) !== -1) {
             dependentFormGroup.disable();
             dependentFormGroup.setValue(rule.replaceValue);

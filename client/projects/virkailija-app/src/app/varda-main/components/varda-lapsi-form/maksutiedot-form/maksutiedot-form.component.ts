@@ -22,7 +22,12 @@ import {map} from 'rxjs/operators';
   styleUrls: ['./maksutiedot-form.component.css']
 })
 export class MaksutiedotFormComponent implements OnInit {
+  private _isLapsiYksityinen: boolean;
   @Input() lapsiId;
+  @Input() set isLapsiYksityinen(lapsiIsYksityinen: boolean) {
+    this._isLapsiYksityinen = lapsiIsYksityinen;
+    this.removeFieldsForYksityinenLapsi();
+  }
   @Input() toimipaikkaAccess: UserAccess;
   // For accessing template reference variables
   @ViewChildren('maksutietoPanels') maksutietoPanels: QueryList<MatExpansionPanel>;
@@ -117,6 +122,8 @@ export class MaksutiedotFormComponent implements OnInit {
     return (data) => {
       const maksutietoFieldsetData = data[0];
       this.maksutiedotFieldSetTemplate = maksutietoFieldsetData[0];
+      this.removeFieldsForYksityinenLapsi();
+
       this.maksutiedot = data[1].sort((a, b) => new Date(a.alkamis_pvm).getTime() - new Date(b.alkamis_pvm).getTime());
       this.maksutiedot.forEach(maksutieto => {
         const koodi = maksutieto.maksun_peruste_koodi;
@@ -350,5 +357,40 @@ export class MaksutiedotFormComponent implements OnInit {
       return paattymis_pvm_old.localeCompare(paattymis_pvm_new) === 0;
     }
     return false;
+  }
+
+  /**
+   * This function alters the form template and existing forms if lapsi is yksityinen.
+   * Function is called when isLapsiYksityinen is set, and when maksutieto data has been fetched, because we don't know
+   * which one finishes first (and both are needed).
+   */
+  private removeFieldsForYksityinenLapsi() {
+    // Only run if isLapsiYksityinen is set and true, and maksutiedotFieldSetTemplate is set as well
+    if (this._isLapsiYksityinen !== undefined && this._isLapsiYksityinen && this.maksutiedotFieldSetTemplate) {
+      // Alter the template so that new maksutieto forms don't have unnecessary fields
+      this.mutateFieldSetForYksityinenLapsi(this.maksutiedotFieldSetTemplate.fieldsets[0]);
+
+      // Alter the existing forms if already created, so that unnecessary fields are removed
+      if (Object.keys(this.maksutiedotFieldSetObj).length > 0) {
+        for (const [key, fieldSetArray] of Object.entries(this.maksutiedotFieldSetObj)) {
+          this.mutateFieldSetForYksityinenLapsi(fieldSetArray[0]);
+        }
+      }
+
+      this.maksutiedotFormArr.controls
+        .map(formGroup => formGroup.get('maksutieto_perustiedot'))
+        .forEach((formGroup: FormGroup) => {
+          delete formGroup.controls['perheen_koko'];
+          delete formGroup.controls['palveluseteli_arvo'];
+      });
+    }
+  }
+
+  private mutateFieldSetForYksityinenLapsi(fieldSet: VardaFieldSet) {
+    fieldSet.fields.forEach((field, index) => {
+      if (field.key === 'perheen_koko' || field.key === 'palveluseteli_arvo') {
+        fieldSet.fields.splice(index, 1);
+      }
+    });
   }
 }

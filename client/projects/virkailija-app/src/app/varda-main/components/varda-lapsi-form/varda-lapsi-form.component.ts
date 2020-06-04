@@ -59,6 +59,8 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   currentLapsi: VardaLapsiDTO;
   currentToimipaikka: VardaToimipaikkaDTO;
 
+  isCurrentLapsiYksityinen: boolean;
+
   lapsiForm: FormGroup;
   lapsiCreateForm: FormGroup;
   toimipaikkaForm: FormGroup;
@@ -578,6 +580,8 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
               this.varhaiskasvatuspaatokset = [...vakapaatokset];
 
               this.varhaiskasvatuspaatokset.sort(this.sortRecurringEntityListsByDates.bind(this));
+
+              this.isCurrentLapsiYksityinen = ['jm04', 'jm05'].includes(this.varhaiskasvatuspaatokset[0].jarjestamismuoto_koodi.toLowerCase());
 
               tempVarhaiskasvatussuhteet.forEach((vakasuhde) => {
                 const vakasuhdeVakaPaatosReference = vakasuhde.varhaiskasvatuspaatos;
