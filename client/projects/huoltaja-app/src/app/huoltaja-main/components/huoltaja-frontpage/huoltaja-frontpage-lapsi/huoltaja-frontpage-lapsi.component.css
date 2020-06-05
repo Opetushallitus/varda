@@ -1,0 +1,14 @@
+.osoitetiedot .mat-expansion-panel-header {
+
+}
+
+.osoitetiedot .mat-expansion-panel-header h3 {
+  font-size: 1.0em;
+}
+
+.osoitetiedot .mat-expansion-panel-header .mat-icon {
+  position:relative;
+  top: 0.5em;
+  margin-right: 1em;
+}
+

@@ -1,60 +1,69 @@
 <div class="huoltaja-frontpage-container">
-
   <div class="huoltaja-frontpage-div-margin-bottom">
-    <h1>{{'label.varhaiskasvatustiedot' | translate}}</h1>
-    <p>{{'text.varhaiskasvatustiedot' | translate}}</p>
+    <h1>{{ translation.varhaiskasvatustiedot | translate}}</h1>
+    <p>{{ translation.varhaiskasvatustiedot_text1 | translate}}</p>
+    <p>{{ translation.varhaiskasvatustiedot_text2 | translate}}</p>
   </div>
   <div *ngIf="fetchError"
        class="error-field">
-    <p>{{ 'error.child-not-found-1' | translate }}</p>
-    <p>{{ 'error.child-not-found-2' | translate }}</p>
-    <p>{{ 'error.child-not-found-3' | translate }}</p>
+    <p>{{ translation.error_child_not_found_1 | translate }}</p>
+    <p>{{ translation.error_child_not_found_2 | translate }}</p>
+    <p>{{ translation.error_child_not_found_3 | translate }}</p>
   </div>
   <div *ngIf="lapsi?.henkilo">
     <div class="huoltaja-frontpage-div-margin-bottom">
-      <h2>{{'label.henkilotiedot' | translate}}: {{lapsi.henkilo.etunimet}} {{lapsi.henkilo.sukunimi}}
-        ({{'label.katsot-tietoja-huoltajana' | translate}})</h2>
+      <h2 class="lapsi-header">
+        <mat-icon>person</mat-icon>
+        {{lapsi.henkilo.etunimet}} {{lapsi.henkilo.sukunimi}}
+      </h2>
 
       <app-huoltaja-frontpage-lapsi [lapsiDto]="lapsi.henkilo">
       </app-huoltaja-frontpage-lapsi>
     </div>
 
-    <div>
-      <h2>{{'label.varhaiskasvatuspaatokset' | translate}}</h2>
-      <div *ngIf="lapsi.voimassaolevia_varhaiskasvatuspaatoksia"
-           class="voimassa-useita-vakapaatoksia-container">
-        <div class="voimassa-useita-vakapaatoksia-rectangle"></div>
-        <div class="voimassa-useita-vakapaatoksia-text-container">
-          <span>{{'text.voimassa-useita-vakapaatoksia' | translate}}</span>
+    <div class="varhaiskasvatustiedot">
+      <div class="varhaiskasvatustiedot-header">
+        <h2>{{ translation.varhaiskasvatustiedot | translate}}</h2>
+        <span class="button-group">
+          <button class="button h5"
+                  (click)="openDialog(translation.info, translation.tooltip_info)">
+            <mat-icon>help_outline</mat-icon>
+            <span>{{ translation.info | translate }}</span>
+          </button>
+
+          <button class="button h5"
+                  (click)="openDialog(translation.onko_tiedoissa_puutteita, translation.contact_dialog_ota_yhteytta_vakajarjestajaan)">
+            <mat-icon>help_outline</mat-icon>
+            <span>{{ translation.onko_tiedoissa_puutteita | translate }}</span>
+          </button>
+        </span>
+      </div>
+
+      <ng-container *ngIf="lapsi.voimassaolevia_varhaiskasvatuspaatoksia > 1">
+        <div class="voimassa-useita-vakapaatoksia-container">
+          <div class="voimassa-useita-vakapaatoksia-rectangle"></div>
+          <div class="voimassa-useita-vakapaatoksia-text-container">
+            <span>{{ translation.voimassa_useita_vakapaatoksia | translate}}</span>
+          </div>
         </div>
-      </div>
+      </ng-container>
+      <ng-container *ngIf="!lapsi.lapset?.length">
+        <div>
+          <div class="voimassa-useita-vakapaatoksia-rectangle ei-voimassa"></div>
+          <div class="voimassa-useita-vakapaatoksia-text-container">
+            <span>{{ translation.ei_vakapaatoksia | translate}}</span>
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-container *ngFor="let toimijanLapsi of lapsi.lapset">
+        <app-huoltaja-vakapaatos *ngFor="let vakapaatos of toimijanLapsi.varhaiskasvatuspaatokset"
+                                 [lapsi]="toimijanLapsi"
+                                 [oma_organisaatio_sahkoposti]="toimijanLapsi.yhteysosoite"
+                                 [vakapaatos]="vakapaatos">
+        </app-huoltaja-vakapaatos>
+      </ng-container>
     </div>
-
-    <ng-container *ngFor="let toimijanLapsi of lapsi.lapset">
-      <app-huoltaja-vakapaatos *ngFor="let vakapaatos of toimijanLapsi.varhaiskasvatuspaatokset"
-                               [oma_organisaatio_sahkoposti]="toimijanLapsi.oma_organisaatio_sahkoposti"
-                               [vakapaatos]="vakapaatos">
-      </app-huoltaja-vakapaatos>
-    </ng-container>
-
-
-    <!--
-    <ng-container *ngFor="let toimipaikka of lapsi.toimipaikat">
-      <div [ngClass]="onkoVakasuhdeVoimassa(vakasuhde) ? 'vakapaatos-voimassa' : 'vakapaatos-ei-ole-voimassa'"
-           *ngFor="let vakasuhde of toimipaikka.varhaiskasvatussuhteet">
-        <h3>
-          <table class="huoltaja-vakapaatos-header-table">
-            <tr>
-              <td>{{toimipaikka.toimipaikka_nimi}}</td>
-              <td>{{vakasuhde.alkamis_pvm | date:'d.M.yyyy'}} - {{vakasuhde.paattymis_pvm | date:'d.M.yyyy'}}</td>
-            </tr>
-          </table>
-        </h3>
-
-        <app-huoltaja-frontpage-vakasuhde [vakasuhde]="vakasuhde">
-        </app-huoltaja-frontpage-vakasuhde>
-      </div>
-    </ng-container> -->
   </div>
 
 </div>

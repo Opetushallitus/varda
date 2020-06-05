@@ -11,6 +11,7 @@ import { HuoltajaFrontpageLapsiComponent } from './components/huoltaja-frontpage
 import { HuoltajaFrontpageVakapaatosComponent } from './components/huoltaja-frontpage/huoltaja-vakapaatos/huoltaja-vakapaatos.component';
 import { MatDialogModule } from '@angular/material/dialog';
 import { ContactDialogComponent} from './components/contact-dialog/contact-dialog.component';
+import { KoodistoValueDirective } from '../directives/koodistoValue.directive';
 
 @NgModule({
   imports: [
@@ -29,12 +30,14 @@ import { ContactDialogComponent} from './components/contact-dialog/contact-dialo
     HuoltajaFrontpageLapsiComponent,
     HuoltajaFrontpageVakapaatosComponent,
     ContactDialogComponent,
+    KoodistoValueDirective
   ],
   entryComponents: [ContactDialogComponent],
   exports: [
     HuoltajaFrontpageComponent,
     HuoltajaFrontpageLapsiComponent,
-    HuoltajaFrontpageVakapaatosComponent
+    HuoltajaFrontpageVakapaatosComponent,
+    KoodistoValueDirective
   ],
   providers: [
   ]

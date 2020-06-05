@@ -6,6 +6,9 @@ import { LoginService, LoadingHttpService } from 'varda-shared';
 import { VarhaiskasvatussuhdeDTO } from '../../../utilities/models/dto/varhaiskasvatussuhde-dto';
 import { HuoltajaFrontpageLapsiComponent } from './huoltaja-frontpage-lapsi/huoltaja-frontpage-lapsi.component';
 import { VarhaiskasvatuspaatosDTO } from '../../../utilities/models/dto/varhaiskasvatuspaatos-dto';
+import { MatDialog } from '@angular/material/dialog';
+import { ContactDialogComponent } from '../contact-dialog/contact-dialog.component';
+import { Translations } from 'projects/huoltaja-app/src/assets/i18n/translations.enum';
 
 @Component({
   selector: 'app-huoltaja-frontpage',
@@ -16,24 +19,28 @@ export class HuoltajaFrontpageComponent implements OnInit {
   loadingHttpService: LoadingHttpService;
   lapsi: HuoltajanLapsiDTO;
   fetchError: boolean;
+  translation = Translations;
 
-  constructor(private apiService: HuoltajaApiService,
+  constructor(
+    private apiService: HuoltajaApiService,
+    private dialog: MatDialog,
     private loginService: LoginService) {
     this.apiService.getHuoltajanLapsi(loginService.currentUserInfo.henkilo_oid).subscribe((data: HuoltajanLapsiDTO) => {
       this.lapsi = data;
+      this.apiService.setCurrentUser(data);
     }, (error: any) => {
       console.error(error.message);
       this.fetchError = true;
+      this.apiService.setCurrentUser({ henkilo: {} });
     });
-  }
-
-  onkoVakasuhdeVoimassa(vakapaatos: VarhaiskasvatuspaatosDTO): boolean {
-    const today = new Date();
-    return !(vakapaatos.paattymis_pvm < today.toISOString());
   }
 
   isLoading() {
     return this.loadingHttpService.isLoading();
+  }
+
+  openDialog(title: string, content: string) {
+    this.dialog.open(ContactDialogComponent, { data: { title: title, content: content } });
   }
 
   ngOnInit() { }

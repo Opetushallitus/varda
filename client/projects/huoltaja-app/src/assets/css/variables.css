@@ -1,0 +1,59 @@
+:root {
+  --oph-teal-darken-1: #006699;
+  --oph-teal: #008181;
+  --oph-teal-lighten-1: #66cccc;
+  --oph-teal-lighten-2: #99ffff;
+
+
+  --oph-blue-darken-2: #000066;
+  --oph-blue-darken-1: #0033cc;
+  --oph-blue: #0041dc;
+  --oph-blue-lighten-1: #008dd7;
+  --oph-blue-lighten-2: #82d4ff;
+  --oph-blue-lighten-3: #c0e9ff;
+
+  --oph-green-darken-2: #245905;
+  --oph-green-darken-1: #378703;
+  --oph-green: #5bca13;
+  --oph-green-lighten-1: #9cff5a;
+  --oph-green-lighten-2: #ccffcc;
+
+  --oph-yellow-darken-1: #d67a00;
+  --oph-yellow: #ffd900;
+  --oph-yellow-lighten-1: #ffcc33;
+  --oph-yellow-lighten-2: #ffff33;
+
+
+  --oph-orange-daken-3: #663300;
+  --oph-orange-darken-2: #993300;
+  --oph-orange-darken-1: #cc3300;
+  --oph-orange: #ff5000;
+  --oph-orange-lighten-1: #cccc99;
+
+
+
+  --oph-pink-darken-2: #660066;
+  --oph-pink-darken-1: #990066;
+  --oph-pink: #e60895;
+  --oph-pink-lighten-1: #ff66cc;
+
+
+  --oph-lila-darken-1: #660099;
+  --oph-lila: #c126b8;
+  --oph-lila-lighten-1: #cc99ff;
+  --oph-lila-lighten-2: #ffccff;
+
+
+  --oph-black: #000000;
+  --oph-black-darken-1: #1d1d1d;
+
+  --oph-gray: #b2b2b2;
+  --oph-gray-darken-1: #4c4c4c;
+  --oph-gray-lighten-1: #EFF2F5;
+  --oph-white: #ffffff;
+
+  --text-color: var(--oph-black);
+  --link-color: var(--oph-blue-lighten-1);
+
+
+}

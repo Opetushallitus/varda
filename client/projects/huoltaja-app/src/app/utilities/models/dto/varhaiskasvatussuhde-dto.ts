@@ -5,4 +5,5 @@ export interface VarhaiskasvatussuhdeDTO {
   alkamis_pvm: string;
   paattymis_pvm?: string;
   toimipaikka: ToimipaikkaDTO;
+  yhteysosoite?: string;
 }

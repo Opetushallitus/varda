@@ -1,47 +1,52 @@
-.huoltaja-frontpage-container {
-  /* Color vars */
-  --huoltaja-green: #378703;
-  --huoltaja-even-row: #edf1f5;
-  --huoltaja-blue: #0041dc;
-  --huoltaja-black: #000a48;
-  --huoltaja-lightblue: #f6faff;
-  --huoltaja-header-focus: #a5cdff;
 
+.huoltaja-frontpage-container {
   position: relative;
   margin: 0 auto;
   width: 75%;
-  max-width: 1200px;
+  max-width: 1000px;
   padding: 20px 0 25px 0;
   font-family: 'Roboto', sans-serif;
-  color: var(--huoltaja-black);
+  color: var(--text-color);
 }
 
 .huoltaja-frontpage-div-margin-bottom {
   margin-bottom: 45px;
 }
 
-h1 {
+h1, .h1 {
   font-size: 1.5rem;
-  /* 2 rem */
 }
 
-h2 {
+h2, .h2 {
   font-size: 1.25rem;
-  /* 1.5 rem */
 }
 
-h3 {
+h3, .h3 {
   font-size: 1.1rem;
-  /* 1.17 rem */
 }
 
-h4 {
+h4, .h4 {
   font-size: 1rem;
-  /* 1 rem */
 }
 
-h5 {
+h5, .h5 {
   font-size: 0.9rem;
+}
+
+.m-b-05 {
+  margin-bottom: 0.5em;
+}
+
+.m-b-1 {
+  margin-bottom: 1em;
+}
+
+.m-b-2 {
+  margin-bottom: 2em;
+}
+
+.link-color {
+  color: var(--link-color);
 }
 
 .voimassa-useita-vakapaatoksia-container {
@@ -52,7 +57,7 @@ h5 {
 .voimassa-useita-vakapaatoksia-rectangle {
   height: 50px;
   width: 12px;
-  background-color: var(--huoltaja-green);
+  background-color: var(--oph-green);
   display: inline-block;
   margin-right: 15px;
 }
@@ -65,6 +70,7 @@ h5 {
 }
 
 .huoltaja-table {
+  padding-top: 1em;
   border-spacing: 0;
   text-align: left;
   width: 100%;
@@ -75,28 +81,26 @@ h5 {
   width: 100%;
 }
 
-.huoltaja-even-row {
-  background-color: var(--huoltaja-even-row);
+tr:nth-child(even) {
+  background-color: var(--oph-gray-lighten-1);
 }
 
 .onko-tiedoissa-virhe {
-  color: var(--huoltaja-blue);
+  color: var(--link-color);
   font-weight: bold;
   text-decoration: underline;
-}
-
-.huoltaja-blue {
-  color: var(--huoltaja-blue);
-  /* display: flex;
-  justify-content: space-between;
-  width: 100%; */
 }
 
 .expansion-otsikko {
   display: flex;
   justify-content: space-between;
   width: 100%;
+  text-align: left;
+}
+
+.expansion-otsikko > *:last-child {
   text-align: right;
+  flex: 2 2;
 }
 
 .vakapaatos {
@@ -105,57 +109,90 @@ h5 {
   margin-bottom: 25px;
 }
 
-.vakapaatos-voimassa {
-  background-color: var(--huoltaja-lightblue);
-  border-color: var(--huoltaja-blue);
-}
-
-.vakapaatos-voimassa-panel {
-  background-color: var(--huoltaja-lightblue);
-}
-
 .vakasuhde-panel {
   margin-bottom: 1em;
 }
 
 .voimassaoloaika {
-  color: dimgray;
+  margin-left: 0.25em;
+  margin-right: 0.25em;
 }
 
 .voimassa {
-  color: var(--huoltaja-green);
+  color: var(--oph-green-darken-1);
+}
+
+.material-icons, mat-icon {
+  position:relative;
+  user-select: none;
 }
 
 .extension-info {
   margin-top: 1em;
   margin-bottom: 1em;
-  border: 1px solid black;
-  padding: 0.75em;
-  font-size: 0.95em;
+  padding: 0.5em;
+  font-size: 1em;
+  background-color: var(--oph-gray-lighten-1);
 }
+
+.varhaiskasvatustiedot > .varhaiskasvatustiedot-header {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap-reverse;
+
+}
+
+.varhaiskasvatustiedot > .varhaiskasvatustiedot-header > *:first-child {
+  margin-right: 1em;
+}
+
+.varhaiskasvatustiedot > .varhaiskasvatustiedot-header .button-group .mat-icon {
+  margin-right: 0.5em;
+  top: 0.25em;
+}
+
+.varhaiskasvatustiedot > .varhaiskasvatustiedot-header .button-group > button:first-child {
+  margin-right: 1em;
+}
+
+.varhaiskasvatustiedot > .varhaiskasvatustiedot-header .button-group > button > span {
+  color: var(--link-color);
+  line-height: 2.2em;
+  margin-right: 0.5em;
+}
+
 
 .error-field {
   padding: 1em;
-  background-color: #e09191;
+  background-color: var(--oph-orange-darken-1);
+  color: var(--oph-white);
+}
+
+.button {
+  border: 1px solid black;
+  border-radius: 0.25em;
+  padding: 0.1em 0.75em;
+  text-align: center;
 }
 
 @media (max-width: 465px) {
-  h1 {
+  h1, .h1 {
     font-size: 1.4rem;
   }
 
-  h2 {
+  h2, .h2 {
     font-size: 1.15rem;
   }
 
-  h3 {
+  h3, .h3 {
     font-size: 1.0rem;
   }
 
-  h4 {
+  h4, .h4 {
     font-size: 0.9rem;
   }
-  h5 {
+
+  h5, .h5 {
     font-size: 0.8rem;
   }
 }
@@ -170,8 +207,11 @@ button {
   outline: inherit;
 }
 
-.huoltaja-header:focus {
-  background: var(--huoltaja-header-focus) !important;
+.lapsi-header>.mat-icon {
+  position: relative;
+  top: 0.2em;
+  user-select: none;
+  margin-right: 0.5em;
 }
 
 @media (max-width: 740px) {

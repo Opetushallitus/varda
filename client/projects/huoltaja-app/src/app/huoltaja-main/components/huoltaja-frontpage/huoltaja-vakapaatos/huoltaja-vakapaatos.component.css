@@ -1,0 +1,80 @@
+.vakapaatos-header .material-icons {
+  margin-right: 0.5em;
+  line-height: 2.2em;
+}
+
+.vakapaatos-expansion {
+  padding-top: 0.25em;
+}
+
+.voimassaoloaika {
+  white-space: nowrap;
+  min-width: 170px;
+  text-align: left;
+}
+
+.toimipaikkaList {
+  flex: 5 0;
+  max-width: 220px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow-x: hidden;
+}
+
+.voimassaoloaika,
+.varhaiskasvatustext {
+  margin-right: 0.5em;
+}
+
+.voimassaoloaika > .suppea {
+  display: none;
+}
+
+@media (max-width: 465px) {
+  .vakapaatos-expansion {
+    padding-top: 0.5em;
+  }
+}
+
+@media (max-width: 520px) {
+  .voimassaoloaika > .laaja {
+    display: none;
+  }
+
+  .voimassaoloaika > .suppea {
+    display: block;
+  }
+
+  .toimipaikkaList {
+    max-width: 150px;
+  }
+}
+
+@media (max-width: 767px) {
+
+
+
+  .voimassaoloaika {
+    min-width: 50px;
+  }
+
+  .togglePanel {
+    display: none;
+  }
+
+  .vakapaatos-expansion {
+    flex-direction: row-reverse;
+  }
+}
+
+@media (max-width: 991px) {
+  .varhaiskasvatustext {
+    display: none;
+  }
+}
+
+@media (min-width: 1100px) {
+  .toimipaikkaList {
+    max-width: 300px;
+  }
+}

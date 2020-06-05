@@ -1,23 +1,11 @@
-<mat-expansion-panel hideToggle="true">
-  <mat-expansion-panel-header class="huoltaja-header">
-    <mat-panel-title (click)="toggleLapsi(lapsiDto)">
-      <h3 class="huoltaja-blue">
-        <mat-icon *ngIf="!lapsiDto.toggle_expanded"
-                  style="vertical-align: middle;">chevron_right</mat-icon>
-        <mat-icon *ngIf="lapsiDto.toggle_expanded"
-                  style="vertical-align: middle;">expand_more</mat-icon>
-        <span>{{'label.henkilotiedot-varjaiskasvatuksen-tietovarannossa' | translate}}</span>
-      </h3>
-    </mat-panel-title>
-  </mat-expansion-panel-header>
-
-  <table class="mat-table huoltaja-table">
+<mat-expansion-panel expanded="true">
+  <table class="mat-table huoltaja-table m-b-2">
     <tr class="mat-header-row"
         tabindex="0">
-      <th class="mat-cell">{{'label.lapsi.oppijanumero' | translate}}</th>
-      <td class="mat-cell">{{lapsiDto.henkilo_oid}}</td>
+      <th class="mat-cell">{{ translation.lapsi_oppijanumero | translate}}</th>
+      <td class="mat-cell">{{ lapsiDto.henkilo_oid }}</td>
       <td class="mat-cell">
-        <button [matTooltip]="'tooltip.henkilotiedot.oppijanumero' | translate"
+        <button [matTooltip]="translation.tooltip_henkilotiedot_oppijanumero | translate"
                 #oppijanumero="matTooltip"
                 (click)="oppijanumero.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -26,12 +14,12 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row huoltaja-even-row"
+    <tr class="mat-header-row"
         tabindex="0">
-      <th class="mat-cell">{{'label.lapsi.henkilotunnus' | translate}}</th>
-      <td class="mat-cell">{{lapsiDto.henkilotunnus}}</td>
+      <th class="mat-cell">{{ translation.lapsi_henkilotunnus | translate }}</th>
+      <td class="mat-cell">{{ lapsiDto.henkilotunnus }}</td>
       <td class="mat-cell">
-        <button [matTooltip]="'tooltip.henkilotiedot.henkilotunnus' | translate"
+        <button [matTooltip]="translation.tooltip_henkilotiedot_henkilotunnus | translate"
                 #henkilotunnus="matTooltip"
                 (click)="henkilotunnus.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -42,10 +30,10 @@
     </tr>
     <tr class="mat-header-row"
         tabindex="0">
-      <th class="mat-cell">{{'label.lapsi.etunimet' | translate}}</th>
-      <td class="mat-cell">{{lapsiDto.etunimet}}</td>
+      <th class="mat-cell">{{ translation.lapsi_etunimet | translate }}</th>
+      <td class="mat-cell">{{ lapsiDto.etunimet }}</td>
       <td class="mat-cell">
-        <button [matTooltip]="'tooltip.henkilotiedot.etunimet' | translate"
+        <button [matTooltip]="translation.tooltip_henkilotiedot_etunimet | translate"
                 #etunimet="matTooltip"
                 (click)="etunimet.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -54,12 +42,12 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row huoltaja-even-row"
+    <tr class="mat-header-row"
         tabindex="0">
-      <th class="mat-cell">{{'label.lapsi.kutsumanimi' | translate}}</th>
+      <th class="mat-cell">{{ translation.lapsi_kutsumanimi| translate }}</th>
       <td class="mat-cell">{{lapsiDto.kutsumanimi}}</td>
       <td class="mat-cell">
-        <button [matTooltip]="'tooltip.henkilotiedot.kutsumanimi' | translate"
+        <button [matTooltip]="translation.tooltip_henkilotiedot_kutsumanimi | translate"
                 #kutsumanimi="matTooltip"
                 (click)="kutsumanimi.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -70,10 +58,10 @@
     </tr>
     <tr class="mat-header-row"
         tabindex="0">
-      <th class="mat-cell">{{'label.lapsi.sukunimi' | translate}}</th>
+      <th class="mat-cell">{{ translation.lapsi_sukunimi | translate}}</th>
       <td class="mat-cell">{{lapsiDto.sukunimi}}</td>
       <td class="mat-cell">
-        <button [matTooltip]="'tooltip.henkilotiedot.sukunimi' | translate"
+        <button [matTooltip]="translation.tooltip_henkilotiedot_sukunimi | translate"
                 #sukunimi="matTooltip"
                 (click)="sukunimi.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -82,12 +70,13 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row huoltaja-even-row"
+    <tr class="mat-header-row"
         tabindex="0">
-      <th class="mat-cell">{{'label.lapsi.aidinkieli' | translate}}</th>
-      <td class="mat-cell">{{lapsiDto.aidinkieli_koodi}}</td>
+      <th class="mat-cell">{{ translation.lapsi_aidinkieli | translate}}</th>
+      <td class="mat-cell"
+          appKoodistoValue="kieli">{{lapsiDto.aidinkieli_koodi}}</td>
       <td class="mat-cell">
-        <button [matTooltip]="'tooltip.henkilotiedot.aidinkieli' | translate"
+        <button [matTooltip]="translation.tooltip_henkilotiedot_aidinkieli | translate"
                 #aidinkieli="matTooltip"
                 (click)="aidinkieli.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -98,10 +87,10 @@
     </tr>
     <tr class="mat-header-row"
         tabindex="0">
-      <th class="mat-cell">{{'label.lapsi.syntymaaika' | translate}}</th>
+      <th class="mat-cell">{{ translation.lapsi_syntymaaika | translate}}</th>
       <td class="mat-cell">{{lapsiDto.syntyma_pvm | date:'d.M.yyyy'}}</td>
       <td class="mat-cell">
-        <button [matTooltip]="'tooltip.henkilotiedot.syntymaaika' | translate"
+        <button [matTooltip]="translation.tooltip_henkilotiedot_syntymaaika | translate"
                 #syntymaaika="matTooltip"
                 (click)="syntymaaika.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -110,15 +99,15 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row huoltaja-even-row"
+    <tr class="mat-header-row"
         tabindex="0">
-      <th class="mat-cell">{{'label.lapsi.sukupuoli' | translate}}</th>
+      <th class="mat-cell">{{ translation.lapsi_sukupuoli | translate}}</th>
       <td class="mat-cell">
-        <span *ngIf="lapsiDto.sukupuoli_koodi == '1'">{{ "label.mies" | translate }}</span>
-        <span *ngIf="lapsiDto.sukupuoli_koodi == '2'">{{ "label.nainen" | translate }}</span>
+        <span *ngIf="lapsiDto.sukupuoli_koodi == '1'">{{ translation.mies | translate }}</span>
+        <span *ngIf="lapsiDto.sukupuoli_koodi == '2'">{{ translation.nainen | translate }}</span>
       </td>
       <td class="mat-cell">
-        <button [matTooltip]="'tooltip.henkilotiedot.sukupuoli' | translate"
+        <button [matTooltip]="translation.tooltip_henkilotiedot_sukupuoli | translate"
                 #sukupuoli="matTooltip"
                 (click)="sukupuoli.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -129,10 +118,11 @@
     </tr>
     <tr class="mat-header-row"
         tabindex="0">
-      <th class="mat-cell">{{'label.lapsi.kotikunta' | translate}}</th>
-      <td class="mat-cell">{{lapsiDto.kotikunta_koodi}}</td>
+      <th class="mat-cell">{{ translation.lapsi_kotikunta | translate}}</th>
+      <td class="mat-cell"
+          appKoodistoValue="kunta">{{lapsiDto.kotikunta_koodi}}</td>
       <td class="mat-cell">
-        <button [matTooltip]="'tooltip.henkilotiedot.kotikunta' | translate"
+        <button [matTooltip]="translation.tooltip_henkilotiedot_kotikunta | translate"
                 #kotikunta="matTooltip"
                 (click)="kotikunta.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -141,12 +131,26 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row huoltaja-even-row"
+    <tr class="mat-header-row"
         tabindex="0">
-      <th class="mat-cell">{{'label.lapsi.postinumero' | translate}}</th>
+      <th class="mat-cell">{{ translation.lapsi_katuosoite | translate}}</th>
+      <td class="mat-cell">{{lapsiDto.katuosoite}}</td>
+      <td class="mat-cell">
+        <button [matTooltip]="translation.tooltip_henkilotiedot_katuosoite | translate"
+                #katuosoite="matTooltip"
+                (click)="katuosoite.toggle()"
+                (mouseenter)="$event.stopImmediatePropagation()"
+                (mouseleave)="$event.stopImmediatePropagation()">
+          <mat-icon>help_outline</mat-icon>
+        </button>
+      </td>
+    </tr>
+    <tr class="mat-header-row"
+        tabindex="0">
+      <th class="mat-cell">{{ translation.lapsi_postinumero | translate}}</th>
       <td class="mat-cell">{{lapsiDto.postinumero}}</td>
       <td class="mat-cell">
-        <button [matTooltip]="'tooltip.henkilotiedot.postinumero' | translate"
+        <button [matTooltip]="translation.tooltip_henkilotiedot_postinumero | translate"
                 #postinumero="matTooltip"
                 (click)="postinumero.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -157,10 +161,10 @@
     </tr>
     <tr class="mat-header-row"
         tabindex="0">
-      <th class="mat-cell">{{'label.lapsi.postitoimipaikka' | translate}}</th>
+      <th class="mat-cell">{{ translation.lapsi_postitoimipaikka | translate}}</th>
       <td class="mat-cell">{{lapsiDto.postitoimipaikka}}</td>
       <td class="mat-cell">
-        <button [matTooltip]="'tooltip.henkilotiedot.postitoimipaikka' | translate"
+        <button [matTooltip]="translation.tooltip_henkilotiedot_postitoimipaikka | translate"
                 #postitoimipaikka="matTooltip"
                 (click)="postitoimipaikka.toggle()"
                 (mouseenter)="$event.stopImmediatePropagation()"
@@ -170,7 +174,20 @@
       </td>
     </tr>
   </table>
+
+  <mat-expansion-panel class="osoitetiedot m-b-2">
+    <mat-expansion-panel-header>
+      <mat-icon>list_alt</mat-icon>
+      <h3 class="link-color">{{ translation.muut_osoitetiedot | translate }}</h3>
+    </mat-expansion-panel-header>
+
+    <ng-container *ngIf="!lapsiDto.muut_osoitteet?.length">
+      Will be added after CSCVARDA-1729
+    </ng-container>
+  </mat-expansion-panel>
+
+
   <div class="extension-info">
-    {{ 'info.henkilotiedot' | translate }}
+    {{ translation.info_henkilotiedot | translate }}
   </div>
 </mat-expansion-panel>

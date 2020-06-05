@@ -1,22 +1,29 @@
 <h2 mat-dialog-title
-    cdkFocusInitial>{{ 'label.contact-dialog.otsikko' | translate }}</h2>
+    tabindex="0"
+    cdkFocusInitial>
+  <span *ngIf="!data.title">{{ translation.contact_dialog_otsikko | translate }}</span>
+  <span *ngIf="data.title">{{ data.title | translate }}</span>
+</h2>
 <mat-dialog-content class="mat-typography">
   <div class="dialog-content"
        role="dialog-content"
        tabindex="0">
+    <ng-container *ngIf="data.content">
+      {{ data.content | translate }}
+    </ng-container>
     <ng-container *ngIf="data.email">
-      {{ 'label.contact-dialog.ota-yhteytta-osoitteeseen' | translate: { email: data.email } }}:
+      {{ translation.contact_dialog_ota_yhteytta_osoitteeseen | translate: { email: data.email } }}:
       <address><a [href]="'mailto:'+data.email"
            target="_blank">{{ data.email }}</a></address>
-      {{ 'label.contact-dialog.muista-mainita' | translate }}
+      {{ translation.contact_dialog_muista_mainita | translate }}
     </ng-container>
 
-    <ng-container *ngIf="!data.email">
-      {{ 'label.contact-dialog.ota-yhteytta-vakajarjestajaan' | translate }}
+    <ng-container *ngIf="!data.content && !data.email">
+      {{ translation.contact_dialog_ota_yhteytta_vakajarjestajaan | translate }}
     </ng-container>
   </div>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button class="dialog-button"
-          mat-dialog-close>{{ 'label.poistu' | translate }}</button>
+          mat-dialog-close>{{ translation.poistu | translate }}</button>
 </mat-dialog-actions>

@@ -2,6 +2,7 @@ import { VarhaiskasvatuspaatosDTO } from './varhaiskasvatuspaatos-dto';
 
 export interface LapsiDTO {
   id: number;
-  oma_organisaatio_sahkoposti?: string;
+  yhteysosoite?: string;
+  varhaiskasvatuksen_jarjestaja?: string;
   varhaiskasvatuspaatokset: VarhaiskasvatuspaatosDTO;
 }

@@ -1,9 +1,9 @@
 .huoltaja-dialog {
-
+  max-width: 300px;
 }
 
 .dialog-content {
-  min-height: 200px;
+  min-height: 4em;
 }
 
 .dialog-actions {
@@ -20,4 +20,9 @@
 address{
   display: inline;
   font-style: normal;
+}
+
+.mat-typography {
+  max-width: min(700px, 80vh);
+  text-overflow: clip;
 }

@@ -1,6 +1,18 @@
 @import "~@angular/material/prebuilt-themes/indigo-pink.css";
+@import "./assets/css/variables.css";
 
 html {
-    font-size: 16px;
-    color: #4A4A4A;
+  font-size: 16px;
+  color: #4A4A4A;
+}
+
+#header-login-button,
+#header-koski-link,
+#header-omatsivut-link,
+.header-language-en {
+  display: none !important;
+}
+
+#header-overflow-menu-container {
+  z-index: 1;
 }

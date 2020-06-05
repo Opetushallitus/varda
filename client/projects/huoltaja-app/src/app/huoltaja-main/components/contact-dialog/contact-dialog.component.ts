@@ -1,5 +1,6 @@
 import { Component, OnInit, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { Translations } from 'projects/huoltaja-app/src/assets/i18n/translations.enum';
 
 @Component({
   selector: 'app-contact-dialog',
@@ -7,6 +8,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
   styleUrls: ['./contact-dialog.component.css']
 })
 export class ContactDialogComponent implements OnInit {
+  translation = Translations;
 
   constructor(
     private dialogRef: MatDialogRef<ContactDialogComponent>,
