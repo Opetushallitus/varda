@@ -1552,8 +1552,13 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
                 cache.delete('vakajarjestaja_yhteenveto_' + str(lapsi_obj.oma_organisaatio.id))
 
             else:  # Not PAOS-lapsi (i.e. normal case)
-                self.assign_non_paos_lapsi_permissions(lapsi_obj, varhaiskasvatussuhde_obj, varhaiskasvatuspaatos_obj,
-                                                       vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
+                try:
+                    self.assign_non_paos_lapsi_permissions(lapsi_obj, varhaiskasvatussuhde_obj, varhaiskasvatuspaatos_obj,
+                                                           vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
+                except Group.DoesNotExist:
+                    logger.error('Missing Group for toimija {} and toimipaikka {}'
+                                 .format(vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid))
+                    raise CustomServerErrorException
 
             """
             Finally remove user-level permissions from the vakasuhde/vakapaatos/lapsi objects.
