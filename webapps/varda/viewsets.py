@@ -712,23 +712,23 @@ class ToiminnallinenPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveMo
         user = self.request.user
         url = self.request.path
         validated_data = serializer.validated_data
-        toimipaikka_obj = validated_data["toimipaikka"]
+        toimipaikka_obj = validated_data['toimipaikka']
         toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
         vakajarjestaja_obj = toimipaikka_obj.vakajarjestaja
         vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
 
-        toiminnallinenpainotus_id = url.split("/")[-2]
+        toiminnallinenpainotus_id = url.split('/')[-2]
         toiminnallinenpainotus_obj = ToiminnallinenPainotus.objects.get(id=toiminnallinenpainotus_id)
 
         related_object_validations.check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
         if not user.has_perm('change_toiminnallinenpainotus', toiminnallinenpainotus_obj):
-            raise PermissionDenied("User does not have permissions to change this object.")
+            raise PermissionDenied('User does not have permissions to change this object.')
 
-        if "alkamis_pvm" in validated_data or "paattymis_pvm" in validated_data:
-            alkamis_pvm = validated_data["alkamis_pvm"] if "alkamis_pvm" in validated_data else toiminnallinenpainotus_obj.alkamis_pvm
-            paattymis_pvm = validated_data["paattymis_pvm"] if "paattymis_pvm" in validated_data else toiminnallinenpainotus_obj.paattymis_pvm
+        if 'alkamis_pvm' in validated_data or 'paattymis_pvm' in validated_data:
+            alkamis_pvm = validated_data['alkamis_pvm'] if 'alkamis_pvm' in validated_data else toiminnallinenpainotus_obj.alkamis_pvm
+            paattymis_pvm = validated_data['paattymis_pvm'] if 'paattymis_pvm' in validated_data else toiminnallinenpainotus_obj.paattymis_pvm
             if not validators.validate_paivamaara1_before_paivamaara2(alkamis_pvm, paattymis_pvm):
-                raise ValidationError({"paattymis_pvm": ["paattymis_pvm must be after alkamis_pvm"]})
+                raise ValidationError({'paattymis_pvm': ['paattymis_pvm must be after alkamis_pvm']})
         related_object_validations.check_overlapping_koodi(validated_data, ToiminnallinenPainotus, toiminnallinenpainotus_id)
 
         saved_object = serializer.save(changed_by=user)
