@@ -48,6 +48,8 @@
                       type="checkbox"
                       (change)="onInputValueChanged(field)"
                       class="varda-mat-checkbox"
+                      (focusin)="onFocus(field)"
+                      (focusout)="onBlur(field)"
                       [ngClass]="{'d-none': field.hidden}">{{getDisplayName(field)}}</mat-checkbox>
       </ng-container>
 
@@ -120,7 +122,7 @@
                     class="oph-input oph-select">
               <option disabled
                       selected
-                      [ngValue]="null"> --Valitse-- </option>
+                      [ngValue]="null"> --{{ 'label.choose' | translate }}-- </option>
               <ng-container *ngFor="let option of selectOptions">
                 <option [ngValue]="option.code"
                         [disabled]="!option.code">

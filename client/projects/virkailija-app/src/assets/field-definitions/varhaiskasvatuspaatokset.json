@@ -270,8 +270,8 @@
           },
           "widget": "checkbox",
           "instructionText": {
-            "instructionTextFi": "Lapsi on päivittäisessä varhaiskasvatuksessa, jos varhaiskasvatus jakautuu viidelle arkipäivälle (ma-pe).",
-            "instructionTextSv": "Barnet deltar i småbarnspedagogik som ordnas dagligen, om småbarnspedagogiken är fördelad på fem vardagar (mån-fre)."
+            "instructionTextFi": "Valitse tämä vaihtoehto, jos lapsen varhaiskasvatus jakautuu viidelle arkipäivälle (ma-pe).",
+            "instructionTextSv": "Välj detta alternativ om barnet deltar i småbarnspedagogisk verksamhet fördelad på fem vardagar (mån-fre)."
           },
           "placeholder": {},
           "rules": {
@@ -288,8 +288,8 @@
           },
           "widget": "checkbox",
           "instructionText": {
-            "instructionTextFi": "Lapsi on kokopäiväisessä varhaiskasvatuksessa, jos varhaiskasvatusaika on yli viisi tuntia päivässä.",
-            "instructionTextSv": "Barnet deltar i heldagsverksamhet inom småbarnspedagogiken, om tiden överstiger fem timmar per dag."
+            "instructionTextFi": "Valitse tämä vaihtoehto, jos lapsen varhaiskasvatusaika on yli viisi tuntia päivässä ja varhaiskasvatus tapahtuu arkipäivinä (ma-pe).",
+            "instructionTextSv": "Välj detta alternativ om barnet deltar i mer än fem timmar om dagen i småbarnspedagogisk verksamhet som ordnas på vardagar (mån-fre)."
           },
           "placeholder": {},
           "rules": {
