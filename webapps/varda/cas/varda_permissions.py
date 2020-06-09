@@ -17,6 +17,7 @@ class IsHuoltajaForChild(IsAdminUser):
         if (not user.is_anonymous and
                 isinstance(view, GenericViewSet) and
                 view.queryset.model == Henkilo and
+                hasattr(user, 'additional_user_info') and
                 getattr(user.additional_user_info, 'henkilo_oid', False) and
                 getattr(user.additional_user_info, 'huoltaja_oid', False)):
             return True
