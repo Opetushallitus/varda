@@ -44,7 +44,20 @@ export class VardaErrorMessageService {
     'maksutieto.alkamis_pvm must be before the latest varhaiskasvatuspaatos.paattymis_pvm': 'field.maksutieto_alkamis_pvm.after.varhaiskasvatuspaatos_paattymis_pvm',
     'maksutieto.paattymis_pvm must be before latest varhaiskasvatuspaatos.paattymis_pvm': 'field.maksutieto_paattymis_pvm.after.varhaiskasvatuspaatos_paattymis_pvm',
     'lapsi already has 2 active maksutieto during that time period': 'field.two_maksutieto_during_time_period',
-    'Tässä luvussa saa olla enintään 1 desimaalia.': 'alert.max-one-decimal'
+    'Tässä luvussa saa olla enintään 1 desimaalia.': 'alert.max-one-decimal',
+    'For PAOS-lapsi both oma_organisaatio and paos_organisaatio are needed.': 'error.paos-lapsi-both-organisations-required',
+    'Lapsi cannot be paos and regular one same time.': 'error.lapsi-cannot-be-paos-and-regular',
+    'Invalid hyperlink - Object does not exist.': 'error.invalid-hyperlink',
+    'User does not have permissions for provided vakatoimija.': 'error.user-doesnt-not-have-permission-for-vakatoimija',
+    'Changing of vakatoimija is not allowed': 'error.change-of-vakatoimija-not-allowed',
+    'Changing of oma_organisaatio is not allowed': 'error.change-of-oma-organisaatio-not-allowed',
+    'Changing of paos_organisaatio is not allowed': 'error.change-of-paos-organisaatio-not-allowed',
+    'alkamis_pvm must be before toimipaikka paattymis_pvm': 'error.alkamispvm-should-be-before-toimipaikka-paattymispvm',
+    'alkamis_pvm must be after or equal to toimipaikka alkamis_pvm': 'error.alkamispvm-should-be-after-toimipaikka-alkamispvm',
+    'paattymis_pvm must be before or equal to toimipaikka paattymis_pvm': 'error.paattymispvm-should-be-before-toimipaikka-paattymispvm',
+    'alkamis_pvm must be before vakajarjestaja paattymis_pvm': 'error.alkamispvm-should-be-before-vakajarjestaja-paattymispvm',
+    'alkamis_pvm must be after or equal to vakajarjestaja alkamis_pvm': 'error.alkamispvm-should-be-after-vakajarjestaja-alkamispvm',
+    'paattymis_pvm must be before or equal to vakajarjestaja paattymis_pvm': 'error.paattymispvm-should-be-before-vakajarjestaja-paattymispvm',
   };
 
   dynamicErrorMessageKeys = {

@@ -483,5 +483,18 @@
     "alert.oma_organisaatio_same_as_paos": "Tarkista ostopalvelua ja palvelusetelitoimintaa koskevat tiedot.",
     "alert.paos-lapsi-creation-failed": "Henkilön lisääminen epäonnistui. Tarkista, että ostopalvelu- ja palvelusetelitoiminnan tiedot ovat oikein. Henkilön lisääminen tähän toimipaikkaan edellyttää, että sekä palveluntuottaja että järjestäjä ovat tallentaneet tarvittavat tiedot ostopalvelu- ja palvelusetelitoiminnasta.",
     "alert.date-format": "Päivämäärä tulee olla muodossa pp.kk.vvvv",
-    "field.date-after-1999": "Päivämäärän pitää olla 1.1.2000 jälkeen"
+    "field.date-after-1999": "Päivämäärän pitää olla 1.1.2000 jälkeen",
+    "error.paos-lapsi-both-organisations-required": "Jos lapsen varhaiskasvatuksen järjestämismuoto on ostopalvelu tai palveluseteli, tulee ilmoittaa sekä varhaiskasvatuksen järjestäjä että palveluntuottaja.",
+    "error.lapsi-cannot-be-paos-and-regular": "Lapsi pitää lisätä uudelleen Lisää lapsi -toiminnolla, jos järjestämismuoto muuttuu.",
+    "error.invalid-hyperlink": "Käyttöoikeutesi eivät riitä toiminnon suorittamiseen.",
+    "error.user-doesnt-not-have-permission-for-vakatoimija": "Sinulla ei ole käyttöoikeuksia kyseiseen varhaiskasvatustoimijaan.",
+    "error.change-of-vakatoimija-not-allowed": "Varhaiskasvatustoimijan muuttaminen ei ole sallittua.",
+    "error.change-of-oma-organisaatio-not-allowed": "Oman organisaation muuttaminen ei ole sallittua.",
+    "error.change-of-paos-organisaatio-not-allowed": "Palveluntuottajan muuttaminen ei ole sallittua.",
+    "error.alkamispvm-should-be-before-toimipaikka-paattymispvm": "Alkamispäivämäärän pitää olla ennen toimipaikan päättymispäivämäärää.",
+    "error.alkamispvm-should-be-after-toimipaikka-alkamispvm": "Alkamispäivämäärä ei saa olla ennen toimipaikan alkamispäivämäärää.",
+    "error.paattymispvm-should-be-before-toimipaikka-paattymispvm": "Päättymispäivämäärä ei saa olla toimipaikan päättymispäivämäärän jälkeen.",
+    "error.alkamispvm-should-be-before-vakajarjestaja-paattymispvm": "Alkamispäivämäärä ei saa olla varhaiskasvatustoimijan päättymispäivämäärän jälkeen.",
+    "error.alkamispvm-should-be-after-vakajarjestaja-alkamispvm": "Alkamispäivämäärä ei saa olla ennen varhaiskasvatustoimijan alkamispäivämäärää.",
+    "error.paattymispvm-should-be-before-vakajarjestaja-paattymispvm": "Päättymispäivämäärä ei saa olla varhaiskasvatustoimijan päättymispäivämäärän jälkeen."
 }

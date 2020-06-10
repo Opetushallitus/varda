@@ -478,5 +478,18 @@
     "alert.oma_organisaatio_same_as_paos": "Kontrollera uppgifterna om servicesedelverksamhet och köptjänster.",
     "alert.paos-lapsi-creation-failed": "Personen kunde inte läggas till. Kontrollera att uppgifterna om verksamhet som ordnas som köpt tjänst eller med servicesedel är korrekta. Att lägga till en person till detta verksamhetsställe förutsätter att både serviceproducenten och anordnaren sparat de behövliga uppgifterna om verksamheten.",
     "alert.date-format": "Datumet ska ha formatet dd.mm.åååå",
-    "field.date-after-1999": "Datumet måste infalla efter 1.1.2000"
+    "field.date-after-1999": "Datumet måste infalla efter 1.1.2000",
+    "error.paos-lapsi-both-organisations-required": "Om formen för anordnandet av småbarnspedagogik är köpt tjänst eller servicesedel ska man meddela både anordnarens och serviceproducentens organisation.",
+    "error.lapsi-cannot-be-paos-and-regular": "Barnet ska läggas till på nytt med Lägg till -funktionen om formen för anordnandet av småbarnspedagogik ändrar.",
+    "error.invalid-hyperlink": "Du har inte tillräckliga användarrättigheter för att uträtta funktionen.",
+    "error.user-doesnt-not-have-permission-for-vakatoimija": "Du saknar användarrättigheter till småbarnspedagogikaktören i fråga.",
+    "error.change-of-vakatoimija-not-allowed": "Det är inte tillåtet att byta småbarnspedagogikaktör.",
+    "error.change-of-oma-organisaatio-not-allowed": "Det är inte tillåtet att ändra den egna organisationen.",
+    "error.change-of-paos-organisaatio-not-allowed": "Det är inte tillåtet att byta serviceproducent.",
+    "error.alkamispvm-should-be-before-toimipaikka-paattymispvm": "Startdatumet ska infalla före verksamhetsställets slutdatum.",
+    "error.alkamispvm-should-be-after-toimipaikka-alkamispvm": "Startdatumet får inte infalla före verksamhetsställets startdatum.",
+    "error.paattymispvm-should-be-before-toimipaikka-paattymispvm": "Slutdatumet får inte infalla efter verksamhetsställets slutdatum.",
+    "error.alkamispvm-should-be-before-vakajarjestaja-paattymispvm": "Startdatumet får inte infalla efter småbarnspedagogikaktörens slutdatum.",
+    "error.alkamispvm-should-be-after-vakajarjestaja-alkamispvm": "Startdatumet får inte infalla före småbarnspedagogikaktörens startdatum.",
+    "error.paattymispvm-should-be-before-vakajarjestaja-paattymispvm": "Slutdatumet får inte infalla efter småbarnspedagogikaktörens slutdatum."
 }
