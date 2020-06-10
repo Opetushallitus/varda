@@ -47,6 +47,7 @@ router_pulssi.register(r'vakajarjestajat', viewsets.PulssiVakajarjestajat, basen
 
 router_ui = routers.DefaultRouter()
 router_ui.register(r'vakajarjestajat', viewsets_ui.UiVakajarjestajatViewSet, basename='hae-vakajarjestajat')
+router_ui.register(r'localisation', viewsets_ui.LocalisationViewSet, basename='get-localisation')
 
 router = routers.DefaultRouter()
 router.register(r'vakajarjestajat', viewsets.VakaJarjestajaViewSet)

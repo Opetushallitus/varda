@@ -1,3 +1,4 @@
+import datetime
 import logging
 
 from django.conf import settings
@@ -346,3 +347,21 @@ def get_koodistot_cache(language):
 
 def set_koodistot_cache(language, data, cached_time=settings.DEFAULT_CACHE_INVALIDATION_TIME):
     cache.set('koodistot.{}'.format(language.upper()), data, cached_time)
+
+
+def get_localisation_cache(category, locale):
+    if locale:
+        return cache.get('lokalisointi.{0}.{1}'.format(category.lower(), locale.lower()))
+    else:
+        return cache.get('lokalisointi.{}'.format(category.lower()))
+
+
+def set_localisation_cache(category, locale, data, cached_time=settings.DEFAULT_CACHE_INVALIDATION_TIME):
+    cache_data = {
+        'data': data,
+        'created': datetime.datetime.now()
+    }
+    if locale:
+        cache.set('lokalisointi.{0}.{1}'.format(category.lower(), locale.lower()), cache_data, cached_time)
+    else:
+        cache.set('lokalisointi.{}'.format(category.lower()), cache_data, cached_time)

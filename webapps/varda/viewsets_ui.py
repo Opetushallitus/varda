@@ -8,6 +8,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import ListModelMixin
 from rest_framework.response import Response
@@ -15,6 +16,7 @@ from rest_framework.viewsets import GenericViewSet
 
 from varda.cache import create_cache_key, get_object_ids_user_has_permissions
 from varda.cas.varda_permissions import IsVardaPaakayttaja
+from varda.lokalisointipalvelu import get_localisation_data
 from varda.misc_queries import get_paos_toimipaikat
 from varda.models import Toimipaikka, VakaJarjestaja, Varhaiskasvatussuhde, PaosToiminta, PaosOikeus
 from varda.permissions import CustomObjectPermissions, save_audit_log
@@ -314,3 +316,31 @@ class NestedToimipaikanLapsetViewSet(GenericViewSet, ListModelMixin):
         # Pagination is disabled
         serializer = self.get_serializer(queryset.distinct(), many=True)
         return Response(serializer.data)
+
+
+class LocalisationViewSet(GenericViewSet, ListModelMixin):
+    """
+    list:
+        Get localisations from lokalisointipalvelu for given category and locale
+
+        parameters:
+            category=string (required)
+            locale=string
+    """
+    def get_queryset(self):
+        return None
+
+    def list(self, request, *args, **kwargs):
+        query_params = request.query_params
+        category = query_params.get('category', None)
+        locale = query_params.get('locale', None)
+
+        if not category:
+            raise ValidationError({'category': ['category url parameter is required']})
+
+        data = get_localisation_data(category, locale)
+
+        if not data:
+            return Response(status=500)
+
+        return Response(data)
