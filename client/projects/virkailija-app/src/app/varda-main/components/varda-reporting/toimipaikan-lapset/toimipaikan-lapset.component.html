@@ -1,5 +1,6 @@
 <div class="toimipaikan-lapset-container">
-  <div #toimipaikanLapsetScrollTo class="toimipaikanLapsetScrollTo"></div>
+  <div #toimipaikanLapsetScrollTo
+       class="toimipaikanLapsetScrollTo"></div>
   <div class="toimipaikan-lapset-container-margin-bottom">
     <h1>{{selectedToimipaikanLapsi.henkilo.etunimet + ' ' + selectedToimipaikanLapsi.henkilo.sukunimi}}</h1>
   </div>
@@ -32,16 +33,26 @@
         <td class="mat-cell">{{'label.birthday' | translate}}</td>
         <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.syntyma_pvm | date:'d.M.yyyy'}}</td>
       </tr>
+      <tr class="mat-header-row"
+          *ngIf="selectedToimipaikanLapsi.oma_organisaatio_nimi">
+        <td class="mat-cell">{{'label.oma-organisaatio' | translate}}</td>
+        <td class="mat-cell">{{selectedToimipaikanLapsi.oma_organisaatio_nimi}}</td>
+      </tr>
+      <tr class="mat-header-row"
+          *ngIf="selectedToimipaikanLapsi.paos_organisaatio_nimi">
+        <td class="mat-cell">{{'label.paos-organisaatio' | translate}}</td>
+        <td class="mat-cell">{{selectedToimipaikanLapsi.paos_organisaatio_nimi}}</td>
+      </tr>
     </table>
   </div>
 
   <div class="toimipaikan-lapset-container-margin-bottom">
     <h2>{{'label.varhaiskasvatuspaatokset' | translate}}</h2>
 
-    <div *ngIf="selectedToimipaikanLapsi.varhaiskasvatuspaatokset && selectedToimipaikanLapsi.varhaiskasvatuspaatokset.length > 0">
+    <div
+         *ngIf="selectedToimipaikanLapsi.varhaiskasvatuspaatokset && selectedToimipaikanLapsi.varhaiskasvatuspaatokset.length > 0">
       <div *ngFor="let vakapaatos of selectedToimipaikanLapsi.varhaiskasvatuspaatokset">
-        <app-toimipaikan-lapset-vakapaatokset
-          [vakapaatos]="vakapaatos">
+        <app-toimipaikan-lapset-vakapaatokset [vakapaatos]="vakapaatos">
         </app-toimipaikan-lapset-vakapaatokset>
       </div>
     </div>
@@ -50,10 +61,10 @@
   <div class="toimipaikan-lapset-container-margin-bottom">
     <h2>{{'label.varhaiskasvatussuhteet' | translate}}</h2>
 
-    <div *ngIf="selectedToimipaikanLapsi.varhaiskasvatussuhteet && selectedToimipaikanLapsi.varhaiskasvatussuhteet.length > 0">
+    <div
+         *ngIf="selectedToimipaikanLapsi.varhaiskasvatussuhteet && selectedToimipaikanLapsi.varhaiskasvatussuhteet.length > 0">
       <div *ngFor="let vakasuhde of selectedToimipaikanLapsi.varhaiskasvatussuhteet">
-        <app-toimipaikan-lapset-vakasuhteet
-          [vakasuhde]="vakasuhde">
+        <app-toimipaikan-lapset-vakasuhteet [vakasuhde]="vakasuhde">
         </app-toimipaikan-lapset-vakasuhteet>
       </div>
     </div>
@@ -64,8 +75,7 @@
 
     <div *ngIf="selectedToimipaikanLapsi.maksutiedot && selectedToimipaikanLapsi.maksutiedot.length > 0">
       <div *ngFor="let maksutieto of selectedToimipaikanLapsi.maksutiedot">
-        <app-toimipaikan-lapset-maksutiedot
-          [maksutieto]="maksutieto">
+        <app-toimipaikan-lapset-maksutiedot [maksutieto]="maksutieto">
         </app-toimipaikan-lapset-maksutiedot>
       </div>
     </div>

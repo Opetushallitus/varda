@@ -25,13 +25,13 @@ export class ToimipaikanLapsetComponent implements OnChanges {
     this.selectedToimipaikanLapsi.varhaiskasvatuspaatokset = [];
     this.selectedToimipaikanLapsi.varhaiskasvatussuhteet = [];
     this.selectedToimipaikanLapsi.maksutiedot = [];
-    this.fetchToimipaikanLapsi();
+    this.fetchToimipaikanLapsi(this.selectedToimipaikanLapsi);
   }
 
-  fetchToimipaikanLapsi(): void {
+  fetchToimipaikanLapsi({ paos_organisaatio_nimi, oma_organisaatio_nimi }): void {
 
     this.vardaApiService.getLapsiKooste(this.selectedToimipaikanLapsi.lapsi_id).subscribe((data) => {
-      this.selectedToimipaikanLapsi = data;
+      this.selectedToimipaikanLapsi = { ...data, paos_organisaatio_nimi: paos_organisaatio_nimi, oma_organisaatio_nimi: oma_organisaatio_nimi };
       this.toimipaikanLapsetScrollTo.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }

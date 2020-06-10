@@ -51,6 +51,8 @@ export class ToimipaikanLapsi {
   varhaiskasvatussuhteet: Array<ToimipaikanLapsiVakasuhde>;
   maksutiedot: Array<ToimipaikanLapsiMaksutieto>;
   lapsi_id: number;
+  oma_organisaatio_nimi: string;
+  paos_organisaatio_nimi: string;
 }
 
 export class ToimipaikanLapsiHenkilo {
