@@ -1,6 +1,11 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.3.17 (11.06.2020)
+- CSCVARDA-1294: Ohjeteksti päivittäiselle ja kokopäiväiselle varhaiskasvatukselle
+- CSCVARDA-1589: Virheviestejä PAOS-lapsen ja maksutietojen lisäämisestä
+- CSCVARDA-1752: Katsele-tietoja lapsi-kortille oma- ja paos-organisaatio
+
 ## [1.3.16] (04.06.2020)
 - CSCVARDA-1652: Lapsiformin desimaali- ja kokonaisluku validointeja.
 - CSCVARDA-1591: Yksityisten toimijoiden maksutietolomakkeen päivitykset
