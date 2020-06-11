@@ -576,10 +576,10 @@ class ToimipaikkaViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, P
     def perform_create(self, serializer):
         user = self.request.user
         validated_data = serializer.validated_data
-        vakajarjestaja_id = validated_data["vakajarjestaja"].id
+        vakajarjestaja_obj = validated_data["vakajarjestaja"]
+        vakajarjestaja_id = vakajarjestaja_obj.id
 
         related_object_validations.check_if_user_has_add_toimipaikka_permissions_under_vakajarjestaja(vakajarjestaja_id, user)
-        validators.validate_toimipaikan_nimi(validated_data["nimi"])
 
         if "paattymis_pvm" in validated_data and validated_data["paattymis_pvm"] is not None:
             if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm']):

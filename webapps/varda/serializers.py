@@ -320,6 +320,9 @@ class ToimipaikkaSerializer(serializers.HyperlinkedModelSerializer):
         if 'nimi' in data and data['nimi'].lower().startswith('palveluseteli ja ostopalvelu'):
             msg = {"nimi": ["toimipaikka with name palveluseteli ja ostopalvelu is reserved for system"]}
             raise serializers.ValidationError(msg, code='invalid')
+        validators.validate_dates_within_vakajarjestaja(data, data['vakajarjestaja'])
+        validators.validate_toimipaikan_nimi(data["nimi"])
+
         return data
 
     @caching_to_representation('toimipaikka')
@@ -335,10 +338,14 @@ class ToiminnallinenPainotusSerializer(serializers.HyperlinkedModelSerializer):
         model = ToiminnallinenPainotus
         exclude = ('luonti_pvm', 'changed_by',)
 
-    def validate_toimipaikka(self, value):
-        if self.instance and value != self.instance.toimipaikka:
-            raise serializers.ValidationError("This field is not allowed to be changed.")
-        return value
+    def validate(self, data):
+        if self.instance:  # PUT/PATCH
+            if 'toimipaikka' in data and data['toimipaikka'] != self.instance.toimipaikka:
+                raise serializers.ValidationError("This field is not allowed to be changed.")
+            validators.validate_painotus_dates_within_toimipaikka(data, self.instance.toimipaikka)
+        else:  # POST
+            validators.validate_painotus_dates_within_toimipaikka(data, data['toimipaikka'])
+        return data
 
 
 class KieliPainotusSerializer(serializers.HyperlinkedModelSerializer):
@@ -349,10 +356,14 @@ class KieliPainotusSerializer(serializers.HyperlinkedModelSerializer):
         model = KieliPainotus
         exclude = ('luonti_pvm', 'changed_by',)
 
-    def validate_toimipaikka(self, value):
-        if self.instance and value != self.instance.toimipaikka:
-            raise serializers.ValidationError("This field is not allowed to be changed.")
-        return value
+    def validate(self, data):
+        if self.instance:  # PUT/PATCH
+            if 'toimipaikka' in data and data['toimipaikka'] != self.instance.toimipaikka:
+                raise serializers.ValidationError("This field is not allowed to be changed.")
+            validators.validate_painotus_dates_within_toimipaikka(data, self.instance.toimipaikka)
+        else:  # POST
+            validators.validate_painotus_dates_within_toimipaikka(data, data['toimipaikka'])
+        return data
 
 
 class HaeHenkiloSerializer(serializers.Serializer):
