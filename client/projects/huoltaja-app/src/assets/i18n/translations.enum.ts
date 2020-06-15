@@ -1,8 +1,11 @@
-export enum Translations {
+export enum HuoltajaTranslations {
   page_title = 'page.title',
   varhaiskasvatustiedot = 'varhaiskasvatustiedot',
-  varhaiskasvatustiedot_text1 = 'varhaiskasvatustiedot_text1',
-  varhaiskasvatustiedot_text2 = 'varhaiskasvatustiedot_text2',
+  varhaiskasvatustiedot_intro_paragraph_1 = 'varhaiskasvatustiedot.intro.paragraph-1',
+  varhaiskasvatustiedot_intro_paragraph_2 = 'varhaiskasvatustiedot.intro.paragraph-2',
+  varhaiskasvatustiedot_intro_paragraph_3 = 'varhaiskasvatustiedot.intro.paragraph-3',
+  varhaiskasvatustiedot_intro_link_href = 'varhaiskasvatustiedot.intro.link.href',
+  varhaiskasvatustiedot_intro_link_text = 'varhaiskasvatustiedot.intro.link.text',
   ei_vakapaatoksia = 'ei-vakapaatoksia',
   henkilotiedot = 'henkilotiedot',
   katsot_tietoja_huoltajana = 'katsot-tietoja-huoltajana',

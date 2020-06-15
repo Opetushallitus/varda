@@ -17,3 +17,17 @@ html {
 #header-overflow-menu-container {
   z-index: 1;
 }
+
+.mat-tooltip {
+  animation: scaleTooltip 2.5s forwards;
+}
+
+@keyframes scaleTooltip {
+  0% {
+    transform: scale(1);
+  }
+
+  100% {
+    transform: scale(1.5);
+  }
+}

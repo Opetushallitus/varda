@@ -3,7 +3,7 @@ import { VarhaiskasvatuspaatosDTO } from 'projects/huoltaja-app/src/app/utilitie
 import { ContactDialogComponent } from '../../contact-dialog/contact-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { LapsiDTO } from 'projects/huoltaja-app/src/app/utilities/models/dto/lapsi-dto';
-import { Translations } from 'projects/huoltaja-app/src/assets/i18n/translations.enum';
+import { HuoltajaTranslations } from 'projects/huoltaja-app/src/assets/i18n/translations.enum';
 
 @Component({
   selector: 'app-huoltaja-vakapaatos',
@@ -16,7 +16,7 @@ export class HuoltajaFrontpageVakapaatosComponent implements OnInit {
   @Input() oma_organisaatio_sahkoposti: string;
   voimassa: boolean;
   toimipaikkaList: Array<string> = [];
-  translation = Translations;
+  translation = HuoltajaTranslations;
 
   constructor(private dialog: MatDialog) { }
 

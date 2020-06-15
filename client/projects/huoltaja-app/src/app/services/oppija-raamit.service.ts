@@ -3,16 +3,15 @@ import { LoadingHttpService } from 'varda-shared';
 import { TranslateService } from '@ngx-translate/core';
 import { take } from 'rxjs/operators';
 import { interval } from 'rxjs';
-import { Translations } from '../../assets/i18n/translations.enum';
+import { HuoltajaTranslations } from '../../assets/i18n/translations.enum';
 
 @Injectable({
   providedIn: 'root'
 })
 export class OppijaRaamitService {
-  translation = Translations;
+  translation = HuoltajaTranslations;
 
-  constructor(private http: LoadingHttpService,
-    private translateService: TranslateService) { }
+  constructor(private translateService: TranslateService) { }
 
   initRaamit(kutsumanimi?: string) {
     const oppijaRaamit = window.location.hostname.endsWith('opintopolku.fi') ? `//${window.location.hostname}/oppija-raamit/js/apply-raamit.js` : null;

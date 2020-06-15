@@ -18,7 +18,7 @@ export class HuoltajaAuthGuard implements CanActivate {
     next: ActivatedRouteSnapshot,
     state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
     return new Observable((authGuardObs) => {
-      const url = `${environment.huoltajaAppUrl}/api/user/apikey/`;
+      const url = `${environment.huoltajaBackendUrl}/api/user/apikey/`;
 
       this.loginService.getApiTokenFromCookie('huoltaja', url).then(newToken => {
         this.loginService.checkApiTokenValidity('huoltaja', url).subscribe((isValid) => {
@@ -53,6 +53,6 @@ export class HuoltajaAuthGuard implements CanActivate {
 
   private getLoginUrl(): string {
     const next = encodeURIComponent(environment.huoltajaFrontendUrl + '/');
-    return `${environment.huoltajaAppUrl}/accounts/huoltaja-login?next=${next}`;
+    return `${environment.huoltajaBackendUrl}/accounts/huoltaja-login?next=${next}`;
   }
 }

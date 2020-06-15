@@ -5,7 +5,8 @@
 export const environment = {
   production: false,
   huoltajaFrontendUrl: 'http://localhost:4200',
-  huoltajaAppUrl: 'http://localhost:8000',
+  huoltajaBackendUrl: 'http://localhost:8000',
+  localizationCategory: 'varda-huoltaja'
 };
 
 /*

@@ -6,6 +6,7 @@ import { CodeDto } from '../../../models/code-dto';
 import * as moment from 'moment';
 import { PublicResponsiveService } from '../../../services/public-responsive.service';
 import { BehaviorSubject } from 'rxjs';
+import { PublicTranslations } from 'projects/public-app/src/assets/i18n/translations.enum';
 
 @Component({
   selector: 'app-public-koodistot-detail',
@@ -13,6 +14,7 @@ import { BehaviorSubject } from 'rxjs';
   styleUrls: ['./public-koodistot-detail.component.css']
 })
 export class PublicKoodistotDetailComponent implements OnInit, OnDestroy {
+  translation = PublicTranslations;
   selectedKoodistoName: string = null;
   isValidKoodistoName = false;
   private koodistot: Array<KoodistoDto> = [];

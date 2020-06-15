@@ -102,10 +102,8 @@
     <tr class="mat-header-row"
         tabindex="0">
       <th class="mat-cell">{{ translation.lapsi_sukupuoli | translate}}</th>
-      <td class="mat-cell">
-        <span *ngIf="lapsiDto.sukupuoli_koodi == '1'">{{ translation.mies | translate }}</span>
-        <span *ngIf="lapsiDto.sukupuoli_koodi == '2'">{{ translation.nainen | translate }}</span>
-      </td>
+      <td class="mat-cell"
+          appKoodistoValue="sukupuoli">{{lapsiDto.sukupuoli_koodi}}</td>
       <td class="mat-cell">
         <button [matTooltip]="translation.tooltip_henkilotiedot_sukupuoli | translate"
                 #sukupuoli="matTooltip"

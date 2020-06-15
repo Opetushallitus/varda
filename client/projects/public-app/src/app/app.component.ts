@@ -7,6 +7,7 @@ import { LoadingHttpService } from 'varda-shared';
 import { NavigationEnd, Router } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { Subscription } from 'rxjs';
+import { PublicTranslations } from '../assets/i18n/translations.enum';
 
 @Component({
   selector: 'app-root',
@@ -14,16 +15,17 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
+  translation = PublicTranslations;
   isLoading: Observable<boolean>;
   private pageTitleTranslations: Array<string>;
   private pageTitleStatic: Array<string>;
   private translationSubscription: Subscription;
 
   constructor(private translateService: TranslateService,
-              private loadingHttpService: LoadingHttpService,
-              private router: Router,
-              private titleService: Title,
-              @Inject(DOCUMENT) private document: Document) { }
+    private loadingHttpService: LoadingHttpService,
+    private router: Router,
+    private titleService: Title,
+    @Inject(DOCUMENT) private document: Document) { }
 
   ngOnInit(): void {
     const defaultLanguage = this.translateService.getBrowserLang() === 'sv' ? 'sv' : 'fi';
@@ -44,7 +46,7 @@ export class AppComponent implements OnInit {
     this.pageTitleTranslations = [];
     this.pageTitleStatic = [];
 
-    this.pageTitleTranslations.push('label.varda');
+    this.pageTitleTranslations.push(this.translation.varda_virallinen);
 
     let snapshot = this.router.routerState.root.snapshot.firstChild;
     while (snapshot) {

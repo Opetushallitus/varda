@@ -1,8 +1,13 @@
 <div class="huoltaja-frontpage-container">
   <div class="huoltaja-frontpage-div-margin-bottom">
     <h1>{{ translation.varhaiskasvatustiedot | translate}}</h1>
-    <p>{{ translation.varhaiskasvatustiedot_text1 | translate}}</p>
-    <p>{{ translation.varhaiskasvatustiedot_text2 | translate}}</p>
+    <p>{{ translation.varhaiskasvatustiedot_intro_paragraph_1 | translate}}</p>
+    <p>{{ translation.varhaiskasvatustiedot_intro_paragraph_2 | translate}}</p>
+    <p>{{ translation.varhaiskasvatustiedot_intro_paragraph_3 | translate}}
+      <a [href]="translation.varhaiskasvatustiedot_intro_link_href | translate">
+        {{ translation.varhaiskasvatustiedot_intro_link_text | translate}}
+      </a>
+    </p>
   </div>
   <div *ngIf="fetchError"
        class="error-field">

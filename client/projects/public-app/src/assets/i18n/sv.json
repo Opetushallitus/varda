@@ -1,13 +1,17 @@
 {
-    "label.site-version": "Version {{value}}",
-    "label.varda": "Informationsresursen inom småbarnspedagogiken Varda",
-    "label.code": "Kod",
-    "label.name": "Namn",
-    "label.description": "Beskrivning",
-    "label.koodistot": "Vardas koder",
-    "label.version": "Version",
-    "label.updated": "Uppdaterats",
+    "site-version": "Version {{value}}",
+    "lang.fi": "FI",
+    "lang.sv": "SV",
+    "varda_virallinen": "Informationsresursen inom småbarnspedagogiken Varda",
+    "code": "Kod",
+    "name": "Namn",
+    "description": "Beskrivning",
+    "koodistot": "Vardas koder",
+    "version": "Version",
+    "updated": "Uppdaterats",
+    "choose": "Välj",
     "alert.koodistot.invalid-koodisto-name": "Ingen kod hittades med detta namn.",
     "title.koodistot": "Koder",
     "prompt.koodistot.select-koodisto": "Välj en kod ur menyn."
+
 }

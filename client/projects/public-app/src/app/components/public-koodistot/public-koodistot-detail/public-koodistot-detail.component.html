@@ -2,22 +2,22 @@
   <h2>{{selectedKoodistoName}}</h2>
   <p *ngIf="isValidKoodistoName"
         class="koodisto-version">
-    {{'label.version' | translate}}: {{version}}
+    {{ translation.version | translate}}: {{version}}
   </p>
   <p *ngIf="isValidKoodistoName"
         class="koodisto-update-date">
-    {{'label.updated' | translate}}: {{update_datetime.format('DD.MM.YYYY')}}
+    {{ translation.updated| translate}}: {{update_datetime.format('DD.MM.YYYY')}}
   </p>
 </div>
 <hr *ngIf="!isValidKoodistoName">
-<p *ngIf="!isValidKoodistoName">{{'alert.koodistot.invalid-koodisto-name' | translate}}</p>
+<p *ngIf="!isValidKoodistoName">{{ translation.alert_koodistot_invalid_koodisto_name | translate}}</p>
 <div *ngIf="isValidKoodistoName && !(isExtraSmall | async)" class="table-responsive koodisto-table">
   <table class="table table-hover">
     <thead>
     <tr>
-      <th scope="col">{{'label.code' | translate}}</th>
-      <th scope="col">{{'label.name' | translate}}</th>
-      <th scope="col">{{'label.description' | translate}}</th>
+      <th scope="col">{{ translation.code | translate}}</th>
+      <th scope="col">{{ translation.name | translate}}</th>
+      <th scope="col">{{ translation.description | translate}}</th>
     </tr>
     </thead>
     <tbody>
@@ -38,15 +38,15 @@
     <table class="table table-borderless koodisto-table-small">
       <tbody>
         <tr>
-          <th scope="row">{{'label.code' | translate}}</th>
+          <th scope="row">{{ translation.code | translate}}</th>
           <td>{{code.code_value}}</td>
         </tr>
         <tr>
-          <th scope="row">{{'label.name' | translate}}</th>
+          <th scope="row">{{ translation.name | translate}}</th>
           <td>{{code.name}}</td>
         </tr>
         <tr>
-          <th scope="row">{{'label.description' | translate}}</th>
+          <th scope="row">{{ translation.description | translate}}</th>
           <td>{{code.description}}</td>
         </tr>
       </tbody>

@@ -1,21 +1,16 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { HttpClientModule, HttpClient } from '@angular/common/http';
+import { HttpClientModule } from '@angular/common/http';
 import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
-import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { HuoltajaMainModule } from './huoltaja-main/huoltaja-main.module';
 
 import { AppComponent } from './app.component';
-import { VardaSharedModule } from 'varda-shared';
+import { VardaSharedModule, HttpService } from 'varda-shared';
 import { CookieService } from 'ngx-cookie-service';
+import { HuoltajaApiService } from './services/huoltaja-api.service';
+import { VardaTranslateLoader } from 'varda-shared';
 
-// AoT requires an exported function for factories
-export function HttpLoaderFactory(http: HttpClient) {
-  const path = './assets/i18n/';
-  return new TranslateHttpLoader(http, path, '.json');
-
-}
 
 @NgModule({
   declarations: [
@@ -30,8 +25,8 @@ export function HttpLoaderFactory(http: HttpClient) {
     TranslateModule.forRoot({
       loader: {
         provide: TranslateLoader,
-        useFactory: (HttpLoaderFactory),
-        deps: [HttpClient]
+        useClass: VardaTranslateLoader,
+        deps: [HttpService, HuoltajaApiService]
       }
     })
   ],

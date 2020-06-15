@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
-import {Observable, of, throwError, throwError as observableThrowError} from 'rxjs';
-import {HttpClient, HttpHeaders, HttpParams} from '@angular/common/http';
-import {catchError, delay, flatMap, map, retryWhen, take} from 'rxjs/operators';
+import { Observable, of, throwError, throwError as observableThrowError, BehaviorSubject } from 'rxjs';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { catchError, delay, flatMap, map, retryWhen, take } from 'rxjs/operators';
 
 export abstract class AbstractHttpService {
   public apiKey = '';
+  private apiKey$ = new BehaviorSubject<string>(null);
   private _http;
 
   constructor(http: HttpClient) {
@@ -20,10 +21,16 @@ export abstract class AbstractHttpService {
 
   setApiKey(token: string): void {
     this.apiKey = token;
+    this.apiKey$.next(token);
   }
 
+  getApiKey(): Observable<string> {
+    return this.apiKey$.asObservable();
+  }
+
+
   getWithCallerId(url: string, options?: any): Observable<any> {
-    const httpHeadersCallerId = new HttpHeaders({'Caller-Id': 'csc.varda'});
+    const httpHeadersCallerId = new HttpHeaders({ 'Caller-Id': 'csc.varda' });
     return this.get(url, options, httpHeadersCallerId);
   }
 
@@ -34,8 +41,8 @@ export abstract class AbstractHttpService {
   getApiKeyByVardaCredentials(username: string, password: string, apiKeyPath: string): Observable<any> {
     const credentialsStr = `${username}:${password}`;
     const authStr = ` Basic ${this.base64encode(credentialsStr)}`;
-    const httpHeaders = new HttpHeaders({'Authorization': authStr});
-    return this._http.get(apiKeyPath, {headers: httpHeaders}).pipe(map((resp: any) => {
+    const httpHeaders = new HttpHeaders({ 'Authorization': authStr });
+    return this._http.get(apiKeyPath, { headers: httpHeaders }).pipe(map((resp: any) => {
       const respBody = resp;
       this.setApiKey(resp.token);
       return respBody;
@@ -72,11 +79,11 @@ export class HttpService extends AbstractHttpService {
 
   get(url: string, options?: any, httpHeadersParam?: HttpHeaders): Observable<any> {
     const authToken = ` Token ${this.apiKey}`;
-    const httpHeaders = httpHeadersParam || new HttpHeaders({'Authorization': authToken});
+    const httpHeaders = httpHeadersParam || new HttpHeaders({ 'Authorization': authToken });
     const params = new HttpParams({
       fromObject: options,
     });
-    return this.http.get(url, {headers: httpHeaders, params})
+    return this.http.get(url, { headers: httpHeaders, params })
       .pipe(
         this.httpRetry(),
         map((resp: any) => {
@@ -90,8 +97,8 @@ export class HttpService extends AbstractHttpService {
 
   post(url: string, formData: any, options?: any): Observable<any> {
     const authToken = ` Token ${this.apiKey}`;
-    const httpHeaders = new HttpHeaders({'Authorization': authToken});
-    return this.http.post(url, formData, {headers: httpHeaders}).pipe(map((resp: any) => {
+    const httpHeaders = new HttpHeaders({ 'Authorization': authToken });
+    return this.http.post(url, formData, { headers: httpHeaders }).pipe(map((resp: any) => {
       return resp;
     }), catchError((e) => {
       return observableThrowError(e);
@@ -100,8 +107,8 @@ export class HttpService extends AbstractHttpService {
 
   put(url: string, formData: any, options?: any): Observable<any> {
     const authToken = ` Token ${this.apiKey}`;
-    const httpHeaders = new HttpHeaders({'Authorization': authToken});
-    return this.http.put(url, formData, {headers: httpHeaders}).pipe(map((resp: any) => {
+    const httpHeaders = new HttpHeaders({ 'Authorization': authToken });
+    return this.http.put(url, formData, { headers: httpHeaders }).pipe(map((resp: any) => {
       return resp;
     }), catchError((e) => {
       return observableThrowError(e);
@@ -110,8 +117,8 @@ export class HttpService extends AbstractHttpService {
 
   patch(url: string, formData: any, options?: any): Observable<any> {
     const authToken = ` Token ${this.apiKey}`;
-    const httpHeaders = new HttpHeaders({'Authorization': authToken});
-    return this.http.patch(url, formData, {headers: httpHeaders}).pipe(map((resp: any) => {
+    const httpHeaders = new HttpHeaders({ 'Authorization': authToken });
+    return this.http.patch(url, formData, { headers: httpHeaders }).pipe(map((resp: any) => {
       return resp;
     }), catchError((e) => {
       return observableThrowError(e);
@@ -120,8 +127,8 @@ export class HttpService extends AbstractHttpService {
 
   options(url: string, options?: any): Observable<any> {
     const authToken = ` Token ${this.apiKey}`;
-    const httpHeaders = new HttpHeaders({'Authorization': authToken});
-    return this.http.options(url, {headers: httpHeaders}).pipe(map((resp: any) => {
+    const httpHeaders = new HttpHeaders({ 'Authorization': authToken });
+    return this.http.options(url, { headers: httpHeaders }).pipe(map((resp: any) => {
       return resp;
     }), catchError((e) => {
       return observableThrowError(e);
@@ -130,8 +137,8 @@ export class HttpService extends AbstractHttpService {
 
   delete(url: string, options?: any): Observable<any> {
     const authToken = ` Token ${this.apiKey}`;
-    const httpHeaders = new HttpHeaders({'Authorization': authToken});
-    return this.http.delete(url, {headers: httpHeaders}).pipe(map((resp: any) => {
+    const httpHeaders = new HttpHeaders({ 'Authorization': authToken });
+    return this.http.delete(url, { headers: httpHeaders }).pipe(map((resp: any) => {
       return resp;
     }), catchError((e) => {
       return observableThrowError(e);

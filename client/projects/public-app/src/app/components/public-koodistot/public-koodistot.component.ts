@@ -3,6 +3,7 @@ import { Subject, Subscription, BehaviorSubject } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PublicKoodistotService } from '../../services/public-koodistot.service';
 import { PublicResponsiveService } from '../../services/public-responsive.service';
+import { PublicTranslations } from 'projects/public-app/src/assets/i18n/translations.enum';
 
 @Component({
   selector: 'app-public-koodistot',
@@ -10,6 +11,7 @@ import { PublicResponsiveService } from '../../services/public-responsive.servic
   styleUrls: ['./public-koodistot.component.css']
 })
 export class PublicKoodistotComponent  implements OnInit, OnDestroy {
+  translation = PublicTranslations;
   koodistoNames: Subject<Array<string>>;
   isSmall: BehaviorSubject<boolean>;
   selectedKoodisto: string;

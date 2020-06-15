@@ -3,6 +3,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { DOCUMENT } from '@angular/common';
 import { PublicResponsiveService } from '../../services/public-responsive.service';
 import { BehaviorSubject } from 'rxjs';
+import { PublicTranslations } from 'projects/public-app/src/assets/i18n/translations.enum';
 
 @Component({
   selector: 'app-public-header',
@@ -10,7 +11,8 @@ import { BehaviorSubject } from 'rxjs';
   styleUrls: ['./public-header.component.css']
 })
 export class PublicHeaderComponent implements OnInit {
-  currentLang: String;
+  translation = PublicTranslations;
+  currentLang: string;
   isSmall: BehaviorSubject<boolean>;
 
   constructor(private translateService: TranslateService,

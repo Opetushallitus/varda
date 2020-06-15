@@ -8,7 +8,8 @@ import { element } from 'protractor';
 
 export enum KoodistoType {
   kunta = 'kunta',
-  kieli = 'kieli'
+  kieli = 'kieli',
+  sukupuoli = 'sukupuoli',
 }
 
 @Directive({
@@ -35,6 +36,8 @@ export class KoodistoValueDirective implements AfterContentInit {
         this.apiService.getKuntakoodistoOptions().subscribe(kuntakoodisto => this.getValueFromKoodisto(kuntakoodisto, this.elem.textContent));
       } else if (this.koodistoType === KoodistoType.kieli) {
         this.apiService.getKielikoodistoOptions().subscribe(kielikoodisto => this.getValueFromKoodisto(kielikoodisto, this.elem.textContent));
+      } else if (this.koodistoType === KoodistoType.sukupuoli) {
+        this.apiService.getSukupuolikoodistoOptions().subscribe(sukupuolikoodisto => this.getValueFromKoodisto(sukupuolikoodisto, this.elem.textContent));
       }
     }
   }

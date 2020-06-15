@@ -1,14 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-
 import { HuoltajanLapsiDTO } from '../../../utilities/models/dto/huoltajan-lapsi-dto';
 import { HuoltajaApiService } from '../../../services/huoltaja-api.service';
-import { LoginService, LoadingHttpService } from 'varda-shared';
-import { VarhaiskasvatussuhdeDTO } from '../../../utilities/models/dto/varhaiskasvatussuhde-dto';
-import { HuoltajaFrontpageLapsiComponent } from './huoltaja-frontpage-lapsi/huoltaja-frontpage-lapsi.component';
-import { VarhaiskasvatuspaatosDTO } from '../../../utilities/models/dto/varhaiskasvatuspaatos-dto';
+import { LoginService } from 'varda-shared';
 import { MatDialog } from '@angular/material/dialog';
 import { ContactDialogComponent } from '../contact-dialog/contact-dialog.component';
-import { Translations } from 'projects/huoltaja-app/src/assets/i18n/translations.enum';
+import { HuoltajaTranslations } from 'projects/huoltaja-app/src/assets/i18n/translations.enum';
 
 @Component({
   selector: 'app-huoltaja-frontpage',
@@ -16,10 +12,9 @@ import { Translations } from 'projects/huoltaja-app/src/assets/i18n/translations
   styleUrls: ['./huoltaja-frontpage.component.css']
 })
 export class HuoltajaFrontpageComponent implements OnInit {
-  loadingHttpService: LoadingHttpService;
   lapsi: HuoltajanLapsiDTO;
   fetchError: boolean;
-  translation = Translations;
+  translation = HuoltajaTranslations;
 
   constructor(
     private apiService: HuoltajaApiService,
@@ -28,15 +23,12 @@ export class HuoltajaFrontpageComponent implements OnInit {
     this.apiService.getHuoltajanLapsi(loginService.currentUserInfo.henkilo_oid).subscribe((data: HuoltajanLapsiDTO) => {
       this.lapsi = data;
       this.apiService.setCurrentUser(data);
+
     }, (error: any) => {
       console.error(error.message);
       this.fetchError = true;
       this.apiService.setCurrentUser({ henkilo: {} });
     });
-  }
-
-  isLoading() {
-    return this.loadingHttpService.isLoading();
   }
 
   openDialog(title: string, content: string) {

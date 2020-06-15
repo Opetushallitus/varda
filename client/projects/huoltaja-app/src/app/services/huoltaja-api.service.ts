@@ -2,16 +2,16 @@ import { Injectable } from '@angular/core';
 import { LoadingHttpService, VardaUserDTO } from 'varda-shared';
 import { environment } from '../../environments/environment';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { TranslationDTO } from '../utilities/models/dto/translation-dto';
 import { HuoltajanLapsiDTO } from '../utilities/models/dto/huoltajan-lapsi-dto';
+import { HuoltajaTranslations } from '../../assets/i18n/translations.enum';
+import { VardaApiServiceInterface } from 'projects/varda-shared/src/lib/dto/vardaApiService.interface';
 
 @Injectable({
   providedIn: 'root'
 })
-export class HuoltajaApiService {
-  // TODO: siirrä .env kunhan koodisto- ja lokalisaatiopalvelu haetaan sisäisesti esim. https://jira.eduuni.fi/browse/CSCVARDA-1258
-  huoltajaApi = `${environment.huoltajaAppUrl}/api/oppija`;
-  loginApi = `${environment.huoltajaAppUrl}/api/user`;
+export class HuoltajaApiService implements VardaApiServiceInterface {
+  huoltajaApi = `${environment.huoltajaBackendUrl}/api/oppija`;
+  loginApi = `${environment.huoltajaBackendUrl}/api/user`;
   opintopolkuUrl = 'https://virkailija.testiopintopolku.fi';
   currentUser = new BehaviorSubject<HuoltajanLapsiDTO>(null);
 
@@ -46,7 +46,19 @@ export class HuoltajaApiService {
     return this.http.getWithCallerId(`${this.opintopolkuUrl}/koodisto-service/rest/json/kunta/koodi`);
   }
 
-  getTranslations(): Observable<TranslationDTO> {
-    return this.http.getWithCallerId(`${this.opintopolkuUrl}/lokalisointi/cxf/rest/v1/localisation?category=varda-huoltaja`);
+  getSukupuolikoodistoOptions(): Observable<any> {
+    return this.http.getWithCallerId(`${this.opintopolkuUrl}/koodisto-service/rest/json/sukupuoli/koodi`);
+  }
+
+  getTranslationCategory(): string {
+    return environment.localizationCategory;
+  }
+
+  getLocalizationApi(): string {
+    return `${environment.huoltajaBackendUrl}/api/ui/localisation`;
+  }
+
+  getTranslationEnum(): any {
+    return HuoltajaTranslations;
   }
 }

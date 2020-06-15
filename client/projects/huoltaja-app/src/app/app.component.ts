@@ -7,10 +7,11 @@ import { delay } from 'rxjs/internal/operators/delay';
 import { DOCUMENT } from '@angular/common';
 import { HuoltajaApiService } from './services/huoltaja-api.service';
 import { CookieService } from 'ngx-cookie-service';
-import { Translations } from '../assets/i18n/translations.enum';
+import { HuoltajaTranslations } from '../assets/i18n/translations.enum';
 import { OppijaRaamitService } from './services/oppija-raamit.service';
 import { filter } from 'rxjs/internal/operators/filter';
 import { HuoltajanLapsiDTO } from './utilities/models/dto/huoltajan-lapsi-dto';
+import { TranslationDTO } from './utilities/models/dto/translation-dto';
 
 @Component({
   selector: 'app-root',
@@ -19,7 +20,7 @@ import { HuoltajanLapsiDTO } from './utilities/models/dto/huoltajan-lapsi-dto';
 })
 export class AppComponent implements OnInit {
   isLoading: Observable<boolean>;
-  translation = Translations;
+  translation = HuoltajaTranslations;
 
   constructor(
     private oppijaRaamit: OppijaRaamitService,
@@ -30,9 +31,7 @@ export class AppComponent implements OnInit {
     private loadingHttpService: LoadingHttpService,
     @Inject(DOCUMENT) private _document: any
   ) {
-
     this.initLanguage();
-
     this.isLoading = this.loadingHttpService.isLoading().pipe(delay(200));
 
     this.huoltajaApi.getCurrentUser().pipe(filter(Boolean)).subscribe((user: HuoltajanLapsiDTO) => {
@@ -60,7 +59,6 @@ export class AppComponent implements OnInit {
     this.translateService.use(defaultLanguage);
     this._document.documentElement.lang = defaultLanguage;
   }
-
 
 }
 

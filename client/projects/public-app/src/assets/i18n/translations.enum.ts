@@ -1,0 +1,16 @@
+export enum PublicTranslations {
+  site_version = 'site-version',
+  lang_fi = 'lang.fi',
+  lang_sv = 'lang.sv',
+  varda_virallinen = 'varda_virallinen',
+  code = 'code',
+  name = 'name',
+  description = 'description',
+  version = 'version',
+  updated = 'updated',
+  choose = 'choose',
+  koodistot = 'koodistot',
+  koodistot_title = 'title.koodistot',
+  alert_koodistot_invalid_koodisto_name = 'alert.koodistot.invalid-koodisto-name',
+  prompt_koodistot_select_koodisto = 'prompt.koodistot.select-koodisto',
+}
