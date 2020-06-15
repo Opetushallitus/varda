@@ -38,11 +38,11 @@ class KunnallinenKytkinFilter(djangofilters.BooleanFilter):
 class VakaJarjestajaFieldFilter(djangofilters.CharFilter):
     def filter(self, qs, value):
         if value.isdigit():
-            return qs.filter(vakajarjestaja=int(value))
+            self.field_name += '__id'
+            value = int(value)
         elif value:
-            return qs.filter(vakajarjestaja__organisaatio_oid=value)
-        else:
-            return qs
+            self.field_name += '__organisaatio_oid'
+        return super().filter(qs, value)
 
 
 class HenkiloFieldFilter(djangofilters.CharFilter):
@@ -225,6 +225,7 @@ class TilapainenHenkilostoFilter(djangofilters.FilterSet):
 class TutkintoFilter(djangofilters.FilterSet):
     henkilo = HenkiloFieldFilter(field_name='henkilo')
     tutkinto_koodi = djangofilters.CharFilter(field_name='tutkinto_koodi', lookup_expr='exact')
+    vakajarjestaja = VakaJarjestajaFieldFilter(field_name='henkilo__tyontekijat__vakajarjestaja')
 
     class Meta:
         model = Tutkinto

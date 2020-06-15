@@ -295,15 +295,18 @@ def select_highest_kayttooikeusrooli(kayttooikeusrooli_list, organization_oid, *
         except Toimipaikka.DoesNotExist:
             pass
 
-    henkilosto_tallentaja_role_list = [
+    henkilosto_role_list = [
         Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
+        Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
         Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,
+        Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
         Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA,
+        Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_KATSELIJA,
     ]
     # Give integraatio organisaatio always the lowest privilege. Only affects vaka roles
     if (vakajarjestaja_obj and
             vakajarjestaja_obj.integraatio_organisaatio and
-            any(role in kayttooikeusrooli_list for role in args if role not in henkilosto_tallentaja_role_list)):
+            any(role in kayttooikeusrooli_list for role in args if role not in henkilosto_role_list)):
         # Lowest priority should be katselija
         return args[-1]
 

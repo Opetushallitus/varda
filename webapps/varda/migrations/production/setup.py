@@ -70,6 +70,14 @@ def get_tyontekija_tallentaja_permissions():
         'change_tyontekija',
         'delete_tyontekija',
         'view_tyontekija',
+        'add_tyoskentelypaikka',
+        'change_tyoskentelypaikka',
+        'delete_tyoskentelypaikka',
+        'view_tyoskentelypaikka',
+        'add_palvelussuhde',
+        'change_palvelussuhde',
+        'delete_palvelussuhde',
+        'view_palvelussuhde',
         'add_tutkinto',
         'change_tutkinto',
         'delete_tutkinto',
@@ -83,6 +91,8 @@ def get_tyontekija_katselija_permissions():
     return [
         'view_henkilo',
         'view_tyontekija',
+        'view_tyoskentelypaikka',
+        'view_palvelussuhde',
         'view_tutkinto',
         'view_vakajarjestaja',
         'view_toimipaikka',
@@ -201,17 +211,20 @@ def load_huoltajatiedot_permissions():
         group_obj.permissions.add(*group_permissions)
 
 
-def load_henkilosto_permissions():
-    from django.contrib.auth.models import Group, Permission
+def clear_old_permissions():
     from django.db.models import Q
-    from django.db import IntegrityError
-
-    # Remove any henkilosto permissions assigned to groups prior to this
+    from django.contrib.auth.models import Permission
+    # Remove any henkilosto permissions assigned to groups previously
     henkilosto_permissions = Permission.objects.filter(Q(codename__endswith='taydennyskoulutus') |
                                                        Q(codename__endswith='tyontekija') |
                                                        Q(codename__endswith='ohjaajasuhde')
                                                        )
     [henkilosto_permission.group_set.clear() for henkilosto_permission in henkilosto_permissions]
+
+
+def load_henkilosto_permissions():
+    from django.contrib.auth.models import Group, Permission
+    from django.db import IntegrityError
 
     tyontekija_tallentaja_permissions = get_tyontekija_tallentaja_permissions()
     tyontekija_katselija_permissions = get_tyontekija_katselija_permissions()
@@ -227,15 +240,16 @@ def load_henkilosto_permissions():
         ('vakajarjestaja_henkilosto_tilapainen_katselija', tilapainen_henkilosto_katselija_permissions),
         ('vakajarjestaja_henkilosto_taydennyskoulutus_tallentaja', taydennyskoulutus_tallentaja_permissions),
         ('vakajarjestaja_henkilosto_taydennyskoulutus_katselija', taydennyskoulutus_katselija_permissions),
-        ('toimipaikka_henkilosto_tyontekija_tallentaja', tyontekija_tallentaja_permissions),
-        ('toimipaikka_henkilosto_tyontekija_katselija', tyontekija_katselija_permissions),
-        ('toimipaikka_henkilosto_taydennyskoulutus_tallentaja', taydennyskoulutus_tallentaja_permissions),
-        ('toimipaikka_henkilosto_taydennyskoulutus_katselija', taydennyskoulutus_katselija_permissions),
+        # TODO: CSCVARDA-1646 toimipaikka tason määrittelyn selvittyä
+        # ('toimipaikka_henkilosto_tyontekija_tallentaja', tyontekija_tallentaja_permissions),
+        # ('toimipaikka_henkilosto_tyontekija_katselija', tyontekija_katselija_permissions),
+        # ('toimipaikka_henkilosto_taydennyskoulutus_tallentaja', taydennyskoulutus_tallentaja_permissions),
+        # ('toimipaikka_henkilosto_taydennyskoulutus_katselija', taydennyskoulutus_katselija_permissions),
     ]
 
     for group_tuple in group_permission_array:
         try:
-            group_obj = Group.objects.create(name=group_tuple[0])
+            group_obj, is_created = Group.objects.get_or_create(name=group_tuple[0])
             group_permissions = Permission.objects.filter(codename__in=group_tuple[1])
             group_obj.permissions.add(*group_permissions)
         except IntegrityError:

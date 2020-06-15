@@ -310,7 +310,9 @@ def update_all_vakajarjestaja_permissiongroups():
                                                       vakajarjestaja=True,
                                                       organisaatio_data=vakajarjestaja_data_list.get(vakajarjestaja_oid))
             assign_permissions_to_vakajarjestaja_obj(vakajarjestaja_oid)
-    logger.info('Finished setting vakajarjestaja permissions. Setting toimipaikka permissions.')
+    logger.info('Finished setting vakajarjestaja permissions.')
+    # TODO: CSCVARDA-1646 toimipaikka tason määrittelyn selvittyä
+    logger.info('Setting toimipaikka permissions.')
     toimipaikka_oid_tuples = Toimipaikka.objects.exclude(organisaatio_oid__exact='').values_list('organisaatio_oid', 'vakajarjestaja__organisaatio_oid')
     toimipaikka_oid_chunks = list_to_chunks(toimipaikka_oid_tuples, 100)
     for oid_tuple_chunk in toimipaikka_oid_chunks:

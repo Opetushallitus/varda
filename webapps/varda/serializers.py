@@ -172,6 +172,19 @@ Show only relevant options in the dropdown menus (where changed_by=user)
 """
 
 
+class PermissionCheckedHLFieldMixin:
+    """
+    Mixin class for checking hyperlink related field permission.
+    Note: This needs to be before HyperlinkedRelatedField in class signature because of inheritance order.
+    """
+    def get_object(self, view_name, view_args, view_kwargs):
+        hlfield_object = super(PermissionCheckedHLFieldMixin, self).get_object(view_name, view_args, view_kwargs)
+        user = self.context['request'].user
+        if not user.has_perm(self.check_permission, hlfield_object):
+            self.fail('does_not_exist')
+        return hlfield_object
+
+
 class VakaJarjestajaHLField(serializers.HyperlinkedRelatedField):
     """
     https://medium.com/django-rest-framework/limit-related-data-choices-with-django-rest-framework-c54e96f5815e
@@ -185,6 +198,10 @@ class VakaJarjestajaHLField(serializers.HyperlinkedRelatedField):
         return queryset
 
 
+class VakaJarjestajaPermissionCheckedHLField(PermissionCheckedHLFieldMixin, VakaJarjestajaHLField):
+    check_permission = 'view_vakajarjestaja'
+
+
 class ToimipaikkaHLField(serializers.HyperlinkedRelatedField):
     def get_queryset(self):
         user = self.context['request'].user
@@ -193,6 +210,10 @@ class ToimipaikkaHLField(serializers.HyperlinkedRelatedField):
         else:
             queryset = Toimipaikka.objects.none()
         return queryset
+
+
+class ToimipaikkaPermissionCheckedHLField(PermissionCheckedHLFieldMixin, ToimipaikkaHLField):
+    check_permission = 'view_toimipaikka'
 
 
 class VarhaiskasvatuspaatosHLField(serializers.HyperlinkedRelatedField):

@@ -1,7 +1,7 @@
 import logging
-import pytz
 from datetime import datetime
 
+import pytz
 from django.contrib.auth.models import Group, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
@@ -16,7 +16,8 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import (NotAuthenticated, NotFound, PermissionDenied, ValidationError)
 from rest_framework.filters import SearchFilter
-from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin)
+from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin, ListModelMixin, RetrieveModelMixin,
+                                   UpdateModelMixin)
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 from rest_framework_guardian.filters import DjangoObjectPermissionsFilter
@@ -38,17 +39,20 @@ from varda.oppijanumerorekisteri import fetch_henkilo_with_oid, save_henkilo_to_
 from varda.organisaatiopalvelu import (check_if_toimipaikka_exists_in_organisaatiopalvelu,
                                        create_toimipaikka_in_organisaatiopalvelu)
 from varda.permission_groups import (assign_object_level_permissions, create_permission_groups_for_organisaatio,
-                                     assign_toimipaikka_lapsi_paos_permissions, assign_vakajarjestaja_lapsi_paos_permissions,
-                                     assign_vakajarjestaja_maksutieto_paos_permissions, assign_toimipaikka_maksutieto_paos_permissions,
+                                     assign_toimipaikka_lapsi_paos_permissions,
+                                     assign_vakajarjestaja_lapsi_paos_permissions,
+                                     assign_vakajarjestaja_maksutieto_paos_permissions,
+                                     assign_toimipaikka_maksutieto_paos_permissions,
                                      assign_vakajarjestaja_vakatiedot_paos_permissions,
-                                     assign_toimipaikka_vakatiedot_paos_permissions, assign_object_permissions_to_all_henkilosto_groups)
+                                     assign_toimipaikka_vakatiedot_paos_permissions,
+                                     assign_object_permissions_to_all_henkilosto_groups)
 from varda.permissions import (throw_if_not_tallentaja_permissions,
                                check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement,
                                check_if_user_has_paakayttaja_permissions,
                                CustomObjectPermissions, save_audit_log,
                                user_has_huoltajatieto_tallennus_permissions_to_correct_organization,
                                grant_or_deny_access_to_paos_toimipaikka, user_has_tallentaja_permission_in_organization)
-from varda.serializers import (UserSerializer, ExternalPermissionsSerializer, GroupSerializer,
+from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer,
                                UpdateHenkiloWithOidSerializer, UpdateOphStaffSerializer, ClearCacheSerializer,
                                ActiveUserSerializer, AuthTokenSerializer, VakaJarjestajaSerializer,
                                ToimipaikkaSerializer, ToiminnallinenPainotusSerializer, KieliPainotusSerializer,
@@ -59,7 +63,7 @@ from varda.serializers import (UserSerializer, ExternalPermissionsSerializer, Gr
                                VarhaiskasvatuspaatosPutSerializer, VarhaiskasvatuspaatosPatchSerializer,
                                VarhaiskasvatussuhdeSerializer, VakaJarjestajaYhteenvetoSerializer,
                                HenkilohakuLapsetSerializer, PaosToimintaSerializer, PaosToimijatSerializer,
-                               PaosToimipaikatSerializer, PaosOikeusSerializer, LapsiKoosteSerializer)
+                               PaosToimipaikatSerializer, PaosOikeusSerializer, LapsiKoosteSerializer, UserSerializer)
 from varda.tasks import update_oph_staff_to_vakajarjestaja_groups
 from webapps.api_throttles import (BurstRateThrottle, BurstRateThrottleStrict, SustainedModifyRateThrottle,
                                    SustainedRateThrottleStrict)

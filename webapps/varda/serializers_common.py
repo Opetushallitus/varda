@@ -31,12 +31,14 @@ class OidRelatedField(serializers.Field):
                  prevalidator,
                  either_required=False,
                  parent_attribute='organisaatio_oid',
+                 check_permission='',
                  **kwargs):
         self.parent_field = parent_field
         self.parent_attribute = parent_attribute
         self.object_type = object_type
         self.prevalidator = prevalidator
         self.either_required = either_required
+        self.check_permission = check_permission
 
         kwargs['source'] = '*'
         kwargs['required'] = False
@@ -59,7 +61,7 @@ class OidRelatedField(serializers.Field):
         return super().run_validation(data)
 
     def _get_parent_value_id(self):
-        if self.parent_field in self.parent.initial_data and self.parent.initial_data[self.parent_field] is not None:
+        if self.parent.initial_data.get(self.parent_field):
             parent_value = self.parent.initial_data[self.parent_field]
             parent_value_id = get_object_id_from_path(parent_value)
 
@@ -85,6 +87,9 @@ class OidRelatedField(serializers.Field):
 
         try:
             referenced_object = self.object_type.objects.get(**{self.parent_attribute: value})
+            if self.check_permission and not self.context['request'].user.has_perm(self.check_permission, referenced_object):
+                # Masking 403 as object not found
+                raise self.object_type.DoesNotExist
         except self.object_type.DoesNotExist:
             msg = {self.field_name: ["Unknown oid", ]}
             raise serializers.ValidationError(msg, code='invalid')

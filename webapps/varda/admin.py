@@ -1,11 +1,13 @@
 from django.contrib import admin
+from django.contrib.admin import ModelAdmin
+from django.contrib.auth.models import User
 from guardian.admin import GuardedModelAdmin
 from simple_history.admin import SimpleHistoryAdmin
 
 from .models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto,
-                     PaosOikeus, PaosToiminta, ToiminnallinenPainotus, Toimipaikka, Tyontekija, VakaJarjestaja,
-                     Varhaiskasvatuspaatos, Varhaiskasvatussuhde, TilapainenHenkilosto, Tutkinto, Palvelussuhde,
-                     Tyoskentelypaikka)
+                     Tyoskentelypaikka, Palvelussuhde, PaosOikeus, PaosToiminta, TilapainenHenkilosto,
+                     ToiminnallinenPainotus, Toimipaikka, Tutkinto, Tyontekija, VakaJarjestaja, Varhaiskasvatuspaatos,
+                     Varhaiskasvatussuhde, )
 
 
 class AdminWithGuardianAndHistory(GuardedModelAdmin, SimpleHistoryAdmin):
@@ -44,6 +46,10 @@ class PaosToimintaAdmin(AdminWithGuardianAndHistory):
     raw_id_fields = ('oma_organisaatio', 'paos_organisaatio', 'paos_toimipaikka', )
 
 
+class TyontekijaAdmin(AdminWithGuardianAndHistory):
+    raw_id_fields = ('henkilo', 'vakajarjestaja', )
+
+
 class TilapainenHenkilostoAdmin(AdminWithGuardianAndHistory):
     raw_id_fields = ('vakajarjestaja', )
 
@@ -60,6 +66,14 @@ class TyoskentelypaikkaAdmin(AdminWithGuardianAndHistory):
     raw_id_fields = ('palvelussuhde', 'toimipaikka', )
 
 
+class AuthUserAdmin(ModelAdmin):
+    list_display = ('username', 'email', 'first_name', 'last_name', )
+    search_fields = ('username', )
+
+
+admin.site.unregister(User)
+
+admin.site.register(User, AuthUserAdmin)
 admin.site.register(VakaJarjestaja, AdminWithGuardianAndHistory)
 admin.site.register(Toimipaikka, AdminWithGuardianAndHistory)
 admin.site.register(ToiminnallinenPainotus, ToiminnallinenPainotusAdmin)
@@ -75,7 +89,7 @@ admin.site.register(Aikaleima, AdminWithGuardianAndHistory)
 admin.site.register(BatchError, AdminWithGuardianAndHistory)
 admin.site.register(PaosToiminta, PaosToimintaAdmin)
 admin.site.register(PaosOikeus, AdminWithGuardianAndHistory)
-admin.site.register(Tyontekija, AdminWithGuardianAndHistory)
+admin.site.register(Tyontekija, TyontekijaAdmin)
 admin.site.register(TilapainenHenkilosto, TilapainenHenkilostoAdmin)
 admin.site.register(Tutkinto, TutkintoAdmin)
 admin.site.register(Palvelussuhde, PalvelussuhdeAdmin)
