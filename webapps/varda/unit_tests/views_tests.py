@@ -703,7 +703,7 @@ class VardaViewsTests(TestCase):
         # TO-DO: fix filtering
         client = SetUpTestClient('credadmin').client()
         resp = client.get('/api/admin/huoltajat/?sukunimi=Virtane&kayntiosoite=Torikatu%2011&postitoimipaikka=Lappeenranta&kotikunta_koodi=034&muutos_pvm=2017-04-12')
-        self.assertEqual(json.loads(resp.content)['count'], 6)
+        self.assertEqual(json.loads(resp.content)['count'], 9)
 
     def test_api_varhaiskasvatuspaatokset(self):
         client = SetUpTestClient('tester').client()
@@ -1819,7 +1819,7 @@ class VardaViewsTests(TestCase):
         result = json.loads(resp.content)
         count = result['count']
         kunnallinen_kytkin = result['results'][0]['kunnallinen_kytkin']
-        self.assertEqual(count, 2)
+        self.assertEqual(count, 4)
         self.assertEqual(kunnallinen_kytkin, True)
 
         resp = client.get('/api/v1/vakajarjestajat/?kunnallinen_kytkin=False')
@@ -1832,7 +1832,7 @@ class VardaViewsTests(TestCase):
         resp = client.get('/api/v1/vakajarjestajat/')
         result = json.loads(resp.content)
         count = result['count']
-        self.assertEqual(count, 4)
+        self.assertEqual(count, 6)
 
     def test_push_incorrect_varhaiskasvatuspaatos_tuntimaara(self):
         varhaiskasvatuspaatos = {
@@ -3027,36 +3027,52 @@ class VardaViewsTests(TestCase):
 
         admin_vakajarjestajat = [
             {
-                "nimi": "Frontti organisaatio",
-                "id": 4,
-                "url": 'http://testserver/api/v1/vakajarjestajat/4/',
-                "organisaatio_oid": "1.2.246.562.10.93957375484",
-                "kunnallinen_kytkin": True,
-                "y_tunnus": "2156233-6"
+                'nimi': 'Frontti organisaatio',
+                'id': 4,
+                'url': 'http://testserver/api/v1/vakajarjestajat/4/',
+                'organisaatio_oid': '1.2.246.562.10.93957375484',
+                'kunnallinen_kytkin': True,
+                'y_tunnus': '2156233-6'
             },
             {
-                "nimi": "Tester organisaatio",
-                "id": 2,
-                "url": 'http://testserver/api/v1/vakajarjestajat/2/',
-                "organisaatio_oid": "1.2.246.562.10.93957375488",
-                "kunnallinen_kytkin": False,
-                "y_tunnus": "1825748-8"
+                'nimi': 'Tester organisaatio',
+                'id': 2,
+                'url': 'http://testserver/api/v1/vakajarjestajat/2/',
+                'organisaatio_oid': '1.2.246.562.10.93957375488',
+                'kunnallinen_kytkin': False,
+                'y_tunnus': '1825748-8'
             },
             {
-                "nimi": "Tester2 organisaatio",
-                "id": 1,
-                "url": 'http://testserver/api/v1/vakajarjestajat/1/',
-                "organisaatio_oid": "1.2.246.562.10.34683023489",
-                "kunnallinen_kytkin": True,
-                "y_tunnus": "8500570-7"
+                'nimi': 'Tester2 organisaatio',
+                'id': 1,
+                'url': 'http://testserver/api/v1/vakajarjestajat/1/',
+                'organisaatio_oid': '1.2.246.562.10.34683023489',
+                'kunnallinen_kytkin': True,
+                'y_tunnus': '8500570-7'
             },
             {
-                "nimi": "varda-testi organisaatio",
-                "id": 3,
-                "url": 'http://testserver/api/v1/vakajarjestajat/3/',
-                "organisaatio_oid": "1.2.246.562.10.93957375486",
-                "kunnallinen_kytkin": False,
-                "y_tunnus": "2617455-1"
+                'nimi': 'varda-testi organisaatio',
+                'id': 3,
+                'url': 'http://testserver/api/v1/vakajarjestajat/3/',
+                'organisaatio_oid': '1.2.246.562.10.93957375486',
+                'kunnallinen_kytkin': False,
+                'y_tunnus': '2617455-1'
+            },
+            {
+                'nimi': 'Tester 10 organisaatio',
+                'id': 5,
+                'url': 'http://testserver/api/v1/vakajarjestajat/5/',
+                'organisaatio_oid': '1.2.246.562.10.57294396385',
+                'kunnallinen_kytkin': True,
+                'y_tunnus': '8685083-0'
+            },
+            {
+                'nimi': 'Tester 11 organisaatio',
+                'id': 6,
+                'url': 'http://testserver/api/v1/vakajarjestajat/6/',
+                'organisaatio_oid': '1.2.246.562.10.52966755795',
+                'kunnallinen_kytkin': True,
+                'y_tunnus': '1428881-8'
             }
         ]
         self.assertCountEqual(json.loads(resp.content), admin_vakajarjestajat)

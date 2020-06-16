@@ -23,26 +23,44 @@ def add_groups_with_permissions():
         ('VARDA-PAAKAYTTAJA_1.2.246.562.10.93957375488', get_vakajarjestaja_paakayttaja_permissions()),
         ('VARDA-PAAKAYTTAJA_1.2.246.562.10.34683023489', get_vakajarjestaja_paakayttaja_permissions()),
         ('VARDA-PAAKAYTTAJA_1.2.246.562.10.93957375484', get_vakajarjestaja_paakayttaja_permissions()),  # vakajarjestaja_4
+        ('VARDA-PAAKAYTTAJA_1.2.246.562.10.57294396385', get_vakajarjestaja_paakayttaja_permissions()),  # vakajarjestaja_5
+        ('VARDA-PAAKAYTTAJA_1.2.246.562.10.52966755795', get_vakajarjestaja_paakayttaja_permissions()),  # vakajarjestaja_6
         ('VARDA-PALVELUKAYTTAJA_1.2.246.562.10.93957375484', get_vakajarjestaja_palvelukayttaja_permissions()),  # vakajarjestaja_4
-        ('VARDA-TALLENTAJA_1.2.246.562.10.93957375488', get_vakajarjestaja_palvelukayttaja_permissions()),
+        ('VARDA-PALVELUKAYTTAJA_1.2.246.562.10.57294396385', get_vakajarjestaja_palvelukayttaja_permissions()),  # vakajarjestaja_5
+        ('VARDA-PALVELUKAYTTAJA_1.2.246.562.10.52966755795', get_vakajarjestaja_palvelukayttaja_permissions()),  # vakajarjestaja_6
         ('VARDA-PALVELUKAYTTAJA_1.2.246.562.10.93957375488', get_vakajarjestaja_palvelukayttaja_permissions()),
+        ('VARDA-TALLENTAJA_1.2.246.562.10.93957375488', get_vakajarjestaja_palvelukayttaja_permissions()),
         ('VARDA-TALLENTAJA_1.2.246.562.10.9395737548810', get_toimipaikka_tallentaja_permissions()),
         ('VARDA-TALLENTAJA_1.2.246.562.10.34683023489', get_vakajarjestaja_palvelukayttaja_permissions()),
         ('VARDA-TALLENTAJA_1.2.246.562.10.9395737548815', get_toimipaikka_tallentaja_permissions()),  # toimipaikka_2
         ('VARDA-TALLENTAJA_1.2.246.562.10.9395737548817', get_toimipaikka_tallentaja_permissions()),  # toimipaikka_5
+        ('VARDA-TALLENTAJA_1.2.246.562.10.57294396385', get_vakajarjestaja_palvelukayttaja_permissions()),  # vakajarjestaja_5
+        ('VARDA-TALLENTAJA_1.2.246.562.10.52966755795', get_vakajarjestaja_palvelukayttaja_permissions()),  # vakajarjestaja_6
         ('VARDA-PALVELUKAYTTAJA_1.2.246.562.10.34683023489', get_vakajarjestaja_palvelukayttaja_permissions()),
         ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.9395737548810', get_huoltajatiedot_tallentaja_permissions()),  # Espoo
         ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.2935996863483', get_huoltajatiedot_tallentaja_permissions()),  # Espoo yksityinen
+        ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.9395737548811', get_huoltajatiedot_tallentaja_permissions()),  # toimipaikka_4
         ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.34683023489', get_huoltajatiedot_tallentaja_permissions()),
         ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.93957375488', get_huoltajatiedot_tallentaja_permissions()),  # Tester organisaatio
         ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.93957375484', get_huoltajatiedot_tallentaja_permissions()),  # vakajarjestaja_4
         ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.9395737548817', get_huoltajatiedot_tallentaja_permissions()),  # toimipaikka_5
+        ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.57294396385', get_huoltajatiedot_tallentaja_permissions()),
+        ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.52966755795', get_huoltajatiedot_tallentaja_permissions()),
+        ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.6727877596658', get_huoltajatiedot_katselija_permissions()),
+        ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.2565458382544', get_huoltajatiedot_katselija_permissions()),
+        ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.9625978384762', get_huoltajatiedot_katselija_permissions()),
         ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.9395737548810', get_huoltajatiedot_katselija_permissions()),
         ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.93957375488', get_huoltajatiedot_katselija_permissions()),
         ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.34683023489', get_huoltajatiedot_katselija_permissions()),
         ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.93957375484', get_huoltajatiedot_katselija_permissions()),  # vakajarjestaja_4
         ('HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.34683023489', get_tyontekija_tallentaja_permissions()),  # vakajarjestaja_1
         ('HENKILOSTO_TILAPAISET_TALLENTAJA_1.2.246.562.10.34683023489', get_tilapainen_henkilosto_tallentaja_permissions()),  # vakajarjestaja_1
+        ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.57294396385', get_huoltajatiedot_katselija_permissions()),
+        ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.52966755795', get_huoltajatiedot_katselija_permissions()),
+        ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.6727877596658', get_huoltajatiedot_katselija_permissions()),
+        ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.2565458382544', get_huoltajatiedot_katselija_permissions()),
+        ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.9625978384762', get_huoltajatiedot_katselija_permissions()),
+        ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.9395737548811', get_huoltajatiedot_katselija_permissions()),  # toimipaikka_4
     ]
 
     for group_tuple in group_permission_array:
@@ -73,6 +91,11 @@ def add_test_users():
     group_huoltajatiedot_tallentaja_toimipaikka_2935996863483 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.2935996863483')
     group_tyontekija_tallentaja_vakajarjestaja1 = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.34683023489')
     group_tilapaiset_tallentaja_vakajarjestaja1 = Group.objects.get(name='HENKILOSTO_TILAPAISET_TALLENTAJA_1.2.246.562.10.34683023489')
+    group_paakayttaja_vakajarjestaja_57294396385 = Group.objects.get(name='VARDA-PAAKAYTTAJA_1.2.246.562.10.57294396385')
+    group_tallentaja_vakajarjestaja_57294396385 = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.57294396385')
+    group_tallentaja_vakajarjestaja_52966755795 = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.52966755795')
+    group_huoltajatiedot_tallentaja_vakajarjestaja_57294396385 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.57294396385')
+    group_huoltajatiedot_tallentaja_vakajarjestaja_52966755795 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.52966755795')
 
     user_tester = User.objects.create(username='tester', password='pbkdf2_sha256$120000$4IdDHxUJJSE6$N18zHZK02yA3KxNeTcDS4t6Ytsn2ZOLO6QLDXNT/8Yo=')
     Token.objects.create(user=user_tester, key='916b7ca8f1687ec3462b4a35d0c5c6da0dbeedf3')
@@ -139,6 +162,16 @@ def add_test_users():
 
     tyontekija_tallentaja = User.objects.create(username='tilapaiset_tallentaja', password='pbkdf2_sha256$150000$ntAfCrXVuXnI$A63mBzAb7EzHDdR6jTSGZDmmYj0OtfbgetIFbtBZXBo=')
     tyontekija_tallentaja.groups.add(group_tilapaiset_tallentaja_vakajarjestaja1)
+    user_tester10 = User.objects.create(username='tester10', password='pbkdf2_sha256$150000$OULQV9qeoPsD$dH1fxZUMGFNjSM3xQzknGRJjndCUMNTj3+nyK+ET0Gc=')
+    user_tester10.groups.add(group_view_henkilo)
+    user_tester10.groups.add(group_paakayttaja_vakajarjestaja_57294396385)
+    user_tester10.groups.add(group_tallentaja_vakajarjestaja_57294396385)
+    user_tester10.groups.add(group_huoltajatiedot_tallentaja_vakajarjestaja_57294396385)
+
+    user_tester11 = User.objects.create(username='tester11', password='pbkdf2_sha256$150000$9HnlY5WRksmT$J5TselErYqb9w2upEbgzsFwJ8tvfbU5U8y7Zj5QQJPk=')
+    user_tester11.groups.add(group_view_henkilo)
+    user_tester11.groups.add(group_tallentaja_vakajarjestaja_52966755795)
+    user_tester11.groups.add(group_huoltajatiedot_tallentaja_vakajarjestaja_52966755795)
 
     User.objects.create(username='tester-no-known-privileges', password='pbkdf2_sha256$120000$6ihvwx47epob$a2xDB6OLThL4eeEuMVw8+3QB1QBxi5hU2gZxnMwA2nE=')
 
@@ -152,6 +185,8 @@ def create_vakajarjestajat():
     tester2_user = User.objects.get(username='tester2')
     varda_testi_user = User.objects.get(username='varda-testi')
     tester_e2e_user = User.objects.get(username='tester-e2e')
+    tester10_user = User.objects.get(username='tester10')
+    tester11_user = User.objects.get(username='tester11')
 
     VakaJarjestaja.objects.create(
         nimi='Tester2 organisaatio',
@@ -234,10 +269,52 @@ def create_vakajarjestajat():
         changed_by=tester_e2e_user
     )
 
+    VakaJarjestaja.objects.create(
+        nimi='Tester 10 organisaatio',
+        y_tunnus='8685083-0',
+        organisaatio_oid='1.2.246.562.10.57294396385',
+        kunta_koodi='405',
+        sahkopostiosoite='tester10@domain.com',
+        tilinumero='FI62 3151 2280 0055 51',
+        kayntiosoite='Kottaraisenkuja 12',
+        kayntiosoite_postinumero='12345',
+        kayntiosoite_postitoimipaikka='Testilä',
+        postiosoite='Kottaraisenkuja 12',
+        postitoimipaikka='Testilä',
+        postinumero='12345',
+        puhelinnumero='+358501231234',
+        yritysmuoto='KUNTAYHTYMA',
+        alkamis_pvm='2019-01-01',
+        paattymis_pvm=None,
+        changed_by=tester10_user
+    )
+
+    VakaJarjestaja.objects.create(
+        nimi='Tester 11 organisaatio',
+        y_tunnus='1428881-8',
+        organisaatio_oid='1.2.246.562.10.52966755795',
+        kunta_koodi='297',
+        sahkopostiosoite='tester11@domain.com',
+        tilinumero='FI94 4374 1935 0004 38',
+        kayntiosoite='Brianinkuja 1',
+        kayntiosoite_postinumero='12345',
+        kayntiosoite_postitoimipaikka='Testilä',
+        postiosoite='Brianinkuja 1',
+        postitoimipaikka='Testilä',
+        postinumero='12345',
+        puhelinnumero='+358401231234',
+        yritysmuoto='KUNTAYHTYMA',
+        alkamis_pvm='2019-02-01',
+        paattymis_pvm=None,
+        changed_by=tester11_user
+    )
+
     assign_permissions_to_vakajarjestaja_obj('1.2.246.562.10.34683023489')
     assign_permissions_to_vakajarjestaja_obj('1.2.246.562.10.93957375488')
     assign_permissions_to_vakajarjestaja_obj('1.2.246.562.10.93957375486')
     assign_permissions_to_vakajarjestaja_obj('1.2.246.562.10.93957375484')
+    assign_permissions_to_vakajarjestaja_obj('1.2.246.562.10.57294396385')
+    assign_permissions_to_vakajarjestaja_obj('1.2.246.562.10.52966755795')
 
 
 def create_toimipaikat_and_painotukset():
@@ -249,10 +326,14 @@ def create_toimipaikat_and_painotukset():
     tester_user = User.objects.get(username='tester')
     tester2_user = User.objects.get(username='tester2')
     tester_e2e_user = User.objects.get(username='tester-e2e')
+    tester10_user = User.objects.get(username='tester10')
+    tester11_user = User.objects.get(username='tester11')
 
     vakajarjestaja_tester_obj = VakaJarjestaja.objects.filter(nimi='Tester organisaatio')[0]
     vakajarjestaja_tester2_obj = VakaJarjestaja.objects.filter(nimi='Tester2 organisaatio')[0]
     vakajarjestaja_4_obj = VakaJarjestaja.objects.get(id=4)
+    vakajarjestaja_57294396385 = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
+    vakajarjestaja_52966755795 = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.52966755795')
 
     toimipaikka_1 = Toimipaikka.objects.create(
         vakajarjestaja=vakajarjestaja_tester_obj,
@@ -437,12 +518,93 @@ def create_toimipaikat_and_painotukset():
         changed_by=tester_user
     )
 
+    Toimipaikka.objects.create(
+        vakajarjestaja=vakajarjestaja_57294396385,
+        nimi='tester10 toimipaikka 1',
+        nimi_sv='tester10 toimipaikka 1 sv',
+        organisaatio_oid='1.2.246.562.10.6727877596658',
+        kayntiosoite='Testisentie 6',
+        kayntiosoite_postitoimipaikka='Testilä',
+        kayntiosoite_postinumero='12345',
+        postiosoite='Testisentie 6',
+        postitoimipaikka='Testilä',
+        postinumero='12345',
+        kunta_koodi='405',
+        puhelinnumero='+358501234567',
+        sahkopostiosoite='test6@domain.com',
+        kasvatusopillinen_jarjestelma_koodi='kj03',
+        toimintamuoto_koodi='tm01',
+        asiointikieli_koodi=['FI', 'SV'],
+        jarjestamismuoto_koodi=['jm01'],
+        varhaiskasvatuspaikat=100,
+        toiminnallinenpainotus_kytkin=False,
+        kielipainotus_kytkin=False,
+        alkamis_pvm='2018-05-01',
+        paattymis_pvm=None,
+        changed_by=tester10_user
+    )
+
+    Toimipaikka.objects.create(
+        vakajarjestaja=vakajarjestaja_57294396385,
+        nimi='tester10 toimipaikka 2',
+        nimi_sv='tester10 toimipaikka 2 sv',
+        organisaatio_oid='1.2.246.562.10.2565458382544',
+        kayntiosoite='Testisentie 7',
+        kayntiosoite_postitoimipaikka='Testilä',
+        kayntiosoite_postinumero='12345',
+        postiosoite='Testisentie 7',
+        postitoimipaikka='Testilä',
+        postinumero='12345',
+        kunta_koodi='405',
+        puhelinnumero='+358502345678',
+        sahkopostiosoite='test6@domain.com',
+        kasvatusopillinen_jarjestelma_koodi='kj03',
+        toimintamuoto_koodi='tm01',
+        asiointikieli_koodi=['FI', 'SV'],
+        jarjestamismuoto_koodi=['jm01'],
+        varhaiskasvatuspaikat=150,
+        toiminnallinenpainotus_kytkin=False,
+        kielipainotus_kytkin=False,
+        alkamis_pvm='2018-09-01',
+        paattymis_pvm=None,
+        changed_by=tester10_user
+    )
+
+    Toimipaikka.objects.create(
+        vakajarjestaja=vakajarjestaja_52966755795,
+        nimi='tester11 toimipaikka 1',
+        nimi_sv='tester11 toimipaikka 1 sv',
+        organisaatio_oid='1.2.246.562.10.9625978384762',
+        kayntiosoite='Kottaraisentie 1',
+        kayntiosoite_postitoimipaikka='Testilä',
+        kayntiosoite_postinumero='12345',
+        postiosoite='Kottaraisentie 1',
+        postitoimipaikka='Testilä',
+        postinumero='12345',
+        kunta_koodi='297',
+        puhelinnumero='+358501230987',
+        sahkopostiosoite='test7@domain.com',
+        kasvatusopillinen_jarjestelma_koodi='kj03',
+        toimintamuoto_koodi='tm01',
+        asiointikieli_koodi=['FI', 'SV'],
+        jarjestamismuoto_koodi=['jm01'],
+        varhaiskasvatuspaikat=175,
+        toiminnallinenpainotus_kytkin=False,
+        kielipainotus_kytkin=False,
+        alkamis_pvm='2019-03-01',
+        paattymis_pvm=None,
+        changed_by=tester11_user
+    )
+
     assign_permissions_to_toimipaikka_obj('1.2.246.562.10.9395737548810', '1.2.246.562.10.93957375488')
     assign_permissions_to_toimipaikka_obj('1.2.246.562.10.9395737548815', '1.2.246.562.10.34683023489')
     assign_permissions_to_toimipaikka_obj('1.2.246.562.10.9395737548811', '1.2.246.562.10.93957375488')
     assign_permissions_to_toimipaikka_obj('1.2.246.562.10.9395737548817', '1.2.246.562.10.93957375488')
     assign_permissions_to_toimipaikka_obj('1.2.246.562.10.9395737548812', '1.2.246.562.10.93957375484')
     assign_permissions_to_toimipaikka_obj('1.2.246.562.10.2935996863483', '1.2.246.562.10.93957375488')
+    assign_permissions_to_toimipaikka_obj('1.2.246.562.10.6727877596658', '1.2.246.562.10.57294396385')
+    assign_permissions_to_toimipaikka_obj('1.2.246.562.10.2565458382544', '1.2.246.562.10.57294396385')
+    assign_permissions_to_toimipaikka_obj('1.2.246.562.10.9625978384762', '1.2.246.562.10.52966755795')
 
     group_tallentaja_tester2_vakajarjestaja = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.34683023489')
     assign_perm('view_toimipaikka', group_tallentaja_tester2_vakajarjestaja, toimipaikka_3)
@@ -494,6 +656,8 @@ def create_henkilot():
 
     tester_user = User.objects.get(username='tester')
     tester2_user = User.objects.get(username='tester2')
+    tester10_user = User.objects.get(username='tester10')
+    tester11_user = User.objects.get(username='tester11')
     vakajarjestaja_view_henkilo_group = Group.objects.get(name='vakajarjestaja_view_henkilo')
 
     henkilo_1 = Henkilo.objects.create(
@@ -860,10 +1024,163 @@ def create_henkilot():
         changed_by=tester_user
     )
 
+    # 010116A807L
+    henkilo_807L = Henkilo.objects.create(
+        henkilotunnus='gAAAAABenXh49bqI1Qr_zfwoh9_EVKL3wDkWJY7HnV3anQwzO_cbiuWLsQ1q4yhBTcjeiv9SjxsQmyB5C0A6cGzrBwMdUSGXrQ==',
+        henkilotunnus_unique_hash='e56b712fdeeec1887d56a77bfe79a586c2d58352b52ee517b6216589af86a81d',
+        syntyma_pvm='2016-01-01',
+        henkilo_oid='1.2.246.562.24.6779627637492',
+        etunimet='Teppo',
+        kutsumanimi='Teppo',
+        sukunimi='Tepponen',
+        aidinkieli_koodi='FI',
+        kotikunta_koodi='405',
+        turvakielto=False,
+        sukupuoli_koodi=1,
+        katuosoite='Kalliokatu 28 B 2',
+        postinumero='12345',
+        postitoimipaikka='Testilä',
+        changed_by=tester10_user
+    )
+
+    # 141117A020X
+    henkilo_020X = Henkilo.objects.create(
+        henkilotunnus='gAAAAABenXlgsNb5RnMtGvuteM0wjUe_Dy81APFQLcrq-fToYTeebR_MqgkjfBCqgmoLDHtRUIanaSjLLCbMz0YQS3Fkr8tdLw==',
+        henkilotunnus_unique_hash='6131fbc7247d7da4df72ffbce1f878f8b658bb374f71478f344407fb36ca370d',
+        syntyma_pvm='2017-11-14',
+        henkilo_oid='1.2.246.562.24.4338669286936',
+        etunimet='Marjatta',
+        kutsumanimi='Marjatta',
+        sukunimi='Marjanen',
+        aidinkieli_koodi='FI',
+        kotikunta_koodi='405',
+        turvakielto=False,
+        sukupuoli_koodi=2,
+        katuosoite='Kalliotie 2 A',
+        postinumero='12345',
+        postitoimipaikka='Testilä',
+        changed_by=tester10_user
+    )
+
+    # 130317A706Y
+    henkilo_706Y = Henkilo.objects.create(
+        henkilotunnus='gAAAAABenXpOeM3Vwk77oSwDnnAFReTSpJYSd1zXuOqPaScj9dXDaxF0GgqS87I0BzUpN250P77huqN_QZ6Vc_umILmuykGy3Q==',
+        henkilotunnus_unique_hash='d1b5e8fe7bea1e5708c298f3d945398e9c567753c5cbd0ac1239e0e523ad5002',
+        syntyma_pvm='2017-03-13',
+        henkilo_oid='1.2.246.562.24.8925547856499',
+        etunimet='Johanna',
+        kutsumanimi='Johanna',
+        sukunimi='Pekkala',
+        aidinkieli_koodi='FI',
+        kotikunta_koodi='405',
+        turvakielto=False,
+        sukupuoli_koodi=2,
+        katuosoite='Kallioväylä 3',
+        postinumero='12345',
+        postitoimipaikka='Testilä',
+        changed_by=tester10_user
+    )
+
+    # 120617A273S
+    henkilo_273S = Henkilo.objects.create(
+        henkilotunnus='gAAAAABenXr9ZTjOCihMFsN_USeTeQ-GxhOarvvMGgbgknzGf1qthbVPhKTzhRsCvCEuqNkcbPmCIDp7giNDPGQ-13GSEBcnaA==',
+        henkilotunnus_unique_hash='ba854e4ffaa6aad557c48c91a8e2d9482a9afe18306ca60538297b03de2a8f84',
+        syntyma_pvm='2017-06-12',
+        henkilo_oid='1.2.246.562.24.5289462746686',
+        etunimet='Timo',
+        kutsumanimi='Timo',
+        sukunimi='Timonen',
+        aidinkieli_koodi='FI',
+        kotikunta_koodi='297',
+        turvakielto=False,
+        sukupuoli_koodi=1,
+        katuosoite='Lintukuja 4 A 13',
+        postinumero='12345',
+        postitoimipaikka='Testilä',
+        changed_by=tester11_user
+    )
+
+    # 241217A5155
+    henkilo_5155 = Henkilo.objects.create(
+        henkilotunnus='gAAAAABenXx0UxAmdYg96djFHoCtRa55tAVZaxBw-exZdc7GCdWqhVwY06r8-3BOZBdNMHnTnJ-7UHYpyUMm_KTAclDJdob5eg==',
+        henkilotunnus_unique_hash='346685bbd8d303bdca9f0445cb682962dc80992e89dbffaf75aa003908718284',
+        syntyma_pvm='2017-12-24',
+        henkilo_oid='1.2.246.562.24.4473262898463',
+        etunimet='Taavi',
+        kutsumanimi='Taavi',
+        sukunimi='Taavetti',
+        aidinkieli_koodi='FI',
+        kotikunta_koodi='297',
+        turvakielto=False,
+        sukupuoli_koodi=1,
+        katuosoite='Taavintie 4 C 1',
+        postinumero='12345',
+        postitoimipaikka='Testilä',
+        changed_by=tester11_user
+    )
+
+    # 130780-753Y
+    henkilo_753Y = Henkilo.objects.create(
+        henkilotunnus='gAAAAABenZ_1sORkNH6zABta2uQ8sV934GEnO3coo2UrJrOYoGiJEyCQKJRYD-Yx6d_ez0l4Vi9Bv9gt7FWdR14Ec4tTwPStow==',
+        henkilotunnus_unique_hash='b9496e91fcd1f21558b80030c87b9dd01bacff5a28593b3bbe2885a8968e2a2a',
+        syntyma_pvm='1980-07-13',
+        henkilo_oid='1.2.246.562.24.2434693467574',
+        etunimet='Taneli',
+        kutsumanimi='Taneli',
+        sukunimi='Tattinen',
+        aidinkieli_koodi='FI',
+        kotikunta_koodi='405',
+        turvakielto=False,
+        sukupuoli_koodi=1,
+        katuosoite='Kalliokatu 28 B 2',
+        postinumero='12345',
+        postitoimipaikka='Testilä',
+        changed_by=tester10_user
+    )
+
+    # 010177-0520
+    henkilo_0520 = Henkilo.objects.create(
+        henkilotunnus='gAAAAABenaDaqT29a4sEhdR81vox-mOxW-JU_al1t3vHgqITdvvgZhY1tafdboKuzWbjVRoDKTLgumsBIfMcV_eBZlQz1d-8yg==',
+        henkilotunnus_unique_hash='db98de5bffe5ad70633547c1bf909066547e12d0f3f6f4619d5e18a30563c9ab',
+        syntyma_pvm='1977-01-01',
+        henkilo_oid='1.2.246.562.24.3367432256266',
+        etunimet='Kirsi',
+        kutsumanimi='Kirsi',
+        sukunimi='Taavetti',
+        aidinkieli_koodi='FI',
+        kotikunta_koodi='405',
+        turvakielto=False,
+        sukupuoli_koodi=2,
+        katuosoite='Kalliokatu 28 B 2',
+        postinumero='12345',
+        postitoimipaikka='Testilä',
+        changed_by=tester10_user
+    )
+
+    # 241093-031J
+    henkilo_031J = Henkilo.objects.create(
+        henkilotunnus='gAAAAABenaGQh-7GdNDjqp2fpEKrmSfn7JJXkhKJOSkE5WIvHnax4g7bfHAj7Wzs5TA-NRl6J1sgYbSyktpweClcENeUrrmRjw==',
+        henkilotunnus_unique_hash='20a1d791974eee539e683b94a85b45055a25130353e6255ac929caed5e71283a',
+        syntyma_pvm='1993-10-24',
+        henkilo_oid='1.2.246.562.24.2395579772672',
+        etunimet='Kalle Kalevi',
+        kutsumanimi='Kalle',
+        sukunimi='Kumpunen',
+        aidinkieli_koodi='FI',
+        kotikunta_koodi='297',
+        turvakielto=False,
+        sukupuoli_koodi=1,
+        katuosoite='Taavintie 4 C 1',
+        postinumero='12345',
+        postitoimipaikka='Testilä',
+        changed_by=tester10_user
+    )
+
     henkilo_list = {
         henkilo_1, henkilo_2, henkilo_3, henkilo_4, henkilo_5, henkilo_6, henkilo_7, henkilo_8, henkilo_9, henkilo_10,
         henkilo_11, henkilo_12, henkilo_13, henkilo_14, henkilo_15, henkilo_16, henkilo_17, henkilo_18, henkilo_19,
-        henkilo_331A, henkilo_642C
+        henkilo_331A, henkilo_642C, henkilo_807L, henkilo_020X, henkilo_706Y, henkilo_273S, henkilo_5155, henkilo_753Y,
+        henkilo_0520, henkilo_031J
     }
     for henkilo in henkilo_list:
         assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo)
@@ -880,10 +1197,14 @@ def create_lapset():
     tester_user = User.objects.get(username='tester')
     tester2_user = User.objects.get(username='tester2')
     tester4_user = User.objects.get(username='tester4')
+    tester10_user = User.objects.get(username='tester10')
+    tester11_user = User.objects.get(username='tester11')
 
     vakajarjestaja_1_organisaatio_oid = '1.2.246.562.10.34683023489'
     vakajarjestaja_2_organisaatio_oid = '1.2.246.562.10.93957375488'
     vakajarjestaja_4_organisaatio_oid = '1.2.246.562.10.93957375484'
+    vakajarjestaja_57294396385_organisaatio_oid = '1.2.246.562.10.57294396385'
+    vakajarjestaja_52966755795_organisaatio_oid = '1.2.246.562.10.52966755795'
 
     vakajarjestaja_1 = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_1_organisaatio_oid)[0]
     vakajarjestaja_2 = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_2_organisaatio_oid)[0]
@@ -893,11 +1214,17 @@ def create_lapset():
     toimipaikka_2_organisaatio_oid = '1.2.246.562.10.9395737548815'
     toimipaikka_4_organisaatio_oid = '1.2.246.562.10.9395737548811'
     toimipaikka_5_organisaatio_oid = '1.2.246.562.10.9395737548817'
+    toimipaikka_6727877596658_organisaatio_oid = '1.2.246.562.10.6727877596658'
+    toimipaikka_2565458382544_organisaatio_oid = '1.2.246.562.10.2565458382544'
+    toimipaikka_9625978384762_organisaatio_oid = '1.2.246.562.10.9625978384762'
 
     toimipaikka_1 = Toimipaikka.objects.filter(organisaatio_oid=toimipaikka_1_organisaatio_oid)[0]
     toimipaikka_2 = Toimipaikka.objects.filter(organisaatio_oid=toimipaikka_2_organisaatio_oid)[0]
     toimipaikka_4 = Toimipaikka.objects.filter(organisaatio_oid=toimipaikka_4_organisaatio_oid)[0]
     toimipaikka_5 = Toimipaikka.objects.filter(organisaatio_oid=toimipaikka_5_organisaatio_oid)[0]
+    toimipaikka_6727877596658 = Toimipaikka.objects.get(organisaatio_oid=toimipaikka_6727877596658_organisaatio_oid)
+    toimipaikka_2565458382544 = Toimipaikka.objects.get(organisaatio_oid=toimipaikka_2565458382544_organisaatio_oid)
+    toimipaikka_9625978384762 = Toimipaikka.objects.get(organisaatio_oid=toimipaikka_9625978384762_organisaatio_oid)
 
     toimipaikka_oid_format = '1.2.246.562.10.{}'
     toimipaikka_2935996863483 = Toimipaikka.objects.get(organisaatio_oid=toimipaikka_oid_format.format('2935996863483'))
@@ -967,6 +1294,36 @@ def create_lapset():
         henkilo=henkilo_331A,
         vakatoimija=vakajarjestaja_2,
         changed_by=tester_user
+    )
+
+    henkilo_807L = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('010116A807L'))
+    lapsi_807L = Lapsi.objects.create(
+        henkilo=henkilo_807L,
+        changed_by=tester10_user
+    )
+
+    henkilo_020X = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('141117A020X'))
+    lapsi_020X = Lapsi.objects.create(
+        henkilo=henkilo_020X,
+        changed_by=tester10_user
+    )
+
+    henkilo_706Y = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('130317A706Y'))
+    lapsi_706Y = Lapsi.objects.create(
+        henkilo=henkilo_706Y,
+        changed_by=tester10_user
+    )
+
+    henkilo_273S = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('120617A273S'))
+    lapsi_273S = Lapsi.objects.create(
+        henkilo=henkilo_273S,
+        changed_by=tester11_user
+    )
+
+    henkilo_5155 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('241217A5155'))
+    lapsi_5155 = Lapsi.objects.create(
+        henkilo=henkilo_5155,
+        changed_by=tester11_user
     )
 
     vakapaatos_1 = Varhaiskasvatuspaatos.objects.create(
@@ -1110,6 +1467,76 @@ def create_lapset():
         changed_by=tester_user
     )
 
+    vakapaatos_807L = Varhaiskasvatuspaatos.objects.create(
+        lapsi=lapsi_807L,
+        vuorohoito_kytkin=False,
+        pikakasittely_kytkin=False,
+        tuntimaara_viikossa=37.5,
+        paivittainen_vaka_kytkin=True,
+        kokopaivainen_vaka_kytkin=True,
+        jarjestamismuoto_koodi='jm01',
+        hakemus_pvm='2019-09-05',
+        alkamis_pvm='2019-09-06',
+        paattymis_pvm=None,
+        changed_by=tester10_user
+    )
+
+    vakapaatos_020X = Varhaiskasvatuspaatos.objects.create(
+        lapsi=lapsi_020X,
+        vuorohoito_kytkin=False,
+        pikakasittely_kytkin=False,
+        tuntimaara_viikossa=37.5,
+        paivittainen_vaka_kytkin=True,
+        kokopaivainen_vaka_kytkin=True,
+        jarjestamismuoto_koodi='jm01',
+        hakemus_pvm='2019-10-05',
+        alkamis_pvm='2019-11-06',
+        paattymis_pvm=None,
+        changed_by=tester10_user
+    )
+
+    vakapaatos_706Y = Varhaiskasvatuspaatos.objects.create(
+        lapsi=lapsi_706Y,
+        vuorohoito_kytkin=False,
+        pikakasittely_kytkin=False,
+        tuntimaara_viikossa=39.0,
+        paivittainen_vaka_kytkin=True,
+        kokopaivainen_vaka_kytkin=True,
+        jarjestamismuoto_koodi='jm01',
+        hakemus_pvm='2020-01-01',
+        alkamis_pvm='2020-01-02',
+        paattymis_pvm=None,
+        changed_by=tester10_user
+    )
+
+    vakapaatos_273S = Varhaiskasvatuspaatos.objects.create(
+        lapsi=lapsi_273S,
+        vuorohoito_kytkin=False,
+        pikakasittely_kytkin=False,
+        tuntimaara_viikossa=30.0,
+        paivittainen_vaka_kytkin=True,
+        kokopaivainen_vaka_kytkin=True,
+        jarjestamismuoto_koodi='jm01',
+        hakemus_pvm='2020-03-03',
+        alkamis_pvm='2020-03-03',
+        paattymis_pvm=None,
+        changed_by=tester11_user
+    )
+
+    vakapaatos_5155 = Varhaiskasvatuspaatos.objects.create(
+        lapsi=lapsi_5155,
+        vuorohoito_kytkin=False,
+        pikakasittely_kytkin=False,
+        tuntimaara_viikossa=35.5,
+        paivittainen_vaka_kytkin=True,
+        kokopaivainen_vaka_kytkin=True,
+        jarjestamismuoto_koodi='jm01',
+        hakemus_pvm='2019-09-30',
+        alkamis_pvm='2019-09-30',
+        paattymis_pvm=None,
+        changed_by=tester11_user
+    )
+
     vakasuhde_1 = Varhaiskasvatussuhde.objects.create(
         toimipaikka=toimipaikka_1,
         varhaiskasvatuspaatos=vakapaatos_1,
@@ -1188,6 +1615,46 @@ def create_lapset():
         alkamis_pvm='2020-05-01',
         paattymis_pvm=None,
         changed_by=tester_user
+    )
+
+    vakasuhde_807L = Varhaiskasvatussuhde.objects.create(
+        toimipaikka=toimipaikka_6727877596658,
+        varhaiskasvatuspaatos=vakapaatos_807L,
+        alkamis_pvm='2019-10-05',
+        paattymis_pvm=None,
+        changed_by=tester10_user
+    )
+
+    vakasuhde_020X = Varhaiskasvatussuhde.objects.create(
+        toimipaikka=toimipaikka_6727877596658,
+        varhaiskasvatuspaatos=vakapaatos_020X,
+        alkamis_pvm='2019-12-12',
+        paattymis_pvm=None,
+        changed_by=tester10_user
+    )
+
+    vakasuhde_706Y = Varhaiskasvatussuhde.objects.create(
+        toimipaikka=toimipaikka_2565458382544,
+        varhaiskasvatuspaatos=vakapaatos_706Y,
+        alkamis_pvm='2020-02-05',
+        paattymis_pvm=None,
+        changed_by=tester10_user
+    )
+
+    vakasuhde_273S = Varhaiskasvatussuhde.objects.create(
+        toimipaikka=toimipaikka_9625978384762,
+        varhaiskasvatuspaatos=vakapaatos_273S,
+        alkamis_pvm='2020-04-01',
+        paattymis_pvm=None,
+        changed_by=tester11_user
+    )
+
+    vakasuhde_5155 = Varhaiskasvatussuhde.objects.create(
+        toimipaikka=toimipaikka_9625978384762,
+        varhaiskasvatuspaatos=vakapaatos_5155,
+        alkamis_pvm='2020-01-10',
+        paattymis_pvm=None,
+        changed_by=tester11_user
     )
 
     assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Lapsi, lapsi_1)
@@ -1275,6 +1742,41 @@ def create_lapset():
     assign_object_level_permissions(toimipaikka_2935996863483.organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_331A)
     assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_331A)
 
+    assign_object_level_permissions(toimipaikka_6727877596658_organisaatio_oid, Lapsi, lapsi_807L)
+    assign_object_level_permissions(toimipaikka_6727877596658_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_807L)
+    assign_object_level_permissions(toimipaikka_6727877596658_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_807L)
+    assign_object_level_permissions(toimipaikka_6727877596658_organisaatio_oid, Lapsi, lapsi_020X)
+    assign_object_level_permissions(toimipaikka_6727877596658_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_020X)
+    assign_object_level_permissions(toimipaikka_6727877596658_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_020X)
+
+    assign_object_level_permissions(toimipaikka_2565458382544_organisaatio_oid, Lapsi, lapsi_706Y)
+    assign_object_level_permissions(toimipaikka_2565458382544_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_706Y)
+    assign_object_level_permissions(toimipaikka_2565458382544_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_706Y)
+
+    assign_object_level_permissions(vakajarjestaja_57294396385_organisaatio_oid, Lapsi, lapsi_807L)
+    assign_object_level_permissions(vakajarjestaja_57294396385_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_807L)
+    assign_object_level_permissions(vakajarjestaja_57294396385_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_807L)
+    assign_object_level_permissions(vakajarjestaja_57294396385_organisaatio_oid, Lapsi, lapsi_020X)
+    assign_object_level_permissions(vakajarjestaja_57294396385_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_020X)
+    assign_object_level_permissions(vakajarjestaja_57294396385_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_020X)
+    assign_object_level_permissions(vakajarjestaja_57294396385_organisaatio_oid, Lapsi, lapsi_706Y)
+    assign_object_level_permissions(vakajarjestaja_57294396385_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_706Y)
+    assign_object_level_permissions(vakajarjestaja_57294396385_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_706Y)
+
+    assign_object_level_permissions(toimipaikka_9625978384762_organisaatio_oid, Lapsi, lapsi_273S)
+    assign_object_level_permissions(toimipaikka_9625978384762_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_273S)
+    assign_object_level_permissions(toimipaikka_9625978384762_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_273S)
+    assign_object_level_permissions(toimipaikka_9625978384762_organisaatio_oid, Lapsi, lapsi_5155)
+    assign_object_level_permissions(toimipaikka_9625978384762_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_5155)
+    assign_object_level_permissions(toimipaikka_9625978384762_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_5155)
+
+    assign_object_level_permissions(vakajarjestaja_52966755795_organisaatio_oid, Lapsi, lapsi_273S)
+    assign_object_level_permissions(vakajarjestaja_52966755795_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_273S)
+    assign_object_level_permissions(vakajarjestaja_52966755795_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_273S)
+    assign_object_level_permissions(vakajarjestaja_52966755795_organisaatio_oid, Lapsi, lapsi_5155)
+    assign_object_level_permissions(vakajarjestaja_52966755795_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_5155)
+    assign_object_level_permissions(vakajarjestaja_52966755795_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_5155)
+
 
 def create_huoltajat():
     from django.contrib.auth.models import User
@@ -1282,12 +1784,17 @@ def create_huoltajat():
     from varda.models import Henkilo, Huoltaja
 
     tester_user = User.objects.get(username='tester')
+    tester10_user = User.objects.get(username='tester10')
+    tester11_user = User.objects.get(username='tester11')
 
     henkilo_huoltaja_1 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020476-321F'))
     henkilo_huoltaja_2 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('120386-109V'))
     henkilo_huoltaja_3 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('110548-316P'))
     henkilo_huoltaja_4 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('291090-398U'))
     henkilo_huoltaja_642C = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('260980-642C'))
+    henkilo_huoltaja_753Y = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('130780-753Y'))
+    henkilo_huoltaja_0520 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('010177-0520'))
+    henkilo_huoltaja_031J = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('241093-031J'))
 
     henkilo_huoltaja_suomifi = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('010280-952L'))
 
@@ -1321,6 +1828,21 @@ def create_huoltajat():
         changed_by=tester_user
     )
 
+    Huoltaja.objects.create(
+        henkilo=henkilo_huoltaja_753Y,
+        changed_by=tester10_user
+    )
+
+    Huoltaja.objects.create(
+        henkilo=henkilo_huoltaja_0520,
+        changed_by=tester10_user
+    )
+
+    Huoltaja.objects.create(
+        henkilo=henkilo_huoltaja_031J,
+        changed_by=tester11_user
+    )
+
 
 def create_huoltajuussuhteet():
     from django.contrib.auth.models import User
@@ -1346,6 +1868,8 @@ def create_huoltajuussuhteet():
     lapsi_7 = Lapsi.objects.filter(henkilo=henkilo_lapsi_6)[1]
     lapsi_8 = Lapsi.objects.filter(henkilo=henkilo_lapsi_6)[2]
     lapsi_331A = henkilo_lapsi_331A.lapsi.first()
+    lapsi_807L = Lapsi.objects.filter(henkilo__henkilotunnus_unique_hash=hash_string('010116A807L')).first()
+    lapsi_273S = Lapsi.objects.filter(henkilo__henkilotunnus_unique_hash=hash_string('120617A273S')).first()
 
     henkilo_huoltaja_1 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020476-321F'))
     henkilo_huoltaja_2 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('120386-109V'))
@@ -1358,6 +1882,9 @@ def create_huoltajuussuhteet():
     huoltaja_3 = Huoltaja.objects.filter(henkilo=henkilo_huoltaja_3).first()
     huoltaja_4 = Huoltaja.objects.filter(henkilo=henkilo_huoltaja_4).first()
     huoltaja_642C = henkilo_huoltaja_642C.huoltaja
+    huoltaja_753Y = Huoltaja.objects.filter(henkilo__henkilotunnus_unique_hash=hash_string('130780-753Y')).first()
+    huoltaja_0520 = Huoltaja.objects.filter(henkilo__henkilotunnus_unique_hash=hash_string('010177-0520')).first()
+    huoltaja_031J = Huoltaja.objects.filter(henkilo__henkilotunnus_unique_hash=hash_string('241093-031J')).first()
 
     henkilo_huoltaja_suomifi = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('010280-952L'))
     huoltaja_suomifi = Huoltaja.objects.filter(henkilo=henkilo_huoltaja_suomifi).first()
@@ -1432,6 +1959,27 @@ def create_huoltajuussuhteet():
         changed_by_id=admin_user.id
     )
 
+    Huoltajuussuhde.objects.create(
+        huoltaja=huoltaja_753Y,
+        lapsi=lapsi_807L,
+        voimassa_kytkin=True,
+        changed_by_id=admin_user.id
+    )
+
+    Huoltajuussuhde.objects.create(
+        huoltaja=huoltaja_0520,
+        lapsi=lapsi_807L,
+        voimassa_kytkin=True,
+        changed_by_id=admin_user.id
+    )
+
+    Huoltajuussuhde.objects.create(
+        huoltaja=huoltaja_031J,
+        lapsi=lapsi_273S,
+        voimassa_kytkin=True,
+        changed_by_id=admin_user.id
+    )
+
 
 def create_maksutiedot():
     from django.contrib.auth.models import Group, User
@@ -1446,6 +1994,9 @@ def create_maksutiedot():
     tester4_user = User.objects.get(username='tester4')
     group_tester = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.93957375488')
     group_tester_toimipaikka_1 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.9395737548810')
+    tester10_user = User.objects.get(username='tester10')
+    tester11_user = User.objects.get(username='tester11')
+    group_tester = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.9395737548810')
     group_tester2 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.34683023489')
     group_tester4 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.93957375484')
 
@@ -1532,6 +2083,51 @@ def create_maksutiedot():
     assign_perm('delete_maksutieto', group_toimipaikka_2935996863483, mp_331A)
     Huoltajuussuhde.objects.filter(
         lapsi__henkilo__henkilotunnus_unique_hash=hash_string('290116A331A')).first().maksutiedot.add(mp_331A)
+
+    group_57294396385 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.57294396385')
+    group_57294396385_palvelukayttaja = Group.objects.get(name='VARDA-PALVELUKAYTTAJA_1.2.246.562.10.57294396385')
+    mp_807L = Maksutieto.objects.create(
+        yksityinen_jarjestaja=False,
+        maksun_peruste_koodi='mp03',
+        palveluseteli_arvo=0.00,
+        asiakasmaksu=50.00,
+        perheen_koko=3,
+        alkamis_pvm='2020-01-11',
+        changed_by=tester10_user
+    )
+    assign_perm('add_maksutieto', group_57294396385, mp_807L)
+    assign_perm('view_maksutieto', group_57294396385, mp_807L)
+    assign_perm('change_maksutieto', group_57294396385, mp_807L)
+    assign_perm('delete_maksutieto', group_57294396385, mp_807L)
+    assign_perm('add_maksutieto', group_57294396385_palvelukayttaja, mp_807L)
+    assign_perm('view_maksutieto', group_57294396385_palvelukayttaja, mp_807L)
+    assign_perm('change_maksutieto', group_57294396385_palvelukayttaja, mp_807L)
+    assign_perm('delete_maksutieto', group_57294396385_palvelukayttaja, mp_807L)
+    for huoltajuussuhde in Huoltajuussuhde.objects.filter(
+            lapsi__henkilo__henkilotunnus_unique_hash=hash_string('010116A807L')):
+        huoltajuussuhde.maksutiedot.add(mp_807L)
+
+    group_52966755795 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.52966755795')
+    group_52966755795_palvelukayttaja = Group.objects.get(name='VARDA-PALVELUKAYTTAJA_1.2.246.562.10.52966755795')
+    mp_273S = Maksutieto.objects.create(
+        yksityinen_jarjestaja=False,
+        maksun_peruste_koodi='mp03',
+        palveluseteli_arvo=0.00,
+        asiakasmaksu=55.00,
+        perheen_koko=4,
+        alkamis_pvm='2020-02-11',
+        changed_by=tester11_user
+    )
+    assign_perm('add_maksutieto', group_52966755795, mp_273S)
+    assign_perm('view_maksutieto', group_52966755795, mp_273S)
+    assign_perm('change_maksutieto', group_52966755795, mp_273S)
+    assign_perm('delete_maksutieto', group_52966755795, mp_273S)
+    assign_perm('add_maksutieto', group_52966755795_palvelukayttaja, mp_273S)
+    assign_perm('view_maksutieto', group_52966755795_palvelukayttaja, mp_273S)
+    assign_perm('change_maksutieto', group_52966755795_palvelukayttaja, mp_273S)
+    assign_perm('delete_maksutieto', group_52966755795_palvelukayttaja, mp_273S)
+    Huoltajuussuhde.objects.filter(
+        lapsi__henkilo__henkilotunnus_unique_hash=hash_string('120617A273S')).first().maksutiedot.add(mp_273S)
 
 
 def create_paos_toiminta():

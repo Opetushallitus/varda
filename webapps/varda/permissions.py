@@ -1,6 +1,7 @@
 import logging
 
 from django.contrib.auth.models import Group, Permission
+from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import IntegerField, Q
 from django.db.models.functions import Cast
@@ -10,11 +11,14 @@ from rest_framework import permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from varda.misc import path_parse
 from varda.models import (VakaJarjestaja, Toimipaikka, Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-                          PaosToiminta, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog)
+                          PaosToiminta, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog,
+                          Maksutieto)
 from varda.permission_groups import assign_object_level_permissions, remove_object_level_permissions
 
 
 # Get an instance of a logger
+from varda.related_object_validations import toimipaikka_is_valid_to_organisaatiopalvelu
+
 logger = logging.getLogger(__name__)
 
 
@@ -286,3 +290,54 @@ def change_paos_tallentaja_organization(jarjestaja_kunta_organisaatio_id, tuotta
         logger.error('Could not find one of the VakaJarjestajat: {}, {}, {}'.format(jarjestaja_kunta_organisaatio_id,
                                                                                     tuottaja_organisaatio_id,
                                                                                     tallentaja_organisaatio_id))
+
+
+def delete_object_permissions_explicitly(model, instance_id):
+    """
+    Object permissions need to be deleted explicitly:
+    https://django-guardian.readthedocs.io/en/stable/userguide/caveats.html
+    """
+    filters = {'content_type': ContentType.objects.get_for_model(model).id, 'object_pk': instance_id}
+    UserObjectPermission.objects.filter(**filters).delete()
+    GroupObjectPermission.objects.filter(**filters).delete()
+
+
+def assign_lapsi_permissions(organisaatio_oid, instance):
+    assign_object_level_permissions(organisaatio_oid, Lapsi, instance)
+    group_huoltajatieto_katselu_vaka = Group.objects.get(name='HUOLTAJATIETO_KATSELU_' + organisaatio_oid)
+    group_huoltajatieto_tallennus_vaka = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_' + organisaatio_oid)
+    assign_perm('view_lapsi', group_huoltajatieto_katselu_vaka, instance)
+    assign_perm('view_lapsi', group_huoltajatieto_tallennus_vaka, instance)
+
+
+def assign_vakapaatos_vakasuhde_permissions(model, vakajarjestaja_oid, toimipaikka_oid, instance):
+    assign_object_level_permissions(vakajarjestaja_oid, model, instance)
+    if toimipaikka_oid and toimipaikka_oid != '':
+        assign_object_level_permissions(toimipaikka_oid, model, instance)
+
+
+def assign_maksutieto_permissions(vakajarjestaja_oid, toimipaikka_obj, instance):
+    assign_object_level_permissions(vakajarjestaja_oid, Maksutieto, instance)
+    if toimipaikka_obj and toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj, toimipaikka_obj.nimi):
+        assign_object_level_permissions(toimipaikka_obj.organisaatio_oid, Maksutieto, instance)
+
+
+def object_ids_organization_has_permissions_to(organisaatio_oid, model):
+    content_type = ContentType.objects.get_for_model(model)
+    permission_group_1 = Group.objects.get(name=Z4_CasKayttoOikeudet.PAAKAYTTAJA + '_' + organisaatio_oid)
+    permission_group_2 = Group.objects.get(name=Z4_CasKayttoOikeudet.PALVELUKAYTTAJA + '_' + organisaatio_oid)
+    model_permissions_for_group_1 = set(permission_group_1.permissions.filter(content_type=content_type.id)
+                                        .values_list('id', flat=True))
+    model_permissions_for_group_2 = set(permission_group_2.permissions.filter(content_type=content_type.id)
+                                        .values_list('id', flat=True))
+    model_permissions = list(model_permissions_for_group_1 | model_permissions_for_group_2)
+
+    group_permission_objects = (GroupObjectPermission
+                                .objects
+                                .filter(group__in=[permission_group_1.id, permission_group_2.id],
+                                        permission__in=model_permissions,
+                                        content_type=content_type.id)
+                                .annotate(object_pk_as_int=Cast('object_pk', IntegerField()))
+                                .values_list('object_pk_as_int', flat=True).distinct())
+
+    return group_permission_objects
