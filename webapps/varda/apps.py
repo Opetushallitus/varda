@@ -76,7 +76,7 @@ def run_post_migration_tasks(sender, **kwargs):
                 create_koodisto_data()
 
             elif (migration_plan_tuple[0].app_label == 'varda' and
-                  migration_plan_tuple[0].name == '0023_auto_20200604_1514' and
+                  migration_plan_tuple[0].name == '0023_historicalpidempipoissaolo_pidempipoissaolo' and
                   not migration_plan_tuple[1]):
                 load_henkilosto_permissions()
 
@@ -200,6 +200,7 @@ class VardaConfig(AppConfig):
         post_save.connect(receiver_save, sender='varda.Tutkinto')
         post_save.connect(receiver_save, sender='varda.Palvelussuhde')
         post_save.connect(receiver_save, sender='varda.Tyoskentelypaikka')
+        post_save.connect(receiver_save, sender='varda.PidempiPoissaolo')
 
         pre_delete.connect(receiver_pre_delete, sender='varda.VakaJarjestaja')
         pre_delete.connect(receiver_pre_delete, sender='varda.Toimipaikka')
@@ -217,3 +218,4 @@ class VardaConfig(AppConfig):
         pre_delete.connect(receiver_pre_delete, sender='varda.Tutkinto')
         pre_delete.connect(receiver_pre_delete, sender='varda.Palvelussuhde')
         pre_delete.connect(receiver_pre_delete, sender='varda.Tyoskentelypaikka')
+        pre_delete.connect(receiver_pre_delete, sender='varda.PidempiPoissaolo')

@@ -18,6 +18,15 @@ def assert_status_code(response, expected_code, extra_message=None):
         raise AssertionError(f'{extra_message}Returned status code {response.status_code} != {expected_code}', content)
 
 
+def assert_validation_error(expected_key, expected_message, response, extra_message=None):
+    messages = json.loads(response.content)
+    messages_for_key = messages.get(expected_key, [])
+
+    if expected_message not in messages_for_key:
+        extra_message = extra_message and f'{extra_message}: ' or ''
+        raise AssertionError(f'{extra_message}{expected_key!r}/{expected_message!r} not found in {messages}')
+
+
 class SetUpTestClient:
 
     def __init__(self, name):

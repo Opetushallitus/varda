@@ -150,6 +150,7 @@ router_henkilosto.register(r'tilapainen-henkilosto', viewsets_henkilosto.Tilapai
 router_henkilosto.register(r'tutkinnot', viewsets_henkilosto.TutkintoViewSet)
 router_henkilosto.register(r'palvelussuhteet', viewsets_henkilosto.PalvelussuhdeViewSet)
 router_henkilosto.register(r'tyoskentelypaikat', viewsets_henkilosto.TyoskentelypaikkaViewSet)
+router_henkilosto.register(r'pidemmatpoissaolot', viewsets_henkilosto.PidempiPoissaoloViewSet)
 
 # Routes for Julkinen-URLs
 

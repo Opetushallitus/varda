@@ -7,7 +7,7 @@ from simple_history.admin import SimpleHistoryAdmin
 from .models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto,
                      Tyoskentelypaikka, Palvelussuhde, PaosOikeus, PaosToiminta, TilapainenHenkilosto,
                      ToiminnallinenPainotus, Toimipaikka, Tutkinto, Tyontekija, VakaJarjestaja, Varhaiskasvatuspaatos,
-                     Varhaiskasvatussuhde, )
+                     Varhaiskasvatussuhde, PidempiPoissaolo, )
 
 
 class AdminWithGuardianAndHistory(GuardedModelAdmin, SimpleHistoryAdmin):
@@ -71,6 +71,10 @@ class AuthUserAdmin(ModelAdmin):
     search_fields = ('username', )
 
 
+class PidempipoissaoloAdmin(AdminWithGuardianAndHistory):
+    raw_id_fields = ('palvelussuhde', )
+
+
 admin.site.unregister(User)
 
 admin.site.register(User, AuthUserAdmin)
@@ -94,3 +98,4 @@ admin.site.register(TilapainenHenkilosto, TilapainenHenkilostoAdmin)
 admin.site.register(Tutkinto, TutkintoAdmin)
 admin.site.register(Palvelussuhde, PalvelussuhdeAdmin)
 admin.site.register(Tyoskentelypaikka, TyoskentelypaikkaAdmin)
+admin.site.register(PidempiPoissaolo, PidempipoissaoloAdmin)

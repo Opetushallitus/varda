@@ -291,17 +291,19 @@ def validate_puhelinnumero(puhelinnumero):
         raise ValidationError(error_msg)
 
 
+def parse_paivamaara(paivamaara, default=None):
+    if not isinstance(paivamaara, datetime.date):
+        if isinstance(paivamaara, str):
+            return datetime.datetime.strptime(paivamaara.replace("-", ""), "%Y%m%d").date()
+        else:
+            return default
+    return paivamaara
+
+
 def validate_paivamaara1_before_paivamaara2(paivamaara1, paivamaara2, can_be_same=False):
-    if not isinstance(paivamaara1, datetime.date):
-        if isinstance(paivamaara1, str):
-            paivamaara1 = datetime.datetime.strptime(paivamaara1.replace("-", ""), "%Y%m%d").date()
-        else:
-            paivamaara1 = datetime.date(2000, 1, 1)
-    if not isinstance(paivamaara2, datetime.date):
-        if isinstance(paivamaara2, str):
-            paivamaara2 = datetime.datetime.strptime(paivamaara2.replace("-", ""), "%Y%m%d").date()
-        else:
-            paivamaara2 = datetime.date(2100, 1, 1)
+    paivamaara1 = parse_paivamaara(paivamaara1, datetime.date(2000, 1, 1))
+    paivamaara2 = parse_paivamaara(paivamaara2, datetime.date(2100, 1, 1))
+
     if paivamaara1 > paivamaara2 or (paivamaara1 == paivamaara2 and not can_be_same):
         return False
     else:

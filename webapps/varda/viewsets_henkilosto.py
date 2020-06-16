@@ -6,7 +6,7 @@ from django.db.models import ProtectedError, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status
+from rest_framework import status, permissions
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.response import Response
@@ -16,13 +16,14 @@ from rest_framework_guardian.filters import DjangoObjectPermissionsFilter
 from varda import filters
 from varda.cache import cached_retrieve_response, delete_cache_keys_related_model, cached_list_response
 from varda.exceptions.conflict_error import ConflictError
-from varda.filters import PalvelussuhdeFilter, TyoskentelypaikkaFilter
-from varda.models import TilapainenHenkilosto, Tutkinto, Tyontekija, VakaJarjestaja, Palvelussuhde, Tyoskentelypaikka
+from varda.filters import PalvelussuhdeFilter, TyoskentelypaikkaFilter, PidempiPoissaoloFilter
+from varda.models import (TilapainenHenkilosto, Tutkinto, Tyontekija, VakaJarjestaja, Palvelussuhde, Tyoskentelypaikka,
+                          PidempiPoissaolo)
 from varda.permission_groups import (assign_object_permissions_to_tyontekija_groups,
                                      remove_object_level_permissions,
                                      assign_object_permissions_to_tilapainenhenkilosto_groups)
 from varda.permissions import CustomObjectPermissions
-from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, PalvelussuhdeSerializer,
+from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, PalvelussuhdeSerializer, PidempiPoissaoloSerializer,
                                           TilapainenHenkilostoSerializer, TutkintoSerializer, TyontekijaSerializer,
                                           TyoskentelypaikkaUpdateSerializer)
 
@@ -382,3 +383,66 @@ class TyoskentelypaikkaViewSet(ModelViewSet):
             delete_cache_keys_related_model('palvelussuhde', instance.palvelussuhde.id)
             if instance.toimipaikka:
                 delete_cache_keys_related_model('toimipaikka', instance.toimipaikka.id)
+
+
+class PidempiPoissaoloViewSet(ModelViewSet):
+    """
+    list:
+        Nouda kaikki pidemmatpoissaolot.
+
+    create:
+        Luo yksi uusi pidempipoissaolo.
+
+    delete:
+        Poista yksi pidempipoissaolo.
+
+    retrieve:
+        Nouda yksittäinen pidempipoissaolo.
+
+    partial_update:
+        Päivitä yksi tai useampi kenttä yhdestä pidempipoissaolo-tietueesta.
+
+    update:
+        Päivitä yhden pidempipoissaolo-tietueen kaikki kentät.
+    """
+    serializer_class = PidempiPoissaoloSerializer
+    permission_classes = (permissions.IsAdminUser, )
+    filter_backends = (DjangoFilterBackend, )
+    filterset_class = PidempiPoissaoloFilter
+    queryset = PidempiPoissaolo.objects.all().order_by('id')
+
+    def retrieve(self, request, *args, **kwargs):
+        return cached_retrieve_response(self, request.user, request.path)
+
+    def list(self, request, *args, **kwargs):
+        return cached_list_response(self, request.user, request.path)
+
+    def perform_create(self, serializer):
+
+        with transaction.atomic():
+            user = self.request.user
+            saved_object = serializer.save(changed_by=user)
+            delete_cache_keys_related_model('palvelussuhde', saved_object.palvelussuhde.id)
+
+    def perform_update(self, serializer):
+        user = self.request.user
+        pidempipoissaolo_obj = self.get_object()
+
+        if not user.has_perm('change_pidempipoissaolo', pidempipoissaolo_obj):
+            raise PermissionDenied('User does not have permissions to change this object.')
+
+        serializer.save(changed_by=user)
+
+    def perform_destroy(self, instance):
+        user = self.request.user
+        if not user.has_perm('delete_pidempipoissaolo', instance):
+            raise PermissionDenied("User does not have permissions to delete this object.")
+
+        with transaction.atomic():
+            try:
+                instance.delete()
+            except ProtectedError:
+                raise ValidationError({'detail': 'Cannot delete pidempipoissaolo. There are objects referencing it '
+                                                 'that need to be deleted first.'})
+
+            delete_cache_keys_related_model('palvelussuhde', instance.palvelussuhde.id)

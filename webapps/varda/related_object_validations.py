@@ -2,9 +2,11 @@ import datetime
 import logging
 
 from collections import namedtuple
+from django.db.models import Q
 from rest_framework.exceptions import ValidationError
 from varda.models import (VakaJarjestaja, Henkilo, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Lapsi, Huoltaja,
-                          Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Palvelussuhde, Tyoskentelypaikka)
+                          Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Palvelussuhde, Tyoskentelypaikka,
+                          PidempiPoissaolo)
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -223,7 +225,13 @@ def check_overlapping_palvelussuhde_object(validated_data, modelobj, *args):
         model_id, original = get_model_id_and_original(modelobj)
 
     tyontekija_id = validated_data['tyontekija'].id if 'tyontekija' in validated_data else original.tyontekija.id
-    queryset = Palvelussuhde.objects.filter(tyontekija=tyontekija_id)
+
+    if original is not None:
+        q_obj = Q(Q(tyontekija=tyontekija_id) & ~Q(pk=original.id))
+    else:
+        q_obj = Q(tyontekija=tyontekija_id)
+
+    queryset = Palvelussuhde.objects.filter(q_obj)
 
     alkamis_pvm, paattymis_pvm = get_alkamis_paattymis_pvm(validated_data, original)
     daterange_new = create_daterange(alkamis_pvm, paattymis_pvm)
@@ -250,7 +258,13 @@ def check_overlapping_tyoskentelypaikka_object(validated_data, modelobj, *args):
         model_id, original = get_model_id_and_original(modelobj)
 
     tyontekija_id = validated_data['palvelussuhde'].tyontekija.id if 'palvelussuhde' in validated_data else original.palvelussuhde.tyontekija.id
-    queryset = Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija_id)
+
+    if original is not None:
+        q_obj = Q(Q(palvelussuhde__tyontekija=tyontekija_id) & ~Q(pk=original.id))
+    else:
+        q_obj = Q(palvelussuhde__tyontekija=tyontekija_id)
+
+    queryset = Tyoskentelypaikka.objects.filter(q_obj)
 
     alkamis_pvm, paattymis_pvm = get_alkamis_paattymis_pvm(validated_data, original)
     daterange_new = create_daterange(alkamis_pvm, paattymis_pvm)
@@ -264,6 +278,39 @@ def check_overlapping_tyoskentelypaikka_object(validated_data, modelobj, *args):
                 counter += 1
     if counter > MAX_OVERLAPS:
         msg = f'Already have {counter - 1} overlapping tyoskentelypaikka on the defined time range.'
+        raise ValidationError({'palvelussuhde': [msg]})
+
+
+def check_overlapping_pidempipoissaolo_object(validated_data, modelobj, *args):
+    """
+    Checks that the number of pidempipoissaolo during any time period is less than the maximum
+    """
+    if args:
+        model_id, original = get_model_id_and_original(modelobj, args[0])
+    else:
+        model_id, original = get_model_id_and_original(modelobj)
+
+    palvelussuhde_id = validated_data['palvelussuhde'].id if 'palvelussuhde' in validated_data else original.palvelussuhde.id
+
+    if original is not None:
+        q_obj = Q(Q(palvelussuhde=palvelussuhde_id) & ~Q(pk=original.id))
+    else:
+        q_obj = Q(palvelussuhde=palvelussuhde_id)
+
+    queryset = PidempiPoissaolo.objects.filter(q_obj)
+
+    alkamis_pvm, paattymis_pvm = get_alkamis_paattymis_pvm(validated_data, original)
+    daterange_new = create_daterange(alkamis_pvm, paattymis_pvm)
+    MAX_OVERLAPS = 1
+    counter = 1
+    for item in queryset:
+        if item.id != int(model_id):
+            daterange_existing = create_daterange(item.alkamis_pvm, item.paattymis_pvm)
+            overlap = daterange_overlap(daterange_existing, daterange_new)
+            if overlap:
+                counter += 1
+    if counter > MAX_OVERLAPS:
+        msg = 'Already have overlapping pidempipoissaolo on the defined time range.'
         raise ValidationError({'palvelussuhde': [msg]})
 
 

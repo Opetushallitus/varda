@@ -4,12 +4,12 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from rest_framework import status
 
-from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient
+from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, assert_validation_error
 from varda.models import (VakaJarjestaja, Henkilo, Tyontekija, Palvelussuhde, Tyoskentelypaikka, Toimipaikka,
                           TilapainenHenkilosto)
 
 
-class VardaHenkiloViewSetTests(TestCase):
+class VardaHenkilostoViewSetTests(TestCase):
     fixtures = ['varda/unit_tests/fixture_basics.json']
 
     def test_api_push_tyontekija_correct(self):
@@ -803,8 +803,7 @@ class VardaHenkiloViewSetTests(TestCase):
 
         resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        messages = json.loads(resp.content)
-        self.assertIn("paattymis_pvm must be after alkamis_pvm", ''.join(messages['paattymis_pvm']))
+        assert_validation_error('paattymis_pvm', 'paattymis_pvm must be after alkamis_pvm.', resp)
 
     def test_palvelussuhde_add_too_many(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -830,8 +829,7 @@ class VardaHenkiloViewSetTests(TestCase):
         # The next one will fail
         resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        messages = json.loads(resp.content)
-        self.assertIn('Already have 7 overlapping palvelussuhde on the defined time range.', ''.join(messages['palvelussuhde']))
+        assert_validation_error('palvelussuhde', 'Already have 7 overlapping palvelussuhde on the defined time range.', resp)
 
         # But later dates are ok
         palvelussuhde.update(alkamis_pvm='2022-02-02', paattymis_pvm='2023-03-03')
@@ -855,10 +853,9 @@ class VardaHenkiloViewSetTests(TestCase):
 
         resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        messages = json.loads(resp.content)
-        self.assertIn("Not a valid tyosuhde_koodi", ''.join(messages['tyosuhde_koodi']))
-        self.assertIn("Not a valid tyoaika_koodi", ''.join(messages['tyoaika_koodi']))
-        self.assertIn("Not a valid tutkinto_koodi", ''.join(messages['tutkinto_koodi']))
+        assert_validation_error('tyosuhde_koodi', 'foo1 : Not a valid tyosuhde_koodi.', resp)
+        assert_validation_error('tyoaika_koodi', 'foo2 : Not a valid tyoaika_koodi.', resp)
+        assert_validation_error('tutkinto_koodi', 'foo3 : Not a valid tutkinto_koodi.', resp)
 
     def test_palvelussuhde_add_wrong_tutkinto(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -878,8 +875,7 @@ class VardaHenkiloViewSetTests(TestCase):
 
         resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        messages = json.loads(resp.content)
-        self.assertIn('tyontekija has tutkinnot other than just 003.', ''.join(messages['tutkinto_koodi']))
+        assert_validation_error('tutkinto_koodi', 'tyontekija has tutkinnot other than just 003.', resp)
 
     def test_tyoskentelypaikka_add_correct(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -931,14 +927,12 @@ class VardaHenkiloViewSetTests(TestCase):
         # The next one will fail
         resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        messages = json.loads(resp.content)
-        self.assertIn('Already have 3 overlapping tyoskentelypaikka on the defined time range.', ''.join(messages['palvelussuhde']))
+        assert_validation_error('palvelussuhde', 'Already have 3 overlapping tyoskentelypaikka on the defined time range.', resp)
 
         # So does this: limit is global across all palvelussuhteet
         tyoskentelypaikka.update(palvelussuhde=palvelussuhde_22_url)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        messages = json.loads(resp.content)
-        self.assertIn('Already have 3 overlapping tyoskentelypaikka on the defined time range.', ''.join(messages['palvelussuhde']))
+        assert_validation_error('palvelussuhde', 'Already have 3 overlapping tyoskentelypaikka on the defined time range.', resp)
 
         # But cases where kiertava_tyontekija_kytkin is True are ok
         tyoskentelypaikka.update(kiertava_tyontekija_kytkin=True, toimipaikka=None)
@@ -1039,8 +1033,7 @@ class VardaHenkiloViewSetTests(TestCase):
 
         resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        messages = json.loads(resp.content)
-        self.assertIn('toimipaikka can\'t be specified with kiertava_tyontekija_kytkin.', messages.get('kiertava_tyontekija_kytkin', []))
+        assert_validation_error('kiertava_tyontekija_kytkin', 'toimipaikka can\'t be specified with kiertava_tyontekija_kytkin.', resp)
 
     def test_tyoskentelypaikka_kelpoisuus_downgrade_allowed(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -1090,8 +1083,7 @@ class VardaHenkiloViewSetTests(TestCase):
             tyoskentelypaikka.update(alkamis_pvm=start, paattymis_pvm=end)
             resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
             assert_status_code(resp, status.HTTP_400_BAD_REQUEST, f'{start}_{end}')
-            messages = json.loads(resp.content)
-            self.assertIn(expected_message, messages.get(key, []))
+            assert_validation_error(key, expected_message, resp)
 
     def test_tyoskentelypaikka_non_kiertava_overlaps_kiertava(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -1126,8 +1118,7 @@ class VardaHenkiloViewSetTests(TestCase):
         tyoskentelypaikka.update(toimipaikka=None, kiertava_tyontekija_kytkin=True, alkamis_pvm='2025-05-01', paattymis_pvm='2025-12-31')
         resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        messages = json.loads(resp.content)
-        self.assertIn('can\'t have different values of kiertava_tyontekija_kytkin on overlapping date ranges', messages.get('kiertava_tyontekija_kytkin', []))
+        assert_validation_error('kiertava_tyontekija_kytkin', 'can\'t have different values of kiertava_tyontekija_kytkin on overlapping date ranges', resp)
 
         # But works on a different palvelussuhde, on the same tyontekija
         tyoskentelypaikka.update(palvelussuhde=palvelussuhde_22_url)
@@ -1154,3 +1145,122 @@ class VardaHenkiloViewSetTests(TestCase):
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         messages = json.loads(resp.content)
         self.assertIn('Toimipaikka must have the same vakajarjestaja as tyontekija', messages.get('toimipaikka', []))
+
+    def test_pidempipoissaolo_add_correct(self):
+        client = SetUpTestClient('credadmin').client()
+
+        palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
+
+        pidempipoissaolo = {
+            'palvelussuhde': '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde.id),
+            'alkamis_pvm': '2021-06-01',
+            'paattymis_pvm': '2021-09-01',
+            'lahdejarjestelma': '1',
+            'tunniste': 'foo'
+        }
+
+        resp = client.post("/api/henkilosto/v1/pidemmatpoissaolot/", json.dumps(pidempipoissaolo), content_type="application/json")
+        assert_status_code(resp, 201)
+
+    def test_pidempipoissaolo_add_correct_two(self):
+        client = SetUpTestClient('credadmin').client()
+
+        palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
+
+        pidempipoissaolo = {
+            'palvelussuhde': '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde.id),
+            'alkamis_pvm': '2021-06-01',
+            'paattymis_pvm': '2021-09-01',
+            'lahdejarjestelma': '1',
+            'tunniste': 'foo'
+        }
+
+        resp = client.post("/api/henkilosto/v1/pidemmatpoissaolot/", json.dumps(pidempipoissaolo), content_type="application/json")
+        assert_status_code(resp, 201)
+
+        pidempipoissaolo = {
+            'palvelussuhde': '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde.id),
+            'alkamis_pvm': '2021-09-02',  # The day after the other poissaolo
+            'paattymis_pvm': '2022-03-01',
+            'lahdejarjestelma': '1',
+            'tunniste': 'foo2'
+        }
+
+        resp = client.post("/api/henkilosto/v1/pidemmatpoissaolot/", json.dumps(pidempipoissaolo), content_type="application/json")
+        assert_status_code(resp, 201)
+
+    def test_pidempipoissaolo_incorrect_date_validation(self):
+        client = SetUpTestClient('credadmin').client()
+
+        palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
+
+        # Invariant data
+        pidempipoissaolo = {
+            'palvelussuhde': '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde.id),
+            'lahdejarjestelma': '1'
+        }
+
+        # Palvelussuhde alkamis_pvm   2020-03-01
+        # Palvelussuhde paattymis_pvm 2030-03-01
+
+        cases = [
+            ('2020-03-01', '2020-01-01', 'paattymis_pvm', 'paattymis_pvm must be after alkamis_pvm.'),
+            ('2020-03-01', '2031-01-01', 'paattymis_pvm', 'paattymis_pvm must be before palvelussuhde paattymis_pvm (or same).'),
+            ('1999-03-01', '2021-01-01', 'alkamis_pvm', 'alkamis_pvm must be after palvelussuhde alkamis_pvm (or same).'),
+            ('2031-03-01', '2032-01-01', 'alkamis_pvm', 'alkamis_pvm must be before palvelussuhde paattymis_pvm.'),
+            ('2022-01-01', '2022-01-30', 'paattymis_pvm', 'poissaolo duration must be 60 days or more.'),
+        ]
+
+        for (start, end, key, expected_message) in cases:
+            extra = f'{start}_{end}'
+            pidempipoissaolo.update(alkamis_pvm=start, paattymis_pvm=end, tunniste=extra)
+            resp = client.post("/api/henkilosto/v1/pidemmatpoissaolot/", json.dumps(pidempipoissaolo), content_type="application/json")
+            assert_status_code(resp, 400, extra)
+            assert_validation_error(key, expected_message, resp, extra)
+
+    def test_pidempipoissaolo_overlap(self):
+        client = SetUpTestClient('credadmin').client()
+
+        palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
+
+        # Add initial poissaolo 1, with set duration
+        pidempipoissaolo = {
+            'palvelussuhde': '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde.id),
+            'alkamis_pvm': '2021-06-01',
+            'paattymis_pvm': '2021-09-01',
+            'lahdejarjestelma': '1',
+            'tunniste': 'foo'
+        }
+        resp = client.post("/api/henkilosto/v1/pidemmatpoissaolot/", json.dumps(pidempipoissaolo), content_type="application/json")
+        assert_status_code(resp, 201)
+
+        # Add initial poissaolo 2, without end date
+        pidempipoissaolo = {
+            'palvelussuhde': '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde.id),
+            'alkamis_pvm': '2023-06-01',
+            'paattymis_pvm': None,
+            'lahdejarjestelma': '1',
+            'tunniste': 'foo2'
+        }
+        resp = client.post("/api/henkilosto/v1/pidemmatpoissaolot/", json.dumps(pidempipoissaolo), content_type="application/json")
+        assert_status_code(resp, 201)
+
+        cases = [
+            ('2021-06-01', '2021-09-01'),
+            ('2021-05-01', '2021-06-01'),
+            ('2021-05-01', '2021-07-01'),
+            ('2021-06-01', '2021-10-01'),
+            ('2021-07-01', '2021-09-01'),
+            ('2021-09-01', '2021-10-01'),
+
+            ('2023-05-01', '2023-06-01'),
+            ('2023-06-01', '2023-09-01'),
+            ('2023-07-01', '2023-10-01'),
+        ]
+
+        for (start, end) in cases:
+            extra = f'{start}_{end}'
+            pidempipoissaolo.update(alkamis_pvm=start, paattymis_pvm=end, tunniste=extra)
+            resp = client.post("/api/henkilosto/v1/pidemmatpoissaolot/", json.dumps(pidempipoissaolo), content_type="application/json")
+            assert_status_code(resp, 400, extra)
+            assert_validation_error('palvelussuhde', 'Already have overlapping pidempipoissaolo on the defined time range.', resp, extra)
