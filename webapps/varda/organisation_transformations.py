@@ -103,6 +103,68 @@ def transfer_toimipaikat_to_vakajarjestaja(user, new_vakajarjestaja_id, toimipai
         _delete_vakajarjestaja_cache(new_vakajarjestaja_obj.id)
 
 
+def merge_toimipaikka_to_other_toimipaikka(user, master_toimipaikka_id, old_toimipaikka_id):
+    """
+    Merge toimipaikka to an existing toimipaikka. Active information is transferred to new toimipaikka, but old
+    toimipaikka retains historical information.
+    TODO: In the future also transfer tyontekijat, tyoskentelypaikat
+    :param user: user object making the changes (needed for Model.changed_by)
+    :param master_toimipaikka_id: ID of the toimipaikka that receives vakatiedot from old_toimipaikka
+    :param old_toimipaikka_id: ID of the toimipaikka that is to be merged to master_toimipaikka
+    :return:
+    """
+
+    today = datetime.date.today()
+
+    # Check master_toimipaikka is different from old_toimipaikka
+    if master_toimipaikka_id == old_toimipaikka_id:
+        raise serializers.ValidationError({'detail': ['master_toimipaikka and old_toimipaikka are the same object']})
+
+    # Check master_toimipaikka exists
+    master_toimipaikka_obj = Toimipaikka.objects.filter(id=master_toimipaikka_id).first()
+    if master_toimipaikka_obj is None:
+        raise serializers.ValidationError({'master_toimipaikka_id': ['master_toimipaikka does not exist']})
+
+    # Check old toimipaikka exists
+    old_toimipaikka_obj = Toimipaikka.objects.filter(id=old_toimipaikka_id).first()
+    if old_toimipaikka_obj is None:
+        raise serializers.ValidationError({'old_toimipaikka_id': ['old_toimipaikka does not exist']})
+
+    master_vakajarjestaja_obj = master_toimipaikka_obj.vakajarjestaja
+    old_vakajarjestaja_obj = old_toimipaikka_obj.vakajarjestaja
+
+    _raise_if_not_supported_transfer(old_vakajarjestaja_obj, master_vakajarjestaja_obj)
+
+    if _toimipaikka_has_paos(old_toimipaikka_obj):
+        _raise_error('toimipaikka has paos, transfer is not supported')
+
+    with transaction.atomic():
+        lapsi_list = _get_toimipaikka_lapset(old_toimipaikka_obj)
+        existing_lapsi_list = _get_vakajarjestaja_lapset_matching_lapsi_list(master_vakajarjestaja_obj, lapsi_list)
+
+        # Handle lapsi permissions
+        _transfer_lapsi_permissions_to_new_vakajarjestaja(user,
+                                                          today,
+                                                          master_vakajarjestaja_obj,
+                                                          old_toimipaikka_obj,
+                                                          lapsi_list,
+                                                          existing_lapsi_list,
+                                                          new_toimipaikka_obj=master_toimipaikka_obj)
+
+        # Set old_toimipaikka inactive
+        if old_toimipaikka_obj.paattymis_pvm is None or old_toimipaikka_obj.paattymis_pvm > today:
+            old_toimipaikka_obj.paattymis_pvm = today
+            old_toimipaikka_obj.save()
+
+        # Clear old vakajarjestaja and toimipaikka cache
+        _delete_toimipaikka_cache(old_toimipaikka_id)
+        _delete_vakajarjestaja_cache(old_toimipaikka_obj.vakajarjestaja.id)
+
+        # Clear master vakajarjestaja and toimipaikka cache
+        _delete_toimipaikka_cache(master_toimipaikka_id)
+        _delete_vakajarjestaja_cache(master_vakajarjestaja_obj.id)
+
+
 def _transfer_lapsi_permissions_to_new_vakajarjestaja(user,
                                                       today,
                                                       new_vakajarjestaja_obj,

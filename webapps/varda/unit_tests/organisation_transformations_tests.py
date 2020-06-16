@@ -9,7 +9,8 @@ from rest_framework.test import APIClient
 
 from varda.models import (VakaJarjestaja, Toimipaikka, Varhaiskasvatussuhde, Varhaiskasvatuspaatos, Maksutieto, Lapsi,
                           Henkilo, Huoltajuussuhde)
-from varda.organisation_transformations import transfer_toimipaikat_to_vakajarjestaja
+from varda.organisation_transformations import (transfer_toimipaikat_to_vakajarjestaja,
+                                                merge_toimipaikka_to_other_toimipaikka)
 from varda.permissions import object_ids_organization_has_permissions_to
 from varda.unit_tests.test_utils import assert_status_code
 
@@ -286,6 +287,134 @@ class OrganisationTransformationsTests(TestCase):
         with self.assertRaises(serializers.ValidationError):
             # Transfer toimipaikka 1.2.246.562.10.6727877596658 to vakajarjestaja 1.2.246.562.10.52966755795
             transfer_toimipaikat_to_vakajarjestaja(admin, new_vakajarjestaja.id, [toimipaikka.id])
+
+    def test_merge_simple_toimipaikka(self):
+        today = datetime.date.today()
+        admin = User.objects.get(username='credadmin')
+
+        old_vakajarjestaja_oid = '1.2.246.562.10.57294396385'
+        master_vakajarjestaja_oid = '1.2.246.562.10.52966755795'
+        old_toimipaikka_oid = '1.2.246.562.10.6727877596658'
+        master_toimipaikka_oid = '1.2.246.562.10.9625978384762'
+
+        old_toimipaikka = Toimipaikka.objects.get(organisaatio_oid=old_toimipaikka_oid)
+        master_toimipaikka = Toimipaikka.objects.get(organisaatio_oid=master_toimipaikka_oid)
+
+        active_filter = Q(paattymis_pvm=None) | Q(paattymis_pvm__gt=today)
+        active_old_vakasuhde_qs = Varhaiskasvatussuhde.objects.filter(Q(toimipaikka=old_toimipaikka) & active_filter)
+        active_master_vakasuhde_qs = Varhaiskasvatussuhde.objects.filter(Q(toimipaikka=master_toimipaikka) &
+                                                                         active_filter)
+        old_vakasuhde_count = active_old_vakasuhde_qs.count()
+        master_vakasuhde_count = active_master_vakasuhde_qs.count()
+
+        # Merge toimipaikka 1.2.246.562.10.6727877596658 to toimipaikka 1.2.246.562.10.52966755795
+        merge_toimipaikka_to_other_toimipaikka(admin, master_toimipaikka.id, old_toimipaikka.id)
+
+        old_lapsi_qs = (Lapsi.objects
+                        .filter(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka=old_toimipaikka)
+                        .distinct())
+        old_lapsi_id_list = list(old_lapsi_qs.values_list('id', flat=True))
+        old_henkilo_set = set(old_lapsi_qs
+                              .filter(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__in=active_old_vakasuhde_qs)
+                              .values_list('henkilo', flat=True))
+        master_lapsi_qs = (Lapsi.objects
+                           .filter(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka=master_toimipaikka)
+                           .distinct())
+
+        old_vakapaatos_qs = Varhaiskasvatuspaatos.objects.filter(lapsi__in=old_lapsi_qs)
+        old_vakapaatos_id_list = list(old_vakapaatos_qs.values_list('id', flat=True))
+
+        old_vakasuhde_qs = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__in=old_vakapaatos_qs)
+        old_vakasuhde_id_list = list(old_vakasuhde_qs.values_list('id', flat=True))
+
+        old_maksutieto_qs = Maksutieto.objects.filter(huoltajuussuhteet__lapsi__in=old_lapsi_qs).distinct()
+        old_maksutieto_id_list = list(old_maksutieto_qs.values_list('id', flat=True))
+
+        # Assert master_vakajarjestaja doesn't have permissions to old_toimipaikka information
+        check_if_organization_has_permissions(self, master_vakajarjestaja_oid, old_toimipaikka.id, old_lapsi_id_list,
+                                              old_vakapaatos_id_list, old_vakasuhde_id_list, old_maksutieto_id_list,
+                                              has_permissions=False)
+
+        # Assert old_vakajarjestaja still has permissions to old_toimipaikka information
+        check_if_organization_has_permissions(self, old_vakajarjestaja_oid, old_toimipaikka.id, old_lapsi_id_list,
+                                              old_vakapaatos_id_list, old_vakasuhde_id_list, old_maksutieto_id_list,
+                                              has_permissions=True)
+
+        # Assert number of vakasuhteet in master_toimipaikka have increased by number of active ones in old_toimipaikka
+        self.assertEqual(active_master_vakasuhde_qs.count(), master_vakasuhde_count + old_vakasuhde_count)
+
+        # Assert that old_toimipaikka doesn't have active vakasuhteet
+        self.assertEqual(active_old_vakasuhde_qs.count(), 0)
+
+        # Assert master_toimipaikka has lapset referencing old_toimipaikka henkilot with active vakasuhde
+        master_toimipaikka_henkilo_list = list(master_lapsi_qs.values_list('henkilo', flat=True))
+        self.assertTrue(old_henkilo_set.issubset(master_toimipaikka_henkilo_list))
+
+    def test_merge_vakasuhde_in_other_toimipaikka_and_history(self):
+        today = datetime.date.today()
+        admin = User.objects.get(username='credadmin')
+
+        old_toimipaikka_oid = '1.2.246.562.10.6727877596658'
+        master_toimipaikka_oid = '1.2.246.562.10.9625978384762'
+
+        old_toimipaikka = Toimipaikka.objects.get(organisaatio_oid=old_toimipaikka_oid)
+        master_toimipaikka = Toimipaikka.objects.get(organisaatio_oid=master_toimipaikka_oid)
+
+        vakapaatos_1 = Varhaiskasvatuspaatos.objects.filter(varhaiskasvatussuhteet__toimipaikka=old_toimipaikka).first()
+        # vakasuhde that is transferred to new toimipaikka
+        vakasuhde_merged = vakapaatos_1.varhaiskasvatussuhteet.first()
+        # Create active vakasuhde to other_toimipaikka
+        vakasuhde_1 = {
+            'varhaiskasvatuspaatos': '/api/v1/varhaiskasvatuspaatokset/{0}/'.format(vakapaatos_1.id),
+            'toimipaikka_oid': '1.2.246.562.10.2565458382544',
+            'alkamis_pvm': '2020-02-02'
+        }
+        client = SetUpTestClient('tester10').client()
+        vakasuhde_1_resp = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde_1)
+        assert_status_code(vakasuhde_1_resp, 201)
+        vakasuhde_1_id = json.loads(vakasuhde_1_resp.content)['id']
+
+        # Create inactive vakapaatos and vakasuhde to old_toimipaikka
+        vakapaatos_2 = {
+            'lapsi': '/api/v1/lapset/{0}/'.format(vakapaatos_1.lapsi.id),
+            'vuorohoito_kytkin': True,
+            'tuntimaara_viikossa': '37.5',
+            'jarjestamismuoto_koodi': 'jm01',
+            'hakemus_pvm': '2020-03-01',
+            'alkamis_pvm': '2020-03-01',
+            'paattymis_pvm': '2020-04-10'
+        }
+        vakapaatos_2_resp = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos_2)
+        assert_status_code(vakapaatos_2_resp, 201)
+
+        vakasuhde_2 = {
+            'toimipaikka_oid': old_toimipaikka_oid,
+            'varhaiskasvatuspaatos': json.loads(vakapaatos_2_resp.content)['url'],
+            'alkamis_pvm': '2020-03-20',
+            'paattymis_pvm': '2020-04-01'
+        }
+        vakasuhde_2_resp = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde_2)
+        assert_status_code(vakasuhde_2_resp, 201)
+
+        # Merge toimipaikka 1.2.246.562.10.6727877596658 to toimipaikka 1.2.246.562.10.52966755795
+        merge_toimipaikka_to_other_toimipaikka(admin, master_toimipaikka.id, old_toimipaikka.id)
+
+        # Assert vakapaatos_1.paattymis_pvm, vakasuhde_merged.paattymis_pvm and vakasuhde_1.paattymis_pvm is today
+        self.assertEqual(Varhaiskasvatuspaatos.objects.get(id=vakapaatos_1.id).paattymis_pvm, today)
+        self.assertEqual(Varhaiskasvatussuhde.objects.get(id=vakasuhde_1_id).paattymis_pvm, today)
+        self.assertEqual(Varhaiskasvatussuhde.objects.get(id=vakasuhde_merged.id).paattymis_pvm, today)
+
+        new_lapsi = Lapsi.objects.get(henkilo=vakapaatos_1.lapsi.henkilo,
+                                      varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka=master_toimipaikka)
+        new_vakapaatos = new_lapsi.varhaiskasvatuspaatokset.first()
+        # Assert merged lapsi only has one vakapaatos with one vakasuhde
+        self.assertEqual(new_lapsi.varhaiskasvatuspaatokset.count(), 1)
+        self.assertEqual(new_vakapaatos.varhaiskasvatussuhteet.count(), 1)
+
+        # Assert new vakasuhde is active
+        self.assertEqual(new_vakapaatos.varhaiskasvatussuhteet
+                         .filter(Q(paattymis_pvm=None) | Q(paattymis_pvm__gt=today))
+                         .exists(), True)
 
 
 def check_if_organization_has_permissions(self,
