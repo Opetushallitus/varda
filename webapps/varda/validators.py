@@ -451,7 +451,7 @@ def validate_unique_lahdejarjestelma_tunniste_pair(self, model):
 
     if model.objects.filter(~Q(pk=self.pk) & Q(lahdejarjestelma=self.lahdejarjestelma) &
                             Q(tunniste=self.tunniste)).exists():
-        raise ValidationError({'non_field_errors': ['lahdejarjestelma and tunniste pair already exists.']})
+        raise ValidationErrorRest({'non_field_errors': ['lahdejarjestelma and tunniste pair already exists.']})
 
 
 def validate_vaka_date(date):

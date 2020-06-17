@@ -72,11 +72,7 @@ class TyontekijaViewSet(ModelViewSet):
         self.return_tyontekija_if_already_created(validated_data)
 
         with transaction.atomic():
-            try:
-                tyontekija_obj = serializer.save(changed_by=user)
-            except DjangoValidationError as e:
-                raise ValidationError(dict(e))
-
+            tyontekija_obj = serializer.save(changed_by=user)
             delete_cache_keys_related_model('henkilo', tyontekija_obj.henkilo.id)
             vakajarjestaja_oid = vakajarjestaja.organisaatio_oid
             assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Tyontekija, tyontekija_obj)
@@ -86,10 +82,7 @@ class TyontekijaViewSet(ModelViewSet):
     def perform_update(self, serializer):
         user = self.request.user
         with transaction.atomic():
-            try:
-                serializer.save(changed_by=user)
-            except DjangoValidationError as e:
-                raise ValidationError(dict(e))
+            serializer.save(changed_by=user)
 
     def perform_destroy(self, instance):
         with transaction.atomic():
@@ -139,12 +132,9 @@ class TilapainenHenkilostoViewSet(ModelViewSet):
     def perform_create(self, serializer):
         with transaction.atomic():
             user = self.request.user
-            try:
-                tilapainenhenkilosto_obj = serializer.save(changed_by=user)
-                vakajarjestaja_oid = tilapainenhenkilosto_obj.vakajarjestaja.organisaatio_oid
-                assign_object_permissions_to_tilapainenhenkilosto_groups(vakajarjestaja_oid, TilapainenHenkilosto, tilapainenhenkilosto_obj)
-            except DjangoValidationError as e:
-                raise ValidationError(dict(e))
+            tilapainenhenkilosto_obj = serializer.save(changed_by=user)
+            vakajarjestaja_oid = tilapainenhenkilosto_obj.vakajarjestaja.organisaatio_oid
+            assign_object_permissions_to_tilapainenhenkilosto_groups(vakajarjestaja_oid, TilapainenHenkilosto, tilapainenhenkilosto_obj)
 
     def perform_update(self, serializer):
         user = self.request.user
