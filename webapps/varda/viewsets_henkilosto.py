@@ -6,7 +6,7 @@ from django.db.models import ProtectedError, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status, permissions
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.response import Response
@@ -22,7 +22,7 @@ from varda.models import (TilapainenHenkilosto, Tutkinto, Tyontekija, VakaJarjes
 from varda.permission_groups import (assign_object_permissions_to_tyontekija_groups,
                                      remove_object_level_permissions,
                                      assign_object_permissions_to_tilapainenhenkilosto_groups)
-from varda.permissions import CustomObjectPermissions
+from varda.permissions import CustomObjectPermissions, delete_object_permissions_explicitly
 from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, PalvelussuhdeSerializer, PidempiPoissaoloSerializer,
                                           TilapainenHenkilostoSerializer, TutkintoSerializer, TyontekijaSerializer,
                                           TyoskentelypaikkaUpdateSerializer)
@@ -94,8 +94,8 @@ class TyontekijaViewSet(ModelViewSet):
     def perform_destroy(self, instance):
         with transaction.atomic():
             try:
+                delete_object_permissions_explicitly(Tyontekija, instance)
                 vakajarjestaja_oid = instance.vakajarjestaja.organisaatio_oid
-                remove_object_level_permissions(vakajarjestaja_oid, Tyontekija, instance)
                 tutkinnot = Tutkinto.objects.filter(henkilo=instance.henkilo)
                 [remove_object_level_permissions(vakajarjestaja_oid, Tutkinto, tutkinto) for tutkinto in tutkinnot]
                 instance.delete()
@@ -157,8 +157,7 @@ class TilapainenHenkilostoViewSet(ModelViewSet):
 
     def perform_destroy(self, instance):
         with transaction.atomic():
-            vakajarjestaja_oid = instance.vakajarjestaja.organisaatio_oid
-            remove_object_level_permissions(vakajarjestaja_oid, TilapainenHenkilosto, instance)
+            delete_object_permissions_explicitly(TilapainenHenkilosto, instance)
             instance.delete()
 
 
@@ -215,8 +214,7 @@ class TutkintoViewSet(ModelViewSet):
 
         delete_cache_keys_related_model('henkilo', henkilo.id)
         with transaction.atomic():
-            vakajarjestaja_oids = VakaJarjestaja.objects.filter(tyontekijat__henkilo=instance.henkilo).values_list('organisaatio_oid', flat=True)
-            [remove_object_level_permissions(vakajarjestaja_oid, Tutkinto, instance) for vakajarjestaja_oid in vakajarjestaja_oids]
+            delete_object_permissions_explicitly(Tutkinto, instance)
             instance.delete()
 
     @action(methods=['delete'], detail=False)
@@ -299,8 +297,7 @@ class PalvelussuhdeViewSet(ModelViewSet):
 
     def perform_destroy(self, instance):
         with transaction.atomic():
-            organisaatio_oid = instance.tyontekija.vakajarjestaja.organisaatio_oid
-            remove_object_level_permissions(organisaatio_oid, Palvelussuhde, instance)
+            delete_object_permissions_explicitly(Palvelussuhde, instance)
             try:
                 instance.delete()
             except ProtectedError:
@@ -372,8 +369,7 @@ class TyoskentelypaikkaViewSet(ModelViewSet):
 
     def perform_destroy(self, instance):
         with transaction.atomic():
-            organisaatio_oid = instance.palvelussuhde.tyontekija.vakajarjestaja.organisaatio_oid
-            remove_object_level_permissions(organisaatio_oid, Tyoskentelypaikka, instance)
+            delete_object_permissions_explicitly(Tyoskentelypaikka, instance)
             try:
                 instance.delete()
             except ProtectedError:
@@ -406,8 +402,8 @@ class PidempiPoissaoloViewSet(ModelViewSet):
         Päivitä yhden pidempipoissaolo-tietueen kaikki kentät.
     """
     serializer_class = PidempiPoissaoloSerializer
-    permission_classes = (permissions.IsAdminUser, )
-    filter_backends = (DjangoFilterBackend, )
+    permission_classes = (CustomObjectPermissions, )
+    filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend, )
     filterset_class = PidempiPoissaoloFilter
     queryset = PidempiPoissaolo.objects.all().order_by('id')
 
@@ -418,31 +414,23 @@ class PidempiPoissaoloViewSet(ModelViewSet):
         return cached_list_response(self, request.user, request.path)
 
     def perform_create(self, serializer):
-
         with transaction.atomic():
             user = self.request.user
             saved_object = serializer.save(changed_by=user)
+            vakajarjestaja_oid = saved_object.palvelussuhde.tyontekija.vakajarjestaja.organisaatio_oid
+            assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, PidempiPoissaolo, saved_object)
             delete_cache_keys_related_model('palvelussuhde', saved_object.palvelussuhde.id)
 
     def perform_update(self, serializer):
         user = self.request.user
-        pidempipoissaolo_obj = self.get_object()
-
-        if not user.has_perm('change_pidempipoissaolo', pidempipoissaolo_obj):
-            raise PermissionDenied('User does not have permissions to change this object.')
-
         serializer.save(changed_by=user)
 
     def perform_destroy(self, instance):
-        user = self.request.user
-        if not user.has_perm('delete_pidempipoissaolo', instance):
-            raise PermissionDenied("User does not have permissions to delete this object.")
-
         with transaction.atomic():
+            delete_object_permissions_explicitly(Palvelussuhde, instance)
             try:
                 instance.delete()
             except ProtectedError:
                 raise ValidationError({'detail': 'Cannot delete pidempipoissaolo. There are objects referencing it '
                                                  'that need to be deleted first.'})
-
             delete_cache_keys_related_model('palvelussuhde', instance.palvelussuhde.id)

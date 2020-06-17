@@ -1147,7 +1147,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         self.assertIn('Toimipaikka must have the same vakajarjestaja as tyontekija', messages.get('toimipaikka', []))
 
     def test_pidempipoissaolo_add_correct(self):
-        client = SetUpTestClient('credadmin').client()
+        client = SetUpTestClient('tyontekija_tallentaja').client()
 
         palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
 
@@ -1163,7 +1163,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         assert_status_code(resp, 201)
 
     def test_pidempipoissaolo_add_correct_two(self):
-        client = SetUpTestClient('credadmin').client()
+        client = SetUpTestClient('tyontekija_tallentaja').client()
 
         palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
 
@@ -1190,7 +1190,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         assert_status_code(resp, 201)
 
     def test_pidempipoissaolo_incorrect_date_validation(self):
-        client = SetUpTestClient('credadmin').client()
+        client = SetUpTestClient('tyontekija_tallentaja').client()
 
         palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
 
@@ -1219,7 +1219,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             assert_validation_error(key, expected_message, resp, extra)
 
     def test_pidempipoissaolo_overlap(self):
-        client = SetUpTestClient('credadmin').client()
+        client = SetUpTestClient('tyontekija_tallentaja').client()
 
         palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
 
