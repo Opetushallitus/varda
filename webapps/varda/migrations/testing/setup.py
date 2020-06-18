@@ -957,9 +957,10 @@ def create_henkilot():
     )
 
     # Henkilo (020400A925B) that is a Tyontekija and has a Palvelussuhde and a Tyoskentelypaikka
-    henkilo_17 = Henkilo.objects.create(
+    henkilo_925B = Henkilo.objects.create(
         henkilotunnus='gAAAAABe1MWYFHThAaVTNtD0e5eqLrILocRrHLcnWIT3wWY1Q9HL81fFBqT6ZsynVVpG66tY--pZAFVzLTiJkZpeY5ykZWNlYA==',
         henkilotunnus_unique_hash=hash_string('020400A925B'),
+        henkilo_oid='1.2.246.562.24.2431884920041',
         etunimet='Aatu',
         kutsumanimi='Aatu',
         sukunimi='Uraputki',
@@ -967,21 +968,34 @@ def create_henkilot():
     )
 
     # Henkilo (020400A926C) that is a Tyontekija and has two Palvelussuhde
-    henkilo_18 = Henkilo.objects.create(
+    henkilo_926C = Henkilo.objects.create(
         henkilotunnus='gAAAAABe1MWYXUPykNlwVdEnV-RGUEIP5SbXSfIMku8S4feee__16334ZkaMohmiiuS0M93jrsgHHFHQHIH2ZG-Rg1bh8w5dqQ==',
         henkilotunnus_unique_hash=hash_string('020400A926C'),
         etunimet='Bella',
         kutsumanimi='Bella',
         sukunimi='Uraputki',
+        henkilo_oid='1.2.246.562.24.2431884920042',
         changed_by=tester2_user
     )
 
     #  Henkilo (020400A927D) that is a Tyontekija
-    henkilo_19 = Henkilo.objects.create(
+    henkilo_927D = Henkilo.objects.create(
         henkilotunnus='gAAAAABe1MWYNPBAkDqIfzXfqNd4bSTi11R3Y8KfyxAlhj0BKnKd1Z0u9oxiIkJ6P-y4QhUHsHB2jo0bbz67-WLDf-HLZK7UOg==',
         henkilotunnus_unique_hash=hash_string('020400A927D'),
         etunimet='Calervo',
         kutsumanimi='Calervo',
+        sukunimi='Uraputki',
+        henkilo_oid='1.2.246.562.24.2431884920043',
+        changed_by=tester_user
+    )
+
+    # Henkilo (020400A928E) that is a Tyontekija
+    henkilo_928E = Henkilo.objects.create(
+        henkilotunnus='020400A928E',
+        henkilotunnus_unique_hash=hash_string('020400A928E'),
+        henkilo_oid='1.2.246.562.24.2431884920044',
+        etunimet='Daniella',
+        kutsumanimi='Daniella',
         sukunimi='Uraputki',
         changed_by=tester_user
     )
@@ -1178,9 +1192,9 @@ def create_henkilot():
 
     henkilo_list = {
         henkilo_1, henkilo_2, henkilo_3, henkilo_4, henkilo_5, henkilo_6, henkilo_7, henkilo_8, henkilo_9, henkilo_10,
-        henkilo_11, henkilo_12, henkilo_13, henkilo_14, henkilo_15, henkilo_16, henkilo_17, henkilo_18, henkilo_19,
-        henkilo_331A, henkilo_642C, henkilo_807L, henkilo_020X, henkilo_706Y, henkilo_273S, henkilo_5155, henkilo_753Y,
-        henkilo_0520, henkilo_031J
+        henkilo_11, henkilo_12, henkilo_13, henkilo_14, henkilo_15, henkilo_16, henkilo_331A, henkilo_642C,
+        henkilo_807L, henkilo_020X, henkilo_706Y, henkilo_273S, henkilo_5155, henkilo_753Y, henkilo_0520, henkilo_031J,
+        henkilo_925B, henkilo_926C, henkilo_927D, henkilo_928E
     }
     for henkilo in henkilo_list:
         assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo)
@@ -2628,7 +2642,8 @@ def create_onr_lapsi_huoltajat(create_all_vakajarjestajat=False):
 
 def create_henkilosto():
     from django.contrib.auth.models import User, Group
-    from varda.models import Henkilo, Tyontekija, Palvelussuhde, Tyoskentelypaikka, VakaJarjestaja, Toimipaikka, Tutkinto
+    from varda.models import (Henkilo, Tyontekija, Palvelussuhde, Tyoskentelypaikka, VakaJarjestaja, Toimipaikka,
+                              Tutkinto, Taydennyskoulutus, TaydennyskoulutusTyontekija)
     from varda.misc import hash_string
     from guardian.shortcuts import assign_perm
 
@@ -2643,6 +2658,7 @@ def create_henkilosto():
     henkilo_1 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A925B'))
     henkilo_2 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A926C'))
     henkilo_3 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A927D'))
+    henkilo_4 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A928E'))
 
     def add_tutkinto(henkilo, *tutkinnot):
         for tutkinto in tutkinnot:
@@ -2655,6 +2671,7 @@ def create_henkilosto():
     add_tutkinto(henkilo_1, '321901', '712104', '613101')
     add_tutkinto(henkilo_2, '321901', '712104', '613101')
     add_tutkinto(henkilo_3, '321901', '712104', '613101')
+    add_tutkinto(henkilo_4, '321901', '712104', '613101')
 
     crud_permissions_tyontekija = ['view_tyontekija', 'change_tyontekija', 'add_tyontekija', 'delete_tyontekija']
     tyontekija_1 = Tyontekija.objects.create(
@@ -2739,6 +2756,83 @@ def create_henkilosto():
         changed_by_id=admin_user.id
     )
     [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja1, tyoskentelypaikka_1) for crud_permission in crud_permissions_tyoskentelypaikka]
+
+    Tyoskentelypaikka.objects.create(
+        palvelussuhde=palvelussuhde_1,
+        toimipaikka=toimipaikka_1,
+        alkamis_pvm='2020-03-01',
+        paattymis_pvm='2021-05-02',
+        tehtavanimike_koodi='64212',
+        kelpoisuus_kytkin=False,
+        kiertava_tyontekija_kytkin=False,
+        lahdejarjestelma='1',
+        tunniste='testing-tyoskentelypaikka2',
+        changed_by_id=admin_user.id
+    )
+
+    tyontekija_4 = Tyontekija.objects.create(
+        henkilo=henkilo_4,
+        vakajarjestaja=vakajarjestaja_tester,
+        lahdejarjestelma='1',
+        tunniste='testing-tyontekija4',
+        changed_by_id=admin_user.id
+    )
+
+    palvelussuhde_4 = Palvelussuhde.objects.create(
+        tyontekija=tyontekija_4,
+        tyosuhde_koodi='ts01',
+        tyoaika_koodi='ta01',
+        tutkinto_koodi='815102',
+        tyoaika_viikossa='20.00',
+        alkamis_pvm='2020-03-01',
+        paattymis_pvm='2030-03-01',
+        lahdejarjestelma='1',
+        tunniste='testing-palvelussuhde4',
+        changed_by_id=admin_user.id
+    )
+
+    Tyoskentelypaikka.objects.create(
+        palvelussuhde=palvelussuhde_4,
+        toimipaikka=toimipaikka_1,
+        alkamis_pvm='2020-03-01',
+        paattymis_pvm='2020-05-02',
+        tehtavanimike_koodi='77826',
+        kelpoisuus_kytkin=True,
+        kiertava_tyontekija_kytkin=False,
+        lahdejarjestelma='1',
+        tunniste='testing-tyoskentylypaikka4',
+        changed_by_id=admin_user.id
+    )
+
+    taydennyskoulutus_1 = Taydennyskoulutus.objects.create(
+        nimi='Testikoulutus',
+        suoritus_pvm='2020-09-01',
+        koulutuspaivia='1.5',
+        lahdejarjestelma='1',
+        tunniste='testing-taydennyskoulutus1',
+        changed_by_id=admin_user.id
+    )
+
+    TaydennyskoulutusTyontekija.objects.create(
+        tyontekija=tyontekija_1,
+        taydennyskoulutus=taydennyskoulutus_1,
+        tehtavanimike_koodi='39407',
+        changed_by_id=admin_user.id
+    )
+
+    TaydennyskoulutusTyontekija.objects.create(
+        tyontekija=tyontekija_1,
+        taydennyskoulutus=taydennyskoulutus_1,
+        tehtavanimike_koodi='64212',
+        changed_by_id=admin_user.id
+    )
+
+    TaydennyskoulutusTyontekija.objects.create(
+        tyontekija=tyontekija_4,
+        taydennyskoulutus=taydennyskoulutus_1,
+        tehtavanimike_koodi='77826',
+        changed_by_id=admin_user.id
+    )
 
 
 def create_test_data():

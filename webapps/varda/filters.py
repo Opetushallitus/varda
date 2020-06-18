@@ -1,7 +1,6 @@
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
                           Maksutieto, PaosToiminta, PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-                          TilapainenHenkilosto, Tutkinto, Palvelussuhde, Tyoskentelypaikka, PidempiPoissaolo)
-
+                          TilapainenHenkilosto, Tutkinto, Palvelussuhde, Tyoskentelypaikka, PidempiPoissaolo, Taydennyskoulutus)
 from django.db.models import Q
 from django_filters import rest_framework as djangofilters
 
@@ -273,4 +272,19 @@ class PidempiPoissaoloFilter(djangofilters.FilterSet):
 
     class Meta:
         model = PidempiPoissaolo
+        fields = []
+
+
+class TaydennyskoulutusFilter(djangofilters.FilterSet):
+    tyontekija = djangofilters.NumberFilter(field_name='tyontekijat', lookup_expr='exact', distinct=True)
+    henkilo_oid = djangofilters.CharFilter(field_name='tyontekijat__henkilo__henkilo_oid', lookup_expr='exact', distinct=True)
+    vakajarjestaja_oid = djangofilters.CharFilter(field_name='tyontekijat__vakajarjestaja__organisaatio_oid', lookup_expr='exact', distinct=True)
+    nimi = djangofilters.CharFilter(field_name='nimi', lookup_expr='icontains')
+    suoritus_pvm = djangofilters.NumberFilter(field_name='suoritus_pvm', lookup_expr='exact')
+    koulutuspaivia = djangofilters.NumberFilter(field_name='koulutuspaivia', lookup_expr='exact')
+    lahdejarjestelma = djangofilters.CharFilter(field_name='lahdejarjestelma', lookup_expr='exact')
+    tunniste = djangofilters.CharFilter(field_name='tunniste', lookup_expr='exact')
+
+    class Meta:
+        model = Taydennyskoulutus
         fields = []

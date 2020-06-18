@@ -201,6 +201,7 @@ class VardaConfig(AppConfig):
         post_save.connect(receiver_save, sender='varda.Palvelussuhde')
         post_save.connect(receiver_save, sender='varda.Tyoskentelypaikka')
         post_save.connect(receiver_save, sender='varda.PidempiPoissaolo')
+        post_save.connect(receiver_save, sender='varda.Taydennyskoulutus')
 
         pre_delete.connect(receiver_pre_delete, sender='varda.VakaJarjestaja')
         pre_delete.connect(receiver_pre_delete, sender='varda.Toimipaikka')
@@ -219,3 +220,4 @@ class VardaConfig(AppConfig):
         pre_delete.connect(receiver_pre_delete, sender='varda.Palvelussuhde')
         pre_delete.connect(receiver_pre_delete, sender='varda.Tyoskentelypaikka')
         pre_delete.connect(receiver_pre_delete, sender='varda.PidempiPoissaolo')
+        pre_delete.connect(receiver_pre_delete, sender='varda.Taydennyskoulutus')

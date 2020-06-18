@@ -1,10 +1,12 @@
 import datetime
 import ipaddress
 import re
+import decimal
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db.models import Q
+from django.utils.deconstruct import deconstructible
 from rest_framework.exceptions import ValidationError as ValidationErrorRest
 
 """
@@ -457,3 +459,23 @@ def validate_unique_lahdejarjestelma_tunniste_pair(self, model):
 def validate_vaka_date(date):
     if date < datetime.date(2000, 1, 1):
         raise ValidationErrorRest({'date': ['Date must be greater than or equal to 2000-01-01.']})
+
+
+def validate_taydennyskoulutus_suoritus_pvm(date):
+    if date < datetime.date(2020, 9, 1):
+        raise ValidationErrorRest(['suoritus_pvm must be greater than or equal to 2020-09-01.'])
+
+
+@deconstructible
+class create_validate_decimal_steps:
+    def __init__(self, stepsize):
+        if not isinstance(stepsize, decimal.Decimal):
+            stepsize = decimal.Decimal(stepsize)
+        self.stepsize = stepsize
+
+    def __call__(self, value):
+        if value % self.stepsize != 0:
+            raise ValidationErrorRest('Invalid decimal step')
+
+    def __eq__(self, other):
+        return self.stepsize == other.stepsize

@@ -49,12 +49,10 @@ class VardaOppijaViewsTests(TestCase):
             "voimassaolevia_varhaiskasvatuspaatoksia": 1,
             "lapset": [
                 {
-                    "id": 8,
                     "yhteysosoite": "organization@domain.com",
                     "varhaiskasvatuksen_jarjestaja": "Tester2 organisaatio",
                     "varhaiskasvatuspaatokset": [
                         {
-                            "id": 9,
                             "alkamis_pvm": "2018-10-05",
                             "hakemus_pvm": "2018-10-05",
                             "paattymis_pvm": None,
@@ -66,7 +64,6 @@ class VardaOppijaViewsTests(TestCase):
                             "tuntimaara_viikossa": 39.0,
                             "varhaiskasvatussuhteet": [
                                 {
-                                    "id": 9,
                                     "alkamis_pvm": "2019-11-11",
                                     "paattymis_pvm": None,
                                     "toimipaikka": {
@@ -80,12 +77,10 @@ class VardaOppijaViewsTests(TestCase):
                     ]
                 },
                 {
-                    "id": 9,
                     "yhteysosoite": "frontti@end.com",
                     "varhaiskasvatuksen_jarjestaja": "Frontti organisaatio",
                     "varhaiskasvatuspaatokset": [
                         {
-                            "id": 8,
                             "alkamis_pvm": "2019-11-11",
                             "hakemus_pvm": "2019-01-01",
                             "paattymis_pvm": "2019-12-22",
@@ -100,12 +95,10 @@ class VardaOppijaViewsTests(TestCase):
                     ]
                 },
                 {
-                    "id": 7,
                     "yhteysosoite": "organization@domain.com",
                     "varhaiskasvatuksen_jarjestaja": "Tester organisaatio",
                     "varhaiskasvatuspaatokset": [
                         {
-                            "id": 7,
                             "alkamis_pvm": "2019-11-11",
                             "hakemus_pvm": "2019-11-01",
                             "paattymis_pvm": "2019-12-22",
@@ -117,7 +110,6 @@ class VardaOppijaViewsTests(TestCase):
                             "tuntimaara_viikossa": 30.5,
                             "varhaiskasvatussuhteet": [
                                 {
-                                    "id": 7,
                                     "alkamis_pvm": "2018-09-05",
                                     "paattymis_pvm": "2019-04-20",
                                     "toimipaikka": {
@@ -127,7 +119,6 @@ class VardaOppijaViewsTests(TestCase):
                                     "yhteysosoite": "organization@domain.com"
                                 },
                                 {
-                                    "id": 8,
                                     "alkamis_pvm": "2018-05-01",
                                     "paattymis_pvm": "2019-10-24",
                                     "toimipaikka": {
@@ -141,12 +132,10 @@ class VardaOppijaViewsTests(TestCase):
                     ]
                 },
                 {
-                    "id": 6,
                     "yhteysosoite": "organization@domain.com",
                     "varhaiskasvatuksen_jarjestaja": "Tester2 organisaatio",
                     "varhaiskasvatuspaatokset": [
                         {
-                            "id": 6,
                             "alkamis_pvm": "2019-02-11",
                             "hakemus_pvm": "2019-01-01",
                             "paattymis_pvm": "2019-10-24",
@@ -158,7 +147,6 @@ class VardaOppijaViewsTests(TestCase):
                             "tuntimaara_viikossa": 37.5,
                             "varhaiskasvatussuhteet": [
                                 {
-                                    "id": 6,
                                     "alkamis_pvm": "2018-02-11",
                                     "paattymis_pvm": "2019-02-24",
                                     "toimipaikka": {
@@ -176,6 +164,15 @@ class VardaOppijaViewsTests(TestCase):
         resp_huoltajanlapsi_api = client_suomifi_tester.get('/api/oppija/v1/huoltajanlapsi/1.2.246.562.24.86012997950/',
                                                             content_type='application/json')
         resp_json = json.loads(resp_huoltajanlapsi_api.content)
+
+        # Remove ID:s because they tend to change
+        for lapsi in resp_json['lapset']:
+            del lapsi['id']
+            for vakapaatos in lapsi['varhaiskasvatuspaatokset']:
+                del vakapaatos['id']
+                for vakasuhde in vakapaatos['varhaiskasvatussuhteet']:
+                    del vakasuhde['id']
+
         assert_status_code(resp_huoltajanlapsi_api, 200)
         self.assertEqual(resp_json, accepted_response)
 

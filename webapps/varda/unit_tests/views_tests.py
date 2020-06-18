@@ -932,7 +932,7 @@ class VardaViewsTests(TestCase):
         resp = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         self.assertEqual(resp.status_code, 400)
         msg = json.loads(resp.content)['toimipaikka_oid']
-        self.assertIn('Either this field or toimipaikka is required', msg)
+        self.assertIn('Either this field or toimipaikka field is required', msg)
 
     def test_api_push_lapsi_valid_henkilo_oid(self):
         henkilo_oid = '1.2.246.562.24.7777777777755'

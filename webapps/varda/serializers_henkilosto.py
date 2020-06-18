@@ -4,7 +4,8 @@ from varda import related_object_validations, validators
 from varda.cache import caching_to_representation
 from varda.misc_viewsets import ViewSetValidator
 from varda.models import (Henkilo, TilapainenHenkilosto, Tutkinto, Tyontekija, VakaJarjestaja, Palvelussuhde,
-                          Tyoskentelypaikka, Toimipaikka, PidempiPoissaolo)
+                          Tyoskentelypaikka, Toimipaikka, PidempiPoissaolo, TaydennyskoulutusTyontekija,
+                          Taydennyskoulutus)
 from varda.related_object_validations import (create_daterange, daterange_overlap,
                                               check_overlapping_tyoskentelypaikka_object,
                                               check_overlapping_palvelussuhde_object,
@@ -101,7 +102,7 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
         model = TilapainenHenkilosto
         exclude = ('changed_by', 'luonti_pvm')
 
-    @caching_to_representation('tilapainen_henkilosto')
+    @caching_to_representation('tilapainenhenkilosto')
     def to_representation(self, instance):
         return super(TilapainenHenkilostoSerializer, self).to_representation(instance)
 
@@ -400,3 +401,220 @@ class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
                 validator.error('alkamis_pvm', 'alkamis_pvm must be after palvelussuhde alkamis_pvm (or same).')
             if not validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], palvelussuhde.paattymis_pvm, can_be_same=False):
                 validator.error('alkamis_pvm', 'alkamis_pvm must be before palvelussuhde paattymis_pvm.')
+
+
+class NestedTaydennyskoulutusTyontekijaSerializer(serializers.ModelSerializer):
+    tyontekija = TyontekijaPermissionCheckedHLField(required=False, view_name='tyontekija-detail')
+    henkilo_oid = serializers.CharField(max_length=50, required=False, validators=[validators.validate_henkilo_oid])
+    vakajarjestaja_oid = serializers.CharField(max_length=50, required=False, validators=[validators.validate_organisaatio_oid])
+    lahdejarjestelma = serializers.CharField(max_length=2, required=False, validators=[validators.validate_lahdejarjestelma_koodi])
+    tunniste = serializers.CharField(max_length=120, required=False, validators=[validators.validate_tunniste])
+
+    class Meta:
+        model = TaydennyskoulutusTyontekija
+        exclude = ('id', 'taydennyskoulutus', 'changed_by', 'luonti_pvm', 'muutos_pvm')
+
+    def create(self, data):
+        user = self.context['request'].user
+
+        with ViewSetValidator() as validator:
+            tyontekija = self._find_tyontekija(data, validator)
+
+        return TaydennyskoulutusTyontekija.objects.create(tyontekija=tyontekija,
+                                                          tehtavanimike_koodi=data['tehtavanimike_koodi'],
+                                                          taydennyskoulutus=data['taydennyskoulutus'],
+                                                          changed_by=user)
+
+    @caching_to_representation('taydennyskoulutustyontekija')
+    def to_representation(self, instance):
+        tyontekija = instance.tyontekija
+
+        instance = super(NestedTaydennyskoulutusTyontekijaSerializer, self).to_representation(instance)
+        instance['henkilo_oid'] = tyontekija.henkilo.henkilo_oid
+        instance['vakajarjestaja_oid'] = tyontekija.vakajarjestaja.organisaatio_oid
+        instance['lahdejarjestelma'] = tyontekija.lahdejarjestelma
+        instance['tunniste'] = tyontekija.tunniste
+
+        return instance
+
+    def validate(self, data):
+        with ViewSetValidator() as validator:
+            data['tyontekija'] = self._find_tyontekija(data, validator)
+
+        self._validate_tehtavanimike_koodi(data)
+        return data
+
+    def _find_tyontekija(self, data, validator):
+        henkilo_oid = data.get('henkilo_oid', None)
+        vakajarjestaja_oid = data.get('vakajarjestaja_oid', None)
+        lahdejarjestelma = data.get('lahdejarjestelma', None)
+        tunniste = data.get('tunniste', None)
+
+        tyontekija = data.get('tyontekija', None)
+
+        if (henkilo_oid is not None) == (vakajarjestaja_oid is None):
+            validator.error('henkilo_oid', 'Either both henkilo_oid and vakajarjestaja_oid, or neither must be given.')
+            return
+        if (lahdejarjestelma is not None) == (tunniste is None):
+            validator.error('tunniste', 'Either both lahdejarjestelma and tunniste, or neither must be given.')
+            return
+
+        if henkilo_oid is not None:
+            tyontekija = self._find_tyontekija_by_henkilo_oid(validator, henkilo_oid, vakajarjestaja_oid, tyontekija)
+
+        if tunniste is not None:
+            tyontekija = self._find_tyontekija_by_tunniste(validator, tunniste, lahdejarjestelma, tyontekija)
+
+        if tyontekija is None:
+            validator.error('tyontekija', 'Tyontekija not specified. Use (tyontekija), (henkilo_oid, vakajarjestaja_oid) or (lahdejarjestelma, tunniste).')
+
+        return tyontekija
+
+    def _find_tyontekija_by_henkilo_oid(self, validator, henkilo_oid, vakajarjestaja_oid, tyontekija=None):
+        try:
+            tyontekija_by_henkilo_oid = Tyontekija.objects.get(henkilo__henkilo_oid=henkilo_oid, vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
+        except Tyontekija.DoesNotExist:
+            validator.error('henkilo_oid', 'Couldn\'t find tyontekija matching the given (henkilo_oid, vakajarjestaja_oid).')
+            return
+
+        if tyontekija is not None and tyontekija_by_henkilo_oid.id != tyontekija.id:
+            validator.error('henkilo_oid', 'henkilo_oid doesn\'t refer to the same tyontekija as url.')
+        return tyontekija_by_henkilo_oid
+
+    def _find_tyontekija_by_tunniste(self, validator, tunniste, lahdejarjestelma, tyontekija=None):
+        try:
+            tyontekija_by_tunniste = Tyontekija.objects.get(tunniste=tunniste, lahdejarjestelma=lahdejarjestelma)
+        except Tyontekija.DoesNotExist:
+            validator.error('tunniste', 'Couldn\'t find tyontekija matching the given (lahdejarjestelma, tunniste).')
+            return
+
+        if tyontekija is not None and tyontekija_by_tunniste.id != tyontekija.id:
+            validator.error('tunniste', 'Tunniste doesn\'t refer to the same tyontekija as url or henkilo_oid.')
+        return tyontekija_by_tunniste
+
+    def _validate_tehtavanimike_koodi(self, data):
+        tyontekija = data.get('tyontekija', None)
+        tehtavanimike_koodi = data.get('tehtavanimike_koodi', None)
+
+        with ViewSetValidator() as validator:
+            if tehtavanimike_koodi is None:
+                # This field is required also in PATCH requests so we need to check it manually
+                validator.error('tehtavanimike_koodi', 'This field is required.')
+                return
+
+            if not Tyontekija.objects.filter(id=tyontekija.id, palvelussuhteet__tyoskentelypaikat__tehtavanimike_koodi=tehtavanimike_koodi).exists():
+                validator.error('tehtavanimike_koodi', f'tyontekija with ID {tyontekija.id} doesn\'t have tehtavanimike_koodi {tehtavanimike_koodi}')
+
+
+class TaydennyskoulutusSerializer(serializers.HyperlinkedModelSerializer):
+    id = serializers.ReadOnlyField()
+    taydennyskoulutus_tyontekijat = NestedTaydennyskoulutusTyontekijaSerializer(required=True, allow_empty=False, many=True, source='taydennyskoulutukset_tyontekijat')
+
+    class Meta:
+        model = Taydennyskoulutus
+        exclude = ('tyontekijat', 'changed_by', 'luonti_pvm')
+
+    @caching_to_representation('taydennyskoulutus')
+    def to_representation(self, instance):
+        return super(TaydennyskoulutusSerializer, self).to_representation(instance)
+
+    def create(self, validated_data):
+        tyontekijat = validated_data.pop('taydennyskoulutukset_tyontekijat', [])
+        instance = Taydennyskoulutus.objects.create(**validated_data)
+
+        for tyontekija in tyontekijat:
+            tyontekija['taydennyskoulutus'] = instance
+            NestedTaydennyskoulutusTyontekijaSerializer(context=self._context).create(tyontekija)
+
+        return instance
+
+    def validate(self, data):
+        with ViewSetValidator() as validator:
+            tyontekija_set = {(tyontekija['tyontekija'].id, tyontekija['tehtavanimike_koodi']) for tyontekija in data['taydennyskoulutukset_tyontekijat']}
+            if len(tyontekija_set) != len(data['taydennyskoulutukset_tyontekijat']):
+                validator.error('taydennyskoulutus_tyontekijat', 'Duplicates detected.')
+
+        return data
+
+
+class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
+    taydennyskoulutus_tyontekijat = NestedTaydennyskoulutusTyontekijaSerializer(required=False, allow_empty=False, many=True, source='taydennyskoulutukset_tyontekijat')
+    taydennyskoulutus_tyontekijat_add = NestedTaydennyskoulutusTyontekijaSerializer(required=False, allow_empty=False, many=True)
+    taydennyskoulutus_tyontekijat_remove = NestedTaydennyskoulutusTyontekijaSerializer(required=False, allow_empty=False, many=True)
+
+    class Meta:
+        model = Taydennyskoulutus
+        exclude = ('tyontekijat', 'changed_by', 'luonti_pvm')
+
+    def validate(self, data):
+        instance = self.instance
+
+        with ViewSetValidator() as validator:
+            if 'taydennyskoulutukset_tyontekijat' in data and ('taydennyskoulutus_tyontekijat_add' in data or 'taydennyskoulutus_tyontekijat_remove' in data):
+                validator.error('taydennyskoulutus_tyontekijat', 'taydennyskoulutus_tyontekijat_add and taydennyskoulutus_tyontekijat_remove fields cannot be used if tyontekijat is provided')
+
+            if 'taydennyskoulutukset_tyontekijat' in data:
+                tyontekijat_set = {(tyontekija['tyontekija'].id, tyontekija['tehtavanimike_koodi']) for tyontekija in data['taydennyskoulutukset_tyontekijat']}
+                if len(tyontekijat_set) != len(data['taydennyskoulutukset_tyontekijat']):
+                    validator.error('taydennyskoulutus_tyontekijat', 'Duplicates detected.')
+
+        self._validate_tyontekijat_add(instance, data)
+        self._validate_tyontekijat_remove(instance, data)
+
+        return super(TaydennyskoulutusUpdateSerializer, self).validate(data)
+
+    def _validate_tyontekijat_add(self, instance, data):
+        if 'taydennyskoulutus_tyontekijat_add' in data:
+            with ViewSetValidator() as validator:
+                tyontekijat_add_set = {(tyontekija['tyontekija'].id, tyontekija['tehtavanimike_koodi']) for tyontekija in data['taydennyskoulutus_tyontekijat_add']}
+                if len(tyontekijat_add_set) != len(data['taydennyskoulutus_tyontekijat_add']):
+                    validator.error('taydennyskoulutus_tyontekijat_add', 'Duplicates detected.')
+                for tyontekija in data['taydennyskoulutus_tyontekijat_add']:
+                    if instance.taydennyskoulutukset_tyontekijat.filter(tyontekija=tyontekija['tyontekija'].id,
+                                                                        tehtavanimike_koodi=tyontekija['tehtavanimike_koodi']).exists():
+                        validator.error('taydennyskoulutus_tyontekijat_add', 'Tyontekija cannot have same taydennyskoulutus more than once')
+
+    def _validate_tyontekijat_remove(self, instance, data):
+        if 'taydennyskoulutus_tyontekijat_remove' in data:
+            with ViewSetValidator() as validator:
+                tyontekijat_remove_set = {(tyontekija['tyontekija'].id, tyontekija['tehtavanimike_koodi']) for tyontekija in data['taydennyskoulutus_tyontekijat_remove']}
+                if len(tyontekijat_remove_set) != len(data['taydennyskoulutus_tyontekijat_remove']):
+                    validator.error('taydennyskoulutus_tyontekijat_remove', 'Duplicates detected.')
+                for tyontekija in data['taydennyskoulutus_tyontekijat_remove']:
+                    if not instance.taydennyskoulutukset_tyontekijat.filter(tyontekija=tyontekija['tyontekija'].id,
+                                                                            tehtavanimike_koodi=tyontekija['tehtavanimike_koodi']).exists():
+                        validator.error('taydennyskoulutus_tyontekijat_remove', 'Tyontekija must have this taydennyskoulutus')
+                if len(tyontekijat_remove_set) == instance.taydennyskoulutukset_tyontekijat.count():
+                    validator.error('taydennyskoulutus_tyontekijat_remove', 'Cannot delete all tyontekijat from taydennyskoulutus')
+
+    def update(self, instance, validated_data):
+        self._update_tyontekijat(instance, validated_data)
+
+        for field in ['nimi', 'suoritus_pvm', 'koulutuspaivia', 'lahdejarjestelma', 'tunniste']:
+            if field in validated_data:
+                setattr(instance, field, validated_data[field])
+
+        instance.save()
+        return instance
+
+    def _update_tyontekijat(self, instance, validated_data):
+        if 'taydennyskoulutukset_tyontekijat' in validated_data:
+            # Remove previous tyontekijat from this taydennyskoulutus
+            TaydennyskoulutusTyontekija.objects.filter(taydennyskoulutus=instance).delete()
+
+            tyontekijat = validated_data.pop('taydennyskoulutukset_tyontekijat', [])
+            for tyontekija in tyontekijat:
+                tyontekija['taydennyskoulutus'] = instance
+                NestedTaydennyskoulutusTyontekijaSerializer(context=self._context).create(tyontekija)
+
+        if 'taydennyskoulutus_tyontekijat_add' in validated_data:
+            tyontekijat_add = validated_data.pop('taydennyskoulutus_tyontekijat_add', [])
+            for tyontekija_add in tyontekijat_add:
+                tyontekija_add['taydennyskoulutus'] = instance
+                NestedTaydennyskoulutusTyontekijaSerializer(context=self._context).create(tyontekija_add)
+
+        if 'taydennyskoulutus_tyontekijat_remove' in validated_data:
+            tyontekijat_remove = validated_data.pop('taydennyskoulutus_tyontekijat_remove', [])
+            for tyontekija_remove in tyontekijat_remove:
+                TaydennyskoulutusTyontekija.objects.filter(tyontekija=tyontekija_remove['tyontekija'],
+                                                           tehtavanimike_koodi=tyontekija_remove['tehtavanimike_koodi']).delete()

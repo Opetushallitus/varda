@@ -621,14 +621,6 @@ class Tutkinto(models.Model):
         verbose_name_plural = 'tutkinnot'
 
 
-class Taydennyskoulutus(models.Model):
-    def __str__(self):
-        return str(self.id)
-
-    class Meta:
-        verbose_name_plural = 'taydennyskoulutukset'
-
-
 class Palvelussuhde(models.Model):
     tyontekija = models.ForeignKey(Tyontekija, related_name='palvelussuhteet', on_delete=models.PROTECT)
     tyosuhde_koodi = models.CharField(max_length=50, validators=[validators.validate_tyosuhde_koodi])
@@ -752,6 +744,73 @@ class PidempiPoissaolo(models.Model):
 
     class Meta:
         verbose_name_plural = 'pidemmatpoissaolot'
+
+
+class Taydennyskoulutus(models.Model):
+    tyontekijat = models.ManyToManyField(Tyontekija, through='TaydennyskoulutusTyontekija', related_name='taydennyskoulutukset')
+    nimi = models.CharField(max_length=120)
+    suoritus_pvm = models.DateField(validators=[validators.validate_taydennyskoulutus_suoritus_pvm])
+    koulutuspaivia = models.DecimalField(max_digits=4, decimal_places=1, validators=[validators.create_validate_decimal_steps('0.5')])
+    lahdejarjestelma = models.CharField(max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
+    tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
+    luonti_pvm = models.DateTimeField(auto_now_add=True)
+    muutos_pvm = models.DateTimeField(auto_now=True)
+    changed_by = models.ForeignKey('auth.User', related_name='taydennyskoulutukset', on_delete=models.PROTECT)
+    history = HistoricalRecords()
+
+    def __str__(self):
+        return str(self.id)
+
+    @property
+    def audit_loggable(self):
+        return True
+
+    @property
+    def _history_user(self):
+        return self.changed_by
+
+    @_history_user.setter
+    def _history_user(self, value):
+        self.changed_by = value
+
+    def validate_unique(self, *args, **kwargs):
+        super(Taydennyskoulutus, self).validate_unique(*args, **kwargs)
+        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, Taydennyskoulutus)
+
+    def save(self, *args, **kwargs):
+        self.validate_unique()
+        super(Taydennyskoulutus, self).save(*args, **kwargs)
+
+    class Meta:
+        verbose_name_plural = 'taydennyskoulutukset'
+
+
+class TaydennyskoulutusTyontekija(models.Model):
+    tyontekija = models.ForeignKey(Tyontekija, related_name='taydennyskoulutukset_tyontekijat', on_delete=models.PROTECT)
+    taydennyskoulutus = models.ForeignKey(Taydennyskoulutus, related_name='taydennyskoulutukset_tyontekijat', on_delete=models.PROTECT)
+    tehtavanimike_koodi = models.CharField(max_length=20, validators=[validators.validate_tehtavanimike_koodi])
+    luonti_pvm = models.DateTimeField(auto_now_add=True)
+    muutos_pvm = models.DateTimeField(auto_now=True)
+    changed_by = models.ForeignKey('auth.User', related_name='taydennyskoulutukset_tyontekijat', on_delete=models.PROTECT)
+    history = HistoricalRecords()
+
+    def __str__(self):
+        return str(self.id)
+
+    @property
+    def audit_loggable(self):
+        return True
+
+    @property
+    def _history_user(self):
+        return self.changed_by
+
+    @_history_user.setter
+    def _history_user(self, value):
+        self.changed_by = value
+
+    class Meta:
+        verbose_name_plural = 'taydennyskoulutukset tyontekijat'
 
 
 class Aikaleima(models.Model):

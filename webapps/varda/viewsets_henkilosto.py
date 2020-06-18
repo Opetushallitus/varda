@@ -1,12 +1,11 @@
 import logging
 
-from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import ProtectedError, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status
+from rest_framework import status, permissions
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.response import Response
@@ -16,16 +15,18 @@ from rest_framework_guardian.filters import DjangoObjectPermissionsFilter
 from varda import filters
 from varda.cache import cached_retrieve_response, delete_cache_keys_related_model, cached_list_response
 from varda.exceptions.conflict_error import ConflictError
-from varda.filters import PalvelussuhdeFilter, TyoskentelypaikkaFilter, PidempiPoissaoloFilter
+from varda.filters import PalvelussuhdeFilter, TyoskentelypaikkaFilter, PidempiPoissaoloFilter, TaydennyskoulutusFilter
 from varda.models import (TilapainenHenkilosto, Tutkinto, Tyontekija, VakaJarjestaja, Palvelussuhde, Tyoskentelypaikka,
-                          PidempiPoissaolo)
+                          PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija)
 from varda.permission_groups import (assign_object_permissions_to_tyontekija_groups,
                                      remove_object_level_permissions,
                                      assign_object_permissions_to_tilapainenhenkilosto_groups)
 from varda.permissions import CustomObjectPermissions, delete_object_permissions_explicitly
 from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, PalvelussuhdeSerializer, PidempiPoissaoloSerializer,
                                           TilapainenHenkilostoSerializer, TutkintoSerializer, TyontekijaSerializer,
-                                          TyoskentelypaikkaUpdateSerializer)
+                                          TyoskentelypaikkaUpdateSerializer, TaydennyskoulutusSerializer,
+                                          TaydennyskoulutusUpdateSerializer)
+
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -138,12 +139,7 @@ class TilapainenHenkilostoViewSet(ModelViewSet):
 
     def perform_update(self, serializer):
         user = self.request.user
-
-        with transaction.atomic():
-            try:
-                serializer.save(changed_by=user)
-            except DjangoValidationError as e:
-                raise ValidationError(dict(e))
+        serializer.save(changed_by=user)
 
     def perform_destroy(self, instance):
         with transaction.atomic():
@@ -424,3 +420,81 @@ class PidempiPoissaoloViewSet(ModelViewSet):
                 raise ValidationError({'detail': 'Cannot delete pidempipoissaolo. There are objects referencing it '
                                                  'that need to be deleted first.'})
             delete_cache_keys_related_model('palvelussuhde', instance.palvelussuhde.id)
+
+
+class TaydennyskoulutusViewSet(ModelViewSet):
+    """
+    list:
+        Nouda kaikki taydennyskoulutukset.
+
+    create:
+        Luo yksi uusi taydennyskoulutus.
+
+    delete:
+        Poista yksi taydennyskoulutus.
+
+    retrieve:
+        Nouda yksittäinen taydennyskoulutus.
+
+    partial_update:
+        Päivitä yksi tai useampi kenttä yhdestä taydennyskoulutus-tietueesta.
+
+    update:
+        Päivitä yhden taydennyskoulutuksen kaikki kentät.
+    """
+    serializer_class = None
+    permission_classes = (permissions.IsAdminUser, )
+    filter_backends = (DjangoFilterBackend, )
+    filter_class = TaydennyskoulutusFilter
+    queryset = Taydennyskoulutus.objects.all().order_by('id')
+
+    def get_serializer_class(self):
+        request = self.request
+        if request.method == 'PUT' or request.method == 'PATCH':
+            return TaydennyskoulutusUpdateSerializer
+        else:
+            return TaydennyskoulutusSerializer
+
+    def list(self, request, *args, **kwargs):
+        return cached_list_response(self, request.user, request.get_full_path())
+
+    def retrieve(self, request, *args, **kwargs):
+        return cached_retrieve_response(self, request.user, request.path)
+
+    def perform_create(self, serializer):
+        with transaction.atomic():
+            user = self.request.user
+            saved_object = serializer.save(changed_by=user)
+            for tyontekija in saved_object.tyontekijat.all():
+                delete_cache_keys_related_model('tyontekija', tyontekija.id)
+
+    def perform_update(self, serializer):
+        user = self.request.user
+        taydennyskoulutus = self.get_object()
+
+        if not user.has_perm('change_taydennyskoulutus', taydennyskoulutus):
+            raise PermissionDenied('User does not have permissions to change this object.')
+
+        # Delete cache keys from old tyontekijat (some may be removed)
+        for tyontekija in taydennyskoulutus.tyontekijat.all():
+            delete_cache_keys_related_model('tyontekija', tyontekija.id)
+
+        instance = serializer.save(changed_by=user)
+
+        # Delete cache keys from new tyontekijat (some may be added)
+        for tyontekija in instance.tyontekijat.all():
+            delete_cache_keys_related_model('tyontekija', tyontekija.id)
+
+    def perform_destroy(self, instance):
+        user = self.request.user
+        if not user.has_perm('delete_taydennyskoulutus', instance):
+            raise PermissionDenied('User does not have permissions to delete this object.')
+
+        tyontekija_id_list = list(instance.tyontekijat.values_list('id', flat=True))
+
+        with transaction.atomic():
+            TaydennyskoulutusTyontekija.objects.filter(taydennyskoulutus=instance).delete()
+            instance.delete()
+
+        for tyontekija_id in tyontekija_id_list:
+            delete_cache_keys_related_model('tyontekija', tyontekija_id)

@@ -125,22 +125,30 @@ def check_if_henkilo_is_changed(path, uusi_henkilo_id, user):
         raise ValidationError({"henkilo": ["This cannot be changed.", ]})
 
 
-def check_if_admin_mutable_object_is_changed(user, instance, data, key):
+def check_if_admin_mutable_object_is_changed(user, instance, data, key, **kwargs):
     if user.is_superuser:
         return None
 
-    check_if_immutable_object_is_changed(instance, data, key)
+    check_if_immutable_object_is_changed(instance, data, key, **kwargs)
 
 
-def check_if_immutable_object_is_changed(instance, data, key, attr=None):
+def check_if_immutable_object_is_changed(instance, data, key, attr=None, many=False):
     if attr is None:
         def get_id(x):
             return x.id
         attr = get_id
 
-    if key in data and attr(data[key]) != attr(getattr(instance, key)):
-        msg = ({key: [f'Changing of {key} is not allowed']})
-        raise ValidationError(msg, code='invalid')
+    if key in data:
+        if not many:
+            if attr(data[key]) != attr(getattr(instance, key)):
+                msg = ({key: [f'Changing of {key} is not allowed']})
+                raise ValidationError(msg, code='invalid')
+        else:
+            datas = [attr(elem[key]) for elem in data]
+            instances = [attr(getattr(instance, key)) for elem in instance]
+            if datas != instances:
+                msg = ({key: [f'Changing of {key} is not allowed']})
+                raise ValidationError(msg, code='invalid')
 
 
 def check_overlapping_koodi(validated_data, modelobj, *args):

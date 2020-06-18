@@ -151,6 +151,7 @@ router_henkilosto.register(r'tutkinnot', viewsets_henkilosto.TutkintoViewSet)
 router_henkilosto.register(r'palvelussuhteet', viewsets_henkilosto.PalvelussuhdeViewSet)
 router_henkilosto.register(r'tyoskentelypaikat', viewsets_henkilosto.TyoskentelypaikkaViewSet)
 router_henkilosto.register(r'pidemmatpoissaolot', viewsets_henkilosto.PidempiPoissaoloViewSet)
+router_henkilosto.register(r'taydennyskoulutukset', viewsets_henkilosto.TaydennyskoulutusViewSet)
 
 # Routes for Julkinen-URLs
 
