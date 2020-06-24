@@ -52,6 +52,7 @@ class YtjYritysmuoto(enum.Enum):
     OSUUSKUNTA = 'Osuuskunta'
     OSUUSPANKKI = 'Osuuspankki'
     PALISKUNTA = 'Paliskunta'
+    PAIKALLISYHTEISO = 'Paikallisyhteisö'
     SEURAKUNTA_PAIKALLISYHTEISO = 'Seurakunta/Paikallisyhteisö'
     SIVULIIKE = 'Sivuliike'
     SAASTOPANKKI = 'Säästöpankki'
