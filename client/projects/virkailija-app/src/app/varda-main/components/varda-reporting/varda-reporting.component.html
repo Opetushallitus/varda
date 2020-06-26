@@ -32,7 +32,8 @@
             </app-varda-radio-button>
           </app-varda-radio-button-group>
         </div>
-        <div class="col-lg-7" *ngIf="selectedSearchEntity==='lapsi'">
+        <div class="col-lg-7"
+             *ngIf="selectedSearchEntity==='lapsi'">
           <div class="modal-form-intro">
             {{'label.haku-condition.search-instruction' | translate}}<br />
             {{'label.haku-condition.search-instruction2' | translate}}
@@ -96,7 +97,8 @@
             {{'label.hae' | translate}}
           </button>
         </div>
-        <div class="oph-bg-gray-lighten-5 lapsi-filter-form" *ngIf="lapsiFiltersAreVisible">
+        <div class="oph-bg-gray-lighten-5 lapsi-filter-form"
+             *ngIf="lapsiFiltersAreVisible">
           <div class="col-md-auto">
             <label class="varda-link varda-filter-close"
                    *ngIf="isSmall"
@@ -127,7 +129,8 @@
               </app-varda-radio-button>
             </app-varda-radio-button-group>
           </div>
-          <div class="col-md-auto" *ngIf="!lapsiFilterInactive">
+          <div class="col-md-auto"
+               *ngIf="!lapsiFilterInactive">
             <label class="oph-bold">{{ 'label.filter-time' | translate }}</label>
             <div class="row lapsi-filter-time-container">
               <div class="col-md-auto">
@@ -153,27 +156,31 @@
               <div class="col varda-date-range-container">
                 <div class="row varda-date-range-row">
                   <div class="col">
-                    <app-varda-datepicker
-                      #alkamisPvm="ngModel"
-                      [name]="'filterAlkamisPvm'"
-                      [(ngModel)]="lapsiFilter.alkamisPvm"
-                      (dateInput)="filterLapset()"
-                      [required]="true">
+                    <app-varda-datepicker #alkamisPvm="ngModel"
+                                          [name]="'filterAlkamisPvm'"
+                                          [(ngModel)]="lapsiFilter.alkamisPvm"
+                                          (dateInput)="filterLapset()"
+                                          [required]="true">
                     </app-varda-datepicker>
-                    <div aria-live="assertive" class="varda-error-message-block" role="alert" *ngIf="alkamisPvm.invalid">
+                    <div aria-live="assertive"
+                         class="varda-error-message-block"
+                         role="alert"
+                         *ngIf="alkamisPvm.invalid">
                       <p>{{'alert.date-format' | translate}}</p>
                     </div>
                   </div>
                   <span class="varda-date-range-dash">–</span>
                   <div class="col">
-                    <app-varda-datepicker
-                      #paattymisPvm="ngModel"
-                      [name]="'filterPaattymisPvm'"
-                      [(ngModel)]="lapsiFilter.paattymisPvm"
-                      (dateInput)="filterLapset()"
-                      [required]="true">
+                    <app-varda-datepicker #paattymisPvm="ngModel"
+                                          [name]="'filterPaattymisPvm'"
+                                          [(ngModel)]="lapsiFilter.paattymisPvm"
+                                          (dateInput)="filterLapset()"
+                                          [required]="true">
                     </app-varda-datepicker>
-                    <div aria-live="assertive" class="varda-error-message-block" role="alert" *ngIf="paattymisPvm.invalid">
+                    <div aria-live="assertive"
+                         class="varda-error-message-block"
+                         role="alert"
+                         *ngIf="paattymisPvm.invalid">
                       <p>{{'alert.date-format' | translate}}</p>
                     </div>
                   </div>
@@ -191,10 +198,13 @@
             </button>
           </div>
         </div>
-        <div class="modal-form-intro lapsi-filter-instruction"  *ngIf="lapsiFiltersAreVisible">
+        <div class="modal-form-intro lapsi-filter-instruction"
+             *ngIf="lapsiFiltersAreVisible">
           {{'label.lapsi-filter.search-instruction' | translate}}
         </div>
-        <div class="varda-link" *ngIf="!lapsiFiltersAreVisible" (click)="lapsiFiltersAreVisible = true">
+        <div class="varda-link"
+             *ngIf="!lapsiFiltersAreVisible"
+             (click)="lapsiFiltersAreVisible = true">
           {{'label.filter-results' | translate}}
         </div>
       </div>
@@ -216,8 +226,12 @@
            *ngIf="selectedSearchEntity === 'toimipaikka'">
     <div class="varda-reporting-card"
          *ngFor="let toimipaikkaObj of toimipaikat">
-      <mat-card>
-        <h2 class="varda-reporting-toimipaikka-header">{{toimipaikkaObj['toimipaikka'].nimi}}</h2>
+      <mat-card tabindex="0">
+        <mat-card-title-group>
+          <mat-card-title>{{toimipaikkaObj['toimipaikka'].nimi}}</mat-card-title>
+          <mat-card-subtitle>{{ getVakajarjestajaName(toimipaikkaObj['toimipaikka']) }}</mat-card-subtitle>
+        </mat-card-title-group>
+
         <mat-card-content>
           <div class="varda-reporting-card-content"
                *ngFor="let key of toimipaikkaObj['toimipaikka'] | keys">
@@ -311,7 +325,10 @@
             <div class="varda-table-caption">
               {{'label.haku-list.topic' | translate}} ({{ ui.noOfResults }})
               <label class="varda-small-text varda-filter-summary"
-                     *ngIf="!lapsiFilterInactive">{{'label.selected-filters' | translate}}: {{lapsiFilterString}}</label>
+                     *ngIf="!lapsiFilterInactive">
+                {{'label.selected-filters' | translate}}:
+                {{lapsiFilterString}}
+              </label>
             </div>
             <div class="varda-table-error"
                  *ngIf="toimipaikanLapset.length === 0">

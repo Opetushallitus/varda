@@ -73,11 +73,11 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
     alkamisPvm: Moment;
     paattymisPvm: Moment;
   } = {
-    rajaus: this.lapsiRajaus.VAKAPAATOKSET,
-    voimassaolo: this.lapsiVoimassaolo.VOIMASSA,
-    alkamisPvm: moment(),
-    paattymisPvm: moment()
-  };
+      rajaus: this.lapsiRajaus.VAKAPAATOKSET,
+      voimassaolo: this.lapsiVoimassaolo.VOIMASSA,
+      alkamisPvm: moment(),
+      paattymisPvm: moment()
+    };
   lapsiFilterInactive = false;
   lapsiFilterString: string;
   lapsiFiltersAreVisible: boolean;
@@ -85,15 +85,17 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
   resizeSubscription: Subscription;
   isSmall: boolean;
 
-  constructor(private vardaApiWrapperService: VardaApiWrapperService,
-              private vardaVakajarjestajaService: VardaVakajarjestajaService,
-              private vardaUtilityService: VardaUtilityService,
-              private vardaFormService: VardaFormService,
-              private translateService: TranslateService,
-              private vardaDateService: VardaDateService,
-              private vardaKielikoodistoService: VardaKielikoodistoService,
-              private vardaKuntakoodistoService: VardaKuntakoodistoService,
-              private breakpointObserver: BreakpointObserver) {
+  constructor(
+    private vardaApiWrapperService: VardaApiWrapperService,
+    private vardaVakajarjestajaService: VardaVakajarjestajaService,
+    private vardaUtilityService: VardaUtilityService,
+    private vardaFormService: VardaFormService,
+    private translateService: TranslateService,
+    private vardaDateService: VardaDateService,
+    private vardaKielikoodistoService: VardaKielikoodistoService,
+    private vardaKuntakoodistoService: VardaKuntakoodistoService,
+    private breakpointObserver: BreakpointObserver
+  ) {
     this.toimipaikat = [];
     this.toimipaikanLapset = null;
 
@@ -389,6 +391,13 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
 
   getToimipaikkaId() {
     return this.vardaVakajarjestajaService.selectedVakajarjestaja.id;
+  }
+
+  getVakajarjestajaName(toimipaikkaObj): string {
+    const vakajarjestajaNimi = this.vardaVakajarjestajaService.selectedVakajarjestaja.nimi;
+    const toimipaikat = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().allToimipaikat;
+    const foundToimipaikka = toimipaikat.find(toimipaikka => toimipaikka.id === toimipaikkaObj.id);
+    return foundToimipaikka?.paos_organisaatio_nimi || vakajarjestajaNimi;
   }
 
   searchToimipaikka(): any {
