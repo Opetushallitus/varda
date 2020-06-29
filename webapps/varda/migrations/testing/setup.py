@@ -2835,6 +2835,13 @@ def create_henkilosto():
     )
 
 
+def create_aikaleima():
+    from varda.models import Aikaleima
+    from varda.enums.aikaleima_avain import AikaleimaAvain
+
+    Aikaleima.objects.create(avain=AikaleimaAvain.HENKILOMUUTOS_LAST_UPDATE)
+
+
 def create_test_data():
     from django.conf import settings
     import os
@@ -2850,6 +2857,7 @@ def create_test_data():
     create_paos_toiminta()
     create_paos_oikeus()
     create_henkilosto()
+    create_aikaleima()
 
     """
     Currently do not populate lapset+huoltajat in db if

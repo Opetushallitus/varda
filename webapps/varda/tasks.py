@@ -6,8 +6,8 @@ from guardian.models import UserObjectPermission, GroupObjectPermission
 
 from varda import oppijanumerorekisteri, koodistopalvelu
 from varda import organisaatiopalvelu
-from varda import permissions
 from varda import permission_groups
+from varda import permissions
 from varda.audit_log import audit_log
 
 
@@ -62,11 +62,6 @@ def fetch_huoltajat_task():
     oppijanumerorekisteri.fetch_huoltajat()
 
 
-@shared_task(acks_late=True)
-def fetch_lapsen_huoltajat_task(henkilo_id):
-    oppijanumerorekisteri.fetch_lapsen_huoltajat(henkilo_id)
-
-
 @shared_task
 def update_all_organisaatio_service_originated_organisations_task():
     """
@@ -87,8 +82,8 @@ def update_henkilot_with_oid():
 
 
 @shared_task(acks_late=True)
-def update_henkilo_data_by_oid(henkilo_id, henkilo_oid):
-    oppijanumerorekisteri.fetch_henkilo_data_by_oid(henkilo_id, henkilo_oid)
+def update_henkilo_data_by_oid(henkilo_oid, henkilo_id):
+    oppijanumerorekisteri.fetch_henkilo_data_by_oid(henkilo_oid, henkilo_id)
 
 
 @shared_task

@@ -1,9 +1,9 @@
 import re
 from datetime import datetime, timezone, timedelta
 
-from django.utils import timezone as tz
 import responses
 from django.test import TestCase
+from django.utils import timezone as tz
 from rest_framework import status
 
 from varda import oppijanumerorekisteri
@@ -362,3 +362,25 @@ class TestOppijanumerorekisteriLogic(TestCase):
         old_batch_error.save()
         oppijanumerorekisteri.update_huoltajuussuhteet()
         self.assertEqual(BatchError.objects.all().count(), errors_before)
+
+    @responses.activate
+    def test_update_henkilotieto_fails_and_batcherror_is_created(self):
+        henkilo_oid = '1.2.246.562.24.47279942650'
+        henkilo = Henkilo.objects.get(henkilo_oid=henkilo_oid)
+        batch_error_start_count = BatchError.objects.filter(type=BatchErrorType.HENKILOTIETO_UPDATE.name, henkilo=henkilo).count()
+        responses.add(responses.GET,
+                      re.compile('https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/s2s/changedSince/{}'.format(self.date_time_regex)),
+                      json=[henkilo_oid],
+                      status=status.HTTP_200_OK)
+        oppijanumerorekisteri.fetch_and_update_modified_henkilot()
+        batch_error_end_count = BatchError.objects.filter(type=BatchErrorType.HENKILOTIETO_UPDATE.name, henkilo=henkilo).count()
+        self.assertEqual(batch_error_start_count + 1, batch_error_end_count)
+        # New batch error is not created but the old one is updated on retry
+        responses.reset()
+        responses.add(responses.GET,
+                      re.compile('https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/s2s/changedSince/{}'.format(self.date_time_regex)),
+                      json=[],
+                      status=status.HTTP_200_OK)
+        oppijanumerorekisteri.fetch_and_update_modified_henkilot()
+        batch_error_after_retry_count = BatchError.objects.filter(type=BatchErrorType.HENKILOTIETO_UPDATE.name, henkilo=henkilo).count()
+        self.assertEqual(batch_error_end_count, batch_error_after_retry_count)

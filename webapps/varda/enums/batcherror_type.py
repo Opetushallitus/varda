@@ -6,6 +6,7 @@ class BatchErrorType(enum.Enum):
     Note: Used in model so changes in values require makemigration
     """
     LAPSI_HUOLTAJUUSSUHDE_UPDATE = 'LAPSI_HUOLTAJUUSSUHDE_UPDATE'
+    HENKILOTIETO_UPDATE = 'HENKILOTIETO_UPDATE'
 
     def __str__(self):
         if not isinstance(self.name, str):

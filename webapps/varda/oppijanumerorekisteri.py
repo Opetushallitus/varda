@@ -7,6 +7,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Q
 from guardian.shortcuts import assign_perm
 from pytz import timezone
+from requests import RequestException
 from rest_framework.exceptions import NotFound, APIException
 
 from varda.clients.oppijanumerorekisteri_client import (get_or_create_henkilo_by_henkilotunnus, get_henkilo_data_by_oid,
@@ -22,6 +23,29 @@ from varda.models import Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Aikaleima, B
 logger = logging.getLogger(__name__)
 
 SERVICE_NAME = "oppijanumerorekisteri-service"
+
+
+def batch_error_decorator(batch_error_type):
+    def decorator(function):
+        def wrap_decorator(*args):
+            henkilo_oid = args[0]
+            henkilo = Henkilo.objects.filter(henkilo_oid=henkilo_oid).first()
+            try:
+                with transaction.atomic():
+                    function(*args)
+                    if henkilo:
+                        BatchError.objects.filter(henkilo=henkilo, type=batch_error_type.name).delete()
+            except Exception as e:
+                logger.exception('BatchError caught exception')
+                if not henkilo:
+                    logger.error('Could not create batch error. Missing henkilo.')
+                elif (batch_error_type == BatchErrorType.LAPSI_HUOLTAJUUSSUHDE_UPDATE or
+                      batch_error_type == BatchErrorType.HENKILOTIETO_UPDATE):
+                    _create_or_update_henkilo_obj_batch_error(henkilo, e, batch_error_type)
+                else:
+                    logger.error('Could not create batcherror. Unkown batcherror type {}'.format(batch_error_type))
+        return wrap_decorator
+    return decorator
 
 
 def save_henkilo_to_db(henkilo_id, henkilo_json):
@@ -105,7 +129,12 @@ def _fetch_henkilo_data_by_henkilotunnus(henkilo_id, henkilotunnus, etunimet, ku
         logger.error('Failed to fetch henkilo_data for henkilo_id: {}.'.format(henkilo_id))
 
 
-def fetch_henkilo_data_by_oid(henkilo_id, henkilo_oid, henkilo_data=None):
+@batch_error_decorator(BatchErrorType.HENKILOTIETO_UPDATE)
+def fetch_henkilo_data_by_oid(henkilo_oid, henkilo_id):
+    _fetch_henkilo_data_by_oid(henkilo_oid, henkilo_id)
+
+
+def _fetch_henkilo_data_by_oid(henkilo_oid, henkilo_id, henkilo_data=None):
     """
     Update henkilo master data from oppijanumerorekisteri by henkilo oid and save to database
     :param henkilo_id: ID of existing henkilo
@@ -115,8 +144,11 @@ def fetch_henkilo_data_by_oid(henkilo_id, henkilo_oid, henkilo_data=None):
     """
     if not henkilo_data:
         henkilo_data = get_henkilo_data_by_oid(henkilo_oid)
-    if henkilo_data is not None:
+    if henkilo_data:
         save_henkilo_to_db(henkilo_id, henkilo_data)
+    else:
+        raise RequestException('Could not get data from oppijanumerorekisteri for henkilo {} {}'
+                               .format(henkilo_id, henkilo_oid))
 
 
 def fetch_henkilot_without_oid():
@@ -148,7 +180,7 @@ def fetch_henkilot_with_oid():
     for henkilo in henkilot:
         henkilo_id = henkilo.id
         henkilo_oid = henkilo.henkilo_oid
-        update_henkilo_data_by_oid.apply_async(args=[henkilo_id, henkilo_oid], queue='low_prio_queue')
+        update_henkilo_data_by_oid.apply_async(args=[henkilo_oid, henkilo_id], queue='low_prio_queue')
 
 
 def fetch_henkilo_with_oid(henkilo_oid):
@@ -164,7 +196,7 @@ def fetch_henkilo_with_oid(henkilo_oid):
     except Henkilo.MultipleObjectsReturned:  # This should never be possible
         logger.error("Multiple of henkilot was found with henkilo_oid: " + henkilo_oid)
         raise CustomServerErrorException
-    fetch_henkilo_data_by_oid(henkilo.id, henkilo_oid)
+    _fetch_henkilo_data_by_oid(henkilo_oid, henkilo.id)
 
 
 def fetch_and_update_modified_henkilot():
@@ -186,21 +218,26 @@ def fetch_and_update_modified_henkilot():
     end_datetime = datetime.datetime.now(tz=datetime.timezone.utc)
 
     changed_henkilo_oids = fetch_changed_henkilot(start_datetime)
+    retry_henkilo_oids = BatchError.objects.filter(type=BatchErrorType.HENKILOTIETO_UPDATE.name).values_list('henkilo__henkilo_oid', flat=True)
 
     if changed_henkilo_oids['is_ok']:
-        for oppijanumero in changed_henkilo_oids['json_msg']:
+        for oppijanumero in changed_henkilo_oids['json_msg'] + list(retry_henkilo_oids):
             try:
                 henkilo = Henkilo.objects.get(henkilo_oid=oppijanumero)
             except Henkilo.DoesNotExist:
                 continue  # This is ok. No further actions needed.
-            except Henkilo.MultipleObjectsReturned:  # This should never be possible
+            except Henkilo.MultipleObjectsReturned as e:  # This should never be possible
                 logger.error("Multiple of henkilot was found with henkilo_oid: " + oppijanumero)
+                [_create_or_update_henkilo_obj_batch_error(henkilo, e, BatchErrorType.HENKILOTIETO_UPDATE)
+                 for henkilo
+                 in Henkilo.objects.filter(henkilo_oid=oppijanumero)
+                 ]
                 continue
 
             """
             We have a match. Finally update henkilo-data using the oppijanumero.
             """
-            update_henkilo_data_by_oid.apply_async(args=[henkilo.id, oppijanumero], queue='low_prio_queue')
+            update_henkilo_data_by_oid.apply_async(args=[oppijanumero, henkilo.id], queue='low_prio_queue')
 
         aikaleima.aikaleima = end_datetime
         aikaleima.save()
@@ -236,33 +273,14 @@ def update_huoltajuussuhteet():
         pass  # We need to fetch the huoltajuussuhteet again later. Do not save the aikaleima.
 
 
-def lapsi_batch_error_decorator(batch_error_type):
-    def decorator(function):
-        def wrap_decorator(*args):
-            henkilo_oid = args[0]
-            henkilo = Henkilo.objects.filter(henkilo_oid=henkilo_oid).first()
-            try:
-                with transaction.atomic():
-                    function(*args)
-                    if henkilo:
-                        BatchError.objects.filter(henkilo=henkilo, type=batch_error_type.name).delete()
-            except Exception as e:
-                if henkilo:
-                    _create_or_update_lapsi_batch_error(henkilo, e, batch_error_type)
-                else:
-                    logger.exception('Could not create batch error. Missing henkilo.')
-        return wrap_decorator
-    return decorator
-
-
-def _create_or_update_lapsi_batch_error(henkilo_obj, error, batch_error_type):
+def _create_or_update_henkilo_obj_batch_error(henkilo_obj, error, batch_error_type):
     batch_error, is_new = BatchError.objects.get_or_create(henkilo=henkilo_obj, type=batch_error_type.name)
     batch_error.update_next_retry()
     batch_error.error_message = str(error)
     batch_error.save()
 
 
-@lapsi_batch_error_decorator(BatchErrorType.LAPSI_HUOLTAJUUSSUHDE_UPDATE)
+@batch_error_decorator(BatchErrorType.LAPSI_HUOLTAJUUSSUHDE_UPDATE)
 def update_huoltajuussuhde(henkilo_oid):
     """
     Update huoltajasuhteet for lapsi
@@ -351,7 +369,7 @@ def _update_lapsi_huoltaja(lapsi_id, huoltaja_master_data):
                                                       .get_or_create(defaults=default_henkilo)
                                                       )
     # Update henkilo
-    fetch_henkilo_data_by_oid(henkilo_huoltaja_obj.id, oid, huoltaja_master_data)
+    _fetch_henkilo_data_by_oid(oid, henkilo_huoltaja_obj.id, huoltaja_master_data)
     if henkilo_huoltaja_created:
         group = Group.objects.get(name="vakajarjestaja_view_henkilo")
         assign_perm('view_henkilo', group, henkilo_huoltaja_obj)
