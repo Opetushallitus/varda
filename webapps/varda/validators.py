@@ -347,24 +347,6 @@ def validate_painotus_dates_within_toimipaikka(validated_data, toimipaikka_obj):
             raise ValidationError({"paattymis_pvm": [msg]})
 
 
-def validate_dates_within_vakajarjestaja(validated_data, vakajarjestaja_obj):
-    """
-    Check validity of user-submitted dates against vakajarjestaja dates.
-    """
-    if "alkamis_pvm" in validated_data:
-        if not validate_paivamaara1_before_paivamaara2(validated_data["alkamis_pvm"], vakajarjestaja_obj.paattymis_pvm):
-            msg = "alkamis_pvm must be before vakajarjestaja paattymis_pvm"
-            raise ValidationError({"alkamis_pvm": [msg]})
-        if not validate_paivamaara1_after_paivamaara2(validated_data['alkamis_pvm'], vakajarjestaja_obj.alkamis_pvm, can_be_same=True):
-            msg = 'alkamis_pvm must be after or equal to vakajarjestaja alkamis_pvm'
-            raise ValidationError({'alkamis_pvm': [msg]})
-
-    if "paattymis_pvm" in validated_data:
-        if not validate_paivamaara1_before_paivamaara2(validated_data["paattymis_pvm"], vakajarjestaja_obj.paattymis_pvm, can_be_same=True):
-            msg = "paattymis_pvm must be before or equal to vakajarjestaja paattymis_pvm"
-            raise ValidationError({"paattymis_pvm": [msg]})
-
-
 def validate_oid(oid):
     oid_sections = oid.split('.')
     if len(oid_sections) != 6:

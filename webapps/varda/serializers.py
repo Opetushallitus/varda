@@ -341,7 +341,6 @@ class ToimipaikkaSerializer(serializers.HyperlinkedModelSerializer):
         if 'nimi' in data and data['nimi'].lower().startswith('palveluseteli ja ostopalvelu'):
             msg = {"nimi": ["toimipaikka with name palveluseteli ja ostopalvelu is reserved for system"]}
             raise serializers.ValidationError(msg, code='invalid')
-        validators.validate_dates_within_vakajarjestaja(data, data['vakajarjestaja'])
         validators.validate_toimipaikan_nimi(data["nimi"])
 
         return data
