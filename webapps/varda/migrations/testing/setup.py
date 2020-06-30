@@ -162,6 +162,7 @@ def add_test_users():
 
     tyontekija_tallentaja = User.objects.create(username='tilapaiset_tallentaja', password='pbkdf2_sha256$150000$ntAfCrXVuXnI$A63mBzAb7EzHDdR6jTSGZDmmYj0OtfbgetIFbtBZXBo=')
     tyontekija_tallentaja.groups.add(group_tilapaiset_tallentaja_vakajarjestaja1)
+
     user_tester10 = User.objects.create(username='tester10', password='pbkdf2_sha256$150000$OULQV9qeoPsD$dH1fxZUMGFNjSM3xQzknGRJjndCUMNTj3+nyK+ET0Gc=')
     user_tester10.groups.add(group_view_henkilo)
     user_tester10.groups.add(group_paakayttaja_vakajarjestaja_57294396385)
@@ -2642,12 +2643,14 @@ def create_onr_lapsi_huoltajat(create_all_vakajarjestajat=False):
 
 def create_henkilosto():
     from django.contrib.auth.models import User, Group
-    from varda.models import (Henkilo, Tyontekija, Palvelussuhde, Tyoskentelypaikka, VakaJarjestaja, Toimipaikka,
-                              Tutkinto, Taydennyskoulutus, TaydennyskoulutusTyontekija)
+    from varda.models import (Henkilo, Tyontekija, Palvelussuhde, PidempiPoissaolo, Tyoskentelypaikka, VakaJarjestaja,
+                              Toimipaikka, Tutkinto, Taydennyskoulutus, TaydennyskoulutusTyontekija,
+                              TilapainenHenkilosto)
     from varda.misc import hash_string
     from guardian.shortcuts import assign_perm
 
     group_tyontekija_tallentaja_vakajarjestaja1 = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.34683023489')
+    group_tilapainen_henkilosto_tallentaja_vakajarjestaja1 = Group.objects.get(name='HENKILOSTO_TILAPAISET_TALLENTAJA_1.2.246.562.10.34683023489')
     toimipaikka = Toimipaikka.objects.filter(organisaatio_oid='1.2.246.562.10.9395737548810').first()
     assign_perm('view_toimipaikka', group_tyontekija_tallentaja_vakajarjestaja1, toimipaikka)
 
@@ -2742,6 +2745,17 @@ def create_henkilosto():
     )
     [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja1, palvelussuhde_2_2) for crud_permission in crud_permissions_palvelussuhde]
 
+    crud_permissions_pidempi_poissaolo = ['view_pidempipoissaolo', 'change_pidempipoissaolo', 'add_pidempipoissaolo', 'delete_pidempipoissaolo']
+    pidempi_poissaolo_1 = PidempiPoissaolo.objects.create(
+        palvelussuhde=palvelussuhde_2_2,
+        alkamis_pvm='2024-01-01',
+        paattymis_pvm='2025-01-01',
+        lahdejarjestelma='1',
+        tunniste='testing-pidempipoissaolo1',
+        changed_by_id=admin_user.id
+    )
+    [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja1, pidempi_poissaolo_1) for crud_permission in crud_permissions_pidempi_poissaolo]
+
     crud_permissions_tyoskentelypaikka = ['view_tyoskentelypaikka', 'change_tyoskentelypaikka', 'add_tyoskentelypaikka', 'delete_tyoskentelypaikka']
     tyoskentelypaikka_1 = Tyoskentelypaikka.objects.create(
         palvelussuhde=palvelussuhde_1,
@@ -2757,7 +2771,7 @@ def create_henkilosto():
     )
     [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja1, tyoskentelypaikka_1) for crud_permission in crud_permissions_tyoskentelypaikka]
 
-    Tyoskentelypaikka.objects.create(
+    tyoskentelypaikka_2 = Tyoskentelypaikka.objects.create(
         palvelussuhde=palvelussuhde_1,
         toimipaikka=toimipaikka_1,
         alkamis_pvm='2020-03-01',
@@ -2769,6 +2783,7 @@ def create_henkilosto():
         tunniste='testing-tyoskentelypaikka2',
         changed_by_id=admin_user.id
     )
+    [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja1, tyoskentelypaikka_2) for crud_permission in crud_permissions_tyoskentelypaikka]
 
     tyontekija_4 = Tyontekija.objects.create(
         henkilo=henkilo_4,
@@ -2777,6 +2792,7 @@ def create_henkilosto():
         tunniste='testing-tyontekija4',
         changed_by_id=admin_user.id
     )
+    [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja1, tyontekija_4) for crud_permission in crud_permissions_tyontekija]
 
     palvelussuhde_4 = Palvelussuhde.objects.create(
         tyontekija=tyontekija_4,
@@ -2790,8 +2806,9 @@ def create_henkilosto():
         tunniste='testing-palvelussuhde4',
         changed_by_id=admin_user.id
     )
+    [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja1, palvelussuhde_4) for crud_permission in crud_permissions_palvelussuhde]
 
-    Tyoskentelypaikka.objects.create(
+    tyoskentelypaikka_3 = Tyoskentelypaikka.objects.create(
         palvelussuhde=palvelussuhde_4,
         toimipaikka=toimipaikka_1,
         alkamis_pvm='2020-03-01',
@@ -2803,6 +2820,19 @@ def create_henkilosto():
         tunniste='testing-tyoskentylypaikka4',
         changed_by_id=admin_user.id
     )
+    [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja1, tyoskentelypaikka_3) for crud_permission in crud_permissions_tyoskentelypaikka]
+
+    crud_permissions_tilapainen_henkilosto = ['view_tilapainenhenkilosto', 'change_tilapainenhenkilosto', 'add_tilapainenhenkilosto', 'delete_tilapainenhenkilosto']
+    tilapainen_henkilosto_1 = TilapainenHenkilosto.objects.create(
+        vakajarjestaja=vakajarjestaja_tester2,
+        kuukausi='2020-03-01',
+        tuntimaara='37.50',
+        tyontekijamaara=5,
+        lahdejarjestelma='1',
+        tunniste='testing-tilapainenhenkilosto1',
+        changed_by_id=admin_user.id
+    )
+    [assign_perm(crud_permission, group_tilapainen_henkilosto_tallentaja_vakajarjestaja1, tilapainen_henkilosto_1) for crud_permission in crud_permissions_tilapainen_henkilosto]
 
     taydennyskoulutus_1 = Taydennyskoulutus.objects.create(
         nimi='Testikoulutus',

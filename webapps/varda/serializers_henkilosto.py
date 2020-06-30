@@ -12,7 +12,7 @@ from varda.related_object_validations import (create_daterange, daterange_overla
                                               check_if_admin_mutable_object_is_changed)
 from varda.serializers import (HenkiloHLField, VakaJarjestajaPermissionCheckedHLField,
                                PermissionCheckedHLFieldMixin, ToimipaikkaPermissionCheckedHLField)
-from varda.serializers_common import OidRelatedField
+from varda.serializers_common import OidRelatedField, TunnisteRelatedField
 from varda.validators import (validate_paattymispvm_after_alkamispvm, validate_paivamaara1_after_paivamaara2,
                               validate_paivamaara1_before_paivamaara2, parse_paivamaara)
 
@@ -175,7 +175,12 @@ class TutkintoSerializer(serializers.HyperlinkedModelSerializer):
 
 class PalvelussuhdeSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
-    tyontekija = TyontekijaPermissionCheckedHLField(view_name='tyontekija-detail')
+    tyontekija = TyontekijaPermissionCheckedHLField(view_name='tyontekija-detail', required=False)
+    tyontekija_tunniste = TunnisteRelatedField(object_type=Tyontekija,
+                                               parent_field='tyontekija',
+                                               prevalidator=validators.validate_tunniste,
+                                               check_permission='change_tyontekija',
+                                               either_required=True)
 
     class Meta:
         model = Palvelussuhde
@@ -234,7 +239,12 @@ class PalvelussuhdeSerializer(serializers.HyperlinkedModelSerializer):
 
 class TyoskentelypaikkaSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
-    palvelussuhde = PalvelussuhdePermissionCheckedHLField(view_name='palvelussuhde-detail')
+    palvelussuhde = PalvelussuhdePermissionCheckedHLField(view_name='palvelussuhde-detail', required=False)
+    palvelussuhde_tunniste = TunnisteRelatedField(object_type=Palvelussuhde,
+                                                  parent_field='palvelussuhde',
+                                                  prevalidator=validators.validate_tunniste,
+                                                  check_permission='change_palvelussuhde',
+                                                  either_required=True)
     toimipaikka = ToimipaikkaPermissionCheckedHLField(required=False, allow_null=True, view_name='toimipaikka-detail')
     toimipaikka_oid = OidRelatedField(object_type=Toimipaikka,
                                       parent_field='toimipaikka',
@@ -343,7 +353,12 @@ class TyoskentelypaikkaUpdateSerializer(serializers.HyperlinkedModelSerializer):
 
 class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
-    palvelussuhde = PalvelussuhdePermissionCheckedHLField(view_name='palvelussuhde-detail')
+    palvelussuhde = PalvelussuhdePermissionCheckedHLField(view_name='palvelussuhde-detail', required=False)
+    palvelussuhde_tunniste = TunnisteRelatedField(object_type=Palvelussuhde,
+                                                  parent_field='palvelussuhde',
+                                                  prevalidator=validators.validate_tunniste,
+                                                  check_permission='change_palvelussuhde',
+                                                  either_required=True)
 
     class Meta:
         model = PidempiPoissaolo

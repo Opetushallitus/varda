@@ -251,7 +251,7 @@ def cached_list_response(original_list_viewset, user, request_full_path,
 
 
 @transaction.atomic
-def cached_retrieve_response(original_view, user, request_path):
+def cached_retrieve_response(original_view, user, request_path, object_id=None):
     """
     Each object from DB should be located in cache only once.
     There is no need to separate these based on user-id etc.
@@ -260,9 +260,12 @@ def cached_retrieve_response(original_view, user, request_path):
     """
     view_name = original_view.get_view_name()
     model_name = get_model_name_from_view_name(view_name)
-    object_id = get_object_id_from_path(request_path)
     if object_id is None:
-        raise NotFound
+        # If object_id wasn't supplied in function call, get it from request_path
+        object_id = get_object_id_from_path(request_path)
+        if object_id is None:
+            # If object_id is still none, raise 404
+            raise NotFound
 
     ct = ContentType.objects.get(model=model_name)
     try:

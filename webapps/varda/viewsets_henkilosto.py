@@ -1,5 +1,7 @@
 import logging
 
+import coreapi
+import coreschema
 from django.db import transaction
 from django.db.models import ProtectedError, Q
 from django.http import Http404
@@ -9,6 +11,7 @@ from rest_framework import status, permissions
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.response import Response
+from rest_framework.schemas.coreapi import AutoSchema
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_guardian.filters import DjangoObjectPermissionsFilter
 
@@ -32,7 +35,48 @@ from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, Palveluss
 logger = logging.getLogger(__name__)
 
 
-class TyontekijaViewSet(ModelViewSet):
+class TunnisteIdSchema(AutoSchema):
+    def get_manual_fields(self, path, method):
+        model_name = self.view.queryset.model._meta.verbose_name
+
+        extra_fields = []
+        path_array = path.split('/')
+        if path_array[-2] == '{id}':
+            field = coreapi.Field('id',
+                                  required=True,
+                                  location='path',
+                                  schema=coreschema.String(),
+                                  description=f'A unique integer value identifying this {model_name}. Can also be '
+                                              'lahdejarjestelma and tunniste pair (lahdejarjestelma:tunniste).',
+                                  type=None,
+                                  example=None)
+            extra_fields.append(field)
+
+        manual_fields = super().get_manual_fields(path, method)
+        return manual_fields + extra_fields
+
+
+class ObjectByTunnisteMixin:
+    schema = TunnisteIdSchema()
+
+    def get_object(self):
+        path_param = self.kwargs[self.lookup_field]
+
+        if not path_param.isdigit():
+            params = path_param.split(':', 1)
+            # Check that both lahdejarjestelma and tunniste have been provided and that they are not empty
+            if len(params) != 2 or (len(params) == 2 and (not params[0] or not params[1])):
+                raise Http404
+
+            model_qs = self.get_queryset().filter(lahdejarjestelma=params[0], tunniste=params[1])
+            if not model_qs.exists():
+                raise Http404
+            self.kwargs[self.lookup_field] = str(model_qs.first().id)
+
+        return super().get_object()
+
+
+class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
         Nouda kaikki tyontekijät.
@@ -58,7 +102,7 @@ class TyontekijaViewSet(ModelViewSet):
     queryset = Tyontekija.objects.all().order_by('id')
 
     def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path)
+        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
     def return_tyontekija_if_already_created(self, validated_data):
         q_obj = Q(henkilo=validated_data['henkilo'], vakajarjestaja=validated_data['vakajarjestaja'])
@@ -98,7 +142,7 @@ class TyontekijaViewSet(ModelViewSet):
                                                  'that need to be deleted first.'})
 
 
-class TilapainenHenkilostoViewSet(ModelViewSet):
+class TilapainenHenkilostoViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
         Nouda kaikki tilapaiset henkilöstötiedot.
@@ -128,7 +172,7 @@ class TilapainenHenkilostoViewSet(ModelViewSet):
         return cached_list_response(self, request.user, request.get_full_path())
 
     def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path)
+        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
     def perform_create(self, serializer):
         with transaction.atomic():
@@ -234,7 +278,7 @@ class TutkintoViewSet(ModelViewSet):
         return Response(status=status.HTTP_200_OK)
 
 
-class PalvelussuhdeViewSet(ModelViewSet):
+class PalvelussuhdeViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
         Nouda kaikki palvelussuhteet.
@@ -264,7 +308,7 @@ class PalvelussuhdeViewSet(ModelViewSet):
         return cached_list_response(self, request.user, request.get_full_path())
 
     def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path)
+        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
     def perform_create(self, serializer):
         validated_data = serializer.validated_data
@@ -293,7 +337,7 @@ class PalvelussuhdeViewSet(ModelViewSet):
             delete_cache_keys_related_model('tyontekija', instance.tyontekija.id)
 
 
-class TyoskentelypaikkaViewSet(ModelViewSet):
+class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
         Nouda kaikki tyoskentelypaikat.
@@ -330,7 +374,7 @@ class TyoskentelypaikkaViewSet(ModelViewSet):
         return cached_list_response(self, request.user, request.get_full_path())
 
     def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path)
+        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
     def perform_create(self, serializer):
         with transaction.atomic():
@@ -367,7 +411,7 @@ class TyoskentelypaikkaViewSet(ModelViewSet):
                 delete_cache_keys_related_model('toimipaikka', instance.toimipaikka.id)
 
 
-class PidempiPoissaoloViewSet(ModelViewSet):
+class PidempiPoissaoloViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
         Nouda kaikki pidemmatpoissaolot.
@@ -394,7 +438,7 @@ class PidempiPoissaoloViewSet(ModelViewSet):
     queryset = PidempiPoissaolo.objects.all().order_by('id')
 
     def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path)
+        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.path)
@@ -422,7 +466,7 @@ class PidempiPoissaoloViewSet(ModelViewSet):
             delete_cache_keys_related_model('palvelussuhde', instance.palvelussuhde.id)
 
 
-class TaydennyskoulutusViewSet(ModelViewSet):
+class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
         Nouda kaikki taydennyskoulutukset.
@@ -459,7 +503,7 @@ class TaydennyskoulutusViewSet(ModelViewSet):
         return cached_list_response(self, request.user, request.get_full_path())
 
     def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path)
+        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
     def perform_create(self, serializer):
         with transaction.atomic():
