@@ -1,6 +1,10 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.3.18 (02.07.2020)
+- CSCVARDA-1724: Näytetään PAOS-tuottaja Katsele tietoja/Toimipaikan tiedoissa
+- CSCVARDA-1711: Yksityinen maksutietotallentaja ei nää lisää maksutieto painiketta paos-lapsilla
+
 1.3.17 (11.06.2020)
 - CSCVARDA-1294: Ohjeteksti päivittäiselle ja kokopäiväiselle varhaiskasvatukselle
 - CSCVARDA-1589: Virheviestejä PAOS-lapsen ja maksutietojen lisäämisestä
