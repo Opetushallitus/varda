@@ -871,7 +871,7 @@ def create_henkilot():
         etunimet='Mari',
         kutsumanimi='Mari',
         sukunimi='Mairinen',
-        aidinkieli_koodi='JP',
+        aidinkieli_koodi='JA',
         kotikunta_koodi='049',
         turvakielto=False,
         sukupuoli_koodi=2,
@@ -909,7 +909,7 @@ def create_henkilot():
         etunimet='Jouni Janne',
         kutsumanimi='Jouni',
         sukunimi='Suroinen',
-        aidinkieli_koodi='JP',
+        aidinkieli_koodi='JA',
         kotikunta_koodi='049',
         turvakielto=False,
         sukupuoli_koodi=2,
@@ -2001,8 +2001,7 @@ def create_maksutiedot():
     from guardian.shortcuts import assign_perm
     from varda.misc import hash_string
     from varda.models import Maksutieto, Huoltajuussuhde
-    from varda.permission_groups import (assign_vakajarjestaja_maksutieto_paos_permissions,
-                                         assign_toimipaikka_maksutieto_paos_permissions)
+    from varda.permission_groups import assign_object_level_permissions
 
     tester_user = User.objects.get(username='tester')
     tester2_user = User.objects.get(username='tester2')
@@ -2015,10 +2014,7 @@ def create_maksutiedot():
     group_tester2 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.34683023489')
     group_tester4 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.93957375484')
 
-    vakajarjestaja_2_organisaatio_oid = '1.2.246.562.10.93957375488'
     vakajarjestaja_4_organisaatio_oid = '1.2.246.562.10.93957375484'
-
-    toimipaikka_5_organisaatio_oid = '1.2.246.562.10.9395737548817'
 
     mp1 = Maksutieto.objects.create(
         yksityinen_jarjestaja=False,
@@ -2077,8 +2073,7 @@ def create_maksutiedot():
     assign_perm('delete_maksutieto', group_tester4, mp4)
     Huoltajuussuhde.objects.get(pk=6).maksutiedot.add(mp4)
 
-    assign_vakajarjestaja_maksutieto_paos_permissions(vakajarjestaja_4_organisaatio_oid, vakajarjestaja_2_organisaatio_oid, mp4)
-    assign_toimipaikka_maksutieto_paos_permissions(toimipaikka_5_organisaatio_oid, vakajarjestaja_4_organisaatio_oid, mp4)
+    assign_object_level_permissions(vakajarjestaja_4_organisaatio_oid, Maksutieto, mp4)
 
     group_toimipaikka_2935996863483 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.2935996863483')
     mp_331A = Maksutieto.objects.create(

@@ -324,3 +324,43 @@ def update_all_vakajarjestaja_permissiongroups():
                                                       organisaatio_data=toimipaikka_data_dict.get(toimipaikka_oid))
             assign_permissions_to_toimipaikka_obj(toimipaikka_oid, vakajarjestaja_oid)
     logger.info('Finished setting toimipaikka permissions')
+
+
+def fix_maksutieto_permissions_for_paos_children():
+    """
+    Temp job for fixing maksutieto permissions for PAOS-children
+    Will be removed after run in production once
+    """
+    from django.db.models import Q
+    from varda.models import Maksutieto, Lapsi
+    from varda.permission_groups import assign_object_level_permissions
+    from guardian.models import UserObjectPermission, GroupObjectPermission
+    from django.contrib.contenttypes.models import ContentType
+
+    paos_maksutiedot = Maksutieto.objects.filter(huoltajuussuhteet__lapsi__paos_kytkin=True)
+
+    for maksutieto in paos_maksutiedot:
+        try:
+            with transaction.atomic():
+                lapsi = maksutieto.huoltajuussuhteet.all().values('lapsi').distinct()
+                if len(lapsi) != 1:
+                    logger.error('Could not find just one lapsi for maksutieto-id: {}'.format(maksutieto.id))
+                    raise ValueError
+                else:
+                    lapsi_id = lapsi[0].get('lapsi')
+                lapsi_obj = Lapsi.objects.get(id=lapsi_id)
+                oma_organisaatio_oid = lapsi_obj.oma_organisaatio.organisaatio_oid
+
+                # remove all permissions from object
+                content_type_id = ContentType.objects.get_for_model(maksutieto).id
+                content_type = ContentType.objects.get(id=content_type_id)
+                filters = Q(content_type=content_type, object_pk=str(maksutieto.id))
+                UserObjectPermission.objects.filter(filters).delete()
+                GroupObjectPermission.objects.filter(filters).delete()
+
+                assign_object_level_permissions(oma_organisaatio_oid, Maksutieto, maksutieto)
+
+        except Exception as e:
+            logger.error('Maksutieto-temp-job: Failed alter permissions for maksutieto {}. Error: {}'.format(maksutieto, e))
+            continue
+        logger.info('Changed permissions for maksutieto {}'.format(maksutieto.id))

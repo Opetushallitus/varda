@@ -193,10 +193,13 @@ class VardaPaosTests(TestCase):
         maksutieto_url = json.loads(resp_maksutieto_tester6.content)['url']
 
         resp_maksutieto_tester7 = client_tester7.get(maksutieto_url)
-        assert_status_code(resp_maksutieto_tester7, 200)
+        assert_status_code(resp_maksutieto_tester7, 404)
 
         resp_maksutieto_tester9 = client_tester9.get(maksutieto_url)
-        assert_status_code(resp_maksutieto_tester9, 200)
+        assert_status_code(resp_maksutieto_tester9, 404)
+
+        resp_maksutieto_pk_vakajarjestaja_2 = client_pk_vakajarjestaja_2.get(maksutieto_url)
+        assert_status_code(resp_maksutieto_pk_vakajarjestaja_2, 404)
 
         patch_maksutieto_data = {
             'paattymis_pvm': '2021-02-10'

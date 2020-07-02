@@ -9,6 +9,7 @@ from varda import organisaatiopalvelu
 from varda import permission_groups
 from varda import permissions
 from varda.audit_log import audit_log
+from varda.misc import fix_maksutieto_permissions_for_paos_children
 
 
 # This is currently only needed for testing, don't remove!
@@ -129,3 +130,12 @@ def delete_object_permissions_explicitly_task(content_type_id, instance_id):
 @shared_task
 def update_koodistot_task():
     koodistopalvelu.update_koodistot()
+
+
+@shared_task
+def fix_maksutieto_paos_permissions_task():
+    """
+    This is a temporary task to fix paos permissions
+    Will be removed after run in production
+    """
+    fix_maksutieto_permissions_for_paos_children()

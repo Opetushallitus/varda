@@ -18,7 +18,7 @@ from varda.cache import create_cache_key, get_object_ids_user_has_permissions
 from varda.cas.varda_permissions import IsVardaPaakayttaja
 from varda.lokalisointipalvelu import get_localisation_data
 from varda.misc_queries import get_paos_toimipaikat
-from varda.models import Toimipaikka, VakaJarjestaja, Varhaiskasvatussuhde, PaosToiminta, PaosOikeus
+from varda.models import Toimipaikka, VakaJarjestaja, Varhaiskasvatussuhde, PaosToiminta, PaosOikeus, Lapsi
 from varda.permissions import CustomObjectPermissions, save_audit_log
 from varda.serializers import PaosToimipaikkaSerializer, PaosVakaJarjestajaSerializer
 from varda.serializers_ui import VakaJarjestajaUiSerializer, ToimipaikkaUiSerializer, ToimipaikanLapsetUISerializer
@@ -188,6 +188,7 @@ class NestedToimipaikanLapsetViewSet(GenericViewSet, ListModelMixin):
         paattymis_pvm=YYYY-mm-dd
     """
     filter_backends = (SearchFilter,)
+    queryset = Lapsi.objects.none()
     # Same functionality as viewsets.HenkilohakuLapset
     search_fields = ('varhaiskasvatuspaatos__lapsi__henkilo__etunimet',
                      'varhaiskasvatuspaatos__lapsi__henkilo__sukunimi',
@@ -250,7 +251,7 @@ class NestedToimipaikanLapsetViewSet(GenericViewSet, ListModelMixin):
 
         return vakasuhde_filter
 
-    def get_queryset(self):
+    def get_vakasuhteet_in_toimipaikka_queryset(self):
         toimipaikka_filter = Q(toimipaikka__id=self.toimipaikka_pk)
         # Get all children for superuser
         if self.request.user.is_superuser:
@@ -268,7 +269,7 @@ class NestedToimipaikanLapsetViewSet(GenericViewSet, ListModelMixin):
                           'varhaiskasvatuspaatos__lapsi__henkilo__etunimet'))
 
     def get_vakapaatokset_in_toimipaikka_queryset(self):
-        return (self.filter_queryset(self.get_queryset())
+        return (self.filter_queryset(self.get_vakasuhteet_in_toimipaikka_queryset())
                 .values(etunimet=F('varhaiskasvatuspaatos__lapsi__henkilo__etunimet'),
                         sukunimi=F('varhaiskasvatuspaatos__lapsi__henkilo__sukunimi'),
                         henkilo_oid=F('varhaiskasvatuspaatos__lapsi__henkilo__henkilo_oid'),

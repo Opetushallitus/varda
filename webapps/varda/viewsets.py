@@ -39,10 +39,7 @@ from varda.oppijanumerorekisteri import fetch_henkilo_with_oid, save_henkilo_to_
 from varda.organisaatiopalvelu import (check_if_toimipaikka_exists_in_organisaatiopalvelu,
                                        create_toimipaikka_in_organisaatiopalvelu)
 from varda.permission_groups import (assign_object_level_permissions, create_permission_groups_for_organisaatio,
-                                     assign_toimipaikka_lapsi_paos_permissions,
-                                     assign_vakajarjestaja_lapsi_paos_permissions,
-                                     assign_vakajarjestaja_maksutieto_paos_permissions,
-                                     assign_toimipaikka_maksutieto_paos_permissions,
+                                     assign_toimipaikka_lapsi_paos_permissions, assign_vakajarjestaja_lapsi_paos_permissions,
                                      assign_vakajarjestaja_vakatiedot_paos_permissions,
                                      assign_toimipaikka_vakatiedot_paos_permissions,
                                      assign_object_permissions_to_all_henkilosto_groups)
@@ -1823,13 +1820,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         """
         if lapsi.paos_kytkin:
             oma_organisaatio_oid = lapsi.oma_organisaatio.organisaatio_oid
-            paos_organisaatio_oid = lapsi.paos_organisaatio.organisaatio_oid
-
-            assign_vakajarjestaja_maksutieto_paos_permissions(oma_organisaatio_oid, paos_organisaatio_oid, saved_object)
-
-            for toimipaikka in toimipaikka_qs:
-                if related_object_validations.toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=toimipaikka):
-                    assign_toimipaikka_maksutieto_paos_permissions(toimipaikka.organisaatio_oid, oma_organisaatio_oid, saved_object)
+            assign_object_level_permissions(oma_organisaatio_oid, Maksutieto, saved_object)
 
         else:
             assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Maksutieto, saved_object)

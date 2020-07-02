@@ -1495,6 +1495,28 @@ class VardaViewsTests(TestCase):
         resp = client.get('/api/ui/toimipaikat/1/lapset/?search=sUSa+TA&format=json')
         self.assertEqual(json.loads(resp.content), toimipaikan_lapset_henkilo_filter_json)
 
+    def test_toimipaikan_lapset_huoltajatieto_tallentaja(self):
+        client = SetUpTestClient('tester6').client()
+        accepted_response_json = {
+            "count": 1,
+            "next": None,
+            "previous": None,
+            "results": [
+                {
+                    "etunimet": "Tuula-Testi",
+                    "sukunimi": "Vanhanen",
+                    "henkilo_oid": "1.2.246.562.24.49084901392",
+                    "syntyma_pvm": "1934-03-17",
+                    "oma_organisaatio_nimi": None,
+                    "paos_organisaatio_nimi": None,
+                    "lapsi_id": 3,
+                    "lapsi_url": "http://testserver/api/v1/lapset/3/"
+                }
+            ]
+        }
+        resp = client.get('/api/ui/toimipaikat/2/lapset/?format=json')
+        self.assertEqual(json.loads(resp.content), accepted_response_json)
+
     def test_api_get_henkilo_syntyma_pvm(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/henkilot/1/')

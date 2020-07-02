@@ -6,7 +6,7 @@ from django.db import transaction
 from django.db.models import Q
 from guardian.shortcuts import assign_perm, remove_perm
 from varda.misc import get_json_from_external_service
-from varda.models import Toimipaikka, VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Maksutieto, Lapsi
+from varda.models import Toimipaikka, VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Lapsi
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -279,17 +279,6 @@ def assign_vakajarjestaja_vakatiedot_paos_permissions(oma_organisaatio_oid, paos
                                             vakajarjestaja_vakatiedot_tallentaja_group_roles)
 
 
-def assign_vakajarjestaja_maksutieto_paos_permissions(oma_organisaatio_oid, paos_organisaatio_oid, maksutieto_obj):
-    vakajarjestaja_maksutieto_katselija_group_roles = [Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
-                                                       Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,
-                                                       Z4_CasKayttoOikeudet.PALVELUKAYTTAJA]
-    vakajarjestaja_maksutieto_tallentaja_group_roles = [Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,
-                                                        Z4_CasKayttoOikeudet.PALVELUKAYTTAJA]
-    _assign_paos_vakajarjestaja_permissions(oma_organisaatio_oid, paos_organisaatio_oid, oma_organisaatio_oid, Maksutieto,
-                                            maksutieto_obj, vakajarjestaja_maksutieto_katselija_group_roles,
-                                            vakajarjestaja_maksutieto_tallentaja_group_roles)
-
-
 def assign_toimipaikka_lapsi_paos_permissions(paos_toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid, saved_object):
     toimipaikka_lapsi_obj_katselija_group_roles = [Z4_CasKayttoOikeudet.KATSELIJA,
                                                    Z4_CasKayttoOikeudet.TALLENTAJA,
@@ -309,15 +298,6 @@ def assign_toimipaikka_vakatiedot_paos_permissions(paos_toimipaikka_organisaatio
     _assign_toimipaikka_paos_permissions(paos_toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid,
                                          toimipaikka_vakatiedot_tallentaja_group_roles, toimipaikka_vakatiedot_katselija_group_roles,
                                          model_class, saved_object)
-
-
-def assign_toimipaikka_maksutieto_paos_permissions(paos_toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid, saved_object):
-    toimipaikka_maksutieto_katselija_group_roles = [Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
-                                                    Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA]
-    toimipaikka_maksutieto_tallentaja_group_roles = [Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA]
-    _assign_toimipaikka_paos_permissions(paos_toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid,
-                                         toimipaikka_maksutieto_tallentaja_group_roles, toimipaikka_maksutieto_katselija_group_roles,
-                                         Maksutieto, saved_object)
 
 
 def _assign_paos_vakajarjestaja_permissions(oma_organisaatio_oid, paos_organisaatio_oid, tallentaja_organisaatio_oid,
