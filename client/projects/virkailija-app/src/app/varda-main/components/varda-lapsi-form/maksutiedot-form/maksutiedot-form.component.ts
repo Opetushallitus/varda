@@ -29,6 +29,7 @@ export class MaksutiedotFormComponent implements OnInit {
     this.removeFieldsForYksityinenLapsi();
   }
   @Input() toimipaikkaAccess: UserAccess;
+  @Input() hideMaksutiedot: boolean;
   // For accessing template reference variables
   @ViewChildren('maksutietoPanels') maksutietoPanels: QueryList<MatExpansionPanel>;
   @ViewChildren('maksutietoCancelDeleteBtn') maksutietoCancelDeleteButtons: QueryList<HTMLButtonElement>;

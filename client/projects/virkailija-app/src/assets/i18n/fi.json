@@ -149,6 +149,8 @@
     "label.varhaiskasvatuspaatos": "Varhaiskasvatuspäätös",
     "label.varhaiskasvatussuhde": "Varhaiskasvatussuhde",
     "label.add-new-varhaiskasvatussuhde": "+ Lisää varhaiskasvatussuhde",
+    "label.maksutieto.ei-kayttooikeuksia": "Ei käyttöoikeuksia maksutietoihin",
+    "label.maksutieto.ei-maksutietoja": "Ei maksutietoja",
     "label.maksutieto.uusi.lisaa": "+ Lisää maksutieto",
     "label.maksutieto.uusi.otsikko": "Lisää maksutieto",
     "label.maksutieto.muokkaa.otsikko-alkupvm": "Maksutieto {{alkupvm}} alkaen",

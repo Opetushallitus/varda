@@ -86,6 +86,7 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
 
   lapsiFormErrors: Array<any>;
 
+  hideMaksutiedot: boolean;
   varhaiskasvatuspaatoksetFormChanged: boolean;
   varhaiskasvatussuhteetFormChanged: boolean;
   toimipaikkaAccess: UserAccess;
@@ -573,15 +574,15 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
         this.vardaApiWrapperService.getVarhaiskasvatussuhteetByLapsi(lapsiId).subscribe((vakasuhteet) => {
           this.vardaApiWrapperService.getVarhaiskasvatuspaatoksetByLapsi(lapsiId)
             .subscribe((vakapaatokset) => {
-
               this.varhaiskasvatussuhteet = [];
               const tempVarhaiskasvatussuhteet = [...vakasuhteet];
 
               this.varhaiskasvatuspaatokset = [...vakapaatokset];
 
               this.varhaiskasvatuspaatokset.sort(this.sortRecurringEntityListsByDates.bind(this));
-
-              this.isCurrentLapsiYksityinen = ['jm04', 'jm05'].includes(this.varhaiskasvatuspaatokset[0].jarjestamismuoto_koodi.toLowerCase());
+              if (this.varhaiskasvatuspaatokset.length) {
+                this.isCurrentLapsiYksityinen = ['jm04', 'jm05'].includes(this.varhaiskasvatuspaatokset[0].jarjestamismuoto_koodi.toLowerCase());
+              }
 
               tempVarhaiskasvatussuhteet.forEach((vakasuhde) => {
                 const vakasuhdeVakaPaatosReference = vakasuhde.varhaiskasvatuspaatos;
@@ -594,7 +595,7 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
               });
 
               this.varhaiskasvatussuhteet.sort(this.sortRecurringEntityListsByDates.bind(this));
-
+              this.checkHidingMaksutiedot();
               observer.next();
               observer.complete();
             }, (e) => {
@@ -977,13 +978,20 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
       // poistetaan eipaoskytkin uudelta lapselta jm02/03 tai jos selectedToimipaikka EI paostoimipaikka
       fieldsetGroup[1].fieldsets[1].fields[0].options = fieldsetGroup[1].fieldsets[1].fields[0].options.filter(option => !['jm02', 'jm03'].includes(option.code));
     }
-
     return fieldsetGroup;
+  }
+
+  checkHidingMaksutiedot(): void {
+    const excludedJarjestamismuodot = ['jm02', 'jm03'];
+    const isYksityinen = !this.vardaVakajarjestajaService.selectedVakajarjestaja.kunnallinen_kytkin;
+    const hasJM23 = this.varhaiskasvatuspaatokset?.some(vakapaatos => excludedJarjestamismuodot.includes(vakapaatos.jarjestamismuoto_koodi));
+    const isNotMyPAOSLapsi = (this.currentLapsi?.oma_organisaatio_oid && this.currentLapsi.oma_organisaatio_oid !== this.vardaVakajarjestajaService.selectedVakajarjestaja.organisaatio_oid);
+    this.hideMaksutiedot = isNotMyPAOSLapsi || (isYksityinen && hasJM23 && !!this.currentLapsi?.paos_organisaatio_nimi);
   }
 
   maksutietoToimijaTallentajalle(lapsi: VardaLapsiDTO): void {
     if (!this.toimipaikkaAccess.huoltajatiedot.tallentaja &&
-      (!lapsi.oma_organisaatio ||  lapsi.oma_organisaatio_oid === this.vardaVakajarjestajaService.selectedVakajarjestaja.organisaatio_oid)) {
+      (!lapsi.oma_organisaatio || lapsi.oma_organisaatio_oid === this.vardaVakajarjestajaService.selectedVakajarjestaja.organisaatio_oid)) {
       const toimijaAccess = this.authService.getUserAccess();
       this.toimipaikkaAccess.huoltajatiedot.tallentaja = toimijaAccess.huoltajatiedot.tallentaja;
       this.toimipaikkaAccess.huoltajatiedot.katselija = this.toimipaikkaAccess.huoltajatiedot.katselija || toimijaAccess.huoltajatiedot.tallentaja;

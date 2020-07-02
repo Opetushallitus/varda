@@ -308,9 +308,10 @@
       </form>
     </div>
     <div class="varda-painotukset lapsi-form-maksutiedot"
-         *ngIf="!ui.isPerustiedotLoading && toimipaikkaAccess.huoltajatiedot.katselija">
+         *ngIf="!ui.isPerustiedotLoading">
       <app-maksutiedot-form [toimipaikkaAccess]="toimipaikkaAccess"
                             [lapsiId]="currentLapsi.id"
+                            [hideMaksutiedot]="hideMaksutiedot"
                             [isLapsiYksityinen]="isCurrentLapsiYksityinen"></app-maksutiedot-form>
     </div>
   </div>

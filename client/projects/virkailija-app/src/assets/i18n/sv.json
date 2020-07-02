@@ -144,6 +144,8 @@
     "label.varhaiskasvatuspaatos": "Beslut om småbarnspedagogik",
     "label.varhaiskasvatussuhde": "Deltagande i småbarnspedagogisk verksamhet",
     "label.add-new-varhaiskasvatussuhde": "+ Lägg till deltagande i småbarnspedagogisk verksamhet",
+    "label.maksutieto.ei-kayttooikeuksia": "Du saknar rättigheter till uppgifterna om avgifter",
+    "label.maksutieto.ei-maksutietoja": "Inga uppgifter om avgifter",
     "label.maksutieto.uusi.lisaa": "+ Lägg till uppgift om avgift",
     "label.maksutieto.uusi.otsikko": "Lägg till uppgift om avgift",
     "label.maksutieto.muokkaa.otsikko-alkupvm": "Uppgift om avgift från och med {{alkupvm}}",
