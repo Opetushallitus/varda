@@ -9,7 +9,7 @@ from varda import organisaatiopalvelu
 from varda import permission_groups
 from varda import permissions
 from varda.audit_log import audit_log
-from varda.misc import fix_maksutieto_permissions_for_paos_children
+from varda.misc import add_maksutieto_permissions_to_palvelukayttajat
 
 
 # This is currently only needed for testing, don't remove!
@@ -133,9 +133,9 @@ def update_koodistot_task():
 
 
 @shared_task
-def fix_maksutieto_paos_permissions_task():
+def add_maksutieto_permissions_to_palvelukayttajat_task():
     """
-    This is a temporary task to fix paos permissions
-    Will be removed after run in production
+    Temporary task to append maksutieto permissions for palvelukayttaja template and existing groups
+    Will be removed after run in production in 1.9.2020
     """
-    fix_maksutieto_permissions_for_paos_children()
+    add_maksutieto_permissions_to_palvelukayttajat()
