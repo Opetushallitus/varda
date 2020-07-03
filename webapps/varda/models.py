@@ -707,10 +707,14 @@ class Tyoskentelypaikka(models.Model):
         verbose_name_plural = 'tyoskentelypaikat'
 
 
+def paattymis_pvm_default():
+    return '9999-01-01'
+
+
 class PidempiPoissaolo(models.Model):
     palvelussuhde = models.ForeignKey(Palvelussuhde, related_name='pidemmatpoissaolot', on_delete=models.PROTECT)
     alkamis_pvm = models.DateField()
-    paattymis_pvm = models.DateField(default=None, blank=True, null=True)
+    paattymis_pvm = models.DateField(default=paattymis_pvm_default)
     lahdejarjestelma = models.CharField(max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
     tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
 

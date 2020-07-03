@@ -6,6 +6,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db.models import Q
+from django.forms.models import model_to_dict
 from django.utils.deconstruct import deconstructible
 from rest_framework.exceptions import ValidationError as ValidationErrorRest
 
@@ -316,7 +317,7 @@ def validate_paivamaara1_after_paivamaara2(paivamaara1, paivamaara2, can_be_same
     return not validate_paivamaara1_before_paivamaara2(paivamaara1, paivamaara2, not can_be_same)
 
 
-def validate_paattymispvm_after_alkamispvm(validated_data):
+def validate_paattymispvm_same_or_after_alkamispvm(validated_data):
     """
     If given, validate that the paattymispvm is after alkamispvm.
     (Should a model have this date, they are always called the same by convention.)
@@ -325,12 +326,12 @@ def validate_paattymispvm_after_alkamispvm(validated_data):
     """
 
     if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
-        if not validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm'], can_be_same=False):
+        if not validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm'], can_be_same=True):
             msg = {'paattymis_pvm': ['paattymis_pvm must be after alkamis_pvm.']}
             raise ValidationErrorRest(msg)
 
 
-def validate_painotus_dates_within_toimipaikka(validated_data, toimipaikka_obj):
+def validate_dates_within_toimipaikka(validated_data, toimipaikka_obj):
     """
     Check validity of user-submitted toiminnallinenpainotus dates against toimipaikka dates.
     """
@@ -461,3 +462,17 @@ class create_validate_decimal_steps:
 
     def __eq__(self, other):
         return self.stepsize == other.stepsize
+
+
+def fill_missing_fields_for_validations(data, instance):
+    """
+    Fills patch request fields from instance data to handle validations
+    :param data: user input
+    :param instance: instance that is being updated
+    :return:
+    """
+    instance_dictionary = model_to_dict(instance)
+    excluded_fields = ['muutos_pvm', 'changed_by', ]
+    for field in instance_dictionary:
+        if field not in data and field not in excluded_fields:
+            data[field] = getattr(instance, field)

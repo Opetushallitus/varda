@@ -12,9 +12,11 @@ from varda.related_object_validations import (create_daterange, daterange_overla
                                               check_if_admin_mutable_object_is_changed)
 from varda.serializers import (HenkiloHLField, VakaJarjestajaPermissionCheckedHLField,
                                PermissionCheckedHLFieldMixin, ToimipaikkaPermissionCheckedHLField)
+
 from varda.serializers_common import OidRelatedField, TunnisteRelatedField
-from varda.validators import (validate_paattymispvm_after_alkamispvm, validate_paivamaara1_after_paivamaara2,
-                              validate_paivamaara1_before_paivamaara2, parse_paivamaara)
+from varda.validators import (validate_dates_within_toimipaikka, validate_paattymispvm_same_or_after_alkamispvm,
+                              validate_paivamaara1_after_paivamaara2, validate_paivamaara1_before_paivamaara2,
+                              parse_paivamaara, fill_missing_fields_for_validations)
 
 
 class TyontekijaPermissionCheckedHLField(PermissionCheckedHLFieldMixin, serializers.HyperlinkedRelatedField):
@@ -75,8 +77,8 @@ class TyontekijaSerializer(serializers.HyperlinkedModelSerializer):
                 validator.error('henkilo', 'This henkilo is already referenced by lapsi objects')
 
             # Validate only when updating existing henkilo
-            if self.context['request'].method in ['PUT', 'PATCH']:
-                instance = self.context['view'].get_object()
+            if self.instance:
+                instance = self.instance
                 if 'henkilo' in data:
                     related_object_validations.check_if_admin_mutable_object_is_changed(self.context['request'].user,
                                                                                         instance,
@@ -107,29 +109,36 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
         return super(TilapainenHenkilostoSerializer, self).to_representation(instance)
 
     def validate(self, data):
-        # Validate only when creating tilapainen henkilosto
-        if self.context['request'].method == 'POST':
-            self.verify_unique_month(data)
+        with ViewSetValidator() as validator:
+            # Validate only when creating tilapainen henkilosto
+            if self.context['request'].method == 'POST':
+                self.verify_unique_month(data, validator)
+                with validator.wrap():
+                    self.validate_date_within_vakajarjestaja(data, validator)
 
-        # Validate only when updating existing tilapainen henkilosto
-        if self.instance:
-            instance = self.instance
-            msg = {}
-            if 'vakajarjestaja' in data and data['vakajarjestaja'].id != instance.vakajarjestaja.id:
-                msg = {'vakajarjestaja': ['Changing of vakajarjestaja is not allowed']}
-            if 'kuukausi' in data and data['kuukausi'] != instance.kuukausi:
-                msg.update({'kuukausi': ['Changing of kuukausi is not allowed']})
-            if msg:
-                raise serializers.ValidationError(msg, code='invalid')
-        return data
+            # Validate only when updating existing tilapainen henkilosto
+            if self.instance:
+                instance = self.instance
+                if 'vakajarjestaja' in data and data['vakajarjestaja'].id != instance.vakajarjestaja.id:
+                    validator.error('vakajarjestaja', 'Changing of vakajarjestaja is not allowed')
+                if 'kuukausi' in data and data['kuukausi'] != instance.kuukausi:
+                    validator.error('kuukausi', 'Changing of kuukausi is not allowed')
+            return data
 
-    def verify_unique_month(self, data):
+    def verify_unique_month(self, data, validator):
         tilapainen_henkilosto_qs = TilapainenHenkilosto.objects.filter(vakajarjestaja=data['vakajarjestaja'],
                                                                        kuukausi__year=data['kuukausi'].year,
                                                                        kuukausi__month=data['kuukausi'].month)
         if tilapainen_henkilosto_qs.exists():
-            raise serializers.ValidationError({'kuukausi': ['tilapainen henkilosto already exists for this month.']},
-                                              code='invalid')
+            validator.error('kuukausi', 'tilapainen henkilosto already exists for this month.')
+
+    def validate_date_within_vakajarjestaja(self, data, validator):
+        vakajarjestaja = data['vakajarjestaja']
+        kuukausi = data['kuukausi']
+        if kuukausi < vakajarjestaja.alkamis_pvm:
+            validator.error('kuukausi', 'kuukausi is not after vakajarjestaja.alkamis_pvm')
+        if vakajarjestaja.paattymis_pvm is not None and kuukausi > vakajarjestaja.paattymis_pvm:
+            validator.error('kuukausi', 'kuukausi is not before vakajarjestaja.paattymis_pvm')
 
 
 class TutkintoSerializer(serializers.HyperlinkedModelSerializer):
@@ -198,17 +207,14 @@ class PalvelussuhdeSerializer(serializers.HyperlinkedModelSerializer):
         # UPDATE
         if palvelussuhde:
             with ViewSetValidator() as validator:
+                fill_missing_fields_for_validations(data, palvelussuhde)
                 with validator.wrap():
-                    validate_paattymispvm_after_alkamispvm(data)
-                if 'tyontekija' in data:
-                    tyontekija = data['tyontekija']
-                else:
-                    tyontekija = palvelussuhde.tyontekija
-                if 'tutkinto_koodi' in data:
-                    tutkinto_koodi = data['tutkinto_koodi']
-                else:
-                    tutkinto_koodi = palvelussuhde.tutkinto_koodi
-                self.validate_tutkinto(tyontekija, tutkinto_koodi, validator)
+                    validate_paattymispvm_same_or_after_alkamispvm(data)
+
+                if data['paattymis_pvm'] is None and data['tyosuhde_koodi'] == '2':
+                    validator.error('paattymis_pvm', 'paattymis_pvm can not be none for tyosuhde_koodi 2')
+
+                self.validate_tutkinto(data['tyontekija'], data['tutkinto_koodi'], validator)
                 if 'tyontekija' in data:
                     check_if_admin_mutable_object_is_changed(self.context['request'].user, palvelussuhde, data, 'tyontekija')
 
@@ -219,7 +225,9 @@ class PalvelussuhdeSerializer(serializers.HyperlinkedModelSerializer):
         else:
             with ViewSetValidator() as validator:
                 with validator.wrap():
-                    validate_paattymispvm_after_alkamispvm(data)
+                    if data['tyosuhde_koodi'] == '2' and ('paattymis_pvm' not in data or data['paattymis_pvm'] is None):
+                        validator.error('paattymis_pvm', 'paattymis_pvm is required for tyosuhde_koodi 2')
+                    validate_paattymispvm_same_or_after_alkamispvm(data)
 
                 self.validate_tutkinto(data['tyontekija'], data['tutkinto_koodi'], validator)
 
@@ -264,14 +272,9 @@ class TyoskentelypaikkaSerializer(serializers.HyperlinkedModelSerializer):
         return super(TyoskentelypaikkaSerializer, self).to_representation(instance)
 
     def validate(self, data):
-        if not self.instance:
-            palvelussuhde = data['palvelussuhde']
-            toimipaikka = data.get('toimipaikka')
-            kiertava_tyontekija_kytkin = data.get('kiertava_tyontekija_kytkin')
-        else:
-            palvelussuhde = data['palvelussuhde'] or self.instance.palvelussuhde
-            toimipaikka = data.get('toimipaikka') or self.instance.toimipaikka
-            kiertava_tyontekija_kytkin = data.get('kiertava_tyontekija_kytkin') or self.instance.kiertava_tyontekija_kytkin
+        palvelussuhde = data['palvelussuhde']
+        toimipaikka = data['toimipaikka'] if 'toimipaikka' in data else None
+        kiertava_tyontekija_kytkin = data['kiertava_tyontekija_kytkin']
 
         with ViewSetValidator() as validator:
             if kiertava_tyontekija_kytkin and toimipaikka:
@@ -285,6 +288,10 @@ class TyoskentelypaikkaSerializer(serializers.HyperlinkedModelSerializer):
                 with validator.wrap():
                     check_overlapping_tyoskentelypaikka_object(data, Tyoskentelypaikka)
 
+            if toimipaikka:
+                with validator.wrap():
+                    validate_dates_within_toimipaikka(data, toimipaikka)
+
             if toimipaikka and toimipaikka.vakajarjestaja_id != palvelussuhde.tyontekija.vakajarjestaja_id:
                 validator.error('toimipaikka', 'Toimipaikka must have the same vakajarjestaja as tyontekija')
 
@@ -293,7 +300,7 @@ class TyoskentelypaikkaSerializer(serializers.HyperlinkedModelSerializer):
 
 def validate_dates(validated_data, palvelussuhde, validator):
     with validator.wrap():
-        validators.validate_paattymispvm_after_alkamispvm(validated_data)
+        validators.validate_paattymispvm_same_or_after_alkamispvm(validated_data)
 
     validate_dates_palvelussuhde(validated_data, palvelussuhde, validator)
 
@@ -322,9 +329,14 @@ def validate_overlapping_kiertavyys(data, palvelussuhde, kiertava_tyontekija_kyt
 
 
 class TyoskentelypaikkaUpdateSerializer(serializers.HyperlinkedModelSerializer):
+    id = serializers.ReadOnlyField()
+    palvelussuhde = serializers.HyperlinkedRelatedField(read_only=True, view_name='palvelussuhde-detail')
+    toimipaikka = serializers.HyperlinkedRelatedField(read_only=True, view_name='toimipaikka-detail')
+
     class Meta:
         model = Tyoskentelypaikka
-        fields = ('tehtavanimike_koodi', 'kelpoisuus_kytkin', 'alkamis_pvm', 'paattymis_pvm', 'lahdejarjestelma', 'tunniste')
+        exclude = ('changed_by', 'luonti_pvm')
+        read_only = ('url', 'palvelussuhde', 'toimipaikka', "kiertava_tyontekija_kytkin", "muutos_pvm",)
 
     @caching_to_representation('tyoskentelypaikka')
     def to_representation(self, instance):
@@ -332,9 +344,10 @@ class TyoskentelypaikkaUpdateSerializer(serializers.HyperlinkedModelSerializer):
 
     def validate(self, data):
         tyoskentelypaikka = self.instance
-        palvelussuhde = tyoskentelypaikka.palvelussuhde
-        toimipaikka = data.get('toimipaikka') or tyoskentelypaikka.toimipaikka
-        kiertava_tyontekija_kytkin = data.get('kiertava_tyontekija_kytkin') or tyoskentelypaikka.kiertava_tyontekija_kytkin
+        fill_missing_fields_for_validations(data, tyoskentelypaikka)
+        palvelussuhde = data['palvelussuhde']
+        toimipaikka = data['toimipaikka']
+        kiertava_tyontekija_kytkin = data['kiertava_tyontekija_kytkin']
 
         with ViewSetValidator() as validator:
             if kiertava_tyontekija_kytkin and toimipaikka:
@@ -348,6 +361,7 @@ class TyoskentelypaikkaUpdateSerializer(serializers.HyperlinkedModelSerializer):
             if not kiertava_tyontekija_kytkin:
                 with validator.wrap():
                     check_overlapping_tyoskentelypaikka_object(data, Tyoskentelypaikka, tyoskentelypaikka.id)
+
         return data
 
 
@@ -359,6 +373,8 @@ class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
                                                   prevalidator=validators.validate_tunniste,
                                                   check_permission='change_palvelussuhde',
                                                   either_required=True)
+    alkamis_pvm = serializers.DateField(required=True)
+    paattymis_pvm = serializers.DateField(required=True)
 
     class Meta:
         model = PidempiPoissaolo
@@ -377,12 +393,7 @@ class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
                     related_object_validations.check_overlapping_pidempipoissaolo_object(data, PidempiPoissaolo)
         else:
             pidempipoissaolo_obj = self.instance
-            if 'alkamis_pvm' not in data:
-                data['alkamis_pvm'] = pidempipoissaolo_obj.alkamis_pvm
-            if 'paattymis_pvm' not in data:
-                data['paattymis_pvm'] = pidempipoissaolo_obj.paattymis_pvm
-            if 'palvelussuhde' not in data:
-                data['palvelussuhde'] = pidempipoissaolo_obj.palvelussuhde
+            fill_missing_fields_for_validations(data, pidempipoissaolo_obj)
 
             with ViewSetValidator() as validator:
                 self.validate_dates(data, pidempipoissaolo_obj.palvelussuhde, validator)
@@ -395,7 +406,7 @@ class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
 
     def validate_dates(self, validated_data, palvelussuhde, validator):
         with validator.wrap():
-            validate_paattymispvm_after_alkamispvm(validated_data)
+            validate_paattymispvm_same_or_after_alkamispvm(validated_data)
 
         self.validate_duration(validated_data, validator)
         self.validate_dates_palvelussuhde(validated_data, palvelussuhde, validator)

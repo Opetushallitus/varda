@@ -887,8 +887,8 @@ class VardaHenkilostoViewSetTests(TestCase):
             'tyoaika_koodi': '1',
             'tutkinto_koodi': '321901',
             'tyoaika_viikossa': '38.73',
-            'alkamis_pvm': '2020-03-01',
-            'paattymis_pvm': '2020-03-01',  # Not after alkamis_pvm
+            'alkamis_pvm': '2020-03-02',
+            'paattymis_pvm': '2020-03-01',
             'lahdejarjestelma': '1',
         }
 
@@ -967,6 +967,41 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error('tutkinto_koodi', 'tyontekija has tutkinnot other than just 003.', resp)
+
+    def test_palvelussuhde_add_and_edit_tyosuhde_koodi_2(self):
+        # tyosuhde_koodi 2 is for fixed term employees. Paattymis_pvm can't be undefined in these cases.
+        client = SetUpTestClient('tyontekija_tallentaja').client()
+
+        tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija2')
+
+        # missing paattymis_pvm
+        palvelussuhde = {
+            'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/',
+            'tyosuhde_koodi': '2',
+            'tyoaika_koodi': '1',
+            'tutkinto_koodi': '321901',
+            'tyoaika_viikossa': '38.73',
+            'alkamis_pvm': '2020-03-01',
+            'lahdejarjestelma': '1',
+            'tunniste': 'testpalvelussuhde'
+        }
+        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+
+        # add paattymis_pvm so the request gets through
+        palvelussuhde['paattymis_pvm'] = '2021-11-11'
+
+        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        assert_status_code(resp, status.HTTP_201_CREATED)
+
+        palvelussuhde_patch = {
+            'paattymis_pvm': None
+        }
+
+        palvelussuhde_id = json.loads(resp.content)['id']
+        resp = client.patch(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_id}/', json.dumps(palvelussuhde_patch), content_type="application/json")
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error('paattymis_pvm', 'paattymis_pvm can not be none for tyosuhde_koodi 2', resp)
 
     def test_palvelussuhde_tyontekija_tunniste_related_field(self):
         tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija2')
@@ -1241,7 +1276,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         client = SetUpTestClient('tyontekija_tallentaja').client()
 
         palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
-        toimipaikka = Toimipaikka.objects.filter(organisaatio_oid='1.2.246.562.10.9395737548810')[0]
+        toimipaikka = Toimipaikka.objects.filter(organisaatio_oid='1.2.246.562.10.9395737548815')[0]
 
         # These are the fields that can be edited
         tyoskentelypaikka = {
@@ -1261,7 +1296,8 @@ class VardaHenkilostoViewSetTests(TestCase):
         cases = [
             ('2020-03-01', '2020-01-01', 'paattymis_pvm', 'paattymis_pvm must be after alkamis_pvm.'),
             ('2020-03-01', '2031-01-01', 'paattymis_pvm', 'paattymis_pvm must be before palvelussuhde paattymis_pvm (or same).'),
-            ('1999-03-01', '2021-01-01', 'alkamis_pvm', 'alkamis_pvm must be after palvelussuhde alkamis_pvm (or same).'),
+            ('1999-03-01', '2021-01-01', 'alkamis_pvm', 'alkamis_pvm must be after or equal to toimipaikka alkamis_pvm'),
+            ('2019-03-01', '2021-01-01', 'alkamis_pvm', 'alkamis_pvm must be after palvelussuhde alkamis_pvm (or same).'),
             ('2031-03-01', '2032-01-01', 'alkamis_pvm', 'alkamis_pvm must be before palvelussuhde paattymis_pvm.'),
         ]
 
@@ -1508,7 +1544,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
 
-        # Add initial poissaolo 1, with set duration
+        # Add initial poissaolo 1
         pidempipoissaolo = {
             'palvelussuhde': '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde.id),
             'alkamis_pvm': '2021-06-01',
@@ -1519,11 +1555,11 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp = client.post("/api/henkilosto/v1/pidemmatpoissaolot/", json.dumps(pidempipoissaolo), content_type="application/json")
         assert_status_code(resp, status.HTTP_201_CREATED)
 
-        # Add initial poissaolo 2, without end date
+        # Add initial poissaolo 2
         pidempipoissaolo = {
             'palvelussuhde': '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde.id),
             'alkamis_pvm': '2023-06-01',
-            'paattymis_pvm': None,
+            'paattymis_pvm': '2029-08-15',
             'lahdejarjestelma': '1',
             'tunniste': 'foo2'
         }

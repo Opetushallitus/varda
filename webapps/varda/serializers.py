@@ -362,9 +362,9 @@ class ToiminnallinenPainotusSerializer(serializers.HyperlinkedModelSerializer):
         if self.instance:  # PUT/PATCH
             if 'toimipaikka' in data and data['toimipaikka'] != self.instance.toimipaikka:
                 raise serializers.ValidationError("This field is not allowed to be changed.")
-            validators.validate_painotus_dates_within_toimipaikka(data, self.instance.toimipaikka)
+            validators.validate_dates_within_toimipaikka(data, self.instance.toimipaikka)
         else:  # POST
-            validators.validate_painotus_dates_within_toimipaikka(data, data['toimipaikka'])
+            validators.validate_dates_within_toimipaikka(data, data['toimipaikka'])
         return data
 
 
@@ -380,9 +380,9 @@ class KieliPainotusSerializer(serializers.HyperlinkedModelSerializer):
         if self.instance:  # PUT/PATCH
             if 'toimipaikka' in data and data['toimipaikka'] != self.instance.toimipaikka:
                 raise serializers.ValidationError("This field is not allowed to be changed.")
-            validators.validate_painotus_dates_within_toimipaikka(data, self.instance.toimipaikka)
+            validators.validate_dates_within_toimipaikka(data, self.instance.toimipaikka)
         else:  # POST
-            validators.validate_painotus_dates_within_toimipaikka(data, data['toimipaikka'])
+            validators.validate_dates_within_toimipaikka(data, data['toimipaikka'])
         return data
 
 
