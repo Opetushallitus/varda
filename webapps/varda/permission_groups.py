@@ -5,10 +5,12 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Q
 from guardian.shortcuts import assign_perm, remove_perm
+
 from varda.misc import get_json_from_external_service
 from varda.models import Toimipaikka, VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Lapsi
 
 # Get an instance of a logger
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,8 +29,7 @@ def assign_permissions_to_toimipaikka_obj(toimipaikka_organisaatio_oid, vakajarj
     if len(toimipaikka_query) == 1:
         toimipaikka_obj = toimipaikka_query[0]
         assign_object_level_permissions(toimipaikka_organisaatio_oid, Toimipaikka, toimipaikka_obj)
-        # TODO: CSCVARDA-1646 toimipaikka tason määrittelyn selvittyä
-        # assign_object_permissions_to_all_henkilosto_groups(toimipaikka_organisaatio_oid, Toimipaikka, toimipaikka_obj)
+        assign_object_permissions_to_all_henkilosto_groups(toimipaikka_organisaatio_oid, Toimipaikka, toimipaikka_obj)
         assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Toimipaikka, toimipaikka_obj)  # Remember also vakajarjestaja-level
         assign_object_permissions_to_all_henkilosto_groups(vakajarjestaja_organisaatio_oid, Toimipaikka, toimipaikka_obj)
     else:
@@ -96,9 +97,6 @@ def create_permission_groups_for_organisaatio(organisaatio_oid, vakajarjestaja=T
     else:  # toimipaikka -> drop PALVELUKAYTTAJA + PAAKAYTTAJA + HENKILOSTO_TILAPAISET
         excluded_roles = [PALVELUKAYTTAJA, PAAKAYTTAJA,
                           HENKILOSTO_TILAPAISET_TALLENTAJA, HENKILOSTO_TILAPAISET_KATSELIJA]
-        # TODO: CSCVARDA-1646 toimipaikka tason määrittelyn selvittyä
-        excluded_roles += [HENKILOSTO_TYONTEKIJA_TALLENTAJA, HENKILOSTO_TYONTEKIJA_KATSELIJA,
-                           HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA, HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA]
         roles = [role for role in roles_vakajarjestaja if role not in excluded_roles]
 
     for role in roles:
@@ -176,11 +174,10 @@ def create_permission_group(role, organisaatio_oid, organization_type):
         KATSELIJA: 'toimipaikka_katselija',
         HUOLTAJATIEDOT_TALLENTAJA: 'toimipaikka_huoltajatiedot_tallentaja',
         HUOLTAJATIEDOT_KATSELIJA: 'toimipaikka_huoltajatiedot_katselija',
-        # TODO: CSCVARDA-1646 toimipaikka tason määrittelyn selvittyä
-        # HENKILOSTO_TYONTEKIJA_TALLENTAJA: 'toimipaikka_henkilosto_tyontekija_tallentaja',
-        # HENKILOSTO_TYONTEKIJA_KATSELIJA: 'toimipaikka_henkilosto_tyontekija_katselija',
-        # HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA: 'toimipaikka_henkilosto_taydennyskoulutus_tallentaja',
-        # HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA: 'toimipaikka_henkilosto_taydennyskoulutus_katselija',
+        HENKILOSTO_TYONTEKIJA_TALLENTAJA: 'toimipaikka_henkilosto_tyontekija_tallentaja',
+        HENKILOSTO_TYONTEKIJA_KATSELIJA: 'toimipaikka_henkilosto_tyontekija_katselija',
+        HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA: 'toimipaikka_henkilosto_taydennyskoulutus_tallentaja',
+        HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA: 'toimipaikka_henkilosto_taydennyskoulutus_katselija',
     }
 
     """
@@ -352,18 +349,23 @@ def _get_permission_groups(group_organisation_oids, group_roles, tallentaja_orga
 
 
 def assign_object_permissions_to_all_henkilosto_groups(organisaatio_oid, model_class, model_obj):
-    henkilosto_groups = Group.objects.filter(name__startswith='HENKILOSTO_', name__contains=organisaatio_oid)
+    henkilosto_groups = Group.objects.filter(name__startswith='HENKILOSTO_', name__endswith=organisaatio_oid)
     _assign_or_remove_object_level_permissions(model_class, model_obj, henkilosto_groups, paos_kytkin=False, assign=True)
 
 
 def assign_object_permissions_to_tyontekija_groups(organisaatio_oid, model_class, model_obj):
-    tyontekija_groups = Group.objects.filter(name__startswith='HENKILOSTO_TYONTEKIJA_', name__contains=organisaatio_oid)
+    tyontekija_groups = Group.objects.filter(name__startswith='HENKILOSTO_TYONTEKIJA_', name__endswith=organisaatio_oid)
     _assign_or_remove_object_level_permissions(model_class, model_obj, tyontekija_groups, paos_kytkin=False, assign=True)
 
 
 def assign_object_permissions_to_tilapainenhenkilosto_groups(organisaatio_oid, model_class, model_obj):
-    tilapaiset_groups = Group.objects.filter(name__startswith='HENKILOSTO_TILAPAISET_', name__contains=organisaatio_oid)
+    tilapaiset_groups = Group.objects.filter(name__startswith='HENKILOSTO_TILAPAISET_', name__endswith=organisaatio_oid)
     _assign_or_remove_object_level_permissions(model_class, model_obj, tilapaiset_groups, paos_kytkin=False, assign=True)
+
+
+def assign_object_permissions_to_taydennyskoulutus_groups(organisaatio_oid, model_class, model_obj):
+    taydennyskoulutus_groups = Group.objects.filter(name__startswith='HENKILOSTO_TAYDENNYSKOULUTUS_', name__endswith=organisaatio_oid)
+    _assign_or_remove_object_level_permissions(model_class, model_obj, taydennyskoulutus_groups, paos_kytkin=False, assign=True)
 
 
 def assign_object_level_permissions(organisaatio_oid, model_class, model_obj, paos_kytkin=False):

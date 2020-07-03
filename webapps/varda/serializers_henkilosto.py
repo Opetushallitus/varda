@@ -1,3 +1,5 @@
+from operator import itemgetter
+
 from rest_framework import serializers
 
 from varda import related_object_validations, validators
@@ -6,6 +8,8 @@ from varda.misc_viewsets import ViewSetValidator
 from varda.models import (Henkilo, TilapainenHenkilosto, Tutkinto, Tyontekija, VakaJarjestaja, Palvelussuhde,
                           Tyoskentelypaikka, Toimipaikka, PidempiPoissaolo, TaydennyskoulutusTyontekija,
                           Taydennyskoulutus)
+from varda.permissions import (is_correct_taydennyskoulutus_tyontekija_permission,
+                               filter_authorized_taydennyskoulutus_tyontekijat)
 from varda.related_object_validations import (create_daterange, daterange_overlap,
                                               check_overlapping_tyoskentelypaikka_object,
                                               check_overlapping_palvelussuhde_object,
@@ -18,10 +22,10 @@ from varda.validators import (validate_dates_within_toimipaikka, validate_paatty
                               validate_paivamaara1_after_paivamaara2, validate_paivamaara1_before_paivamaara2,
                               parse_paivamaara, fill_missing_fields_for_validations)
 
+_tyontekija_not_specified_error_message = 'Tyontekija not specified. Use (tyontekija), (henkilo_oid, vakajarjestaja_oid) or (lahdejarjestelma, tunniste).'
 
-class TyontekijaPermissionCheckedHLField(PermissionCheckedHLFieldMixin, serializers.HyperlinkedRelatedField):
-    check_permission = 'change_tyontekija'
 
+class TyontekijaHLField(serializers.HyperlinkedRelatedField):
     def get_queryset(self):
         """
         https://medium.com/django-rest-framework/limit-related-data-choices-with-django-rest-framework-c54e96f5815e
@@ -32,6 +36,10 @@ class TyontekijaPermissionCheckedHLField(PermissionCheckedHLFieldMixin, serializ
         else:
             queryset = Tyontekija.objects.none()
         return queryset
+
+
+class TyontekijaPermissionCheckedHLField(PermissionCheckedHLFieldMixin, TyontekijaHLField):
+    check_permission = 'change_tyontekija'
 
 
 class PalvelussuhdePermissionCheckedHLField(PermissionCheckedHLFieldMixin, serializers.HyperlinkedRelatedField):
@@ -46,7 +54,32 @@ class PalvelussuhdePermissionCheckedHLField(PermissionCheckedHLFieldMixin, seria
         return queryset
 
 
-class TyontekijaSerializer(serializers.HyperlinkedModelSerializer):
+class OptionalToimipaikkaMixin(metaclass=serializers.SerializerMetaclass):
+    """
+    Mixin class to be used with HyperlinkedModelSerializer
+    """
+    # Only user with toimipaikka permissions need to provide this field
+    toimipaikka = ToimipaikkaPermissionCheckedHLField(view_name='toimipaikka-detail', required=False, write_only=True)
+    toimipaikka_oid = OidRelatedField(object_type=Toimipaikka,
+                                      parent_field='toimipaikka',
+                                      parent_attribute='organisaatio_oid',
+                                      prevalidator=validators.validate_organisaatio_oid,
+                                      either_required=False,
+                                      check_permission='view_toimipaikka',
+                                      write_only=True)
+
+    def create(self, validated_data):
+        """
+        NOTE: Since toimipaikka is removed here we need to pick toimipaikka before calling serializer.save()
+        :param validated_data: Serializer validated data
+        :return: Created object
+        """
+        validated_data.pop('toimipaikka', None)
+        validated_data.pop('toimipaikka_oid', None)
+        return super(OptionalToimipaikkaMixin, self).create(validated_data)
+
+
+class TyontekijaSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     henkilo = HenkiloHLField(view_name='henkilo-detail', required=False)
     henkilo_oid = OidRelatedField(object_type=Henkilo,
@@ -141,7 +174,7 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
             validator.error('kuukausi', 'kuukausi is not before vakajarjestaja.paattymis_pvm')
 
 
-class TutkintoSerializer(serializers.HyperlinkedModelSerializer):
+class TutkintoSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     henkilo = HenkiloHLField(view_name='henkilo-detail', required=False)
     henkilo_oid = OidRelatedField(object_type=Henkilo,
@@ -173,16 +206,17 @@ class TutkintoSerializer(serializers.HyperlinkedModelSerializer):
 
     def validate(self, data):
         vakajarjestaja = data.get('vakajarjestaja')
+        toimipaikka = data.get('toimipaikka')
         henkilo = data.get('henkilo')
-        msg = {}
-        if not Tyontekija.objects.filter(vakajarjestaja=vakajarjestaja, henkilo=henkilo).exists():
-            msg = {'tyontekija': ['Provided vakajarjestaja has not added this henkilo as tyontekija']}
-        if msg:
-            raise serializers.ValidationError(msg, code='invalid')
+        with ViewSetValidator() as validator:
+            if not Tyontekija.objects.filter(vakajarjestaja=vakajarjestaja, henkilo=henkilo).exists():
+                validator.error('tyontekija', 'Provided vakajarjestaja has not added this henkilo as tyontekija')
+            if vakajarjestaja and toimipaikka and vakajarjestaja != toimipaikka.vakajarjestaja:
+                validator.error('toimipaikka', 'Provided toimipaikka is not matching provided vakajarjestaja')
         return data
 
 
-class PalvelussuhdeSerializer(serializers.HyperlinkedModelSerializer):
+class PalvelussuhdeSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     tyontekija = TyontekijaPermissionCheckedHLField(view_name='tyontekija-detail', required=False)
     tyontekija_tunniste = TunnisteRelatedField(object_type=Tyontekija,
@@ -365,7 +399,7 @@ class TyoskentelypaikkaUpdateSerializer(serializers.HyperlinkedModelSerializer):
         return data
 
 
-class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
+class PidempiPoissaoloSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     palvelussuhde = PalvelussuhdePermissionCheckedHLField(view_name='palvelussuhde-detail', required=False)
     palvelussuhde_tunniste = TunnisteRelatedField(object_type=Palvelussuhde,
@@ -429,46 +463,38 @@ class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
                 validator.error('alkamis_pvm', 'alkamis_pvm must be before palvelussuhde paattymis_pvm.')
 
 
-class NestedTaydennyskoulutusTyontekijaSerializer(serializers.ModelSerializer):
-    tyontekija = TyontekijaPermissionCheckedHLField(required=False, view_name='tyontekija-detail')
-    henkilo_oid = serializers.CharField(max_length=50, required=False, validators=[validators.validate_henkilo_oid])
-    vakajarjestaja_oid = serializers.CharField(max_length=50, required=False, validators=[validators.validate_organisaatio_oid])
-    lahdejarjestelma = serializers.CharField(max_length=2, required=False, validators=[validators.validate_lahdejarjestelma_koodi])
-    tunniste = serializers.CharField(max_length=120, required=False, validators=[validators.validate_tunniste])
+class PermissionCheckedTaydennyskoulutusTyontekijaListSerializer(serializers.ListSerializer):
+    def update(self, instance, validated_data):
+        super(PermissionCheckedTaydennyskoulutusTyontekijaListSerializer, self).update(instance, validated_data)
 
-    class Meta:
-        model = TaydennyskoulutusTyontekija
-        exclude = ('id', 'taydennyskoulutus', 'changed_by', 'luonti_pvm', 'muutos_pvm')
+    def to_internal_value(self, data):
+        taydennyskoulutus_tyontekija_dicts = super(PermissionCheckedTaydennyskoulutusTyontekijaListSerializer, self).to_internal_value(data)
+        with ViewSetValidator() as validator:
+            # Validate all provided tyontekijat exist and mutate 'tyontekija' field to data.
+            for taydennyskoulutus_tyontekija in taydennyskoulutus_tyontekija_dicts:
+                taydennyskoulutus_tyontekija['tyontekija'] = self._find_tyontekija(taydennyskoulutus_tyontekija, validator)
+                if validator.messages:
+                    break
 
-    def create(self, data):
+            if not validator.messages:  # All tyontekijat found so check permissions
+                user = self.context['request'].user
+                tyontekija_ids = {itemgetter('tyontekija')(taydennyskoulutus_tyontekija_dict).id
+                                  for taydennyskoulutus_tyontekija_dict in taydennyskoulutus_tyontekija_dicts
+                                  }
+                if not is_correct_taydennyskoulutus_tyontekija_permission(user, tyontekija_ids, throws=False):
+                    validator.error('tyontekija', _tyontekija_not_specified_error_message)
+
+        return taydennyskoulutus_tyontekija_dicts
+
+    def to_representation(self, data):
         user = self.context['request'].user
-
-        with ViewSetValidator() as validator:
-            tyontekija = self._find_tyontekija(data, validator)
-
-        return TaydennyskoulutusTyontekija.objects.create(tyontekija=tyontekija,
-                                                          tehtavanimike_koodi=data['tehtavanimike_koodi'],
-                                                          taydennyskoulutus=data['taydennyskoulutus'],
-                                                          changed_by=user)
-
-    @caching_to_representation('taydennyskoulutustyontekija')
-    def to_representation(self, instance):
-        tyontekija = instance.tyontekija
-
-        instance = super(NestedTaydennyskoulutusTyontekijaSerializer, self).to_representation(instance)
-        instance['henkilo_oid'] = tyontekija.henkilo.henkilo_oid
-        instance['vakajarjestaja_oid'] = tyontekija.vakajarjestaja.organisaatio_oid
-        instance['lahdejarjestelma'] = tyontekija.lahdejarjestelma
-        instance['tunniste'] = tyontekija.tunniste
-
-        return instance
-
-    def validate(self, data):
-        with ViewSetValidator() as validator:
-            data['tyontekija'] = self._find_tyontekija(data, validator)
-
-        self._validate_tehtavanimike_koodi(data)
-        return data
+        # On listing filter tyontekijat that user has no permissions
+        if not user.is_superuser and self.context['view'].action == 'list':
+            checked_data, organisaatio_oids = filter_authorized_taydennyskoulutus_tyontekijat(data, user)
+            if not organisaatio_oids:
+                return []
+            return super(PermissionCheckedTaydennyskoulutusTyontekijaListSerializer, self).to_representation(checked_data)
+        return super(PermissionCheckedTaydennyskoulutusTyontekijaListSerializer, self).to_representation(data)
 
     def _find_tyontekija(self, data, validator):
         henkilo_oid = data.get('henkilo_oid', None)
@@ -480,10 +506,10 @@ class NestedTaydennyskoulutusTyontekijaSerializer(serializers.ModelSerializer):
 
         if (henkilo_oid is not None) == (vakajarjestaja_oid is None):
             validator.error('henkilo_oid', 'Either both henkilo_oid and vakajarjestaja_oid, or neither must be given.')
-            return
+            return None
         if (lahdejarjestelma is not None) == (tunniste is None):
             validator.error('tunniste', 'Either both lahdejarjestelma and tunniste, or neither must be given.')
-            return
+            return None
 
         if henkilo_oid is not None:
             tyontekija = self._find_tyontekija_by_henkilo_oid(validator, henkilo_oid, vakajarjestaja_oid, tyontekija)
@@ -492,7 +518,7 @@ class NestedTaydennyskoulutusTyontekijaSerializer(serializers.ModelSerializer):
             tyontekija = self._find_tyontekija_by_tunniste(validator, tunniste, lahdejarjestelma, tyontekija)
 
         if tyontekija is None:
-            validator.error('tyontekija', 'Tyontekija not specified. Use (tyontekija), (henkilo_oid, vakajarjestaja_oid) or (lahdejarjestelma, tunniste).')
+            validator.error('tyontekija', _tyontekija_not_specified_error_message)
 
         return tyontekija
 
@@ -517,6 +543,46 @@ class NestedTaydennyskoulutusTyontekijaSerializer(serializers.ModelSerializer):
         if tyontekija is not None and tyontekija_by_tunniste.id != tyontekija.id:
             validator.error('tunniste', 'Tunniste doesn\'t refer to the same tyontekija as url or henkilo_oid.')
         return tyontekija_by_tunniste
+
+
+class NestedTaydennyskoulutusTyontekijaSerializer(serializers.ModelSerializer):
+    tyontekija = TyontekijaHLField(required=False, view_name='tyontekija-detail')
+    henkilo_oid = serializers.CharField(max_length=50, required=False, validators=[validators.validate_henkilo_oid])
+    vakajarjestaja_oid = serializers.CharField(max_length=50, required=False, validators=[validators.validate_organisaatio_oid])
+    lahdejarjestelma = serializers.CharField(max_length=2, required=False, validators=[validators.validate_lahdejarjestelma_koodi])
+    tunniste = serializers.CharField(max_length=120, required=False, validators=[validators.validate_tunniste])
+
+    class Meta:
+        model = TaydennyskoulutusTyontekija
+        list_serializer_class = PermissionCheckedTaydennyskoulutusTyontekijaListSerializer
+        exclude = ('id', 'taydennyskoulutus', 'changed_by', 'luonti_pvm', 'muutos_pvm')
+
+    def create(self, data):
+        user = self.context['request'].user
+
+        tyontekija = data['tyontekija']
+        self._validate_tehtavanimike_koodi(data)
+
+        return TaydennyskoulutusTyontekija.objects.create(tyontekija=tyontekija,
+                                                          tehtavanimike_koodi=data['tehtavanimike_koodi'],
+                                                          taydennyskoulutus=data['taydennyskoulutus'],
+                                                          changed_by=user)
+
+    @caching_to_representation('taydennyskoulutustyontekija')
+    def to_representation(self, instance):
+        tyontekija = instance.tyontekija
+
+        instance = super(NestedTaydennyskoulutusTyontekijaSerializer, self).to_representation(instance)
+        instance['henkilo_oid'] = tyontekija.henkilo.henkilo_oid
+        instance['vakajarjestaja_oid'] = tyontekija.vakajarjestaja.organisaatio_oid
+        instance['lahdejarjestelma'] = tyontekija.lahdejarjestelma
+        instance['tunniste'] = tyontekija.tunniste
+
+        return instance
+
+    def validate(self, data):
+
+        return data
 
     def _validate_tehtavanimike_koodi(self, data):
         tyontekija = data.get('tyontekija', None)
@@ -546,13 +612,13 @@ class TaydennyskoulutusSerializer(serializers.HyperlinkedModelSerializer):
 
     def create(self, validated_data):
         tyontekijat = validated_data.pop('taydennyskoulutukset_tyontekijat', [])
-        instance = Taydennyskoulutus.objects.create(**validated_data)
+        taydennyskoulutus = Taydennyskoulutus.objects.create(**validated_data)
 
         for tyontekija in tyontekijat:
-            tyontekija['taydennyskoulutus'] = instance
+            tyontekija['taydennyskoulutus'] = taydennyskoulutus
             NestedTaydennyskoulutusTyontekijaSerializer(context=self._context).create(tyontekija)
 
-        return instance
+        return taydennyskoulutus
 
     def validate(self, data):
         with ViewSetValidator() as validator:
@@ -644,3 +710,13 @@ class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
             for tyontekija_remove in tyontekijat_remove:
                 TaydennyskoulutusTyontekija.objects.filter(tyontekija=tyontekija_remove['tyontekija'],
                                                            tehtavanimike_koodi=tyontekija_remove['tehtavanimike_koodi']).delete()
+
+
+class TaydennyskoulutusTyontekijaSerializer(serializers.ModelSerializer):
+    henkilo_etunimet = serializers.CharField(source='tyontekija.henkilo.etunimet')
+    henkilo_sukunimi = serializers.CharField(source='tyontekija.henkilo.sukunimi')
+    henkilo_oid = serializers.CharField(source='tyontekija.henkilo.henkilo_oid')
+
+    class Meta:
+        model = TaydennyskoulutusTyontekija
+        fields = ('tehtavanimike_koodi', 'henkilo_etunimet', 'henkilo_sukunimi', 'henkilo_oid')

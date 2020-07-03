@@ -40,18 +40,20 @@ def assert_validation_error(expected_key, expected_message, response, extra_mess
         for subkey in expected_key[:-1]:
             messages_for_key = messages_for_key.get(subkey, [])
 
-            if not isinstance(messages_for_key, list):
+            if isinstance(messages_for_key, dict):
+                pass
+            elif not isinstance(messages_for_key, list):
                 raise ValueError(f'Expected to find a list at {subkey}')
-
-            # Each key contains a list of error dictionaries;
-            # iterate the lists and merge the errors to a single dict.
-            merged = {}
-            for msg_dict in messages_for_key:
-                for key, value in msg_dict.items():
-                    arr = merged.get(key, value.copy())
-                    merged[key] = arr
-                    arr.append(value)
-            messages_for_key = merged
+            else:
+                # Each key contains a list of error dictionaries;
+                # iterate the lists and merge the errors to a single dict.
+                merged = {}
+                for msg_dict in messages_for_key:
+                    for key, value in msg_dict.items():
+                        arr = merged.get(key, value.copy())
+                        merged[key] = arr
+                        arr.append(value)
+                messages_for_key = merged
         messages_for_key = messages_for_key.get(expected_key[-1], [])
 
     if expected_message not in messages_for_key:

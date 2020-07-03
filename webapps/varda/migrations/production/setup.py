@@ -245,11 +245,10 @@ def load_henkilosto_permissions():
         ('vakajarjestaja_henkilosto_tilapainen_katselija', tilapainen_henkilosto_katselija_permissions),
         ('vakajarjestaja_henkilosto_taydennyskoulutus_tallentaja', taydennyskoulutus_tallentaja_permissions),
         ('vakajarjestaja_henkilosto_taydennyskoulutus_katselija', taydennyskoulutus_katselija_permissions),
-        # TODO: CSCVARDA-1646 toimipaikka tason määrittelyn selvittyä
-        # ('toimipaikka_henkilosto_tyontekija_tallentaja', tyontekija_tallentaja_permissions),
-        # ('toimipaikka_henkilosto_tyontekija_katselija', tyontekija_katselija_permissions),
-        # ('toimipaikka_henkilosto_taydennyskoulutus_tallentaja', taydennyskoulutus_tallentaja_permissions),
-        # ('toimipaikka_henkilosto_taydennyskoulutus_katselija', taydennyskoulutus_katselija_permissions),
+        ('toimipaikka_henkilosto_tyontekija_tallentaja', tyontekija_tallentaja_permissions),
+        ('toimipaikka_henkilosto_tyontekija_katselija', tyontekija_katselija_permissions),
+        ('toimipaikka_henkilosto_taydennyskoulutus_tallentaja', taydennyskoulutus_tallentaja_permissions),
+        ('toimipaikka_henkilosto_taydennyskoulutus_katselija', taydennyskoulutus_katselija_permissions),
     ]
 
     for group_tuple in group_permission_array:

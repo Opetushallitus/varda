@@ -1,9 +1,10 @@
 import logging
+from collections import Iterable
 
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
-from django.db import transaction
-from django.db.models import IntegerField, Q
+from django.db import transaction, IntegrityError
+from django.db.models import IntegerField, Q, QuerySet
 from django.db.models.functions import Cast
 from guardian.models import UserObjectPermission, GroupObjectPermission
 from guardian.shortcuts import assign_perm, remove_perm
@@ -12,7 +13,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from varda.misc import path_parse
 from varda.models import (VakaJarjestaja, Toimipaikka, Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
                           PaosToiminta, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog,
-                          Maksutieto)
+                          Maksutieto, Tyontekija)
 from varda.permission_groups import assign_object_level_permissions, remove_object_level_permissions
 
 
@@ -127,10 +128,20 @@ def check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(oma_orga
     raise PermissionDenied('There is no active paos-agreement.')
 
 
+def is_user_permission(user, permission_group_name):
+    """
+    Check is user superuser or has user required permission group
+    :param user: user instance
+    :param permission_group_name: name of the permission requested
+    :return: boolean
+    """
+    return user.is_superuser or user.groups.filter(name=permission_group_name).exists()
+
+
 def check_if_user_has_paakayttaja_permissions(vakajarjestaja_organisaatio_oid, user):
     VARDA_PAAKAYTTAJA = Z4_CasKayttoOikeudet.PAAKAYTTAJA
     paakayttaja_group_name = VARDA_PAAKAYTTAJA + '_' + vakajarjestaja_organisaatio_oid
-    if not user.is_superuser and not user.groups.filter(name=paakayttaja_group_name).exists():
+    if not is_user_permission(user, paakayttaja_group_name):
         raise PermissionDenied("User does not have paakayttaja-permissions.")
 
 
@@ -341,3 +352,57 @@ def object_ids_organization_has_permissions_to(organisaatio_oid, model):
                                 .values_list('object_pk_as_int', flat=True).distinct())
 
     return group_permission_objects
+
+
+def is_correct_taydennyskoulutus_tyontekija_permission(user, tyontekijat, throws=True):
+    """
+    Checks user has taydennyskoulutus tallentaja group permissions to taydennyskoulutus tyontekijat vakajarjestaja
+     or all tyontekija related toimipaikat.
+    :param user: User requesting to access taydennyskoulutus tyontekijat
+    :param tyontekijat: taydennyskoulutus instance related tyontekijat queryset or list of tyontekija ids
+    :type tyontekijat: QuerySet or Iterable
+    :param throws: By default validation fails raise PermissionDenied. Else if this param is False returns False.
+    :return: boolean
+    """
+    if not isinstance(tyontekijat, QuerySet) and isinstance(tyontekijat, Iterable):
+        tyontekijat = Tyontekija.objects.filter(id__in=tyontekijat)
+    if tyontekijat.exists():
+        vakajarjestaja_oid = get_tyontekija_vakajarjestaja_oid(tyontekijat)
+        permission_format = 'HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA_{}'
+        if not is_user_permission(user, permission_format.format(vakajarjestaja_oid)):
+            toimipaikka_oids = (tyontekijat
+                                .values_list('palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid', flat=True)
+                                .exclude(palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid='')
+                                .distinct()
+                                )
+            if any(not is_user_permission(user, permission_format.format(toimipaikka_oid)) for toimipaikka_oid in toimipaikka_oids):
+                if throws:
+                    raise PermissionDenied('Insufficient permissions to taydennyskoulutus related tyontekijat')
+                return False
+    return True
+
+
+def get_tyontekija_vakajarjestaja_oid(tyontekijat):
+    """
+    Gets vakajarjestaja oid if tyontekijat has been added to taydennyskoulutus. Always returns 1 or throws
+    :param tyontekijat: taydennyskoulutus instance related tyontekijat
+    :return: vakajarjestaja oid or None
+    """
+    vakajarjestaja_oids = (tyontekijat.values_list('vakajarjestaja__organisaatio_oid', flat=True)
+                           .distinct()
+                           )
+    if len(vakajarjestaja_oids) > 1 or not vakajarjestaja_oids:
+        raise IntegrityError('Täydennyskoulutus has tyontekijat on multiple vakatoimijat')
+    return vakajarjestaja_oids.first()
+
+
+def filter_authorized_taydennyskoulutus_tyontekijat(data, user):
+    taydennyskoulutus_group_names = user.groups.filter(
+        name__startswith='HENKILOSTO_TAYDENNYSKOULUTUS_').values_list('name', flat=True)
+    organisaatio_oids = [group_name.split('_')[-1] for group_name in taydennyskoulutus_group_names]
+    # We can't distinguish vakajarjestaja oids from toimipaikka oids but since oids are unique it doesn't matter
+    checked_data = data.filter(
+        Q(tyontekija__vakajarjestaja__organisaatio_oid__in=organisaatio_oids) |
+        Q(tyontekija__palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid__in=organisaatio_oids)
+    ).distinct()
+    return checked_data, organisaatio_oids

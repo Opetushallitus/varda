@@ -7,29 +7,34 @@ from django.db.models import ProtectedError, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status, permissions
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.response import Response
 from rest_framework.schemas.coreapi import AutoSchema
 from rest_framework.viewsets import ModelViewSet
-from rest_framework_guardian.filters import DjangoObjectPermissionsFilter
+from rest_framework_guardian.filters import ObjectPermissionsFilter
 
 from varda import filters
 from varda.cache import cached_retrieve_response, delete_cache_keys_related_model, cached_list_response
 from varda.exceptions.conflict_error import ConflictError
-from varda.filters import PalvelussuhdeFilter, TyoskentelypaikkaFilter, PidempiPoissaoloFilter, TaydennyskoulutusFilter
-from varda.models import (TilapainenHenkilosto, Tutkinto, Tyontekija, VakaJarjestaja, Palvelussuhde, Tyoskentelypaikka,
-                          PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija)
+from varda.filters import PalvelussuhdeFilter, TyoskentelypaikkaFilter, PidempiPoissaoloFilter, TaydennyskoulutusFilter, \
+    TaydennyskoulutusTyontekijaFilter
+from varda.models import (TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
+                          PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Toimipaikka)
 from varda.permission_groups import (assign_object_permissions_to_tyontekija_groups,
                                      remove_object_level_permissions,
-                                     assign_object_permissions_to_tilapainenhenkilosto_groups)
-from varda.permissions import CustomObjectPermissions, delete_object_permissions_explicitly
-from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, PalvelussuhdeSerializer, PidempiPoissaoloSerializer,
+                                     assign_object_permissions_to_tilapainenhenkilosto_groups,
+                                     assign_object_permissions_to_taydennyskoulutus_groups)
+from varda.permissions import (CustomObjectPermissions, delete_object_permissions_explicitly, is_user_permission,
+                               is_correct_taydennyskoulutus_tyontekija_permission, get_tyontekija_vakajarjestaja_oid,
+                               filter_authorized_taydennyskoulutus_tyontekijat)
+from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, PalvelussuhdeSerializer,
+                                          PidempiPoissaoloSerializer,
                                           TilapainenHenkilostoSerializer, TutkintoSerializer, TyontekijaSerializer,
                                           TyoskentelypaikkaUpdateSerializer, TaydennyskoulutusSerializer,
-                                          TaydennyskoulutusUpdateSerializer)
-
+                                          TaydennyskoulutusUpdateSerializer,
+                                          TaydennyskoulutusTyontekijaSerializer)
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -98,45 +103,56 @@ class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     serializer_class = TyontekijaSerializer
     permission_classes = (CustomObjectPermissions, )
-    filter_backends = (DjangoObjectPermissionsFilter,)
+    filter_backends = (ObjectPermissionsFilter,)
     queryset = Tyontekija.objects.all().order_by('id')
 
     def retrieve(self, request, *args, **kwargs):
         return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
-    def return_tyontekija_if_already_created(self, validated_data):
+    def return_tyontekija_if_already_created(self, validated_data, toimipaikka_oid):
         q_obj = Q(henkilo=validated_data['henkilo'], vakajarjestaja=validated_data['vakajarjestaja'])
         tyontekija_obj = Tyontekija.objects.filter(q_obj).first()
         if tyontekija_obj:
+            if toimipaikka_oid:
+                self._assign_toimipaikka_permissions(toimipaikka_oid, tyontekija_obj)
             raise ConflictError(self.get_serializer(tyontekija_obj).data, status_code=status.HTTP_200_OK)
+
+    def _assign_toimipaikka_permissions(self, toimipaikka_oid, tyontekija_obj):
+        assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Tyontekija, tyontekija_obj)
+        tutkinnot = Tutkinto.objects.filter(henkilo=tyontekija_obj.henkilo)
+        [assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Tutkinto, tutkinto) for tutkinto in tutkinnot]
 
     def perform_create(self, serializer):
         validated_data = serializer.validated_data
         user = self.request.user
         vakajarjestaja = validated_data['vakajarjestaja']
-        self.return_tyontekija_if_already_created(validated_data)
+        toimipaikka_oid = validated_data.get('toimipaikka') and validated_data.get('toimipaikka').organisaatio_oid
+        self.return_tyontekija_if_already_created(validated_data, toimipaikka_oid)
 
         with transaction.atomic():
             tyontekija_obj = serializer.save(changed_by=user)
-            delete_cache_keys_related_model('henkilo', tyontekija_obj.henkilo.id)
             vakajarjestaja_oid = vakajarjestaja.organisaatio_oid
-            assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Tyontekija, tyontekija_obj)
             tutkinnot = Tutkinto.objects.filter(henkilo=tyontekija_obj.henkilo)
+
+            assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Tyontekija, tyontekija_obj)
             [assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Tutkinto, tutkinto) for tutkinto in tutkinnot]
+            if toimipaikka_oid:
+                self._assign_toimipaikka_permissions(toimipaikka_oid, tyontekija_obj)
+            delete_cache_keys_related_model('henkilo', tyontekija_obj.henkilo.id)
 
     def perform_update(self, serializer):
         user = self.request.user
         with transaction.atomic():
             serializer.save(changed_by=user)
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, tyontekija):
         with transaction.atomic():
             try:
-                delete_object_permissions_explicitly(Tyontekija, instance)
-                vakajarjestaja_oid = instance.vakajarjestaja.organisaatio_oid
-                tutkinnot = Tutkinto.objects.filter(henkilo=instance.henkilo)
+                delete_object_permissions_explicitly(Tyontekija, tyontekija)
+                vakajarjestaja_oid = tyontekija.vakajarjestaja.organisaatio_oid
+                tutkinnot = Tutkinto.objects.filter(henkilo=tyontekija.henkilo)
                 [remove_object_level_permissions(vakajarjestaja_oid, Tutkinto, tutkinto) for tutkinto in tutkinnot]
-                instance.delete()
+                tyontekija.delete()
             except ProtectedError:
                 raise ValidationError({'detail': 'Cannot delete tyontekija. There are objects referencing it '
                                                  'that need to be deleted first.'})
@@ -164,7 +180,7 @@ class TilapainenHenkilostoViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     serializer_class = TilapainenHenkilostoSerializer
     permission_classes = (CustomObjectPermissions, )
-    filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend, )
+    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
     filterset_class = filters.TilapainenHenkilostoFilter
     queryset = TilapainenHenkilosto.objects.all().order_by('id')
 
@@ -185,16 +201,16 @@ class TilapainenHenkilostoViewSet(ObjectByTunnisteMixin, ModelViewSet):
         user = self.request.user
         serializer.save(changed_by=user)
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, tilapainenhenkilosto):
         with transaction.atomic():
-            delete_object_permissions_explicitly(TilapainenHenkilosto, instance)
-            instance.delete()
+            delete_object_permissions_explicitly(TilapainenHenkilosto, tilapainenhenkilosto)
+            tilapainenhenkilosto.delete()
 
 
 class TutkintoViewSet(ModelViewSet):
     """
     list:
-        Nouda kaikki tutkinnot.
+        Nouda kaikki tutkinnot joita käyttäjä pystyy muokkaamaan. Kaikkien hakuun käytä /tutkinto-list-all
 
     create:
         Luo yksi uusi tutkinto.
@@ -213,12 +229,28 @@ class TutkintoViewSet(ModelViewSet):
     """
     serializer_class = TutkintoSerializer
     permission_classes = (CustomObjectPermissions, )
-    filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend, )
+    filter_backends = None
     filterset_class = filters.TutkintoFilter
     queryset = Tutkinto.objects.all().order_by('id')
 
+    def filter_queryset(self, queryset):
+        if self.action == 'tutkinto_list_all':
+            # We are allowing users to view all tutkinto without object level permission check.
+            self.filter_backends = DjangoFilterBackend,
+        else:
+            self.filter_backends = ObjectPermissionsFilter, DjangoFilterBackend,
+        return super().filter_queryset(queryset)
+
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
+
+    @action(methods=['get'], detail=False, url_path='tutkinto-list-all', url_name='tutkinto_list_all')
+    def tutkinto_list_all(self, request, *args, **kwargs):
+        """
+        Kaikkien henkilön tutkintojen hakuun.
+        """
+        # cached_list_response is permission check based
+        return super().list(request, *args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):
         return cached_retrieve_response(self, request.user, request.path)
@@ -233,19 +265,23 @@ class TutkintoViewSet(ModelViewSet):
         user = self.request.user
         validated_data = serializer.validated_data
         self.return_henkilo_already_has_tutkinto(validated_data)
+        toimipaikka_oid = validated_data.get('toimipaikka') and validated_data.get('toimipaikka').organisaatio_oid
 
-        saved_object = serializer.save(changed_by=user)
-        delete_cache_keys_related_model('henkilo', saved_object.henkilo.id)
-        vakajarjestaja_oids = VakaJarjestaja.objects.filter(tyontekijat__henkilo=saved_object.henkilo).values_list('organisaatio_oid', flat=True)
-        [assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Tutkinto, saved_object) for vakajarjestaja_oid in vakajarjestaja_oids]
+        tutkinto = serializer.save(changed_by=user)
+        delete_cache_keys_related_model('henkilo', tutkinto.henkilo.id)
+        vakajarjestaja_oid = validated_data['vakajarjestaja'].organisaatio_oid
+        assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Tutkinto, tutkinto)
 
-    def perform_destroy(self, instance):
-        henkilo = instance.henkilo
+        if toimipaikka_oid:
+            assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Tutkinto, tutkinto)
 
-        delete_cache_keys_related_model('henkilo', henkilo.id)
+    def perform_destroy(self, tutkinto):
+        henkilo = tutkinto.henkilo
+
         with transaction.atomic():
-            delete_object_permissions_explicitly(Tutkinto, instance)
-            instance.delete()
+            delete_object_permissions_explicitly(Tutkinto, tutkinto)
+            tutkinto.delete()
+        delete_cache_keys_related_model('henkilo', henkilo.id)
 
     @action(methods=['delete'], detail=False)
     def delete(self, request):
@@ -300,7 +336,7 @@ class PalvelussuhdeViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     serializer_class = PalvelussuhdeSerializer
     permission_classes = (CustomObjectPermissions, )
-    filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend, )
+    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
     filterset_class = PalvelussuhdeFilter
     queryset = Palvelussuhde.objects.all().order_by('id')
 
@@ -312,29 +348,45 @@ class PalvelussuhdeViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
     def perform_create(self, serializer):
         validated_data = serializer.validated_data
+        toimipaikka_oid = validated_data.get('toimipaikka') and validated_data.get('toimipaikka').organisaatio_oid
 
         with transaction.atomic():
             user = self.request.user
-            saved_object = serializer.save(changed_by=user)
-            delete_cache_keys_related_model('tyontekija', saved_object.tyontekija.id)
+            palvelussuhde = serializer.save(changed_by=user)
+            delete_cache_keys_related_model('tyontekija', palvelussuhde.tyontekija.id)
             vakajarjestaja_oid = validated_data['tyontekija'].vakajarjestaja.organisaatio_oid
-            assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Palvelussuhde, saved_object)
+            assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Palvelussuhde, palvelussuhde)
+            if toimipaikka_oid:
+                assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Palvelussuhde, palvelussuhde)
 
     def perform_update(self, serializer):
         user = self.request.user
-        saved_object = serializer.save(changed_by=user)
-        delete_cache_keys_related_model('palvelussuhde', saved_object.id)
+        self._throw_if_not_all_tyoskentelypaikka_permissions()
+        palvelussuhde = serializer.save(changed_by=user)
+        delete_cache_keys_related_model('palvelussuhde', palvelussuhde.id)
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, palvelussuhde):
+        self._throw_if_not_all_tyoskentelypaikka_permissions()
         with transaction.atomic():
-            delete_object_permissions_explicitly(Palvelussuhde, instance)
+            delete_object_permissions_explicitly(Palvelussuhde, palvelussuhde)
             try:
-                instance.delete()
+                palvelussuhde.delete()
             except ProtectedError:
                 raise ValidationError({'detail': 'Cannot delete palvelussuhde. There are objects referencing it '
                                                  'that need to be deleted first.'})
 
-            delete_cache_keys_related_model('tyontekija', instance.tyontekija.id)
+            delete_cache_keys_related_model('tyontekija', palvelussuhde.tyontekija.id)
+
+    def _throw_if_not_all_tyoskentelypaikka_permissions(self):
+        """
+        User is required to have permission to all tyoskentelypaikkas related to palvelussuhde in order to modify it.
+        Object level permission is still required.
+        :return: None
+        """
+        user = self.request.user
+        tyoskentelypaikat = self.get_object().tyoskentelypaikat.all()
+        if any(not user.has_perm('change_tyoskentelypaikka', tyoskentelypaikka) for tyoskentelypaikka in tyoskentelypaikat):
+            raise PermissionDenied('Modify actions requires permissions to all tyoskentelypaikkas.')
 
 
 class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
@@ -359,7 +411,7 @@ class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     serializer_class = None
     permission_classes = (CustomObjectPermissions, )
-    filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend, )
+    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
     filterset_class = TyoskentelypaikkaFilter
     queryset = Tyoskentelypaikka.objects.all().order_by('id')
 
@@ -377,38 +429,55 @@ class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
         return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
     def perform_create(self, serializer):
+        user = self.request.user
+        validated_data = serializer.validated_data
+        vakajarjestaja_oid = validated_data['palvelussuhde'].tyontekija.vakajarjestaja.organisaatio_oid
+        tyontekija_tallentaja_group = 'HENKILOSTO_TYONTEKIJA_TALLENTAJA_{}'.format(vakajarjestaja_oid)
+        if validated_data.get('kiertava_tyontekija_kytkin') and not is_user_permission(user, tyontekija_tallentaja_group):
+            raise PermissionDenied('Vakajarjestaja level permissions required for kiertava tyontekija.')
+
         with transaction.atomic():
-            user = self.request.user
             tyoskentelypaikka = serializer.save(changed_by=user)
-            palvelussuhde = tyoskentelypaikka.palvelussuhde
-            delete_cache_keys_related_model('palvelussuhde', tyoskentelypaikka.palvelussuhde.id)
-            if tyoskentelypaikka.toimipaikka:
-                delete_cache_keys_related_model('toimipaikka', tyoskentelypaikka.toimipaikka.id)
-            vakajarjestaja_oid = palvelussuhde.tyontekija.vakajarjestaja.organisaatio_oid
             assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Tyoskentelypaikka, tyoskentelypaikka)
-            if (tyoskentelypaikka.kiertava_tyontekija_kytkin and not user.is_superuser and
-                    not user.groups.filter(name='HENKILOSTO_TYONTEKIJA_TALLENTAJA_{}'.format(vakajarjestaja_oid)).exists()):
-                raise PermissionDenied('Vakajarjestaja level permissions required for kiertava tyontekija.')
             if tyoskentelypaikka.toimipaikka:
                 toimipaikka_oid = tyoskentelypaikka.toimipaikka.organisaatio_oid
                 assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Tyoskentelypaikka, tyoskentelypaikka)
+                # Since it's allowed for vakatoimija level user to not provide toimipaikka earlier related objects this
+                # needs to be filled here to make sure
+                palvelussuhde = tyoskentelypaikka.palvelussuhde
+                assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Palvelussuhde, palvelussuhde)
+                pidemmatpoissaolot = palvelussuhde.pidemmatpoissaolot.all()
+                [assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, PidempiPoissaolo, pidempipoissaolo)
+                 for pidempipoissaolo in pidemmatpoissaolot
+                 ]
+                tyontekija = palvelussuhde.tyontekija
+                assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Tyontekija, tyontekija)
+                # Add also permission to all taydennyskoulutukset for current jarjestaja
+                taydennyskoulutukset = Taydennyskoulutus.objects.filter(tyontekijat__vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
+                [assign_object_permissions_to_taydennyskoulutus_groups(toimipaikka_oid, Taydennyskoulutus, taydennyskoulutus)
+                 for taydennyskoulutus in taydennyskoulutukset
+                 ]
+
+            delete_cache_keys_related_model('palvelussuhde', tyoskentelypaikka.palvelussuhde.id)
+            if tyoskentelypaikka.toimipaikka:
+                delete_cache_keys_related_model('toimipaikka', tyoskentelypaikka.toimipaikka.id)
 
     def perform_update(self, serializer):
         user = self.request.user
         serializer.save(changed_by=user)
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, tyoskentelypaikka):
         with transaction.atomic():
-            delete_object_permissions_explicitly(Tyoskentelypaikka, instance)
+            delete_object_permissions_explicitly(Tyoskentelypaikka, tyoskentelypaikka)
             try:
-                instance.delete()
+                tyoskentelypaikka.delete()
             except ProtectedError:
                 raise ValidationError({'detail': 'Cannot delete tyoskentelypaikka. There are objects referencing it '
                                                  'that need to be deleted first.'})
 
-            delete_cache_keys_related_model('palvelussuhde', instance.palvelussuhde.id)
-            if instance.toimipaikka:
-                delete_cache_keys_related_model('toimipaikka', instance.toimipaikka.id)
+            delete_cache_keys_related_model('palvelussuhde', tyoskentelypaikka.palvelussuhde.id)
+            if tyoskentelypaikka.toimipaikka:
+                delete_cache_keys_related_model('toimipaikka', tyoskentelypaikka.toimipaikka.id)
 
 
 class PidempiPoissaoloViewSet(ObjectByTunnisteMixin, ModelViewSet):
@@ -433,7 +502,7 @@ class PidempiPoissaoloViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     serializer_class = PidempiPoissaoloSerializer
     permission_classes = (CustomObjectPermissions, )
-    filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend, )
+    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
     filterset_class = PidempiPoissaoloFilter
     queryset = PidempiPoissaolo.objects.all().order_by('id')
 
@@ -444,26 +513,48 @@ class PidempiPoissaoloViewSet(ObjectByTunnisteMixin, ModelViewSet):
         return cached_list_response(self, request.user, request.path)
 
     def perform_create(self, serializer):
+        validated_data = serializer.validated_data
+        toimipaikka_oid = validated_data.get('toimipaikka') and validated_data.get('toimipaikka').organisaatio_oid
+
         with transaction.atomic():
             user = self.request.user
-            saved_object = serializer.save(changed_by=user)
-            vakajarjestaja_oid = saved_object.palvelussuhde.tyontekija.vakajarjestaja.organisaatio_oid
-            assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, PidempiPoissaolo, saved_object)
-            delete_cache_keys_related_model('palvelussuhde', saved_object.palvelussuhde.id)
+            pidempipoissaolo = serializer.save(changed_by=user)
+            vakajarjestaja_oid = pidempipoissaolo.palvelussuhde.tyontekija.vakajarjestaja.organisaatio_oid
+            assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, PidempiPoissaolo, pidempipoissaolo)
+            if toimipaikka_oid:
+                assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, PidempiPoissaolo, pidempipoissaolo)
+            tyontekija_toimipaikka_oids = pidempipoissaolo.palvelussuhde.tyoskentelypaikat.values_list('toimipaikka__organisaatio_oid', flat=True)
+            [assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, PidempiPoissaolo, pidempipoissaolo)
+             for toimipaikka_oid in tyontekija_toimipaikka_oids
+             ]
+            delete_cache_keys_related_model('palvelussuhde', pidempipoissaolo.palvelussuhde.id)
 
     def perform_update(self, serializer):
         user = self.request.user
+        self._throw_if_not_all_tyoskentelypaikka_permissions()
         serializer.save(changed_by=user)
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, pidempipoissaolo):
+        self._throw_if_not_all_tyoskentelypaikka_permissions()
         with transaction.atomic():
-            delete_object_permissions_explicitly(Palvelussuhde, instance)
+            delete_object_permissions_explicitly(PidempiPoissaolo, pidempipoissaolo)
             try:
-                instance.delete()
+                pidempipoissaolo.delete()
             except ProtectedError:
                 raise ValidationError({'detail': 'Cannot delete pidempipoissaolo. There are objects referencing it '
                                                  'that need to be deleted first.'})
-            delete_cache_keys_related_model('palvelussuhde', instance.palvelussuhde.id)
+            delete_cache_keys_related_model('palvelussuhde', pidempipoissaolo.palvelussuhde.id)
+
+    def _throw_if_not_all_tyoskentelypaikka_permissions(self):
+        """
+        User is required to have permission to all tyoskentelypaikkas related to palvelussuhde in order to modify it.
+        Object level permission is still required.
+        :return: None
+        """
+        user = self.request.user
+        tyoskentelypaikat = self.get_object().palvelussuhde.tyoskentelypaikat.all()
+        if any(not user.has_perm('change_tyoskentelypaikka', tyoskentelypaikka) for tyoskentelypaikka in tyoskentelypaikat):
+            raise PermissionDenied('Modify actions requires permissions to all tyoskentelypaikkas.')
 
 
 class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
@@ -487,9 +578,9 @@ class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
         Päivitä yhden taydennyskoulutuksen kaikki kentät.
     """
     serializer_class = None
-    permission_classes = (permissions.IsAdminUser, )
-    filter_backends = (DjangoFilterBackend, )
-    filter_class = TaydennyskoulutusFilter
+    permission_classes = (CustomObjectPermissions, )
+    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
+    filterset_class = TaydennyskoulutusFilter
     queryset = Taydennyskoulutus.objects.all().order_by('id')
 
     def get_serializer_class(self):
@@ -499,8 +590,30 @@ class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
         else:
             return TaydennyskoulutusSerializer
 
+    def get_queryset(self):
+        # For browsable
+        if self.action == 'tyontekija_list':
+            self.filterset_class = TaydennyskoulutusTyontekijaFilter
+        else:
+            self.filterset_class = TaydennyskoulutusFilter
+        return self.queryset
+
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
+
+    @action(methods=['get'], detail=False, url_path='tyontekija-list', url_name='tyontekija_list')
+    def tyontekija_list(self, request, *args, **kwargs):
+        """
+        Palauttaa kaikki tyontekijät joihin täydennyskoulutuskäyttäjällä on oikeus.
+        """
+        user = request.user
+        queryset = TaydennyskoulutusTyontekija.objects.all().order_by('id')
+        if not user.is_superuser:
+            queryset, organisaatio_oids = filter_authorized_taydennyskoulutus_tyontekijat(queryset, user)
+        tyontekija_filter = TaydennyskoulutusTyontekijaFilter(request.query_params, queryset, request=request)
+        page = self.paginate_queryset(tyontekija_filter.qs)
+        serializer = TaydennyskoulutusTyontekijaSerializer(page, many=True, context=self.get_serializer_context())
+        return self.get_paginated_response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
         return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
@@ -508,37 +621,48 @@ class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
     def perform_create(self, serializer):
         with transaction.atomic():
             user = self.request.user
-            saved_object = serializer.save(changed_by=user)
-            for tyontekija in saved_object.tyontekijat.all():
-                delete_cache_keys_related_model('tyontekija', tyontekija.id)
+            taydennyskoulutus = serializer.save(changed_by=user)
+            tyontekijat = taydennyskoulutus.tyontekijat
+            if tyontekijat.exists:
+                vakajarjestaja_oid = get_tyontekija_vakajarjestaja_oid(tyontekijat)
+                assign_object_permissions_to_taydennyskoulutus_groups(vakajarjestaja_oid, Taydennyskoulutus, taydennyskoulutus)
+                toimipaikka_oids = (Toimipaikka.objects
+                                    .filter(vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
+                                    .values_list('organisaatio_oid', flat=True)
+                                    )
+                [assign_object_permissions_to_taydennyskoulutus_groups(toimipaikka_oid, Taydennyskoulutus, taydennyskoulutus)
+                 for toimipaikka_oid in toimipaikka_oids]
+                for tyontekija in tyontekijat.all():
+                    delete_cache_keys_related_model('tyontekija', tyontekija.id)
 
     def perform_update(self, serializer):
         user = self.request.user
+        validated_data = serializer.validated_data
         taydennyskoulutus = self.get_object()
-
-        if not user.has_perm('change_taydennyskoulutus', taydennyskoulutus):
-            raise PermissionDenied('User does not have permissions to change this object.')
+        current_tyontekijat = taydennyskoulutus.tyontekijat
+        # When doing full update (both put and patch) user needs permission to all previous tyontekijat
+        if 'taydennyskoulutukset_tyontekijat' in validated_data:
+            is_correct_taydennyskoulutus_tyontekija_permission(user, current_tyontekijat, throws=True)
 
         # Delete cache keys from old tyontekijat (some may be removed)
-        for tyontekija in taydennyskoulutus.tyontekijat.all():
+        for tyontekija in current_tyontekijat.all():
             delete_cache_keys_related_model('tyontekija', tyontekija.id)
-
-        instance = serializer.save(changed_by=user)
+        with transaction.atomic():
+            updated_taydennyskoulutus = serializer.save(changed_by=user)
 
         # Delete cache keys from new tyontekijat (some may be added)
-        for tyontekija in instance.tyontekijat.all():
+        for tyontekija in updated_taydennyskoulutus.tyontekijat.all():
             delete_cache_keys_related_model('tyontekija', tyontekija.id)
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, taydennyskoulutus):
         user = self.request.user
-        if not user.has_perm('delete_taydennyskoulutus', instance):
-            raise PermissionDenied('User does not have permissions to delete this object.')
-
-        tyontekija_id_list = list(instance.tyontekijat.values_list('id', flat=True))
+        tyontekija_id_list = list(taydennyskoulutus.tyontekijat.values_list('id', flat=True))
+        is_correct_taydennyskoulutus_tyontekija_permission(user, taydennyskoulutus.tyontekijat, throws=True)
 
         with transaction.atomic():
-            TaydennyskoulutusTyontekija.objects.filter(taydennyskoulutus=instance).delete()
-            instance.delete()
+            delete_object_permissions_explicitly(Taydennyskoulutus, taydennyskoulutus)
+            TaydennyskoulutusTyontekija.objects.filter(taydennyskoulutus=taydennyskoulutus).delete()
+            taydennyskoulutus.delete()
 
-        for tyontekija_id in tyontekija_id_list:
-            delete_cache_keys_related_model('tyontekija', tyontekija_id)
+            for tyontekija_id in tyontekija_id_list:
+                delete_cache_keys_related_model('tyontekija', tyontekija_id)

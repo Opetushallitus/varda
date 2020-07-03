@@ -1,6 +1,7 @@
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
                           Maksutieto, PaosToiminta, PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-                          TilapainenHenkilosto, Tutkinto, Palvelussuhde, Tyoskentelypaikka, PidempiPoissaolo, Taydennyskoulutus)
+                          TilapainenHenkilosto, Tutkinto, Palvelussuhde, Tyoskentelypaikka, PidempiPoissaolo,
+                          Taydennyskoulutus, TaydennyskoulutusTyontekija)
 from django.db.models import Q
 from django_filters import rest_framework as djangofilters
 
@@ -287,4 +288,12 @@ class TaydennyskoulutusFilter(djangofilters.FilterSet):
 
     class Meta:
         model = Taydennyskoulutus
+        fields = []
+
+
+class TaydennyskoulutusTyontekijaFilter(djangofilters.FilterSet):
+    vakajarjestaja_oid = djangofilters.CharFilter(field_name='tyontekija__vakajarjestaja__organisaatio_oid', lookup_expr='exact', distinct=True)
+
+    class Meta:
+        model: TaydennyskoulutusTyontekija
         fields = []
