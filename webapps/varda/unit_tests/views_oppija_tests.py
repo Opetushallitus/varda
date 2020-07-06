@@ -49,34 +49,6 @@ class VardaOppijaViewsTests(TestCase):
             "voimassaolevia_varhaiskasvatuspaatoksia": 1,
             "lapset": [
                 {
-                    "yhteysosoite": "organization@domain.com",
-                    "varhaiskasvatuksen_jarjestaja": "Tester2 organisaatio",
-                    "varhaiskasvatuspaatokset": [
-                        {
-                            "alkamis_pvm": "2018-10-05",
-                            "hakemus_pvm": "2018-10-05",
-                            "paattymis_pvm": None,
-                            "paivittainen_vaka_kytkin": True,
-                            "kokopaivainen_vaka_kytkin": True,
-                            "jarjestamismuoto_koodi": "jm03",
-                            "vuorohoito_kytkin": False,
-                            "pikakasittely_kytkin": False,
-                            "tuntimaara_viikossa": 39.0,
-                            "varhaiskasvatussuhteet": [
-                                {
-                                    "alkamis_pvm": "2019-11-11",
-                                    "paattymis_pvm": None,
-                                    "toimipaikka": {
-                                        "toimipaikka_nimi": "Espoo_3",
-                                        "toimipaikka_kunta_koodi": "091"
-                                    },
-                                    "yhteysosoite": "organization@domain.com"
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
                     "yhteysosoite": "frontti@end.com",
                     "varhaiskasvatuksen_jarjestaja": "Frontti organisaatio",
                     "varhaiskasvatuspaatokset": [
@@ -110,6 +82,15 @@ class VardaOppijaViewsTests(TestCase):
                             "tuntimaara_viikossa": 30.5,
                             "varhaiskasvatussuhteet": [
                                 {
+                                    "alkamis_pvm": "2018-05-01",
+                                    "paattymis_pvm": "2019-10-24",
+                                    "toimipaikka": {
+                                        "toimipaikka_nimi": "Espoo",
+                                        "toimipaikka_kunta_koodi": "091"
+                                    },
+                                    "yhteysosoite": "test1@espoo.fi"
+                                },
+                                {
                                     "alkamis_pvm": "2018-09-05",
                                     "paattymis_pvm": "2019-04-20",
                                     "toimipaikka": {
@@ -118,14 +99,33 @@ class VardaOppijaViewsTests(TestCase):
                                     },
                                     "yhteysosoite": "organization@domain.com"
                                 },
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "yhteysosoite": "organization@domain.com",
+                    "varhaiskasvatuksen_jarjestaja": "Tester2 organisaatio",
+                    "varhaiskasvatuspaatokset": [
+                        {
+                            "alkamis_pvm": "2018-10-05",
+                            "hakemus_pvm": "2018-10-05",
+                            "paattymis_pvm": None,
+                            "paivittainen_vaka_kytkin": True,
+                            "kokopaivainen_vaka_kytkin": True,
+                            "jarjestamismuoto_koodi": "jm03",
+                            "vuorohoito_kytkin": False,
+                            "pikakasittely_kytkin": False,
+                            "tuntimaara_viikossa": 39.0,
+                            "varhaiskasvatussuhteet": [
                                 {
-                                    "alkamis_pvm": "2018-05-01",
-                                    "paattymis_pvm": "2019-10-24",
+                                    "alkamis_pvm": "2019-11-11",
+                                    "paattymis_pvm": None,
                                     "toimipaikka": {
-                                        "toimipaikka_nimi": "Espoo",
+                                        "toimipaikka_nimi": "Espoo_3",
                                         "toimipaikka_kunta_koodi": "091"
                                     },
-                                    "yhteysosoite": "test1@espoo.fi"
+                                    "yhteysosoite": "organization@domain.com"
                                 }
                             ]
                         }
@@ -158,18 +158,20 @@ class VardaOppijaViewsTests(TestCase):
                             ]
                         }
                     ]
-                }
+                },
             ]
         }
         resp_huoltajanlapsi_api = client_suomifi_tester.get('/api/oppija/v1/huoltajanlapsi/1.2.246.562.24.86012997950/',
                                                             content_type='application/json')
         resp_json = json.loads(resp_huoltajanlapsi_api.content)
-
-        # Remove ID:s because they tend to change
+        # Remove ID:s because they tend to change and sort for expected behaviour
+        resp_json['lapset'] = sorted(resp_json['lapset'], key=lambda key: (key['varhaiskasvatuksen_jarjestaja'], key['varhaiskasvatuspaatokset'][0]['alkamis_pvm']))
         for lapsi in resp_json['lapset']:
             del lapsi['id']
+            lapsi['varhaiskasvatuspaatokset'] = sorted(lapsi['varhaiskasvatuspaatokset'], key=lambda key: key['alkamis_pvm'])
             for vakapaatos in lapsi['varhaiskasvatuspaatokset']:
                 del vakapaatos['id']
+                vakapaatos['varhaiskasvatussuhteet'] = sorted(vakapaatos['varhaiskasvatussuhteet'], key=lambda key: key['alkamis_pvm'])
                 for vakasuhde in vakapaatos['varhaiskasvatussuhteet']:
                     del vakasuhde['id']
 
