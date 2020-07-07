@@ -250,6 +250,28 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         self.assertFalse(Tyontekija.objects.filter(id=tyontekija.id).exists())
 
+    def test_api_push_tyontekija_henkilo_address_information_removed(self):
+        # Get Henkilo that does not reference any Huoltaja or Lapsi object
+        henkilo_qs = Henkilo.objects.filter(huoltaja__isnull=True, lapsi__isnull=True)
+        henkilo_obj = henkilo_qs.first()
+        self.assertTrue(henkilo_obj.kotikunta_koodi or henkilo_obj.katuosoite or
+                        henkilo_obj.postinumero or henkilo_obj.postitoimipaikka)
+
+        tyontekija = {
+            'henkilo': f'/api/v1/henkilot/{henkilo_obj.id}/',
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'lahdejarjestelma': '1',
+            'tunniste': 'testitunniste'
+        }
+
+        client = SetUpTestClient('tyontekija_tallentaja').client()
+        resp = client.post('/api/henkilosto/v1/tyontekijat/', tyontekija)
+        assert_status_code(resp, status.HTTP_201_CREATED)
+
+        henkilo_obj = henkilo_qs.first()
+        self.assertFalse(henkilo_obj.kotikunta_koodi or henkilo_obj.katuosoite or
+                         henkilo_obj.postinumero or henkilo_obj.postitoimipaikka)
+
     def test_api_push_tilapainen_henkilosto_correct(self):
         client = SetUpTestClient('tilapaiset_tallentaja').client()
 

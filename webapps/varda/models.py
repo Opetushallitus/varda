@@ -250,8 +250,14 @@ class Henkilo(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
+    def remove_address_information(self):
+        self.kotikunta_koodi = ''
+        self.katuosoite = ''
+        self.postinumero = ''
+        self.postitoimipaikka = ''
+
     class Meta:
-        verbose_name_plural = "henkilöt"
+        verbose_name_plural = 'henkilöt'
         constraints = [
             UniqueConstraint(fields=['henkilo_oid', 'henkilotunnus_unique_hash'],
                              name='henkilo_oid_henkilotunnus_unique_hash_unique_constraint')

@@ -106,9 +106,6 @@ class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
     filter_backends = (ObjectPermissionsFilter,)
     queryset = Tyontekija.objects.all().order_by('id')
 
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
-
     def return_tyontekija_if_already_created(self, validated_data, toimipaikka_oid):
         q_obj = Q(henkilo=validated_data['henkilo'], vakajarjestaja=validated_data['vakajarjestaja'])
         tyontekija_obj = Tyontekija.objects.filter(q_obj).first()
@@ -122,6 +119,18 @@ class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
         tutkinnot = Tutkinto.objects.filter(henkilo=tyontekija_obj.henkilo)
         [assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Tutkinto, tutkinto) for tutkinto in tutkinnot]
 
+    def remove_address_information_from_henkilo(self, henkilo):
+        """
+        If henkilo is related only to Tyontekijat, we need to remove address information
+        :param henkilo: Henkilo object linked to this Tyontekija
+        """
+        if not hasattr(henkilo, 'huoltaja'):
+            henkilo.remove_address_information()
+            henkilo.save()
+
+    def retrieve(self, request, *args, **kwargs):
+        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
+
     def perform_create(self, serializer):
         validated_data = serializer.validated_data
         user = self.request.user
@@ -131,6 +140,8 @@ class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
         with transaction.atomic():
             tyontekija_obj = serializer.save(changed_by=user)
+            self.remove_address_information_from_henkilo(tyontekija_obj.henkilo)
+            delete_cache_keys_related_model('henkilo', tyontekija_obj.henkilo.id)
             vakajarjestaja_oid = vakajarjestaja.organisaatio_oid
             tutkinnot = Tutkinto.objects.filter(henkilo=tyontekija_obj.henkilo)
 

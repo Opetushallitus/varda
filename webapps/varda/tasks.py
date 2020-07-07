@@ -10,11 +10,14 @@ from varda import permission_groups
 from varda import permissions
 from varda.audit_log import audit_log
 from varda.misc import add_maksutieto_permissions_to_palvelukayttajat
+from varda.models import Henkilo
 
 
-# This is currently only needed for testing, don't remove!
 @shared_task
 def add(x, y):
+    """
+    This is currently only needed for testing, don't remove!
+    """
     return x + y
 
 
@@ -139,3 +142,15 @@ def add_maksutieto_permissions_to_palvelukayttajat_task():
     Will be removed after run in production in 1.9.2020
     """
     add_maksutieto_permissions_to_palvelukayttajat()
+
+
+@shared_task
+def remove_address_information_from_tyontekijat_only_task():
+    henkilot = Henkilo.objects.filter(~Q(kotikunta_koodi='') | ~Q(katuosoite='') |
+                                      ~Q(postinumero='') | ~Q(postitoimipaikka=''),
+                                      huoltaja__isnull=True, tyontekijat__isnull=False).distinct()
+
+    # Loop through each Henkilo so that save signals are processed correctly
+    for henkilo in henkilot:
+        henkilo.remove_address_information()
+        henkilo.save()

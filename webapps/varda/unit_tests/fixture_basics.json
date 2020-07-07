@@ -24,6 +24,14 @@
     }
   },
   {
+    "model": "django_celery_beat.intervalschedule",
+    "pk": 3,
+    "fields": {
+      "every": 7,
+      "period": "days"
+    }
+  },
+  {
     "model": "django_celery_beat.crontabschedule",
     "pk": 1,
     "fields": {
@@ -453,6 +461,31 @@
       "last_run_at": null,
       "total_run_count": 0,
       "date_changed": "2020-05-25T14:00:00.000Z",
+      "description": ""
+    }
+  },
+  {
+    "model": "django_celery_beat.periodictask",
+    "pk": 14,
+    "fields": {
+      "name": "remove_address_information_from_tyontekijat_only",
+      "task": "varda.tasks.remove_address_information_from_tyontekijat_only_task",
+      "interval": 3,
+      "crontab": null,
+      "solar": null,
+      "args": "[]",
+      "kwargs": "{}",
+      "queue": null,
+      "exchange": null,
+      "routing_key": null,
+      "priority": null,
+      "one_off": false,
+      "start_time": null,
+      "expires": null,
+      "enabled": true,
+      "last_run_at": null,
+      "total_run_count": 0,
+      "date_changed": "2020-07-01T16:00:00.000Z",
       "description": ""
     }
   }

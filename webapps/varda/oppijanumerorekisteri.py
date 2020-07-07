@@ -53,34 +53,38 @@ def save_henkilo_to_db(henkilo_id, henkilo_json):
 
     # Field mapping: first field is Oppijanumerorekisteri - second attribute-name in Varda
     henkilo_fields = {
-        "syntymaaika": "syntyma_pvm",
-        "oidHenkilo": "henkilo_oid",
-        "etunimet": "etunimet",
-        "kutsumanimi": "kutsumanimi",
-        "sukunimi": "sukunimi",
-        "sukupuoli": "sukupuoli_koodi",
-        "kotikunta": "kotikunta_koodi",
-        "turvakielto": "turvakielto",
-        "yksiloityVTJ": "vtj_yksiloity",
-        "yksilointiYritetty": "vtj_yksilointi_yritetty"
+        'syntymaaika': 'syntyma_pvm',
+        'oidHenkilo': 'henkilo_oid',
+        'etunimet': 'etunimet',
+        'kutsumanimi': 'kutsumanimi',
+        'sukunimi': 'sukunimi',
+        'sukupuoli': 'sukupuoli_koodi',
+        'kotikunta': 'kotikunta_koodi',
+        'turvakielto': 'turvakielto',
+        'yksiloityVTJ': 'vtj_yksiloity',
+        'yksilointiYritetty': 'vtj_yksilointi_yritetty'
     }
 
     for key, field_name in henkilo_fields.items():
         if henkilo_json.get(key, None) is not None:
             setattr(henkilo, field_name, henkilo_json[key])
 
-    if "hetu" in henkilo_json and henkilo_json["hetu"]:
-        henkilo.henkilotunnus = encrypt_henkilotunnus(henkilo_json["hetu"])
-        henkilo.henkilotunnus_unique_hash = hash_string(henkilo_json["hetu"])
+    if 'hetu' in henkilo_json and henkilo_json['hetu']:
+        henkilo.henkilotunnus = encrypt_henkilotunnus(henkilo_json['hetu'])
+        henkilo.henkilotunnus_unique_hash = hash_string(henkilo_json['hetu'])
     else:
         henkilo.henkilotunnus = ''
         henkilo.henkilotunnus_unique_hash = ''
 
-    aidinkieli = henkilo_json.get("aidinkieli", None)
-    if aidinkieli is not None and "kieliKoodi" in aidinkieli:
-        henkilo.aidinkieli_koodi = aidinkieli["kieliKoodi"]
+    aidinkieli = henkilo_json.get('aidinkieli', None)
+    if aidinkieli is not None and 'kieliKoodi' in aidinkieli:
+        henkilo.aidinkieli_koodi = aidinkieli['kieliKoodi']
 
-    _set_address_to_henkilo(henkilo_json, henkilo)
+    # Remove address information if henkilo is only related to Tyontekijat
+    if henkilo.tyontekijat.exists() and not hasattr(henkilo, 'huoltaja'):
+        henkilo.remove_address_information()
+    else:
+        _set_address_to_henkilo(henkilo_json, henkilo)
 
     henkilo.save()
 
