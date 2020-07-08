@@ -2,8 +2,8 @@ export interface UserAccess {
   paakayttaja: boolean;
   lapsitiedot: UserAccessPart;
   huoltajatiedot: UserAccessPart;
-  henkilostotiedot: UserAccessPart;
-  tilapainen_henkilosto: UserAccessPart;
+  tyontekijatiedot: UserAccessPart;
+  tilapainenHenkilosto: UserAccessPart;
   taydennyskoulutustiedot: UserAccessPart;
 }
 

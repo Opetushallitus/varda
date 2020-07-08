@@ -100,13 +100,13 @@ export class AuthService {
     return toimipaikat.filter((toimipaikka: VardaToimipaikkaDTO) => {
       const access = this.getUserAccess(toimipaikka.organisaatio_oid);
       if (!hasSaveAccess) {
-        return (access.henkilostotiedot.katselija || access.huoltajatiedot.katselija || access.lapsitiedot.katselija);
+        return (access.tyontekijatiedot.katselija || access.huoltajatiedot.katselija || access.lapsitiedot.katselija);
       } else if (hasSaveAccess === SaveAccess.kaikki) {
-        return (access.henkilostotiedot.tallentaja || access.huoltajatiedot.tallentaja || access.lapsitiedot.tallentaja);
+        return (access.tyontekijatiedot.tallentaja || access.huoltajatiedot.tallentaja || access.lapsitiedot.tallentaja);
       } else if (hasSaveAccess === SaveAccess.lapsitiedot) {
         return (access.huoltajatiedot.tallentaja || access.lapsitiedot.tallentaja);
       } else if (hasSaveAccess === SaveAccess.henkilostotiedot) {
-        return (access.henkilostotiedot.tallentaja);
+        return (access.tyontekijatiedot.tallentaja);
       }
       console.error('GetAuthorizedToimipaikat called with incorrect value', hasSaveAccess);
       return false;
@@ -223,22 +223,27 @@ export class AuthService {
         katselija: getRoles(VardaKayttooikeusRoles.VARDA_HUOLTAJA_TALLENTAJA, VardaKayttooikeusRoles.VARDA_HUOLTAJA_KATSELIJA),
         tallentaja: getRoles(VardaKayttooikeusRoles.VARDA_HUOLTAJA_TALLENTAJA)
       },
-      henkilostotiedot: {
-        katselija: false,
-        tallentaja: false
+      tyontekijatiedot: {
+        katselija: getRoles(VardaKayttooikeusRoles.HENKILOSTO_TYONTEKIJA_TALLENTAJA, VardaKayttooikeusRoles.HENKILOSTO_TYONTEKIJA_KATSELIJA),
+        tallentaja: getRoles(VardaKayttooikeusRoles.HENKILOSTO_TYONTEKIJA_TALLENTAJA)
       },
-      tilapainen_henkilosto: {
-        katselija: false,
-        tallentaja: false
+      tilapainenHenkilosto: {
+        katselija: getRoles(VardaKayttooikeusRoles.HENKILOSTO_TILAPAISET_TALLENTAJA, VardaKayttooikeusRoles.HENKILOSTO_TILAPAISET_KATSELIJA),
+        tallentaja: getRoles(VardaKayttooikeusRoles.HENKILOSTO_TILAPAISET_TALLENTAJA)
       },
       taydennyskoulutustiedot: {
-        katselija: false,
-        tallentaja: false
+        katselija: getRoles(VardaKayttooikeusRoles.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA, VardaKayttooikeusRoles.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA),
+        tallentaja: getRoles(VardaKayttooikeusRoles.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA)
       }
     };
 
     // filter off TALLENTAJA rights from PAOS-toimipaikat without TALLENTAJA-responsibility
     if (toimipaikka && toimipaikka.paos_organisaatio_nimi) {
+      // toimipaikka-based henkilöstötiedot are disabled on PAOS
+      access.tyontekijatiedot = { katselija: false, tallentaja: false };
+      access.tilapainenHenkilosto = { katselija: false, tallentaja: false };
+      access.taydennyskoulutustiedot = { katselija: false, tallentaja: false };
+
       if (!toimipaikka.paos_tallentaja_organisaatio_id_list.includes(parseInt(this.vardaVakajarjestajaService.selectedVakajarjestaja.id))) {
         Object.keys(access).forEach(key => {
           if (access[key].tallentaja) {

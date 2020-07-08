@@ -95,7 +95,7 @@ export class VardaHakuContainerComponent implements OnInit {
     this.access = {
       userAccess: userAccess,
       showLapset: userAccess.huoltajatiedot.katselija || userAccess.lapsitiedot.katselija,
-      showHenkilosto: userAccess.henkilostotiedot.katselija || userAccess.taydennyskoulutustiedot.katselija,
+      showHenkilosto: userAccess.tyontekijatiedot.katselija || userAccess.taydennyskoulutustiedot.katselija,
       isTallentaja: Object.keys(userAccess).some(key => userAccess[key].tallentaja)
     };
 
