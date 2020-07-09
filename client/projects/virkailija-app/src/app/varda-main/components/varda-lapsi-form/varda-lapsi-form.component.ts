@@ -1,11 +1,13 @@
 import {
   AfterViewInit,
   Component,
+  ElementRef,
   EventEmitter,
   Input,
   OnChanges,
   OnInit,
   Output,
+  QueryList,
   SimpleChanges,
   ViewChild,
   ViewChildren
@@ -36,6 +38,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { UserAccess, SaveAccess } from '../../../utilities/models/varda-user-access.model';
 import { VardaLapsiCreateDto } from '../../../utilities/models/dto/varda-lapsi-dto.model';
 import { MatRadioChange } from '@angular/material/radio';
+import { MatExpansionPanel } from '@angular/material/expansion';
 
 declare var $: any;
 
@@ -52,9 +55,12 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   @Output() updateLapsi: EventEmitter<any> = new EventEmitter();
   @Output() deleteLapsi: EventEmitter<any> = new EventEmitter();
   @Output() valuesChanged: EventEmitter<any> = new EventEmitter();
+  @ViewChild('backendErrorContainer') backendErrorContainer: ElementRef;
   @ViewChild('lapsiStepper') lapsiStepper: MatStepper;
-  @ViewChildren('varhaiskasvatuspaatosPanels') varhaiskasvatuspaatosPanels: any;
-  @ViewChildren('varhaiskasvatussuhdePanels') varhaiskasvatussuhdePanels: any;
+  @ViewChildren('varhaiskasvatuspaatosPanels') varhaiskasvatuspaatosPanels: QueryList<MatExpansionPanel>;
+  @ViewChildren('varhaiskasvatuspaatosPanels', { read: ElementRef }) varhaiskasvatuspaatosPanelRefs: QueryList<ElementRef>;
+  @ViewChildren('varhaiskasvatussuhdePanels') varhaiskasvatussuhdePanels: QueryList<MatExpansionPanel>;
+  @ViewChildren('varhaiskasvatussuhdePanels', { read: ElementRef }) varhaiskasvatussuhdePanelRefs: QueryList<ElementRef>;
 
   currentLapsi: VardaLapsiDTO;
   currentToimipaikka: VardaToimipaikkaDTO;
@@ -91,6 +97,14 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   varhaiskasvatussuhteetFormChanged: boolean;
   toimipaikkaAccess: UserAccess;
   paosJarjestajaKunnat$ = new BehaviorSubject<Array<VardaVakajarjestajaUi>>(undefined);
+
+  /**
+   * Map that is used to link vakasuhteet to vakapaatokset. Vakasuhde forms are displayed inside vakapaatos based
+   * on this map.
+   * key=vakapaatos index
+   * value=list of vakasuhde indexes
+   */
+  vakasuhteetVakapaatoksetMap: {[key: number]: Array<number>} = {};
 
   ui: {
     noVarhaiskasvatustietoPrivileges: boolean;
@@ -151,7 +165,7 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
       });
   }
 
-  addNewRecurringStructure(entityName: string): void {
+  addNewRecurringStructure(entityName: string, vakapaatosIndex?: number): void {
     let formArr: FormArray;
     let fieldSets: any;
     let fieldSetCopy: Array<VardaFieldSet>;
@@ -173,25 +187,42 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
 
     const fg = this.vardaFormService.initFieldSetFormGroup(fieldSetCopy, null);
     if (entityName === VardaEntityNames.VARHAISKASVATUSSUHDE) {
-      fg.addControl('varhaiskasvatuspaatos', new FormControl(this.varhaiskasvatuspaatokset[0]));
+      fg.addControl('varhaiskasvatuspaatos', new FormControl(this.varhaiskasvatuspaatokset[vakapaatosIndex]));
       fg.addControl('toimipaikka', new FormControl(this.currentToimipaikka.nimi ? this.currentToimipaikka : '', [Validators.required]));
     }
 
     formArr.push(fg);
-    fieldSets[formArr.length - 1] = fieldSetCopy;
+    const newIndex = formArr.length - 1;
+    fieldSets[newIndex] = fieldSetCopy;
 
     setTimeout(() => {
       panels = panels.toArray();
-      panelToOpen = panels[formArr.length - 1];
+      if (entityName === VardaEntityNames.VARHAISKASVATUSSUHDE) {
+        // If we're adding vakasuhde, the panel may not hierarchically be the last one, so find the panel based on
+        // data-realindex -attribute.
+        const panelIndex = this.varhaiskasvatussuhdePanelRefs.toArray().findIndex(elementRef => {
+          const realIndex = elementRef.nativeElement.getAttribute('data-realindex');
+          if (realIndex === String(newIndex)) {
+            return true;
+          }
+        });
+        panelToOpen = panels[panelIndex];
+      } else {
+        // When adding vakapaatos, the panel is always the last one.
+        panelToOpen = panels[newIndex];
+      }
       if (panelToOpen) {
         panelToOpen.open();
       }
     });
 
     setTimeout(() => {
-      this.setRecurringStructureFocus(entityName);
+      this.setRecurringStructureFocus(entityName, newIndex);
     }, 500);
 
+    if (entityName === VardaEntityNames.VARHAISKASVATUSSUHDE) {
+      this.updateVakasuhteetVakapaatosMap();
+    }
   }
 
   cancelDelete(entity: string): void {
@@ -291,6 +322,7 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
       this.getDeleteEndpointByEntityName(entity, entityObjId).subscribe(() => {
         const indexToRemove = entities.findIndex((item) => item.url === entityToDelete.url);
         entities.splice(indexToRemove, 1);
+
         formArr.removeAt(formArrIndex);
 
         if (entity === VardaEntityNames.VARHAISKASVATUSPAATOS &&
@@ -299,9 +331,13 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
         } else {
           this.ui.lapsiFormSaveSuccess = true;
         }
+
+        this.updateVakasuhteetVakapaatosMap();
       }, this.onSaveError.bind(this, formArrIndex, entity));
     } else {
       formArr.removeAt(formArrIndex);
+
+      this.updateVakasuhteetVakapaatosMap();
     }
 
     this.ui.selectedVarhaiskasvatuspaatosIndexToDelete = null;
@@ -358,6 +394,9 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
       }
 
       this.translateService.get(tsKey, translationsParams).subscribe((st) => rv = st);
+    } else {
+      const tsKey = entityStr === VardaEntityNames.VARHAISKASVATUSPAATOS ? 'label.add-new-varhaiskasvatuspaatos' : 'label.add-new-varhaiskasvatussuhde';
+      this.translateService.get(tsKey).subscribe(st => rv = st);
     }
     return rv;
   }
@@ -430,7 +469,6 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   }
 
   getLapsiFormData(): any {
-
     const data = {
       createLapsiDto: this.createLapsiDTO(this.henkilo),
       lapsi: { formData: {}, fieldSets: {} },
@@ -535,6 +573,8 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
       this.ui.isPerustiedotLoading = false;
 
       this.bindHideSuccessMsg();
+
+      this.updateVakasuhteetVakapaatosMap();
     });
   }
 
@@ -611,7 +651,7 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
     this.selectedToimipaikka = this.toimipaikkaForm.get('toimipaikka').value;
   }
 
-  saveRecurringStructure(formArrIndex: number, entityName: string): void {
+  saveRecurringStructure(formArrIndex: number, entityName: string, panel: MatExpansionPanel): void {
     this.ui.lapsiFormHasErrors = false;
     this.ui.isSubmitting = true;
     const formData = this.getFormDataByEntityName(formArrIndex, entityName);
@@ -639,7 +679,7 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
     }
 
     recurringSaveObs.subscribe({
-      next: this.onSaveSuccess.bind(this, entityName, formArrIndex, isEdit),
+      next: this.onSaveSuccess.bind(this, entityName, formArrIndex, isEdit, panel),
       error: this.onSaveError.bind(this, formArrIndex, entityName),
     });
   }
@@ -737,50 +777,50 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
       const action = args[0];
       const formArrIndex = args[1];
       const isEdit = args[2];
-      const entity = args[3];
+      const panel = args[3];
+      const entity = args[4];
 
-      let currentPanels;
       let entities, formArray;
       if (action === VardaEntityNames.VARHAISKASVATUSPAATOS) {
-        currentPanels = this.varhaiskasvatuspaatosPanels.toArray();
         this.updateLapsi.emit({ saveVarhaiskasvatuspaatos: { url: this.currentLapsi.url, entity: entity } });
         entities = this.varhaiskasvatuspaatokset;
         formArray = <FormArray>this.varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr');
       } else if (action === VardaEntityNames.VARHAISKASVATUSSUHDE) {
-        currentPanels = this.varhaiskasvatussuhdePanels.toArray();
         entities = this.varhaiskasvatussuhteet;
         formArray = <FormArray>this.varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr');
       }
 
       if (entities) {
-
         if (isEdit) {
           entities[formArrIndex] = entity;
         } else {
           entities.push(entity);
         }
-
         entities.sort(this.sortRecurringEntityListsByDates.bind(this));
       }
 
-
       this.ui.formSaveSuccessMsg = 'alert.modal-generic-save-success';
       this.ui.lapsiFormSaveSuccess = true;
-      currentPanels[formArrIndex].close();
+
+      if (panel) {
+        panel.close();
+      }
+
+      const newIndex = entities.findIndex((r) => {
+        return r.url === entity.url;
+      });
+
+      const entityToBeMoved = formArray.at(formArrIndex);
+      formArray.removeAt(formArrIndex);
+      formArray.insert(newIndex, entityToBeMoved);
+
+      this.updateVakasuhteetVakapaatosMap();
 
       setTimeout(() => {
-        const newIndex = entities.findIndex((r) => {
-          return r.url === entity.url;
-        });
-        const entityToBeMoved = formArray.at(formArrIndex);
-        formArray.removeAt(formArrIndex);
-        formArray.insert(newIndex, entityToBeMoved);
-        setTimeout(() => {
-          this.setControlsDisabledOnEdit(action, entityToBeMoved);
-          this.setFormsChangedState(action, false);
-          this.checkIfAnyOfTheFormsHasChanged();
-          this.setRecurringStructureFocus(action, newIndex);
-        }, 1000);
+        this.setControlsDisabledOnEdit(action, entityToBeMoved);
+        this.setFormsChangedState(action, false);
+        this.checkIfAnyOfTheFormsHasChanged();
+        this.setRecurringStructureFocus(action, newIndex);
       }, 1000);
 
       this.ui.isSubmitting = false;
@@ -821,18 +861,28 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   }
 
   setRecurringStructureFocus(entityName: string, index?: number): void {
-    let recurringStructureSelectorToFocus;
+    let panelRefs, panelToFocus;
     if (entityName === VardaEntityNames.VARHAISKASVATUSPAATOS) {
-      recurringStructureSelectorToFocus = $('.recurring-varhaiskasvatuspaatos-entity-header');
+      panelRefs = this.varhaiskasvatuspaatosPanelRefs;
     } else if (entityName === VardaEntityNames.VARHAISKASVATUSSUHDE) {
-      recurringStructureSelectorToFocus = $('.recurring-varhaiskasvatussuhde-entity-header');
+      panelRefs = this.varhaiskasvatussuhdePanelRefs;
     }
 
     if (!isNaN(index)) {
-      recurringStructureSelectorToFocus.get(index).focus();
+      panelToFocus = panelRefs.find(element => {
+        const identifier = element.nativeElement.getAttribute('data-realindex');
+        if (identifier === String(index)) {
+          return true;
+        }
+      });
     } else {
-      recurringStructureSelectorToFocus.last().focus();
+      panelToFocus = panelRefs[panelRefs.length - 1];
     }
+    panelToFocus = panelToFocus.nativeElement;
+
+    const headerElement = panelToFocus.children[0];
+    headerElement.focus();
+    panelToFocus.scrollIntoView({behavior: 'smooth'});
   }
 
   onSaveError(...args): void {
@@ -862,29 +912,28 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
     this.lapsiFormErrors = [];
     const errorMessageObj = this.vardaErrorMessageService.getErrorMessages(eObj);
     this.lapsiFormErrors = errorMessageObj.errorsArr;
-    $('#henkiloModal .lapsi-form-content').scrollTop(0);
     this.ui.lapsiFormHasErrors = true;
     this.ui.isSubmitting = false;
     this.hideMessages();
+    this.backendErrorContainer.nativeElement.scrollIntoView({behavior: 'smooth'});
   }
 
-  onExpansionPanelClick($event: any, index: number, entityName: string): void {
+  onExpansionPanelClick($event: any, index: number, entityName: string, panel: MatExpansionPanel): void {
     const entity = this.getExistingEntityByIndex(index, entityName);
     this.ui.lapsiFormSaveSuccess = false;
     if (entityName === VardaEntityNames.VARHAISKASVATUSPAATOS) {
       this.ui.openedVarhaiskasvatuspaatosIndex = index;
-      this.preventClosingForUnsavedEntity($event, entity, this.varhaiskasvatuspaatosPanels, index);
+      this.preventClosingForUnsavedEntity($event, entity, panel);
     } else if (entityName === VardaEntityNames.VARHAISKASVATUSSUHDE) {
       this.ui.openedVarhaiskasvatussuhdeIndex = index;
-      this.preventClosingForUnsavedEntity($event, entity, this.varhaiskasvatussuhdePanels, index);
+      this.preventClosingForUnsavedEntity($event, entity, panel);
     }
   }
 
-  preventClosingForUnsavedEntity($event: Event, entity: any, panels: any, index: number) {
+  preventClosingForUnsavedEntity($event: Event, entity: any, panel: MatExpansionPanel) {
     if (!entity) {
       $event.stopPropagation();
-      const currentPanels = panels.toArray();
-      currentPanels[index].open();
+      panel.open();
     }
   }
 
@@ -996,5 +1045,28 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
       this.toimipaikkaAccess.huoltajatiedot.tallentaja = toimijaAccess.huoltajatiedot.tallentaja;
       this.toimipaikkaAccess.huoltajatiedot.katselija = this.toimipaikkaAccess.huoltajatiedot.katselija || toimijaAccess.huoltajatiedot.tallentaja;
     }
+  }
+
+  isVakapaatosWithoutVakasuhde(vakapaatosIndex: number): boolean {
+    if (!this.varhaiskasvatuspaatokset[vakapaatosIndex]) {
+      return false;
+    }
+
+    const vakasuhdeList = this.vakasuhteetVakapaatoksetMap[vakapaatosIndex];
+    return !vakasuhdeList || !vakasuhdeList.length;
+  }
+
+  private updateVakasuhteetVakapaatosMap(): void {
+    this.vakasuhteetVakapaatoksetMap = {};
+    const vakasuhdeControls = this.varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'];
+    vakasuhdeControls.forEach((formGroup: FormGroup, vakasuhdeIndex: number) => {
+      const vakapaatosIndex = this.varhaiskasvatuspaatokset.indexOf(formGroup.get('varhaiskasvatuspaatos').value);
+
+      if (!this.vakasuhteetVakapaatoksetMap[vakapaatosIndex]) {
+        this.vakasuhteetVakapaatoksetMap[vakapaatosIndex] = [vakasuhdeIndex];
+      } else {
+        this.vakasuhteetVakapaatoksetMap[vakapaatosIndex].push(vakasuhdeIndex);
+      }
+    });
   }
 }

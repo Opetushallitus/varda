@@ -1,4 +1,5 @@
 export class VardaVarhaiskasvatuspaatosDTO {
+    id?: number;
     url?: string;
     lapsi?: string;
     vuorohoito_kytkin?: boolean;

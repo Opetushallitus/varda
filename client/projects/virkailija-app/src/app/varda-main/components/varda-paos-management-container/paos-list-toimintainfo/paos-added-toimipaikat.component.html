@@ -33,7 +33,7 @@
             <span class='text-nowrap'>{{paosToiminta.toimijaOID}}</span></div>
           <div>{{'label.ytunnus' | translate}}:
             <span class='text-nowrap'>{{paosToiminta.toimijaYTunnus}}</span></div>
-          <div>{{'label.id' | translate}}: {{paosToiminta.toimijaId}}</div>
+          <div>{{'label.varda-id' | translate}}: {{paosToiminta.toimijaId}}</div>
         </div>
         <app-varda-toggle-button [isUp]="openToimija !== paosToiminta.toimijaId"
                                  [showTextKey]="'label.paos-toimipaikat.list.show-toimipaikka'"
@@ -97,7 +97,7 @@
               <span class="text-nowrap">{{toimipaikka.toimipaikka_organisaatio_oid}}</span>
             </div>
             <div>
-              {{'label.id' | translate}}: {{toimipaikka.toimipaikka_id}}
+              {{'label.varda-id' | translate}}: {{toimipaikka.toimipaikka_id}}
             </div>
           </div>
           <app-varda-delete-button *ngIf="isVardaPaakayttaja"

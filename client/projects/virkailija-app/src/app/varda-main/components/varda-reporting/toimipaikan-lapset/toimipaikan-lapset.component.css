@@ -2,6 +2,9 @@
   background-color: #ffffff;
   position: relative;
   padding: 20px 20px 25px 20px;
+  --tree-width: 0.75em;
+  --tree-width-negative: -.75em;
+  --tree-border: 0.1em solid var(--gray-lighten-1);
 }
 
 .toimipaikanLapsetScrollTo {
@@ -10,7 +13,7 @@
 }
 
 .toimipaikan-lapset-container-margin-bottom {
-  margin-bottom: 40px;
+  margin-bottom: 2em;
 }
 
 .toimipaikan-lapset-table {
@@ -47,6 +50,54 @@
 .toimipaikan-lapset-header-table {
   table-layout: fixed;
   width: 100%;
+}
+
+.vakatieto-container {
+  margin-bottom: 2em;
+}
+
+.vakapaatos-panel {
+  background: var(--blue-lighten-4);
+}
+
+.vakapaatos-panel .mat-table {
+  background: initial;
+}
+
+.vakasuhteet-wrapper {
+  margin-top: 1.5em;
+  margin-left: 1.5em;
+}
+
+.vakasuhteet-wrapper app-toimipaikan-lapset-vakasuhteet:first-child .vakasuhde-panel::before {
+  content: "";
+  position: absolute;
+  top: -1.5em;
+  left: var(--tree-width-negative);
+  border-left: var(--tree-border);
+  width: var(--tree-width);
+  height: 3.25em;
+}
+
+.vakasuhteet-wrapper .vakasuhde-panel::before {
+  content: "";
+  position: absolute;
+  top: -1em;
+  left: var(--tree-width-negative);
+  border-left: var(--tree-border);
+  border-bottom: var(--tree-border);
+  width: var(--tree-width);
+  height: 2.5em;
+}
+
+.vakasuhteet-wrapper app-toimipaikan-lapset-vakasuhteet:not(:last-child) .vakasuhde-panel::after {
+  content: "";
+  position: absolute;
+  top: 1em;
+  left: var(--tree-width-negative);
+  border-left: var(--tree-border);
+  width: var(--tree-width);
+  height: 100%;
 }
 
 h1 {

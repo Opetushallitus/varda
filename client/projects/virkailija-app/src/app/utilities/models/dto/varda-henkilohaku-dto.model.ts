@@ -81,6 +81,7 @@ export class ToimipaikanLapsiMaksutieto {
 }
 
 export class ToimipaikanLapsiVakapaatos {
+  id: number;
   alkamis_pvm: string;
   paattymis_pvm: string;
   hakemus_pvm: string;
@@ -96,4 +97,5 @@ export class ToimipaikanLapsiVakasuhde {
   alkamis_pvm: string;
   paattymis_pvm: string;
   toimipaikka_nimi: string;
+  varhaiskasvatuspaatos: string;
 }

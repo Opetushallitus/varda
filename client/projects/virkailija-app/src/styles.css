@@ -216,6 +216,15 @@ legend {
   border: 2px solid transparent;
 }
 
+.varda-text-with-icon {
+  display: flex;
+  align-items: center;
+}
+
+.varda-text-with-icon mat-icon {
+  margin-right: .5em;
+}
+
 /*HIGH CONTRAST DEFAULT STYLES*/
 .varda-high-contrast,
 .varda-high-contrast .varda-main-login-opintopolku-section-content,

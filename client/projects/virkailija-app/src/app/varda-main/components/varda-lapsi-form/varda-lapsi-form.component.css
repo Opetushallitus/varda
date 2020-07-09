@@ -1,98 +1,67 @@
-.form-group-details {
-  margin-left: 10px;
-}
-.lapsi-form-new-form {
-    max-height: 400px;
-    overflow: auto;
-    margin-bottom: 10px;
-}
-
-.lapsi-form-btn-wrapper,
-.lapsi-form-delete-all-btn-wrapper {
-    display: flex;
-    justify-content: flex-end
-}
-
-.lapsi-form-delete-all-btn-wrapper {
-    margin-bottom: 10px;
-}
-
-.lapsi-form-btn-wrapper > div:first-child {
-    margin-right: 5px;
-}
-
-.lapsi-form-section-heading h3 {
-    margin-bottom: 20px;
-    font-size: 1.0rem;
-    font-weight: bold;
-}
-
-.lapsi-form-form-wrapper {
-    margin-top: 20px;
-    margin-bottom: 80px;
-}
-
-.lapsi-form-section-heading {
-    padding-left: 10px;
-}
-
 .lapsi-form-content {
-    max-height: 80vh;
-    overflow: auto;
+  --tree-width: .75em;
+  --tree-width-negative: -.75em;
+  --tree-border: .1em solid var(--gray-lighten-1);
 }
 
-.lapsi-form-heading-and-delete-section {
-    display: flex;
+.varda-vakapaatos-row {
+  margin-bottom: 1em;
 }
 
-.lapsi-form-heading-and-delete-section > div:first-child {
-    flex: 0 1 30%;
+.varda-vakapaatos-row > div {
+  margin-bottom: .5em;
 }
 
-.lapsi-form-heading-and-delete-section > div:nth-child(2) {
-    flex: 0 1 70%;
+.varda-vakapaatos-row .varda-recurring-field-add-new-wrapper {
+  margin-top: 0;
+  padding-left: 15px;
 }
 
-.mat-expansion-panel {
-  width: 60%;
-  margin-left: 20px;
-  margin-bottom: 5px;
-  box-shadow: none;
-  border-style: solid;
-  border-width: 1px;
-  border-color: #a6dcee;
-  background-color: #def2ff;
+.lapsi-form-varhaiskasvatussuhteet {
+  margin-right: 0;
+  margin-left: 1.5em;
+  margin-top: 1.5em;
+}
+
+.vakasuhde-panel {
+  position: relative;
   overflow: visible;
+  margin-bottom: 1em !important;
 }
 
-.mat-expansion-panel-header {
-  background-color: #def2ff;
-  margin-bottom: 5px;
-  width: 100%;
-  color: #2a2a2a;
-  border-radius: 2px;
-
+.vakasuhde-panel:first-child::before {
+  content: "";
+  position: absolute;
+  top: -1.6em;
+  left: var(--tree-width-negative);
+  border-left: var(--tree-border);
+  width: var(--tree-width);
+  height: 3.25em;
 }
 
-.mat-expansion-panel-body {
-  padding: 10px 24px 16px;
+.vakasuhde-panel::before {
+  content: "";
+  position: absolute;
+  top: -1em;
+  left: var(--tree-width-negative);
+  border-left: var(--tree-border);
+  border-bottom: var(--tree-border);
+  width: var(--tree-width);
+  height: 2.5em;
 }
 
-.mat-expansion-panel-header:focus {
-  border-width: 2px;
-  outline: 2px solid black;
+.vakasuhde-panel:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 1em;
+  left: var(--tree-width-negative);
+  border-left: var(--tree-border);
+  width: var(--tree-width);
+  height: 100%;
 }
-.mat-expansion-panel-header:hover {
-  background-color: #00b5f0;
-  color: #fff;
-}
-.varda-fieldset-legend {
-  margin-top: 20px;
-  margin-bottom: 20px;
-}
-.varhaiskasvatuspaatos-form-continues-text-wrapper,
-.varhaiskasvatussuhde-form-continues-text-wrapper {
-    position: absolute;
-    top: 78%;
-    right: 110px;
+
+.varda-missing-vakasuhde {
+  margin-top: 1.5em;
+  font-weight: var(--font-weight-bold);
+  color: var(--red);
 }

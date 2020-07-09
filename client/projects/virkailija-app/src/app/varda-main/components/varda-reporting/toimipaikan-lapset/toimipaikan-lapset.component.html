@@ -22,8 +22,12 @@
         <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.sukunimi}}</td>
       </tr>
       <tr class="mat-header-row">
-        <td class="mat-cell">{{'label.id' | translate}}</td>
+        <td class="mat-cell">{{'label.henkilo.id' | translate}}</td>
         <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.id}}</td>
+      </tr>
+      <tr class="mat-header-row">
+        <td class="mat-cell">{{'label.lapsi.id' | translate}}</td>
+        <td class="mat-cell">{{selectedToimipaikanLapsi.lapsi_id}}</td>
       </tr>
       <tr class="mat-header-row">
         <td class="mat-cell">{{'label.oppijanumero' | translate}}</td>
@@ -47,25 +51,16 @@
   </div>
 
   <div class="toimipaikan-lapset-container-margin-bottom">
-    <h2>{{'label.varhaiskasvatuspaatokset' | translate}}</h2>
-
-    <div
-         *ngIf="selectedToimipaikanLapsi.varhaiskasvatuspaatokset && selectedToimipaikanLapsi.varhaiskasvatuspaatokset.length > 0">
-      <div *ngFor="let vakapaatos of selectedToimipaikanLapsi.varhaiskasvatuspaatokset">
+    <h2>{{'label.vakatiedot' | translate}}</h2>
+    <div *ngIf="selectedToimipaikanLapsi.varhaiskasvatuspaatokset && selectedToimipaikanLapsi.varhaiskasvatuspaatokset.length > 0">
+      <div class="vakatieto-container" *ngFor="let vakapaatos of selectedToimipaikanLapsi.varhaiskasvatuspaatokset">
         <app-toimipaikan-lapset-vakapaatokset [vakapaatos]="vakapaatos">
         </app-toimipaikan-lapset-vakapaatokset>
-      </div>
-    </div>
-  </div>
 
-  <div class="toimipaikan-lapset-container-margin-bottom">
-    <h2>{{'label.varhaiskasvatussuhteet' | translate}}</h2>
-
-    <div
-         *ngIf="selectedToimipaikanLapsi.varhaiskasvatussuhteet && selectedToimipaikanLapsi.varhaiskasvatussuhteet.length > 0">
-      <div *ngFor="let vakasuhde of selectedToimipaikanLapsi.varhaiskasvatussuhteet">
-        <app-toimipaikan-lapset-vakasuhteet [vakasuhde]="vakasuhde">
-        </app-toimipaikan-lapset-vakasuhteet>
+        <div class="toimipaikan-lapset-container-margin-bottom vakasuhteet-wrapper">
+          <app-toimipaikan-lapset-vakasuhteet *ngFor="let vakasuhde of getVakasuhteetForVakapaatos(vakapaatos.id)" [vakasuhde]="vakasuhde">
+          </app-toimipaikan-lapset-vakasuhteet>
+        </div>
       </div>
     </div>
   </div>

@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
 import {VardaApiWrapperService} from '../../../../../core/services/varda-api-wrapper.service';
 import {VardaFieldSet} from '../../../../../utilities/models';
 import {VardaFormService} from '../../../../../core/services/varda-form.service';
