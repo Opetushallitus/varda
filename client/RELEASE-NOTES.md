@@ -1,6 +1,10 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.3.19 (09.07.2020)
+- CSCVARDA-1418 Tietojen katselussa lapsen vakapäätöksen ja -suhteen välinen linkitys näkyviin
+- CSCVARDA-1736 Näytetään lapsen tietojen katselussa kenttä Lapsi-id
+
 1.3.18 (02.07.2020)
 - CSCVARDA-1724: Näytetään PAOS-tuottaja Katsele tietoja/Toimipaikan tiedoissa
 - CSCVARDA-1711: Yksityinen maksutietotallentaja ei nää lisää maksutieto painiketta paos-lapsilla
