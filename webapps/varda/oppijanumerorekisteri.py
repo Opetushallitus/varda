@@ -222,7 +222,10 @@ def fetch_and_update_modified_henkilot():
     end_datetime = datetime.datetime.now(tz=datetime.timezone.utc)
 
     changed_henkilo_oids = fetch_changed_henkilot(start_datetime)
-    retry_henkilo_oids = BatchError.objects.filter(type=BatchErrorType.HENKILOTIETO_UPDATE.name).values_list('henkilo__henkilo_oid', flat=True)
+    retry_henkilo_oids = (BatchError.objects.filter(type=BatchErrorType.HENKILOTIETO_UPDATE.name,
+                                                    retry_time__lte=datetime.datetime.now(datetime.timezone.utc))
+                          .values_list('henkilo__henkilo_oid', flat=True)
+                          )
 
     if changed_henkilo_oids['is_ok']:
         for oppijanumero in changed_henkilo_oids['json_msg'] + list(retry_henkilo_oids):
@@ -262,9 +265,8 @@ def update_huoltajuussuhteet():
     end_datetime = datetime.datetime.now(tz=datetime.timezone.utc)
 
     changed_lapsi_oids = fetch_changed_huoltajuussuhteet(start_datetime)
-    oids_to_retry = (BatchError.objects
-                     .filter(retry_time__lte=datetime.datetime.now(datetime.timezone.utc),
-                             type=BatchErrorType.LAPSI_HUOLTAJUUSSUHDE_UPDATE.name)
+    oids_to_retry = (BatchError.objects.filter(retry_time__lte=datetime.datetime.now(datetime.timezone.utc),
+                                               type=BatchErrorType.LAPSI_HUOLTAJUUSSUHDE_UPDATE.name)
                      .values_list('henkilo__henkilo_oid', flat=True)
                      )
 
