@@ -2662,17 +2662,18 @@ def create_henkilosto():
     group_tilapainen_henkilosto_tallentaja_vakajarjestaja1 = Group.objects.get(name='HENKILOSTO_TILAPAISET_TALLENTAJA_1.2.246.562.10.34683023489')
     group_taydennys_tallentaja_vakajarjestaja1 = Group.objects.get(name='HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA_1.2.246.562.10.93957375488')
 
-    toimipaikka = Toimipaikka.objects.filter(organisaatio_oid='1.2.246.562.10.9395737548810').first()
-    assign_perm('view_toimipaikka', group_tyontekija_tallentaja_vakajarjestaja1, toimipaikka)
-
     admin_user = User.objects.get(username='credadmin')
     vakajarjestaja_tester = VakaJarjestaja.objects.filter(nimi='Tester organisaatio')[0]
     vakajarjestaja_tester2 = VakaJarjestaja.objects.filter(organisaatio_oid='1.2.246.562.10.34683023489').first()
-    toimipaikka_1 = Toimipaikka.objects.filter(organisaatio_oid='1.2.246.562.10.9395737548810')[0]
+    toimipaikka_1 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548810')
+    toimipaikka_9395737548811 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548811')
     henkilo_1 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A925B'))
     henkilo_2 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A926C'))
     henkilo_3 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A927D'))
     henkilo_4 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A928E'))
+
+    assign_perm('view_toimipaikka', group_tyontekija_tallentaja_vakajarjestaja1, toimipaikka_1)
+    assign_perm('view_toimipaikka', group_tyontekija_tallentaja_vakajarjestaja1, toimipaikka_9395737548811)
 
     def add_tutkinto(henkilo, *tutkinnot):
         for tutkinto in tutkinnot:
@@ -2790,6 +2791,20 @@ def create_henkilosto():
         changed_by_id=admin_user.id
     )
     [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja1, tyoskentelypaikka_1) for crud_permission in crud_permissions_tyoskentelypaikka]
+
+    tyoskentelypaikka_1_1 = Tyoskentelypaikka.objects.create(
+        palvelussuhde=palvelussuhde_1,
+        toimipaikka=toimipaikka_9395737548811,
+        alkamis_pvm='2020-03-01',
+        paattymis_pvm='2020-05-02',
+        tehtavanimike_koodi='39407',
+        kelpoisuus_kytkin=False,
+        kiertava_tyontekija_kytkin=False,
+        lahdejarjestelma='1',
+        tunniste='testing-tyoskentelypaikka1-1',
+        changed_by_id=admin_user.id
+    )
+    [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja1, tyoskentelypaikka_1_1) for crud_permission in crud_permissions_tyoskentelypaikka]
 
     tyoskentelypaikka_2 = Tyoskentelypaikka.objects.create(
         palvelussuhde=palvelussuhde_1,

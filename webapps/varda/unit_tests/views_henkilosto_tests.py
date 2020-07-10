@@ -1492,6 +1492,18 @@ class VardaHenkilostoViewSetTests(TestCase):
         assert_status_code(resp_tyoskentelypaikka, status.HTTP_201_CREATED)
         self.assertEqual(palvelussuhde.tunniste, json.loads(resp_tyoskentelypaikka.content)['palvelussuhde_tunniste'])
 
+    def test_tyoskentelypaikka_delete_invalid(self):
+        lahdejarjestelma = '1'
+        tunniste = 'testing-tyoskentelypaikka2'
+
+        tyoskentelypaikka = Tyoskentelypaikka.objects.get(lahdejarjestelma=lahdejarjestelma, tunniste=tunniste)
+
+        client = SetUpTestClient('tyontekija_tallentaja').client()
+        resp = client.delete(f'/api/henkilosto/v1/tyoskentelypaikat/{tyoskentelypaikka.id}/')
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error('detail', 'Cannot delete tyoskentelypaikka. Taydennyskoulutukset with this '
+                                          'tehtavanimike_koodi must be deleted first.', resp)
+
     def test_pidempipoissaolo_add_correct(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
 

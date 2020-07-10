@@ -478,6 +478,18 @@ class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
         serializer.save(changed_by=user)
 
     def perform_destroy(self, tyoskentelypaikka):
+        tyontekija = tyoskentelypaikka.palvelussuhde.tyontekija
+        tehtavanimike = tyoskentelypaikka.tehtavanimike_koodi
+        taydennyskoulutus_qs = TaydennyskoulutusTyontekija.objects.filter(tyontekija=tyontekija,
+                                                                          tehtavanimike_koodi=tehtavanimike)
+        tyoskentelypaikka_qs = (Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija,
+                                                                 tehtavanimike_koodi=tehtavanimike)
+                                .exclude(id=tyoskentelypaikka.id))
+
+        if taydennyskoulutus_qs.exists() and not tyoskentelypaikka_qs.exists():
+            raise ValidationError({'detail': 'Cannot delete tyoskentelypaikka. Taydennyskoulutukset with this '
+                                             'tehtavanimike_koodi must be deleted first.'})
+
         with transaction.atomic():
             delete_object_permissions_explicitly(Tyoskentelypaikka, tyoskentelypaikka)
             try:
