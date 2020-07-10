@@ -2940,7 +2940,6 @@ def create_test_data():
     - testing or
     - missing env variables: OPINTOPOLKU_USERNAME / OPINTOPOLKU_PASSWORD
     """
-
     opintopolku_username = os.getenv('OPINTOPOLKU_USERNAME', None)
     opintopolku_password = os.getenv('OPINTOPOLKU_PASSWORD', None)
     if settings.TESTING or opintopolku_username is None or opintopolku_password is None:
