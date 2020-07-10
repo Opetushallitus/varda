@@ -1,3 +1,4 @@
+import datetime
 import logging
 
 from django.contrib.auth.models import User, Group
@@ -17,7 +18,8 @@ from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, K
                           Varhaiskasvatussuhde, Z3_AdditionalCasUserFields, Tyontekija)
 from varda.permissions import check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement
 from varda.serializers_common import OidRelatedField
-from varda.validators import validate_henkilo_oid, validate_nimi, validate_henkilotunnus_or_oid_needed, validate_organisaatio_oid
+from varda.validators import (fill_missing_fields_for_validations, validate_henkilo_oid, validate_nimi,
+                              validate_henkilotunnus_or_oid_needed, validate_organisaatio_oid)
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -816,38 +818,58 @@ class VarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSerializer):
 
     def validate(self, data):
         lapsi_obj = data['lapsi']
-        jarjestamismuoto_koodi_paos = ['jm02', 'jm03']
+        jarjestamismuoto_koodi = data['jarjestamismuoto_koodi'].lower()
+        paattymis_pvm = data.get('paattymis_pvm', None)
+
         if not self.context['request'].user.has_perm('view_lapsi', lapsi_obj):
-            msg = {"lapsi": ["Invalid hyperlink - Object does not exist.", ]}
+            msg = {'lapsi': ['Invalid hyperlink - Object does not exist.', ]}
             raise serializers.ValidationError(msg, code='invalid')
 
-        if (lapsi_obj.paos_organisaatio is not None and
-                data['jarjestamismuoto_koodi'].lower() not in jarjestamismuoto_koodi_paos):
-            msg = {'jarjestamismuoto_koodi': ['Invalid code for paos-lapsi.', ]}
-            raise serializers.ValidationError(msg, code='invalid')
+        self._validate_paos_specific_data(lapsi_obj, jarjestamismuoto_koodi, paattymis_pvm)
+        self._validate_jarjestamismuoto(lapsi_obj, jarjestamismuoto_koodi)
+        self._validate_vuorohoito(data)
 
-        if (lapsi_obj.paos_organisaatio is not None):
-            check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(lapsi_obj.oma_organisaatio,
-                                                                                lapsi_obj.paos_organisaatio)
+        return data
 
-        """
-        TODO: Activate when PAOS-yksityiset in production.
-        NOTE: Also uncomment the relevant test case in views_tests.py: test_api_push_vakapaatos_non_paos_lapsi
-        if (lapsi_obj.paos_organisaatio is None and
-                data['jarjestamismuoto_koodi'].lower() in jarjestamismuoto_koodi_paos):
+    def _validate_paos_specific_data(self, lapsi_obj, jarjestamismuoto_koodi, paattymis_pvm):
+        jarjestamismuoto_koodit_paos = ['jm02', 'jm03']
+
+        if paattymis_pvm and paattymis_pvm < datetime.date(year=2020, month=1, day=1):
+            # If paattymis_pvm is set and is before 2020, do not validate paos-koodit. Lapsi may be related to
+            # tilapäinen toimipaikka. TODO: Remove this condition after tilapaiset toimipaikat are not in use.
+            # https://jira.eduuni.fi/browse/CSCVARDA-1807
+            return
+
+        if lapsi_obj.paos_organisaatio is not None:
+            check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(lapsi_obj.oma_organisaatio, lapsi_obj.paos_organisaatio)
+            if jarjestamismuoto_koodi not in jarjestamismuoto_koodit_paos:
+                msg = {'jarjestamismuoto_koodi': ['Invalid code for paos-lapsi.', ]}
+                raise serializers.ValidationError(msg, code='invalid')
+        elif jarjestamismuoto_koodi in jarjestamismuoto_koodit_paos:
             msg = {'jarjestamismuoto_koodi': ['Invalid code for non-paos-lapsi.', ]}
             raise serializers.ValidationError(msg, code='invalid')
-        """
 
-        if not data["vuorohoito_kytkin"]:
+    def _validate_jarjestamismuoto(self, lapsi_obj, jarjestamismuoto_koodi):
+        jarjestamismuoto_koodit_kunta = ['jm01']
+        jarjestamismuoto_koodit_yksityinen = ['jm04', 'jm05']
+
+        if lapsi_obj.vakatoimija is not None:
+            if lapsi_obj.vakatoimija.kunnallinen_kytkin and jarjestamismuoto_koodi not in jarjestamismuoto_koodit_kunta:
+                msg = {'jarjestamismuoto_koodi': ['Invalid code for kunnallinen lapsi']}
+                raise serializers.ValidationError(msg, code='invalid')
+            elif not lapsi_obj.vakatoimija.kunnallinen_kytkin and jarjestamismuoto_koodi not in jarjestamismuoto_koodit_yksityinen:
+                msg = {'jarjestamismuoto_koodi': ['Invalid code for yksityinen lapsi']}
+                raise serializers.ValidationError(msg, code='invalid')
+
+    def _validate_vuorohoito(self, data):
+        if not data['vuorohoito_kytkin']:
             msg = {}
-            if "paivittainen_vaka_kytkin" not in data or data["paivittainen_vaka_kytkin"] is None:
-                msg["paivittainen_vaka_kytkin"] = "paivittainen_vaka_kytkin must be given if vuorohoito_kytkin is False"
-            if "kokopaivainen_vaka_kytkin" not in data or data["kokopaivainen_vaka_kytkin"] is None:
-                msg["kokopaivainen_vaka_kytkin"] = "kokopaivainen_vaka_kytkin must be given if vuorohoito_kytkin is False"
+            if 'paivittainen_vaka_kytkin' not in data or data['paivittainen_vaka_kytkin'] is None:
+                msg['paivittainen_vaka_kytkin'] = 'paivittainen_vaka_kytkin must be given if vuorohoito_kytkin is False'
+            if 'kokopaivainen_vaka_kytkin' not in data or data['kokopaivainen_vaka_kytkin'] is None:
+                msg['kokopaivainen_vaka_kytkin'] = 'kokopaivainen_vaka_kytkin must be given if vuorohoito_kytkin is False'
             if msg:
                 raise serializers.ValidationError(msg, code='invalid')
-        return data
 
     @caching_to_representation('varhaiskasvatuspaatos')
     def to_representation(self, instance):
@@ -881,7 +903,7 @@ class VarhaiskasvatuspaatosPatchSerializer(serializers.HyperlinkedModelSerialize
 
     def validate(self, data):
         if len(data) == 0:
-            raise serializers.ValidationError("No data given.")
+            raise serializers.ValidationError('No data given.')
         return data
 
 
@@ -900,42 +922,79 @@ class VarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSerializer):
         exclude = ('luonti_pvm', 'changed_by',)
 
     def validate(self, data):
-        if ('varhaiskasvatuspaatos' in data and
-                not self.context['request'].user.has_perm('view_varhaiskasvatuspaatos', data['varhaiskasvatuspaatos'])):
-            msg = {"varhaiskasvatuspaatos": ["Invalid hyperlink - Object does not exist.", ]}
+        instance = self.instance
+        if instance:
+            fill_missing_fields_for_validations(data, instance)
+
+        if not self.context['request'].user.has_perm('view_varhaiskasvatuspaatos', data['varhaiskasvatuspaatos']):
+            msg = {'varhaiskasvatuspaatos': ['Invalid hyperlink - Object does not exist.', ]}
             raise serializers.ValidationError(msg, code='invalid')
         elif data['varhaiskasvatuspaatos'].lapsi.paos_kytkin and data['varhaiskasvatuspaatos'].lapsi.paos_organisaatio != data['toimipaikka'].vakajarjestaja:
             msg = {'non_field_errors': ['Vakajarjestaja is different than paos_organisaatio for lapsi.']}
             raise serializers.ValidationError(msg, code='invalid')
 
-        self.validate_paivamaarat_varhaiskasvatussuhde_toimipaikka(data, data['toimipaikka'].paattymis_pvm)
-        self.validate_paivamaarat_varhaiskasvatussuhde_varhaiskasvatuspaatos(data, data['varhaiskasvatuspaatos'],
-                                                                             not (self.instance and self.instance.paattymis_pvm))
+        self._validate_jarjestamismuoto(data)
+        self._validate_paivamaarat_varhaiskasvatussuhde_toimipaikka(data)
+        self._validate_paivamaarat_varhaiskasvatussuhde_varhaiskasvatuspaatos(data)
 
         return data
 
-    def validate_paivamaarat_varhaiskasvatussuhde_toimipaikka(self, data, toimipaikka_paattymis_pvm):
+    def _validate_jarjestamismuoto(self, data):
+        jarjestamismuoto_koodit_kunta = ['jm01']
+        jarjestamismuoto_koodit_yksityinen = ['jm04', 'jm05']
+        vakapaatos = data['varhaiskasvatuspaatos']
+        jarjestamismuoto_koodi = vakapaatos.jarjestamismuoto_koodi.lower()
+        toimipaikka = data['toimipaikka']
+
+        if toimipaikka.nimi.lower().startswith('palveluseteli ja ostopalvelu'):
+            # If toimipaikka is tilapäinen toimipaikka, jarjestamismuoto can be paos-jarjestamismuoto as well
+            # TODO: Remove this condition after tilapaiset toimipaikat are not in use.
+            # https://jira.eduuni.fi/browse/CSCVARDA-1807
+            jarjestamismuoto_koodit_paos = ['jm02', 'jm03']
+            jarjestamismuoto_koodit_kunta.extend(jarjestamismuoto_koodit_paos)
+            jarjestamismuoto_koodit_yksityinen.extend(jarjestamismuoto_koodit_paos)
+
+        if jarjestamismuoto_koodi not in (koodi.lower() for koodi in toimipaikka.jarjestamismuoto_koodi):
+            msg = {'varhaiskasvatuspaatos': ['jarjestamismuoto_koodi is invalid for toimipaikka']}
+            raise serializers.ValidationError(msg, code='invalid')
+
+        if vakapaatos.lapsi.paos_organisaatio is None:
+            # Validate only non-paos-lapset, paos-lapset are validated in VarhaiskasvatuspaatosSerializer
+            kunnallinen_kytkin = toimipaikka.vakajarjestaja.kunnallinen_kytkin
+            if kunnallinen_kytkin and jarjestamismuoto_koodi not in jarjestamismuoto_koodit_kunta:
+                msg = {'varhaiskasvatuspaatos': ['jarjestamismuoto_koodi is invalid for kunnallinen toimipaikka']}
+                raise serializers.ValidationError(msg, code='invalid')
+            elif not kunnallinen_kytkin and jarjestamismuoto_koodi not in jarjestamismuoto_koodit_yksityinen:
+                msg = {'varhaiskasvatuspaatos': ['jarjestamismuoto_koodi is invalid for yksityinen toimipaikka']}
+                raise serializers.ValidationError(msg, code='invalid')
+
+    def _validate_paivamaarat_varhaiskasvatussuhde_toimipaikka(self, data):
+        toimipaikka_paattymis_pvm = data['toimipaikka'].paattymis_pvm
+        vakasuhde_paattymis_pvm = data.get('paattymis_pvm', None)
+
         if toimipaikka_paattymis_pvm is not None:
             if not validators.validate_paivamaara1_before_paivamaara2(data['alkamis_pvm'], toimipaikka_paattymis_pvm):
-                raise ValidationError({"non_field_errors": ['varhaiskasvatussuhde.alkamis_pvm cannot be same or after toimipaikka.paattymis_pvm.']})
-            if('paattymis_pvm' in data and
-                    data['paattymis_pvm'] is not None and
-                    not validators.validate_paivamaara1_before_paivamaara2(data['paattymis_pvm'], toimipaikka_paattymis_pvm, can_be_same=True)):
+                raise ValidationError({'non_field_errors': ['varhaiskasvatussuhde.alkamis_pvm cannot be same or after toimipaikka.paattymis_pvm.']})
+            if(vakasuhde_paattymis_pvm is not None and
+                    not validators.validate_paivamaara1_before_paivamaara2(vakasuhde_paattymis_pvm, toimipaikka_paattymis_pvm, can_be_same=True)):
                 raise ValidationError({'non_field_errors': ['varhaiskasvatussuhde.paattymis_pvm cannot be after toimipaikka.paattymis_pvm.']})
 
-    def validate_paivamaarat_varhaiskasvatussuhde_varhaiskasvatuspaatos(self, data, varhaiskasvatuspaatos_obj, paattymis_pvm_is_none=True):
-        if not validators.validate_paivamaara1_before_paivamaara2(varhaiskasvatuspaatos_obj.alkamis_pvm, data['alkamis_pvm'], can_be_same=True):
+    def _validate_paivamaarat_varhaiskasvatussuhde_varhaiskasvatuspaatos(self, data):
+        vakapaatos = data['varhaiskasvatuspaatos']
+        alkamis_pvm = data['alkamis_pvm']
+        paattymis_pvm = data.get('paattymis_pvm', None)
+
+        if not validators.validate_paivamaara1_before_paivamaara2(vakapaatos.alkamis_pvm, alkamis_pvm, can_be_same=True):
             raise ValidationError({'alkamis_pvm': ['varhaiskasvatussuhde.alkamis_pvm must be after varhaiskasvatuspaatos.alkamis_pvm (or same)']})
-        if not validators.validate_paivamaara1_before_paivamaara2(data['alkamis_pvm'], varhaiskasvatuspaatos_obj.paattymis_pvm, can_be_same=True):
+        if not validators.validate_paivamaara1_before_paivamaara2(alkamis_pvm, vakapaatos.paattymis_pvm, can_be_same=True):
             raise ValidationError({'alkamis_pvm': ['varhaiskasvatussuhde.alkamis_pvm must be before varhaiskasvatuspaatos.paattymis_pvm (or same)']})
 
-        if 'paattymis_pvm' in data and data['paattymis_pvm']:
-            if not validators.validate_paivamaara1_before_paivamaara2(data['alkamis_pvm'], data['paattymis_pvm'], can_be_same=True):
+        if paattymis_pvm:
+            if not validators.validate_paivamaara1_before_paivamaara2(alkamis_pvm, paattymis_pvm, can_be_same=True):
                 raise ValidationError({'paattymis_pvm': ['paattymis_pvm must be after alkamis_pvm (or same)']})
-            if (not validators.validate_paivamaara1_before_paivamaara2(data['paattymis_pvm'], varhaiskasvatuspaatos_obj.paattymis_pvm, can_be_same=True) or
-                    (data['paattymis_pvm'] is None and varhaiskasvatuspaatos_obj.paattymis_pvm is not None)):
+            if not validators.validate_paivamaara1_before_paivamaara2(paattymis_pvm, vakapaatos.paattymis_pvm, can_be_same=True):
                 raise ValidationError({'paattymis_pvm': ['varhaiskasvatuspaatos.paattymis_pvm must be after varhaiskasvatussuhde.paattymis_pvm (or same)']})
-        elif (varhaiskasvatuspaatos_obj.paattymis_pvm and paattymis_pvm_is_none) or (varhaiskasvatuspaatos_obj.paattymis_pvm and 'paattymis_pvm' in data):
+        elif vakapaatos.paattymis_pvm:
             # Raise error if vakapaatos has paattymis_pvm and vakasuhde doesn't have paattymis_pvm (existing or in request)
             raise ValidationError({'paattymis_pvm': ['varhaiskasvatussuhde must have paattymis_pvm because varhaiskasvatuspaatos has paattymis_pvm']})
 

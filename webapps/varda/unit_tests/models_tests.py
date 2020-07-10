@@ -25,7 +25,7 @@ class VardaModelsTests(TestCase):
         self.assertEqual(test_toimipaikka_varhaiskasvatuspaikat, 120)
 
         test_toimipaikka_jarjestamismuoto = Toimipaikka.objects.get(pk=1).jarjestamismuoto_koodi
-        self.assertEqual(test_toimipaikka_jarjestamismuoto[0], 'jm01')
+        self.assertEqual(test_toimipaikka_jarjestamismuoto[0], 'jm02')
 
     def test_toiminnalliset_painotukset(self):
         test_toiminnallinen_painotus = ToiminnallinenPainotus.objects.get(pk=1).toimintapainotus_koodi

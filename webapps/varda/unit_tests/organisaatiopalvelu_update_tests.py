@@ -160,7 +160,12 @@ class VardaOrganisaatiopalveluTests(TestCase):
             "varhaiskasvatuksenToimipaikkaTiedot": {
                 "toimintamuoto": "vardatoimintamuoto_tm01",
                 "kasvatusopillinenJarjestelma": "vardakasvatusopillinenjarjestelma_kj03",
-                "varhaiskasvatuksenJarjestamismuodot": ["vardajarjestamismuoto_jm01"],
+                "varhaiskasvatuksenJarjestamismuodot": [
+                    "vardajarjestamismuoto_jm02",
+                    "vardajarjestamismuoto_jm03",
+                    "vardajarjestamismuoto_jm04",
+                    "vardajarjestamismuoto_jm05"
+                ],
                 "paikkojenLukumaara": 1,
                 "varhaiskasvatuksenKielipainotukset": [{
                     "kielipainotus": "kieli_bh",
@@ -352,7 +357,10 @@ class VardaOrganisaatiopalveluTests(TestCase):
                 "toimintamuoto": "vardatoimintamuoto_tm01",
                 "kasvatusopillinenJarjestelma": "vardakasvatusopillinenjarjestelma_kj02",
                 "varhaiskasvatuksenJarjestamismuodot": [
-                    "vardajarjestamismuoto_jm01"
+                    "vardajarjestamismuoto_jm02",
+                    "vardajarjestamismuoto_jm03",
+                    "vardajarjestamismuoto_jm04",
+                    "vardajarjestamismuoto_jm05"
                 ],
                 "paikkojenLukumaara": 120,
                 "varhaiskasvatuksenKielipainotukset": [

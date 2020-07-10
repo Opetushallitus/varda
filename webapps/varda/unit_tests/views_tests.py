@@ -11,7 +11,7 @@ from varda.misc import hash_string, encrypt_henkilotunnus
 from varda.models import (VakaJarjestaja, Toimipaikka, PaosOikeus, Huoltaja, Huoltajuussuhde, Henkilo,
                           Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto)
 from varda.permission_groups import assign_object_level_permissions
-from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient
+from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, assert_validation_error
 
 # Well known test organizations (name corresponds to id)
 test_org1 = "1.2.246.562.10.34683023489"  # "Tester2 organisaatio"
@@ -251,7 +251,7 @@ class VardaViewsTests(TestCase):
 
     def test_api_varhaiskasvatuspaatos_filtering(self):
         client = SetUpTestClient('tester').client()
-        resp = client.get('/api/v1/varhaiskasvatuspaatokset/?jarjestamismuoto_koodi=jm02')
+        resp = client.get('/api/v1/varhaiskasvatuspaatokset/?jarjestamismuoto_koodi=jm04')
         self.assertEqual(json.loads(resp.content)['count'], 2)
 
     def test_post_vakajarjestaja_with_invalid_yritysmuoto(self):
@@ -1042,7 +1042,7 @@ class VardaViewsTests(TestCase):
         varhaiskasvatuspaatos = {
             "lapsi": lapsi_url,
             "tuntimaara_viikossa": "37.5",
-            "jarjestamismuoto_koodi": "jm01",
+            "jarjestamismuoto_koodi": "jm04",
             "hakemus_pvm": "2018-08-15",
             "alkamis_pvm": "2018-09-30"
         }
@@ -1082,10 +1082,11 @@ class VardaViewsTests(TestCase):
             "alkamis_pvm": "2018-09-30"
         }
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
+        assert_status_code(resp, 201)
         vakapaatos_url = json.loads(resp.content)['url']
 
         varhaiskasvatussuhde = {
-            "toimipaikka": "http://testserver/api/v1/toimipaikat/1/",
+            "toimipaikka": "/api/v1/toimipaikat/6/",
             "varhaiskasvatuspaatos": vakapaatos_url,
             "alkamis_pvm": "2019-10-01"
         }
@@ -1227,7 +1228,6 @@ class VardaViewsTests(TestCase):
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
         assert_status_code(resp, 201)
 
-    """
     def test_api_push_vakapaatos_non_paos_lapsi(self):
         varhaiskasvatuspaatos = {
             'lapsi': '/api/v1/lapset/1/',
@@ -1238,9 +1238,8 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
-        self.assertEqual(json.loads(resp.content), {'jarjestamismuoto_koodi': ['Invalid code for non-paos-lapsi.']})
         assert_status_code(resp, 400)
-    """
+        assert_validation_error('jarjestamismuoto_koodi', 'Invalid code for non-paos-lapsi.', resp)
 
     def test_api_get_huoltaja_by_varhaiskasvatuspaatos(self):
         client = SetUpTestClient('credadmin').client()
@@ -1426,7 +1425,10 @@ class VardaViewsTests(TestCase):
             "toimintamuoto_koodi": "tm01",
             "asiointikieli_koodi": ["FI", "SV"],
             "jarjestamismuoto_koodi": [
-                "jm01"
+                "jm02",
+                "jm03",
+                "jm04",
+                "jm05"
             ],
             "varhaiskasvatuspaikat": 120,
             "toiminnallinenpainotus_kytkin": True,
@@ -2114,7 +2116,7 @@ class VardaViewsTests(TestCase):
         }
         self.assertEqual(json.loads(resp.content), accepted_response)
 
-    def test_push_api_maksutieto_correct_format_2(self):
+    def test_push_api_maksutieto_yksityinen_1(self):
         """
         In response:
          - Return henkilotunnus if huoltaja was given using it
@@ -2161,9 +2163,9 @@ class VardaViewsTests(TestCase):
             ],
             'lapsi': 'http://testserver/api/v1/lapset/1/',
             'maksun_peruste_koodi': 'mp02',
-            'palveluseteli_arvo': 120.0,
+            'palveluseteli_arvo': 0.0,
             'asiakasmaksu': 0.0,
-            'perheen_koko': 2,
+            'perheen_koko': None,
             'alkamis_pvm': '2018-02-23',
             'paattymis_pvm': '2018-02-24',
             'tallennetut_huoltajat_count': 2,
@@ -2171,7 +2173,7 @@ class VardaViewsTests(TestCase):
         }
         self.assertEqual(json.loads(resp.content), accepted_response)
 
-    def test_push_api_maksutieto_yksityinen(self):
+    def test_push_api_maksutieto_yksityinen_2(self):
         lapsi_oid = '1.2.246.562.24.52864662677'
         lapsi_obj = Lapsi.objects.get(henkilo__henkilo_oid=lapsi_oid)
 
@@ -2722,9 +2724,10 @@ class VardaViewsTests(TestCase):
         self.assertEqual(json.loads(resp.content), {'paos_toimipaikka': 'paos_toimipaikka can not be in oma_organisaatio'})
 
     def test_push_incorrect_paos_toiminta_toimipaikka_2(self):
+        paos_toimipaikka_obj = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.2935996863483')
         paos_toiminta = {
-            "oma_organisaatio": "http://localhost:8000/api/v1/vakajarjestajat/1/",
-            "paos_toimipaikka": "http://localhost:8000/api/v1/toimipaikat/1/"
+            'oma_organisaatio': 'http://localhost:8000/api/v1/vakajarjestajat/1/',
+            'paos_toimipaikka': f'http://localhost:8000/api/v1/toimipaikat/{paos_toimipaikka_obj.id}/'
         }
         client = SetUpTestClient('tester4').client()
         paos_toiminta = json.dumps(paos_toiminta)
@@ -2949,11 +2952,11 @@ class VardaViewsTests(TestCase):
 
     def test_api_push_too_many_overlapping_varhaiskasvatuspaatos(self):
         varhaiskasvatuspaatos = {
-            "lapsi": "http://testserver/api/v1/lapset/1/",
-            "tuntimaara_viikossa": 40,
-            "jarjestamismuoto_koodi": "jm01",
-            "hakemus_pvm": "2018-09-15",
-            "alkamis_pvm": "2018-10-20"
+            'lapsi': 'http://testserver/api/v1/lapset/1/',
+            'tuntimaara_viikossa': 40,
+            'jarjestamismuoto_koodi': 'jm01',
+            'hakemus_pvm': '2018-09-15',
+            'alkamis_pvm': '2018-10-20'
         }
         client = SetUpTestClient('tester').client()
         client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
@@ -2961,13 +2964,15 @@ class VardaViewsTests(TestCase):
         client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'varhaiskasvatuspaatos': ['Lapsi 1 has already 3 overlapping varhaiskasvatuspaatos on the defined time range.']})
+        assert_validation_error('varhaiskasvatuspaatos',
+                                'Lapsi 1 has already 3 overlapping varhaiskasvatuspaatos on the defined time range.',
+                                resp)
 
     def test_api_push_too_many_varhaiskasvatussuhde(self):
         varhaiskasvatussuhde = {
-            "toimipaikka": "http://testserver/api/v1/toimipaikat/1/",
-            "varhaiskasvatuspaatos": "http://testserver/api/v1/varhaiskasvatuspaatokset/2/",
-            "alkamis_pvm": "2018-12-01"
+            'toimipaikka': 'http://testserver/api/v1/toimipaikat/1/',
+            'varhaiskasvatuspaatos': 'http://testserver/api/v1/varhaiskasvatuspaatokset/10/',
+            'alkamis_pvm': '2020-05-01'
         }
         client = SetUpTestClient('tester').client()
         client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
@@ -2975,7 +2980,9 @@ class VardaViewsTests(TestCase):
         client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         resp = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'varhaiskasvatussuhde': ["Lapsi 2 has already 3 overlapping varhaiskasvatussuhde on the defined time range."]})
+        assert_validation_error('varhaiskasvatussuhde',
+                                'Lapsi 10 has already 3 overlapping varhaiskasvatussuhde on the defined time range.',
+                                resp)
 
     def test_api_get_vakajarjestaja_yhteenveto(self):
         client = SetUpTestClient('tester').client()
@@ -2986,7 +2993,7 @@ class VardaViewsTests(TestCase):
             "lapset_vakapaatos_voimassaoleva": 5,
             "lapset_vakasuhde_voimassaoleva": 5,
             "lapset_vuorohoidossa": 0,
-            "lapset_palveluseteli_ja_ostopalvelu": 4,
+            "lapset_palveluseteli_ja_ostopalvelu": 3,
             "lapset_maksutieto_voimassaoleva": 4,
             "toimipaikat_voimassaolevat": 4,
             "toimipaikat_paattyneet": 0,
@@ -3035,7 +3042,7 @@ class VardaViewsTests(TestCase):
     def test_api_filter_jarjestamismuotokoodi_1(self):
         client = SetUpTestClient('tester2').client()
         resp = client.get("/api/v1/toimipaikat/?jarjestamismuoto_koodi=jm01")
-        self.assertEqual(json.loads(resp.content)['count'], 2)
+        self.assertEqual(json.loads(resp.content)['count'], 3)
 
     def test_api_filter_jarjestamismuotokoodi_2(self):
         client = SetUpTestClient('tester2').client()
