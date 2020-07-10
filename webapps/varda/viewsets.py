@@ -28,7 +28,7 @@ from varda.cache import (cached_list_response, cached_retrieve_response, delete_
 from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid,
                                                         add_henkilo_to_oppijanumerorekisteri,
                                                         get_henkilo_by_henkilotunnus)
-from varda.enums.lahdejarjestelma import Lahdejarjestelma
+from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
 from varda.exceptions.conflict_error import ConflictError
 from varda.misc import CustomServerErrorException, decrypt_henkilotunnus, encrypt_henkilotunnus, hash_string
 from varda.misc_queries import get_paos_toimipaikat
@@ -634,17 +634,17 @@ class ToimipaikkaViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, P
         toimipaikka_obj = Toimipaikka.objects.get(id=toimipaikka_id)
 
         if not user.has_perm('change_toimipaikka', toimipaikka_obj):
-            raise PermissionDenied("User does not have permissions to change this object.")
+            raise PermissionDenied('User does not have permissions to change this object.')
 
-        if Lahdejarjestelma[toimipaikka_obj.lahdejarjestelma] is not Lahdejarjestelma.VARDA:
-            raise ValidationError({"lahdejarjestelma": ["This toimipaikka should be modified in organisaatio-service."]})
+        if Hallinnointijarjestelma[toimipaikka_obj.hallinnointijarjestelma] is not Hallinnointijarjestelma.VARDA:
+            raise ValidationError({'hallinnointijarjestelma': ['This toimipaikka should be modified in organisaatio-service.']})
         if validated_data['vakajarjestaja'] != toimipaikka_obj.vakajarjestaja:
-            raise ValidationError({"vakajarjestaja": ["It is not allowed to change the vakajarjestaja where toimipaikka belongs to."]})
+            raise ValidationError({'vakajarjestaja': ['It is not allowed to change the vakajarjestaja where toimipaikka belongs to.']})
         if validated_data['toimintamuoto_koodi'] != toimipaikka_obj.toimintamuoto_koodi and toimipaikka_obj.organisaatio_oid is None:
-            raise ValidationError({"toimintamuoto_koodi": ["It is not allowed to change the toimintamuoto_koodi of a toimipaikka that has no organisaatio_oid."]})
-        if "paattymis_pvm" in validated_data and validated_data["paattymis_pvm"] is not None:
+            raise ValidationError({'toimintamuoto_koodi': ['It is not allowed to change the toimintamuoto_koodi of a toimipaikka that has no organisaatio_oid.']})
+        if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
             if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm']):
-                raise ValidationError({"paattymis_pvm": ["paattymis_pvm must be after alkamis_pvm"]})
+                raise ValidationError({'paattymis_pvm': ['paattymis_pvm must be after alkamis_pvm']})
 
         saved_object = serializer.save(changed_by=user)
         delete_cache_keys_related_model('vakajarjestaja', saved_object.vakajarjestaja.id)

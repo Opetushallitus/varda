@@ -4,7 +4,7 @@ import responses
 from django.test import TestCase
 
 from varda import organisaatiopalvelu
-from varda.enums.lahdejarjestelma import Lahdejarjestelma
+from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
 from varda.enums.ytj import YtjYritysmuoto
 from varda.models import Toimipaikka, ToiminnallinenPainotus, KieliPainotus, VakaJarjestaja
 from varda.organisaatiopalvelu import fetch_and_save_toimipaikka_data
@@ -45,7 +45,7 @@ class TestFetchAndSaveToimipaikkaData(TestCase):
         self.assertEqual(toimipaikka.paattymis_pvm, None)
         # Not assigned in this method but when toimipaikka is created
         self.assertEqual(toimipaikka.changed_by_id, 3)
-        self.assertEqual(toimipaikka.lahdejarjestelma, str(Lahdejarjestelma.ORGANISAATIO))
+        self.assertEqual(toimipaikka.hallinnointijarjestelma, str(Hallinnointijarjestelma.ORGANISAATIO))
 
         painotus_dicts = list((ToiminnallinenPainotus.objects
                                .all()

@@ -7,7 +7,7 @@ import { VardaVakajarjestajaService } from '../../../../core/services/varda-vaka
 import { VardaModalService } from '../../../../core/services/varda-modal.service';
 import { VardaUtilityService } from '../../../../core/services/varda-utility.service';
 import { AuthService } from '../../../../core/auth/auth.service';
-import { Lahdejarjestelma } from '../../../../utilities/models/enums/lahdejarjestelma';
+import { Hallinnointijarjestelma } from '../../../../utilities/models/enums/hallinnointijarjestelma';
 import { VardaFieldsetArrayContainer, VardaFieldSet } from '../../../../utilities/models/varda-fieldset.model';
 import { ModalEvent } from '../../../../shared/components/varda-modal-form/varda-modal-form.component';
 import { VardaToimipaikkaMinimalDto, VardaToimipaikkaDTO } from '../../../../utilities/models/dto/varda-toimipaikka-dto.model';
@@ -34,7 +34,7 @@ export class VardaToimipaikkaSelectorComponent implements OnChanges {
   toimipaikkaFormOpen: boolean;
   editToimipaikkaAction: boolean;
   isOrganisationLevelTallentajaRole: boolean;
-  lahdejarjestelmaTypes = Lahdejarjestelma;
+  hallinnointijarjestelmaTypes = Hallinnointijarjestelma;
 
   ui: {
     isLoading: boolean,

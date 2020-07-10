@@ -226,7 +226,7 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
   formatForReporting(toimipaikat: Array<VardaToimipaikkaDTO>): Observable<any> {
     const excludedInToimipaikkaReportingFields = [
       'url',
-      'lahdejarjestelma',
+      'hallinnointijarjestelma',
       'vakajarjestaja',
       'toiminnallisetpainotukset_top',
       'kielipainotukset_top',

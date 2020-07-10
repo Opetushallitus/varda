@@ -14,7 +14,7 @@ from varda.clients.organisaatio_client import get_organisaatiopalvelu_info, get_
     check_if_toimipaikka_exists_by_name, get_organisaatio, create_organisaatio, update_organisaatio, get_changed_since, \
     get_multiple_organisaatio
 from varda.enums.aikaleima_avain import AikaleimaAvain
-from varda.enums.lahdejarjestelma import Lahdejarjestelma
+from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
 from varda.exceptions.invalid_koodi_uri_exception import InvalidKoodiUriException
 from varda.misc import list_to_chunks
 from varda.models import Toimipaikka, VakaJarjestaja, KieliPainotus, ToiminnallinenPainotus, Aikaleima
@@ -184,7 +184,7 @@ def _fill_toimipaikka_data(reply_json, toimipaikka_obj):
 
     # Managed on organisaatio-service if toimipaikka has other organisation types
     if len(reply_json['tyypit']) > 1:
-        toimipaikka_obj.lahdejarjestelma = Lahdejarjestelma.ORGANISAATIO
+        toimipaikka_obj.hallinnointijarjestelma = Hallinnointijarjestelma.ORGANISAATIO
 
 
 def get_koodi_from_uri(uri, required=True):
@@ -753,7 +753,7 @@ def update_toimipaikat_in_organisaatiopalvelu():
                                              toimipaikka_toiminnallinenpainotus_changed_qs,
                                              toimipaikka_deleted_painotukset_qs)
     # Do not update organisaatio service managed toimipaikkas
-    result_qs = result_qs.exclude(lahdejarjestelma=Lahdejarjestelma.ORGANISAATIO.name)
+    result_qs = result_qs.exclude(hallinnointijarjestelma=Hallinnointijarjestelma.ORGANISAATIO.name)
     for toimipaikka_obj in result_qs:
         if toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=toimipaikka_obj):
             update_toimipaikka_in_organisaatiopalvelu(toimipaikka_obj)
@@ -782,8 +782,8 @@ def update_all_organisaatio_service_organisations():
 
 def _update_toimipaikka_chunk(oid_chunk):
     toimipaikka_objs = (Toimipaikka.objects
-                        .filter(organisaatio_oid__in=oid_chunk, lahdejarjestelma=Lahdejarjestelma.ORGANISAATIO.name)
-                        )
+                        .filter(organisaatio_oid__in=oid_chunk,
+                                hallinnointijarjestelma=Hallinnointijarjestelma.ORGANISAATIO.name))
     oids_to_update = set(map(lambda org: org.organisaatio_oid, toimipaikka_objs))
     organisaatios_data = {org['oid']: org for org in get_multiple_organisaatio(oids_to_update)}
     for toimipaikka in toimipaikka_objs:

@@ -35,7 +35,7 @@
               (click)="addToimipaikka()">+ {{'label.add-toimipaikka' | translate}}</button>
     </div>
   </div>
-  <div *ngIf="!!activeToimipaikka && activeToimipaikka.lahdejarjestelma !== lahdejarjestelmaTypes.VARDA">
+  <div *ngIf="!!activeToimipaikka && activeToimipaikka.hallinnointijarjestelma !== hallinnointijarjestelmaTypes.VARDA">
     <small class="text-danger"
            role="alert"
            aria-live="polite">{{'label.not-varda-toimipaikka' | translate}}</small>
@@ -62,7 +62,7 @@
   <app-varda-toimipaikka-form *ngIf="toimipaikkaFormOpen"
                               [toimipaikka]="toimipaikkaData"
                               [isEdit]="editToimipaikkaAction"
-                              [isReadOnly]="!!formToimipaikka && (formToimipaikka.lahdejarjestelma !== lahdejarjestelmaTypes.VARDA || formToimipaikka.paos_toimipaikka_kytkin)"
+                              [isReadOnly]="!!formToimipaikka && (formToimipaikka.hallinnointijarjestelma !== hallinnointijarjestelmaTypes.VARDA || formToimipaikka.paos_toimipaikka_kytkin)"
                               (saveToimipaikkaFormSuccess)="updateToimipaikat($event)"
                               (valuesChanged)="toimipaikkaFormValuesChanged($event)"></app-varda-toimipaikka-form>
 </app-varda-modal-form>

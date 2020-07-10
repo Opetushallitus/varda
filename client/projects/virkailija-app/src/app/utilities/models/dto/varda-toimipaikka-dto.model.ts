@@ -1,4 +1,4 @@
-import {Lahdejarjestelma} from '../enums/lahdejarjestelma';
+import {Hallinnointijarjestelma} from '../enums/hallinnointijarjestelma';
 
 export class VardaToimipaikkaDTO {
   id?: string;
@@ -23,7 +23,7 @@ export class VardaToimipaikkaDTO {
   toimipaikka?: VardaToimipaikkaDTO;
   alkamis_pvm?: string;
   paattymis_pvm?: string;
-  lahdejarjestelma?: Lahdejarjestelma;
+  hallinnointijarjestelma?: Hallinnointijarjestelma;
   paos_toimipaikka_kytkin?: boolean;
   paos_oma_organisaatio_url?: string;
   paos_organisaatio_url?: string;
@@ -32,7 +32,7 @@ export class VardaToimipaikkaDTO {
 
 export class VardaToimipaikkaMinimalDto {
   id?: string;
-  lahdejarjestelma: Lahdejarjestelma;
+  hallinnointijarjestelma: Hallinnointijarjestelma;
   nimi: string;
   organisaatio_oid: string;
   paos_tallentaja_organisaatio_id_list?: Array<number>;

@@ -374,7 +374,7 @@ def create_toimipaikat_and_painotukset():
         alkamis_pvm='2017-02-03',
         paattymis_pvm=None,
         changed_by=tester_user,
-        lahdejarjestelma='ORGANISAATIO'
+        hallinnointijarjestelma='ORGANISAATIO'
     )
 
     Toimipaikka.objects.create(

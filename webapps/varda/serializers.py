@@ -319,7 +319,7 @@ class ToimipaikkaSerializer(serializers.HyperlinkedModelSerializer):
     toiminnallisetpainotukset_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='toiminnallinenpainotus-detail')
     kielipainotukset_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='kielipainotus-detail')
     varhaiskasvatussuhteet_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='varhaiskasvatussuhde-detail')
-    lahdejarjestelma = serializers.CharField(read_only=True)
+    hallinnointijarjestelma = serializers.CharField(read_only=True)
 
     class Meta:
         model = Toimipaikka

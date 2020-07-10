@@ -107,7 +107,7 @@ describe('AuthService', () => {
 
     const minimalToimipaikat: Array<VardaToimipaikkaMinimalDto> = mockToimipaikat.map(mockToimipaikka => {
       return {
-        lahdejarjestelma: mockToimipaikka.lahdejarjestelma,
+        hallinnointijarjestelma: mockToimipaikka.hallinnointijarjestelma,
         nimi: mockToimipaikka.nimi,
         organisaatio_oid: mockToimipaikka.organisaatio_oid,
         paos_toimipaikka_kytkin: mockToimipaikka.paos_toimipaikka_kytkin,

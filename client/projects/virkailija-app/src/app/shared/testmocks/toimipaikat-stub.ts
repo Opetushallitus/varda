@@ -1,8 +1,8 @@
-import {Lahdejarjestelma} from '../../utilities/models/enums/lahdejarjestelma';
+import {Hallinnointijarjestelma} from '../../utilities/models/enums/hallinnointijarjestelma';
 
 export const toimipaikatStub = [
     {
-      'lahdejarjestelma': Lahdejarjestelma.VARDA,
+      'hallinnointijarjestelma': Hallinnointijarjestelma.VARDA,
       'paos_toimipaikka_kytkin': false,
       'url': 'https://varda-manual-testing-370.rahtiapp.fi/api/v1/toimipaikat/1/',
       'vakajarjestaja': 'https://varda-manual-testing-370.rahtiapp.fi/api/v1/vakajarjestajat/2/',
@@ -24,7 +24,7 @@ export const toimipaikatStub = [
       'paattymis_pvm': null
     },
     {
-      'lahdejarjestelma': Lahdejarjestelma.VARDA,
+      'hallinnointijarjestelma': Hallinnointijarjestelma.VARDA,
       'paos_toimipaikka_kytkin': false,
       'url': 'https://varda-manual-testing-370.rahtiapp.fi/api/v1/toimipaikat/4/',
       'vakajarjestaja': 'https://varda-manual-testing-370.rahtiapp.fi/api/v1/vakajarjestajat/2/',
@@ -46,7 +46,7 @@ export const toimipaikatStub = [
       'paattymis_pvm': '2023-05-21'
     },
     {
-      'lahdejarjestelma': Lahdejarjestelma.VARDA,
+      'hallinnointijarjestelma': Hallinnointijarjestelma.VARDA,
       'paos_toimipaikka_kytkin': false,
       'url': 'https://varda-manual-testing-370.rahtiapp.fi/api/v1/toimipaikat/5/',
       'vakajarjestaja': 'https://varda-manual-testing-370.rahtiapp.fi/api/v1/vakajarjestajat/2/',
@@ -68,7 +68,7 @@ export const toimipaikatStub = [
       'paattymis_pvm': null
     },
     {
-      'lahdejarjestelma': Lahdejarjestelma.VARDA,
+      'hallinnointijarjestelma': Hallinnointijarjestelma.VARDA,
       'paos_toimipaikka_kytkin': false,
       'url': 'https://varda-manual-testing-370.rahtiapp.fi/api/v1/toimipaikat/6/',
       'vakajarjestaja': 'https://varda-manual-testing-370.rahtiapp.fi/api/v1/vakajarjestajat/2/',

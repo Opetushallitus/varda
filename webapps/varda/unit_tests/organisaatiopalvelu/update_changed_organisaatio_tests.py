@@ -4,7 +4,7 @@ import responses
 from django.test import TestCase
 
 from varda.enums.aikaleima_avain import AikaleimaAvain
-from varda.enums.lahdejarjestelma import Lahdejarjestelma
+from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
 from varda.models import Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Aikaleima
 from varda.organisaatiopalvelu import update_all_organisaatio_service_organisations
 from varda.unit_tests.organisaatiopalvelu.fetch_and_save_tests import TestFetchAndSaveToimipaikkaData
@@ -55,7 +55,7 @@ class TestUpdateChangedOrganisaatio(TestCase):
         self.assertEqual(toimipaikka.paattymis_pvm, None)
         # Not assigned in this method but when toimipaikka is created
         self.assertEqual(toimipaikka.changed_by_id, 3)
-        self.assertEqual(toimipaikka.lahdejarjestelma, str(Lahdejarjestelma.ORGANISAATIO))
+        self.assertEqual(toimipaikka.hallinnointijarjestelma, str(Hallinnointijarjestelma.ORGANISAATIO))
 
         painotus_dicts = list((ToiminnallinenPainotus.objects
                                .all()

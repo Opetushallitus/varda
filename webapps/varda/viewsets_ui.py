@@ -94,7 +94,7 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
         qs_all_toimipaikat = (Toimipaikka
                               .objects
                               .filter(qs_own_toimipaikat | qs_paos_toimipaikat)
-                              .values('id', 'nimi', 'organisaatio_oid', 'lahdejarjestelma', 'vakajarjestaja__id', 'vakajarjestaja__nimi')
+                              .values('id', 'nimi', 'organisaatio_oid', 'hallinnointijarjestelma', 'vakajarjestaja__id', 'vakajarjestaja__nimi')
                               .order_by('nimi'))
 
         save_audit_log(request.user, request.get_full_path())

@@ -12,7 +12,7 @@ from simple_history.models import HistoricalRecords
 from varda import validators
 from varda.enums.aikaleima_avain import AikaleimaAvain
 from varda.enums.batcherror_type import BatchErrorType
-from varda.enums.lahdejarjestelma import Lahdejarjestelma
+from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
 from varda.enums.ytj import YtjYritysmuoto
 
 # Get an instance of a logger
@@ -116,9 +116,9 @@ class Toimipaikka(models.Model):
     muutos_pvm = models.DateTimeField(auto_now=True)
     changed_by = models.ForeignKey('auth.User', related_name='toimipaikat', on_delete=models.PROTECT)
     history = HistoricalRecords()
-    lahdejarjestelma = models.CharField(choices=Lahdejarjestelma.choices(),
-                                        max_length=50,
-                                        default=Lahdejarjestelma.VARDA)
+    hallinnointijarjestelma = models.CharField(choices=Hallinnointijarjestelma.choices(),
+                                               max_length=50,
+                                               default=Hallinnointijarjestelma.VARDA)
 
     def __str__(self):
         return str(self.id)

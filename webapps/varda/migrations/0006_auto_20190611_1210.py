@@ -4,10 +4,8 @@ from django.conf import settings
 import django.contrib.postgres.fields
 import django.core.validators
 from django.db import migrations, models
-import django.db.models.deletion
 import django.utils.timezone
 import simple_history.models
-import varda.enums.lahdejarjestelma
 import varda.models
 import varda.validators
 
@@ -85,12 +83,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='historicaltoimipaikka',
             name='lahdejarjestelma',
-            field=models.CharField(choices=[('VARDA', 'VARDA'), ('ORGANISAATIO', 'ORGANISAATIOPALVELU')], default=varda.enums.lahdejarjestelma.Lahdejarjestelma('VARDA'), max_length=50),
+            field=models.CharField(choices=[('VARDA', 'VARDA'), ('ORGANISAATIO', 'ORGANISAATIOPALVELU')], default='VARDA', max_length=50),
         ),
         migrations.AddField(
             model_name='toimipaikka',
             name='lahdejarjestelma',
-            field=models.CharField(choices=[('VARDA', 'VARDA'), ('ORGANISAATIO', 'ORGANISAATIOPALVELU')], default=varda.enums.lahdejarjestelma.Lahdejarjestelma('VARDA'), max_length=50),
+            field=models.CharField(choices=[('VARDA', 'VARDA'), ('ORGANISAATIO', 'ORGANISAATIOPALVELU')], default='VARDA', max_length=50),
         ),
         migrations.AddField(
             model_name='z2_koodisto',

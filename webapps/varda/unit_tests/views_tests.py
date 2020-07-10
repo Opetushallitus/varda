@@ -1433,7 +1433,7 @@ class VardaViewsTests(TestCase):
             "kielipainotus_kytkin": True,
             "alkamis_pvm": "2017-02-03",
             "paattymis_pvm": None,
-            "lahdejarjestelma": 'ORGANISAATIO'
+            "hallinnointijarjestelma": 'ORGANISAATIO'
         }
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/toimipaikat/1/?format=json')
