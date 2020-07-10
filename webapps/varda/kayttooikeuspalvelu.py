@@ -10,6 +10,7 @@ from guardian.shortcuts import assign_perm
 
 from varda.cache import delete_cached_user_permissions_for_model
 from varda.clients import organisaatio_client
+from varda.enums.tietosisalto_ryhma import TietosisaltoRyhma
 from varda.exceptions.invalid_koodi_uri_exception import InvalidKoodiUriException
 from varda.misc import get_json_from_external_service, get_reply_json
 from varda.models import Toimipaikka, VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet
@@ -143,6 +144,7 @@ def fetch_permissions_roles_for_organization(user_id, henkilo_oid, organisation,
     """
     role_vakatiedot = select_highest_kayttooikeusrooli(permission_group_list,
                                                        organization_oid,
+                                                       TietosisaltoRyhma.VAKATIEDOT,
                                                        Z4_CasKayttoOikeudet.TALLENTAJA,
                                                        Z4_CasKayttoOikeudet.KATSELIJA)
     """
@@ -156,25 +158,30 @@ def fetch_permissions_roles_for_organization(user_id, henkilo_oid, organisation,
     """
     role_huoltajatiedot = select_highest_kayttooikeusrooli(permission_group_list,
                                                            organization_oid,
+                                                           TietosisaltoRyhma.VAKATIEDOT,
                                                            Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,
                                                            Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA)
     # Z4_CasKayttoOikeudet.PAAKAYTTAJA
     role_paakayttaja = select_highest_kayttooikeusrooli(permission_group_list,
                                                         organization_oid,
+                                                        TietosisaltoRyhma.VAKATIEDOT,
                                                         Z4_CasKayttoOikeudet.PAAKAYTTAJA)
     # Henkilosto
     role_tyontekija = select_highest_kayttooikeusrooli(permission_group_list,
                                                        organization_oid,
+                                                       TietosisaltoRyhma.TYONTEKIJATIEDOT,
                                                        Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
                                                        Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA)
 
     role_taydennyskoulutus = select_highest_kayttooikeusrooli(permission_group_list,
                                                               organization_oid,
+                                                              TietosisaltoRyhma.TAYDENNYSKOULUTUSTIEDOT,
                                                               Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,
                                                               Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA)
 
     role_tilapainenhenkilosto = select_highest_kayttooikeusrooli(permission_group_list,
                                                                  organization_oid,
+                                                                 TietosisaltoRyhma.TILAPAINENHENKILOSTOTIEDOT,
                                                                  Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA,
                                                                  Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_KATSELIJA)
 
@@ -276,9 +283,11 @@ def get_user_info(service_name, username):
         return get_reply_json(is_ok=False)
 
 
-def select_highest_kayttooikeusrooli(kayttooikeusrooli_list, organization_oid, *args):
+def select_highest_kayttooikeusrooli(kayttooikeusrooli_list, organization_oid, tietosisalto_ryhma, *args):
     """
-
+    Select highest role from user permissions and provided list. In case of integraatio_organisaatio selects lowest one.
+    :param tietosisalto_ryhma: integraatio_organisaatio group which should be considered for read only user
+    :type tietosisalto_ryhma: TietosisaltoRyhma
     :param kayttooikeusrooli_list: Roles user has
     :param organization_oid: Oid of organisation in order to make sure it's not (under) integration organisation
     :param args: Roles in order from highest to lowest
@@ -295,18 +304,10 @@ def select_highest_kayttooikeusrooli(kayttooikeusrooli_list, organization_oid, *
         except Toimipaikka.DoesNotExist:
             pass
 
-    henkilosto_role_list = [
-        Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
-        Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
-        Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,
-        Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
-        Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA,
-        Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_KATSELIJA,
-    ]
-    # Give integraatio organisaatio always the lowest privilege. Only affects vaka roles
+    # Give integraatio organisaatio always the lowest privilege.
     if (vakajarjestaja_obj and
-            vakajarjestaja_obj.integraatio_organisaatio and
-            any(role in kayttooikeusrooli_list for role in args if role not in henkilosto_role_list)):
+            tietosisalto_ryhma.value in vakajarjestaja_obj.integraatio_organisaatio and
+            any(role in kayttooikeusrooli_list for role in args)):
         # Lowest priority should be katselija
         return args[-1]
 

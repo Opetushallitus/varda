@@ -1,5 +1,6 @@
 import datetime
 
+from varda.enums.tietosisalto_ryhma import TietosisaltoRyhma
 from varda.migrations.production.setup import (get_vakajarjestaja_palvelukayttaja_permissions,
                                                get_vakajarjestaja_katselija_permissions,
                                                get_vakajarjestaja_paakayttaja_permissions,
@@ -222,7 +223,7 @@ def create_vakajarjestajat():
         alkamis_pvm='2017-02-03',
         paattymis_pvm=None,
         changed_by=tester2_user,
-        integraatio_organisaatio=True
+        integraatio_organisaatio=[TietosisaltoRyhma.VAKATIEDOT.value]
     )
 
     vakajarjestaja_2 = VakaJarjestaja.objects.create(
@@ -243,7 +244,8 @@ def create_vakajarjestajat():
         paattymis_pvm=None,
         ytjkieli='FI',
         yritysmuoto='OSAKEYHTIO',
-        changed_by=tester_user
+        changed_by=tester_user,
+        integraatio_organisaatio=[]
     )
     assign_perm('view_vakajarjestaja', tyontekija_toimipaikka_tallentaja, vakajarjestaja_2)
 
@@ -263,7 +265,8 @@ def create_vakajarjestajat():
         puhelinnumero='+358451234567',
         alkamis_pvm='2018-09-13',
         paattymis_pvm=None,
-        changed_by=varda_testi_user
+        changed_by=varda_testi_user,
+        integraatio_organisaatio=[]
     )
 
     VakaJarjestaja.objects.create(
@@ -283,7 +286,8 @@ def create_vakajarjestajat():
         yritysmuoto='KUNTAYHTYMA',
         alkamis_pvm='2018-09-25',
         paattymis_pvm=None,
-        changed_by=tester_e2e_user
+        changed_by=tester_e2e_user,
+        integraatio_organisaatio=[]
     )
 
     VakaJarjestaja.objects.create(
@@ -303,7 +307,8 @@ def create_vakajarjestajat():
         yritysmuoto='KUNTAYHTYMA',
         alkamis_pvm='2019-01-01',
         paattymis_pvm=None,
-        changed_by=tester10_user
+        changed_by=tester10_user,
+        integraatio_organisaatio=[]
     )
 
     VakaJarjestaja.objects.create(
@@ -323,7 +328,8 @@ def create_vakajarjestajat():
         yritysmuoto='KUNTAYHTYMA',
         alkamis_pvm='2019-02-01',
         paattymis_pvm=None,
-        changed_by=tester11_user
+        changed_by=tester11_user,
+        integraatio_organisaatio=[]
     )
 
     assign_permissions_to_vakajarjestaja_obj('1.2.246.562.10.34683023489')

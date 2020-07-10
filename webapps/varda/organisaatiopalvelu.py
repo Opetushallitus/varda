@@ -105,7 +105,9 @@ def fetch_organisaatio_info(vakajarjestaja_id=None):
             pass  # Process the next vakajarjestaja
 
 
-def create_vakajarjestaja_using_oid(organisaatio_oid, user_id, integraatio_organisaatio=False):
+def create_vakajarjestaja_using_oid(organisaatio_oid, user_id, integraatio_organisaatio=None):
+    if not integraatio_organisaatio:
+        integraatio_organisaatio = []
     try:
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:

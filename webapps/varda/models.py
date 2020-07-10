@@ -47,7 +47,7 @@ class VakaJarjestaja(models.Model):
                                    default='EI_YRITYSMUOTOA')
     alkamis_pvm = models.DateField(blank=True, null=True)
     paattymis_pvm = models.DateField(default=None, blank=True, null=True)
-    integraatio_organisaatio = models.BooleanField(default=False)  # This is needed for permissions checking
+    integraatio_organisaatio = ArrayField(models.CharField(max_length=50))  # This is needed for permissions checking
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
     changed_by = models.ForeignKey('auth.User', related_name='vakajarjestajat', on_delete=models.PROTECT)

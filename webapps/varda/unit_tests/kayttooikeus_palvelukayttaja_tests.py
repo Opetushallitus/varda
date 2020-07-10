@@ -4,6 +4,7 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from varda.enums.tietosisalto_ryhma import TietosisaltoRyhma
 from varda.models import Z4_CasKayttoOikeudet, VakaJarjestaja
 from varda.unit_tests.test_utils import assert_status_code, base64_encoding
 
@@ -43,7 +44,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         self._assert_user_permissiongroups(expected_group_names, username)
 
         jarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=organisaatio_oid)
-        self.assertTrue(jarjestaja.integraatio_organisaatio)
+        self.assertEqual(jarjestaja.integraatio_organisaatio, [TietosisaltoRyhma.VAKATIEDOT.value])
 
     @responses.activate
     def test_palvelukayttaja_henkilosto_only_permissions(self):
@@ -90,7 +91,12 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         self._assert_user_permissiongroups(expected_group_names, username)
 
         jarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=organisaatio_oid)
-        self.assertFalse(jarjestaja.integraatio_organisaatio)
+        expected_integraatio = [
+            TietosisaltoRyhma.TILAPAINENHENKILOSTOTIEDOT.value,
+            TietosisaltoRyhma.TYONTEKIJATIEDOT.value,
+            TietosisaltoRyhma.TAYDENNYSKOULUTUSTIEDOT.value,
+        ]
+        self.assertEqual(jarjestaja.integraatio_organisaatio, expected_integraatio)
 
     @responses.activate
     def test_palvelukayttaja_multiple_permissions(self):
@@ -132,7 +138,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         self._assert_user_permissiongroups(expected_group_names, username)
 
         jarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=organisaatio_oid)
-        self.assertTrue(jarjestaja.integraatio_organisaatio)
+        self.assertEqual(jarjestaja.integraatio_organisaatio, [TietosisaltoRyhma.VAKATIEDOT.value])
 
     @responses.activate
     def test_palvelukayttaja_vaka_and_henkilosto_permissions_mixed(self):
@@ -189,7 +195,13 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         self._assert_user_permissiongroups(expected_group_names, username)
 
         jarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=organisaatio_oid)
-        self.assertTrue(jarjestaja.integraatio_organisaatio)
+        expected_integraatio = [
+            TietosisaltoRyhma.TYONTEKIJATIEDOT.value,
+            TietosisaltoRyhma.TAYDENNYSKOULUTUSTIEDOT.value,
+            TietosisaltoRyhma.TILAPAINENHENKILOSTOTIEDOT.value,
+            TietosisaltoRyhma.VAKATIEDOT.value,
+        ]
+        self.assertEqual(jarjestaja.integraatio_organisaatio, expected_integraatio)
 
     @responses.activate
     def test_palvelukayttaja_no_active_organisaatio(self):

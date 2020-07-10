@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 import json
 import logging
 import os
+from collections import OrderedDict
+
 import requests
 import uuid
 
@@ -18,6 +20,7 @@ from rest_framework.authtoken.models import Token
 
 from varda import kayttooikeuspalvelu
 from varda.clients.organisaatio_client import organization_is_not_active_vaka_organization
+from varda.enums.tietosisalto_ryhma import TietosisaltoRyhma
 from varda.oph_yhteiskayttopalvelu_autentikaatio import get_authentication_header
 from varda.models import VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet
 from varda.permission_groups import get_permission_group
@@ -271,10 +274,15 @@ class CustomBasicAuthentication(BasicAuthentication):
         :return: None
         """
         # Having any of these permissions changes vakajarjestaja to integraatio organisaatio
-        integraatio_organisaatio_permissions = [Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
-                                                Z4_CasKayttoOikeudet.TALLENTAJA,
-                                                Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,
-                                                ]
+        integraatio_permissions = {
+            Z4_CasKayttoOikeudet.PALVELUKAYTTAJA: TietosisaltoRyhma.VAKATIEDOT.value,
+            Z4_CasKayttoOikeudet.TALLENTAJA: TietosisaltoRyhma.VAKATIEDOT.value,
+            Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA: TietosisaltoRyhma.VAKATIEDOT.value,
+            Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA: TietosisaltoRyhma.TYONTEKIJATIEDOT.value,
+            Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA: TietosisaltoRyhma.TAYDENNYSKOULUTUSTIEDOT.value,
+            Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA: TietosisaltoRyhma.TILAPAINENHENKILOSTOTIEDOT.value,
+        }
+
         for kayttooikeus in kayttooikeus_list:
             k, created = Z4_CasKayttoOikeudet.objects.get_or_create(user=user,
                                                                     organisaatio_oid=organisaatio_oid,
@@ -283,16 +291,21 @@ class CustomBasicAuthentication(BasicAuthentication):
                 logger.info('Already had kayttooikeus {} for user: {}, organisaatio_oid: {}'
                             .format(kayttooikeus, user.username, organisaatio_oid))
         vakajarjestaja = VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid)
-        is_integraatio_organisaatio = bool([kayttooikeus for kayttooikeus in kayttooikeus_list
-                                            if kayttooikeus in integraatio_organisaatio_permissions])
+        integraatio_organisaatio_list = [integraatio_permissions.get(kayttooikeus)
+                                         for kayttooikeus in kayttooikeus_list
+                                         if kayttooikeus in integraatio_permissions]
+        integraatio_organisaatio_list = list(OrderedDict.fromkeys(integraatio_organisaatio_list))  # Remove duplicates
         if vakajarjestaja.exists():  # There is only one vakajarjestaja, organisaatio_oid is unique
             vakajarjestaja_obj = vakajarjestaja[0]
-            if not vakajarjestaja_obj.integraatio_organisaatio and is_integraatio_organisaatio:
-                vakajarjestaja_obj.integraatio_organisaatio = True
+            if not VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_obj.organisaatio_oid,
+                                                 integraatio_organisaatio__contains=integraatio_organisaatio_list,
+                                                 integraatio_organisaatio__contained_by=integraatio_organisaatio_list,
+                                                 ).exists():
+                vakajarjestaja_obj.integraatio_organisaatio = integraatio_organisaatio_list
                 vakajarjestaja_obj.save()
         else:
             # VakaJarjestaja doesn't exist yet, let's create it.
-            create_vakajarjestaja_using_oid(organisaatio_oid, user.id, integraatio_organisaatio=is_integraatio_organisaatio)
+            create_vakajarjestaja_using_oid(organisaatio_oid, user.id, integraatio_organisaatio=integraatio_organisaatio_list)
 
     def _exclude_non_valid_permissions(self, cas_henkilo_organisaatiot):
         accepted_palvelukayttaja_permissions = [Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
