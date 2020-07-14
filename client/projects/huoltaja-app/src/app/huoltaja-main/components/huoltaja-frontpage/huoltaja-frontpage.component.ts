@@ -38,7 +38,6 @@ export class HuoltajaFrontpageComponent {
   }
 
   sortVakapaatokset(data: HuoltajanLapsiDTO) {
-    const nullReplacement = 'SORT';
     const lapsetOneByOne: Array<LapsiDTO> = [];
     data.lapset.forEach(lapsi => {
       lapsi.varhaiskasvatuspaatokset.forEach(vakapaatos => {
@@ -47,12 +46,15 @@ export class HuoltajaFrontpageComponent {
       });
     });
 
-    lapsetOneByOne.sort((a, b) => b.varhaiskasvatuspaatos.alkamis_pvm.localeCompare(a.varhaiskasvatuspaatos.alkamis_pvm));
     lapsetOneByOne.sort((a, b) => {
-      const sortByA = a.varhaiskasvatuspaatos.paattymis_pvm || nullReplacement;
-      const sortByB = b.varhaiskasvatuspaatos.paattymis_pvm || nullReplacement;
+      const sortA = a.varhaiskasvatuspaatos;
+      const sortB = b.varhaiskasvatuspaatos;
+
+      const sortByA = sortA.paattymis_pvm ? `${sortA.alkamis_pvm}x${sortA.paattymis_pvm}` : `x${sortA.alkamis_pvm}`;
+      const sortByB = sortB.paattymis_pvm ? `${sortB.alkamis_pvm}x${sortB.paattymis_pvm}` : `x${sortB.alkamis_pvm}`;
       return sortByB.localeCompare(sortByA);
     });
+
 
     data.lapset = lapsetOneByOne;
     return data;

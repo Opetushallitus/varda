@@ -48,12 +48,10 @@ export class HuoltajaFrontpageVakapaatosComponent implements OnInit {
   }
 
   sortVarhaiskasvatussuhteet() {
-    const nullReplacement = 'SORT';
-
     this.vakapaatos.varhaiskasvatussuhteet.sort((a, b) => b.alkamis_pvm.localeCompare(a.alkamis_pvm));
     this.vakapaatos.varhaiskasvatussuhteet.sort((a, b) => {
-      const sortByA = a.paattymis_pvm || nullReplacement;
-      const sortByB = b.paattymis_pvm || nullReplacement;
+      const sortByA = a.paattymis_pvm ? `${a.alkamis_pvm}x${a.paattymis_pvm}` : `x${a.alkamis_pvm}`;
+      const sortByB = b.paattymis_pvm ? `${b.alkamis_pvm}x${b.paattymis_pvm}` : `x${b.alkamis_pvm}`;
       return sortByB.localeCompare(sortByA);
     });
   }
