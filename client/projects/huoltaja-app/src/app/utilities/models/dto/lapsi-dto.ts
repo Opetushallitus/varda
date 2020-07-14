@@ -4,5 +4,6 @@ export interface LapsiDTO {
   id: number;
   yhteysosoite?: string;
   varhaiskasvatuksen_jarjestaja?: string;
-  varhaiskasvatuspaatokset: VarhaiskasvatuspaatosDTO;
+  varhaiskasvatuspaatokset?: Array<VarhaiskasvatuspaatosDTO>;
+  varhaiskasvatuspaatos?: VarhaiskasvatuspaatosDTO;
 }

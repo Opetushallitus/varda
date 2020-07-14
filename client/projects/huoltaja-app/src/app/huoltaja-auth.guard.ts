@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { Observable } from 'rxjs';
 import { environment } from '../environments/environment';
-import { LoginService } from 'varda-shared';
+import { LoginService, VardaKoodistoService } from 'varda-shared';
 import { HuoltajaApiService } from './services/huoltaja-api.service';
 import { Router } from '@angular/router';
 
@@ -10,9 +10,11 @@ import { Router } from '@angular/router';
   providedIn: 'root'
 })
 export class HuoltajaAuthGuard implements CanActivate {
-  constructor(private loginService: LoginService,
+  constructor(
+    private loginService: LoginService,
     private apiService: HuoltajaApiService,
-    private router: Router) { }
+    private koodistoService: VardaKoodistoService,
+  ) { }
 
   canActivate(
     next: ActivatedRouteSnapshot,
@@ -36,7 +38,7 @@ export class HuoltajaAuthGuard implements CanActivate {
             // Save userdata
             this.apiService.getUserInfo().subscribe(userdata => {
               this.loginService.currentUserInfo = userdata;
-
+              this.koodistoService.initKoodistot(environment.huoltajaBackendUrl);
               authGuardObs.next(true);
               authGuardObs.complete();
             }, (err) => {

@@ -74,7 +74,7 @@
         tabindex="0">
       <th class="mat-cell">{{ translation.lapsi_aidinkieli | translate}}</th>
       <td class="mat-cell"
-          appKoodistoValue="kieli">{{lapsiDto.aidinkieli_koodi}}</td>
+          libKoodistoValue="kielikoodistoopetushallinto">{{lapsiDto.aidinkieli_koodi}}</td>
       <td class="mat-cell">
         <button [matTooltip]="translation.tooltip_henkilotiedot_aidinkieli | translate"
                 #aidinkieli="matTooltip"
@@ -103,7 +103,7 @@
         tabindex="0">
       <th class="mat-cell">{{ translation.lapsi_sukupuoli | translate}}</th>
       <td class="mat-cell"
-          appKoodistoValue="sukupuoli">{{lapsiDto.sukupuoli_koodi}}</td>
+          libKoodistoValue="sukupuoli">{{lapsiDto.sukupuoli_koodi}}</td>
       <td class="mat-cell">
         <button [matTooltip]="translation.tooltip_henkilotiedot_sukupuoli | translate"
                 #sukupuoli="matTooltip"
@@ -118,7 +118,7 @@
         tabindex="0">
       <th class="mat-cell">{{ translation.lapsi_kotikunta | translate}}</th>
       <td class="mat-cell"
-          appKoodistoValue="kunta">{{lapsiDto.kotikunta_koodi}}</td>
+          libKoodistoValue="kunta">{{lapsiDto.kotikunta_koodi}}</td>
       <td class="mat-cell">
         <button [matTooltip]="translation.tooltip_henkilotiedot_kotikunta | translate"
                 #kotikunta="matTooltip"
@@ -173,7 +173,7 @@
     </tr>
   </table>
 
-  <mat-expansion-panel class="osoitetiedot m-b-2">
+  <!-- <mat-expansion-panel class="osoitetiedot m-b-2">
     <mat-expansion-panel-header>
       <mat-icon>list_alt</mat-icon>
       <h3 class="link-color">{{ translation.muut_osoitetiedot | translate }}</h3>
@@ -182,7 +182,7 @@
     <ng-container *ngIf="!lapsiDto.muut_osoitteet?.length">
       Will be added after CSCVARDA-1729
     </ng-container>
-  </mat-expansion-panel>
+  </mat-expansion-panel> -->
 
 
   <div class="extension-info">

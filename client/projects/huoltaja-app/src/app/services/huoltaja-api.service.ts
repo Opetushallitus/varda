@@ -14,9 +14,10 @@ export class HuoltajaApiService implements VardaApiServiceInterface {
   loginApi = `${environment.huoltajaBackendUrl}/api/user`;
   opintopolkuUrl = 'https://virkailija.testiopintopolku.fi';
   currentUser = new BehaviorSubject<HuoltajanLapsiDTO>(null);
+  private vardaDomains = ['opintopolku.fi', 'studieinfo.fi', 'studyinfo.fi'];
 
   constructor(private http: LoadingHttpService) {
-    if (window.location.hostname === 'opintopolku.fi') {
+    if (this.vardaDomains.includes(window.location.hostname)) {
       this.opintopolkuUrl = 'https://virkailija.opintopolku.fi';
     }
   }
@@ -38,16 +39,8 @@ export class HuoltajaApiService implements VardaApiServiceInterface {
     return this.http.get(`${this.huoltajaApi}/v1/huoltajanlapsi/${lapsi_oid}/`);
   }
 
-  getKielikoodistoOptions(): Observable<any> {
-    return this.http.getWithCallerId(`${this.opintopolkuUrl}/koodisto-service/rest/json/kielikoodistoopetushallinto/koodi`);
-  }
-
-  getKuntakoodistoOptions(): Observable<any> {
-    return this.http.getWithCallerId(`${this.opintopolkuUrl}/koodisto-service/rest/json/kunta/koodi`);
-  }
-
-  getSukupuolikoodistoOptions(): Observable<any> {
-    return this.http.getWithCallerId(`${this.opintopolkuUrl}/koodisto-service/rest/json/sukupuoli/koodi`);
+  getVardaDomains(): Array<string> {
+    return this.vardaDomains;
   }
 
   getTranslationCategory(): string {

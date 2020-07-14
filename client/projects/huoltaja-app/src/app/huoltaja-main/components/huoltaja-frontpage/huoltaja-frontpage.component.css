@@ -50,23 +50,10 @@ h5, .h5 {
 }
 
 .voimassa-useita-vakapaatoksia-container {
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.voimassa-useita-vakapaatoksia-rectangle {
-  height: 50px;
-  width: 12px;
-  background-color: var(--oph-green);
-  display: inline-block;
-  margin-right: 15px;
-}
-
-.voimassa-useita-vakapaatoksia-text-container {
-  display: inline-block;
-  height: 60px;
-  vertical-align: middle;
-  white-space: normal;
+  display: flex;
+  margin-bottom: 1em;
+  border-left: 12px solid var(--oph-green);
+  padding: 0.25em 1em;
 }
 
 .huoltaja-table {
@@ -173,6 +160,11 @@ tr:nth-child(even) {
   border-radius: 0.25em;
   padding: 0.1em 0.75em;
   text-align: center;
+}
+
+td {
+  padding-left: 0.25em;
+  padding-right: 0.25em;
 }
 
 @media (max-width: 465px) {

@@ -11,7 +11,8 @@ import { HuoltajaFrontpageLapsiComponent } from './components/huoltaja-frontpage
 import { HuoltajaFrontpageVakapaatosComponent } from './components/huoltaja-frontpage/huoltaja-vakapaatos/huoltaja-vakapaatos.component';
 import { MatDialogModule } from '@angular/material/dialog';
 import { ContactDialogComponent} from './components/contact-dialog/contact-dialog.component';
-import { KoodistoValueDirective } from '../directives/koodistoValue.directive';
+import { VardaSharedModule } from 'varda-shared';
+
 
 @NgModule({
   imports: [
@@ -23,21 +24,20 @@ import { KoodistoValueDirective } from '../directives/koodistoValue.directive';
     MatIconModule,
     MatTooltipModule,
     NoopAnimationsModule,
-    BrowserAnimationsModule
+    BrowserAnimationsModule,
+    VardaSharedModule
   ],
   declarations: [
     HuoltajaFrontpageComponent,
     HuoltajaFrontpageLapsiComponent,
     HuoltajaFrontpageVakapaatosComponent,
-    ContactDialogComponent,
-    KoodistoValueDirective
+    ContactDialogComponent
   ],
   entryComponents: [ContactDialogComponent],
   exports: [
     HuoltajaFrontpageComponent,
     HuoltajaFrontpageLapsiComponent,
-    HuoltajaFrontpageVakapaatosComponent,
-    KoodistoValueDirective
+    HuoltajaFrontpageVakapaatosComponent
   ],
   providers: [
   ]

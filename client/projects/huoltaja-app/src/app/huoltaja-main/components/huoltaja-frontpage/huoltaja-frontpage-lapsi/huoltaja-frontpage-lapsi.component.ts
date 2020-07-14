@@ -8,7 +8,6 @@ import { HuoltajaTranslations } from 'projects/huoltaja-app/src/assets/i18n/tran
   styleUrls: ['../huoltaja-frontpage.component.css', './huoltaja-frontpage-lapsi.component.css']
 })
 export class HuoltajaFrontpageLapsiComponent {
-
   @Input() lapsiDto: HenkiloDTO;
   translation = HuoltajaTranslations;
 

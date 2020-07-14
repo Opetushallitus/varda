@@ -4,7 +4,8 @@
     <p>{{ translation.varhaiskasvatustiedot_intro_paragraph_1 | translate}}</p>
     <p>{{ translation.varhaiskasvatustiedot_intro_paragraph_2 | translate}}</p>
     <p>{{ translation.varhaiskasvatustiedot_intro_paragraph_3 | translate}}
-      <a [href]="translation.varhaiskasvatustiedot_intro_link_href | translate">
+      <a target="_blank"
+         [href]="translation.varhaiskasvatustiedot_intro_link_href | translate">
         {{ translation.varhaiskasvatustiedot_intro_link_text | translate}}
       </a>
     </p>
@@ -46,10 +47,7 @@
 
       <ng-container *ngIf="lapsi.voimassaolevia_varhaiskasvatuspaatoksia > 1">
         <div class="voimassa-useita-vakapaatoksia-container">
-          <div class="voimassa-useita-vakapaatoksia-rectangle"></div>
-          <div class="voimassa-useita-vakapaatoksia-text-container">
-            <span>{{ translation.voimassa_useita_vakapaatoksia | translate}}</span>
-          </div>
+          <span>{{ translation.voimassa_useita_vakapaatoksia | translate}}</span>
         </div>
       </ng-container>
       <ng-container *ngIf="!lapsi.lapset?.length">
@@ -62,10 +60,9 @@
       </ng-container>
 
       <ng-container *ngFor="let toimijanLapsi of lapsi.lapset">
-        <app-huoltaja-vakapaatos *ngFor="let vakapaatos of toimijanLapsi.varhaiskasvatuspaatokset"
-                                 [lapsi]="toimijanLapsi"
+        <app-huoltaja-vakapaatos [lapsi]="toimijanLapsi"
                                  [oma_organisaatio_sahkoposti]="toimijanLapsi.yhteysosoite"
-                                 [vakapaatos]="vakapaatos">
+                                 [vakapaatos]="toimijanLapsi.varhaiskasvatuspaatos">
         </app-huoltaja-vakapaatos>
       </ng-container>
     </div>

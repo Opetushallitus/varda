@@ -4,6 +4,7 @@ import { ContactDialogComponent } from '../../contact-dialog/contact-dialog.comp
 import { MatDialog } from '@angular/material/dialog';
 import { LapsiDTO } from 'projects/huoltaja-app/src/app/utilities/models/dto/lapsi-dto';
 import { HuoltajaTranslations } from 'projects/huoltaja-app/src/assets/i18n/translations.enum';
+import { KoodistoEnum } from 'varda-shared/lib/dto/koodisto-models';
 
 @Component({
   selector: 'app-huoltaja-vakapaatos',
@@ -25,6 +26,8 @@ export class HuoltajaFrontpageVakapaatosComponent implements OnInit {
     this.toimipaikkaList = this.vakapaatos.varhaiskasvatussuhteet.map(vakasuhde => vakasuhde.toimipaikka.toimipaikka_nimi)
       .filter((toimipaikka, index, arr) => arr.lastIndexOf(toimipaikka) === index)
       .sort((a, b) => a.localeCompare(b));
+
+    this.sortVarhaiskasvatussuhteet();
   }
 
   togglePanel(panel: any) {
@@ -41,6 +44,17 @@ export class HuoltajaFrontpageVakapaatosComponent implements OnInit {
       data: {
         email: email
       }
+    });
+  }
+
+  sortVarhaiskasvatussuhteet() {
+    const nullReplacement = 'SORT';
+
+    this.vakapaatos.varhaiskasvatussuhteet.sort((a, b) => b.alkamis_pvm.localeCompare(a.alkamis_pvm));
+    this.vakapaatos.varhaiskasvatussuhteet.sort((a, b) => {
+      const sortByA = a.paattymis_pvm || nullReplacement;
+      const sortByB = b.paattymis_pvm || nullReplacement;
+      return sortByB.localeCompare(sortByA);
     });
   }
 }

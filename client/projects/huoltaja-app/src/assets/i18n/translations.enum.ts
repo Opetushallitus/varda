@@ -53,6 +53,7 @@ export enum HuoltajaTranslations {
   kylla = 'kylla',
   ei = 'ei',
   poistu = 'poistu',
+  poistu_palvelusta = 'poistu-palvelusta',
   varhaiskasvatuspaatos_onko_tiedoissa_virhe = 'varhaiskasvatuspaatos.onko-tiedoissa-virhe',
   onko_tiedoissa_puutteita = 'onko-tiedoissa-puutteita',
   mies = 'mies',

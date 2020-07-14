@@ -18,16 +18,20 @@ export class VardaTranslateLoader implements TranslateLoader {
 
 
   }
-  getTranslation(lang: SupportedLanguages): Observable<AngularTranslateDTO> {
+  getTranslation(lang: SupportedLanguages, attemptNr = 0): Observable<AngularTranslateDTO> {
     return new Observable(preparedTranslation => {
       this.http.getApiKey().pipe(filter(Boolean)).subscribe(() =>
         this.fetchTranslations(lang).subscribe(translation => {
           preparedTranslation.next(this.handleTranslations(translation, lang));
           preparedTranslation.complete();
         }, () => {
-          console.error('Failed to load translations');
-          preparedTranslation.next({});
-          preparedTranslation.complete();
+          if (attemptNr < 2) {
+            setTimeout(() => this.getTranslation(lang, attemptNr++), 200);
+          } else {
+            console.error('Failed to load translations');
+            preparedTranslation.next({});
+            preparedTranslation.complete();
+          }
         })
       );
     });
