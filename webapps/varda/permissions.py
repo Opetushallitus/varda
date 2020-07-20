@@ -397,12 +397,51 @@ def get_tyontekija_vakajarjestaja_oid(tyontekijat):
 
 
 def filter_authorized_taydennyskoulutus_tyontekijat(data, user):
-    taydennyskoulutus_group_names = user.groups.filter(
-        name__startswith='HENKILOSTO_TAYDENNYSKOULUTUS_').values_list('name', flat=True)
-    organisaatio_oids = [group_name.split('_')[-1] for group_name in taydennyskoulutus_group_names]
+    organisaatio_oids = get_organisaatio_oids_from_groups(user, 'HENKILOSTO_TAYDENNYSKOULUTUS_')
     # We can't distinguish vakajarjestaja oids from toimipaikka oids but since oids are unique it doesn't matter
     checked_data = data.filter(
         Q(tyontekija__vakajarjestaja__organisaatio_oid__in=organisaatio_oids) |
         Q(tyontekija__palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid__in=organisaatio_oids)
     ).distinct()
     return checked_data, organisaatio_oids
+
+
+def get_organisaatio_oids_from_groups(user, *group_name_prefixes):
+    """
+    Returns organisaatio oids that given permission group name prefixes and organisaatio_oid pairs match and are found
+    from user's permission groups.
+    NOTE: This doesn't take into account if user is superuser or not.
+    :param user: User who's permission groups are filtered
+    :param group_name_prefixes: List of group_name prefix
+    :return: List of organisaatio_oids. Subset of given oids (if any)
+    """
+    filter_condition = Q()
+    for group_name_prefix in group_name_prefixes:
+        group_condition = Q(name__startswith=group_name_prefix)
+        filter_condition = filter_condition | group_condition
+    group_names = user.groups.filter(filter_condition).values_list('name', flat=True)
+    return [group_name.split('_')[-1] for group_name in group_names]
+
+
+def get_taydennyskoulutus_tyontekija_group_organisaatio_oids(user):
+    """
+    Returns organisaatio oids (toimipaikka and vakajarjestaja!) from taydennyskoulutus and tyontekija (katelija and
+    tallentaja) permission group user has access.
+    :param user: User who's permission groups are filtered
+    :return: List of organisaatio oids (mixed vakajarjestaja and toimipaikka oids)
+    """
+    return get_organisaatio_oids_from_groups(user, 'HENKILOSTO_TAYDENNYSKOULUTUS_', 'HENKILOSTO_TYONTEKIJA_')
+
+
+def is_toimipaikka_access_for_group(user, vakajarjestaja_pk, *group_name_prefixes):
+    """
+    Check is user toimipaikka level access to given permission groups
+    :param user: User who's toimipaikka permissions are checked
+    :param vakajarjestaja_pk: id for vakajarjestaja which toimipaikka must be under
+    :param group_name_prefixes: List of group_name prefix
+    :return: true if user has toimipaikat in provided roles
+    """
+    tyontekija_organisaatio_oids = get_organisaatio_oids_from_groups(user, *group_name_prefixes)
+    toimipaikat_qs = Toimipaikka.objects.filter(organisaatio_oid__in=tyontekija_organisaatio_oids,
+                                                vakajarjestaja=vakajarjestaja_pk)
+    return toimipaikat_qs.exists()

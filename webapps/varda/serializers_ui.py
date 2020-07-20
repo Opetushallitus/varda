@@ -1,9 +1,11 @@
 from django.db.models import Q
 from django.urls import reverse
+from guardian.shortcuts import get_objects_for_user
 from rest_framework import serializers
 
 from varda.cache import caching_to_representation
-from varda.models import PaosOikeus, PaosToiminta, Toimipaikka, VakaJarjestaja
+from varda.models import PaosOikeus, PaosToiminta, Toimipaikka, VakaJarjestaja, Henkilo, Tyontekija, Tyoskentelypaikka
+from varda.permissions import get_taydennyskoulutus_tyontekija_group_organisaatio_oids, is_toimipaikka_access_for_group
 
 """
 UI serializers
@@ -99,3 +101,56 @@ class ToimipaikanLapsetUISerializer(serializers.Serializer):
     def get_lapsi_url(self, vakasuhde_obj):
         request = self.context.get('request')
         return request.build_absolute_uri(reverse('lapsi-detail', kwargs={'pk': vakasuhde_obj["lapsi_id"]}))
+
+
+class PermissionCheckedTyoskentelypaikkaUiListSerializer(serializers.ListSerializer):
+    def update(self, instance, validated_data):
+        super(PermissionCheckedTyoskentelypaikkaUiListSerializer, self).update(instance, validated_data)
+
+    def to_representation(self, tyoskentelypaikat):
+        """
+        Filter tyontekijat user has no permission.
+        :param tyoskentelypaikat: Queryset of tyontekijat
+        :return: Dict of serialized tyontekijat
+        """
+        user = self.context['request'].user
+        vakajarjestaja_pk = self.context['view'].kwargs['pk']
+        organisaatio_oids = get_taydennyskoulutus_tyontekija_group_organisaatio_oids(user)
+        filter_condition = (Q(toimipaikka__vakajarjestaja__organisaatio_oid__in=organisaatio_oids) |
+                            Q(toimipaikka__organisaatio_oid__in=organisaatio_oids))
+        # user with tyontekija toimipaikka permissions might have object level permissions to tyontekijat without tyoskentelypaikka
+        if is_toimipaikka_access_for_group(user, vakajarjestaja_pk, 'HENKILOSTO_TYONTEKIJA_'):
+            tyontekijat_object_level_permission = get_objects_for_user(user, 'view_tyontekija', klass=Tyontekija, accept_global_perms=False)
+            filter_condition = filter_condition | Q(palvelussuhde__tyontekija__in=tyontekijat_object_level_permission)
+        tyoskentelypaikat = tyoskentelypaikat.filter(filter_condition).order_by('-alkamis_pvm')
+        return super(PermissionCheckedTyoskentelypaikkaUiListSerializer, self).to_representation(tyoskentelypaikat)
+
+
+class TyoskentelypaikatUiSerializer(serializers.HyperlinkedModelSerializer):
+    toimipaikka_oid = serializers.CharField(source='toimipaikka.organisaatio_oid')
+    toimipaikka_nimi = serializers.CharField(source='toimipaikka.nimi')
+
+    class Meta:
+        model = Tyoskentelypaikka
+        fields = ('id', 'url', 'toimipaikka_oid', 'toimipaikka_nimi', 'tehtavanimike_koodi', 'alkamis_pvm')
+        list_serializer_class = PermissionCheckedTyoskentelypaikkaUiListSerializer
+
+
+class TyontekijatUiSerializer(serializers.HyperlinkedModelSerializer):
+    tyoskentelypaikat = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Tyontekija
+        fields = ('id', 'url', 'tyoskentelypaikat')
+
+    def get_tyoskentelypaikat(self, tyontekija):
+        tyoskentelypaikat = Tyoskentelypaikka.objects.filter(palvelussuhde__in=tyontekija.palvelussuhteet.all())
+        return TyoskentelypaikatUiSerializer(instance=tyoskentelypaikat, many=True, context=self.context).data
+
+
+class TyontekijaUiSerializer(serializers.HyperlinkedModelSerializer):
+    tyontekijat = TyontekijatUiSerializer(many=True)
+
+    class Meta:
+        model = Henkilo
+        fields = ('id', 'url', 'henkilo_oid', 'etunimet', 'sukunimi', 'tyontekijat')

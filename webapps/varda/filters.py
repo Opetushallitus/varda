@@ -1,9 +1,10 @@
+from django.db.models import Q
+from django_filters import rest_framework as djangofilters
+
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
                           Maksutieto, PaosToiminta, PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
                           TilapainenHenkilosto, Tutkinto, Palvelussuhde, Tyoskentelypaikka, PidempiPoissaolo,
                           Taydennyskoulutus, TaydennyskoulutusTyontekija)
-from django.db.models import Q
-from django_filters import rest_framework as djangofilters
 
 
 class CustomCharFilter(djangofilters.CharFilter):
@@ -296,4 +297,13 @@ class TaydennyskoulutusTyontekijaFilter(djangofilters.FilterSet):
 
     class Meta:
         model: TaydennyskoulutusTyontekija
+        fields = []
+
+
+class TyontekijaUiFilter(djangofilters.FilterSet):
+    toimipaikka_oid = djangofilters.CharFilter(field_name='tyontekijat__palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid')
+    kiertava_tyontekija_kytkin = djangofilters.BooleanFilter(field_name='tyontekijat__palvelussuhteet__tyoskentelypaikat__kiertava_tyontekija_kytkin')
+
+    class Meta:
+        model: Henkilo
         fields = []

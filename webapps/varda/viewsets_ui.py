@@ -7,24 +7,31 @@ from django.db.models import Q, F
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from guardian.shortcuts import get_objects_for_user
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
-from rest_framework.mixins import ListModelMixin
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from varda.cache import create_cache_key, get_object_ids_user_has_permissions
 from varda.cas.varda_permissions import IsVardaPaakayttaja
+from varda.filters import TyontekijaUiFilter
 from varda.lokalisointipalvelu import get_localisation_data
 from varda.misc_queries import get_paos_toimipaikat
-from varda.models import Toimipaikka, VakaJarjestaja, Varhaiskasvatussuhde, PaosToiminta, PaosOikeus, Lapsi
-from varda.permissions import CustomObjectPermissions, save_audit_log
+from varda.models import (Toimipaikka, VakaJarjestaja, Varhaiskasvatussuhde, PaosToiminta, PaosOikeus, Lapsi, Henkilo,
+                          Tyontekija)
+from varda.pagination import ChangeablePageSizePagination
+from varda.permissions import (CustomObjectPermissions, save_audit_log,
+                               get_taydennyskoulutus_tyontekija_group_organisaatio_oids,
+                               is_toimipaikka_access_for_group)
 from varda.serializers import PaosToimipaikkaSerializer, PaosVakaJarjestajaSerializer
-from varda.serializers_ui import VakaJarjestajaUiSerializer, ToimipaikkaUiSerializer, ToimipaikanLapsetUISerializer
+from varda.serializers_ui import (VakaJarjestajaUiSerializer, ToimipaikkaUiSerializer, ToimipaikanLapsetUISerializer,
+                                  TyontekijaUiSerializer)
 
 
-class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
+class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin):
     """
     list:
         Nouda vakajarjestajien nimet
@@ -43,6 +50,29 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
             queryset = VakaJarjestaja.objects.filter(id__in=vakajarjestaja_ids).order_by('nimi')
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    @action(methods=['get'], detail=True, url_path='tyontekija-list', url_name='tyontekija_list',
+            serializer_class=TyontekijaUiSerializer,
+            queryset=Henkilo.objects.all(),
+            filter_backends=[SearchFilter, DjangoFilterBackend],
+            pagination_class=ChangeablePageSizePagination
+            )
+    def tyontekija_list(self, request, pk=None):
+        # Putting these to keyword arguments raises exception
+        self.filterset_class = TyontekijaUiFilter
+        self.search_fields = ['etunimet', 'sukunimi']
+        user = request.user
+        self.queryset = self.queryset.filter(tyontekijat__vakajarjestaja=pk).order_by('sukunimi', 'etunimet').distinct()
+        if not user.is_superuser:
+            organisaatio_oids = get_taydennyskoulutus_tyontekija_group_organisaatio_oids(user)
+            filter_condition = (Q(tyontekijat__vakajarjestaja__organisaatio_oid__in=organisaatio_oids) |
+                                Q(tyontekijat__palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid__in=organisaatio_oids))
+            # user with tyontekija toimipaikka permissions might have object level permissions to tyontekijat without tyoskentelypaikka
+            if is_toimipaikka_access_for_group(user, pk, 'HENKILOSTO_TYONTEKIJA_'):
+                tyontekijat_object_level_permission = get_objects_for_user(user, 'view_tyontekija', klass=Tyontekija, accept_global_perms=False)
+                filter_condition = filter_condition | Q(tyontekijat__in=tyontekijat_object_level_permission)
+            self.queryset = self.queryset.filter(filter_condition)
+        return super().list(request, pk=pk)
 
 
 class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):

@@ -74,3 +74,8 @@ class CustomPagination(PageNumberPagination):
         self.display_page_controls = True
         self.request = request
         return list(self.page)
+
+
+class ChangeablePageSizePagination(PageNumberPagination):
+    max_page_size = 100
+    page_size_query_param = 'page_size'
