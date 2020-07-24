@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.3.20 (24.7.2020)
+- CSCVARDA-1639 Muokkaa toimipaikan lähdejärjestelmäkenttä hallinnointijärjestelmäksi
+
 1.3.19 (09.07.2020)
 - CSCVARDA-1418 Tietojen katselussa lapsen vakapäätöksen ja -suhteen välinen linkitys näkyviin
 - CSCVARDA-1736 Näytetään lapsen tietojen katselussa kenttä Lapsi-id
