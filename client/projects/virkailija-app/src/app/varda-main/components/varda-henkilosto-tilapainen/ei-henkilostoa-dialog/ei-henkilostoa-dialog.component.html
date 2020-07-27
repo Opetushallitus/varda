@@ -1,0 +1,22 @@
+<h2 mat-dialog-title
+    tabindex="0"
+    cdkFocusInitial>
+  {{ "dialog.ei-henkilostoa.title" | translate }}
+</h2>
+<mat-dialog-content class="mat-typography">
+  <div class="dialog-content"
+       role="dialog-content"
+       tabindex="0">
+    {{ "dialog.ei-henkilostoa.info" | translate }}
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <div class="varda-form-btn-wrapper">
+
+
+    <button class="varda-button responsive"
+            [mat-dialog-close]="true">{{ "tallenna" | translate }}</button>
+    <button class="varda-button varda-button-neutral responsive"
+            mat-dialog-close>{{"poistu" | translate }}</button>
+  </div>
+</mat-dialog-actions>

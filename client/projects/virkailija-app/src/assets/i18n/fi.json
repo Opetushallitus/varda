@@ -501,5 +501,27 @@
     "error.paattymispvm-should-be-before-toimipaikka-paattymispvm": "Päättymispäivämäärä ei saa olla toimipaikan päättymispäivämäärän jälkeen.",
     "error.alkamispvm-should-be-before-vakajarjestaja-paattymispvm": "Alkamispäivämäärä ei saa olla varhaiskasvatustoimijan päättymispäivämäärän jälkeen.",
     "error.alkamispvm-should-be-after-vakajarjestaja-alkamispvm": "Alkamispäivämäärä ei saa olla ennen varhaiskasvatustoimijan alkamispäivämäärää.",
-    "error.paattymispvm-should-be-before-vakajarjestaja-paattymispvm": "Päättymispäivämäärä ei saa olla varhaiskasvatustoimijan päättymispäivämäärän jälkeen."
+    "error.paattymispvm-should-be-before-vakajarjestaja-paattymispvm": "Päättymispäivämäärä ei saa olla varhaiskasvatustoimijan päättymispäivämäärän jälkeen.",
+
+    "kokonaisluku": "Kokonaisluku",
+    "aika.tammikuu": "Tammikuu",
+    "aika.helmikuu": "Helmikuu",
+    "aika.maaliskuu": "Maaliskuu",
+    "aika.huhtikuu": "Huhtikuu",
+    "aika.toukokuu": "Toukokuu",
+    "aika.kesäkuu": "Kesäkuu",
+    "aika.heinäkuu": "Heinäkuu",
+    "aika.elokuu": "Elokuu",
+    "aika.syyskuu": "Syyskuu",
+    "aika.lokakuu": "Lokakuu",
+    "aika.marraskuu": "Marraskuu",
+    "aika.joulukuu": "Joulukuu",
+    "aika.vuosi": "Vuosi",
+
+    "tilapainen-henkilosto.title": "Tilapäinen henkilöstö",
+    "tilapainen-henkilosto.ohje": "Turha koittaa liskomiehet voittaa-ohjeteksti",
+    "tilapainen-henkilosto.ei-tilapaista-henkilostoa": "Toimijalla ei ole tilapäistä henkilöstöä",
+    "tooltip.tilapainen-henkilosto.ei-tilapaista-henkilostoa": "Toimijalla ei ole tilapäistä henkilöstöä-tooltip",
+    "tilapainen-henkilosto.tunnit-yhteensa": "Tunnit yhteensä, esim 15,75",
+    "tilapainen-henkilosto.tiedot-paivitetty-viimeksi": "Tiedot päivitetty viimeksi"
 }

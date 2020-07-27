@@ -66,7 +66,8 @@ a {
   color: #4A4A4A;
 }
 
-mat-icon {
+mat-icon,
+.material-icons {
   vertical-align: middle;
 }
 
@@ -432,4 +433,18 @@ body:not(.user-is-tabbing) h5:focus {
 
 .user-is-tabbing .selected-language:focus {
   border-bottom: none;
+}
+
+.mat-tooltip {
+  animation: scaleTooltip 2.5s forwards;
+}
+
+@keyframes scaleTooltip {
+  0% {
+    transform: scale(1);
+  }
+
+  100% {
+    transform: scale(1.5);
+  }
 }

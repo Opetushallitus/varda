@@ -110,6 +110,12 @@
   margin-right: 0.25em;
 }
 
+.varda-link-button {
+  border: none;
+  background-color: transparent;
+}
+
+
 /*HIGH CONTRAST PRIMARY CTA-BUTTON STYLES*/
 .varda-high-contrast .varda-button,
 .varda-button.change-contrast {

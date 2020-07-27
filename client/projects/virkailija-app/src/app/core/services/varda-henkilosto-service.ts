@@ -4,6 +4,8 @@ import { environment } from '../../../environments/environment';
 
 import { LoadingHttpService } from 'varda-shared';
 import { VardaPageDto } from '../../utilities/models/dto/varda-page-dto';
+import { VardaTilapainenHenkiloDTO } from '../../utilities/models/dto/varda-tilapainen-henkilo-dto.model';
+
 
 @Injectable()
 export class VardaHenkilostoService {
@@ -11,11 +13,12 @@ export class VardaHenkilostoService {
 
   constructor(private http: LoadingHttpService) { }
 
-  getTilapainenHenkilostoByYear(year: number, vakajarjestaja_oid: string): Observable<VardaPageDto<any>> {
+  getTilapainenHenkilostoByYear(year: number, vakajarjestaja_oid: string): Observable<VardaPageDto<VardaTilapainenHenkiloDTO>> {
     return this.http.get(`${this.henkilostoApiPath}/tilapainen-henkilosto/?vuosi=${year}&vakajarjestaja=${vakajarjestaja_oid}`);
   }
 
-  saveTilapainenHenkilostoByMonth(tilapainenHenkilostoByMonth: any): Observable<any> {
+
+  saveTilapainenHenkilostoByMonth(tilapainenHenkilostoByMonth: VardaTilapainenHenkiloDTO): Observable<any> {
     if (tilapainenHenkilostoByMonth.url) {
       return this.http.put(tilapainenHenkilostoByMonth.url, tilapainenHenkilostoByMonth);
     } else {

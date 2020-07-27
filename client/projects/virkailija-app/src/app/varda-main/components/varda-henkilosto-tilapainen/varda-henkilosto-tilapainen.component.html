@@ -1,0 +1,125 @@
+<ng-container *ngIf="toimijaAccess.tilapainenHenkilosto.katselija">
+  <h1 class="varda-page-header">{{ 'tilapainen-henkilosto.title' | translate }}</h1>
+  <main class="varda-page-content">
+    <div class="modal-form-intro">{{ 'tilapainen-henkilosto.ohje' | translate }}</div>
+
+    <div class="oph-field oph-field-inline year-picker">
+      <label class="oph-label">{{ 'aika.vuosi' | translate }}</label>
+      <select class="oph-select"
+              (change)="initiateMonths(henkilostoVuosi)"
+              [(ngModel)]="henkilostoVuosi">
+        <option *ngFor="let vuosi of vuodet"
+                [value]="vuosi">{{ vuosi }}</option>
+      </select>
+    </div>
+    <ng-container *ngIf="monthArray">
+      <form (submit)="saveHenkilosto(monthArray)">
+        <div class="toggle-henkilosto"
+             *ngIf="!henkilostoKytkin.hidden">
+          <button class="henkilostoKytkin varda-link-button"
+                  [disabled]="monthArray.disabled || (!henkilostoKytkin.value && !henkilostoKytkin.editable)"
+                  [class.no-pointer]="monthArray.disabled || !henkilostoKytkin.editable"
+                  (keydown.enter)="toggleHenkilosto()"
+                  (click)="toggleHenkilosto()">
+            <i *ngIf="henkilostoKytkin.value"
+               class="material-icons material-icons-outlined">check_box</i>
+            <mat-icon *ngIf="!henkilostoKytkin.value">check_box_outline_blank</mat-icon>
+            {{ "tilapainen-henkilosto.ei-tilapaista-henkilostoa" | translate }}
+          </button>
+          <button class="varda-link-button"
+                  [matTooltip]="'tooltip.tilapainen-henkilosto.ei-tilapaista-henkilostoa' | translate"
+                  #henkilotunnus="matTooltip"
+                  (click)="henkilotunnus.toggle()"
+                  (mouseenter)="$event.stopImmediatePropagation()"
+                  (mouseleave)="$event.stopImmediatePropagation()">
+            <mat-icon>help_outline</mat-icon>
+          </button>
+        </div>
+        <ng-container *ngIf="!henkilostoKytkin.value">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Kuukausi</th>
+                  <th>Henkilöiden määrä:</th>
+                  <th>Tehdyt tunnit:</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="">
+                  <td></td>
+                  <td><span>{{ 'kokonaisluku' | translate }}</span></td>
+                  <td><span>{{ 'tilapainen-henkilosto.tunnit-yhteensa' | translate }}</span></td>
+                </tr>
+                <tr *ngFor="let month of monthArray.controls">
+                  <ng-container [formGroup]="month">
+                    <td>{{ month.value.name  | translate }}</td>
+                    <td>
+                      <input type="number"
+                             class="oph-input"
+                             formControlName="tyontekijamaara"
+                             placeholder="Henkilömäärä" />
+                      <div class="error-field oph-error"
+                           *ngIf="!month.pristine">
+                        <span *ngIf="month.get('tyontekijamaara').hasError('required')">
+                          {{ 'tilapainen-henkilosto.error.tyontekijamaara' | translate }}
+                        </span>
+                        <span *ngIf="month.get('tyontekijamaara').hasError('pattern')">
+                          {{ 'tilapainen-henkilosto.error.tyontekijamaara-kokonaisluku' | translate }}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <input type="number"
+                             class="oph-input"
+                             formControlName="tuntimaara"
+                             placeholder="Työtunnit" />
+                      <div class="error-field oph-error"
+                           *ngIf="!month.pristine">
+                        <span *ngIf="month.get('tuntimaara').hasError('required')">
+                          {{ 'tilapainen-henkilosto.error.tuntimaara' | translate }}
+                        </span>
+                        <span *ngIf="month.get('tuntimaara').hasError('pattern')">
+                          {{ 'tilapainen-henkilosto.error.tuntimaara-pattern' | translate }}
+                        </span>
+                        <span *ngIf="month.get('tuntimaara').hasError('max')">
+                          {{ 'tilapainen-henkilosto.error.tuntimaara-max' | translate }}
+                        </span>
+                      </div>
+                    </td>
+                  </ng-container>
+                </tr>
+
+                <ng-container *ngIf="vuosiArvot.months > 0">
+                  <tr>
+                    <td>{{ 'keskimaarin' | translate }}</td>
+                    <td>{{ vuosiArvot.employees / vuosiArvot.months | number:'1.1-1' }} henkiloa / kk</td>
+                    <td>{{ vuosiArvot.hours / vuosiArvot.months | number:'1.2-2' }} h / kk</td>
+                  </tr>
+                  <tr>
+                    <td>{{ 'yhteensa' | translate }}</td>
+                    <td>{{ vuosiArvot.employees }} henkiloa</td>
+                    <td>{{ vuosiArvot.hours  }} h</td>
+                  </tr>
+                </ng-container>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="varda-form-btn-wrapper"
+               *ngIf="!monthArray.disabled">
+            <button type="submit"
+                    *ngIf="toimijaAccess.tilapainenHenkilosto.tallentaja"
+                    class="varda-button varda-button-wide responsive-md"
+                    [disabled]="monthArray.pristine || (isLoading | async)">{{'label.generic-save' | translate}}</button>
+          </div>
+        </ng-container>
+      </form>
+    </ng-container>
+    <div *ngIf="lastUpdated"
+         class="last-updated">
+      <strong>{{ 'tilapainen-henkilosto.tiedot-paivitetty-viimeksi' | translate}}:</strong>
+      <span *ngIf="lastUpdated">{{ lastUpdated | date: 'd.M.yyyy hh:mm' }}</span>
+    </div>
+  </main>
+</ng-container>

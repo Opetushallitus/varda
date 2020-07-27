@@ -15,6 +15,7 @@ import { VardaHakuContainerComponent } from './components/varda-haku-container/v
 import { VardaPaosManagementContainerComponent } from './components/varda-paos-management-container/varda-paos-management-container.component';
 import { BrowserNotSupportedComponent } from '../shared/components/browser-not-supported/browser-not-supported.component';
 import { BrowserNotSupportedGuard } from '../shared/components/browser-not-supported/browser-not-supported.guard';
+import { VardaHenkilostoTilapainenComponent } from './components/varda-henkilosto-tilapainen/varda-henkilosto-tilapainen.component';
 
 const routes: Routes = [
   {
@@ -47,6 +48,11 @@ const routes: Routes = [
         component: VardaPaosManagementContainerComponent,
         data: { title: 'ohjeet.lisaaminen-ja-muokkaaminen.paos-hallinta' }
       },
+     /*  {
+        path: 'tilapainen-henkilosto',
+        component: VardaHenkilostoTilapainenComponent,
+        data: { title: 'label.tilapainen-henkilosto' }
+      }, */
     ]
   },
   {

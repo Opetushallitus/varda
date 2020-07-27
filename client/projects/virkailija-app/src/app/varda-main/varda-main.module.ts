@@ -46,7 +46,11 @@ import { PaosAddedToimipaikatComponent } from './components/varda-paos-managemen
 import { PaosAddPaosToimintaComponent } from './components/varda-paos-management-container/paos-add-paos-toiminta/paos-add-paos-toiminta.component';
 import { PaosAddToimintaListComponent } from './components/varda-paos-management-container/paos-add-paos-toiminta/paos-add-toiminta-list/paos-add-toiminta-list.component';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { VardaDropdownMenuComponent } from './components/varda-header/varda-dropdown-menu/varda-dropdown-menu.component';
+import { VardaHenkilostoTilapainenComponent } from './components/varda-henkilosto-tilapainen/varda-henkilosto-tilapainen.component';
+import { EiHenkilostoaDialogComponent } from './components/varda-henkilosto-tilapainen/ei-henkilostoa-dialog/ei-henkilostoa-dialog.component';
+import { MatDialogModule } from '@angular/material/dialog';
 
 @NgModule({
   imports: [
@@ -55,11 +59,14 @@ import { VardaDropdownMenuComponent } from './components/varda-header/varda-drop
     SharedModule,
     TranslateModule,
     MatTableModule,
+    MatTooltipModule,
     VardaSharedModule,
     MatMenuModule,
+    MatDialogModule
   ],
   declarations: [
     VardaHeaderComponent,
+    VardaHenkilostoTilapainenComponent,
     VardaMainFrameComponent,
     VardaFooterComponent,
     VardaToimipaikkaSelectorComponent,
@@ -92,9 +99,12 @@ import { VardaDropdownMenuComponent } from './components/varda-header/varda-drop
     PaosAddPaosToimintaComponent,
     PaosAddToimintaListComponent,
     VardaDropdownMenuComponent,
+    EiHenkilostoaDialogComponent
   ],
+  entryComponents: [EiHenkilostoaDialogComponent],
   exports: [
     VardaHeaderComponent,
+    VardaHenkilostoTilapainenComponent,
     VardaMainFrameComponent,
     VardaFooterComponent,
     VardaToimipaikkaSelectorComponent,
