@@ -349,23 +349,25 @@ def _get_permission_groups(group_organisation_oids, group_roles, tallentaja_orga
 
 
 def assign_object_permissions_to_all_henkilosto_groups(organisaatio_oid, model_class, model_obj):
-    henkilosto_groups = Group.objects.filter(name__startswith='HENKILOSTO_', name__endswith=organisaatio_oid)
-    _assign_or_remove_object_level_permissions(model_class, model_obj, henkilosto_groups, paos_kytkin=False, assign=True)
+    _assign_object_permissions_to_groups('HENKILOSTO_', organisaatio_oid, model_class, model_obj)
 
 
 def assign_object_permissions_to_tyontekija_groups(organisaatio_oid, model_class, model_obj):
-    tyontekija_groups = Group.objects.filter(name__startswith='HENKILOSTO_TYONTEKIJA_', name__endswith=organisaatio_oid)
-    _assign_or_remove_object_level_permissions(model_class, model_obj, tyontekija_groups, paos_kytkin=False, assign=True)
+    _assign_object_permissions_to_groups('HENKILOSTO_TYONTEKIJA_', organisaatio_oid, model_class, model_obj)
 
 
 def assign_object_permissions_to_tilapainenhenkilosto_groups(organisaatio_oid, model_class, model_obj):
-    tilapaiset_groups = Group.objects.filter(name__startswith='HENKILOSTO_TILAPAISET_', name__endswith=organisaatio_oid)
-    _assign_or_remove_object_level_permissions(model_class, model_obj, tilapaiset_groups, paos_kytkin=False, assign=True)
+    _assign_object_permissions_to_groups('HENKILOSTO_TILAPAISET_', organisaatio_oid, model_class, model_obj)
 
 
 def assign_object_permissions_to_taydennyskoulutus_groups(organisaatio_oid, model_class, model_obj):
-    taydennyskoulutus_groups = Group.objects.filter(name__startswith='HENKILOSTO_TAYDENNYSKOULUTUS_', name__endswith=organisaatio_oid)
-    _assign_or_remove_object_level_permissions(model_class, model_obj, taydennyskoulutus_groups, paos_kytkin=False, assign=True)
+    _assign_object_permissions_to_groups('HENKILOSTO_TAYDENNYSKOULUTUS_', organisaatio_oid, model_class, model_obj)
+
+
+def _assign_object_permissions_to_groups(group_name_prefix, group_name_suffix, model_class, model_obj):
+    if group_name_prefix and group_name_suffix:
+        taydennyskoulutus_groups = Group.objects.filter(name__startswith=group_name_prefix, name__endswith=group_name_suffix)
+        _assign_or_remove_object_level_permissions(model_class, model_obj, taydennyskoulutus_groups, paos_kytkin=False, assign=True)
 
 
 def assign_object_level_permissions(organisaatio_oid, model_class, model_obj, paos_kytkin=False):
