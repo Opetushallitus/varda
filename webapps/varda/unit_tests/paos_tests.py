@@ -23,7 +23,7 @@ class VardaPaosTests(TestCase):
         client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja_1
         client_tester5 = SetUpTestClient('tester5').client()  # tallentaja vakajarjestaja_2
         client_palvelukayttaja_vakajarjestaja1 = SetUpTestClient('pkvakajarjestaja1').client()  # palvelukayttaja vakajarjestaja_1
-        client_tester6 = SetUpTestClient('tester6').client()  # huoltaja_tallentaja_vakajarjestaja_1
+        client_tester6 = SetUpTestClient('huoltajatietojen_tallentaja').client()  # huoltaja_tallentaja_vakajarjestaja_1
         client_tester7 = SetUpTestClient('tester7').client()  # huoltaja_tallentaja_vakajarjestaja_2
         client_tester8 = SetUpTestClient('tester8').client()  # tallentaja toimipaikka_5
 
@@ -105,7 +105,7 @@ class VardaPaosTests(TestCase):
 
     def test_assign_organisaatio_paos_maksutieto_permissions(self):
         client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
-        client_tester6 = SetUpTestClient('tester6').client()  # huoltaja_tallentaja_vakajarjestaja_1
+        client_tester6 = SetUpTestClient('huoltajatietojen_tallentaja').client()  # huoltaja_tallentaja_vakajarjestaja_1
         client_tester7 = SetUpTestClient('tester7').client()  # huoltaja_tallentaja_vakajarjestaja_2
         client_tester9 = SetUpTestClient('tester9').client()  # huoltaja_tallentaja toimipaikka_5
         client_pk_vakajarjestaja_1 = SetUpTestClient('pkvakajarjestaja1').client()  # vakajarjestaja_1 palvelukayttaja

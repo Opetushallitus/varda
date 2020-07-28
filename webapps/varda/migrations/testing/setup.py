@@ -149,9 +149,17 @@ def add_test_users():
     user_palvelukayttaja_vakajarjestaja_2.groups.add(group_palvelukayttaja_vakajarjestaja_2)
     user_palvelukayttaja_vakajarjestaja_2.groups.add(group_view_henkilo)
 
-    user_tester6 = User.objects.create(username='tester6', password='pbkdf2_sha256$150000$S3mQ66CWYdSO$o9T08pdVyIZFqbdC8pK5cMk2O64d3xfQdw2x2vzr4M8=')
-    user_tester6.groups.add(group_huoltajatiedot_tallentaja_vakajarjestaja_1)
-    user_tester6.groups.add(group_view_henkilo)
+    huoltajatietojen_tallentaja = User.objects.create(username='huoltajatietojen_tallentaja', password='pbkdf2_sha256$150000$S3mQ66CWYdSO$o9T08pdVyIZFqbdC8pK5cMk2O64d3xfQdw2x2vzr4M8=')
+    huoltajatietojen_tallentaja.groups.add(group_huoltajatiedot_tallentaja_vakajarjestaja_1)
+    huoltajatietojen_tallentaja.groups.add(group_view_henkilo)
+
+    vakatietojen_tallentaja = User.objects.create(username='vakatietojen_tallentaja', password='pbkdf2_sha256$150000$S3mQ66CWYdSO$o9T08pdVyIZFqbdC8pK5cMk2O64d3xfQdw2x2vzr4M8=')
+    vakatietojen_tallentaja.groups.add(group_tallentaja_vakajarjestaja_1)
+    vakatietojen_tallentaja.groups.add(group_view_henkilo)
+
+    vakatietojen_toimipaikka_tallentaja = User.objects.create(username='vakatietojen_toimipaikka_tallentaja', password='pbkdf2_sha256$150000$S3mQ66CWYdSO$o9T08pdVyIZFqbdC8pK5cMk2O64d3xfQdw2x2vzr4M8=')
+    vakatietojen_toimipaikka_tallentaja.groups.add(group_tallentaja_toimipaikka_1)
+    vakatietojen_toimipaikka_tallentaja.groups.add(group_view_henkilo)
 
     user_tester7 = User.objects.create(username='tester7', password='pbkdf2_sha256$150000$9fuSiDHlpxu4$qpRt5+aPs8Fd9VsI0XPjOvMHCN7LF+VbSJLyIghrNks=')
     user_tester7.groups.add(group_huoltajatiedot_tallentaja_vakajarjestaja_2)
@@ -1023,6 +1031,17 @@ def create_henkilot():
         changed_by=tester_user
     )
 
+    # Henkilo (210700A919U) that is a Tyontekija
+    henkilo_919U = Henkilo.objects.create(
+        henkilotunnus='210700A919U',
+        henkilotunnus_unique_hash=hash_string('210700A919U'),
+        henkilo_oid='1.2.246.562.24.2431884920045',
+        etunimet='Döner',
+        kutsumanimi='Döner',
+        sukunimi='Kebab',
+        changed_by=tester_user
+    )
+
     # 290116A331A
     henkilo_331A = Henkilo.objects.create(
         henkilotunnus='gAAAAABey190QZiEOSVXu4lhwaCn5xRAOdf3cwrqVrXHbIA8ToTidxonHNm3hhMQmJYCfe-X3VPQfv577HBlzq08zLrJ7lWtLw==',
@@ -1217,7 +1236,7 @@ def create_henkilot():
         henkilo_1, henkilo_2, henkilo_3, henkilo_4, henkilo_5, henkilo_6, henkilo_7, henkilo_8, henkilo_9, henkilo_10,
         henkilo_11, henkilo_12, henkilo_13, henkilo_14, henkilo_15, henkilo_16, henkilo_331A, henkilo_642C,
         henkilo_807L, henkilo_020X, henkilo_706Y, henkilo_273S, henkilo_5155, henkilo_753Y, henkilo_0520, henkilo_031J,
-        henkilo_925B, henkilo_926C, henkilo_927D, henkilo_928E
+        henkilo_925B, henkilo_926C, henkilo_927D, henkilo_928E, henkilo_919U
     }
     for henkilo in henkilo_list:
         assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo)
@@ -1246,6 +1265,8 @@ def create_lapset():
     vakajarjestaja_1 = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_1_organisaatio_oid)[0]
     vakajarjestaja_2 = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_2_organisaatio_oid)[0]
     vakajarjestaja_4 = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_4_organisaatio_oid)[0]
+    vakajarjestaja_57294396385 = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_57294396385_organisaatio_oid)[0]
+    vakajarjestaja_52966755795 = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_52966755795_organisaatio_oid)[0]
 
     toimipaikka_1_organisaatio_oid = '1.2.246.562.10.9395737548810'
     toimipaikka_2_organisaatio_oid = '1.2.246.562.10.9395737548815'
@@ -1269,18 +1290,21 @@ def create_lapset():
     henkilo_2 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('010114A0013'))
     lapsi_1 = Lapsi.objects.create(
         henkilo=henkilo_2,
+        vakatoimija=vakajarjestaja_2,
         changed_by=tester_user
     )
 
     henkilo_3 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('120516A123V'))
     lapsi_2 = Lapsi.objects.create(
         henkilo=henkilo_3,
-        changed_by=tester_user
+        vakatoimija=vakajarjestaja_2,
+        changed_by=tester_user,
     )
 
     henkilo_7 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('170334-130B'))
     lapsi_3 = Lapsi.objects.create(
         henkilo=henkilo_7,
+        vakatoimija=vakajarjestaja_1,
         changed_by=tester2_user
     )
 
@@ -1336,30 +1360,35 @@ def create_lapset():
     henkilo_807L = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('010116A807L'))
     lapsi_807L = Lapsi.objects.create(
         henkilo=henkilo_807L,
+        vakatoimija=vakajarjestaja_57294396385,
         changed_by=tester10_user
     )
 
     henkilo_020X = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('141117A020X'))
     lapsi_020X = Lapsi.objects.create(
         henkilo=henkilo_020X,
+        vakatoimija=vakajarjestaja_57294396385,
         changed_by=tester10_user
     )
 
     henkilo_706Y = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('130317A706Y'))
     lapsi_706Y = Lapsi.objects.create(
         henkilo=henkilo_706Y,
+        vakatoimija=vakajarjestaja_57294396385,
         changed_by=tester10_user
     )
 
     henkilo_273S = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('120617A273S'))
     lapsi_273S = Lapsi.objects.create(
         henkilo=henkilo_273S,
+        vakatoimija=vakajarjestaja_52966755795,
         changed_by=tester11_user
     )
 
     henkilo_5155 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('241217A5155'))
     lapsi_5155 = Lapsi.objects.create(
         henkilo=henkilo_5155,
+        vakatoimija=vakajarjestaja_52966755795,
         changed_by=tester11_user
     )
 
@@ -2326,7 +2355,7 @@ def create_user_data():
 
     tester_user = User.objects.get(username='tester')
     tester2_user = User.objects.get(username='tester2')
-    tester6_user = User.objects.get(username='tester6')
+    tester6_user = User.objects.get(username='huoltajatietojen_tallentaja')
     tester7_user = User.objects.get(username='tester7')
     tester9_user = User.objects.get(username='tester9')
 
@@ -2671,7 +2700,7 @@ def create_henkilosto():
     group_taydennys_tallentaja_vakajarjestaja1 = Group.objects.get(name='HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA_1.2.246.562.10.93957375488')
 
     admin_user = User.objects.get(username='credadmin')
-    vakajarjestaja_tester = VakaJarjestaja.objects.filter(nimi='Tester organisaatio')[0]
+    vakajarjestaja_tester = VakaJarjestaja.objects.filter(organisaatio_oid='1.2.246.562.10.93957375488').first()
     vakajarjestaja_tester2 = VakaJarjestaja.objects.filter(organisaatio_oid='1.2.246.562.10.34683023489').first()
     toimipaikka_1 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548810')
     toimipaikka_9395737548811 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548811')
@@ -2679,6 +2708,7 @@ def create_henkilosto():
     henkilo_2 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A926C'))
     henkilo_3 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A927D'))
     henkilo_4 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A928E'))
+    henkilo_5 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('210700A919U'))
 
     assign_perm('view_toimipaikka', group_tyontekija_tallentaja_vakajarjestaja1, toimipaikka_1)
     assign_perm('view_toimipaikka', group_tyontekija_tallentaja_vakajarjestaja1, toimipaikka_9395737548811)
@@ -2695,6 +2725,7 @@ def create_henkilosto():
     add_tutkinto(henkilo_2, '321901', '712104', '613101')
     add_tutkinto(henkilo_3, '321901', '712104', '613101')
     add_tutkinto(henkilo_4, '321901', '712104', '613101')
+    add_tutkinto(henkilo_5, '321901', '712104', '613101')
 
     crud_permissions_tyontekija = ['view_tyontekija', 'change_tyontekija', 'add_tyontekija', 'delete_tyontekija']
     tyontekija_1 = Tyontekija.objects.create(
@@ -2731,6 +2762,15 @@ def create_henkilosto():
         changed_by_id=admin_user.id
     )
     [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja1, tyontekija_4) for crud_permission in crud_permissions_tyontekija]
+
+    tyontekija_kiertava = Tyontekija.objects.create(
+        henkilo=henkilo_5,
+        vakajarjestaja=vakajarjestaja_tester,
+        lahdejarjestelma='1',
+        tunniste='testing-tyontekija-kiertava',
+        changed_by_id=admin_user.id
+    )
+    [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja1, tyontekija_kiertava) for crud_permission in crud_permissions_tyontekija]
 
     crud_permissions_palvelussuhde = ['view_palvelussuhde', 'change_palvelussuhde', 'add_palvelussuhde', 'delete_palvelussuhde']
     palvelussuhde_1 = Palvelussuhde.objects.create(
@@ -2855,6 +2895,34 @@ def create_henkilosto():
         changed_by_id=admin_user.id
     )
     [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja1, tyoskentelypaikka_3) for crud_permission in crud_permissions_tyoskentelypaikka]
+
+    palvelussuhde_kiertava = Palvelussuhde.objects.create(
+        tyontekija=tyontekija_kiertava,
+        tyosuhde_koodi='ts01',
+        tyoaika_koodi='ta01',
+        tutkinto_koodi='815102',
+        tyoaika_viikossa='20.00',
+        alkamis_pvm='2020-03-01',
+        paattymis_pvm='2030-03-01',
+        lahdejarjestelma='1',
+        tunniste='testing-palvelussuhde-kiertava',
+        changed_by_id=admin_user.id
+    )
+    [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja1, palvelussuhde_kiertava) for crud_permission in crud_permissions_palvelussuhde]
+
+    tyoskentelypaikka_kiertava = Tyoskentelypaikka.objects.create(
+        palvelussuhde=palvelussuhde_kiertava,
+        toimipaikka=None,
+        alkamis_pvm='2020-03-01',
+        paattymis_pvm='2020-05-02',
+        tehtavanimike_koodi='77826',
+        kelpoisuus_kytkin=True,
+        kiertava_tyontekija_kytkin=True,
+        lahdejarjestelma='1',
+        tunniste='testing-tyoskentylypaikka-kiertava',
+        changed_by_id=admin_user.id
+    )
+    [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja1, tyoskentelypaikka_kiertava) for crud_permission in crud_permissions_tyoskentelypaikka]
 
     crud_permissions_tilapainen_henkilosto = ['view_tilapainenhenkilosto', 'change_tilapainenhenkilosto', 'add_tilapainenhenkilosto', 'delete_tilapainenhenkilosto']
     tilapainen_henkilosto_1 = TilapainenHenkilosto.objects.create(

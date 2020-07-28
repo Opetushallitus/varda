@@ -719,8 +719,8 @@ class VardaViewsTests(TestCase):
         lapsi_json = {
             'url': 'http://testserver/api/v1/lapset/1/?format=json',
             'id': 1,
-            'vakatoimija': None,
-            'vakatoimija_oid': None,
+            'vakatoimija': 'http://testserver/api/v1/vakajarjestajat/2/?format=json',
+            'vakatoimija_oid': '1.2.246.562.10.93957375488',
             'oma_organisaatio': None,
             'oma_organisaatio_oid': None,
             'paos_kytkin': False,
@@ -968,8 +968,8 @@ class VardaViewsTests(TestCase):
         lapsi_json = {
             'url': 'http://testserver/api/v1/lapset/1/?format=json',
             'id': 1,
-            'vakatoimija': None,
-            'vakatoimija_oid': None,
+            'vakatoimija': 'http://testserver/api/v1/vakajarjestajat/2/?format=json',
+            'vakatoimija_oid': '1.2.246.562.10.93957375488',
             'oma_organisaatio': None,
             'oma_organisaatio_oid': None,
             'paos_kytkin': False,
@@ -1498,7 +1498,7 @@ class VardaViewsTests(TestCase):
         self.assertEqual(json.loads(resp.content), toimipaikan_lapset_henkilo_filter_json)
 
     def test_toimipaikan_lapset_huoltajatieto_tallentaja(self):
-        client = SetUpTestClient('tester6').client()
+        client = SetUpTestClient('huoltajatietojen_tallentaja').client()
         accepted_response_json = {
             "count": 1,
             "next": None,
@@ -1877,7 +1877,7 @@ class VardaViewsTests(TestCase):
             "lapsi": "/api/v1/lapset/2/",
             "vuorohoito_kytkin": True,
             "tuntimaara_viikossa": 30,
-            "jarjestamismuoto_koodi": "jm01",
+            "jarjestamismuoto_koodi": "jm04",
             "hakemus_pvm": "2018-01-01",
             "alkamis_pvm": "2018-01-15"
         }
@@ -1892,7 +1892,7 @@ class VardaViewsTests(TestCase):
             "lapsi": "/api/v1/lapset/2/",
             "vuorohoito_kytkin": True,
             "tuntimaara_viikossa": 30,
-            "jarjestamismuoto_koodi": "jm01",
+            "jarjestamismuoto_koodi": "jm04",
             "hakemus_pvm": "2018-01-01",
             "alkamis_pvm": "2018-01-16"
         }
@@ -1909,7 +1909,7 @@ class VardaViewsTests(TestCase):
             'lapsi': '/api/v1/lapset/2/',
             'vuorohoito_kytkin': True,
             'tuntimaara_viikossa': 30,
-            'jarjestamismuoto_koodi': 'jm01'
+            'jarjestamismuoto_koodi': 'jm04'
         }
 
         ok_cases = [
@@ -2954,7 +2954,7 @@ class VardaViewsTests(TestCase):
         varhaiskasvatuspaatos = {
             'lapsi': 'http://testserver/api/v1/lapset/1/',
             'tuntimaara_viikossa': 40,
-            'jarjestamismuoto_koodi': 'jm01',
+            'jarjestamismuoto_koodi': 'jm04',
             'hakemus_pvm': '2018-09-15',
             'alkamis_pvm': '2018-10-20'
         }

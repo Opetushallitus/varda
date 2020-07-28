@@ -51,6 +51,20 @@ class CustomReportingViewAccess(permissions.BasePermission):
             return False
 
 
+class LapsihakuPermissions(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        accepted_permissions = ['view_lapsi', 'view_maksutieto']
+        return user.is_superuser or user.groups.filter(permissions__codename__in=accepted_permissions)
+
+
+class HenkilostohakuPermissions(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        accepted_permissions = ['view_tyontekija', 'view_taydennyskoulutus']
+        return user.is_superuser or user.groups.filter(permissions__codename__in=accepted_permissions)
+
+
 def user_has_tallentaja_permission_in_organization(organisaatio_oid, user):
     """
     Tallentaja-permissions are needed for POST, PUT, PATCH and DELETE
@@ -433,15 +447,15 @@ def get_taydennyskoulutus_tyontekija_group_organisaatio_oids(user):
     return get_organisaatio_oids_from_groups(user, 'HENKILOSTO_TAYDENNYSKOULUTUS_', 'HENKILOSTO_TYONTEKIJA_')
 
 
-def is_toimipaikka_access_for_group(user, vakajarjestaja_pk, *group_name_prefixes):
+def get_toimipaikat_group_has_access(user, vakajarjestaja_pk, *group_name_prefixes):
     """
     Check is user toimipaikka level access to given permission groups
     :param user: User who's toimipaikka permissions are checked
     :param vakajarjestaja_pk: id for vakajarjestaja which toimipaikka must be under
     :param group_name_prefixes: List of group_name prefix
-    :return: true if user has toimipaikat in provided roles
+    :return: queryset containing toimipaikat user has access
     """
-    tyontekija_organisaatio_oids = get_organisaatio_oids_from_groups(user, *group_name_prefixes)
-    toimipaikat_qs = Toimipaikka.objects.filter(organisaatio_oid__in=tyontekija_organisaatio_oids,
+    organisaatio_oids = get_organisaatio_oids_from_groups(user, *group_name_prefixes)
+    toimipaikat_qs = Toimipaikka.objects.filter(organisaatio_oid__in=organisaatio_oids,
                                                 vakajarjestaja=vakajarjestaja_pk)
-    return toimipaikat_qs.exists()
+    return toimipaikat_qs

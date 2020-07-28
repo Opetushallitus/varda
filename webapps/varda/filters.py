@@ -300,9 +300,20 @@ class TaydennyskoulutusTyontekijaFilter(djangofilters.FilterSet):
         fields = []
 
 
-class TyontekijaUiFilter(djangofilters.FilterSet):
+class TyontekijahakuUiFilter(djangofilters.FilterSet):
+    toimipaikka_id = djangofilters.CharFilter(field_name='tyontekijat__palvelussuhteet__tyoskentelypaikat__toimipaikka__id')
     toimipaikka_oid = djangofilters.CharFilter(field_name='tyontekijat__palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid')
     kiertava_tyontekija_kytkin = djangofilters.BooleanFilter(field_name='tyontekijat__palvelussuhteet__tyoskentelypaikat__kiertava_tyontekija_kytkin')
+
+    class Meta:
+        model: Henkilo
+        fields = []
+
+
+class LapsihakuUiFilter(djangofilters.FilterSet):
+    # Note LapsihakuLapsetUiSerializer flattens toimipaikat so nested filtering can't be done here
+    toimipaikka_id = djangofilters.CharFilter(field_name='lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__id')
+    toimipaikka_oid = djangofilters.CharFilter(field_name='lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__organisaatio_oid')
 
     class Meta:
         model: Henkilo
