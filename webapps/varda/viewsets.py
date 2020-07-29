@@ -2270,33 +2270,43 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
         """
         Return the number of unique lapset (having an active vakasuhde) in all toimipaikat under the vakajarjestaja.
         """
+        organisation_filter = Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=vakajarjestaja_id)
+
+        date_filter = Q(Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm__lte=self.today) &
+                        (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True) |
+                         Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__gte=self.today)))
+
         return (Lapsi.objects
-                .filter(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=vakajarjestaja_id)
-                .filter(
-                    Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm__lte=self.today) &
-                    (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True) |
-                     Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__gte=self.today)))
+                .filter(organisation_filter &
+                        date_filter)
                 .distinct()
                 .count()
                 )
 
     def get_vakapaatos_voimassaoleva(self, vakajarjestaja_id):
+        organisation_filter = Q(varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=vakajarjestaja_id)
+        date_filter = Q(Q(alkamis_pvm__lte=self.today) &
+                        (Q(paattymis_pvm__isnull=True) |
+                         Q(paattymis_pvm__gte=self.today)))
+
         return (Varhaiskasvatuspaatos.objects
-                .filter(varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=vakajarjestaja_id)
-                .filter(
-                    Q(alkamis_pvm__lte=self.today) &
-                    (Q(paattymis_pvm__isnull=True) |
-                     Q(paattymis_pvm__gte=self.today)))
+                .filter(organisation_filter &
+                        date_filter)
+                .distinct()
                 .count()
                 )
 
     def get_vakasuhde_voimassaoleva(self, vakajarjestaja_id):
+        organisation_filter = Q(toimipaikka__vakajarjestaja__id=vakajarjestaja_id)
+
+        date_filter = Q(Q(alkamis_pvm__lte=self.today) &
+                        (Q(paattymis_pvm__isnull=True) |
+                         Q(paattymis_pvm__gte=self.today)))
+
         return (Varhaiskasvatussuhde.objects
-                .filter(toimipaikka__vakajarjestaja__id=vakajarjestaja_id)
-                .filter(
-                    Q(alkamis_pvm__lte=self.today) &
-                    (Q(paattymis_pvm__isnull=True) |
-                     Q(paattymis_pvm__gte=self.today)))
+                .filter(organisation_filter &
+                        date_filter)
+                .distinct()
                 .count()
                 )
 
@@ -2304,14 +2314,19 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
         """
         Return the number of unique lapset (having an active vakasuhde AND vuorohoito_kytkin=True) in all toimipaikat under the vakajarjestaja.
         """
+        organisation_filter = Q(Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=vakajarjestaja_id) &
+                                Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__isnull=False))
+
+        vuorohoito_filter = Q(varhaiskasvatuspaatokset__vuorohoito_kytkin=True)
+
+        date_filter = Q(Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm__lte=self.today) &
+                        (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True) |
+                         Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__gte=self.today)))
+
         return (Lapsi.objects
-                .filter(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=vakajarjestaja_id)
-                .filter(Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__isnull=False) &
-                        Q(varhaiskasvatuspaatokset__vuorohoito_kytkin=True))
-                .filter(
-                    Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm__lte=self.today) &
-                    (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True) |
-                     Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__gte=self.today)))
+                .filter(organisation_filter &
+                        vuorohoito_filter &
+                        date_filter)
                 .distinct()
                 .count()
                 )
@@ -2319,52 +2334,73 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
     def get_paos_lapset(self, vakajarjestaja_id):
         """
         Return the number of unique lapset (having an active vakasuhde) in Palveluseteli or Ostopalvelu under the vakajarjestaja.
-
         """
+        organisation_filter = Q(Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=vakajarjestaja_id) |
+                                Q(oma_organisaatio=vakajarjestaja_id) |
+                                Q(paos_organisaatio=vakajarjestaja_id) &
+                                Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__isnull=False))
+
+        jarjestamismuoto_filter = Q(Q(varhaiskasvatuspaatokset__jarjestamismuoto_koodi__iexact="JM02") |
+                                    Q(varhaiskasvatuspaatokset__jarjestamismuoto_koodi__iexact="JM03"))
+
+        date_filter = Q(Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm__lte=self.today) &
+                        (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True) |
+                        Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__gte=self.today)))
+
         return (Lapsi.objects
-                .filter(Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=vakajarjestaja_id) |
-                        Q(oma_organisaatio=vakajarjestaja_id) |
-                        Q(paos_organisaatio=vakajarjestaja_id)
-                        )
-                .filter(
-                    Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__isnull=False) &
-                    (Q(varhaiskasvatuspaatokset__jarjestamismuoto_koodi__iexact="JM02") |
-                     Q(varhaiskasvatuspaatokset__jarjestamismuoto_koodi__iexact="JM03")))
-                .filter(
-                    Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm__lte=self.today) &
-                    (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True) |
-                     Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__gte=self.today)))
-                .distinct().count()
+                .filter(organisation_filter &
+                        jarjestamismuoto_filter &
+                        date_filter)
+                .distinct()
+                .count()
                 )
 
     def get_maksutieto_voimassaoleva(self, vakajarjestaja_id):
         """
         Returns the number of unique active maksutieto objects
         """
+
+        # in paos cases only children in oma_organisaatio are counted
+        organisation_filter = Q((Q(huoltajuussuhteet__lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=vakajarjestaja_id) &
+                                Q(huoltajuussuhteet__lapsi__paos_kytkin=False)) |
+                                (Q(huoltajuussuhteet__lapsi__oma_organisaatio__id=vakajarjestaja_id) &
+                                Q(huoltajuussuhteet__lapsi__paos_kytkin=True)) &
+                                Q(huoltajuussuhteet__lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__isnull=False))
+
+        date_filter = Q(Q(alkamis_pvm__lte=self.today) &
+                        (Q(paattymis_pvm__isnull=True) |
+                         Q(paattymis_pvm__gte=self.today)))
+
         return (Maksutieto.objects
-                .filter(huoltajuussuhteet__lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=vakajarjestaja_id)
-                .filter(huoltajuussuhteet__lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__isnull=False)
-                .filter(
-                    Q(alkamis_pvm__lte=self.today) &
-                    (Q(paattymis_pvm__isnull=True) |
-                     Q(paattymis_pvm__gte=self.today)))
-                .distinct().count()
+                .filter(organisation_filter &
+                        date_filter)
+                .distinct()
+                .count()
                 )
 
     def get_active_toimipaikat(self, vakajarjestaja_id):
+        organisation_filter = Q(vakajarjestaja__id=vakajarjestaja_id)
+
+        date_filter = Q(Q(alkamis_pvm__lte=self.today) &
+                        (Q(paattymis_pvm__isnull=True) |
+                         Q(paattymis_pvm__gte=self.today)))
+
         return (Toimipaikka.objects
-                .filter(vakajarjestaja__id=vakajarjestaja_id)
-                .filter(
-                    Q(alkamis_pvm__lte=self.today) &
-                    (Q(paattymis_pvm__isnull=True) |
-                     Q(paattymis_pvm__gte=self.today)))
+                .filter(organisation_filter &
+                        date_filter)
+                .distinct()
                 .count()
                 )
 
     def get_closed_toimipaikat(self, vakajarjestaja_id):
+        organisation_filter = Q(vakajarjestaja__id=vakajarjestaja_id)
+
+        date_filter = Q(paattymis_pvm__lt=self.today)
+
         return (Toimipaikka.objects
-                .filter(vakajarjestaja__id=vakajarjestaja_id)
-                .filter(paattymis_pvm__lt=self.today)
+                .filter(organisation_filter,
+                        date_filter)
+                .distinct()
                 .count()
                 )
 
@@ -2372,12 +2408,16 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
         """
         Return the number of active toimintapainotukset in all toimipaikat under the vakajarjestaja.
         """
+        organisation_filter = Q(toimipaikka__vakajarjestaja__id=vakajarjestaja_id)
+
+        date_filter = Q(Q(alkamis_pvm__lte=self.today) &
+                        (Q(paattymis_pvm__isnull=True) |
+                         Q(paattymis_pvm__gte=self.today)))
+
         return (ToiminnallinenPainotus.objects
-                .filter(toimipaikka__vakajarjestaja__id=vakajarjestaja_id)
-                .filter(
-                    Q(alkamis_pvm__lte=self.today) &
-                    (Q(paattymis_pvm__isnull=True) |
-                     Q(paattymis_pvm__gte=self.today)))
+                .filter(organisation_filter &
+                        date_filter)
+                .distinct()
                 .count()
                 )
 
@@ -2385,12 +2425,16 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
         """
         Return the number of active kielipainotukset in all toimipaikat under the vakajarjestaja.
         """
+        organisation_filter = Q(toimipaikka__vakajarjestaja__id=vakajarjestaja_id)
+
+        date_filter = Q(Q(alkamis_pvm__lte=self.today) &
+                        (Q(paattymis_pvm__isnull=True) |
+                         Q(paattymis_pvm__gte=self.today)))
+
         return (KieliPainotus.objects
-                .filter(toimipaikka__vakajarjestaja__id=vakajarjestaja_id)
-                .filter(
-                    Q(alkamis_pvm__lte=self.today) &
-                    (Q(paattymis_pvm__isnull=True) |
-                     Q(paattymis_pvm__gte=self.today)))
+                .filter(organisation_filter &
+                        date_filter)
+                .distinct()
                 .count()
                 )
 

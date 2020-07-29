@@ -2994,7 +2994,7 @@ class VardaViewsTests(TestCase):
             "lapset_vakasuhde_voimassaoleva": 5,
             "lapset_vuorohoidossa": 0,
             "lapset_palveluseteli_ja_ostopalvelu": 3,
-            "lapset_maksutieto_voimassaoleva": 4,
+            "lapset_maksutieto_voimassaoleva": 3,
             "toimipaikat_voimassaolevat": 4,
             "toimipaikat_paattyneet": 0,
             "toimintapainotukset_maara": 2,
