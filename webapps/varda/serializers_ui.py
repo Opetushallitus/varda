@@ -119,7 +119,7 @@ class PermissionCheckedTyoskentelypaikkaUiListSerializer(serializers.ListSeriali
         user = self.context['request'].user
         vakajarjestaja_pk = self.context['view'].kwargs['pk']
         organisaatio_oids = get_taydennyskoulutus_tyontekija_group_organisaatio_oids(user)
-        filter_condition = Q()
+        filter_condition = Q(palvelussuhde__tyontekija__vakajarjestaja=vakajarjestaja_pk)
         if not user.is_superuser:
             filter_condition = (Q(palvelussuhde__tyontekija__vakajarjestaja__organisaatio_oid__in=organisaatio_oids) |
                                 Q(toimipaikka__organisaatio_oid__in=organisaatio_oids))
