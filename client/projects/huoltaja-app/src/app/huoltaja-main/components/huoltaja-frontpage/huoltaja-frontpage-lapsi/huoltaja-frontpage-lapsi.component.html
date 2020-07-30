@@ -3,7 +3,7 @@
     <tr class="mat-header-row"
         tabindex="0">
       <th class="mat-cell">{{ translation.lapsi_oppijanumero | translate}}</th>
-      <td class="mat-cell">{{ lapsiDto.henkilo_oid }}</td>
+      <td class="mat-cell word-break">{{ lapsiDto.henkilo_oid }}</td>
       <td class="mat-cell">
         <button [matTooltip]="translation.tooltip_henkilotiedot_oppijanumero | translate"
                 #oppijanumero="matTooltip"

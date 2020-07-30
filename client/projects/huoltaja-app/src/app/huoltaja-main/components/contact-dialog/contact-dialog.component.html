@@ -11,10 +11,14 @@
     <ng-container *ngIf="data.content">
       {{ data.content | translate }}
     </ng-container>
+    <ng-container *ngIf="data.toimija">
+      <div class="jarjestaja">{{ translation.varhaiskasvatussuhteet_jarjestaja | translate }}: {{ data.toimija }}</div>
+    </ng-container>
     <ng-container *ngIf="data.email">
-      {{ translation.contact_dialog_ota_yhteytta_osoitteeseen | translate: { email: data.email } }}:
+      {{ translation.contact_dialog_ota_yhteytta_osoitteeseen | translate: { toimija: data.toimija, email: data.email } }}:
       <address><a [href]="'mailto:'+data.email"
            target="_blank">{{ data.email }}</a></address>
+      <span *ngIf="data.toimija"> ({{ data.toimija }})</span>.
       {{ translation.contact_dialog_muista_mainita | translate }}
     </ng-container>
 

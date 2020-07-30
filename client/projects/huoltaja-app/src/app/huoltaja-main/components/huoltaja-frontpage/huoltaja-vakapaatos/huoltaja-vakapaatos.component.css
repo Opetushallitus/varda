@@ -30,6 +30,8 @@
   display: none;
 }
 
+
+
 @media (max-width: 465px) {
   .vakapaatos-expansion {
     padding-top: 0.5em;
@@ -37,6 +39,7 @@
 }
 
 @media (max-width: 520px) {
+  .mat-expansion-panel-header-title .material-icons,
   .voimassaoloaika > .laaja {
     display: none;
   }
@@ -47,6 +50,17 @@
 
   .toimipaikkaList {
     max-width: 150px;
+    word-wrap: break-word;
+  }
+
+  .vakasuhde-panel .toimipaikkaList {
+    max-width: 100px;
+  }
+}
+
+@media (max-width: 340px) {
+  .toimipaikkaList {
+    max-width: 80px;
   }
 }
 

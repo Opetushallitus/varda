@@ -39,10 +39,11 @@ export class HuoltajaFrontpageVakapaatosComponent implements OnInit {
     return !(date < today.toISOString());
   }
 
-  openDialog(email?: string) {
+  openDialog(lapsi?: LapsiDTO) {
     this.dialog.open(ContactDialogComponent, {
       data: {
-        email: email
+        email: lapsi?.yhteysosoite,
+        toimija: lapsi?.varhaiskasvatuksen_jarjestaja
       }
     });
   }

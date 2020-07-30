@@ -26,3 +26,7 @@ address{
   max-width: min(700px, 80vh);
   text-overflow: clip;
 }
+
+.jarjestaja {
+  margin-bottom: 0.5em;
+}

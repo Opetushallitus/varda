@@ -141,7 +141,7 @@
   </table>
   <div>
     <button class="onko-tiedoissa-virhe"
-            (click)="openDialog(lapsi.yhteysosoite)">{{ translation.varhaiskasvatuspaatos_onko_tiedoissa_virhe | translate}}
+            (click)="openDialog(lapsi)">{{ translation.varhaiskasvatuspaatos_onko_tiedoissa_virhe | translate}}
     </button>
     <div class="extension-info">{{ translation.info_varhaiskasvatuspaatos | translate }}</div>
   </div>
@@ -156,7 +156,7 @@
     <mat-expansion-panel-header style="position:relative;">
       <mat-panel-title>
         <h5 class="expansion-otsikko">
-          <span>
+          <span class="toimipaikkaList">
             {{ vakasuhde.toimipaikka.toimipaikka_nimi }}
           </span>
           <span class="voimassaoloaika"
