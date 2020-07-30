@@ -62,6 +62,9 @@ class TunnisteIdSchema(AutoSchema):
 
 
 class ObjectByTunnisteMixin:
+    """
+    @DynamicAttrs
+    """
     schema = TunnisteIdSchema()
 
     def get_object(self):

@@ -19,6 +19,8 @@ class AbstractCustomRelatedField(serializers.Field):
     If a field should be required, set the parent required=False and
     either_required=True here. This field then makes sure that a value
     is provided in at least one of the fields.
+
+    Permission
     """
 
     _does_not_exist = object()
@@ -28,7 +30,6 @@ class AbstractCustomRelatedField(serializers.Field):
                  prevalidator,
                  either_required=False,
                  required_in_patch=False,
-                 check_permission='',
                  **kwargs):
         if type(self) is AbstractCustomRelatedField:
             raise TypeError('AbstractCustomRelatedField must be subclassed')
@@ -37,7 +38,6 @@ class AbstractCustomRelatedField(serializers.Field):
         self.prevalidator = prevalidator
         self.either_required = either_required
         self.required_in_patch = required_in_patch
-        self.check_permission = check_permission
 
         kwargs['source'] = '*'
         kwargs['required'] = False
@@ -89,8 +89,8 @@ class AbstractCustomRelatedField(serializers.Field):
         if referenced_object is None:
             return {}
         else:
-            if self.check_permission and not self.context['request'].user.has_perm(self.check_permission,
-                                                                                   referenced_object):
+            check_permission = getattr(self.parent.fields.fields[self.parent_field], 'check_permission', None)
+            if check_permission and not self.context['request'].user.has_perm(check_permission, referenced_object):
                 # Masking 403 as object not found
                 referenced_object = AbstractCustomRelatedField._does_not_exist
         if referenced_object is AbstractCustomRelatedField._does_not_exist:

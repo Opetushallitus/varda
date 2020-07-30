@@ -176,6 +176,7 @@ Show only relevant options in the dropdown menus (where changed_by=user)
 
 class PermissionCheckedHLFieldMixin:
     """
+    @DynamicAttrs
     Mixin class for checking hyperlink related field permission.
     Note: This needs to be before HyperlinkedRelatedField in class signature because of inheritance order.
     """

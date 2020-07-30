@@ -26,7 +26,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
     def test_tyontekija_list_vakajarjestaja_taydennyskoulutus_user(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
-        vakajarjestaja_oid = '1.2.246.562.10.93957375488'
+        vakajarjestaja_oid = '1.2.246.562.10.34683023489'
         expected_henkilo_count = Tyontekija.objects.filter(vakajarjestaja__organisaatio_oid=vakajarjestaja_oid).count()
         vakajarjestaja_id = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_oid).values_list('id', flat=True).first()
         resp = client.get('/api/ui/vakajarjestajat/{}/tyontekija-list/'.format(vakajarjestaja_id))
@@ -36,9 +36,9 @@ class VardaHenkilostoViewSetTests(TestCase):
         self.assertEqual(resp_content['count'], expected_henkilo_count)
 
     def test_tyontekija_list_toimipaikka_tyontekija_user(self):
-        client = SetUpTestClient('tyontekija_toimipaikka_tallentaja').client()
-        vakajarjestaja_oid = '1.2.246.562.10.93957375488'
-        toimipaikka_oid = '1.2.246.562.10.9395737548810'
+        client = SetUpTestClient('tyontekija_toimipaikka_tallentaja_9395737548815').client()
+        vakajarjestaja_oid = '1.2.246.562.10.34683023489'
+        toimipaikka_oid = '1.2.246.562.10.9395737548815'
         expected_henkilo_count = Tyontekija.objects.filter(palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid=toimipaikka_oid).distinct().count()
         vakajarjestaja_id = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_oid).values_list('id', flat=True).first()
         resp = client.get('/api/ui/vakajarjestajat/{}/tyontekija-list/'.format(vakajarjestaja_id))
@@ -48,9 +48,10 @@ class VardaHenkilostoViewSetTests(TestCase):
         self.assertEqual(resp_content['count'], expected_henkilo_count)
 
         # Check direct permission also (tyontekija without tyoskentelypaikka)
-        user = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.9395737548810')
+        group_tyontekija_tallentaja_9395737548815 = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.9395737548815')
         tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija3')
-        assign_perm('view_tyontekija', user, tyontekija)  # assing permission to tyontekija without tyoskentelypaikka
+        # assing permission to tyontekija without tyoskentelypaikka
+        assign_perm('view_tyontekija', group_tyontekija_tallentaja_9395737548815, tyontekija)
         resp_after_extra_permission = client.get('/api/ui/vakajarjestajat/{}/tyontekija-list/'.format(vakajarjestaja_id))
         resp_content_after_extra_permission = json.loads(resp_after_extra_permission.content)
         self.assertGreater(resp_content_after_extra_permission['count'], 0)
@@ -58,9 +59,9 @@ class VardaHenkilostoViewSetTests(TestCase):
 
     def test_tyontekija_list_filters(self):
         client = SetUpTestClient('credadmin').client()
-        vakajarjestaja_oid = '1.2.246.562.10.93957375488'
+        vakajarjestaja_oid = '1.2.246.562.10.34683023489'
         vakajarjestaja_id = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_oid).values_list('id', flat=True).first()
-        toimipaikka_oid = '1.2.246.562.10.9395737548810'
+        toimipaikka_oid = '1.2.246.562.10.9395737548815'
         toimipaikka_id = Toimipaikka.objects.get(organisaatio_oid=toimipaikka_oid).id
         result_qs = Henkilo.objects.filter(tyontekijat__vakajarjestaja__organisaatio_oid=vakajarjestaja_oid).distinct()
         query_result_list = [

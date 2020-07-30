@@ -65,7 +65,6 @@ class OptionalToimipaikkaMixin(metaclass=serializers.SerializerMetaclass):
                                       parent_attribute='organisaatio_oid',
                                       prevalidator=validators.validate_organisaatio_oid,
                                       either_required=False,
-                                      check_permission='view_toimipaikka',
                                       write_only=True)
 
     def create(self, validated_data):
@@ -92,7 +91,6 @@ class TyontekijaSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedMode
                                          parent_field='vakajarjestaja',
                                          parent_attribute='organisaatio_oid',
                                          prevalidator=validators.validate_organisaatio_oid,
-                                         check_permission='view_vakajarjestaja',
                                          either_required=True)
 
     class Meta:
@@ -130,7 +128,6 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
                                          parent_field='vakajarjestaja',
                                          parent_attribute='organisaatio_oid',
                                          prevalidator=validators.validate_organisaatio_oid,
-                                         check_permission='view_vakajarjestaja',
                                          either_required=True)
 
     class Meta:
@@ -188,7 +185,6 @@ class TutkintoSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelS
                                          parent_attribute='organisaatio_oid',
                                          prevalidator=validators.validate_organisaatio_oid,
                                          either_required=True,
-                                         check_permission='view_vakajarjestaja',
                                          write_only=True)
 
     class Meta:
@@ -222,7 +218,6 @@ class PalvelussuhdeSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedM
     tyontekija_tunniste = TunnisteRelatedField(object_type=Tyontekija,
                                                parent_field='tyontekija',
                                                prevalidator=validators.validate_tunniste,
-                                               check_permission='change_tyontekija',
                                                either_required=True)
 
     class Meta:
@@ -285,14 +280,12 @@ class TyoskentelypaikkaSerializer(serializers.HyperlinkedModelSerializer):
     palvelussuhde_tunniste = TunnisteRelatedField(object_type=Palvelussuhde,
                                                   parent_field='palvelussuhde',
                                                   prevalidator=validators.validate_tunniste,
-                                                  check_permission='change_palvelussuhde',
                                                   either_required=True)
     toimipaikka = ToimipaikkaPermissionCheckedHLField(required=False, allow_null=True, view_name='toimipaikka-detail')
     toimipaikka_oid = OidRelatedField(object_type=Toimipaikka,
                                       parent_field='toimipaikka',
                                       parent_attribute='organisaatio_oid',
                                       prevalidator=validators.validate_organisaatio_oid,
-                                      check_permission='view_toimipaikka',
                                       either_required=False)
     kiertava_tyontekija_kytkin = serializers.BooleanField(default=False)
 
@@ -405,7 +398,6 @@ class PidempiPoissaoloSerializer(OptionalToimipaikkaMixin, serializers.Hyperlink
     palvelussuhde_tunniste = TunnisteRelatedField(object_type=Palvelussuhde,
                                                   parent_field='palvelussuhde',
                                                   prevalidator=validators.validate_tunniste,
-                                                  check_permission='change_palvelussuhde',
                                                   either_required=True)
     alkamis_pvm = serializers.DateField(required=True)
     paattymis_pvm = serializers.DateField(required=True)
