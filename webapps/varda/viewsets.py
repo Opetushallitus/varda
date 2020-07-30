@@ -1225,11 +1225,11 @@ class LapsiViewSet(viewsets.ModelViewSet):
 
         with transaction.atomic():
             try:
+                Huoltajuussuhde.objects.filter(lapsi__id=instance_id).delete()
                 instance.delete()
             except ProtectedError:
                 raise ValidationError({"detail": "Cannot delete lapsi. There are objects referencing it that need to be deleted first."})
 
-            Huoltajuussuhde.objects.filter(lapsi__id=instance_id).delete()
             delete_cache_keys_related_model('henkilo', instance.henkilo.id)
 
 
