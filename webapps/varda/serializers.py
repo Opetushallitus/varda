@@ -1150,10 +1150,10 @@ class PaosToimijatSerializer(serializers.HyperlinkedModelSerializer):
     paos_oikeus = serializers.SerializerMethodField('get_paos_oikeus')
 
     def get_paos_oikeus(self, instance):
-        paos_oikeus = PaosOikeus.objects.filter(
-            Q(jarjestaja_kunta_organisaatio=instance.oma_organisaatio, tuottaja_organisaatio=instance.paos_organisaatio) |
-            Q(jarjestaja_kunta_organisaatio=instance.paos_organisaatio, tuottaja_organisaatio=instance.oma_organisaatio)
-        ).select_related('tallentaja_organisaatio').first()
+        paos_oikeus = (PaosOikeus.objects.filter(jarjestaja_kunta_organisaatio=instance.paos_organisaatio,
+                                                 tuottaja_organisaatio=instance.oma_organisaatio)
+                                         .select_related('tallentaja_organisaatio')
+                                         .first())
         return NestedPaosOikeusSerializer(paos_oikeus).data
 
     class Meta:
