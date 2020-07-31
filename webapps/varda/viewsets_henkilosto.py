@@ -2,6 +2,7 @@ import logging
 
 import coreapi
 import coreschema
+from django.core.cache import cache
 from django.db import transaction
 from django.db.models import ProtectedError, Q
 from django.http import Http404
@@ -18,9 +19,9 @@ from rest_framework_guardian.filters import ObjectPermissionsFilter
 from varda import filters
 from varda.cache import cached_retrieve_response, delete_cache_keys_related_model, cached_list_response
 from varda.exceptions.conflict_error import ConflictError
-from varda.filters import PalvelussuhdeFilter, TyoskentelypaikkaFilter, PidempiPoissaoloFilter, TaydennyskoulutusFilter, \
-    TaydennyskoulutusTyontekijaFilter
-from varda.models import (TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
+from varda.filters import (PalvelussuhdeFilter, TyoskentelypaikkaFilter, PidempiPoissaoloFilter, TaydennyskoulutusFilter,
+                           TaydennyskoulutusTyontekijaFilter)
+from varda.models import (VakaJarjestaja, TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
                           PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Toimipaikka)
 from varda.permission_groups import (assign_object_permissions_to_tyontekija_groups,
                                      remove_object_level_permissions,
@@ -131,6 +132,9 @@ class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
             henkilo.remove_address_information()
             henkilo.save()
 
+    def list(self, request, *args, **kwargs):
+        return cached_list_response(self, request.user, request.get_full_path())
+
     def retrieve(self, request, *args, **kwargs):
         return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
@@ -153,6 +157,7 @@ class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
             if toimipaikka_oid:
                 self._assign_toimipaikka_permissions(toimipaikka_oid, tyontekija_obj)
             delete_cache_keys_related_model('henkilo', tyontekija_obj.henkilo.id)
+            delete_cache_keys_related_model('vakajarjestaja', tyontekija_obj.vakajarjestaja.id)
 
     def perform_update(self, serializer):
         user = self.request.user
@@ -170,6 +175,8 @@ class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
             except ProtectedError:
                 raise ValidationError({'detail': 'Cannot delete tyontekija. There are objects referencing it '
                                                  'that need to be deleted first.'})
+            delete_cache_keys_related_model('henkilo', tyontekija.henkilo.id)
+            delete_cache_keys_related_model('vakajarjestaja', tyontekija.vakajarjestaja.id)
 
 
 class TilapainenHenkilostoViewSet(ObjectByTunnisteMixin, ModelViewSet):
@@ -210,14 +217,17 @@ class TilapainenHenkilostoViewSet(ObjectByTunnisteMixin, ModelViewSet):
             tilapainenhenkilosto_obj = serializer.save(changed_by=user)
             vakajarjestaja_oid = tilapainenhenkilosto_obj.vakajarjestaja.organisaatio_oid
             assign_object_permissions_to_tilapainenhenkilosto_groups(vakajarjestaja_oid, TilapainenHenkilosto, tilapainenhenkilosto_obj)
+            cache.delete('vakajarjestaja_yhteenveto_' + str(tilapainenhenkilosto_obj.vakajarjestaja.id))
 
     def perform_update(self, serializer):
         user = self.request.user
-        serializer.save(changed_by=user)
+        tilapainenhenkilosto = serializer.save(changed_by=user)
+        cache.delete('vakajarjestaja_yhteenveto_' + str(tilapainenhenkilosto.vakajarjestaja.id))
 
     def perform_destroy(self, tilapainenhenkilosto):
         with transaction.atomic():
             delete_object_permissions_explicitly(TilapainenHenkilosto, tilapainenhenkilosto)
+            cache.delete('vakajarjestaja_yhteenveto_' + str(tilapainenhenkilosto.vakajarjestaja.id))
             tilapainenhenkilosto.delete()
 
 
@@ -295,7 +305,7 @@ class TutkintoViewSet(ModelViewSet):
         with transaction.atomic():
             delete_object_permissions_explicitly(Tutkinto, tutkinto)
             tutkinto.delete()
-        delete_cache_keys_related_model('henkilo', henkilo.id)
+            delete_cache_keys_related_model('henkilo', henkilo.id)
 
     @action(methods=['delete'], detail=False)
     def delete(self, request):
@@ -325,6 +335,7 @@ class TutkintoViewSet(ModelViewSet):
 
         tutkinto_obj = get_object_or_404(Tutkinto.objects.all(), **henkilo_filter, tutkinto_koodi=tutkinto_koodi)
         self.perform_destroy(tutkinto_obj)
+
         return Response(status=status.HTTP_200_OK)
 
 
@@ -372,12 +383,13 @@ class PalvelussuhdeViewSet(ObjectByTunnisteMixin, ModelViewSet):
             assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Palvelussuhde, palvelussuhde)
             if toimipaikka_oid:
                 assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Palvelussuhde, palvelussuhde)
+            cache.delete('vakajarjestaja_yhteenveto_' + str(palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def perform_update(self, serializer):
         user = self.request.user
         self._throw_if_not_all_tyoskentelypaikka_permissions()
         palvelussuhde = serializer.save(changed_by=user)
-        delete_cache_keys_related_model('palvelussuhde', palvelussuhde.id)
+        cache.delete('vakajarjestaja_yhteenveto_' + str(palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def perform_destroy(self, palvelussuhde):
         self._throw_if_not_all_tyoskentelypaikka_permissions()
@@ -390,6 +402,7 @@ class PalvelussuhdeViewSet(ObjectByTunnisteMixin, ModelViewSet):
                                                  'that need to be deleted first.'})
 
             delete_cache_keys_related_model('tyontekija', palvelussuhde.tyontekija.id)
+            cache.delete('vakajarjestaja_yhteenveto_' + str(palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def _throw_if_not_all_tyoskentelypaikka_permissions(self):
         """
@@ -473,12 +486,14 @@ class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
                  ]
 
             delete_cache_keys_related_model('palvelussuhde', tyoskentelypaikka.palvelussuhde.id)
+            cache.delete('vakajarjestaja_yhteenveto_' + str(tyoskentelypaikka.palvelussuhde.tyontekija.vakajarjestaja.id))
             if tyoskentelypaikka.toimipaikka:
                 delete_cache_keys_related_model('toimipaikka', tyoskentelypaikka.toimipaikka.id)
 
     def perform_update(self, serializer):
         user = self.request.user
-        serializer.save(changed_by=user)
+        tyoskentelypaikka = serializer.save(changed_by=user)
+        cache.delete('vakajarjestaja_yhteenveto_' + str(tyoskentelypaikka.palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def perform_destroy(self, tyoskentelypaikka):
         tyontekija = tyoskentelypaikka.palvelussuhde.tyontekija
@@ -502,6 +517,7 @@ class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
                                                  'that need to be deleted first.'})
 
             delete_cache_keys_related_model('palvelussuhde', tyoskentelypaikka.palvelussuhde.id)
+            cache.delete('vakajarjestaja_yhteenveto_' + str(tyoskentelypaikka.palvelussuhde.tyontekija.vakajarjestaja.id))
             if tyoskentelypaikka.toimipaikka:
                 delete_cache_keys_related_model('toimipaikka', tyoskentelypaikka.toimipaikka.id)
 
@@ -554,11 +570,14 @@ class PidempiPoissaoloViewSet(ObjectByTunnisteMixin, ModelViewSet):
              for toimipaikka_oid in tyontekija_toimipaikka_oids
              ]
             delete_cache_keys_related_model('palvelussuhde', pidempipoissaolo.palvelussuhde.id)
+            cache.delete('vakajarjestaja_yhteenveto_' + str(pidempipoissaolo.palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def perform_update(self, serializer):
         user = self.request.user
         self._throw_if_not_all_tyoskentelypaikka_permissions()
-        serializer.save(changed_by=user)
+        pidempipoissaolo = serializer.save(changed_by=user)
+        delete_cache_keys_related_model('palvelussuhde', pidempipoissaolo.palvelussuhde.id)
+        cache.delete('vakajarjestaja_yhteenveto_' + str(pidempipoissaolo.palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def perform_destroy(self, pidempipoissaolo):
         self._throw_if_not_all_tyoskentelypaikka_permissions()
@@ -570,6 +589,7 @@ class PidempiPoissaoloViewSet(ObjectByTunnisteMixin, ModelViewSet):
                 raise ValidationError({'detail': 'Cannot delete pidempipoissaolo. There are objects referencing it '
                                                  'that need to be deleted first.'})
             delete_cache_keys_related_model('palvelussuhde', pidempipoissaolo.palvelussuhde.id)
+            cache.delete('vakajarjestaja_yhteenveto_' + str(pidempipoissaolo.palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def _throw_if_not_all_tyoskentelypaikka_permissions(self):
         """
@@ -660,6 +680,8 @@ class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
                  for toimipaikka_oid in toimipaikka_oids]
                 for tyontekija in tyontekijat.all():
                     delete_cache_keys_related_model('tyontekija', tyontekija.id)
+                vakajarjestaja_obj = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid)
+                cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja_obj.id))
 
     def perform_update(self, serializer):
         user = self.request.user
@@ -677,8 +699,13 @@ class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
             updated_taydennyskoulutus = serializer.save(changed_by=user)
 
         # Delete cache keys from new tyontekijat (some may be added)
-        for tyontekija in updated_taydennyskoulutus.tyontekijat.all():
+        tyontekijat = updated_taydennyskoulutus.tyontekijat.all()
+        for tyontekija in tyontekijat:
             delete_cache_keys_related_model('tyontekija', tyontekija.id)
+
+        vakajarjestaja_oid = get_tyontekija_vakajarjestaja_oid(tyontekijat)
+        vakajarjestaja_obj = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid)
+        cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja_obj.id))
 
     def perform_destroy(self, taydennyskoulutus):
         user = self.request.user
@@ -687,8 +714,12 @@ class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
         with transaction.atomic():
             delete_object_permissions_explicitly(Taydennyskoulutus, taydennyskoulutus)
+            vakajarjestaja_oid = get_tyontekija_vakajarjestaja_oid(taydennyskoulutus.tyontekijat)
             TaydennyskoulutusTyontekija.objects.filter(taydennyskoulutus=taydennyskoulutus).delete()
             taydennyskoulutus.delete()
 
             for tyontekija_id in tyontekija_id_list:
                 delete_cache_keys_related_model('tyontekija', tyontekija_id)
+
+            vakajarjestaja_obj = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid)
+            cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja_obj.id))
