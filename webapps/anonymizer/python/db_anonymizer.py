@@ -1,5 +1,4 @@
 import base64
-import datetime
 import hashlib
 import json
 import os
@@ -7,6 +6,7 @@ import random
 import string
 import requests
 import zipfile
+import datetime
 
 from django.contrib.auth.models import User
 from django.core.management import call_command
@@ -124,10 +124,16 @@ def anonymize_henkilot():
         with open(DB_ANONYMIZER_ZIP_FILE_PATH, 'wb') as f:
             f.write(r.content)
 
-    md5sum_of_zip_file = get_md5sum(DB_ANONYMIZER_ZIP_FILE_PATH)
-    if md5sum_of_zip_file != CORRECT_MD5SUM_OF_ZIP_FILE:
-        print('Error: Downloaded file is corrupted, md5sum doesnt match.')
-        return None
+    zipfile_info = zipfile.ZipInfo.from_file(DB_ANONYMIZER_ZIP_FILE_PATH)
+    if (zipfile_info.date_time[0] == datetime.datetime.now().year and
+            zipfile_info.date_time[1] == datetime.datetime.now().month and
+            zipfile_info.date_time[2] == datetime.datetime.now().day):
+        pass
+    else:
+        md5sum_of_zip_file = get_md5sum(DB_ANONYMIZER_ZIP_FILE_PATH)
+        if md5sum_of_zip_file != CORRECT_MD5SUM_OF_ZIP_FILE:
+            print('Error: Downloaded file is corrupted, md5sum doesnt match.')
+            return None
 
     # Unzip the dummy Hetu / sukunimi files and read them
     try:

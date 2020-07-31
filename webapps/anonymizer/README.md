@@ -1,16 +1,10 @@
 ## Database anonymization
 
 You can use the following management-command to generate anonymized dataset.
-By default creating a dataset of 800 000 henkilot.
+Creates an anonymized data set from database.
 
 ```
 $ python manage.py create_anonymized_dataset
-```
-
-You can also set the number of henkilot yourself. Useful in testing.
-
-```
-python manage.py create_anonymized_dataset --number_of_henkilot 100
 ```
 
 After dataset has been created, you can perform the actual anonymization.

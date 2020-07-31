@@ -16,6 +16,14 @@ begin
 end;
 $$ language plpgsql;
 
+-- Create a function that generates random int between numbers
+Create or replace function random_between(low INT, high INT)
+    RETURNS INT AS
+$$
+BEGIN
+    RETURN floor(random() * (high - low + 1) + low);
+END;
+$$ language plpgsql STRICT;
 
 
 -- NORMAL TABLES
@@ -23,7 +31,7 @@ $$ language plpgsql;
 -- Columns: henkilo_oid, etunimet, kutsumanimi, katuosoite, postinumero, postitoimipaikka
 
 -- henkilo_oid (generate random strings)
-UPDATE varda_henkilo SET henkilo_oid = concat('1.2.246.562.24.', trunc(id + 1000000000000)::text) WHERE henkilo_oid <> '';
+UPDATE varda_henkilo SET henkilo_oid = concat('1.2.246.562.24.', trunc(id + 10000000000)::text) WHERE henkilo_oid <> '';
 
 
 -- etunimet, kutsumanimi (shuffle not-null values)
@@ -167,7 +175,7 @@ UPDATE varda_vakajarjestaja SET puhelinnumero = concat('+358', trunc(random() * 
 
 
 -- Table: varda_varhaiskasvatuspaatos
--- Columns: hakemus_pvm, alkamis_pvm, paattymis_pvm
+-- Columns: hakemus_pvm, alkamis_pvm, paattymis_pvm, tuntimaara_viikossa
 
 -- hakemus_pvm (subtract random number of days 0 - 365 from the existing date)
 UPDATE varda_varhaiskasvatuspaatos SET hakemus_pvm = date(hakemus_pvm - trunc(random() * 365) * '1 day'::interval * random()) WHERE hakemus_pvm IS NOT NULL;
@@ -181,6 +189,10 @@ UPDATE varda_varhaiskasvatuspaatos SET alkamis_pvm = date(hakemus_pvm + trunc(ra
 UPDATE varda_varhaiskasvatuspaatos SET paattymis_pvm = date(alkamis_pvm + trunc(random() * 365) * '1 day'::interval * random()) WHERE paattymis_pvm IS NOT NULL;
 
 
+-- tuntimaara_viikossa (randomize number between allowed numbers)
+UPDATE varda_varhaiskasvatuspaatos SET tuntimaara_viikossa = random_between(1, 120);
+
+
 
 -- Table: varda_varhaiskasvatussuhde
 -- Columns: alkamis_pvm, paattymis_pvm
@@ -191,6 +203,23 @@ UPDATE varda_varhaiskasvatussuhde SET alkamis_pvm = date(alkamis_pvm - trunc(ran
 
 -- paattymis_pvm (add random number of days 0 - 365 to the existing date)
 UPDATE varda_varhaiskasvatussuhde SET paattymis_pvm = date(paattymis_pvm + trunc(random() * 365) * '1 day'::interval * random()) WHERE paattymis_pvm IS NOT NULL;
+
+
+
+--Table: varda_maksutieto
+-- alkamis_pvm (subtract random number of days 0 - 365 from the existing date)
+UPDATE varda_maksutieto SET alkamis_pvm = date(alkamis_pvm - trunc(random() * 365) * '1 day'::interval * random()) WHERE alkamis_pvm IS NOT NULL;
+
+
+-- paattymis_pvm (add random number of days 0 - 365 to the existing date)
+UPDATE varda_maksutieto SET paattymis_pvm = date(paattymis_pvm + trunc(random() * 365) * '1 day'::interval * random()) WHERE paattymis_pvm IS NOT NULL;
+
+
+-- asiakasmaksu
+UPDATE varda_maksutieto SET asiakasmaksu = random_between(1, 999) WHERE asiakasmaksu != 0;
+
+-- palveluseteli_arvo
+UPDATE varda_maksutieto SET palveluseteli_arvo = random_between(1, 999) WHERE palveluseteli_arvo != 0;
 
 
 
@@ -224,6 +253,12 @@ UPDATE varda_historicalvarhaiskasvatussuhde
 SET alkamis_pvm = t.alkamis_pvm, paattymis_pvm = t.paattymis_pvm
 FROM varda_varhaiskasvatussuhde t
 WHERE varda_historicalvarhaiskasvatussuhde.id = t.id;
+
+-- Table: varda_historicalmaksutieto
+UPDATE varda_historicalmaksutieto
+SET alkamis_pvm = t.alkamis_pvm, paattymis_pvm = t.paattymis_pvm
+FROM varda_maksutieto t
+WHERE varda_historicalmaksutieto.id = t.id;
 
 
 -- MISC
