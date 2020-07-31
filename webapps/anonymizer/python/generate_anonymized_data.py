@@ -5,12 +5,14 @@ import zipfile
 import datetime
 
 from calendar import monthrange
+from django.db.models import Max
 from timeit import default_timer as timer
 from varda.models import Henkilo
 from varda.misc import encrypt_henkilotunnus, hash_string
 
 
 DB_ANONYMIZER_ZIP_FILE_PATH = 'anonymizer/python/anonymized_names.zip'
+KUNTAKOODI_FILE = 'anonymizer/python/kuntakoodit.zip'
 DB_ANONYMIZED_JSON_FILE = '/tmp/anonymized_data.json'
 DB_ANONYMIZED_ZIP_FILE_PATH = 'anonymizer/python/anonymized_data.zip'
 CHECK_KEYS = '0123456789ABCDEFHJKLMNPRSTUVWXY'
@@ -82,6 +84,52 @@ def read_lines_file(zip_ref, file):
     return lines
 
 
+def create_henkilo(henkilo, henkilotunnus_unique_hash_set, file, etunimet_miehet, etunimet_naiset, sukunimet):
+    # Gender
+    sukupuoli_koodi = henkilo['sukupuoli_koodi'] or random.randint(1, 2)
+    syntyma_pvm = henkilo['syntyma_pvm'] or datetime.date(random.randint(1990, 2019), random.randint(1, 12), random.randint(1, 28))
+
+    # Henkilotunnus
+    henkilotunnus = create_hetu_from_birthday(syntyma_pvm, sukupuoli_koodi)
+    encrypted_henkilotunnus = encrypt_henkilotunnus(henkilotunnus)
+    henkilotunnus_unique_hash = hash_string(henkilotunnus)
+
+    # counter is to prevent infinite loop if there are duplicates in the data the max amount could be adjusted
+    counter = 0
+    while henkilotunnus_unique_hash in henkilotunnus_unique_hash_set and counter <= 50:
+        henkilotunnus = create_hetu_from_birthday(syntyma_pvm, sukupuoli_koodi)
+        encrypted_henkilotunnus = encrypt_henkilotunnus(henkilotunnus)
+        henkilotunnus_unique_hash = hash_string(henkilotunnus)
+        counter += 1
+
+    # Names
+    if sukupuoli_koodi == '1':
+        etunimi = random.choice(etunimet_miehet).decode('utf-8').rstrip('\n\r')
+    else:  # sukupuoli_koodi == '2'
+        etunimi = random.choice(etunimet_naiset).decode('utf-8').rstrip('\n\r')
+
+    kutsumanimi = etunimi.split('-')[0]
+    sukunimi = random.choice(sukunimet).decode('utf-8').rstrip('\n\r')
+
+    # Get new syntyma_pvm from randomized hetu
+    syntyma_pvm = get_syntymaaika(henkilotunnus)
+
+    data = {
+        'id': henkilo['id'],
+        'henkilotunnus': encrypted_henkilotunnus,
+        'henkilotunnus_unique_hash': henkilotunnus_unique_hash,
+        'etunimet': etunimi,
+        'kutsumanimi': kutsumanimi,
+        'sukunimi': sukunimi,
+        'syntyma_pvm': syntyma_pvm,
+        'sukupuoli_koodi': sukupuoli_koodi,
+        'kotikunta_koodi': henkilo['kotikunta_koodi']
+    }
+    json.dump(data, file)
+    file.write(',\n')
+    henkilotunnus_unique_hash_set.add(henkilotunnus_unique_hash)
+
+
 def create_anonymized_data_dump():
     start = timer()
     henkilotunnus_unique_hash_set = set()
@@ -92,61 +140,35 @@ def create_anonymized_data_dump():
         etunimet_naiset = read_lines_file(zip_ref, 'etunimet_naiset.txt')
         sukunimet = read_lines_file(zip_ref, 'sukunimet.txt')
 
+    with zipfile.ZipFile(KUNTAKOODI_FILE, 'r') as kuntakoodi_ref:
+        kuntakoodit = read_lines_file(kuntakoodi_ref, 'kuntakoodit.txt')
+
     with open(DB_ANONYMIZED_JSON_FILE, 'w+') as f:
         f.write('[')
 
     with open(DB_ANONYMIZED_JSON_FILE, 'a+', encoding='utf-8') as f:
         henkilot = Henkilo.objects.all().values('syntyma_pvm', 'id', 'sukupuoli_koodi', 'kotikunta_koodi')
+        max_id = Henkilo.objects.all().aggregate(Max('id'))['id__max']
         for henkilo in henkilot:
-            # Gender
-            sukupuoli_koodi = henkilo['sukupuoli_koodi'] or random.randint(1, 2)
-            syntyma_pvm = henkilo['syntyma_pvm'] or datetime.date(random.randint(1990, 2019), random.randint(1, 12), random.randint(1, 28))
-
-            # Henkilotunnus
-            henkilotunnus = create_hetu_from_birthday(syntyma_pvm, sukupuoli_koodi)
-            encrypted_henkilotunnus = encrypt_henkilotunnus(henkilotunnus)
-            henkilotunnus_unique_hash = hash_string(henkilotunnus)
-
-            # counter is to prevent infinite loop if there are duplicates in the data the max amount could be adjusted
-            counter = 0
-            while henkilotunnus_unique_hash in henkilotunnus_unique_hash_set and counter <= 50:
-                henkilotunnus = create_hetu_from_birthday(syntyma_pvm, sukupuoli_koodi)
-                encrypted_henkilotunnus = encrypt_henkilotunnus(henkilotunnus)
-                henkilotunnus_unique_hash = hash_string(henkilotunnus)
-                counter += 1
-
-            # Names
-            if sukupuoli_koodi == '1':
-                etunimi = random.choice(etunimet_miehet).decode('utf-8').rstrip('\n\r')
-            else:  # sukupuoli_koodi == '2'
-                etunimi = random.choice(etunimet_naiset).decode('utf-8').rstrip('\n\r')
-
-            kutsumanimi = etunimi.split('-')[0]
-            sukunimi = random.choice(sukunimet).decode('utf-8').rstrip('\n\r')
-
-            # Get new syntyma_pvm from randomized hetu
-            syntyma_pvm = get_syntymaaika(henkilotunnus)
-
-            data = {
-                'id': henkilo['id'],
-                'henkilotunnus': encrypted_henkilotunnus,
-                'henkilotunnus_unique_hash': henkilotunnus_unique_hash,
-                'etunimet': etunimi,
-                'kutsumanimi': kutsumanimi,
-                'sukunimi': sukunimi,
-                'syntyma_pvm': syntyma_pvm,
-                'sukupuoli_koodi': sukupuoli_koodi,
-                'kotikunta_koodi': henkilo['kotikunta_koodi']
-            }
-            json.dump(data, f)
-            f.write(',\n')
-            henkilotunnus_unique_hash_set.add(henkilotunnus_unique_hash)
+            create_henkilo(henkilo, henkilotunnus_unique_hash_set, f, etunimet_miehet, etunimet_naiset, sukunimet)
+        counter = 1
+        while counter < 100000:  # The amount of extra person info added to the dataset -1
+            imaginary_henkilo = henkilo
+            imaginary_henkilo['sukupuoli_koodi'] = random.randint(1, 2)
+            imaginary_henkilo['syntyma_pvm'] = datetime.date(random.randint(2010, 2019), random.randint(1, 12), random.randint(1, 28))
+            imaginary_henkilo['id'] = max_id + counter
+            imaginary_henkilo['kotikunta_koodi'] = random.choice(kuntakoodit).decode('utf-8').rstrip('\n\r')
+            create_henkilo(imaginary_henkilo, henkilotunnus_unique_hash_set, f, etunimet_miehet, etunimet_naiset, sukunimet)
+            counter += 1
 
     with open(DB_ANONYMIZED_JSON_FILE, 'rb+') as f:
         """
         Remove two last chars in the file: ', '
         """
-        f.seek(-2, os.SEEK_END)
+        if os.name == 'nt':
+            f.seek(-3, os.SEEK_END)
+        else:
+            f.seek(-2, os.SEEK_END)
         f.truncate()
 
     with open(DB_ANONYMIZED_JSON_FILE, 'a') as f:

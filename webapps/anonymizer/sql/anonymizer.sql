@@ -23,7 +23,7 @@ $$
 BEGIN
     RETURN floor(random() * (high - low + 1) + low);
 END;
-$$ language plpgsql STRICT;
+$$ language plpgsql;
 
 
 -- NORMAL TABLES
@@ -270,4 +270,5 @@ UPDATE django_celery_beat_periodictask SET enabled = false;
 
 -- Clean up
 DROP FUNCTION IF EXISTS random_string;
+DROP FUNCTION IF EXISTS random_between;
 DROP TABLE IF EXISTS tmp_org;
