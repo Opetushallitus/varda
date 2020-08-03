@@ -24,15 +24,15 @@ from varda.misc_queries import get_paos_toimipaikat
 from varda.models import (Toimipaikka, VakaJarjestaja, Varhaiskasvatussuhde, PaosToiminta, PaosOikeus, Lapsi, Henkilo,
                           Tyontekija)
 from varda.pagination import ChangeablePageSizePagination
-from varda.permissions import (CustomObjectPermissions, save_audit_log,
-                               get_taydennyskoulutus_tyontekija_group_organisaatio_oids,
+from varda.permissions import (CustomObjectPermissions, get_taydennyskoulutus_tyontekija_group_organisaatio_oids,
                                get_toimipaikat_group_has_access, get_organisaatio_oids_from_groups,
-                               HenkilostohakuPermissions, LapsihakuPermissions)
+                               HenkilostohakuPermissions, LapsihakuPermissions, auditlog, auditlogclass)
 from varda.serializers import PaosToimipaikkaSerializer, PaosVakaJarjestajaSerializer
 from varda.serializers_ui import (VakaJarjestajaUiSerializer, ToimipaikkaUiSerializer, ToimipaikanLapsetUISerializer,
                                   TyontekijaHenkiloUiSerializer, LapsihakuHenkiloUiSerializer)
 
 
+@auditlogclass
 class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin):
     """
     list:
@@ -53,6 +53,7 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixi
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+    @auditlog
     @action(methods=['get'], detail=True, url_path='tyontekija-list', url_name='tyontekija_list',
             serializer_class=TyontekijaHenkiloUiSerializer,
             queryset=Henkilo.objects.all(),
@@ -77,6 +78,7 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixi
             self.queryset = self.queryset.filter(filter_condition)
         return super().list(request, pk=pk)
 
+    @auditlog
     @action(methods=['get'], detail=True, url_path='lapsi-list', url_name='lapsi_list',
             serializer_class=LapsihakuHenkiloUiSerializer,
             queryset=Henkilo.objects.all(),
@@ -124,6 +126,7 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixi
         return context
 
 
+@auditlogclass
 class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
     """
     list:
@@ -162,6 +165,7 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
         else:
             raise Http404("Not found.")
 
+    @auditlog
     def list(self, request, *args, **kwargs):
         if not kwargs['vakajarjestaja_pk'].isdigit():
             raise Http404("Not found.")
@@ -176,11 +180,10 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
                               .values('id', 'nimi', 'organisaatio_oid', 'hallinnointijarjestelma', 'vakajarjestaja__id', 'vakajarjestaja__nimi')
                               .order_by('nimi'))
 
-        save_audit_log(request.user, request.get_full_path())
-
         serializer = self.get_serializer(qs_all_toimipaikat, many=True)
         return Response(serializer.data)
 
+    @auditlog
     @action(methods=['get'], detail=True, url_path='paos-jarjestajat', url_name='paos_jarjestajat')
     def paos_jarjestajat(self, request, vakajarjestaja_pk=None, pk=None):
         """
@@ -204,6 +207,7 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
         return self.get_paginated_response(serializer.data)
 
 
+@auditlogclass
 class NestedAllToimipaikkaViewSet(GenericViewSet, ListModelMixin):
     """
     Rajapinta varda pääkäyttäjille paos-toimipaikkojen hakuun (jm02 ja jm03).
@@ -229,6 +233,7 @@ class NestedAllToimipaikkaViewSet(GenericViewSet, ListModelMixin):
                                           jarjestamismuoto_koodi__overlap=['jm02', 'jm03']).order_by('id')
 
 
+@auditlogclass
 class AllVakajarjestajaViewSet(GenericViewSet, ListModelMixin):
     """
     Rajapinta yksityisten ja kunnallisen toimijan tarvitsemien varhaiskasvatustoimijoiden hakuun.
@@ -250,6 +255,7 @@ class AllVakajarjestajaViewSet(GenericViewSet, ListModelMixin):
         return queryset.order_by('id')
 
 
+@auditlogclass
 class NestedToimipaikanLapsetViewSet(GenericViewSet, ListModelMixin):
     """
     list:
@@ -361,6 +367,7 @@ class NestedToimipaikanLapsetViewSet(GenericViewSet, ListModelMixin):
                           'varhaiskasvatuspaatos__lapsi__id'))
 
     @transaction.atomic
+    @auditlog
     def list(self, request, *args, **kwargs):
         if not kwargs['toimipaikka_pk'].isdigit():
             raise Http404('Not found.')
@@ -384,7 +391,6 @@ class NestedToimipaikanLapsetViewSet(GenericViewSet, ListModelMixin):
                 list_of_all_toimipaikka_cache_keys.append(toimipaikka_cache_key)
             cache.set(key_for_list_of_all_toimipaikka_cache_keys, list_of_all_toimipaikka_cache_keys, 8 * 60 * 60)
 
-            save_audit_log(request.user, request.get_full_path())
             queryset = self.get_vakapaatokset_in_toimipaikka_queryset()
             cache.set(toimipaikka_cache_key, queryset, 8 * 60 * 60)
 
@@ -398,6 +404,7 @@ class NestedToimipaikanLapsetViewSet(GenericViewSet, ListModelMixin):
         return Response(serializer.data)
 
 
+@auditlogclass
 class LocalisationViewSet(GenericViewSet, ListModelMixin):
     """
     list:

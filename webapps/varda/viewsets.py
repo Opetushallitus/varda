@@ -46,9 +46,10 @@ from varda.permission_groups import (assign_object_level_permissions, create_per
 from varda.permissions import (throw_if_not_tallentaja_permissions,
                                check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement,
                                check_if_user_has_paakayttaja_permissions,
-                               CustomObjectPermissions, save_audit_log,
+                               CustomObjectPermissions,
                                user_has_huoltajatieto_tallennus_permissions_to_correct_organization,
-                               grant_or_deny_access_to_paos_toimipaikka, user_has_tallentaja_permission_in_organization)
+                               grant_or_deny_access_to_paos_toimipaikka, user_has_tallentaja_permission_in_organization,
+                               auditlogclass, save_audit_log)
 from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer,
                                UpdateHenkiloWithOidSerializer, UpdateOphStaffSerializer, ClearCacheSerializer,
                                ActiveUserSerializer, AuthTokenSerializer, VakaJarjestajaSerializer,
@@ -98,6 +99,7 @@ ADMIN-specific viewsets below
 """
 
 
+@auditlogclass
 class UserViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows users to be viewed or edited.
@@ -107,6 +109,7 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUser, )
 
 
+@auditlogclass
 class GroupViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows groups to be viewed or edited.
@@ -116,6 +119,7 @@ class GroupViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUser, )
 
 
+@auditlogclass
 class UpdateHenkiloWithOid(GenericViewSet, CreateModelMixin):
     """
     create:
@@ -141,6 +145,7 @@ class UpdateHenkiloWithOid(GenericViewSet, CreateModelMixin):
         return {"result": "Henkilo-data fetched."}
 
 
+@auditlogclass
 class UpdateOphStaff(GenericViewSet, CreateModelMixin):
     """
     create:
@@ -166,6 +171,7 @@ class UpdateOphStaff(GenericViewSet, CreateModelMixin):
         return {"result": "Update-task started."}
 
 
+@auditlogclass
 class ClearCacheViewSet(GenericViewSet, CreateModelMixin):
     """
     create:
@@ -190,6 +196,7 @@ class ClearCacheViewSet(GenericViewSet, CreateModelMixin):
         return {"result": "Cache was cleared successfully."}
 
 
+@auditlogclass
 class HaeYksiloimattomatHenkilotViewSet(viewsets.ModelViewSet):
     """
     list:
@@ -218,6 +225,7 @@ Huoltaja-info currently available only for ADMIN-user.
 """
 
 
+@auditlogclass
 class HuoltajaViewSet(viewsets.ModelViewSet):
     """
     list:
@@ -236,12 +244,12 @@ class HuoltajaViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser:
-            save_audit_log(user, self.request.get_full_path())
             return Huoltaja.objects.all().order_by('id')
         else:
             return Huoltaja.objects.none()
 
 
+@auditlogclass
 class NestedHuoltajaViewSet(GenericViewSet, ListModelMixin):
     """
     list:
@@ -280,6 +288,7 @@ class NestedHuoltajaViewSet(GenericViewSet, ListModelMixin):
         return Response(serializer.data)
 
 
+@auditlogclass
 class HuoltajuussuhdeViewSet(viewsets.ModelViewSet):
     """
     list:
@@ -298,12 +307,12 @@ class HuoltajuussuhdeViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser:
-            save_audit_log(user, self.request.get_full_path())
             return Huoltajuussuhde.objects.all().order_by('id')
         else:
             return Huoltajuussuhde.objects.none()
 
 
+@auditlogclass
 class NestedLapsiViewSet(GenericViewSet, ListModelMixin):
     """
     list:
@@ -363,6 +372,7 @@ User-specific viewsets below
 """
 
 
+@auditlogclass
 class ActiveUserViewSet(GenericViewSet, ListModelMixin):
     """
     list:
@@ -379,6 +389,7 @@ class ActiveUserViewSet(GenericViewSet, ListModelMixin):
         return Response(serializer.data)
 
 
+@auditlogclass
 class ApikeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin):
     """
     list:
@@ -414,6 +425,7 @@ class ApikeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin):
         return {"token": token[0].key}
 
 
+@auditlogclass
 class ExternalPermissionsViewSet(GenericViewSet, CreateModelMixin):
     """
     create:
@@ -492,6 +504,7 @@ When a new instance is created (POST-request), we give object-level permissions 
 """
 
 
+@auditlogclass
 class VakaJarjestajaViewSet(viewsets.ModelViewSet):
     """
     list:
@@ -543,6 +556,7 @@ class VakaJarjestajaViewSet(viewsets.ModelViewSet):
             raise ValidationError({"detail": "Cannot delete vakajarjestaja. There are objects referencing it that need to be deleted first."})
 
 
+@auditlogclass
 class ToimipaikkaViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, PutModelMixin, ListModelMixin):
     """
     list:
@@ -651,6 +665,7 @@ class ToimipaikkaViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, P
         cache.delete('vakajarjestaja_yhteenveto_' + str(saved_object.vakajarjestaja.id))
 
 
+@auditlogclass
 class ToiminnallinenPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, PutModelMixin, ListModelMixin, DestroyModelMixin):
     """
     list:
@@ -750,6 +765,7 @@ class ToiminnallinenPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveMo
         instance.delete()
 
 
+@auditlogclass
 class KieliPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, PutModelMixin, ListModelMixin, DestroyModelMixin):
     """
     list:
@@ -907,6 +923,7 @@ class HaeHenkiloViewSet(GenericViewSet, CreateModelMixin):
                     raise NotFound(detail="Henkilo was not found.", code=404)
 
 
+@auditlogclass
 class HenkiloViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
     """
     retrieve:
@@ -1043,6 +1060,7 @@ class HenkiloViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
                 raise ValidationError({"henkilo_oid": [error_msg, ]})
 
 
+@auditlogclass
 class LapsiViewSet(viewsets.ModelViewSet):
     """
     list:
@@ -1233,6 +1251,7 @@ class LapsiViewSet(viewsets.ModelViewSet):
             delete_cache_keys_related_model('henkilo', instance.henkilo.id)
 
 
+@auditlogclass
 class VarhaiskasvatuspaatosViewSet(viewsets.ModelViewSet):
     """
     list:
@@ -1403,6 +1422,7 @@ class VarhaiskasvatuspaatosViewSet(viewsets.ModelViewSet):
             raise ValidationError(error_text)
 
 
+@auditlogclass
 class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
     """
     list:
@@ -1616,6 +1636,7 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
         instance.delete()
 
 
+@auditlogclass
 class MaksutietoViewSet(viewsets.ModelViewSet):
     """
     list:
@@ -1660,7 +1681,6 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         return cached_list_response(self, request.user, request.get_full_path())
 
     def retrieve(self, request, *args, **kwargs):
-        save_audit_log(request.user, request.path)
         return cached_retrieve_response(self, request.user, request.path)
 
     def validate_user_data(self, data):
@@ -1966,6 +1986,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@auditlogclass
 class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, CreateModelMixin, DestroyModelMixin):
     """
     list:
@@ -2160,6 +2181,7 @@ class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cr
                 paos_oikeus_object.save()  # we cannot use update since we need to catch the pre_save signal
 
 
+@auditlogclass
 class PaosOikeusViewSet(GenericViewSet, UpdateModelMixin, ListModelMixin, RetrieveModelMixin):
     """
     list:
@@ -2211,7 +2233,6 @@ class PaosOikeusViewSet(GenericViewSet, UpdateModelMixin, ListModelMixin, Retrie
 
         with transaction.atomic():
             serializer.save(changed_by=user)
-            save_audit_log(user, self.request.get_full_path())
 
 
 """
@@ -2219,6 +2240,7 @@ Nested viewsets, e.g. /api/v1/vakajarjestajat/33/toimipaikat/
 """
 
 
+@auditlogclass
 class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
     """
     list:
@@ -2247,7 +2269,6 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
         vakajarjestaja_obj = self.get_vakajarjestaja(vakajarjestaja_pk=kwargs['vakajarjestaja_pk'])
         data = cache.get('vakajarjestaja_yhteenveto_' + kwargs['vakajarjestaja_pk'])
         if data is None:
-            save_audit_log(request.user, request.get_full_path())
             data = {
                 "vakajarjestaja_nimi": vakajarjestaja_obj.nimi,
                 "lapset_lkm": self.get_lapset_lkm(vakajarjestaja_obj.id),
@@ -2439,6 +2460,7 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
                 )
 
 
+@auditlogclass
 class NestedVarhaiskasvatussuhdeViewSet(GenericViewSet, ListModelMixin):
     """
     list:
@@ -2469,6 +2491,7 @@ class NestedVarhaiskasvatussuhdeViewSet(GenericViewSet, ListModelMixin):
         return cached_list_response(self, request.user, request.get_full_path())
 
 
+@auditlogclass
 class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
     """
     list:
@@ -2505,6 +2528,7 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
         return cached_list_response(self, request.user, request.get_full_path(), order_by='nimi')
 
 
+@auditlogclass
 class NestedToiminnallinenPainotusViewSet(GenericViewSet, ListModelMixin):
     """
     list:
@@ -2535,6 +2559,7 @@ class NestedToiminnallinenPainotusViewSet(GenericViewSet, ListModelMixin):
         return cached_list_response(self, request.user, request.get_full_path())
 
 
+@auditlogclass
 class NestedKieliPainotusViewSet(GenericViewSet, ListModelMixin):
     """
     list:
@@ -2565,6 +2590,7 @@ class NestedKieliPainotusViewSet(GenericViewSet, ListModelMixin):
         return cached_list_response(self, request.user, request.get_full_path())
 
 
+@auditlogclass
 class NestedVarhaiskasvatussuhdeToimipaikkaViewSet(GenericViewSet, ListModelMixin):
     """
     list:
@@ -2595,6 +2621,7 @@ class NestedVarhaiskasvatussuhdeToimipaikkaViewSet(GenericViewSet, ListModelMixi
         return cached_list_response(self, request.user, request.get_full_path())
 
 
+@auditlogclass
 class NestedVarhaiskasvatuspaatosViewSet(GenericViewSet, ListModelMixin):
     """
     list:
@@ -2625,6 +2652,7 @@ class NestedVarhaiskasvatuspaatosViewSet(GenericViewSet, ListModelMixin):
         return cached_list_response(self, request.user, request.get_full_path())
 
 
+@auditlogclass
 class NestedLapsiKoosteViewSet(GenericViewSet):
     """
     list:
@@ -2652,7 +2680,6 @@ class NestedLapsiKoosteViewSet(GenericViewSet):
         user = self.request.user
 
         lapsi = self.get_lapsi(request, lapsi_pk=kwargs['lapsi_pk'])
-        save_audit_log(request.user, request.get_full_path())
         data = {
             "henkilo": self.get_henkilo(lapsi),
             "varhaiskasvatuspaatokset": self.get_vakapaatokset(lapsi.id, user),
@@ -2719,6 +2746,7 @@ class NestedLapsiKoosteViewSet(GenericViewSet):
         return maksutiedot
 
 
+@auditlogclass
 class NestedLapsenVarhaiskasvatussuhdeViewSet(GenericViewSet, ListModelMixin):
     """
     list:
@@ -2750,6 +2778,7 @@ class NestedLapsenVarhaiskasvatussuhdeViewSet(GenericViewSet, ListModelMixin):
         return cached_list_response(self, request.user, request.get_full_path())
 
 
+@auditlogclass
 class NestedLapsiMaksutietoViewSet(GenericViewSet, ListModelMixin):
     """
     list:
@@ -2777,8 +2806,6 @@ class NestedLapsiMaksutietoViewSet(GenericViewSet, ListModelMixin):
         self.get_lapsi(request, lapsi_pk=kwargs['lapsi_pk'])
         queryset = self.filter_queryset(Maksutieto.objects.filter(huoltajuussuhteet__lapsi=kwargs['lapsi_pk']).distinct().order_by('id'))
 
-        save_audit_log(request.user, request.get_full_path())
-
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -2788,6 +2815,7 @@ class NestedLapsiMaksutietoViewSet(GenericViewSet, ListModelMixin):
         return Response(serializer.data)
 
 
+@auditlogclass
 class NestedVakajarjestajaPaosToimijatViewSet(GenericViewSet, ListModelMixin):
     """
     list:
@@ -2828,6 +2856,7 @@ class NestedVakajarjestajaPaosToimijatViewSet(GenericViewSet, ListModelMixin):
         return Response(serializer.data)
 
 
+@auditlogclass
 class NestedVakajarjestajaPaosToimipaikatViewSet(GenericViewSet, ListModelMixin):
     """
     list:
@@ -2891,6 +2920,7 @@ class NestedVakajarjestajaPaosToimipaikatViewSet(GenericViewSet, ListModelMixin)
         return Response(serializer.data)
 
 
+@auditlogclass
 class HenkilohakuLapset(GenericViewSet, ListModelMixin):
     """
     Henkilöhaku rajapinta

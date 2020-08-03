@@ -1,5 +1,6 @@
 import logging
 from collections import Iterable
+from functools import wraps
 
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
@@ -8,7 +9,7 @@ from django.db.models import IntegerField, Q, QuerySet
 from django.db.models.functions import Cast
 from guardian.models import UserObjectPermission, GroupObjectPermission
 from guardian.shortcuts import assign_perm, remove_perm
-from rest_framework import permissions
+from rest_framework import permissions, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from varda.misc import path_parse
 from varda.models import (VakaJarjestaja, Toimipaikka, Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
@@ -162,6 +163,43 @@ def check_if_user_has_paakayttaja_permissions(vakajarjestaja_organisaatio_oid, u
 def save_audit_log(user, url):
     path = path_parse(url)
     Z5_AuditLog.objects.create(user=user, successful_get_request_path=path[:100])  # path max-length is 100 characters
+
+
+def auditlog(function):
+    """
+    Decorator that audit logs successful responses. Used with GenericViewSet methods
+    :param function: Function to be executed
+    :return: response from provided function
+    """
+    @wraps(function)  # @action decorator wants function name not to change
+    def argument_wrapper(*args, **kwargs):
+        generic_view_set_obj = args[0]
+        response = function(*args, **kwargs)
+        status_code = response.status_code
+        if status.is_success(status_code):
+            request = generic_view_set_obj.request
+            user = request.user
+            path = request.get_full_path()
+            save_audit_log(user, path)
+        return response
+    return argument_wrapper
+
+
+def auditlogclass(cls):
+    """
+    Class level decorator that adds auditlog decorator to all supported classes that exist in provided class. If action
+    is not in supported methods (see supported_methods list) @auditlog decorator needs to be used explicitly for that
+    action.
+    :param cls: GenericViewSet subclass
+    :return: Provided class with decorated methods
+    """
+    supported_methods = ['list', 'create', 'retrieve', 'update', 'destroy']
+    existing_methods = [method_name for method_name in supported_methods if getattr(cls, method_name, None)]
+
+    for method_name in existing_methods:
+        original_method = getattr(cls, method_name)
+        setattr(cls, method_name, auditlog(original_method))
+    return cls
 
 
 def user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, vakajarjestaja_organisaatio_oid, toimipaikka_qs=None):

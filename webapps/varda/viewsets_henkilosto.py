@@ -19,7 +19,8 @@ from rest_framework_guardian.filters import ObjectPermissionsFilter
 from varda import filters
 from varda.cache import cached_retrieve_response, delete_cache_keys_related_model, cached_list_response
 from varda.exceptions.conflict_error import ConflictError
-from varda.filters import (PalvelussuhdeFilter, TyoskentelypaikkaFilter, PidempiPoissaoloFilter, TaydennyskoulutusFilter,
+from varda.filters import (PalvelussuhdeFilter, TyoskentelypaikkaFilter, PidempiPoissaoloFilter,
+                           TaydennyskoulutusFilter,
                            TaydennyskoulutusTyontekijaFilter)
 from varda.models import (VakaJarjestaja, TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
                           PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Toimipaikka)
@@ -29,7 +30,7 @@ from varda.permission_groups import (assign_object_permissions_to_tyontekija_gro
                                      assign_object_permissions_to_taydennyskoulutus_groups)
 from varda.permissions import (CustomObjectPermissions, delete_object_permissions_explicitly, is_user_permission,
                                is_correct_taydennyskoulutus_tyontekija_permission, get_tyontekija_vakajarjestaja_oid,
-                               filter_authorized_taydennyskoulutus_tyontekijat)
+                               filter_authorized_taydennyskoulutus_tyontekijat, auditlog, auditlogclass)
 from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, PalvelussuhdeSerializer,
                                           PidempiPoissaoloSerializer,
                                           TilapainenHenkilostoSerializer, TutkintoSerializer, TyontekijaSerializer,
@@ -85,6 +86,7 @@ class ObjectByTunnisteMixin:
         return super().get_object()
 
 
+@auditlogclass
 class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
@@ -179,6 +181,7 @@ class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
             delete_cache_keys_related_model('vakajarjestaja', tyontekija.vakajarjestaja.id)
 
 
+@auditlogclass
 class TilapainenHenkilostoViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
@@ -231,6 +234,7 @@ class TilapainenHenkilostoViewSet(ObjectByTunnisteMixin, ModelViewSet):
             tilapainenhenkilosto.delete()
 
 
+@auditlogclass
 class TutkintoViewSet(ModelViewSet):
     """
     list:
@@ -268,6 +272,7 @@ class TutkintoViewSet(ModelViewSet):
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
 
+    @auditlog
     @action(methods=['get'], detail=False, url_path='tutkinto-list-all', url_name='tutkinto_list_all')
     def tutkinto_list_all(self, request, *args, **kwargs):
         """
@@ -307,6 +312,7 @@ class TutkintoViewSet(ModelViewSet):
             tutkinto.delete()
             delete_cache_keys_related_model('henkilo', henkilo.id)
 
+    @auditlog
     @action(methods=['delete'], detail=False)
     def delete(self, request):
         """
@@ -339,6 +345,7 @@ class TutkintoViewSet(ModelViewSet):
         return Response(status=status.HTTP_200_OK)
 
 
+@auditlogclass
 class PalvelussuhdeViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
@@ -416,6 +423,7 @@ class PalvelussuhdeViewSet(ObjectByTunnisteMixin, ModelViewSet):
             raise PermissionDenied('Modify actions requires permissions to all tyoskentelypaikkas.')
 
 
+@auditlogclass
 class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
@@ -522,6 +530,7 @@ class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
                 delete_cache_keys_related_model('toimipaikka', tyoskentelypaikka.toimipaikka.id)
 
 
+@auditlogclass
 class PidempiPoissaoloViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
@@ -603,6 +612,7 @@ class PidempiPoissaoloViewSet(ObjectByTunnisteMixin, ModelViewSet):
             raise PermissionDenied('Modify actions requires permissions to all tyoskentelypaikkas.')
 
 
+@auditlogclass
 class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
@@ -647,6 +657,7 @@ class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
 
+    @auditlog
     @action(methods=['get'], detail=False, url_path='tyontekija-list', url_name='tyontekija_list')
     def tyontekija_list(self, request, *args, **kwargs):
         """

@@ -10,7 +10,7 @@ from rest_framework.viewsets import GenericViewSet
 from varda.enums.ytj import YtjYritysmuoto
 from varda.models import (Henkilo, KieliPainotus, Lapsi, Maksutieto, PaosOikeus, ToiminnallinenPainotus, Toimipaikka,
                           VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde)
-from varda.permissions import CustomReportingViewAccess
+from varda.permissions import CustomReportingViewAccess, auditlogclass
 from varda.serializers_reporting import KelaRaporttiSerializer, TiedonsiirtotilastoSerializer
 
 """
@@ -18,6 +18,7 @@ Query-results for reports
 """
 
 
+@auditlogclass
 class KelaRaporttiViewSet(GenericViewSet, ListModelMixin):
     """
     list:
@@ -73,6 +74,7 @@ class KelaRaporttiViewSet(GenericViewSet, ListModelMixin):
         return Response(serializer.data)
 
 
+@auditlogclass
 class TiedonsiirtotilastoViewSet(GenericViewSet, ListModelMixin):
     """
     list:
@@ -188,6 +190,7 @@ class TiedonsiirtotilastoViewSet(GenericViewSet, ListModelMixin):
 
 
 """
+@auditlogclass
 class LapsetRyhmittainViewSet(GenericViewSet, ListModelMixin):
 
     list:

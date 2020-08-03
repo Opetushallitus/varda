@@ -12,7 +12,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from varda.misc import get_object_id_from_path, intersection, path_parse
 from varda.pagination import CustomPagination, get_requested_page_and_query_params
-from varda.permissions import get_object_ids_user_has_view_permissions, save_audit_log
+from varda.permissions import get_object_ids_user_has_view_permissions
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -221,7 +221,6 @@ def get_cached_page_for_non_superuser(original_list_viewset, user, request_full_
     if queryset_count and requested_page > total_pages:
         raise NotFound(detail='Invalid page.')
 
-    save_audit_log(user, request_full_path)
     return original_list_viewset.paginator.paginate_queryset(queryset,
                                                              original_list_viewset.request,
                                                              view=original_list_viewset,
@@ -277,7 +276,6 @@ def cached_retrieve_response(original_view, user, request_path, object_id=None):
     app_view_permission = 'varda.' + view_permission.codename
     if not user.has_perm(app_view_permission, obj):
         raise NotFound
-    save_audit_log(user, request_path)
 
     serializer = original_view.get_serializer(obj)
     return Response(serializer.data)

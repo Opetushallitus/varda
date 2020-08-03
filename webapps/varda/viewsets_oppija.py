@@ -9,11 +9,12 @@ from django.http import Http404
 from varda.cas import varda_permissions
 from varda.models import Varhaiskasvatuspaatos, Henkilo, Lapsi
 from varda.serializers_oppija import HuoltajanLapsiSerializer
-from varda.permissions import save_audit_log
+from varda.permissions import auditlogclass
 
 logger = logging.getLogger(__name__)
 
 
+@auditlogclass
 class HuoltajanLapsiViewSet(GenericViewSet, mixins.RetrieveModelMixin):
     """
     Returns data for Huoltaja
@@ -28,9 +29,6 @@ class HuoltajanLapsiViewSet(GenericViewSet, mixins.RetrieveModelMixin):
 
         data = self.get_queryset(henkilo_oid=henkilo_oid)
         serializer = self.get_serializer(instance=data)
-
-        if data is not None:
-            save_audit_log(request.user, request.path)
 
         return Response(serializer.data)
 
