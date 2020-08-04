@@ -2793,15 +2793,15 @@ class NestedLapsiMaksutietoViewSet(GenericViewSet, ListModelMixin):
     def get_lapsi(self, request, lapsi_pk=None):
         lapsi = get_object_or_404(Lapsi.objects.all(), pk=lapsi_pk)
         user = request.user
-        if user.has_perm("view_lapsi", lapsi):
+        if user.has_perm('view_lapsi', lapsi):
             return lapsi
         else:
-            raise Http404("Not found.")
+            raise Http404('Not found.')
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
         if not kwargs['lapsi_pk'].isdigit():
-            raise Http404("Not found.")
+            raise Http404('Not found.')
 
         self.get_lapsi(request, lapsi_pk=kwargs['lapsi_pk'])
         queryset = self.filter_queryset(Maksutieto.objects.filter(huoltajuussuhteet__lapsi=kwargs['lapsi_pk']).distinct().order_by('id'))
