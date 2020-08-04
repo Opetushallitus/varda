@@ -294,6 +294,8 @@ class TaydennyskoulutusFilter(djangofilters.FilterSet):
 
 class TaydennyskoulutusTyontekijaFilter(djangofilters.FilterSet):
     vakajarjestaja_oid = djangofilters.CharFilter(field_name='tyontekija__vakajarjestaja__organisaatio_oid', lookup_expr='exact', distinct=True)
+    tyontekija_henkilo_oid = djangofilters.CharFilter(field_name='tyontekija__henkilo__henkilo_oid', lookup_expr='exact')
+    toimipaikka_oid = djangofilters.CharFilter(field_name='tyontekija__palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid', lookup_expr='exact', distinct=True)
 
     class Meta:
         model: TaydennyskoulutusTyontekija
