@@ -1722,7 +1722,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         """
         if vakapaatos.jarjestamismuoto_koodi.lower() in ['jm04', 'jm05']:
             validated_data['yksityinen_jarjestaja'] = True
-            validated_data['palveluseteli_arvo'] = 0.00
+            validated_data['palveluseteli_arvo'] = None
             validated_data['perheen_koko'] = None
 
     def validate_maksun_peruste(self, validated_data):

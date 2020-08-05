@@ -2163,7 +2163,7 @@ class VardaViewsTests(TestCase):
             ],
             'lapsi': 'http://testserver/api/v1/lapset/1/',
             'maksun_peruste_koodi': 'mp02',
-            'palveluseteli_arvo': 0.0,
+            'palveluseteli_arvo': None,
             'asiakasmaksu': 0.0,
             'perheen_koko': None,
             'alkamis_pvm': '2018-02-23',
@@ -2195,7 +2195,7 @@ class VardaViewsTests(TestCase):
         assert_status_code(resp, 201)
 
         resp_result = json.loads(resp.content)
-        self.assertEqual(resp_result['palveluseteli_arvo'], 0.00)
+        self.assertEqual(resp_result['palveluseteli_arvo'], None)
         self.assertEqual(resp_result['perheen_koko'], None)
 
         maksutieto_obj = Maksutieto.objects.get(id=resp_result['id'])
