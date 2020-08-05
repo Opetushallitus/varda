@@ -42,6 +42,10 @@ class KieliPainotusAdmin(AdminWithGuardianAndHistory):
     raw_id_fields = ('toimipaikka', )
 
 
+class BatchErrorAdmin(AdminWithGuardianAndHistory):
+    raw_id_fields = ('henkilo', )
+
+
 class PaosToimintaAdmin(AdminWithGuardianAndHistory):
     raw_id_fields = ('oma_organisaatio', 'paos_organisaatio', 'paos_toimipaikka', )
 
@@ -94,7 +98,7 @@ admin.site.register(Varhaiskasvatuspaatos, VarhaiskasvatuspaatosAdmin)
 admin.site.register(Varhaiskasvatussuhde, VarhaiskasvatussuhdeAdmin)
 admin.site.register(Maksutieto, AdminWithGuardianAndHistory)
 admin.site.register(Aikaleima, AdminWithGuardianAndHistory)
-admin.site.register(BatchError, AdminWithGuardianAndHistory)
+admin.site.register(BatchError, BatchErrorAdmin)
 admin.site.register(PaosToiminta, PaosToimintaAdmin)
 admin.site.register(PaosOikeus, AdminWithGuardianAndHistory)
 admin.site.register(Tyontekija, TyontekijaAdmin)
