@@ -141,12 +141,19 @@ class TyoskentelypaikatUiSerializer(serializers.HyperlinkedModelSerializer):
         list_serializer_class = PermissionCheckedTyoskentelypaikkaUiListSerializer
 
 
+class TyontekijatUiListSerializer(serializers.ListSerializer):
+    def to_representation(self, tyontekijat):
+        vakajarjestaja_pk = self.context['view'].kwargs['pk']
+        return super(TyontekijatUiListSerializer, self).to_representation(tyontekijat.filter(vakajarjestaja=vakajarjestaja_pk))
+
+
 class TyontekijatUiSerializer(serializers.HyperlinkedModelSerializer):
     tyoskentelypaikat = serializers.SerializerMethodField()
 
     class Meta:
         model = Tyontekija
         fields = ('id', 'url', 'tyoskentelypaikat')
+        list_serializer_class = TyontekijatUiListSerializer
 
     def get_tyoskentelypaikat(self, tyontekija):
         tyoskentelypaikat = Tyoskentelypaikka.objects.filter(palvelussuhde__in=tyontekija.palvelussuhteet.all())
