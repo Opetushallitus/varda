@@ -26,6 +26,34 @@ class VardaHenkilostoViewSetTests(TestCase):
         expected_count = Tyontekija.objects.filter(vakajarjestaja__organisaatio_oid='1.2.246.562.10.34683023489').count()
         self._assert_create_and_list(client_katselija, client_tallentaja, tyontekija, '/api/henkilosto/v1/tyontekijat/', expected_count + 1)
 
+    def test_api_tyontekija_filter(self):
+        client = SetUpTestClient('tyontekija_tallentaja').client()
+        vakajarjestaja_oid = '1.2.246.562.10.34683023489'
+        tyontekija_oid = '1.2.246.562.24.2431884920044'
+        tyontekija_obj = Tyontekija.objects.filter(henkilo__henkilo_oid=tyontekija_oid).first()
+        tyontekija_henkilo_id = tyontekija_obj.henkilo.id
+        vakajarjestaja_obj = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid)
+        vakajarjestaja_id = vakajarjestaja_obj.id
+        expected_count = Tyontekija.objects.filter(vakajarjestaja__organisaatio_oid=vakajarjestaja_oid).count()
+
+        resp = client.get(f'/api/henkilosto/v1/tyontekijat/?vakajarjestaja_oid={vakajarjestaja_oid}')
+        assert_status_code(resp, status.HTTP_200_OK)
+        self.assertEqual(json.loads(resp.content)['count'], expected_count)
+
+        resp = client.get(f'/api/henkilosto/v1/tyontekijat/?vakajarjestaja_id={vakajarjestaja_id}')
+        assert_status_code(resp, status.HTTP_200_OK)
+        self.assertEqual(json.loads(resp.content)['count'], expected_count)
+
+        # even if there are multiple Tyontekija this should only return one based on the permissions for the user
+        tyontekija_henkilo_count = Tyontekija.objects.filter(henkilo__henkilo_oid=tyontekija_oid, vakajarjestaja__organisaatio_oid=vakajarjestaja_oid).count()
+        resp = client.get(f'/api/henkilosto/v1/tyontekijat/?henkilo_oid={tyontekija_oid}')
+        assert_status_code(resp, status.HTTP_200_OK)
+        self.assertEqual(json.loads(resp.content)['count'], tyontekija_henkilo_count)
+
+        resp = client.get(f'/api/henkilosto/v1/tyontekijat/?henkilo_id={tyontekija_henkilo_id}')
+        assert_status_code(resp, status.HTTP_200_OK)
+        self.assertEqual(json.loads(resp.content)['count'], tyontekija_henkilo_count)
+
     def test_tyontekija_add_incorrect_vakajarjestaja(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
 
@@ -2381,8 +2409,8 @@ class VardaHenkilostoViewSetTests(TestCase):
                                            .distinct()
                                            .count()
                                            )
-        correct_jarjestaja_tyontekija_count = (TaydennyskoulutusTyontekija.objects
-                                               .filter(tyontekija__vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
+        correct_jarjestaja_tyontekija_count = (Tyontekija.objects
+                                               .filter(vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
                                                .count()
                                                )
         taydennyskoulutus_list_resp = client.get('/api/henkilosto/v1/taydennyskoulutukset/')
@@ -2391,29 +2419,26 @@ class VardaHenkilostoViewSetTests(TestCase):
         # Only taydennyskoulutukset user has permission to are returned
         self.assertEqual(taydennyskoulutus_content.get('count'), correct_taydennyskoulutus_count)
         self.assertEqual(len(taydennyskoulutus_content.get('results')), correct_taydennyskoulutus_count)
-        taydennyskoulutus_tyontekijat = sum([len(taydennyskoulutus.get('taydennyskoulutus_tyontekijat'))
-                                             for taydennyskoulutus in taydennyskoulutus_content.get('results', [])])
-        self.assertEqual(taydennyskoulutus_tyontekijat, correct_jarjestaja_tyontekija_count)
-
         tyontekija_list_resp = client.get('/api/henkilosto/v1/taydennyskoulutukset/tyontekija-list/')
         assert_status_code(tyontekija_list_resp, status.HTTP_200_OK)
         tyontekija_content = json.loads(tyontekija_list_resp.content)
+
         # Only taydennyskoulutustyontekijat user has permission to are returned
         self.assertEqual(tyontekija_content.get('count'), correct_jarjestaja_tyontekija_count)
         self.assertEqual(len(tyontekija_content.get('results')), correct_jarjestaja_tyontekija_count)
 
     def test_taydennyskoulutus_tyontekija_list_filter(self):
         client = SetUpTestClient('credadmin').client()
-        correct_tyontekija_count = TaydennyskoulutusTyontekija.objects.count()
+        vakajarjestaja_oid = '1.2.246.562.10.93957375488'
+        correct_tyontekija_count = Tyontekija.objects.all().count()
         tyontekija_list_resp = client.get('/api/henkilosto/v1/taydennyskoulutukset/tyontekija-list/')
         assert_status_code(tyontekija_list_resp, status.HTTP_200_OK)
         tyontekija_content = json.loads(tyontekija_list_resp.content)
         self.assertEqual(tyontekija_content.get('count'), correct_tyontekija_count)
         self.assertEqual(len(tyontekija_content.get('results')), correct_tyontekija_count)
 
-        vakajarjestaja_oid = '1.2.246.562.10.93957375488'
-        correct_jarjestaja_tyontekija_count = (TaydennyskoulutusTyontekija.objects
-                                               .filter(tyontekija__vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
+        correct_jarjestaja_tyontekija_count = (Tyontekija.objects
+                                               .filter(vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
                                                .count()
                                                )
         tyontekija_list_filtered_resp = client.get('/api/henkilosto/v1/taydennyskoulutukset/tyontekija-list/?vakajarjestaja_oid={}'

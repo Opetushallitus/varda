@@ -3,7 +3,7 @@ from django_filters import rest_framework as djangofilters
 
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
                           Maksutieto, PaosToiminta, PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-                          TilapainenHenkilosto, Tutkinto, Palvelussuhde, Tyoskentelypaikka, PidempiPoissaolo,
+                          TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka, PidempiPoissaolo,
                           Taydennyskoulutus, TaydennyskoulutusTyontekija)
 
 
@@ -292,10 +292,10 @@ class TaydennyskoulutusFilter(djangofilters.FilterSet):
         fields = []
 
 
-class TaydennyskoulutusTyontekijaFilter(djangofilters.FilterSet):
-    vakajarjestaja_oid = djangofilters.CharFilter(field_name='tyontekija__vakajarjestaja__organisaatio_oid', lookup_expr='exact', distinct=True)
-    tyontekija_henkilo_oid = djangofilters.CharFilter(field_name='tyontekija__henkilo__henkilo_oid', lookup_expr='exact')
-    toimipaikka_oid = djangofilters.CharFilter(field_name='tyontekija__palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid', lookup_expr='exact', distinct=True)
+class TaydennyskoulutusTyontekijaListFilter(djangofilters.FilterSet):
+    vakajarjestaja_oid = djangofilters.CharFilter(field_name='vakajarjestaja__organisaatio_oid', lookup_expr='exact', distinct=True, label='vakajarjestaja_oid')
+    henkilo_oid = djangofilters.CharFilter(field_name='henkilo__henkilo_oid', lookup_expr='exact', label='henkilo_oid')
+    toimipaikka_oid = djangofilters.CharFilter(field_name='palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid', lookup_expr='exact', distinct=True, label='toimipaikka_oid')
 
     class Meta:
         model: TaydennyskoulutusTyontekija
@@ -303,9 +303,9 @@ class TaydennyskoulutusTyontekijaFilter(djangofilters.FilterSet):
 
 
 class TyontekijahakuUiFilter(djangofilters.FilterSet):
-    toimipaikka_id = djangofilters.CharFilter(field_name='tyontekijat__palvelussuhteet__tyoskentelypaikat__toimipaikka__id')
-    toimipaikka_oid = djangofilters.CharFilter(field_name='tyontekijat__palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid')
-    kiertava_tyontekija_kytkin = djangofilters.BooleanFilter(field_name='tyontekijat__palvelussuhteet__tyoskentelypaikat__kiertava_tyontekija_kytkin')
+    toimipaikka_id = djangofilters.CharFilter(field_name='tyontekijat__palvelussuhteet__tyoskentelypaikat__toimipaikka__id', label='toimipaikka_id')
+    toimipaikka_oid = djangofilters.CharFilter(field_name='tyontekijat__palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid', label='toimipaikka_oid')
+    kiertava_tyontekija_kytkin = djangofilters.BooleanFilter(field_name='tyontekijat__palvelussuhteet__tyoskentelypaikat__kiertava_tyontekija_kytkin', label='kiertava_tyontekija_kytkin')
 
     class Meta:
         model: Henkilo
@@ -314,9 +314,20 @@ class TyontekijahakuUiFilter(djangofilters.FilterSet):
 
 class LapsihakuUiFilter(djangofilters.FilterSet):
     # Note LapsihakuLapsetUiSerializer flattens toimipaikat so nested filtering can't be done here
-    toimipaikka_id = djangofilters.CharFilter(field_name='lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__id')
-    toimipaikka_oid = djangofilters.CharFilter(field_name='lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__organisaatio_oid')
+    toimipaikka_id = djangofilters.CharFilter(field_name='lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__id', label='toimipaikka_id')
+    toimipaikka_oid = djangofilters.CharFilter(field_name='lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__organisaatio_oid', label='toimipaikka_oid')
 
     class Meta:
         model: Henkilo
+        fields = []
+
+
+class TyontekijaFilter(djangofilters.FilterSet):
+    vakajarjestaja_id = djangofilters.CharFilter(field_name='vakajarjestaja__id', lookup_expr='exact', label='vakajarjestaja_id')
+    vakajarjestaja_oid = djangofilters.CharFilter(field_name='vakajarjestaja__organisaatio_oid', lookup_expr='exact', label='vakajarjestaja_oid')
+    henkilo_id = djangofilters.CharFilter(field_name='henkilo__id', lookup_expr='exact', label='henkilo_id')
+    henkilo_oid = djangofilters.CharFilter(field_name='henkilo__henkilo_oid', lookup_expr='exact', label='henkilo_oid')
+
+    class Meta:
+        model = Tyontekija
         fields = []

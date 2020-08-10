@@ -19,9 +19,6 @@ from rest_framework_guardian.filters import ObjectPermissionsFilter
 from varda import filters
 from varda.cache import cached_retrieve_response, delete_cache_keys_related_model, cached_list_response
 from varda.exceptions.conflict_error import ConflictError
-from varda.filters import (PalvelussuhdeFilter, TyoskentelypaikkaFilter, PidempiPoissaoloFilter,
-                           TaydennyskoulutusFilter,
-                           TaydennyskoulutusTyontekijaFilter)
 from varda.models import (VakaJarjestaja, TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
                           PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Toimipaikka)
 from varda.permission_groups import (assign_object_permissions_to_tyontekija_groups,
@@ -30,13 +27,13 @@ from varda.permission_groups import (assign_object_permissions_to_tyontekija_gro
                                      assign_object_permissions_to_taydennyskoulutus_groups)
 from varda.permissions import (CustomObjectPermissions, delete_object_permissions_explicitly, is_user_permission,
                                is_correct_taydennyskoulutus_tyontekija_permission, get_tyontekija_vakajarjestaja_oid,
-                               filter_authorized_taydennyskoulutus_tyontekijat, auditlog, auditlogclass)
+                               filter_authorized_taydennyskoulutus_tyontekijat_list, auditlog, auditlogclass)
 from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, PalvelussuhdeSerializer,
                                           PidempiPoissaoloSerializer,
                                           TilapainenHenkilostoSerializer, TutkintoSerializer, TyontekijaSerializer,
                                           TyoskentelypaikkaUpdateSerializer, TaydennyskoulutusSerializer,
                                           TaydennyskoulutusUpdateSerializer,
-                                          TaydennyskoulutusTyontekijaSerializer)
+                                          TaydennyskoulutusTyontekijaListSerializer)
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -109,7 +106,8 @@ class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     serializer_class = TyontekijaSerializer
     permission_classes = (CustomObjectPermissions, )
-    filter_backends = (ObjectPermissionsFilter,)
+    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
+    filterset_class = filters.TyontekijaFilter
     queryset = Tyontekija.objects.all().order_by('id')
 
     def return_tyontekija_if_already_created(self, validated_data, toimipaikka_oid):
@@ -369,7 +367,7 @@ class PalvelussuhdeViewSet(ObjectByTunnisteMixin, ModelViewSet):
     serializer_class = PalvelussuhdeSerializer
     permission_classes = (CustomObjectPermissions, )
     filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
-    filterset_class = PalvelussuhdeFilter
+    filterset_class = filters.PalvelussuhdeFilter
     queryset = Palvelussuhde.objects.all().order_by('id')
 
     def list(self, request, *args, **kwargs):
@@ -447,7 +445,7 @@ class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
     serializer_class = None
     permission_classes = (CustomObjectPermissions, )
     filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
-    filterset_class = TyoskentelypaikkaFilter
+    filterset_class = filters.TyoskentelypaikkaFilter
     queryset = Tyoskentelypaikka.objects.all().order_by('id')
 
     def get_serializer_class(self):
@@ -554,7 +552,7 @@ class PidempiPoissaoloViewSet(ObjectByTunnisteMixin, ModelViewSet):
     serializer_class = PidempiPoissaoloSerializer
     permission_classes = (CustomObjectPermissions, )
     filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
-    filterset_class = PidempiPoissaoloFilter
+    filterset_class = filters.PidempiPoissaoloFilter
     queryset = PidempiPoissaolo.objects.all().order_by('id')
 
     def retrieve(self, request, *args, **kwargs):
@@ -636,7 +634,7 @@ class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
     serializer_class = None
     permission_classes = (CustomObjectPermissions, )
     filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
-    filterset_class = TaydennyskoulutusFilter
+    filterset_class = filters.TaydennyskoulutusFilter
     queryset = Taydennyskoulutus.objects.all().order_by('id')
 
     def get_serializer_class(self):
@@ -649,9 +647,9 @@ class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
     def get_queryset(self):
         # For browsable
         if self.action == 'tyontekija_list':
-            self.filterset_class = TaydennyskoulutusTyontekijaFilter
+            self.filterset_class = filters.TaydennyskoulutusTyontekijaListFilter
         else:
-            self.filterset_class = TaydennyskoulutusFilter
+            self.filterset_class = filters.TaydennyskoulutusFilter
         return self.queryset
 
     def list(self, request, *args, **kwargs):
@@ -664,12 +662,12 @@ class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
         Palauttaa kaikki tyontekijät joihin täydennyskoulutuskäyttäjällä on oikeus.
         """
         user = request.user
-        queryset = TaydennyskoulutusTyontekija.objects.all().order_by('id')
+        queryset = Tyontekija.objects.all().prefetch_related('palvelussuhteet').order_by('id')
         if not user.is_superuser:
-            queryset, organisaatio_oids = filter_authorized_taydennyskoulutus_tyontekijat(queryset, user)
-        tyontekija_filter = TaydennyskoulutusTyontekijaFilter(request.query_params, queryset, request=request)
+            queryset, organisaatio_oids = filter_authorized_taydennyskoulutus_tyontekijat_list(queryset, user)
+        tyontekija_filter = filters.TaydennyskoulutusTyontekijaListFilter(request.query_params, queryset, request=request)
         page = self.paginate_queryset(tyontekija_filter.qs)
-        serializer = TaydennyskoulutusTyontekijaSerializer(page, many=True, context=self.get_serializer_context())
+        serializer = TaydennyskoulutusTyontekijaListSerializer(page, many=True, context=self.get_serializer_context())
         return self.get_paginated_response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):

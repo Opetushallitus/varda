@@ -448,6 +448,16 @@ def get_tyontekija_vakajarjestaja_oid(tyontekijat):
     return vakajarjestaja_oids.first()
 
 
+def filter_authorized_taydennyskoulutus_tyontekijat_list(data, user):
+    organisaatio_oids = get_organisaatio_oids_from_groups(user, 'HENKILOSTO_TAYDENNYSKOULUTUS_')
+    # We can't distinguish vakajarjestaja oids from toimipaikka oids but since oids are unique it doesn't matter
+    checked_data = data.filter(
+        Q(vakajarjestaja__organisaatio_oid__in=organisaatio_oids) |
+        Q(palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid__in=organisaatio_oids)
+    ).distinct()
+    return checked_data, organisaatio_oids
+
+
 def filter_authorized_taydennyskoulutus_tyontekijat(data, user):
     organisaatio_oids = get_organisaatio_oids_from_groups(user, 'HENKILOSTO_TAYDENNYSKOULUTUS_')
     # We can't distinguish vakajarjestaja oids from toimipaikka oids but since oids are unique it doesn't matter

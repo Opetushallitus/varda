@@ -704,11 +704,16 @@ class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
                                                            tehtavanimike_koodi=tyontekija_remove['tehtavanimike_koodi']).delete()
 
 
-class TaydennyskoulutusTyontekijaSerializer(serializers.ModelSerializer):
-    henkilo_etunimet = serializers.CharField(source='tyontekija.henkilo.etunimet')
-    henkilo_sukunimi = serializers.CharField(source='tyontekija.henkilo.sukunimi')
-    henkilo_oid = serializers.CharField(source='tyontekija.henkilo.henkilo_oid')
+class TaydennyskoulutusTyontekijaListSerializer(serializers.ModelSerializer):
+    henkilo_etunimet = serializers.CharField(source='henkilo.etunimet')
+    henkilo_sukunimi = serializers.CharField(source='henkilo.sukunimi')
+    henkilo_oid = serializers.CharField(source='henkilo.henkilo_oid')
+    tehtavanimike_koodit = serializers.SerializerMethodField()
+
+    def get_tehtavanimike_koodit(self, instance):
+        palvelussuhteet = instance.palvelussuhteet.all()
+        return Tyoskentelypaikka.objects.filter(palvelussuhde__in=palvelussuhteet).values_list('tehtavanimike_koodi', flat=True).distinct()
 
     class Meta:
-        model = TaydennyskoulutusTyontekija
-        fields = ('tehtavanimike_koodi', 'henkilo_etunimet', 'henkilo_sukunimi', 'henkilo_oid')
+        model = Tyontekija
+        fields = ('henkilo_etunimet', 'henkilo_sukunimi', 'henkilo_oid', 'tehtavanimike_koodit')
