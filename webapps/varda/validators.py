@@ -449,6 +449,11 @@ def validate_taydennyskoulutus_suoritus_pvm(date):
         raise ValidationErrorRest(['suoritus_pvm must be greater than or equal to 2020-09-01.'])
 
 
+def validate_palvelussuhde_paattymis_pvm(date):
+    if isinstance(date, datetime.date) and date < datetime.date(2020, 9, 1):
+        raise ValidationErrorRest(['paattymis_pvm must be greater than or equal to 2020-09-01.'])
+
+
 @deconstructible
 class create_validate_decimal_steps:
     def __init__(self, stepsize):

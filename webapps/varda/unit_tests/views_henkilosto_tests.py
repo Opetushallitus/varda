@@ -556,6 +556,51 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp_edit = client.patch(json.loads(resp.content)['url'], tilapainen_henkilosto_edit)
         assert_status_code(resp_edit, status.HTTP_400_BAD_REQUEST)
 
+    def test_api_push_tilapainen_henkilosto_tuntimaara_is_zero(self):
+        client = SetUpTestClient('tilapaiset_tallentaja').client()
+
+        tilapainen_henkilosto = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'kuukausi': '2020-03-31',
+            'tyontekijamaara': 5,
+            'tuntimaara': 0,
+            'lahdejarjestelma': '1',
+            'tunniste': 'tunniste'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+
+    def test_api_push_tilapainen_henkilosto_tyontekijamaara_is_zero(self):
+        client = SetUpTestClient('tilapaiset_tallentaja').client()
+
+        tilapainen_henkilosto = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'kuukausi': '2020-03-31',
+            'tyontekijamaara': 0,
+            'tuntimaara': 5,
+            'lahdejarjestelma': '1',
+            'tunniste': 'tunniste'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+
+    def test_api_push_tilapainen_henkilosto_tyontekijamaara_and_tuntimaara_is_zero(self):
+        client = SetUpTestClient('tilapaiset_tallentaja').client()
+
+        tilapainen_henkilosto = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'kuukausi': '2021-03-31',
+            'tyontekijamaara': 0,
+            'tuntimaara': 0,
+            'lahdejarjestelma': '1',
+            'tunniste': 'tunniste'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+        assert_status_code(resp, status.HTTP_201_CREATED)
+
     def test_api_tilapainen_henkilosto_filter(self):
         vakajarjestaja_oid = '1.2.246.562.10.34683023489'
         vakajarjestaja_id = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid).id
@@ -844,7 +889,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             'tutkinto_koodi': '321901',
             'tyoaika_viikossa': '38.73',
             'alkamis_pvm': '2020-03-01',
-            'paattymis_pvm': '2020-03-02',
+            'paattymis_pvm': '2020-09-01',
             'lahdejarjestelma': '1',
         }
 
@@ -867,7 +912,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             'tutkinto_koodi': '613101',
             'tyoaika_viikossa': '35.00',
             'alkamis_pvm': '2020-01-01',
-            'paattymis_pvm': '2020-04-04',
+            'paattymis_pvm': '2021-04-04',
             'lahdejarjestelma': '1',
             'tunniste': 'b'
         }
@@ -941,14 +986,54 @@ class VardaHenkilostoViewSetTests(TestCase):
             'tyoaika_koodi': '1',
             'tutkinto_koodi': '321901',
             'tyoaika_viikossa': '38.73',
-            'alkamis_pvm': '2020-03-02',
-            'paattymis_pvm': '2020-03-01',
+            'alkamis_pvm': '2021-03-02',
+            'paattymis_pvm': '2021-03-01',
             'lahdejarjestelma': '1',
         }
 
         resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error('paattymis_pvm', 'paattymis_pvm must be after alkamis_pvm.', resp)
+
+    def test_palvelussuhde_add_incorrect_tyoaika_viikossa(self):
+        client = SetUpTestClient('tyontekija_tallentaja').client()
+
+        tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija3')
+
+        palvelussuhde = {
+            'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/',
+            'tyosuhde_koodi': '1',
+            'tyoaika_koodi': '1',
+            'tutkinto_koodi': '321901',
+            'tyoaika_viikossa': '50.73',
+            'alkamis_pvm': '2020-03-02',
+            'paattymis_pvm': '2021-03-05',
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error('tyoaika_viikossa', 'Ensure this value is less than or equal to 50.0.', resp)
+
+    def test_palvelussuhde_add_too_early_ending_paattymis_pvm(self):
+        client = SetUpTestClient('tyontekija_tallentaja').client()
+
+        tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija3')
+
+        palvelussuhde = {
+            'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/',
+            'tyosuhde_koodi': '1',
+            'tyoaika_koodi': '1',
+            'tutkinto_koodi': '321901',
+            'tyoaika_viikossa': '50.73',
+            'alkamis_pvm': '2014-03-02',
+            'paattymis_pvm': '2020-03-05',
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error('paattymis_pvm', 'paattymis_pvm must be greater than or equal to 2020-09-01.', resp)
 
     def test_palvelussuhde_add_too_many(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -1014,7 +1099,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             'tutkinto_koodi': '003',
             'tyoaika_viikossa': '38.73',
             'alkamis_pvm': '2020-03-01',
-            'paattymis_pvm': '2020-03-02',
+            'paattymis_pvm': '2021-03-02',
             'lahdejarjestelma': '1',
         }
 
@@ -1035,7 +1120,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             'tyoaika_koodi': '1',
             'tutkinto_koodi': '321901',
             'tyoaika_viikossa': '38.73',
-            'alkamis_pvm': '2020-03-01',
+            'alkamis_pvm': '2021-03-01',
             'lahdejarjestelma': '1',
             'tunniste': 'testpalvelussuhde'
         }

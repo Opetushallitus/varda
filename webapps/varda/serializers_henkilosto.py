@@ -143,16 +143,19 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
             # Validate only when creating tilapainen henkilosto
             if self.context['request'].method == 'POST':
                 self.verify_unique_month(data, validator)
+                self.validate_workers_and_working_hours(data, validator)
                 with validator.wrap():
                     self.validate_date_within_vakajarjestaja(data, validator)
 
             # Validate only when updating existing tilapainen henkilosto
             if self.instance:
                 instance = self.instance
+                fill_missing_fields_for_validations(data, instance)
                 if 'vakajarjestaja' in data and data['vakajarjestaja'].id != instance.vakajarjestaja.id:
                     validator.error('vakajarjestaja', 'Changing of vakajarjestaja is not allowed')
                 if 'kuukausi' in data and data['kuukausi'] != instance.kuukausi:
                     validator.error('kuukausi', 'Changing of kuukausi is not allowed')
+                self.validate_workers_and_working_hours(data, validator)
             return data
 
     def verify_unique_month(self, data, validator):
@@ -169,6 +172,14 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
             validator.error('kuukausi', 'kuukausi is not after vakajarjestaja.alkamis_pvm')
         if vakajarjestaja.paattymis_pvm is not None and kuukausi > vakajarjestaja.paattymis_pvm:
             validator.error('kuukausi', 'kuukausi is not before vakajarjestaja.paattymis_pvm')
+
+    def validate_workers_and_working_hours(self, data, validator):
+        tyontekijat_count = data['tyontekijamaara']
+        hours_count = data['tuntimaara']
+        if tyontekijat_count == 0 and hours_count != 0:
+            validator.error('tuntimaara', 'tuntimaara can not be zero if tyontekijamaara is greater than zero')
+        if tyontekijat_count != 0 and hours_count == 0:
+            validator.error('tyontekijamaara', 'tyontekijamaara can not be zero if tuntimaara is greater than zero')
 
 
 class TutkintoSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
