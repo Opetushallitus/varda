@@ -3,37 +3,37 @@
                      (closed)="togglePanel(vakapaatos)"
                      hideToggle="false">
   <mat-expansion-panel-header class="huoltaja-header vakapaatos-header">
-    <mat-panel-title>
-      <i class="material-icons material-icons-outlined">assignment</i>
-      <h3 class="expansion-otsikko vakapaatos-expansion h5">
-        <div class="varhaiskasvatustext">{{ translation.varhaiskasvatuspaatos | translate}}</div>
+    <mat-panel-title [attr.aria-expanded]="vakapaatos.toggle_expanded">
+      <i class="material-icons material-icons-outlined"
+         aria-hidden="true">assignment</i>
+      <div class="expansion-otsikko vakapaatos-expansion">
+        <h3 class="varhaiskasvatustext h5">{{ translation.varhaiskasvatuspaatos | translate}}</h3>
         <div *ngIf="vakapaatos.paattymis_pvm"
-             class="voimassaoloaika">
+             class="voimassaoloaika h5">
           <span class="laaja">{{ vakapaatos.alkamis_pvm | date:'d.M.yyyy'}} -
             {{vakapaatos.paattymis_pvm | date:'d.M.yyyy'}}</span>
           <span class="suppea">{{ vakapaatos.alkamis_pvm | date:'MM/yyyy'}} -
             {{vakapaatos.paattymis_pvm | date:'MM/yyyy'}}</span>
         </div>
         <div *ngIf="!vakapaatos.paattymis_pvm"
-             class="voimassaoloaika">
+             class="voimassaoloaika h5">
           <span
                 class="laaja">{{ translation.alkaen | translate:{date: vakapaatos.alkamis_pvm | date:'d.M.yyyy'} }}</span>
-          <span class="suppea">{{ translation.alkaen | translate:{date: vakapaatos.alkamis_pvm | date:'MM/yyyy'} }}</span>
+          <span
+                class="suppea">{{ translation.alkaen | translate:{date: vakapaatos.alkamis_pvm | date:'MM/yyyy'} }}</span>
         </div>
-        <div class="toimipaikkaList">{{ toimipaikkaList.join(", ") }}</div>
-        <div class="togglePanel"
-             *ngIf="!vakapaatos.toggle_expanded">{{ translation.open | translate }}</div>
-        <div class="togglePanel"
-             *ngIf="vakapaatos.toggle_expanded">{{ translation.close | translate }}</div>
-      </h3>
-
+        <address class="toimipaikkaList h5">{{ toimipaikkaList.join(", ") }}</address>
+        <button class="togglePanel"
+                *ngIf="!vakapaatos.toggle_expanded">{{ translation.open | translate }}</button>
+        <button class="togglePanel"
+                *ngIf="vakapaatos.toggle_expanded">{{ translation.close | translate }}</button>
+      </div>
     </mat-panel-title>
   </mat-expansion-panel-header>
 
   <table class="mat-table huoltaja-table">
-    <tr class="mat-header-row"
-        tabindex="0">
-      <th class="mat-cell">{{ translation.varhaiskasvatuspaatos_hakemus_pvm| translate}}</th>
+    <tr class="mat-header-row">
+      <th class="mat-cell" scope="row">{{ translation.varhaiskasvatuspaatos_hakemus_pvm| translate}}</th>
       <td class="mat-cell">{{vakapaatos.hakemus_pvm | date:'d.M.yyyy'}}</td>
       <td class="mat-cell">
         <button [matTooltip]="translation.tooltip_hakemus_pvm | translate"
@@ -45,9 +45,8 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row"
-        tabindex="0">
-      <th class="mat-cell">{{ translation.varhaiskasvatuspaatos_tuntimaara_viikossa | translate}}</th>
+    <tr class="mat-header-row">
+      <th class="mat-cell" scope="row">{{ translation.varhaiskasvatuspaatos_tuntimaara_viikossa | translate}}</th>
       <td class="mat-cell">{{vakapaatos.tuntimaara_viikossa}}</td>
       <td class="mat-cell">
         <button [matTooltip]="translation.tooltip_tuntimaara_viikossa | translate"
@@ -59,9 +58,8 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row huoltaja-even-row"
-        tabindex="0">
-      <th class="mat-cell">{{ translation.varhaiskasvatuspaatos_jarjestamismuoto | translate}}</th>
+    <tr class="mat-header-row huoltaja-even-row">
+      <th class="mat-cell" scope="row">{{ translation.varhaiskasvatuspaatos_jarjestamismuoto | translate}}</th>
       <td class="mat-cell"
           libKoodistoValue="vardajarjestamismuoto">{{vakapaatos.jarjestamismuoto_koodi}}</td>
       <td class="mat-cell">
@@ -74,9 +72,8 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row"
-        tabindex="0">
-      <th class="mat-cell">{{ translation.varhaiskasvatuspaatos_paivittainen_varhaiskasvatus | translate}}</th>
+    <tr class="mat-header-row">
+      <th class="mat-cell" scope="row">{{ translation.varhaiskasvatuspaatos_paivittainen_varhaiskasvatus | translate}}</th>
       <td class="mat-cell">
         {{vakapaatos.paivittainen_vaka_kytkin ? (translation.varhaiskasvatuspaatos_paivittainen_varhaiskasvatus_kylla | translate) : (translation.varhaiskasvatuspaatos_paivittainen_varhaiskasvatus_ei | translate)}}
       </td>
@@ -90,9 +87,8 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row huoltaja-even-row"
-        tabindex="0">
-      <th class="mat-cell">{{ translation.varhaiskasvatuspaatos_kokoaikainen_varhaiskasvatus | translate}}</th>
+    <tr class="mat-header-row huoltaja-even-row">
+      <th class="mat-cell" scope="row">{{ translation.varhaiskasvatuspaatos_kokoaikainen_varhaiskasvatus | translate}}</th>
       <td class="mat-cell">
         {{vakapaatos.kokopaivainen_vaka_kytkin ? (translation.varhaiskasvatuspaatos_kokoaikainen_varhaiskasvatus_kylla | translate) : (translation.varhaiskasvatuspaatos_kokoaikainen_varhaiskasvatus_ei | translate)}}
       </td>
@@ -106,9 +102,8 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row"
-        tabindex="0">
-      <th class="mat-cell">{{ translation.varhaiskasvatuspaatos_vuorohoito | translate}}</th>
+    <tr class="mat-header-row">
+      <th class="mat-cell" scope="row">{{ translation.varhaiskasvatuspaatos_vuorohoito | translate}}</th>
       <td class="mat-cell">
         {{vakapaatos.vuorohoito_kytkin ? (translation.varhaiskasvatuspaatos_vuorohoito_kylla | translate) : (translation.varhaiskasvatuspaatos_vuorohoito_ei | translate)}}
       </td>
@@ -122,9 +117,8 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row huoltaja-even-row"
-        tabindex="0">
-      <th class="mat-cell">{{translation.varhaiskasvatuspaatos_pikakasittely | translate}}</th>
+    <tr class="mat-header-row huoltaja-even-row">
+      <th class="mat-cell" scope="row">{{translation.varhaiskasvatuspaatos_pikakasittely | translate}}</th>
       <td class="mat-cell">
         {{vakapaatos.pikakasittely_kytkin ? (translation.varhaiskasvatuspaatos_pikakasittely_kylla | translate) : (translation.varhaiskasvatuspaatos_pikakasittely_ei | translate)}}
       </td>
@@ -156,9 +150,9 @@
     <mat-expansion-panel-header style="position:relative;">
       <mat-panel-title>
         <h5 class="expansion-otsikko">
-          <span class="toimipaikkaList">
+          <address class="toimipaikkaList">
             {{ vakasuhde.toimipaikka.toimipaikka_nimi }}
-          </span>
+          </address>
           <span class="voimassaoloaika"
                 [class.voimassa]="isOngoing(vakasuhde.paattymis_pvm)">
             <span *ngIf="vakasuhde.paattymis_pvm">
@@ -173,9 +167,8 @@
       </mat-panel-title>
     </mat-expansion-panel-header>
     <table class="mat-table huoltaja-table">
-      <tr class="mat-header-row"
-          tabindex="0">
-        <th class="mat-cell">{{ translation.lapsi_postitoimipaikka | translate}}</th>
+      <tr class="mat-header-row">
+        <th class="mat-cell" scope="row">{{ translation.lapsi_postitoimipaikka | translate}}</th>
         <td class="mat-cell"
             libKoodistoValue="kunta">{{ vakasuhde.toimipaikka.toimipaikka_kunta_koodi }}</td>
         <td class="mat-cell">
@@ -188,9 +181,8 @@
           </button>
         </td>
       </tr>
-      <tr class="mat-header-row"
-          tabindex="0">
-        <th class="mat-cell">{{ translation.varhaiskasvatussuhteet_jarjestaja | translate}}</th>
+      <tr class="mat-header-row">
+        <th class="mat-cell" scope="row">{{ translation.varhaiskasvatussuhteet_jarjestaja | translate}}</th>
         <td class="mat-cell">{{ lapsi.varhaiskasvatuksen_jarjestaja }}</td>
         <td class="mat-cell">
           <button [matTooltip]="translation.tooltip_toimipaikka_jarjestaja | translate"

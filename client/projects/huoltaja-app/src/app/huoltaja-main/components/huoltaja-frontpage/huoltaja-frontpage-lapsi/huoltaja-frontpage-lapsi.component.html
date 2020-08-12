@@ -1,22 +1,21 @@
 <mat-expansion-panel expanded="true">
   <table class="mat-table huoltaja-table m-b-2">
-    <tr class="mat-header-row"
-        tabindex="0">
-      <th class="mat-cell">{{ translation.lapsi_oppijanumero | translate}}</th>
+    <tr class="mat-header-row">
+      <th scope="row" class="mat-cell">{{ translation.lapsi_oppijanumero | translate}}</th>
       <td class="mat-cell word-break">{{ lapsiDto.henkilo_oid }}</td>
       <td class="mat-cell">
         <button [matTooltip]="translation.tooltip_henkilotiedot_oppijanumero | translate"
                 #oppijanumero="matTooltip"
                 (click)="oppijanumero.toggle()"
+
                 (mouseenter)="$event.stopImmediatePropagation()"
                 (mouseleave)="$event.stopImmediatePropagation()">
           <mat-icon>help_outline</mat-icon>
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row"
-        tabindex="0">
-      <th class="mat-cell">{{ translation.lapsi_henkilotunnus | translate }}</th>
+    <tr class="mat-header-row">
+      <th scope="row" class="mat-cell">{{ translation.lapsi_henkilotunnus | translate }}</th>
       <td class="mat-cell">{{ lapsiDto.henkilotunnus }}</td>
       <td class="mat-cell">
         <button [matTooltip]="translation.tooltip_henkilotiedot_henkilotunnus | translate"
@@ -28,9 +27,8 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row"
-        tabindex="0">
-      <th class="mat-cell">{{ translation.lapsi_etunimet | translate }}</th>
+    <tr class="mat-header-row">
+      <th scope="row" class="mat-cell">{{ translation.lapsi_etunimet | translate }}</th>
       <td class="mat-cell">{{ lapsiDto.etunimet }}</td>
       <td class="mat-cell">
         <button [matTooltip]="translation.tooltip_henkilotiedot_etunimet | translate"
@@ -42,9 +40,8 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row"
-        tabindex="0">
-      <th class="mat-cell">{{ translation.lapsi_kutsumanimi| translate }}</th>
+    <tr class="mat-header-row">
+      <th scope="row" class="mat-cell">{{ translation.lapsi_kutsumanimi| translate }}</th>
       <td class="mat-cell">{{lapsiDto.kutsumanimi}}</td>
       <td class="mat-cell">
         <button [matTooltip]="translation.tooltip_henkilotiedot_kutsumanimi | translate"
@@ -56,9 +53,8 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row"
-        tabindex="0">
-      <th class="mat-cell">{{ translation.lapsi_sukunimi | translate}}</th>
+    <tr class="mat-header-row">
+      <th scope="row" class="mat-cell">{{ translation.lapsi_sukunimi | translate}}</th>
       <td class="mat-cell">{{lapsiDto.sukunimi}}</td>
       <td class="mat-cell">
         <button [matTooltip]="translation.tooltip_henkilotiedot_sukunimi | translate"
@@ -70,9 +66,8 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row"
-        tabindex="0">
-      <th class="mat-cell">{{ translation.lapsi_aidinkieli | translate}}</th>
+    <tr class="mat-header-row">
+      <th scope="row" class="mat-cell">{{ translation.lapsi_aidinkieli | translate}}</th>
       <td class="mat-cell"
           libKoodistoValue="kielikoodistoopetushallinto">{{lapsiDto.aidinkieli_koodi}}</td>
       <td class="mat-cell">
@@ -85,9 +80,8 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row"
-        tabindex="0">
-      <th class="mat-cell">{{ translation.lapsi_syntymaaika | translate}}</th>
+    <tr class="mat-header-row">
+      <th scope="row" class="mat-cell">{{ translation.lapsi_syntymaaika | translate}}</th>
       <td class="mat-cell">{{lapsiDto.syntyma_pvm | date:'d.M.yyyy'}}</td>
       <td class="mat-cell">
         <button [matTooltip]="translation.tooltip_henkilotiedot_syntymaaika | translate"
@@ -99,9 +93,8 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row"
-        tabindex="0">
-      <th class="mat-cell">{{ translation.lapsi_sukupuoli | translate}}</th>
+    <tr class="mat-header-row">
+      <th scope="row" class="mat-cell">{{ translation.lapsi_sukupuoli | translate}}</th>
       <td class="mat-cell"
           libKoodistoValue="sukupuoli">{{lapsiDto.sukupuoli_koodi}}</td>
       <td class="mat-cell">
@@ -114,9 +107,8 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row"
-        tabindex="0">
-      <th class="mat-cell">{{ translation.lapsi_kotikunta | translate}}</th>
+    <tr class="mat-header-row">
+      <th scope="row" class="mat-cell">{{ translation.lapsi_kotikunta | translate}}</th>
       <td class="mat-cell"
           libKoodistoValue="kunta">{{lapsiDto.kotikunta_koodi}}</td>
       <td class="mat-cell">
@@ -129,9 +121,8 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row"
-        tabindex="0">
-      <th class="mat-cell">{{ translation.lapsi_katuosoite | translate}}</th>
+    <tr class="mat-header-row">
+      <th scope="row" class="mat-cell">{{ translation.lapsi_katuosoite | translate}}</th>
       <td class="mat-cell">{{lapsiDto.katuosoite}}</td>
       <td class="mat-cell">
         <button [matTooltip]="translation.tooltip_henkilotiedot_katuosoite | translate"
@@ -143,9 +134,8 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row"
-        tabindex="0">
-      <th class="mat-cell">{{ translation.lapsi_postinumero | translate}}</th>
+    <tr class="mat-header-row">
+      <th scope="row" class="mat-cell">{{ translation.lapsi_postinumero | translate}}</th>
       <td class="mat-cell">{{lapsiDto.postinumero}}</td>
       <td class="mat-cell">
         <button [matTooltip]="translation.tooltip_henkilotiedot_postinumero | translate"
@@ -157,9 +147,8 @@
         </button>
       </td>
     </tr>
-    <tr class="mat-header-row"
-        tabindex="0">
-      <th class="mat-cell">{{ translation.lapsi_postitoimipaikka | translate}}</th>
+    <tr class="mat-header-row">
+      <th scope="row" class="mat-cell">{{ translation.lapsi_postitoimipaikka | translate}}</th>
       <td class="mat-cell">{{lapsiDto.postitoimipaikka}}</td>
       <td class="mat-cell">
         <button [matTooltip]="translation.tooltip_henkilotiedot_postitoimipaikka | translate"

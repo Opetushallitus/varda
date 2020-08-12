@@ -47,7 +47,7 @@ h5,
 }
 
 .mat-cell {
-  font-size: clamp(0.8rem, 2.0vw, 1.0rem);
+  font-size: clamp(0.8rem, 1.9vw, 1.0rem);
   word-break: break-word;
 }
 
@@ -101,6 +101,8 @@ tr:nth-child(even) {
   justify-content: space-between;
   width: 100%;
   text-align: left;
+  align-items: center;
+  font-weight: bold;
 }
 
 .expansion-otsikko>*:last-child {
@@ -165,6 +167,7 @@ mat-icon {
   color: var(--link-color);
   line-height: 2.2em;
   margin-right: 0.5em;
+  font-weight: bold;
 }
 
 .word-break {
@@ -184,13 +187,21 @@ mat-icon {
   text-align: center;
 }
 
+.button:hover,
+.button:focus {
+  background-color: var(--oph-gray-lighten-1);
+}
+
 td {
   padding-left: 0.25em;
   padding-right: 0.25em;
 }
 
-
-
+.mat-expansion-panel-header:focus-within,
+.mat-expansion-panel-header:hover:not([aria-disabled=true]) {
+  font-weight: bold;
+  background: var(--oph-gray-lighten-1) !important;
+}
 
 
 @media (max-width: 465px) {
@@ -218,6 +229,8 @@ button {
   cursor: pointer;
   outline: inherit;
 }
+
+
 
 .lapsi-header>.mat-icon {
   position: relative;

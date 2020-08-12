@@ -8,7 +8,9 @@
   --oph-blue-darken-2: #000066;
   --oph-blue-darken-1: #0033cc;
   --oph-blue: #0041dc;
-  --oph-blue-lighten-1: #008dd7;
+  --oph-blue-alt: #0A789C;
+  --oph-blue-alt-lighten-1: #159ecb;
+  --oph-blue-lighten-1: #030303;
   --oph-blue-lighten-2: #82d4ff;
   --oph-blue-lighten-3: #c0e9ff;
 
@@ -53,7 +55,7 @@
   --oph-white: #ffffff;
 
   --text-color: var(--oph-black);
-  --link-color: var(--oph-blue-lighten-1);
+  --link-color: var(--oph-blue-alt);
 
 
 }

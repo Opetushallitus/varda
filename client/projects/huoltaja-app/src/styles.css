@@ -24,12 +24,12 @@ html {
 
 @media (min-width: 700px) {
   .mat-tooltip {
-    animation: scaleTooltip 2.5s forwards;
+    animation: scaleTooltip 1s forwards;
   }
 
   @keyframes scaleTooltip {
     0% {
-      transform: scale(1);
+      transform: scale(0.9);
     }
 
     100% {
@@ -41,7 +41,7 @@ html {
 @media (min-width: 1000px) {
   @keyframes scaleTooltip {
     0% {
-      transform: scale(1);
+      transform: scale(0.9);
     }
 
     100% {

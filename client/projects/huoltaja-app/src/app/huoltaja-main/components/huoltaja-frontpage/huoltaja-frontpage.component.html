@@ -4,19 +4,20 @@
     <p>{{ translation.varhaiskasvatustiedot_intro_paragraph_1 | translate}}</p>
     <p>{{ translation.varhaiskasvatustiedot_intro_paragraph_2 | translate}}</p>
     <p>{{ translation.varhaiskasvatustiedot_intro_paragraph_3 | translate}}
-      <a target="_blank"
+      <a target="_blank" [attr.aria-label]="translation.varhaiskasvatustiedot_intro_paragraph_3 | translate"
          [href]="translation.varhaiskasvatustiedot_intro_link_href | translate">
         {{ translation.varhaiskasvatustiedot_intro_link_text | translate}}
       </a>
     </p>
   </div>
-  <div *ngIf="fetchError"
+  <main *ngIf="fetchError"
+       role="alert"
        class="error-field">
     <p>{{ translation.error_child_not_found_1 | translate }}</p>
     <p>{{ translation.error_child_not_found_2 | translate }}</p>
     <p>{{ translation.error_child_not_found_3 | translate }}</p>
-  </div>
-  <div *ngIf="lapsi?.henkilo">
+</main>
+  <main *ngIf="lapsi?.henkilo">
     <div class="huoltaja-frontpage-div-margin-bottom">
       <h2 class="lapsi-header">
         <mat-icon>person</mat-icon>
@@ -66,6 +67,6 @@
         </app-huoltaja-vakapaatos>
       </ng-container>
     </div>
-  </div>
+  </main>
 
 </div>
