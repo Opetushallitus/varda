@@ -2740,19 +2740,20 @@ def create_henkilosto():
     assign_perm('view_toimipaikka', group_tyontekija_tallentaja_vakajarjestaja_34683023489, toimipaikka_9395737548815)
     assign_perm('view_toimipaikka', group_tyontekija_katselija_vakajarjestaja_34683023489, toimipaikka_9395737548815)
 
-    def add_tutkinto(henkilo, *tutkinnot):
+    def add_tutkinto(henkilo, vakajarjestaja, *tutkinnot):
         for tutkinto in tutkinnot:
             Tutkinto.objects.create(
                 henkilo=henkilo,
+                vakajarjestaja=vakajarjestaja,
                 tutkinto_koodi=tutkinto,
                 changed_by_id=admin_user.id
             )
 
-    add_tutkinto(henkilo_1, '321901', '712104', '613101')
-    add_tutkinto(henkilo_2, '321901', '712104', '613101')
-    add_tutkinto(henkilo_3, '321901', '712104', '613101')
-    add_tutkinto(henkilo_4, '321901', '712104', '613101')
-    add_tutkinto(henkilo_5, '321901', '712104', '613101')
+    add_tutkinto(henkilo_1, vakajarjestaja_34683023489, '321901', '712104', '613101')
+    add_tutkinto(henkilo_2, vakajarjestaja_34683023489, '321901', '712104', '613101')
+    add_tutkinto(henkilo_3, vakajarjestaja_34683023489, '321901', '712104', '613101')
+    add_tutkinto(henkilo_4, vakajarjestaja_34683023489, '321901', '712104', '613101')
+    add_tutkinto(henkilo_5, vakajarjestaja_34683023489, '321901', '712104', '613101')
 
     crud_permissions_tyontekija = ['view_tyontekija', 'change_tyontekija', 'add_tyontekija', 'delete_tyontekija']
     tyontekija_1 = Tyontekija.objects.create(

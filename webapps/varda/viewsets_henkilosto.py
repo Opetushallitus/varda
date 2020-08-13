@@ -11,9 +11,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
+from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, ListModelMixin
 from rest_framework.response import Response
 from rest_framework.schemas.coreapi import AutoSchema
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework_guardian.filters import ObjectPermissionsFilter
 
 from varda import filters
@@ -22,7 +23,6 @@ from varda.exceptions.conflict_error import ConflictError
 from varda.models import (VakaJarjestaja, TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
                           PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Toimipaikka)
 from varda.permission_groups import (assign_object_permissions_to_tyontekija_groups,
-                                     remove_object_level_permissions,
                                      assign_object_permissions_to_tilapainenhenkilosto_groups,
                                      assign_object_permissions_to_taydennyskoulutus_groups)
 from varda.permissions import (CustomObjectPermissions, delete_object_permissions_explicitly, is_user_permission,
@@ -120,7 +120,7 @@ class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
     def _assign_toimipaikka_permissions(self, toimipaikka_oid, tyontekija_obj):
         assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Tyontekija, tyontekija_obj)
-        tutkinnot = Tutkinto.objects.filter(henkilo=tyontekija_obj.henkilo)
+        tutkinnot = Tutkinto.objects.filter(henkilo=tyontekija_obj.henkilo, vakajarjestaja=tyontekija_obj.vakajarjestaja)
         [assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Tutkinto, tutkinto) for tutkinto in tutkinnot]
 
     def remove_address_information_from_henkilo(self, henkilo):
@@ -150,10 +150,7 @@ class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
             self.remove_address_information_from_henkilo(tyontekija_obj.henkilo)
             delete_cache_keys_related_model('henkilo', tyontekija_obj.henkilo.id)
             vakajarjestaja_oid = vakajarjestaja.organisaatio_oid
-            tutkinnot = Tutkinto.objects.filter(henkilo=tyontekija_obj.henkilo)
-
             assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Tyontekija, tyontekija_obj)
-            [assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Tutkinto, tutkinto) for tutkinto in tutkinnot]
             if toimipaikka_oid:
                 self._assign_toimipaikka_permissions(toimipaikka_oid, tyontekija_obj)
             delete_cache_keys_related_model('henkilo', tyontekija_obj.henkilo.id)
@@ -165,12 +162,12 @@ class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
             serializer.save(changed_by=user)
 
     def perform_destroy(self, tyontekija):
+        if Tutkinto.objects.filter(vakajarjestaja=tyontekija.vakajarjestaja, henkilo=tyontekija.henkilo).exists():
+            raise ValidationError({'detail': 'Cannot delete tyontekija. There are tutkinto objects referencing it '
+                                             'that need to be deleted first.'})
         with transaction.atomic():
             try:
                 delete_object_permissions_explicitly(Tyontekija, tyontekija)
-                vakajarjestaja_oid = tyontekija.vakajarjestaja.organisaatio_oid
-                tutkinnot = Tutkinto.objects.filter(henkilo=tyontekija.henkilo)
-                [remove_object_level_permissions(vakajarjestaja_oid, Tutkinto, tutkinto) for tutkinto in tutkinnot]
                 tyontekija.delete()
             except ProtectedError:
                 raise ValidationError({'detail': 'Cannot delete tyontekija. There are objects referencing it '
@@ -233,10 +230,10 @@ class TilapainenHenkilostoViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
 
 @auditlogclass
-class TutkintoViewSet(ModelViewSet):
+class TutkintoViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, ListModelMixin, GenericViewSet):
     """
     list:
-        Nouda kaikki tutkinnot joita käyttäjä pystyy muokkaamaan. Kaikkien hakuun käytä /tutkinto-list-all
+        Nouda kaikki tutkinnot joita käyttäjä pystyy muokkaamaan.
 
     create:
         Luo yksi uusi tutkinto.
@@ -246,65 +243,56 @@ class TutkintoViewSet(ModelViewSet):
 
     retrieve:
         Nouda yksittäinen tutkinto.
-
-    partial_update:
-        Päivitä yksi tai useampi kenttä yhdestä tutkinto-tietueesta.
-
-    update:
-        Päivitä yhden tutkinnon kaikki kentät.
     """
     serializer_class = TutkintoSerializer
     permission_classes = (CustomObjectPermissions, )
-    filter_backends = None
+    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend,)
     filterset_class = filters.TutkintoFilter
     queryset = Tutkinto.objects.all().order_by('id')
 
-    def filter_queryset(self, queryset):
-        if self.action == 'tutkinto_list_all':
-            # We are allowing users to view all tutkinto without object level permission check.
-            self.filter_backends = DjangoFilterBackend,
-        else:
-            self.filter_backends = ObjectPermissionsFilter, DjangoFilterBackend,
-        return super().filter_queryset(queryset)
-
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
-
-    @auditlog
-    @action(methods=['get'], detail=False, url_path='tutkinto-list-all', url_name='tutkinto_list_all')
-    def tutkinto_list_all(self, request, *args, **kwargs):
-        """
-        Kaikkien henkilön tutkintojen hakuun.
-        """
-        # cached_list_response is permission check based
-        return super().list(request, *args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):
         return cached_retrieve_response(self, request.user, request.path)
 
     def return_henkilo_already_has_tutkinto(self, validated_data):
-        q_obj = Q(henkilo=validated_data['henkilo'], tutkinto_koodi=validated_data['tutkinto_koodi'])
-        tutkinto_obj = Tutkinto.objects.filter(q_obj).first()
-        if tutkinto_obj:
-            raise ConflictError(self.get_serializer(tutkinto_obj).data, status_code=status.HTTP_200_OK)
+        tutkinto_condition = Q(henkilo=validated_data['henkilo'],
+                               tutkinto_koodi=validated_data['tutkinto_koodi'],
+                               vakajarjestaja=validated_data['vakajarjestaja'])
+        tutkinto = Tutkinto.objects.filter(tutkinto_condition).first()
+        if tutkinto:
+            # Toimipaikka user might be trying to add existing tutkinto he simply doesn't have permissions
+            self._assign_toimipaikka_permissions(tutkinto, validated_data)
+            raise ConflictError(self.get_serializer(tutkinto).data, status_code=status.HTTP_200_OK)
 
     def perform_create(self, serializer):
         user = self.request.user
         validated_data = serializer.validated_data
         self.return_henkilo_already_has_tutkinto(validated_data)
-        toimipaikka_oid = validated_data.get('toimipaikka') and validated_data.get('toimipaikka').organisaatio_oid
-
         tutkinto = serializer.save(changed_by=user)
         delete_cache_keys_related_model('henkilo', tutkinto.henkilo.id)
+
         vakajarjestaja_oid = validated_data['vakajarjestaja'].organisaatio_oid
         assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Tutkinto, tutkinto)
+        self._assign_toimipaikka_permissions(tutkinto, validated_data)
 
+    def _assign_toimipaikka_permissions(self, tutkinto, validated_data):
+        toimipaikka_oid = validated_data.get('toimipaikka') and validated_data.get('toimipaikka').organisaatio_oid
         if toimipaikka_oid:
             assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Tutkinto, tutkinto)
 
     def perform_destroy(self, tutkinto):
         henkilo = tutkinto.henkilo
-
+        tutkinto_koodi = tutkinto.tutkinto_koodi
+        vakajarjestaja = tutkinto.vakajarjestaja
+        palvelussuhde_condition = Q(tyontekija__vakajarjestaja=vakajarjestaja,
+                                    tutkinto_koodi=tutkinto_koodi,
+                                    tyontekija__henkilo=henkilo,
+                                    )
+        if Palvelussuhde.objects.filter(palvelussuhde_condition).exists():
+            raise ValidationError({'detail': 'Cannot delete tutkinto. There are palvelussuhde objects referencing it '
+                                             'that need to be deleted first.'})
         with transaction.atomic():
             delete_object_permissions_explicitly(Tutkinto, tutkinto)
             tutkinto.delete()
@@ -320,22 +308,31 @@ class TutkintoViewSet(ModelViewSet):
         filter:
             henkilo_id=number
             henkilo_oid=string
+            vakajarjestaja_id=number
+            vakajarjestaja_oid=string
             tutkinto_koodi=string
 
-            esim. /api/henkilosto/v1/tutkinnot/delete/?henkilo_id=1&tutkinto_koodi=2
+            esim. /api/henkilosto/v1/tutkinnot/delete/?henkilo_id=1&tutkinto_koodi=2&vakajarjestaja_id=1
         """
         query_params = self.request.query_params
         henkilo_id = query_params.get('henkilo_id', None)
         henkilo_oid = query_params.get('henkilo_oid', None)
+        vakajarjestaja_id = query_params.get('vakajarjestaja_id', None)
+        vakajarjestaja_oid = query_params.get('vakajarjestaja_oid', None)
         tutkinto_koodi = query_params.get('tutkinto_koodi', None)
 
-        if (henkilo_id is None and henkilo_oid is None) or tutkinto_koodi is None:
+        if (not henkilo_id and not henkilo_oid) or not tutkinto_koodi or (not vakajarjestaja_id and not vakajarjestaja_oid):
             raise Http404
 
         if henkilo_id:
             henkilo_filter = {'henkilo__id': henkilo_id}
         else:
             henkilo_filter = {'henkilo__henkilo_oid': henkilo_oid}
+
+        if vakajarjestaja_id:
+            henkilo_filter['vakajarjestaja'] = vakajarjestaja_id
+        else:
+            henkilo_filter['vakajarjestaja__organisaatio_oid'] = vakajarjestaja_oid
 
         tutkinto_obj = get_object_or_404(Tutkinto.objects.all(), **henkilo_filter, tutkinto_koodi=tutkinto_koodi)
         self.perform_destroy(tutkinto_obj)
@@ -475,8 +472,8 @@ class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
             if tyoskentelypaikka.toimipaikka:
                 toimipaikka_oid = tyoskentelypaikka.toimipaikka.organisaatio_oid
                 assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Tyoskentelypaikka, tyoskentelypaikka)
-                # Since it's allowed for vakatoimija level user to not provide toimipaikka earlier related objects this
-                # needs to be filled here to make sure
+                # Since it's allowed for vakatoimija level user to not provide toimipaikka earlier than
+                # tyoskentelypaikka in related objects toimipaikka permissions need to be filled here to make sure
                 palvelussuhde = tyoskentelypaikka.palvelussuhde
                 assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Palvelussuhde, palvelussuhde)
                 pidemmatpoissaolot = palvelussuhde.pidemmatpoissaolot.all()
@@ -485,6 +482,8 @@ class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
                  ]
                 tyontekija = palvelussuhde.tyontekija
                 assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Tyontekija, tyontekija)
+                tutkinnot = Tutkinto.objects.filter(henkilo=tyontekija.henkilo, vakajarjestaja=tyontekija.vakajarjestaja)
+                [assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Tutkinto, tutkinto) for tutkinto in tutkinnot]
                 # Add also permission to all taydennyskoulutukset for current jarjestaja
                 taydennyskoulutukset = Taydennyskoulutus.objects.filter(tyontekijat__vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
                 [assign_object_permissions_to_taydennyskoulutus_groups(toimipaikka_oid, Taydennyskoulutus, taydennyskoulutus)

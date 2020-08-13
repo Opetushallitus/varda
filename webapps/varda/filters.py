@@ -227,7 +227,7 @@ class TilapainenHenkilostoFilter(djangofilters.FilterSet):
 class TutkintoFilter(djangofilters.FilterSet):
     henkilo = HenkiloFieldFilter(field_name='henkilo')
     tutkinto_koodi = djangofilters.CharFilter(field_name='tutkinto_koodi', lookup_expr='exact')
-    vakajarjestaja = VakaJarjestajaFieldFilter(field_name='henkilo__tyontekijat__vakajarjestaja')
+    vakajarjestaja = VakaJarjestajaFieldFilter(field_name='vakajarjestaja')
 
     class Meta:
         model = Tutkinto

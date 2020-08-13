@@ -602,6 +602,7 @@ class TilapainenHenkilosto(models.Model):
 
 class Tutkinto(models.Model):
     henkilo = models.ForeignKey(Henkilo, related_name='tutkinnot', on_delete=models.PROTECT)
+    vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='tutkinnot', on_delete=models.PROTECT, null=True, blank=True)
     tutkinto_koodi = models.CharField(max_length=10, validators=[validators.validate_tutkinto_koodi])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)

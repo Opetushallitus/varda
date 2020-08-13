@@ -7,7 +7,8 @@ from rest_framework import status
 
 from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, assert_validation_error
 from varda.models import (VakaJarjestaja, Henkilo, Tyontekija, Palvelussuhde, Tyoskentelypaikka, Toimipaikka,
-                          TilapainenHenkilosto, Taydennyskoulutus, TaydennyskoulutusTyontekija, PidempiPoissaolo)
+                          TilapainenHenkilosto, Taydennyskoulutus, TaydennyskoulutusTyontekija, PidempiPoissaolo,
+                          Tutkinto)
 
 
 class VardaHenkilostoViewSetTests(TestCase):
@@ -278,6 +279,27 @@ class VardaHenkilostoViewSetTests(TestCase):
         assert_status_code(resp_tyontekija_delete, status.HTTP_204_NO_CONTENT)
 
         self.assertFalse(Tyontekija.objects.filter(id=tyontekija.id).exists())
+
+    def test_api_delete_tyontekija_with_referencing_objects(self):
+        client = SetUpTestClient('tyontekija_tallentaja').client()
+        tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija1')
+        resp_tyontekija_delete = client.delete(f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/')
+        assert_status_code(resp_tyontekija_delete, status.HTTP_400_BAD_REQUEST)
+        detail = json.loads(resp_tyontekija_delete.content).get('detail')
+        self.assertEqual(detail, 'Cannot delete tyontekija. There are tutkinto objects referencing it that need to be deleted first.')
+
+        Tutkinto.objects.filter(vakajarjestaja=tyontekija.vakajarjestaja, henkilo=tyontekija.henkilo).delete()
+        resp_tyontekija_delete = client.delete(f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/')
+        assert_status_code(resp_tyontekija_delete, status.HTTP_400_BAD_REQUEST)
+        detail = json.loads(resp_tyontekija_delete.content).get('detail')
+        self.assertEqual(detail, 'Cannot delete tyontekija. There are objects referencing it that need to be deleted first.')
+
+        Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija).delete()
+        PidempiPoissaolo.objects.filter(palvelussuhde__tyontekija=tyontekija).delete()
+        Palvelussuhde.objects.filter(tyontekija=tyontekija).delete()
+        TaydennyskoulutusTyontekija.objects.filter(tyontekija=tyontekija).delete()
+        resp_tyontekija_delete = client.delete(f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/')
+        assert_status_code(resp_tyontekija_delete, status.HTTP_204_NO_CONTENT)
 
     def test_api_push_tyontekija_henkilo_address_information_removed(self):
         # Get Henkilo that does not reference any Huoltaja or Lapsi object
@@ -803,12 +825,13 @@ class VardaHenkilostoViewSetTests(TestCase):
         tutkinto = {
             'henkilo': '/api/v1/henkilot/1/',
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
-            'tutkinto_koodi': '321901'
+            'tutkinto_koodi': '719999'
         }
 
         resp = client.post('/api/henkilosto/v1/tutkinnot/', tutkinto)
         assert_status_code(resp, status.HTTP_201_CREATED)
-        resp_delete = client.delete('/api/henkilosto/v1/tutkinnot/delete/?henkilo_id=1&tutkinto_koodi=321901')
+        resp_delete = client.delete('/api/henkilosto/v1/tutkinnot/delete/'
+                                    '?henkilo_id=1&tutkinto_koodi=719999&vakajarjestaja_id=1')
         assert_status_code(resp_delete, status.HTTP_200_OK)
 
     def test_api_delete_tutkinto_by_oid(self):
@@ -827,14 +850,57 @@ class VardaHenkilostoViewSetTests(TestCase):
         tutkinto = {
             'henkilo_oid': '1.2.246.562.24.6815481182312',
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
-            'tutkinto_koodi': '001'
+            'tutkinto_koodi': '719999'
         }
 
         resp = client.post('/api/henkilosto/v1/tutkinnot/', tutkinto)
         assert_status_code(resp, status.HTTP_201_CREATED)
         resp_delete = client.delete('/api/henkilosto/v1/tutkinnot/delete/'
-                                    '?henkilo_oid=1.2.246.562.24.6815481182312&tutkinto_koodi=001')
+                                    '?henkilo_oid=1.2.246.562.24.6815481182312'
+                                    '&tutkinto_koodi=719999'
+                                    '&vakajarjestaja_oid=1.2.246.562.10.34683023489')
         assert_status_code(resp_delete, status.HTTP_200_OK)
+
+    def test_api_delete_tutkinto_with_tutkinto_koodi_in_use(self):
+        client = SetUpTestClient('tyontekija_tallentaja').client()
+
+        tyontekija = {
+            'henkilo': '/api/v1/henkilot/1/',
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'lahdejarjestelma': '1',
+            'tunniste': 'tunniste',
+        }
+
+        resp = client.post('/api/henkilosto/v1/tyontekijat/', tyontekija)
+        assert_status_code(resp, status.HTTP_201_CREATED)
+        tyontekija_id = json.loads(resp.content).get('id')
+
+        tutkinto = {
+            'henkilo': '/api/v1/henkilot/1/',
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'tutkinto_koodi': '321901',
+        }
+
+        tutkinto_resp = client.post('/api/henkilosto/v1/tutkinnot/', tutkinto)
+        assert_status_code(tutkinto_resp, status.HTTP_201_CREATED)
+        tutkinto_id = json.loads(tutkinto_resp.content).get('id')
+
+        palvelussuhde = {
+            'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_id}/',
+            'tyosuhde_koodi': '1',
+            'tyoaika_koodi': '1',
+            'tutkinto_koodi': '321901',
+            'tyoaika_viikossa': '38.73',
+            'alkamis_pvm': '2020-03-01',
+            'paattymis_pvm': '2020-09-01',
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post('/api/henkilosto/v1/palvelussuhteet/', json.dumps(palvelussuhde), content_type='application/json')
+        assert_status_code(resp, status.HTTP_201_CREATED)
+
+        delete_resp = client.delete('/api/henkilosto/v1/tutkinnot/{}/'.format(tutkinto_id))
+        assert_status_code(delete_resp, status.HTTP_400_BAD_REQUEST)
 
     def test_api_tutkinto_filter(self):
         henkilo_oid = '1.2.246.562.24.6815481182312'

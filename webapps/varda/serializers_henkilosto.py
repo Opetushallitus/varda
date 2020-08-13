@@ -190,13 +190,12 @@ class TutkintoSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelS
                                   parent_attribute='henkilo_oid',
                                   prevalidator=validators.validate_henkilo_oid,
                                   either_required=True)
-    vakajarjestaja = VakaJarjestajaPermissionCheckedHLField(view_name='vakajarjestaja-detail', required=False, write_only=True)
+    vakajarjestaja = VakaJarjestajaPermissionCheckedHLField(view_name='vakajarjestaja-detail', required=False)
     vakajarjestaja_oid = OidRelatedField(object_type=VakaJarjestaja,
                                          parent_field='vakajarjestaja',
                                          parent_attribute='organisaatio_oid',
                                          prevalidator=validators.validate_organisaatio_oid,
-                                         either_required=True,
-                                         write_only=True)
+                                         either_required=True)
 
     class Meta:
         model = Tutkinto
@@ -206,16 +205,11 @@ class TutkintoSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelS
     def to_representation(self, instance):
         return super(TutkintoSerializer, self).to_representation(instance)
 
-    def create(self, validated_data):
-        validated_data.pop('vakajarjestaja', None)
-        validated_data.pop('vakajarjestaja_oid', None)
-        return super().create(validated_data)
-
     def validate(self, data):
-        vakajarjestaja = data.get('vakajarjestaja')
-        toimipaikka = data.get('toimipaikka')
-        henkilo = data.get('henkilo')
         with ViewSetValidator() as validator:
+            vakajarjestaja = data.get('vakajarjestaja')
+            toimipaikka = data.get('toimipaikka')
+            henkilo = data.get('henkilo')
             if not Tyontekija.objects.filter(vakajarjestaja=vakajarjestaja, henkilo=henkilo).exists():
                 validator.error('tyontekija', 'Provided vakajarjestaja has not added this henkilo as tyontekija')
             if vakajarjestaja and toimipaikka and vakajarjestaja != toimipaikka.vakajarjestaja:
