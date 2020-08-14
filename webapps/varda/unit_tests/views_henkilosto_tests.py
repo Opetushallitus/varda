@@ -1313,7 +1313,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             'palvelussuhde': '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde.id),
             'toimipaikka': '/api/v1/toimipaikat/{}/'.format(toimipaikka.id),
             'alkamis_pvm': '2020-03-01',
-            'paattymis_pvm': '2020-05-02',
+            'paattymis_pvm': '2020-09-02',
             'tehtavanimike_koodi': '39407',
             'kelpoisuus_kytkin': True,
             'kiertava_tyontekija_kytkin': False,
@@ -1355,10 +1355,11 @@ class VardaHenkilostoViewSetTests(TestCase):
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error('palvelussuhde', 'Already have 3 overlapping tyoskentelypaikka on the defined time range.', resp)
 
-        # So does this: limit is global across all palvelussuhteet
+        # This will succeed due to different palvelussuhde
         tyoskentelypaikka.update(palvelussuhde=palvelussuhde_22_url)
-        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('palvelussuhde', 'Already have 3 overlapping tyoskentelypaikka on the defined time range.', resp)
+        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        assert_status_code(resp, status.HTTP_201_CREATED)
+        client.delete('/api/henkilosto/v1/tyoskentelypaikat/{}/'.format(json.loads(resp.content)['id']))
 
         # But cases where kiertava_tyontekija_kytkin is True are ok
         tyoskentelypaikka.update(kiertava_tyontekija_kytkin=True, toimipaikka=None)
@@ -1504,6 +1505,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             ('1999-03-01', '2021-01-01', 'alkamis_pvm', 'alkamis_pvm must be after or equal to toimipaikka alkamis_pvm'),
             ('2019-03-01', '2021-01-01', 'alkamis_pvm', 'alkamis_pvm must be after palvelussuhde alkamis_pvm (or same).'),
             ('2031-03-01', '2032-01-01', 'alkamis_pvm', 'alkamis_pvm must be before palvelussuhde paattymis_pvm.'),
+            ('2020-08-01', '2020-08-28', 'paattymis_pvm', 'paattymis_pvm must be after 2020-09-01 (or same)'),
         ]
 
         for (start, end, key, expected_message) in cases:
@@ -1597,7 +1599,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             'palvelussuhde_tunniste': tyoskentelypaikka.palvelussuhde.tunniste,
             'toimipaikka': f'/api/v1/toimipaikat/{tyoskentelypaikka.toimipaikka}/',
             'alkamis_pvm': '2020-03-01',
-            'paattymis_pvm': '2020-06-02',
+            'paattymis_pvm': '2020-09-02',
             'tehtavanimike_koodi': '39407',
             'kelpoisuus_kytkin': False,
             'kiertava_tyontekija_kytkin': False,
@@ -1609,7 +1611,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         tyoskentelypaikka_patch = {
             'alkamis_pvm': '2020-03-01',
-            'paattymis_pvm': '2020-08-02'
+            'paattymis_pvm': '2020-09-02'
         }
         resp_tyoskentelypaikka_patch = client.patch(tyoskentelypaikka_url, tyoskentelypaikka_patch)
         assert_status_code(resp_tyoskentelypaikka_patch, status.HTTP_200_OK)
@@ -1628,7 +1630,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             'palvelussuhde_tunniste': palvelussuhde.tunniste,
             'toimipaikka': '/api/v1/toimipaikat/2/',
             'alkamis_pvm': '2020-03-01',
-            'paattymis_pvm': '2020-06-02',
+            'paattymis_pvm': '2020-09-02',
             'tehtavanimike_koodi': '39407',
             'kelpoisuus_kytkin': False,
             'kiertava_tyontekija_kytkin': False,
@@ -1666,7 +1668,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             'palvelussuhde': f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde.id}/',
             'toimipaikka': '/api/v1/toimipaikat/2/',
             'alkamis_pvm': '2020-03-01',
-            'paattymis_pvm': '2020-06-02',
+            'paattymis_pvm': '2020-09-02',
             'tehtavanimike_koodi': '39407',
             'kelpoisuus_kytkin': False,
             'kiertava_tyontekija_kytkin': False,
@@ -2655,7 +2657,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         tyoskentelypaikka = {
             'palvelussuhde': palvelussuhde_url,
             'alkamis_pvm': '2020-03-01',
-            'paattymis_pvm': '2020-05-02',
+            'paattymis_pvm': '2020-09-02',
             'tehtavanimike_koodi': '39407',
             'kelpoisuus_kytkin': True,
             'kiertava_tyontekija_kytkin': True,

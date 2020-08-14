@@ -341,6 +341,9 @@ def validate_dates_palvelussuhde(data, palvelussuhde, validator):
     if 'paattymis_pvm' in data and data['paattymis_pvm'] is not None:
         if palvelussuhde.paattymis_pvm is not None and not validators.validate_paivamaara1_before_paivamaara2(data['paattymis_pvm'], palvelussuhde.paattymis_pvm, can_be_same=True):
             validator.error('paattymis_pvm', 'paattymis_pvm must be before palvelussuhde paattymis_pvm (or same).')
+        if not validate_paivamaara1_after_paivamaara2(data['paattymis_pvm'], '2020-09-01', can_be_same=True):
+            validator.error('paattymis_pvm', 'paattymis_pvm must be after 2020-09-01 (or same)')
+
     if 'alkamis_pvm' in data and data['alkamis_pvm'] is not None:
         if not validators.validate_paivamaara1_after_paivamaara2(data['alkamis_pvm'], palvelussuhde.alkamis_pvm, can_be_same=True):
             validator.error('alkamis_pvm', 'alkamis_pvm must be after palvelussuhde alkamis_pvm (or same).')

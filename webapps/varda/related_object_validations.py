@@ -265,12 +265,12 @@ def check_overlapping_tyoskentelypaikka_object(validated_data, modelobj, *args):
     else:
         model_id, original = get_model_id_and_original(modelobj)
 
-    tyontekija_id = validated_data['palvelussuhde'].tyontekija.id if 'palvelussuhde' in validated_data else original.palvelussuhde.tyontekija.id
+    palvelussuhde_id = validated_data['palvelussuhde'].id if 'palvelussuhde' in validated_data else original.palvelussuhde.id
 
     if original is not None:
-        q_obj = Q(Q(palvelussuhde__tyontekija=tyontekija_id) & ~Q(pk=original.id))
+        q_obj = Q(Q(palvelussuhde=palvelussuhde_id) & ~Q(pk=original.id))
     else:
-        q_obj = Q(palvelussuhde__tyontekija=tyontekija_id)
+        q_obj = Q(palvelussuhde=palvelussuhde_id)
 
     queryset = Tyoskentelypaikka.objects.filter(q_obj)
 
