@@ -19,8 +19,9 @@ class IsHuoltajaForChild(IsAdminUser):
                 view.queryset.model == Henkilo and
                 hasattr(user, 'additional_user_info') and
                 getattr(user.additional_user_info, 'henkilo_oid', False) and
-                getattr(user.additional_user_info, 'huoltaja_oid', False)):
-            return True
+                hasattr(user.additional_user_info, 'huoltaja_oid')):
+            henkilo_oid = view.kwargs.get('henkilo_oid')
+            return henkilo_oid and henkilo_oid == user.additional_user_info.henkilo_oid
         return False
 
 

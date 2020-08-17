@@ -48,22 +48,20 @@ def login_handler(sender, user, request, **kwargs):
 
 def _oppija_post_login_handler(user):
     """
-    Handles oppija cas logged in user privileges givin parent
-    :param user:
-    :return:
+    Handles oppija cas logged in user privileges givin parent. ALlows login even if lapsi or huoltaja oid doesn't exist.
+    :param user: user with attributes personOid and impersonatorPersonOid
+    :return: None
     """
-    if not hasattr(user, 'personOid') or not hasattr(user, 'impersonatorPersonOid'):
-        raise ValueError('User {} missing required argument personOid or impersonatorPersonOid received from CAS'
-                         .format(user.username))
-    lapsi_oid = user.personOid
-    huoltaja_oid = user.impersonatorPersonOid
+    if getattr(user, 'personOid', None):
+        lapsi_oid = user.personOid
+        huoltaja_oid = getattr(user, 'impersonatorPersonOid', None)
 
-    # external service validates permissions for user
-    Z3_AdditionalCasUserFields.objects.update_or_create(user=user,
-                                                        defaults={
-                                                            "henkilo_oid": lapsi_oid,
-                                                            "huoltaja_oid": huoltaja_oid,
-                                                        })
+        # external service validates permissions for user
+        Z3_AdditionalCasUserFields.objects.update_or_create(user=user,
+                                                            defaults={
+                                                                "henkilo_oid": lapsi_oid,
+                                                                "huoltaja_oid": huoltaja_oid,
+                                                            })
 
 
 def logout_handler(sender, user, request, **kwargs):

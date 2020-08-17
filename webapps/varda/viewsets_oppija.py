@@ -43,7 +43,7 @@ class HuoltajanLapsiViewSet(GenericViewSet, mixins.RetrieveModelMixin):
         except Henkilo.DoesNotExist:
             raise Http404('Not found.')
         except Henkilo.MultipleObjectsReturned:  # This should not be possible
-            logger.error("Multiple of henkilot was found with henkilo_oid: " + henkilo_oid)
+            logger.error('Multiple of henkilot was found with henkilo_oid: {}'.format(henkilo_oid))
             raise Http404('Not found.')
 
         if henkilo.turvakielto:

@@ -1,8 +1,10 @@
 import json
 
 from django.test import TestCase
+from rest_framework import status
 from rest_framework.test import APIClient
 
+from varda.models import Z3_AdditionalCasUserFields, Z5_AuditLog
 from varda.unit_tests.test_utils import assert_status_code
 from django.contrib.auth.models import User
 from varda.custom_auth import _oppija_post_login_handler
@@ -175,11 +177,63 @@ class VardaOppijaViewsTests(TestCase):
                 for vakasuhde in vakapaatos['varhaiskasvatussuhteet']:
                     del vakasuhde['id']
 
-        assert_status_code(resp_huoltajanlapsi_api, 200)
+        assert_status_code(resp_huoltajanlapsi_api, status.HTTP_200_OK)
         self.assertEqual(resp_json, accepted_response)
+        request_count = Z5_AuditLog.objects.filter(user__username='suomi.fi#010280-952L#010215A951T').count()
+        self.assertEqual(request_count, 1)
 
     def test_get_huoltajanlapsi_data_no_permission(self):
         client = SetUpTestClient('tester2').client()
         resp_huoltajanlapsi_api = client.get('/api/oppija/v1/huoltajanlapsi/1.2.246.562.24.86012997950/',
                                              content_type='application/json')
-        assert_status_code(resp_huoltajanlapsi_api, 403)
+        assert_status_code(resp_huoltajanlapsi_api, status.HTTP_403_FORBIDDEN)
+
+    def test_api_lapsen_huoltaja_cant_access_wrong_lapsi(self):
+        lapsi_oid = '1.2.246.562.24.86012997950'
+        other_lapsi_oid = '1.2.246.562.24.47279942650'
+        huoltaja_oid = ''
+        client_suomifi_tester = self._create_oppija_cas_user_and_assert_huoltaja_oid(huoltaja_oid, lapsi_oid)
+        resp_huoltajanlapsi_api = client_suomifi_tester.get('/api/oppija/v1/huoltajanlapsi/{}/'.format(other_lapsi_oid),
+                                                            content_type='application/json')
+        assert_status_code(resp_huoltajanlapsi_api, status.HTTP_403_FORBIDDEN)
+
+    def test_api_lapsen_huoltaja_no_oid(self):
+        lapsi_oid = '1.2.246.562.24.86012997950'
+        huoltaja_oid = ''
+        client_suomifi_tester = self._create_oppija_cas_user_and_assert_huoltaja_oid(huoltaja_oid, lapsi_oid)
+        resp_huoltajanlapsi_api = client_suomifi_tester.get('/api/oppija/v1/huoltajanlapsi/{}/'.format(lapsi_oid),
+                                                            content_type='application/json')
+        assert_status_code(resp_huoltajanlapsi_api, status.HTTP_200_OK)
+
+        lapsi_oid = '1.2.246.562.24.86012997950'
+        huoltaja_oid = None
+        client_suomifi_tester = self._create_oppija_cas_user_and_assert_huoltaja_oid(huoltaja_oid, lapsi_oid)
+        resp_huoltajanlapsi_api = client_suomifi_tester.get('/api/oppija/v1/huoltajanlapsi/{}/'.format(lapsi_oid),
+                                                            content_type='application/json')
+        assert_status_code(resp_huoltajanlapsi_api, status.HTTP_200_OK)
+
+        lapsi_oid = '1.2.246.562.24.86012997950'
+        huoltaja_oid = None
+        client_suomifi_tester = self._create_oppija_cas_user_and_assert_huoltaja_oid(huoltaja_oid, lapsi_oid, is_set_huoltaja_oid=False)
+        resp_huoltajanlapsi_api = client_suomifi_tester.get('/api/oppija/v1/huoltajanlapsi/{}/'.format(lapsi_oid),
+                                                            content_type='application/json')
+        assert_status_code(resp_huoltajanlapsi_api, status.HTTP_200_OK)
+
+        request_count = Z5_AuditLog.objects.filter(user__username='suomi.fi#010280-952L#010215A951T').count()
+        self.assertEqual(request_count, 3)
+
+    def _create_oppija_cas_user_and_assert_huoltaja_oid(self, huoltaja_oid, lapsi_oid, is_set_huoltaja_oid=True):
+        user_suomifi, is_created = User.objects.get_or_create(username='suomi.fi#010280-952L#010215A951T',
+                                                              is_staff=False,
+                                                              is_active=True)
+        user_suomifi.personOid = lapsi_oid
+        if is_set_huoltaja_oid:
+            user_suomifi.impersonatorPersonOid = huoltaja_oid
+        _oppija_post_login_handler(user_suomifi)
+        expected_huoltaja_oid = (Z3_AdditionalCasUserFields.objects
+                                 .filter(user=user_suomifi)
+                                 .values_list('huoltaja_oid', flat=True)
+                                 .first()
+                                 )
+        self.assertEqual(expected_huoltaja_oid, huoltaja_oid)
+        return SetUpTestClient(user_suomifi.username).client()
