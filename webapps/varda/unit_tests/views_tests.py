@@ -775,14 +775,14 @@ class VardaViewsTests(TestCase):
                       status=status.HTTP_201_CREATED
                       )
         henkilo = {
-            "henkilotunnus": "230315A943J",
+            "henkilotunnus": "240219A149T",
             "etunimet": "Pentti Jr",
             "kutsumanimi": "Pentti",
             "sukunimi": "Kivimäki"
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 200)
         henkilo_url = json.loads(resp.content)['url']
 
         lapsi = {

@@ -1259,11 +1259,30 @@ def create_henkilot():
         changed_by=tester10_user
     )
 
+    # 240219A149T
+    henkilo_149T = Henkilo.objects.create(
+        henkilotunnus='gAAAAABfK90_SFbRRu7lXJaLvCe4SJMVG_oOdr1Ui8aSwWDNoTVLUqU-lWcceHV9LEQVN4TlSJhv2frKjrbyCokPLTyA1X-3hg==',
+        henkilotunnus_unique_hash='5d92e7c9f631645e2e86e6636cb4f5ba270557f4ee27118ae1884fc354e2db1a',
+        syntyma_pvm='1993-10-24',
+        henkilo_oid='1.2.246.562.24.2395579772672',
+        etunimet='Pentti Jr',
+        kutsumanimi='Pentti',
+        sukunimi='Kivimäki',
+        aidinkieli_koodi='FI',
+        kotikunta_koodi='297',
+        turvakielto=False,
+        sukupuoli_koodi=1,
+        katuosoite='Taavintie 4 C 1',
+        postinumero='12345',
+        postitoimipaikka='Testilä',
+        changed_by=tester10_user
+    )
+
     henkilo_list = {
         henkilo_1, henkilo_2, henkilo_3, henkilo_4, henkilo_5, henkilo_6, henkilo_7, henkilo_8, henkilo_9, henkilo_10,
         henkilo_11, henkilo_12, henkilo_13, henkilo_14, henkilo_15, henkilo_16, henkilo_331A, henkilo_642C,
         henkilo_807L, henkilo_020X, henkilo_706Y, henkilo_273S, henkilo_5155, henkilo_753Y, henkilo_0520, henkilo_031J,
-        henkilo_925B, henkilo_926C, henkilo_927D, henkilo_928E, henkilo_919U
+        henkilo_925B, henkilo_926C, henkilo_927D, henkilo_928E, henkilo_919U, henkilo_149T
     }
     for henkilo in henkilo_list:
         assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo)
