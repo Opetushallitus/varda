@@ -1041,7 +1041,7 @@ class HenkiloViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
                 raise ValidationError({'henkilo_oid': ['Not found']})
             # in order to return henkilo_oid and syntyma_pvm in create we need to wait until the new henkilo has been
             # added to oppijanumerorekisteri before saving to database
-            if henkilo_data and not serializer.validated_data['henkilo_oid']:
+            if henkilo_data and 'henkilo_oid' not in serializer.validated_data:
                 serializer.validated_data['henkilo_oid'] = henkilo_data['oidHenkilo']
                 serializer.validated_data['syntyma_pvm'] = henkilo_data.get('syntymaaika', None)
             saved_object = serializer.save(changed_by=user)
