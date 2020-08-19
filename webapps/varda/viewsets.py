@@ -656,8 +656,12 @@ class ToimipaikkaViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, P
             raise ValidationError({'vakajarjestaja': ['It is not allowed to change the vakajarjestaja where toimipaikka belongs to.']})
         if validated_data['toimintamuoto_koodi'] != toimipaikka_obj.toimintamuoto_koodi and toimipaikka_obj.organisaatio_oid is None:
             raise ValidationError({'toimintamuoto_koodi': ['It is not allowed to change the toimintamuoto_koodi of a toimipaikka that has no organisaatio_oid.']})
-        if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
-            if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm']):
+
+        # Validate that paattymis_pvm is after alkamis_pvm if toimipaikka has paattymis_pvm, or if paattymis_pvm
+        # is other than null in request
+        paattymis_pvm = validated_data.get('paattymis_pvm', None) or toimipaikka_obj.paattymis_pvm
+        if paattymis_pvm and not ('paattymis_pvm' in validated_data and not validated_data['paattymis_pvm']):
+            if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], paattymis_pvm):
                 raise ValidationError({'paattymis_pvm': ['paattymis_pvm must be after alkamis_pvm']})
 
         saved_object = serializer.save(changed_by=user)
