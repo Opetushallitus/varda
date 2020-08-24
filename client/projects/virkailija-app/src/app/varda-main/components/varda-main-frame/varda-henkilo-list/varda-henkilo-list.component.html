@@ -1,38 +1,71 @@
-<div class="varda-list"
-     id="henkiloListScrollWrapper">
-  <div class="varda-list-content varda-list-content-scrollable">
-    <div class="oph-error"
-         *ngIf="henkilot && henkilot.length === 0 && henkiloSearchValue && henkiloSearchValue.searchValue !== ''">
-      <p>{{'alert.henkilo-search-not-found-in-toimipaikka' | translate}}</p>
-    </div>
-    <div class="varda-list-item-outside"
-         *ngFor="let item of henkilot"
-         aria-live="polite">
-      <app-varda-henkilo-item [henkiloItem]="item"
-                              [activeHenkiloItemId]="activeHenkiloItemId"
-                              (editHenkiloItem)="editHenkilo($event)"></app-varda-henkilo-item>
-    </div>
-  </div>
-  <div *ngIf="toimipaikkaAccess.lapsitiedot.tallentaja && !(paosKatselijaObservable | async)" class="varda-henkilo-list-content-button-wrapper">
-    <button class="varda-button varda-button-wide responsive-md"
-            (click)="addHenkilo()"
-            id="addHenkiloBtn">
-      + {{'label.add-lapsi' | translate}}
-    </button>
-  </div>
+<div class="table-responsive">
+  <table class="henkilo-list">
+    <tbody>
+      <ng-container *ngFor="let henkilo of henkiloList">
+        <ng-container *ngIf="henkiloRooli === 'lapsi'">
+
+          <tr class="henkilo-list-item"
+              tabindex="0"
+              [class.disabled]="henkilo.expanded"
+              (keydown.enter)="clickItem(henkilo)"
+              (click)="clickItem(henkilo)">
+            <td>
+              <mat-icon *ngIf="henkilo.lapset.length === 1">perm_identity</mat-icon>
+              <mat-icon *ngIf="henkilo.lapset.length > 1 && !henkilo.expanded">add</mat-icon>
+            </td>
+            <td>
+              {{ henkilo.sukunimi }} {{ henkilo.etunimet }}
+              <span *ngIf="henkilo.lapset?.length > 1">({{henkilo.lapset.length}})</span>
+            </td>
+            <td>
+              <i *ngIf="henkilo.lapset?.length === 1">
+                {{ henkilo.lapset[0].oma_organisaatio_nimi }}
+              </i>
+            </td>
+          </tr>
+
+          <ng-container *ngIf="henkilo.expanded">
+            <tr class="henkilo-list-item sub-item"
+                tabindex="0"
+                (keydown.enter)="openItem(lapsi, henkilo)"
+                (click)="openItem(lapsi, henkilo)"
+                *ngFor="let lapsi of henkilo.lapset">
+              <td>
+                <mat-icon>perm_identity</mat-icon>
+              </td>
+              <td>{{ henkilo.sukunimi }} {{ henkilo.etunimet }}</td>
+              <td><i>{{ lapsi.oma_organisaatio_nimi || lapsi.vakatoimija_nimi }}</i></td>
+            </tr>
+          </ng-container>
+        </ng-container>
+
+        <ng-container *ngIf="henkiloRooli === 'tyontekija'">
+          <ng-container *ngFor="let tyontekija of henkilo.tyontekijat">
+            <tr class="henkilo-list-item"
+                tabindex="0"
+                (keydown.enter)="clickItem(henkilo)"
+                (click)="clickItem(henkilo)">
+              <td>
+                <mat-icon>perm_identity</mat-icon>
+              </td>
+              <td>{{ henkilo.sukunimi }} {{ henkilo.etunimet }}</td>
+              <td *ngIf="tyontekija.tyoskentelypaikat.length === 0; else tyoskentelypaikat"
+                  class="henkilo-warning">
+                <mat-icon>error_outline</mat-icon>
+                {{ i18n.henkilo_tyontekija_tiedot_puuttuu | translate }}
+              </td>
+              <ng-template #tyoskentelypaikat>
+                <td>
+                  <div *ngFor="let koodi of tyontekija.tehtavanimikkeet; let index = index; let last = last">
+                    <span *ngIf="index < 2" libKoodistoValue="vardatehtavanimike">{{ koodi }}</span>
+                    <span *ngIf="index === 1 && !last"> (+{{tyontekija.tehtavanimikkeet.length - 2}})</span>
+                  </div>
+                </td>
+              </ng-template>
+            </tr>
+          </ng-container>
+        </ng-container>
+      </ng-container>
+    </tbody>
+  </table>
 </div>
-<app-varda-modal-form [identifier]="'henkiloModal'"
-                      [isLg]="true"
-                      [modalTitle]="activeHenkiloItemId"
-                      [openModal]="henkiloFormOpen"
-                      [closeWithoutConfirm]="confirmedHenkiloFormLeave"
-                      (events)="handleFormClose($event)">
-  <app-varda-henkilo-form *ngIf="henkiloFormOpen"
-                          [henkilo]="activeHenkiloItem"
-                          (createHenkilo)="onHenkiloAdded($event)"
-                          (updateLapsi)="onLapsiUpdated($event)"
-                          (deleteLapsi)="onLapsiDeleted($event)"
-                          (valuesChanged)="henkiloFormValuesChanged($event)"></app-varda-henkilo-form>
-</app-varda-modal-form>
-<app-varda-success-modal [identifier]="'lapsiSuccessModal'"
-                         [successTitle]="'alert.modal-generic-save-success'"></app-varda-success-modal>

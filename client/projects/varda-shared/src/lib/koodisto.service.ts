@@ -1,14 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { TranslateService, LangChangeEvent } from '@ngx-translate/core';
-import { KoodistoDTO, KoodistoEnum, CodeDTO } from './dto/koodisto-models';
+import { KoodistoDTO, KoodistoEnum, CodeDTO, KoodistoSortBy } from './dto/koodisto-models';
 import { LoadingHttpService } from './loading-http.service';
-
-
-enum KoodistoSortBy {
-  name = 'name',
-  codeValue = 'code_value'
-}
 
 @Injectable({
   providedIn: 'root'
@@ -45,7 +39,8 @@ export class VardaKoodistoService {
     return new Observable(koodistoObs => {
       this.koodistot$.subscribe(koodistot => {
         if (koodistot) {
-          const foundKoodisto = koodistot.find(koodisto => koodistoNimi.toLocaleUpperCase() === koodisto.name.toLocaleUpperCase());
+          // needs to be copied object so sub-functions wont modify the original
+          const foundKoodisto = { ...koodistot.find(koodisto => koodistoNimi.toLocaleUpperCase() === koodisto.name.toLocaleUpperCase()) };
 
           if (sortBy) {
             foundKoodisto.codes.sort((a, b) => a[sortBy].localeCompare(b[sortBy]));

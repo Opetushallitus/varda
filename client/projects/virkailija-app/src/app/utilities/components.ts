@@ -1,5 +1,4 @@
 
-
 export { PageNotFoundComponent } from '../shared/components/page-not-found/page-not-found.component';
 export { VardaHeaderComponent } from '../varda-main/components/varda-header/varda-header.component';
 export { VardaMainFrameComponent } from '../varda-main/components/varda-main-frame/varda-main-frame.component';
@@ -8,19 +7,30 @@ export { VardaToimipaikkaSelectorComponent } from '../varda-main/components/vard
 export { VardaDashboardComponent } from '../varda-main/components/varda-dashboard/varda-dashboard.component';
 export { VardaLoginComponent } from '../varda-main/components/varda-login/varda-login.component';
 export { VardaLoginFormComponent } from '../varda-main/components/varda-login/varda-login-form/varda-login-form.component';
-export { VardaLogoutComponent } from '../varda-main/components/varda-logout/varda-logout.component';
-export { VardaLogoutFormComponent } from '../varda-main/components/varda-logout/varda-logout-form/varda-logout-form.component';
-export { VardaIconComponent } from '../shared/components/varda-icon/varda-icon.component';
 export { VardaLapsiSectionComponent } from '../varda-main/components/varda-main-frame/varda-lapsi-section/varda-lapsi-section.component';
+export { VardaHenkilostoSectionComponent } from '../varda-main/components/varda-main-frame/varda-henkilosto-section/varda-henkilosto-section.component';
 export { VardaAccessibilitySettingsComponent } from '../shared/components/varda-accessibility-settings/varda-accessibility-settings.component';
-export { VardaInfoModalComponent } from '../shared/components/varda-info-modal/varda-info-modal.component';
 export { VardaModalFormComponent } from '../shared/components/varda-modal-form/varda-modal-form.component';
 export { VardaLapsiFormComponent } from '../varda-main/components/varda-lapsi-form/varda-lapsi-form.component';
+export { VardaTyontekijaFormComponent } from '../varda-main/components/varda-tyontekija-form/varda-tyontekija-form.component';
 export { VardaHenkiloFormComponent } from '../varda-main/components/varda-henkilo-form/varda-henkilo-form.component';
 export { VardaFormQuestionComponent } from '../shared/components/varda-form-question/varda-form-question.component';
+export { VardaFormFieldComponent } from '../shared/components/varda-form-field/varda-form-field.component';
 export { VardaToimipaikkaFormComponent } from '../varda-main/components/varda-toimipaikka-form/varda-toimipaikka-form.component';
 export { VardaSuccessModalComponent } from '../shared/components/varda-success-modal/varda-success-modal.component';
 export { VardaReportingComponent } from '../varda-main/components/varda-reporting/varda-reporting.component';
 export { VardaVakatoimijaComponent } from '../varda-main/components/varda-vakatoimija/varda-vakatoimija.component';
 export { VardaHenkiloListComponent } from '../varda-main/components/varda-main-frame/varda-henkilo-list/varda-henkilo-list.component';
-export { VardaHenkiloListItemComponent } from '../varda-main/components/varda-main-frame/varda-henkilo-list/varda-henkilo-item/varda-henkilo-item.component';
+export { VardaPalvelussuhteetComponent } from '../varda-main/components/varda-tyontekija-form/varda-palvelussuhteet/varda-palvelussuhteet.component';
+export { VardaPalvelussuhdeComponent } from '../varda-main/components/varda-tyontekija-form/varda-palvelussuhteet/varda-palvelussuhde/varda-palvelussuhde.component';
+export { VardaTyoskentelypaikkaComponent } from '../varda-main/components/varda-tyontekija-form/varda-palvelussuhteet/varda-palvelussuhde/varda-tyoskentelypaikka/varda-tyoskentelypaikka.component';
+export { VardaTyontekijaTutkintoComponent } from '../varda-main/components/varda-tyontekija-form/varda-tyontekija-tutkinto/varda-tyontekija-tutkinto.component';
+export { VardaPoissaoloComponent } from '../varda-main/components/varda-tyontekija-form/varda-palvelussuhteet/varda-palvelussuhde/varda-poissaolo/varda-poissaolo.component';
+export { VardaTyontekijaErrorComponent } from '../varda-main/components/varda-tyontekija-form/varda-tyontekija-error/varda-tyontekija-error.component';
+export { TyontekijaFormActionRowComponent } from '../varda-main/components/varda-tyontekija-form/tyontekija-form-action-row/tyontekija-form-action-row.component';
+export { VardaTyontekijaTaydennyskoulutuksetComponent } from '../varda-main/components/varda-tyontekija-form/varda-tyontekija-taydennyskoulutukset/varda-tyontekija-taydennyskoulutukset.component';
+export { VardaTyontekijaTaydennyskoulutusComponent } from '../varda-main/components/varda-tyontekija-form/varda-tyontekija-taydennyskoulutukset/varda-tyontekija-taydennyskoulutus/varda-tyontekija-taydennyskoulutus.component';
+export { VardaTaydennyskoulutusComponent } from '../varda-main/components/varda-taydennyskoulutus/varda-taydennyskoulutus.component';
+export { VardaTaydennyskoulutusFormComponent } from '../varda-main/components/varda-taydennyskoulutus/varda-taydennyskoulutus-form/varda-taydennyskoulutus-form.component';
+export { VardaTaydennyskoulutusOsallistujaListComponent } from '../varda-main/components/varda-taydennyskoulutus/varda-taydennyskoulutus-form/taydennyskoulutus-osallistuja-list/taydennyskoulutus-osallistuja-list.component';
+export { VardaTaydennyskoulutusOsallistujaPickerComponent } from '../varda-main/components/varda-taydennyskoulutus/varda-taydennyskoulutus-form/taydennyskoulutus-osallistuja-picker/taydennyskoulutus-osallistuja-picker.component';

@@ -1,12 +1,32 @@
 <div class="page-not-found-wrapper">
   <div class="page-not-found-content">
-    <p id="pageNotFound">{{'page-not-found.page-not-found' | translate}}</p>
+    <p id="pageNotFound">
+      404 - Etsimääsi sivua ei löydy |
+      Sidan du sökte hittas inte
+    </p>
     <ul>
-      <li>{{'page-not-found.link-might-be-wrong' | translate}}</li>
-      <li>{{'page-not-found.have-you-written-address-correctly' | translate}}</li>
-      <li>{{'page-not-found.link-deprecated' | translate}}</li>
+      <li>
+        Käyttämässäsi linkissä saattaa olla virhe. |
+        Länken du använde kan vara felaktig.
+      </li>
+      <li>
+        Oletko kirjoittanut verkkopalvelun osoitteen oikein? |
+        Har du skrivit webbtjänstens adress rätt?
+      </li>
+      <li>
+        Jos käytit selaimesi kirjanmerkkiä, sen sisältämä linkki saattaa olla vanhentunut. |
+        Om du använde ett bokmärke i din webbläsare kan länken i bokmärket vara föråldrad.
+      </li>
     </ul>
-    <p>{{'page-not-found.you-can-find-service' | translate}} <a [href]="rootUrl">{{rootUrl}}</a></p>
-    <p>{{'page-not-found.thank-you-for-your-patience' | translate}}</p>
+    <p>
+      Vardan verkkopalvelun löydät osoitteesta: |
+      Vardas webbtjänst finns på adressen:
+      <a class="varda-button secondary"
+         [href]="rootUrl">{{rootUrl}}</a>
+    </p>
+    <p>
+      Kiitos kärsivällisyydestäsi! |
+      Tack for ditt tålamod!
+    </p>
   </div>
 </div>

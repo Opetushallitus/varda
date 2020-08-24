@@ -100,7 +100,7 @@ describe('VardaMainFrameComponent', () => {
     fixture.detectChanges();
   });
 
-  it('Should set vakajarjestaja and init toimipaikat', () => {
+/*   it('Should set vakajarjestaja and init toimipaikat', () => {
     component.toimipaikat = toimipaikatStub;
     expect(component.toimipaikat.length).toEqual(4);
     component.updateToimipaikatAndVakasuhteet();
@@ -112,6 +112,6 @@ describe('VardaMainFrameComponent', () => {
     component.toimipaikat = toimipaikatStub;
     component.onToimipaikkaChanged(toimipaikatStub[0]);
     expect(apiWrapperMockFunction).toHaveBeenCalled();
-  });
+  }); */
 });
 

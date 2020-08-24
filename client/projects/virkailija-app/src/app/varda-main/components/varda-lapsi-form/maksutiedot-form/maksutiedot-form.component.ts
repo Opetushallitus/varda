@@ -1,20 +1,20 @@
-import {Component, ElementRef, Input, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
-import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
-import {HuoltajaDTO, VardaCreateMaksutietoDTO, VardaMaksutietoDTO} from '../../../../utilities/models/dto/varda-maksutieto-dto.model';
+import { Component, ElementRef, Input, OnInit, QueryList, ViewChild, ViewChildren, Output, EventEmitter } from '@angular/core';
+import { AbstractControl, FormArray, FormControl, FormGroup } from '@angular/forms';
+import { HuoltajaDTO, VardaCreateMaksutietoDTO, VardaMaksutietoDTO } from '../../../../utilities/models/dto/varda-maksutieto-dto.model';
 import { MatExpansionPanel } from '@angular/material/expansion';
-import {VardaFieldSet, VardaFieldsetArrayContainer} from '../../../../utilities/models/varda-fieldset.model';
-import {VardaApiWrapperService} from '../../../../core/services/varda-api-wrapper.service';
-import {VardaFormService} from '../../../../core/services/varda-form.service';
-import {forkJoin, Observable} from 'rxjs';
-import {VardaUtilityService} from '../../../../core/services/varda-utility.service';
-import {VardaValidatorService} from '../../../../core/services/varda-validator.service';
-import {VardaApiService} from '../../../../core/services/varda-api.service';
-import {TranslateService} from '@ngx-translate/core';
-import {VardaDateService} from '../../../services/varda-date.service';
-import {VardaErrorMessageService} from '../../../../core/services/varda-error-message.service';
-import {AuthService} from '../../../../core/auth/auth.service';
+import { VardaFieldSet, VardaFieldsetArrayContainer } from '../../../../utilities/models/varda-fieldset.model';
+import { VardaApiWrapperService } from '../../../../core/services/varda-api-wrapper.service';
+import { VardaFormService } from '../../../../core/services/varda-form.service';
+import { forkJoin, Observable } from 'rxjs';
+import { VardaUtilityService } from '../../../../core/services/varda-utility.service';
+import { VardaValidatorService } from '../../../../core/services/varda-validator.service';
+import { VardaApiService } from '../../../../core/services/varda-api.service';
+import { TranslateService } from '@ngx-translate/core';
+import { VardaDateService } from '../../../services/varda-date.service';
+import { VardaErrorMessageService } from '../../../../core/services/varda-error-message.service';
+import { AuthService } from '../../../../core/auth/auth.service';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
-import {map} from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-maksutiedot-form',
@@ -30,6 +30,7 @@ export class MaksutiedotFormComponent implements OnInit {
   }
   @Input() toimipaikkaAccess: UserAccess;
   @Input() hideMaksutiedot: boolean;
+
   // For accessing template reference variables
   @ViewChildren('maksutietoPanels') maksutietoPanels: QueryList<MatExpansionPanel>;
   @ViewChildren('maksutietoCancelDeleteBtn') maksutietoCancelDeleteButtons: QueryList<HTMLButtonElement>;
@@ -53,17 +54,17 @@ export class MaksutiedotFormComponent implements OnInit {
   // template for creating new one
   maksutiedotFieldSetTemplate: VardaFieldsetArrayContainer;
   // fieldset obj for editing
-  maksutiedotFieldSetObj: {[key: string]: Array<VardaFieldSet>};
+  maksutiedotFieldSetObj: { [key: string]: Array<VardaFieldSet> };
 
   constructor(private vardaApiWrapperService: VardaApiWrapperService,
-              private vardaFormService: VardaFormService,
-              private vardaUtilityService: VardaUtilityService,
-              private vardaValidatorService: VardaValidatorService,
-              private vardaApiService: VardaApiService,
-              private translate: TranslateService,
-              private vardaDateService: VardaDateService,
-              private vardaErrorMessageService: VardaErrorMessageService,
-              private authService: AuthService) {
+    private vardaFormService: VardaFormService,
+    private vardaUtilityService: VardaUtilityService,
+    private vardaValidatorService: VardaValidatorService,
+    private vardaApiService: VardaApiService,
+    private translate: TranslateService,
+    private vardaDateService: VardaDateService,
+    private vardaErrorMessageService: VardaErrorMessageService,
+    private authService: AuthService) {
     this.maksutiedotFieldSetObj = {};
     this.maksutiedotFormGroup = new FormGroup({
       maksutiedotFormArr: new FormArray([]),
@@ -114,7 +115,7 @@ export class MaksutiedotFormComponent implements OnInit {
 
   private scrollToSelected() {
     if (this.ui.scrollOnInit) {
-      this.ui.scrollOnInit.nativeElement.scrollIntoView({behavior: 'smooth'});
+      this.ui.scrollOnInit.nativeElement.scrollIntoView({ behavior: 'smooth' });
       this.ui.scrollOnInit = null;
     }
   }
@@ -175,8 +176,8 @@ export class MaksutiedotFormComponent implements OnInit {
       const alkupvm = this.vardaDateService.vardaDateToUIStrDate(entity.alkamis_pvm);
       const loppupvm = this.vardaDateService.vardaDateToUIStrDate(entity.paattymis_pvm);
       return entity.paattymis_pvm
-        ? this.translate.get('label.maksutieto.muokkaa.otsikko-alkupvm-loppupvm', {alkupvm, loppupvm})
-        : this.translate.get('label.maksutieto.muokkaa.otsikko-alkupvm', {alkupvm});
+        ? this.translate.get('label.maksutieto.muokkaa.otsikko-alkupvm-loppupvm', { alkupvm, loppupvm })
+        : this.translate.get('label.maksutieto.muokkaa.otsikko-alkupvm', { alkupvm });
     }
     return this.translate.get('label.maksutieto.uusi.otsikko');
   }
@@ -281,6 +282,7 @@ export class MaksutiedotFormComponent implements OnInit {
         .subscribe(() => {
           this.showSuccessAndHideAfterDelay('alert.delete-maksutieto-success');
           this.maksutiedot.splice(idx, 1);
+
           // Refresh component
           this.ngOnInit();
         }, this.onSaveError(idx))
@@ -383,7 +385,7 @@ export class MaksutiedotFormComponent implements OnInit {
         .forEach((formGroup: FormGroup) => {
           delete formGroup.controls['perheen_koko'];
           delete formGroup.controls['palveluseteli_arvo'];
-      });
+        });
     }
   }
 

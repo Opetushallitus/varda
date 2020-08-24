@@ -1,0 +1,10 @@
+/* .taydennyskoulutus-osallistuja-sections {
+  display: flex;
+  justify-content: space-between;
+}
+
+.taydennyskoulutus-osallistuja-sections > * {
+  display: block;
+  width: calc(50% - 1em);
+}
+ */

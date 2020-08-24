@@ -1,17 +1,17 @@
-import {EMPTY, Observable} from 'rxjs';
-import {expand, map, reduce} from 'rxjs/operators';
-import {Injectable} from '@angular/core';
-import {environment} from '../../../environments/environment';
-import {VardaUtilityService} from './varda-utility.service';
-import {VardaToimipaikkaYhteenvetoDTO} from '../../utilities/models/dto/varda-toimipaikka-yhteenveto-dto.model';
-import {VardaFieldsetArrayContainer} from '../../utilities/models/varda-fieldset.model';
+import { EMPTY, Observable } from 'rxjs';
+import { expand, map, reduce } from 'rxjs/operators';
+import { Injectable } from '@angular/core';
+import { environment } from '../../../environments/environment';
+import { VardaUtilityService } from './varda-utility.service';
+import { VardaToimipaikkaYhteenvetoDTO } from '../../utilities/models/dto/varda-toimipaikka-yhteenveto-dto.model';
+import { VardaFieldsetArrayContainer } from '../../utilities/models/varda-fieldset.model';
 import {
   VardaCreateMaksutietoDTO,
   VardaMaksutietoDTO,
   VardaUpdateMaksutietoDTO
 } from '../../utilities/models/dto/varda-maksutieto-dto.model';
-import {VardaPageDto} from '../../utilities/models/dto/varda-page-dto';
-import {VardaKoodistoDto} from '../../utilities/models/dto/varda-koodisto-dto.model';
+import { VardaPageDto } from '../../utilities/models/dto/varda-page-dto';
+import { VardaKoodistoDto } from '../../utilities/models/dto/varda-koodisto-dto.model';
 import {
   HenkilohakuResultDTO,
   HenkilohakuSearchDTO,
@@ -19,23 +19,29 @@ import {
   LapsiByToimipaikkaDTO,
   ToimipaikanLapsi
 } from '../../utilities/models/dto/varda-henkilohaku-dto.model';
-import {sha256} from 'js-sha256';
-import {LoadingHttpService} from 'varda-shared';
-import {AllVakajarjestajaSearchDto} from '../../utilities/models/varda-vakajarjestaja.model';
+import { sha256 } from 'js-sha256';
+import { LoadingHttpService } from 'varda-shared';
+import { AllVakajarjestajaSearchDto } from '../../utilities/models/varda-vakajarjestaja.model';
 import {
   PaosToimintaCreateDto,
   PaosToimintaDto,
   PaosToimintatietoDto, PaosToimipaikkaDto,
   PaosToimipaikkatietoDto, PaosVakajarjestajaDto
 } from '../../utilities/models/dto/varda-paos-dto';
-import {VardaToimipaikkaSearchDto} from '../../utilities/models/dto/varda-toimipaikka-dto.model';
-import {VardaVakajarjestajaUi} from '../../utilities/models/varda-vakajarjestaja-ui.model';
+import { VardaToimipaikkaSearchDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
+import { VardaVakajarjestajaUi } from '../../utilities/models/varda-vakajarjestaja-ui.model';
+import { VardaHenkiloDTO } from '../../utilities/models';
+import { HenkiloListDTO } from '../../utilities/models/dto/varda-henkilo-dto.model';
+import { VardaApiServiceInterface } from 'varda-shared/lib/dto/vardaApiService.interface';
+import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
 @Injectable()
-export class VardaApiService {
+export class VardaApiService implements VardaApiServiceInterface {
 
-  constructor(private vardaUtilityService: VardaUtilityService,
-              private http: LoadingHttpService) { }
+  constructor(
+    private vardaUtilityService: VardaUtilityService,
+    private http: LoadingHttpService
+  ) { }
 
   private toimipaikatApiPath = `${environment.vardaApiUrl}/toimipaikat/`;
   private vakaJarjestajatApiPath = `${environment.vardaApiUrl}/vakajarjestajat/`;
@@ -66,6 +72,19 @@ export class VardaApiService {
     return `/api/v1/lapset/${id}/`;
   }
 
+  getTranslationCategory() {
+    return environment.localizationCategory;
+  }
+
+  getLocalizationApi() {
+    return `${environment.vardaAppUrl}/api/ui/localisation`;
+  }
+
+  getTranslationEnum() {
+    return VirkailijaTranslations;
+  }
+
+
   getUserData(): Observable<any> {
     return this.http.get(`${environment.vardaAppUrl}/api/user/data/`).pipe(map((resp: any) => {
       return resp;
@@ -80,6 +99,10 @@ export class VardaApiService {
   getLogoutCasUrl(): string {
     const opintopolkuUrl = this.vardaUtilityService.getOpintopolkuUrl(window.location.hostname);
     return `${opintopolkuUrl}/service-provider-app/saml/logout`;
+  }
+
+  getHenkilo(henkiloId: number): Observable<VardaHenkiloDTO> {
+    return this.http.get(`${this.henkilotApiPath}${henkiloId}/`);
   }
 
   getHenkilot(): Observable<any> {
@@ -135,6 +158,10 @@ export class VardaApiService {
     }));
   }
 
+  getVakajarjestajaLapset(vakajarjestajaId: string, searchFilter: any): Observable<VardaPageDto<HenkiloListDTO>> {
+    return this.http.get(`${this.vakaJarjestajatUiPath}${vakajarjestajaId}/lapsi-list/`, searchFilter);
+  }
+
   getLapsetForToimipaikka(toimipaikkaId: string, searchParams?: any, nextLink?: string): Observable<VardaPageDto<LapsiByToimipaikkaDTO>> {
     let url = `${this.toimipaikanLapsetUiPath}${toimipaikkaId}/lapset/`;
 
@@ -169,7 +196,7 @@ export class VardaApiService {
     const url = `${this.vakaJarjestajatUiPath}${vakaJarjestajaId}/toimipaikat/`;
     return this.http.get(url).pipe(
       map((resp: any) => {
-        return {results: resp};
+        return { results: resp };
       })
     );
   }
@@ -177,7 +204,7 @@ export class VardaApiService {
   getAllVarhaiskasvatussuhteetByToimipaikka(toimipaikkaId: string): Observable<any> {
     const url = `${environment.vardaApiUrl}/toimipaikat/${toimipaikkaId}/varhaiskasvatussuhteet/`;
     return this.http.get(url).pipe(map((resp: any) => {
-      return {results: resp.results, count: resp.count, next: resp.next};
+      return { results: resp.results, count: resp.count, next: resp.next };
     }));
   }
 
@@ -400,9 +427,9 @@ export class VardaApiService {
   }
 
   getHenkilohaku(vakajarjestajaId: number,
-                 searchDto: HenkilohakuSearchDTO,
-                 nextUrl?: string): Observable<VardaPageDto<HenkilohakuResultDTO>> {
-    const mutableSearchDto = {...searchDto};
+    searchDto: HenkilohakuSearchDTO,
+    nextUrl?: string): Observable<VardaPageDto<HenkilohakuResultDTO>> {
+    const mutableSearchDto = { ...searchDto };
     mutableSearchDto.search = this.hashHetu(mutableSearchDto.search);
     const url = nextUrl && this.getVardaPrefixedUrl(nextUrl)
       || `${this.vakaJarjestajatApiPath}${vakajarjestajaId}/henkilohaku/${searchDto.type || HenkilohakuType.lapset}/`;
@@ -413,12 +440,12 @@ export class VardaApiService {
 
   getAllPaosToimijat(searchDto: AllVakajarjestajaSearchDto, page: number = 1): Observable<VardaPageDto<PaosVakajarjestajaDto>> {
     const url = this.allVakaJarjestajatUiPath;
-    return this.http.get(url, {...searchDto, ...{page}});
+    return this.http.get(url, { ...searchDto, ...{ page } });
   }
 
   getAllPaosToimipaikat(id: string, searchDto: VardaToimipaikkaSearchDto, page: number = 1): Observable<VardaPageDto<PaosToimipaikkaDto>> {
     const url = `${this.vakaJarjestajatUiPath}${id}/all-toimipaikat/`;
-    return this.http.get(url, {...searchDto, ...{page}});
+    return this.http.get(url, { ...searchDto, ...{ page } });
   }
 
   createPaosToiminta(createDto: PaosToimintaCreateDto): Observable<PaosToimintaDto> {
@@ -428,17 +455,17 @@ export class VardaApiService {
 
   getPaosToimijat(id: string, page: number): Observable<VardaPageDto<PaosToimintatietoDto>> {
     const url = `${this.vakaJarjestajatApiPath}${id}/paos-toimijat/`;
-    return this.http.get(url, {page});
+    return this.http.get(url, { page });
   }
 
   getPaosJarjestajat(vakajarjestajaId: string, toimipaikkaId: string, page: number): Observable<VardaPageDto<VardaVakajarjestajaUi>> {
     const url = `${this.vakaJarjestajatUiPath}${vakajarjestajaId}/toimipaikat/${toimipaikkaId}/paos-jarjestajat/`;
-    return this.http.get(url, {page});
+    return this.http.get(url, { page });
   }
 
   getPaosToimipaikat(id: string, page: number = 1): Observable<VardaPageDto<PaosToimipaikkatietoDto>> {
     const url = `${this.vakaJarjestajatApiPath}${id}/paos-toimipaikat/`;
-    return this.http.get(url, {page});
+    return this.http.get(url, { page });
   }
 
   // Generic function to fetch all pages sequentially.
@@ -469,7 +496,7 @@ export class VardaApiService {
   updatePaosOikeus(paosOikeusId: number, savingToimijaId: string) {
     const url = `${this.paosOikeusApiPath}${paosOikeusId}/`;
     const savingToimijaUrl = VardaApiService.getVakajarjestajaUrlFromId(`${savingToimijaId}`);
-    return this.http.put(url, {tallentaja_organisaatio: savingToimijaUrl});
+    return this.http.put(url, { tallentaja_organisaatio: savingToimijaUrl });
   }
 
   hashHetu(rawHetu: string) {

@@ -5,10 +5,12 @@ import { Moment } from 'moment';
 @Injectable()
 export class VardaDateService {
   public static vardaDefaultDateFormat = 'DD.MM.YYYY';
+  public static uiDateFormat = 'd.M.yyyy';
   public static vardaApiDateFormat = 'YYYY-MM-DD';
 
   /**
    * Varda UI date: view values are always DD.MM.YYYY. Datepicker returns Moment object. See https://material.angular.io/components/datepicker
+   * ..or d.M.yyyy
    * Varda API date: YYYY-MM-DD
    */
 

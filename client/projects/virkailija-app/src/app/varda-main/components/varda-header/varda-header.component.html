@@ -1,12 +1,13 @@
 <ng-container *ngIf="!virkailijaRaamit">
   <div id="virkailija-raamit-filleri"></div>
 </ng-container>
-<nav class="navbar navbar-expand-md navbar-light bg-light varda-navbar"
-     *ngIf="isAuthenticated()"
+<nav *ngIf="isAuthenticated()"
+     class="navbar navbar-expand-md navbar-light bg-light varda-navbar"
      appHighContrast>
   <div class="navbar-brand varda-navbar-toimija"
        *ngIf="vakajarjestajat && vakajarjestajat.length">
-    <span class="d-none d-lg-inline">{{'label.toimija' | translate}}:</span>
+    <span id="siteTitle"
+          class="d-none d-lg-inline">{{"label.toimija" | translate}}:</span>
     <ng-container *ngIf="vakajarjestajat">
       <app-varda-dropdown-filter [filterBy]="['nimi', 'organisaatio_oid', 'y_tunnus']"
                                  [label]="selectedVakajarjestaja?.nimi"
@@ -23,7 +24,7 @@
           aria-controls="navbarSupportedContent"
           aria-expanded="false"
           aria-label="Toggle navigation">
-    <span class="navbar-toggler-text">{{'label.menu' | translate }}</span>
+    <span class="navbar-toggler-text">{{"label.menu" | translate }}</span>
     <mat-icon>expand_more</mat-icon>
   </button>
 
@@ -32,43 +33,63 @@
        id="navbarSupportedContent">
     <ul class="navbar-nav mr-auto"
         *ngIf="vakajarjestajat">
-      <li class="varda-header-nav-item-container"
-          *ngIf="toimipaikkaAccessIfAnyToimipaikka.lapsitiedot.tallentaja"
-          [ngClass]="{'active-nav-item': activeNavItem === 'toimipaikatjalapset'}">
-        <a [routerLink]="['/']"
-           class=""
-           (click)="setActiveNavItem('toimipaikatjalapset')">
-          {{'label.navi.syotto' | translate}}</a>
-      </li>
+      <ng-container *ngIf="!tilapainenHenkilostoOnlyBoolean">
+        <li class="varda-header-nav-item-container"
+            [class.active-nav-item]="activeNavItem === 'syota-tietoja'">
+          <a [routerLink]="['/']">
+            {{"label.navi.syotto" | translate}}</a>
+        </li>
+
+        <li class="varda-header-nav-item-container"
+            [class.active-nav-item]="activeNavItem === 'tietojen-katselu'">
+          <a [routerLink]="['/tietojen-katselu']">
+            {{"label.navi.tietojen-katselu" | translate}}</a>
+        </li>
+
+        <li class="varda-header-nav-item-container divider">
+          <span class="d-none d-md-block"> | </span>
+        </li>
+      </ng-container>
 
       <li class="varda-header-nav-item-container"
-          [ngClass]="{'active-nav-item': activeNavItem === 'haku'}">
-        <a [routerLink]="['/haku']"
-           (click)="setActiveNavItem('haku')">
-          {{'label.navi.haku' | translate}}</a>
-      </li>
-      <li class="varda-header-nav-item-container"
-          [ngClass]="{'active-nav-item': activeNavItem === 'tietojen-katselu'}">
-        <a [routerLink]="['/tietojen-katselu']"
-           (click)="setActiveNavItem('tietojen-katselu')">
-          {{'label.navi.tietojen-katselu' | translate}}</a>
-      </li>
+          [matMenuTriggerFor]="menu"
+          #trigger="matMenuTrigger"
+          [class.active-nav-item]=" activeNavItem === 'vakatoimija'">
+        <button class="varda-text-button">
+          <span>{{ "label.varhaiskasvatustoimija" | translate }}</span>
+          <mat-icon *ngIf="!trigger.menuOpen; else arrowUp">arrow_drop_down</mat-icon>
+          <ng-template #arrowUp>
+            <mat-icon>arrow_drop_up</mat-icon>
+          </ng-template>
+        </button>
 
-      <li class="varda-header-nav-item-container divider">
-        <span class="d-none d-md-block"> | </span>
-      </li>
-
-      <li class="varda-header-nav-item-container"
-          [ngClass]="{'active-nav-item': activeNavItem === 'vakatoimija'}"
-          *ngIf="canViewToimijanTiedot">
-        <app-varda-dropdown-menu topicKey="label.varhaiskasvatustoimija"
-                                 [routeMaps]="toimijanTiedotRouteMaps"
-                                 (navigationChange)="setActiveNavItem('vakatoimija')"></app-varda-dropdown-menu>
+        <mat-menu #menu="matMenu">
+          <a [routerLink]="['/vakatoimija']"
+             (keydown.tab)="$event.stopPropagation()"
+             (keydown.shift.tab)="$event.stopPropagation()"
+             mat-menu-item>
+            {{ "label.yhteystiedot" | translate }}
+          </a>
+          <a [routerLink]="['/paos-hallinta']"
+             *ngIf="!tilapainenHenkilostoOnlyBoolean"
+             (keydown.tab)="$event.stopPropagation()"
+             (keydown.shift.tab)="$event.stopPropagation()"
+             mat-menu-item>
+            {{ "label.paostoiminta" | translate }}
+          </a>
+          <a *ngIf="toimipaikkaAccessIfAnyToimipaikka.tilapainenHenkilosto.katselija"
+             [routerLink]="['/tilapainen-henkilosto']"
+             (keydown.tab)="$event.stopPropagation()"
+             (keydown.shift.tab)="$event.stopPropagation()"
+             mat-menu-item>
+            {{ "label.tilapainen-henkilosto" | translate }}
+          </a>
+        </mat-menu>
       </li>
       <li class="varda-header-nav-item-container">
         <a [href]="'ohjeet.url.confluence' | translate"
            target="_vardaGuides">
-          {{'label.ohjeet' | translate}}</a>
+          {{"label.ohjeet" | translate}}</a>
       </li>
     </ul>
   </div>

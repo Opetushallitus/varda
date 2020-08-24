@@ -8,12 +8,9 @@ import {
   VardaHeaderComponent,
   VardaMainFrameComponent,
   VardaFooterComponent,
-  VardaHenkiloListItemComponent,
   VardaDashboardComponent,
   VardaLoginComponent,
   VardaLoginFormComponent,
-  VardaLogoutComponent,
-  VardaLogoutFormComponent,
   VardaToimipaikkaSelectorComponent,
   VardaLapsiSectionComponent,
   VardaHenkiloListComponent,
@@ -21,7 +18,21 @@ import {
   VardaLapsiFormComponent,
   VardaToimipaikkaFormComponent,
   VardaReportingComponent,
-  VardaVakatoimijaComponent
+  VardaVakatoimijaComponent,
+  VardaHenkilostoSectionComponent,
+  VardaTyontekijaFormComponent,
+  TyontekijaFormActionRowComponent,
+  VardaTyontekijaErrorComponent,
+  VardaTyontekijaTutkintoComponent,
+  VardaTyontekijaTaydennyskoulutusComponent,
+  VardaPalvelussuhdeComponent,
+  VardaTyoskentelypaikkaComponent,
+  VardaPalvelussuhteetComponent,
+  VardaPoissaoloComponent,
+  VardaTaydennyskoulutusComponent,
+  VardaTaydennyskoulutusFormComponent,
+  VardaTaydennyskoulutusOsallistujaListComponent,
+  VardaTaydennyskoulutusOsallistujaPickerComponent,
 } from '../utilities/components';
 
 import { AuthService } from '../core/auth/auth.service';
@@ -47,10 +58,11 @@ import { PaosAddPaosToimintaComponent } from './components/varda-paos-management
 import { PaosAddToimintaListComponent } from './components/varda-paos-management-container/paos-add-paos-toiminta/paos-add-toiminta-list/paos-add-toiminta-list.component';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { VardaDropdownMenuComponent } from './components/varda-header/varda-dropdown-menu/varda-dropdown-menu.component';
 import { VardaHenkilostoTilapainenComponent } from './components/varda-henkilosto-tilapainen/varda-henkilosto-tilapainen.component';
 import { EiHenkilostoaDialogComponent } from './components/varda-henkilosto-tilapainen/ei-henkilostoa-dialog/ei-henkilostoa-dialog.component';
 import { MatDialogModule } from '@angular/material/dialog';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { VardaTyontekijaTaydennyskoulutuksetComponent } from './components/varda-tyontekija-form/varda-tyontekija-taydennyskoulutukset/varda-tyontekija-taydennyskoulutukset.component';
 
 @NgModule({
   imports: [
@@ -62,7 +74,8 @@ import { MatDialogModule } from '@angular/material/dialog';
     MatTooltipModule,
     VardaSharedModule,
     MatMenuModule,
-    MatDialogModule
+    MatDialogModule,
+    MatProgressBarModule
   ],
   declarations: [
     VardaHeaderComponent,
@@ -70,15 +83,27 @@ import { MatDialogModule } from '@angular/material/dialog';
     VardaMainFrameComponent,
     VardaFooterComponent,
     VardaToimipaikkaSelectorComponent,
-    VardaHenkiloListItemComponent,
     VardaDashboardComponent,
     VardaLoginComponent,
     VardaLoginFormComponent,
-    VardaLogoutComponent,
-    VardaLogoutFormComponent,
     VardaLapsiSectionComponent,
+    VardaHenkilostoSectionComponent,
     VardaHenkiloListComponent,
     VardaLapsiFormComponent,
+    VardaTyontekijaFormComponent,
+    TyontekijaFormActionRowComponent,
+    VardaTyontekijaErrorComponent,
+    VardaTyontekijaTutkintoComponent,
+    VardaTyontekijaTaydennyskoulutuksetComponent,
+    VardaTyontekijaTaydennyskoulutusComponent,
+    VardaTaydennyskoulutusComponent,
+    VardaTaydennyskoulutusFormComponent,
+    VardaTaydennyskoulutusOsallistujaListComponent,
+    VardaTaydennyskoulutusOsallistujaPickerComponent,
+    VardaPalvelussuhteetComponent,
+    VardaPalvelussuhdeComponent,
+    VardaTyoskentelypaikkaComponent,
+    VardaPoissaoloComponent,
     VardaHenkiloFormComponent,
     VardaToimipaikkaFormComponent,
     VardaReportingComponent,
@@ -98,7 +123,6 @@ import { MatDialogModule } from '@angular/material/dialog';
     PaosAddedToimipaikatComponent,
     PaosAddPaosToimintaComponent,
     PaosAddToimintaListComponent,
-    VardaDropdownMenuComponent,
     EiHenkilostoaDialogComponent
   ],
   entryComponents: [EiHenkilostoaDialogComponent],
@@ -108,16 +132,28 @@ import { MatDialogModule } from '@angular/material/dialog';
     VardaMainFrameComponent,
     VardaFooterComponent,
     VardaToimipaikkaSelectorComponent,
-    VardaHenkiloListItemComponent,
     VardaDashboardComponent,
     VardaLoginComponent,
     VardaLoginFormComponent,
-    VardaLogoutComponent,
-    VardaLogoutFormComponent,
     VardaLapsiSectionComponent,
+    VardaHenkilostoSectionComponent,
     VardaHenkiloListComponent,
     VardaHenkiloFormComponent,
     VardaLapsiFormComponent,
+    VardaTyontekijaFormComponent,
+    TyontekijaFormActionRowComponent,
+    VardaTyontekijaErrorComponent,
+    VardaTyontekijaTutkintoComponent,
+    VardaTyontekijaTaydennyskoulutuksetComponent,
+    VardaTyontekijaTaydennyskoulutusComponent,
+    VardaTaydennyskoulutusComponent,
+    VardaTaydennyskoulutusFormComponent,
+    VardaTaydennyskoulutusOsallistujaListComponent,
+    VardaTaydennyskoulutusOsallistujaPickerComponent,
+    VardaPalvelussuhteetComponent,
+    VardaPalvelussuhdeComponent,
+    VardaTyoskentelypaikkaComponent,
+    VardaPoissaoloComponent,
     VardaToimipaikkaFormComponent,
     VardaReportingComponent,
     VardaVakatoimijaComponent

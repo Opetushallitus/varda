@@ -1,0 +1,77 @@
+:host {
+  --tree-width: 2rem;
+  --tree-border: 0.25rem solid var(--gray-lighten-2);
+}
+
+.palvelussuhde {
+  position: relative;
+  display: flex;
+}
+
+.palvelussuhde>.mat-icon {
+  margin: 0.5rem;
+  vertical-align: middle;
+  line-height: 1.6rem;
+}
+
+.palvelussuhde>.mat-expansion-panel {
+  margin: 0.5rem;
+  width: 100%;
+}
+
+.tyoskentelypaikka .mat-expansion-panel {
+  position: relative;
+}
+
+.tyoskentelypaikka {
+  position: relative;
+}
+
+.tyoskentelypaikka::before {
+  content: "";
+  position: absolute;
+  bottom: 1.6rem;
+  left: -1.5rem;
+  border-bottom: var(--tree-border);
+  border-left: var(--tree-border);
+  width: 2.2rem;
+  height: calc(100% + 1rem);
+  border-color: green;
+}
+
+.tree-border {
+  position: relative;
+}
+
+.tree-border::before {
+  content: "";
+  position: absolute;
+  top: -0.95rem;
+  left: 2.85rem;
+  border-left: var(--tree-border);
+  width: 2rem;
+  height: 4rem;
+  border-color: blue;
+}
+
+.poissaolot.tree-border::before {
+  height: calc(100% - 5rem);
+  bottom: 5rem;
+  border-color: red;
+}
+
+.has-poissaolo::before {
+  height: calc(100% + 5rem);
+}
+
+
+
+@media (max-width: 576px) {
+  .tree-border::before {
+    left: 0rem;
+  }
+
+  .tyoskentelypaikka::before {
+    left: -0.9rem;
+  }
+}

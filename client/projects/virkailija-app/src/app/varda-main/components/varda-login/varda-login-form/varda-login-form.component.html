@@ -3,21 +3,15 @@
   <main class="varda-login-page">
     <h1 class="oph-h2 oph-bold"
         aria-live="polite">
-      <span *ngIf="!showLogOutMsg">{{'label.login' | translate}}</span>
-      <span *ngIf="showLogOutMsg">{{'logout-info' | translate}}</span>
+      Kirjaudu sisään / Logga in
     </h1>
 
     <div class="varda-page-content">
       <button class="varda-button responsive-md"
               id="navigateToVardaLoginBtn"
               (click)="navigateToVardaLogin()">
-        {{'label.action-login' | translate}}
+        LOGIN
       </button>
-
-      <div class="oph-h4 varda-logout-clear"
-           *ngIf="showLogOutMsg">
-        {{'logout-close-and-clear' | translate}}
-      </div>
 
       <ng-container *ngIf="tokenInput?.show">
         <form (ngSubmit)="addLoginToken(tokenInput.value)"

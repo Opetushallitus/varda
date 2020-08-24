@@ -17,23 +17,23 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatSelectModule } from '@angular/material/select';
 import { MatMomentDateModule, MAT_MOMENT_DATE_ADAPTER_OPTIONS } from '@angular/material-moment-adapter';
 import { MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import {
   PageNotFoundComponent,
-  VardaIconComponent,
   VardaAccessibilitySettingsComponent,
-  VardaInfoModalComponent,
   VardaModalFormComponent,
   VardaFormQuestionComponent,
-  VardaSuccessModalComponent
+  VardaSuccessModalComponent,
+  VardaFormFieldComponent
 } from '../utilities/components';
 import { HighlightElementDirective } from './directives/highlight-element.directive';
 import { HighContrastDirective } from './directives/high-contrast.directive';
 import { ClickOutsideDirective } from './directives/click-outside.directive';
 import { KoodistoDisplayvalueDirective } from './directives/koodisto-displayvalue.directive';
-import { VardaDatePipe } from './pipes/varda-date.pipe';
+import { VardaDate } from './pipes/varda-date.pipe';
 import { KeysPipe } from './pipes/keys.pipe';
 import { VardaDeleteButtonComponent } from './components/varda-delete-button/varda-delete-button.component';
 import { VardaToggleButtonComponent } from './components/varda-toggle-button/varda-toggle-button.component';
@@ -49,6 +49,11 @@ import { SlideHideDirective } from './directives/slide-hide.directive';
 import { VardaDatepickerComponent } from './components/varda-datepicker/varda-datepicker.component';
 import { VardaDateService } from '../varda-main/services/varda-date.service';
 import { VardaDatepickerHeaderComponent } from './components/varda-datepicker/varda-datepicker-header/varda-datepicker-header.component';
+import { MatPaginatorIntl, MatPaginatorModule, MAT_PAGINATOR_DEFAULT_OPTIONS } from '@angular/material/paginator';
+import { VardaMatPaginator } from './components/varda-paginator/varda-paginator.class';
+import { ToimipaikkaNimiDirective } from './directives/toimipaikka-nimi.directive';
+import { MatSortModule } from '@angular/material/sort';
+
 
 
 const cookieConfig: NgcCookieConsentConfig = {
@@ -95,8 +100,11 @@ const cookieConfig: NgcCookieConsentConfig = {
     MatListModule,
     MatCardModule,
     MatMenuModule,
+    MatSelectModule,
     MatDatepickerModule,
     MatMomentDateModule,
+    MatPaginatorModule,
+    MatSortModule,
     TranslateModule,
     NgcCookieConsentModule.forRoot(cookieConfig)
   ],
@@ -104,16 +112,14 @@ const cookieConfig: NgcCookieConsentConfig = {
     PageNotFoundComponent,
     HighlightElementDirective,
     HighContrastDirective,
-    VardaIconComponent,
     VardaAccessibilitySettingsComponent,
-    VardaInfoModalComponent,
     ClickOutsideDirective,
     KoodistoDisplayvalueDirective,
-    VardaDatePipe,
+    VardaDate,
     KeysPipe,
-    VardaInfoModalComponent,
     VardaModalFormComponent,
     VardaFormQuestionComponent,
+    VardaFormFieldComponent,
     VardaSuccessModalComponent,
     VardaDeleteButtonComponent,
     VardaToggleButtonComponent,
@@ -125,6 +131,7 @@ const cookieConfig: NgcCookieConsentConfig = {
     VardaRadioButtonComponent,
     BrowserNotSupportedComponent,
     SlideHideDirective,
+    ToimipaikkaNimiDirective,
     VardaDatepickerComponent,
     VardaDatepickerHeaderComponent],
   providers: [
@@ -148,20 +155,28 @@ const cookieConfig: NgcCookieConsentConfig = {
     },
     {
       provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { strict: true }
-    }
+    },
+    {
+      provide: MAT_PAGINATOR_DEFAULT_OPTIONS, useValue: {
+        pageSizeOptions: [1, 2, 5, 20, 50, 100],
+        pageSize: 2,
+        showFirstLastButtons: true
+      }
+    },
+    { provide: MatPaginatorIntl, useClass: VardaMatPaginator },
+    MatSortModule
   ],
   exports: [
     HighlightElementDirective,
     HighContrastDirective,
     ClickOutsideDirective,
     KoodistoDisplayvalueDirective,
-    VardaIconComponent,
     VardaAccessibilitySettingsComponent,
-    VardaInfoModalComponent,
     VardaModalFormComponent,
     VardaFormQuestionComponent,
+    VardaFormFieldComponent,
     VardaSuccessModalComponent,
-    VardaDatePipe,
+    VardaDate,
     KeysPipe,
     FormsModule,
     ReactiveFormsModule,
@@ -171,11 +186,14 @@ const cookieConfig: NgcCookieConsentConfig = {
     MatFormFieldModule,
     MatInputModule,
     MatIconModule,
+    MatSelectModule,
     MatExpansionModule,
     MatRadioModule,
     MatAutocompleteModule,
     MatListModule,
     MatCardModule,
+    MatPaginatorModule,
+    MatSortModule,
     BrowserAnimationsModule,
     NgcCookieConsentModule,
     VardaDeleteButtonComponent,
@@ -188,8 +206,9 @@ const cookieConfig: NgcCookieConsentConfig = {
     VardaRadioButtonComponent,
     BrowserNotSupportedComponent,
     SlideHideDirective,
+    ToimipaikkaNimiDirective,
     VardaDatepickerComponent
   ],
-  entryComponents: [ VardaDatepickerHeaderComponent ]
+  entryComponents: [VardaDatepickerHeaderComponent]
 })
 export class SharedModule { }

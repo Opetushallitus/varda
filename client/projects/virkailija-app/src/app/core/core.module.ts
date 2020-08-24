@@ -14,7 +14,9 @@ import { VardaKielikoodistoService } from './services/varda-kielikoodisto.servic
 import { VardaErrorMessageService } from './services/varda-error-message.service';
 import { VardaDomService } from './services/varda-dom.service';
 import { VardaKuntakoodistoService } from './services/varda-kuntakoodisto.service';
-import { VardaHenkilostoService } from './services/varda-henkilosto-service';
+import { VardaHenkilostoApiService } from './services/varda-henkilosto.service';
+import { VardaLapsiService } from './services/varda-lapsi.service';
+
 
 @NgModule({
   imports: [
@@ -35,7 +37,8 @@ import { VardaHenkilostoService } from './services/varda-henkilosto-service';
     VardaErrorMessageService,
     VardaDomService,
     VardaKuntakoodistoService,
-    VardaHenkilostoService
+    VardaHenkilostoApiService,
+    VardaLapsiService
   ]
 })
 export class CoreModule {

@@ -1,20 +1,19 @@
-import {Component, OnInit} from '@angular/core';
-import {Title} from '@angular/platform-browser';
-import {VardaApiService} from '../../../core/services/varda-api.service';
-import {AuthService} from '../../../core/auth/auth.service';
-import {TranslateService} from '@ngx-translate/core';
-import {forkJoin, Observable, Subscription, throwError} from 'rxjs';
-import {mergeMap, switchMap} from 'rxjs/operators';
-import {VardaKielikoodistoService} from '../../../core/services/varda-kielikoodisto.service';
-import {VardaKuntakoodistoService} from '../../../core/services/varda-kuntakoodisto.service';
-import {VardaApiWrapperService} from '../../../core/services/varda-api-wrapper.service';
-import {VardaVakajarjestajaService} from '../../../core/services/varda-vakajarjestaja.service';
-import {NgcCookieConsentService} from 'ngx-cookieconsent';
-import {VardaToimipaikkaDTO, VardaVakajarjestajaUi} from '../../../utilities/models';
-import {Router} from '@angular/router';
-import {VardaMaksunPerusteKoodistoService} from '../../../core/services/varda-maksun-peruste-koodisto.service';
-import {LoginService, VardaUserDTO} from 'varda-shared';
-import {VardaToimipaikkaMinimalDto} from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
+import { Component, OnInit } from '@angular/core';
+import { VardaApiService } from '../../../core/services/varda-api.service';
+import { AuthService } from '../../../core/auth/auth.service';
+import { TranslateService } from '@ngx-translate/core';
+import { forkJoin, Observable, Subscription, throwError } from 'rxjs';
+import { mergeMap, switchMap } from 'rxjs/operators';
+import { VardaKielikoodistoService } from '../../../core/services/varda-kielikoodisto.service';
+import { VardaKuntakoodistoService } from '../../../core/services/varda-kuntakoodisto.service';
+import { VardaApiWrapperService } from '../../../core/services/varda-api-wrapper.service';
+import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
+import { NgcCookieConsentService } from 'ngx-cookieconsent';
+import { VardaVakajarjestajaUi } from '../../../utilities/models';
+import { VardaMaksunPerusteKoodistoService } from '../../../core/services/varda-maksun-peruste-koodisto.service';
+import { LoginService, VardaUserDTO, VardaKoodistoService } from 'varda-shared';
+import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
+import { environment } from 'projects/virkailija-app/src/environments/environment';
 
 @Component({
   selector: 'app-varda-dashboard',
@@ -36,25 +35,28 @@ export class VardaDashboardComponent implements OnInit {
     private vardaApiService: VardaApiService,
     private authService: AuthService,
     private loginService: LoginService,
+    private koodistoService: VardaKoodistoService,
     private vardaKielikoodistoService: VardaKielikoodistoService,
     private vardaKuntakoodistoService: VardaKuntakoodistoService,
     private vardaMaksunPerusteKoodistoService: VardaMaksunPerusteKoodistoService,
     private vardaApiWrapperService: VardaApiWrapperService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private ccService: NgcCookieConsentService,
-    private router: Router) {
-      this.ui = {
-        isLoading: false,
-        dashboardInitializationError: false,
-        alertMsg: 'alert.error-occurred'
-      };
+  ) {
+    this.ui = {
+      isLoading: false,
+      dashboardInitializationError: false,
+      alertMsg: 'alert.error-occurred'
+    };
 
-      this.vardaVakajarjestajaService.getSelectedVakajarjestajaObs().subscribe((data) => {
-        if (data.onVakajarjestajaChange) {
-          this.ui.isLoading = true;
-          this.getToimipaikat().subscribe(this.onGetToimipaikatSuccess.bind(this), this.onGetToimipaikatError.bind(this));
-        }
-      });
+    this.koodistoService.initKoodistot(environment.vardaAppUrl);
+
+    this.vardaVakajarjestajaService.getSelectedVakajarjestajaObs().subscribe((data) => {
+      if (data.onVakajarjestajaChange) {
+        this.ui.isLoading = true;
+        this.getToimipaikat().subscribe(this.onGetToimipaikatSuccess.bind(this), this.onGetToimipaikatError.bind(this));
+      }
+    });
   }
 
   getToimipaikat(): any {
@@ -67,15 +69,16 @@ export class VardaDashboardComponent implements OnInit {
     this.ui.isLoading = false;
   }
 
-  onGetToimipaikatError(e: any): any {
-    console.log(e);
-    if (e.noPrivileges) {
+  onGetToimipaikatError(e: any): void {
+    if (e?.noPrivileges) {
       this.ui.alertMsg = 'alert.contact-organisation-admin-user';
-    } else if (e.isPalvelukayttaja) {
+      this.ui.dashboardInitializationError = true;
+    } else if (e?.isPalvelukayttaja) {
       this.ui.alertMsg = 'alert.palvelukayttaja-forbidden';
+      this.ui.dashboardInitializationError = true;
+    } else {
+      this.onGetToimipaikatSuccess([]);
     }
-
-    this.ui.dashboardInitializationError = true;
     this.ui.isLoading = false;
   }
 
@@ -83,11 +86,11 @@ export class VardaDashboardComponent implements OnInit {
     let selectedVakajarjestaja = vakajarjestajat[0];
     const vakajarjestajaFoundInLocalStorage = localStorage.getItem('varda.selectedvakajarjestaja');
     if (vakajarjestajaFoundInLocalStorage) {
-        const parsedVakajarjestaja = JSON.parse(vakajarjestajaFoundInLocalStorage);
-        selectedVakajarjestaja = vakajarjestajat.find(vakajarjestaja => vakajarjestaja.id === parsedVakajarjestaja.id);
-        if (!selectedVakajarjestaja) {
-          selectedVakajarjestaja = vakajarjestajat[0];
-        }
+      const parsedVakajarjestaja = JSON.parse(vakajarjestajaFoundInLocalStorage);
+      selectedVakajarjestaja = vakajarjestajat.find(vakajarjestaja => vakajarjestaja.id === parsedVakajarjestaja.id);
+      if (!selectedVakajarjestaja) {
+        selectedVakajarjestaja = vakajarjestajat[0];
+      }
     }
 
     this.vardaVakajarjestajaService.setSelectedVakajarjestaja(selectedVakajarjestaja);
@@ -98,10 +101,12 @@ export class VardaDashboardComponent implements OnInit {
       this.loginService.setUsername(userData.username);
       this.loginService.setUserEmail(userData.email);
       this.authService.setUserAsiointikieli(userData.asiointikieli_koodi);
-      this.authService.setUserKayttooikeudet({kayttooikeudet: userData.kayttooikeudet,
-        kayttajatyyppi: userData.kayttajatyyppi}).subscribe(() => {
-          setUserDataObserver.next();
-          setUserDataObserver.complete();
+      this.authService.setUserKayttooikeudet({
+        kayttooikeudet: userData.kayttooikeudet,
+        kayttajatyyppi: userData.kayttajatyyppi
+      }).subscribe(() => {
+        setUserDataObserver.next();
+        setUserDataObserver.complete();
       }, (e) => setUserDataObserver.error(e));
     });
   }
@@ -113,7 +118,7 @@ export class VardaDashboardComponent implements OnInit {
     ]).pipe(mergeMap((data) => {
       const privileges = data[0];
       if (!privileges.length) {
-        return throwError({noPrivileges: true});
+        return throwError({ noPrivileges: true });
       }
       this.vardaVakajarjestajaService.setVakajarjestajat(privileges);
       this.setSelectedVakajarjestaja(privileges);
@@ -129,8 +134,9 @@ export class VardaDashboardComponent implements OnInit {
     })).pipe(mergeMap(() => {
       return this.getToimipaikat();
     })).subscribe({
-        next: this.onGetToimipaikatSuccess.bind(this),
-        error: this.onGetToimipaikatError.bind(this)},
+      next: this.onGetToimipaikatSuccess.bind(this),
+      error: this.onGetToimipaikatError.bind(this)
+    },
     );
 
     this.translateService.get(['cookie.message']).subscribe((translations) => {
@@ -143,11 +149,11 @@ export class VardaDashboardComponent implements OnInit {
       this.handleCookies(translations);
     });
 
-    this.popupOpenSubscription = this.ccService.popupOpen$.subscribe(() => {});
+    this.popupOpenSubscription = this.ccService.popupOpen$.subscribe(() => { });
   }
 
   private handleCookies(translations) {
-    this.ccService.getConfig().content = this.ccService.getConfig().content || {} ;
+    this.ccService.getConfig().content = this.ccService.getConfig().content || {};
     // Override default messages with the translated ones
     this.ccService.getConfig().content.message = translations['cookie.message'];
     this.ccService.destroy();

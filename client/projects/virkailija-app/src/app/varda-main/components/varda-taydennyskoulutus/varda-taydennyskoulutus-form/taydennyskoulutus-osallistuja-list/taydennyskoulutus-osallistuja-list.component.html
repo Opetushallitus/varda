@@ -1,0 +1,74 @@
+<!-- <section class="taydennyskoulutus-osallistuja">
+  <h2 class="oph-h2">{{ i18n.osallistujat | translate }} (1337)</h2>
+
+  <button class="varda-button varda-button-danger secondary responsive" [disabled]="!tableSelection.selected.length" type="button" (click)="removeSelectedOsallistujat()">remove</button>
+  <table mat-table
+         [dataSource]="tyontekijatData"
+         class="example-table"
+         matSort
+         matSortActive="nimi"
+         matSortDisableClear
+         matSortDirection="desc">
+
+    <ng-container matColumnDef="select">
+      <th mat-header-cell
+          *matHeaderCellDef>
+        <mat-checkbox (change)="$event ? masterToggle() : null"
+                      [checked]="tableSelection.hasValue() && isAllSelected()"
+                      [indeterminate]="tableSelection.hasValue() && !isAllSelected()"
+                      [aria-label]="checkboxLabel()">
+        </mat-checkbox>
+      </th>
+      <td mat-cell
+          *matCellDef="let row">
+        <mat-checkbox (click)="$event.stopPropagation()"
+                      (change)="$event ? tableSelection.toggle(row) : null"
+                      [checked]="tableSelection.isSelected(row)"
+                      [aria-label]="checkboxLabel(row)">
+        </mat-checkbox>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="nimi">
+      <th mat-header-cell
+          mat-sort-header
+          *matHeaderCellDef>{{ i18n.nimi | translate }}</th>
+      <td mat-cell
+          *matCellDef="let row">{{row.nimi}}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="tehtavanimike">
+      <th mat-header-cell
+          *matHeaderCellDef>{{ i18n.tyoskentelypaikka_tehtavanimike | translate }}</th>
+      <td mat-cell
+          *matCellDef="let row">
+        <ng-container *ngFor="let tehtavanimike_koodi of row.tehtavanimike_koodit">
+          <div class=""
+               libKoodistoValue="vardatehtavanimike">
+            {{ tehtavanimike_koodi }}
+          </div>
+        </ng-container>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="delete">
+      <th mat-header-cell
+          *matHeaderCellDef>{{ i18n.delete | translate }}</th>
+      <td mat-cell
+          *matCellDef="let row">
+          <button class="varda-button varda-button-danger" (click)="removeOsallistuja(row)">
+            <mat-icon>delete_outline</mat-icon>
+            PÖISTÄ
+          </button>
+        </td>
+    </ng-container>
+
+
+    <tr mat-header-row
+        *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row
+        *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+  <div class="osallistuja-info">{{ i18n.taydennyskoulutukset_instruction_tuo_osallistujat_listasta | translate }}</div>
+</section>
+ -->

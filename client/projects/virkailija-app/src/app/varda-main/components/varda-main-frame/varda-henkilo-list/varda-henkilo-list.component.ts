@@ -1,157 +1,49 @@
-import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
-import { map } from 'rxjs/operators';
-import { Observable } from 'rxjs';
-import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
-import { VardaExtendedHenkiloModel, VardaHenkiloSearchConfiguration, VardaHenkiloDTO } from 'projects/virkailija-app/src/app/utilities/models';
-import { VardaHenkiloService } from '../../../services/varda-henkilo.service';
-import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
-import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
-import { ModalEvent } from 'projects/virkailija-app/src/app/shared/components/varda-modal-form/varda-modal-form.component';
+import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { HenkiloRooliEnum } from 'projects/virkailija-app/src/app/utilities/models/enums/henkilorooli.enum';
+import { HenkiloListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-henkilo-dto.model';
+import { TyontekijaListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tyontekija-dto.model';
+import { LapsiListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-lapsi-dto.model';
+import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
 @Component({
   selector: 'app-varda-henkilo-list',
   templateUrl: './varda-henkilo-list.component.html',
   styleUrls: ['./varda-henkilo-list.component.css']
 })
-export class VardaHenkiloListComponent implements OnInit, OnChanges {
-  @Input() toimipaikkaAccess: UserAccess;
-  @Input() henkiloList: Array<VardaExtendedHenkiloModel>;
-  @Input() henkiloSearchValue: VardaHenkiloSearchConfiguration;
-  @Output() henkiloListUpdated: EventEmitter<any> = new EventEmitter<any>();
-
-  henkilot: Array<VardaExtendedHenkiloModel> = [];
-  activeHenkiloItemId: string;
-  activeHenkiloItem: VardaHenkiloDTO;
-  previousSearchValue: string;
-  henkiloFormOpen: boolean;
-  searchTimeout: any;
-  showHenkiloCountText: boolean;
-  confirmedHenkiloFormLeave: boolean;
-  paosKatselijaObservable: Observable<boolean>;
-
-  constructor(private vardaHenkiloService: VardaHenkiloService,
-    private vardaModalService: VardaModalService,
-    private vardaVakajarjestajaService: VardaVakajarjestajaService) {
-    this.henkiloFormOpen = false;
-    this.showHenkiloCountText = true;
-    this.confirmedHenkiloFormLeave = true;
-
-    this.vardaModalService.modalOpenObs('henkiloForm').subscribe((data) => {
-      if (data.data['isNew']) {
-        this.activeHenkiloItem = null;
-      }
-      this.openHenkiloForm();
-    });
-
-    this.paosKatselijaObservable = this.vardaVakajarjestajaService.getSelectedToimipaikkaObs()
-      .pipe(map(toimipaikka => {
-        if (toimipaikka.paos_toimipaikka_kytkin) {
-          const toimipaikkaTallentajaIdList = toimipaikka.paos_tallentaja_organisaatio_id_list;
-          return toimipaikkaTallentajaIdList &&
-            !toimipaikkaTallentajaIdList.includes(parseInt(this.vardaVakajarjestajaService.selectedVakajarjestaja.id));
-        } else {
-          return false;
-        }
-      }));
-  }
-
-  addHenkilo(): void {
-    this.vardaModalService.openModal('henkiloForm', true, { isNew: true });
-  }
-
-  editHenkilo(data: any): void {
-    this.activeHenkiloItem = data;
-    this.openHenkiloForm();
-  }
-
-  onLapsiUpdated(data: any): void {
-    if (data.saveVarhaiskasvatuspaatos) {
-      const henkiloToUpdate = this.henkiloList.find((henkiloItem) => {
-        const lapsi = henkiloItem.lapsi;
-        return lapsi.url === data.saveVarhaiskasvatuspaatos.url;
-      });
-
-      const lapsiObj = henkiloToUpdate.lapsi;
-      if (lapsiObj) {
-        lapsiObj['varhaiskasvatuspaatokset_top'].push(data.saveVarhaiskasvatuspaatos.entity);
-      }
-    }
-  }
-
-  onLapsiDeleted(data: any): void {
-    const lapsiToDeleteIndex = this.henkiloList.findIndex((henkiloItem) => {
-      const lapsi = henkiloItem.lapsi;
-      return lapsi.url === data;
-    });
-
-    if (lapsiToDeleteIndex !== -1) {
-      this.henkiloList.splice(lapsiToDeleteIndex, 1);
-    }
-
-    this.searchHenkilo(this.henkiloSearchValue);
-  }
-
-  onHenkiloAdded(extendedHenkilo: VardaExtendedHenkiloModel): void {
-    this.confirmedHenkiloFormLeave = true;
-    this.henkiloFormOpen = false;
-    extendedHenkilo.isNew = true;
-    this.henkiloList.push(extendedHenkilo);
-    this.activeHenkiloItem = extendedHenkilo.henkilo;
-    this.activeHenkiloItemId = extendedHenkilo.henkilo.url;
-    this.searchHenkilo(this.henkiloSearchValue);
-  }
-
-  openHenkiloForm(): void {
-    this.henkiloFormOpen = true;
-  }
-
-  henkiloFormValuesChanged(hasChanged: boolean): void {
-    this.confirmedHenkiloFormLeave = !hasChanged;
-  }
-
-  searchHenkilo(searchObj: VardaHenkiloSearchConfiguration): void {
-    const searchValue = searchObj.searchValue;
-
-    this.showHenkiloCountText = true;
-
-    if (!searchObj.displayAll) {
-      this.showHenkiloCountText = false;
-    }
-
-    if (this.searchTimeout) {
-      clearTimeout(this.searchTimeout);
-    }
-
-    this.previousSearchValue = searchValue;
-
-    const cloneHenkiloList = Object.assign(this.henkiloList);
-
-    this.searchTimeout = setTimeout(() => {
-      this.henkilot = this.vardaHenkiloService.searchByStrAndEntityFilter(searchObj, cloneHenkiloList);
-      this.henkiloListUpdated.emit(this.henkilot);
-    });
-  }
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes.henkiloSearchValue && changes.henkiloSearchValue.currentValue) {
-      const searchObj = changes.henkiloSearchValue.currentValue;
-      this.searchHenkilo(searchObj);
-    }
-
-    if (changes.henkiloList) {
-      this.henkilot = Object.assign(this.henkiloList);
-      this.searchHenkilo(this.henkiloSearchValue);
-    }
-  }
+export class VardaHenkiloListComponent implements OnInit {
+  @Input() henkiloList: Array<HenkiloListDTO>;
+  @Input() henkiloRooli: HenkiloRooliEnum;
+  @Output() openHenkiloForm = new EventEmitter<LapsiListDTO | TyontekijaListDTO>(true);
+  i18n = VirkailijaTranslations;
 
   ngOnInit() {
-    this.henkilot = Object.assign(this.henkiloList);
+    if (this.henkiloRooli === HenkiloRooliEnum.tyontekija) {
+      this.initTehtavanimikkeet();
+    }
   }
 
-  handleFormClose($event: ModalEvent) {
-    if ($event === ModalEvent.hidden) {
-      this.henkiloFormOpen = false;
-      this.confirmedHenkiloFormLeave = true;
+  clickItem(henkilo: HenkiloListDTO) {
+    const suhdeToCheck = this.henkiloRooli === HenkiloRooliEnum.lapsi ? 'lapset' : 'tyontekijat';
+    henkilo.expanded = henkilo[suhdeToCheck].length !== 1;
+    if (!henkilo.expanded) {
+      this.openItem(henkilo[suhdeToCheck][0], henkilo);
     }
+  }
+
+  openItem(henkilonSuhde: LapsiListDTO | TyontekijaListDTO, henkilo: HenkiloListDTO) {
+    henkilonSuhde.henkilo_id = henkilo.id;
+    henkilonSuhde.henkilo_oid = henkilo.henkilo_oid;
+    this.openHenkiloForm.emit(henkilonSuhde);
+  }
+
+
+  initTehtavanimikkeet() {
+    this.henkiloList.forEach(henkilo => henkilo.tyontekijat.forEach(tyontekija => {
+      const tehtavanimikkeet = new Set(tyontekija.tyoskentelypaikat.sort(
+        (a, b) => b.alkamis_pvm.localeCompare(a.alkamis_pvm)
+      ).map(tyopaikka => tyopaikka.tehtavanimike_koodi));
+
+      tyontekija.tehtavanimikkeet = Array.from(tehtavanimikkeet);
+    }));
   }
 }

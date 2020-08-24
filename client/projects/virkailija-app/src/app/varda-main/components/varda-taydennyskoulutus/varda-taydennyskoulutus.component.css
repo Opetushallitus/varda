@@ -1,0 +1,24 @@
+/*
+th.mat-header-cell:not(:first-of-type),
+td.mat-cell:not(:first-of-type) {
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+}
+
+
+table td .mat-icon {
+  user-select: none;
+  margin-right: 0.5em;
+}
+
+.table th .mat-checkbox,
+.table td .mat-checkbox  {
+  position: relative;
+  top: 4px;
+}
+
+.taydennyskoulutus-row:hover {
+  cursor: pointer;
+  background-color: var(--blue-lighten-1);
+}
+ */

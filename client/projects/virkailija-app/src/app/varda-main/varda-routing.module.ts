@@ -6,16 +6,17 @@ import {
   VardaDashboardComponent,
   PageNotFoundComponent,
   VardaLoginComponent,
-  VardaLogoutComponent,
   VardaReportingComponent,
   VardaMainFrameComponent,
-  VardaVakatoimijaComponent
+  VardaVakatoimijaComponent,
+  VardaTaydennyskoulutusComponent
 } from '../utilities/components';
 import { VardaHakuContainerComponent } from './components/varda-haku-container/varda-haku-container.component';
 import { VardaPaosManagementContainerComponent } from './components/varda-paos-management-container/varda-paos-management-container.component';
 import { BrowserNotSupportedComponent } from '../shared/components/browser-not-supported/browser-not-supported.component';
 import { BrowserNotSupportedGuard } from '../shared/components/browser-not-supported/browser-not-supported.guard';
 import { VardaHenkilostoTilapainenComponent } from './components/varda-henkilosto-tilapainen/varda-henkilosto-tilapainen.component';
+import { VirkailijaTranslations } from '../../assets/i18n/virkailija-translations.enum';
 
 const routes: Routes = [
   {
@@ -26,7 +27,7 @@ const routes: Routes = [
       {
         path: '',
         component: VardaMainFrameComponent,
-        data: { title: 'label.navi.syotto' }
+        data: { title: 'label.navi.syotto', nav_item: 'syota-tietoja' }
       },
       {
         path: 'vakatoimija',
@@ -46,12 +47,17 @@ const routes: Routes = [
       {
         path: 'paos-hallinta',
         component: VardaPaosManagementContainerComponent,
-        data: { title: 'ohjeet.lisaaminen-ja-muokkaaminen.paos-hallinta' }
+        data: { title: VirkailijaTranslations.paos_title, nav_item: 'vakatoimija' }
       },
-     /*  {
+      {
         path: 'tilapainen-henkilosto',
         component: VardaHenkilostoTilapainenComponent,
-        data: { title: 'label.tilapainen-henkilosto' }
+        data: { title: VirkailijaTranslations.tilapainen_henkilosto }
+      },
+      /* {
+        path: 'taydennyskoulutus',
+        component: VardaTaydennyskoulutusComponent,
+        data: { title: VirkailijaTranslations.taydennyskoulutukset }
       }, */
     ]
   },
@@ -59,12 +65,7 @@ const routes: Routes = [
     path: 'login',
     canActivate: [BrowserNotSupportedGuard],
     component: VardaLoginComponent,
-    data: { title: 'label.login' }
-  },
-  {
-    path: 'logout',
-    component: VardaLogoutComponent,
-    data: { title: 'label.logout' }
+    data: { title: 'Kirjaudu sisään / Logga in' }
   },
   {
     path: 'browser-not-supported',
@@ -74,7 +75,7 @@ const routes: Routes = [
   {
     path: '**',
     component: PageNotFoundComponent,
-    data: { title: 'page-not-found.page-not-found' }
+    data: { title: '404 - page not found' }
   }
 ];
 @NgModule({

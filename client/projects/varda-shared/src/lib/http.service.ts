@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, throwError, throwError as observableThrowError, BehaviorSubject } from 'rxjs';
+import { Observable, of, throwError, throwError as observableThrowError, BehaviorSubject, EMPTY } from 'rxjs';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { catchError, delay, flatMap, map, retryWhen, take } from 'rxjs/operators';
+import { catchError, delay, flatMap, map, retryWhen, take, expand, reduce } from 'rxjs/operators';
 
 export abstract class AbstractHttpService {
   public apiKey = '';
@@ -13,6 +13,7 @@ export abstract class AbstractHttpService {
   }
 
   abstract get(url: string, options?: any, httpHeadersParam?: HttpHeaders): Observable<any>;
+  abstract getAllResults(url: string, options?: any): Observable<Array<any>>;
   abstract post(url: string, formData: any, options?: any): Observable<any>;
   abstract put(url: string, formData: any, options?: any): Observable<any>;
   abstract patch(url: string, formData: any, options?: any): Observable<any>;
@@ -93,6 +94,13 @@ export class HttpService extends AbstractHttpService {
           return observableThrowError(e);
         })
       );
+  }
+
+  getAllResults(url: string, options?: any): Observable<Array<any>> {
+    return this.get(url, options).pipe(
+      expand((res: any) => res.next ? this.http.get(res.next) : EMPTY),
+      reduce((acc, res: any) => acc.concat(res.results), [])
+    );
   }
 
   post(url: string, formData: any, options?: any): Observable<any> {

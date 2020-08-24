@@ -1,0 +1,67 @@
+<ng-container *ngIf="palvelussuhteet">
+  <mat-expansion-panel class="palvelussuhteet mt-4 main-section"
+                       (opened)="togglePanel(true)"
+                       (closed)="togglePanel(false)"
+                       [expanded]="expandPanel">
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <h2 class="varda-fieldset-legend">
+          {{ i18n.palvelussuhteet | translate }}
+          <span *ngIf="palvelussuhteet?.length">({{ palvelussuhteet.length }})</span>
+        </h2>
+      </mat-panel-title>
+      <ng-container *ngIf="toimipaikkaAccess?.tyontekijatiedot.tallentaja">
+        <mat-panel-description *ngIf="palvelussuhteet.length">
+          <button class="varda-text-button"
+                  (keydown.enter)="initPalvelussuhde()"
+                  (click)="initPalvelussuhde()">
+            <mat-icon class="d-none d-md-inline-block">assignment_outline</mat-icon>
+            <mat-icon>add</mat-icon>{{ i18n.palvelussuhteet_lisaa_palvelussuhde | translate }}
+          </button>
+        </mat-panel-description>
+      </ng-container>
+    </mat-expansion-panel-header>
+
+    <div class="tyontekija-panel-content tyontekija-panel-content-first">
+      <ng-container *ngIf="!toimipaikkaAccess.tyontekijatiedot.katselija">
+        <div class="ei-palvelussuhteita"
+             role="alert">
+          <p>{{ i18n.palvelussuhteet_ei_oikeuksia | translate }}</p>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="toimipaikkaAccess.tyontekijatiedot.katselija">
+        <div *ngIf="!palvelussuhteet.length"
+             class="ei-palvelussuhteita"
+             role="alert">
+          <p>{{ i18n.palvelussuhteet_ei_palvelussuhteita | translate }}</p>
+
+          <ng-container *ngIf="toimipaikkaAccess?.tyontekijatiedot.tallentaja">
+            <button class="varda-text-button"
+                    *ngIf="!addPalvelussuhdeBoolean"
+                    (click)="initPalvelussuhde()">
+              <mat-icon>add</mat-icon>{{ i18n.palvelussuhteet_lisaa_palvelussuhde | translate }}
+            </button>
+          </ng-container>
+        </div>
+
+        <mat-accordion class="accordion-large-margin">
+          <app-varda-palvelussuhde [toimipaikkaAccess]="toimipaikkaAccess"
+                                   [henkilonToimipaikka]="henkilonToimipaikka"
+                                   [tyontekija]="tyontekija"
+                                   [palvelussuhde]="palvelussuhde"
+                                   [henkilonTutkinnot]="henkilonTutkinnot"
+                                   (changedPalvelussuhde)="getPalvelussuhteet()"
+                                   (closeAddPalvelussuhde)="closeAddPalvelussuhde($event)"
+                                   *ngFor="let palvelussuhde of palvelussuhteet"></app-varda-palvelussuhde>
+          <app-varda-palvelussuhde *ngIf="addPalvelussuhdeBoolean && toimipaikkaAccess.tyontekijatiedot.tallentaja"
+                                   [henkilonToimipaikka]="henkilonToimipaikka"
+                                   [tyontekija]="tyontekija"
+                                   [toimipaikkaAccess]="toimipaikkaAccess"
+                                   [henkilonTutkinnot]="henkilonTutkinnot"
+                                   (closeAddPalvelussuhde)="closeAddPalvelussuhde($event)"></app-varda-palvelussuhde>
+        </mat-accordion>
+      </ng-container>
+    </div>
+  </mat-expansion-panel>
+</ng-container>

@@ -1,69 +1,50 @@
-import { TranslateService } from '@ngx-translate/core';
-import { Component, OnInit, OnChanges, Input, SimpleChanges } from '@angular/core';
-import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
-import { VardaExtendedHenkiloModel, VardaHenkiloSearchConfiguration } from 'projects/virkailija-app/src/app/utilities/models';
-import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
-import { VardaHenkiloService } from '../../../services/varda-henkilo.service';
+import { Component } from '@angular/core';
+import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
+import { HenkiloRooliEnum } from 'projects/virkailija-app/src/app/utilities/models/enums/henkilorooli.enum';
+import { HenkiloSearchFilter, AbstractHenkiloSectionComponent } from '../henkilo-section.abstract';
+import { VardaApiService } from 'projects/virkailija-app/src/app/core/services/varda-api.service';
+import { LapsiListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-lapsi-dto.model';
+import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
+import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
+
 
 @Component({
   selector: 'app-varda-lapsi-section',
   templateUrl: './varda-lapsi-section.component.html',
-  styleUrls: ['./varda-lapsi-section.component.css']
+  styleUrls: ['./varda-lapsi-section.component.css', '../varda-main-frame.component.css']
 })
-export class VardaLapsiSectionComponent implements OnInit, OnChanges {
-  @Input() toimipaikkaAccess: UserAccess;
-  @Input() henkilot: Array<VardaExtendedHenkiloModel>;
-
-  showLapset: boolean;
-  showTyontekijat: boolean;
-  activeFilter: string;
-  currentSearchValue: string;
-  henkiloFormOpen: boolean;
-  henkiloSearchObj: VardaHenkiloSearchConfiguration;
-  henkiloList: Array<VardaExtendedHenkiloModel>;
-
+export class VardaLapsiSectionComponent extends AbstractHenkiloSectionComponent {
+  i18n = VirkailijaTranslations;
   constructor(
-    private vardaModalService: VardaModalService,
-    private vardaHenkiloService: VardaHenkiloService,
-    private translateService: TranslateService) {
-    this.showLapset = true;
-    this.showTyontekijat = true;
-    this.activeFilter = 'lapsi';
-    this.currentSearchValue = '';
-    this.henkiloFormOpen = false;
+    private apiService: VardaApiService,
+    private vakajarjestajaService: VardaVakajarjestajaService,
+    private lapsiService: VardaLapsiService
+  ) {
+    super(apiService);
+
+    this.subscriptions.push(this.lapsiService.listenLapsiListUpdate().subscribe(() => this.getHenkilot()));
   }
 
-  getPlaceholderText(): string {
-    let rv = '';
-    this.translateService.get('placeholder.who-are-you-looking-for').subscribe((translation) => {
-      rv = translation;
-    });
-    return rv;
+  getHenkilot(): void {
+    this.henkilot = null;
+    this.isLoading.next(true);
+
+    const selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
+    this.apiService.getVakajarjestajaLapset(selectedVakajarjestaja.id, this.getFilter()).subscribe({
+      next: henkiloData => {
+        this.henkilot = henkiloData.results;
+        this.searchFilter.count = henkiloData.count;
+      },
+      error: (err) => console.error(err)
+    }).add(() => setTimeout(() => this.isLoading.next(false), 500));
+
   }
 
-  searchValueChanged(event: any): void {
-    this.currentSearchValue = event.target.value;
-    this.henkiloSearchObj = this.vardaHenkiloService.createHenkiloSearchObj(this.activeFilter, this.currentSearchValue);
+  addHenkilo(): void {
+    this.openHenkiloForm.emit({ rooli: HenkiloRooliEnum.lapsi });
   }
 
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes.henkilot && changes.henkilot.currentValue) {
-      this.henkiloList = changes.henkilot.currentValue;
-
-      if (this.henkiloList.length <= 10) {
-        this.currentSearchValue = '';
-      }
-
-      this.henkiloSearchObj = this.vardaHenkiloService.createHenkiloSearchObj(this.activeFilter, this.currentSearchValue);
-    }
+  openHenkilo(suhde: LapsiListDTO): void {
+    this.openHenkiloForm.emit({ ...suhde, rooli: HenkiloRooliEnum.lapsi });
   }
-
-  ngOnInit() {
-    this.vardaModalService.modalOpenObs('henkiloForm').subscribe((isOpen: boolean) => {
-      this.henkiloFormOpen = isOpen;
-    });
-    this.henkiloSearchObj = this.vardaHenkiloService.createHenkiloSearchObj(this.activeFilter, this.currentSearchValue);
-    this.henkiloList = [];
-  }
-
 }

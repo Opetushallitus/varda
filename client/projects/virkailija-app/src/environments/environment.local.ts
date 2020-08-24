@@ -11,6 +11,7 @@ const vardaFrontendUrl = 'http://localhost:4200';
 const virkailijaOpintopolkuUrl = '';
 const virkailijaTestiOpintopolkuUrl = 'https://virkailija.testiopintopolku.fi';
 const virkailijaRaamitScriptPath = '/virkailija-raamit/apply-raamit.js';
+const localizationCategory = 'varda-virkailija';
 
 export const environment = {
   vardaApiKeyUrl,
@@ -20,6 +21,7 @@ export const environment = {
   virkailijaOpintopolkuUrl,
   virkailijaTestiOpintopolkuUrl,
   virkailijaRaamitScriptPath,
+  localizationCategory,
   useLocalStorage: false,
   production: false
 };

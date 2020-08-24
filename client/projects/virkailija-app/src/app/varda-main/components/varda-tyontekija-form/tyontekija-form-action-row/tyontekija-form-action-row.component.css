@@ -1,0 +1,18 @@
+.mat-action-row {
+  padding: 1em 0.5em;
+  width: 100%;
+  border-top-color: transparent;
+}
+
+.action-button-wrapper {
+  justify-content: space-between;
+  margin: 1em 0;
+  padding: 0 0.5em;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.action-button-wrapper button {
+  margin: 0.5em;
+}

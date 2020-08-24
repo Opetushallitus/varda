@@ -1,0 +1,21 @@
+<div #formField class="oph-field" *ngIf="formControl">
+  <div class="oph-field-inputs">
+    <label [id]="labelId"
+           class="oph-label"><b>{{ label | translate }}</b></label>
+
+    <ng-content></ng-content>
+
+    <div class="oph-error"
+         role="alert"
+         *ngIf="formControl.touched && (formControl.invalid || formControl.errors?.required)">
+      {{ errorText | translate}}
+      <div>{{ formControl.errors | json}}</div>
+    </div>
+  </div>
+
+  <div class="oph-field-text">
+    <small [appSlideHide]="focusStatus$ | async">
+      {{ instructionText | translate}}
+    </small>
+  </div>
+</div>

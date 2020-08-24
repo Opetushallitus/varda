@@ -25,7 +25,7 @@ export class VardaVakajarjestajaService {
   tallentajaToimipaikatSubject = new Subject<Array<VardaToimipaikkaDTO>>();
   toimipaikkaVarhaiskasvatussuhteet: Array<VardaVarhaiskasvatussuhdeDTO>;
   private selectedVakajarjestajaToimipaikat: VakajarjestajaToimipaikat;
-
+  private selectedVakajarjestajaToimipaikat$ = new BehaviorSubject<VakajarjestajaToimipaikat>(null);
   constructor() { }
 
   getVakajarjestajat(): Array<VardaVakajarjestajaUi> {
@@ -108,10 +108,16 @@ export class VardaVakajarjestajaService {
       katselijaToimipaikat: authService.getAuthorizedToimipaikat(toimipaikat),
       tallentajaToimipaikat: authService.getAuthorizedToimipaikat(toimipaikat, SaveAccess.kaikki)
     };
+
+    this.selectedVakajarjestajaToimipaikat$.next(this.selectedVakajarjestajaToimipaikat);
   }
 
   getVakajarjestajaToimipaikat(): VakajarjestajaToimipaikat {
     return this.selectedVakajarjestajaToimipaikat;
+  }
+
+  getVakajarjestajaToimipaikatObs(): Observable<VakajarjestajaToimipaikat> {
+    return this.selectedVakajarjestajaToimipaikat$.asObservable();
   }
 
   getToimipaikkaAsMinimal(toimipaikka_oid: string): VardaToimipaikkaMinimalDto {
@@ -154,17 +160,5 @@ export class VardaVakajarjestajaService {
 
   getVakajarjestajaByUrl(url: string, vakajarjestajat: Array<VardaVakajarjestaja>): VardaVakajarjestaja {
     return vakajarjestajat.find((t) => t.url === url);
-  }
-
-  getVakaJarjestajaTextForLists(lapsi: VardaLapsiDTO | LapsiByToimipaikkaDTO) {
-    if (this.selectedVakajarjestaja.nimi === lapsi.oma_organisaatio_nimi
-      && lapsi.paos_organisaatio_nimi) {
-      return lapsi.paos_organisaatio_nimi;
-    } else if (this.selectedVakajarjestaja.nimi === lapsi.paos_organisaatio_nimi
-      && lapsi.oma_organisaatio_nimi) {
-      return lapsi.oma_organisaatio_nimi;
-    } else {
-      return null;
-    }
   }
 }

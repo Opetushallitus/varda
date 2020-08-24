@@ -1,26 +1,12 @@
 import { Pipe, PipeTransform } from '@angular/core';
+import { VardaDateService } from '../../varda-main/services/varda-date.service';
+import { DatePipe } from '@angular/common';
 
 @Pipe({
   name: 'vardaDate'
 })
-export class VardaDatePipe implements PipeTransform {
-
-  transform(dateStr: string, args?: any): string {
-    let rv = '';
-
-    if (!dateStr) {
-      return rv;
-    }
-
-    if (!args) {
-        const dateParts = dateStr.split('-');
-        const yearStr = dateParts[0];
-        const monthStr = dateParts[1];
-        const dayStr = dateParts[2];
-        rv =  `${dayStr}.${monthStr}.${yearStr}`;
-    }
-
-    return rv;
+export class VardaDate extends DatePipe implements PipeTransform {
+  transform(value: any, args?: any): any {
+    return super.transform(value, VardaDateService.uiDateFormat);
   }
-
 }

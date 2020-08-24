@@ -1,10 +1,10 @@
 <ng-container *ngIf="toimijaAccess.tilapainenHenkilosto.katselija">
-  <h1 class="varda-page-header">{{ 'tilapainen-henkilosto.title' | translate }}</h1>
+  <h1 class="varda-page-header">{{ i18n.tilapainen_henkilosto | translate }}</h1>
   <main class="varda-page-content">
-    <div class="modal-form-intro">{{ 'tilapainen-henkilosto.ohje' | translate }}</div>
+    <div class="modal-form-intro">{{ i18n.tilapainen_henkilosto_ohje | translate }}</div>
 
     <div class="oph-field oph-field-inline year-picker">
-      <label class="oph-label">{{ 'aika.vuosi' | translate }}</label>
+      <label class="oph-label">{{ i18n.aika_vuosi | translate }}</label>
       <select class="oph-select"
               (change)="initiateMonths(henkilostoVuosi)"
               [(ngModel)]="henkilostoVuosi">
@@ -16,7 +16,7 @@
       <form (submit)="saveHenkilosto(monthArray)">
         <div class="toggle-henkilosto"
              *ngIf="!henkilostoKytkin.hidden">
-          <button class="henkilostoKytkin varda-link-button"
+          <button class="henkilostoKytkin varda-text-button"
                   [disabled]="monthArray.disabled || (!henkilostoKytkin.value && !henkilostoKytkin.editable)"
                   [class.no-pointer]="monthArray.disabled || !henkilostoKytkin.editable"
                   (keydown.enter)="toggleHenkilosto()"
@@ -24,10 +24,10 @@
             <i *ngIf="henkilostoKytkin.value"
                class="material-icons material-icons-outlined">check_box</i>
             <mat-icon *ngIf="!henkilostoKytkin.value">check_box_outline_blank</mat-icon>
-            {{ "tilapainen-henkilosto.ei-tilapaista-henkilostoa" | translate }}
+            {{ i18n.tilapainen_henkilosto_ei_tilapaista_henkilostoa | translate }}
           </button>
-          <button class="varda-link-button"
-                  [matTooltip]="'tooltip.tilapainen-henkilosto.ei-tilapaista-henkilostoa' | translate"
+          <button class="varda-text-button"
+                  [matTooltip]="i18n.tilapainen_henkilosto_tooltip_ei_tilapaista_henkilostoa | translate"
                   #henkilotunnus="matTooltip"
                   (click)="henkilotunnus.toggle()"
                   (mouseenter)="$event.stopImmediatePropagation()"
@@ -40,16 +40,16 @@
             <table class="table">
               <thead>
                 <tr>
-                  <th>Kuukausi</th>
-                  <th>Henkilöiden määrä:</th>
-                  <th>Tehdyt tunnit:</th>
+                  <th>{{ i18n.aika_kuukausi | translate }}:</th>
+                  <th>{{ i18n.tilapainen_henkilosto_henkiloiden_maara | translate }}:</th>
+                  <th>{{ i18n.tilapainen_henkilosto_tehdyt_tunnit | translate }}:</th>
                 </tr>
               </thead>
               <tbody>
                 <tr class="">
                   <td></td>
-                  <td><span>{{ 'kokonaisluku' | translate }}</span></td>
-                  <td><span>{{ 'tilapainen-henkilosto.tunnit-yhteensa' | translate }}</span></td>
+                  <td><span>{{ i18n.kokonaisluku | translate }}</span></td>
+                  <td><span>{{ i18n.tilapainen_henkilosto_tunnit_yhteensa | translate }}</span></td>
                 </tr>
                 <tr *ngFor="let month of monthArray.controls">
                   <ng-container [formGroup]="month">
@@ -58,14 +58,19 @@
                       <input type="number"
                              class="oph-input"
                              formControlName="tyontekijamaara"
-                             placeholder="Henkilömäärä" />
+                             min="0"
+                             (change)="valueChanged(month)"
+                             [placeholder]="i18n.tilapainen_henkilosto_henkilomaara" />
                       <div class="error-field oph-error"
-                           *ngIf="!month.pristine">
+                           *ngIf="month.touched">
                         <span *ngIf="month.get('tyontekijamaara').hasError('required')">
-                          {{ 'tilapainen-henkilosto.error.tyontekijamaara' | translate }}
+                          {{ i18n.tilapainen_henkilosto_error_tyontekijamaara | translate }}
                         </span>
                         <span *ngIf="month.get('tyontekijamaara').hasError('pattern')">
-                          {{ 'tilapainen-henkilosto.error.tyontekijamaara-kokonaisluku' | translate }}
+                          {{ i18n.tilapainen_henkilosto_error_tyontekijamaara_kokonaisluku | translate }}
+                        </span>
+                        <span *ngIf="month.get('tyontekijamaara').hasError('max')">
+                          {{ i18n.tilapainen_henkilosto_error_tyontekijamaara_zero | translate }}
                         </span>
                       </div>
                     </td>
@@ -73,17 +78,20 @@
                       <input type="number"
                              class="oph-input"
                              formControlName="tuntimaara"
-                             placeholder="Työtunnit" />
+                             min="0"
+                             step="0.5"
+                             (change)="valueChanged(month)"
+                             [placeholder]="i18n.tilapainen_henkilosto_tyotunnit" />
                       <div class="error-field oph-error"
-                           *ngIf="!month.pristine">
+                           *ngIf="month.touched">
                         <span *ngIf="month.get('tuntimaara').hasError('required')">
-                          {{ 'tilapainen-henkilosto.error.tuntimaara' | translate }}
+                          {{ i18n.tilapainen_henkilosto_error_tuntimaara | translate }}
                         </span>
                         <span *ngIf="month.get('tuntimaara').hasError('pattern')">
-                          {{ 'tilapainen-henkilosto.error.tuntimaara-pattern' | translate }}
+                          {{ i18n.tilapainen_henkilosto_error_tuntimaara_pattern | translate }}
                         </span>
                         <span *ngIf="month.get('tuntimaara').hasError('max')">
-                          {{ 'tilapainen-henkilosto.error.tuntimaara-max' | translate }}
+                          {{ i18n.tilapainen_henkilosto_error_tuntimaara_zero | translate }}
                         </span>
                       </div>
                     </td>
@@ -92,34 +100,41 @@
 
                 <ng-container *ngIf="vuosiArvot.months > 0">
                   <tr>
-                    <td>{{ 'keskimaarin' | translate }}</td>
-                    <td>{{ vuosiArvot.employees / vuosiArvot.months | number:'1.1-1' }} henkiloa / kk</td>
-                    <td>{{ vuosiArvot.hours / vuosiArvot.months | number:'1.2-2' }} h / kk</td>
+                    <td>{{ i18n.keskimaarin | translate }}</td>
+                    <td>
+                      {{ i18n.tilapainen_henkilosto_COUNT_henkiloa_per_kk | translate: { count:  vuosiArvot.employees / vuosiArvot.months | number:'1.1-1' } }}
+                    </td>
+                    <td>
+                      {{ i18n.tilapainen_henkilosto_HOURS_tuntia_per_kk | translate: { hours: vuosiArvot.hours / vuosiArvot.months | number:'1.2-2' } }}
+                    </td>
                   </tr>
                   <tr>
-                    <td>{{ 'yhteensa' | translate }}</td>
-                    <td>{{ vuosiArvot.employees }} henkiloa</td>
-                    <td>{{ vuosiArvot.hours  }} h</td>
+                    <td>{{ i18n.yhteensa | translate }}</td>
+                    <td>{{ i18n.tilapainen_henkilosto_COUNT_henkiloa | translate: { count: vuosiArvot.employees } }}
+                    </td>
+                    <td>{{ i18n.tilapainen_henkilosto_HOURS_tuntia | translate: { hours: vuosiArvot.hours } }}</td>
                   </tr>
                 </ng-container>
               </tbody>
             </table>
           </div>
 
+          <app-varda-tyontekija-error [errors]="henkilostoFormErrors"></app-varda-tyontekija-error>
+
           <div class="varda-form-btn-wrapper"
                *ngIf="!monthArray.disabled">
             <button type="submit"
                     *ngIf="toimijaAccess.tilapainenHenkilosto.tallentaja"
                     class="varda-button varda-button-wide responsive-md"
-                    [disabled]="monthArray.pristine || (isLoading | async)">{{'label.generic-save' | translate}}</button>
+                    [disabled]="monthArray.pristine || (isLoading$ | async)">{{ i18n.save | translate}}</button>
           </div>
         </ng-container>
       </form>
     </ng-container>
     <div *ngIf="lastUpdated"
          class="last-updated">
-      <strong>{{ 'tilapainen-henkilosto.tiedot-paivitetty-viimeksi' | translate}}:</strong>
-      <span *ngIf="lastUpdated">{{ lastUpdated | date: 'd.M.yyyy hh:mm' }}</span>
+      <strong>{{ i18n.tilapainen_henkilosto_tiedot_paivitetty_viimeksi | translate}}:</strong>
+      <span *ngIf="lastUpdated">{{ lastUpdated | date: 'd.M.yyyy HH:mm' }}</span>
     </div>
   </main>
 </ng-container>

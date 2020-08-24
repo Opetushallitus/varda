@@ -1,0 +1,80 @@
+<!-- <div class="modal-header">
+  <h1 class="modal-title varda-modal-title"
+      [id]="'vardaModalTitleLabelhenkiloModal'">
+    <span *ngIf="taydennyskoulutus?.id; else uusikoulutus">
+      {{ taydennyskoulutus.nimi }}
+    </span>
+    <ng-template #uusikoulutus>
+      {{ i18n.taydennyskoulutukset_lisaa_taydennyskoulutus }}
+    </ng-template>
+  </h1>
+  <button type="button"
+          class="close"
+          data-dismiss="modal"
+          aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+
+<div class="modal-body">
+  <form [formGroup]="taydennyskoulutusForm"
+        (submit)="saveTaydennyskoulutus(taydennyskoulutusForm)">
+
+    <app-varda-form-field name="nimi"
+                          [form]="taydennyskoulutusForm"
+                          [label]="i18n.taydennyskoulutus_nimi | translate"
+                          [errorText]="i18n.taydennyskoulutus_error_nimi | translate"
+                          [instructionText]="i18n.taydennyskoulutus_instruction_nimi | translate">
+      <input #fieldItem
+             type="text"
+             class="oph-input"
+             formControlName="nimi" />
+    </app-varda-form-field>
+
+    <app-varda-form-field name="suoritus_pvm"
+                          [form]="taydennyskoulutusForm"
+                          [label]="i18n.taydennyskoulutus_suoritus_pvm | translate"
+                          [errorText]="i18n.taydennyskoulutus_error_suoritus_pvm | translate"
+                          [instructionText]="i18n.taydennyskoulutus_instruction_suoritus_pvm | translate">
+      <app-varda-datepicker #fieldItem
+                            formControlName='suoritus_pvm'></app-varda-datepicker>
+    </app-varda-form-field>
+
+    <app-varda-form-field name="koulutuspaivia"
+                          [form]="taydennyskoulutusForm"
+                          [label]="i18n.taydennyskoulutus_koulutuspaivia | translate"
+                          [errorText]="i18n.taydennyskoulutus_error_koulutuspaivia | translate"
+                          [instructionText]="i18n.taydennyskoulutus_instruction_koulutuspaivia | translate">
+      <input #fieldItem
+             type="number"
+             class="oph-input"
+             min="0.5"
+             max="160"
+             step="0.5"
+             formControlName="koulutuspaivia" />
+    </app-varda-form-field>
+
+    <div class="taydennyskoulutus-osallistuja-sections"
+         *ngIf="tyontekijaList">
+      <app-taydennyskoulutus-osallistuja-list [tyontekijaList]="tyontekijaList"
+                                              [osallistujat]="currentOsallistujat"
+                                              (selectOsallistujat)="selectOsallistujat($event)">
+      </app-taydennyskoulutus-osallistuja-list>
+      <app-taydennyskoulutus-osallistuja-picker [tyontekijaList]="tyontekijaList"
+                                                [osallistujat]="currentOsallistujat"
+                                                (selectOsallistujat)="selectOsallistujat($event)">
+      </app-taydennyskoulutus-osallistuja-picker>
+    </div>
+    <app-varda-tyontekija-error [errors]="taydennyskoulutusFormErrors"></app-varda-tyontekija-error>
+
+    <app-tyontekija-form-action-row [saveDisabled]="taydennyskoulutusForm.pristine"
+                                    [saveAccess]="true"
+                                    [formExists]="!!taydennyskoulutus?.id"
+                                    [isEdit]="isEdit"
+                                    (togglePanel)="togglePanel($event)"
+                                    (deleteForm)="deleteTaydennyskoulutus()"
+                                    (enableEdit)="enableForm()"></app-tyontekija-form-action-row>
+  </form>
+
+</div>
+ -->

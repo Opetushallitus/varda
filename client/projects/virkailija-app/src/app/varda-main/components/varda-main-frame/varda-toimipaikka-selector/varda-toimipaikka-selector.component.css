@@ -1,18 +1,75 @@
+.toimipaikka-selector-top {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: row-reverse;
+  margin-bottom: 1em;
+  flex-wrap: wrap;
+}
+
+.toimipaikka-selector-top>* {
+  flex: 1 1 500px;
+}
+
+.toimipaikka-selector-top>.toimipaikka-selector-navi {
+  justify-content: flex-end;
+  display: flex;
+  min-width: 650px;
+}
+
+.toimipaikka-selector-top>.toimipaikka-selector-navi>a {
+  color: var(--link-color);
+}
+
+.toimipaikka-selector-top>.toimipaikka-selector-navi>a:hover {
+  color: var(--link-color-hover);
+}
+
+.toimipaikka-selector-top>.toimipaikka-selector-navi>a:not(:last-child) {
+  margin-right: 1em;
+}
+
 .toimipaikka-selector {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.toimipaikka-selector>* {
+  margin: 0.5em;
+}
+
+.toimipaikka-selector-left {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
+  width: min(600px, 100%);
+}
+
+.toimipaikka-selector-left>* {
+  margin: 0.25em;
 }
 
 .toimipaikka-selector-dropdown {
   flex: 1 1 310px;
 }
 
-.toimipaikka-selector-dropdown > button {
+.toimipaikka-selector-dropdown>button {
   margin-top: 0.5em;
   margin-bottom: 1em;
 }
+
 .toimipaikka-selector-add {
   flex: 1 1 180px;
   text-align: right;
+}
+
+.varda-button-small {
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+@media (max-width: 750px) {
+  .toimipaikka-selector-navi {
+    display: none !important;
+  }
 }

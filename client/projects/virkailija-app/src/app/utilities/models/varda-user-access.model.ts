@@ -1,19 +1,33 @@
+export enum UserAccessKeys {
+  lapsitiedot = 'lapsitiedot',
+  huoltajatiedot = 'huoltajatiedot',
+  tyontekijatiedot = 'tyontekijatiedot',
+  tilapainenHenkilosto = 'tilapainenHenkilosto',
+  taydennyskoulutustiedot = 'taydennyskoulutustiedot'
+}
+
+export enum UserAccessTypes {
+  katselija = 'katselija',
+  tallentaja = 'tallentaja'
+}
+
 export interface UserAccess {
   paakayttaja: boolean;
-  lapsitiedot: UserAccessPart;
-  huoltajatiedot: UserAccessPart;
-  tyontekijatiedot: UserAccessPart;
-  tilapainenHenkilosto: UserAccessPart;
-  taydennyskoulutustiedot: UserAccessPart;
+  [UserAccessKeys.lapsitiedot]: UserAccessPart;
+  [UserAccessKeys.huoltajatiedot]: UserAccessPart;
+  [UserAccessKeys.tyontekijatiedot]: UserAccessPart;
+  [UserAccessKeys.tilapainenHenkilosto]: UserAccessPart;
+  [UserAccessKeys.taydennyskoulutustiedot]: UserAccessPart;
 }
 
 interface UserAccessPart {
-  katselija: boolean;
-  tallentaja: boolean;
+  [UserAccessTypes.katselija]: boolean;
+  [UserAccessTypes.tallentaja]: boolean;
 }
 
 export enum SaveAccess {
   kaikki = 'kaikki',
   lapsitiedot = 'lapsitiedot',
-  henkilostotiedot = 'henkilostotiedot'
+  henkilostotiedot = 'henkilostotiedot',
+  tyontekijatiedot = 'tyontekijatiedot',
 }

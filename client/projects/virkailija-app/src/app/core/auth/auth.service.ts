@@ -5,9 +5,9 @@ import { VardaVakajarjestajaService } from '../services/varda-vakajarjestaja.ser
 import { NavigationEnd, Router } from '@angular/router';
 import { VardaKayttajatyyppi, VardaKayttooikeusRoles, VardaToimipaikkaDTO } from '../../utilities/models';
 import { VardaToimipaikkaMinimalDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
-import { UserAccess, SaveAccess } from '../../utilities/models/varda-user-access.model';
+import { UserAccess, SaveAccess, UserAccessKeys } from '../../utilities/models/varda-user-access.model';
 import { environment } from 'projects/huoltaja-app/src/environments/environment';
-import { filter } from 'rxjs/operators';
+import { filter, windowWhen } from 'rxjs/operators';
 
 class Kayttooikeus {
   kayttooikeus: VardaKayttooikeusRoles;
@@ -37,14 +37,16 @@ export class AuthService {
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private router: Router) {
 
-    combineLatest(
+    combineLatest([
       (router.events).pipe(filter(event => event instanceof NavigationEnd)),
       this.toimipaikkaAccessToAnyToimipaikka$.asObservable()
-    ).subscribe(([navigation, toimipaikkaAccessToAny]) => {
+    ]).subscribe(([navigation, toimipaikkaAccessToAny]) => {
       if (navigation instanceof NavigationEnd && toimipaikkaAccessToAny) {
         const route = navigation.url.split('?').shift();
-        if (route === '/' && !toimipaikkaAccessToAny.lapsitiedot?.tallentaja) {
-          this.router.navigate(['/haku']);
+
+        const tempHenkilostoOnlyRoutes = ['/vakatoimija', '/tilapainen-henkilosto'];
+        if (this.isTilapainenHenkilostoOnly() && !tempHenkilostoOnlyRoutes.includes(route)) {
+          this.router.navigate(['/tilapainen-henkilosto']);
         }
       }
     });
@@ -67,10 +69,6 @@ export class AuthService {
     this.toimipaikkaAccessToAnyToimipaikka$.next(toimipaikkaAccessIfAny);
 
     const routeParts = this.router.url.split('?');
-    if (routeParts[0] === ('/') && !toimipaikkaAccessIfAny?.lapsitiedot?.tallentaja) {
-      this.router.navigate(['/haku']);
-    }
-
     // these parts are just for simply printing your user access in the selected organization
     const userAccessToConsole = {
       [selectedVakajarjestaja.nimi]: this.loggedInUserVakajarjestajaLevelKayttooikeudet.map(kayttooikeus => kayttooikeus.kayttooikeus),
@@ -100,12 +98,14 @@ export class AuthService {
     return toimipaikat.filter((toimipaikka: VardaToimipaikkaDTO) => {
       const access = this.getUserAccess(toimipaikka.organisaatio_oid);
       if (!hasSaveAccess) {
-        return (access.tyontekijatiedot.katselija || access.huoltajatiedot.katselija || access.lapsitiedot.katselija);
+        return (access.tyontekijatiedot.katselija || access.taydennyskoulutustiedot.katselija || access.huoltajatiedot.katselija || access.lapsitiedot.katselija);
       } else if (hasSaveAccess === SaveAccess.kaikki) {
-        return (access.tyontekijatiedot.tallentaja || access.huoltajatiedot.tallentaja || access.lapsitiedot.tallentaja);
+        return (access.tyontekijatiedot.tallentaja || access.taydennyskoulutustiedot.tallentaja || access.huoltajatiedot.tallentaja || access.lapsitiedot.tallentaja);
       } else if (hasSaveAccess === SaveAccess.lapsitiedot) {
         return (access.huoltajatiedot.tallentaja || access.lapsitiedot.tallentaja);
       } else if (hasSaveAccess === SaveAccess.henkilostotiedot) {
+        return (access.tyontekijatiedot.tallentaja || access.taydennyskoulutustiedot.tallentaja);
+      } else if (hasSaveAccess === SaveAccess.tyontekijatiedot) {
         return (access.tyontekijatiedot.tallentaja);
       }
       console.error('GetAuthorizedToimipaikat called with incorrect value', hasSaveAccess);
@@ -162,12 +162,12 @@ export class AuthService {
   }
 
   setSessionInactivityTimeout(): void {
-    if (this.sessionInactivityTimeout) {
-      clearTimeout(this.sessionInactivityTimeout);
+    if (window.location.hostname !== 'localhost') {
+      if (this.sessionInactivityTimeout) {
+        clearTimeout(this.sessionInactivityTimeout);
+      }
+      this.sessionInactivityTimeout = setTimeout(() => window.location.href = this.vardaApiService.getLogoutCasUrl(), 3600000);
     }
-    this.sessionInactivityTimeout = setTimeout(() => {
-      window.location.href = this.vardaApiService.getLogoutCasUrl();
-    }, 3600000);
   }
 
   isCurrentUserSelectedVakajarjestajaRole(...roles: VardaKayttooikeusRoles[]): boolean {
@@ -177,7 +177,7 @@ export class AuthService {
       return true;
     }
 
-    const selectedVakajarjestaja = this.vardaVakajarjestajaService.selectedVakajarjestaja.organisaatio_oid;
+    const selectedVakajarjestaja = this.vardaVakajarjestajaService.getSelectedVakajarjestaja().organisaatio_oid;
     return this.loggedInUserVakajarjestajaLevelKayttooikeudet
       .filter(kayttooikeus => kayttooikeus.organisaatio === selectedVakajarjestaja)
       .some(kayttooikeus => roles.indexOf(kayttooikeus.kayttooikeus) !== -1);
@@ -274,6 +274,17 @@ export class AuthService {
       });
     });
     return userAccess;
+  }
+
+  isTilapainenHenkilostoOnly() {
+    const access = this.getUserAccess();
+
+    if (!access.tilapainenHenkilosto.katselija) {
+      return false;
+    }
+    return !Object.entries(access)
+      .filter(([accessKey, accessValue]) => accessKey !== UserAccessKeys.tilapainenHenkilosto)
+      .some(([accessKey, accessValue]) => !!accessValue.katselija);
   }
 
 }

@@ -3,19 +3,35 @@
 </h1>
 <main class="varda-main-frame-wrapper">
   <section class="varda-main-frame-toimipaikka-section-container varda-page-content">
-    <app-varda-toimipaikka-selector [userAccess]="userAccess"
-                                    [entityType]="'toimipaikka'"
-                                    [toimipaikat]="toimipaikat"
-                                    [activeToimipaikka]="selectedToimipaikka"
-                                    (changeToimipaikka)="onToimipaikkaChanged($event)"
-                                    (updateToimipaikka)="onToimipaikkaUpdated($event)">
+    <app-varda-toimipaikka-selector [toimijaAccess]="toimijaAccess"
+                                    (changeToimipaikka)="onToimipaikkaChanged($event)">
     </app-varda-toimipaikka-selector>
   </section>
-  <section class="varda-main-frame-henkilo-section-container varda-page-content"
-           *ngIf="toimipaikat && toimipaikat.length > 0 && selectedToimipaikka"
-           aria-live="polite"
-           role="region">
-    <app-varda-lapsi-section [toimipaikkaAccess]="toimipaikkaAccess"
-                               [henkilot]="henkilot"></app-varda-lapsi-section>
-  </section>
+  <div class="varda-main-frame-henkilo-section-container "
+       *ngIf="toimipaikkaAccess"
+       aria-live="polite"
+       role="region">
+    <app-varda-lapsi-section *ngIf="toimipaikkaAccess.lapsitiedot.katselija || toimipaikkaAccess.huoltajatiedot.katselija"
+                             (openHenkiloForm)="openHenkilo($event)"
+                             [toimipaikkaAccess]="toimipaikkaAccess"
+                             [selectedToimipaikka]="selectedToimipaikka"></app-varda-lapsi-section>
+
+    <app-varda-henkilosto-section *ngIf="toimipaikkaAccess.tyontekijatiedot.katselija || toimipaikkaAccess.taydennyskoulutustiedot.katselija"
+                                  (openHenkiloForm)="openHenkilo($event)"
+                                  [toimipaikkaAccess]="toimipaikkaAccess"
+                                  [selectedToimipaikka]="selectedToimipaikka"></app-varda-henkilosto-section>
+  </div>
+  <app-varda-modal-form [identifier]="'henkiloModal'"
+                        [isLg]="true"
+                        [openModal]="!!activeSuhde"
+                        [closeWithoutConfirm]="confirmedHenkiloFormLeave"
+                        (events)="handleFormClose($event)">
+    <app-varda-henkilo-form *ngIf="!!activeSuhde"
+                            [henkilonSuhde]="activeSuhde"
+                            [henkilonToimipaikka]="selectedToimipaikka"
+                            (createHenkilo)="onHenkiloAdded($event)"
+                            (valuesChanged)="henkiloFormValuesChanged($event)"></app-varda-henkilo-form>
+  </app-varda-modal-form>
+  <app-varda-success-modal [identifier]="'lapsiSuccessModal'"
+                           [successTitle]="'alert.modal-generic-save-success'"></app-varda-success-modal>
 </main>

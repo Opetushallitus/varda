@@ -16,6 +16,7 @@ import { AbstractControl, ControlValueAccessor, FormControl, NG_VALIDATORS, NG_V
 import { TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../../core/auth/auth.service';
 import { VardaDatepickerHeaderComponent } from './varda-datepicker-header/varda-datepicker-header.component';
+import { Observable, Subject, BehaviorSubject } from 'rxjs';
 
 export interface VardaDatepickerEvent {
   valid: boolean;
@@ -60,6 +61,7 @@ export class VardaDatepickerComponent implements OnInit, ControlValueAccessor {
   VardaDatepickerHeaderComponent = VardaDatepickerHeaderComponent;
   disabled = false;
   matDateModel: Moment = moment();
+  private focus$ = new Subject<boolean>();
   private lastValidState = true;
   private propagateChange = (_: any) => {};
   private propagateTouch = () => {};
@@ -92,11 +94,17 @@ export class VardaDatepickerComponent implements OnInit, ControlValueAccessor {
 
   onFocus() {
     this.focusChange.emit(true);
+    this.focus$.next(true);
   }
 
   onBlur() {
     this.propagateTouch();
     this.focusChange.emit(false);
+    this.focus$.next(false);
+  }
+
+  focusObservable(): Observable<boolean> {
+    return this.focus$.asObservable();
   }
 
   // Handle input events so we get feedback before blur, while user is typing

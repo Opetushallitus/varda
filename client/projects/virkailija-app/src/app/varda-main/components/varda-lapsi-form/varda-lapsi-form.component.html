@@ -1,5 +1,6 @@
 <div *ngIf="isEdit">
-  <div class="backend-error-container" #backendErrorContainer>
+  <div class="backend-error-container"
+       #backendErrorContainer>
     <div class="alert alert-danger"
          *ngIf="false">
       {{lapsiFormErrors | json}}
@@ -62,14 +63,14 @@
             <span>{{henkilo.henkilo_oid}}</span>
           </div>
           <div class="oph-field oph-field-inline"
-               *ngIf="currentLapsi.oma_organisaatio">
+               *ngIf="lapsi.oma_organisaatio_oid">
             <label class="oph-label">{{'label.oma-organisaatio' | translate}}:</label>
-            <span>{{currentLapsi.oma_organisaatio_nimi}}</span>
+            <span>{{lapsi.oma_organisaatio_nimi}}</span>
           </div>
           <div class="oph-field oph-field-inline"
-               *ngIf="currentLapsi.paos_organisaatio">
+               *ngIf="lapsi.paos_organisaatio_oid">
             <label class="oph-label">{{'label.paos-organisaatio' | translate}}:</label>
-            <span>{{currentLapsi.paos_organisaatio_nimi}}</span>
+            <span>{{lapsi.paos_organisaatio_nimi}}</span>
           </div>
         </fieldset>
       </form>
@@ -145,11 +146,11 @@
                      role="alert"
                      aria-live="assertive">
                   <ng-container
-                    *ngIf="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr')['controls'].length === 1">
+                                *ngIf="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr')['controls'].length === 1">
                     <div class="oph-bold">{{'label.confirm-delete-last-varhaiskasvatuspaatos' | translate}}</div>
                   </ng-container>
                   <ng-container
-                    *ngIf="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr')['controls'].length > 1">
+                                *ngIf="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr')['controls'].length > 1">
                     <div class="oph-bold">{{'label.confirm-delete-varhaiskasvatuspaatos' | translate}}</div>
                   </ng-container>
                   <div class="varda-form-btn-wrapper">
@@ -171,10 +172,12 @@
                 </div>
               </div>
             </mat-expansion-panel>
-            <div class="varda-text-with-icon varda-missing-vakasuhde" *ngIf="isVakapaatosWithoutVakasuhde(vakapaatosIndex)">
+            <div class="varda-text-with-icon varda-missing-vakasuhde"
+                 *ngIf="isVakapaatosWithoutVakasuhde(vakapaatosIndex)">
               <mat-icon>error_outline</mat-icon>{{'label.missing-varhaiskasvatussuhde' | translate}}
             </div>
-            <div class="varda-painotukset lapsi-form-varhaiskasvatussuhteet" *ngIf="varhaiskasvatuspaatokset[vakapaatosIndex]">
+            <div class="varda-painotukset lapsi-form-varhaiskasvatussuhteet"
+                 *ngIf="varhaiskasvatuspaatokset[vakapaatosIndex]">
               <form [formGroup]="varhaiskasvatussuhteetForm"
                     class="varda-painotukset-panel">
                 <mat-accordion>
@@ -186,7 +189,8 @@
                                        (click)="onExpansionPanelClick($event, vakasuhdeIndex, 'varhaiskasvatussuhde', varhaiskasvatussuhdePanels)"
                                        [attr.data-realindex]="vakasuhdeIndex">
                     <mat-expansion-panel-header>
-                      <header class="oph-h4" tabindex="0">
+                      <header class="oph-h4"
+                              tabindex="0">
                         {{getRecurringEntityHeader(vakasuhdeIndex, 'varhaiskasvatussuhde')}}
                       </header>
                     </mat-expansion-panel-header>
@@ -204,12 +208,12 @@
                                   [compareWith]="byEndpoint"
                                   [disabled]="isEdit">
                             <ng-container
-                              *ngIf="varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'][vakasuhdeIndex].controls['toimipaikka'].disabled">
+                                          *ngIf="varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'][vakasuhdeIndex].controls['toimipaikka'].disabled">
                               <option *ngFor="let toimipaikka of allToimipaikkaOptions"
                                       [ngValue]="toimipaikka">{{toimipaikka.nimi}}</option>
                             </ng-container>
                             <ng-container
-                              *ngIf="!varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'][vakasuhdeIndex].controls['toimipaikka'].disabled">
+                                          *ngIf="!varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'][vakasuhdeIndex].controls['toimipaikka'].disabled">
                               <option value=""
                                       disabled>-- {{'label.choose' | translate}} --</option>
                               <option *ngFor="let toimipaikka of tallentajaToimipaikkaOptions"
@@ -301,6 +305,31 @@
                             [hideMaksutiedot]="hideMaksutiedot"
                             [isLapsiYksityinen]="isCurrentLapsiYksityinen"></app-maksutiedot-form>
     </div>
+    <ng-container *ngIf="toimipaikkaAccess.lapsitiedot.tallentaja
+    && toimipaikkaAccess.huoltajatiedot.tallentaja">
+      <app-varda-tyontekija-error [errors]="deleteLapsiErrors"></app-varda-tyontekija-error>
+
+      <div class="tyontekija-form-footer">
+        <button *ngIf="lapsi?.id && !promptDeleteHenkilo"
+                (click)="promptDeleteHenkilo = true"
+                class="varda-button varda-button-danger secondary responsive-md">
+          <mat-icon>delete_outline</mat-icon>
+          {{ i18n.henkilo_poista_lapsi | translate }}
+        </button>
+        <ng-container *ngIf="promptDeleteHenkilo">
+          <button (click)="deleteLapsiRole(lapsi.url)"
+                  class="varda-button varda-button-danger secondary responsive-md">
+            <mat-icon>delete_outline</mat-icon>
+            {{ i18n.henkilo_poista_lapsi | translate }}
+          </button>
+          <button class="varda-button varda-button-wide varda-button-neutral responsive-md secondary"
+                  type="button"
+                  (click)="promptDeleteHenkilo = false">
+            {{ i18n.cancel | translate }}
+          </button>
+        </ng-container>
+      </div>
+    </ng-container>
   </div>
 </div>
 <div *ngIf="!ui.isPerustiedotLoading && !isEdit"
@@ -366,7 +395,9 @@
                     [formControlName]="'toimipaikka'"
                     [attr.name]="'toimipaikka'"
                     [compareWith]="byEndpoint"
-                    disabled>
+                    [attr.disabled]="henkilonToimipaikka?.id">
+              <option [value]="null"
+                      disabled>-- {{ 'label.choose' | translate }} --</option>
               <option *ngFor="let toimipaikka of tallentajaToimipaikkaOptions"
                       [ngValue]="toimipaikka">{{toimipaikka.nimi}}</option>
             </select>

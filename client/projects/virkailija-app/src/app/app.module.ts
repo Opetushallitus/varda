@@ -4,13 +4,15 @@ import { VardaMainModule } from './varda-main/varda-main.module';
 import { CoreModule } from './core/core.module';
 import { SharedModule } from './shared/shared.module';
 import { RouterModule, Routes } from '@angular/router';
-import {HttpClientModule, HttpClient, HTTP_INTERCEPTORS } from '@angular/common/http';
-import {TranslateModule, TranslateLoader} from '@ngx-translate/core';
-import {TranslateHttpLoader} from '@ngx-translate/http-loader';
+import { HttpClientModule, HttpClient, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
+import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { CookieService } from 'ngx-cookie-service';
 import { AppComponent } from './app.component';
 import { VardaHttpInterceptor } from './core/services/varda-http-interceptor';
-import {VardaSharedModule} from 'varda-shared';
+import { VardaSharedModule, HttpService } from 'varda-shared';
+import { VirkailijaTranslateLoader } from './core/services/virkailija-translate.service';
+import { VardaApiService } from './core/services/varda-api.service';
 
 // AoT requires an exported function for factories
 export function HttpLoaderFactory(http: HttpClient) {
@@ -32,11 +34,11 @@ export function HttpLoaderFactory(http: HttpClient) {
     HttpClientModule,
     TranslateModule.forRoot({
       loader: {
-          provide: TranslateLoader,
-          useFactory: (HttpLoaderFactory),
-          deps: [HttpClient]
+        provide: TranslateLoader,
+        useClass: VirkailijaTranslateLoader,
+        deps: [HttpService, VardaApiService]
       }
-  })
+    })
   ],
   providers: [Title, CookieService, { provide: HTTP_INTERCEPTORS, useClass: VardaHttpInterceptor, multi: true }],
   bootstrap: [AppComponent]

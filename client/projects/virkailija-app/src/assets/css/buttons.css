@@ -110,9 +110,25 @@
   margin-right: 0.25em;
 }
 
-.varda-link-button {
+.varda-text-button {
   border: none;
-  background-color: transparent;
+  padding: 0 0 0 0;
+  background-color: inherit;
+}
+
+.varda-text-button .link-color {
+  color: var(--link-color);
+}
+
+.varda-text-button .small-text-icon {
+  line-height: 0.75;
+  font-size: 1em;
+  height: 1em;
+  width: 1em;
+}
+
+.varda-text-button:hover {
+  text-decoration: underline;
 }
 
 
@@ -148,6 +164,7 @@
 }
 
 @media (max-width: 1200px) {
+
   .oph-radio-button-group.responsive-xl app-varda-radio-button,
   .oph-radio-button-group.responsive-xl {
     width: 100%;
@@ -166,6 +183,7 @@
 }
 
 @media (max-width: 992px) {
+
   .oph-radio-button-group.responsive-lg app-varda-radio-button,
   .oph-radio-button-group.responsive-lg {
     width: 100%;
@@ -184,6 +202,7 @@
 }
 
 @media (max-width: 767px) {
+
   .oph-radio-button-group.responsive-md app-varda-radio-button,
   .oph-radio-button-group.responsive-md {
     width: 100%;

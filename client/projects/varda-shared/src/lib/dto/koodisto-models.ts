@@ -26,3 +26,8 @@ export interface CodeDTO {
   name: string;
   description: string;
 }
+
+export enum KoodistoSortBy {
+  name = 'name',
+  codeValue = 'code_value'
+}

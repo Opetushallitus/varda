@@ -11,7 +11,6 @@ import { HuoltajaTranslations } from '../assets/i18n/translations.enum';
 import { OppijaRaamitService } from './services/oppija-raamit.service';
 import { filter } from 'rxjs/internal/operators/filter';
 import { HuoltajanLapsiDTO } from './utilities/models/dto/huoltajan-lapsi-dto';
-import { TranslationDTO } from './utilities/models/dto/translation-dto';
 
 @Component({
   selector: 'app-root',

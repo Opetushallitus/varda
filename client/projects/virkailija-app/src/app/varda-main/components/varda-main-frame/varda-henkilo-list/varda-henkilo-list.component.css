@@ -5,3 +5,42 @@
   overflow: auto;
   margin-bottom: 1em;
 }
+
+.henkilo-list {
+  width: 100%;
+}
+
+.henkilo-list-item {
+  user-select: none;
+  cursor: pointer;
+}
+
+.henkilo-list-item:hover:not(.disabled) {
+  background: var(--black);
+  color: var(--white);
+}
+
+.henkilo-list-item.disabled {
+  color: var(--gray-lighten-1);
+  cursor: unset;
+}
+
+.henkilo-list-item > td:first-child {
+  width: 2em;
+}
+
+.henkilo-list-item > td {
+  padding: 0.25em;
+}
+
+.henkilo-list-item.disabled,
+.henkilo-list-item.sub-item {
+  background-color: var(--gray-lighten-5);
+}
+.sub-item > td {
+  padding-left: 1em;
+}
+
+.henkilo-warning {
+  color: var(--red);
+}

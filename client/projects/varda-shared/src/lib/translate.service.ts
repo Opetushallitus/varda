@@ -50,7 +50,9 @@ export class VardaTranslateLoader implements TranslateLoader {
     const enumMissing = Object.values(translationEnum).filter(value => !translations.some(translation => translation.key === value));
 
     translations.forEach(translation => {
-      if (!Object.values(translationEnum).some(value => value === translation.key)) {
+      if (translation.key.startsWith('backend.')) {
+        i18nTranslations[translation.key] = translation.value;
+      } else if (!Object.values(translationEnum).some(value => value === translation.key)) {
         i18nExcess.push(translation.key);
       } else {
         i18nTranslations[translation.key] = translation.value;

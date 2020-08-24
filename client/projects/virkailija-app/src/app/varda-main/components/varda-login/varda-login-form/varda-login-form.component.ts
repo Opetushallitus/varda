@@ -12,7 +12,6 @@ export class VardaLoginFormComponent implements OnInit {
 
   next = encodeURIComponent(environment.vardaFrontendUrl + '/');
   vardaBackendLoginUrl = `${environment.vardaAppUrl}/accounts/login?next=${this.next}`;
-  showLogOutMsg = false;
   tokenInput = {
     show: !environment.production && environment.vardaFrontendUrl === 'http://localhost:4200',
     value: null,
@@ -23,9 +22,6 @@ export class VardaLoginFormComponent implements OnInit {
   constructor(
     private loginService: LoginService,
     private router: Router) {
-    this.loginService.isLoggedOut().subscribe((isLoggedOut: boolean) => {
-      this.showLogOutMsg = isLoggedOut;
-    });
   }
 
   navigateToVardaLogin(): void {

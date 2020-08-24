@@ -507,7 +507,7 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
   }
 
   getVakaJarjestajaText(lapsi: LapsiByToimipaikkaDTO): string {
-    return this.vardaVakajarjestajaService.getVakaJarjestajaTextForLists(lapsi);
+    return lapsi.paos_organisaatio_nimi;
   }
 
   fillLapsiFilter() {

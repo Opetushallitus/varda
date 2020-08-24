@@ -18,13 +18,13 @@
 }
 
 .varda-datepicker.mat-form-field.mat-form-field-disabled .mat-form-field-wrapper {
-  cursor: not-allowed;
+  cursor: inherit;
   box-shadow: 0 0 0;
-  background-color: var(--gray-lighten-5);
+  background-color: transparent /* var(--gray-lighten-5) */;
 }
 
 .varda-datepicker.mat-form-field.mat-form-field-disabled .mat-form-field-wrapper input {
-  cursor: not-allowed;
+  cursor: inherit;
 }
 
 .varda-datepicker.mat-form-field.mat-form-field-disabled .mat-input-element {

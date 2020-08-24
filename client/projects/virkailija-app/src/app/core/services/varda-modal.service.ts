@@ -1,8 +1,11 @@
 import { Injectable } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, BehaviorSubject } from 'rxjs';
 
 @Injectable()
 export class VardaModalService {
+
+  private formValuesChanged$ = new Subject<boolean>();
+  private modalOpen$ = new Subject<boolean>();
 
   private henkiloFormSubject = new Subject<any>();
   private fileUploadFormSubject = new Subject<any>();
@@ -25,7 +28,7 @@ export class VardaModalService {
     } else if (modalName === 'lapsiSuccessModal') {
       subject = this.lapsiSuccessModalSubject;
     }
-    subject.next({isOpen: isOpen, data: data});
+    subject.next({ isOpen: isOpen, data: data });
   }
 
   modalOpenObs(modalName: string): Observable<any> {
@@ -42,6 +45,22 @@ export class VardaModalService {
       obs = this.lapsiSuccessModalSubject.asObservable();
     }
     return obs;
+  }
+
+  setFormValuesChanged(value: boolean) {
+    this.formValuesChanged$.next(value);
+  }
+
+  getFormValuesChanged(): Observable<boolean> {
+    return this.formValuesChanged$.asObservable();
+  }
+
+  setModalOpen(isOpen: boolean) {
+    this.modalOpen$.next(isOpen);
+  }
+
+  getModalOpen(): Observable<boolean> {
+    return this.modalOpen$.asObservable();
   }
 
 }

@@ -1,16 +1,21 @@
-import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, ElementRef} from '@angular/core';
-import {VardaEntityNames, VardaHenkiloDTO, VardaToimipaikkaDTO} from '../../../utilities/models';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
-import { MatStepper } from '@angular/material/stepper';
-import {VardaHenkiloService} from '../../services/varda-henkilo.service';
-import {VardaApiWrapperService} from '../../../core/services/varda-api-wrapper.service';
-import {VardaModalService} from '../../../core/services/varda-modal.service';
-import {VardaFormValidators} from '../../../shared/validators/varda-form-validators';
-import {VardaVakajarjestajaService} from '../../../core/services/varda-vakajarjestaja.service';
-import {TranslateService} from '@ngx-translate/core';
-import {VardaErrorMessageService} from '../../../core/services/varda-error-message.service';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, ElementRef } from '@angular/core';
+import { VardaHenkiloDTO, VardaToimipaikkaDTO } from '../../../utilities/models';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { VardaApiWrapperService } from '../../../core/services/varda-api-wrapper.service';
+import { VardaModalService } from '../../../core/services/varda-modal.service';
+import { VardaFormValidators } from '../../../shared/validators/varda-form-validators';
+import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
+import { TranslateService } from '@ngx-translate/core';
+import { VardaErrorMessageService } from '../../../core/services/varda-error-message.service';
 import { debounceTime } from 'rxjs/operators';
 import { fromEvent } from 'rxjs';
+import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
+import { HenkiloRooliEnum } from '../../../utilities/models/enums/henkilorooli.enum';
+import { VardaApiService } from '../../../core/services/varda-api.service';
+import { TyontekijaListDTO } from '../../../utilities/models/dto/varda-tyontekija-dto.model';
+import { LapsiListDTO } from '../../../utilities/models/dto/varda-lapsi-dto.model';
+import { LoadingHttpService } from 'varda-shared';
+import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
 declare var $: any;
 
@@ -20,22 +25,21 @@ declare var $: any;
   styleUrls: ['./varda-henkilo-form.component.css']
 })
 export class VardaHenkiloFormComponent implements OnInit, OnChanges {
-
-  @Input() henkilo: VardaHenkiloDTO;
+  @Input() henkilonSuhde: TyontekijaListDTO | LapsiListDTO;
+  @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
   @Output() createHenkilo: EventEmitter<any> = new EventEmitter<any>();
+  @Output() updateList = new EventEmitter(true);
   @Output() updateLapsi: EventEmitter<any> = new EventEmitter<any>();
   @Output() deleteLapsi: EventEmitter<any> = new EventEmitter<any>();
   @Output() closeHenkiloForm: EventEmitter<any> = new EventEmitter<any>();
-  @Output() valuesChanged: EventEmitter<any> = new EventEmitter();
-  @ViewChild('henkiloStepper') henkiloStepper: MatStepper;
+  @Output() valuesChanged = new EventEmitter<boolean>(true);
   @ViewChild('formContent', { static: true }) formContent: ElementRef;
-
+  i18n = VirkailijaTranslations;
   currentHenkilo: VardaHenkiloDTO;
   vardaHenkiloForm: FormGroup;
-  henkiloEntitySelection: string;
   henkiloHasRole: boolean;
-  henkiloIsLapsi: boolean;
   toimipaikka: VardaToimipaikkaDTO;
+  HenkiloRooliEnum = HenkiloRooliEnum;
 
   ui: {
     henkiloAddRequestSuccess: boolean,
@@ -50,7 +54,9 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
     showFormContinuesWarning: boolean
   };
 
-  constructor(private vardaHenkiloService: VardaHenkiloService,
+  constructor(
+    private http: LoadingHttpService,
+    private vardaApiService: VardaApiService,
     private vardaApiWrapperService: VardaApiWrapperService,
     private vardaModalService: VardaModalService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
@@ -71,7 +77,7 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
 
     this.vardaModalService.modalOpenObs('lapsiSuccessModal').subscribe((isOpen: boolean) => {
       if (isOpen) {
-        $(`#lapsiSuccessModal`).modal({keyboard: true, focus: true});
+        $(`#lapsiSuccessModal`).modal({ keyboard: true, focus: true });
         setTimeout(() => {
           $(`#lapsiSuccessModal`).modal('hide');
         }, 2500);
@@ -87,10 +93,6 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
       this.ui.firstnamesInsructionText = translations[1];
       this.ui.lastnamesInstructionText = translations[2];
     });
-  }
-
-  chooseHenkiloEntity(entity: string): void {
-    this.henkiloEntitySelection = entity;
   }
 
   getHenkiloFormData(): any {
@@ -146,23 +148,8 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
       });
   }
 
-  initExistingHenkiloForm(): void {
-    if (this.vardaHenkiloService.henkiloIsLapsi(this.currentHenkilo)) {
-      this.henkiloIsLapsi = true;
-      this.henkiloHasRole = true;
-    }
-  }
-
-  lapsiFormValuesChanged(hasChanged: boolean) {
+  formValuesChanged(hasChanged: boolean) {
     this.valuesChanged.emit(hasChanged);
-  }
-
-  onUpdateLapsi(data: any): void {
-    this.updateLapsi.emit(data);
-  }
-
-  onDeleteLapsi(data: any): void {
-    this.deleteLapsi.emit(data);
   }
 
   onSaveLapsiSuccess(data: any): void {
@@ -191,6 +178,14 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
     this.ui.activeInstructionText = field;
   }
 
+
+  getHenkilo(henkiloId: number): void {
+    this.vardaApiService.getHenkilo(henkiloId).subscribe({
+      next: henkilo => this.currentHenkilo = henkilo,
+      error: err => console.error(err)
+    });
+  }
+
   searchHenkilo(): void {
     const henkiloFormData = this.getHenkiloFormData();
     const ssnValue = henkiloFormData.ssn;
@@ -203,29 +198,45 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
     const addWithSsnOrOid = this.vardaHenkiloForm.get('addWithSsnOrOid').value;
 
     this.vardaApiWrapperService.getHenkiloBySsnOrHenkiloOid(ssnValue, addWithSsnOrOid).subscribe((henkilo) => {
-      this.currentHenkilo = henkilo;
-      this.chooseHenkiloEntity(VardaEntityNames.LAPSI);
+      this.currentHenkilo = {
+        id: henkilo.id,
+        url: henkilo.url,
+        etunimet: henkilo.etunimet,
+        sukunimi: henkilo.sukunimi,
+        syntyma_pvm: henkilo.syntyma_pvm,
+        henkilo_oid: henkilo.henkilo_oid,
+      };
       this.ui.isFetchingHenkilo = false;
     }, () => {
       this.vardaApiWrapperService.createHenkiloByHenkiloDetails(ssnValue,
         firstnamesValue, nicknameValue, lastnameValue, addWithSsnOrOid).subscribe(() => {
-        setTimeout(() => {
-          this.vardaApiWrapperService.getHenkiloBySsnOrHenkiloOid(ssnValue, addWithSsnOrOid).subscribe((fetchedHenkilo) => {
-            this.currentHenkilo = fetchedHenkilo;
-            this.chooseHenkiloEntity(VardaEntityNames.LAPSI);
-            this.ui.isFetchingHenkilo = false;
-          }, (ee) => this.onSaveLapsiFailure(ee));
-        }, 4000);
-      }, (ee) => {
-        this.onSaveLapsiFailure(ee);
-      });
+          setTimeout(() => {
+            this.vardaApiWrapperService.getHenkiloBySsnOrHenkiloOid(ssnValue, addWithSsnOrOid).subscribe((fetchedHenkilo) => {
+              this.currentHenkilo = {
+                id: fetchedHenkilo.id,
+                url: fetchedHenkilo.url,
+                etunimet: fetchedHenkilo.etunimet,
+                sukunimi: fetchedHenkilo.sukunimi,
+                syntyma_pvm: fetchedHenkilo.syntyma_pvm,
+                henkilo_oid: fetchedHenkilo.henkilo_oid,
+              };
+
+              this.ui.isFetchingHenkilo = false;
+            }, (ee) => this.onSaveLapsiFailure(ee));
+          }, 4000);
+        }, (ee) => {
+          this.onSaveLapsiFailure(ee);
+        });
     });
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes.henkilo) {
-      this.currentHenkilo = changes.henkilo.currentValue;
-      this.initExistingHenkiloForm();
+    this.currentHenkilo = null;
+    if (changes.henkilonSuhde) {
+      const suhde = changes.henkilonSuhde.currentValue;
+      if (suhde.henkilo_id) {
+        this.getHenkilo(suhde.henkilo_id);
+      }
     }
   }
 
@@ -234,9 +245,9 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
     this.vardaHenkiloForm = new FormGroup({
       addWithSsnOrOid: new FormControl(true),
       ssn: new FormControl('', [Validators.required, VardaFormValidators.validSSN]),
-      firstnames: new FormControl('', [Validators.required, VardaFormValidators.validHenkiloName]),
-      nickname: new FormControl('', [Validators.required, VardaFormValidators.validHenkiloName]),
-      lastname: new FormControl('', [Validators.required, VardaFormValidators.validHenkiloName])
+      firstnames: new FormControl(null, [Validators.required, VardaFormValidators.validHenkiloName]),
+      nickname: new FormControl(null, [Validators.required, VardaFormValidators.validHenkiloName]),
+      lastname: new FormControl(null, [Validators.required, VardaFormValidators.validHenkiloName])
     }, VardaFormValidators.nicknamePartOfFirstname);
 
     this.vardaHenkiloForm.valueChanges.subscribe(() => {
@@ -249,4 +260,7 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
 
   }
 
+  emitUpdateList() {
+    this.updateList.emit();
+  }
 }

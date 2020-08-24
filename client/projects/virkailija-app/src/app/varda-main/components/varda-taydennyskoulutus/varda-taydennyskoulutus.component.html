@@ -1,0 +1,87 @@
+<!-- <h1 class="varda-page-header">
+  {{ i18n.taydennyskoulutukset | translate }}
+</h1>
+<main class="taydennyskoulutus">
+  <h2>{{ selectedVakajarjestaja.nimi }}</h2>
+  <button *ngIf="toimijaAccess.taydennyskoulutustiedot.tallentaja"
+          class="varda-button responsive"
+          (click)="openTaydennyskoulutus()">
+    + {{ i18n.taydennyskoulutukset_lisaa_taydennyskoulutus | translate }}
+  </button>
+</main>
+
+<h1 class="oph-h1">
+  WÖRK IN PRÖGRESS
+</h1>
+
+<section class="taydennyskoulutukset">
+  <h2 class="oph-h3">
+    {{ i18n.taydennyskoulutukset_tallennettut_taytennyskoulutukset | translate }}
+    ({{ taydennyskoulutusData?.data.length || 0 }})
+  </h2>
+
+  <table mat-table
+         [dataSource]="taydennyskoulutusData"
+         class="taydennyskoulutus-table"
+         matSort
+         matSortActive="suoritus_pvm"
+         matSortDisableClear
+         matSortDirection="desc">
+
+
+    <ng-container matColumnDef="nimi">
+      <th mat-header-cell
+          mat-sort-header
+          *matHeaderCellDef>{{ i18n.taydennyskoulutukset_koulutuksen_nimi | translate }}</th>
+      <td mat-cell
+          *matCellDef="let row">
+        <mat-icon aria-ignore>school</mat-icon>
+        {{ row.nimi }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="osallistuja_lkm">
+      <th mat-header-cell
+          mat-sort-header
+          *matHeaderCellDef>{{ i18n.taydennyskoulutukset_osallistujia | translate }}</th>
+      <td mat-cell
+          *matCellDef="let row">{{ row.osallistuja_lkm }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="suoritus_pvm">
+      <th mat-header-cell
+          mat-sort-header
+          *matHeaderCellDef>{{ i18n.taydennyskoulutus_suoritus_pvm | translate }}</th>
+      <td mat-cell
+          *matCellDef="let row">{{ row.suoritus_pvm | vardaDate }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="koulutuspaivia">
+      <th mat-header-cell
+          mat-sort-header
+          *matHeaderCellDef>{{ i18n.taydennyskoulutus_koulutuspaivia | translate }}</th>
+      <td mat-cell
+          *matCellDef="let row">{{ row.koulutuspaivia }}</td>
+    </ng-container>
+
+
+    <tr mat-header-row
+        *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row
+        class="taydennyskoulutus-row"
+        (click)="openTaydennyskoulutus(row)"
+        *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+
+</section>
+
+<ng-container *ngIf="selectedTaydennyskoulutus">
+  <app-varda-modal-form [identifier]="'henkiloModal'"
+                        [isLg]="true"
+                        [openModal]="true"
+                        [closeWithoutConfirm]="true"
+                        (events)="closeTaydennyskoulutus($event)">
+    <app-varda-taydennyskoulutus-form [taydennyskoulutus]="selectedTaydennyskoulutus"></app-varda-taydennyskoulutus-form>
+  </app-varda-modal-form>
+</ng-container>
+ -->

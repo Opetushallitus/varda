@@ -1,7 +1,9 @@
+import { Lahdejarjestelma } from '../enums/hallinnointijarjestelma';
+
 export class VardaTilapainenHenkiloDTO {
   id?: number;
   kuukausi: string;
-  lahdejarjestelma: string;
+  lahdejarjestelma: Lahdejarjestelma;
   muutos_pvm?: string;
   tunniste?: string;
   tuntimaara: string;

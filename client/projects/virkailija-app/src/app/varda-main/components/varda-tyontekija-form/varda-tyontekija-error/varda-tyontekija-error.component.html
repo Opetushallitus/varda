@@ -1,0 +1,34 @@
+<ng-container *ngIf="errors | async as errorArr">
+  <div *ngIf="errorArr?.length"
+       class="varda-error-component">
+    <div class="varda-error-header">
+      <header class="oph-h3"
+              #scrollTo>
+        <mat-icon>error_outline</mat-icon>
+        <span
+              *ngIf="errorArr.length > 1; else singlemistake">{{ 'label.error-multiple' | translate: { count: errorArr.length } }}</span>
+        <ng-template #singlemistake>
+          {{ 'label.error-single' | translate }}
+        </ng-template>
+
+
+      </header>
+      <button (click)="hideError()"
+              class="varda-text-button">
+        <mat-icon mat-button>close</mat-icon>
+      </button>
+
+    </div>
+    <div class="tyontekija-error-line"
+         *ngFor="let errorBranch of errorArr; let lineNr = index">
+      <label>
+        {{ 'generic.error' | translate }} {{lineNr + 1}}:
+      </label>
+
+      <span *ngFor="let key of errorBranch.keys">
+        <i> {{ key }} <mat-icon>chevron_right</mat-icon></i>
+      </span>
+      <b *ngFor="let errorText of errorBranch.values"> {{ errorText | translate }} </b>
+    </div>
+  </div>
+</ng-container>
