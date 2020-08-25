@@ -1,11 +1,45 @@
+.margin-top {
+  margin-top: 1em;
+}
+
+.margin-top-large {
+  margin-top: 2em;
+}
+
+.varda-text-large {
+  font-size: var(--h3);
+  font-weight: 500;
+}
+
+.varda-text-secondary {
+  font-size: var(--h5);
+  color: rgba(0,0,0,.54);
+}
+
 .mat-card-content,
 .mat-card-header .mat-card-title,
 .mat-card-subtitle {
   font-size: inherit;
 }
 
-.mat-icon {
-  vertical-align: middle;
+.mat-tab-label-active {
+  color: var(--black);
+  opacity: 1 !important;
+  font-weight: bold;
+}
+
+.mat-ink-bar {
+  background-color: var(--blue-lighten-1) !important;
+}
+
+.mat-tab-group, .mat-tab-label, .mat-tab-link, .mat-card,
+.mat-expansion-panel-header, .mat-expansion-panel-content {
+  font-family: inherit;
+}
+
+.mat-table {
+  font-family: var(--font-family-base);
+  width: 100%;
 }
 
 .varda-field-label {
@@ -15,7 +49,7 @@
 .varda-reporting-card-container {
   display: flex;
   flex-wrap: wrap;
-  width: 95%;
+  width: 100%;
   margin: auto;
   align-items: stretch;
   padding-bottom: 10em;
@@ -29,10 +63,7 @@
 }
 
 .varda-reporting-results-wrapper {
-  display: flex;
-  justify-content: flex-start;
-  padding-left: 5%;
-  padding-right: 5%;
+  padding: 0 2em;
   margin-top: 15px;
 }
 
@@ -45,80 +76,53 @@
   justify-content: flex-start;
 }
 
-.varda-toimipaikan-lapset-scroller {
-  background-color: var(--white);
-  min-height: 200px;
-  overflow: auto;
-  flex: 1 0 300px;
-  margin: 0.5em;
-}
-
-.varda-toimipaikan-lapset-scroller .varda-table {
-  max-width: 600px;
-}
-
-.lapsi-rivi > :nth-child(2) {
+.varda-mat-table tr > :nth-child(2) {
   font-style: italic;
   font-size: 80%;
 }
 
-.varda-toimipaikan-lapset-scroller-item-selected {
-  background-color: #159ecb;
-  color: #f8eded;
+.varda-mat-table tr:hover {
+  background-color: var(--blue-lighten-4);
+  cursor: pointer;
 }
 
-.varda-toimipaikan-lapset-container {
-  background-color: #ffffff;
-  padding: 0.5em;
-  flex: 2 2 450px;
-  margin: 0.5em;
-}
-
-.varda-reporting-search-form-content.toimipaikka-search-form>div:nth-child(2) {
-  align-self: flex-end;
-}
-
-.varda-reporting-search-form-content.toimipaikka-search-form>div:nth-child(2) .varda-button {
-  margin-bottom: 3px
+.varda-info-button {
+  position: absolute !important;
+  top: -0.5em;
+  color: var(--blue-lighten-1);
 }
 
 .varda-reporting-row-wrap {
   display: flex;
   flex-wrap: wrap;
+  width: 100%;
 }
 
-.varda-reporting-row-wrap>div:not(.lapsi-filter-instruction) {
-  padding: 0.5em;
-}
-
-.varda-reporting-row-wrap>div:nth-child(3) {
-  align-self: flex-end;
-}
-
-.varda-reporting-row-wrap>div:nth-child(3) .varda-button {
-  margin-bottom: 3px;
+.search-button, .search-button-toimipaikat {
+  align-self: flex-start;
+  margin-top: 2.45em;
 }
 
 .varda-reporting-row-wrap .modal-form-intro {
   margin-bottom: 0;
 }
 
-.lapsi-filter-form {
+.filter-form {
   width: 100%;
   display: flex;
   flex-wrap: wrap;
   margin: 1em .5em .5em .5em;
 }
 
-.lapsi-filter-form > div {
+.filter-form > div {
   margin: .5em 0 .5em 0;
 }
 
-.lapsi-filter-time-container {
+.filter-time-container {
   margin-top: -1em;
 }
 
-.lapsi-filter-time-container > * {
+.filter-time-container > * {
   margin-top: 1em;
 }
 
@@ -132,6 +136,7 @@
   flex-basis: 50%;
   margin-bottom: 1em;
   padding: 0.5em;
+  height: fit-content;
 }
 
 .varda-reporting-card>.mat-card {
@@ -187,26 +192,6 @@
   margin-right: auto;
 }
 
-.varda-reporting-kielipainotus-wrapper,
-.varda-reporting-toimintapainotus-wrapper {
-  margin-top: 20px;
-}
-
-.varda-reporting-kielipainotus-item,
-.varda-reporting-toimintapainotus-item {
-  margin-bottom: 10px;
-}
-
-.varda-reporting-kielipainotus-koodi,
-.varda-reporting-toimintapainotus-koodi {
-  padding-left: 30px
-}
-
-.varda-reporting-kielipainotus-koodi p,
-.varda-reporting-toimintapainotus-koodi p {
-  margin: 0;
-}
-
 .varda-date-range-container {
   min-width: 320px;
 }
@@ -222,6 +207,7 @@
 .varda-filter-summary {
   font-weight: normal;
   margin-right: .5em;
+  display: block;
 }
 
 .varda-link {
@@ -240,12 +226,11 @@
   margin: 0;
 }
 
-.lapsi-filter-clear-container {
+.filter-clear-container {
   align-self: flex-end;
-  margin-bottom: 1.25em !important;
 }
 
-.lapsi-filter-clear {
+.filter-clear {
   width: auto;
   white-space: nowrap;
   float: right;
@@ -255,6 +240,14 @@
   margin: .5em;
 }
 
+.toimipaikka-chip-container {
+  padding-top: 0.5em;
+}
+
+.toimipaikka-chip-container .mat-chip-list-wrapper {
+  margin: 0;
+}
+
 @media (min-width: 768px) {
   .varda-date-range-container {
     max-width: 400px;
@@ -262,8 +255,12 @@
 }
 
 @media (max-width: 767px) {
-  .lapsi-filter-clear {
+  .filter-clear {
     width: 100%;
+  }
+
+  .search-button {
+    margin-top: initial;
   }
 }
 
@@ -284,5 +281,9 @@
 
   .varda-date-range-dash {
     margin: 0;
+  }
+
+  .search-button-toimipaikat {
+    margin-top: initial;
   }
 }

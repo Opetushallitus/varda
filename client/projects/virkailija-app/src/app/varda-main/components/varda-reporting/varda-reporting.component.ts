@@ -1,8 +1,8 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { VardaApiWrapperService } from '../../../core/services/varda-api-wrapper.service';
-import { VardaEntityNames, VardaFieldSet, VardaToimipaikkaDTO, VardaWidgetNames } from '../../../utilities/models';
+import { VardaEntityNames, VardaFieldSet, VardaToimipaikkaDTO, VardaVakajarjestajaUi } from '../../../utilities/models';
 import { mergeMap } from 'rxjs/operators';
-import { forkJoin, Observable, Subscription } from 'rxjs';
+import { BehaviorSubject, defer, forkJoin, Observable, Subscription } from 'rxjs';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
 import { VardaUtilityService } from '../../../core/services/varda-utility.service';
 import { VardaFormService } from '../../../core/services/varda-form.service';
@@ -11,34 +11,67 @@ import { VardaDateService } from '../../services/varda-date.service';
 import { VardaKielikoodistoService } from '../../../core/services/varda-kielikoodisto.service';
 import { VardaKuntakoodistoService } from '../../../core/services/varda-kuntakoodisto.service';
 import { VardaPageDto } from '../../../utilities/models/dto/varda-page-dto';
-import { LapsiByToimipaikkaDTO } from '../../../utilities/models/dto/varda-henkilohaku-dto.model';
+import {
+  LapsiByToimipaikkaDTO,
+  TyontekijaByToimipaikkaDTO
+} from '../../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { VakajarjestajaToimipaikat } from '../../../utilities/models/varda-vakajarjestaja-toimipaikat.model';
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { Moment } from 'moment';
 import * as moment from 'moment';
+import { Moment } from 'moment';
+import { MatTabChangeEvent } from '@angular/material/tabs';
+import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
+import { MatChipList } from '@angular/material/chips';
+import { CodeDTO, KoodistoDTO, VardaKoodistoService } from 'varda-shared';
+import { KoodistoEnum } from 'varda-shared';
+import { UserAccess } from '../../../utilities/models/varda-user-access.model';
+import { AuthService } from '../../../core/auth/auth.service';
+
+enum FilterStringType {
+  TRANSLATED_STRING = 'translatedString',
+  RAW = 'raw'
+}
+
+interface FilterStringParam {
+  type: FilterStringType;
+  value: string;
+  ignoreComma?: boolean;
+  lowercase?: boolean;
+}
 
 @Component({
   selector: 'app-varda-reporting',
   templateUrl: './varda-reporting.component.html',
-  styleUrls: ['./varda-reporting.component.css']
+  styleUrls: ['./varda-reporting.component.css'],
+  encapsulation: ViewEncapsulation.None
 })
 export class VardaReportingComponent implements OnInit, OnDestroy {
+  @ViewChild('lapsiToimipaikkaInput') lapsiToimipaikkaInput: ElementRef<HTMLInputElement>;
+  @ViewChild('lapsiToimipaikkaChipList') lapsiToimipaikkaChipList: MatChipList;
+  @ViewChild('tyontekijaToimipaikkaInput') tyontekijaToimipaikkaInput: ElementRef<HTMLInputElement>;
+  @ViewChild('tyontekijaToimipaikkaChipList') tyontekijaToimipaikkaChipList: MatChipList;
 
+  koodistoEnum = KoodistoEnum;
+
+  selectedVakajarjestaja: VardaVakajarjestajaUi;
   toimipaikat: Array<VardaToimipaikkaDTO>;
   toimipaikanLapset: Array<any>;
   selectedToimipaikanLapsi: any;
   vakajarjestajaToimipaikat: VakajarjestajaToimipaikat;
+  userAccess: UserAccess;
 
-  toimipaikatFieldSets: Array<VardaFieldSet>;
-  toimintapainotuksetFieldSets: Array<VardaFieldSet>;
-  varhaiskasvatuspaatoksetFieldSets: Array<VardaFieldSet>;
-
-  toimipaikkaSearchValue: string;
-  lapsiSearchValue: string;
   selectedSearchEntity: string = VardaEntityNames.TOIMIPAIKKA;
   nextSearchLink: string;
   prevSearchLink: string;
-  toimipaikanLapsetSelectedToimipaikka: VardaToimipaikkaDTO;
+
+  lapsiToimipaikat: Array<VardaToimipaikkaMinimalDto>;
+  tyontekijaToimipaikat: Array<VardaToimipaikkaMinimalDto>;
+  selectedToimipaikat: Array<VardaToimipaikkaMinimalDto> = [];
+  toimipaikkaOptions: Array<VardaToimipaikkaMinimalDto> = [];
+  filteredToimipaikkaOptions: BehaviorSubject<Array<VardaToimipaikkaMinimalDto>> = new BehaviorSubject([]);
+  isNoToimipaikkaResults = false;
+  isAllToimipaikatSelected = true;
 
   toimipaikkaFieldsToBeFormatted: Array<string>;
 
@@ -46,13 +79,43 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
   toimipaikanLapsetBooleanFiels: Array<string>;
 
   ui: {
-    reportingInitializationError: boolean,
-    resultsEmpty: boolean,
+    isReportingInitializationError: boolean,
+    isResultsEmpty: boolean,
     noOfResults: number
   };
 
-  labelYes: string;
-  labelNo: string;
+  translatedStringMap = {
+    'voimassa': 'label.voimassa',
+    'paattynyt': 'label.paattynyt',
+    'vakasuhteet': 'label.varhaiskasvatussuhteet',
+    'vakapaatokset': 'label.varhaiskasvatuspaatokset',
+    'maksutiedot': 'label.maksutiedot',
+    'alkanut': 'label.alkanut',
+    'palvelussuhteet': 'label.palvelussuhteet',
+    'aikavali': 'label.aikavali'
+  };
+
+  toimipaikkaSearchValue: string;
+
+  toimipaikkaVoimassaolo = {
+    KAIKKI: 'kaikki',
+    VOIMASSAOLEVAT: 'voimassa',
+    PAATTYNEET: 'paattynyt'
+  };
+
+  toimipaikkaFilter: {
+    toimintamuoto: string;
+    jarjestamismuoto: string;
+    voimassaolo: string;
+  } = {
+    toimintamuoto: '',
+    jarjestamismuoto: '',
+    voimassaolo: this.toimipaikkaVoimassaolo.KAIKKI
+  };
+
+  toimipaikkaFilterString: string;
+  isToimipaikkaFiltersAreVisible: boolean;
+  isToimipaikkaFilterInactive = true;
 
   lapsiRajaus = {
     VAKASUHTEET: 'vakasuhteet',
@@ -61,7 +124,9 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
     NONE: null
   };
 
-  lapsiVoimassaolo = {
+  lapsiSearchValue: string;
+
+  voimassaolo = {
     ALKANUT: 'alkanut',
     PAATTYNYT: 'paattynyt',
     VOIMASSA: 'voimassa',
@@ -74,13 +139,52 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
     paattymisPvm: Moment;
   } = {
       rajaus: this.lapsiRajaus.VAKAPAATOKSET,
-      voimassaolo: this.lapsiVoimassaolo.VOIMASSA,
+      voimassaolo: this.voimassaolo.VOIMASSA,
       alkamisPvm: moment(),
       paattymisPvm: moment()
     };
-  lapsiFilterInactive = false;
+  isLapsiFilterInactive = false;
   lapsiFilterString: string;
-  lapsiFiltersAreVisible: boolean;
+  isLapsiFiltersAreVisible: boolean;
+
+  tyontekijaResults: Array<TyontekijaByToimipaikkaDTO> = null;
+  selectedTyontekija: TyontekijaByToimipaikkaDTO = null;
+
+  tyontekijaSearchValue: string;
+
+  tyontekijaRajaus = {
+    PALVELUSSUHTEET: 'palvelussuhteet',
+    NONE: null
+  };
+
+  tyontekijaFilter: {
+    rajaus: string;
+    voimassaolo: string;
+    alkamisPvm: Moment;
+    paattymisPvm: Moment;
+    tehtavanimike: CodeDTO;
+    tutkinto: CodeDTO;
+  } = {
+    rajaus: this.tyontekijaRajaus.PALVELUSSUHTEET,
+    voimassaolo: this.voimassaolo.VOIMASSA,
+    alkamisPvm: moment(),
+    paattymisPvm: moment(),
+    tehtavanimike: null,
+    tutkinto: null
+  };
+
+  isTyontekijaFilterInactive = false;
+  isTyontekijaRajausFilterInactive = false;
+  tyontekijaFilterString: string;
+  isTyontekijaFiltersAreVisible: boolean;
+
+  tehtavanimikkeet: Array<CodeDTO> = [];
+  filteredTehtavanimikeOptions: BehaviorSubject<Array<CodeDTO>> = new BehaviorSubject([]);
+  isNoTehtavanimikeResults = false;
+
+  tutkinnot: Array<CodeDTO> = [];
+  filteredTutkintoOptions: BehaviorSubject<Array<CodeDTO>> = new BehaviorSubject([]);
+  isNoTutkintoResults = false;
 
   resizeSubscription: Subscription;
   isSmall: boolean;
@@ -94,14 +198,16 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
     private vardaDateService: VardaDateService,
     private vardaKielikoodistoService: VardaKielikoodistoService,
     private vardaKuntakoodistoService: VardaKuntakoodistoService,
-    private breakpointObserver: BreakpointObserver
+    private breakpointObserver: BreakpointObserver,
+    private koodistoService: VardaKoodistoService,
+    private authService: AuthService
   ) {
     this.toimipaikat = [];
     this.toimipaikanLapset = null;
 
     this.ui = {
-      reportingInitializationError: false,
-      resultsEmpty: false,
+      isReportingInitializationError: false,
+      isResultsEmpty: false,
       noOfResults: null
     };
 
@@ -132,18 +238,18 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
       'vaka_paatos_pikakasittely_kytkin'
     ];
 
-    this.translateService.onLangChange.subscribe(() => {
-      this.updateLabelTranslations();
-    });
-    this.updateLabelTranslations();
-
-    // For administrative users who can switch between toimipaikkas
+    // For administrative users who can switch between vakajarjestajat
     this.vardaVakajarjestajaService.getSelectedVakajarjestajaObs().subscribe((data) => {
+      this.selectedVakajarjestaja = data.vakajarjestaja;
       if (data.onVakajarjestajaChange) {
         if (this.selectedSearchEntity === VardaEntityNames.TOIMIPAIKKA) {
           this.searchToimipaikka();
         } else if (this.selectedSearchEntity === VardaEntityNames.LAPSI) {
-          this.searchLapsi();
+          this.resetToimipaikkaSelect(VardaEntityNames.LAPSI);
+          this.filterLapset();
+        } else if (this.selectedSearchEntity === VardaEntityNames.TYONTEKIJA) {
+          this.resetToimipaikkaSelect(VardaEntityNames.TYONTEKIJA);
+          this.filterTyontekijat();
         } else if (this.selectedSearchEntity === VardaEntityNames.YHTEENVETO) {
           // In yhteenveto component
         }
@@ -153,74 +259,30 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
     this.selectedSearchEntity = VardaEntityNames.TOIMIPAIKKA;
     // Hide filters if screen size is small
     this.resizeSubscription = this.breakpointObserver.observe('(min-width: 768px)').subscribe(data => {
-      this.lapsiFiltersAreVisible = this.lapsiFiltersAreFilled() || data.matches;
+      this.isLapsiFiltersAreVisible = this.lapsiFiltersAreFilled() || data.matches;
+      this.isToimipaikkaFiltersAreVisible = this.toimipaikkaFiltersAreFilled() || data.matches;
+      this.isTyontekijaFiltersAreVisible = this.isTyontekijaFiltersFilled() || data.matches;
       this.isSmall = !data.matches;
     });
   }
 
-  changeSearchEntity($event): any {
-    this.selectedSearchEntity = $event.value;
+  changeSearchEntity($event: MatTabChangeEvent): void {
+    this.selectedSearchEntity = $event.tab.ariaLabel;
     this.nextSearchLink = null;
     this.prevSearchLink = null;
     this.lapsiSearchValue = null;
-    this.ui.resultsEmpty = false;
+    this.ui.isResultsEmpty = false;
     if (this.selectedSearchEntity === VardaEntityNames.TOIMIPAIKKA) {
       this.searchToimipaikka();
     } else if (this.selectedSearchEntity === VardaEntityNames.LAPSI) {
-      this.searchLapsi();
+      this.resetToimipaikkaSelect(VardaEntityNames.LAPSI);
+      this.filterLapset();
+    } else if (this.selectedSearchEntity === VardaEntityNames.TYONTEKIJA) {
+      this.resetToimipaikkaSelect(VardaEntityNames.TYONTEKIJA);
+      this.filterTyontekijat();
     } else if (this.selectedSearchEntity === VardaEntityNames.YHTEENVETO) {
       // In yhteenveto component
     }
-  }
-
-  formatToimipaikkaDisplayValue(key: string, val: any): string {
-    let rv = val;
-    let fieldSets, fieldsToBeFormatted;
-
-    if (this.selectedSearchEntity === VardaEntityNames.TOIMIPAIKKA) {
-      fieldSets = this.toimipaikatFieldSets;
-      fieldsToBeFormatted = this.toimipaikkaFieldsToBeFormatted;
-    }
-
-    if (fieldsToBeFormatted.includes(key)) {
-      const field = this.vardaFormService.findVardaFieldFromFieldSetsByFieldKey(key, fieldSets);
-
-      if (field && (field.widget === VardaWidgetNames.SELECT || field.widget === VardaWidgetNames.SELECTARR)) {
-
-        if (!field.koodisto) {
-          const selectedOption = field.options.find((opt) => opt.code === val);
-          rv = this.getOptionDisplayName(selectedOption);
-        }
-
-        if (field.koodisto === 'kielikoodisto') {
-          rv = this.getKielikoodiDisplayValue(val);
-        }
-
-        if (field.koodisto === 'kuntakoodisto') {
-          rv = this.getKuntakoodiDisplayValue(val);
-        }
-      }
-
-      if (field && field.widget === VardaWidgetNames.CHECKBOXGROUP) {
-        const selectedOptions = [];
-        val.forEach((chkValue) => {
-          const selectedOption = field.options.find((opt) => opt.code === chkValue);
-          const displayValue = this.getOptionDisplayName(selectedOption);
-          selectedOptions.push(displayValue);
-        });
-        rv = selectedOptions;
-      }
-
-      if (key === 'kielipainotus_kytkin' || key === 'toiminnallinenpainotus_kytkin') {
-        rv = val ? this.labelYes : this.labelNo;
-      }
-
-      if (field && field.widget === VardaWidgetNames.DATE) {
-        rv = this.vardaDateService.vardaDateToUIStrDate(val);
-      }
-    }
-
-    return rv || key === 'varhaiskasvatuspaikat' ? rv : '-';
   }
 
   formatForReporting(toimipaikat: Array<VardaToimipaikkaDTO>): Observable<any> {
@@ -279,104 +341,8 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
     });
   }
 
-  getKielikoodiDisplayValue(val: Array<string>): string {
-    try {
-      let rv = '';
-      const kielikoodiValues = val.map((kieliKoodi) => {
-        const selectedOption = this.vardaKielikoodistoService.getKielikoodistoOptionByLangAbbreviation(kieliKoodi);
-        const kielikoodiMetadata = this.vardaKielikoodistoService.getKielikoodistoOptionMetadataByLang(selectedOption.metadata,
-          this.translateService.currentLang);
-        rv = kielikoodiMetadata.nimi;
-        return rv ? rv : null;
-      });
-      return kielikoodiValues ? kielikoodiValues.join(', ') : null;
-    } catch (e) {
-      console.log(e);
-      return '-';
-    }
-  }
-
-  getKielikoodiDisplayValueByString(val: string): string {
-    try {
-      let rv: string;
-      const selectedOption = this.vardaKielikoodistoService.getKielikoodistoOptionByLangAbbreviation(val);
-      const kielikoodiMetadata = this.vardaKielikoodistoService.getKielikoodistoOptionMetadataByLang(selectedOption.metadata,
-        this.translateService.currentLang);
-      rv = kielikoodiMetadata.nimi;
-      return rv ? rv : null;
-    } catch (e) {
-      console.log(e);
-      return '-';
-    }
-  }
-
-  getKuntakoodiDisplayValue(val: string): string {
-    try {
-      let rv: string;
-      const selectedOption = this.vardaKuntakoodistoService.getKuntakoodistoOptionByKuntakoodi(val);
-      const kuntakoodiMetadata = this.vardaKuntakoodistoService.getKuntaKoodistoOptionMetadataByLang(selectedOption.metadata,
-        this.translateService.currentLang);
-      rv = kuntakoodiMetadata.nimi;
-      return rv;
-    } catch (e) {
-      return '-';
-    }
-  }
-
-  showLapsiRow(key: string, val: any): boolean {
-    if (key === 'vaka_paatos_paivittainen_vaka_kytkin' || key === 'vaka_paatos_kokopaivainen_vaka_kytkin') {
-      const vuorohoitoKytkinVal = val['vaka_paatos_vuorohoito_kytkin'];
-      if (vuorohoitoKytkinVal) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   getDateDisplayValue(value: any): string {
-    const rv = this.vardaDateService.vardaDateToUIStrDate(value);
-    return rv ? rv : '-';
-  }
-
-  getToimintapainotusDisplayValue(val: string): string {
-    try {
-      let rv = '';
-      const field = this.vardaFormService.findVardaFieldFromFieldSetsByFieldKey('toimintapainotus_koodi',
-        this.toimintapainotuksetFieldSets);
-      if (field) {
-        const selectedOption = field.options.find((opt) => opt.code === val);
-        rv = this.getOptionDisplayName(selectedOption);
-      }
-      return rv;
-    } catch (e) {
-      return '-';
-    }
-  }
-
-  getOptionDisplayName(option: any): string {
-    try {
-      let rv = '';
-      const lang = this.translateService.currentLang.toUpperCase();
-      const prop = (lang === 'SV') ? 'displayNameSv' : 'displayNameFi';
-
-      if (option.displayName && option.displayName[prop]) {
-        rv = option.displayName[prop];
-      }
-      return rv;
-    } catch (e) {
-      return '-';
-    }
-  }
-
-  getSearchInputLabel(): string {
-    let rv = '';
-    if (this.selectedSearchEntity === VardaEntityNames.TOIMIPAIKKA) {
-      rv = 'label.toimipaikannimi';
-    } else if (this.selectedSearchEntity === VardaEntityNames.LAPSI) {
-      rv = 'label.toimipaikka';
-    }
-
-    return rv;
+    return this.vardaDateService.getDateDisplayValue(value);
   }
 
   getToimipaikatForReporting(searchParams: any, nextLink: string): Observable<any> {
@@ -385,11 +351,10 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
   }
 
   getToimipaikanLapsetForReporting(searchParams: any, nextLink: string): Observable<VardaPageDto<LapsiByToimipaikkaDTO>> {
-    const selectedToimipaikkaId = this.vardaUtilityService.parseIdFromUrl(this.toimipaikanLapsetSelectedToimipaikka.url);
-    return this.vardaApiWrapperService.getLapsetForToimipaikka(selectedToimipaikkaId, searchParams, nextLink);
+    return this.vardaApiWrapperService.getLapsetForToimipaikat(searchParams, nextLink);
   }
 
-  getToimipaikkaId() {
+  getVakajarjestajaId() {
     return this.vardaVakajarjestajaService.selectedVakajarjestaja.id;
   }
 
@@ -403,14 +368,26 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
   searchToimipaikka(): any {
     const searchParams = {};
 
+    this.isToimipaikkaFilterInactive = !this.toimipaikkaFiltersAreFilled();
+    this.updateToimipaikkaFilterString();
+
     if (this.toimipaikkaSearchValue) {
       searchParams['nimi'] = this.toimipaikkaSearchValue;
+    }
+    if (this.toimipaikkaFilter.voimassaolo !== this.toimipaikkaVoimassaolo.KAIKKI) {
+      searchParams['voimassaolo'] = this.toimipaikkaFilter.voimassaolo;
+    }
+    if (this.toimipaikkaFilter.jarjestamismuoto !== '') {
+      searchParams['jarjestamismuoto_koodi'] = this.toimipaikkaFilter.jarjestamismuoto.toLowerCase();
+    }
+    if (this.toimipaikkaFilter.toimintamuoto !== '') {
+      searchParams['toimintamuoto_koodi'] = this.toimipaikkaFilter.toimintamuoto.toLowerCase();
     }
 
     this.getToimipaikatForReporting(searchParams, null).subscribe(this.updateToimipaikat.bind(this));
   }
 
-  searchLapsi(): any {
+  searchLapsi(): void {
     const searchParams = {};
 
     const searchVal = this.lapsiSearchValue;
@@ -423,8 +400,12 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
       searchParams['paattymis_pvm'] = this.vardaDateService.momentToVardaDate(this.lapsiFilter.paattymisPvm);
     }
 
-    if (!this.toimipaikanLapsetSelectedToimipaikka) {
-      this.ui.resultsEmpty = true;
+    if (!this.isAllToimipaikatSelected) {
+      searchParams['toimipaikat'] = this.selectedToimipaikat.map(toimipaikka => toimipaikka.id).join(',');
+    }
+
+    if (!this.isAllToimipaikatSelected && this.selectedToimipaikat.length === 0) {
+      this.ui.isResultsEmpty = true;
       return;
     }
 
@@ -440,21 +421,23 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
     const searchLink = less ? this.prevSearchLink : this.nextSearchLink;
     if (searchLink) {
       if (this.selectedSearchEntity === VardaEntityNames.TOIMIPAIKKA) {
-        this.getToimipaikatForReporting(null, searchLink).subscribe((this.updateToimipaikat.bind(this)));
+        this.getToimipaikatForReporting(null, searchLink).subscribe(this.updateToimipaikat.bind(this));
       } else if (this.selectedSearchEntity === VardaEntityNames.LAPSI) {
-        this.getToimipaikanLapsetForReporting(null, searchLink).subscribe((this.updateToimipaikanLapset.bind(this)));
+        this.getToimipaikanLapsetForReporting(null, searchLink).subscribe(this.updateToimipaikanLapset.bind(this));
+      } if (this.selectedSearchEntity === VardaEntityNames.TYONTEKIJA) {
+        this.getTyontekijatForReporting(null, searchLink).subscribe(this.updateTyontekijaResults.bind(this));
       }
     }
   }
 
   updateToimipaikanLapset(lapsetResp: any): void {
-    this.ui.resultsEmpty = false;
+    this.ui.isResultsEmpty = false;
 
     if (lapsetResp) {
       this.toimipaikanLapset = lapsetResp.results;
 
-      this.toimipaikanLapset.forEach(function (v) {
-        delete v.lapsi_url;
+      this.toimipaikanLapset.forEach(lapsi => {
+        delete lapsi.lapsi_url;
       });
     }
 
@@ -463,13 +446,13 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
     this.ui.noOfResults = lapsetResp.count;
 
     if (this.selectedSearchEntity === VardaEntityNames.LAPSI && this.toimipaikanLapset.length === 0) {
-      this.ui.resultsEmpty = true;
+      this.ui.isResultsEmpty = true;
     }
   }
 
   updateToimipaikat(toimipaikatResp: any): void {
     const concatArr = !!toimipaikatResp.previous;
-    this.ui.resultsEmpty = false;
+    this.ui.isResultsEmpty = false;
     this.nextSearchLink = toimipaikatResp.next;
 
     this.formatForReporting(toimipaikatResp.results).subscribe((formattedToimipaikatArr) => {
@@ -483,17 +466,10 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
       });
 
       if (this.selectedSearchEntity === VardaEntityNames.TOIMIPAIKKA && this.toimipaikat.length === 0) {
-        this.ui.resultsEmpty = true;
+        this.ui.isResultsEmpty = true;
       } else {
         this.ui.noOfResults = toimipaikatResp.count;
       }
-    });
-  }
-
-  updateLabelTranslations(): void {
-    this.translateService.get(['label.yes', 'label.no']).subscribe((translations: any) => {
-      this.labelYes = translations['label.yes'];
-      this.labelNo = translations['label.no'];
     });
   }
 
@@ -511,20 +487,23 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
   }
 
   fillLapsiFilter() {
-    this.lapsiFilter.voimassaolo = this.lapsiVoimassaolo.VOIMASSA;
+    this.lapsiFilter.voimassaolo = this.voimassaolo.VOIMASSA;
     this.lapsiFilter.alkamisPvm = moment();
     this.lapsiFilter.paattymisPvm = moment();
   }
 
   filterLapset() {
-    // Filter was inactive
-    if (this.lapsiFilterInactive) {
-      this.lapsiFilterInactive = false;
+    if (this.selectedSearchEntity !== VardaEntityNames.LAPSI) {
+      return;
+    }
+
+    if (this.isLapsiFilterInactive) {
+      this.isLapsiFilterInactive = false;
       this.fillLapsiFilter();
     }
 
     if (this.lapsiFilter.rajaus === this.lapsiRajaus.NONE) {
-      this.lapsiFilterInactive = true;
+      this.isLapsiFilterInactive = true;
       this.clearLapsiFilter();
       return;
     }
@@ -539,40 +518,19 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
 
   updateLapsiFilterString() {
     this.lapsiFilterString = '';
+    const stringParams: Array<FilterStringParam> = [];
 
-    switch (this.lapsiFilter.rajaus) {
-      case this.lapsiRajaus.VAKASUHTEET:
-        this.lapsiFilterString += this.translateService.instant('label.varhaiskasvatussuhteet');
-        break;
-      case this.lapsiRajaus.VAKAPAATOKSET:
-        this.lapsiFilterString += this.translateService.instant('label.varhaiskasvatuspaatokset');
-        break;
-      case this.lapsiRajaus.MAKSUTIEDOT:
-        this.lapsiFilterString += this.translateService.instant('label.maksutiedot');
-        break;
-      default:
-        return;
-    }
+    stringParams.push({value: this.lapsiFilter.rajaus, type: FilterStringType.TRANSLATED_STRING});
+    stringParams.push({value: this.lapsiFilter.voimassaolo, type: FilterStringType.TRANSLATED_STRING, lowercase: true});
+    stringParams.push({value: 'aikavali', type: FilterStringType.TRANSLATED_STRING, lowercase: true});
+    stringParams.push({
+      value: `${this.lapsiFilter.alkamisPvm.format(VardaDateService.vardaDefaultDateFormat)} -
+        ${this.lapsiFilter.paattymisPvm.format(VardaDateService.vardaDefaultDateFormat)}`,
+      type: FilterStringType.RAW,
+      ignoreComma: true
+    });
 
-    this.lapsiFilterString += ', ';
-
-    switch (this.lapsiFilter.voimassaolo) {
-      case this.lapsiVoimassaolo.ALKANUT:
-        this.lapsiFilterString += this.translateService.instant('label.alkanut').toLowerCase();
-        break;
-      case this.lapsiVoimassaolo.PAATTYNYT:
-        this.lapsiFilterString += this.translateService.instant('label.paattynyt').toLowerCase();
-        break;
-      case this.lapsiVoimassaolo.VOIMASSA:
-        this.lapsiFilterString += this.translateService.instant('label.voimassa').toLowerCase();
-        break;
-      default:
-        return;
-    }
-
-    this.lapsiFilterString += ', ' + this.translateService.instant('label.aikavali').toLowerCase() + ' ';
-    this.lapsiFilterString += this.lapsiFilter.alkamisPvm.format(VardaDateService.vardaDefaultDateFormat) + ' - '
-      + this.lapsiFilter.paattymisPvm.format(VardaDateService.vardaDefaultDateFormat);
+    this.lapsiFilterString = this.getFilterString(stringParams);
   }
 
   clearLapsiFilter() {
@@ -580,7 +538,7 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
     this.lapsiFilter.voimassaolo = null;
     this.lapsiFilter.alkamisPvm = null;
     this.lapsiFilter.paattymisPvm = null;
-    this.lapsiFilterInactive = true;
+    this.isLapsiFilterInactive = true;
     this.searchLapsi();
   }
 
@@ -590,26 +548,348 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
       this.lapsiFilter.paattymisPvm !== null;
   }
 
-  ngOnInit() {
-    setTimeout(() => {
-      this.vakajarjestajaToimipaikat = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat();
-      this.toimipaikanLapsetSelectedToimipaikka = this.vakajarjestajaToimipaikat.katselijaToimipaikat[0];
-      forkJoin([
-        this.vardaApiWrapperService.getToimipaikkaFormFieldSets(),
-        this.vardaApiWrapperService.getVarhaiskasvatuspaatosFieldSets(),
-      ]).pipe(mergeMap((data) => {
-        this.toimipaikatFieldSets = data[0][0].fieldsets;
-        this.toimintapainotuksetFieldSets = data[0][2].fieldsets;
-        this.varhaiskasvatuspaatoksetFieldSets = data[1]['fieldsets'];
-        return this.getToimipaikatForReporting(null, null);
-      })).subscribe({
-        next: this.updateToimipaikat.bind(this),
-        error: () => {
-          this.ui.reportingInitializationError = true;
-        },
+  toimipaikkaAutocompleteSelected(event: MatAutocompleteSelectedEvent) {
+    const selectedToimipaikka = event.option.value;
+
+    if (selectedToimipaikka) {
+      this.isAllToimipaikatSelected = false;
+      this.selectedToimipaikat.push(selectedToimipaikka);
+
+      // Remove selected option from Autocomplete
+      this.filteredToimipaikkaOptions.next(this.toimipaikkaOptions.filter(toimipaikka => {
+        return toimipaikka.id !== selectedToimipaikka.id && this.selectedToimipaikat.indexOf(toimipaikka) === -1;
+      }));
+    } else {
+      // All toimipaikat selection is applied
+      this.isAllToimipaikatSelected = true;
+      this.selectedToimipaikat = [];
+      this.filteredToimipaikkaOptions.next([...this.toimipaikkaOptions]);
+    }
+
+    if (this.selectedSearchEntity === VardaEntityNames.LAPSI) {
+      this.lapsiToimipaikkaInput.nativeElement.value = '';
+      setTimeout(() => {
+        this.lapsiToimipaikkaChipList.chips.last.focus();
       });
+    } else if (this.selectedSearchEntity === VardaEntityNames.TYONTEKIJA) {
+      this.tyontekijaToimipaikkaInput.nativeElement.value = '';
+      setTimeout(() => {
+        this.tyontekijaToimipaikkaChipList.chips.last.focus();
+      });
+    }
+    this.isNoToimipaikkaResults = false;
+  }
+
+  removeSelectedToimipaikka(removedToimipaikka: VardaToimipaikkaMinimalDto) {
+    if (removedToimipaikka) {
+      this.selectedToimipaikat.splice(this.selectedToimipaikat.indexOf(removedToimipaikka), 1);
+
+      // Add removed option back to Autocomplete
+      this.filteredToimipaikkaOptions.next(this.toimipaikkaOptions.filter(toimipaikka => {
+        return this.selectedToimipaikat.indexOf(toimipaikka) === -1;
+      }));
+    } else {
+      // Reset input if all toimipaikat selection is cleared
+      this.isAllToimipaikatSelected = false;
+      this.filteredToimipaikkaOptions.next([...this.toimipaikkaOptions]);
+    }
+
+    if (this.selectedSearchEntity === VardaEntityNames.LAPSI) {
+      this.lapsiToimipaikkaInput.nativeElement.value = '';
+    } else if (this.selectedSearchEntity === VardaEntityNames.TYONTEKIJA) {
+      this.tyontekijaToimipaikkaInput.nativeElement.value = '';
+    }
+
+    this.isNoToimipaikkaResults = false;
+  }
+
+  toimipaikkaSelectInputChange(event: Event) {
+    const targetValue = (<HTMLInputElement> event.target).value;
+    const results = this.toimipaikkaOptions.filter(toimipaikka => {
+      return toimipaikka.nimi.toLowerCase().includes(targetValue.toLowerCase()) && this.selectedToimipaikat.indexOf(toimipaikka) === -1;
     });
+
+    if (results.length === 0) {
+      this.isNoToimipaikkaResults = true;
+      this.filteredToimipaikkaOptions.next([]);
+    } else {
+      this.isNoToimipaikkaResults = false;
+      this.filteredToimipaikkaOptions.next(results);
+    }
+  }
+
+  clearToimipaikkaFilter() {
+    this.toimipaikkaFilter.voimassaolo = this.toimipaikkaVoimassaolo.KAIKKI;
+    this.toimipaikkaFilter.toimintamuoto = '';
+    this.toimipaikkaFilter.jarjestamismuoto = '';
+    this.isToimipaikkaFilterInactive = true;
+    this.searchToimipaikka();
+  }
+
+  toimipaikkaFiltersAreFilled(): boolean {
+    return this.toimipaikkaFilter.voimassaolo !== this.toimipaikkaVoimassaolo.KAIKKI ||
+      this.toimipaikkaFilter.jarjestamismuoto !== '' || this.toimipaikkaFilter.toimintamuoto !== '';
+  }
+
+  updateToimipaikkaFilterString() {
+    this.toimipaikkaFilterString = '';
+    const stringParams: Array<FilterStringParam> = [];
+
+    if (this.toimipaikkaFilter.voimassaolo !== this.toimipaikkaVoimassaolo.KAIKKI) {
+      stringParams.push({value: this.toimipaikkaFilter.voimassaolo, type: FilterStringType.TRANSLATED_STRING});
+    }
+
+    stringParams.push({value: this.toimipaikkaFilter.toimintamuoto, type: FilterStringType.RAW});
+    stringParams.push({value: this.toimipaikkaFilter.jarjestamismuoto, type: FilterStringType.RAW});
+
+    this.toimipaikkaFilterString = this.getFilterString(stringParams);
+  }
+
+  getToimipaikkaKeys(toimipaikka: VardaToimipaikkaDTO): Array<string> {
+    return Object.keys(toimipaikka.toimipaikka);
+  }
+
+  searchTyontekija(): void {
+    const searchParams = {};
+
+    this.isTyontekijaFilterInactive = !this.isTyontekijaFiltersFilled();
+
+    searchParams['search'] = this.tyontekijaSearchValue ? this.tyontekijaSearchValue : '';
+
+    if (this.isTyontekijaRajausFiltersFilled()) {
+      searchParams['rajaus'] = this.tyontekijaFilter.rajaus;
+      searchParams['voimassaolo'] = this.tyontekijaFilter.voimassaolo;
+      searchParams['alkamis_pvm'] = this.vardaDateService.momentToVardaDate(this.tyontekijaFilter.alkamisPvm);
+      searchParams['paattymis_pvm'] = this.vardaDateService.momentToVardaDate(this.tyontekijaFilter.paattymisPvm);
+    }
+    if (this.tyontekijaFilter.tehtavanimike !== null) {
+      searchParams['tehtavanimike'] = this.tyontekijaFilter.tehtavanimike.code_value;
+    }
+    if (this.tyontekijaFilter.tutkinto !== null) {
+      searchParams['tutkinto'] = this.tyontekijaFilter.tutkinto.code_value;
+    }
+
+    if (!this.isAllToimipaikatSelected && this.selectedToimipaikat.length === 0) {
+      this.ui.isResultsEmpty = true;
+      return;
+    }
+
+    if (!this.isAllToimipaikatSelected) {
+      searchParams['toimipaikat'] = this.selectedToimipaikat.map(toimipaikka => toimipaikka.id).join(',');
+    }
+
+    this.selectedTyontekija = null;
+    this.tyontekijaResults = null;
+    this.getTyontekijatForReporting(searchParams, null).subscribe({
+      next: this.updateTyontekijaResults.bind(this),
+      error: () => this.updateTyontekijaResults({ results: [], count: 0 })
+    });
+  }
+
+  filterTyontekijat(): void {
+    if (this.selectedSearchEntity !== VardaEntityNames.TYONTEKIJA) {
+      return;
+    }
+
+    if (this.isTyontekijaRajausFilterInactive) {
+      this.isTyontekijaRajausFilterInactive = false;
+      this.fillTyontekijaRajausFilter();
+    }
+
+    if (this.tyontekijaFilter.rajaus === this.tyontekijaRajaus.NONE) {
+      this.isTyontekijaRajausFilterInactive = true;
+      this.clearTyontekijaRajausFilter();
+      return;
+    }
+
+    if (!this.isTyontekijaFiltersFilled()) {
+      return;
+    }
+
+    this.updateTyontekijaFilterString();
+    this.searchTyontekija();
+  }
+
+  fillTyontekijaRajausFilter() {
+    this.tyontekijaFilter.voimassaolo = this.voimassaolo.VOIMASSA;
+    this.tyontekijaFilter.alkamisPvm = moment();
+    this.tyontekijaFilter.paattymisPvm = moment();
+  }
+
+  clearTyontekijaRajausFilter() {
+    this.tyontekijaFilter.rajaus = this.tyontekijaRajaus.NONE;
+    this.tyontekijaFilter.voimassaolo = null;
+    this.tyontekijaFilter.alkamisPvm = null;
+    this.tyontekijaFilter.paattymisPvm = null;
+    this.isTyontekijaRajausFilterInactive = true;
+    this.updateTyontekijaFilterString();
+    this.searchTyontekija();
+  }
+
+  clearTyontekijaFilter() {
+    this.tyontekijaFilter.tehtavanimike = null;
+    this.tyontekijaFilter.tutkinto = null;
+    this.isTyontekijaFilterInactive = true;
+    this.clearTyontekijaRajausFilter();
+  }
+
+  isTyontekijaFiltersFilled(): boolean {
+    return this.isTyontekijaRajausFiltersFilled() || (this.tyontekijaFilter.rajaus === this.tyontekijaRajaus.NONE &&
+      (this.tyontekijaFilter.tehtavanimike !== null || this.tyontekijaFilter.tutkinto !== null));
+  }
+
+  isTyontekijaRajausFiltersFilled(): boolean {
+    return this.tyontekijaFilter.rajaus !== this.tyontekijaRajaus.NONE &&
+      this.tyontekijaFilter.voimassaolo !== null && this.tyontekijaFilter.alkamisPvm !== null &&
+      this.tyontekijaFilter.paattymisPvm !== null;
+  }
+
+  updateTyontekijaFilterString() {
+    this.tyontekijaFilterString = '';
+    const stringParams: Array<FilterStringParam> = [];
+
+    if (this.isTyontekijaRajausFiltersFilled()) {
+      stringParams.push({value: this.tyontekijaFilter.rajaus, type: FilterStringType.TRANSLATED_STRING});
+      stringParams.push({value: this.tyontekijaFilter.voimassaolo, type: FilterStringType.TRANSLATED_STRING, lowercase: true});
+      stringParams.push({value: 'aikavali', type: FilterStringType.TRANSLATED_STRING, lowercase: true});
+      stringParams.push({
+        value: `${this.tyontekijaFilter.alkamisPvm.format(VardaDateService.vardaDefaultDateFormat)} -
+        ${this.tyontekijaFilter.paattymisPvm.format(VardaDateService.vardaDefaultDateFormat)}`,
+        type: FilterStringType.RAW,
+        ignoreComma: true
+      });
+    }
+
+    stringParams.push({value: this.tyontekijaFilter.tehtavanimike?.code_value, type: FilterStringType.RAW});
+    stringParams.push({value: this.tyontekijaFilter.tutkinto?.code_value, type: FilterStringType.RAW});
+
+    this.tyontekijaFilterString = this.getFilterString(stringParams);
+  }
+
+  getFilterString(params: Array<FilterStringParam>): string {
+    let resultString = '';
+
+    params.forEach((param, index) => {
+      if (!param.value) {
+        return;
+      }
+
+      if (resultString !== '') {
+        resultString += param.ignoreComma ? ' ' : ', ';
+      }
+
+      let newValue;
+      switch (param.type) {
+        case FilterStringType.TRANSLATED_STRING:
+          newValue = this.translateService.instant(this.translatedStringMap[param.value]);
+          break;
+        case FilterStringType.RAW:
+        default:
+          newValue = param.value;
+      }
+
+      resultString += param.lowercase ? newValue.toLowerCase() : newValue;
+    });
+
+    return resultString;
+  }
+
+  tehtavanimikeOnChange(tehtavanimike: CodeDTO) {
+    this.filterTyontekijat();
+  }
+
+  tutkintoOnChange(tutkinto: CodeDTO) {
+    this.filterTyontekijat();
+  }
+
+  getTyontekijatForReporting(searchParams: any, nextLink: string): Observable<VardaPageDto<TyontekijaByToimipaikkaDTO>> {
+    return this.vardaApiWrapperService.getTyontekijatForToimipaikat(searchParams, nextLink);
+  }
+
+  updateTyontekijaResults(tyontekijatResponse: VardaPageDto<TyontekijaByToimipaikkaDTO>): void {
+    this.ui.isResultsEmpty = false;
+
+    if (tyontekijatResponse) {
+      this.tyontekijaResults = tyontekijatResponse.results;
+
+      this.tyontekijaResults.forEach(tyontekija => {
+        delete tyontekija.tyontekija_url;
+      });
+    }
+
+    this.nextSearchLink = tyontekijatResponse.next;
+    this.prevSearchLink = tyontekijatResponse.previous;
+    this.ui.noOfResults = tyontekijatResponse.count;
+
+    if (this.selectedSearchEntity === VardaEntityNames.TYONTEKIJA && this.tyontekijaResults.length === 0) {
+      this.ui.isResultsEmpty = true;
+    }
+  }
+
+  showTyontekija(tyontekija: TyontekijaByToimipaikkaDTO) {
+    // Unselect if tyontekija was already selected
+    if (this.selectedTyontekija && this.selectedTyontekija === tyontekija) {
+      this.selectedTyontekija = null;
+    } else {
+      this.selectedTyontekija = tyontekija;
+    }
+  }
+
+  getKoodistoFromKoodistoService(name: KoodistoEnum) {
+    return this.koodistoService.getKoodisto(name);
+  }
+
+  getCodeFromKoodistoService(koodistoName: KoodistoEnum, code: string) {
+    return this.koodistoService.getCodeValueFromKoodisto(koodistoName, code);
+  }
+
+  resetToimipaikkaSelect(entity: string) {
+    this.selectedToimipaikat = [];
+    this.isAllToimipaikatSelected = true;
+    this.isNoToimipaikkaResults = false;
+    if (entity === VardaEntityNames.LAPSI) {
+      this.toimipaikkaOptions = this.lapsiToimipaikat;
+    } else if (entity === VardaEntityNames.TYONTEKIJA) {
+      this.toimipaikkaOptions = this.tyontekijaToimipaikat;
+    } else {
+      this.toimipaikkaOptions = [];
+    }
+    this.filteredToimipaikkaOptions.next([...this.toimipaikkaOptions]);
+  }
+
+  getCodeUiString(code: CodeDTO): string {
+    return `${code.name} (${code.code_value})`;
+  }
+
+  ngOnInit() {
+    this.vakajarjestajaToimipaikat = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat();
+    this.userAccess = this.authService.getUserAccessIfAnyToimipaikka(this.vakajarjestajaToimipaikat.katselijaToimipaikat);
+    const toimipaikatByPermissions = this.authService.getToimipaikatByLapsiTyontekijaPermissions(this.vakajarjestajaToimipaikat.katselijaToimipaikat);
+    this.lapsiToimipaikat = toimipaikatByPermissions.lapsiToimipaikat;
+    this.tyontekijaToimipaikat = toimipaikatByPermissions.tyontekijaToimipaikat;
+    if (this.selectedSearchEntity === VardaEntityNames.LAPSI) {
+      this.resetToimipaikkaSelect(VardaEntityNames.LAPSI);
+    } else if (this.selectedSearchEntity === VardaEntityNames.TYONTEKIJA) {
+      this.resetToimipaikkaSelect(VardaEntityNames.TYONTEKIJA);
+    }
+    forkJoin([
+      this.getKoodistoFromKoodistoService(this.koodistoEnum.tehtavanimike),
+      this.getKoodistoFromKoodistoService(this.koodistoEnum.tutkinto)
+    ]).pipe(mergeMap((data) => {
+      this.tehtavanimikkeet = (<KoodistoDTO> data[0]).codes;
+      this.filteredTehtavanimikeOptions.next(this.tehtavanimikkeet);
+      this.tutkinnot = (<KoodistoDTO> data[1]).codes;
+      this.filteredTutkintoOptions.next(this.tutkinnot);
+      return this.getToimipaikatForReporting(null, null);
+    })).subscribe({
+      next: this.updateToimipaikat.bind(this),
+      error: () => {
+        this.ui.isReportingInitializationError = true;
+      },
+    });
+
     this.filterLapset();
+    this.filterTyontekijat();
   }
 
   ngOnDestroy(): void {

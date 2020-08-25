@@ -287,4 +287,25 @@ export class AuthService {
       .some(([accessKey, accessValue]) => !!accessValue.katselija);
   }
 
+  getToimipaikatByLapsiTyontekijaPermissions(toimipaikat: Array<VardaToimipaikkaMinimalDto>): {
+    lapsiToimipaikat: Array<VardaToimipaikkaMinimalDto>,
+    tyontekijaToimipaikat: Array<VardaToimipaikkaMinimalDto>
+  } {
+    const lapsiResult = [];
+    const tyontekijaResult = [];
+    toimipaikat.forEach(toimipaikka => {
+      const toimipaikkaAccess = this.getUserAccess(toimipaikka.organisaatio_oid);
+      if (toimipaikkaAccess.lapsitiedot.katselija || toimipaikkaAccess.huoltajatiedot.katselija) {
+        lapsiResult.push(toimipaikka);
+      }
+
+      if (toimipaikkaAccess.tyontekijatiedot.katselija || toimipaikkaAccess.taydennyskoulutustiedot.katselija) {
+        tyontekijaResult.push(toimipaikka);
+      }
+    });
+    return {
+      lapsiToimipaikat: lapsiResult,
+      tyontekijaToimipaikat: tyontekijaResult
+    };
+  }
 }

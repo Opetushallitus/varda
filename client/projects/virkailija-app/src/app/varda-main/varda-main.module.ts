@@ -63,6 +63,7 @@ import { EiHenkilostoaDialogComponent } from './components/varda-henkilosto-tila
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { VardaTyontekijaTaydennyskoulutuksetComponent } from './components/varda-tyontekija-form/varda-tyontekija-taydennyskoulutukset/varda-tyontekija-taydennyskoulutukset.component';
+import { ReportTyontekijaComponent } from './components/varda-reporting/report-tyontekija/report-tyontekija.component';
 
 @NgModule({
   imports: [
@@ -123,7 +124,8 @@ import { VardaTyontekijaTaydennyskoulutuksetComponent } from './components/varda
     PaosAddedToimipaikatComponent,
     PaosAddPaosToimintaComponent,
     PaosAddToimintaListComponent,
-    EiHenkilostoaDialogComponent
+    EiHenkilostoaDialogComponent,
+    ReportTyontekijaComponent
   ],
   entryComponents: [EiHenkilostoaDialogComponent],
   exports: [

@@ -35,11 +35,6 @@ const routes: Routes = [
         data: { title: 'label.varhaiskasvatustoimija' }
       },
       {
-        path: 'haku',
-        component: VardaHakuContainerComponent,
-        data: { title: 'label.navi.haku' }
-      },
-      {
         path: 'tietojen-katselu',
         component: VardaReportingComponent,
         data: { title: 'label.navi.tietojen-katselu' }

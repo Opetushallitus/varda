@@ -1,15 +1,16 @@
 .varda-footer-wrapper {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    background-color: var(--white);
-    font-size: 0.75rem;
-    border-top: 2px solid var(--gray-lighten-4);
-    display: flex;
-    flex-wrap: nowrap;
-    justify-content: space-between;
-    align-items: center;
-    height: 4.5em;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background-color: var(--white);
+  font-size: 0.75rem;
+  border-top: 2px solid var(--gray-lighten-4);
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  height: 4.5em;
+  z-index: 2;
 }
 
 .varda-footer-section {

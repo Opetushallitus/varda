@@ -68,7 +68,7 @@ describe('VardaApiWrapperService', () => {
     getVarhaiskasvatussuhteetByLapsiSpy = spyOn(vardaApiService, 'getVarhaiskasvatussuhteetByLapsi').and.returnValue({});
     getVarhaiskasvatuspaatoksetByLapsiSpy = spyOn(vardaApiService, 'getVarhaiskasvatuspaatoksetByLapsi').and.returnValue({});
     patchVakajarjestajaSpy = spyOn(vardaApiService, 'patchVakajarjestaja').and.returnValue({});
-    getToimipaikanLapsetSpy = spyOn(vardaApiService, 'getLapsetForToimipaikka').and.returnValue({});
+    getToimipaikanLapsetSpy = spyOn(vardaApiService, 'getLapsetForToimipaikat').and.returnValue({});
     getSelectedVakajarjestajaIdSpy = spyOn(vardaVakajarjestajaService, 'getSelectedVakajarjestajaId').and.returnValue('1');
   });
 
@@ -253,10 +253,10 @@ describe('VardaApiWrapperService', () => {
     expect(booleanRadioValue3).toEqual(false);
   });
 
-  it('Should call getLapsetForToimipaikka with toimipaikkaId and name parameters', () => {
-    const toimipaikkaId = '1';
-    const searchParams = {sukunimi: 'Virtanen', etunimet: 'pekka'};
-    const result1 = vardaApiWrapperService.getLapsetForToimipaikka(toimipaikkaId, searchParams, null);
-    expect(getToimipaikanLapsetSpy).toHaveBeenCalledWith('1', '1', {sukunimi: 'Virtanen', etunimet: 'pekka'}, null);
+  it('Should call getLapsetForToimipaikat with vakajarjestajaId and name parameters', () => {
+    const vakajarjestajaId = '1';
+    const searchParams = {sukunimi: 'Virtanen', etunimet: 'pekka', toimipaikat: '1'};
+    const result1 = vardaApiWrapperService.getLapsetForToimipaikat(searchParams, null);
+    expect(getToimipaikanLapsetSpy).toHaveBeenCalledWith(vakajarjestajaId, searchParams, null);
   });
 });

@@ -1,7 +1,7 @@
 .toimipaikan-lapset-container {
   background-color: #ffffff;
   position: relative;
-  padding: 20px 20px 25px 20px;
+  margin-top: 1em;
   --tree-width: 0.75em;
   --tree-width-negative: -.75em;
   --tree-border: 0.1em solid var(--gray-lighten-1);
@@ -50,6 +50,10 @@
 .toimipaikan-lapset-header-table {
   table-layout: fixed;
   width: 100%;
+}
+
+.maksutieto-panel {
+  margin-bottom: 1em;
 }
 
 .vakatieto-container {
@@ -113,13 +117,4 @@ h2 {
 
 h3 {
   font-size: 1rem;
-}
-
-@media (max-width: 550px) {
-  h3 {
-    font-size: 2.6vw;
-  }
-  .mat-cell {
-    font-size: 2.4vw;
-  }
 }

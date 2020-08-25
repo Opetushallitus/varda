@@ -69,4 +69,23 @@ export class VardaDateService {
     return date1.isBefore(date2);
   }
 
+  getDateDisplayValue(date: string): string {
+    const dateUi = this.vardaDateToUIStrDate(date);
+    return dateUi ? dateUi : '-';
+  }
+
+  getDateRangeDisplayValue(startDate: string, endDate: string): string {
+    const startDateUi = this.vardaDateToUIStrDate(startDate);
+    const endDateUi = this.vardaDateToUIStrDate(endDate);
+
+    if (!startDateUi && !endDateUi) {
+      return '-';
+    }
+
+    let result = '';
+    result += startDateUi ? `${startDateUi} -` : '-';
+    result += endDateUi ? ` ${endDateUi}` : '';
+
+    return result;
+  }
 }

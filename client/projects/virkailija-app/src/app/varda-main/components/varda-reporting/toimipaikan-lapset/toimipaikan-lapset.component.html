@@ -1,48 +1,44 @@
 <div class="toimipaikan-lapset-container">
-  <div #toimipaikanLapsetScrollTo
-       class="toimipaikanLapsetScrollTo"></div>
-  <div class="toimipaikan-lapset-container-margin-bottom">
-    <h1>{{selectedToimipaikanLapsi.henkilo.etunimet + ' ' + selectedToimipaikanLapsi.henkilo.sukunimi}}</h1>
-  </div>
+  <div #toimipaikanLapsetScrollTo class="toimipaikanLapsetScrollTo"></div>
 
   <div class="toimipaikan-lapset-container-margin-bottom">
-    <h2>{{'label.lapsi-stepper.lapsi-details' | translate}}</h2>
+    <h2>{{'label.perustiedot' | translate}}</h2>
 
     <table class="mat-table toimipaikan-lapset-table">
-      <tr class="mat-header-row">
+      <tr class="mat-row">
         <td class="mat-cell">{{'label.firstnamesbyseparated' | translate}}</td>
         <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.etunimet}}</td>
       </tr>
-      <tr class="mat-header-row">
+      <tr class="mat-row">
         <td class="mat-cell">{{'label.nickname' | translate}}</td>
         <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.kutsumanimi}}</td>
       </tr>
-      <tr class="mat-header-row">
+      <tr class="mat-row">
         <td class="mat-cell">{{'label.lastname' | translate}}</td>
         <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.sukunimi}}</td>
       </tr>
-      <tr class="mat-header-row">
+      <tr class="mat-row">
         <td class="mat-cell">{{'label.henkilo.id' | translate}}</td>
         <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.id}}</td>
       </tr>
-      <tr class="mat-header-row">
+      <tr class="mat-row">
         <td class="mat-cell">{{'label.lapsi.id' | translate}}</td>
-        <td class="mat-cell">{{lapsiId}}</td>
+        <td class="mat-cell">{{selectedToimipaikanLapsi.id}}</td>
       </tr>
-      <tr class="mat-header-row">
+      <tr class="mat-row">
         <td class="mat-cell">{{'label.oppijanumero' | translate}}</td>
         <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.henkilo_oid}}</td>
       </tr>
-      <tr class="mat-header-row">
+      <tr class="mat-row">
         <td class="mat-cell">{{'label.birthday' | translate}}</td>
         <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.syntyma_pvm | date:'d.M.yyyy'}}</td>
       </tr>
-      <tr class="mat-header-row"
+      <tr class="mat-row"
           *ngIf="selectedToimipaikanLapsi.oma_organisaatio_nimi">
         <td class="mat-cell">{{'label.oma-organisaatio' | translate}}</td>
         <td class="mat-cell">{{selectedToimipaikanLapsi.oma_organisaatio_nimi}}</td>
       </tr>
-      <tr class="mat-header-row"
+      <tr class="mat-row"
           *ngIf="selectedToimipaikanLapsi.paos_organisaatio_nimi">
         <td class="mat-cell">{{'label.paos-organisaatio' | translate}}</td>
         <td class="mat-cell">{{selectedToimipaikanLapsi.paos_organisaatio_nimi}}</td>
@@ -70,7 +66,7 @@
 
     <div *ngIf="selectedToimipaikanLapsi.maksutiedot && selectedToimipaikanLapsi.maksutiedot.length > 0">
       <div *ngFor="let maksutieto of selectedToimipaikanLapsi.maksutiedot">
-        <app-toimipaikan-lapset-maksutiedot [maksutieto]="maksutieto">
+        <app-toimipaikan-lapset-maksutiedot [maksutieto]="maksutieto" [isYksityinen]="selectedToimipaikanLapsi.yksityinen_kytkin">
         </app-toimipaikan-lapset-maksutiedot>
       </div>
     </div>

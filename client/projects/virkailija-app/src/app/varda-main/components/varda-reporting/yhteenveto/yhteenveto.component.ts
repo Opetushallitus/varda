@@ -1,9 +1,9 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { VardaToimipaikkaYhteenvetoDTO } from '../../../../utilities/models/dto/varda-toimipaikka-yhteenveto-dto.model';
+import { VardaVakajarjestajaYhteenvetoDTO } from '../../../../utilities/models/dto/varda-vakajarjestaja-yhteenveto-dto.model';
 import { Observable } from 'rxjs';
 import { VardaApiWrapperService } from '../../../../core/services/varda-api-wrapper.service';
 
-interface YhteenvetoElement { tieto: string; lukumaara: number; status: string; }
+interface YhteenvetoElement { name: string; value: number; status: string; }
 
 @Component({
   selector: 'app-yhteenveto',
@@ -12,33 +12,19 @@ interface YhteenvetoElement { tieto: string; lukumaara: number; status: string; 
 })
 export class YhteenvetoComponent implements OnInit {
 
-  @Input() toimipaikkaId: string;
+  @Input() vakajarjestajaId: string;
 
-  yhteenveto: VardaToimipaikkaYhteenvetoDTO;
+  yhteenveto: VardaVakajarjestajaYhteenvetoDTO;
 
-  datasourceLapset: Array<YhteenvetoElement>;
-  datasourceToimipaikat: Array<YhteenvetoElement>;
+  datasourceLapset: Array<YhteenvetoElement> = [];
+  datasourceToimipaikat: Array<YhteenvetoElement> = [];
+  datasourceTyontekijat: Array<YhteenvetoElement> = [];
 
-  displayedColumns: string[];
+  displayedColumns = ['name', 'value'];
 
   constructor(private vardaApiWrapperService: VardaApiWrapperService) { }
 
   ngOnInit() {
-    this.datasourceLapset = [];
-    this.displayedColumns = ['tieto', 'lukumaara'];
-    this.yhteenveto = {
-      vakajarjestaja_nimi: null,
-      lapset_lkm: null,
-      lapset_maksutieto_voimassaoleva: null,
-      lapset_vakapaatos_voimassaoleva: null,
-      lapset_vakasuhde_voimassaoleva: null,
-      lapset_vuorohoidossa: null,
-      lapset_palveluseteli_ja_ostopalvelu: null,
-      toimipaikat_voimassaolevat: null,
-      toimipaikat_paattyneet: null,
-      toimintapainotukset_maara: null,
-      kielipainotukset_maara: null,
-    };
     this.fetchYhteenveto();
   }
 
@@ -59,20 +45,27 @@ export class YhteenvetoComponent implements OnInit {
         this.createDatasourceElement('toimintapainotukset_maara'),
         this.createDatasourceElement('kielipainotukset_maara'),
       ];
-
+      this.datasourceTyontekijat = [
+        this.createDatasourceElement('tyontekijat_lkm'),
+        this.createDatasourceElement('palvelussuhteet_voimassaoleva'),
+        this.createDatasourceElement('varhaiskasvatusalan_tutkinnot'),
+        this.createDatasourceElement('tyoskentelypaikat_kelpoiset'),
+        this.createDatasourceElement('taydennyskoulutukset_kuluva_vuosi'),
+        this.createDatasourceElement('tilapainen_henkilosto_maara_kuluva_vuosi'),
+        this.createDatasourceElement('tilapainen_henkilosto_tunnit_kuluva_vuosi'),
+      ];
     });
   }
 
   createDatasourceElement(label: string): YhteenvetoElement {
     return {
-      tieto: 'label.yhteenveto.' + label.replace(/_/g, '-'),
-      lukumaara: this.yhteenveto[label],
+      name: 'label.yhteenveto.' + label.replace(/_/g, '-'),
+      value: this.yhteenveto[label],
       status: '',
     };
   }
 
-  getYhteenvetoForReporting(): Observable<VardaToimipaikkaYhteenvetoDTO> {
-    return this.vardaApiWrapperService.getYhteenvetoByToimipaikka(this.toimipaikkaId);
+  getYhteenvetoForReporting(): Observable<VardaVakajarjestajaYhteenvetoDTO> {
+    return this.vardaApiWrapperService.getYhteenvetoByVakajarjestaja(this.vakajarjestajaId);
   }
-
 }

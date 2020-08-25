@@ -28,7 +28,10 @@
     </tr>
     <tr class="mat-header-row">
       <td class="mat-cell">{{'label.vaka_paatos_jarjestamismuoto' | translate}}</td>
-      <td class="mat-cell">{{formatJarjestamismuotoDisplayValue(vakapaatos.jarjestamismuoto_koodi)}} ({{vakapaatos.jarjestamismuoto_koodi}})</td>
+      <td class="mat-cell">
+        {{(getCodeFromKoodistoService(koodistoEnum.jarjestamismuoto, vakapaatos.jarjestamismuoto_koodi) | async)?.name}}
+        ({{vakapaatos.jarjestamismuoto_koodi}})
+      </td>
     </tr>
     <tr class="mat-header-row">
       <td class="mat-cell">{{'label.vaka_paatos_paivittainen_vaka_kytkin' | translate}}</td>

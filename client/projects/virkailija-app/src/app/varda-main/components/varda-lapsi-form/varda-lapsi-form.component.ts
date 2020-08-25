@@ -1071,7 +1071,9 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
     this.vakasuhteetVakapaatoksetMap = {};
     const vakasuhdeControls = this.varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'];
     vakasuhdeControls.forEach((formGroup: FormGroup, vakasuhdeIndex: number) => {
-      const vakapaatosIndex = this.varhaiskasvatuspaatokset.indexOf(formGroup.get('varhaiskasvatuspaatos').value);
+      const vakapaatosIndex = this.varhaiskasvatuspaatokset.findIndex(vakapaatos => {
+        return formGroup.get('varhaiskasvatuspaatos').value.id === vakapaatos.id;
+      });
 
       if (!this.vakasuhteetVakapaatoksetMap[vakapaatosIndex]) {
         this.vakasuhteetVakapaatoksetMap[vakapaatosIndex] = [vakasuhdeIndex];

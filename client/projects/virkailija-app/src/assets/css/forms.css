@@ -190,6 +190,16 @@
   font-weight: bold;
 }
 
+.oph-invalid-container .oph-input {
+  background-color: var(--red-lighten-2);
+  border-color: var(--red-lighten-1);
+  box-shadow: 0 0 0;
+}
+
+.oph-invalid-container .oph-select-container:after {
+  border-top-color: var(--red-lighten-2);
+}
+
 
 @media (max-width: 767px) {
   .form-continues-text-wrapper {

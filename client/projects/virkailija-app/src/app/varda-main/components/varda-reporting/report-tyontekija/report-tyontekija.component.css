@@ -1,0 +1,78 @@
+.tyontekija-section {
+  margin-top: 1em;
+  --tree-width: 0.75em;
+  --tree-width-negative: -.75em;
+  --tree-border: 0.1em solid var(--gray-lighten-1);
+}
+
+.tyontekija-section:not(:first-child) {
+  margin-top: 2em;
+}
+
+.tyontekija-section-inner {
+  margin-top: 1.5em;
+  margin-left: 1.5em;
+}
+
+.secondary-text {
+  font-size: 90%;
+}
+
+.tyoskentelypaikka-panel-container {
+  position: relative;
+}
+
+.tyoskentelypaikka-panel, .taydennyskoulutus-panel {
+  margin-bottom: 1em;
+}
+
+.tyoskentelypaikka-panel .mat-expansion-panel-header-title,
+.taydennyskoulutus-panel .mat-expansion-panel-header-title,
+.tyoskentelypaikka-panel .mat-expansion-panel-header-description,
+.taydennyskoulutus-panel .mat-expansion-panel-header-description {
+  color: var(--blue-lighten-1);
+}
+
+.palvelussuhde-panel, .palvelussuhde-panel .mat-table {
+  background: var(--blue-lighten-4);
+}
+
+.palvelussuhde-panel .mat-expansion-panel-header-title,
+.palvelussuhde-panel .mat-expansion-panel-header-description {
+  color: var(--black);
+}
+
+.tyoskentelypaikka-panel .mat-expansion-panel-header:focus, .taydennyskoulutus-panel .mat-expansion-panel-header:focus {
+  background: var(--blue-lighten-4);
+}
+
+.tyoskentelypaikka-panel-container:first-child .tyoskentelypaikka-panel::before {
+  content: "";
+  position: absolute;
+  top: -1.5em;
+  left: var(--tree-width-negative);
+  border-left: var(--tree-border);
+  width: var(--tree-width);
+  height: 3.25em;
+}
+
+.tyoskentelypaikka-panel-container .tyoskentelypaikka-panel::before {
+  content: "";
+  position: absolute;
+  top: -1em;
+  left: var(--tree-width-negative);
+  border-left: var(--tree-border);
+  border-bottom: var(--tree-border);
+  width: var(--tree-width);
+  height: 2.5em;
+}
+
+.tyoskentelypaikka-panel-container:not(:last-child) .tyoskentelypaikka-panel::after {
+  content: "";
+  position: absolute;
+  top: 1em;
+  left: var(--tree-width-negative);
+  border-left: var(--tree-border);
+  width: var(--tree-width);
+  height: 100%;
+}

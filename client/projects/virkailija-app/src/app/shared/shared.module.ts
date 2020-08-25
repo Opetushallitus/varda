@@ -53,8 +53,9 @@ import { MatPaginatorIntl, MatPaginatorModule, MAT_PAGINATOR_DEFAULT_OPTIONS } f
 import { VardaMatPaginator } from './components/varda-paginator/varda-paginator.class';
 import { ToimipaikkaNimiDirective } from './directives/toimipaikka-nimi.directive';
 import { MatSortModule } from '@angular/material/sort';
-
-
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatChipsModule } from '@angular/material/chips';
+import { VardaAutocompleteSelectorComponent } from './components/varda-autocomplete-selector/varda-autocomplete-selector.component';
 
 const cookieConfig: NgcCookieConsentConfig = {
   cookie: {
@@ -105,6 +106,8 @@ const cookieConfig: NgcCookieConsentConfig = {
     MatMomentDateModule,
     MatPaginatorModule,
     MatSortModule,
+    MatTabsModule,
+    MatChipsModule,
     TranslateModule,
     NgcCookieConsentModule.forRoot(cookieConfig)
   ],
@@ -133,7 +136,8 @@ const cookieConfig: NgcCookieConsentConfig = {
     SlideHideDirective,
     ToimipaikkaNimiDirective,
     VardaDatepickerComponent,
-    VardaDatepickerHeaderComponent],
+    VardaDatepickerHeaderComponent,
+    VardaAutocompleteSelectorComponent],
   providers: [
     BrowserNotSupportedGuard,
     {
@@ -194,6 +198,8 @@ const cookieConfig: NgcCookieConsentConfig = {
     MatCardModule,
     MatPaginatorModule,
     MatSortModule,
+    MatTabsModule,
+    MatChipsModule,
     BrowserAnimationsModule,
     NgcCookieConsentModule,
     VardaDeleteButtonComponent,
@@ -207,7 +213,8 @@ const cookieConfig: NgcCookieConsentConfig = {
     BrowserNotSupportedComponent,
     SlideHideDirective,
     ToimipaikkaNimiDirective,
-    VardaDatepickerComponent
+    VardaDatepickerComponent,
+    VardaAutocompleteSelectorComponent
   ],
   entryComponents: [VardaDatepickerHeaderComponent]
 })

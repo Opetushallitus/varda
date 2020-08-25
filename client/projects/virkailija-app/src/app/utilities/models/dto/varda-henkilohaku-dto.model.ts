@@ -46,11 +46,13 @@ export class LapsiByToimipaikkaDTO {
 }
 
 export class ToimipaikanLapsi {
+  id?: number;
+  lapsi_id?: number;
+  yksityinen_kytkin: boolean;
   henkilo: ToimipaikanLapsiHenkilo;
   varhaiskasvatuspaatokset: Array<ToimipaikanLapsiVakapaatos>;
   varhaiskasvatussuhteet: Array<ToimipaikanLapsiVakasuhde>;
   maksutiedot: Array<ToimipaikanLapsiMaksutieto>;
-  lapsi_id: number;
   oma_organisaatio_nimi: string;
   paos_organisaatio_nimi: string;
 }
@@ -98,4 +100,66 @@ export class ToimipaikanLapsiVakasuhde {
   paattymis_pvm: string;
   toimipaikka_nimi: string;
   varhaiskasvatuspaatos: string;
+}
+
+export class TyontekijaByToimipaikkaDTO {
+  etunimet: string;
+  sukunimi: string;
+  henkilo_oid: string;
+  vakajarjestaja_nimi: string;
+  tyontekija_id: number;
+  tyontekija_url: string;
+}
+
+export class TyontekijaKooste {
+  id: number;
+  vakajarjestaja_id: number;
+  vakajarjestaja_nimi: string;
+  tutkinnot: Array<string>;
+  henkilo: TyontekijaHenkilo;
+  taydennyskoulutukset: Array<TyontekijaTaydennyskoulutus>;
+  palvelussuhteet: Array<TyontekijaPalvelussuhde>;
+}
+
+export class TyontekijaHenkilo {
+  id: number;
+  etunimet: string;
+  sukunimi: string;
+  henkilo_oid: string;
+}
+
+export class TyontekijaTaydennyskoulutus {
+  tehtavanimike_koodi: string;
+  nimi: string;
+  suoritus_pvm: string;
+  koulutuspaivia: number;
+}
+
+export class TyontekijaPalvelussuhde {
+  id: number;
+  tyosuhde_koodi: string;
+  tyoaika_koodi: string;
+  tyoaika_viikossa: number;
+  tutkinto_koodi: string;
+  alkamis_pvm: string;
+  paattymis_pvm: string;
+  tyoskentelypaikat: Array<TyontekijaTyoskentelypaikka>;
+  pidemmatpoissaolot: Array<TyontekijaPidempiPoissaolo>;
+}
+
+export class TyontekijaTyoskentelypaikka {
+  id: number;
+  toimipaikka_id: number;
+  toimipaikka_nimi: string;
+  tehtavanimike_koodi: string;
+  kelpoisuus_kytkin: boolean;
+  kiertava_tyontekija_kytkin: boolean;
+  alkamis_pvm: string;
+  paattymis_pvm: string;
+}
+
+export class TyontekijaPidempiPoissaolo {
+  id: number;
+  alkamis_pvm: string;
+  paattymis_pvm: string;
 }

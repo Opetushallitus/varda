@@ -12,13 +12,9 @@ export class ToimipaikanLapsetComponent implements OnChanges {
 
   @Input() selectedToimipaikanLapsi: ToimipaikanLapsi;
   @ViewChild('toimipaikanLapsetScrollTo') toimipaikanLapsetScrollTo: any;
-  lapsiId: number;
   constructor(private vardaApiService: VardaApiService, private vardaUtilityService: VardaUtilityService) { }
 
   ngOnChanges() {
-    // lapsi_id must be stored because selectedToimipaikanLapsi is overwritten in fetchToimipaikanLapsi
-    this.lapsiId = this.selectedToimipaikanLapsi.lapsi_id;
-
     this.selectedToimipaikanLapsi.henkilo = {
       etunimet: '',
       kutsumanimi: '',

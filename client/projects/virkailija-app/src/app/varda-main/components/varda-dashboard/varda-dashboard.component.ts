@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Title} from '@angular/platform-browser';
 import { VardaApiService } from '../../../core/services/varda-api.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { TranslateService } from '@ngx-translate/core';
@@ -9,11 +10,11 @@ import { VardaKuntakoodistoService } from '../../../core/services/varda-kuntakoo
 import { VardaApiWrapperService } from '../../../core/services/varda-api-wrapper.service';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
 import { NgcCookieConsentService } from 'ngx-cookieconsent';
-import { VardaVakajarjestajaUi } from '../../../utilities/models';
+import { VardaToimipaikkaDTO, VardaVakajarjestajaUi } from '../../../utilities/models';
 import { VardaMaksunPerusteKoodistoService } from '../../../core/services/varda-maksun-peruste-koodisto.service';
 import { LoginService, VardaUserDTO, VardaKoodistoService } from 'varda-shared';
 import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
-import { environment } from 'projects/virkailija-app/src/environments/environment';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-varda-dashboard',

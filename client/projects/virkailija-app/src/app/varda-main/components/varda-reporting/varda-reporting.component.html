@@ -4,372 +4,761 @@
 <main class="varda-reporting-wrapper">
   <div class="varda-reporting-initialization-error alert alert-danger"
        role="alert"
-       *ngIf="ui.reportingInitializationError">
+       *ngIf="ui.isReportingInitializationError">
     <p>{{'alert.error-occurred' | translate}}</p>
   </div>
   <section class="varda-page-content"
-           *ngIf="!ui.reportingInitializationError">
-    <form>
-      <div class="varda-reporting-row-wrap">
-        <div class="col-md-6 col-lg-5">
-          <label class="oph-bold">{{'label.choose' | translate}}</label>
-          <app-varda-radio-button-group name="'reportingEntitySelectorRadio'"
-                                        responsive="md"
-                                        wrap="sm"
-                                        (change)="changeSearchEntity($event)">
-            <app-varda-radio-button [id]="'reportingToimipaikat'"
-                                    [value]="'toimipaikka'"
-                                    [checked]="true">
-              {{'label.toimipaikat' | translate}}
-            </app-varda-radio-button>
-            <app-varda-radio-button [id]="'reportingLapset'"
-                                    [value]="'lapsi'">
-              {{'label.lapset' | translate}}
-            </app-varda-radio-button>
-            <app-varda-radio-button [id]="'reportingYhteenveto'"
-                                    [value]="'yhteenveto'">
-              {{'label.yhteenveto' | translate}}
-            </app-varda-radio-button>
-          </app-varda-radio-button-group>
-        </div>
-        <div class="col-lg-7"
-             *ngIf="selectedSearchEntity==='lapsi'">
-          <div class="modal-form-intro">
-            {{'label.haku-condition.search-instruction' | translate}}<br />
-            {{'label.haku-condition.search-instruction2' | translate}}
-          </div>
-        </div>
+           *ngIf="!ui.isReportingInitializationError">
+    <div class="row align-items-baseline">
+      <div class="col-auto">
+        <label class="varda-text-large">{{selectedVakajarjestaja.nimi}}</label>
       </div>
-      <div class="varda-reporting-search-form-content toimipaikka-search-form varda-reporting-row-wrap"
-           *ngIf="selectedSearchEntity === 'toimipaikka'">
-        <div class="col-sm col-md-6 col-lg-5">
-          <label for="reportingToimipaikkaSearchInput"
-                 class="oph-bold">{{getSearchInputLabel() | translate}}</label>
-          <input class="oph-input"
-                 name="reportingToimipaikkaSearchInput"
-                 id="reportingToimipaikkaSearchInput"
-                 type="text"
-                 [(ngModel)]="toimipaikkaSearchValue"
-                 (keydown.enter)="searchToimipaikka()">
-        </div>
-        <div class="col-sm-auto">
-          <button class="varda-button varda-icon-button"
-                  type="button"
-                  (click)="searchToimipaikka()">
-            <mat-icon>search</mat-icon>
-            {{'label.hae' | translate}}
-          </button>
-        </div>
+      <div class="col">
+        <label class="varda-text-secondary">{{selectedVakajarjestaja.organisaatio_oid}}</label>
       </div>
-      <div class="varda-reporting-search-form-content varda-reporting-row-wrap"
-           *ngIf="selectedSearchEntity === 'lapsi'">
-        <div class="col-md-5 col-lg-5">
-          <label for="toimipaikkaSelect"
-                 class="oph-bold">{{getSearchInputLabel() | translate}}</label>
-          <div class="oph-select-container">
-            <select class="oph-input oph-select"
-                    name="toimipaikkaSelect"
-                    id="toimipaikkaSelect"
-                    (change)="searchLapsi()"
-                    [(ngModel)]="toimipaikanLapsetSelectedToimipaikka">
-              <option *ngFor="let toimipaikkaObj of vakajarjestajaToimipaikat.katselijaToimipaikat"
-                      [ngValue]="toimipaikkaObj">
-                {{toimipaikkaObj.nimi}}</option>
-            </select>
-          </div>
-        </div>
-        <div class="col-md col-lg-4">
-          <label for="reportingLapsiSearchInput"
-                 class="oph-bold">{{'label.haku-list.nimi-ssn-oid' | translate}}</label>
-          <input class="oph-input"
-                 name="reportingLapsiSearchInput"
-                 id="reportingLapsiSearchInput"
-                 type="text"
-                 placeholder="{{'label.haku-condition.hae-henkilo' | translate}}..."
-                 [(ngModel)]="lapsiSearchValue"
-                 (keydown.enter)="searchLapsi()">
-        </div>
-        <div class="col-md-auto">
-          <button class="varda-button varda-icon-button"
-                  type="button"
-                  (click)="searchLapsi()">
-            <mat-icon>search</mat-icon>
-            {{'label.hae' | translate}}
-          </button>
-        </div>
-        <div class="oph-bg-gray-lighten-5 lapsi-filter-form"
-             *ngIf="lapsiFiltersAreVisible">
-          <div class="col-md-auto">
-            <label class="varda-link varda-filter-close"
-                   *ngIf="isSmall"
-                   (click)="lapsiFiltersAreVisible = false; clearLapsiFilter()">
-              {{'label.close' | translate}}
-            </label>
-            <label class="oph-bold">{{'label.filter-content' | translate}}</label>
-            <app-varda-radio-button-group name="lapsiRajausButtonGroup"
-                                          responsive="lg"
-                                          wrap="lg"
-                                          (change)="filterLapset()"
-                                          [(ngModel)]="lapsiFilter.rajaus">
-              <app-varda-radio-button [id]="'filterVakapaatokset'"
-                                      [value]="lapsiRajaus.VAKAPAATOKSET">
-                {{'label.varhaiskasvatuspaatokset' | translate}}
-              </app-varda-radio-button>
-              <app-varda-radio-button [id]="'filterVakasuhteet'"
-                                      [value]="lapsiRajaus.VAKASUHTEET">
-                {{'label.varhaiskasvatussuhteet' | translate}}
-              </app-varda-radio-button>
-              <app-varda-radio-button [id]="'filterMaksutiedot'"
-                                      [value]="lapsiRajaus.MAKSUTIEDOT">
-                {{'label.maksutiedot' | translate}}
-              </app-varda-radio-button>
-              <app-varda-radio-button [id]="'filterNone'"
-                                      [value]="lapsiRajaus.NONE">
-                {{'label.no-filters' | translate}}
-              </app-varda-radio-button>
-            </app-varda-radio-button-group>
-          </div>
-          <div class="col-md-auto"
-               *ngIf="!lapsiFilterInactive">
-            <label class="oph-bold">{{ 'label.filter-time' | translate }}</label>
-            <div class="row lapsi-filter-time-container">
-              <div class="col-md-auto">
-                <app-varda-radio-button-group name="lapsiVoimassaoloButtonGroup"
-                                              responsive="md"
-                                              wrap="xs"
-                                              (change)="filterLapset()"
-                                              [(ngModel)]="lapsiFilter.voimassaolo">
-                  <app-varda-radio-button [id]="'filterVoimassa'"
-                                          [value]="lapsiVoimassaolo.VOIMASSA">
-                    {{'label.voimassa' | translate}}
-                  </app-varda-radio-button>
-                  <app-varda-radio-button [id]="'filterAlkanut'"
-                                          [value]="lapsiVoimassaolo.ALKANUT">
-                    {{'label.alkanut' | translate}}
-                  </app-varda-radio-button>
-                  <app-varda-radio-button [id]="'filterPaattynyt'"
-                                          [value]="lapsiVoimassaolo.PAATTYNYT">
-                    {{'label.paattynyt' | translate}}
-                  </app-varda-radio-button>
-                </app-varda-radio-button-group>
+    </div>
+    <mat-tab-group animationDuration="0ms" (selectedTabChange)="changeSearchEntity($event)" class="margin-top">
+      <mat-tab [label]="'label.toimipaikat' | translate" aria-label="toimipaikka">
+        <ng-template matTabContent>
+          <form>
+            <div class="varda-reporting-search-form-content toimipaikka-search-form varda-reporting-row-wrap margin-top">
+              <div class="col-sm col-md-6 col-lg-5">
+                <label for="toimipaikkaSearchInput" class="oph-bold">{{'label.toimipaikannimi' | translate}}</label>
+                <input class="oph-input"
+                       name="toimipaikkaSearchInput"
+                       id="toimipaikkaSearchInput"
+                       type="text"
+                       [placeholder]="'label.toimipaikannimi' | translate"
+                       [(ngModel)]="toimipaikkaSearchValue"
+                       (keydown.enter)="searchToimipaikka()">
               </div>
-              <div class="col varda-date-range-container">
-                <div class="row varda-date-range-row">
-                  <div class="col">
-                    <app-varda-datepicker #alkamisPvm="ngModel"
-                                          [name]="'filterAlkamisPvm'"
-                                          [(ngModel)]="lapsiFilter.alkamisPvm"
-                                          (dateInput)="filterLapset()"
-                                          [required]="true">
-                    </app-varda-datepicker>
-                    <div aria-live="assertive"
-                         class="varda-error-message-block"
-                         role="alert"
-                         *ngIf="alkamisPvm.invalid">
-                      <p>{{'alert.date-format' | translate}}</p>
-                    </div>
+              <div class="col-sm-auto">
+                <button class="varda-button varda-icon-button search-button-toimipaikat"
+                        type="button"
+                        (click)="searchToimipaikka()">
+                  <mat-icon>search</mat-icon>
+                  {{'label.hae' | translate}}
+                </button>
+              </div>
+              <div class="oph-bg-gray-lighten-5 filter-form" *ngIf="isToimipaikkaFiltersAreVisible">
+                <div class="col-md-auto">
+                  <label class="varda-link varda-filter-close"
+                         *ngIf="isSmall"
+                         (click)="isToimipaikkaFiltersAreVisible = false; clearToimipaikkaFilter()">
+                    {{'label.close' | translate}}
+                  </label>
+                  <label for="toimintamuotoSelect" class="oph-bold">{{'label.toimintamuoto_koodi' | translate}}</label>
+                  <div class="oph-select-container">
+                    <select class="oph-input oph-select"
+                            name="toimintamuotoSelect"
+                            id="toimintamuotoSelect"
+                            (change)="searchToimipaikka()"
+                            [(ngModel)]="toimipaikkaFilter.toimintamuoto">
+                      <option value="">{{'label.all-toimintamuodot' | translate}}</option>
+                      <option *ngFor="let code of (getKoodistoFromKoodistoService(koodistoEnum.toimintamuoto) | async)?.codes"
+                              [ngValue]="code.code_value"
+                              [title]="getCodeUiString(code)">
+                        {{getCodeUiString(code)}}
+                      </option>
+                    </select>
                   </div>
-                  <span class="varda-date-range-dash">–</span>
-                  <div class="col">
-                    <app-varda-datepicker #paattymisPvm="ngModel"
-                                          [name]="'filterPaattymisPvm'"
-                                          [(ngModel)]="lapsiFilter.paattymisPvm"
-                                          (dateInput)="filterLapset()"
-                                          [required]="true">
-                    </app-varda-datepicker>
-                    <div aria-live="assertive"
-                         class="varda-error-message-block"
-                         role="alert"
-                         *ngIf="paattymisPvm.invalid">
-                      <p>{{'alert.date-format' | translate}}</p>
-                    </div>
+                </div>
+                <div class="col-md-auto">
+                  <label for="jarjestamismuotoSelect" class="oph-bold">{{'label.jarjestamismuoto_koodi' | translate}}</label>
+                  <div class="oph-select-container">
+                    <select class="oph-input oph-select"
+                            name="jarjestamismuotoSelect"
+                            id="jarjestamismuotoSelect"
+                            (change)="searchToimipaikka()"
+                            [(ngModel)]="toimipaikkaFilter.jarjestamismuoto">
+                      <option value="">{{'label.all-jarjestamismuodot' | translate}}</option>
+                      <option *ngFor="let code of (getKoodistoFromKoodistoService(koodistoEnum.jarjestamismuoto) | async)?.codes"
+                              [ngValue]="code.code_value"
+                              [title]="getCodeUiString(code)">
+                        {{getCodeUiString(code)}}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-auto">
+                  <label for="toimipaikkaVoimassaoloButtonGroup" class="oph-bold">{{'label.voimassaolo' | translate}}</label>
+                  <app-varda-radio-button-group name="toimipaikkaVoimassaoloButtonGroup"
+                                                id="toimipaikkaVoimassaoloButtonGroup"
+                                                responsive="md"
+                                                wrap="md"
+                                                (change)="searchToimipaikka()"
+                                                [(ngModel)]="toimipaikkaFilter.voimassaolo">
+                    <app-varda-radio-button [id]="'voimassaoloKaikki'"
+                                            [value]="toimipaikkaVoimassaolo.KAIKKI">
+                      {{'label.haku.filter-status.kaikki' | translate}}
+                    </app-varda-radio-button>
+                    <app-varda-radio-button [id]="'voimassaoloVoimassaolevat'"
+                                            [value]="toimipaikkaVoimassaolo.VOIMASSAOLEVAT">
+                      {{'label.haku.filter-status.voimassa-olevat' | translate}}
+                    </app-varda-radio-button>
+                    <app-varda-radio-button [id]="'voimassaoloPaattyneet'"
+                                            [value]="toimipaikkaVoimassaolo.PAATTYNEET">
+                      {{'label.haku.filter-status.paattyneet' | translate}}
+                    </app-varda-radio-button>
+                  </app-varda-radio-button-group>
+                </div>
+                <div class="col filter-clear-container">
+                  <button class="varda-button varda-icon-button filter-clear"
+                          type="button"
+                          (click)="clearToimipaikkaFilter()"
+                          [disabled]="isToimipaikkaFilterInactive">
+                    <mat-icon>delete</mat-icon>
+                    {{'label.clear-filters' | translate}}
+                  </button>
+                </div>
+              </div>
+              <div class="col-12 varda-link"
+                   *ngIf="!isToimipaikkaFiltersAreVisible"
+                   (click)="isToimipaikkaFiltersAreVisible = true">
+                {{'label.filter-results' | translate}}
+              </div>
+            </div>
+          </form>
+        </ng-template>
+      </mat-tab>
+      <mat-tab [label]="'label.lapset' | translate"
+               aria-label="lapsi"
+               *ngIf="userAccess && (userAccess.paakayttaja || userAccess.lapsitiedot.katselija || userAccess.huoltajatiedot.katselija)">
+        <ng-template matTabContent>
+          <form class="margin-top">
+            <div class="varda-reporting-search-form-content varda-reporting-row-wrap">
+              <div class="col-md-5 order-1">
+                <label for="lapsiToimipaikkaInput" class="oph-bold">{{'label.toimipaikat' | translate}}</label>
+                <div [class.oph-invalid-container]="!isAllToimipaikatSelected && selectedToimipaikat.length === 0">
+                  <div class="oph-select-container">
+                    <input class="oph-input"
+                           id="lapsiToimipaikkaInput"
+                           name="lapsiToimipaikkaInput"
+                           type="text"
+                           placeholder="{{'label.choose-toimipaikat' | translate}}"
+                           #lapsiToimipaikkaInput
+                           [matAutocomplete]="auto"
+                           (input)="toimipaikkaSelectInputChange($event)">
+                  </div>
+                  <mat-autocomplete #auto="matAutocomplete" (optionSelected)="toimipaikkaAutocompleteSelected($event)">
+                    <mat-option *ngIf="!isAllToimipaikatSelected" [value]="null">{{'label.kaikki-toimipaikat' | translate}}</mat-option>
+                    <mat-option *ngIf="isNoToimipaikkaResults" disabled>{{'alert.reporting-no-results' | translate}}</mat-option>
+                    <mat-option *ngFor="let toimipaikkaObj of filteredToimipaikkaOptions | async"
+                                [value]="toimipaikkaObj"
+                                [title]="toimipaikkaObj.nimi">
+                      {{toimipaikkaObj.nimi}}
+                    </mat-option>
+                  </mat-autocomplete>
+                  <div class="varda-error-message-block"
+                       aria-live="assertive"
+                       role="alert"
+                       *ngIf="!isAllToimipaikatSelected && selectedToimipaikat.length === 0">
+                    <p>{{'alert.no-selected-toimipaikka' | translate}}</p>
                   </div>
                 </div>
               </div>
+              <div class="col-md col-lg-4 order-3 order-md-2">
+                <label for="reportingLapsiSearchInput"
+                       class="oph-bold">{{'label.haku-list.nimi-tai-tunniste' | translate}}</label>
+                <button mat-icon-button
+                        class="varda-info-button"
+                        [matTooltip]="('label.haku-condition.search-instruction' | translate) +
+                          ('label.haku-condition.search-instruction2' | translate)"
+                        aria-label="Example icon button with a menu icon">
+                  <mat-icon>info</mat-icon>
+                </button>
+                <input class="oph-input"
+                       name="reportingLapsiSearchInput"
+                       id="reportingLapsiSearchInput"
+                       type="text"
+                       placeholder="{{'label.haku-list.nimi-ssn-oid' | translate}}"
+                       [(ngModel)]="lapsiSearchValue"
+                       (keydown.enter)="searchLapsi()">
+              </div>
+              <div class="col-md-auto order-4 order-md-3">
+                <button class="varda-button varda-icon-button search-button"
+                        type="button"
+                        (click)="searchLapsi()">
+                  <mat-icon>search</mat-icon>
+                  {{'label.hae' | translate}}
+                </button>
+              </div>
+              <div class="toimipaikka-chip-container col-12 order-2 order-md-4">
+                <mat-chip-list aria-label="valitut toimipaikat" #lapsiToimipaikkaChipList>
+                  <mat-chip *ngIf="isAllToimipaikatSelected"
+                            [removable]="true"
+                            (removed)="removeSelectedToimipaikka(null)">
+                    {{'label.kaikki-toimipaikat' | translate}}
+                    <mat-icon matChipRemove>cancel</mat-icon>
+                  </mat-chip>
+                  <mat-chip *ngFor="let toimipaikkaObj of selectedToimipaikat"
+                            [removable]="true"
+                            (removed)="removeSelectedToimipaikka(toimipaikkaObj)">
+                    {{toimipaikkaObj.nimi}}
+                    <mat-icon matChipRemove>cancel</mat-icon>
+                  </mat-chip>
+                </mat-chip-list>
+              </div>
+              <div class="oph-bg-gray-lighten-5 filter-form order-5"
+                   *ngIf="isLapsiFiltersAreVisible">
+                <div class="col-md-auto">
+                  <label class="varda-link varda-filter-close"
+                         *ngIf="isSmall"
+                         (click)="isLapsiFiltersAreVisible = false; clearLapsiFilter()">
+                    {{'label.close' | translate}}
+                  </label>
+                  <label class="oph-bold">{{'label.filter-content' | translate}}</label>
+                  <app-varda-radio-button-group name="lapsiRajausButtonGroup"
+                                                responsive="lg"
+                                                wrap="lg"
+                                                (change)="filterLapset()"
+                                                [(ngModel)]="lapsiFilter.rajaus">
+                    <app-varda-radio-button [id]="'filterVakapaatokset'"
+                                            [value]="lapsiRajaus.VAKAPAATOKSET">
+                      {{'label.varhaiskasvatuspaatokset' | translate}}
+                    </app-varda-radio-button>
+                    <app-varda-radio-button [id]="'filterVakasuhteet'"
+                                            [value]="lapsiRajaus.VAKASUHTEET">
+                      {{'label.varhaiskasvatussuhteet' | translate}}
+                    </app-varda-radio-button>
+                    <app-varda-radio-button [id]="'filterMaksutiedot'"
+                                            [value]="lapsiRajaus.MAKSUTIEDOT">
+                      {{'label.maksutiedot' | translate}}
+                    </app-varda-radio-button>
+                    <app-varda-radio-button [id]="'filterNone'"
+                                            [value]="lapsiRajaus.NONE">
+                      {{'label.no-filters' | translate}}
+                    </app-varda-radio-button>
+                  </app-varda-radio-button-group>
+                </div>
+                <div class="col-md-auto"
+                     *ngIf="!isLapsiFilterInactive">
+                  <label class="oph-bold">{{ 'label.filter-time' | translate }}</label>
+                  <div class="row filter-time-container">
+                    <div class="col-md-auto">
+                      <app-varda-radio-button-group name="lapsiVoimassaoloButtonGroup"
+                                                    responsive="md"
+                                                    wrap="xs"
+                                                    (change)="filterLapset()"
+                                                    [(ngModel)]="lapsiFilter.voimassaolo">
+                        <app-varda-radio-button [id]="'filterVoimassa'"
+                                                [value]="voimassaolo.VOIMASSA">
+                          {{'label.voimassa' | translate}}
+                        </app-varda-radio-button>
+                        <app-varda-radio-button [id]="'filterAlkanut'"
+                                                [value]="voimassaolo.ALKANUT">
+                          {{'label.alkanut' | translate}}
+                        </app-varda-radio-button>
+                        <app-varda-radio-button [id]="'filterPaattynyt'"
+                                                [value]="voimassaolo.PAATTYNYT">
+                          {{'label.paattynyt' | translate}}
+                        </app-varda-radio-button>
+                      </app-varda-radio-button-group>
+                    </div>
+                    <div class="col varda-date-range-container">
+                      <div class="row varda-date-range-row">
+                        <div class="col">
+                          <app-varda-datepicker #alkamisPvm="ngModel"
+                                                [name]="'filterAlkamisPvm'"
+                                                [(ngModel)]="lapsiFilter.alkamisPvm"
+                                                (dateInput)="filterLapset()"
+                                                [required]="true">
+                          </app-varda-datepicker>
+                          <div aria-live="assertive"
+                               class="varda-error-message-block"
+                               role="alert"
+                               *ngIf="alkamisPvm.invalid">
+                            <p>{{'alert.date-format' | translate}}</p>
+                          </div>
+                        </div>
+                        <span class="varda-date-range-dash">–</span>
+                        <div class="col">
+                          <app-varda-datepicker #paattymisPvm="ngModel"
+                                                [name]="'filterPaattymisPvm'"
+                                                [(ngModel)]="lapsiFilter.paattymisPvm"
+                                                (dateInput)="filterLapset()"
+                                                [required]="true">
+                          </app-varda-datepicker>
+                          <div aria-live="assertive"
+                               class="varda-error-message-block"
+                               role="alert"
+                               *ngIf="paattymisPvm.invalid">
+                            <p>{{'alert.date-format' | translate}}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col filter-clear-container">
+                  <button class="varda-button varda-icon-button filter-clear"
+                          type="button"
+                          (click)="clearLapsiFilter()"
+                          [disabled]="isLapsiFilterInactive">
+                    <mat-icon>delete</mat-icon>
+                    {{'label.clear-filters' | translate}}
+                  </button>
+                </div>
+              </div>
+              <div class="modal-form-intro lapsi-filter-instruction order-6"
+                   *ngIf="isLapsiFiltersAreVisible">
+                {{'label.lapsi-filter.search-instruction' | translate}}
+              </div>
+              <div class="varda-link order-7"
+                   *ngIf="!isLapsiFiltersAreVisible"
+                   (click)="isLapsiFiltersAreVisible = true">
+                {{'label.filter-results' | translate}}
+              </div>
             </div>
-          </div>
-          <div class="col lapsi-filter-clear-container">
-            <button class="varda-button varda-icon-button lapsi-filter-clear"
-                    type="button"
-                    (click)="clearLapsiFilter()"
-                    [disabled]="lapsiFilterInactive">
-              <mat-icon>delete</mat-icon>
-              {{'label.clear-filters' | translate}}
-            </button>
-          </div>
-        </div>
-        <div class="modal-form-intro lapsi-filter-instruction"
-             *ngIf="lapsiFiltersAreVisible">
-          {{'label.lapsi-filter.search-instruction' | translate}}
-        </div>
-        <div class="varda-link"
-             *ngIf="!lapsiFiltersAreVisible"
-             (click)="lapsiFiltersAreVisible = true">
-          {{'label.filter-results' | translate}}
-        </div>
+          </form>
+        </ng-template>
+      </mat-tab>
+      <mat-tab [label]="'label.tyontekijat' | translate"
+               aria-label="tyontekija"
+               *ngIf="userAccess && (userAccess.tyontekijatiedot.katselija || userAccess.taydennyskoulutustiedot.katselija)">
+        <ng-template matTabContent>
+          <form class="margin-top">
+            <div class="varda-reporting-search-form-content varda-reporting-row-wrap">
+              <div class="col-md-5 order-1">
+                <label for="tyontekijaToimipaikkaInput" class="oph-bold">{{'label.toimipaikat' | translate}}</label>
+                <div [class.oph-invalid-container]="!isAllToimipaikatSelected && selectedToimipaikat.length === 0">
+                  <div class="oph-select-container">
+                    <input class="oph-input"
+                           id="tyontekijaToimipaikkaInput"
+                           name="tyontekijaToimipaikkaInput"
+                           type="text"
+                           placeholder="{{'label.choose-toimipaikat' | translate}}"
+                           #tyontekijaToimipaikkaInput
+                           [matAutocomplete]="auto"
+                           (input)="toimipaikkaSelectInputChange($event)">
+                  </div>
+                  <mat-autocomplete #auto="matAutocomplete" (optionSelected)="toimipaikkaAutocompleteSelected($event)">
+                    <mat-option *ngIf="!isAllToimipaikatSelected" [value]="null">{{'label.kaikki-toimipaikat' | translate}}</mat-option>
+                    <mat-option *ngIf="isNoToimipaikkaResults" disabled>{{'alert.reporting-no-results' | translate}}</mat-option>
+                    <mat-option *ngFor="let toimipaikkaObj of filteredToimipaikkaOptions | async"
+                                [value]="toimipaikkaObj"
+                                [title]="toimipaikkaObj.nimi">
+                      {{toimipaikkaObj.nimi}}
+                    </mat-option>
+                  </mat-autocomplete>
+                  <div class="varda-error-message-block"
+                       aria-live="assertive"
+                       role="alert"
+                       *ngIf="!isAllToimipaikatSelected && selectedToimipaikat.length === 0">
+                    <p>{{'alert.no-selected-toimipaikka' | translate}}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md col-lg-4 order-3 order-md-2">
+                <label for="tyontekijaSearchInput"
+                       class="oph-bold">{{'label.haku-list.nimi-tai-tunniste' | translate}}</label>
+                <button mat-icon-button
+                        class="varda-info-button"
+                        [matTooltip]="('label.haku-condition.search-instruction' | translate) +
+                          ('label.haku-condition.search-instruction2' | translate)"
+                        aria-label="Example icon button with a menu icon">
+                  <mat-icon>info</mat-icon>
+                </button>
+                <input class="oph-input"
+                       name="tyontekijaSearchInput"
+                       id="tyontekijaSearchInput"
+                       type="text"
+                       placeholder="{{'label.haku-list.nimi-ssn-oid' | translate}}"
+                       [(ngModel)]="tyontekijaSearchValue"
+                       (keydown.enter)="searchTyontekija()">
+              </div>
+              <div class="col-md-auto order-4 order-md-3">
+                <button class="varda-button varda-icon-button search-button"
+                        type="button"
+                        (click)="searchTyontekija()">
+                  <mat-icon>search</mat-icon>
+                  {{'label.hae' | translate}}
+                </button>
+              </div>
+              <div class="toimipaikka-chip-container col-12 order-2 order-md-4">
+                <mat-chip-list aria-label="valitut toimipaikat" #tyontekijaToimipaikkaChipList>
+                  <mat-chip *ngIf="isAllToimipaikatSelected"
+                            [removable]="true"
+                            (removed)="removeSelectedToimipaikka(null)">
+                    {{'label.kaikki-toimipaikat' | translate}}
+                    <mat-icon matChipRemove>cancel</mat-icon>
+                  </mat-chip>
+                  <mat-chip *ngFor="let toimipaikkaObj of selectedToimipaikat"
+                            [removable]="true"
+                            (removed)="removeSelectedToimipaikka(toimipaikkaObj)">
+                    {{toimipaikkaObj.nimi}}
+                    <mat-icon matChipRemove>cancel</mat-icon>
+                  </mat-chip>
+                </mat-chip-list>
+              </div>
+
+              <div class="oph-bg-gray-lighten-5 filter-form order-5" *ngIf="isTyontekijaFiltersAreVisible">
+                <div class="col-md-auto">
+                  <label class="varda-link varda-filter-close"
+                         *ngIf="isSmall"
+                         (click)="isTyontekijaFiltersAreVisible = false; clearTyontekijaFilter()">
+                    {{'label.close' | translate}}
+                  </label>
+                  <label class="oph-bold">{{'label.filter-content' | translate}}</label>
+                  <app-varda-radio-button-group name="tyontekijaRajausButtonGroup"
+                                                responsive="md"
+                                                wrap="md"
+                                                (change)="filterTyontekijat()"
+                                                [(ngModel)]="tyontekijaFilter.rajaus">
+                    <app-varda-radio-button [id]="'filterPalvelussuhteet'"
+                                            [value]="tyontekijaRajaus.PALVELUSSUHTEET">
+                      {{'label.palvelussuhteet' | translate}}
+                    </app-varda-radio-button>
+                    <app-varda-radio-button [id]="'filterNone'"
+                                            [value]="tyontekijaRajaus.NONE">
+                      {{'label.no-filters' | translate}}
+                    </app-varda-radio-button>
+                  </app-varda-radio-button-group>
+                </div>
+                <div class="col-md-auto" *ngIf="tyontekijaFilter.rajaus !== tyontekijaRajaus.NONE">
+                  <label class="oph-bold">{{ 'label.filter-time' | translate }}</label>
+                  <div class="row filter-time-container">
+                    <div class="col-md-auto">
+                      <app-varda-radio-button-group name="tyontekijaVoimassaoloButtonGroup"
+                                                    responsive="md"
+                                                    wrap="xs"
+                                                    (change)="filterTyontekijat()"
+                                                    [(ngModel)]="tyontekijaFilter.voimassaolo">
+                        <app-varda-radio-button [id]="'filterVoimassa'"
+                                                [value]="voimassaolo.VOIMASSA">
+                          {{'label.voimassa' | translate}}
+                        </app-varda-radio-button>
+                        <app-varda-radio-button [id]="'filterAlkanut'"
+                                                [value]="voimassaolo.ALKANUT">
+                          {{'label.alkanut' | translate}}
+                        </app-varda-radio-button>
+                        <app-varda-radio-button [id]="'filterPaattynyt'"
+                                                [value]="voimassaolo.PAATTYNYT">
+                          {{'label.paattynyt' | translate}}
+                        </app-varda-radio-button>
+                      </app-varda-radio-button-group>
+                    </div>
+                    <div class="col varda-date-range-container">
+                      <div class="row varda-date-range-row">
+                        <div class="col">
+                          <app-varda-datepicker #alkamisPvm="ngModel"
+                                                [name]="'filterAlkamisPvm'"
+                                                [(ngModel)]="tyontekijaFilter.alkamisPvm"
+                                                (dateInput)="filterTyontekijat()"
+                                                [required]="true">
+                          </app-varda-datepicker>
+                          <div aria-live="assertive"
+                               class="varda-error-message-block"
+                               role="alert"
+                               *ngIf="alkamisPvm.invalid">
+                            <p>{{'alert.date-format' | translate}}</p>
+                          </div>
+                        </div>
+                        <span class="varda-date-range-dash">–</span>
+                        <div class="col">
+                          <app-varda-datepicker #paattymisPvm="ngModel"
+                                                [name]="'filterPaattymisPvm'"
+                                                [(ngModel)]="tyontekijaFilter.paattymisPvm"
+                                                (dateInput)="filterTyontekijat()"
+                                                [required]="true">
+                          </app-varda-datepicker>
+                          <div aria-live="assertive"
+                               class="varda-error-message-block"
+                               role="alert"
+                               *ngIf="paattymisPvm.invalid">
+                            <p>{{'alert.date-format' | translate}}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="varda-reporting-row-wrap">
+                  <div class="col-md-4">
+                    <label for="tyontekijaTehtavanimikeInput" class="oph-bold">{{'label.tehtavanimike' | translate}}</label>
+                    <app-varda-autocomplete-selector [options]="tehtavanimikkeet"
+                                                     id="tyontekijaTehtavanimikeInput"
+                                                     name="tyontekijaTehtavanimikeInput"
+                                                     [optionFormat]="{format: '{0} ({1})', properties:['name', 'code_value']}"
+                                                     [nullValue]="null"
+                                                     [placeholder]="'label.all-tehtavanimikkeet' | translate"
+                                                     [nullOptionLabel]="'label.all-tehtavanimikkeet' | translate"
+                                                     [invalidInputLabel]="'alert.no-selected-tehtavanimike' | translate"
+                                                     [(ngModel)]="tyontekijaFilter.tehtavanimike"
+                                                     (ngModelChange)="tehtavanimikeOnChange($event)">
+                    </app-varda-autocomplete-selector>
+                  </div>
+                  <div class="col-md-4">
+                    <label for="tyontekijaTutkintoInput" class="oph-bold">{{'label.tutkinto' | translate}}</label>
+                    <app-varda-autocomplete-selector [options]="tutkinnot"
+                                                     id="tyontekijaTutkintoInput"
+                                                     name="tyontekijaTutkintoInput"
+                                                     [optionFormat]="{format: '{0} ({1})', properties:['name', 'code_value']}"
+                                                     [nullValue]="null"
+                                                     [placeholder]="'label.all-tutkinnot' | translate"
+                                                     [nullOptionLabel]="'label.all-tutkinnot' | translate"
+                                                     [invalidInputLabel]="'alert.no-selected-tutkinto' | translate"
+                                                     [(ngModel)]="tyontekijaFilter.tutkinto"
+                                                     (ngModelChange)="tutkintoOnChange($event)">
+                    </app-varda-autocomplete-selector>
+                  </div>
+                  <div class="col-md-4 filter-clear-container">
+                    <button class="varda-button varda-icon-button filter-clear"
+                            type="button"
+                            (click)="clearTyontekijaFilter()"
+                            [disabled]="isTyontekijaFilterInactive">
+                      <mat-icon>delete</mat-icon>
+                      {{'label.clear-filters' | translate}}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="varda-link order-6"
+                   *ngIf="!isTyontekijaFiltersAreVisible"
+                   (click)="isTyontekijaFiltersAreVisible = true">
+                {{'label.filter-results' | translate}}
+              </div>
+            </div>
+          </form>
+        </ng-template>
+      </mat-tab>
+      <mat-tab [label]="'label.yhteenveto' | translate" aria-label="yhteenveto">
+        <ng-template matTabContent>
+          <app-yhteenveto [vakajarjestajaId]="getVakajarjestajaId()"></app-yhteenveto>
+        </ng-template>
+      </mat-tab>
+    </mat-tab-group>
+  </section>
+
+  <ng-container *ngIf="selectedSearchEntity === 'toimipaikka'">
+    <div class="varda-reporting-results-wrapper">
+      <label class="oph-bold" *ngIf="ui.isResultsEmpty">
+        {{'alert.reporting-no-results' | translate}}
+      </label>
+      <label class="oph-bold" *ngIf="!ui.isResultsEmpty && ui.noOfResults">
+        {{'label.haku-list.topic' | translate}}: {{ui.noOfResults}}
+      </label>
+      <label class="varda-small-text varda-filter-summary" *ngIf="!isToimipaikkaFilterInactive">
+        {{'label.selected-filters' | translate}}:
+        {{toimipaikkaFilterString}}
+      </label>
+    </div>
+
+    <section class="varda-reporting-card-container">
+      <div class="varda-reporting-card" *ngFor="let toimipaikkaObj of toimipaikat">
+        <mat-card tabindex="0">
+          <mat-card-title-group>
+            <mat-card-title>{{toimipaikkaObj['toimipaikka'].nimi}}</mat-card-title>
+            <mat-card-subtitle>{{ getVakajarjestajaName(toimipaikkaObj['toimipaikka']) }}</mat-card-subtitle>
+          </mat-card-title-group>
+
+          <mat-card-content>
+            <table mat-table [dataSource]="getToimipaikkaKeys(toimipaikkaObj)">
+              <ng-container matColumnDef="key">
+                <td mat-cell *matCellDef="let key">{{'label.' + key | translate }}</td>
+              </ng-container>
+              <ng-container matColumnDef="value">
+                <td mat-cell *matCellDef="let key">
+                  <ng-container *ngIf="toimipaikkaFieldsToBeFormatted.indexOf(key) === -1">
+                    {{toimipaikkaObj['toimipaikka'][key]}}
+                  </ng-container>
+                  <ng-container *ngIf="key === 'kunta_koodi'">
+                    {{(getCodeFromKoodistoService(koodistoEnum.kunta, toimipaikkaObj['toimipaikka'][key]) | async)?.name}}
+                    ({{toimipaikkaObj['toimipaikka'][key]}})
+                  </ng-container>
+                  <ng-container *ngIf="key === 'toimintamuoto_koodi'">
+                    {{(getCodeFromKoodistoService(koodistoEnum.toimintamuoto, toimipaikkaObj['toimipaikka'][key]) | async)?.name}}
+                    ({{toimipaikkaObj['toimipaikka'][key]}})
+                  </ng-container>
+                  <ng-container *ngIf="key === 'kasvatusopillinen_jarjestelma_koodi'">
+                    {{(getCodeFromKoodistoService(koodistoEnum.kasvatusopillinenjarjestelma, toimipaikkaObj['toimipaikka'][key]) | async)?.name}}
+                    ({{toimipaikkaObj['toimipaikka'][key]}})
+                  </ng-container>
+                  <ng-container *ngIf="key === 'asiointikieli_koodi'">
+                    <ng-container *ngFor="let language of toimipaikkaObj['toimipaikka'][key]">
+                      {{(getCodeFromKoodistoService(koodistoEnum.kieli, language) | async)?.name}}
+                      ({{language}})
+                    </ng-container>
+                  </ng-container>
+                  <ng-container *ngIf="key === 'jarjestamismuoto_koodi'">
+                    <ng-container *ngFor="let jarjestamismuoto of toimipaikkaObj['toimipaikka'][key]">
+                      {{(getCodeFromKoodistoService(koodistoEnum.jarjestamismuoto, jarjestamismuoto) | async)?.name}}
+                      ({{jarjestamismuoto}})
+                    </ng-container>
+                  </ng-container>
+                  <ng-container *ngIf="key === 'kielipainotus_kytkin' || key === 'toiminnallinenpainotus_kytkin'">
+                    {{toimipaikkaObj['toimipaikka'][key] ? ('label.yes' | translate) : ('label.no' | translate)}}
+                  </ng-container>
+                  <ng-container *ngIf="key === 'alkamis_pvm' || key === 'paattymis_pvm'">
+                    {{getDateDisplayValue(toimipaikkaObj['toimipaikka'][key])}}
+                  </ng-container>
+                </td>
+              </ng-container>
+              <tr mat-row *matRowDef="let row; columns: ['key', 'value'];"></tr>
+            </table>
+
+            <ng-container *ngIf="toimipaikkaObj['kielipainotukset'] && toimipaikkaObj['kielipainotukset'].length > 0">
+              <label class="oph-bold margin-top-large">{{'label.kielipainotukset' | translate}}</label>
+              <table class="mat-table"
+                     *ngFor="let kielipainotus of toimipaikkaObj['kielipainotukset']"
+                     [class.margin-top]="toimipaikkaObj['kielipainotukset'].indexOf(kielipainotus) !== 0">
+                <tr class="mat-row">
+                  <td class="mat-cell">{{'label.kielipainotus' | translate }}</td>
+                  <td class="mat-cell">
+                    {{(getCodeFromKoodistoService(koodistoEnum.kieli, kielipainotus.kielipainotus_koodi) | async)?.name}}
+                    ({{kielipainotus.kielipainotus_koodi}})
+                  </td>
+                </tr>
+                <tr class="mat-row">
+                  <td class="mat-cell">{{'label.alkamis_pvm' | translate }}</td>
+                  <td class="mat-cell">{{getDateDisplayValue(kielipainotus.alkamis_pvm)}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <td class="mat-cell">{{'label.paattymis_pvm' | translate }}</td>
+                  <td class="mat-cell">{{getDateDisplayValue(kielipainotus.paattymis_pvm)}}</td>
+                </tr>
+              </table>
+            </ng-container>
+
+            <ng-container *ngIf="toimipaikkaObj['toimintapainotukset'] && toimipaikkaObj['toimintapainotukset'].length > 0">
+              <label class="oph-bold margin-top-large">{{'label.toimintapainotukset' | translate}}</label>
+              <table class="mat-table"
+                     *ngFor="let toimintapainotus of toimipaikkaObj['toimintapainotukset']"
+                     [class.margin-top]="toimipaikkaObj['toimintapainotukset'].indexOf(toimintapainotus) !== 0">
+                <tr class="mat-row">
+                  <td class="mat-cell">{{'label.toimintapainotus' | translate }}</td>
+                  <td class="mat-cell">
+                    {{(getCodeFromKoodistoService(koodistoEnum.toiminnallinenpainotus, toimintapainotus.toimintapainotus_koodi) | async)?.name}}
+                    ({{toimintapainotus.toimintapainotus_koodi}})
+                  </td>
+                </tr>
+                <tr class="mat-row">
+                  <td class="mat-cell">{{'label.alkamis_pvm' | translate }}</td>
+                  <td class="mat-cell">{{getDateDisplayValue(toimintapainotus.alkamis_pvm)}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <td class="mat-cell">{{'label.paattymis_pvm' | translate }}</td>
+                  <td class="mat-cell">{{getDateDisplayValue(toimintapainotus.paattymis_pvm)}}</td>
+                </tr>
+              </table>
+            </ng-container>
+          </mat-card-content>
+        </mat-card>
       </div>
-    </form>
-  </section>
+      <div class="varda-reporting-search-more-btn-wrapper">
+        <button class="varda-button"
+                type="button"
+                (click)="searchMore()"
+                *ngIf="nextSearchLink">{{'label.search-more' | translate}} + </button>
+      </div>
+    </section>
+  </ng-container>
 
-  <div class="varda-reporting-results-wrapper"
-       *ngIf="ui.resultsEmpty && selectedSearchEntity === 'toimipaikka'">
-    {{'alert.reporting-no-results' | translate}}
-  </div>
-  <div class="varda-reporting-results-wrapper"
-       *ngIf="!ui.resultsEmpty && ui.noOfResults">
-    <ng-container *ngIf="selectedSearchEntity === 'toimipaikka'">
-      {{'reporting.toimipaikkoja' | translate}}: {{ui.noOfResults}}
-    </ng-container>
-  </div>
+  <ng-container *ngIf="selectedSearchEntity === 'lapsi'">
+    <div class="varda-reporting-results-wrapper">
+      <label class="oph-bold" *ngIf="ui.isResultsEmpty">
+        {{'alert.reporting-no-results' | translate}}
+      </label>
+      <label class="oph-bold" *ngIf="!ui.isResultsEmpty && ui.noOfResults">
+        {{'label.haku-list.topic' | translate}}: {{ui.noOfResults}}
+      </label>
+      <label class="varda-small-text varda-filter-summary" *ngIf="!isLapsiFilterInactive">
+        {{'label.selected-filters' | translate}}:
+        {{lapsiFilterString}}
+      </label>
+    </div>
 
-  <section class="varda-reporting-card-container"
-           *ngIf="selectedSearchEntity === 'toimipaikka'">
-    <div class="varda-reporting-card"
-         *ngFor="let toimipaikkaObj of toimipaikat">
-      <mat-card tabindex="0">
-        <mat-card-title-group>
-          <mat-card-title>{{toimipaikkaObj['toimipaikka'].nimi}}</mat-card-title>
-          <mat-card-subtitle>{{ getVakajarjestajaName(toimipaikkaObj['toimipaikka']) }}</mat-card-subtitle>
-        </mat-card-title-group>
+    <section class="varda-reporting-card-container varda-reporting-row-wrap">
+      <div class="col-12 col-lg-5 varda-reporting-card" *ngIf="!ui.isResultsEmpty && ui.noOfResults > 0">
+        <mat-card tabindex="0">
+          <mat-card-content>
+            <table mat-table [dataSource]="toimipaikanLapset" class="varda-mat-table">
+              <ng-container matColumnDef="name">
+                <td mat-cell *matCellDef="let lapsi">{{lapsi.sukunimi}}, {{lapsi.etunimet}}</td>
+              </ng-container>
+              <ng-container matColumnDef="vakajarjestaja">
+                <td mat-cell *matCellDef="let lapsi">{{getVakaJarjestajaText(lapsi)}}</td>
+              </ng-container>
+              <tr mat-row
+                  *matRowDef="let lapsi; columns: ['name', 'vakajarjestaja'];"
+                  tabindex="0"
+                  (click)="showLapsi(lapsi.lapsi_id)"
+                  (keydown.enter)="showLapsi(lapsi.lapsi_id)"></tr>
+            </table>
+            <app-varda-list-pagination [prevLink]="prevSearchLink"
+                                       [nextLink]="nextSearchLink"
+                                       (prevSearch)="searchMore(true)"
+                                       (nextSearch)="searchMore()">
+            </app-varda-list-pagination>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-12 col-lg-7 varda-reporting-card" *ngIf="selectedToimipaikanLapsi">
+        <mat-card tabindex="0">
+          <mat-card-title-group>
+            <mat-card-title>
+              {{selectedToimipaikanLapsi.sukunimi}}, {{selectedToimipaikanLapsi.etunimet}}
+            </mat-card-title>
+          </mat-card-title-group>
+          <mat-card-content>
+            <app-toimipaikan-lapset [selectedToimipaikanLapsi]="selectedToimipaikanLapsi"></app-toimipaikan-lapset>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </section>
+  </ng-container>
 
-        <mat-card-content>
-          <div class="varda-reporting-card-content"
-               *ngFor="let key of toimipaikkaObj['toimipaikka'] | keys">
-            <div>
-              <p>
-                {{'label.' + key | translate}}
-              </p>
-            </div>
-            <div>
-              <p>
-                {{formatToimipaikkaDisplayValue(key, toimipaikkaObj['toimipaikka'][key])}}
-              </p>
-            </div>
-          </div>
-          <div class="varda-reporting-kielipainotus-wrapper"
-               *ngIf="toimipaikkaObj['kielipainotukset'] && toimipaikkaObj['kielipainotukset'].length > 0">
-            <p><b>{{'label.kielipainotukset' | translate}}</b></p>
-            <div class="varda-reporting-kielipainotus-item"
-                 *ngFor="let kielipainotus of toimipaikkaObj['kielipainotukset']">
-              <div class="varda-reporting-kielipainotus-koodi">
-                <p>{{getKielikoodiDisplayValueByString(kielipainotus.kielipainotus_koodi)}}</p>
-              </div>
-              <div class="varda-reporting-card-content kielipainotus-card-content">
-                <div>
-                  <p>
-                    {{'label.alkamis_pvm' | translate}}
-                  </p>
-                </div>
-                <div>
-                  {{getDateDisplayValue(kielipainotus.alkamis_pvm)}}
-                </div>
-              </div>
-              <div class="varda-reporting-card-content kielipainotus-card-content">
-                <div>
-                  <p>
-                    {{'label.paattymis_pvm' | translate}}
-                  </p>
-                </div>
-                <div>
-                  {{getDateDisplayValue(kielipainotus.paattymis_pvm)}}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="varda-reporting-toimintapainotus-wrapper"
-               *ngIf="toimipaikkaObj['toimintapainotukset'] && toimipaikkaObj['toimintapainotukset'].length > 0">
-            <p><b>{{'label.toimintapainotukset' | translate}}</b></p>
-            <div class="varda-reporting-toimintapainotus-item"
-                 *ngFor="let toimintapainotus of toimipaikkaObj['toimintapainotukset']">
-              <div class="varda-reporting-toimintapainotus-koodi">
-                <p>{{getToimintapainotusDisplayValue(toimintapainotus.toimintapainotus_koodi)}}</p>
-              </div>
-              <div class="varda-reporting-card-content toimintapainotus-card-content">
-                <div>
-                  <p>
-                    {{'label.alkamis_pvm' | translate}}
-                  </p>
-                </div>
-                <div>
-                  {{getDateDisplayValue(toimintapainotus.alkamis_pvm)}}
-                </div>
-              </div>
-              <div class="varda-reporting-card-content toimintapainotus-card-content">
-                <div>
-                  <p>
-                    {{'label.paattymis_pvm' | translate}}
-                  </p>
-                </div>
-                <div>
-                  {{getDateDisplayValue(toimintapainotus.paattymis_pvm)}}
-                </div>
-              </div>
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
+  <ng-container *ngIf="selectedSearchEntity === 'tyontekija'">
+    <div class="varda-reporting-results-wrapper">
+      <label class="oph-bold" *ngIf="ui.isResultsEmpty">
+        {{'alert.reporting-no-results' | translate}}
+      </label>
+      <label class="oph-bold" *ngIf="!ui.isResultsEmpty && ui.noOfResults">
+        {{'label.haku-list.topic' | translate}}: {{ui.noOfResults}}
+      </label>
+      <label class="varda-small-text varda-filter-summary" *ngIf="!isTyontekijaFilterInactive">
+        {{'label.selected-filters' | translate}}:
+        {{tyontekijaFilterString}}
+      </label>
     </div>
-    <div class="varda-reporting-search-more-btn-wrapper">
-      <button class="varda-button"
-              type="button"
-              (click)="searchMore()"
-              *ngIf="nextSearchLink">{{'label.search-more' | translate}} + </button>
-    </div>
-  </section>
-  <section class="varda-reporting-card-container"
-           *ngIf="selectedSearchEntity === 'lapsi'">
-    <div class="varda-toimipaikan-lapset-scroller">
-      <ng-container *ngIf="toimipaikanLapset">
-        <div class="varda-table-responsive">
-          <div class="varda-table">
-            <div class="varda-table-caption">
-              {{'label.haku-list.topic' | translate}} ({{ ui.noOfResults }})
-              <label class="varda-small-text varda-filter-summary"
-                     *ngIf="!lapsiFilterInactive">
-                {{'label.selected-filters' | translate}}:
-                {{lapsiFilterString}}
-              </label>
-            </div>
-            <div class="varda-table-error"
-                 *ngIf="toimipaikanLapset.length === 0">
-              {{'alert.toimipaikan-lapset-not-found' | translate}}
-            </div>
-            <div class="varda-table-body">
-              <div class="varda-table-row lapsi-rivi"
-                   tabindex="0"
-                   (click)="showLapsi(result.lapsi_id)"
-                   (keydown.enter)="showLapsi(result.lapsi_id)"
-                   *ngFor="let result of toimipaikanLapset">
-                <div class="varda-table-cell">
-                  {{result.sukunimi}}, {{result.etunimet}}
-                </div>
-                <div class="varda-table-cell">
-                  {{getVakaJarjestajaText(result)}}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <app-varda-list-pagination [prevLink]="prevSearchLink"
-                                   [nextLink]="nextSearchLink"
-                                   (prevSearch)="searchMore(true)"
-                                   (nextSearch)="searchMore()">
-        </app-varda-list-pagination>
-      </ng-container>
-    </div>
-    <div class="varda-toimipaikan-lapset-container"
-         *ngIf="selectedToimipaikanLapsi">
-      <app-toimipaikan-lapset [selectedToimipaikanLapsi]="selectedToimipaikanLapsi"></app-toimipaikan-lapset>
-    </div>
-  </section>
-  <section class="varda-reporting-card-container"
-           *ngIf="selectedSearchEntity === 'yhteenveto'">
-    <app-yhteenveto [toimipaikkaId]="getToimipaikkaId()"></app-yhteenveto>
-    <div class="varda-reporting-search-more-btn-wrapper">
-      <button class="varda-button"
-              type="button"
-              (click)="searchMore()"
-              *ngIf="nextSearchLink">{{'label.search-more' | translate}} + </button>
-    </div>
-  </section>
+
+    <section class="varda-reporting-card-container varda-reporting-row-wrap">
+      <div class="col-12 col-lg-5 varda-reporting-card" *ngIf="!ui.isResultsEmpty && ui.noOfResults > 0">
+        <mat-card tabindex="0">
+          <mat-card-content>
+            <table mat-table [dataSource]="tyontekijaResults" class="varda-mat-table">
+              <ng-container matColumnDef="name">
+                <td mat-cell *matCellDef="let tyontekija">{{tyontekija.sukunimi}}, {{tyontekija.etunimet}}</td>
+              </ng-container>
+              <ng-container matColumnDef="vakajarjestaja">
+                <td mat-cell *matCellDef="let tyontekija">{{tyontekija.vakajarjestaja_nimi}}</td>
+              </ng-container>
+              <tr mat-row
+                  *matRowDef="let tyontekija; columns: ['name', 'vakajarjestaja'];"
+                  tabindex="0"
+                  (click)="showTyontekija(tyontekija)"
+                  (keydown.enter)="showTyontekija(tyontekija)"></tr>
+            </table>
+            <app-varda-list-pagination [prevLink]="prevSearchLink"
+                                       [nextLink]="nextSearchLink"
+                                       (prevSearch)="searchMore(true)"
+                                       (nextSearch)="searchMore()">
+            </app-varda-list-pagination>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-12 col-lg-7 varda-reporting-card" *ngIf="selectedTyontekija">
+        <mat-card tabindex="0">
+          <mat-card-title-group>
+            <mat-card-title>
+              {{selectedTyontekija.sukunimi}}, {{selectedTyontekija.etunimet}}
+            </mat-card-title>
+          </mat-card-title-group>
+          <mat-card-content>
+            <app-report-tyontekija [tyontekija]="selectedTyontekija"></app-report-tyontekija>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </section>
+  </ng-container>
 </main>

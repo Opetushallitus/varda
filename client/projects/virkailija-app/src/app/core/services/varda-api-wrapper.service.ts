@@ -26,10 +26,13 @@ import {
   VardaEndpoints
 } from '../../utilities/models';
 import { LoadingHttpService } from 'varda-shared';
-import {VardaToimipaikkaYhteenvetoDTO} from '../../utilities/models/dto/varda-toimipaikka-yhteenveto-dto.model';
+import {VardaVakajarjestajaYhteenvetoDTO} from '../../utilities/models/dto/varda-vakajarjestaja-yhteenveto-dto.model';
 import {VardaFieldsetArrayContainer} from '../../utilities/models/varda-fieldset.model';
 import {VardaMaksutietoDTO} from '../../utilities/models/dto/varda-maksutieto-dto.model';
-import {LapsiByToimipaikkaDTO} from '../../utilities/models/dto/varda-henkilohaku-dto.model';
+import {
+  LapsiByToimipaikkaDTO,
+  TyontekijaByToimipaikkaDTO
+} from '../../utilities/models/dto/varda-henkilohaku-dto.model';
 import {VardaPageDto} from '../../utilities/models/dto/varda-page-dto';
 import {VardaToimipaikkaMinimalDto} from '../../utilities/models/dto/varda-toimipaikka-dto.model';
 import {VardaLapsiCreateDto} from '../../utilities/models/dto/varda-lapsi-dto.model';
@@ -282,12 +285,17 @@ export class VardaApiWrapperService {
     return this.vardaApiService.getToimipaikatForVakaJarjestaja(id, searchParams, nextLink);
   }
 
-  getLapsetForToimipaikka(id: string, searchParams?: any, nextLink?: string): Observable<VardaPageDto<LapsiByToimipaikkaDTO>> {
-    return this.vardaApiService.getLapsetForToimipaikka(
+  getLapsetForToimipaikat(searchParams?: any, nextLink?: string): Observable<VardaPageDto<LapsiByToimipaikkaDTO>> {
+    return this.vardaApiService.getLapsetForToimipaikat(
       this.vardaVakajarjestajaService.getSelectedVakajarjestajaId(),
-      id,
-      searchParams,
-      nextLink
+      searchParams, nextLink
+    );
+  }
+
+  getTyontekijatForToimipaikat(searchParams: any, nextLink?: string): Observable<VardaPageDto<TyontekijaByToimipaikkaDTO>> {
+    return this.vardaApiService.getTyontekijatForToimipaikat(
+      this.vardaVakajarjestajaService.getSelectedVakajarjestajaId(),
+      searchParams, nextLink
     );
   }
 
@@ -308,10 +316,9 @@ export class VardaApiWrapperService {
         } else if (endpoint === VardaEndpoints.getAllMaksutiedotByLapsiByPageNo) {
           paginatedObservables.push(this.vardaApiService.getAllMaksutiedotByLapsiByPageNo(entityId, page));
         } else if (endpoint === VardaEndpoints.getAllLapsetByToimipaikkaByPageNo) {
-          paginatedObservables.push(this.vardaApiService.getLapsetForToimipaikka(
+          paginatedObservables.push(this.vardaApiService.getLapsetForToimipaikat(
             this.vardaVakajarjestajaService.getSelectedVakajarjestajaId(),
-            entityId,
-            { page },
+            { toimipaikat: entityId, page },
             null
           ).pipe(map((resp: VardaPageDto<LapsiByToimipaikkaDTO>) => resp.results)));
         }
@@ -369,11 +376,9 @@ export class VardaApiWrapperService {
 
   getAllLapsetForToimipaikka(toimipaikkaId: string): Observable<Array<LapsiByToimipaikkaDTO>> {
     return this.getAllByPaginatedResults(
-      this.vardaApiService.getLapsetForToimipaikka(
+      this.vardaApiService.getLapsetForToimipaikat(
         this.vardaVakajarjestajaService.getSelectedVakajarjestajaId(),
-        toimipaikkaId,
-        null,
-        null
+        { toimipaikat: toimipaikkaId }, null
       ),
       VardaEndpoints.getAllLapsetByToimipaikkaByPageNo,
       toimipaikkaId
@@ -396,8 +401,8 @@ export class VardaApiWrapperService {
     return this.vardaApiService.getVarhaiskasvatuspaatoksetByLapsi(lapsiId);
   }
 
-  getYhteenvetoByToimipaikka(toimipaikkaId: string): Observable<VardaToimipaikkaYhteenvetoDTO> {
-    return this.vardaApiService.getYhteenveto(toimipaikkaId);
+  getYhteenvetoByVakajarjestaja(vakajarjestajaId: string): Observable<VardaVakajarjestajaYhteenvetoDTO> {
+    return this.vardaApiService.getYhteenveto(vakajarjestajaId);
   }
 
   getCreateLapsiFieldSets(): any {

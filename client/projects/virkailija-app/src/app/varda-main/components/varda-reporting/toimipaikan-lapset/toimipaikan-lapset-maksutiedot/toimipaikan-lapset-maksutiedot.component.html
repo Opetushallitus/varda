@@ -1,4 +1,4 @@
-<mat-expansion-panel>
+<mat-expansion-panel class="maksutieto-panel">
   <mat-expansion-panel-header class="toimipaikan-lapset-header">
     <mat-panel-title>
       <h3 class="toimipaikan-lapset-font-blue">
@@ -41,9 +41,12 @@
   <table class="mat-table toimipaikan-lapset-table toimipaikan-lapset-vakatable">
     <tr class="mat-header-row">
       <td class="mat-cell">{{'label.maksutieto.maksunperuste' | translate}}</td>
-      <td class="mat-cell">{{formatMaksunperusteDisplayValue(maksutieto.maksun_peruste_koodi)}} ({{maksutieto.maksun_peruste_koodi}})</td>
+      <td class="mat-cell">
+        {{(getCodeFromKoodistoService(koodistoEnum.maksunperuste, maksutieto.maksun_peruste_koodi) | async)?.name}}
+        ({{maksutieto.maksun_peruste_koodi}})
+      </td>
     </tr>
-    <tr class="mat-header-row">
+    <tr class="mat-header-row" *ngIf="!isYksityinen">
       <td class="mat-cell">{{'label.maksutieto.palvelusetelin_arvo_euroina' | translate}}</td>
       <td class="mat-cell">{{maksutieto.palveluseteli_arvo}}</td>
     </tr>
@@ -51,7 +54,7 @@
       <td class="mat-cell">{{'label.maksutieto.asiakasmaksu_euroina' | translate}}</td>
       <td class="mat-cell">{{maksutieto.asiakasmaksu}}</td>
     </tr>
-    <tr class="mat-header-row">
+    <tr class="mat-header-row" *ngIf="!isYksityinen">
       <td class="mat-cell">{{'label.maksutieto.perheen_koko' | translate}}</td>
       <td class="mat-cell">{{maksutieto.perheen_koko}}</td>
     </tr>

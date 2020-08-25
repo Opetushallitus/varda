@@ -3,7 +3,7 @@ import { expand, map, reduce } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { VardaUtilityService } from './varda-utility.service';
-import { VardaToimipaikkaYhteenvetoDTO } from '../../utilities/models/dto/varda-toimipaikka-yhteenveto-dto.model';
+import { VardaVakajarjestajaYhteenvetoDTO } from '../../utilities/models/dto/varda-vakajarjestaja-yhteenveto-dto.model';
 import { VardaFieldsetArrayContainer } from '../../utilities/models/varda-fieldset.model';
 import {
   VardaCreateMaksutietoDTO,
@@ -17,7 +17,7 @@ import {
   HenkilohakuSearchDTO,
   HenkilohakuType,
   LapsiByToimipaikkaDTO,
-  ToimipaikanLapsi
+  ToimipaikanLapsi, TyontekijaByToimipaikkaDTO, TyontekijaKooste
 } from '../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { sha256 } from 'js-sha256';
 import { LoadingHttpService } from 'varda-shared';
@@ -58,6 +58,7 @@ export class VardaApiService implements VardaApiServiceInterface {
   private kielipainotuksetApiPath = `${environment.vardaApiUrl}/kielipainotukset/`;
   private toimintapainotuksetApiPath = `${environment.vardaApiUrl}/toiminnallisetpainotukset/`;
   private fieldDefinitionsPath = 'assets/field-definitions/';
+  private henkilostoApiPath = `${environment.vardaAppUrl}/api/henkilosto/v1/`;
 
   static getVakajarjestajaUrlFromId(id: string) {
     return `/api/v1/vakajarjestajat/${id}/`;
@@ -161,13 +162,16 @@ export class VardaApiService implements VardaApiServiceInterface {
     return this.http.get(`${this.vakaJarjestajatUiPath}${vakajarjestajaId}/lapsi-list/`, searchFilter);
   }
 
-  getLapsetForToimipaikka(vakajarjestajaId: string, toimipaikkaId: string, searchParams?: any, nextLink?: string): Observable<VardaPageDto<LapsiByToimipaikkaDTO>> {
+  getLapsetForToimipaikat(
+    vakajarjestajaId: string,
+    searchParams?: any,
+    nextLink?: string
+  ): Observable<VardaPageDto<LapsiByToimipaikkaDTO>> {
     let url = `${this.vakaJarjestajatUiPath}${vakajarjestajaId}/lapset/`;
 
     if (!searchParams) {
       searchParams = {};
     }
-    searchParams.toimipaikat = toimipaikkaId;
 
     if (searchParams.search) {
       searchParams.search = this.hashHetu(searchParams.search);
@@ -192,6 +196,36 @@ export class VardaApiService implements VardaApiServiceInterface {
     return this.http.get(`${environment.vardaApiUrl}/lapset/${id}/kooste/`).pipe(map((resp: any) => {
       return resp;
     }));
+  }
+
+  getTyontekijatForToimipaikat(
+    vakajarjestajaId: string,
+    searchParams: any,
+    nextLink?: string
+  ): Observable<VardaPageDto<TyontekijaByToimipaikkaDTO>> {
+    let url = `${this.vakaJarjestajatUiPath}${vakajarjestajaId}/tyontekijat/`;
+
+    if (searchParams.search) {
+      searchParams.search = this.hashHetu(searchParams.search);
+    }
+
+    url += '?';
+    url += Object.keys(searchParams)
+      .filter(key => searchParams[key] !== null && searchParams[key] !== undefined)
+      .map(key => `${key}=${searchParams[key]}`)
+      .join('&');
+
+    if (nextLink) {
+      url = this.getVardaPrefixedUrl(nextLink);
+    }
+
+    return this.http.get(url).pipe(map((resp: any) => {
+      return resp;
+    }));
+  }
+
+  getTyontekijaKooste(id: number): Observable<TyontekijaKooste> {
+    return this.http.get(`${this.henkilostoApiPath}tyontekijat/${id}/kooste/`).pipe(map(response => response));
   }
 
   getAllToimipaikatForVakaJarjestaja(vakaJarjestajaId: string): Observable<any> {
@@ -273,9 +307,9 @@ export class VardaApiService implements VardaApiServiceInterface {
     }));
   }
 
-  getYhteenveto(toimipaikkaId: string): Observable<VardaToimipaikkaYhteenvetoDTO> {
-    const url = `${environment.vardaApiUrl}/vakajarjestajat/${toimipaikkaId}/yhteenveto/`;
-    return this.http.get(url).pipe(map((resp: VardaToimipaikkaYhteenvetoDTO) => resp));
+  getYhteenveto(vakajarjestajaId: string): Observable<VardaVakajarjestajaYhteenvetoDTO> {
+    const url = `${environment.vardaApiUrl}/vakajarjestajat/${vakajarjestajaId}/yhteenveto/`;
+    return this.http.get(url).pipe(map((resp: VardaVakajarjestajaYhteenvetoDTO) => resp));
   }
 
   getToimipaikkaFields(): Observable<any> {

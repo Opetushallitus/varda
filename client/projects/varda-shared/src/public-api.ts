@@ -11,3 +11,4 @@ export * from './lib/translate.service';
 export * from './lib/koodisto.service';
 export * from './lib/varda-shared.module';
 export * from './lib/directives/koodistoValue.directive';
+export * from './lib/dto/koodisto-models';
