@@ -10,7 +10,7 @@ from functools import wraps
 from hashlib import sha1
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
-from varda.misc import get_object_id_from_path, intersection, path_parse
+from varda.misc import get_object_id_from_path, intersection, path_parse, hash_string
 from varda.pagination import CustomPagination, get_requested_page_and_query_params
 from varda.permissions import get_object_ids_user_has_view_permissions
 
@@ -362,10 +362,12 @@ def set_koodistot_cache(language, data, cached_time=settings.DEFAULT_CACHE_INVAL
 
 
 def get_localisation_cache(category, locale):
+    # keys are hashed to prevent malformed keys in cache
+    category = hash_string(category.lower())
     if locale:
-        return cache.get('lokalisointi.{0}.{1}'.format(category.lower(), locale.lower()))
+        return cache.get('lokalisointi.{0}.{1}'.format(category, locale.lower()))
     else:
-        return cache.get('lokalisointi.{}'.format(category.lower()))
+        return cache.get('lokalisointi.{}'.format(category))
 
 
 def set_localisation_cache(category, locale, data, cached_time=settings.DEFAULT_CACHE_INVALIDATION_TIME):
@@ -373,7 +375,9 @@ def set_localisation_cache(category, locale, data, cached_time=settings.DEFAULT_
         'data': data,
         'created': datetime.datetime.now()
     }
+    # keys are hashed to prevent malformed keys in cache
+    category = hash_string(category.lower())
     if locale:
-        cache.set('lokalisointi.{0}.{1}'.format(category.lower(), locale.lower()), cache_data, cached_time)
+        cache.set('lokalisointi.{0}.{1}'.format(category, locale.lower()), cache_data, cached_time)
     else:
-        cache.set('lokalisointi.{}'.format(category.lower()), cache_data, cached_time)
+        cache.set('lokalisointi.{}'.format(category), cache_data, cached_time)

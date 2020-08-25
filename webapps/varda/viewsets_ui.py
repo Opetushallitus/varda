@@ -436,6 +436,9 @@ class LocalisationViewSet(GenericViewSet, ListModelMixin):
         if not category:
             raise ValidationError({'category': ['category url parameter is required']})
 
+        if locale and locale.lower() not in ['fi', 'sv']:
+            raise ValidationError({'locale': ['locale must be either FI or SV']})
+
         data = get_localisation_data(category, locale)
 
         if not data:
