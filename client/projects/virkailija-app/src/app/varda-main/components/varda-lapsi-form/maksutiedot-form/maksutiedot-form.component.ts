@@ -15,6 +15,7 @@ import { VardaErrorMessageService } from '../../../../core/services/varda-error-
 import { AuthService } from '../../../../core/auth/auth.service';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { map } from 'rxjs/operators';
+import { KoodistoDTO, KoodistoEnum, VardaKoodistoService } from 'varda-shared';
 
 @Component({
   selector: 'app-maksutiedot-form',
@@ -56,7 +57,8 @@ export class MaksutiedotFormComponent implements OnInit {
   // fieldset obj for editing
   maksutiedotFieldSetObj: { [key: string]: Array<VardaFieldSet> };
 
-  constructor(private vardaApiWrapperService: VardaApiWrapperService,
+  constructor(
+    private vardaApiWrapperService: VardaApiWrapperService,
     private vardaFormService: VardaFormService,
     private vardaUtilityService: VardaUtilityService,
     private vardaValidatorService: VardaValidatorService,
@@ -64,7 +66,9 @@ export class MaksutiedotFormComponent implements OnInit {
     private translate: TranslateService,
     private vardaDateService: VardaDateService,
     private vardaErrorMessageService: VardaErrorMessageService,
-    private authService: AuthService) {
+    private authService: AuthService,
+    private koodistoService: VardaKoodistoService
+  ) {
     this.maksutiedotFieldSetObj = {};
     this.maksutiedotFormGroup = new FormGroup({
       maksutiedotFormArr: new FormArray([]),
@@ -101,11 +105,11 @@ export class MaksutiedotFormComponent implements OnInit {
   }
 
   ngOnInit() {
-
     if (this.toimipaikkaAccess.huoltajatiedot.katselija) {
       forkJoin([
         this.vardaApiWrapperService.getMaksutietoFormFieldSets(),
         this.vardaApiWrapperService.getLapsiMaksutiedot(this.lapsiId),
+        this.koodistoService.getKoodisto(KoodistoEnum.maksunperuste)
       ]).subscribe({
         next: this.onInitFetchSuccess(),
         error: () => this.ui.noMaksutietoPrivileges = true,
@@ -121,12 +125,15 @@ export class MaksutiedotFormComponent implements OnInit {
   }
 
   private onInitFetchSuccess() {
-    return (data) => {
-      const maksutietoFieldsetData = data[0];
+    return ([maksutietoFieldsetData, maksutiedotData, koodistoData]) => {
+
+      // Update codes used in this form
+      VardaKoodistoService.updateOptionsIfFound(maksutietoFieldsetData[0].fieldsets[0].fields, 'maksun_peruste_koodi', koodistoData);
+
       this.maksutiedotFieldSetTemplate = maksutietoFieldsetData[0];
       this.removeFieldsForYksityinenLapsi();
 
-      this.maksutiedot = data[1].sort((a, b) => new Date(a.alkamis_pvm).getTime() - new Date(b.alkamis_pvm).getTime());
+      this.maksutiedot = maksutiedotData.sort((a, b) => new Date(a.alkamis_pvm).getTime() - new Date(b.alkamis_pvm).getTime());
       this.maksutiedot.forEach(maksutieto => {
         const koodi = maksutieto.maksun_peruste_koodi;
         maksutieto.maksun_peruste_koodi = koodi && koodi.toLowerCase();

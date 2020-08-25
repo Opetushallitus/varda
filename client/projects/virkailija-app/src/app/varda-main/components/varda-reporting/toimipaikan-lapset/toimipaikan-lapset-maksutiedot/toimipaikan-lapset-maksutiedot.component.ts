@@ -1,6 +1,4 @@
 import { Component, Input } from '@angular/core';
-import {VardaMaksunPerusteKoodistoService} from '../../../../../core/services/varda-maksun-peruste-koodisto.service';
-import { TranslateService } from '@ngx-translate/core';
 import {ToimipaikanLapsiMaksutieto} from '../../../../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { KoodistoEnum, VardaKoodistoService } from 'varda-shared';
 

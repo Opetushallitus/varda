@@ -19,6 +19,7 @@
             "instructionTextSv": "Ange verksamhet som betonas från menyn. Med verksamhet som betonas avses de former av verksamhet som betonas i samband med småbarnspedagogiken. Dessa är bland annat musik, gymnastik och bildkonst. Ett verksamhetsställe kan betona flera former av verksamhet. Varje enskild verksamhet som betonas ska anges separat."
           },
           "placeholder": {},
+          "koodisto": "vardatoiminnallinenpainotus",
           "options": [
             {
               "code": "tp01",

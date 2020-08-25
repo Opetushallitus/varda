@@ -1,6 +1,5 @@
 export { VardaEntityNames } from './varda-entity-names';
 export { VardaWidgetNames } from './varda-widget-names';
-export { VardaKoodistot } from './varda-koodistot';
 export { VardaFieldSet } from './models/varda-fieldset.model';
 export { VardaField } from './models/varda-field.model';
 export { VardaVakajarjestaja } from './models/varda-vakajarjestaja.model';

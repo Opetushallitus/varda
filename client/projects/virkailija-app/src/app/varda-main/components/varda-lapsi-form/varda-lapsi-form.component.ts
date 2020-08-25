@@ -30,7 +30,7 @@ import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajar
 import { VardaUtilityService } from '../../../core/services/varda-utility.service';
 import { VardaValidatorService } from '../../../core/services/varda-validator.service';
 import { VardaErrorMessageService } from '../../../core/services/varda-error-message.service';
-import { forkJoin, Observable, BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, forkJoin, Observable } from 'rxjs';
 import { VardaDateService } from '../../services/varda-date.service';
 import { TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -43,6 +43,7 @@ import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/
 import { ErrorTree, HenkilostoErrorMessageService } from '../../../core/services/varda-henkilosto-error-message.service';
 import { VardaLapsiService } from '../../../core/services/varda-lapsi.service';
 import { VardaModalService } from '../../../core/services/varda-modal.service';
+import { KoodistoDTO, KoodistoEnum, VardaKoodistoService } from 'varda-shared';
 
 declare var $: any;
 
@@ -142,7 +143,8 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
     private translateService: TranslateService,
     private lapsiService: VardaLapsiService,
     private modalService: VardaModalService,
-    private authService: AuthService) {
+    private authService: AuthService,
+    private koodistoService: VardaKoodistoService) {
     this.ui = {
       noVarhaiskasvatustietoPrivileges: true,
       isPerustiedotLoading: false,
@@ -499,7 +501,15 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   }
 
   initLapsiFormFields(): void {
-    this.vardaApiWrapperService.getCreateLapsiFieldSets().subscribe((data) => {
+    forkJoin([
+      this.vardaApiWrapperService.getCreateLapsiFieldSets(),
+      this.koodistoService.getKoodisto(KoodistoEnum.jarjestamismuoto)
+    ]).subscribe(([formData, koodistoData]) => {
+
+      // Update codes used in this form
+      VardaKoodistoService.updateOptionsIfFound(formData[1].fieldsets[1].fields, 'jarjestamismuoto_koodi', koodistoData);
+
+      // Initialize form
       const vakajarjestajaToimipaikat = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat();
       this.allToimipaikkaOptions = vakajarjestajaToimipaikat.allToimipaikat;
 
@@ -512,17 +522,17 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
       this.selectedSuhdeForm = new FormGroup({ addVarhaiskasvatussuhde: new FormControl() });
       this.setToimipaikka();
 
-      data = this.filterJarjestamismuodot(data);
-      this.varhaiskasvatussuhteetFieldSetsTemplate = data[0].fieldsets;
+      formData = this.filterJarjestamismuodot(formData);
+      this.varhaiskasvatussuhteetFieldSetsTemplate = formData[0].fieldsets;
       this.varhaiskasvatussuhteetFieldSets = {};
-      this.varhaiskasvatussuhteetFieldSets[0] = this.vardaUtilityService.deepcopyArray(data[0].fieldsets);
+      this.varhaiskasvatussuhteetFieldSets[0] = this.vardaUtilityService.deepcopyArray(formData[0].fieldsets);
       this.varhaiskasvatussuhdeForm = this.vardaFormService.initFieldSetFormGroup(this.varhaiskasvatussuhteetFieldSetsTemplate, null);
       this.varhaiskasvatussuhteetForm = new FormGroup({});
       const varhaiskasvatussuhteetFormArr = new FormArray([]);
 
-      this.varhaiskasvatuspaatoksetFieldSetsTemplate = data[1].fieldsets;
+      this.varhaiskasvatuspaatoksetFieldSetsTemplate = formData[1].fieldsets;
       this.varhaiskasvatuspaatoksetFieldSets = {};
-      this.varhaiskasvatuspaatoksetFieldSets[0] = this.vardaUtilityService.deepcopyArray(data[1].fieldsets);
+      this.varhaiskasvatuspaatoksetFieldSets[0] = this.vardaUtilityService.deepcopyArray(formData[1].fieldsets);
       this.varhaiskasvatuspaatosForm = this.vardaFormService.initFieldSetFormGroup(this.varhaiskasvatuspaatoksetFieldSetsTemplate, null);
       this.varhaiskasvatuspaatoksetForm = new FormGroup({});
       const varhaiskasvatuspaatoksetFormArr = new FormArray([]);

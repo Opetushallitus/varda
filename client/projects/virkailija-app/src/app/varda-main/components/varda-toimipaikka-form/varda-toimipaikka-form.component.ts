@@ -1,14 +1,28 @@
-import { Component, OnInit, OnChanges, Input, Output, SimpleChanges, EventEmitter, ViewChild, ViewChildren, ElementRef } from '@angular/core';
-import { FormControl, FormGroup, FormArray } from '@angular/forms';
+import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnInit,
+  Output,
+  SimpleChanges,
+  ViewChild,
+  ViewChildren
+} from '@angular/core';
+import { FormArray, FormControl, FormGroup } from '@angular/forms';
 import { MatRadioButton } from '@angular/material/radio';
 import { MatStep, MatStepper } from '@angular/material/stepper';
 import {
-  VardaToimipaikkaDTO, VardaFieldSet, VardaKielipainotusDTO, VardaToimintapainotusDTO,
-  VardaEntityNames
+  VardaEntityNames,
+  VardaFieldSet,
+  VardaKielipainotusDTO,
+  VardaToimintapainotusDTO,
+  VardaToimipaikkaDTO
 } from '../../../utilities/models';
 import { VardaFormService } from '../../../core/services/varda-form.service';
 import { VardaApiWrapperService } from '../../../core/services/varda-api-wrapper.service';
-import { Observable, forkJoin, Subject, fromEvent } from 'rxjs';
+import { forkJoin, fromEvent, Observable, Subject } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 import { VardaUtilityService } from '../../../core/services/varda-utility.service';
 import { VardaModalService } from '../../../core/services/varda-modal.service';
@@ -16,9 +30,9 @@ import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajar
 import { VardaLocalstorageWrapperService } from '../../../core/services/varda-localstorage-wrapper.service';
 import { VardaErrorMessageService } from '../../../core/services/varda-error-message.service';
 import { TranslateService } from '@ngx-translate/core';
-import { VardaKielikoodistoService } from '../../../core/services/varda-kielikoodisto.service';
 import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 import { AuthService } from '../../../core/auth/auth.service';
+import { KoodistoDTO, KoodistoEnum, KoodistoSortBy, VardaKoodistoService } from 'varda-shared';
 
 declare var $: any;
 
@@ -88,6 +102,8 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
   };
 
   private saveToimipaikkaSubject = new Subject<any>();
+  private kieliKoodisto: KoodistoDTO;
+  private toimintapainotusKoodisto: KoodistoDTO;
 
   constructor(
     private authService: AuthService,
@@ -99,7 +115,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
     private vardaLocalStorageWrapperService: VardaLocalstorageWrapperService,
     private vardaErrorMessageService: VardaErrorMessageService,
     private translateService: TranslateService,
-    private vardaKielikoodistoService: VardaKielikoodistoService) {
+    private koodistoService: VardaKoodistoService) {
     this.ui = {
       isSubmitting: false,
       toimipaikkaFormSaveSuccess: false,
@@ -403,37 +419,30 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
   }
 
   getRecurringFieldValue(entity: string, index: number): string {
-    let rv;
-    const currentLang = this.translateService.currentLang.toUpperCase();
+    let rv = '';
+    let code;
     if (entity === VardaEntityNames.KIELIPAINOTUS) {
-      rv = '';
       const foundKielipainotus = this.kielipainotukset[index];
       if (foundKielipainotus) {
         rv += foundKielipainotus.kielipainotus_koodi;
-        const language = this.vardaKielikoodistoService.getKielikoodistoOptionByLangAbbreviation(foundKielipainotus.kielipainotus_koodi);
-        if (!language) {
-          return '';
-        }
-        const metaData = this.vardaKielikoodistoService.getKielikoodistoOptionMetadataByLang(language.metadata, currentLang);
-        rv = `${metaData.nimi} (${language.koodiArvo})`;
+        code = this.kieliKoodisto.codes.find(kieliCode => {
+          return kieliCode.code_value.toLowerCase() === foundKielipainotus.kielipainotus_koodi.toLowerCase();
+        });
       }
     } else if (entity === VardaEntityNames.TOIMINTAPAINOTUS) {
-
-      rv = '';
       const foundToimintapainotus = this.toimintapainotukset[index];
       if (foundToimintapainotus) {
         rv += foundToimintapainotus.toimintapainotus_koodi;
-        const toimintapainotusOptionsField = this.vardaFormService.findVardaFieldFromFieldSetsByFieldKey('toimintapainotus_koodi',
-          this.toimintapainotuksetFieldSets);
-
-        const foundToimintapainotusCode = toimintapainotusOptionsField.options
-          .find((obj) => obj.code === foundToimintapainotus.toimintapainotus_koodi);
-        if (foundToimintapainotusCode) {
-          const translatedDisplayNameProp = currentLang === 'SV' ? 'displayNameSv' : 'displayNameFi';
-          rv = `${foundToimintapainotusCode.displayName[translatedDisplayNameProp]} (${foundToimintapainotusCode.code})`;
-        }
+        code = this.toimintapainotusKoodisto.codes.find(toimintapainotus => {
+          return foundToimintapainotus.toimintapainotus_koodi.toLowerCase() === toimintapainotus.code_value.toLowerCase();
+        });
       }
     }
+
+    if (!code) {
+      return '';
+    }
+    rv = `${code.name} (${code.code_value})`;
 
     return rv;
   }
@@ -444,15 +453,39 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
   }
 
   initToimipaikkaFormFields(): void {
-    this.vardaApiWrapperService.getToimipaikkaFormFieldSets().subscribe((data) => {
-      this.toimipaikkaFieldSets = data[0].fieldsets;
+    forkJoin([
+      this.vardaApiWrapperService.getToimipaikkaFormFieldSets(),
+      this.koodistoService.getKoodisto(KoodistoEnum.kunta, KoodistoSortBy.name),
+      this.koodistoService.getKoodisto(KoodistoEnum.kieli, KoodistoSortBy.name),
+      this.koodistoService.getKoodisto(KoodistoEnum.kasvatusopillinenjarjestelma),
+      this.koodistoService.getKoodisto(KoodistoEnum.toimintamuoto),
+      this.koodistoService.getKoodisto(KoodistoEnum.jarjestamismuoto),
+      this.koodistoService.getKoodisto(KoodistoEnum.toiminnallinenpainotus)
+    ]).subscribe(([formData, kuntaKoodisto, kieliKoodisto, kasvatusjarjestelmaKoodisto,
+                        toimintamuotoKoodisto, jarjestamismuotoKoodisto, toimintapainotusKoodisto]) => {
+      this.toimintapainotusKoodisto = <KoodistoDTO> toimintapainotusKoodisto;
+      this.kieliKoodisto = <KoodistoDTO> kieliKoodisto;
+      VardaKoodistoService.sortKieliKoodistoByPrimaryLanguages(this.kieliKoodisto);
+
+      // Update codes used in this form
+      [
+        { fields: formData[0].fieldsets[1].fields, key: 'kunta_koodi', koodisto: kuntaKoodisto },
+        { fields: formData[0].fieldsets[2].fields, key: 'toimintamuoto_koodi', koodisto: toimintamuotoKoodisto },
+        { fields: formData[0].fieldsets[2].fields, key: 'jarjestamismuoto_koodi', koodisto: jarjestamismuotoKoodisto },
+        { fields: formData[0].fieldsets[2].fields, key: 'kasvatusopillinen_jarjestelma_koodi', koodisto: kasvatusjarjestelmaKoodisto },
+        { fields: formData[0].fieldsets[2].fields, key: 'asiointikieli_koodi', koodisto: this.kieliKoodisto },
+        { fields: formData[1].fieldsets[0].fields, key: 'kielipainotus_koodi', koodisto: this.kieliKoodisto },
+        { fields: formData[2].fieldsets[0].fields, key: 'toimintapainotus_koodi', koodisto: this.toimintapainotusKoodisto }
+      ].forEach(fieldsObject => VardaKoodistoService.updateOptionsIfFound(fieldsObject.fields, fieldsObject.key, fieldsObject.koodisto));
+
+      this.toimipaikkaFieldSets = formData[0].fieldsets;
       this.toimipaikkaForm = this.vardaFormService.initFieldSetFormGroup(this.toimipaikkaFieldSets, this.toimipaikka);
 
-      this.kielipainotuksetFieldSets = data[1].fieldsets;
+      this.kielipainotuksetFieldSets = formData[1].fieldsets;
       this.kielipainotuksetForm = new FormGroup({});
       const kielipainotusFormArr = new FormArray([]);
 
-      this.toimintapainotuksetFieldSets = data[2].fieldsets;
+      this.toimintapainotuksetFieldSets = formData[2].fieldsets;
       this.toimintapainotuksetForm = new FormGroup({});
       const toimintapainotusFormArr = new FormArray([]);
 
@@ -511,10 +544,8 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
         }
       });
 
-      this.kielikoodistoOptions = this.vardaKielikoodistoService.kielikoodistoOptions;
       this.bindHideSuccessMsg();
       this.bindScrollHandlers();
-
     });
   }
 

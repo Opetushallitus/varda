@@ -8,8 +8,6 @@ import { VardaUtilityService } from '../../../core/services/varda-utility.servic
 import { VardaFormService } from '../../../core/services/varda-form.service';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaDateService } from '../../services/varda-date.service';
-import { VardaKielikoodistoService } from '../../../core/services/varda-kielikoodisto.service';
-import { VardaKuntakoodistoService } from '../../../core/services/varda-kuntakoodisto.service';
 import { VardaPageDto } from '../../../utilities/models/dto/varda-page-dto';
 import {
   LapsiByToimipaikkaDTO,
@@ -196,8 +194,6 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
     private vardaFormService: VardaFormService,
     private translateService: TranslateService,
     private vardaDateService: VardaDateService,
-    private vardaKielikoodistoService: VardaKielikoodistoService,
-    private vardaKuntakoodistoService: VardaKuntakoodistoService,
     private breakpointObserver: BreakpointObserver,
     private koodistoService: VardaKoodistoService,
     private authService: AuthService

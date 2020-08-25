@@ -33,7 +33,7 @@
           "placeholder": {
             "placeholderFi": ""
           },
-          "koodisto": "kielikoodisto",
+          "koodisto": "kielikoodistoopetushallinto",
           "rules": {
             "required": {
               "acceptedValue": true,
@@ -53,7 +53,7 @@
           "placeholder": {
             "placeholderFi": ""
           },
-          "koodisto": "kielikoodisto",
+          "koodisto": "kielikoodistoopetushallinto",
           "rules": {
             "required": {
               "acceptedValue": true,
@@ -151,7 +151,7 @@
           "placeholder": {
             "placeholderFi": ""
           },
-          "koodisto": "kielikoodisto",
+          "koodisto": "kielikoodistoopetushallinto",
           "rules": {
             "required": {
               "acceptedValue": true,

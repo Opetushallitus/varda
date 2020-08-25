@@ -358,7 +358,7 @@
             "placeholderFi": "",
             "placeholderSv": ""
           },
-          "koodisto": "kuntakoodisto",
+          "koodisto": "kunta",
           "rules": {
             "required": {
               "acceptedValue": true,
@@ -489,6 +489,7 @@
             "instructionTextSv": "Välj verksamhetsform för verksamhetsstället. Med verksamhetsform avses verksamhet inom småbarnspedagogik som anordnas i daghem, familjedaghem eller gruppfamiljedaghem."
           },
           "placeholder": {},
+          "koodisto": "vardatoimintamuoto",
           "options": [
             {
               "code": "tm01",
@@ -549,6 +550,7 @@
             "instructionTextSv": "Välj verksamhetsställets verksamhetsform. Du kan välja en eller flera verksamhetsformer. Verksamhetsformen är en obligatorisk uppgift."
           },
           "placeholder": {},
+          "koodisto": "vardajarjestamismuoto",
           "options": [
             {
               "code": "jm01",
@@ -608,7 +610,7 @@
             "instructionTextSv": "Välj ett eller flera kontaktspråk. Kontaktspråket är det språk som på verksamhetsstället i huvudsak används i kommunikationen mellan barnen och personalen. Kontaktspråket är ofta samma språk som personalen talar med föräldrarna/vårdnadshavarna. Kontaktspråket är en obligatorisk uppgift."
           },
           "placeholder": {},
-          "koodisto": "kielikoodisto",
+          "koodisto": "kielikoodistoopetushallinto",
           "rules": {
             "required": {
               "acceptedValue": true,
@@ -638,6 +640,7 @@
             "instructionTextSv": "Välj verksamhetsställets pedagogiska inriktning. Pedagogiska inriktningar är Freinet-pedagogik, Freire-pedagogik, Montessori-pedagogik, Reggio Emilia- och Steiner-pedagogik. Du kan även välja alternativet Övrig om verksamhetsstället inte har en pedagogisk inriktning."
           },
           "placeholder": {},
+          "koodisto": "vardakasvatusopillinenjarjestelma",
           "options": [
             {
               "code": "kj01",

@@ -1,14 +1,12 @@
 import { Component, OnInit, Input, OnChanges, Output, EventEmitter } from '@angular/core';
 import { VardaFormService } from '../../../core/services/varda-form.service';
 import { FormControl, FormGroup, FormArray } from '@angular/forms';
-import { VardaFieldSet, VardaField, VardaWidgetNames, VardaKoodistot } from '../../../utilities/models';
-import { VardaKielikoodistoService } from '../../../core/services/varda-kielikoodisto.service';
-import { VardaKuntakoodistoService } from '../../../core/services/varda-kuntakoodisto.service';
+import { VardaFieldSet, VardaField, VardaWidgetNames } from '../../../utilities/models';
 import { VardaDateService } from '../../../varda-main/services/varda-date.service';
 import { TranslateService, LangChangeEvent } from '@ngx-translate/core';
-import { VardaMaksunPerusteKoodistoService } from '../../../core/services/varda-maksun-peruste-koodisto.service';
 import { VardaSelectOption } from '../../../utilities/models/varda-select-option.model';
 import { VardaDatepickerEvent } from '../varda-datepicker/varda-datepicker.component';
+import { KoodistoEnum, VardaKoodistoService } from 'varda-shared';
 
 @Component({
   selector: 'app-varda-form-question',
@@ -41,12 +39,12 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
     isLoading: boolean
   };
 
-  constructor(private vardaFormService: VardaFormService,
-    private vardaKielikoodistoService: VardaKielikoodistoService,
-    private vardaKuntakoodistoService: VardaKuntakoodistoService,
-    private vardaMaksunPerustekoodistoService: VardaMaksunPerusteKoodistoService,
+  constructor(
+    private vardaFormService: VardaFormService,
     private vardaDateService: VardaDateService,
-    private translateService: TranslateService) {
+    private translateService: TranslateService,
+    private koodistoService: VardaKoodistoService
+  ) {
     this.showInstructionText = false;
     this.ui = {
       isLoading: false
@@ -248,89 +246,22 @@ export class VardaFormQuestionComponent implements OnInit, OnChanges {
   }
 
   formatSelectOptions(): void {
-    if (this.field.koodisto === VardaKoodistot.KIELIKOODISTO) {
+    const options = this.field.options.map(option => {
+      return { displayName: option.displayName, code: option.code };
+    });
 
-      this.allSelectOptions = this.vardaKielikoodistoService.getKielikoodistoOptions();
+    this.currentLang = this.translateService.currentLang;
 
-      this.allSelectOptions.forEach((koodistoOption) => {
-        try {
-          const kielikoodiObj = {};
-          const metadataFi = this.vardaKielikoodistoService.getKielikoodistoOptionMetadataByLang(
-            koodistoOption.metadata, 'FI');
-          let metadataSv = this.vardaKielikoodistoService.getKielikoodistoOptionMetadataByLang(
-            koodistoOption.metadata, 'SV');
+    this.selectOptions = options;
 
-          if (!metadataSv) {
-            metadataSv = metadataFi;
-          }
-
-          kielikoodiObj['code'] = koodistoOption.koodiArvo;
-          kielikoodiObj['displayName'] = {};
-          kielikoodiObj['displayName']['displayNameFi'] = metadataFi.nimi;
-          kielikoodiObj['displayName']['displayNameSv'] = metadataSv.nimi;
-          this.selectOptions.push(kielikoodiObj);
-        } catch (e) {
-          console.log(e);
-        }
-      });
-
-      this.selectOptions.splice(10, 0, '-------------');
-
-    } else if (this.field.koodisto === VardaKoodistot.KUNTAKOODISTO) {
-      this.allSelectOptions = this.vardaKuntakoodistoService.getKuntakoodistoOptions();
-      this.allSelectOptions.forEach((koodistoOption) => {
-        const kuntakoodiObj = {};
-        const metadataFi = this.vardaKuntakoodistoService.getKuntaKoodistoOptionMetadataByLang(
-          koodistoOption.metadata, 'FI');
-        const metadataSv = this.vardaKuntakoodistoService.getKuntaKoodistoOptionMetadataByLang(
-          koodistoOption.metadata, 'SV');
-        kuntakoodiObj['code'] = koodistoOption.koodiArvo;
-        kuntakoodiObj['displayName'] = {};
-        kuntakoodiObj['displayName']['displayNameFi'] = metadataFi.nimi;
-        kuntakoodiObj['displayName']['displayNameSv'] = metadataSv.nimi;
-        this.selectOptions.push(kuntakoodiObj);
-      });
-    } else if (this.field.koodisto === VardaKoodistot.MAKSUNPERUSTEKOODISTO) {
-      this.allSelectOptions = this.vardaMaksunPerustekoodistoService.getKoodistoOptions();
-      this.allSelectOptions.forEach((koodistoOption) => {
-        const kuntakoodiObj = {};
-        const metadataFi = this.vardaMaksunPerustekoodistoService
-          .getKoodistoOptionMetadataByLang(koodistoOption.metadata, 'FI');
-        const metadataSv = this.vardaMaksunPerustekoodistoService
-          .getKoodistoOptionMetadataByLang(koodistoOption.metadata, 'SV');
-        kuntakoodiObj['code'] = koodistoOption.koodiArvo.toLowerCase();
-        kuntakoodiObj['displayName'] = {};
-        kuntakoodiObj['displayName']['displayNameFi'] = metadataFi && metadataFi.nimi;
-        kuntakoodiObj['displayName']['displayNameSv'] = metadataSv && metadataSv.nimi;
-        this.selectOptions.push(kuntakoodiObj);
-      });
-
-      this.currentLang = this.translateService.currentLang;
-      this.sortKoodistoOptions(this.selectOptions);
-
-      this.translateService.onLangChange.subscribe((event: LangChangeEvent) => {
-        this.currentLang = event.lang;
-        this.sortKoodistoOptions(this.selectOptions);
-      });
+    if (this.field.koodisto === KoodistoEnum.kieli) {
+      this.selectOptions.splice(VardaKoodistoService.getNumberOfPrimaryLanguages(), 0, '-------------');
     } else {
-      const selectOptions = [];
-      this.field.options.forEach((opt) => {
-        selectOptions.push({ displayName: opt.displayName, code: opt.code });
-      });
-
-      this.currentLang = this.translateService.currentLang;
-      this.sortKoodistoOptions(selectOptions);
-
-      this.selectOptions = selectOptions;
-
-      this.translateService.onLangChange.subscribe((event: LangChangeEvent) => {
-        this.currentLang = event.lang;
-        this.sortKoodistoOptions(this.selectOptions);
-      });
+      this.sortOptions(options);
     }
   }
 
-  sortKoodistoOptions(options: Array<VardaSelectOption>): Array<VardaSelectOption> {
+  sortOptions(options: Array<VardaSelectOption>): Array<VardaSelectOption> {
     return options.sort((a, b) => a.code.localeCompare(b.code));
   }
 

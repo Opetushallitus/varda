@@ -135,17 +135,17 @@
                 </option>
               </ng-container>
             </select>
-            <div *ngIf="isReadOnly">
-              <div *ngFor="let code of field.value['selectArr'] || []">
-                <span>{{getOptionDisplayNameByCode(code)}}</span>
-              </div>
-            </div>
             <div class="varda-select-arr-remove-item-wrapper"
                  *ngIf="!isReadOnly">
               <a href="#"
                  class=""
                  (click)="removeSelectArrControl(m)"
                  *ngIf="m > 0">{{'label.delete' | translate}}</a>
+            </div>
+          </div>
+          <div *ngIf="isReadOnly">
+            <div *ngFor="let code of field.value['selectArr'] || []">
+              <span>{{getOptionDisplayNameByCode(code)}}</span>
             </div>
           </div>
         </fieldset>
@@ -216,5 +216,4 @@
       {{getInstructionText(field)}}
     </small>
   </div>
-
 </div>

@@ -9,9 +9,6 @@ import { VardaUtilityService } from '../../../core/services/varda-utility.servic
 import { VardaDateService } from '../../services/varda-date.service';
 import { vardaApiWrapperServiceStub } from '../../../shared/testmocks/mock-services';
 import { toimipaikatStub } from '../../../shared/testmocks/toimipaikat-stub';
-import { VardaToimipaikkaDTO } from '../../../utilities/models';
-import { VardaKielikoodistoService } from '../../../core/services/varda-kielikoodisto.service';
-import { VardaKuntakoodistoService } from '../../../core/services/varda-kuntakoodisto.service';
 import { TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../../core/auth/auth.service';
 import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
@@ -47,8 +44,6 @@ describe('VardaMainFrameComponent', () => {
   let authService: AuthService;
   let vardaApiWrapperService: VardaApiWrapperService;
   let vardaVakajarjestajaService: VardaVakajarjestajaService;
-  let vardaKieliKoodistoService: VardaKielikoodistoService;
-  let vardaKuntaKoodistoService: VardaKuntakoodistoService;
 
   let setVakajarjestajatSpy;
   let apiWrapperMockFunction;
@@ -69,8 +64,6 @@ describe('VardaMainFrameComponent', () => {
         VardaUtilityService,
         { provide: VardaApiWrapperService, useValue: vardaApiWrapperServiceStub },
         VardaDateService,
-        { provide: VardaKielikoodistoService, useValue: { initKielikoodisto: () => { }, sortKielikoodistoOptions: () => { } } },
-        { provide: VardaKuntakoodistoService, useValue: { initKuntakoodisto: () => { }, sortKuntakoodistoOptions: () => { } } },
         { provide: VardaApiService, useValue: {} },
         { provide: TranslateService, useValue: {} },
         { provide: AuthService, useValue: { getAuthorizedToimipaikat: () => { }, getUserAccess: () => { } } },
@@ -85,8 +78,6 @@ describe('VardaMainFrameComponent', () => {
     const selectedVaka = { id: '111', nimi: 'Nimi' };
     vardaVakajarjestajaService.setVakajarjestajat([selectedVaka]);
     vardaVakajarjestajaService.selectedVakajarjestaja = selectedVaka;
-    vardaKieliKoodistoService = TestBed.inject<VardaKielikoodistoService>(VardaKielikoodistoService);
-    vardaKuntaKoodistoService = TestBed.inject<VardaKuntakoodistoService>(VardaKuntakoodistoService);
 
     apiWrapperMockFunction = spyOn(vardaApiWrapperService, 'getAllLapsetForToimipaikka').and.callThrough();
     setVakajarjestajatSpy = spyOn(vardaVakajarjestajaService, 'setVakajarjestajat').and.callThrough();

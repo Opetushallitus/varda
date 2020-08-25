@@ -444,7 +444,7 @@ export const fieldsets = {
           'styles': {
             'width': '0.8'
           },
-          'koodisto': 'kielikoodisto',
+          'koodisto': 'kielikoodistoopetushallinto',
           'rules': {
             'required': {
               'acceptedValue': true,
@@ -905,7 +905,7 @@ export const fieldsets = {
           'styles': {
             'width': '0.6'
           },
-          'koodisto': 'kielikoodisto',
+          'koodisto': 'kielikoodistoopetushallinto',
           'rules': {
             'required': {
               'acceptedValue': true,
@@ -930,7 +930,7 @@ export const fieldsets = {
           'styles': {
             'width': '0.6'
           },
-          'koodisto': 'kielikoodisto',
+          'koodisto': 'kielikoodistoopetushallinto',
           'rules': {
             'required': {
               'acceptedValue': true,
@@ -1046,7 +1046,7 @@ export const fieldsets = {
           'styles': {
             'width': '0.6'
           },
-          'koodisto': 'kielikoodisto',
+          'koodisto': 'kielikoodistoopetushallinto',
           'rules': {
             'required': {
               'acceptedValue': true,

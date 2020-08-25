@@ -5,13 +5,10 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { TranslateService } from '@ngx-translate/core';
 import { forkJoin, Observable, Subscription, throwError } from 'rxjs';
 import { mergeMap, switchMap } from 'rxjs/operators';
-import { VardaKielikoodistoService } from '../../../core/services/varda-kielikoodisto.service';
-import { VardaKuntakoodistoService } from '../../../core/services/varda-kuntakoodisto.service';
 import { VardaApiWrapperService } from '../../../core/services/varda-api-wrapper.service';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
 import { NgcCookieConsentService } from 'ngx-cookieconsent';
 import { VardaToimipaikkaDTO, VardaVakajarjestajaUi } from '../../../utilities/models';
-import { VardaMaksunPerusteKoodistoService } from '../../../core/services/varda-maksun-peruste-koodisto.service';
 import { LoginService, VardaUserDTO, VardaKoodistoService } from 'varda-shared';
 import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { environment } from '../../../../environments/environment';
@@ -37,9 +34,6 @@ export class VardaDashboardComponent implements OnInit {
     private authService: AuthService,
     private loginService: LoginService,
     private koodistoService: VardaKoodistoService,
-    private vardaKielikoodistoService: VardaKielikoodistoService,
-    private vardaKuntakoodistoService: VardaKuntakoodistoService,
-    private vardaMaksunPerusteKoodistoService: VardaMaksunPerusteKoodistoService,
     private vardaApiWrapperService: VardaApiWrapperService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private ccService: NgcCookieConsentService,
@@ -126,12 +120,6 @@ export class VardaDashboardComponent implements OnInit {
       return this.vardaApiService.getUserData();
     })).pipe(mergeMap((userData) => {
       return this.setUserData(userData);
-    })).pipe(mergeMap(() => {
-      return forkJoin([
-        this.vardaKuntakoodistoService.initKuntakoodisto(),
-        this.vardaKielikoodistoService.initKielikoodisto(),
-        this.vardaMaksunPerusteKoodistoService.initialise(),
-      ]);
     })).pipe(mergeMap(() => {
       return this.getToimipaikat();
     })).subscribe({

@@ -7,6 +7,7 @@ import {
 import { VardaFormValidators } from '../../shared/validators/varda-form-validators';
 import { VardaVakajarjestajaService } from './varda-vakajarjestaja.service';
 import { VardaDateService } from '../../varda-main/services/varda-date.service';
+import { KoodistoEnum } from 'varda-shared';
 
 @Injectable()
 export class VardaFormService {
@@ -97,6 +98,26 @@ export class VardaFormService {
   }
 
   setValue(fc: AbstractControl, field: VardaField, value: any): void {
+    // Set koodisto values to lowercase, except lang
+    if (field.koodisto && value) {
+      const isLang = field.koodisto === KoodistoEnum.kieli;
+      if (typeof value === 'string') {
+        value = isLang ? value.toUpperCase() : value.toLowerCase();
+      } else if (Array.isArray(value)) {
+        value = value.map(val => {
+          if (typeof val === 'string') {
+            if (isLang) {
+              return val.toUpperCase();
+            } else {
+              return val.toLowerCase();
+            }
+          } else {
+            return val;
+          }
+        });
+      }
+    }
+
     if (field.widget === VardaWidgetNames.DATE) {
       field.value = value && this.vardaDateService.vardaDateToUIStrDate(value);
       value = value ? this.vardaDateService.vardaDateToMoment(value) : null;

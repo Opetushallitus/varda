@@ -131,6 +131,7 @@
             "instructionTextSv": "Välj form för anordnandet av småbarnspedagogik i rullgardinsmenyn. Småbarnspedagogisk verksamhet ordnas av kommunen eller samkommunen, som köpt tjänst av kommunen eller samkommunen, med servicesedlar eller med hjälp av stödet för privat vård av barn. Formen för anordnandet har angetts i beslutet om småbarnspedagogik."
           },
           "placeholder": {},
+          "koodisto": "vardajarjestamismuoto",
           "options": [
             {
               "code": "jm01",

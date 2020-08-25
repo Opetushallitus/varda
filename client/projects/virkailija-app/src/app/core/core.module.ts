@@ -10,13 +10,10 @@ import { VardaUtilityService } from './services/varda-utility.service';
 import { VardaModalService } from './services/varda-modal.service';
 import { VardaValidatorService } from './services/varda-validator.service';
 import { VardaRuleService } from './services/varda-rule.service';
-import { VardaKielikoodistoService } from './services/varda-kielikoodisto.service';
 import { VardaErrorMessageService } from './services/varda-error-message.service';
 import { VardaDomService } from './services/varda-dom.service';
-import { VardaKuntakoodistoService } from './services/varda-kuntakoodisto.service';
 import { VardaHenkilostoApiService } from './services/varda-henkilosto.service';
 import { VardaLapsiService } from './services/varda-lapsi.service';
-
 
 @NgModule({
   imports: [
@@ -33,10 +30,8 @@ import { VardaLapsiService } from './services/varda-lapsi.service';
     VardaModalService,
     VardaValidatorService,
     VardaRuleService,
-    VardaKielikoodistoService,
     VardaErrorMessageService,
     VardaDomService,
-    VardaKuntakoodistoService,
     VardaHenkilostoApiService,
     VardaLapsiService
   ]

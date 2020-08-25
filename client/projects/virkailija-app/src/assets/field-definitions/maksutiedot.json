@@ -19,7 +19,7 @@
             "instructionTextSv": "Välj avgiftsgrund från menyn. Avgiftsgrunden kan vara allmän avgiftsfrihet, partiell avgiftsfrihet eller avgift."
           },
           "placeholder": {},
-          "koodisto": "maksunperustekoodisto",
+          "koodisto": "vardamaksunperuste",
           "rules": {
             "required": {
               "acceptedValue": true,

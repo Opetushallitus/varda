@@ -1,21 +1,67 @@
 import { Injectable } from '@angular/core';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { TranslateService, LangChangeEvent } from '@ngx-translate/core';
-import { KoodistoDTO, KoodistoEnum, CodeDTO, KoodistoSortBy } from './dto/koodisto-models';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { LangChangeEvent, TranslateService } from '@ngx-translate/core';
+import { CodeDTO, KoodistoDTO, KoodistoEnum, KoodistoSortBy } from './dto/koodisto-models';
 import { LoadingHttpService } from './loading-http.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class VardaKoodistoService {
+  private static primaryLanguages = ['FI', 'SV', 'SEPO', 'RU', 'ET', 'EN', 'AR', 'SO', 'DE', 'FR'];
   private vardaApiUrl: string;
   private koodistot$ = new BehaviorSubject<Array<KoodistoDTO>>(null);
 
   constructor(
     private http: LoadingHttpService,
     private translateService: TranslateService,
-  ) {
+  ) {}
 
+  static sortKieliKoodistoByPrimaryLanguages(koodisto: KoodistoDTO) {
+    koodisto.codes = koodisto.codes.sort((a, b) => {
+      const primaryIndexOfA = VardaKoodistoService.primaryLanguages.indexOf(a.code_value.toUpperCase());
+      const primaryIndexOfB = VardaKoodistoService.primaryLanguages.indexOf(b.code_value.toUpperCase());
+      const isAPrimaryLanguage = primaryIndexOfA !== -1;
+      const isBPrimaryLanguage = primaryIndexOfB !== -1;
+      if (!isAPrimaryLanguage && !isBPrimaryLanguage) {
+        return a.code_value.localeCompare(b.code_value);
+      } else if (isAPrimaryLanguage && !isBPrimaryLanguage) {
+        return -1;
+      } else if (!isAPrimaryLanguage && isBPrimaryLanguage) {
+        return 1;
+      } else {
+        return primaryIndexOfA > primaryIndexOfB ? 1 : -1;
+      }
+    });
+  }
+
+  static getNumberOfPrimaryLanguages(): number {
+    return VardaKoodistoService.primaryLanguages.length;
+  }
+
+  static mapCodesToFormOptions(koodisto: KoodistoDTO) {
+    return koodisto.codes.map(code => {
+      return {
+        code: koodisto.name === KoodistoEnum.kieli ? code.code_value.toUpperCase() : code.code_value.toLowerCase(),
+        displayName: {
+          displayNameFi: code.name,
+          displayNameSv: code.name
+        }
+      };
+    });
+  }
+
+  static updateOptionsIfFound(fields, key, koodisto) {
+    const fieldResult = fields.find(field => {
+      return field.key === key;
+    });
+
+    if (!fieldResult) {
+      console.error(`Form JSON file has been edited, ${key} not found`);
+      return;
+    }
+
+    fieldResult.options = VardaKoodistoService.mapCodesToFormOptions(koodisto);
   }
 
   initKoodistot(vardaApiUrl: string) {

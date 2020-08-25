@@ -32,7 +32,6 @@ import {
 import { HighlightElementDirective } from './directives/highlight-element.directive';
 import { HighContrastDirective } from './directives/high-contrast.directive';
 import { ClickOutsideDirective } from './directives/click-outside.directive';
-import { KoodistoDisplayvalueDirective } from './directives/koodisto-displayvalue.directive';
 import { VardaDate } from './pipes/varda-date.pipe';
 import { KeysPipe } from './pipes/keys.pipe';
 import { VardaDeleteButtonComponent } from './components/varda-delete-button/varda-delete-button.component';
@@ -117,7 +116,6 @@ const cookieConfig: NgcCookieConsentConfig = {
     HighContrastDirective,
     VardaAccessibilitySettingsComponent,
     ClickOutsideDirective,
-    KoodistoDisplayvalueDirective,
     VardaDate,
     KeysPipe,
     VardaModalFormComponent,
@@ -174,7 +172,6 @@ const cookieConfig: NgcCookieConsentConfig = {
     HighlightElementDirective,
     HighContrastDirective,
     ClickOutsideDirective,
-    KoodistoDisplayvalueDirective,
     VardaAccessibilitySettingsComponent,
     VardaModalFormComponent,
     VardaFormQuestionComponent,

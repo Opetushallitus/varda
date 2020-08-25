@@ -19,7 +19,7 @@
             "instructionTextSv": "Välj språk som betonas från menyn. Med ett språk som betonas avses det språk som betonas på verksamhetsstället i form av till exempel språkbad, språkberikad småbarnspedagogik eller annan omfattande småbarnspedagogik på två språk. Ett verksamhetsställe kan betona flera språk. Spara uppgifterna om olika språk som betonas separat."
           },
           "placeholder": {},
-          "koodisto": "kielikoodisto",
+          "koodisto": "kielikoodistoopetushallinto",
           "rules": {
             "required": {
               "acceptedValue": true,

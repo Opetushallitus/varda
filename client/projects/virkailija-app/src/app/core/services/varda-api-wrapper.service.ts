@@ -22,10 +22,9 @@ import {
   VardaVakajarjestajaUi,
   VardaVarhaiskasvatuspaatosDTO,
   VardaField,
-  VardaKoodistot,
   VardaEndpoints
 } from '../../utilities/models';
-import { LoadingHttpService } from 'varda-shared';
+import { KoodistoEnum, LoadingHttpService } from 'varda-shared';
 import {VardaVakajarjestajaYhteenvetoDTO} from '../../utilities/models/dto/varda-vakajarjestaja-yhteenveto-dto.model';
 import {VardaFieldsetArrayContainer} from '../../utilities/models/varda-fieldset.model';
 import {VardaMaksutietoDTO} from '../../utilities/models/dto/varda-maksutieto-dto.model';
@@ -539,10 +538,10 @@ export class VardaApiWrapperService {
       return null;
     }
 
-    if (field.koodisto === VardaKoodistot.KIELIKOODISTO) {
+    if (field.koodisto === KoodistoEnum.kieli) {
       const kieliKoodi = value.koodiArvo;
       rv = kieliKoodi ? kieliKoodi.toUpperCase() : value;
-    } else if (field.koodisto === VardaKoodistot.KUNTAKOODISTO) {
+    } else if (field.koodisto === KoodistoEnum.kunta) {
       const kuntaKoodi = value.koodiArvo;
       rv = kuntaKoodi ? kuntaKoodi.toUpperCase() : value;
     }
