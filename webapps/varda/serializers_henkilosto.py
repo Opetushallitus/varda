@@ -367,7 +367,16 @@ def validate_overlapping_kiertavyys(data, palvelussuhde, kiertava_tyontekija_kyt
 class TyoskentelypaikkaUpdateSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     palvelussuhde = serializers.HyperlinkedRelatedField(read_only=True, view_name='palvelussuhde-detail')
+    palvelussuhde_tunniste = TunnisteRelatedField(object_type=Palvelussuhde,
+                                                  parent_field='palvelussuhde',
+                                                  prevalidator=validators.validate_tunniste,
+                                                  read_only=True)
     toimipaikka = serializers.HyperlinkedRelatedField(read_only=True, view_name='toimipaikka-detail')
+    toimipaikka_oid = OidRelatedField(object_type=Toimipaikka,
+                                      parent_field='toimipaikka',
+                                      parent_attribute='organisaatio_oid',
+                                      prevalidator=validators.validate_organisaatio_oid,
+                                      read_only=True)
 
     class Meta:
         model = Tyoskentelypaikka
