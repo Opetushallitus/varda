@@ -2750,6 +2750,7 @@ def create_henkilosto():
     vakajarjestaja_93957375486 = VakaJarjestaja.objects.filter(organisaatio_oid='1.2.246.562.10.93957375486').first()
     vakajarjestaja_34683023489 = VakaJarjestaja.objects.filter(organisaatio_oid='1.2.246.562.10.34683023489').first()
     toimipaikka_9395737548815 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548815')
+    toimipaikka_kukkanen = Toimipaikka.objects.filter(nimi__iexact='Paivakoti kukkanen').first()
     henkilo_1 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A925B'))
     henkilo_2 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A926C'))
     henkilo_3 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A927D'))
@@ -2757,6 +2758,7 @@ def create_henkilosto():
     henkilo_5 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('210700A919U'))
 
     assign_perm('view_toimipaikka', group_tyontekija_tallentaja_vakajarjestaja_34683023489, toimipaikka_9395737548815)
+    assign_perm('view_toimipaikka', group_tyontekija_tallentaja_vakajarjestaja_34683023489, toimipaikka_kukkanen)
     assign_perm('view_toimipaikka', group_tyontekija_katselija_vakajarjestaja_34683023489, toimipaikka_9395737548815)
 
     def add_tutkinto(henkilo, vakajarjestaja, *tutkinnot):

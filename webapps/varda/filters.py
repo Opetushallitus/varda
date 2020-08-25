@@ -1,10 +1,14 @@
+from datetime import datetime
+
 from django.db.models import Q
+from django.http import Http404
 from django_filters import rest_framework as djangofilters
 
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
                           Maksutieto, PaosToiminta, PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
                           TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka, PidempiPoissaolo,
                           Taydennyskoulutus, TaydennyskoulutusTyontekija)
+from varda.misc import parse_toimipaikka_id_list
 
 
 class CustomCharFilter(djangofilters.CharFilter):
@@ -21,10 +25,6 @@ class CustomCharFilter(djangofilters.CharFilter):
 
         qs = self.get_method(qs)(**{'%s__%s' % (self.field_name, self.lookup_expr): ""})
         return qs.distinct() if self.distinct else qs
-
-
-class CharArrayFilter(djangofilters.BaseCSVFilter, djangofilters.CharFilter):
-    pass
 
 
 class KunnallinenKytkinFilter(djangofilters.BooleanFilter):
@@ -64,8 +64,6 @@ class VakaJarjestajaFilter(djangofilters.FilterSet):
     kunta_koodi = djangofilters.CharFilter(field_name='kunta_koodi', lookup_expr='exact')
     sahkopostiosoite = CustomCharFilter(field_name='sahkopostiosoite', lookup_expr='exact')
     tilinumero = djangofilters.CharFilter(field_name='tilinumero', lookup_expr='exact')
-    ipv4_osoitteet = CharArrayFilter(field_name='ipv4_osoitteet', lookup_expr='contains')
-    ipv6_osoitteet = CharArrayFilter(field_name='ipv6_osoitteet', lookup_expr='contains')
     kayntiosoite = djangofilters.CharFilter(field_name='kayntiosoite', lookup_expr='icontains')
     kayntiosoite_postitoimipaikka = djangofilters.CharFilter(field_name='kayntiosoite_postitoimipaikka', lookup_expr='icontains')
     kayntiosoite_postinumero = djangofilters.CharFilter(field_name='kayntiosoite_postinumero', lookup_expr='exact')
@@ -97,8 +95,8 @@ class ToimipaikkaFilter(djangofilters.FilterSet):
     sahkopostiosoite = CustomCharFilter(field_name='sahkopostiosoite', lookup_expr='exact')
     kasvatusopillinen_jarjestelma_koodi = CustomCharFilter(field_name='kasvatusopillinen_jarjestelma_koodi', lookup_expr='exact')
     toimintamuoto_koodi = CustomCharFilter(field_name='toimintamuoto_koodi', lookup_expr='exact')
-    asiointikieli_koodi = CharArrayFilter(field_name='asiointikieli_koodi', lookup_expr='contains')
-    jarjestamismuoto_koodi = CharArrayFilter(field_name='jarjestamismuoto_koodi', lookup_expr='contains')
+    asiointikieli_koodi = djangofilters.BaseCSVFilter(field_name='asiointikieli_koodi', lookup_expr='contains')
+    jarjestamismuoto_koodi = djangofilters.BaseCSVFilter(field_name='jarjestamismuoto_koodi', lookup_expr='contains')
     varhaiskasvatuspaikat = djangofilters.NumberFilter(field_name='varhaiskasvatuspaikat', lookup_expr='gte')
     alkamis_pvm = djangofilters.DateFilter(field_name='alkamis_pvm', lookup_expr='gte')
     paattymis_pvm = djangofilters.DateFilter(field_name='paattymis_pvm', lookup_expr='gte')
@@ -331,3 +329,82 @@ class TyontekijaFilter(djangofilters.FilterSet):
     class Meta:
         model = Tyontekija
         fields = []
+
+
+class UiTyontekijaFilter(djangofilters.FilterSet):
+    """
+    Can't utilize djangofilters provided filters (e.g. CharFilter), because all filters need to be inside a single
+    .filter() call. If we had multiple .filter() calls, we might get tyontekija that has selected tehtavanimike in
+    other toimipaikka, than the ones selected. For example, user has selected toimipaikat=1,2&tehtavanimike=001, we
+    may get tyontekija that has tyoskentelypaikka in toimipaikka=1 with tehtavanimike=002 and in toimipaikka=3 with
+    tehtavanimike=001.
+    """
+
+    class Meta:
+        model = Tyontekija
+        fields = []
+
+    def get_rajaus_filters(self):
+        query_params = self.request.query_params
+        rajaus = query_params.get('rajaus', None)
+        voimassaolo = query_params.get('voimassaolo', None)
+        alkamis_pvm = query_params.get('alkamis_pvm', None)
+        paattymis_pvm = query_params.get('paattymis_pvm', None)
+
+        if not rajaus or not voimassaolo or not alkamis_pvm or not paattymis_pvm:
+            return Q()
+
+        rajaus = str.lower(rajaus)
+        voimassaolo = str.lower(voimassaolo)
+
+        try:
+            alkamis_pvm = datetime.strptime(alkamis_pvm, '%Y-%m-%d').date()
+            paattymis_pvm = datetime.strptime(paattymis_pvm, '%Y-%m-%d').date()
+        except ValueError as e:
+            raise Http404(e)
+
+        if rajaus == 'tyoskentelypaikat':
+            prefix = 'palvelussuhteet__tyoskentelypaikat__'
+        elif rajaus == 'palvelussuhteet':
+            prefix = 'palvelussuhteet__'
+        else:
+            return Q()
+
+        if voimassaolo == 'alkanut':
+            return Q(**{prefix + 'alkamis_pvm__gte': alkamis_pvm}) & Q(**{prefix + 'alkamis_pvm__lte': paattymis_pvm})
+        elif voimassaolo == 'paattynyt':
+            return Q(**{prefix + 'paattymis_pvm__gte': alkamis_pvm}) & Q(**{prefix + 'paattymis_pvm__lte': paattymis_pvm})
+        elif voimassaolo == 'voimassa':
+            return (Q(**{prefix + 'alkamis_pvm__lte': alkamis_pvm}) &
+                    (Q(**{prefix + 'paattymis_pvm__gte': paattymis_pvm})) | Q(**{prefix + 'paattymis_pvm__isnull': True}))
+
+    def apply_kiertava_filter(self, toimipaikka_filter):
+        kiertava_arg = self.request.query_params.get('kiertava', '').lower()
+        if kiertava_arg == 'true' or kiertava_arg == 'false':
+            kiertava_boolean = True if kiertava_arg == 'true' else False
+            return toimipaikka_filter | Q(palvelussuhteet__tyoskentelypaikat__kiertava_tyontekija_kytkin=kiertava_boolean)
+        return toimipaikka_filter
+
+    def filter_queryset(self, queryset):
+        user = self.request.user
+        query_params = self.request.query_params
+
+        tyontekija_filter = Q()
+
+        toimipaikka_id_list = parse_toimipaikka_id_list(user, query_params.get('toimipaikat', ''))
+        if len(toimipaikka_id_list) > 0:
+            tyontekija_filter = Q(palvelussuhteet__tyoskentelypaikat__toimipaikka__id__in=toimipaikka_id_list)
+        tyontekija_filter = self.apply_kiertava_filter(tyontekija_filter)
+
+        tehtavanimike_arg = query_params.get('tehtavanimike', None)
+        if tehtavanimike_arg:
+            tyontekija_filter = tyontekija_filter & Q(palvelussuhteet__tyoskentelypaikat__tehtavanimike_koodi__iexact=tehtavanimike_arg)
+
+        tutkinto_arg = query_params.get('tutkinto', None)
+        if tutkinto_arg:
+            tyontekija_filter = tyontekija_filter & Q(palvelussuhteet__tutkinto_koodi__iexact=tutkinto_arg)
+
+        # Apply custom filters
+        return queryset.filter(tyontekija_filter & self.get_rajaus_filters()).distinct('henkilo__sukunimi',
+                                                                                       'henkilo__etunimet',
+                                                                                       'id')

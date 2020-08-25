@@ -102,6 +102,17 @@ def get_object_ids_user_has_permissions(user, model_name, content_type,
     return object_ids_user_has_permissions
 
 
+def get_object_ids_for_user_by_model(user, model_name):
+    """
+    Return list of IDs for certain model that user has permissions to
+    :param user: User object
+    :param model_name: Django model name
+    :return: List of IDs
+    """
+    content_type = ContentType.objects.get(model=model_name)
+    return get_object_ids_user_has_permissions(user, model_name, content_type)
+
+
 def get_filtered_object_ids(query_param_dict_has_values, model_name, original_queryset, cached_time, request_full_path):
     """
     Cache-keys:

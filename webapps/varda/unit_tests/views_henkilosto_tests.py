@@ -2718,3 +2718,104 @@ class VardaHenkilostoViewSetTests(TestCase):
         self.assertEqual(json.loads(list_response_katselija.content).get('count'), expected_count)
 
         return create_response
+
+    def test_ui_tyontekijat_json(self):
+        tyontekijat_json = {
+            'count': 2,
+            'next': None,
+            'previous': None,
+            'results': [
+                {
+                    'etunimet': 'Aatu',
+                    'sukunimi': 'Uraputki',
+                    'henkilo_oid': '1.2.246.562.24.2431884920041',
+                    'tyontekija_id': 1,
+                    'tyontekija_url': 'http://testserver/api/henkilosto/v1/tyontekijat/1/?format=json',
+                    'vakajarjestaja_nimi': 'Tester2 organisaatio'
+                },
+                {
+                    'etunimet': 'Daniella',
+                    'sukunimi': 'Uraputki',
+                    'henkilo_oid': '1.2.246.562.24.2431884920044',
+                    'tyontekija_id': 4,
+                    'tyontekija_url': 'http://testserver/api/henkilosto/v1/tyontekijat/4/?format=json',
+                    'vakajarjestaja_nimi': 'Tester2 organisaatio'
+                }
+            ]
+        }
+        client = SetUpTestClient('tyontekija_tallentaja').client()
+        resp = client.get('/api/ui/vakajarjestajat/1/tyontekijat/?toimipaikat=2&format=json')
+        self.assertEqual(json.loads(resp.content), tyontekijat_json)
+
+    def test_ui_tyontekijat_filter_nimi(self):
+        toimipaikan_lapset_henkilo_filter_json = {
+            'count': 1,
+            'next': None,
+            'previous': None,
+            'results': [
+                {
+                    'etunimet': 'Aatu',
+                    'sukunimi': 'Uraputki',
+                    'henkilo_oid': '1.2.246.562.24.2431884920041',
+                    'tyontekija_id': 1,
+                    'tyontekija_url': 'http://testserver/api/henkilosto/v1/tyontekijat/1/?format=json',
+                    'vakajarjestaja_nimi': 'Tester2 organisaatio'
+                }
+            ]
+        }
+        client = SetUpTestClient('tyontekija_tallentaja').client()
+        resp = client.get('/api/ui/vakajarjestajat/1/tyontekijat/?toimipaikat=2&search=aAt+putki&format=json')
+        self.assertEqual(json.loads(resp.content), toimipaikan_lapset_henkilo_filter_json)
+
+    def test_ui_tyontekija_filter_tehtavanimike(self):
+        palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
+        toimipaikka_1 = Toimipaikka.objects.filter(nimi__iexact='Paivakoti kukkanen').first()
+        toimipaikka_2 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548815')
+
+        tyoskentelypaikka_1 = {
+            'palvelussuhde': '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde.id),
+            'toimipaikka': '/api/v1/toimipaikat/{}/'.format(toimipaikka_1.id),
+            'alkamis_pvm': '2021-03-01',
+            'paattymis_pvm': '2021-09-02',
+            'tehtavanimike_koodi': '64212',
+            'kelpoisuus_kytkin': True,
+            'kiertava_tyontekija_kytkin': False,
+            'lahdejarjestelma': '1',
+        }
+
+        tyoskentelypaikka_2 = {
+            'palvelussuhde': '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde.id),
+            'toimipaikka': '/api/v1/toimipaikat/{}/'.format(toimipaikka_2.id),
+            'alkamis_pvm': '2021-03-01',
+            'paattymis_pvm': '2021-09-02',
+            'tehtavanimike_koodi': '39407',
+            'kelpoisuus_kytkin': True,
+            'kiertava_tyontekija_kytkin': False,
+            'lahdejarjestelma': '1',
+        }
+
+        client = SetUpTestClient('tyontekija_tallentaja').client()
+        resp_tyoskentelypaikka_1 = client.post('/api/henkilosto/v1/tyoskentelypaikat/', tyoskentelypaikka_1)
+        assert_status_code(resp_tyoskentelypaikka_1, status.HTTP_201_CREATED)
+        resp_tyoskentelypaikka_2 = client.post('/api/henkilosto/v1/tyoskentelypaikat/', tyoskentelypaikka_2)
+        assert_status_code(resp_tyoskentelypaikka_2, status.HTTP_201_CREATED)
+
+        resp_ui_1 = client.get(f'/api/ui/vakajarjestajat/1/tyontekijat/?toimipaikat={toimipaikka_1.id}&tehtavanimike=64212')
+        self.assertEqual(json.loads(resp_ui_1.content)['count'], 1)
+
+        # Tyontekija has tehtavanimike 39407 in other toimipaikka, so it should now show up in results
+        resp_ui_2 = client.get(f'/api/ui/vakajarjestajat/1/tyontekijat/?toimipaikat={toimipaikka_1.id}&tehtavanimike=39407')
+        self.assertEqual(json.loads(resp_ui_2.content)['count'], 0)
+
+        resp_ui_2 = client.get(f'/api/ui/vakajarjestajat/1/tyontekijat/?tehtavanimike=39407&search={palvelussuhde.tyontekija.henkilo.etunimet}')
+        self.assertEqual(json.loads(resp_ui_2.content)['count'], 1)
+
+    def test_ui_tyontekija_kooste(self):
+        tyontekija = Tyontekija.objects.filter(tunniste='testing-tyontekija2').first()
+
+        client_tyontekija = SetUpTestClient('tyontekija_tallentaja').client()
+        resp_tyontekija = client_tyontekija.get(f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/kooste/')
+        resp_content_tyontekija = json.loads(resp_tyontekija.content)
+        self.assertEqual(len(resp_content_tyontekija['palvelussuhteet']), tyontekija.palvelussuhteet.count())
+        # No access to taydennyskoulutukset
+        self.assertEqual(len(resp_content_tyontekija['taydennyskoulutukset']), 0)

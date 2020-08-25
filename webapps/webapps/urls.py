@@ -65,19 +65,19 @@ router.register(r'paos-oikeudet', viewsets.PaosOikeusViewSet)
 
 # Nested routers are needed to support e.g. /api/v1/vakajarjestajat/33/toimipaikat/
 
-# /api/ui/vakajarjestajat/{id}/toimipaikat/
 nested_vakajarjestaja_router_ui = nested_routers.NestedSimpleRouter(router, r'vakajarjestajat', lookup='vakajarjestaja')
+# /api/ui/vakajarjestajat/{id}/toimipaikat/
 nested_vakajarjestaja_router_ui.register(r'toimipaikat', viewsets_ui.NestedToimipaikkaViewSet)
+# /api/ui/vakajarjestajat/{id}/lapset/
+nested_vakajarjestaja_router_ui.register(r'lapset', viewsets_ui.UiNestedLapsiViewSet)
+# /api/ui/vakajarjestajat/{id}/tyontekijat/
+nested_vakajarjestaja_router_ui.register(r'tyontekijat', viewsets_ui.UiNestedTyontekijaViewSet)
 # /api/ui/all-vakajarjestajat/<id>/toimipaikat/
 all_toimipaikat_router = nested_routers.NestedSimpleRouter(router, r'vakajarjestajat', lookup='vakajarjestaja')
 all_toimipaikat_router.register(r'all-toimipaikat', varda.viewsets_ui.NestedAllToimipaikkaViewSet)
 # /api/ui/toimipaikat/
 ui_toimipaikat_router = routers.SimpleRouter()
 ui_toimipaikat_router.register(r'toimipaikat', viewsets.ToimipaikkaViewSet)
-# /api/ui/toimipaikat/<id>/lapset/
-nested_ui_toimipaikat_lapset_router = nested_routers.NestedSimpleRouter(router, r'toimipaikat', lookup='toimipaikka')
-nested_ui_toimipaikat_lapset_router.register(r'lapset', viewsets_ui.NestedToimipaikanLapsetViewSet, basename='toimipaikan-lapset')
-
 
 # /api/ui/all-vakajarjestajat/
 vakajarjestaja_router = routers.SimpleRouter()
@@ -153,6 +153,10 @@ router_henkilosto.register(r'tyoskentelypaikat', viewsets_henkilosto.Tyoskentely
 router_henkilosto.register(r'pidemmatpoissaolot', viewsets_henkilosto.PidempiPoissaoloViewSet)
 router_henkilosto.register(r'taydennyskoulutukset', viewsets_henkilosto.TaydennyskoulutusViewSet)
 
+nested_tyontekija_router = nested_routers.NestedSimpleRouter(router_henkilosto, r'tyontekijat', lookup='tyontekija')
+# /api/henkilosto/v1/tyontekijat/{id}/kooste/
+nested_tyontekija_router.register(r'kooste', viewsets_henkilosto.NestedTyontekijaKoosteViewSet)
+
 # Routes for Julkinen-URLs
 
 router_julkinen = routers.DefaultRouter()
@@ -172,7 +176,6 @@ urlpatterns = [
     re_path(r'^api/ui/', include(nested_vakajarjestaja_router_ui.urls), name='nested-vakajarjestaja-api-ui'),
     re_path(r'^api/ui/', include(all_toimipaikat_router.urls), name='nested-all-vakajarjestaja-api-ui'),
     re_path(r'^api/ui/', include(ui_toimipaikat_router.urls), name='toimipaikat'),
-    re_path(r'^api/ui/', include(nested_ui_toimipaikat_lapset_router.urls), name='nested-toimipaikat-lapset-api-ui'),
     re_path(r'^api/ui/', include(vakajarjestaja_router.urls), name='all-vakajarjestaja-api-ui'),
     re_path(r'^api/user/', include(router_user.urls), name='api_user'),
     re_path(r'^api/v1/', include(router.urls), name='api-v1'),
@@ -191,6 +194,7 @@ urlpatterns = [
     re_path(r'^reporting/api/v1/', include(router_reporting.urls), name='api-v1-reporting'),
     re_path(r'^varda/', include('varda.urls'), name='varda'),
     re_path(r'^api/henkilosto/v1/', include(router_henkilosto.urls), name='api-henkilosto-v1'),
+    re_path(r'^api/henkilosto/v1/', include(nested_tyontekija_router.urls), name='api-nested-tyontekija-v1'),
     re_path(r'^api/oppija/v1/', include(router_oppija.urls), name='oppija-api-v1'),
     re_path(r'^api/oppija/v1/huoltajanlapsi/(?P<henkilo_oid>[.0-9]{26,})/$',
             viewsets_oppija.HuoltajanLapsiViewSet.as_view({'get': 'retrieve'}), name='huoltajanlapsi'),

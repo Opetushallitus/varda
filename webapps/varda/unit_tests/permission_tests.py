@@ -434,14 +434,14 @@ class VardaPermissionsTests(TestCase):
         client = SetUpTestClient('tester').client()
         client.post('/api/v1/hae-henkilo/', data)
         audit_log = Z5_AuditLog.objects.all()[0]
-        self.assertEqual(audit_log.user.username, "tester")
-        self.assertEqual(audit_log.successful_get_request_path, "/api/v1/hae-henkilo/id=2")
+        self.assertEqual(audit_log.user.username, 'tester')
+        self.assertEqual(audit_log.successful_get_request_path, '/api/v1/hae-henkilo/id=2')
 
     def test_audit_log_for_toimipaikan_lapset(self):
         client = SetUpTestClient('tester').client()
-        client.get('/api/ui/toimipaikat/1/lapset/')
+        client.get('/api/ui/vakajarjestajat/2/lapset/?toimipaikat=1')
         audit_log = Z5_AuditLog.objects.all()[0]
-        self.assertEqual(audit_log.successful_get_request_path, '/api/ui/toimipaikat/1/lapset/')
+        self.assertEqual(audit_log.successful_get_request_path, '/api/ui/vakajarjestajat/2/lapset/')
 
     def test_audit_log_for_nested_resources(self):
         client = SetUpTestClient('tester').client()

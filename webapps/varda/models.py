@@ -10,6 +10,7 @@ import django.utils.timezone
 from simple_history.models import HistoricalRecords
 
 from varda import validators
+from varda.constants import JARJESTAMISMUODOT_YKSITYINEN
 from varda.enums.aikaleima_avain import AikaleimaAvain
 from varda.enums.batcherror_type import BatchErrorType
 from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
@@ -295,8 +296,13 @@ class Lapsi(models.Model):
         items_to_show = 3
         return self.varhaiskasvatuspaatokset.all().order_by('id')[:items_to_show]
 
+    @property
+    def yksityinen_kytkin(self):
+        vakapaatos = self.varhaiskasvatuspaatokset.first()
+        return vakapaatos and vakapaatos.jarjestamismuoto_koodi.lower() in JARJESTAMISMUODOT_YKSITYINEN
+
     class Meta:
-        verbose_name_plural = "lapset"
+        verbose_name_plural = 'lapset'
         constraints = [
             CheckConstraint(check=~Q(oma_organisaatio=F('paos_organisaatio')),
                             name='oma_organisaatio_is_not_paos_organisaatio'),

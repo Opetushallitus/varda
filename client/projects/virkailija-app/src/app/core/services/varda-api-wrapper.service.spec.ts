@@ -18,6 +18,7 @@ describe('VardaApiWrapperService', () => {
 
   let vardaApiWrapperService: VardaApiWrapperService;
   let vardaApiService: any;
+  let vardaVakajarjestajaService: VardaVakajarjestajaService;
 
   const toimipaikkaFieldSets = fieldsets.toimipaikat;
   const varhaiskasvatuspaatosFieldSets = fieldsets.varhaiskasvatuspaatokset;
@@ -30,14 +31,15 @@ describe('VardaApiWrapperService', () => {
   getKielipainotuksetByToimipaikkaSpy, getVarhaiskasvatussuhteetByLapsiSpy,
   getVarhaiskasvatuspaatoksetByLapsiSpy,
   deleteKielipainotusSpy, deleteToimintapainotusSpy, deleteVarhaiskasvatuspaatosSpy,
-  deleteVarhaiskasvatussuhdeSpy, patchVakajarjestajaSpy, getToimipaikanLapsetSpy;
+  deleteVarhaiskasvatussuhdeSpy, patchVakajarjestajaSpy, getToimipaikanLapsetSpy,
+  getSelectedVakajarjestajaIdSpy;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
         VardaApiWrapperService,
         VardaApiService,
-        {provide: VardaVakajarjestajaService, useValue: {selectedVakajarjestaja: {url: ''}}},
+        VardaVakajarjestajaService,
         VardaDateService,
         VardaUtilityService,
         {provide: HttpBackend, useClass: HttpTestingController},
@@ -47,6 +49,7 @@ describe('VardaApiWrapperService', () => {
     });
     vardaApiWrapperService = TestBed.inject<VardaApiWrapperService>(VardaApiWrapperService);
     vardaApiService = TestBed.inject<VardaApiService>(VardaApiService);
+    vardaVakajarjestajaService = TestBed.inject<VardaVakajarjestajaService>(VardaVakajarjestajaService);
 
     createHenkiloByHenkiloDetailsSpy = spyOn(vardaApiService, 'createHenkilo').and.returnValue({});
     createVarhaiskasvatussuhdeSpy = spyOn(vardaApiService, 'createVarhaiskasvatussuhde').and.returnValue({});
@@ -66,6 +69,7 @@ describe('VardaApiWrapperService', () => {
     getVarhaiskasvatuspaatoksetByLapsiSpy = spyOn(vardaApiService, 'getVarhaiskasvatuspaatoksetByLapsi').and.returnValue({});
     patchVakajarjestajaSpy = spyOn(vardaApiService, 'patchVakajarjestaja').and.returnValue({});
     getToimipaikanLapsetSpy = spyOn(vardaApiService, 'getLapsetForToimipaikka').and.returnValue({});
+    getSelectedVakajarjestajaIdSpy = spyOn(vardaVakajarjestajaService, 'getSelectedVakajarjestajaId').and.returnValue('1');
   });
 
   it('Should call createHenkilo with ssn', () => {
@@ -119,7 +123,7 @@ describe('VardaApiWrapperService', () => {
     expect(getVarhaiskasvatuspaatoksetByLapsiSpy).toHaveBeenCalledWith(id);
     expect(getToimipaikatForVakajarjestajaSpy).toHaveBeenCalledWith(id, null, null);
     expect(getAllVakajarjestajaForLoggedInUser).toHaveBeenCalled();
-    expect(patchVakajarjestajaSpy).toHaveBeenCalledWith(undefined, vakatoimijaFormData);
+    expect(patchVakajarjestajaSpy).toHaveBeenCalledWith('1', vakatoimijaFormData);
   });
 
   it('Should pass delete request to varda-api.service', () => {
@@ -253,6 +257,6 @@ describe('VardaApiWrapperService', () => {
     const toimipaikkaId = '1';
     const searchParams = {sukunimi: 'Virtanen', etunimet: 'pekka'};
     const result1 = vardaApiWrapperService.getLapsetForToimipaikka(toimipaikkaId, searchParams, null);
-    expect(getToimipaikanLapsetSpy).toHaveBeenCalledWith('1', {sukunimi: 'Virtanen', etunimet: 'pekka'}, null);
+    expect(getToimipaikanLapsetSpy).toHaveBeenCalledWith('1', '1', {sukunimi: 'Virtanen', etunimet: 'pekka'}, null);
   });
 });

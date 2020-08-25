@@ -1457,7 +1457,7 @@ class VardaViewsTests(TestCase):
                     "oma_organisaatio_nimi": "Tester2 organisaatio",
                     "paos_organisaatio_nimi": "Tester organisaatio",
                     "lapsi_id": 4,
-                    "lapsi_url": "http://testserver/api/v1/lapset/4/"
+                    "lapsi_url": "http://testserver/api/v1/lapset/4/?format=json"
                 },
                 {
                     "etunimet": "Teila Aamu Runelma",
@@ -1467,12 +1467,12 @@ class VardaViewsTests(TestCase):
                     "oma_organisaatio_nimi": "Tester2 organisaatio",
                     "paos_organisaatio_nimi": "Tester organisaatio",
                     "lapsi_id": 8,
-                    "lapsi_url": "http://testserver/api/v1/lapset/8/"
+                    "lapsi_url": "http://testserver/api/v1/lapset/8/?format=json"
                 }
             ]
         }
         client = SetUpTestClient('tester2').client()
-        resp = client.get('/api/ui/toimipaikat/5/lapset/?format=json')
+        resp = client.get('/api/ui/vakajarjestajat/1/lapset/?toimipaikat=5&format=json')
         self.assertEqual(json.loads(resp.content), toimipaikan_lapset_json)
 
     def test_api_toimipaikan_lapset_henkilo_nimi_filter(self):
@@ -1486,37 +1486,42 @@ class VardaViewsTests(TestCase):
                     "sukunimi": "Virtanen",
                     "henkilo_oid": "1.2.246.562.24.58672764848",
                     "syntyma_pvm": "2016-05-12",
-                    "oma_organisaatio_nimi": None,
-                    "paos_organisaatio_nimi": None,
                     "lapsi_id": 2,
-                    "lapsi_url": "http://testserver/api/v1/lapset/2/"
+                    "lapsi_url": "http://testserver/api/v1/lapset/2/?format=json"
                 }
             ]
         }
         client = SetUpTestClient('tester').client()
-        resp = client.get('/api/ui/toimipaikat/1/lapset/?search=sUSa+TA&format=json')
+        resp = client.get('/api/ui/vakajarjestajat/2/lapset/?toimipaikat=1&search=sUSa+TA&format=json')
         self.assertEqual(json.loads(resp.content), toimipaikan_lapset_henkilo_filter_json)
 
     def test_toimipaikan_lapset_huoltajatieto_tallentaja(self):
+        self.maxDiff = None
         client = SetUpTestClient('huoltajatietojen_tallentaja').client()
         accepted_response_json = {
-            "count": 1,
-            "next": None,
-            "previous": None,
-            "results": [
+            'count': 2,
+            'next': None,
+            'previous': None,
+            'results': [
                 {
-                    "etunimet": "Tuula-Testi",
-                    "sukunimi": "Vanhanen",
-                    "henkilo_oid": "1.2.246.562.24.49084901392",
-                    "syntyma_pvm": "1934-03-17",
-                    "oma_organisaatio_nimi": None,
-                    "paos_organisaatio_nimi": None,
-                    "lapsi_id": 3,
-                    "lapsi_url": "http://testserver/api/v1/lapset/3/"
+                    'etunimet': 'Teila Aamu Runelma',
+                    'sukunimi': 'Testilä',
+                    'henkilo_oid': '1.2.246.562.24.86012997950',
+                    'syntyma_pvm': '2018-03-11',
+                    'lapsi_id': 6,
+                    'lapsi_url': 'http://testserver/api/v1/lapset/6/?format=json'
+                },
+                {
+                    'etunimet': 'Tuula-Testi',
+                    'sukunimi': 'Vanhanen',
+                    'henkilo_oid': '1.2.246.562.24.49084901392',
+                    'syntyma_pvm': '1934-03-17',
+                    'lapsi_id': 3,
+                    'lapsi_url': 'http://testserver/api/v1/lapset/3/?format=json'
                 }
             ]
         }
-        resp = client.get('/api/ui/toimipaikat/2/lapset/?format=json')
+        resp = client.get('/api/ui/vakajarjestajat/1/lapset/?toimipaikat=2&format=json')
         self.assertEqual(json.loads(resp.content), accepted_response_json)
 
     def test_api_get_henkilo_syntyma_pvm(self):
@@ -2988,17 +2993,24 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/vakajarjestajat/2/yhteenveto/')
         accepted_response = {
-            "vakajarjestaja_nimi": "Tester organisaatio",
-            "lapset_lkm": 5,
-            "lapset_vakapaatos_voimassaoleva": 5,
-            "lapset_vakasuhde_voimassaoleva": 5,
-            "lapset_vuorohoidossa": 0,
-            "lapset_palveluseteli_ja_ostopalvelu": 3,
-            "lapset_maksutieto_voimassaoleva": 3,
-            "toimipaikat_voimassaolevat": 4,
-            "toimipaikat_paattyneet": 0,
-            "toimintapainotukset_maara": 2,
-            "kielipainotukset_maara": 2
+            'vakajarjestaja_nimi': 'Tester organisaatio',
+            'lapset_lkm': 5,
+            'lapset_vakapaatos_voimassaoleva': 5,
+            'lapset_vakasuhde_voimassaoleva': 5,
+            'lapset_vuorohoidossa': 0,
+            'lapset_palveluseteli_ja_ostopalvelu': 3,
+            'lapset_maksutieto_voimassaoleva': 3,
+            'toimipaikat_voimassaolevat': 4,
+            'toimipaikat_paattyneet': 0,
+            'toimintapainotukset_maara': 2,
+            'kielipainotukset_maara': 2,
+            'tyontekijat_lkm': 0,
+            'palvelussuhteet_voimassaoleva': 0,
+            'varhaiskasvatusalan_tutkinnot': 0,
+            'tyoskentelypaikat_kelpoiset': 0,
+            'taydennyskoulutukset_kuluva_vuosi': 0,
+            'tilapainen_henkilosto_maara_kuluva_vuosi': 0,
+            'tilapainen_henkilosto_tunnit_kuluva_vuosi': 0.0
         }
         assert_status_code(resp, 200)
         self.assertEqual(json.loads(resp.content), accepted_response)
@@ -3036,7 +3048,7 @@ class VardaViewsTests(TestCase):
 
     def test_api_filter_asiointikieli_2(self):
         client = SetUpTestClient('tester2').client()
-        resp = client.get("/api/v1/toimipaikat/?asiointikieli_koodi=S")
+        resp = client.get("/api/v1/toimipaikat/?asiointikieli_koodi=SE")
         self.assertEqual(json.loads(resp.content)['count'], 0)
 
     def test_api_filter_jarjestamismuotokoodi_1(self):
@@ -3046,7 +3058,7 @@ class VardaViewsTests(TestCase):
 
     def test_api_filter_jarjestamismuotokoodi_2(self):
         client = SetUpTestClient('tester2').client()
-        resp = client.get("/api/v1/toimipaikat/?jarjestamismuoto_koodi=jm0")
+        resp = client.get("/api/v1/toimipaikat/?jarjestamismuoto_koodi=jm06")
         self.assertEqual(json.loads(resp.content)['count'], 0)
 
     def test_api_ui_vakajarjestajat(self):

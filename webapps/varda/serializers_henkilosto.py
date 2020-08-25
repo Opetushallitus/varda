@@ -1,15 +1,16 @@
 from operator import itemgetter
 
+from django.db.models import Q
 from rest_framework import serializers
 
 from varda import related_object_validations, validators
-from varda.cache import caching_to_representation
+from varda.cache import caching_to_representation, get_object_ids_for_user_by_model
 from varda.misc_viewsets import ViewSetValidator
 from varda.models import (Henkilo, TilapainenHenkilosto, Tutkinto, Tyontekija, VakaJarjestaja, Palvelussuhde,
                           Tyoskentelypaikka, Toimipaikka, PidempiPoissaolo, TaydennyskoulutusTyontekija,
-                          Taydennyskoulutus)
+                          Taydennyskoulutus, Z4_CasKayttoOikeudet)
 from varda.permissions import (is_correct_taydennyskoulutus_tyontekija_permission,
-                               filter_authorized_taydennyskoulutus_tyontekijat)
+                               filter_authorized_taydennyskoulutus_tyontekijat, permission_groups_in_organization)
 from varda.related_object_validations import (create_daterange, daterange_overlap,
                                               check_overlapping_tyoskentelypaikka_object,
                                               check_overlapping_palvelussuhde_object,
@@ -725,3 +726,81 @@ class TaydennyskoulutusTyontekijaListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tyontekija
         fields = ('henkilo_etunimet', 'henkilo_sukunimi', 'henkilo_oid', 'tehtavanimike_koodit')
+
+
+class TyontekijaKoosteHenkiloSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Henkilo
+        fields = ('id', 'etunimet', 'sukunimi', 'henkilo_oid')
+
+
+class TyontekijaKoosteTyoskentelypaikkaSerializer(serializers.ModelSerializer):
+    toimipaikka_nimi = serializers.ReadOnlyField(source='toimipaikka.nimi')
+    toimipaikka_oid = serializers.ReadOnlyField(source='toimipaikka.organisaatio_oid')
+
+    class Meta:
+        model = Tyoskentelypaikka
+        fields = ('id', 'toimipaikka_id', 'toimipaikka_oid', 'toimipaikka_nimi', 'tehtavanimike_koodi',
+                  'kelpoisuus_kytkin', 'kiertava_tyontekija_kytkin', 'alkamis_pvm', 'paattymis_pvm')
+
+    def to_representation(self, instance):
+        """
+        Override to_representation so we can filter tyoskentelypaikat based on user permissions
+        :param instance: all tyoskentelypaikat of palvelussuhde
+        :return: list of tyoskentelypaikat user has permissions to
+        """
+        if not instance.exists():
+            return []
+
+        user = self.context['request'].user
+        vakajarjestaja_oid = instance.first().palvelussuhde.tyontekija.vakajarjestaja.organisaatio_oid
+        tyontekija_organization_groups_qs = permission_groups_in_organization(user, vakajarjestaja_oid,
+                                                                              [Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
+                                                                               Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA])
+        if not user.is_superuser and not tyontekija_organization_groups_qs.exists():
+            instance = instance.filter(Q(id__in=get_object_ids_for_user_by_model(user, 'tyoskentelypaikka')))
+
+        filtered_list = []
+        for tyoskentelypaikka in instance.all():
+            filtered_list.append(super(TyontekijaKoosteTyoskentelypaikkaSerializer, self).to_representation(tyoskentelypaikka))
+        return filtered_list
+
+
+class TyontekijaKoostePidempiPoissaoloSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PidempiPoissaolo
+        fields = ('id', 'alkamis_pvm', 'paattymis_pvm')
+
+
+class TyontekijaKoostePalvelussuhdeSerializer(serializers.ModelSerializer):
+    tyoskentelypaikat = TyontekijaKoosteTyoskentelypaikkaSerializer()
+    pidemmatpoissaolot = TyontekijaKoostePidempiPoissaoloSerializer(many=True)
+
+    class Meta:
+        model = Palvelussuhde
+        fields = ('id', 'tyosuhde_koodi', 'tyoaika_koodi', 'tyoaika_viikossa', 'tutkinto_koodi',
+                  'alkamis_pvm', 'paattymis_pvm', 'tyoskentelypaikat', 'pidemmatpoissaolot')
+
+
+class TyontekijaKoosteTaydennyskoulutusSerializer(serializers.ModelSerializer):
+    nimi = serializers.ReadOnlyField(source='taydennyskoulutus.nimi')
+    suoritus_pvm = serializers.ReadOnlyField(source='taydennyskoulutus.suoritus_pvm')
+    koulutuspaivia = serializers.ReadOnlyField(source='taydennyskoulutus.koulutuspaivia')
+
+    class Meta:
+        model = TaydennyskoulutusTyontekija
+        fields = ('tehtavanimike_koodi', 'nimi', 'suoritus_pvm', 'koulutuspaivia')
+
+
+class TyontekijaKoosteSerializer(serializers.Serializer):
+    id = serializers.ReadOnlyField(source='tyontekija.id')
+    vakajarjestaja_id = serializers.ReadOnlyField(source='tyontekija.vakajarjestaja.id')
+    vakajarjestaja_nimi = serializers.ReadOnlyField(source='tyontekija.vakajarjestaja.nimi')
+    henkilo = TyontekijaKoosteHenkiloSerializer(source='tyontekija.henkilo')
+    tutkinnot = serializers.ReadOnlyField()
+    palvelussuhteet = TyontekijaKoostePalvelussuhdeSerializer(many=True)
+    taydennyskoulutukset = TyontekijaKoosteTaydennyskoulutusSerializer(many=True)
+
+    class Meta:
+        fields = ('id', 'vakajarjestaja_id', 'vakajarjestaja_nimi', 'tutkinnot', 'henkilo',
+                  'palvelussuhteet', 'taydennyskoulutukset')

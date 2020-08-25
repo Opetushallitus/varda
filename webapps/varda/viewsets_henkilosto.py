@@ -18,22 +18,25 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework_guardian.filters import ObjectPermissionsFilter
 
 from varda import filters
-from varda.cache import cached_retrieve_response, delete_cache_keys_related_model, cached_list_response
+from varda.cache import (cached_retrieve_response, delete_cache_keys_related_model, cached_list_response,
+                         get_object_ids_for_user_by_model)
 from varda.exceptions.conflict_error import ConflictError
 from varda.models import (VakaJarjestaja, TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
-                          PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Toimipaikka)
+                          PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Toimipaikka,
+                          Z4_CasKayttoOikeudet)
 from varda.permission_groups import (assign_object_permissions_to_tyontekija_groups,
                                      assign_object_permissions_to_tilapainenhenkilosto_groups,
                                      assign_object_permissions_to_taydennyskoulutus_groups)
 from varda.permissions import (CustomObjectPermissions, delete_object_permissions_explicitly, is_user_permission,
                                is_correct_taydennyskoulutus_tyontekija_permission, get_tyontekija_vakajarjestaja_oid,
-                               filter_authorized_taydennyskoulutus_tyontekijat_list, auditlog, auditlogclass)
+                               filter_authorized_taydennyskoulutus_tyontekijat_list, auditlog, auditlogclass,
+                               permission_groups_in_organization, HenkilostohakuPermissions)
 from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, PalvelussuhdeSerializer,
                                           PidempiPoissaoloSerializer,
                                           TilapainenHenkilostoSerializer, TutkintoSerializer, TyontekijaSerializer,
                                           TyoskentelypaikkaUpdateSerializer, TaydennyskoulutusSerializer,
-                                          TaydennyskoulutusUpdateSerializer,
-                                          TaydennyskoulutusTyontekijaListSerializer)
+                                          TaydennyskoulutusUpdateSerializer, TaydennyskoulutusTyontekijaListSerializer,
+                                          TyontekijaKoosteSerializer)
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -155,11 +158,13 @@ class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
                 self._assign_toimipaikka_permissions(toimipaikka_oid, tyontekija_obj)
             delete_cache_keys_related_model('henkilo', tyontekija_obj.henkilo.id)
             delete_cache_keys_related_model('vakajarjestaja', tyontekija_obj.vakajarjestaja.id)
+            cache.delete('vakajarjestaja_yhteenveto_' + str(tyontekija_obj.vakajarjestaja.id))
 
     def perform_update(self, serializer):
         user = self.request.user
         with transaction.atomic():
-            serializer.save(changed_by=user)
+            tyontekija_obj = serializer.save(changed_by=user)
+            cache.delete('vakajarjestaja_yhteenveto_' + str(tyontekija_obj.vakajarjestaja.id))
 
     def perform_destroy(self, tyontekija):
         if Tutkinto.objects.filter(vakajarjestaja=tyontekija.vakajarjestaja, henkilo=tyontekija.henkilo).exists():
@@ -174,6 +179,67 @@ class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
                                                  'that need to be deleted first.'})
             delete_cache_keys_related_model('henkilo', tyontekija.henkilo.id)
             delete_cache_keys_related_model('vakajarjestaja', tyontekija.vakajarjestaja.id)
+            cache.delete('vakajarjestaja_yhteenveto_' + str(tyontekija.vakajarjestaja.id))
+
+
+@auditlogclass
+class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListModelMixin):
+    """
+    list:
+        Nouda tietyn työntekijän kooste
+    """
+    serializer_class = TyontekijaKoosteSerializer
+    permission_classes = (HenkilostohakuPermissions, )
+    queryset = Tyontekija.objects.all().order_by('id')
+
+    def list(self, request, *args, **kwargs):
+        # Enable support for ObjectByTunnisteMixin
+        self.kwargs['pk'] = self.kwargs['tyontekija_pk']
+
+        user = request.user
+        tyontekija = self.get_object()
+        tyontekija_data = {
+            'tyontekija': tyontekija
+        }
+
+        # Get palvelussuhteet
+        palvelussuhde_filter = Q(tyontekija=tyontekija)
+        tyontekija_organization_groups_qs = permission_groups_in_organization(user, tyontekija.vakajarjestaja.organisaatio_oid,
+                                                                              [Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
+                                                                               Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA])
+        if not user.is_superuser and not tyontekija_organization_groups_qs.exists():
+            palvelussuhde_filter = palvelussuhde_filter & Q(id__in=get_object_ids_for_user_by_model(user, 'palvelussuhde'))
+
+        palvelussuhteet = Palvelussuhde.objects.filter(palvelussuhde_filter).distinct().order_by('-alkamis_pvm')
+        tyontekija_data['palvelussuhteet'] = palvelussuhteet
+
+        # Get täydennyskoulutukset
+        taydennyskoulutus_filter = Q(tyontekija=tyontekija)
+        taydennyskoulutus_organization_groups_qs = permission_groups_in_organization(user, tyontekija.vakajarjestaja.organisaatio_oid,
+                                                                                     [Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
+                                                                                      Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA])
+        if not user.is_superuser and not taydennyskoulutus_organization_groups_qs.exists():
+            taydennyskoulutus_filter = taydennyskoulutus_filter & Q(id__in=get_object_ids_for_user_by_model(user, 'taydennyskoulutus'))
+
+        taydennyskoulutukset = (TaydennyskoulutusTyontekija.objects
+                                .filter(taydennyskoulutus_filter)
+                                .distinct()
+                                .order_by('-taydennyskoulutus__suoritus_pvm'))
+        tyontekija_data['taydennyskoulutukset'] = taydennyskoulutukset
+
+        # Get tutkinnot
+        tutkinto_filter = Q(henkilo=tyontekija.henkilo) & Q(vakajarjestaja=tyontekija.vakajarjestaja)
+        if not user.is_superuser:
+            tutkinto_filter = tutkinto_filter & Q(id__in=get_object_ids_for_user_by_model(user, 'tutkinto'))
+
+        tutkinnot = set(Tutkinto.objects
+                        .filter(tutkinto_filter)
+                        .distinct()
+                        .order_by('-luonti_pvm')
+                        .values_list('tutkinto_koodi', flat=True))
+        tyontekija_data['tutkinnot'] = tutkinnot
+
+        return Response(self.get_serializer(tyontekija_data).data)
 
 
 @auditlogclass
@@ -276,6 +342,7 @@ class TutkintoViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, L
         vakajarjestaja_oid = validated_data['vakajarjestaja'].organisaatio_oid
         assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Tutkinto, tutkinto)
         self._assign_toimipaikka_permissions(tutkinto, validated_data)
+        cache.delete('vakajarjestaja_yhteenveto_' + str(validated_data['vakajarjestaja'].id))
 
     def _assign_toimipaikka_permissions(self, tutkinto, validated_data):
         toimipaikka_oid = validated_data.get('toimipaikka') and validated_data.get('toimipaikka').organisaatio_oid
@@ -297,6 +364,7 @@ class TutkintoViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, L
             delete_object_permissions_explicitly(Tutkinto, tutkinto)
             tutkinto.delete()
             delete_cache_keys_related_model('henkilo', henkilo.id)
+            cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja.id))
 
     @auditlog
     @action(methods=['delete'], detail=False)

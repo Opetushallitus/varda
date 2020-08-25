@@ -1078,6 +1078,13 @@ class VakaJarjestajaYhteenvetoSerializer(serializers.Serializer):
     toimipaikat_paattyneet = serializers.IntegerField(read_only=True)
     toimintapainotukset_maara = serializers.IntegerField(read_only=True)
     kielipainotukset_maara = serializers.IntegerField(read_only=True)
+    tyontekijat_lkm = serializers.IntegerField(read_only=True)
+    palvelussuhteet_voimassaoleva = serializers.IntegerField(read_only=True)
+    varhaiskasvatusalan_tutkinnot = serializers.IntegerField(read_only=True)
+    tyoskentelypaikat_kelpoiset = serializers.IntegerField(read_only=True)
+    taydennyskoulutukset_kuluva_vuosi = serializers.IntegerField(read_only=True)
+    tilapainen_henkilosto_maara_kuluva_vuosi = serializers.IntegerField(read_only=True)
+    tilapainen_henkilosto_tunnit_kuluva_vuosi = serializers.FloatField(read_only=True)
 
 
 class ToimipaikanLapsetKatseluSerializer(serializers.Serializer):
@@ -1127,10 +1134,15 @@ class LapsiKoosteMaksutietoSerializer(serializers.HyperlinkedModelSerializer):
 
 class LapsiKoosteSerializer(serializers.Serializer):
     id = serializers.ReadOnlyField()
+    yksityinen_kytkin = serializers.ReadOnlyField()
     henkilo = LapsiKoosteHenkiloSerializer(many=False)
     varhaiskasvatuspaatokset = LapsiKoosteVarhaiskasvatuspaatosSerializer(many=True)
     varhaiskasvatussuhteet = LapsiKoosteVarhaiskasvatussuhdeSerializer(many=True)
     maksutiedot = LapsiKoosteMaksutietoSerializer(many=True)
+
+    class Meta:
+        fields = ('id', 'yksityinen_kytkin', 'henkilo', 'varhaiskasvatuspaatokset',
+                  'varhaiskasvatussuhteet', 'maksutiedot')
 
 
 class NestedPaosOikeusSerializer(serializers.ModelSerializer):

@@ -90,20 +90,20 @@ class ToimipaikkaUiSerializer(serializers.HyperlinkedModelSerializer):
             return []
 
 
-class ToimipaikanLapsetUISerializer(serializers.Serializer):
-    id = serializers.ReadOnlyField()
-    etunimet = serializers.ReadOnlyField()
-    sukunimi = serializers.ReadOnlyField()
-    henkilo_oid = serializers.ReadOnlyField()
-    syntyma_pvm = serializers.ReadOnlyField()
-    oma_organisaatio_nimi = serializers.ReadOnlyField()
-    paos_organisaatio_nimi = serializers.ReadOnlyField()
-    lapsi_id = serializers.ReadOnlyField()
-    lapsi_url = serializers.SerializerMethodField()
+class UiLapsiSerializer(serializers.HyperlinkedModelSerializer):
+    etunimet = serializers.ReadOnlyField(source='henkilo.etunimet')
+    sukunimi = serializers.ReadOnlyField(source='henkilo.sukunimi')
+    henkilo_oid = serializers.ReadOnlyField(source='henkilo.henkilo_oid')
+    syntyma_pvm = serializers.ReadOnlyField(source='henkilo.syntyma_pvm')
+    oma_organisaatio_nimi = serializers.ReadOnlyField(source='oma_organisaatio.nimi')
+    paos_organisaatio_nimi = serializers.ReadOnlyField(source='paos_organisaatio.nimi')
+    lapsi_id = serializers.ReadOnlyField(source='id')
+    lapsi_url = serializers.HyperlinkedRelatedField(view_name='lapsi-detail', source='id', read_only=True)
 
-    def get_lapsi_url(self, vakasuhde_obj):
-        request = self.context.get('request')
-        return request.build_absolute_uri(reverse('lapsi-detail', kwargs={'pk': vakasuhde_obj["lapsi_id"]}))
+    class Meta:
+        model = Lapsi
+        fields = ('etunimet', 'sukunimi', 'henkilo_oid', 'syntyma_pvm', 'oma_organisaatio_nimi',
+                  'paos_organisaatio_nimi', 'lapsi_id', 'lapsi_url')
 
 
 class PermissionCheckedTyoskentelypaikkaUiListSerializer(serializers.ListSerializer):
@@ -225,3 +225,16 @@ class LapsihakuHenkiloUiSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Henkilo
         fields = ('id', 'url', 'henkilo_oid', 'etunimet', 'sukunimi', 'lapset')
+
+
+class UiTyontekijaSerializer(serializers.HyperlinkedModelSerializer):
+    etunimet = serializers.ReadOnlyField(source='henkilo.etunimet')
+    sukunimi = serializers.ReadOnlyField(source='henkilo.sukunimi')
+    henkilo_oid = serializers.ReadOnlyField(source='henkilo.henkilo_oid')
+    vakajarjestaja_nimi = serializers.ReadOnlyField(source='vakajarjestaja.nimi')
+    tyontekija_id = serializers.ReadOnlyField(source='id')
+    tyontekija_url = serializers.HyperlinkedRelatedField(view_name='tyontekija-detail', source='id', read_only=True)
+
+    class Meta:
+        model = Tyontekija
+        fields = ('etunimet', 'sukunimi', 'henkilo_oid', 'vakajarjestaja_nimi', 'tyontekija_id', 'tyontekija_url')

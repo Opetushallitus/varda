@@ -1,12 +1,12 @@
 import logging
-from datetime import datetime
+import datetime
 
 import pytz
 from django.contrib.auth.models import Group, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
-from django.db.models import Prefetch, ProtectedError, Q, Subquery
+from django.db.models import Prefetch, ProtectedError, Q, Subquery, Sum
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -34,7 +34,8 @@ from varda.misc import CustomServerErrorException, decrypt_henkilotunnus, encryp
 from varda.misc_queries import get_paos_toimipaikat
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, PaosToiminta,
                           Lapsi, Huoltaja, Huoltajuussuhde, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto,
-                          PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet)
+                          PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Tyontekija, Palvelussuhde,
+                          Taydennyskoulutus, Tyoskentelypaikka, TilapainenHenkilosto, Tutkinto)
 from varda.oppijanumerorekisteri import fetch_henkilo_with_oid, save_henkilo_to_db
 from varda.organisaatiopalvelu import (check_if_toimipaikka_exists_in_organisaatiopalvelu,
                                        create_toimipaikka_in_organisaatiopalvelu)
@@ -2259,47 +2260,60 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
     queryset = VakaJarjestaja.objects.none()
     serializer_class = VakaJarjestajaYhteenvetoSerializer
     permission_classes = (CustomObjectPermissions,)
-    today = datetime.now()
+    today = datetime.datetime.now()
+    vakajarjestaja_id = None
+
+    def get_active_filter(self, prefix):
+        return (Q(**{prefix + 'alkamis_pvm__lte': self.today}) &
+                (Q(**{prefix + 'paattymis_pvm__isnull': True}) | Q(**{prefix + 'paattymis_pvm__gte': self.today})))
 
     def get_vakajarjestaja(self, vakajarjestaja_pk=None):
         vakajarjestaja = get_object_or_404(VakaJarjestaja.objects.all(), pk=vakajarjestaja_pk)
         user = self.request.user
-        if user.has_perm("view_vakajarjestaja", vakajarjestaja):
+        if user.has_perm('view_vakajarjestaja', vakajarjestaja):
             return vakajarjestaja
         else:
-            raise Http404("Not found.")
+            raise Http404('Not found.')
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
-        if not kwargs['vakajarjestaja_pk'].isdigit():
-            raise Http404("Not found.")
+        self.vakajarjestaja_id = kwargs['vakajarjestaja_pk']
+        if not self.vakajarjestaja_id.isdigit():
+            raise Http404('Not found.')
 
-        vakajarjestaja_obj = self.get_vakajarjestaja(vakajarjestaja_pk=kwargs['vakajarjestaja_pk'])
+        vakajarjestaja_obj = self.get_vakajarjestaja(vakajarjestaja_pk=self.vakajarjestaja_id)
         data = cache.get('vakajarjestaja_yhteenveto_' + kwargs['vakajarjestaja_pk'])
         if data is None:
             data = {
-                "vakajarjestaja_nimi": vakajarjestaja_obj.nimi,
-                "lapset_lkm": self.get_lapset_lkm(vakajarjestaja_obj.id),
-                "lapset_vakapaatos_voimassaoleva": self.get_vakapaatos_voimassaoleva(vakajarjestaja_obj.id),
-                "lapset_vakasuhde_voimassaoleva": self.get_vakasuhde_voimassaoleva(vakajarjestaja_obj.id),
-                "lapset_vuorohoidossa": self.get_vuorohoito_lapset(vakajarjestaja_obj.id),
-                "lapset_palveluseteli_ja_ostopalvelu": self.get_paos_lapset(vakajarjestaja_obj.id),
-                "lapset_maksutieto_voimassaoleva": self.get_maksutieto_voimassaoleva(vakajarjestaja_obj.id),
-                "toimipaikat_voimassaolevat": self.get_active_toimipaikat(vakajarjestaja_obj.id),
-                "toimipaikat_paattyneet": self.get_closed_toimipaikat(vakajarjestaja_obj.id),
-                "toimintapainotukset_maara": self.get_toimipaikkojen_toimintapainotukset(vakajarjestaja_obj.id),
-                "kielipainotukset_maara": self.get_toimipaikkojen_kielipainotukset(vakajarjestaja_obj.id)
+                'vakajarjestaja_nimi': vakajarjestaja_obj.nimi,
+                'lapset_lkm': self.get_lapset_lkm(),
+                'lapset_vakapaatos_voimassaoleva': self.get_vakapaatos_voimassaoleva(),
+                'lapset_vakasuhde_voimassaoleva': self.get_vakasuhde_voimassaoleva(),
+                'lapset_vuorohoidossa': self.get_vuorohoito_lapset(),
+                'lapset_palveluseteli_ja_ostopalvelu': self.get_paos_lapset(),
+                'lapset_maksutieto_voimassaoleva': self.get_maksutieto_voimassaoleva(),
+                'toimipaikat_voimassaolevat': self.get_active_toimipaikat(),
+                'toimipaikat_paattyneet': self.get_closed_toimipaikat(),
+                'toimintapainotukset_maara': self.get_toimipaikkojen_toimintapainotukset(),
+                'kielipainotukset_maara': self.get_toimipaikkojen_kielipainotukset(),
+                'tyontekijat_lkm': self.get_tyontekija_count(),
+                'palvelussuhteet_voimassaoleva': self.get_active_palvelussuhde_count(),
+                'varhaiskasvatusalan_tutkinnot': self.get_vaka_tutkinto_count(),
+                'tyoskentelypaikat_kelpoiset': self.get_kelpoinen_tyoskentelypaikka_count(),
+                'taydennyskoulutukset_kuluva_vuosi': self.get_taydennyskoulutus_count_this_year(),
+                'tilapainen_henkilosto_maara_kuluva_vuosi': self.get_tilapainen_henkilosto_maara_this_year(),
+                'tilapainen_henkilosto_tunnit_kuluva_vuosi': self.get_tilapainen_henkilosto_tunnit_this_year()
             }
             cache.set('vakajarjestaja_yhteenveto_' + kwargs['vakajarjestaja_pk'], data, 8 * 60 * 60)
 
         serializer = self.get_serializer(data, many=False)
         return Response(serializer.data)
 
-    def get_lapset_lkm(self, vakajarjestaja_id):
+    def get_lapset_lkm(self):
         """
         Return the number of unique lapset (having an active vakasuhde) in all toimipaikat under the vakajarjestaja.
         """
-        organisation_filter = Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=vakajarjestaja_id)
+        organisation_filter = Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=self.vakajarjestaja_id)
 
         date_filter = Q(Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm__lte=self.today) &
                         (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True) |
@@ -2312,8 +2326,8 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
                 .count()
                 )
 
-    def get_vakapaatos_voimassaoleva(self, vakajarjestaja_id):
-        organisation_filter = Q(varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=vakajarjestaja_id)
+    def get_vakapaatos_voimassaoleva(self):
+        organisation_filter = Q(varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=self.vakajarjestaja_id)
         date_filter = Q(Q(alkamis_pvm__lte=self.today) &
                         (Q(paattymis_pvm__isnull=True) |
                          Q(paattymis_pvm__gte=self.today)))
@@ -2325,8 +2339,8 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
                 .count()
                 )
 
-    def get_vakasuhde_voimassaoleva(self, vakajarjestaja_id):
-        organisation_filter = Q(toimipaikka__vakajarjestaja__id=vakajarjestaja_id)
+    def get_vakasuhde_voimassaoleva(self):
+        organisation_filter = Q(toimipaikka__vakajarjestaja__id=self.vakajarjestaja_id)
 
         date_filter = Q(Q(alkamis_pvm__lte=self.today) &
                         (Q(paattymis_pvm__isnull=True) |
@@ -2339,11 +2353,11 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
                 .count()
                 )
 
-    def get_vuorohoito_lapset(self, vakajarjestaja_id):
+    def get_vuorohoito_lapset(self):
         """
         Return the number of unique lapset (having an active vakasuhde AND vuorohoito_kytkin=True) in all toimipaikat under the vakajarjestaja.
         """
-        organisation_filter = Q(Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=vakajarjestaja_id) &
+        organisation_filter = Q(Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=self.vakajarjestaja_id) &
                                 Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__isnull=False))
 
         vuorohoito_filter = Q(varhaiskasvatuspaatokset__vuorohoito_kytkin=True)
@@ -2360,13 +2374,13 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
                 .count()
                 )
 
-    def get_paos_lapset(self, vakajarjestaja_id):
+    def get_paos_lapset(self):
         """
         Return the number of unique lapset (having an active vakasuhde) in Palveluseteli or Ostopalvelu under the vakajarjestaja.
         """
-        organisation_filter = Q(Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=vakajarjestaja_id) |
-                                Q(oma_organisaatio=vakajarjestaja_id) |
-                                Q(paos_organisaatio=vakajarjestaja_id) &
+        organisation_filter = Q(Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=self.vakajarjestaja_id) |
+                                Q(oma_organisaatio=self.vakajarjestaja_id) |
+                                Q(paos_organisaatio=self.vakajarjestaja_id) &
                                 Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__isnull=False))
 
         jarjestamismuoto_filter = Q(Q(varhaiskasvatuspaatokset__jarjestamismuoto_koodi__iexact="JM02") |
@@ -2384,15 +2398,15 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
                 .count()
                 )
 
-    def get_maksutieto_voimassaoleva(self, vakajarjestaja_id):
+    def get_maksutieto_voimassaoleva(self):
         """
         Returns the number of unique active maksutieto objects
         """
 
         # in paos cases only children in oma_organisaatio are counted
-        organisation_filter = Q((Q(huoltajuussuhteet__lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=vakajarjestaja_id) &
+        organisation_filter = Q((Q(huoltajuussuhteet__lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=self.vakajarjestaja_id) &
                                 Q(huoltajuussuhteet__lapsi__paos_kytkin=False)) |
-                                (Q(huoltajuussuhteet__lapsi__oma_organisaatio__id=vakajarjestaja_id) &
+                                (Q(huoltajuussuhteet__lapsi__oma_organisaatio__id=self.vakajarjestaja_id) &
                                 Q(huoltajuussuhteet__lapsi__paos_kytkin=True)) &
                                 Q(huoltajuussuhteet__lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__isnull=False))
 
@@ -2407,8 +2421,8 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
                 .count()
                 )
 
-    def get_active_toimipaikat(self, vakajarjestaja_id):
-        organisation_filter = Q(vakajarjestaja__id=vakajarjestaja_id)
+    def get_active_toimipaikat(self):
+        organisation_filter = Q(vakajarjestaja__id=self.vakajarjestaja_id)
 
         date_filter = Q(Q(alkamis_pvm__lte=self.today) &
                         (Q(paattymis_pvm__isnull=True) |
@@ -2421,8 +2435,8 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
                 .count()
                 )
 
-    def get_closed_toimipaikat(self, vakajarjestaja_id):
-        organisation_filter = Q(vakajarjestaja__id=vakajarjestaja_id)
+    def get_closed_toimipaikat(self):
+        organisation_filter = Q(vakajarjestaja__id=self.vakajarjestaja_id)
 
         date_filter = Q(paattymis_pvm__lt=self.today)
 
@@ -2433,11 +2447,11 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
                 .count()
                 )
 
-    def get_toimipaikkojen_toimintapainotukset(self, vakajarjestaja_id):
+    def get_toimipaikkojen_toimintapainotukset(self):
         """
         Return the number of active toimintapainotukset in all toimipaikat under the vakajarjestaja.
         """
-        organisation_filter = Q(toimipaikka__vakajarjestaja__id=vakajarjestaja_id)
+        organisation_filter = Q(toimipaikka__vakajarjestaja__id=self.vakajarjestaja_id)
 
         date_filter = Q(Q(alkamis_pvm__lte=self.today) &
                         (Q(paattymis_pvm__isnull=True) |
@@ -2450,11 +2464,11 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
                 .count()
                 )
 
-    def get_toimipaikkojen_kielipainotukset(self, vakajarjestaja_id):
+    def get_toimipaikkojen_kielipainotukset(self):
         """
         Return the number of active kielipainotukset in all toimipaikat under the vakajarjestaja.
         """
-        organisation_filter = Q(toimipaikka__vakajarjestaja__id=vakajarjestaja_id)
+        organisation_filter = Q(toimipaikka__vakajarjestaja__id=self.vakajarjestaja_id)
 
         date_filter = Q(Q(alkamis_pvm__lte=self.today) &
                         (Q(paattymis_pvm__isnull=True) |
@@ -2466,6 +2480,65 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
                 .distinct()
                 .count()
                 )
+
+    def get_tyontekija_count(self):
+        """
+        :return: number of tyontekijat
+        """
+        tyontekija_filter = Q(vakajarjestaja__id=self.vakajarjestaja_id)
+        return Tyontekija.objects.filter(tyontekija_filter).count()
+
+    def get_active_palvelussuhde_count(self):
+        """
+        :return: number of active palvelussuhteet
+        """
+        date_filter = self.get_active_filter('')
+        vakajarjestaja_filter = Q(tyontekija__vakajarjestaja__id=self.vakajarjestaja_id)
+        return Palvelussuhde.objects.filter(date_filter & vakajarjestaja_filter).distinct().count()
+
+    def get_taydennyskoulutus_count_this_year(self):
+        """
+        :return: number of taydennyskoulutukset this year
+        """
+        suoritus_pvm_filter = Q(suoritus_pvm__year=self.today.year)
+        vakajarjestaja_filter = Q(tyontekijat__vakajarjestaja__id=self.vakajarjestaja_id)
+        return Taydennyskoulutus.objects.filter(suoritus_pvm_filter & vakajarjestaja_filter).distinct().count()
+
+    def get_kelpoinen_tyoskentelypaikka_count(self):
+        """
+        :return: number of tyoskentelypaikat with kelpoisuus_kytkin=True
+        """
+        kelpoisuus_filter = Q(kelpoisuus_kytkin=True)
+        vakajarjestaja_filter = Q(palvelussuhde__tyontekija__vakajarjestaja__id=self.vakajarjestaja_id)
+        return Tyoskentelypaikka.objects.filter(kelpoisuus_filter & vakajarjestaja_filter).distinct().count()
+
+    def get_vaka_tutkinto_count(self):
+        """
+        :return: number of valid tutkinnot
+        """
+        tutkinto_koodi_filter = ~Q(tutkinto_koodi='003')
+        vakajarjestaja_filter = Q(vakajarjestaja__id=self.vakajarjestaja_id)
+        return Tutkinto.objects.filter(tutkinto_koodi_filter & vakajarjestaja_filter).distinct().count()
+
+    def get_tilapainen_henkilosto_maara_this_year(self):
+        """
+        :return: total amount of tilapainen henkilosto this year
+        """
+        kuukausi_filter = Q(kuukausi__year=self.today.year)
+        vakajarjestaja_filter = Q(vakajarjestaja__id=self.vakajarjestaja_id)
+        return (TilapainenHenkilosto.objects
+                .filter(kuukausi_filter & vakajarjestaja_filter)
+                .aggregate(sum=Sum('tyontekijamaara')))['sum'] or 0
+
+    def get_tilapainen_henkilosto_tunnit_this_year(self):
+        """
+        :return: total amount of tilapainen henkilosto hours this year
+        """
+        kuukausi_filter = Q(kuukausi__year=self.today.year)
+        vakajarjestaja_filter = Q(vakajarjestaja__id=self.vakajarjestaja_id)
+        return (TilapainenHenkilosto.objects
+                .filter(kuukausi_filter & vakajarjestaja_filter)
+                .aggregate(sum=Sum('tuntimaara')))['sum'] or 0
 
 
 @auditlogclass
@@ -2504,6 +2577,9 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
     """
     list:
         Nouda tietyn vaka-järjestäjän kaikki toimipaikat.
+
+    filter:
+        voimassaolo=str (voimassa/paattynyt)
     """
     filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.ToimipaikkaFilter
@@ -2514,24 +2590,40 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
     def get_vakajarjestaja(self, request, vakajarjestaja_pk=None):
         vakajarjestaja = get_object_or_404(VakaJarjestaja.objects.all(), pk=vakajarjestaja_pk)
         user = request.user
-        if user.has_perm("view_vakajarjestaja", vakajarjestaja):
+        if user.has_perm('view_vakajarjestaja', vakajarjestaja):
             return vakajarjestaja
         else:
-            raise Http404("Not found.")
+            raise Http404('Not found.')
+
+    def apply_filters(self, toimipaikka_filter):
+        voimassaolo = self.request.query_params.get('voimassaolo', None)
+
+        if not voimassaolo:
+            return toimipaikka_filter
+
+        today = datetime.date.today()
+        voimassaolo = str.lower(voimassaolo)
+
+        if voimassaolo == 'voimassa':
+            toimipaikka_filter = toimipaikka_filter & (Q(paattymis_pvm__isnull=True) | Q(paattymis_pvm__gte=today))
+        elif voimassaolo == 'paattynyt':
+            toimipaikka_filter = toimipaikka_filter & Q(paattymis_pvm__lt=today)
+
+        return toimipaikka_filter
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
         if not kwargs['vakajarjestaja_pk'].isdigit():
-            raise Http404("Not found.")
+            raise Http404('Not found.')
 
         vakajarjestaja_obj = self.get_vakajarjestaja(request, vakajarjestaja_pk=kwargs['vakajarjestaja_pk'])
         paos_toimipaikat = get_paos_toimipaikat(vakajarjestaja_obj)
         qs_own_toimipaikat = Q(vakajarjestaja=kwargs['vakajarjestaja_pk'])
         qs_paos_toimipaikat = Q(id__in=paos_toimipaikat)
-        self.queryset = (Toimipaikka
-                         .objects
-                         .filter(qs_own_toimipaikat | qs_paos_toimipaikat)
-                         .order_by('nimi'))
+        toimipaikka_filter = qs_own_toimipaikat | qs_paos_toimipaikat
+        toimipaikka_filter = self.apply_filters(toimipaikka_filter)
+
+        self.queryset = Toimipaikka.objects.filter(toimipaikka_filter).order_by('nimi')
 
         return cached_list_response(self, request.user, request.get_full_path(), order_by='nimi')
 
@@ -2689,10 +2781,12 @@ class NestedLapsiKoosteViewSet(GenericViewSet):
 
         lapsi = self.get_lapsi(request, lapsi_pk=kwargs['lapsi_pk'])
         data = {
-            "henkilo": self.get_henkilo(lapsi),
-            "varhaiskasvatuspaatokset": self.get_vakapaatokset(lapsi.id, user),
-            "varhaiskasvatussuhteet": self.get_vakasuhteet(lapsi.id, user),
-            "maksutiedot": self.get_maksutiedot(lapsi.id, user)
+            'id': lapsi.id,
+            'yksityinen_kytkin': lapsi.yksityinen_kytkin,
+            'henkilo': self.get_henkilo(lapsi),
+            'varhaiskasvatuspaatokset': self.get_vakapaatokset(lapsi.id, user),
+            'varhaiskasvatussuhteet': self.get_vakasuhteet(lapsi.id, user),
+            'maksutiedot': self.get_maksutiedot(lapsi.id, user)
         }
 
         serializer = self.get_serializer(data, many=False)
@@ -2834,7 +2928,7 @@ class NestedVakajarjestajaPaosToimijatViewSet(GenericViewSet, ListModelMixin):
     queryset = VakaJarjestaja.objects.none()
     serializer_class = PaosToimijatSerializer
     permission_classes = (CustomObjectPermissions,)
-    today = datetime.now()
+    today = datetime.datetime.now()
 
     def get_vakajarjestaja(self, vakajarjestaja_pk=None):
         vakajarjestaja = get_object_or_404(VakaJarjestaja.objects.all(), pk=vakajarjestaja_pk)
@@ -2880,7 +2974,7 @@ class NestedVakajarjestajaPaosToimipaikatViewSet(GenericViewSet, ListModelMixin)
     queryset = VakaJarjestaja.objects.none()
     serializer_class = PaosToimipaikatSerializer
     permission_classes = (CustomObjectPermissions,)
-    today = datetime.now()
+    today = datetime.datetime.now()
 
     def get_vakajarjestaja(self, vakajarjestaja_pk=None):
         vakajarjestaja = get_object_or_404(VakaJarjestaja.objects.all(), pk=vakajarjestaja_pk)
@@ -2944,7 +3038,7 @@ class HenkilohakuLapset(GenericViewSet, ListModelMixin):
     permission_classes = (CustomObjectPermissions, )
     search_fields = ('henkilo__etunimet', 'henkilo__sukunimi', '=henkilo__henkilotunnus_unique_hash', '=henkilo__henkilo_oid', )
     tz = pytz.timezone('Europe/Helsinki')
-    today = datetime.now(tz=tz)
+    today = datetime.datetime.now(tz=tz)
 
     def get_toimipaikka_ids(self):
         vakajarjestaja_id = self.kwargs.get('vakajarjestaja_pk', None)

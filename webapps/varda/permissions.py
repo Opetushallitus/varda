@@ -507,3 +507,8 @@ def get_toimipaikat_group_has_access(user, vakajarjestaja_pk, *group_name_prefix
     toimipaikat_qs = Toimipaikka.objects.filter(organisaatio_oid__in=organisaatio_oids,
                                                 vakajarjestaja=vakajarjestaja_pk)
     return toimipaikat_qs
+
+
+def permission_groups_in_organization(user, organisaatio_oid, z4_groups):
+    group_names = [group + '_' + organisaatio_oid for group in z4_groups]
+    return user.groups.filter(name__in=group_names)

@@ -160,7 +160,7 @@ export class VardaApiWrapperService {
       toimipaikkaData.formData,
       new VardaToimipaikkaDTO(),
       toimipaikkaData.fieldSets);
-    toimipaikkaDTO.vakajarjestaja = VardaApiService.getVakajarjestajaUrlFromId(this.vardaVakajarjestajaService.selectedVakajarjestaja.id);
+    toimipaikkaDTO.vakajarjestaja = VardaApiService.getVakajarjestajaUrlFromId(this.vardaVakajarjestajaService.getSelectedVakajarjestajaId());
     const toimipaikkaFormDataKeys = Object.keys(toimipaikkaData.formData);
     const someKey = toimipaikkaFormDataKeys.pop();
     toimipaikkaDTO.kielipainotus_kytkin = toimipaikkaData.formData[someKey]['kielipainotus_kytkin'];
@@ -256,7 +256,7 @@ export class VardaApiWrapperService {
     vakatoimijaDTO.puhelinnumero = data.puhelinnumero;
     vakatoimijaDTO.tilinumero = data.tilinumero;
     return this.vardaApiService.patchVakajarjestaja(
-      this.vardaVakajarjestajaService.selectedVakajarjestaja.id,
+      this.vardaVakajarjestajaService.getSelectedVakajarjestajaId(),
       vakatoimijaDTO);
   }
 
@@ -283,7 +283,12 @@ export class VardaApiWrapperService {
   }
 
   getLapsetForToimipaikka(id: string, searchParams?: any, nextLink?: string): Observable<VardaPageDto<LapsiByToimipaikkaDTO>> {
-    return this.vardaApiService.getLapsetForToimipaikka(id, searchParams, nextLink);
+    return this.vardaApiService.getLapsetForToimipaikka(
+      this.vardaVakajarjestajaService.getSelectedVakajarjestajaId(),
+      id,
+      searchParams,
+      nextLink
+    );
   }
 
   getByPageNo(respData: any, endpoint: string, entityId?: string): any {
@@ -303,8 +308,12 @@ export class VardaApiWrapperService {
         } else if (endpoint === VardaEndpoints.getAllMaksutiedotByLapsiByPageNo) {
           paginatedObservables.push(this.vardaApiService.getAllMaksutiedotByLapsiByPageNo(entityId, page));
         } else if (endpoint === VardaEndpoints.getAllLapsetByToimipaikkaByPageNo) {
-          paginatedObservables.push(this.vardaApiService.getLapsetForToimipaikka(entityId, { page }, null)
-            .pipe(map((resp: VardaPageDto<LapsiByToimipaikkaDTO>) => resp.results)));
+          paginatedObservables.push(this.vardaApiService.getLapsetForToimipaikka(
+            this.vardaVakajarjestajaService.getSelectedVakajarjestajaId(),
+            entityId,
+            { page },
+            null
+          ).pipe(map((resp: VardaPageDto<LapsiByToimipaikkaDTO>) => resp.results)));
         }
       }
 
@@ -360,7 +369,12 @@ export class VardaApiWrapperService {
 
   getAllLapsetForToimipaikka(toimipaikkaId: string): Observable<Array<LapsiByToimipaikkaDTO>> {
     return this.getAllByPaginatedResults(
-      this.vardaApiService.getLapsetForToimipaikka(toimipaikkaId, null, null),
+      this.vardaApiService.getLapsetForToimipaikka(
+        this.vardaVakajarjestajaService.getSelectedVakajarjestajaId(),
+        toimipaikkaId,
+        null,
+        null
+      ),
       VardaEndpoints.getAllLapsetByToimipaikkaByPageNo,
       toimipaikkaId
     );

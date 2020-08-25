@@ -45,7 +45,6 @@ export class VardaApiService implements VardaApiServiceInterface {
 
   private toimipaikatApiPath = `${environment.vardaApiUrl}/toimipaikat/`;
   private vakaJarjestajatApiPath = `${environment.vardaApiUrl}/vakajarjestajat/`;
-  private toimipaikanLapsetUiPath = `${environment.vardaAppUrl}/api/ui/toimipaikat/`;
   private vakaJarjestajatUiPath = `${environment.vardaAppUrl}/api/ui/vakajarjestajat/`;
   private allVakaJarjestajatUiPath = `${environment.vardaAppUrl}/api/ui/all-vakajarjestajat/`;
   private henkilotApiPath = `${environment.vardaApiUrl}/henkilot/`;
@@ -162,20 +161,23 @@ export class VardaApiService implements VardaApiServiceInterface {
     return this.http.get(`${this.vakaJarjestajatUiPath}${vakajarjestajaId}/lapsi-list/`, searchFilter);
   }
 
-  getLapsetForToimipaikka(toimipaikkaId: string, searchParams?: any, nextLink?: string): Observable<VardaPageDto<LapsiByToimipaikkaDTO>> {
-    let url = `${this.toimipaikanLapsetUiPath}${toimipaikkaId}/lapset/`;
+  getLapsetForToimipaikka(vakajarjestajaId: string, toimipaikkaId: string, searchParams?: any, nextLink?: string): Observable<VardaPageDto<LapsiByToimipaikkaDTO>> {
+    let url = `${this.vakaJarjestajatUiPath}${vakajarjestajaId}/lapset/`;
 
-    if (searchParams) {
-      if (searchParams.search) {
-        searchParams.search = this.hashHetu(searchParams.search);
-      }
-
-      url += '?';
-      url += Object.keys(searchParams)
-        .filter(key => searchParams[key] !== null && searchParams[key] !== undefined)
-        .map(key => `${key}=${searchParams[key]}`)
-        .join('&');
+    if (!searchParams) {
+      searchParams = {};
     }
+    searchParams.toimipaikat = toimipaikkaId;
+
+    if (searchParams.search) {
+      searchParams.search = this.hashHetu(searchParams.search);
+    }
+
+    url += '?';
+    url += Object.keys(searchParams)
+      .filter(key => searchParams[key] !== null && searchParams[key] !== undefined)
+      .map(key => `${key}=${searchParams[key]}`)
+      .join('&');
 
     if (nextLink) {
       url = this.getVardaPrefixedUrl(nextLink);
