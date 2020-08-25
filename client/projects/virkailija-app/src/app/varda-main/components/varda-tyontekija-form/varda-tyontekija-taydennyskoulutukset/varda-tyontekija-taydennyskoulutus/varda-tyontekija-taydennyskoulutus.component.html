@@ -56,24 +56,24 @@
                  formControlName="koulutuspaivia" />
         </app-varda-form-field>
 
-        <app-varda-form-field name="tehtavanimike_koodi"
+        <app-varda-form-field name="tehtavanimike_koodit"
                               [form]="taydennyskoulutusForm"
                               [label]="i18n.taydennyskoulutus_tehtavanimike | translate"
                               [errorText]="i18n.taydennyskoulutus_error_tehtavanimike | translate"
                               [instructionText]="i18n.taydennyskoulutus_instruction_tehtavanimike | translate">
-          <select #fieldItem
-                  *ngIf="tehtavanimikkeet?.codes.length > 0; else eiNimikkeita"
-                  class="oph-input oph-select"
-                  formControlName="tehtavanimike_koodi">
-            <option value="null"
-                    disabled>-- {{ i18n.choose | translate }} --</option>
+          <mat-select #fieldItem
+                      placeholder="-- {{ i18n.choose | translate }} --"
+                      multiple
+                      *ngIf="tehtavanimikkeet?.codes.length > 0; else eiNimikkeita"
+                      class="oph-input oph-select"
+                      formControlName="tehtavanimike_koodit">
             <ng-container *ngIf="tehtavanimikkeet">
-              <option *ngFor="let nimike of tehtavanimikkeet.codes"
-                      [value]="nimike.code_value">
+              <mat-option *ngFor="let nimike of tehtavanimikkeet.codes"
+                          [value]="nimike.code_value">
                 {{ nimike.name }}
-              </option>
+              </mat-option>
             </ng-container>
-          </select>
+          </mat-select>
           <ng-template #eiNimikkeita>
             <div class="oph-error">
               <mat-icon>error_outline</mat-icon> {{ i18n.taydennyskoulutus_ei_nimikkeita | translate }}

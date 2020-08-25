@@ -1,7 +1,7 @@
 import { Component, OnInit, OnChanges, Input, Output, ViewChildren, EventEmitter, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VardaTutkintoDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tutkinto-dto.model';
-import { VardaTaydennyskoulutusDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-taydennyskoulutus-dto.model';
+import { VardaTaydennyskoulutusDTO, VardaTaydennyskoulutusTyontekijaDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-taydennyskoulutus-dto.model';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
@@ -37,7 +37,7 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
   expandPanel: boolean;
   taydennyskoulutusForm: FormGroup;
   isEdit: boolean;
-  tehtavanimike_koodi: string;
+  tehtavanimike_koodit: Array<string>;
   taydennyskoulutusFormErrors: Observable<Array<ErrorTree>>;
   private henkilostoErrorService = new HenkilostoErrorMessageService();
 
@@ -52,7 +52,9 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
 
   ngOnInit() {
     this.expandPanel = !this.taydennyskoulutus;
-    this.tehtavanimike_koodi = this.taydennyskoulutus?.taydennyskoulutus_tyontekijat.find(tyontekija => tyontekija.tyontekija === this.tyontekija.url).tehtavanimike_koodi;
+    this.tehtavanimike_koodit = this.taydennyskoulutus?.taydennyskoulutus_tyontekijat.
+      filter(tyontekija => tyontekija.henkilo_oid === this.tyontekija.henkilo_oid)
+      .map(tyontekija => tyontekija.tehtavanimike_koodi) || [];
 
     this.taydennyskoulutusForm = new FormGroup({
       id: new FormControl(this.taydennyskoulutus?.id),
@@ -60,7 +62,7 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
       nimi: new FormControl(this.taydennyskoulutus?.nimi, Validators.required),
       koulutuspaivia: new FormControl(this.taydennyskoulutus?.koulutuspaivia, [Validators.required, Validators.min(0.5), Validators.max(160), VardaFormValidators.remainderOf(0.5)]),
       suoritus_pvm: new FormControl(this.taydennyskoulutus ? moment(this.taydennyskoulutus?.suoritus_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
-      tehtavanimike_koodi: new FormControl(this.tehtavanimike_koodi || null, Validators.required),
+      tehtavanimike_koodit: new FormControl(this.tehtavanimike_koodit, Validators.required),
     });
 
     if (!this.toimipaikkaAccess.taydennyskoulutustiedot.tallentaja || this.taydennyskoulutus) {
@@ -87,15 +89,18 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
         suoritus_pvm: form.value.suoritus_pvm.format(VardaDateService.vardaApiDateFormat)
       };
 
+      const tehtavanimikkeetToAdd = this.compareTehtavanimikkeet(form.value.tehtavanimike_koodit, this.tehtavanimike_koodit);
+      const tehtavanimikkeetToRemove = this.compareTehtavanimikkeet(this.tehtavanimike_koodit, form.value.tehtavanimike_koodit);
+
       if (this.taydennyskoulutus) {
-        if (this.tehtavanimike_koodi !== form.value.tehtavanimike_koodi) {
-          taydennyskoulutusJson.taydennyskoulutus_tyontekijat_add = [{ tyontekija: this.tyontekija.url, tehtavanimike_koodi: form.value.tehtavanimike_koodi }];
+        if (tehtavanimikkeetToAdd.length) {
+          taydennyskoulutusJson.taydennyskoulutus_tyontekijat_add = tehtavanimikkeetToAdd;
         }
 
         this.henkilostoService.updateTaydennyskoulutus(taydennyskoulutusJson).subscribe({
           next: () => {
-            if (this.tehtavanimike_koodi !== form.value.tehtavanimike_koodi) {
-              this.deleteTaydennyskoulutus();
+            if (tehtavanimikkeetToRemove.length) {
+              this.deleteTaydennyskoulutus(tehtavanimikkeetToRemove);
             } else {
               this.togglePanel(false, true);
             }
@@ -103,7 +108,7 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
           error: err => this.henkilostoErrorService.handleError(err)
         });
       } else {
-        taydennyskoulutusJson.taydennyskoulutus_tyontekijat = [{ tyontekija: this.tyontekija.url, tehtavanimike_koodi: form.value.tehtavanimike_koodi }];
+        taydennyskoulutusJson.taydennyskoulutus_tyontekijat = tehtavanimikkeetToAdd;
 
         this.henkilostoService.createTaydennyskoulutus(taydennyskoulutusJson).subscribe({
           next: () => this.togglePanel(false, true),
@@ -115,11 +120,11 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
   }
 
 
-  deleteTaydennyskoulutus(): void {
+  deleteTaydennyskoulutus(nimikkeetToDelete?: Array<VardaTaydennyskoulutusTyontekijaDTO>): void {
     const taydennyskoulutusJson: VardaTaydennyskoulutusDTO = {
       ...this.taydennyskoulutusForm.value,
       suoritus_pvm: this.taydennyskoulutusForm.value.suoritus_pvm.format(VardaDateService.vardaApiDateFormat),
-      taydennyskoulutus_tyontekijat_remove: this.getExistingRecords()
+      taydennyskoulutus_tyontekijat_remove: nimikkeetToDelete || this.compareTehtavanimikkeet(this.tehtavanimike_koodit)
     };
 
     this.henkilostoService.updateTaydennyskoulutus(taydennyskoulutusJson).subscribe({
@@ -160,15 +165,14 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
     this.taydennyskoulutusForm.enable();
   }
 
+  compareTehtavanimikkeet(newNimikkeet: Array<string>, existingNimikkeet: Array<string> = []): Array<VardaTaydennyskoulutusTyontekijaDTO> {
+    const comparableNimikkeet = newNimikkeet.filter(nimikekoodi => !existingNimikkeet.includes(nimikekoodi)).map(nimikekoodi => {
+      return {
+        tyontekija: this.tyontekija.url,
+        tehtavanimike_koodi: nimikekoodi
+      };
+    });
 
-  getExistingRecords() {
-    return this.taydennyskoulutus.taydennyskoulutus_tyontekijat
-      .filter(tyontekija => tyontekija.tyontekija === this.tyontekija.url)
-      .map(tyontekija => {
-        return {
-          tyontekija: tyontekija.tyontekija,
-          tehtavanimike_koodi: this.tehtavanimike_koodi
-        };
-      });
+    return comparableNimikkeet;
   }
 }
