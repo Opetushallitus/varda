@@ -9,7 +9,6 @@
          role="alert"
          *ngIf="formControl.touched && (formControl.invalid || formControl.errors?.required)">
       {{ errorText | translate}}
-      <div>{{ formControl.errors | json}}</div>
     </div>
   </div>
 

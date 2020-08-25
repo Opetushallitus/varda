@@ -22,7 +22,7 @@ import { Lahdejarjestelma } from '../../../utilities/models/enums/hallinnointija
   styleUrls: ['./varda-henkilosto-tilapainen.component.css']
 })
 export class VardaHenkilostoTilapainenComponent implements OnDestroy {
-  private START_YEAR = 2018;
+  private START_YEAR = 2020;
   private disableEditingAfterMonthNr = 5;
   lastEditableYear: number;
   toimijaAccess: UserAccess;
@@ -144,7 +144,7 @@ export class VardaHenkilostoTilapainenComponent implements OnDestroy {
 
   initiateYears() {
     const today = new Date();
-    this.lastEditableYear = 2015; // today.getMonth() > this.disableEditingAfterMonthNr ? today.getUTCFullYear() : today.getUTCFullYear() - 1;
+    this.lastEditableYear = today.getMonth() > this.disableEditingAfterMonthNr ? today.getUTCFullYear() : today.getUTCFullYear() - 1;
 
     for (let i = this.START_YEAR; i <= today.getUTCFullYear(); ++i) {
       this.vuodet.push(i);

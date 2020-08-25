@@ -197,37 +197,25 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
 
     const addWithSsnOrOid = this.vardaHenkiloForm.get('addWithSsnOrOid').value;
 
-    this.vardaApiWrapperService.getHenkiloBySsnOrHenkiloOid(ssnValue, addWithSsnOrOid).subscribe((henkilo) => {
-      this.currentHenkilo = {
-        id: henkilo.id,
-        url: henkilo.url,
-        etunimet: henkilo.etunimet,
-        sukunimi: henkilo.sukunimi,
-        syntyma_pvm: henkilo.syntyma_pvm,
-        henkilo_oid: henkilo.henkilo_oid,
-      };
-      this.ui.isFetchingHenkilo = false;
-    }, () => {
-      this.vardaApiWrapperService.createHenkiloByHenkiloDetails(ssnValue,
-        firstnamesValue, nicknameValue, lastnameValue, addWithSsnOrOid).subscribe(() => {
-          setTimeout(() => {
-            this.vardaApiWrapperService.getHenkiloBySsnOrHenkiloOid(ssnValue, addWithSsnOrOid).subscribe((fetchedHenkilo) => {
-              this.currentHenkilo = {
-                id: fetchedHenkilo.id,
-                url: fetchedHenkilo.url,
-                etunimet: fetchedHenkilo.etunimet,
-                sukunimi: fetchedHenkilo.sukunimi,
-                syntyma_pvm: fetchedHenkilo.syntyma_pvm,
-                henkilo_oid: fetchedHenkilo.henkilo_oid,
-              };
+    this.vardaApiWrapperService.createHenkiloByHenkiloDetails(ssnValue,
+      firstnamesValue, nicknameValue, lastnameValue, addWithSsnOrOid).subscribe(() => {
+        setTimeout(() => {
+          this.vardaApiWrapperService.getHenkiloBySsnOrHenkiloOid(ssnValue, addWithSsnOrOid).subscribe((fetchedHenkilo) => {
+            this.currentHenkilo = {
+              id: fetchedHenkilo.id,
+              url: fetchedHenkilo.url,
+              etunimet: fetchedHenkilo.etunimet,
+              sukunimi: fetchedHenkilo.sukunimi,
+              syntyma_pvm: fetchedHenkilo.syntyma_pvm,
+              henkilo_oid: fetchedHenkilo.henkilo_oid,
+            };
 
-              this.ui.isFetchingHenkilo = false;
-            }, (ee) => this.onSaveLapsiFailure(ee));
-          }, 4000);
-        }, (ee) => {
-          this.onSaveLapsiFailure(ee);
-        });
-    });
+            this.ui.isFetchingHenkilo = false;
+          }, (ee) => this.onSaveLapsiFailure(ee));
+        }, 2000);
+      }, (ee) => {
+        this.onSaveLapsiFailure(ee);
+      });
   }
 
   ngOnChanges(changes: SimpleChanges) {
