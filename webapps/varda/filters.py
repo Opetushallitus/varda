@@ -303,7 +303,7 @@ class TaydennyskoulutusTyontekijaListFilter(djangofilters.FilterSet):
 
 
 class TyontekijahakuUiFilter(djangofilters.FilterSet):
-    toimipaikka_id = djangofilters.CharFilter(field_name='tyontekijat__palvelussuhteet__tyoskentelypaikat__toimipaikka__id', label='toimipaikka_id')
+    toimipaikka_id = djangofilters.NumberFilter(field_name='tyontekijat__palvelussuhteet__tyoskentelypaikat__toimipaikka__id', label='toimipaikka_id')
     toimipaikka_oid = djangofilters.CharFilter(field_name='tyontekijat__palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid', label='toimipaikka_oid')
     kiertava_tyontekija_kytkin = djangofilters.BooleanFilter(field_name='tyontekijat__palvelussuhteet__tyoskentelypaikat__kiertava_tyontekija_kytkin', label='kiertava_tyontekija_kytkin')
 
@@ -314,7 +314,7 @@ class TyontekijahakuUiFilter(djangofilters.FilterSet):
 
 class LapsihakuUiFilter(djangofilters.FilterSet):
     # Note LapsihakuLapsetUiSerializer flattens toimipaikat so nested filtering can't be done here
-    toimipaikka_id = djangofilters.CharFilter(field_name='lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__id', label='toimipaikka_id')
+    toimipaikka_id = djangofilters.NumberFilter(field_name='lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__id', label='toimipaikka_id')
     toimipaikka_oid = djangofilters.CharFilter(field_name='lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__organisaatio_oid', label='toimipaikka_oid')
 
     class Meta:
@@ -323,9 +323,9 @@ class LapsihakuUiFilter(djangofilters.FilterSet):
 
 
 class TyontekijaFilter(djangofilters.FilterSet):
-    vakajarjestaja_id = djangofilters.CharFilter(field_name='vakajarjestaja__id', lookup_expr='exact', label='vakajarjestaja_id')
+    vakajarjestaja_id = djangofilters.NumberFilter(field_name='vakajarjestaja__id', lookup_expr='exact', label='vakajarjestaja_id')
     vakajarjestaja_oid = djangofilters.CharFilter(field_name='vakajarjestaja__organisaatio_oid', lookup_expr='exact', label='vakajarjestaja_oid')
-    henkilo_id = djangofilters.CharFilter(field_name='henkilo__id', lookup_expr='exact', label='henkilo_id')
+    henkilo_id = djangofilters.NumberFilter(field_name='henkilo__id', lookup_expr='exact', label='henkilo_id')
     henkilo_oid = djangofilters.CharFilter(field_name='henkilo__henkilo_oid', lookup_expr='exact', label='henkilo_oid')
 
     class Meta:
