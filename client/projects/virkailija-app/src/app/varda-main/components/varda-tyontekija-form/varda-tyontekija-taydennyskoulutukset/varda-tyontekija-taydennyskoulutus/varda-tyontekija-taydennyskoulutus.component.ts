@@ -1,10 +1,10 @@
-import { Component, OnInit, OnChanges, Input, Output, ViewChildren, EventEmitter, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnChanges, Input, Output, ViewChildren, EventEmitter, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VardaTutkintoDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tutkinto-dto.model';
 import { VardaTaydennyskoulutusDTO, VardaTaydennyskoulutusTyontekijaDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-taydennyskoulutus-dto.model';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { ErrorTree, HenkilostoErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
 import * as moment from 'moment';
 import { TyontekijaListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tyontekija-dto.model';
@@ -14,6 +14,8 @@ import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/
 import { MatExpansionPanelHeader } from '@angular/material/expansion';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { VardaDateService } from '../../../../services/varda-date.service';
+import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
+import { filter, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-varda-tyontekija-taydennyskoulutus',
@@ -24,7 +26,7 @@ import { VardaDateService } from '../../../../services/varda-date.service';
     '../../varda-tyontekija-form.component.css'
   ]
 })
-export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterViewInit {
+export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() toimipaikkaAccess: UserAccess;
   @Input() tyontekija: TyontekijaListDTO;
   @Input() taydennyskoulutus: VardaTaydennyskoulutusDTO;
@@ -36,6 +38,7 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
   element: ElementRef;
   expandPanel: boolean;
   taydennyskoulutusForm: FormGroup;
+  subscriptions: Array<Subscription> = [];
   isEdit: boolean;
   tehtavanimike_koodit: Array<string>;
   taydennyskoulutusFormErrors: Observable<Array<ErrorTree>>;
@@ -43,7 +46,8 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
 
   constructor(
     private el: ElementRef,
-    private henkilostoService: VardaHenkilostoApiService
+    private henkilostoService: VardaHenkilostoApiService,
+    private modalService: VardaModalService
   ) {
     this.element = this.el;
     this.taydennyskoulutusFormErrors = this.henkilostoErrorService.initErrorList();
@@ -72,10 +76,20 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
     }
   }
 
+  ngOnDestroy() {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+
   ngAfterViewInit() {
     if (!this.taydennyskoulutus) {
       this.panelHeader?.focus();
     }
+
+    this.subscriptions.push(
+      this.taydennyskoulutusForm.statusChanges
+        .pipe(filter(() => !this.taydennyskoulutusForm.pristine), distinctUntilChanged())
+        .subscribe(() => this.modalService.setFormValuesChanged(true))
+    );
   }
 
 
@@ -158,6 +172,7 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
   disableForm() {
     this.isEdit = false;
     this.taydennyskoulutusForm.disable();
+    this.modalService.setFormValuesChanged(false);
   }
 
   enableForm() {

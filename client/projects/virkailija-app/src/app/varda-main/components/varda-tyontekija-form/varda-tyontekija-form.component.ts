@@ -1,4 +1,4 @@
-import { Component, OnChanges, Input, Output, EventEmitter, SimpleChanges } from '@angular/core';
+import { Component, OnChanges, Input, Output, EventEmitter, SimpleChanges, OnDestroy } from '@angular/core';
 import { VardaHenkiloDTO } from '../../../utilities/models';
 import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -9,7 +9,7 @@ import { VardaHenkilostoApiService } from '../../../core/services/varda-henkilos
 import { VardaTyontekijaDTO, TyontekijaListDTO } from '../../../utilities/models/dto/varda-tyontekija-dto.model';
 import { HenkiloRooliEnum } from '../../../utilities/models/enums/henkilorooli.enum';
 import { HenkilostoErrorMessageService, ErrorTree } from '../../../core/services/varda-henkilosto-error-message.service';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { VardaModalService } from '../../../core/services/varda-modal.service';
 import { Lahdejarjestelma } from '../../../utilities/models/enums/hallinnointijarjestelma';
@@ -19,7 +19,7 @@ import { Lahdejarjestelma } from '../../../utilities/models/enums/hallinnointija
   templateUrl: './varda-tyontekija-form.component.html',
   styleUrls: ['./varda-tyontekija-form.component.css']
 })
-export class VardaTyontekijaFormComponent implements OnChanges {
+export class VardaTyontekijaFormComponent implements OnChanges, OnDestroy {
   @Input() henkilo: VardaHenkiloDTO;
   @Input() tyontekija: TyontekijaListDTO;
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
@@ -31,6 +31,7 @@ export class VardaTyontekijaFormComponent implements OnChanges {
   private henkilostoErrorService = new HenkilostoErrorMessageService();
   private deleteTyontekijaErrorService = new HenkilostoErrorMessageService();
   promptDeleteHenkilo = false;
+  subscriptions: Array<Subscription> = [];
   toimipaikkaAccess: UserAccess;
   henkilonTutkinnot: Array<VardaTutkintoDTO>;
   tyontekijaFormErrors: Observable<Array<ErrorTree>>;
@@ -44,6 +45,12 @@ export class VardaTyontekijaFormComponent implements OnChanges {
   ) {
     this.tyontekijaFormErrors = this.henkilostoErrorService.initErrorList();
     this.deleteTyontekijaErrors = this.deleteTyontekijaErrorService.initErrorList();
+
+    this.subscriptions.push(this.modalService.getFormValuesChanged().subscribe(formValuesChanged => this.valuesChanged.emit(formValuesChanged)));
+  }
+
+  ngOnDestroy() {
+    this.subscriptions.forEach(subscription => subscription.unsubscribe());
   }
 
   ngOnChanges(changes: SimpleChanges) {

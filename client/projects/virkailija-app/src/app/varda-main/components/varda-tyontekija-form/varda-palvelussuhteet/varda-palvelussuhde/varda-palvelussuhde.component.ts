@@ -17,6 +17,7 @@ import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/mode
 import { VardaKoodistoService } from 'varda-shared';
 import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/dto/koodisto-models';
 import { VardaDateService } from '../../../../services/varda-date.service';
+import { filter, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-varda-palvelussuhde',
@@ -83,6 +84,12 @@ export class VardaPalvelussuhdeComponent implements OnInit, OnChanges, OnDestroy
     } else {
       this.enableForm();
     }
+
+    this.subscriptions.push(
+      this.palvelussuhdeForm.statusChanges
+        .pipe(filter(() => !this.palvelussuhdeForm.pristine), distinctUntilChanged())
+        .subscribe(() => this.modalService.setFormValuesChanged(true))
+    );
   }
 
   ngOnDestroy() {

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnChanges, Input, Output, ViewChildren, EventEmitter, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnChanges, Input, Output, ViewChildren, EventEmitter, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VardaTyoskentelypaikkaDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tyoskentelypaikka-dto.model';
 import { VardaPoissaoloDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-poissolo-dto.model';
@@ -7,12 +7,14 @@ import * as moment from 'moment';
 import { VardaPalvelussuhdeDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-palvelussuhde-dto.model';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { ErrorTree, HenkilostoErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { MatExpansionPanelHeader } from '@angular/material/expansion';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/services/varda-date.service';
+import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
+import { filter, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-varda-poissaolo',
@@ -23,7 +25,7 @@ import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/ser
     '../../../varda-tyontekija-form.component.css'
   ]
 })
-export class VardaPoissaoloComponent implements OnInit, AfterViewInit {
+export class VardaPoissaoloComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() toimipaikkaAccess: UserAccess;
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
   @Input() palvelussuhde: VardaPalvelussuhdeDTO;
@@ -32,6 +34,7 @@ export class VardaPoissaoloComponent implements OnInit, AfterViewInit {
   @ViewChild(MatExpansionPanelHeader) panelHeader: MatExpansionPanelHeader;
   expandPanel: boolean;
   poissaoloForm: FormGroup;
+  subscriptions: Array<Subscription> = [];
   i18n = VirkailijaTranslations;
   isEdit: boolean;
 
@@ -39,7 +42,8 @@ export class VardaPoissaoloComponent implements OnInit, AfterViewInit {
   private henkilostoErrorService = new HenkilostoErrorMessageService();
 
   constructor(
-    private henkilostoService: VardaHenkilostoApiService
+    private henkilostoService: VardaHenkilostoApiService,
+    private modalService: VardaModalService
   ) {
     this.poissaoloFormErrors = this.henkilostoErrorService.initErrorList();
   }
@@ -64,10 +68,20 @@ export class VardaPoissaoloComponent implements OnInit, AfterViewInit {
 
   }
 
+  ngOnDestroy() {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+
   ngAfterViewInit() {
     if (!this.poissaolo) {
       this.panelHeader?.focus();
     }
+
+    this.subscriptions.push(
+      this.poissaoloForm.statusChanges
+        .pipe(filter(() => !this.poissaoloForm.pristine), distinctUntilChanged())
+        .subscribe(() => this.modalService.setFormValuesChanged(true))
+    );
   }
 
 
@@ -116,6 +130,7 @@ export class VardaPoissaoloComponent implements OnInit, AfterViewInit {
   disableForm() {
     this.isEdit = false;
     this.poissaoloForm.disable();
+    this.modalService.setFormValuesChanged(false);
   }
 
   enableForm() {

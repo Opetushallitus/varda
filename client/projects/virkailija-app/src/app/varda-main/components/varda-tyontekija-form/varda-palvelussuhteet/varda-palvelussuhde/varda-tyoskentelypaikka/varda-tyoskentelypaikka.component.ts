@@ -1,4 +1,4 @@
-import { Component, OnInit, OnChanges, Input, Output, ViewChildren, EventEmitter, Inject, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnChanges, Input, Output, ViewChildren, EventEmitter, Inject, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 import { VardaHenkiloDTO, VardaToimipaikkaDTO } from 'projects/virkailija-app/src/app/utilities/models';
 import { UserAccess, SaveAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
@@ -13,11 +13,13 @@ import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/
 import { VardaKoodistoService } from 'varda-shared';
 import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/dto/koodisto-models';
 import { HenkilostoErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { MatExpansionPanelHeader } from '@angular/material/expansion';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/services/varda-date.service';
+import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
+import { filter, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-varda-tyoskentelypaikka',
@@ -28,7 +30,7 @@ import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/ser
     '../../../varda-tyontekija-form.component.css'
   ]
 })
-export class VardaTyoskentelypaikkaComponent implements OnInit, OnChanges, AfterViewInit {
+export class VardaTyoskentelypaikkaComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   @Input() toimipaikkaAccess: UserAccess;
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
   @Input() palvelussuhde: VardaPalvelussuhdeDTO;
@@ -41,6 +43,7 @@ export class VardaTyoskentelypaikkaComponent implements OnInit, OnChanges, After
   expandPanel: boolean;
   currentToimipaikka: VardaToimipaikkaDTO;
   tyoskentelypaikkaForm: FormGroup;
+  subscriptions: Array<Subscription> = [];
   tehtavanimikkeet: KoodistoDTO;
   toimipaikat: Array<VardaToimipaikkaMinimalDto>;
   isEdit: boolean;
@@ -53,7 +56,8 @@ export class VardaTyoskentelypaikkaComponent implements OnInit, OnChanges, After
     private authService: AuthService,
     private henkilostoService: VardaHenkilostoApiService,
     private koodistoService: VardaKoodistoService,
-    private vardaVakajarjestajaService: VardaVakajarjestajaService
+    private vardaVakajarjestajaService: VardaVakajarjestajaService,
+    private modalService: VardaModalService
   ) {
     this.toimijaAccess = this.authService.getUserAccess();
     this.palvelussuhdeFormErrors = this.henkilostoErrorService.initErrorList();
@@ -82,10 +86,20 @@ export class VardaTyoskentelypaikkaComponent implements OnInit, OnChanges, After
     }
   }
 
+  ngOnDestroy() {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+
   ngAfterViewInit() {
     if (!this.tyoskentelypaikka) {
       this.panelHeader?.focus();
     }
+
+    this.subscriptions.push(
+      this.tyoskentelypaikkaForm.statusChanges
+        .pipe(filter(() => !this.tyoskentelypaikkaForm.pristine), distinctUntilChanged())
+        .subscribe(() => this.modalService.setFormValuesChanged(true))
+    );
   }
 
   ngOnChanges() {
@@ -155,6 +169,8 @@ export class VardaTyoskentelypaikkaComponent implements OnInit, OnChanges, After
   disableForm() {
     this.isEdit = false;
     this.tyoskentelypaikkaForm.disable();
+
+    this.modalService.setFormValuesChanged(false);
   }
 
   enableForm() {
