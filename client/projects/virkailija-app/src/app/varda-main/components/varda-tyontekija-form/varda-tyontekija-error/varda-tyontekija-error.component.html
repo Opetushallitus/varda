@@ -6,9 +6,9 @@
               #scrollTo>
         <mat-icon>error_outline</mat-icon>
         <span
-              *ngIf="errorArr.length > 1; else singlemistake">{{ 'label.error-multiple' | translate: { count: errorArr.length } }}</span>
+              *ngIf="errorArr.length > 1; else singlemistake">{{ i18n.error_multiple | translate: { count: errorArr.length } }}</span>
         <ng-template #singlemistake>
-          {{ 'label.error-single' | translate }}
+          {{ i18n.error_single | translate }}
         </ng-template>
 
 
@@ -22,7 +22,7 @@
     <div class="tyontekija-error-line"
          *ngFor="let errorBranch of errorArr; let lineNr = index">
       <label>
-        {{ 'generic.error' | translate }} {{lineNr + 1}}:
+        {{ i18n.error | translate }} {{lineNr + 1}}:
       </label>
 
       <span *ngFor="let key of errorBranch.keys">

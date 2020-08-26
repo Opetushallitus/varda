@@ -11,6 +11,10 @@ export enum VirkailijaTranslations {
   show_more = 'show-more',
   show_less = 'show-less',
 
+  error = 'error',
+  error_multiple = 'error-multiple',
+  error_single = 'error-single',
+
   perustiedot = 'perustiedot',
   nimi = 'nimi',
   syntymapaiva = 'syntymapaiva',
@@ -58,6 +62,13 @@ export enum VirkailijaTranslations {
   lapsi_instruction_creation_paragraph_2 = 'lapsi.instruction.creation-paragraph-2',
   lapsi_instruction_creation_link_text = 'lapsi.instruction.creation-link-text',
   lapsi_instruction_creation_link_href = 'lapsi.instruction.creation-link-href',
+  lapsi_intro_paragraph_1 = 'lapsi.intro.paragraph-1',
+  lapsi_intro_paragraph_2 = 'lapsi.intro.paragraph-2',
+  lapsi_intro_paragraph_3 = 'lapsi.intro.paragraph-3',
+  lapsi_intro_link_1_text = 'lapsi.intro.link-1.text',
+  lapsi_intro_link_1_href = 'lapsi.intro.link-1.href',
+  lapsi_intro_link_2_text = 'lapsi.intro.link-2.text',
+  lapsi_intro_link_2_href = 'lapsi.intro.link-2.href',
 
   tutkinnot = 'tutkinnot',
   tutkinnot_lisaa_tutkinto = 'tutkinnot.lisaa-tutkinto',

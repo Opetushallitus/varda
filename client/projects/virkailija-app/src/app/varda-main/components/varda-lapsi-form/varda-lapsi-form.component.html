@@ -29,7 +29,7 @@
        role="alert"
        aria-live="assertive"
        *ngIf="!toimipaikkaAccess.huoltajatiedot.katselija && !toimipaikkaAccess.lapsitiedot.katselija">
-    {{ "generic.error" | translate }}.
+    {{ i18n.error | translate }}.
     {{ "alert.invalid-access-to-person" | translate }}
   </div>
   <div class="lapsi-form-content"
@@ -37,29 +37,37 @@
        id="lapsiFormContent">
     <div class="lapsi-form-perustiedot"
          *ngIf="!ui.isPerustiedotLoading">
-      <div class="modal-form-intro">{{'text.add-lapsi-form-info' | translate}}<br />
-        {{'text.add-lapsi-form-info-edit-varhaiskasvatustiedot' | translate}}
-        <a target="_blank"
-           [href]="'ohjeet.url.lisaaminen-ja-muokkaaminen.lapsen-tietojen-tarkastelu-ja-muokkaaminen' | translate">{{'label.taalta' | translate}}</a>.<br />
-        {{'text.add-lapsi-form-info-edit-huoltaja-ja-maksutiedot' | translate}}
-        <a target="_blank"
-           [href]="'ohjeet.url.lisaaminen-ja-muokkaaminen.huoltaja-ja-maksutiedot' | translate">{{'label.taalta' | translate}}</a>.
+      <div class="modal-form-intro"
+           aria-role="info">
+        <div>{{ i18n.lapsi_intro_paragraph_1 | translate }}</div>
+        <div>{{ i18n.lapsi_intro_paragraph_2 | translate }}
+          <a [href]="i18n.lapsi_intro_link_1_href | translate"
+             target="_blank">
+            {{ i18n.lapsi_intro_link_1_text | translate }}
+          </a>
+        </div>
+        <div>{{ i18n.lapsi_intro_paragraph_3 | translate }}
+          <a [href]="i18n.lapsi_intro_link_2_href | translate"
+             target="_blank">
+            {{ i18n.lapsi_intro_link_2_text | translate }}
+          </a>
+        </div>
       </div>
       <form [formGroup]="lapsiForm"
             autocomplete="off">
         <fieldset class="form-group varda-fieldset"
                   [id]="'lapsiFormFieldSet'">
-          <legend class="varda-fieldset-legend">{{'label.perustiedot' | translate}}</legend>
+          <legend class="varda-fieldset-legend">{{ i18n.perustiedot | translate}}</legend>
           <div class="oph-field oph-field-inline">
-            <label class="oph-label">{{'label.generic-name' | translate}}:</label>
+            <label class="oph-label">{{ i18n.nimi | translate}}:</label>
             <span>{{henkilo.sukunimi + ', ' + henkilo.etunimet}}</span>
           </div>
           <div class="oph-field oph-field-inline">
-            <label class="oph-label">{{'label.birthday' | translate}}:</label>
+            <label class="oph-label">{{ i18n.syntymapaiva | translate}}:</label>
             <span>{{henkilo.syntyma_pvm | vardaDate}}</span>
           </div>
           <div class="oph-field oph-field-inline">
-            <label class="oph-label">{{'label.oppijanumero' | translate}}:</label>
+            <label class="oph-label">{{ i18n.oppijanumero | translate}}:</label>
             <span>{{henkilo.henkilo_oid}}</span>
           </div>
           <div class="oph-field oph-field-inline"
@@ -132,7 +140,7 @@
                           (click)="saveRecurringStructure(vakapaatosIndex, 'varhaiskasvatuspaatos', varhaiskasvatuspaatosPanels)"
                           [ngClass]="{'varda-disabled-button': varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr')['controls'][vakapaatosIndex].invalid}"
                           [disabled]="varhaiskasvatuspaatoksetForm.get('varhaiskasvatuspaatoksetFormArr')['controls'][vakapaatosIndex].invalid">
-                    {{'label.generic-save' | translate}}
+                    {{ i18n.save | translate}}
                   </button>
                   <button class="varda-button responsive varda-button-delete"
                           type="button"
@@ -159,14 +167,14 @@
                             (click)="confirmDeleteAction('varhaiskasvatuspaatos', vakapaatosIndex, true)"
                             [disabled]="ui.isSubmitting"
                             [ngClass]="{'varda-disabled-button': ui.isSubmitting}">
-                      {{'label.delete' | translate}}
+                      {{ i18n.delete | translate}}
                     </button>
                     <button [id]="'varhaiskasvatuspaatosCancelDeleteBtn' + vakapaatosIndex"
                             class="varda-button responsive varda-button-neutral"
                             (click)="cancelDelete('varhaiskasvatuspaatos')"
                             [disabled]="ui.isSubmitting"
                             [ngClass]="{'varda-disabled-button': ui.isSubmitting}">
-                      {{'label.cancel' | translate}}
+                      {{ i18n.cancel | translate}}
                     </button>
                   </div>
                 </div>
@@ -199,7 +207,7 @@
                               [formGroup]="varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'][vakasuhdeIndex]">
                       <div class="varda-fieldset-content form-group">
                         <label id="vakaFormToimipaikkaLabel"
-                               class="varda-field-label">{{'label.toimipaikka' | translate}}</label>
+                               class="varda-field-label">{{ i18n.toimipaikka | translate}}</label>
                         <div>
                           <select class="varda-form-control form-control varda-select"
                                   aria-labelledby="vakaFormToimipaikkaLabel"
@@ -215,7 +223,7 @@
                             <ng-container
                                           *ngIf="!varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'][vakasuhdeIndex].controls['toimipaikka'].disabled">
                               <option value=""
-                                      disabled>-- {{'label.choose' | translate}} --</option>
+                                      disabled>-- {{ i18n.choose | translate}} --</option>
                               <option *ngFor="let toimipaikka of tallentajaToimipaikkaOptions"
                                       [ngValue]="toimipaikka">{{toimipaikka.nimi}}</option>
                             </ng-container>
@@ -248,7 +256,7 @@
                                 (click)="saveRecurringStructure(vakasuhdeIndex, 'varhaiskasvatussuhde', varhaiskasvatussuhdePanels)"
                                 [ngClass]="{'varda-disabled-button': varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'][vakasuhdeIndex].invalid || ui.isSubmitting}"
                                 [disabled]="varhaiskasvatussuhteetForm.get('varhaiskasvatussuhteetFormArr')['controls'][vakasuhdeIndex].invalid || ui.isSubmitting">
-                          {{'label.generic-save' | translate}}
+                          {{ i18n.save | translate}}
                         </button>
 
                         <button class="varda-button responsive varda-button-delete"
@@ -269,7 +277,7 @@
                                   (click)="confirmDeleteAction('varhaiskasvatussuhde', vakasuhdeIndex, true)"
                                   [disabled]="ui.isSubmitting"
                                   [ngClass]="{'varda-disabled-button': ui.isSubmitting}">
-                            {{'label.delete' | translate}}
+                            {{ i18n.delete | translate}}
                           </button>
 
                           <button [id]="'varhaiskasvatussuhdeCancelDeleteBtn'+ vakasuhdeIndex"
@@ -277,7 +285,7 @@
                                   (click)="cancelDelete('varhaiskasvatussuhde')"
                                   [disabled]="ui.isSubmitting"
                                   [ngClass]="{'varda-disabled-button': ui.isSubmitting}">
-                            {{'label.cancel' | translate}}
+                            {{ i18n.cancel | translate}}
                           </button>
                         </div>
                       </div>
@@ -343,8 +351,8 @@
         <mat-radio-group id="paosKytkin"
                          (change)="fetchPaosOrganisaatiot($event)">
           <mat-radio-button [value]="false"
-                            checked>{{'label.no' | translate}}</mat-radio-button>
-          <mat-radio-button [value]="true">{{'label.yes' | translate}}</mat-radio-button>
+                            checked>{{ i18n.no | translate}}</mat-radio-button>
+          <mat-radio-button [value]="true">{{ i18n.yes | translate}}</mat-radio-button>
         </mat-radio-group>
       </div>
     </div>
@@ -362,7 +370,7 @@
                 (change)="setPaosOrganisaatiot($event)">
           <option [value]=""
                   disabled
-                  selected>-- {{'label.choose' | translate}} --</option>
+                  selected>-- {{ i18n.choose | translate}} --</option>
           <option *ngFor="let vakajarjestaja of paosJarjestajaKunnat"
                   [value]="vakajarjestaja.url">
             {{vakajarjestaja.nimi}}
@@ -385,7 +393,7 @@
   <form [formGroup]="toimipaikkaForm">
     <fieldset class="form-group varda-fieldset varda-fieldset-add-person">
       <legend id="toimipaikkaListLabel"
-              class="varda-fieldset-legend">{{'label.toimipaikka' | translate}}</legend>
+              class="varda-fieldset-legend">{{ i18n.toimipaikka | translate}}</legend>
       <div class="varda-fieldset-content form-group">
         <div class="oph-field">
           <div class="oph-field-inputs">
@@ -397,7 +405,7 @@
                     [compareWith]="byEndpoint"
                     [attr.disabled]="henkilonToimipaikka?.id">
               <option [value]="null"
-                      disabled>-- {{ 'label.choose' | translate }} --</option>
+                      disabled>-- {{ i18n.choose | translate }} --</option>
               <option *ngFor="let toimipaikka of tallentajaToimipaikkaOptions"
                       [ngValue]="toimipaikka">{{toimipaikka.nimi}}</option>
             </select>
@@ -470,7 +478,7 @@
             type="button"
             data-dismiss="modal"
             [ngClass]="{'varda-disabled-button': ui.isSubmitting }"
-            [disabled]="ui.isSubmitting">{{'label.cancel' | translate}}</button>
+            [disabled]="ui.isSubmitting">{{ i18n.cancel | translate}}</button>
     <button class="varda-button varda-button-wide responsive-md"
             type="button"
             [ngClass]="{'varda-disabled-button': !addLapsiFormValid() || ui.isSubmitting }"
