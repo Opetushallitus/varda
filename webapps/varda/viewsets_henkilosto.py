@@ -30,7 +30,8 @@ from varda.permission_groups import (assign_object_permissions_to_tyontekija_gro
 from varda.permissions import (CustomObjectPermissions, delete_object_permissions_explicitly, is_user_permission,
                                is_correct_taydennyskoulutus_tyontekija_permission, get_tyontekija_vakajarjestaja_oid,
                                filter_authorized_taydennyskoulutus_tyontekijat_list, auditlog, auditlogclass,
-                               permission_groups_in_organization, HenkilostohakuPermissions)
+                               permission_groups_in_organization, HenkilostohakuPermissions,
+                               get_tyontekija_filters_for_taydennyskoulutus_groups)
 from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, PalvelussuhdeSerializer,
                                           PidempiPoissaoloSerializer,
                                           TilapainenHenkilostoSerializer, TutkintoSerializer, TyontekijaSerializer,
@@ -191,6 +192,19 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
     serializer_class = TyontekijaKoosteSerializer
     permission_classes = (HenkilostohakuPermissions, )
     queryset = Tyontekija.objects.all().order_by('id')
+
+    def get_object(self):
+        user = self.request.user
+        tyontekija = super(NestedTyontekijaKoosteViewSet, self).get_object()
+
+        # Raise 404 if user doesn't have object level permissions to tyontekija, or if tyontekija is not
+        # linked to one of user's taydennyskoulutus groups
+        tyontekija_taydennyskoulutus_filters, organisaatio_oids = get_tyontekija_filters_for_taydennyskoulutus_groups(user)
+        if (user.has_perm('view_tyontekija', tyontekija) or
+                Tyontekija.objects.filter(Q(pk=tyontekija.id) & tyontekija_taydennyskoulutus_filters).exists()):
+            return tyontekija
+        else:
+            raise Http404
 
     def list(self, request, *args, **kwargs):
         # Enable support for ObjectByTunnisteMixin

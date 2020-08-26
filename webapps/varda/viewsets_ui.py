@@ -29,7 +29,7 @@ from varda.pagination import ChangeablePageSizePagination
 from varda.permissions import (CustomObjectPermissions, get_taydennyskoulutus_tyontekija_group_organisaatio_oids,
                                get_toimipaikat_group_has_access, get_organisaatio_oids_from_groups,
                                HenkilostohakuPermissions, LapsihakuPermissions, auditlog, auditlogclass,
-                               permission_groups_in_organization)
+                               permission_groups_in_organization, get_tyontekija_filters_for_taydennyskoulutus_groups)
 from varda.serializers import PaosToimipaikkaSerializer, PaosVakaJarjestajaSerializer
 from varda.serializers_ui import (VakaJarjestajaUiSerializer, ToimipaikkaUiSerializer, UiLapsiSerializer,
                                   TyontekijaHenkiloUiSerializer, LapsihakuHenkiloUiSerializer,
@@ -498,9 +498,11 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
                                                                                Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA])
         # Get all tyontekijat for superuser and vakajarjestaja level permissions
         if not self.request.user.is_superuser and not tyontekija_organization_groups_qs.exists():
+            # Get only tyontekijat user has object permissions to, or tyontekijat that belong to user's
+            # taydennyskoulutus groups
             tyontekija_ids_user_has_view_permissions = self.get_tyontekija_ids_user_has_view_permissions()
-            tyontekija_filter = (tyontekija_filter &
-                                 Q(id__in=tyontekija_ids_user_has_view_permissions))
+            tyontekija_taydennyskoulutus_filters, organisaatio_oids = get_tyontekija_filters_for_taydennyskoulutus_groups(self.request.user)
+            tyontekija_filter = (tyontekija_filter & (Q(id__in=tyontekija_ids_user_has_view_permissions) | tyontekija_taydennyskoulutus_filters))
 
         return Tyontekija.objects.filter(tyontekija_filter).order_by('henkilo__sukunimi', 'henkilo__etunimet')
 
