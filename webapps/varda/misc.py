@@ -325,24 +325,6 @@ def update_all_vakajarjestaja_permissiongroups():
     logger.info('Finished setting toimipaikka permissions')
 
 
-def add_maksutieto_permissions_to_palvelukayttajat():
-    """
-    Temporary task to add maksutieto permissions to palvelukayttaja template and all palvelukayttaja groups
-    Will be deleted after run in production once
-    """
-    from django.contrib.auth.models import Group, Permission
-    from django.db.models import Q
-    pk_groups = Group.objects.filter(Q(name__startswith='VARDA-PALVELUKAYTTAJA_') | Q(name='vakajarjestaja_palvelukayttaja'))
-    permissions = Permission.objects.filter(codename__in=['add_maksutieto', 'view_maksutieto', 'change_maksutieto',
-                                            'delete_maksutieto'])
-    for group in pk_groups:
-        for permission in permissions:
-            try:
-                group.permissions.add(permission)
-            except Exception as e:
-                logger.error('unable to append permissions for {} with error {}'.format(group.id, e))
-
-
 def parse_toimipaikka_id_list(user, toimipaikka_ids_string):
     """
     Return parsed list of toimipaikka ids based on user permissions

@@ -9,7 +9,6 @@ from varda import organisaatiopalvelu
 from varda import permission_groups
 from varda import permissions
 from varda.audit_log import audit_log
-from varda.misc import add_maksutieto_permissions_to_palvelukayttajat
 from varda.models import Henkilo
 
 
@@ -133,15 +132,6 @@ def delete_object_permissions_explicitly_task(content_type_id, instance_id):
 @shared_task
 def update_koodistot_task():
     koodistopalvelu.update_koodistot()
-
-
-@shared_task
-def add_maksutieto_permissions_to_palvelukayttajat_task():
-    """
-    Temporary task to append maksutieto permissions for palvelukayttaja template and existing groups
-    Will be removed after run in production in 1.9.2020
-    """
-    add_maksutieto_permissions_to_palvelukayttajat()
 
 
 @shared_task
