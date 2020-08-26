@@ -7,6 +7,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction, IntegrityError
 from django.db.models import IntegerField, Q, QuerySet
 from django.db.models.functions import Cast
+from django.http import Http404
+from django.shortcuts import get_object_or_404
 from guardian.models import UserObjectPermission, GroupObjectPermission
 from guardian.shortcuts import assign_perm, remove_perm
 from rest_framework import permissions, status
@@ -56,14 +58,25 @@ class LapsihakuPermissions(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
         accepted_permissions = ['view_lapsi', 'view_maksutieto']
-        return user.is_superuser or user.groups.filter(permissions__codename__in=accepted_permissions)
+        return _is_user_group_permissions(accepted_permissions, user)
 
 
 class HenkilostohakuPermissions(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
         accepted_permissions = ['view_tyontekija', 'view_taydennyskoulutus']
-        return user.is_superuser or user.groups.filter(permissions__codename__in=accepted_permissions)
+        return _is_user_group_permissions(accepted_permissions, user)
+
+
+class ToimipaikkaPermissions(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        accepted_permissions = ['view_toimipaikka']
+        return _is_user_group_permissions(accepted_permissions, user)
+
+
+def _is_user_group_permissions(accepted_permissions, user):
+    return user.is_superuser or user.groups.filter(permissions__codename__in=accepted_permissions).exists()
 
 
 def user_has_tallentaja_permission_in_organization(organisaatio_oid, user):
@@ -506,6 +519,19 @@ def get_toimipaikat_group_has_access(user, vakajarjestaja_pk, *group_name_prefix
     toimipaikat_qs = Toimipaikka.objects.filter(organisaatio_oid__in=organisaatio_oids,
                                                 vakajarjestaja=vakajarjestaja_pk)
     return toimipaikat_qs
+
+
+def get_toimipaikka_or_404(user, toimipaikka_pk=None):
+    """
+    Get toimipaikka or 404 if not found or user has no view permission to the toimipaikka.
+    :param user: User whose permissions are checked
+    :param toimipaikka_pk: Toimipaikka id
+    :return: Toimipaikka object
+    """
+    toimipaikka = get_object_or_404(Toimipaikka.objects.all(), pk=toimipaikka_pk)
+    if user.has_perm('view_toimipaikka', toimipaikka):
+        return toimipaikka
+    raise Http404('Not found.')
 
 
 def permission_groups_in_organization(user, organisaatio_oid, z4_groups):

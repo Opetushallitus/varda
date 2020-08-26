@@ -50,7 +50,7 @@ from varda.permissions import (throw_if_not_tallentaja_permissions,
                                CustomObjectPermissions,
                                user_has_huoltajatieto_tallennus_permissions_to_correct_organization,
                                grant_or_deny_access_to_paos_toimipaikka, user_has_tallentaja_permission_in_organization,
-                               auditlogclass, save_audit_log)
+                               auditlogclass, save_audit_log, ToimipaikkaPermissions, get_toimipaikka_or_404)
 from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer,
                                UpdateHenkiloWithOidSerializer, UpdateOphStaffSerializer, ClearCacheSerializer,
                                ActiveUserSerializer, AuthTokenSerializer, VakaJarjestajaSerializer,
@@ -2638,25 +2638,16 @@ class NestedToiminnallinenPainotusViewSet(GenericViewSet, ListModelMixin):
     filterset_class = filters.ToiminnallinenPainotusFilter
     queryset = ToiminnallinenPainotus.objects.none()
     serializer_class = ToiminnallinenPainotusSerializer
-    permission_classes = (CustomObjectPermissions, )
-
-    def get_toimipaikka(self, request, toimipaikka_pk=None):
-        toimipaikka = get_object_or_404(Toimipaikka.objects.all(), pk=toimipaikka_pk)
-        user = request.user
-        if user.has_perm("view_toimipaikka", toimipaikka):
-            return toimipaikka
-        else:
-            raise Http404("Not found.")
+    permission_classes = (ToimipaikkaPermissions, )
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
         if not kwargs['toimipaikka_pk'].isdigit():
             raise Http404("Not found.")
+        get_toimipaikka_or_404(request.user, toimipaikka_pk=kwargs['toimipaikka_pk'])
 
-        self.get_toimipaikka(request, toimipaikka_pk=kwargs['toimipaikka_pk'])
         self.queryset = ToiminnallinenPainotus.objects.filter(toimipaikka=kwargs['toimipaikka_pk']).order_by('id')
-
-        return cached_list_response(self, request.user, request.get_full_path())
+        return super(NestedToiminnallinenPainotusViewSet, self).list(request, *args, **kwargs)
 
 
 @auditlogclass
@@ -2669,25 +2660,16 @@ class NestedKieliPainotusViewSet(GenericViewSet, ListModelMixin):
     filterset_class = filters.KieliPainotusFilter
     queryset = KieliPainotus.objects.none()
     serializer_class = KieliPainotusSerializer
-    permission_classes = (CustomObjectPermissions, )
-
-    def get_toimipaikka(self, request, toimipaikka_pk=None):
-        toimipaikka = get_object_or_404(Toimipaikka.objects.all(), pk=toimipaikka_pk)
-        user = request.user
-        if user.has_perm("view_toimipaikka", toimipaikka):
-            return toimipaikka
-        else:
-            raise Http404("Not found.")
+    permission_classes = (ToimipaikkaPermissions, )
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
         if not kwargs['toimipaikka_pk'].isdigit():
             raise Http404("Not found.")
+        get_toimipaikka_or_404(request.user, toimipaikka_pk=kwargs['toimipaikka_pk'])
 
-        self.get_toimipaikka(request, toimipaikka_pk=kwargs['toimipaikka_pk'])
         self.queryset = KieliPainotus.objects.filter(toimipaikka=kwargs['toimipaikka_pk']).order_by('id')
-
-        return cached_list_response(self, request.user, request.get_full_path())
+        return super(NestedKieliPainotusViewSet, self).list(request, *args, **kwargs)
 
 
 @auditlogclass
@@ -2702,20 +2684,12 @@ class NestedVarhaiskasvatussuhdeToimipaikkaViewSet(GenericViewSet, ListModelMixi
     serializer_class = VarhaiskasvatussuhdeSerializer
     permission_classes = (CustomObjectPermissions, )
 
-    def get_toimipaikka(self, request, toimipaikka_pk=None):
-        toimipaikka = get_object_or_404(Toimipaikka.objects.all(), pk=toimipaikka_pk)
-        user = request.user
-        if user.has_perm("view_toimipaikka", toimipaikka):
-            return toimipaikka
-        else:
-            raise Http404("Not found.")
-
     @transaction.atomic
     def list(self, request, *args, **kwargs):
         if not kwargs['toimipaikka_pk'].isdigit():
             raise Http404("Not found.")
 
-        self.get_toimipaikka(request, toimipaikka_pk=kwargs['toimipaikka_pk'])
+        get_toimipaikka_or_404(request.user, toimipaikka_pk=kwargs['toimipaikka_pk'])
         self.queryset = Varhaiskasvatussuhde.objects.filter(toimipaikka=kwargs['toimipaikka_pk']).order_by('id')
 
         return cached_list_response(self, request.user, request.get_full_path())
