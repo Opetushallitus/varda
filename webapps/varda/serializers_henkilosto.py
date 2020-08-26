@@ -348,8 +348,8 @@ def validate_dates_palvelussuhde(data, palvelussuhde, validator):
     if 'alkamis_pvm' in data and data['alkamis_pvm'] is not None:
         if not validators.validate_paivamaara1_after_paivamaara2(data['alkamis_pvm'], palvelussuhde.alkamis_pvm, can_be_same=True):
             validator.error('alkamis_pvm', 'alkamis_pvm must be after palvelussuhde alkamis_pvm (or same).')
-        if not validators.validate_paivamaara1_before_paivamaara2(data['alkamis_pvm'], palvelussuhde.paattymis_pvm, can_be_same=False):
-            validator.error('alkamis_pvm', 'alkamis_pvm must be before palvelussuhde paattymis_pvm.')
+        if not validators.validate_paivamaara1_before_paivamaara2(data['alkamis_pvm'], palvelussuhde.paattymis_pvm, can_be_same=True):
+            validator.error('alkamis_pvm', 'alkamis_pvm must be before palvelussuhde paattymis_pvm (or same).')
 
 
 def validate_overlapping_kiertavyys(data, palvelussuhde, kiertava_tyontekija_kytkin, validator):
