@@ -26,7 +26,9 @@
                     class="varda-form-control form-control varda-select"
                     (change)="setToimipaikka(activeToimipaikka)"
                     [(ngModel)]="activeToimipaikka">
-              <option [ngValue]="null">{{ i18n.kaikki_toimipaikat | translate }}</option>
+              <option [ngValue]="null"
+                      [disabled]="!anyToimijaKatselija">
+                {{ i18n.kaikki_toimipaikat | translate }}</option>
               <option *ngFor="let toimipaikka of toimipaikat"
                       [ngValue]="toimipaikka">{{toimipaikka.nimi}}</option>
             </select>

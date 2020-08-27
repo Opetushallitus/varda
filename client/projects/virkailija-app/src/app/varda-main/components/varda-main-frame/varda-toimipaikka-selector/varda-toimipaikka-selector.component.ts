@@ -28,6 +28,7 @@ export class VardaToimipaikkaSelectorComponent implements OnInit {
   toimipaikkaFormOpen: boolean;
   editToimipaikkaAction: boolean;
   hallinnointijarjestelmaTypes = Hallinnointijarjestelma;
+  anyToimijaKatselija: boolean;
 
   confirmedToimipaikkaFormLeave = true;
 
@@ -41,6 +42,11 @@ export class VardaToimipaikkaSelectorComponent implements OnInit {
 
   ngOnInit() {
     this.initToimipaikat();
+
+    this.anyToimijaKatselija = this.toimijaAccess.lapsitiedot.katselija ||
+      this.toimijaAccess.huoltajatiedot.katselija ||
+      this.toimijaAccess.tyontekijatiedot.katselija ||
+      this.toimijaAccess.taydennyskoulutustiedot.katselija;
   }
 
   initToimipaikat(): void {
@@ -52,7 +58,7 @@ export class VardaToimipaikkaSelectorComponent implements OnInit {
       return;
     }
 
-    if (this.toimipaikat.length === 1) {
+    if (this.toimipaikat.length === 1 || (!this.anyToimijaKatselija && this.toimipaikat.length > 0)) {
       this.activeToimipaikka = this.toimipaikat[0];
       this.vardaVakajarjestajaService.setSelectedToimipaikka(this.activeToimipaikka);
       this.changeToimipaikka.emit(this.activeToimipaikka);
