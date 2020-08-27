@@ -1,6 +1,15 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.4.0 (27.08.2020)
+- CSCVARDA-1465 Henkilöstökokonaisuus
+- Huoltajan katselunäkymän käyttöönotto
+- Yksityisten toimijoiden maksutietojen käyttöönotto
+- CSCVARDA-1704 Syötä tietoja-sivu yleisnäkymäksi, hae- ja muokkaa sivun poisto
+- CSCVARDA-1138 Henkilön lisäämiseen validointeja
+- CSCVARDA-1833: Lapsen poistamiseen parannuksia
+- CSCVARDA-1678: Koodistointegraatio
+
 1.3.20 (24.7.2020)
 - CSCVARDA-1639 Muokkaa toimipaikan lähdejärjestelmäkenttä hallinnointijärjestelmäksi
 
