@@ -41,12 +41,12 @@ export class VardaToimipaikkaSelectorComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.initToimipaikat();
-
     this.anyToimijaKatselija = this.toimijaAccess.lapsitiedot.katselija ||
       this.toimijaAccess.huoltajatiedot.katselija ||
       this.toimijaAccess.tyontekijatiedot.katselija ||
       this.toimijaAccess.taydennyskoulutustiedot.katselija;
+
+    this.initToimipaikat();
   }
 
   initToimipaikat(): void {
