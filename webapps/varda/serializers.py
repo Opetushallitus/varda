@@ -56,20 +56,20 @@ class UpdateOphStaffSerializer(serializers.Serializer):
     def validate(self, attrs):
         virkailija_id = attrs.get('virkailija_id')
         if virkailija_id < 1:
-            raise serializers.ValidationError({"virkailija_id": "Incorrect data format. Id should be a positive integer."})
+            raise serializers.ValidationError({'virkailija_id': 'Incorrect data format. Id should be a positive integer.'})
 
         try:
             user = User.objects.get(id=virkailija_id)
         except User.DoesNotExist:
-            raise serializers.ValidationError({"virkailija_id": "User was not found with id: " + str(virkailija_id) + "."})
+            raise serializers.ValidationError({'virkailija_id': 'User was not found with id: ' + str(virkailija_id) + '.'})
 
         try:
             oph_staff_user_obj = Z3_AdditionalCasUserFields.objects.get(user=user)
         except Z3_AdditionalCasUserFields.DoesNotExist:
-            raise serializers.ValidationError({"virkailija_id": "User with id: " + str(virkailija_id) + ", is not a CAS-user."})
+            raise serializers.ValidationError({'virkailija_id': 'User with id: ' + str(virkailija_id) + ', is not a CAS-user.'})
 
-        if not user.groups.filter(name="oph_staff").exists():
-            raise serializers.ValidationError({"virkailija_id": "User with id: " + str(virkailija_id) + ", is not in oph_staff group."})
+        if not user.groups.filter(name='oph_staff').exists():
+            raise serializers.ValidationError({'virkailija_id': 'User with id: ' + str(virkailija_id) + ', is not in oph_staff group.'})
 
         oph_staff_user_obj.approved_oph_staff = True
         oph_staff_user_obj.save()

@@ -421,13 +421,19 @@ def add_oph_staff_to_vakajarjestaja_katselija_groups():
     for organisaatio_oid in vakajarjestaja_oids:
         org_oid_query |= Q(name__endswith=organisaatio_oid)
 
-    katselija_groups = (Group
-                        .objects
-                        .filter((Q(name__startswith='VARDA-KATSELIJA') |
-                                 Q(name__startswith='HUOLTAJATIETO_KATSELU')),
-                                org_oid_query))
+    katselija_condition = (Q(name__startswith='VARDA-KATSELIJA') |
+                           Q(name__startswith='HUOLTAJATIETO_KATSELU') |
+                           Q(name__startswith='HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA') |
+                           Q(name__startswith='HENKILOSTO_TILAPAISET_KATSELIJA') |
+                           Q(name__startswith='HENKILOSTO_TYONTEKIJA_KATSELIJA')
+                           )
+    katselija_groups_query = Group.objects.filter(katselija_condition, org_oid_query)
 
-    for katselija_group in katselija_groups:
-        for approved_oph_staff_member_obj in approved_oph_staff_query:
-            if not approved_oph_staff_member_obj.user.is_superuser:  # Superuser has permissions anyhow
-                katselija_group.user_set.add(approved_oph_staff_member_obj.user)
+    for approved_oph_staff_member_obj in approved_oph_staff_query:
+        # Since pure OPH-staff members don't have any real permissions to varda making sure view_henkilo gets set
+        user = approved_oph_staff_member_obj.user
+        if not user.is_superuser:  # Superuser has permissions anyhow
+            group = Group.objects.get(name="vakajarjestaja_view_henkilo")
+            group.user_set.add(user)
+            for katselija_group in katselija_groups_query:
+                katselija_group.user_set.add(user)
