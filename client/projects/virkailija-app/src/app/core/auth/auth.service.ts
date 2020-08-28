@@ -172,8 +172,7 @@ export class AuthService {
 
   isCurrentUserSelectedVakajarjestajaRole(...roles: VardaKayttooikeusRoles[]): boolean {
     // Admin-user has TALLENTAJA-permissions on VakaJarjestaja-level
-    if (this.isAdminUser && (roles.includes(VardaKayttooikeusRoles.VARDA_TALLENTAJA)
-      || roles.includes(VardaKayttooikeusRoles.VARDA_HUOLTAJA_TALLENTAJA))) {
+    if (this.isAdminUser && !roles.includes(VardaKayttooikeusRoles.VARDA_PAAKAYTTAJA)) {
       return true;
     }
 
@@ -188,22 +187,6 @@ export class AuthService {
       .filter(kayttooikeus => kayttooikeus.organisaatio === oid)
       .some(kayttooikeus => roles.indexOf(kayttooikeus.kayttooikeus) !== -1);
   }
-
-  /* Katselija is an user who can't modify vakatieto in given toimipaikka. This considers only vaka roles in following cases:
-  * Toimija katselija = toimipaikka katselija
-  * Toimija katselija + toimipaikka tallentaja != toimipaikka katselija
-  * Toimija tallentaja = never katselija
-  * Toimipaikka tallentaja = never katselija
-  pääkäyttäjä = katselija from this point of view
-   */
-  isCurrentUserKatselijaForToimipaikka(oid: string): boolean {
-    return !this.isCurrentUserToimipaikkaRole(oid, VardaKayttooikeusRoles.VARDA_TALLENTAJA)
-      && !this.isCurrentUserSelectedVakajarjestajaRole(VardaKayttooikeusRoles.VARDA_TALLENTAJA)
-      && (this.isCurrentUserToimipaikkaRole(oid, VardaKayttooikeusRoles.VARDA_KATSELIJA, VardaKayttooikeusRoles.VARDA_PAAKAYTTAJA)
-        || this.isCurrentUserSelectedVakajarjestajaRole(VardaKayttooikeusRoles.VARDA_KATSELIJA, VardaKayttooikeusRoles.VARDA_PAAKAYTTAJA)
-      );
-  }
-
 
   getUserAccess(toimipaikkaOID?: string): UserAccess {
     const getRoles = (...roles: Array<VardaKayttooikeusRoles>): boolean => {

@@ -8,14 +8,14 @@ import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajar
 import { TranslateService } from '@ngx-translate/core';
 import { VardaErrorMessageService } from '../../../core/services/varda-error-message.service';
 import { debounceTime } from 'rxjs/operators';
-import { fromEvent } from 'rxjs';
+import { fromEvent, Observable } from 'rxjs';
 import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { HenkiloRooliEnum } from '../../../utilities/models/enums/henkilorooli.enum';
 import { VardaApiService } from '../../../core/services/varda-api.service';
 import { TyontekijaListDTO } from '../../../utilities/models/dto/varda-tyontekija-dto.model';
 import { LapsiListDTO } from '../../../utilities/models/dto/varda-lapsi-dto.model';
-import { LoadingHttpService } from 'varda-shared';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
+import { HenkilostoErrorMessageService, ErrorTree } from '../../../core/services/varda-henkilosto-error-message.service';
 
 declare var $: any;
 
@@ -40,6 +40,7 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
   henkiloHasRole: boolean;
   toimipaikka: VardaToimipaikkaDTO;
   HenkiloRooliEnum = HenkiloRooliEnum;
+  henkiloFormErrors: Observable<Array<ErrorTree>>;
 
   ui: {
     henkiloAddRequestSuccess: boolean,
@@ -55,7 +56,7 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
   };
 
   constructor(
-    private http: LoadingHttpService,
+    private henkilostoErrorService: HenkilostoErrorMessageService,
     private vardaApiService: VardaApiService,
     private vardaApiWrapperService: VardaApiWrapperService,
     private vardaModalService: VardaModalService,
@@ -182,7 +183,7 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
   getHenkilo(henkiloId: number): void {
     this.vardaApiService.getHenkilo(henkiloId).subscribe({
       next: henkilo => this.currentHenkilo = henkilo,
-      error: err => console.error(err)
+      error: err => this.henkilostoErrorService.handleError(err)
     });
   }
 
@@ -243,6 +244,9 @@ export class VardaHenkiloFormComponent implements OnInit, OnChanges {
         this.valuesChanged.emit(true);
       }
     });
+
+    this.henkilostoErrorService.resetErrorList();
+    this.henkiloFormErrors = this.henkilostoErrorService.initErrorList();
 
     this.bindScrollHandlers();
 

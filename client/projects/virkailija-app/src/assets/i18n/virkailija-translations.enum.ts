@@ -46,6 +46,7 @@ export enum VirkailijaTranslations {
 
   henkilo_lisaa_lapsi = 'henkilo.lisaa-lapsi',
   henkilo_lisaa_tyontekija = 'henkilo.lisaa-tyontekija',
+  henkilo_haetaan_tietoja = 'henkilo.haetaan-tietoja',
   henkilo_hae_nimella = 'henkilo.hae-nimella',
   henkilo_lapset = 'henkilo.lapset',
   henkilo_tyontekijat = 'henkilo.tyontekijat',

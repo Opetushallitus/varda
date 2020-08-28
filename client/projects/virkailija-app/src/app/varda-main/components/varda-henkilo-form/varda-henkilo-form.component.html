@@ -7,17 +7,22 @@
     </span>
 
     <ng-container *ngIf="!currentHenkilo">
-      <span *ngIf="henkilonSuhde.rooli===HenkiloRooliEnum.lapsi">
-        <span
-              *ngIf="henkilonToimipaikka; else lapsiToimipaikaton">{{ i18n.henkilo_lisaa_lapsi_TOIMIPAIKKA | translate: { toimipaikka: henkilonToimipaikka?.nimi} }}</span>
-        <ng-template #lapsiToimipaikaton>{{ i18n.henkilo_lisaa_lapsi | translate }}</ng-template>
+      <span *ngIf="henkilonSuhde.henkilo_id; else showRooli">
+        {{ i18n.henkilo_haetaan_tietoja | translate }}
       </span>
+      <ng-template #showRooli>
+        <span *ngIf="henkilonSuhde.rooli===HenkiloRooliEnum.lapsi">
+          <span
+                *ngIf="henkilonToimipaikka; else lapsiToimipaikaton">{{ i18n.henkilo_lisaa_lapsi_TOIMIPAIKKA | translate: { toimipaikka: henkilonToimipaikka?.nimi} }}</span>
+          <ng-template #lapsiToimipaikaton>{{ i18n.henkilo_lisaa_lapsi | translate }}</ng-template>
+        </span>
 
-      <span *ngIf="henkilonSuhde.rooli === HenkiloRooliEnum.tyontekija">
-        <span
-              *ngIf="henkilonToimipaikka; else lapsiToimipaikaton">{{ i18n.henkilo_lisaa_tyontekija_TOIMIPAIKKA | translate: { toimipaikka: henkilonToimipaikka?.nimi} }}</span>
-        <ng-template #lapsiToimipaikaton>{{ i18n.henkilo_lisaa_tyontekija | translate }}</ng-template>
-      </span>
+        <span *ngIf="henkilonSuhde.rooli === HenkiloRooliEnum.tyontekija">
+          <span
+                *ngIf="henkilonToimipaikka; else lapsiToimipaikaton">{{ i18n.henkilo_lisaa_tyontekija_TOIMIPAIKKA | translate: { toimipaikka: henkilonToimipaikka?.nimi} }}</span>
+          <ng-template #lapsiToimipaikaton>{{ i18n.henkilo_lisaa_tyontekija | translate }}</ng-template>
+        </span>
+      </ng-template>
     </ng-container>
   </h1>
   <button type="button"
@@ -38,6 +43,8 @@
     </li>
   </ul>
 </div>
+
+<app-varda-tyontekija-error [errors]="henkiloFormErrors"></app-varda-tyontekija-error>
 
 <div class="form-continues-text-wrapper"
      *ngIf="ui.showFormContinuesWarning">
@@ -277,7 +284,7 @@
              *ngIf="!currentHenkilo">
           <div><button class="varda-button secondary"
                     type="button"
-                    data-dismiss="modal">{{'label.cancel' | translate}}</button></div>
+                    data-dismiss="modal">{{ i18n.cancel | translate}}</button></div>
         </div>
       </div>
     </div>
