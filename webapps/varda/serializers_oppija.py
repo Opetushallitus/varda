@@ -65,9 +65,11 @@ class HuoltajanLapsiLapsiSerializer(serializers.ModelSerializer):
             return obj.vakatoimija.nimi
         if obj.oma_organisaatio is not None:
             return obj.oma_organisaatio.nimi
-        vakasuhde_first = obj.varhaiskasvatuspaatokset.first().varhaiskasvatussuhteet.first()
-        if vakasuhde_first is not None:
-            return vakasuhde_first.toimipaikka.vakajarjestaja.nimi
+        vakapaatos_first = obj.varhaiskasvatuspaatokset.first()
+        if vakapaatos_first is not None:
+            vakasuhde_first = vakapaatos_first.varhaiskasvatussuhteet.first()
+            if vakasuhde_first is not None:
+                return vakasuhde_first.toimipaikka.vakajarjestaja.nimi
         return None
 
     class Meta:
