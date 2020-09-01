@@ -13,11 +13,11 @@ from varda.models import (VakaJarjestaja, Toimipaikka, PaosOikeus, Huoltaja, Huo
 from varda.permission_groups import assign_object_level_permissions
 from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, assert_validation_error
 
-# Well known test organizations (name corresponds to id)
-test_org1 = "1.2.246.562.10.34683023489"  # "Tester2 organisaatio"
-test_org2 = "1.2.246.562.10.93957375488"  # "Tester organisaatio"
-test_org3 = "1.2.246.562.10.93957375486"  # "varda-testi organisaatio"
-test_org4 = "1.2.246.562.10.93957375484"  # "Frontti organisaatio"
+# Well known test organizations (name corresponds to oid)
+test_org_34683023489 = '1.2.246.562.10.34683023489'  # "Tester2 organisaatio"
+test_org_93957375488 = '1.2.246.562.10.93957375488'  # "Tester organisaatio"
+test_org_93957375486 = '1.2.246.562.10.93957375486'  # "varda-testi organisaatio"
+test_org_93957375484 = '1.2.246.562.10.93957375484'  # "Frontti organisaatio"
 
 
 class VardaViewsTests(TestCase):
@@ -757,8 +757,8 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient("tester2").client()
         data = {
             "henkilo": "/api/v1/henkilot/7/",
-            "oma_organisaatio_oid": test_org1,
-            "paos_organisaatio_oid": test_org2,
+            "oma_organisaatio_oid": test_org_34683023489,
+            "paos_organisaatio_oid": test_org_93957375488,
             "oma_organisaatio": None,
             "paos_organisaatio": None,
         }
@@ -775,30 +775,32 @@ class VardaViewsTests(TestCase):
                       status=status.HTTP_201_CREATED
                       )
         henkilo = {
-            "henkilotunnus": "240219A149T",
-            "etunimet": "Pentti Jr",
-            "kutsumanimi": "Pentti",
-            "sukunimi": "Kivimäki"
+            'henkilotunnus': "240219A149T",
+            'etunimet': "Pentti Jr",
+            'kutsumanimi': "Pentti",
+            'sukunimi': "Kivimäki"
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
         self.assertEqual(resp.status_code, 200)
         henkilo_url = json.loads(resp.content)['url']
+        vakajarjestaja_id_34683023489 = VakaJarjestaja.objects.filter(organisaatio_oid=test_org_34683023489).first().id
 
         lapsi = {
-            "henkilo": henkilo_url,
-            "oma_organisaatio": None,
-            "paos_organisaatio": None,
+            'henkilo': henkilo_url,
+            'vakatoimija': 'http://testserver/api/v1/vakajarjestajat/{}/'.format(vakajarjestaja_id_34683023489),
+            'oma_organisaatio': None,
+            'paos_organisaatio': None,
         }
-        resp = client.post("/api/v1/lapset/", json.dumps(lapsi), content_type='application/json')
+        resp = client.post('/api/v1/lapset/', json.dumps(lapsi), content_type='application/json')
         self.assertEqual(resp.status_code, 201)
 
     def test_api_oid_related_field_create_lapsi_with_oids(self):
         client = SetUpTestClient("tester2").client()
         data = {
             "henkilo": "/api/v1/henkilot/7/",
-            "oma_organisaatio_oid": test_org1,
-            "paos_organisaatio_oid": test_org2,
+            "oma_organisaatio_oid": test_org_34683023489,
+            "paos_organisaatio_oid": test_org_93957375488,
         }
 
         resp = client.post("/api/v1/lapset/", json.dumps(data), content_type='application/json')
@@ -812,8 +814,8 @@ class VardaViewsTests(TestCase):
         data = {
             "url": "/api/v1/lapset/4/",
             "henkilo": "/api/v1/henkilot/9/",
-            "oma_organisaatio_oid": test_org4,
-            "paos_organisaatio_oid": test_org2,
+            "oma_organisaatio_oid": test_org_93957375484,
+            "paos_organisaatio_oid": test_org_93957375488,
         }
 
         resp = client.put("/api/v1/lapset/4/", json.dumps(data), content_type='application/json')
@@ -826,7 +828,7 @@ class VardaViewsTests(TestCase):
         data = {
             "url": "/api/v1/lapset/4/",
             "henkilo": "/api/v1/henkilot/9/",
-            "oma_organisaatio_oid": test_org4,
+            "oma_organisaatio_oid": test_org_93957375484,
             # no paos_organisaatio_oid
         }
 
@@ -837,7 +839,7 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient("tester2").client()
         data = {
             "henkilo": "/api/v1/henkilot/7/",
-            "oma_organisaatio_oid": test_org1,
+            "oma_organisaatio_oid": test_org_34683023489,
             # no oma_organisaatio as it is via oid
             "paos_organisaatio": "/api/v1/vakajarjestajat/2/",
         }
@@ -861,7 +863,7 @@ class VardaViewsTests(TestCase):
         data = {
             "url": "/api/v1/lapset/4/",
             "henkilo": "/api/v1/henkilot/9/",
-            "oma_organisaatio_oid": test_org1,  # id=1
+            "oma_organisaatio_oid": test_org_34683023489,  # id=1
             "paos_organisaatio_oid": None,
             "oma_organisaatio": "/api/v1/vakajarjestajat/4/",  # id=4
             "paos_organisaatio": "/api/v1/vakajarjestajat/2/",
@@ -896,29 +898,31 @@ class VardaViewsTests(TestCase):
                       status=status.HTTP_201_CREATED
                       )
         henkilo = {
-            "henkilotunnus": "180315A901Y",
-            "etunimet": "Anton",
-            "kutsumanimi": "Anton",
-            "sukunimi": "Kivimäki"
+            'henkilotunnus': "180315A901Y",
+            'etunimet': "Anton",
+            'kutsumanimi': "Anton",
+            'sukunimi': "Kivimäki"
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
         self.assertEqual(resp.status_code, 201)
         henkilo_url = json.loads(resp.content)['url']
 
+        vakajarjestaja_id_34683023489 = VakaJarjestaja.objects.filter(organisaatio_oid=test_org_34683023489).first().id
         lapsi = {
-            "henkilo": henkilo_url
+            'henkilo': henkilo_url,
+            'vakatoimija': 'http://testserver/api/v1/vakajarjestajat/{}/'.format(vakajarjestaja_id_34683023489),
         }
         resp2 = client.post('/api/v1/lapset/', lapsi)
         self.assertEqual(resp2.status_code, 201)
         lapsi_url = json.loads(resp2.content)['url']
 
         varhaiskasvatuspaatos = {
-            "lapsi": lapsi_url,
-            "tuntimaara_viikossa": "37.5",
-            "jarjestamismuoto_koodi": "jm01",
-            "hakemus_pvm": "2018-08-15",
-            "alkamis_pvm": "2018-09-30"
+            'lapsi': lapsi_url,
+            'tuntimaara_viikossa': '37.5',
+            'jarjestamismuoto_koodi': 'jm01',
+            'hakemus_pvm': '2018-08-15',
+            'alkamis_pvm': '2018-09-30'
         }
         resp3 = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
         self.assertEqual(resp3.status_code, 201)
@@ -926,8 +930,8 @@ class VardaViewsTests(TestCase):
 
         varhaiskasvatussuhde = {
             # no toimipaikka
-            "varhaiskasvatuspaatos": varhaiskasvatuspaatos_url,
-            "alkamis_pvm": "2018-10-01"
+            'varhaiskasvatuspaatos': varhaiskasvatuspaatos_url,
+            'alkamis_pvm': "2018-10-01"
         }
         resp = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         self.assertEqual(resp.status_code, 400)
@@ -1022,38 +1026,42 @@ class VardaViewsTests(TestCase):
                       status=status.HTTP_201_CREATED
                       )
         henkilo = {
-            "henkilotunnus": "210616A028D",
-            "etunimet": "Anton",
-            "kutsumanimi": "Anton",
-            "sukunimi": "Kivimäki"
+            'henkilotunnus': '210616A028D',
+            'etunimet': 'Anton',
+            'kutsumanimi': 'Anton',
+            'sukunimi': 'Kivimäki',
         }
-        client = SetUpTestClient('tester').client()
+        client = SetUpTestClient('tester5').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
         assert_status_code(resp, 201)
         henkilo_url = json.loads(resp.content)['url']
 
+        vakajarjestaja_id_93957375488 = VakaJarjestaja.objects.filter(organisaatio_oid=test_org_93957375488).first().id
         lapsi = {
-            "henkilo": henkilo_url
+            'henkilo': henkilo_url,
+            'vakatoimija': 'http://testserver/api/v1/vakajarjestajat/{}/'.format(vakajarjestaja_id_93957375488),
         }
         resp2 = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp2, 201)
         lapsi_url = json.loads(resp2.content)['url']
 
         varhaiskasvatuspaatos = {
-            "lapsi": lapsi_url,
-            "tuntimaara_viikossa": "37.5",
-            "jarjestamismuoto_koodi": "jm04",
-            "hakemus_pvm": "2018-08-15",
-            "alkamis_pvm": "2018-09-30"
+            'lapsi': lapsi_url,
+            'tuntimaara_viikossa': '37.5',
+            'jarjestamismuoto_koodi': 'jm04',
+            'hakemus_pvm': '2018-08-15',
+            'alkamis_pvm': '2018-09-30',
         }
         resp3 = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
         assert_status_code(resp3, 201)
         varhaiskasvatuspaatos_url = json.loads(resp3.content)['url']
 
+        toimipaikka_oid = '1.2.246.562.10.9395737548810'
+        toimipaikka_id = Toimipaikka.objects.filter(organisaatio_oid=toimipaikka_oid).first().id
         varhaiskasvatussuhde = {
-            "toimipaikka": "http://testserver/api/v1/toimipaikat/1/",
-            "varhaiskasvatuspaatos": varhaiskasvatuspaatos_url,
-            "alkamis_pvm": "2018-10-01"
+            'toimipaikka': 'http://testserver/api/v1/toimipaikat/{}/'.format(toimipaikka_id),
+            'varhaiskasvatuspaatos': varhaiskasvatuspaatos_url,
+            'alkamis_pvm': '2018-10-01',
         }
         resp = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         assert_status_code(resp, 201)
@@ -2563,31 +2571,33 @@ class VardaViewsTests(TestCase):
                       status=status.HTTP_201_CREATED
                       )
         henkilo = {
-            "henkilotunnus": "080576-922J",
-            "etunimet": "Anni",
-            "kutsumanimi": "Anni",
-            "sukunimi": "Jussinen"
+            'henkilotunnus': '080576-922J',
+            'etunimet': 'Anni',
+            'kutsumanimi': 'Anni',
+            'sukunimi': 'Jussinen',
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
         assert_status_code(resp, 201)
         henkilo_url = json.loads(resp.content)['url']
 
+        vakajarjestaja_id_34683023489 = VakaJarjestaja.objects.filter(organisaatio_oid=test_org_34683023489).first().id
         lapsi = {
-            "henkilo": henkilo_url
+            'henkilo': henkilo_url,
+            'vakatoimija': 'http://testserver/api/v1/vakajarjestajat/{}/'.format(vakajarjestaja_id_34683023489),
         }
         resp2 = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp2, 201)
         lapsi_url = json.loads(resp2.content)['url']
         maksutieto = {
-            "huoltajat": [{"henkilotunnus": "110494-9153", "etunimet": "Jukka", "sukunimi": "Pekkarinen"}],
-            "lapsi": lapsi_url,
-            "maksun_peruste_koodi": "mp02",
-            "palveluseteli_arvo": 120,
-            "asiakasmaksu": 0,
-            "perheen_koko": 2,
-            "alkamis_pvm": "2019-01-01",
-            "paattymis_pvm": "2020-01-01"
+            'huoltajat': [{'henkilotunnus': '110494-9153', 'etunimet': 'Jukka', 'sukunimi': 'Pekkarinen'}],
+            'lapsi': lapsi_url,
+            'maksun_peruste_koodi': 'mp02',
+            'palveluseteli_arvo': 120,
+            'asiakasmaksu': 0,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2019-01-01',
+            'paattymis_pvm': '2020-01-01',
         }
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
         assert_status_code(resp, 400)

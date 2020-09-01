@@ -13,6 +13,7 @@ from rest_framework.validators import UniqueTogetherValidator
 from varda import validators
 from varda.cache import caching_to_representation
 from varda.misc import list_of_dicts_has_duplicate_values
+from varda.misc_viewsets import ViewSetValidator
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Maksutieto, Henkilo,
                           Lapsi, Huoltaja, Huoltajuussuhde, PaosOikeus, PaosToiminta, Varhaiskasvatuspaatos,
                           Varhaiskasvatussuhde, Z3_AdditionalCasUserFields, Tyontekija)
@@ -661,28 +662,23 @@ class LapsiSerializer(serializers.HyperlinkedModelSerializer):
         exclude = ('luonti_pvm', 'changed_by')
 
     def validate(self, data):
-        errors = []
-        if 'henkilo' in data and not self.context['request'].user.has_perm('view_henkilo', data['henkilo']):
-            msg = {'henkilo': ['Invalid hyperlink - Object does not exist.', ]}
-            errors.append(msg)
+        with ViewSetValidator() as validator:
+            vakatoimija = data.get('vakatoimija')
+            oma_organisaatio = data.get('oma_organisaatio')
+            paos_organisaatio = data.get('paos_organisaatio')
 
-        vakatoimija = data.get('vakatoimija')
-        oma_organisaatio = data.get('oma_organisaatio')
-        paos_organisaatio = data.get('paos_organisaatio')
-        # We don't require vakatoimija for regular (non-paos) lapsi since this would change api signature. This can be
-        # changed when all users input vakatoimija or in v2 api.
-        if vakatoimija and oma_organisaatio or vakatoimija and paos_organisaatio:
-            msg = 'Lapsi cannot be paos and regular one same time.'
-            errors.append(msg)
+            if 'henkilo' in data and not self.context['request'].user.has_perm('view_henkilo', data['henkilo']):
+                validator.error('henkilo', 'Invalid hyperlink - Object does not exist.')
 
-        if oma_organisaatio and not paos_organisaatio or paos_organisaatio and not oma_organisaatio:
-            msg = 'For PAOS-lapsi both oma_organisaatio and paos_organisaatio are needed.'
-            errors.append(msg)
-        if oma_organisaatio and oma_organisaatio == paos_organisaatio:
-            msg = {'detail': 'oma_organisaatio cannot be same as paos_organisaatio.'}
-            errors.append(msg)
-        if errors:
-            raise serializers.ValidationError(errors, code='invalid')
+            if not (vakatoimija or oma_organisaatio or paos_organisaatio):
+                validator.error('non_field_errors', 'Either vakatoimija or oma_organisaatio and paos_organisaatio are required')
+            if vakatoimija and oma_organisaatio or vakatoimija and paos_organisaatio:
+                validator.error('non_field_errors', 'Lapsi cannot be paos and regular one same time.')
+
+            if oma_organisaatio and not paos_organisaatio or paos_organisaatio and not oma_organisaatio:
+                validator.error('non_field_errors', 'For PAOS-lapsi both oma_organisaatio and paos_organisaatio are needed.')
+            if oma_organisaatio and oma_organisaatio == paos_organisaatio:
+                validator.error('detail', 'oma_organisaatio cannot be same as paos_organisaatio.')
         return data
 
     @caching_to_representation('lapsi')

@@ -5,7 +5,7 @@ from django.test import TestCase
 
 from rest_framework import status
 
-from varda.models import Z5_AuditLog
+from varda.models import Z5_AuditLog, VakaJarjestaja
 from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient
 
 
@@ -207,25 +207,32 @@ class VardaPermissionsTests(TestCase):
                       status=status.HTTP_201_CREATED
                       )
         henkilo = {
-            "henkilotunnus": "090471-813K",
-            "etunimet": "Kaarle-Johan",
-            "kutsumanimi": "Kaarle-Johan",
-            "sukunimi": "Mattson"
+            'henkilotunnus': '090471-813K',
+            'etunimet': 'Kaarle-Johan',
+            'kutsumanimi': 'Kaarle-Johan',
+            'sukunimi': 'Mattson',
         }
+        organisaatio_oid_34683023489 = '1.2.246.562.10.34683023489'
+        vakajarjestaja_id_34683023489 = VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid_34683023489).first().id
 
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
         assert_status_code(resp, 201)
 
-        new_henkilo_url = json.loads(resp.content)["url"]
+        new_henkilo_url = json.loads(resp.content)['url']
         lapsi = {
-            "henkilo": new_henkilo_url
+            'henkilo': new_henkilo_url,
+            'vakatoimija': 'http://testserver/api/v1/vakajarjestajat/{}/'.format(vakajarjestaja_id_34683023489),
         }
 
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, 201)
 
-        client = SetUpTestClient('tester').client()
+        organisaatio_oid_93957375488 = '1.2.246.562.10.93957375488'
+        vakajarjestaja_id_93957375488 = VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid_93957375488).first().id
+        vakajarjestaja_url_93957375488 = 'http://testserver/api/v1/vakajarjestajat/{}/'.format(vakajarjestaja_id_93957375488)
+        lapsi.update({'vakatoimija': vakajarjestaja_url_93957375488})
+        client = SetUpTestClient('tester5').client()
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, 201)
 
@@ -312,9 +319,11 @@ class VardaPermissionsTests(TestCase):
     def test_create_non_unique_lapsi_within_vakajarjestaja(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/lapset/1/')
-        henkilo_url = json.loads(resp.content)["henkilo"]
+        henkilo_url = json.loads(resp.content)['henkilo']
+        vakatoimija_url = json.loads(resp.content)['vakatoimija']
         lapsi = {
-            "henkilo": henkilo_url
+            'henkilo': henkilo_url,
+            'vakatoimija': vakatoimija_url,
         }
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, 200)  # Lapsi is already added
@@ -335,8 +344,12 @@ class VardaPermissionsTests(TestCase):
 
     def test_try_to_change_henkilo(self):
         client = SetUpTestClient('tester').client()
+        organisaatio_oid_34683023489 = '1.2.246.562.10.34683023489'
+        vakajarjestaja_id_34683023489 = VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid_34683023489).first().id
+
         lapsi = {
-            "henkilo": "http://testserver/api/v1/henkilot/8/",
+            'henkilo': 'http://testserver/api/v1/henkilot/8/',
+            'vakatoimija': 'http://testserver/api/v1/vakajarjestajat/{}/'.format(vakajarjestaja_id_34683023489),
         }
         resp = client.put('/api/v1/lapset/1/', lapsi)
         assert_status_code(resp, 400)
@@ -364,18 +377,6 @@ class VardaPermissionsTests(TestCase):
         resp = client.get('/api/v1/toimipaikat/')
         assert_status_code(resp, 200)
         self.assertEqual(json.loads(resp.content)['count'], 10)
-
-        """
-        TODO:
-        client = SetUpTestClient('antero_jenkins').client()
-        resp = client.get('/api/v1/toimipaikat/')
-        assert_status_code(resp, 200)
-        self.assertEqual(json.loads(resp.content)["count"], 1)
-
-        client = SetUpTestClient('antero_platform').client()
-        resp = client.get('/api/v1/toimipaikat/')
-        assert_status_code(resp, 403)
-        """
 
     def test_view_content_as_anonymous(self):
         # vaka-jarjestajat tested already elsewhere
