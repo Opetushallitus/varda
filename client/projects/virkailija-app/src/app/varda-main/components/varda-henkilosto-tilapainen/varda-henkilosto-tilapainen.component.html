@@ -60,7 +60,7 @@
                              formControlName="tyontekijamaara"
                              min="0"
                              (change)="valueChanged(month)"
-                             [placeholder]="i18n.tilapainen_henkilosto_henkilomaara" />
+                             [placeholder]="i18n.tilapainen_henkilosto_henkilomaara | translate" />
                       <div class="error-field oph-error"
                            *ngIf="month.touched">
                         <span *ngIf="month.get('tyontekijamaara').hasError('required')">
@@ -81,7 +81,7 @@
                              min="0"
                              step="0.5"
                              (change)="valueChanged(month)"
-                             [placeholder]="i18n.tilapainen_henkilosto_tyotunnit" />
+                             [placeholder]="i18n.tilapainen_henkilosto_tyotunnit | translate" />
                       <div class="error-field oph-error"
                            *ngIf="month.touched">
                         <span *ngIf="month.get('tuntimaara').hasError('required')">

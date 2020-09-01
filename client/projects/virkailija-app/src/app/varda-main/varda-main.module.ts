@@ -47,9 +47,6 @@ import { YhteenvetoComponent } from './components/varda-reporting/yhteenveto/yht
 import { MatTableModule } from '@angular/material/table';
 import { MaksutiedotFormComponent } from './components/varda-lapsi-form/maksutiedot-form/maksutiedot-form.component';
 import { HuoltajatContainerComponent } from './components/varda-lapsi-form/huoltajat-container/huoltajat-container.component';
-import { VardaHakuContainerComponent } from './components/varda-haku-container/varda-haku-container.component';
-import { HakuConditionComponent } from './components/varda-haku-container/haku-condition/haku-condition.component';
-import { HakuListComponent } from './components/varda-haku-container/haku-list/haku-list.component';
 import { VardaSharedModule } from 'varda-shared';
 import { VardaPaosManagementContainerComponent } from './components/varda-paos-management-container/varda-paos-management-container.component';
 import { PaosAddedToimijatComponent } from './components/varda-paos-management-container/paos-list-toimintainfo/paos-added-toimijat.component';
@@ -116,9 +113,6 @@ import { ReportTyontekijaComponent } from './components/varda-reporting/report-t
     YhteenvetoComponent,
     MaksutiedotFormComponent,
     HuoltajatContainerComponent,
-    VardaHakuContainerComponent,
-    HakuConditionComponent,
-    HakuListComponent,
     VardaPaosManagementContainerComponent,
     PaosAddedToimijatComponent,
     PaosAddedToimipaikatComponent,

@@ -11,7 +11,6 @@ import {
   VardaVakatoimijaComponent,
   VardaTaydennyskoulutusComponent
 } from '../utilities/components';
-import { VardaHakuContainerComponent } from './components/varda-haku-container/varda-haku-container.component';
 import { VardaPaosManagementContainerComponent } from './components/varda-paos-management-container/varda-paos-management-container.component';
 import { BrowserNotSupportedComponent } from '../shared/components/browser-not-supported/browser-not-supported.component';
 import { BrowserNotSupportedGuard } from '../shared/components/browser-not-supported/browser-not-supported.guard';
