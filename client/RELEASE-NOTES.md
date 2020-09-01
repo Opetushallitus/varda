@@ -1,6 +1,10 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.4.1 (1.09.2020)
+- CSCVARDA-1891 Poista Hae ja muokkaa -näkymän komponentit
+- CSCVARDA-1900 UI: virheilmoitus henkilöformin latauksesta
+
 1.4.0 (27.08.2020)
 - CSCVARDA-1465 Henkilöstökokonaisuus
 - Huoltajan katselunäkymän käyttöönotto
