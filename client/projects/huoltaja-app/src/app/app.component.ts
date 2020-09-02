@@ -2,14 +2,13 @@ import { Component, OnInit, Inject } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { Title } from '@angular/platform-browser';
 import { LoadingHttpService } from 'varda-shared';
-import { Observable } from 'rxjs/internal/Observable';
-import { delay } from 'rxjs/internal/operators/delay';
+import { Observable } from 'rxjs';
+import { filter, delay } from 'rxjs/operators';
 import { DOCUMENT } from '@angular/common';
 import { HuoltajaApiService } from './services/huoltaja-api.service';
 import { CookieService } from 'ngx-cookie-service';
 import { HuoltajaTranslations } from '../assets/i18n/translations.enum';
 import { OppijaRaamitService } from './services/oppija-raamit.service';
-import { filter } from 'rxjs/internal/operators/filter';
 import { HuoltajanLapsiDTO } from './utilities/models/dto/huoltajan-lapsi-dto';
 
 @Component({

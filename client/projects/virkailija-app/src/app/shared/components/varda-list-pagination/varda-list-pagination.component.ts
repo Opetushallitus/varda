@@ -1,7 +1,7 @@
 import { Component, Input, EventEmitter, Output } from '@angular/core';
 import { LoadingHttpService } from 'varda-shared';
 import { Subscription, Observable } from 'rxjs';
-import { delay } from 'rxjs/internal/operators/delay';
+import { delay } from 'rxjs/operators';
 
 @Component({
   selector: 'app-varda-list-pagination',

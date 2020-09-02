@@ -6,8 +6,8 @@ import { DOCUMENT } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { Router, NavigationEnd } from '@angular/router';
 import { LoadingHttpService } from 'varda-shared';
-import { Observable } from 'rxjs/internal/Observable';
-import { delay } from 'rxjs/internal/operators/delay';
+import { Observable } from 'rxjs';
+import { delay } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',

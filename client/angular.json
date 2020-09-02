@@ -26,8 +26,7 @@
             "styles": [
               "projects/huoltaja-app/src/styles.css"
             ],
-            "scripts": [],
-            "es5BrowserSupport": true
+            "scripts": []
           },
           "configurations": {
             "local": {
@@ -200,8 +199,7 @@
               "node_modules/jquery/dist/jquery.min.js",
               "node_modules/bootstrap/dist/js/bootstrap.min.js",
               "node_modules/cookieconsent/build/cookieconsent.min.js"
-            ],
-            "es5BrowserSupport": true
+            ]
           },
           "configurations": {
             "local": {

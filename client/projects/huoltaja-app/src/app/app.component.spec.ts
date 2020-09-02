@@ -3,8 +3,7 @@ import { AppComponent } from './app.component';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaSharedModule, LoadingHttpService, LoginService, HttpService } from 'varda-shared';
 import { RouterTestingModule } from '@angular/router/testing';
-import { Observable } from 'rxjs/internal/Observable';
-import { EMPTY } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 
 describe('AppComponent', () => {
   let loadingHttpService: LoadingHttpService;

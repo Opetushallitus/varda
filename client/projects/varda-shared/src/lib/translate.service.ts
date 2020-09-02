@@ -1,8 +1,8 @@
 import { TranslateLoader } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { TranslationDTO, AngularTranslateDTO } from './dto/translation-dto';
 import { LoadingHttpService } from './loading-http.service';
-import { filter } from 'rxjs/internal/operators/filter';
 import { SupportedLanguages } from './dto/supported-languages.enum';
 import { VardaApiServiceInterface } from './dto/vardaApiService.interface';
 

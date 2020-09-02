@@ -1,4 +1,4 @@
-import { OnChanges, Input, Output, EventEmitter, SimpleChanges, OnDestroy } from '@angular/core';
+import { OnChanges, Input, Output, EventEmitter, SimpleChanges, OnDestroy, Component } from '@angular/core';
 import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 import { BehaviorSubject, Subscription } from 'rxjs';
@@ -19,6 +19,9 @@ export interface HenkiloSearchFilter {
   toimipaikka_id?: string;
 }
 
+@Component({
+  template: ''
+})
 export abstract class AbstractHenkiloSectionComponent implements OnChanges, OnDestroy {
   @Input() selectedToimipaikka: VardaToimipaikkaMinimalDto;
   @Input() toimipaikkaAccess: UserAccess;

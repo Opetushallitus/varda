@@ -1,12 +1,11 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { DOCUMENT } from '@angular/common';
-import { Observable } from 'rxjs/internal/Observable';
-import { delay } from 'rxjs/internal/operators/delay';
+import { Observable, Subscription } from 'rxjs';
+import { delay } from 'rxjs/operators';
 import { LoadingHttpService } from 'varda-shared';
 import { NavigationEnd, Router } from '@angular/router';
 import { Title } from '@angular/platform-browser';
-import { Subscription } from 'rxjs';
 import { PublicTranslations } from '../assets/i18n/translations.enum';
 
 @Component({
