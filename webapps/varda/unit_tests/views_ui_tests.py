@@ -6,6 +6,7 @@ from django.test import TestCase
 from guardian.shortcuts import assign_perm
 from rest_framework import status
 
+from varda.misc import hash_string
 from varda.models import VakaJarjestaja, Tyontekija, Henkilo, Lapsi, Toimipaikka
 from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient
 
@@ -80,6 +81,17 @@ class VardaHenkilostoViewSetTests(TestCase):
              ),
             ('search=daniella',
              result_qs.filter(etunimet__contains='Daniella')
+             ),
+            ('search={}'.format(hash_string('020400A928E')),
+             result_qs.filter(henkilotunnus_unique_hash__iexact=hash_string('020400A928E'))
+             ),
+            ('search=1.2.246.562.24.2431884920044',
+             result_qs.filter(henkilo_oid__iexact='1.2.246.562.24.2431884920044')
+             ),
+            ('palvelussuhde_voimassa=2020-03-01',
+             result_qs.filter(Q(tyontekijat__palvelussuhteet__alkamis_pvm__lte='2020-03-01') &
+                              (Q(tyontekijat__palvelussuhteet__paattymis_pvm__gte='2020-03-01') |
+                               Q(tyontekijat__palvelussuhteet__paattymis_pvm__isnull=True)))
              ),
         ]
         for query, exptected_value in query_result_list:
@@ -157,6 +169,17 @@ class VardaHenkilostoViewSetTests(TestCase):
              ),
             ('search=aamu',
              result_qs.filter(etunimet__contains='Aamu')
+             ),
+            ('search={}'.format(hash_string('120699-985W')),
+             result_qs.filter(henkilotunnus_unique_hash__iexact=hash_string('120699-985W'))
+             ),
+            ('search=1.2.246.562.24.6815981182311',
+             result_qs.filter(henkilo_oid__iexact='1.2.246.562.24.6815981182311')
+             ),
+            ('vakapaatos_voimassa=2020-01-01',
+             result_qs.filter(Q(lapsi__varhaiskasvatuspaatokset__alkamis_pvm__lte='2020-01-01') &
+                              (Q(lapsi__varhaiskasvatuspaatokset__paattymis_pvm__gte='2020-01-01') |
+                               Q(lapsi__varhaiskasvatuspaatokset__paattymis_pvm__isnull=True)))
              ),
         ]
         for query, exptected_value in query_result_list:

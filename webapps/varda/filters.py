@@ -304,20 +304,32 @@ class TyontekijahakuUiFilter(djangofilters.FilterSet):
     toimipaikka_id = djangofilters.NumberFilter(field_name='tyontekijat__palvelussuhteet__tyoskentelypaikat__toimipaikka__id', label='toimipaikka_id')
     toimipaikka_oid = djangofilters.CharFilter(field_name='tyontekijat__palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid', label='toimipaikka_oid')
     kiertava_tyontekija_kytkin = djangofilters.BooleanFilter(field_name='tyontekijat__palvelussuhteet__tyoskentelypaikat__kiertava_tyontekija_kytkin', label='kiertava_tyontekija_kytkin')
+    palvelussuhde_voimassa = djangofilters.DateFilter(method='filter_palvelussuhde_voimassa')
 
     class Meta:
         model: Henkilo
         fields = []
+
+    def filter_palvelussuhde_voimassa(self, queryset, name, value):
+        return queryset.filter(Q(tyontekijat__palvelussuhteet__alkamis_pvm__lte=value) &
+                               (Q(tyontekijat__palvelussuhteet__paattymis_pvm__gte=value) |
+                                Q(tyontekijat__palvelussuhteet__paattymis_pvm__isnull=True)))
 
 
 class LapsihakuUiFilter(djangofilters.FilterSet):
     # Note LapsihakuLapsetUiSerializer flattens toimipaikat so nested filtering can't be done here
     toimipaikka_id = djangofilters.NumberFilter(field_name='lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__id', label='toimipaikka_id')
     toimipaikka_oid = djangofilters.CharFilter(field_name='lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__organisaatio_oid', label='toimipaikka_oid')
+    vakapaatos_voimassa = djangofilters.DateFilter(method='filter_vakapaatos_voimassa')
 
     class Meta:
         model: Henkilo
         fields = []
+
+    def filter_vakapaatos_voimassa(self, queryset, name, value):
+        return queryset.filter(Q(lapsi__varhaiskasvatuspaatokset__alkamis_pvm__lte=value) &
+                               (Q(lapsi__varhaiskasvatuspaatokset__paattymis_pvm__gte=value) |
+                                Q(lapsi__varhaiskasvatuspaatokset__paattymis_pvm__isnull=True)))
 
 
 class TyontekijaFilter(djangofilters.FilterSet):

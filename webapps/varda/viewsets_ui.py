@@ -78,7 +78,7 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixi
     def tyontekija_list(self, request, pk=None):
         # Putting these to keyword arguments raises exception
         self.filterset_class = TyontekijahakuUiFilter
-        self.search_fields = ['etunimet', 'sukunimi']
+        self.search_fields = ['etunimet', 'sukunimi', '=henkilotunnus_unique_hash', '=henkilo_oid']
         user = request.user
         self.queryset = self.queryset.filter(tyontekijat__vakajarjestaja=pk).order_by('sukunimi', 'etunimet').distinct()
         if not user.is_superuser:
@@ -103,7 +103,7 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixi
     def lapsi_list(self, request, pk=None):
         # Putting these to keyword arguments raises exception
         self.filterset_class = LapsihakuUiFilter
-        self.search_fields = ['etunimet', 'sukunimi']
+        self.search_fields = ['etunimet', 'sukunimi', '=henkilotunnus_unique_hash', '=henkilo_oid']
         vakatoimija_condition = Q(lapsi__vakatoimija=pk) | Q(lapsi__oma_organisaatio=pk) | Q(lapsi__paos_organisaatio=pk)
         self.queryset = self.queryset.filter(vakatoimija_condition).order_by('sukunimi', 'etunimet').distinct()
         permission_context = self._get_lapsi_permission_context()
