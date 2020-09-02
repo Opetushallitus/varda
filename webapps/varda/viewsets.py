@@ -2260,7 +2260,7 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
     queryset = VakaJarjestaja.objects.none()
     serializer_class = VakaJarjestajaYhteenvetoSerializer
     permission_classes = (CustomObjectPermissions,)
-    today = datetime.datetime.now()
+    today = None
     vakajarjestaja_id = None
 
     def get_active_filter(self, prefix):
@@ -2277,6 +2277,7 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
+        self.today = datetime.datetime.now()
         self.vakajarjestaja_id = kwargs['vakajarjestaja_pk']
         if not self.vakajarjestaja_id.isdigit():
             raise Http404('Not found.')
