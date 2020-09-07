@@ -565,6 +565,9 @@ class Tyontekija(models.Model):
 
     class Meta:
         verbose_name_plural = 'tyontekijat'
+        constraints = [
+            models.UniqueConstraint(fields=['henkilo', 'vakajarjestaja'], name='unique_tyontekija')
+        ]
 
 
 class TilapainenHenkilosto(models.Model):
