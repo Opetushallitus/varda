@@ -30,7 +30,7 @@ def get_new_ticketing_granting_ticket(username, password, external_request):
         "password": password
     })
 
-    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    headers = {"Content-Type": "application/x-www-form-urlencoded", "Caller-Id": "csc.varda"}
 
     try:
         r = requests.post(settings.OPINTOPOLKU_DOMAIN + "/cas/v1/tickets", data=credentials, headers=headers)
@@ -60,7 +60,7 @@ def get_service_ticket(service_suffix, username, password, external_request):
 
     while LOOP_NUMBER < MAX_NO_OF_LOOPS:
         LOOP_NUMBER += 1
-        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        headers = {"Content-Type": "application/x-www-form-urlencoded", "Caller-Id": "csc.varda"}
         if external_request:
             ticket_granting_ticket_location = get_new_ticketing_granting_ticket(username, password, external_request)
         else:
