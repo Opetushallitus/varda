@@ -1217,13 +1217,14 @@ class LapsiViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         user = self.request.user
-        url = self.request.path
-        validated_data = serializer.validated_data
-        lapsi_id = url.split("/")[-2]
-        lapsi_obj = Lapsi.objects.get(id=lapsi_id)
+        lapsi_obj = self.get_object()
 
         if not user.has_perm('change_lapsi', lapsi_obj):
             raise PermissionDenied("User does not have permissions to change this object.")
+        """
+        # These functions are temporarily disabled. Will be re-enabled in CSCVARDA-1942
+
+        validated_data = serializer.validated_data
 
         if "henkilo" in validated_data:
             related_object_validations.check_if_henkilo_is_changed(url, validated_data["henkilo"].id, user)
@@ -1239,6 +1240,8 @@ class LapsiViewSet(viewsets.ModelViewSet):
             raise ValidationError(msg, code='invalid')
 
         serializer.save(changed_by=user)
+        """
+        return lapsi_obj
 
     def perform_destroy(self, instance):
         user = self.request.user

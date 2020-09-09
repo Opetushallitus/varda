@@ -343,17 +343,22 @@ class VardaPermissionsTests(TestCase):
         self.assertEqual(json.loads(resp.content), {'detail': 'User does not have permissions.'})
 
     def test_try_to_change_henkilo(self):
+        # PUT/PATCH functions will be re-enabled in CSCVARDA-1942
         client = SetUpTestClient('tester').client()
         organisaatio_oid_34683023489 = '1.2.246.562.10.34683023489'
         vakajarjestaja_id_34683023489 = VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid_34683023489).first().id
-
+        expected_data = client.get('/api/v1/lapset/1/')
         lapsi = {
             'henkilo': 'http://testserver/api/v1/henkilot/8/',
             'vakatoimija': 'http://testserver/api/v1/vakajarjestajat/{}/'.format(vakajarjestaja_id_34683023489),
         }
         resp = client.put('/api/v1/lapset/1/', lapsi)
+        """
         assert_status_code(resp, 400)
         self.assertEqual(json.loads(resp.content), {'henkilo': ['This cannot be changed.']})
+        """
+        assert_status_code(resp, 200)
+        self.assertEqual(json.loads(expected_data.content), json.loads(resp.content))
 
     def test_push_correct_paos_toiminta_organisaatio_without_permissions(self):
         paos_toiminta = {

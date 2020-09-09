@@ -809,8 +809,9 @@ class VardaViewsTests(TestCase):
         self.assertEqual(json.loads(resp.content)['paos_organisaatio'], 'http://testserver/api/v1/vakajarjestajat/2/')
 
     def test_api_oid_related_field_lapsi_change_denied(self):
+        # PUT/PATCH functions will be re-enabled in CSCVARDA-1942
         client = SetUpTestClient("tester2").client()
-
+        expected_data = client.get('/api/v1/lapset/4/')
         data = {
             "url": "/api/v1/lapset/4/",
             "henkilo": "/api/v1/henkilot/9/",
@@ -819,8 +820,12 @@ class VardaViewsTests(TestCase):
         }
 
         resp = client.put("/api/v1/lapset/4/", json.dumps(data), content_type='application/json')
+        """
         assert_status_code(resp, 400)
         self.assertEqual(json.loads(resp.content), {'oma_organisaatio': ['Changing of oma_organisaatio is not allowed']})
+        """
+        assert_status_code(resp, 200)
+        self.assertEqual(json.loads(expected_data.content), json.loads(resp.content))
 
     def test_api_oid_related_field_lapsi_no_paos_organisaatio(self):
         client = SetUpTestClient("tester2").client()
