@@ -317,26 +317,11 @@
     && toimipaikkaAccess.huoltajatiedot.tallentaja">
       <app-varda-tyontekija-error [errors]="deleteLapsiErrors"></app-varda-tyontekija-error>
 
-      <div class="tyontekija-form-footer">
-        <button *ngIf="lapsi?.id && !promptDeleteHenkilo"
-                (click)="promptDeleteHenkilo = true"
-                class="varda-button varda-button-danger secondary responsive-md">
-          <mat-icon>delete_outline</mat-icon>
-          {{ i18n.henkilo_poista_lapsi | translate }}
-        </button>
-        <ng-container *ngIf="promptDeleteHenkilo">
-          <button (click)="deleteLapsiRole(lapsi.url)"
-                  class="varda-button varda-button-danger secondary responsive-md">
-            <mat-icon>delete_outline</mat-icon>
-            {{ i18n.henkilo_poista_lapsi | translate }}
-          </button>
-          <button class="varda-button varda-button-wide varda-button-neutral responsive-md secondary"
-                  type="button"
-                  (click)="promptDeleteHenkilo = false">
-            {{ i18n.cancel | translate }}
-          </button>
-        </ng-container>
-      </div>
+      <app-varda-delete-henkilo *ngIf="lapsi?.id"
+                                [instructionText]="i18n.lapsi_instruction_delete | translate"
+                                [deleteText]="i18n.henkilo_poista_lapsi |translate"
+                                (deleteAction)="deleteLapsiRole(lapsi.url)">
+      </app-varda-delete-henkilo>
     </ng-container>
   </div>
 </div>

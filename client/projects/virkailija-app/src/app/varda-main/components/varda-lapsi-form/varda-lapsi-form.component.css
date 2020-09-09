@@ -8,7 +8,7 @@
   margin-bottom: 1em;
 }
 
-.varda-vakapaatos-row > div {
+.varda-vakapaatos-row>div {
   margin-bottom: .5em;
 }
 
@@ -66,12 +66,3 @@
   color: var(--red);
 }
 
-.tyontekija-form-footer {
-  display:flex;
-  justify-content: flex-end;
-  margin-top: 4em;
-}
-
-.tyontekija-form-footer button:nth-child(2) {
-  margin-left: 1em;
-}

@@ -28,6 +28,7 @@ export { VardaTyontekijaTutkintoComponent } from '../varda-main/components/varda
 export { VardaPoissaoloComponent } from '../varda-main/components/varda-tyontekija-form/varda-palvelussuhteet/varda-palvelussuhde/varda-poissaolo/varda-poissaolo.component';
 export { VardaTyontekijaErrorComponent } from '../varda-main/components/varda-tyontekija-form/varda-tyontekija-error/varda-tyontekija-error.component';
 export { TyontekijaFormActionRowComponent } from '../varda-main/components/varda-tyontekija-form/tyontekija-form-action-row/tyontekija-form-action-row.component';
+export { VardaDeleteHenkiloComponent } from '../varda-main/components/varda-henkilo-form/varda-delete-henkilo/varda-delete-henkilo.component';
 export { VardaTyontekijaTaydennyskoulutuksetComponent } from '../varda-main/components/varda-tyontekija-form/varda-tyontekija-taydennyskoulutukset/varda-tyontekija-taydennyskoulutukset.component';
 export { VardaTyontekijaTaydennyskoulutusComponent } from '../varda-main/components/varda-tyontekija-form/varda-tyontekija-taydennyskoulutukset/varda-tyontekija-taydennyskoulutus/varda-tyontekija-taydennyskoulutus.component';
 export { VardaTaydennyskoulutusComponent } from '../varda-main/components/varda-taydennyskoulutus/varda-taydennyskoulutus.component';

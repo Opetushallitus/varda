@@ -75,16 +75,6 @@ h5 {
   margin: 1em 1.5em;
 }
 
-.tyontekija-form-footer {
-  display:flex;
-  justify-content: flex-end;
-  margin-top: 4em;
-}
-
-.tyontekija-form-footer button:nth-child(2) {
-  margin-left: 1em;
-}
-
 mat-expansion-panel mat-expansion-panel-header {
   min-height: 48px;
   height: auto !important;

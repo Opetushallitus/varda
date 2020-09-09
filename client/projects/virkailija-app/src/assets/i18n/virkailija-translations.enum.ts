@@ -63,6 +63,7 @@ export enum VirkailijaTranslations {
   lapsi_instruction_creation_paragraph_2 = 'lapsi.instruction.creation-paragraph-2',
   lapsi_instruction_creation_link_text = 'lapsi.instruction.creation-link-text',
   lapsi_instruction_creation_link_href = 'lapsi.instruction.creation-link-href',
+  lapsi_instruction_delete = 'lapsi.instruction.delete',
   lapsi_intro_paragraph_1 = 'lapsi.intro.paragraph-1',
   lapsi_intro_paragraph_2 = 'lapsi.intro.paragraph-2',
   lapsi_intro_paragraph_3 = 'lapsi.intro.paragraph-3',
@@ -70,6 +71,7 @@ export enum VirkailijaTranslations {
   lapsi_intro_link_1_href = 'lapsi.intro.link-1.href',
   lapsi_intro_link_2_text = 'lapsi.intro.link-2.text',
   lapsi_intro_link_2_href = 'lapsi.intro.link-2.href',
+
 
   tutkinnot = 'tutkinnot',
   tutkinnot_lisaa_tutkinto = 'tutkinnot.lisaa-tutkinto',
@@ -206,6 +208,7 @@ export enum VirkailijaTranslations {
   tyontekija_intro_paragraph_2 = 'tyontekija.intro.paragraph-2',
   tyontekija_intro_link_1_text = 'tyontekija.intro.link-1.text',
   tyontekija_intro_link_1_href = 'tyontekija.intro.link-1.href',
+  tyontekija_instruction_delete = 'tyontekija.instruction.delete',
 
 
 

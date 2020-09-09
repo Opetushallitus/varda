@@ -1,0 +1,32 @@
+<div class="henkilo-delete"
+     [class.modal-form-intro]="promptDeleteHenkilo > 0">
+  <div *ngIf="promptDeleteHenkilo > 0">
+    <mat-icon class="varda-button-danger">warning</mat-icon>
+    {{ instructionText }}
+  </div>
+
+  <div class="henkilo-delete-action-row">
+    <button *ngIf="promptDeleteHenkilo < 2"
+            (click)="promptDeleteHenkilo = promptDeleteHenkilo + 1"
+            [class.varda-button-neutral]="promptDeleteHenkilo !== 1"
+            [class.varda-button-danger]="promptDeleteHenkilo === 1"
+            class="varda-button secondary responsive-md">
+      <mat-icon>delete_outline</mat-icon>
+      {{ deleteText | translate }}
+    </button>
+
+
+    <ng-container *ngIf="promptDeleteHenkilo >= 2">
+      <button (click)="deleteEmit()"
+              class="varda-button varda-button-danger secondary responsive-md">
+        <mat-icon>delete_outline</mat-icon>
+        {{ deleteText }}
+      </button>
+      <button class="varda-button varda-button-wide varda-button-neutral responsive-md secondary"
+              type="button"
+              (click)="promptDeleteHenkilo = 0">
+        {{ i18n.cancel | translate }}
+      </button>
+    </ng-container>
+  </div>
+</div>

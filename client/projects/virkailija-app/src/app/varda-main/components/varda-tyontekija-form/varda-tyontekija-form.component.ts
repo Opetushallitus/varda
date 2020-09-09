@@ -30,7 +30,6 @@ export class VardaTyontekijaFormComponent implements OnChanges, OnDestroy {
   i18n = VirkailijaTranslations;
   private henkilostoErrorService = new HenkilostoErrorMessageService();
   private deleteTyontekijaErrorService = new HenkilostoErrorMessageService();
-  promptDeleteHenkilo = false;
   subscriptions: Array<Subscription> = [];
   toimipaikkaAccess: UserAccess;
   henkilonTutkinnot: Array<VardaTutkintoDTO>;

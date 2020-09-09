@@ -69,7 +69,6 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   @ViewChildren('varhaiskasvatussuhdePanels', { read: ElementRef }) varhaiskasvatussuhdePanelRefs: QueryList<ElementRef>;
 
   currentLapsi: VardaLapsiDTO;
-  promptDeleteHenkilo = false;
 
   isCurrentLapsiYksityinen: boolean;
   i18n = VirkailijaTranslations;

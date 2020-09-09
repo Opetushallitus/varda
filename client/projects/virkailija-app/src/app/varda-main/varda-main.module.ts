@@ -33,6 +33,7 @@ import {
   VardaTaydennyskoulutusFormComponent,
   VardaTaydennyskoulutusOsallistujaListComponent,
   VardaTaydennyskoulutusOsallistujaPickerComponent,
+  VardaDeleteHenkiloComponent,
 } from '../utilities/components';
 
 import { AuthService } from '../core/auth/auth.service';
@@ -90,6 +91,7 @@ import { ReportTyontekijaComponent } from './components/varda-reporting/report-t
     VardaLapsiFormComponent,
     VardaTyontekijaFormComponent,
     TyontekijaFormActionRowComponent,
+    VardaDeleteHenkiloComponent,
     VardaTyontekijaErrorComponent,
     VardaTyontekijaTutkintoComponent,
     VardaTyontekijaTaydennyskoulutuksetComponent,
@@ -138,6 +140,7 @@ import { ReportTyontekijaComponent } from './components/varda-reporting/report-t
     VardaLapsiFormComponent,
     VardaTyontekijaFormComponent,
     TyontekijaFormActionRowComponent,
+    VardaDeleteHenkiloComponent,
     VardaTyontekijaErrorComponent,
     VardaTyontekijaTutkintoComponent,
     VardaTyontekijaTaydennyskoulutuksetComponent,
