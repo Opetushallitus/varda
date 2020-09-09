@@ -253,20 +253,13 @@ class AllVakajarjestajaViewSet(GenericViewSet, ListModelMixin):
     Rajapinta yksityisten ja kunnallisen toimijan tarvitsemien varhaiskasvatustoimijoiden hakuun.
     Query-parametrit:
     *  tyyppi = 'yksityinen' tai 'kunnallinen'
+    *  search = str
     """
-    queryset = VakaJarjestaja.objects.none()
+    queryset = VakaJarjestaja.objects.all().order_by('id')
     permission_classes = (IsVardaPaakayttaja, )
     serializer_class = PaosVakaJarjestajaSerializer
-    filter_backends = (SearchFilter, )
-    search_fields = ['nimi', '=postitoimipaikka', '=organisaatio_oid', '=y_tunnus']
-
-    def get_queryset(self):
-        queryset = VakaJarjestaja.objects.all()
-        tyyppi = self.request.query_params.get('tyyppi', None)
-        if tyyppi in ['yksityinen', 'kunnallinen']:
-            condition = Q(yritysmuoto__in=VakaJarjestaja.get_kuntatyypit())
-            queryset = queryset.filter(condition) if tyyppi == 'kunnallinen' else queryset.exclude(condition)
-        return queryset.order_by('id')
+    filter_backends = (DjangoFilterBackend, )
+    filterset_class = filters.UiAllVakajarjestajaFilter
 
 
 @auditlogclass

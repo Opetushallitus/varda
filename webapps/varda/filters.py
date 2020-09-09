@@ -4,10 +4,11 @@ from django.db.models import Q
 from django.http import Http404
 from django_filters import rest_framework as djangofilters
 
+from varda.koodistopalvelu import Koodistot
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
                           Maksutieto, PaosToiminta, PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-                          TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka, PidempiPoissaolo,
-                          Taydennyskoulutus, TaydennyskoulutusTyontekija)
+                          TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
+                          PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Z2_Code)
 from varda.misc import parse_toimipaikka_id_list
 
 
@@ -420,3 +421,22 @@ class UiTyontekijaFilter(djangofilters.FilterSet):
         return queryset.filter(tyontekija_filter & self.get_rajaus_filters()).distinct('henkilo__sukunimi',
                                                                                        'henkilo__etunimet',
                                                                                        'id')
+
+
+class UiAllVakajarjestajaFilter(djangofilters.FilterSet):
+    tyyppi = djangofilters.CharFilter(method='filter_tyyppi')
+    search = djangofilters.CharFilter(method='filter_search')
+
+    def filter_tyyppi(self, queryset, name, value):
+        if value in ['yksityinen', 'kunnallinen']:
+            condition = Q(yritysmuoto__in=VakaJarjestaja.get_kuntatyypit())
+            queryset = queryset.filter(condition) if value == 'kunnallinen' else queryset.exclude(condition)
+
+        return queryset
+
+    def filter_search(self, queryset, name, value):
+        matching_kunta_koodit = (Z2_Code.objects.filter(koodisto__name=Koodistot.kunta_koodit.value,
+                                                        translations__name__iexact=value)
+                                 .values_list('code_value', flat=True))
+        return queryset.filter(Q(nimi__icontains=value) | Q(postitoimipaikka__iexact=value) |
+                               Q(organisaatio_oid=value) | Q(y_tunnus=value) | Q(kunta_koodi__in=matching_kunta_koodit))
