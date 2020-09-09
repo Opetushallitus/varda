@@ -4,7 +4,6 @@ import logging
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db import IntegrityError, transaction
-from django.db.models import Q
 from guardian.shortcuts import assign_perm
 from pytz import timezone
 from requests import RequestException
@@ -180,11 +179,12 @@ def fetch_henkilot_with_oid():
     """
     from varda.tasks import update_henkilo_data_by_oid
 
-    henkilot = Henkilo.objects.filter(~Q(henkilo_oid=""))  # TODO: Use values_list
-    for henkilo in henkilot:
-        henkilo_id = henkilo.id
-        henkilo_oid = henkilo.henkilo_oid
-        update_henkilo_data_by_oid.apply_async(args=[henkilo_oid, henkilo_id], queue='low_prio_queue')
+    henkilo_id_oid_tuples = Henkilo.objects.exclude(henkilo_oid="").values_list('id', 'henkilo_oid')
+    for henkilo_id, henkilo_oid in henkilo_id_oid_tuples:
+        update_henkilo_data_by_oid.apply_async(args=[henkilo_oid, henkilo_id],
+                                               kwargs={'is_fetch_huoltajat': True},
+                                               queue='low_prio_queue'
+                                               )
 
 
 def fetch_henkilo_with_oid(henkilo_oid):
@@ -296,7 +296,7 @@ def update_huoltajuussuhde(henkilo_oid):
     try:
         with transaction.atomic():
             henkilo = Henkilo.objects.get(henkilo_oid=henkilo_oid)
-            fetch_lapsen_huoltajat(henkilo.id)
+            _fetch_lapsen_huoltajat(henkilo.id)
     except Henkilo.DoesNotExist:
         logger.info("Skipped huoltajasuhde update for child with oid {} since he was not added to varda"
                     .format(henkilo_oid))
@@ -337,7 +337,7 @@ def fetch_huoltajat():
     for henkilo_obj in lapset_without_huoltajuussuhteet:
         if henkilo_obj.henkilo_oid != "":
             try:
-                fetch_lapsen_huoltajat(henkilo_obj.id)
+                _fetch_lapsen_huoltajat(henkilo_obj.id)
             except IntegrityError as ie:
                 logger.error('Could not create or update huoltajuussuhde with henkilo-id {} and cause {}'
                              .format(henkilo_obj.id, ie.__cause__))
@@ -345,7 +345,7 @@ def fetch_huoltajat():
                 logger.exception('Could not update huoltajuussuhteet with henkilo-id {}'.format(henkilo_obj.id))
 
 
-def fetch_lapsen_huoltajat(henkilo_id):
+def _fetch_lapsen_huoltajat(henkilo_id):
     """
     Create or update huoltajat for all lapsi objects henkilo has. Throws exception on error.
     :param henkilo_id: Henkilo object id

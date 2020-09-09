@@ -85,8 +85,10 @@ def update_henkilot_with_oid():
 
 
 @shared_task(acks_late=True)
-def update_henkilo_data_by_oid(henkilo_oid, henkilo_id):
+def update_henkilo_data_by_oid(henkilo_oid, henkilo_id, is_fetch_huoltajat=False):
     oppijanumerorekisteri.fetch_henkilo_data_by_oid(henkilo_oid, henkilo_id)
+    if is_fetch_huoltajat:
+        oppijanumerorekisteri.update_huoltajuussuhde(henkilo_oid)
 
 
 @shared_task
