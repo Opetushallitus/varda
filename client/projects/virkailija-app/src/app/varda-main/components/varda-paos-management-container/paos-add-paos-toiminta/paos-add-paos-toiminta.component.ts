@@ -76,7 +76,7 @@ export class PaosAddPaosToimintaComponent implements OnInit, OnDestroy {
     this.apiService.getAllPagesSequentially(page => this.apiService.getAllPaosToimijat(searchDto, page))
       .subscribe({
         next: vakajarjestajat => {
-          this.vakajarjestajat = vakajarjestajat.sort((a, b) => a.nimi.localeCompare(b.nimi));
+          this.vakajarjestajat = vakajarjestajat.sort((a, b) => a.nimi.localeCompare(b.nimi, 'fi'));
           this.isVakajarjestajatFetched = true;
         },
         error: this.paosToimintaService.pushGenericErrorMessage,
@@ -87,7 +87,7 @@ export class PaosAddPaosToimintaComponent implements OnInit, OnDestroy {
     const searchDto = new VardaToimipaikkaSearchDto();
     this.apiService.getAllPagesSequentially(page => this.apiService.getAllPaosToimipaikat(vakajarjestaja.id, searchDto, page))
       .subscribe(toimipaikat => {
-        this.toimipaikatById = { [vakajarjestaja.id]: toimipaikat.sort((a, b) => a.nimi.localeCompare(b.nimi)) };
+        this.toimipaikatById = { [vakajarjestaja.id]: toimipaikat.sort((a, b) => a.nimi.localeCompare(b.nimi, 'fi')) };
       });
   }
 

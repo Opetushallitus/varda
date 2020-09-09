@@ -72,7 +72,7 @@ export class PaosAddedToimijatComponent extends AbstractPaosListToimintainfoComp
   }
 
   getPaosToiminnatOnCompleteHook() {
-    this.paosToiminnat.sort((a: PaosToimintatietoDto, b: PaosToimintatietoDto) => a.vakajarjestaja_nimi.localeCompare(b.vakajarjestaja_nimi));
+    this.paosToiminnat.sort((a: PaosToimintatietoDto, b: PaosToimintatietoDto) => a.vakajarjestaja_nimi.localeCompare(b.vakajarjestaja_nimi, 'fi'));
     this.filteredToiminnat = [...this.paosToiminnat];
   }
 

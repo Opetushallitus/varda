@@ -52,7 +52,7 @@ export class VardaHeaderComponent implements OnInit {
     this.vardaVakajarjestajaService.getVakajarjestajatObs().subscribe(() => {
       this.vakajarjestajat = this.vardaVakajarjestajaService.getVakajarjestajat();
       try {
-        this.vakajarjestajat.sort((a, b) => a.nimi.localeCompare(b.nimi));
+        this.vakajarjestajat.sort((a, b) => a.nimi.localeCompare(b.nimi, 'fi'));
       } catch (e) {
         console.log('Error on vakajarjestajat sorting', e);
       }

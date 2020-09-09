@@ -1,7 +1,6 @@
-import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
-import { VardaApiWrapperService } from '../../../core/services/varda-api-wrapper.service';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
-import { VardaExtendedHenkiloModel, VardaHenkiloDTO, VardaLapsiDTO } from '../../../utilities/models';
+import { VardaExtendedHenkiloModel } from '../../../utilities/models';
 import { AuthService } from '../../../core/auth/auth.service';
 import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { UserAccess } from '../../../utilities/models/varda-user-access.model';
@@ -17,7 +16,7 @@ import { VardaModalService } from '../../../core/services/varda-modal.service';
   templateUrl: './varda-main-frame.component.html',
   styleUrls: ['./varda-main-frame.component.css']
 })
-export class VardaMainFrameComponent implements OnInit, OnDestroy, AfterViewInit {
+export class VardaMainFrameComponent implements OnInit, OnDestroy {
   i18n = VirkailijaTranslations;
   toimijaAccess: UserAccess;
   toimipaikkaAccess: UserAccess;
@@ -28,25 +27,18 @@ export class VardaMainFrameComponent implements OnInit, OnDestroy, AfterViewInit
   confirmedHenkiloFormLeave = true;
 
   constructor(
-    private vardaApiWrapperService: VardaApiWrapperService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private authService: AuthService,
     private modalService: VardaModalService
-  ) {
-
-    this.vardaApiWrapperService.getAllToimipaikatForVakajarjestaja(this.vardaVakajarjestajaService.selectedVakajarjestaja.id).subscribe(
-      (toimipaikat) => this.initToimipaikat(),
-      (error) => console.error(error)
-    );
-  }
+  ) { }
 
   onToimipaikkaChanged(toimipaikka: VardaToimipaikkaMinimalDto): void {
     this.toimipaikkaAccess = this.authService.getUserAccess(toimipaikka?.organisaatio_oid);
     this.selectedToimipaikka = toimipaikka;
   }
 
-  initToimipaikat(): void {
-    this.toimipaikat = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().katselijaToimipaikat;
+  setToimipaikat(toimipaikat: Array<VardaToimipaikkaMinimalDto>): void {
+    this.toimipaikat = toimipaikat;
   }
 
   ngOnInit() {
@@ -57,10 +49,6 @@ export class VardaMainFrameComponent implements OnInit, OnDestroy, AfterViewInit
         this.activeSuhde = null;
       }
     }));
-  }
-
-  ngAfterViewInit() {
-    this.initToimipaikat();
   }
 
   ngOnDestroy() {

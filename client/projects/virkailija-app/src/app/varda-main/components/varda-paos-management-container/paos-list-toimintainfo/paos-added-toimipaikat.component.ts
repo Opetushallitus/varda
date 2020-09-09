@@ -88,10 +88,10 @@ export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoC
 
     this.toimipaikatByToimija = Object.values(groupObject);
     this.filteredToiminnat = [...this.toimipaikatByToimija];
-    this.filteredToiminnat.sort((a: PaosToimijaInternalDto, b: PaosToimijaInternalDto) => a.toimijaNimi.localeCompare(b.toimijaNimi));
+    this.filteredToiminnat.sort((a: PaosToimijaInternalDto, b: PaosToimijaInternalDto) => a.toimijaNimi.localeCompare(b.toimijaNimi, 'fi'));
     this.filteredToiminnat.forEach(toimija =>
       toimija.toimipaikat.sort((a: PaosToimipaikkatietoDto, b: PaosToimipaikkatietoDto) =>
-        a.toimipaikka_nimi.localeCompare(b.toimipaikka_nimi)
+        a.toimipaikka_nimi.localeCompare(b.toimipaikka_nimi, 'fi')
       )
     );
   }

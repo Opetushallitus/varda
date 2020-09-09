@@ -9,6 +9,7 @@ import { VardaToimipaikkaMinimalDto, VardaToimipaikkaDTO } from '../../../../uti
 import { UserAccess } from '../../../../utilities/models/varda-user-access.model';
 import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
+import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
 
 @Component({
   selector: 'app-varda-toimipaikka-selector',
@@ -17,6 +18,7 @@ import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/
 })
 export class VardaToimipaikkaSelectorComponent implements OnInit {
   @Input() toimijaAccess: UserAccess;
+  @Output() listToimipaikat = new EventEmitter<Array<VardaToimipaikkaMinimalDto>>(true);
   @Output() changeToimipaikka = new EventEmitter<VardaToimipaikkaMinimalDto>(true);
 
   i18n = VirkailijaTranslations;
@@ -35,7 +37,8 @@ export class VardaToimipaikkaSelectorComponent implements OnInit {
   constructor(
     private vardaApiWrapperService: VardaApiWrapperService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
-    private vardaLocalStorageWrapperService: VardaLocalstorageWrapperService
+    private vardaLocalStorageWrapperService: VardaLocalstorageWrapperService,
+    private authService: AuthService
   ) {
     this.selectedVakajarjestaja = this.vardaVakajarjestajaService.getSelectedVakajarjestaja();
   }
@@ -85,6 +88,7 @@ export class VardaToimipaikkaSelectorComponent implements OnInit {
     this.vardaVakajarjestajaService.setSelectedToimipaikka(this.activeToimipaikka);
     this.vardaVakajarjestajaService.setSelectedToimipaikkaSubject(this.activeToimipaikka);
     this.changeToimipaikka.emit(this.activeToimipaikka);
+    this.listToimipaikat.emit(this.toimipaikat);
   }
 
   openToimipaikka(toimipaikka: VardaToimipaikkaMinimalDto): void {
@@ -128,6 +132,11 @@ export class VardaToimipaikkaSelectorComponent implements OnInit {
     if (data.toimipaikka) {
       this.activeToimipaikka = data.toimipaikka;
       this.setToimipaikka(this.activeToimipaikka);
+
+      this.vardaApiWrapperService.getAllToimipaikatForVakajarjestaja(this.vardaVakajarjestajaService.selectedVakajarjestaja.id).subscribe(toimipaikat => {
+        this.vardaVakajarjestajaService.setToimipaikat(toimipaikat, this.authService);
+        this.initToimipaikat();
+      });
     }
   }
 
