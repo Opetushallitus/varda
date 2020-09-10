@@ -1,6 +1,13 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.4.2 (10.09.2020)
+- Angular 10 päivitys
+- CSCVARDA-1906: Ensimmäisen toimipaikan lisäykseen parannus
+- CSCVARDA-1908: Aakkosjärjestyksen korjaus toimija-listauksessa
+- CSCVARDA-1910: Ohjeteksti lapsen mitätöintiin
+- CSCVARDA-1911: Poista lapsi/tyontekijä painikkeen parannuksia
+
 1.4.1 (1.09.2020)
 - CSCVARDA-1891 Poista Hae ja muokkaa -näkymän komponentit
 - CSCVARDA-1900 UI: virheilmoitus henkilöformin latauksesta
