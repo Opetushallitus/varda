@@ -25,6 +25,7 @@ import { CodeDTO, KoodistoDTO, VardaKoodistoService } from 'varda-shared';
 import { KoodistoEnum } from 'varda-shared';
 import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 import { AuthService } from '../../../core/auth/auth.service';
+import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
 enum FilterStringType {
   TRANSLATED_STRING = 'translatedString',
@@ -50,6 +51,7 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
   @ViewChild('tyontekijaToimipaikkaInput') tyontekijaToimipaikkaInput: ElementRef<HTMLInputElement>;
   @ViewChild('tyontekijaToimipaikkaChipList') tyontekijaToimipaikkaChipList: MatChipList;
 
+  i18n = VirkailijaTranslations;
   koodistoEnum = KoodistoEnum;
 
   selectedVakajarjestaja: VardaVakajarjestajaUi;

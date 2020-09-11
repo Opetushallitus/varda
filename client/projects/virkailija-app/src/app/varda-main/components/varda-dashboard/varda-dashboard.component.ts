@@ -12,6 +12,7 @@ import { VardaToimipaikkaDTO, VardaVakajarjestajaUi } from '../../../utilities/m
 import { LoginService, VardaUserDTO, VardaKoodistoService } from 'varda-shared';
 import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { environment } from '../../../../environments/environment';
+import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
 @Component({
   selector: 'app-varda-dashboard',
@@ -19,11 +20,11 @@ import { environment } from '../../../../environments/environment';
   styleUrls: ['./varda-dashboard.component.css']
 })
 export class VardaDashboardComponent implements OnInit {
-
+  i18n = VirkailijaTranslations;
   ui: {
     isLoading: boolean,
     dashboardInitializationError: boolean,
-    alertMsg: string
+    alertMsg: VirkailijaTranslations
   };
 
   private popupOpenSubscription: Subscription;
@@ -41,7 +42,7 @@ export class VardaDashboardComponent implements OnInit {
     this.ui = {
       isLoading: false,
       dashboardInitializationError: false,
-      alertMsg: 'alert.error-occurred'
+      alertMsg: this.i18n.error_occured
     };
 
     this.koodistoService.initKoodistot(environment.vardaAppUrl);
@@ -66,10 +67,10 @@ export class VardaDashboardComponent implements OnInit {
 
   onGetToimipaikatError(e: any): void {
     if (e?.noPrivileges) {
-      this.ui.alertMsg = 'alert.contact-organisation-admin-user';
+      this.ui.alertMsg = this.i18n.dashboard_error_contact_organisation_admin;
       this.ui.dashboardInitializationError = true;
     } else if (e?.isPalvelukayttaja) {
-      this.ui.alertMsg = 'alert.palvelukayttaja-forbidden';
+      this.ui.alertMsg = this.i18n.dashboard_error_palvelukayttaja_forbidden;
       this.ui.dashboardInitializationError = true;
     } else {
       this.onGetToimipaikatSuccess([]);
@@ -128,12 +129,12 @@ export class VardaDashboardComponent implements OnInit {
     },
     );
 
-    this.translateService.get(['cookie.message']).subscribe((translations) => {
+    this.translateService.get([this.i18n.cookie_popup_message]).subscribe((translations) => {
       this.handleCookies(translations);
     });
 
     this.translateService.onLangChange.pipe(
-      switchMap(() => this.translateService.get(['cookie.message']))
+      switchMap(() => this.translateService.get([this.i18n.cookie_popup_message]))
     ).subscribe((translations) => {
       this.handleCookies(translations);
     });
@@ -144,7 +145,7 @@ export class VardaDashboardComponent implements OnInit {
   private handleCookies(translations) {
     this.ccService.getConfig().content = this.ccService.getConfig().content || {};
     // Override default messages with the translated ones
-    this.ccService.getConfig().content.message = translations['cookie.message'];
+    this.ccService.getConfig().content.message = translations[this.i18n.cookie_popup_message];
     this.ccService.destroy();
     this.ccService.init(this.ccService.getConfig()); // update config with translated messages
   }

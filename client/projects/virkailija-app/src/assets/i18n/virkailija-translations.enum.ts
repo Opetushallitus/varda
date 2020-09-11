@@ -14,6 +14,7 @@ export enum VirkailijaTranslations {
   error = 'error',
   error_multiple = 'error-multiple',
   error_single = 'error-single',
+  error_occured = 'error-occured',
 
   perustiedot = 'perustiedot',
   nimi = 'nimi',
@@ -219,5 +220,9 @@ export enum VirkailijaTranslations {
   paginator_next_page = 'paginator.next-page',
   paginator_previous_page = 'paginator.previous-page',
 
-  paos_title = 'paos.title'
+  paos_title = 'paos.title',
+
+  cookie_popup_message = 'cookie.popup-message',
+  dashboard_error_contact_organisation_admin = 'dashboard.error.contact-organisation-admin',
+  dashboard_error_palvelukayttaja_forbidden = 'dashboard.error.palvelukayttaja-forbidden'
 }

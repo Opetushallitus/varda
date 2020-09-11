@@ -9,10 +9,8 @@
             {{ i18n.poissaolo | translate }}
             {{poissaolo.alkamis_pvm | vardaDate }} - {{poissaolo.paattymis_pvm | vardaDate }}
           </span>
-          <ng-template>
-            <span #addPoissaolo>
-              {{ i18n.palvelussuhde_lisaa_poissaolo | translate }}
-            </span>
+          <ng-template #addPoissaolo>
+            <span>{{ i18n.palvelussuhde_lisaa_poissaolo | translate }}</span>
           </ng-template>
         </mat-panel-title>
       </mat-expansion-panel-header>
