@@ -11,6 +11,11 @@ import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/
 import { Subscription } from 'rxjs';
 import { VardaModalService } from '../../../core/services/varda-modal.service';
 
+export interface ToimipaikkaChange {
+  toimipaikka: VardaToimipaikkaMinimalDto;
+  toimipaikat: Array<VardaToimipaikkaMinimalDto>;
+}
+
 @Component({
   selector: 'app-varda-main-frame',
   templateUrl: './varda-main-frame.component.html',
@@ -32,13 +37,10 @@ export class VardaMainFrameComponent implements OnInit, OnDestroy {
     private modalService: VardaModalService
   ) { }
 
-  onToimipaikkaChanged(toimipaikka: VardaToimipaikkaMinimalDto): void {
-    this.toimipaikkaAccess = this.authService.getUserAccess(toimipaikka?.organisaatio_oid);
-    this.selectedToimipaikka = toimipaikka;
-  }
-
-  setToimipaikat(toimipaikat: Array<VardaToimipaikkaMinimalDto>): void {
-    this.toimipaikat = toimipaikat;
+  onToimipaikkaChanged(toimipaikkaChange: ToimipaikkaChange): void {
+    this.toimipaikkaAccess = this.authService.getUserAccess(toimipaikkaChange.toimipaikka?.organisaatio_oid);
+    this.selectedToimipaikka = toimipaikkaChange.toimipaikka;
+    this.toimipaikat = toimipaikkaChange.toimipaikat;
   }
 
   ngOnInit() {

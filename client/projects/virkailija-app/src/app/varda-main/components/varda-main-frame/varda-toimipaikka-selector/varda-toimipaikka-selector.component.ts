@@ -10,6 +10,7 @@ import { UserAccess } from '../../../../utilities/models/varda-user-access.model
 import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
+import { ToimipaikkaChange } from '../varda-main-frame.component';
 
 @Component({
   selector: 'app-varda-toimipaikka-selector',
@@ -18,8 +19,7 @@ import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.serv
 })
 export class VardaToimipaikkaSelectorComponent implements OnInit {
   @Input() toimijaAccess: UserAccess;
-  @Output() listToimipaikat = new EventEmitter<Array<VardaToimipaikkaMinimalDto>>(true);
-  @Output() changeToimipaikka = new EventEmitter<VardaToimipaikkaMinimalDto>(true);
+  @Output() changeToimipaikka = new EventEmitter<ToimipaikkaChange>(true);
 
   i18n = VirkailijaTranslations;
   toimipaikat: Array<VardaToimipaikkaMinimalDto>;
@@ -57,14 +57,14 @@ export class VardaToimipaikkaSelectorComponent implements OnInit {
 
     if (this.toimipaikat.length === 0) {
       this.activeToimipaikka = null;
-      this.changeToimipaikka.emit(this.activeToimipaikka);
+      this.emitToimipaikkaChange(this.activeToimipaikka);
       return;
     }
 
     if (this.toimipaikat.length === 1 || (!this.anyToimijaKatselija && this.toimipaikat.length > 0)) {
       this.activeToimipaikka = this.toimipaikat[0];
       this.vardaVakajarjestajaService.setSelectedToimipaikka(this.activeToimipaikka);
-      this.changeToimipaikka.emit(this.activeToimipaikka);
+      this.emitToimipaikkaChange(this.activeToimipaikka);
       return;
     }
 
@@ -87,8 +87,7 @@ export class VardaToimipaikkaSelectorComponent implements OnInit {
 
     this.vardaVakajarjestajaService.setSelectedToimipaikka(this.activeToimipaikka);
     this.vardaVakajarjestajaService.setSelectedToimipaikkaSubject(this.activeToimipaikka);
-    this.changeToimipaikka.emit(this.activeToimipaikka);
-    this.listToimipaikat.emit(this.toimipaikat);
+    this.emitToimipaikkaChange(this.activeToimipaikka);
   }
 
   openToimipaikka(toimipaikka: VardaToimipaikkaMinimalDto): void {
@@ -146,8 +145,10 @@ export class VardaToimipaikkaSelectorComponent implements OnInit {
       this.vardaVakajarjestajaService.setSelectedToimipaikka(toimipaikka);
       this.vardaLocalStorageWrapperService.saveToLocalStorage('varda.activeToimipaikka', JSON.stringify(toimipaikka));
     }
-
-    this.changeToimipaikka.emit(toimipaikka);
+    this.emitToimipaikkaChange(toimipaikka);
   }
 
+  emitToimipaikkaChange(activeToimipaikka?: VardaToimipaikkaMinimalDto): void {
+    this.changeToimipaikka.emit({ toimipaikka: activeToimipaikka, toimipaikat: this.toimipaikat });
+  }
 }
