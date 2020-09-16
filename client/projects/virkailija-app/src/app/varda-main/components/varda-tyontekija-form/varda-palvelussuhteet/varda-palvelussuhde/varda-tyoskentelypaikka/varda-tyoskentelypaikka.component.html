@@ -6,7 +6,13 @@
       <mat-expansion-panel-header>
         <mat-panel-title *ngIf="tyoskentelypaikka">
           <h4>
-            <span appToimipaikkaNimi>{{ tyoskentelypaikka.toimipaikka_oid }}</span>
+            <span *ngIf="tyoskentelypaikka.toimipaikka_oid"
+                  appToimipaikkaNimi>
+              {{ tyoskentelypaikka.toimipaikka_oid }}
+            </span>
+            <span *ngIf="!tyoskentelypaikka.toimipaikka_oid">
+              {{ i18n.tyoskentelypaikka_kiertava_kytkin | translate }}
+            </span>
             <span *ngIf="!tyoskentelypaikka.paattymis_pvm">
               {{ i18n.tyoskentelypaikka_alkaen_PVM | translate: {pvm: tyoskentelypaikka.alkamis_pvm | vardaDate} }},
             </span>
