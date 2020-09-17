@@ -19,9 +19,9 @@ from varda.serializers import (HenkiloHLField, VakaJarjestajaPermissionCheckedHL
                                PermissionCheckedHLFieldMixin, ToimipaikkaPermissionCheckedHLField)
 
 from varda.serializers_common import OidRelatedField, TunnisteRelatedField
-from varda.validators import (validate_dates_within_toimipaikka, validate_paattymispvm_same_or_after_alkamispvm,
-                              validate_paivamaara1_after_paivamaara2, validate_paivamaara1_before_paivamaara2,
-                              parse_paivamaara, fill_missing_fields_for_validations)
+from varda.validators import (validate_paattymispvm_same_or_after_alkamispvm, validate_paivamaara1_after_paivamaara2,
+                              validate_paivamaara1_before_paivamaara2, parse_paivamaara,
+                              fill_missing_fields_for_validations)
 
 _tyontekija_not_specified_error_message = 'Tyontekija not specified. Use (tyontekija), (henkilo_oid, vakajarjestaja_oid) or (lahdejarjestelma, tunniste).'
 
@@ -320,10 +320,6 @@ class TyoskentelypaikkaSerializer(serializers.HyperlinkedModelSerializer):
             if not kiertava_tyontekija_kytkin:
                 with validator.wrap():
                     check_overlapping_tyoskentelypaikka_object(data, Tyoskentelypaikka)
-
-            if toimipaikka:
-                with validator.wrap():
-                    validate_dates_within_toimipaikka(data, toimipaikka)
 
             if toimipaikka and toimipaikka.vakajarjestaja_id != palvelussuhde.tyontekija.vakajarjestaja_id:
                 validator.error('toimipaikka', 'Toimipaikka must have the same vakajarjestaja as tyontekija')

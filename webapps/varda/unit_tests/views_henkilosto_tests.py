@@ -1502,7 +1502,6 @@ class VardaHenkilostoViewSetTests(TestCase):
         cases = [
             ('2020-03-01', '2020-01-01', 'paattymis_pvm', 'paattymis_pvm must be after alkamis_pvm.'),
             ('2020-03-01', '2031-01-01', 'paattymis_pvm', 'paattymis_pvm must be before palvelussuhde paattymis_pvm (or same).'),
-            ('1999-03-01', '2021-01-01', 'alkamis_pvm', 'alkamis_pvm must be after or equal to toimipaikka alkamis_pvm'),
             ('2019-03-01', '2021-01-01', 'alkamis_pvm', 'alkamis_pvm must be after palvelussuhde alkamis_pvm (or same).'),
             ('2031-03-01', '2032-01-01', 'alkamis_pvm', 'alkamis_pvm must be before palvelussuhde paattymis_pvm (or same).'),
             ('2020-08-01', '2020-08-28', 'paattymis_pvm', 'paattymis_pvm must be after 2020-09-01 (or same)'),
