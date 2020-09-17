@@ -770,7 +770,8 @@ class Taydennyskoulutus(models.Model):
     tyontekijat = models.ManyToManyField(Tyontekija, through='TaydennyskoulutusTyontekija', related_name='taydennyskoulutukset')
     nimi = models.CharField(max_length=120)
     suoritus_pvm = models.DateField(validators=[validators.validate_taydennyskoulutus_suoritus_pvm])
-    koulutuspaivia = models.DecimalField(max_digits=4, decimal_places=1, validators=[validators.create_validate_decimal_steps('0.5')])
+    koulutuspaivia = models.DecimalField(max_digits=4, decimal_places=1, validators=[validators.create_validate_decimal_steps('0.5'),
+                                                                                     MaxValueValidator(160)])
     lahdejarjestelma = models.CharField(max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
     tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)

@@ -2074,7 +2074,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija1')
 
-        taydennyskoulutus = {
+        taydennyskoulutus_1 = {
             'taydennyskoulutus_tyontekijat': [{'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '39407'}],
             'nimi': 'Ensiapukoulutus',
             'suoritus_pvm': '2020-09-14',
@@ -2082,9 +2082,21 @@ class VardaHenkilostoViewSetTests(TestCase):
             'lahdejarjestelma': '1',
         }
 
-        resp = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus), content_type='application/json')
-        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('koulutuspaivia', 'Invalid decimal step', resp)
+        resp_1 = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus_1), content_type='application/json')
+        assert_status_code(resp_1, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error('koulutuspaivia', 'Invalid decimal step', resp_1)
+
+        taydennyskoulutus_2 = {
+            'taydennyskoulutus_tyontekijat': [{'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '39407'}],
+            'nimi': 'Ensiapukoulutus',
+            'suoritus_pvm': '2020-09-14',
+            'koulutuspaivia': '160.5',  # Must be < 160
+            'lahdejarjestelma': '1',
+        }
+
+        resp_2 = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus_2), content_type='application/json')
+        assert_status_code(resp_2, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error('koulutuspaivia', 'Ensure this value is less than or equal to 160.', resp_2)
 
     def test_taydennyskoulutus_add_invalid_tyontekija(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
