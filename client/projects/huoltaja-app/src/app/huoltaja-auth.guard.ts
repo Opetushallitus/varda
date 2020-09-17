@@ -5,6 +5,7 @@ import { environment } from '../environments/environment';
 import { LoginService, VardaKoodistoService } from 'varda-shared';
 import { HuoltajaApiService } from './services/huoltaja-api.service';
 import { Router } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 
 @Injectable({
   providedIn: 'root'
@@ -14,6 +15,7 @@ export class HuoltajaAuthGuard implements CanActivate {
     private loginService: LoginService,
     private apiService: HuoltajaApiService,
     private koodistoService: VardaKoodistoService,
+    private translateService: TranslateService
   ) { }
 
   canActivate(
@@ -38,7 +40,7 @@ export class HuoltajaAuthGuard implements CanActivate {
             // Save userdata
             this.apiService.getUserInfo().subscribe(userdata => {
               this.loginService.currentUserInfo = userdata;
-              this.koodistoService.initKoodistot(environment.huoltajaBackendUrl);
+              this.koodistoService.initKoodistot(environment.huoltajaBackendUrl, this.translateService.currentLang);
               authGuardObs.next(true);
               authGuardObs.complete();
             }, (err) => {

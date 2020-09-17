@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { LangChangeEvent, TranslateService } from '@ngx-translate/core';
 import { CodeDTO, KoodistoDTO, KoodistoEnum, KoodistoSortBy } from './dto/koodisto-models';
 import { LoadingHttpService } from './loading-http.service';
 
@@ -13,9 +12,8 @@ export class VardaKoodistoService {
   private koodistot$ = new BehaviorSubject<Array<KoodistoDTO>>(null);
 
   constructor(
-    private http: LoadingHttpService,
-    private translateService: TranslateService,
-  ) {}
+    private http: LoadingHttpService
+  ) { }
 
   static sortKieliKoodistoByPrimaryLanguages(koodisto: KoodistoDTO) {
     koodisto.codes = koodisto.codes.sort((a, b) => {
@@ -64,13 +62,9 @@ export class VardaKoodistoService {
     fieldResult.options = VardaKoodistoService.mapCodesToFormOptions(koodisto);
   }
 
-  initKoodistot(vardaApiUrl: string) {
+  initKoodistot(vardaApiUrl: string, lang: string) {
     this.vardaApiUrl = vardaApiUrl;
-    this.getKoodistot(this.translateService.currentLang).subscribe(koodistoJSON => this.koodistot$.next(koodistoJSON));
-
-    this.translateService.onLangChange.subscribe((event: LangChangeEvent) => {
-      this.getKoodistot(event.lang).subscribe(koodistoJSON => this.koodistot$.next(koodistoJSON));
-    });
+    this.getKoodistot(lang).subscribe(koodistoJSON => this.koodistot$.next(koodistoJSON));
   }
 
   private getKoodistot(lang: string): Observable<Array<KoodistoDTO>> {

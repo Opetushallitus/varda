@@ -39,7 +39,7 @@ export class AppComponent implements OnInit {
       this.translateService.use(selectedAsiointikieli);
       this.setTitle(router);
 
-      this.koodistoService.initKoodistot(environment.vardaAppUrl);
+      this.koodistoService.initKoodistot(environment.vardaAppUrl, selectedAsiointikieli);
     });
 
     this.router.events.subscribe(event => {
