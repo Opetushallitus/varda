@@ -431,7 +431,7 @@ body:not(.user-is-tabbing) h5:focus {
 }
 
 .user-is-tabbing .varda-button:focus {
-  border-radius: 0px;
+  border-radius: 0;
 }
 
 .user-is-tabbing .selected-language:focus {
@@ -440,6 +440,10 @@ body:not(.user-is-tabbing) h5:focus {
 
 .mat-tooltip {
   animation: scaleTooltip 2.5s forwards;
+}
+
+.tyoskentelypaikka-panel .mat-expansion-panel-body {
+  overflow: hidden;
 }
 
 @keyframes scaleTooltip {

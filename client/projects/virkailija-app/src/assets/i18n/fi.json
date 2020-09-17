@@ -531,7 +531,7 @@
     "alert.no-selected-tehtavanimike": "Valitse tehtävänimike valikosta",
     "alert.no-selected-tutkinto": "Valitse tutkinto valikosta",
     "alert.no-results": "Ei tuloksia",
-    "label.tyontekija.id": "Tyontekijän ID",
+    "label.tyontekija.id": "Työntekijän ID",
     "label.taydennyskoulutus": "Täydennyskoulutus",
     "label.suorituspaiva": "Suorituspäivä",
     "label.koulutuspaivia": "Koulutuspäiviä",
@@ -550,5 +550,16 @@
     "label.yhteenveto.tyoskentelypaikat-kelpoiset": "Työtehtävään kelpoiset työntekijät työskentelypaikoittain",
     "label.yhteenveto.taydennyskoulutukset-kuluva-vuosi": "Kuluvan vuoden suoritetut täydennyskoulutukset",
     "label.yhteenveto.tilapainen-henkilosto-maara-kuluva-vuosi": "Kuluvan vuoden tilapäiset työntekijät",
-    "label.yhteenveto.tilapainen-henkilosto-tunnit-kuluva-vuosi": "Kuluvan vuoden tilapäisten työntekijöiden tehdyt työtunnit"
+    "label.yhteenveto.tilapainen-henkilosto-tunnit-kuluva-vuosi": "Kuluvan vuoden tilapäisten työntekijöiden tehdyt työtunnit",
+
+    "alert.invalid-permissions": "Käyttöoikeutesi eivät riitä tämän tiedon näyttämiseen",
+    "label.no-tutkinnot": "Ei tutkintoja",
+    "label.no-palvelussuhteet": "Ei palvelussuhteita",
+    "label.no-pidemmat-poissaolot": "Ei pidempiä poissaoloja",
+    "label.no-taydennyskoulutukset": "Ei täydennyskoulutuksia",
+    "label.no-vakatiedot": "Ei varhaiskasvatustietoja",
+    "label.no-maksutiedot": "Ei maksutietoja",
+    "label.tutkinnot": "Tutkinnot",
+    "label.tutkinto": "Tutkinto",
+    "label.palvelussuhteet": "Palvelussuhteet"
 }

@@ -14,16 +14,16 @@
   margin-left: 1.5em;
 }
 
-.secondary-text {
-  font-size: 90%;
-}
-
 .tyoskentelypaikka-panel-container {
   position: relative;
 }
 
 .tyoskentelypaikka-panel, .taydennyskoulutus-panel {
-  margin-bottom: 1em;
+  margin-bottom: 1em !important;
+}
+
+.tyoskentelypaikka-panel {
+  overflow: visible !important;
 }
 
 .tyoskentelypaikka-panel .mat-expansion-panel-header-title,
@@ -40,6 +40,10 @@
 .palvelussuhde-panel .mat-expansion-panel-header-title,
 .palvelussuhde-panel .mat-expansion-panel-header-description {
   color: var(--black);
+}
+
+.palvelussuhde-panel:not(:nth-of-type(1)) {
+  margin-top: 2em;
 }
 
 .tyoskentelypaikka-panel .mat-expansion-panel-header:focus, .taydennyskoulutus-panel .mat-expansion-panel-header:focus {

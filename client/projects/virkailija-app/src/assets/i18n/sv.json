@@ -537,5 +537,13 @@
     "label.yhteenveto.tyoskentelypaikat-kelpoiset": "För arbetsuppgifterna behöriga arbetstagare enligt arbetsplats",
     "label.yhteenveto.taydennyskoulutukset-kuluva-vuosi": "Fortbildningar som avlagts under det gångna året",
     "label.yhteenveto.tilapainen-henkilosto-maara-kuluva-vuosi": "Tillfällig personal under det gångna året",
-    "label.yhteenveto.tilapainen-henkilosto-tunnit-kuluva-vuosi": "Av tillfällig personal utförda arbetstimmar under det gångna året"
+    "label.yhteenveto.tilapainen-henkilosto-tunnit-kuluva-vuosi": "Av tillfällig personal utförda arbetstimmar under det gångna året",
+
+    "alert.invalid-permissions": "Du har inte tillräckliga användarrättigheter för att granska uppgifterna",
+    "label.no-tutkinnot": "Inga examina",
+    "label.no-palvelussuhteet": "Inga anställningsförhållanden",
+    "label.no-pidemmat-poissaolot": "Inga längre frånvaroperioder",
+    "label.no-taydennyskoulutukset": "Inga fortbildningar",
+    "label.no-vakatiedot": "Inga uppgifter om småbarnspedagogik",
+    "label.no-maksutiedot": "Inga uppgifter om avgifter"
 }

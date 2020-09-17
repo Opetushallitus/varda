@@ -19,34 +19,33 @@
 
   <table class="mat-table toimipaikan-lapset-table toimipaikan-lapset-vakatable">
     <tr class="mat-header-row">
-      <td class="mat-cell">{{'label.vaka_paatos_hakemus_pvm' | translate}}</td>
+      <th scope="row" class="mat-header-cell">{{'label.vaka_paatos_hakemus_pvm' | translate}}</th>
       <td class="mat-cell">{{vakapaatos.hakemus_pvm | date:'d.M.yyyy'}}</td>
     </tr>
     <tr class="mat-header-row">
-      <td class="mat-cell">{{'label.vaka_paatos_tuntimaara_viikossa' | translate}}</td>
+      <th scope="row" class="mat-header-cell">{{'label.vaka_paatos_tuntimaara_viikossa' | translate}}</th>
       <td class="mat-cell">{{vakapaatos.tuntimaara_viikossa}}</td>
     </tr>
     <tr class="mat-header-row">
-      <td class="mat-cell">{{'label.vaka_paatos_jarjestamismuoto' | translate}}</td>
-      <td class="mat-cell">
-        {{(getCodeFromKoodistoService(koodistoEnum.jarjestamismuoto, vakapaatos.jarjestamismuoto_koodi) | async)?.name}}
-        ({{vakapaatos.jarjestamismuoto_koodi}})
+      <th scope="row" class="mat-header-cell">{{'label.vaka_paatos_jarjestamismuoto' | translate}}</th>
+      <td class="mat-cell" [libKoodistoValue]="koodistoEnum.jarjestamismuoto" format="long">
+        {{vakapaatos.jarjestamismuoto_koodi}}
       </td>
     </tr>
     <tr class="mat-header-row">
-      <td class="mat-cell">{{'label.vaka_paatos_paivittainen_vaka_kytkin' | translate}}</td>
+      <th scope="row" class="mat-header-cell">{{'label.vaka_paatos_paivittainen_vaka_kytkin' | translate}}</th>
       <td class="mat-cell">{{vakapaatos.paivittainen_vaka_kytkin ? ('label.yes' | translate) : ('label.no' | translate)}}</td>
     </tr>
     <tr class="mat-header-row">
-      <td class="mat-cell">{{'label.vaka_paatos_kokopaivainen_vaka_kytkin' | translate}}</td>
+      <th scope="row" class="mat-header-cell">{{'label.vaka_paatos_kokopaivainen_vaka_kytkin' | translate}}</th>
       <td class="mat-cell">{{vakapaatos.kokopaivainen_vaka_kytkin ? ('label.yes' | translate) : ('label.no' | translate)}}</td>
     </tr>
     <tr class="mat-header-row">
-      <td class="mat-cell">{{'label.vaka_paatos_vuorohoito_kytkin' | translate}}</td>
+      <th scope="row" class="mat-header-cell">{{'label.vaka_paatos_vuorohoito_kytkin' | translate}}</th>
       <td class="mat-cell">{{vakapaatos.vuorohoito_kytkin ? ('label.yes' | translate) : ('label.no' | translate)}}</td>
     </tr>
     <tr class="mat-header-row">
-      <td class="mat-cell">{{'label.vaka_paatos_pikakasittely' | translate}}</td>
+      <th scope="row" class="mat-header-cell">{{'label.vaka_paatos_pikakasittely' | translate}}</th>
       <td class="mat-cell">{{vakapaatos.pikakasittely_kytkin ? ('label.yes' | translate) : ('label.no' | translate)}}</td>
     </tr>
   </table>

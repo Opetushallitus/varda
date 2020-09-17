@@ -156,7 +156,9 @@
   margin: 3em 1em;
 }
 
-.varda-painotukset .varda-painotukset-panel {}
+.varda-painotukset .varda-painotukset-panel > .row {
+  margin-bottom: 0;
+}
 
 .varda-painotukset .varda-painotukset-wrapper {
   margin: 1em;

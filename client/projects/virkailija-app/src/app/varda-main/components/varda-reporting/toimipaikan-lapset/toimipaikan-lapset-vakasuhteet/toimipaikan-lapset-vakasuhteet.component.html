@@ -19,15 +19,15 @@
 
   <table class="mat-table toimipaikan-lapset-table toimipaikan-lapset-vakatable">
     <tr class="mat-header-row">
-      <td class="mat-cell">{{'label.toimipaikka' | translate}}</td>
+      <th scope="row" class="mat-header-cell">{{'label.toimipaikka' | translate}}</th>
       <td class="mat-cell">{{vakasuhde.toimipaikka_nimi}}</td>
     </tr>
     <tr class="mat-header-row">
-      <td class="mat-cell">{{'label.alkamis_pvm' | translate}}</td>
+      <th scope="row" class="mat-header-cell">{{'label.alkamis_pvm' | translate}}</th>
       <td class="mat-cell">{{vakasuhde.alkamis_pvm | date:'d.M.yyyy'}}</td>
     </tr>
     <tr class="mat-header-row">
-      <td class="mat-cell">{{'label.paattymis_pvm' | translate}}</td>
+      <th scope="row" class="mat-header-cell">{{'label.paattymis_pvm' | translate}}</th>
       <td class="mat-cell">{{vakasuhde.paattymis_pvm | date:'d.M.yyyy'}}</td>
     </tr>
   </table>

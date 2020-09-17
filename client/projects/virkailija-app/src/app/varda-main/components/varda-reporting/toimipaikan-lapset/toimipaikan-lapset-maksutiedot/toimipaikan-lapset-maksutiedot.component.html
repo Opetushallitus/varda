@@ -24,15 +24,15 @@
 
     <table class="mat-table toimipaikan-lapset-table toimipaikan-lapset-huoltajat-table toimipaikan-lapset-vakatable" *ngFor="let huoltaja of maksutieto.huoltajat">
       <tr class="mat-header-row">
-        <td class="mat-cell">{{'label.oppijanumero' | translate}}</td>
+        <th scope="row" class="mat-header-cell">{{'label.oppijanumero' | translate}}</th>
         <td class="mat-cell">{{huoltaja.henkilo_oid}}</td>
       </tr>
       <tr class="mat-header-row">
-        <td class="mat-cell">{{'label.firstnamesbyseparated' | translate}}</td>
+        <th scope="row" class="mat-header-cell">{{'label.firstnamesbyseparated' | translate}}</th>
         <td class="mat-cell">{{huoltaja.etunimet}}</td>
       </tr>
       <tr class="mat-header-row">
-        <td class="mat-cell">{{'label.lastname' | translate}}</td>
+        <th scope="row" class="mat-header-cell">{{'label.lastname' | translate}}</th>
         <td class="mat-cell">{{huoltaja.sukunimi}}</td>
       </tr>
     </table>
@@ -40,30 +40,29 @@
 
   <table class="mat-table toimipaikan-lapset-table toimipaikan-lapset-vakatable">
     <tr class="mat-header-row">
-      <td class="mat-cell">{{'label.maksutieto.maksunperuste' | translate}}</td>
-      <td class="mat-cell">
-        {{(getCodeFromKoodistoService(koodistoEnum.maksunperuste, maksutieto.maksun_peruste_koodi) | async)?.name}}
-        ({{maksutieto.maksun_peruste_koodi}})
+      <th scope="row" class="mat-header-cell">{{'label.maksutieto.maksunperuste' | translate}}</th>
+      <td class="mat-cell" [libKoodistoValue]="koodistoEnum.maksunperuste" format="long">
+        {{maksutieto.maksun_peruste_koodi}}
       </td>
     </tr>
     <tr class="mat-header-row" *ngIf="!isYksityinen">
-      <td class="mat-cell">{{'label.maksutieto.palvelusetelin_arvo_euroina' | translate}}</td>
+      <th scope="row" class="mat-header-cell">{{'label.maksutieto.palvelusetelin_arvo_euroina' | translate}}</th>
       <td class="mat-cell">{{maksutieto.palveluseteli_arvo}}</td>
     </tr>
     <tr class="mat-header-row">
-      <td class="mat-cell">{{'label.maksutieto.asiakasmaksu_euroina' | translate}}</td>
+      <th scope="row" class="mat-header-cell">{{'label.maksutieto.asiakasmaksu_euroina' | translate}}</th>
       <td class="mat-cell">{{maksutieto.asiakasmaksu}}</td>
     </tr>
     <tr class="mat-header-row" *ngIf="!isYksityinen">
-      <td class="mat-cell">{{'label.maksutieto.perheen_koko' | translate}}</td>
+      <th scope="row" class="mat-header-cell">{{'label.maksutieto.perheen_koko' | translate}}</th>
       <td class="mat-cell">{{maksutieto.perheen_koko}}</td>
     </tr>
     <tr class="mat-header-row">
-      <td class="mat-cell">{{'label.maksutieto.alkamis_pvm' | translate}}</td>
+      <th scope="row" class="mat-header-cell">{{'label.maksutieto.alkamis_pvm' | translate}}</th>
       <td class="mat-cell">{{maksutieto.alkamis_pvm | date:'d.M.yyyy'}}</td>
     </tr>
     <tr class="mat-header-row">
-      <td class="mat-cell">{{'label.maksutieto.paattymis_pvm' | translate}}</td>
+      <th scope="row" class="mat-header-cell">{{'label.maksutieto.paattymis_pvm' | translate}}</th>
       <td class="mat-cell">{{maksutieto.paattymis_pvm | date:'d.M.yyyy'}}</td>
     </tr>
   </table>

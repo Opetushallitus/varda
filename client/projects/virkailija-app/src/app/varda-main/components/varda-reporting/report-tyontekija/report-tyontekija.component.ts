@@ -1,8 +1,12 @@
 import { Component, ElementRef, Input, OnChanges, ViewChild } from '@angular/core';
-import { TyontekijaByToimipaikkaDTO, TyontekijaKooste } from '../../../../utilities/models/dto/varda-henkilohaku-dto.model';
+import {
+  TyontekijaByToimipaikkaDTO,
+  TyontekijaKooste
+} from '../../../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { VardaApiService } from '../../../../core/services/varda-api.service';
-import { KoodistoEnum, VardaKoodistoService } from 'varda-shared';
+import { KoodistoEnum } from 'varda-shared';
 import { VardaDateService } from '../../../services/varda-date.service';
+import { UserAccess } from '../../../../utilities/models/varda-user-access.model';
 
 @Component({
   selector: 'app-report-tyontekija',
@@ -11,6 +15,7 @@ import { VardaDateService } from '../../../services/varda-date.service';
 })
 export class ReportTyontekijaComponent implements OnChanges {
   @Input() tyontekija: TyontekijaByToimipaikkaDTO;
+  @Input() userAccess: UserAccess;
   @ViewChild('tyontekijaScrollTo') tyontekijaScrollTo: ElementRef<HTMLElement>;
 
   koodistoEnum = KoodistoEnum;
@@ -18,7 +23,6 @@ export class ReportTyontekijaComponent implements OnChanges {
 
   constructor(
     private vardaApiService: VardaApiService,
-    private koodistoService: VardaKoodistoService,
     private dateService: VardaDateService,
   ) {}
 
@@ -31,10 +35,6 @@ export class ReportTyontekijaComponent implements OnChanges {
       this.tyontekijaKooste = data;
       this.tyontekijaScrollTo.nativeElement.scrollIntoView({behavior: 'smooth', block: 'start'});
     });
-  }
-
-  getCodeFromKoodistoService(koodistoName: KoodistoEnum, code: string) {
-    return this.koodistoService.getCodeValueFromKoodisto(koodistoName, code);
   }
 
   getDateDisplayValue(date: string): string {

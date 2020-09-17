@@ -584,8 +584,8 @@
             <table mat-table
                    [dataSource]="getToimipaikkaKeys(toimipaikkaObj)">
               <ng-container matColumnDef="key">
-                <td mat-cell
-                    *matCellDef="let key">{{'label.' + key | translate }}</td>
+                <th scope="row" mat-header-cell
+                      *matCellDef="let key">{{'label.' + key | translate }}</th>
               </ng-container>
               <ng-container matColumnDef="value">
                 <td mat-cell
@@ -594,27 +594,34 @@
                     {{toimipaikkaObj['toimipaikka'][key]}}
                   </ng-container>
                   <ng-container *ngIf="key === 'kunta_koodi'">
-                    {{(getCodeFromKoodistoService(koodistoEnum.kunta, toimipaikkaObj['toimipaikka'][key]) | async)?.name}}
-                    ({{toimipaikkaObj['toimipaikka'][key]}})
+                    <span [libKoodistoValue]="koodistoEnum.kunta" format="long">
+                      {{toimipaikkaObj['toimipaikka'][key]}}
+                    </span>
                   </ng-container>
                   <ng-container *ngIf="key === 'toimintamuoto_koodi'">
-                    {{(getCodeFromKoodistoService(koodistoEnum.toimintamuoto, toimipaikkaObj['toimipaikka'][key]) | async)?.name}}
-                    ({{toimipaikkaObj['toimipaikka'][key]}})
+                    <span [libKoodistoValue]="koodistoEnum.toimintamuoto" format="long">
+                      {{toimipaikkaObj['toimipaikka'][key]}}
+                    </span>
                   </ng-container>
                   <ng-container *ngIf="key === 'kasvatusopillinen_jarjestelma_koodi'">
-                    {{(getCodeFromKoodistoService(koodistoEnum.kasvatusopillinenjarjestelma, toimipaikkaObj['toimipaikka'][key]) | async)?.name}}
-                    ({{toimipaikkaObj['toimipaikka'][key]}})
+                    <span [libKoodistoValue]="koodistoEnum.kasvatusopillinenjarjestelma" format="long">
+                      {{toimipaikkaObj['toimipaikka'][key]}}
+                    </span>
                   </ng-container>
                   <ng-container *ngIf="key === 'asiointikieli_koodi'">
-                    <ng-container *ngFor="let language of toimipaikkaObj['toimipaikka'][key]">
-                      {{(getCodeFromKoodistoService(koodistoEnum.kieli, language) | async)?.name}}
-                      ({{language}})
+                    <ng-container *ngFor="let language of toimipaikkaObj['toimipaikka'][key]; let index = index, let length = count">
+                      <span [libKoodistoValue]="koodistoEnum.kieli" format="long">
+                        {{language}}
+                      </span>
+                      <span *ngIf="index !== length - 1 && length > 1">, </span>
                     </ng-container>
                   </ng-container>
                   <ng-container *ngIf="key === 'jarjestamismuoto_koodi'">
-                    <ng-container *ngFor="let jarjestamismuoto of toimipaikkaObj['toimipaikka'][key]">
-                      {{(getCodeFromKoodistoService(koodistoEnum.jarjestamismuoto, jarjestamismuoto) | async)?.name}}
-                      ({{jarjestamismuoto}})
+                    <ng-container *ngFor="let jarjestamismuoto of toimipaikkaObj['toimipaikka'][key]; let index = index, let length = count">
+                      <span [libKoodistoValue]="koodistoEnum.jarjestamismuoto" format="long">
+                        {{jarjestamismuoto}}
+                      </span>
+                      <span *ngIf="index !== length - 1 && length > 1">, </span>
                     </ng-container>
                   </ng-container>
                   <ng-container *ngIf="key === 'kielipainotus_kytkin' || key === 'toiminnallinenpainotus_kytkin'">
@@ -635,18 +642,17 @@
                      *ngFor="let kielipainotus of toimipaikkaObj['kielipainotukset']"
                      [class.margin-top]="toimipaikkaObj['kielipainotukset'].indexOf(kielipainotus) !== 0">
                 <tr class="mat-row">
-                  <td class="mat-cell">{{'label.kielipainotus' | translate }}</td>
-                  <td class="mat-cell">
-                    {{(getCodeFromKoodistoService(koodistoEnum.kieli, kielipainotus.kielipainotus_koodi) | async)?.name}}
-                    ({{kielipainotus.kielipainotus_koodi}})
+                  <th scope="row" class="mat-header-cell">{{'label.kielipainotus' | translate }}</th>
+                  <td class="mat-cell" [libKoodistoValue]="koodistoEnum.kieli" format="long">
+                    {{kielipainotus.kielipainotus_koodi}}
                   </td>
                 </tr>
                 <tr class="mat-row">
-                  <td class="mat-cell">{{'label.alkamis_pvm' | translate }}</td>
+                  <th scope="row" class="mat-header-cell">{{'label.alkamis_pvm' | translate }}</th>
                   <td class="mat-cell">{{getDateDisplayValue(kielipainotus.alkamis_pvm)}}</td>
                 </tr>
                 <tr class="mat-row">
-                  <td class="mat-cell">{{'label.paattymis_pvm' | translate }}</td>
+                  <th scope="row" class="mat-header-cell">{{'label.paattymis_pvm' | translate }}</th>
                   <td class="mat-cell">{{getDateDisplayValue(kielipainotus.paattymis_pvm)}}</td>
                 </tr>
               </table>
@@ -659,18 +665,17 @@
                      *ngFor="let toimintapainotus of toimipaikkaObj['toimintapainotukset']"
                      [class.margin-top]="toimipaikkaObj['toimintapainotukset'].indexOf(toimintapainotus) !== 0">
                 <tr class="mat-row">
-                  <td class="mat-cell">{{'label.toimintapainotus' | translate }}</td>
-                  <td class="mat-cell">
-                    {{(getCodeFromKoodistoService(koodistoEnum.toiminnallinenpainotus, toimintapainotus.toimintapainotus_koodi) | async)?.name}}
-                    ({{toimintapainotus.toimintapainotus_koodi}})
+                  <th scope="row" class="mat-header-cell">{{'label.toimintapainotus' | translate }}</th>
+                  <td class="mat-cell" [libKoodistoValue]="koodistoEnum.toiminnallinenpainotus" format="long">
+                    {{toimintapainotus.toimintapainotus_koodi}}
                   </td>
                 </tr>
                 <tr class="mat-row">
-                  <td class="mat-cell">{{'label.alkamis_pvm' | translate }}</td>
+                  <th scope="row" class="mat-header-cell">{{'label.alkamis_pvm' | translate }}</th>
                   <td class="mat-cell">{{getDateDisplayValue(toimintapainotus.alkamis_pvm)}}</td>
                 </tr>
                 <tr class="mat-row">
-                  <td class="mat-cell">{{'label.paattymis_pvm' | translate }}</td>
+                  <th scope="row" class="mat-header-cell">{{'label.paattymis_pvm' | translate }}</th>
                   <td class="mat-cell">{{getDateDisplayValue(toimintapainotus.paattymis_pvm)}}</td>
                 </tr>
               </table>
@@ -743,7 +748,7 @@
             </mat-card-title>
           </mat-card-title-group>
           <mat-card-content>
-            <app-toimipaikan-lapset [selectedToimipaikanLapsi]="selectedToimipaikanLapsi"></app-toimipaikan-lapset>
+            <app-toimipaikan-lapset [selectedToimipaikanLapsi]="selectedToimipaikanLapsi" [userAccess]="userAccess"></app-toimipaikan-lapset>
           </mat-card-content>
         </mat-card>
       </div>
@@ -806,7 +811,7 @@
             </mat-card-title>
           </mat-card-title-group>
           <mat-card-content>
-            <app-report-tyontekija [tyontekija]="selectedTyontekija"></app-report-tyontekija>
+            <app-report-tyontekija [tyontekija]="selectedTyontekija" [userAccess]="userAccess"></app-report-tyontekija>
           </mat-card-content>
         </mat-card>
       </div>

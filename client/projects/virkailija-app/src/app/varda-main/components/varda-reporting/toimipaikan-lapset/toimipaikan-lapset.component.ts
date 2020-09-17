@@ -2,6 +2,7 @@ import { Component, Input, OnChanges, ViewChild } from '@angular/core';
 import { VardaApiService } from '../../../../core/services/varda-api.service';
 import { ToimipaikanLapsi } from '../../../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { VardaUtilityService } from '../../../../core/services/varda-utility.service';
+import { UserAccess } from '../../../../utilities/models/varda-user-access.model';
 
 @Component({
   selector: 'app-toimipaikan-lapset',
@@ -9,8 +10,8 @@ import { VardaUtilityService } from '../../../../core/services/varda-utility.ser
   styleUrls: ['./toimipaikan-lapset.component.css']
 })
 export class ToimipaikanLapsetComponent implements OnChanges {
-
   @Input() selectedToimipaikanLapsi: ToimipaikanLapsi;
+  @Input() userAccess: UserAccess;
   @ViewChild('toimipaikanLapsetScrollTo') toimipaikanLapsetScrollTo: any;
   constructor(private vardaApiService: VardaApiService, private vardaUtilityService: VardaUtilityService) { }
 

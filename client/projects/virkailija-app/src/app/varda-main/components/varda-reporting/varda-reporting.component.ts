@@ -837,10 +837,6 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
     return this.koodistoService.getKoodisto(name);
   }
 
-  getCodeFromKoodistoService(koodistoName: KoodistoEnum, code: string) {
-    return this.koodistoService.getCodeValueFromKoodisto(koodistoName, code);
-  }
-
   resetToimipaikkaSelect(entity: string) {
     this.selectedToimipaikat = [];
     this.isAllToimipaikatSelected = true;

@@ -1,176 +1,198 @@
 <div #tyontekijaScrollTo></div>
 <div *ngIf="tyontekijaKooste">
   <div class="tyontekija-section">
-    <label class="oph-bold">{{'label.perustiedot' | translate}}</label>
+    <h3 class="oph-bold">{{'label.perustiedot' | translate}}</h3>
     <table class="mat-table">
       <tr class="mat-row">
-        <td class="mat-cell">{{'label.firstnamesbyseparated' | translate}}</td>
+        <th scope="row" class="mat-header-cell">{{'label.firstnamesbyseparated' | translate}}</th>
         <td class="mat-cell">{{tyontekijaKooste.henkilo.etunimet}}</td>
       </tr>
       <tr class="mat-row">
-        <td class="mat-cell">{{'label.lastname' | translate}}</td>
+        <th scope="row" class="mat-header-cell">{{'label.lastname' | translate}}</th>
         <td class="mat-cell">{{tyontekijaKooste.henkilo.sukunimi}}</td>
       </tr>
       <tr class="mat-row">
-        <td class="mat-cell">{{'label.henkilo.id' | translate}}</td>
+        <th scope="row" class="mat-header-cell">{{'label.henkilo.id' | translate}}</th>
         <td class="mat-cell">{{tyontekijaKooste.henkilo.id}}</td>
       </tr>
       <tr class="mat-row">
-        <td class="mat-cell">{{'label.tyontekija.id' | translate}}</td>
+        <th scope="row" class="mat-header-cell">{{'label.tyontekija.id' | translate}}</th>
         <td class="mat-cell">{{tyontekijaKooste.id}}</td>
       </tr>
       <tr class="mat-row">
-        <td class="mat-cell">{{'label.oppijanumero' | translate}}</td>
+        <th scope="row" class="mat-header-cell">{{'label.oppijanumero' | translate}}</th>
         <td class="mat-cell">{{tyontekijaKooste.henkilo.henkilo_oid}}</td>
       </tr>
     </table>
   </div>
   <div class="tyontekija-section">
-    <label class="oph-bold">{{'label.tutkinnot' | translate}}</label>
-    <table mat-table [dataSource]="tyontekijaKooste.tutkinnot" *ngIf="tyontekijaKooste.tutkinnot.length > 0">
-      <ng-container matColumnDef="code">
-        <td mat-cell *matCellDef="let tutkinto">{{tutkinto}}</td>
-      </ng-container>
-      <ng-container matColumnDef="name">
-        <td mat-cell *matCellDef="let tutkinto">{{(getCodeFromKoodistoService(koodistoEnum.tutkinto, tutkinto) | async)?.name}}</td>
-      </ng-container>
-      <tr mat-row *matRowDef="let tutkinto; columns: ['code', 'name'];"></tr>
-    </table>
+    <h3 class="oph-bold">{{'label.tutkinnot' | translate}}</h3>
+    <div class="varda-text-secondary d-block" *ngIf="!userAccess.tyontekijatiedot.katselija; else validTutkintoPermissionsContainer">
+      {{'alert.invalid-permissions' | translate}}
+    </div>
+    <ng-template #validTutkintoPermissionsContainer>
+      <div class="varda-text-secondary d-block" *ngIf="tyontekijaKooste.tutkinnot.length === 0">
+        {{'label.no-tutkinnot' | translate}}
+      </div>
+      <table mat-table [dataSource]="tyontekijaKooste.tutkinnot" *ngIf="tyontekijaKooste.tutkinnot.length > 0">
+        <ng-container matColumnDef="code">
+          <td mat-cell *matCellDef="let tutkinto">{{tutkinto}}</td>
+        </ng-container>
+        <ng-container matColumnDef="name">
+          <td mat-cell *matCellDef="let tutkinto" [libKoodistoValue]="koodistoEnum.tutkinto">{{tutkinto}}</td>
+        </ng-container>
+        <tr mat-row *matRowDef="let tutkinto; columns: ['code', 'name'];"></tr>
+      </table>
+    </ng-template>
   </div>
   <div class="tyontekija-section">
-    <label class="oph-bold">{{'label.palvelussuhteet' | translate}}</label>
-    <ng-container *ngFor="let palvelussuhde of tyontekijaKooste.palvelussuhteet">
-      <mat-expansion-panel class="palvelussuhde-panel">
+    <h3 class="oph-bold">{{'label.palvelussuhteet' | translate}}</h3>
+    <div class="varda-text-secondary d-block" *ngIf="!userAccess.tyontekijatiedot.katselija; else validTyontekijaPermissionsContainer">
+      {{'alert.invalid-permissions' | translate}}
+    </div>
+    <ng-template #validTyontekijaPermissionsContainer>
+      <div class="varda-text-secondary d-block" *ngIf="tyontekijaKooste.palvelussuhteet.length === 0">
+        {{'label.no-palvelussuhteet' | translate}}
+      </div>
+      <ng-container *ngFor="let palvelussuhde of tyontekijaKooste.palvelussuhteet">
+        <mat-expansion-panel class="palvelussuhde-panel">
+          <mat-expansion-panel-header>
+            <mat-panel-title>{{'label.palvelussuhde' | translate}}</mat-panel-title>
+            <mat-panel-description>
+              {{getDateRangeDisplayValue(palvelussuhde.alkamis_pvm, palvelussuhde.paattymis_pvm)}}
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+          <table class="mat-table">
+            <tr class="mat-row">
+              <th scope="row" class="mat-header-cell">{{'label.tyosuhde' | translate}}</th>
+              <td class="mat-cell" [libKoodistoValue]="koodistoEnum.tyosuhde" format="long">
+                {{palvelussuhde.tyosuhde_koodi}}
+              </td>
+            </tr>
+            <tr class="mat-row">
+              <th scope="row" class="mat-header-cell">{{'label.tyoaika' | translate}}</th>
+              <td class="mat-cell" [libKoodistoValue]="koodistoEnum.tyoaika" format="long">
+                {{palvelussuhde.tyoaika_koodi}}
+              </td>
+            </tr>
+            <tr class="mat-row">
+              <th scope="row" class="mat-header-cell">{{'label.tyoaika-viikossa' | translate}}</th>
+              <td class="mat-cell">{{palvelussuhde.tyoaika_viikossa}}</td>
+            </tr>
+            <tr class="mat-row">
+              <th scope="row" class="mat-header-cell">{{'label.tutkinto' | translate}}</th>
+              <td class="mat-cell" [libKoodistoValue]="koodistoEnum.tutkinto" format="long">
+                {{palvelussuhde.tutkinto_koodi}}
+              </td>
+            </tr>
+            <tr class="mat-row">
+              <th scope="row" class="mat-header-cell">{{'label.alkamis_pvm' | translate}}</th>
+              <td class="mat-cell">{{getDateDisplayValue(palvelussuhde.alkamis_pvm)}}</td>
+            </tr>
+            <tr class="mat-row">
+              <th scope="row" class="mat-header-cell">{{'label.paattymis_pvm' | translate}}</th>
+              <td class="mat-cell">{{getDateDisplayValue(palvelussuhde.paattymis_pvm)}}</td>
+            </tr>
+          </table>
+        </mat-expansion-panel>
+        <div class="tyontekija-section-inner tyoskentelypaikka-container" *ngIf="palvelussuhde.tyoskentelypaikat.length > 0">
+          <div *ngFor="let tyoskentelypaikka of palvelussuhde.tyoskentelypaikat" class="tyoskentelypaikka-panel-container">
+            <mat-expansion-panel class="tyoskentelypaikka-panel">
+              <mat-expansion-panel-header>
+                <mat-panel-title>{{'label.tyoskentelypaikka' | translate}}</mat-panel-title>
+                <mat-panel-description>
+                  {{getDateRangeDisplayValue(tyoskentelypaikka.alkamis_pvm, tyoskentelypaikka.paattymis_pvm)}}
+                </mat-panel-description>
+              </mat-expansion-panel-header>
+              <table class="mat-table">
+                <tr class="mat-row">
+                  <th scope="row" class="mat-header-cell">{{'label.toimipaikka' | translate}}</th>
+                  <td class="mat-cell">{{tyoskentelypaikka.toimipaikka_nimi}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th scope="row" class="mat-header-cell">{{'label.toimipaikka.id' | translate}}</th>
+                  <td class="mat-cell">{{tyoskentelypaikka.toimipaikka_id}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th scope="row" class="mat-header-cell">{{'label.tehtavanimike' | translate}}</th>
+                  <td class="mat-cell" [libKoodistoValue]="koodistoEnum.tehtavanimike" format="long">
+                    {{tyoskentelypaikka.tehtavanimike_koodi}}
+                  </td>
+                </tr>
+                <tr class="mat-row">
+                  <th scope="row" class="mat-header-cell">{{'label.kelpoinen' | translate}}</th>
+                  <td class="mat-cell">{{tyoskentelypaikka.kelpoisuus_kytkin ? ('label.yes' | translate) : ('label.no' | translate)}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th scope="row" class="mat-header-cell">{{'label.kiertava-tyontekija' | translate}}</th>
+                  <td class="mat-cell">{{tyoskentelypaikka.kiertava_tyontekija_kytkin ? ('label.yes' | translate) : ('label.no' | translate)}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th scope="row" class="mat-header-cell">{{'label.alkamis_pvm' | translate}}</th>
+                  <td class="mat-cell">{{getDateDisplayValue(tyoskentelypaikka.alkamis_pvm)}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th scope="row" class="mat-header-cell">{{'label.paattymis_pvm' | translate}}</th>
+                  <td class="mat-cell">{{getDateDisplayValue(tyoskentelypaikka.paattymis_pvm)}}</td>
+                </tr>
+              </table>
+            </mat-expansion-panel>
+          </div>
+        </div>
+        <div class="tyontekija-section-inner">
+          <h4 class="oph-bold varda-text-secondary-inherit-color">{{'label.pidemmat-poissaolot' | translate}}</h4>
+          <div class="varda-text-secondary d-block" *ngIf="palvelussuhde.pidemmatpoissaolot.length === 0">
+            {{'label.no-pidemmat-poissaolot' | translate}}
+          </div>
+          <table mat-table [dataSource]="palvelussuhde.pidemmatpoissaolot" *ngIf="palvelussuhde.pidemmatpoissaolot.length > 0">
+            <ng-container matColumnDef="date">
+              <td mat-cell *matCellDef="let poissaolo">{{getDateRangeDisplayValue(poissaolo.alkamis_pvm, poissaolo.paattymis_pvm)}}</td>
+            </ng-container>
+            <tr mat-row *matRowDef="let poissaolo; columns: ['date']"></tr>
+          </table>
+        </div>
+      </ng-container>
+    </ng-template>
+  </div>
+  <div class="tyontekija-section">
+    <h3 class="oph-bold">{{'label.taydennyskoulutukset' | translate}}</h3>
+    <div class="varda-text-secondary d-block" *ngIf="!userAccess.taydennyskoulutustiedot.katselija; else validTaydennyskoulutusPermissionsContainer">
+      {{'alert.invalid-permissions' | translate}}
+    </div>
+    <ng-template #validTaydennyskoulutusPermissionsContainer>
+      <div class="varda-text-secondary d-block" *ngIf="tyontekijaKooste.taydennyskoulutukset.length === 0">
+        {{'label.no-taydennyskoulutukset' | translate}}
+      </div>
+      <mat-expansion-panel *ngFor="let taydennyskoulutus of tyontekijaKooste.taydennyskoulutukset" class="taydennyskoulutus-panel">
         <mat-expansion-panel-header>
-          <mat-panel-title>{{'label.palvelussuhde' | translate}}</mat-panel-title>
+          <mat-panel-title>
+            {{'label.taydennyskoulutus' | translate}}
+          </mat-panel-title>
           <mat-panel-description>
-            {{getDateRangeDisplayValue(palvelussuhde.alkamis_pvm, palvelussuhde.paattymis_pvm)}}
+            {{getDateDisplayValue(taydennyskoulutus.suoritus_pvm)}}
           </mat-panel-description>
         </mat-expansion-panel-header>
         <table class="mat-table">
           <tr class="mat-row">
-            <td class="mat-cell">{{'label.tyosuhde' | translate}}</td>
-            <td class="mat-cell">
-              {{(getCodeFromKoodistoService(koodistoEnum.tyosuhde, palvelussuhde.tyosuhde_koodi) | async)?.name}}
-              ({{palvelussuhde.tyosuhde_koodi}})
+            <th scope="row" class="mat-header-cell">{{'label.nimi' | translate}}</th>
+            <td class="mat-cell">{{taydennyskoulutus.nimi}}</td>
+          </tr>
+          <tr class="mat-row">
+            <th scope="row" class="mat-header-cell">{{'label.suorituspaiva' | translate}}</th>
+            <td class="mat-cell">{{getDateDisplayValue(taydennyskoulutus.suoritus_pvm)}}</td>
+          </tr>
+          <tr class="mat-row">
+            <th scope="row" class="mat-header-cell">{{'label.koulutuspaivia' | translate}}</th>
+            <td class="mat-cell">{{taydennyskoulutus.koulutuspaivia}}</td>
+          </tr>
+          <tr class="mat-row">
+            <th scope="row" class="mat-header-cell">{{'label.tehtavanimike' | translate}}</th>
+            <td class="mat-cell" [libKoodistoValue]="koodistoEnum.tehtavanimike" format="long">
+              {{taydennyskoulutus.tehtavanimike_koodi}}
             </td>
-          </tr>
-          <tr class="mat-row">
-            <td class="mat-cell">{{'label.tyoaika' | translate}}</td>
-            <td class="mat-cell">
-              {{(getCodeFromKoodistoService(koodistoEnum.tyoaika, palvelussuhde.tyoaika_koodi) | async)?.name}}
-              ({{palvelussuhde.tyoaika_koodi}})
-            </td>
-          </tr>
-          <tr class="mat-row">
-            <td class="mat-cell">{{'label.tyoaika-viikossa' | translate}}</td>
-            <td class="mat-cell">{{palvelussuhde.tyoaika_viikossa}}</td>
-          </tr>
-          <tr class="mat-row">
-            <td class="mat-cell">{{'label.tutkinto' | translate}}</td>
-            <td class="mat-cell">
-              {{(getCodeFromKoodistoService(koodistoEnum.tutkinto, palvelussuhde.tutkinto_koodi) | async)?.name}}
-              ({{palvelussuhde.tutkinto_koodi}})
-            </td>
-          </tr>
-          <tr class="mat-row">
-            <td class="mat-cell">{{'label.alkamis_pvm' | translate}}</td>
-            <td class="mat-cell">{{getDateDisplayValue(palvelussuhde.alkamis_pvm)}}</td>
-          </tr>
-          <tr class="mat-row">
-            <td class="mat-cell">{{'label.paattymis_pvm' | translate}}</td>
-            <td class="mat-cell">{{getDateDisplayValue(palvelussuhde.paattymis_pvm)}}</td>
           </tr>
         </table>
       </mat-expansion-panel>
-      <div class="tyontekija-section-inner tyoskentelypaikka-container">
-        <div *ngFor="let tyoskentelypaikka of palvelussuhde.tyoskentelypaikat" class="tyoskentelypaikka-panel-container">
-          <mat-expansion-panel class="tyoskentelypaikka-panel">
-            <mat-expansion-panel-header>
-              <mat-panel-title>{{'label.tyoskentelypaikka' | translate}}</mat-panel-title>
-              <mat-panel-description>
-                {{getDateRangeDisplayValue(tyoskentelypaikka.alkamis_pvm, tyoskentelypaikka.paattymis_pvm)}}
-              </mat-panel-description>
-            </mat-expansion-panel-header>
-            <table class="mat-table">
-              <tr class="mat-row">
-                <td class="mat-cell">{{'label.toimipaikka' | translate}}</td>
-                <td class="mat-cell">{{tyoskentelypaikka.toimipaikka_nimi}}</td>
-              </tr>
-              <tr class="mat-row">
-                <td class="mat-cell">{{'label.toimipaikka.id' | translate}}</td>
-                <td class="mat-cell">{{tyoskentelypaikka.toimipaikka_id}}</td>
-              </tr>
-              <tr class="mat-row">
-                <td class="mat-cell">{{'label.tehtavanimike' | translate}}</td>
-                <td class="mat-cell">
-                  {{(getCodeFromKoodistoService(koodistoEnum.tehtavanimike, tyoskentelypaikka.tehtavanimike_koodi) | async)?.name}}
-                  ({{tyoskentelypaikka.tehtavanimike_koodi}})
-                </td>
-              </tr>
-              <tr class="mat-row">
-                <td class="mat-cell">{{'label.kelpoinen' | translate}}</td>
-                <td class="mat-cell">{{tyoskentelypaikka.kelpoisuus_kytkin ? ('label.yes' | translate) : ('label.no' | translate)}}</td>
-              </tr>
-              <tr class="mat-row">
-                <td class="mat-cell">{{'label.kiertava-tyontekija' | translate}}</td>
-                <td class="mat-cell">{{tyoskentelypaikka.kiertava_tyontekija_kytkin ? ('label.yes' | translate) : ('label.no' | translate)}}</td>
-              </tr>
-              <tr class="mat-row">
-                <td class="mat-cell">{{'label.alkamis_pvm' | translate}}</td>
-                <td class="mat-cell">{{getDateDisplayValue(tyoskentelypaikka.alkamis_pvm)}}</td>
-              </tr>
-              <tr class="mat-row">
-                <td class="mat-cell">{{'label.paattymis_pvm' | translate}}</td>
-                <td class="mat-cell">{{getDateDisplayValue(tyoskentelypaikka.paattymis_pvm)}}</td>
-              </tr>
-            </table>
-          </mat-expansion-panel>
-        </div>
-      </div>
-      <div class="tyontekija-section-inner">
-        <label class="oph-bold secondary-text">{{'label.pidemmat-poissaolot' | translate}}</label>
-        <table mat-table [dataSource]="palvelussuhde.pidemmatpoissaolot" *ngIf="palvelussuhde.pidemmatpoissaolot.length > 0">
-          <ng-container matColumnDef="date">
-            <td mat-cell *matCellDef="let poissaolo">{{getDateRangeDisplayValue(poissaolo.alkamis_pvm, poissaolo.paattymis_pvm)}}</td>
-          </ng-container>
-          <tr mat-row *matRowDef="let poissaolo; columns: ['date']"></tr>
-        </table>
-      </div>
-    </ng-container>
-  </div>
-  <div class="tyontekija-section">
-    <label class="oph-bold">{{'label.taydennyskoulutukset' | translate}}</label>
-    <mat-expansion-panel *ngFor="let taydennyskoulutus of tyontekijaKooste.taydennyskoulutukset" class="taydennyskoulutus-panel">
-      <mat-expansion-panel-header>
-        <mat-panel-title>
-          {{'label.taydennyskoulutus' | translate}}
-        </mat-panel-title>
-        <mat-panel-description>
-          {{getDateDisplayValue(taydennyskoulutus.suoritus_pvm)}}
-        </mat-panel-description>
-      </mat-expansion-panel-header>
-      <table class="mat-table">
-        <tr class="mat-row">
-          <td class="mat-cell">{{'label.nimi' | translate}}</td>
-          <td class="mat-cell">{{taydennyskoulutus.nimi}}</td>
-        </tr>
-        <tr class="mat-row">
-          <td class="mat-cell">{{'label.suorituspaiva' | translate}}</td>
-          <td class="mat-cell">{{getDateDisplayValue(taydennyskoulutus.suoritus_pvm)}}</td>
-        </tr>
-        <tr class="mat-row">
-          <td class="mat-cell">{{'label.koulutuspaivia' | translate}}</td>
-          <td class="mat-cell">{{taydennyskoulutus.koulutuspaivia}}</td>
-        </tr>
-        <tr class="mat-row">
-          <td class="mat-cell">{{'label.tehtavanimike' | translate}}</td>
-          <td class="mat-cell">
-            {{(getCodeFromKoodistoService(koodistoEnum.tehtavanimike, taydennyskoulutus.tehtavanimike_koodi) | async)?.name}}
-            ({{taydennyskoulutus.tehtavanimike_koodi}})
-          </td>
-        </tr>
-      </table>
-    </mat-expansion-panel>
+    </ng-template>
   </div>
 </div>

@@ -103,18 +103,3 @@
   width: var(--tree-width);
   height: 100%;
 }
-
-h1 {
-  font-size: 1.25rem;
-  font-weight: bold;
-}
-
-h2 {
-  font-size: 1rem;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
-
-h3 {
-  font-size: 1rem;
-}

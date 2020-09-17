@@ -20,15 +20,14 @@
     </ul>
   </div>
 </div>
-<div *ngIf="!ui.noMaksutietoPrivileges"
-     class="varda-painotukset-panel">
+<div class="varda-painotukset-panel">
   <div class="varda-painotukset-header">
     {{'label.maksutiedot'  | translate}}
   </div>
-  <div *ngIf="hideMaksutiedot || !toimipaikkaAccess.huoltajatiedot.katselija">
-    {{ 'label.maksutieto.ei-kayttooikeuksia' | translate }}
+  <div *ngIf="ui.noMaksutietoPrivileges || hideMaksutiedot || !toimipaikkaAccess.huoltajatiedot.katselija; else validPermissionsContainer">
+    {{ 'alert.invalid-permissions' | translate }}
   </div>
-  <ng-container *ngIf="!hideMaksutiedot && toimipaikkaAccess.huoltajatiedot.katselija">
+  <ng-template #validPermissionsContainer>
     <div *ngIf="!maksutiedot.length">
       {{ 'label.maksutieto.ei-maksutietoja' | translate }}
     </div>
@@ -121,5 +120,5 @@
          (click)="createNewMaksutietoForm()">
         {{'label.maksutieto.uusi.lisaa' | translate}}</a>
     </div>
-  </ng-container>
+  </ng-template>
 </div>

@@ -2,6 +2,7 @@ import { Directive, ElementRef, Input, AfterContentInit } from '@angular/core';
 import { VardaKoodistoService } from '../koodisto.service';
 import { KoodistoEnum } from '../dto/koodisto-models';
 
+export type CodeFormat = 'short' | 'long';
 
 @Directive({
   selector: '[libKoodistoValue]'
@@ -12,7 +13,7 @@ export class KoodistoValueDirective implements AfterContentInit {
   set libKoodistoValue(value: KoodistoEnum) {
     this.koodistoType = value;
   }
-
+  @Input() format: CodeFormat = 'short';
   private elem: HTMLInputElement;
 
   constructor(
@@ -24,8 +25,21 @@ export class KoodistoValueDirective implements AfterContentInit {
 
   ngAfterContentInit() {
     if (this.elem.textContent) {
-      this.koodistoService.getCodeValueFromKoodisto(this.koodistoType, this.elem.textContent.trim()).subscribe({
-        next: code => this.elem.textContent = code?.name || this.elem.textContent,
+      const codeValue = this.elem.textContent.trim();
+      this.koodistoService.getCodeValueFromKoodisto(this.koodistoType, codeValue).subscribe({
+        next: code => {
+          let result = '';
+
+          if (!code) {
+            result = codeValue;
+          } else if (this.format === 'long') {
+            result = `${code.name} (${codeValue})`;
+          } else {
+            result = code.name;
+          }
+
+          this.elem.textContent = result;
+        },
         error: err => console.error(err)
       });
     }
