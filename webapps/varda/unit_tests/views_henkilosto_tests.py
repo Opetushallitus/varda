@@ -2456,6 +2456,36 @@ class VardaHenkilostoViewSetTests(TestCase):
                                     json.dumps(taydennyskoulutus_patch_2), content_type='application/json')
         assert_status_code(resp_patch_2, status.HTTP_400_BAD_REQUEST)
 
+    def test_taydennyskoulutus_update_remove_all(self):
+        client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
+
+        taydennyskoulutus_obj = Taydennyskoulutus.objects.get(lahdejarjestelma=1, tunniste='testing-taydennyskoulutus2')
+        tyontekija_1_obj = Tyontekija.objects.get(tunniste='testing-tyontekija1')
+        tyontekija_2_obj = Tyontekija.objects.get(tunniste='testing-tyontekija2')
+
+        # Taydennyskoulutus does not have other tyontekijat
+        taydennyskoulutus_patch_1 = {
+            'taydennyskoulutus_tyontekijat_remove': [
+                {'tehtavanimike_koodi': '77826', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_2_obj.id}/'}
+            ]
+        }
+        resp_patch_1 = client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_obj.id}/',
+                                    json.dumps(taydennyskoulutus_patch_1), content_type='application/json')
+        assert_status_code(resp_patch_1, status.HTTP_400_BAD_REQUEST)
+
+        # Other tyontekija added in same request
+        taydennyskoulutus_patch_2 = {
+            'taydennyskoulutus_tyontekijat_remove': [
+                {'tehtavanimike_koodi': '77826', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_2_obj.id}/'}
+            ],
+            'taydennyskoulutus_tyontekijat_add': [
+                {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
+            ]
+        }
+        resp_patch_2 = client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_obj.id}/',
+                                    json.dumps(taydennyskoulutus_patch_2), content_type='application/json')
+        assert_status_code(resp_patch_2, status.HTTP_200_OK)
+
     def test_taydennyskoulutus_update_tyontekijat_add_and_remove_correct(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
 

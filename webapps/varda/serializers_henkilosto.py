@@ -656,23 +656,27 @@ class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
                 if len(tyontekijat_set) != len(data['taydennyskoulutukset_tyontekijat']):
                     validator.error('taydennyskoulutus_tyontekijat', 'Duplicates detected.')
 
-        self._validate_tyontekijat_add(instance, data)
-        self._validate_tyontekijat_remove(instance, data)
+        is_new_tyontekijat_added = self._validate_tyontekijat_add(instance, data)
+        self._validate_tyontekijat_remove(instance, data, is_new_tyontekijat_added)
 
         return super(TaydennyskoulutusUpdateSerializer, self).validate(data)
 
     def _validate_tyontekijat_add(self, instance, data):
-        if 'taydennyskoulutus_tyontekijat_add' in data:
-            with ViewSetValidator() as validator:
-                tyontekijat_add_set = {(tyontekija['tyontekija'].id, tyontekija['tehtavanimike_koodi']) for tyontekija in data['taydennyskoulutus_tyontekijat_add']}
-                if len(tyontekijat_add_set) != len(data['taydennyskoulutus_tyontekijat_add']):
-                    validator.error('taydennyskoulutus_tyontekijat_add', 'Duplicates detected.')
-                for tyontekija in data['taydennyskoulutus_tyontekijat_add']:
-                    if instance.taydennyskoulutukset_tyontekijat.filter(tyontekija=tyontekija['tyontekija'].id,
-                                                                        tehtavanimike_koodi=tyontekija['tehtavanimike_koodi']).exists():
-                        validator.error('taydennyskoulutus_tyontekijat_add', 'Tyontekija cannot have same taydennyskoulutus more than once')
+        """
+        :return: boolean to signify if new tyontekijat were added in this request
+        """
+        tyontekijat_add = data.get('taydennyskoulutus_tyontekijat_add', [])
+        with ViewSetValidator() as validator:
+            tyontekijat_add_set = {(tyontekija['tyontekija'].id, tyontekija['tehtavanimike_koodi']) for tyontekija in tyontekijat_add}
+            if len(tyontekijat_add_set) != len(tyontekijat_add):
+                validator.error('taydennyskoulutus_tyontekijat_add', 'Duplicates detected.')
+            for tyontekija in tyontekijat_add:
+                if instance.taydennyskoulutukset_tyontekijat.filter(tyontekija=tyontekija['tyontekija'].id,
+                                                                    tehtavanimike_koodi=tyontekija['tehtavanimike_koodi']).exists():
+                    validator.error('taydennyskoulutus_tyontekijat_add', 'Tyontekija cannot have same taydennyskoulutus more than once')
+        return len(tyontekijat_add) > 0
 
-    def _validate_tyontekijat_remove(self, instance, data):
+    def _validate_tyontekijat_remove(self, instance, data, is_new_tyontekijat_added):
         if 'taydennyskoulutus_tyontekijat_remove' in data:
             with ViewSetValidator() as validator:
                 tyontekijat_remove_set = {(tyontekija['tyontekija'].id, tyontekija['tehtavanimike_koodi']) for tyontekija in data['taydennyskoulutus_tyontekijat_remove']}
@@ -682,7 +686,7 @@ class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
                     if not instance.taydennyskoulutukset_tyontekijat.filter(tyontekija=tyontekija['tyontekija'].id,
                                                                             tehtavanimike_koodi=tyontekija['tehtavanimike_koodi']).exists():
                         validator.error('taydennyskoulutus_tyontekijat_remove', 'Tyontekija must have this taydennyskoulutus')
-                if len(tyontekijat_remove_set) == instance.taydennyskoulutukset_tyontekijat.count():
+                if len(tyontekijat_remove_set) == instance.taydennyskoulutukset_tyontekijat.count() and not is_new_tyontekijat_added:
                     validator.error('taydennyskoulutus_tyontekijat_remove', 'Cannot delete all tyontekijat from taydennyskoulutus')
 
     def update(self, instance, validated_data):
