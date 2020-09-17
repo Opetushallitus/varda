@@ -34,7 +34,6 @@ export class VardaDashboardComponent implements OnInit {
     private vardaApiService: VardaApiService,
     private authService: AuthService,
     private loginService: LoginService,
-    private koodistoService: VardaKoodistoService,
     private vardaApiWrapperService: VardaApiWrapperService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private ccService: NgcCookieConsentService,
@@ -44,8 +43,6 @@ export class VardaDashboardComponent implements OnInit {
       dashboardInitializationError: false,
       alertMsg: this.i18n.error_occured
     };
-
-    this.koodistoService.initKoodistot(environment.vardaAppUrl);
 
     this.vardaVakajarjestajaService.getSelectedVakajarjestajaObs().subscribe((data) => {
       if (data.onVakajarjestajaChange) {

@@ -9,7 +9,7 @@ import { VardaApiService } from './core/services/varda-api.service';
 import { CookieService } from 'ngx-cookie-service';
 import { VardaVakajarjestajaService } from './core/services/varda-vakajarjestaja.service';
 import { Router } from '@angular/router';
-import { LoadingHttpService } from 'varda-shared';
+import { LoadingHttpService, VardaKoodistoService } from 'varda-shared';
 
 describe('AppComponent', () => {
   let component: AppComponent;
@@ -34,6 +34,7 @@ describe('AppComponent', () => {
         { provide: VardaApiService, useValue: {} },
         { provide: TranslateService, useValue: { use: () => { }, getBrowserLang: () => { }, setDefaultLang: () => { }, get: () => EMPTY } },
         { provide: LoadingHttpService, useValue: { isLoading: () => { } } },
+        { provide: VardaKoodistoService, useValue: { initKoodistot: () => { } } },
       ]
     })
       .compileComponents();

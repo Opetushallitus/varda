@@ -5,9 +5,10 @@ import { VardaDomService } from './core/services/varda-dom.service';
 import { DOCUMENT } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { Router, NavigationEnd } from '@angular/router';
-import { LoadingHttpService } from 'varda-shared';
+import { LoadingHttpService, VardaKoodistoService } from 'varda-shared';
 import { Observable } from 'rxjs';
 import { delay } from 'rxjs/operators';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -15,7 +16,6 @@ import { delay } from 'rxjs/operators';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
-  title = 'app';
   isLoading: Observable<boolean>;
 
   constructor(
@@ -23,21 +23,24 @@ export class AppComponent implements OnInit {
     private router: Router,
     private translateService: TranslateService,
     private auth: AuthService,
+    private koodistoService: VardaKoodistoService,
     private vardaDomService: VardaDomService,
     private loadingHttpService: LoadingHttpService,
     @Inject(DOCUMENT) private _document: any) {
+
+    const defaultLanguage = this.translateService.getBrowserLang() === 'sv' ? 'sv' : 'fi';
+    this.translateService.setDefaultLang(defaultLanguage);
+    this.translateService.use(defaultLanguage);
+    this.vardaDomService.bindTabAndClickEvents();
 
     this.auth.loggedInUserAsiointikieliSet().subscribe((asiointikieli: string) => {
       const selectedAsiointikieli = (asiointikieli.toLocaleLowerCase() === 'sv') ? 'sv' : 'fi';
       this._document.documentElement.lang = selectedAsiointikieli;
       this.translateService.use(selectedAsiointikieli);
       this.setTitle(router);
-    });
 
-    const defaultLanguage = this.translateService.getBrowserLang() === 'sv' ? 'sv' : 'fi';
-    this.translateService.setDefaultLang(defaultLanguage);
-    this.translateService.use(defaultLanguage);
-    this.vardaDomService.bindTabAndClickEvents();
+      this.koodistoService.initKoodistot(environment.vardaAppUrl);
+    });
 
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
