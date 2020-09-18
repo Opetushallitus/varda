@@ -73,7 +73,6 @@ export enum VirkailijaTranslations {
   lapsi_intro_link_2_text = 'lapsi.intro.link-2.text',
   lapsi_intro_link_2_href = 'lapsi.intro.link-2.href',
 
-
   tutkinnot = 'tutkinnot',
   tutkinnot_lisaa_tutkinto = 'tutkinnot.lisaa-tutkinto',
   tutkinnot_valitse_ylin_tutkinto = 'tutkinnot.valitse-ylin-tutkinto',
@@ -148,8 +147,6 @@ export enum VirkailijaTranslations {
   tyoskentelypaikka_instruction_kelpoisuus_kytkin = 'tyoskentelypaikka.instruction.kelpoisuus-kytkin',
   tyoskentelypaikka_palvelussuhteeseen_lisatty_tutkinto = 'tyoskentelypaikka.palvelussuhteeseen-lisatty-tutkinto',
 
-
-
   tilapainen_henkilosto = 'tilapainen-henkilosto',
   tilapainen_henkilosto_ohje = 'tilapainen-henkilosto.ohje',
   tilapainen_henkilosto_ei_tilapaista_henkilostoa = 'tilapainen-henkilosto.ei-tilapaista-henkilostoa',
@@ -200,7 +197,6 @@ export enum VirkailijaTranslations {
   taydennyskoulutus_COUNT_paivaa = 'taydennyskoulutus.COUNT-paivaa',
   taydennyskoulutus_ei_nimikkeita = 'taydennyskoulutus.ei-nimikkeita',
 
-
   tyontekija_instruction_creation_paragraph_1 = 'tyontekija.instruction.creation-paragraph-1',
   tyontekija_instruction_creation_paragraph_2 = 'tyontekija.instruction.creation-paragraph-2',
   tyontekija_instruction_creation_link_text = 'tyontekija.instruction.creation-link-text',
@@ -210,8 +206,6 @@ export enum VirkailijaTranslations {
   tyontekija_intro_link_1_text = 'tyontekija.intro.link-1.text',
   tyontekija_intro_link_1_href = 'tyontekija.intro.link-1.href',
   tyontekija_instruction_delete = 'tyontekija.instruction.delete',
-
-
 
   paginator_page_of_max = 'paginator.page-of-max',
   paginator_items_per_page = 'paginator.items-per-page',
@@ -224,5 +218,8 @@ export enum VirkailijaTranslations {
 
   cookie_popup_message = 'cookie.popup-message',
   dashboard_error_contact_organisation_admin = 'dashboard.error.contact-organisation-admin',
-  dashboard_error_palvelukayttaja_forbidden = 'dashboard.error.palvelukayttaja-forbidden'
+  dashboard_error_palvelukayttaja_forbidden = 'dashboard.error.palvelukayttaja-forbidden',
+
+  katsele_tietoja_lapsi_tooltip_search = 'katsele-tietoja.lapsi.tooltip-search',
+  katsele_tietoja_tyontekija_tooltip_search = 'katsele-tietoja.tyontekija.tooltip-search',
 }

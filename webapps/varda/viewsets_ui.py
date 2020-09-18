@@ -285,7 +285,8 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
     search_fields = ('henkilo__etunimet',
                      'henkilo__sukunimi',
                      '=henkilo__henkilotunnus_unique_hash',
-                     '=henkilo__henkilo_oid',)
+                     '=henkilo__henkilo_oid',
+                     '=id')
     serializer_class = UiLapsiSerializer
     permission_classes = (CustomObjectPermissions,)
     vakajarjestaja_id = None
@@ -469,7 +470,8 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
     search_fields = ('henkilo__etunimet',
                      'henkilo__sukunimi',
                      '=henkilo__henkilotunnus_unique_hash',
-                     '=henkilo__henkilo_oid',)
+                     '=henkilo__henkilo_oid',
+                     '=id')
     serializer_class = UiTyontekijaSerializer
     permission_classes = (HenkilostohakuPermissions,)
     queryset = Tyontekija.objects.none()

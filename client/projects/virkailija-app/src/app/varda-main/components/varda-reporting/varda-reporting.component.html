@@ -175,8 +175,7 @@
                        class="oph-bold">{{'label.haku-list.nimi-tai-tunniste' | translate}}</label>
                 <button mat-icon-button
                         class="varda-info-button"
-                        [matTooltip]="('label.haku-condition.search-instruction' | translate) +
-                          ('label.haku-condition.search-instruction2' | translate)"
+                        [matTooltip]="i18n.katsele_tietoja_lapsi_tooltip_search | translate"
                         aria-label="Example icon button with a menu icon">
                   <mat-icon>info</mat-icon>
                 </button>
@@ -184,7 +183,7 @@
                        name="reportingLapsiSearchInput"
                        id="reportingLapsiSearchInput"
                        type="text"
-                       placeholder="{{'label.haku-list.nimi-ssn-oid' | translate}}"
+                       placeholder="{{'label.haku-list.nimi-tai-tunniste' | translate}}"
                        [(ngModel)]="lapsiSearchValue"
                        (keydown.enter)="searchLapsi()">
               </div>
@@ -372,8 +371,7 @@
                        class="oph-bold">{{'label.haku-list.nimi-tai-tunniste' | translate}}</label>
                 <button mat-icon-button
                         class="varda-info-button"
-                        [matTooltip]="('label.haku-condition.search-instruction' | translate) +
-                          ('label.haku-condition.search-instruction2' | translate)"
+                        [matTooltip]="i18n.katsele_tietoja_tyontekija_tooltip_search | translate"
                         aria-label="Example icon button with a menu icon">
                   <mat-icon>info</mat-icon>
                 </button>
@@ -381,7 +379,7 @@
                        name="tyontekijaSearchInput"
                        id="tyontekijaSearchInput"
                        type="text"
-                       placeholder="{{'label.haku-list.nimi-ssn-oid' | translate}}"
+                       placeholder="{{'label.haku-list.nimi-tai-tunniste' | translate}}"
                        [(ngModel)]="tyontekijaSearchValue"
                        (keydown.enter)="searchTyontekija()">
               </div>
