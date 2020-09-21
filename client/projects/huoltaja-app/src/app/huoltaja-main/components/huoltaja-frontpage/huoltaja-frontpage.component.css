@@ -1,71 +1,8 @@
-.huoltaja-frontpage-container {
-  position: relative;
-  margin: 0 auto;
-  width: 75%;
-  max-width: 1000px;
-  padding: 20px 0 25px 0;
-  font-family: 'Roboto', sans-serif;
-  color: var(--text-color);
-}
-
 .huoltaja-frontpage-div-margin-bottom {
   margin-bottom: 45px;
 }
 
-mat-expansion-panel mat-expansion-panel-header {
-  min-height: 48px;
-  height: auto !important;
-}
 
-body {
-  font-size: clamp(0.9rem, 2.0vw, 1.0rem);
-}
-
-h1,
-.h1 {
-  font-size: clamp(1.4rem, 5vw, 1.5rem);
-}
-
-h2,
-.h2 {
-  font-size: clamp(1.1rem, 4vw, 1.3rem);
-}
-
-h3,
-.h3 {
-  font-size: clamp(1.0rem, 4vw, 1.1rem);
-}
-
-h4,
-.h4 {
-  font-size: clamp(0.9rem, 3vw, 1rem);
-}
-
-h5,
-.h5 {
-  font-size: clamp(0.8rem, 3vw, 0.9rem);
-}
-
-.mat-cell {
-  font-size: clamp(0.8rem, 1.9vw, 1.0rem);
-  word-break: break-word;
-}
-
-.m-b-05 {
-  margin-bottom: 0.5em;
-}
-
-.m-b-1 {
-  margin-bottom: 1em;
-}
-
-.m-b-2 {
-  margin-bottom: 2em;
-}
-
-.link-color {
-  color: var(--link-color);
-}
 
 .voimassa-useita-vakapaatoksia-container {
   display: flex;
@@ -129,19 +66,13 @@ tr:nth-child(even) {
   color: var(--oph-green-darken-1);
 }
 
-.material-icons,
-mat-icon {
+.lapsi-header>.mat-icon {
   position: relative;
+  top: 0.2em;
   user-select: none;
+  margin-right: 0.5em;
 }
 
-.extension-info {
-  margin-top: 1em;
-  margin-bottom: 1em;
-  padding: 0.5em;
-  font-size: 1em;
-  background-color: var(--oph-gray-lighten-1);
-}
 
 .varhaiskasvatustiedot>.varhaiskasvatustiedot-header {
   display: flex;
@@ -170,33 +101,6 @@ mat-icon {
   font-weight: bold;
 }
 
-.word-break {
-  word-break: break-all;
-}
-
-.error-field {
-  padding: 1em;
-  background-color: var(--oph-orange-darken-1);
-  color: var(--oph-white);
-}
-
-.button {
-  border: 1px solid black;
-  border-radius: 0.25em;
-  padding: 0.1em 0.75em;
-  text-align: center;
-}
-
-.button:hover,
-.button:focus {
-  background-color: var(--oph-gray-lighten-1);
-}
-
-td {
-  padding-left: 0.25em;
-  padding-right: 0.25em;
-}
-
 .mat-expansion-panel-header:focus-within,
 .mat-expansion-panel-header:hover:not([aria-disabled=true]) {
   font-weight: bold;
@@ -220,24 +124,6 @@ td {
   }
 }
 
-button {
-  background: none;
-  color: inherit;
-  border: none;
-  padding: 0;
-  font: inherit;
-  cursor: pointer;
-  outline: inherit;
-}
-
-
-
-.lapsi-header>.mat-icon {
-  position: relative;
-  top: 0.2em;
-  user-select: none;
-  margin-right: 0.5em;
-}
 
 @media (max-width: 740px) {
   .huoltaja-frontpage-container {

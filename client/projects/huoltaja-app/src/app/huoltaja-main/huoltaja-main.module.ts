@@ -6,6 +6,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NoopAnimationsModule, BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { HuoltajaDashboardComponent } from './components/dashboard/huoltaja-dashboard.component';
 import { HuoltajaFrontpageComponent } from './components/huoltaja-frontpage/huoltaja-frontpage.component';
 import { HuoltajaFrontpageLapsiComponent } from './components/huoltaja-frontpage/huoltaja-frontpage-lapsi/huoltaja-frontpage-lapsi.component';
 import { HuoltajaFrontpageVakapaatosComponent } from './components/huoltaja-frontpage/huoltaja-vakapaatos/huoltaja-vakapaatos.component';
@@ -28,6 +29,7 @@ import { VardaSharedModule } from 'varda-shared';
     VardaSharedModule
   ],
   declarations: [
+    HuoltajaDashboardComponent,
     HuoltajaFrontpageComponent,
     HuoltajaFrontpageLapsiComponent,
     HuoltajaFrontpageVakapaatosComponent,
@@ -35,6 +37,7 @@ import { VardaSharedModule } from 'varda-shared';
   ],
   entryComponents: [ContactDialogComponent],
   exports: [
+    HuoltajaDashboardComponent,
     HuoltajaFrontpageComponent,
     HuoltajaFrontpageLapsiComponent,
     HuoltajaFrontpageVakapaatosComponent

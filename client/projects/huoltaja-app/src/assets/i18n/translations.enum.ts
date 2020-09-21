@@ -1,5 +1,6 @@
 export enum HuoltajaTranslations {
   page_title = 'page.title',
+  versio_VALUE = 'versio.VALUE',
   varhaiskasvatustiedot = 'varhaiskasvatustiedot',
   varhaiskasvatustiedot_intro_paragraph_1 = 'varhaiskasvatustiedot.intro.paragraph-1',
   varhaiskasvatustiedot_intro_paragraph_2 = 'varhaiskasvatustiedot.intro.paragraph-2',
