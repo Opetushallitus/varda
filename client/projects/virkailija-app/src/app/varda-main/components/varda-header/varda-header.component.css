@@ -5,7 +5,7 @@
   top: var(--virkailija-raami-height);
   z-index: calc(var(--virkailija-z-index) - 1);
   align-items: stretch;
-  width: 100%;
+  width: min(100vw, 100%);
   min-height: var(--varda-navi-height);
   user-select: none;
 }
@@ -36,7 +36,7 @@
 }
 
 .varda-navbar-links {
-  min-width: 520px;
+  min-width: min(520px, 100%);
   flex: 3 1 520px;
   height: 100%;
   align-items: top;

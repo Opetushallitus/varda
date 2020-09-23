@@ -1,7 +1,7 @@
 .varda-footer-wrapper {
   position: fixed;
   bottom: 0;
-  width: 100%;
+  width: min(100vw, 100%);
   background-color: var(--white);
   font-size: 0.75rem;
   border-top: 2px solid var(--gray-lighten-4);
@@ -17,8 +17,6 @@
   display: flex;
   flex-wrap: wrap;
   flex: 1 0 200px;
-  /* justify-items: flex-start;
-  align-items: center; */
   margin: auto 2em;
 }
 

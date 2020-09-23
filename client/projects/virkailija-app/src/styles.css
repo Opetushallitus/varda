@@ -1,5 +1,6 @@
 @import "~@angular/material/prebuilt-themes/indigo-pink.css";
 @import "~oph-virkailija-style-guide/src/index.css";
+@import "./assets/css/variables.css";
 @import "./assets/css/buttons.css";
 @import "./assets/css/forms.css";
 @import "./assets/css/modals.css";
@@ -207,6 +208,11 @@ legend {
 .mat-selection-list .mat-list-item:hover,
 .mat-selection-list .mat-list-item:focus {
   border: 1px solid var(--black);
+}
+
+mat-expansion-panel mat-expansion-panel-header {
+  min-height: 48px;
+  height: auto !important;
 }
 
 .varda-accessibility-settings-container {
@@ -444,6 +450,12 @@ body:not(.user-is-tabbing) h5:focus {
 
 .tyoskentelypaikka-panel .mat-expansion-panel-body {
   overflow: hidden;
+}
+
+@media (max-width: 576px) {
+  .varda-router-outlet-container {
+    width: calc(98% - 0.5rem);
+  }
 }
 
 @keyframes scaleTooltip {
