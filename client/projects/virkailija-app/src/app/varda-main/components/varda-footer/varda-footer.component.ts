@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { VardaLocalstorageWrapperService } from '../../../core/services/varda-localstorage-wrapper.service';
 
 @Component({
@@ -7,7 +8,7 @@ import { VardaLocalstorageWrapperService } from '../../../core/services/varda-lo
   styleUrls: ['./varda-footer.component.css']
 })
 export class VardaFooterComponent implements OnInit {
-
+  i18n = VirkailijaTranslations;
   highContrastText: string;
   highContrastEnabled: boolean;
   displayAccessibilitySettings: boolean;

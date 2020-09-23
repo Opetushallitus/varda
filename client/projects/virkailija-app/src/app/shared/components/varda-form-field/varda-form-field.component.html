@@ -1,4 +1,6 @@
-<div #formField class="oph-field" *ngIf="formControl">
+<div #formField
+     class="oph-field"
+     *ngIf="formControl">
   <div class="oph-field-inputs">
     <label [id]="labelId"
            class="oph-label"><b>{{ label | translate }}</b></label>
@@ -9,6 +11,13 @@
          role="alert"
          *ngIf="formControl.touched && (formControl.invalid || formControl.errors?.required)">
       {{ errorText | translate}}
+      <ng-container *ngIf="errorMap">
+        <ng-container *ngFor="let error of errorMap">
+          <div *ngIf="formControl.hasError(error.key)">
+            {{ error.value | translate }}
+          </div>
+        </ng-container>
+      </ng-container>
     </div>
   </div>
 

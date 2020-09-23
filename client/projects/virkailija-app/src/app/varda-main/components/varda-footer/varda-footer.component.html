@@ -1,13 +1,17 @@
-<footer class="varda-footer-wrapper" appHighContrast>
+<footer class="varda-footer-wrapper"
+        appHighContrast>
   <div class="varda-footer-section site-version">
-    <span>{{'label.version' | translate: {value: '1.4.2'} }}</span>
+    <span>{{ i18n.versio_VALUE | translate: {value: '1.4.2'} }}</span>
   </div>
   <div class="varda-footer-section">
-    <a href="javascript:void(0);" (click)="toggleAccesibilitySettingsVisibility()" class="varda-footer-link">
+    <a href="javascript:void(0);"
+       (click)="toggleAccesibilitySettingsVisibility()"
+       class="varda-footer-link">
       {{'label.accessibilitysettings' | translate}}
     </a>
     <a href="{{'footer.url.accessibilityinfo' | translate}}"
-      target="_blank" class="varda-footer-link">
+       target="_blank"
+       class="varda-footer-link">
       {{'label.accessibilityinfo' | translate}}
     </a>
   </div>

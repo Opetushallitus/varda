@@ -26,6 +26,7 @@
              (change)="searchHenkilot()"
              [(ngModel)]="searchFilter.search" />
       <button mat-button
+              [title]="i18n.henkilo_hae_nimella | translate"
               [disabled]="isLoading | async"
               (click)="searchHenkilot()"
               matSuffix>

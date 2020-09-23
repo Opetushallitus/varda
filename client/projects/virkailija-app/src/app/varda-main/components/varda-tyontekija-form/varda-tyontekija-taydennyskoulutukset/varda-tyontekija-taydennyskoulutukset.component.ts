@@ -61,9 +61,8 @@ export class VardaTyontekijaTaydennyskoulutuksetComponent implements OnInit, OnC
   }
 
   getTaydennyskoulutukset() {
-
     this.taydennyskoulutukset = null;
-    const searchParams = { henkilo_oid: this.tyontekija.henkilo_oid };
+    const searchParams = { tyontekija: this.tyontekija.id };
     this.henkilostoService.getTaydennyskoulutukset(searchParams).subscribe({
       next: taydennyskoulutusData => this.taydennyskoulutukset = taydennyskoulutusData,
       error: err => console.error(err)

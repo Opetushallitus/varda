@@ -5,6 +5,10 @@ import { MatRadioGroup, MatRadioButton } from '@angular/material/radio';
 import { VardaDatepickerComponent } from '../varda-datepicker/varda-datepicker.component';
 import { Subscription, Subject, Observable, fromEvent } from 'rxjs';
 
+export interface FormFieldErrorMap {
+  key: string;
+  value: string;
+}
 
 export enum VardaFormFieldType {
   text = 'text',
@@ -22,6 +26,7 @@ export class VardaFormFieldComponent implements AfterContentInit, OnDestroy {
   @Input() label: string;
   @Input() name: string;
   @Input() errorText: string;
+  @Input() errorMap: Array<FormFieldErrorMap>;
   @Input() error: boolean;
   @Input() placeholder: string;
   @Input() instructionText: string;

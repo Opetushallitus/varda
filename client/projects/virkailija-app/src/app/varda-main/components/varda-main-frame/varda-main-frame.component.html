@@ -32,6 +32,7 @@
                             [henkilonSuhde]="activeSuhde"
                             [henkilonToimipaikka]="selectedToimipaikka"
                             (createHenkilo)="onHenkiloAdded($event)"
+                            (closeHenkiloForm)="handleFormClose('hidden')"
                             (valuesChanged)="henkiloFormValuesChanged($event)"></app-varda-henkilo-form>
   </app-varda-modal-form>
   <app-varda-success-modal [identifier]="'lapsiSuccessModal'"

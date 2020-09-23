@@ -760,12 +760,12 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
       }, formData).subscribe((henkilo) => {
         setTimeout(() => {
           this.ui.isSubmitting = false;
-          this.saveLapsiSuccess.emit(henkilo);
+          this.saveLapsiSuccess.emit();
           this.lapsiService.sendLapsiListUpdate();
         }, 2000);
       }, (e) => {
         this.ui.isSubmitting = false;
-        this.saveLapsiFailure.emit(e);
+        this.saveLapsiSuccess.emit(e);
       });
   }
 

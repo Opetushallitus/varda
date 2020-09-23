@@ -30,6 +30,9 @@ export enum VirkailijaTranslations {
   yhteensa = 'yhteensa',
   osallistujat = 'osallistujat',
   kokonaisluku = 'kokonaisluku',
+
+  versio_VALUE = 'versio.VALUE',
+
   aika_tammikuu = 'aika.tammikuu',
   aika_helmikuu = 'aika.helmikuu',
   aika_maaliskuu = 'aika.maaliskuu',
@@ -59,6 +62,32 @@ export enum VirkailijaTranslations {
   henkilo_poista_lapsi = 'henkilo.poista-lapsi',
   henkilo_lisaa_lapsi_TOIMIPAIKKA = 'henkilo.lisaa-lapsi-TOIMIPAIKKA',
   henkilo_lisaa_tyontekija_TOIMIPAIKKA = 'henkilo.lisaa-tyontekija-TOIMIPAIKKA',
+  henkilo_lisaa_henkilotunnuksella = 'henkilo.lisaa-henkilotunnuksella',
+  henkilo_lisaa_oppijanumerolla = 'henkilo.lisaa-oppijanumerolla',
+  henkilo_instruction_ssn_or_oid = 'henkilo.instruction.ssn-or-oid',
+  henkilo_henkilotunnus = 'henkilo.henkilotunnus',
+  henkilo_error_henkilotunnus = 'henkilo.error.henkilotunnus',
+  henkilo_placeholder_henkilotunnus = 'henkilo.placeholder.henkilotunnus',
+  henkilo_instruction_henkilotunnus = 'henkilo.instruction.henkilotunnus',
+  henkilo_henkilo_oid = 'henkilo.henkilo_oid',
+  henkilo_error_henkilo_oid = 'henkilo.error.henkilo_oid',
+  henkilo_placeholder_henkilo_oid = 'henkilo.placeholder.henkilo_oid',
+  henkilo_instruction_henkilo_oid = 'henkilo.instruction.henkilo_oid',
+  henkilo_etunimet = 'henkilo.etunimet',
+  henkilo_error_etunimet = 'henkilo.error.etunimet',
+  henkilo_placeholder_etunimet = 'henkilo.placeholder.etunimet',
+  henkilo_instruction_etunimet = 'henkilo.instruction.etunimet',
+  henkilo_kutsumanimi = 'henkilo.kutsumanimi',
+  henkilo_error_kutsumanimi = 'henkilo.error.kutsumanimi',
+  henkilo_placeholder_kutsumanimi = 'henkilo.placeholder.kutsumanimi',
+  henkilo_instruction_kutsumanimi = 'henkilo.instruction.kutsumanimi',
+  henkilo_error_nimi_disallowed_characters = 'henkilo.error.nimi.disallowed-characters',
+  henkilo_error_kutsumanimi_not_part_of_firstname = 'henkilo.error.kutsumanimi.not-part-of-firstname',
+  henkilo_error_kutsumanimi_must_be_one_name = 'henkilo.error.kutsumanimi.must-be-one-name',
+  henkilo_sukunimi = 'henkilo.sukunimi',
+  henkilo_error_sukunimi = 'henkilo.error.sukunimi',
+  henkilo_placeholder_sukunimi = 'henkilo.placeholder.sukunimi',
+  henkilo_instruction_sukunimi = 'henkilo.instruction.sukunimi',
 
   lapsi_instruction_creation_paragraph_1 = 'lapsi.instruction.creation-paragraph-1',
   lapsi_instruction_creation_paragraph_2 = 'lapsi.instruction.creation-paragraph-2',
@@ -220,6 +249,9 @@ export enum VirkailijaTranslations {
   dashboard_error_contact_organisation_admin = 'dashboard.error.contact-organisation-admin',
   dashboard_error_palvelukayttaja_forbidden = 'dashboard.error.palvelukayttaja-forbidden',
 
+
   katsele_tietoja_lapsi_tooltip_search = 'katsele-tietoja.lapsi.tooltip-search',
   katsele_tietoja_tyontekija_tooltip_search = 'katsele-tietoja.tyontekija.tooltip-search',
+
+
 }

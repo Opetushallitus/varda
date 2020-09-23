@@ -78,34 +78,46 @@ export class VardaFormValidators {
   static nicknamePartOfFirstname(fg: FormGroup) {
     try {
       const controls = fg.controls;
-      const originalFirstnames = controls.firstnames.value;
-      const originalNickname = controls.nickname.value;
+      const kutsumanimiCtrl = fg.get('kutsumanimi');
+      const kutsumanimiErrors = { ...kutsumanimiCtrl.errors };
+      delete kutsumanimiErrors.nicknameMustBeOneName;
+      delete kutsumanimiErrors.nicknameNotPartOfFirstname;
+
+      const originalFirstnames = controls.etunimet.value;
+      const originalNickname = kutsumanimiCtrl.value;
 
       if (!originalFirstnames || !originalNickname) {
         return null;
       }
-
       const trimmedFirstnames = originalFirstnames.trim();
       const trimmedNickname = originalNickname.trim();
       const firstnameParts = trimmedFirstnames.split(' ');
       const nicknameParts = trimmedNickname.split(' ');
 
       if (nicknameParts.length !== 1) {
-        return { nicknameMustBeOneName: true };
-      }
+        kutsumanimiCtrl.setErrors({
+          ...kutsumanimiErrors,
+          nicknameMustBeOneName: true
+        });
+      } else {
+        const nickname = nicknameParts[0];
+        const acceptedNicknames = [];
 
-      const nickname = nicknameParts[0];
-      const acceptedNicknames = [];
+        firstnameParts.forEach((v) => {
+          const dashedFirstnameParts = v.split('-');
+          if (dashedFirstnameParts.length > 1) {
+            acceptedNicknames.push(v);
+          }
+          acceptedNicknames.push(...dashedFirstnameParts);
+        });
 
-      firstnameParts.forEach((v) => {
-        const dashedFirstnameParts = v.split('-');
-        if (dashedFirstnameParts.length > 1) {
-          acceptedNicknames.push(v);
+        if (!acceptedNicknames.includes(nickname)) {
+          kutsumanimiCtrl.setErrors({
+            ...kutsumanimiErrors,
+            nicknameNotPartOfFirstname: true
+          });
         }
-        acceptedNicknames.push(...dashedFirstnameParts);
-      });
-
-      return acceptedNicknames.includes(nickname) ? null : { nicknameNotPartOfFirstname: true };
+      }
     } catch (e) {
       return null;
     }
@@ -141,7 +153,7 @@ export class VardaFormValidators {
       }
 
       const validationObj = {
-        nameHasDisallowedCharacters: null
+        nameHasDisallowedCharacters: true
       };
 
       const trimmedValue = fcValue.replace(/ /g, '');
@@ -149,7 +161,6 @@ export class VardaFormValidators {
       const endsWith = trimmedValue.endsWith('-');
       const hasDoubleDash = trimmedValue.indexOf('--');
       if (hasDoubleDash !== -1 || startsWith || endsWith) {
-        validationObj.nameHasDisallowedCharacters = true;
         return validationObj;
       }
 

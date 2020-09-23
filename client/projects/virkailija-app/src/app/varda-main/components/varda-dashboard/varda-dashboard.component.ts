@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { Title} from '@angular/platform-browser';
 import { VardaApiService } from '../../../core/services/varda-api.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { TranslateService } from '@ngx-translate/core';
@@ -8,10 +7,9 @@ import { mergeMap, switchMap } from 'rxjs/operators';
 import { VardaApiWrapperService } from '../../../core/services/varda-api-wrapper.service';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
 import { NgcCookieConsentService } from 'ngx-cookieconsent';
-import { VardaToimipaikkaDTO, VardaVakajarjestajaUi } from '../../../utilities/models';
-import { LoginService, VardaUserDTO, VardaKoodistoService } from 'varda-shared';
+import { VardaVakajarjestajaUi } from '../../../utilities/models';
+import { LoginService, VardaUserDTO } from 'varda-shared';
 import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
-import { environment } from '../../../../environments/environment';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
 @Component({

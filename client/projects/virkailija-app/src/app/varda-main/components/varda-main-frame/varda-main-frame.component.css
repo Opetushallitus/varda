@@ -3,13 +3,13 @@
   justify-content: space-between;
 }
 
-.varda-main-frame-henkilo-section-container > * {
+.varda-main-frame-henkilo-section-container>* {
   display: block;
   width: 100%;
   margin-bottom: 1em;
 }
 
-.varda-main-frame-henkilo-section-container > *:nth-child(2) {
+.varda-main-frame-henkilo-section-container>*:nth-child(2) {
   margin-left: 1em;
 }
 
@@ -20,16 +20,12 @@
   justify-content: space-between;
 }
 
-.henkilo-section-header > * {
+.henkilo-section-header>* {
   margin-bottom: 1em;
 }
 
 .henkilo-section-filter {
   display: flex;
-}
-
-.henkilo-section-filter-section {
-
 }
 
 .mat-progress-bar {
@@ -42,7 +38,8 @@
   .varda-main-frame-henkilo-section-container {
     flex-direction: column;
   }
-  .varda-main-frame-henkilo-section-container > *:nth-child(2) {
+
+  .varda-main-frame-henkilo-section-container>*:nth-child(2) {
     margin-left: 0;
   }
 }
