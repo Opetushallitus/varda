@@ -188,7 +188,7 @@
     "label.search-henkilo": "Hae henkilön tiedot",
     "_alert.ssn-format-warning": "Henkilötunnus on väärin. Henkilötunnus tulee olla muodossa 012345A678B",
     "_label.ssn": "Henkilötunnus",
-    "_label.oppijanumero": "Oppijanumero",
+    "label.oppijanumero": "Oppijanumero",
     "label.syntyma_pvm": "Syntymäpäivä",
     "label.firstnamesbyseparated": "Etunimet",
     "label.lastname": "Sukunimi",

@@ -183,7 +183,7 @@
     "label.search-henkilo": "Sök personens uppgifter",
     "_alert.ssn-format-warning": "Personbeteckningen som angetts är felaktig. Personbeteckningen ska ha formen 012345A678B",
     "_label.ssn": "Personbeteckning",
-    "_label.oppijanumero": "Studentnummer",
+    "label.oppijanumero": "Studentnummer",
     "label.syntyma_pvm": "Födelsedag",
     "label.firstnamesbyseparated": "Förnamn",
     "label.lastname": "Efternamn",
