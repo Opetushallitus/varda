@@ -1,6 +1,16 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.4.3 (23.09.2020)
+- CSCVARDA-1945: Tehtävänimike näytettiin Syötä tietoja-listalla suomeksi ruotsinkieliselle käyttäjälle
+- CSCVARDA-1789: Lapsitiedot: Näytetään vain otsikko + teksti, mikäli ei ole oikeuksia (katsele tietoja)
+- CSCVARDA-1898: Kiertävä työntekijä tieto näkyviin työskentelypaikkan haitariin
+- CSCVARDA-1814: Katsele tietoja osioon haku Varda-ID:llä
+- CSCVARDA-1912: Henkilölomake lokalisointipalveluun ja yleisiä parannuksia
+
+1.4.2 hotfix (14.09.2020)
+- CSCVARDA-1954 Syötä tietoja-näkymästä puuttuu lapsi- ja työntekijätiedot, jos toimijalla vain yksi toimipaikka
+
 1.4.2 (10.09.2020)
 - Angular 10 päivitys
 - CSCVARDA-1906: Ensimmäisen toimipaikan lisäykseen parannus
