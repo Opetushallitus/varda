@@ -69,6 +69,7 @@ class ObjectByTunnisteMixin:
     @DynamicAttrs
     """
     schema = TunnisteIdSchema()
+    lookup_value_regex = '[^/]+'
 
     def get_object(self):
         path_param = self.kwargs[self.lookup_field]
