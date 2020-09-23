@@ -187,6 +187,7 @@ class PaosOikeusFilter(djangofilters.FilterSet):
 
 
 class VarhaiskasvatuspaatosFilter(djangofilters.FilterSet):
+    lapsi = djangofilters.NumberFilter(field_name='lapsi__id', lookup_expr='exact')
     vuorohoito_kytkin = djangofilters.BooleanFilter(field_name='vuorohoito_kytkin', lookup_expr='exact')
     pikakasittely_kytkin = djangofilters.BooleanFilter(field_name='pikakasittely_kytkin', lookup_expr='exact')
     tuntimaara_viikossa = djangofilters.NumberFilter(field_name='tuntimaara_viikossa', lookup_expr='gte')
@@ -204,6 +205,7 @@ class VarhaiskasvatuspaatosFilter(djangofilters.FilterSet):
 
 
 class VarhaiskasvatussuhdeFilter(djangofilters.FilterSet):
+    varhaiskasvatuspaatos = djangofilters.NumberFilter(field_name='varhaiskasvatuspaatos__id', lookup_expr='exact')
     alkamis_pvm = djangofilters.DateFilter(field_name='alkamis_pvm', lookup_expr='gte')
     paattymis_pvm = djangofilters.DateFilter(field_name='paattymis_pvm', lookup_expr='gte')
     muutos_pvm = djangofilters.DateTimeFilter(field_name='muutos_pvm', lookup_expr='gte')
