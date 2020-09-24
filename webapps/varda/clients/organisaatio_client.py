@@ -5,6 +5,7 @@ import requests
 from django.conf import settings
 
 from varda.enums.ytj import YtjYritysmuoto
+from varda.oph_yhteiskayttopalvelu_autentikaatio import get_contenttype_header
 from varda.misc import get_json_from_external_service, post_json_to_external_service, put_json_to_external_service
 
 logger = logging.getLogger(__name__)
@@ -16,8 +17,9 @@ ORGANISAATIOPALVELU_API_V4 = '/rest/organisaatio/v4/'
 def get_organisaatiopalvelu_info(organisaatio_oid):
     url = settings.OPINTOPOLKU_DOMAIN + '/' + SERVICE_NAME + ORGANISAATIOPALVELU_API_V4 + organisaatio_oid
     result_info = {'result_ok': False}
+    headers = get_contenttype_header()
     try:
-        r = requests.get(url)
+        r = requests.get(url, headers=headers)
         response = json.loads(r.content)
     except (requests.exceptions.RequestException, json.decoder.JSONDecodeError, ValueError) as e:
         logger.error('Url: {}, Error: {}'.format(url, e))
