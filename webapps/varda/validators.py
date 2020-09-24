@@ -419,9 +419,12 @@ def validate_tunniste(tunniste):
     except ValidationErrorRest:
         is_hetu = False
 
-    if is_hetu:
-        error_msg = tunniste + ' : Not a valid tunniste.'
-        raise ValidationError(error_msg)
+    # Validate allowed characters
+    pattern = re.compile(r'[a-zA-Z0-9.\-_]+')
+    is_valid_characters = pattern.fullmatch(tunniste)
+
+    if is_hetu or not is_valid_characters:
+        raise ValidationError('Not a valid tunniste.')
 
 
 def validate_unique_lahdejarjestelma_tunniste_pair(self, model):

@@ -128,18 +128,30 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp = client.post('/api/henkilosto/v1/tyontekijat/', tyontekija)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
 
-    def test_api_push_tyontekija_incorrect_tunniste(self):
+    def test_api_push_tyontekija_tunniste(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
 
-        tyontekija = {
-            'henkilo_oid': '1.2.246.562.24.472799426504',
-            'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
-            'tunniste': '250700A5074',
-            'lahdejarjestelma': '1'
-        }
+        ok_cases = ['', 'test-tunniste1', 'test_-.tunniste.31432']
 
-        resp = client.post('/api/henkilosto/v1/tyontekijat/', tyontekija)
+        for tunniste in ok_cases:
+            resp = client.patch('/api/henkilosto/v1/tyontekijat/1/', {'tunniste': tunniste})
+            assert_status_code(resp, status.HTTP_200_OK, tunniste)
+
+        not_ok_cases = ['250700A5074', 'illegal:characters', r'illegal\characters', 'illegal/characters',
+                        'illegal_chäräcters']
+
+        for tunniste in not_ok_cases:
+            resp = client.patch('/api/henkilosto/v1/tyontekijat/1/', {'tunniste': tunniste})
+            assert_status_code(resp, status.HTTP_400_BAD_REQUEST, tunniste)
+            assert_validation_error('tunniste', 'Not a valid tunniste.', resp, tunniste)
+
+        resp = client.patch('/api/henkilosto/v1/tyontekijat/1/',
+                            {
+                                'tunniste': 'tunniste_that_is_way_too_long_tunniste_that_is_way_too_long_tunniste_'
+                                            'that_is_way_too_long_tunniste_that_is_way_too_long_1'
+                            })
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error('tunniste', 'Ensure this field has no more than 120 characters.', resp)
 
     def test_api_push_tyontekija_henkilo_is_lapsi(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
