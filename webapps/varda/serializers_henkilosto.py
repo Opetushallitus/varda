@@ -1,3 +1,4 @@
+import datetime
 from operator import itemgetter
 
 from django.db.models import Q
@@ -145,6 +146,7 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
             if self.context['request'].method == 'POST':
                 self.verify_unique_month(data, validator)
                 self.validate_workers_and_working_hours(data, validator)
+                self.validate_date_not_in_future(data, validator)
                 with validator.wrap():
                     self.validate_date_within_vakajarjestaja(data, validator)
 
@@ -181,6 +183,11 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
             validator.error('tuntimaara', 'tuntimaara can not be zero if tyontekijamaara is greater than zero')
         if tyontekijat_count != 0 and hours_count == 0:
             validator.error('tyontekijamaara', 'tyontekijamaara can not be zero if tuntimaara is greater than zero')
+
+    def validate_date_not_in_future(self, data, validator):
+        kuukausi = data['kuukausi']
+        if kuukausi > datetime.date.today():
+            validator.error('kuukausi', 'kuukausi must be in the past')
 
 
 class TutkintoSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):

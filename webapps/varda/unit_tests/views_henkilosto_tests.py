@@ -1,4 +1,5 @@
 import json
+from datetime import date
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
@@ -647,7 +648,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         tilapainen_henkilosto = {
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
-            'kuukausi': '2021-03-31',
+            'kuukausi': '2020-04-01',
             'tyontekijamaara': 0,
             'tuntimaara': 0,
             'lahdejarjestelma': '1',
@@ -741,6 +742,25 @@ class VardaHenkilostoViewSetTests(TestCase):
         assert_status_code(resp_tilapainen_henkilosto_delete, status.HTTP_204_NO_CONTENT)
 
         self.assertFalse(TilapainenHenkilosto.objects.filter(id=tilapainen_henkilosto.id).exists())
+
+    @patch('varda.serializers_henkilosto.datetime')
+    def test_api_push_tilapainen_henkilosto_kuukausi_in_future(self, mock_datetime):
+        # Freeze date used in validation
+        mock_datetime.date.today.return_value = date(2020, 9, 1)
+
+        client = SetUpTestClient('tilapaiset_tallentaja').client()
+
+        tilapainen_henkilosto = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'kuukausi': '2020-10-01',
+            'tuntimaara': '50',
+            'tyontekijamaara': 99,
+            'lahdejarjestelma': '1'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error('kuukausi', 'kuukausi must be in the past', resp)
 
     def test_api_push_tutkinto_correct(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
