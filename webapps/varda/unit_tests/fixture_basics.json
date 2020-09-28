@@ -191,31 +191,6 @@
   },
   {
     "model": "django_celery_beat.periodictask",
-    "pk": 3,
-    "fields": {
-      "name": "update_henkilot_without_oid",
-      "task": "varda.tasks.update_henkilot_without_oid",
-      "interval": null,
-      "crontab": 3,
-      "solar": null,
-      "args": "[]",
-      "kwargs": "{}",
-      "queue": null,
-      "exchange": null,
-      "routing_key": null,
-      "priority": null,
-      "one_off": false,
-      "start_time": null,
-      "expires": null,
-      "enabled": true,
-      "last_run_at": null,
-      "total_run_count": 0,
-      "date_changed": "2018-10-04T16:02:37.128Z",
-      "description": ""
-    }
-  },
-  {
-    "model": "django_celery_beat.periodictask",
     "pk": 4,
     "fields": {
       "name": "update_modified_henkilot",

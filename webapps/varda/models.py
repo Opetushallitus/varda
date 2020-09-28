@@ -218,7 +218,7 @@ class Henkilo(models.Model):
     henkilotunnus = models.CharField(max_length=120, blank=True)  # Currently encrypted hetu-length is 100 characters
     henkilotunnus_unique_hash = models.CharField(max_length=80, blank=True)  # This is used for checking uniqueness (64 characters)
     syntyma_pvm = models.DateField(default=None, blank=True, null=True)
-    henkilo_oid = models.CharField(max_length=50, blank=True, validators=[validators.validate_henkilo_oid])
+    henkilo_oid = models.CharField(max_length=50, validators=[validators.validate_henkilo_oid])
     etunimet = models.CharField(max_length=100)
     kutsumanimi = models.CharField(max_length=100)
     sukunimi = models.CharField(max_length=100)

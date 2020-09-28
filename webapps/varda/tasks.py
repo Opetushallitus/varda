@@ -74,11 +74,6 @@ def update_all_organisaatio_service_originated_organisations_task():
     organisaatiopalvelu.update_all_organisaatio_service_organisations()
 
 
-@shared_task
-def update_henkilot_without_oid():
-    oppijanumerorekisteri.fetch_henkilot_without_oid()
-
-
 @shared_task(acks_late=True)
 def update_henkilot_with_oid():
     oppijanumerorekisteri.fetch_henkilot_with_oid()

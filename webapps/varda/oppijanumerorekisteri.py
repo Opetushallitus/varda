@@ -9,13 +9,13 @@ from pytz import timezone
 from requests import RequestException
 from rest_framework.exceptions import NotFound, APIException
 
-from varda.clients.oppijanumerorekisteri_client import (get_or_create_henkilo_by_henkilotunnus, get_henkilo_data_by_oid,
-                                                        fetch_changed_henkilot, fetch_changed_huoltajuussuhteet)
+from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid, fetch_changed_henkilot,
+                                                        fetch_changed_huoltajuussuhteet)
 from varda.enums.aikaleima_avain import AikaleimaAvain
 from varda.enums.batcherror_type import BatchErrorType
 from varda.enums.yhteystieto import Yhteystietoryhmatyyppi, YhteystietoAlkupera, YhteystietoTyyppi
-from varda.misc import (CustomServerErrorException, decrypt_henkilotunnus, encrypt_henkilotunnus,
-                        get_json_from_external_service, hash_string)
+from varda.misc import (CustomServerErrorException, encrypt_henkilotunnus, get_json_from_external_service,
+                        hash_string)
 from varda.models import Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Aikaleima, BatchError
 
 # Get an instance of a logger
@@ -119,19 +119,6 @@ def _set_address_to_henkilo(henkilo_json, henkilo):
      ]
 
 
-def _fetch_henkilo_data_by_henkilotunnus(henkilo_id, henkilotunnus, etunimet, kutsumanimi, sukunimi):
-    """
-    If henkilo is not found from Oppijanumerorekisteri, we add it there.
-    """
-    henkilo_query = get_or_create_henkilo_by_henkilotunnus(henkilotunnus, etunimet, kutsumanimi, sukunimi)
-    if henkilo_query and 'result' in henkilo_query:
-        henkilo_data = henkilo_query['result']
-        if henkilo_data is not None:
-            save_henkilo_to_db(henkilo_id, henkilo_data)
-    else:
-        logger.error('Failed to fetch henkilo_data for henkilo_id: {}.'.format(henkilo_id))
-
-
 @batch_error_decorator(BatchErrorType.HENKILOTIETO_UPDATE)
 def fetch_henkilo_data_by_oid(henkilo_oid, henkilo_id):
     _fetch_henkilo_data_by_oid(henkilo_oid, henkilo_id)
@@ -152,20 +139,6 @@ def _fetch_henkilo_data_by_oid(henkilo_oid, henkilo_id, henkilo_data=None):
     else:
         raise RequestException('Could not get data from oppijanumerorekisteri for henkilo {} {}'
                                .format(henkilo_id, henkilo_oid))
-
-
-def fetch_henkilot_without_oid():
-    """
-    Schedule this method to be run once a day.
-    """
-    henkilot = Henkilo.objects.filter(henkilo_oid="")
-    for henkilo in henkilot:
-        henkilo_id = henkilo.id
-        henkilotunnus = decrypt_henkilotunnus(henkilo.henkilotunnus)
-        etunimet = henkilo.etunimet
-        kutsumanimi = henkilo.kutsumanimi
-        sukunimi = henkilo.sukunimi
-        _fetch_henkilo_data_by_henkilotunnus(henkilo_id, henkilotunnus, etunimet, kutsumanimi, sukunimi)
 
 
 def fetch_henkilot_with_oid():
