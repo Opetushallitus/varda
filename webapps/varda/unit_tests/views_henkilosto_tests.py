@@ -1,4 +1,5 @@
 import json
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -9,6 +10,7 @@ from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, ass
 from varda.models import (VakaJarjestaja, Henkilo, Tyontekija, Palvelussuhde, Tyoskentelypaikka, Toimipaikka,
                           TilapainenHenkilosto, Taydennyskoulutus, TaydennyskoulutusTyontekija, PidempiPoissaolo,
                           Tutkinto)
+from varda.viewsets_henkilosto import TyontekijaViewSet
 
 
 class VardaHenkilostoViewSetTests(TestCase):
@@ -101,6 +103,26 @@ class VardaHenkilostoViewSetTests(TestCase):
         tyontekija_url_2 = json.loads(resp_duplicate.content)['url']
 
         self.assertEqual(tyontekija_url_1, tyontekija_url_2)
+
+    def mock_return_tyontekija_if_already_created(self, *args, **kwargs):
+        return
+
+    @patch.object(TyontekijaViewSet, 'return_tyontekija_if_already_created', mock_return_tyontekija_if_already_created)
+    def test_tyontekija_add_twice_unique_constraint(self):
+        client = SetUpTestClient('tyontekija_tallentaja').client()
+
+        tyontekija = {
+            'henkilo': '/api/v1/henkilot/1/',
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'lahdejarjestelma': '1'
+        }
+
+        resp_original = client.post('/api/henkilosto/v1/tyontekijat/', tyontekija)
+        assert_status_code(resp_original, status.HTTP_201_CREATED)
+
+        resp_duplicate = client.post('/api/henkilosto/v1/tyontekijat/', tyontekija)
+        assert_status_code(resp_duplicate, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error('tyontekija', 'tyontekija with this henkilo and vakajarjestaja pair already exists', resp_duplicate)
 
     def test_api_push_tyontekija_correct_oid(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()

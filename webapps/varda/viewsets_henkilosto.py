@@ -3,6 +3,7 @@ import logging
 import coreapi
 import coreschema
 from django.core.cache import cache
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import ProtectedError, Q
 from django.http import Http404
@@ -151,7 +152,15 @@ class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
         self.return_tyontekija_if_already_created(validated_data, toimipaikka_oid)
 
         with transaction.atomic():
-            tyontekija_obj = serializer.save(changed_by=user)
+            try:
+                tyontekija_obj = serializer.save(changed_by=user)
+            except DjangoValidationError as error:
+                # Catch Tyontekija model's UniqueConstraint, otherwise it will return 500
+                if 'Tyontekija with this Henkilo and Vakajarjestaja already exists' in ' '.join(error.messages):
+                    raise ValidationError({'tyontekija': ['tyontekija with this henkilo and vakajarjestaja pair already exists']})
+                else:
+                    raise error
+
             self.remove_address_information_from_henkilo(tyontekija_obj.henkilo)
             delete_cache_keys_related_model('henkilo', tyontekija_obj.henkilo.id)
             vakajarjestaja_oid = vakajarjestaja.organisaatio_oid
