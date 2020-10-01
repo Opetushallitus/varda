@@ -1,6 +1,10 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.4.4 (01.10.2020)
+- CSCVARDA-1968: Responsiivisuuden kehitystä
+- CSCVARDA-1877: ID-tietojen näyttö tietojen katselussa
+
 1.4.3 (23.09.2020)
 - CSCVARDA-1945: Tehtävänimike näytettiin Syötä tietoja-listalla suomeksi ruotsinkieliselle käyttäjälle
 - CSCVARDA-1789: Lapsitiedot: Näytetään vain otsikko + teksti, mikäli ei ole oikeuksia (katsele tietoja)
