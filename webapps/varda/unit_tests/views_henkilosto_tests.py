@@ -2739,20 +2739,22 @@ class VardaHenkilostoViewSetTests(TestCase):
         palvelussuhde_url = json.loads(palvelussuhde_resp.content)['url']
 
         # Pidempipoissaolo
+        # Toimipaikka tallentaja can't get access to Pidempipoissaolo until tyoskentelypaikka has been created so this will fail
         pidempipoissaolo = {
             'palvelussuhde': palvelussuhde_url,
             'alkamis_pvm': '2021-06-01',
             'paattymis_pvm': '2021-09-01',
-            'lahdejarjestelma': '1',
-            'toimipaikka_oid': toimipaikka_oid,
+            'lahdejarjestelma': '1'
         }
-        self._assert_create_and_list(client_tyontekija_katselija, client_tyontekija_tallentaja, pidempipoissaolo, '/api/henkilosto/v1/pidemmatpoissaolot/')
+        create_response = client_tyontekija_tallentaja.post('/api/henkilosto/v1/pidemmatpoissaolot/', json.dumps(pidempipoissaolo), content_type='application/json')
+        assert_status_code(create_response, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error('tyoskentelypaikka', 'no matching tyoskentelypaikka exists', create_response)
 
         # Tyoskentelypaikka
         tyoskentelypaikka = {
             'palvelussuhde': palvelussuhde_url,
             'alkamis_pvm': '2020-03-01',
-            'paattymis_pvm': '2020-09-02',
+            'paattymis_pvm': '2022-03-02',
             'tehtavanimike_koodi': '39407',
             'kelpoisuus_kytkin': True,
             'kiertava_tyontekija_kytkin': True,
@@ -2770,6 +2772,16 @@ class VardaHenkilostoViewSetTests(TestCase):
             'toimipaikka_oid': toimipaikka_oid,
         })
         self._assert_create_and_list(client_tyontekija_katselija, client_tyontekija_tallentaja, tyoskentelypaikka, '/api/henkilosto/v1/tyoskentelypaikat/')
+
+        # Pidempipoissaolo
+        # After adding Tyoskentelypaikka toimipaikka_tallentaja can add pidempipoissaolo
+        pidempipoissaolo = {
+            'palvelussuhde': palvelussuhde_url,
+            'alkamis_pvm': '2021-06-01',
+            'paattymis_pvm': '2021-09-01',
+            'lahdejarjestelma': '1'
+        }
+        self._assert_create_and_list(client_tyontekija_katselija, client_tyontekija_tallentaja, pidempipoissaolo, '/api/henkilosto/v1/pidemmatpoissaolot/')
 
         # Taydennyskoulutus
         client_koulutus_katselija = SetUpTestClient('taydennyskoulutus_toimipaikka_katselija').client()

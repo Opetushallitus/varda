@@ -16,7 +16,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from varda.misc import path_parse
 from varda.models import (VakaJarjestaja, Toimipaikka, Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
                           PaosToiminta, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog,
-                          Maksutieto, Tyontekija)
+                          Maksutieto, Tyontekija, Tyoskentelypaikka, PidempiPoissaolo)
 from varda.permission_groups import assign_object_level_permissions, remove_object_level_permissions
 
 
@@ -537,3 +537,42 @@ def get_toimipaikka_or_404(user, toimipaikka_pk=None):
 def permission_groups_in_organization(user, organisaatio_oid, z4_groups):
     group_names = [group + '_' + organisaatio_oid for group in z4_groups]
     return user.groups.filter(name__in=group_names)
+
+
+def get_permission_checked_pidempi_poissaolo_katselija_queryset_for_user(user):
+    additional_details = getattr(user, 'additional_user_info', None)
+    extra_view_perms = getattr(additional_details, 'approved_oph_staff', False)
+    permission = 'HENKILOSTO_TYONTEKIJA'
+    return _get_permission_checked_pidempi_poissaolo_queryset_for_user(user, permission, extra_view_perms)
+
+
+def get_permission_checked_pidempi_poissaolo_tallentaja_queryset_for_user(user):
+    permission = 'HENKILOSTO_TYONTEKIJA_TALLENTAJA'
+    return _get_permission_checked_pidempi_poissaolo_queryset_for_user(user, permission)
+
+
+def _get_permission_checked_pidempi_poissaolo_queryset_for_user(user, permission, extra_perms=False):
+    if user.is_superuser or extra_perms:
+        return PidempiPoissaolo.objects.all()
+    else:
+        # since we cannot distinguish between toimipaikka user and toimija user we need to fetch for both
+        # either the user has permission for the vakatoimija that the tyontekija is linked to or toimipaikka that is
+        # related to tyoskentelypaikka
+        user_perm_oids = get_organisaatio_oids_from_groups(user, permission)
+        # vakajarjestaja permissions
+        tyontekijat = Tyontekija.objects.filter(vakajarjestaja__organisaatio_oid__in=user_perm_oids)
+        # toimipaikka permissions
+        tyoskentelypaikat = Tyoskentelypaikka.objects.filter(toimipaikka__organisaatio_oid__in=user_perm_oids)
+        palvelussuhde_ids = [tyoskentelypaikka.palvelussuhde_id for tyoskentelypaikka in tyoskentelypaikat]
+        return PidempiPoissaolo.objects.filter(Q(palvelussuhde_id__in=palvelussuhde_ids) | Q(palvelussuhde__tyontekija__in=tyontekijat))
+
+
+def toimipaikka_tallentaja_pidempipoissaolo_has_perm_to_add(user, vakajarjestaja_oid, validated_data):
+    # toimipaikka tallentaja can't create a pidempipoissaolo if there is no corresponding tyoskentelypaikka
+    if user.is_superuser or user.groups.filter(name='HENKILOSTO_TYONTEKIJA_TALLENTAJA_{}'.format(vakajarjestaja_oid)):
+        return True
+    else:
+        user_perm_oids = get_organisaatio_oids_from_groups(user, 'HENKILOSTO_TYONTEKIJA_TALLENTAJA')
+        return Tyoskentelypaikka.objects.filter(Q(palvelussuhde=validated_data['palvelussuhde'],
+                                                  toimipaikka__organisaatio_oid__in=user_perm_oids)
+                                                ).exists()

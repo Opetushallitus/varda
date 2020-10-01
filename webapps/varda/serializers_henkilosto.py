@@ -11,7 +11,8 @@ from varda.models import (Henkilo, TilapainenHenkilosto, Tutkinto, Tyontekija, V
                           Tyoskentelypaikka, Toimipaikka, PidempiPoissaolo, TaydennyskoulutusTyontekija,
                           Taydennyskoulutus, Z4_CasKayttoOikeudet)
 from varda.permissions import (is_correct_taydennyskoulutus_tyontekija_permission,
-                               filter_authorized_taydennyskoulutus_tyontekijat, permission_groups_in_organization)
+                               filter_authorized_taydennyskoulutus_tyontekijat, permission_groups_in_organization,
+                               get_permission_checked_pidempi_poissaolo_katselija_queryset_for_user)
 from varda.related_object_validations import (create_daterange, daterange_overlap,
                                               check_overlapping_tyoskentelypaikka_object,
                                               check_overlapping_palvelussuhde_object,
@@ -413,7 +414,7 @@ class TyoskentelypaikkaUpdateSerializer(serializers.HyperlinkedModelSerializer):
         return data
 
 
-class PidempiPoissaoloSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
+class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     palvelussuhde = PalvelussuhdePermissionCheckedHLField(view_name='palvelussuhde-detail', required=False)
     palvelussuhde_tunniste = TunnisteRelatedField(object_type=Palvelussuhde,
@@ -786,6 +787,13 @@ class TyontekijaKoostePidempiPoissaoloSerializer(serializers.ModelSerializer):
     class Meta:
         model = PidempiPoissaolo
         fields = ('id', 'alkamis_pvm', 'paattymis_pvm')
+
+    def to_representation(self, instance):
+        user = self.context['request'].user
+        data = get_permission_checked_pidempi_poissaolo_katselija_queryset_for_user(user)
+        if not data.exists():
+            return []
+        return super(TyontekijaKoostePidempiPoissaoloSerializer, self).to_representation(data.filter(id=instance.id).first())
 
 
 class TyontekijaKoostePalvelussuhdeSerializer(serializers.ModelSerializer):
