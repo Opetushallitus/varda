@@ -63,7 +63,7 @@ from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer,
                                VarhaiskasvatussuhdeSerializer, VakaJarjestajaYhteenvetoSerializer,
                                HenkilohakuLapsetSerializer, PaosToimintaSerializer, PaosToimijatSerializer,
                                PaosToimipaikatSerializer, PaosOikeusSerializer, LapsiKoosteSerializer, UserSerializer)
-from varda.tasks import update_oph_staff_to_vakajarjestaja_groups
+from varda.tasks import update_oph_staff_to_vakajarjestaja_groups, assign_taydennyskoulutus_permissions_for_toimipaikka_task
 from webapps.api_throttles import (BurstRateThrottle, BurstRateThrottleStrict, SustainedModifyRateThrottle,
                                    SustainedRateThrottleStrict)
 
@@ -633,6 +633,13 @@ class ToimipaikkaViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, P
                 assign_object_permissions_to_all_henkilosto_groups(toimipaikka_organisaatio_oid, Toimipaikka, saved_object)
                 assign_object_level_permissions(toimipaikka_organisaatio_oid, Toimipaikka, saved_object)
                 assign_object_permissions_to_all_henkilosto_groups(vakajarjestaja_organisaatio_oid, Toimipaikka, saved_object)
+
+                """
+                Assign permissions to all taydennyskoulutukset of vakajarjestaja in a task
+                so that it doesn't block execution
+                """
+                assign_taydennyskoulutus_permissions_for_toimipaikka_task.delay(vakajarjestaja_organisaatio_oid,
+                                                                                toimipaikka_organisaatio_oid)
         except IntegrityError as e:
             logger.error('Could not create a toimipaikka in Org.Palvelu. Data: {}. Error: {}.'
                          .format(validated_data, e.__cause__))

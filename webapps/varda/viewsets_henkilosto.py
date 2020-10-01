@@ -576,11 +576,6 @@ class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
                 assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Tyontekija, tyontekija)
                 tutkinnot = Tutkinto.objects.filter(henkilo=tyontekija.henkilo, vakajarjestaja=tyontekija.vakajarjestaja)
                 [assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Tutkinto, tutkinto) for tutkinto in tutkinnot]
-                # Add also permission to all taydennyskoulutukset for current jarjestaja
-                taydennyskoulutukset = Taydennyskoulutus.objects.filter(tyontekijat__vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
-                [assign_object_permissions_to_taydennyskoulutus_groups(toimipaikka_oid, Taydennyskoulutus, taydennyskoulutus)
-                 for taydennyskoulutus in taydennyskoulutukset
-                 ]
 
             delete_cache_keys_related_model('palvelussuhde', tyoskentelypaikka.palvelussuhde.id)
             cache.delete('vakajarjestaja_yhteenveto_' + str(tyoskentelypaikka.palvelussuhde.tyontekija.vakajarjestaja.id))

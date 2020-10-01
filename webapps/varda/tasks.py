@@ -9,7 +9,8 @@ from varda import organisaatiopalvelu
 from varda import permission_groups
 from varda import permissions
 from varda.audit_log import audit_log
-from varda.models import Henkilo
+from varda.models import Henkilo, Taydennyskoulutus
+from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups
 
 
 @shared_task
@@ -141,3 +142,16 @@ def remove_address_information_from_tyontekijat_only_task():
     for henkilo in henkilot:
         henkilo.remove_address_information()
         henkilo.save()
+
+
+@shared_task(acks_late=True)
+def assign_taydennyskoulutus_permissions_for_toimipaikka_task(vakajarjestaja_oid, toimipaikka_oid):
+    """
+    Assign object level permissions to all taydennyskoulutukset of given vakajarjestaja for toimipaikka level groups
+    :param vakajarjestaja_oid: OID of vakajarjestaja
+    :param toimipaikka_oid: OID of toimipaikka
+    """
+    taydennyskoulutukset = Taydennyskoulutus.objects.filter(tyontekijat__vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
+    [assign_object_permissions_to_taydennyskoulutus_groups(toimipaikka_oid, Taydennyskoulutus, taydennyskoulutus)
+     for taydennyskoulutus in taydennyskoulutukset
+     ]
