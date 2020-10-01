@@ -157,6 +157,7 @@ class HuoltajaFilter(djangofilters.FilterSet):
 
 
 class MaksutietoFilter(djangofilters.FilterSet):
+    lapsi = djangofilters.NumberFilter(field_name='huoltajuussuhteet__lapsi__id', lookup_expr='exact', label='lapsi_id')
     maksun_peruste_koodi = djangofilters.CharFilter(field_name='maksun_peruste_koodi', lookup_expr='exact')
     alkamis_pvm = djangofilters.DateFilter(field_name='alkamis_pvm', lookup_expr='gte')
     paattymis_pvm = djangofilters.DateFilter(field_name='paattymis_pvm', lookup_expr='gte')

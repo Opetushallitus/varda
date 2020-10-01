@@ -2309,7 +2309,7 @@ class VardaViewsTests(TestCase):
         )
         assign_object_level_permissions(oid_of_client, Varhaiskasvatussuhde, vakasuhde)
 
-        vakapaatos = Varhaiskasvatuspaatos.objects.create(
+        vakapaatos_2 = Varhaiskasvatuspaatos.objects.create(
             lapsi=lapsi,
             tuntimaara_viikossa=45,
             jarjestamismuoto_koodi='jm02',
@@ -2317,15 +2317,15 @@ class VardaViewsTests(TestCase):
             hakemus_pvm='2017-11-01',
             changed_by=adminuser
         )
-        assign_object_level_permissions(oid_of_client, Varhaiskasvatuspaatos, vakapaatos)
+        assign_object_level_permissions(oid_of_client, Varhaiskasvatuspaatos, vakapaatos_2)
 
-        vakasuhde = Varhaiskasvatussuhde.objects.create(
+        vakasuhde_2 = Varhaiskasvatussuhde.objects.create(
             toimipaikka=toimipaikka_1,
-            varhaiskasvatuspaatos=vakapaatos,
+            varhaiskasvatuspaatos=vakapaatos_2,
             alkamis_pvm='2021-01-01',
             changed_by=adminuser
         )
-        assign_object_level_permissions(oid_of_client, Varhaiskasvatussuhde, vakasuhde)
+        assign_object_level_permissions(oid_of_client, Varhaiskasvatussuhde, vakasuhde_2)
 
         """
         Now the test setup is finally done.
@@ -2335,7 +2335,7 @@ class VardaViewsTests(TestCase):
 
         ok_cases = [
             ('2018-02-01', '2018-07-01'),  # Within first vaka
-            ('2018-01-01', '2018-12-31'),  # Exactly the first vaka
+            ('2018-01-01', '2019-12-31'),  # Exactly the first vaka
             ('2018-02-01', '2021-02-01'),  # Within first and second vaka
             ('2020-02-01', '2020-11-01'),  # Between vakas (move to fail cases after whenever stage 2 is implemented)
             ('2021-02-01', None),          # Open-ended; within second(open-ended) vaka
@@ -2376,6 +2376,44 @@ class VardaViewsTests(TestCase):
             Maksutieto.objects.get(id=id).delete()
 
         for (start, end) in fail_cases:
+            maksutieto.update(
+                alkamis_pvm=start,
+                paattymis_pvm=end
+            )
+
+            resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
+            assert_status_code(resp, 400)
+
+        # to test ending date validations every vakapaatos needs to have paattymis_pvm
+        vakapaatos_2.paattymis_pvm = '2025-01-01'
+        vakapaatos_2.save()
+
+        close_ended_ok_cases = [
+            ('2021-01-01', '2025-01-01'),  # Within second vakapaatos
+            ('2025-01-01', '2025-01-01'),  # One day maksu at the end of the last vakapaatos
+            ('2021-01-01', '2021-01-01'),  # One day maksu at the start of the last vakapaatos
+        ]
+
+        for (start, end) in close_ended_ok_cases:
+            maksutieto.update(
+                alkamis_pvm=start,
+                paattymis_pvm=end
+            )
+
+            resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
+            assert_status_code(resp, 201)
+
+            id = json.loads(resp.content)['id']
+            Maksutieto.objects.get(id=id).delete()
+
+        close_ended_fail_cases = [
+            ('2017-12-31', '2025-01-02'),  # Before first vakapaatos and after the end of the second vakapaatos
+            ('2018-01-01', '2025-01-02'),  # Ending after second vakapaatos
+            ('2017-12-31', '2025-01-01'),  # Before first vakapaatos
+            ('2025-01-03', '2025-01-05'),  # After both vakapaatos dates
+        ]
+
+        for (start, end) in close_ended_fail_cases:
             maksutieto.update(
                 alkamis_pvm=start,
                 paattymis_pvm=end

@@ -1761,8 +1761,8 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
             raise ValidationError({'alkamis_pvm': [msg]})
 
         if all((v.paattymis_pvm is not None) for v in vakapaatokset):
-            if start_date is not None and not validators.validate_paivamaara1_before_paivamaara2(start_date, vakapaatos_latest.paattymis_pvm, can_be_same=False):
-                msg = 'maksutieto.alkamis_pvm must be before the latest varhaiskasvatuspaatos.paattymis_pvm'
+            if start_date is not None and not validators.validate_paivamaara1_after_paivamaara2(vakapaatos_latest.paattymis_pvm, start_date, can_be_same=True):
+                msg = 'maksutieto.alkamis_pvm must be before the latest varhaiskasvatuspaatos.paattymis_pvm (or same)'
                 raise ValidationError({'alkamis_pvm': [msg]})
 
         """
@@ -1771,8 +1771,8 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         """
         if end_date is not None:
             if all((v.paattymis_pvm is not None) for v in vakapaatokset):
-                if validators.validate_paivamaara1_after_paivamaara2(end_date, vakapaatos_latest.paattymis_pvm, can_be_same=False):
-                    msg = 'maksutieto.paattymis_pvm must be before latest varhaiskasvatuspaatos.paattymis_pvm'
+                if not validators.validate_paivamaara1_after_paivamaara2(vakapaatos_latest.paattymis_pvm, end_date, can_be_same=True):
+                    msg = 'maksutieto.paattymis_pvm must be before latest varhaiskasvatuspaatos.paattymis_pvm (or same)'
                     raise ValidationError({'paattymis_pvm': [msg]})
 
     def fetch_and_match_huoltajuudet(self, data):
