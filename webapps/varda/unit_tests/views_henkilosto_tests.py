@@ -1516,6 +1516,24 @@ class VardaHenkilostoViewSetTests(TestCase):
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error('kiertava_tyontekija_kytkin', 'toimipaikka can\'t be specified with kiertava_tyontekija_kytkin.', resp)
 
+    def test_tyoskentelypaikka_require_toimipaikka_or_kiertava_true(self):
+        client = SetUpTestClient('tyontekija_tallentaja').client()
+        palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
+
+        tyoskentelypaikka = {
+            'palvelussuhde': f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde.id}/',
+            'alkamis_pvm': '2020-09-01',
+            'paattymis_pvm': '2021-05-02',
+            'tehtavanimike_koodi': '39407',
+            'kelpoisuus_kytkin': True,
+            'kiertava_tyontekija_kytkin': False,
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post('/api/henkilosto/v1/tyoskentelypaikat/', tyoskentelypaikka)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error('toimipaikka', 'toimipaikka is required if kiertava_tyontekija_kytkin is false.', resp)
+
     def test_tyoskentelypaikka_kelpoisuus_downgrade_allowed(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
 

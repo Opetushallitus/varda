@@ -318,21 +318,32 @@ class TyoskentelypaikkaSerializer(serializers.HyperlinkedModelSerializer):
         kiertava_tyontekija_kytkin = data['kiertava_tyontekija_kytkin']
 
         with ViewSetValidator() as validator:
-            if kiertava_tyontekija_kytkin and toimipaikka:
-                validator.error('kiertava_tyontekija_kytkin', 'toimipaikka can\'t be specified with kiertava_tyontekija_kytkin.')
-            validate_dates(data, palvelussuhde, validator)
-
-            with validator.wrap():
-                validate_overlapping_kiertavyys(data, palvelussuhde, kiertava_tyontekija_kytkin, validator)
-
-            if not kiertava_tyontekija_kytkin:
-                with validator.wrap():
-                    check_overlapping_tyoskentelypaikka_object(data, Tyoskentelypaikka)
+            validate_tyoskentelypaikka_general(validator, data, toimipaikka, palvelussuhde, kiertava_tyontekija_kytkin)
 
             if toimipaikka and toimipaikka.vakajarjestaja_id != palvelussuhde.tyontekija.vakajarjestaja_id:
                 validator.error('toimipaikka', 'Toimipaikka must have the same vakajarjestaja as tyontekija')
 
         return data
+
+
+def validate_tyoskentelypaikka_general(validator, data, toimipaikka, palvelussuhde,
+                                       kiertava_tyontekija_kytkin, tyoskentelypaikka_id=None):
+    if kiertava_tyontekija_kytkin and toimipaikka:
+        validator.error('kiertava_tyontekija_kytkin', 'toimipaikka can\'t be specified with kiertava_tyontekija_kytkin.')
+    if not kiertava_tyontekija_kytkin and not toimipaikka:
+        validator.error('toimipaikka', 'toimipaikka is required if kiertava_tyontekija_kytkin is false.')
+
+    validate_dates(data, palvelussuhde, validator)
+
+    with validator.wrap():
+        validate_overlapping_kiertavyys(data, palvelussuhde, kiertava_tyontekija_kytkin, validator)
+
+    if not kiertava_tyontekija_kytkin:
+        with validator.wrap():
+            if tyoskentelypaikka_id:
+                check_overlapping_tyoskentelypaikka_object(data, Tyoskentelypaikka, tyoskentelypaikka_id)
+            else:
+                check_overlapping_tyoskentelypaikka_object(data, Tyoskentelypaikka)
 
 
 def validate_dates(validated_data, palvelussuhde, validator):
@@ -399,17 +410,8 @@ class TyoskentelypaikkaUpdateSerializer(serializers.HyperlinkedModelSerializer):
         kiertava_tyontekija_kytkin = data['kiertava_tyontekija_kytkin']
 
         with ViewSetValidator() as validator:
-            if kiertava_tyontekija_kytkin and toimipaikka:
-                validator.error('kiertava_tyontekija_kytkin', 'toimipaikka can\'t be specified with kiertava_tyontekija_kytkin.')
-
-            validate_dates(data, palvelussuhde, validator)
-
-            with validator.wrap():
-                validate_overlapping_kiertavyys(data, palvelussuhde, kiertava_tyontekija_kytkin, validator)
-
-            if not kiertava_tyontekija_kytkin:
-                with validator.wrap():
-                    check_overlapping_tyoskentelypaikka_object(data, Tyoskentelypaikka, tyoskentelypaikka.id)
+            validate_tyoskentelypaikka_general(validator, data, toimipaikka, palvelussuhde,
+                                               kiertava_tyontekija_kytkin, tyoskentelypaikka_id=tyoskentelypaikka.id)
 
         return data
 
