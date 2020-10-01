@@ -262,8 +262,7 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
         tutkinnot = set(Tutkinto.objects
                         .filter(tutkinto_filter)
                         .distinct()
-                        .order_by('-luonti_pvm')
-                        .values_list('tutkinto_koodi', flat=True))
+                        .order_by('-luonti_pvm'))
         tyontekija_data['tutkinnot'] = tutkinnot
 
         return Response(self.get_serializer(tyontekija_data).data)

@@ -7,6 +7,7 @@ import { VardaApiService } from '../../../../core/services/varda-api.service';
 import { KoodistoEnum } from 'varda-shared';
 import { VardaDateService } from '../../../services/varda-date.service';
 import { UserAccess } from '../../../../utilities/models/varda-user-access.model';
+import { VirkailijaTranslations } from '../../../../../assets/i18n/virkailija-translations.enum';
 
 @Component({
   selector: 'app-report-tyontekija',
@@ -18,6 +19,7 @@ export class ReportTyontekijaComponent implements OnChanges {
   @Input() userAccess: UserAccess;
   @ViewChild('tyontekijaScrollTo') tyontekijaScrollTo: ElementRef<HTMLElement>;
 
+  i18n = VirkailijaTranslations;
   koodistoEnum = KoodistoEnum;
   tyontekijaKooste: TyontekijaKooste = null;
 

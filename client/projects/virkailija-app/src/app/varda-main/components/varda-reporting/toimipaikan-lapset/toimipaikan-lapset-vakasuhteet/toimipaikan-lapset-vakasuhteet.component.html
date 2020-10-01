@@ -1,34 +1,28 @@
 <mat-expansion-panel class="vakasuhde-panel">
   <mat-expansion-panel-header class="toimipaikan-lapset-header">
-    <mat-panel-title>
-      <h3 class="toimipaikan-lapset-font-blue">
-        <table class="toimipaikan-lapset-header-table">
-          <tr>
-            <td>
-              <span>{{'label.varhaiskasvatussuhde' | translate}}</span>
-            </td>
-            <td>
-              <span *ngIf="vakasuhde.paattymis_pvm">{{vakasuhde.alkamis_pvm | date:'d.M.yyyy'}}-{{vakasuhde.paattymis_pvm | date:'d.M.yyyy'}}</span>
-              <span *ngIf="!vakasuhde.paattymis_pvm">{{'label.alkaen' | translate:{value: vakasuhde.alkamis_pvm | date:'d.M.yyyy'} }}</span>
-            </td>
-          </tr>
-        </table>
-      </h3>
-    </mat-panel-title>
+    <mat-panel-title>{{'label.varhaiskasvatussuhde' | translate}}</mat-panel-title>
+    <mat-panel-description>
+      {{getDateRangeDisplayValue(vakasuhde.alkamis_pvm, vakasuhde.paattymis_pvm)}}
+    </mat-panel-description>
   </mat-expansion-panel-header>
-
-  <table class="mat-table toimipaikan-lapset-table toimipaikan-lapset-vakatable">
-    <tr class="mat-header-row">
-      <th scope="row" class="mat-header-cell">{{'label.toimipaikka' | translate}}</th>
-      <td class="mat-cell">{{vakasuhde.toimipaikka_nimi}}</td>
-    </tr>
-    <tr class="mat-header-row">
-      <th scope="row" class="mat-header-cell">{{'label.alkamis_pvm' | translate}}</th>
-      <td class="mat-cell">{{vakasuhde.alkamis_pvm | date:'d.M.yyyy'}}</td>
-    </tr>
-    <tr class="mat-header-row">
-      <th scope="row" class="mat-header-cell">{{'label.paattymis_pvm' | translate}}</th>
-      <td class="mat-cell">{{vakasuhde.paattymis_pvm | date:'d.M.yyyy'}}</td>
-    </tr>
-  </table>
+  <div class="table-responsive">
+    <table class="mat-table">
+      <tr class="mat-header-row">
+        <th scope="row" class="mat-header-cell">{{i18n.id | translate}}</th>
+        <td class="mat-cell">{{vakasuhde.id}}</td>
+      </tr>
+      <tr class="mat-header-row">
+        <th scope="row" class="mat-header-cell">{{'label.toimipaikka' | translate}}</th>
+        <td class="mat-cell">{{vakasuhde.toimipaikka_nimi}}</td>
+      </tr>
+      <tr class="mat-header-row">
+        <th scope="row" class="mat-header-cell">{{'label.alkamis_pvm' | translate}}</th>
+        <td class="mat-cell">{{vakasuhde.alkamis_pvm | date:'d.M.yyyy'}}</td>
+      </tr>
+      <tr class="mat-header-row">
+        <th scope="row" class="mat-header-cell">{{'label.paattymis_pvm' | translate}}</th>
+        <td class="mat-cell">{{vakasuhde.paattymis_pvm | date:'d.M.yyyy'}}</td>
+      </tr>
+    </table>
+  </div>
 </mat-expansion-panel>

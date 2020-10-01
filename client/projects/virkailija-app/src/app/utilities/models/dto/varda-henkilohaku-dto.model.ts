@@ -73,6 +73,7 @@ export class ToimipaikanLapsiHuoltaja {
 }
 
 export class ToimipaikanLapsiMaksutieto {
+  id: number;
   maksun_peruste_koodi: string;
   palveluseteli_arvo: number;
   asiakasmaksu: number;
@@ -96,6 +97,7 @@ export class ToimipaikanLapsiVakapaatos {
 }
 
 export class ToimipaikanLapsiVakasuhde {
+  id: number;
   alkamis_pvm: string;
   paattymis_pvm: string;
   toimipaikka_nimi: string;
@@ -115,10 +117,15 @@ export class TyontekijaKooste {
   id: number;
   vakajarjestaja_id: number;
   vakajarjestaja_nimi: string;
-  tutkinnot: Array<string>;
+  tutkinnot: Array<TyontekijaTutkinto>;
   henkilo: TyontekijaHenkilo;
   taydennyskoulutukset: Array<TyontekijaTaydennyskoulutus>;
   palvelussuhteet: Array<TyontekijaPalvelussuhde>;
+}
+
+export class TyontekijaTutkinto {
+  id: number;
+  tutkinto_koodi: string;
 }
 
 export class TyontekijaHenkilo {
@@ -129,6 +136,7 @@ export class TyontekijaHenkilo {
 }
 
 export class TyontekijaTaydennyskoulutus {
+  id: number;
   tehtavanimike_koodi: string;
   nimi: string;
   suoritus_pvm: string;

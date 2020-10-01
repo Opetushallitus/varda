@@ -2,46 +2,48 @@
   <div #toimipaikanLapsetScrollTo class="toimipaikanLapsetScrollTo"></div>
   <div class="toimipaikan-lapset-container-margin-bottom">
     <h3 class="oph-bold">{{'label.perustiedot' | translate}}</h3>
-    <table class="mat-table toimipaikan-lapset-table">
-      <tr class="mat-row">
-        <th scope="row" class="mat-header-cell">{{'label.firstnamesbyseparated' | translate}}</th>
-        <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.etunimet}}</td>
-      </tr>
-      <tr class="mat-row">
-        <th scope="row" class="mat-header-cell">{{'label.nickname' | translate}}</th>
-        <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.kutsumanimi}}</td>
-      </tr>
-      <tr class="mat-row">
-        <th scope="row" class="mat-header-cell">{{'label.lastname' | translate}}</th>
-        <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.sukunimi}}</td>
-      </tr>
-      <tr class="mat-row">
-        <th scope="row" class="mat-header-cell">{{'label.henkilo.id' | translate}}</th>
-        <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.id}}</td>
-      </tr>
-      <tr class="mat-row">
-        <th scope="row" class="mat-header-cell">{{'label.lapsi.id' | translate}}</th>
-        <td class="mat-cell">{{selectedToimipaikanLapsi.id}}</td>
-      </tr>
-      <tr class="mat-row">
-        <th scope="row" class="mat-header-cell">{{'label.oppijanumero' | translate}}</th>
-        <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.henkilo_oid}}</td>
-      </tr>
-      <tr class="mat-row">
-        <th scope="row" class="mat-header-cell">{{'label.birthday' | translate}}</th>
-        <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.syntyma_pvm | date:'d.M.yyyy'}}</td>
-      </tr>
-      <tr class="mat-row"
-          *ngIf="selectedToimipaikanLapsi.oma_organisaatio_nimi">
-        <th scope="row" class="mat-header-cell">{{'label.oma-organisaatio' | translate}}</th>
-        <td class="mat-cell">{{selectedToimipaikanLapsi.oma_organisaatio_nimi}}</td>
-      </tr>
-      <tr class="mat-row"
-          *ngIf="selectedToimipaikanLapsi.paos_organisaatio_nimi">
-        <th scope="row" class="mat-header-cell">{{'label.paos-organisaatio' | translate}}</th>
-        <td class="mat-cell">{{selectedToimipaikanLapsi.paos_organisaatio_nimi}}</td>
-      </tr>
-    </table>
+    <div class="table-responsive">
+      <table class="mat-table">
+        <tr class="mat-row">
+          <th scope="row" class="mat-header-cell">{{'label.firstnamesbyseparated' | translate}}</th>
+          <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.etunimet}}</td>
+        </tr>
+        <tr class="mat-row">
+          <th scope="row" class="mat-header-cell">{{'label.nickname' | translate}}</th>
+          <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.kutsumanimi}}</td>
+        </tr>
+        <tr class="mat-row">
+          <th scope="row" class="mat-header-cell">{{'label.lastname' | translate}}</th>
+          <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.sukunimi}}</td>
+        </tr>
+        <tr class="mat-row">
+          <th scope="row" class="mat-header-cell">{{'label.henkilo.id' | translate}}</th>
+          <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.id}}</td>
+        </tr>
+        <tr class="mat-row">
+          <th scope="row" class="mat-header-cell">{{'label.lapsi.id' | translate}}</th>
+          <td class="mat-cell">{{selectedToimipaikanLapsi.id}}</td>
+        </tr>
+        <tr class="mat-row">
+          <th scope="row" class="mat-header-cell">{{'label.oppijanumero' | translate}}</th>
+          <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.henkilo_oid}}</td>
+        </tr>
+        <tr class="mat-row">
+          <th scope="row" class="mat-header-cell">{{'label.birthday' | translate}}</th>
+          <td class="mat-cell">{{selectedToimipaikanLapsi.henkilo.syntyma_pvm | date:'d.M.yyyy'}}</td>
+        </tr>
+        <tr class="mat-row"
+            *ngIf="selectedToimipaikanLapsi.oma_organisaatio_nimi">
+          <th scope="row" class="mat-header-cell">{{'label.oma-organisaatio' | translate}}</th>
+          <td class="mat-cell">{{selectedToimipaikanLapsi.oma_organisaatio_nimi}}</td>
+        </tr>
+        <tr class="mat-row"
+            *ngIf="selectedToimipaikanLapsi.paos_organisaatio_nimi">
+          <th scope="row" class="mat-header-cell">{{'label.paos-organisaatio' | translate}}</th>
+          <td class="mat-cell">{{selectedToimipaikanLapsi.paos_organisaatio_nimi}}</td>
+        </tr>
+      </table>
+    </div>
   </div>
 
   <div class="toimipaikan-lapset-container-margin-bottom">

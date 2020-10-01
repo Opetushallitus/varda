@@ -47,6 +47,9 @@ export enum VirkailijaTranslations {
   aika_joulukuu = 'aika.joulukuu',
   aika_vuosi = 'aika.vuosi',
   aika_kuukausi = 'aika.kuukausi',
+  id = 'id',
+  code = 'code',
+  ajanjakso = 'ajanjakso',
 
   henkilo_lisaa_lapsi = 'henkilo.lisaa-lapsi',
   henkilo_lisaa_tyontekija = 'henkilo.lisaa-tyontekija',

@@ -240,6 +240,7 @@ h3 {
 
 .filter-clear-container {
   align-self: flex-end;
+  margin-top: 1em;
 }
 
 .filter-clear {
@@ -297,5 +298,9 @@ h3 {
 
   .search-button-toimipaikat {
     margin-top: initial;
+  }
+
+  .mat-expansion-panel-header .mat-content {
+    flex-direction: column;
   }
 }

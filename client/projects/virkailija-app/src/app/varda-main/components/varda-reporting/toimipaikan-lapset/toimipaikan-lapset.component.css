@@ -16,21 +16,6 @@
   margin-bottom: 2em;
 }
 
-.toimipaikan-lapset-table {
-  border-spacing: 0;
-  text-align: left;
-  width: 100%;
-}
-
-.toimipaikan-lapset-vakatable {
-  table-layout: fixed;
-  width: 97.5%;
-}
-
-.toimipaikan-lapset-huoltajat-table {
-  margin-bottom: 25px;
-}
-
 .toimipaikan-lapset-font-blue {
   color: #159ecb;
 }
@@ -50,6 +35,18 @@
 .toimipaikan-lapset-header-table {
   table-layout: fixed;
   width: 100%;
+}
+
+.vakapaatos-panel .mat-expansion-panel-header-title,
+.vakapaatos-panel .mat-expansion-panel-header-description {
+  color: var(--black);
+}
+
+.maksutieto-panel .mat-expansion-panel-header-title,
+.maksutieto-panel .mat-expansion-panel-header-description,
+.vakasuhde-panel .mat-expansion-panel-header-title,
+.vakasuhde-panel .mat-expansion-panel-header-description {
+  color: var(--blue-lighten-1);
 }
 
 .maksutieto-panel {
