@@ -243,8 +243,9 @@ class NestedAllToimipaikkaViewSet(GenericViewSet, ListModelMixin):
         if not vakajarjestaja_id or not vakajarjestaja_id.isdigit():
             vakajarjestaja_id = None
         # Return only paos toimipaikat
-        return Toimipaikka.objects.filter(vakajarjestaja__pk=vakajarjestaja_id,
-                                          jarjestamismuoto_koodi__overlap=['jm02', 'jm03']).order_by('id')
+        return Toimipaikka.objects.filter(Q(vakajarjestaja__pk=vakajarjestaja_id,
+                                          jarjestamismuoto_koodi__overlap=['jm02', 'jm03']) &
+                                          ~Q(nimi__istartswith='Palveluseteli ja ostopalvelu ')).order_by('id')
 
 
 @auditlogclass
