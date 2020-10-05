@@ -247,8 +247,10 @@ def cached_list_response(original_list_viewset, user, request_full_path,
     This is needed for cache invalidation.
     """
     original_queryset = original_list_viewset.filter_queryset(original_list_viewset.queryset)
-
-    if user.is_superuser:  # No caching for superuser
+    # Handling oph-staff users through regular object permissions effectively causes all object ids of this type in
+    # db  to be fetched to cache.
+    additional_details = getattr(user, 'additional_user_info', None)
+    if user.is_superuser or getattr(additional_details, 'approved_oph_staff', False):  # No caching for superuser
         page = original_list_viewset.paginate_queryset(original_queryset)
     else:
         request_full_path = path_parse(request_full_path)
