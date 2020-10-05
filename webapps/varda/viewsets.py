@@ -1760,15 +1760,15 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         * start date must be after the earliest vakapaatos start
         * end date, if given, must be before the latest vakapaatos end
         """
-        vakapaatos_earliest = vakapaatokset.last()
-        vakapaatos_latest = vakapaatokset.first()
+        earliest_alkamis_pvm = vakapaatokset.earliest('alkamis_pvm').alkamis_pvm
+        latest_paattymis_pvm = vakapaatokset.latest('paattymis_pvm').paattymis_pvm
 
-        if start_date is not None and validators.validate_paivamaara1_before_paivamaara2(start_date, vakapaatos_earliest.alkamis_pvm, can_be_same=False):
+        if start_date is not None and validators.validate_paivamaara1_before_paivamaara2(start_date, earliest_alkamis_pvm, can_be_same=False):
             msg = 'maksutieto.alkamis_pvm must be after earliest varhaiskasvatuspaatos.alkamis_pvm'
             raise ValidationError({'alkamis_pvm': [msg]})
 
         if all((v.paattymis_pvm is not None) for v in vakapaatokset):
-            if start_date is not None and not validators.validate_paivamaara1_after_paivamaara2(vakapaatos_latest.paattymis_pvm, start_date, can_be_same=True):
+            if start_date is not None and not validators.validate_paivamaara1_after_paivamaara2(latest_paattymis_pvm, start_date, can_be_same=True):
                 msg = 'maksutieto.alkamis_pvm must be before the latest varhaiskasvatuspaatos.paattymis_pvm (or same)'
                 raise ValidationError({'alkamis_pvm': [msg]})
 
@@ -1778,7 +1778,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         """
         if end_date is not None:
             if all((v.paattymis_pvm is not None) for v in vakapaatokset):
-                if not validators.validate_paivamaara1_after_paivamaara2(vakapaatos_latest.paattymis_pvm, end_date, can_be_same=True):
+                if not validators.validate_paivamaara1_after_paivamaara2(latest_paattymis_pvm, end_date, can_be_same=True):
                     msg = 'maksutieto.paattymis_pvm must be before latest varhaiskasvatuspaatos.paattymis_pvm (or same)'
                     raise ValidationError({'paattymis_pvm': [msg]})
 
