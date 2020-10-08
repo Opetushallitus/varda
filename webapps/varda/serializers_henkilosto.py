@@ -617,6 +617,7 @@ class NestedTaydennyskoulutusTyontekijaSerializer(serializers.ModelSerializer):
 class TaydennyskoulutusSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     taydennyskoulutus_tyontekijat = NestedTaydennyskoulutusTyontekijaSerializer(required=True, allow_empty=False, many=True, source='taydennyskoulutukset_tyontekijat')
+    taydennyskoulutus_tyontekijat_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Taydennyskoulutus
@@ -644,11 +645,15 @@ class TaydennyskoulutusSerializer(serializers.HyperlinkedModelSerializer):
 
         return data
 
+    def get_taydennyskoulutus_tyontekijat_count(self, instance):
+        return instance.taydennyskoulutukset_tyontekijat.count()
+
 
 class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
     taydennyskoulutus_tyontekijat = NestedTaydennyskoulutusTyontekijaSerializer(required=False, allow_empty=False, many=True, source='taydennyskoulutukset_tyontekijat')
     taydennyskoulutus_tyontekijat_add = NestedTaydennyskoulutusTyontekijaSerializer(required=False, allow_empty=False, many=True)
     taydennyskoulutus_tyontekijat_remove = NestedTaydennyskoulutusTyontekijaSerializer(required=False, allow_empty=False, many=True)
+    taydennyskoulutus_tyontekijat_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Taydennyskoulutus
@@ -670,6 +675,9 @@ class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
         self._validate_tyontekijat_remove(instance, data, is_new_tyontekijat_added)
 
         return super(TaydennyskoulutusUpdateSerializer, self).validate(data)
+
+    def get_taydennyskoulutus_tyontekijat_count(self, instance):
+        return instance.taydennyskoulutukset_tyontekijat.count()
 
     def _validate_tyontekijat_add(self, instance, data):
         """
