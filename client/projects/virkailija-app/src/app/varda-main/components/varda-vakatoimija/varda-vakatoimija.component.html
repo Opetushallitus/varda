@@ -1,134 +1,113 @@
 <h1 class="varda-page-header">
-  {{ 'label.varhaiskasvatustoimija' | translate }}
+  {{ i18n.yhteystiedot_label | translate }}
 </h1>
+<main class="varda-page-content">
+  <form *ngIf="vakatoimijaForm"
+        class="vakatoimija-form"
+        autocomplete="off"
+        [formGroup]="vakatoimijaForm"
+        (submit)="saveVakatoimijaForm(vakatoimijaForm)">
+    <h2 class="oph-h3 oph-bold">{{ vakajarjestajaDetails.nimi }} - {{ i18n.yhteystiedot | translate }}</h2>
 
+    <div class="modal-form-intro">
+      {{ i18n.yhteystiedot_instruction_paragraph_1 | translate }}
+    </div>
 
-<main class="varda-page-content varda-vakatoimija-wrapper">
-  <div class="varda-vakatoimija-form-wrapper"
-       *ngIf="vakatoimijaForm">
-    <form class="varda-form"
-          [formGroup]="vakatoimijaForm">
-      <div class="alert alert-danger varda-form-main-feedback"
-           role="alert"
-           aria-live="polite"
-           *ngIf="ui.vakatoimijaSaveError">
-        {{ui.vakatoimijaSaveErrorMsg | translate}}
-        <ul>
-          <li *ngFor="let errItem of ui.vakatoimijaSaveErrors">
-            {{errItem.key | translate}}. {{errItem.msg | translate}}
-          </li>
-        </ul>
-      </div>
-      <div class="alert alert-success varda-form-main-feedback"
-           role="alert"
-           aria-live="polite"
-           *ngIf="ui.vakatoimijaSaveSuccess">
-        {{ui.vakatoimijaSaveSuccessMsg | translate}}
-      </div>
+    <app-varda-form-field name="sahkopostiosoite"
+                          [form]="vakatoimijaForm"
+                          [label]="i18n.yhteystiedot_sahkopostiosoite | translate"
+                          [errorText]="i18n.yhteystiedot_error_sahkopostiosoite | translate"
+                          [placeholder]="i18n.yhteystiedot_placeholder_sahkopostiosoite | translate"
+                          [instructionText]="i18n.yhteystiedot_instruction_sahkopostiosoite | translate">
+      <input #fieldItem
+             *ngIf="saveAccess; else noEditEmail"
+             type="text"
+             class="oph-input"
+             formControlName="sahkopostiosoite" />
+      <ng-template #noEditEmail>
+        <span class="oph-field-text"
+              *ngIf="!vakajarjestajaDetails.sahkopostiosoite; else showEmail">
+          {{ i18n.yhteystiedot_instruction_sahkopostiosoite | translate }}
+        </span>
+        <ng-template #showEmail>
+          {{ vakajarjestajaDetails.sahkopostiosoite }}
+        </ng-template>
+      </ng-template>
+    </app-varda-form-field>
 
-      <fieldset>
-        <legend class="oph-h4 oph-bold">{{vakatoimijaNimi}} / {{'label.yhteystiedot' | translate}}
-        </legend>
+    <app-varda-form-field name="puhelinnumero"
+                          [form]="vakatoimijaForm"
+                          [label]="i18n.yhteystiedot_puhelinnumero | translate"
+                          [errorText]="i18n.yhteystiedot_error_puhelinnumero | translate"
+                          [placeholder]="i18n.yhteystiedot_placeholder_puhelinnumero | translate"
+                          [instructionText]="i18n.yhteystiedot_instruction_puhelinnumero | translate">
+      <input #fieldItem
+             *ngIf="saveAccess; else noEditPhone"
+             type="text"
+             class="oph-input"
+             formControlName="puhelinnumero" />
+      <ng-template #noEditPhone>
+        <span class="oph-field-text"
+              *ngIf="!vakajarjestajaDetails.puhelinnumero; else showPhone">
+          {{ i18n.yhteystiedot_instruction_puhelinnumero | translate }}
+        </span>
+        <ng-template #showPhone>
+          {{ vakajarjestajaDetails.puhelinnumero }}
+        </ng-template>
+      </ng-template>
+    </app-varda-form-field>
 
-        <div class="oph-field">
-          <div class="oph-field-inputs">
-            <label for="sahkopostiosoite"
-                   class="oph-label">{{'label.sahkopostiosoite' | translate}}</label>
-            <input type="text"
-                   class="oph-input"
-                   [ngClass]="{'oph-input-has-error': vakatoimijaForm.get('sahkopostiosoite').invalid && isTouched('sahkopostiosoite')}"
-                   id="sahkopostiosoite"
-                   [placeholder]="'vakatoimija.sahkopostiosoite-placeholder' | translate"
-                   formControlName="sahkopostiosoite"
-                   aria-describedby="sahkopostiosoiteInstruction"
-                   (blur)="onBlur()"
-                   (focus)="onFocus('sahkopostiosoite')"
-                   [readonly]="!toimijaAccess.lapsitiedot.tallentaja">
-            <div class="oph-error"
-                 role="alert"
-                 *ngIf="vakatoimijaForm &&
-              vakatoimijaForm.get('sahkopostiosoite').invalid &&
-              isTouched('sahkopostiosoite')">
-              {{'alert.sahkopostiosoite-format-warning' | translate}}
-            </div>
-          </div>
-          <div class="oph-field-text"
-               id="sahkopostiosoiteInstruction">
-            <small [appSlideHide]="ui.activeInstructionText === 'sahkopostiosoite'">
-              {{'vakatoimija.sahkopostiosoite-instructiontext' | translate}}
-            </small>
-          </div>
-        </div>
+    <app-varda-form-field name="tilinumero"
+                          [form]="vakatoimijaForm"
+                          [label]="i18n.yhteystiedot_tilinumero | translate"
+                          [errorText]="i18n.yhteystiedot_error_tilinumero | translate"
+                          [placeholder]="i18n.yhteystiedot_placeholder_tilinumero | translate"
+                          [instructionText]="i18n.yhteystiedot_instruction_tilinumero | translate">
+      <input #fieldItem
+             *ngIf="saveAccess; else noEditIBAN"
+             type="text"
+             class="oph-input"
+             formControlName="tilinumero" />
+      <ng-template #noEditIBAN>
+        <span class="oph-field-text"
+              *ngIf="!vakajarjestajaDetails.tilinumero; else showIBAN">
+          {{ i18n.yhteystiedot_instruction_tilinumero | translate }}
+        </span>
+        <ng-template #showIBAN>
+          {{ vakajarjestajaDetails.tilinumero }}
+        </ng-template>
+      </ng-template>
+    </app-varda-form-field>
 
-        <div class="oph-field">
-          <div class="oph-field-inputs">
-            <label for="puhelinnumero"
-                   class="oph-label">{{'label.puhelinnumero' | translate}}</label>
-            <input type="text"
-                   class="oph-input"
-                   [ngClass]="{'oph-input-has-error': vakatoimijaForm.get('puhelinnumero').invalid && isTouched('puhelinnumero')}"
-                   id="puhelinnumero"
-                   [placeholder]="'vakatoimija.puhelinnumero-placeholder' | translate"
-                   formControlName="puhelinnumero"
-                   aria-describedby="puhelinnumeroInstruction"
-                   (blur)="onBlur()"
-                   (focus)="onFocus('puhelinnumero')"
-                   [readonly]="!toimijaAccess.lapsitiedot.tallentaja">
-            <div class="oph-error"
-                 role="alert"
-                 *ngIf="vakatoimijaForm &&
-              vakatoimijaForm.get('puhelinnumero').invalid &&
-              isTouched('puhelinnumero')">
-              {{'alert.puhelinnumero-format-warning' | translate}}
-            </div>
-          </div>
+    <app-varda-tyontekija-error [errors]="vakatoimijaFormErrors"></app-varda-tyontekija-error>
 
-          <div class="oph-field-text"
-               id="puhelinnumeroInstruction">
-            <small [appSlideHide]="ui.activeInstructionText === 'puhelinnumero'">
-              {{'vakatoimija.puhelinnumero-instructiontext' | translate}}
-            </small>
+    <div *ngIf="saveSuccess"
+         role="alert"
+         aria-live="polite"
+         class="alert alert-success">{{ i18n.save_success | translate }}</div>
 
-          </div>
-        </div>
-        <div class="oph-field">
-          <div class="oph-field-inputs">
-            <label for="tilinumero"
-                   class="oph-label">{{'label.tilinumero' | translate}}</label>
-            <input class="oph-input"
-                   [ngClass]="{'oph-input-has-error': vakatoimijaForm.get('tilinumero').invalid && isTouched('tilinumero')}"
-                   id="tilinumero"
-                   [placeholder]="'vakatoimija.tilinumero-placeholder' | translate"
-                   formControlName="tilinumero"
-                   aria-describedby="tilinumeroInstruction"
-                   (blur)="onBlur()"
-                   (focus)="onFocus('tilinumero')"
-                   [readonly]="!toimijaAccess.lapsitiedot.tallentaja">
-            <div class="oph-error"
-                 role="alert"
-                 *ngIf="vakatoimijaForm &&
-              vakatoimijaForm.get('tilinumero').invalid &&
-              isTouched('tilinumero')">
-              {{'alert.tilinumero-format-warning' | translate}}
-            </div>
-          </div>
-          <div class="oph-field-text"
-               id="tilinumeroInstruction">
-            <small [appSlideHide]="ui.activeInstructionText === 'tilinumero'">
-              {{'vakatoimija.tilinumero-instructiontext' | translate}}
-            </small>
-          </div>
-        </div>
-        <div class="oph-field">
-          <button type="button"
-                  class="varda-button responsive-md"
-                  [disabled]="!vakatoimijaForm.valid || ui.isSubmitting"
-                  [ngClass]="{'varda-disabled-button': !vakatoimijaForm.valid || ui.isSubmitting}"
-                  (click)="saveVakatoimijaForm()"
-                  *ngIf="toimijaAccess.lapsitiedot.tallentaja">{{'label.generic-save' | translate}}</button>
+    <div *ngIf="saveAccess"
+         class="vakatoimija-button-row">
+      <button *ngIf="isEdit"
+              [disabled]="(isLoading | async) || vakatoimijaForm.pristine"
+              type="submit"
+              class="varda-button varda-button-wide responsive-md">
+        {{ i18n.save | translate }}
+      </button>
 
-        </div>
-      </fieldset>
-    </form>
-  </div>
+      <button *ngIf="!isEdit"
+              (click)="enableForm()"
+              type="button"
+              class="varda-button varda-button-wide secondary responsive-md">
+        {{ i18n.edit | translate }}
+      </button>
+
+      <button *ngIf="isEdit"
+              (click)="disableForm()"
+              type="button"
+              class="varda-button varda-button-neutral varda-button-wide secondary responsive-md">
+        {{ i18n.cancel | translate }}
+      </button>
+    </div>
+  </form>
 </main>

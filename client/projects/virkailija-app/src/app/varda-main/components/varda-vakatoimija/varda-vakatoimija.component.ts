@@ -1,138 +1,88 @@
-import { Component, OnInit } from '@angular/core';
-import { TranslateService } from '@ngx-translate/core';
-import { VardaField, VardaKayttooikeusRoles } from '../../../utilities/models';
+import { Component } from '@angular/core';
+import { VardaVakajarjestaja, VardaVakajarjestajaUi } from '../../../utilities/models';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { VardaFormValidators } from '../../../shared/validators/varda-form-validators';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
-import { VardaApiWrapperService } from '../../../core/services/varda-api-wrapper.service';
-import { VardaUtilityService } from '../../../core/services/varda-utility.service';
 import { AuthService } from '../../../core/auth/auth.service';
-import { VardaErrorMessageService } from '../../../core/services/varda-error-message.service';
 import { UserAccess } from '../../../utilities/models/varda-user-access.model';
+import { VardaApiService } from '../../../core/services/varda-api.service';
+import { ErrorTree, HenkilostoErrorMessageService } from '../../../core/services/varda-henkilosto-error-message.service';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
 @Component({
   selector: 'app-varda-vakatoimija',
   templateUrl: './varda-vakatoimija.component.html',
   styleUrls: ['./varda-vakatoimija.component.css']
 })
-export class VardaVakatoimijaComponent implements OnInit {
-
+export class VardaVakatoimijaComponent {
+  i18n = VirkailijaTranslations;
   vakatoimijaForm: FormGroup;
-  vakatoimijaNimi: string;
-  ui: {
-    isSubmitting: boolean,
-    activeInstructionText: string,
-    vakatoimijaSaveSuccess: boolean,
-    vakatoimijaSaveError: boolean,
-    vakatoimijaSaveSuccessMsg: string,
-    vakatoimijaSaveErrorMsg: string,
-    vakatoimijaSaveErrors: Array<any>,
-    hadValuesOnInit: boolean
-  };
-
+  vakatoimijaFormErrors: Observable<Array<ErrorTree>>;
   toimijaAccess: UserAccess;
+  selectedVakajarjestaja: VardaVakajarjestajaUi;
+  vakajarjestajaDetails: VardaVakajarjestaja;
+  isEdit: boolean;
+  saveAccess: boolean;
+  isLoading = new BehaviorSubject<boolean>(false);
+  saveSuccess: boolean;
+  private errorService = new HenkilostoErrorMessageService();
 
   constructor(
-    private translateService: TranslateService,
     private vakajarjestajaService: VardaVakajarjestajaService,
-    private vardaApiWrapperService: VardaApiWrapperService,
-    private vardaUtilityService: VardaUtilityService,
+    private vardaApiService: VardaApiService,
     private authService: AuthService,
-    private vardaErrorMessageService: VardaErrorMessageService) {
-    this.vakatoimijaNimi = '';
-    this.ui = {
-      isSubmitting: false,
-      activeInstructionText: '',
-      vakatoimijaSaveSuccess: false,
-      vakatoimijaSaveError: false,
-      vakatoimijaSaveErrorMsg: 'alert.modal-generic-save-error',
-      vakatoimijaSaveSuccessMsg: 'alert.modal-generic-save-success',
-      vakatoimijaSaveErrors: [],
-      hadValuesOnInit: false
-    };
-
-    this.authService.getToimipaikkaAccessToAnyToimipaikka().subscribe(() => {
-      this.toimijaAccess = this.authService.getUserAccess();
+  ) {
+    this.vakatoimijaFormErrors = this.errorService.initErrorList();
+    this.toimijaAccess = this.authService.getUserAccess();
+    this.saveAccess = this.toimijaAccess.lapsitiedot.tallentaja;
+    this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
+    this.vardaApiService.getVakaJarjestajaById(this.selectedVakajarjestaja.id).subscribe((vakajarjestaja: VardaVakajarjestaja) => {
+      this.initVakatoimijaForm(vakajarjestaja);
     });
   }
 
-  getDisplayName(field: VardaField): string {
-    let rv = '';
-    const lang = this.translateService.currentLang.toUpperCase();
-    const prop = (lang === 'SV') ? 'displayNameSv' : 'displayNameFi';
+  initVakatoimijaForm(vakajarjestaja: VardaVakajarjestaja) {
+    this.vakajarjestajaDetails = vakajarjestaja;
 
-    if (field.displayName && field.displayName[prop]) {
-      rv = field.displayName[prop];
-    }
-    return rv;
-  }
-
-  initVakatoimijaForm(): void {
-    const selectedVakajarjestaja = this.vakajarjestajaService.selectedVakajarjestaja;
-    const selectedVakajarjestajaId = selectedVakajarjestaja.id;
-
-    this.vardaApiWrapperService.getVakaJarjestajaById(selectedVakajarjestajaId).subscribe((vk) => {
-      const vakajarjestaja = vk;
-      this.vakatoimijaNimi = vakajarjestaja.nimi;
-      let sahkopostiosoiteVal, tilinumeroVal, puhelinnumeroVal;
-
-      if (vakajarjestaja) {
-        sahkopostiosoiteVal = vakajarjestaja.sahkopostiosoite;
-        tilinumeroVal = vakajarjestaja.tilinumero;
-        puhelinnumeroVal = vakajarjestaja.puhelinnumero;
-      }
-
-      this.vakatoimijaForm = new FormGroup({
-        sahkopostiosoite: new FormControl(sahkopostiosoiteVal,
-          [Validators.required, VardaFormValidators.validStringFormat.bind(null, { regex: '^[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+(\\.[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+)*@[A-Za-z0-9][A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*(\\.[A-Za-z]{2,})$' })]),
-        tilinumero: new FormControl(tilinumeroVal, VardaFormValidators.validOrEmptyIBAN),
-        puhelinnumero: new FormControl(puhelinnumeroVal, [Validators.required, VardaFormValidators.validStringFormat.bind(null, { regex: '^\\+358\\d+$' })])
-      });
-
-      this.ui.hadValuesOnInit = Object.values(this.vakatoimijaForm.value).some((v) => v ? true : false);
+    this.vakatoimijaForm = new FormGroup({
+      sahkopostiosoite: new FormControl(vakajarjestaja.sahkopostiosoite,
+        [Validators.required, VardaFormValidators.validStringFormat.bind(null, { regex: '^[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+(\\.[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+)*@[A-Za-z0-9][A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*(\\.[A-Za-z]{2,})$' })]),
+      puhelinnumero: new FormControl(vakajarjestaja.puhelinnumero, [Validators.required, VardaFormValidators.validStringFormat.bind(null, { regex: '^(\\+358)[1-9]\\d{5,10}$' })]),
+      tilinumero: new FormControl(vakajarjestaja.tilinumero,
+        this.selectedVakajarjestaja.kunnallinen_kytkin ? [VardaFormValidators.validOrEmptyIBAN] : [Validators.required, VardaFormValidators.validOrEmptyIBAN]),
     });
+
+    this.disableForm();
   }
 
-  isTouched(fieldName: string): boolean {
-    if (this.vakatoimijaForm) {
-      let rv;
-      if (this.ui.hadValuesOnInit) {
-        rv = true;
-      } else {
-        rv = this.vakatoimijaForm.get(fieldName).touched;
-      }
-      return rv;
+  saveVakatoimijaForm(form: FormGroup) {
+    form.markAllAsTouched();
+    this.errorService.resetErrorList();
+
+    if (HenkilostoErrorMessageService.formIsValid(form)) {
+      this.isLoading.next(true);
+      const vakatoimijaDTO: VardaVakajarjestaja = { ...form.value };
+
+      this.vardaApiService.patchVakajarjestaja(this.selectedVakajarjestaja.id, vakatoimijaDTO).subscribe({
+        next: vakatoimijaData => {
+          this.disableForm();
+          this.saveSuccess = true;
+          setTimeout(() => this.saveSuccess = false, 15000);
+        },
+        error: err => this.errorService.handleError(err)
+      }).add(() => setTimeout(() => this.isLoading.next(false), 500));
     }
   }
 
-  onBlur(): void {
-    this.ui.activeInstructionText = '';
+
+  enableForm() {
+    this.isEdit = true;
+    this.vakatoimijaForm.enable();
   }
 
-  onFocus(field: string): void {
-    this.ui.activeInstructionText = field;
+  disableForm() {
+    this.isEdit = false;
+    this.vakatoimijaForm.disable();
   }
-
-  onSaveError(e: any): void {
-    const errorMessageObj = this.vardaErrorMessageService.getErrorMessages(e);
-    this.ui.vakatoimijaSaveErrors = errorMessageObj.errorsArr;
-    this.ui.vakatoimijaSaveError = true;
-    this.ui.isSubmitting = false;
-  }
-
-  saveVakatoimijaForm(): void {
-    this.ui.vakatoimijaSaveSuccess = false;
-    this.ui.vakatoimijaSaveError = false;
-    this.ui.isSubmitting = true;
-    const vakatoimijaFormData = this.vakatoimijaForm.value;
-    this.vardaApiWrapperService.saveVakatoimijaData(vakatoimijaFormData).subscribe(() => {
-      this.ui.vakatoimijaSaveSuccess = true;
-      this.ui.isSubmitting = false;
-    }, this.onSaveError.bind(this));
-  }
-
-  ngOnInit() {
-    this.initVakatoimijaForm();
-  }
-
 }

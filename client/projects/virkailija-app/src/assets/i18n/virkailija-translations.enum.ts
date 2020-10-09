@@ -11,6 +11,8 @@ export enum VirkailijaTranslations {
   show_more = 'show-more',
   show_less = 'show-less',
 
+  save_success = 'save-success',
+
   error = 'error',
   error_multiple = 'error-multiple',
   error_single = 'error-single',
@@ -50,6 +52,22 @@ export enum VirkailijaTranslations {
   id = 'id',
   code = 'code',
   ajanjakso = 'ajanjakso',
+
+  yhteystiedot = 'yhteystiedot',
+  yhteystiedot_label = 'yhteystiedot.label',
+  yhteystiedot_instruction_paragraph_1 = 'yhteystiedot.instruction.paragraph-1',
+  yhteystiedot_sahkopostiosoite = 'yhteystiedot.sahkopostiosoite',
+  yhteystiedot_error_sahkopostiosoite = 'yhteystiedot.error.sahkopostiosoite',
+  yhteystiedot_placeholder_sahkopostiosoite = 'yhteystiedot.placeholder.sahkopostiosoite',
+  yhteystiedot_instruction_sahkopostiosoite = 'yhteystiedot.instruction.sahkopostiosoite',
+  yhteystiedot_puhelinnumero = 'yhteystiedot.puhelinnumero',
+  yhteystiedot_error_puhelinnumero = 'yhteystiedot.error.puhelinnumero',
+  yhteystiedot_placeholder_puhelinnumero = 'yhteystiedot.placeholder.puhelinnumero',
+  yhteystiedot_instruction_puhelinnumero = 'yhteystiedot.instruction.puhelinnumero',
+  yhteystiedot_tilinumero = 'yhteystiedot.tilinumero',
+  yhteystiedot_error_tilinumero = 'yhteystiedot.error.tilinumero',
+  yhteystiedot_placeholder_tilinumero = 'yhteystiedot.placeholder.tilinumero',
+  yhteystiedot_instruction_tilinumero = 'yhteystiedot.instruction.tilinumero',
 
   henkilo_lisaa_lapsi = 'henkilo.lisaa-lapsi',
   henkilo_lisaa_tyontekija = 'henkilo.lisaa-tyontekija',
