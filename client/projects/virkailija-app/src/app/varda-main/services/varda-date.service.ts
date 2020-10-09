@@ -7,6 +7,7 @@ export class VardaDateService {
   public static vardaDefaultDateFormat = 'DD.MM.YYYY';
   public static uiDateFormat = 'd.M.yyyy';
   public static vardaApiDateFormat = 'YYYY-MM-DD';
+  public static henkilostoReleaseDate = new Date('2020-09-01');
 
   /**
    * Varda UI date: view values are always DD.MM.YYYY. Datepicker returns Moment object. See https://material.angular.io/components/datepicker
