@@ -1,4 +1,5 @@
-<mat-form-field appearance="outline" class="varda-datepicker">
+<mat-form-field appearance="outline"
+                class="varda-datepicker">
   <input matInput
          #matPicker="ngModel"
          [matDatepicker]="picker"
@@ -6,9 +7,13 @@
          [(ngModel)]="matDateModel"
          (dateInput)="onDateInput($event)"
          (dateChange)="onDateChange($event)"
+         [matDatepickerFilter]="dateFilter"
          (focus)="onFocus()"
          (blur)="onBlur()"
          [required]="required"
+         [readonly]="readonly"
+         [min]="min"
+         [max]="max"
          (input)="onInput($event)"
          [placeholder]="placeholder"
          [attr.aria-labelledby]="attrAriaLabelledBy"
@@ -17,8 +22,12 @@
          [attr.aria-required]="attrAriaRequired"
          [attr.aria-describedby]="attrAriaDescribedBy"
          [attr.data-parent-container]="attrDataParentContainer">
-  <mat-datepicker-toggle (keydown.enter)="$event.preventDefault()" matSuffix [for]="picker"></mat-datepicker-toggle>
+  <mat-datepicker-toggle [disabled]="readonly"
+                         (keydown.enter)="$event.preventDefault()"
+                         matSuffix
+                         [for]="picker"></mat-datepicker-toggle>
   <mat-datepicker #picker
+                  [startAt]="startAt"
                   [calendarHeaderComponent]="VardaDatepickerHeaderComponent"
                   (opened)="onCalendarOpened()"
                   (closed)="onCalendarClosed()"></mat-datepicker>

@@ -44,6 +44,11 @@ export interface VardaDatepickerEvent {
 export class VardaDatepickerComponent implements OnInit, ControlValueAccessor {
   @Input() placeholder: string;
   @Input() required = false;
+  @Input() readonly = false;
+  @Input() startAt: Date;
+  @Input() min: Date;
+  @Input() max: Date;
+  @Input() dateFilter: any;
   @Input() attrAriaLabelledBy?: string;
   @Input() attrName?: string;
   @Input() attrDataFieldname?: string;
