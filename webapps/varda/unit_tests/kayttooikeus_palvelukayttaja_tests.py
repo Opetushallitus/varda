@@ -289,6 +289,11 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
                           organisaatio_oid),
                       json={'numHits': 1, 'organisaatiot': self._get_parikkala_organisaatio_json(organisaatio_oid)},
                       status=status.HTTP_200_OK)
+        responses.add(responses.GET,
+                      'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oid={}'.format(
+                          organisaatio_oid),
+                      json={'numHits': 1, 'organisaatiot': self._get_parikkala_organisaatio_json(organisaatio_oid)},
+                      status=status.HTTP_200_OK)
 
     def _get_kayttooikeudet_json(self, organisaatiot, username):
         kayttooikeus_json = {
