@@ -25,9 +25,9 @@
              class="oph-input"
              formControlName="sahkopostiosoite" />
       <ng-template #noEditEmail>
-        <span class="oph-field-text"
+        <span class="yhteystieto-field-missing"
               *ngIf="!vakajarjestajaDetails.sahkopostiosoite; else showEmail">
-          {{ i18n.yhteystiedot_instruction_sahkopostiosoite | translate }}
+          {{ i18n.yhteystiedot_missing_sahkopostiosoite | translate }}
         </span>
         <ng-template #showEmail>
           {{ vakajarjestajaDetails.sahkopostiosoite }}
@@ -47,9 +47,9 @@
              class="oph-input"
              formControlName="puhelinnumero" />
       <ng-template #noEditPhone>
-        <span class="oph-field-text"
+        <span class="yhteystieto-field-missing"
               *ngIf="!vakajarjestajaDetails.puhelinnumero; else showPhone">
-          {{ i18n.yhteystiedot_instruction_puhelinnumero | translate }}
+          {{ i18n.yhteystiedot_missing_puhelinnumero | translate }}
         </span>
         <ng-template #showPhone>
           {{ vakajarjestajaDetails.puhelinnumero }}
@@ -69,9 +69,9 @@
              class="oph-input"
              formControlName="tilinumero" />
       <ng-template #noEditIBAN>
-        <span class="oph-field-text"
+        <span class="yhteystieto-field-missing"
               *ngIf="!vakajarjestajaDetails.tilinumero; else showIBAN">
-          {{ i18n.yhteystiedot_instruction_tilinumero | translate }}
+          {{ i18n.yhteystiedot_missing_tilinumero | translate }}
         </span>
         <ng-template #showIBAN>
           {{ vakajarjestajaDetails.tilinumero }}

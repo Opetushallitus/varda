@@ -11,3 +11,7 @@
   margin: 0.5rem;
   max-width: calc(100% - 1rem);
 }
+
+.yhteystieto-field-missing {
+  color: var(--gray-lighten-1);
+}
