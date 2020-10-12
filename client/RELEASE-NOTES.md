@@ -1,6 +1,10 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.4.6 (12.10.2020)
+- CSCVARDA-2032: Yhteystiedot-sivun päivitys
+- CSCVARDA-2036: datepicker päivitys
+
 1.4.4 (01.10.2020)
 - CSCVARDA-1968: Responsiivisuuden kehitystä
 - CSCVARDA-1877: ID-tietojen näyttö tietojen katselussa
