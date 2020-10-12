@@ -29,6 +29,7 @@ app-varda-header {
   position: sticky !important;
   top: 0px;
   z-index: var(--virkailija-z-index);
+  background-color: cadetblue;
 }
 
 #virkailija-raamit-filleri {
