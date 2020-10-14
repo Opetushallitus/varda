@@ -1732,14 +1732,14 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
 
         return vtj_huoltajuudet
 
-    def validate_yksityinen_maksutieto(self, validated_data, vakapaatos):
+    def validate_yksityinen_maksutieto(self, validated_data, lapsi):
         """
         If maksutieto is yksityinen, palveluseteli_arvo and perheen_koko are not stored.
-        :param vakapaatos: first vakapaatos of lapsi
+        :param lapsi: lapsi object
         :param validated_data: serializer.validated_data
         :return:
         """
-        if vakapaatos.jarjestamismuoto_koodi.lower() in ['jm04', 'jm05']:
+        if lapsi.yksityinen_kytkin:
             validated_data['yksityinen_jarjestaja'] = True
             validated_data['palveluseteli_arvo'] = None
             validated_data['perheen_koko'] = None
@@ -1754,11 +1754,13 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
             validated_data['asiakasmaksu'] = 0
             validated_data['palveluseteli_arvo'] = 0.00
 
-    def validate_start_and_end_dates(self, vakapaatokset, start_date, end_date):
+    def validate_start_and_end_dates(self, vakapaatokset, start_date, end_date, lapsi):
         """
         Validate the dates for the maksutieto:
-        * start date must be after the earliest vakapaatos start
-        * end date, if given, must be before the latest vakapaatos end
+        :param vakapaatokset: vakapaatokset of lapsi
+        :param start_date: must be after the earliest vakapaatos start
+        :param end_date: if given, must be before the latest vakapaatos end
+        :param lapsi: lapsi object
         """
         earliest_alkamis_pvm = vakapaatokset.earliest('alkamis_pvm').alkamis_pvm
         latest_paattymis_pvm = vakapaatokset.latest('paattymis_pvm').paattymis_pvm
@@ -1781,6 +1783,9 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
                 if not validators.validate_paivamaara1_after_paivamaara2(latest_paattymis_pvm, end_date, can_be_same=True):
                     msg = 'maksutieto.paattymis_pvm must be before latest varhaiskasvatuspaatos.paattymis_pvm (or same)'
                     raise ValidationError({'paattymis_pvm': [msg]})
+
+        if lapsi.yksityinen_kytkin and end_date and end_date < datetime.date(2020, 9, 1):
+            raise ValidationError({'paattymis_pvm': ['paattymis_pvm must be after 1.9.2020 for yksityinen lapsi']})
 
     def fetch_and_match_huoltajuudet(self, data):
         queryset_filter = Q()
@@ -1867,7 +1872,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
                 if related_object_validations.toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=toimipaikka):
                     assign_object_level_permissions(toimipaikka.organisaatio_oid, Maksutieto, saved_object)
 
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         user = self.request.user
         serializer = self.get_serializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
@@ -1879,7 +1884,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         if not vakapaatos:
             raise ValidationError({'Maksutieto': ['Lapsi has no Varhaiskasvatuspaatos. Add Varhaiskasvatuspaatos before adding maksutieto.']})
 
-        self.validate_yksityinen_maksutieto(serializer.validated_data, vakapaatos)
+        self.validate_yksityinen_maksutieto(serializer.validated_data, lapsi)
 
         """
         In order to be able to add maksutieto to lapsi, we need to know the organizations
@@ -1909,7 +1914,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         serializer.validated_data.pop('lapsi')
 
         self.validate_start_and_end_dates(vakapaatokset, serializer.validated_data['alkamis_pvm'],
-                                          serializer.validated_data.get('paattymis_pvm', None))
+                                          serializer.validated_data.get('paattymis_pvm', None), lapsi)
 
         """
         Save maksutieto
@@ -1959,7 +1964,8 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         if not Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__in=vakapaatokset).exists():
             raise ValidationError({"Maksutieto": ["Lapsi has no Varhaiskasvatussuhde. Add Varhaiskasvatussuhde before adding maksutieto."]})
 
-        self.validate_start_and_end_dates(vakapaatokset, data.get('alkamis_pvm', None), data.get('paattymis_pvm', None))
+        self.validate_start_and_end_dates(vakapaatokset, data.get('alkamis_pvm', None),
+                                          data.get('paattymis_pvm', None), lapsi_object)
 
         samanaikaiset_maksutiedot = Maksutieto.objects.filter(
             Q(huoltajuussuhteet__lapsi=lapsi_object) &

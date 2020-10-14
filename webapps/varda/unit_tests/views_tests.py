@@ -1,4 +1,7 @@
 import json
+from datetime import datetime
+from unittest.mock import patch
+
 import responses
 
 from django.contrib.auth.models import Group, User
@@ -1992,11 +1995,11 @@ class VardaViewsTests(TestCase):
         fail_cases = [
             ('2017-04-01', None),          # No end date (vakapaatos has end date)
             ('2016-02-01', None),          # start before vakapaatos start
-            ('2016-02-01', '2019-11-30'),  # start before vakapaatos start and end after vakapaatos end
-            ('2017-12-31', '2020-11-30'),  # end after vakapaatos end
+            ('2016-02-01', '2023-11-30'),  # start before vakapaatos start and end after vakapaatos end
+            ('2017-12-31', '2023-11-30'),  # end after vakapaatos end
             ('1999-03-01', None),          # start before 2000
             ('1998-02-02', '1999-02-02'),  # all before 2000
-            (None, '2018-01-01'),          # start missing
+            (None, '2023-01-01'),          # start missing
             (None, None),                  # all missing
         ]
 
@@ -2152,7 +2155,7 @@ class VardaViewsTests(TestCase):
             'asiakasmaksu': 0,
             'perheen_koko': 2,
             'alkamis_pvm': '2018-02-23',
-            'paattymis_pvm': '2018-02-24'
+            'paattymis_pvm': '2021-02-24'
         }
         client = SetUpTestClient('tester').client()
         client.delete('/api/v1/maksutiedot/1/')  # remove 1 maksutieto, otherwise error: more than two active maksutieto
@@ -2185,7 +2188,7 @@ class VardaViewsTests(TestCase):
             'asiakasmaksu': 0.0,
             'perheen_koko': None,
             'alkamis_pvm': '2018-02-23',
-            'paattymis_pvm': '2018-02-24',
+            'paattymis_pvm': '2021-02-24',
             'tallennetut_huoltajat_count': 2,
             'ei_tallennetut_huoltajat_count': 1,
         }
@@ -2218,6 +2221,28 @@ class VardaViewsTests(TestCase):
 
         maksutieto_obj = Maksutieto.objects.get(id=resp_result['id'])
         self.assertTrue(maksutieto_obj.yksityinen_jarjestaja)
+
+    def test_push_api_maksutieto_yksityinen_date_validation(self):
+        lapsi_oid = '1.2.246.562.24.52864662677'
+        lapsi_obj = Lapsi.objects.get(henkilo__henkilo_oid=lapsi_oid)
+
+        maksutieto = {
+            'huoltajat': [
+                {'henkilotunnus': '260980-642C', 'etunimet': 'Maija', 'sukunimi': 'Mallikas'}
+            ],
+            'lapsi': f'/api/v1/lapset/{lapsi_obj.id}/',
+            'maksun_peruste_koodi': 'mp02',
+            'palveluseteli_arvo': 120,
+            'asiakasmaksu': 0,
+            'perheen_koko': 4,
+            'alkamis_pvm': '2020-05-25',
+            'paattymis_pvm': '2020-08-30'
+        }
+
+        client = SetUpTestClient('tester').client()
+        resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error('paattymis_pvm', 'paattymis_pvm must be after 1.9.2020 for yksityinen lapsi', resp)
 
     def test_push_api_maksutieto_date_validation(self):
         """
@@ -3042,13 +3067,17 @@ class VardaViewsTests(TestCase):
                                 'Lapsi 10 has already 3 overlapping varhaiskasvatussuhde on the defined time range.',
                                 resp)
 
-    def test_api_get_vakajarjestaja_yhteenveto(self):
+    @patch('varda.viewsets.datetime')
+    def test_api_get_vakajarjestaja_yhteenveto(self, mock_datetime):
+        # Freeze date used in reporting
+        mock_datetime.datetime.now.return_value = datetime(2020, 9, 1)
+
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/vakajarjestajat/2/yhteenveto/')
         accepted_response = {
             'vakajarjestaja_nimi': 'Tester organisaatio',
             'lapset_lkm': 5,
-            'lapset_vakapaatos_voimassaoleva': 5,
+            'lapset_vakapaatos_voimassaoleva': 6,
             'lapset_vakasuhde_voimassaoleva': 5,
             'lapset_vuorohoidossa': 0,
             'lapset_palveluseteli_ja_ostopalvelu': 3,

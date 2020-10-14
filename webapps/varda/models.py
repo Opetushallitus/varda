@@ -298,6 +298,10 @@ class Lapsi(models.Model):
 
     @property
     def yksityinen_kytkin(self):
+        """
+        TODO: Use vakatoimija-field when it is set for all lapset https://jira.eduuni.fi/browse/CSCVARDA-1946
+        :return: True if lapsi is yksityinen, otherwise False
+        """
         vakapaatos = self.varhaiskasvatuspaatokset.first()
         return vakapaatos and vakapaatos.jarjestamismuoto_koodi.lower() in JARJESTAMISMUODOT_YKSITYINEN
 

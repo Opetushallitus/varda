@@ -1448,7 +1448,7 @@ def create_lapset():
         jarjestamismuoto_koodi='jm04',
         hakemus_pvm='2017-01-12',
         alkamis_pvm='2017-02-11',
-        paattymis_pvm='2018-02-24',
+        paattymis_pvm='2022-02-24',
         changed_by=tester_user
     )
 
