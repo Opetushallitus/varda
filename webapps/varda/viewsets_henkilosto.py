@@ -246,7 +246,7 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
                                                                                      [Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
                                                                                       Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA])
         if not user.is_superuser and not taydennyskoulutus_organization_groups_qs.exists():
-            taydennyskoulutus_filter = taydennyskoulutus_filter & Q(id__in=get_object_ids_for_user_by_model(user, 'taydennyskoulutus'))
+            taydennyskoulutus_filter = taydennyskoulutus_filter & Q(taydennyskoulutus__id__in=get_object_ids_for_user_by_model(user, 'taydennyskoulutus'))
 
         taydennyskoulutukset = (TaydennyskoulutusTyontekija.objects
                                 .filter(taydennyskoulutus_filter)
@@ -718,6 +718,10 @@ class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
     filterset_class = filters.TaydennyskoulutusFilter
     queryset = Taydennyskoulutus.objects.all().order_by('id')
 
+    def _parse_tyontekija_tehtavanimike_tuple_list(self, taydennyskoulutus):
+        return [(taydennyskoulutus_tyontekija.tyontekija, taydennyskoulutus_tyontekija.tehtavanimike_koodi)
+                for taydennyskoulutus_tyontekija in taydennyskoulutus.taydennyskoulutukset_tyontekijat.all()]
+
     def get_serializer_class(self):
         request = self.request
         if request.method == 'PUT' or request.method == 'PATCH':
@@ -780,7 +784,8 @@ class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
         current_tyontekijat = taydennyskoulutus.tyontekijat
         # When doing full update (both put and patch) user needs permission to all previous tyontekijat
         if 'taydennyskoulutukset_tyontekijat' in validated_data:
-            is_correct_taydennyskoulutus_tyontekija_permission(user, current_tyontekijat, throws=True)
+            tyontekija_tehtavanimike_tuple_list = self._parse_tyontekija_tehtavanimike_tuple_list(taydennyskoulutus)
+            is_correct_taydennyskoulutus_tyontekija_permission(user, tyontekija_tehtavanimike_tuple_list, throws=True)
 
         # Delete cache keys from old tyontekijat (some may be removed)
         for tyontekija in current_tyontekijat.all():
@@ -800,7 +805,8 @@ class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
     def perform_destroy(self, taydennyskoulutus):
         user = self.request.user
         tyontekija_id_list = list(taydennyskoulutus.tyontekijat.values_list('id', flat=True))
-        is_correct_taydennyskoulutus_tyontekija_permission(user, taydennyskoulutus.tyontekijat, throws=True)
+        tyontekija_tehtavanimike_tuple_list = self._parse_tyontekija_tehtavanimike_tuple_list(taydennyskoulutus)
+        is_correct_taydennyskoulutus_tyontekija_permission(user, tyontekija_tehtavanimike_tuple_list, throws=True)
 
         with transaction.atomic():
             delete_object_permissions_explicitly(Taydennyskoulutus, taydennyskoulutus)

@@ -1,5 +1,4 @@
 import datetime
-from operator import itemgetter
 
 from django.db.models import Q
 from rest_framework import serializers
@@ -494,10 +493,10 @@ class PermissionCheckedTaydennyskoulutusTyontekijaListSerializer(serializers.Lis
 
             if not validator.messages:  # All tyontekijat found so check permissions
                 user = self.context['request'].user
-                tyontekija_ids = {itemgetter('tyontekija')(taydennyskoulutus_tyontekija_dict).id
-                                  for taydennyskoulutus_tyontekija_dict in taydennyskoulutus_tyontekija_dicts
-                                  }
-                if not is_correct_taydennyskoulutus_tyontekija_permission(user, tyontekija_ids, throws=False):
+                tyontekija_tehtavanimike_tuple_list = [(taydennyskoulutus_tyontekija['tyontekija'],
+                                                        taydennyskoulutus_tyontekija['tehtavanimike_koodi'])
+                                                       for taydennyskoulutus_tyontekija in taydennyskoulutus_tyontekija_dicts]
+                if not is_correct_taydennyskoulutus_tyontekija_permission(user, tyontekija_tehtavanimike_tuple_list, throws=False):
                     validator.error('tyontekija', _tyontekija_not_specified_error_message)
 
         return taydennyskoulutus_tyontekija_dicts
@@ -597,7 +596,6 @@ class NestedTaydennyskoulutusTyontekijaSerializer(serializers.ModelSerializer):
         return instance
 
     def validate(self, data):
-
         return data
 
     def _validate_tehtavanimike_koodi(self, data):

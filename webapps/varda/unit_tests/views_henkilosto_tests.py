@@ -2714,6 +2714,70 @@ class VardaHenkilostoViewSetTests(TestCase):
         self.assertEqual(tyontekija_filtered_content.get('count'), correct_jarjestaja_tyontekija_count)
         self.assertEqual(len(tyontekija_filtered_content.get('results')), correct_jarjestaja_tyontekija_count)
 
+    def test_taydennyskoulutus_toimipaikka_permissions(self):
+        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.93957375488')
+        tyontekija = Tyontekija.objects.filter(vakajarjestaja=vakajarjestaja).first()
+
+        client_toimipaikka = SetUpTestClient('taydennyskoulutus_toimipaikka_tallentaja').client()
+        client_jarjestaja = SetUpTestClient('henkilosto_tallentaja_93957375488').client()
+
+        taydennyskoulutus_1 = {
+            'taydennyskoulutus_tyontekijat': [
+                {'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '43525'}
+            ],
+            'nimi': 'Testikoulutus 1',
+            'suoritus_pvm': '2020-09-14',
+            'koulutuspaivia': '1.5',
+            'lahdejarjestelma': '1',
+        }
+        resp_1 = client_toimipaikka.post('/api/henkilosto/v1/taydennyskoulutukset/',
+                                         json.dumps(taydennyskoulutus_1),
+                                         content_type='application/json')
+        assert_status_code(resp_1, status.HTTP_201_CREATED)
+        taydennyskoulutus_1_id = json.loads(resp_1.content).get('id')
+
+        taydennyskoulutus_1_patch = {
+            'taydennyskoulutus_tyontekijat_add': [
+                {'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '77826'}
+            ]
+        }
+        resp_patch_1 = client_toimipaikka.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_1_id}/',
+                                                json.dumps(taydennyskoulutus_1_patch),
+                                                content_type='application/json')
+        assert_status_code(resp_patch_1, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(['taydennyskoulutus_tyontekijat_add', 'tyontekija'],
+                                'Tyontekija not specified. Use (tyontekija), (henkilo_oid, vakajarjestaja_oid) or (lahdejarjestelma, tunniste).',
+                                resp_patch_1)
+        resp_patch_2 = client_jarjestaja.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_1_id}/',
+                                               json.dumps(taydennyskoulutus_1_patch),
+                                               content_type='application/json')
+        assert_status_code(resp_patch_2, status.HTTP_200_OK)
+
+        resp_delete_1 = client_toimipaikka.delete(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_1_id}/')
+        assert_status_code(resp_delete_1, status.HTTP_403_FORBIDDEN)
+        assert_validation_error('detail', 'Insufficient permissions to taydennyskoulutus related tyontekijat', resp_delete_1)
+
+        resp_delete_2 = client_jarjestaja.delete(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_1_id}/')
+        assert_status_code(resp_delete_2, status.HTTP_204_NO_CONTENT)
+
+        taydennyskoulutus_2 = {
+            'taydennyskoulutus_tyontekijat': [
+                {'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '43525'}
+            ],
+            'nimi': 'Testikoulutus 2',
+            'suoritus_pvm': '2020-09-14',
+            'koulutuspaivia': '1.5',
+            'lahdejarjestelma': '1',
+        }
+        resp_2 = client_toimipaikka.post('/api/henkilosto/v1/taydennyskoulutukset/',
+                                         json.dumps(taydennyskoulutus_2),
+                                         content_type='application/json')
+        assert_status_code(resp_2, status.HTTP_201_CREATED)
+        taydennyskoulutus_2_id = json.loads(resp_2.content).get('id')
+
+        resp_delete_3 = client_toimipaikka.delete(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_2_id}/')
+        assert_status_code(resp_delete_3, status.HTTP_204_NO_CONTENT)
+
     def test_toimipaikka_tyontekija_create_all(self):
         client_tyontekija_tallentaja = SetUpTestClient('tyontekija_toimipaikka_tallentaja').client()
         client_tyontekija_katselija = SetUpTestClient('tyontekija_toimipaikka_katselija').client()

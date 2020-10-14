@@ -1,11 +1,10 @@
 import logging
-from collections import Iterable
 from functools import wraps
 
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction, IntegrityError
-from django.db.models import IntegerField, Q, QuerySet
+from django.db.models import IntegerField, Q
 from django.db.models.functions import Cast
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -422,25 +421,28 @@ def object_ids_organization_has_permissions_to(organisaatio_oid, model):
 def is_correct_taydennyskoulutus_tyontekija_permission(user, tyontekijat, throws=True):
     """
     Checks user has taydennyskoulutus tallentaja group permissions to taydennyskoulutus tyontekijat vakajarjestaja
-     or all tyontekija related toimipaikat.
+     or to all toimipaikat that are related to tehtavanimikkeet of tyontekijat.
     :param user: User requesting to access taydennyskoulutus tyontekijat
-    :param tyontekijat: taydennyskoulutus instance related tyontekijat queryset or list of tyontekija ids
-    :type tyontekijat: QuerySet or Iterable
+    :param tyontekijat: list of Tyontekija and tehtavanimike_koodi tuples, e.g. [(<Tyontekija: 1>, '001')]
+    :type tyontekijat: list
     :param throws: By default validation fails raise PermissionDenied. Else if this param is False returns False.
     :return: boolean
     """
-    if not isinstance(tyontekijat, QuerySet) and isinstance(tyontekijat, Iterable):
-        tyontekijat = Tyontekija.objects.filter(id__in=tyontekijat)
-    if tyontekijat.exists():
-        vakajarjestaja_oid = get_tyontekija_vakajarjestaja_oid(tyontekijat)
-        permission_format = 'HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA_{}'
-        if not is_user_permission(user, permission_format.format(vakajarjestaja_oid)):
-            toimipaikka_oids = (tyontekijat
-                                .values_list('palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid', flat=True)
-                                .exclude(palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid='')
-                                .distinct()
-                                )
-            if any(not is_user_permission(user, permission_format.format(toimipaikka_oid)) for toimipaikka_oid in toimipaikka_oids):
+    tyontekija_ids = {tyontekija_tuple[0].id for tyontekija_tuple in tyontekijat}
+    tyontekijat_qs = Tyontekija.objects.filter(id__in=tyontekija_ids)
+    vakajarjestaja_oid = get_tyontekija_vakajarjestaja_oid(tyontekijat_qs)
+    permission_format = 'HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA_{}'
+    if not is_user_permission(user, permission_format.format(vakajarjestaja_oid)):
+        for tyontekija_tuple in tyontekijat:
+            tyontekija = tyontekija_tuple[0]
+            tehtavanimike_koodi = tyontekija_tuple[1]
+
+            toimipaikka_oids = (Tyoskentelypaikka.objects
+                                .filter(palvelussuhde__tyontekija=tyontekija, tehtavanimike_koodi=tehtavanimike_koodi)
+                                .values_list('toimipaikka__organisaatio_oid', flat=True))
+
+            # User does not have permissions to any työskentelypaikka with this tehtavanimike_koodi
+            if not any(is_user_permission(user, permission_format.format(toimipaikka_oid)) for toimipaikka_oid in toimipaikka_oids):
                 if throws:
                     raise PermissionDenied('Insufficient permissions to taydennyskoulutus related tyontekijat')
                 return False

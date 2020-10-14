@@ -59,12 +59,14 @@ def add_groups_with_permissions():
         ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.34683023489', get_huoltajatiedot_katselija_permissions()),
         ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.93957375484', get_huoltajatiedot_katselija_permissions()),  # vakajarjestaja_4
         ('HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.34683023489', get_tyontekija_tallentaja_permissions()),  # vakajarjestaja_1
+        ('HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.93957375488', get_tyontekija_tallentaja_permissions()),  # vakajarjestaja_2
         ('HENKILOSTO_TYONTEKIJA_KATSELIJA_1.2.246.562.10.34683023489', get_tyontekija_katselija_permissions()),  # vakajarjestaja_1
         ('HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.9395737548810', get_tyontekija_tallentaja_permissions()),  # toimipaikka_1
         ('HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.9395737548815', get_tyontekija_tallentaja_permissions()),  # toimipaikka_2
         ('HENKILOSTO_TYONTEKIJA_KATSELIJA_1.2.246.562.10.9395737548810', get_tyontekija_katselija_permissions()),  # toimipaikka_1
         ('HENKILOSTO_TILAPAISET_TALLENTAJA_1.2.246.562.10.34683023489', get_tilapainen_henkilosto_tallentaja_permissions()),  # vakajarjestaja_1
         ('HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA_1.2.246.562.10.34683023489', get_taydennyskoulutus_tallentaja_permissions()),  # vakajarjestaja_1
+        ('HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA_1.2.246.562.10.93957375488', get_taydennyskoulutus_tallentaja_permissions()),  # vakajarjestaja_2
         ('HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA_1.2.246.562.10.9395737548810', get_taydennyskoulutus_tallentaja_permissions()),  # toimipaikka_1
         ('HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA_1.2.246.562.10.9395737548810', get_taydennyskoulutus_katselija_permissions()),  # toimipaikka_1
         ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.57294396385', get_huoltajatiedot_katselija_permissions()),
@@ -103,12 +105,14 @@ def add_test_users():
     group_huoltajatiedot_tallentaja_toimipaikka_5 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.9395737548817')
     group_huoltajatiedot_tallentaja_toimipaikka_2935996863483 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.2935996863483')
     group_tyontekija_tallentaja_vakajarjestaja1 = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.34683023489')
+    group_tyontekija_tallentaja_vakajarjestaja2 = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.93957375488')
     group_tyontekija_katselija_vakajarjestaja1 = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_KATSELIJA_1.2.246.562.10.34683023489')
     group_tyontekija_tallentaja_toimipaikka1 = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.9395737548810')
     group_tyontekija_tallentaja_toimipaikka_9395737548815 = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.9395737548815')
     group_tyontekija_katselija_toimipaikka1 = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_KATSELIJA_1.2.246.562.10.9395737548810')
     group_tilapaiset_tallentaja_vakajarjestaja1 = Group.objects.get(name='HENKILOSTO_TILAPAISET_TALLENTAJA_1.2.246.562.10.34683023489')
     group_taydennys_tallentaja_vakajarjestaja1 = Group.objects.get(name='HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA_1.2.246.562.10.34683023489')
+    group_taydennys_tallentaja_vakajarjestaja2 = Group.objects.get(name='HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA_1.2.246.562.10.93957375488')
     group_taydennys_tallentaja_toimipaikka1 = Group.objects.get(name='HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA_1.2.246.562.10.9395737548810')
     group_taydennys_katselija_toimipaikka1 = Group.objects.get(name='HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA_1.2.246.562.10.9395737548810')
     group_paakayttaja_vakajarjestaja_57294396385 = Group.objects.get(name='VARDA-PAAKAYTTAJA_1.2.246.562.10.57294396385')
@@ -224,6 +228,10 @@ def add_test_users():
     user_tester11.groups.add(group_huoltajatiedot_tallentaja_vakajarjestaja_52966755795)
 
     User.objects.create(username='tester-no-known-privileges', password='pbkdf2_sha256$120000$6ihvwx47epob$a2xDB6OLThL4eeEuMVw8+3QB1QBxi5hU2gZxnMwA2nE=')
+
+    henkilosto_tallentaja_93957375488 = User.objects.create(username='henkilosto_tallentaja_93957375488', password='pbkdf2_sha256$150000$WMst0ZmwKf3p$Fqyz4SSdybbBdAexKCjxXyqiUfYafn7XxGaxQsALqoo=')
+    henkilosto_tallentaja_93957375488.groups.add(group_tyontekija_tallentaja_vakajarjestaja2)
+    henkilosto_tallentaja_93957375488.groups.add(group_taydennys_tallentaja_vakajarjestaja2)
 
 
 def create_vakajarjestajat():
@@ -2745,12 +2753,16 @@ def create_henkilosto():
     group_tyontekija_katselija_vakajarjestaja_34683023489 = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_KATSELIJA_1.2.246.562.10.34683023489')
     group_tilapainen_henkilosto_tallentaja_vakajarjestaja_34683023489 = Group.objects.get(name='HENKILOSTO_TILAPAISET_TALLENTAJA_1.2.246.562.10.34683023489')
     group_taydennys_tallentaja_vakajarjestaja_34683023489 = Group.objects.get(name='HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA_1.2.246.562.10.34683023489')
+    group_tyontekija_tallentaja_vakajarjestaja_93957375488 = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.93957375488')
 
     admin_user = User.objects.get(username='credadmin')
     vakajarjestaja_93957375486 = VakaJarjestaja.objects.filter(organisaatio_oid='1.2.246.562.10.93957375486').first()
     vakajarjestaja_34683023489 = VakaJarjestaja.objects.filter(organisaatio_oid='1.2.246.562.10.34683023489').first()
+    vakajarjestaja_93957375488 = VakaJarjestaja.objects.filter(organisaatio_oid='1.2.246.562.10.93957375488').first()
     toimipaikka_9395737548815 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548815')
     toimipaikka_kukkanen = Toimipaikka.objects.filter(nimi__iexact='Paivakoti kukkanen').first()
+    toimipaikka_9395737548810 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548810')
+    toimipaikka_9395737548811 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548811')
     henkilo_1 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A925B'))
     henkilo_2 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A926C'))
     henkilo_3 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('020400A927D'))
@@ -2775,6 +2787,7 @@ def create_henkilosto():
     add_tutkinto(henkilo_3, vakajarjestaja_34683023489, '321901', '712104', '613101')
     add_tutkinto(henkilo_4, vakajarjestaja_34683023489, '321901', '712104', '613101')
     add_tutkinto(henkilo_5, vakajarjestaja_34683023489, '321901', '712104', '613101')
+    add_tutkinto(henkilo_1, vakajarjestaja_93957375488, '321901')
 
     crud_permissions_tyontekija = ['view_tyontekija', 'change_tyontekija', 'add_tyontekija', 'delete_tyontekija']
     tyontekija_1 = Tyontekija.objects.create(
@@ -2834,6 +2847,15 @@ def create_henkilosto():
     )
     [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja_34683023489, tyontekija_kiertava) for crud_permission in crud_permissions_tyontekija]
     assign_perm('view_tyontekija', group_tyontekija_katselija_vakajarjestaja_34683023489, tyontekija_kiertava)
+
+    tyontekija_5 = Tyontekija.objects.create(
+        henkilo=henkilo_1,
+        vakajarjestaja=vakajarjestaja_93957375488,
+        lahdejarjestelma=1,
+        tunniste='testing-tyontekija5',
+        changed_by_id=admin_user.id
+    )
+    [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja_93957375488, tyontekija_5) for crud_permission in crud_permissions_tyontekija]
 
     crud_permissions_palvelussuhde = ['view_palvelussuhde', 'change_palvelussuhde', 'add_palvelussuhde', 'delete_palvelussuhde']
     palvelussuhde_1 = Palvelussuhde.objects.create(
@@ -2986,6 +3008,48 @@ def create_henkilosto():
         changed_by_id=admin_user.id
     )
     [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja_34683023489, tyoskentelypaikka_kiertava) for crud_permission in crud_permissions_tyoskentelypaikka]
+
+    palvelussuhde_5 = Palvelussuhde.objects.create(
+        tyontekija=tyontekija_5,
+        tyosuhde_koodi=1,
+        tyoaika_koodi=1,
+        tutkinto_koodi='321901',
+        tyoaika_viikossa='20.00',
+        alkamis_pvm='2020-09-01',
+        paattymis_pvm='2030-03-01',
+        lahdejarjestelma=1,
+        tunniste='testing-palvelussuhde5',
+        changed_by_id=admin_user.id
+    )
+    [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja_93957375488, palvelussuhde_5) for crud_permission in crud_permissions_palvelussuhde]
+
+    tyoskentelypaikka_5_1 = Tyoskentelypaikka.objects.create(
+        palvelussuhde=palvelussuhde_5,
+        toimipaikka=toimipaikka_9395737548811,
+        alkamis_pvm='2020-09-02',
+        paattymis_pvm='2020-10-02',
+        tehtavanimike_koodi='77826',
+        kelpoisuus_kytkin=True,
+        kiertava_tyontekija_kytkin=False,
+        lahdejarjestelma='1',
+        tunniste='testing-tyoskentylypaikka5-1',
+        changed_by_id=admin_user.id
+    )
+    [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja_93957375488, tyoskentelypaikka_5_1) for crud_permission in crud_permissions_tyoskentelypaikka]
+
+    tyoskentelypaikka_5_2 = Tyoskentelypaikka.objects.create(
+        palvelussuhde=palvelussuhde_5,
+        toimipaikka=toimipaikka_9395737548810,
+        alkamis_pvm='2020-09-02',
+        paattymis_pvm='2020-10-02',
+        tehtavanimike_koodi='43525',
+        kelpoisuus_kytkin=True,
+        kiertava_tyontekija_kytkin=False,
+        lahdejarjestelma='1',
+        tunniste='testing-tyoskentylypaikka5-2',
+        changed_by_id=admin_user.id
+    )
+    [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja_93957375488, tyoskentelypaikka_5_2) for crud_permission in crud_permissions_tyoskentelypaikka]
 
     crud_permissions_tilapainen_henkilosto = ['view_tilapainenhenkilosto', 'change_tilapainenhenkilosto', 'add_tilapainenhenkilosto', 'delete_tilapainenhenkilosto']
     tilapainen_henkilosto_1 = TilapainenHenkilosto.objects.create(
