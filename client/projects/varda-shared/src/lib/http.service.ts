@@ -98,7 +98,7 @@ export class HttpService extends AbstractHttpService {
 
   getAllResults(url: string, options?: any): Observable<Array<any>> {
     return this.get(url, options).pipe(
-      expand((res: any) => res.next ? this.http.get(res.next) : EMPTY),
+      expand((res: any) => res.next ? this.get(res.next) : EMPTY),
       reduce((acc, res: any) => acc.concat(res.results), [])
     );
   }
