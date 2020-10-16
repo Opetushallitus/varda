@@ -312,8 +312,12 @@ class TyoskentelypaikkaSerializer(serializers.HyperlinkedModelSerializer):
         return super(TyoskentelypaikkaSerializer, self).to_representation(instance)
 
     def validate(self, data):
+        instance = self.instance
+        if instance:
+            fill_missing_fields_for_validations(data, instance)
+
         palvelussuhde = data['palvelussuhde']
-        toimipaikka = data['toimipaikka'] if 'toimipaikka' in data else None
+        toimipaikka = data.get('toimipaikka', None)
         kiertava_tyontekija_kytkin = data['kiertava_tyontekija_kytkin']
 
         with ViewSetValidator() as validator:
@@ -332,7 +336,7 @@ def validate_tyoskentelypaikka_general(validator, data, toimipaikka, palvelussuh
     if not kiertava_tyontekija_kytkin and not toimipaikka:
         validator.error('toimipaikka', 'toimipaikka is required if kiertava_tyontekija_kytkin is false.')
 
-    validate_dates(data, palvelussuhde, validator)
+    validate_tyoskentelypaikka_dates(data, palvelussuhde, validator)
 
     with validator.wrap():
         validate_overlapping_kiertavyys(data, palvelussuhde, kiertava_tyontekija_kytkin, validator)
@@ -345,25 +349,24 @@ def validate_tyoskentelypaikka_general(validator, data, toimipaikka, palvelussuh
                 check_overlapping_tyoskentelypaikka_object(data, Tyoskentelypaikka)
 
 
-def validate_dates(validated_data, palvelussuhde, validator):
+def validate_tyoskentelypaikka_dates(validated_data, palvelussuhde, validator):
     with validator.wrap():
         validators.validate_paattymispvm_same_or_after_alkamispvm(validated_data)
 
-    validate_dates_palvelussuhde(validated_data, palvelussuhde, validator)
-
-
-def validate_dates_palvelussuhde(data, palvelussuhde, validator):
-    if 'paattymis_pvm' in data and data['paattymis_pvm'] is not None:
-        if palvelussuhde.paattymis_pvm is not None and not validators.validate_paivamaara1_before_paivamaara2(data['paattymis_pvm'], palvelussuhde.paattymis_pvm, can_be_same=True):
+    tyoskentelypaikka_paattymis_pvm = validated_data.get('paattymis_pvm', None)
+    tyoskentelypaikka_alkamis_pvm = validated_data.get('alkamis_pvm', None)
+    if tyoskentelypaikka_paattymis_pvm:
+        if (palvelussuhde.paattymis_pvm is not None and not validators.validate_paivamaara1_before_paivamaara2(tyoskentelypaikka_paattymis_pvm, palvelussuhde.paattymis_pvm, can_be_same=True)):
             validator.error('paattymis_pvm', 'paattymis_pvm must be before palvelussuhde paattymis_pvm (or same).')
-        if not validate_paivamaara1_after_paivamaara2(data['paattymis_pvm'], '2020-09-01', can_be_same=True):
+        if not validate_paivamaara1_after_paivamaara2(tyoskentelypaikka_paattymis_pvm, '2020-09-01', can_be_same=True):
             validator.error('paattymis_pvm', 'paattymis_pvm must be after 2020-09-01 (or same)')
+    elif palvelussuhde.paattymis_pvm:
+        validator.error('paattymis_pvm', 'tyoskentelypaikka must have paattymis_pvm because palvelussuhde has paattymis_pvm')
 
-    if 'alkamis_pvm' in data and data['alkamis_pvm'] is not None:
-        if not validators.validate_paivamaara1_after_paivamaara2(data['alkamis_pvm'], palvelussuhde.alkamis_pvm, can_be_same=True):
-            validator.error('alkamis_pvm', 'alkamis_pvm must be after palvelussuhde alkamis_pvm (or same).')
-        if not validators.validate_paivamaara1_before_paivamaara2(data['alkamis_pvm'], palvelussuhde.paattymis_pvm, can_be_same=True):
-            validator.error('alkamis_pvm', 'alkamis_pvm must be before palvelussuhde paattymis_pvm (or same).')
+    if not validators.validate_paivamaara1_after_paivamaara2(tyoskentelypaikka_alkamis_pvm, palvelussuhde.alkamis_pvm, can_be_same=True):
+        validator.error('alkamis_pvm', 'alkamis_pvm must be after palvelussuhde alkamis_pvm (or same).')
+    if not validators.validate_paivamaara1_before_paivamaara2(tyoskentelypaikka_alkamis_pvm, palvelussuhde.paattymis_pvm, can_be_same=True):
+        validator.error('alkamis_pvm', 'alkamis_pvm must be before palvelussuhde paattymis_pvm (or same).')
 
 
 def validate_overlapping_kiertavyys(data, palvelussuhde, kiertava_tyontekija_kytkin, validator):

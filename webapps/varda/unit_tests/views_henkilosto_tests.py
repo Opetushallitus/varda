@@ -1577,6 +1577,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             ('2019-03-01', '2021-01-01', 'alkamis_pvm', 'alkamis_pvm must be after palvelussuhde alkamis_pvm (or same).'),
             ('2031-03-01', '2032-01-01', 'alkamis_pvm', 'alkamis_pvm must be before palvelussuhde paattymis_pvm (or same).'),
             ('2020-08-01', '2020-08-28', 'paattymis_pvm', 'paattymis_pvm must be after 2020-09-01 (or same)'),
+            ('2020-09-01', None, 'paattymis_pvm', 'tyoskentelypaikka must have paattymis_pvm because palvelussuhde has paattymis_pvm')
         ]
 
         for (start, end, key, expected_message) in cases:
