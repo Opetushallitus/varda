@@ -443,17 +443,26 @@ def validate_unique_lahdejarjestelma_tunniste_pair(self, model):
 
 
 def validate_vaka_date(date):
-    if date < datetime.date(2000, 1, 1):
+    date_limit = datetime.date(2000, 1, 1)
+    if not validate_paivamaara1_after_paivamaara2(date, date_limit, can_be_same=True):
         raise ValidationErrorRest({'date': ['Date must be greater than or equal to 2000-01-01.']})
 
 
 def validate_taydennyskoulutus_suoritus_pvm(date):
-    if date < datetime.date(2020, 9, 1):
+    date_limit = datetime.date(2020, 9, 1)
+    if not validate_paivamaara1_after_paivamaara2(date, date_limit, can_be_same=True):
         raise ValidationErrorRest(['suoritus_pvm must be greater than or equal to 2020-09-01.'])
 
 
 def validate_palvelussuhde_paattymis_pvm(date):
-    if isinstance(date, datetime.date) and date < datetime.date(2020, 9, 1):
+    date_limit = datetime.date(2020, 9, 1)
+    if not validate_paivamaara1_after_paivamaara2(date, date_limit, can_be_same=True):
+        raise ValidationErrorRest(['paattymis_pvm must be greater than or equal to 2020-09-01.'])
+
+
+def validate_pidempi_poissaolo_paattymis_pvm(date):
+    date_limit = datetime.date(2020, 9, 1)
+    if not validate_paivamaara1_after_paivamaara2(date, date_limit, can_be_same=True):
         raise ValidationErrorRest(['paattymis_pvm must be greater than or equal to 2020-09-01.'])
 
 

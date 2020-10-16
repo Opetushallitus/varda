@@ -1821,7 +1821,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         # Palvelussuhde paattymis_pvm 2030-03-01
 
         cases = [
-            ('2020-03-01', '2020-01-01', 'paattymis_pvm', 'paattymis_pvm must be after alkamis_pvm.'),
+            ('2020-10-01', '2020-09-01', 'paattymis_pvm', 'paattymis_pvm must be after alkamis_pvm.'),
             ('2020-03-01', '2031-01-01', 'paattymis_pvm', 'paattymis_pvm must be before palvelussuhde paattymis_pvm (or same).'),
             ('1999-03-01', '2021-01-01', 'alkamis_pvm', 'alkamis_pvm must be after palvelussuhde alkamis_pvm (or same).'),
             ('2031-03-01', '2032-01-01', 'alkamis_pvm', 'alkamis_pvm must be before palvelussuhde paattymis_pvm.'),
@@ -1920,7 +1920,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         pidempi_poissaolo = {
             'palvelussuhde': f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde.id}/',
             'alkamis_pvm': '2020-03-01',
-            'paattymis_pvm': '2020-06-02',
+            'paattymis_pvm': '2020-09-02',
             'lahdejarjestelma': palvelussuhde.lahdejarjestelma,
             'tunniste': 'tunniste500'
         }
@@ -1946,7 +1946,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         pidempi_poissaolo_put = {
             'palvelussuhde_tunniste': pidempi_poissaolo.palvelussuhde.tunniste,
             'alkamis_pvm': '2020-03-01',
-            'paattymis_pvm': '2020-06-02',
+            'paattymis_pvm': '2020-10-02',
             'lahdejarjestelma': '1',
             'tunniste': 'testing-pidempipoissaolo1'
         }
@@ -1955,7 +1955,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         pidempi_poissaolo_patch = {
             'alkamis_pvm': '2020-03-01',
-            'paattymis_pvm': '2020-08-02'
+            'paattymis_pvm': '2020-09-02'
         }
         resp_pidempi_poissaolo_patch = client.patch(pidempi_poissaolo_url, pidempi_poissaolo_patch)
         assert_status_code(resp_pidempi_poissaolo_patch, status.HTTP_200_OK)

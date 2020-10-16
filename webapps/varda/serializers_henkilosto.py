@@ -426,7 +426,7 @@ class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
                                                   prevalidator=validators.validate_tunniste,
                                                   either_required=True)
     alkamis_pvm = serializers.DateField(required=True)
-    paattymis_pvm = serializers.DateField(required=True)
+    paattymis_pvm = serializers.DateField(required=True, validators=[validators.validate_pidempi_poissaolo_paattymis_pvm])
 
     class Meta:
         model = PidempiPoissaolo
