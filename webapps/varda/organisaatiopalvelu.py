@@ -795,3 +795,18 @@ def _update_toimipaikka_chunk(oid_chunk):
         else:
             _fill_toimipaikka_data(organisaatio, toimipaikka)
             toimipaikka.save()
+
+
+def update_all_toimipaikat_in_organisaatiopalvelu(toimipaikka_filter=None):
+    """
+    Update all toimipaikat in organisaatiopalvelu
+    :param toimipaikka_filter: Q-object
+    """
+    # Exclude Organisaatiopalvelu-managed toimipaikat
+    toimipaikka_qs = Toimipaikka.objects.exclude(hallinnointijarjestelma=Hallinnointijarjestelma.ORGANISAATIO.name)
+    if toimipaikka_filter:
+        toimipaikka_qs = toimipaikka_qs.filter(toimipaikka_filter)
+
+    for toimipaikka in toimipaikka_qs:
+        if toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=toimipaikka):
+            update_toimipaikka_in_organisaatiopalvelu(toimipaikka)

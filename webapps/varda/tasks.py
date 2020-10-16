@@ -1,10 +1,12 @@
 import logging
 import re
-from functools import wraps
 
-from django.core.cache import cache
+from functools import wraps
 from celery import shared_task
+
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.core.cache import cache
 from django.core.management import call_command
 from django.db.models import Q
 from guardian.models import UserObjectPermission, GroupObjectPermission
@@ -210,3 +212,19 @@ def assign_taydennyskoulutus_permissions_for_toimipaikka_task(vakajarjestaja_oid
     [assign_object_permissions_to_taydennyskoulutus_groups(toimipaikka_oid, Taydennyskoulutus, taydennyskoulutus)
      for taydennyskoulutus in taydennyskoulutukset
      ]
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def after_data_import_task():
+    """
+    Task that is run in QA environment after data import.
+    Currently updates the anonymized toimipaikat to organisaatiopalvelu.
+    """
+    if settings.PRODUCTION_ENV:
+        logger.error('Running this task in production is not allowed!')
+        return None
+
+    # Push anonymized toimipaikat to organisaatiopalvelu
+    toimipaikka_filter = Q(toimintamuoto_koodi__iexact='tm02') | Q(toimintamuoto_koodi__iexact='tm03')
+    organisaatiopalvelu.update_all_toimipaikat_in_organisaatiopalvelu(toimipaikka_filter=toimipaikka_filter)
