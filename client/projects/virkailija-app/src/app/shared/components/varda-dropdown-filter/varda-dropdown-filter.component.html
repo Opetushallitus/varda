@@ -19,8 +19,8 @@
       <input type="text"
              #dropdownFilterInput
              class="oph-input"
-             [attr.aria-label]="'label.haku-condition.filter' | translate"
-             placeholder="{{ 'label.paos-toiminta.search.placeholder' | translate}}"
+             [attr.aria-label]="ariaLabel"
+             [placeholder]="placeholder"
              [(ngModel)]="filterText"
              (keyup)="filterList(filterText)"
              (keyup.enter)="filterList(filterText, true)"
@@ -30,12 +30,10 @@
         disabled
         *ngIf="filteredList?.length === 0"
         class="dropdownFilterEmpty">
-      {{ 'label.paos-add-toimipaikka-list.search-empty' | translate }}
+      {{ noResults }}
     </li>
     <ng-container *ngFor="let item of filteredList">
       <li mat-menu-item
-          aria
-          [attr.aria-describedby]="item[filterBy[0]]"
           class='item'
           (click)='selectItem(item)'>{{ item[filterBy[0]] }}</li>
     </ng-container>

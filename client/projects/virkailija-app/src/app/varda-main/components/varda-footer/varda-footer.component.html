@@ -7,12 +7,12 @@
     <a href="javascript:void(0);"
        (click)="toggleAccesibilitySettingsVisibility()"
        class="varda-footer-link">
-      {{'label.accessibilitysettings' | translate}}
+      {{ i18n.accessibility_settings | translate }}
     </a>
-    <a href="{{'footer.url.accessibilityinfo' | translate}}"
+    <a [href]="i18n.accessibility_href | translate"
        target="_blank"
        class="varda-footer-link">
-      {{'label.accessibilityinfo' | translate}}
+      {{ i18n.accessibility_info | translate }}
     </a>
   </div>
 </footer>

@@ -24,6 +24,8 @@ export enum VirkailijaTranslations {
   oppijanumero = 'oppijanumero',
   nayta_tiedot = 'nayta-tiedot',
   toimipaikka = 'toimipaikka',
+  toimija = 'toimija',
+  toimijan_tiedot = 'toimijan-tiedot',
   kaikki_toimipaikat = 'kaikki-toimipaikat',
   lisaa_toimipaikka = 'lisaa-toimipaikka',
   ei_toimipaikkoja = 'ei-toimipaikkoja',
@@ -33,7 +35,16 @@ export enum VirkailijaTranslations {
   osallistujat = 'osallistujat',
   kokonaisluku = 'kokonaisluku',
 
+
   versio_VALUE = 'versio.VALUE',
+  accessibility_info = 'accessibility.info', // 'label.accessibilityinfo'
+  accessibility_href = 'accessibility.href', // 'footer.url.accessibilityinfo
+  accessibility_settings = 'accessibility.settings',
+  accessibility_increase_contrast = 'accessibility.increase-contrast',
+  accessibility_decrease_contrast = 'accessibility.decrease-contrast',
+  accessibility_text_size = 'accessibility.text-size',
+  accessibility_popup_label = 'accessibility.popup-label',
+  accessibility_close_label = 'accessibility.close-label',
 
   aika_tammikuu = 'aika.tammikuu',
   aika_helmikuu = 'aika.helmikuu',
@@ -52,6 +63,16 @@ export enum VirkailijaTranslations {
   id = 'id',
   code = 'code',
   ajanjakso = 'ajanjakso',
+
+  navi_menu = 'navi.menu',
+  navi_toggle_menu = 'navi.toggle-menu',
+  navi_ohjeet = 'navi.ohjeet',
+  navi_ohjeet_href = 'navi.ohjeet.href',
+  navi_syota_tietoja = 'navi.syota-tietoja',
+  navi_oma_organisaatio = 'navi.oma-organisaatio',
+  navi_haku_filter_placeholder = 'navi.haku-filter.placeholder', // 'label.paos-toiminta.search.placeholder'
+  navi_haku_filter_no_results = 'navi.haku-filter.no-results', // label.paos-add-toimipaikka-list.search-empty
+
 
   yhteystiedot = 'yhteystiedot',
   yhteystiedot_label = 'yhteystiedot.label',
@@ -267,13 +288,14 @@ export enum VirkailijaTranslations {
   paginator_next_page = 'paginator.next-page',
   paginator_previous_page = 'paginator.previous-page',
 
-  paos_title = 'paos.title',
+  paos = 'paos',
 
   cookie_popup_message = 'cookie.popup-message',
   dashboard_error_contact_organisation_admin = 'dashboard.error.contact-organisation-admin',
   dashboard_error_palvelukayttaja_forbidden = 'dashboard.error.palvelukayttaja-forbidden',
 
 
+  katsele_tietoja = 'katsele-tietoja',
   katsele_tietoja_lapsi_tooltip_search = 'katsele-tietoja.lapsi.tooltip-search',
   katsele_tietoja_tyontekija_tooltip_search = 'katsele-tietoja.tyontekija.tooltip-search',
 

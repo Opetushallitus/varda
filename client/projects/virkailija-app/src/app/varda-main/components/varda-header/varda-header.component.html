@@ -7,11 +7,13 @@
   <div class="navbar-brand varda-navbar-toimija"
        *ngIf="vakajarjestajat && vakajarjestajat.length">
     <span id="siteTitle"
-          class="d-none d-lg-inline">{{"label.toimija" | translate}}:</span>
+          class="d-none d-lg-inline">{{ i18n.toimija | translate}}:</span>
     <ng-container *ngIf="vakajarjestajat">
       <app-varda-dropdown-filter [filterBy]="['nimi', 'organisaatio_oid', 'y_tunnus']"
                                  [label]="selectedVakajarjestaja?.nimi"
-                                 [attr.aria-label]="'label.oma-organisaatio' | translate"
+                                 [attr.aria-label]="i18n.navi_oma_organisaatio | translate"
+                                 [placeholder]="i18n.navi_haku_filter_placeholder | translate"
+                                 [noResults]="i18n.navi_haku_filter_no_results | translate"
                                  (select)="changeVakajarjestaja($event)"
                                  [list]="vakajarjestajat">
       </app-varda-dropdown-filter>
@@ -23,8 +25,8 @@
           data-target="#navbarSupportedContent"
           aria-controls="navbarSupportedContent"
           aria-expanded="false"
-          aria-label="Toggle navigation">
-    <span class="navbar-toggler-text">{{"label.menu" | translate }}</span>
+          [attr.aria-label]="i18n.navi_toggle_menu">
+    <span class="navbar-toggler-text">{{ i18n.navi_menu | translate }}</span>
     <mat-icon>expand_more</mat-icon>
   </button>
 
@@ -37,13 +39,13 @@
         <li class="varda-header-nav-item-container"
             [class.active-nav-item]="activeNavItem === 'syota-tietoja'">
           <a [routerLink]="['/']">
-            {{"label.navi.syotto" | translate}}</a>
+            {{ i18n.navi_syota_tietoja | translate}}</a>
         </li>
 
         <li class="varda-header-nav-item-container"
             [class.active-nav-item]="activeNavItem === 'tietojen-katselu'">
           <a [routerLink]="['/tietojen-katselu']">
-            {{"label.navi.tietojen-katselu" | translate}}</a>
+            {{ i18n.katsele_tietoja | translate}}</a>
         </li>
 
         <li class="varda-header-nav-item-container divider">
@@ -56,11 +58,9 @@
           #trigger="matMenuTrigger"
           [class.active-nav-item]=" activeNavItem === 'vakatoimija'">
         <button class="varda-text-button">
-          <span>{{ "label.varhaiskasvatustoimija" | translate }}</span>
-          <mat-icon *ngIf="!trigger.menuOpen; else arrowUp">arrow_drop_down</mat-icon>
-          <ng-template #arrowUp>
-            <mat-icon>arrow_drop_up</mat-icon>
-          </ng-template>
+          <span>{{ i18n.toimijan_tiedot | translate }}</span>
+          <mat-icon *ngIf="!trigger.menuOpen">arrow_drop_down</mat-icon>
+          <mat-icon *ngIf="trigger.menuOpen">arrow_drop_up</mat-icon>
         </button>
 
         <mat-menu #menu="matMenu">
@@ -68,28 +68,28 @@
              (keydown.tab)="$event.stopPropagation()"
              (keydown.shift.tab)="$event.stopPropagation()"
              mat-menu-item>
-            {{ "label.yhteystiedot" | translate }}
+            {{ i18n.yhteystiedot | translate }}
           </a>
           <a [routerLink]="['/paos-hallinta']"
              *ngIf="!tilapainenHenkilostoOnlyBoolean"
              (keydown.tab)="$event.stopPropagation()"
              (keydown.shift.tab)="$event.stopPropagation()"
              mat-menu-item>
-            {{ "label.paostoiminta" | translate }}
+            {{ i18n.paos | translate }}
           </a>
           <a *ngIf="toimipaikkaAccessIfAnyToimipaikka.tilapainenHenkilosto.katselija"
              [routerLink]="['/tilapainen-henkilosto']"
              (keydown.tab)="$event.stopPropagation()"
              (keydown.shift.tab)="$event.stopPropagation()"
              mat-menu-item>
-            {{ "label.tilapainen-henkilosto" | translate }}
+            {{i18n.tilapainen_henkilosto | translate }}
           </a>
         </mat-menu>
       </li>
       <li class="varda-header-nav-item-container">
-        <a [href]="'ohjeet.url.confluence' | translate"
+        <a [href]="i18n.navi_ohjeet_href | translate"
            target="_vardaGuides">
-          {{"label.ohjeet" | translate}}</a>
+          {{ i18n.navi_ohjeet | translate}}</a>
       </li>
     </ul>
   </div>

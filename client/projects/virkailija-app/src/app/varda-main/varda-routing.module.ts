@@ -26,22 +26,22 @@ const routes: Routes = [
       {
         path: '',
         component: VardaMainFrameComponent,
-        data: { title: 'label.navi.syotto', nav_item: 'syota-tietoja' }
+        data: { title: VirkailijaTranslations.navi_syota_tietoja, nav_item: 'syota-tietoja' }
       },
       {
         path: 'vakatoimija',
         component: VardaVakatoimijaComponent,
-        data: { title: 'label.varhaiskasvatustoimija' }
+        data: { title: VirkailijaTranslations.toimijan_tiedot }
       },
       {
         path: 'tietojen-katselu',
         component: VardaReportingComponent,
-        data: { title: 'label.navi.tietojen-katselu' }
+        data: { title: VirkailijaTranslations.katsele_tietoja }
       },
       {
         path: 'paos-hallinta',
         component: VardaPaosManagementContainerComponent,
-        data: { title: VirkailijaTranslations.paos_title, nav_item: 'vakatoimija' }
+        data: { title: VirkailijaTranslations.paos, nav_item: 'vakatoimija' }
       },
       {
         path: 'tilapainen-henkilosto',

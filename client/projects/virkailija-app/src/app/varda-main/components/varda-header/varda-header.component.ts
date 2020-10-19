@@ -1,15 +1,14 @@
-import { AfterViewInit, ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../../core/auth/auth.service';
 import { NavigationEnd, Router, ActivatedRoute } from '@angular/router';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
-import { VardaKayttooikeusRoles, VardaVakajarjestajaUi } from '../../../utilities/models';
-import { environment } from '../../../../environments/environment';
+import { VardaVakajarjestajaUi } from '../../../utilities/models';
 import { VardaUtilityService } from '../../../core/services/varda-utility.service';
 import { LoginService } from 'varda-shared';
 import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 import { filter } from 'rxjs/operators';
+import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
-declare var $: any;
 
 @Component({
   selector: 'app-varda-header',
@@ -17,8 +16,7 @@ declare var $: any;
   styleUrls: ['./varda-header.component.css']
 })
 export class VardaHeaderComponent implements OnInit {
-
-  @Input() isDashboardPage: boolean;
+  i18n = VirkailijaTranslations;
   toimipaikkaSelected: boolean;
   selectedVakajarjestaja: VardaVakajarjestajaUi;
   vakajarjestajat: Array<VardaVakajarjestajaUi>;

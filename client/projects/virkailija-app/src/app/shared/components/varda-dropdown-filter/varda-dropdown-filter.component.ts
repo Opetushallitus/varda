@@ -1,5 +1,6 @@
 import { Component, OnInit, Input, ViewChild, EventEmitter, Output, ElementRef } from '@angular/core';
 import { MatMenuTrigger } from '@angular/material/menu';
+import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
 
 @Component({
@@ -12,6 +13,8 @@ export class VardaDropdownFilterComponent implements OnInit {
   @Input() list: Array<object>;
   @Input() label: string;
   @Input() ariaLabel: string;
+  @Input() placeholder: string;
+  @Input() noResults: string;
   @Output() select = new EventEmitter(true);
   @ViewChild('dropdownFilterInput') dropdownFilterInput: ElementRef;
   @ViewChild(MatMenuTrigger, { static: true }) trigger: MatMenuTrigger;

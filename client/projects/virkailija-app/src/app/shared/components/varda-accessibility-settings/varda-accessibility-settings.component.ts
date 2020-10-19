@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { VardaLocalstorageWrapperService } from '../../../core/services/varda-localstorage-wrapper.service';
 import { VardaDomService } from '../../../core/services/varda-dom.service';
+import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
 declare var $: any;
 
@@ -10,8 +11,7 @@ declare var $: any;
   styleUrls: ['./varda-accessibility-settings.component.css']
 })
 export class VardaAccessibilitySettingsComponent implements OnInit {
-
-  highContrastText: string;
+  i18n = VirkailijaTranslations;
   highContrastEnabled: boolean;
   displayAccessibilitySettings: boolean;
   documentRootElem: any;
@@ -20,7 +20,6 @@ export class VardaAccessibilitySettingsComponent implements OnInit {
   instructionPanelHeaderElem: any;
 
   constructor(private vardaLocalstorageWrapperService: VardaLocalstorageWrapperService, private vardaDomService: VardaDomService) {
-    this.highContrastText = 'Lisää kontrastia';
     this.highContrastEnabled = false;
     this.displayAccessibilitySettings = false;
     this.documentRootFontSize = 16;
@@ -42,8 +41,8 @@ export class VardaAccessibilitySettingsComponent implements OnInit {
       this.documentRootFontSize = 30;
     }
     this.documentRootElem.style.fontSize = `${this.documentRootFontSize}px`;
-    this.instructionPanelHeaderElem.css({'fontSize': `${this.documentRootFontSize}px`});
-    this.instructionPanelContentElem.css({'fontSize': `${this.documentRootFontSize}px`});
+    this.instructionPanelHeaderElem?.css({'fontSize': `${this.documentRootFontSize}px`});
+    this.instructionPanelContentElem?.css({'fontSize': `${this.documentRootFontSize}px`});
   }
 
   decreaseFontSize(): void {
@@ -52,8 +51,8 @@ export class VardaAccessibilitySettingsComponent implements OnInit {
       this.documentRootFontSize = 16;
     }
     this.documentRootElem.style.fontSize = `${this.documentRootFontSize}px`;
-    this.instructionPanelHeaderElem.css({'fontSize': `${this.documentRootFontSize}px`});
-    this.instructionPanelContentElem.css({'fontSize': `${this.documentRootFontSize}px`});
+    this.instructionPanelHeaderElem?.css({'fontSize': `${this.documentRootFontSize}px`});
+    this.instructionPanelContentElem?.css({'fontSize': `${this.documentRootFontSize}px`});
   }
 
   ngOnInit() {

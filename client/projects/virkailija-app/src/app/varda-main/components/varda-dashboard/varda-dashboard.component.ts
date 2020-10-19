@@ -25,8 +25,6 @@ export class VardaDashboardComponent implements OnInit {
     alertMsg: VirkailijaTranslations
   };
 
-  private popupOpenSubscription: Subscription;
-
   constructor(
     private translateService: TranslateService,
     private vardaApiService: VardaApiService,
@@ -133,11 +131,9 @@ export class VardaDashboardComponent implements OnInit {
     ).subscribe((translations) => {
       this.handleCookies(translations);
     });
-
-    this.popupOpenSubscription = this.ccService.popupOpen$.subscribe(() => { });
   }
 
-  private handleCookies(translations) {
+  private handleCookies(translations: any) {
     this.ccService.getConfig().content = this.ccService.getConfig().content || {};
     // Override default messages with the translated ones
     this.ccService.getConfig().content.message = translations[this.i18n.cookie_popup_message];

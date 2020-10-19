@@ -9,19 +9,10 @@ import { VardaLocalstorageWrapperService } from '../../../core/services/varda-lo
 })
 export class VardaFooterComponent implements OnInit {
   i18n = VirkailijaTranslations;
-  highContrastText: string;
-  highContrastEnabled: boolean;
   displayAccessibilitySettings: boolean;
 
   constructor(private vardaLocalStorageWrapper: VardaLocalstorageWrapperService) {
-    this.highContrastText = 'Lisää kontrastia';
-    this.highContrastEnabled = false;
     this.displayAccessibilitySettings = true;
-  }
-
-  toggleContrast(isEnabled: boolean): void {
-    this.highContrastEnabled = isEnabled;
-    this.vardaLocalStorageWrapper.saveContrastSelection(this.highContrastEnabled);
   }
 
   toggleAccesibilitySettingsVisibility(): void {
@@ -30,10 +21,6 @@ export class VardaFooterComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.vardaLocalStorageWrapper.highContrastIsEnabled().subscribe((isEnabled) => {
-      this.highContrastEnabled = isEnabled;
-    });
-
     this.vardaLocalStorageWrapper.showAccessibilitySettings().subscribe((isEnabled) => {
       this.displayAccessibilitySettings = isEnabled;
     });

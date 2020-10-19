@@ -1,40 +1,55 @@
 <div class="varda-accessibility-settings-container"
-  [attr.aria-label]="'label.instructions.kayttoliittyman-teksti-ja-kontrasti' | translate"
-  *ngIf="displayAccessibilitySettings">
+     [attr.aria-label]="i18n.accessibility_popup_label | translate"
+     *ngIf="displayAccessibilitySettings">
   <div class="varda-accessibility-settings-content">
     <div class="varda-accessibility-settings-font-size-section">
-      <div id="closeAccessibilitySettingsIcon" tabindex="0"
-       (click)="closeAccessibilitySettings()"
-       (keydown.enter)="closeAccessibilitySettings()" role="img" alt="Sulje saavutettavuusasetukset" aria-label="Sulje saavutettavuusasetukset"><i class="material-icons">close</i></div>
+      <div id="closeAccessibilitySettingsIcon"
+           tabindex="0"
+           (click)="closeAccessibilitySettings()"
+           (keydown.enter)="closeAccessibilitySettings()"
+           role="img"
+           [attr.alt]="i18n.accessibility_close_label | translate">
+        <i class="material-icons">close</i>
+      </div>
       <div>
-        <header class="oph-h4 oph-bold">{{'label.text-size' | translate}}</header>
+        <header class="oph-h4 oph-bold">{{ i18n.accessibility_text_size | translate }}</header>
         <div class="varda-accessibility-settings-font-size-btn-wrapper">
-            <button (click)="increaseFontSize()" [id]="'increaseFontSizeBtn'">
-              +
-            </button>
+          <button (click)="increaseFontSize()"
+                  [id]="'increaseFontSizeBtn'">
+            +
+          </button>
         </div>
         <div class="varda-accessibility-settings-font-size-btn-wrapper">
-            <button tabindex="0"
-              (click)="decreaseFontSize()"
-              [disabled]="(documentRootFontSize === 16)"
-              [id]="'decreaseFontSizeBtn'">
-              -
-            </button>
+          <button tabindex="0"
+                  (click)="decreaseFontSize()"
+                  [disabled]="(documentRootFontSize === 16)"
+                  [id]="'decreaseFontSizeBtn'">
+            -
+          </button>
         </div>
       </div>
-      <div id="fontSize" *ngIf="(documentRootFontSize > 16)">+ {{documentRootFontSize - 16}}</div>
+      <div id="fontSize"
+           *ngIf="(documentRootFontSize > 16)">+ {{documentRootFontSize - 16}}</div>
     </div>
     <div class="varda-accessibility-settings-adjust-contrast-section">
-        <div class="varda-accessibility-settings-adjust-contrast-btn-wrapper">
-            <div class="varda-footer-link">
-                <button type="button" class="varda-button change-contrast" [id]="'addContrastBtn'" (click)="toggleContrast(true)" *ngIf="!highContrastEnabled">
-                    {{'label.increase-contrast' | translate}}
-                </button>
-                <button type="button" class="varda-button change-contrast" [id]="'decreaseContrastBtn'" (click)="toggleContrast(false)" *ngIf="highContrastEnabled">
-                    {{'label.decrease-contrast' | translate}}
-                </button>
-            </div>
+      <div class="varda-accessibility-settings-adjust-contrast-btn-wrapper">
+        <div class="varda-footer-link">
+          <button type="button"
+                  class="varda-button change-contrast"
+                  [id]="'addContrastBtn'"
+                  (click)="toggleContrast(true)"
+                  *ngIf="!highContrastEnabled">
+            {{ i18n.accessibility_increase_contrast | translate }}
+          </button>
+          <button type="button"
+                  class="varda-button change-contrast"
+                  [id]="'decreaseContrastBtn'"
+                  (click)="toggleContrast(false)"
+                  *ngIf="highContrastEnabled">
+            {{ i18n.accessibility_decrease_contrast | translate }}
+          </button>
         </div>
+      </div>
     </div>
   </div>
 </div>

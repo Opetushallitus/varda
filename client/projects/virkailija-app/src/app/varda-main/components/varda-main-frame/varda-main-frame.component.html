@@ -1,5 +1,5 @@
 <h1 class="varda-page-header">
-  {{ 'label.navi.syotto' | translate }}
+  {{ i18n.navi_syota_tietoja | translate }}
 </h1>
 <main class="varda-main-frame-wrapper">
   <section class="varda-main-frame-toimipaikka-section-container varda-page-content">
@@ -36,5 +36,5 @@
                             (valuesChanged)="henkiloFormValuesChanged($event)"></app-varda-henkilo-form>
   </app-varda-modal-form>
   <app-varda-success-modal [identifier]="'lapsiSuccessModal'"
-                           [successTitle]="'alert.modal-generic-save-success'"></app-varda-success-modal>
+                           [successTitle]="i18n.save_success"></app-varda-success-modal>
 </main>
