@@ -18,3 +18,7 @@
     margin-top: 2em;
     padding: 0.5em;
 }
+
+.mat-progress-spinner {
+  margin: 1rem auto;
+}

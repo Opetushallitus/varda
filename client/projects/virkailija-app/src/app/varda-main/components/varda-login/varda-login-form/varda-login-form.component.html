@@ -1,5 +1,4 @@
-<div class="varda-router-outlet-container"
-     appHighContrast>
+<div class="varda-router-outlet-container varda-high-contrast">
   <main class="varda-login-page">
     <h1 class="oph-h2 oph-bold"
         aria-live="polite">
@@ -9,9 +8,15 @@
     <div class="varda-page-content">
       <button class="varda-button responsive-md"
               id="navigateToVardaLoginBtn"
+              [disabled]="tokenInput?.show || (isLoading | async)"
               (click)="navigateToVardaLogin()">
         LOGIN
       </button>
+
+      <mat-progress-spinner *ngIf="isLoading | async"
+                            diameter="40"
+                            mode="indeterminate"
+                            color="accent"></mat-progress-spinner>
 
       <ng-container *ngIf="tokenInput?.show">
         <form (ngSubmit)="addLoginToken(tokenInput.value)"

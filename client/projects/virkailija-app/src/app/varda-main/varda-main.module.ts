@@ -60,6 +60,7 @@ import { VardaHenkilostoTilapainenComponent } from './components/varda-henkilost
 import { EiHenkilostoaDialogComponent } from './components/varda-henkilosto-tilapainen/ei-henkilostoa-dialog/ei-henkilostoa-dialog.component';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { VardaTyontekijaTaydennyskoulutuksetComponent } from './components/varda-tyontekija-form/varda-tyontekija-taydennyskoulutukset/varda-tyontekija-taydennyskoulutukset.component';
 import { ReportTyontekijaComponent } from './components/varda-reporting/report-tyontekija/report-tyontekija.component';
 
@@ -74,7 +75,8 @@ import { ReportTyontekijaComponent } from './components/varda-reporting/report-t
     VardaSharedModule,
     MatMenuModule,
     MatDialogModule,
-    MatProgressBarModule
+    MatProgressBarModule,
+    MatProgressSpinnerModule
   ],
   declarations: [
     VardaHeaderComponent,
