@@ -39,6 +39,7 @@ from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, K
 from varda.oppijanumerorekisteri import fetch_henkilo_with_oid, save_henkilo_to_db
 from varda.organisaatiopalvelu import (check_if_toimipaikka_exists_in_organisaatiopalvelu,
                                        create_toimipaikka_in_organisaatiopalvelu)
+from varda.pagination import ChangeableReportingPageSizePagination
 from varda.permission_groups import (assign_object_level_permissions, create_permission_groups_for_organisaatio,
                                      assign_toimipaikka_lapsi_paos_permissions, assign_vakajarjestaja_lapsi_paos_permissions,
                                      assign_vakajarjestaja_vakatiedot_paos_permissions,
@@ -46,8 +47,7 @@ from varda.permission_groups import (assign_object_level_permissions, create_per
                                      assign_object_permissions_to_all_henkilosto_groups)
 from varda.permissions import (throw_if_not_tallentaja_permissions,
                                check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement,
-                               check_if_user_has_paakayttaja_permissions,
-                               CustomObjectPermissions,
+                               check_if_user_has_paakayttaja_permissions, ReadAdminOrOPHUser, CustomObjectPermissions,
                                user_has_huoltajatieto_tallennus_permissions_to_correct_organization,
                                grant_or_deny_access_to_paos_toimipaikka, user_has_tallentaja_permission_in_organization,
                                auditlogclass, save_audit_log, ToimipaikkaPermissions, get_toimipaikka_or_404)
@@ -56,7 +56,7 @@ from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer,
                                ActiveUserSerializer, AuthTokenSerializer, VakaJarjestajaSerializer,
                                ToimipaikkaSerializer, ToiminnallinenPainotusSerializer, KieliPainotusSerializer,
                                HaeHenkiloSerializer, HenkiloSerializer, HenkiloSerializerAdmin,
-                               HenkiloOppijanumeroSerializer, LapsiSerializer, LapsiSerializerAdmin, HuoltajaSerializer,
+                               YksiloimattomatHenkilotSerializer, LapsiSerializer, LapsiSerializerAdmin, HuoltajaSerializer,
                                HuoltajuussuhdeSerializer, MaksutietoPostSerializer, MaksutietoUpdateSerializer,
                                MaksutietoGetSerializer, VarhaiskasvatuspaatosSerializer,
                                VarhaiskasvatuspaatosPutSerializer, VarhaiskasvatuspaatosPatchSerializer,
@@ -198,27 +198,25 @@ class ClearCacheViewSet(GenericViewSet, CreateModelMixin):
 
 
 @auditlogclass
-class HaeYksiloimattomatHenkilotViewSet(viewsets.ModelViewSet):
+class HaeYksiloimattomatHenkilotViewSet(GenericViewSet, ListModelMixin):
     """
     list:
         Nouda yksilöimättömat henkilot.
+    filters:
+        vakatoimija_oid: Suodata lapsen tai työntekijän oidin perusteella
+        henkilo_oid: Suodata henkilön oidin perusteella
+        henkilotunnus: SHA256 hash henkilötunnus
     """
     filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend)
-    filterset_class = filters.HenkiloFilter
-    queryset = Henkilo.objects.none()
-    serializer_class = HenkiloOppijanumeroSerializer
-    permission_classes = (permissions.IsAdminUser, )
+    filterset_class = filters.YksiloimattomatHenkilotFilter
+    queryset = Henkilo.objects.filter(Q(vtj_yksiloity=False) & Q(vtj_yksilointi_yritetty=True))
+    serializer_class = YksiloimattomatHenkilotSerializer
+    permission_classes = (ReadAdminOrOPHUser, )
+    pagination_class = ChangeableReportingPageSizePagination
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(Henkilo.objects.filter(vtj_yksiloity=False, vtj_yksilointi_yritetty=True)).order_by('id')
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+    def get_queryset(self):
+        return (self.queryset.order_by('lapsi__vakatoimija__organisaatio_oid',
+                                       'tyontekijat__vakajarjestaja__organisaatio_oid'))
 
 
 """

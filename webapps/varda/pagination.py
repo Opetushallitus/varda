@@ -79,3 +79,8 @@ class CustomPagination(PageNumberPagination):
 class ChangeablePageSizePagination(PageNumberPagination):
     max_page_size = 100
     page_size_query_param = 'page_size'
+
+
+class ChangeableReportingPageSizePagination(PageNumberPagination):
+    max_page_size = 3000
+    page_size_query_param = 'page_size'

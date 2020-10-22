@@ -53,6 +53,19 @@ class CustomReportingViewAccess(permissions.BasePermission):
             return False
 
 
+class ReadAdminOrOPHUser(permissions.BasePermission):
+    """
+    Allows access to admin and OPH users.
+    Only for GET functions
+    """
+
+    def has_permission(self, request, view):
+        user = request.user
+        additional_details = getattr(user, 'additional_user_info', None)
+        is_oph_staff = getattr(additional_details, 'approved_oph_staff', False)
+        return bool(request.user and request.method == 'GET' and (user.is_superuser or is_oph_staff))
+
+
 class LapsihakuPermissions(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user

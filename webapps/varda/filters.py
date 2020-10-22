@@ -130,13 +130,18 @@ class KieliPainotusFilter(djangofilters.FilterSet):
         fields = []
 
 
-class HenkiloFilter(djangofilters.FilterSet):
+class YksiloimattomatHenkilotFilter(djangofilters.FilterSet):
     henkilotunnus = CustomCharFilter(field_name='henkilotunnus', lookup_expr='exact')
     henkilo_oid = CustomCharFilter(field_name='henkilo_oid', lookup_expr='exact')
+    vakatoimija_oid = djangofilters.CharFilter(method='filter_vakatoimija_oid')
 
     class Meta:
         model = Henkilo
         fields = []
+
+    def filter_vakatoimija_oid(self, queryset, name, value):
+        return queryset.filter(Q(lapsi__vakatoimija__organisaatio_oid=value) |
+                               Q(tyontekijat__vakajarjestaja__organisaatio_oid=value))
 
 
 class LapsiFilter(djangofilters.FilterSet):

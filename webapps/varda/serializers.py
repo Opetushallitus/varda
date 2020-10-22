@@ -120,8 +120,13 @@ class ActiveUserSerializer(serializers.ModelSerializer):
 
     def get_kayttajatyyppi(self, obj):
         user = obj
+        additional_details = getattr(user, 'additional_user_info', None)
+        is_oph_staff = getattr(additional_details, 'approved_oph_staff', False)
+
         if user.is_superuser:
             return 'ADMIN'
+        if is_oph_staff:
+            return 'OPH-STAFF'
 
         try:
             cas_user_obj = Z3_AdditionalCasUserFields.objects.get(user_id=user.id)
@@ -501,12 +506,31 @@ class HenkiloSerializerAdmin(HenkiloSerializer):
         return huoltajat
 
 
-class HenkiloOppijanumeroSerializer(serializers.HyperlinkedModelSerializer):
+class YksiloimattomatHenkilotSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
+    vakatoimija_oid = serializers.SerializerMethodField()
+    vakatoimija_nimi = serializers.SerializerMethodField()
 
     class Meta:
         model = Henkilo
-        fields = ('id', 'henkilo_oid')
+        fields = ('id', 'henkilo_oid', 'vakatoimija_oid', 'vakatoimija_nimi')
+
+    def get_vakatoimija_oid(self, instance):
+        toimija = self._get_toimija(instance)
+        return getattr(toimija, 'organisaatio_oid', None)
+
+    def get_vakatoimija_nimi(self, instance):
+        toimija = self._get_toimija(instance)
+        return getattr(toimija, 'nimi', None)
+
+    def _get_toimija(self, instance):
+        first_lapsi = instance.lapsi.first()
+        if first_lapsi is not None:
+            return first_lapsi.vakatoimija
+        first_tyontekija = instance.tyontekijat.first()
+        if first_tyontekija is not None:
+            return first_tyontekija.vakajarjestaja
+        return None
 
 
 class MaksutietoPostHuoltajaSerializer(serializers.ModelSerializer):
