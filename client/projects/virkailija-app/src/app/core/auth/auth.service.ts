@@ -25,6 +25,7 @@ export class AuthService {
   selectedOrganisationLevelKayttooikeusRole: string;
   hasToimipaikkaLevelTallentajaRole: boolean;
   isAdminUser: boolean;
+  isOPHUser: boolean;
 
   loggedInUserVakajarjestajaLevelKayttooikeudet: Array<Kayttooikeus> = [];
   loggedInUserToimipaikkaLevelKayttooikeudet: Array<Kayttooikeus> = [];
@@ -140,6 +141,9 @@ export class AuthService {
         // pass
       } else if (kayttajaTyyppi === VardaKayttajatyyppi.ADMIN) {
         this.isAdminUser = true;
+        this.isOPHUser = true;
+      } else if (kayttajaTyyppi === VardaKayttajatyyppi.OPH_STAFF) {
+        this.isOPHUser = true;
       } else {
         precheckKayttajaTyyppiObserver.error({ isPalvelukayttaja: true });
         return;

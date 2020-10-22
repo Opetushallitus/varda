@@ -1,5 +1,6 @@
 export const VardaKayttajatyyppi = {
     ADMIN: 'ADMIN',
     PALVELU: 'PALVELU',
-    VIRKAILIJA: 'VIRKAILIJA'
+    VIRKAILIJA: 'VIRKAILIJA',
+    OPH_STAFF: 'OPH-STAFF',
 };
