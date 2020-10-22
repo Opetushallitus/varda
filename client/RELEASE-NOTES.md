@@ -1,6 +1,12 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.4.7 (22.10.2020)
+- CSCVARDA-1470 UI: täydennyskoulutustiedot massana
+- CSCVARDA-2044 UI: login sivu antaa painaa kirjaudu nappia jo kirjautuessa
+- CSCVARDA-2045 Header, footer ja dashboard lokalisointi
+- CSCVARDA-1718 nginx proxy http 1.1 versiolla hajottaa session
+
 1.4.6 (12.10.2020)
 - CSCVARDA-2032: Yhteystiedot-sivun päivitys
 - CSCVARDA-2036: datepicker päivitys
