@@ -769,7 +769,8 @@ class TyontekijaKoosteTyoskentelypaikkaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tyoskentelypaikka
         fields = ('id', 'toimipaikka_id', 'toimipaikka_oid', 'toimipaikka_nimi', 'tehtavanimike_koodi',
-                  'kelpoisuus_kytkin', 'kiertava_tyontekija_kytkin', 'alkamis_pvm', 'paattymis_pvm')
+                  'kelpoisuus_kytkin', 'kiertava_tyontekija_kytkin', 'alkamis_pvm', 'paattymis_pvm', 'lahdejarjestelma',
+                  'tunniste', 'muutos_pvm')
 
     def to_representation(self, instance):
         """
@@ -797,7 +798,7 @@ class TyontekijaKoosteTyoskentelypaikkaSerializer(serializers.ModelSerializer):
 class TyontekijaKoostePidempiPoissaoloSerializer(serializers.ModelSerializer):
     class Meta:
         model = PidempiPoissaolo
-        fields = ('id', 'alkamis_pvm', 'paattymis_pvm')
+        fields = ('id', 'alkamis_pvm', 'paattymis_pvm', 'lahdejarjestelma', 'tunniste', 'muutos_pvm')
 
     def to_representation(self, instance):
         user = self.context['request'].user
@@ -814,7 +815,8 @@ class TyontekijaKoostePalvelussuhdeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Palvelussuhde
         fields = ('id', 'tyosuhde_koodi', 'tyoaika_koodi', 'tyoaika_viikossa', 'tutkinto_koodi',
-                  'alkamis_pvm', 'paattymis_pvm', 'tyoskentelypaikat', 'pidemmatpoissaolot')
+                  'alkamis_pvm', 'paattymis_pvm', 'tyoskentelypaikat', 'pidemmatpoissaolot', 'lahdejarjestelma',
+                  'tunniste', 'muutos_pvm')
 
 
 class TyontekijaKoosteTaydennyskoulutusSerializer(serializers.ModelSerializer):
@@ -822,10 +824,14 @@ class TyontekijaKoosteTaydennyskoulutusSerializer(serializers.ModelSerializer):
     nimi = serializers.ReadOnlyField(source='taydennyskoulutus.nimi')
     suoritus_pvm = serializers.ReadOnlyField(source='taydennyskoulutus.suoritus_pvm')
     koulutuspaivia = serializers.ReadOnlyField(source='taydennyskoulutus.koulutuspaivia')
+    lahdejarjestelma = serializers.ReadOnlyField(source='taydennyskoulutus.lahdejarjestelma')
+    tunniste = serializers.ReadOnlyField(source='taydennyskoulutus.tunniste')
+    muutos_pvm = serializers.ReadOnlyField(source='taydennyskoulutus.muutos_pvm')
 
     class Meta:
         model = TaydennyskoulutusTyontekija
-        fields = ('id', 'tehtavanimike_koodi', 'nimi', 'suoritus_pvm', 'koulutuspaivia')
+        fields = ('id', 'tehtavanimike_koodi', 'nimi', 'suoritus_pvm', 'koulutuspaivia', 'lahdejarjestelma', 'tunniste',
+                  'muutos_pvm')
 
 
 class TyontekijaKoosteTutkintoSerializer(serializers.ModelSerializer):
@@ -838,11 +844,14 @@ class TyontekijaKoosteSerializer(serializers.Serializer):
     id = serializers.ReadOnlyField(source='tyontekija.id')
     vakajarjestaja_id = serializers.ReadOnlyField(source='tyontekija.vakajarjestaja.id')
     vakajarjestaja_nimi = serializers.ReadOnlyField(source='tyontekija.vakajarjestaja.nimi')
+    vakajarjestaja_organisaatio_oid = serializers.ReadOnlyField(source='tyontekija.vakajarjestaja.organisaatio_oid')
+    lahdejarjestelma = serializers.ReadOnlyField(source='tyontekija.lahdejarjestelma')
+    tunniste = serializers.ReadOnlyField(source='tyontekija.tunniste')
     henkilo = TyontekijaKoosteHenkiloSerializer(source='tyontekija.henkilo')
     tutkinnot = TyontekijaKoosteTutkintoSerializer(many=True)
     palvelussuhteet = TyontekijaKoostePalvelussuhdeSerializer(many=True)
     taydennyskoulutukset = TyontekijaKoosteTaydennyskoulutusSerializer(many=True)
 
     class Meta:
-        fields = ('id', 'vakajarjestaja_id', 'vakajarjestaja_nimi', 'tutkinnot', 'henkilo',
-                  'palvelussuhteet', 'taydennyskoulutukset')
+        fields = ('id', 'vakajarjestaja_id', 'vakajarjestaja_nimi', 'vakajarjestaja_organisaatio_oid', 'tutkinnot', 'henkilo',
+                  'palvelussuhteet', 'taydennyskoulutukset', 'lahdejarjestelma', 'tunniste')
