@@ -1,0 +1,55 @@
+.cdk-overlay-pane .mat-snack-bar-container {
+  max-width: min(66vw, 800px);
+}
+
+.cdk-overlay-pane .mat-snack-bar-container .mat-simple-snackbar {
+  font-weight: bold;
+}
+
+.cdk-overlay-pane .mat-snack-bar-container .mat-simple-snackbar-action button {
+  font-weight: normal;
+}
+
+/* success */
+.mat-snack-bar-container.varda-snackbar-success {
+  background-color: var(--green-lighten-2);
+
+}
+
+.mat-snack-bar-container.varda-snackbar-success .mat-simple-snackbar {
+  color: var(--gray);
+}
+
+.mat-snack-bar-container.varda-snackbar-success .mat-simple-snackbar-action {
+  color: var(--black);
+}
+
+/* error */
+.mat-snack-bar-container.varda-snackbar-error {
+  background-color: var(--white);
+  max-width: 66vw;
+}
+
+.mat-snack-bar-container.varda-snackbar-error .mat-simple-snackbar {
+  color: var(--red);
+}
+
+.mat-snack-bar-container.varda-snackbar-error .mat-simple-snackbar-action {
+  color: var(--red);
+}
+
+
+/* warning */
+
+.mat-snack-bar-container.varda-snackbar-warning {
+  background-color: var(--yellow-lighten-1);
+  max-width: 66vw;
+}
+
+.mat-snack-bar-container.varda-snackbar-warning .mat-simple-snackbar {
+  color: var(--black);
+}
+
+.mat-snack-bar-container.varda-snackbar-warning .mat-simple-snackbar-action {
+  color: var(--black);
+}

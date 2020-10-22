@@ -17,10 +17,12 @@
   background-color: var(--red-lighten-2);
 }
 
+.varda-datepicker.mat-form-field.mat-form-field-readonly .mat-form-field-wrapper,
 .varda-datepicker.mat-form-field.mat-form-field-disabled .mat-form-field-wrapper {
   cursor: inherit;
   box-shadow: 0 0 0;
-  background-color: transparent /* var(--gray-lighten-5) */;
+  background-color: var(--gray-lighten-5);
+  border: none;
 }
 
 .varda-datepicker.mat-form-field.mat-form-field-disabled .mat-form-field-wrapper input {
@@ -52,6 +54,9 @@
   border-width: 1px !important;
 }
 
+.varda-datepicker.mat-form-field-readonly .mat-form-field-outline-start,
+.varda-datepicker.mat-form-field-readonly .mat-form-field-outline-end,
+.varda-datepicker.mat-form-field-readonly .mat-form-field-outline-gap,
 .varda-datepicker.mat-form-field-disabled .mat-form-field-outline-start,
 .varda-datepicker.mat-form-field-disabled .mat-form-field-outline-end,
 .varda-datepicker.mat-form-field-disabled .mat-form-field-outline-gap {
@@ -93,6 +98,7 @@ app-varda-datepicker.ng-dirty .varda-datepicker.mat-form-field.mat-form-field-in
   top: initial !important;
 }
 
+.varda-datepicker.mat-form-field-readonly .mat-form-field-suffix,
 .varda-datepicker.mat-form-field-disabled .mat-form-field-suffix {
   visibility: hidden;
 }

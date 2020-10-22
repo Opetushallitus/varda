@@ -1,20 +1,31 @@
-<!-- <section class="taydennyskoulutus-osallistuja">
-  <h2 class="oph-h2">{{ i18n.osallistujat | translate }} (1337)</h2>
+<section class="taydennyskoulutus-osallistuja">
+  <h2 class="oph-h2">{{ i18n.osallistujat | translate }} ({{ tyontekijatData?.data.length}})</h2>
 
-  <button class="varda-button varda-button-danger secondary responsive" [disabled]="!tableSelection.selected.length" type="button" (click)="removeSelectedOsallistujat()">remove</button>
+  <button *ngIf="!isDisabled"
+          class="varda-button varda-button-danger secondary responsive"
+          [disabled]="!tableSelection.selected.length"
+          type="button"
+          (click)="removeSelectedOsallistujat()">
+    {{ i18n.taydennyskoulutus_poista_valitut_tyontekijat | translate }}
+    <span *ngIf="tableSelection.hasValue()">
+      ({{ tableSelection.selected.length}})
+    </span>
+  </button>
+
   <table mat-table
          [dataSource]="tyontekijatData"
-         class="example-table"
+         class="taydennyskoulutus-osallistuja-table"
          matSort
          matSortActive="nimi"
          matSortDisableClear
-         matSortDirection="desc">
+         matSortDirection="asc">
 
     <ng-container matColumnDef="select">
       <th mat-header-cell
           *matHeaderCellDef>
         <mat-checkbox (change)="$event ? masterToggle() : null"
                       [checked]="tableSelection.hasValue() && isAllSelected()"
+                      [disabled]="isDisabled"
                       [indeterminate]="tableSelection.hasValue() && !isAllSelected()"
                       [aria-label]="checkboxLabel()">
         </mat-checkbox>
@@ -23,6 +34,7 @@
           *matCellDef="let row">
         <mat-checkbox (click)="$event.stopPropagation()"
                       (change)="$event ? tableSelection.toggle(row) : null"
+                      [disabled]="isDisabled"
                       [checked]="tableSelection.isSelected(row)"
                       [aria-label]="checkboxLabel(row)">
         </mat-checkbox>
@@ -41,26 +53,42 @@
       <th mat-header-cell
           *matHeaderCellDef>{{ i18n.tyoskentelypaikka_tehtavanimike | translate }}</th>
       <td mat-cell
+          class="wide-cell"
           *matCellDef="let row">
-        <ng-container *ngFor="let tehtavanimike_koodi of row.tehtavanimike_koodit">
-          <div class=""
-               libKoodistoValue="vardatehtavanimike">
-            {{ tehtavanimike_koodi }}
-          </div>
-        </ng-container>
+        <div>
+          <mat-select #fieldItem
+                      placeholder="-- {{ i18n.choose | translate }} --"
+                      multiple
+                      class="oph-input oph-select transparent-disable"
+                      (selectionChange)="changeValitutNimikkeet(row)"
+                      [disabled]="isDisabled"
+                      [(ngModel)]="row.valitut_nimikkeet">
+            <mat-option *ngFor="let tehtavanimike_koodi of row.tehtavanimike_koodit"
+                        [value]="tehtavanimike_koodi">
+              <span libKoodistoValue="vardatehtavanimike">{{ tehtavanimike_koodi }}</span>
+            </mat-option>
+          </mat-select>
+          <span *ngIf="row.valitut_nimikkeet?.length > 1">({{row.valitut_nimikkeet.length}})</span>
+        </div>
+        <div *ngIf="!row.valitut_nimikkeet[0]"
+             class="oph-error">
+          {{ i18n.taydennyskoulutus_error_tehtavanimike | translate }}
+        </div>
       </td>
     </ng-container>
 
     <ng-container matColumnDef="delete">
       <th mat-header-cell
-          *matHeaderCellDef>{{ i18n.delete | translate }}</th>
+          *matHeaderCellDef>
+      </th>
       <td mat-cell
           *matCellDef="let row">
-          <button class="varda-button varda-button-danger" (click)="removeOsallistuja(row)">
-            <mat-icon>delete_outline</mat-icon>
-            PÖISTÄ
-          </button>
-        </td>
+        <button class="varda-button varda-button-danger varda-text-button secondary responsive"
+                type="button"
+                (click)="removeOsallistuja(row)">
+          <mat-icon>delete_outline</mat-icon>
+        </button>
+      </td>
     </ng-container>
 
 
@@ -69,6 +97,8 @@
     <tr mat-row
         *matRowDef="let row; columns: displayedColumns;"></tr>
   </table>
-  <div class="osallistuja-info">{{ i18n.taydennyskoulutukset_instruction_tuo_osallistujat_listasta | translate }}</div>
+  <div class="osallistuja-info"
+       *ngIf="!tyontekijatData?.data.length">
+    {{ i18n.taydennyskoulutukset_instruction_tuo_osallistujat_listasta | translate }}
+  </div>
 </section>
- -->

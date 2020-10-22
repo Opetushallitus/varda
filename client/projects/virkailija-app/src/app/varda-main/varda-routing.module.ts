@@ -48,11 +48,11 @@ const routes: Routes = [
         component: VardaHenkilostoTilapainenComponent,
         data: { title: VirkailijaTranslations.tilapainen_henkilosto }
       },
-      /* {
+      {
         path: 'taydennyskoulutus',
         component: VardaTaydennyskoulutusComponent,
         data: { title: VirkailijaTranslations.taydennyskoulutukset }
-      }, */
+      },
     ]
   },
   {

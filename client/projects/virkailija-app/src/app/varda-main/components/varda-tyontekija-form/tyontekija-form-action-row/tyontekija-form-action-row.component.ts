@@ -12,9 +12,12 @@ export class TyontekijaFormActionRowComponent {
   @Input() saveAccess: boolean;
   @Input() formExists: boolean;
   @Input() isEdit: boolean;
+  @Input() noToggle: boolean; // will not hide the form after cancel
+  @Input() noMargin: boolean;
   @Output() togglePanel = new EventEmitter<boolean>(true);
   @Output() deleteForm = new EventEmitter<boolean>(true);
   @Output() enableEdit = new EventEmitter<boolean>(true);
+  @Output() disableEdit = new EventEmitter<boolean>(true);
   i18n = VirkailijaTranslations;
   promptDelete = false;
 
@@ -29,5 +32,9 @@ export class TyontekijaFormActionRowComponent {
 
   _enableEdit() {
     this.enableEdit.emit();
+  }
+
+  _disableEdit() {
+    this.disableEdit.emit();
   }
 }

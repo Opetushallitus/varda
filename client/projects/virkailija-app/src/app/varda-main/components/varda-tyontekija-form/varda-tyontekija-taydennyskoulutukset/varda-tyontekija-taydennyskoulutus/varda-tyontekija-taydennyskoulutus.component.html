@@ -30,6 +30,7 @@
           <input #fieldItem
                  type="text"
                  class="oph-input"
+                 [readonly]="limitedEditAccess"
                  formControlName="nimi" />
         </app-varda-form-field>
 
@@ -39,6 +40,8 @@
                               [errorText]="i18n.taydennyskoulutus_error_suoritus_pvm | translate"
                               [instructionText]="i18n.taydennyskoulutus_instruction_suoritus_pvm | translate">
           <app-varda-datepicker #fieldItem
+                                [min]="firstAllowedDate"
+                                [readonly]="limitedEditAccess"
                                 formControlName='suoritus_pvm'></app-varda-datepicker>
         </app-varda-form-field>
 
@@ -53,6 +56,7 @@
                  min="0.5"
                  max="160"
                  step="0.5"
+                 [readonly]="limitedEditAccess"
                  formControlName="koulutuspaivia" />
         </app-varda-form-field>
 
@@ -80,6 +84,13 @@
             </div>
           </ng-template>
         </app-varda-form-field>
+
+        <div class="taydennyskoulutus-rajoitettu"
+             *ngIf="limitedEditAccess"
+             role="alert">
+          <mat-icon>info_outlined</mat-icon>
+          {{ i18n.taydennyskoulutus_instruction_muokkaus_rajoitettu | translate }}
+        </div>
 
         <app-varda-tyontekija-error [errors]="taydennyskoulutusFormErrors"></app-varda-tyontekija-error>
 

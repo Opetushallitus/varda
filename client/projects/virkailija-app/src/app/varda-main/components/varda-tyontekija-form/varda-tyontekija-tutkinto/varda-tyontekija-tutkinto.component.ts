@@ -88,7 +88,7 @@ export class VardaTyontekijaTutkintoComponent implements OnChanges {
     if (tutkintoFormGroup.valid) {
       this.henkilostoService.createTutkinto(tutkintoFormGroup.value).subscribe({
         next: () => this.getHenkilonTutkinnot(),
-        error: err => this.henkilostoErrorService.handleError(err, tutkintoFormGroup)
+        error: err => this.henkilostoErrorService.handleError(err, null, tutkintoFormGroup)
       });
     }
   }

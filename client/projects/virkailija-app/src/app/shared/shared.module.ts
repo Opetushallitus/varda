@@ -18,6 +18,7 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSnackBarModule, MAT_SNACK_BAR_DEFAULT_OPTIONS } from '@angular/material/snack-bar';
 import { MatMomentDateModule, MAT_MOMENT_DATE_ADAPTER_OPTIONS } from '@angular/material-moment-adapter';
 import { MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -55,6 +56,7 @@ import { MatSortModule } from '@angular/material/sort';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatChipsModule } from '@angular/material/chips';
 import { VardaAutocompleteSelectorComponent } from './components/varda-autocomplete-selector/varda-autocomplete-selector.component';
+import { SnackbarTimers } from '../core/services/varda-snackbar.service';
 
 const cookieConfig: NgcCookieConsentConfig = {
   cookie: {
@@ -101,6 +103,7 @@ const cookieConfig: NgcCookieConsentConfig = {
     MatCardModule,
     MatMenuModule,
     MatSelectModule,
+    MatSnackBarModule,
     MatDatepickerModule,
     MatMomentDateModule,
     MatPaginatorModule,
@@ -156,6 +159,9 @@ const cookieConfig: NgcCookieConsentConfig = {
       }
     },
     {
+      provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: { duration: SnackbarTimers.normal }
+    },
+    {
       provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { strict: true }
     },
     {
@@ -188,6 +194,7 @@ const cookieConfig: NgcCookieConsentConfig = {
     MatInputModule,
     MatIconModule,
     MatSelectModule,
+    MatSnackBarModule,
     MatExpansionModule,
     MatRadioModule,
     MatAutocompleteModule,

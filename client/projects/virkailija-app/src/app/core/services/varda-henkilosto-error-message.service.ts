@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { FormGroup } from '@angular/forms';
 import { VardaErrorMessageService } from './varda-error-message.service';
+import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
+import { VardaSnackBarService } from './varda-snackbar.service';
 
 interface VardaErrorLine {
   [key: string]: Array<string> | VardaErrorLine;
@@ -22,7 +24,8 @@ export interface ErrorTree {
 export class HenkilostoErrorMessageService {
   private errorList$ = new BehaviorSubject<Array<ErrorTree>>(null);
   private errorLines: Array<ErrorTree> = [];
-  private errorMessageKeys = { };
+  private errorMessageKeys = {};
+  private i18n = VirkailijaTranslations;
 
   constructor() {
     const vardaErrorMessageService = new VardaErrorMessageService();
@@ -79,7 +82,7 @@ export class HenkilostoErrorMessageService {
     return this.errorList$;
   }
 
-  handleError(response: VardaErrorResponse, formGroup?: FormGroup): void {
+  handleError(response: VardaErrorResponse, snackBar?: VardaSnackBarService, formGroup?: FormGroup): void {
     console.error(response.error);
 
     this.errorLines = [];
@@ -89,12 +92,11 @@ export class HenkilostoErrorMessageService {
     if (formGroup) {
       this.checkFormErrors(formGroup);
     }
+
+    if (snackBar) {
+      const errorFlat: Array<string> = [].concat(...this.errorLines.map(line => line.values));
+      snackBar.errorFromBackend(errorFlat);
+    }
   }
-
-
-
-
-
-
 
 }

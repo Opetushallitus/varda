@@ -270,6 +270,15 @@ export enum VirkailijaTranslations {
   taydennyskoulutus_valitse_osallistujat = 'taydennyskoulutus.valitse-osallistujat',
   taydennyskoulutus_COUNT_paivaa = 'taydennyskoulutus.COUNT-paivaa',
   taydennyskoulutus_ei_nimikkeita = 'taydennyskoulutus.ei-nimikkeita',
+  taydennyskoulutus_instruction_muokkaus_rajoitettu = 'taydennyskoulutus.instruction.muokkaus-rajoitettu',
+  taydennyskoulutus_delete_success = 'taydennyskoulutus.delete-success',
+  taydennyskoulutus_save_success = 'taydennyskoulutus.save-success',
+
+  taydennyskoulutus_instruction_massasyotto = 'taydennyskoulutus.instruction.massasyotto',
+  taydennyskoulutus_instruction_massasyotto_muokkaus_rajoitettu = 'taydennyskoulutus.instruction.massasyoton-muokkaus-rajoitettu',
+  taydennyskoulutus_lisaa_valitut_tyontekijat = 'taydennyskoulutus.lisaa-valitut-tyontekijat',
+  taydennyskoulutus_poista_valitut_tyontekijat = 'taydennyskoulutus.poista-valitut-tyontekijat',
+
 
   tyontekija_instruction_creation_paragraph_1 = 'tyontekija.instruction.creation-paragraph-1',
   tyontekija_instruction_creation_paragraph_2 = 'tyontekija.instruction.creation-paragraph-2',

@@ -9,7 +9,6 @@ import { TyontekijaListDTO } from '../../../utilities/models/dto/varda-tyontekij
 import { VardaApiService } from 'projects/virkailija-app/src/app/core/services/varda-api.service';
 
 export interface HenkiloSearchFilter {
-  previousSearch?: string;
   page: number;
   page_size: number;
   search?: string;

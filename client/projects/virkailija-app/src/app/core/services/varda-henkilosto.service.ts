@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { LoadingHttpService } from 'varda-shared';
-import { VardaToimipaikkaMinimalDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
-import { Observable, Subject, EMPTY, BehaviorSubject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { VardaTyontekijaDTO } from '../../utilities/models/dto/varda-tyontekija-dto.model';
 import { VardaTutkintoDTO } from '../../utilities/models/dto/varda-tutkinto-dto.model';
@@ -11,7 +10,6 @@ import { VardaTaydennyskoulutusDTO, VardaTaydennyskoulutusTyontekijaListDTO } fr
 import { VardaTyoskentelypaikkaDTO } from '../../utilities/models/dto/varda-tyoskentelypaikka-dto.model';
 import { VardaPoissaoloDTO } from '../../utilities/models/dto/varda-poissolo-dto.model';
 import { HenkiloListDTO } from '../../utilities/models/dto/varda-henkilo-dto.model';
-import { expand, reduce, last, map } from 'rxjs/operators';
 import { VardaTilapainenHenkiloDTO } from '../../utilities/models/dto/varda-tilapainen-henkilo-dto.model';
 
 @Injectable()

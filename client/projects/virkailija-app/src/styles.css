@@ -6,6 +6,7 @@
 @import "./assets/css/modals.css";
 @import "./assets/css/lists.css";
 @import "./assets/css/tables.css";
+@import "./assets/css/snackbars.css";
 
 /* virkailija-raamifixit */
 :root {
@@ -292,7 +293,9 @@ mat-expansion-panel mat-expansion-panel-header {
   z-index: 9999 !important;
 }
 
-
+.mat-select-disabled .mat-select-arrow {
+  visibility: hidden;
+}
 
 
 

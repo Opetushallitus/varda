@@ -1,18 +1,25 @@
-<!-- <section class="osallistuja-picker">
-  <h3>{{ i18n.henkilo_tyontekijat | translate }}</h3>
+<section class="osallistuja-picker">
+  <h2 class="oph-h2">
+    {{ i18n.henkilo_tyontekijat | translate }} ({{ filteredTyontekijatData?.length }})
+  </h2>
 
   <button class="varda-button varda-button-primary secondary responsive"
           [disabled]="!tableSelection.selected.length"
           type="button"
-          (click)="addSelectedOsallistujat()">add</button>
+          (click)="addSelectedOsallistujat()">
+    {{ i18n.taydennyskoulutus_lisaa_valitut_tyontekijat | translate }}
+    <span *ngIf="tableSelection.hasValue()">
+      ({{ tableSelection.selected.length}})
+    </span>
+  </button>
 
   <table mat-table
          [dataSource]="tyontekijatData"
-         class="example-table"
+         class="taydennyskoulutus-osallistuja-table"
          matSort
          matSortActive="nimi"
          matSortDisableClear
-         matSortDirection="desc">
+         matSortDirection="asc">
 
     <ng-container matColumnDef="select">
       <th mat-header-cell
@@ -46,20 +53,28 @@
           *matHeaderCellDef>{{ i18n.tyoskentelypaikka_tehtavanimike | translate }}</th>
       <td mat-cell
           *matCellDef="let row">
-        <ng-container *ngFor="let tehtavanimike_koodi of row.tehtavanimike_koodit">
-          <button class="varda-button varda-button-small"
+        <div *ngFor="let tehtavanimike_koodi of row.tehtavanimike_koodit">
+          <button class="varda-text-button"
+                  type="button"
                   (click)="addOsallistuja(row, tehtavanimike_koodi)">
-            <mat-icon>add</mat-icon>
+            +
             <span libKoodistoValue="vardatehtavanimike">{{ tehtavanimike_koodi }}</span>
           </button>
-        </ng-container>
+        </div>
       </td>
     </ng-container>
-
 
     <tr mat-header-row
         *matHeaderRowDef="displayedColumns"></tr>
     <tr mat-row
         *matRowDef="let row; columns: displayedColumns;"></tr>
   </table>
-</section> -->
+
+  <mat-paginator
+                   [length]="filteredTyontekijatData.length"
+                   [pageSize]="searchFilter.page_size"
+                   [pageIndex]="searchFilter.page - 1"
+                   (page)="searchHenkilot($event)">
+    </mat-paginator>
+</section>
+

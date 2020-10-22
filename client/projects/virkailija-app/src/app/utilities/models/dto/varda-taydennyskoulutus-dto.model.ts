@@ -9,10 +9,10 @@ export interface VardaTaydennyskoulutusDTO {
   taydennyskoulutus_tyontekijat?: Array<VardaTaydennyskoulutusTyontekijaDTO>;
   taydennyskoulutus_tyontekijat_add?: Array<VardaTaydennyskoulutusTyontekijaDTO>;
   taydennyskoulutus_tyontekijat_remove?: Array<VardaTaydennyskoulutusTyontekijaDTO>;
+  taydennyskoulutus_tyontekijat_count?: number;
   muutos_pvm?: string;
   lahdejarjestelma?: Lahdejarjestelma;
   tunniste?: string;
-
   osallistuja_lkm?: number;
 }
 
@@ -27,8 +27,9 @@ export interface VardaTaydennyskoulutusTyontekijaDTO {
 
 export interface VardaTaydennyskoulutusTyontekijaListDTO {
   tehtavanimike_koodit: Array<string>;
-  henkilo_etunimet: string;
-  henkilo_sukunimi: string;
+  henkilo_etunimet?: string;
+  henkilo_sukunimi?: string;
   henkilo_oid: string;
   nimi?: string;
+  valitut_nimikkeet?: Array<string>;
 }

@@ -1,5 +1,6 @@
-<mat-action-row>
-  <div class="action-button-wrapper">
+<mat-action-row [class.margin-normal]="!noMargin">
+  <div class="action-button-wrapper"
+       [class.margin-normal]="!noMargin">
     <div class="left">
       <ng-container *ngIf="!promptDelete">
         <button type="submit"
@@ -11,9 +12,19 @@
 
         <button class="varda-button varda-button-wide varda-button-neutral responsive-md secondary"
                 type="button"
+                *ngIf="!noToggle; else noToggleCancelBtn"
                 (click)="_togglePanel(false)">
           {{ i18n.cancel | translate }}
         </button>
+
+        <ng-template #noToggleCancelBtn>
+          <button class="varda-button varda-button-wide varda-button-neutral responsive-md secondary"
+                  type="button"
+                  *ngIf="isEdit"
+                  (click)="_disableEdit()">
+            {{ i18n.cancel | translate }}
+          </button>
+        </ng-template>
 
         <ng-container *ngIf="formExists && saveAccess">
           <button *ngIf="!isEdit"

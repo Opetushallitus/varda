@@ -1,5 +1,7 @@
 <ng-container *ngIf="errors | async as errorArr">
   <div *ngIf="errorArr?.length"
+       role="alert"
+       aria-live="polite"
        class="varda-error-component">
     <div class="varda-error-header">
       <header class="oph-h3"

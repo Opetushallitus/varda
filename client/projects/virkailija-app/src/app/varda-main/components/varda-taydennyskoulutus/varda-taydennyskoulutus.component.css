@@ -1,4 +1,8 @@
-/*
+
+.taydennyskoulutus-table {
+  width: 100%;
+}
+
 th.mat-header-cell:not(:first-of-type),
 td.mat-cell:not(:first-of-type) {
   padding-left: 0.5em;
@@ -21,4 +25,4 @@ table td .mat-icon {
   cursor: pointer;
   background-color: var(--blue-lighten-1);
 }
- */
+

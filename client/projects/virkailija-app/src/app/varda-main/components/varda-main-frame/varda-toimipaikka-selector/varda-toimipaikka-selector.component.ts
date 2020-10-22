@@ -1,5 +1,4 @@
 import { Component, EventEmitter, Input, Output, SimpleChanges, OnInit } from '@angular/core';
-import { VardaApiService } from '../../../../core/services/varda-api.service';
 import { VardaLocalstorageWrapperService } from '../../../../core/services/varda-localstorage-wrapper.service';
 import { VardaApiWrapperService } from '../../../../core/services/varda-api-wrapper.service';
 import { VardaVakajarjestajaService } from '../../../../core/services/varda-vakajarjestaja.service';

@@ -42,6 +42,8 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
   isEdit: boolean;
   tehtavanimike_koodit: Array<string>;
   taydennyskoulutusFormErrors: Observable<Array<ErrorTree>>;
+  limitedEditAccess: boolean;
+  firstAllowedDate = VardaDateService.henkilostoReleaseDate;
   private henkilostoErrorService = new HenkilostoErrorMessageService();
 
   constructor(
@@ -68,6 +70,9 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
       suoritus_pvm: new FormControl(this.taydennyskoulutus ? moment(this.taydennyskoulutus?.suoritus_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
       tehtavanimike_koodit: new FormControl(this.tehtavanimike_koodit, Validators.required),
     });
+
+    const tyontekijaNimikeCount = this.taydennyskoulutus?.taydennyskoulutus_tyontekijat.filter(nimike => nimike.henkilo_oid === this.tyontekija.henkilo_oid).length;
+    this.limitedEditAccess = this.taydennyskoulutus?.taydennyskoulutus_tyontekijat_count !== tyontekijaNimikeCount;
 
     if (!this.toimipaikkaAccess.taydennyskoulutustiedot.tallentaja || this.taydennyskoulutus) {
       this.disableForm();
@@ -111,14 +116,12 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
           taydennyskoulutusJson.taydennyskoulutus_tyontekijat_add = tehtavanimikkeetToAdd;
         }
 
+        if (tehtavanimikkeetToRemove.length) {
+          taydennyskoulutusJson.taydennyskoulutus_tyontekijat_remove = tehtavanimikkeetToRemove;
+        }
+
         this.henkilostoService.updateTaydennyskoulutus(taydennyskoulutusJson).subscribe({
-          next: () => {
-            if (tehtavanimikkeetToRemove.length) {
-              this.deleteTaydennyskoulutus(tehtavanimikkeetToRemove);
-            } else {
-              this.togglePanel(false, true);
-            }
-          },
+          next: () => this.togglePanel(false, true),
           error: err => this.henkilostoErrorService.handleError(err)
         });
       } else {

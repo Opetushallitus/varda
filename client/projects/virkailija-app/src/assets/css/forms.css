@@ -202,6 +202,14 @@
   border-top-color: var(--red-lighten-2);
 }
 
+.transparent-disable.mat-select-disabled {
+  border-width: 0;
+  box-shadow: none;
+}
+
+.transparent-disable.mat-select-disabled .mat-select-value {
+  color: var(--black);
+}
 
 @media (max-width: 767px) {
   .form-continues-text-wrapper {

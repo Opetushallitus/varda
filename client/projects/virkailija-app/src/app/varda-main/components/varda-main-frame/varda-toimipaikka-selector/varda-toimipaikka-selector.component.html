@@ -2,12 +2,12 @@
      aria-live="polite">
   <div class="toimipaikka-selector-top">
     <nav class="toimipaikka-selector-navi">
-      <!-- <a *ngIf="toimijaAccess.taydennyskoulutustiedot.katselija"
-         [routerLink]="['/taydennyskoulutus']">{{ i18n.taydennyskoulutukset | translate }}</a> -->
+      <a *ngIf="toimijaAccess.taydennyskoulutustiedot.katselija"
+         [routerLink]="['/taydennyskoulutus']">{{ i18n.taydennyskoulutukset | translate }}</a>
       <a *ngIf="toimijaAccess.tilapainenHenkilosto.katselija"
          [routerLink]="['/tilapainen-henkilosto']">{{ i18n.tilapainen_henkilosto | translate }}</a>
       <a *ngIf="toimijaAccess.lapsitiedot.katselija"
-         [routerLink]="['/paos-hallinta']">{{ i18n.paos_title | translate }}</a>
+         [routerLink]="['/paos-hallinta']">{{ i18n.paos | translate }}</a>
     </nav>
 
     <h2 class="oph-h3">{{ selectedVakajarjestaja.nimi }}</h2>

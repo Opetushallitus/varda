@@ -14,6 +14,7 @@ import { VardaErrorMessageService } from './services/varda-error-message.service
 import { VardaDomService } from './services/varda-dom.service';
 import { VardaHenkilostoApiService } from './services/varda-henkilosto.service';
 import { VardaLapsiService } from './services/varda-lapsi.service';
+import { VardaSnackBarService} from './services/varda-snackbar.service';
 
 @NgModule({
   imports: [
@@ -33,7 +34,8 @@ import { VardaLapsiService } from './services/varda-lapsi.service';
     VardaErrorMessageService,
     VardaDomService,
     VardaHenkilostoApiService,
-    VardaLapsiService
+    VardaLapsiService,
+    VardaSnackBarService
   ]
 })
 export class CoreModule {
