@@ -407,12 +407,14 @@ class UiTyontekijaFilter(djangofilters.FilterSet):
         voimassaolo = query_params.get('voimassaolo', None)
         alkamis_pvm = query_params.get('alkamis_pvm', None)
         paattymis_pvm = query_params.get('paattymis_pvm', None)
+        tehtavanimike_taydennyskoulutus = query_params.get('tehtavanimike_taydennyskoulutus', None)
 
-        if not rajaus or not voimassaolo or not alkamis_pvm or not paattymis_pvm:
+        # voimassaolo is not required if rajaus is taydennyskoulutukset
+        voimassaolo_none_and_required = not voimassaolo and rajaus != 'taydennyskoulutukset'
+        if not rajaus or voimassaolo_none_and_required or not alkamis_pvm or not paattymis_pvm:
             return Q()
 
         rajaus = str.lower(rajaus)
-        voimassaolo = str.lower(voimassaolo)
 
         try:
             alkamis_pvm = datetime.strptime(alkamis_pvm, '%Y-%m-%d').date()
@@ -420,12 +422,25 @@ class UiTyontekijaFilter(djangofilters.FilterSet):
         except ValueError as e:
             raise Http404(e)
 
-        if rajaus == 'tyoskentelypaikat':
-            prefix = 'palvelussuhteet__tyoskentelypaikat__'
-        elif rajaus == 'palvelussuhteet':
-            prefix = 'palvelussuhteet__'
+        prefixes = {
+            'tyoskentelypaikat': 'palvelussuhteet__tyoskentelypaikat__',
+            'palvelussuhteet': 'palvelussuhteet__',
+            'poissaolot': 'palvelussuhteet__pidemmatpoissaolot__'
+        }
+
+        if rajaus in ['tyoskentelypaikat', 'palvelussuhteet', 'poissaolot']:
+            prefix = prefixes[rajaus]
+        elif rajaus == 'taydennyskoulutukset':
+            tyontekija_filter = Q(taydennyskoulutukset__suoritus_pvm__gte=alkamis_pvm,
+                                  taydennyskoulutukset__suoritus_pvm__lte=paattymis_pvm)
+            if tehtavanimike_taydennyskoulutus:
+                tyontekija_filter = (tyontekija_filter &
+                                     Q(taydennyskoulutukset_tyontekijat__tehtavanimike_koodi=tehtavanimike_taydennyskoulutus))
+            return tyontekija_filter
         else:
             return Q()
+
+        voimassaolo = str.lower(voimassaolo)
 
         if voimassaolo == 'alkanut':
             return Q(**{prefix + 'alkamis_pvm__gte': alkamis_pvm}) & Q(**{prefix + 'alkamis_pvm__lte': paattymis_pvm})
@@ -433,7 +448,7 @@ class UiTyontekijaFilter(djangofilters.FilterSet):
             return Q(**{prefix + 'paattymis_pvm__gte': alkamis_pvm}) & Q(**{prefix + 'paattymis_pvm__lte': paattymis_pvm})
         elif voimassaolo == 'voimassa':
             return (Q(**{prefix + 'alkamis_pvm__lte': alkamis_pvm}) &
-                    (Q(**{prefix + 'paattymis_pvm__gte': paattymis_pvm})) | Q(**{prefix + 'paattymis_pvm__isnull': True}))
+                    (Q(**{prefix + 'paattymis_pvm__gte': paattymis_pvm}) | Q(**{prefix + 'paattymis_pvm__isnull': True})))
 
     def apply_kiertava_filter(self, toimipaikka_filter):
         kiertava_arg = self.request.query_params.get('kiertava', '').lower()

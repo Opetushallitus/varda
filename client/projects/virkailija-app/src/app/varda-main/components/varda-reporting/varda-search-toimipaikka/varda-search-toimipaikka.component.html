@@ -13,7 +13,7 @@
                (keydown.enter)="search()">
       </div>
       <div class="col-sm-auto">
-        <button class="varda-button varda-icon-button search-button-toimipaikat"
+        <button class="varda-button varda-icon-button search-button-toimipaikat margin-top-sm"
                 type="button"
                 (click)="search()">
           <mat-icon>search</mat-icon>
@@ -96,7 +96,7 @@
           </button>
         </div>
       </div>
-      <div class="col-12 varda-link"
+      <div class="col-12 varda-link margin-top-md"
            *ngIf="!isFiltersVisible"
            (click)="isFiltersVisible = true">
         {{i18n.katsele_tietoja_apply_filters | translate}}

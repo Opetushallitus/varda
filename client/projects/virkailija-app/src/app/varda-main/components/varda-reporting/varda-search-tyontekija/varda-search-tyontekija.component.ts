@@ -24,6 +24,8 @@ import { PaginatorParams } from '../varda-result-list/varda-result-list.componen
 export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent implements OnInit {
   rajaus = {
     PALVELUSSUHTEET: 'palvelussuhteet',
+    POISSAOLOT: 'poissaolot',
+    TAYDENNYSKOULUTUKSET: 'taydennyskoulutukset',
     NONE: null
   };
 
@@ -40,13 +42,15 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
     paattymisPvm: Moment;
     tehtavanimike: CodeDTO;
     tutkinto: CodeDTO;
+    tehtavanimikeTaydennyskoulutus: CodeDTO;
   } = {
     rajaus: this.rajaus.PALVELUSSUHTEET,
     voimassaolo: this.voimassaolo.VOIMASSA,
     alkamisPvm: moment(),
     paattymisPvm: moment(),
     tehtavanimike: null,
-    tutkinto: null
+    tutkinto: null,
+    tehtavanimikeTaydennyskoulutus: null
   };
 
   isRajausFiltersInactive = false;
@@ -107,8 +111,13 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
       searchParams['voimassaolo'] = this.filterParams.voimassaolo;
       searchParams['alkamis_pvm'] = this.dateService.momentToVardaDate(this.filterParams.alkamisPvm);
       searchParams['paattymis_pvm'] = this.dateService.momentToVardaDate(this.filterParams.paattymisPvm);
+
+      if (this.filterParams.rajaus === this.rajaus.TAYDENNYSKOULUTUKSET &&
+        this.filterParams.tehtavanimikeTaydennyskoulutus) {
+        searchParams['tehtavanimike_taydennyskoulutus'] = this.filterParams.tehtavanimikeTaydennyskoulutus.code_value;
+      }
     }
-    if (this.filterParams.tehtavanimike !== null) {
+    if (this.filterParams.rajaus !== this.rajaus.TAYDENNYSKOULUTUKSET && this.filterParams.tehtavanimike !== null) {
       searchParams['tehtavanimike'] = this.filterParams.tehtavanimike.code_value;
     }
     if (this.filterParams.tutkinto !== null) {
@@ -163,6 +172,7 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
     this.filterParams.voimassaolo = null;
     this.filterParams.alkamisPvm = null;
     this.filterParams.paattymisPvm = null;
+    this.filterParams.tehtavanimikeTaydennyskoulutus = null;
     this.isRajausFiltersInactive = true;
   }
 
@@ -190,7 +200,11 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
 
     if (this.isRajausFiltersFilled()) {
       stringParams.push({value: this.filterParams.rajaus, type: FilterStringType.TRANSLATED_STRING});
-      stringParams.push({value: this.filterParams.voimassaolo, type: FilterStringType.TRANSLATED_STRING, lowercase: true});
+      if (this.filterParams.rajaus !== this.rajaus.TAYDENNYSKOULUTUKSET) {
+        stringParams.push({value: this.filterParams.voimassaolo, type: FilterStringType.TRANSLATED_STRING, lowercase: true});
+      } else {
+        stringParams.push({value: this.filterParams.tehtavanimikeTaydennyskoulutus?.code_value, type: FilterStringType.RAW});
+      }
       if (this.filterParams.alkamisPvm && this.filterParams.paattymisPvm) {
         stringParams.push({value: 'aikavali', type: FilterStringType.TRANSLATED_STRING, lowercase: true});
         stringParams.push({
@@ -202,7 +216,9 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
       }
     }
 
-    stringParams.push({value: this.filterParams.tehtavanimike?.code_value, type: FilterStringType.RAW});
+    if (this.filterParams.rajaus !== this.rajaus.TAYDENNYSKOULUTUKSET) {
+      stringParams.push({value: this.filterParams.tehtavanimike?.code_value, type: FilterStringType.RAW});
+    }
     stringParams.push({value: this.filterParams.tutkinto?.code_value, type: FilterStringType.RAW});
 
     setTimeout(() => {
@@ -210,11 +226,7 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
     });
   }
 
-  tehtavanimikeOnChange(tehtavanimike: CodeDTO) {
-    this.search();
-  }
-
-  tutkintoOnChange(tutkinto: CodeDTO) {
+  autofillOnChange() {
     this.search();
   }
 }

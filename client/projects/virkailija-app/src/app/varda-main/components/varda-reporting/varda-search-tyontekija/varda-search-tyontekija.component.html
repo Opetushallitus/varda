@@ -35,7 +35,7 @@
           </div>
         </div>
       </div>
-      <div class="col-md col-lg-4 order-3 order-md-2">
+      <div class="col-md col-lg-4 order-3 order-md-2 margin-top-md">
         <label for="tyontekijaSearchInput"
                class="oph-bold">{{i18n.katsele_tietoja_nimi_tunniste | translate}}</label>
         <button mat-icon-button
@@ -53,7 +53,7 @@
                (keydown.enter)="search()">
       </div>
       <div class="col-md-auto order-4 order-md-3">
-        <button class="varda-button varda-icon-button search-button"
+        <button class="varda-button varda-icon-button search-button margin-top-md"
                 type="button"
                 (click)="search()">
           <mat-icon>search</mat-icon>
@@ -96,6 +96,14 @@
                                     [value]="rajaus.PALVELUSSUHTEET">
               {{i18n.palvelussuhteet | translate}}
             </app-varda-radio-button>
+            <app-varda-radio-button [id]="'filterPoissaolot'"
+                                    [value]="rajaus.POISSAOLOT">
+              {{i18n.katsele_tietoja_tyontekija_poissaolot | translate}}
+            </app-varda-radio-button>
+            <app-varda-radio-button [id]="'filterTaydennyskoulutukset'"
+                                    [value]="rajaus.TAYDENNYSKOULUTUKSET">
+              {{i18n.taydennyskoulutukset | translate}}
+            </app-varda-radio-button>
             <app-varda-radio-button [id]="'filterNone'"
                                     [value]="rajaus.NONE">
               {{i18n.katsele_tietoja_no_filter_content | translate}}
@@ -106,7 +114,7 @@
              *ngIf="filterParams.rajaus !== rajaus.NONE">
           <label class="oph-bold">{{i18n.katsele_tietoja_filter_time | translate}}</label>
           <div class="row filter-time-container">
-            <div class="col-md-auto">
+            <div class="col-md-auto" *ngIf="filterParams.rajaus !== rajaus.TAYDENNYSKOULUTUKSET">
               <app-varda-radio-button-group name="tyontekijaVoimassaoloButtonGroup"
                                             responsive="md"
                                             wrap="xs"
@@ -162,22 +170,39 @@
           </div>
         </div>
         <div class="varda-reporting-row-wrap">
-          <div class="col-md-4">
-            <label for="tyontekijaTehtavanimikeInput"
-                   class="oph-bold">{{i18n.tyoskentelypaikka_tehtavanimike | translate}}</label>
-            <app-varda-autocomplete-selector [options]="tehtavanimikkeet"
-                                             id="tyontekijaTehtavanimikeInput"
-                                             name="tyontekijaTehtavanimikeInput"
-                                             [optionFormat]="{format: '{0} ({1})', properties:['name', 'code_value']}"
-                                             [nullValue]="null"
-                                             [placeholder]="i18n.katsele_tietoja_tyontekija_tehtavanimike_all | translate"
-                                             [nullOptionLabel]="i18n.katsele_tietoja_tyontekija_tehtavanimike_all | translate"
-                                             [invalidInputLabel]="i18n.katsele_tietoja_error_no_tehtavanimike_selected | translate"
-                                             [(ngModel)]="filterParams.tehtavanimike"
-                                             (ngModelChange)="tehtavanimikeOnChange($event)">
-            </app-varda-autocomplete-selector>
+          <div class="col-md-6 col-lg-4">
+            <ng-container *ngIf="filterParams.rajaus === rajaus.TAYDENNYSKOULUTUKSET; else tehtavanimikeContainer">
+              <label for="tyontekijaTehtavanimikeTaydennyskoulutusInput"
+                     class="oph-bold">{{i18n.katsele_tietoja_tyontekija_tehtavanimike_taydennyskoulutus | translate}}</label>
+              <app-varda-autocomplete-selector [options]="tehtavanimikkeet"
+                                               id="tyontekijaTehtavanimikeTaydennyskoulutusInput"
+                                               name="tyontekijaTehtavanimikeTaydennyskoulutusInput"
+                                               [optionFormat]="{format: '{0} ({1})', properties:['name', 'code_value']}"
+                                               [nullValue]="null"
+                                               [placeholder]="i18n.katsele_tietoja_tyontekija_tehtavanimike_all | translate"
+                                               [nullOptionLabel]="i18n.katsele_tietoja_tyontekija_tehtavanimike_all | translate"
+                                               [invalidInputLabel]="i18n.katsele_tietoja_error_no_tehtavanimike_selected | translate"
+                                               [(ngModel)]="filterParams.tehtavanimikeTaydennyskoulutus"
+                                               (ngModelChange)="autofillOnChange()">
+              </app-varda-autocomplete-selector>
+            </ng-container>
+            <ng-template #tehtavanimikeContainer>
+              <label for="tyontekijaTehtavanimikeInput"
+                     class="oph-bold">{{i18n.katsele_tietoja_tyontekija_tehtavanimike | translate}}</label>
+              <app-varda-autocomplete-selector [options]="tehtavanimikkeet"
+                                               id="tyontekijaTehtavanimikeInput"
+                                               name="tyontekijaTehtavanimikeInput"
+                                               [optionFormat]="{format: '{0} ({1})', properties:['name', 'code_value']}"
+                                               [nullValue]="null"
+                                               [placeholder]="i18n.katsele_tietoja_tyontekija_tehtavanimike_all | translate"
+                                               [nullOptionLabel]="i18n.katsele_tietoja_tyontekija_tehtavanimike_all | translate"
+                                               [invalidInputLabel]="i18n.katsele_tietoja_error_no_tehtavanimike_selected | translate"
+                                               [(ngModel)]="filterParams.tehtavanimike"
+                                               (ngModelChange)="autofillOnChange()">
+              </app-varda-autocomplete-selector>
+            </ng-template>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-6 col-lg-4 margin-top-md">
             <label for="tyontekijaTutkintoInput"
                    class="oph-bold">{{'label.tutkinto' | translate}}</label>
             <app-varda-autocomplete-selector [options]="tutkinnot"
@@ -189,10 +214,10 @@
                                              [nullOptionLabel]="i18n.katsele_tietoja_tyontekija_tutkinto_all | translate"
                                              [invalidInputLabel]="i18n.katsele_tietoja_error_no_tutkinto_selected | translate"
                                              [(ngModel)]="filterParams.tutkinto"
-                                             (ngModelChange)="tutkintoOnChange($event)">
+                                             (ngModelChange)="autofillOnChange()">
             </app-varda-autocomplete-selector>
           </div>
-          <div class="col-md-4 filter-clear-container">
+          <div class="col-md-12 col-lg-4 filter-clear-container">
             <button class="varda-button varda-icon-button filter-clear"
                     type="button"
                     (click)="clearFilters()"
@@ -203,7 +228,7 @@
           </div>
         </div>
       </div>
-      <div class="varda-link order-6"
+      <div class="varda-link col-12 order-6 margin-top-md"
            *ngIf="!isFiltersVisible"
            (click)="isFiltersVisible = true">
         {{i18n.katsele_tietoja_apply_filters | translate}}

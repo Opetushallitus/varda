@@ -60,6 +60,8 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
     'maksutiedot': this.i18n.maksutiedot,
     'alkanut': this.i18n.katsele_tietoja_alkanut,
     'palvelussuhteet': this.i18n.palvelussuhteet,
+    'poissaolot': this.i18n.katsele_tietoja_tyontekija_poissaolot,
+    'taydennyskoulutukset': this.i18n.taydennyskoulutukset,
     'aikavali': this.i18n.katsele_tietoja_aikavalilla
   };
 

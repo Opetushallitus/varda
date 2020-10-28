@@ -487,7 +487,7 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
         toimipaikat=pilkuilla eroteltu lista toimipaikkojen ID:stä, esim. 1,2,3
         kiertava=true/false
         search=str (nimi/hetu/OID)
-        rajaus=str (palvelussuhteet/tyoskentelypaikat)
+        rajaus=str (palvelussuhteet/tyoskentelypaikat/poissaolot/taydennyskoulutukset)
         voimassaolo=str (alkanut/paattynyt/voimassa)
         alkamis_pvm=YYYY-mm-dd
         paattymis_pvm=YYYY-mm-dd

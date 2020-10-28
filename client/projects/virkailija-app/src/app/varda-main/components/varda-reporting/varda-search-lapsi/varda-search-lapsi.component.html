@@ -35,7 +35,7 @@
           </div>
         </div>
       </div>
-      <div class="col-md col-lg-4 order-3 order-md-2">
+      <div class="col-md col-lg-4 order-3 order-md-2 margin-top-md">
         <label for="reportingLapsiSearchInput"
                class="oph-bold">{{i18n.katsele_tietoja_nimi_tunniste | translate}}</label>
         <button mat-icon-button
@@ -53,7 +53,7 @@
                (keydown.enter)="search()">
       </div>
       <div class="col-md-auto order-4 order-md-3">
-        <button class="varda-button varda-icon-button search-button"
+        <button class="varda-button varda-icon-button search-button margin-top-md"
                 type="button"
                 (click)="search()">
           <mat-icon>search</mat-icon>
@@ -182,7 +182,7 @@
            *ngIf="isFiltersVisible">
         {{i18n.katsele_tietoja_lapsi_filter_help | translate}}
       </div>
-      <div class="varda-link order-7"
+      <div class="varda-link col-12 order-7 margin-top-md"
            *ngIf="!isFiltersVisible"
            (click)="isFiltersVisible = true">
         {{i18n.katsele_tietoja_apply_filters | translate}}

@@ -347,8 +347,8 @@ tr.selected-row .mat-cell {
     width: 100%;
   }
 
-  .search-button {
-    margin-top: initial;
+  .margin-top-md {
+    margin-top: 1em;
   }
 }
 
@@ -377,5 +377,9 @@ tr.selected-row .mat-cell {
 
   .mat-expansion-panel-header .mat-content {
     flex-direction: column;
+  }
+
+  .margin-top-sm {
+    margin-top: 1em;
   }
 }
