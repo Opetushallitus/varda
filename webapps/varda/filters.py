@@ -3,6 +3,7 @@ from datetime import datetime
 from django.db.models import Q
 from django.http import Http404
 from django_filters import rest_framework as djangofilters
+from django_filters.constants import EMPTY_VALUES
 
 from varda.koodistopalvelu import Koodistot
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
@@ -58,6 +59,41 @@ class HenkiloFieldFilter(djangofilters.CharFilter):
             return qs
 
 
+class NoneDateFromToRangeFilter(djangofilters.DateFromToRangeFilter):
+    """
+    DateFromToRangeFilter that also returns results with undefined date with keyword _after
+    """
+    def filter(self, qs, value):
+        # Copied from filters.RangeFilter.filter()
+        if value:
+            if value.start is not None and value.stop is not None:
+                self.lookup_expr = 'range'
+                value = (value.start, value.stop)
+            elif value.start is not None:
+                self.lookup_expr = 'gte'
+                value = value.start
+            elif value.stop is not None:
+                self.lookup_expr = 'lte'
+                value = value.stop
+
+        # Overrides filters.Filter.filter()
+        if value in EMPTY_VALUES:
+            return qs
+        if self.distinct:
+            qs = qs.distinct()
+        lookup = f'{self.field_name}__{self.lookup_expr}'
+        filter_obj = Q(**{lookup: value})
+
+        # Date value can also be None if the lookup_expr is 'gte' so that dates that are after the value and
+        # dates that are not yet set are filtered.
+        if self.lookup_expr == 'gte':
+            isnull_filter = Q(**{f'{self.field_name}__isnull': True})
+            filter_obj = filter_obj | isnull_filter
+
+        qs = self.get_method(qs)(filter_obj)
+        return qs
+
+
 class VakaJarjestajaFilter(djangofilters.FilterSet):
     nimi = djangofilters.CharFilter(field_name='nimi', lookup_expr='icontains')
     y_tunnus = djangofilters.CharFilter(field_name='y_tunnus', lookup_expr='exact')
@@ -99,8 +135,8 @@ class ToimipaikkaFilter(djangofilters.FilterSet):
     asiointikieli_koodi = djangofilters.BaseCSVFilter(field_name='asiointikieli_koodi', lookup_expr='contains')
     jarjestamismuoto_koodi = djangofilters.BaseCSVFilter(field_name='jarjestamismuoto_koodi', lookup_expr='contains')
     varhaiskasvatuspaikat = djangofilters.NumberFilter(field_name='varhaiskasvatuspaikat', lookup_expr='gte')
-    alkamis_pvm = djangofilters.DateFilter(field_name='alkamis_pvm', lookup_expr='gte')
-    paattymis_pvm = djangofilters.DateFilter(field_name='paattymis_pvm', lookup_expr='gte')
+    alkamis_pvm = djangofilters.DateFromToRangeFilter(field_name='alkamis_pvm')
+    paattymis_pvm = NoneDateFromToRangeFilter(field_name='paattymis_pvm')
     muutos_pvm = djangofilters.DateTimeFilter(field_name='muutos_pvm', lookup_expr='gte')
 
     class Meta:

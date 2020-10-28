@@ -88,8 +88,8 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   varhaiskasvatuspaatoksetFieldSets: { [key: string]: Array<VardaFieldSet> };
   varhaiskasvatuspaatoksetFieldSetsTemplate: Array<VardaFieldSet>;
 
-  allToimipaikkaOptions: Array<VardaToimipaikkaDTO>;
-  tallentajaToimipaikkaOptions: Array<VardaToimipaikkaDTO>;
+  allToimipaikkaOptions: Array<VardaToimipaikkaMinimalDto>;
+  tallentajaToimipaikkaOptions: Array<VardaToimipaikkaMinimalDto>;
   varhaiskasvatussuhteet: Array<VardaVarhaiskasvatussuhdeDTO>;
   varhaiskasvatuspaatokset: Array<VardaVarhaiskasvatuspaatosDTO>;
 
@@ -609,7 +609,7 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
     this.valuesChanged.emit(rv);
   }
 
-  getToimipaikkaByUrl(suhde: any): VardaToimipaikkaDTO {
+  getToimipaikkaByUrl(suhde: any): VardaToimipaikkaMinimalDto {
     return this.allToimipaikkaOptions.find((toimipaikkaObj) => toimipaikkaObj.url === suhde.toimipaikka);
   }
 

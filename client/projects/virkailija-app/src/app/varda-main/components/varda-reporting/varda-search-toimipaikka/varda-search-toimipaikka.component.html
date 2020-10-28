@@ -1,0 +1,123 @@
+<div class="varda-card-bottom">
+  <form>
+    <div class="varda-reporting-search-form-content toimipaikka-search-form varda-reporting-row-wrap margin-top">
+      <div class="col-sm col-md-6 col-lg-5">
+        <label for="toimipaikkaSearchInput"
+               class="oph-bold">{{i18n.toimipaikka_nimi | translate}}</label>
+        <input class="oph-input"
+               name="toimipaikkaSearchInput"
+               id="toimipaikkaSearchInput"
+               type="text"
+               [placeholder]="i18n.toimipaikka_nimi | translate"
+               [(ngModel)]="searchValue"
+               (keydown.enter)="search()">
+      </div>
+      <div class="col-sm-auto">
+        <button class="varda-button varda-icon-button search-button-toimipaikat"
+                type="button"
+                (click)="search()">
+          <mat-icon>search</mat-icon>
+          {{i18n.katsele_tietoja_search | translate}}
+        </button>
+      </div>
+      <div class="oph-bg-gray-lighten-5 filter-form"
+           *ngIf="isFiltersVisible">
+        <div class="col-md-auto">
+          <label class="varda-link varda-filter-close"
+                 *ngIf="isSmall"
+                 (click)="isFiltersVisible = false; clearFilters()">
+            {{i18n.close | translate}}
+          </label>
+          <label for="toimintamuotoSelect"
+                 class="oph-bold">{{i18n.toimipaikka_toimintamuoto | translate}}</label>
+          <div class="oph-select-container">
+            <select class="oph-input oph-select"
+                    name="toimintamuotoSelect"
+                    id="toimintamuotoSelect"
+                    (change)="search()"
+                    [(ngModel)]="filterParams.toimintamuoto">
+              <option value="">{{i18n.katsele_tietoja_toimipaikka_toimintamuoto_all | translate}}</option>
+              <option *ngFor="let code of (getKoodistoFromKoodistoService(koodistoEnum.toimintamuoto) | async)?.codes"
+                      [ngValue]="code.code_value"
+                      [title]="getCodeUiString(code)">
+                {{getCodeUiString(code)}}
+              </option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-auto">
+          <label for="jarjestamismuotoSelect"
+                 class="oph-bold">{{i18n.toimipaikka_jarjestamismuoto | translate}}</label>
+          <div class="oph-select-container">
+            <select class="oph-input oph-select"
+                    name="jarjestamismuotoSelect"
+                    id="jarjestamismuotoSelect"
+                    (change)="search()"
+                    [(ngModel)]="filterParams.jarjestamismuoto">
+              <option value="">{{i18n.katsele_tietoja_toimipaikka_jarjestamismuoto_all | translate}}</option>
+              <option *ngFor="let code of (getKoodistoFromKoodistoService(koodistoEnum.jarjestamismuoto) | async)?.codes"
+                      [ngValue]="code.code_value"
+                      [title]="getCodeUiString(code)">
+                {{getCodeUiString(code)}}
+              </option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-auto">
+          <label for="toimipaikkaVoimassaoloButtonGroup"
+                 class="oph-bold">{{i18n.katsele_tietoja_voimassaolo | translate}}</label>
+          <app-varda-radio-button-group name="toimipaikkaVoimassaoloButtonGroup"
+                                        id="toimipaikkaVoimassaoloButtonGroup"
+                                        responsive="md"
+                                        wrap="md"
+                                        (change)="search()"
+                                        [(ngModel)]="filterParams.voimassaolo">
+            <app-varda-radio-button [id]="'voimassaoloKaikki'"
+                                    [value]="voimassaolo.KAIKKI">
+              {{i18n.all | translate}}
+            </app-varda-radio-button>
+            <app-varda-radio-button [id]="'voimassaoloVoimassaolevat'"
+                                    [value]="voimassaolo.VOIMASSAOLEVAT">
+              {{i18n.katsele_tietoja_voimassa_olevat | translate}}
+            </app-varda-radio-button>
+            <app-varda-radio-button [id]="'voimassaoloPaattyneet'"
+                                    [value]="voimassaolo.PAATTYNEET">
+              {{i18n.katsele_tietoja_paattyneet | translate}}
+            </app-varda-radio-button>
+          </app-varda-radio-button-group>
+        </div>
+        <div class="col filter-clear-container">
+          <button class="varda-button varda-icon-button filter-clear"
+                  type="button"
+                  (click)="clearFilters()"
+                  [disabled]="isFiltersInactive">
+            <mat-icon>delete</mat-icon>
+            {{i18n.katsele_tietoja_clear_filters | translate}}
+          </button>
+        </div>
+      </div>
+      <div class="col-12 varda-link"
+           *ngIf="!isFiltersVisible"
+           (click)="isFiltersVisible = true">
+        {{i18n.katsele_tietoja_apply_filters | translate}}
+      </div>
+    </div>
+  </form>
+</div>
+<app-varda-result-info [filterString]="filterString"
+                       [resultCount]="resultCount"></app-varda-result-info>
+<div class="varda-reporting-card-container"
+     *ngIf="resultCount > 0">
+  <div class="col-12 col-lg-5 varda-reporting-card">
+    <app-varda-result-list #resultList
+                           [resultCount]="resultCount"
+                           [searchResults]="searchResults"
+                           [pageSize]="pageSize"
+                           (paginationChanged)="search($event)"
+                           (resultSelected)="setSelectedId($event)"></app-varda-result-list>
+  </div>
+  <div class="col-12 col-lg-7 varda-reporting-card"
+       *ngIf="selectedId">
+    <app-varda-result-toimipaikka [toimipaikkaId]="selectedId"></app-varda-result-toimipaikka>
+  </div>
+</div>

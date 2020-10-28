@@ -1163,6 +1163,8 @@ class LapsiKoosteMaksutietoSerializer(serializers.HyperlinkedModelSerializer):
 
 class LapsiKoosteSerializer(serializers.Serializer):
     id = serializers.ReadOnlyField()
+    oma_organisaatio_nimi = serializers.ReadOnlyField(source='oma_organisaatio.nimi')
+    paos_organisaatio_nimi = serializers.ReadOnlyField(source='paos_organisaatio.nimi')
     yksityinen_kytkin = serializers.ReadOnlyField()
     henkilo = LapsiKoosteHenkiloSerializer(many=False)
     varhaiskasvatuspaatokset = LapsiKoosteVarhaiskasvatuspaatosSerializer(many=True)
@@ -1171,7 +1173,7 @@ class LapsiKoosteSerializer(serializers.Serializer):
 
     class Meta:
         fields = ('id', 'yksityinen_kytkin', 'henkilo', 'varhaiskasvatuspaatokset',
-                  'varhaiskasvatussuhteet', 'maksutiedot')
+                  'varhaiskasvatussuhteet', 'maksutiedot', 'oma_organisaatio_nimi', 'paos_organisaatio_nimi')
 
 
 class NestedPaosOikeusSerializer(serializers.ModelSerializer):
@@ -1257,3 +1259,27 @@ class PaosToimipaikkaSerializer(serializers.HyperlinkedModelSerializer):
     @caching_to_representation('paosalltoimipaikka')
     def to_representation(self, instance):
         return super(PaosToimipaikkaSerializer, self).to_representation(instance)
+
+
+class ToimipaikkaKoosteToiminnallinenPainotusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ToiminnallinenPainotus
+        fields = ('id', 'toimintapainotus_koodi', 'alkamis_pvm', 'paattymis_pvm')
+
+
+class ToimipaikkaKoosteKieliPainotusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = KieliPainotus
+        fields = ('id', 'kielipainotus_koodi', 'alkamis_pvm', 'paattymis_pvm')
+
+
+class ToimipaikkaKoosteSerializer(serializers.ModelSerializer):
+    vakajarjestaja_id = serializers.ReadOnlyField(source='vakajarjestaja.id')
+    vakajarjestaja_nimi = serializers.ReadOnlyField(source='vakajarjestaja.nimi')
+    kielipainotukset = ToimipaikkaKoosteKieliPainotusSerializer(many=True, read_only=True)
+    toiminnalliset_painotukset = ToimipaikkaKoosteToiminnallinenPainotusSerializer(source='toiminnallisetpainotukset',
+                                                                                   many=True, read_only=True)
+
+    class Meta:
+        model = Toimipaikka
+        exclude = ('changed_by', 'vakajarjestaja', 'luonti_pvm', 'muutos_pvm', )

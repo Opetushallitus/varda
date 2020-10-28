@@ -10,6 +10,7 @@ import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
 import { ToimipaikkaChange } from '../varda-main-frame.component';
+import { VardaApiService } from '../../../../core/services/varda-api.service';
 
 @Component({
   selector: 'app-varda-toimipaikka-selector',
@@ -35,6 +36,7 @@ export class VardaToimipaikkaSelectorComponent implements OnInit {
 
   constructor(
     private vardaApiWrapperService: VardaApiWrapperService,
+    private vardaApiService: VardaApiService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private vardaLocalStorageWrapperService: VardaLocalstorageWrapperService,
     private authService: AuthService
@@ -92,7 +94,7 @@ export class VardaToimipaikkaSelectorComponent implements OnInit {
   openToimipaikka(toimipaikka: VardaToimipaikkaMinimalDto): void {
     this.editToimipaikkaAction = true;
     this.formToimipaikka = toimipaikka;
-    this.openToimipaikkaForm(toimipaikka.id);
+    this.openToimipaikkaForm(toimipaikka.id.toString());
   }
 
   toimipaikkaFormValuesChanged(hasChanged: boolean) {
@@ -131,7 +133,7 @@ export class VardaToimipaikkaSelectorComponent implements OnInit {
       this.activeToimipaikka = data.toimipaikka;
       this.setToimipaikka(this.activeToimipaikka);
 
-      this.vardaApiWrapperService.getAllToimipaikatForVakajarjestaja(this.vardaVakajarjestajaService.selectedVakajarjestaja.id).subscribe(toimipaikat => {
+      this.vardaApiService.getAllToimipaikatForVakaJarjestaja(this.vardaVakajarjestajaService.selectedVakajarjestaja.id).subscribe(toimipaikat => {
         this.vardaVakajarjestajaService.setToimipaikat(toimipaikat, this.authService);
         this.initToimipaikat();
       });

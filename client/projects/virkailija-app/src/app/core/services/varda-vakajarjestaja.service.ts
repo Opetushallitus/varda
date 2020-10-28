@@ -22,7 +22,7 @@ export class VardaVakajarjestajaService {
   selectedToimipaikkaSubject = new Subject<VardaToimipaikkaMinimalDto>();
   tallentajaToimipaikat: Array<VardaToimipaikkaMinimalDto>;
   toimipaikat: Array<VardaToimipaikkaMinimalDto>;
-  tallentajaToimipaikatSubject = new Subject<Array<VardaToimipaikkaDTO>>();
+  tallentajaToimipaikatSubject = new Subject<Array<VardaToimipaikkaMinimalDto>>();
   toimipaikkaVarhaiskasvatussuhteet: Array<VardaVarhaiskasvatussuhdeDTO>;
   private selectedVakajarjestajaToimipaikat: VakajarjestajaToimipaikat;
   private selectedVakajarjestajaToimipaikat$ = new BehaviorSubject<VakajarjestajaToimipaikat>(null);
@@ -83,7 +83,7 @@ export class VardaVakajarjestajaService {
     return this.selectedVakajarjestajaSubject.asObservable();
   }
 
-  getToimipaikat(): Array<VardaToimipaikkaDTO> {
+  getToimipaikat(): Array<VardaToimipaikkaMinimalDto> {
     return this.toimipaikat;
   }
 
@@ -142,11 +142,11 @@ export class VardaVakajarjestajaService {
     this.setTallentajaToimipaikatSubject(toimipaikat);
   }
 
-  setTallentajaToimipaikatSubject(toimipaikat: Array<VardaToimipaikkaDTO>) {
+  setTallentajaToimipaikatSubject(toimipaikat: Array<VardaToimipaikkaMinimalDto>) {
     this.tallentajaToimipaikatSubject.next(toimipaikat);
   }
 
-  getTallentajaToimipaikatObs(): Observable<Array<VardaToimipaikkaDTO>> {
+  getTallentajaToimipaikatObs(): Observable<Array<VardaToimipaikkaMinimalDto>> {
     return this.tallentajaToimipaikatSubject.asObservable();
   }
 

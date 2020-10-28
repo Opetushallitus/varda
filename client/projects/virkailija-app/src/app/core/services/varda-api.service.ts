@@ -17,7 +17,7 @@ import {
   HenkilohakuSearchDTO,
   HenkilohakuType,
   LapsiByToimipaikkaDTO,
-  ToimipaikanLapsi, TyontekijaByToimipaikkaDTO, TyontekijaKooste
+  LapsiKooste, TyontekijaByToimipaikkaDTO, TyontekijaKooste
 } from '../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { sha256 } from 'js-sha256';
 import { LoadingHttpService } from 'varda-shared';
@@ -28,7 +28,11 @@ import {
   PaosToimintatietoDto, PaosToimipaikkaDto,
   PaosToimipaikkatietoDto, PaosVakajarjestajaDto
 } from '../../utilities/models/dto/varda-paos-dto';
-import { VardaToimipaikkaSearchDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
+import {
+  ToimipaikkaKooste,
+  VardaToimipaikkaMinimalDto,
+  VardaToimipaikkaSearchDto
+} from '../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { VardaVakajarjestajaUi } from '../../utilities/models/varda-vakajarjestaja-ui.model';
 import { VardaHenkiloDTO } from '../../utilities/models';
 import { HenkiloListDTO } from '../../utilities/models/dto/varda-henkilo-dto.model';
@@ -137,54 +141,18 @@ export class VardaApiService implements VardaApiServiceInterface {
     }));
   }
 
-  getToimipaikatForVakaJarjestaja(vakaJarjestajaId: string, searchParams?: any, nextLink?: string): Observable<any> {
-    let url = `${environment.vardaApiUrl}/vakajarjestajat/${vakaJarjestajaId}/toimipaikat/`;
-
-    if (searchParams) {
-      url += '?';
-      const searchParamKeys = Object.keys(searchParams);
-      searchParamKeys.forEach((key) => {
-        const searchParamValue = searchParams[key];
-        url += key + '=' + searchParamValue + '&';
-      });
-    }
-
-    if (nextLink) {
-      url = this.getVardaPrefixedUrl(nextLink);
-    }
-
-    return this.http.get(url).pipe(map((resp: any) => {
-      return resp;
-    }));
-  }
-
   getVakajarjestajaLapset(vakajarjestajaId: string, searchFilter: any): Observable<VardaPageDto<HenkiloListDTO>> {
     return this.http.get(`${this.vakaJarjestajatUiPath}${vakajarjestajaId}/lapsi-list/`, searchFilter);
   }
 
-  getLapsetForToimipaikat(
+  getLapsetForVakajarjestaja(
     vakajarjestajaId: string,
-    searchParams?: any,
-    nextLink?: string
+    searchParams?: any
   ): Observable<VardaPageDto<LapsiByToimipaikkaDTO>> {
     let url = `${this.vakaJarjestajatUiPath}${vakajarjestajaId}/lapset/`;
 
-    if (!searchParams) {
-      searchParams = {};
-    }
-
-    if (searchParams.search) {
-      searchParams.search = this.hashHetu(searchParams.search);
-    }
-
-    url += '?';
-    url += Object.keys(searchParams)
-      .filter(key => searchParams[key] !== null && searchParams[key] !== undefined)
-      .map(key => `${key}=${searchParams[key]}`)
-      .join('&');
-
-    if (nextLink) {
-      url = this.getVardaPrefixedUrl(nextLink);
+    if (searchParams) {
+      url = this.parseSearchParams(url, searchParams);
     }
 
     return this.http.get(url).pipe(map((resp: any) => {
@@ -192,32 +160,18 @@ export class VardaApiService implements VardaApiServiceInterface {
     }));
   }
 
-  getLapsiKooste(id: number): Observable<ToimipaikanLapsi> {
+  getLapsiKooste(id: number): Observable<LapsiKooste> {
     return this.http.get(`${environment.vardaApiUrl}/lapset/${id}/kooste/`).pipe(map((resp: any) => {
       return resp;
     }));
   }
 
-  getTyontekijatForToimipaikat(
+  getTyontekijatForVakajarjestaja(
     vakajarjestajaId: string,
-    searchParams: any,
-    nextLink?: string
+    searchParams: any
   ): Observable<VardaPageDto<TyontekijaByToimipaikkaDTO>> {
     let url = `${this.vakaJarjestajatUiPath}${vakajarjestajaId}/tyontekijat/`;
-
-    if (searchParams.search) {
-      searchParams.search = this.hashHetu(searchParams.search);
-    }
-
-    url += '?';
-    url += Object.keys(searchParams)
-      .filter(key => searchParams[key] !== null && searchParams[key] !== undefined)
-      .map(key => `${key}=${searchParams[key]}`)
-      .join('&');
-
-    if (nextLink) {
-      url = this.getVardaPrefixedUrl(nextLink);
-    }
+    url = this.parseSearchParams(url, searchParams);
 
     return this.http.get(url).pipe(map((resp: any) => {
       return resp;
@@ -228,13 +182,30 @@ export class VardaApiService implements VardaApiServiceInterface {
     return this.http.get(`${this.henkilostoApiPath}tyontekijat/${id}/kooste/`).pipe(map(response => response));
   }
 
-  getAllToimipaikatForVakaJarjestaja(vakaJarjestajaId: string): Observable<any> {
-    const url = `${this.vakaJarjestajatUiPath}${vakaJarjestajaId}/toimipaikat/`;
+  getToimipaikatForVakaJarjestaja(
+    vakaJarjestajaId: string,
+    searchParams?: Object
+  ): Observable<VardaPageDto<VardaToimipaikkaMinimalDto>> {
+    let url = `${this.vakaJarjestajatUiPath}${vakaJarjestajaId}/toimipaikat/`;
+
+    if (searchParams) {
+      url = this.parseSearchParams(url, searchParams);
+    }
+
     return this.http.get(url).pipe(
-      map((resp: any) => {
-        return { results: resp };
+      map(resp => {
+        return resp;
       })
     );
+  }
+
+  getToimipaikkaKooste(id: number): Observable<ToimipaikkaKooste> {
+    return this.http.get(`${this.toimipaikatApiPath}${id}/kooste/`).pipe(map(response => response));
+  }
+
+  getAllToimipaikatForVakaJarjestaja(vakaJarjestajaId: string): Observable<Array<VardaToimipaikkaMinimalDto>> {
+    const url = `${this.vakaJarjestajatUiPath}${vakaJarjestajaId}/toimipaikat/`;
+    return this.http.getAllResults(url, {page_size: 500});
   }
 
   getAllVarhaiskasvatussuhteetByToimipaikka(toimipaikkaId: string): Observable<any> {
@@ -417,21 +388,6 @@ export class VardaApiService implements VardaApiServiceInterface {
     return this.http.delete(`${environment.vardaApiUrl}/lapset/${lapsiId}/`);
   }
 
-  getKielikoodistoOptions(): Observable<any> {
-    const opintopolkuUrl = this.getOpintopolkuUrlFromHost();
-    return this.http.getWithCallerId(`${opintopolkuUrl}/koodisto-service/rest/json/kielikoodistoopetushallinto/koodi`);
-  }
-
-  getKuntakoodistoOptions(): Observable<any> {
-    const opintopolkuUrl = this.getOpintopolkuUrlFromHost();
-    return this.http.getWithCallerId(`${opintopolkuUrl}/koodisto-service/rest/json/kunta/koodi`);
-  }
-
-  getMaksunPerustekoodisto(): Observable<Array<VardaKoodistoDto>> {
-    const opintopolkuUrl = this.getOpintopolkuUrlFromHost();
-    return this.http.getWithCallerId(`${opintopolkuUrl}/koodisto-service/rest/json/vardamaksunperuste/koodi`);
-  }
-
   getOpintopolkuUrlFromHost(): string {
     let opintopolkuUrl = this.vardaUtilityService.getOpintopolkuUrl(window.location.hostname);
     if (!opintopolkuUrl) {
@@ -460,18 +416,6 @@ export class VardaApiService implements VardaApiServiceInterface {
   deleteMaksutieto(maksutietoId: number): Observable<any> {
     const url = `${this.maksutiedotApiPath}${maksutietoId}/`;
     return this.http.delete(url);
-  }
-
-  getHenkilohaku(vakajarjestajaId: number,
-    searchDto: HenkilohakuSearchDTO,
-    nextUrl?: string): Observable<VardaPageDto<HenkilohakuResultDTO>> {
-    const mutableSearchDto = { ...searchDto };
-    mutableSearchDto.search = this.hashHetu(mutableSearchDto.search);
-    const url = nextUrl && this.getVardaPrefixedUrl(nextUrl)
-      || `${this.vakaJarjestajatApiPath}${vakajarjestajaId}/henkilohaku/${searchDto.type || HenkilohakuType.lapset}/`;
-    // If getting next page query it as is
-    const params = nextUrl ? null : mutableSearchDto;
-    return this.http.get(url, params);
   }
 
   getAllPaosToimijat(searchDto: AllVakajarjestajaSearchDto, page: number = 1): Observable<VardaPageDto<PaosVakajarjestajaDto>> {
@@ -533,6 +477,20 @@ export class VardaApiService implements VardaApiServiceInterface {
     const url = `${this.paosOikeusApiPath}${paosOikeusId}/`;
     const savingToimijaUrl = VardaApiService.getVakajarjestajaUrlFromId(`${savingToimijaId}`);
     return this.http.put(url, { tallentaja_organisaatio: savingToimijaUrl });
+  }
+
+  parseSearchParams(url: string, searchParams: Object): string {
+    if (searchParams['search']) {
+      searchParams['search'] = this.hashHetu(searchParams['search']);
+    }
+
+    url += '?';
+    url += Object.keys(searchParams)
+      .filter(key => searchParams[key] !== null && searchParams[key] !== undefined)
+      .map(key => `${key}=${searchParams[key]}`)
+      .join('&');
+
+    return url;
   }
 
   hashHetu(rawHetu: string) {

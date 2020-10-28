@@ -1,4 +1,5 @@
-from datetime import datetime
+import datetime
+
 from operator import itemgetter
 
 from django.contrib.contenttypes.models import ContentType
@@ -25,11 +26,12 @@ from varda.misc import parse_toimipaikka_id_list
 from varda.misc_queries import get_paos_toimipaikat
 from varda.models import (Toimipaikka, VakaJarjestaja, PaosToiminta, PaosOikeus, Lapsi, Henkilo,
                           Tyontekija, Z4_CasKayttoOikeudet)
-from varda.pagination import ChangeablePageSizePagination
+from varda.pagination import ChangeablePageSizePagination, ChangeablePageSizePaginationLarge
 from varda.permissions import (CustomObjectPermissions, get_taydennyskoulutus_tyontekija_group_organisaatio_oids,
                                get_toimipaikat_group_has_access, get_organisaatio_oids_from_groups,
                                HenkilostohakuPermissions, LapsihakuPermissions, auditlog, auditlogclass,
-                               permission_groups_in_organization, get_tyontekija_filters_for_taydennyskoulutus_groups)
+                               permission_groups_in_organization, get_tyontekija_filters_for_taydennyskoulutus_groups,
+                               user_has_vakajarjestaja_level_permission)
 from varda.serializers import PaosToimipaikkaSerializer, PaosVakaJarjestajaSerializer
 from varda.serializers_ui import (VakaJarjestajaUiSerializer, ToimipaikkaUiSerializer, UiLapsiSerializer,
                                   TyontekijaHenkiloUiSerializer, LapsihakuHenkiloUiSerializer,
@@ -144,13 +146,45 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixi
 class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
     """
     list:
-        Nouda tietyn vaka-järjestäjän kaikki toimipaikat. (dropdownia -varten)
+        Nouda tietyn vakajärjestäjän kaikki toimipaikat.
+    filter:
+        voimassaolo=str (voimassa/paattynyt)
     """
     filter_backends = (DjangoFilterBackend,)
-    filterset_class = None
+    filterset_class = filters.ToimipaikkaFilter
     queryset = Toimipaikka.objects.none()
     serializer_class = ToimipaikkaUiSerializer
     permission_classes = (CustomObjectPermissions, )
+    pagination_class = ChangeablePageSizePaginationLarge
+
+    vakajarjestaja_id = None
+    vakajarjestaja_obj = None
+    vakajarjestaja_oid = ''
+
+    def get_toimipaikka_ids_user_has_view_permissions(self):
+        model_name = 'toimipaikka'
+        content_type = ContentType.objects.get(model=model_name)
+        return get_object_ids_user_has_permissions(self.request.user, model_name, content_type)
+
+    def get_queryset(self):
+        paos_toimipaikat = get_paos_toimipaikat(self.vakajarjestaja_obj, is_only_active_paostoiminta_included=False)
+        qs_own_toimipaikat = Q(vakajarjestaja=self.vakajarjestaja_id)
+        qs_paos_toimipaikat = Q(id__in=paos_toimipaikat)
+        toimipaikka_filter = qs_own_toimipaikat | qs_paos_toimipaikat
+
+        # Filter toimipaikat based on permissions
+        user = self.request.user
+        has_vakajarjestaja_level_permission = user_has_vakajarjestaja_level_permission(user, self.vakajarjestaja_oid,
+                                                                                       'view_toimipaikka')
+        if not user.is_superuser and not has_vakajarjestaja_level_permission:
+            # Get only toimipaikat user has object level permissions to
+            toimipaikka_ids_user_has_view_permissions = self.get_toimipaikka_ids_user_has_view_permissions()
+            toimipaikka_filter = toimipaikka_filter & Q(id__in=toimipaikka_ids_user_has_view_permissions)
+
+        return (Toimipaikka.objects.filter(toimipaikka_filter)
+                .values('id', 'nimi', 'organisaatio_oid', 'hallinnointijarjestelma', 'vakajarjestaja__id',
+                        'vakajarjestaja__nimi')
+                .order_by('nimi'))
 
     def get_serializer_context(self):
         """
@@ -166,36 +200,28 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
     def get_vakajarjestaja(self, request, vakajarjestaja_pk=None):
         vakajarjestaja = get_object_or_404(VakaJarjestaja.objects.all(), pk=vakajarjestaja_pk)
         user = request.user
-        if user.has_perm("view_vakajarjestaja", vakajarjestaja):
+        if user.has_perm('view_vakajarjestaja', vakajarjestaja):
             return vakajarjestaja
         else:
-            raise Http404("Not found.")
+            raise Http404('Not found.')
 
     def get_toimipaikka(self, request, toimipaikka_pk=None):
         toimipaikka = get_object_or_404(Toimipaikka.objects.all(), pk=toimipaikka_pk)
         user = request.user
-        if user.has_perm("view_toimipaikka", toimipaikka):
+        if user.has_perm('view_toimipaikka', toimipaikka):
             return toimipaikka
         else:
-            raise Http404("Not found.")
+            raise Http404('Not found.')
 
-    @auditlog
     def list(self, request, *args, **kwargs):
-        if not kwargs['vakajarjestaja_pk'].isdigit():
-            raise Http404("Not found.")
+        self.vakajarjestaja_id = kwargs.get('vakajarjestaja_pk', None)
+        if not self.vakajarjestaja_id.isdigit():
+            raise Http404('Not found.')
 
-        vakajarjestaja_obj = self.get_vakajarjestaja(request, vakajarjestaja_pk=kwargs['vakajarjestaja_pk'])
-        paos_toimipaikat = get_paos_toimipaikat(vakajarjestaja_obj, is_only_active_paostoiminta_included=False)
-        qs_own_toimipaikat = Q(vakajarjestaja=kwargs['vakajarjestaja_pk'])
-        qs_paos_toimipaikat = Q(id__in=paos_toimipaikat)
-        qs_all_toimipaikat = (Toimipaikka
-                              .objects
-                              .filter(qs_own_toimipaikat | qs_paos_toimipaikat)
-                              .values('id', 'nimi', 'organisaatio_oid', 'hallinnointijarjestelma', 'vakajarjestaja__id', 'vakajarjestaja__nimi')
-                              .order_by('nimi'))
+        self.vakajarjestaja_obj = self.get_vakajarjestaja(request, vakajarjestaja_pk=self.vakajarjestaja_id)
+        self.vakajarjestaja_oid = self.vakajarjestaja_obj.organisaatio_oid
 
-        serializer = self.get_serializer(qs_all_toimipaikat, many=True)
-        return Response(serializer.data)
+        return super(NestedToimipaikkaViewSet, self).list(request, args, kwargs)
 
     @auditlog
     @action(methods=['get'], detail=True, url_path='paos-jarjestajat', url_name='paos_jarjestajat')
@@ -290,6 +316,8 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
                      '=id')
     serializer_class = UiLapsiSerializer
     permission_classes = (CustomObjectPermissions,)
+    pagination_class = ChangeablePageSizePagination
+
     vakajarjestaja_id = None
     vakajarjestaja_oid = ''
     toimipaikka_id_list = []
@@ -313,8 +341,8 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
         voimassaolo = str.lower(voimassaolo)
 
         try:
-            alkamis_pvm = datetime.strptime(alkamis_pvm, '%Y-%m-%d').date()
-            paattymis_pvm = datetime.strptime(paattymis_pvm, '%Y-%m-%d').date()
+            alkamis_pvm = datetime.datetime.strptime(alkamis_pvm, '%Y-%m-%d').date()
+            paattymis_pvm = datetime.datetime.strptime(paattymis_pvm, '%Y-%m-%d').date()
         except ValueError as e:
             raise Http404(e)
 
@@ -476,6 +504,8 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
     serializer_class = UiTyontekijaSerializer
     permission_classes = (HenkilostohakuPermissions,)
     queryset = Tyontekija.objects.none()
+    pagination_class = ChangeablePageSizePagination
+
     vakajarjestaja_id = None
     vakajarjestaja_oid = ''
 

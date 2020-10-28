@@ -1,0 +1,231 @@
+<div #scrollTo></div>
+<mat-card tabindex="0" *ngIf="lapsiKooste">
+  <mat-card-title-group>
+    <mat-card-title>
+      {{lapsiKooste.henkilo.sukunimi}}, {{lapsiKooste.henkilo.etunimet}}
+    </mat-card-title>
+  </mat-card-title-group>
+  <mat-card-content>
+    <div class="toimipaikan-lapset-container-margin-bottom">
+      <h3 class="oph-bold">{{i18n.katsele_tietoja_perustiedot | translate}}</h3>
+      <div class="table-responsive">
+        <table class="mat-table">
+          <tr class="mat-row">
+            <th scope="row" class="mat-header-cell">{{i18n.henkilo_etunimet | translate}}</th>
+            <td class="mat-cell">{{lapsiKooste.henkilo.etunimet}}</td>
+          </tr>
+          <tr class="mat-row">
+            <th scope="row" class="mat-header-cell">{{i18n.henkilo_kutsumanimi | translate}}</th>
+            <td class="mat-cell">{{lapsiKooste.henkilo.kutsumanimi}}</td>
+          </tr>
+          <tr class="mat-row">
+            <th scope="row" class="mat-header-cell">{{i18n.henkilo_sukunimi | translate}}</th>
+            <td class="mat-cell">{{lapsiKooste.henkilo.sukunimi}}</td>
+          </tr>
+          <tr class="mat-row">
+            <th scope="row" class="mat-header-cell">{{i18n.henkilo_id | translate}}</th>
+            <td class="mat-cell">{{lapsiKooste.henkilo.id}}</td>
+          </tr>
+          <tr class="mat-row">
+            <th scope="row" class="mat-header-cell">{{i18n.lapsi_id | translate}}</th>
+            <td class="mat-cell">{{lapsiKooste.id}}</td>
+          </tr>
+          <tr class="mat-row">
+            <th scope="row" class="mat-header-cell">{{i18n.oppijanumero | translate}}</th>
+            <td class="mat-cell">{{lapsiKooste.henkilo.henkilo_oid}}</td>
+          </tr>
+          <tr class="mat-row">
+            <th scope="row" class="mat-header-cell">{{i18n.syntymapaiva | translate}}</th>
+            <td class="mat-cell">{{getDateDisplayValue(lapsiKooste.henkilo.syntyma_pvm)}}</td>
+          </tr>
+          <tr class="mat-row"
+              *ngIf="lapsiKooste.oma_organisaatio_nimi">
+            <th scope="row" class="mat-header-cell">{{i18n.lapsi_oma_organisaatio | translate}}</th>
+            <td class="mat-cell">{{lapsiKooste.oma_organisaatio_nimi}}</td>
+          </tr>
+          <tr class="mat-row"
+              *ngIf="lapsiKooste.paos_organisaatio_nimi">
+            <th scope="row" class="mat-header-cell">{{i18n.lapsi_paos_organisaatio | translate}}</th>
+            <td class="mat-cell">{{lapsiKooste.paos_organisaatio_nimi}}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="toimipaikan-lapset-container-margin-bottom">
+      <h3 class="oph-bold">{{i18n.katsele_tietoja_lapsi_vakatiedot | translate}}</h3>
+      <div class="varda-text-secondary d-block" *ngIf="!userAccess.lapsitiedot.katselija; else validLapsiPermissionsContainer">
+        {{i18n.katsele_tietoja_error_invalid_permissions | translate}}
+      </div>
+      <ng-template #validLapsiPermissionsContainer>
+        <div class="varda-text-secondary d-block" *ngIf="lapsiKooste.varhaiskasvatuspaatokset.length === 0">
+          {{i18n.katsele_tietoja_lapsi_no_vakatiedot | translate}}
+        </div>
+        <div *ngIf="lapsiKooste.varhaiskasvatuspaatokset && lapsiKooste.varhaiskasvatuspaatokset.length > 0">
+          <div class="vakatieto-container" *ngFor="let vakapaatos of lapsiKooste.varhaiskasvatuspaatokset">
+            <mat-expansion-panel class="vakapaatos-panel">
+              <mat-expansion-panel-header class="toimipaikan-lapset-header">
+                <mat-panel-title>{{i18n.varhaiskasvatuspaatos | translate}}</mat-panel-title>
+                <mat-panel-description>
+                  {{getDateRangeDisplayValue(vakapaatos.alkamis_pvm, vakapaatos.paattymis_pvm)}}
+                </mat-panel-description>
+              </mat-expansion-panel-header>
+              <div class="table-responsive">
+                <table class="mat-table">
+                  <tr class="mat-header-row">
+                    <th scope="row" class="mat-header-cell">{{i18n.id | translate}}</th>
+                    <td class="mat-cell">{{vakapaatos.id}}</td>
+                  </tr>
+                  <tr class="mat-header-row">
+                    <th scope="row" class="mat-header-cell">{{i18n.varhaiskasvatuspaatos_hakemus_pvm | translate}}</th>
+                    <td class="mat-cell">{{getDateDisplayValue(vakapaatos.hakemus_pvm)}}</td>
+                  </tr>
+                  <tr class="mat-header-row">
+                    <th scope="row" class="mat-header-cell">{{i18n.varhaiskasvatuspaatos_tuntimaara_viikossa | translate}}</th>
+                    <td class="mat-cell">{{vakapaatos.tuntimaara_viikossa}}</td>
+                  </tr>
+                  <tr class="mat-header-row">
+                    <th scope="row" class="mat-header-cell">{{i18n.varhaiskasvatuspaatos_jarjestamismuoto_koodi | translate}}</th>
+                    <td class="mat-cell" [libKoodistoValue]="koodistoEnum.jarjestamismuoto" format="long">
+                      {{vakapaatos.jarjestamismuoto_koodi}}
+                    </td>
+                  </tr>
+                  <tr class="mat-header-row">
+                    <th scope="row" class="mat-header-cell">{{i18n.varhaiskasvatuspaatos_paivittainen_vaka_kytkin | translate}}</th>
+                    <td class="mat-cell">{{getBooleanLabel(vakapaatos.paivittainen_vaka_kytkin) | translate}}</td>
+                  </tr>
+                  <tr class="mat-header-row">
+                    <th scope="row" class="mat-header-cell">{{i18n.varhaiskasvatuspaatos_kokopaivainen_vaka_kytkin | translate}}</th>
+                    <td class="mat-cell">{{getBooleanLabel(vakapaatos.kokopaivainen_vaka_kytkin) | translate}}</td>
+                  </tr>
+                  <tr class="mat-header-row">
+                    <th scope="row" class="mat-header-cell">{{i18n.varhaiskasvatuspaatos_vuorohoito_kytkin | translate}}</th>
+                    <td class="mat-cell">{{getBooleanLabel(vakapaatos.vuorohoito_kytkin) | translate}}</td>
+                  </tr>
+                  <tr class="mat-header-row">
+                    <th scope="row" class="mat-header-cell">{{i18n.varhaiskasvatuspaatos_pikakasittely | translate}}</th>
+                    <td class="mat-cell">{{getBooleanLabel(vakapaatos.pikakasittely_kytkin) | translate}}</td>
+                  </tr>
+                </table>
+              </div>
+            </mat-expansion-panel>
+            <div class="toimipaikan-lapset-container-margin-bottom vakasuhteet-wrapper">
+              <div class="tree-child-container"
+                   *ngFor="let vakasuhde of getVakasuhteetForVakapaatos(vakapaatos.id)">
+                <mat-expansion-panel class="vakasuhde-panel tree-child">
+                  <mat-expansion-panel-header class="toimipaikan-lapset-header">
+                    <mat-panel-title>{{i18n.varhaiskasvatussuhde | translate}}</mat-panel-title>
+                    <mat-panel-description>
+                      {{getDateRangeDisplayValue(vakasuhde.alkamis_pvm, vakasuhde.paattymis_pvm)}}
+                    </mat-panel-description>
+                  </mat-expansion-panel-header>
+                  <div class="table-responsive">
+                    <table class="mat-table">
+                      <tr class="mat-header-row">
+                        <th scope="row" class="mat-header-cell">{{i18n.id | translate}}</th>
+                        <td class="mat-cell">{{vakasuhde.id}}</td>
+                      </tr>
+                      <tr class="mat-header-row">
+                        <th scope="row" class="mat-header-cell">{{i18n.toimipaikka | translate}}</th>
+                        <td class="mat-cell">{{vakasuhde.toimipaikka_nimi}}</td>
+                      </tr>
+                      <tr class="mat-header-row">
+                        <th scope="row" class="mat-header-cell">{{i18n.alkamis_pvm | translate}}</th>
+                        <td class="mat-cell">{{getDateDisplayValue(vakasuhde.alkamis_pvm)}}</td>
+                      </tr>
+                      <tr class="mat-header-row">
+                        <th scope="row" class="mat-header-cell">{{i18n.paattymis_pvm | translate}}</th>
+                        <td class="mat-cell">{{getDateDisplayValue(vakasuhde.paattymis_pvm)}}</td>
+                      </tr>
+                    </table>
+                  </div>
+                </mat-expansion-panel>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-template>
+    </div>
+
+    <div class="toimipaikan-lapset-container-margin-bottom">
+      <h3 class="oph-bold">{{i18n.maksutiedot | translate}}</h3>
+      <div class="varda-text-secondary d-block" *ngIf="!userAccess.huoltajatiedot.katselija; else validHuoltajaPermissionsContainer">
+        {{i18n.katsele_tietoja_error_invalid_permissions | translate}}
+      </div>
+      <ng-template #validHuoltajaPermissionsContainer>
+        <div class="varda-text-secondary d-block" *ngIf="lapsiKooste.maksutiedot.length === 0">
+          {{i18n.katsele_tietoja_lapsi_no_maksutiedot | translate}}
+        </div>
+        <div *ngIf="lapsiKooste.maksutiedot && lapsiKooste.maksutiedot.length > 0">
+          <div *ngFor="let maksutieto of lapsiKooste.maksutiedot">
+            <mat-expansion-panel class="maksutieto-panel">
+              <mat-expansion-panel-header class="toimipaikan-lapset-header">
+                <mat-panel-title>{{i18n.maksutieto | translate}}</mat-panel-title>
+                <mat-panel-description>
+                  {{getDateRangeDisplayValue(maksutieto.alkamis_pvm, maksutieto.paattymis_pvm)}}
+                </mat-panel-description>
+              </mat-expansion-panel-header>
+              <div class="table-responsive">
+                <table class="mat-table">
+                  <tr class="mat-header-row">
+                    <th scope="row" class="mat-header-cell">{{i18n.id | translate}}</th>
+                    <td class="mat-cell">{{maksutieto.id}}</td>
+                  </tr>
+                  <tr class="mat-header-row">
+                    <th scope="row" class="mat-header-cell">{{i18n.maksutieto_maksunperuste_koodi | translate}}</th>
+                    <td class="mat-cell" [libKoodistoValue]="koodistoEnum.maksunperuste" format="long">
+                      {{maksutieto.maksun_peruste_koodi}}
+                    </td>
+                  </tr>
+                  <tr class="mat-header-row" *ngIf="lapsiKooste.yksityinen_kytkin">
+                    <th scope="row" class="mat-header-cell">{{i18n.maksutieto_palveluseteli_arvo | translate}}</th>
+                    <td class="mat-cell">{{maksutieto.palveluseteli_arvo}}</td>
+                  </tr>
+                  <tr class="mat-header-row">
+                    <th scope="row" class="mat-header-cell">{{i18n.maksutieto_asiakasmaksu | translate}}</th>
+                    <td class="mat-cell">{{maksutieto.asiakasmaksu}}</td>
+                  </tr>
+                  <tr class="mat-header-row" *ngIf="lapsiKooste.yksityinen_kytkin">
+                    <th scope="row" class="mat-header-cell">{{i18n.maksutieto_perheen_koko | translate}}</th>
+                    <td class="mat-cell">{{maksutieto.perheen_koko}}</td>
+                  </tr>
+                  <tr class="mat-header-row">
+                    <th scope="row" class="mat-header-cell">{{i18n.alkamis_pvm | translate}}</th>
+                    <td class="mat-cell">{{getDateDisplayValue(maksutieto.alkamis_pvm)}}</td>
+                  </tr>
+                  <tr class="mat-header-row">
+                    <th scope="row" class="mat-header-cell">{{i18n.paattymis_pvm | translate}}</th>
+                    <td class="mat-cell">{{getDateDisplayValue(maksutieto.paattymis_pvm)}}</td>
+                  </tr>
+                </table>
+              </div>
+              <div class="huoltajat-container">
+                <h3 class="oph-bold">
+                  <span>{{i18n.maksutieto_huoltaja_plural | translate}}</span>
+                </h3>
+                <div class="table-responsive"
+                     *ngFor="let huoltaja of maksutieto.huoltajat; let i = index;"
+                     [class.margin-top]="i !== 0">
+                  <table class="mat-table">
+                    <tr class="mat-header-row">
+                      <th scope="row" class="mat-header-cell">{{i18n.oppijanumero | translate}}</th>
+                      <td class="mat-cell">{{huoltaja.henkilo_oid}}</td>
+                    </tr>
+                    <tr class="mat-header-row">
+                      <th scope="row" class="mat-header-cell">{{i18n.henkilo_etunimet | translate}}</th>
+                      <td class="mat-cell">{{huoltaja.etunimet}}</td>
+                    </tr>
+                    <tr class="mat-header-row">
+                      <th scope="row" class="mat-header-cell">{{i18n.henkilo_sukunimi | translate}}</th>
+                      <td class="mat-cell">{{huoltaja.sukunimi}}</td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+            </mat-expansion-panel>
+          </div>
+        </div>
+      </ng-template>
+    </div>
+  </mat-card-content>
+</mat-card>

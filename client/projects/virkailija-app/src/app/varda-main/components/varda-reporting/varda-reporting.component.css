@@ -2,6 +2,27 @@ h3 {
   margin-bottom: 0.5em;
 }
 
+.varda-reporting-wrapper {
+  margin-bottom: 5em;
+  --tree-width: 0.75em;
+  --tree-width-negative: -.75em;
+  --tree-border: 0.1em solid var(--gray-lighten-1);
+}
+
+.varda-card-top {
+  background-color: var(--white);
+  border-radius: 0.25em 0.25em 0 0;
+  padding: 1em 1em 0 1em;
+  border: 2px solid transparent;
+}
+
+.varda-card-bottom {
+  background-color: var(--white);
+  border-radius: 0 0 0.25em 0.25em;
+  padding: 0 1em 1em 1em;
+  border: 2px solid transparent;
+}
+
 .margin-top {
   margin-top: 1em;
 }
@@ -61,10 +82,9 @@ h3 {
 .varda-reporting-card-container {
   display: flex;
   flex-wrap: wrap;
-  width: 100%;
-  margin: auto;
   align-items: stretch;
-  padding-bottom: 10em;
+  margin-left: -0.5em;
+  margin-right: -0.5em;
 }
 
 .varda-reporting-search-wrapper {
@@ -259,6 +279,61 @@ h3 {
 
 .toimipaikka-chip-container .mat-chip-list-wrapper {
   margin: 0;
+}
+
+.tree-child-container {
+  position: relative;
+}
+
+.tree-child {
+  overflow: visible !important;
+}
+
+.tree-child .mat-expansion-panel-body {
+  overflow: hidden;
+}
+
+.tree-child-container:first-child .tree-child::before {
+  content: "";
+  position: absolute;
+  top: -1.5em;
+  left: var(--tree-width-negative);
+  border-left: var(--tree-border);
+  width: var(--tree-width);
+  height: 3.25em;
+}
+
+.tree-child-container .tree-child::before {
+  content: "";
+  position: absolute;
+  top: -1em;
+  left: var(--tree-width-negative);
+  border-left: var(--tree-border);
+  border-bottom: var(--tree-border);
+  width: var(--tree-width);
+  height: 2.5em;
+}
+
+.tree-child-container:not(:last-child) .tree-child::after {
+  content: "";
+  position: absolute;
+  top: 1em;
+  left: var(--tree-width-negative);
+  border-left: var(--tree-border);
+  width: var(--tree-width);
+  height: 100%;
+}
+
+tr.selected-row {
+  background-color: var(--blue-lighten-1);
+  font-weight: var(--font-weight-bold);
+}
+tr.selected-row:hover {
+  background-color: var(--blue);
+}
+
+tr.selected-row .mat-cell {
+  color: var(--white);
 }
 
 @media (min-width: 768px) {

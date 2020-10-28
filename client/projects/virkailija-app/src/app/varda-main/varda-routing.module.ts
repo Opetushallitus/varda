@@ -16,6 +16,10 @@ import { BrowserNotSupportedComponent } from '../shared/components/browser-not-s
 import { BrowserNotSupportedGuard } from '../shared/components/browser-not-supported/browser-not-supported.guard';
 import { VardaHenkilostoTilapainenComponent } from './components/varda-henkilosto-tilapainen/varda-henkilosto-tilapainen.component';
 import { VirkailijaTranslations } from '../../assets/i18n/virkailija-translations.enum';
+import { VardaSearchToimipaikkaComponent } from './components/varda-reporting/varda-search-toimipaikka/varda-search-toimipaikka.component';
+import { VardaSearchTyontekijaComponent } from './components/varda-reporting/varda-search-tyontekija/varda-search-tyontekija.component';
+import { VardaYhteenvetoComponent } from './components/varda-reporting/varda-yhteenveto/varda-yhteenveto.component';
+import { VardaSearchLapsiComponent } from './components/varda-reporting/varda-search-lapsi/varda-search-lapsi.component';
 
 const routes: Routes = [
   {
@@ -36,7 +40,30 @@ const routes: Routes = [
       {
         path: 'tietojen-katselu',
         component: VardaReportingComponent,
-        data: { title: VirkailijaTranslations.katsele_tietoja }
+        data: { title: VirkailijaTranslations.katsele_tietoja },
+        children: [
+          {
+            path: 'toimipaikat',
+            component: VardaSearchToimipaikkaComponent
+          },
+          {
+            path: 'lapset',
+            component: VardaSearchLapsiComponent
+          },
+          {
+            path: 'tyontekijat',
+            component: VardaSearchTyontekijaComponent
+          },
+          {
+            path: 'yhteenveto',
+            component: VardaYhteenvetoComponent
+          },
+          {
+            path: '',
+            pathMatch: 'full',
+            redirectTo: 'toimipaikat'
+          }
+        ]
       },
       {
         path: 'paos-hallinta',

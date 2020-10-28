@@ -49,8 +49,7 @@ export class VardaDashboardComponent implements OnInit {
   }
 
   getToimipaikat(): any {
-    return this.vardaApiWrapperService
-      .getAllToimipaikatForVakajarjestaja(this.vardaVakajarjestajaService.selectedVakajarjestaja.id);
+    return this.vardaApiService.getAllToimipaikatForVakaJarjestaja(this.vardaVakajarjestajaService.selectedVakajarjestaja.id);
   }
 
   onGetToimipaikatSuccess(toimipaikat_: Array<VardaToimipaikkaMinimalDto>): void {

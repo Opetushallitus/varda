@@ -452,10 +452,6 @@ body:not(.user-is-tabbing) h5:focus {
   animation: scaleTooltip 2.5s forwards;
 }
 
-.tyoskentelypaikka-panel .mat-expansion-panel-body {
-  overflow: hidden;
-}
-
 @media (max-width: 576px) {
   .varda-router-outlet-container {
     width: calc(98% - 0.5rem);

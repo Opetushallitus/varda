@@ -1,0 +1,74 @@
+.toimipaikan-lapset-container {
+  background-color: #ffffff;
+  position: relative;
+  margin-top: 1em;
+  --tree-width: 0.75em;
+  --tree-width-negative: -.75em;
+  --tree-border: 0.1em solid var(--gray-lighten-1);
+}
+
+.toimipaikan-lapset-container-margin-bottom {
+  margin-bottom: 2em;
+}
+
+.toimipaikan-lapset-font-blue {
+  color: #159ecb;
+}
+
+.toimipaikan-lapset-font-bold {
+  font-weight: bold;
+}
+
+.toimipaikan-lapset-header-margin-bottom {
+  margin-bottom: 15px;
+}
+
+.toimipaikan-lapset-header:focus {
+  background: #def2ff !important;
+}
+
+.toimipaikan-lapset-header-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.vakapaatos-panel .mat-expansion-panel-header-title,
+.vakapaatos-panel .mat-expansion-panel-header-description {
+  color: var(--black);
+}
+
+.maksutieto-panel .mat-expansion-panel-header-title,
+.maksutieto-panel .mat-expansion-panel-header-description,
+.vakasuhde-panel .mat-expansion-panel-header-title,
+.vakasuhde-panel .mat-expansion-panel-header-description {
+  color: var(--blue-lighten-1);
+}
+
+.maksutieto-panel {
+  margin-bottom: 1em;
+}
+
+.vakatieto-container {
+  margin-bottom: 2em;
+}
+
+.vakapaatos-panel {
+  background: var(--blue-lighten-4);
+}
+
+.vakapaatos-panel .mat-table {
+  background: initial;
+}
+
+.vakasuhde-panel {
+  margin-bottom: 1em;
+}
+
+.vakasuhteet-wrapper {
+  margin-top: 1.5em;
+  margin-left: 1.5em;
+}
+
+.huoltajat-container {
+  margin-top: 2em;
+}

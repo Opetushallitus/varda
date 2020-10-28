@@ -12,6 +12,7 @@ import { VardaToimipaikkaDTO, VardaVakajarjestaja } from '../../utilities/models
 import { SaveAccess } from '../../utilities/models/varda-user-access.model';
 import { VardaToimipaikkaMinimalDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { EMPTY } from 'rxjs';
+import { toimipaikatMinStub } from '../../shared/testmocks/toimipaikat-min-stub';
 
 describe('AuthService', () => {
 
@@ -20,7 +21,7 @@ describe('AuthService', () => {
   let httpService: HttpService;
   let vardaVakajarjestajaService: VardaVakajarjestajaService;
   let mockVakaJarjestajat: Array<VardaVakajarjestaja>;
-  let mockToimipaikat: Array<VardaToimipaikkaDTO>;
+  let mockMinToimipaikat: Array<VardaToimipaikkaMinimalDto>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -50,7 +51,7 @@ describe('AuthService', () => {
     httpService = TestBed.inject<HttpService>(HttpService);
     vardaVakajarjestajaService = TestBed.inject<VardaVakajarjestajaService>(VardaVakajarjestajaService);
     mockVakaJarjestajat = vakajarjestajatStub;
-    mockToimipaikat = toimipaikatStub;
+    mockMinToimipaikat = toimipaikatMinStub;
     vardaVakajarjestajaService.setVakajarjestajat(mockVakaJarjestajat);
   });
 
@@ -70,7 +71,7 @@ describe('AuthService', () => {
       { 'organisaatio': '98765346777', 'kayttooikeus': VardaKayttooikeusRoles.VARDA_TALLENTAJA },
       { 'organisaatio': '1.2.246.562.10.67019405222', 'kayttooikeus': VardaKayttooikeusRoles.VARDA_TALLENTAJA },
       { 'organisaatio': '1.2.246.562.10.67019405123', 'kayttooikeus': VardaKayttooikeusRoles.VARDA_KATSELIJA }];
-    vardaAuthService.initUserAccess(mockToimipaikat);
+    vardaAuthService.initUserAccess(mockMinToimipaikat);
     expect(vardaAuthService.loggedInUserVakajarjestajaLevelKayttooikeudet.length).toEqual(1);
     expect(vardaAuthService.loggedInUserToimipaikkaLevelKayttooikeudet.length).toEqual(1);
 
@@ -84,7 +85,7 @@ describe('AuthService', () => {
     vardaAuthService.loggedInUserKayttooikeudet = [
       { 'organisaatio': '98765346777', 'kayttooikeus': VardaKayttooikeusRoles.VARDA_TALLENTAJA }
     ];
-    vardaAuthService.initUserAccess(mockToimipaikat);
+    vardaAuthService.initUserAccess(mockMinToimipaikat);
     expect(vardaAuthService.loggedInUserVakajarjestajaLevelKayttooikeudet.length).toEqual(0);
     expect(vardaAuthService.loggedInUserToimipaikkaLevelKayttooikeudet.length).toEqual(1);
 
@@ -103,19 +104,9 @@ describe('AuthService', () => {
       { 'organisaatio': '98765346777', 'kayttooikeus': VardaKayttooikeusRoles.VARDA_TALLENTAJA },
       { 'organisaatio': '1.2.246.562.10.67019405222', 'kayttooikeus': VardaKayttooikeusRoles.VARDA_KATSELIJA }
     ];
-    vardaAuthService.initUserAccess(mockToimipaikat);
+    vardaAuthService.initUserAccess(mockMinToimipaikat);
 
-    const minimalToimipaikat: Array<VardaToimipaikkaMinimalDto> = mockToimipaikat.map(mockToimipaikka => {
-      return {
-        hallinnointijarjestelma: mockToimipaikka.hallinnointijarjestelma,
-        nimi: mockToimipaikka.nimi,
-        organisaatio_oid: mockToimipaikka.organisaatio_oid,
-        paos_toimipaikka_kytkin: mockToimipaikka.paos_toimipaikka_kytkin,
-        url: mockToimipaikka.url
-      };
-    });
-
-    const toimipaikat = vardaAuthService.getAuthorizedToimipaikat(minimalToimipaikat, SaveAccess.lapsitiedot);
+    const toimipaikat = vardaAuthService.getAuthorizedToimipaikat(mockMinToimipaikat, SaveAccess.lapsitiedot);
     expect(toimipaikat.length).toEqual(1);
     expect(toimipaikat[0].nimi).toEqual('Kivelän päiväkoti');
   });

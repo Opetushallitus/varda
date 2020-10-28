@@ -45,16 +45,15 @@ export class LapsiByToimipaikkaDTO {
   lapsi_url: string;
 }
 
-export class ToimipaikanLapsi {
+export class LapsiKooste {
   id?: number;
-  lapsi_id?: number;
   yksityinen_kytkin: boolean;
   henkilo: ToimipaikanLapsiHenkilo;
   varhaiskasvatuspaatokset: Array<ToimipaikanLapsiVakapaatos>;
   varhaiskasvatussuhteet: Array<ToimipaikanLapsiVakasuhde>;
   maksutiedot: Array<ToimipaikanLapsiMaksutieto>;
-  oma_organisaatio_nimi: string;
-  paos_organisaatio_nimi: string;
+  oma_organisaatio_nimi?: string;
+  paos_organisaatio_nimi?: string;
 }
 
 export class ToimipaikanLapsiHenkilo {

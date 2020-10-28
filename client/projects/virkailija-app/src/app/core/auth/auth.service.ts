@@ -59,7 +59,7 @@ export class AuthService {
     this.isAdminUser = false;
   }
 
-  initUserAccess(toimipaikat: Array<VardaToimipaikkaDTO>): void {
+  initUserAccess(toimipaikat: Array<VardaToimipaikkaMinimalDto>): void {
     const selectedVakajarjestaja = this.vardaVakajarjestajaService.selectedVakajarjestaja;
     this.loggedInUserVakajarjestajaLevelKayttooikeudet = this.loggedInUserKayttooikeudet.filter(kayttooikeus => kayttooikeus.organisaatio === selectedVakajarjestaja.organisaatio_oid);
     this.loggedInUserToimipaikkaLevelKayttooikeudet = this.loggedInUserKayttooikeudet.filter(
@@ -96,7 +96,7 @@ export class AuthService {
   }
 
   getAuthorizedToimipaikat(toimipaikat: Array<VardaToimipaikkaMinimalDto>, hasSaveAccess?: SaveAccess): Array<VardaToimipaikkaMinimalDto> {
-    return toimipaikat.filter((toimipaikka: VardaToimipaikkaDTO) => {
+    return toimipaikat.filter((toimipaikka: VardaToimipaikkaMinimalDto) => {
       const access = this.getUserAccess(toimipaikka.organisaatio_oid);
       if (!hasSaveAccess) {
         return (access.tyontekijatiedot.katselija || access.taydennyskoulutustiedot.katselija || access.huoltajatiedot.katselija || access.lapsitiedot.katselija);
@@ -274,25 +274,17 @@ export class AuthService {
       .some(([accessKey, accessValue]) => !!accessValue.katselija);
   }
 
-  getToimipaikatByLapsiTyontekijaPermissions(toimipaikat: Array<VardaToimipaikkaMinimalDto>): {
-    lapsiToimipaikat: Array<VardaToimipaikkaMinimalDto>,
-    tyontekijaToimipaikat: Array<VardaToimipaikkaMinimalDto>
-  } {
-    const lapsiResult = [];
-    const tyontekijaResult = [];
-    toimipaikat.forEach(toimipaikka => {
+  getToimipaikatWithLapsiPermissions(toimipaikat: Array<VardaToimipaikkaMinimalDto>): Array<VardaToimipaikkaMinimalDto> {
+    return toimipaikat.filter(toimipaikka => {
       const toimipaikkaAccess = this.getUserAccess(toimipaikka.organisaatio_oid);
-      if (toimipaikkaAccess.lapsitiedot.katselija || toimipaikkaAccess.huoltajatiedot.katselija) {
-        lapsiResult.push(toimipaikka);
-      }
-
-      if (toimipaikkaAccess.tyontekijatiedot.katselija || toimipaikkaAccess.taydennyskoulutustiedot.katselija) {
-        tyontekijaResult.push(toimipaikka);
-      }
+      return toimipaikkaAccess.lapsitiedot.katselija || toimipaikkaAccess.huoltajatiedot.katselija;
     });
-    return {
-      lapsiToimipaikat: lapsiResult,
-      tyontekijaToimipaikat: tyontekijaResult
-    };
+  }
+
+  getToimipaikatWithTyontekijaPermissions(toimipaikat: Array<VardaToimipaikkaMinimalDto>): Array<VardaToimipaikkaMinimalDto> {
+    return toimipaikat.filter(toimipaikka => {
+      const toimipaikkaAccess = this.getUserAccess(toimipaikka.organisaatio_oid);
+      return toimipaikkaAccess.tyontekijatiedot.katselija || toimipaikkaAccess.taydennyskoulutustiedot.katselija;
+    });
   }
 }

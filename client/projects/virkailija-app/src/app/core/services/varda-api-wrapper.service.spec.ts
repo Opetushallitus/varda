@@ -26,12 +26,12 @@ describe('VardaApiWrapperService', () => {
   let createHenkiloByHenkiloDetailsSpy, createVarhaiskasvatussuhdeSpy,
   getHenkiloBySsnOrHenkiloOidSpy, getHenkilotSpy,
   getVakaJarjestajaByIdSpy, getAllVakajarjestajaForLoggedInUser,
-  getToimipaikkaByIdSpy, getToimipaikatForVakajarjestajaSpy,
+  getToimipaikkaByIdSpy,
   getAllVarhaiskasvatussuhteetByToimipaikkaSpy,
   getKielipainotuksetByToimipaikkaSpy, getVarhaiskasvatussuhteetByLapsiSpy,
   getVarhaiskasvatuspaatoksetByLapsiSpy,
   deleteKielipainotusSpy, deleteToimintapainotusSpy, deleteVarhaiskasvatuspaatosSpy,
-  deleteVarhaiskasvatussuhdeSpy, patchVakajarjestajaSpy, getToimipaikanLapsetSpy,
+  deleteVarhaiskasvatussuhdeSpy, patchVakajarjestajaSpy, getVakajarjestajanLapsetSpy,
   getSelectedVakajarjestajaIdSpy;
 
   beforeEach(() => {
@@ -62,13 +62,12 @@ describe('VardaApiWrapperService', () => {
     deleteVarhaiskasvatuspaatosSpy = spyOn(vardaApiService, 'deleteVarhaiskasvatuspaatos').and.returnValue({});
     deleteVarhaiskasvatussuhdeSpy = spyOn(vardaApiService, 'deleteVarhaiskasvatussuhde').and.returnValue({});
     getToimipaikkaByIdSpy = spyOn(vardaApiService, 'getToimipaikkaById').and.returnValue({});
-    getToimipaikatForVakajarjestajaSpy = spyOn(vardaApiService, 'getToimipaikatForVakaJarjestaja').and.returnValue({});
     getAllVarhaiskasvatussuhteetByToimipaikkaSpy = spyOn(vardaApiService, 'getAllVarhaiskasvatussuhteetByToimipaikka').and.returnValue({});
     getKielipainotuksetByToimipaikkaSpy = spyOn(vardaApiService, 'getKielipainotuksetByToimipaikka').and.returnValue({});
     getVarhaiskasvatussuhteetByLapsiSpy = spyOn(vardaApiService, 'getVarhaiskasvatussuhteetByLapsi').and.returnValue({});
     getVarhaiskasvatuspaatoksetByLapsiSpy = spyOn(vardaApiService, 'getVarhaiskasvatuspaatoksetByLapsi').and.returnValue({});
     patchVakajarjestajaSpy = spyOn(vardaApiService, 'patchVakajarjestaja').and.returnValue({});
-    getToimipaikanLapsetSpy = spyOn(vardaApiService, 'getLapsetForToimipaikat').and.returnValue({});
+    getVakajarjestajanLapsetSpy = spyOn(vardaApiService, 'getLapsetForVakajarjestaja').and.returnValue({});
     getSelectedVakajarjestajaIdSpy = spyOn(vardaVakajarjestajaService, 'getSelectedVakajarjestajaId').and.returnValue('1');
   });
 
@@ -112,7 +111,6 @@ describe('VardaApiWrapperService', () => {
     vardaApiWrapperService.getKielipainotuksetByToimipaikka(id);
     vardaApiWrapperService.getVarhaiskasvatussuhteetByLapsi(id);
     vardaApiWrapperService.getVarhaiskasvatuspaatoksetByLapsi(id);
-    vardaApiWrapperService.getToimipaikatForVakajarjestaja(id, null, null);
     vardaApiWrapperService.getVakajarjestajaForLoggedInUser();
     vardaApiWrapperService.saveVakatoimijaData(vakatoimijaFormData);
 
@@ -121,7 +119,6 @@ describe('VardaApiWrapperService', () => {
     expect(getKielipainotuksetByToimipaikkaSpy).toHaveBeenCalledWith(id);
     expect(getVarhaiskasvatussuhteetByLapsiSpy).toHaveBeenCalledWith(id);
     expect(getVarhaiskasvatuspaatoksetByLapsiSpy).toHaveBeenCalledWith(id);
-    expect(getToimipaikatForVakajarjestajaSpy).toHaveBeenCalledWith(id, null, null);
     expect(getAllVakajarjestajaForLoggedInUser).toHaveBeenCalled();
     expect(patchVakajarjestajaSpy).toHaveBeenCalledWith('1', vakatoimijaFormData);
   });
@@ -256,7 +253,7 @@ describe('VardaApiWrapperService', () => {
   it('Should call getLapsetForToimipaikat with vakajarjestajaId and name parameters', () => {
     const vakajarjestajaId = '1';
     const searchParams = {sukunimi: 'Virtanen', etunimet: 'pekka', toimipaikat: '1'};
-    const result1 = vardaApiWrapperService.getLapsetForToimipaikat(searchParams, null);
-    expect(getToimipaikanLapsetSpy).toHaveBeenCalledWith(vakajarjestajaId, searchParams, null);
+    const result1 = vardaApiWrapperService.getLapsetForVakajarjestaja(searchParams);
+    expect(getVakajarjestajanLapsetSpy).toHaveBeenCalledWith(vakajarjestajaId, searchParams);
   });
 });

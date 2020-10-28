@@ -14,13 +14,14 @@ from django_filters.rest_framework import DjangoFilterBackend
 from guardian.shortcuts import assign_perm, remove_perm, get_perms
 from rest_framework import permissions, status, viewsets
 from rest_framework.authtoken.models import Token
+from rest_framework.decorators import action
 from rest_framework.exceptions import (NotAuthenticated, NotFound, PermissionDenied, ValidationError)
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin, ListModelMixin, RetrieveModelMixin,
                                    UpdateModelMixin)
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-from rest_framework_guardian.filters import DjangoObjectPermissionsFilter
+from rest_framework_guardian.filters import DjangoObjectPermissionsFilter, ObjectPermissionsFilter
 
 from varda import filters, related_object_validations, validators, permission_groups
 from varda.cache import (cached_list_response, cached_retrieve_response, delete_toimipaikan_lapset_cache,
@@ -41,7 +42,8 @@ from varda.organisaatiopalvelu import (check_if_toimipaikka_exists_in_organisaat
                                        create_toimipaikka_in_organisaatiopalvelu)
 from varda.pagination import ChangeableReportingPageSizePagination
 from varda.permission_groups import (assign_object_level_permissions, create_permission_groups_for_organisaatio,
-                                     assign_toimipaikka_lapsi_paos_permissions, assign_vakajarjestaja_lapsi_paos_permissions,
+                                     assign_toimipaikka_lapsi_paos_permissions,
+                                     assign_vakajarjestaja_lapsi_paos_permissions,
                                      assign_vakajarjestaja_vakatiedot_paos_permissions,
                                      assign_toimipaikka_vakatiedot_paos_permissions,
                                      assign_object_permissions_to_all_henkilosto_groups)
@@ -50,7 +52,7 @@ from varda.permissions import (throw_if_not_tallentaja_permissions,
                                check_if_user_has_paakayttaja_permissions, ReadAdminOrOPHUser, CustomObjectPermissions,
                                user_has_huoltajatieto_tallennus_permissions_to_correct_organization,
                                grant_or_deny_access_to_paos_toimipaikka, user_has_tallentaja_permission_in_organization,
-                               auditlogclass, save_audit_log, ToimipaikkaPermissions, get_toimipaikka_or_404)
+                               auditlogclass, save_audit_log, ToimipaikkaPermissions, get_toimipaikka_or_404, auditlog)
 from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer,
                                UpdateHenkiloWithOidSerializer, UpdateOphStaffSerializer, ClearCacheSerializer,
                                ActiveUserSerializer, AuthTokenSerializer, VakaJarjestajaSerializer,
@@ -62,8 +64,10 @@ from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer,
                                VarhaiskasvatuspaatosPutSerializer, VarhaiskasvatuspaatosPatchSerializer,
                                VarhaiskasvatussuhdeSerializer, VakaJarjestajaYhteenvetoSerializer,
                                HenkilohakuLapsetSerializer, PaosToimintaSerializer, PaosToimijatSerializer,
-                               PaosToimipaikatSerializer, PaosOikeusSerializer, LapsiKoosteSerializer, UserSerializer)
-from varda.tasks import update_oph_staff_to_vakajarjestaja_groups, assign_taydennyskoulutus_permissions_for_toimipaikka_task
+                               PaosToimipaikatSerializer, PaosOikeusSerializer, LapsiKoosteSerializer, UserSerializer,
+                               ToimipaikkaKoosteSerializer)
+from varda.tasks import (update_oph_staff_to_vakajarjestaja_groups,
+                         assign_taydennyskoulutus_permissions_for_toimipaikka_task)
 from webapps.api_throttles import (BurstRateThrottle, BurstRateThrottleStrict, SustainedModifyRateThrottle,
                                    SustainedRateThrottleStrict)
 
@@ -673,6 +677,13 @@ class ToimipaikkaViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, P
         saved_object = serializer.save(changed_by=user)
         delete_cache_keys_related_model('vakajarjestaja', saved_object.vakajarjestaja.id)
         cache.delete('vakajarjestaja_yhteenveto_' + str(saved_object.vakajarjestaja.id))
+
+    @auditlog
+    @action(methods=['get'], detail=True, serializer_class=ToimipaikkaKoosteSerializer, filter_backends=(ObjectPermissionsFilter, ))
+    def kooste(self, request, pk=None):
+        toimipaikka_obj = self.get_object()
+        serialized_data = self.get_serializer(toimipaikka_obj).data
+        return Response(data=serialized_data)
 
 
 @auditlogclass
@@ -2592,9 +2603,6 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
     """
     list:
         Nouda tietyn vaka-järjestäjän kaikki toimipaikat.
-
-    filter:
-        voimassaolo=str (voimassa/paattynyt)
     """
     filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.ToimipaikkaFilter
@@ -2610,22 +2618,6 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
         else:
             raise Http404('Not found.')
 
-    def apply_filters(self, toimipaikka_filter):
-        voimassaolo = self.request.query_params.get('voimassaolo', None)
-
-        if not voimassaolo:
-            return toimipaikka_filter
-
-        today = datetime.date.today()
-        voimassaolo = str.lower(voimassaolo)
-
-        if voimassaolo == 'voimassa':
-            toimipaikka_filter = toimipaikka_filter & (Q(paattymis_pvm__isnull=True) | Q(paattymis_pvm__gte=today))
-        elif voimassaolo == 'paattynyt':
-            toimipaikka_filter = toimipaikka_filter & Q(paattymis_pvm__lt=today)
-
-        return toimipaikka_filter
-
     @transaction.atomic
     def list(self, request, *args, **kwargs):
         if not kwargs['vakajarjestaja_pk'].isdigit():
@@ -2636,7 +2628,6 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
         qs_own_toimipaikat = Q(vakajarjestaja=kwargs['vakajarjestaja_pk'])
         qs_paos_toimipaikat = Q(id__in=paos_toimipaikat)
         toimipaikka_filter = qs_own_toimipaikat | qs_paos_toimipaikat
-        toimipaikka_filter = self.apply_filters(toimipaikka_filter)
 
         self.queryset = Toimipaikka.objects.filter(toimipaikka_filter).order_by('nimi')
 
@@ -2772,6 +2763,8 @@ class NestedLapsiKoosteViewSet(GenericViewSet):
         data = {
             'id': lapsi.id,
             'yksityinen_kytkin': lapsi.yksityinen_kytkin,
+            'oma_organisaatio': lapsi.oma_organisaatio,
+            'paos_organisaatio': lapsi.paos_organisaatio,
             'henkilo': self.get_henkilo(lapsi),
             'varhaiskasvatuspaatokset': self.get_vakapaatokset(lapsi.id, user),
             'varhaiskasvatussuhteet': self.get_vakasuhteet(lapsi.id, user),

@@ -89,28 +89,27 @@ nested_vakajarjestaja_router.register(r'toimipaikat', viewsets.NestedToimipaikka
 nested_vakajarjestaja_router.register(r'yhteenveto', viewsets.NestedVakajarjestajaYhteenvetoViewSet)
 # /api/v1/vakajarjestajat/{id}/henkilohaku/
 nested_vakajarjestaja_router.register('henkilohaku/lapset', viewsets.HenkilohakuLapset)
+
+nested_toimipaikka_router = nested_routers.NestedSimpleRouter(router, r'toimipaikat', lookup='toimipaikka')
 # /api/v1/toimipaikat/{id}/toiminnallisetpainotukset/
-nested_toimipaikka_router_1 = nested_routers.NestedSimpleRouter(router, r'toimipaikat', lookup='toimipaikka')
-nested_toimipaikka_router_1.register(r'toiminnallisetpainotukset', viewsets.NestedToiminnallinenPainotusViewSet)
+nested_toimipaikka_router.register(r'toiminnallisetpainotukset', viewsets.NestedToiminnallinenPainotusViewSet)
 # /api/v1/toimipaikat/{id}/kielipainotukset/
-nested_toimipaikka_router_2 = nested_routers.NestedSimpleRouter(router, r'toimipaikat', lookup='toimipaikka')
-nested_toimipaikka_router_2.register(r'kielipainotukset', viewsets.NestedKieliPainotusViewSet)
-# /api/v1/toimipaikka/{id}/varhaiskasvatussuhteet/
-nested_toimipaikka_router_4 = nested_routers.NestedSimpleRouter(router, r'toimipaikat', lookup='toimipaikka')
-nested_toimipaikka_router_4.register(r'varhaiskasvatussuhteet', viewsets.NestedVarhaiskasvatussuhdeToimipaikkaViewSet)
+nested_toimipaikka_router.register(r'kielipainotukset', viewsets.NestedKieliPainotusViewSet)
+# /api/v1/toimipaikat/{id}/varhaiskasvatussuhteet/
+nested_toimipaikka_router.register(r'varhaiskasvatussuhteet', viewsets.NestedVarhaiskasvatussuhdeToimipaikkaViewSet)
+
+nested_lapsi_router = nested_routers.NestedSimpleRouter(router, r'lapset', lookup='lapsi')
 # /api/v1/lapset/{id}/huoltajat/
-nested_lapsi_router_1 = nested_routers.NestedSimpleRouter(router, r'lapset', lookup='lapsi')
-nested_lapsi_router_1.register(r'huoltajat', viewsets.NestedHuoltajaViewSet)
+nested_lapsi_router.register(r'huoltajat', viewsets.NestedHuoltajaViewSet)
 # /api/v1/lapset/{id}/varhaiskasvatuspaatokset/
-nested_lapsi_router_2 = nested_routers.NestedSimpleRouter(router, r'lapset', lookup='lapsi')
-nested_lapsi_router_2.register(r'varhaiskasvatuspaatokset', viewsets.NestedVarhaiskasvatuspaatosViewSet)
+nested_lapsi_router.register(r'varhaiskasvatuspaatokset', viewsets.NestedVarhaiskasvatuspaatosViewSet)
 # /api/v1/lapset/{id}/maksutiedot/
-nested_lapsi_router_2.register(r'maksutiedot', viewsets.NestedLapsiMaksutietoViewSet)
+nested_lapsi_router.register(r'maksutiedot', viewsets.NestedLapsiMaksutietoViewSet)
 # /api/v1/lapset/{id}/varhaiskasvatussuhteet/
-nested_lapsi_router_3 = nested_routers.NestedSimpleRouter(router, r'lapset', lookup='lapsi')
-nested_lapsi_router_3.register(r'varhaiskasvatussuhteet', viewsets.NestedLapsenVarhaiskasvatussuhdeViewSet)
+nested_lapsi_router.register(r'varhaiskasvatussuhteet', viewsets.NestedLapsenVarhaiskasvatussuhdeViewSet)
 # /api/v1/lapset/{id}/kooste/
-nested_lapsi_router_3.register(r'kooste', viewsets.NestedLapsiKoosteViewSet)
+nested_lapsi_router.register(r'kooste', viewsets.NestedLapsiKoosteViewSet)
+
 # /api/v1/huoltajat/{id}/lapset/
 nested_huoltaja_router = nested_routers.NestedSimpleRouter(router_admin, r'huoltajat', lookup='huoltaja')
 nested_huoltaja_router.register(r'lapset', viewsets.NestedLapsiViewSet)
@@ -180,12 +179,8 @@ urlpatterns = [
     re_path(r'^api/user/', include(router_user.urls), name='api_user'),
     re_path(r'^api/v1/', include(router.urls), name='api-v1'),
     re_path(r'^api/v1/', include(nested_vakajarjestaja_router.urls), name='nested-vakajarjestaja-api-v1'),
-    re_path(r'^api/v1/', include(nested_toimipaikka_router_1.urls), name='nested-toimipaikka-1-api-v1'),
-    re_path(r'^api/v1/', include(nested_toimipaikka_router_2.urls), name='nested-toimipaikka-2-api-v1'),
-    re_path(r'^api/v1/', include(nested_toimipaikka_router_4.urls), name='nested-toimipaikka-4-api-v1'),
-    re_path(r'^api/v1/', include(nested_lapsi_router_1.urls), name='nested-lapsi-1-api-v1'),
-    re_path(r'^api/v1/', include(nested_lapsi_router_2.urls), name='nested-lapsi-2-api-v1'),
-    re_path(r'^api/v1/', include(nested_lapsi_router_3.urls), name='nested-lapsi-3-api-v1'),
+    re_path(r'^api/v1/', include(nested_toimipaikka_router.urls), name='nested-toimipaikka-api-v1'),
+    re_path(r'^api/v1/', include(nested_lapsi_router.urls), name='nested-lapsi-api-v1'),
     re_path(r'^api/admin/', include(nested_huoltaja_router.urls), name='nested-huoltaja-admin'),
     re_path(r'^api/v1/', include(nested_varhaiskasvatuspaatos_router.urls), name='nested-varhaiskasvatuspaatos-api-v1'),
     re_path(r'^api/v1/schema/', schema_view, name='schema-v1'),

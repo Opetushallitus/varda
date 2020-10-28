@@ -1,0 +1,13 @@
+.yhteenveto-row {
+  display: flex;
+  width: 100%;
+  padding-bottom: 2em;
+}
+
+.yhteenveto-container {
+  margin-top: 2em;
+}
+
+.mat-table .mat-header-cell:nth-child(2), .mat-table .mat-cell:nth-child(2) {
+  width: 1%;
+}

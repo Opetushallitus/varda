@@ -27,6 +27,7 @@ class VakaJarjestajaUiSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class ToimipaikkaUiSerializer(serializers.HyperlinkedModelSerializer):
+    nimi_original = serializers.ReadOnlyField(source='nimi')
     nimi = serializers.SerializerMethodField()
     url = serializers.SerializerMethodField()
     paos_toimipaikka_kytkin = serializers.SerializerMethodField()
@@ -37,8 +38,9 @@ class ToimipaikkaUiSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Toimipaikka
-        fields = ('hallinnointijarjestelma', 'id', 'nimi', 'url', 'organisaatio_oid', 'paos_toimipaikka_kytkin', 'paos_oma_organisaatio_url',
-                  'paos_organisaatio_url', 'paos_organisaatio_nimi', 'paos_tallentaja_organisaatio_id_list')
+        fields = ('hallinnointijarjestelma', 'id', 'nimi_original', 'nimi', 'url', 'organisaatio_oid',
+                  'paos_toimipaikka_kytkin', 'paos_oma_organisaatio_url', 'paos_organisaatio_url',
+                  'paos_organisaatio_nimi', 'paos_tallentaja_organisaatio_id_list')
 
     def get_nimi(self, toimipaikka_obj):
         if self.get_paos_toimipaikka_kytkin(toimipaikka_obj):

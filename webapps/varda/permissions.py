@@ -591,3 +591,8 @@ def toimipaikka_tallentaja_pidempipoissaolo_has_perm_to_add(user, vakajarjestaja
         return Tyoskentelypaikka.objects.filter(Q(palvelussuhde=validated_data['palvelussuhde'],
                                                   toimipaikka__organisaatio_oid__in=user_perm_oids)
                                                 ).exists()
+
+
+def user_has_vakajarjestaja_level_permission(user, organisaatio_oid, permission_name):
+    return user.groups.filter(Q(name__endswith=organisaatio_oid) &
+                              Q(permissions__codename__exact=permission_name)).exists()

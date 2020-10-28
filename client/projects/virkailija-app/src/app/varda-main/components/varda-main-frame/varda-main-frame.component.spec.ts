@@ -8,10 +8,9 @@ import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajar
 import { VardaUtilityService } from '../../../core/services/varda-utility.service';
 import { VardaDateService } from '../../services/varda-date.service';
 import { vardaApiWrapperServiceStub } from '../../../shared/testmocks/mock-services';
-import { toimipaikatStub } from '../../../shared/testmocks/toimipaikat-stub';
+import { toimipaikatMinStub } from '../../../shared/testmocks/toimipaikat-min-stub';
 import { TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../../core/auth/auth.service';
-import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 
@@ -46,7 +45,6 @@ describe('VardaMainFrameComponent', () => {
   let vardaVakajarjestajaService: VardaVakajarjestajaService;
 
   let setVakajarjestajatSpy;
-  let apiWrapperMockFunction;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
@@ -79,10 +77,9 @@ describe('VardaMainFrameComponent', () => {
     vardaVakajarjestajaService.setVakajarjestajat([selectedVaka]);
     vardaVakajarjestajaService.selectedVakajarjestaja = selectedVaka;
 
-    apiWrapperMockFunction = spyOn(vardaApiWrapperService, 'getAllLapsetForToimipaikka').and.callThrough();
     setVakajarjestajatSpy = spyOn(vardaVakajarjestajaService, 'setVakajarjestajat').and.callThrough();
-    vardaVakajarjestajaService.setSelectedToimipaikka(<VardaToimipaikkaMinimalDto>toimipaikatStub[0]);
-    vardaVakajarjestajaService.setVakajarjestajaToimipaikat(toimipaikatStub, authService);
+    vardaVakajarjestajaService.setSelectedToimipaikka(toimipaikatMinStub[0]);
+    vardaVakajarjestajaService.setVakajarjestajaToimipaikat(toimipaikatMinStub, authService);
   }));
 
   beforeEach(() => {
