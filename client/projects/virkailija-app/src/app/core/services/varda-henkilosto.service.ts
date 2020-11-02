@@ -43,7 +43,7 @@ export class VardaHenkilostoApiService {
     return this.http.get(`${this.henkilostoApiPath}/tutkinnot/${tutkintoId}/`);
   }
   getTutkinnot(henkiloOid: string): Observable<Array<VardaTutkintoDTO>> {
-    return this.http.getAllResults(`${this.henkilostoApiPath}/tutkinnot/`, { henkilo: henkiloOid });
+    return this.http.getAllResults(`${this.henkilostoApiPath}/tutkinnot/`, environment.vardaAppUrl, { henkilo: henkiloOid });
   }
 
   createTutkinto(tutkintoDTO: VardaTutkintoDTO): Observable<VardaTutkintoDTO> {
@@ -58,7 +58,7 @@ export class VardaHenkilostoApiService {
 
   // palvelussuhteet
   getPalvelussuhteet(tyontekijaId: number): Observable<Array<VardaPalvelussuhdeDTO>> {
-    return this.http.getAllResults(`${this.henkilostoApiPath}/palvelussuhteet/`, { tyontekija: tyontekijaId });
+    return this.http.getAllResults(`${this.henkilostoApiPath}/palvelussuhteet/`, environment.vardaAppUrl, { tyontekija: tyontekijaId });
   }
 
   createPalvelussuhde(palvelussuhdeDTO: VardaPalvelussuhdeDTO): Observable<VardaPalvelussuhdeDTO> {
@@ -77,7 +77,7 @@ export class VardaHenkilostoApiService {
 
   // tyoskentelypaikat
   getTyoskentelypaikat(palvelussuhdeId: number): Observable<Array<VardaTyoskentelypaikkaDTO>> {
-    return this.http.getAllResults(`${this.henkilostoApiPath}/tyoskentelypaikat/`, { palvelussuhde: palvelussuhdeId });
+    return this.http.getAllResults(`${this.henkilostoApiPath}/tyoskentelypaikat/`, environment.vardaAppUrl, { palvelussuhde: palvelussuhdeId });
   }
 
   createTyoskentelypaikka(tyoskentelypaikkaDTO: VardaTyoskentelypaikkaDTO): Observable<VardaTyoskentelypaikkaDTO> {
@@ -96,7 +96,7 @@ export class VardaHenkilostoApiService {
 
   // poissaolot
   getPoissaolot(palvelussuhdeId: number): Observable<Array<VardaPoissaoloDTO>> {
-    return this.http.getAllResults(`${this.henkilostoApiPath}/pidemmatpoissaolot/`, { palvelussuhde: palvelussuhdeId });
+    return this.http.getAllResults(`${this.henkilostoApiPath}/pidemmatpoissaolot/`, environment.vardaAppUrl, { palvelussuhde: palvelussuhdeId });
   }
 
   createPoissaolo(poissaoloDTO: VardaPoissaoloDTO): Observable<VardaPoissaoloDTO> {
@@ -115,7 +115,7 @@ export class VardaHenkilostoApiService {
 
   // täydennyskoulutukset
   getTaydennyskoulutukset(searchParams: object): Observable<Array<VardaTaydennyskoulutusDTO>> {
-    return this.http.getAllResults(`${this.henkilostoApiPath}/taydennyskoulutukset/`, searchParams);
+    return this.http.getAllResults(`${this.henkilostoApiPath}/taydennyskoulutukset/`, environment.vardaAppUrl, searchParams);
   }
 
   createTaydennyskoulutus(taydennyskoulutusDTO: VardaTaydennyskoulutusDTO): Observable<VardaTaydennyskoulutusDTO> {
@@ -131,7 +131,7 @@ export class VardaHenkilostoApiService {
   }
 
   getTaydennyskoulutuksetTyontekijat(searchParams: object): Observable<Array<VardaTaydennyskoulutusTyontekijaListDTO>> {
-    return this.http.getAllResults(`${this.henkilostoApiPath}/taydennyskoulutukset/tyontekija-list/`, searchParams);
+    return this.http.getAllResults(`${this.henkilostoApiPath}/taydennyskoulutukset/tyontekija-list/`, environment.vardaAppUrl, searchParams);
   }
 
 

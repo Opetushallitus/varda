@@ -205,7 +205,7 @@ export class VardaApiService implements VardaApiServiceInterface {
 
   getAllToimipaikatForVakaJarjestaja(vakaJarjestajaId: string): Observable<Array<VardaToimipaikkaMinimalDto>> {
     const url = `${this.vakaJarjestajatUiPath}${vakaJarjestajaId}/toimipaikat/`;
-    return this.http.getAllResults(url, {page_size: 500});
+    return this.http.getAllResults(url, environment.vardaAppUrl, { page_size: 500 });
   }
 
   getAllVarhaiskasvatussuhteetByToimipaikka(toimipaikkaId: string): Observable<any> {

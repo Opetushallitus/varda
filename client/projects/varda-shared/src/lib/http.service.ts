@@ -13,7 +13,7 @@ export abstract class AbstractHttpService {
   }
 
   abstract get(url: string, options?: any, httpHeadersParam?: HttpHeaders): Observable<any>;
-  abstract getAllResults(url: string, options?: any): Observable<Array<any>>;
+  abstract getAllResults(url: string, backendUrl: string, options?: any): Observable<Array<any>>;
   abstract post(url: string, formData: any, options?: any): Observable<any>;
   abstract put(url: string, formData: any, options?: any): Observable<any>;
   abstract patch(url: string, formData: any, options?: any): Observable<any>;
@@ -96,9 +96,20 @@ export class HttpService extends AbstractHttpService {
       );
   }
 
-  getAllResults(url: string, options?: any): Observable<Array<any>> {
+  getAllResults(url: string, backendUrl: string, options?: any): Observable<Array<any>> {
+
+    const nextLink = (nextUrl: string): Observable<any> => {
+      try { // check if url is valid
+        const properUrl = new URL(nextUrl);
+      } catch (e) { // if not presume its /api/something
+        nextUrl = `${backendUrl}${nextUrl}`;
+      }
+
+      return this.get(nextUrl);
+    };
+
     return this.get(url, options).pipe(
-      expand((res: any) => res.next ? this.get(res.next) : EMPTY),
+      expand((res: any) => res.next ? nextLink(res.next) : EMPTY),
       reduce((acc, res: any) => acc.concat(res.results), [])
     );
   }

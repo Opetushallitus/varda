@@ -43,8 +43,8 @@ export class LoadingHttpService extends AbstractHttpService {
     return this.addLoader(this.http.get(url, options, httpHeadersParam));
   }
 
-  getAllResults(url: string, options?: any): Observable<any> {
-    return this.addLoader(this.http.getAllResults(url, options));
+  getAllResults(url: string, backendUrl: string, options?: any): Observable<any> {
+    return this.addLoader(this.http.getAllResults(url, backendUrl, options));
   }
 
   options(url: string, options?: any): Observable<any> {
