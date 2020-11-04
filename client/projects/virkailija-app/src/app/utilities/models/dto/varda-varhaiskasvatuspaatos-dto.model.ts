@@ -1,3 +1,5 @@
+import { Lahdejarjestelma } from '../enums/hallinnointijarjestelma';
+
 export class VardaVarhaiskasvatuspaatosDTO {
     id?: number;
     url?: string;
@@ -7,8 +9,10 @@ export class VardaVarhaiskasvatuspaatosDTO {
     tuntimaara_viikossa?: any;
     paivittainen_vaka_kytkin?: boolean;
     kokopaivainen_vaka_kytkin?: boolean;
+    tilapainen_vaka_kytkin?: boolean;
     jarjestamismuoto_koodi?: string;
     hakemus_pvm?: string;
     alkamis_pvm?: string;
     paattymis_pvm?: string;
+    lahdejarjestelma?: Lahdejarjestelma;
 }

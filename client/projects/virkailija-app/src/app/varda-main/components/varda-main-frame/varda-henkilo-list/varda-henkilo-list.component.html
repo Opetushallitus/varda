@@ -19,7 +19,7 @@
             </td>
             <td>
               <i *ngIf="henkilo.lapset?.length === 1">
-                {{ henkilo.lapset[0].oma_organisaatio_nimi }}
+                {{  getPaosText(henkilo.lapset[0]) }}
               </i>
             </td>
           </tr>
@@ -34,7 +34,7 @@
                 <mat-icon>perm_identity</mat-icon>
               </td>
               <td>{{ henkilo.sukunimi }} {{ henkilo.etunimet }}</td>
-              <td><i>{{ lapsi.oma_organisaatio_nimi || lapsi.vakatoimija_nimi }}</i></td>
+              <td><i>{{  getPaosText(lapsi) }}</i></td>
             </tr>
           </ng-container>
         </ng-container>

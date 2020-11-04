@@ -4,6 +4,8 @@ import { HenkiloListDTO } from 'projects/virkailija-app/src/app/utilities/models
 import { TyontekijaListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tyontekija-dto.model';
 import { LapsiListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-lapsi-dto.model';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
+import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';
+import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
 
 @Component({
   selector: 'app-varda-henkilo-list',
@@ -15,6 +17,13 @@ export class VardaHenkiloListComponent implements OnInit {
   @Input() henkiloRooli: HenkiloRooliEnum;
   @Output() openHenkiloForm = new EventEmitter<LapsiListDTO | TyontekijaListDTO>(true);
   i18n = VirkailijaTranslations;
+  selectedVakajarjestaja: VardaVakajarjestajaUi;
+
+  constructor(
+    private vakajarjestajService: VardaVakajarjestajaService
+  ) {
+    this.selectedVakajarjestaja = this.vakajarjestajService.getSelectedVakajarjestaja();
+  }
 
   ngOnInit() {
     if (this.henkiloRooli === HenkiloRooliEnum.tyontekija) {
@@ -36,6 +45,12 @@ export class VardaHenkiloListComponent implements OnInit {
     this.openHenkiloForm.emit(henkilonSuhde);
   }
 
+  getPaosText(suhde: LapsiListDTO) {
+    if (suhde.oma_organisaatio_oid) {
+      return suhde.oma_organisaatio_oid === this.selectedVakajarjestaja.organisaatio_oid ? suhde.paos_organisaatio_nimi : suhde.oma_organisaatio_nimi;
+    }
+
+  }
 
   initTehtavanimikkeet() {
     this.henkiloList.forEach(henkilo => henkilo.tyontekijat.forEach(tyontekija => {

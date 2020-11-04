@@ -1,5 +1,4 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
 import { VardaExtendedHenkiloModel } from '../../../utilities/models';
 import { AuthService } from '../../../core/auth/auth.service';
 import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
@@ -32,7 +31,6 @@ export class VardaMainFrameComponent implements OnInit, OnDestroy {
   confirmedHenkiloFormLeave = true;
 
   constructor(
-    private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private authService: AuthService,
     private modalService: VardaModalService
   ) { }

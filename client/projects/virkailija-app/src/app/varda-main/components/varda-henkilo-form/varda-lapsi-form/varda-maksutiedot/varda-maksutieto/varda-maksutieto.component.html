@@ -1,0 +1,174 @@
+<ng-container *ngIf="maksutietoForm">
+  <div class="maksutieto taydennyskoulutus">
+    <mat-expansion-panel [expanded]="expandPanel"
+                         (opened)="togglePanel(true)"
+                         (closed)="togglePanel(false)">
+      <mat-expansion-panel-header>
+        <mat-panel-title *ngIf="maksutieto; else addMaksutieto">
+          <span *ngIf="!maksutieto.paattymis_pvm; else hasPaattymispvm">
+            {{ i18n.maksutieto_alkaen_PVM | translate: {pvm: maksutieto.alkamis_pvm | vardaDate} }}
+          </span>
+          <ng-template #hasPaattymispvm>
+            <span *ngIf="maksutieto.paattymis_pvm">
+              {{ i18n.maksutieto | translate }}
+              {{maksutieto.alkamis_pvm | vardaDate }} - {{maksutieto.paattymis_pvm | vardaDate }}
+            </span>
+          </ng-template>
+        </mat-panel-title>
+
+        <ng-template #addMaksutieto>
+          <mat-panel-title>
+            <span>
+              {{ i18n.maksutiedot_lisaa_maksutieto | translate }}
+            </span>
+          </mat-panel-title>
+        </ng-template>
+      </mat-expansion-panel-header>
+      <form [formGroup]="maksutietoForm"
+            (submit)="saveMaksutieto(maksutietoForm)"
+            autocomplete="off">
+
+        <div class="huoltajat">
+          <ng-container *ngIf="maksutieto; else addHuoltajat">
+            <app-varda-maksutieto-huoltaja *ngFor="let huoltaja of maksutieto.huoltajat; let i = index"
+                                           [indexNr]="i"
+                                           [huoltaja]="huoltaja"></app-varda-maksutieto-huoltaja>
+          </ng-container>
+          <ng-template #addHuoltajat>
+            <ng-container formArrayName="huoltajat">
+              <app-varda-maksutieto-huoltaja *ngFor="let huoltajaFormGroup of huoltajat.controls, let i = index"
+                                             [huoltajaForm]="huoltajaFormGroup"
+                                             [indexNr]="i"
+                                             [showDeleteButton]="huoltajat.controls.length > 1"
+                                             (removeHuoltaja)="removeHuoltajaForm($event)">
+              </app-varda-maksutieto-huoltaja>
+            </ng-container>
+            <button class="varda-button secondary responsive-md"
+                    type="button"
+                    *ngIf="huoltajat.length < 7"
+                    (click)="addHuoltaja()">
+              <mat-icon>add</mat-icon>
+              {{ i18n.maksutieto_lisaa_huoltaja | translate }}
+            </button>
+          </ng-template>
+        </div>
+
+        <app-varda-form-field name="maksun_peruste_koodi"
+                              [form]="maksutietoForm"
+                              [label]="i18n.maksutieto_maksunperuste_koodi | translate"
+                              [errorText]="i18n.maksutieto_error_maksunperuste_koodi | translate"
+                              [instructionText]="i18n.maksutieto_instruction_maksunperuste_koodi | translate">
+          <div *ngIf="maksutieto; else maksunPerusteSelect"
+               libKoodistoValue="vardamaksunperuste"
+               format="long">{{ maksutieto.maksun_peruste_koodi }}</div>
+          <ng-template #maksunPerusteSelect>
+            <mat-select #fieldItem
+                        *ngIf="maksunperusteKoodisto?.codes.length > 0"
+                        (valueChange)="changeMaksunPeruste($event)"
+                        placeholder="-- {{ i18n.choose | translate }} --"
+                        class="oph-input oph-select"
+                        formControlName="maksun_peruste_koodi">
+              <mat-option *ngFor="let maksunperuste of maksunperusteKoodisto.codes"
+                          [value]="maksunperuste.code_value">
+                {{ maksunperuste.name }} ({{maksunperuste.code_value}})
+              </mat-option>
+            </mat-select>
+          </ng-template>
+        </app-varda-form-field>
+
+        <app-varda-form-field name="palveluseteli_arvo"
+                              *ngIf="!yksityinenBoolean"
+                              [form]="maksutietoForm"
+                              [label]="i18n.maksutieto_palveluseteli_arvo | translate"
+                              [placeholder]="i18n.maksutieto_placeholder_palveluseteli_arvo | translate"
+                              [errorText]="i18n.maksutieto_error_palveluseteli_arvo | translate"
+                              [instructionText]="i18n.maksutieto_instruction_palveluseteli_arvo | translate">
+          <input #fieldItem
+                 [readonly]="disableForMaksuttomuus"
+                 type="number"
+                 class="oph-input"
+                 min="0"
+                 max="999"
+                 step="0.05"
+                 formControlName="palveluseteli_arvo" />
+        </app-varda-form-field>
+
+        <app-varda-form-field name="asiakasmaksu"
+                              [form]="maksutietoForm"
+                              [label]="i18n.maksutieto_asiakasmaksu | translate"
+                              [placeholder]="i18n.maksutieto_placeholder_asiakasmaksu | translate"
+                              [errorText]="i18n.maksutieto_error_asiakasmaksu | translate"
+                              [instructionText]="i18n.maksutieto_instruction_asiakasmaksu | translate">
+          <input #fieldItem
+                 [readonly]="disableForMaksuttomuus"
+                 type="number"
+                 class="oph-input"
+                 min="0"
+                 max="9999"
+                 step="0.05"
+                 formControlName="asiakasmaksu" />
+        </app-varda-form-field>
+
+        <app-varda-form-field name="perheen_koko"
+                              *ngIf="!yksityinenBoolean"
+                              [form]="maksutietoForm"
+                              [label]="i18n.maksutieto_perheen_koko | translate"
+                              [placeholder]="i18n.maksutieto_placeholder_perheen_koko | translate"
+                              [errorText]="i18n.maksutieto_error_perheen_koko | translate"
+                              [instructionText]="i18n.maksutieto_instruction_perheen_koko | translate">
+          <input #fieldItem
+                 type="number"
+                 class="oph-input"
+                 min="2"
+                 max="50"
+                 step="1"
+                 formControlName="perheen_koko" />
+        </app-varda-form-field>
+
+        <app-varda-form-field name="alkamis_pvm"
+                              [form]="maksutietoForm"
+                              [label]="i18n.varhaiskasvatussuhde_alkamis_pvm | translate"
+                              [errorText]="i18n.varhaiskasvatussuhde_error_alkamis_pvm | translate"
+                              [instructionText]="i18n.varhaiskasvatussuhde_instruction_alkamis_pvm | translate">
+          <app-varda-datepicker #fieldItem
+                                (dateChange)="startDateChange($event.value)"
+                                formControlName='alkamis_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+
+        <app-varda-form-field name="paattymis_pvm"
+                              [form]="maksutietoForm"
+                              [label]="i18n.varhaiskasvatussuhde_paattymis_pvm | translate"
+                              [errorText]="i18n.varhaiskasvatussuhde_error_paattymis_pvm | translate"
+                              [instructionText]="i18n.varhaiskasvatussuhde_instruction_paattymis_pvm | translate">
+          <app-varda-datepicker #fieldItem
+                                [min]="minEndDate"
+                                formControlName='paattymis_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+
+        <app-varda-error-field [errors]="maksutietoFormErrors"></app-varda-error-field>
+
+        <div *ngIf="huoltajaSaveStatus"
+             role="alert"
+             aria-live="polite"
+             class="alert alert-success">
+          <div *ngIf="!huoltajaSaveStatus.failure; else savePartial">
+            {{ i18n.save_success | translate }}
+          </div>
+          <ng-template #savePartial>
+            <div>{{ i18n.maksutieto_save_success_partial | translate }}</div>
+            <div>{{ i18n.maksutieto_save_success_COUNT | translate: { count: huoltajaSaveStatus.success} }}</div>
+            <div>{{ i18n.maksutieto_save_failure_COUNT | translate: { count: huoltajaSaveStatus.failure} }}</div>
+          </ng-template>
+        </div>
+
+        <app-varda-action-row [saveDisabled]="maksutietoForm.pristine || (isSubmitting | async)"
+                              [saveAccess]="toimipaikkaAccess?.huoltajatiedot.tallentaja"
+                              [formExists]="!!maksutieto"
+                              [isEdit]="isEdit"
+                              (togglePanel)="togglePanel($event)"
+                              (deleteForm)="deleteMaksutieto()"
+                              (enableEdit)="enableForm()"></app-varda-action-row>
+      </form>
+    </mat-expansion-panel>
+  </div>
+</ng-container>

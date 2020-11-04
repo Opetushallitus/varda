@@ -1,3 +1,5 @@
+import { Lahdejarjestelma } from '../enums/hallinnointijarjestelma';
+
 export class VardaMaksutietoDTO {
   url: string;
   id: number;
@@ -11,6 +13,7 @@ export class VardaMaksutietoDTO {
   paattymis_pvm?: string; // YYYY-MM-dd
   tallennetut_huoltajat_count: number;
   ei_tallennetut_huoltajat_count: number;
+  lahdejarjestelma?: Lahdejarjestelma;
 }
 
 export class HuoltajaDTO {

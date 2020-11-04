@@ -166,8 +166,8 @@ const cookieConfig: NgcCookieConsentConfig = {
     },
     {
       provide: MAT_PAGINATOR_DEFAULT_OPTIONS, useValue: {
-        pageSizeOptions: [1, 2, 5, 20, 50, 100],
-        pageSize: 2,
+        pageSizeOptions: [10, 20, 50, 100],
+        pageSize: 20,
         showFirstLastButtons: true
       }
     },

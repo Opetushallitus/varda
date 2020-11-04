@@ -1,79 +1,221 @@
-.add-ssn-section,
-.henkilo-form-ssn-or-oid-fields-wrapper {
-    display: flex;
-    justify-content: space-between;
+:host {
+  --tree-width: 2rem;
+  --tree-border: 0.25rem solid var(--gray-lighten-2);
 }
 
-.choose-henkilo-entity-buttons {
-    display: flex;
-    justify-content: space-between;
-    margin-left: 10%;
-    margin-right: 10%;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
 }
 
-.choose-henkilo-entity-buttons > div {
-    flex: 0 1 40%;
+h1 {
+  font-size: var(--h3);
 }
 
-.add-ssn-section > div:first-child {
-    flex: 0 1 50%;
+h2 {
+  font-size: var(--h4);
 }
 
-.add-ssn-section > div:nth-child(2) {
-    display: flex;
-    flex: 0 1 40%;
+h3 {
+  font-size: var(--h5)
 }
 
-.add-ssn-section > div:nth-child(2) > button {
-    height: 35px;
+h4 {
+  font-size: var(--h5);
+  font-weight: normal;
+  text-transform: none;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
-.active-entity-selection {
-    background-color: #000;
-    color: #fff;
+h5 {
+  font-size: var(--h6)
 }
 
-.henkilo-form-cancel-btn-wrapper {
-    display: flex;
-    justify-content: flex-end
+.mat-expansion-panel {
+  margin: 1em auto;
 }
 
-.henkilo-form-cancel-btn-wrapper > div {
-    margin-right: 5px;
+.accordion-large-margin>* {
+  display: block;
+  margin-bottom: 3em;
 }
 
-.varda-henkilo-form-instructions-section {
-    padding-left: 40px;
-    padding-top: 33px;
+.accordion-medium-margin>* {
+  display: block;
+  margin-bottom: 2em;
 }
 
-.varda-henkilo-form-add-btn-wrapper {
-    display: flex;
-    justify-content: flex-end;
-    align-items: flex-end;
-    padding-right: 62px;
-    height: 50px;
+.tyontekija-panel-content {
+  margin-left: 2em;
+  margin-bottom: 2em;
+  margin-right: 0.5em;
 }
 
-.varda-henkilo-form-add-btn-wrapper > div {
-    width: 200px;
+.tyontekija-panel-content.tyontekija-panel-content-first {
+  margin-left: 0;
+  padding-left: 0;
 }
 
-.henkilo-form-ssn-or-oid-fields-wrapper > div:first-child {
-    flex: 0 1 50%;
+.ei-palvelussuhteita {
+  margin-left: 1.5em;
 }
 
-.henkilo-form-ssn-or-oid-fields-wrapper > div:nth-child(2) {
-    flex: 0 1 40%;
-    display: flex;
-    align-items: center;
+.mat-expansion-panel {
+  background-color: var(--blue-lighten-4);
 }
 
-#lisaaHenkilotunnuksella {
-    margin-bottom: 10px;
-    margin-right: 15px;
+.mat-expansion-panel.main-section {
+  background-color: var(--gray-lighten-5);
 }
 
-.varda-fieldset-content .ssn-or-oid-radio-wrapper {
-    flex: 0 1 90%;
+.mat-expansion-panel form {
+  margin: 1em 1.5em;
+}
+
+mat-expansion-panel mat-expansion-panel-header {
+  min-height: 48px;
+  height: auto !important;
+}
+
+.tyontekija-panel-content {
+  padding-left: 5em;
+}
+
+.missing-info {
+  display: flex;
+  align-items: center;
+  margin-top: 1.5em;
+  font-weight: var(--font-weight-bold);
+  color: var(--red);
+}
+
+.missing-info .mat-icon {
+  margin-right: 0.5em;
+}
+
+mat-panel-description>.varda-text-button .mat-icon:first-child {
+  color: black;
+  margin-right: 1em;
+}
+
+
+.palvelussuhde {
+  position: relative;
+  display: flex;
+  z-index: 2;
+}
+
+.palvelussuhde>.mat-icon {
+  margin: 0.5rem;
+  vertical-align: middle;
+  line-height: 3.0rem;
+  font-size: 2rem;
+}
+
+.palvelussuhde>.mat-expansion-panel {
+  margin: 0.5rem;
+  width: 100%;
+}
+
+.tyoskentelypaikka .mat-expansion-panel {
+  position: relative;
+}
+
+.tyoskentelypaikka {
+  position: relative;
+}
+
+.tyoskentelypaikka::before {
+  content: "";
+  position: absolute;
+  bottom: 1.6rem;
+  left: -25px;
+  border-bottom: var(--tree-border);
+  border-left: var(--tree-border);
+  width: 2.2rem;
+  height: calc(100% + 1.2rem);
+}
+
+.tree-border {
+  position: relative;
+}
+
+.tree-border::before {
+  content: "";
+  position: absolute;
+  top: -0.95rem;
+  left: 45px;
+  border-left: var(--tree-border);
+  width: 2rem;
+  height: 4rem;
+}
+
+.poissaolot.tree-border::before {
+  height: calc(100% - 5rem);
+  bottom: 5rem;
+}
+
+.has-poissaolo::before {
+  height: calc(100% + 5rem);
+}
+
+@media (max-width: 767px) {
+  .action-button-wrapper>* {
+    width: 100%;
+  }
+
+  .action-button-wrapper button {
+    width: 100%;
+    margin: 0.5em auto;
+  }
+
+  .tree-border::before {
+    left: 15px;
+  }
+
+  .tyoskentelypaikka::before {
+    left: -17px;
+  }
+
+  .tyontekija-panel-content {
+    padding-left: 2rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .tyontekija-panel-content {
+    padding-left: 1em;
+  }
+
+  .tree-border::before {
+    left: 0rem;
+  }
+
+  .tyoskentelypaikka::before {
+    left: -14px;
+  }
+
+  .mat-expansion-panel form {
+    margin: 1em 0.5em;
+  }
+
+  h1 {
+    font-size: var(--h4);
+  }
+
+  h2 {
+    font-size: var(--h5);
+  }
+
+  h3 {
+    font-size: var(--h6)
+  }
 }

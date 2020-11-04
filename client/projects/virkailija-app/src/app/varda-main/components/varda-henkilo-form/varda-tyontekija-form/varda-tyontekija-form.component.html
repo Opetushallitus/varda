@@ -1,0 +1,64 @@
+<ng-container
+              *ngIf="toimipaikkaAccess?.tyontekijatiedot.katselija || toimipaikkaAccess?.taydennyskoulutustiedot.katselija">
+  <div class="modal-form-intro"
+       aria-role="info">
+    <p>{{ i18n.tyontekija_intro_paragraph_1 | translate }}</p>
+    <p>{{ i18n.tyontekija_intro_paragraph_2 | translate }}
+      <a [href]="i18n.tyontekija_intro_link_1_href | translate"
+         target="_blank">
+        {{ i18n.tyontekija_intro_link_1_text | translate }}
+      </a>
+    </p>
+  </div>
+
+  <app-varda-error-field [errors]="tyontekijaFormErrors"></app-varda-error-field>
+
+  <form class="henkilo-perustiedot">
+    <h2 class="varda-fieldset-legend">{{ i18n.perustiedot | translate}}</h2>
+    <div class="oph-field oph-field-inline">
+      <label class="oph-label">{{ i18n.nimi | translate }}:</label>
+      <span>{{henkilo.sukunimi}}, {{henkilo.etunimet}}</span>
+    </div>
+    <div class="oph-field oph-field-inline">
+      <label class="oph-label">{{ i18n.syntymapaiva | translate }}:</label>
+      <span>{{henkilo.syntyma_pvm | vardaDate}}</span>
+    </div>
+    <div class="oph-field oph-field-inline">
+      <label class="oph-label">{{ i18n.oppijanumero | translate }}:</label>
+      <span>{{henkilo.henkilo_oid}}</span>
+    </div>
+  </form>
+  <ng-container *ngIf="tyontekija.id">
+    <app-varda-tyontekija-tutkinto [toimipaikkaAccess]="toimipaikkaAccess"
+                                   [henkilonToimipaikka]="henkilonToimipaikka"
+                                   (changeTutkinnot)="setTutkinnot($event)"
+                                   [henkilo]="henkilo"></app-varda-tyontekija-tutkinto>
+
+    <ng-container
+                  *ngIf="henkilonTutkinnot?.length || ( !toimipaikkaAccess.tyontekijatiedot.katselija && toimipaikkaAccess.taydennyskoulutustiedot.katselija)">
+
+      <app-varda-palvelussuhteet [henkilonToimipaikka]="henkilonToimipaikka"
+                                 [toimipaikkaAccess]="toimipaikkaAccess"
+                                 [henkilonTutkinnot]="henkilonTutkinnot"
+                                 [tyontekija]="tyontekija"></app-varda-palvelussuhteet>
+
+      <app-varda-tyontekija-taydennyskoulutukset [toimipaikkaAccess]="toimipaikkaAccess"
+                                                 [tyontekija]="tyontekija"></app-varda-tyontekija-taydennyskoulutukset>
+    </ng-container>
+
+
+
+
+
+    <ng-container *ngIf="toimipaikkaAccess.taydennyskoulutustiedot.tallentaja
+                && toimipaikkaAccess.tyontekijatiedot.tallentaja">
+
+      <app-varda-error-field [errors]="deleteTyontekijaErrors"></app-varda-error-field>
+      <app-varda-delete-henkilo *ngIf="tyontekija?.id"
+                                [instructionText]="i18n.tyontekija_instruction_delete | translate"
+                                [deleteText]="i18n.henkilo_poista_tyontekija | translate"
+                                (deleteAction)="poistaTyontekija()">
+      </app-varda-delete-henkilo>
+    </ng-container>
+  </ng-container>
+</ng-container>

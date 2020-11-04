@@ -30,7 +30,7 @@ export class VardaLapsiSectionComponent extends AbstractHenkiloSectionComponent 
     this.isLoading.next(true);
 
     const selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
-    this.apiService.getVakajarjestajaLapset(selectedVakajarjestaja.id, this.getFilter()).subscribe({
+    this.lapsiService.getVakajarjestajaLapset(selectedVakajarjestaja.id, this.getFilter()).subscribe({
       next: henkiloData => {
         this.henkilot = henkiloData.results;
         this.searchFilter.count = henkiloData.count;

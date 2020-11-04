@@ -1,0 +1,201 @@
+<ng-container *ngIf="varhaiskasvatuspaatosForm">
+  <div class="palvelussuhde">
+    <mat-icon class="d-none d-md-block">assignment</mat-icon>
+
+    <mat-expansion-panel [class.before-icon]="true"
+                         (opened)="togglePanel(true)"
+                         (closed)="togglePanel(false)"
+                         [expanded]="expandPanel">
+      <mat-expansion-panel-header>
+        <mat-panel-title *ngIf="varhaiskasvatuspaatos; else addVarhaiskasvatussuhde">
+          <span *ngIf="!varhaiskasvatuspaatos.paattymis_pvm; else hasPaattymispvm">
+            {{ i18n.varhaiskasvatuspaatos_alkaen_PVM | translate: {pvm: varhaiskasvatuspaatos.alkamis_pvm | vardaDate} }}
+          </span>
+          <ng-template #hasPaattymispvm>
+            <span *ngIf="varhaiskasvatuspaatos.paattymis_pvm">
+              {{ i18n.varhaiskasvatuspaatos | translate }}
+              {{varhaiskasvatuspaatos.alkamis_pvm | vardaDate }} - {{varhaiskasvatuspaatos.paattymis_pvm | vardaDate }}
+            </span>
+          </ng-template>
+        </mat-panel-title>
+
+        <ng-template #addVarhaiskasvatussuhde>
+          <mat-panel-title>
+            <span>
+              {{ i18n.varhaiskasvatuspaatokset_lisaa_varhaiskasvatuspaatos | translate }}
+            </span>
+          </mat-panel-title>
+        </ng-template>
+      </mat-expansion-panel-header>
+      <form [formGroup]="varhaiskasvatuspaatosForm"
+            autocomplete="off"
+            (submit)="saveVarhaiskasvatuspaatos(varhaiskasvatuspaatosForm)">
+        <!-- tilapainen will be enabled later -->
+        <!--
+          <app-varda-form-field name="tilapainen_vaka_kytkin"
+                              *ngIf="selectedVakajarjestaja.kunnallinen_kytkin"
+                              [form]="varhaiskasvatuspaatosForm"
+                              [label]="i18n.varhaiskasvatuspaatos_tilapainen_vaka_kytkin | translate"
+                              [errorText]="i18n.varhaiskasvatuspaatos_error_tilapainen_vaka_kytkin | translate"
+                              [instructionText]="i18n.varhaiskasvatuspaatos_instruction_tilapainen_vaka_kytkin | translate">
+          <mat-radio-group #fieldItem
+                           formControlName="tilapainen_vaka_kytkin">
+            <mat-radio-button [value]="false">{{ i18n.no | translate }}</mat-radio-button>
+            <mat-radio-button [value]="true">{{ i18n.yes | translate }}</mat-radio-button>
+          </mat-radio-group>
+        </app-varda-form-field>
+      -->
+
+        <app-varda-form-field name="hakemus_pvm"
+                              [form]="varhaiskasvatuspaatosForm"
+                              [label]="i18n.varhaiskasvatuspaatos_hakemus_pvm | translate"
+                              [errorText]="i18n.varhaiskasvatuspaatos_error_hakemus_pvm | translate"
+                              [instructionText]="i18n.varhaiskasvatuspaatos_instruction_hakemus_pvm | translate">
+          <app-varda-datepicker #fieldItem
+                                (dateChange)="hakemusDateChange($event.value)"
+                                formControlName='hakemus_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+
+        <app-varda-form-field name="alkamis_pvm"
+                              [form]="varhaiskasvatuspaatosForm"
+                              [label]="i18n.varhaiskasvatuspaatos_alkamis_pvm | translate"
+                              [errorText]="i18n.varhaiskasvatuspaatos_error_alkamis_pvm | translate"
+                              [instructionText]="i18n.varhaiskasvatuspaatos_instruction_alkamis_pvm | translate">
+          <app-varda-datepicker #fieldItem
+                                (dateChange)="startDateChange($event.value)"
+                                [min]="minStartDate"
+                                [startAt]="minStartDate"
+                                formControlName='alkamis_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+
+        <app-varda-form-field name="paattymis_pvm"
+                              [form]="varhaiskasvatuspaatosForm"
+                              [label]="i18n.varhaiskasvatuspaatos_paattymis_pvm | translate"
+                              [errorText]="i18n.varhaiskasvatuspaatos_error_paattymis_pvm | translate"
+                              [instructionText]="i18n.varhaiskasvatuspaatos_instruction_paattymis_pvm | translate">
+          <app-varda-datepicker #fieldItem
+                                [min]="minEndDate"
+                                formControlName='paattymis_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+
+        <app-varda-form-field name="jarjestamismuoto_koodi"
+                              [form]="varhaiskasvatuspaatosForm"
+                              [label]="i18n.varhaiskasvatuspaatos_jarjestamismuoto_koodi | translate"
+                              [errorText]="i18n.varhaiskasvatuspaatos_error_jarjestamismuoto_koodi | translate"
+                              [instructionText]="i18n.varhaiskasvatuspaatos_instruction_jarjestamismuoto_koodi | translate">
+          <select #fieldItem
+                  class="oph-input oph-select"
+                  formControlName="jarjestamismuoto_koodi">
+            <option [value]="null"
+                    disabled>-- {{ i18n.choose | translate }} --</option>
+            <option *ngFor="let jarjestamismuoto of jarjestamismuotoKoodisto"
+                    [disabled]="jarjestamismuoto.disabled"
+                    [value]="jarjestamismuoto.code_value">
+              <span *ngIf="jarjestamismuoto.disabled">x</span>
+              {{ jarjestamismuoto.name }} ({{ jarjestamismuoto.code_value }})
+            </option>
+          </select>
+        </app-varda-form-field>
+
+        <app-varda-form-field name="tuntimaara_viikossa"
+                              [form]="varhaiskasvatuspaatosForm"
+                              [label]="i18n.varhaiskasvatuspaatos_tuntimaara_viikossa | translate"
+                              [errorText]="i18n.varhaiskasvatuspaatos_error_tuntimaara_viikossa | translate"
+                              [instructionText]="i18n.varhaiskasvatuspaatos_instruction_tuntimaara_viikossa | translate">
+          <input #fieldItem
+                 type="number"
+                 class="oph-input"
+                 min="1"
+                 step="0.5"
+                 max="120"
+                 formControlName="tuntimaara_viikossa" />
+        </app-varda-form-field>
+
+        <app-varda-form-field name="vuorohoito_kytkin"
+                              [form]="varhaiskasvatuspaatosForm"
+                              [label]="i18n.varhaiskasvatuspaatos_vuorohoito_kytkin | translate"
+                              [errorText]="i18n.varhaiskasvatuspaatos_error_vuorohoito_kytkin | translate"
+                              [instructionText]="i18n.varhaiskasvatuspaatos_instruction_vuorohoito_kytkin | translate">
+          <mat-radio-group #fieldItem
+                           formControlName="vuorohoito_kytkin">
+            <mat-radio-button [value]="true">{{ i18n.yes | translate }}</mat-radio-button>
+            <mat-radio-button [value]="false">{{ i18n.no | translate }}</mat-radio-button>
+          </mat-radio-group>
+        </app-varda-form-field>
+
+        <app-varda-form-field name="paivittainen_vaka_kytkin"
+                              [form]="varhaiskasvatuspaatosForm"
+                              [label]="i18n.varhaiskasvatuspaatos_paivittainen_vaka_kytkin | translate"
+                              [errorText]="i18n.varhaiskasvatuspaatos_error_paivittainen_vaka_kytkin | translate"
+                              [instructionText]="i18n.varhaiskasvatuspaatos_instruction_paivittainen_vaka_kytkin | translate">
+          <mat-radio-group #fieldItem
+                           formControlName="paivittainen_vaka_kytkin">
+            <mat-radio-button [value]="true">{{ i18n.yes | translate }}</mat-radio-button>
+            <mat-radio-button [value]="false">{{ i18n.no | translate }}</mat-radio-button>
+          </mat-radio-group>
+        </app-varda-form-field>
+
+        <app-varda-form-field name="kokopaivainen_vaka_kytkin"
+                              [form]="varhaiskasvatuspaatosForm"
+                              [label]="i18n.varhaiskasvatuspaatos_kokopaivainen_vaka_kytkin | translate"
+                              [errorText]="i18n.varhaiskasvatuspaatos_error_kokopaivainen_vaka_kytkin | translate"
+                              [instructionText]="i18n.varhaiskasvatuspaatos_instruction_kokopaivainen_vaka_kytkin | translate">
+          <mat-radio-group #fieldItem
+                           formControlName="kokopaivainen_vaka_kytkin">
+            <mat-radio-button [value]="true">{{ i18n.yes | translate }}</mat-radio-button>
+            <mat-radio-button [value]="false">{{ i18n.no | translate }}</mat-radio-button>
+          </mat-radio-group>
+        </app-varda-form-field>
+
+        <app-varda-error-field [errors]="varhaiskasvatuspaatosFormErrors"></app-varda-error-field>
+
+        <app-varda-action-row [saveDisabled]="varhaiskasvatuspaatosForm.pristine || (isSubmitting | async)"
+                              [saveAccess]="lapsitiedotTallentaja"
+                              [formExists]="!!varhaiskasvatuspaatos"
+                              [isEdit]="isEdit"
+                              (togglePanel)="togglePanel($event)"
+                              (deleteForm)="deleteVarhaiskasvatuspaatos()"
+                              (enableEdit)="enableForm()"></app-varda-action-row>
+      </form>
+    </mat-expansion-panel>
+  </div>
+
+  <ng-container *ngIf="varhaiskasvatuspaatos">
+    <div *ngIf="varhaiskasvatussuhteet"
+         [class.tree-border]="varhaiskasvatussuhteet.length"
+         [class.no-save]="!lapsitiedotTallentaja"
+         class="poissaolot tyontekija-panel-content">
+      <h3 class="oph-h3">{{ i18n.varhaiskasvatuspaatos_varhaiskasvatussuhteet_varhaiskasvatuspaatoksessa | translate }}
+        <span *ngIf="varhaiskasvatussuhteet.length">({{ varhaiskasvatussuhteet.length }})</span>
+      </h3>
+
+      <div class="missing-info"
+           *ngIf="varhaiskasvatussuhteet.length === 0 && !lapsitiedotTallentaja">
+        <mat-icon>error_outline</mat-icon>
+        {{ i18n.varhaiskasvatuspaatos_ei_varhaiskasvatussuhteita | translate }}
+      </div>
+
+      <mat-accordion>
+        <app-varda-varhaiskasvatussuhde *ngFor="let varhaiskasvatussuhde of varhaiskasvatussuhteet"
+                                        [henkilonToimipaikka]="henkilonToimipaikka"
+                                        [varhaiskasvatuspaatos]="varhaiskasvatuspaatos"
+                                        [lapsitiedotTallentaja]="lapsitiedotTallentaja"
+                                        [varhaiskasvatussuhde]="varhaiskasvatussuhde"
+                                        (closeVarhaiskasvatussuhde)="closeVarhaiskasvatussuhde($event)">
+        </app-varda-varhaiskasvatussuhde>
+        <app-varda-varhaiskasvatussuhde *ngIf="addVarhaiskasvatussuhdeBoolean"
+                                        [henkilonToimipaikka]="henkilonToimipaikka"
+                                        [varhaiskasvatuspaatos]="varhaiskasvatuspaatos"
+                                        [lapsitiedotTallentaja]="lapsitiedotTallentaja"
+                                        (closeVarhaiskasvatussuhde)="closeVarhaiskasvatussuhde($event)">
+        </app-varda-varhaiskasvatussuhde>
+      </mat-accordion>
+
+      <button class="varda-text-button"
+              *ngIf="!addVarhaiskasvatussuhdeBoolean && lapsitiedotTallentaja"
+              (click)="addVarhaiskasvatussuhdeBoolean = true">
+        <mat-icon>add</mat-icon> {{ i18n.varhaiskasvatuspaatos_lisaa_varhaiskasvatussuhde | translate }}
+      </button>
+    </div>
+  </ng-container>
+</ng-container>

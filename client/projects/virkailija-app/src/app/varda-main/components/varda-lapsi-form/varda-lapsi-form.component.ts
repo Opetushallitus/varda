@@ -48,11 +48,11 @@ import { KoodistoDTO, KoodistoEnum, VardaKoodistoService } from 'varda-shared';
 declare var $: any;
 
 @Component({
-  selector: 'app-varda-lapsi-form',
+  selector: 'app-varda-child-form',
   templateUrl: './varda-lapsi-form.component.html',
   styleUrls: ['./varda-lapsi-form.component.css']
 })
-export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit {
+export class VardaChildFormComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() henkilo: VardaHenkiloDTO;
   @Input() lapsi: LapsiListDTO;
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
@@ -169,7 +169,7 @@ export class VardaLapsiFormComponent implements OnInit, OnChanges, AfterViewInit
   private fetchPaosJarjestajas() {
     const vakajarjestajaId = this.vardaVakajarjestajaService.selectedVakajarjestaja.id;
     const toimipaikkaId = this.selectedToimipaikka.id;
-    this.vardaApiWrapperService.getPaosJarjestajat(vakajarjestajaId, toimipaikkaId)
+    this.vardaApiWrapperService.getPaosJarjestajat(vakajarjestajaId, parseInt(toimipaikkaId))
       .subscribe({
         next: (data) => this.paosJarjestajaKunnat$.next(data),
         error: e => console.error('Could not fetch paos-jarjestajat', e),

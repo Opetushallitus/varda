@@ -22,7 +22,7 @@
       </div>
     </div>
     <ng-template #actionRow>
-      <app-tyontekija-form-action-row [saveDisabled]="taydennyskoulutusForm.pristine || (isLoading | async)"
+      <app-varda-action-row [saveDisabled]="taydennyskoulutusForm.pristine || (isLoading | async)"
                                       [saveAccess]="true"
                                       [formExists]="!!taydennyskoulutus?.id"
                                       [isEdit]="isEdit"
@@ -30,7 +30,7 @@
                                       [noMargin]="true"
                                       (deleteForm)="deleteTaydennyskoulutus()"
                                       (enableEdit)="enableForm()"
-                                      (disableEdit)="disableForm()"></app-tyontekija-form-action-row>
+                                      (disableEdit)="disableForm()"></app-varda-action-row>
     </ng-template>
     <button type="button"
             class="close"
@@ -58,6 +58,9 @@
                             [form]="taydennyskoulutusForm"
                             [label]="i18n.taydennyskoulutus_suoritus_pvm | translate"
                             [errorText]="i18n.taydennyskoulutus_error_suoritus_pvm | translate"
+                            [errorMap]="[
+                            { key: 'matDatepickerMin', value: i18n.taydennyskoulutus_error_min_suoritus_pvm }
+                            ]"
                             [instructionText]="i18n.taydennyskoulutus_instruction_suoritus_pvm | translate">
         <app-varda-datepicker #fieldItem
                               [min]="firstAllowedDate"
@@ -111,7 +114,7 @@
                                                   (selectOsallistujat)="selectOsallistujat($event)">
         </app-taydennyskoulutus-osallistuja-picker>
       </div>
-      <app-varda-tyontekija-error [errors]="taydennyskoulutusFormErrors"></app-varda-tyontekija-error>
+      <app-varda-error-field [errors]="taydennyskoulutusFormErrors"></app-varda-error-field>
 
 
     </div>

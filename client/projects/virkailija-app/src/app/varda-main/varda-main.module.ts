@@ -21,8 +21,8 @@ import {
   VardaVakatoimijaComponent,
   VardaHenkilostoSectionComponent,
   VardaTyontekijaFormComponent,
-  TyontekijaFormActionRowComponent,
-  VardaTyontekijaErrorComponent,
+  VardaActionRowComponent,
+  VardaErrorFieldComponent,
   VardaTyontekijaTutkintoComponent,
   VardaTyontekijaTaydennyskoulutusComponent,
   VardaPalvelussuhdeComponent,
@@ -33,7 +33,14 @@ import {
   VardaTaydennyskoulutusFormComponent,
   VardaTaydennyskoulutusOsallistujaListComponent,
   VardaTaydennyskoulutusOsallistujaPickerComponent,
+  VardaTyontekijaTaydennyskoulutuksetComponent,
   VardaDeleteHenkiloComponent,
+  VardaVarhaiskasvatuspaatosComponent,
+  VardaVarhaiskasvatuspaatoksetComponent,
+  VardaVarhaiskasvatussuhdeComponent,
+  VardaMaksutietoComponent,
+  VardaMaksutiedotComponent,
+  VardaMaksutietoHuoltajaComponent
 } from '../utilities/components';
 
 import { AuthService } from '../core/auth/auth.service';
@@ -57,7 +64,6 @@ import { EiHenkilostoaDialogComponent } from './components/varda-henkilosto-tila
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { VardaTyontekijaTaydennyskoulutuksetComponent } from './components/varda-tyontekija-form/varda-tyontekija-taydennyskoulutukset/varda-tyontekija-taydennyskoulutukset.component';
 import { VardaResultTyontekijaComponent } from './components/varda-reporting/varda-result-tyontekija/varda-result-tyontekija.component';
 import { VardaSearchLapsiComponent } from './components/varda-reporting/varda-search-lapsi/varda-search-lapsi.component';
 import { VardaSearchToimipaikkaComponent } from './components/varda-reporting/varda-search-toimipaikka/varda-search-toimipaikka.component';
@@ -95,9 +101,9 @@ import { VardaResultInfoComponent } from './components/varda-reporting/varda-res
     VardaHenkiloListComponent,
     VardaLapsiFormComponent,
     VardaTyontekijaFormComponent,
-    TyontekijaFormActionRowComponent,
+    VardaActionRowComponent,
     VardaDeleteHenkiloComponent,
-    VardaTyontekijaErrorComponent,
+    VardaErrorFieldComponent,
     VardaTyontekijaTutkintoComponent,
     VardaTyontekijaTaydennyskoulutuksetComponent,
     VardaTyontekijaTaydennyskoulutusComponent,
@@ -111,11 +117,17 @@ import { VardaResultInfoComponent } from './components/varda-reporting/varda-res
     VardaPoissaoloComponent,
     VardaHenkiloFormComponent,
     VardaToimipaikkaFormComponent,
+    VardaVarhaiskasvatuspaatosComponent,
+    VardaVarhaiskasvatuspaatoksetComponent,
+    VardaVarhaiskasvatussuhdeComponent,
     VardaReportingComponent,
     VardaVakatoimijaComponent,
     VardaResultLapsiComponent,
     VardaYhteenvetoComponent,
     MaksutiedotFormComponent,
+    VardaMaksutietoComponent,
+    VardaMaksutietoHuoltajaComponent,
+    VardaMaksutiedotComponent,
     HuoltajatContainerComponent,
     VardaPaosManagementContainerComponent,
     PaosAddedToimijatComponent,
@@ -148,9 +160,9 @@ import { VardaResultInfoComponent } from './components/varda-reporting/varda-res
     VardaHenkiloFormComponent,
     VardaLapsiFormComponent,
     VardaTyontekijaFormComponent,
-    TyontekijaFormActionRowComponent,
+    VardaActionRowComponent,
     VardaDeleteHenkiloComponent,
-    VardaTyontekijaErrorComponent,
+    VardaErrorFieldComponent,
     VardaTyontekijaTutkintoComponent,
     VardaTyontekijaTaydennyskoulutuksetComponent,
     VardaTyontekijaTaydennyskoulutusComponent,
@@ -160,6 +172,7 @@ import { VardaResultInfoComponent } from './components/varda-reporting/varda-res
     VardaTaydennyskoulutusOsallistujaPickerComponent,
     VardaPalvelussuhteetComponent,
     VardaPalvelussuhdeComponent,
+    VardaVarhaiskasvatussuhdeComponent,
     VardaTyoskentelypaikkaComponent,
     VardaPoissaoloComponent,
     VardaToimipaikkaFormComponent,

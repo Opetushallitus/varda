@@ -36,9 +36,14 @@
   overflow-x: auto;
 }
 
-
 @media (max-width: 767px) {
   .modal-dialog {
     width: 90%;
+  }
+}
+
+@media (max-width: 575px) {
+  .modal-dialog {
+    width: 96%;
   }
 }

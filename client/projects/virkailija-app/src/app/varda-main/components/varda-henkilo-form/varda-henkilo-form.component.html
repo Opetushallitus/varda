@@ -148,18 +148,18 @@
                  formControlName="sukunimi" />
         </app-varda-form-field>
 
-        <app-varda-tyontekija-error [errors]="henkiloFormErrors"></app-varda-tyontekija-error>
+        <app-varda-error-field [errors]="henkiloFormErrors"></app-varda-error-field>
 
-        <app-tyontekija-form-action-row [saveDisabled]="henkiloForm.pristine || (isLoading | async)"
-                                        [saveAccess]="true"
-                                        [formExists]="false"
-                                        [isEdit]="true"
-                                        (togglePanel)="closeForm()">
-        </app-tyontekija-form-action-row>
+        <app-varda-action-row [saveDisabled]="henkiloForm.pristine || (isLoading | async)"
+                              [saveAccess]="true"
+                              [formExists]="false"
+                              [isEdit]="true"
+                              (togglePanel)="closeForm()">
+        </app-varda-action-row>
 
       </form>
       <ng-template #singleError>
-        <app-varda-tyontekija-error [errors]="henkiloFormErrors"></app-varda-tyontekija-error>
+        <app-varda-error-field [errors]="henkiloFormErrors"></app-varda-error-field>
       </ng-template>
 
       <div *ngIf="currentHenkilo">
@@ -168,7 +168,6 @@
                                 [lapsi]="henkilonSuhde"
                                 [henkilonToimipaikka]="henkilonToimipaikka"
                                 [isEdit]="!!henkilonSuhde.henkilo_id"
-                                (saveLapsiSuccess)="onSaveLapsiSuccess($event)"
                                 (valuesChanged)="formValuesChanged($event)"></app-varda-lapsi-form>
         </ng-container>
         <ng-container *ngIf="henkilonSuhde.rooli === HenkiloRooliEnum.tyontekija">

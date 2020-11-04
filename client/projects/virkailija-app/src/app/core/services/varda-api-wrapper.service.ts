@@ -414,7 +414,7 @@ export class VardaApiWrapperService {
     return this.vardaApiService.getVakaJarjestajaById(id);
   }
 
-  getPaosJarjestajat(vakajarjestajaId: string, toimipaikkaId: string): Observable<Array<VardaVakajarjestajaUi>> {
+  getPaosJarjestajat(vakajarjestajaId: string, toimipaikkaId: number): Observable<Array<VardaVakajarjestajaUi>> {
     const _apiCallMethod = (page: number) => this.vardaApiService.getPaosJarjestajat(vakajarjestajaId, toimipaikkaId, page);
     return this.vardaApiService.getAllPagesSequentially<VardaVakajarjestajaUi>(_apiCallMethod);
   }

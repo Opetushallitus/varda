@@ -1,0 +1,30 @@
+.henkilo-head {
+  display: flex;
+  flex-wrap: wrap;
+
+  justify-content: space-between;
+}
+
+.henkilo-head>legend {
+  width: auto;
+  margin-right: 1rem;
+  margin-bottom: 1rem;
+}
+
+
+.huoltaja-rivi {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+
+}
+
+.huoltaja-rivi>.huoltaja-nimi {
+  font-weight: bold;
+  word-wrap: break-word;
+}
+
+.huoltaja-rivi>.huoltaja-oid {
+  font-style: italic;
+  word-wrap: break-word;
+}

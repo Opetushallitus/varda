@@ -1,0 +1,64 @@
+<ng-container *ngIf="maksutiedot">
+  <mat-expansion-panel class="palvelussuhteet mt-4 main-section"
+                       (opened)="togglePanel(true)"
+                       (closed)="togglePanel(false)"
+                       [expanded]="expandPanel">
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <h2 class="varda-fieldset-legend">{{ i18n.maksutiedot | translate }} <span
+                *ngIf="maksutiedot?.length">({{ maksutiedot.length }})</span></h2>
+      </mat-panel-title>
+      <ng-container *ngIf="maksutietoOikeus && toimipaikkaAccess?.huoltajatiedot.tallentaja">
+        <mat-panel-description *ngIf="maksutiedot.length">
+          <button class="varda-text-button"
+                  (keydown.enter)="initMaksutieto()"
+                  (click)="initMaksutieto()">
+            <mat-icon class="d-none d-md-inline-block">assignment_outline</mat-icon>
+            <mat-icon>add</mat-icon>{{ i18n.maksutiedot_lisaa_maksutieto | translate }}
+          </button>
+        </mat-panel-description>
+      </ng-container>
+    </mat-expansion-panel-header>
+
+    <div class="tyontekija-panel-content tyontekija-panel-content-first">
+      <ng-container *ngIf="!toimipaikkaAccess?.huoltajatiedot.katselija || !maksutietoOikeus">
+        <div class="ei-palvelussuhteita"
+             role="alert">
+          <p>{{ i18n.maksutiedot_ei_oikeuksia | translate }}</p>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="maksutietoOikeus && toimipaikkaAccess?.huoltajatiedot.katselija">
+        <div *ngIf="!maksutiedot.length"
+             class="ei-palvelussuhteita"
+             role="alert">
+          <p>{{ i18n.maksutiedot_ei_maksutietoja | translate }}</p>
+
+          <ng-container *ngIf="toimipaikkaAccess?.huoltajatiedot.tallentaja">
+            <button class="varda-text-button"
+                    *ngIf="!addMaksutieto"
+                    (click)="initMaksutieto()">
+              <mat-icon>add</mat-icon>{{ i18n.maksutiedot_lisaa_maksutieto | translate }}
+            </button>
+          </ng-container>
+        </div>
+
+        <mat-accordion class="">
+          <app-varda-maksutieto *ngFor="let maksutieto of maksutiedot"
+                                [toimipaikkaAccess]="toimipaikkaAccess"
+                                [lapsi]="lapsi"
+                                [yksityinenBoolean]="!selectedVakajarjestaja.kunnallinen_kytkin"
+                                [maksutieto]="maksutieto"
+                                (closeAddMaksutieto)="closeAddMaksutieto($event)">
+          </app-varda-maksutieto>
+          <app-varda-maksutieto *ngIf="addMaksutieto && toimipaikkaAccess?.huoltajatiedot.tallentaja"
+                                [toimipaikkaAccess]="toimipaikkaAccess"
+                                [lapsi]="lapsi"
+                                [yksityinenBoolean]="!selectedVakajarjestaja.kunnallinen_kytkin"
+                                (closeAddMaksutieto)="closeAddMaksutieto($event)">
+          </app-varda-maksutieto>
+        </mat-accordion>
+      </ng-container>
+    </div>
+  </mat-expansion-panel>
+</ng-container>

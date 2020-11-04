@@ -1,7 +1,7 @@
 import { Lahdejarjestelma } from '../enums/hallinnointijarjestelma';
 
 export class VardaPalvelussuhdeDTO {
-  id?: string;
+  id?: number;
   tunniste?: string;
   url?: string;
   tyontekija?: string;

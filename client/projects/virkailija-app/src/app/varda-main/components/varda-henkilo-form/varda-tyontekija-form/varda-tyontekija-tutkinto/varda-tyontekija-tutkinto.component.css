@@ -1,0 +1,33 @@
+a {
+  color: var(--link-color);
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+mat-icon {
+  line-height: 0.75;
+  font-size: 1em;
+  height: 1em;
+  width: 1em;
+}
+
+ul {
+  list-style: none;
+  padding-inline-start: 0.5em;
+}
+
+ul li > span:not(:first-child) {
+  margin-left: 1em;
+}
+
+mat-form-field {
+  width: 100%;
+  max-width: 800px;
+  z-index: 1051;
+}
+
+.action-button-wrapper button {
+  margin: 0.5em;
+}

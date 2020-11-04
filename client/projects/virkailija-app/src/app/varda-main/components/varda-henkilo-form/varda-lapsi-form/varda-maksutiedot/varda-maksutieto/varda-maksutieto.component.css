@@ -1,0 +1,20 @@
+.huoltajat {
+  padding: 1rem;
+  border: 2px solid var(--gray-lighten-2);
+  background-color: var(--gray-lighten-5);
+  border-radius: 0.25rem;
+  margin-bottom: 2rem;
+}
+
+.huoltajat > * {
+  display: block;
+
+}
+
+.huoltajat > *:not(:last-child) {
+  margin-bottom: 2rem;
+}
+
+.huoltajat button:last-of-type {
+  margin-top: 2rem;
+}

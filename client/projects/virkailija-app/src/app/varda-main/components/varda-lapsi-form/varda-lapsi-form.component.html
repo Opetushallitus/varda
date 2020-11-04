@@ -318,7 +318,7 @@
     </div>
     <ng-container *ngIf="toimipaikkaAccess.lapsitiedot.tallentaja
     && toimipaikkaAccess.huoltajatiedot.tallentaja">
-      <app-varda-tyontekija-error [errors]="deleteLapsiErrors"></app-varda-tyontekija-error>
+      <app-varda-error-field [errors]="deleteLapsiErrors"></app-varda-error-field>
 
       <app-varda-delete-henkilo *ngIf="lapsi?.id"
                                 [instructionText]="i18n.lapsi_instruction_delete | translate"

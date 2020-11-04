@@ -1,0 +1,67 @@
+<ng-container *ngIf="varhaiskasvatuspaatokset">
+  <mat-expansion-panel class="palvelussuhteet mt-4 main-section"
+                       (opened)="togglePanel(true)"
+                       (closed)="togglePanel(false)"
+                       [expanded]="expandPanel">
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <h2 class="varda-fieldset-legend">
+          {{ i18n.varhaiskasvatuspaatokset | translate }}
+          <span *ngIf="varhaiskasvatuspaatokset?.length">({{ varhaiskasvatuspaatokset.length }})</span>
+        </h2>
+      </mat-panel-title>
+      <ng-container *ngIf="lapsitiedotTallentaja">
+        <mat-panel-description *ngIf="varhaiskasvatuspaatokset.length">
+          <button class="varda-text-button"
+                  (keydown.enter)="initVarhaiskasvatuspaatos()"
+                  (click)="initVarhaiskasvatuspaatos()">
+            <mat-icon class="d-none d-md-inline-block">assignment_outline</mat-icon>
+            <mat-icon>add</mat-icon>{{ i18n.varhaiskasvatuspaatokset_lisaa_varhaiskasvatuspaatos | translate }}
+          </button>
+        </mat-panel-description>
+      </ng-container>
+    </mat-expansion-panel-header>
+
+    <div class="tyontekija-panel-content tyontekija-panel-content-first">
+      <ng-container *ngIf="!toimipaikkaAccess.lapsitiedot.katselija">
+        <div class="ei-palvelussuhteita"
+             role="alert">
+          <p>{{ i18n.varhaiskasvatuspaatokset_ei_oikeuksia | translate }}</p>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="toimipaikkaAccess.lapsitiedot.katselija">
+        <div *ngIf="!varhaiskasvatuspaatokset.length"
+             class="ei-palvelussuhteita"
+             role="alert">
+          <p>{{ i18n.varhaiskasvatuspaatokset_ei_varhaiskasvatuspaatoksia | translate }}</p>
+
+          <ng-container *ngIf="lapsitiedotTallentaja">
+            <button class="varda-text-button"
+                    *ngIf="!addVarhaiskasvatuspaatosBoolean"
+                    (click)="initVarhaiskasvatuspaatos()">
+              <mat-icon>add</mat-icon>{{ i18n.varhaiskasvatuspaatokset_lisaa_varhaiskasvatuspaatos | translate }}
+            </button>
+          </ng-container>
+        </div>
+
+        <mat-accordion class="accordion-large-margin">
+          <app-varda-varhaiskasvatuspaatos *ngFor="let varhaiskasvatuspaatos of varhaiskasvatuspaatokset"
+                                           [lapsitiedotTallentaja]="lapsitiedotTallentaja"
+                                           [lapsi]="lapsi"
+                                           [varhaiskasvatuspaatos]="varhaiskasvatuspaatos"
+                                           [henkilonToimipaikka]="henkilonToimipaikka"
+                                           (changedVarhaiskasvatuspaatos)="getVarhaiskasvatuspaatokset()"
+                                           (closeAddVarhaiskasvatuspaatos)="closeAddVarhaiskasvatuspaatos($event)">
+          </app-varda-varhaiskasvatuspaatos>
+          <app-varda-varhaiskasvatuspaatos *ngIf="addVarhaiskasvatuspaatosBoolean && lapsitiedotTallentaja"
+                                           [lapsitiedotTallentaja]="lapsitiedotTallentaja"
+                                           [lapsi]="lapsi"
+                                           [henkilonToimipaikka]="henkilonToimipaikka"
+                                           (closeAddVarhaiskasvatuspaatos)="closeAddVarhaiskasvatuspaatos($event)">
+          </app-varda-varhaiskasvatuspaatos>
+        </mat-accordion>
+      </ng-container>
+    </div>
+  </mat-expansion-panel>
+</ng-container>

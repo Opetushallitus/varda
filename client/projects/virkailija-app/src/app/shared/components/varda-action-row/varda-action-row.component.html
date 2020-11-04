@@ -1,0 +1,61 @@
+<mat-action-row [class.margin-normal]="!noMargin">
+  <div class="action-button-wrapper"
+       [class.margin-normal]="!noMargin">
+    <div class="left">
+      <ng-container *ngIf="!promptDelete">
+        <button type="submit"
+                *ngIf="isEdit && saveAccess"
+                [disabled]="saveDisabled"
+                class="varda-button varda-button-wide responsive-md">
+          {{ i18n.save | translate}}
+        </button>
+
+        <button class="varda-button varda-button-wide varda-button-neutral responsive-md secondary"
+                type="button"
+                *ngIf="!noToggle; else noToggleCancelBtn"
+                (click)="_togglePanel(false)">
+          {{ i18n.cancel | translate }}
+        </button>
+
+        <ng-template #noToggleCancelBtn>
+          <button class="varda-button varda-button-wide varda-button-neutral responsive-md secondary"
+                  type="button"
+                  *ngIf="isEdit"
+                  (click)="_disableEdit()">
+            {{ i18n.cancel | translate }}
+          </button>
+        </ng-template>
+
+        <ng-container *ngIf="formExists && saveAccess">
+          <button *ngIf="!isEdit"
+                  type="button"
+                  class="varda-button varda-button-wide responsive-md"
+                  (click)="_enableEdit()">
+            {{ i18n.edit | translate}}
+          </button>
+        </ng-container>
+      </ng-container>
+    </div>
+    <div class="right"
+         *ngIf="isEdit && saveAccess">
+      <button *ngIf="formExists && !promptDelete"
+              type="button"
+              class="varda-button varda-button-wide varda-button-danger responsive-md secondary"
+              (click)="promptDelete = true">
+        {{ i18n.delete | translate }}
+      </button>
+      <ng-container *ngIf="promptDelete">
+        <button type="button"
+                class="varda-button varda-button-wide varda-button-danger responsive-md secondary"
+                (click)="_deleteForm()">
+          {{ i18n.delete | translate }}
+        </button>
+        <button class="varda-button varda-button-wide varda-button-neutral responsive-md secondary"
+                type="button"
+                (click)="promptDelete = false">
+          {{ i18n.cancel | translate }}
+        </button>
+      </ng-container>
+    </div>
+  </div>
+</mat-action-row>

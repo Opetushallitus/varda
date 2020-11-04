@@ -14,8 +14,14 @@ export class VardaLapsiCreateDto {
 export class VardaLapsiDTO extends VardaLapsiCreateDto {
   url?: string;
   id: number;
+  paos_kytkin?: boolean;
+  henkilo_oid?: string;
+  vakatoimija_oid?: string;
   oma_organisaatio_oid?: string;
+  oma_organisaatio_nimi?: string;
   paos_organisaatio_oid?: string;
+  paos_organisaatio_nimi?: string;
+  muutos_pvm?: string;
 }
 
 

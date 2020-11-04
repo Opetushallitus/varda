@@ -65,8 +65,30 @@ export class HenkilostoErrorMessageService {
     }
   }
 
-  private getErrorByKey(key: string) {
-    return this.errorMessageKeys[key] || `backend.${key}`;
+  private getErrorByKey(key: string): string {
+    if (this.errorMessageKeys[key]) {
+      return this.errorMessageKeys[key];
+    }
+
+    key = this.getDynamicError(key);
+    // remove this line after error-message rework CSCVARDA-1740
+    // the idea is to fix dynamic errors like '121299-111X: not a valid hetu"
+    key = key.split(':', 2).pop().trim();
+
+    return `backend.${key}`;
+  }
+
+  private getDynamicError(key: string): string {
+    const dynamicKeys = [
+      {
+        regex: /^Lapsi (\d*) has already \d overlapping/,
+        key: 'Lapsi already has 3 overlapping varhaiskasvatussuhde on the defined time range.'
+      }
+    ];
+
+    key = dynamicKeys.find(dynamic => key.match(dynamic.regex))?.key || key;
+
+    return key;
   }
 
   private checkFormErrors(formGroup: FormGroup) {

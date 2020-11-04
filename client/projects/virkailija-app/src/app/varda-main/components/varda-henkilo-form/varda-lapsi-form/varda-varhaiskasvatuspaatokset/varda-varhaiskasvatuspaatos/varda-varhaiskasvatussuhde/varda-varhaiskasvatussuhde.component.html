@@ -1,0 +1,101 @@
+<ng-container *ngIf="varhaiskasvatussuhdeForm">
+  <div class="tyoskentelypaikka">
+    <mat-expansion-panel [expanded]="expandPanel"
+                         (opened)="togglePanel(true)"
+                         (closed)="togglePanel(false)">
+      <mat-expansion-panel-header>
+        <mat-panel-title *ngIf="varhaiskasvatussuhde">
+          <h4>
+            <span *ngIf="varhaiskasvatussuhde.toimipaikka_oid"
+                  appToimipaikkaNimi>
+              {{ varhaiskasvatussuhde.toimipaikka_oid }}
+            </span>
+            <span *ngIf="!varhaiskasvatussuhde.toimipaikka_oid">
+              {{ i18n.tyoskentelypaikka_kiertava_kytkin | translate }}
+            </span>
+            <span *ngIf="!varhaiskasvatussuhde.paattymis_pvm">
+              {{ i18n.tyoskentelypaikka_alkaen_PVM | translate: {pvm: varhaiskasvatussuhde.alkamis_pvm | vardaDate} }}
+            </span>
+            <span *ngIf="varhaiskasvatussuhde.paattymis_pvm">
+              {{varhaiskasvatussuhde.alkamis_pvm | vardaDate}} -
+              {{varhaiskasvatussuhde.paattymis_pvm | vardaDate}}
+            </span>
+          </h4>
+        </mat-panel-title>
+        <mat-panel-title *ngIf="!varhaiskasvatussuhde">
+          <h4>{{ i18n.varhaiskasvatuspaatos_lisaa_varhaiskasvatussuhde | translate }}</h4>
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+
+      <form [formGroup]="varhaiskasvatussuhdeForm"
+            (submit)="saveVarhaiskasvatussuhde(varhaiskasvatussuhdeForm)">
+
+        <app-varda-form-field name="toimipaikka"
+                              [form]="varhaiskasvatussuhdeForm"
+                              [label]="i18n.varhaiskasvatussuhde_toimipaikka | translate"
+                              [errorText]="i18n.varhaiskasvatussuhde_error_toimipaikka | translate"
+                              [instructionText]="i18n.varhaiskasvatussuhde_instruction_toimipaikka | translate">
+          <div *ngIf="varhaiskasvatussuhde; else toimipaikkaSelector"
+               class="my-3"
+               appToimipaikkaNimi>
+            {{ varhaiskasvatussuhde.toimipaikka_oid }}
+          </div>
+
+          <ng-template #toimipaikkaSelector>
+            <select #fieldItem
+                    *ngIf="!varhaiskasvatussuhdeForm.controls.toimipaikka.disabled"
+                    class="oph-input oph-select"
+                    formControlName="toimipaikka">
+              <option [value]="null"
+                      disabled>-- {{ i18n.choose | translate }} --</option>
+              <option *ngFor="let toimipaikka of toimipaikat"
+                      [value]="toimipaikka.url">
+                {{ toimipaikka.nimi }}
+              </option>
+            </select>
+          </ng-template>
+        </app-varda-form-field>
+        <app-varda-form-field name="alkamis_pvm"
+                              [form]="varhaiskasvatussuhdeForm"
+                              [label]="i18n.varhaiskasvatussuhde_alkamis_pvm | translate"
+                              [errorText]="i18n.varhaiskasvatussuhde_error_alkamis_pvm | translate"
+                              [errorMap]="[
+                              { key: 'matDatepickerMin', value: i18n.varhaiskasvatussuhde_error_min_alkamis_pvm },
+                              { key: 'matDatepickerMax', value: i18n.varhaiskasvatussuhde_error_max_alkamis_pvm }
+                              ]"
+                              [instructionText]="i18n.varhaiskasvatussuhde_instruction_alkamis_pvm | translate">
+          <app-varda-datepicker #fieldItem
+                                [min]="startDateRange.min"
+                                [max]="startDateRange.max"
+                                (dateChange)="startDateChange($event.value)"
+                                formControlName='alkamis_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+
+        <app-varda-form-field name="paattymis_pvm"
+                              [form]="varhaiskasvatussuhdeForm"
+                              [label]="i18n.varhaiskasvatussuhde_paattymis_pvm | translate"
+                              [errorText]="i18n.varhaiskasvatussuhde_error_paattymis_pvm | translate"
+                              [errorMap]="[
+                              { key: 'matDatepickerMin', value: i18n.varhaiskasvatussuhde_error_min_paattymis_pvm },
+                              { key: 'matDatepickerMax', value: i18n.varhaiskasvatussuhde_error_max_paattymis_pvm }
+                              ]"
+                              [instructionText]="i18n.varhaiskasvatussuhde_instruction_paattymis_pvm | translate">
+          <app-varda-datepicker #fieldItem
+                                [min]="endDateRange.min"
+                                [max]="endDateRange.max"
+                                formControlName='paattymis_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+
+        <app-varda-error-field [errors]="varhaiskasvatussuhdeFormErrors"></app-varda-error-field>
+
+        <app-varda-action-row [saveDisabled]="varhaiskasvatussuhdeForm.pristine || (isSubmitting | async)"
+                              [saveAccess]="lapsitiedotTallentaja"
+                              [formExists]="!!varhaiskasvatussuhde"
+                              [isEdit]="isEdit"
+                              (togglePanel)="togglePanel($event)"
+                              (deleteForm)="deleteVarhaiskasvatussuhde()"
+                              (enableEdit)="enableForm()"></app-varda-action-row>
+      </form>
+    </mat-expansion-panel>
+  </div>
+</ng-container>

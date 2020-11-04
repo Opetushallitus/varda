@@ -11,13 +11,10 @@ import {
   VardaUpdateMaksutietoDTO
 } from '../../utilities/models/dto/varda-maksutieto-dto.model';
 import { VardaPageDto } from '../../utilities/models/dto/varda-page-dto';
-import { VardaKoodistoDto } from '../../utilities/models/dto/varda-koodisto-dto.model';
 import {
-  HenkilohakuResultDTO,
-  HenkilohakuSearchDTO,
-  HenkilohakuType,
   LapsiByToimipaikkaDTO,
-  LapsiKooste, TyontekijaByToimipaikkaDTO, TyontekijaKooste
+  LapsiKooste,
+  TyontekijaByToimipaikkaDTO, TyontekijaKooste
 } from '../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { sha256 } from 'js-sha256';
 import { LoadingHttpService } from 'varda-shared';
@@ -35,7 +32,6 @@ import {
 } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { VardaVakajarjestajaUi } from '../../utilities/models/varda-vakajarjestaja-ui.model';
 import { VardaHenkiloDTO } from '../../utilities/models';
-import { HenkiloListDTO } from '../../utilities/models/dto/varda-henkilo-dto.model';
 import { VardaApiServiceInterface } from 'varda-shared/lib/dto/vardaApiService.interface';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
@@ -139,10 +135,6 @@ export class VardaApiService implements VardaApiServiceInterface {
     return this.http.get(`${this.toimipaikatApiPath}${id}/`).pipe(map((resp: any) => {
       return resp;
     }));
-  }
-
-  getVakajarjestajaLapset(vakajarjestajaId: string, searchFilter: any): Observable<VardaPageDto<HenkiloListDTO>> {
-    return this.http.get(`${this.vakaJarjestajatUiPath}${vakajarjestajaId}/lapsi-list/`, searchFilter);
   }
 
   getLapsetForVakajarjestaja(
@@ -438,7 +430,7 @@ export class VardaApiService implements VardaApiServiceInterface {
     return this.http.get(url, { page });
   }
 
-  getPaosJarjestajat(vakajarjestajaId: string, toimipaikkaId: string, page: number): Observable<VardaPageDto<VardaVakajarjestajaUi>> {
+  getPaosJarjestajat(vakajarjestajaId: string, toimipaikkaId: number, page: number): Observable<VardaPageDto<VardaVakajarjestajaUi>> {
     const url = `${this.vakaJarjestajatUiPath}${vakajarjestajaId}/toimipaikat/${toimipaikkaId}/paos-jarjestajat/`;
     return this.http.get(url, { page });
   }

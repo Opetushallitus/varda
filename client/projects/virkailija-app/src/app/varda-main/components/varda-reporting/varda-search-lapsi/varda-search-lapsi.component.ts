@@ -104,7 +104,7 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
         return {
           id: lapsi.lapsi_id,
           textPrimary: `${lapsi.sukunimi}, ${lapsi.etunimet}`,
-          textSecondary: this.getSecondaryText(lapsi.oma_organisaatio_nimi)
+          textSecondary: this.getSecondaryText(lapsi.paos_organisaatio_nimi) || this.getSecondaryText(lapsi.oma_organisaatio_nimi)
         };
       });
     });

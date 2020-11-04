@@ -82,6 +82,14 @@ export class VardaSnackBarService {
   }
 
   /**
+    * does console.error(message, error) and passes your message to snackbar error(message)
+   */
+  errorWithConsole(message: string, error: Error) {
+    console.error(message, '\n', error.message);
+    this.error(message);
+  }
+
+  /**
     * errorFromBackend is only for varda-backend-format errors. only shows the first error in the list
     * @remarks
     * expand this with template if you wish to show multiple error-lines

@@ -14,7 +14,8 @@ import { VardaErrorMessageService } from './services/varda-error-message.service
 import { VardaDomService } from './services/varda-dom.service';
 import { VardaHenkilostoApiService } from './services/varda-henkilosto.service';
 import { VardaLapsiService } from './services/varda-lapsi.service';
-import { VardaSnackBarService} from './services/varda-snackbar.service';
+import { VardaSnackBarService } from './services/varda-snackbar.service';
+import { VardaPaosApiService } from './services/varda-paos-api.service';
 
 @NgModule({
   imports: [
@@ -35,11 +36,12 @@ import { VardaSnackBarService} from './services/varda-snackbar.service';
     VardaDomService,
     VardaHenkilostoApiService,
     VardaLapsiService,
+    VardaPaosApiService,
     VardaSnackBarService
   ]
 })
 export class CoreModule {
-  constructor (@Optional() @SkipSelf() parentModule: CoreModule) {
+  constructor(@Optional() @SkipSelf() parentModule: CoreModule) {
     if (parentModule) {
       throw new Error(
         'CoreModule is already loaded. Import it in the AppModule only');

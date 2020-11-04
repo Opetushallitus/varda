@@ -72,6 +72,7 @@ a {
 mat-icon,
 .material-icons {
   vertical-align: middle;
+  user-select: none;
 }
 
 h1,

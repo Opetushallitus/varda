@@ -33,7 +33,7 @@ export class VardaHenkilostoApiService {
     return this.http.post(`${this.henkilostoApiPath}/tyontekijat/`, tyontekijaDTO);
   }
 
-  deleteTyontekija(tyontekijaId: number) {
+  deleteTyontekija(tyontekijaId: number): Observable<void> {
     return this.http.delete(`${this.henkilostoApiPath}/tyontekijat/${tyontekijaId}/`);
   }
 
@@ -42,6 +42,7 @@ export class VardaHenkilostoApiService {
   getTutkinto(tutkintoId: number): Observable<VardaTutkintoDTO> {
     return this.http.get(`${this.henkilostoApiPath}/tutkinnot/${tutkintoId}/`);
   }
+
   getTutkinnot(henkiloOid: string): Observable<Array<VardaTutkintoDTO>> {
     return this.http.getAllResults(`${this.henkilostoApiPath}/tutkinnot/`, environment.vardaAppUrl, { henkilo: henkiloOid });
   }
@@ -50,7 +51,7 @@ export class VardaHenkilostoApiService {
     return this.http.post(`${this.henkilostoApiPath}/tutkinnot/`, tutkintoDTO);
   }
 
-  deleteTutkinto(tutkintoId: number) {
+  deleteTutkinto(tutkintoId: number): Observable<void> {
     return this.http.delete(`${this.henkilostoApiPath}/tutkinnot/${tutkintoId}/`);
   }
 
@@ -69,7 +70,7 @@ export class VardaHenkilostoApiService {
     return this.http.put(`${this.henkilostoApiPath}/palvelussuhteet/${palvelussuhdeDTO.id}/`, palvelussuhdeDTO);
   }
 
-  deletePalvelussuhde(palvelussuhdeId: number): Observable<any> {
+  deletePalvelussuhde(palvelussuhdeId: number): Observable<void> {
     return this.http.delete(`${this.henkilostoApiPath}/palvelussuhteet/${palvelussuhdeId}/`);
   }
 
@@ -88,7 +89,7 @@ export class VardaHenkilostoApiService {
     return this.http.put(`${this.henkilostoApiPath}/tyoskentelypaikat/${tyoskentelypaikkaDTO.id}/`, tyoskentelypaikkaDTO);
   }
 
-  deleteTyoskentelypaikka(tyoskentelypaikkaId: number): Observable<any> {
+  deleteTyoskentelypaikka(tyoskentelypaikkaId: number): Observable<void> {
     return this.http.delete(`${this.henkilostoApiPath}/tyoskentelypaikat/${tyoskentelypaikkaId}/`);
   }
 
@@ -107,7 +108,7 @@ export class VardaHenkilostoApiService {
     return this.http.put(`${this.henkilostoApiPath}/pidemmatpoissaolot/${poissaoloDTO.id}/`, poissaoloDTO);
   }
 
-  deletePoissaolo(poissaoloId: number): Observable<any> {
+  deletePoissaolo(poissaoloId: number): Observable<void> {
     return this.http.delete(`${this.henkilostoApiPath}/pidemmatpoissaolot/${poissaoloId}/`);
   }
 
@@ -126,7 +127,7 @@ export class VardaHenkilostoApiService {
     return this.http.put(`${this.henkilostoApiPath}/taydennyskoulutukset/${taydennyskoulutusDTO.id}/`, taydennyskoulutusDTO);
   }
 
-  deleteTaydennyskoulutus(taydennyskoulutusId: number): Observable<any> {
+  deleteTaydennyskoulutus(taydennyskoulutusId: number): Observable<void> {
     return this.http.delete(`${this.henkilostoApiPath}/taydennyskoulutukset/${taydennyskoulutusId}/`);
   }
 
