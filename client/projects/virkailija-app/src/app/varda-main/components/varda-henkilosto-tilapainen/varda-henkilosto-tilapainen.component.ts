@@ -135,7 +135,7 @@ export class VardaHenkilostoTilapainenComponent implements OnDestroy {
 
         if (!this.monthArray.controls.some(formGroup =>
           parseInt(formGroup.get('tuntimaara').value) !== 0 || parseInt(formGroup.get('tyontekijamaara').value) !== 0)) {
-          this.henkilostoKytkin.value = true;
+          this.henkilostoKytkin.value = this.monthArray.controls.length === 12;
         }
 
         if (year < this.lastEditableYear || !this.toimijaAccess.tilapainenHenkilosto.tallentaja) {
