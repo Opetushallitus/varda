@@ -10,6 +10,7 @@ interface VardaErrorLine {
 }
 
 interface VardaErrorResponse {
+  status?: number;
   error: VardaErrorLine;
 }
 
@@ -105,15 +106,22 @@ export class HenkilostoErrorMessageService {
   }
 
   handleError(response: VardaErrorResponse, snackBar?: VardaSnackBarService, formGroup?: FormGroup): void {
-    console.error(response.error);
-
+    console.error(response.status, response.error);
+    const generalErrors = [404, 504];
     this.errorLines = [];
-    this.loopThrough(response.error);
+
+    if (generalErrors.includes(response?.status)) {
+      const generalError: ErrorTree = { keys: ['server'], values: ['backend.api-timeout-or-not-found'] };
+      this.errorLines.push(generalError);
+    } else {
+      this.loopThrough(response.error);
+      if (formGroup) {
+        this.checkFormErrors(formGroup);
+      }
+    }
     this.errorList$.next(this.errorLines);
 
-    if (formGroup) {
-      this.checkFormErrors(formGroup);
-    }
+
 
     if (snackBar) {
       const errorFlat: Array<string> = [].concat(...this.errorLines.map(line => line.values));
