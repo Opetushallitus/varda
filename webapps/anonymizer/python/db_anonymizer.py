@@ -21,35 +21,31 @@ from varda.models import (Henkilo, HistoricalHenkilo, Toimipaikka, VakaJarjestaj
 
 
 BATCH_SIZE = 50000
-DB_ANONYMIZER_SQL_FILE_PATH = 'anonymizer/sql/anonymizer.sql'
+DB_ANONYMIZER_SQL_FILE_PATH_SETUP = 'anonymizer/sql/anonymizer_setup.sql'
+DB_ANONYMIZER_SQL_FILE_PATH_HENKILO = 'anonymizer/sql/anonymizer_henkilo.sql'
+DB_ANONYMIZER_SQL_FILE_PATH_TOIMIJA = 'anonymizer/sql/anonymizer_vakatoimija.sql'
+DB_ANONYMIZER_SQL_FILE_PATH_VAKATIEDOT = 'anonymizer/sql/anonymizer_vakatiedot.sql'
+DB_ANONYMIZER_SQL_FILE_PATH_HENKILOSTO = 'anonymizer/sql/anonymizer_henkilosto.sql'
+DB_ANONYMIZER_SQL_FILE_PATH_CLEANUP = 'anonymizer/sql/anonymizer_cleanup.sql'
 DB_ANONYMIZER_ZIP_FILE_PATH = 'anonymizer/python/anonymized_data.zip'
 CORRECT_MD5SUM_OF_ZIP_FILE = '7fceecbc4bdc2021ea8c9a18816018ab'
 SAFETY_MARGIN_HENKILOT = 10
 
 
 def anonymize_data():
-
     # SQL part
-    start = timer()
-    print('Anonymizing data (SQL part)...')
-    with open(Path(DB_ANONYMIZER_SQL_FILE_PATH), encoding='utf-8') as f:
-        with connection.cursor() as c:
-            c.execute(f.read())
-    end = timer()
-    print('SQL part successfully executed in {} seconds'.format(end - start))
+    operation_type = 'sql'
+    run_and_time_operation(operation_type, DB_ANONYMIZER_SQL_FILE_PATH_SETUP, 'Setup')
+    run_and_time_operation(operation_type, DB_ANONYMIZER_SQL_FILE_PATH_HENKILO, 'Henkilo')
+    run_and_time_operation(operation_type, DB_ANONYMIZER_SQL_FILE_PATH_TOIMIJA, 'Toimija')
+    run_and_time_operation(operation_type, DB_ANONYMIZER_SQL_FILE_PATH_VAKATIEDOT, 'Vakatiedot')
+    run_and_time_operation(operation_type, DB_ANONYMIZER_SQL_FILE_PATH_HENKILOSTO, 'Henkilosto')
+    run_and_time_operation(operation_type, DB_ANONYMIZER_SQL_FILE_PATH_CLEANUP, 'Cleanup')
 
     # Python part (Henkilot)
-    start = timer()
-    print('Anonymizing data (Python part / Hetut and lastnames)...')
-    anonymize_henkilot()
-    end = timer()
-    print('Python part successfully executed in {} seconds'.format(end - start))
-
-    start = timer()
-    print('Finalizing the dump.')
-    finalize_data_dump()
-    end = timer()
-    print('Finalizing the dump executed in {} seconds'.format(end - start))
+    operation_type = 'python'
+    run_and_time_operation(operation_type, anonymize_henkilot, 'Henkilo')
+    run_and_time_operation(operation_type, finalize_data_dump, 'Finalize')
 
 
 def base64_encoding(string_to_be_encoded):
@@ -72,6 +68,23 @@ def get_md5sum(fname):
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
+
+
+def run_and_time_operation(operation_type, operation, operation_name):
+    start = timer()
+    if operation_type == 'sql':
+        print('Running anonymizer SQL {}...'.format(operation_name))
+        with open(Path(operation), encoding='utf-8') as f:
+            with connection.cursor() as c:
+                c.execute(f.read())
+        end = timer()
+        print('{} SQL part successfully executed in {} seconds'.format(operation_name, end - start))
+    elif operation_type == 'python':
+        operation()
+        end = timer()
+        print('{} python successfully executed in {} seconds'.format(operation_name, end - start))
+    else:
+        print('Unknown operation, nothing executed')
 
 
 def finalize_data_dump():
@@ -195,9 +208,11 @@ def anonymize_users(user_qs):
         user.save()
 
 
-def get_random_string(length):
-    characters = string.ascii_letters + string.digits + '_@+.-'
-
+def get_random_string(length, special_characters=True):
+    if special_characters:
+        characters = string.ascii_letters + string.digits + '_@+.-'
+    else:
+        characters = string.ascii_letters + string.digits
     random_string = ''
     for i in range(length):
         random_string += random.choice(characters)

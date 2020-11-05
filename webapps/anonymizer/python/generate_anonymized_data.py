@@ -10,7 +10,6 @@ from timeit import default_timer as timer
 from varda.models import Henkilo
 from varda.misc import encrypt_henkilotunnus, hash_string
 
-
 DB_ANONYMIZER_ZIP_FILE_PATH = 'anonymizer/python/anonymized_names.zip'
 KUNTAKOODI_FILE = 'anonymizer/python/kuntakoodit.zip'
 DB_ANONYMIZED_JSON_FILE = '/tmp/anonymized_data.json'
@@ -85,6 +84,7 @@ def read_lines_file(zip_ref, file):
 
 
 def create_henkilo(henkilo, henkilotunnus_unique_hash_set, file, etunimet_miehet, etunimet_naiset, sukunimet):
+    from anonymizer.python.db_anonymizer import get_random_string
     # Gender
     sukupuoli_koodi = henkilo['sukupuoli_koodi'] or random.randint(1, 2)
     syntyma_pvm = henkilo['syntyma_pvm'] or datetime.date(random.randint(1990, 2019), random.randint(1, 12), random.randint(1, 28))
@@ -114,6 +114,10 @@ def create_henkilo(henkilo, henkilotunnus_unique_hash_set, file, etunimet_miehet
     # Get new syntyma_pvm from randomized hetu
     syntyma_pvm = get_syntymaaika(henkilotunnus)
 
+    # Street address
+    katuosoite = get_random_string(length=15, special_characters=False)
+    postinumero = random.randrange(10000, 99999)
+
     data = {
         'id': henkilo['id'],
         'henkilotunnus': encrypted_henkilotunnus,
@@ -123,7 +127,9 @@ def create_henkilo(henkilo, henkilotunnus_unique_hash_set, file, etunimet_miehet
         'sukunimi': sukunimi,
         'syntyma_pvm': syntyma_pvm,
         'sukupuoli_koodi': sukupuoli_koodi,
-        'kotikunta_koodi': henkilo['kotikunta_koodi']
+        'kotikunta_koodi': henkilo['kotikunta_koodi'],
+        'katuosoite': katuosoite,
+        'postinumero': postinumero
     }
     json.dump(data, file)
     file.write(',\n')
