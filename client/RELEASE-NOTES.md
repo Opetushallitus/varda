@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.4.9 (5.11.2020)
+- CSCVARDA-1958 Lapsiform uudelleenkirjoitus
+
 1.4.8 (29.10.2020)
 - CSCVARDA-1817 Katsele tietoja -aikarajain koskemaan myös poissaoloa ja täydennyskoulutuksen suorituspäivämäärää (suoritettu aikavälillä)
 - CSCVARDA-1808 Katsele tietoja: Työntekijän haun toteutus osa 1
