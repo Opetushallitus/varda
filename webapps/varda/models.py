@@ -983,7 +983,7 @@ class Z3_AdditionalCasUserFields(models.Model):
         return str(self.user_id)
 
     class Meta:
-        verbose_name_plural = "Additional user fields"
+        verbose_name_plural = 'Additional user fields'
 
 
 class Z4_CasKayttoOikeudet(models.Model):
@@ -999,6 +999,9 @@ class Z4_CasKayttoOikeudet(models.Model):
     HENKILOSTO_TILAPAISET_TALLENTAJA = 'HENKILOSTO_TILAPAISET_TALLENTAJA'
     HENKILOSTO_TYONTEKIJA_KATSELIJA = 'HENKILOSTO_TYONTEKIJA_KATSELIJA'
     HENKILOSTO_TYONTEKIJA_TALLENTAJA = 'HENKILOSTO_TYONTEKIJA_TALLENTAJA'
+    # No use case for TOIMIJATIEDOT_KATSELIJA
+    TOIMIJATIEDOT_KATSELIJA = 'VARDA_TOIMIJATIEDOT_KATSELIJA'
+    TOIMIJATIEDOT_TALLENTAJA = 'VARDA_TOIMIJATIEDOT_TALLENTAJA'
     KAYTTOOIKEUSROOLIT = (
         (PAAKAYTTAJA, 'Varda-Pääkäyttäjä'),
         (TALLENTAJA, 'Varda-Tallentaja'),
@@ -1012,6 +1015,8 @@ class Z4_CasKayttoOikeudet(models.Model):
         (HENKILOSTO_TILAPAISET_TALLENTAJA, 'Varda-Tilapäisen henkilöstön tallentaja'),
         (HENKILOSTO_TYONTEKIJA_KATSELIJA, 'Varda-Työntekijätietojen katselija'),
         (HENKILOSTO_TYONTEKIJA_TALLENTAJA, 'Varda-Työntekijätietojen tallentaja'),
+        (TOIMIJATIEDOT_KATSELIJA, 'Varda-Toimijatietojen katselija'),
+        (TOIMIJATIEDOT_TALLENTAJA, 'Varda-Toimijatietojen tallentaja'),
     )
 
     user = models.ForeignKey(User, related_name='kayttooikeudet', on_delete=models.PROTECT)
@@ -1023,7 +1028,7 @@ class Z4_CasKayttoOikeudet(models.Model):
         return str(self.id)
 
     class Meta:
-        verbose_name_plural = "Kayttooikeudet"
+        verbose_name_plural = 'Kayttooikeudet'
 
 
 class Z5_AuditLog(models.Model):
@@ -1035,4 +1040,4 @@ class Z5_AuditLog(models.Model):
         return str(self.id)
 
     class Meta:
-        verbose_name_plural = "Audit log"
+        verbose_name_plural = 'Audit log'

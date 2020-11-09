@@ -279,6 +279,7 @@ class CustomBasicAuthentication(BasicAuthentication):
             Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA: TietosisaltoRyhma.TYONTEKIJATIEDOT.value,
             Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA: TietosisaltoRyhma.TAYDENNYSKOULUTUSTIEDOT.value,
             Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA: TietosisaltoRyhma.TILAPAINENHENKILOSTOTIEDOT.value,
+            Z4_CasKayttoOikeudet.TOIMIJATIEDOT_TALLENTAJA: TietosisaltoRyhma.TOIMIJATIEDOT.value
         }
 
         for kayttooikeus in kayttooikeus_list:
@@ -312,6 +313,7 @@ class CustomBasicAuthentication(BasicAuthentication):
                                                 Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
                                                 Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,
                                                 Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA,
+                                                Z4_CasKayttoOikeudet.TOIMIJATIEDOT_TALLENTAJA
                                                 ]
         for organisaatio in cas_henkilo_organisaatiot:
             # Filter out permissions we are not interested

@@ -35,7 +35,7 @@ export class VardaVakatoimijaComponent {
   ) {
     this.vakatoimijaFormErrors = this.errorService.initErrorList();
     this.toimijaAccess = this.authService.getUserAccess();
-    this.saveAccess = this.toimijaAccess.lapsitiedot.tallentaja;
+    this.saveAccess = this.toimijaAccess.toimijatiedot.tallentaja;
     this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
     this.vardaApiService.getVakaJarjestajaById(this.selectedVakajarjestaja.id).subscribe((vakajarjestaja: VardaVakajarjestaja) => {
       this.initVakatoimijaForm(vakajarjestaja);

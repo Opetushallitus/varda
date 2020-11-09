@@ -10,6 +10,7 @@ class TietosisaltoRyhma(enum.Enum):
     TYONTEKIJATIEDOT = 'tyontekijatiedot'
     TAYDENNYSKOULUTUSTIEDOT = 'taydennyskoulutustiedot'
     TILAPAINENHENKILOSTOTIEDOT = 'tilapainenhenkilostotiedot'
+    TOIMIJATIEDOT = 'toimijatiedot'
 
     def __str__(self):
         if not isinstance(self.value, str):

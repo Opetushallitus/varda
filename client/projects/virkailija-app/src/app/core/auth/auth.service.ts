@@ -1,13 +1,13 @@
 import { Injectable } from '@angular/core';
-import { Observable, Subject, BehaviorSubject, combineLatest } from 'rxjs';
+import { BehaviorSubject, combineLatest, Observable, Subject } from 'rxjs';
 import { VardaApiService } from '../services/varda-api.service';
 import { VardaVakajarjestajaService } from '../services/varda-vakajarjestaja.service';
 import { NavigationEnd, Router } from '@angular/router';
 import { VardaKayttajatyyppi, VardaKayttooikeusRoles, VardaToimipaikkaDTO } from '../../utilities/models';
 import { VardaToimipaikkaMinimalDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
-import { UserAccess, SaveAccess, UserAccessKeys } from '../../utilities/models/varda-user-access.model';
+import { SaveAccess, UserAccess, UserAccessKeys } from '../../utilities/models/varda-user-access.model';
 import { environment } from 'projects/huoltaja-app/src/environments/environment';
-import { filter, windowWhen } from 'rxjs/operators';
+import { filter } from 'rxjs/operators';
 
 class Kayttooikeus {
   kayttooikeus: VardaKayttooikeusRoles;
@@ -221,6 +221,10 @@ export class AuthService {
       taydennyskoulutustiedot: {
         katselija: getRoles(VardaKayttooikeusRoles.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA, VardaKayttooikeusRoles.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA),
         tallentaja: getRoles(VardaKayttooikeusRoles.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA)
+      },
+      toimijatiedot: {
+        katselija: getRoles(VardaKayttooikeusRoles.TOIMIJATIEDOT_TALLENTAJA, VardaKayttooikeusRoles.TOIMIJATIEDOT_KATSELIJA),
+        tallentaja: getRoles(VardaKayttooikeusRoles.TOIMIJATIEDOT_TALLENTAJA)
       }
     };
 

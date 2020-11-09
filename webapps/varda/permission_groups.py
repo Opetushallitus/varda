@@ -86,17 +86,22 @@ def create_permission_groups_for_organisaatio(organisaatio_oid, vakajarjestaja=T
     HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA = Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA
     HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA = Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA
 
+    TOIMIJATIEDOT_KATSELIJA = Z4_CasKayttoOikeudet.TOIMIJATIEDOT_KATSELIJA
+    TOIMIJATIEDOT_TALLENTAJA = Z4_CasKayttoOikeudet.TOIMIJATIEDOT_TALLENTAJA
+
     roles_vakajarjestaja = [PALVELUKAYTTAJA, PAAKAYTTAJA, TALLENTAJA, KATSELIJA,
                             HUOLTAJATIEDOT_TALLENTAJA, HUOLTAJATIEDOT_KATSELIJA,
                             HENKILOSTO_TYONTEKIJA_TALLENTAJA, HENKILOSTO_TYONTEKIJA_KATSELIJA,
                             HENKILOSTO_TILAPAISET_TALLENTAJA, HENKILOSTO_TILAPAISET_KATSELIJA,
-                            HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA, HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA]
+                            HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA, HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
+                            TOIMIJATIEDOT_KATSELIJA, TOIMIJATIEDOT_TALLENTAJA]
 
     if vakajarjestaja:
         roles = roles_vakajarjestaja
-    else:  # toimipaikka -> drop PALVELUKAYTTAJA + PAAKAYTTAJA + HENKILOSTO_TILAPAISET
+    else:  # toimipaikka -> drop PALVELUKAYTTAJA + PAAKAYTTAJA + HENKILOSTO_TILAPAISET + TOIMIJATIEDOT
         excluded_roles = [PALVELUKAYTTAJA, PAAKAYTTAJA,
-                          HENKILOSTO_TILAPAISET_TALLENTAJA, HENKILOSTO_TILAPAISET_KATSELIJA]
+                          HENKILOSTO_TILAPAISET_TALLENTAJA, HENKILOSTO_TILAPAISET_KATSELIJA,
+                          TOIMIJATIEDOT_TALLENTAJA, TOIMIJATIEDOT_KATSELIJA]
         roles = [role for role in roles_vakajarjestaja if role not in excluded_roles]
 
     for role in roles:
@@ -153,6 +158,9 @@ def create_permission_group(role, organisaatio_oid, organization_type):
     HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA = Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA
     HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA = Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA
 
+    TOIMIJATIEDOT_KATSELIJA = Z4_CasKayttoOikeudet.TOIMIJATIEDOT_KATSELIJA
+    TOIMIJATIEDOT_TALLENTAJA = Z4_CasKayttoOikeudet.TOIMIJATIEDOT_TALLENTAJA
+
     group_templates_vakajarjestaja = {
         PAAKAYTTAJA: 'vakajarjestaja_paakayttaja',
         TALLENTAJA: 'vakajarjestaja_tallentaja',
@@ -166,6 +174,8 @@ def create_permission_group(role, organisaatio_oid, organization_type):
         HENKILOSTO_TILAPAISET_KATSELIJA: 'vakajarjestaja_henkilosto_tilapainen_katselija',
         HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA: 'vakajarjestaja_henkilosto_taydennyskoulutus_tallentaja',
         HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA: 'vakajarjestaja_henkilosto_taydennyskoulutus_katselija',
+        TOIMIJATIEDOT_KATSELIJA: 'vakajarjestaja_toimijatiedot_katselija',
+        TOIMIJATIEDOT_TALLENTAJA: 'vakajarjestaja_toimijatiedot_tallentaja',
     }
 
     group_templates_toimipaikka = {
@@ -181,19 +191,19 @@ def create_permission_group(role, organisaatio_oid, organization_type):
     }
 
     """
-    organisaatiotyyppi_07 == "Varhaiskasvatuksen jarjestaja"
-    organisaatiotyyppi_08 == "Varhaiskasvatuksen toimipaikka"
+    organisaatiotyyppi_07 == 'Varhaiskasvatuksen jarjestaja'
+    organisaatiotyyppi_08 == 'Varhaiskasvatuksen toimipaikka'
     Ref: https://github.com/Opetushallitus/organisaatio/blob/master/organisaatio-service/src/main/resources/db/migration/V084__organisaatio_tyypit.sql
     """
-    if organization_type == "organisaatiotyyppi_07":
+    if organization_type == 'organisaatiotyyppi_07':
         group_template_name = group_templates_vakajarjestaja[role]
-    else:  # organization_type == "organisaatiotyyppi_08":
+    else:  # organization_type == 'organisaatiotyyppi_08':
         group_template_name = group_templates_toimipaikka[role]
 
     """
     Finally copy the template and create a new permission_group.
     """
-    new_name_of_permission_group = role + "_" + organisaatio_oid
+    new_name_of_permission_group = role + '_' + organisaatio_oid
 
     group_template = Group.objects.get(name=group_template_name)
     group_template_permissions = group_template.permissions.all()
@@ -388,7 +398,7 @@ def get_permission_groups_for_organization(organisaatio_oid):
     First, if organisaatio_oid is empty, return no permissions.
     """
     permission_groups = []
-    if organisaatio_oid is None or organisaatio_oid == "":
+    if organisaatio_oid is None or organisaatio_oid == '':
         return permission_groups
 
     PAAKAYTTAJA = Z4_CasKayttoOikeudet.PAAKAYTTAJA
@@ -399,8 +409,12 @@ def get_permission_groups_for_organization(organisaatio_oid):
     HUOLTAJATIEDOT_TALLENTAJA = Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA
     HUOLTAJATIEDOT_KATSELIJA = Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA
 
+    TOIMIJATIEDOT_KATSELIJA = Z4_CasKayttoOikeudet.TOIMIJATIEDOT_KATSELIJA
+    TOIMIJATIEDOT_TALLENTAJA = Z4_CasKayttoOikeudet.TOIMIJATIEDOT_TALLENTAJA
+
     roles = [PAAKAYTTAJA, TALLENTAJA, KATSELIJA, PALVELUKAYTTAJA,
-             HUOLTAJATIEDOT_TALLENTAJA, HUOLTAJATIEDOT_KATSELIJA]
+             HUOLTAJATIEDOT_TALLENTAJA, HUOLTAJATIEDOT_KATSELIJA,
+             TOIMIJATIEDOT_KATSELIJA, TOIMIJATIEDOT_TALLENTAJA]
 
     all_organization_groups = Group.objects.filter(name__contains=organisaatio_oid)
     for group in all_organization_groups:
@@ -425,7 +439,8 @@ def add_oph_staff_to_vakajarjestaja_katselija_groups():
                            Q(name__startswith='HUOLTAJATIETO_KATSELU') |
                            Q(name__startswith='HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA') |
                            Q(name__startswith='HENKILOSTO_TILAPAISET_KATSELIJA') |
-                           Q(name__startswith='HENKILOSTO_TYONTEKIJA_KATSELIJA')
+                           Q(name__startswith='HENKILOSTO_TYONTEKIJA_KATSELIJA') |
+                           Q(name__startswith='VARDA_TOIMIJATIEDOT_KATSELIJA')
                            )
     katselija_groups_query = Group.objects.filter(katselija_condition, org_oid_query)
 
@@ -433,7 +448,7 @@ def add_oph_staff_to_vakajarjestaja_katselija_groups():
         # Since pure OPH-staff members don't have any real permissions to varda making sure view_henkilo gets set
         user = approved_oph_staff_member_obj.user
         if not user.is_superuser:  # Superuser has permissions anyhow
-            group = Group.objects.get(name="vakajarjestaja_view_henkilo")
+            group = Group.objects.get(name='vakajarjestaja_view_henkilo')
             group.user_set.add(user)
             for katselija_group in katselija_groups_query:
                 katselija_group.user_set.add(user)

@@ -186,7 +186,14 @@ def fetch_permissions_roles_for_organization(user_id, henkilo_oid, organisation,
                                                                  Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA,
                                                                  Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_KATSELIJA)
 
-    roles = [role_vakatiedot, role_huoltajatiedot, role_paakayttaja, role_tyontekija, role_taydennyskoulutus, role_tilapainenhenkilosto]
+    role_toimijatiedot = select_highest_kayttooikeusrooli(permission_group_list,
+                                                          organization_oid,
+                                                          TietosisaltoRyhma.TOIMIJATIEDOT,
+                                                          Z4_CasKayttoOikeudet.TOIMIJATIEDOT_TALLENTAJA,
+                                                          Z4_CasKayttoOikeudet.TOIMIJATIEDOT_KATSELIJA)
+
+    roles = [role_vakatiedot, role_huoltajatiedot, role_paakayttaja, role_tyontekija, role_taydennyskoulutus,
+             role_tilapainenhenkilosto, role_toimijatiedot]
     if all(role is None for role in roles):
         return None
 

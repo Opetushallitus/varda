@@ -1,12 +1,13 @@
 import json
 
 import responses
+from django.contrib.auth.models import Group, User
 from django.test import TestCase
 
 from rest_framework import status
 
 from varda.models import Z5_AuditLog, VakaJarjestaja
-from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient
+from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, assert_validation_error
 
 
 class VardaPermissionsTests(TestCase):
@@ -481,6 +482,26 @@ class VardaPermissionsTests(TestCase):
         vakapaatos_url = json.loads(resp.content)['varhaiskasvatuspaatokset_top'][0]
         resp = client.get(vakapaatos_url)
         assert_status_code(resp, 404)
+
+    def test_toimijatiedot_update(self):
+        vakajarjestaja_qs = VakaJarjestaja.objects.filter(organisaatio_oid='1.2.246.562.10.34683023489')
+        new_email = 'test@email.com'
+        client = SetUpTestClient('tester2').client()
+
+        vakajarjestaja_patch = {
+            'sahkopostiosoite': new_email
+        }
+        resp = client.patch(f'/api/v1/vakajarjestajat/{vakajarjestaja_qs.first().id}/', vakajarjestaja_patch)
+        assert_status_code(resp, status.HTTP_200_OK)
+        self.assertEqual(vakajarjestaja_qs.first().sahkopostiosoite, new_email)
+
+        # Remove user from toimijatiedot tallentaja group
+        group = Group.objects.get(name='VARDA_TOIMIJATIEDOT_TALLENTAJA_1.2.246.562.10.34683023489')
+        User.objects.get(username='tester2').groups.remove(group)
+
+        resp_fail = client.patch(f'/api/v1/vakajarjestajat/{vakajarjestaja_qs.first().id}/', vakajarjestaja_patch)
+        assert_status_code(resp_fail, status.HTTP_403_FORBIDDEN)
+        assert_validation_error('detail', 'User does not have permissions to change this object.', resp_fail)
 
     """
     TODO: Reporting related permissions

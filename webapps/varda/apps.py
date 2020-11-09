@@ -3,9 +3,11 @@ import os
 from django.apps import AppConfig
 from django.db.models.signals import post_migrate, post_save, pre_save, pre_delete
 
-from varda.migrations.production.setup import (load_initial_data, load_huoltajatiedot_permissions,
-                                               load_paos_permissions,
-                                               load_henkilosto_permissions, clear_old_permissions)
+from varda.migrations.production.setup import (load_initial_data, create_huoltajatiedot_template_groups,
+                                               create_paos_template_groups,
+                                               create_henkilosto_template_groups, clear_old_permissions,
+                                               modify_change_vakajarjestaja_permission,
+                                               create_toimijatiedot_template_groups)
 from varda.migrations.testing.setup import load_testing_data, create_koodisto_data
 
 
@@ -62,12 +64,12 @@ def run_post_migration_tasks(sender, **kwargs):
             elif (migration_plan_tuple[0].app_label == 'varda' and
                     migration_plan_tuple[0].name == '0010_auto_20190807_1055' and
                     not migration_plan_tuple[1]):
-                load_huoltajatiedot_permissions()
+                create_huoltajatiedot_template_groups()
 
             elif (migration_plan_tuple[0].app_label == 'varda' and
                   migration_plan_tuple[0].name == '0012_auto_20191031_0926' and
                   not migration_plan_tuple[1]):
-                load_paos_permissions()
+                create_paos_template_groups()
                 clear_old_permissions()
 
             elif (migration_plan_tuple[0].app_label == 'varda' and
@@ -78,12 +80,18 @@ def run_post_migration_tasks(sender, **kwargs):
             elif (migration_plan_tuple[0].app_label == 'varda' and
                   migration_plan_tuple[0].name == '0023_historicalpidempipoissaolo_pidempipoissaolo' and
                   not migration_plan_tuple[1]):
-                load_henkilosto_permissions()
+                create_henkilosto_template_groups()
 
                 # Note: If you are adding new permissions this might need to be moved to current migration block.
                 env_type = os.getenv('VARDA_ENVIRONMENT_TYPE', None)
                 if env_type is None or env_type != 'env-varda-prod':
                     load_testing_data()
+
+            elif (migration_plan_tuple[0].app_label == 'varda' and
+                  migration_plan_tuple[0].name == '0034_auto_20201029_1603' and
+                  not migration_plan_tuple[1]):
+                create_toimijatiedot_template_groups()
+                modify_change_vakajarjestaja_permission()
 
 
 def receiver_auth_user(**kwargs):

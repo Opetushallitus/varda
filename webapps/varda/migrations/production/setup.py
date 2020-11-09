@@ -25,7 +25,6 @@ def get_vaka_tallentaja_permissions():
         'change_toimipaikka',
         'view_toimipaikka',
         'view_vakajarjestaja',
-        'change_vakajarjestaja',
         'add_varhaiskasvatuspaatos',
         'change_varhaiskasvatuspaatos',
         'delete_varhaiskasvatuspaatos',
@@ -140,6 +139,19 @@ def get_tilapainen_henkilosto_katselija_permissions():
     ]
 
 
+def get_toimijatiedot_katselija_permissions():
+    return [
+        'view_vakajarjestaja'
+    ]
+
+
+def get_toimijatiedot_tallentaja_permissions():
+    return [
+        'view_vakajarjestaja',
+        'change_vakajarjestaja'
+    ]
+
+
 def get_vakajarjestaja_katselija_permissions():
     vakajarjestaja_tallentaja = get_vaka_tallentaja_permissions()
     vakajarjestaja_katselija = []
@@ -160,7 +172,6 @@ def get_vakajarjestaja_paakayttaja_permissions():
 def get_toimipaikka_tallentaja_permissions():
     vakajarjestaja_tallentaja = get_vaka_tallentaja_permissions()
     toimipaikka_tallentaja = vakajarjestaja_tallentaja.copy()
-    toimipaikka_tallentaja.remove('change_vakajarjestaja')
     toimipaikka_tallentaja.remove('add_toimipaikka')
     return toimipaikka_tallentaja
 
@@ -172,8 +183,24 @@ def get_vakajarjestaja_palvelukayttaja_permissions():
     return vakajarjestaja_palvelukayttaja_permissions
 
 
-def load_initial_permissions():
+def _create_groups_with_permissions(group_tuple_list):
+    """
+    Creates Groups and assigns given permissions to them
+    :param group_tuple_list: List of tuples, e.g. [('group_name', [group_permissions])]
+    """
     from django.contrib.auth.models import Group, Permission
+    from django.db import IntegrityError
+
+    for group_tuple in group_tuple_list:
+        try:
+            group_obj = Group.objects.create(name=group_tuple[0])
+            group_permissions = Permission.objects.filter(codename__in=group_tuple[1])
+            group_obj.permissions.add(*group_permissions)
+        except IntegrityError:
+            logger.warning('Could not create group {}. Already exists?'.format(group_tuple[0]))
+
+
+def create_initial_template_groups():
     vakajarjestaja_tallentaja_permissions = get_vaka_tallentaja_permissions()
     vakajarjestaja_palvelukayttaja_permissions = get_vakajarjestaja_palvelukayttaja_permissions()
     vakajarjestaja_katselija_permissions = get_vakajarjestaja_katselija_permissions()
@@ -192,14 +219,10 @@ def load_initial_permissions():
         ('oph_staff', oph_staff_permissions)
     ]
 
-    for group_tuple in group_permission_array:
-        group_obj = Group.objects.create(name=group_tuple[0])
-        group_permissions = Permission.objects.filter(codename__in=group_tuple[1])
-        group_obj.permissions.add(*group_permissions)
+    _create_groups_with_permissions(group_permission_array)
 
 
-def load_huoltajatiedot_permissions():
-    from django.contrib.auth.models import Group, Permission
+def create_huoltajatiedot_template_groups():
     huoltajatiedot_tallentaja_permissions = get_huoltajatiedot_tallentaja_permissions()
     huoltajatiedot_katselija_permissions = get_huoltajatiedot_katselija_permissions()
 
@@ -210,10 +233,7 @@ def load_huoltajatiedot_permissions():
         ('toimipaikka_huoltajatiedot_katselija', huoltajatiedot_katselija_permissions)
     ]
 
-    for group_tuple in group_permission_array:
-        group_obj = Group.objects.create(name=group_tuple[0])
-        group_permissions = Permission.objects.filter(codename__in=group_tuple[1])
-        group_obj.permissions.add(*group_permissions)
+    _create_groups_with_permissions(group_permission_array)
 
 
 def clear_old_permissions():
@@ -227,10 +247,7 @@ def clear_old_permissions():
     [henkilosto_permission.group_set.clear() for henkilosto_permission in henkilosto_permissions]
 
 
-def load_henkilosto_permissions():
-    from django.contrib.auth.models import Group, Permission
-    from django.db import IntegrityError
-
+def create_henkilosto_template_groups():
     tyontekija_tallentaja_permissions = get_tyontekija_tallentaja_permissions()
     tyontekija_katselija_permissions = get_tyontekija_katselija_permissions()
     tilapainen_henkilosto_tallentaja_permissions = get_tilapainen_henkilosto_tallentaja_permissions()
@@ -251,25 +268,28 @@ def load_henkilosto_permissions():
         ('toimipaikka_henkilosto_taydennyskoulutus_katselija', taydennyskoulutus_katselija_permissions),
     ]
 
-    for group_tuple in group_permission_array:
-        try:
-            group_obj, is_created = Group.objects.get_or_create(name=group_tuple[0])
-            group_permissions = Permission.objects.filter(codename__in=group_tuple[1])
-            group_obj.permissions.add(*group_permissions)
-        except IntegrityError:
-            logger.warning('Could not create group {}. Already exists?'.format(group_tuple[0]))
+    _create_groups_with_permissions(group_permission_array)
 
 
-def load_paos_permissions():
-    from django.contrib.auth.models import Group, Permission
+def create_paos_template_groups():
     vakajarjestaja_paakayttaja_permissions = get_vakajarjestaja_paakayttaja_permissions()
     group_permission_array = [
         ('vakajarjestaja_paakayttaja', vakajarjestaja_paakayttaja_permissions)
     ]
-    for group_tuple in group_permission_array:
-        group_obj = Group.objects.create(name=group_tuple[0])
-        group_permissions = Permission.objects.filter(codename__in=group_tuple[1])
-        group_obj.permissions.add(*group_permissions)
+
+    _create_groups_with_permissions(group_permission_array)
+
+
+def create_toimijatiedot_template_groups():
+    toimijatiedot_katselija_permissions = get_toimijatiedot_katselija_permissions()
+    toimijatiedot_tallentaja_permissions = get_toimijatiedot_tallentaja_permissions()
+
+    group_permission_list = [
+        ('vakajarjestaja_toimijatiedot_katselija', toimijatiedot_katselija_permissions),
+        ('vakajarjestaja_toimijatiedot_tallentaja', toimijatiedot_tallentaja_permissions)
+    ]
+
+    _create_groups_with_permissions(group_permission_list)
 
 
 def load_initial_users():
@@ -281,9 +301,37 @@ def load_initial_users():
 
 
 def load_initial_data():
-    load_initial_permissions()
+    create_initial_template_groups()
     load_initial_users()
 
 
 def load_paos_data():
-    load_paos_permissions()
+    create_paos_template_groups()
+
+
+def modify_change_vakajarjestaja_permission():
+    """
+    Removes change_vakajarjestaja permission from VARDA-TALLENTAJA groups. Also modifies all object level permissions.
+    """
+    from django.contrib.auth.models import Group, Permission
+    from django.db.models import Q
+    from guardian.shortcuts import remove_perm
+    from varda.models import VakaJarjestaja, Z4_CasKayttoOikeudet
+    from varda.permission_groups import get_permission_group
+
+    permission_name = 'change_vakajarjestaja'
+    change_vakajarjestaja_permission = Permission.objects.get(codename=permission_name)
+
+    # Remove the permission from tallentaja template group
+    tallentaja_group_qs = Group.objects.filter(Q(name='vakajarjestaja_tallentaja') &
+                                               Q(permissions__codename=permission_name))
+    if tallentaja_group_qs.exists():
+        tallentaja_group_qs.first().permissions.remove(change_vakajarjestaja_permission)
+
+    # Go through each vakajarjestaja with OID and modify TALLENTAJA permissions
+    vakajarjestaja_qs = VakaJarjestaja.objects.exclude(Q(organisaatio_oid__isnull=True) | Q(organisaatio_oid=''))
+    for vakajarjestaja in vakajarjestaja_qs:
+        tallentaja_group = get_permission_group(Z4_CasKayttoOikeudet.TALLENTAJA, vakajarjestaja.organisaatio_oid)
+        if tallentaja_group:
+            # Remove permission from the TALLENTAJA group and from the vakajarjestaja object
+            remove_perm(permission_name, tallentaja_group, vakajarjestaja)

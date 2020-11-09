@@ -3,7 +3,8 @@ export enum UserAccessKeys {
   huoltajatiedot = 'huoltajatiedot',
   tyontekijatiedot = 'tyontekijatiedot',
   tilapainenHenkilosto = 'tilapainenHenkilosto',
-  taydennyskoulutustiedot = 'taydennyskoulutustiedot'
+  taydennyskoulutustiedot = 'taydennyskoulutustiedot',
+  toimijatiedot = 'toimijatiedot'
 }
 
 export enum UserAccessTypes {
@@ -18,6 +19,7 @@ export interface UserAccess {
   [UserAccessKeys.tyontekijatiedot]: UserAccessPart;
   [UserAccessKeys.tilapainenHenkilosto]: UserAccessPart;
   [UserAccessKeys.taydennyskoulutustiedot]: UserAccessPart;
+  [UserAccessKeys.toimijatiedot]: UserAccessPart;
 }
 
 interface UserAccessPart {
