@@ -252,6 +252,20 @@ export class VardaVarhaiskasvatuspaatosComponent implements OnInit, OnChanges, O
     }
   }
 
+  vuorohoitoChange(value: boolean) {
+    this.varhaiskasvatuspaatosForm.get('paivittainen_vaka_kytkin').setValue(null);
+    this.varhaiskasvatuspaatosForm.get('kokopaivainen_vaka_kytkin').setValue(null);
+
+    if (value) {
+      this.varhaiskasvatuspaatosForm.get('paivittainen_vaka_kytkin').disable();
+      this.varhaiskasvatuspaatosForm.get('kokopaivainen_vaka_kytkin').disable();
+    } else {
+      this.varhaiskasvatuspaatosForm.get('paivittainen_vaka_kytkin').enable();
+      this.varhaiskasvatuspaatosForm.get('kokopaivainen_vaka_kytkin').enable();
+
+    }
+  }
+
   hakemusDateChange(hakemusDate: Moment) {
     this.minStartDate = hakemusDate?.clone().toDate();
     this.minEndDate = this.minEndDate || hakemusDate?.clone().toDate();

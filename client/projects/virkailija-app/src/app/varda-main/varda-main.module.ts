@@ -49,8 +49,6 @@ import { VardaDateService } from './services/varda-date.service';
 import { VardaHenkiloService } from './services/varda-henkilo.service';
 import { VardaResultLapsiComponent } from './components/varda-reporting/varda-result-lapsi/varda-result-lapsi.component';
 import { MatTableModule } from '@angular/material/table';
-import { MaksutiedotFormComponent } from './components/varda-lapsi-form/maksutiedot-form/maksutiedot-form.component';
-import { HuoltajatContainerComponent } from './components/varda-lapsi-form/huoltajat-container/huoltajat-container.component';
 import { VardaSharedModule } from 'varda-shared';
 import { VardaPaosManagementContainerComponent } from './components/varda-paos-management-container/varda-paos-management-container.component';
 import { PaosAddedToimijatComponent } from './components/varda-paos-management-container/paos-list-toimintainfo/paos-added-toimijat.component';
@@ -124,11 +122,9 @@ import { VardaResultInfoComponent } from './components/varda-reporting/varda-res
     VardaVakatoimijaComponent,
     VardaResultLapsiComponent,
     VardaYhteenvetoComponent,
-    MaksutiedotFormComponent,
     VardaMaksutietoComponent,
     VardaMaksutietoHuoltajaComponent,
     VardaMaksutiedotComponent,
-    HuoltajatContainerComponent,
     VardaPaosManagementContainerComponent,
     PaosAddedToimijatComponent,
     PaosAddedToimipaikatComponent,

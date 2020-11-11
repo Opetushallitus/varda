@@ -92,19 +92,24 @@ export class VardaVarhaiskasvatuspaatoksetComponent implements OnInit {
 
   initPaosOikeus(tallentaja: boolean): Observable<boolean> {
     return new Observable(paosObs => {
-      if (!this.lapsi.paos_organisaatio_oid) {
+      if (!tallentaja) { // not a tallentaja anyways
+        paosObs.next(false);
+        paosObs.complete();
+      } else if (!this.lapsi.paos_organisaatio_oid) { // its not paos lapsi
         paosObs.next(tallentaja);
         paosObs.complete();
       } else if (this.lapsi.paos_organisaatio_oid === this.selectedVakajarjestaja.organisaatio_oid) {
+        // its own paos-lapsi
         paosObs.next(tallentaja);
         paosObs.complete();
-      } else {
+      } else { // otherwise check if your organisation is set as the one saving data
         this.paosService.getPaosToimipaikat(this.selectedVakajarjestaja.id).subscribe({
           next: paosToimipaikkaData => {
             const paosToimipaikka = paosToimipaikkaData.find(toimipaikka =>
               [this.lapsi.paos_organisaatio_oid, this.lapsi.oma_organisaatio_oid].includes(toimipaikka.toimija_organisaatio_oid)
             );
 
+            // this list is unreliable, so if you dont find the toimipaikka, just return the original access
             if (paosToimipaikka) {
               tallentaja = paosToimipaikka.paos_oikeus.tallentaja_organisaatio_oid === this.selectedVakajarjestaja.organisaatio_oid;
             }
