@@ -45,8 +45,10 @@
         </tr>
         <tr class="mat-row">
           <th scope="row" class="mat-header-cell">{{i18n.organisaatio_kuntakoodi | translate}}</th>
-          <td class="mat-cell" [libKoodistoValue]="koodistoEnum.kunta" format="long">
-            {{toimipaikkaKooste.kunta_koodi}}
+          <td class="mat-cell"
+              [libKoodistoValue]="koodistoEnum.kunta"
+              [value]="toimipaikkaKooste.kunta_koodi"
+              format="long">
           </td>
         </tr>
         <tr class="mat-row">
@@ -59,8 +61,10 @@
         </tr>
         <tr class="mat-row">
           <th scope="row" class="mat-header-cell">{{i18n.toimipaikka_kasvatusopillinen_jarjestelma | translate}}</th>
-          <td class="mat-cell" [libKoodistoValue]="koodistoEnum.kasvatusopillinenjarjestelma" format="long">
-            {{toimipaikkaKooste.kasvatusopillinen_jarjestelma_koodi}}
+          <td class="mat-cell"
+              [libKoodistoValue]="koodistoEnum.kasvatusopillinenjarjestelma"
+              [value]="toimipaikkaKooste.kasvatusopillinen_jarjestelma_koodi"
+              format="long">
           </td>
         </tr>
         <tr class="mat-row">
@@ -69,8 +73,10 @@
         </tr>
         <tr class="mat-row">
           <th scope="row" class="mat-header-cell">{{i18n.toimipaikka_toimintamuoto | translate}}</th>
-          <td class="mat-cell" [libKoodistoValue]="koodistoEnum.toimintamuoto" format="long">
-            {{toimipaikkaKooste.toimintamuoto_koodi}}
+          <td class="mat-cell"
+              [libKoodistoValue]="koodistoEnum.toimintamuoto"
+              [value]="toimipaikkaKooste.toimintamuoto_koodi"
+              format="long">
           </td>
         </tr>
         <tr class="mat-row">

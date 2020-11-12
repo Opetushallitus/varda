@@ -1,4 +1,4 @@
-import { Directive, ElementRef, Input, AfterContentInit } from '@angular/core';
+import { Directive, ElementRef, Input, AfterContentInit, OnChanges, SimpleChanges } from '@angular/core';
 import { VardaKoodistoService } from '../koodisto.service';
 import { KoodistoEnum } from '../dto/koodisto-models';
 
@@ -7,12 +7,13 @@ export type CodeFormat = 'short' | 'long';
 @Directive({
   selector: '[libKoodistoValue]'
 })
-export class KoodistoValueDirective implements AfterContentInit {
+export class KoodistoValueDirective implements AfterContentInit, OnChanges {
   private koodistoType: KoodistoEnum;
   @Input()
   set libKoodistoValue(value: KoodistoEnum) {
     this.koodistoType = value;
   }
+  @Input() value: string;
   @Input() format: CodeFormat = 'short';
   private elem: HTMLInputElement;
 
@@ -24,24 +25,38 @@ export class KoodistoValueDirective implements AfterContentInit {
   }
 
   ngAfterContentInit() {
-    if (this.elem.textContent) {
-      const codeValue = this.elem.textContent.trim();
-      this.koodistoService.getCodeValueFromKoodisto(this.koodistoType, codeValue).subscribe({
-        next: code => {
-          let result = '';
+    if (!this.value) {
+      this.updateTextContent(this.elem.textContent.trim());
+    }
+  }
 
-          if (!code) {
-            result = codeValue;
-          } else if (this.format === 'long') {
-            result = `${code.name} (${codeValue})`;
-          } else {
-            result = code.name;
-          }
+  updateTextContent(codeValue: string) {
+    if (!codeValue) {
+      this.elem.textContent = '';
+      return;
+    }
 
-          this.elem.textContent = result;
-        },
-        error: err => console.error(err)
-      });
+    this.koodistoService.getCodeValueFromKoodisto(this.koodistoType, codeValue).subscribe({
+      next: code => {
+        let result = '';
+
+        if (!code) {
+          result = codeValue;
+        } else if (this.format === 'long') {
+          result = `${code.name} (${codeValue})`;
+        } else {
+          result = code.name;
+        }
+
+        this.elem.textContent = result;
+      },
+      error: err => console.error(err)
+    });
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['value']) {
+      this.updateTextContent(this.value);
     }
   }
 }
