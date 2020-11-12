@@ -1,6 +1,12 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.4.10 (12.11.2020)
+- CSCVARDA-1941: Toimijan yhteystietojen tallennus pääkäyttäjäoikeuksilla
+- CSCVARDA-2070: Lapsiform paos-katselija korjaus
+- CSCVARDA-2071: Katsele tietoja pieniä korjauksia
+- CSCVARDA-2066 UI: Käyttäjälle näytetään HTML:ää virheessä
+
 1.4.9 (5.11.2020)
 - CSCVARDA-1958 Lapsiform uudelleenkirjoitus
 
