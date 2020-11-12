@@ -6,12 +6,8 @@
       <mat-expansion-panel-header>
         <mat-panel-title *ngIf="varhaiskasvatussuhde">
           <h4>
-            <span *ngIf="varhaiskasvatussuhde.toimipaikka_oid"
-                  appToimipaikkaNimi>
+            <span appToimipaikkaNimi>
               {{ varhaiskasvatussuhde.toimipaikka_oid }}
-            </span>
-            <span *ngIf="!varhaiskasvatussuhde.toimipaikka_oid">
-              {{ i18n.tyoskentelypaikka_kiertava_kytkin | translate }}
             </span>
             <span *ngIf="!varhaiskasvatussuhde.paattymis_pvm">
               {{ i18n.tyoskentelypaikka_alkaen_PVM | translate: {pvm: varhaiskasvatussuhde.alkamis_pvm | vardaDate} }}
