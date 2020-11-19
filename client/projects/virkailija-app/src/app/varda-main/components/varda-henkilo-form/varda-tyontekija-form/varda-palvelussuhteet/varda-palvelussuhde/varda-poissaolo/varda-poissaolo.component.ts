@@ -129,7 +129,7 @@ export class VardaPoissaoloComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   deletePoissaolo(): void {
-    this.henkilostoService.deletePoissaolo(parseInt(this.poissaolo.id)).subscribe({
+    this.henkilostoService.deletePoissaolo(this.poissaolo.id).subscribe({
       next: deleted => {
         this.togglePanel(false, true);
         this.snackBarService.warning(this.i18n.poissaolo_delete_success);

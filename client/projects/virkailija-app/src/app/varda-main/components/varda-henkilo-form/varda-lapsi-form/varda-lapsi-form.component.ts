@@ -7,6 +7,7 @@ import { VardaApiService } from 'projects/virkailija-app/src/app/core/services/v
 import { HenkilostoErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
 import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
+import { VardaPaosApiService } from 'projects/virkailija-app/src/app/core/services/varda-paos-api.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
 import { VardaHenkiloDTO, VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';
@@ -55,7 +56,7 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
   constructor(
     private authService: AuthService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
-    private vardaApiWrapperService: VardaApiWrapperService,
+    private paosService: VardaPaosApiService,
     private lapsiService: VardaLapsiService,
     private modalService: VardaModalService,
     private snackBarService: VardaSnackBarService,
@@ -91,7 +92,7 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
       paos_organisaatio: new FormControl(null),
     });
 
-    this.paosToimipaikat = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().tallentajaToimipaikat
+    this.paosToimipaikat = this.vardaVakajarjestajaService.getFilteredToimipaikat().tallentajaToimipaikat
       .filter(toimipaikat => toimipaikat.organisaatio_oid);
 
     this.subscriptions.push(
@@ -122,7 +123,7 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
   fetchPaosJarjestajat(toimipaikkaId: number) {
     this.lapsiForm.get('oma_organisaatio').setValue(null);
 
-    this.vardaApiWrapperService.getPaosJarjestajat(this.vardaVakajarjestajaService.getSelectedVakajarjestaja().id, toimipaikkaId)
+    this.paosService.getPaosJarjestajat(this.vardaVakajarjestajaService.getSelectedVakajarjestaja().id, toimipaikkaId)
       .subscribe({
         next: paosJarjestajaData => this.paosJarjestajaKunnat$.next(paosJarjestajaData),
         error: err => this.lapsiErrorService.handleError(err, this.snackBarService),

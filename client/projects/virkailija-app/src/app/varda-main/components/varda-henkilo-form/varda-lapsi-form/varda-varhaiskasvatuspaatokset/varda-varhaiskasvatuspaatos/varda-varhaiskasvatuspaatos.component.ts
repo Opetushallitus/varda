@@ -1,5 +1,5 @@
 import { Component, OnInit, OnChanges, Input, Output, EventEmitter, ElementRef, OnDestroy } from '@angular/core';
-import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { FormGroup, FormControl, Validators, AbstractControl, ValidatorFn } from '@angular/forms';
 import * as moment from 'moment';
 import { Moment } from 'moment';
 import { ErrorTree, HenkilostoErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
@@ -22,6 +22,7 @@ interface JarjestamismuodotCode extends CodeDTO {
   disabled?: boolean;
 }
 
+export const kunnallisetJarjestamismuodot = ['JM01', 'JM02', 'JM03'];
 
 @Component({
   selector: 'app-varda-varhaiskasvatuspaatos',
@@ -52,6 +53,7 @@ export class VardaVarhaiskasvatuspaatosComponent implements OnInit, OnChanges, O
   varhaiskasvatuspaatosFormErrors: Observable<Array<ErrorTree>>;
   subscriptions: Array<Subscription> = [];
   jarjestamismuotoKoodisto: Array<JarjestamismuodotCode>;
+  tilapainenVarhaiskasvatusBoolean: boolean;
   minStartDate: Date;
   minEndDate: Date;
   private henkilostoErrorService = new HenkilostoErrorMessageService();
@@ -87,10 +89,14 @@ export class VardaVarhaiskasvatuspaatosComponent implements OnInit, OnChanges, O
       vuorohoito_kytkin: new FormControl(this.varhaiskasvatuspaatos?.vuorohoito_kytkin, Validators.required),
       paivittainen_vaka_kytkin: new FormControl(this.varhaiskasvatuspaatos?.paivittainen_vaka_kytkin, Validators.required),
       kokopaivainen_vaka_kytkin: new FormControl(this.varhaiskasvatuspaatos?.kokopaivainen_vaka_kytkin, Validators.required),
-      // tilapainen will be enabled later
-      // tilapainen_vaka_kytkin: new FormControl(this.varhaiskasvatuspaatos?.tilapainen_vaka_kytkin, this.selectedVakajarjestaja.kunnallinen_kytkin ? Validators.required : null),
+      // tilapainen will be enabled later CSCVARDA-2040
+      tilapainen_vaka_kytkin: new FormControl(this.varhaiskasvatuspaatos?.tilapainen_vaka_kytkin, Validators.required),
       tuntimaara_viikossa: new FormControl(this.varhaiskasvatuspaatos?.tuntimaara_viikossa, [Validators.pattern('^\\d+([,.]\\d{1})?$'), Validators.min(1), Validators.max(120), Validators.required]),
     });
+
+    if (this.varhaiskasvatuspaatos) {
+      this.changeJarjestajismuoto(this.varhaiskasvatuspaatos.jarjestamismuoto_koodi);
+    }
 
     if (!this.lapsitiedotTallentaja || this.varhaiskasvatuspaatos) {
       this.disableForm();
@@ -103,7 +109,9 @@ export class VardaVarhaiskasvatuspaatosComponent implements OnInit, OnChanges, O
     this.subscriptions.push(
       this.varhaiskasvatuspaatosForm.statusChanges
         .pipe(filter(() => !this.varhaiskasvatuspaatosForm.pristine), distinctUntilChanged())
-        .subscribe(() => this.modalService.setFormValuesChanged(true))
+        .subscribe(() => this.modalService.setFormValuesChanged(true)),
+      this.varhaiskasvatuspaatosForm.get('tilapainen_vaka_kytkin').valueChanges
+        .subscribe((value: boolean) => this.tilapainenVakaChange(value))
     );
   }
 
@@ -245,6 +253,16 @@ export class VardaVarhaiskasvatuspaatosComponent implements OnInit, OnChanges, O
     });
   }
 
+  changeJarjestajismuoto(jarjestamismuoto: string) {
+
+    this.tilapainenVarhaiskasvatusBoolean = kunnallisetJarjestamismuodot.includes(jarjestamismuoto.toLocaleUpperCase());
+    if (this.tilapainenVarhaiskasvatusBoolean) {
+      this.varhaiskasvatuspaatosForm.get('tilapainen_vaka_kytkin').enable();
+    } else {
+      this.varhaiskasvatuspaatosForm.get('tilapainen_vaka_kytkin').disable();
+    }
+  }
+
   initDateFilters() {
     if (this.varhaiskasvatuspaatos) {
       this.minStartDate = new Date(this.varhaiskasvatuspaatos.hakemus_pvm);
@@ -262,8 +280,24 @@ export class VardaVarhaiskasvatuspaatosComponent implements OnInit, OnChanges, O
     } else {
       this.varhaiskasvatuspaatosForm.get('paivittainen_vaka_kytkin').enable();
       this.varhaiskasvatuspaatosForm.get('kokopaivainen_vaka_kytkin').enable();
-
     }
+  }
+
+  tilapainenVakaChange(value: boolean) {
+    const tilapainenValidator = (): ValidatorFn => {
+      return (control: AbstractControl) => {
+        return control.value ? null : { tilapainen: true };
+      };
+    };
+
+    const paattymisCtrl = this.varhaiskasvatuspaatosForm.get('paattymis_pvm');
+    if (value) {
+      paattymisCtrl.setValidators(tilapainenValidator());
+    } else {
+      paattymisCtrl.setValidators(null);
+    }
+
+    paattymisCtrl.updateValueAndValidity();
   }
 
   hakemusDateChange(hakemusDate: Moment) {

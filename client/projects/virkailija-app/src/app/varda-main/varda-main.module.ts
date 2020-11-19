@@ -9,8 +9,6 @@ import {
   VardaMainFrameComponent,
   VardaFooterComponent,
   VardaDashboardComponent,
-  VardaLoginComponent,
-  VardaLoginFormComponent,
   VardaToimipaikkaSelectorComponent,
   VardaLapsiSectionComponent,
   VardaHenkiloListComponent,
@@ -39,15 +37,15 @@ import {
   VardaVarhaiskasvatuspaatoksetComponent,
   VardaVarhaiskasvatussuhdeComponent,
   VardaMaksutietoComponent,
+  VardaMaksutietoHuoltajaComponent,
   VardaMaksutiedotComponent,
-  VardaMaksutietoHuoltajaComponent
 } from '../utilities/components';
 
 import { AuthService } from '../core/auth/auth.service';
 import { AuthGuard } from '../core/auth/auth.guard';
+import { RoleGuard } from '../core/auth/role.guard';
 import { VardaDateService } from './services/varda-date.service';
 import { VardaHenkiloService } from './services/varda-henkilo.service';
-import { VardaResultLapsiComponent } from './components/varda-reporting/varda-result-lapsi/varda-result-lapsi.component';
 import { MatTableModule } from '@angular/material/table';
 import { VardaSharedModule } from 'varda-shared';
 import { VardaPaosManagementContainerComponent } from './components/varda-paos-management-container/varda-paos-management-container.component';
@@ -62,14 +60,17 @@ import { EiHenkilostoaDialogComponent } from './components/varda-henkilosto-tila
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { VardaResultTyontekijaComponent } from './components/varda-reporting/varda-result-tyontekija/varda-result-tyontekija.component';
 import { VardaSearchLapsiComponent } from './components/varda-reporting/varda-search-lapsi/varda-search-lapsi.component';
 import { VardaSearchToimipaikkaComponent } from './components/varda-reporting/varda-search-toimipaikka/varda-search-toimipaikka.component';
 import { VardaSearchTyontekijaComponent } from './components/varda-reporting/varda-search-tyontekija/varda-search-tyontekija.component';
-import { VardaResultToimipaikkaComponent } from './components/varda-reporting/varda-result-toimipaikka/varda-result-toimipaikka.component';
 import { VardaYhteenvetoComponent } from './components/varda-reporting/varda-yhteenveto/varda-yhteenveto.component';
 import { VardaResultListComponent } from './components/varda-reporting/varda-result-list/varda-result-list.component';
 import { VardaResultInfoComponent } from './components/varda-reporting/varda-result-info/varda-result-info.component';
+import { VardaResultToimipaikkaComponent } from './components/varda-reporting/varda-result-toimipaikka/varda-result-toimipaikka.component';
+import { VardaResultTyontekijaComponent } from './components/varda-reporting/varda-result-tyontekija/varda-result-tyontekija.component';
+import { VardaResultLapsiComponent } from './components/varda-reporting/varda-result-lapsi/varda-result-lapsi.component';
+import { VardaBodyComponent } from './components/varda-body/varda-body.component';
+import { BrowserNotSupportedComponent, BrowserNotSupportedGuard, LoginFailedComponent, LoginPageComponent, PageNotFoundComponent } from './components/public-components/public-components';
 
 @NgModule({
   imports: [
@@ -92,8 +93,6 @@ import { VardaResultInfoComponent } from './components/varda-reporting/varda-res
     VardaFooterComponent,
     VardaToimipaikkaSelectorComponent,
     VardaDashboardComponent,
-    VardaLoginComponent,
-    VardaLoginFormComponent,
     VardaLapsiSectionComponent,
     VardaHenkilostoSectionComponent,
     VardaHenkiloListComponent,
@@ -120,7 +119,6 @@ import { VardaResultInfoComponent } from './components/varda-reporting/varda-res
     VardaVarhaiskasvatussuhdeComponent,
     VardaReportingComponent,
     VardaVakatoimijaComponent,
-    VardaResultLapsiComponent,
     VardaYhteenvetoComponent,
     VardaMaksutietoComponent,
     VardaMaksutietoHuoltajaComponent,
@@ -131,14 +129,20 @@ import { VardaResultInfoComponent } from './components/varda-reporting/varda-res
     PaosAddPaosToimintaComponent,
     PaosAddToimintaListComponent,
     EiHenkilostoaDialogComponent,
-    VardaResultTyontekijaComponent,
     VardaSearchToimipaikkaComponent,
     VardaSearchLapsiComponent,
     VardaSearchToimipaikkaComponent,
     VardaSearchTyontekijaComponent,
-    VardaResultToimipaikkaComponent,
     VardaResultListComponent,
-    VardaResultInfoComponent
+    VardaResultInfoComponent,
+    VardaResultToimipaikkaComponent,
+    VardaResultTyontekijaComponent,
+    VardaResultLapsiComponent,
+    VardaBodyComponent,
+    LoginPageComponent,
+    LoginFailedComponent,
+    PageNotFoundComponent,
+    BrowserNotSupportedComponent
   ],
   entryComponents: [EiHenkilostoaDialogComponent],
   exports: [
@@ -148,8 +152,6 @@ import { VardaResultInfoComponent } from './components/varda-reporting/varda-res
     VardaFooterComponent,
     VardaToimipaikkaSelectorComponent,
     VardaDashboardComponent,
-    VardaLoginComponent,
-    VardaLoginFormComponent,
     VardaLapsiSectionComponent,
     VardaHenkilostoSectionComponent,
     VardaHenkiloListComponent,
@@ -178,6 +180,8 @@ import { VardaResultInfoComponent } from './components/varda-reporting/varda-res
   providers: [
     AuthService,
     AuthGuard,
+    RoleGuard,
+    BrowserNotSupportedGuard,
     VardaDateService,
     VardaHenkiloService
   ]

@@ -5,7 +5,7 @@ import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/
 import { AbstractHenkiloSectionComponent } from '../henkilo-section.abstract';
 import { TyontekijaListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tyontekija-dto.model';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
-import { VardaApiService } from 'projects/virkailija-app/src/app/core/services/varda-api.service';
+import { VardaUtilityService } from 'projects/virkailija-app/src/app/core/services/varda-utility.service';
 
 @Component({
   selector: 'app-varda-henkilosto-section',
@@ -15,11 +15,11 @@ import { VardaApiService } from 'projects/virkailija-app/src/app/core/services/v
 export class VardaHenkilostoSectionComponent extends AbstractHenkiloSectionComponent {
   i18n = VirkailijaTranslations;
   constructor(
-    private apiService: VardaApiService,
+    private utilityService: VardaUtilityService,
     private henkilostoService: VardaHenkilostoApiService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService
   ) {
-    super(apiService);
+    super(utilityService);
 
     this.subscriptions.push(this.henkilostoService.listenHenkilostoListUpdate().subscribe(() => this.getHenkilot()));
   }

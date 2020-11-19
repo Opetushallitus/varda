@@ -30,22 +30,6 @@
       <form [formGroup]="varhaiskasvatuspaatosForm"
             autocomplete="off"
             (submit)="saveVarhaiskasvatuspaatos(varhaiskasvatuspaatosForm)">
-        <!-- tilapainen will be enabled later -->
-        <!--
-          <app-varda-form-field name="tilapainen_vaka_kytkin"
-                              *ngIf="selectedVakajarjestaja.kunnallinen_kytkin"
-                              [form]="varhaiskasvatuspaatosForm"
-                              [label]="i18n.varhaiskasvatuspaatos_tilapainen_vaka_kytkin | translate"
-                              [errorText]="i18n.varhaiskasvatuspaatos_error_tilapainen_vaka_kytkin | translate"
-                              [instructionText]="i18n.varhaiskasvatuspaatos_instruction_tilapainen_vaka_kytkin | translate">
-          <mat-radio-group #fieldItem
-                           formControlName="tilapainen_vaka_kytkin">
-            <mat-radio-button [value]="false">{{ i18n.no | translate }}</mat-radio-button>
-            <mat-radio-button [value]="true">{{ i18n.yes | translate }}</mat-radio-button>
-          </mat-radio-group>
-        </app-varda-form-field>
-      -->
-
         <app-varda-form-field name="hakemus_pvm"
                               [form]="varhaiskasvatuspaatosForm"
                               [label]="i18n.varhaiskasvatuspaatos_hakemus_pvm | translate"
@@ -71,7 +55,10 @@
         <app-varda-form-field name="paattymis_pvm"
                               [form]="varhaiskasvatuspaatosForm"
                               [label]="i18n.varhaiskasvatuspaatos_paattymis_pvm | translate"
-                              [errorText]="i18n.varhaiskasvatuspaatos_error_paattymis_pvm | translate"
+                              [errorMap]="[
+                              { key: 'matDatepickerMin', value: i18n.varhaiskasvatuspaatos_error_min_paattymis_pvm },
+                              { key: 'tilapainen', value: i18n.varhaiskasvatuspaatos_error_paattymis_pvm }
+                              ]"
                               [instructionText]="i18n.varhaiskasvatuspaatos_instruction_paattymis_pvm | translate">
           <app-varda-datepicker #fieldItem
                                 [min]="minEndDate"
@@ -84,6 +71,7 @@
                               [errorText]="i18n.varhaiskasvatuspaatos_error_jarjestamismuoto_koodi | translate"
                               [instructionText]="i18n.varhaiskasvatuspaatos_instruction_jarjestamismuoto_koodi | translate">
           <select #fieldItem
+                  (ngModelChange)="changeJarjestajismuoto($event)"
                   class="oph-input oph-select"
                   formControlName="jarjestamismuoto_koodi">
             <option [value]="null"
@@ -95,6 +83,19 @@
               {{ jarjestamismuoto.name }} ({{ jarjestamismuoto.code_value }})
             </option>
           </select>
+        </app-varda-form-field>
+
+        <app-varda-form-field name="tilapainen_vaka_kytkin"
+                              *ngIf="tilapainenVarhaiskasvatusBoolean"
+                              [form]="varhaiskasvatuspaatosForm"
+                              [label]="i18n.varhaiskasvatuspaatos_tilapainen_vaka_kytkin | translate"
+                              [errorText]="i18n.varhaiskasvatuspaatos_error_tilapainen_vaka_kytkin | translate"
+                              [instructionText]="i18n.varhaiskasvatuspaatos_instruction_tilapainen_vaka_kytkin | translate">
+          <mat-radio-group #fieldItem
+                           formControlName="tilapainen_vaka_kytkin">
+            <mat-radio-button [value]="true">{{ i18n.yes | translate }}</mat-radio-button>
+            <mat-radio-button [value]="false">{{ i18n.no | translate }}</mat-radio-button>
+          </mat-radio-group>
         </app-varda-form-field>
 
         <app-varda-form-field name="tuntimaara_viikossa"

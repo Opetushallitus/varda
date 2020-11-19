@@ -39,13 +39,13 @@ export class HuoltajaAuthGuard implements CanActivate {
           } else {
             // Save userdata
             this.apiService.getUserInfo().subscribe(userdata => {
-              this.loginService.currentUserInfo = userdata;
+              this.loginService.setCurrentUser(userdata);
               this.koodistoService.initKoodistot(environment.huoltajaBackendUrl, this.translateService.currentLang);
               authGuardObs.next(true);
               authGuardObs.complete();
             }, (err) => {
               console.error('getUser Error', err);
-              this.loginService.currentUserInfo = {};
+              this.loginService.setCurrentUser({});
               authGuardObs.next(true);
               authGuardObs.complete();
             });

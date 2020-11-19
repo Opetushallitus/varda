@@ -90,6 +90,10 @@
                       {{vakapaatos.jarjestamismuoto_koodi}}
                     </td>
                   </tr>
+                  <tr class="mat-header-row" *ngIf="isKunnallinenJarjestamismuoto(vakapaatos.jarjestamismuoto_koodi)">
+                    <th scope="row" class="mat-header-cell">{{i18n.varhaiskasvatuspaatos_tilapainen_vaka_kytkin | translate}}</th>
+                    <td class="mat-cell">{{getBooleanLabel(vakapaatos.tilapainen_vaka_kytkin) | translate}}</td>
+                  </tr>
                   <tr class="mat-header-row" *ngIf="vakapaatos.paivittainen_vaka_kytkin !== null">
                     <th scope="row" class="mat-header-cell">{{i18n.varhaiskasvatuspaatos_paivittainen_vaka_kytkin | translate}}</th>
                     <td class="mat-cell">{{getBooleanLabel(vakapaatos.paivittainen_vaka_kytkin) | translate}}</td>

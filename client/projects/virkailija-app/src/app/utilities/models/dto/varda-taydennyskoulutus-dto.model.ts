@@ -1,7 +1,7 @@
 import { Lahdejarjestelma } from '../enums/hallinnointijarjestelma';
 
 export interface VardaTaydennyskoulutusDTO {
-  id?: string;
+  id?: number;
   url?: string;
   nimi?: string;
   suoritus_pvm?: string;

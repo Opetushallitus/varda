@@ -1,23 +1,22 @@
-import { Component, EventEmitter, Input, Output, SimpleChanges, OnInit } from '@angular/core';
-import { VardaLocalstorageWrapperService } from '../../../../core/services/varda-localstorage-wrapper.service';
-import { VardaApiWrapperService } from '../../../../core/services/varda-api-wrapper.service';
+import { Component, EventEmitter, Input, Output, OnInit, OnDestroy } from '@angular/core';
 import { VardaVakajarjestajaService } from '../../../../core/services/varda-vakajarjestaja.service';
 import { Hallinnointijarjestelma } from '../../../../utilities/models/enums/hallinnointijarjestelma';
 import { ModalEvent } from '../../../../shared/components/varda-modal-form/varda-modal-form.component';
-import { VardaToimipaikkaMinimalDto, VardaToimipaikkaDTO } from '../../../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { UserAccess } from '../../../../utilities/models/varda-user-access.model';
-import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';
+import { VardaToimipaikkaDTO, VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
-import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
 import { ToimipaikkaChange } from '../varda-main-frame.component';
-import { VardaApiService } from '../../../../core/services/varda-api.service';
+import { VardaVakajarjestajaApiService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja-api.service';
+import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
+import { VardaCookieEnum } from 'projects/virkailija-app/src/app/utilities/models/enums/varda-cookie.enum';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-varda-toimipaikka-selector',
   templateUrl: './varda-toimipaikka-selector.component.html',
   styleUrls: ['./varda-toimipaikka-selector.component.css']
 })
-export class VardaToimipaikkaSelectorComponent implements OnInit {
+export class VardaToimipaikkaSelectorComponent implements OnInit, OnDestroy {
   @Input() toimijaAccess: UserAccess;
   @Output() changeToimipaikka = new EventEmitter<ToimipaikkaChange>(true);
 
@@ -31,15 +30,12 @@ export class VardaToimipaikkaSelectorComponent implements OnInit {
   editToimipaikkaAction: boolean;
   hallinnointijarjestelmaTypes = Hallinnointijarjestelma;
   anyToimijaKatselija: boolean;
-
+  subscriptions: Array<Subscription> = [];
   confirmedToimipaikkaFormLeave = true;
 
   constructor(
-    private vardaApiWrapperService: VardaApiWrapperService,
-    private vardaApiService: VardaApiService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
-    private vardaLocalStorageWrapperService: VardaLocalstorageWrapperService,
-    private authService: AuthService
+    private vakajarjestajaApiService: VardaVakajarjestajaApiService,
   ) {
     this.selectedVakajarjestaja = this.vardaVakajarjestajaService.getSelectedVakajarjestaja();
   }
@@ -50,12 +46,16 @@ export class VardaToimipaikkaSelectorComponent implements OnInit {
       this.toimijaAccess.tyontekijatiedot.katselija ||
       this.toimijaAccess.taydennyskoulutustiedot.katselija;
 
-    this.initToimipaikat();
+    this.subscriptions.push(
+      this.vardaVakajarjestajaService.getToimipaikat().subscribe({
+        next: toimipaikat => this.initToimipaikat(this.vardaVakajarjestajaService.getFilteredToimipaikat().katselijaToimipaikat),
+        error: err => console.error(err)
+      })
+    );
   }
 
-  initToimipaikat(): void {
-    this.toimipaikat = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().katselijaToimipaikat;
-
+  initToimipaikat(toimipaikat: Array<VardaToimipaikkaMinimalDto>): void {
+    this.toimipaikat = toimipaikat;
     if (this.toimipaikat.length === 0) {
       this.activeToimipaikka = null;
       this.emitToimipaikkaChange(this.activeToimipaikka);
@@ -64,7 +64,6 @@ export class VardaToimipaikkaSelectorComponent implements OnInit {
 
     if (this.toimipaikat.length === 1 || (!this.anyToimijaKatselija && this.toimipaikat.length > 0)) {
       this.activeToimipaikka = this.toimipaikat[0];
-      this.vardaVakajarjestajaService.setSelectedToimipaikka(this.activeToimipaikka);
       this.emitToimipaikkaChange(this.activeToimipaikka);
       return;
     }
@@ -73,40 +72,26 @@ export class VardaToimipaikkaSelectorComponent implements OnInit {
       return a.nimi.toLowerCase().localeCompare(b.nimi.toLowerCase(), 'fi');
     });
 
-    const activeToimipaikkaFromLocalStorage = this.vardaLocalStorageWrapperService.getFromLocalStorage('varda.activeToimipaikka');
-    if (activeToimipaikkaFromLocalStorage) {
-      const parsedToimipaikka = JSON.parse(activeToimipaikkaFromLocalStorage);
-      if (parsedToimipaikka?.id) {
-        this.activeToimipaikka = this.toimipaikat.find(toimipaikka => toimipaikka.id === parsedToimipaikka.id);
-      }
-
-    }
-
-    if (!this.activeToimipaikka) {
-      this.activeToimipaikka = null;
-    }
-
-    this.vardaVakajarjestajaService.setSelectedToimipaikka(this.activeToimipaikka);
-    this.vardaVakajarjestajaService.setSelectedToimipaikkaSubject(this.activeToimipaikka);
+    const previousToimipaikkaOID = localStorage.getItem(VardaCookieEnum.previous_toimipaikka);
+    this.activeToimipaikka = this.toimipaikat.find(toimipaikka => toimipaikka.organisaatio_oid === previousToimipaikkaOID) || null;
     this.emitToimipaikkaChange(this.activeToimipaikka);
   }
 
   openToimipaikka(toimipaikka: VardaToimipaikkaMinimalDto): void {
     this.editToimipaikkaAction = true;
     this.formToimipaikka = toimipaikka;
-    this.openToimipaikkaForm(toimipaikka.id.toString());
+    this.openToimipaikkaForm(toimipaikka.id);
   }
 
   toimipaikkaFormValuesChanged(hasChanged: boolean) {
     this.confirmedToimipaikkaFormLeave = !hasChanged;
   }
 
-  openToimipaikkaForm(toimipaikka_id?: string): void {
-
+  openToimipaikkaForm(toimipaikkaId?: number): void {
     this.toimipaikkaData = null;
 
-    if (toimipaikka_id) {
-      this.vardaApiWrapperService.getToimipaikkaById(toimipaikka_id).subscribe(toimipaikkaData => {
+    if (toimipaikkaId) {
+      this.vakajarjestajaApiService.getToimipaikka(toimipaikkaId).subscribe(toimipaikkaData => {
         this.toimipaikkaData = toimipaikkaData;
         this.toimipaikkaFormOpen = true;
       });
@@ -133,23 +118,27 @@ export class VardaToimipaikkaSelectorComponent implements OnInit {
       this.activeToimipaikka = data.toimipaikka;
       this.setToimipaikka(this.activeToimipaikka);
 
-      this.vardaApiService.getAllToimipaikatForVakaJarjestaja(this.vardaVakajarjestajaService.selectedVakajarjestaja.id).subscribe(toimipaikat => {
-        this.vardaVakajarjestajaService.setToimipaikat(toimipaikat, this.authService);
-        this.initToimipaikat();
+      this.vakajarjestajaApiService.getToimipaikat(this.selectedVakajarjestaja.id).subscribe({
+        next: toimipaikat => {
+          this.vardaVakajarjestajaService.setToimipaikat(toimipaikat);
+        },
+        error: err => console.error(err)
       });
     }
   }
 
   setToimipaikka(toimipaikka: VardaToimipaikkaMinimalDto): void {
     if (toimipaikka) {
-      this.vardaVakajarjestajaService.setSelectedToimipaikkaSubject(toimipaikka);
-      this.vardaVakajarjestajaService.setSelectedToimipaikka(toimipaikka);
-      this.vardaLocalStorageWrapperService.saveToLocalStorage('varda.activeToimipaikka', JSON.stringify(toimipaikka));
+      localStorage.setItem(VardaCookieEnum.previous_toimipaikka, toimipaikka.organisaatio_oid);
     }
     this.emitToimipaikkaChange(toimipaikka);
   }
 
   emitToimipaikkaChange(activeToimipaikka?: VardaToimipaikkaMinimalDto): void {
     this.changeToimipaikka.emit({ toimipaikka: activeToimipaikka, toimipaikat: this.toimipaikat });
+  }
+
+  ngOnDestroy() {
+    this.subscriptions.forEach(sub => sub.unsubscribe);
   }
 }

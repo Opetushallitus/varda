@@ -1,7 +1,7 @@
 import {Hallinnointijarjestelma} from '../enums/hallinnointijarjestelma';
 
 export class VardaToimipaikkaDTO {
-  id?: string;
+  id?: number;
   url?: string;
   vakajarjestaja?: string;
   nimi?: string;

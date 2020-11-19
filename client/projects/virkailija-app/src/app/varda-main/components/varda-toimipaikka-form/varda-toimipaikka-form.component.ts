@@ -27,7 +27,6 @@ import { debounceTime } from 'rxjs/operators';
 import { VardaUtilityService } from '../../../core/services/varda-utility.service';
 import { VardaModalService } from '../../../core/services/varda-modal.service';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
-import { VardaLocalstorageWrapperService } from '../../../core/services/varda-localstorage-wrapper.service';
 import { VardaErrorMessageService } from '../../../core/services/varda-error-message.service';
 import { TranslateService } from '@ngx-translate/core';
 import { UserAccess } from '../../../utilities/models/varda-user-access.model';
@@ -112,7 +111,6 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
     private vardaUtilityService: VardaUtilityService,
     private vardaModalService: VardaModalService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
-    private vardaLocalStorageWrapperService: VardaLocalstorageWrapperService,
     private vardaErrorMessageService: VardaErrorMessageService,
     private translateService: TranslateService,
     private koodistoService: VardaKoodistoService) {
@@ -705,8 +703,6 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnChanges {
         this.toimipaikkaFormChanged = false;
 
         this.toimipaikka = entity;
-        this.vardaVakajarjestajaService.setSelectedToimipaikka(entity);
-        this.vardaLocalStorageWrapperService.saveToLocalStorage('varda.activeToimipaikka', JSON.stringify(entity));
         this.saveToimipaikkaFormSuccess.emit({ toimipaikka: entity });
       }
 

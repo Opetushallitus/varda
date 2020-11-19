@@ -1,11 +1,11 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { AbstractPaosListToimintainfoComponentDirective } from './abstract-paos-list-toimintainfo-component';
-import { VardaApiService } from '../../../../core/services/varda-api.service';
-import { PaosToimintatietoDto, PaosToimijaInternalDto } from '../../../../utilities/models/dto/varda-paos-dto';
+import { PaosToimintatietoDto } from '../../../../utilities/models/dto/varda-paos-dto';
 import { PaosCreateEvent, PaosToimintaService } from '../paos-toiminta.service';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { animate, state, style, transition, trigger } from '@angular/animations';
+import { VardaPaosApiService } from 'projects/virkailija-app/src/app/core/services/varda-paos-api.service';
 
 @Component({
   selector: 'app-paos-added-toimijat',
@@ -25,13 +25,13 @@ export class PaosAddedToimijatComponent extends AbstractPaosListToimintainfoComp
   highlighted: Array<string>;
   openToimija: string;
   filteredToiminnat: Array<PaosToimintatietoDto>;
-  private _apiCallMethod = (page: number) => this.apiService.getPaosToimijat(this.selectedVakajarjestaja.id, page);
-  apiServiceMethod = () => this.apiService.getAllPagesSequentially<PaosToimintatietoDto>(this._apiCallMethod);
-
+  apiServiceMethod = () => this.paosService.getPaosToimijat(this.selectedVakajarjestaja.id);
   pushToimintaOrganisaatioId = paosToiminta => this.paosToimintaService.pushToimintaOrganisaatio(paosToiminta.vakajarjestaja_id, PaosCreateEvent.Toimija);
 
-  constructor(private apiService: VardaApiService,
-    private paosToimintaService: PaosToimintaService) {
+  constructor(
+    private paosService: VardaPaosApiService,
+    private paosToimintaService: PaosToimintaService,
+  ) {
     super();
   }
 
@@ -58,7 +58,7 @@ export class PaosAddedToimijatComponent extends AbstractPaosListToimintainfoComp
 
   deletePaosToiminta() {
     this.openToimija = '';
-    this.apiService.deletePaosToiminta(`${this.paosToimintaToDelete.paos_toiminta_id}`).subscribe({
+    this.paosService.deletePaosToiminta(`${this.paosToimintaToDelete.paos_toiminta_id}`).subscribe({
       next: value => {
         this.paosToimintaService.pushDeletedToimintaOrganisaatio(this.paosToimintaToDelete.vakajarjestaja_id, PaosCreateEvent.Toimija);
         this.getPaosToiminnat();

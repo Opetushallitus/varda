@@ -89,17 +89,13 @@ legend {
   line-height: normal;
 }
 
-.varda-app-wrapper {
-  width: 100%;
-}
-
 .varda-router-outlet-container {
   width: 90%;
   max-width: 1450px;
-  margin-bottom: 55px;
+  margin-bottom: 4rem;
   margin-right: auto;
   margin-left: auto;
-  padding: 1em 0;
+  padding: 1rem 0;
 }
 
 .varda-page-header {

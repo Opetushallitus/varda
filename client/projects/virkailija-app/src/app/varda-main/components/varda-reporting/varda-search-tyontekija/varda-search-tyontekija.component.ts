@@ -15,6 +15,8 @@ import { VardaDateService } from '../../../services/varda-date.service';
 import { VardaApiWrapperService } from '../../../../core/services/varda-api-wrapper.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { PaginatorParams } from '../varda-result-list/varda-result-list.component';
+import { VardaKoosteApiService } from 'projects/virkailija-app/src/app/core/services/varda-kooste-api.service';
+import { SaveAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 
 @Component({
   selector: 'app-varda-search-tyontekija',
@@ -44,14 +46,14 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
     tutkinto: CodeDTO;
     tehtavanimikeTaydennyskoulutus: CodeDTO;
   } = {
-    rajaus: this.rajaus.PALVELUSSUHTEET,
-    voimassaolo: this.voimassaolo.VOIMASSA,
-    alkamisPvm: moment(),
-    paattymisPvm: moment(),
-    tehtavanimike: null,
-    tutkinto: null,
-    tehtavanimikeTaydennyskoulutus: null
-  };
+      rajaus: this.rajaus.PALVELUSSUHTEET,
+      voimassaolo: this.voimassaolo.VOIMASSA,
+      alkamisPvm: moment(),
+      paattymisPvm: moment(),
+      tehtavanimike: null,
+      tutkinto: null,
+      tehtavanimikeTaydennyskoulutus: null
+    };
 
   isRajausFiltersInactive = false;
 
@@ -65,17 +67,18 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
     koodistoService: VardaKoodistoService,
     breakpointObserver: BreakpointObserver,
     translateService: TranslateService,
+    koosteService: VardaKoosteApiService,
     authService: AuthService,
     vakajarjestajaService: VardaVakajarjestajaService,
     private apiWrapperService: VardaApiWrapperService,
     private dateService: VardaDateService
   ) {
-    super(koodistoService, breakpointObserver, translateService, authService, vakajarjestajaService);
+    super(koodistoService, breakpointObserver, translateService, koosteService, authService, vakajarjestajaService);
   }
 
   ngOnInit(): void {
     super.ngOnInit();
-    this.toimipaikat = this.authService.getToimipaikatWithTyontekijaPermissions(this.katselijaToimipaikat);
+    this.toimipaikat = this.authService.getAuthorizedToimipaikat(this.katselijaToimipaikat, SaveAccess.henkilostotiedot);
     this.filteredToimipaikkaOptions.next(this.toimipaikat);
     this.search();
     forkJoin([
@@ -134,7 +137,7 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
       this.resultListComponent.resetResults();
     }
 
-    this.apiWrapperService.getTyontekijatForVakajarjestaja(searchParams).subscribe(response => {
+    this.koosteService.getTyontekijatForVakajarjestaja(this.selectedVakajarjestaja.id, searchParams).subscribe(response => {
       this.resultCount = response.count;
       this.searchResults = response.results.map(tyontekija => {
         return {
@@ -199,14 +202,14 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
     const stringParams: Array<FilterStringParam> = [];
 
     if (this.isRajausFiltersFilled()) {
-      stringParams.push({value: this.filterParams.rajaus, type: FilterStringType.TRANSLATED_STRING});
+      stringParams.push({ value: this.filterParams.rajaus, type: FilterStringType.TRANSLATED_STRING });
       if (this.filterParams.rajaus !== this.rajaus.TAYDENNYSKOULUTUKSET) {
-        stringParams.push({value: this.filterParams.voimassaolo, type: FilterStringType.TRANSLATED_STRING, lowercase: true});
+        stringParams.push({ value: this.filterParams.voimassaolo, type: FilterStringType.TRANSLATED_STRING, lowercase: true });
       } else {
-        stringParams.push({value: this.filterParams.tehtavanimikeTaydennyskoulutus?.code_value, type: FilterStringType.RAW});
+        stringParams.push({ value: this.filterParams.tehtavanimikeTaydennyskoulutus?.code_value, type: FilterStringType.RAW });
       }
       if (this.filterParams.alkamisPvm && this.filterParams.paattymisPvm) {
-        stringParams.push({value: 'aikavali', type: FilterStringType.TRANSLATED_STRING, lowercase: true});
+        stringParams.push({ value: 'aikavali', type: FilterStringType.TRANSLATED_STRING, lowercase: true });
         stringParams.push({
           value: `${this.filterParams.alkamisPvm.format(VardaDateService.vardaDefaultDateFormat)} -
         ${this.filterParams.paattymisPvm.format(VardaDateService.vardaDefaultDateFormat)}`,
@@ -217,9 +220,9 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
     }
 
     if (this.filterParams.rajaus !== this.rajaus.TAYDENNYSKOULUTUKSET) {
-      stringParams.push({value: this.filterParams.tehtavanimike?.code_value, type: FilterStringType.RAW});
+      stringParams.push({ value: this.filterParams.tehtavanimike?.code_value, type: FilterStringType.RAW });
     }
-    stringParams.push({value: this.filterParams.tutkinto?.code_value, type: FilterStringType.RAW});
+    stringParams.push({ value: this.filterParams.tutkinto?.code_value, type: FilterStringType.RAW });
 
     setTimeout(() => {
       this.filterString = this.getFilterString(stringParams);

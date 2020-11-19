@@ -9,6 +9,7 @@ import { VardaApiService } from '../../../core/services/varda-api.service';
 import { ErrorTree, HenkilostoErrorMessageService } from '../../../core/services/varda-henkilosto-error-message.service';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
+import { VardaVakajarjestajaApiService } from '../../../core/services/varda-vakajarjestaja-api.service';
 
 @Component({
   selector: 'app-varda-vakatoimija',
@@ -30,6 +31,7 @@ export class VardaVakatoimijaComponent {
 
   constructor(
     private vakajarjestajaService: VardaVakajarjestajaService,
+    private vakajarjestajaApiService: VardaVakajarjestajaApiService,
     private vardaApiService: VardaApiService,
     private authService: AuthService,
   ) {
@@ -37,7 +39,8 @@ export class VardaVakatoimijaComponent {
     this.toimijaAccess = this.authService.getUserAccess();
     this.saveAccess = this.toimijaAccess.toimijatiedot.tallentaja;
     this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
-    this.vardaApiService.getVakaJarjestajaById(this.selectedVakajarjestaja.id).subscribe((vakajarjestaja: VardaVakajarjestaja) => {
+
+    this.vakajarjestajaApiService.getVakajarjestaja(this.selectedVakajarjestaja.id).subscribe((vakajarjestaja: VardaVakajarjestaja) => {
       this.initVakatoimijaForm(vakajarjestaja);
     });
   }
@@ -64,7 +67,7 @@ export class VardaVakatoimijaComponent {
       this.isLoading.next(true);
       const vakatoimijaDTO: VardaVakajarjestaja = { ...form.value };
 
-      this.vardaApiService.patchVakajarjestaja(this.selectedVakajarjestaja.id, vakatoimijaDTO).subscribe({
+      this.vakajarjestajaApiService.patchVakajarjestaja(this.selectedVakajarjestaja.id, vakatoimijaDTO).subscribe({
         next: vakatoimijaData => {
           this.disableForm();
           this.saveSuccess = true;

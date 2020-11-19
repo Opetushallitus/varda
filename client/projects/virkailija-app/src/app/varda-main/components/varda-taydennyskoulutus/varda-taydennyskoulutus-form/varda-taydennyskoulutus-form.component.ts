@@ -116,7 +116,7 @@ export class VardaTaydennyskoulutusFormComponent implements OnInit {
   }
 
   deleteTaydennyskoulutus(): void {
-    this.henkilostoService.deleteTaydennyskoulutus(parseInt(this.taydennyskoulutus.id)).subscribe({
+    this.henkilostoService.deleteTaydennyskoulutus(this.taydennyskoulutus.id).subscribe({
       next: deleted => {
         this.snackBarService.warning(this.i18n.taydennyskoulutus_delete_success);
         this.refreshList.emit();

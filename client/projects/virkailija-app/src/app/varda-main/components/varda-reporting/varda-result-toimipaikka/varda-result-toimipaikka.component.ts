@@ -1,6 +1,6 @@
 import { Component, ElementRef, Input, OnChanges, ViewChild } from '@angular/core';
+import { VardaKoosteApiService } from 'projects/virkailija-app/src/app/core/services/varda-kooste-api.service';
 import { KoodistoEnum } from 'varda-shared';
-import { VardaApiService } from '../../../../core/services/varda-api.service';
 import { ToimipaikkaKooste } from '../../../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { VardaDateService } from '../../../services/varda-date.service';
 import { VardaResultAbstractComponent } from '../varda-result-abstract.component';
@@ -18,7 +18,7 @@ export class VardaResultToimipaikkaComponent extends VardaResultAbstractComponen
   toimipaikkaKooste: ToimipaikkaKooste = null;
 
   constructor(
-    private vardaApiService: VardaApiService,
+    private koosteService: VardaKoosteApiService,
     dateService: VardaDateService
   ) {
     super(dateService);
@@ -29,7 +29,7 @@ export class VardaResultToimipaikkaComponent extends VardaResultAbstractComponen
   }
 
   fetchToimipaikka(id: number) {
-    this.vardaApiService.getToimipaikkaKooste(id).subscribe(data => {
+    this.koosteService.getToimipaikkaKooste(id).subscribe(data => {
       this.toimipaikkaKooste = data;
       this.scrollTo.nativeElement.scrollIntoView({behavior: 'smooth', block: 'start'});
     });

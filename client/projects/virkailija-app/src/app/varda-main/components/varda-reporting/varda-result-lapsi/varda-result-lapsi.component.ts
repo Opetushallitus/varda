@@ -6,6 +6,8 @@ import { UserAccess } from '../../../../utilities/models/varda-user-access.model
 import { KoodistoEnum } from 'varda-shared';
 import { VardaDateService } from '../../../services/varda-date.service';
 import { VardaResultAbstractComponent } from '../varda-result-abstract.component';
+import { VardaKoosteApiService } from 'projects/virkailija-app/src/app/core/services/varda-kooste-api.service';
+import { kunnallisetJarjestamismuodot } from '../../varda-henkilo-form/varda-lapsi-form/varda-varhaiskasvatuspaatokset/varda-varhaiskasvatuspaatos/varda-varhaiskasvatuspaatos.component';
 
 @Component({
   selector: 'app-varda-result-lapsi',
@@ -20,7 +22,9 @@ export class VardaResultLapsiComponent extends VardaResultAbstractComponent impl
   koodistoEnum = KoodistoEnum;
   lapsiKooste: LapsiKooste = null;
 
+
   constructor(
+    private koosteService: VardaKoosteApiService,
     private vardaApiService: VardaApiService,
     private vardaUtilityService: VardaUtilityService,
     dateService: VardaDateService
@@ -33,7 +37,7 @@ export class VardaResultLapsiComponent extends VardaResultAbstractComponent impl
   }
 
   fetchToimipaikanLapsi(id: number): void {
-    this.vardaApiService.getLapsiKooste(id).subscribe(data => {
+    this.koosteService.getLapsiKooste(id).subscribe(data => {
       this.lapsiKooste = data;
       this.scrollTo.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -43,5 +47,9 @@ export class VardaResultLapsiComponent extends VardaResultAbstractComponent impl
     return this.lapsiKooste.varhaiskasvatussuhteet.filter(vakasuhde => {
       return String(id) === this.vardaUtilityService.parseIdFromUrl(vakasuhde.varhaiskasvatuspaatos);
     });
+  }
+
+  isKunnallinenJarjestamismuoto(jarjetamismuoto: string) {
+    return kunnallisetJarjestamismuodot.includes(jarjetamismuoto.toLocaleUpperCase());
   }
 }

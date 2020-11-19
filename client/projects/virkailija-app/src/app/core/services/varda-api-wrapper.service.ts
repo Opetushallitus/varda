@@ -1,40 +1,20 @@
-import { catchError, expand, map, mergeMap, reduce } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { Observable, forkJoin, of, EMPTY } from 'rxjs';
+import { Observable, forkJoin } from 'rxjs';
 import { FormGroup } from '@angular/forms';
 import { VardaApiService } from './varda-api.service';
 import { VardaVakajarjestajaService } from './varda-vakajarjestaja.service';
 import { VardaUtilityService } from './varda-utility.service';
 import { VardaDateService } from '../../varda-main/services/varda-date.service';
-import { environment } from '../../../environments/environment';
 
 import {
   VardaFieldSet,
   VardaWidgetNames,
-  VardaHenkiloDTO,
-  VardaLapsiDTO,
-  VardaVarhaiskasvatussuhdeDTO,
   VardaToimipaikkaDTO,
   VardaKielipainotusDTO,
   VardaToimintapainotusDTO,
-  VardaExtendedHenkiloModel,
-  VardaVakajarjestaja,
-  VardaVakajarjestajaUi,
-  VardaVarhaiskasvatuspaatosDTO,
   VardaField,
-  VardaEndpoints
 } from '../../utilities/models';
 import { KoodistoEnum, LoadingHttpService } from 'varda-shared';
-import {VardaVakajarjestajaYhteenvetoDTO} from '../../utilities/models/dto/varda-vakajarjestaja-yhteenveto-dto.model';
-import {VardaFieldsetArrayContainer} from '../../utilities/models/varda-fieldset.model';
-import {VardaMaksutietoDTO} from '../../utilities/models/dto/varda-maksutieto-dto.model';
-import {
-  LapsiByToimipaikkaDTO,
-  TyontekijaByToimipaikkaDTO
-} from '../../utilities/models/dto/varda-henkilohaku-dto.model';
-import {VardaPageDto} from '../../utilities/models/dto/varda-page-dto';
-import {VardaToimipaikkaMinimalDto} from '../../utilities/models/dto/varda-toimipaikka-dto.model';
-import {VardaLapsiCreateDto} from '../../utilities/models/dto/varda-lapsi-dto.model';
 
 @Injectable()
 export class VardaApiWrapperService {
@@ -50,119 +30,13 @@ export class VardaApiWrapperService {
     private vardaUtilityService: VardaUtilityService,
     private http: LoadingHttpService) { }
 
-  createNewLapsi(henkilo: VardaHenkiloDTO, toimipaikka: VardaToimipaikkaDTO, suhteet: any, data: any): Observable<any> {
-    const varhaiskasvatussuhdeAndPaatosData = {};
-
-    if (suhteet.addVarhaiskasvatussuhde) {
-      varhaiskasvatussuhdeAndPaatosData['varhaiskasvatussuhde'] = data.varhaiskasvatussuhde;
-      varhaiskasvatussuhdeAndPaatosData['varhaiskasvatuspaatos'] = data.varhaiskasvatuspaatos;
-    }
-
-    return new Observable((observer) => {
-      const extendedHenkilo: VardaExtendedHenkiloModel = {};
-      extendedHenkilo.henkilo = henkilo;
-      let lapsiId, paatosId, lapsiExists = false;
-
-      this.createLapsi(data.createLapsiDto).pipe(mergeMap((lapsi) => {
-
-        if (!lapsi) {
-          observer.error(null);
-          return;
-        }
-
-        extendedHenkilo.lapsi = lapsi;
-        lapsiId = lapsi.id;
-        lapsiExists = lapsi.varhaiskasvatuspaatokset_top.length > 0;
-        extendedHenkilo.henkilo.lapsi = [lapsi.url];
-
-        let createVarhaiskasvatussuhdeObs = of(null);
-        let saveVarhaiskasvatuspaatosObs = of(null);
-
-        if (suhteet.addVarhaiskasvatussuhde) {
-          saveVarhaiskasvatuspaatosObs = this.saveVarhaiskasvatuspaatos(false, lapsi, null,
-            varhaiskasvatussuhdeAndPaatosData['varhaiskasvatuspaatos']);
-        }
-
-
-        return forkJoin([saveVarhaiskasvatuspaatosObs]).pipe(mergeMap((paatokset) => {
-          const vakapaatos = paatokset[0];
-          paatosId = vakapaatos.id;
-
-          if (vakapaatos) {
-            createVarhaiskasvatussuhdeObs = this.createVarhaiskasvatussuhde(
-              toimipaikka,
-              paatokset[0],
-              varhaiskasvatussuhdeAndPaatosData['varhaiskasvatussuhde']);
-          }
-
-          return forkJoin([createVarhaiskasvatussuhdeObs]);
-        }));
-
-      })).subscribe(() => {
-        observer.next(lapsiExists ? null : extendedHenkilo);
-        observer.complete();
-      }, (e) => {
-        observer.error(e);
-
-        if (lapsiId) {
-          if (paatosId) {
-            this.deleteVarhaiskasvatuspaatos(paatosId.toString()).subscribe(() => {
-              if (!lapsiExists) {
-                this.deleteLapsi(lapsiId.toString()).subscribe();
-              }
-            });
-          } else {
-            if (!lapsiExists) {
-              this.deleteLapsi(lapsiId.toString()).subscribe();
-            }
-          }
-        }
-      });
-    });
-  }
-
-  createHenkiloByHenkiloDetails(ssnOrOid: string, firstnames: string, nickname: string, lastname: string, isSsn: boolean): Observable<any> {
-    const henkiloCreateObj = {};
-
-    henkiloCreateObj['etunimet'] = firstnames;
-    henkiloCreateObj['kutsumanimi'] = nickname;
-    henkiloCreateObj['sukunimi'] = lastname;
-    if (isSsn) {
-      henkiloCreateObj['henkilotunnus'] = ssnOrOid;
-    } else {
-      henkiloCreateObj['henkilo_oid'] = ssnOrOid;
-    }
-    return this.vardaApiService.createHenkilo(henkiloCreateObj);
-  }
-
-  createLapsi(lapsiDTO: VardaLapsiCreateDto): Observable<any> {
-    return new Observable((henkiloObserver) => {
-      this.vardaApiService.createLapsi(lapsiDTO).subscribe((lapsi) => {
-        henkiloObserver.next(lapsi);
-        henkiloObserver.complete();
-      }, (e) => henkiloObserver.error(e));
-    });
-  }
-
-  createVarhaiskasvatussuhde(toimipaikka: VardaToimipaikkaDTO,
-    varhaiskasvatuspaatos: VardaVarhaiskasvatuspaatosDTO, data: any): Observable<any> {
-    const varhaiskasvatussuhdeDTO = this.createDTOwithData<VardaVarhaiskasvatussuhdeDTO>(
-      data.formData,
-      new VardaVarhaiskasvatussuhdeDTO(),
-      data.fieldSets);
-
-    varhaiskasvatussuhdeDTO.varhaiskasvatuspaatos = varhaiskasvatuspaatos.url;
-    varhaiskasvatussuhdeDTO.toimipaikka = toimipaikka.url;
-    return this.vardaApiService.createVarhaiskasvatussuhde(varhaiskasvatussuhdeDTO);
-  }
-
   saveToimipaikka(isEdit: boolean, toimipaikka: VardaToimipaikkaDTO, data: any): Observable<any> {
     const toimipaikkaData = data.toimipaikka;
     const toimipaikkaDTO = this.createDTOwithData<VardaToimipaikkaDTO>(
       toimipaikkaData.formData,
       new VardaToimipaikkaDTO(),
       toimipaikkaData.fieldSets);
-    toimipaikkaDTO.vakajarjestaja = VardaApiService.getVakajarjestajaUrlFromId(this.vardaVakajarjestajaService.getSelectedVakajarjestajaId());
+    toimipaikkaDTO.vakajarjestaja = VardaApiService.getVakajarjestajaUrlFromId(this.vardaVakajarjestajaService.getSelectedVakajarjestaja().id);
     const toimipaikkaFormDataKeys = Object.keys(toimipaikkaData.formData);
     const someKey = toimipaikkaFormDataKeys.pop();
     toimipaikkaDTO.kielipainotus_kytkin = toimipaikkaData.formData[someKey]['kielipainotus_kytkin'];
@@ -171,55 +45,6 @@ export class VardaApiWrapperService {
       return this.vardaApiService.editToimipaikka(this.vardaUtilityService.parseIdFromUrl(toimipaikka.url), toimipaikkaDTO);
     } else {
       return this.vardaApiService.createToimipaikka(toimipaikkaDTO);
-    }
-  }
-
-  saveVarhaiskasvatussuhde(
-    isEdit: boolean,
-    varhaiskasvatuspaatos: VardaVarhaiskasvatuspaatosDTO,
-    varhaiskasvatussuhde: VardaVarhaiskasvatussuhdeDTO,
-    data: any): Observable<any> {
-
-    const varhaiskasvatussuhdeFormData = data.formData;
-    const toimipaikkaReference = varhaiskasvatussuhdeFormData.toimipaikka.url;
-    const varhaiskasvatuspaatosReference = varhaiskasvatussuhdeFormData.varhaiskasvatuspaatos.url;
-    delete varhaiskasvatussuhdeFormData.toimipaikka;
-    delete varhaiskasvatussuhdeFormData.varhaiskasvatuspaatos;
-    const varhaiskasvatussuhdeDTO = this.createDTOwithData<VardaVarhaiskasvatussuhdeDTO>(
-      varhaiskasvatussuhdeFormData,
-      new VardaVarhaiskasvatussuhdeDTO(),
-      data.fieldSets);
-    varhaiskasvatussuhdeDTO.varhaiskasvatuspaatos = varhaiskasvatuspaatosReference;
-    varhaiskasvatussuhdeDTO.toimipaikka = toimipaikkaReference;
-    if (isEdit) {
-      return this.vardaApiService.editVarhaiskasvatussuhde(
-        this.vardaUtilityService.parseIdFromUrl(varhaiskasvatussuhde.url), varhaiskasvatussuhdeDTO);
-    } else {
-      return this.vardaApiService.createVarhaiskasvatussuhde(varhaiskasvatussuhdeDTO);
-    }
-  }
-
-  saveVarhaiskasvatuspaatos(
-    isEdit: boolean,
-    lapsi: VardaLapsiDTO,
-    varhaiskasvatuspaatos: VardaVarhaiskasvatuspaatosDTO,
-    data: any): Observable<any> {
-    const varhaiskasvatuspaatosFormData = data.formData;
-    const varhaiskasvatuspaatosDTO = this.createDTOwithData<VardaVarhaiskasvatuspaatosDTO>(
-      varhaiskasvatuspaatosFormData,
-      new VardaVarhaiskasvatuspaatosDTO(),
-      data.fieldSets);
-
-    varhaiskasvatuspaatosDTO.lapsi = lapsi.url;
-
-    // Replace comma to dot for numeric values before saving
-    varhaiskasvatuspaatosDTO.tuntimaara_viikossa = varhaiskasvatuspaatosDTO.tuntimaara_viikossa.replace(',', '.');
-
-    if (isEdit) {
-      return this.vardaApiService.editVarhaiskasvatuspaatos(
-        this.vardaUtilityService.parseIdFromUrl(varhaiskasvatuspaatos.url), varhaiskasvatuspaatosDTO);
-    } else {
-      return this.vardaApiService.createVarhaiskasvatuspaatos(varhaiskasvatuspaatosDTO);
     }
   }
 
@@ -252,150 +77,12 @@ export class VardaApiWrapperService {
     }
   }
 
-  saveVakatoimijaData(data: any): Observable<any> {
-    const vakatoimijaDTO = new VardaVakajarjestaja();
-    vakatoimijaDTO.sahkopostiosoite = data.sahkopostiosoite;
-    vakatoimijaDTO.puhelinnumero = data.puhelinnumero;
-    vakatoimijaDTO.tilinumero = data.tilinumero;
-    return this.vardaApiService.patchVakajarjestaja(
-      this.vardaVakajarjestajaService.getSelectedVakajarjestajaId(),
-      vakatoimijaDTO);
-  }
-
-  getHenkilot(): Observable<Array<VardaHenkiloDTO>> {
-    return this.vardaApiService.getHenkilot();
-  }
-
-  getHenkiloBySsnOrHenkiloOid(ssnOrOid: string, isSsn: boolean): Observable<VardaHenkiloDTO> {
-    const henkiloSearchObj = {};
-    if (isSsn) {
-      henkiloSearchObj['henkilotunnus'] = ssnOrOid;
-    } else {
-      henkiloSearchObj['henkilo_oid'] = ssnOrOid;
-    }
-    return this.vardaApiService.getHenkiloBySsnOrHenkiloOid(henkiloSearchObj);
-  }
-
-  getToimipaikkaById(toimipaikkaId: string): Observable<VardaToimipaikkaDTO> {
-    return this.vardaApiService.getToimipaikkaById(toimipaikkaId);
-  }
-
-  getLapsetForVakajarjestaja(searchParams: Object): Observable<VardaPageDto<LapsiByToimipaikkaDTO>> {
-    return this.vardaApiService.getLapsetForVakajarjestaja(
-      this.vardaVakajarjestajaService.getSelectedVakajarjestajaId(),
-      searchParams
-    );
-  }
-
-  getTyontekijatForVakajarjestaja(searchParams: any): Observable<VardaPageDto<TyontekijaByToimipaikkaDTO>> {
-    return this.vardaApiService.getTyontekijatForVakajarjestaja(
-      this.vardaVakajarjestajaService.getSelectedVakajarjestajaId(),
-      searchParams
-    );
-  }
-
-  getByPageNo(respData: any, endpoint: string, entityId?: string): any {
-    return new Observable((getByPageNoObs) => {
-      const paginatedObservables = [];
-      let entities = [];
-      const noOfResultSets = Math.ceil(respData.count / 20);
-      for (let page = 2; page <= noOfResultSets; page++) {
-        if (endpoint === VardaEndpoints.getVarhaiskasvatussuhteetByPageNo) {
-          paginatedObservables.push(this.vardaApiService.getVarhaiskasvatussuhteetByPageNo(page.toString()));
-        } else if (endpoint === VardaEndpoints.getToimipaikatForVakaJarjestajaByPageNo) {
-          paginatedObservables.push(this.vardaApiService.getToimipaikatForVakaJarjestajaByPageNo(entityId, page.toString()));
-        } else if (endpoint === VardaEndpoints.getVakajarjestajaForLoggedInUserByPageNo) {
-          paginatedObservables.push(this.vardaApiService.getVakajarjestajaForLoggedInUserByPageNo(page.toString()));
-        } else if (endpoint === VardaEndpoints.getAllVarhaiskasvatussuhteetByToimipaikkaByPageNo) {
-          paginatedObservables.push(this.vardaApiService.getAllVarhaiskasvatussuhteetByToimipaikkaByPageNo(entityId, page.toString()));
-        } else if (endpoint === VardaEndpoints.getAllMaksutiedotByLapsiByPageNo) {
-          paginatedObservables.push(this.vardaApiService.getAllMaksutiedotByLapsiByPageNo(entityId, page));
-        } else if (endpoint === VardaEndpoints.getAllLapsetByToimipaikkaByPageNo) {
-          paginatedObservables.push(this.vardaApiService.getLapsetForVakajarjestaja(
-            this.vardaVakajarjestajaService.getSelectedVakajarjestajaId(),
-            { toimipaikat: entityId, page }
-          ).pipe(map((resp: VardaPageDto<LapsiByToimipaikkaDTO>) => resp.results)));
-        }
-      }
-
-      forkJoin(paginatedObservables).subscribe((paginatedResults) => {
-        paginatedResults.forEach((resultSet) => {
-          entities = entities.concat(resultSet);
-        });
-        getByPageNoObs.next(entities);
-      }, (e) => {
-        console.error(e);
-      });
-    });
-  }
-
-  getAllByPaginatedResults(allObs: Observable<any>, paginatedEndpointName: string, entityId?: string): Observable<any> {
-    let entities = [];
-    return new Observable((entitiesObserver) => {
-      allObs.subscribe((data) => {
-        if (data.next) {
-          entities = data.results;
-          this.getByPageNo(data, paginatedEndpointName, entityId).subscribe((v) => {
-            entities = entities.concat(v);
-            entitiesObserver.next(entities);
-          });
-        } else {
-          entitiesObserver.next(data.results);
-          entitiesObserver.complete();
-        }
-      }, (e) => {
-        console.error(e);
-        entitiesObserver.error();
-      });
-    });
-  }
-
-  getVakajarjestajaForLoggedInUser(): Observable<Array<VardaVakajarjestajaUi>> {
-    return this.vardaApiService.getAllVakajarjestajaForLoggedInUser();
-  }
-
-  getLapsiMaksutiedot(lapsiId: any): Observable<Array<VardaMaksutietoDTO>> {
-    return this.getAllByPaginatedResults(
-      this.vardaApiService.getLapsiMaksupaatokset(lapsiId),
-      VardaEndpoints.getAllMaksutiedotByLapsiByPageNo,
-      lapsiId);
-  }
-
   getKielipainotuksetByToimipaikka(toimipaikkaId: string): Observable<Array<VardaKielipainotusDTO>> {
     return this.vardaApiService.getKielipainotuksetByToimipaikka(toimipaikkaId);
   }
 
   getToimintapainotuksetByToimipaikka(toimipaikkaId: string): Observable<Array<VardaToimintapainotusDTO>> {
     return this.vardaApiService.getToimintapainotuksetByToimipaikka(toimipaikkaId);
-  }
-
-  getVarhaiskasvatussuhteetByLapsi(lapsiId: string): Observable<Array<VardaVarhaiskasvatussuhdeDTO>> {
-    return this.vardaApiService.getVarhaiskasvatussuhteetByLapsi(lapsiId);
-  }
-
-  getVarhaiskasvatuspaatoksetByLapsi(lapsiId: string): Observable<Array<VardaVarhaiskasvatuspaatosDTO>> {
-    return this.vardaApiService.getVarhaiskasvatuspaatoksetByLapsi(lapsiId);
-  }
-
-  getYhteenvetoByVakajarjestaja(vakajarjestajaId: string): Observable<VardaVakajarjestajaYhteenvetoDTO> {
-    return this.vardaApiService.getYhteenveto(vakajarjestajaId);
-  }
-
-  getCreateLapsiFieldSets(): any {
-    return forkJoin([
-      this.vardaApiService.getVarhaiskasvatussuhdeFields(),
-      this.vardaApiService.getVarhaiskasvatuspaatosFields(),
-    ]);
-  }
-
-  getMaksutietoFormFieldSets(): Observable<Array<VardaFieldsetArrayContainer>> {
-    return forkJoin([
-      this.vardaApiService.getMaksutietoFields(),
-    ]);
-  }
-
-  getHuoltajaFormFieldSets(): Observable<VardaFieldsetArrayContainer> {
-    return this.vardaApiService.getHuoltajaFields();
   }
 
   getToimipaikkaFormFieldSets(): any {
@@ -406,45 +93,12 @@ export class VardaApiWrapperService {
     ]);
   }
 
-  getVarhaiskasvatuspaatosFieldSets(): any {
-    return this.vardaApiService.getVarhaiskasvatuspaatosFields();
-  }
-
-  getVakaJarjestajaById(id: string): Observable<VardaVakajarjestaja> {
-    return this.vardaApiService.getVakaJarjestajaById(id);
-  }
-
-  getPaosJarjestajat(vakajarjestajaId: string, toimipaikkaId: number): Observable<Array<VardaVakajarjestajaUi>> {
-    const _apiCallMethod = (page: number) => this.vardaApiService.getPaosJarjestajat(vakajarjestajaId, toimipaikkaId, page);
-    return this.vardaApiService.getAllPagesSequentially<VardaVakajarjestajaUi>(_apiCallMethod);
-  }
-
-  getEntityReferenceByEndpoint(endpoint: string): Observable<any> {
-    let url = endpoint;
-    if (environment.production) {
-      url = `/varda${endpoint}`;
-    }
-    return this.http.get(url);
-  }
-
   deleteKielipainotus(kielipainotusId: string): Observable<any> {
     return this.vardaApiService.deleteKielipainotus(kielipainotusId);
   }
 
   deleteToimintapainotus(toimintapainotusId: string): Observable<any> {
     return this.vardaApiService.deleteToimintapainotus(toimintapainotusId);
-  }
-
-  deleteVarhaiskasvatuspaatos(varhaiskasvatuspaatosId: string): Observable<any> {
-    return this.vardaApiService.deleteVarhaiskasvatuspaatos(varhaiskasvatuspaatosId);
-  }
-
-  deleteVarhaiskasvatussuhde(varhaiskasvatussuhdeId: string): Observable<any> {
-    return this.vardaApiService.deleteVarhaiskasvatussuhde(varhaiskasvatussuhdeId);
-  }
-
-  deleteLapsi(lapsiId: string): Observable<any> {
-    return this.vardaApiService.deleteLapsi(lapsiId);
   }
 
   createDTOwithData<T>(data: any, dto: T, fieldSets: Array<VardaFieldSet>): T {

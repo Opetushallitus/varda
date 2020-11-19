@@ -1,13 +1,10 @@
-<div id="vardaAppWrapper" class="varda-app-wrapper" appHighContrast>
-    <app-varda-header></app-varda-header>
-    <div class="varda-dashboard-initialization-error alert alert-danger" role="alert" *ngIf="ui.dashboardInitializationError">
-        <p>{{ui.alertMsg | translate}}</p>
-    </div>
-    <div class="varda-router-outlet-container" *ngIf="!ui.isLoading && !ui.dashboardInitializationError">
+<div class="varda-dashboard">
+    <app-varda-header
+    [selectedVakajarjestaja]="selectedVakajarjestaja"
+    [toimipaikkaAccessToAnyToimipaikka]="toimipaikkaAccessToAnyToimipaikka"
+    ></app-varda-header>
+    <div class="varda-router-outlet-container" *ngIf="toimipaikkaAccessToAnyToimipaikka">
         <router-outlet></router-outlet>
     </div>
-    <app-varda-footer></app-varda-footer>
 </div>
-<div class="varda-main-frame-accessibility-settings-container">
-    <app-varda-accessibility-settings></app-varda-accessibility-settings>
-</div>
+

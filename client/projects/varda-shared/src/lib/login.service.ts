@@ -1,11 +1,10 @@
 import { Injectable } from '@angular/core';
-import {Observable, Subject, throwError as observableThrowError} from 'rxjs';
+import { BehaviorSubject, Observable, Subject, throwError as observableThrowError } from 'rxjs';
 import * as moment_ from 'moment';
 const moment = moment_;
-import {HttpService} from './http.service';
-import {catchError, map} from 'rxjs/operators';
-import {CookieService} from 'ngx-cookie-service';
-import {VardaUserDTO} from './dto/user-dto';
+import { HttpService } from './http.service';
+import { CookieService } from 'ngx-cookie-service';
+import { VardaUserDTO } from './dto/user-dto';
 
 @Injectable({
   providedIn: 'root'
@@ -16,48 +15,36 @@ export class LoginService {
   isValidApiTokenSubject = new Subject<boolean>();
   logoutSubject = new Subject<boolean>();
   fetchedApiTokenSubject = new Subject<boolean>();
+  private currentUser$ = new BehaviorSubject<VardaUserDTO>(null);
 
-  loggedInUserUsername: string;
-  loggedInUserEmail: string;
+  constructor(
+    private http: HttpService,
+    private cookieService: CookieService,
+  ) { }
 
-  private _currentUserInfo: VardaUserDTO;
 
-  constructor(private http: HttpService,
-              private cookieService: CookieService) { }
-
-  getUsername(): string {
-    return this.loggedInUserUsername;
+  getCurrentUser(): Observable<VardaUserDTO> {
+    return this.currentUser$.asObservable();
   }
 
-  setUsername(username: string): void {
-    this.loggedInUserUsername = username;
-  }
+  setCurrentUser(userData: VardaUserDTO): void {
+    this.currentUser$.next(userData);
 
-  getUserEmail(): string {
-    return this.loggedInUserEmail;
-  }
-
-  setUserEmail(email: string): void {
-    this.loggedInUserEmail = email;
-  }
-
-  get currentUserInfo(): VardaUserDTO {
-    return this._currentUserInfo || new VardaUserDTO();
-  }
-
-  set currentUserInfo(value: VardaUserDTO) {
-    this._currentUserInfo = value;
   }
 
   checkApiTokenValidity(nameSpace: string, apiKeyUrl: string): Observable<boolean> {
     try {
       return new Observable((apiTokenValidityObs) => {
+        const completeObs = (isValidToken: boolean) => {
+          this.validApiToken = isValidToken;
+          this.isValidApiTokenSubject.next(isValidToken);
+          apiTokenValidityObs.next(isValidToken);
+          apiTokenValidityObs.complete();
+        };
+
         const tokenData = localStorage.getItem(`${nameSpace}.api.token`);
         if (!tokenData) {
-          this.isValidApiTokenSubject.next(false);
-          apiTokenValidityObs.next(false);
-          apiTokenValidityObs.complete();
-          return;
+          return completeObs(false);
         }
 
         const parsedTokenObj = JSON.parse(tokenData);
@@ -68,27 +55,16 @@ export class LoginService {
         this.http.setApiKey(token);
 
         if (!tokenValid) {
-          this.validApiToken = false;
-          this.isValidApiTokenSubject.next(false);
-          apiTokenValidityObs.next(false);
-          apiTokenValidityObs.complete();
-          return;
+          return completeObs(false);
         }
 
-        this.getApiKey(apiKeyUrl).subscribe(() => {
-          this.validApiToken = true;
-          this.isValidApiTokenSubject.next(true);
-          apiTokenValidityObs.next(true);
-          apiTokenValidityObs.complete();
-        }, () => {
-          this.validApiToken = false;
-          this.isValidApiTokenSubject.next(false);
-          apiTokenValidityObs.next(false);
-          apiTokenValidityObs.complete();
+        this.getApiKey(apiKeyUrl).subscribe({
+          next: () => completeObs(true),
+          error: err => completeObs(false)
         });
       });
-    } catch (e) {
-      console.log(e);
+    } catch (err) {
+      console.log(err);
     }
     return;
   }
@@ -138,37 +114,8 @@ export class LoginService {
     return this.isValidApiTokenSubject.asObservable();
   }
 
-  logout(appUrl: string, nameSpace: string): void {
-    this.validApiToken = false;
-    localStorage.removeItem(`${nameSpace}.activeToimipaikka`);
-    localStorage.removeItem(`${nameSpace}.api.token`);
-    localStorage.removeItem(`${nameSpace}.selectedvakajarjestaja`);
-    this.loggedInUserUsername = null;
-    this.loggedInUserEmail = null;
-    setTimeout(() => {
-      this.logoutSubject.next(true);
-    });
-    this.httpLogout(appUrl).subscribe(() => {}, (e) => console.log(e));
-  }
-
-  isLoggedOut(): Observable<any> {
-    return this.logoutSubject.asObservable();
-  }
-
-  private httpLogout(appUrl: string): Observable<any> {
-    return this.http.get(appUrl + '/api-auth/logout/').pipe(map((resp: any) => {
-      return resp;
-    }), catchError((e) => {
-      return observableThrowError(e);
-    }));
-  }
-
   private refreshApiToken(apiKeyUrl): Observable<any> {
-    return this.http.post(apiKeyUrl, {refresh_token: true});
-  }
-
-  private checkApiKey(apiKeyUrl: string): Observable<any> {
-    return this.http.options(apiKeyUrl);
+    return this.http.post(apiKeyUrl, { refresh_token: true });
   }
 
   private getApiKey(apiKeyUrl: string): Observable<any> {

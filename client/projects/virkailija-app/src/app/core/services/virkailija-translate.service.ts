@@ -71,4 +71,5 @@ export class VirkailijaTranslateLoader implements TranslateLoader {
 
     return i18nTranslations;
   }
+
 }

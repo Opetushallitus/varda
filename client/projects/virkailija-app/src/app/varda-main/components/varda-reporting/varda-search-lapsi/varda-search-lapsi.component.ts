@@ -14,6 +14,8 @@ import { VardaApiWrapperService } from '../../../../core/services/varda-api-wrap
 import { VardaVakajarjestajaService } from '../../../../core/services/varda-vakajarjestaja.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { PaginatorParams } from '../varda-result-list/varda-result-list.component';
+import { VardaKoosteApiService } from 'projects/virkailija-app/src/app/core/services/varda-kooste-api.service';
+import { SaveAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 
 @Component({
   selector: 'app-varda-search-lapsi',
@@ -40,27 +42,27 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
     alkamisPvm: Moment;
     paattymisPvm: Moment;
   } = {
-    rajaus: this.rajaus.VAKAPAATOKSET,
-    voimassaolo: this.voimassaolo.VOIMASSA,
-    alkamisPvm: moment(),
-    paattymisPvm: moment()
-  };
+      rajaus: this.rajaus.VAKAPAATOKSET,
+      voimassaolo: this.voimassaolo.VOIMASSA,
+      alkamisPvm: moment(),
+      paattymisPvm: moment()
+    };
 
   constructor(
     koodistoService: VardaKoodistoService,
     breakpointObserver: BreakpointObserver,
     translateService: TranslateService,
+    koosteService: VardaKoosteApiService,
     authService: AuthService,
     vakajarjestajaService: VardaVakajarjestajaService,
     private dateService: VardaDateService,
-    private apiWrapperService: VardaApiWrapperService
   ) {
-    super(koodistoService, breakpointObserver, translateService, authService, vakajarjestajaService);
+    super(koodistoService, breakpointObserver, translateService, koosteService, authService, vakajarjestajaService);
   }
 
   ngOnInit() {
     super.ngOnInit();
-    this.toimipaikat = this.authService.getToimipaikatWithLapsiPermissions(this.katselijaToimipaikat);
+    this.toimipaikat = this.authService.getAuthorizedToimipaikat(this.katselijaToimipaikat, SaveAccess.lapsitiedot);
     this.filteredToimipaikkaOptions.next(this.toimipaikat);
     this.search();
   }
@@ -98,7 +100,7 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
       this.resultListComponent.resetResults();
     }
 
-    this.apiWrapperService.getLapsetForVakajarjestaja(searchParams).subscribe(response => {
+    this.koosteService.getLapsetForVakajarjestaja(this.selectedVakajarjestaja.id, searchParams).subscribe(response => {
       this.resultCount = response.count;
       this.searchResults = response.results.map(lapsi => {
         return {
@@ -134,10 +136,10 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
   updateFilterString() {
     const stringParams: Array<FilterStringParam> = [];
 
-    stringParams.push({value: this.filterParams.rajaus, type: FilterStringType.TRANSLATED_STRING});
-    stringParams.push({value: this.filterParams.voimassaolo, type: FilterStringType.TRANSLATED_STRING, lowercase: true});
+    stringParams.push({ value: this.filterParams.rajaus, type: FilterStringType.TRANSLATED_STRING });
+    stringParams.push({ value: this.filterParams.voimassaolo, type: FilterStringType.TRANSLATED_STRING, lowercase: true });
     if (this.filterParams.alkamisPvm && this.filterParams.paattymisPvm) {
-      stringParams.push({value: 'aikavali', type: FilterStringType.TRANSLATED_STRING, lowercase: true});
+      stringParams.push({ value: 'aikavali', type: FilterStringType.TRANSLATED_STRING, lowercase: true });
       stringParams.push({
         value: `${this.filterParams.alkamisPvm.format(VardaDateService.vardaDefaultDateFormat)} -
         ${this.filterParams.paattymisPvm.format(VardaDateService.vardaDefaultDateFormat)}`,

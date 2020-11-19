@@ -20,7 +20,7 @@ describe('AppComponent', () => {
       ],
       providers: [
         { provide: LoginService, useValue: EMPTY },
-        { provide: LoadingHttpService, useValue: { isLoading: () => { } } },
+        { provide: LoadingHttpService, useValue: { isLoading: () => { }, isLoadingWithDebounce: () => { } } },
         { provide: TranslateService, useValue: { use: () => { }, setDefaultLang: () => { }, getBrowserLang: () => { } } }
       ]
     }).compileComponents();

@@ -1,6 +1,6 @@
 
 export class VardaVakajarjestaja {
-  id: string;
+  id: number;
   url?: string;
   nimi?: string;
   y_tunnus?: string;

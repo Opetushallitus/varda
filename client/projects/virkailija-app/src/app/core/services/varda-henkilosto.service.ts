@@ -11,6 +11,7 @@ import { VardaTyoskentelypaikkaDTO } from '../../utilities/models/dto/varda-tyos
 import { VardaPoissaoloDTO } from '../../utilities/models/dto/varda-poissolo-dto.model';
 import { HenkiloListDTO } from '../../utilities/models/dto/varda-henkilo-dto.model';
 import { VardaTilapainenHenkiloDTO } from '../../utilities/models/dto/varda-tilapainen-henkilo-dto.model';
+import { HenkiloSearchFilter } from '../../varda-main/components/varda-main-frame/henkilo-section.abstract';
 
 @Injectable()
 export class VardaHenkilostoApiService {
@@ -21,7 +22,7 @@ export class VardaHenkilostoApiService {
 
 
   // tyontekija
-  getVakajarjestajaTyontekijat(vakajarjestajaId: string, tyontekijaSearchFilter: any): Observable<VardaPageDto<HenkiloListDTO>> {
+  getVakajarjestajaTyontekijat(vakajarjestajaId: number, tyontekijaSearchFilter: HenkiloSearchFilter): Observable<VardaPageDto<HenkiloListDTO>> {
     return this.http.get(`${environment.vardaAppUrl}/api/ui/vakajarjestajat/${vakajarjestajaId}/tyontekija-list/`, tyontekijaSearchFilter);
   }
 

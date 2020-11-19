@@ -112,7 +112,6 @@ export class VardaHenkiloFormComponent implements OnInit, OnDestroy {
 
       this.vardaApiService.createHenkilo(henkiloForm.value).subscribe({
         next: henkiloData => {
-          console.log(henkiloData);
           this.currentHenkilo = henkiloData;
         },
         error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { HuoltajanLapsiDTO } from '../../../utilities/models/dto/huoltajan-lapsi-dto';
 import { HuoltajaApiService } from '../../../services/huoltaja-api.service';
 import { LoginService } from 'varda-shared';
@@ -6,6 +6,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { ContactDialogComponent } from '../contact-dialog/contact-dialog.component';
 import { HuoltajaTranslations } from 'projects/huoltaja-app/src/assets/i18n/translations.enum';
 import { LapsiDTO } from '../../../utilities/models/dto/lapsi-dto';
+import { mergeMap, take } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-huoltaja-frontpage',
@@ -16,13 +18,16 @@ export class HuoltajaFrontpageComponent {
   lapsi: HuoltajanLapsiDTO;
   fetchError: boolean;
   translation = HuoltajaTranslations;
-
+  subscriptions: Array<Subscription> = [];
   constructor(
     private apiService: HuoltajaApiService,
     private dialog: MatDialog,
     private loginService: LoginService
   ) {
-    this.apiService.getHuoltajanLapsi(loginService.currentUserInfo.henkilo_oid).subscribe((data: HuoltajanLapsiDTO) => {
+    this.loginService.getCurrentUser().pipe(
+      mergeMap(currentUser => this.apiService.getHuoltajanLapsi(currentUser.henkilo_oid)),
+      take(1)
+    ).subscribe((data: HuoltajanLapsiDTO) => {
       this.lapsi = this.sortVakapaatokset(data);
       this.apiService.setCurrentUser(data);
 

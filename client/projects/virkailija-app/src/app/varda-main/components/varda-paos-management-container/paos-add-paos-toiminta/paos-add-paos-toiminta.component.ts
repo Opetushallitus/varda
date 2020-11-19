@@ -4,8 +4,9 @@ import { VardaApiService } from '../../../../core/services/varda-api.service';
 import { AllVakajarjestajaSearchDto, VardaVakajarjestaja } from '../../../../utilities/models/varda-vakajarjestaja.model';
 import { PaosToimintaCreateDto, PaosToimipaikkaDto, PaosVakajarjestajaDto } from '../../../../utilities/models/dto/varda-paos-dto';
 import { VardaToimipaikkaSearchDto } from '../../../../utilities/models/dto/varda-toimipaikka-dto.model';
-import { OrganisaatioIdentity, PaosCreateEvent, PaosToimintaService } from '../paos-toiminta.service';
+import { PaosCreateEvent, PaosToimintaService } from '../paos-toiminta.service';
 import { Subscription } from 'rxjs';
+import { VardaPaosApiService } from 'projects/virkailija-app/src/app/core/services/varda-paos-api.service';
 
 @Component({
   selector: 'app-paos-add-paos-toiminta',
@@ -19,17 +20,19 @@ export class PaosAddPaosToimintaComponent implements OnInit, OnDestroy {
 
   paosToimijaForm: FormGroup;
   vakajarjestajat: Array<PaosVakajarjestajaDto>;
-  ignoredToimipaikkaIds: Set<string>;
-  ignoredJarjestajaIds: Set<string>;
+  ignoredToimipaikkaIds: Set<number>;
+  ignoredJarjestajaIds: Set<number>;
 
   isVakajarjestajatFetched: boolean;
-  toimipaikatById: { [key: string]: Array<PaosToimipaikkaDto> };
+  toimipaikatById: { [key: number]: Array<PaosToimipaikkaDto> };
 
   toimintaOrganisaatioSubscription: Subscription;
   toimintaOrganisaatioDeleteSubscription: Subscription;
 
-  constructor(private apiService: VardaApiService,
-    private paosToimintaService: PaosToimintaService) { }
+  constructor(
+    private paosService: VardaPaosApiService,
+    private paosToimintaService: PaosToimintaService
+  ) { }
 
   ngOnInit() {
     this.vakajarjestajat = [];
@@ -73,22 +76,24 @@ export class PaosAddPaosToimintaComponent implements OnInit, OnDestroy {
     const searchDto: AllVakajarjestajaSearchDto = this.paosToimijaForm.value;
     // Yksityinen needs only kunta vakajarjestajat. Kunta needs all.
     searchDto.tyyppi = this.isVakajarjestajaKunta ? null : 'kunnallinen';
-    this.apiService.getAllPagesSequentially(page => this.apiService.getAllPaosToimijat(searchDto, page))
-      .subscribe({
-        next: vakajarjestajat => {
-          this.vakajarjestajat = vakajarjestajat.sort((a, b) => a.nimi.localeCompare(b.nimi, 'fi'));
-          this.isVakajarjestajatFetched = true;
-        },
-        error: this.paosToimintaService.pushGenericErrorMessage,
-      });
+
+    this.paosService.getAllPaosToimijat(searchDto).subscribe({
+      next: vakajarjestajat => {
+        this.vakajarjestajat = vakajarjestajat.sort((a, b) => a.nimi.localeCompare(b.nimi, 'fi'));
+        this.isVakajarjestajatFetched = true;
+      },
+      error: this.paosToimintaService.pushGenericErrorMessage,
+    });
   }
 
   searchToimipaikat(vakajarjestaja: VardaVakajarjestaja) {
     const searchDto = new VardaToimipaikkaSearchDto();
-    this.apiService.getAllPagesSequentially(page => this.apiService.getAllPaosToimipaikat(vakajarjestaja.id, searchDto, page))
-      .subscribe(toimipaikat => {
+    this.paosService.getAllPaosToimipaikat(vakajarjestaja.id, searchDto).subscribe({
+      next: toimipaikat => {
         this.toimipaikatById = { [vakajarjestaja.id]: toimipaikat.sort((a, b) => a.nimi.localeCompare(b.nimi, 'fi')) };
-      });
+      },
+      error: err => console.log(err)
+    });
   }
 
   toggleSearchToimipaikat(vakajarjestaja: VardaVakajarjestaja) {
@@ -103,13 +108,13 @@ export class PaosAddPaosToimintaComponent implements OnInit, OnDestroy {
     const createDto = new PaosToimintaCreateDto();
     createDto.oma_organisaatio = VardaApiService.getVakajarjestajaUrlFromId(this.selectedVakajarjestaja.id);
     createDto.paos_organisaatio = VardaApiService.getVakajarjestajaUrlFromId(vakajarjestaja.id);
-    this.apiService.createPaosToiminta(createDto).subscribe({
+    this.paosService.createPaosToiminta(createDto).subscribe({
       next: paosToimintaDto => this.paosToimintaService.pushCreateEvent(PaosCreateEvent.Toimija, paosToimintaDto.paos_organisaatio),
       error: this.paosToimintaService.pushGenericErrorMessage,
     });
   }
 
-  isToimipaikkadata(id: string) {
+  isToimipaikkadata(id: number) {
     return Object.keys(this.toimipaikatById).indexOf(`${id}`) !== -1;
   }
 

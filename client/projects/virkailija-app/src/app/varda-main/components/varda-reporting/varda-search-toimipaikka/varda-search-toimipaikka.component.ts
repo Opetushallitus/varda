@@ -12,6 +12,7 @@ import { VardaApiService } from '../../../../core/services/varda-api.service';
 import * as moment from 'moment';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { PaginatorParams } from '../varda-result-list/varda-result-list.component';
+import { VardaKoosteApiService } from 'projects/virkailija-app/src/app/core/services/varda-kooste-api.service';
 
 @Component({
   selector: 'app-varda-search-toimipaikka',
@@ -30,20 +31,21 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
     jarjestamismuoto: string;
     voimassaolo: string;
   } = {
-    toimintamuoto: '',
-    jarjestamismuoto: '',
-    voimassaolo: this.voimassaolo.KAIKKI
-  };
+      toimintamuoto: '',
+      jarjestamismuoto: '',
+      voimassaolo: this.voimassaolo.KAIKKI
+    };
 
   constructor(
     koodistoService: VardaKoodistoService,
     breakpointObserver: BreakpointObserver,
     translateService: TranslateService,
+    koosteService: VardaKoosteApiService,
     vakajarjestajaService: VardaVakajarjestajaService,
     authService: AuthService,
     private apiService: VardaApiService
   ) {
-    super(koodistoService, breakpointObserver, translateService, authService, vakajarjestajaService);
+    super(koodistoService, breakpointObserver, translateService, koosteService, authService, vakajarjestajaService);
     this.isFiltersInactive = true;
   }
 
@@ -84,8 +86,7 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
       this.resultListComponent.resetResults();
     }
 
-    this.apiService
-      .getToimipaikatForVakaJarjestaja(this.vakajarjestajaService.getSelectedVakajarjestajaId(), searchParams)
+    this.koosteService.getToimipaikatForVakajarjestaja(this.selectedVakajarjestaja.id, searchParams)
       .subscribe(response => {
         this.resultCount = response.count;
         this.searchResults = response.results.map(toimipaikka => {
@@ -102,11 +103,11 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
     const stringParams: Array<FilterStringParam> = [];
 
     if (this.filterParams.voimassaolo !== this.voimassaolo.KAIKKI) {
-      stringParams.push({value: this.filterParams.voimassaolo, type: FilterStringType.TRANSLATED_STRING});
+      stringParams.push({ value: this.filterParams.voimassaolo, type: FilterStringType.TRANSLATED_STRING });
     }
 
-    stringParams.push({value: this.filterParams.toimintamuoto, type: FilterStringType.RAW});
-    stringParams.push({value: this.filterParams.jarjestamismuoto, type: FilterStringType.RAW});
+    stringParams.push({ value: this.filterParams.toimintamuoto, type: FilterStringType.RAW });
+    stringParams.push({ value: this.filterParams.jarjestamismuoto, type: FilterStringType.RAW });
 
     setTimeout(() => {
       this.filterString = this.getFilterString(stringParams);

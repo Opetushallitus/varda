@@ -5,6 +5,7 @@ import { KoodistoEnum } from 'varda-shared';
 import { VardaDateService } from '../../../services/varda-date.service';
 import { UserAccess } from '../../../../utilities/models/varda-user-access.model';
 import { VardaResultAbstractComponent } from '../varda-result-abstract.component';
+import { VardaKoosteApiService } from 'projects/virkailija-app/src/app/core/services/varda-kooste-api.service';
 
 @Component({
   selector: 'app-varda-result-tyontekija',
@@ -20,6 +21,7 @@ export class VardaResultTyontekijaComponent extends VardaResultAbstractComponent
   tyontekijaKooste: TyontekijaKooste = null;
 
   constructor(
+    private koosteService: VardaKoosteApiService,
     private vardaApiService: VardaApiService,
     dateService: VardaDateService,
   ) {
@@ -31,7 +33,7 @@ export class VardaResultTyontekijaComponent extends VardaResultAbstractComponent
   }
 
   fetchTyontekija(id: number) {
-    this.vardaApiService.getTyontekijaKooste(id).subscribe(data => {
+    this.koosteService.getTyontekijaKooste(id).subscribe(data => {
       this.tyontekijaKooste = data;
       this.scrollTo.nativeElement.scrollIntoView({behavior: 'smooth', block: 'start'});
     });

@@ -2,20 +2,20 @@ import { NgModule, Optional, SkipSelf } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedModule } from '../shared/shared.module';
 import { VardaApiService } from './services/varda-api.service';
-import { VardaLocalstorageWrapperService } from './services/varda-localstorage-wrapper.service';
+import { VardaAccessibilityService } from './services/varda-accessibility.service';
 import { VardaFormService } from './services/varda-form.service';
 import { VardaApiWrapperService } from './services/varda-api-wrapper.service';
 import { VardaVakajarjestajaService } from './services/varda-vakajarjestaja.service';
+import { VardaVakajarjestajaApiService } from './services/varda-vakajarjestaja-api.service';
 import { VardaUtilityService } from './services/varda-utility.service';
 import { VardaModalService } from './services/varda-modal.service';
-import { VardaValidatorService } from './services/varda-validator.service';
-import { VardaRuleService } from './services/varda-rule.service';
 import { VardaErrorMessageService } from './services/varda-error-message.service';
 import { VardaDomService } from './services/varda-dom.service';
 import { VardaHenkilostoApiService } from './services/varda-henkilosto.service';
 import { VardaLapsiService } from './services/varda-lapsi.service';
 import { VardaSnackBarService } from './services/varda-snackbar.service';
 import { VardaPaosApiService } from './services/varda-paos-api.service';
+import { VardaKoosteApiService } from './services/varda-kooste-api.service';
 
 @NgModule({
   imports: [
@@ -24,20 +24,20 @@ import { VardaPaosApiService } from './services/varda-paos-api.service';
   ],
   providers: [
     VardaApiService,
-    VardaLocalstorageWrapperService,
+    VardaAccessibilityService,
     VardaFormService,
     VardaApiWrapperService,
     VardaVakajarjestajaService,
+    VardaVakajarjestajaApiService,
     VardaUtilityService,
     VardaModalService,
-    VardaValidatorService,
-    VardaRuleService,
     VardaErrorMessageService,
     VardaDomService,
     VardaHenkilostoApiService,
     VardaLapsiService,
     VardaPaosApiService,
-    VardaSnackBarService
+    VardaSnackBarService,
+    VardaKoosteApiService,
   ]
 })
 export class CoreModule {

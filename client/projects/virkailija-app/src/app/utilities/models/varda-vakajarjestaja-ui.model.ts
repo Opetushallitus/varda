@@ -1,5 +1,5 @@
 export class VardaVakajarjestajaUi {
-  id?: string;
+  id?: number;
   url?: string;
   nimi?: string;
   organisaatio_oid?: string;

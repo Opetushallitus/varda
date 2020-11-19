@@ -14,7 +14,7 @@ export class PaosToimintatietoDto {
   paos_oikeus?: PaosOikeusTieto;
   paos_toiminta_id?: string;
   url?: string;
-  vakajarjestaja_id?: string;
+  vakajarjestaja_id?: number;
   vakajarjestaja_nimi?: string;
   vakajarjestaja_organisaatio_oid?: string;
   vakajarjestaja_url?: string;
@@ -31,12 +31,12 @@ export class PaosOikeusTieto {
 export class PaosToimipaikkatietoDto {
   paos_oikeus?: PaosOikeusTieto;
   paos_toiminta_id?: string;
-  toimija_id?: string;
+  toimija_id?: number;
   toimija_organisaatio_oid?: string;
   toimija_y_tunnus?: string;
   toimija_nimi?: string;
   toimija_url?: string;
-  toimipaikka_id?: string;
+  toimipaikka_id?: number;
   toimipaikka_nimi?: string;
   toimipaikka_organisaatio_oid?: string;
   toimipaikka_url?: string;
@@ -45,7 +45,7 @@ export class PaosToimipaikkatietoDto {
 export class PaosToimijaInternalDto {
   paosOikeus: PaosOikeusTieto;
   toimijaUrl?: string;
-  toimijaId?: string;
+  toimijaId?: number;
   toimijaOID?: string;
   toimijaNimi?: string;
   toimijaYTunnus?: string;
@@ -53,7 +53,7 @@ export class PaosToimijaInternalDto {
 }
 
 export class PaosVakajarjestajaDto {
-  id: string;
+  id: number;
   url: string;
   nimi: string;
   y_tunnus: string;
@@ -62,7 +62,7 @@ export class PaosVakajarjestajaDto {
 }
 
 export class PaosToimipaikkaDto {
-  id: string;
+  id: number;
   url: string;
   nimi: string;
   organisaatio_oid: string;

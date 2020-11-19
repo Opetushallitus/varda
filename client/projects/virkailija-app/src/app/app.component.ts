@@ -1,13 +1,12 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
-import { AuthService } from './core/auth/auth.service';
 import { VardaDomService } from './core/services/varda-dom.service';
 import { DOCUMENT } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { Router, NavigationEnd } from '@angular/router';
-import { LoadingHttpService, VardaKoodistoService } from 'varda-shared';
-import { Observable } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { LoadingHttpService, LoginService, VardaKoodistoService, VardaUserDTO } from 'varda-shared';
+import { interval, Observable } from 'rxjs';
+import { delayWhen, filter } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 
 @Component({
@@ -22,25 +21,13 @@ export class AppComponent implements OnInit {
     private titleService: Title,
     private router: Router,
     private translateService: TranslateService,
-    private auth: AuthService,
     private koodistoService: VardaKoodistoService,
     private vardaDomService: VardaDomService,
     private loadingHttpService: LoadingHttpService,
+    private loginService: LoginService,
     @Inject(DOCUMENT) private _document: any) {
 
-    const defaultLanguage = this.translateService.getBrowserLang() === 'sv' ? 'sv' : 'fi';
-    this.translateService.setDefaultLang(defaultLanguage);
-    this.translateService.use(defaultLanguage);
-    this.vardaDomService.bindTabAndClickEvents();
-
-    this.auth.loggedInUserAsiointikieliSet().subscribe((asiointikieli: string) => {
-      const selectedAsiointikieli = (asiointikieli.toLocaleLowerCase() === 'sv') ? 'sv' : 'fi';
-      this._document.documentElement.lang = selectedAsiointikieli;
-      this.translateService.use(selectedAsiointikieli);
-      this.setTitle(router);
-
-      this.koodistoService.initKoodistot(environment.vardaAppUrl, selectedAsiointikieli);
-    });
+    this.initKoodistotAndLanguage();
 
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
@@ -48,13 +35,13 @@ export class AppComponent implements OnInit {
       }
     });
 
-    this.isLoading = this.loadingHttpService.isLoading().pipe(delay(200));
+    this.isLoading = this.loadingHttpService.isLoadingWithDebounce();
   }
 
   ngOnInit() { }
 
   setTitle(router: Router): void {
-    const title: string = this.getTitle(router.routerState, router.routerState.root).join('-');
+    const title: string = this.getTitle(router.routerState, router.routerState.root).join('-') || 'Varda';
     this.translateService.get(title).subscribe(
       translation => this.titleService.setTitle(`${translation} - Varda`)
     );
@@ -71,4 +58,24 @@ export class AppComponent implements OnInit {
     }
     return data;
   }
+
+
+  initKoodistotAndLanguage() {
+    const defaultLanguage = this.translateService.getBrowserLang() === 'sv' ? 'sv' : 'fi';
+    this.translateService.setDefaultLang(defaultLanguage);
+    this.translateService.use(defaultLanguage);
+    this.vardaDomService.bindTabAndClickEvents();
+
+    this.loginService.getCurrentUser().pipe(filter(Boolean)).subscribe((user: VardaUserDTO) => {
+      const userLanguage = user.asiointikieli_koodi.toLocaleLowerCase() === 'sv' ? 'sv' : 'fi';
+      this._document.documentElement.lang = userLanguage;
+      this.translateService.use(userLanguage);
+      this.setTitle(this.router);
+      this.koodistoService.initKoodistot(environment.vardaAppUrl, userLanguage);
+    });
+  }
 }
+
+
+
+

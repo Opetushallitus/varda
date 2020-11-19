@@ -1,0 +1,37 @@
+.varda-login-page {
+  width: 95%;
+  max-width: 600px;
+  margin: 2rem auto;
+  text-align: center;
+}
+
+.varda-login-page > .varda-page-content {
+  margin-top: 1rem;
+  padding: 3rem;
+}
+
+.varda-login-page > .varda-page-content > button {
+  margin-top: 2rem;
+  min-width: 150px;
+}
+
+.varda-login-page > .varda-page-content > .varda-logout-clear {
+    margin-top: 2rem;
+    padding: 0.5rem;
+}
+
+.mat-progress-spinner {
+  margin: 1rem auto;
+}
+
+
+@media (max-width: 767px) {
+  .varda-login-page {
+    margin: 0.5rem auto;
+  }
+
+  .varda-login-page > .varda-page-content {
+    margin-top: 0rem;
+    padding: 1rem;
+  }
+}

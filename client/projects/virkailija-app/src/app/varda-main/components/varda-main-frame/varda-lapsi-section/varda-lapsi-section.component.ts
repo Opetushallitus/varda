@@ -2,10 +2,10 @@ import { Component } from '@angular/core';
 import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
 import { HenkiloRooliEnum } from 'projects/virkailija-app/src/app/utilities/models/enums/henkilorooli.enum';
 import { HenkiloSearchFilter, AbstractHenkiloSectionComponent } from '../henkilo-section.abstract';
-import { VardaApiService } from 'projects/virkailija-app/src/app/core/services/varda-api.service';
 import { LapsiListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-lapsi-dto.model';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
+import { VardaUtilityService } from 'projects/virkailija-app/src/app/core/services/varda-utility.service';
 
 
 @Component({
@@ -16,11 +16,11 @@ import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services
 export class VardaLapsiSectionComponent extends AbstractHenkiloSectionComponent {
   i18n = VirkailijaTranslations;
   constructor(
-    private apiService: VardaApiService,
+    private utilityService: VardaUtilityService,
     private vakajarjestajaService: VardaVakajarjestajaService,
     private lapsiService: VardaLapsiService
   ) {
-    super(apiService);
+    super(utilityService);
 
     this.subscriptions.push(this.lapsiService.listenLapsiListUpdate().subscribe(() => this.getHenkilot()));
   }

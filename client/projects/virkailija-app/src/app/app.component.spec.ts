@@ -19,7 +19,7 @@ describe('AppComponent', () => {
   let loadingHttpService;
   let translateService: TranslateService;
 
-  let loggedInUserAsiointikieliSetSpy, translateServiceUseSpy, loadingHttpServiceSpy;
+  let translateServiceUseSpy, loadingHttpServiceSpy;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
@@ -33,7 +33,7 @@ describe('AppComponent', () => {
         { provide: CookieService, useValue: {} },
         { provide: VardaApiService, useValue: {} },
         { provide: TranslateService, useValue: { use: () => { }, getBrowserLang: () => { }, setDefaultLang: () => { }, get: () => EMPTY } },
-        { provide: LoadingHttpService, useValue: { isLoading: () => { } } },
+        { provide: LoadingHttpService, useValue: { isLoading: () => { }, isLoadingWithDebounce: () => { } } },
         { provide: VardaKoodistoService, useValue: { initKoodistot: () => { } } },
       ]
     })
@@ -53,21 +53,4 @@ describe('AppComponent', () => {
     fixture.detectChanges();
   });
 
-  it('Should set asiointikieli and pass to translateservice', () => {
-    loggedInUserAsiointikieliSetSpy = spyOn(vardaAuthService, 'loggedInUserAsiointikieliSet').and.returnValue(of('sv'));
-    vardaAuthService.setUserAsiointikieli('sv');
-    expect(translateServiceUseSpy).toHaveBeenCalledWith('sv');
-  });
-
-  it('Should fallback to finnish asiointikieli and pass to translateservice', () => {
-    loggedInUserAsiointikieliSetSpy = spyOn(vardaAuthService, 'loggedInUserAsiointikieliSet').and.returnValue(of('en'));
-    vardaAuthService.setUserAsiointikieli('en');
-    expect(translateServiceUseSpy).toHaveBeenCalledWith('fi');
-  });
-
-  it('Should fallback to finnish asiointikieli and pass to translateservice', () => {
-    loggedInUserAsiointikieliSetSpy = spyOn(vardaAuthService, 'loggedInUserAsiointikieliSet').and.returnValue(of('asdfasdf'));
-    vardaAuthService.setUserAsiointikieli('asdfasdf');
-    expect(translateServiceUseSpy).toHaveBeenCalledWith('fi');
-  });
 });

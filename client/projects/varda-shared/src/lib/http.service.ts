@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, of, throwError, throwError as observableThrowError, BehaviorSubject, EMPTY } from 'rxjs';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { catchError, delay, flatMap, map, retryWhen, take, expand, reduce } from 'rxjs/operators';
+import { catchError, delay, map, retryWhen, take, expand, reduce, mergeMap } from 'rxjs/operators';
 
 export abstract class AbstractHttpService {
   public apiKey = '';
@@ -59,7 +59,7 @@ export abstract class AbstractHttpService {
       retryWhen(errors => {
         const randomInterval = this.generateRandomInterval(minDelayMs, maxDelayMs);
         return errors.pipe(
-          flatMap(error => error.status === 429 ? of(error) : throwError(error)),
+          mergeMap(error => error.status === 429 ? of(error) : throwError(error)),
           delay(randomInterval),
           take(maxRetry)
         );

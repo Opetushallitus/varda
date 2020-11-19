@@ -75,10 +75,4 @@ describe('LoginService', () => {
     expect(res2).toBeFalsy();
   });
 
-  it('Should logout endpoint', () => {
-    loginService.logout('/', 'varda');
-    expect(loginService.loggedInUserEmail).toBeNull();
-    expect(loginService.loggedInUserUsername).toBeNull();
-  });
-
 });

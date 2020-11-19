@@ -1,9 +1,10 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {VardaToimipaikkaDTO} from '../../../../../utilities/models/dto/varda-toimipaikka-dto.model';
-import {PaosToimintaCreateDto, PaosToimipaikkaDto} from '../../../../../utilities/models/dto/varda-paos-dto';
-import {VardaApiService} from '../../../../../core/services/varda-api.service';
-import {VardaVakajarjestaja} from '../../../../../utilities/models/varda-vakajarjestaja.model';
-import {OrganisaatioIdentity, PaosCreateEvent, PaosToimintaService} from '../../paos-toiminta.service';
+import { Component, Input, OnInit } from '@angular/core';
+import { VardaToimipaikkaDTO } from '../../../../../utilities/models/dto/varda-toimipaikka-dto.model';
+import { PaosToimintaCreateDto, PaosToimipaikkaDto } from '../../../../../utilities/models/dto/varda-paos-dto';
+import { VardaApiService } from '../../../../../core/services/varda-api.service';
+import { VardaVakajarjestaja } from '../../../../../utilities/models/varda-vakajarjestaja.model';
+import { OrganisaatioIdentity, PaosCreateEvent, PaosToimintaService } from '../../paos-toiminta.service';
+import { VardaPaosApiService } from 'projects/virkailija-app/src/app/core/services/varda-paos-api.service';
 
 @Component({
   selector: 'app-paos-add-toiminta-list',
@@ -17,8 +18,8 @@ export class PaosAddToimintaListComponent implements OnInit {
   @Input() isVardaPaakayttaja: boolean;
   filteredToimipaikat: Array<VardaToimipaikkaDTO>;
 
-  constructor(private apiService: VardaApiService,
-              private paosToimintaService: PaosToimintaService) { }
+  constructor(private paosService: VardaPaosApiService,
+    private paosToimintaService: PaosToimintaService) { }
 
   ngOnInit() {
     this.filteredToimipaikat = this.toimipaikat ? [...this.toimipaikat] : [];
@@ -28,7 +29,7 @@ export class PaosAddToimintaListComponent implements OnInit {
     const createDto = new PaosToimintaCreateDto();
     createDto.oma_organisaatio = VardaApiService.getVakajarjestajaUrlFromId(this.selectedVakajarjestaja.id);
     createDto.paos_toimipaikka = VardaApiService.getToimipaikkaUrlFromId(toimipaikka.id);
-    this.apiService.createPaosToiminta(createDto).subscribe({
+    this.paosService.createPaosToiminta(createDto).subscribe({
       next: paosToimintaDto => this.paosToimintaService.pushCreateEvent(PaosCreateEvent.Toimipaikka, paosToimintaDto.paos_toimipaikka),
       error: this.paosToimintaService.pushGenericErrorMessage,
     });

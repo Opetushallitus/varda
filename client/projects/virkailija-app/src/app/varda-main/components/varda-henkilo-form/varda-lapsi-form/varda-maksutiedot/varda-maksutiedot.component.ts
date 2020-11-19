@@ -34,7 +34,6 @@ export class VardaMaksutiedotComponent implements OnInit, OnChanges {
 
   constructor(
     private lapsiService: VardaLapsiService,
-    private authService: AuthService,
     private snackBarService: VardaSnackBarService,
   ) {
 

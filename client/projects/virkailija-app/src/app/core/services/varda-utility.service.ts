@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { VardaFieldSet } from '../../utilities/models';
 import { environment } from '../../../environments/environment';
+import { sha256 } from 'js-sha256';
 
 @Injectable()
 export class VardaUtilityService {
@@ -23,29 +24,48 @@ export class VardaUtilityService {
   }
 
   getVirkailijaRaamitUrl(locationHostname: string): string {
-    let rv;
     const domain = this.splitHostname(locationHostname);
     if (domain === 'opintopolku') {
-      rv = `${environment.virkailijaOpintopolkuUrl}${environment.virkailijaRaamitScriptPath}`;
+      return `${environment.virkailijaOpintopolkuUrl}${environment.virkailijaRaamitScriptPath}`;
     } else if (domain === 'testiopintopolku' || locationHostname === 'localhost') {
-      rv = `${environment.virkailijaTestiOpintopolkuUrl}${environment.virkailijaRaamitScriptPath}`;
+      return `${environment.virkailijaTestiOpintopolkuUrl}${environment.virkailijaRaamitScriptPath}`;
     }
 
-    return rv;
+    return null;
   }
 
   getOpintopolkuUrl(locationHostname: string): string {
-    let rv;
     const hostname = locationHostname;
     const domain = this.splitHostname(hostname);
     if (domain === 'opintopolku') {
-      rv = `${environment.virkailijaOpintopolkuUrl}`;
+      return `${environment.virkailijaOpintopolkuUrl}`;
     } else if (domain === 'testiopintopolku') {
-      rv = `${environment.virkailijaTestiOpintopolkuUrl}`;
+      return `${environment.virkailijaTestiOpintopolkuUrl}`;
     } else {
-      rv = null;
+      return null;
     }
-    return rv;
+  }
+
+  parseSearchParams(url: string, searchParams: Object): string {
+    if (searchParams['search']) {
+      searchParams['search'] = this.hashHetu(searchParams['search']);
+    }
+
+    url += '?';
+    url += Object.keys(searchParams)
+      .filter(key => searchParams[key] !== null && searchParams[key] !== undefined)
+      .map(key => `${key}=${searchParams[key]}`)
+      .join('&');
+
+    return url;
+  }
+
+  hashHetu(rawHetu: string) {
+    const hetu_regex = /^\d{6}[A+\-]\d{3}[0-9A-FHJ-NPR-Y]$/;
+    if (rawHetu && hetu_regex.test(rawHetu)) {
+      return sha256.create().update(rawHetu).hex();
+    }
+    return rawHetu;
   }
 
 }

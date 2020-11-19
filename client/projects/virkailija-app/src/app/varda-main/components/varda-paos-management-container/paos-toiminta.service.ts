@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
-import {Observable, Subject} from 'rxjs';
-import {finalize} from 'rxjs/operators';
+import { Subject } from 'rxjs';
 
 export enum PaosCreateEvent {
   Toimipaikka,
@@ -9,7 +8,7 @@ export enum PaosCreateEvent {
 
 export class OrganisaatioIdentity {
   type: PaosCreateEvent;
-  id: string;
+  id: number;
 }
 
 @Injectable({
@@ -43,12 +42,12 @@ export class PaosToimintaService {
     this.createEventsSource.next(paosCreateEvent);
   }
 
-  pushToimintaOrganisaatio(organisaatioId: string, type: PaosCreateEvent) {
-    this._allToimintaOrganisaatioOidsSource.next({id: organisaatioId, type: type});
+  pushToimintaOrganisaatio(organisaatioId: number, type: PaosCreateEvent) {
+    this._allToimintaOrganisaatioOidsSource.next({ id: organisaatioId, type: type });
   }
 
-  pushDeletedToimintaOrganisaatio(organisaatioId: string, type: PaosCreateEvent) {
-    this._toimintaDeletedOrganisaatioIdSource.next({id: organisaatioId, type});
+  pushDeletedToimintaOrganisaatio(organisaatioId: number, type: PaosCreateEvent) {
+    this._toimintaDeletedOrganisaatioIdSource.next({ id: organisaatioId, type });
   }
 
   pushGenericErrorMessage = (err) => {

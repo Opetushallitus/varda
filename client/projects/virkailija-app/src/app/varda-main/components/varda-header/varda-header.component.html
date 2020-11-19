@@ -1,9 +1,4 @@
-<ng-container *ngIf="!virkailijaRaamit">
-  <div id="virkailija-raamit-filleri"></div>
-</ng-container>
-<nav *ngIf="isAuthenticated()"
-     class="navbar navbar-expand-md navbar-light bg-light varda-navbar"
-     appHighContrast>
+<nav class="navbar navbar-expand-md navbar-light bg-light varda-navbar">
   <div class="navbar-brand varda-navbar-toimija"
        *ngIf="vakajarjestajat && vakajarjestajat.length">
     <span id="siteTitle"
@@ -30,28 +25,28 @@
     <mat-icon>expand_more</mat-icon>
   </button>
 
-  <div *ngIf="toimipaikkaAccessIfAnyToimipaikka"
+  <div *ngIf="toimipaikkaAccessToAnyToimipaikka"
        class="collapse navbar-collapse varda-navbar-links"
        id="navbarSupportedContent">
     <ul class="navbar-nav mr-auto"
         *ngIf="vakajarjestajat">
-      <ng-container *ngIf="!tilapainenHenkilostoOnlyBoolean">
+      <ng-container *ngIf="!tilapainenHenkilostoOnly">
         <li class="varda-header-nav-item-container"
             [class.active-nav-item]="activeNavItem === 'syota-tietoja'">
-          <a [routerLink]="['/']">
+          <a [routerLink]="['/syota-tietoja']">
             {{ i18n.navi_syota_tietoja | translate}}</a>
         </li>
-
-        <li class="varda-header-nav-item-container"
-            [class.active-nav-item]="activeNavItem === 'tietojen-katselu'">
-          <a [routerLink]="['/tietojen-katselu']">
-            {{ i18n.katsele_tietoja | translate}}</a>
-        </li>
-
-        <li class="varda-header-nav-item-container divider">
-          <span class="d-none d-md-block"> | </span>
-        </li>
       </ng-container>
+      <li class="varda-header-nav-item-container"
+          [class.active-nav-item]="activeNavItem === 'tietojen-katselu'">
+        <a [routerLink]="['/tietojen-katselu']">
+          {{ i18n.katsele_tietoja | translate}}</a>
+      </li>
+
+      <li class="varda-header-nav-item-container divider">
+        <span class="d-none d-md-block"> | </span>
+      </li>
+
 
       <li class="varda-header-nav-item-container"
           [matMenuTriggerFor]="menu"
@@ -71,13 +66,13 @@
             {{ i18n.yhteystiedot | translate }}
           </a>
           <a [routerLink]="['/paos-hallinta']"
-             *ngIf="!tilapainenHenkilostoOnlyBoolean"
+             *ngIf="!tilapainenHenkilostoOnly"
              (keydown.tab)="$event.stopPropagation()"
              (keydown.shift.tab)="$event.stopPropagation()"
              mat-menu-item>
             {{ i18n.paos | translate }}
           </a>
-          <a *ngIf="toimipaikkaAccessIfAnyToimipaikka.tilapainenHenkilosto.katselija"
+          <a *ngIf="toimipaikkaAccessToAnyToimipaikka.tilapainenHenkilosto.katselija"
              [routerLink]="['/tilapainen-henkilosto']"
              (keydown.tab)="$event.stopPropagation()"
              (keydown.shift.tab)="$event.stopPropagation()"

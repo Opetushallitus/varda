@@ -1,6 +1,7 @@
-import { Component, OnInit, Input, ViewChild, EventEmitter, Output, ElementRef } from '@angular/core';
+import { Component, OnInit, Input, ViewChild, EventEmitter, Output, ElementRef, OnDestroy } from '@angular/core';
 import { MatMenuTrigger } from '@angular/material/menu';
-import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
+import { fromEvent, Subject, Subscription } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 
 
 @Component({
@@ -8,7 +9,7 @@ import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/
   templateUrl: './varda-dropdown-filter.component.html',
   styleUrls: ['./varda-dropdown-filter.component.css']
 })
-export class VardaDropdownFilterComponent implements OnInit {
+export class VardaDropdownFilterComponent implements OnInit, OnDestroy {
   @Input() filterBy: Array<string>;
   @Input() list: Array<object>;
   @Input() label: string;
@@ -18,9 +19,11 @@ export class VardaDropdownFilterComponent implements OnInit {
   @Output() select = new EventEmitter(true);
   @ViewChild('dropdownFilterInput') dropdownFilterInput: ElementRef;
   @ViewChild(MatMenuTrigger, { static: true }) trigger: MatMenuTrigger;
+  subscriptions: Array<Subscription> = [];
   showDropdown: boolean;
   filteredList: Array<object>;
-  filterText: string;
+  filterText = '';
+  searchFieldChanged = new Subject<boolean>();
 
   constructor() { }
 
@@ -34,14 +37,25 @@ export class VardaDropdownFilterComponent implements OnInit {
 
     this.trigger.menuOpened.subscribe({
       next: opened => this.dropdownFilterInput ?
-        setTimeout(() => this.dropdownFilterInput.nativeElement.focus(), 500) : null,
+        setTimeout(() => this.dropdownFilterInput.nativeElement.focus(), 300) : null,
       error: err => console.error(err),
     });
+
+    this.subscriptions.push(this.searchFieldChanged.pipe(debounceTime(500)).subscribe((enter: boolean) => this.filterList(this.filterText, enter)));
+
   }
 
+  ngOnDestroy() {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+
+  debounceList(text: string, enter = false) {
+    this.searchFieldChanged.next(enter);
+
+  }
 
   filterList(text: string, enter: boolean = false) {
-    setTimeout(() => this.dropdownFilterInput.nativeElement.focus(), 100);
+    setTimeout(() => this.dropdownFilterInput.nativeElement.focus(), 200);
     if (!text || !text.length) {
       return this.filteredList = this.list;
     }

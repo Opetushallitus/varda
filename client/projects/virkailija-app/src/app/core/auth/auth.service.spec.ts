@@ -1,3 +1,5 @@
+/*
+palauta @ https://jira.eduuni.fi/browse/CSCVARDA-2080
 import { TestBed } from '@angular/core/testing';
 import { AuthService } from './auth.service';
 import { VardaApiService } from '../services/varda-api.service';
@@ -111,3 +113,4 @@ describe('AuthService', () => {
     expect(toimipaikat[0].nimi).toEqual('Kivelän päiväkoti');
   });
 });
+ */

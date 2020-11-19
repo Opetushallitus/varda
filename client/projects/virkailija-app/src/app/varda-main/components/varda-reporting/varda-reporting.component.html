@@ -14,7 +14,8 @@
     <nav mat-tab-nav-bar>
       <a mat-tab-link
          routerLink="toimipaikat"
-         [active]="activeRoute === 'toimipaikat'">
+         [active]="activeRoute === 'toimipaikat'"
+         *ngIf="!tilapainenHenkilostoOnly">
         {{i18n.katsele_tietoja_toimipaikat | translate}}
       </a>
       <a mat-tab-link

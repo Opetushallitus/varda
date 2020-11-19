@@ -1,0 +1,38 @@
+<div class="varda-login-page varda-high-contrast">
+<main class="varda-page-content">
+  <h1 class="oph-h2 oph-bold"
+      aria-live="polite">
+    Kirjaudu sisään / Logga in
+  </h1>
+
+
+  <button class="varda-button responsive-md"
+          id="navigateToVardaLoginBtn"
+          [disabled]="tokenInput?.show || (isLoading | async)"
+          (click)="navigateToVardaLogin()">
+    LOGIN
+  </button>
+
+  <mat-progress-spinner *ngIf="isLoading | async"
+                        diameter="40"
+                        mode="indeterminate"
+                        color="accent"></mat-progress-spinner>
+
+  <ng-container *ngIf="tokenInput?.show">
+    <form (ngSubmit)="addLoginToken(tokenInput.value)"
+          class="varda-logout-clear oph-alert-error">
+      <div class="oph-h2 oph-bold">Tämä kenttä näkyy vain testiympäristössä</div>
+      <div><a target="_blank"
+           [attr.href]="tokenInput.backend">{{ tokenInput.backend }}</a></div>
+      <label class="oph-label">Tallenna login token tästä</label>
+      <input class="oph-input"
+             [(ngModel)]='tokenInput.value'
+             autocomplete="off"
+             name='value'
+             placeholder="login-token" />
+      <button type="submit"
+              class="varda-button varda-button-success secondary">Tallenna</button>
+    </form>
+  </ng-container>
+</main>
+</div>

@@ -108,15 +108,16 @@ export class VardaVarhaiskasvatussuhdeComponent implements OnInit, OnChanges, Af
   }
 
   ngOnChanges() {
+    const filteredToimipaikat = this.vardaVakajarjestajaService.getFilteredToimipaikat();
     if (this.lapsitiedotTallentaja) {
-      this.toimipaikat = this.authService.getAuthorizedToimipaikat(this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().tallentajaToimipaikat, SaveAccess.lapsitiedot);
+      this.toimipaikat = this.authService.getAuthorizedToimipaikat(filteredToimipaikat.tallentajaToimipaikat, SaveAccess.lapsitiedot);
       this.toimipaikat = this.toimipaikat.filter(toimipaikka => toimipaikka.organisaatio_oid);
       // remove PAOS-toimipaikat from JM01
       if (this.varhaiskasvatuspaatos.jarjestamismuoto_koodi.toLocaleUpperCase() === 'JM01') {
         this.toimipaikat = this.toimipaikat.filter(toimipaikka => !toimipaikka.paos_organisaatio_url);
       }
     } else {
-      this.toimipaikat = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().allToimipaikat;
+      this.toimipaikat = filteredToimipaikat.toimipaikat;
     }
   }
 
@@ -198,11 +199,11 @@ export class VardaVarhaiskasvatussuhdeComponent implements OnInit, OnChanges, Af
   }
 
   initToimipaikat() {
-    const vakajarjestajatoimipaikat = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat();
+    const { toimipaikat, tallentajaToimipaikat } = this.vardaVakajarjestajaService.getFilteredToimipaikat();
     if (this.varhaiskasvatussuhde && !this.toimijaAccess.lapsitiedot.tallentaja) {
-      this.toimipaikat = vakajarjestajatoimipaikat.allToimipaikat;
+      this.toimipaikat = toimipaikat;
     } else {
-      this.toimipaikat = vakajarjestajatoimipaikat.tallentajaToimipaikat.filter(toimipaikka => {
+      this.toimipaikat = tallentajaToimipaikat.filter(toimipaikka => {
         const access = this.authService.getUserAccess(toimipaikka.organisaatio_oid);
         return access.lapsitiedot.tallentaja;
       });

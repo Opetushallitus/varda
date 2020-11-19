@@ -67,7 +67,7 @@ export class VardaFormFieldComponent implements AfterContentInit, OnDestroy {
 
   ngAfterContentInit() {
     this.placeholder = this.placeholder || this.label;
-    this.labelId = `${this.name}Label`;
+    this.labelId = `${this.name}Label_${Math.random().toString(36)}`;
 
     if (this.form) {
       this.formControl = <FormControl>this.form.get(this.name);

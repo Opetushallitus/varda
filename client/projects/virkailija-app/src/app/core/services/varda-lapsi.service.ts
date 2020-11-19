@@ -6,6 +6,7 @@ import { VardaLapsiDTO, VardaVarhaiskasvatuspaatosDTO, VardaVarhaiskasvatussuhde
 import { HenkiloListDTO } from '../../utilities/models/dto/varda-henkilo-dto.model';
 import { VardaPageDto } from '../../utilities/models/dto/varda-page-dto';
 import { VardaMaksutietoDTO } from '../../utilities/models/dto/varda-maksutieto-dto.model';
+import { HenkiloSearchFilter } from '../../varda-main/components/varda-main-frame/henkilo-section.abstract';
 
 
 @Injectable()
@@ -26,7 +27,7 @@ export class VardaLapsiService {
     this.updateLapsiList$.next(true);
   }
 
-  getVakajarjestajaLapset(vakajarjestajaId: string, searchFilter: any): Observable<VardaPageDto<HenkiloListDTO>> {
+  getVakajarjestajaLapset(vakajarjestajaId: number, searchFilter: HenkiloSearchFilter): Observable<VardaPageDto<HenkiloListDTO>> {
     return this.http.get(`${environment.vardaAppUrl}/api/ui/vakajarjestajat/${vakajarjestajaId}/lapsi-list/`, searchFilter);
   }
 

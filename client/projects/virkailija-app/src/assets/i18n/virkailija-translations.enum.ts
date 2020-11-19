@@ -41,8 +41,8 @@ export enum VirkailijaTranslations {
 
 
   versio_VALUE = 'versio.VALUE',
-  accessibility_info = 'accessibility.info', // 'label.accessibilityinfo'
-  accessibility_href = 'accessibility.href', // 'footer.url.accessibilityinfo
+  accessibility_info = 'accessibility.info',
+  accessibility_href = 'accessibility.href',
   accessibility_settings = 'accessibility.settings',
   accessibility_increase_contrast = 'accessibility.increase-contrast',
   accessibility_decrease_contrast = 'accessibility.decrease-contrast',
@@ -74,8 +74,8 @@ export enum VirkailijaTranslations {
   navi_ohjeet_href = 'navi.ohjeet.href',
   navi_syota_tietoja = 'navi.syota-tietoja',
   navi_oma_organisaatio = 'navi.oma-organisaatio',
-  navi_haku_filter_placeholder = 'navi.haku-filter.placeholder', // 'label.paos-toiminta.search.placeholder'
-  navi_haku_filter_no_results = 'navi.haku-filter.no-results', // label.paos-add-toimipaikka-list.search-empty
+  navi_haku_filter_placeholder = 'navi.haku-filter.placeholder',
+  navi_haku_filter_no_results = 'navi.haku-filter.no-results',
 
 
   yhteystiedot = 'yhteystiedot',
@@ -194,6 +194,7 @@ export enum VirkailijaTranslations {
   varhaiskasvatuspaatos_instruction_alkamis_pvm = 'varhaiskasvatuspaatos.instruction.alkamis-pvm',
   varhaiskasvatuspaatos_paattymis_pvm = 'varhaiskasvatuspaatos.paattymis-pvm',
   varhaiskasvatuspaatos_error_paattymis_pvm = 'varhaiskasvatuspaatos.error.paattymis-pvm',
+  varhaiskasvatuspaatos_error_min_paattymis_pvm = 'varhaiskasvatuspaatos.error.min.paattymis-pvm',
   varhaiskasvatuspaatos_instruction_paattymis_pvm = 'varhaiskasvatuspaatos.instruction.paattymis-pvm',
   varhaiskasvatuspaatos_jarjestamismuoto_koodi = 'varhaiskasvatuspaatos.jarjestamismuoto-koodi',
   varhaiskasvatuspaatos_error_jarjestamismuoto_koodi = 'varhaiskasvatuspaatos.error.jarjestamismuoto-koodi',

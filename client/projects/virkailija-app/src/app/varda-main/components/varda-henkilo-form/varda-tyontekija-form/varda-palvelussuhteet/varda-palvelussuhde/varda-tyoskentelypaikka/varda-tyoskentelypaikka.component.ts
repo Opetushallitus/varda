@@ -114,10 +114,10 @@ export class VardaTyoskentelypaikkaComponent implements OnInit, OnChanges, After
 
   ngOnChanges() {
     if (this.toimipaikkaAccess.tyontekijatiedot.tallentaja) {
-      this.toimipaikat = this.authService.getAuthorizedToimipaikat(this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().tallentajaToimipaikat, SaveAccess.tyontekijatiedot);
+      this.toimipaikat = this.authService.getAuthorizedToimipaikat(this.vardaVakajarjestajaService.getFilteredToimipaikat().tallentajaToimipaikat, SaveAccess.tyontekijatiedot);
       this.toimipaikat = this.toimipaikat.filter(toimipaikka => toimipaikka.organisaatio_oid);
     } else {
-      this.toimipaikat = this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().allToimipaikat;
+      this.toimipaikat = this.vardaVakajarjestajaService.getFilteredToimipaikat().toimipaikat;
     }
   }
 
@@ -177,7 +177,7 @@ export class VardaTyoskentelypaikkaComponent implements OnInit, OnChanges, After
   }
 
   deleteTyoskentelypaikka(): void {
-    this.henkilostoService.deleteTyoskentelypaikka(parseInt(this.tyoskentelypaikka.id)).subscribe({
+    this.henkilostoService.deleteTyoskentelypaikka(this.tyoskentelypaikka.id).subscribe({
       next: () => {
         this.togglePanel(false, true);
         this.snackBarService.warning(this.i18n.tyoskentelypaikka_save_success);

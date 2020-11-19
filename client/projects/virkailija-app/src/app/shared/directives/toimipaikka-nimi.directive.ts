@@ -14,7 +14,7 @@ export class ToimipaikkaNimiDirective implements AfterContentInit {
   ngAfterContentInit() {
     if (this.elem.textContent) {
       const toimipaikka_oid = this.elem.textContent.trim();
-      const toimipaikat = this.vakajarjestajaService.getVakajarjestajaToimipaikat().allToimipaikat;
+      const toimipaikat = this.vakajarjestajaService.getFilteredToimipaikat().toimipaikat;
       const foundToimipaikka = toimipaikat.find(toimipaikka => toimipaikka.organisaatio_oid === toimipaikka_oid);
       this.elem.textContent = foundToimipaikka?.nimi || this.elem.textContent;
     }

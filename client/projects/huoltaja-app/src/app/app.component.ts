@@ -3,7 +3,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { Title } from '@angular/platform-browser';
 import { LoadingHttpService } from 'varda-shared';
 import { Observable } from 'rxjs';
-import { filter, delay } from 'rxjs/operators';
+import { filter } from 'rxjs/operators';
 import { DOCUMENT } from '@angular/common';
 import { HuoltajaApiService } from './services/huoltaja-api.service';
 import { CookieService } from 'ngx-cookie-service';
@@ -30,7 +30,7 @@ export class AppComponent implements OnInit {
     @Inject(DOCUMENT) private _document: any
   ) {
     this.initLanguage();
-    this.isLoading = this.loadingHttpService.isLoading().pipe(delay(200));
+    this.isLoading = this.loadingHttpService.isLoadingWithDebounce();
 
     this.huoltajaApi.getCurrentUser().pipe(filter(Boolean)).subscribe((user: HuoltajanLapsiDTO) => {
       this.oppijaRaamit.initRaamit(user.henkilo?.kutsumanimi);

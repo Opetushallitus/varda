@@ -68,19 +68,20 @@ export class VardaDatepickerComponent implements OnInit, ControlValueAccessor {
   matDateModel: Moment = moment();
   private focus$ = new Subject<boolean>();
   private lastValidState = true;
-  private propagateChange = (_: any) => {};
-  private propagateTouch = () => {};
+  private propagateChange = (_: any) => { };
+  private propagateTouch = () => { };
 
-  constructor(private dateAdapter: DateAdapter<any>,
-              private translateService: TranslateService,
-              private authService: AuthService) { }
+  constructor(
+    private dateAdapter: DateAdapter<any>,
+    private translateService: TranslateService,
+  ) { }
 
   ngOnInit(): void {
     if (!this.placeholder) {
       this.placeholder = this.translateService.instant('label.date-placeholder');
     }
 
-    if (this.authService.loggedInUserAsiointikieli === 'sv') {
+    if (this.translateService.getDefaultLang() === 'sv') {
       this.dateAdapter.setLocale('sv-SV');
     } else {
       this.dateAdapter.setLocale('fi-FI');
@@ -90,11 +91,11 @@ export class VardaDatepickerComponent implements OnInit, ControlValueAccessor {
   onDateInput(event: MatDatepickerInputEvent<any>) {
     this.propagateTouch();
     this.propagateChange(this.matDateModel);
-    this.dateInput.emit({valid: this.pickerControl.valid, value: event.value});
+    this.dateInput.emit({ valid: this.pickerControl.valid, value: event.value });
   }
 
   onDateChange(event: MatDatepickerInputEvent<any>) {
-    this.dateChange.emit({valid: this.pickerControl.valid, value: event.value});
+    this.dateChange.emit({ valid: this.pickerControl.valid, value: event.value });
   }
 
   onFocus() {
@@ -117,7 +118,7 @@ export class VardaDatepickerComponent implements OnInit, ControlValueAccessor {
     const target = event.target as HTMLInputElement;
     if (target.value === null || target.value === '' || this.lastValidState !== this.pickerControl.valid) {
       this.propagateChange(this.matDateModel);
-      this.dateInput.emit({valid: this.pickerControl.valid, value: this.matDateModel});
+      this.dateInput.emit({ valid: this.pickerControl.valid, value: this.matDateModel });
     }
     this.lastValidState = this.pickerControl.valid;
   }

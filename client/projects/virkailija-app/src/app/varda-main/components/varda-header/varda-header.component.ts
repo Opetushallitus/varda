@@ -1,13 +1,12 @@
-import { Component, OnInit } from '@angular/core';
-import { AuthService } from '../../../core/auth/auth.service';
+import { Component, Input, OnDestroy } from '@angular/core';
 import { NavigationEnd, Router, ActivatedRoute } from '@angular/router';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
 import { VardaVakajarjestajaUi } from '../../../utilities/models';
-import { VardaUtilityService } from '../../../core/services/varda-utility.service';
-import { LoginService } from 'varda-shared';
-import { UserAccess } from '../../../utilities/models/varda-user-access.model';
+import { UserAccess, UserAccessKeys } from '../../../utilities/models/varda-user-access.model';
 import { filter } from 'rxjs/operators';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
+import { AuthService } from '../../../core/auth/auth.service';
+import { Subscription } from 'rxjs';
 
 
 @Component({
@@ -15,79 +14,50 @@ import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/
   templateUrl: './varda-header.component.html',
   styleUrls: ['./varda-header.component.css']
 })
-export class VardaHeaderComponent implements OnInit {
+export class VardaHeaderComponent implements OnDestroy {
+  @Input() selectedVakajarjestaja: VardaVakajarjestajaUi;
+  @Input() toimipaikkaAccessToAnyToimipaikka: UserAccess;
+  tilapainenHenkilostoOnly: boolean;
+  vakajarjestajat: Array<VardaVakajarjestajaUi>;
   i18n = VirkailijaTranslations;
   toimipaikkaSelected: boolean;
-  selectedVakajarjestaja: VardaVakajarjestajaUi;
-  vakajarjestajat: Array<VardaVakajarjestajaUi>;
   activeNavItem: string;
-  virkailijaRaamit: boolean;
+  subscriptions: Array<Subscription> = [];
 
-  tilapainenHenkilostoOnlyBoolean: boolean;
-  toimipaikkaAccessIfAnyToimipaikka: UserAccess;
+
 
   constructor(
-    private authService: AuthService,
-    private loginService: LoginService,
     private activatedRoute: ActivatedRoute,
     private router: Router,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
-    private vardaUtilityService: VardaUtilityService
+    private authService: AuthService
   ) {
-    this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe((navigationEnd) => {
-      let topRoute = this.activatedRoute.firstChild;
-      while (topRoute.firstChild) {
-        topRoute = topRoute.firstChild;
-      }
 
-      this.activeNavItem = topRoute.snapshot?.data?.nav_item || topRoute.snapshot.routeConfig.path;
-    });
+    this.tilapainenHenkilostoOnly = this.authService.hasAccessOnlyTo([UserAccessKeys.tilapainenHenkilosto], true);
 
-    this.vardaVakajarjestajaService.getSelectedVakajarjestajaObs().subscribe((data) => {
-      this.selectedVakajarjestaja = data.vakajarjestaja;
-    });
+    this.subscriptions.push(
+      this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe((navigationEnd) => {
+        let topRoute = this.activatedRoute.firstChild;
+        while (topRoute?.firstChild) {
+          topRoute = topRoute.firstChild;
+        }
 
-    this.vardaVakajarjestajaService.getVakajarjestajatObs().subscribe(() => {
-      this.vakajarjestajat = this.vardaVakajarjestajaService.getVakajarjestajat();
-      try {
-        this.vakajarjestajat.sort((a, b) => a.nimi.localeCompare(b.nimi, 'fi'));
-      } catch (e) {
-        console.log('Error on vakajarjestajat sorting', e);
-      }
-    });
+        this.activeNavItem = topRoute.snapshot?.data?.nav_item || topRoute.snapshot.routeConfig.path;
+      })
+    );
 
 
-    this.authService.getToimipaikkaAccessToAnyToimipaikka().subscribe(toimipaikkaAccessIfAny => {
-      this.toimipaikkaAccessIfAnyToimipaikka = toimipaikkaAccessIfAny;
-      if (this.vardaVakajarjestajaService.selectedVakajarjestaja) {
-        this.tilapainenHenkilostoOnlyBoolean = this.authService.isTilapainenHenkilostoOnly();
-      }
+    this.vardaVakajarjestajaService.getVakajarjestajat().pipe(filter(Boolean)).subscribe((vakajarjestajat: Array<VardaVakajarjestajaUi>) => {
+      this.vakajarjestajat = vakajarjestajat;
+      this.vakajarjestajat.sort((a, b) => a.nimi?.localeCompare(b.nimi, 'fi'));
     });
   }
 
   changeVakajarjestaja(selectedVakajarjestaja: VardaVakajarjestajaUi): void {
-    this.vardaVakajarjestajaService.setSelectedVakajarjestaja(selectedVakajarjestaja, true);
+    this.vardaVakajarjestajaService.setSelectedVakajarjestaja(selectedVakajarjestaja);
   }
 
-
-  isAuthenticated(): boolean {
-    return this.loginService.validApiToken;
+  ngOnDestroy() {
+    this.subscriptions.forEach(sub => sub.unsubscribe);
   }
-
-  ngOnInit() {
-    const virkailijaRaamitUrl = this.vardaUtilityService.getVirkailijaRaamitUrl(window.location.hostname);
-    if (virkailijaRaamitUrl) {
-      this.virkailijaRaamit = true;
-      const node = document.createElement('script');
-      node.src = virkailijaRaamitUrl;
-      node.type = 'text/javascript';
-      node.async = true;
-      document.getElementsByTagName('head')[0].appendChild(node);
-
-      if (!window.location.hostname.includes('opintopolku.fi')) {
-        setTimeout(() => window.document.dispatchEvent(new Event('DOMContentLoaded')), 500);
-      }
-    }
-  }
-
 }

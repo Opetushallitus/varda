@@ -13,18 +13,18 @@ export enum UserAccessTypes {
 }
 
 export interface UserAccess {
-  paakayttaja: boolean;
-  [UserAccessKeys.lapsitiedot]: UserAccessPart;
-  [UserAccessKeys.huoltajatiedot]: UserAccessPart;
-  [UserAccessKeys.tyontekijatiedot]: UserAccessPart;
-  [UserAccessKeys.tilapainenHenkilosto]: UserAccessPart;
-  [UserAccessKeys.taydennyskoulutustiedot]: UserAccessPart;
-  [UserAccessKeys.toimijatiedot]: UserAccessPart;
+  paakayttaja?: boolean;
+  [UserAccessKeys.lapsitiedot]?: UserAccessPart;
+  [UserAccessKeys.huoltajatiedot]?: UserAccessPart;
+  [UserAccessKeys.tyontekijatiedot]?: UserAccessPart;
+  [UserAccessKeys.tilapainenHenkilosto]?: UserAccessPart;
+  [UserAccessKeys.taydennyskoulutustiedot]?: UserAccessPart;
+  [UserAccessKeys.toimijatiedot]?: UserAccessPart;
 }
 
 interface UserAccessPart {
-  [UserAccessTypes.katselija]: boolean;
-  [UserAccessTypes.tallentaja]: boolean;
+  [UserAccessTypes.katselija]?: boolean;
+  [UserAccessTypes.tallentaja]?: boolean;
 }
 
 export enum SaveAccess {

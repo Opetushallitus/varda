@@ -1,7 +1,7 @@
 import { Directive, ElementRef} from '@angular/core';
 
 
-import { VardaLocalstorageWrapperService } from '../../core/services/varda-localstorage-wrapper.service';
+import { VardaAccessibilityService } from '../../core/services/varda-accessibility.service';
 
 @Directive({
   selector: '[appHighContrast]'
@@ -9,7 +9,7 @@ import { VardaLocalstorageWrapperService } from '../../core/services/varda-local
 export class HighContrastDirective {
   private elem: HTMLElement;
 
-  constructor(el: ElementRef, private localStorageWrapper: VardaLocalstorageWrapperService) {
+  constructor(el: ElementRef, private localStorageWrapper: VardaAccessibilityService) {
     this.elem = el.nativeElement;
     this.localStorageWrapper.highContrastIsEnabled().subscribe((isEnabled) => {
       if (isEnabled) {

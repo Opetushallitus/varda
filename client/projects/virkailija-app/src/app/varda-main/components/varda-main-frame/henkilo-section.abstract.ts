@@ -6,11 +6,11 @@ import { PageEvent } from '@angular/material/paginator';
 import { HenkiloListDTO } from '../../../utilities/models/dto/varda-henkilo-dto.model';
 import { LapsiListDTO } from '../../../utilities/models/dto/varda-lapsi-dto.model';
 import { TyontekijaListDTO } from '../../../utilities/models/dto/varda-tyontekija-dto.model';
-import { VardaApiService } from 'projects/virkailija-app/src/app/core/services/varda-api.service';
+import { VardaUtilityService } from '../../../core/services/varda-utility.service';
 
 export interface HenkiloSearchFilter {
-  page: number;
-  page_size: number;
+  page?: number;
+  page_size?: number;
   search?: string;
   count?: number;
   kiertava_tyontekija_kytkin?: boolean;
@@ -36,7 +36,9 @@ export abstract class AbstractHenkiloSectionComponent implements OnChanges, OnDe
     count: 0
   };
 
-  constructor(private vardaApiService: VardaApiService) { }
+  constructor(
+    private vardaUtilityService: VardaUtilityService
+  ) { }
 
   ngOnChanges(change: SimpleChanges) {
     this.henkilot = null;
@@ -60,7 +62,7 @@ export abstract class AbstractHenkiloSectionComponent implements OnChanges, OnDe
 
     for (const [key, value] of Object.entries(this.searchFilter)) {
       if (value) {
-        cleanSearchFilter[key] = key === 'search' ? this.vardaApiService.hashHetu(value) : value;
+        cleanSearchFilter[key] = key === 'search' ? this.vardaUtilityService.hashHetu(value) : value;
       }
     }
 

@@ -1,11 +1,8 @@
-export { PageNotFoundComponent } from '../shared/components/page-not-found/page-not-found.component';
 export { VardaHeaderComponent } from '../varda-main/components/varda-header/varda-header.component';
 export { VardaMainFrameComponent } from '../varda-main/components/varda-main-frame/varda-main-frame.component';
 export { VardaFooterComponent } from '../varda-main/components/varda-footer/varda-footer.component';
 export { VardaToimipaikkaSelectorComponent } from '../varda-main/components/varda-main-frame/varda-toimipaikka-selector/varda-toimipaikka-selector.component';
 export { VardaDashboardComponent } from '../varda-main/components/varda-dashboard/varda-dashboard.component';
-export { VardaLoginComponent } from '../varda-main/components/varda-login/varda-login.component';
-export { VardaLoginFormComponent } from '../varda-main/components/varda-login/varda-login-form/varda-login-form.component';
 export { VardaLapsiSectionComponent } from '../varda-main/components/varda-main-frame/varda-lapsi-section/varda-lapsi-section.component';
 export { VardaHenkilostoSectionComponent } from '../varda-main/components/varda-main-frame/varda-henkilosto-section/varda-henkilosto-section.component';
 export { VardaAccessibilitySettingsComponent } from '../shared/components/varda-accessibility-settings/varda-accessibility-settings.component';

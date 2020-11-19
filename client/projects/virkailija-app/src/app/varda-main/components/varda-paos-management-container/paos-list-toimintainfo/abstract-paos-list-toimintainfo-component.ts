@@ -1,6 +1,6 @@
 import { OnInit, Input, Directive } from '@angular/core';
 import { VardaVakajarjestaja } from '../../../../utilities/models/varda-vakajarjestaja.model';
-import { flatMap } from 'rxjs/operators';
+import { mergeMap } from 'rxjs/operators';
 import { from, Observable, Subject } from 'rxjs';
 import { PaosOikeusTieto, PaosToimintatietoDto, PaosToimipaikkatietoDto } from '../../../../utilities/models/dto/varda-paos-dto';
 
@@ -43,7 +43,7 @@ export abstract class AbstractPaosListToimintainfoComponentDirective<T extends P
   getPaosToiminnat() {
     this.paosToiminnat = [];
     return this.apiServiceMethod().pipe(
-      flatMap(res => from(res))
+      mergeMap(res => from(res))
     ).subscribe({
       next: paosToiminta => {
         this.paosToiminnat.push(paosToiminta);

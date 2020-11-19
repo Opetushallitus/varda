@@ -23,7 +23,6 @@ import { MatMomentDateModule, MAT_MOMENT_DATE_ADAPTER_OPTIONS } from '@angular/m
 import { MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import {
-  PageNotFoundComponent,
   VardaAccessibilitySettingsComponent,
   VardaModalFormComponent,
   VardaFormQuestionComponent,
@@ -40,11 +39,8 @@ import { VardaToggleButtonComponent } from './components/varda-toggle-button/var
 import { VardaErrorAlertComponent } from './components/varda-error-alert/varda-error-alert.component';
 import { VardaPromptModalComponent } from './components/varda-prompt-modal/varda-prompt-modal.component';
 import { VardaDropdownFilterComponent } from './components/varda-dropdown-filter/varda-dropdown-filter.component';
-import { VardaListPaginationComponent } from './components/varda-list-pagination/varda-list-pagination.component';
 import { VardaRadioButtonGroupComponent } from './components/varda-radio-button-group/varda-radio-button-group.component';
 import { VardaRadioButtonComponent } from './components/varda-radio-button-group/varda-radio-button/varda-radio-button.component';
-import { BrowserNotSupportedComponent } from './components/browser-not-supported/browser-not-supported.component';
-import { BrowserNotSupportedGuard } from './components/browser-not-supported/browser-not-supported.guard';
 import { SlideHideDirective } from './directives/slide-hide.directive';
 import { VardaDatepickerComponent } from './components/varda-datepicker/varda-datepicker.component';
 import { VardaDateService } from '../varda-main/services/varda-date.service';
@@ -57,6 +53,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatChipsModule } from '@angular/material/chips';
 import { VardaAutocompleteSelectorComponent } from './components/varda-autocomplete-selector/varda-autocomplete-selector.component';
 import { SnackbarTimers } from '../core/services/varda-snackbar.service';
+import { BrowserNotSupportedGuard } from '../varda-main/components/public-components/public-components';
 
 const cookieConfig: NgcCookieConsentConfig = {
   cookie: {
@@ -114,7 +111,6 @@ const cookieConfig: NgcCookieConsentConfig = {
     NgcCookieConsentModule.forRoot(cookieConfig)
   ],
   declarations: [
-    PageNotFoundComponent,
     HighlightElementDirective,
     HighContrastDirective,
     VardaAccessibilitySettingsComponent,
@@ -130,15 +126,14 @@ const cookieConfig: NgcCookieConsentConfig = {
     VardaErrorAlertComponent,
     VardaPromptModalComponent,
     VardaDropdownFilterComponent,
-    VardaListPaginationComponent,
     VardaRadioButtonGroupComponent,
     VardaRadioButtonComponent,
-    BrowserNotSupportedComponent,
     SlideHideDirective,
     ToimipaikkaNimiDirective,
     VardaDatepickerComponent,
     VardaDatepickerHeaderComponent,
-    VardaAutocompleteSelectorComponent],
+    VardaAutocompleteSelectorComponent,
+  ],
   providers: [
     BrowserNotSupportedGuard,
     {
@@ -211,10 +206,8 @@ const cookieConfig: NgcCookieConsentConfig = {
     VardaErrorAlertComponent,
     VardaPromptModalComponent,
     VardaDropdownFilterComponent,
-    VardaListPaginationComponent,
     VardaRadioButtonGroupComponent,
     VardaRadioButtonComponent,
-    BrowserNotSupportedComponent,
     SlideHideDirective,
     ToimipaikkaNimiDirective,
     VardaDatepickerComponent,

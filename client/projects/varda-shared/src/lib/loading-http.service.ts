@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { AbstractHttpService, HttpService } from './http.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { finalize } from 'rxjs/operators';
+import { debounceTime, finalize } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -11,8 +11,10 @@ export class LoadingHttpService extends AbstractHttpService {
   private _loadingCount: number;
   private _isLoading: BehaviorSubject<boolean>;
 
-  constructor(private http: HttpService,
-    private client: HttpClient) {
+  constructor(
+    private http: HttpService,
+    private client: HttpClient
+  ) {
     super(client);
     this._loadingCount = 0;
     this._isLoading = new BehaviorSubject<boolean>(false);
@@ -20,6 +22,10 @@ export class LoadingHttpService extends AbstractHttpService {
 
   isLoading(): Observable<boolean> {
     return this._isLoading.asObservable();
+  }
+
+  isLoadingWithDebounce(milliseconds = 500): Observable<boolean> {
+    return this._isLoading.asObservable().pipe(debounceTime(milliseconds));
   }
 
   addLoader<T>(obs: Observable<T>): Observable<T> {

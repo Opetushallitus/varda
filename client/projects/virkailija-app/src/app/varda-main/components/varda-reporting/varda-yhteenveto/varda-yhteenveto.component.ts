@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { VardaVakajarjestajaYhteenvetoDTO } from '../../../../utilities/models/dto/varda-vakajarjestaja-yhteenveto-dto.model';
 import { Observable } from 'rxjs';
-import { VardaApiWrapperService } from '../../../../core/services/varda-api-wrapper.service';
 import { VirkailijaTranslations } from '../../../../../assets/i18n/virkailija-translations.enum';
 import { VardaVakajarjestajaService } from '../../../../core/services/varda-vakajarjestaja.service';
+import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';
+import { VardaKoosteApiService } from 'projects/virkailija-app/src/app/core/services/varda-kooste-api.service';
 
 interface YhteenvetoElement {
   name: string;
@@ -22,13 +23,15 @@ export class VardaYhteenvetoComponent implements OnInit {
   datasourceLapset: Array<YhteenvetoElement> = [];
   datasourceToimipaikat: Array<YhteenvetoElement> = [];
   datasourceTyontekijat: Array<YhteenvetoElement> = [];
-
+  selectedVakajarjestaja: VardaVakajarjestajaUi;
   displayedColumns = ['name', 'value'];
 
   constructor(
-    private vardaApiWrapperService: VardaApiWrapperService,
+    private koosteService: VardaKoosteApiService,
     private vakajarjestajService: VardaVakajarjestajaService
-  ) { }
+  ) {
+    this.selectedVakajarjestaja = this.vakajarjestajService.getSelectedVakajarjestaja();
+   }
 
   ngOnInit() {
     this.fetchYhteenveto();
@@ -73,6 +76,6 @@ export class VardaYhteenvetoComponent implements OnInit {
   }
 
   getYhteenvetoForReporting(): Observable<VardaVakajarjestajaYhteenvetoDTO> {
-    return this.vardaApiWrapperService.getYhteenvetoByVakajarjestaja(this.vakajarjestajService.getSelectedVakajarjestajaId());
+    return this.koosteService.getYhteenveto(this.selectedVakajarjestaja.id);
   }
 }

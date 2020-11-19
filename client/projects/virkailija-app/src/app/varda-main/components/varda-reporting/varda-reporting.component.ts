@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { VardaVakajarjestajaUi } from '../../../utilities/models';
 import { Subscription } from 'rxjs';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
-import { UserAccess } from '../../../utilities/models/varda-user-access.model';
+import { UserAccess, UserAccessKeys } from '../../../utilities/models/varda-user-access.model';
 import { AuthService } from '../../../core/auth/auth.service';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { filter } from 'rxjs/operators';
@@ -19,7 +19,7 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
 
   selectedVakajarjestaja: VardaVakajarjestajaUi;
   userAccess: UserAccess;
-
+  tilapainenHenkilostoOnly: boolean;
   subscriptions: Array<Subscription> = [];
   activeRoute: string;
 
@@ -33,14 +33,20 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
     this.activeRoute = this.router.url.split('/').pop();
     this.subscriptions.push(
       this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(event => {
-        this.activeRoute = (<NavigationEnd> event).url.split('/').pop();
+        this.activeRoute = (<NavigationEnd>event).url.split('/').pop();
       })
     );
 
     this.selectedVakajarjestaja = this.vardaVakajarjestajaService.getSelectedVakajarjestaja();
-    this.userAccess = this.authService.getUserAccessIfAnyToimipaikka(
-      this.vardaVakajarjestajaService.getVakajarjestajaToimipaikat().katselijaToimipaikat
+
+    this.subscriptions.push(
+      this.authService.getToimipaikkaAccessToAnyToimipaikka().subscribe({
+        next: accessIfAny => this.userAccess = accessIfAny,
+        error: err => console.error(err)
+      })
     );
+
+    this.tilapainenHenkilostoOnly = this.authService.hasAccessOnlyTo([UserAccessKeys.tilapainenHenkilosto], true);
   }
 
   getVakajarjestajaId() {

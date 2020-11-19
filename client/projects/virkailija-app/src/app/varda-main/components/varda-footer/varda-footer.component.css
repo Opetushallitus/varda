@@ -9,7 +9,7 @@
   flex-wrap: nowrap;
   justify-content: space-between;
   align-items: center;
-  height: 4.5em;
+  min-height: 4.5em;
   z-index: 2;
 }
 

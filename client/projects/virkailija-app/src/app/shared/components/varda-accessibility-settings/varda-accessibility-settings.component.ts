@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { VardaLocalstorageWrapperService } from '../../../core/services/varda-localstorage-wrapper.service';
+import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { VardaAccessibilityService } from '../../../core/services/varda-accessibility.service';
 import { VardaDomService } from '../../../core/services/varda-dom.service';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
@@ -10,7 +10,7 @@ declare var $: any;
   templateUrl: './varda-accessibility-settings.component.html',
   styleUrls: ['./varda-accessibility-settings.component.css']
 })
-export class VardaAccessibilitySettingsComponent implements OnInit {
+export class VardaAccessibilitySettingsComponent implements OnInit, AfterViewInit {
   i18n = VirkailijaTranslations;
   highContrastEnabled: boolean;
   displayAccessibilitySettings: boolean;
@@ -19,7 +19,10 @@ export class VardaAccessibilitySettingsComponent implements OnInit {
   instructionPanelContentElem: any;
   instructionPanelHeaderElem: any;
 
-  constructor(private vardaLocalstorageWrapperService: VardaLocalstorageWrapperService, private vardaDomService: VardaDomService) {
+  constructor(
+    private accessibilityService: VardaAccessibilityService,
+    private vardaDomService: VardaDomService
+  ) {
     this.highContrastEnabled = false;
     this.displayAccessibilitySettings = false;
     this.documentRootFontSize = 16;
@@ -27,40 +30,55 @@ export class VardaAccessibilitySettingsComponent implements OnInit {
 
   closeAccessibilitySettings(): void {
     this.displayAccessibilitySettings = false;
-    this.vardaLocalstorageWrapperService.saveAccessibilitySettingsVisibility(false);
+    this.accessibilityService.saveAccessibilitySettingsVisibility(false);
   }
 
   toggleContrast(isEnabled: boolean): void {
     this.highContrastEnabled = isEnabled;
-    this.vardaLocalstorageWrapperService.saveContrastSelection(this.highContrastEnabled);
+    this.accessibilityService.saveContrastSelection(this.highContrastEnabled);
+  }
+
+  setFontSize(fontSize: number): void {
+    if (fontSize !== this.documentRootFontSize) {
+      this.documentRootFontSize = fontSize;
+      this.documentRootElem.style.fontSize = `${fontSize}px`;
+      this.instructionPanelHeaderElem?.css({ 'fontSize': `${fontSize}px` });
+      this.instructionPanelContentElem?.css({ 'fontSize': `${fontSize}px` });
+      this.accessibilityService.saveFontSize(fontSize);
+    }
   }
 
   increaseFontSize(): void {
-    this.documentRootFontSize++;
-    if (this.documentRootFontSize > 30) {
-      this.documentRootFontSize = 30;
+    let fontSize = this.documentRootFontSize + 1;
+    if (fontSize > 30) {
+      fontSize = 30;
     }
-    this.documentRootElem.style.fontSize = `${this.documentRootFontSize}px`;
-    this.instructionPanelHeaderElem?.css({'fontSize': `${this.documentRootFontSize}px`});
-    this.instructionPanelContentElem?.css({'fontSize': `${this.documentRootFontSize}px`});
+
+    this.setFontSize(fontSize);
   }
 
   decreaseFontSize(): void {
-    this.documentRootFontSize--;
-    if (this.documentRootFontSize < 16) {
-      this.documentRootFontSize = 16;
+    let fontSize = this.documentRootFontSize - 1;
+    if (fontSize < 16) {
+      fontSize = 16;
     }
-    this.documentRootElem.style.fontSize = `${this.documentRootFontSize}px`;
-    this.instructionPanelHeaderElem?.css({'fontSize': `${this.documentRootFontSize}px`});
-    this.instructionPanelContentElem?.css({'fontSize': `${this.documentRootFontSize}px`});
+
+    this.setFontSize(fontSize);
+  }
+
+  ngAfterViewInit() {
+    this.accessibilityService.getFontSize().subscribe((fontSize) => {
+      fontSize = fontSize >= 16 && fontSize <= 30 ? fontSize : 16;
+      this.setFontSize(fontSize);
+    });
   }
 
   ngOnInit() {
-    this.vardaLocalstorageWrapperService.highContrastIsEnabled().subscribe((isEnabled) => {
+    this.accessibilityService.highContrastIsEnabled().subscribe((isEnabled) => {
       this.highContrastEnabled = isEnabled;
     });
 
-    this.vardaLocalstorageWrapperService.showAccessibilitySettings().subscribe((isOn) => {
+    this.accessibilityService.showAccessibilitySettings().subscribe((isOn) => {
       this.displayAccessibilitySettings = isOn;
     });
 

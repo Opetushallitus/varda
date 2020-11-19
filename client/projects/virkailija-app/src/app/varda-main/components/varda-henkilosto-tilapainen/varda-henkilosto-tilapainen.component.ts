@@ -10,7 +10,6 @@ import { VardaTilapainenHenkiloDTO } from '../../../utilities/models/dto/varda-t
 import { MatDialog } from '@angular/material/dialog';
 import { EiHenkilostoaDialogComponent } from './ei-henkilostoa-dialog/ei-henkilostoa-dialog.component';
 import { catchError } from 'rxjs/operators';
-import { Router } from '@angular/router';
 import { VardaHenkilostoApiService } from '../../../core/services/varda-henkilosto.service';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { ErrorTree, HenkilostoErrorMessageService } from '../../../core/services/varda-henkilosto-error-message.service';
@@ -46,17 +45,11 @@ export class VardaHenkilostoTilapainenComponent implements OnDestroy {
     private http: LoadingHttpService,
     private authService: AuthService,
     private henkilostoService: VardaHenkilostoApiService,
-    private router: Router,
     private snackBarService: VardaSnackBarService,
   ) {
-
     this.isLoading$ = this.http.isLoading();
     this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
     this.toimijaAccess = this.authService.getUserAccess();
-
-    if (!this.toimijaAccess.tilapainenHenkilosto.katselija) {
-      this.router.navigate(['/']);
-    }
     this.henkilostoFormErrors = this.henkilostoErrorService.initErrorList();
     this.initiateYears();
   }

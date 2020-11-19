@@ -11,7 +11,8 @@
   <mat-icon *ngIf="trigger.menuOpen">arrow_drop_up</mat-icon>
 </div>
 <mat-menu #dropdown>
-  <ul role="menu"
+  <ul role="menu" #unorderedList
+      (keydown)="$event.stopPropagation()"
       (click)="$event.stopPropagation()"
       (keydown.tab)="$event.stopPropagation()">
     <li class="dropdownFilterSearch"
@@ -22,9 +23,9 @@
              [attr.aria-label]="ariaLabel"
              [placeholder]="placeholder"
              [(ngModel)]="filterText"
-             (keyup)="filterList(filterText)"
-             (keyup.enter)="filterList(filterText, true)"
-             (change)="filterList(filterText)" />
+             (keyup)="debounceList(filterText)"
+             (keyup.enter)="debounceList(filterText, true)"
+             (change)="debounceList(filterText)" />
     </li>
     <li mat-menu-item
         disabled

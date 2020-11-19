@@ -1,16 +1,18 @@
-import {Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import { CodeDTO, KoodistoEnum, VardaKoodistoService } from 'varda-shared';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { CodeDTO, KoodistoDTO, KoodistoEnum, VardaKoodistoService } from 'varda-shared';
 import { VirkailijaTranslations } from '../../../../assets/i18n/virkailija-translations.enum';
-import { BehaviorSubject, Subscription } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { TranslateService } from '@ngx-translate/core';
 import { MatChipList } from '@angular/material/chips';
 import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
-import { UserAccess } from '../../../utilities/models/varda-user-access.model';
+import { SaveAccess, UserAccess } from '../../../utilities/models/varda-user-access.model';
 import { AuthService } from '../../../core/auth/auth.service';
 import { PaginatorParams, VardaResultListComponent } from './varda-result-list/varda-result-list.component';
+import { VardaVakajarjestajaUi } from '../../../utilities/models';
+import { VardaKoosteApiService } from '../../../core/services/varda-kooste-api.service';
 
 export enum FilterStringType {
   TRANSLATED_STRING = 'translatedString',
@@ -46,7 +48,7 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
 
   i18n = VirkailijaTranslations;
   koodistoEnum = KoodistoEnum;
-
+  selectedVakajarjestaja: VardaVakajarjestajaUi;
   vakajarjestajaName: string;
 
   resizeSubscription: Subscription;
@@ -89,9 +91,12 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
     private koodistoService: VardaKoodistoService,
     private breakpointObserver: BreakpointObserver,
     private translateService: TranslateService,
+    protected koosteService: VardaKoosteApiService,
     protected authService: AuthService,
     protected vakajarjestajaService: VardaVakajarjestajaService
-  ) { }
+  ) {
+    this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
+  }
 
   ngOnInit(): void {
     // Hide filters if screen size is small
@@ -101,12 +106,11 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
     });
 
     this.vakajarjestajaName = this.vakajarjestajaService.getSelectedVakajarjestaja().nimi.trim().toLowerCase();
-
-    this.katselijaToimipaikat = this.vakajarjestajaService.getVakajarjestajaToimipaikat().katselijaToimipaikat;
-    this.userAccess = this.authService.getUserAccessIfAnyToimipaikka(this.katselijaToimipaikat);
+    this.katselijaToimipaikat = this.vakajarjestajaService.getFilteredToimipaikat().katselijaToimipaikat;
+    this.authService.getToimipaikkaAccessToAnyToimipaikka().subscribe(accessIfAny => this.userAccess = accessIfAny);
   }
 
-  getKoodistoFromKoodistoService(name: KoodistoEnum) {
+  getKoodistoFromKoodistoService(name: KoodistoEnum): Observable<KoodistoDTO> {
     return this.koodistoService.getKoodisto(name);
   }
 
@@ -186,7 +190,7 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
   }
 
   toimipaikkaSelectInputChange(event: Event) {
-    const targetValue = (<HTMLInputElement> event.target).value;
+    const targetValue = (<HTMLInputElement>event.target).value;
     const results = this.toimipaikat.filter(toimipaikka => {
       return toimipaikka.nimi.toLowerCase().includes(targetValue.toLowerCase()) && this.selectedToimipaikat.indexOf(toimipaikka) === -1;
     });

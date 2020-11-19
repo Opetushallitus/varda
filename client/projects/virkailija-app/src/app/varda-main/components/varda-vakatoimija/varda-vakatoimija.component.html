@@ -30,7 +30,7 @@
           {{ i18n.yhteystiedot_missing_sahkopostiosoite | translate }}
         </span>
         <ng-template #showEmail>
-          {{ vakajarjestajaDetails.sahkopostiosoite }}
+          <span>{{ vakajarjestajaDetails.sahkopostiosoite }}</span>
         </ng-template>
       </ng-template>
     </app-varda-form-field>
@@ -52,7 +52,7 @@
           {{ i18n.yhteystiedot_missing_puhelinnumero | translate }}
         </span>
         <ng-template #showPhone>
-          {{ vakajarjestajaDetails.puhelinnumero }}
+          <span>{{ vakajarjestajaDetails.puhelinnumero }}</span>
         </ng-template>
       </ng-template>
     </app-varda-form-field>
