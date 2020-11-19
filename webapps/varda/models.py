@@ -342,6 +342,7 @@ class Varhaiskasvatuspaatos(models.Model):
     tuntimaara_viikossa = models.DecimalField(max_digits=4, decimal_places=1, blank=False, null=False, validators=[MinValueValidator(1.0), MaxValueValidator(120.0)])
     paivittainen_vaka_kytkin = models.BooleanField(null=True)
     kokopaivainen_vaka_kytkin = models.BooleanField(null=True)
+    tilapainen_vaka_kytkin = models.BooleanField(default=False)
     jarjestamismuoto_koodi = models.CharField(max_length=50, blank=False, validators=[validators.validate_jarjestamismuoto_koodi])
     hakemus_pvm = models.DateField(blank=False, null=False, validators=[validators.validate_vaka_date])
     alkamis_pvm = models.DateField(blank=False, null=False, validators=[validators.validate_vaka_date])

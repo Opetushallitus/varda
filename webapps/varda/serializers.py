@@ -832,6 +832,7 @@ class VarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSerializer):
     alkamis_pvm = serializers.DateField(validators=[validators.validate_vaka_date])
     hakemus_pvm = serializers.DateField(validators=[validators.validate_vaka_date])
     vuorohoito_kytkin = serializers.BooleanField(required=True)
+    tilapainen_vaka_kytkin = serializers.BooleanField(default=False)
 
     class Meta:
         model = Varhaiskasvatuspaatos
@@ -918,7 +919,7 @@ class VarhaiskasvatuspaatosPutSerializer(serializers.HyperlinkedModelSerializer)
         model = Varhaiskasvatuspaatos
         exclude = ('luonti_pvm', 'changed_by',)
         read_only_fields = ('lapsi', 'vuorohoito_kytkin', 'pikakasittely_kytkin', 'tuntimaara_viikossa', 'paivittainen_vaka_kytkin',
-                            'kokopaivainen_vaka_kytkin', 'jarjestamismuoto_koodi')
+                            'kokopaivainen_vaka_kytkin', 'tilapainen_vaka_kytkin', 'jarjestamismuoto_koodi')
 
 
 class VarhaiskasvatuspaatosPatchSerializer(serializers.HyperlinkedModelSerializer):
@@ -931,7 +932,7 @@ class VarhaiskasvatuspaatosPatchSerializer(serializers.HyperlinkedModelSerialize
         model = Varhaiskasvatuspaatos
         exclude = ('luonti_pvm', 'changed_by',)
         read_only_fields = ('lapsi', 'vuorohoito_kytkin', 'pikakasittely_kytkin', 'tuntimaara_viikossa', 'paivittainen_vaka_kytkin',
-                            'kokopaivainen_vaka_kytkin', 'jarjestamismuoto_koodi')
+                            'kokopaivainen_vaka_kytkin', 'tilapainen_vaka_kytkin', 'jarjestamismuoto_koodi')
 
     def validate(self, data):
         if len(data) == 0:
