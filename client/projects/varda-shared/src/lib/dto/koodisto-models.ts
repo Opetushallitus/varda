@@ -12,6 +12,7 @@ export enum KoodistoEnum {
   tutkinto = 'vardatutkinto',
   maksunperuste = 'vardamaksunperuste',
   lahdejarjestelma = 'vardalahdejarjestelma',
+  posti = 'posti',
 }
 
 export interface KoodistoDTO {

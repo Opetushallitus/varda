@@ -192,6 +192,10 @@ export class AuthService {
       toimijatiedot: {
         katselija: getRoles(VardaKayttooikeusRoles.TOIMIJATIEDOT_TALLENTAJA, VardaKayttooikeusRoles.TOIMIJATIEDOT_KATSELIJA),
         tallentaja: getRoles(VardaKayttooikeusRoles.TOIMIJATIEDOT_TALLENTAJA)
+      },
+      raportit: {
+        katselija: getRoles(VardaKayttooikeusRoles.RAPORTTIEN_KATSELIJA),
+        tallentaja: false
       }
     };
 
