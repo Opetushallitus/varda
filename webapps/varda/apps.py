@@ -8,7 +8,8 @@ from varda.migrations.production.setup import (load_initial_data, create_huoltaj
                                                create_henkilosto_template_groups, clear_old_permissions,
                                                modify_change_vakajarjestaja_permission,
                                                create_toimijatiedot_template_groups)
-from varda.migrations.testing.setup import load_testing_data, create_koodisto_data
+from varda.migrations.testing.setup import (load_testing_data, create_initial_koodisto_data,
+                                            create_postinumero_koodisto_data)
 
 
 def run_post_migration_tasks(sender, **kwargs):
@@ -55,43 +56,32 @@ def run_post_migration_tasks(sender, **kwargs):
         False: Migration was applied
         True: Migration was rolled back
         """
+        migration_action_dict = {
+            '0001_initial': [load_initial_data],
+            '0010_auto_20190807_1055': [create_huoltajatiedot_template_groups],
+            '0012_auto_20191031_0926': [create_paos_template_groups, clear_old_permissions],
+            '0021_auto_20200528_0732': [create_initial_koodisto_data],
+            '0023_historicalpidempipoissaolo_pidempipoissaolo': [create_henkilosto_template_groups,
+                                                                 load_dev_testing_data],
+            '0034_auto_20201029_1603': [create_toimijatiedot_template_groups,
+                                        modify_change_vakajarjestaja_permission],
+            '0036_postinumero_koodit': [create_postinumero_koodisto_data]
+        }
+
         for migration_plan_tuple in kwargs['plan']:
+            migration_action_list = migration_action_dict.get(migration_plan_tuple[0].name, None)
             if (migration_plan_tuple[0].app_label == 'varda' and
-                    migration_plan_tuple[0].name == '0001_initial' and
-                    not migration_plan_tuple[1]):
-                load_initial_data()
+                    not migration_plan_tuple[1] and
+                    isinstance(migration_action_list, list)):
+                for migration_action in migration_action_list:
+                    migration_action()
 
-            elif (migration_plan_tuple[0].app_label == 'varda' and
-                    migration_plan_tuple[0].name == '0010_auto_20190807_1055' and
-                    not migration_plan_tuple[1]):
-                create_huoltajatiedot_template_groups()
 
-            elif (migration_plan_tuple[0].app_label == 'varda' and
-                  migration_plan_tuple[0].name == '0012_auto_20191031_0926' and
-                  not migration_plan_tuple[1]):
-                create_paos_template_groups()
-                clear_old_permissions()
-
-            elif (migration_plan_tuple[0].app_label == 'varda' and
-                  migration_plan_tuple[0].name == '0021_auto_20200528_0732' and
-                  not migration_plan_tuple[1]):
-                create_koodisto_data()
-
-            elif (migration_plan_tuple[0].app_label == 'varda' and
-                  migration_plan_tuple[0].name == '0023_historicalpidempipoissaolo_pidempipoissaolo' and
-                  not migration_plan_tuple[1]):
-                create_henkilosto_template_groups()
-
-                # Note: If you are adding new permissions this might need to be moved to current migration block.
-                env_type = os.getenv('VARDA_ENVIRONMENT_TYPE', None)
-                if env_type is None or env_type != 'env-varda-prod':
-                    load_testing_data()
-
-            elif (migration_plan_tuple[0].app_label == 'varda' and
-                  migration_plan_tuple[0].name == '0034_auto_20201029_1603' and
-                  not migration_plan_tuple[1]):
-                create_toimijatiedot_template_groups()
-                modify_change_vakajarjestaja_permission()
+def load_dev_testing_data():
+    # Note: If you are adding new permissions this might need to be moved to current migration block.
+    env_type = os.getenv('VARDA_ENVIRONMENT_TYPE', None)
+    if env_type is None or env_type != 'env-varda-prod':
+        load_testing_data()
 
 
 def receiver_auth_user(**kwargs):

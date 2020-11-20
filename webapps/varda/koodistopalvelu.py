@@ -26,6 +26,7 @@ class Koodistot(enum.Enum):
     tutkinto_koodit = 'tutkinto_koodit'
     maksun_peruste_koodit = 'maksun_peruste_koodit'
     lahdejarjestelma_koodit = 'lahdejarjestelma_koodit'
+    postinumero_koodit = 'postinumero_koodit'
 
     @classmethod
     def list(cls):
@@ -45,7 +46,8 @@ KOODISTOPALVELU_DICT = {
     Koodistot.sukupuoli_koodit: 'sukupuoli',
     Koodistot.tutkinto_koodit: 'vardatutkinto',
     Koodistot.maksun_peruste_koodit: 'vardamaksunperuste',
-    Koodistot.lahdejarjestelma_koodit: 'vardalahdejarjestelma'
+    Koodistot.lahdejarjestelma_koodit: 'vardalahdejarjestelma',
+    Koodistot.postinumero_koodit: 'posti'
 }
 
 LANGUAGE_CODES = ['FI', 'SV', 'EN']

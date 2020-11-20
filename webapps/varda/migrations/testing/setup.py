@@ -2516,8 +2516,22 @@ def create_user_data():
     )
 
 
-def create_koodisto_data():
+def create_koodisto(name, name_koodistopalvelu, update_datetime, codes):
     from varda.models import Z2_Koodisto, Z2_Code, Z2_CodeTranslation
+    from varda import koodistopalvelu
+
+    koodisto_obj = Z2_Koodisto.objects.create(name=name,
+                                              name_koodistopalvelu=name_koodistopalvelu,
+                                              update_datetime=update_datetime,
+                                              version=1)
+    for code in codes:
+        code_obj = Z2_Code.objects.create(koodisto=koodisto_obj, code_value=code)
+        for lang in koodistopalvelu.LANGUAGE_CODES:
+            Z2_CodeTranslation.objects.create(code=code_obj, language=lang, name='test nimi',
+                                              description='test kuvaus', short_name='test lyhyt nimi')
+
+
+def create_initial_koodisto_data():
     from varda import koodistopalvelu
 
     koodisto_codes = {
@@ -2583,15 +2597,26 @@ def create_koodisto_data():
     update_datetime = update_datetime.replace(tzinfo=datetime.timezone.utc)
 
     for key, value in koodistopalvelu.KOODISTOPALVELU_DICT.items():
-        koodisto_obj = Z2_Koodisto.objects.create(name=key.value,
-                                                  name_koodistopalvelu=value,
-                                                  update_datetime=update_datetime,
-                                                  version=1)
-        for code in koodisto_codes[key.value]:
-            code_obj = Z2_Code.objects.create(koodisto=koodisto_obj, code_value=code)
-            for lang in koodistopalvelu.LANGUAGE_CODES:
-                Z2_CodeTranslation.objects.create(code=code_obj, language=lang, name='test nimi',
-                                                  description='test kuvaus', short_name='test lyhyt nimi')
+        # Some koodistot have been added afterwards, they have their own create functions
+        if key.value not in koodisto_codes:
+            continue
+        create_koodisto(key.value, value, update_datetime, koodisto_codes[key.value])
+
+
+def create_postinumero_koodisto_data():
+    from varda import koodistopalvelu
+
+    # No need to load all postinumerot initially because they are not used in validation
+    codes = ['00100', '99999']
+
+    update_datetime = datetime.datetime.strptime('2020-11-01', '%Y-%m-%d')
+    update_datetime = update_datetime.replace(tzinfo=datetime.timezone.utc)
+
+    koodisto_enum = koodistopalvelu.Koodistot.postinumero_koodit
+    name = koodisto_enum.value
+    koodistopalvelu_name = koodistopalvelu.KOODISTOPALVELU_DICT.get(koodisto_enum)
+
+    create_koodisto(name, koodistopalvelu_name, update_datetime, codes)
 
 
 def get_vakajarjestaja_oids(create_all_vakajarjestajat):
