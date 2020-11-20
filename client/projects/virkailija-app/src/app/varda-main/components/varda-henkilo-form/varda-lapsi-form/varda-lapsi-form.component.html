@@ -36,12 +36,18 @@
     <div class="oph-field oph-field-inline"
          *ngIf="lapsi.oma_organisaatio_oid">
       <label class="oph-label">{{ i18n.lapsi_oma_organisaatio | translate }}:</label>
-      <span>{{lapsi.oma_organisaatio_nimi}}</span>
+      <span>{{lapsi.oma_organisaatio_nimi}}
+        <mat-icon *ngIf="lapsi.oma_organisaatio_oid === lapsi.tallentaja_organisaatio_oid"
+                  aria-ignore="true">save</mat-icon>
+      </span>
     </div>
     <div class="oph-field oph-field-inline"
          *ngIf="lapsi.paos_organisaatio_oid">
       <label class="oph-label">{{ i18n.lapsi_paos_organisaatio | translate }}:</label>
-      <span>{{lapsi.paos_organisaatio_nimi}}</span>
+      <span>{{lapsi.paos_organisaatio_nimi}}
+        <mat-icon *ngIf="lapsi.paos_organisaatio_oid === lapsi.tallentaja_organisaatio_oid"
+                  aria-ignore="true">save</mat-icon>
+      </span>
     </div>
   </form>
 

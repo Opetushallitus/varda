@@ -1,14 +1,12 @@
 import { Component, OnInit, Input, ViewChildren, QueryList } from '@angular/core';
 import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
-import { VardaPaosApiService } from 'projects/virkailija-app/src/app/core/services/varda-paos-api.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaToimipaikkaDTO, VardaVakajarjestajaUi, VardaVarhaiskasvatuspaatosDTO } from 'projects/virkailija-app/src/app/utilities/models';
 import { LapsiListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-lapsi-dto.model';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
-import { Observable } from 'rxjs';
 import { VardaVarhaiskasvatuspaatosComponent } from './varda-varhaiskasvatuspaatos/varda-varhaiskasvatuspaatos.component';
 
 @Component({
@@ -38,22 +36,22 @@ export class VardaVarhaiskasvatuspaatoksetComponent implements OnInit {
     private lapsiService: VardaLapsiService,
     private modalService: VardaModalService,
     private snackBarService: VardaSnackBarService,
-    private paosService: VardaPaosApiService,
   ) {
 
   }
 
 
   ngOnInit() {
-    this.initPaosOikeus(this.toimipaikkaAccess.lapsitiedot.tallentaja).subscribe(tallentaja => {
-      this.lapsitiedotTallentaja = tallentaja;
+    this.lapsitiedotTallentaja = this.toimipaikkaAccess.lapsitiedot.tallentaja;
+    if (this.lapsi.paos_organisaatio_oid && this.lapsi.tallentaja_organisaatio_oid !== this.selectedVakajarjestaja.organisaatio_oid) {
+      this.lapsitiedotTallentaja = false;
+    }
 
-      if (this.toimipaikkaAccess.lapsitiedot.katselija) {
-        this.getVarhaiskasvatuspaatokset();
-      } else {
-        this.varhaiskasvatuspaatokset = [];
-      }
-    });
+    if (this.toimipaikkaAccess.lapsitiedot.katselija) {
+      this.getVarhaiskasvatuspaatokset();
+    } else {
+      this.varhaiskasvatuspaatokset = [];
+    }
   }
 
   togglePanel(open: boolean) {
@@ -90,38 +88,4 @@ export class VardaVarhaiskasvatuspaatoksetComponent implements OnInit {
     }
   }
 
-  initPaosOikeus(tallentaja: boolean): Observable<boolean> {
-    return new Observable(paosObs => {
-      if (!tallentaja) { // not a tallentaja anyways
-        paosObs.next(false);
-        paosObs.complete();
-      } else if (!this.lapsi.paos_organisaatio_oid) { // its not paos lapsi
-        paosObs.next(tallentaja);
-        paosObs.complete();
-      } else if (this.lapsi.paos_organisaatio_oid === this.selectedVakajarjestaja.organisaatio_oid) {
-        // its own paos-lapsi
-        paosObs.next(tallentaja);
-        paosObs.complete();
-      } else { // otherwise check if your organisation is set as the one saving data
-        this.paosService.getPaosToimipaikat(this.selectedVakajarjestaja.id).subscribe({
-          next: paosToimipaikkaData => {
-            const paosToimipaikka = paosToimipaikkaData.find(toimipaikka =>
-              [this.lapsi.paos_organisaatio_oid, this.lapsi.oma_organisaatio_oid].includes(toimipaikka.toimija_organisaatio_oid)
-            );
-
-            // this list is unreliable, so if you dont find the toimipaikka, just return the original access
-            if (paosToimipaikka) {
-              tallentaja = paosToimipaikka.paos_oikeus.tallentaja_organisaatio_oid === this.selectedVakajarjestaja.organisaatio_oid;
-            }
-          },
-          error: err => {
-            console.log(err);
-          }
-        }).add(() => {
-          paosObs.next(tallentaja);
-          paosObs.complete();
-        });
-      }
-    });
-  }
 }

@@ -37,6 +37,7 @@ export interface LapsiListDTO {
   oma_organisaatio_nimi: string;
   paos_organisaatio_oid: string;
   paos_organisaatio_nimi: string;
+  tallentaja_organisaatio_oid: string;
   toimipaikat: Array<LapsiListToimipaikkaDTO>;
 }
 
