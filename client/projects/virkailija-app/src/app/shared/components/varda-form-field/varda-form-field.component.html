@@ -9,6 +9,7 @@
 
     <div class="oph-error"
          role="alert"
+         [attr.robot]="errorRef"
          *ngIf="formControl.touched && (formControl.invalid || formControl.errors?.required)">
       {{ errorText | translate}}
       <ng-container *ngIf="errorMap">
@@ -21,7 +22,7 @@
     </div>
   </div>
 
-  <div class="oph-field-text">
+  <div class="oph-field-text" [attr.robot]="instructionRef">
     <small [appSlideHide]="focusStatus$ | async">
       {{ instructionText | translate}}
     </small>
