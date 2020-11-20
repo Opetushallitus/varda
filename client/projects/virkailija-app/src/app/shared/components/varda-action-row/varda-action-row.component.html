@@ -4,6 +4,7 @@
     <div class="left">
       <ng-container *ngIf="!promptDelete">
         <button type="submit"
+                robot="submit-button"
                 *ngIf="isEdit && saveAccess"
                 [disabled]="saveDisabled"
                 class="varda-button varda-button-wide responsive-md">
@@ -12,6 +13,7 @@
 
         <button class="varda-button varda-button-wide varda-button-neutral responsive-md secondary"
                 type="button"
+                robot="cancel-button"
                 *ngIf="!noToggle; else noToggleCancelBtn"
                 (click)="_togglePanel(false)">
           {{ i18n.cancel | translate }}
@@ -20,6 +22,7 @@
         <ng-template #noToggleCancelBtn>
           <button class="varda-button varda-button-wide varda-button-neutral responsive-md secondary"
                   type="button"
+                  robot="cancel-button"
                   *ngIf="isEdit"
                   (click)="_disableEdit()">
             {{ i18n.cancel | translate }}
@@ -29,6 +32,7 @@
         <ng-container *ngIf="formExists && saveAccess">
           <button *ngIf="!isEdit"
                   type="button"
+                  robot="edit-button"
                   class="varda-button varda-button-wide responsive-md"
                   (click)="_enableEdit()">
             {{ i18n.edit | translate}}
@@ -40,18 +44,21 @@
          *ngIf="isEdit && saveAccess">
       <button *ngIf="formExists && !promptDelete"
               type="button"
+              robot="prompt-delete-button"
               class="varda-button varda-button-wide varda-button-danger responsive-md secondary"
               (click)="promptDelete = true">
         {{ i18n.delete | translate }}
       </button>
       <ng-container *ngIf="promptDelete">
         <button type="button"
+                robot="submit-delete-button"
                 class="varda-button varda-button-wide varda-button-danger responsive-md secondary"
                 (click)="_deleteForm()">
           {{ i18n.delete | translate }}
         </button>
         <button class="varda-button varda-button-wide varda-button-neutral responsive-md secondary"
                 type="button"
+                robot="cancel-delete-button"
                 (click)="promptDelete = false">
           {{ i18n.cancel | translate }}
         </button>
