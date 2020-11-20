@@ -61,10 +61,10 @@ def run_post_migration_tasks(sender, **kwargs):
             '0010_auto_20190807_1055': [create_huoltajatiedot_template_groups],
             '0012_auto_20191031_0926': [create_paos_template_groups, clear_old_permissions],
             '0021_auto_20200528_0732': [create_initial_koodisto_data],
-            '0023_historicalpidempipoissaolo_pidempipoissaolo': [create_henkilosto_template_groups,
-                                                                 load_dev_testing_data],
+            '0023_historicalpidempipoissaolo_pidempipoissaolo': [create_henkilosto_template_groups],
             '0034_auto_20201029_1603': [create_toimijatiedot_template_groups,
-                                        modify_change_vakajarjestaja_permission],
+                                        modify_change_vakajarjestaja_permission,
+                                        load_dev_testing_data],
             '0036_postinumero_koodit': [create_postinumero_koodisto_data]
         }
 
