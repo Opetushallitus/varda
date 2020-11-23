@@ -195,11 +195,13 @@ class LapsihakuLapsetUiSerializer(serializers.HyperlinkedModelSerializer):
     oma_organisaatio_nimi = serializers.CharField(source='oma_organisaatio.nimi', allow_null=True)
     paos_organisaatio_oid = serializers.CharField(source='paos_organisaatio.organisaatio_oid', allow_null=True)
     paos_organisaatio_nimi = serializers.CharField(source='paos_organisaatio.nimi', allow_null=True)
+    tallentaja_organisaatio_oid = serializers.SerializerMethodField(allow_null=True)
     toimipaikat = serializers.SerializerMethodField()
 
     class Meta:
         model = Lapsi
-        fields = ('id', 'url', 'vakatoimija_oid', 'vakatoimija_nimi', 'oma_organisaatio_oid', 'oma_organisaatio_nimi', 'paos_organisaatio_oid', 'paos_organisaatio_nimi', 'toimipaikat')
+        fields = ('id', 'url', 'vakatoimija_oid', 'vakatoimija_nimi', 'oma_organisaatio_oid', 'oma_organisaatio_nimi',
+                  'paos_organisaatio_oid', 'paos_organisaatio_nimi', 'tallentaja_organisaatio_oid', 'toimipaikat')
         list_serializer_class = LapsihakuLapsetUiListSerializer
 
     def get_toimipaikat(self, lapsi):
@@ -219,6 +221,15 @@ class LapsihakuLapsetUiSerializer(serializers.HyperlinkedModelSerializer):
             toimipaikka_oids = permission_context['toimipaikka_oids']
             toimipaikat = toimipaikat.filter(organisaatio_oid__in=toimipaikka_oids)
         return LapsihakuToimipaikkaUiSerializer(instance=toimipaikat, many=True, context=self.context).data
+
+    def get_tallentaja_organisaatio_oid(self, lapsi):
+        if lapsi.oma_organisaatio and lapsi.paos_organisaatio:
+            paos_oikeus = PaosOikeus.objects.filter(jarjestaja_kunta_organisaatio=lapsi.oma_organisaatio,
+                                                    tuottaja_organisaatio=lapsi.paos_organisaatio,
+                                                    voimassa_kytkin=True).first()
+            if paos_oikeus:
+                return paos_oikeus.tallentaja_organisaatio.organisaatio_oid
+        return None
 
 
 class LapsihakuHenkiloUiSerializer(serializers.HyperlinkedModelSerializer):
