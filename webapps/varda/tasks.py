@@ -9,6 +9,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.management import call_command
 from django.db.models import Q
+from django.db.models.signals import post_save
 from guardian.models import UserObjectPermission, GroupObjectPermission
 
 from varda import oppijanumerorekisteri, koodistopalvelu
@@ -16,7 +17,7 @@ from varda import organisaatiopalvelu
 from varda import permission_groups
 from varda import permissions
 from varda.audit_log import audit_log
-from varda.models import Henkilo, Taydennyskoulutus
+from varda.models import Henkilo, Taydennyskoulutus, Toimipaikka
 from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups
 
 
@@ -212,6 +213,19 @@ def assign_taydennyskoulutus_permissions_for_toimipaikka_task(vakajarjestaja_oid
     [assign_object_permissions_to_taydennyskoulutus_groups(toimipaikka_oid, Taydennyskoulutus, taydennyskoulutus)
      for taydennyskoulutus in taydennyskoulutukset
      ]
+
+
+@shared_task(acks_late=True)
+@single_instance_task(timeout_in_minutes=8 * 60)
+def assign_taydennyskoulutus_permissions_for_all_toimipaikat_task(vakajarjestaja_oid, taydennyskoulutus_id):
+    taydennyskoulutus = Taydennyskoulutus.objects.get(id=taydennyskoulutus_id)
+    toimipaikka_oid_list = (Toimipaikka.objects.filter(vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
+                            .values_list('organisaatio_oid', flat=True))
+    [assign_object_permissions_to_taydennyskoulutus_groups(toimipaikka_oid, Taydennyskoulutus, taydennyskoulutus)
+     for toimipaikka_oid in toimipaikka_oid_list]
+
+    # Send post_save signal so that cache is updated
+    post_save.send(Taydennyskoulutus, instance=taydennyskoulutus, created=True)
 
 
 @shared_task

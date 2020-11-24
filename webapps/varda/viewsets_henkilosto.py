@@ -1,4 +1,6 @@
+import functools
 import logging
+import operator
 
 import coreapi
 import coreschema
@@ -23,8 +25,7 @@ from varda.cache import (cached_retrieve_response, delete_cache_keys_related_mod
                          get_object_ids_for_user_by_model)
 from varda.exceptions.conflict_error import ConflictError
 from varda.models import (VakaJarjestaja, TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
-                          PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Toimipaikka,
-                          Z4_CasKayttoOikeudet)
+                          PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Z4_CasKayttoOikeudet)
 from varda.permission_groups import (assign_object_permissions_to_tyontekija_groups,
                                      assign_object_permissions_to_tilapainenhenkilosto_groups,
                                      assign_object_permissions_to_taydennyskoulutus_groups)
@@ -35,13 +36,16 @@ from varda.permissions import (CustomObjectPermissions, delete_object_permission
                                get_tyontekija_filters_for_taydennyskoulutus_groups,
                                get_permission_checked_pidempi_poissaolo_katselija_queryset_for_user,
                                get_permission_checked_pidempi_poissaolo_tallentaja_queryset_for_user,
-                               toimipaikka_tallentaja_pidempipoissaolo_has_perm_to_add)
+                               toimipaikka_tallentaja_pidempipoissaolo_has_perm_to_add,
+                               get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus)
 from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, PalvelussuhdeSerializer,
                                           PidempiPoissaoloSerializer,
                                           TilapainenHenkilostoSerializer, TutkintoSerializer, TyontekijaSerializer,
                                           TyoskentelypaikkaUpdateSerializer, TaydennyskoulutusSerializer,
                                           TaydennyskoulutusUpdateSerializer, TaydennyskoulutusTyontekijaListSerializer,
                                           TyontekijaKoosteSerializer)
+from varda.tasks import assign_taydennyskoulutus_permissions_for_all_toimipaikat_task
+
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -718,10 +722,6 @@ class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
     filterset_class = filters.TaydennyskoulutusFilter
     queryset = Taydennyskoulutus.objects.all().order_by('id')
 
-    def _parse_tyontekija_tehtavanimike_tuple_list(self, taydennyskoulutus):
-        return [(taydennyskoulutus_tyontekija.tyontekija, taydennyskoulutus_tyontekija.tehtavanimike_koodi)
-                for taydennyskoulutus_tyontekija in taydennyskoulutus.taydennyskoulutukset_tyontekijat.all()]
-
     def get_serializer_class(self):
         request = self.request
         if request.method == 'PUT' or request.method == 'PATCH':
@@ -766,47 +766,57 @@ class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
             if tyontekijat.exists:
                 vakajarjestaja_oid = get_tyontekija_vakajarjestaja_oid(tyontekijat)
                 assign_object_permissions_to_taydennyskoulutus_groups(vakajarjestaja_oid, Taydennyskoulutus, taydennyskoulutus)
-                toimipaikka_oids = (Toimipaikka.objects
-                                    .filter(vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
-                                    .values_list('organisaatio_oid', flat=True)
-                                    )
+
+                # Assign toimipaikka level permissions to toimipaikat that are related to this taydennyskoulutus,
+                # other toimipaikka level permissions are set in a celery task
+                tyontekija_id_list, toimipaikka_oid_list_list = get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus(
+                    taydennyskoulutus.taydennyskoulutukset_tyontekijat.all()
+                )
+                toimipaikka_oid_list_flat = functools.reduce(operator.iconcat, toimipaikka_oid_list_list, [])
                 [assign_object_permissions_to_taydennyskoulutus_groups(toimipaikka_oid, Taydennyskoulutus, taydennyskoulutus)
-                 for toimipaikka_oid in toimipaikka_oids]
+                 for toimipaikka_oid in set(toimipaikka_oid_list_flat)]
+
                 for tyontekija in tyontekijat.all():
                     delete_cache_keys_related_model('tyontekija', tyontekija.id)
                 vakajarjestaja_obj = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid)
                 cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja_obj.id))
 
+        # Assign permissions for all toimipaikat of vakajarjestaja in a task so that it doesn't block execution
+        assign_taydennyskoulutus_permissions_for_all_toimipaikat_task.delay(vakajarjestaja_oid, taydennyskoulutus.id)
+
     def perform_update(self, serializer):
         user = self.request.user
         validated_data = serializer.validated_data
         taydennyskoulutus = self.get_object()
-        current_tyontekijat = taydennyskoulutus.tyontekijat
-        # When doing full update (both put and patch) user needs permission to all previous tyontekijat
-        if 'taydennyskoulutukset_tyontekijat' in validated_data:
-            tyontekija_tehtavanimike_tuple_list = self._parse_tyontekija_tehtavanimike_tuple_list(taydennyskoulutus)
-            is_correct_taydennyskoulutus_tyontekija_permission(user, tyontekija_tehtavanimike_tuple_list, throws=True)
 
-        # Delete cache keys from old tyontekijat (some may be removed)
-        for tyontekija in current_tyontekijat.all():
-            delete_cache_keys_related_model('tyontekija', tyontekija.id)
+        if 'taydennyskoulutukset_tyontekijat' in validated_data:
+            # When doing full update (both put and patch) user needs permission to all previous tyontekijat
+            is_correct_taydennyskoulutus_tyontekija_permission(user,
+                                                               taydennyskoulutus.taydennyskoulutukset_tyontekijat.all(),
+                                                               throws=True)
+
         with transaction.atomic():
+            # Delete cache keys from old tyontekijat (some may be removed)
+            for tyontekija in taydennyskoulutus.tyontekijat.all():
+                delete_cache_keys_related_model('tyontekija', tyontekija.id)
+
             updated_taydennyskoulutus = serializer.save(changed_by=user)
 
-        # Delete cache keys from new tyontekijat (some may be added)
-        tyontekijat = updated_taydennyskoulutus.tyontekijat.all()
-        for tyontekija in tyontekijat:
-            delete_cache_keys_related_model('tyontekija', tyontekija.id)
+            # Delete cache keys from new tyontekijat (some may be added)
+            tyontekijat = updated_taydennyskoulutus.tyontekijat.all()
+            for tyontekija in tyontekijat:
+                delete_cache_keys_related_model('tyontekija', tyontekija.id)
 
-        vakajarjestaja_oid = get_tyontekija_vakajarjestaja_oid(tyontekijat)
-        vakajarjestaja_obj = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid)
-        cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja_obj.id))
+            vakajarjestaja_oid = get_tyontekija_vakajarjestaja_oid(tyontekijat)
+            vakajarjestaja_obj = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid)
+            cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja_obj.id))
 
     def perform_destroy(self, taydennyskoulutus):
         user = self.request.user
         tyontekija_id_list = list(taydennyskoulutus.tyontekijat.values_list('id', flat=True))
-        tyontekija_tehtavanimike_tuple_list = self._parse_tyontekija_tehtavanimike_tuple_list(taydennyskoulutus)
-        is_correct_taydennyskoulutus_tyontekija_permission(user, tyontekija_tehtavanimike_tuple_list, throws=True)
+        is_correct_taydennyskoulutus_tyontekija_permission(user,
+                                                           taydennyskoulutus.taydennyskoulutukset_tyontekijat.all(),
+                                                           throws=True)
 
         with transaction.atomic():
             delete_object_permissions_explicitly(Taydennyskoulutus, taydennyskoulutus)

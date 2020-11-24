@@ -6,6 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction, IntegrityError
 from django.db.models import IntegerField, Q
 from django.db.models.functions import Cast
+from django.forms import model_to_dict
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from guardian.models import UserObjectPermission, GroupObjectPermission
@@ -15,7 +16,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from varda.misc import path_parse
 from varda.models import (VakaJarjestaja, Toimipaikka, Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
                           PaosToiminta, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog,
-                          Maksutieto, Tyontekija, Tyoskentelypaikka, PidempiPoissaolo)
+                          Maksutieto, Tyontekija, Tyoskentelypaikka, PidempiPoissaolo, TaydennyskoulutusTyontekija)
 from varda.permission_groups import assign_object_level_permissions, remove_object_level_permissions
 
 
@@ -431,31 +432,56 @@ def object_ids_organization_has_permissions_to(organisaatio_oid, model):
     return group_permission_objects
 
 
-def is_correct_taydennyskoulutus_tyontekija_permission(user, tyontekijat, throws=True):
+def get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus(taydennyskoulutus_tyontekija_list):
+    """
+    :param taydennyskoulutus_tyontekija_list: list of TaydennyskoulutusTyontekija objects or similar dict objects
+    :return tyontekija_id_list: list of Tyontekija ids
+    :return toimipaikka_oid_list_list: list of lists of Toimipaikka oids
+    """
+    # Transform taydennyskoulutus_tyontekija_list to the following format:
+    # [{'tyontekija': 1, 'tehtavanimike_koodi': '12345'}]
+    if taydennyskoulutus_tyontekija_list and isinstance(taydennyskoulutus_tyontekija_list[0], TaydennyskoulutusTyontekija):
+        taydennyskoulutus_tyontekija_list = [model_to_dict(taydennyskoulutus_tyontekija,
+                                                           fields=['tehtavanimike_koodi', 'tyontekija'])
+                                             for taydennyskoulutus_tyontekija in taydennyskoulutus_tyontekija_list]
+    else:
+        taydennyskoulutus_tyontekija_list = [{'tehtavanimike_koodi': taydennyskoulutus_tyontekija['tehtavanimike_koodi'],
+                                              'tyontekija': taydennyskoulutus_tyontekija['tyontekija'].id}
+                                             for taydennyskoulutus_tyontekija in taydennyskoulutus_tyontekija_list]
+
+    tyontekija_id_list = [taydennyskoulutus_tyontekija['tyontekija']
+                          for taydennyskoulutus_tyontekija in taydennyskoulutus_tyontekija_list]
+
+    # List of lists of toimipaikka oids
+    # Toimipaikka level user must have permissions to at least one toimipaikka in a list
+    toimipaikka_oid_list_list = [Tyoskentelypaikka.objects
+                                 .filter(palvelussuhde__tyontekija=taydennyskoulutus_tyontekija['tyontekija'],
+                                         tehtavanimike_koodi=taydennyskoulutus_tyontekija['tehtavanimike_koodi'])
+                                 .values_list('toimipaikka__organisaatio_oid', flat=True)
+                                 for taydennyskoulutus_tyontekija in taydennyskoulutus_tyontekija_list]
+
+    return tyontekija_id_list, toimipaikka_oid_list_list
+
+
+def is_correct_taydennyskoulutus_tyontekija_permission(user, taydennyskoulutus_tyontekija_list, throws=True):
     """
     Checks user has taydennyskoulutus tallentaja group permissions to taydennyskoulutus tyontekijat vakajarjestaja
-     or to all toimipaikat that are related to tehtavanimikkeet of tyontekijat.
+    or to all toimipaikat that are related to tehtavanimikkeet of tyontekijat.
     :param user: User requesting to access taydennyskoulutus tyontekijat
-    :param tyontekijat: list of Tyontekija and tehtavanimike_koodi tuples, e.g. [(<Tyontekija: 1>, '001')]
-    :type tyontekijat: list
+    :param taydennyskoulutus_tyontekija_list: list of TaydennyskoulutusTyontekija objects or similar dict objects
     :param throws: By default validation fails raise PermissionDenied. Else if this param is False returns False.
     :return: boolean
     """
-    tyontekija_ids = {tyontekija_tuple[0].id for tyontekija_tuple in tyontekijat}
-    tyontekijat_qs = Tyontekija.objects.filter(id__in=tyontekija_ids)
-    vakajarjestaja_oid = get_tyontekija_vakajarjestaja_oid(tyontekijat_qs)
+    tyontekija_id_list, toimipaikka_oid_list_list = get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus(taydennyskoulutus_tyontekija_list)
+
     permission_format = 'HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA_{}'
+    vakajarjestaja_oid = get_tyontekija_vakajarjestaja_oid(Tyontekija.objects.filter(id__in=tyontekija_id_list))
+
     if not is_user_permission(user, permission_format.format(vakajarjestaja_oid)):
-        for tyontekija_tuple in tyontekijat:
-            tyontekija = tyontekija_tuple[0]
-            tehtavanimike_koodi = tyontekija_tuple[1]
-
-            toimipaikka_oids = (Tyoskentelypaikka.objects
-                                .filter(palvelussuhde__tyontekija=tyontekija, tehtavanimike_koodi=tehtavanimike_koodi)
-                                .values_list('toimipaikka__organisaatio_oid', flat=True))
-
-            # User does not have permissions to any työskentelypaikka with this tehtavanimike_koodi
-            if not any(is_user_permission(user, permission_format.format(toimipaikka_oid)) for toimipaikka_oid in toimipaikka_oids):
+        # Check if user has toimipaikka level permissions
+        for toimipaikka_oid_list in toimipaikka_oid_list_list:
+            if not any(is_user_permission(user, permission_format.format(toimipaikka_oid)) for toimipaikka_oid in toimipaikka_oid_list):
+                # User does not have permissions to any toimipaikka with this tehtavanimike
                 if throws:
                     raise PermissionDenied('Insufficient permissions to taydennyskoulutus related tyontekijat')
                 return False
