@@ -1,6 +1,10 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.4.11 (26.11.2020)
+- CSCVARDA-2040 Varhaiskasvatus päätös - tilapäinen varhaiskasvatus kytkin
+- CSCVARDA-2048 Role Guard
+
 1.4.10 (12.11.2020)
 - CSCVARDA-1941: Toimijan yhteystietojen tallennus pääkäyttäjäoikeuksilla
 - CSCVARDA-2070: Lapsiform paos-katselija korjaus
