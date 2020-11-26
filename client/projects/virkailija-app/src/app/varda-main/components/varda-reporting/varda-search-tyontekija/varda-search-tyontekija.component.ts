@@ -16,7 +16,7 @@ import { VardaApiWrapperService } from '../../../../core/services/varda-api-wrap
 import { AuthService } from '../../../../core/auth/auth.service';
 import { PaginatorParams } from '../varda-result-list/varda-result-list.component';
 import { VardaKoosteApiService } from 'projects/virkailija-app/src/app/core/services/varda-kooste-api.service';
-import { SaveAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
+import { ViewAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 
 @Component({
   selector: 'app-varda-search-tyontekija',
@@ -78,7 +78,7 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
 
   ngOnInit(): void {
     super.ngOnInit();
-    this.toimipaikat = this.authService.getAuthorizedToimipaikat(this.katselijaToimipaikat, SaveAccess.henkilostotiedot);
+    this.toimipaikat = this.authService.getAuthorizedToimipaikat(this.katselijaToimipaikat, ViewAccess.henkilostotiedot);
     this.filteredToimipaikkaOptions.next(this.toimipaikat);
     this.search();
     forkJoin([

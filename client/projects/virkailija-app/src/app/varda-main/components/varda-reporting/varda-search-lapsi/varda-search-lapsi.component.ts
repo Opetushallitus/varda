@@ -10,12 +10,11 @@ import { TranslateService } from '@ngx-translate/core';
 import { Moment } from 'moment';
 import * as moment from 'moment';
 import { VardaDateService } from '../../../services/varda-date.service';
-import { VardaApiWrapperService } from '../../../../core/services/varda-api-wrapper.service';
 import { VardaVakajarjestajaService } from '../../../../core/services/varda-vakajarjestaja.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { PaginatorParams } from '../varda-result-list/varda-result-list.component';
 import { VardaKoosteApiService } from 'projects/virkailija-app/src/app/core/services/varda-kooste-api.service';
-import { SaveAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
+import { ViewAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 
 @Component({
   selector: 'app-varda-search-lapsi',
@@ -62,7 +61,7 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
 
   ngOnInit() {
     super.ngOnInit();
-    this.toimipaikat = this.authService.getAuthorizedToimipaikat(this.katselijaToimipaikat, SaveAccess.lapsitiedot);
+    this.toimipaikat = this.authService.getAuthorizedToimipaikat(this.katselijaToimipaikat, ViewAccess.lapsitiedot);
     this.filteredToimipaikkaOptions.next(this.toimipaikat);
     this.search();
   }

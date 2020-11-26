@@ -30,8 +30,15 @@ interface UserAccessPart {
 }
 
 export enum SaveAccess {
-  kaikki = 'kaikki',
-  lapsitiedot = 'lapsitiedot',
-  henkilostotiedot = 'henkilostotiedot',
-  tyontekijatiedot = 'tyontekijatiedot',
+  kaikki = 'kaikki_save',
+  lapsitiedot = 'lapsitiedot_save',
+  henkilostotiedot = 'henkilostotiedot_save',
+  tyontekijatiedot = 'tyontekijatiedot_save',
+}
+
+export enum ViewAccess {
+  kaikki = 'kaikki_view',
+  lapsitiedot = 'lapsitiedot_view',
+  henkilostotiedot = 'henkilostotiedot_view',
+  tyontekijatiedot = 'tyontekijatiedot_view'
 }

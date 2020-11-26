@@ -2,9 +2,14 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { VardaApiService } from '../services/varda-api.service';
 import { VardaVakajarjestajaService } from '../services/varda-vakajarjestaja.service';
-import { VardaKayttajatyyppi, VardaKayttooikeusRoles, VardaToimipaikkaDTO, VardaVakajarjestajaUi } from '../../utilities/models';
+import {
+  VardaKayttajatyyppi,
+  VardaKayttooikeusRoles,
+  VardaToimipaikkaDTO,
+  VardaVakajarjestajaUi
+} from '../../utilities/models';
 import { VardaToimipaikkaMinimalDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
-import { SaveAccess, UserAccess, UserAccessKeys } from '../../utilities/models/varda-user-access.model';
+import { SaveAccess, UserAccess, UserAccessKeys, ViewAccess } from '../../utilities/models/varda-user-access.model';
 import { environment } from 'projects/huoltaja-app/src/environments/environment';
 import { filter } from 'rxjs/operators';
 import { VardaUserDTO } from 'varda-shared';
@@ -90,22 +95,32 @@ export class AuthService {
     return this.toimipaikkaAccessToAnyToimipaikka$.asObservable();
   }
 
-  getAuthorizedToimipaikat(toimipaikat: Array<VardaToimipaikkaMinimalDto>, hasSaveAccess?: SaveAccess): Array<VardaToimipaikkaMinimalDto> {
+  getAuthorizedToimipaikat(toimipaikat: Array<VardaToimipaikkaMinimalDto>, hasAccess?: SaveAccess | ViewAccess): Array<VardaToimipaikkaMinimalDto> {
     return toimipaikat.filter((toimipaikka: VardaToimipaikkaMinimalDto) => {
       const access = this.getUserAccess(toimipaikka.organisaatio_oid);
-      if (!hasSaveAccess) {
-        return (access.tyontekijatiedot.katselija || access.taydennyskoulutustiedot.katselija || access.huoltajatiedot.katselija || access.lapsitiedot.katselija);
-      } else if (hasSaveAccess === SaveAccess.kaikki) {
-        return (access.tyontekijatiedot.tallentaja || access.taydennyskoulutustiedot.tallentaja || access.huoltajatiedot.tallentaja || access.lapsitiedot.tallentaja);
-      } else if (hasSaveAccess === SaveAccess.lapsitiedot) {
-        return (access.huoltajatiedot.tallentaja || access.lapsitiedot.tallentaja);
-      } else if (hasSaveAccess === SaveAccess.henkilostotiedot) {
-        return (access.tyontekijatiedot.tallentaja || access.taydennyskoulutustiedot.tallentaja);
-      } else if (hasSaveAccess === SaveAccess.tyontekijatiedot) {
-        return (access.tyontekijatiedot.tallentaja);
+
+      switch (hasAccess) {
+        case SaveAccess.kaikki:
+          return (access.tyontekijatiedot.tallentaja || access.taydennyskoulutustiedot.tallentaja || access.huoltajatiedot.tallentaja || access.lapsitiedot.tallentaja);
+        case SaveAccess.lapsitiedot:
+          return (access.huoltajatiedot.tallentaja || access.lapsitiedot.tallentaja);
+        case SaveAccess.henkilostotiedot:
+          return (access.tyontekijatiedot.tallentaja || access.taydennyskoulutustiedot.tallentaja);
+        case SaveAccess.tyontekijatiedot:
+          return (access.tyontekijatiedot.tallentaja);
+        case ViewAccess.lapsitiedot:
+          return (access.huoltajatiedot.katselija || access.lapsitiedot.katselija);
+        case ViewAccess.henkilostotiedot:
+          return (access.tyontekijatiedot.katselija || access.taydennyskoulutustiedot.katselija);
+        case ViewAccess.tyontekijatiedot:
+          return (access.tyontekijatiedot.katselija);
+        case ViewAccess.kaikki:
+        case undefined:
+          return (access.tyontekijatiedot.katselija || access.taydennyskoulutustiedot.katselija || access.huoltajatiedot.katselija || access.lapsitiedot.katselija);
+        default:
+          console.error('GetAuthorizedToimipaikat called with incorrect value', hasAccess);
+          return false;
       }
-      console.error('GetAuthorizedToimipaikat called with incorrect value', hasSaveAccess);
-      return false;
     });
   }
 
