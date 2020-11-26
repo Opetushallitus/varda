@@ -781,8 +781,9 @@ class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
                 vakajarjestaja_obj = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid)
                 cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja_obj.id))
 
-        # Assign permissions for all toimipaikat of vakajarjestaja in a task so that it doesn't block execution
-        assign_taydennyskoulutus_permissions_for_all_toimipaikat_task.delay(vakajarjestaja_oid, taydennyskoulutus.id)
+                # Assign permissions for all toimipaikat of vakajarjestaja in a task so that it doesn't block execution
+                transaction.on_commit(lambda: assign_taydennyskoulutus_permissions_for_all_toimipaikat_task
+                                      .delay(vakajarjestaja_oid, taydennyskoulutus.id))
 
     def perform_update(self, serializer):
         user = self.request.user
