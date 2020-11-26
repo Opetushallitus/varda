@@ -396,7 +396,6 @@ class TutkintoViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, L
             delete_cache_keys_related_model('henkilo', henkilo.id)
             cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja.id))
 
-    @auditlog
     @action(methods=['delete'], detail=False)
     def delete(self, request):
         """

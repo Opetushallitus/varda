@@ -219,7 +219,8 @@ def auditlogclass(cls):
     :param cls: GenericViewSet subclass
     :return: Provided class with decorated methods
     """
-    supported_methods = ['list', 'create', 'retrieve', 'update', 'destroy']
+    # create, update and destroy are detected from history table on auditlog send process.
+    supported_methods = ['list', 'retrieve', ]
     existing_methods = [method_name for method_name in supported_methods if getattr(cls, method_name, None)]
 
     for method_name in existing_methods:

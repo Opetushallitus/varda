@@ -124,7 +124,6 @@ class GroupViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUser, )
 
 
-@auditlogclass
 class UpdateHenkiloWithOid(GenericViewSet, CreateModelMixin):
     """
     create:
@@ -150,7 +149,6 @@ class UpdateHenkiloWithOid(GenericViewSet, CreateModelMixin):
         return {"result": "Henkilo-data fetched."}
 
 
-@auditlogclass
 class UpdateOphStaff(GenericViewSet, CreateModelMixin):
     """
     create:
@@ -176,7 +174,6 @@ class UpdateOphStaff(GenericViewSet, CreateModelMixin):
         return {"result": "Update-task started."}
 
 
-@auditlogclass
 class ClearCacheViewSet(GenericViewSet, CreateModelMixin):
     """
     create:
@@ -410,6 +407,7 @@ class ApikeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin):
         token = Token.objects.get_or_create(user=user)
         return Response({"token": token[0].key})
 
+    @auditlog
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -428,7 +426,6 @@ class ApikeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin):
         return {"token": token[0].key}
 
 
-@auditlogclass
 class ExternalPermissionsViewSet(GenericViewSet, CreateModelMixin):
     """
     create:
@@ -439,6 +436,7 @@ class ExternalPermissionsViewSet(GenericViewSet, CreateModelMixin):
     permission_classes = (permissions.AllowAny, )
     # TODO: Allow queries only from Varda fe-proxy; it then allows only from ONR.
 
+    @auditlog
     def create(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -919,6 +917,7 @@ class HaeHenkiloViewSet(GenericViewSet, CreateModelMixin):
         save_audit_log(self.request.user, self.request.path + "id=" + str(serializer.data["id"]))
         return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
 
+    @auditlog
     def create(self, request, *args, **kwargs):  # Function name (create) is misleading! Here we get the henkilo based on henkilotunnus or henkilo_oid.
         user = request.user
         serializer = self.get_serializer(data=request.data)
