@@ -42,7 +42,7 @@ export class VardaTaydennyskoulutusFormComponent implements OnInit {
     private modalService: VardaModalService,
     private vakajarjestajaService: VardaVakajarjestajaService,
     private henkilostoService: VardaHenkilostoApiService,
-    translateService: TranslateService
+    private translateService: TranslateService
   ) {
     this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
     this.taydennyskoulutusFormErrors = this.henkilostoErrorService.initErrorList();
@@ -174,7 +174,20 @@ export class VardaTaydennyskoulutusFormComponent implements OnInit {
   checkRoster(): boolean {
     const withoutNimike = this.currentOsallistujat.find(osallistuja => !osallistuja.tehtavanimike_koodi);
     if (withoutNimike) {
-      const nimikePuuttuuError = { error: { osallistujat: ['UI-001'] } };
+      const nimikePuuttuuError = {
+        error: {
+          UI: [{
+            error_code: 'UI001',
+            description: null,
+            translations: [
+              {
+                language: this.translateService.currentLang.toLocaleUpperCase(),
+                description: this.translateService.instant('backend.UI-001')
+              }
+            ]
+          }]
+        }
+      };
       this.henkilostoErrorService.handleError(nimikePuuttuuError, this.snackBarService);
     }
     return !withoutNimike;

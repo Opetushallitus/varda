@@ -176,15 +176,15 @@ export class HenkilostoErrorMessageService {
 
   handleError(response: VardaErrorResponse, snackBar?: VardaSnackBarService, formGroup?: FormGroup): void {
     console.error(response.status, response.error);
-    const generalErrors = [404, 504];
+    const generalErrors = [404, 500, 504];
     this.errorLines = [];
 
     if (generalErrors.includes(response?.status)) {
       const generalError: ErrorTree = {
         keys: ['server'],
         values: [{
-          errorCode: 'backend.api-timeout-or-not-found',
-          errorTranslation: null,
+          errorCode: 'UI002',
+          errorTranslation: this.translateService.instant('backend.api-timeout-or-not-found'),
           dynamicValue: null
         }]
       };

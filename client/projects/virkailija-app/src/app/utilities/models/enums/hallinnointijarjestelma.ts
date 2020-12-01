@@ -5,5 +5,5 @@ export enum Hallinnointijarjestelma {
 
 
 export enum Lahdejarjestelma {
-  kayttoliittyma = 1
+  kayttoliittyma = '1'
 }
