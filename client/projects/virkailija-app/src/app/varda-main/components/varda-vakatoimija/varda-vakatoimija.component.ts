@@ -10,6 +10,7 @@ import { ErrorTree, HenkilostoErrorMessageService } from '../../../core/services
 import { BehaviorSubject, Observable } from 'rxjs';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { VardaVakajarjestajaApiService } from '../../../core/services/varda-vakajarjestaja-api.service';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-varda-vakatoimija',
@@ -27,14 +28,16 @@ export class VardaVakatoimijaComponent {
   saveAccess: boolean;
   isLoading = new BehaviorSubject<boolean>(false);
   saveSuccess: boolean;
-  private errorService = new HenkilostoErrorMessageService();
+  private errorService: HenkilostoErrorMessageService;
 
   constructor(
     private vakajarjestajaService: VardaVakajarjestajaService,
     private vakajarjestajaApiService: VardaVakajarjestajaApiService,
     private vardaApiService: VardaApiService,
     private authService: AuthService,
+    translateService: TranslateService
   ) {
+    this.errorService = new HenkilostoErrorMessageService(translateService);
     this.vakatoimijaFormErrors = this.errorService.initErrorList();
     this.toimijaAccess = this.authService.getUserAccess();
     this.saveAccess = this.toimijaAccess.toimijatiedot.tallentaja;

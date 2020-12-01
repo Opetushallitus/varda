@@ -18,16 +18,16 @@ def assert_status_code(response, expected_code, extra_message=None):
         raise AssertionError(f'{extra_message}Returned status code {response.status_code} != {expected_code}', content)
 
 
-def assert_validation_error(expected_key, expected_message, response, extra_message=None):
+def assert_validation_error(response, expected_key, expected_error_code, expected_message=None, extra_message=None):
     """
     Assert that the given message can be found in the response's errors.
     The message is expected to be found in the path described by expected_key;
     it can be just a string in case the error is behind a single key,
-    for example errors={'expected_key': ['expected_message']}.
+    for example errors={'expected_key': [{'error_code': expected_error_code, 'description': expected_message}]}.
 
     In a case where the error is nested behind multiple keys, the
     expected_key can be specified as a list,
-    for example errors={'key': [{'subkey': 'expected_message'}]} for
+    for example errors={'key': {'subkey': [{'error_code': expected_error_code, 'description': expected_message}]}} for
     expected_key=['key', 'subkey'].
     """
 
@@ -56,9 +56,15 @@ def assert_validation_error(expected_key, expected_message, response, extra_mess
                 messages_for_key = merged
         messages_for_key = messages_for_key.get(expected_key[-1], [])
 
-    if expected_message not in messages_for_key:
-        extra_message = extra_message and f'{extra_message}: ' or ''
-        raise AssertionError(f'{extra_message}{expected_key!r}/{expected_message!r} not found in {messages}')
+    for message in messages_for_key:
+        if message.get('error_code', '') == expected_error_code:
+            if expected_message and message.get('description', '') != expected_message:
+                continue
+            # Matching error message found
+            return
+
+    extra_message = extra_message and f'{extra_message}: ' or ''
+    raise AssertionError(f'{extra_message}{expected_key!r}/{expected_message!r} not found in {messages}')
 
 
 class SetUpTestClient:

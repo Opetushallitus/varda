@@ -23,6 +23,7 @@ from rest_framework_guardian.filters import ObjectPermissionsFilter
 from varda import filters
 from varda.cache import (cached_retrieve_response, delete_cache_keys_related_model, cached_list_response,
                          get_object_ids_for_user_by_model)
+from varda.enums.error_messages import ErrorMessages
 from varda.exceptions.conflict_error import ConflictError
 from varda.models import (VakaJarjestaja, TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
                           PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Z4_CasKayttoOikeudet)
@@ -164,7 +165,7 @@ class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
             except DjangoValidationError as error:
                 # Catch Tyontekija model's UniqueConstraint, otherwise it will return 500
                 if 'Tyontekija with this Henkilo and Vakajarjestaja already exists' in ' '.join(error.messages):
-                    raise ValidationError({'tyontekija': ['tyontekija with this henkilo and vakajarjestaja pair already exists']})
+                    raise ValidationError({'errors': [ErrorMessages.TY005.value]})
                 else:
                     raise error
 
@@ -186,15 +187,13 @@ class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
     def perform_destroy(self, tyontekija):
         if Tutkinto.objects.filter(vakajarjestaja=tyontekija.vakajarjestaja, henkilo=tyontekija.henkilo).exists():
-            raise ValidationError({'detail': 'Cannot delete tyontekija. There are tutkinto objects referencing it '
-                                             'that need to be deleted first.'})
+            raise ValidationError({'errors': [ErrorMessages.TY001.value]})
         with transaction.atomic():
             try:
                 delete_object_permissions_explicitly(Tyontekija, tyontekija)
                 tyontekija.delete()
             except ProtectedError:
-                raise ValidationError({'detail': 'Cannot delete tyontekija. There are objects referencing it '
-                                                 'that need to be deleted first.'})
+                raise ValidationError({'errors': [ErrorMessages.TY002.value]})
             delete_cache_keys_related_model('henkilo', tyontekija.henkilo.id)
             delete_cache_keys_related_model('vakajarjestaja', tyontekija.vakajarjestaja.id)
             cache.delete('vakajarjestaja_yhteenveto_' + str(tyontekija.vakajarjestaja.id))
@@ -388,8 +387,7 @@ class TutkintoViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, L
                                     tyontekija__henkilo=henkilo,
                                     )
         if Palvelussuhde.objects.filter(palvelussuhde_condition).exists():
-            raise ValidationError({'detail': 'Cannot delete tutkinto. There are palvelussuhde objects referencing it '
-                                             'that need to be deleted first.'})
+            raise ValidationError({'errors': [ErrorMessages.TU001.value]})
         with transaction.atomic():
             delete_object_permissions_explicitly(Tutkinto, tutkinto)
             tutkinto.delete()
@@ -497,8 +495,7 @@ class PalvelussuhdeViewSet(ObjectByTunnisteMixin, ModelViewSet):
             try:
                 palvelussuhde.delete()
             except ProtectedError:
-                raise ValidationError({'detail': 'Cannot delete palvelussuhde. There are objects referencing it '
-                                                 'that need to be deleted first.'})
+                raise ValidationError({'errors': [ErrorMessages.PS001.value]})
 
             delete_cache_keys_related_model('tyontekija', palvelussuhde.tyontekija.id)
             cache.delete('vakajarjestaja_yhteenveto_' + str(palvelussuhde.tyontekija.vakajarjestaja.id))
@@ -512,7 +509,7 @@ class PalvelussuhdeViewSet(ObjectByTunnisteMixin, ModelViewSet):
         user = self.request.user
         tyoskentelypaikat = self.get_object().tyoskentelypaikat.all()
         if any(not user.has_perm('change_tyoskentelypaikka', tyoskentelypaikka) for tyoskentelypaikka in tyoskentelypaikat):
-            raise PermissionDenied('Modify actions requires permissions to all tyoskentelypaikkas.')
+            raise PermissionDenied({'errors': [ErrorMessages.PS002.value]})
 
 
 @auditlogclass
@@ -561,7 +558,7 @@ class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
         vakajarjestaja_oid = validated_data['palvelussuhde'].tyontekija.vakajarjestaja.organisaatio_oid
         tyontekija_tallentaja_group = 'HENKILOSTO_TYONTEKIJA_TALLENTAJA_{}'.format(vakajarjestaja_oid)
         if validated_data.get('kiertava_tyontekija_kytkin') and not is_user_permission(user, tyontekija_tallentaja_group):
-            raise PermissionDenied('Vakajarjestaja level permissions required for kiertava tyontekija.')
+            raise PermissionDenied({'errors': [ErrorMessages.TA001.value]})
 
         with transaction.atomic():
             tyoskentelypaikka = serializer.save(changed_by=user)
@@ -600,16 +597,14 @@ class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
                                 .exclude(id=tyoskentelypaikka.id))
 
         if taydennyskoulutus_qs.exists() and not tyoskentelypaikka_qs.exists():
-            raise ValidationError({'detail': 'Cannot delete tyoskentelypaikka. Taydennyskoulutukset with this '
-                                             'tehtavanimike_koodi must be deleted first.'})
+            raise ValidationError({'errors': [ErrorMessages.TA002.value]})
 
         with transaction.atomic():
             delete_object_permissions_explicitly(Tyoskentelypaikka, tyoskentelypaikka)
             try:
                 tyoskentelypaikka.delete()
             except ProtectedError:
-                raise ValidationError({'detail': 'Cannot delete tyoskentelypaikka. There are objects referencing it '
-                                                 'that need to be deleted first.'})
+                raise ValidationError({'errors': [ErrorMessages.TA003.value]})
 
             delete_cache_keys_related_model('palvelussuhde', tyoskentelypaikka.palvelussuhde.id)
             cache.delete('vakajarjestaja_yhteenveto_' + str(tyoskentelypaikka.palvelussuhde.tyontekija.vakajarjestaja.id))
@@ -654,13 +649,12 @@ class PidempiPoissaoloViewSet(ObjectByTunnisteMixin, ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-
         with transaction.atomic():
             user = self.request.user
             validated_data = serializer.validated_data
             vakajarjestaja_oid = validated_data['palvelussuhde'].tyontekija.vakajarjestaja.organisaatio_oid
             if not toimipaikka_tallentaja_pidempipoissaolo_has_perm_to_add(user, vakajarjestaja_oid, validated_data):
-                raise ValidationError({'tyoskentelypaikka': ['no matching tyoskentelypaikka exists']})
+                raise ValidationError({'tyoskentelypaikka': [ErrorMessages.PP002.value]})
             pidempipoissaolo = serializer.save(changed_by=user)
             assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, PidempiPoissaolo, pidempipoissaolo)
             # toimipaikka permissions are not added to pidempipoissaolo objects until they are directly linked to tyoskentelypaikkas
@@ -673,7 +667,7 @@ class PidempiPoissaoloViewSet(ObjectByTunnisteMixin, ModelViewSet):
         queryset = self.get_queryset()
 
         if not queryset.filter(id=self.get_object().id):
-            raise PermissionDenied('user does not have permission to change this object')
+            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
         pidempipoissaolo = serializer.save(changed_by=user)
         delete_cache_keys_related_model('palvelussuhde', pidempipoissaolo.palvelussuhde.id)
         cache.delete('vakajarjestaja_yhteenveto_' + str(pidempipoissaolo.palvelussuhde.tyontekija.vakajarjestaja.id))
@@ -682,14 +676,13 @@ class PidempiPoissaoloViewSet(ObjectByTunnisteMixin, ModelViewSet):
         queryset = self.get_queryset()
 
         if not queryset.filter(id=self.get_object().id):
-            raise PermissionDenied('user does not have permission to delete this object')
+            raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
         with transaction.atomic():
             delete_object_permissions_explicitly(PidempiPoissaolo, pidempipoissaolo)
             try:
                 pidempipoissaolo.delete()
             except ProtectedError:
-                raise ValidationError({'detail': 'Cannot delete pidempipoissaolo. There are objects referencing it '
-                                                 'that need to be deleted first.'})
+                raise ValidationError({'errors': [ErrorMessages.PP001.value]})
             delete_cache_keys_related_model('palvelussuhde', pidempipoissaolo.palvelussuhde.id)
             cache.delete('vakajarjestaja_yhteenveto_' + str(pidempipoissaolo.palvelussuhde.tyontekija.vakajarjestaja.id))
 

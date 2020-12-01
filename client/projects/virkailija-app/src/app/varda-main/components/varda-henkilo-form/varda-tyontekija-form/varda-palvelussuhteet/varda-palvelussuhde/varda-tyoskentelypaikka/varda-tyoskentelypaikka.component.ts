@@ -22,6 +22,7 @@ import { VardaModalService } from 'projects/virkailija-app/src/app/core/services
 import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { Moment } from 'moment';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-varda-tyoskentelypaikka',
@@ -56,7 +57,7 @@ export class VardaTyoskentelypaikkaComponent implements OnInit, OnChanges, After
 
 
   palvelussuhdeFormErrors: Observable<Array<ErrorTree>>;
-  private henkilostoErrorService = new HenkilostoErrorMessageService();
+  private henkilostoErrorService: HenkilostoErrorMessageService;
 
   constructor(
     @Inject(DOCUMENT) private document,
@@ -66,8 +67,10 @@ export class VardaTyoskentelypaikkaComponent implements OnInit, OnChanges, After
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private modalService: VardaModalService,
     private snackBarService: VardaSnackBarService,
+    translateService: TranslateService
   ) {
     this.toimijaAccess = this.authService.getUserAccess();
+    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
     this.palvelussuhdeFormErrors = this.henkilostoErrorService.initErrorList();
     this.koodistoService.getKoodisto(KoodistoEnum.tehtavanimike).subscribe(koodisto => this.tehtavanimikkeet = koodisto);
   }

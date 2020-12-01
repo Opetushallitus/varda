@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { MatSnackBar, MatSnackBarConfig } from '@angular/material/snack-bar';
 import { TranslateService } from '@ngx-translate/core';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
+import { ErrorValue } from './varda-henkilosto-error-message.service';
 
 export enum SnackbarTimers {
   flash = 2000,
@@ -94,14 +95,14 @@ export class VardaSnackBarService {
     * @remarks
     * expand this with template if you wish to show multiple error-lines
    */
-  errorFromBackend(messages: Array<string>, action?: string, config?: MatSnackBarConfig) {
+  errorFromBackend(messages: Array<ErrorValue>, action?: string, config?: MatSnackBarConfig) {
     const errorConfig = {
       ...config,
       panelClass: 'varda-snackbar-error',
       duration: config?.duration || SnackbarTimers.long
     };
 
-    const message = `${this.defaultError}: ${this.translate.instant(messages[0])}`;
+    const message = `${this.defaultError}: ${messages[0]?.errorTranslation}`;
 
     this.open(
       message,

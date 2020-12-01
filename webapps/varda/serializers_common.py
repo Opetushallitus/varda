@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from varda.enums.error_messages import ErrorMessages
 from varda.misc import get_object_id_from_path
 
 
@@ -55,8 +56,7 @@ class AbstractCustomRelatedField(serializers.Field):
 
         # Check if either of the fields is required, or if the request is PATCH request and the field is required
         if (required_and_not_patch or required_and_in_patch) and val is serializers.empty:
-            msg = [f'Either this field or {self.parent_field} field is required', ]
-            raise serializers.ValidationError(msg, code='invalid')
+            raise serializers.ValidationError([ErrorMessages.RF001.value], code='invalid')
 
         return super().run_validation(data)
 
@@ -66,8 +66,7 @@ class AbstractCustomRelatedField(serializers.Field):
             parent_value_id = get_object_id_from_path(parent_value)
 
             if parent_value_id is None:
-                msg = [f'Could not parse object id from field {self.parent_field}', ]
-                raise serializers.ValidationError(msg, code='invalid')
+                raise serializers.ValidationError([ErrorMessages.RF002.value], code='invalid')
 
             return parent_value_id
         return serializers.empty
@@ -79,8 +78,7 @@ class AbstractCustomRelatedField(serializers.Field):
 
         # Not sure if this is required, but better be safe?
         if self.read_only:
-            msg = ['Field is read-only', ]
-            raise serializers.ValidationError(msg, code='invalid')
+            raise serializers.ValidationError([ErrorMessages.GE015.value], code='invalid')
 
         # Django validators work too late, so we use our own here
         self.prevalidator(value)
@@ -94,14 +92,12 @@ class AbstractCustomRelatedField(serializers.Field):
                 # Masking 403 as object not found
                 referenced_object = AbstractCustomRelatedField._does_not_exist
         if referenced_object is AbstractCustomRelatedField._does_not_exist:
-            msg = ['Could not find matching object', ]
-            raise serializers.ValidationError(msg, code='invalid')
+            raise serializers.ValidationError([ErrorMessages.RF003.value], code='invalid')
 
         # If the linked parent field has a value, make sure it equals to the one in this field
         parent_value_id = self._get_parent_value_id()
         if parent_value_id is not serializers.empty and referenced_object.id != parent_value_id:
-            msg = [f'Differs from {self.parent_field}', ]
-            raise serializers.ValidationError(msg, code='invalid')
+            raise serializers.ValidationError([ErrorMessages.RF004.value], code='invalid')
 
         return {
             self.parent_field: referenced_object

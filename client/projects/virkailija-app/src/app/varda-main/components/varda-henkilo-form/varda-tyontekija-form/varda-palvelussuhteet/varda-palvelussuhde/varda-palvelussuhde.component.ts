@@ -20,6 +20,7 @@ import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/services/varda-date.service';
 import { Moment } from 'moment';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-varda-palvelussuhde',
@@ -54,7 +55,7 @@ export class VardaPalvelussuhdeComponent implements OnInit, OnChanges, OnDestroy
   tyosuhdeKoodisto: KoodistoDTO;
   tyoaikaKoodisto: KoodistoDTO;
   minEndDate: Date;
-  private henkilostoErrorService = new HenkilostoErrorMessageService();
+  private henkilostoErrorService: HenkilostoErrorMessageService;
 
   constructor(
     private el: ElementRef,
@@ -62,8 +63,10 @@ export class VardaPalvelussuhdeComponent implements OnInit, OnChanges, OnDestroy
     private modalService: VardaModalService,
     private koodistoService: VardaKoodistoService,
     private snackBarService: VardaSnackBarService,
+    translateService: TranslateService
   ) {
     this.element = this.el;
+    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
     this.palvelussuhdeFormErrors = this.henkilostoErrorService.initErrorList();
 
     this.koodistoService.getKoodisto(KoodistoEnum.tyosuhde).subscribe(koodisto => this.tyosuhdeKoodisto = koodisto);

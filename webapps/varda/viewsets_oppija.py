@@ -41,13 +41,13 @@ class HuoltajanLapsiViewSet(GenericViewSet, mixins.RetrieveModelMixin):
         try:
             henkilo = Henkilo.objects.get(henkilo_oid=henkilo_oid)
         except Henkilo.DoesNotExist:
-            raise Http404('Not found.')
+            raise Http404
         except Henkilo.MultipleObjectsReturned:  # This should not be possible
             logger.error('Multiple of henkilot was found with henkilo_oid: {}'.format(henkilo_oid))
-            raise Http404('Not found.')
+            raise Http404
 
         if henkilo.turvakielto:
-            raise Http404('Not found.')
+            raise Http404
 
         lapset = (Lapsi.objects.filter(henkilo=henkilo)
                                .prefetch_related('varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja')

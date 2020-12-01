@@ -16,6 +16,7 @@ import { VardaModalService } from 'projects/virkailija-app/src/app/core/services
 import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { Moment } from 'moment';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-varda-poissaolo',
@@ -45,13 +46,15 @@ export class VardaPoissaoloComponent implements OnInit, AfterViewInit, OnDestroy
   endDateRange = { min: null, max: null };
 
   poissaoloFormErrors: Observable<Array<ErrorTree>>;
-  private henkilostoErrorService = new HenkilostoErrorMessageService();
+  private henkilostoErrorService: HenkilostoErrorMessageService;
 
   constructor(
     private henkilostoService: VardaHenkilostoApiService,
     private modalService: VardaModalService,
     private snackBarService: VardaSnackBarService,
+    translateService: TranslateService
   ) {
+    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
     this.poissaoloFormErrors = this.henkilostoErrorService.initErrorList();
   }
 

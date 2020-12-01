@@ -70,7 +70,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp_original = client.post('/api/henkilosto/v1/tyontekijat/', tyontekija)
         # Masking 403 as validation error
         assert_status_code(resp_original, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(b'{"vakajarjestaja":["Invalid hyperlink - Object does not exist."]}', resp_original.content)
+        assert_validation_error(resp_original, 'vakajarjestaja', 'GE008', 'Invalid hyperlink, object does not exist.')
 
     def test_tyontekija_add_incorrect_vakajarjestaja_oid(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -84,7 +84,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp_original = client.post('/api/henkilosto/v1/tyontekijat/', tyontekija)
         # Masking 403 as validation error
         assert_status_code(resp_original, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('vakajarjestaja_oid', 'Could not find matching object', resp_original)
+        assert_validation_error(resp_original, 'vakajarjestaja_oid', 'RF003', 'Could not find matching object.')
 
     def test_tyontekija_add_twice(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -123,7 +123,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         resp_duplicate = client.post('/api/henkilosto/v1/tyontekijat/', tyontekija)
         assert_status_code(resp_duplicate, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('tyontekija', 'tyontekija with this henkilo and vakajarjestaja pair already exists', resp_duplicate)
+        assert_validation_error(resp_duplicate, 'errors', 'TY005', 'Combination of henkilo and vakajarjestaja fields should be unique.')
 
     def test_api_push_tyontekija_correct_oid(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -166,7 +166,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         for tunniste in not_ok_cases:
             resp = client.patch('/api/henkilosto/v1/tyontekijat/1/', {'tunniste': tunniste})
             assert_status_code(resp, status.HTTP_400_BAD_REQUEST, tunniste)
-            assert_validation_error('tunniste', 'Not a valid tunniste.', resp, tunniste)
+            assert_validation_error(resp, 'tunniste', 'MI012', 'Not a valid tunniste.', tunniste)
 
         resp = client.patch('/api/henkilosto/v1/tyontekijat/1/',
                             {
@@ -174,7 +174,7 @@ class VardaHenkilostoViewSetTests(TestCase):
                                             'that_is_way_too_long_tunniste_that_is_way_too_long_1'
                             })
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('tunniste', 'Ensure this field has no more than 120 characters.', resp)
+        assert_validation_error(resp, 'tunniste', 'DY001', 'Ensure this field has no more than 120 characters.')
 
     def test_api_push_tyontekija_henkilo_is_lapsi(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -320,21 +320,21 @@ class VardaHenkilostoViewSetTests(TestCase):
         tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija1')
         resp_tyontekija_delete = client.delete(f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/')
         assert_status_code(resp_tyontekija_delete, status.HTTP_400_BAD_REQUEST)
-        detail = json.loads(resp_tyontekija_delete.content).get('detail')
-        self.assertEqual(detail, 'Cannot delete tyontekija. There are tutkinto objects referencing it that need to be deleted first.')
+        assert_validation_error(resp_tyontekija_delete, 'errors', 'TY001',
+                                'Cannot delete Tyontekija. There are Tutkinto objects referencing it that need to be deleted first.')
 
         Tutkinto.objects.filter(vakajarjestaja=tyontekija.vakajarjestaja, henkilo=tyontekija.henkilo).delete()
-        resp_tyontekija_delete = client.delete(f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/')
-        assert_status_code(resp_tyontekija_delete, status.HTTP_400_BAD_REQUEST)
-        detail = json.loads(resp_tyontekija_delete.content).get('detail')
-        self.assertEqual(detail, 'Cannot delete tyontekija. There are objects referencing it that need to be deleted first.')
+        resp_tyontekija_delete2 = client.delete(f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/')
+        assert_status_code(resp_tyontekija_delete2, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_tyontekija_delete2, 'errors', 'TY002',
+                                'Cannot delete Tyontekija. There are objects referencing it that need to be deleted first.')
 
         Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija).delete()
         PidempiPoissaolo.objects.filter(palvelussuhde__tyontekija=tyontekija).delete()
         Palvelussuhde.objects.filter(tyontekija=tyontekija).delete()
         TaydennyskoulutusTyontekija.objects.filter(tyontekija=tyontekija).delete()
-        resp_tyontekija_delete = client.delete(f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/')
-        assert_status_code(resp_tyontekija_delete, status.HTTP_204_NO_CONTENT)
+        resp_tyontekija_delete3 = client.delete(f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/')
+        assert_status_code(resp_tyontekija_delete3, status.HTTP_204_NO_CONTENT)
 
     def test_api_push_tyontekija_henkilo_address_information_removed(self):
         # Get Henkilo that does not reference any Huoltaja or Lapsi object
@@ -760,7 +760,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('kuukausi', 'kuukausi must be in the past', resp)
+        assert_validation_error(resp, 'kuukausi', 'TH006', 'kuukausi must be in the past.')
 
     def test_api_push_tutkinto_correct(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -1013,7 +1013,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             'lahdejarjestelma': '1',
         }
 
-        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/palvelussuhteet/', json.dumps(palvelussuhde), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
 
     def test_palvelussuhde_edit_allowed_and_delete(self):
@@ -1021,7 +1021,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         # Get initial data as a dictionary
         palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
-        resp = client.get(f"/api/henkilosto/v1/palvelussuhteet/{palvelussuhde.id}/")
+        resp = client.get(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde.id}/')
         assert_status_code(resp, status.HTTP_200_OK)
         palvelussuhde_dict = json.loads(resp.content)
 
@@ -1041,16 +1041,17 @@ class VardaHenkilostoViewSetTests(TestCase):
         for key, value in palvelussuhde_edits.items():
             palvelussuhde_edit = palvelussuhde_dict.copy()
             palvelussuhde_edit[key] = value
-            resp = client.put(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_dict["id"]}/', json.dumps(palvelussuhde_edit), content_type="application/json")
+            palvelussuhde_id = palvelussuhde_dict['id']
+            resp = client.put(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_id}/', json.dumps(palvelussuhde_edit), content_type='application/json')
             assert_status_code(resp, status.HTTP_200_OK, key)
 
             # Fetch object and ensure field was changed
-            resp = client.get(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_dict["id"]}/')
+            resp = client.get(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_id}/')
             assert_status_code(resp, status.HTTP_200_OK)
             data = json.loads(resp.content)
             self.assertEqual(value, data[key])
 
-        delete_resp = client.delete(f"/api/henkilosto/v1/palvelussuhteet/{palvelussuhde.id}/")
+        delete_resp = client.delete(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde.id}/')
         assert_status_code(delete_resp, status.HTTP_204_NO_CONTENT)
 
     def test_palvelussuhde_edit_disallowed(self):
@@ -1073,7 +1074,8 @@ class VardaHenkilostoViewSetTests(TestCase):
         for key, value in palvelussuhde_edits.items():
             palvelussuhde_edit = palvelussuhde_dict.copy()
             palvelussuhde_edit[key] = value
-            resp = client.put(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_dict["id"]}/', json.dumps(palvelussuhde_edit), content_type="application/json")
+            palvelussuhde_id = palvelussuhde_dict['id']
+            resp = client.put(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_id}/', json.dumps(palvelussuhde_edit), content_type='application/json')
             assert_status_code(resp, status.HTTP_400_BAD_REQUEST, key)
 
     def test_palvelussuhde_add_correct_end_date_null(self):
@@ -1092,7 +1094,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             'lahdejarjestelma': '1',
         }
 
-        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/palvelussuhteet/', json.dumps(palvelussuhde), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
 
     def test_palvelussuhde_add_incorrect_end_date(self):
@@ -1111,9 +1113,9 @@ class VardaHenkilostoViewSetTests(TestCase):
             'lahdejarjestelma': '1',
         }
 
-        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/palvelussuhteet/', json.dumps(palvelussuhde), content_type='application/json')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('paattymis_pvm', 'paattymis_pvm must be after alkamis_pvm.', resp)
+        assert_validation_error(resp, 'paattymis_pvm', 'MI004', 'paattymis_pvm must be equal to or after alkamis_pvm.')
 
     def test_palvelussuhde_add_incorrect_tyoaika_viikossa(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -1131,9 +1133,9 @@ class VardaHenkilostoViewSetTests(TestCase):
             'lahdejarjestelma': '1',
         }
 
-        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/palvelussuhteet/', json.dumps(palvelussuhde), content_type='application/json')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('tyoaika_viikossa', 'Ensure this value is less than or equal to 50.0.', resp)
+        assert_validation_error(resp, 'tyoaika_viikossa', 'DY005', 'Ensure this value is less than or equal to 50.')
 
     def test_palvelussuhde_add_too_early_ending_paattymis_pvm(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -1151,9 +1153,9 @@ class VardaHenkilostoViewSetTests(TestCase):
             'lahdejarjestelma': '1',
         }
 
-        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/palvelussuhteet/', json.dumps(palvelussuhde), content_type='application/json')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('paattymis_pvm', 'paattymis_pvm must be greater than or equal to 2020-09-01.', resp)
+        assert_validation_error(resp, 'paattymis_pvm', 'PS007', 'paattymis_pvm must be equal to or after 2020-09-01.')
 
     def test_palvelussuhde_add_too_many(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -1173,17 +1175,17 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         # Add as many as we can
         for i in range(7):
-            resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+            resp = client.post('/api/henkilosto/v1/palvelussuhteet/', json.dumps(palvelussuhde), content_type='application/json')
             assert_status_code(resp, status.HTTP_201_CREATED)
 
         # The next one will fail
-        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/palvelussuhteet/', json.dumps(palvelussuhde), content_type='application/json')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('palvelussuhde', 'Already have 7 overlapping palvelussuhde on the defined time range.', resp)
+        assert_validation_error(resp, 'errors', 'PS006', 'Tyontekija already has 7 overlapping Palvelussuhde on the given date range.')
 
         # But later dates are ok
         palvelussuhde.update(alkamis_pvm='2022-02-02', paattymis_pvm='2023-03-03')
-        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/palvelussuhteet/', json.dumps(palvelussuhde), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
 
     def test_palvelussuhde_add_invalid_codes(self):
@@ -1201,11 +1203,11 @@ class VardaHenkilostoViewSetTests(TestCase):
             'lahdejarjestelma': '1',
         }
 
-        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/palvelussuhteet/', json.dumps(palvelussuhde), content_type='application/json')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('tyosuhde_koodi', 'foo1 : Not a valid tyosuhde_koodi.', resp)
-        assert_validation_error('tyoaika_koodi', 'foo2 : Not a valid tyoaika_koodi.', resp)
-        assert_validation_error('tutkinto_koodi', 'foo3 : Not a valid tutkinto_koodi.', resp)
+        assert_validation_error(resp, 'tyosuhde_koodi', 'KO003', 'Not a valid code.')
+        assert_validation_error(resp, 'tyoaika_koodi', 'KO003', 'Not a valid code.')
+        assert_validation_error(resp, 'tutkinto_koodi', 'KO003', 'Not a valid code.')
 
     def test_palvelussuhde_add_wrong_tutkinto(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -1223,9 +1225,9 @@ class VardaHenkilostoViewSetTests(TestCase):
             'lahdejarjestelma': '1',
         }
 
-        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/palvelussuhteet/', json.dumps(palvelussuhde), content_type='application/json')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('tutkinto_koodi', 'tyontekija has tutkinnot other than just 003.', resp)
+        assert_validation_error(resp, 'tutkinto_koodi', 'PS004', 'Tyontekija has Tutkinto objects other than just 003.')
 
     def test_palvelussuhde_add_and_edit_tyosuhde_koodi_2(self):
         # tyosuhde_koodi 2 is for fixed term employees. Paattymis_pvm can't be undefined in these cases.
@@ -1244,13 +1246,13 @@ class VardaHenkilostoViewSetTests(TestCase):
             'lahdejarjestelma': '1',
             'tunniste': 'testpalvelussuhde'
         }
-        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/palvelussuhteet/', json.dumps(palvelussuhde), content_type='application/json')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
 
         # add paattymis_pvm so the request gets through
         palvelussuhde['paattymis_pvm'] = '2021-11-11'
 
-        resp = client.post("/api/henkilosto/v1/palvelussuhteet/", json.dumps(palvelussuhde), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/palvelussuhteet/', json.dumps(palvelussuhde), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
 
         palvelussuhde_patch = {
@@ -1258,9 +1260,9 @@ class VardaHenkilostoViewSetTests(TestCase):
         }
 
         palvelussuhde_id = json.loads(resp.content)['id']
-        resp = client.patch(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_id}/', json.dumps(palvelussuhde_patch), content_type="application/json")
+        resp = client.patch(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_id}/', json.dumps(palvelussuhde_patch), content_type='application/json')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('paattymis_pvm', 'paattymis_pvm can not be none for tyosuhde_koodi 2', resp)
+        assert_validation_error(resp, 'paattymis_pvm', 'PS003', 'paattymis_pvm is required for tyosuhde_koodi 2.')
 
     def test_palvelussuhde_tyontekija_tunniste_related_field(self):
         tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija2')
@@ -1374,7 +1376,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             'lahdejarjestelma': '1',
         }
 
-        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/tyoskentelypaikat/', json.dumps(tyoskentelypaikka), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
 
     def test_tyoskentelypaikka_add_too_many(self):
@@ -1386,7 +1388,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         palvelussuhde_22_url = '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde_22.id)
         toimipaikka = Toimipaikka.objects.filter(organisaatio_oid='1.2.246.562.10.9395737548815').first()
 
-        # Tietoluettelosta: "Työntekijälle voi tallentaa enintään kolme pääasiallista toimipaikkaa, joissa työntekijä työskentelee."
+        # Tietoluettelosta: 'Työntekijälle voi tallentaa enintään kolme pääasiallista toimipaikkaa, joissa työntekijä työskentelee.'
 
         tyoskentelypaikka = {
             'palvelussuhde': palvelussuhde_url,
@@ -1401,28 +1403,28 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         # Add as many as we can
         for i in range(3):
-            resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+            resp = client.post('/api/henkilosto/v1/tyoskentelypaikat/', json.dumps(tyoskentelypaikka), content_type='application/json')
             assert_status_code(resp, status.HTTP_201_CREATED)
 
         # The next one will fail
-        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/tyoskentelypaikat/', json.dumps(tyoskentelypaikka), content_type='application/json')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('palvelussuhde', 'Already have 3 overlapping tyoskentelypaikka on the defined time range.', resp)
+        assert_validation_error(resp, 'errors', 'TA011', 'Palvelussuhde already has 3 overlapping Tyoskentelypaikka on the given date range.')
 
         # This will succeed due to different palvelussuhde
         tyoskentelypaikka.update(palvelussuhde=palvelussuhde_22_url)
-        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/tyoskentelypaikat/', json.dumps(tyoskentelypaikka), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
         client.delete('/api/henkilosto/v1/tyoskentelypaikat/{}/'.format(json.loads(resp.content)['id']))
 
         # But cases where kiertava_tyontekija_kytkin is True are ok
         tyoskentelypaikka.update(kiertava_tyontekija_kytkin=True, toimipaikka=None)
-        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/tyoskentelypaikat/', json.dumps(tyoskentelypaikka), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
 
         # So are later dates
         tyoskentelypaikka.update(kiertava_tyontekija_kytkin=False, toimipaikka='/api/v1/toimipaikat/{}/'.format(toimipaikka), alkamis_pvm='2022-02-02', paattymis_pvm='2023-03-03')
-        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/tyoskentelypaikat/', json.dumps(tyoskentelypaikka), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
 
     def test_tyoskentelypaikka_edit_allowed(self):
@@ -1448,11 +1450,11 @@ class VardaHenkilostoViewSetTests(TestCase):
         for key, value in tyoskentelypaikka_edits.items():
             tyoskentelypaikka_edit = tyoskentelypaikka_dict.copy()
             tyoskentelypaikka_edit[key] = value
-            resp = client.put('/api/henkilosto/v1/tyoskentelypaikat/{}/'.format(tyoskentelypaikka_dict["id"]), json.dumps(tyoskentelypaikka_edit), content_type="application/json")
+            resp = client.put('/api/henkilosto/v1/tyoskentelypaikat/{}/'.format(tyoskentelypaikka_dict['id']), json.dumps(tyoskentelypaikka_edit), content_type='application/json')
             assert_status_code(resp, status.HTTP_200_OK, key)
 
             # Fetch object and ensure field was changed
-            resp = client.get('/api/henkilosto/v1/tyoskentelypaikat/{}/'.format(tyoskentelypaikka_dict["id"]))
+            resp = client.get('/api/henkilosto/v1/tyoskentelypaikat/{}/'.format(tyoskentelypaikka_dict['id']))
             assert_status_code(resp, status.HTTP_200_OK)
             data = json.loads(resp.content)
             self.assertEqual(value, data[key])
@@ -1486,7 +1488,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         for key, value in tyoskentelypaikka_edits.items():
             tyoskentelypaikka_edit = tyoskentelypaikka_dict.copy()
             tyoskentelypaikka_edit[key] = value
-            resp = client.put(tyoskentelypaikka_url, json.dumps(tyoskentelypaikka_edit), content_type="application/json")
+            resp = client.put(tyoskentelypaikka_url, json.dumps(tyoskentelypaikka_edit), content_type='application/json')
             assert_status_code(resp, status.HTTP_200_OK, key)
 
             # Make sure that the so-called edit didn't do anything
@@ -1512,9 +1514,10 @@ class VardaHenkilostoViewSetTests(TestCase):
             'lahdejarjestelma': '1',
         }
 
-        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/tyoskentelypaikat/', json.dumps(tyoskentelypaikka), content_type='application/json')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('kiertava_tyontekija_kytkin', 'toimipaikka can\'t be specified with kiertava_tyontekija_kytkin.', resp)
+        assert_validation_error(resp, 'kiertava_tyontekija_kytkin', 'TA004',
+                                'Toimipaikka cannot be specified with kiertava_tyontekija_kytkin.')
 
     def test_tyoskentelypaikka_require_toimipaikka_or_kiertava_true(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -1532,7 +1535,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         resp = client.post('/api/henkilosto/v1/tyoskentelypaikat/', tyoskentelypaikka)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('toimipaikka', 'toimipaikka is required if kiertava_tyontekija_kytkin is false.', resp)
+        assert_validation_error(resp, 'toimipaikka', 'TA012', 'toimipaikka is required if kiertava_tyontekija_kytkin is false.')
 
     def test_tyoskentelypaikka_kelpoisuus_downgrade_allowed(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -1547,7 +1550,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         tyoskentelypaikka_dict.update(kelpoisuus_kytkin=False)
 
-        resp = client.put('/api/henkilosto/v1/tyoskentelypaikat/{}/'.format(tyoskentelypaikka_dict["id"]), json.dumps(tyoskentelypaikka_dict), content_type="application/json")
+        resp = client.put('/api/henkilosto/v1/tyoskentelypaikat/{}/'.format(tyoskentelypaikka_dict['id']), json.dumps(tyoskentelypaikka_dict), content_type='application/json')
         assert_status_code(resp, status.HTTP_200_OK)
 
     def test_tyoskentelypaikka_incorrect_date_validation(self):
@@ -1572,19 +1575,19 @@ class VardaHenkilostoViewSetTests(TestCase):
         # Palvelussuhde paattymis_pvm 2030-03-01
 
         cases = [
-            ('2020-03-01', '2020-01-01', 'paattymis_pvm', 'paattymis_pvm must be after alkamis_pvm.'),
-            ('2020-03-01', '2031-01-01', 'paattymis_pvm', 'paattymis_pvm must be before palvelussuhde paattymis_pvm (or same).'),
-            ('2019-03-01', '2021-01-01', 'alkamis_pvm', 'alkamis_pvm must be after palvelussuhde alkamis_pvm (or same).'),
-            ('2031-03-01', '2032-01-01', 'alkamis_pvm', 'alkamis_pvm must be before palvelussuhde paattymis_pvm (or same).'),
-            ('2020-08-01', '2020-08-28', 'paattymis_pvm', 'paattymis_pvm must be after 2020-09-01 (or same)'),
-            ('2020-09-01', None, 'paattymis_pvm', 'tyoskentelypaikka must have paattymis_pvm because palvelussuhde has paattymis_pvm')
+            ('2020-03-01', '2020-01-01', 'paattymis_pvm', 'MI004', 'paattymis_pvm must be equal to or after alkamis_pvm.'),
+            ('2020-03-01', '2031-01-01', 'paattymis_pvm', 'TA006', 'paattymis_pvm must be before or equal to Palvelussuhde paattymis_pvm.'),
+            ('2019-03-01', '2021-01-01', 'alkamis_pvm', 'TA008', 'alkamis_pvm must be equal to or after Palvelussuhde alkamis_pvm.'),
+            ('2031-03-01', '2032-01-01', 'alkamis_pvm', 'TA009', 'alkamis_pvm must be before or equal to Palvelussuhde paattymis_pvm.'),
+            ('2020-08-01', '2020-08-28', 'paattymis_pvm', 'TA007', 'paattymis_pvm must be equal to or after 2020-09-01.'),
+            ('2020-09-01', None, 'paattymis_pvm', 'TA013', 'Tyoskentelypaikka must have paattymis_pvm because Palvelussuhde has paattymis_pvm.')
         ]
 
-        for (start, end, key, expected_message) in cases:
+        for (start, end, key, expected_error_code, expected_message) in cases:
             tyoskentelypaikka.update(alkamis_pvm=start, paattymis_pvm=end)
-            resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+            resp = client.post('/api/henkilosto/v1/tyoskentelypaikat/', json.dumps(tyoskentelypaikka), content_type='application/json')
             assert_status_code(resp, status.HTTP_400_BAD_REQUEST, f'{start}_{end}')
-            assert_validation_error(key, expected_message, resp)
+            assert_validation_error(resp, key, expected_error_code, expected_message)
 
     def test_tyoskentelypaikka_non_kiertava_overlaps_kiertava(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -1611,19 +1614,20 @@ class VardaHenkilostoViewSetTests(TestCase):
         }
 
         # Add a tyoskentelypaikka on some date range with kiertava=False
-        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/tyoskentelypaikat/', json.dumps(tyoskentelypaikka), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
 
         # Try to add another on the same range with kiertava kiertava=True
         # This should fail.
         tyoskentelypaikka.update(toimipaikka=None, kiertava_tyontekija_kytkin=True, alkamis_pvm='2025-05-01', paattymis_pvm='2025-12-31')
-        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/tyoskentelypaikat/', json.dumps(tyoskentelypaikka), content_type='application/json')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('kiertava_tyontekija_kytkin', 'can\'t have different values of kiertava_tyontekija_kytkin on overlapping date ranges', resp)
+        assert_validation_error(resp, 'kiertava_tyontekija_kytkin', 'TA010',
+                                'Cannot have different values of kiertava_tyontekija_kytkin on overlapping date ranges.')
 
         # But works on a different palvelussuhde, on the same tyontekija
         tyoskentelypaikka.update(palvelussuhde=palvelussuhde_22_url)
-        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/tyoskentelypaikat/', json.dumps(tyoskentelypaikka), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
 
     def test_tyoskentelypaikka_add_incorrect_toimipaikka(self):
@@ -1647,10 +1651,9 @@ class VardaHenkilostoViewSetTests(TestCase):
             'lahdejarjestelma': '1',
         }
 
-        resp = client.post("/api/henkilosto/v1/tyoskentelypaikat/", json.dumps(tyoskentelypaikka), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/tyoskentelypaikat/', json.dumps(tyoskentelypaikka), content_type='application/json')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        messages = json.loads(resp.content)
-        self.assertIn('Toimipaikka must have the same vakajarjestaja as tyontekija', messages.get('toimipaikka', []))
+        assert_validation_error(resp, 'toimipaikka', 'TA005', 'Toimipaikka must have the same Vakajarjestaja as Tyontekija.')
 
     def test_tyoskentelypaikka_lahdejarjestelma_tunniste_get_put_patch_delete(self):
         lahdejarjestelma = '1'
@@ -1760,8 +1763,8 @@ class VardaHenkilostoViewSetTests(TestCase):
         client = SetUpTestClient('tyontekija_tallentaja').client()
         resp = client.delete(f'/api/henkilosto/v1/tyoskentelypaikat/{tyoskentelypaikka.id}/')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('detail', 'Cannot delete tyoskentelypaikka. Taydennyskoulutukset with this '
-                                          'tehtavanimike_koodi must be deleted first.', resp)
+        assert_validation_error(resp, 'errors', 'TA002', 'Cannot delete Tyoskentelypaikka. Taydennyskoulutus objects '
+                                                         'with this tehtavanimike_koodi must be deleted first.')
 
     def test_pidempipoissaolo_add_correct(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -1776,7 +1779,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             'tunniste': 'foo'
         }
 
-        resp = client.post("/api/henkilosto/v1/pidemmatpoissaolot/", json.dumps(pidempipoissaolo), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/pidemmatpoissaolot/', json.dumps(pidempipoissaolo), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
 
     def test_pidempipoissaolo_add_correct_two(self):
@@ -1792,7 +1795,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             'tunniste': 'foo'
         }
 
-        resp = client.post("/api/henkilosto/v1/pidemmatpoissaolot/", json.dumps(pidempipoissaolo), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/pidemmatpoissaolot/', json.dumps(pidempipoissaolo), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
 
         pidempipoissaolo = {
@@ -1803,7 +1806,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             'tunniste': 'foo2'
         }
 
-        resp = client.post("/api/henkilosto/v1/pidemmatpoissaolot/", json.dumps(pidempipoissaolo), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/pidemmatpoissaolot/', json.dumps(pidempipoissaolo), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
 
     def test_pidempipoissaolo_incorrect_date_validation(self):
@@ -1821,19 +1824,19 @@ class VardaHenkilostoViewSetTests(TestCase):
         # Palvelussuhde paattymis_pvm 2030-03-01
 
         cases = [
-            ('2020-10-01', '2020-09-01', 'paattymis_pvm', 'paattymis_pvm must be after alkamis_pvm.'),
-            ('2020-03-01', '2031-01-01', 'paattymis_pvm', 'paattymis_pvm must be before palvelussuhde paattymis_pvm (or same).'),
-            ('1999-03-01', '2021-01-01', 'alkamis_pvm', 'alkamis_pvm must be after palvelussuhde alkamis_pvm (or same).'),
-            ('2031-03-01', '2032-01-01', 'alkamis_pvm', 'alkamis_pvm must be before palvelussuhde paattymis_pvm.'),
-            ('2022-01-01', '2022-01-30', 'paattymis_pvm', 'poissaolo duration must be 60 days or more.'),
+            ('2020-10-01', '2020-09-01', 'paattymis_pvm', 'MI004', 'paattymis_pvm must be equal to or after alkamis_pvm.'),
+            ('2020-03-01', '2031-01-01', 'paattymis_pvm', 'PP004', 'paattymis_pvm must be before or equal to Palvelussuhde paattymis_pvm.'),
+            ('1999-03-01', '2021-01-01', 'alkamis_pvm', 'PP005', 'alkamis_pvm must be equal to or after Palvelussuhde alkamis_pvm.'),
+            ('2031-03-01', '2032-01-01', 'alkamis_pvm', 'PP006', 'alkamis_pvm must be before Palvelussuhde paattymis_pvm.'),
+            ('2022-01-01', '2022-01-30', 'paattymis_pvm', 'PP003', 'Poissaolo duration must be 60 days or more.'),
         ]
 
-        for (start, end, key, expected_message) in cases:
+        for (start, end, key, expected_error_code, expected_message) in cases:
             extra = f'{start}_{end}'
             pidempipoissaolo.update(alkamis_pvm=start, paattymis_pvm=end, tunniste=extra)
-            resp = client.post("/api/henkilosto/v1/pidemmatpoissaolot/", json.dumps(pidempipoissaolo), content_type="application/json")
+            resp = client.post('/api/henkilosto/v1/pidemmatpoissaolot/', json.dumps(pidempipoissaolo), content_type='application/json')
             assert_status_code(resp, 400, extra)
-            assert_validation_error(key, expected_message, resp, extra)
+            assert_validation_error(resp, key, expected_error_code, expected_message, extra)
 
     def test_pidempipoissaolo_overlap(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -1848,7 +1851,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             'lahdejarjestelma': '1',
             'tunniste': 'foo'
         }
-        resp = client.post("/api/henkilosto/v1/pidemmatpoissaolot/", json.dumps(pidempipoissaolo), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/pidemmatpoissaolot/', json.dumps(pidempipoissaolo), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
 
         # Add initial poissaolo 2
@@ -1859,7 +1862,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             'lahdejarjestelma': '1',
             'tunniste': 'foo2'
         }
-        resp = client.post("/api/henkilosto/v1/pidemmatpoissaolot/", json.dumps(pidempipoissaolo), content_type="application/json")
+        resp = client.post('/api/henkilosto/v1/pidemmatpoissaolot/', json.dumps(pidempipoissaolo), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
 
         cases = [
@@ -1878,9 +1881,11 @@ class VardaHenkilostoViewSetTests(TestCase):
         for (start, end) in cases:
             extra = f'{start}_{end}'
             pidempipoissaolo.update(alkamis_pvm=start, paattymis_pvm=end, tunniste=extra)
-            resp = client.post("/api/henkilosto/v1/pidemmatpoissaolot/", json.dumps(pidempipoissaolo), content_type="application/json")
+            resp = client.post('/api/henkilosto/v1/pidemmatpoissaolot/', json.dumps(pidempipoissaolo), content_type='application/json')
             assert_status_code(resp, 400, extra)
-            assert_validation_error('palvelussuhde', 'Already have overlapping pidempipoissaolo on the defined time range.', resp, extra)
+            assert_validation_error(resp, 'palvelussuhde', 'PP007',
+                                    'Palvelussuhde already has 1 overlapping PidempiPoissaolo on the given date range.',
+                                    extra)
 
     def test_pidempipoissaolo_palvelussuhde_tunniste_related_field(self):
         palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
@@ -1981,7 +1986,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp = client.post('/api/henkilosto/v1/pidemmatpoissaolot/', json.dumps(pidempipoissaolo), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
 
-        delete_resp = client.delete('/api/henkilosto/v1/pidemmatpoissaolot/{}/'.format(json.loads(resp.content).get("id")))
+        delete_resp = client.delete('/api/henkilosto/v1/pidemmatpoissaolot/{}/'.format(json.loads(resp.content).get('id')))
         assert_status_code(delete_resp, status.HTTP_204_NO_CONTENT)
 
     def test_taydennyskoulutus_add_correct(self):
@@ -2140,7 +2145,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         resp = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus), content_type='application/json')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(['tehtavanimike_koodi'], 'tyontekija with ID 1 doesn\'t have tehtavanimike_koodi 77826', resp)
+        assert_validation_error(resp, ['tehtavanimike_koodi'], 'TK008', 'Tyontekija does not have given tehtavanimike_koodi.')
 
     def test_taydennyskoulutus_add_incorrect_koulutuspaivia(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
@@ -2157,7 +2162,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         resp_1 = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus_1), content_type='application/json')
         assert_status_code(resp_1, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('koulutuspaivia', 'Invalid decimal step', resp_1)
+        assert_validation_error(resp_1, 'koulutuspaivia', 'GE018', 'Invalid decimal step.')
 
         taydennyskoulutus_2 = {
             'taydennyskoulutus_tyontekijat': [{'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '39407'}],
@@ -2169,7 +2174,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         resp_2 = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus_2), content_type='application/json')
         assert_status_code(resp_2, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('koulutuspaivia', 'Ensure this value is less than or equal to 160.', resp_2)
+        assert_validation_error(resp_2, 'koulutuspaivia', 'DY005', 'Ensure this value is less than or equal to 160.')
 
     def test_taydennyskoulutus_add_invalid_tyontekija(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
@@ -2180,49 +2185,57 @@ class VardaHenkilostoViewSetTests(TestCase):
         cases = [
             [
                 {'lahdejarjestelma': 1, 'tunniste': 'unknown_tyontekija'},
-                ['taydennyskoulutus_tyontekijat', 'tunniste'],
-                'Couldn\'t find tyontekija matching the given (lahdejarjestelma, tunniste).'
+                ['taydennyskoulutus_tyontekijat', '0', 'tunniste'],
+                'TK006',
+                'Could not find Tyontekija matching the given (lahdejarjestelma, tunniste).'
             ],
             [
                 {'tunniste': 'unknown_tyontekija'},
-                ['taydennyskoulutus_tyontekijat', 'tunniste'],
+                ['taydennyskoulutus_tyontekijat', '0', 'tunniste'],
+                'TK003',
                 'Either both lahdejarjestelma and tunniste, or neither must be given.'
             ],
             [
                 {'henkilo_oid': '1.2.246.562.24.2431884920040', 'vakajarjestaja_oid': '1.2.246.562.10.34683023489'},
-                ['taydennyskoulutus_tyontekijat', 'henkilo_oid'],
-                'Couldn\'t find tyontekija matching the given (henkilo_oid, vakajarjestaja_oid).'
+                ['taydennyskoulutus_tyontekijat', '0', 'henkilo_oid'],
+                'TK004',
+                'Could not find Tyontekija matching the given (henkilo_oid, vakajarjestaja_oid).'
             ],
             [
                 {'henkilo_oid': '1.2.246.562.24.2431884920040'},
-                ['taydennyskoulutus_tyontekijat', 'henkilo_oid'],
+                ['taydennyskoulutus_tyontekijat', '0', 'henkilo_oid'],
+                'TK002',
                 'Either both henkilo_oid and vakajarjestaja_oid, or neither must be given.'
             ],
             [
                 {},
-                ['taydennyskoulutus_tyontekijat', 'tyontekija'],
+                ['taydennyskoulutus_tyontekijat', '0', 'tyontekija'],
+                'TK001',
                 'Tyontekija not specified. Use (tyontekija), (henkilo_oid, vakajarjestaja_oid) or (lahdejarjestelma, tunniste).'
             ],
             [
                 {'tyontekija': '/api/henkilosto/v1/tyontekijat/1000000/'},
-                ['taydennyskoulutus_tyontekijat', 'tyontekija'],
-                'Invalid hyperlink - Object does not exist.'
+                ['taydennyskoulutus_tyontekijat', '0', 'tyontekija'],
+                'GE008',
+                'Invalid hyperlink, object does not exist.'
             ],
             [
                 {'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija1.id}/',
                  'henkilo_oid': tyontekija2.henkilo.henkilo_oid, 'vakajarjestaja_oid': tyontekija2.vakajarjestaja.organisaatio_oid},
-                ['taydennyskoulutus_tyontekijat', 'henkilo_oid'],
-                'henkilo_oid doesn\'t refer to the same tyontekija as url.'
+                ['taydennyskoulutus_tyontekijat', '0', 'henkilo_oid'],
+                'TK005',
+                'henkilo_oid does not refer to the same Tyontekija as URL.'
             ],
             [
                 {'henkilo_oid': tyontekija1.henkilo.henkilo_oid, 'vakajarjestaja_oid': tyontekija1.vakajarjestaja.organisaatio_oid,
                  'tunniste': tyontekija2.tunniste, 'lahdejarjestelma': tyontekija2.lahdejarjestelma},
-                ['taydennyskoulutus_tyontekijat', 'tunniste'],
-                'Tunniste doesn\'t refer to the same tyontekija as url or henkilo_oid.'
+                ['taydennyskoulutus_tyontekijat', '0', 'tunniste'],
+                'TK007',
+                'Tunniste does not refer to the same Tyontekija as URL or henkilo_oid.'
             ],
         ]
 
-        for data, error_path, expected_error in cases:
+        for data, error_path, expected_error_code, expected_error_msg in cases:
             taydennyskoulutus = {
                 'taydennyskoulutus_tyontekijat': [{'tehtavanimike_koodi': '39407', **data}],
                 'nimi': 'Ensiapukoulutus',
@@ -2232,7 +2245,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             }
             resp = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus), content_type='application/json')
             assert_status_code(resp, 400, data)
-            assert_validation_error(error_path, expected_error, resp, data)
+            assert_validation_error(resp, error_path, expected_error_code, expected_error_msg, data)
 
     def test_taydennyskoulutus_add_duplicate(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
@@ -2251,7 +2264,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         }
         resp = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus), content_type='application/json')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('taydennyskoulutus_tyontekijat', 'Duplicates detected.', resp)
+        assert_validation_error(resp, 'taydennyskoulutus_tyontekijat', 'TK010', 'Duplicates detected.')
 
     def test_taydennyskoulutus_update_tyontekijat_correct(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
@@ -2664,9 +2677,10 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         resp = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus), content_type='application/json')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        error_path = ['taydennyskoulutus_tyontekijat', 'tyontekija']
+        error_path = ['taydennyskoulutus_tyontekijat', '0']
+        expected_error_code = 'TK001'
         expected_error_msg = 'Tyontekija not specified. Use (tyontekija), (henkilo_oid, vakajarjestaja_oid) or (lahdejarjestelma, tunniste).'
-        assert_validation_error(error_path, expected_error_msg, resp)
+        assert_validation_error(resp, error_path, expected_error_code, expected_error_msg)
 
     def test_taydennyskoulutus_tyontekija_list(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
@@ -2746,9 +2760,8 @@ class VardaHenkilostoViewSetTests(TestCase):
                                                 json.dumps(taydennyskoulutus_1_patch),
                                                 content_type='application/json')
         assert_status_code(resp_patch_1, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(['taydennyskoulutus_tyontekijat_add', 'tyontekija'],
-                                'Tyontekija not specified. Use (tyontekija), (henkilo_oid, vakajarjestaja_oid) or (lahdejarjestelma, tunniste).',
-                                resp_patch_1)
+        assert_validation_error(resp_patch_1, ['taydennyskoulutus_tyontekijat_add', '0'], 'TK001',
+                                'Tyontekija not specified. Use (tyontekija), (henkilo_oid, vakajarjestaja_oid) or (lahdejarjestelma, tunniste).')
         resp_patch_2 = client_jarjestaja.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_1_id}/',
                                                json.dumps(taydennyskoulutus_1_patch),
                                                content_type='application/json')
@@ -2756,7 +2769,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         resp_delete_1 = client_toimipaikka.delete(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_1_id}/')
         assert_status_code(resp_delete_1, status.HTTP_403_FORBIDDEN)
-        assert_validation_error('detail', 'Insufficient permissions to taydennyskoulutus related tyontekijat', resp_delete_1)
+        assert_validation_error(resp_delete_1, 'errors', 'TK014', 'Insufficient permissions to Taydennyskoulutus related Tyontekija objects.')
 
         resp_delete_2 = client_jarjestaja.delete(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_1_id}/')
         assert_status_code(resp_delete_2, status.HTTP_204_NO_CONTENT)
@@ -2831,7 +2844,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         }
         create_response = client_tyontekija_tallentaja.post('/api/henkilosto/v1/pidemmatpoissaolot/', json.dumps(pidempipoissaolo), content_type='application/json')
         assert_status_code(create_response, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('tyoskentelypaikka', 'no matching tyoskentelypaikka exists', create_response)
+        assert_validation_error(create_response, 'tyoskentelypaikka', 'PP002', 'No matching Tyoskentelypaikka exists.')
 
         # Tyoskentelypaikka
         tyoskentelypaikka = {

@@ -30,6 +30,7 @@ from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid,
                                                         add_henkilo_to_oppijanumerorekisteri,
                                                         get_henkilo_by_henkilotunnus)
 from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
+from varda.enums.error_messages import ErrorMessages
 from varda.exceptions.conflict_error import ConflictError
 from varda.misc import CustomServerErrorException, decrypt_henkilotunnus, encrypt_henkilotunnus, hash_string
 from varda.misc_queries import get_paos_toimipaikat
@@ -267,13 +268,13 @@ class NestedHuoltajaViewSet(GenericViewSet, ListModelMixin):
         if user.has_perm("view_lapsi", lapsi):
             return lapsi
         else:
-            raise Http404("Not found.")
+            raise Http404
 
     def list(self, request, *args, **kwargs):
         # Explicit check that given primary key is integer
         # TODO: This should be handled by schema validation. Compare to e.g. /lapset/{id} : A unique integer value identifying this lapsi.
         if not kwargs['lapsi_pk'].isdigit():
-            raise Http404("Not found.")
+            raise Http404
 
         # checking if lapsi exists and user has permissions
         self.get_lapsi(request, lapsi_pk=kwargs['lapsi_pk'])
@@ -330,11 +331,11 @@ class NestedLapsiViewSet(GenericViewSet, ListModelMixin):
         if user.has_perm("view_huoltaja", huoltaja):
             return huoltaja
         else:
-            raise Http404("Not found.")
+            raise Http404
 
     def list(self, request, *args, **kwargs):
         if not kwargs['huoltaja_pk'].isdigit():
-            raise Http404("Not found.")
+            raise Http404
 
         self.get_huoltaja(request, huoltaja_pk=kwargs['huoltaja_pk'])
         queryset = self.filter_queryset(Lapsi.objects.filter(huoltajuussuhteet__huoltaja__id=kwargs['huoltaja_pk'])).order_by('id')
@@ -547,14 +548,14 @@ class VakaJarjestajaViewSet(viewsets.ModelViewSet):
         user = self.request.user
         original_object = self.get_object()
         if not user.has_perm('change_vakajarjestaja', original_object):
-            raise PermissionDenied("User does not have permissions to change this object.")
+            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
         serializer.save(changed_by=user)
 
     def perform_destroy(self, instance):
         try:
             instance.delete()
         except ProtectedError:
-            raise ValidationError({"detail": "Cannot delete vakajarjestaja. There are objects referencing it that need to be deleted first."})
+            raise ValidationError({'errors': ErrorMessages.VJ001.value})
 
 
 @auditlogclass
@@ -592,16 +593,16 @@ class ToimipaikkaViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, P
     def perform_create(self, serializer):
         user = self.request.user
         validated_data = serializer.validated_data
-        vakajarjestaja_obj = validated_data["vakajarjestaja"]
+        vakajarjestaja_obj = validated_data['vakajarjestaja']
         vakajarjestaja_id = vakajarjestaja_obj.id
 
         related_object_validations.check_if_user_has_add_toimipaikka_permissions_under_vakajarjestaja(vakajarjestaja_id, user)
 
-        if "paattymis_pvm" in validated_data and validated_data["paattymis_pvm"] is not None:
+        if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
             if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm']):
-                raise ValidationError({"paattymis_pvm": ["paattymis_pvm must be after alkamis_pvm"]})
+                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI003.value]})
 
-        check_if_toimipaikka_exists_in_organisaatiopalvelu(vakajarjestaja_id, validated_data["nimi"])
+        check_if_toimipaikka_exists_in_organisaatiopalvelu(vakajarjestaja_id, validated_data['nimi'])
         """
         Toimipaikka was not found in Organisaatiopalvelu. We can POST it there.
         """
@@ -611,8 +612,8 @@ class ToimipaikkaViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, P
                 serializer.save(changed_by=user)
 
                 result = create_toimipaikka_in_organisaatiopalvelu(validated_data)
-                if result["toimipaikka_created"]:
-                    toimipaikka_organisaatio_oid = result["organisaatio_oid"]
+                if result['toimipaikka_created']:
+                    toimipaikka_organisaatio_oid = result['organisaatio_oid']
                 else:
                     # transaction.set_rollback(True)  This would be otherwise nice but the user wouldn't get an error-msg.
                     raise IntegrityError('Org.palvelu-integration')
@@ -643,7 +644,7 @@ class ToimipaikkaViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, P
         except IntegrityError as e:
             logger.error('Could not create a toimipaikka in Org.Palvelu. Data: {}. Error: {}.'
                          .format(validated_data, e.__cause__))
-            raise ValidationError({"toimipaikka": ["Could not create toimipaikka in Organisaatiopalvelu."]})
+            raise ValidationError({'toimipaikka': [ErrorMessages.TP002.value]})
 
     def perform_update(self, serializer):
         """
@@ -652,25 +653,25 @@ class ToimipaikkaViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, P
         user = self.request.user
         url = self.request.path
         validated_data = serializer.validated_data
-        toimipaikka_id = url.split("/")[-2]
+        toimipaikka_id = url.split('/')[-2]
         toimipaikka_obj = Toimipaikka.objects.get(id=toimipaikka_id)
 
         if not user.has_perm('change_toimipaikka', toimipaikka_obj):
-            raise PermissionDenied('User does not have permissions to change this object.')
+            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
 
         if Hallinnointijarjestelma[toimipaikka_obj.hallinnointijarjestelma] is not Hallinnointijarjestelma.VARDA:
-            raise ValidationError({'hallinnointijarjestelma': ['This toimipaikka should be modified in organisaatio-service.']})
+            raise ValidationError({'hallinnointijarjestelma': [ErrorMessages.TP003.value]})
         if validated_data['vakajarjestaja'] != toimipaikka_obj.vakajarjestaja:
-            raise ValidationError({'vakajarjestaja': ['It is not allowed to change the vakajarjestaja where toimipaikka belongs to.']})
+            raise ValidationError({'vakajarjestaja': [ErrorMessages.TP004.value]})
         if validated_data['toimintamuoto_koodi'] != toimipaikka_obj.toimintamuoto_koodi and toimipaikka_obj.organisaatio_oid is None:
-            raise ValidationError({'toimintamuoto_koodi': ['It is not allowed to change the toimintamuoto_koodi of a toimipaikka that has no organisaatio_oid.']})
+            raise ValidationError({'toimintamuoto_koodi': [ErrorMessages.TP005.value]})
 
         # Validate that paattymis_pvm is after alkamis_pvm if toimipaikka has paattymis_pvm, or if paattymis_pvm
         # is other than null in request
         paattymis_pvm = validated_data.get('paattymis_pvm', None) or toimipaikka_obj.paattymis_pvm
         if paattymis_pvm and not ('paattymis_pvm' in validated_data and not validated_data['paattymis_pvm']):
             if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], paattymis_pvm):
-                raise ValidationError({'paattymis_pvm': ['paattymis_pvm must be after alkamis_pvm']})
+                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI003.value]})
 
         saved_object = serializer.save(changed_by=user)
         delete_cache_keys_related_model('vakajarjestaja', saved_object.vakajarjestaja.id)
@@ -722,7 +723,7 @@ class ToiminnallinenPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveMo
     def perform_create(self, serializer):
         user = self.request.user
         validated_data = serializer.validated_data
-        toimipaikka_obj = validated_data["toimipaikka"]
+        toimipaikka_obj = validated_data['toimipaikka']
         toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
         vakajarjestaja_obj = toimipaikka_obj.vakajarjestaja
         vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
@@ -730,9 +731,9 @@ class ToiminnallinenPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveMo
         related_object_validations.check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
         throw_if_not_tallentaja_permissions(vakajarjestaja_organisaatio_oid, toimipaikka_obj, user)
 
-        if "paattymis_pvm" in validated_data and validated_data["paattymis_pvm"] is not None:
+        if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
             if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm']):
-                raise ValidationError({"paattymis_pvm": ["paattymis_pvm must be after alkamis_pvm"]})
+                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI003.value]})
 
         related_object_validations.check_overlapping_koodi(validated_data, ToiminnallinenPainotus)
 
@@ -757,13 +758,13 @@ class ToiminnallinenPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveMo
 
         related_object_validations.check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
         if not user.has_perm('change_toiminnallinenpainotus', toiminnallinenpainotus_obj):
-            raise PermissionDenied('User does not have permissions to change this object.')
+            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
 
         if 'alkamis_pvm' in validated_data or 'paattymis_pvm' in validated_data:
             alkamis_pvm = validated_data['alkamis_pvm'] if 'alkamis_pvm' in validated_data else toiminnallinenpainotus_obj.alkamis_pvm
             paattymis_pvm = validated_data['paattymis_pvm'] if 'paattymis_pvm' in validated_data else toiminnallinenpainotus_obj.paattymis_pvm
             if not validators.validate_paivamaara1_before_paivamaara2(alkamis_pvm, paattymis_pvm):
-                raise ValidationError({'paattymis_pvm': ['paattymis_pvm must be after alkamis_pvm']})
+                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI003.value]})
         related_object_validations.check_overlapping_koodi(validated_data, ToiminnallinenPainotus, toiminnallinenpainotus_id)
 
         saved_object = serializer.save(changed_by=user)
@@ -773,7 +774,7 @@ class ToiminnallinenPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveMo
         user = request.user
         instance = self.get_object()
         if not user.has_perm('delete_toiminnallinenpainotus', instance):
-            raise PermissionDenied("User does not have permissions to delete this object.")
+            raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
 
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -822,7 +823,7 @@ class KieliPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin,
     def perform_create(self, serializer):
         user = self.request.user
         validated_data = serializer.validated_data
-        toimipaikka_obj = validated_data["toimipaikka"]
+        toimipaikka_obj = validated_data['toimipaikka']
         toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
         vakajarjestaja_obj = toimipaikka_obj.vakajarjestaja
         vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
@@ -830,9 +831,9 @@ class KieliPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin,
         related_object_validations.check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
         throw_if_not_tallentaja_permissions(vakajarjestaja_organisaatio_oid, toimipaikka_obj, user)
 
-        if "paattymis_pvm" in validated_data:
+        if 'paattymis_pvm' in validated_data:
             if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm']):
-                raise ValidationError({"paattymis_pvm": ["paattymis_pvm must be after alkamis_pvm"]})
+                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI003.value]})
         related_object_validations.check_overlapping_koodi(validated_data, KieliPainotus)
 
         with transaction.atomic():
@@ -846,23 +847,23 @@ class KieliPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin,
         user = self.request.user
         url = self.request.path
         validated_data = serializer.validated_data
-        toimipaikka_obj = validated_data["toimipaikka"]
+        toimipaikka_obj = validated_data['toimipaikka']
         toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
         vakajarjestaja_obj = toimipaikka_obj.vakajarjestaja
         vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
 
-        kielipainotus_id = url.split("/")[-2]
+        kielipainotus_id = url.split('/')[-2]
         kielipainotus_obj = KieliPainotus.objects.get(id=kielipainotus_id)
 
         related_object_validations.check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
         if not user.has_perm('change_kielipainotus', kielipainotus_obj):
-            raise PermissionDenied("User does not have permissions to change this object.")
+            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
 
-        if "alkamis_pvm" in validated_data or "paattymis_pvm" in validated_data:
-            alkamis_pvm = validated_data["alkamis_pvm"] if "alkamis_pvm" in validated_data else kielipainotus_obj.alkamis_pvm
-            paattymis_pvm = validated_data["paattymis_pvm"] if "paattymis_pvm" in validated_data else kielipainotus_obj.paattymis_pvm
+        if 'alkamis_pvm' in validated_data or 'paattymis_pvm' in validated_data:
+            alkamis_pvm = validated_data['alkamis_pvm'] if 'alkamis_pvm' in validated_data else kielipainotus_obj.alkamis_pvm
+            paattymis_pvm = validated_data['paattymis_pvm'] if 'paattymis_pvm' in validated_data else kielipainotus_obj.paattymis_pvm
             if not validators.validate_paivamaara1_before_paivamaara2(alkamis_pvm, paattymis_pvm):
-                raise ValidationError({"paattymis_pvm": ["paattymis_pvm must be after alkamis_pvm"]})
+                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI003.value]})
         related_object_validations.check_overlapping_koodi(validated_data, KieliPainotus, kielipainotus_id)
 
         saved_object = serializer.save(changed_by=user)
@@ -872,7 +873,7 @@ class KieliPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin,
         user = request.user
         instance = self.get_object()
         if not user.has_perm('delete_kielipainotus', instance):
-            raise PermissionDenied("User does not have permissions to delete this object.")
+            raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
 
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -890,16 +891,17 @@ class HaeHenkiloViewSet(GenericViewSet, CreateModelMixin):
     """
     queryset = Henkilo.objects.none()
     serializer_class = HaeHenkiloSerializer
-    throttle_classes = (BurstRateThrottleStrict, SustainedRateThrottleStrict)  # We need more strict throttling on henkilo-haku, due to security reasons.
+    # We need more strict throttling on henkilo-haku, due to security reasons.
+    throttle_classes = (BurstRateThrottleStrict, SustainedRateThrottleStrict)
     permission_classes = (CustomObjectPermissions,)
 
     def get_henkilo(self, query_param, query_param_value):
         try:
             henkilo = Henkilo.objects.get(**{query_param: query_param_value})
         except Henkilo.DoesNotExist:
-            raise NotFound(detail="Henkilo was not found.", code=404)
+            raise NotFound(detail='Henkilo was not found.', code=404)
         except Henkilo.MultipleObjectsReturned:  # This should never be possible
-            logger.error("Multiple of henkilot was found with " + query_param + ": " + query_param_value)
+            logger.error('Multiple of henkilot was found with ' + query_param + ': ' + query_param_value)
             raise CustomServerErrorException
 
         user = self.request.user
@@ -909,38 +911,39 @@ class HaeHenkiloViewSet(GenericViewSet, CreateModelMixin):
             """
             For security reasons give HTTP 404 Not found, instead of 403 Permission denied.
             """
-            raise NotFound(detail="Henkilo was not found.", code=404)
+            raise NotFound(detail='Henkilo was not found.', code=404)
 
     def get_successful_response(self, henkilo):
         serializer = HenkiloSerializer(henkilo, context={'request': self.request})
         headers = self.get_success_headers(serializer.data)
-        save_audit_log(self.request.user, self.request.path + "id=" + str(serializer.data["id"]))
+        save_audit_log(self.request.user, self.request.path + 'id=' + str(serializer.data['id']))
         return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
 
     @auditlog
-    def create(self, request, *args, **kwargs):  # Function name (create) is misleading! Here we get the henkilo based on henkilotunnus or henkilo_oid.
+    def create(self, request, *args, **kwargs):
+        # Function name (create) is misleading! Here we get the henkilo based on henkilotunnus or henkilo_oid.
         user = request.user
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        if "henkilotunnus" in serializer.validated_data:
-            henkilotunnus = serializer.validated_data["henkilotunnus"]
+        if 'henkilotunnus' in serializer.validated_data:
+            henkilotunnus = serializer.validated_data['henkilotunnus']
             validators.validate_henkilotunnus(henkilotunnus)
             with transaction.atomic():
-                henkilo = self.get_henkilo("henkilotunnus_unique_hash", hash_string(henkilotunnus))
+                henkilo = self.get_henkilo('henkilotunnus_unique_hash', hash_string(henkilotunnus))
                 if user.has_perm('varda.view_henkilo', henkilo):  # Explicit permission checking - Very important!
                     return self.get_successful_response(henkilo)
                 else:
-                    raise NotFound(detail="Henkilo was not found.", code=404)
+                    raise NotFound(detail='Henkilo was not found.', code=404)
         else:  # "henkilo_oid" in serializer.validated_data
-            henkilo_oid = serializer.validated_data["henkilo_oid"]
+            henkilo_oid = serializer.validated_data['henkilo_oid']
             validators.validate_henkilo_oid(henkilo_oid)
             with transaction.atomic():
-                henkilo = self.get_henkilo("henkilo_oid", henkilo_oid)
+                henkilo = self.get_henkilo('henkilo_oid', henkilo_oid)
                 if user.has_perm('varda.view_henkilo', henkilo):
                     return self.get_successful_response(henkilo)
                 else:
-                    raise NotFound(detail="Henkilo was not found.", code=404)
+                    raise NotFound(detail='Henkilo was not found.', code=404)
 
 
 @auditlogclass
@@ -987,14 +990,14 @@ class HenkiloViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
         self.validate_names_match(henkilo, etunimet, sukunimi)
 
     def validate_names_match(self, henkilo, etunimet, sukunimi):
-        etunimet_list = etunimet.split(" ")
+        etunimet_list = etunimet.split(' ')
         etunimet_list_lowercase = [x.lower() for x in etunimet_list]
-        henkilo_etunimet_list = henkilo.etunimet.split(" ")
+        henkilo_etunimet_list = henkilo.etunimet.split(' ')
         henkilo_etunimet_list_lowercase = [x.lower() for x in henkilo_etunimet_list]
         if set(etunimet_list_lowercase) & set(henkilo_etunimet_list_lowercase) or sukunimi.lower() == henkilo.sukunimi.lower():
             raise ConflictError(self.get_serializer(henkilo).data, status_code=status.HTTP_200_OK)
         else:
-            raise ValidationError({'detail': 'Person data does not match with the entered data'})
+            raise ValidationError({'errors': [ErrorMessages.HE001.value]})
 
     def perform_create(self, serializer):
         """
@@ -1034,7 +1037,8 @@ class HenkiloViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
 
         else:  # "henkilo_oid" in validated_data
             validators.validate_henkilo_oid(henkilo_oid)
-            self.validate_henkilo_uniqueness_oid(henkilo_oid, etunimet, sukunimi)  # checking we don't have this henkilo already (return HTTP 200 if so)
+            # checking we don't have this henkilo already (return HTTP 200 if so)
+            self.validate_henkilo_uniqueness_oid(henkilo_oid, etunimet, sukunimi)
             henkilo_data = get_henkilo_data_by_oid(henkilo_oid)
 
         self.validate_henkilo_data(henkilo_data)
@@ -1058,7 +1062,7 @@ class HenkiloViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
             if henkilo_oid and not henkilo_data:
                 # If adding henkilo to varda using oid he should always be found from ONR. Later adding henkilo with
                 # just name data might be possible here when manual yksilointi is functional.
-                raise ValidationError({'henkilo_oid': ['Not found']})
+                raise ValidationError({'henkilo_oid': [ErrorMessages.HE003.value]})
             # in order to return henkilo_oid and syntyma_pvm in create we need to wait until the new henkilo has been
             # added to oppijanumerorekisteri before saving to database
             if henkilo_data and 'henkilo_oid' not in serializer.validated_data:
@@ -1067,7 +1071,7 @@ class HenkiloViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
             saved_object = serializer.save(changed_by=user)
             assign_perm('view_henkilo', group, saved_object)
 
-            henkilo_id = serializer.data["id"]
+            henkilo_id = serializer.data['id']
             if henkilo_data is not None:
                 save_henkilo_to_db(henkilo_id, henkilo_data)
 
@@ -1076,12 +1080,11 @@ class HenkiloViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
         Validate if henkilo is found in Oppijanumerorekisteri and he has been identified as unique.
         """
         if henkilo_data:
-            is_hetullinen = henkilo_data.get("hetu", None)
-            is_hetuton_yksiloity = (not henkilo_data.get("hetu", None) and
-                                    henkilo_data.get("yksiloity", None))
+            is_hetullinen = henkilo_data.get('hetu', None)
+            is_hetuton_yksiloity = (not henkilo_data.get('hetu', None) and
+                                    henkilo_data.get('yksiloity', None))
             if not is_hetullinen and not is_hetuton_yksiloity:
-                error_msg = "Unfortunately this henkilo cannot be added. Is the henkilo yksiloity?"
-                raise ValidationError({"henkilo_oid": [error_msg, ]})
+                raise ValidationError({'henkilo_oid': [ErrorMessages.HE002.value, ]})
 
 
 @auditlogclass
@@ -1159,7 +1162,7 @@ class LapsiViewSet(viewsets.ModelViewSet):
         lapsi_qs = Lapsi.objects.filter(q_obj).distinct()
         if len(lapsi_qs) > 1:
             logger.error('unable to fetch a single child for {} with henkilo {}'.format(user, validated_data['henkilo']))
-            raise ValidationError('Error while creating a lapsi', code='invalid')
+            raise ValidationError(ErrorMessages.LA001.value, code='invalid')
         else:
             lapsi_obj = lapsi_qs.first()
         if lapsi_obj:
@@ -1200,8 +1203,8 @@ class LapsiViewSet(viewsets.ModelViewSet):
                     throw_if_not_tallentaja_permissions(paos_organisaatio_oid, paos_toimipaikka, user, oma_organisaatio)
                 elif vakatoimija:
                     # Limit vakatoimija user can use to the ones he has view permission
-                    if "view_vakajarjestaja" not in get_perms(user, vakatoimija):
-                        raise PermissionDenied('User does not have permissions for provided vakatoimija.')
+                    if 'view_vakajarjestaja' not in get_perms(user, vakatoimija):
+                        raise PermissionDenied({'errors': [ErrorMessages.LA002.value]})
 
                 # This can be performed only after all permission checks are done!
                 saved_object = self.save_or_return_lapsi_if_already_created(validated_data, serializer)
@@ -1235,7 +1238,7 @@ class LapsiViewSet(viewsets.ModelViewSet):
         lapsi_obj = self.get_object()
 
         if not user.has_perm('change_lapsi', lapsi_obj):
-            raise PermissionDenied("User does not have permissions to change this object.")
+            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
         """
         # These functions are temporarily disabled. Will be re-enabled in CSCVARDA-1942
 
@@ -1261,10 +1264,10 @@ class LapsiViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         user = self.request.user
         if not user.has_perm('delete_lapsi', instance):
-            raise PermissionDenied("User does not have permissions to delete this object.")
+            raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
 
         if Huoltajuussuhde.objects.filter(lapsi__id=instance.id).filter(maksutiedot__isnull=False).exists():
-            raise ValidationError({"detail": "Cannot delete lapsi. There are maksutieto/maksutietoja referencing it that need to be deleted first."})
+            raise ValidationError({'errors': [ErrorMessages.LA003.value]})
 
         instance_id = instance.id
 
@@ -1273,7 +1276,7 @@ class LapsiViewSet(viewsets.ModelViewSet):
                 Huoltajuussuhde.objects.filter(lapsi__id=instance_id).delete()
                 instance.delete()
             except ProtectedError:
-                raise ValidationError({"detail": "Cannot delete lapsi. There are objects referencing it that need to be deleted first."})
+                raise ValidationError({'errors': [ErrorMessages.LA004.value]})
 
             delete_cache_keys_related_model('henkilo', instance.henkilo.id)
 
@@ -1328,21 +1331,21 @@ class VarhaiskasvatuspaatosViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = self.request.user
         validated_data = serializer.validated_data
-        lapsi = validated_data["lapsi"]
-        if "change_lapsi" not in get_perms(user, lapsi):
-            raise PermissionDenied('User does not have permissions.')
+        lapsi = validated_data['lapsi']
+        if 'change_lapsi' not in get_perms(user, lapsi):
+            raise PermissionDenied({'errors': [ErrorMessages.PE003.value]})
 
         if not validators.validate_paivamaara1_before_paivamaara2(validated_data['hakemus_pvm'], validated_data['alkamis_pvm'], can_be_same=True):
-            raise ValidationError({"hakemus_pvm": ["hakemus_pvm must be before alkamis_pvm (or same)."]})
-        if "paattymis_pvm" in validated_data and validated_data["paattymis_pvm"] is not None:
+            raise ValidationError({'hakemus_pvm': [ErrorMessages.VP001.value]})
+        if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
             if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm'], can_be_same=True):
-                raise ValidationError({"paattymis_pvm": ["paattymis_pvm must be after alkamis_pvm (or same)"]})
-        if validated_data["vuorohoito_kytkin"]:
-            validated_data["paivittainen_vaka_kytkin"] = None
-            validated_data["kokopaivainen_vaka_kytkin"] = None
-        timediff = validated_data["alkamis_pvm"] - validated_data["hakemus_pvm"]
+                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI004.value]})
+        if validated_data['vuorohoito_kytkin']:
+            validated_data['paivittainen_vaka_kytkin'] = None
+            validated_data['kokopaivainen_vaka_kytkin'] = None
+        timediff = validated_data['alkamis_pvm'] - validated_data['hakemus_pvm']
         if timediff.days <= 14:
-            validated_data["pikakasittely_kytkin"] = True
+            validated_data['pikakasittely_kytkin'] = True
 
         related_object_validations.check_overlapping_varhaiskasvatus_object(validated_data, Varhaiskasvatuspaatos)
 
@@ -1352,7 +1355,7 @@ class VarhaiskasvatuspaatosViewSet(viewsets.ModelViewSet):
             if lapsi.paos_kytkin:
                 paos_oikeus = check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(lapsi.oma_organisaatio, lapsi.paos_organisaatio)
                 if not user_has_tallentaja_permission_in_organization(paos_oikeus.tallentaja_organisaatio.organisaatio_oid, user):
-                    raise PermissionDenied('User does not have permissions.')
+                    raise PermissionDenied({'errors': [ErrorMessages.PE003.value]})
                 oma_organisaatio_oid = lapsi.oma_organisaatio.organisaatio_oid
                 paos_organisaatio_oid = lapsi.paos_organisaatio.organisaatio_oid
                 tallentaja_organisaatio_oid = paos_oikeus.tallentaja_organisaatio.organisaatio_oid
@@ -1370,39 +1373,47 @@ class VarhaiskasvatuspaatosViewSet(viewsets.ModelViewSet):
         user = self.request.user
         validated_data = serializer.validated_data
         url = self.request.path
-        varhaiskasvatuspaatos_id = url.split("/")[-2]
+        varhaiskasvatuspaatos_id = url.split('/')[-2]
         varhaiskasvatuspaatos_obj = Varhaiskasvatuspaatos.objects.get(id=varhaiskasvatuspaatos_id)
         varhaiskasvatussuhteet = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos_id=varhaiskasvatuspaatos_id)
 
         if not user.has_perm('change_varhaiskasvatuspaatos', varhaiskasvatuspaatos_obj):
-            raise PermissionDenied("User does not have permissions to change this object.")
+            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
 
         """
         Validations for alkamis_pvm and hakemus_pvm must be done in every PUT/PATCH.
         Therefore include the original value if not included in the PATCH.
         """
-        if "alkamis_pvm" not in validated_data:
+        if 'alkamis_pvm' not in validated_data:
             validated_data['alkamis_pvm'] = varhaiskasvatuspaatos_obj.alkamis_pvm
-        if "hakemus_pvm" not in validated_data:
+        if 'hakemus_pvm' not in validated_data:
             validated_data['hakemus_pvm'] = varhaiskasvatuspaatos_obj.hakemus_pvm
 
-        if not validators.validate_paivamaara1_before_paivamaara2(validated_data['hakemus_pvm'], validated_data['alkamis_pvm'], can_be_same=True):
-            raise ValidationError({"hakemus_pvm": ["hakemus_pvm must be before alkamis_pvm (or same)."]})
+        if not validators.validate_paivamaara1_before_paivamaara2(validated_data['hakemus_pvm'],
+                                                                  validated_data['alkamis_pvm'],
+                                                                  can_be_same=True):
+            raise ValidationError({'hakemus_pvm': [ErrorMessages.VP001.value]})
 
         for varhaiskasvatussuhde_obj in varhaiskasvatussuhteet:
-            self.validate_paivamaarat_varhaiskasvatussuhteet(validated_data['alkamis_pvm'], varhaiskasvatussuhde_obj.alkamis_pvm, {"alkamis_pvm": ["varhaiskasvatussuhde.alkamis_pvm must be after varhaiskasvatuspaatos.alkamis_pvm"]})
+            self.validate_paivamaarat_varhaiskasvatussuhteet(validated_data['alkamis_pvm'],
+                                                             varhaiskasvatussuhde_obj.alkamis_pvm,
+                                                             {'alkamis_pvm': [ErrorMessages.VP002.value]})
 
-        if "paattymis_pvm" in validated_data and validated_data["paattymis_pvm"] is not None:
-            if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm'], can_be_same=True):
-                raise ValidationError({"paattymis_pvm": ["paattymis_pvm must be after alkamis_pvm (or same)."]})
+        if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
+            if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'],
+                                                                      validated_data['paattymis_pvm'],
+                                                                      can_be_same=True):
+                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI004.value]})
             for varhaiskasvatussuhde_obj in varhaiskasvatussuhteet:
-                self.validate_paivamaarat_varhaiskasvatussuhteet(varhaiskasvatussuhde_obj.paattymis_pvm, validated_data['paattymis_pvm'], {"paattymis_pvm": ["varhaiskasvatuspaatos.paattymis_pvm must be after varhaiskasvatussuhde.paattymis_pvm"]})
+                self.validate_paivamaarat_varhaiskasvatussuhteet(varhaiskasvatussuhde_obj.paattymis_pvm,
+                                                                 validated_data['paattymis_pvm'],
+                                                                 {'paattymis_pvm': [ErrorMessages.VP003.value]})
 
-        timediff = validated_data["alkamis_pvm"] - validated_data["hakemus_pvm"]
+        timediff = validated_data['alkamis_pvm'] - validated_data['hakemus_pvm']
         if timediff.days <= 14:
-            validated_data["pikakasittely_kytkin"] = True
+            validated_data['pikakasittely_kytkin'] = True
         else:
-            validated_data["pikakasittely_kytkin"] = False
+            validated_data['pikakasittely_kytkin'] = False
 
         related_object_validations.check_overlapping_varhaiskasvatus_object(validated_data, Varhaiskasvatuspaatos, varhaiskasvatuspaatos_id)
         saved_object = serializer.save(changed_by=user)
@@ -1415,12 +1426,12 @@ class VarhaiskasvatuspaatosViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         user = self.request.user
         if not user.has_perm('delete_varhaiskasvatuspaatos', instance):
-            raise PermissionDenied("User does not have permissions to delete this object.")
+            raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
         lapsi_id = instance.lapsi.id
         try:
             instance.delete()
         except ProtectedError:
-            raise ValidationError({"detail": "Cannot delete varhaiskasvatuspaatos. There are objects referencing it that need to be deleted first."})
+            raise ValidationError({'errors': [ErrorMessages.VP004.value]})
         delete_cache_keys_related_model('lapsi', lapsi_id)
         """
         No need to delete toimipaikan_lapset or vakajarjestaja_yhteenveto caches.
@@ -1496,9 +1507,9 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
         vakasuhteet = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=lapsi_obj)
         vakajarjestajat = VakaJarjestaja.objects.filter(toimipaikat__varhaiskasvatussuhteet__in=vakasuhteet).distinct()
         if vakajarjestajat.count() > 1:
-            logger.error('Lapsi under multiple vakajarjestajat. Lapsi-id:  {}'.format(lapsi_obj.id))
+            logger.error('Lapsi under multiple vakajarjestajat. Lapsi-id: {}'.format(lapsi_obj.id))
         if vakajarjestajat and new_vakajarjestaja_obj not in vakajarjestajat:
-            raise ValidationError({"non_field_errors": ["this lapsi is already under other vakajarjestaja. Please create a new one."]})
+            raise ValidationError({'errors': [ErrorMessages.VS001.value]})
 
     def assign_paos_lapsi_permissions(self, lapsi_obj, varhaiskasvatussuhde_obj, varhaiskasvatuspaatos_obj,
                                       toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid):
@@ -1576,7 +1587,7 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
             """
             if vakajarjestaja_organisaatio_oid == '':
                 logger.error('Missing organisaatio_oid for vakajarjestaja: ' + str(vakajarjestaja_obj.id))
-                raise ValidationError({'non_field_errors': ['Organisaatio_oid missing for vakajarjestaja.']})
+                raise ValidationError({'errors': [ErrorMessages.VS002.value]})
         else:
             toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
             related_object_validations.check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
@@ -1623,21 +1634,21 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
         user = self.request.user
         url = self.request.path
         validated_data = serializer.validated_data
-        toimipaikka_obj = validated_data["toimipaikka"]
+        toimipaikka_obj = validated_data['toimipaikka']
         toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
         vakajarjestaja_obj = toimipaikka_obj.vakajarjestaja
         vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
-        varhaiskasvatussuhde_id = url.split("/")[-2]
+        varhaiskasvatussuhde_id = url.split('/')[-2]
         varhaiskasvatussuhde_obj = Varhaiskasvatussuhde.objects.get(id=varhaiskasvatussuhde_id)
 
         related_object_validations.check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
         if not user.has_perm('change_varhaiskasvatussuhde', varhaiskasvatussuhde_obj):
-            raise PermissionDenied("User does not have permissions to change this object.")
+            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
 
-        if "varhaiskasvatuspaatos" in validated_data and varhaiskasvatussuhde_obj.varhaiskasvatuspaatos != validated_data["varhaiskasvatuspaatos"]:
-            raise ValidationError({"varhaiskasvatuspaatos": ["Changing of varhaiskasvatuspaatos is not allowed"]})
-        if "toimipaikka" in validated_data and varhaiskasvatussuhde_obj.toimipaikka != validated_data["toimipaikka"]:
-            raise ValidationError({"toimipaikka": ["Changing of toimipaikka is not allowed"]})
+        if 'varhaiskasvatuspaatos' in validated_data and varhaiskasvatussuhde_obj.varhaiskasvatuspaatos != validated_data['varhaiskasvatuspaatos']:
+            raise ValidationError({'varhaiskasvatuspaatos': [ErrorMessages.VS003.value]})
+        if 'toimipaikka' in validated_data and varhaiskasvatussuhde_obj.toimipaikka != validated_data['toimipaikka']:
+            raise ValidationError({'toimipaikka': [ErrorMessages.VS004.value]})
         related_object_validations.check_overlapping_varhaiskasvatus_object(validated_data, Varhaiskasvatussuhde, varhaiskasvatussuhde_id)
         saved_object = serializer.save(changed_by=user)
         """
@@ -1652,7 +1663,7 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         user = self.request.user
         if not user.has_perm('delete_varhaiskasvatussuhde', instance):
-            raise PermissionDenied("User does not have permissions to delete this object.")
+            raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
         delete_toimipaikan_lapset_cache(str(instance.toimipaikka.id))
         cache.delete('vakajarjestaja_yhteenveto_' + str(instance.toimipaikka.vakajarjestaja.id))
         delete_cache_keys_related_model('toimipaikka', instance.toimipaikka.id)
@@ -1715,28 +1726,28 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         paattymis_pvm_filter = Q()
 
         if not data['yksityinen_jarjestaja']:
-            if "perheen_koko" not in data:
-                raise ValidationError({"perheen_koko": ["perheen_koko field is required"]})
+            if 'perheen_koko' not in data:
+                raise ValidationError({'perheen_koko': [ErrorMessages.MA001.value]})
 
         alkamis_pvm_filter = (Q(huoltajuussuhteet__lapsi=data['lapsi']) &
                               (Q(paattymis_pvm=None) | Q(paattymis_pvm__gte=data['alkamis_pvm']))
                               )
 
-        if "paattymis_pvm" in data and data['paattymis_pvm'] is not None:
+        if 'paattymis_pvm' in data and data['paattymis_pvm'] is not None:
             if not validators.validate_paivamaara1_before_paivamaara2(data['alkamis_pvm'], data['paattymis_pvm'], can_be_same=True):
-                raise ValidationError({"paattymis_pvm": ["paattymis_pvm must be after alkamis_pvm (or same)"]})
+                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI004.value]})
             paattymis_pvm_filter = (Q(alkamis_pvm__lte=data['paattymis_pvm']))
 
-        if not data["huoltajat"] or len(data["huoltajat"]) == 0:
-            raise ValidationError({"huoltajat": ["huoltajat field is required"]})
+        if not data['huoltajat'] or len(data['huoltajat']) == 0:
+            raise ValidationError({'huoltajat': [ErrorMessages.MA002.value]})
 
         vtj_huoltajuudet = self.fetch_and_match_huoltajuudet(data)
         if vtj_huoltajuudet.count() == 0:
-            raise ValidationError({"huoltajat": ["no matching huoltaja found"]})
+            raise ValidationError({'huoltajat': [ErrorMessages.MA003.value]})
 
         samanaikaiset_maksutiedot = Maksutieto.objects.filter(Q(alkamis_pvm_filter & paattymis_pvm_filter)).distinct().count()
         if samanaikaiset_maksutiedot >= 2:
-            raise ValidationError({"maksutieto": ["lapsi already has 2 active maksutieto during that time period"]})
+            raise ValidationError({'errors': [ErrorMessages.MA004.value]})
 
         return vtj_huoltajuudet
 
@@ -1774,13 +1785,11 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         latest_paattymis_pvm = vakapaatokset.latest('paattymis_pvm').paattymis_pvm
 
         if start_date is not None and validators.validate_paivamaara1_before_paivamaara2(start_date, earliest_alkamis_pvm, can_be_same=False):
-            msg = 'maksutieto.alkamis_pvm must be after earliest varhaiskasvatuspaatos.alkamis_pvm'
-            raise ValidationError({'alkamis_pvm': [msg]})
+            raise ValidationError({'alkamis_pvm': [ErrorMessages.MA005.value]})
 
         if all((v.paattymis_pvm is not None) for v in vakapaatokset):
             if start_date is not None and not validators.validate_paivamaara1_after_paivamaara2(latest_paattymis_pvm, start_date, can_be_same=True):
-                msg = 'maksutieto.alkamis_pvm must be before the latest varhaiskasvatuspaatos.paattymis_pvm (or same)'
-                raise ValidationError({'alkamis_pvm': [msg]})
+                raise ValidationError({'alkamis_pvm': [ErrorMessages.MA006.value]})
 
         """
         While it is possible to leave out the end date, it must fall within vakapaatokset if given.
@@ -1789,38 +1798,37 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         if end_date is not None:
             if all((v.paattymis_pvm is not None) for v in vakapaatokset):
                 if not validators.validate_paivamaara1_after_paivamaara2(latest_paattymis_pvm, end_date, can_be_same=True):
-                    msg = 'maksutieto.paattymis_pvm must be before latest varhaiskasvatuspaatos.paattymis_pvm (or same)'
-                    raise ValidationError({'paattymis_pvm': [msg]})
+                    raise ValidationError({'paattymis_pvm': [ErrorMessages.MA007.value]})
 
         if lapsi.yksityinen_kytkin and end_date and end_date < datetime.date(2020, 9, 1):
-            raise ValidationError({'paattymis_pvm': ['paattymis_pvm must be after 1.9.2020 for yksityinen lapsi']})
+            raise ValidationError({'paattymis_pvm': [ErrorMessages.MA014.value]})
 
     def fetch_and_match_huoltajuudet(self, data):
         queryset_filter = Q()
 
         # get VTJ_huoltajat from database
         vtj_huoltajuudet = (Huoltajuussuhde.objects
-                            .filter(lapsi=data["lapsi"])
+                            .filter(lapsi=data['lapsi'])
                             .filter(voimassa_kytkin=True)
                             )
 
         # validate VTJ_huoltaja to be one of the persons in the data
 
-        for user_huoltaja in data["huoltajat"]:
+        for user_huoltaja in data['huoltajat']:
             etunimi_q = Q()
-            etunimet_list = user_huoltaja["etunimet"].split()
+            etunimet_list = user_huoltaja['etunimet'].split()
             for etunimi in etunimet_list:
                 etunimi_q = Q(huoltaja__henkilo__etunimet__search=etunimi) | etunimi_q
-            if "henkilo_oid" in user_huoltaja:
+            if 'henkilo_oid' in user_huoltaja:
                 henkilo_filter = ((etunimi_q |
-                                  Q(huoltaja__henkilo__sukunimi__iexact=user_huoltaja["sukunimi"])) &
-                                  Q(huoltaja__henkilo__henkilo_oid=user_huoltaja["henkilo_oid"])
+                                  Q(huoltaja__henkilo__sukunimi__iexact=user_huoltaja['sukunimi'])) &
+                                  Q(huoltaja__henkilo__henkilo_oid=user_huoltaja['henkilo_oid'])
                                   )
             else:
-                validators.validate_henkilotunnus(user_huoltaja["henkilotunnus"])
-                henkilotunnus = hash_string(user_huoltaja["henkilotunnus"])
+                validators.validate_henkilotunnus(user_huoltaja['henkilotunnus'])
+                henkilotunnus = hash_string(user_huoltaja['henkilotunnus'])
                 henkilo_filter = ((etunimi_q |
-                                  Q(huoltaja__henkilo__sukunimi__iexact=user_huoltaja["sukunimi"])) &
+                                  Q(huoltaja__henkilo__sukunimi__iexact=user_huoltaja['sukunimi'])) &
                                   Q(huoltaja__henkilo__henkilotunnus_unique_hash=henkilotunnus)
                                   )
             queryset_filter = (queryset_filter | henkilo_filter)
@@ -1829,18 +1837,18 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
 
     def get_maksutieto(self, saved_data, lapsi, huoltajat, inserted_huoltajat_count):
         return {
-            "url": self.request.build_absolute_uri(reverse('maksutieto-detail', args=[saved_data.id])),
-            "id": saved_data.id,
-            "huoltajat": huoltajat,
-            "lapsi": self.request.build_absolute_uri(reverse('lapsi-detail', args=[lapsi.id])),
-            "maksun_peruste_koodi": saved_data.maksun_peruste_koodi,
-            "palveluseteli_arvo": saved_data.palveluseteli_arvo,
-            "asiakasmaksu": saved_data.asiakasmaksu,
-            "perheen_koko": saved_data.perheen_koko,
-            "alkamis_pvm": saved_data.alkamis_pvm,
-            "paattymis_pvm": saved_data.paattymis_pvm,
-            "tallennetut_huoltajat_count": len(huoltajat),
-            "ei_tallennetut_huoltajat_count": inserted_huoltajat_count - len(huoltajat),
+            'url': self.request.build_absolute_uri(reverse('maksutieto-detail', args=[saved_data.id])),
+            'id': saved_data.id,
+            'huoltajat': huoltajat,
+            'lapsi': self.request.build_absolute_uri(reverse('lapsi-detail', args=[lapsi.id])),
+            'maksun_peruste_koodi': saved_data.maksun_peruste_koodi,
+            'palveluseteli_arvo': saved_data.palveluseteli_arvo,
+            'asiakasmaksu': saved_data.asiakasmaksu,
+            'perheen_koko': saved_data.perheen_koko,
+            'alkamis_pvm': saved_data.alkamis_pvm,
+            'paattymis_pvm': saved_data.paattymis_pvm,
+            'tallennetut_huoltajat_count': len(huoltajat),
+            'ei_tallennetut_huoltajat_count': inserted_huoltajat_count - len(huoltajat),
         }
 
     def process_post_maksutieto_response(self, huoltajat, inserted_huoltaja_data):
@@ -1851,7 +1859,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
             If a match is not found -> remove henkilotunnus-attribute from response.
             """
             henkilotunnus_found = False
-            henkilotunnus = decrypt_henkilotunnus(huoltaja["henkilotunnus"])
+            henkilotunnus = decrypt_henkilotunnus(huoltaja['henkilotunnus'])
             for inserted_huoltaja in inserted_huoltaja_data:
                 for key, value in inserted_huoltaja.items():
                     if key == 'henkilotunnus' and value == henkilotunnus:
@@ -1890,7 +1898,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         vakapaatokset = Varhaiskasvatuspaatos.objects.filter(lapsi=lapsi).order_by('-alkamis_pvm')
         vakapaatos = vakapaatokset.first()
         if not vakapaatos:
-            raise ValidationError({'Maksutieto': ['Lapsi has no Varhaiskasvatuspaatos. Add Varhaiskasvatuspaatos before adding maksutieto.']})
+            raise ValidationError({'errors': [ErrorMessages.MA008.value]})
 
         self.validate_yksityinen_maksutieto(serializer.validated_data, lapsi)
 
@@ -1901,16 +1909,16 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         """
         toimipaikka_qs = Toimipaikka.objects.filter(varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi__id=lapsi.id)
         if not toimipaikka_qs:
-            raise ValidationError({"Maksutieto": ["Lapsi has no Varhaiskasvatussuhde. Add Varhaiskasvatussuhde before adding maksutieto."]})
+            raise ValidationError({'errors': [ErrorMessages.MA009.value]})
         vakajarjestaja = toimipaikka_qs[0].vakajarjestaja
         vakajarjestaja_organisaatio_oid = vakajarjestaja.organisaatio_oid
 
         if lapsi.paos_kytkin:
             if not user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, lapsi.oma_organisaatio.organisaatio_oid):
-                raise PermissionDenied("User does not have permissions to add maksutieto to this lapsi.")
+                raise PermissionDenied({'errors': [ErrorMessages.MA010.value]})
         else:
             if not user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, vakajarjestaja_organisaatio_oid, toimipaikka_qs):
-                raise PermissionDenied("User does not have permissions to add maksutieto to this lapsi.")
+                raise PermissionDenied({'errors': [ErrorMessages.MA010.value]})
 
         data = dict(serializer.validated_data)
         vtj_huoltajuudet = self.validate_user_data(data)
@@ -1937,10 +1945,10 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
 
         henkilo_attributes = ['henkilotunnus', 'henkilo_oid', 'etunimet', 'sukunimi']
         huoltajat = Henkilo.objects.filter(huoltaja__huoltajuussuhteet__in=vtj_huoltajuudet).values(*henkilo_attributes)
-        self.process_post_maksutieto_response(huoltajat, data["huoltajat"])
+        self.process_post_maksutieto_response(huoltajat, data['huoltajat'])
 
         # return saved object and related information
-        return_maksutieto_to_user = self.get_maksutieto(saved_object, lapsi, huoltajat, len(data["huoltajat"]))
+        return_maksutieto_to_user = self.get_maksutieto(saved_object, lapsi, huoltajat, len(data['huoltajat']))
 
         headers = self.get_success_headers(saved_object)
         return Response(return_maksutieto_to_user, status=status.HTTP_201_CREATED, headers=headers)
@@ -1953,24 +1961,24 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         paattymis_pvm_q = Q()
 
         if not user.has_perm('change_maksutieto', maksutieto_obj):
-            raise PermissionDenied("User does not have permissions to change this object.")
+            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
 
-        if "paattymis_pvm" in data and data['paattymis_pvm'] is not None:
+        if 'paattymis_pvm' in data and data['paattymis_pvm'] is not None:
             if validators.validate_paivamaara1_after_paivamaara2(maksutieto_obj.alkamis_pvm, data['paattymis_pvm'], can_be_same=False):
-                raise ValidationError({"paattymis_pvm": ["paattymis_pvm must be after alkamis_pvm (or same)"]})
+                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI004.value]})
             paattymis_pvm_q = Q(alkamis_pvm__lte=data['paattymis_pvm'])
 
         lapsi_objects = Lapsi.objects.filter(huoltajuussuhteet__maksutiedot__id=maksutieto_obj.id).distinct()
         if len(lapsi_objects) != 1:
-            logger.error("Error getting lapsi for maksutieto " + str(maksutieto_obj.id))
+            logger.error('Error getting lapsi for maksutieto ' + str(maksutieto_obj.id))
             raise CustomServerErrorException
         lapsi_object = lapsi_objects[0]
 
-        vakapaatokset = Varhaiskasvatuspaatos.objects.filter(lapsi=lapsi_object).order_by("-alkamis_pvm")
+        vakapaatokset = Varhaiskasvatuspaatos.objects.filter(lapsi=lapsi_object).order_by('-alkamis_pvm')
         if not vakapaatokset.exists():
-            raise ValidationError({"Maksutieto": ["Lapsi has no Varhaiskasvatuspaatos. Add Varhaiskasvatuspaatos before adding maksutieto."]})
+            raise ValidationError({'errors': [ErrorMessages.MA008.value]})
         if not Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__in=vakapaatokset).exists():
-            raise ValidationError({"Maksutieto": ["Lapsi has no Varhaiskasvatussuhde. Add Varhaiskasvatussuhde before adding maksutieto."]})
+            raise ValidationError({'errors': [ErrorMessages.MA009.value]})
 
         self.validate_start_and_end_dates(vakapaatokset, data.get('alkamis_pvm', None),
                                           data.get('paattymis_pvm', None), lapsi_object)
@@ -1983,7 +1991,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         ).distinct().count()
 
         if samanaikaiset_maksutiedot >= 2:
-            raise ValidationError({"paattymis_pvm": ["lapsi already has 2 active maksutieto during that time period"]})
+            raise ValidationError({'paattymis_pvm': [ErrorMessages.MA004.value]})
 
         serializer.save(changed_by=user)
 
@@ -2000,12 +2008,12 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
 
         lapsi_objects = Lapsi.objects.filter(huoltajuussuhteet__maksutiedot=instance).distinct()
         if len(lapsi_objects) != 1:
-            logger.error("Error getting lapsi when deleting maksutieto " + str(instance.id))
+            logger.error('Error getting lapsi when deleting maksutieto ' + str(instance.id))
             raise CustomServerErrorException
         lapsi_object = lapsi_objects[0]
 
         if not user.has_perm('delete_maksutieto', instance):
-            raise PermissionDenied("User does not have permissions to delete this object.")
+            raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
         self.perform_destroy(instance)
 
         toimipaikka_obj = (Toimipaikka
@@ -2056,14 +2064,14 @@ class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cr
 
         if 'paos_organisaatio' in validated_data and validated_data['paos_organisaatio'] is not None:
             if validated_data['oma_organisaatio'] == validated_data['paos_organisaatio']:
-                raise ValidationError({'oma_organisaatio': "oma_organisaatio can not be the same as paos_organisaatio"})
+                raise ValidationError({'oma_organisaatio': [ErrorMessages.PT001.value]})
 
             paos_toiminta_is_active_q = (Q(oma_organisaatio=validated_data['paos_organisaatio']) &
                                          Q(paos_toimipaikka__vakajarjestaja=validated_data['oma_organisaatio']))
 
         elif 'paos_toimipaikka' in validated_data and validated_data['paos_toimipaikka'] is not None:
             if validated_data['paos_toimipaikka'].vakajarjestaja == validated_data['oma_organisaatio']:
-                raise ValidationError({'paos_toimipaikka': "paos_toimipaikka can not be in oma_organisaatio"})
+                raise ValidationError({'paos_toimipaikka': [ErrorMessages.PT002.value]})
 
             paos_toiminta_is_active_q = (Q(oma_organisaatio=validated_data['paos_toimipaikka'].vakajarjestaja) &
                                          Q(paos_organisaatio=validated_data['oma_organisaatio']))
@@ -2073,7 +2081,7 @@ class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cr
             toimipaikka_jarjestamismuoto_koodit_set = set(toimipaikka_jarjestamismuoto_koodit)
             paos_jarjestamismuoto_koodit_set = set(['jm02', 'jm03'])
             if len(toimipaikka_jarjestamismuoto_koodit_set.intersection(paos_jarjestamismuoto_koodit_set)) == 0:
-                raise ValidationError({'paos_toimipaikka': "jarjestamismuoto_koodi is not jm02 or jm03"})
+                raise ValidationError({'paos_toimipaikka': [ErrorMessages.PT003.value]})
 
         return paos_toiminta_is_active_q
 
@@ -2164,10 +2172,10 @@ class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cr
 
             except IntegrityError as e:
                 if 'oma_organisaatio_paos_organisaatio_unique_constraint' in str(e):
-                    msg = {'non_field_errors': ['oma_organisaatio and paos_organisaatio pair already exists.']}
+                    msg = {'errors': [ErrorMessages.PT004.value]}
                     raise ValidationError(msg)
                 elif 'oma_organisaatio_paos_toimipaikka_unique_constraint' in str(e):
-                    msg = {'non_field_errors': ['oma_organisaatio and paos_toimipaikka pair already exists.']}
+                    msg = {'errors': [ErrorMessages.PT005.value]}
                     raise ValidationError(msg)
                 else:
                     logger.error('IntegrityError at PaosToimintaViewSet: {}'.format(e))
@@ -2182,7 +2190,7 @@ class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cr
         is_delete = False  # If toimipaikka permissions are removed instance should also be deleted
 
         if not user.has_perm('delete_paostoiminta', instance):
-            raise PermissionDenied("User does not have permissions to delete this object.")
+            raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
 
         with transaction.atomic():
             if instance.paos_organisaatio is not None:
@@ -2251,18 +2259,16 @@ class PaosOikeusViewSet(GenericViewSet, UpdateModelMixin, ListModelMixin, Retrie
         paos_oikeus_obj = self.get_object()
         validated_data = serializer.validated_data
 
-        if not user.has_perm("change_paosoikeus", paos_oikeus_obj):
-            raise PermissionDenied("user does not have permission to change object")
+        if not user.has_perm('change_paosoikeus', paos_oikeus_obj):
+            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
 
         if (validated_data['tallentaja_organisaatio'] != paos_oikeus_obj.jarjestaja_kunta_organisaatio and
                 validated_data['tallentaja_organisaatio'] != paos_oikeus_obj.tuottaja_organisaatio):
-            msg = ("tallentaja_organisaatio must be either jarjestaja_kunta_organisaatio or tuottaja_organisaatio")
-            raise ValidationError({"tallentaja_organisaatio": msg}, code='invalid')
+            raise ValidationError({'tallentaja_organisaatio': [ErrorMessages.PO001.value]}, code='invalid')
 
         # do not allow unnecessary updates
         if paos_oikeus_obj.tallentaja_organisaatio == validated_data['tallentaja_organisaatio']:
-            msg = ('tallentaja is already set for vakajarjestaja {}').format(validated_data['tallentaja_organisaatio'])
-            raise ValidationError({"tallentaja_organisaatio": msg}, code='invalid')
+            raise ValidationError({'tallentaja_organisaatio': [ErrorMessages.PO002.value]}, code='invalid')
 
         with transaction.atomic():
             serializer.save(changed_by=user)
@@ -2297,14 +2303,14 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
         if user.has_perm('view_vakajarjestaja', vakajarjestaja):
             return vakajarjestaja
         else:
-            raise Http404('Not found.')
+            raise Http404
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
         self.today = datetime.datetime.now()
         self.vakajarjestaja_id = kwargs['vakajarjestaja_pk']
         if not self.vakajarjestaja_id.isdigit():
-            raise Http404('Not found.')
+            raise Http404
 
         vakajarjestaja_obj = self.get_vakajarjestaja(vakajarjestaja_pk=self.vakajarjestaja_id)
         data = cache.get('vakajarjestaja_yhteenveto_' + kwargs['vakajarjestaja_pk'])
@@ -2581,15 +2587,15 @@ class NestedVarhaiskasvatussuhdeViewSet(GenericViewSet, ListModelMixin):
     def get_varhaiskasvatuspaatos(self, request, varhaiskasvatuspaatos_pk=None):
         varhaiskasvatuspaatos = get_object_or_404(Varhaiskasvatuspaatos.objects.all(), pk=varhaiskasvatuspaatos_pk)
         user = request.user
-        if user.has_perm("view_varhaiskasvatuspaatos", varhaiskasvatuspaatos):
+        if user.has_perm('view_varhaiskasvatuspaatos', varhaiskasvatuspaatos):
             return varhaiskasvatuspaatos
         else:
-            raise Http404("Not found.")
+            raise Http404
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
         if not kwargs['varhaiskasvatuspaatos_pk'].isdigit():
-            raise Http404("Not found.")
+            raise Http404
 
         self.get_varhaiskasvatuspaatos(request, varhaiskasvatuspaatos_pk=kwargs['varhaiskasvatuspaatos_pk'])
         self.queryset = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos=kwargs['varhaiskasvatuspaatos_pk']).order_by('id')
@@ -2615,12 +2621,12 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
         if user.has_perm('view_vakajarjestaja', vakajarjestaja):
             return vakajarjestaja
         else:
-            raise Http404('Not found.')
+            raise Http404
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
         if not kwargs['vakajarjestaja_pk'].isdigit():
-            raise Http404('Not found.')
+            raise Http404
 
         vakajarjestaja_obj = self.get_vakajarjestaja(request, vakajarjestaja_pk=kwargs['vakajarjestaja_pk'])
         paos_toimipaikat = get_paos_toimipaikat(vakajarjestaja_obj)
@@ -2648,7 +2654,7 @@ class NestedToiminnallinenPainotusViewSet(GenericViewSet, ListModelMixin):
     @transaction.atomic
     def list(self, request, *args, **kwargs):
         if not kwargs['toimipaikka_pk'].isdigit():
-            raise Http404("Not found.")
+            raise Http404
         get_toimipaikka_or_404(request.user, toimipaikka_pk=kwargs['toimipaikka_pk'])
 
         self.queryset = ToiminnallinenPainotus.objects.filter(toimipaikka=kwargs['toimipaikka_pk']).order_by('id')
@@ -2670,7 +2676,7 @@ class NestedKieliPainotusViewSet(GenericViewSet, ListModelMixin):
     @transaction.atomic
     def list(self, request, *args, **kwargs):
         if not kwargs['toimipaikka_pk'].isdigit():
-            raise Http404("Not found.")
+            raise Http404
         get_toimipaikka_or_404(request.user, toimipaikka_pk=kwargs['toimipaikka_pk'])
 
         self.queryset = KieliPainotus.objects.filter(toimipaikka=kwargs['toimipaikka_pk']).order_by('id')
@@ -2692,7 +2698,7 @@ class NestedVarhaiskasvatussuhdeToimipaikkaViewSet(GenericViewSet, ListModelMixi
     @transaction.atomic
     def list(self, request, *args, **kwargs):
         if not kwargs['toimipaikka_pk'].isdigit():
-            raise Http404("Not found.")
+            raise Http404
 
         get_toimipaikka_or_404(request.user, toimipaikka_pk=kwargs['toimipaikka_pk'])
         self.queryset = Varhaiskasvatussuhde.objects.filter(toimipaikka=kwargs['toimipaikka_pk']).order_by('id')
@@ -2715,15 +2721,15 @@ class NestedVarhaiskasvatuspaatosViewSet(GenericViewSet, ListModelMixin):
     def get_lapsi(self, request, lapsi_pk=None):
         lapsi = get_object_or_404(Lapsi.objects.all(), pk=lapsi_pk)
         user = request.user
-        if user.has_perm("view_lapsi", lapsi):
+        if user.has_perm('view_lapsi', lapsi):
             return lapsi
         else:
-            raise Http404("Not found.")
+            raise Http404
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
         if not kwargs['lapsi_pk'].isdigit():
-            raise Http404("Not found.")
+            raise Http404
 
         self.get_lapsi(request, lapsi_pk=kwargs['lapsi_pk'])
         self.queryset = Varhaiskasvatuspaatos.objects.filter(lapsi=kwargs['lapsi_pk']).order_by('id')
@@ -2746,15 +2752,15 @@ class NestedLapsiKoosteViewSet(GenericViewSet):
     def get_lapsi(self, request, lapsi_pk=None):
         lapsi = get_object_or_404(Lapsi.objects.all(), pk=lapsi_pk)
         user = request.user
-        if user.has_perm("view_lapsi", lapsi):
+        if user.has_perm('view_lapsi', lapsi):
             return lapsi
         else:
-            raise Http404("Not found.")
+            raise Http404
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
         if not kwargs['lapsi_pk'].isdigit():
-            raise Http404("Not found.")
+            raise Http404
 
         user = self.request.user
 
@@ -2847,15 +2853,15 @@ class NestedLapsenVarhaiskasvatussuhdeViewSet(GenericViewSet, ListModelMixin):
     def get_lapsi(self, request, lapsi_pk=None):
         lapsi = get_object_or_404(Lapsi.objects.all(), pk=lapsi_pk)
         user = request.user
-        if user.has_perm("view_lapsi", lapsi):
+        if user.has_perm('view_lapsi', lapsi):
             return lapsi
         else:
-            raise Http404("Not found.")
+            raise Http404
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
         if not kwargs['lapsi_pk'].isdigit():
-            raise Http404("Not found.")
+            raise Http404
 
         self.get_lapsi(request, lapsi_pk=kwargs['lapsi_pk'])
         varhaiskasvatuspaatos_ids = Varhaiskasvatuspaatos.objects.filter(lapsi=kwargs['lapsi_pk']).values('id')
@@ -2882,12 +2888,12 @@ class NestedLapsiMaksutietoViewSet(GenericViewSet, ListModelMixin):
         if user.has_perm('view_lapsi', lapsi):
             return lapsi
         else:
-            raise Http404('Not found.')
+            raise Http404
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
         if not kwargs['lapsi_pk'].isdigit():
-            raise Http404('Not found.')
+            raise Http404
 
         self.get_lapsi(request, lapsi_pk=kwargs['lapsi_pk'])
         queryset = self.filter_queryset(Maksutieto.objects.filter(huoltajuussuhteet__lapsi=kwargs['lapsi_pk']).distinct().order_by('id'))
@@ -2917,14 +2923,14 @@ class NestedVakajarjestajaPaosToimijatViewSet(GenericViewSet, ListModelMixin):
     def get_vakajarjestaja(self, vakajarjestaja_pk=None):
         vakajarjestaja = get_object_or_404(VakaJarjestaja.objects.all(), pk=vakajarjestaja_pk)
         user = self.request.user
-        if user.has_perm("view_vakajarjestaja", vakajarjestaja):
+        if user.has_perm('view_vakajarjestaja', vakajarjestaja):
             return vakajarjestaja
         else:
-            raise Http404("Not found.")
+            raise Http404
 
     def list(self, request, *args, **kwargs):
         if not self.kwargs['vakajarjestaja_pk'].isdigit():
-            raise Http404("Not found.")
+            raise Http404
 
         vakajarjestaja_obj = self.get_vakajarjestaja(vakajarjestaja_pk=self.kwargs['vakajarjestaja_pk'])
 
@@ -2963,14 +2969,14 @@ class NestedVakajarjestajaPaosToimipaikatViewSet(GenericViewSet, ListModelMixin)
     def get_vakajarjestaja(self, vakajarjestaja_pk=None):
         vakajarjestaja = get_object_or_404(VakaJarjestaja.objects.all(), pk=vakajarjestaja_pk)
         user = self.request.user
-        if user.has_perm("view_vakajarjestaja", vakajarjestaja):
+        if user.has_perm('view_vakajarjestaja', vakajarjestaja):
             return vakajarjestaja
         else:
-            raise Http404("Not found.")
+            raise Http404
 
     def list(self, request, *args, **kwargs):
         if not self.kwargs['vakajarjestaja_pk'].isdigit():
-            raise Http404("Not found.")
+            raise Http404
 
         query_params = self.request.query_params
         toimipaikka_nimi_filter = query_params.get('toimipaikka_nimi')

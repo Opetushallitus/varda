@@ -3,6 +3,7 @@ from unittest import mock
 from django.test import TestCase
 
 from varda import koodistopalvelu
+from varda.enums.koodistot import Koodistot
 from varda.models import Z2_Koodisto, Z2_Code, Z2_CodeTranslation
 
 
@@ -46,7 +47,7 @@ class KoodistopalveluTests(TestCase):
     @mock.patch('varda.clients.koodistopalvelu_client.get_koodisto', mock_get_koodisto)
     @mock.patch('varda.clients.koodistopalvelu_client.get_koodisto_codes', mock_get_koodisto_codes)
     def test_simple_update(self):
-        koodistot_count = len(koodistopalvelu.Koodistot.list())
+        koodistot_count = len(Koodistot.list())
         code_id_qs = Z2_Code.objects.all().values_list('id', flat=True)
         code_id_list_old = list(code_id_qs)
 

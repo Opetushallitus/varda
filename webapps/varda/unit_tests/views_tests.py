@@ -1,14 +1,15 @@
 import json
 from datetime import datetime
+from unittest import mock
 from unittest.mock import patch
 
 import responses
 
 from django.contrib.auth.models import Group, User
-from django.core.exceptions import ValidationError
 from django.test import TestCase
 from guardian.core import ObjectPermissionChecker
 from rest_framework import status
+from rest_framework.exceptions import ValidationError as ValidationErrorRest
 
 from varda.misc import hash_string, encrypt_henkilotunnus
 from varda.models import (VakaJarjestaja, Toimipaikka, PaosOikeus, Huoltaja, Huoltajuussuhde, Henkilo,
@@ -17,10 +18,21 @@ from varda.permission_groups import assign_object_level_permissions
 from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, assert_validation_error
 
 # Well known test organizations (name corresponds to oid)
-test_org_34683023489 = '1.2.246.562.10.34683023489'  # "Tester2 organisaatio"
-test_org_93957375488 = '1.2.246.562.10.93957375488'  # "Tester organisaatio"
-test_org_93957375486 = '1.2.246.562.10.93957375486'  # "varda-testi organisaatio"
-test_org_93957375484 = '1.2.246.562.10.93957375484'  # "Frontti organisaatio"
+test_org_34683023489 = '1.2.246.562.10.34683023489'  # Tester2 organisaatio
+test_org_93957375488 = '1.2.246.562.10.93957375488'  # Tester organisaatio
+test_org_93957375486 = '1.2.246.562.10.93957375486'  # varda-testi organisaatio
+test_org_93957375484 = '1.2.246.562.10.93957375484'  # Frontti organisaatio
+
+
+def mock_check_if_toimipaikka_exists_by_name(vakajarjestaja_id, toimipaikka_name):
+    return False, []
+
+
+def mock_create_organisaatio(organisaatio_json):
+    return {
+        'toimipaikka_created': True,
+        'organisaatio_oid': '1.2.246.562.10.01234567891'
+    }
 
 
 class VardaViewsTests(TestCase):
@@ -59,18 +71,18 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/')
         api_root = {
-            "vakajarjestajat": "http://testserver/api/v1/vakajarjestajat/",
-            "toimipaikat": "http://testserver/api/v1/toimipaikat/",
-            "toiminnallisetpainotukset": "http://testserver/api/v1/toiminnallisetpainotukset/",
-            "kielipainotukset": "http://testserver/api/v1/kielipainotukset/",
-            "hae-henkilo": "http://testserver/api/v1/hae-henkilo/",
-            "henkilot": "http://testserver/api/v1/henkilot/",
-            "lapset": "http://testserver/api/v1/lapset/",
-            "maksutiedot": "http://testserver/api/v1/maksutiedot/",
-            "varhaiskasvatuspaatokset": "http://testserver/api/v1/varhaiskasvatuspaatokset/",
-            "varhaiskasvatussuhteet": "http://testserver/api/v1/varhaiskasvatussuhteet/",
-            "paos-toiminnat": "http://testserver/api/v1/paos-toiminnat/",
-            "paos-oikeudet": "http://testserver/api/v1/paos-oikeudet/"
+            'vakajarjestajat': 'http://testserver/api/v1/vakajarjestajat/',
+            'toimipaikat': 'http://testserver/api/v1/toimipaikat/',
+            'toiminnallisetpainotukset': 'http://testserver/api/v1/toiminnallisetpainotukset/',
+            'kielipainotukset': 'http://testserver/api/v1/kielipainotukset/',
+            'hae-henkilo': 'http://testserver/api/v1/hae-henkilo/',
+            'henkilot': 'http://testserver/api/v1/henkilot/',
+            'lapset': 'http://testserver/api/v1/lapset/',
+            'maksutiedot': 'http://testserver/api/v1/maksutiedot/',
+            'varhaiskasvatuspaatokset': 'http://testserver/api/v1/varhaiskasvatuspaatokset/',
+            'varhaiskasvatussuhteet': 'http://testserver/api/v1/varhaiskasvatussuhteet/',
+            'paos-toiminnat': 'http://testserver/api/v1/paos-toiminnat/',
+            'paos-oikeudet': 'http://testserver/api/v1/paos-oikeudet/'
         }
         assert_status_code(resp, 200)
         self.assertEqual(json.loads(resp.content), api_root)
@@ -100,7 +112,7 @@ class VardaViewsTests(TestCase):
     def test_api_get_user_data_anonymous(self):
         resp = self.client.get('/api/user/data/')
         assert_status_code(resp, 403)
-        self.assertEqual(json.loads(resp.content), {'detail': 'Authentication credentials were not provided.'})
+        assert_validation_error(resp, 'errors', 'PE005', 'Authentication credentials were not provided.')
 
     def test_api_get_user_data_authenticated(self):
         client = SetUpTestClient('tester').client()
@@ -111,20 +123,20 @@ class VardaViewsTests(TestCase):
                        'kayttajatyyppi': 'VIRKAILIJA',
                        'kayttooikeudet': [
                            {
-                               "organisaatio": "1.2.246.562.10.9395737548810",
-                               "kayttooikeus": "VARDA-TALLENTAJA"
+                               'organisaatio': '1.2.246.562.10.9395737548810',
+                               'kayttooikeus': 'VARDA-TALLENTAJA'
                            },
                            {
-                               "organisaatio": "1.2.246.562.10.9395737548811",
-                               "kayttooikeus": "VARDA-KATSELIJA"
+                               'organisaatio': '1.2.246.562.10.9395737548811',
+                               'kayttooikeus': 'VARDA-KATSELIJA'
                            },
                            {
-                               "organisaatio": "1.2.246.562.10.9395737548810",
-                               "kayttooikeus": "HUOLTAJATIETO_TALLENNUS"
+                               'organisaatio': '1.2.246.562.10.9395737548810',
+                               'kayttooikeus': 'HUOLTAJATIETO_TALLENNUS'
                            },
                            {
-                               "organisaatio": "1.2.246.562.10.34683023489",
-                               "kayttooikeus": "HUOLTAJATIETO_TALLENNUS"
+                               'organisaatio': '1.2.246.562.10.34683023489',
+                               'kayttooikeus': 'HUOLTAJATIETO_TALLENNUS'
                            }
                        ],
                        'username': 'tester'
@@ -135,45 +147,45 @@ class VardaViewsTests(TestCase):
     def test_api_get_token_anonymous(self):
         resp = self.client.get('/api/user/apikey/')
         assert_status_code(resp, 403)
-        self.assertEqual(json.loads(resp.content), {"detail": "Authentication credentials were not provided."})
+        assert_validation_error(resp, 'errors', 'PE005', 'Authentication credentials were not provided.')
 
     def test_api_get_token_authenticated(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/user/apikey/')
         assert_status_code(resp, 200)
-        self.assertEqual(json.loads(resp.content), {"token": "916b7ca8f1687ec3462b4a35d0c5c6da0dbeedf3"})
+        self.assertEqual(json.loads(resp.content), {'token': '916b7ca8f1687ec3462b4a35d0c5c6da0dbeedf3'})
 
     def test_api_refresh_token_anonymous(self):
         data = {
-            "refresh_token": True
+            'refresh_token': True
         }
         resp = self.client.post('/api/user/apikey/', data)
         assert_status_code(resp, 403)
 
     def test_api_refresh_token_authenticated(self):
         data = {
-            "refresh_token": True
+            'refresh_token': True
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/user/apikey/', data)
         assert_status_code(resp, 201)
-        self.assertNotEqual(json.loads(resp.content)["token"], "916b7ca8f1687ec3462b4a35d0c5c6da0dbeedf3")
+        self.assertNotEqual(json.loads(resp.content)['token'], '916b7ca8f1687ec3462b4a35d0c5c6da0dbeedf3')
 
     def test_api_refresh_token_authenticated_faulty_input(self):
         data = {
-            "refresh_token": False
+            'refresh_token': False
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/user/apikey/', data)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"non_field_errors": ["Token was not refreshed."]})
+        assert_validation_error(resp, 'errors', 'MI001', 'Token was not refreshed.')
 
     def test_api_refresh_token_authenticated_faulty_input_2(self):
         data = {}
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/user/apikey/', data)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"non_field_errors": ["Token was not refreshed."]})
+        assert_validation_error(resp, 'errors', 'MI001', 'Token was not refreshed.')
 
     def test_api_vakajarjestajat(self):
         client = SetUpTestClient('tester').client()
@@ -205,7 +217,7 @@ class VardaViewsTests(TestCase):
         """
         client = SetUpTestClient('tester2').client()
         resp = client.get('/api/v1/toimipaikat/')
-        self.assertEqual(json.loads(resp.content)["count"], 4)
+        self.assertEqual(json.loads(resp.content)['count'], 4)
 
     def test_api_toimipaikat_permissions_3(self):
         client = SetUpTestClient('tester').client()
@@ -259,34 +271,34 @@ class VardaViewsTests(TestCase):
 
     def test_post_vakajarjestaja_with_invalid_yritysmuoto(self):
         user = User.objects.get(username='tester')
-        with self.assertRaises(ValidationError) as validation_error:
+        with self.assertRaises(ValidationErrorRest) as validation_error:
             VakaJarjestaja.objects.create(
-                nimi="Tester2 organisaatio",
-                y_tunnus="8500570-7",
-                organisaatio_oid="1.2.246.562.10.34683023489",
-                kunta_koodi="091",
-                sahkopostiosoite="organization@domain.com",
-                tilinumero="FI37 1590 3000 0007 76",
-                kayntiosoite="Testerkatu 2",
-                kayntiosoite_postinumero="00001",
-                kayntiosoite_postitoimipaikka="Testilä",
-                postiosoite="Testerkatu 2",
-                postitoimipaikka="Testilä",
-                postinumero="00001",
-                puhelinnumero="+358101234567",
+                nimi='Tester2 organisaatio',
+                y_tunnus='8500570-7',
+                organisaatio_oid='1.2.246.562.10.34683023489',
+                kunta_koodi='091',
+                sahkopostiosoite='organization@domain.com',
+                tilinumero='FI37 1590 3000 0007 76',
+                kayntiosoite='Testerkatu 2',
+                kayntiosoite_postinumero='00001',
+                kayntiosoite_postitoimipaikka='Testilä',
+                postiosoite='Testerkatu 2',
+                postitoimipaikka='Testilä',
+                postinumero='00001',
+                puhelinnumero='+358101234567',
                 yritysmuoto='INVALID_OPTION',
-                alkamis_pvm="2017-02-03",
+                alkamis_pvm='2017-02-03',
                 paattymis_pvm=None,
                 changed_by=user
             )
-        self.assertIn('Yritysmuoto INVALID_OPTION is not one of the permitted values.', str(validation_error.exception))
+        self.assertIn('VJ002', str(validation_error.exception))
 
     def test_api_push_non_unique_henkilo_etunimi_correct_sukunimi_wrong(self):
         henkilo = {
-            "henkilotunnus": "130266-915J",
-            "etunimet": "Lasse Eemeli",
-            "kutsumanimi": "Lasse",
-            "sukunimi": "Palomäki"
+            'henkilotunnus': '130266-915J',
+            'etunimet': 'Lasse Eemeli',
+            'kutsumanimi': 'Lasse',
+            'sukunimi': 'Palomäki'
         }
         expected_response = {
             'url': 'http://testserver/api/v1/henkilot/6/',
@@ -300,16 +312,16 @@ class VardaViewsTests(TestCase):
             'tyontekija': []
         }
         client = SetUpTestClient('tester2').client()
-        resp2 = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp2, 200)
-        self.assertEqual(json.loads(resp2.content), expected_response)
+        resp = client.post('/api/v1/henkilot/', henkilo)
+        assert_status_code(resp, 200)
+        self.assertEqual(json.loads(resp.content), expected_response)
 
     def test_api_push_non_unique_henkilo_etunimi_correct_sukunimi_wrong_small_letters(self):
         henkilo = {
-            "henkilotunnus": "130266-915J",
-            "etunimet": "lasse eemeli",
-            "kutsumanimi": "lasse",
-            "sukunimi": "Palomäki"
+            'henkilotunnus': '130266-915J',
+            'etunimet': 'lasse eemeli',
+            'kutsumanimi': 'lasse',
+            'sukunimi': 'Palomäki'
         }
         expected_response = {
             'url': 'http://testserver/api/v1/henkilot/6/',
@@ -323,16 +335,16 @@ class VardaViewsTests(TestCase):
             'tyontekija': []
         }
         client = SetUpTestClient('tester2').client()
-        resp2 = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp2, 200)
-        self.assertEqual(json.loads(resp2.content), expected_response)
+        resp = client.post('/api/v1/henkilot/', henkilo)
+        assert_status_code(resp, 200)
+        self.assertEqual(json.loads(resp.content), expected_response)
 
     def test_api_push_non_unique_henkilo_etunimi_wrong_sukunimi_correct(self):
         henkilo = {
-            "henkilotunnus": "130266-915J",
-            "etunimet": "Ville",
-            "kutsumanimi": "Ville",
-            "sukunimi": "Manner"
+            'henkilotunnus': '130266-915J',
+            'etunimet': 'Ville',
+            'kutsumanimi': 'Ville',
+            'sukunimi': 'Manner'
         }
         expected_response = {
             'url': 'http://testserver/api/v1/henkilot/6/',
@@ -346,16 +358,16 @@ class VardaViewsTests(TestCase):
             'tyontekija': []
         }
         client = SetUpTestClient('tester2').client()
-        resp2 = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp2, 200)
-        self.assertEqual(json.loads(resp2.content), expected_response)
+        resp = client.post('/api/v1/henkilot/', henkilo)
+        assert_status_code(resp, 200)
+        self.assertEqual(json.loads(resp.content), expected_response)
 
     def test_api_push_non_unique_henkilo_etunimi_wrong_sukunimi_correct_small_letters(self):
         henkilo = {
-            "henkilotunnus": "130266-915J",
-            "etunimet": "Ville",
-            "kutsumanimi": "Ville",
-            "sukunimi": "manner"
+            'henkilotunnus': '130266-915J',
+            'etunimet': 'Ville',
+            'kutsumanimi': 'Ville',
+            'sukunimi': 'manner'
         }
         expected_response = {
             'url': 'http://testserver/api/v1/henkilot/6/',
@@ -369,116 +381,116 @@ class VardaViewsTests(TestCase):
             'tyontekija': []
         }
         client = SetUpTestClient('tester2').client()
-        resp2 = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp2, 200)
-        self.assertEqual(json.loads(resp2.content), expected_response)
+        resp = client.post('/api/v1/henkilot/', henkilo)
+        assert_status_code(resp, 200)
+        self.assertEqual(json.loads(resp.content), expected_response)
 
     def test_api_push_non_unique_henkilo_etunimi_wrong_sukunimi_wrong(self):
         henkilo = {
-            "henkilotunnus": "130266-915J",
-            "etunimet": "Hanna Karin",
-            "kutsumanimi": "Karin",
-            "sukunimi": "Palomäki"
+            'henkilotunnus': '130266-915J',
+            'etunimet': 'Hanna Karin',
+            'kutsumanimi': 'Karin',
+            'sukunimi': 'Palomäki'
         }
         client = SetUpTestClient('tester2').client()
-        resp2 = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp2, 400)
-        self.assertEqual(json.loads(resp2.content), {'detail': 'Person data does not match with the entered data'})
+        resp = client.post('/api/v1/henkilot/', henkilo)
+        assert_status_code(resp, 400)
+        assert_validation_error(resp, 'errors', 'HE001', 'Person data does not match with the entered data.')
 
     def test_api_push_incorrect_varhaiskasvatuspaatos_date_sequence(self):
         vaka_paatos = {
-            "lapsi": "/api/v1/lapset/3/",
-            "vuorohoito_kytkin": False,
-            "tuntimaara_viikossa": 33,
-            "paivittainen_vaka_kytkin": True,
-            "kokopaivainen_vaka_kytkin": True,
-            "jarjestamismuoto_koodi": "jm01",
-            "hakemus_pvm": "2020-04-06",
-            "alkamis_pvm": "2009-02-02",
-            "paattymis_pvm": "2008-01-05"
+            'lapsi': '/api/v1/lapset/3/',
+            'vuorohoito_kytkin': False,
+            'tuntimaara_viikossa': 33,
+            'paivittainen_vaka_kytkin': True,
+            'kokopaivainen_vaka_kytkin': True,
+            'jarjestamismuoto_koodi': 'jm01',
+            'hakemus_pvm': '2020-04-06',
+            'alkamis_pvm': '2009-02-02',
+            'paattymis_pvm': '2008-01-05'
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', vaka_paatos)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"hakemus_pvm": ["hakemus_pvm must be before alkamis_pvm (or same)."]})
+        assert_validation_error(resp, 'hakemus_pvm', 'VP001', 'hakemus_pvm must be before or equal to alkamis_pvm.')
 
     def test_api_push_incorrect_varhaiskasvatussuhde_date_sequence(self):
         vaka_suhde = {
-            "varhaiskasvatuspaatos": "/api/v1/varhaiskasvatuspaatokset/1/",
-            "toimipaikka": "/api/v1/toimipaikat/1/",
-            "alkamis_pvm": "2018-02-02",
-            "paattymis_pvm": "2018-01-02",
+            'varhaiskasvatuspaatos': '/api/v1/varhaiskasvatuspaatokset/1/',
+            'toimipaikka': '/api/v1/toimipaikat/1/',
+            'alkamis_pvm': '2018-02-02',
+            'paattymis_pvm': '2018-01-02',
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/varhaiskasvatussuhteet/', vaka_suhde)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"paattymis_pvm": ["paattymis_pvm must be after alkamis_pvm (or same)"]})
+        assert_validation_error(resp, 'paattymis_pvm', 'MI004', 'paattymis_pvm must be equal to or after alkamis_pvm.')
 
     def test_api_push_incorrect_henkilo(self):  # wrong henkilotunnus-beginning
         henkilo = {
-            "henkilotunnus": "123465-123P",
-            "etunimet": "Hanna Karin",
-            "kutsumanimi": "Karin",
-            "sukunimi": "Palomäki"
+            'henkilotunnus': '123465-123P',
+            'etunimet': 'Hanna Karin',
+            'kutsumanimi': 'Karin',
+            'sukunimi': 'Palomäki'
         }
         client = SetUpTestClient('tester').client()
-        resp2 = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp2, 400)
-        self.assertEqual(json.loads(resp2.content), {"henkilotunnus": ["123465-123P : Date incorrect."]})
+        resp = client.post('/api/v1/henkilot/', henkilo)
+        assert_status_code(resp, 400)
+        assert_validation_error(resp, 'henkilotunnus', 'HE007', 'Incorrect henkilotunnus date.')
 
     def test_api_push_incorrect_henkilo_2(self):  # wrong henkilotunnus-end; should end with P
         henkilo = {
-            "henkilotunnus": "120465-123B",
-            "etunimet": "Hanna Karin",
-            "kutsumanimi": "Hanna",
-            "sukunimi": "Palomäki"
+            'henkilotunnus': '120465-123B',
+            'etunimet': 'Hanna Karin',
+            'kutsumanimi': 'Hanna',
+            'sukunimi': 'Palomäki'
         }
         client = SetUpTestClient('tester').client()
-        resp2 = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp2, 400)
-        self.assertEqual(json.loads(resp2.content), {"henkilotunnus": ["120465-123B : ID-number or control character incorrect."]})
+        resp = client.post('/api/v1/henkilot/', henkilo)
+        assert_status_code(resp, 400)
+        assert_validation_error(resp, 'henkilotunnus', 'HE008', 'ID number or control character is incorrect.')
 
     def test_api_push_incorrect_henkilo_3(self):  # empty kutsumanimi
         henkilo = {
-            "henkilotunnus": "030187-851M",
-            "etunimet": "Hanna Karin",
-            "kutsumanimi": "",
-            "sukunimi": "Palomäki"
+            'henkilotunnus': '030187-851M',
+            'etunimet': 'Hanna Karin',
+            'kutsumanimi': '',
+            'sukunimi': 'Palomäki'
         }
         client = SetUpTestClient('tester').client()
-        resp2 = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp2, 400)
-        self.assertEqual(json.loads(resp2.content), {'kutsumanimi': ['This field may not be blank.']})
+        resp = client.post('/api/v1/henkilot/', henkilo)
+        assert_status_code(resp, 400)
+        assert_validation_error(resp, 'kutsumanimi', 'GE003', 'This field may not be blank.')
 
     def test_api_push_incorrect_henkilo_4(self):  # missing kutsumanimi
         henkilo = {
-            "henkilotunnus": "030187-851M",
-            "etunimet": "Hanna Karin",
-            "sukunimi": "Palomäki"
+            'henkilotunnus': '030187-851M',
+            'etunimet': 'Hanna Karin',
+            'sukunimi': 'Palomäki'
         }
         client = SetUpTestClient('tester').client()
-        resp2 = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp2, 400)
-        self.assertEqual(json.loads(resp2.content), {'kutsumanimi': ['This field is required.']})
+        resp = client.post('/api/v1/henkilot/', henkilo)
+        assert_status_code(resp, 400)
+        assert_validation_error(resp, 'kutsumanimi', 'GE001', 'This field is required.')
 
     def test_api_push_incorrect_henkilo_5(self):  # wrong kutsumanimi
         henkilo = {
-            "henkilotunnus": "030187-851M",
-            "etunimet": "Hanna Karin",
-            "kutsumanimi": "HannaKarin",
-            "sukunimi": "Palomäki"
+            'henkilotunnus': '030187-851M',
+            'etunimet': 'Hanna Karin',
+            'kutsumanimi': 'HannaKarin',
+            'sukunimi': 'Palomäki'
         }
         client = SetUpTestClient('tester').client()
-        resp2 = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp2, 400)
-        self.assertEqual(json.loads(resp2.content), {'kutsumanimi': ['Kutsumanimi is not valid.']})
+        resp = client.post('/api/v1/henkilot/', henkilo)
+        assert_status_code(resp, 400)
+        assert_validation_error(resp, 'kutsumanimi', 'HE011', 'kutsumanimi is not valid.')
 
     def test_api_push_henkilo_oid_etunimi_correct_sukunimi_wrong(self):
         henkilo = {
-            "henkilo_oid": "1.2.246.562.24.58672764848",
-            "etunimet": "Susanna Maria",
-            "kutsumanimi": "Susanna",
-            "sukunimi": "Palomäki"
+            'henkilo_oid': '1.2.246.562.24.58672764848',
+            'etunimet': 'Susanna Maria',
+            'kutsumanimi': 'Susanna',
+            'sukunimi': 'Palomäki'
         }
         expected_response = {
             'url': 'http://testserver/api/v1/henkilot/3/',
@@ -498,10 +510,10 @@ class VardaViewsTests(TestCase):
 
     def test_api_push_henkilo_oid_etunimi_wrong_sukunimi_correct(self):
         henkilo = {
-            "henkilo_oid": "1.2.246.562.24.58672764848",
-            "etunimet": "Elina",
-            "kutsumanimi": "Elina",
-            "sukunimi": "Virtanen"
+            'henkilo_oid': '1.2.246.562.24.58672764848',
+            'etunimet': 'Elina',
+            'kutsumanimi': 'Elina',
+            'sukunimi': 'Virtanen'
         }
         expected_response = {
             'url': 'http://testserver/api/v1/henkilot/3/',
@@ -521,33 +533,33 @@ class VardaViewsTests(TestCase):
 
     def test_api_push_henkilo_oid_etunimi_wrong_sukunimi_wrong(self):
         henkilo = {
-            "henkilo_oid": "1.2.246.562.24.58672764848",
-            "etunimet": "Marko",
-            "kutsumanimi": "Marko",
-            "sukunimi": "Anttila"
+            'henkilo_oid': '1.2.246.562.24.58672764848',
+            'etunimet': 'Marko',
+            'kutsumanimi': 'Marko',
+            'sukunimi': 'Anttila'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'detail': 'Person data does not match with the entered data'})
+        assert_validation_error(resp, 'errors', 'HE001', 'Person data does not match with the entered data.')
 
     @responses.activate
     def test_api_push_henkilo_oid_not_in_oppijanumerorekisteri(self):
         responses.add(responses.POST,
                       'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/',
-                      json="1.2.246.562.24.47279942111",
+                      json='1.2.246.562.24.47279942111',
                       status=status.HTTP_201_CREATED
                       )
         responses.add(responses.GET,
                       'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/1.2.246.562.24.47279942111/master',
-                      json={"hetu": None, "yksiloity": True},
+                      json={'hetu': None, 'yksiloity': True},
                       status=status.HTTP_200_OK
                       )
         henkilo = {
-            "henkilo_oid": "1.2.246.562.24.47279942111",
-            "etunimet": "Erkki",
-            "kutsumanimi": "Erkki",
-            "sukunimi": "Esimerkki"
+            'henkilo_oid': '1.2.246.562.24.47279942111',
+            'etunimet': 'Erkki',
+            'kutsumanimi': 'Erkki',
+            'sukunimi': 'Esimerkki'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
@@ -557,32 +569,32 @@ class VardaViewsTests(TestCase):
     def test_api_push_henkilo_oid_not_yksiloity_in_oppijanumerorekisteri(self):
         responses.add(responses.GET,
                       'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/1.2.246.562.24.47279942111/master',
-                      json={"hetu": None, "yksiloity": False},
+                      json={'hetu': None, 'yksiloity': False},
                       status=status.HTTP_200_OK
                       )
         henkilo = {
-            "henkilo_oid": "1.2.246.562.24.47279942111",
-            "etunimet": "Erkki",
-            "kutsumanimi": "Erkki",
-            "sukunimi": "Esimerkki"
+            'henkilo_oid': '1.2.246.562.24.47279942111',
+            'etunimet': 'Erkki',
+            'kutsumanimi': 'Erkki',
+            'sukunimi': 'Esimerkki'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'henkilo_oid': ['Unfortunately this henkilo cannot be added. Is the henkilo yksiloity?']})
+        assert_validation_error(resp, 'henkilo_oid', 'HE002', 'Unfortunately this Henkilo cannot be added. Is the Henkilo yksiloity?')
 
     @responses.activate
     def test_api_push_henkilo_oid_has_yksiloimatonhenkilotunnus_in_oppijanumerorekisteri(self):
         responses.add(responses.GET,
                       'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/1.2.246.562.24.47279942111/master',
-                      json={"hetu": '1', "yksiloityVTJ": False},
+                      json={'hetu': '1', 'yksiloityVTJ': False},
                       status=status.HTTP_200_OK
                       )
         henkilo = {
-            "henkilo_oid": "1.2.246.562.24.47279942111",
-            "etunimet": "Erkki",
-            "kutsumanimi": "Erkki",
-            "sukunimi": "Esimerkki"
+            'henkilo_oid': '1.2.246.562.24.47279942111',
+            'etunimet': 'Erkki',
+            'kutsumanimi': 'Erkki',
+            'sukunimi': 'Esimerkki'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
@@ -592,14 +604,14 @@ class VardaViewsTests(TestCase):
     def test_api_push_henkilo_oid_has_yksiloityhenkilotunnus_in_oppijanumerorekisteri(self):
         responses.add(responses.GET,
                       'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/1.2.246.562.24.47279942111/master',
-                      json={"hetu": '1', "yksiloityVTJ": True},
+                      json={'hetu': '1', 'yksiloityVTJ': True},
                       status=status.HTTP_200_OK
                       )
         henkilo = {
-            "henkilo_oid": "1.2.246.562.24.47279942111",
-            "etunimet": "Erkki",
-            "kutsumanimi": "Erkki",
-            "sukunimi": "Esimerkki"
+            'henkilo_oid': '1.2.246.562.24.47279942111',
+            'etunimet': 'Erkki',
+            'kutsumanimi': 'Erkki',
+            'sukunimi': 'Esimerkki'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
@@ -614,14 +626,14 @@ class VardaViewsTests(TestCase):
                       )
         responses.add(responses.GET,
                       'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/1.2.246.562.24.47279942111/master',
-                      json={"hetu": None, "yksiloity": True},
+                      json={'hetu': None, 'yksiloity': True},
                       status=status.HTTP_200_OK
                       )
         henkilo = {
-            "henkilo_oid": "1.2.246.562.24.47279942111",
-            "etunimet": "Erkki",
-            "kutsumanimi": "Erkki",
-            "sukunimi": "Esimerkki"
+            'henkilo_oid': '1.2.246.562.24.47279942111',
+            'etunimet': 'Erkki',
+            'kutsumanimi': 'Erkki',
+            'sukunimi': 'Esimerkki'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
@@ -648,35 +660,35 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/hae-henkilo/', data)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'non_field_errors': ['Either henkilotunnus or henkilo_oid is needed. But not both.']})
+        assert_validation_error(resp, 'errors', 'HE004', 'Either henkilotunnus or henkilo_oid is needed, but not both.')
 
     def test_hae_henkilo_missing_keys(self):
         data = {'foo': 12}
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/hae-henkilo/', data)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'non_field_errors': ['Either henkilotunnus or henkilo_oid is needed. But not both.']})
+        assert_validation_error(resp, 'errors', 'HE004', 'Either henkilotunnus or henkilo_oid is needed, but not both.')
 
     def test_hae_henkilo_faulty_inputs(self):
         data = {'henkilotunnus': 'string', 'henkilo_oid': 'string'}
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/hae-henkilo/', data)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'non_field_errors': ['Either henkilotunnus or henkilo_oid is needed. But not both.']})
+        assert_validation_error(resp, 'errors', 'HE004', 'Either henkilotunnus or henkilo_oid is needed, but not both.')
 
     def test_hae_henkilo_not_found_oid(self):
         data = {'henkilo_oid': '1.2.246.562.24.47279942111'}
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/hae-henkilo/', data)
         assert_status_code(resp, 404)
-        self.assertEqual(json.loads(resp.content), {'detail': 'Henkilo was not found.'})
+        assert_validation_error(resp, 'errors', 'MI015', 'Not found.')
 
     def test_hae_henkilo_not_found_henkilotunnus(self):
         data = {'henkilotunnus': '290381-213W'}
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/hae-henkilo/', data)
         assert_status_code(resp, 404)
-        self.assertEqual(json.loads(resp.content), {'detail': 'Henkilo was not found.'})
+        assert_validation_error(resp, 'errors', 'MI015', 'Not found.')
 
     def test_hae_henkilo_found_oid(self):
         data = {'henkilo_oid': '1.2.246.562.24.47279942650'}
@@ -742,31 +754,31 @@ class VardaViewsTests(TestCase):
         self.assertEqual(content, lapsi_json)
 
     def test_api_oid_related_field_lapsi_nulls_allowed_in_oids(self):
-        client = SetUpTestClient("tester2").client()
+        client = SetUpTestClient('tester2').client()
         data = {
-            "henkilo": "/api/v1/henkilot/7/",
-            "oma_organisaatio_oid": None,
-            "paos_organisaatio_oid": None,
-            "oma_organisaatio": "/api/v1/vakajarjestajat/1/",
-            "paos_organisaatio": "/api/v1/vakajarjestajat/2/",
+            'henkilo': '/api/v1/henkilot/7/',
+            'oma_organisaatio_oid': None,
+            'paos_organisaatio_oid': None,
+            'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
+            'paos_organisaatio': '/api/v1/vakajarjestajat/2/',
         }
 
-        resp = client.post("/api/v1/lapset/", json.dumps(data), content_type='application/json')
+        resp = client.post('/api/v1/lapset/', json.dumps(data), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
         self.assertEqual(json.loads(resp.content)['oma_organisaatio_oid'], '1.2.246.562.10.34683023489')
         self.assertEqual(json.loads(resp.content)['paos_organisaatio_oid'], '1.2.246.562.10.93957375488')
 
     def test_api_oid_related_field_lapsi_nulls_allowed_in_urls(self):
-        client = SetUpTestClient("tester2").client()
+        client = SetUpTestClient('tester2').client()
         data = {
-            "henkilo": "/api/v1/henkilot/7/",
-            "oma_organisaatio_oid": test_org_34683023489,
-            "paos_organisaatio_oid": test_org_93957375488,
-            "oma_organisaatio": None,
-            "paos_organisaatio": None,
+            'henkilo': '/api/v1/henkilot/7/',
+            'oma_organisaatio_oid': test_org_34683023489,
+            'paos_organisaatio_oid': test_org_93957375488,
+            'oma_organisaatio': None,
+            'paos_organisaatio': None,
         }
 
-        resp = client.post("/api/v1/lapset/", json.dumps(data), content_type='application/json')
+        resp = client.post('/api/v1/lapset/', json.dumps(data), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
         self.assertEqual(json.loads(resp.content)['oma_organisaatio'], 'http://testserver/api/v1/vakajarjestajat/1/')
         self.assertEqual(json.loads(resp.content)['paos_organisaatio'], 'http://testserver/api/v1/vakajarjestajat/2/')
@@ -778,10 +790,10 @@ class VardaViewsTests(TestCase):
                       status=status.HTTP_201_CREATED
                       )
         henkilo = {
-            'henkilotunnus': "240219A149T",
-            'etunimet': "Pentti Jr",
-            'kutsumanimi': "Pentti",
-            'sukunimi': "Kivimäki"
+            'henkilotunnus': '240219A149T',
+            'etunimet': 'Pentti Jr',
+            'kutsumanimi': 'Pentti',
+            'sukunimi': 'Kivimäki'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
@@ -799,30 +811,30 @@ class VardaViewsTests(TestCase):
         self.assertEqual(resp.status_code, 201)
 
     def test_api_oid_related_field_create_lapsi_with_oids(self):
-        client = SetUpTestClient("tester2").client()
+        client = SetUpTestClient('tester2').client()
         data = {
-            "henkilo": "/api/v1/henkilot/7/",
-            "oma_organisaatio_oid": test_org_34683023489,
-            "paos_organisaatio_oid": test_org_93957375488,
+            'henkilo': '/api/v1/henkilot/7/',
+            'oma_organisaatio_oid': test_org_34683023489,
+            'paos_organisaatio_oid': test_org_93957375488,
         }
 
-        resp = client.post("/api/v1/lapset/", json.dumps(data), content_type='application/json')
+        resp = client.post('/api/v1/lapset/', json.dumps(data), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
         self.assertEqual(json.loads(resp.content)['oma_organisaatio'], 'http://testserver/api/v1/vakajarjestajat/1/')
         self.assertEqual(json.loads(resp.content)['paos_organisaatio'], 'http://testserver/api/v1/vakajarjestajat/2/')
 
     def test_api_oid_related_field_lapsi_change_denied(self):
         # PUT/PATCH functions will be re-enabled in CSCVARDA-1942
-        client = SetUpTestClient("tester2").client()
+        client = SetUpTestClient('tester2').client()
         expected_data = client.get('/api/v1/lapset/4/')
         data = {
-            "url": "/api/v1/lapset/4/",
-            "henkilo": "/api/v1/henkilot/9/",
-            "oma_organisaatio_oid": test_org_93957375484,
-            "paos_organisaatio_oid": test_org_93957375488,
+            'url': '/api/v1/lapset/4/',
+            'henkilo': '/api/v1/henkilot/9/',
+            'oma_organisaatio_oid': test_org_93957375484,
+            'paos_organisaatio_oid': test_org_93957375488,
         }
 
-        resp = client.put("/api/v1/lapset/4/", json.dumps(data), content_type='application/json')
+        resp = client.put('/api/v1/lapset/4/', json.dumps(data), content_type='application/json')
         """
         assert_status_code(resp, 400)
         self.assertEqual(json.loads(resp.content), {'oma_organisaatio': ['Changing of oma_organisaatio is not allowed']})
@@ -831,66 +843,66 @@ class VardaViewsTests(TestCase):
         self.assertEqual(json.loads(expected_data.content), json.loads(resp.content))
 
     def test_api_oid_related_field_lapsi_no_paos_organisaatio(self):
-        client = SetUpTestClient("tester2").client()
+        client = SetUpTestClient('tester2').client()
 
         data = {
-            "url": "/api/v1/lapset/4/",
-            "henkilo": "/api/v1/henkilot/9/",
-            "oma_organisaatio_oid": test_org_93957375484,
+            'url': '/api/v1/lapset/4/',
+            'henkilo': '/api/v1/henkilot/9/',
+            'oma_organisaatio_oid': test_org_93957375484,
             # no paos_organisaatio_oid
         }
 
-        resp = client.put("/api/v1/lapset/4/", json.dumps(data), content_type='application/json')
+        resp = client.put('/api/v1/lapset/4/', json.dumps(data), content_type='application/json')
         self.assertEqual(resp.status_code, 400)
 
     def test_api_oid_related_field_lapsi_one_with_oid_one_with_url(self):
-        client = SetUpTestClient("tester2").client()
+        client = SetUpTestClient('tester2').client()
         data = {
-            "henkilo": "/api/v1/henkilot/7/",
-            "oma_organisaatio_oid": test_org_34683023489,
+            'henkilo': '/api/v1/henkilot/7/',
+            'oma_organisaatio_oid': test_org_34683023489,
             # no oma_organisaatio as it is via oid
-            "paos_organisaatio": "/api/v1/vakajarjestajat/2/",
+            'paos_organisaatio': '/api/v1/vakajarjestajat/2/',
         }
 
-        resp = client.post("/api/v1/lapset/", json.dumps(data), content_type='application/json')
+        resp = client.post('/api/v1/lapset/', json.dumps(data), content_type='application/json')
         assert_status_code(resp, status.HTTP_201_CREATED)
         self.assertEqual(json.loads(resp.content)['oma_organisaatio'], 'http://testserver/api/v1/vakajarjestajat/1/')
 
     def test_api_oid_related_field_lapsi_roundtrip(self):
-        client = SetUpTestClient("tester2").client()
-        resp = client.get("/api/v1/lapset/4/?format=json")
+        client = SetUpTestClient('tester2').client()
+        resp = client.get('/api/v1/lapset/4/?format=json')
         self.assertEqual(resp.status_code, 200)
         data = json.loads(resp.content)
 
-        resp = client.put("/api/v1/lapset/4/", json.dumps(data), content_type='application/json')
+        resp = client.put('/api/v1/lapset/4/', json.dumps(data), content_type='application/json')
         self.assertEqual(resp.status_code, 200)
 
     def test_api_oid_related_field_lapsi_different_values_error(self):
-        client = SetUpTestClient("tester2").client()
+        client = SetUpTestClient('tester2').client()
 
         data = {
-            "url": "/api/v1/lapset/4/",
-            "henkilo": "/api/v1/henkilot/9/",
-            "oma_organisaatio_oid": test_org_34683023489,  # id=1
-            "paos_organisaatio_oid": None,
-            "oma_organisaatio": "/api/v1/vakajarjestajat/4/",  # id=4
-            "paos_organisaatio": "/api/v1/vakajarjestajat/2/",
+            'url': '/api/v1/lapset/4/',
+            'henkilo': '/api/v1/henkilot/9/',
+            'oma_organisaatio_oid': test_org_34683023489,  # id=1
+            'paos_organisaatio_oid': None,
+            'oma_organisaatio': '/api/v1/vakajarjestajat/4/',  # id=4
+            'paos_organisaatio': '/api/v1/vakajarjestajat/2/',
         }
 
-        resp = client.put("/api/v1/lapset/4/", json.dumps(data), content_type='application/json')
+        resp = client.put('/api/v1/lapset/4/', json.dumps(data), content_type='application/json')
         self.assertEqual(resp.status_code, 400)
 
     def test_api_oid_related_field_lapsi_invalid_oma_organisaatio_oid(self):
-        client = SetUpTestClient("tester2").client()
+        client = SetUpTestClient('tester2').client()
 
         data = {
-            "url": "/api/v1/lapset/4/",
-            "henkilo": "/api/v1/henkilot/9/",
-            "oma_organisaatio_oid": "some_invalid_oid",
-            "paos_organisaatio": "/api/v1/vakajarjestajat/2/",
+            'url': '/api/v1/lapset/4/',
+            'henkilo': '/api/v1/henkilot/9/',
+            'oma_organisaatio_oid': 'some_invalid_oid',
+            'paos_organisaatio': '/api/v1/vakajarjestajat/2/',
         }
 
-        resp = client.put("/api/v1/lapset/4/", json.dumps(data), content_type='application/json')
+        resp = client.put('/api/v1/lapset/4/', json.dumps(data), content_type='application/json')
         self.assertEqual(resp.status_code, 400)
 
     @responses.activate
@@ -906,10 +918,10 @@ class VardaViewsTests(TestCase):
                       status=status.HTTP_201_CREATED
                       )
         henkilo = {
-            'henkilotunnus': "180315A901Y",
-            'etunimet': "Anton",
-            'kutsumanimi': "Anton",
-            'sukunimi': "Kivimäki"
+            'henkilotunnus': '180315A901Y',
+            'etunimet': 'Anton',
+            'kutsumanimi': 'Anton',
+            'sukunimi': 'Kivimäki'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
@@ -939,12 +951,11 @@ class VardaViewsTests(TestCase):
         varhaiskasvatussuhde = {
             # no toimipaikka
             'varhaiskasvatuspaatos': varhaiskasvatuspaatos_url,
-            'alkamis_pvm': "2018-10-01"
+            'alkamis_pvm': '2018-10-01'
         }
-        resp = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
-        self.assertEqual(resp.status_code, 400)
-        msg = json.loads(resp.content)['toimipaikka_oid']
-        self.assertIn('Either this field or toimipaikka field is required', msg)
+        resp4 = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
+        self.assertEqual(resp4.status_code, 400)
+        assert_validation_error(resp4, 'toimipaikka_oid', 'RF001', 'Either this field or the parent field is required.')
 
     def test_api_push_lapsi_valid_henkilo_oid(self):
         henkilo_oid = '1.2.246.562.24.7777777777755'
@@ -1081,34 +1092,34 @@ class VardaViewsTests(TestCase):
         assert_status_code(resp, 404)
 
         lapsi = {
-            "henkilo": henkilo_url
+            'henkilo': henkilo_url
         }
-        resp2 = client.post('/api/v1/lapset/', lapsi)
-        assert_status_code(resp2, 400)
-        self.assertEqual(json.loads(resp2.content), {'henkilo': ['Invalid hyperlink - Object does not exist.']})
+        resp = client.post('/api/v1/lapset/', lapsi)
+        assert_status_code(resp, 400)
+        assert_validation_error(resp, 'henkilo', 'GE008', 'Invalid hyperlink, object does not exist.')
 
     def test_api_push_lapsi_under_different_vakajarjestaja(self):
         client = SetUpTestClient('tester2').client()
 
         varhaiskasvatuspaatos = {
-            "lapsi": "/api/v1/lapset/3/",
-            "tuntimaara_viikossa": "37.5",
-            "jarjestamismuoto_koodi": "jm01",
-            "hakemus_pvm": "2018-08-15",
-            "alkamis_pvm": "2018-09-30"
+            'lapsi': '/api/v1/lapset/3/',
+            'tuntimaara_viikossa': '37.5',
+            'jarjestamismuoto_koodi': 'jm01',
+            'hakemus_pvm': '2018-08-15',
+            'alkamis_pvm': '2018-09-30'
         }
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
         assert_status_code(resp, 201)
         vakapaatos_url = json.loads(resp.content)['url']
 
         varhaiskasvatussuhde = {
-            "toimipaikka": "/api/v1/toimipaikat/6/",
-            "varhaiskasvatuspaatos": vakapaatos_url,
-            "alkamis_pvm": "2019-10-01"
+            'toimipaikka': '/api/v1/toimipaikat/6/',
+            'varhaiskasvatuspaatos': vakapaatos_url,
+            'alkamis_pvm': '2019-10-01'
         }
-        resp = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
-        self.assertEqual(json.loads(resp.content), {'non_field_errors': ['this lapsi is already under other vakajarjestaja. Please create a new one.']})
-        assert_status_code(resp, 400)
+        resp2 = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
+        assert_validation_error(resp2, 'errors', 'VS001', 'This Lapsi is already under another Vakajarjestaja. Please create a new one.')
+        assert_status_code(resp2, 400)
 
     def test_api_push_lapsi_incorrect_paos(self):
         client = SetUpTestClient('tester').client()
@@ -1118,26 +1129,26 @@ class VardaViewsTests(TestCase):
         }
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'non_field_errors': ['For PAOS-lapsi both oma_organisaatio and paos_organisaatio are needed.']})
+        assert_validation_error(resp, 'errors', 'LA007', 'For PAOS, both oma_organisaatio and paos_organisaatio are required.')
 
         lapsi = {
             'henkilo': '/api/v1/henkilot/9/',
             'paos_organisaatio': '/api/v1/vakajarjestajat/2/'
         }
-        resp = client.post('/api/v1/lapset/', lapsi)
-        assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'non_field_errors': ['For PAOS-lapsi both oma_organisaatio and paos_organisaatio are needed.']})
+        resp2 = client.post('/api/v1/lapset/', lapsi)
+        assert_status_code(resp2, 400)
+        assert_validation_error(resp2, 'errors', 'LA007', 'For PAOS, both oma_organisaatio and paos_organisaatio are required.')
 
     def test_api_push_lapsi_incorrect_paos_2(self):
         client = SetUpTestClient('tester2').client()
         lapsi = {
             'henkilo': '/api/v1/henkilot/1/',
             'oma_organisaatio': '/api/v1/vakajarjestajat/2/',
-            "paos_organisaatio": '/api/v1/vakajarjestajat/1/'
+            'paos_organisaatio': '/api/v1/vakajarjestajat/1/'
         }
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, 403)
-        self.assertEqual(json.loads(resp.content), {'detail': 'There is no active paos-agreement.'})
+        assert_validation_error(resp, 'errors', 'PO003', 'There is no active PaosOikeus.')
 
     def test_api_push_lapsi_correct_paos(self):
         client = SetUpTestClient('tester2').client()
@@ -1167,35 +1178,35 @@ class VardaViewsTests(TestCase):
             'alkamis_pvm': '2018-09-01',
             'hakemus_pvm': '2018-08-08'
         }
-        resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
-        assert_status_code(resp, 201)
-        vakapaatos_url = json.loads(resp.content)['url']
+        resp2 = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
+        assert_status_code(resp2, 201)
+        vakapaatos_url = json.loads(resp2.content)['url']
 
         varhaiskasvatussuhde = {
             'toimipaikka': 'http://testserver/api/v1/toimipaikat/2/',
             'varhaiskasvatuspaatos': vakapaatos_url,
             'alkamis_pvm': '2018-12-01'
         }
-        resp = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
-        assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'non_field_errors': ['Vakajarjestaja is different than paos_organisaatio for lapsi.']})
+        resp3 = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
+        assert_status_code(resp3, 400)
+        assert_validation_error(resp3, 'toimipaikka', 'VS005', 'Vakajarjestaja is different than paos_organisaatio for Lapsi.')
 
         varhaiskasvatussuhde = {
             'toimipaikka': 'http://testserver/api/v1/toimipaikat/1/',
             'varhaiskasvatuspaatos': vakapaatos_url,
             'alkamis_pvm': '2018-12-01'
         }
-        resp = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
-        self.assertEqual(json.loads(resp.content), {'non_field_errors': ['There is no active paos-agreement to this toimipaikka.']})
-        assert_status_code(resp, 400)
+        resp4 = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
+        assert_validation_error(resp4, 'errors', 'PT010', 'There is no active PaosToiminta to this Toimipaikka.')
+        assert_status_code(resp4, 400)
 
         varhaiskasvatussuhde = {
             'toimipaikka': 'http://testserver/api/v1/toimipaikat/5/',
             'varhaiskasvatuspaatos': vakapaatos_url,
             'alkamis_pvm': '2018-12-01'
         }
-        resp = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
-        assert_status_code(resp, 201)
+        resp5 = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
+        assert_status_code(resp5, 201)
 
     def test_api_push_paos_lapsi_duplicate(self):
         client = SetUpTestClient('tester2').client()
@@ -1237,7 +1248,7 @@ class VardaViewsTests(TestCase):
             'alkamis_pvm': '2018-09-30'
         }
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
-        self.assertEqual(json.loads(resp.content), {'jarjestamismuoto_koodi': ['Invalid code for paos-lapsi.']})
+        assert_validation_error(resp, 'jarjestamismuoto_koodi', 'VP005', 'Invalid code for PAOS Lapsi.')
         assert_status_code(resp, 400)
 
         varhaiskasvatuspaatos['jarjestamismuoto_koodi'] = 'jm02'
@@ -1255,7 +1266,7 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
         assert_status_code(resp, 400)
-        assert_validation_error('jarjestamismuoto_koodi', 'Invalid code for non-paos-lapsi.', resp)
+        assert_validation_error(resp, 'jarjestamismuoto_koodi', 'VP006', 'Invalid code for non-PAOS Lapsi.')
 
     def test_api_get_huoltaja_by_varhaiskasvatuspaatos(self):
         client = SetUpTestClient('credadmin').client()
@@ -1268,14 +1279,14 @@ class VardaViewsTests(TestCase):
     def test_api_external_permissions_no_virkailija(self):
         client = SetUpTestClient('tester').client()
         expected_response = {
-            "accessAllowed": False,
-            "errorMessage": "loggedInUserOid was not found"
+            'accessAllowed': False,
+            'errorMessage': 'loggedInUserOid was not found'
         }
         post_data = {
-            "personOidsForSamePerson": ["1", "1.2.246.562.24.47279942650"],
-            "organisationOids": ["string"],
-            "loggedInUserRoles": ["string"],
-            "loggedInUserOid": "1.2.34567891"
+            'personOidsForSamePerson': ['1', '1.2.246.562.24.47279942650'],
+            'organisationOids': ['string'],
+            'loggedInUserRoles': ['string'],
+            'loggedInUserOid': '1.2.34567891'
         }
         resp = client.post('/api/onr/external-permissions/', post_data)
         assert_status_code(resp, 200)
@@ -1284,14 +1295,14 @@ class VardaViewsTests(TestCase):
     def test_api_external_permissions_no_person(self):
         client = SetUpTestClient('tester').client()
         expected_response = {
-            "accessAllowed": False,
-            "errorMessage": "Person not found"
+            'accessAllowed': False,
+            'errorMessage': 'Person not found'
         }
         post_data = {
-            "personOidsForSamePerson": ["1", "1.2.246.562.24.490849013939"],
-            "organisationOids": ["string"],
-            "loggedInUserRoles": ["string"],
-            "loggedInUserOid": "1.2.345678910"
+            'personOidsForSamePerson': ['1', '1.2.246.562.24.490849013939'],
+            'organisationOids': ['string'],
+            'loggedInUserRoles': ['string'],
+            'loggedInUserOid': '1.2.345678910'
         }
         resp = client.post('/api/onr/external-permissions/', post_data)
         assert_status_code(resp, 200)
@@ -1299,30 +1310,27 @@ class VardaViewsTests(TestCase):
 
     def test_api_external_permissions_multiple_person(self):
         client = SetUpTestClient('tester').client()
-        expected_response = {
-            "detail": "A server error occurred. Team is investigating this."
-        }
         post_data = {
-            "personOidsForSamePerson": ["1.2.246.562.24.49084901392", "1.2.246.562.24.47279942650"],
-            "organisationOids": ["string"],
-            "loggedInUserRoles": ["string"],
-            "loggedInUserOid": "1.2.345678910"
+            'personOidsForSamePerson': ['1.2.246.562.24.49084901392', '1.2.246.562.24.47279942650'],
+            'organisationOids': ['string'],
+            'loggedInUserRoles': ['string'],
+            'loggedInUserOid': '1.2.345678910'
         }
         resp = client.post('/api/onr/external-permissions/', post_data)
         assert_status_code(resp, 500)
-        self.assertEqual(json.loads(resp.content), expected_response)
+        assert_validation_error(resp, 'errors', 'MI016', 'A server error occurred. Team is investigating this.')
 
     def test_api_external_permissions_no_permissions(self):
         client = SetUpTestClient('tester').client()
         expected_response = {
-            "accessAllowed": False,
-            "errorMessage": ""
+            'accessAllowed': False,
+            'errorMessage': ''
         }
         post_data = {
-            "personOidsForSamePerson": ["1", "1.2.246.562.24.47279942650"],
-            "organisationOids": ["string"],
-            "loggedInUserRoles": ["string"],
-            "loggedInUserOid": "1.2.345678911"
+            'personOidsForSamePerson': ['1', '1.2.246.562.24.47279942650'],
+            'organisationOids': ['string'],
+            'loggedInUserRoles': ['string'],
+            'loggedInUserOid': '1.2.345678911'
         }
         resp = client.post('/api/onr/external-permissions/', post_data)
         assert_status_code(resp, 200)
@@ -1331,14 +1339,14 @@ class VardaViewsTests(TestCase):
     def test_api_external_permissions_has_permission(self):
         client = SetUpTestClient('tester').client()
         expected_response = {
-            "accessAllowed": True,
-            "errorMessage": ""
+            'accessAllowed': True,
+            'errorMessage': ''
         }
         post_data = {
-            "personOidsForSamePerson": ["1", "1.2.246.562.24.47279942650"],
-            "organisationOids": ["string"],
-            "loggedInUserRoles": ["string"],
-            "loggedInUserOid": "1.2.345678910"
+            'personOidsForSamePerson': ['1', '1.2.246.562.24.47279942650'],
+            'organisationOids': ['string'],
+            'loggedInUserRoles': ['string'],
+            'loggedInUserOid': '1.2.345678910'
         }
         resp = client.post('/api/onr/external-permissions/', post_data)
         assert_status_code(resp, 200)
@@ -1352,10 +1360,10 @@ class VardaViewsTests(TestCase):
                       status=status.HTTP_201_CREATED
                       )
         henkilo = {
-            "henkilotunnus": "050990-431L",
-            "etunimet": "Tobias Jonas",
-            "kutsumanimi": "Tobias",
-            "sukunimi": "Virkkunen"
+            'henkilotunnus': '050990-431L',
+            'etunimet': 'Tobias Jonas',
+            'kutsumanimi': 'Tobias',
+            'sukunimi': 'Virkkunen'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
@@ -1363,7 +1371,7 @@ class VardaViewsTests(TestCase):
         henkilo_url = json.loads(resp.content)['url']
 
         huoltaja = {
-            "henkilo": henkilo_url
+            'henkilo': henkilo_url
         }
         client = SetUpTestClient('credadmin').client()
         resp1 = client.post('/api/admin/huoltajat/', huoltaja)
@@ -1371,87 +1379,87 @@ class VardaViewsTests(TestCase):
 
     def test_api_get_vakajarjestaja_json(self):
         vakajarjestaja_json = {
-            "count": 1,
-            "next": None,
-            "previous": None,
-            "results": [
+            'count': 1,
+            'next': None,
+            'previous': None,
+            'results': [
                 {
-                    "url": "http://testserver/api/v1/vakajarjestajat/1/?format=json",
-                    "id": 1,
-                    "nimi": "Tester2 organisaatio",
-                    "y_tunnus": "8500570-7",
-                    "yritysmuoto": "KUNTA",
-                    "kunnallinen_kytkin": True,
-                    "organisaatio_oid": "1.2.246.562.10.34683023489",
-                    "kunta_koodi": "091",
-                    "kayntiosoite": "Testerkatu 2",
-                    "kayntiosoite_postinumero": "00001",
-                    "kayntiosoite_postitoimipaikka": "Testilä",
-                    "postiosoite": "Testerkatu 2",
-                    "postinumero": "00001",
-                    "postitoimipaikka": "Testilä",
-                    "alkamis_pvm": "2017-02-03",
-                    "paattymis_pvm": None,
-                    "toimipaikat_top": [
-                        "http://testserver/api/v1/toimipaikat/2/?format=json",
-                        "http://testserver/api/v1/toimipaikat/3/?format=json"
+                    'url': 'http://testserver/api/v1/vakajarjestajat/1/?format=json',
+                    'id': 1,
+                    'nimi': 'Tester2 organisaatio',
+                    'y_tunnus': '8500570-7',
+                    'yritysmuoto': 'KUNTA',
+                    'kunnallinen_kytkin': True,
+                    'organisaatio_oid': '1.2.246.562.10.34683023489',
+                    'kunta_koodi': '091',
+                    'kayntiosoite': 'Testerkatu 2',
+                    'kayntiosoite_postinumero': '00001',
+                    'kayntiosoite_postitoimipaikka': 'Testilä',
+                    'postiosoite': 'Testerkatu 2',
+                    'postinumero': '00001',
+                    'postitoimipaikka': 'Testilä',
+                    'alkamis_pvm': '2017-02-03',
+                    'paattymis_pvm': None,
+                    'toimipaikat_top': [
+                        'http://testserver/api/v1/toimipaikat/2/?format=json',
+                        'http://testserver/api/v1/toimipaikat/3/?format=json'
                     ],
-                    "sahkopostiosoite": "organization@domain.com",
-                    "tilinumero": "FI37 1590 3000 0007 76",
-                    "ipv4_osoitteet": None,
-                    "ipv6_osoitteet": None,
-                    "puhelinnumero": "+358101234567"
+                    'sahkopostiosoite': 'organization@domain.com',
+                    'tilinumero': 'FI37 1590 3000 0007 76',
+                    'ipv4_osoitteet': None,
+                    'ipv6_osoitteet': None,
+                    'puhelinnumero': '+358101234567'
                 }
             ]
         }
         client = SetUpTestClient('tester2').client()
         resp = client.get('/api/v1/vakajarjestajat/?format=json')
         content = json.loads(resp.content)
-        content["results"][0].pop('muutos_pvm', None)
+        content['results'][0].pop('muutos_pvm', None)
         self.assertEqual(content, vakajarjestaja_json)
 
     def test_api_get_toimipaikat_json(self):
         toimipaikka_json = {
-            "url": "http://testserver/api/v1/toimipaikat/1/?format=json",
-            "id": 1,
-            "vakajarjestaja": "http://testserver/api/v1/vakajarjestajat/2/?format=json",
-            "toiminnallisetpainotukset_top": [
-                "http://testserver/api/v1/toiminnallisetpainotukset/1/?format=json"
+            'url': 'http://testserver/api/v1/toimipaikat/1/?format=json',
+            'id': 1,
+            'vakajarjestaja': 'http://testserver/api/v1/vakajarjestajat/2/?format=json',
+            'toiminnallisetpainotukset_top': [
+                'http://testserver/api/v1/toiminnallisetpainotukset/1/?format=json'
             ],
-            "kielipainotukset_top": [
-                "http://testserver/api/v1/kielipainotukset/1/?format=json"
+            'kielipainotukset_top': [
+                'http://testserver/api/v1/kielipainotukset/1/?format=json'
             ],
-            "varhaiskasvatussuhteet_top": [
-                "http://testserver/api/v1/varhaiskasvatussuhteet/1/?format=json",
-                "http://testserver/api/v1/varhaiskasvatussuhteet/2/?format=json",
-                "http://testserver/api/v1/varhaiskasvatussuhteet/8/?format=json"
+            'varhaiskasvatussuhteet_top': [
+                'http://testserver/api/v1/varhaiskasvatussuhteet/1/?format=json',
+                'http://testserver/api/v1/varhaiskasvatussuhteet/2/?format=json',
+                'http://testserver/api/v1/varhaiskasvatussuhteet/8/?format=json'
             ],
-            "nimi": "Espoo",
-            "organisaatio_oid": "1.2.246.562.10.9395737548810",
-            "kayntiosoite": "Keilaranta 14",
-            "kayntiosoite_postitoimipaikka": "Espoo",
-            "kayntiosoite_postinumero": "02100",
-            "postiosoite": "Keilaranta 14",
-            "postitoimipaikka": "Espoo",
-            "postinumero": "02100",
-            "kunta_koodi": "091",
-            "puhelinnumero": "+35810123456",
-            "sahkopostiosoite": "test1@espoo.fi",
-            "kasvatusopillinen_jarjestelma_koodi": "kj02",
-            "toimintamuoto_koodi": "tm01",
-            "asiointikieli_koodi": ["FI", "SV"],
-            "jarjestamismuoto_koodi": [
-                "jm02",
-                "jm03",
-                "jm04",
-                "jm05"
+            'nimi': 'Espoo',
+            'organisaatio_oid': '1.2.246.562.10.9395737548810',
+            'kayntiosoite': 'Keilaranta 14',
+            'kayntiosoite_postitoimipaikka': 'Espoo',
+            'kayntiosoite_postinumero': '02100',
+            'postiosoite': 'Keilaranta 14',
+            'postitoimipaikka': 'Espoo',
+            'postinumero': '02100',
+            'kunta_koodi': '091',
+            'puhelinnumero': '+35810123456',
+            'sahkopostiosoite': 'test1@espoo.fi',
+            'kasvatusopillinen_jarjestelma_koodi': 'kj02',
+            'toimintamuoto_koodi': 'tm01',
+            'asiointikieli_koodi': ['FI', 'SV'],
+            'jarjestamismuoto_koodi': [
+                'jm02',
+                'jm03',
+                'jm04',
+                'jm05'
             ],
-            "varhaiskasvatuspaikat": 120,
-            "toiminnallinenpainotus_kytkin": True,
-            "kielipainotus_kytkin": True,
-            "alkamis_pvm": "2017-02-03",
-            "paattymis_pvm": None,
-            "hallinnointijarjestelma": 'ORGANISAATIO'
+            'varhaiskasvatuspaikat': 120,
+            'toiminnallinenpainotus_kytkin': True,
+            'kielipainotus_kytkin': True,
+            'alkamis_pvm': '2017-02-03',
+            'paattymis_pvm': None,
+            'hallinnointijarjestelma': 'ORGANISAATIO'
         }
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/toimipaikat/1/?format=json')
@@ -1461,29 +1469,29 @@ class VardaViewsTests(TestCase):
 
     def test_api_get_toimipaikan_lapset_json(self):
         toimipaikan_lapset_json = {
-            "count": 2,
-            "next": None,
-            "previous": None,
-            "results": [
+            'count': 2,
+            'next': None,
+            'previous': None,
+            'results': [
                 {
-                    "etunimet": "Arpa Noppa",
-                    "sukunimi": "Kuutio",
-                    "henkilo_oid": "1.2.246.562.24.6815981182311",
-                    "syntyma_pvm": "1948-05-11",
-                    "oma_organisaatio_nimi": "Tester2 organisaatio",
-                    "paos_organisaatio_nimi": "Tester organisaatio",
-                    "lapsi_id": 4,
-                    "lapsi_url": "http://testserver/api/v1/lapset/4/?format=json"
+                    'etunimet': 'Arpa Noppa',
+                    'sukunimi': 'Kuutio',
+                    'henkilo_oid': '1.2.246.562.24.6815981182311',
+                    'syntyma_pvm': '1948-05-11',
+                    'oma_organisaatio_nimi': 'Tester2 organisaatio',
+                    'paos_organisaatio_nimi': 'Tester organisaatio',
+                    'lapsi_id': 4,
+                    'lapsi_url': 'http://testserver/api/v1/lapset/4/?format=json'
                 },
                 {
-                    "etunimet": "Teila Aamu Runelma",
-                    "sukunimi": "Testilä",
-                    "henkilo_oid": "1.2.246.562.24.86012997950",
-                    "syntyma_pvm": "2018-03-11",
-                    "oma_organisaatio_nimi": "Tester2 organisaatio",
-                    "paos_organisaatio_nimi": "Tester organisaatio",
-                    "lapsi_id": 8,
-                    "lapsi_url": "http://testserver/api/v1/lapset/8/?format=json"
+                    'etunimet': 'Teila Aamu Runelma',
+                    'sukunimi': 'Testilä',
+                    'henkilo_oid': '1.2.246.562.24.86012997950',
+                    'syntyma_pvm': '2018-03-11',
+                    'oma_organisaatio_nimi': 'Tester2 organisaatio',
+                    'paos_organisaatio_nimi': 'Tester organisaatio',
+                    'lapsi_id': 8,
+                    'lapsi_url': 'http://testserver/api/v1/lapset/8/?format=json'
                 }
             ]
         }
@@ -1493,17 +1501,17 @@ class VardaViewsTests(TestCase):
 
     def test_api_toimipaikan_lapset_henkilo_nimi_filter(self):
         toimipaikan_lapset_henkilo_filter_json = {
-            "count": 1,
-            "next": None,
-            "previous": None,
-            "results": [
+            'count': 1,
+            'next': None,
+            'previous': None,
+            'results': [
                 {
-                    "etunimet": "Susanna",
-                    "sukunimi": "Virtanen",
-                    "henkilo_oid": "1.2.246.562.24.58672764848",
-                    "syntyma_pvm": "2016-05-12",
-                    "lapsi_id": 2,
-                    "lapsi_url": "http://testserver/api/v1/lapset/2/?format=json"
+                    'etunimet': 'Susanna',
+                    'sukunimi': 'Virtanen',
+                    'henkilo_oid': '1.2.246.562.24.58672764848',
+                    'syntyma_pvm': '2016-05-12',
+                    'lapsi_id': 2,
+                    'lapsi_url': 'http://testserver/api/v1/lapset/2/?format=json'
                 }
             ]
         }
@@ -1544,16 +1552,16 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/henkilot/1/')
         henkilo = json.loads(resp.content)
-        self.assertEqual(henkilo["syntyma_pvm"], "1956-04-12")
+        self.assertEqual(henkilo['syntyma_pvm'], '1956-04-12')
 
     def test_api_push_without_privilages(self):
         org = {
-            "nimi": "Fake-Helsingin kaupunki",
-            "y_tunnus": "0201244-2",
-            "kunta_koodi": "091",
-            "sahkopostiosoite": "fake@helsiki.fi",
-            "tilinumero": "FI00 0000 0000 0000 99",
-            "puhelinnumero": "112"
+            'nimi': 'Fake-Helsingin kaupunki',
+            'y_tunnus': '0201244-2',
+            'kunta_koodi': '091',
+            'sahkopostiosoite': 'fake@helsiki.fi',
+            'tilinumero': 'FI00 0000 0000 0000 99',
+            'puhelinnumero': '112'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/vakajarjestajat/', org)
@@ -1561,215 +1569,216 @@ class VardaViewsTests(TestCase):
 
     def test_api_push_incorrect_ipv4_address(self):
         org = {
-            "nimi": "Fake-Helsingin kaupunki",
-            "y_tunnus": "0920632-0",
-            "sahkopostiosoite": "fake@helsiki.fi",
-            "ipv4_osoitteet": ["192.168.0.1/"],
-            "kunta_koodi": "091",
-            "kayntiosoite": "Testerkatu 2",
-            "kayntiosoite_postinumero": "00001",
-            "kayntiosoite_postitoimipaikka": "Testilä",
-            "postiosoite": "Testerkatu 2",
-            "postitoimipaikka": "Testilä",
-            "postinumero": "00001",
-            "tilinumero": "FI59 5542 8540 0041 21",
-            "puhelinnumero": "+3589123123"
+            'nimi': 'Fake-Helsingin kaupunki',
+            'y_tunnus': '0920632-0',
+            'sahkopostiosoite': 'fake@helsiki.fi',
+            'ipv4_osoitteet': ['192.168.0.1/'],
+            'kunta_koodi': '091',
+            'kayntiosoite': 'Testerkatu 2',
+            'kayntiosoite_postinumero': '00001',
+            'kayntiosoite_postitoimipaikka': 'Testilä',
+            'postiosoite': 'Testerkatu 2',
+            'postitoimipaikka': 'Testilä',
+            'postinumero': '00001',
+            'tilinumero': 'FI59 5542 8540 0041 21',
+            'puhelinnumero': '+3589123123'
         }
         client = SetUpTestClient('credadmin').client()
         resp = client.post('/api/v1/vakajarjestajat/', org)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"ipv4_osoitteet": {'0': ["192.168.0.1/ : Not a valid IPv4-address."]}})
+        assert_validation_error(resp, ['ipv4_osoitteet', '0'], 'VJ007', 'Not a valid IPv4-address.')
 
     def test_api_push_incorrect_ipv6_address(self):
         org = {
-            "nimi": "Fake-Helsingin kaupunki",
-            "y_tunnus": "0920632-0",
-            "sahkopostiosoite": "fake@helsiki.fi",
-            "ipv4_osoitteet": ["192.168.0.1/32"],
-            "ipv6_osoitteet": ["2001:db8::/480"],
-            "kunta_koodi": "091",
-            "kayntiosoite": "Testerkatu 2",
-            "kayntiosoite_postinumero": "00001",
-            "kayntiosoite_postitoimipaikka": "Testilä",
-            "postiosoite": "Testerkatu 2",
-            "postitoimipaikka": "Testilä",
-            "postinumero": "00001",
-            "tilinumero": "FI59 5542 8540 0041 21",
-            "puhelinnumero": "+3589112112"
+            'nimi': 'Fake-Helsingin kaupunki',
+            'y_tunnus': '0920632-0',
+            'sahkopostiosoite': 'fake@helsiki.fi',
+            'ipv4_osoitteet': ['192.168.0.1/32'],
+            'ipv6_osoitteet': ['2001:db8::/480'],
+            'kunta_koodi': '091',
+            'kayntiosoite': 'Testerkatu 2',
+            'kayntiosoite_postinumero': '00001',
+            'kayntiosoite_postitoimipaikka': 'Testilä',
+            'postiosoite': 'Testerkatu 2',
+            'postitoimipaikka': 'Testilä',
+            'postinumero': '00001',
+            'tilinumero': 'FI59 5542 8540 0041 21',
+            'puhelinnumero': '+3589112112'
         }
         client = SetUpTestClient('credadmin').client()
         resp = client.post('/api/v1/vakajarjestajat/', org)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"ipv6_osoitteet": {'0': ["2001:db8::/480 : Not a valid IPv6-address."]}})
+        assert_validation_error(resp, ['ipv6_osoitteet', '0'], 'VJ008', 'Not a valid IPv6-address.')
 
     def test_api_push_incorrect_jarjestamismuoto_koodi(self):
         varhaiskasvatuspaatos = {
-            "lapsi": "http://testserver/api/v1/lapset/1/",
-            "tuntimaara_viikossa": 45,
-            "jarjestamismuoto_koodi": "no_code",
-            "alkamis_pvm": "2018-09-01",
-            "hakemus_pvm": "2018-08-08"
+            'lapsi': 'http://testserver/api/v1/lapset/1/',
+            'tuntimaara_viikossa': 45,
+            'jarjestamismuoto_koodi': 'no_code',
+            'alkamis_pvm': '2018-09-01',
+            'hakemus_pvm': '2018-08-08'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"jarjestamismuoto_koodi": ["Koodi has special characters. Not allowed."]})
+        assert_validation_error(resp, 'jarjestamismuoto_koodi', 'KO002', 'Code cannot have special characters.')
 
     @responses.activate
     def test_api_push_correct_toimipaikka(self):
         # This test relies on organisaatio_client default error handling
         toimipaikka = {
-            "vakajarjestaja": "http://testserver/api/v1/vakajarjestajat/1/",
-            "nimi": "Testila",
-            "kunta_koodi": "091",
-            "puhelinnumero": "+35892323234",
-            "kayntiosoite": "Testerkatu 2",
-            "kayntiosoite_postinumero": "00001",
-            "kayntiosoite_postitoimipaikka": "Testilä",
-            "postiosoite": "Testerkatu 2",
-            "postitoimipaikka": "Testilä",
-            "postinumero": "00001",
-            "sahkopostiosoite": "hel1234@helsinki.fi",
-            "kasvatusopillinen_jarjestelma_koodi": "kj03",
-            "toimintamuoto_koodi": "tm01",
-            "asiointikieli_koodi": ["FI"],
-            "jarjestamismuoto_koodi": ["jm01", "jm03"],
-            "varhaiskasvatuspaikat": 1000,
-            "alkamis_pvm": "2018-01-01"
+            'vakajarjestaja': 'http://testserver/api/v1/vakajarjestajat/1/',
+            'nimi': 'Testila',
+            'kunta_koodi': '091',
+            'puhelinnumero': '+35892323234',
+            'kayntiosoite': 'Testerkatu 2',
+            'kayntiosoite_postinumero': '00001',
+            'kayntiosoite_postitoimipaikka': 'Testilä',
+            'postiosoite': 'Testerkatu 2',
+            'postitoimipaikka': 'Testilä',
+            'postinumero': '00001',
+            'sahkopostiosoite': 'hel1234@helsinki.fi',
+            'kasvatusopillinen_jarjestelma_koodi': 'kj03',
+            'toimintamuoto_koodi': 'tm01',
+            'asiointikieli_koodi': ['FI'],
+            'jarjestamismuoto_koodi': ['jm01', 'jm03'],
+            'varhaiskasvatuspaikat': 1000,
+            'alkamis_pvm': '2018-01-01'
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/toimipaikat/', toimipaikka)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'nimi': ['Could not check toimipaikka-duplicates from Organisaatiopalvelu. Please try again later.']})
+        assert_validation_error(resp, 'errors', 'TP007', 'Could not check duplicates from Organisaatiopalvelu. Please try again later.')
 
     def test_api_push_incorrect_toimipaikka(self):
         toimipaikka = {
-            "vakajarjestaja": "http://testserver/api/v1/vakajarjestajat/1/",
-            "nimi": "Testila",
-            "kunta_koodi": "091",
-            "puhelinnumero": "+35892323234",
-            "kayntiosoite_postinumero": "00001",
-            "kayntiosoite_postitoimipaikka": "Testilä",
-            "postiosoite": "Testerkatu 2",
-            "postitoimipaikka": "Testilä",
-            "postinumero": "00001",
-            "sahkopostiosoite": "hel1234@helsinki.fi",
-            "kasvatusopillinen_jarjestelma_koodi": "kj03",
-            "toimintamuoto_koodi": "tm01",
-            "asiointikieli_koodi": ["FI"],
-            "jarjestamismuoto_koodi": ["jm01", "jm03"],
-            "varhaiskasvatuspaikat": 1000,
-            "alkamis_pvm": "2018-01-01"
+            'vakajarjestaja': 'http://testserver/api/v1/vakajarjestajat/1/',
+            'nimi': 'Testila',
+            'kunta_koodi': '091',
+            'puhelinnumero': '+35892323234',
+            'kayntiosoite_postinumero': '00001',
+            'kayntiosoite_postitoimipaikka': 'Testilä',
+            'postiosoite': 'Testerkatu 2',
+            'postitoimipaikka': 'Testilä',
+            'postinumero': '00001',
+            'sahkopostiosoite': 'hel1234@helsinki.fi',
+            'kasvatusopillinen_jarjestelma_koodi': 'kj03',
+            'toimintamuoto_koodi': 'tm01',
+            'asiointikieli_koodi': ['FI'],
+            'jarjestamismuoto_koodi': ['jm01', 'jm03'],
+            'varhaiskasvatuspaikat': 1000,
+            'alkamis_pvm': '2018-01-01'
         }
 
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/toimipaikat/', toimipaikka)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'kayntiosoite': ['This field is required.']})
+        assert_validation_error(resp, 'kayntiosoite', 'GE001', 'This field is required.')
 
-        toimipaikka["kayntiosoite"] = ""
-        resp = client.post('/api/v1/toimipaikat/', toimipaikka)
-        assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'kayntiosoite': ['This field may not be blank.']})
+        toimipaikka['kayntiosoite'] = ''
+        resp2 = client.post('/api/v1/toimipaikat/', toimipaikka)
+        assert_status_code(resp2, 400)
+        assert_validation_error(resp2, 'kayntiosoite', 'GE003', 'This field may not be blank.')
 
-        toimipaikka["kayntiosoite"] = "Jo"
-        resp = client.post('/api/v1/toimipaikat/', toimipaikka)
-        assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'kayntiosoite': ['Ensure this field has at least 3 characters.']})
+        toimipaikka['kayntiosoite'] = 'Jo'
+        resp3 = client.post('/api/v1/toimipaikat/', toimipaikka)
+        assert_status_code(resp3, 400)
+        assert_validation_error(resp3, 'kayntiosoite', 'DY002', 'Ensure this field has at least 3 characters.')
 
-        toimipaikka["kayntiosoite"] = "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901"
-        resp = client.post('/api/v1/toimipaikat/', toimipaikka)
-        assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'kayntiosoite': ['Ensure this field has no more than 100 characters.']})
+        toimipaikka['kayntiosoite'] = '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901'
+        resp4 = client.post('/api/v1/toimipaikat/', toimipaikka)
+        assert_status_code(resp4, 400)
+        assert_validation_error(resp4, 'kayntiosoite', 'DY001', 'Ensure this field has no more than 100 characters.')
 
     def test_api_push_incorrect_toimintamuoto(self):
         toimipaikka = {
-            "vakajarjestaja": "http://testserver/api/v1/vakajarjestajat/1/",
-            "nimi": "Testila",
-            "kunta_koodi": "091",
-            "puhelinnumero": "+35892323234",
-            "kayntiosoite": "Testerkatu 2",
-            "kayntiosoite_postinumero": "00001",
-            "kayntiosoite_postitoimipaikka": "Testilä",
-            "postiosoite": "Testerkatu 2",
-            "postitoimipaikka": "Testilä",
-            "postinumero": "00001",
-            "sahkopostiosoite": "hel1234@helsinki.fi",
-            "kasvatusopillinen_jarjestelma_koodi": "kj03",
-            "toimintamuoto_koodi": "eitoimintaa",
-            "asiointikieli_koodi": ["FI"],
-            "jarjestamismuoto_koodi": ["jm01", "jm03"],
-            "varhaiskasvatuspaikat": 1000,
-            "alkamis_pvm": "2018-01-01"
+            'vakajarjestaja': 'http://testserver/api/v1/vakajarjestajat/1/',
+            'nimi': 'Testila',
+            'kunta_koodi': '091',
+            'puhelinnumero': '+35892323234',
+            'kayntiosoite': 'Testerkatu 2',
+            'kayntiosoite_postinumero': '00001',
+            'kayntiosoite_postitoimipaikka': 'Testilä',
+            'postiosoite': 'Testerkatu 2',
+            'postitoimipaikka': 'Testilä',
+            'postinumero': '00001',
+            'sahkopostiosoite': 'hel1234@helsinki.fi',
+            'kasvatusopillinen_jarjestelma_koodi': 'kj03',
+            'toimintamuoto_koodi': 'eitoimintaa',
+            'asiointikieli_koodi': ['FI'],
+            'jarjestamismuoto_koodi': ['jm01', 'jm03'],
+            'varhaiskasvatuspaikat': 1000,
+            'alkamis_pvm': '2018-01-01'
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/toimipaikat/', toimipaikka)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"toimintamuoto_koodi": ["eitoimintaa : Not a valid toimintamuoto_koodi."]})
+        assert_validation_error(resp, 'toimintamuoto_koodi', 'KO003', 'Not a valid code.')
 
     def test_api_push_incorrect_kasvatusopillinen_jarjestelma(self):
         toimipaikka = {
-            "vakajarjestaja": "http://testserver/api/v1/vakajarjestajat/1/",
-            "nimi": "Testila",
-            "kunta_koodi": "091",
-            "puhelinnumero": "+35892323234",
-            "kayntiosoite": "Testerkatu 2",
-            "kayntiosoite_postinumero": "00001",
-            "kayntiosoite_postitoimipaikka": "Testilä",
-            "postiosoite": "Testerkatu 2",
-            "postitoimipaikka": "Testilä",
-            "postinumero": "00001",
-            "sahkopostiosoite": "hel1234@helsinki.fi",
-            "kasvatusopillinen_jarjestelma_koodi": "ei kasvatusta",
-            "toimintamuoto_koodi": "tm01",
-            "asiointikieli_koodi": ["FI"],
-            "jarjestamismuoto_koodi": ["jm01", "jm03"],
-            "varhaiskasvatuspaikat": 1000,
-            "alkamis_pvm": "2018-01-01"
+            'vakajarjestaja': 'http://testserver/api/v1/vakajarjestajat/1/',
+            'nimi': 'Testila',
+            'kunta_koodi': '091',
+            'puhelinnumero': '+35892323234',
+            'kayntiosoite': 'Testerkatu 2',
+            'kayntiosoite_postinumero': '00001',
+            'kayntiosoite_postitoimipaikka': 'Testilä',
+            'postiosoite': 'Testerkatu 2',
+            'postitoimipaikka': 'Testilä',
+            'postinumero': '00001',
+            'sahkopostiosoite': 'hel1234@helsinki.fi',
+            'kasvatusopillinen_jarjestelma_koodi': 'ei kasvatusta',
+            'toimintamuoto_koodi': 'tm01',
+            'asiointikieli_koodi': ['FI'],
+            'jarjestamismuoto_koodi': ['jm01', 'jm03'],
+            'varhaiskasvatuspaikat': 1000,
+            'alkamis_pvm': '2018-01-01'
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/toimipaikat/', toimipaikka)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"kasvatusopillinen_jarjestelma_koodi": ["Koodi has spaces. Not allowed."]})
+        assert_validation_error(resp, 'kasvatusopillinen_jarjestelma_koodi', 'KO001', 'Code cannot have spaces.')
 
     def test_api_push_incorrect_toimintapainotus_koodi(self):
         toiminnallinenpainotus = {
-            "toimipaikka": "http://testserver/api/v1/toimipaikat/1/",
-            "alkamis_pvm": "2018-07-01",
-            "toimintapainotus_koodi": "noc"
+            'toimipaikka': 'http://testserver/api/v1/toimipaikat/1/',
+            'alkamis_pvm': '2018-07-01',
+            'toimintapainotus_koodi': 'noc'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/toiminnallisetpainotukset/', toiminnallinenpainotus)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"toimintapainotus_koodi": ["noc : Not a valid toimintapainotus_koodi."]})
+        assert_validation_error(resp, 'toimintapainotus_koodi', 'KO003', 'Not a valid code.')
 
     def test_push_api_incorrect_kieli_koodi(self):
         kielipainotus = {
-            "toimipaikka": "http://testserver/api/v1/toimipaikat/1/",
-            "alkamis_pvm": "2018-07-01",
-            "kielipainotus_koodi": "UU"
+            'toimipaikka': 'http://testserver/api/v1/toimipaikat/1/',
+            'alkamis_pvm': '2018-07-01',
+            'kielipainotus_koodi': 'UU'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/kielipainotukset/', kielipainotus)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"kielipainotus_koodi": ["UU : Not a valid kieli_koodi."]})
+        assert_validation_error(resp, 'kielipainotus_koodi', 'KO003', 'Not a valid code.')
 
     def test_push_api_incorrect_kielipainotus(self):
         kielipainotus = {
-            "toimipaikka": "http://testserver/api/v1/toimipaikat/1/",
-            "kielipainotus_koodi": "FI",
-            "alkamis_pvm": "2018-08-09",
+            'toimipaikka': 'http://testserver/api/v1/toimipaikat/1/',
+            'kielipainotus_koodi': 'FI',
+            'alkamis_pvm': '2018-08-09',
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/kielipainotukset/', kielipainotus)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"kielipainotus": ["kielipainotus_koodi FI already exists for toimipaikka 1 on the defined time range."]})
+        assert_validation_error(resp, 'errors', 'KP001', 'KieliPainotus with this kielipainotus_koodi already exists '
+                                                         'for toimipaikka on the given date range.')
 
     def test_push_correct_kielipainotus(self):
         kielipainotus = {
-            "toimipaikka": "http://testserver/api/v1/toimipaikat/1/",
-            "kielipainotus_koodi": "SV",
-            "alkamis_pvm": "2019-08-09"
+            'toimipaikka': 'http://testserver/api/v1/toimipaikat/1/',
+            'kielipainotus_koodi': 'SV',
+            'alkamis_pvm': '2019-08-09'
         }
 
         client = SetUpTestClient('tester').client()
@@ -1778,20 +1787,21 @@ class VardaViewsTests(TestCase):
 
     def test_push_api_incorrect_toiminnallinenpainotus(self):
         toiminnallinenpainotus = {
-            "toimipaikka": "http://testserver/api/v1/toimipaikat/1/",
-            "toimintapainotus_koodi": "tp01",
-            "alkamis_pvm": "2018-08-09",
+            'toimipaikka': 'http://testserver/api/v1/toimipaikat/1/',
+            'toimintapainotus_koodi': 'tp01',
+            'alkamis_pvm': '2018-08-09',
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/toiminnallisetpainotukset/', toiminnallinenpainotus)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"toiminnallinenpainotus": ["toimintapainotus_koodi tp01 already exists for toimipaikka 1 on the defined time range."]})
+        assert_validation_error(resp, 'errors', 'TO001', 'ToiminnallinenPainotus with this toimintapainotus_koodi '
+                                                         'already exists for toimipaikka on the given date range.')
 
     def test_push_correct_toiminnallinenpainotus(self):
         toiminnallinenpainotus = {
-            "toimipaikka": "http://testserver/api/v1/toimipaikat/1/",
-            "toimintapainotus_koodi": "tp02",
-            "alkamis_pvm": "2019-08-09"
+            'toimipaikka': 'http://testserver/api/v1/toimipaikat/1/',
+            'toimintapainotus_koodi': 'tp02',
+            'alkamis_pvm': '2019-08-09'
         }
 
         client = SetUpTestClient('tester').client()
@@ -1800,63 +1810,63 @@ class VardaViewsTests(TestCase):
 
     def test_push_incorrect_iban_1(self):
         vakajarjestaja = {
-            "nimi": "Testikylä",
-            "y_tunnus": "2913769-2",
-            "kunta_koodi": "091",
-            "kayntiosoite": "Testerkatu 2",
-            "kayntiosoite_postinumero": "00001",
-            "kayntiosoite_postitoimipaikka": "Testilä",
-            "postiosoite": "Testerkatu 2",
-            "postitoimipaikka": "Testilä",
-            "postinumero": "00001",
-            "sahkopostiosoite": "iban@ibanila.iban",
-            "tilinumero": "FI92 2046 1800 0628 0",
-            "puhelinnumero": "+358400987654"
+            'nimi': 'Testikylä',
+            'y_tunnus': '2913769-2',
+            'kunta_koodi': '091',
+            'kayntiosoite': 'Testerkatu 2',
+            'kayntiosoite_postinumero': '00001',
+            'kayntiosoite_postitoimipaikka': 'Testilä',
+            'postiosoite': 'Testerkatu 2',
+            'postitoimipaikka': 'Testilä',
+            'postinumero': '00001',
+            'sahkopostiosoite': 'iban@ibanila.iban',
+            'tilinumero': 'FI92 2046 1800 0628 0',
+            'puhelinnumero': '+358400987654'
         }   # too short IBAN
         client = SetUpTestClient('credadmin').client()
         resp = client.post('/api/v1/vakajarjestajat/', vakajarjestaja)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"tilinumero": ["FI92 2046 1800 0628 0 : Not a valid IBAN code."]})
+        assert_validation_error(resp, 'tilinumero', 'VJ009', 'Not a valid IBAN code.')
 
     def test_push_incorrect_iban_2(self):
         vakajarjestaja = {
-            "nimi": "Testikylä",
-            "y_tunnus": "2913769-2",
-            "kunta_koodi": "091",
-            "kayntiosoite": "Testerkatu 2",
-            "kayntiosoite_postinumero": "00001",
-            "kayntiosoite_postitoimipaikka": "Testilä",
-            "postiosoite": "Testerkatu 2",
-            "postitoimipaikka": "Testilä",
-            "postinumero": "00001",
-            "sahkopostiosoite": "iban@ibanila.iban",
-            "tilinumero": "IF92 2046 1800 0628 04",
-            "puhelinnumero": "+358400987654"
+            'nimi': 'Testikylä',
+            'y_tunnus': '2913769-2',
+            'kunta_koodi': '091',
+            'kayntiosoite': 'Testerkatu 2',
+            'kayntiosoite_postinumero': '00001',
+            'kayntiosoite_postitoimipaikka': 'Testilä',
+            'postiosoite': 'Testerkatu 2',
+            'postitoimipaikka': 'Testilä',
+            'postinumero': '00001',
+            'sahkopostiosoite': 'iban@ibanila.iban',
+            'tilinumero': 'IF92 2046 1800 0628 04',
+            'puhelinnumero': '+358400987654'
         }  # IBAN country code incorrect
         client = SetUpTestClient('credadmin').client()
         resp = client.post('/api/v1/vakajarjestajat/', vakajarjestaja)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"tilinumero": ["IF92 2046 1800 0628 04 : Not a valid IBAN code."]})
+        assert_validation_error(resp, 'tilinumero', 'VJ009', 'Not a valid IBAN code.')
 
     def test_push_incorrect_iban_3(self):
         vakajarjestaja = {
-            "nimi": "Testikylä",
-            "y_tunnus": "2913769-2",
-            "kunta_koodi": "091",
-            "kayntiosoite": "Testerkatu 2",
-            "kayntiosoite_postinumero": "00001",
-            "kayntiosoite_postitoimipaikka": "Testilä",
-            "postiosoite": "Testerkatu 2",
-            "postitoimipaikka": "Testilä",
-            "postinumero": "00001",
-            "sahkopostiosoite": "iban@ibanila.iban",
-            "tilinumero": "FI92 2046 1800 0628 05",
-            "puhelinnumero": "+358400987654"
+            'nimi': 'Testikylä',
+            'y_tunnus': '2913769-2',
+            'kunta_koodi': '091',
+            'kayntiosoite': 'Testerkatu 2',
+            'kayntiosoite_postinumero': '00001',
+            'kayntiosoite_postitoimipaikka': 'Testilä',
+            'postiosoite': 'Testerkatu 2',
+            'postitoimipaikka': 'Testilä',
+            'postinumero': '00001',
+            'sahkopostiosoite': 'iban@ibanila.iban',
+            'tilinumero': 'FI92 2046 1800 0628 05',
+            'puhelinnumero': '+358400987654'
         }   # last number in IBAN code changed
         client = SetUpTestClient('credadmin').client()
         resp = client.post('/api/v1/vakajarjestajat/', vakajarjestaja)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"tilinumero": ["FI92 2046 1800 0628 05 : Not a valid IBAN code."]})
+        assert_validation_error(resp, 'tilinumero', 'VJ009', 'Not a valid IBAN code.')
 
     def test_api_filter_vakajarjestajat_kunnallinen_kytkin(self):
         client = SetUpTestClient('credadmin').client()
@@ -1881,26 +1891,26 @@ class VardaViewsTests(TestCase):
 
     def test_push_incorrect_varhaiskasvatuspaatos_tuntimaara(self):
         varhaiskasvatuspaatos = {
-            "lapsi": "http://testserver/api/v1/lapset/1/",
-            "vuorohoito_kytkin": True,
-            "tuntimaara_viikossa": 200,
-            "jarjestamismuoto_koodi": "jm01",
-            "hakemus_pvm": "2018-07-30",
-            "alkamis_pvm": "2018-10-01"
+            'lapsi': 'http://testserver/api/v1/lapset/1/',
+            'vuorohoito_kytkin': True,
+            'tuntimaara_viikossa': 200,
+            'jarjestamismuoto_koodi': 'jm01',
+            'hakemus_pvm': '2018-07-30',
+            'alkamis_pvm': '2018-10-01'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', json.dumps(varhaiskasvatuspaatos), content_type='application/json')
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"tuntimaara_viikossa": ["Ensure this value is less than or equal to 120.0."]})
+        assert_validation_error(resp, 'tuntimaara_viikossa', 'DY005', 'Ensure this value is less than or equal to 120.')
 
     def test_push_api_varhaiskasvatuspaatos_pikakasittely_kytkin_true(self):
         varhaiskasvatuspaatos = {
-            "lapsi": "/api/v1/lapset/2/",
-            "vuorohoito_kytkin": True,
-            "tuntimaara_viikossa": 30,
-            "jarjestamismuoto_koodi": "jm04",
-            "hakemus_pvm": "2018-01-01",
-            "alkamis_pvm": "2018-01-15"
+            'lapsi': '/api/v1/lapset/2/',
+            'vuorohoito_kytkin': True,
+            'tuntimaara_viikossa': 30,
+            'jarjestamismuoto_koodi': 'jm04',
+            'hakemus_pvm': '2018-01-01',
+            'alkamis_pvm': '2018-01-15'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', json.dumps(varhaiskasvatuspaatos), content_type='application/json')
@@ -1910,12 +1920,12 @@ class VardaViewsTests(TestCase):
 
     def test_push_api_varhaiskasvatuspaatos_pikakasittely_kytkin_false(self):
         varhaiskasvatuspaatos = {
-            "lapsi": "/api/v1/lapset/2/",
-            "vuorohoito_kytkin": True,
-            "tuntimaara_viikossa": 30,
-            "jarjestamismuoto_koodi": "jm04",
-            "hakemus_pvm": "2018-01-01",
-            "alkamis_pvm": "2018-01-16"
+            'lapsi': '/api/v1/lapset/2/',
+            'vuorohoito_kytkin': True,
+            'tuntimaara_viikossa': 30,
+            'jarjestamismuoto_koodi': 'jm04',
+            'hakemus_pvm': '2018-01-01',
+            'alkamis_pvm': '2018-01-16'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', json.dumps(varhaiskasvatuspaatos), content_type='application/json')
@@ -1976,7 +1986,8 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester').client()
         resp = client.delete('/api/v1/varhaiskasvatuspaatokset/1/')
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"detail": "Cannot delete varhaiskasvatuspaatos. There are objects referencing it that need to be deleted first."})
+        assert_validation_error(resp, 'errors', 'VP004', 'Cannot delete Varhaiskasvatuspaatos. There are objects '
+                                                         'referencing it that need to be deleted first.')
 
     def test_push_api_varhaiskasvatussuhde_date_validation(self):
         client = SetUpTestClient('tester').client()
@@ -2061,35 +2072,35 @@ class VardaViewsTests(TestCase):
 
     def test_push_api_maksutieto_missing_huoltajat(self):
         maksutieto = {
-            "huoltajat": [],
-            "lapsi": "/api/v1/lapset/1/",
-            "maksun_peruste_koodi": "mp01",
-            "palveluseteli_arvo": 120,
-            "asiakasmaksu": 0,
-            "perheen_koko": 2,
-            "alkamis_pvm": "2019-01-01",
-            "paattymis_pvm": "2020-01-01"
+            'huoltajat': [],
+            'lapsi': '/api/v1/lapset/1/',
+            'maksun_peruste_koodi': 'mp01',
+            'palveluseteli_arvo': 120,
+            'asiakasmaksu': 0,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2019-01-01',
+            'paattymis_pvm': '2020-01-01'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"huoltajat": {'non_field_errors': ['This list may not be empty.']}})
+        assert_validation_error(resp, ['huoltajat', 'errors'], 'GE005', 'This list may not be empty.')
 
     def test_push_api_maksutieto_missing_huoltaja_hetu_or_oid(self):
         maksutieto = {
-            "huoltajat": [{"etunimet": "Jukka", "sukunimi": "Pekkarinen"}],
-            "lapsi": "/api/v1/lapset/1/",
-            "maksun_peruste_koodi": "mp01",
-            "palveluseteli_arvo": 120,
-            "asiakasmaksu": 0,
-            "perheen_koko": 2,
-            "alkamis_pvm": "2019-01-01",
-            "paattymis_pvm": "2020-01-01"
+            'huoltajat': [{'etunimet': 'Jukka', 'sukunimi': 'Pekkarinen'}],
+            'lapsi': '/api/v1/lapset/1/',
+            'maksun_peruste_koodi': 'mp01',
+            'palveluseteli_arvo': 120,
+            'asiakasmaksu': 0,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2019-01-01',
+            'paattymis_pvm': '2020-01-01'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"huoltajat": [{"non_field_errors": ["Either henkilotunnus or henkilo_oid is needed. But not both."]}]})
+        assert_validation_error(resp, ['huoltajat', '0', 'errors'], 'HE004', 'Either henkilotunnus or henkilo_oid is needed, but not both.')
 
     def test_push_api_maksutieto_correct_format_1(self):
         maksutieto = {
@@ -2242,7 +2253,7 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error('paattymis_pvm', 'paattymis_pvm must be after 1.9.2020 for yksityinen lapsi', resp)
+        assert_validation_error(resp, 'paattymis_pvm', 'MA014', 'paattymis_pvm must be equal to or after 2020-09-01 for yksityinen Lapsi.')
 
     def test_push_api_maksutieto_date_validation(self):
         """
@@ -2449,112 +2460,112 @@ class VardaViewsTests(TestCase):
 
     def test_push_api_maksutieto_too_many_active(self):
         maksutieto = {
-            "huoltajat": [
-                {"henkilo_oid": "1.2.987654321", "etunimet": "Pauliina", "sukunimi": "Virtanen"},
-                {"henkilotunnus": "120386-109V", "etunimet": "Pertti", "sukunimi": "Virtanen"},
-                {"henkilotunnus": "110548-316P", "etunimet": "Juhani", "sukunimi": "Virtanen"}
+            'huoltajat': [
+                {'henkilo_oid': '1.2.987654321', 'etunimet': 'Pauliina', 'sukunimi': 'Virtanen'},
+                {'henkilotunnus': '120386-109V', 'etunimet': 'Pertti', 'sukunimi': 'Virtanen'},
+                {'henkilotunnus': '110548-316P', 'etunimet': 'Juhani', 'sukunimi': 'Virtanen'}
             ],
-            "lapsi": "/api/v1/lapset/1/",
-            "maksun_peruste_koodi": "mp02",
-            "palveluseteli_arvo": 120,
-            "asiakasmaksu": 0,
-            "perheen_koko": 2,
-            "alkamis_pvm": "2020-01-02",
-            "paattymis_pvm": "2021-01-01"
+            'lapsi': '/api/v1/lapset/1/',
+            'maksun_peruste_koodi': 'mp02',
+            'palveluseteli_arvo': 120,
+            'asiakasmaksu': 0,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2020-01-02',
+            'paattymis_pvm': '2021-01-01'
         }
         client = SetUpTestClient('tester').client()
         maksutieto = json.dumps(maksutieto)
         client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         resp = client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'maksutieto': ['lapsi already has 2 active maksutieto during that time period']})
+        assert_validation_error(resp, 'errors', 'MA004', 'Lapsi already has 2 overlapping Maksutieto on the given date range.')
 
     def test_push_api_maksutieto_duplicate_hetus(self):
         maksutieto = {
-            "huoltajat": [
-                {"henkilo_oid": "1.2.987654321", "etunimet": "Pauliina", "sukunimi": "Virtanen"},
-                {"henkilotunnus": "120386-109V", "etunimet": "Pertti", "sukunimi": "Virtanen"},
-                {"henkilotunnus": "120386-109V", "etunimet": "Juhani", "sukunimi": "Virtanen"}
+            'huoltajat': [
+                {'henkilo_oid': '1.2.987654321', 'etunimet': 'Pauliina', 'sukunimi': 'Virtanen'},
+                {'henkilotunnus': '120386-109V', 'etunimet': 'Pertti', 'sukunimi': 'Virtanen'},
+                {'henkilotunnus': '120386-109V', 'etunimet': 'Juhani', 'sukunimi': 'Virtanen'}
             ],
-            "lapsi": "/api/v1/lapset/1/",
-            "maksun_peruste_koodi": "mp02",
-            "palveluseteli_arvo": 120,
-            "asiakasmaksu": 0,
-            "perheen_koko": 2,
-            "alkamis_pvm": "2020-01-02",
-            "paattymis_pvm": "2021-01-01"
+            'lapsi': '/api/v1/lapset/1/',
+            'maksun_peruste_koodi': 'mp02',
+            'palveluseteli_arvo': 120,
+            'asiakasmaksu': 0,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2020-01-02',
+            'paattymis_pvm': '2021-01-01'
         }
         client = SetUpTestClient('tester').client()
         maksutieto = json.dumps(maksutieto)
         client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         resp = client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'huoltajat': ['duplicated henkilotunnus given']})
+        assert_validation_error(resp, 'huoltajat', 'MA012', 'Duplicated henkilotunnus given.')
 
     def test_push_api_maksutieto_duplicate_henkilo_oids(self):
         maksutieto = {
-            "huoltajat": [
-                {"henkilo_oid": "1.2.987654321", "etunimet": "Pauliina", "sukunimi": "Virtanen"},
-                {"henkilo_oid": "1.2.987654321", "etunimet": "Pertti", "sukunimi": "Virtanen"},
-                {"henkilotunnus": "120386-109V", "etunimet": "Juhani", "sukunimi": "Virtanen"}
+            'huoltajat': [
+                {'henkilo_oid': '1.2.987654321', 'etunimet': 'Pauliina', 'sukunimi': 'Virtanen'},
+                {'henkilo_oid': '1.2.987654321', 'etunimet': 'Pertti', 'sukunimi': 'Virtanen'},
+                {'henkilotunnus': '120386-109V', 'etunimet': 'Juhani', 'sukunimi': 'Virtanen'}
             ],
-            "lapsi": "/api/v1/lapset/1/",
-            "maksun_peruste_koodi": "mp02",
-            "palveluseteli_arvo": 120,
-            "asiakasmaksu": 0,
-            "perheen_koko": 2,
-            "alkamis_pvm": "2020-01-02",
-            "paattymis_pvm": "2021-01-01"
+            'lapsi': '/api/v1/lapset/1/',
+            'maksun_peruste_koodi': 'mp02',
+            'palveluseteli_arvo': 120,
+            'asiakasmaksu': 0,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2020-01-02',
+            'paattymis_pvm': '2021-01-01'
         }
         client = SetUpTestClient('tester').client()
         maksutieto = json.dumps(maksutieto)
         client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         resp = client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'huoltajat': ['duplicated henkilo_oid given']})
+        assert_validation_error(resp, 'huoltajat', 'MA013', 'Duplicated henkilo_oid given.')
 
     def test_push_api_maksutieto_missing_alkamis_pvm(self):
         maksutieto = {
-            "huoltajat": [
-                {"henkilo_oid": "1.2.987654321", "etunimet": "Pauliina", "sukunimi": "Virtanen"},
-                {"henkilotunnus": "120386-109V", "etunimet": "Pertti", "sukunimi": "Virtanen"},
-                {"henkilotunnus": "110548-316P", "etunimet": "Juhani", "sukunimi": "Virtanen"}
+            'huoltajat': [
+                {'henkilo_oid': '1.2.987654321', 'etunimet': 'Pauliina', 'sukunimi': 'Virtanen'},
+                {'henkilotunnus': '120386-109V', 'etunimet': 'Pertti', 'sukunimi': 'Virtanen'},
+                {'henkilotunnus': '110548-316P', 'etunimet': 'Juhani', 'sukunimi': 'Virtanen'}
             ],
-            "lapsi": "/api/v1/lapset/1/",
-            "maksun_peruste_koodi": "mp02",
-            "palveluseteli_arvo": 0,
-            "asiakasmaksu": 0,
-            "perheen_koko": 2,
-            "paattymis_pvm": "2021-01-01"
+            'lapsi': '/api/v1/lapset/1/',
+            'maksun_peruste_koodi': 'mp02',
+            'palveluseteli_arvo': 0,
+            'asiakasmaksu': 0,
+            'perheen_koko': 2,
+            'paattymis_pvm': '2021-01-01'
         }
         client = SetUpTestClient('tester').client()
         maksutieto = json.dumps(maksutieto)
         client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         resp = client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"alkamis_pvm": ['This field is required.']})
+        assert_validation_error(resp, 'alkamis_pvm', 'GE001', 'This field is required.')
 
     def test_push_api_maksutieto_incorrect_paattymis_pvm(self):
         maksutieto = {
-            "huoltajat": [
-                {"henkilo_oid": "1.2.987654321", "etunimet": "Pauliina", "sukunimi": "Virtanen"},
-                {"henkilotunnus": "120386-109V", "etunimet": "Pertti", "sukunimi": "Virtanen"},
-                {"henkilotunnus": "110548-316P", "etunimet": "Juhani", "sukunimi": "Virtanen"}
+            'huoltajat': [
+                {'henkilo_oid': '1.2.987654321', 'etunimet': 'Pauliina', 'sukunimi': 'Virtanen'},
+                {'henkilotunnus': '120386-109V', 'etunimet': 'Pertti', 'sukunimi': 'Virtanen'},
+                {'henkilotunnus': '110548-316P', 'etunimet': 'Juhani', 'sukunimi': 'Virtanen'}
             ],
-            "lapsi": "/api/v1/lapset/1/",
-            "maksun_peruste_koodi": "mp02",
-            "palveluseteli_arvo": 0,
-            "asiakasmaksu": 0,
-            "perheen_koko": 2,
-            "alkamis_pvm": "2022-01-01",
-            "paattymis_pvm": "2021-01-01"
+            'lapsi': '/api/v1/lapset/1/',
+            'maksun_peruste_koodi': 'mp02',
+            'palveluseteli_arvo': 0,
+            'asiakasmaksu': 0,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2022-01-01',
+            'paattymis_pvm': '2021-01-01'
         }
         client = SetUpTestClient('tester').client()
         maksutieto = json.dumps(maksutieto)
         client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         resp = client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"paattymis_pvm": ['paattymis_pvm must be after alkamis_pvm (or same)']})
+        assert_validation_error(resp, 'paattymis_pvm', 'MI004', 'paattymis_pvm must be equal to or after alkamis_pvm.')
 
     def test_push_api_correct_maksutieto_for_one_day(self):
         maksutieto = {
@@ -2577,59 +2588,59 @@ class VardaViewsTests(TestCase):
 
     def test_push_api_maksutieto_too_many_active_long_timeframe(self):
         maksutieto = {
-            "huoltajat": [
-                {"henkilo_oid": "1.2.987654321", "etunimet": "Pauliina", "sukunimi": "Virtanen"}
+            'huoltajat': [
+                {'henkilo_oid': '1.2.987654321', 'etunimet': 'Pauliina', 'sukunimi': 'Virtanen'}
             ],
-            "lapsi": "/api/v1/lapset/1/",
-            "maksun_peruste_koodi": "mp02",
-            "palveluseteli_arvo": 120,
-            "asiakasmaksu": 0,
-            "perheen_koko": 2,
-            "alkamis_pvm": "2008-01-02",
-            "paattymis_pvm": "2021-01-01"
+            'lapsi': '/api/v1/lapset/1/',
+            'maksun_peruste_koodi': 'mp02',
+            'palveluseteli_arvo': 120,
+            'asiakasmaksu': 0,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2008-01-02',
+            'paattymis_pvm': '2021-01-01'
         }
         client = SetUpTestClient('tester').client()
         maksutieto = json.dumps(maksutieto)
         client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         resp = client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'maksutieto': ['lapsi already has 2 active maksutieto during that time period']})
+        assert_validation_error(resp, 'errors', 'MA004', 'Lapsi already has 2 overlapping Maksutieto on the given date range.')
 
     def test_push_api_maksutieto_too_many_active_short_timeframe(self):
         maksutieto = {
-            "huoltajat": [
-                {"henkilo_oid": "1.2.987654321", "etunimet": "Pauliina", "sukunimi": "Virtanen"}
+            'huoltajat': [
+                {'henkilo_oid': '1.2.987654321', 'etunimet': 'Pauliina', 'sukunimi': 'Virtanen'}
             ],
-            "lapsi": "/api/v1/lapset/1/",
-            "maksun_peruste_koodi": "mp02",
-            "palveluseteli_arvo": 120,
-            "asiakasmaksu": 0,
-            "perheen_koko": 2,
-            "alkamis_pvm": "2019-03-02",
-            "paattymis_pvm": "2021-06-01"
+            'lapsi': '/api/v1/lapset/1/',
+            'maksun_peruste_koodi': 'mp02',
+            'palveluseteli_arvo': 120,
+            'asiakasmaksu': 0,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2019-03-02',
+            'paattymis_pvm': '2021-06-01'
         }
         client = SetUpTestClient('tester').client()
         maksutieto = json.dumps(maksutieto)
         client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         resp = client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'maksutieto': ['lapsi already has 2 active maksutieto during that time period']})
+        assert_validation_error(resp, 'errors', 'MA004', 'Lapsi already has 2 overlapping Maksutieto on the given date range.')
 
     def test_push_api_maksutieto_no_matching_huoltajat(self):
         maksutieto = {
-            "huoltajat": [{"henkilotunnus": "110494-9153", "etunimet": "Jukka", "sukunimi": "Pekkarinen"}],
-            "lapsi": "/api/v1/lapset/1/",
-            "maksun_peruste_koodi": "mp02",
-            "palveluseteli_arvo": 120,
-            "asiakasmaksu": 0,
-            "perheen_koko": 2,
-            "alkamis_pvm": "2019-01-01",
-            "paattymis_pvm": "2020-01-01"
+            'huoltajat': [{'henkilotunnus': '110494-9153', 'etunimet': 'Jukka', 'sukunimi': 'Pekkarinen'}],
+            'lapsi': '/api/v1/lapset/1/',
+            'maksun_peruste_koodi': 'mp02',
+            'palveluseteli_arvo': 120,
+            'asiakasmaksu': 0,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2019-01-01',
+            'paattymis_pvm': '2020-01-01'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"huoltajat": ['no matching huoltaja found']})
+        assert_validation_error(resp, 'huoltajat', 'MA003', 'No matching huoltaja found.')
 
     @responses.activate
     def test_push_api_maksutieto_no_varhaiskasvatuspaatos(self):
@@ -2669,27 +2680,27 @@ class VardaViewsTests(TestCase):
         }
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'Maksutieto': ['Lapsi has no Varhaiskasvatuspaatos. Add Varhaiskasvatuspaatos before adding maksutieto.']})
+        assert_validation_error(resp, 'errors', 'MA008', 'Lapsi does not have Varhaiskasvatuspaatos. Add Varhaiskasvatuspaatos before adding Maksutieto.')
 
     def test_push_duplicate_paos_toiminta(self):
         paos_toiminta = {
-            "oma_organisaatio": "http://localhost:8000/api/v1/vakajarjestajat/2/",
-            "paos_organisaatio": "http://localhost:8000/api/v1/vakajarjestajat/1/"
+            'oma_organisaatio': 'http://localhost:8000/api/v1/vakajarjestajat/2/',
+            'paos_organisaatio': 'http://localhost:8000/api/v1/vakajarjestajat/1/'
         }
         client = SetUpTestClient('tester3').client()
         resp = client.post('/api/v1/paos-toiminnat/', json.dumps(paos_toiminta), content_type='application/json')
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'non_field_errors': ['oma_organisaatio and paos_organisaatio pair already exists.']})
+        assert_validation_error(resp, 'errors', 'PT004', 'Combination of oma_organisaatio and paos_organisaatio fields should be unique.')
 
     def test_push_duplicate_paos_toiminta_2(self):
         paos_toiminta = {
-            "oma_organisaatio": "http://localhost:8000/api/v1/vakajarjestajat/1/",
-            "paos_toimipaikka": "http://localhost:8000/api/v1/toimipaikat/5/"
+            'oma_organisaatio': 'http://localhost:8000/api/v1/vakajarjestajat/1/',
+            'paos_toimipaikka': 'http://localhost:8000/api/v1/toimipaikat/5/'
         }
         client = SetUpTestClient('tester4').client()
         resp = client.post('/api/v1/paos-toiminnat/', paos_toiminta)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'non_field_errors': ['oma_organisaatio and paos_toimipaikka pair already exists.']})
+        assert_validation_error(resp, 'errors', 'PT005', 'Combination of oma_organisaatio and paos_toimipaikka fields should be unique.')
 
     def test_delete_paos_toiminta_with_toimija_and_push_correct_paos_toiminta_organisaatio(self):
         """
@@ -2714,8 +2725,8 @@ class VardaViewsTests(TestCase):
         self.assertFalse(PaosOikeus.objects.get(id=1).voimassa_kytkin)
 
         paos_toiminta = {
-            "oma_organisaatio": "http://localhost:8000/api/v1/vakajarjestajat/2/",
-            "paos_organisaatio": "http://localhost:8000/api/v1/vakajarjestajat/1/"
+            'oma_organisaatio': 'http://localhost:8000/api/v1/vakajarjestajat/2/',
+            'paos_organisaatio': 'http://localhost:8000/api/v1/vakajarjestajat/1/'
         }
         resp = client.post('/api/v1/paos-toiminnat/', paos_toiminta)
         assert_status_code(resp, 201)
@@ -2730,21 +2741,21 @@ class VardaViewsTests(TestCase):
         resp = client.post('/api/v1/lapset/', lapsi_json)
         assert_status_code(resp, status.HTTP_200_OK)  # lapsi is already created
         varhaiskasvatuspaatos = {
-            "lapsi": json.loads(resp.content)['url'],
-            "vuorohoito_kytkin": True,
-            "tuntimaara_viikossa": "37.5",
-            "jarjestamismuoto_koodi": "jm03",
-            "hakemus_pvm": "2018-08-15",
-            "alkamis_pvm": "2018-09-30"
+            'lapsi': json.loads(resp.content)['url'],
+            'vuorohoito_kytkin': True,
+            'tuntimaara_viikossa': '37.5',
+            'jarjestamismuoto_koodi': 'jm03',
+            'hakemus_pvm': '2018-08-15',
+            'alkamis_pvm': '2018-09-30'
         }
         resp3 = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
         assert_status_code(resp3, status.HTTP_201_CREATED)
         varhaiskasvatuspaatos_url = json.loads(resp3.content)['url']
 
         varhaiskasvatussuhde = {
-            "toimipaikka": "http://testserver/api/v1/toimipaikat/5/",
-            "varhaiskasvatuspaatos": varhaiskasvatuspaatos_url,
-            "alkamis_pvm": "2018-10-01"
+            'toimipaikka': 'http://testserver/api/v1/toimipaikat/5/',
+            'varhaiskasvatuspaatos': varhaiskasvatuspaatos_url,
+            'alkamis_pvm': '2018-10-01'
         }
         resp = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         assert_status_code(resp, status.HTTP_201_CREATED)
@@ -2786,25 +2797,25 @@ class VardaViewsTests(TestCase):
 
     def test_push_incorrect_paos_toiminta_organisaatio(self):
         paos_toiminta = {
-            "oma_organisaatio": "http://localhost:8000/api/v1/vakajarjestajat/2/",
-            "paos_organisaatio": "http://localhost:8000/api/v1/vakajarjestajat/3/"
+            'oma_organisaatio': 'http://localhost:8000/api/v1/vakajarjestajat/2/',
+            'paos_organisaatio': 'http://localhost:8000/api/v1/vakajarjestajat/3/'
         }
         client = SetUpTestClient('tester3').client()
         paos_toiminta = json.dumps(paos_toiminta)
         resp = client.post('/api/v1/paos-toiminnat/', paos_toiminta, content_type='application/json')
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'paos_organisaatio': ['paos_organisaatio must be kunta or kuntayhtyma.']})
+        assert_validation_error(resp, 'paos_organisaatio', 'PT008', 'paos_organisaatio must be kunta or kuntayhtyma.')
 
     def test_push_incorrect_paos_toiminta_toimipaikka(self):  # Not possible to vakajarjestaja's own toimipaikka
         paos_toiminta = {
-            "oma_organisaatio": "http://localhost:8000/api/v1/vakajarjestajat/1/",
-            "paos_toimipaikka": "http://localhost:8000/api/v1/toimipaikat/2/"
+            'oma_organisaatio': 'http://localhost:8000/api/v1/vakajarjestajat/1/',
+            'paos_toimipaikka': 'http://localhost:8000/api/v1/toimipaikat/2/'
         }
         client = SetUpTestClient('tester4').client()
         paos_toiminta = json.dumps(paos_toiminta)
         resp = client.post('/api/v1/paos-toiminnat/', paos_toiminta, content_type='application/json')
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'paos_toimipaikka': 'paos_toimipaikka can not be in oma_organisaatio'})
+        assert_validation_error(resp, 'paos_toimipaikka', 'PT002', 'paos_toimipaikka cannot be in oma_organisaatio.')
 
     def test_push_incorrect_paos_toiminta_toimipaikka_2(self):
         paos_toimipaikka_obj = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.2935996863483')
@@ -2816,12 +2827,12 @@ class VardaViewsTests(TestCase):
         paos_toiminta = json.dumps(paos_toiminta)
         resp = client.post('/api/v1/paos-toiminnat/', paos_toiminta, content_type='application/json')
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'paos_toimipaikka': 'jarjestamismuoto_koodi is not jm02 or jm03'})
+        assert_validation_error(resp, 'paos_toimipaikka', 'PT003', 'jarjestamismuoto_koodi is not jm02 or jm03.')
 
     def test_push_correct_paos_toiminta_toimipaikka(self):
         paos_toiminta = {
-            "oma_organisaatio": "http://localhost:8000/api/v1/vakajarjestajat/1/",
-            "paos_toimipaikka": "http://localhost:8000/api/v1/toimipaikat/4/"
+            'oma_organisaatio': 'http://localhost:8000/api/v1/vakajarjestajat/1/',
+            'paos_toimipaikka': 'http://localhost:8000/api/v1/toimipaikat/4/'
         }
         client = SetUpTestClient('tester4').client()
         paos_toiminta = json.dumps(paos_toiminta)
@@ -2834,8 +2845,8 @@ class VardaViewsTests(TestCase):
         paos_organisaatio to use their toimipaikat
         """
         paos_toiminta_organisaatio = {
-            "oma_organisaatio": "http://localhost:8000/api/v1/vakajarjestajat/2/",
-            "paos_organisaatio": "http://localhost:8000/api/v1/vakajarjestajat/1/"
+            'oma_organisaatio': 'http://localhost:8000/api/v1/vakajarjestajat/2/',
+            'paos_organisaatio': 'http://localhost:8000/api/v1/vakajarjestajat/1/'
         }
         client_tester3 = SetUpTestClient('tester3').client()
         resp_1 = client_tester3.delete('/api/v1/paos-toiminnat/1/')  # duplicate must be removed first
@@ -2846,8 +2857,8 @@ class VardaViewsTests(TestCase):
         to add PAOS-lapset to toimipaikka (ID=5)
         """
         paos_toiminta_toimipaikka = {
-            "oma_organisaatio": "http://localhost:8000/api/v1/vakajarjestajat/1/",
-            "paos_toimipaikka": "http://localhost:8000/api/v1/toimipaikat/5/"
+            'oma_organisaatio': 'http://localhost:8000/api/v1/vakajarjestajat/1/',
+            'paos_toimipaikka': 'http://localhost:8000/api/v1/toimipaikat/5/'
         }
         client_tester4 = SetUpTestClient('tester4').client()
         resp_2 = client_tester4.delete('/api/v1/paos-toiminnat/2/')  # duplicate must be removed first
@@ -2949,81 +2960,75 @@ class VardaViewsTests(TestCase):
     def test_paos_oikeus_change_tallentaja_organisaatio_correct_format(self):
         client_tester4 = SetUpTestClient('tester4').client()
         tallentaja_organisaatio = {
-            "tallentaja_organisaatio": "/api/v1/vakajarjestajat/2/"
+            'tallentaja_organisaatio': '/api/v1/vakajarjestajat/2/'
         }
         tallentaja_organisaatio = json.dumps(tallentaja_organisaatio)
         resp_paos_oikeus = client_tester4.patch('/api/v1/paos-oikeudet/1/', tallentaja_organisaatio, content_type='application/json')
         resp_paos_oikeus_tallentaja_organisaatio = json.loads(resp_paos_oikeus.content)['tallentaja_organisaatio']
         assert_status_code(resp_paos_oikeus, 200)
-        self.assertEqual(resp_paos_oikeus_tallentaja_organisaatio, "http://testserver/api/v1/vakajarjestajat/2/")
+        self.assertEqual(resp_paos_oikeus_tallentaja_organisaatio, 'http://testserver/api/v1/vakajarjestajat/2/')
 
     def test_paos_oikeus_change_tallentaja_organisaatio_already_is_same(self):
         client_tester4 = SetUpTestClient('tester4').client()
-        tallentaja_organisaatio = {"tallentaja_organisaatio": "/api/v1/vakajarjestajat/1/"}
-        accepted_response = {
-            "tallentaja_organisaatio": "tallentaja is already set for vakajarjestaja 1"
-        }
+        tallentaja_organisaatio = {'tallentaja_organisaatio': '/api/v1/vakajarjestajat/1/'}
         tallentaja_organisaatio = json.dumps(tallentaja_organisaatio)
         resp_paos_oikeus = client_tester4.patch('/api/v1/paos-oikeudet/1/', tallentaja_organisaatio, content_type='application/json')
-        resp_paos_oikeus_data = json.loads(resp_paos_oikeus.content)
         assert_status_code(resp_paos_oikeus, 400)
-        self.assertEqual(resp_paos_oikeus_data, accepted_response)
+        assert_validation_error(resp_paos_oikeus, 'tallentaja_organisaatio', 'PO002',
+                                'tallentaja_organisaatio is already the same as requested.')
 
     def test_paos_oikeus_change_tallentaja_organisaatio_not_either_organisation(self):
         client_tester4 = SetUpTestClient('tester4').client()
-        tallentaja_organisaatio = {"tallentaja_organisaatio": "/api/v1/vakajarjestajat/4/"}
-        accepted_response = {
-            "tallentaja_organisaatio": "tallentaja_organisaatio must be either jarjestaja_kunta_organisaatio or tuottaja_organisaatio"
-        }
+        tallentaja_organisaatio = {'tallentaja_organisaatio': '/api/v1/vakajarjestajat/4/'}
         tallentaja_organisaatio = json.dumps(tallentaja_organisaatio)
         resp_paos_oikeus = client_tester4.patch('/api/v1/paos-oikeudet/1/', tallentaja_organisaatio, content_type='application/json')
-        resp_paos_oikeus_data = json.loads(resp_paos_oikeus.content)
         assert_status_code(resp_paos_oikeus, 400)
-        self.assertEqual(resp_paos_oikeus_data, accepted_response)
+        assert_validation_error(resp_paos_oikeus, 'tallentaja_organisaatio', 'PO001',
+                                'tallentaja_organisaatio must be either jarjestaja_kunta_organisaatio or tuottaja_organisaatio.')
 
     def test_push_incorrect_puhelinnumero(self):
         vakajarjestaja = {
-            "nimi": "Testikylä",
-            "y_tunnus": "2913769-2",
-            "kunta_koodi": "091",
-            "kayntiosoite": "Testerkatu 2",
-            "kayntiosoite_postinumero": "00001",
-            "kayntiosoite_postitoimipaikka": "Testilä",
-            "postiosoite": "Testerkatu 2",
-            "postitoimipaikka": "Testilä",
-            "postinumero": "00001",
-            "sahkopostiosoite": "iban@ibanila.iban",
-            "tilinumero": "FI92 2046 1800 0628 04",
-            "puhelinnumero": "+359400987654"
+            'nimi': 'Testikylä',
+            'y_tunnus': '2913769-2',
+            'kunta_koodi': '091',
+            'kayntiosoite': 'Testerkatu 2',
+            'kayntiosoite_postinumero': '00001',
+            'kayntiosoite_postitoimipaikka': 'Testilä',
+            'postiosoite': 'Testerkatu 2',
+            'postitoimipaikka': 'Testilä',
+            'postinumero': '00001',
+            'sahkopostiosoite': 'iban@ibanila.iban',
+            'tilinumero': 'FI92 2046 1800 0628 04',
+            'puhelinnumero': '+359400987654'
         }
         client = SetUpTestClient('credadmin').client()
         resp = client.post('/api/v1/vakajarjestajat/', vakajarjestaja)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"puhelinnumero": ["+359400987654 : Not a valid Finnish phone number."]})
+        assert_validation_error(resp, 'puhelinnumero', 'MI006', 'Not a valid Finnish phone number.')
 
     def test_api_delete_toimipaikka_1(self):
         client = SetUpTestClient('tester').client()
         resp = client.delete('/api/v1/toimipaikat/1/')
         assert_status_code(resp, 403)
-        self.assertEqual(json.loads(resp.content), {"detail": 'You do not have permission to perform this action.'})
+        assert_validation_error(resp, 'errors', 'PE006', 'User does not have permission to perform this action.')
 
     def test_api_delete_toimipaikka_2(self):
         client = SetUpTestClient('tester2').client()
         resp = client.delete('/api/v1/toimipaikat/3/')
         assert_status_code(resp, 403)
-        self.assertEqual(json.loads(resp.content), {"detail": 'You do not have permission to perform this action.'})
+        assert_validation_error(resp, 'errors', 'PE006', 'User does not have permission to perform this action.')
 
     def test_api_delete_lapsi_1(self):
         client = SetUpTestClient('tester').client()
         resp = client.delete('/api/v1/lapset/1/')
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"detail": "Cannot delete lapsi. There are maksutieto/maksutietoja referencing it that need to be deleted first."})
+        assert_validation_error(resp, 'errors', 'LA003', 'Cannot delete Lapsi. There are Maksutieto objects referencing it that need to be deleted first.')
 
     def test_api_delete_lapsi_2(self):
         client = SetUpTestClient('tester2').client()
         resp = client.delete('/api/v1/lapset/4/')
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {"detail": "Cannot delete lapsi. There are objects referencing it that need to be deleted first."})
+        assert_validation_error(resp, 'errors', 'LA004', 'Cannot delete Lapsi. There are objects referencing it that need to be deleted first.')
 
     def test_api_delete_lapsi_3(self):
         Huoltajuussuhde.objects.get(id=5).delete()  # This is required before lapsi can be removed.
@@ -3047,9 +3052,8 @@ class VardaViewsTests(TestCase):
         client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
         assert_status_code(resp, 400)
-        assert_validation_error('varhaiskasvatuspaatos',
-                                'Lapsi 1 has already 3 overlapping varhaiskasvatuspaatos on the defined time range.',
-                                resp)
+        assert_validation_error(resp, 'errors', 'VP011',
+                                'Lapsi already has 3 overlapping Varhaiskasvatuspaatos on the given date range.')
 
     def test_api_push_too_many_varhaiskasvatussuhde(self):
         varhaiskasvatussuhde = {
@@ -3063,9 +3067,8 @@ class VardaViewsTests(TestCase):
         client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         resp = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         assert_status_code(resp, 400)
-        assert_validation_error('varhaiskasvatussuhde',
-                                'Lapsi 10 has already 3 overlapping varhaiskasvatussuhde on the defined time range.',
-                                resp)
+        assert_validation_error(resp, 'errors', 'VS013',
+                                'Lapsi already has 3 overlapping Varhaiskasvatussuhde on the given date range.')
 
     @patch('varda.viewsets.datetime')
     def test_api_get_vakajarjestaja_yhteenveto(self, mock_datetime):
@@ -3100,23 +3103,23 @@ class VardaViewsTests(TestCase):
     """ organisaatiopalvelu-integraatio
     def test_api_multiple_asiointikieli(self):
         toimipaikka = {
-            "vakajarjestaja": "http://testserver/api/v1/vakajarjestajat/1/",
-            "nimi": "Testila",
-            "kunta_koodi": "091",
-            "puhelinnumero": "+35892323234",
-            "kayntiosoite": "Testerkatu 2",
-            "kayntiosoite_postinumero": "00001",
-            "kayntiosoite_postitoimipaikka": "Testilä",
-            "postiosoite": "Testerkatu 2",
-            "postitoimipaikka": "Testilä",
-            "postinumero": "00001",
-            "sahkopostiosoite": "hel1234@helsinki.fi",
-            "kasvatusopillinen_jarjestelma_koodi": "kj03",
-            "toimintamuoto_koodi": "tm01",
-            "asiointikieli_koodi": ["FI", "SV", "EN"],
-            "jarjestamismuoto_koodi": ["jm01", "jm03"],
-            "varhaiskasvatuspaikat": 1000,
-            "alkamis_pvm": "2018-01-01"
+            'vakajarjestaja': 'http://testserver/api/v1/vakajarjestajat/1/',
+            'nimi': 'Testila',
+            'kunta_koodi': '091',
+            'puhelinnumero': '+35892323234',
+            'kayntiosoite': 'Testerkatu 2',
+            'kayntiosoite_postinumero': '00001',
+            'kayntiosoite_postitoimipaikka': 'Testilä',
+            'postiosoite': 'Testerkatu 2',
+            'postitoimipaikka': 'Testilä',
+            'postinumero': '00001',
+            'sahkopostiosoite': 'hel1234@helsinki.fi',
+            'kasvatusopillinen_jarjestelma_koodi': 'kj03',
+            'toimintamuoto_koodi': 'tm01',
+            'asiointikieli_koodi': ['FI', 'SV', 'EN'],
+            'jarjestamismuoto_koodi': ['jm01', 'jm03'],
+            'varhaiskasvatuspaikat': 1000,
+            'alkamis_pvm': '2018-01-01'
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/toimipaikat/', toimipaikka)
@@ -3125,22 +3128,22 @@ class VardaViewsTests(TestCase):
 
     def test_api_filter_asiointikieli_1(self):
         client = SetUpTestClient('tester2').client()
-        resp = client.get("/api/v1/toimipaikat/?asiointikieli_koodi=SV")
+        resp = client.get('/api/v1/toimipaikat/?asiointikieli_koodi=SV')
         self.assertEqual(json.loads(resp.content)['count'], 2)
 
     def test_api_filter_asiointikieli_2(self):
         client = SetUpTestClient('tester2').client()
-        resp = client.get("/api/v1/toimipaikat/?asiointikieli_koodi=SE")
+        resp = client.get('/api/v1/toimipaikat/?asiointikieli_koodi=SE')
         self.assertEqual(json.loads(resp.content)['count'], 0)
 
     def test_api_filter_jarjestamismuotokoodi_1(self):
         client = SetUpTestClient('tester2').client()
-        resp = client.get("/api/v1/toimipaikat/?jarjestamismuoto_koodi=jm01")
+        resp = client.get('/api/v1/toimipaikat/?jarjestamismuoto_koodi=jm01')
         self.assertEqual(json.loads(resp.content)['count'], 3)
 
     def test_api_filter_jarjestamismuotokoodi_2(self):
         client = SetUpTestClient('tester2').client()
-        resp = client.get("/api/v1/toimipaikat/?jarjestamismuoto_koodi=jm06")
+        resp = client.get('/api/v1/toimipaikat/?jarjestamismuoto_koodi=jm06')
         self.assertEqual(json.loads(resp.content)['count'], 0)
 
     def test_api_ui_vakajarjestajat(self):
@@ -3200,11 +3203,76 @@ class VardaViewsTests(TestCase):
         ]
         self.assertCountEqual(json.loads(resp.content), admin_vakajarjestajat)
 
+    @mock.patch('varda.organisaatiopalvelu.check_if_toimipaikka_exists_by_name',
+                mock_check_if_toimipaikka_exists_by_name)
+    @mock.patch('varda.organisaatiopalvelu.create_organisaatio',
+                mock_create_organisaatio)
+    def test_api_toimipaikka_add_valid(self):
+        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+
+        toimipaikka = {
+            'vakajarjestaja': f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/',
+            'nimi': 'Uusi toimipaikka',
+            'kayntiosoite': 'Katukaksi',
+            'kayntiosoite_postitoimipaikka': 'Postitoimipaikkakolme',
+            'kayntiosoite_postinumero': '00109',
+            'postiosoite': 'Katukaksi',
+            'postitoimipaikka': 'Postitoimipaikkakolme',
+            'postinumero': '00109',
+            'kunta_koodi': '091',
+            'puhelinnumero': '+35810123456',
+            'sahkopostiosoite': 'test2@domain.com',
+            'kasvatusopillinen_jarjestelma_koodi': 'kj03',
+            'toimintamuoto_koodi': 'tm01',
+            'asiointikieli_koodi': ['FI', 'SV'],
+            'jarjestamismuoto_koodi': ['jm01'],
+            'varhaiskasvatuspaikat': 200,
+            'alkamis_pvm': '2020-09-02',
+            'paattymis_pvm': '2021-09-02'
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp = client.post('/api/v1/toimipaikat/', toimipaikka)
+        assert_status_code(resp, status.HTTP_201_CREATED)
+
+    @mock.patch('varda.organisaatiopalvelu.check_if_toimipaikka_exists_by_name',
+                mock_check_if_toimipaikka_exists_by_name)
+    @mock.patch('varda.organisaatiopalvelu.create_organisaatio',
+                mock_create_organisaatio)
+    def test_api_toimipaikka_add_duplicate_name(self):
+        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+
+        toimipaikka = {
+            'vakajarjestaja': f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/',
+            'nimi': 'Tester2 toimipaikka',
+            'kayntiosoite': 'Katukaksi',
+            'kayntiosoite_postitoimipaikka': 'Postitoimipaikkakolme',
+            'kayntiosoite_postinumero': '00109',
+            'postiosoite': 'Katukaksi',
+            'postitoimipaikka': 'Postitoimipaikkakolme',
+            'postinumero': '00109',
+            'kunta_koodi': '091',
+            'puhelinnumero': '+35810123456',
+            'sahkopostiosoite': 'test2@domain.com',
+            'kasvatusopillinen_jarjestelma_koodi': 'kj03',
+            'toimintamuoto_koodi': 'tm01',
+            'asiointikieli_koodi': ['FI', 'SV'],
+            'jarjestamismuoto_koodi': ['jm01'],
+            'varhaiskasvatuspaikat': 200,
+            'alkamis_pvm': '2020-09-02',
+            'paattymis_pvm': '2021-09-02'
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp = client.post('/api/v1/toimipaikat/', toimipaikka)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'errors', 'TP001', 'Combination of nimi and vakajarjestaja fields should be unique.')
+
     # TODO: Reporting related view-tests
 
     """
     def test_reporting_view(self):
-        client = SetUpTestClient("kelaetuusmaksatus").client()
+        client = SetUpTestClient('kelaetuusmaksatus').client()
         resp = client.get('/reporting/api/v1/kelaraportti/')
         assert_status_code(resp, 403)
 
@@ -3212,7 +3280,7 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester').client()
         resp = client.get('/reporting/api/v1/')
         assert_status_code(resp, 200)
-        self.assertEqual(json.loads(resp.content), {"kelaraportti": "http://testserver/reporting/api/v1/kelaraportti/"})
+        self.assertEqual(json.loads(resp.content), {'kelaraportti': 'http://testserver/reporting/api/v1/kelaraportti/'})
 
     def test_reporting_api_kelaraportti_1(self):
         client = SetUpTestClient('tester').client()

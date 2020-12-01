@@ -15,6 +15,7 @@ from rest_framework.exceptions import APIException
 from time import sleep
 from urllib.parse import urlparse
 
+from varda.enums.error_messages import ErrorMessages
 from varda.models import Henkilo, Toimipaikka
 from varda.oph_yhteiskayttopalvelu_autentikaatio import get_authentication_header, get_contenttype_header
 
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class CustomServerErrorException(APIException):
-    default_detail = "A server error occurred. Team is investigating this."
+    default_detail = {'errors': [ErrorMessages.MI016.value]}
 
 
 def sleep_if_not_test(x_seconds):
@@ -50,10 +51,10 @@ def decrypt_henkilotunnus(encrypted_henkilotunnus):
     try:
         resolved_token = f.decrypt(encrypted_henkilotunnus.encode('utf-8'))
     except TypeError:
-        logger.error("Decrypt henkilotunnus: Fernet token is not bytes.")
+        logger.error('Decrypt henkilotunnus: Fernet token is not bytes.')
         raise CustomServerErrorException
     except InvalidToken:
-        logger.error("Decrypt henkilotunnus: Invalid token.")
+        logger.error('Decrypt henkilotunnus: Invalid token.')
         raise CustomServerErrorException
     return resolved_token.decode('utf-8')  # convert bytes -> string
 
@@ -62,7 +63,7 @@ def _get_fernet():
     decoded_key = settings.FERNET_SECRET_KEY
     key = decoded_key.encode('utf-8')
     if not key:
-        logger.error("Henkilotunnus decryption failed. No secret key available.")
+        logger.error('Henkilotunnus decryption failed. No secret key available.')
         raise CustomServerErrorException
     return Fernet(key)
 
@@ -73,7 +74,7 @@ def encrypt_henkilotunnus(henkilotunnus):
     try:
         token = f.encrypt(henkilotunnus.encode('utf-8'))
     except TypeError:
-        logger.error("Encrypt henkilotunnus: Data is not bytes.")
+        logger.error('Encrypt henkilotunnus: Data is not bytes.')
         raise CustomServerErrorException
     return token.decode('utf-8')  # convert bytes -> string
 
@@ -93,7 +94,7 @@ def rotate_henkilotunnus(henkilo_id, f=None):
 
 
 def get_reply_json(is_ok, json_msg=None):
-    return {"is_ok": is_ok, "json_msg": json_msg}
+    return {'is_ok': is_ok, 'json_msg': json_msg}
 
 
 def decode_json_msg(reply_type, response, service_name):
@@ -124,7 +125,7 @@ def send_request_get_response(service_name, http_url_suffix, headers, request_ty
     response = None
 
     try:
-        http_complete_url = settings.OPINTOPOLKU_DOMAIN + "/" + service_name + http_url_suffix
+        http_complete_url = settings.OPINTOPOLKU_DOMAIN + '/' + service_name + http_url_suffix
         if request_type == 'get':
             response = requests.get(http_complete_url, headers=headers, timeout=DEFAULT_TIMEOUT_TUPLE)
         elif request_type == 'post':
@@ -281,9 +282,9 @@ def test_decrypt_all_hetus():
     """
     Validate all hetus in db are decryptable. Meant to be run after after fernet key rotation.
     """
-    logger.info("Starting decrypting all hetus in db")
+    logger.info('Starting decrypting all hetus in db')
     [decrypt_henkilotunnus(henkilotunnus) for henkilotunnus in Henkilo.objects.exclude(henkilotunnus='').values_list('henkilotunnus', flat=True)]
-    logger.info("Finished decrypting all hetus in db succesfully")
+    logger.info('Finished decrypting all hetus in db succesfully')
 
 
 @shared_task

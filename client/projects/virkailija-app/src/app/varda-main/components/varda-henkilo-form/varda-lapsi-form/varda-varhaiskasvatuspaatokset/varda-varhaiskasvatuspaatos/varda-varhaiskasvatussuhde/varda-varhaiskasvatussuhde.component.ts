@@ -18,6 +18,7 @@ import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/
 import { Subscription, Observable, BehaviorSubject } from 'rxjs';
 import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { KoodistoDTO, VardaKoodistoService, KoodistoEnum } from 'varda-shared';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-varda-varhaiskasvatussuhde',
@@ -52,7 +53,7 @@ export class VardaVarhaiskasvatussuhdeComponent implements OnInit, OnChanges, Af
   endDateRange = { min: null, max: null };
 
   varhaiskasvatussuhdeFormErrors: Observable<Array<ErrorTree>>;
-  private henkilostoErrorService = new HenkilostoErrorMessageService();
+  private henkilostoErrorService: HenkilostoErrorMessageService;
 
   constructor(
     private authService: AuthService,
@@ -61,8 +62,10 @@ export class VardaVarhaiskasvatussuhdeComponent implements OnInit, OnChanges, Af
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private modalService: VardaModalService,
     private snackBarService: VardaSnackBarService,
+    translateService: TranslateService
   ) {
     this.toimijaAccess = this.authService.getUserAccess();
+    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
     this.varhaiskasvatussuhdeFormErrors = this.henkilostoErrorService.initErrorList();
     this.koodistoService.getKoodisto(KoodistoEnum.tehtavanimike).subscribe(koodisto => this.tehtavanimikkeet = koodisto);
     this.initToimipaikat();

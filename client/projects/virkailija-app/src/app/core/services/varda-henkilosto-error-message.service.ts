@@ -1,12 +1,26 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { FormGroup } from '@angular/forms';
 import { VardaErrorMessageService } from './varda-error-message.service';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { VardaSnackBarService } from './varda-snackbar.service';
+import { KoodistoEnum, VardaKoodistoService } from 'varda-shared';
+import { AppModule } from '../../app.module';
+import { TranslateService } from '@ngx-translate/core';
 
 interface VardaErrorLine {
-  [key: string]: Array<string> | VardaErrorLine;
+  [key: string]: Array<string | VardaErrorMessage> | VardaErrorLine;
+}
+
+interface VardaErrorTranslation {
+  language: string;
+  description: string;
+}
+
+interface VardaErrorMessage {
+  error_code: string;
+  description: string;
+  translations: Array<VardaErrorTranslation>;
 }
 
 interface VardaErrorResponse {
@@ -14,9 +28,15 @@ interface VardaErrorResponse {
   error: VardaErrorLine;
 }
 
+export interface ErrorValue {
+  errorCode: string;
+  errorTranslation: string;
+  dynamicValue: string;
+}
+
 export interface ErrorTree {
   keys: Array<string>;
-  values: Array<string>;
+  values: Array<ErrorValue>;
 }
 
 @Injectable({
@@ -26,9 +46,8 @@ export class HenkilostoErrorMessageService {
   private errorList$ = new BehaviorSubject<Array<ErrorTree>>(null);
   private errorLines: Array<ErrorTree> = [];
   private errorMessageKeys = {};
-  private i18n = VirkailijaTranslations;
 
-  constructor() {
+  constructor(private translateService: TranslateService) {
     const vardaErrorMessageService = new VardaErrorMessageService();
     this.errorMessageKeys = {
       ...vardaErrorMessageService.errorMessageKeys,
@@ -54,10 +73,10 @@ export class HenkilostoErrorMessageService {
 
   private loopThrough(error: object | Array<string> | string, errorTree: ErrorTree = { keys: [], values: [] }) {
     if (Array.isArray(error)) {
-      errorTree.values = error.map(text => this.getErrorByKey(text));
+      errorTree.values = error.map(text => this.parseBackendError(text));
       this.errorLines.push(errorTree);
     } else if (typeof (error) === 'string') {
-      errorTree.values.push(this.getErrorByKey(error));
+      errorTree.values.push(this.parseBackendError(error));
       this.errorLines.push(errorTree);
     } else {
       Object.keys(error).forEach(key => {
@@ -66,36 +85,86 @@ export class HenkilostoErrorMessageService {
     }
   }
 
-  private getErrorByKey(key: string): string {
-    if (this.errorMessageKeys[key]) {
-      return this.errorMessageKeys[key];
+  private parseBackendError(error: VardaErrorMessage | string): ErrorValue {
+    let errorCode, errorTranslation, dynamicValue;
+    if (typeof error === 'object' && error !== null) {
+      errorCode = error.error_code;
+      errorTranslation = this.getErrorTranslation(error);
+      if (errorTranslation) {
+        // If translation was found, show: errorTranslation (errorCode)
+        errorTranslation = errorTranslation + ` (${errorCode})`;
+      } else {
+        // If no translation was found, show: errorCode
+        errorTranslation = errorCode;
+      }
+      if (errorCode.startsWith('DY')) {
+        dynamicValue = this.parseDynamicValue(errorCode, error.description);
+        if (errorTranslation) {
+          // Translations include {{}} signifying dynamic value position
+          errorTranslation = errorTranslation.replace(/{{}}/g, dynamicValue);
+        }
+      }
+    } else {
+      errorCode = error;
     }
 
-    key = this.getDynamicError(key);
-    // remove this line after error-message rework CSCVARDA-1740
-    // the idea is to fix dynamic errors like '121299-111X: not a valid hetu"
-    key = key.split(':', 2).pop().trim();
-
-    return `backend.${key}`;
+    return {
+      errorCode: errorCode,
+      errorTranslation: errorTranslation,
+      dynamicValue: dynamicValue
+    };
   }
 
-  private getDynamicError(key: string): string {
-    const dynamicKeys = [
-      {
-        regex: /^Lapsi (\d*) has already \d overlapping/,
-        key: 'Lapsi already has 3 overlapping varhaiskasvatussuhde on the defined time range.'
-      }
-    ];
-
-    key = dynamicKeys.find(dynamic => key.match(dynamic.regex))?.key || key;
-
-    return key;
+  private getErrorTranslation(error: VardaErrorMessage): string {
+    const currentLang = this.translateService.currentLang;
+    return error.translations.find(errorTranslation => {
+      return errorTranslation.language.toLocaleLowerCase() === currentLang.toLocaleLowerCase();
+    })?.description;
   }
 
   private checkFormErrors(formGroup: FormGroup) {
     this.errorLines.forEach(line => line.keys.forEach(key => formGroup.controls[key]?.setErrors({ backend: line.values, scrollTo: true })));
   }
 
+  private parseDynamicValue(errorCode: string, errorDescription: string): string {
+    /**
+     * Parses dynamic error messages returned from Varda backend. If dynamic error messages are added or modified
+     * in backend (error_messages.py), any modifications should be reflected here.
+     */
+    let regex;
+    switch (errorCode) {
+      case 'DY001':
+        regex = /no more than (\d+) characters/;
+        break;
+      case 'DY002':
+        regex = /at least (\d+) characters/;
+        break;
+      case 'DY003':
+        regex = /no more than (\d+) items/;
+        break;
+      case 'DY004':
+        regex = /greater than or equal to ([\d.]+?)[.]/;
+        break;
+      case 'DY005':
+        regex = /less than or equal to ([\d.]+?)[.]/;
+        break;
+      case 'DY006':
+        regex = /no more than (\d+) decimal places/;
+        break;
+      case 'DY007':
+        regex = /no more than (\d+) digits in total/;
+        break;
+      default:
+        return null;
+    }
+
+    const match = errorDescription.match(regex);
+    if (match.length > 1) {
+      return match[1];
+    }
+
+    return null;
+  }
 
   resetErrorList(): void {
     this.errorList$.next(null);
@@ -111,7 +180,14 @@ export class HenkilostoErrorMessageService {
     this.errorLines = [];
 
     if (generalErrors.includes(response?.status)) {
-      const generalError: ErrorTree = { keys: ['server'], values: ['backend.api-timeout-or-not-found'] };
+      const generalError: ErrorTree = {
+        keys: ['server'],
+        values: [{
+          errorCode: 'backend.api-timeout-or-not-found',
+          errorTranslation: null,
+          dynamicValue: null
+        }]
+      };
       this.errorLines.push(generalError);
     } else {
       this.loopThrough(response.error);
@@ -121,12 +197,9 @@ export class HenkilostoErrorMessageService {
     }
     this.errorList$.next(this.errorLines);
 
-
-
     if (snackBar) {
-      const errorFlat: Array<string> = [].concat(...this.errorLines.map(line => line.values));
+      const errorFlat: Array<ErrorValue> = [].concat(...this.errorLines.map(line => line.values));
       snackBar.errorFromBackend(errorFlat);
     }
   }
-
 }

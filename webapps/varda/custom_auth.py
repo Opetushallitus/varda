@@ -20,6 +20,7 @@ from rest_framework.authtoken.models import Token
 
 from varda import kayttooikeuspalvelu
 from varda.clients.organisaatio_client import organization_is_not_active_vaka_organization
+from varda.enums.error_messages import ErrorMessages
 from varda.enums.tietosisalto_ryhma import TietosisaltoRyhma
 from varda.oph_yhteiskayttopalvelu_autentikaatio import get_authentication_header
 from varda.models import VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet
@@ -59,8 +60,8 @@ def _oppija_post_login_handler(user):
         # external service validates permissions for user
         Z3_AdditionalCasUserFields.objects.update_or_create(user=user,
                                                             defaults={
-                                                                "henkilo_oid": lapsi_oid,
-                                                                "huoltaja_oid": huoltaja_oid,
+                                                                'henkilo_oid': lapsi_oid,
+                                                                'huoltaja_oid': huoltaja_oid,
                                                             })
 
 
@@ -88,14 +89,14 @@ def celery_task_prerun_signal_handler(task_id, **kwargs):
     See Kubernetes Statefulesets for more information.
     Additionally: New request_id for celery tasks from celery task_id.
     """
-    splitted_hostname = os.environ["HOSTNAME"].split("-")
+    splitted_hostname = os.environ['HOSTNAME'].split('-')
     if len(splitted_hostname) == 2:
         hostname = splitted_hostname[1]  # e.g. varda-0 --> 0
     else:
         hostname = None
 
-    local.request_id = task_id.replace("-", "")
-    if 'periodic_task' in kwargs and kwargs['periodic_task'] and hostname != "0":
+    local.request_id = task_id.replace('-', '')
+    if 'periodic_task' in kwargs and kwargs['periodic_task'] and hostname != '0':
         """
         If not the first (0) POD, cancel periodic task
 
@@ -118,9 +119,9 @@ class CustomBasicAuthentication(BasicAuthentication):
     This is used ONLY for palvelukayttaja-authentication.
     """
     def _authenticate_and_get_omattiedot(self, userid, password):
-        service_name = "kayttooikeus-service"
+        service_name = 'kayttooikeus-service'
         try:
-            omattiedot_url = settings.OPINTOPOLKU_DOMAIN + "/" + service_name + '/henkilo/current/omattiedot'
+            omattiedot_url = settings.OPINTOPOLKU_DOMAIN + '/' + service_name + '/henkilo/current/omattiedot'
             r = requests.get(omattiedot_url, headers=get_authentication_header(service_name, userid, password))
         except requests.exceptions.RequestException as e:
             logger.error('User could not log in. Username: {}, Error: {}.'.format(userid, e))
@@ -153,8 +154,8 @@ class CustomBasicAuthentication(BasicAuthentication):
             msg = _('An internal error occured. Team is investigating.')
             raise exceptions.AuthenticationFailed(msg)
 
-        cas_henkilo_kayttajaTyyppi = omattiedot["kayttajaTyyppi"]
-        if cas_henkilo_kayttajaTyyppi != "PALVELU":
+        cas_henkilo_kayttajaTyyppi = omattiedot['kayttajaTyyppi']
+        if cas_henkilo_kayttajaTyyppi != 'PALVELU':
             msg = _('Did not find an active palvelukayttaja-profile.')
             raise exceptions.AuthenticationFailed(msg)
 
@@ -167,7 +168,7 @@ class CustomBasicAuthentication(BasicAuthentication):
         """
         if request is not None:
             path = request.get_full_path()
-            if path == "/api/user/apikey/":
+            if path == '/api/user/apikey/':
                 pass
             else:
                 msg = _('Basic authentication not allowed.')
@@ -177,11 +178,11 @@ class CustomBasicAuthentication(BasicAuthentication):
         Authenticate user via CAS, and get "omattiedot" for the user.
         """
         omattiedot = self._authenticate_and_get_omattiedot(userid, password)
-        cas_henkilo_kayttajaTyyppi = omattiedot["kayttajaTyyppi"]
+        cas_henkilo_kayttajaTyyppi = omattiedot['kayttajaTyyppi']
 
-        cas_username = omattiedot["username"]
-        cas_henkilo_oid = omattiedot["oidHenkilo"]
-        cas_henkilo_organisaatiot = omattiedot["organisaatiot"]
+        cas_username = omattiedot['username']
+        cas_henkilo_oid = omattiedot['oidHenkilo']
+        cas_henkilo_organisaatiot = omattiedot['organisaatiot']
 
         # Do we have the user in our DB. If not, create it.
         try:
@@ -260,8 +261,7 @@ class CustomBasicAuthentication(BasicAuthentication):
             Decline the access to Varda if the "palvelukayttaja" doesn't have correct
             permissions to VARDA-service in one active vaka-organization.
             """
-            msg = _('Palvelukayttaja does not have Varda-permissions to just one active vaka-organization.')
-            raise exceptions.AuthenticationFailed(msg)
+            raise exceptions.AuthenticationFailed({'errors': [ErrorMessages.PE008.value]})
 
     def _create_or_update_vakajarjestaja(self, kayttooikeus_list, organisaatio_oid, user):
         """
@@ -285,7 +285,7 @@ class CustomBasicAuthentication(BasicAuthentication):
         for kayttooikeus in kayttooikeus_list:
             k, created = Z4_CasKayttoOikeudet.objects.get_or_create(user=user,
                                                                     organisaatio_oid=organisaatio_oid,
-                                                                    defaults={"kayttooikeus": kayttooikeus})
+                                                                    defaults={'kayttooikeus': kayttooikeus})
             if not created:
                 logger.info('Already had kayttooikeus {} for user: {}, organisaatio_oid: {}'
                             .format(kayttooikeus, user.username, organisaatio_oid))

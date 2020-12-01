@@ -13,6 +13,8 @@ from guardian.models import UserObjectPermission, GroupObjectPermission
 from guardian.shortcuts import assign_perm, remove_perm
 from rest_framework import permissions, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
+
+from varda.enums.error_messages import ErrorMessages
 from varda.misc import path_parse
 from varda.models import (VakaJarjestaja, Toimipaikka, Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
                           PaosToiminta, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog,
@@ -104,8 +106,8 @@ def user_has_tallentaja_permission_in_organization(organisaatio_oid, user):
     PALVELUKAYTTAJA = Z4_CasKayttoOikeudet.PALVELUKAYTTAJA
     TALLENTAJA = Z4_CasKayttoOikeudet.TALLENTAJA
 
-    PALVELUKAYTTAJA_GROUP_NAME = PALVELUKAYTTAJA + "_" + organisaatio_oid
-    TALLENTAJA_GROUP_NAME = TALLENTAJA + "_" + organisaatio_oid
+    PALVELUKAYTTAJA_GROUP_NAME = PALVELUKAYTTAJA + '_' + organisaatio_oid
+    TALLENTAJA_GROUP_NAME = TALLENTAJA + '_' + organisaatio_oid
 
     acceptable_group_names = [PALVELUKAYTTAJA_GROUP_NAME, TALLENTAJA_GROUP_NAME]
 
@@ -128,8 +130,7 @@ def throw_if_not_tallentaja_permissions(vakajarjestaja_organisaatio_oid, toimipa
         try:
             paos_organisaatio = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_organisaatio_oid)
         except VakaJarjestaja.DoesNotExist:
-            msg = {"paos_organisaatio": ["VakaJarjestaja must have an organisaatio_oid.", ]}
-            raise ValidationError(msg, code='invalid')
+            raise ValidationError({'paos_organisaatio': [ErrorMessages.PT009.value]}, code='invalid')
 
         if toimipaikka_obj:
             paos_toiminta = PaosToiminta.objects.filter(
@@ -137,8 +138,7 @@ def throw_if_not_tallentaja_permissions(vakajarjestaja_organisaatio_oid, toimipa
                 Q(oma_organisaatio=oma_organisaatio, paos_toimipaikka=toimipaikka_obj)
             ).first()  # This is either None or the actual paos-toiminta object
             if not paos_toiminta:
-                msg = {'non_field_errors': ['There is no active paos-agreement to this toimipaikka.']}
-                raise ValidationError(msg, code='invalid')
+                raise ValidationError({'errors': [ErrorMessages.PT010.value]}, code='invalid')
 
         paos_oikeus = PaosOikeus.objects.filter(
             Q(jarjestaja_kunta_organisaatio=oma_organisaatio) & Q(tuottaja_organisaatio=paos_organisaatio)
@@ -156,7 +156,7 @@ def throw_if_not_tallentaja_permissions(vakajarjestaja_organisaatio_oid, toimipa
                 """
                 return None
 
-    raise PermissionDenied("User does not have permissions.")
+    raise PermissionDenied({'errors': [ErrorMessages.PE003.value]})
 
 
 def check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(oma_organisaatio, paos_organisaatio):
@@ -166,7 +166,7 @@ def check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(oma_orga
 
     if paos_oikeus and paos_oikeus.voimassa_kytkin:
         return paos_oikeus
-    raise PermissionDenied('There is no active paos-agreement.')
+    raise PermissionDenied({'errors': [ErrorMessages.PO003.value]})
 
 
 def is_user_permission(user, permission_group_name):
@@ -183,7 +183,7 @@ def check_if_user_has_paakayttaja_permissions(vakajarjestaja_organisaatio_oid, u
     VARDA_PAAKAYTTAJA = Z4_CasKayttoOikeudet.PAAKAYTTAJA
     paakayttaja_group_name = VARDA_PAAKAYTTAJA + '_' + vakajarjestaja_organisaatio_oid
     if not is_user_permission(user, paakayttaja_group_name):
-        raise PermissionDenied("User does not have paakayttaja-permissions.")
+        raise PermissionDenied(ErrorMessages.PE004.value)
 
 
 def save_audit_log(user, url):
@@ -484,7 +484,7 @@ def is_correct_taydennyskoulutus_tyontekija_permission(user, taydennyskoulutus_t
             if not any(is_user_permission(user, permission_format.format(toimipaikka_oid)) for toimipaikka_oid in toimipaikka_oid_list):
                 # User does not have permissions to any toimipaikka with this tehtavanimike
                 if throws:
-                    raise PermissionDenied('Insufficient permissions to taydennyskoulutus related tyontekijat')
+                    raise PermissionDenied({'errors': [ErrorMessages.TK014.value]})
                 return False
     return True
 
@@ -573,7 +573,7 @@ def get_toimipaikka_or_404(user, toimipaikka_pk=None):
     toimipaikka = get_object_or_404(Toimipaikka.objects.all(), pk=toimipaikka_pk)
     if user.has_perm('view_toimipaikka', toimipaikka):
         return toimipaikka
-    raise Http404('Not found.')
+    raise Http404
 
 
 def permission_groups_in_organization(user, organisaatio_oid, z4_groups):

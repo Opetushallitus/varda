@@ -5,7 +5,7 @@ from django.http import Http404
 from django_filters import rest_framework as djangofilters
 from django_filters.constants import EMPTY_VALUES
 
-from varda.koodistopalvelu import Koodistot
+from varda.enums.koodistot import Koodistot
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
                           Maksutieto, PaosToiminta, PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
                           TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
@@ -420,8 +420,8 @@ class UiTyontekijaFilter(djangofilters.FilterSet):
         try:
             alkamis_pvm = datetime.strptime(alkamis_pvm, '%Y-%m-%d').date()
             paattymis_pvm = datetime.strptime(paattymis_pvm, '%Y-%m-%d').date()
-        except ValueError as e:
-            raise Http404(e)
+        except ValueError:
+            raise Http404
 
         prefixes = {
             'tyoskentelypaikat': 'palvelussuhteet__tyoskentelypaikat__',

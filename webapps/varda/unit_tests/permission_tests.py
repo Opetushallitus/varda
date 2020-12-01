@@ -18,7 +18,7 @@ class VardaPermissionsTests(TestCase):
     """
     def test_permissions_root_url_anonymous(self):
         resp = self.client.get('/api/v1/?format=json')
-        self.assertEqual(json.loads(resp.content)["detail"], "Authentication credentials were not provided.")
+        assert_validation_error(resp, 'errors', 'PE005', 'Authentication credentials were not provided.')
 
     def test_permissions_root_url_authenticated(self):
         client = SetUpTestClient('tester2').client()
@@ -37,8 +37,8 @@ class VardaPermissionsTests(TestCase):
     def test_permissions_vakajarjestaja_authenticated(self):
         client = SetUpTestClient('tester2').client()
         resp = client.get('/api/v1/vakajarjestajat/?format=json')
-        self.assertEqual(json.loads(resp.content)["count"], 1)
-        self.assertEqual(json.loads(resp.content)["results"][0]["y_tunnus"], "8500570-7")
+        self.assertEqual(json.loads(resp.content)['count'], 1)
+        self.assertEqual(json.loads(resp.content)['results'][0]['y_tunnus'], '8500570-7')
 
     """
     Henkilo-object: reverse-relation (to Lapsi, Huoltaja) permissions
@@ -50,19 +50,19 @@ class VardaPermissionsTests(TestCase):
     def test_permissions_henkilo_reverse_relations_2(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/henkilot/2/?format=json')
-        self.assertEqual(len(json.loads(resp.content)["lapsi"]), 1)
-        self.assertEqual(json.loads(resp.content)["lapsi"][0], "http://testserver/api/v1/lapset/1/")
+        self.assertEqual(len(json.loads(resp.content)['lapsi']), 1)
+        self.assertEqual(json.loads(resp.content)['lapsi'][0], 'http://testserver/api/v1/lapset/1/')
 
     def test_permissions_henkilo_reverse_relations_3(self):
         client = SetUpTestClient('tester2').client()
         resp = client.get('/api/v1/henkilot/2/?format=json')
-        self.assertEqual(len(json.loads(resp.content)["lapsi"]), 0)
+        self.assertEqual(len(json.loads(resp.content)['lapsi']), 0)
 
     def test_permissions_henkilo_reverse_relations_4(self):
         client = SetUpTestClient('credadmin').client()
         resp = client.get('/api/v1/henkilot/2/?format=json')
-        self.assertEqual(len(json.loads(resp.content)["lapsi"]), 1)
-        self.assertEqual(json.loads(resp.content)["lapsi"][0], "http://testserver/api/v1/lapset/1/")
+        self.assertEqual(len(json.loads(resp.content)['lapsi']), 1)
+        self.assertEqual(json.loads(resp.content)['lapsi'][0], 'http://testserver/api/v1/lapset/1/')
 
     def test_permissions_henkilo_reverse_relations_5(self):
         client = SetUpTestClient('tester').client()
@@ -73,7 +73,7 @@ class VardaPermissionsTests(TestCase):
         client = SetUpTestClient('credadmin').client()
         resp = client.get('/api/v1/henkilot/4/?format=json')
         self.assertEqual(len(json.loads(resp.content)['huoltaja']), 1)
-        self.assertEqual(json.loads(resp.content)['huoltaja'][0], "http://testserver/api/admin/huoltajat/1/")
+        self.assertEqual(json.loads(resp.content)['huoltaja'][0], 'http://testserver/api/admin/huoltajat/1/')
 
     """
     Making POST-requests:
@@ -82,11 +82,11 @@ class VardaPermissionsTests(TestCase):
     """
     def test_permissions_post_requests_vakajarjestaja(self):
         vakajarjestaja = {
-            "nimi": "Testikaupunki",
-            "y_tunnus": "5482703-8",
-            "sahkopostiosoite": "testi@kaupunki.fi",
-            "tilinumero": "FI12 3456 7890 1234 56",
-            "puhelinnumero": "00112"
+            'nimi': 'Testikaupunki',
+            'y_tunnus': '5482703-8',
+            'sahkopostiosoite': 'testi@kaupunki.fi',
+            'tilinumero': 'FI12 3456 7890 1234 56',
+            'puhelinnumero': '00112'
         }
         resp = self.client.post('/api/v1/vakajarjestajat/', vakajarjestaja)
         assert_status_code(resp, 403)  # anonymous not allowed
@@ -99,23 +99,23 @@ class VardaPermissionsTests(TestCase):
     def test_permissions_post_requests_toimipaikka(self):
         # This test relies on organisaatio_client default error handling
         toimipaikka = {
-            "vakajarjestaja": "http://testserver/api/v1/vakajarjestajat/1/",
-            "nimi": "Pasilan toimipiste 2",
-            "kunta_koodi": "091",
-            "puhelinnumero": "+35892323234",
-            "kayntiosoite": "Pasilankatu 123",
-            "kayntiosoite_postitoimipaikka": "Helsinki",
-            "kayntiosoite_postinumero": "00200",
-            "postiosoite": "Pasilankatu 123",
-            "postitoimipaikka": "Helsinki",
-            "postinumero": "00200",
-            "sahkopostiosoite": "hel1234@helsinki.fi",
-            "kasvatusopillinen_jarjestelma_koodi": "kj99",
-            "toimintamuoto_koodi": "tm01",
-            "asiointikieli_koodi": "FI",
-            "jarjestamismuoto_koodi": ["jm01", "jm03"],
-            "varhaiskasvatuspaikat": 1000,
-            "alkamis_pvm": "2018-01-01"
+            'vakajarjestaja': 'http://testserver/api/v1/vakajarjestajat/1/',
+            'nimi': 'Pasilan toimipiste 2',
+            'kunta_koodi': '091',
+            'puhelinnumero': '+35892323234',
+            'kayntiosoite': 'Pasilankatu 123',
+            'kayntiosoite_postitoimipaikka': 'Helsinki',
+            'kayntiosoite_postinumero': '00200',
+            'postiosoite': 'Pasilankatu 123',
+            'postitoimipaikka': 'Helsinki',
+            'postinumero': '00200',
+            'sahkopostiosoite': 'hel1234@helsinki.fi',
+            'kasvatusopillinen_jarjestelma_koodi': 'kj99',
+            'toimintamuoto_koodi': 'tm01',
+            'asiointikieli_koodi': 'FI',
+            'jarjestamismuoto_koodi': ['jm01', 'jm03'],
+            'varhaiskasvatuspaikat': 1000,
+            'alkamis_pvm': '2018-01-01'
         }
         resp = self.client.post('/api/v1/toimipaikat/', toimipaikka)
         assert_status_code(resp, 403)  # anonymous not allowed
@@ -123,35 +123,35 @@ class VardaPermissionsTests(TestCase):
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/toimipaikat/', toimipaikka)
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'nimi': ['Could not check toimipaikka-duplicates from Organisaatiopalvelu. Please try again later.']})
+        assert_validation_error(resp, 'errors', 'TP007', 'Could not check duplicates from Organisaatiopalvelu. Please try again later.')
 
         toimipaikka = {
-            "vakajarjestaja": "http://testserver/api/v1/vakajarjestajat/2/",
-            "nimi": "Pasilan toimipiste 2",
-            "kunta_koodi": "091",
-            "puhelinnumero": "+35892323234",
-            "kayntiosoite": "Pasilankatu 123",
-            "kayntiosoite_postitoimipaikka": "Helsinki",
-            "kayntiosoite_postinumero": "00200",
-            "postiosoite": "Pasilankatu 123",
-            "postitoimipaikka": "Helsinki",
-            "postinumero": "00200",
-            "sahkopostiosoite": "hel1234@helsinki.fi",
-            "kasvatusopillinen_jarjestelma_koodi": "kj98",
-            "toimintamuoto_koodi": "tm01",
-            "asiointikieli_koodi": "FI",
-            "jarjestamismuoto_koodi": ["jm01", "jm03"],
-            "varhaiskasvatuspaikat": 1000,
-            "alkamis_pvm": "2018-01-01"
+            'vakajarjestaja': 'http://testserver/api/v1/vakajarjestajat/2/',
+            'nimi': 'Pasilan toimipiste 2',
+            'kunta_koodi': '091',
+            'puhelinnumero': '+35892323234',
+            'kayntiosoite': 'Pasilankatu 123',
+            'kayntiosoite_postitoimipaikka': 'Helsinki',
+            'kayntiosoite_postinumero': '00200',
+            'postiosoite': 'Pasilankatu 123',
+            'postitoimipaikka': 'Helsinki',
+            'postinumero': '00200',
+            'sahkopostiosoite': 'hel1234@helsinki.fi',
+            'kasvatusopillinen_jarjestelma_koodi': 'kj98',
+            'toimintamuoto_koodi': 'tm01',
+            'asiointikieli_koodi': 'FI',
+            'jarjestamismuoto_koodi': ['jm01', 'jm03'],
+            'varhaiskasvatuspaikat': 1000,
+            'alkamis_pvm': '2018-01-01'
         }
         client = SetUpTestClient('tester2').client()
-        resp = client.post('/api/v1/toimipaikat/', toimipaikka)
-        self.assertEqual(json.loads(resp.content), {"vakajarjestaja": ["Invalid hyperlink - Object does not exist."]})
-        assert_status_code(resp, 400)  # vakajarjestaja not owned by tester2
+        resp2 = client.post('/api/v1/toimipaikat/', toimipaikka)
+        assert_validation_error(resp2, 'vakajarjestaja', 'GE008', 'Invalid hyperlink, object does not exist.')
+        assert_status_code(resp2, 400)  # vakajarjestaja not owned by tester2
 
     def test_permissions_henkilo(self):
         henkilo = {
-            "henkilotunnus": "120516A123V"
+            'henkilotunnus': '120516A123V'
         }
 
         resp = self.client.put('/api/v1/henkilot/3/', henkilo)
@@ -177,17 +177,17 @@ class VardaPermissionsTests(TestCase):
                       status=status.HTTP_201_CREATED
                       )
         henkilo = {
-            "henkilotunnus": "090471-813K",
-            "etunimet": "Kaarle-Johan",
-            "kutsumanimi": "Kaarle-Johan",
-            "sukunimi": "Mattson"
+            'henkilotunnus': '090471-813K',
+            'etunimet': 'Kaarle-Johan',
+            'kutsumanimi': 'Kaarle-Johan',
+            'sukunimi': 'Mattson'
         }
 
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
         assert_status_code(resp, 201)
 
-        new_henkilo_url = json.loads(resp.content)["url"]
+        new_henkilo_url = json.loads(resp.content)['url']
 
         resp = self.client.get(new_henkilo_url)
         assert_status_code(resp, 403)  # anonymous not allowed
@@ -244,7 +244,7 @@ class VardaPermissionsTests(TestCase):
         client = SetUpTestClient('credadmin').client()
         resp = client.get('/api/v1/lapset/1/huoltajat/')
         assert_status_code(resp, 200)
-        self.assertEqual(json.loads(resp.content)["count"], 2)
+        self.assertEqual(json.loads(resp.content)['count'], 2)
 
         client = SetUpTestClient('tester2').client()
         resp = client.get('/api/v1/lapset/1/huoltajat/')
@@ -263,7 +263,7 @@ class VardaPermissionsTests(TestCase):
         client = SetUpTestClient('credadmin').client()
         resp = client.get('/api/admin/huoltajat/1/lapset/')
         assert_status_code(resp, 200)
-        self.assertEqual(json.loads(resp.content)["count"], 1)
+        self.assertEqual(json.loads(resp.content)['count'], 1)
 
         client = SetUpTestClient('tester2').client()
         resp = client.get('/api/admin/huoltajat/1/lapset/')
@@ -280,38 +280,38 @@ class VardaPermissionsTests(TestCase):
                       status=status.HTTP_201_CREATED
                       )
         henkilo = {
-            "henkilotunnus": "090471-813K",
-            "etunimet": "Kaarle-Johan",
-            "kutsumanimi": "Kaarle-Johan",
-            "sukunimi": "Mattson"
+            'henkilotunnus': '090471-813K',
+            'etunimet': 'Kaarle-Johan',
+            'kutsumanimi': 'Kaarle-Johan',
+            'sukunimi': 'Mattson'
         }
 
         client = SetUpTestClient('credadmin').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
         assert_status_code(resp, 201)
 
-        new_henkilo_url = json.loads(resp.content)["url"]
+        new_henkilo_url = json.loads(resp.content)['url']
         lapsi = {
-            "henkilo": new_henkilo_url
+            'henkilo': new_henkilo_url
         }
 
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, 201)
 
         henkilo_2 = {
-            "henkilotunnus": "251150-711U",
-            "etunimet": "Johanna Maarit",
-            "kutsumanimi": "Maarit",
-            "sukunimi": "Nieminen"
+            'henkilotunnus': '251150-711U',
+            'etunimet': 'Johanna Maarit',
+            'kutsumanimi': 'Maarit',
+            'sukunimi': 'Nieminen'
         }
 
         resp = client.post('/api/v1/henkilot/', henkilo_2)
         assert_status_code(resp, 201)
 
-        new_henkilo_url_2 = json.loads(resp.content)["url"]
+        new_henkilo_url_2 = json.loads(resp.content)['url']
 
         huoltaja = {
-            "henkilo": new_henkilo_url_2,
+            'henkilo': new_henkilo_url_2,
         }
 
         resp = client.post('/api/admin/huoltajat/', huoltaja)
@@ -337,11 +337,11 @@ class VardaPermissionsTests(TestCase):
         lapsi = {
             'henkilo': '/api/v1/henkilot/9/',
             'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
-            "paos_organisaatio": '/api/v1/vakajarjestajat/2/'
+            'paos_organisaatio': '/api/v1/vakajarjestajat/2/'
         }
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, 403)
-        self.assertEqual(json.loads(resp.content), {'detail': 'User does not have permissions.'})
+        assert_validation_error(resp, 'errors', 'PE003', 'User does not have permissions.')
 
     def test_try_to_change_henkilo(self):
         # PUT/PATCH functions will be re-enabled in CSCVARDA-1942
@@ -363,20 +363,20 @@ class VardaPermissionsTests(TestCase):
 
     def test_push_correct_paos_toiminta_organisaatio_without_permissions(self):
         paos_toiminta = {
-            "oma_organisaatio": "http://localhost:8000/api/v1/vakajarjestajat/2/",
-            "paos_organisaatio": "http://localhost:8000/api/v1/vakajarjestajat/3/"
+            'oma_organisaatio': 'http://localhost:8000/api/v1/vakajarjestajat/2/',
+            'paos_organisaatio': 'http://localhost:8000/api/v1/vakajarjestajat/3/'
         }
         client = SetUpTestClient('tester').client()
         paos_toiminta = json.dumps(paos_toiminta)
         resp = client.post('/api/v1/paos-toiminnat/', data=paos_toiminta, content_type='application/json')
         assert_status_code(resp, 403)
-        self.assertEqual(json.loads(resp.content), {'detail': 'You do not have permission to perform this action.'})
+        assert_validation_error(resp, 'errors', 'PE006', 'User does not have permission to perform this action.')
 
     def test_get_paos_toiminnat(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/paos-toiminnat/')
         assert_status_code(resp, 403)
-        self.assertEqual(json.loads(resp.content), {'detail': 'You do not have permission to perform this action.'})
+        assert_validation_error(resp, 'errors', 'PE006', 'User does not have permission to perform this action.')
 
     def test_get_toimipaikat(self):
         client = SetUpTestClient('credadmin').client()
@@ -388,43 +388,43 @@ class VardaPermissionsTests(TestCase):
         # vaka-jarjestajat tested already elsewhere
         resp = self.client.get('/api/v1/toimipaikat/')
         assert_status_code(resp, 403)
-        self.assertEqual(json.loads(resp.content), {'detail': 'Authentication credentials were not provided.'})
+        assert_validation_error(resp, 'errors', 'PE005', 'Authentication credentials were not provided.')
 
         resp = self.client.get('/api/v1/toiminnallisetpainotukset/')
         assert_status_code(resp, 403)
-        self.assertEqual(json.loads(resp.content), {'detail': 'Authentication credentials were not provided.'})
+        assert_validation_error(resp, 'errors', 'PE005', 'Authentication credentials were not provided.')
 
         resp = self.client.get('/api/v1/kielipainotukset/')
         assert_status_code(resp, 403)
-        self.assertEqual(json.loads(resp.content), {'detail': 'Authentication credentials were not provided.'})
+        assert_validation_error(resp, 'errors', 'PE005', 'Authentication credentials were not provided.')
 
         resp = self.client.get('/api/v1/henkilot/')
         assert_status_code(resp, 403)
-        self.assertEqual(json.loads(resp.content), {'detail': 'Authentication credentials were not provided.'})
+        assert_validation_error(resp, 'errors', 'PE005', 'Authentication credentials were not provided.')
 
         resp = self.client.get('/api/admin/huoltajat/')
         assert_status_code(resp, 403)
-        self.assertEqual(json.loads(resp.content), {'detail': 'Authentication credentials were not provided.'})
+        assert_validation_error(resp, 'errors', 'PE005', 'Authentication credentials were not provided.')
 
         resp = self.client.get('/api/v1/lapset/')
         assert_status_code(resp, 403)
-        self.assertEqual(json.loads(resp.content), {'detail': 'Authentication credentials were not provided.'})
+        assert_validation_error(resp, 'errors', 'PE005', 'Authentication credentials were not provided.')
 
         resp = self.client.get('/api/v1/varhaiskasvatuspaatokset/')
         assert_status_code(resp, 403)
-        self.assertEqual(json.loads(resp.content), {'detail': 'Authentication credentials were not provided.'})
+        assert_validation_error(resp, 'errors', 'PE005', 'Authentication credentials were not provided.')
 
         resp = self.client.get('/api/v1/varhaiskasvatussuhteet/')
         assert_status_code(resp, 403)
-        self.assertEqual(json.loads(resp.content), {'detail': 'Authentication credentials were not provided.'})
+        assert_validation_error(resp, 'errors', 'PE005', 'Authentication credentials were not provided.')
 
         resp = self.client.get('/api/v1/maksutiedot/')
         assert_status_code(resp, 403)
-        self.assertEqual(json.loads(resp.content), {'detail': 'Authentication credentials were not provided.'})
+        assert_validation_error(resp, 'errors', 'PE005', 'Authentication credentials were not provided.')
 
         resp = self.client.get('/api/v1/paos-toiminnat/')
         assert_status_code(resp, 403)
-        self.assertEqual(json.loads(resp.content), {'detail': 'Authentication credentials were not provided.'})
+        assert_validation_error(resp, 'errors', 'PE005', 'Authentication credentials were not provided.')
 
     def test_audit_log_collected_for_authenticated_users(self):
         self.client.get('/api/v1/vakajarjestajat/')
@@ -501,7 +501,7 @@ class VardaPermissionsTests(TestCase):
 
         resp_fail = client.patch(f'/api/v1/vakajarjestajat/{vakajarjestaja_qs.first().id}/', vakajarjestaja_patch)
         assert_status_code(resp_fail, status.HTTP_403_FORBIDDEN)
-        assert_validation_error('detail', 'User does not have permissions to change this object.', resp_fail)
+        assert_validation_error(resp_fail, 'errors', 'PE001', 'User does not have permissions to change this object.')
 
     """
     TODO: Reporting related permissions

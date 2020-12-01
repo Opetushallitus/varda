@@ -3,13 +3,14 @@ import os
 from django.apps import AppConfig
 from django.db.models.signals import post_migrate, post_save, pre_save, pre_delete
 
+from varda.enums.error_messages import ErrorMessages
 from varda.migrations.production.setup import (load_initial_data, create_huoltajatiedot_template_groups,
                                                create_paos_template_groups,
                                                create_henkilosto_template_groups, clear_old_permissions,
                                                modify_change_vakajarjestaja_permission,
                                                create_toimijatiedot_template_groups)
 from varda.migrations.testing.setup import (load_testing_data, create_initial_koodisto_data,
-                                            create_postinumero_koodisto_data)
+                                            create_postinumero_koodisto_data, create_virhe_koodisto_data)
 
 
 def run_post_migration_tasks(sender, **kwargs):
@@ -65,7 +66,8 @@ def run_post_migration_tasks(sender, **kwargs):
             '0034_auto_20201029_1603': [create_toimijatiedot_template_groups,
                                         modify_change_vakajarjestaja_permission,
                                         load_dev_testing_data],
-            '0036_postinumero_koodit': [create_postinumero_koodisto_data]
+            '0036_postinumero_koodit': [create_postinumero_koodisto_data],
+            '0037_auto_20201126_1055': [create_virhe_koodisto_data]
         }
 
         for migration_plan_tuple in kwargs['plan']:
@@ -105,8 +107,8 @@ def receiver_pre_save(sender, **kwargs):
     instance = kwargs['instance']
     if model_name == 'vakajarjestaja':
         if not YtjYritysmuoto.has_value(instance.yritysmuoto):
-            from django.core.exceptions import ValidationError
-            raise ValidationError('Yritysmuoto {} is not one of the permitted values.'.format(instance.yritysmuoto))
+            from rest_framework.exceptions import ValidationError as ValidationErrorRest
+            raise ValidationErrorRest({'yritysmuoto': [ErrorMessages.VJ002.value]})
 
     with transaction.atomic():
         if model_name == 'paosoikeus':

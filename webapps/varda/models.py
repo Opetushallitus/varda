@@ -91,7 +91,7 @@ class VakaJarjestaja(models.Model):
 
 
 class Toimipaikka(models.Model):
-    vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name="toimipaikat", on_delete=models.PROTECT)
+    vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='toimipaikat', on_delete=models.PROTECT)
     nimi = models.CharField(max_length=200, blank=False)
     nimi_sv = models.CharField(max_length=200, blank=True)
     organisaatio_oid = models.CharField(max_length=50, blank=True, validators=[validators.validate_organisaatio_oid])
@@ -152,8 +152,11 @@ class Toimipaikka(models.Model):
         return self.kielipainotukset.all().order_by('id')[:items_to_show]
 
     class Meta:
-        verbose_name_plural = "toimipaikat"
-        unique_together = ("nimi", "vakajarjestaja")
+        verbose_name_plural = 'toimipaikat'
+        constraints = [
+            UniqueConstraint(fields=['nimi', 'vakajarjestaja'],
+                             name='nimi_vakajarjestaja_unique_constraint')
+        ]
 
 
 class ToiminnallinenPainotus(models.Model):

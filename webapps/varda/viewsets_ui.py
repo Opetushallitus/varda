@@ -20,6 +20,7 @@ from rest_framework.viewsets import GenericViewSet
 from varda import filters
 from varda.cache import create_cache_key, get_object_ids_user_has_permissions
 from varda.cas.varda_permissions import IsVardaPaakayttaja
+from varda.enums.error_messages import ErrorMessages
 from varda.filters import TyontekijahakuUiFilter, LapsihakuUiFilter
 from varda.lokalisointipalvelu import get_localisation_data
 from varda.misc import parse_toimipaikka_id_list
@@ -40,10 +41,10 @@ from varda.serializers_ui import (VakaJarjestajaUiSerializer, ToimipaikkaUiSeria
 
 def parse_vakajarjestaja(user, vakajarjestaja_id):
     if not vakajarjestaja_id.isdigit():
-        raise Http404()
+        raise Http404
     vakajarjestaja_qs = VakaJarjestaja.objects.filter(pk=vakajarjestaja_id)
     if not vakajarjestaja_qs.exists() or not user.has_perm('view_vakajarjestaja', vakajarjestaja_qs.first()):
-        raise Http404()
+        raise Http404
 
     return vakajarjestaja_qs.first()
 
@@ -203,7 +204,7 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
         if user.has_perm('view_vakajarjestaja', vakajarjestaja):
             return vakajarjestaja
         else:
-            raise Http404('Not found.')
+            raise Http404
 
     def get_toimipaikka(self, request, toimipaikka_pk=None):
         toimipaikka = get_object_or_404(Toimipaikka.objects.all(), pk=toimipaikka_pk)
@@ -211,12 +212,12 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
         if user.has_perm('view_toimipaikka', toimipaikka):
             return toimipaikka
         else:
-            raise Http404('Not found.')
+            raise Http404
 
     def list(self, request, *args, **kwargs):
         self.vakajarjestaja_id = kwargs.get('vakajarjestaja_pk', None)
         if not self.vakajarjestaja_id.isdigit():
-            raise Http404('Not found.')
+            raise Http404
 
         self.vakajarjestaja_obj = self.get_vakajarjestaja(request, vakajarjestaja_pk=self.vakajarjestaja_id)
         self.vakajarjestaja_oid = self.vakajarjestaja_obj.organisaatio_oid
@@ -261,7 +262,7 @@ class NestedAllToimipaikkaViewSet(GenericViewSet, ListModelMixin):
     def list(self, request, *args, **kwargs):
         vakajarjestaja_id = self.kwargs.get('vakajarjestaja_pk', None)
         if not vakajarjestaja_id or not vakajarjestaja_id.isdigit() or not get_object_or_404(VakaJarjestaja, pk=vakajarjestaja_id):
-            raise Http404("Not found.")
+            raise Http404
         return super(NestedAllToimipaikkaViewSet, self).list(request, *args, **kwargs)
 
     def get_queryset(self, **kwargs):
@@ -343,8 +344,8 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
         try:
             alkamis_pvm = datetime.datetime.strptime(alkamis_pvm, '%Y-%m-%d').date()
             paattymis_pvm = datetime.datetime.strptime(paattymis_pvm, '%Y-%m-%d').date()
-        except ValueError as e:
-            raise Http404(e)
+        except ValueError:
+            raise Http404
 
         if rajaus == 'vakasuhteet':
             prefix = 'varhaiskasvatuspaatokset__varhaiskasvatussuhteet__'
@@ -457,10 +458,10 @@ class LocalisationViewSet(GenericViewSet, ListModelMixin):
         locale = query_params.get('locale', None)
 
         if not category:
-            raise ValidationError({'category': ['category url parameter is required']})
+            raise ValidationError({'errors': [ErrorMessages.LO001.value]})
 
         if locale and locale.lower() not in ['fi', 'sv']:
-            raise ValidationError({'locale': ['locale must be either FI or SV']})
+            raise ValidationError({'errors': [ErrorMessages.LO002.value]})
 
         data = get_localisation_data(category, locale)
 

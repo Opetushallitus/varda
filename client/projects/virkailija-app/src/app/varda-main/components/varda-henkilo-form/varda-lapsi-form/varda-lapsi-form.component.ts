@@ -18,6 +18,7 @@ import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/var
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { Subscription, Observable, BehaviorSubject } from 'rxjs';
 import { filter } from 'rxjs/operators';
+import { TranslateService } from '@ngx-translate/core';
 
 
 @Component({
@@ -44,8 +45,8 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
   selectedVakajarjestaja: VardaVakajarjestajaUi;
   selectedToimipaikka: VardaToimipaikkaMinimalDto;
 
-  private lapsiErrorService = new HenkilostoErrorMessageService();
-  private deleteLapsiErrorService = new HenkilostoErrorMessageService();
+  private lapsiErrorService: HenkilostoErrorMessageService;
+  private deleteLapsiErrorService: HenkilostoErrorMessageService;
   subscriptions: Array<Subscription> = [];
   toimipaikkaAccess: UserAccess;
   henkilonTutkinnot: Array<VardaTutkintoDTO>;
@@ -60,7 +61,11 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
     private lapsiService: VardaLapsiService,
     private modalService: VardaModalService,
     private snackBarService: VardaSnackBarService,
+    translateService: TranslateService
   ) {
+    this.lapsiErrorService = new HenkilostoErrorMessageService(translateService);
+    this.deleteLapsiErrorService = new HenkilostoErrorMessageService(translateService);
+
     this.lapsiFormErrors = this.lapsiErrorService.initErrorList();
     this.deleteLapsiErrors = this.deleteLapsiErrorService.initErrorList();
 

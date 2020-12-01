@@ -30,11 +30,10 @@ class ViewSetValidator:
 
     def error(self, key, message):
         """
-        A helper function to add a validation error to the given dictionary.
+        A helper function to add a validation error to the error dictionary.
         The values of the dictionary are expected to be arrays.
         If a key already exists, the error is appended to the list.
 
-        :param msgs: Error dictionary
         :param key: Dictionary key
         :param message: Validation error text
         """
@@ -57,6 +56,21 @@ class ViewSetValidator:
             for key, msgs in detail.items():
                 for msg in msgs:
                     self.error(key, msg)
+
+    def error_nested(self, key_list, message):
+        """
+        A helper function to add a nested validation error to the error dictionary.
+        :param key_list: list of nested keys (e.g. ['key1', 'key2'] -> {'key1': {'key2': ['error1']}}
+        :param message: Validation error text
+        """
+        current_dict = self.messages
+        for key in key_list[:-1]:
+            current_dict[key] = current_dict.get(key, {})
+            current_dict = current_dict[key]
+
+        last_key = key_list[-1]
+        arr = current_dict[last_key] = current_dict.get(last_key, [])
+        arr.append(message)
 
     def wrap(self):
         """

@@ -16,6 +16,7 @@ import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { VardaKoodistoService, KoodistoEnum, CodeDTO } from 'varda-shared';
+import { TranslateService } from '@ngx-translate/core';
 
 
 interface JarjestamismuodotCode extends CodeDTO {
@@ -56,7 +57,7 @@ export class VardaVarhaiskasvatuspaatosComponent implements OnInit, OnChanges, O
   tilapainenVarhaiskasvatusBoolean: boolean;
   minStartDate: Date;
   minEndDate: Date;
-  private henkilostoErrorService = new HenkilostoErrorMessageService();
+  private henkilostoErrorService: HenkilostoErrorMessageService;
 
   constructor(
     private el: ElementRef,
@@ -65,8 +66,10 @@ export class VardaVarhaiskasvatuspaatosComponent implements OnInit, OnChanges, O
     private koodistoService: VardaKoodistoService,
     private vakajarjestajaService: VardaVakajarjestajaService,
     private snackBarService: VardaSnackBarService,
+    private translateService: TranslateService
   ) {
     this.element = this.el;
+    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
     this.varhaiskasvatuspaatosFormErrors = this.henkilostoErrorService.initErrorList();
 
     this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();

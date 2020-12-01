@@ -15,6 +15,7 @@ import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/
 import { ErrorTree, HenkilostoErrorMessageService } from '../../../core/services/varda-henkilosto-error-message.service';
 import { Lahdejarjestelma } from '../../../utilities/models/enums/hallinnointijarjestelma';
 import { VardaSnackBarService } from '../../../core/services/varda-snackbar.service';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-varda-henkilosto-tilapainen',
@@ -37,7 +38,7 @@ export class VardaHenkilostoTilapainenComponent implements OnDestroy {
   isLoading$: Observable<boolean>;
   i18n = VirkailijaTranslations;
   henkilostoFormErrors: Observable<Array<ErrorTree>>;
-  private henkilostoErrorService = new HenkilostoErrorMessageService();
+  private henkilostoErrorService: HenkilostoErrorMessageService;
 
   constructor(
     private dialog: MatDialog,
@@ -46,10 +47,12 @@ export class VardaHenkilostoTilapainenComponent implements OnDestroy {
     private authService: AuthService,
     private henkilostoService: VardaHenkilostoApiService,
     private snackBarService: VardaSnackBarService,
+    translateService: TranslateService
   ) {
     this.isLoading$ = this.http.isLoading();
     this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
     this.toimijaAccess = this.authService.getUserAccess();
+    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
     this.henkilostoFormErrors = this.henkilostoErrorService.initErrorList();
     this.initiateYears();
   }

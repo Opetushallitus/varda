@@ -8,10 +8,10 @@ from django.utils.translation import ugettext_lazy as _
 from guardian.shortcuts import get_objects_for_user
 from rest_framework import serializers
 from rest_framework.exceptions import APIException, ValidationError
-from rest_framework.validators import UniqueTogetherValidator
 
 from varda import validators
 from varda.cache import caching_to_representation
+from varda.enums.error_messages import ErrorMessages
 from varda.misc import list_of_dicts_has_duplicate_values
 from varda.misc_viewsets import ViewSetValidator
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Maksutieto, Henkilo,
@@ -57,20 +57,20 @@ class UpdateOphStaffSerializer(serializers.Serializer):
     def validate(self, attrs):
         virkailija_id = attrs.get('virkailija_id')
         if virkailija_id < 1:
-            raise serializers.ValidationError({'virkailija_id': 'Incorrect data format. Id should be a positive integer.'})
+            raise serializers.ValidationError({'virkailija_id': [ErrorMessages.AD001.value]})
 
         try:
             user = User.objects.get(id=virkailija_id)
         except User.DoesNotExist:
-            raise serializers.ValidationError({'virkailija_id': 'User was not found with id: ' + str(virkailija_id) + '.'})
+            raise serializers.ValidationError({'virkailija_id': [ErrorMessages.AD002.value]})
 
         try:
             oph_staff_user_obj = Z3_AdditionalCasUserFields.objects.get(user=user)
         except Z3_AdditionalCasUserFields.DoesNotExist:
-            raise serializers.ValidationError({'virkailija_id': 'User with id: ' + str(virkailija_id) + ', is not a CAS-user.'})
+            raise serializers.ValidationError({'virkailija_id': [ErrorMessages.AD003.value]})
 
         if not user.groups.filter(name='oph_staff').exists():
-            raise serializers.ValidationError({'virkailija_id': 'User with id: ' + str(virkailija_id) + ', is not in oph_staff group.'})
+            raise serializers.ValidationError({'virkailija_id': [ErrorMessages.AD004.value]})
 
         oph_staff_user_obj.approved_oph_staff = True
         oph_staff_user_obj.save()
@@ -83,9 +83,8 @@ class ClearCacheSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         clear_cache = attrs.get('clear_cache')
-        if clear_cache.lower() != "yes":
-            msg = _("You must approve with 'yes'.")
-            raise serializers.ValidationError(msg, code='invalid')
+        if clear_cache.lower() != 'yes':
+            raise serializers.ValidationError({'errors': [ErrorMessages.AD005.value]}, code='invalid')
         return attrs
 
 
@@ -108,14 +107,14 @@ class ActiveUserSerializer(serializers.ModelSerializer):
         try:
             cas_user_obj = Z3_AdditionalCasUserFields.objects.get(user_id=obj.id)
         except Z3_AdditionalCasUserFields.DoesNotExist:
-            return "fi"
+            return 'fi'
         return cas_user_obj.asiointikieli_koodi
 
     def get_henkilo_oid(self, obj):
         try:
             cas_user_obj = Z3_AdditionalCasUserFields.objects.get(user_id=obj.id)
         except Z3_AdditionalCasUserFields.DoesNotExist:
-            return ""
+            return ''
         return cas_user_obj.henkilo_oid
 
     def get_kayttajatyyppi(self, obj):
@@ -150,7 +149,7 @@ class ActiveUserSerializer(serializers.ModelSerializer):
 
 
 class AuthTokenSerializer(serializers.Serializer):
-    refresh_token = serializers.BooleanField(label=_("Refresh token"))
+    refresh_token = serializers.BooleanField(label=_('Refresh token'))
 
     def validate(self, attrs):
         refresh = attrs.get('refresh_token')
@@ -158,8 +157,7 @@ class AuthTokenSerializer(serializers.Serializer):
         if refresh:
             pass
         else:
-            msg = _('Token was not refreshed.')
-            raise serializers.ValidationError(msg, code='invalid')
+            raise serializers.ValidationError({'errors': [ErrorMessages.MI001.value]}, code='invalid')
 
         return attrs
 
@@ -334,24 +332,23 @@ class ToimipaikkaSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Toimipaikka
         exclude = ('nimi_sv', 'luonti_pvm', 'changed_by',)
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Toimipaikka.objects.all(),
-                fields=('nimi', 'vakajarjestaja'),
-                message='Combination of nimi and vakajarjestaja fields should be unique'
-            )
-        ]
 
     def validate(self, data):
+        if 'vakajarjestaja' in data and 'nimi' in data:
+            unique_name_qs = Toimipaikka.objects.filter(vakajarjestaja=data['vakajarjestaja'], nimi=data['nimi'])
+            if self.instance:
+                # Exclude current instance
+                unique_name_qs = unique_name_qs.exclude(pk=self.instance.pk)
+            if unique_name_qs.exists():
+                raise serializers.ValidationError({'errors': [ErrorMessages.TP001.value]})
+
         if ('vakajarjestaja' in data and
                 not self.context['request'].user.has_perm('view_vakajarjestaja', data['vakajarjestaja'])):
-            msg = {"vakajarjestaja": ["Invalid hyperlink - Object does not exist.", ]}
-            raise serializers.ValidationError(msg, code='invalid')
-        #  names that collide with temporary toimipaikka are not allowed
+            raise serializers.ValidationError({'vakajarjestaja': [ErrorMessages.GE008.value]}, code='invalid')
+        # Names that collide with temporary toimipaikka are not allowed
         if 'nimi' in data and data['nimi'].lower().startswith('palveluseteli ja ostopalvelu'):
-            msg = {"nimi": ["toimipaikka with name palveluseteli ja ostopalvelu is reserved for system"]}
-            raise serializers.ValidationError(msg, code='invalid')
-        validators.validate_toimipaikan_nimi(data["nimi"])
+            raise serializers.ValidationError({'nimi': [ErrorMessages.TP006.value]}, code='invalid')
+        validators.validate_toimipaikan_nimi(data['nimi'])
 
         return data
 
@@ -371,7 +368,7 @@ class ToiminnallinenPainotusSerializer(serializers.HyperlinkedModelSerializer):
     def validate(self, data):
         if self.instance:  # PUT/PATCH
             if 'toimipaikka' in data and data['toimipaikka'] != self.instance.toimipaikka:
-                raise serializers.ValidationError("This field is not allowed to be changed.")
+                raise serializers.ValidationError({'toimipaikka': [ErrorMessages.GE013.value]})
             validators.validate_dates_within_toimipaikka(data, self.instance.toimipaikka)
         else:  # POST
             validators.validate_dates_within_toimipaikka(data, data['toimipaikka'])
@@ -389,7 +386,7 @@ class KieliPainotusSerializer(serializers.HyperlinkedModelSerializer):
     def validate(self, data):
         if self.instance:  # PUT/PATCH
             if 'toimipaikka' in data and data['toimipaikka'] != self.instance.toimipaikka:
-                raise serializers.ValidationError("This field is not allowed to be changed.")
+                raise serializers.ValidationError({'toimipaikka': [ErrorMessages.GE013.value]})
             validators.validate_dates_within_toimipaikka(data, self.instance.toimipaikka)
         else:  # POST
             validators.validate_dates_within_toimipaikka(data, data['toimipaikka'])
@@ -449,7 +446,7 @@ class HenkiloSerializer(serializers.HyperlinkedModelSerializer):
         qs = Lapsi.objects.filter(henkilo=obj.pk).order_by('id')
 
         for lapsi in qs:
-            if user.has_perm("view_lapsi", lapsi):
+            if user.has_perm('view_lapsi', lapsi):
                 lapset.append(request.build_absolute_uri(reverse('lapsi-detail', kwargs={'pk': lapsi.pk})))
 
         return lapset
@@ -572,17 +569,17 @@ class MaksutietoPostSerializer(serializers.HyperlinkedModelSerializer):
         if 'lapsi' in data and self.context['request'].user.has_perm('view_lapsi', data['lapsi']):
             pass
         else:
-            msg = {"lapsi": ["Invalid hyperlink - Object does not exist.", ]}
+            msg = {'lapsi': [ErrorMessages.GE008.value]}
             raise serializers.ValidationError(msg, code='invalid')
 
-        if len(data["huoltajat"]) > 7:
-            raise serializers.ValidationError({"huoltajat": ["maximum number of huoltajat is 7"]})
+        if len(data['huoltajat']) > 7:
+            raise serializers.ValidationError({'huoltajat': [ErrorMessages.MA011.value]})
 
-        if list_of_dicts_has_duplicate_values(data["huoltajat"], 'henkilotunnus'):
-            raise serializers.ValidationError({"huoltajat": ["duplicated henkilotunnus given"]})
+        if list_of_dicts_has_duplicate_values(data['huoltajat'], 'henkilotunnus'):
+            raise serializers.ValidationError({'huoltajat': [ErrorMessages.MA012.value]})
 
-        if list_of_dicts_has_duplicate_values(data["huoltajat"], 'henkilo_oid'):
-            raise serializers.ValidationError({"huoltajat": ["duplicated henkilo_oid given"]})
+        if list_of_dicts_has_duplicate_values(data['huoltajat'], 'henkilo_oid'):
+            raise serializers.ValidationError({'huoltajat': [ErrorMessages.MA013.value]})
 
         return data
 
@@ -644,13 +641,13 @@ class MaksutietoUpdateSerializer(serializers.HyperlinkedModelSerializer):
 
     def validate(self, data):
         if len(data) == 0:
-            raise serializers.ValidationError("No data given.")
+            raise serializers.ValidationError({'errors': [ErrorMessages.GE014.value]})
         return data
 
     class Meta:
         model = Maksutieto
-        read_only_fields = ['url', 'id', 'huoltajat', "lapsi", "alkamis_pvm", "perheen_koko", 'maksun_peruste_koodi',
-                            "palveluseteli_arvo", "asiakasmaksu"]
+        read_only_fields = ['url', 'id', 'huoltajat', 'lapsi', 'alkamis_pvm', 'perheen_koko', 'maksun_peruste_koodi',
+                            'palveluseteli_arvo', 'asiakasmaksu']
         exclude = ('luonti_pvm', 'changed_by', 'yksityinen_jarjestaja',)
 
 
@@ -693,17 +690,17 @@ class LapsiSerializer(serializers.HyperlinkedModelSerializer):
             paos_organisaatio = data.get('paos_organisaatio')
 
             if 'henkilo' in data and not self.context['request'].user.has_perm('view_henkilo', data['henkilo']):
-                validator.error('henkilo', 'Invalid hyperlink - Object does not exist.')
+                validator.error('henkilo', ErrorMessages.GE008.value)
 
             if not (vakatoimija or oma_organisaatio or paos_organisaatio):
-                validator.error('non_field_errors', 'Either vakatoimija or oma_organisaatio and paos_organisaatio are required')
+                validator.error('errors', ErrorMessages.LA005.value)
             if vakatoimija and oma_organisaatio or vakatoimija and paos_organisaatio:
-                validator.error('non_field_errors', 'Lapsi cannot be paos and regular one same time.')
+                validator.error('errors', ErrorMessages.LA006.value)
 
             if oma_organisaatio and not paos_organisaatio or paos_organisaatio and not oma_organisaatio:
-                validator.error('non_field_errors', 'For PAOS-lapsi both oma_organisaatio and paos_organisaatio are needed.')
+                validator.error('errors', ErrorMessages.LA007.value)
             if oma_organisaatio and oma_organisaatio == paos_organisaatio:
-                validator.error('detail', 'oma_organisaatio cannot be same as paos_organisaatio.')
+                validator.error('errors', ErrorMessages.LA008.value)
         return data
 
     @caching_to_representation('lapsi')
@@ -788,7 +785,7 @@ class HenkilohakuLapsetSerializer(serializers.HyperlinkedModelSerializer):
                              .filter(toimipaikka_filter)
                              .distinct('id')
                              )
-        return [{"nimi": toimipaikka.nimi, "nimi_sv": toimipaikka.nimi_sv, "organisaatio_oid": toimipaikka.organisaatio_oid}
+        return [{'nimi': toimipaikka.nimi, 'nimi_sv': toimipaikka.nimi_sv, 'organisaatio_oid': toimipaikka.organisaatio_oid}
                 for toimipaikka
                 in get_objects_for_user(request.user, 'view_toimipaikka', toimipaikat_query)
                 ]
@@ -845,7 +842,7 @@ class VarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSerializer):
         paattymis_pvm = data.get('paattymis_pvm', None)
 
         if not self.context['request'].user.has_perm('view_lapsi', lapsi_obj):
-            msg = {'lapsi': ['Invalid hyperlink - Object does not exist.', ]}
+            msg = {'lapsi': [ErrorMessages.GE008.value]}
             raise serializers.ValidationError(msg, code='invalid')
 
         self._validate_paos_specific_data(lapsi_obj, jarjestamismuoto_koodi, paattymis_pvm)
@@ -868,10 +865,10 @@ class VarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSerializer):
         if lapsi_obj.paos_organisaatio is not None:
             check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(lapsi_obj.oma_organisaatio, lapsi_obj.paos_organisaatio)
             if jarjestamismuoto_koodi not in jarjestamismuoto_koodit_paos:
-                msg = {'jarjestamismuoto_koodi': ['Invalid code for paos-lapsi.', ]}
+                msg = {'jarjestamismuoto_koodi': [ErrorMessages.VP005.value]}
                 raise serializers.ValidationError(msg, code='invalid')
         elif jarjestamismuoto_koodi in jarjestamismuoto_koodit_paos:
-            msg = {'jarjestamismuoto_koodi': ['Invalid code for non-paos-lapsi.', ]}
+            msg = {'jarjestamismuoto_koodi': [ErrorMessages.VP006.value]}
             raise serializers.ValidationError(msg, code='invalid')
 
     def _validate_jarjestamismuoto(self, lapsi_obj, jarjestamismuoto_koodi, paattymis_pvm):
@@ -888,19 +885,19 @@ class VarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSerializer):
 
         if lapsi_obj.vakatoimija is not None:
             if lapsi_obj.vakatoimija.kunnallinen_kytkin and jarjestamismuoto_koodi not in jarjestamismuoto_koodit_kunta:
-                msg = {'jarjestamismuoto_koodi': ['Invalid code for kunnallinen lapsi']}
+                msg = {'jarjestamismuoto_koodi': [ErrorMessages.VP007.value]}
                 raise serializers.ValidationError(msg, code='invalid')
             elif not lapsi_obj.vakatoimija.kunnallinen_kytkin and jarjestamismuoto_koodi not in jarjestamismuoto_koodit_yksityinen:
-                msg = {'jarjestamismuoto_koodi': ['Invalid code for yksityinen lapsi']}
+                msg = {'jarjestamismuoto_koodi': [ErrorMessages.VP008.value]}
                 raise serializers.ValidationError(msg, code='invalid')
 
     def _validate_vuorohoito(self, data):
         if not data['vuorohoito_kytkin']:
             msg = {}
             if 'paivittainen_vaka_kytkin' not in data or data['paivittainen_vaka_kytkin'] is None:
-                msg['paivittainen_vaka_kytkin'] = 'paivittainen_vaka_kytkin must be given if vuorohoito_kytkin is False'
+                msg['paivittainen_vaka_kytkin'] = [ErrorMessages.VP009.value]
             if 'kokopaivainen_vaka_kytkin' not in data or data['kokopaivainen_vaka_kytkin'] is None:
-                msg['kokopaivainen_vaka_kytkin'] = 'kokopaivainen_vaka_kytkin must be given if vuorohoito_kytkin is False'
+                msg['kokopaivainen_vaka_kytkin'] = [ErrorMessages.VP010.value]
             if msg:
                 raise serializers.ValidationError(msg, code='invalid')
 
@@ -936,7 +933,7 @@ class VarhaiskasvatuspaatosPatchSerializer(serializers.HyperlinkedModelSerialize
 
     def validate(self, data):
         if len(data) == 0:
-            raise serializers.ValidationError('No data given.')
+            raise serializers.ValidationError({'errors': [ErrorMessages.GE014.value]})
         return data
 
 
@@ -960,10 +957,10 @@ class VarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSerializer):
             fill_missing_fields_for_validations(data, instance)
 
         if not self.context['request'].user.has_perm('view_varhaiskasvatuspaatos', data['varhaiskasvatuspaatos']):
-            msg = {'varhaiskasvatuspaatos': ['Invalid hyperlink - Object does not exist.', ]}
+            msg = {'varhaiskasvatuspaatos': [ErrorMessages.GE008.value]}
             raise serializers.ValidationError(msg, code='invalid')
         elif data['varhaiskasvatuspaatos'].lapsi.paos_kytkin and data['varhaiskasvatuspaatos'].lapsi.paos_organisaatio != data['toimipaikka'].vakajarjestaja:
-            msg = {'non_field_errors': ['Vakajarjestaja is different than paos_organisaatio for lapsi.']}
+            msg = {'toimipaikka': [ErrorMessages.VS005.value]}
             raise serializers.ValidationError(msg, code='invalid')
 
         self._validate_jarjestamismuoto(data)
@@ -987,17 +984,17 @@ class VarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSerializer):
             jarjestamismuoto_koodit_kunta.extend(jarjestamismuoto_koodit_paos)
 
         if jarjestamismuoto_koodi not in (koodi.lower() for koodi in toimipaikka.jarjestamismuoto_koodi):
-            msg = {'varhaiskasvatuspaatos': ['jarjestamismuoto_koodi is invalid for toimipaikka']}
+            msg = {'varhaiskasvatuspaatos': [ErrorMessages.VS006.value]}
             raise serializers.ValidationError(msg, code='invalid')
 
         if vakapaatos.lapsi.paos_organisaatio is None:
             # Validate only non-paos-lapset, paos-lapset are validated in VarhaiskasvatuspaatosSerializer
             kunnallinen_kytkin = toimipaikka.vakajarjestaja.kunnallinen_kytkin
             if kunnallinen_kytkin and jarjestamismuoto_koodi not in jarjestamismuoto_koodit_kunta:
-                msg = {'varhaiskasvatuspaatos': ['jarjestamismuoto_koodi is invalid for kunnallinen toimipaikka']}
+                msg = {'varhaiskasvatuspaatos': [ErrorMessages.VS007.value]}
                 raise serializers.ValidationError(msg, code='invalid')
             elif not kunnallinen_kytkin and jarjestamismuoto_koodi not in jarjestamismuoto_koodit_yksityinen:
-                msg = {'varhaiskasvatuspaatos': ['jarjestamismuoto_koodi is invalid for yksityinen toimipaikka']}
+                msg = {'varhaiskasvatuspaatos': [ErrorMessages.VS008.value]}
                 raise serializers.ValidationError(msg, code='invalid')
 
     def _validate_paivamaarat_varhaiskasvatussuhde_toimipaikka(self, data):
@@ -1006,10 +1003,10 @@ class VarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSerializer):
 
         if toimipaikka_paattymis_pvm is not None:
             if not validators.validate_paivamaara1_before_paivamaara2(data['alkamis_pvm'], toimipaikka_paattymis_pvm):
-                raise ValidationError({'non_field_errors': ['varhaiskasvatussuhde.alkamis_pvm cannot be same or after toimipaikka.paattymis_pvm.']})
+                raise ValidationError({'errors': [ErrorMessages.VS009.value]})
             if(vakasuhde_paattymis_pvm is not None and
                     not validators.validate_paivamaara1_before_paivamaara2(vakasuhde_paattymis_pvm, toimipaikka_paattymis_pvm, can_be_same=True)):
-                raise ValidationError({'non_field_errors': ['varhaiskasvatussuhde.paattymis_pvm cannot be after toimipaikka.paattymis_pvm.']})
+                raise ValidationError({'errors': [ErrorMessages.VS010.value]})
 
     def _validate_paivamaarat_varhaiskasvatussuhde_varhaiskasvatuspaatos(self, data):
         vakapaatos = data['varhaiskasvatuspaatos']
@@ -1017,18 +1014,18 @@ class VarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSerializer):
         paattymis_pvm = data.get('paattymis_pvm', None)
 
         if not validators.validate_paivamaara1_before_paivamaara2(vakapaatos.alkamis_pvm, alkamis_pvm, can_be_same=True):
-            raise ValidationError({'alkamis_pvm': ['varhaiskasvatussuhde.alkamis_pvm must be after varhaiskasvatuspaatos.alkamis_pvm (or same)']})
+            raise ValidationError({'alkamis_pvm': [ErrorMessages.VP002.value]})
         if not validators.validate_paivamaara1_before_paivamaara2(alkamis_pvm, vakapaatos.paattymis_pvm, can_be_same=True):
-            raise ValidationError({'alkamis_pvm': ['varhaiskasvatussuhde.alkamis_pvm must be before varhaiskasvatuspaatos.paattymis_pvm (or same)']})
+            raise ValidationError({'alkamis_pvm': [ErrorMessages.VS011.value]})
 
         if paattymis_pvm:
             if not validators.validate_paivamaara1_before_paivamaara2(alkamis_pvm, paattymis_pvm, can_be_same=True):
-                raise ValidationError({'paattymis_pvm': ['paattymis_pvm must be after alkamis_pvm (or same)']})
+                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI004.value]})
             if not validators.validate_paivamaara1_before_paivamaara2(paattymis_pvm, vakapaatos.paattymis_pvm, can_be_same=True):
-                raise ValidationError({'paattymis_pvm': ['varhaiskasvatuspaatos.paattymis_pvm must be after varhaiskasvatussuhde.paattymis_pvm (or same)']})
+                raise ValidationError({'paattymis_pvm': [ErrorMessages.VP003.value]})
         elif vakapaatos.paattymis_pvm:
             # Raise error if vakapaatos has paattymis_pvm and vakasuhde doesn't have paattymis_pvm (existing or in request)
-            raise ValidationError({'paattymis_pvm': ['varhaiskasvatussuhde must have paattymis_pvm because varhaiskasvatuspaatos has paattymis_pvm']})
+            raise ValidationError({'paattymis_pvm': [ErrorMessages.VS012.value]})
 
 
 class PaosToimintaSerializer(serializers.HyperlinkedModelSerializer):
@@ -1056,21 +1053,17 @@ class PaosToimintaSerializer(serializers.HyperlinkedModelSerializer):
     def validate(self, data):
         if ('paos_organisaatio' in data and data['paos_organisaatio'] is not None and
                 'paos_toimipaikka' in data and data['paos_toimipaikka'] is not None):
-            msg = _("Either paos_organisaatio or paos_toimipaikka is needed, not both.")
-            raise serializers.ValidationError(msg, code='invalid')
+            raise serializers.ValidationError({'errors': [ErrorMessages.PT006.value]}, code='invalid')
 
         if 'paos_organisaatio' not in data and 'paos_toimipaikka' not in data:
-            msg = ("Either paos_organisaatio or paos_toimipaikka is needed")
-            raise serializers.ValidationError(msg, code='invalid')
+            raise serializers.ValidationError({'errors': [ErrorMessages.PT007.value]}, code='invalid')
 
         if not self.context['request'].user.has_perm('view_vakajarjestaja', data['oma_organisaatio']):
-            msg = {"oma_organisaatio": ["Invalid hyperlink - Object does not exist.", ]}
-            raise serializers.ValidationError(msg, code='invalid')
+            raise serializers.ValidationError({'oma_organisaatio': [ErrorMessages.GE008.value]}, code='invalid')
 
         if ('paos_organisaatio' in data and data['paos_organisaatio'] is not None and
                 not data['paos_organisaatio'].kunnallinen_kytkin):
-            msg = {"paos_organisaatio": ["paos_organisaatio must be kunta or kuntayhtyma.", ]}
-            raise serializers.ValidationError(msg, code='invalid')
+            raise serializers.ValidationError({'paos_organisaatio': [ErrorMessages.PT008.value]}, code='invalid')
 
         return data
 
@@ -1088,7 +1081,7 @@ class PaosOikeusSerializer(serializers.HyperlinkedModelSerializer):
 
     def validate(self, data):
         if 'tallentaja_organisaatio' not in data:
-            raise serializers.ValidationError({"tallentaja_organisaatio": ["This field is required"]}, code='invalid')
+            raise serializers.ValidationError({'tallentaja_organisaatio': [ErrorMessages.GE001.value]}, code='invalid')
         return data
 
 

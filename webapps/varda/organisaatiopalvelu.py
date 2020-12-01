@@ -14,6 +14,7 @@ from varda.clients.organisaatio_client import get_organisaatiopalvelu_info, get_
     check_if_toimipaikka_exists_by_name, get_organisaatio, create_organisaatio, update_organisaatio, get_changed_since, \
     get_multiple_organisaatio
 from varda.enums.aikaleima_avain import AikaleimaAvain
+from varda.enums.error_messages import ErrorMessages
 from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
 from varda.exceptions.invalid_koodi_uri_exception import InvalidKoodiUriException
 from varda.misc import list_to_chunks
@@ -315,11 +316,9 @@ def check_if_toimipaikka_exists_in_organisaatiopalvelu(vakajarjestaja_id, toimip
     if not toimipaikka_exists_already:
         return
     elif len(oids) == 0:
-        error_message = 'Could not check toimipaikka-duplicates from Organisaatiopalvelu. Please try again later.'
-        raise ValidationErrorRest({'nimi': [error_message]})
+        raise ValidationErrorRest({'errors': [ErrorMessages.TP007.value]})
     else:
-        error_message = 'Toimipaikka with name ' + toimipaikka_name + ' exists already in Organisaatiopalvelu, having oid(s) : ' + str(oids)
-        raise ValidationErrorRest({'nimi': [error_message]})
+        raise ValidationErrorRest({'nimi': [ErrorMessages.TP008.value]})
 
 
 def get_toimipaikka_json(toimipaikka_validated_data, vakajarjestaja_id):

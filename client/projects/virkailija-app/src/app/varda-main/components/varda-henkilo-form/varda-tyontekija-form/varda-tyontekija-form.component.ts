@@ -14,6 +14,7 @@ import { HenkiloRooliEnum } from 'projects/virkailija-app/src/app/utilities/mode
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { Subscription, Observable } from 'rxjs';
+import { TranslateService } from '@ngx-translate/core';
 
 
 @Component({
@@ -33,8 +34,8 @@ export class VardaTyontekijaFormComponent implements OnChanges, OnDestroy {
 
 
   i18n = VirkailijaTranslations;
-  private henkilostoErrorService = new HenkilostoErrorMessageService();
-  private deleteTyontekijaErrorService = new HenkilostoErrorMessageService();
+  private henkilostoErrorService: HenkilostoErrorMessageService;
+  private deleteTyontekijaErrorService: HenkilostoErrorMessageService;
   subscriptions: Array<Subscription> = [];
   toimipaikkaAccess: UserAccess;
   henkilonTutkinnot: Array<VardaTutkintoDTO>;
@@ -47,7 +48,11 @@ export class VardaTyontekijaFormComponent implements OnChanges, OnDestroy {
     private henkilostoService: VardaHenkilostoApiService,
     private modalService: VardaModalService,
     private snackBarService: VardaSnackBarService,
+    private translateService: TranslateService
   ) {
+    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
+    this.deleteTyontekijaErrorService = new HenkilostoErrorMessageService(translateService);
+
     this.tyontekijaFormErrors = this.henkilostoErrorService.initErrorList();
     this.deleteTyontekijaErrors = this.deleteTyontekijaErrorService.initErrorList();
 

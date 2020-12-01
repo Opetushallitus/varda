@@ -5,6 +5,7 @@ import { ErrorTree, HenkilostoErrorMessageService } from 'projects/virkailija-ap
 import { HuoltajaDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-maksutieto-dto.model';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { Observable } from 'rxjs';
+import { TranslateService } from '@ngx-translate/core';
 
 export interface HuoltajaFormResponse {
   index: number;
@@ -33,12 +34,14 @@ export class VardaMaksutietoHuoltajaComponent implements OnInit {
   element: ElementRef;
   expandPanel: boolean;
   maksutietoFormErrors: Observable<Array<ErrorTree>>;
-  private henkilostoErrorService = new HenkilostoErrorMessageService();
+  private henkilostoErrorService: HenkilostoErrorMessageService;
 
   constructor(
-    private el: ElementRef
+    private el: ElementRef,
+    translateService: TranslateService
   ) {
     this.element = this.el;
+    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
     this.maksutietoFormErrors = this.henkilostoErrorService.initErrorList();
   }
 

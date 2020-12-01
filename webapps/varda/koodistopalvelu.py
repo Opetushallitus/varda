@@ -1,38 +1,14 @@
 import datetime
-import enum
 import logging
 
 from django.db.models import Q
 
 from varda.cache import delete_cache_keys_related_model
 from varda.clients import koodistopalvelu_client
+from varda.enums.koodistot import Koodistot
 from varda.models import Z2_Koodisto, Z2_CodeTranslation, Z2_Code
 
-# Get an instance of a logger
 logger = logging.getLogger(__name__)
-
-
-class Koodistot(enum.Enum):
-    kunta_koodit = 'kunta_koodit'
-    kieli_koodit = 'kieli_koodit'
-    jarjestamismuoto_koodit = 'jarjestamismuoto_koodit'
-    toimintamuoto_koodit = 'toimintamuoto_koodit'
-    kasvatusopillinen_jarjestelma_koodit = 'kasvatusopillinen_jarjestelma_koodit'
-    toiminnallinen_painotus_koodit = 'toiminnallinen_painotus_koodit'
-    tyosuhde_koodit = 'tyosuhde_koodit'
-    tyoaika_koodit = 'tyoaika_koodit'
-    tehtavanimike_koodit = 'tehtavanimike_koodit'
-    sukupuoli_koodit = 'sukupuoli_koodit'
-    tutkinto_koodit = 'tutkinto_koodit'
-    maksun_peruste_koodit = 'maksun_peruste_koodit'
-    lahdejarjestelma_koodit = 'lahdejarjestelma_koodit'
-    postinumero_koodit = 'postinumero_koodit'
-
-    @classmethod
-    def list(cls):
-        return [koodisto.value for koodisto in cls]
-
-
 KOODISTOPALVELU_DICT = {
     Koodistot.kunta_koodit: 'kunta',
     Koodistot.kieli_koodit: 'kielikoodistoopetushallinto',
@@ -47,9 +23,9 @@ KOODISTOPALVELU_DICT = {
     Koodistot.tutkinto_koodit: 'vardatutkinto',
     Koodistot.maksun_peruste_koodit: 'vardamaksunperuste',
     Koodistot.lahdejarjestelma_koodit: 'vardalahdejarjestelma',
-    Koodistot.postinumero_koodit: 'posti'
+    Koodistot.postinumero_koodit: 'posti',
+    Koodistot.virhe_koodit: 'vardavirheviestit'
 }
-
 LANGUAGE_CODES = ['FI', 'SV', 'EN']
 
 

@@ -17,6 +17,7 @@ import { VardaModalService } from 'projects/virkailija-app/src/app/core/services
 import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/services/varda-date.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-varda-tyontekija-taydennyskoulutus',
@@ -47,15 +48,17 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
   taydennyskoulutusFormErrors: Observable<Array<ErrorTree>>;
   limitedEditAccess: boolean;
   firstAllowedDate = VardaDateService.henkilostoReleaseDate;
-  private henkilostoErrorService = new HenkilostoErrorMessageService();
+  private henkilostoErrorService: HenkilostoErrorMessageService;
 
   constructor(
     private el: ElementRef,
     private henkilostoService: VardaHenkilostoApiService,
     private modalService: VardaModalService,
     private snackBarService: VardaSnackBarService,
+    translateService: TranslateService
   ) {
     this.element = this.el;
+    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
     this.taydennyskoulutusFormErrors = this.henkilostoErrorService.initErrorList();
 
   }

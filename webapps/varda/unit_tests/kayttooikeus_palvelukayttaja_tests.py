@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 
 from varda.enums.tietosisalto_ryhma import TietosisaltoRyhma
 from varda.models import Z4_CasKayttoOikeudet, VakaJarjestaja
-from varda.unit_tests.test_utils import assert_status_code, base64_encoding
+from varda.unit_tests.test_utils import assert_status_code, base64_encoding, assert_validation_error
 
 
 class TestPalvelukayttajaKayttooikeus(TestCase):
@@ -213,8 +213,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         client.credentials(HTTP_AUTHORIZATION='Basic {}'.format(basic_auth_token))
         resp_apikey = client.get('/api/user/apikey/')
         assert_status_code(resp_apikey, status.HTTP_403_FORBIDDEN)
-        detail = resp_apikey.json().get('detail')
-        self.assertEqual(detail, 'Palvelukayttaja does not have Varda-permissions to just one active vaka-organization.')
+        assert_validation_error(resp_apikey, 'errors', 'PE008', 'User does not have permissions to just one active organization.')
 
     @responses.activate
     def test_palvelukayttaja_multiple_active_organisaatio(self):
@@ -252,8 +251,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         client.credentials(HTTP_AUTHORIZATION='Basic {}'.format(basic_auth_token))
         resp_apikey = client.get('/api/user/apikey/')
         assert_status_code(resp_apikey, status.HTTP_403_FORBIDDEN)
-        detail = resp_apikey.json().get('detail')
-        self.assertEqual(detail, 'Palvelukayttaja does not have Varda-permissions to just one active vaka-organization.')
+        assert_validation_error(resp_apikey, 'errors', 'PE008', 'User does not have permissions to just one active organization.')
 
     @responses.activate
     def test_palvelukayttaja_no_valid_kayttooikeus(self):
@@ -276,8 +274,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         client.credentials(HTTP_AUTHORIZATION='Basic {}'.format(basic_auth_token))
         resp_apikey = client.get('/api/user/apikey/')
         assert_status_code(resp_apikey, status.HTTP_403_FORBIDDEN)
-        detail = resp_apikey.json().get('detail')
-        self.assertEqual(detail, 'Palvelukayttaja does not have Varda-permissions to just one active vaka-organization.')
+        assert_validation_error(resp_apikey, 'errors', 'PE008', 'User does not have permissions to just one active organization.')
 
     def _mock_responses(self, organisaatiot, organisaatio_oid, username):
         responses.add(responses.GET,

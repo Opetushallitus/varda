@@ -12,6 +12,7 @@ import { VardaKoodistoService } from 'varda-shared';
 import { KoodistoEnum, KoodistoSortBy, KoodistoDTO, CodeDTO } from 'projects/varda-shared/src/lib/dto/koodisto-models';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
+import { TranslateService } from '@ngx-translate/core';
 
 
 
@@ -30,7 +31,7 @@ export class VardaTyontekijaTutkintoComponent implements OnChanges {
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
   @Output() changeTutkinnot = new EventEmitter<Array<VardaTutkintoDTO>>(true);
   tutkintoFormErrors: Observable<Array<ErrorTree>>;
-  private henkilostoErrorService = new HenkilostoErrorMessageService();
+  private henkilostoErrorService: HenkilostoErrorMessageService;
   i18n = VirkailijaTranslations;
   tutkintoViewLimit = 3;
   tutkintoOptions: Array<CodeDTO>;
@@ -47,7 +48,9 @@ export class VardaTyontekijaTutkintoComponent implements OnChanges {
     private koodistoService: VardaKoodistoService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private snackBarService: VardaSnackBarService,
+    translateService: TranslateService
   ) {
+    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
     this.tutkintoFormErrors = this.henkilostoErrorService.initErrorList();
     this.henkilonTutkinnot.subscribe(tutkinnot => {
       this.changeTutkinnot.emit(tutkinnot);

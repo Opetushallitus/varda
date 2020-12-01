@@ -1,4 +1,4 @@
-import datetime
+import logging
 
 from varda.enums.tietosisalto_ryhma import TietosisaltoRyhma
 from varda.migrations.production.setup import (get_vakajarjestaja_palvelukayttaja_permissions,
@@ -13,6 +13,9 @@ from varda.migrations.production.setup import (get_vakajarjestaja_palvelukayttaj
                                                get_tyontekija_katselija_permissions,
                                                get_taydennyskoulutus_katselija_permissions,
                                                get_toimijatiedot_tallentaja_permissions)
+
+
+logger = logging.getLogger(__name__)
 
 
 def add_groups_with_permissions():
@@ -2516,19 +2519,29 @@ def create_user_data():
     )
 
 
-def create_koodisto(name, name_koodistopalvelu, update_datetime, codes):
+def create_koodisto(name, name_koodistopalvelu, codes):
+    import datetime
+
+    from django.db import IntegrityError
+
     from varda.models import Z2_Koodisto, Z2_Code, Z2_CodeTranslation
     from varda import koodistopalvelu
 
-    koodisto_obj = Z2_Koodisto.objects.create(name=name,
-                                              name_koodistopalvelu=name_koodistopalvelu,
-                                              update_datetime=update_datetime,
-                                              version=1)
-    for code in codes:
-        code_obj = Z2_Code.objects.create(koodisto=koodisto_obj, code_value=code)
-        for lang in koodistopalvelu.LANGUAGE_CODES:
-            Z2_CodeTranslation.objects.create(code=code_obj, language=lang, name='test nimi',
-                                              description='test kuvaus', short_name='test lyhyt nimi')
+    update_datetime = datetime.datetime.strptime('2020-05-14', '%Y-%m-%d')
+    update_datetime = update_datetime.replace(tzinfo=datetime.timezone.utc)
+
+    try:
+        koodisto_obj = Z2_Koodisto.objects.create(name=name,
+                                                  name_koodistopalvelu=name_koodistopalvelu,
+                                                  update_datetime=update_datetime,
+                                                  version=1)
+        for code in codes:
+            code_obj = Z2_Code.objects.create(koodisto=koodisto_obj, code_value=code)
+            for lang in koodistopalvelu.LANGUAGE_CODES:
+                Z2_CodeTranslation.objects.create(code=code_obj, language=lang, name='test nimi',
+                                                  description='test kuvaus', short_name='test lyhyt nimi')
+    except IntegrityError:
+        logger.warning(f'Error creating koodisto {name}')
 
 
 def create_initial_koodisto_data():
@@ -2593,14 +2606,11 @@ def create_initial_koodisto_data():
         'lahdejarjestelma_koodit': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15']
     }
 
-    update_datetime = datetime.datetime.strptime('2020-05-14', '%Y-%m-%d')
-    update_datetime = update_datetime.replace(tzinfo=datetime.timezone.utc)
-
     for key, value in koodistopalvelu.KOODISTOPALVELU_DICT.items():
         # Some koodistot have been added afterwards, they have their own create functions
         if key.value not in koodisto_codes:
             continue
-        create_koodisto(key.value, value, update_datetime, koodisto_codes[key.value])
+        create_koodisto(key.value, value, koodisto_codes[key.value])
 
 
 def create_postinumero_koodisto_data():
@@ -2609,14 +2619,43 @@ def create_postinumero_koodisto_data():
     # No need to load all postinumerot initially because they are not used in validation
     codes = ['00100', '99999']
 
-    update_datetime = datetime.datetime.strptime('2020-11-01', '%Y-%m-%d')
-    update_datetime = update_datetime.replace(tzinfo=datetime.timezone.utc)
-
     koodisto_enum = koodistopalvelu.Koodistot.postinumero_koodit
     name = koodisto_enum.value
     koodistopalvelu_name = koodistopalvelu.KOODISTOPALVELU_DICT.get(koodisto_enum)
 
-    create_koodisto(name, koodistopalvelu_name, update_datetime, codes)
+    create_koodisto(name, koodistopalvelu_name, codes)
+
+
+def create_virhe_koodisto_data():
+    from varda import koodistopalvelu
+
+    # Load all codes that are used in unit testing
+    codes = ['GE001', 'GE002', 'GE003', 'GE004', 'GE005', 'GE006', 'GE007', 'GE008', 'GE009', 'GE010', 'GE011',
+             'GE012', 'GE013', 'GE014', 'GE015', 'GE016', 'GE017', 'GE018', 'DY001', 'DY002', 'DY003', 'DY004',
+             'DY005', 'DY006', 'DY007', 'VJ001', 'VJ002', 'VJ003', 'VJ004', 'VJ005', 'VJ006', 'VJ007', 'VJ008',
+             'VJ009', 'TP001', 'TP002', 'TP003', 'TP004', 'TP005', 'TP006', 'TP007', 'TP008', 'TP009', 'TP010',
+             'TP011', 'TP012', 'TP013', 'TP014', 'TP015', 'TP016', 'TO001', 'KP001', 'HE001', 'HE002', 'HE003',
+             'HE004', 'HE005', 'HE006', 'HE007', 'HE008', 'HE009', 'HE010', 'HE011', 'HE012', 'HE013', 'LA001',
+             'LA002', 'LA003', 'LA004', 'LA005', 'LA006', 'LA007', 'LA008', 'VP001', 'VP002', 'VP003', 'VP004',
+             'VP005', 'VP006', 'VP007', 'VP008', 'VP009', 'VP010', 'VP011', 'VS001', 'VS002', 'VS003', 'VS004',
+             'VS005', 'VS006', 'VS007', 'VS008', 'VS009', 'VS010', 'VS011', 'VS012', 'VS013', 'MA001', 'MA002',
+             'MA003', 'MA004', 'MA005', 'MA006', 'MA007', 'MA008', 'MA009', 'MA010', 'MA011', 'MA012', 'MA013',
+             'MA014', 'PT001', 'PT002', 'PT003', 'PT004', 'PT005', 'PT006', 'PT007', 'PT008', 'PT009', 'PT010',
+             'PO001', 'PO002', 'PO003', 'TY001', 'TY002', 'TY003', 'TY004', 'TY005', 'TU001', 'TU002', 'TU003',
+             'PS001', 'PS002', 'PS003', 'PS004', 'PS005', 'PS006', 'PS007', 'TA001', 'TA002', 'TA003', 'TA004',
+             'TA005', 'TA006', 'TA007', 'TA008', 'TA009', 'TA010', 'TA011', 'TA012', 'TA013', 'PP001', 'PP002',
+             'PP003', 'PP004', 'PP005', 'PP006', 'PP007', 'PP008', 'TH001', 'TH002', 'TH003', 'TH004', 'TH005',
+             'TH006', 'TK001', 'TK002', 'TK003', 'TK004', 'TK005', 'TK006', 'TK007', 'TK008', 'TK009', 'TK010',
+             'TK011', 'TK012', 'TK013', 'TK014', 'TK015', 'PE001', 'PE002', 'PE003', 'PE004', 'PE005', 'PE006',
+             'PE007', 'PE008', 'AD001', 'AD002', 'AD003', 'AD004', 'AD005', 'LO001', 'LO002', 'RF001', 'RF002',
+             'RF003', 'RF004', 'KO001', 'KO002', 'KO003', 'KO004', 'MI001', 'MI002', 'MI003', 'MI004', 'MI005',
+             'MI006', 'MI007', 'MI008', 'MI009', 'MI010', 'MI011', 'MI012', 'MI013', 'MI014', 'MI015', 'MI016']
+
+    koodisto_enum = koodistopalvelu.Koodistot.virhe_koodit
+    name = koodisto_enum.value
+    koodistopalvelu_name = koodistopalvelu.KOODISTOPALVELU_DICT.get(koodisto_enum)
+
+    create_koodisto(name, koodistopalvelu_name, codes)
 
 
 def get_vakajarjestaja_oids(create_all_vakajarjestajat):

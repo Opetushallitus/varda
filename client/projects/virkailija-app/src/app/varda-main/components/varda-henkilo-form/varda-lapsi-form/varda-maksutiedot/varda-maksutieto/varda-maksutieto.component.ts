@@ -17,6 +17,7 @@ import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { KoodistoDTO, VardaKoodistoService, KoodistoEnum } from 'varda-shared';
 import { VardaMaksutietoHuoltajaComponent } from './varda-maksutieto-huoltaja/varda-maksutieto-huoltaja.component';
+import { TranslateService } from '@ngx-translate/core';
 
 
 @Component({
@@ -45,7 +46,7 @@ export class VardaMaksutietoComponent implements OnInit, OnDestroy {
   maksutietoForm: FormGroup;
   maksutietoFormErrors: Observable<Array<ErrorTree>>;
   subscriptions: Array<Subscription> = [];
-  private henkilostoErrorService = new HenkilostoErrorMessageService();
+  private henkilostoErrorService: HenkilostoErrorMessageService;
   maksunperusteKoodisto: KoodistoDTO;
   huoltajaSaveStatus: { success: number, failure: number };
   minEndDate: Date;
@@ -59,8 +60,10 @@ export class VardaMaksutietoComponent implements OnInit, OnDestroy {
     private modalService: VardaModalService,
     private koodistoService: VardaKoodistoService,
     private snackBarService: VardaSnackBarService,
+    translateService: TranslateService
   ) {
     this.element = this.el;
+    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
     this.maksutietoFormErrors = this.henkilostoErrorService.initErrorList();
     this.koodistoService.getKoodisto(KoodistoEnum.maksunperuste).subscribe(koodisto => this.maksunperusteKoodisto = koodisto);
   }

@@ -1,9 +1,9 @@
 import datetime
 import unittest
 from django.conf import settings
-from rest_framework.exceptions import ErrorDetail, ValidationError as ValidationErrorRest
-from varda.validators import validate_henkilotunnus, validate_paivamaara1_before_paivamaara2, \
-    validate_paivamaara1_after_paivamaara2, validate_vaka_date
+from rest_framework.exceptions import ValidationError as ValidationErrorRest
+from varda.validators import (validate_henkilotunnus, validate_paivamaara1_before_paivamaara2,
+                              validate_paivamaara1_after_paivamaara2, validate_vaka_date)
 
 
 class ValidatorsTests(unittest.TestCase):
@@ -18,7 +18,9 @@ class ValidatorsTests(unittest.TestCase):
         with self.assertRaises(ValidationErrorRest) as error:
             settings.PRODUCTION_ENV = True
             validate_henkilotunnus('180207-913F')
-        self.assertEqual(error.exception.detail, {'henkilotunnus': [ErrorDetail(string='180207-913F : Temporary personal identification is not permitted.', code='invalid')]})
+        self.assertEqual(error.exception.detail, {
+            'henkilotunnus': [{'error_code': 'HE009', 'description': 'Temporary henkilotunnus is not permitted.'}]
+        })
 
     def test_validate_henkilotunnus_non_production_permanent_hetu(self):
         try:
@@ -50,4 +52,4 @@ class ValidatorsTests(unittest.TestCase):
             validate_vaka_date(datetime.date(2000, 1, 1))
             validate_vaka_date(datetime.date(2010, 1, 1))
         except ValidationErrorRest:
-            self.fail('ValidationErrorRest was raised unexpectedly!')
+            self.fail('ValidationError was raised unexpectedly!')

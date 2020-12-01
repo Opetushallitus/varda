@@ -7,7 +7,7 @@ from django.test import TestCase
 from guardian.models import GroupObjectPermission
 from varda.models import Toimipaikka, PaosOikeus, Huoltaja, Huoltajuussuhde, Henkilo, Lapsi
 from varda.permissions import change_paos_tallentaja_organization
-from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient
+from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, assert_validation_error
 
 
 class VardaPaosTests(TestCase):
@@ -17,7 +17,7 @@ class VardaPaosTests(TestCase):
         client = SetUpTestClient('tester4').client()
         resp = client.get('/api/v1/vakajarjestajat/1/paos-toimipaikat/')
         assert_status_code(resp, 200)
-        self.assertEqual(json.loads(resp.content)["count"], 2)
+        self.assertEqual(json.loads(resp.content)['count'], 2)
 
     def test_assign_organisaatio_paos_vaka_permissions(self):
         client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja_1
@@ -336,17 +336,17 @@ class VardaPaosTests(TestCase):
 
         resp_tester2 = tester2_client.put('/api/v1/varhaiskasvatussuhteet/4/', vakasuhde_4, content_type='application/json')
         assert_status_code(resp_tester2, 403)
-        self.assertEqual(json.loads(resp_tester2.content), {'detail': 'User does not have permissions to change this object.'})
+        assert_validation_error(resp_tester2, 'errors', 'PE001', 'User does not have permissions to change this object.')
         resp_tester5 = tester5_client.put('/api/v1/varhaiskasvatussuhteet/4/', vakasuhde_4, content_type='application/json')
         assert_status_code(resp_tester5, 403)
-        self.assertEqual(json.loads(resp_tester5.content), {'detail': 'User does not have permissions to change this object.'})
+        assert_validation_error(resp_tester5, 'errors', 'PE001', 'User does not have permissions to change this object.')
 
         resp_tester2 = tester2_client.put('/api/v1/varhaiskasvatuspaatokset/4/', vakapaatos_4, content_type='application/json')
         assert_status_code(resp_tester2, 403)
-        self.assertEqual(json.loads(resp_tester2.content), {'detail': 'User does not have permissions to change this object.'})
+        assert_validation_error(resp_tester2, 'errors', 'PE001', 'User does not have permissions to change this object.')
         resp_tester5 = tester5_client.put('/api/v1/varhaiskasvatuspaatokset/4/', vakapaatos_4, content_type='application/json')
         assert_status_code(resp_tester5, 403)
-        self.assertEqual(json.loads(resp_tester5.content), {'detail': 'User does not have permissions to change this object.'})
+        assert_validation_error(resp_tester5, 'errors', 'PE001', 'User does not have permissions to change this object.')
 
         resp_tester2 = tester2_client.get('/api/v1/varhaiskasvatussuhteet/4/')
         assert_status_code(resp_tester2, 200)

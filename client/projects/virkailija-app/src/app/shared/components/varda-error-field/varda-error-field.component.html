@@ -30,7 +30,9 @@
       <span *ngFor="let key of errorBranch.keys">
         <i> {{ key }} <mat-icon>chevron_right</mat-icon></i>
       </span>
-      <b *ngFor="let errorText of errorBranch.values"> {{ errorText | translate }} </b>
+      <b *ngFor="let errorValue of errorBranch.values">
+        {{ errorValue.errorTranslation }}
+      </b>
     </div>
   </div>
 </ng-container>

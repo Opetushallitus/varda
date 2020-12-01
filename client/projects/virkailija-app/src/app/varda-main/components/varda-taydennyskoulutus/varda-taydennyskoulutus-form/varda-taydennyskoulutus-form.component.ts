@@ -13,6 +13,7 @@ import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/mode
 import { VardaDateService } from '../../../services/varda-date.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-varda-taydennyskoulutus-form',
@@ -33,15 +34,17 @@ export class VardaTaydennyskoulutusFormComponent implements OnInit {
   editFormBoolean: boolean;
   limitedEditAccess: boolean;
   firstAllowedDate = VardaDateService.henkilostoReleaseDate;
-  private henkilostoErrorService = new HenkilostoErrorMessageService();
+  private henkilostoErrorService: HenkilostoErrorMessageService;
   isLoading = new BehaviorSubject<boolean>(false);
 
   constructor(
     private snackBarService: VardaSnackBarService,
     private modalService: VardaModalService,
     private vakajarjestajaService: VardaVakajarjestajaService,
-    private henkilostoService: VardaHenkilostoApiService
+    private henkilostoService: VardaHenkilostoApiService,
+    translateService: TranslateService
   ) {
+    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
     this.taydennyskoulutusFormErrors = this.henkilostoErrorService.initErrorList();
   }
 

@@ -5,6 +5,7 @@ from rest_framework import serializers
 
 from varda import related_object_validations, validators
 from varda.cache import caching_to_representation, get_object_ids_for_user_by_model
+from varda.enums.error_messages import ErrorMessages
 from varda.misc_viewsets import ViewSetValidator
 from varda.models import (Henkilo, TilapainenHenkilosto, Tutkinto, Tyontekija, VakaJarjestaja, Palvelussuhde,
                           Tyoskentelypaikka, Toimipaikka, PidempiPoissaolo, TaydennyskoulutusTyontekija,
@@ -23,8 +24,6 @@ from varda.serializers_common import OidRelatedField, TunnisteRelatedField
 from varda.validators import (validate_paattymispvm_same_or_after_alkamispvm, validate_paivamaara1_after_paivamaara2,
                               validate_paivamaara1_before_paivamaara2, parse_paivamaara,
                               fill_missing_fields_for_validations)
-
-_tyontekija_not_specified_error_message = 'Tyontekija not specified. Use (tyontekija), (henkilo_oid, vakajarjestaja_oid) or (lahdejarjestelma, tunniste).'
 
 
 class TyontekijaHLField(serializers.HyperlinkedRelatedField):
@@ -107,7 +106,7 @@ class TyontekijaSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedMode
         with ViewSetValidator() as validator:
             henkilo = data.get('henkilo')
             if henkilo and henkilo.lapsi.exists():
-                validator.error('henkilo', 'This henkilo is already referenced by lapsi objects')
+                validator.error('henkilo', ErrorMessages.TY003.value)
 
             # Validate only when updating existing henkilo
             if self.instance:
@@ -118,7 +117,7 @@ class TyontekijaSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedMode
                                                                                         data,
                                                                                         'henkilo')
                 if 'vakajarjestaja' in data and data['vakajarjestaja'].id != instance.vakajarjestaja.id:
-                    validator.error('vakajarjestaja', 'Changing of vakajarjestaja is not allowed')
+                    validator.error('vakajarjestaja', ErrorMessages.GE013.value)
 
         return data
 
@@ -155,9 +154,9 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
                 instance = self.instance
                 fill_missing_fields_for_validations(data, instance)
                 if 'vakajarjestaja' in data and data['vakajarjestaja'].id != instance.vakajarjestaja.id:
-                    validator.error('vakajarjestaja', 'Changing of vakajarjestaja is not allowed')
+                    validator.error('vakajarjestaja', ErrorMessages.GE013.value)
                 if 'kuukausi' in data and data['kuukausi'] != instance.kuukausi:
-                    validator.error('kuukausi', 'Changing of kuukausi is not allowed')
+                    validator.error('kuukausi', ErrorMessages.GE013.value)
                 self.validate_workers_and_working_hours(data, validator)
             return data
 
@@ -166,28 +165,28 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
                                                                        kuukausi__year=data['kuukausi'].year,
                                                                        kuukausi__month=data['kuukausi'].month)
         if tilapainen_henkilosto_qs.exists():
-            validator.error('kuukausi', 'tilapainen henkilosto already exists for this month.')
+            validator.error('kuukausi', ErrorMessages.TH001.value)
 
     def validate_date_within_vakajarjestaja(self, data, validator):
         vakajarjestaja = data['vakajarjestaja']
         kuukausi = data['kuukausi']
         if kuukausi < vakajarjestaja.alkamis_pvm:
-            validator.error('kuukausi', 'kuukausi is not after vakajarjestaja.alkamis_pvm')
+            validator.error('kuukausi', ErrorMessages.TH002.value)
         if vakajarjestaja.paattymis_pvm is not None and kuukausi > vakajarjestaja.paattymis_pvm:
-            validator.error('kuukausi', 'kuukausi is not before vakajarjestaja.paattymis_pvm')
+            validator.error('kuukausi', ErrorMessages.TH003.value)
 
     def validate_workers_and_working_hours(self, data, validator):
         tyontekijat_count = data['tyontekijamaara']
         hours_count = data['tuntimaara']
         if tyontekijat_count == 0 and hours_count != 0:
-            validator.error('tuntimaara', 'tuntimaara can not be zero if tyontekijamaara is greater than zero')
+            validator.error('tuntimaara', ErrorMessages.TH004.value)
         if tyontekijat_count != 0 and hours_count == 0:
-            validator.error('tyontekijamaara', 'tyontekijamaara can not be zero if tuntimaara is greater than zero')
+            validator.error('tyontekijamaara', ErrorMessages.TH005.value)
 
     def validate_date_not_in_future(self, data, validator):
         kuukausi = data['kuukausi']
         if kuukausi > datetime.date.today():
-            validator.error('kuukausi', 'kuukausi must be in the past')
+            validator.error('kuukausi', ErrorMessages.TH006.value)
 
 
 class TutkintoSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
@@ -219,9 +218,9 @@ class TutkintoSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelS
             toimipaikka = data.get('toimipaikka')
             henkilo = data.get('henkilo')
             if not Tyontekija.objects.filter(vakajarjestaja=vakajarjestaja, henkilo=henkilo).exists():
-                validator.error('tyontekija', 'Provided vakajarjestaja has not added this henkilo as tyontekija')
+                validator.error('tyontekija', ErrorMessages.TU002.value)
             if vakajarjestaja and toimipaikka and vakajarjestaja != toimipaikka.vakajarjestaja:
-                validator.error('toimipaikka', 'Provided toimipaikka is not matching provided vakajarjestaja')
+                validator.error('toimipaikka', ErrorMessages.TU003.value)
         return data
 
 
@@ -254,7 +253,7 @@ class PalvelussuhdeSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedM
                     validate_paattymispvm_same_or_after_alkamispvm(data)
 
                 if data['paattymis_pvm'] is None and data['tyosuhde_koodi'] == '2':
-                    validator.error('paattymis_pvm', 'paattymis_pvm can not be none for tyosuhde_koodi 2')
+                    validator.error('paattymis_pvm', ErrorMessages.PS003.value)
 
                 self.validate_tutkinto(data['tyontekija'], data['tutkinto_koodi'], validator)
                 if 'tyontekija' in data:
@@ -268,7 +267,7 @@ class PalvelussuhdeSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedM
             with ViewSetValidator() as validator:
                 with validator.wrap():
                     if data['tyosuhde_koodi'] == '2' and ('paattymis_pvm' not in data or data['paattymis_pvm'] is None):
-                        validator.error('paattymis_pvm', 'paattymis_pvm is required for tyosuhde_koodi 2')
+                        validator.error('paattymis_pvm', ErrorMessages.PS003.value)
                     validate_paattymispvm_same_or_after_alkamispvm(data)
 
                 self.validate_tutkinto(data['tyontekija'], data['tutkinto_koodi'], validator)
@@ -281,10 +280,10 @@ class PalvelussuhdeSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedM
     def validate_tutkinto(self, tyontekija, tutkinto_koodi, validator):
         if tutkinto_koodi == '003':  # Ei tutkintoa
             if tyontekija.henkilo.tutkinnot.exclude(tutkinto_koodi='003').exists():
-                validator.error('tutkinto_koodi', 'tyontekija has tutkinnot other than just 003.')
+                validator.error('tutkinto_koodi', ErrorMessages.PS004.value)
         else:
             if not tyontekija.henkilo.tutkinnot.filter(tutkinto_koodi=tutkinto_koodi).exists():
-                validator.error('tutkinto_koodi', 'tyontekija doesn\'t have the given tutkinto.')
+                validator.error('tutkinto_koodi', ErrorMessages.PS005.value)
 
 
 class TyoskentelypaikkaSerializer(serializers.HyperlinkedModelSerializer):
@@ -324,7 +323,7 @@ class TyoskentelypaikkaSerializer(serializers.HyperlinkedModelSerializer):
             validate_tyoskentelypaikka_general(validator, data, toimipaikka, palvelussuhde, kiertava_tyontekija_kytkin)
 
             if toimipaikka and toimipaikka.vakajarjestaja_id != palvelussuhde.tyontekija.vakajarjestaja_id:
-                validator.error('toimipaikka', 'Toimipaikka must have the same vakajarjestaja as tyontekija')
+                validator.error('toimipaikka', ErrorMessages.TA005.value)
 
         return data
 
@@ -332,9 +331,9 @@ class TyoskentelypaikkaSerializer(serializers.HyperlinkedModelSerializer):
 def validate_tyoskentelypaikka_general(validator, data, toimipaikka, palvelussuhde,
                                        kiertava_tyontekija_kytkin, tyoskentelypaikka_id=None):
     if kiertava_tyontekija_kytkin and toimipaikka:
-        validator.error('kiertava_tyontekija_kytkin', 'toimipaikka can\'t be specified with kiertava_tyontekija_kytkin.')
+        validator.error('kiertava_tyontekija_kytkin', ErrorMessages.TA004.value)
     if not kiertava_tyontekija_kytkin and not toimipaikka:
-        validator.error('toimipaikka', 'toimipaikka is required if kiertava_tyontekija_kytkin is false.')
+        validator.error('toimipaikka', ErrorMessages.TA012.value)
 
     validate_tyoskentelypaikka_dates(data, palvelussuhde, validator)
 
@@ -357,16 +356,16 @@ def validate_tyoskentelypaikka_dates(validated_data, palvelussuhde, validator):
     tyoskentelypaikka_alkamis_pvm = validated_data.get('alkamis_pvm', None)
     if tyoskentelypaikka_paattymis_pvm:
         if (palvelussuhde.paattymis_pvm is not None and not validators.validate_paivamaara1_before_paivamaara2(tyoskentelypaikka_paattymis_pvm, palvelussuhde.paattymis_pvm, can_be_same=True)):
-            validator.error('paattymis_pvm', 'paattymis_pvm must be before palvelussuhde paattymis_pvm (or same).')
+            validator.error('paattymis_pvm', ErrorMessages.TA006.value)
         if not validate_paivamaara1_after_paivamaara2(tyoskentelypaikka_paattymis_pvm, '2020-09-01', can_be_same=True):
-            validator.error('paattymis_pvm', 'paattymis_pvm must be after 2020-09-01 (or same)')
+            validator.error('paattymis_pvm', ErrorMessages.TA007.value)
     elif palvelussuhde.paattymis_pvm:
-        validator.error('paattymis_pvm', 'tyoskentelypaikka must have paattymis_pvm because palvelussuhde has paattymis_pvm')
+        validator.error('paattymis_pvm', ErrorMessages.TA013.value)
 
     if not validators.validate_paivamaara1_after_paivamaara2(tyoskentelypaikka_alkamis_pvm, palvelussuhde.alkamis_pvm, can_be_same=True):
-        validator.error('alkamis_pvm', 'alkamis_pvm must be after palvelussuhde alkamis_pvm (or same).')
+        validator.error('alkamis_pvm', ErrorMessages.TA008.value)
     if not validators.validate_paivamaara1_before_paivamaara2(tyoskentelypaikka_alkamis_pvm, palvelussuhde.paattymis_pvm, can_be_same=True):
-        validator.error('alkamis_pvm', 'alkamis_pvm must be before palvelussuhde paattymis_pvm (or same).')
+        validator.error('alkamis_pvm', ErrorMessages.TA009.value)
 
 
 def validate_overlapping_kiertavyys(data, palvelussuhde, kiertava_tyontekija_kytkin, validator):
@@ -377,7 +376,7 @@ def validate_overlapping_kiertavyys(data, palvelussuhde, kiertava_tyontekija_kyt
     for item in related_palvelussuhde_tyoskentelypaikat:
         range_other = create_daterange(item.alkamis_pvm, item.paattymis_pvm)
         if daterange_overlap(range_this, range_other):
-            validator.error('kiertava_tyontekija_kytkin', 'can\'t have different values of kiertava_tyontekija_kytkin on overlapping date ranges')
+            validator.error('kiertava_tyontekija_kytkin', ErrorMessages.TA010.value)
             break
 
 
@@ -468,17 +467,17 @@ class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
             start = parse_paivamaara(validated_data['alkamis_pvm'])
             end = parse_paivamaara(validated_data['paattymis_pvm'])
             if (end - start).days < 60:
-                validator.error('paattymis_pvm', 'poissaolo duration must be 60 days or more.')
+                validator.error('paattymis_pvm', ErrorMessages.PP003.value)
 
     def validate_dates_palvelussuhde(self, validated_data, palvelussuhde, validator):
         if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
             if palvelussuhde.paattymis_pvm is not None and not validate_paivamaara1_before_paivamaara2(validated_data['paattymis_pvm'], palvelussuhde.paattymis_pvm, can_be_same=True):
-                validator.error('paattymis_pvm', 'paattymis_pvm must be before palvelussuhde paattymis_pvm (or same).')
+                validator.error('paattymis_pvm', ErrorMessages.PP004.value)
         if 'alkamis_pvm' in validated_data and validated_data['alkamis_pvm'] is not None:
             if not validate_paivamaara1_after_paivamaara2(validated_data['alkamis_pvm'], palvelussuhde.alkamis_pvm, can_be_same=True):
-                validator.error('alkamis_pvm', 'alkamis_pvm must be after palvelussuhde alkamis_pvm (or same).')
+                validator.error('alkamis_pvm', ErrorMessages.PP005.value)
             if not validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], palvelussuhde.paattymis_pvm, can_be_same=False):
-                validator.error('alkamis_pvm', 'alkamis_pvm must be before palvelussuhde paattymis_pvm.')
+                validator.error('alkamis_pvm', ErrorMessages.PP006.value)
 
 
 class PermissionCheckedTaydennyskoulutusTyontekijaListSerializer(serializers.ListSerializer):
@@ -489,8 +488,8 @@ class PermissionCheckedTaydennyskoulutusTyontekijaListSerializer(serializers.Lis
         taydennyskoulutus_tyontekija_dicts = super(PermissionCheckedTaydennyskoulutusTyontekijaListSerializer, self).to_internal_value(data)
         with ViewSetValidator() as validator:
             # Validate all provided tyontekijat exist and mutate 'tyontekija' field to data.
-            for taydennyskoulutus_tyontekija in taydennyskoulutus_tyontekija_dicts:
-                taydennyskoulutus_tyontekija['tyontekija'] = self._find_tyontekija(taydennyskoulutus_tyontekija, validator)
+            for index, taydennyskoulutus_tyontekija in enumerate(taydennyskoulutus_tyontekija_dicts):
+                taydennyskoulutus_tyontekija['tyontekija'] = self._find_tyontekija(taydennyskoulutus_tyontekija, validator, index)
                 if validator.messages:
                     break
 
@@ -498,7 +497,7 @@ class PermissionCheckedTaydennyskoulutusTyontekijaListSerializer(serializers.Lis
                 # All tyontekijat found so check permissions
                 user = self.context['request'].user
                 if not is_correct_taydennyskoulutus_tyontekija_permission(user, taydennyskoulutus_tyontekija_dicts, throws=False):
-                    validator.error('tyontekija', _tyontekija_not_specified_error_message)
+                    validator.error('0', ErrorMessages.TK001.value)
 
         return taydennyskoulutus_tyontekija_dicts
 
@@ -512,7 +511,7 @@ class PermissionCheckedTaydennyskoulutusTyontekijaListSerializer(serializers.Lis
             return super(PermissionCheckedTaydennyskoulutusTyontekijaListSerializer, self).to_representation(checked_data)
         return super(PermissionCheckedTaydennyskoulutusTyontekijaListSerializer, self).to_representation(data)
 
-    def _find_tyontekija(self, data, validator):
+    def _find_tyontekija(self, data, validator, index):
         henkilo_oid = data.get('henkilo_oid', None)
         vakajarjestaja_oid = data.get('vakajarjestaja_oid', None)
         lahdejarjestelma = data.get('lahdejarjestelma', None)
@@ -521,43 +520,43 @@ class PermissionCheckedTaydennyskoulutusTyontekijaListSerializer(serializers.Lis
         tyontekija = data.get('tyontekija', None)
 
         if (henkilo_oid is not None) == (vakajarjestaja_oid is None):
-            validator.error('henkilo_oid', 'Either both henkilo_oid and vakajarjestaja_oid, or neither must be given.')
+            validator.error_nested([index, 'henkilo_oid'], ErrorMessages.TK002.value)
             return None
         if (lahdejarjestelma is not None) == (tunniste is None):
-            validator.error('tunniste', 'Either both lahdejarjestelma and tunniste, or neither must be given.')
+            validator.error_nested([index, 'tunniste'], ErrorMessages.TK003.value)
             return None
 
         if henkilo_oid is not None:
-            tyontekija = self._find_tyontekija_by_henkilo_oid(validator, henkilo_oid, vakajarjestaja_oid, tyontekija)
+            tyontekija = self._find_tyontekija_by_henkilo_oid(validator, henkilo_oid, vakajarjestaja_oid, index, tyontekija)
 
         if tunniste is not None:
-            tyontekija = self._find_tyontekija_by_tunniste(validator, tunniste, lahdejarjestelma, tyontekija)
+            tyontekija = self._find_tyontekija_by_tunniste(validator, tunniste, lahdejarjestelma, index, tyontekija)
 
         if tyontekija is None:
-            validator.error('tyontekija', _tyontekija_not_specified_error_message)
+            validator.error_nested([index, 'tyontekija'], ErrorMessages.TK001.value)
 
         return tyontekija
 
-    def _find_tyontekija_by_henkilo_oid(self, validator, henkilo_oid, vakajarjestaja_oid, tyontekija=None):
+    def _find_tyontekija_by_henkilo_oid(self, validator, henkilo_oid, vakajarjestaja_oid, index, tyontekija=None):
         try:
             tyontekija_by_henkilo_oid = Tyontekija.objects.get(henkilo__henkilo_oid=henkilo_oid, vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
         except Tyontekija.DoesNotExist:
-            validator.error('henkilo_oid', 'Couldn\'t find tyontekija matching the given (henkilo_oid, vakajarjestaja_oid).')
+            validator.error_nested([index, 'henkilo_oid'], ErrorMessages.TK004.value)
             return
 
         if tyontekija is not None and tyontekija_by_henkilo_oid.id != tyontekija.id:
-            validator.error('henkilo_oid', 'henkilo_oid doesn\'t refer to the same tyontekija as url.')
+            validator.error_nested([index, 'henkilo_oid'], ErrorMessages.TK005.value)
         return tyontekija_by_henkilo_oid
 
-    def _find_tyontekija_by_tunniste(self, validator, tunniste, lahdejarjestelma, tyontekija=None):
+    def _find_tyontekija_by_tunniste(self, validator, tunniste, lahdejarjestelma, index, tyontekija=None):
         try:
             tyontekija_by_tunniste = Tyontekija.objects.get(tunniste=tunniste, lahdejarjestelma=lahdejarjestelma)
         except Tyontekija.DoesNotExist:
-            validator.error('tunniste', 'Couldn\'t find tyontekija matching the given (lahdejarjestelma, tunniste).')
+            validator.error_nested([index, 'tunniste'], ErrorMessages.TK006.value)
             return
 
         if tyontekija is not None and tyontekija_by_tunniste.id != tyontekija.id:
-            validator.error('tunniste', 'Tunniste doesn\'t refer to the same tyontekija as url or henkilo_oid.')
+            validator.error_nested([index, 'tunniste'], ErrorMessages.TK007.value)
         return tyontekija_by_tunniste
 
 
@@ -606,11 +605,11 @@ class NestedTaydennyskoulutusTyontekijaSerializer(serializers.ModelSerializer):
         with ViewSetValidator() as validator:
             if tehtavanimike_koodi is None:
                 # This field is required also in PATCH requests so we need to check it manually
-                validator.error('tehtavanimike_koodi', 'This field is required.')
+                validator.error('tehtavanimike_koodi', ErrorMessages.GE001.value)
                 return
 
             if not Tyontekija.objects.filter(id=tyontekija.id, palvelussuhteet__tyoskentelypaikat__tehtavanimike_koodi=tehtavanimike_koodi).exists():
-                validator.error('tehtavanimike_koodi', f'tyontekija with ID {tyontekija.id} doesn\'t have tehtavanimike_koodi {tehtavanimike_koodi}')
+                validator.error('tehtavanimike_koodi', ErrorMessages.TK008.value)
 
 
 class TaydennyskoulutusSerializer(serializers.HyperlinkedModelSerializer):
@@ -640,7 +639,7 @@ class TaydennyskoulutusSerializer(serializers.HyperlinkedModelSerializer):
         with ViewSetValidator() as validator:
             tyontekija_set = {(tyontekija['tyontekija'].id, tyontekija['tehtavanimike_koodi']) for tyontekija in data['taydennyskoulutukset_tyontekijat']}
             if len(tyontekija_set) != len(data['taydennyskoulutukset_tyontekijat']):
-                validator.error('taydennyskoulutus_tyontekijat', 'Duplicates detected.')
+                validator.error('taydennyskoulutus_tyontekijat', ErrorMessages.TK010.value)
 
         return data
 
@@ -663,12 +662,12 @@ class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
 
         with ViewSetValidator() as validator:
             if 'taydennyskoulutukset_tyontekijat' in data and ('taydennyskoulutus_tyontekijat_add' in data or 'taydennyskoulutus_tyontekijat_remove' in data):
-                validator.error('taydennyskoulutus_tyontekijat', 'taydennyskoulutus_tyontekijat_add and taydennyskoulutus_tyontekijat_remove fields cannot be used if tyontekijat is provided')
+                validator.error('taydennyskoulutus_tyontekijat', ErrorMessages.TK009.value)
 
             if 'taydennyskoulutukset_tyontekijat' in data:
                 tyontekijat_set = {(tyontekija['tyontekija'].id, tyontekija['tehtavanimike_koodi']) for tyontekija in data['taydennyskoulutukset_tyontekijat']}
                 if len(tyontekijat_set) != len(data['taydennyskoulutukset_tyontekijat']):
-                    validator.error('taydennyskoulutus_tyontekijat', 'Duplicates detected.')
+                    validator.error('taydennyskoulutus_tyontekijat', ErrorMessages.TK010.value)
 
         is_new_tyontekijat_added = self._validate_tyontekijat_add(instance, data)
         self._validate_tyontekijat_remove(instance, data, is_new_tyontekijat_added)
@@ -686,11 +685,11 @@ class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
         with ViewSetValidator() as validator:
             tyontekijat_add_set = {(tyontekija['tyontekija'].id, tyontekija['tehtavanimike_koodi']) for tyontekija in tyontekijat_add}
             if len(tyontekijat_add_set) != len(tyontekijat_add):
-                validator.error('taydennyskoulutus_tyontekijat_add', 'Duplicates detected.')
+                validator.error('taydennyskoulutus_tyontekijat_add', ErrorMessages.TK010.value)
             for tyontekija in tyontekijat_add:
                 if instance.taydennyskoulutukset_tyontekijat.filter(tyontekija=tyontekija['tyontekija'].id,
                                                                     tehtavanimike_koodi=tyontekija['tehtavanimike_koodi']).exists():
-                    validator.error('taydennyskoulutus_tyontekijat_add', 'Tyontekija cannot have same taydennyskoulutus more than once')
+                    validator.error('taydennyskoulutus_tyontekijat_add', ErrorMessages.TK011.value)
         return len(tyontekijat_add) > 0
 
     def _validate_tyontekijat_remove(self, instance, data, is_new_tyontekijat_added):
@@ -698,13 +697,13 @@ class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
             with ViewSetValidator() as validator:
                 tyontekijat_remove_set = {(tyontekija['tyontekija'].id, tyontekija['tehtavanimike_koodi']) for tyontekija in data['taydennyskoulutus_tyontekijat_remove']}
                 if len(tyontekijat_remove_set) != len(data['taydennyskoulutus_tyontekijat_remove']):
-                    validator.error('taydennyskoulutus_tyontekijat_remove', 'Duplicates detected.')
+                    validator.error('taydennyskoulutus_tyontekijat_remove', ErrorMessages.TK010.value)
                 for tyontekija in data['taydennyskoulutus_tyontekijat_remove']:
                     if not instance.taydennyskoulutukset_tyontekijat.filter(tyontekija=tyontekija['tyontekija'].id,
                                                                             tehtavanimike_koodi=tyontekija['tehtavanimike_koodi']).exists():
-                        validator.error('taydennyskoulutus_tyontekijat_remove', 'Tyontekija must have this taydennyskoulutus')
+                        validator.error('taydennyskoulutus_tyontekijat_remove', ErrorMessages.TK012.value)
                 if len(tyontekijat_remove_set) == instance.taydennyskoulutukset_tyontekijat.count() and not is_new_tyontekijat_added:
-                    validator.error('taydennyskoulutus_tyontekijat_remove', 'Cannot delete all tyontekijat from taydennyskoulutus')
+                    validator.error('taydennyskoulutus_tyontekijat_remove', ErrorMessages.TK013.value)
 
     def update(self, instance, validated_data):
         self._update_tyontekijat(instance, validated_data)
