@@ -83,11 +83,13 @@ export class VardaFormFieldComponent implements AfterContentInit, OnDestroy {
     }
 
     if (this.radioGroup) {
+      this.radioGroup.name = this.name || this.radioGroup.name; // by default radiogroup.name is incremental
       this.subscriptions.push(this.formControl.valueChanges.subscribe((change: Observable<boolean>) => {
         this.focusStatus$.next(true);
         setTimeout(() => this.focusStatus$.next(false), 2000);
       }));
     } else if (this.datePicker) {
+      this.datePicker.attrName = this.datePicker.attrName || this.name;
       this.subscriptions.push(this.datePicker.focusObservable().subscribe(value => this.focusStatus$.next(value)));
     }
 
@@ -95,9 +97,11 @@ export class VardaFormFieldComponent implements AfterContentInit, OnDestroy {
       childEl.nativeElement.name = childEl.nativeElement.name || this.name;
       childEl.nativeElement.placeholder = this.placeholder;
       childEl.nativeElement.setAttribute('aria-labelledby', this.labelId);
+      childEl.nativeElement.setAttribute('robot', this.name);
       this.subscriptions.push(fromEvent(childEl.nativeElement, 'focus').subscribe(() => this.focusStatus$.next(true)));
       this.subscriptions.push(fromEvent(childEl.nativeElement, 'blur').subscribe(() => this.focusStatus$.next(false)));
     });
+
   }
 }
 
