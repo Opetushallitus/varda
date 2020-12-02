@@ -6,7 +6,7 @@
 {% load i18n %}
 
 {% block body %}
-<body class="container">
+  <body class="container">
   <div class="container-fluid" style="margin-top: 30px">
     <div class="row-fluid">
       <div class="well" style="width: 320px; margin-left: auto; margin-right: auto">
@@ -26,10 +26,10 @@
                 <div class="form-group">
                   <label for="id_username">{{ form.username.label }}:</label>
                   <input type="text" name="username" maxlength="100"
-                      autocapitalize="off"
-                      autocorrect="off" class="form-control textinput textInput"
-                      id="id_username" required autofocus
-                      {% if form.username.value %}value="{{ form.username.value }}"{% endif %}>
+                         autocapitalize="off"
+                         autocorrect="off" class="form-control textinput textInput"
+                         id="id_username" required autofocus
+                         {% if form.username.value %}value="{{ form.username.value }}"{% endif %}>
                   {% if form.username.errors %}
                     <p class="text-error">
                       {{ form.username.errors|striptags }}
@@ -75,12 +75,21 @@
       <div class="well" style="width: 320px; margin-left: auto; margin-right: auto">
         <div class="row-fluid">
           <div>
-            <p><a href="{% url 'oppija_cas_ng_login' %}?next={{ next }}">{% trans "Kirjaudu sisään huoltajana käyttäen Suomi.fi tunnuksia" %}</a></p>
+            <p><a href="{% url 'oppija_cas_ng_login' %}?next={{ next }}&valtuudet=true">{% trans "Kirjaudu sisään huoltajana käyttäen Suomi.fi VALTUUDET tunnuksia" %}</a></p>
           </div>
         </div><!-- /row fluid -->
       </div><!--/.well-->
 
+      <div class="well" style="width: 320px; margin-left: auto; margin-right: auto">
+        <div class="row-fluid">
+          <div>
+            <p><a href="{% url 'oppija_cas_ng_login' %}?next={{ next }}&valtuudet=false">{% trans "Kirjaudu sisään käyttäen Suomi.fi tunnuksia" %}</a></p>
+          </div>
+        </div><!-- /row fluid -->
+      </div><!--/.well-->
+
+
     </div><!-- /.row-fluid -->
   </div><!-- /.container-fluid -->
-</body>
+  </body>
 {% endblock %}
