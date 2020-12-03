@@ -306,7 +306,7 @@ REST_FRAMEWORK = {
         'anon': '10/hour',
         'burst': '20/second',
         'sustained_get': '10000/day',
-        'sustained_modify': '50000/day',
+        'sustained_modify': '100000/day',
         'burst_strict': '5/second',
         'sustained_strict': '500/day',
         'koodistot': '50/hour'
