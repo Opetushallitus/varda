@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.4.12 (03.12.2020)
+CSCVARDA-1740: Backend-virheviestit koodistosta
+
 1.4.11 (26.11.2020)
 - CSCVARDA-2040 Varhaiskasvatus päätös - tilapäinen varhaiskasvatus kytkin
 - CSCVARDA-2048 Role Guard
