@@ -1,17 +1,24 @@
 import datetime
-import math
 
-from django.db.models import Q
+from django.db.models import Q, Case, Value, When, OuterRef, Subquery
+from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.timezone import make_aware
 from rest_framework import permissions
+from rest_framework.exceptions import ValidationError
 from rest_framework.mixins import ListModelMixin
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-
+from varda.enums.error_messages import ErrorMessages
+from varda.pagination import ChangeablePageSizePagination
+from varda import filters
+from varda.serializers_reporting import (KelaEtuusmaksatusAloittaneetSerializer, KelaEtuusmaksatusLopettaneetSerializer,
+                                         KelaEtuusmaksatusMaaraaikaisetSerializer, KelaEtuusmaksatusKorjaustiedotSerializer,
+                                         KelaEtuusmaksatusKorjaustiedotPoistetutSerializer, TiedonsiirtotilastoSerializer)
 from varda.enums.ytj import YtjYritysmuoto
-from varda.models import (Henkilo, KieliPainotus, Lapsi, Maksutieto, PaosOikeus, ToiminnallinenPainotus, Toimipaikka,
+from varda.models import (KieliPainotus, Lapsi, Maksutieto, PaosOikeus, ToiminnallinenPainotus, Toimipaikka,
                           VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde)
 from varda.permissions import CustomReportingViewAccess, auditlogclass
-from varda.serializers_reporting import KelaRaporttiSerializer, TiedonsiirtotilastoSerializer
+
 
 """
 Query-results for reports
@@ -19,59 +26,330 @@ Query-results for reports
 
 
 @auditlogclass
-class KelaRaporttiViewSet(GenericViewSet, ListModelMixin):
+class KelaEtuusmaksatusAloittaneetViewset(GenericViewSet, ListModelMixin):
     """
     list:
-    nouda ne lapset joiden vaka_päätöstä on päivitetty kuukauden
+    nouda ne lapset jotka ovat aloittaneet varhaiskasvatuksessa viikon
     sisällä tästä päivästä.
+
+    params:
+        page_size: change the amount of query results per page
+        luonti_pvm: fetch data after given luonti_pvm
     """
-    queryset = None
-    serializer_class = KelaRaporttiSerializer
+    filter_class = filters.KelaEtuusmaksatusAloittaneetFilter
+    queryset = Varhaiskasvatussuhde.objects.none()
+    serializer_class = KelaEtuusmaksatusAloittaneetSerializer
     permission_classes = (CustomReportingViewAccess, )
+    pagination_class = ChangeablePageSizePagination
+
+    def create_filters_for_data(self, luonti_pvm):
+        common_filters = _create_common_kela_filters()
+
+        # time window for fetching data
+        luonti_pvm_filter = Q(luonti_pvm__date__gte=luonti_pvm)
+
+        # paattymis_pvm must be none, vakapaatokset with end date are reported separately
+        paattymis_pvm_filter = Q(paattymis_pvm=None)
+
+        return (luonti_pvm_filter &
+                common_filters &
+                paattymis_pvm_filter)
 
     def get_queryset(self):
         now = datetime.datetime.now(datetime.timezone.utc)
-        startdate = now - datetime.timedelta(days=500)
-        lapsien_tiedot = []
-        vakapaatokset = Varhaiskasvatuspaatos.objects.filter(muutos_pvm__range=[startdate, now]).order_by('id')
-        for vakapaatos in vakapaatokset:
-            lapsen_id = vakapaatos.lapsi
-            henkilo = Henkilo.objects.get(lapsi=lapsen_id)
-            ikavuosia = (now.date() - henkilo.syntyma_pvm).days / 365.2425
-            vuosia = math.floor(ikavuosia)
-            kuukausia = math.floor((ikavuosia - vuosia) * 12)
-            ika = '%d vuotta, %d kuukautta' % (vuosia, kuukausia)
-            if vakapaatos.paattymis_pvm:
-                if (now.date() - vakapaatos.paattymis_pvm).days > 0:
-                    varhaiskasvatuksessa = False
-                else:
-                    varhaiskasvatuksessa = True
-            else:
-                varhaiskasvatuksessa = True
-            lapsen_tiedot = {
-                'henkilotunnus': henkilo.henkilotunnus,
-                'etunimet': henkilo.etunimet,
-                'sukunimi': henkilo.sukunimi,
-                'ika': ika,
-                'postinumero': henkilo.postinumero,
-                'kotikunta_koodi': henkilo.kotikunta_koodi,
-                'vaka_paatos_alkamis_pvm': vakapaatos.alkamis_pvm,
-                'vaka_paatos_paattymis_pvm': vakapaatos.paattymis_pvm,
-                'varhaiskasvatuksessa': varhaiskasvatuksessa,
-                'vaka_paatos_muutos_pvm': vakapaatos.muutos_pvm
-            }
-            lapsien_tiedot.append(lapsen_tiedot)
-        return lapsien_tiedot
+        luonti_pvm = self.request.query_params.get('luonti_pvm', None)
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+        # Limit the amount of objects to the dataset (maximum of 1 year ago)
+        if luonti_pvm is not None:
+            try:
+                luonti_pvm = datetime.datetime.strptime(luonti_pvm, '%Y-%m-%d')
+            except ValueError:
+                raise ValidationError({'luonti_pvm': [ErrorMessages.GE006.value]})
+            if (now.date() - luonti_pvm.date()).days > 365:
+                raise ValidationError({'luonti_pvm': [ErrorMessages.GE019.value]})
+        else:
+            luonti_pvm = now - datetime.timedelta(days=7)
 
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        dataset_filters = self.create_filters_for_data(luonti_pvm)
+
+        return (Varhaiskasvatussuhde.objects.select_related('varhaiskasvatuspaatos__lapsi', 'varhaiskasvatuspaatos__lapsi__henkilo')
+                                            .filter(dataset_filters)
+                                            .values('varhaiskasvatuspaatos__lapsi_id', 'alkamis_pvm',
+                                                    'varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus',
+                                                    'varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi')
+                                            .order_by('varhaiskasvatuspaatos__lapsi', 'alkamis_pvm').distinct('varhaiskasvatuspaatos__lapsi'))
+
+
+@auditlogclass
+class KelaEtuusmaksatusLopettaneetViewSet(GenericViewSet, ListModelMixin):
+    """
+    list:
+    nouda ne lapset jotka ovat lopettaneet varhaiskasvatuksessa viikon
+    sisällä tästä päivästä.
+
+    params:
+        page_size: Change amount of search results per page
+        muutos_pvm: Pick starting date for muutos_pvm
+    """
+    filter_class = filters.KelaEtuusmaksatusLopettaneetFilter
+    queryset = Varhaiskasvatussuhde.objects.none()
+    serializer_class = KelaEtuusmaksatusLopettaneetSerializer
+    permission_classes = (CustomReportingViewAccess, )
+    pagination_class = ChangeablePageSizePagination
+
+    def create_filters_for_data(self, muutos_pvm):
+        common_filters = _create_common_kela_filters()
+
+        muutos_pvm_filter = Q(muutos_pvm__gte=muutos_pvm)
+
+        paattymis_pvm_filter = Q(paattymis_pvm__isnull=True)
+
+        history_type_filter = ~Q(history_type='-')
+
+        return common_filters & muutos_pvm_filter & paattymis_pvm_filter & history_type_filter
+
+    def get_queryset(self):
+        muutos_pvm = self.get_muutos_pvm()
+
+        dataset_filters = self.create_filters_for_data(muutos_pvm)
+
+        latest_end_dates = (Varhaiskasvatussuhde.history.filter(dataset_filters)
+                                                        .values('id')
+                                                        .distinct('id')
+                                                        .order_by('id'))
+
+        id_filter = Q(id__in=latest_end_dates)
+
+        return (Varhaiskasvatussuhde.history.select_related('varhaiskasvatuspaatos__lapsi', 'lapsi__henkilo')
+                                            .filter(id_filter & Q(paattymis_pvm__isnull=False))
+                                            .values('varhaiskasvatuspaatos__lapsi_id', 'paattymis_pvm',
+                                                    'varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus',
+                                                    'varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi')
+                                            .order_by('id', 'varhaiskasvatuspaatos__lapsi', 'paattymis_pvm').distinct('id'))
+
+    def get_muutos_pvm(self):
+        now = datetime.datetime.now(datetime.timezone.utc)
+        muutos_pvm = self.request.query_params.get('muutos_pvm', None)
+
+        # Limit the amount of objects to the dataset (1 year past)
+        if muutos_pvm is not None:
+            try:
+                muutos_pvm = datetime.datetime.strptime(muutos_pvm, '%Y-%m-%d')
+                aware_muutos_pvm = make_aware(muutos_pvm)
+            except ValueError:
+                raise ValidationError({'muutos_pvm': [ErrorMessages.GE006.value]})
+            if (now.date() - muutos_pvm.date()).days > 365:
+                raise ValidationError({'muutos_pvm': [ErrorMessages.GE019.value]})
+        else:
+            aware_muutos_pvm = now - datetime.timedelta(days=7)
+
+        return aware_muutos_pvm
+
+
+@auditlogclass
+class KelaEtuusmaksatusMaaraaikaisetViewSet(GenericViewSet, ListModelMixin):
+    """
+    list:
+    nouda ne lapset jotka ovat aloittaneet määräaikaisessa varhaiskasvatuksessa viikon
+    sisällä tästä päivästä.
+
+    params:
+        page_size: Change amount of results per page of response
+        luonti_pvm: Change alkamis_pvm of fetched data
+    """
+    filter_class = filters.KelaEtuusmaksatusAloittaneetFilter
+    filter_backends = (DjangoFilterBackend,)
+    queryset = Varhaiskasvatussuhde.history.none()
+    serializer_class = KelaEtuusmaksatusMaaraaikaisetSerializer
+    permission_classes = (CustomReportingViewAccess, )
+    pagination_class = ChangeablePageSizePagination
+
+    def create_filters_for_data(self, luonti_pvm):
+        common_filters = _create_common_kela_filters()
+
+        # time window for fetching data
+        luonti_pvm_filter = Q(luonti_pvm__date__gte=luonti_pvm)
+
+        # maaraaikainen must always have an end date
+        paattymis_pvm_filter = Q(paattymis_pvm__isnull=False)
+
+        return (luonti_pvm_filter &
+                common_filters &
+                paattymis_pvm_filter)
+
+    def get_queryset(self):
+        now = datetime.datetime.now()
+        luonti_pvm = self.request.query_params.get('luonti_pvm', None)
+
+        # Limit the amount of objects to the dataset (1 year past)
+        if luonti_pvm is not None:
+            try:
+                luonti_pvm = datetime.datetime.strptime(luonti_pvm, '%Y-%m-%d')
+            except ValueError:
+                raise ValidationError({'luonti_pvm': [ErrorMessages.GE006.value]})
+            if (now - luonti_pvm).days > 365:
+                raise ValidationError({'luonti_pvm': [ErrorMessages.GE019.value]})
+        else:
+            luonti_pvm = now - datetime.timedelta(days=7)
+
+        dataset_filters = self.create_filters_for_data(luonti_pvm)
+
+        return (Varhaiskasvatussuhde.objects.select_related('varhaiskasvatuspaatos__lapsi', 'varhaiskasvatuspaatos__lapsi__henkilo')
+                                            .filter(dataset_filters)
+                                            .values('varhaiskasvatuspaatos__lapsi_id', 'alkamis_pvm', 'paattymis_pvm',
+                                                    'varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus',
+                                                    'varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi')
+                                            .order_by('varhaiskasvatuspaatos__lapsi', 'alkamis_pvm', 'paattymis_pvm')
+                                            .distinct('varhaiskasvatuspaatos__lapsi'))
+
+
+@auditlogclass
+class KelaEtuusmaksatusKorjaustiedotViewSet(GenericViewSet, ListModelMixin):
+    """
+    list:
+    nouda ne lapset joiden tietoihin on tullut muutoksia viimeisen viikon sisällä.
+
+    params:
+        page_size: change the number of query results per page
+        muutos_pvm: change starting date for returned changes
+    """
+    filter_backends = (DjangoFilterBackend,)
+    queryset = Varhaiskasvatussuhde.history.none()
+    serializer_class = KelaEtuusmaksatusKorjaustiedotSerializer
+    permission_classes = (CustomReportingViewAccess, )
+    pagination_class = ChangeablePageSizePagination
+
+    def create_filters_for_data(self, aware_muutos_pvm):
+        common_filters = _create_common_kela_filters()
+
+        # time window for fetching data
+        time_window_filter = Q(muutos_pvm__gte=aware_muutos_pvm) & Q(luonti_pvm__lt=aware_muutos_pvm)
+
+        # Must be active at or after
+        # TO-DO change filter to 2021-18-01
+        paattymis_pvm_date_gte = datetime.datetime(2019, 9, 4)
+        paattymis_pvm_filter = (Q(paattymis_pvm__isnull=True) | Q(paattymis_pvm__gte=paattymis_pvm_date_gte))
+
+        history_type_filter = ~Q(history_type='-')
+
+        return (time_window_filter &
+                paattymis_pvm_filter &
+                history_type_filter &
+                common_filters)
+
+    def get_queryset(self):
+        now = datetime.datetime.now(datetime.timezone.utc)
+        muutos_pvm = self.request.query_params.get('muutos_pvm', None)
+
+        if muutos_pvm is not None:
+            try:
+                muutos_pvm = datetime.datetime.strptime(muutos_pvm, '%Y-%m-%d')
+                aware_muutos_pvm = make_aware(muutos_pvm)
+            except ValueError:
+                raise ValidationError({'muutos_pvm': [ErrorMessages.GE006.value]})
+            if (now.date() - muutos_pvm.date()).days > 365:
+                raise ValidationError({'muutos_pvm': [ErrorMessages.GE019.value]})
+        else:
+            aware_muutos_pvm = now - datetime.timedelta(days=7)
+
+        dataset_filters = self.create_filters_for_data(aware_muutos_pvm)
+
+        latest_changed_objects = Varhaiskasvatussuhde.history.filter(dataset_filters)
+        id_filter = Q(id__in=latest_changed_objects.values('id'))
+
+        history_subquery = Varhaiskasvatussuhde.history.filter(id=OuterRef('id')).order_by('history_id')
+
+        return (Varhaiskasvatussuhde.history.select_related('varhaiskasvatuspaatos__lapsi', 'varhaiskasvatuspaatos__lapsi__henkilo')
+                                            .annotate(new_alkamis_pvm=(Case(When(alkamis_pvm=Subquery(history_subquery.values('alkamis_pvm')[:1]), then=Value('0001-01-01')), default=Subquery(history_subquery.values('alkamis_pvm')[:1]))),
+                                                      new_paattymis_pvm=(Case(When(paattymis_pvm=Subquery(history_subquery.values('paattymis_pvm')[:1]), then=Value('0001-01-01')), default=Subquery(history_subquery.values('paattymis_pvm')[:1])))
+                                                      )
+                                            .filter(id_filter & ~Q(Q(new_alkamis_pvm='0001-01-01') & Q(new_paattymis_pvm='0001-01-01')))
+                                            .values('id', 'varhaiskasvatuspaatos__lapsi_id', 'alkamis_pvm', 'paattymis_pvm',
+                                                    'new_alkamis_pvm', 'new_paattymis_pvm',
+                                                    'varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus',
+                                                    'varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi')
+                                            .order_by('id', 'varhaiskasvatuspaatos__lapsi', 'alkamis_pvm').distinct('id'))
+
+
+@auditlogclass
+class KelaEtuusmaksatusKorjaustiedotPoistetutViewSet(GenericViewSet, ListModelMixin):
+    """
+    list:
+    nouda ne lapset joiden on poistettu viimeisen viikon sisällä.
+
+    params:
+        page_size: change the amount of query results per page
+        poisto_pvm: get deleted after set poisto_pvm
+    """
+    filter_backends = (DjangoFilterBackend,)
+    queryset = Varhaiskasvatussuhde.history.none()
+    serializer_class = KelaEtuusmaksatusKorjaustiedotPoistetutSerializer
+    permission_classes = (CustomReportingViewAccess, )
+    pagination_class = ChangeablePageSizePagination
+
+    def create_filters_for_data(self, now, poisto_pvm):
+        common_filters = _create_common_kela_filters()
+
+        # time window for fetching data
+        if poisto_pvm is None:
+            poisto_pvm = now - datetime.timedelta(days=7)
+        time_window_filter = Q(history_date__gte=poisto_pvm)
+
+        # Must be active at or after
+        # TO-DO change filter to 2021-18-01
+        paattymis_pvm_date_gte = datetime.datetime(2019, 9, 4)
+        paattymis_pvm_filter = (Q(paattymis_pvm__isnull=True) | Q(paattymis_pvm__gte=paattymis_pvm_date_gte))
+
+        # Only deleted objects
+        history_filter = Q(history_type='-')
+
+        return (time_window_filter &
+                paattymis_pvm_filter &
+                history_filter &
+                common_filters)
+
+    def get_queryset(self):
+        now = datetime.datetime.now(datetime.timezone.utc)
+        poisto_pvm = self.request.query_params.get('poisto_pvm', None)
+
+        if poisto_pvm is not None:
+            try:
+                poisto_pvm = datetime.datetime.strptime(poisto_pvm, '%Y-%m-%d')
+            except ValueError:
+                raise ValidationError({'poisto_pvm': [ErrorMessages.GE006.value]})
+            if (now.date() - poisto_pvm.date()).days > 365:
+                raise ValidationError({'poisto_pvm': [ErrorMessages.GE019.value]})
+        else:
+            poisto_pvm = now - datetime.timedelta(days=7)
+
+        dataset_filters = self.create_filters_for_data(now, poisto_pvm)
+
+        return (Varhaiskasvatussuhde.history.select_related('varhaiskasvatuspaatos__lapsi', 'varhaiskasvatuspaatos__lapsi__henkilo')
+                                            .filter(dataset_filters)
+                                            .values('id', 'varhaiskasvatuspaatos__lapsi_id', 'alkamis_pvm', 'paattymis_pvm',
+                                                    'varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus',
+                                                    'varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi')
+                                            .order_by('varhaiskasvatuspaatos__lapsi', 'alkamis_pvm').distinct('varhaiskasvatuspaatos__lapsi'))
+
+
+def _create_common_kela_filters():
+    # Kunnallinen
+    jarjestamismuoto_filter = (Q(varhaiskasvatuspaatos__jarjestamismuoto_koodi__iexact='JM01') |
+                               Q(varhaiskasvatuspaatos__jarjestamismuoto_koodi__iexact='JM02') |
+                               Q(varhaiskasvatuspaatos__jarjestamismuoto_koodi__iexact='JM03'))
+
+    # Tilapäinen varhaiskasvatus
+    tilapainen_vaka_filter = Q(varhaiskasvatuspaatos__tilapainen_vaka_kytkin=False)
+
+    # Date from which data is transfered
+    # TO-DO Change filter to 2021, 1, 4
+    luonti_pvm_date = datetime.datetime(2019, 9, 4, tzinfo=datetime.timezone.utc)
+    luonti_pvm_filter = Q(varhaiskasvatuspaatos__luonti_pvm__gte=luonti_pvm_date)
+
+    # Only henkilo with hetu
+    hetu_filter = Q(varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus__isnull=False)
+
+    return jarjestamismuoto_filter & luonti_pvm_filter & tilapainen_vaka_filter & hetu_filter
 
 
 @auditlogclass

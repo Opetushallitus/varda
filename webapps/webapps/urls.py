@@ -129,9 +129,21 @@ router_onr.register(r'external-permissions', viewsets.ExternalPermissionsViewSet
 # Routes for Reporting-URLs
 
 router_reporting = routers.DefaultRouter()
-router_reporting.register(r'kelaraportti', viewsets_reporting.KelaRaporttiViewSet, 'kelaraportti')
 # /reporting/api/v1/tiedonsiirtotilasto/
 router_reporting.register(r'tiedonsiirtotilasto', viewsets_reporting.TiedonsiirtotilastoViewSet, basename="tiedonsiirtotilasto")
+
+router_kela_reporting = routers.DefaultRouter()
+# /reporting/api/v1/kela/etuusmaksatus/aloittaneet
+router_kela_reporting.register(r'aloittaneet', viewsets_reporting.KelaEtuusmaksatusAloittaneetViewset, basename='aloittaneet')
+# /reporting/api/v1/kela/etuusmaksatus/lopettaneet
+router_kela_reporting.register(r'lopettaneet', viewsets_reporting.KelaEtuusmaksatusLopettaneetViewSet, 'lopettaneet')
+# /reporting/api/v1/kela/etuusmaksatus/maaraaikaiset
+router_kela_reporting.register(r'maaraaikaiset', viewsets_reporting.KelaEtuusmaksatusMaaraaikaisetViewSet, 'maaraaikaset')
+# /reporting/api/v1/kela/etuusmaksatus/korjaustiedot
+router_kela_reporting.register(r'korjaustiedot', viewsets_reporting.KelaEtuusmaksatusKorjaustiedotViewSet, 'korjaustiedot')
+# /reporting/api/v1/kela/etuusmaksatus/korjaustiedotpoistetut
+router_kela_reporting.register(r'korjaustiedotpoistetut', viewsets_reporting.KelaEtuusmaksatusKorjaustiedotPoistetutViewSet, 'korjaustiedotpoistetut')
+
 """
 router_reporting.register(r'lapset-ryhmittain', viewsets_reporting.LapsetRyhmittainViewSet, 'lapset-ryhmittain')
 """
@@ -186,7 +198,8 @@ urlpatterns = [
     re_path(r'^api/v1/schema/', schema_view, name='schema-v1'),
     re_path(r'^api-auth/', include('varda.custom_login_urls', namespace='rest_framework'), name='api-auth'),
     re_path(r'^api/onr/', include(router_onr.urls), name='api-onr'),
-    re_path(r'^reporting/api/v1/', include(router_reporting.urls), name='api-v1-reporting'),
+    re_path(r'^api/reporting/v1/', include(router_reporting.urls), name='api-v1-reporting'),
+    re_path(r'^api/reporting/v1/kela/etuusmaksatus/', include(router_kela_reporting.urls), name='kela-v1-reporting'),
     re_path(r'^varda/', include('varda.urls'), name='varda'),
     re_path(r'^api/henkilosto/v1/', include(router_henkilosto.urls), name='api-henkilosto-v1'),
     re_path(r'^api/henkilosto/v1/', include(nested_tyontekija_router.urls), name='api-nested-tyontekija-v1'),

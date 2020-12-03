@@ -99,3 +99,7 @@ ENV/
 
 node_modules
 .netrc
+
+# VSCode
+
+**/.vscode/settings.json

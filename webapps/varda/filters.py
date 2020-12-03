@@ -500,3 +500,19 @@ class UiAllVakajarjestajaFilter(djangofilters.FilterSet):
                                  .values_list('code_value', flat=True))
         return queryset.filter(Q(nimi__icontains=value) | Q(postitoimipaikka__iexact=value) |
                                Q(organisaatio_oid=value) | Q(y_tunnus=value) | Q(kunta_koodi__in=matching_kunta_koodit))
+
+
+class KelaEtuusmaksatusAloittaneetFilter(djangofilters.FilterSet):
+    luonti_pvm = djangofilters.DateFilter(field_name='luonti_pvm', lookup_expr='gte')
+
+    class Meta:
+        model: Varhaiskasvatussuhde
+        fields = ['luonti_pvm', ]
+
+
+class KelaEtuusmaksatusLopettaneetFilter(djangofilters.FilterSet):
+    muutos_pvm = djangofilters.DateFilter(field_name='muutos_pvm', label='muutos_pvm')
+
+    class Meta:
+        model: Varhaiskasvatussuhde
+        fields = []

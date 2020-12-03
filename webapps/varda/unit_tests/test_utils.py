@@ -81,3 +81,9 @@ class SetUpTestClient:
 
 def base64_encoding(string_to_be_encoded):
     return base64.b64encode(bytes(string_to_be_encoded, "utf-8")).decode("utf-8")
+
+
+def mock_admin_user(username):
+    mock_admin = User.objects.get(username=username)
+    mock_admin.is_superuser = True
+    mock_admin.save()

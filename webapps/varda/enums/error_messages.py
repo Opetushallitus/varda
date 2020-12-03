@@ -33,6 +33,7 @@ class ErrorMessages(enum.Enum):
     GE016 = get_error_dict('GE016', 'Problem accessing database.')
     GE017 = get_error_dict('GE017', 'You must give at least one value.')
     GE018 = get_error_dict('GE018', 'Invalid decimal step.')
+    GE019 = get_error_dict('GE019', 'Time period exceeds allowed timeframe.')
 
     # Dynamic errors, prefix: DY
     DY001 = get_error_dict('DY001', 'Ensure this field has no more than {} characters.')

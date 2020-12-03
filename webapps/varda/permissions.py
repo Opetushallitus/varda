@@ -46,11 +46,11 @@ class CustomObjectPermissions(permissions.DjangoModelPermissions):
 
 class CustomReportingViewAccess(permissions.BasePermission):
     """
-    Allow access to reporting api for users in the "reporting_view_access"-group.
+    Allow access to reporting apis for users requiring data.
     """
     def has_permission(self, request, view):
         user = request.user
-        if user.is_authenticated and user.groups.filter(name='reporting_view_access').exists():
+        if user.is_superuser:
             return True
         else:
             return False
