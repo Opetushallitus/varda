@@ -1,12 +1,6 @@
 from rest_framework import serializers
-from varda.models import Varhaiskasvatussuhde
+from varda.models import Varhaiskasvatussuhde, Lapsi, Tyontekija
 from varda.misc import decrypt_henkilotunnus
-
-from varda.models import Lapsi
-
-"""
-Serializers for query-results used in reports
-"""
 
 
 class KelaEtuusmaksatusAloittaneetSerializer(serializers.Serializer):
@@ -166,3 +160,11 @@ class ErrorReportLapsetSerializer(AbstractErrorReportSerializer):
                   'oma_organisaatio_id', 'oma_organisaatio_oid', 'oma_organisaatio_nimi',
                   'paos_organisaatio_id', 'paos_organisaatio_oid', 'paos_organisaatio_nimi',
                   'errors')
+
+
+class ErrorReportTyontekijatSerializer(AbstractErrorReportSerializer):
+    tyontekija_id = serializers.ReadOnlyField(source='id')
+
+    class Meta:
+        model = Tyontekija
+        fields = ('tyontekija_id', 'henkilo_id', 'henkilo_oid', 'etunimet', 'sukunimi', 'errors')

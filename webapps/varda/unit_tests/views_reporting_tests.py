@@ -4,7 +4,8 @@ import json
 from django.test import TestCase
 from rest_framework import status
 
-from varda.models import VakaJarjestaja, Lapsi, Henkilo, Maksutieto, Varhaiskasvatuspaatos, Varhaiskasvatussuhde
+from varda.models import (VakaJarjestaja, Lapsi, Henkilo, Maksutieto, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
+                          Tyontekija, Tyoskentelypaikka, Palvelussuhde, PidempiPoissaolo, Tutkinto)
 from varda.unit_tests.test_utils import SetUpTestClient, assert_validation_error, mock_admin_user, assert_status_code
 
 
@@ -281,3 +282,59 @@ class VardaViewsReportingTests(TestCase):
         resp_string = resp.content.decode('utf-8')
         self.assertIn('MA016', resp_string)
         self.assertIn('VP013', resp_string)
+
+    def test_api_error_report_tyontekijat(self):
+        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        tyontekija = Tyontekija.objects.get(vakajarjestaja=vakajarjestaja, henkilo__henkilo_oid='1.2.246.562.24.2431884920042')
+
+        client = SetUpTestClient('tyontekija_tallentaja').client()
+        url = f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-tyontekijat/'
+
+        # Remove invalid Tyontekija information so no error is raised
+        invalid_tyontekija_henkilo = Henkilo.objects.get(henkilo_oid='1.2.246.562.24.2431884920043')
+        Tutkinto.objects.filter(henkilo=invalid_tyontekija_henkilo, vakajarjestaja=vakajarjestaja).delete()
+        Tyontekija.objects.filter(henkilo=invalid_tyontekija_henkilo, vakajarjestaja=vakajarjestaja).delete()
+
+        # Remove Tyoskentelypaikka
+        Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija).delete()
+        resp_1 = client.get(url)
+        assert_status_code(resp_1, status.HTTP_200_OK)
+
+        resp_1_json = json.loads(resp_1.content)
+        self.assertEqual(len(resp_1_json['results']), 1)
+        self.assertEqual(len(resp_1_json['results'][0]['errors']), 1)
+
+        resp_1_string = resp_1.content.decode('utf-8')
+        self.assertIn('TA014', resp_1_string)
+
+        # Remove Palvelussuhde (PidempiPoissaolo must be removed as well)
+        PidempiPoissaolo.objects.filter(palvelussuhde__tyontekija=tyontekija).delete()
+        Palvelussuhde.objects.filter(tyontekija=tyontekija).delete()
+        resp_2 = client.get(url)
+        assert_status_code(resp_2, status.HTTP_200_OK)
+
+        resp_2_json = json.loads(resp_2.content)
+        self.assertEqual(len(resp_2_json['results']), 1)
+        self.assertEqual(len(resp_2_json['results'][0]['errors']), 1)
+
+        resp_2_string = resp_2.content.decode('utf-8')
+        self.assertIn('PS008', resp_2_string)
+
+    def test_api_error_report_tyontekijat_no_permissions(self):
+        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        url = f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-tyontekijat/'
+
+        # No view_tyontekija permissions
+        client_no_permissions_1 = SetUpTestClient('tester2').client()
+        resp_no_permissions_1 = client_no_permissions_1.get(url)
+        assert_status_code(resp_no_permissions_1, status.HTTP_403_FORBIDDEN)
+
+        # No permissions to correct groups
+        client_no_permissions_2 = SetUpTestClient('tyontekija_toimipaikka_tallentaja_9395737548815').client()
+        resp_no_permissions_2 = client_no_permissions_2.get(url)
+        assert_status_code(resp_no_permissions_2, status.HTTP_404_NOT_FOUND)
+
+        # No permissions to correct VakaJarjestaja
+        client_no_permissions_3 = SetUpTestClient('henkilosto_tallentaja_93957375488').client()
+        resp_no_permissions_3 = client_no_permissions_3.get(url)
+        assert_status_code(resp_no_permissions_3, status.HTTP_404_NOT_FOUND)

@@ -191,6 +191,7 @@ class ErrorMessages(enum.Enum):
     PS005 = get_error_dict('PS005', 'Tyontekija does not have the given Tutkinto.')
     PS006 = get_error_dict('PS006', 'Tyontekija already has 7 overlapping Palvelussuhde on the given date range.')
     PS007 = get_error_dict('PS007', 'paattymis_pvm must be equal to or after 2020-09-01.')
+    PS008 = get_error_dict('PS008', 'Tyontekija must have at least one Palvelussuhde.')
 
     # Tyoskentelypaikka errors, prefix: TA
     TA001 = get_error_dict('TA001', 'Vakajarjestaja level permissions required for kiertava tyontekija.')
@@ -206,6 +207,7 @@ class ErrorMessages(enum.Enum):
     TA011 = get_error_dict('TA011', 'Palvelussuhde already has 3 overlapping Tyoskentelypaikka on the given date range.')
     TA012 = get_error_dict('TA012', 'toimipaikka is required if kiertava_tyontekija_kytkin is false.')
     TA013 = get_error_dict('TA013', 'Tyoskentelypaikka must have paattymis_pvm because Palvelussuhde has paattymis_pvm.')
+    TA014 = get_error_dict('TA014', 'Palvelussuhde must have at least one Tyoskentelypaikka.')
 
     # PidempiPoissaolo errors, prefix: PP
     PP001 = get_error_dict('PP001', 'Cannot delete PidempiPoissaolo. There are objects referencing it that need to be deleted first.')

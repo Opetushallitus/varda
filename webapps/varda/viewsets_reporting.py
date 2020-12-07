@@ -21,10 +21,11 @@ from varda.serializers_reporting import (KelaEtuusmaksatusAloittaneetSerializer,
                                          KelaEtuusmaksatusMaaraaikaisetSerializer,
                                          KelaEtuusmaksatusKorjaustiedotSerializer,
                                          KelaEtuusmaksatusKorjaustiedotPoistetutSerializer,
-                                         TiedonsiirtotilastoSerializer, ErrorReportLapsetSerializer)
+                                         TiedonsiirtotilastoSerializer, ErrorReportLapsetSerializer,
+                                         ErrorReportTyontekijatSerializer)
 from varda.enums.ytj import YtjYritysmuoto
 from varda.models import (KieliPainotus, Lapsi, Maksutieto, PaosOikeus, ToiminnallinenPainotus, Toimipaikka,
-                          VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z4_CasKayttoOikeudet)
+                          VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z4_CasKayttoOikeudet, Tyontekija)
 from varda.permissions import (CustomReportingViewAccess, auditlogclass, permission_groups_in_organization,
                                CustomObjectPermissions)
 
@@ -664,4 +665,48 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
 
         annotations = self.get_annotations()
 
+        return queryset.annotate(**annotations).filter(self.get_include_filter(annotations)).order_by('id')
+
+
+@auditlogclass
+class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
+    serializer_class = ErrorReportTyontekijatSerializer
+    queryset = Tyontekija.objects.none()
+    permission_classes = (CustomObjectPermissions,)
+
+    def verify_permissions(self):
+        user = self.request.user
+
+        valid_permission_groups = [Z4_CasKayttoOikeudet.PAAKAYTTAJA,
+                                   Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
+                                   Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA]
+        user_group_qs = permission_groups_in_organization(user, self.vakajarjestaja_oid,
+                                                          valid_permission_groups)
+
+        if not user.is_superuser and not user_group_qs.exists():
+            raise Http404()
+
+    def get_error_tuples(self):
+        return {
+            ErrorMessages.PS008: (
+                self.get_annotation_for_filter(
+                    Q(palvelussuhteet__isnull=True),
+                    'id'
+                ),
+                'tyontekija'
+            ),
+            ErrorMessages.TA014: (
+                self.get_annotation_for_filter(
+                    Q(palvelussuhteet__isnull=False) & Q(palvelussuhteet__tyoskentelypaikat__isnull=True),
+                    'palvelussuhteet__id'
+                ),
+                'palvelussuhde'
+            )
+        }
+
+    def get_queryset(self):
+        queryset = Tyontekija.objects.filter(vakajarjestaja=self.vakajarjestaja_id)
+        queryset = self.filter_queryset(queryset)
+
+        annotations = self.get_annotations()
         return queryset.annotate(**annotations).filter(self.get_include_filter(annotations)).order_by('id')
