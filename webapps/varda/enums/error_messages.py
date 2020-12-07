@@ -117,6 +117,8 @@ class ErrorMessages(enum.Enum):
     VP009 = get_error_dict('VP009', 'paivittainen_vaka_kytkin must be given if vuorohoito_kytkin is false.')
     VP010 = get_error_dict('VP010', 'kokopaivainen_vaka_kytkin must be given if vuorohoito_kytkin is false.')
     VP011 = get_error_dict('VP011', 'Lapsi already has 3 overlapping Varhaiskasvatuspaatos on the given date range.')
+    VP012 = get_error_dict('VP012', 'Lapsi must have at least one Varhaiskasvatuspaatos.')
+    VP013 = get_error_dict('VP013', 'Varhaiskasvatuspaatos must have paattymis_pvm because Lapsi is over 8 years old.')
 
     # Varhaiskasvatussuhde errors, prefix: VS
     VS001 = get_error_dict('VS001', 'This Lapsi is already under another Vakajarjestaja. Please create a new one.')
@@ -132,6 +134,7 @@ class ErrorMessages(enum.Enum):
     VS011 = get_error_dict('VS011', 'Varhaiskasvatussuhde alkamis_pvm must be before or equal to Varhaiskasvatuspaatos paattymis_pvm.')
     VS012 = get_error_dict('VS012', 'Varhaiskasvatussuhde must have paattymis_pvm because Varhaiskasvatuspaatos has paattymis_pvm.')
     VS013 = get_error_dict('VS013', 'Lapsi already has 3 overlapping Varhaiskasvatussuhde on the given date range.')
+    VS014 = get_error_dict('VS014', 'Varhaiskasvatuspaatos must have at least one Varhaiskasvatussuhde.')
 
     # Maksutieto errors, prefix: MA
     MA001 = get_error_dict('MA001', 'perheen_koko field is required.')
@@ -148,6 +151,8 @@ class ErrorMessages(enum.Enum):
     MA012 = get_error_dict('MA012', 'Duplicated henkilotunnus given.')
     MA013 = get_error_dict('MA013', 'Duplicated henkilo_oid given.')
     MA014 = get_error_dict('MA014', 'paattymis_pvm must be equal to or after 2020-09-01 for yksityinen Lapsi.')
+    MA015 = get_error_dict('MA015', 'Maksutieto must have paattymis_pvm because Lapsi has no active Varhaiskasvatuspaatos.')
+    MA016 = get_error_dict('MA016', 'Maksutieto must have paattymis_pvm because Lapsi is over 8 years old.')
 
     # PaosToiminta errors, prefix: PT
     PT001 = get_error_dict('PT001', 'oma_organisaatio cannot be the same as paos_organisaatio.')

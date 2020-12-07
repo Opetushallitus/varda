@@ -89,6 +89,8 @@ nested_vakajarjestaja_router.register(r'toimipaikat', viewsets.NestedToimipaikka
 nested_vakajarjestaja_router.register(r'yhteenveto', viewsets.NestedVakajarjestajaYhteenvetoViewSet)
 # /api/v1/vakajarjestajat/{id}/henkilohaku/
 nested_vakajarjestaja_router.register('henkilohaku/lapset', viewsets.HenkilohakuLapset)
+# /api/v1/vakajarjestajat/{id}/error-report-lapset/
+nested_vakajarjestaja_router.register('error-report-lapset', viewsets_reporting.ErrorReportLapsetViewSet, basename='error-report-lapset')
 
 nested_toimipaikka_router = nested_routers.NestedSimpleRouter(router, r'toimipaikat', lookup='toimipaikka')
 # /api/v1/toimipaikat/{id}/toiminnallisetpainotukset/

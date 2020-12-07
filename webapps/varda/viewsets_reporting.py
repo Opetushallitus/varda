@@ -1,10 +1,16 @@
 import datetime
 
-from django.db.models import Q, Case, Value, When, OuterRef, Subquery
+from dateutil.relativedelta import relativedelta
+from django.contrib.postgres.aggregates import StringAgg
+from django.db.models import Q, Case, Value, When, OuterRef, Subquery, CharField, F
+from django.db.models.functions import Cast
+from django.http import Http404
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.timezone import make_aware
 from rest_framework import permissions
 from rest_framework.exceptions import ValidationError
+from rest_framework.filters import SearchFilter
 from rest_framework.mixins import ListModelMixin
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
@@ -12,17 +18,15 @@ from varda.enums.error_messages import ErrorMessages
 from varda.pagination import ChangeablePageSizePagination
 from varda import filters
 from varda.serializers_reporting import (KelaEtuusmaksatusAloittaneetSerializer, KelaEtuusmaksatusLopettaneetSerializer,
-                                         KelaEtuusmaksatusMaaraaikaisetSerializer, KelaEtuusmaksatusKorjaustiedotSerializer,
-                                         KelaEtuusmaksatusKorjaustiedotPoistetutSerializer, TiedonsiirtotilastoSerializer)
+                                         KelaEtuusmaksatusMaaraaikaisetSerializer,
+                                         KelaEtuusmaksatusKorjaustiedotSerializer,
+                                         KelaEtuusmaksatusKorjaustiedotPoistetutSerializer,
+                                         TiedonsiirtotilastoSerializer, ErrorReportLapsetSerializer)
 from varda.enums.ytj import YtjYritysmuoto
 from varda.models import (KieliPainotus, Lapsi, Maksutieto, PaosOikeus, ToiminnallinenPainotus, Toimipaikka,
-                          VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde)
-from varda.permissions import CustomReportingViewAccess, auditlogclass
-
-
-"""
-Query-results for reports
-"""
+                          VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z4_CasKayttoOikeudet)
+from varda.permissions import (CustomReportingViewAccess, auditlogclass, permission_groups_in_organization,
+                               CustomObjectPermissions)
 
 
 @auditlogclass
@@ -465,3 +469,199 @@ class TiedonsiirtotilastoViewSet(GenericViewSet, ListModelMixin):
 
         serializer = self.get_serializer(stats)
         return Response(serializer.data)
+
+
+class AbstractErrorReportViewSet(GenericViewSet, ListModelMixin):
+    """
+    list:
+    Return a list of Lapsi/Tyontekija objects whose data is not completely correct.
+    Rules are defined in get_error_tuples function.
+
+    search=str (nimi/hetu (SHA-256 hash as hexadecimal)/OID)
+    """
+    filter_backends = (SearchFilter, )
+    search_fields = ('henkilo__etunimet',
+                     'henkilo__sukunimi',
+                     '=henkilo__henkilotunnus_unique_hash',
+                     '=henkilo__henkilo_oid',
+                     '=id')
+    pagination_class = ChangeablePageSizePagination
+
+    vakajarjestaja_oid = None
+    vakajarjestaja_id = None
+
+    def get_annotation_for_filter(self, filter_object, id_lookup):
+        return StringAgg(Case(When(filter_object, then=Cast(id_lookup, CharField()))), delimiter=',')
+
+    def get_annotations(self):
+        return {error_key.value['error_code']: error_tuple[0]
+                for error_key, error_tuple in self.get_error_tuples().items()}
+
+    def get_include_filter(self, annotations):
+        include_filter = Q()
+        for error_name in annotations:
+            include_filter = include_filter | ~Q(**{error_name: None})
+        return include_filter
+
+    def get_vakajarjestaja_object(self, vakajarjestaja_id):
+        vakajarjestaja_obj = get_object_or_404(VakaJarjestaja.objects.all(), pk=vakajarjestaja_id)
+        if self.request.user.has_perm('view_vakajarjestaja', vakajarjestaja_obj):
+            self.vakajarjestaja_oid = vakajarjestaja_obj.organisaatio_oid
+            self.vakajarjestaja_id = vakajarjestaja_id
+        else:
+            raise Http404()
+
+    def list(self, request, *args, **kwargs):
+        self.get_vakajarjestaja_object(kwargs.get('vakajarjestaja_pk', None))
+        self.verify_permissions()
+        return super(AbstractErrorReportViewSet, self).list(request, *args, **kwargs)
+
+    def get_error_tuples(self):
+        """
+        Returns a dict of tuples e.g. 'error_key': (error_annotation, model_name)
+        error_key is ErrorMessages enum value, which is used to identify the specific error
+        error_annotation is used in the queryset, model_name is used in the serializer
+        :return: dict of error tuples
+        """
+        raise NotImplementedError('get_error_tuples')
+
+    def verify_permissions(self):
+        """
+        Verifies that user has correct permissions to view this information.
+        """
+        raise NotImplementedError('verify_permissions')
+
+    def get_queryset(self):
+        raise NotImplementedError('get_queryset')
+
+
+@auditlogclass
+class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
+    serializer_class = ErrorReportLapsetSerializer
+    queryset = Lapsi.objects.none()
+    permission_classes = (CustomObjectPermissions,)
+
+    is_vakatiedot_permissions = False
+    is_huoltajatiedot_permissions = False
+
+    def verify_permissions(self):
+        user = self.request.user
+
+        valid_permission_groups_vakatiedot = [Z4_CasKayttoOikeudet.PAAKAYTTAJA,
+                                              Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.KATSELIJA]
+        user_group_vakatiedot_qs = permission_groups_in_organization(user, self.vakajarjestaja_oid,
+                                                                     valid_permission_groups_vakatiedot)
+        self.is_vakatiedot_permissions = user.is_superuser | user_group_vakatiedot_qs.exists()
+
+        valid_permission_groups_huoltajatiedot = [Z4_CasKayttoOikeudet.PAAKAYTTAJA,
+                                                  Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,
+                                                  Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA]
+        user_group_huoltajatiedot_qs = permission_groups_in_organization(user, self.vakajarjestaja_oid,
+                                                                         valid_permission_groups_huoltajatiedot)
+        self.is_huoltajatiedot_permissions = user.is_superuser | user_group_huoltajatiedot_qs.exists()
+
+        if not self.is_vakatiedot_permissions and not self.is_huoltajatiedot_permissions:
+            raise Http404()
+
+    def get_error_tuples(self):
+        today = datetime.date.today()
+        overage_date = today - relativedelta(years=8)
+
+        vakatiedot_error_tuples = {
+            ErrorMessages.VP002: (
+                self.get_annotation_for_filter(
+                    Q(varhaiskasvatuspaatokset__alkamis_pvm__gt=F('varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm')),
+                    'varhaiskasvatuspaatokset__varhaiskasvatussuhteet__id'
+                ),
+                'vakasuhde'
+            ),
+            ErrorMessages.VP003: (
+                self.get_annotation_for_filter(
+                    Q(varhaiskasvatuspaatokset__paattymis_pvm__lt=F('varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm')),
+                    'varhaiskasvatuspaatokset__varhaiskasvatussuhteet__id'
+                ),
+                'vakasuhde'
+            ),
+            ErrorMessages.VS012: (
+                self.get_annotation_for_filter(
+                    Q(varhaiskasvatuspaatokset__paattymis_pvm__isnull=False) &
+                    Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__isnull=False) &
+                    Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True),
+                    'varhaiskasvatuspaatokset__varhaiskasvatussuhteet__id'
+                ),
+                'vakasuhde'
+            ),
+            ErrorMessages.VP012: (
+                self.get_annotation_for_filter(
+                    Q(varhaiskasvatuspaatokset__isnull=True),
+                    'id'
+                ),
+                'lapsi'
+            ),
+            ErrorMessages.VS014: (
+                self.get_annotation_for_filter(
+                    Q(varhaiskasvatuspaatokset__isnull=False) &
+                    Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__isnull=True),
+                    'varhaiskasvatuspaatokset__id'
+                ),
+                'vakapaatos'
+            ),
+            ErrorMessages.VP013: (
+                self.get_annotation_for_filter(
+                    Q(varhaiskasvatuspaatokset__paattymis_pvm__isnull=True) &
+                    Q(henkilo__syntyma_pvm__lt=overage_date),
+                    'varhaiskasvatuspaatokset__id'
+                ),
+                'vakapaatos'
+            )
+        }
+
+        huoltajatiedot_error_tuples = {
+            # Use Subquery to check that Lapsi is not in a list of Lapsi objects that have active varhaiskasvatuspaatos
+            ErrorMessages.MA015: (
+                self.get_annotation_for_filter(
+                    ~Q(id__in=Subquery(
+                        Lapsi.objects.filter(self.get_vakajarjestaja_filter() &
+                                             (Q(varhaiskasvatuspaatokset__paattymis_pvm__isnull=True) |
+                                              Q(varhaiskasvatuspaatokset__paattymis_pvm__gt=today))).values('id'))) &
+                    Q(huoltajuussuhteet__maksutiedot__paattymis_pvm__isnull=True),
+                    'huoltajuussuhteet__maksutiedot__id'
+                ),
+                'maksutieto'
+            ),
+            ErrorMessages.MA016: (
+                self.get_annotation_for_filter(
+                    Q(huoltajuussuhteet__maksutiedot__paattymis_pvm__isnull=True) &
+                    Q(henkilo__syntyma_pvm__lt=overage_date),
+                    'huoltajuussuhteet__maksutiedot__id'
+                ),
+                'maksutieto'
+            )
+        }
+
+        vakatiedot_dict = vakatiedot_error_tuples if self.is_vakatiedot_permissions else {}
+        huoltajatiedot_dict = huoltajatiedot_error_tuples if self.is_huoltajatiedot_permissions else {}
+        return {**vakatiedot_dict, **huoltajatiedot_dict}
+
+    def get_vakajarjestaja_filter(self):
+        vakatoimija_filter = Q(vakatoimija=self.vakajarjestaja_id)
+        no_vakatoimija_filter = (Q(vakatoimija__isnull=True) & Q(paos_organisaatio__isnull=True) &
+                                 Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja=self.vakajarjestaja_id))
+        paos_paos_filter = (Q(paos_organisaatio=self.vakajarjestaja_id) &
+                            Q(paos_organisaatio__paos_oikeudet_tuottaja__tallentaja_organisaatio=self.vakajarjestaja_id) &
+                            Q(paos_organisaatio__paos_oikeudet_tuottaja__jarjestaja_kunta_organisaatio=F('oma_organisaatio')) &
+                            Q(paos_organisaatio__paos_oikeudet_tuottaja__voimassa_kytkin=True))
+        paos_oma_filter = (Q(oma_organisaatio=self.vakajarjestaja_id) &
+                           Q(oma_organisaatio__paos_oikeudet_jarjestaja_kunta__tallentaja_organisaatio=self.vakajarjestaja_id) &
+                           Q(oma_organisaatio__paos_oikeudet_jarjestaja_kunta__tuottaja_organisaatio=F('paos_organisaatio')) &
+                           Q(oma_organisaatio__paos_oikeudet_jarjestaja_kunta__voimassa_kytkin=True))
+
+        return vakatoimija_filter | no_vakatoimija_filter | paos_paos_filter | paos_oma_filter
+
+    def get_queryset(self):
+        queryset = Lapsi.objects.filter(self.get_vakajarjestaja_filter())
+        queryset = self.filter_queryset(queryset)
+
+        annotations = self.get_annotations()
+
+        return queryset.annotate(**annotations).filter(self.get_include_filter(annotations)).order_by('id')

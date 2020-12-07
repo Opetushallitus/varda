@@ -2,6 +2,8 @@ from rest_framework import serializers
 from varda.models import Varhaiskasvatussuhde
 from varda.misc import decrypt_henkilotunnus
 
+from varda.models import Lapsi
+
 """
 Serializers for query-results used in reports
 """
@@ -121,3 +123,46 @@ class TiedonsiirtotilastoSerializer(serializers.Serializer):
     kielipainotukset = serializers.IntegerField()
     toiminnalliset_painotukset = serializers.IntegerField()
     paos_oikeudet = serializers.ReadOnlyField()
+
+
+class AbstractErrorReportSerializer(serializers.ModelSerializer):
+    henkilo_id = serializers.ReadOnlyField(source='henkilo.id')
+    henkilo_oid = serializers.ReadOnlyField(source='henkilo.henkilo_oid')
+    etunimet = serializers.ReadOnlyField(source='henkilo.etunimet')
+    sukunimi = serializers.ReadOnlyField(source='henkilo.sukunimi')
+    errors = serializers.SerializerMethodField()
+
+    def get_errors(self, obj):
+        """
+        This function parses the list of errors from different error attributes in the Lapsi/Tyontekija object.
+        :param obj: Lapsi/Tyontekija object with annotated errors
+        :return: list of errors
+        """
+        error_list = []
+        for error_key, error_tuple in self.context['view'].get_error_tuples().items():
+            error_attr = getattr(obj, error_key.value['error_code'], '')
+            if error_attr != '':
+                model_id_list = error_attr.split(',')
+                error_list.append({
+                    **error_key.value,
+                    'model_name': error_tuple[1],
+                    'model_id_list': [int(model_id) for model_id in set(model_id_list)]
+                })
+        return error_list
+
+
+class ErrorReportLapsetSerializer(AbstractErrorReportSerializer):
+    lapsi_id = serializers.ReadOnlyField(source='id')
+    oma_organisaatio_id = serializers.ReadOnlyField(source='oma_organisaatio.id')
+    oma_organisaatio_oid = serializers.ReadOnlyField(source='oma_organisaatio.organisaatio_oid')
+    oma_organisaatio_nimi = serializers.ReadOnlyField(source='oma_organisaatio.nimi')
+    paos_organisaatio_id = serializers.ReadOnlyField(source='paos_organisaatio.id')
+    paos_organisaatio_oid = serializers.ReadOnlyField(source='paos_organisaatio.organisaatio_oid')
+    paos_organisaatio_nimi = serializers.ReadOnlyField(source='paos_organisaatio.nimi')
+
+    class Meta:
+        model = Lapsi
+        fields = ('lapsi_id', 'henkilo_id', 'henkilo_oid', 'etunimet', 'sukunimi',
+                  'oma_organisaatio_id', 'oma_organisaatio_oid', 'oma_organisaatio_nimi',
+                  'paos_organisaatio_id', 'paos_organisaatio_oid', 'paos_organisaatio_nimi',
+                  'errors')
