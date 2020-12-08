@@ -46,7 +46,7 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
       })
     );
 
-    this.tilapainenHenkilostoOnly = this.authService.hasAccessOnlyTo([UserAccessKeys.tilapainenHenkilosto], true);
+    this.tilapainenHenkilostoOnly = this.authService.hasAccessOnlyTo([UserAccessKeys.tilapainenHenkilosto]);
   }
 
   getVakajarjestajaId() {

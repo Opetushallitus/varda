@@ -265,9 +265,13 @@ export class AuthService {
 
     const hasAccessTo = Object.entries(access)
       .filter(([accessKey, accessValue]) => accessValue?.katselija)
-      .map(([accessKey, accessValue]) => accessKey as UserAccessKeys)
-      .filter(accessKey => !accessKeys.includes(accessKey));
-    return !hasAccessTo.length ? true : false;
+      .map(([accessKey, accessValue]) => accessKey as UserAccessKeys);
+
+    const requiredAccess = hasAccessTo.find(accessKey => accessKeys.includes(accessKey));
+    const excessAccess = hasAccessTo.find(accessKey => !accessKeys.includes(accessKey));
+
+    // check if atleast one key is a hit and nothing else is found
+    return requiredAccess && !excessAccess;
   }
 
 }
