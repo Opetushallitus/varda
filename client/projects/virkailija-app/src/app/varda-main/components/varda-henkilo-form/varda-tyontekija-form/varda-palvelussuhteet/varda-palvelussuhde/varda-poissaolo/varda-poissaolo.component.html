@@ -1,5 +1,10 @@
 <ng-container *ngIf="poissaoloForm">
-  <div class="tyoskentelypaikka poissaolo">
+  <div [id]="'poissaolo_'+ poissaolo?.id"
+       class="tyoskentelypaikka poissaolo">
+    <var aria-ignore
+         [attr.robot]="'poissaolo_'+poissaolo?.alkamis_pvm+'-'+ poissaolo?.paattymis_pvm">
+      {{ poissaolo?.id }}
+    </var>
     <mat-expansion-panel [expanded]="expandPanel"
                          (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)">

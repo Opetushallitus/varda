@@ -1,5 +1,10 @@
 <ng-container *ngIf="palvelussuhdeForm">
-  <div class="palvelussuhde">
+  <div [id]="'palvelussuhde_'+ palvelussuhde?.id"
+       class="palvelussuhde">
+    <var aria-ignore
+         [attr.robot]="'palvelussuhde_'+palvelussuhde?.alkamis_pvm+'-'+palvelussuhde?.paattymis_pvm">
+      {{ palvelussuhde?.id }}
+    </var>
     <mat-icon class="d-none d-md-block">assignment</mat-icon>
 
     <mat-expansion-panel [class.before-icon]="true"
@@ -131,7 +136,8 @@
         <span *ngIf="tyoskentelypaikat.length > 1">({{ tyoskentelypaikat.length }})</span>
       </h3>
 
-      <div class="missing-info" *ngIf="tyoskentelypaikat.length === 0">
+      <div class="missing-info"
+           *ngIf="tyoskentelypaikat.length === 0">
         <mat-icon>error_outline</mat-icon>
         {{ i18n.palvelussuhde_ei_tyoskentelypaikkoja | translate }}
       </div>

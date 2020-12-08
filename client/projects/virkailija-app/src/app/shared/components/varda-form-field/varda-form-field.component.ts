@@ -83,7 +83,6 @@ export class VardaFormFieldComponent implements AfterContentInit, OnDestroy {
     }
 
     if (this.radioGroup) {
-      this.radioGroup.name = this.name || this.radioGroup.name; // by default radiogroup.name is incremental
       this.subscriptions.push(this.formControl.valueChanges.subscribe((change: Observable<boolean>) => {
         this.focusStatus$.next(true);
         setTimeout(() => this.focusStatus$.next(false), 2000);

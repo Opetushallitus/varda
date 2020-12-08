@@ -30,6 +30,7 @@
                       [disabled]="!anyToimijaKatselija">
                 {{ i18n.kaikki_toimipaikat | translate }}</option>
               <option *ngFor="let toimipaikka of toimipaikat"
+                      [attr.robot]="'toimipaikka_'+toimipaikka.id"
                       [ngValue]="toimipaikka">{{toimipaikka.nimi}}</option>
             </select>
           </ng-container>

@@ -1,5 +1,10 @@
 <ng-container *ngIf="taydennyskoulutusForm">
-  <div class="taydennyskoulutus">
+  <div [id]="'taydennyskoulutus_'+ taydennyskoulutus?.id"
+       class="taydennyskoulutus">
+    <var aria-ignore
+         [attr.robot]="'taydennyskoulutus_'+taydennyskoulutus?.nimi+'-'+ taydennyskoulutus?.suoritus_pvm">
+      {{ taydennyskoulutus?.id }}
+    </var>
     <mat-expansion-panel [expanded]="expandPanel"
                          (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)">

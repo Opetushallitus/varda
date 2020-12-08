@@ -89,6 +89,11 @@ legend {
   line-height: normal;
 }
 
+/* id for robot tests to pick is hidden here */
+var[robot] {
+  display: none;
+}
+
 .varda-router-outlet-container {
   width: 90%;
   max-width: 1450px;
