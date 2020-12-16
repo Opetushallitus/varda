@@ -278,7 +278,7 @@ def validate_puhelinnumero(puhelinnumero):
     if not puhelinnumero:
         raise ValidationErrorRest([ErrorMessages.GE001.value])
     puhelinnumero_regex = re.compile(r'^(\+358)[1-9][0-9]{5,10}')
-    if not puhelinnumero_regex.match(puhelinnumero):
+    if not puhelinnumero_regex.fullmatch(puhelinnumero):
         raise ValidationErrorRest([ErrorMessages.MI006.value])
 
 

@@ -11,7 +11,7 @@ from webapps.api_throttles import KoodistotAnonThrottle
 
 
 class KoodistotViewSet(GenericViewSet, ListModelMixin):
-    queryset = Z2_Koodisto.objects.all()
+    queryset = Z2_Koodisto.objects.all().order_by('name_koodistopalvelu')
     permission_classes = (permissions.AllowAny, )
     throttle_classes = (KoodistotAnonThrottle, )
 

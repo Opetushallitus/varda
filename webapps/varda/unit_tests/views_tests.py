@@ -2986,24 +2986,17 @@ class VardaViewsTests(TestCase):
                                 'tallentaja_organisaatio must be either jarjestaja_kunta_organisaatio or tuottaja_organisaatio.')
 
     def test_push_incorrect_puhelinnumero(self):
-        vakajarjestaja = {
-            'nimi': 'Testikylä',
-            'y_tunnus': '2913769-2',
-            'kunta_koodi': '091',
-            'kayntiosoite': 'Testerkatu 2',
-            'kayntiosoite_postinumero': '00001',
-            'kayntiosoite_postitoimipaikka': 'Testilä',
-            'postiosoite': 'Testerkatu 2',
-            'postitoimipaikka': 'Testilä',
-            'postinumero': '00001',
-            'sahkopostiosoite': 'iban@ibanila.iban',
-            'tilinumero': 'FI92 2046 1800 0628 04',
-            'puhelinnumero': '+359400987654'
-        }
-        client = SetUpTestClient('credadmin').client()
-        resp = client.post('/api/v1/vakajarjestajat/', vakajarjestaja)
-        assert_status_code(resp, 400)
-        assert_validation_error(resp, 'puhelinnumero', 'MI006', 'Not a valid Finnish phone number.')
+        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        puhelinnumero_list = ['+359400987654', '+35850123123.']
+        client = SetUpTestClient('tester2').client()
+
+        for puhelinnumero in puhelinnumero_list:
+            patch_body = {
+                'puhelinnumero': puhelinnumero
+            }
+            resp = client.patch(f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/', patch_body)
+            assert_status_code(resp, status.HTTP_400_BAD_REQUEST, puhelinnumero)
+            assert_validation_error(resp, 'puhelinnumero', 'MI006', 'Not a valid Finnish phone number.', puhelinnumero)
 
     def test_api_delete_toimipaikka_1(self):
         client = SetUpTestClient('tester').client()
