@@ -181,7 +181,7 @@
                       {{maksutieto.maksun_peruste_koodi}}
                     </td>
                   </tr>
-                  <tr class="mat-header-row" *ngIf="lapsiKooste.yksityinen_kytkin">
+                  <tr class="mat-header-row" *ngIf="!lapsiKooste.yksityinen_kytkin">
                     <th scope="row" class="mat-header-cell">{{i18n.maksutieto_palveluseteli_arvo | translate}}</th>
                     <td class="mat-cell">{{maksutieto.palveluseteli_arvo}}</td>
                   </tr>
@@ -189,7 +189,7 @@
                     <th scope="row" class="mat-header-cell">{{i18n.maksutieto_asiakasmaksu | translate}}</th>
                     <td class="mat-cell">{{maksutieto.asiakasmaksu}}</td>
                   </tr>
-                  <tr class="mat-header-row" *ngIf="lapsiKooste.yksityinen_kytkin">
+                  <tr class="mat-header-row" *ngIf="!lapsiKooste.yksityinen_kytkin">
                     <th scope="row" class="mat-header-cell">{{i18n.maksutieto_perheen_koko | translate}}</th>
                     <td class="mat-cell">{{maksutieto.perheen_koko}}</td>
                   </tr>

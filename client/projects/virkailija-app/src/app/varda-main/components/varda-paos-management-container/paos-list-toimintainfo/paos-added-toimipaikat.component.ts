@@ -6,6 +6,7 @@ import { AbstractPaosListToimintainfoComponentDirective } from './abstract-paos-
 import { PaosCreateEvent, PaosToimintaService } from '../paos-toiminta.service';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { VardaPaosApiService } from 'projects/virkailija-app/src/app/core/services/varda-paos-api.service';
+import { VirkailijaTranslations } from '../../../../../assets/i18n/virkailija-translations.enum';
 
 @Component({
   selector: 'app-paos-added-toimipaikat',
@@ -22,6 +23,7 @@ import { VardaPaosApiService } from 'projects/virkailija-app/src/app/core/servic
 })
 export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoComponentDirective<PaosToimipaikkatietoDto> implements OnInit, OnDestroy {
   private createEventSubscription: Subscription;
+  i18n = VirkailijaTranslations;
   highlighted: Array<string>;
   toimipaikatByToimija: Array<PaosToimijaInternalDto>;
   filteredToiminnat: Array<PaosToimijaInternalDto>;

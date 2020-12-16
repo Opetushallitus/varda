@@ -11,6 +11,7 @@ export enum VirkailijaTranslations {
   show_more = 'show-more',
   show_less = 'show-less',
   all = 'all',
+  search = 'search',
 
   save_success = 'save-success',
 
@@ -38,7 +39,6 @@ export enum VirkailijaTranslations {
   alkamis_pvm = 'alkamis-pvm',
   paattymis_pvm = 'paattymis-pvm',
   no_autofill_results = 'no-autofill-results',
-
 
   versio_VALUE = 'versio.VALUE',
   accessibility_info = 'accessibility.info',
@@ -76,7 +76,6 @@ export enum VirkailijaTranslations {
   navi_oma_organisaatio = 'navi.oma-organisaatio',
   navi_haku_filter_placeholder = 'navi.haku-filter.placeholder',
   navi_haku_filter_no_results = 'navi.haku-filter.no-results',
-
 
   yhteystiedot = 'yhteystiedot',
   yhteystiedot_label = 'yhteystiedot.label',
@@ -459,8 +458,6 @@ export enum VirkailijaTranslations {
   paginator_next_page = 'paginator.next-page',
   paginator_previous_page = 'paginator.previous-page',
 
-  paos = 'paos',
-
   cookie_popup_message = 'cookie.popup-message',
   dashboard_error_contact_organisation_admin = 'dashboard.error.contact-organisation-admin',
   dashboard_error_palvelukayttaja_forbidden = 'dashboard.error.palvelukayttaja-forbidden',
@@ -541,6 +538,7 @@ export enum VirkailijaTranslations {
   organisaatio_postinumero = 'organisaatio.postinumero',
   organisaatio_postitoimipaikka = 'organisaatio.postitoimipaikka',
   organisaatio_kuntakoodi = 'organisaatio.kuntakoodi',
+  organisaatio_y_tunnus = 'organisaatio.y-tunnus',
 
   toimipaikka_kasvatusopillinen_jarjestelma = 'toimipaikka.kasvatusopillinen-jarjestelma',
   toimipaikka_jarjestamismuoto = 'toimipaikka.jarjestamismuoto',
@@ -554,4 +552,38 @@ export enum VirkailijaTranslations {
   toimipaikka_id = 'toimipaikka.id',
   toimipaikka_plural = 'toimipaikka.plural',
   toimipaikka_nimi = 'toimipaikka.nimi',
+
+  paos = 'paos',
+  paos_saved_by = 'paos.saved-by',
+  paos_switch = 'paos.switch',
+  paos_search_placeholder = 'paos.search.placeholder',
+  paos_results = 'paos.results',
+  paos_instruction = 'paos.instruction',
+  paos_instruction_yksityinen = 'paos.instruction.yksityinen',
+  paos_error_generic = 'paos.error-generic',
+  paos_toiminta_instruction = 'paos.toiminta.instruction',
+  paos_toiminta_instruction_yksityinen = 'paos.toiminta.instruction.yksityinen',
+  paos_toiminta_instruction_search = 'paos.toiminta.instruction.search',
+  paos_toiminta_instruction_search_yksityinen = 'paos.toiminta.instruction.search.yksityinen',
+  paos_toiminta_search = 'paos.toiminta.search',
+  paos_toiminta_search_yksityinen = 'paos.toiminta.search.yksityinen',
+  paos_toiminta_no_results = 'paos.toiminta.no-results',
+  paos_toiminta_add = 'paos.toiminta.add',
+  paos_toiminta_already_added = 'paos.toiminta.already-added',
+  paos_toimijat = 'paos.toimijat',
+  paos_toimijat_instruction = 'paos.toimijat.instruction',
+  paos_toimijat_empty = 'paos.toimijat.empty',
+  paos_toimijat_already_added = 'paos.toimijat.already-added',
+  paos_toimijat_both_added = 'paos.toimijat.both-added',
+  paos_toimijat_delete_confirm = 'paos.toimijat.delete-confirm',
+  paos_toimipaikat = 'paos.toimipaikat',
+  paos_toimipaikat_search_placeholder = 'paos.toimipaikat.search-placeholder',
+  paos_toimipaikat_submit = 'paos.toimipaikat.add',
+  paos_toimipaikat_already_added = 'paos.toimipaikat.already-added',
+  paos_toimipaikat_no_results = 'paos.toimipaikat.no-results',
+  paos_toimipaikat_show = 'paos.toimipaikat.show',
+  paos_toimipaikat_hide = 'paos.toimipaikat.hide',
+  paos_toimipaikat_instruction = 'paos.toimipaikat.instruction',
+  paos_toimipaikat_empty = 'paos.toimipaikat.empty',
+  paos_toimipaikat_delete_confirm = 'paos.toimipaikat.delete-confirm',
 }

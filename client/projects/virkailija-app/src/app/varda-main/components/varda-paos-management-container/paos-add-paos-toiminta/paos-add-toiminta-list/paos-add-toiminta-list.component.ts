@@ -3,8 +3,9 @@ import { VardaToimipaikkaDTO } from '../../../../../utilities/models/dto/varda-t
 import { PaosToimintaCreateDto, PaosToimipaikkaDto } from '../../../../../utilities/models/dto/varda-paos-dto';
 import { VardaApiService } from '../../../../../core/services/varda-api.service';
 import { VardaVakajarjestaja } from '../../../../../utilities/models/varda-vakajarjestaja.model';
-import { OrganisaatioIdentity, PaosCreateEvent, PaosToimintaService } from '../../paos-toiminta.service';
+import { PaosCreateEvent, PaosToimintaService } from '../../paos-toiminta.service';
 import { VardaPaosApiService } from 'projects/virkailija-app/src/app/core/services/varda-paos-api.service';
+import { VirkailijaTranslations } from '../../../../../../assets/i18n/virkailija-translations.enum';
 
 @Component({
   selector: 'app-paos-add-toiminta-list',
@@ -14,8 +15,10 @@ import { VardaPaosApiService } from 'projects/virkailija-app/src/app/core/servic
 export class PaosAddToimintaListComponent implements OnInit {
   @Input() toimipaikat: Array<PaosToimipaikkaDto>;
   @Input() selectedVakajarjestaja: VardaVakajarjestaja;
-  @Input() ignoredIds: Set<string>;
+  @Input() ignoredIds: Set<number>;
   @Input() isVardaPaakayttaja: boolean;
+
+  i18n = VirkailijaTranslations;
   filteredToimipaikat: Array<VardaToimipaikkaDTO>;
 
   constructor(private paosService: VardaPaosApiService,

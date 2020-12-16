@@ -1,10 +1,10 @@
-<h1 class="varda-page-header">{{'label.paos-management.topic' | translate}}</h1>
+<h1 class="varda-page-header">{{i18n.paos | translate}}</h1>
 <div class="varda-paos-hallinta-wrapper">
   <main *ngIf="isVardaPaakayttaja"
        class="varda-paos-hallinta-flex-column varda-paos-hallinta-flex-column-big varda-page-content">
-    <h1>{{'label.paos-management.topic' | translate}}</h1>
+    <h1>{{i18n.paos | translate}}</h1>
     <p>
-      {{(selectedVakajarjestaja.kunnallinen_kytkin ? 'label.paos-management.description' : 'label.paos-management.description.yksityinen') | translate}}
+      {{(selectedVakajarjestaja.kunnallinen_kytkin ? i18n.paos_instruction : i18n.paos_instruction_yksityinen) | translate}}
     </p>
     <app-varda-error-alert [errorMessageKey$]="errorMessage$"></app-varda-error-alert>
     <app-paos-add-paos-toiminta [isVardaPaakayttaja]="isVardaPaakayttaja"

@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { VardaPaosApiService } from 'projects/virkailija-app/src/app/core/services/varda-paos-api.service';
+import { VirkailijaTranslations } from '../../../../../assets/i18n/virkailija-translations.enum';
 
 @Component({
   selector: 'app-paos-added-toimijat',
@@ -22,8 +23,9 @@ import { VardaPaosApiService } from 'projects/virkailija-app/src/app/core/servic
 })
 export class PaosAddedToimijatComponent extends AbstractPaosListToimintainfoComponentDirective<PaosToimintatietoDto> implements OnInit, OnDestroy {
   private createEventSubscription: Subscription;
+  i18n = VirkailijaTranslations;
   highlighted: Array<string>;
-  openToimija: string;
+  openToimija: number;
   filteredToiminnat: Array<PaosToimintatietoDto>;
   apiServiceMethod = () => this.paosService.getPaosToimijat(this.selectedVakajarjestaja.id);
   pushToimintaOrganisaatioId = paosToiminta => this.paosToimintaService.pushToimintaOrganisaatio(paosToiminta.vakajarjestaja_id, PaosCreateEvent.Toimija);
@@ -39,7 +41,7 @@ export class PaosAddedToimijatComponent extends AbstractPaosListToimintainfoComp
     super.ngOnInit();
 
     this.highlighted = [];
-    this.openToimija = '';
+    this.openToimija = null;
     this.createEventSubscription = this.paosToimintaService.createEvents$.pipe(
       filter(event => event === PaosCreateEvent.Toimija)
     ).subscribe({
@@ -57,7 +59,7 @@ export class PaosAddedToimijatComponent extends AbstractPaosListToimintainfoComp
   }
 
   deletePaosToiminta() {
-    this.openToimija = '';
+    this.openToimija = null;
     this.paosService.deletePaosToiminta(`${this.paosToimintaToDelete.paos_toiminta_id}`).subscribe({
       next: value => {
         this.paosToimintaService.pushDeletedToimintaOrganisaatio(this.paosToimintaToDelete.vakajarjestaja_id, PaosCreateEvent.Toimija);
@@ -67,8 +69,8 @@ export class PaosAddedToimijatComponent extends AbstractPaosListToimintainfoComp
     });
   }
 
-  toggleToimija(id: string) {
-    this.openToimija = this.openToimija === id ? '' : id;
+  toggleToimija(id: number) {
+    this.openToimija = this.openToimija === id ? null : id;
   }
 
   getPaosToiminnatOnCompleteHook() {

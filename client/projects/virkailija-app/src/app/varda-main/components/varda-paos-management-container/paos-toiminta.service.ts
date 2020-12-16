@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
+import { VirkailijaTranslations } from '../../../../assets/i18n/virkailija-translations.enum';
 
 export enum PaosCreateEvent {
   Toimipaikka,
@@ -21,6 +22,8 @@ export class PaosToimintaService {
   private readonly _allToimintaOrganisaatioOidsSource = new Subject<OrganisaatioIdentity>();
   private readonly _toimintaDeletedOrganisaatioIdSource = new Subject<OrganisaatioIdentity>();
   private readonly errorMessageSource = new Subject<string>();
+
+  i18n = VirkailijaTranslations;
 
   createEvents$ = this.createEventsSource.asObservable();
   toimintaOrganisaatioId$ = this._allToimintaOrganisaatioOidsSource.asObservable();
@@ -52,7 +55,7 @@ export class PaosToimintaService {
 
   pushGenericErrorMessage = (err) => {
     console.error(err);
-    this.pushErrorMessage('label.paos-management.generic-error');
+    this.pushErrorMessage(this.i18n.paos_error_generic);
   }
 
   private pushErrorMessage(errorKey: string) {

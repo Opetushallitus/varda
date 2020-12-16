@@ -1,14 +1,14 @@
-<h3>{{'label.paos-toimijat.topic' | translate}} ({{paosToiminnat.length}})</h3>
+<h3>{{i18n.paos_toimijat | translate}} ({{paosToiminnat.length}})</h3>
 <div>
-  <p>{{'label.paos-toimijat.description' | translate}}</p>
+  <p>{{i18n.paos_toimijat_instruction | translate}}</p>
   <p *ngIf="!paosToiminnat.length"
      class="paos-list-toimijat-search-empty">
-    {{'label.paos-toimijat.list.empty' | translate}}</p>
+    {{i18n.paos_toimijat_empty | translate}}</p>
 </div>
 <div *ngIf="showSuccess"
      class="oph-alert oph-alert-success"
      [@fadeOut]>
-  {{'label.paos-toimijat.created-notification' | translate}}
+  {{i18n.paos_toimijat_already_added | translate}}
 </div>
 <div *ngIf="paosToiminnat.length">
   <mat-form-field>
@@ -16,7 +16,7 @@
            matInput
            id="paos-list-toimijat-search"
            class="varda-input"
-           [placeholder]="'label.hae' | translate"
+           [placeholder]="i18n.search | translate"
            (keyup)="filterToimintaInfo($event.target.value)" />
   </mat-form-field>
   <div [class.scrollable]="paosToiminnat.length > 3">
@@ -27,17 +27,17 @@
         <h4>
           {{paosToiminta.vakajarjestaja_nimi}}
           <mat-icon *ngIf="paosToiminta.paos_oikeus.voimassa_kytkin"
-                    title="{{'label.paos-toimijat.added-each-other' | translate }}">sync_alt
+                    title="{{i18n.paos_toimijat_both_added | translate }}">sync_alt
           </mat-icon>
         </h4>
 
         <div class="paos-list-flexbox">
           <div>
             <div>
-              {{'label.oid' | translate}}: {{paosToiminta.vakajarjestaja_organisaatio_oid}}
+              {{i18n.organisaatio_oid | translate}}: {{paosToiminta.vakajarjestaja_organisaatio_oid}}
             </div>
             <div>
-              {{'label.varda-id' | translate}}: {{paosToiminta.vakajarjestaja_id}}
+              {{i18n.id | translate}}: {{paosToiminta.vakajarjestaja_id}}
             </div>
           </div>
           <app-varda-toggle-button [isUp]="openToimija !== paosToiminta.vakajarjestaja_id"
@@ -48,7 +48,7 @@
         <div class="paos-toimijat-list-tallennusvastuu-wrapper paos-list-flexbox">
           <div class="paos-list-flexbox">
             <div class="paos-toimipaikat-list-tallennusvastuu-column">
-              {{'label.paos-toimipaikat.list.tiedot-tallentaa' | translate}}:
+              {{i18n.paos_saved_by | translate}}:
             </div>
             <div class="paos-toimipaikat-list-tallennusvastuu-column">
               {{getCurrentTallentajaName(paosToiminta.paos_oikeus, paosToiminta.vakajarjestaja_nimi)}}
@@ -56,7 +56,7 @@
           </div>
           <app-varda-delete-button *ngIf="isVardaPaakayttaja"
                                    (click)="showDeleteConfirm(paosToiminta)">
-            {{'label.delete' | translate}}
+            {{i18n.delete | translate}}
           </app-varda-delete-button>
         </div>
       </div>
@@ -69,6 +69,6 @@
        *ngIf="paosToimintaToDelete">
     {{paosToimintaToDelete.vakajarjestaja_nimi}}
   </div>
-  {{'label.paos-toimijat.list.delete-confirm' | translate}}
+  {{i18n.paos_toimijat_delete_confirm | translate}}
 
 </app-varda-prompt-modal>

@@ -7,6 +7,7 @@ import { VardaToimipaikkaSearchDto } from '../../../../utilities/models/dto/vard
 import { PaosCreateEvent, PaosToimintaService } from '../paos-toiminta.service';
 import { Subscription } from 'rxjs';
 import { VardaPaosApiService } from 'projects/virkailija-app/src/app/core/services/varda-paos-api.service';
+import { VirkailijaTranslations } from '../../../../../assets/i18n/virkailija-translations.enum';
 
 @Component({
   selector: 'app-paos-add-paos-toiminta',
@@ -17,6 +18,8 @@ export class PaosAddPaosToimintaComponent implements OnInit, OnDestroy {
   @Input() isVakajarjestajaKunta: boolean;
   @Input() selectedVakajarjestaja: VardaVakajarjestaja;
   @Input() isVardaPaakayttaja: boolean;
+
+  i18n = VirkailijaTranslations;
 
   paosToimijaForm: FormGroup;
   vakajarjestajat: Array<PaosVakajarjestajaDto>;

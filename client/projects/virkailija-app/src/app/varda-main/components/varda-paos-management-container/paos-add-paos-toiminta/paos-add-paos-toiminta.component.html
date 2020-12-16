@@ -1,33 +1,33 @@
 <form [formGroup]="paosToimijaForm"
       (ngSubmit)="searchToimija()">
-  <h2>{{(isVakajarjestajaKunta ? 'label.paos-toiminta.topic' : 'label.paos-toiminta.topic.yksityinen') | translate}}
+  <h2>{{(isVakajarjestajaKunta ? i18n.paos_toiminta_instruction : i18n.paos_toiminta_instruction_yksityinen) | translate}}
   </h2>
   <p>
-    {{(isVakajarjestajaKunta ? 'label.paos-toiminta.search.description' : 'label.paos-toiminta.search.description.yksityinen') | translate}}
+    {{(isVakajarjestajaKunta ? i18n.paos_toiminta_instruction_search : i18n.paos_toiminta_instruction_search_yksityinen) | translate}}
   </p>
   <div>
     <label class="oph-h4 oph-bold"
-           for="add-paos-toiminta-toimija-search-input">{{(isVakajarjestajaKunta ? 'label.paos-toiminta.search.topic2' : 'label.paos-toiminta.search.topic2.yksityinen') | translate}}</label>
+           for="add-paos-toiminta-toimija-search-input">{{(isVakajarjestajaKunta ? i18n.paos_toiminta_search : i18n.paos_toiminta_search_yksityinen) | translate}}</label>
     <div id="add-paos-toiminta-toimija-search-wrapper">
       <input type="text"
              class="oph-input"
              id="add-paos-toiminta-toimija-search-input"
-             [placeholder]="'label.paos-toiminta.search.placeholder' | translate"
+             [placeholder]="i18n.paos_search_placeholder | translate"
              autofocus
              formControlName="search" />
       <button type="submit"
               class="varda-button responsive add-paos-toiminta-toimija-search-button"
               [disabled]="paosToimijaForm.invalid"
               [class.varda-disabled-button]="paosToimijaForm.invalid">
-        {{'label.hae' | translate}}
+        {{i18n.search | translate}}
       </button>
     </div>
   </div>
 </form>
 <div *ngIf="isVakajarjestajatFetched">
-  <div class="oph-h5 oph-bold my-2">{{'label.paos-toiminta.result.topic' | translate}}</div>
+  <div class="oph-h5 oph-bold my-2">{{i18n.paos_results | translate}}</div>
   <div *ngIf="!vakajarjestajat.length">
-    {{'label.paos-toiminta.result.empty' | translate}}
+    {{i18n.paos_toiminta_no_results | translate}}
   </div>
   <div *ngIf="vakajarjestajat.length"
        class="varda-paos-hallinta-result-wrapper">
@@ -40,10 +40,10 @@
               <h6>{{vakajarjestaja.nimi}}</h6>
             </div>
             <div>
-              {{'label.ytunnus' | translate}}: {{vakajarjestaja.y_tunnus}}
+              {{i18n.organisaatio_y_tunnus | translate}}: {{vakajarjestaja.y_tunnus}}
             </div>
             <div>
-              {{'label.oid' | translate}}: {{vakajarjestaja.organisaatio_oid}}
+              {{i18n.organisaatio_oid | translate}}: {{vakajarjestaja.organisaatio_oid}}
             </div>
           </div>
           <ng-container *ngIf="isVardaPaakayttaja">
@@ -53,18 +53,18 @@
                 <button class="varda-button add-paos-toiminta-toimija-add-button"
                         *ngIf="!ignoredJarjestajaIds.has(vakajarjestaja.id)"
                         (click)="addJarjestaja(vakajarjestaja)">
-                  {{'label.paos-toiminta.result.add' | translate}}
+                  {{i18n.paos_toiminta_add | translate}}
                 </button>
                 <span
-                      *ngIf="ignoredJarjestajaIds.has(vakajarjestaja.id)">{{'label.paos-toiminta.result.already-added' | translate}}</span>
+                      *ngIf="ignoredJarjestajaIds.has(vakajarjestaja.id)">{{i18n.paos_toiminta_already_added | translate}}</span>
               </div>
             </div>
           </ng-container>
           <div class="varda-paos-hallinta-result-column varda-paos-hallinta-result-middle">
             <app-varda-toggle-button *ngIf="isVakajarjestajaKunta"
                                      [isUp]="!isToimipaikkadata(vakajarjestaja.id)"
-                                     showTextKey="label.paos-toiminta.result.search-toimipaikka"
-                                     hideTextKey="label.paos-toiminta.result.clear-toimipaikka"
+                                     [showTextKey]="i18n.paos_toimipaikat_show"
+                                     [hideTextKey]="i18n.paos_toimipaikat_hide"
                                      (click)="toggleSearchToimipaikat(vakajarjestaja)"></app-varda-toggle-button>
           </div>
 
