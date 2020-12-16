@@ -1520,7 +1520,6 @@ class VardaViewsTests(TestCase):
         self.assertEqual(json.loads(resp.content), toimipaikan_lapset_henkilo_filter_json)
 
     def test_toimipaikan_lapset_huoltajatieto_tallentaja(self):
-        self.maxDiff = None
         client = SetUpTestClient('huoltajatietojen_tallentaja').client()
         accepted_response_json = {
             'count': 2,

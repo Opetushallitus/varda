@@ -193,3 +193,52 @@ class VardaHenkilostoViewSetTests(TestCase):
         assert_status_code(resp, status.HTTP_200_OK)
         resp_content = json.loads(resp.content)
         self.assertEqual(len(resp_content['results']), 2)
+
+    def test_api_lapset_paos_permissions(self):
+        # PAOS-organisaatio should not see non-PAOS Lapsi objects in selected Toimipaikka
+        paos_client = SetUpTestClient('tester2').client()
+        toimipaikka_client = SetUpTestClient('tester8').client()
+
+        henkilo_oid = '1.2.246.562.24.49084901392'
+        toimipaikka_oid = '1.2.246.562.10.9395737548817'
+        toimipaikka_id = Toimipaikka.objects.get(organisaatio_oid=toimipaikka_oid).id
+        vakajarjestaja_oid = '1.2.246.562.10.93957375488'
+        paos_vakajarjestaja_oid = '1.2.246.562.10.34683023489'
+        paos_vakajarjestaja_id = VakaJarjestaja.objects.get(organisaatio_oid=paos_vakajarjestaja_oid)
+
+        lapsi = {
+            'henkilo_oid': henkilo_oid,
+            'vakatoimija_oid': vakajarjestaja_oid
+        }
+        resp_lapsi = toimipaikka_client.post('/api/v1/lapset/', lapsi)
+        assert_status_code(resp_lapsi, status.HTTP_201_CREATED)
+        lapsi_id = json.loads(resp_lapsi.content)['id']
+
+        vakapaatos = {
+            'lapsi': f'/api/v1/lapset/{lapsi_id}/',
+            'alkamis_pvm': '2020-12-01',
+            'hakemus_pvm': '2020-12-01',
+            'vuorohoito_kytkin': False,
+            'tilapainen_vaka_kytkin': False,
+            'pikakasittely_kytkin': False,
+            'tuntimaara_viikossa': '32.0',
+            'paivittainen_vaka_kytkin': True,
+            'kokopaivainen_vaka_kytkin': True,
+            'jarjestamismuoto_koodi': 'jm04'
+        }
+        resp_vakapaatos = toimipaikka_client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos)
+        assert_status_code(resp_vakapaatos, status.HTTP_201_CREATED)
+        vakapaatos_id = json.loads(resp_vakapaatos.content)['id']
+
+        vakasuhde = {
+            'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos_id}/',
+            'toimipaikka_oid': toimipaikka_oid,
+            'alkamis_pvm': '2020-12-01'
+        }
+        resp_vakasuhde = toimipaikka_client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
+        assert_status_code(resp_vakasuhde, status.HTTP_201_CREATED)
+
+        resp_ui_lapset = paos_client.get(f'/api/ui/vakajarjestajat/{paos_vakajarjestaja_id}/lapset/?toimipaikat={toimipaikka_id}')
+        assert_status_code(resp_ui_lapset, status.HTTP_200_OK)
+        lapset_results = json.loads(resp_ui_lapset.content)['results']
+        self.assertIsNone(next((lapsi for lapsi in lapset_results if lapsi['lapsi_id'] == lapsi_id), None))

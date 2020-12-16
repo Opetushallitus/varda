@@ -62,6 +62,7 @@ def add_groups_with_permissions():
         ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.93957375488', get_huoltajatiedot_katselija_permissions()),
         ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.34683023489', get_huoltajatiedot_katselija_permissions()),
         ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.93957375484', get_huoltajatiedot_katselija_permissions()),  # vakajarjestaja_4
+        ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.9395737548817', get_huoltajatiedot_tallentaja_permissions()),  # toimipaikka_5
         ('HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.34683023489', get_tyontekija_tallentaja_permissions()),  # vakajarjestaja_1
         ('HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.93957375488', get_tyontekija_tallentaja_permissions()),  # vakajarjestaja_2
         ('HENKILOSTO_TYONTEKIJA_KATSELIJA_1.2.246.562.10.34683023489', get_tyontekija_katselija_permissions()),  # vakajarjestaja_1
@@ -530,7 +531,7 @@ def create_toimipaikat_and_painotukset():
         kasvatusopillinen_jarjestelma_koodi='kj04',
         toimintamuoto_koodi='tm03',
         asiointikieli_koodi=['FI'],
-        jarjestamismuoto_koodi=['jm02', 'jm03'],
+        jarjestamismuoto_koodi=['jm02', 'jm03', 'jm04', 'jm05'],
         varhaiskasvatuspaikat=150,
         toiminnallinenpainotus_kytkin=True,
         kielipainotus_kytkin=True,
@@ -2434,6 +2435,7 @@ def create_user_data():
     tester3_user = User.objects.get(username='tester3')
     tester6_user = User.objects.get(username='huoltajatietojen_tallentaja')
     tester7_user = User.objects.get(username='tester7')
+    tester8_user = User.objects.get(username='tester8')
     tester9_user = User.objects.get(username='tester9')
 
     pk_vakajarjestaja_1_user = User.objects.get(username='pkvakajarjestaja1')
@@ -2479,6 +2481,15 @@ def create_user_data():
         user_id=tester7_user.id,
         kayttajatyyppi='VIRKAILIJA',
         henkilo_oid='1.2.345679001',
+        asiointikieli_koodi='fi',
+        approved_oph_staff=False,
+        last_modified='2019-01-24 12:00:00+1459'
+    )
+
+    Z3_AdditionalCasUserFields.objects.create(
+        user_id=tester8_user.id,
+        kayttajatyyppi='VIRKAILIJA',
+        henkilo_oid='',
         asiointikieli_koodi='fi',
         approved_oph_staff=False,
         last_modified='2019-01-24 12:00:00+1459'
