@@ -87,7 +87,9 @@ class TyontekijaSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedMode
                                   parent_attribute='henkilo_oid',
                                   prevalidator=validators.validate_henkilo_oid,
                                   either_required=True)
-    vakajarjestaja = VakaJarjestajaPermissionCheckedHLField(view_name='vakajarjestaja-detail', required=False)
+    vakajarjestaja = VakaJarjestajaPermissionCheckedHLField(view_name='vakajarjestaja-detail', required=False,
+                                                            permission_groups=[Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA],
+                                                            accept_toimipaikka_permission=True)
     vakajarjestaja_oid = OidRelatedField(object_type=VakaJarjestaja,
                                          parent_field='vakajarjestaja',
                                          parent_attribute='organisaatio_oid',
@@ -124,7 +126,8 @@ class TyontekijaSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedMode
 
 class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
-    vakajarjestaja = VakaJarjestajaPermissionCheckedHLField(view_name='vakajarjestaja-detail', required=False)
+    vakajarjestaja = VakaJarjestajaPermissionCheckedHLField(view_name='vakajarjestaja-detail', required=False,
+                                                            permission_groups=[Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA])
     vakajarjestaja_oid = OidRelatedField(object_type=VakaJarjestaja,
                                          parent_field='vakajarjestaja',
                                          parent_attribute='organisaatio_oid',
@@ -197,7 +200,9 @@ class TutkintoSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelS
                                   parent_attribute='henkilo_oid',
                                   prevalidator=validators.validate_henkilo_oid,
                                   either_required=True)
-    vakajarjestaja = VakaJarjestajaPermissionCheckedHLField(view_name='vakajarjestaja-detail', required=False)
+    vakajarjestaja = VakaJarjestajaPermissionCheckedHLField(view_name='vakajarjestaja-detail', required=False,
+                                                            permission_groups=[Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA],
+                                                            accept_toimipaikka_permission=True)
     vakajarjestaja_oid = OidRelatedField(object_type=VakaJarjestaja,
                                          parent_field='vakajarjestaja',
                                          parent_attribute='organisaatio_oid',
@@ -293,7 +298,8 @@ class TyoskentelypaikkaSerializer(serializers.HyperlinkedModelSerializer):
                                                   parent_field='palvelussuhde',
                                                   prevalidator=validators.validate_tunniste,
                                                   either_required=True)
-    toimipaikka = ToimipaikkaPermissionCheckedHLField(required=False, allow_null=True, view_name='toimipaikka-detail')
+    toimipaikka = ToimipaikkaPermissionCheckedHLField(required=False, allow_null=True, view_name='toimipaikka-detail',
+                                                      permission_groups=[Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA])
     toimipaikka_oid = OidRelatedField(object_type=Toimipaikka,
                                       parent_field='toimipaikka',
                                       parent_attribute='organisaatio_oid',

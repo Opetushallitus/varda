@@ -623,3 +623,42 @@ def toimipaikka_tallentaja_pidempipoissaolo_has_perm_to_add(user, vakajarjestaja
 def user_has_vakajarjestaja_level_permission(user, organisaatio_oid, permission_name):
     return user.groups.filter(Q(name__endswith=organisaatio_oid) &
                               Q(permissions__codename__exact=permission_name)).exists()
+
+
+def user_belongs_to_correct_groups(field, user, field_object):
+    """
+    Verifies that given user belongs to pre-defined permission groups.
+    Used in ensuring that, for example, if user has vaka permissions to one VakaJarjestaja and henkilosto permissions
+    to another VakaJarjestaja, user cannot create Tyontekija objects to VakaJarjestaja with only vaka permissions.
+    :param user: User object instance
+    :param field: PermissionCheckedHLFieldMixin instance
+    :param field_object: VakaJarjestaja or Toimipaikka object instance
+    :return: True if user belongs to correct permission groups or if no specific groups are defined, else False
+    """
+    if (not user.is_superuser and not is_oph_staff(user) and
+            hasattr(field, 'permission_groups') and field.permission_groups):
+        oid_list = []
+        if isinstance(field_object, Toimipaikka):
+            oid_list = [field_object.organisaatio_oid, field_object.vakajarjestaja.organisaatio_oid]
+        elif isinstance(field_object, VakaJarjestaja):
+            oid_list = [field_object.organisaatio_oid]
+            if hasattr(field, 'accept_toimipaikka_permission') and field.accept_toimipaikka_permission:
+                # User can also have permissions to Toimipaikka of specified VakaJarjestaja
+                toimipaikka_oid_list = list(field_object.toimipaikat.values_list('organisaatio_oid', flat=True))
+                oid_list = oid_list + toimipaikka_oid_list
+
+        group_name_list = [f'{group}_{oid}' for oid in oid_list for group in field.permission_groups]
+        return user.groups.filter(name__in=group_name_list).exists()
+    else:
+        # User is admin, oph_staff or permission groups not specified
+        return True
+
+
+def is_oph_staff(user):
+    """
+    Return True if user is OPH staff, otherwise return False
+    :param user: User object
+    :return: boolean
+    """
+    additional_details = getattr(user, 'additional_user_info', None)
+    return getattr(additional_details, 'approved_oph_staff', False)

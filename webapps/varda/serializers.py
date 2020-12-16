@@ -17,7 +17,8 @@ from varda.misc_viewsets import ViewSetValidator
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Maksutieto, Henkilo,
                           Lapsi, Huoltaja, Huoltajuussuhde, PaosOikeus, PaosToiminta, Varhaiskasvatuspaatos,
                           Varhaiskasvatussuhde, Z3_AdditionalCasUserFields, Tyontekija)
-from varda.permissions import check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement
+from varda.permissions import (check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement,
+                               user_belongs_to_correct_groups)
 from varda.serializers_common import OidRelatedField
 from varda.validators import (fill_missing_fields_for_validations, validate_henkilo_oid, validate_nimi,
                               validate_henkilotunnus_or_oid_needed, validate_organisaatio_oid)
@@ -188,8 +189,11 @@ class PermissionCheckedHLFieldMixin:
     def get_object(self, view_name, view_args, view_kwargs):
         hlfield_object = super(PermissionCheckedHLFieldMixin, self).get_object(view_name, view_args, view_kwargs)
         user = self.context['request'].user
-        if not user.has_perm(self.check_permission, hlfield_object):
+
+        if (not user.has_perm(self.check_permission, hlfield_object) or
+                not user_belongs_to_correct_groups(self, user, hlfield_object)):
             self.fail('does_not_exist')
+
         return hlfield_object
 
 
@@ -208,6 +212,14 @@ class VakaJarjestajaHLField(serializers.HyperlinkedRelatedField):
 
 class VakaJarjestajaPermissionCheckedHLField(PermissionCheckedHLFieldMixin, VakaJarjestajaHLField):
     check_permission = 'view_vakajarjestaja'
+    permission_groups = []
+    accept_toimipaikka_permission = False
+
+    def __init__(self, *args, **kwargs):
+        self.permission_groups = kwargs.pop('permission_groups', [])
+        self.accept_toimipaikka_permission = kwargs.pop('accept_toimipaikka_permission', False)
+
+        super(VakaJarjestajaPermissionCheckedHLField, self).__init__(*args, **kwargs)
 
 
 class ToimipaikkaHLField(serializers.HyperlinkedRelatedField):
@@ -222,6 +234,11 @@ class ToimipaikkaHLField(serializers.HyperlinkedRelatedField):
 
 class ToimipaikkaPermissionCheckedHLField(PermissionCheckedHLFieldMixin, ToimipaikkaHLField):
     check_permission = 'view_toimipaikka'
+    permission_groups = []
+
+    def __init__(self, *args, **kwargs):
+        self.permission_groups = kwargs.pop('permission_groups', [])
+        super(ToimipaikkaPermissionCheckedHLField, self).__init__(*args, **kwargs)
 
 
 class VarhaiskasvatuspaatosHLField(serializers.HyperlinkedRelatedField):

@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from varda.enums.error_messages import ErrorMessages
 from varda.misc import get_object_id_from_path
+from varda.permissions import user_belongs_to_correct_groups
 
 
 class AbstractCustomRelatedField(serializers.Field):
@@ -87,10 +88,15 @@ class AbstractCustomRelatedField(serializers.Field):
         if referenced_object is None:
             return {}
         else:
-            check_permission = getattr(self.parent.fields.fields[self.parent_field], 'check_permission', None)
-            if check_permission and not self.context['request'].user.has_perm(check_permission, referenced_object):
+            parent_field = self.parent.fields.fields[self.parent_field]
+            user = self.context['request'].user
+
+            check_permission = getattr(parent_field, 'check_permission', None)
+            if ((check_permission and not user.has_perm(check_permission, referenced_object)) or
+                    not user_belongs_to_correct_groups(parent_field, user, referenced_object)):
                 # Masking 403 as object not found
                 referenced_object = AbstractCustomRelatedField._does_not_exist
+
         if referenced_object is AbstractCustomRelatedField._does_not_exist:
             raise serializers.ValidationError([ErrorMessages.RF003.value], code='invalid')
 

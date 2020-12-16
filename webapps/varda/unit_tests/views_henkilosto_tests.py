@@ -2,9 +2,8 @@ import json
 from datetime import date
 from unittest.mock import patch
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.test import TestCase
-from guardian.shortcuts import assign_perm
 from rest_framework import status
 
 from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, assert_validation_error
@@ -1633,10 +1632,11 @@ class VardaHenkilostoViewSetTests(TestCase):
     def test_tyoskentelypaikka_add_incorrect_toimipaikka(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
         toimipaikka_oid = '1.2.246.562.10.9395737548810'
+
         # User must have permission to toimipaikka or 400 toimipaikka not found is returned
         user = User.objects.get(username='tyontekija_tallentaja')
-        toimipaikka = Toimipaikka.objects.filter(organisaatio_oid=toimipaikka_oid).first()
-        assign_perm('view_toimipaikka', user, toimipaikka)
+        permission_group = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.9395737548810')
+        user.groups.add(permission_group)
 
         palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
 
@@ -2805,7 +2805,8 @@ class VardaHenkilostoViewSetTests(TestCase):
             'lahdejarjestelma': '1',
             'toimipaikka_oid': toimipaikka_oid,
         }
-        tyontekija_resp = self._assert_create_and_list(client_tyontekija_katselija, client_tyontekija_tallentaja, tyontekija, '/api/henkilosto/v1/tyontekijat/')
+        tyontekija_resp = self._assert_create_and_list(client_tyontekija_katselija, client_tyontekija_tallentaja,
+                                                       tyontekija, '/api/henkilosto/v1/tyontekijat/', expected_count=2)
         tyontekija_url = json.loads(tyontekija_resp.content)['url']
         tyontekija_id = json.loads(tyontekija_resp.content)['id']
 
@@ -2831,7 +2832,8 @@ class VardaHenkilostoViewSetTests(TestCase):
             'lahdejarjestelma': '1',
             'toimipaikka_oid': toimipaikka_oid,
         }
-        palvelussuhde_resp = self._assert_create_and_list(client_tyontekija_katselija, client_tyontekija_tallentaja, palvelussuhde, '/api/henkilosto/v1/palvelussuhteet/')
+        palvelussuhde_resp = self._assert_create_and_list(client_tyontekija_katselija, client_tyontekija_tallentaja,
+                                                          palvelussuhde, '/api/henkilosto/v1/palvelussuhteet/', expected_count=2)
         palvelussuhde_url = json.loads(palvelussuhde_resp.content)['url']
 
         # Pidempipoissaolo
@@ -2867,7 +2869,8 @@ class VardaHenkilostoViewSetTests(TestCase):
             'kiertava_tyontekija_kytkin': False,
             'toimipaikka_oid': toimipaikka_oid,
         })
-        self._assert_create_and_list(client_tyontekija_katselija, client_tyontekija_tallentaja, tyoskentelypaikka, '/api/henkilosto/v1/tyoskentelypaikat/')
+        self._assert_create_and_list(client_tyontekija_katselija, client_tyontekija_tallentaja, tyoskentelypaikka,
+                                     '/api/henkilosto/v1/tyoskentelypaikat/', expected_count=2)
 
         # Pidempipoissaolo
         # After adding Tyoskentelypaikka toimipaikka_tallentaja can add pidempipoissaolo
@@ -3022,3 +3025,100 @@ class VardaHenkilostoViewSetTests(TestCase):
         self.assertEqual(len(resp_content_tyontekija['palvelussuhteet']), tyontekija.palvelussuhteet.count())
         # No access to taydennyskoulutukset
         self.assertEqual(len(resp_content_tyontekija['taydennyskoulutukset']), 0)
+
+    def test_tyontekija_vakajarjestaja_permission_group(self):
+        # If user has vaka permissions in one organization and henkilosto permissions in another organization,
+        # user should not be able to create a Tyontekija in the organization with only vaka permissions
+        vakajarjestaja_vaka = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        vakajarjestaja_henkilosto = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.93957375488')
+        user = User.objects.get(username='tester2')
+
+        # Give user tyontekija permissions in another organization
+        permission_group = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.93957375488')
+        user.groups.add(permission_group)
+
+        client = SetUpTestClient('tester2').client()
+
+        tyontekija_invalid_1 = {
+            'henkilo': '/api/v1/henkilot/1/',
+            'vakajarjestaja_oid': vakajarjestaja_vaka.organisaatio_oid,
+            'lahdejarjestelma': '1'
+        }
+
+        resp_invalid_1 = client.post('/api/henkilosto/v1/tyontekijat/', tyontekija_invalid_1)
+        assert_status_code(resp_invalid_1, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_invalid_1, 'vakajarjestaja_oid', 'RF003', 'Could not find matching object.')
+
+        tyontekija_invalid_2 = {
+            'henkilo': '/api/v1/henkilot/1/',
+            'vakajarjestaja': f'/api/v1/vakajarjestajat/{vakajarjestaja_vaka.id}/',
+            'lahdejarjestelma': '1'
+        }
+
+        resp_invalid_2 = client.post('/api/henkilosto/v1/tyontekijat/', tyontekija_invalid_2)
+        assert_status_code(resp_invalid_2, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_invalid_2, 'vakajarjestaja', 'GE008', 'Invalid hyperlink, object does not exist.')
+
+        tyontekija_valid = {
+            'henkilo': '/api/v1/henkilot/1/',
+            'vakajarjestaja': f'/api/v1/vakajarjestajat/{vakajarjestaja_henkilosto.id}/',
+            'lahdejarjestelma': '1'
+        }
+        resp_valid = client.post('/api/henkilosto/v1/tyontekijat/', tyontekija_valid)
+        assert_status_code(resp_valid, status.HTTP_201_CREATED)
+
+    def test_tyoskentelypaikka_toimipaikka_permission_group(self):
+        toimipaikka_valid = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548810')
+        toimipaikka_invalid = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548811')
+        palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde5')
+        user = User.objects.get(username='tyontekija_toimipaikka_tallentaja')
+
+        # Give user VakaJarjestaja level vaka permissions in same organization
+        permission_group = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.93957375488')
+        user.groups.add(permission_group)
+
+        client = SetUpTestClient('tyontekija_toimipaikka_tallentaja').client()
+
+        tyoskentelypaikka_invalid_1 = {
+            'palvelussuhde': f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde.id}/',
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_invalid.id}/',
+            'alkamis_pvm': '2021-03-01',
+            'paattymis_pvm': '2021-09-02',
+            'tehtavanimike_koodi': '64212',
+            'kelpoisuus_kytkin': True,
+            'kiertava_tyontekija_kytkin': False,
+            'lahdejarjestelma': '1'
+        }
+
+        resp_invalid_1 = client.post('/api/henkilosto/v1/tyoskentelypaikat/', tyoskentelypaikka_invalid_1)
+        assert_status_code(resp_invalid_1, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_invalid_1, 'toimipaikka', 'GE008', 'Invalid hyperlink, object does not exist.')
+
+        tyoskentelypaikka_invalid_2 = {
+            'palvelussuhde': f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde.id}/',
+            'toimipaikka_oid': toimipaikka_invalid.organisaatio_oid,
+            'alkamis_pvm': '2021-03-01',
+            'paattymis_pvm': '2021-09-02',
+            'tehtavanimike_koodi': '64212',
+            'kelpoisuus_kytkin': True,
+            'kiertava_tyontekija_kytkin': False,
+            'lahdejarjestelma': '1'
+        }
+
+        resp_invalid_2 = client.post('/api/henkilosto/v1/tyoskentelypaikat/', tyoskentelypaikka_invalid_2)
+        assert_status_code(resp_invalid_2, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_invalid_2, 'toimipaikka_oid', 'RF003', 'Could not find matching object.')
+
+        tyoskentelypaikka_valid = {
+            'palvelussuhde': f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde.id}/',
+            'toimipaikka_oid': toimipaikka_valid.organisaatio_oid,
+            'alkamis_pvm': '2021-03-01',
+            'paattymis_pvm': '2021-09-02',
+            'tehtavanimike_koodi': '64212',
+            'kelpoisuus_kytkin': True,
+            'kiertava_tyontekija_kytkin': False,
+            'lahdejarjestelma': '1'
+        }
+
+        resp_valid = client.post('/api/henkilosto/v1/tyoskentelypaikat/', tyoskentelypaikka_valid)
+        assert_status_code(resp_valid, status.HTTP_201_CREATED)

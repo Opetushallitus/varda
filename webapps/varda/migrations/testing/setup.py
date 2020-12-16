@@ -2858,6 +2858,8 @@ def create_henkilosto():
     group_tilapainen_henkilosto_tallentaja_vakajarjestaja_34683023489 = Group.objects.get(name='HENKILOSTO_TILAPAISET_TALLENTAJA_1.2.246.562.10.34683023489')
     group_taydennys_tallentaja_vakajarjestaja_34683023489 = Group.objects.get(name='HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA_1.2.246.562.10.34683023489')
     group_tyontekija_tallentaja_vakajarjestaja_93957375488 = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.93957375488')
+    group_tyontekija_tallentaja_toimipaikka_9395737548810 = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.9395737548810')
+    group_tyontekija_katselija_toimipaikka_9395737548810 = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_KATSELIJA_1.2.246.562.10.9395737548810')
 
     admin_user = User.objects.get(username='credadmin')
     vakajarjestaja_93957375486 = VakaJarjestaja.objects.filter(organisaatio_oid='1.2.246.562.10.93957375486').first()
@@ -2960,6 +2962,8 @@ def create_henkilosto():
         changed_by_id=admin_user.id
     )
     [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja_93957375488, tyontekija_5) for crud_permission in crud_permissions_tyontekija]
+    [assign_perm(crud_permission, group_tyontekija_tallentaja_toimipaikka_9395737548810, tyontekija_5) for crud_permission in crud_permissions_tyontekija]
+    [assign_perm(crud_permission, group_tyontekija_katselija_toimipaikka_9395737548810, tyontekija_5) for crud_permission in crud_permissions_tyontekija]
 
     crud_permissions_palvelussuhde = ['view_palvelussuhde', 'change_palvelussuhde', 'add_palvelussuhde', 'delete_palvelussuhde']
     palvelussuhde_1 = Palvelussuhde.objects.create(
@@ -3126,6 +3130,8 @@ def create_henkilosto():
         changed_by_id=admin_user.id
     )
     [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja_93957375488, palvelussuhde_5) for crud_permission in crud_permissions_palvelussuhde]
+    [assign_perm(crud_permission, group_tyontekija_tallentaja_toimipaikka_9395737548810, palvelussuhde_5) for crud_permission in crud_permissions_palvelussuhde]
+    [assign_perm(crud_permission, group_tyontekija_katselija_toimipaikka_9395737548810, palvelussuhde_5) for crud_permission in crud_permissions_palvelussuhde]
 
     tyoskentelypaikka_5_1 = Tyoskentelypaikka.objects.create(
         palvelussuhde=palvelussuhde_5,
@@ -3154,6 +3160,8 @@ def create_henkilosto():
         changed_by_id=admin_user.id
     )
     [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja_93957375488, tyoskentelypaikka_5_2) for crud_permission in crud_permissions_tyoskentelypaikka]
+    [assign_perm(crud_permission, group_tyontekija_tallentaja_toimipaikka_9395737548810, tyoskentelypaikka_5_2) for crud_permission in crud_permissions_tyoskentelypaikka]
+    [assign_perm(crud_permission, group_tyontekija_katselija_toimipaikka_9395737548810, tyoskentelypaikka_5_2) for crud_permission in crud_permissions_tyoskentelypaikka]
 
     crud_permissions_tilapainen_henkilosto = ['view_tilapainenhenkilosto', 'change_tilapainenhenkilosto', 'add_tilapainenhenkilosto', 'delete_tilapainenhenkilosto']
     tilapainen_henkilosto_1 = TilapainenHenkilosto.objects.create(
