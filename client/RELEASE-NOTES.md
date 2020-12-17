@@ -1,6 +1,11 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.0 (17.12.2020)
+CSCVARDA-2003: Yksilöimättömättömien henkilöiden listaus
+CSCVARDA-2004: Tiedonsiirrot ja puuttuvat tiedot-raportointi
+CSCVARDA-2047: PAOS-sivu lokalisointipalveluun
+
 1.4.12 (03.12.2020)
 CSCVARDA-1740: Backend-virheviestit koodistosta
 
