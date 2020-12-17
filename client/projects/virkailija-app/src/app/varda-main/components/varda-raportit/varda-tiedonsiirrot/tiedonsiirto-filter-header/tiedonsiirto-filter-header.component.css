@@ -1,0 +1,22 @@
+.material-icons {
+  margin-left: 0.25rem;
+  font-size: 1.3rem;
+  position: relative;
+  top: 2px;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:hover {
+  color: var(--black);
+  font-weight: bold;
+}
+
+.mat-button {
+  background-color: var(--gray-lighten-3);
+  padding-left: 0;
+  padding-right: 0.5rem;
+  border-radius: 0px 4px 4px 0px;
+}

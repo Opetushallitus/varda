@@ -83,6 +83,11 @@
   border-color: var(--black);
 }
 
+.warning {
+  margin-right: 0.25rem;
+  font-size: 1.25rem;
+}
+
 @media (max-width: 992px) {
   .varda-navbar-toimija>*:last-child {
     width: 100%;

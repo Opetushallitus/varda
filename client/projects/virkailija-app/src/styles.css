@@ -75,6 +75,14 @@ mat-icon,
   user-select: none;
 }
 
+.mat-icon.warning {
+  color: var(--orange);
+}
+
+.material-icons:hover {
+  text-transform: none;
+}
+
 h1,
 h2,
 h3,

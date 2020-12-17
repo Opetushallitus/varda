@@ -23,8 +23,8 @@ export class VirkailijaTranslateLoader implements TranslateLoader {
             preparedTranslation.next(this.handleTranslations(angularTranslation, translation, lang));
             preparedTranslation.complete();
           }, () => {
-            if (attemptNr < 2) {
-              setTimeout(() => this.getTranslation(lang, attemptNr++), 200);
+            if (attemptNr < 4) {
+              setTimeout(() => this.getTranslation(lang, attemptNr++), 400);
             } else {
               console.error('Failed to load translations');
               preparedTranslation.next({});

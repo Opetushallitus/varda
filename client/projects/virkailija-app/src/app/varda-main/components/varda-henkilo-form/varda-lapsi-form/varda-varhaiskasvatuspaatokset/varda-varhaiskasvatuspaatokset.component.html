@@ -34,7 +34,10 @@
         <div *ngIf="!varhaiskasvatuspaatokset.length"
              class="ei-palvelussuhteita"
              role="alert">
-          <p>{{ i18n.varhaiskasvatuspaatokset_ei_varhaiskasvatuspaatoksia | translate }}</p>
+          <p class="missing-info">
+            <mat-icon aria-ignore>error_outline</mat-icon>
+            {{ i18n.varhaiskasvatuspaatokset_ei_varhaiskasvatuspaatoksia | translate }}
+          </p>
 
           <ng-container *ngIf="lapsitiedotTallentaja">
             <button class="varda-text-button"

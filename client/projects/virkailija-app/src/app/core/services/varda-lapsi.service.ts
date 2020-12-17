@@ -1,12 +1,15 @@
 import { Injectable } from '@angular/core';
 import { LoadingHttpService } from 'varda-shared';
-import { Observable, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { environment } from 'projects/virkailija-app/src/environments/environment';
 import { VardaLapsiDTO, VardaVarhaiskasvatuspaatosDTO, VardaVarhaiskasvatussuhdeDTO } from '../../utilities/models';
-import { HenkiloListDTO } from '../../utilities/models/dto/varda-henkilo-dto.model';
+import { HenkiloListDTO, HenkiloListErrorDTO } from '../../utilities/models/dto/varda-henkilo-dto.model';
 import { VardaPageDto } from '../../utilities/models/dto/varda-page-dto';
 import { VardaMaksutietoDTO } from '../../utilities/models/dto/varda-maksutieto-dto.model';
 import { HenkiloSearchFilter } from '../../varda-main/components/varda-main-frame/henkilo-section.abstract';
+import { TyontekijaListDTO } from '../../utilities/models/dto/varda-tyontekija-dto.model';
+import { VardaRaportitService } from './varda-raportit.service';
+import { LapsiListDTO } from '../../utilities/models/dto/varda-lapsi-dto.model';
 
 
 @Injectable()
@@ -14,8 +17,12 @@ export class VardaLapsiService {
 
   private apiPath = `${environment.vardaAppUrl}/api/v1`;
   private updateLapsiList$ = new Subject();
+  private lapsiFormErrorList = new BehaviorSubject<Array<HenkiloListErrorDTO>>(null);
 
-  constructor(private http: LoadingHttpService) { }
+  constructor(
+    private http: LoadingHttpService,
+    private raportitService: VardaRaportitService
+  ) { }
 
 
   // listeners
@@ -94,4 +101,26 @@ export class VardaLapsiService {
     return this.http.delete(`${this.apiPath}/maksutiedot/${maksutietoId}/`);
   }
 
+
+  initFormErrorList(vakajarjestajaID: number, lapsi: LapsiListDTO) {
+    this.lapsiFormErrorList.next([]);
+    if (lapsi.id) {
+      const searchFilter = {
+        page: 1,
+        page_size: 100,
+        search: lapsi.henkilo_oid
+      };
+
+      this.raportitService.getLapsiErrorList(vakajarjestajaID, searchFilter).subscribe(henkiloData => {
+        const henkilo = henkiloData.results.find(result => result.lapsi_id === lapsi.id);
+        if (henkilo?.errors) {
+          this.lapsiFormErrorList.next(henkilo.errors);
+        }
+      });
+    }
+  }
+
+  getFormErrorList(): Observable<Array<HenkiloListErrorDTO>> {
+    return this.lapsiFormErrorList.asObservable();
+  }
 }

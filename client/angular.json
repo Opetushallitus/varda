@@ -141,34 +141,6 @@
         }
       }
     },
-    "huoltaja-app-e2e": {
-      "root": "projects/huoltaja-app-e2e/",
-      "projectType": "application",
-      "prefix": "",
-      "architect": {
-        "e2e": {
-          "builder": "@angular-devkit/build-angular:protractor",
-          "options": {
-            "protractorConfig": "projects/huoltaja-app-e2e/protractor.conf.js",
-            "devServerTarget": "huoltaja-app:serve"
-          },
-          "configurations": {
-            "production": {
-              "devServerTarget": "huoltaja-app:serve:production"
-            }
-          }
-        },
-        "lint": {
-          "builder": "@angular-devkit/build-angular:tslint",
-          "options": {
-            "tsConfig": "projects/huoltaja-app-e2e/tsconfig.e2e.json",
-            "exclude": [
-              "**/node_modules/**"
-            ]
-          }
-        }
-      }
-    },
     "virkailija-app": {
       "root": "projects/virkailija-app/",
       "sourceRoot": "projects/virkailija-app/src",
@@ -331,39 +303,6 @@
               "projects/virkailija-app/tsconfig.app.json",
               "projects/virkailija-app/tsconfig.spec.json"
             ],
-            "exclude": [
-              "**/node_modules/**"
-            ]
-          }
-        }
-      }
-    },
-    "virkailija-app-e2e": {
-      "root": "projects/virkailija-app-e2e/",
-      "projectType": "application",
-      "prefix": "",
-      "architect": {
-        "e2e": {
-          "builder": "@angular-devkit/build-angular:protractor",
-          "options": {
-            "protractorConfig": "projects/virkailija-app-e2e/protractor.conf.js",
-            "devServerTarget": "virkailija-app:serve"
-          },
-          "configurations": {
-            "dev": {
-              "protractorConfig": "projects/virkailija-app-e2e/protractor.conf.js",
-              "devServerTarget": "virkailija-app:serve"
-            },
-            "prod": {
-              "protractorConfig": "projects/virkailija-app-e2e/protractor-prod.conf.js",
-              "devServerTarget": "virkailija-app:serve"
-            }
-          }
-        },
-        "lint": {
-          "builder": "@angular-devkit/build-angular:tslint",
-          "options": {
-            "tsConfig": "projects/virkailija-app-e2e/tsconfig.e2e.json",
             "exclude": [
               "**/node_modules/**"
             ]

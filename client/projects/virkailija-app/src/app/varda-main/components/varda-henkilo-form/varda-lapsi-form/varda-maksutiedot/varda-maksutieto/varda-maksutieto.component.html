@@ -5,6 +5,7 @@
                          (closed)="togglePanel(false)">
       <mat-expansion-panel-header>
         <mat-panel-title *ngIf="maksutieto; else addMaksutieto">
+          <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
           <span *ngIf="!maksutieto.paattymis_pvm; else hasPaattymispvm">
             {{ i18n.maksutieto_alkaen_PVM | translate: {pvm: maksutieto.alkamis_pvm | vardaDate} }}
           </span>
@@ -27,7 +28,7 @@
       <form [formGroup]="maksutietoForm"
             (submit)="saveMaksutieto(maksutietoForm)"
             autocomplete="off">
-
+        <app-varda-henkilo-form-error-list [errors]="errorList"></app-varda-henkilo-form-error-list>
         <div class="huoltajat">
           <ng-container *ngIf="maksutieto; else addHuoltajat">
             <app-varda-maksutieto-huoltaja *ngFor="let huoltaja of maksutieto.huoltajat; let i = index"

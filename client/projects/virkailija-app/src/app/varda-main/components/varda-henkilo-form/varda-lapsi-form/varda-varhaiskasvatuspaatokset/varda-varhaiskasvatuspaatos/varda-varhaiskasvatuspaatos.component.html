@@ -8,6 +8,7 @@
                          [expanded]="expandPanel">
       <mat-expansion-panel-header>
         <mat-panel-title *ngIf="varhaiskasvatuspaatos; else addVarhaiskasvatussuhde">
+          <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
           <span *ngIf="!varhaiskasvatuspaatos.paattymis_pvm; else hasPaattymispvm">
             {{ i18n.varhaiskasvatuspaatos_alkaen_PVM | translate: {pvm: varhaiskasvatuspaatos.alkamis_pvm | vardaDate} }}
           </span>
@@ -30,6 +31,7 @@
       <form [formGroup]="varhaiskasvatuspaatosForm"
             autocomplete="off"
             (submit)="saveVarhaiskasvatuspaatos(varhaiskasvatuspaatosForm)">
+        <app-varda-henkilo-form-error-list [errors]="errorList"></app-varda-henkilo-form-error-list>
         <app-varda-form-field name="hakemus_pvm"
                               [form]="varhaiskasvatuspaatosForm"
                               [label]="i18n.varhaiskasvatuspaatos_hakemus_pvm | translate"
@@ -172,7 +174,7 @@
       </h3>
 
       <div class="missing-info"
-           *ngIf="varhaiskasvatussuhteet.length === 0 && !lapsitiedotTallentaja">
+           *ngIf="varhaiskasvatussuhteet.length === 0">
         <mat-icon>error_outline</mat-icon>
         {{ i18n.varhaiskasvatuspaatos_ei_varhaiskasvatussuhteita | translate }}
       </div>

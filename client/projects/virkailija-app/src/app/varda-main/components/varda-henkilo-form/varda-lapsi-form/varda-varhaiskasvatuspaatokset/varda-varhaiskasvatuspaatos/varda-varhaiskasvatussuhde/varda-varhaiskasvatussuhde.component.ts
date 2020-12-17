@@ -19,6 +19,7 @@ import { Subscription, Observable, BehaviorSubject } from 'rxjs';
 import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { KoodistoDTO, VardaKoodistoService, KoodistoEnum } from 'varda-shared';
 import { TranslateService } from '@ngx-translate/core';
+import { VardaHenkiloFormAccordionAbstractComponent } from '../../../../varda-henkilo-form-accordion/varda-henkilo-form-accordion.abstract';
 
 @Component({
   selector: 'app-varda-varhaiskasvatussuhde',
@@ -31,7 +32,7 @@ import { TranslateService } from '@ngx-translate/core';
     '../../../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaVarhaiskasvatussuhdeComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
+export class VardaVarhaiskasvatussuhdeComponent extends VardaHenkiloFormAccordionAbstractComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   @Input() lapsitiedotTallentaja: boolean;
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
   @Input() varhaiskasvatuspaatos: VardaVarhaiskasvatuspaatosDTO;
@@ -64,6 +65,7 @@ export class VardaVarhaiskasvatussuhdeComponent implements OnInit, OnChanges, Af
     private snackBarService: VardaSnackBarService,
     translateService: TranslateService
   ) {
+    super();
     this.toimijaAccess = this.authService.getUserAccess();
     this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
     this.varhaiskasvatussuhdeFormErrors = this.henkilostoErrorService.initErrorList();
@@ -90,6 +92,8 @@ export class VardaVarhaiskasvatussuhdeComponent implements OnInit, OnChanges, Af
     } else {
       this.enableForm();
     }
+
+    this.checkFormErrors(this.lapsiService, 'vakasuhde', this.varhaiskasvatussuhde?.id);
 
     this.initDateFilters();
   }
@@ -143,6 +147,7 @@ export class VardaVarhaiskasvatussuhdeComponent implements OnInit, OnChanges, Af
           next: () => {
             this.togglePanel(false, true);
             this.snackBarService.success(this.i18n.varhaiskasvatussuhde_save_success);
+            this.lapsiService.sendLapsiListUpdate();
           },
           error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
         }).add(() => this.disableSubmit());

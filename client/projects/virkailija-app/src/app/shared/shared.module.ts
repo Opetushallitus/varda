@@ -32,7 +32,7 @@ import {
 import { HighlightElementDirective } from './directives/highlight-element.directive';
 import { HighContrastDirective } from './directives/high-contrast.directive';
 import { ClickOutsideDirective } from './directives/click-outside.directive';
-import { VardaDate } from './pipes/varda-date.pipe';
+import { VardaDate, VardaLongDate } from './pipes/varda-date.pipe';
 import { KeysPipe } from './pipes/keys.pipe';
 import { VardaDeleteButtonComponent } from './components/varda-delete-button/varda-delete-button.component';
 import { VardaToggleButtonComponent } from './components/varda-toggle-button/varda-toggle-button.component';
@@ -51,6 +51,7 @@ import { ToimipaikkaNimiDirective } from './directives/toimipaikka-nimi.directiv
 import { MatSortModule } from '@angular/material/sort';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { VardaAutocompleteSelectorComponent } from './components/varda-autocomplete-selector/varda-autocomplete-selector.component';
 import { SnackbarTimers } from '../core/services/varda-snackbar.service';
 import { BrowserNotSupportedGuard } from '../varda-main/components/public-components/public-components';
@@ -107,6 +108,7 @@ const cookieConfig: NgcCookieConsentConfig = {
     MatSortModule,
     MatTabsModule,
     MatChipsModule,
+    MatButtonToggleModule,
     TranslateModule,
     NgcCookieConsentModule.forRoot(cookieConfig)
   ],
@@ -116,6 +118,7 @@ const cookieConfig: NgcCookieConsentConfig = {
     VardaAccessibilitySettingsComponent,
     ClickOutsideDirective,
     VardaDate,
+    VardaLongDate,
     KeysPipe,
     VardaModalFormComponent,
     VardaFormQuestionComponent,
@@ -179,6 +182,7 @@ const cookieConfig: NgcCookieConsentConfig = {
     VardaFormFieldComponent,
     VardaSuccessModalComponent,
     VardaDate,
+    VardaLongDate,
     KeysPipe,
     FormsModule,
     ReactiveFormsModule,
@@ -199,6 +203,7 @@ const cookieConfig: NgcCookieConsentConfig = {
     MatSortModule,
     MatTabsModule,
     MatChipsModule,
+    MatButtonToggleModule,
     BrowserAnimationsModule,
     NgcCookieConsentModule,
     VardaDeleteButtonComponent,

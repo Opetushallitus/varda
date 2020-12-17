@@ -211,6 +211,10 @@ export class AuthService {
       raportit: {
         katselija: getRoles(VardaKayttooikeusRoles.RAPORTTIEN_KATSELIJA),
         tallentaja: false
+      },
+      oph: {
+        katselija: this.isOPHUser,
+        tallentaja: this.isOPHUser
       }
     };
 

@@ -1,0 +1,31 @@
+<h1 class="varda-page-header">{{ pageHeader | translate }}</h1>
+<div class="varda-page-content">
+  <nav class="raportit-nav"
+       mat-tab-nav-bar>
+    <a mat-tab-link
+       routerLink="/raportit"
+       (click)="activeLink = 'raportit'"
+       [active]="activeLink == 'raportit'">
+      <mat-icon>warning</mat-icon>
+      {{ i18n.puutteelliset_tiedot | translate }}
+    </a>
+    <a mat-tab-link
+       routerLink="tiedonsiirrot"
+       (click)="activeLink = 'tiedonsiirrot'"
+       [active]="activeLink == 'tiedonsiirrot'">
+      <mat-icon>cloud_upload</mat-icon>
+      {{ i18n.tiedonsiirrot | translate }}
+    </a>
+    <ng-container *ngIf="isOPHUser">
+      <a mat-tab-link
+         routerLink="yksiloimattomat"
+         (click)="activeLink = 'yksiloimattomat'"
+         [active]="activeLink == 'yksiloimattomat'">
+        <mat-icon>ac_unit</mat-icon>
+        {{ i18n.yksiloimattomat | translate }}
+      </a>
+    </ng-container>
+  </nav>
+
+  <router-outlet></router-outlet>
+</div>

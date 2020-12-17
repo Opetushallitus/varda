@@ -19,6 +19,12 @@ import { VardaYhteenvetoComponent } from './components/varda-reporting/varda-yht
 import { VardaSearchLapsiComponent } from './components/varda-reporting/varda-search-lapsi/varda-search-lapsi.component';
 import { VardaBodyComponent } from './components/varda-body/varda-body.component';
 import { UserAccessKeys } from '../utilities/models/varda-user-access.model';
+import { VardaRaportitComponent } from './components/varda-raportit/varda-raportit.component';
+import { VardaPuutteellisetTiedotComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/varda-puutteelliset-tiedot.component';
+import { VardaTiedonsiirtoComponent } from './components/varda-raportit/varda-tiedonsiirrot/tiedonsiirto/tiedonsiirto.component';
+import { VardaTiedonsiirrotYhteenvetoComponent } from './components/varda-raportit/varda-tiedonsiirrot/tiedonsiirrot-yhteenveto/tiedonsiirrot-yhteenveto.component';
+import { VardaTiedonsiirrotComponent } from './components/varda-raportit/varda-tiedonsiirrot/varda-tiedonsiirrot.component';
+import { VardaYksiloimattomatComponent } from './components/varda-raportit/varda-yksiloimattomat/varda-yksiloimattomat.component';
 
 const routes: Routes = [
   {
@@ -64,6 +70,7 @@ const routes: Routes = [
                 path: 'toimipaikat',
                 component: VardaSearchToimipaikkaComponent,
                 data: {
+                  title: VirkailijaTranslations.katsele_tietoja_toimipaikat,
                   roles: [
                     UserAccessKeys.lapsitiedot,
                     UserAccessKeys.huoltajatiedot,
@@ -76,6 +83,7 @@ const routes: Routes = [
                 path: 'lapset',
                 component: VardaSearchLapsiComponent,
                 data: {
+                  title: VirkailijaTranslations.katsele_tietoja_lapset,
                   roles: [
                     UserAccessKeys.lapsitiedot,
                     UserAccessKeys.huoltajatiedot,
@@ -86,6 +94,7 @@ const routes: Routes = [
                 path: 'tyontekijat',
                 component: VardaSearchTyontekijaComponent,
                 data: {
+                  title: VirkailijaTranslations.katsele_tietoja_tyontekijat,
                   roles: [
                     UserAccessKeys.tyontekijatiedot,
                     UserAccessKeys.taydennyskoulutustiedot,
@@ -94,7 +103,10 @@ const routes: Routes = [
               },
               {
                 path: 'yhteenveto',
-                component: VardaYhteenvetoComponent
+                component: VardaYhteenvetoComponent,
+                data: {
+                  title: VirkailijaTranslations.katsele_tietoja_yhteenveto
+                }
               },
               {
                 path: '',
@@ -128,7 +140,67 @@ const routes: Routes = [
               toimijaRoles: [UserAccessKeys.taydennyskoulutustiedot],
             },
 
-          }
+          },
+          {
+            path: 'raportit',
+            component: VardaRaportitComponent,
+            data: { title: VirkailijaTranslations.raportit },
+            children: [
+              {
+                path: '',
+                component: VardaPuutteellisetTiedotComponent,
+                data: {
+                  title: VirkailijaTranslations.puutteelliset_tiedot,
+                  toimijaRoles: [
+                    UserAccessKeys.raportit,
+                    UserAccessKeys.lapsitiedot,
+                    UserAccessKeys.tyontekijatiedot,
+                    UserAccessKeys.huoltajatiedot
+                  ]
+                }
+              },
+              {
+                path: 'yksiloimattomat',
+                component: VardaYksiloimattomatComponent,
+                data: {
+                  title: VirkailijaTranslations.yksiloimattomat_title,
+                  toimijaRoles: [
+                    UserAccessKeys.oph
+                  ]
+                }
+              },
+              {
+                path: 'tiedonsiirrot',
+                component: VardaTiedonsiirrotComponent,
+                data: {
+                  title: VirkailijaTranslations.tiedonsiirrot,
+                  toimijaRoles: [UserAccessKeys.raportit, UserAccessKeys.oph],
+                },
+                children: [
+                  {
+                    path: 'yhteenveto',
+                    component: VardaTiedonsiirrotYhteenvetoComponent,
+                    data: { title: VirkailijaTranslations.tiedonsiirrot_yhteenveto }
+                  },
+                  {
+                    path: 'onnistuneet',
+                    component: VardaTiedonsiirtoComponent,
+                    data: { title: VirkailijaTranslations.tiedonsiirrot_onnistuneet }
+                  },
+                  {
+                    path: 'epaonnistuneet',
+                    component: VardaTiedonsiirtoComponent,
+                    data: { title: VirkailijaTranslations.tiedonsiirrot_epaonnistuneet }
+                  },
+                  {
+                    path: '',
+                    pathMatch: 'full',
+                    redirectTo: 'yhteenveto'
+                  }
+                ]
+              },
+            ]
+          },
         ]
       },
       {

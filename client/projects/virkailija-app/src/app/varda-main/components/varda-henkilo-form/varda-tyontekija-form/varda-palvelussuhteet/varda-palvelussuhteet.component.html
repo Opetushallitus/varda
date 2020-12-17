@@ -34,8 +34,11 @@
         <div *ngIf="!palvelussuhteet.length"
              class="ei-palvelussuhteita"
              role="alert">
-          <p>{{ i18n.palvelussuhteet_ei_palvelussuhteita | translate }}</p>
-
+          <div class="missing-info"
+               role="alert">
+            <mat-icon aria-ignore>error_outline</mat-icon>
+            {{ i18n.palvelussuhteet_ei_palvelussuhteita | translate }}
+          </div>
           <ng-container *ngIf="toimipaikkaAccess?.tyontekijatiedot.tallentaja">
             <button class="varda-text-button"
                     *ngIf="!addPalvelussuhdeBoolean"

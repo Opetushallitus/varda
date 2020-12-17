@@ -1,0 +1,54 @@
+<section class="henkilo-section varda-page-content">
+  <div class="henkilo-section-header">
+    <h3 class="oph-h4 oph-bold">
+      {{ i18n.henkilo_tyontekijat | translate }}
+      <span *ngIf="searchFilter.count"
+            class="henkilo-section-header-counter">
+        ({{ searchFilter.count }})
+      </span>
+    </h3>
+  </div>
+
+  <div class="henkilo-section-filter-search">
+    <mat-form-field>
+      <mat-label>{{ i18n.henkilo_hae_nimella | translate }}</mat-label>
+      <input autocomplete="off"
+             matInput
+             type="text"
+             [disabled]="isLoading | async"
+             (change)="searchHenkilot()"
+             [(ngModel)]="searchFilter.search" />
+      <button mat-button
+              [title]="i18n.henkilo_hae_nimella | translate"
+              [disabled]="isLoading | async"
+              (click)="searchHenkilot()"
+              matSuffix>
+        <mat-icon>search</mat-icon>
+      </button>
+    </mat-form-field>
+  </div>
+
+  <div *ngIf="henkilot?.length === 0"
+       class="varda-muted">
+    {{ i18n.henkilo_toimipaikasta_ei_loydy_tyontekijoita | translate }}
+  </div>
+
+  <mat-progress-bar *ngIf="!henkilot && isLoading | async"
+                    mode="indeterminate"></mat-progress-bar>
+
+  <app-varda-error-field [errors]="formErrors"></app-varda-error-field>
+
+  <ng-container *ngIf="henkilot?.length > 0">
+    <app-puutteelliset-henkilot-list (openErrorForm)="findHenkilo($event)"
+                            henkiloRooli="tyontekija"
+                            [henkiloList]="henkilot">
+    </app-puutteelliset-henkilot-list>
+    <mat-paginator *ngIf="searchFilter.count"
+                   [disabled]="isLoading | async"
+                   [length]="searchFilter.count"
+                   [pageSize]="searchFilter.page_size"
+                   [pageIndex]="searchFilter.page - 1"
+                   (page)="searchHenkilot($event)">
+    </mat-paginator>
+  </ng-container>
+</section>

@@ -8,9 +8,7 @@ import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core
 import { VardaHenkiloDTO } from 'projects/virkailija-app/src/app/utilities/models';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { VardaTutkintoDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tutkinto-dto.model';
-import { TyontekijaListDTO, VardaTyontekijaDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tyontekija-dto.model';
-import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
-import { HenkiloRooliEnum } from 'projects/virkailija-app/src/app/utilities/models/enums/henkilorooli.enum';
+import { TyontekijaListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tyontekija-dto.model';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { Subscription, Observable } from 'rxjs';
@@ -50,8 +48,8 @@ export class VardaTyontekijaFormComponent implements OnChanges, OnDestroy {
     private snackBarService: VardaSnackBarService,
     private translateService: TranslateService
   ) {
-    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
-    this.deleteTyontekijaErrorService = new HenkilostoErrorMessageService(translateService);
+    this.henkilostoErrorService = new HenkilostoErrorMessageService(this.translateService);
+    this.deleteTyontekijaErrorService = new HenkilostoErrorMessageService(this.translateService);
 
     this.tyontekijaFormErrors = this.henkilostoErrorService.initErrorList();
     this.deleteTyontekijaErrors = this.deleteTyontekijaErrorService.initErrorList();
@@ -67,44 +65,19 @@ export class VardaTyontekijaFormComponent implements OnChanges, OnDestroy {
     this.toimipaikkaAccess = this.authService.getUserAccess(this.henkilonToimipaikka?.organisaatio_oid);
     this.valuesChanged.emit(false);
 
-    if (!this.tyontekija.id) {
-      this.luoTyontekija();
-    }
+    this.henkilostoService.initFormErrorList(this.vardaVakajarjestajaService.getSelectedVakajarjestaja().id, this.tyontekija);
+    this.subscriptions.push(
+      this.henkilostoService.listenHenkilostoListUpdate().subscribe(() => this.henkilostoService.initFormErrorList(this.vardaVakajarjestajaService.getSelectedVakajarjestaja().id, this.tyontekija))
+    );
   }
 
   setTutkinnot(tutkinnot: Array<VardaTutkintoDTO>) {
     this.henkilonTutkinnot = tutkinnot;
   }
 
-
-  luoTyontekija() {
-
-    const tyontekijaDTO: VardaTyontekijaDTO = {
-      henkilo_oid: this.henkilo.henkilo_oid,
-      vakajarjestaja_oid: this.vardaVakajarjestajaService.getSelectedVakajarjestaja().organisaatio_oid,
-      toimipaikka_oid: this.henkilonToimipaikka?.organisaatio_oid,
-      lahdejarjestelma: Lahdejarjestelma.kayttoliittyma
-    };
-
-    this.henkilostoService.createTyontekija(tyontekijaDTO).subscribe({
-      next: tyontekijaData => {
-
-        this.tyontekija = {
-          id: tyontekijaData.id,
-          url: tyontekijaData.url,
-          henkilo_id: this.henkilo.id,
-          henkilo_oid: this.henkilo.henkilo_oid,
-          rooli: HenkiloRooliEnum.tyontekija,
-          tyoskentelypaikat: []
-        };
-
-        this.snackBarService.success(this.i18n.tyontekija_save_success);
-        this.henkilostoService.sendHenkilostoListUpdate();
-      },
-      error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
-    });
+  updateTyontekija(tyontekija: TyontekijaListDTO) {
+    this.tyontekija = tyontekija;
   }
-
 
   poistaTyontekija() {
 
@@ -117,5 +90,4 @@ export class VardaTyontekijaFormComponent implements OnChanges, OnDestroy {
       error: err => this.deleteTyontekijaErrorService.handleError(err, this.snackBarService)
     });
   }
-
 }

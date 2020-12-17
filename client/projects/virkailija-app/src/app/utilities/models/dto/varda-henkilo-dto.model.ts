@@ -19,8 +19,21 @@ export interface HenkiloListDTO {
   url: string;
   etunimet: string;
   sukunimi: string;
+  henkilo_id: number;
   henkilo_oid: string;
   tyontekijat?: Array<TyontekijaListDTO>;
   lapset?: Array<LapsiListDTO>;
   expanded?: boolean;
+
+  lapsi_id?: number;
+  tyontekija_id?: number;
+  errors?: Array<HenkiloListErrorDTO>;
+}
+
+
+export interface HenkiloListErrorDTO {
+  description: string;
+  error_code: string;
+  model_id_list: Array<number>;
+  model_name: string;
 }

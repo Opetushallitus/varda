@@ -71,6 +71,22 @@ import { VardaResultTyontekijaComponent } from './components/varda-reporting/var
 import { VardaResultLapsiComponent } from './components/varda-reporting/varda-result-lapsi/varda-result-lapsi.component';
 import { VardaBodyComponent } from './components/varda-body/varda-body.component';
 import { BrowserNotSupportedComponent, BrowserNotSupportedGuard, LoginFailedComponent, LoginPageComponent, PageNotFoundComponent } from './components/public-components/public-components';
+import { VardaRaportitComponent } from './components/varda-raportit/varda-raportit.component';
+import { VardaYksiloimattomatComponent } from './components/varda-raportit/varda-yksiloimattomat/varda-yksiloimattomat.component';
+import { VardaPuutteellisetTiedotComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/varda-puutteelliset-tiedot.component';
+import { VardaPuutteellisetTyontekijatComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-tyontekijat/puutteelliset-tyontekijat.component';
+import { VardaPuutteellisetLapsetComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-lapset/puutteelliset-lapset.component';
+import { VardaTiedonsiirrotComponent } from './components/varda-raportit/varda-tiedonsiirrot/varda-tiedonsiirrot.component';
+import { VardaTiedonsiirtoComponent } from './components/varda-raportit/varda-tiedonsiirrot/tiedonsiirto/tiedonsiirto.component';
+import { VardaTiedonsiirrotYhteenvetoComponent } from './components/varda-raportit/varda-tiedonsiirrot/tiedonsiirrot-yhteenveto/tiedonsiirrot-yhteenveto.component';
+import { TiedonsiirtoDialogComponent } from './components/varda-raportit/varda-tiedonsiirrot/tiedonsiirto-dialog/tiedonsiirto-dialog.component';
+import { PuutteellisetDialogComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-dialog/puutteelliset-dialog.component';
+import { VardaFormErrorIconComponent } from './components/varda-henkilo-form/varda-form-error-icon/varda-form-error-icon.component';
+import { VardaHenkiloFormErrorListComponent } from './components/varda-henkilo-form/varda-henkilo-form-error-list/varda-henkilo-form-error-list.component';
+import { VardaHenkiloFormAccordionAbstractComponent } from './components/varda-henkilo-form/varda-henkilo-form-accordion/varda-henkilo-form-accordion.abstract';
+import { TiedonsiirtoFilterHeaderComponent } from './components/varda-raportit/varda-tiedonsiirrot/tiedonsiirto-filter-header/tiedonsiirto-filter-header.component';
+import { TiedonsiirtoFilterComponent } from './components/varda-raportit/varda-tiedonsiirrot/tiedonsiirto-filter/tiedonsiirto-filter.component';
+import { PuutteellisetHenkilotListComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-henkilot-list/puutteelliset-henkilot-list.component';
 
 @NgModule({
   imports: [
@@ -142,7 +158,23 @@ import { BrowserNotSupportedComponent, BrowserNotSupportedGuard, LoginFailedComp
     LoginPageComponent,
     LoginFailedComponent,
     PageNotFoundComponent,
-    BrowserNotSupportedComponent
+    BrowserNotSupportedComponent,
+    VardaRaportitComponent,
+    VardaYksiloimattomatComponent,
+    VardaPuutteellisetTiedotComponent,
+    VardaPuutteellisetTyontekijatComponent,
+    VardaPuutteellisetLapsetComponent,
+    VardaTiedonsiirrotComponent,
+    VardaTiedonsiirtoComponent,
+    VardaTiedonsiirrotYhteenvetoComponent,
+    TiedonsiirtoDialogComponent,
+    PuutteellisetDialogComponent,
+    VardaFormErrorIconComponent,
+    VardaHenkiloFormErrorListComponent,
+    VardaHenkiloFormAccordionAbstractComponent,
+    TiedonsiirtoFilterHeaderComponent,
+    TiedonsiirtoFilterComponent,
+    PuutteellisetHenkilotListComponent,
   ],
   entryComponents: [EiHenkilostoaDialogComponent],
   exports: [

@@ -6,6 +6,7 @@
       <mat-expansion-panel-header>
         <mat-panel-title *ngIf="varhaiskasvatussuhde">
           <h4>
+            <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
             <span appToimipaikkaNimi>
               {{ varhaiskasvatussuhde.toimipaikka_oid }}
             </span>
@@ -25,7 +26,7 @@
 
       <form [formGroup]="varhaiskasvatussuhdeForm"
             (submit)="saveVarhaiskasvatussuhde(varhaiskasvatussuhdeForm)">
-
+        <app-varda-henkilo-form-error-list [errors]="errorList"></app-varda-henkilo-form-error-list>
         <app-varda-form-field name="toimipaikka"
                               [form]="varhaiskasvatussuhdeForm"
                               [label]="i18n.varhaiskasvatussuhde_toimipaikka | translate"

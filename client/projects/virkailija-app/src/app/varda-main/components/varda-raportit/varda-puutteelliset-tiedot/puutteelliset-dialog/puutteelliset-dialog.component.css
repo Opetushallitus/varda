@@ -1,0 +1,36 @@
+.mat-dialog-container {
+  border: 3px solid red;
+}
+
+.puutteelliset-dialog-header {
+  text-align: center;
+  position: relative;
+  border-top: 4px solid var(--orange);
+  padding: 1rem 0.5rem 0.5rem 0.5rem;
+}
+
+.puutteelliset-dialog-header .close {
+  position: absolute;
+  top: 0.5rem;
+  right: 1rem;
+}
+
+.puutteelliset-dialog-header .mat-icon {
+  font-size: 2rem;
+}
+
+.puutteelliset-dialog-content .mat-dialog-title {
+  margin-bottom: 0.5rem;
+}
+
+.puutteelliset-dialog-content {
+  text-align: center;
+  padding-top: 0.25rem;
+  padding: 1.5rem;
+}
+
+.puutteelliset-dialog-content .mat-dialog-content {
+  color: var(--gray);
+  margin-bottom: 1rem;
+}
+

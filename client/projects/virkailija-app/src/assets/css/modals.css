@@ -15,7 +15,7 @@
   overflow-y: auto;
 }
 
-.modal-form-intro {
+.modal-form-intro, .varda-info {
   padding: 1em 2em;
   background-color: var(--bg-color-info);
   margin-bottom: 1em;
@@ -34,6 +34,16 @@
 .modal-body .mat-expansion-panel-body {
   padding: 0.5em;
   overflow-x: auto;
+}
+
+.puutteelliset-dialog {
+  width: min(400px, 90%);
+  max-height: 90vh;
+}
+
+.puutteelliset-dialog > .mat-dialog-container {
+  padding: 0;
+  overflow-x: hidden;
 }
 
 @media (max-width: 767px) {

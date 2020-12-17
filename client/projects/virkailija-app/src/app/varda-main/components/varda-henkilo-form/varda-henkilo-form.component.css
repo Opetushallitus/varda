@@ -93,6 +93,7 @@ mat-expansion-panel mat-expansion-panel-header {
   display: flex;
   align-items: center;
   margin-top: 1.5em;
+  margin-bottom: 1.5em;
   font-weight: var(--font-weight-bold);
   color: var(--red);
 }

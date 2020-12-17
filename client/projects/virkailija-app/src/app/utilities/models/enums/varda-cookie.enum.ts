@@ -4,5 +4,6 @@ export enum VardaCookieEnum {
   previous_toimipaikka = 'varda.previousToimipaikka',
   font_size = 'varda.fontSize',
   high_contrast = 'varda.highContrast',
-  display_accessibility_settings = 'varda.displayAccessibilitySettings'
+  display_accessibility_settings = 'varda.displayAccessibilitySettings',
+  puutteelliset_warning = 'varda.puutteellisetWarning'
 }

@@ -13,6 +13,7 @@
                          [expanded]="expandPanel">
       <mat-expansion-panel-header>
         <mat-panel-title *ngIf="palvelussuhde; else addPalvelussuhde">
+          <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
           <span *ngIf="!palvelussuhde.paattymis_pvm; else hasPaattymispvm">
             {{ i18n.palvelussuhde_alkaen_PVM | translate: {pvm: palvelussuhde.alkamis_pvm | vardaDate} }}
           </span>
@@ -34,6 +35,7 @@
       </mat-expansion-panel-header>
       <form [formGroup]="palvelussuhdeForm"
             (submit)="savePalvelussuhde(palvelussuhdeForm)">
+        <app-varda-henkilo-form-error-list [errors]="errorList"></app-varda-henkilo-form-error-list>
         <app-varda-form-field name="tyosuhde_koodi"
                               [form]="palvelussuhdeForm"
                               [label]="i18n.palvelussuhde_palvelussuhteen_tyyppi | translate"

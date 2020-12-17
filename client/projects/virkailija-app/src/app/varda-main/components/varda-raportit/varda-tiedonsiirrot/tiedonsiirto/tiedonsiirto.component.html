@@ -1,0 +1,258 @@
+<section class="tiedonsiirto">
+  <div class="varda-info">
+    <ng-container *ngIf="searchFilter.successful; else unsuccessful">
+      {{ i18n.tiedonsiirrot_instruction_successful_paragraph_1 | translate }}<br />
+      {{ i18n.tiedonsiirrot_instruction_successful_paragraph_2 | translate }}
+    </ng-container>
+    <ng-template #unsuccessful>
+      {{ i18n.tiedonsiirrot_instruction_unsuccessful_paragraph_1 | translate }}<br />
+      {{ i18n.tiedonsiirrot_instruction_unsuccessful_paragraph_2 | translate }}
+    </ng-template>
+  </div>
+
+  <app-tiedonsiirto-filter *ngIf="toimijaAccess.oph.katselija"
+                           [oph]="toimijaAccess.oph.katselija"></app-tiedonsiirto-filter>
+
+  <div class="varda-table-column-selector">
+    <ng-container *ngFor="let column of columnFields">
+      <mat-checkbox (change)="toggleColumn()"
+                    [disabled]="column.disabled || (isLoading | async)"
+                    [(ngModel)]="column.selected">
+        {{ column.name | translate }}
+      </mat-checkbox>
+    </ng-container>
+  </div>
+
+  <a class="varda-link oph-link float-right"
+     target="_blank"
+     href="/varda/julkinen/koodistot/vardavirheviestit">
+    {{ i18n.tiedonsiirrot_virhekoodisto_text | translate }}
+  </a>
+
+  <div class="table-responsive">
+    <table mat-table
+           [dataSource]="tiedonsiirrot"
+           class="onnistuneet-tiedonsiirrot-table">
+      <ng-container *ngIf="displayedColumns.includes('timestamp')"
+                    matColumnDef="timestamp">
+        <th mat-header-cell
+            class="timestamp"
+            *matHeaderCellDef>
+          <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_aikaleima"
+                                          [multiline]="true"
+                                          (reset)="searchFilter.timestamp_after = null; searchFilter.timestamp_before = null"
+                                          (submit)="getPage(searchFilter.timestamp_after || i18n.tiedonsiirrot_placeholder_timestamp_before)">
+            <app-varda-datepicker [(ngModel)]="searchFilter.timestamp_after"
+                                  [placeholder]="i18n.tiedonsiirrot_placeholder_timestamp_after | translate">
+            </app-varda-datepicker>
+            <app-varda-datepicker [(ngModel)]="searchFilter.timestamp_before"
+                                  [placeholder]="i18n.tiedonsiirrot_placeholder_timestamp_before | translate">
+            </app-varda-datepicker>
+          </app-tiedonsiirto-filter-header>
+        </th>
+
+        <td mat-cell
+            *matCellDef="let row">
+          <span>{{ row.timestamp | vardaLongDate }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container *ngIf="displayedColumns.includes('json')"
+                    matColumnDef="json">
+        <th mat-header-cell
+            *matHeaderCellDef>{{ i18n.tiedonsiirrot_json | translate }}</th>
+
+        <td mat-cell
+            *matCellDef="let row">
+          <button class="tiedonsiirto-text-button varda-text-button"
+                  (click)="openJSON(row)">JSON</button>
+        </td>
+      </ng-container>
+
+      <ng-container *ngIf="displayedColumns.includes('target')"
+                    matColumnDef="target">
+        <th mat-header-cell
+            *matHeaderCellDef>
+          <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_kohde"
+                                          (reset)="searchFilter.search_target = null"
+                                          (submit)="getPage(searchFilter.search_target)">
+            <input type="text"
+                   class="oph-input"
+                   [placeholder]="i18n.tiedonsiirrot_placeholder_search_target | translate"
+                   [(ngModel)]="searchFilter.search_target" />
+          </app-tiedonsiirto-filter-header>
+        </th>
+
+        <td mat-cell
+            *matCellDef="let row">
+          <span *ngIf="row.target">
+            {{ row.target.sukunimi }}, {{ row.target.etunimet }} {{ row.target.henkilo_oid }}
+          </span>
+
+        </td>
+      </ng-container>
+
+      <ng-container *ngIf="displayedColumns.includes('request_method')"
+                    matColumnDef="request_method">
+        <th mat-header-cell
+            *matHeaderCellDef>
+          <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_tyyppi"
+                                          (reset)="searchFilter.request_method = null"
+                                          (submit)="getPage(searchFilter.request_method)">
+            <input type="text"
+                   class="oph-input"
+                   [placeholder]="i18n.tiedonsiirrot_placeholder_request_method | translate"
+                   [(ngModel)]="searchFilter.request_method" />
+          </app-tiedonsiirto-filter-header>
+        </th>
+
+        <td mat-cell
+            *matCellDef="let row">
+          {{ row.request_method | uppercase }}
+        </td>
+      </ng-container>
+
+      <ng-container *ngIf="displayedColumns.includes('request_url')"
+                    matColumnDef="request_url">
+        <th mat-header-cell
+            *matHeaderCellDef>
+          <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_rajapinta"
+                                          (reset)="searchFilter.request_url = null"
+                                          (submit)="getPage(searchFilter.request_url)">
+            <input type="text"
+                   class="oph-input"
+                   [placeholder]="i18n.tiedonsiirrot_placeholder_request_url | translate"
+                   [(ngModel)]="searchFilter.request_url" />
+          </app-tiedonsiirto-filter-header>
+        </th>
+
+        <td mat-cell
+            *matCellDef="let row"
+            class="no-wrap">
+          <span class="mr-2"
+                [class.oph-green]="row.response_code < 400"
+                [class.oph-red]="row.response_code >= 400">{{ row.response_code }}</span>
+          <span>{{ row.request_url }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container *ngIf="displayedColumns.includes('error')"
+                    matColumnDef="error">
+        <th mat-header-cell
+            *matHeaderCellDef>
+          <!-- {{ i18n.tiedonsiirrot_syy | translate }} -->
+          <div class="error-column">
+            <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_syy"
+                                            (reset)="searchFilter.response_body = null"
+                                            (submit)="getPage(searchFilter.response_body)">
+              <input type="text"
+                     class="oph-input"
+                     [placeholder]="i18n.tiedonsiirrot_placeholder_response_body | translate"
+                     [(ngModel)]="searchFilter.response_body" />
+            </app-tiedonsiirto-filter-header>
+
+            <button class="tiedonsiirto-text-button varda-text-button ml-4"
+                    (click)="toggleReasonsExpand()">
+              <ng-container *ngIf="!expandResponse; else expandedResponse">
+                <span>{{ i18n.show | translate }}</span>
+                <mat-icon aria-ignore>switch_left</mat-icon>
+              </ng-container>
+              <ng-template #expandedResponse>
+                <span>{{ i18n.hide | translate }}</span>
+                <mat-icon aria-ignore>switch_right</mat-icon>
+              </ng-template>
+            </button>
+          </div>
+        </th>
+        <td mat-cell
+            *matCellDef="let row">
+          <div class="tiedonsiirto-error-grid">
+            <ng-container *ngFor="let response of row.response_list">
+              <div>{{ response.error_code }}</div>
+              <div>{{ response.field }}</div>
+              <div [class.expanded-grid]="response.expand">
+                <span *ngIf="response.expand"
+                      [libKoodistoValue]="koodistoEnum.virhe">
+                  {{ response.error_code }}
+                </span>
+              </div>
+              <div>
+                <button class="tiedonsiirto-text-button varda-text-button"
+                        *ngIf="!response.expand && !expandResponse"
+                        (click)="response.expand = true">{{ i18n.show | translate }}</button>
+                <button *ngIf="response.expand && !expandResponse"
+                        class="tiedonsiirto-text-button varda-text-button"
+                        (click)="response.expand = false">{{ i18n.hide | translate }}</button>
+              </div>
+            </ng-container>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container *ngIf="displayedColumns.includes('username')"
+                    matColumnDef="username">
+        <th mat-header-cell
+            *matHeaderCellDef>
+          <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_kayttaja"
+                                          (reset)="searchFilter.username = null"
+                                          (submit)="getPage(searchFilter.username)">
+            <input type="text"
+                   class="oph-input"
+                   [placeholder]="i18n.tiedonsiirrot_placeholder_username | translate"
+                   [(ngModel)]="searchFilter.username" />
+          </app-tiedonsiirto-filter-header>
+        </th>
+
+        <td mat-cell
+            class="no-wrap"
+            *matCellDef="let row"> {{ row.username }} </td>
+      </ng-container>
+
+      <ng-container *ngIf="displayedColumns.includes('lahdejarjestelma')"
+                    matColumnDef="lahdejarjestelma">
+        <th mat-header-cell
+            *matHeaderCellDef>
+          <app-tiedonsiirto-filter-header [label]="i18n.lahdejarjestelma"
+                                          [multiline]="true"
+                                          (reset)="searchFilter.lahdejarjestelma = null"
+                                          (submit)="getPage(searchFilter.lahdejarjestelma)">
+            <select *ngIf="lahdejarjestelmaKoodisto | async as lahdejarjestelmat"
+                    class="oph-input oph-select"
+                    (change)="getPage(true)"
+                    [(ngModel)]="searchFilter.lahdejarjestelma">
+              <option [value]="null">{{ i18n.tiedonsiirrot_kaikki_lahdejarjestelmat | translate }}</option>
+              <option *ngFor="let lahdejarjestelmaOption of lahdejarjestelmat.codes"
+                      [value]="lahdejarjestelmaOption.code_value">
+                {{ lahdejarjestelmaOption.name }} ({{ lahdejarjestelmaOption.code_value }})
+              </option>
+            </select>
+          </app-tiedonsiirto-filter-header>
+        </th>
+
+        <td mat-cell
+            class="no-wrap"
+            [libKoodistoValue]="koodistoEnum.lahdejarjestelma"
+            format="long"
+            *matCellDef="let row">{{ row.lahdejarjestelma }}</td>
+      </ng-container>
+
+      <tr mat-header-row
+          *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row
+          *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+    <div class="ml-1"
+         *ngIf="tiedonsiirrot?.data.length === 0">{{ i18n.yksiloimattomat_ei_hakutuloksia | translate }}</div>
+    <mat-progress-bar *ngIf="isLoading | async"
+                      mode="indeterminate"
+                      color="accent"></mat-progress-bar>
+    <app-varda-error-field [errors]="formErrors"></app-varda-error-field>
+
+    <mat-paginator [disabled]="isLoading | async"
+                   [length]="resultCount"
+                   [pageSize]="searchFilter.page_size"
+                   [pageIndex]="searchFilter.page - 1"
+                   (page)="changePage($event)">
+    </mat-paginator>
+  </div>
+</section>

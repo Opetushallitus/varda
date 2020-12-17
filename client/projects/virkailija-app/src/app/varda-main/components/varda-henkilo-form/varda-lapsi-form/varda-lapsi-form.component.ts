@@ -84,6 +84,9 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
     if (!this.lapsi.id) {
       this.initLapsiForm();
     }
+
+    this.lapsiService.initFormErrorList(this.selectedVakajarjestaja.id, this.lapsi);
+    this.subscriptions.push(this.lapsiService.listenLapsiListUpdate().subscribe(() => this.lapsiService.initFormErrorList(this.selectedVakajarjestaja.id, this.lapsi)));
   }
 
   initLapsiForm() {

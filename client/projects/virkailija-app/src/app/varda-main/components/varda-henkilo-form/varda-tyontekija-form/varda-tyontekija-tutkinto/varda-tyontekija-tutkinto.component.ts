@@ -13,6 +13,9 @@ import { KoodistoEnum, KoodistoSortBy, KoodistoDTO, CodeDTO } from 'projects/var
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
+import { TyontekijaListDTO, VardaTyontekijaDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tyontekija-dto.model';
+import { HenkiloRooliEnum } from 'projects/virkailija-app/src/app/utilities/models/enums/henkilorooli.enum';
+import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 
 
 
@@ -28,8 +31,11 @@ import { TranslateService } from '@ngx-translate/core';
 export class VardaTyontekijaTutkintoComponent implements OnChanges {
   @Input() toimipaikkaAccess: UserAccess;
   @Input() henkilo: VardaHenkiloDTO;
+  @Input() tyontekija: TyontekijaListDTO;
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
   @Output() changeTutkinnot = new EventEmitter<Array<VardaTutkintoDTO>>(true);
+  @Output() updateTyontekija = new EventEmitter<TyontekijaListDTO>(true);
+
   tutkintoFormErrors: Observable<Array<ErrorTree>>;
   private henkilostoErrorService: HenkilostoErrorMessageService;
   i18n = VirkailijaTranslations;
@@ -39,6 +45,7 @@ export class VardaTyontekijaTutkintoComponent implements OnChanges {
   henkilonTutkinnot: BehaviorSubject<Array<VardaTutkintoDTO>> = new BehaviorSubject<Array<VardaTutkintoDTO>>([]);
   henkilonTutkinnotExpand: boolean;
   addTutkinto: boolean;
+  pendingTutkinto: boolean;
   isSubmitting = new BehaviorSubject<boolean>(false);
 
   tutkintoForm: FormGroup;
@@ -97,6 +104,11 @@ export class VardaTyontekijaTutkintoComponent implements OnChanges {
   createTutkinto(tutkintoFormGroup: FormGroup) {
     if (tutkintoFormGroup.valid) {
       this.isSubmitting.next(true);
+
+      if (!this.tyontekija.id) {
+        return this.createTyontekija();
+      }
+
       this.henkilostoService.createTutkinto(tutkintoFormGroup.value).subscribe({
         next: () => {
           this.snackBarService.success(this.i18n.tutkinnot_save_success);
@@ -124,6 +136,37 @@ export class VardaTyontekijaTutkintoComponent implements OnChanges {
       toimipaikka_oid: new FormControl(this.henkilonToimipaikka?.organisaatio_oid),
       vakajarjestaja_oid: new FormControl(this.vardaVakajarjestajaService.getSelectedVakajarjestaja().organisaatio_oid),
       tutkinto_koodi: new FormControl(null, Validators.required)
+    });
+  }
+
+
+  createTyontekija() {
+
+    const tyontekijaDTO: VardaTyontekijaDTO = {
+      henkilo_oid: this.henkilo.henkilo_oid,
+      vakajarjestaja_oid: this.vardaVakajarjestajaService.getSelectedVakajarjestaja().organisaatio_oid,
+      toimipaikka_oid: this.henkilonToimipaikka?.organisaatio_oid,
+      lahdejarjestelma: Lahdejarjestelma.kayttoliittyma
+    };
+
+    this.henkilostoService.createTyontekija(tyontekijaDTO).subscribe({
+      next: tyontekijaData => {
+
+        this.tyontekija = {
+          id: tyontekijaData.id,
+          url: tyontekijaData.url,
+          henkilo_id: this.henkilo.id,
+          henkilo_oid: this.henkilo.henkilo_oid,
+          rooli: HenkiloRooliEnum.tyontekija,
+          tyoskentelypaikat: []
+        };
+
+        this.snackBarService.success(this.i18n.tyontekija_save_success);
+        this.henkilostoService.sendHenkilostoListUpdate();
+        this.updateTyontekija.emit(this.tyontekija);
+        this.createTutkinto(this.tutkintoForm);
+      },
+      error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
     });
   }
 

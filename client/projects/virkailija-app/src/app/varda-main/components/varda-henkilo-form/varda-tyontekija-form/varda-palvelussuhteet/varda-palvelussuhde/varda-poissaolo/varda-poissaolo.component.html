@@ -11,6 +11,7 @@
       <mat-expansion-panel-header>
         <mat-panel-title>
           <span *ngIf="poissaolo; else addPoissaolo">
+            <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
             {{ i18n.poissaolo | translate }}
             {{poissaolo.alkamis_pvm | vardaDate }} - {{poissaolo.paattymis_pvm | vardaDate }}
           </span>
@@ -22,6 +23,7 @@
       <form [formGroup]="poissaoloForm"
             autocomplete="off"
             (submit)="savePoissaolo(poissaoloForm)">
+        <app-varda-henkilo-form-error-list [errors]="errorList"></app-varda-henkilo-form-error-list>
         <app-varda-form-field name="alkamis_pvm"
                               [form]="poissaoloForm"
                               [label]="i18n.poissaolo_alkamis_pvm | translate"

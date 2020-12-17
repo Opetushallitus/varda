@@ -11,6 +11,7 @@
       <mat-expansion-panel-header>
         <mat-panel-title *ngIf="tyoskentelypaikka">
           <h4>
+            <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
             <span *ngIf="tyoskentelypaikka.toimipaikka_oid"
                   appToimipaikkaNimi>
               {{ tyoskentelypaikka.toimipaikka_oid }}
@@ -36,6 +37,7 @@
       <form [formGroup]="tyoskentelypaikkaForm"
             autocomplete="off"
             (submit)="SaveTyoskentelypaikka(tyoskentelypaikkaForm)">
+        <app-varda-henkilo-form-error-list [errors]="errorList"></app-varda-henkilo-form-error-list>
         <app-varda-form-field name="kiertava_tyontekija_kytkin"
                               [form]="tyoskentelypaikkaForm"
                               [label]="i18n.tyoskentelypaikka_kiertava_kytkin | translate"

@@ -33,13 +33,13 @@
       <ng-container *ngIf="!tilapainenHenkilostoOnly">
         <li class="varda-header-nav-item-container"
             [class.active-nav-item]="activeNavItem === 'syota-tietoja'">
-          <a [routerLink]="['/syota-tietoja']">
+          <a routerLink="/syota-tietoja">
             {{ i18n.navi_syota_tietoja | translate}}</a>
         </li>
       </ng-container>
       <li class="varda-header-nav-item-container"
           [class.active-nav-item]="activeNavItem === 'tietojen-katselu'">
-        <a [routerLink]="['/tietojen-katselu']">
+        <a routerLink="/tietojen-katselu">
           {{ i18n.katsele_tietoja | translate}}</a>
       </li>
 
@@ -53,19 +53,22 @@
           #trigger="matMenuTrigger"
           [class.active-nav-item]=" activeNavItem === 'vakatoimija'">
         <button class="varda-text-button">
+          <mat-icon *ngIf="puutteellisetWarning | async"
+                    aria-ignore="true"
+                    class="warning">warning</mat-icon>
           <span>{{ i18n.toimijan_tiedot | translate }}</span>
           <mat-icon *ngIf="!trigger.menuOpen">arrow_drop_down</mat-icon>
           <mat-icon *ngIf="trigger.menuOpen">arrow_drop_up</mat-icon>
         </button>
 
         <mat-menu #menu="matMenu">
-          <a [routerLink]="['/vakatoimija']"
+          <a routerLink="/vakatoimija"
              (keydown.tab)="$event.stopPropagation()"
              (keydown.shift.tab)="$event.stopPropagation()"
              mat-menu-item>
             {{ i18n.yhteystiedot | translate }}
           </a>
-          <a [routerLink]="['/paos-hallinta']"
+          <a routerLink="/paos-hallinta"
              *ngIf="!tilapainenHenkilostoOnly"
              (keydown.tab)="$event.stopPropagation()"
              (keydown.shift.tab)="$event.stopPropagation()"
@@ -73,11 +76,20 @@
             {{ i18n.paos | translate }}
           </a>
           <a *ngIf="toimipaikkaAccessToAnyToimipaikka.tilapainenHenkilosto.katselija"
-             [routerLink]="['/tilapainen-henkilosto']"
+             routerLink="/tilapainen-henkilosto"
              (keydown.tab)="$event.stopPropagation()"
              (keydown.shift.tab)="$event.stopPropagation()"
              mat-menu-item>
             {{i18n.tilapainen_henkilosto | translate }}
+          </a>
+          <a *ngIf="showRaportitBoolean"
+             routerLink="/raportit"
+             (keydown.tab)="$event.stopPropagation()"
+             (keydown.shift.tab)="$event.stopPropagation()"
+             mat-menu-item>
+            <mat-icon [class.warning]="puutteellisetWarning | async"
+                      aria-ignore="true">warning</mat-icon>
+            <span>{{i18n.raportit | translate }}</span>
           </a>
         </mat-menu>
       </li>

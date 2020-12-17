@@ -23,6 +23,7 @@ import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { Moment } from 'moment';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
+import { VardaHenkiloFormAccordionAbstractComponent } from '../../../../varda-henkilo-form-accordion/varda-henkilo-form-accordion.abstract';
 
 @Component({
   selector: 'app-varda-tyoskentelypaikka',
@@ -34,7 +35,7 @@ import { TranslateService } from '@ngx-translate/core';
     '../../../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaTyoskentelypaikkaComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
+export class VardaTyoskentelypaikkaComponent extends VardaHenkiloFormAccordionAbstractComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   @Input() toimipaikkaAccess: UserAccess;
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
   @Input() palvelussuhde: VardaPalvelussuhdeDTO;
@@ -69,6 +70,7 @@ export class VardaTyoskentelypaikkaComponent implements OnInit, OnChanges, After
     private snackBarService: VardaSnackBarService,
     translateService: TranslateService
   ) {
+    super();
     this.toimijaAccess = this.authService.getUserAccess();
     this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
     this.palvelussuhdeFormErrors = this.henkilostoErrorService.initErrorList();
@@ -96,6 +98,7 @@ export class VardaTyoskentelypaikkaComponent implements OnInit, OnChanges, After
       this.enableForm();
     }
 
+    this.checkFormErrors(this.henkilostoService, 'tyoskentelypaikka', this.tyoskentelypaikka?.id);
     this.initDateFilters();
   }
 
@@ -152,6 +155,7 @@ export class VardaTyoskentelypaikkaComponent implements OnInit, OnChanges, After
           next: () => {
             this.togglePanel(false, true);
             this.snackBarService.success(this.i18n.tyoskentelypaikka_save_success);
+            this.henkilostoService.sendHenkilostoListUpdate();
           },
           error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
         }).add(() => this.disableSubmit());
@@ -228,4 +232,5 @@ export class VardaTyoskentelypaikkaComponent implements OnInit, OnChanges, After
     this.endDateRange.min = startDate?.clone().toDate() || new Date(this.palvelussuhde.alkamis_pvm);
     setTimeout(() => this.tyoskentelypaikkaForm.controls.paattymis_pvm?.updateValueAndValidity(), 100);
   }
+
 }

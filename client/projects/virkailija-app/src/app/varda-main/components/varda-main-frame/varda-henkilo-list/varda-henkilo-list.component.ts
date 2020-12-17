@@ -6,6 +6,7 @@ import { LapsiListDTO } from 'projects/virkailija-app/src/app/utilities/models/d
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';
 import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
+import { KoodistoEnum } from 'varda-shared';
 
 @Component({
   selector: 'app-varda-henkilo-list',
@@ -16,11 +17,13 @@ export class VardaHenkiloListComponent implements OnInit {
   @Input() henkiloList: Array<HenkiloListDTO>;
   @Input() henkiloRooli: HenkiloRooliEnum;
   @Output() openHenkiloForm = new EventEmitter<LapsiListDTO | TyontekijaListDTO>(true);
+  @Output() openErrorForm = new EventEmitter<HenkiloListDTO>(true);
   i18n = VirkailijaTranslations;
+  koodistoEnum = KoodistoEnum;
   selectedVakajarjestaja: VardaVakajarjestajaUi;
 
   constructor(
-    private vakajarjestajService: VardaVakajarjestajaService
+    protected vakajarjestajService: VardaVakajarjestajaService
   ) {
     this.selectedVakajarjestaja = this.vakajarjestajService.getSelectedVakajarjestaja();
   }

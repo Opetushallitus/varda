@@ -10,3 +10,12 @@ export class VardaDate extends DatePipe implements PipeTransform {
     return super.transform(value, VardaDateService.uiDateFormat);
   }
 }
+
+@Pipe({
+  name: 'vardaLongDate'
+})
+export class VardaLongDate extends DatePipe implements PipeTransform {
+  transform(value: any, args?: any): any {
+    return super.transform(value, VardaDateService.uiLongTimeFormat);
+  }
+}

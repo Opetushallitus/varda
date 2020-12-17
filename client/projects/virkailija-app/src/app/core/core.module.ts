@@ -13,6 +13,7 @@ import { VardaErrorMessageService } from './services/varda-error-message.service
 import { VardaDomService } from './services/varda-dom.service';
 import { VardaHenkilostoApiService } from './services/varda-henkilosto.service';
 import { VardaLapsiService } from './services/varda-lapsi.service';
+import { VardaRaportitService } from './services/varda-raportit.service';
 import { VardaSnackBarService } from './services/varda-snackbar.service';
 import { VardaPaosApiService } from './services/varda-paos-api.service';
 import { VardaKoosteApiService } from './services/varda-kooste-api.service';
@@ -35,6 +36,7 @@ import { VardaKoosteApiService } from './services/varda-kooste-api.service';
     VardaDomService,
     VardaHenkilostoApiService,
     VardaLapsiService,
+    VardaRaportitService,
     VardaPaosApiService,
     VardaSnackBarService,
     VardaKoosteApiService,

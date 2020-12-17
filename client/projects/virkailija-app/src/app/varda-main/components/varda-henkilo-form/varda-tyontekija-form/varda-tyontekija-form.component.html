@@ -28,12 +28,14 @@
       <span>{{henkilo.henkilo_oid}}</span>
     </div>
   </form>
-  <ng-container *ngIf="tyontekija.id">
-    <app-varda-tyontekija-tutkinto [toimipaikkaAccess]="toimipaikkaAccess"
-                                   [henkilonToimipaikka]="henkilonToimipaikka"
-                                   (changeTutkinnot)="setTutkinnot($event)"
-                                   [henkilo]="henkilo"></app-varda-tyontekija-tutkinto>
 
+  <app-varda-tyontekija-tutkinto [toimipaikkaAccess]="toimipaikkaAccess"
+                                 [henkilonToimipaikka]="henkilonToimipaikka"
+                                 [henkilo]="henkilo"
+                                 [tyontekija]="tyontekija"
+                                 (updateTyontekija)="updateTyontekija($event)"
+                                 (changeTutkinnot)="setTutkinnot($event)"></app-varda-tyontekija-tutkinto>
+  <ng-container *ngIf="tyontekija.id">
     <ng-container
                   *ngIf="henkilonTutkinnot?.length || ( !toimipaikkaAccess.tyontekijatiedot.katselija && toimipaikkaAccess.taydennyskoulutustiedot.katselija)">
 
@@ -43,7 +45,8 @@
                                  [tyontekija]="tyontekija"></app-varda-palvelussuhteet>
 
       <app-varda-tyontekija-taydennyskoulutukset [toimipaikkaAccess]="toimipaikkaAccess"
-                                                 [tyontekija]="tyontekija"></app-varda-tyontekija-taydennyskoulutukset>
+                                                 [tyontekija]="tyontekija">
+      </app-varda-tyontekija-taydennyskoulutukset>
     </ng-container>
 
 

@@ -21,6 +21,7 @@ import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/ser
 import { Moment } from 'moment';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
+import { VardaHenkiloFormAccordionAbstractComponent } from '../../../varda-henkilo-form-accordion/varda-henkilo-form-accordion.abstract';
 
 @Component({
   selector: 'app-varda-palvelussuhde',
@@ -32,7 +33,7 @@ import { TranslateService } from '@ngx-translate/core';
     '../../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaPalvelussuhdeComponent implements OnInit, OnChanges, OnDestroy {
+export class VardaPalvelussuhdeComponent extends VardaHenkiloFormAccordionAbstractComponent implements OnInit, OnChanges, OnDestroy {
   @Input() tyontekija: TyontekijaListDTO;
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
   @Input() toimipaikkaAccess: UserAccess;
@@ -65,6 +66,7 @@ export class VardaPalvelussuhdeComponent implements OnInit, OnChanges, OnDestroy
     private snackBarService: VardaSnackBarService,
     translateService: TranslateService
   ) {
+    super();
     this.element = this.el;
     this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
     this.palvelussuhdeFormErrors = this.henkilostoErrorService.initErrorList();
@@ -95,6 +97,7 @@ export class VardaPalvelussuhdeComponent implements OnInit, OnChanges, OnDestroy
       this.enableForm();
     }
 
+    this.checkFormErrors(this.henkilostoService, 'palvelussuhde', this.palvelussuhde?.id);
     this.initDateFilters();
 
     this.subscriptions.push(
@@ -134,6 +137,7 @@ export class VardaPalvelussuhdeComponent implements OnInit, OnChanges, OnDestroy
           next: palvelussuhdeData => {
             this.changedPalvelussuhde.emit();
             this.snackBarService.success(this.i18n.palvelussuhde_save_success);
+            this.henkilostoService.sendHenkilostoListUpdate();
           },
           error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
         }).add(() => this.disableSubmit());
@@ -158,6 +162,9 @@ export class VardaPalvelussuhdeComponent implements OnInit, OnChanges, OnDestroy
     if (!open || refreshList) {
       this.disableForm();
       this.closeAddPalvelussuhde?.emit(refreshList);
+      if (refreshList) {
+        this.henkilostoService.sendHenkilostoListUpdate();
+      }
     }
   }
 
@@ -189,12 +196,6 @@ export class VardaPalvelussuhdeComponent implements OnInit, OnChanges, OnDestroy
     this.henkilostoService.getTyoskentelypaikat(this.palvelussuhde.id).subscribe({
       next: tyoskentelypaikkaData => {
         this.tyoskentelypaikat = tyoskentelypaikkaData;
-        if (!this.tyoskentelypaikat.length && this.toimipaikkaAccess.tyontekijatiedot.tallentaja) {
-          setTimeout(() => {
-            this.addTyoskentelypaikkaBoolean = true;
-            this.modalService.setFormValuesChanged(true);
-          }, 1000);
-        }
       },
       error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
     });

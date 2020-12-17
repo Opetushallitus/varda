@@ -1,0 +1,25 @@
+<h2 class="mb-1"
+    mat-dialog-title>REQUEST {{ tiedonsiirto.timestamp }}</h2>
+<mat-dialog-content class="mat-typography">
+  <div class="mb-2">
+    <span>{{ tiedonsiirto.username }}</span>
+    <span [libKoodistoValue]="koodistoEnum.lahdejarjestelma">
+      <span *ngIf="tiedonsiirto.lahdejarjestelma">- {{ tiedonsiirto.lahdejarjestelma }}</span>
+    </span>
+  </div>
+  <h3>
+    {{ tiedonsiirto.request_method }}
+    {{ tiedonsiirto.request_url }}
+  </h3>
+  <pre>{{ toJSON(tiedonsiirto.request_body) | json }}</pre>
+
+  <hr />
+
+  <h3>RESPONSE {{ tiedonsiirto.response_code }}</h3>
+  <pre>{{ toJSON(tiedonsiirto.response_body) | json }}</pre>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button
+          mat-dialog-close
+          cdkFocusInitial>{{ i18n.close | translate }}</button>
+</mat-dialog-actions>

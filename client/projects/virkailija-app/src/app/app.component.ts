@@ -41,9 +41,11 @@ export class AppComponent implements OnInit {
   ngOnInit() { }
 
   setTitle(router: Router): void {
-    const title: string = this.getTitle(router.routerState, router.routerState.root).join('-') || 'Varda';
-    this.translateService.get(title).subscribe(
-      translation => this.titleService.setTitle(`${translation} - Varda`)
+    const titles: Array<string> = [...this.getTitle(router.routerState, router.routerState.root).reverse(), 'Varda'];
+    this.translateService.get(titles).subscribe(
+      translation => {
+        this.titleService.setTitle(titles.map(title => translation[title]).join(' - '));
+      }
     );
   }
 
@@ -54,8 +56,9 @@ export class AppComponent implements OnInit {
     }
 
     if (state && parent) {
-      data.push(... this.getTitle(state, state.firstChild(parent)));
+      data.push(...this.getTitle(state, state.firstChild(parent)));
     }
+
     return data;
   }
 

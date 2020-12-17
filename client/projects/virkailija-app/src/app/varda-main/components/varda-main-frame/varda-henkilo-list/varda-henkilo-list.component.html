@@ -3,7 +3,6 @@
     <tbody>
       <ng-container *ngFor="let henkilo of henkiloList">
         <ng-container *ngIf="henkiloRooli === 'lapsi'">
-
           <tr class="henkilo-list-item"
               tabindex="0"
               [class.disabled]="henkilo.expanded"
@@ -19,7 +18,7 @@
             </td>
             <td>
               <i *ngIf="henkilo.lapset?.length === 1">
-                {{  getPaosText(henkilo.lapset[0]) }}
+                {{ getPaosText(henkilo.lapset[0]) }}
               </i>
             </td>
           </tr>
@@ -34,7 +33,7 @@
                 <mat-icon>perm_identity</mat-icon>
               </td>
               <td>{{ henkilo.sukunimi }} {{ henkilo.etunimet }}</td>
-              <td><i>{{  getPaosText(lapsi) }}</i></td>
+              <td><i>{{ getPaosText(lapsi) }}</i></td>
             </tr>
           </ng-container>
         </ng-container>
@@ -57,7 +56,8 @@
               <ng-template #tyoskentelypaikat>
                 <td>
                   <div *ngFor="let koodi of tyontekija.tehtavanimikkeet; let index = index; let last = last">
-                    <span *ngIf="index < 2" libKoodistoValue="vardatehtavanimike">{{ koodi }}</span>
+                    <span *ngIf="index < 2"
+                          libKoodistoValue="vardatehtavanimike">{{ koodi }}</span>
                     <span *ngIf="index === 1 && !last"> (+{{tyontekija.tehtavanimikkeet.length - 2}})</span>
                   </div>
                 </td>

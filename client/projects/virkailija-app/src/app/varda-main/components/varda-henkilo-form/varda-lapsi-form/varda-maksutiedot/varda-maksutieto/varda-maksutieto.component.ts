@@ -18,6 +18,8 @@ import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { KoodistoDTO, VardaKoodistoService, KoodistoEnum } from 'varda-shared';
 import { VardaMaksutietoHuoltajaComponent } from './varda-maksutieto-huoltaja/varda-maksutieto-huoltaja.component';
 import { TranslateService } from '@ngx-translate/core';
+import { HenkiloListErrorDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-henkilo-dto.model';
+import { VardaHenkiloFormAccordionAbstractComponent } from '../../../varda-henkilo-form-accordion/varda-henkilo-form-accordion.abstract';
 
 
 @Component({
@@ -30,7 +32,7 @@ import { TranslateService } from '@ngx-translate/core';
     '../../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaMaksutietoComponent implements OnInit, OnDestroy {
+export class VardaMaksutietoComponent extends VardaHenkiloFormAccordionAbstractComponent implements OnInit, OnDestroy {
   @Input() lapsi: LapsiListDTO;
   @Input() toimipaikkaAccess: UserAccess;
   @Input() maksutieto: VardaMaksutietoDTO;
@@ -62,6 +64,7 @@ export class VardaMaksutietoComponent implements OnInit, OnDestroy {
     private snackBarService: VardaSnackBarService,
     translateService: TranslateService
   ) {
+    super();
     this.element = this.el;
     this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
     this.maksutietoFormErrors = this.henkilostoErrorService.initErrorList();
@@ -88,6 +91,8 @@ export class VardaMaksutietoComponent implements OnInit, OnDestroy {
     this.huoltajat = this.maksutietoForm.get('huoltajat') as FormArray;
     if (!this.maksutieto) {
       this.addHuoltaja();
+    } else {
+      this.checkFormErrors(this.lapsiService, 'maksutieto', this.maksutieto.id);
     }
 
     if (!this.toimipaikkaAccess.huoltajatiedot.tallentaja || this.maksutieto) {
@@ -160,6 +165,9 @@ export class VardaMaksutietoComponent implements OnInit, OnDestroy {
     if (!open || refreshList) {
       this.disableForm();
       this.closeAddMaksutieto?.emit(refreshList);
+      if (refreshList) {
+        this.lapsiService.sendLapsiListUpdate();
+      }
     }
   }
 
@@ -234,5 +242,4 @@ export class VardaMaksutietoComponent implements OnInit, OnDestroy {
     this.minEndDate = startDate?.clone().toDate();
     setTimeout(() => this.maksutietoForm.controls.paattymis_pvm?.updateValueAndValidity(), 100);
   }
-
 }

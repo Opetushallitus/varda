@@ -1,24 +1,29 @@
 import { Injectable } from '@angular/core';
 import { LoadingHttpService } from 'varda-shared';
-import { Observable, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { VardaTyontekijaDTO } from '../../utilities/models/dto/varda-tyontekija-dto.model';
+import { TyontekijaListDTO, VardaTyontekijaDTO } from '../../utilities/models/dto/varda-tyontekija-dto.model';
 import { VardaTutkintoDTO } from '../../utilities/models/dto/varda-tutkinto-dto.model';
 import { VardaPageDto } from '../../utilities/models/dto/varda-page-dto';
 import { VardaPalvelussuhdeDTO } from '../../utilities/models/dto/varda-palvelussuhde-dto.model';
 import { VardaTaydennyskoulutusDTO, VardaTaydennyskoulutusTyontekijaListDTO } from '../../utilities/models/dto/varda-taydennyskoulutus-dto.model';
 import { VardaTyoskentelypaikkaDTO } from '../../utilities/models/dto/varda-tyoskentelypaikka-dto.model';
 import { VardaPoissaoloDTO } from '../../utilities/models/dto/varda-poissolo-dto.model';
-import { HenkiloListDTO } from '../../utilities/models/dto/varda-henkilo-dto.model';
+import { HenkiloListDTO, HenkiloListErrorDTO } from '../../utilities/models/dto/varda-henkilo-dto.model';
 import { VardaTilapainenHenkiloDTO } from '../../utilities/models/dto/varda-tilapainen-henkilo-dto.model';
 import { HenkiloSearchFilter } from '../../varda-main/components/varda-main-frame/henkilo-section.abstract';
+import { VardaRaportitService } from './varda-raportit.service';
 
 @Injectable()
 export class VardaHenkilostoApiService {
 
   private henkilostoApiPath = `${environment.vardaAppUrl}/api/henkilosto/v1`;
   private updateHenkilostoList$ = new Subject();
-  constructor(private http: LoadingHttpService) { }
+  private tyontekijaFormErrorList = new BehaviorSubject<Array<HenkiloListErrorDTO>>(null);
+  constructor(
+    private http: LoadingHttpService,
+    private raportitService: VardaRaportitService
+  ) { }
 
 
   // tyontekija
@@ -158,6 +163,28 @@ export class VardaHenkilostoApiService {
 
   sendHenkilostoListUpdate() {
     this.updateHenkilostoList$.next(true);
+  }
+
+  initFormErrorList(vakajarjestajaID: number, tyontekija: TyontekijaListDTO) {
+    this.tyontekijaFormErrorList.next([]);
+    if (tyontekija.id) {
+      const searchFilter = {
+        page: 1,
+        page_size: 100,
+        search: tyontekija.henkilo_oid
+      };
+
+      this.raportitService.getTyontekijaErrorList(vakajarjestajaID, searchFilter).subscribe(henkiloData => {
+        const henkilo = henkiloData.results.find(result => result.tyontekija_id === tyontekija.id);
+        if (henkilo?.errors) {
+          this.tyontekijaFormErrorList.next(henkilo.errors);
+        }
+      });
+    }
+  }
+
+  getFormErrorList(): Observable<Array<HenkiloListErrorDTO>> {
+    return this.tyontekijaFormErrorList.asObservable();
   }
 
 }

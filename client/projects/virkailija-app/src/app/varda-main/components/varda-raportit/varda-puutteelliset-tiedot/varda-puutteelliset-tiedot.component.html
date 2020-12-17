@@ -1,0 +1,51 @@
+<main class="puutteelliset-tiedot-section">
+  <mat-button-toggle-group *ngIf="showLapset && showTyontekijat"
+                           class="puutteelliset-navi"
+                           aria-role="navigation"
+                           name="henkiloSection"
+                           [value]="activeSection"
+                           [attr.aria-label]="i18n.tiedonsiirrot_navigointi_label | translate">
+    <mat-button-toggle routerLink="."
+                       [fragment]="'lapset'"
+                       value="lapset">
+      <mat-icon aria-ignore>child_friendly</mat-icon>
+      {{ i18n.henkilo_lapset | translate }}
+    </mat-button-toggle>
+    <mat-button-toggle routerLink="."
+                       [fragment]="'tyontekijat'"
+                       value="tyontekijat">
+      <mat-icon aria-ignore>group</mat-icon>
+      {{ i18n.henkilo_tyontekijat | translate }}
+    </mat-button-toggle>
+  </mat-button-toggle-group>
+
+  <div class="raportit-info varda-info">
+    {{ i18n.puutteelliset_tiedot_instruction_paragraph_1 | translate }}<br />
+    {{ i18n.puutteelliset_tiedot_instruction_paragraph_2 | translate }}
+  </div>
+
+  <div class="henkilo-sections"
+       aria-live="polite"
+       role="region">
+    <app-varda-puutteelliset-tyontekijat *ngIf="activeSection === 'tyontekijat' && showTyontekijat"
+                                         [selectedVakajarjestaja]="selectedVakajarjestaja"
+                                         (openHenkiloForm)="openHenkilo($event)"
+                                         [toimipaikkaAccess]="toimijaAccess"></app-varda-puutteelliset-tyontekijat>
+
+    <app-varda-puutteelliset-lapset *ngIf="activeSection === 'lapset' && showLapset"
+                                    [selectedVakajarjestaja]="selectedVakajarjestaja"
+                                    (openHenkiloForm)="openHenkilo($event)"
+                                    [toimipaikkaAccess]="toimijaAccess"></app-varda-puutteelliset-lapset>
+  </div>
+
+  <app-varda-modal-form [identifier]="'henkiloModal'"
+                        [isLg]="true"
+                        [openModal]="!!activeSuhde"
+                        [closeWithoutConfirm]="confirmedHenkiloFormLeave"
+                        (events)="handleFormClose($event)">
+    <app-varda-henkilo-form *ngIf="!!activeSuhde"
+                            [henkilonSuhde]="activeSuhde"
+                            (closeHenkiloForm)="handleFormClose('hidden')"
+                            (valuesChanged)="henkiloFormValuesChanged($event)"></app-varda-henkilo-form>
+  </app-varda-modal-form>
+</main>

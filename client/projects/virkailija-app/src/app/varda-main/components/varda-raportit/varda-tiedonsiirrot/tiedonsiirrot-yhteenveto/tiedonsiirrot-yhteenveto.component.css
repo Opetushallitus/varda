@@ -1,0 +1,8 @@
+.large-cell {
+  width: 60%;
+}
+
+app-tiedonsiirto-filter-header {
+  position:relative;
+  top: 1px;
+}

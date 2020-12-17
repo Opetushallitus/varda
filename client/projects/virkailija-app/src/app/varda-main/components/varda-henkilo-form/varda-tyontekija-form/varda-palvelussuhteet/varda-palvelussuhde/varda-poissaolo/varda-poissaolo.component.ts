@@ -17,6 +17,7 @@ import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { Moment } from 'moment';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
+import { VardaHenkiloFormAccordionAbstractComponent } from '../../../../varda-henkilo-form-accordion/varda-henkilo-form-accordion.abstract';
 
 @Component({
   selector: 'app-varda-poissaolo',
@@ -28,7 +29,7 @@ import { TranslateService } from '@ngx-translate/core';
     '../../../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaPoissaoloComponent implements OnInit, AfterViewInit, OnDestroy {
+export class VardaPoissaoloComponent extends VardaHenkiloFormAccordionAbstractComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() toimipaikkaAccess: UserAccess;
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
   @Input() palvelussuhde: VardaPalvelussuhdeDTO;
@@ -54,6 +55,7 @@ export class VardaPoissaoloComponent implements OnInit, AfterViewInit, OnDestroy
     private snackBarService: VardaSnackBarService,
     translateService: TranslateService
   ) {
+    super();
     this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
     this.poissaoloFormErrors = this.henkilostoErrorService.initErrorList();
   }
@@ -76,6 +78,7 @@ export class VardaPoissaoloComponent implements OnInit, AfterViewInit, OnDestroy
       this.enableForm();
     }
 
+    this.checkFormErrors(this.henkilostoService, 'poissaolo', this.poissaolo?.id);
     this.initDateFilters();
   }
 
@@ -113,6 +116,7 @@ export class VardaPoissaoloComponent implements OnInit, AfterViewInit, OnDestroy
           next: poissaoloData => {
             this.togglePanel(false, true);
             this.snackBarService.success(this.i18n.poissaolo_save_success);
+            this.henkilostoService.sendHenkilostoListUpdate();
           },
           error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
         }).add(() => this.disableSubmit());
@@ -147,6 +151,9 @@ export class VardaPoissaoloComponent implements OnInit, AfterViewInit, OnDestroy
     if (!open || refreshList) {
       this.disableForm();
       this.closePoissaolo?.emit(refreshList);
+      if (refreshList) {
+        this.henkilostoService.sendHenkilostoListUpdate();
+      }
     }
   }
 
