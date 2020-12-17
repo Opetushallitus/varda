@@ -503,15 +503,29 @@ class UiAllVakajarjestajaFilter(djangofilters.FilterSet):
 
 
 class KelaEtuusmaksatusAloittaneetFilter(djangofilters.FilterSet):
-    luonti_pvm = djangofilters.DateFilter(field_name='luonti_pvm', lookup_expr='gte')
+    kunta_koodi = djangofilters.CharFilter(field_name='varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi', lookup_expr='exact', label='kotikunta_koodi')
+    syntyma_pvm = djangofilters.DateFilter(field_name='varhaiskasvatuspaatos__lapsi__henkilo__syntyma_pvm', lookup_expr='gte', label='syntyma_pvm')
+    luonti_pvm = djangofilters.DateFilter(field_name='luonti_pvm', lookup_expr='gte', label='luonti_pvm')
 
     class Meta:
         model: Varhaiskasvatussuhde
-        fields = ['luonti_pvm', ]
+        fields = []
 
 
 class KelaEtuusmaksatusLopettaneetFilter(djangofilters.FilterSet):
-    muutos_pvm = djangofilters.DateFilter(field_name='muutos_pvm', label='muutos_pvm')
+    kunta_koodi = djangofilters.CharFilter(field_name='varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi', lookup_expr='exact', label='kotikunta_koodi')
+    syntyma_pvm = djangofilters.DateFilter(field_name='varhaiskasvatuspaatos__lapsi__henkilo__syntyma_pvm', lookup_expr='gte', label='syntyma_pvm')
+    muutos_pvm = djangofilters.DateFilter(field_name='muutos_pvm', lookup_expr='gte', label='muutos_pvm')
+
+    class Meta:
+        model: Varhaiskasvatussuhde
+        fields = []
+
+
+class KelaEtuusmaksatusKorjaustiedotFilter(djangofilters.FilterSet):
+    kunta_koodi = djangofilters.CharFilter(field_name='varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi', lookup_expr='exact', label='kotikunta_koodi')
+    syntyma_pvm = djangofilters.DateFilter(field_name='varhaiskasvatuspaatos__lapsi__henkilo__syntyma_pvm', lookup_expr='gte', label='syntyma_pvm')
+    muutos_pvm = djangofilters.DateFilter(field_name='muutos_pvm', lookup_expr='gte', label='muutos_pvm')
 
     class Meta:
         model: Varhaiskasvatussuhde

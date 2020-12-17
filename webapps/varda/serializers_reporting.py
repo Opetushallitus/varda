@@ -59,10 +59,10 @@ class KelaEtuusmaksatusKorjaustiedotSerializer(serializers.Serializer):
     kotikunta_koodi = serializers.SerializerMethodField()
     henkilotunnus = serializers.SerializerMethodField()
     tietue = serializers.CharField(default='K', initial='K')
-    vakasuhde_alkamis_pvm = serializers.DateField(source='new_alkamis_pvm')
-    vakasuhde_paattymis_pvm = serializers.DateField(source='new_paattymis_pvm')
-    vakasuhde_alkuperainen_alkamis_pvm = serializers.SerializerMethodField()
-    vakasuhde_alkuperainen_paattymis_pvm = serializers.SerializerMethodField()
+    vakasuhde_alkamis_pvm = serializers.SerializerMethodField()
+    vakasuhde_paattymis_pvm = serializers.SerializerMethodField()
+    vakasuhde_alkuperainen_alkamis_pvm = serializers.DateField(source='old_alkamis_pvm')
+    vakasuhde_alkuperainen_paattymis_pvm = serializers.DateField(source='old_paattymis_pvm')
 
     def get_henkilotunnus(self, data):
         return decrypt_henkilotunnus(data['varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus'])
@@ -70,13 +70,13 @@ class KelaEtuusmaksatusKorjaustiedotSerializer(serializers.Serializer):
     def get_kotikunta_koodi(self, data):
         return data['varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi']
 
-    def get_vakasuhde_alkuperainen_alkamis_pvm(self, data):
-        if data['new_alkamis_pvm'].year == 1:
+    def get_vakasuhde_alkamis_pvm(self, data):
+        if data['old_alkamis_pvm'].year == 1:
             return '0001-01-01'
         return data['alkamis_pvm']
 
-    def get_vakasuhde_alkuperainen_paattymis_pvm(self, data):
-        if data['new_paattymis_pvm'] is not None and data['new_paattymis_pvm'].year == 1:
+    def get_vakasuhde_paattymis_pvm(self, data):
+        if data['old_paattymis_pvm'] is not None and data['old_paattymis_pvm'].year == 1:
             return '0001-01-01'
         return data['paattymis_pvm']
 
@@ -92,8 +92,8 @@ class KelaEtuusmaksatusKorjaustiedotPoistetutSerializer(serializers.Serializer):
     tietue = serializers.CharField(default='K', initial='K')
     vakasuhde_alkamis_pvm = serializers.DateField(source='alkamis_pvm')
     vakasuhde_paattymis_pvm = serializers.DateField(source='alkamis_pvm')
-    vakasuhde_alkuperainen_alkamis_pvm = serializers.DateField(source='alkamis_pvm')
-    vakasuhde_alkuperainen_paattymis_pvm = serializers.DateField(source='paattymis_pvm')
+    vakasuhde_alkuperainen_alkamis_pvm = serializers.DateField(source='old_alkamis_pvm')
+    vakasuhde_alkuperainen_paattymis_pvm = serializers.DateField(source='old_paattymis_pvm')
 
     def get_henkilotunnus(self, data):
         return decrypt_henkilotunnus(data['varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus'])
