@@ -495,10 +495,20 @@ class AbstractErrorReportViewSet(GenericViewSet, ListModelMixin):
         return StringAgg(Case(When(filter_object, then=Cast(id_lookup, CharField()))), delimiter=',')
 
     def get_annotations(self):
+        """
+        Desired errors can be filtered with error URL parameter
+        (e.g. /api/v1/vakajarjestajat/1/error-report-tyontekijat/?error=TA006)
+        """
+        error_search_term = self.request.query_params.get('error', None)
         return {error_key.value['error_code']: error_tuple[0]
-                for error_key, error_tuple in self.get_error_tuples().items()}
+                for error_key, error_tuple in self.get_error_tuples().items()
+                if not error_search_term or error_search_term.lower() in error_key.value['error_code'].lower()}
 
     def get_include_filter(self, annotations):
+        if not annotations:
+            # No matching annotations found using search, do not return any results
+            return Q(id=None)
+
         include_filter = Q()
         for error_name in annotations:
             include_filter = include_filter | ~Q(**{error_name: None})
@@ -617,10 +627,12 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
             )
         }
 
+        # Do not get Maksutieto related errors for Lapsi objects for which vakajarjestaja is paos_organisaatio
         huoltajatiedot_error_tuples = {
             # Use Subquery to check that Lapsi is not in a list of Lapsi objects that have active varhaiskasvatuspaatos
             ErrorMessages.MA015: (
                 self.get_annotation_for_filter(
+                    ~Q(paos_organisaatio=self.vakajarjestaja_id) &
                     ~Q(id__in=Subquery(
                         Lapsi.objects.filter(self.get_vakajarjestaja_filter() &
                                              (Q(varhaiskasvatuspaatokset__paattymis_pvm__isnull=True) |
@@ -632,6 +644,7 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
             ),
             ErrorMessages.MA016: (
                 self.get_annotation_for_filter(
+                    ~Q(paos_organisaatio=self.vakajarjestaja_id) &
                     Q(huoltajuussuhteet__maksutiedot__paattymis_pvm__isnull=True) &
                     Q(henkilo__syntyma_pvm__lt=overage_date),
                     'huoltajuussuhteet__maksutiedot__id'
@@ -648,16 +661,9 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
         vakatoimija_filter = Q(vakatoimija=self.vakajarjestaja_id)
         no_vakatoimija_filter = (Q(vakatoimija__isnull=True) & Q(paos_organisaatio__isnull=True) &
                                  Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja=self.vakajarjestaja_id))
-        paos_paos_filter = (Q(paos_organisaatio=self.vakajarjestaja_id) &
-                            Q(paos_organisaatio__paos_oikeudet_tuottaja__tallentaja_organisaatio=self.vakajarjestaja_id) &
-                            Q(paos_organisaatio__paos_oikeudet_tuottaja__jarjestaja_kunta_organisaatio=F('oma_organisaatio')) &
-                            Q(paos_organisaatio__paos_oikeudet_tuottaja__voimassa_kytkin=True))
-        paos_oma_filter = (Q(oma_organisaatio=self.vakajarjestaja_id) &
-                           Q(oma_organisaatio__paos_oikeudet_jarjestaja_kunta__tallentaja_organisaatio=self.vakajarjestaja_id) &
-                           Q(oma_organisaatio__paos_oikeudet_jarjestaja_kunta__tuottaja_organisaatio=F('paos_organisaatio')) &
-                           Q(oma_organisaatio__paos_oikeudet_jarjestaja_kunta__voimassa_kytkin=True))
+        paos_filter = Q(oma_organisaatio=self.vakajarjestaja_id) | Q(paos_organisaatio=self.vakajarjestaja_id)
 
-        return vakatoimija_filter | no_vakatoimija_filter | paos_paos_filter | paos_oma_filter
+        return vakatoimija_filter | no_vakatoimija_filter | paos_filter
 
     def get_queryset(self):
         queryset = Lapsi.objects.filter(self.get_vakajarjestaja_filter())
@@ -665,7 +671,7 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
 
         annotations = self.get_annotations()
 
-        return queryset.annotate(**annotations).filter(self.get_include_filter(annotations)).order_by('id')
+        return queryset.annotate(**annotations).filter(self.get_include_filter(annotations)).order_by('henkilo__sukunimi')
 
 
 @auditlogclass
@@ -690,7 +696,7 @@ class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
         return {
             ErrorMessages.PS008: (
                 self.get_annotation_for_filter(
-                    Q(palvelussuhteet__isnull=True),
+                    Q(henkilo__tutkinnot__vakajarjestaja=F('vakajarjestaja')) & Q(palvelussuhteet__isnull=True),
                     'id'
                 ),
                 'tyontekija'
@@ -701,6 +707,38 @@ class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
                     'palvelussuhteet__id'
                 ),
                 'palvelussuhde'
+            ),
+            ErrorMessages.TU004: (
+                self.get_annotation_for_filter(
+                    Q(id__in=Subquery(
+                        Tyontekija.objects.filter(vakajarjestaja=self.vakajarjestaja_id)
+                        .exclude(henkilo__tutkinnot__vakajarjestaja=self.vakajarjestaja_id).values('id'))),
+                    'id'
+                ),
+                'tyontekija'
+            ),
+            ErrorMessages.TA008: (
+                self.get_annotation_for_filter(
+                    Q(palvelussuhteet__alkamis_pvm__gt=F('palvelussuhteet__tyoskentelypaikat__alkamis_pvm')),
+                    'palvelussuhteet__tyoskentelypaikat__id'
+                ),
+                'tyoskentelypaikka'
+            ),
+            ErrorMessages.TA006: (
+                self.get_annotation_for_filter(
+                    Q(palvelussuhteet__paattymis_pvm__lt=F('palvelussuhteet__tyoskentelypaikat__paattymis_pvm')),
+                    'palvelussuhteet__tyoskentelypaikat__id'
+                ),
+                'tyoskentelypaikka'
+            ),
+            ErrorMessages.TA013: (
+                self.get_annotation_for_filter(
+                    Q(palvelussuhteet__paattymis_pvm__isnull=False) &
+                    Q(palvelussuhteet__tyoskentelypaikat__isnull=False) &
+                    Q(palvelussuhteet__tyoskentelypaikat__paattymis_pvm__isnull=True),
+                    'palvelussuhteet__tyoskentelypaikat__id'
+                ),
+                'tyoskentelypaikka'
             )
         }
 
@@ -709,4 +747,4 @@ class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
         queryset = self.filter_queryset(queryset)
 
         annotations = self.get_annotations()
-        return queryset.annotate(**annotations).filter(self.get_include_filter(annotations)).order_by('id')
+        return queryset.annotate(**annotations).filter(self.get_include_filter(annotations)).order_by('henkilo__sukunimi')

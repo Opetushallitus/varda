@@ -164,15 +164,7 @@ class VardaViewsReportingTests(TestCase):
 
         client = SetUpTestClient('tester10').client()
         resp = client.get(f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-lapset/')
-        assert_status_code(resp, status.HTTP_200_OK)
-
-        resp_json = json.loads(resp.content)
-        self.assertEqual(len(resp_json['results']), 1)
-        self.assertEqual(len(resp_json['results'][0]['errors']), 2)
-
-        resp_string = resp.content.decode('utf-8')
-        self.assertIn('MA015', resp_string)
-        self.assertIn('MA016', resp_string)
+        self._verify_error_report_result(resp, ['MA015', 'MA016'])
 
     def test_api_error_report_lapset_vakatiedot(self):
         vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
@@ -196,15 +188,7 @@ class VardaViewsReportingTests(TestCase):
         client = SetUpTestClient('tester10').client()
 
         resp_1 = client.get(url)
-        assert_status_code(resp_1, status.HTTP_200_OK)
-
-        resp_1_json = json.loads(resp_1.content)
-        self.assertEqual(len(resp_1_json['results']), 1)
-        self.assertEqual(len(resp_1_json['results'][0]['errors']), 2)
-
-        resp_1_string = resp_1.content.decode('utf-8')
-        self.assertIn('VP013', resp_1_string)
-        self.assertIn('VP002', resp_1_string)
+        self._verify_error_report_result(resp_1, ['VP013', 'VP002'])
 
         # Set alkamis_pvm for Varhaiskasvatussuhde so that error is not raised
         Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=lapsi).update(alkamis_pvm=today)
@@ -212,51 +196,23 @@ class VardaViewsReportingTests(TestCase):
         # Set paattymis_pvm for Varhaiskasvatuspaatos
         Varhaiskasvatuspaatos.objects.filter(lapsi=lapsi).update(paattymis_pvm=today)
         resp_2 = client.get(url)
-        assert_status_code(resp_2, status.HTTP_200_OK)
-
-        resp_2_json = json.loads(resp_2.content)
-        self.assertEqual(len(resp_2_json['results']), 1)
-        self.assertEqual(len(resp_2_json['results'][0]['errors']), 1)
-
-        resp_2_string = resp_2.content.decode('utf-8')
-        self.assertIn('VS012', resp_2_string)
+        self._verify_error_report_result(resp_2, ['VS012'])
 
         # Set paattymis_pvm for Varhaiskasvatussuhde to be after Varhaiskasvatuspaatos
         tomorrow = today + datetime.timedelta(days=1)
         Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=lapsi).update(paattymis_pvm=tomorrow)
         resp_3 = client.get(url)
-        assert_status_code(resp_3, status.HTTP_200_OK)
-
-        resp_3_json = json.loads(resp_3.content)
-        self.assertEqual(len(resp_3_json['results']), 1)
-        self.assertEqual(len(resp_3_json['results'][0]['errors']), 1)
-
-        resp_3_string = resp_3.content.decode('utf-8')
-        self.assertIn('VP003', resp_3_string)
+        self._verify_error_report_result(resp_3, ['VP003'])
 
         # Remove Varhaiskasvatussuhde
         Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=lapsi).delete()
         resp_4 = client.get(url)
-        assert_status_code(resp_4, status.HTTP_200_OK)
-
-        resp_4_json = json.loads(resp_4.content)
-        self.assertEqual(len(resp_4_json['results']), 1)
-        self.assertEqual(len(resp_4_json['results'][0]['errors']), 1)
-
-        resp_4_string = resp_4.content.decode('utf-8')
-        self.assertIn('VS014', resp_4_string)
+        self._verify_error_report_result(resp_4, ['VS014'])
 
         # Remove Varhaiskasvatuspaatos
         Varhaiskasvatuspaatos.objects.filter(lapsi=lapsi).delete()
         resp_5 = client.get(url)
-        assert_status_code(resp_5, status.HTTP_200_OK)
-
-        resp_5_json = json.loads(resp_5.content)
-        self.assertEqual(len(resp_5_json['results']), 1)
-        self.assertEqual(len(resp_5_json['results'][0]['errors']), 1)
-
-        resp_5_string = resp_5.content.decode('utf-8')
-        self.assertIn('VP012', resp_5_string)
+        self._verify_error_report_result(resp_5, ['VP012'])
 
     def test_api_error_report_lapset_huoltajatiedot_vakatiedot(self):
         vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
@@ -273,52 +229,63 @@ class VardaViewsReportingTests(TestCase):
 
         client = SetUpTestClient('tester10').client()
         resp = client.get(f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-lapset/')
-        assert_status_code(resp, status.HTTP_200_OK)
-
-        resp_json = json.loads(resp.content)
-        self.assertEqual(len(resp_json['results']), 1)
-        self.assertEqual(len(resp_json['results'][0]['errors']), 2)
-
-        resp_string = resp.content.decode('utf-8')
-        self.assertIn('MA016', resp_string)
-        self.assertIn('VP013', resp_string)
+        self._verify_error_report_result(resp, ['MA016', 'VP013'])
 
     def test_api_error_report_tyontekijat(self):
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
-        tyontekija = Tyontekija.objects.get(vakajarjestaja=vakajarjestaja, henkilo__henkilo_oid='1.2.246.562.24.2431884920042')
+        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.93957375488')
+        tyontekija = Tyontekija.objects.get(vakajarjestaja=vakajarjestaja, henkilo__henkilo_oid='1.2.246.562.24.2431884920041')
 
-        client = SetUpTestClient('tyontekija_tallentaja').client()
+        client = SetUpTestClient('henkilosto_tallentaja_93957375488').client()
         url = f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-tyontekijat/'
 
-        # Remove invalid Tyontekija information so no error is raised
-        invalid_tyontekija_henkilo = Henkilo.objects.get(henkilo_oid='1.2.246.562.24.2431884920043')
-        Tutkinto.objects.filter(henkilo=invalid_tyontekija_henkilo, vakajarjestaja=vakajarjestaja).delete()
-        Tyontekija.objects.filter(henkilo=invalid_tyontekija_henkilo, vakajarjestaja=vakajarjestaja).delete()
+        # Make Tyoskentelypaikka start before Palvelussuhde
+        # and remove paattymis_pvm from Palvelussuhde and Tyoskentelypaikka
+        today = datetime.date.today()
+        yesterday = today - datetime.timedelta(days=1)
+        Palvelussuhde.objects.filter(tyontekija=tyontekija).update(alkamis_pvm=today, paattymis_pvm=None)
+        Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija).update(alkamis_pvm=yesterday,
+                                                                                      paattymis_pvm=None)
+        resp_1 = client.get(url)
+        self._verify_error_report_result(resp_1, ['TA008'])
+
+        # Set alkamis_pvm for Tyoskentelypaikka so that error is not raised
+        Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija).update(alkamis_pvm=today)
+
+        # Set paattymis_pvm for Palvelussuhde
+        Palvelussuhde.objects.filter(tyontekija=tyontekija).update(paattymis_pvm=today)
+        resp_2 = client.get(url)
+        self._verify_error_report_result(resp_2, ['TA013'])
+
+        # Set paattymis_pvm for Tyoskentelypaikka to be after Palvelussuhde
+        tomorrow = today + datetime.timedelta(days=1)
+        Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija).update(paattymis_pvm=tomorrow)
+        resp_3 = client.get(url)
+        self._verify_error_report_result(resp_3, ['TA006'])
 
         # Remove Tyoskentelypaikka
         Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija).delete()
-        resp_1 = client.get(url)
-        assert_status_code(resp_1, status.HTTP_200_OK)
-
-        resp_1_json = json.loads(resp_1.content)
-        self.assertEqual(len(resp_1_json['results']), 1)
-        self.assertEqual(len(resp_1_json['results'][0]['errors']), 1)
-
-        resp_1_string = resp_1.content.decode('utf-8')
-        self.assertIn('TA014', resp_1_string)
+        resp_4 = client.get(url)
+        self._verify_error_report_result(resp_4, ['TA014'])
 
         # Remove Palvelussuhde (PidempiPoissaolo must be removed as well)
         PidempiPoissaolo.objects.filter(palvelussuhde__tyontekija=tyontekija).delete()
         Palvelussuhde.objects.filter(tyontekija=tyontekija).delete()
-        resp_2 = client.get(url)
-        assert_status_code(resp_2, status.HTTP_200_OK)
+        resp_5 = client.get(url)
+        self._verify_error_report_result(resp_5, ['PS008'])
 
-        resp_2_json = json.loads(resp_2.content)
-        self.assertEqual(len(resp_2_json['results']), 1)
-        self.assertEqual(len(resp_2_json['results'][0]['errors']), 1)
+        # Remove Tutkinto
+        Tutkinto.objects.filter(vakajarjestaja=vakajarjestaja, henkilo=tyontekija.henkilo).delete()
+        resp_6 = client.get(url)
+        self._verify_error_report_result(resp_6, ['TU004'])
 
-        resp_2_string = resp_2.content.decode('utf-8')
-        self.assertIn('PS008', resp_2_string)
+    def _verify_error_report_result(self, response, error_code_list):
+        assert_status_code(response, status.HTTP_200_OK)
+        response_json = json.loads(response.content)
+        self.assertEqual(len(response_json['results']), 1)
+        self.assertEqual(len(response_json['results'][0]['errors']), len(error_code_list))
+        response_string = response.content.decode('utf-8')
+        for error_code in error_code_list:
+            self.assertIn(error_code, response_string)
 
     def test_api_error_report_tyontekijat_no_permissions(self):
         vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
@@ -338,3 +305,20 @@ class VardaViewsReportingTests(TestCase):
         client_no_permissions_3 = SetUpTestClient('henkilosto_tallentaja_93957375488').client()
         resp_no_permissions_3 = client_no_permissions_3.get(url)
         assert_status_code(resp_no_permissions_3, status.HTTP_404_NOT_FOUND)
+
+    def test_api_error_report_lapset_filter(self):
+        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        url = f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-lapset/'
+        client = SetUpTestClient('tester2').client()
+
+        resp_1 = client.get(url)
+        assert_status_code(resp_1, status.HTTP_200_OK)
+        resp_1_string = resp_1.content.decode('utf8')
+        self.assertIn('VP002', resp_1_string)
+        self.assertIn('VP013', resp_1_string)
+
+        resp_2 = client.get(f'{url}?error=VP002')
+        assert_status_code(resp_2, status.HTTP_200_OK)
+        resp_2_string = resp_2.content.decode('utf8')
+        self.assertNotIn('VP013', resp_2_string)
+        self.assertIn('VP002', resp_2_string)
