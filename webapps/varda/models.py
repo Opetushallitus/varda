@@ -1006,6 +1006,7 @@ class Z4_CasKayttoOikeudet(models.Model):
     # No use case for TOIMIJATIEDOT_KATSELIJA
     TOIMIJATIEDOT_KATSELIJA = 'VARDA_TOIMIJATIEDOT_KATSELIJA'
     TOIMIJATIEDOT_TALLENTAJA = 'VARDA_TOIMIJATIEDOT_TALLENTAJA'
+    RAPORTTIEN_KATSELIJA = 'VARDA_RAPORTTIEN_KATSELIJA'
     KAYTTOOIKEUSROOLIT = (
         (PAAKAYTTAJA, 'Varda-Pääkäyttäjä'),
         (TALLENTAJA, 'Varda-Tallentaja'),
@@ -1021,6 +1022,7 @@ class Z4_CasKayttoOikeudet(models.Model):
         (HENKILOSTO_TYONTEKIJA_TALLENTAJA, 'Varda-Työntekijätietojen tallentaja'),
         (TOIMIJATIEDOT_KATSELIJA, 'Varda-Toimijatietojen katselija'),
         (TOIMIJATIEDOT_TALLENTAJA, 'Varda-Toimijatietojen tallentaja'),
+        (RAPORTTIEN_KATSELIJA, 'Varda-Raporttien katselija')
     )
 
     user = models.ForeignKey(User, related_name='kayttooikeudet', on_delete=models.PROTECT)
@@ -1045,3 +1047,23 @@ class Z5_AuditLog(models.Model):
 
     class Meta:
         verbose_name_plural = 'Audit log'
+
+
+class Z6_RequestLog(models.Model):
+    request_url = models.CharField(max_length=200)
+    request_method = models.CharField(max_length=10)
+    request_body = models.TextField(blank=True)
+    response_code = models.IntegerField()
+    response_body = models.TextField(blank=True)
+    target_model = models.CharField(null=True, max_length=100)
+    target_id = models.IntegerField(null=True)
+    lahdejarjestelma = models.CharField(null=True, max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
+    vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='request_log', on_delete=models.PROTECT, null=True)
+    user = models.ForeignKey(User, related_name='request_log', on_delete=models.PROTECT)
+    timestamp = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return str(self.id)
+
+    class Meta:
+        verbose_name_plural = 'Request log'

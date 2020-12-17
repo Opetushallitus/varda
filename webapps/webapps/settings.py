@@ -80,7 +80,6 @@ MIDDLEWARE = [
     'log_request_id.middleware.RequestIDMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.locale.LocaleMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -322,28 +321,21 @@ REST_FRAMEWORK = {
 # Internationalization
 # https://docs.djangoproject.com/en/dev/topics/i18n/
 
-# Language set to english because in unit tests that is the assumed language
-# (language selection impacts also the language of error codes)
-# Browser's language selection overrides this
-
-LANGUAGE_CODE = 'en'
-
-TIME_ZONE = 'UTC'
+# Language set to English because in unit tests that is the assumed language
+# Django's LocaleMiddleware is disabled so that error messages are always in English and predictable
 
 USE_I18N = True
-
-USE_L10N = True
+LANGUAGE_CODE = 'en'
+LANGUAGES = [
+    ('en', _('English'))
+]
+LOCALE_PATHS = [
+    os.path.join(BASE_DIR, 'locale'),
+]
 
 USE_TZ = True
+TIME_ZONE = 'UTC'
 
-LANGUAGES = [
-    ('fi', _('Finnish')),
-    ('sv', _('Swedish')),
-]
-
-LOCALE_PATHS = [
-    os.path.join(BASE_DIR, "locale"),
-]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/dev/howto/static-files/

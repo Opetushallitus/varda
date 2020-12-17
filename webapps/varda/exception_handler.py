@@ -81,7 +81,9 @@ def varda_exception_handler(exc, context):
         response.data = _parse_error_messages(response.data, status_code=response.status_code)
     # Catch 404 errors and return generic Varda style error message
     elif response.status_code == status.HTTP_404_NOT_FOUND:
-        response.data = {'errors': [ErrorMessages.MI015.value]}
+        error_message = ErrorMessages.MI015.value
+        _add_error_translations(error_message)
+        response.data = {'errors': [error_message]}
     return response
 
 

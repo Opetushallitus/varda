@@ -463,5 +463,30 @@
       "date_changed": "2020-07-01T16:00:00.000Z",
       "description": ""
     }
+  },
+  {
+    "model": "django_celery_beat.periodictask",
+    "pk": 15,
+    "fields": {
+      "name": "delete_request_log_older_than_arg_days",
+      "task": "varda.tasks.delete_request_log_older_than_arg_days_task",
+      "interval": 3,
+      "crontab": null,
+      "solar": null,
+      "args": "[31]",
+      "kwargs": "{}",
+      "queue": null,
+      "exchange": null,
+      "routing_key": null,
+      "priority": null,
+      "one_off": false,
+      "start_time": null,
+      "expires": null,
+      "enabled": false,
+      "last_run_at": null,
+      "total_run_count": 0,
+      "date_changed": "2020-07-01T16:00:00.000Z",
+      "description": ""
+    }
   }
 ]

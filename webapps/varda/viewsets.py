@@ -54,6 +54,7 @@ from varda.permissions import (throw_if_not_tallentaja_permissions,
                                user_has_huoltajatieto_tallennus_permissions_to_correct_organization,
                                grant_or_deny_access_to_paos_toimipaikka, user_has_tallentaja_permission_in_organization,
                                auditlogclass, save_audit_log, ToimipaikkaPermissions, get_toimipaikka_or_404, auditlog)
+from varda.request_logging import request_log_viewset_decorator_factory
 from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer,
                                UpdateHenkiloWithOidSerializer, UpdateOphStaffSerializer, ClearCacheSerializer,
                                ActiveUserSerializer, AuthTokenSerializer, VakaJarjestajaSerializer,
@@ -507,6 +508,7 @@ When a new instance is created (POST-request), we give object-level permissions 
 
 
 @auditlogclass
+@request_log_viewset_decorator_factory()
 class VakaJarjestajaViewSet(viewsets.ModelViewSet):
     """
     list:
@@ -559,6 +561,7 @@ class VakaJarjestajaViewSet(viewsets.ModelViewSet):
 
 
 @auditlogclass
+@request_log_viewset_decorator_factory(target_path=[])
 class ToimipaikkaViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, PutModelMixin, ListModelMixin):
     """
     list:
@@ -686,6 +689,7 @@ class ToimipaikkaViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, P
 
 
 @auditlogclass
+@request_log_viewset_decorator_factory(target_path=['toimipaikka'])
 class ToiminnallinenPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, PutModelMixin, ListModelMixin, DestroyModelMixin):
     """
     list:
@@ -786,6 +790,7 @@ class ToiminnallinenPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveMo
 
 
 @auditlogclass
+@request_log_viewset_decorator_factory(target_path=['toimipaikka'])
 class KieliPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, PutModelMixin, ListModelMixin, DestroyModelMixin):
     """
     list:
@@ -947,6 +952,7 @@ class HaeHenkiloViewSet(GenericViewSet, CreateModelMixin):
 
 
 @auditlogclass
+@request_log_viewset_decorator_factory()
 class HenkiloViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
     """
     retrieve:
@@ -1088,6 +1094,7 @@ class HenkiloViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
 
 
 @auditlogclass
+@request_log_viewset_decorator_factory(target_path=[])
 class LapsiViewSet(viewsets.ModelViewSet):
     """
     list:
@@ -1282,6 +1289,7 @@ class LapsiViewSet(viewsets.ModelViewSet):
 
 
 @auditlogclass
+@request_log_viewset_decorator_factory(target_path=['lapsi'])
 class VarhaiskasvatuspaatosViewSet(viewsets.ModelViewSet):
     """
     list:
@@ -1461,6 +1469,7 @@ class VarhaiskasvatuspaatosViewSet(viewsets.ModelViewSet):
 
 
 @auditlogclass
+@request_log_viewset_decorator_factory(target_path=['varhaiskasvatuspaatos', 'lapsi'])
 class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
     """
     list:
@@ -1675,6 +1684,7 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
 
 
 @auditlogclass
+@request_log_viewset_decorator_factory()
 class MaksutietoViewSet(viewsets.ModelViewSet):
     """
     list:
@@ -2028,6 +2038,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
 
 
 @auditlogclass
+@request_log_viewset_decorator_factory()
 class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, CreateModelMixin, DestroyModelMixin):
     """
     list:
@@ -2223,6 +2234,7 @@ class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cr
 
 
 @auditlogclass
+@request_log_viewset_decorator_factory()
 class PaosOikeusViewSet(GenericViewSet, UpdateModelMixin, ListModelMixin, RetrieveModelMixin):
     """
     list:

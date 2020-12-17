@@ -133,19 +133,23 @@ router_onr.register(r'external-permissions', viewsets.ExternalPermissionsViewSet
 # Routes for Reporting-URLs
 
 router_reporting = routers.DefaultRouter()
-# /reporting/api/v1/tiedonsiirtotilasto/
+# /api/reporting/v1/tiedonsiirtotilasto/
 router_reporting.register(r'tiedonsiirtotilasto', viewsets_reporting.TiedonsiirtotilastoViewSet, basename="tiedonsiirtotilasto")
+# /api/reporting/v1/tiedonsiirto/
+router_reporting.register(r'tiedonsiirto', viewsets_reporting.TiedonsiirtoViewSet, basename='tiedonsiirto')
+# /api/reporting/v1/tiedonsiirto/yhteenveto/
+router_reporting.register(r'tiedonsiirto/yhteenveto', viewsets_reporting.TiedonsiirtoYhteenvetoViewSet, basename='tiedonsiirto-yhteenveto')
 
 router_kela_reporting = routers.DefaultRouter()
-# /reporting/api/v1/kela/etuusmaksatus/aloittaneet
+# /api/reporting/v1/kela/etuusmaksatus/aloittaneet
 router_kela_reporting.register(r'aloittaneet', viewsets_reporting.KelaEtuusmaksatusAloittaneetViewset, basename='aloittaneet')
-# /reporting/api/v1/kela/etuusmaksatus/lopettaneet
+# /api/reporting/v1/kela/etuusmaksatus/lopettaneet
 router_kela_reporting.register(r'lopettaneet', viewsets_reporting.KelaEtuusmaksatusLopettaneetViewSet, 'lopettaneet')
-# /reporting/api/v1/kela/etuusmaksatus/maaraaikaiset
+# /api/reporting/v1/kela/etuusmaksatus/maaraaikaiset
 router_kela_reporting.register(r'maaraaikaiset', viewsets_reporting.KelaEtuusmaksatusMaaraaikaisetViewSet, 'maaraaikaset')
-# /reporting/api/v1/kela/etuusmaksatus/korjaustiedot
+# /api/reporting/v1/kela/etuusmaksatus/korjaustiedot
 router_kela_reporting.register(r'korjaustiedot', viewsets_reporting.KelaEtuusmaksatusKorjaustiedotViewSet, 'korjaustiedot')
-# /reporting/api/v1/kela/etuusmaksatus/korjaustiedotpoistetut
+# /api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut
 router_kela_reporting.register(r'korjaustiedotpoistetut', viewsets_reporting.KelaEtuusmaksatusKorjaustiedotPoistetutViewSet, 'korjaustiedotpoistetut')
 
 """

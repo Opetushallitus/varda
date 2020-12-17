@@ -2,7 +2,7 @@ import datetime
 
 from dateutil.relativedelta import relativedelta
 from django.contrib.postgres.aggregates import StringAgg
-from django.db.models import Q, Case, Value, When, OuterRef, Subquery, CharField, F, DateField
+from django.db.models import Q, Case, Value, When, OuterRef, Subquery, CharField, F, DateField, Count, IntegerField
 from django.db.models.functions import Cast
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -13,7 +13,10 @@ from rest_framework.filters import SearchFilter
 from rest_framework.mixins import ListModelMixin
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
+
+from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
 from varda.enums.error_messages import ErrorMessages
+from varda.filters import TiedonsiirtoFilter
 from varda.pagination import ChangeablePageSizePagination
 from varda import filters
 from varda.serializers_reporting import (KelaEtuusmaksatusAloittaneetSerializer, KelaEtuusmaksatusLopettaneetSerializer,
@@ -21,12 +24,15 @@ from varda.serializers_reporting import (KelaEtuusmaksatusAloittaneetSerializer,
                                          KelaEtuusmaksatusKorjaustiedotSerializer,
                                          KelaEtuusmaksatusKorjaustiedotPoistetutSerializer,
                                          TiedonsiirtotilastoSerializer, ErrorReportLapsetSerializer,
-                                         ErrorReportTyontekijatSerializer)
+                                         ErrorReportTyontekijatSerializer, TiedonsiirtoSerializer,
+                                         TiedonsiirtoYhteenvetoSerializer)
+from varda.permissions import permission_groups_in_organization, CustomObjectPermissions
 from varda.enums.ytj import YtjYritysmuoto
 from varda.models import (KieliPainotus, Lapsi, Maksutieto, PaosOikeus, ToiminnallinenPainotus, Toimipaikka,
-                          VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z4_CasKayttoOikeudet, Tyontekija)
-from varda.permissions import (CustomReportingViewAccess, auditlogclass, permission_groups_in_organization,
-                               CustomObjectPermissions)
+                          VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z6_RequestLog,
+                          Z4_CasKayttoOikeudet, Tyontekija)
+from varda.permissions import (CustomReportingViewAccess, auditlogclass, get_vakajarjestajat_filter_for_raportit,
+                               TiedonsiirtoPermissions)
 
 
 @auditlogclass
@@ -753,3 +759,48 @@ class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
 
         annotations = self.get_annotations()
         return queryset.annotate(**annotations).filter(self.get_include_filter(annotations)).order_by('henkilo__sukunimi')
+
+
+@auditlogclass
+class TiedonsiirtoViewSet(GenericViewSet, ListModelMixin):
+    serializer_class = TiedonsiirtoSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TiedonsiirtoFilter
+    permission_classes = (TiedonsiirtoPermissions,)
+    pagination_class = ChangeablePageSizePagination
+
+    vakajarjestaja_filter = None
+
+    def get_queryset(self):
+        queryset = Z6_RequestLog.objects.filter(self.vakajarjestaja_filter).order_by('-timestamp')
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        self.vakajarjestaja_filter = get_vakajarjestajat_filter_for_raportit(request)
+        return super(TiedonsiirtoViewSet, self).list(request, *args, **kwargs)
+
+
+@auditlogclass
+class TiedonsiirtoYhteenvetoViewSet(GenericViewSet, ListModelMixin):
+    serializer_class = TiedonsiirtoYhteenvetoSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TiedonsiirtoFilter
+    permission_classes = (TiedonsiirtoPermissions,)
+    pagination_class = ChangeablePageSizePagination
+
+    vakajarjestaja_filter = None
+
+    def get_queryset(self):
+        queryset = (Z6_RequestLog.objects.filter(self.vakajarjestaja_filter)
+                    .values('user__id', 'user__username', 'timestamp__date')
+                    .annotate(successful=Count(Case(When(response_code__in=SUCCESSFUL_STATUS_CODE_LIST, then=1),
+                                                    output_field=IntegerField())),
+                              unsuccessful=Count(Case(When(~Q(response_code__in=SUCCESSFUL_STATUS_CODE_LIST), then=1),
+                                                      output_field=IntegerField())),
+                              date=Cast('timestamp', DateField()))
+                    .order_by('-date'))
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        self.vakajarjestaja_filter = get_vakajarjestajat_filter_for_raportit(request)
+        return super(TiedonsiirtoYhteenvetoViewSet, self).list(request, *args, **kwargs)

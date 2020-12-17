@@ -64,9 +64,7 @@ class ReadAdminOrOPHUser(permissions.BasePermission):
 
     def has_permission(self, request, view):
         user = request.user
-        additional_details = getattr(user, 'additional_user_info', None)
-        is_oph_staff = getattr(additional_details, 'approved_oph_staff', False)
-        return bool(request.user and request.method == 'GET' and (user.is_superuser or is_oph_staff))
+        return bool(request.user and request.method == 'GET' and (user.is_superuser or is_oph_staff(user)))
 
 
 class LapsihakuPermissions(permissions.BasePermission):
@@ -88,6 +86,18 @@ class ToimipaikkaPermissions(permissions.BasePermission):
         user = request.user
         accepted_permissions = ['view_toimipaikka']
         return _is_user_group_permissions(accepted_permissions, user)
+
+
+class TiedonsiirtoPermissions(permissions.BasePermission):
+    """
+    Allows access to admin, OPH users, and users who belong to a VARDA_RAPORTTIEN_KATSELIJA group
+    """
+    def has_permission(self, request, view):
+        user = request.user
+
+        return (user.is_superuser or
+                is_oph_staff(user) or
+                user.groups.filter(name__startswith=Z4_CasKayttoOikeudet.RAPORTTIEN_KATSELIJA).exists())
 
 
 def _is_user_group_permissions(accepted_permissions, user):
@@ -635,8 +645,7 @@ def user_belongs_to_correct_groups(field, user, field_object):
     :param field_object: VakaJarjestaja or Toimipaikka object instance
     :return: True if user belongs to correct permission groups or if no specific groups are defined, else False
     """
-    if (not user.is_superuser and not is_oph_staff(user) and
-            hasattr(field, 'permission_groups') and field.permission_groups):
+    if not user.is_superuser and not is_oph_staff(user) and getattr(field, 'permission_groups', None):
         oid_list = []
         if isinstance(field_object, Toimipaikka):
             oid_list = [field_object.organisaatio_oid, field_object.vakajarjestaja.organisaatio_oid]
@@ -652,6 +661,35 @@ def user_belongs_to_correct_groups(field, user, field_object):
     else:
         # User is admin, oph_staff or permission groups not specified
         return True
+
+
+def get_vakajarjestajat_filter_for_raportit(request):
+    """
+    Return vakajarjestaja filter based on user permissions
+    :param request: Request object
+    :return: Q filter object
+    """
+    user = request.user
+    vakajarjestajat_param = request.query_params.get('vakajarjestajat', '')
+
+    if not vakajarjestajat_param and (user.is_superuser or is_oph_staff(user)):
+        # If vakajarjestajat param is not provided and user is superuser or oph staff, get all request logs
+        return Q()
+
+    vakajarjestaja_ids_splitted = vakajarjestajat_param.split(',')
+    vakajarjestaja_id_list = []
+    for vakajarjestaja_id in vakajarjestaja_ids_splitted:
+        if not vakajarjestaja_id.isdigit():
+            continue
+        vakajarjestaja_qs = VakaJarjestaja.objects.filter(id=vakajarjestaja_id)
+        if not vakajarjestaja_qs.exists():
+            continue
+        vakajarjestaja_obj = vakajarjestaja_qs.first()
+        permission_group_qs = permission_groups_in_organization(user, vakajarjestaja_obj.organisaatio_oid,
+                                                                [Z4_CasKayttoOikeudet.RAPORTTIEN_KATSELIJA])
+        if user.is_superuser or is_oph_staff or permission_group_qs.exists():
+            vakajarjestaja_id_list.append(vakajarjestaja_id)
+    return Q(vakajarjestaja__in=vakajarjestaja_id_list)
 
 
 def is_oph_staff(user):

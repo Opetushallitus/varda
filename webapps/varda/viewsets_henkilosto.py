@@ -39,6 +39,7 @@ from varda.permissions import (CustomObjectPermissions, delete_object_permission
                                get_permission_checked_pidempi_poissaolo_tallentaja_queryset_for_user,
                                toimipaikka_tallentaja_pidempipoissaolo_has_perm_to_add,
                                get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus)
+from varda.request_logging import request_log_viewset_decorator_factory
 from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, PalvelussuhdeSerializer,
                                           PidempiPoissaoloSerializer,
                                           TilapainenHenkilostoSerializer, TutkintoSerializer, TyontekijaSerializer,
@@ -98,6 +99,7 @@ class ObjectByTunnisteMixin:
 
 
 @auditlogclass
+@request_log_viewset_decorator_factory(target_path=[])
 class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
@@ -272,6 +274,7 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
 
 
 @auditlogclass
+@request_log_viewset_decorator_factory()
 class TilapainenHenkilostoViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
@@ -325,6 +328,7 @@ class TilapainenHenkilostoViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
 
 @auditlogclass
+@request_log_viewset_decorator_factory(target_path=['henkilo'])
 class TutkintoViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, ListModelMixin, GenericViewSet):
     """
     list:
@@ -430,12 +434,16 @@ class TutkintoViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, L
             henkilo_filter['vakajarjestaja__organisaatio_oid'] = vakajarjestaja_oid
 
         tutkinto_obj = get_object_or_404(Tutkinto.objects.all(), **henkilo_filter, tutkinto_koodi=tutkinto_koodi)
-        self.perform_destroy(tutkinto_obj)
 
-        return Response(status=status.HTTP_200_OK)
+        # Set lookup arg so that get_object() can be used in request logging
+        self.kwargs['pk'] = tutkinto_obj.id
+
+        self.perform_destroy(tutkinto_obj)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @auditlogclass
+@request_log_viewset_decorator_factory(target_path=['tyontekija'])
 class PalvelussuhdeViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
@@ -513,6 +521,7 @@ class PalvelussuhdeViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
 
 @auditlogclass
+@request_log_viewset_decorator_factory(target_path=['palvelussuhde', 'tyontekija'])
 class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
@@ -613,6 +622,7 @@ class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
 
 @auditlogclass
+@request_log_viewset_decorator_factory(target_path=['palvelussuhde', 'tyontekija'])
 class PidempiPoissaoloViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
@@ -688,6 +698,7 @@ class PidempiPoissaoloViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
 
 @auditlogclass
+@request_log_viewset_decorator_factory()
 class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
     """
     list:

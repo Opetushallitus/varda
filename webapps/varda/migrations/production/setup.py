@@ -152,6 +152,12 @@ def get_toimijatiedot_tallentaja_permissions():
     ]
 
 
+def get_raporttien_katselija_permissions():
+    return [
+        'view_vakajarjestaja'
+    ]
+
+
 def get_vakajarjestaja_katselija_permissions():
     vakajarjestaja_tallentaja = get_vaka_tallentaja_permissions()
     vakajarjestaja_katselija = []
@@ -290,6 +296,14 @@ def create_toimijatiedot_template_groups():
     ]
 
     _create_groups_with_permissions(group_permission_list)
+
+
+def create_raportit_template_groups():
+    raporttien_katselija_permissions = get_raporttien_katselija_permissions()
+    group_permissions_list = [
+        ('vakajarjestaja_raporttien_katselija', raporttien_katselija_permissions)
+    ]
+    _create_groups_with_permissions(group_permissions_list)
 
 
 def load_initial_users():

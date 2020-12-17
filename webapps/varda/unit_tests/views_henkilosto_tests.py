@@ -885,7 +885,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         assert_status_code(resp, status.HTTP_201_CREATED)
         resp_delete = client.delete('/api/henkilosto/v1/tutkinnot/delete/'
                                     '?henkilo_id=1&tutkinto_koodi=719999&vakajarjestaja_id=1')
-        assert_status_code(resp_delete, status.HTTP_200_OK)
+        assert_status_code(resp_delete, status.HTTP_204_NO_CONTENT)
 
     def test_api_delete_tutkinto_by_oid(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
@@ -912,7 +912,7 @@ class VardaHenkilostoViewSetTests(TestCase):
                                     '?henkilo_oid=1.2.246.562.24.6815481182312'
                                     '&tutkinto_koodi=719999'
                                     '&vakajarjestaja_oid=1.2.246.562.10.34683023489')
-        assert_status_code(resp_delete, status.HTTP_200_OK)
+        assert_status_code(resp_delete, status.HTTP_204_NO_CONTENT)
 
     def test_api_delete_tutkinto_with_tutkinto_koodi_in_use(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()

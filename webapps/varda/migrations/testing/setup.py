@@ -12,7 +12,8 @@ from varda.migrations.production.setup import (get_vakajarjestaja_palvelukayttaj
                                                get_taydennyskoulutus_tallentaja_permissions,
                                                get_tyontekija_katselija_permissions,
                                                get_taydennyskoulutus_katselija_permissions,
-                                               get_toimijatiedot_tallentaja_permissions)
+                                               get_toimijatiedot_tallentaja_permissions,
+                                               get_raporttien_katselija_permissions)
 
 
 logger = logging.getLogger(__name__)
@@ -82,6 +83,7 @@ def add_groups_with_permissions():
         ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.9395737548811', get_huoltajatiedot_katselija_permissions()),  # toimipaikka_4
         ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.9395737548815', get_huoltajatiedot_katselija_permissions()),
         ('VARDA_TOIMIJATIEDOT_TALLENTAJA_1.2.246.562.10.34683023489', get_toimijatiedot_tallentaja_permissions()),
+        ('VARDA_RAPORTTIEN_KATSELIJA_1.2.246.562.10.34683023489', get_raporttien_katselija_permissions()),
     ]
 
     for group_tuple in group_permission_array:
@@ -127,6 +129,7 @@ def add_test_users():
     group_huoltajatiedot_tallentaja_vakajarjestaja_57294396385 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.57294396385')
     group_huoltajatiedot_tallentaja_vakajarjestaja_52966755795 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.52966755795')
     group_toimijatiedot_tallentaja_34683023489 = Group.objects.get(name='VARDA_TOIMIJATIEDOT_TALLENTAJA_1.2.246.562.10.34683023489')
+    group_raporttien_katselija_34683023489 = Group.objects.get(name='VARDA_RAPORTTIEN_KATSELIJA_1.2.246.562.10.34683023489')
 
     user_tester = User.objects.create(username='tester', password='pbkdf2_sha256$120000$4IdDHxUJJSE6$N18zHZK02yA3KxNeTcDS4t6Ytsn2ZOLO6QLDXNT/8Yo=')
     Token.objects.create(user=user_tester, key='916b7ca8f1687ec3462b4a35d0c5c6da0dbeedf3')
@@ -144,6 +147,7 @@ def add_test_users():
     user_tester2.groups.add(group_tallentaja_vakajarjestaja_1)
     user_tester2.groups.add(group_huoltajatiedot_tallentaja_vakajarjestaja_1)
     user_tester2.groups.add(group_toimijatiedot_tallentaja_34683023489)
+    user_tester2.groups.add(group_raporttien_katselija_34683023489)
 
     user_tester3 = User.objects.create(username='tester3', password='pbkdf2_sha256$150000$kfJSJbENiF5k$tZ3aa9ErAy1Ciszx40KdRMU787p7HnKHjVOQ+lzDF7U=')
     user_tester3.groups.add(group_view_henkilo)

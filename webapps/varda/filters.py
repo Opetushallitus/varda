@@ -1,10 +1,16 @@
+import operator
+import re
 from datetime import datetime
+from functools import reduce
 
-from django.db.models import Q
+from django.contrib.postgres.aggregates import StringAgg
+from django.db.models import Q, Case, When, Subquery, OuterRef, CharField, Value
+from django.db.models.functions import Concat
 from django.http import Http404
 from django_filters import rest_framework as djangofilters
 from django_filters.constants import EMPTY_VALUES
 
+from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
 from varda.enums.koodistot import Koodistot
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
                           Maksutieto, PaosToiminta, PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
@@ -530,3 +536,63 @@ class KelaEtuusmaksatusKorjaustiedotFilter(djangofilters.FilterSet):
     class Meta:
         model: Varhaiskasvatussuhde
         fields = []
+
+
+class TiedonsiirtoFilter(djangofilters.FilterSet):
+    timestamp = djangofilters.IsoDateTimeFromToRangeFilter()
+    request_url = djangofilters.CharFilter(lookup_expr='icontains')
+    request_method = djangofilters.CharFilter(lookup_expr='iexact')
+    request_body = djangofilters.CharFilter(lookup_expr='icontains')
+    response_body = djangofilters.CharFilter(lookup_expr='icontains')
+    response_code = djangofilters.NumberFilter(lookup_expr='exact')
+    lahdejarjestelma = djangofilters.CharFilter(lookup_expr='exact')
+    username = djangofilters.CharFilter(lookup_expr='iexact', field_name='user__username')
+    successful = djangofilters.BooleanFilter(method='filter_successful')
+    search_target = djangofilters.CharFilter(method='filter_target')
+
+    def filter_successful(self, queryset, name, value):
+        if value:
+            return queryset.filter(response_code__in=SUCCESSFUL_STATUS_CODE_LIST)
+        else:
+            return queryset.exclude(response_code__in=SUCCESSFUL_STATUS_CODE_LIST)
+
+    def _get_target_filter_annotation(self, model, search_field_list):
+        new_search_field_list = []
+        for index, search_field in enumerate(search_field_list):
+            new_search_field_list.append(search_field)
+            if index != len(search_field_list) - 1:
+                new_search_field_list.append(Value(' '))
+
+        return StringAgg(Subquery(
+            model.objects.filter(pk=OuterRef('target_id'))
+            .annotate(search_field=Concat(*search_field_list, output_field=CharField()))
+            .values_list('search_field', flat=True)
+        ), delimiter=' ')
+
+    def filter_target(self, queryset, name, value):
+        # Clean search value
+        value = re.sub(re.compile(r'[ ]{2,}'), ' ', value.strip()).strip()
+        if not value:
+            return queryset
+
+        search_filter = reduce(operator.and_, (Q(search_target__icontains=search_value)
+                                               for search_value in value.split(' ')))
+
+        lapsi_model_name = Lapsi.__name__
+        tyontekija_model_name = Tyontekija.__name__
+        toimipaikka_model_name = Toimipaikka.__name__
+
+        return (queryset.filter(target_model__isnull=False, target_id__isnull=False)
+                .annotate(search_target=Case(
+                    When(target_model=lapsi_model_name,
+                         then=self._get_target_filter_annotation(Lapsi, ['henkilo__henkilo_oid',
+                                                                         'henkilo__etunimet',
+                                                                         'henkilo__sukunimi'])),
+                    When(target_model=tyontekija_model_name,
+                         then=self._get_target_filter_annotation(Tyontekija, ['henkilo__henkilo_oid',
+                                                                              'henkilo__etunimet',
+                                                                              'henkilo__sukunimi'])),
+                    When(target_model=toimipaikka_model_name,
+                         then=self._get_target_filter_annotation(Toimipaikka, ['organisaatio_oid', 'nimi'])),
+                    output_field=CharField()
+                )).filter(search_filter))

@@ -1,6 +1,7 @@
 import datetime
 import json
 
+from django.contrib.auth.models import User
 from django.test import TestCase
 from rest_framework import status
 
@@ -21,7 +22,11 @@ class VardaViewsReportingTests(TestCase):
         client = SetUpTestClient('tester2').client()
         resp = client.get('/api/reporting/v1/')
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(json.loads(resp.content), {'tiedonsiirtotilasto': 'http://testserver/api/reporting/v1/tiedonsiirtotilasto/'})
+        self.assertEqual(json.loads(resp.content), {
+            'tiedonsiirto': 'http://testserver/api/reporting/v1/tiedonsiirto/',
+            'tiedonsiirto/yhteenveto': 'http://testserver/api/reporting/v1/tiedonsiirto/yhteenveto/',
+            'tiedonsiirtotilasto': 'http://testserver/api/reporting/v1/tiedonsiirtotilasto/'
+        })
 
     def test_kela_reporting_api(self):
         mock_admin_user('tester2')
@@ -322,3 +327,43 @@ class VardaViewsReportingTests(TestCase):
         resp_2_string = resp_2.content.decode('utf8')
         self.assertNotIn('VP013', resp_2_string)
         self.assertIn('VP002', resp_2_string)
+
+    def test_api_tiedonsiirto(self):
+        client = SetUpTestClient('tester2').client()
+
+        vakasuhde_json = json.loads(client.get('/api/v1/varhaiskasvatussuhteet/').content)['results'][0]
+        vakasuhde_json['paattymis_pvm'] = None
+        client.put(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde_json["id"]}/', json.dumps(vakasuhde_json), content_type='application/json')
+
+        # Must use vakajarjestajat filter if not admin or oph user
+        resp_1 = client.get('/api/reporting/v1/tiedonsiirto/')
+        assert_status_code(resp_1, status.HTTP_200_OK)
+        self.assertEqual(0, json.loads(resp_1.content)['count'])
+
+        resp_2 = client.get('/api/reporting/v1/tiedonsiirto/?vakajarjestajat=1')
+        assert_status_code(resp_2, status.HTTP_200_OK)
+        self.assertEqual(1, json.loads(resp_2.content)['count'])
+
+    def test_api_tiedonsiirto_admin(self):
+        client = SetUpTestClient('credadmin').client()
+        client.delete('/api/henkilosto/v1/tyontekijat/1/')
+
+        resp = client.get('/api/reporting/v1/tiedonsiirto/')
+        assert_status_code(resp, status.HTTP_200_OK)
+        self.assertEqual(1, json.loads(resp.content)['count'])
+
+    def test_tiedonsiirto_yhteenveto(self):
+        client = SetUpTestClient('tester2').client()
+        client.delete('/api/v1/varhaiskasvatussuhteet/1/')
+
+        resp = client.get('/api/reporting/v1/tiedonsiirto/yhteenveto/?vakajarjestajat=1')
+        assert_status_code(resp, status.HTTP_200_OK)
+
+        accepted_response = {
+            'date': datetime.date.today().strftime('%Y-%m-%d'),
+            'successful': 0,
+            'unsuccessful': 1,
+            'user_id': User.objects.get(username='tester2').id,
+            'username': 'tester2'
+        }
+        self.assertDictEqual(json.loads(resp.content)['results'][0], accepted_response)

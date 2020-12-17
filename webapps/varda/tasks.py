@@ -1,3 +1,4 @@
+import datetime
 import logging
 import re
 
@@ -17,7 +18,7 @@ from varda import organisaatiopalvelu
 from varda import permission_groups
 from varda import permissions
 from varda.audit_log import audit_log
-from varda.models import Henkilo, Taydennyskoulutus, Toimipaikka
+from varda.models import Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog
 from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups
 
 
@@ -242,3 +243,12 @@ def after_data_import_task():
     # Push anonymized toimipaikat to organisaatiopalvelu
     toimipaikka_filter = Q(toimintamuoto_koodi__iexact='tm02') | Q(toimintamuoto_koodi__iexact='tm03')
     organisaatiopalvelu.update_all_toimipaikat_in_organisaatiopalvelu(toimipaikka_filter=toimipaikka_filter)
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def delete_request_log_older_than_arg_days_task(days):
+    timestamp_lower_limit = datetime.datetime.now() - datetime.timedelta(days=days)
+    timestamp_lower_limit = timestamp_lower_limit.replace(tzinfo=datetime.timezone.utc)
+
+    Z6_RequestLog.objects.filter(timestamp__lt=timestamp_lower_limit).delete()

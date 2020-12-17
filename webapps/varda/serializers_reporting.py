@@ -1,5 +1,7 @@
+from django.apps import apps
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
-from varda.models import Varhaiskasvatussuhde, Lapsi, Tyontekija
+from varda.models import Varhaiskasvatussuhde, Lapsi, Tyontekija, Z6_RequestLog
 from varda.misc import decrypt_henkilotunnus
 
 
@@ -168,3 +170,47 @@ class ErrorReportTyontekijatSerializer(AbstractErrorReportSerializer):
     class Meta:
         model = Tyontekija
         fields = ('tyontekija_id', 'henkilo_id', 'henkilo_oid', 'etunimet', 'sukunimi', 'errors')
+
+
+class TiedonsiirtoSerializer(serializers.ModelSerializer):
+    target = serializers.SerializerMethodField(read_only=True)
+    user_id = serializers.IntegerField(read_only=True, source='user.id')
+    username = serializers.CharField(read_only=True, source='user.username')
+    vakajarjestaja_id = serializers.IntegerField(read_only=True, source='vakajarjestaja.id')
+    vakajarjestaja_name = serializers.CharField(read_only=True, source='vakajarjestaja.nimi')
+
+    class Meta:
+        model = Z6_RequestLog
+        fields = ('request_url', 'request_method', 'request_body', 'response_code', 'response_body',
+                  'lahdejarjestelma', 'target', 'user_id', 'username', 'vakajarjestaja_id', 'vakajarjestaja_name',
+                  'timestamp')
+
+    def get_target(self, instance):
+        target_model = instance.target_model
+        target_id = instance.target_id
+        target = {}
+        if target_model in ['Lapsi', 'Tyontekija']:
+            if target_model == 'Lapsi':
+                id_name = 'lapsi_id'
+            else:
+                id_name = 'tyontekija_id'
+
+            try:
+                target_object = apps.get_model('varda', target_model).objects.get(id=target_id)
+            except (LookupError, ObjectDoesNotExist):
+                # Could not find target object
+                return None
+
+            target[id_name] = instance.target_id
+            target['henkilo_oid'] = target_object.henkilo.henkilo_oid
+            target['etunimet'] = target_object.henkilo.etunimet
+            target['sukunimi'] = target_object.henkilo.sukunimi
+            return target
+
+
+class TiedonsiirtoYhteenvetoSerializer(serializers.Serializer):
+    date = serializers.DateField(read_only=True)
+    successful = serializers.IntegerField(read_only=True)
+    unsuccessful = serializers.IntegerField(read_only=True)
+    user_id = serializers.IntegerField(read_only=True, source='user__id')
+    username = serializers.CharField(read_only=True, source='user__username')
