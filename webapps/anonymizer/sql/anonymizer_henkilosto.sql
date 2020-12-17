@@ -1,16 +1,27 @@
 --HENKILOSTO TABLES
 
+-- NOTE: Information is related to each other so if the order needs to be changed then relations need to be taken into account
+
+-- Table varda_tutkinto
+UPDATE varda_tutkinto SET tutkinto_koodi = random_code_value('tutkinto_koodit');
+
 -- Table varda_palvelussuhde
-UPDATE varda_palvelussuhde SET alkamis_pvm = date(alkamis_pvm - trunc(random() * 365) * '1 day'::interval * random()),
+UPDATE varda_palvelussuhde ps SET alkamis_pvm = date(ps2.alkamis_pvm - trunc(random() * 365) * '1 day'::interval * random()),
                                tyosuhde_koodi = random_between(1, 2),
                                tyoaika_koodi = random_between(1,2),
-                               tutkinto_koodi = random_code_value(11),
+                               tutkinto_koodi = coalesce(t.tutkinto_koodi, '003'),
                                tyoaika_viikossa = random_between(1, 50),
-                               tunniste = id;
-UPDATE varda_palvelussuhde SET paattymis_pvm = date(paattymis_pvm + trunc(random() * 365) * '1 day'::interval * random()) Where paattymis_pvm is NOT NULL;
+                               tunniste = ps2.id
+                               from varda_palvelussuhde ps2 left join (select tu.tutkinto_koodi, ps3.id as palvelussuhde_id from varda_palvelussuhde ps3 join varda_tyontekija tt on tt.id = ps3.tyontekija_id
+                               left join varda_tutkinto tu on (tu.henkilo_id=tt.henkilo_id and tu.vakajarjestaja_id = tt.vakajarjestaja_id)) t on t.palvelussuhde_id = ps2.id where ps.id=ps2.id;
+
+UPDATE varda_palvelussuhde SET paattymis_pvm = (Case when tyosuhde_koodi='2' then date(alkamis_pvm + trunc(random() * 365) * '1 day'::interval * random())
+                                                when paattymis_pvm is NUll then paattymis_pvm
+                                                else date(paattymis_pvm + trunc(random() * 365) * '1 day'::interval * random())
+                                                END);
 
 -- Table varda_tyoskentelypaikka
-UPDATE varda_tyoskentelypaikka SET tehtavanimike_koodi = random_code_value(9),
+UPDATE varda_tyoskentelypaikka SET tehtavanimike_koodi = random_code_value('tehtavanimike_koodit'),
                                    alkamis_pvm = (select CASE WHEN pal.paattymis_pvm is not NULL THEN pal.alkamis_pvm + random() * '1 day'::interval * (pal.paattymis_pvm - pal.alkamis_pvm)
                                                               ELSE date(pal.alkamis_pvm + trunc(random() * 365) * '1 day'::interval * random())
                                                               END AS alkamis_pvm
@@ -32,7 +43,7 @@ UPDATE varda_pidempipoissaolo SET alkamis_pvm = (select CASE WHEN pal.paattymis_
                                                      from varda_palvelussuhde pal
                                                      where pal.id = varda_pidempipoissaolo.palvelussuhde_id),
                                   paattymis_pvm = (SELECT CASE WHEN pal.paattymis_pvm is not NULL THEN varda_pidempipoissaolo.alkamis_pvm + (random() * '1 day'::interval * (pal.paattymis_pvm - varda_pidempipoissaolo.alkamis_pvm + 60))
-                                                               ELSE NULL
+                                                               ELSE varda_pidempipoissaolo.alkamis_pvm + (random() * '1 day'::interval * 60)
                                                                END AS paattymis_pvm
                                                        FROM varda_palvelussuhde pal
                                                        WHERE pal.id = varda_pidempipoissaolo.palvelussuhde_id),
@@ -44,13 +55,14 @@ UPDATE varda_taydennyskoulutus set nimi = concat('Taydennyskoulutus ', random_be
                                    tunniste = id;
 
 -- Table varda_taydennyskoulutustyontekija
-UPDATE varda_taydennyskoulutustyontekija SET tehtavanimike_koodi = random_code_value(9);
+UPDATE varda_taydennyskoulutustyontekija tkt SET tehtavanimike_koodi = (select tehtavanimike_koodi from varda_tyoskentelypaikka tp
+                                                                                               join varda_palvelussuhde ps on ps.id=tp.palvelussuhde_id
+                                                                                               join varda_tyontekija tt on tt.id=ps.tyontekija_id
+                                                                                               where tyontekija_id=tkt.tyontekija_id
+                                                                                               order by random() limit 1);
 
 -- Table varda_tyontekija
 UPDATE varda_tyontekija SET tunniste = id;
-
--- Table varda_tutkinto
-UPDATE varda_tutkinto SET tutkinto_koodi = random_code_value(11);
 
 -- Table varda_tilapainenhenkilosto
 UPDATE varda_tilapainenhenkilosto SET tuntimaara=random(),

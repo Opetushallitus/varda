@@ -26,10 +26,10 @@ END;
 $$ language plpgsql;
 
 -- Create a function that return random code value from codes
-Create or replace function random_code_value(koodiston_id INT)
+Create or replace function random_code_value(koodiston_nimi CHAR)
     RETURNS CHAR AS
 $$
 BEGIN
-    RETURN (select code_value from varda_z2_code z2 where z2.koodisto_id=koodiston_id order by random() limit 1);
+    RETURN (select code_value from varda_z2_code c join varda_z2_koodisto k on k.id=c.koodisto_id where k.name=koodiston_nimi order by random() limit 1);
 END;
 $$ language plpgsql;

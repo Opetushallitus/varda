@@ -1020,6 +1020,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         # Get initial data as a dictionary
         palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
+        tyoskentelypaikka = Tyoskentelypaikka.objects.get(tunniste='testing-tyoskentelypaikka2_1')
         resp = client.get(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde.id}/')
         assert_status_code(resp, status.HTTP_200_OK)
         palvelussuhde_dict = json.loads(resp.content)
@@ -1049,6 +1050,12 @@ class VardaHenkilostoViewSetTests(TestCase):
             assert_status_code(resp, status.HTTP_200_OK)
             data = json.loads(resp.content)
             self.assertEqual(value, data[key])
+
+        # user does not have permission to remove tyontekija from taydennyskoulutus
+        TaydennyskoulutusTyontekija.objects.get(tyontekija=palvelussuhde.tyontekija).delete()
+
+        delete_resp = client.delete(f'/api/henkilosto/v1/tyoskentelypaikat/{tyoskentelypaikka.id}/')
+        assert_status_code(delete_resp, status.HTTP_204_NO_CONTENT)
 
         delete_resp = client.delete(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde.id}/')
         assert_status_code(delete_resp, status.HTTP_204_NO_CONTENT)
@@ -1317,12 +1324,15 @@ class VardaHenkilostoViewSetTests(TestCase):
 
     def test_palvelussuhde_lahdejarjestelma_tunniste_get_put_patch_delete(self):
         lahdejarjestelma = '1'
-        tunniste = 'testing-palvelussuhde2'
+        palvelussuhde_tunniste = 'testing-palvelussuhde2'
+        tyoskentelypaikka_tunniste = 'testing-tyoskentelypaikka2_1'
 
-        palvelussuhde = Palvelussuhde.objects.get(lahdejarjestelma=lahdejarjestelma, tunniste=tunniste)
+        palvelussuhde = Palvelussuhde.objects.get(lahdejarjestelma=lahdejarjestelma, tunniste=palvelussuhde_tunniste)
+        tyoskentelypaikka = Tyoskentelypaikka.objects.get(lahdejarjestelma=lahdejarjestelma, tunniste=tyoskentelypaikka_tunniste)
 
         client = SetUpTestClient('tyontekija_tallentaja').client()
-        palvelussuhde_url = f'/api/henkilosto/v1/palvelussuhteet/{lahdejarjestelma}:{tunniste}/'
+        palvelussuhde_url = f'/api/henkilosto/v1/palvelussuhteet/{lahdejarjestelma}:{palvelussuhde_tunniste}/'
+        tyoskentelypaikka_url = f'/api/henkilosto/v1/tyoskentelypaikat/{lahdejarjestelma}:{tyoskentelypaikka_tunniste}/'
         resp_palvelussuhde_get = client.get(palvelussuhde_url)
         assert_status_code(resp_palvelussuhde_get, status.HTTP_200_OK)
         self.assertEqual(palvelussuhde.id, json.loads(resp_palvelussuhde_get.content)['id'])
@@ -1353,9 +1363,16 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp_palvelussuhde_patch = client.patch(palvelussuhde_url, palvelussuhde_patch)
         assert_status_code(resp_palvelussuhde_patch, status.HTTP_200_OK)
 
+        # user does not have permission to remove person from taydennyskoulutus
+        TaydennyskoulutusTyontekija.objects.get(tyontekija=palvelussuhde.tyontekija).delete()
+
+        resp_tyoskentelypaikka_delete = client.delete(tyoskentelypaikka_url)
+        assert_status_code(resp_tyoskentelypaikka_delete, status.HTTP_204_NO_CONTENT)
+
         resp_palvelussuhde_delete = client.delete(palvelussuhde_url)
         assert_status_code(resp_palvelussuhde_delete, status.HTTP_204_NO_CONTENT)
 
+        self.assertFalse(Tyoskentelypaikka.objects.filter(id=tyoskentelypaikka.id).exists())
         self.assertFalse(Palvelussuhde.objects.filter(id=palvelussuhde.id).exists())
 
     def test_tyoskentelypaikka_add_correct(self):
@@ -1401,7 +1418,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         }
 
         # Add as many as we can
-        for i in range(3):
+        for i in range(2):
             resp = client.post('/api/henkilosto/v1/tyoskentelypaikat/', json.dumps(tyoskentelypaikka), content_type='application/json')
             assert_status_code(resp, status.HTTP_201_CREATED)
 
@@ -2927,7 +2944,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
     def test_ui_tyontekijat_json(self):
         tyontekijat_json = {
-            'count': 2,
+            'count': 3,
             'next': None,
             'previous': None,
             'results': [
@@ -2938,6 +2955,14 @@ class VardaHenkilostoViewSetTests(TestCase):
                     'tyontekija_id': 1,
                     'tyontekija_url': 'http://testserver/api/henkilosto/v1/tyontekijat/1/?format=json',
                     'vakajarjestaja_nimi': 'Tester2 organisaatio'
+                },
+                {
+                    "etunimet": "Bella",
+                    "sukunimi": "Uraputki",
+                    "henkilo_oid": "1.2.246.562.24.2431884920042",
+                    "tyontekija_id": 2,
+                    "tyontekija_url": "http://testserver/api/henkilosto/v1/tyontekijat/2/?format=json",
+                    "vakajarjestaja_nimi": "Tester2 organisaatio"
                 },
                 {
                     'etunimet': 'Daniella',

@@ -3065,6 +3065,20 @@ def create_henkilosto():
     )
     [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja_34683023489, tyoskentelypaikka_2) for crud_permission in crud_permissions_tyoskentelypaikka]
 
+    tyoskentelypaikka_2_1 = Tyoskentelypaikka.objects.create(
+        palvelussuhde=palvelussuhde_2,
+        toimipaikka=toimipaikka_9395737548815,
+        alkamis_pvm='2020-03-01',
+        paattymis_pvm='2030-03-01',
+        tehtavanimike_koodi='77826',
+        kelpoisuus_kytkin=False,
+        kiertava_tyontekija_kytkin=False,
+        lahdejarjestelma='1',
+        tunniste='testing-tyoskentelypaikka2_1',
+        changed_by_id=admin_user.id
+    )
+    [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja_34683023489, tyoskentelypaikka_2_1) for crud_permission in crud_permissions_tyoskentelypaikka]
+
     palvelussuhde_4 = Palvelussuhde.objects.create(
         tyontekija=tyontekija_4,
         tyosuhde_koodi='ts01',
