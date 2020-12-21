@@ -2,7 +2,6 @@ import { Component, OnChanges, OnDestroy, Input, Output, SimpleChanges, EventEmi
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatRadioChange } from '@angular/material/radio';
 import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
-import { VardaApiWrapperService } from 'projects/virkailija-app/src/app/core/services/varda-api-wrapper.service';
 import { VardaApiService } from 'projects/virkailija-app/src/app/core/services/varda-api.service';
 import { HenkilostoErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
 import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
@@ -19,6 +18,7 @@ import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/
 import { Subscription, Observable, BehaviorSubject } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { TranslateService } from '@ngx-translate/core';
+import { HenkiloRooliEnum } from 'projects/virkailija-app/src/app/utilities/models/enums/henkilorooli.enum';
 
 
 @Component({
@@ -164,14 +164,7 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
           this.snackBarService.success(this.i18n.lapsi_save_success);
           this.lapsiService.sendLapsiListUpdate();
 
-          this.lapsiService.getVakajarjestajaLapset(this.selectedVakajarjestaja.id, { search: lapsiData.henkilo_oid }).subscribe({
-            next: henkiloListData => {
-              const foundHenkilo = henkiloListData.results.find(henkilo => henkilo.henkilo_oid === lapsiData.henkilo_oid);
-              const foundLapsi = foundHenkilo.lapset.find(lapsi => lapsi.id === lapsiData.id);
-              this.lapsi = foundLapsi;
-            },
-            error: (err) => console.error(err)
-          });
+          this.lapsi = this.createLapsiListDTO(lapsiData);
         },
         error: err => this.lapsiErrorService.handleError(err, this.snackBarService)
       }).add(() => setTimeout(() => this.isSubmitting.next(false), 500));
@@ -188,6 +181,27 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
       },
       error: err => this.deleteLapsiErrorService.handleError(err, this.snackBarService)
     });
+  }
+
+  createLapsiListDTO(lapsiDTO: VardaLapsiDTO): LapsiListDTO {
+    const henkiloID = lapsiDTO.henkilo.split('/').filter(Boolean).pop();
+    const lapsi: LapsiListDTO = {
+      id: lapsiDTO.id,
+      url: lapsiDTO.url,
+      henkilo_id: parseInt(henkiloID),
+      henkilo_oid: lapsiDTO.henkilo_oid,
+      rooli: HenkiloRooliEnum.lapsi,
+      vakatoimija_oid: lapsiDTO.vakatoimija_oid,
+      vakatoimija_nimi: null,
+      oma_organisaatio_oid: lapsiDTO.oma_organisaatio_oid,
+      oma_organisaatio_nimi: lapsiDTO.oma_organisaatio_nimi,
+      paos_organisaatio_oid: lapsiDTO.paos_organisaatio_oid,
+      paos_organisaatio_nimi: lapsiDTO.paos_organisaatio_nimi,
+      tallentaja_organisaatio_oid: null,
+      toimipaikat: [],
+    };
+
+    return lapsi;
   }
 
 }
