@@ -161,7 +161,8 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
       },
       error: err => {
         try {
-          if (err.error?.taydennyskoulutus_tyontekijat_remove?.includes('Cannot delete all tyontekijat from taydennyskoulutus')) {
+          const lastPersonError = err.error.taydennyskoulutus_tyontekijat_remove.find(error => error.error_code === 'TK013');
+          if (lastPersonError) {
             this.henkilostoService.deleteTaydennyskoulutus(this.taydennyskoulutus.id).subscribe({
               next: deleted => {
                 this.togglePanel(false, true);
