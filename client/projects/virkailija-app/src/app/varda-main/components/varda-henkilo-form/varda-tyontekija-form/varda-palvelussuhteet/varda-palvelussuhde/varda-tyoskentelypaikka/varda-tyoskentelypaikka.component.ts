@@ -135,7 +135,7 @@ export class VardaTyoskentelypaikkaComponent extends VardaHenkiloFormAccordionAb
 
     if (!form.valid) {
       if (form.controls.kiertava_tyontekija_kytkin.value) {
-        form.controls.toimipaikka_oid = null;
+        form.get('toimipaikka_oid').setValue(null);
       } else if (!form.controls.toimipaikka_oid.value) {
         form.controls.toimipaikka_oid.setErrors({ required: true });
       }
