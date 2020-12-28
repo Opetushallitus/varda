@@ -150,6 +150,10 @@ export class VardaTyoskentelypaikkaComponent extends VardaHenkiloFormAccordionAb
         paattymis_pvm: form.value.paattymis_pvm?.isValid() ? form.value.paattymis_pvm.format(VardaDateService.vardaApiDateFormat) : null
       };
 
+      if (tyoskentelypaikkaJson.kiertava_tyontekija_kytkin) {
+        delete tyoskentelypaikkaJson.toimipaikka_oid;
+      }
+
       if (this.tyoskentelypaikka) {
         this.henkilostoService.updateTyoskentelypaikka(tyoskentelypaikkaJson).subscribe({
           next: () => {
