@@ -650,7 +650,7 @@ class Palvelussuhde(models.Model):
     tyosuhde_koodi = models.CharField(max_length=50, validators=[validators.validate_tyosuhde_koodi])
     tyoaika_koodi = models.CharField(max_length=50, validators=[validators.validate_tyoaika_koodi])
     tutkinto_koodi = models.CharField(max_length=50, validators=[validators.validate_tutkinto_koodi])
-    tyoaika_viikossa = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(1.0), MaxValueValidator(50.0)])
+    tyoaika_viikossa = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(0.0), MaxValueValidator(50.0)])
     alkamis_pvm = models.DateField()
     paattymis_pvm = models.DateField(default=None, blank=True, null=True, validators=[validators.validate_palvelussuhde_paattymis_pvm])
     lahdejarjestelma = models.CharField(max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
