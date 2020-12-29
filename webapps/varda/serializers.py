@@ -11,6 +11,7 @@ from rest_framework.exceptions import APIException, ValidationError
 
 from varda import validators
 from varda.cache import caching_to_representation
+from varda.constants import JARJESTAMISMUODOT_YKSITYINEN
 from varda.enums.error_messages import ErrorMessages
 from varda.misc import list_of_dicts_has_duplicate_values
 from varda.misc_viewsets import ViewSetValidator
@@ -865,6 +866,7 @@ class VarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSerializer):
         self._validate_paos_specific_data(lapsi_obj, jarjestamismuoto_koodi, paattymis_pvm)
         self._validate_jarjestamismuoto(lapsi_obj, jarjestamismuoto_koodi, paattymis_pvm)
         self._validate_vuorohoito(data)
+        self._validate_tilapainen_vaka_kytkin(data)
 
         return data
 
@@ -917,6 +919,11 @@ class VarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSerializer):
                 msg['kokopaivainen_vaka_kytkin'] = [ErrorMessages.VP010.value]
             if msg:
                 raise serializers.ValidationError(msg, code='invalid')
+
+    def _validate_tilapainen_vaka_kytkin(self, data):
+        if not data['jarjestamismuoto_koodi'].lower() in JARJESTAMISMUODOT_YKSITYINEN:
+            if self.initial_data.get('tilapainen_vaka_kytkin', None) is None:
+                raise serializers.ValidationError({'tilapainen_vaka_kytkin': [ErrorMessages.VP014.value]})
 
     @caching_to_representation('varhaiskasvatuspaatos')
     def to_representation(self, instance):

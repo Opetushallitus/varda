@@ -180,6 +180,7 @@ class OrganisationTransformationsTests(TestCase):
             'vuorohoito_kytkin': True,
             'tuntimaara_viikossa': '37.5',
             'jarjestamismuoto_koodi': 'jm01',
+            'tilapainen_vaka_kytkin': False,
             'hakemus_pvm': '2020-03-01',
             'alkamis_pvm': '2020-03-01'
         }
@@ -270,6 +271,7 @@ class OrganisationTransformationsTests(TestCase):
             'vuorohoito_kytkin': True,
             'tuntimaara_viikossa': '37.5',
             'jarjestamismuoto_koodi': 'jm03',
+            'tilapainen_vaka_kytkin': False,
             'hakemus_pvm': '2020-04-01',
             'alkamis_pvm': '2020-04-01'
         }
@@ -380,6 +382,7 @@ class OrganisationTransformationsTests(TestCase):
             'vuorohoito_kytkin': True,
             'tuntimaara_viikossa': '37.5',
             'jarjestamismuoto_koodi': 'jm01',
+            'tilapainen_vaka_kytkin': False,
             'hakemus_pvm': '2020-03-01',
             'alkamis_pvm': '2020-03-01',
             'paattymis_pvm': '2020-04-10'

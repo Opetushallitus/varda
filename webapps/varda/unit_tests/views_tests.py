@@ -405,6 +405,7 @@ class VardaViewsTests(TestCase):
             'paivittainen_vaka_kytkin': True,
             'kokopaivainen_vaka_kytkin': True,
             'jarjestamismuoto_koodi': 'jm01',
+            'tilapainen_vaka_kytkin': False,
             'hakemus_pvm': '2020-04-06',
             'alkamis_pvm': '2009-02-02',
             'paattymis_pvm': '2008-01-05'
@@ -941,6 +942,7 @@ class VardaViewsTests(TestCase):
             'lapsi': lapsi_url,
             'tuntimaara_viikossa': '37.5',
             'jarjestamismuoto_koodi': 'jm01',
+            'tilapainen_vaka_kytkin': False,
             'hakemus_pvm': '2018-08-15',
             'alkamis_pvm': '2018-09-30'
         }
@@ -1105,6 +1107,7 @@ class VardaViewsTests(TestCase):
             'lapsi': '/api/v1/lapset/3/',
             'tuntimaara_viikossa': '37.5',
             'jarjestamismuoto_koodi': 'jm01',
+            'tilapainen_vaka_kytkin': False,
             'hakemus_pvm': '2018-08-15',
             'alkamis_pvm': '2018-09-30'
         }
@@ -1175,6 +1178,7 @@ class VardaViewsTests(TestCase):
             'lapsi': lapsi_url,
             'tuntimaara_viikossa': 45,
             'jarjestamismuoto_koodi': 'jm02',
+            'tilapainen_vaka_kytkin': False,
             'alkamis_pvm': '2018-09-01',
             'hakemus_pvm': '2018-08-08'
         }
@@ -1244,6 +1248,7 @@ class VardaViewsTests(TestCase):
             'lapsi': lapsi_url,
             'tuntimaara_viikossa': '37.5',
             'jarjestamismuoto_koodi': 'jm01',
+            'tilapainen_vaka_kytkin': False,
             'hakemus_pvm': '2018-08-15',
             'alkamis_pvm': '2018-09-30'
         }
@@ -2744,6 +2749,7 @@ class VardaViewsTests(TestCase):
             'vuorohoito_kytkin': True,
             'tuntimaara_viikossa': '37.5',
             'jarjestamismuoto_koodi': 'jm03',
+            'tilapainen_vaka_kytkin': False,
             'hakemus_pvm': '2018-08-15',
             'alkamis_pvm': '2018-09-30'
         }
@@ -3259,3 +3265,45 @@ class VardaViewsTests(TestCase):
         resp = client.post('/api/v1/toimipaikat/', toimipaikka)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'TP001', 'Combination of nimi and vakajarjestaja fields should be unique.')
+
+    def test_api_vakapaatos_tilapainen_vaka_kytkin_required(self):
+        lapsi_kunta = Lapsi.objects.get(henkilo__henkilo_oid='1.2.246.562.24.49084901392',
+                                        vakatoimija__organisaatio_oid='1.2.246.562.10.34683023489')
+        vakapaatos_kunta = {
+            'lapsi': f'/api/v1/lapset/{lapsi_kunta.id}/',
+            'vuorohoito_kytkin': False,
+            'paivittainen_vaka_kytkin': True,
+            'kokopaivainen_vaka_kytkin': True,
+            'tuntimaara_viikossa': '39.0',
+            'jarjestamismuoto_koodi': 'jm01',
+            'alkamis_pvm': '2020-12-01',
+            'hakemus_pvm': '2020-12-01'
+        }
+
+        client_kunta = SetUpTestClient('tester2').client()
+
+        resp_kunta_1 = client_kunta.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos_kunta)
+        assert_status_code(resp_kunta_1, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_kunta_1, 'tilapainen_vaka_kytkin', 'VP014',
+                                'tilapainen_vaka_kytkin is required for kunnallinen Lapsi.')
+
+        vakapaatos_kunta['tilapainen_vaka_kytkin'] = False
+        resp_kunta_2 = client_kunta.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos_kunta)
+        assert_status_code(resp_kunta_2, status.HTTP_201_CREATED)
+
+        lapsi_yksityinen = Lapsi.objects.get(henkilo__henkilo_oid='1.2.246.562.24.47279942650',
+                                             vakatoimija__organisaatio_oid='1.2.246.562.10.93957375488')
+        vakapaatos_yksityinen = {
+            'lapsi': f'/api/v1/lapset/{lapsi_yksityinen.id}/',
+            'vuorohoito_kytkin': False,
+            'paivittainen_vaka_kytkin': True,
+            'kokopaivainen_vaka_kytkin': True,
+            'tuntimaara_viikossa': '39.0',
+            'jarjestamismuoto_koodi': 'jm04',
+            'alkamis_pvm': '2020-12-01',
+            'hakemus_pvm': '2020-12-01'
+        }
+
+        client_yksityinen = SetUpTestClient('tester').client()
+        resp_yksityinen = client_yksityinen.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos_yksityinen)
+        assert_status_code(resp_yksityinen, status.HTTP_201_CREATED)

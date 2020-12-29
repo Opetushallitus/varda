@@ -51,6 +51,7 @@ class VardaPaosTests(TestCase):
             'lapsi': lapsi_url,
             'tuntimaara_viikossa': 45,
             'jarjestamismuoto_koodi': 'jm03',
+            'tilapainen_vaka_kytkin': False,
             'vuorohoito': True,
             'alkamis_pvm': '2020-01-05',
             'hakemus_pvm': '2020-01-01'
@@ -137,6 +138,7 @@ class VardaPaosTests(TestCase):
             'lapsi': lapsi_url,
             'tuntimaara_viikossa': 45,
             'jarjestamismuoto_koodi': 'jm03',
+            'tilapainen_vaka_kytkin': False,
             'vuorohoito': True,
             'alkamis_pvm': '2020-01-05',
             'hakemus_pvm': '2020-01-01'
