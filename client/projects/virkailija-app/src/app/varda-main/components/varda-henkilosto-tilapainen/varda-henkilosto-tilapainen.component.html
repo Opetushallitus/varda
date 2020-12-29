@@ -51,12 +51,13 @@
                   <td><span>{{ i18n.kokonaisluku | translate }}</span></td>
                   <td><span>{{ i18n.tilapainen_henkilosto_tunnit_yhteensa | translate }}</span></td>
                 </tr>
-                <tr *ngFor="let month of monthArray.controls">
+                <tr *ngFor="let month of monthArray.controls; let index = index">
                   <ng-container [formGroup]="month">
                     <td>{{ month.value.name  | translate }}</td>
                     <td>
                       <input type="number"
                              class="oph-input"
+                             [attr.robot]="'tyontekijamaara-'+index"
                              formControlName="tyontekijamaara"
                              min="0"
                              (change)="valueChanged(month)"
@@ -77,6 +78,7 @@
                     <td>
                       <input type="number"
                              class="oph-input"
+                             [attr.robot]="'tuntimaara-'+index"
                              formControlName="tuntimaara"
                              min="0"
                              step="0.5"
