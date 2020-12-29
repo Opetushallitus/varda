@@ -2,8 +2,6 @@ import functools
 import logging
 import operator
 
-import coreapi
-import coreschema
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
@@ -11,12 +9,13 @@ from django.db.models import ProtectedError, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg import openapi
+from drf_yasg.inspectors import SwaggerAutoSchema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, ListModelMixin
 from rest_framework.response import Response
-from rest_framework.schemas.coreapi import AutoSchema
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework_guardian.filters import ObjectPermissionsFilter
 
@@ -53,32 +52,27 @@ from varda.tasks import assign_taydennyskoulutus_permissions_for_all_toimipaikat
 logger = logging.getLogger(__name__)
 
 
-class TunnisteIdSchema(AutoSchema):
-    def get_manual_fields(self, path, method):
-        model_name = self.view.queryset.model._meta.verbose_name
-
-        extra_fields = []
-        path_array = path.split('/')
-        if path_array[-2] == '{id}':
-            field = coreapi.Field('id',
-                                  required=True,
-                                  location='path',
-                                  schema=coreschema.String(),
+class TunnisteIdSchema(SwaggerAutoSchema):
+    def get_query_parameters(self):
+        query_params = super(TunnisteIdSchema, self).get_query_parameters()
+        path_list = self.path.split('/')
+        if path_list[-2] == '{id}':
+            # Override id path parameter description to include lahdejarjestelma:tunniste option
+            model_name = self.view.get_queryset().model.__name__
+            query_params.append(
+                openapi.Parameter('id', openapi.IN_PATH,
                                   description=f'A unique integer value identifying this {model_name}. Can also be '
                                               'lahdejarjestelma and tunniste pair (lahdejarjestelma:tunniste).',
-                                  type=None,
-                                  example=None)
-            extra_fields.append(field)
-
-        manual_fields = super().get_manual_fields(path, method)
-        return manual_fields + extra_fields
+                                  type=openapi.TYPE_STRING)
+            )
+        return query_params
 
 
 class ObjectByTunnisteMixin:
     """
     @DynamicAttrs
     """
-    schema = TunnisteIdSchema()
+    swagger_schema = TunnisteIdSchema
     lookup_value_regex = '[^/]+'
 
     def get_object(self):

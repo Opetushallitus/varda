@@ -15,8 +15,8 @@ You should make sure your authentication settings include `SessionAuthentication
 """
 from __future__ import unicode_literals
 
-from django.conf.urls import url
 from django.contrib.auth import views
+from django.urls import re_path
 
 from . import custom_login_views
 
@@ -35,6 +35,6 @@ else:
 
 app_name = 'rest_framework'
 urlpatterns = [
-    url(r'^login/$', login, login_kwargs, name='login'),
-    url(r'^logout/$', logout, name='logout'),
+    re_path(r'^login/$', login, login_kwargs, name='login'),
+    re_path(r'^logout/$', logout, name='logout'),
 ]

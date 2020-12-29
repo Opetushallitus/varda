@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.signals import user_logged_in, user_logged_out
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django_cas_ng.signals import cas_user_logout
 from rest_framework import exceptions
 from rest_framework.authentication import BasicAuthentication

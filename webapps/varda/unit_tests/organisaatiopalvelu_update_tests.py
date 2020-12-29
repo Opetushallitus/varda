@@ -476,7 +476,7 @@ class VardaOrganisaatiopalveluTests(TestCase):
             if call.request.method == 'PUT' and oid not in organizations_after_update:
                 organizations_after_update.append(oid)
 
-        organizations_1_4 = [self.toimipaikka_1_organisaatio_oid, self.toimipaikka_4_organisaatio_oid]
+        organizations_1_4 = [self.toimipaikka_4_organisaatio_oid]
         organizations_1_2_4 = organizations_1_4 + [self.toimipaikka_2_organisaatio_oid]
 
         self.assertListEqual(organizations_1_4, sorted(organizations_before_update))

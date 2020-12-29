@@ -14,7 +14,7 @@ import hashlib
 import os
 import sys
 
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from logging.handlers import SysLogHandler
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -38,7 +38,6 @@ ALLOWED_HOSTS = ['*']
 DEBUG = True
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = DEFAULT_SECRET_KEY_FOR_TESTING_ONLY
-STATIC_URL = '/static/'
 
 DEFAULT_CACHE_INVALIDATION_TIME = 54000  # 15 hours
 BASIC_AUTHENTICATION_LOGIN_INTERVAL_IN_SECONDS = 300  # 5 minutes
@@ -61,7 +60,6 @@ INSTALLED_APPS = [
     'django_filters',
     'guardian',
     'rest_framework',
-    'rest_framework_swagger',
     'simple_history',
     'varda.apps.VardaConfig',
     'django_celery_results',
@@ -73,6 +71,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'token_resolved',
     'django.contrib.postgres',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -339,12 +338,18 @@ TIME_ZONE = 'UTC'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/dev/howto/static-files/
+# In non-local environment, nginx default path is '/static/', and STATIC_URL cannot be '/', because MEDIA_URL
+# cannot also be '/' and MEDIA_URL cannot be child of STATIC_URL. So in '/static/' we have folders '/static/' and
+# '/media/' to work with nginx root path.
 
-# STATIC_URL = '/'
-STATIC_ROOT = os.path.join(BASE_DIR, "static")
+STATIC_ROOT = os.path.join(BASE_DIR, 'static', 'static')
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "rest_framework", "static"),
+    os.path.join(BASE_DIR, 'rest_framework', 'static'),
 ]
+STATIC_URL = '/static/static/'
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'static', 'media')
+MEDIA_URL = '/static/media/'
 
 
 # Swagger (online API documentation)
@@ -357,7 +362,8 @@ SWAGGER_SETTINGS = {
             'name': 'Authorization',
             'in': 'header'
         }
-    }
+    },
+    'LOGOUT_URL': '/api-auth/logout/'
 }
 
 LOGIN_URL = 'rest_framework:login'

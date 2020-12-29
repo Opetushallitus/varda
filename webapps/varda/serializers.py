@@ -4,7 +4,7 @@ import logging
 from django.contrib.auth.models import User, Group
 from django.db.models import Q
 from django.urls import reverse
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from guardian.shortcuts import get_objects_for_user
 from rest_framework import serializers
 from rest_framework.exceptions import APIException, ValidationError

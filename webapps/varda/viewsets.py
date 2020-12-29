@@ -21,7 +21,7 @@ from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin, ListMode
                                    UpdateModelMixin)
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-from rest_framework_guardian.filters import DjangoObjectPermissionsFilter, ObjectPermissionsFilter
+from rest_framework_guardian.filters import ObjectPermissionsFilter
 
 from varda import filters, related_object_validations, validators, permission_groups
 from varda.cache import (cached_list_response, cached_retrieve_response, delete_toimipaikan_lapset_cache,
@@ -210,7 +210,7 @@ class HaeYksiloimattomatHenkilotViewSet(GenericViewSet, ListModelMixin):
         henkilo_oid: Suodata henkilön oidin perusteella
         henkilotunnus: SHA256 hash henkilötunnus
     """
-    filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend)
+    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend)
     filterset_class = filters.YksiloimattomatHenkilotFilter
     queryset = Henkilo.objects.filter(Q(vtj_yksiloity=False) & Q(vtj_yksilointi_yritetty=True))
     serializer_class = YksiloimattomatHenkilotSerializer
@@ -236,7 +236,7 @@ class HuoltajaViewSet(viewsets.ModelViewSet):
     retrieve:
         Hae yksittäinen huoltaja.
     """
-    filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend)
+    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend)
     filterset_class = filters.HuoltajaFilter
     queryset = Huoltaja.objects.none()
     serializer_class = HuoltajaSerializer
@@ -257,7 +257,7 @@ class NestedHuoltajaViewSet(GenericViewSet, ListModelMixin):
     list:
         Nouda tietyn lapsen kaikki huoltajat.
     """
-    filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend)
+    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend)
     filterset_class = filters.HuoltajaFilter
     queryset = Huoltaja.objects.none()
     serializer_class = HuoltajaSerializer
@@ -299,7 +299,7 @@ class HuoltajuussuhdeViewSet(viewsets.ModelViewSet):
     retrieve:
         Hae yksittainen huoltajuussuhde.
     """
-    filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend)
+    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend)
     filterset_class = None
     queryset = Huoltajuussuhde.objects.none()
     serializer_class = HuoltajuussuhdeSerializer
@@ -320,7 +320,7 @@ class NestedLapsiViewSet(GenericViewSet, ListModelMixin):
     list:
         Nouda tietyn huoltajan kaikki lapset.
     """
-    filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend)
+    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend)
     filterset_class = filters.LapsiFilter
     queryset = Lapsi.objects.none()
     serializer_class = LapsiSerializer
@@ -2297,7 +2297,7 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
     list:
         Nouda varhaiskasvatustoimijan yhteenvetotiedot
     """
-    filter_backends = (DjangoObjectPermissionsFilter, )
+    filter_backends = (ObjectPermissionsFilter, )
     filterset_class = None
     queryset = VakaJarjestaja.objects.none()
     serializer_class = VakaJarjestajaYhteenvetoSerializer
@@ -2888,7 +2888,7 @@ class NestedLapsiMaksutietoViewSet(GenericViewSet, ListModelMixin):
     list:
         Nouda tietyn lapsen kaikki maksutiedot.
     """
-    filter_backends = (DjangoObjectPermissionsFilter, DjangoFilterBackend)
+    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend)
     filterset_class = filters.MaksutietoFilter
     queryset = Maksutieto.objects.none()
     serializer_class = MaksutietoGetSerializer
@@ -2925,7 +2925,7 @@ class NestedVakajarjestajaPaosToimijatViewSet(GenericViewSet, ListModelMixin):
     list:
         Nouda varhaiskasvatustoimijan paos-järjestäjät
     """
-    filter_backends = (DjangoObjectPermissionsFilter,)
+    filter_backends = (ObjectPermissionsFilter,)
     filterset_class = None
     queryset = VakaJarjestaja.objects.none()
     serializer_class = PaosToimijatSerializer
@@ -2971,7 +2971,7 @@ class NestedVakajarjestajaPaosToimipaikatViewSet(GenericViewSet, ListModelMixin)
         organisaatio_oid: suodata toimipaikan organisaatio_oid:n perusteella
         toimija_nimi: suodata toimijan nimen perusteella
     """
-    filter_backends = (DjangoObjectPermissionsFilter, )
+    filter_backends = (ObjectPermissionsFilter, )
     filterset_class = None
     queryset = VakaJarjestaja.objects.none()
     serializer_class = PaosToimipaikatSerializer
@@ -3071,7 +3071,7 @@ class HenkilohakuLapset(GenericViewSet, ListModelMixin):
         if cas_user_obj_found and cas_user_obj.approved_oph_staff:
             self.filter_backends = (SearchFilter, )
         else:
-            self.filter_backends = (DjangoObjectPermissionsFilter, SearchFilter, )
+            self.filter_backends = (ObjectPermissionsFilter, SearchFilter, )
 
     def list(self, request, *args, **kwargs):
         """

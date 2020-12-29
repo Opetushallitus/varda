@@ -710,17 +710,20 @@ def update_toimipaikat_in_organisaatiopalvelu():
     we need to add the same annotation to all toimipaikka-queries. Union requires that the
     querysets have exactly the same attributes (and same types).
     """
-    toimipaikka_changed_qs = (Toimipaikka.objects
+    # Do not update organisaatio service managed toimipaikkas (filter/exclude has no effect after union)
+    toimipaikka_base_qs = Toimipaikka.objects.exclude(hallinnointijarjestelma=Hallinnointijarjestelma.ORGANISAATIO.name)
+
+    toimipaikka_changed_qs = (toimipaikka_base_qs
                               .filter(muutos_pvm__gt=start_datetime)
                               .annotate(update_time_difference=ExpressionWrapper(F('muutos_pvm') - F('luonti_pvm'), output_field=DurationField()))
                               .filter(update_time_difference__gt=datetime.timedelta(microseconds=100 * 1000))  # greater than 100 mseconds difference
                               )
 
-    toimipaikka_kielipainotus_changed_qs = (Toimipaikka.objects
+    toimipaikka_kielipainotus_changed_qs = (toimipaikka_base_qs
                                             .filter(kielipainotukset__muutos_pvm__gt=start_datetime)
                                             .annotate(update_time_difference=ExpressionWrapper(F('muutos_pvm') - F('luonti_pvm'), output_field=DurationField()))
                                             )
-    toimipaikka_toiminnallinenpainotus_changed_qs = (Toimipaikka.objects
+    toimipaikka_toiminnallinenpainotus_changed_qs = (toimipaikka_base_qs
                                                      .filter(toiminnallisetpainotukset__muutos_pvm__gt=start_datetime)
                                                      .annotate(update_time_difference=ExpressionWrapper(F('muutos_pvm') - F('luonti_pvm'), output_field=DurationField()))
                                                      )
@@ -745,7 +748,7 @@ def update_toimipaikat_in_organisaatiopalvelu():
 
     history_deleted_painotukset_union = history_kielipainotus_deleted_qs.union(history_toiminnallinenpainotus_deleted_qs)
 
-    toimipaikka_deleted_painotukset_qs = (Toimipaikka.objects
+    toimipaikka_deleted_painotukset_qs = (toimipaikka_base_qs
                                           .filter(id__in=history_deleted_painotukset_union)
                                           .annotate(update_time_difference=ExpressionWrapper(F('muutos_pvm') - F('luonti_pvm'), output_field=DurationField()))
                                           )
@@ -753,8 +756,6 @@ def update_toimipaikat_in_organisaatiopalvelu():
     result_qs = toimipaikka_changed_qs.union(toimipaikka_kielipainotus_changed_qs,
                                              toimipaikka_toiminnallinenpainotus_changed_qs,
                                              toimipaikka_deleted_painotukset_qs)
-    # Do not update organisaatio service managed toimipaikkas
-    result_qs = result_qs.exclude(hallinnointijarjestelma=Hallinnointijarjestelma.ORGANISAATIO.name)
     for toimipaikka_obj in result_qs:
         if toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=toimipaikka_obj):
             update_toimipaikka_in_organisaatiopalvelu(toimipaikka_obj)

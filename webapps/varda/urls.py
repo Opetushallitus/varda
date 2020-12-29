@@ -1,13 +1,22 @@
 from django.urls import re_path
-from rest_framework_swagger.views import get_swagger_view
+from drf_yasg import openapi
+from drf_yasg.views import get_schema_view
+from rest_framework import permissions
 
 from . import views
 
-schema_view = get_swagger_view(title='VARDA REST API')
 
+schema_view = get_schema_view(
+    openapi.Info(
+        title='VARDA REST API',
+        default_version='v1',
+    ),
+    public=False,
+    permission_classes=(permissions.AllowAny,),
+)
 
 urlpatterns = [
     re_path(r'^$', views.varda_index, name='varda_index'),
     re_path(r'^release-notes/', views.varda_release_notes, name='varda_release_notes'),
-    re_path(r'^swagger/', schema_view),
+    re_path(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 ]
