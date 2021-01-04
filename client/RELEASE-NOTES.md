@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.1 (04.01.2021)
+CSCVARDA-2142: Bugikorjauksia työntekijän lomakkeeseen, korjaus täydennyskoulutuksen poistoon
+
 1.5.0 (17.12.2020)
 CSCVARDA-2003: Yksilöimättömättömien henkilöiden listaus
 CSCVARDA-2004: Tiedonsiirrot ja puuttuvat tiedot-raportointi
