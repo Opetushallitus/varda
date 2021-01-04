@@ -92,10 +92,10 @@ class KelaEtuusmaksatusKorjaustiedotPoistetutSerializer(serializers.Serializer):
     kotikunta_koodi = serializers.SerializerMethodField()
     henkilotunnus = serializers.SerializerMethodField()
     tietue = serializers.CharField(default='K', initial='K')
-    vakasuhde_alkamis_pvm = serializers.DateField(source='alkamis_pvm')
-    vakasuhde_paattymis_pvm = serializers.DateField(source='alkamis_pvm')
-    vakasuhde_alkuperainen_alkamis_pvm = serializers.DateField(source='old_alkamis_pvm')
-    vakasuhde_alkuperainen_paattymis_pvm = serializers.DateField(source='old_paattymis_pvm')
+    vakasuhde_alkamis_pvm = serializers.DateField(source='new_alkamis_pvm')
+    vakasuhde_paattymis_pvm = serializers.DateField(source='new_paattymis_pvm')
+    vakasuhde_alkuperainen_alkamis_pvm = serializers.DateField(source='alkamis_pvm')
+    vakasuhde_alkuperainen_paattymis_pvm = serializers.DateField(source='paattymis_pvm')
 
     def get_henkilotunnus(self, data):
         return decrypt_henkilotunnus(data['varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus'])

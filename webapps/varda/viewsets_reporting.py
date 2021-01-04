@@ -296,7 +296,7 @@ class KelaEtuusmaksatusKorjaustiedotPoistetutViewSet(GenericViewSet, ListModelMi
         poisto_pvm: get deleted after set poisto_pvm
     """
     filter_backends = (DjangoFilterBackend,)
-    filterset_class = filters.KelaEtuusmaksatusKorjaustiedotFilter
+    filterset_class = filters.KelaEtuusmaksatusKorjaustiedotPoistetutFilter
     queryset = Varhaiskasvatussuhde.history.none()
     serializer_class = KelaEtuusmaksatusKorjaustiedotPoistetutSerializer
     permission_classes = (CustomReportingViewAccess, )
@@ -338,11 +338,11 @@ class KelaEtuusmaksatusKorjaustiedotPoistetutViewSet(GenericViewSet, ListModelMi
         dataset_filters = self.create_filters_for_data(poisto_pvm)
 
         return (Varhaiskasvatussuhde.history.select_related('varhaiskasvatuspaatos__lapsi', 'varhaiskasvatuspaatos__lapsi__henkilo')
-                                            .annotate(old_alkamis_pvm=Value('0001-01-01', output_field=DateField()),
-                                                      old_paattymis_pvm=Value('0001-01-01', output_field=DateField()))
+                                            .annotate(new_alkamis_pvm=Value('0001-01-01', output_field=DateField()),
+                                                      new_paattymis_pvm=Value('0001-01-01', output_field=DateField()))
                                             .filter(dataset_filters)
-                                            .values('id', 'varhaiskasvatuspaatos__lapsi_id', 'alkamis_pvm',
-                                                    'old_alkamis_pvm', 'old_paattymis_pvm',
+                                            .values('id', 'varhaiskasvatuspaatos__lapsi_id', 'alkamis_pvm', 'paattymis_pvm',
+                                                    'new_alkamis_pvm', 'new_paattymis_pvm',
                                                     'varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus',
                                                     'varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi')
                                             .order_by('id', 'history_id', 'varhaiskasvatuspaatos__lapsi', 'alkamis_pvm').distinct('id'))
