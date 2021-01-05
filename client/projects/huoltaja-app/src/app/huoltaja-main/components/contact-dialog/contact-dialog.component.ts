@@ -8,7 +8,7 @@ import { HuoltajaTranslations } from 'projects/huoltaja-app/src/assets/i18n/tran
   styleUrls: ['./contact-dialog.component.css']
 })
 export class ContactDialogComponent implements OnInit {
-  translation = HuoltajaTranslations;
+  i18n = HuoltajaTranslations;
 
   constructor(
     private dialogRef: MatDialogRef<ContactDialogComponent>,

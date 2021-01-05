@@ -1,6 +1,7 @@
 export enum HuoltajaTranslations {
   page_title = 'page.title',
   versio_VALUE = 'versio.VALUE',
+  varda_email = 'varda.email',
   varhaiskasvatustiedot = 'varhaiskasvatustiedot',
   varhaiskasvatustiedot_intro_paragraph_1 = 'varhaiskasvatustiedot.intro.paragraph-1',
   varhaiskasvatustiedot_intro_paragraph_2 = 'varhaiskasvatustiedot.intro.paragraph-2',
@@ -69,6 +70,8 @@ export enum HuoltajaTranslations {
   error_child_not_found_3 = 'error.child-not-found-3',
   contact_dialog_otsikko = 'contact-dialog.otsikko',
   contact_dialog_ota_yhteytta_osoitteeseen = 'contact-dialog.ota-yhteytta-osoitteeseen',
+  contact_dialog_toiminta_lakkautettu = 'contact-dialog.toiminta-lakkautettu',
+  contact_dialog_toiminta_lakkautettu_ota_yhteytta = 'contact-dialog.toiminta-lakkautettu.ota-yhteytta',
   contact_dialog_muista_mainita = 'contact-dialog.muista-mainita',
   contact_dialog_ota_yhteytta_vakajarjestajaan = 'contact-dialog.ota-yhteytta-vakajarjestajaan',
   info_henkilotiedot = 'info.henkilotiedot',
