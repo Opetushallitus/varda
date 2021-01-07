@@ -48,7 +48,7 @@ export class HuoltajaApiService implements VardaApiServiceInterface {
   }
 
   getLocalizationApi(): string {
-    return `${environment.huoltajaBackendUrl}/api/ui/localisation`;
+    return `${environment.huoltajaBackendUrl}/api/julkinen/v1/localisation`;
   }
 
   getTranslationEnum(): any {

@@ -14,7 +14,7 @@ export class PublicApiService {
   constructor(private http: LoadingHttpService) { }
 
   getKoodistot(params: Object): Observable<Array<KoodistoDto>> {
-    const url = this.setParams(`${this.julkinenApiPath}/koodistot/v1/`, params);
+    const url = this.setParams(`${this.julkinenApiPath}/v1/koodistot/`, params);
     // Overwrite headers so that Authorization isn't required
     return this.http.get(url, null, new HttpHeaders());
   }

@@ -10,6 +10,6 @@ class VardaJulkinenViewSetTests(TestCase):
 
     def test_api_get_koodistot(self):
         client = SetUpTestClient('tester').client()
-        resp = client.get('/api/julkinen/koodistot/v1/')
+        resp = client.get('/api/julkinen/v1/koodistot/')
         assert_status_code(resp, 200)
         self.assertGreater(len(json.loads(resp.content)), 0)

@@ -1,11 +1,10 @@
 import { TranslateLoader } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
-import { filter } from 'rxjs/operators';
 import { TranslationDTO, AngularTranslateDTO } from './dto/translation-dto';
 import { LoadingHttpService } from './loading-http.service';
 import { SupportedLanguages } from './dto/supported-languages.enum';
 import { VardaApiServiceInterface } from './dto/vardaApiService.interface';
-
+import { HttpHeaders } from '@angular/common/http';
 
 
 export class VardaTranslateLoader implements TranslateLoader {
@@ -20,26 +19,24 @@ export class VardaTranslateLoader implements TranslateLoader {
   }
   getTranslation(lang: SupportedLanguages, attemptNr = 0): Observable<AngularTranslateDTO> {
     return new Observable(preparedTranslation => {
-      this.http.getApiKey().pipe(filter(Boolean)).subscribe(() =>
-        this.fetchTranslations(lang).subscribe(translation => {
-          preparedTranslation.next(this.handleTranslations(translation, lang));
+      this.fetchTranslations(lang).subscribe(translation => {
+        preparedTranslation.next(this.handleTranslations(translation, lang));
+        preparedTranslation.complete();
+      }, () => {
+        if (attemptNr < 2) {
+          setTimeout(() => this.getTranslation(lang, attemptNr++), 200);
+        } else {
+          console.error('Failed to load translations');
+          preparedTranslation.next({});
           preparedTranslation.complete();
-        }, () => {
-          if (attemptNr < 2) {
-            setTimeout(() => this.getTranslation(lang, attemptNr++), 200);
-          } else {
-            console.error('Failed to load translations');
-            preparedTranslation.next({});
-            preparedTranslation.complete();
-          }
-        })
-      );
+        }
+      });
     });
   }
 
 
   fetchTranslations(lang: SupportedLanguages): Observable<Array<TranslationDTO>> {
-    return this.http.get(`${this.localizationApi}/?category=${this.translationCategory}&locale=${lang}`);
+    return this.http.get(`${this.localizationApi}/?category=${this.translationCategory}&locale=${lang}`, null, new HttpHeaders());
   }
 
 

@@ -51,7 +51,7 @@ export class VardaApiService implements VardaApiServiceInterface {
   }
 
   getLocalizationApi() {
-    return `${environment.vardaAppUrl}/api/ui/localisation`;
+    return `${environment.vardaAppUrl}/api/julkinen/v1/localisation`;
   }
 
   getTranslationEnum() {

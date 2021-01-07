@@ -21,5 +21,5 @@ class SustainedRateThrottleStrict(UserRateThrottle):
     scope = 'sustained_strict'
 
 
-class KoodistotAnonThrottle(AnonRateThrottle):
-    scope = 'koodistot'
+class PublicAnonThrottle(AnonRateThrottle):
+    scope = 'public'

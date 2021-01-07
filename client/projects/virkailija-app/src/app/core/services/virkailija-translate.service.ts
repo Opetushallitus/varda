@@ -1,10 +1,10 @@
 import { TranslateLoader } from '@ngx-translate/core';
-import { Observable, forkJoin } from 'rxjs';
+import { Observable } from 'rxjs';
 import { LoadingHttpService } from 'varda-shared';
-import { filter } from 'rxjs/operators';
 import { SupportedLanguages } from 'projects/varda-shared/src/lib/dto/supported-languages.enum';
 import { AngularTranslateDTO, TranslationDTO } from 'projects/varda-shared/src/lib/dto/translation-dto';
 import { VardaApiServiceInterface } from 'projects/varda-shared/src/lib/dto/vardaApiService.interface';
+import { HttpHeaders } from '@angular/common/http';
 
 
 export class VirkailijaTranslateLoader implements TranslateLoader {
@@ -15,30 +15,28 @@ export class VirkailijaTranslateLoader implements TranslateLoader {
     this.translationCategory = appApi.getTranslationCategory();
     this.localizationApi = appApi.getLocalizationApi();
   }
+
   getTranslation(lang: SupportedLanguages, attemptNr = 0): Observable<AngularTranslateDTO> {
     return new Observable(preparedTranslation => {
-      this.http.getApiKey().pipe(filter(Boolean)).subscribe(() =>
-        this.fetchJson(lang).subscribe(angularTranslation =>
-          this.fetchTranslations(lang).subscribe(translation => {
-            preparedTranslation.next(this.handleTranslations(angularTranslation, translation, lang));
+      this.fetchJson(lang).subscribe(angularTranslation =>
+        this.fetchTranslations(lang).subscribe(translation => {
+          preparedTranslation.next(this.handleTranslations(angularTranslation, translation, lang));
+          preparedTranslation.complete();
+        }, () => {
+          if (attemptNr < 4) {
+            setTimeout(() => this.getTranslation(lang, attemptNr++), 400);
+          } else {
+            console.error('Failed to load translations');
+            preparedTranslation.next({});
             preparedTranslation.complete();
-          }, () => {
-            if (attemptNr < 4) {
-              setTimeout(() => this.getTranslation(lang, attemptNr++), 400);
-            } else {
-              console.error('Failed to load translations');
-              preparedTranslation.next({});
-              preparedTranslation.complete();
-            }
-          })
-        )
+          }
+        })
       );
     });
   }
 
-
   fetchTranslations(lang: SupportedLanguages): Observable<Array<TranslationDTO>> {
-    return this.http.get(`${this.localizationApi}/?category=${this.translationCategory}&locale=${lang}`);
+    return this.http.get(`${this.localizationApi}/?category=${this.translationCategory}&locale=${lang}`, null, new HttpHeaders());
   }
 
   fetchJson(lang: SupportedLanguages): Observable<AngularTranslateDTO> {

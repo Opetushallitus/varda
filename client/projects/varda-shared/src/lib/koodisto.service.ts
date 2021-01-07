@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { CodeDTO, KoodistoDTO, KoodistoEnum, KoodistoSortBy } from './dto/koodisto-models';
 import { LoadingHttpService } from './loading-http.service';
+import { HttpHeaders } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -68,7 +69,7 @@ export class VardaKoodistoService {
   }
 
   private getKoodistot(lang: string): Observable<Array<KoodistoDTO>> {
-    return this.http.get(`${this.vardaApiUrl}/api/julkinen/koodistot/v1/?lang=${lang}`);
+    return this.http.get(`${this.vardaApiUrl}/api/julkinen/v1/koodistot/?lang=${lang}`, null, new HttpHeaders());
   }
 
   getKoodisto(koodistoNimi: KoodistoEnum, sortBy?: KoodistoSortBy): Observable<KoodistoDTO> {

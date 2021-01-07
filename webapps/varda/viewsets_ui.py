@@ -11,7 +11,6 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from guardian.shortcuts import get_objects_for_user
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.response import Response
@@ -20,9 +19,7 @@ from rest_framework.viewsets import GenericViewSet
 from varda import filters
 from varda.cache import create_cache_key, get_object_ids_user_has_permissions
 from varda.cas.varda_permissions import IsVardaPaakayttaja
-from varda.enums.error_messages import ErrorMessages
 from varda.filters import TyontekijahakuUiFilter, LapsihakuUiFilter
-from varda.lokalisointipalvelu import get_localisation_data
 from varda.misc import parse_toimipaikka_id_list
 from varda.misc_queries import get_paos_toimipaikat
 from varda.models import (Toimipaikka, VakaJarjestaja, PaosToiminta, PaosOikeus, Lapsi, Henkilo,
@@ -438,38 +435,6 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
         # Pagination is disabled
         serializer = self.get_serializer(queryset.distinct(), many=True)
         return Response(serializer.data)
-
-
-@auditlogclass
-class LocalisationViewSet(GenericViewSet, ListModelMixin):
-    """
-    list:
-        Get localisations from lokalisointipalvelu for given category and locale
-
-        parameters:
-            category=string (required)
-            locale=string
-    """
-    def get_queryset(self):
-        return None
-
-    def list(self, request, *args, **kwargs):
-        query_params = request.query_params
-        category = query_params.get('category', None)
-        locale = query_params.get('locale', None)
-
-        if not category:
-            raise ValidationError({'errors': [ErrorMessages.LO001.value]})
-
-        if locale and locale.lower() not in ['fi', 'sv']:
-            raise ValidationError({'errors': [ErrorMessages.LO002.value]})
-
-        data = get_localisation_data(category, locale)
-
-        if not data:
-            return Response(status=500)
-
-        return Response(data)
 
 
 @auditlogclass

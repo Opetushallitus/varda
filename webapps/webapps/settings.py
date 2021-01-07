@@ -307,7 +307,7 @@ REST_FRAMEWORK = {
         'sustained_modify': '100000/day',
         'burst_strict': '5/second',
         'sustained_strict': '500/day',
-        'koodistot': '50/hour'
+        'public': '50/hour'
     },
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
