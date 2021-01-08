@@ -1,3 +1,4 @@
+import datetime
 from varda.models import Henkilo, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Lapsi
 from varda.misc import decrypt_henkilotunnus
 from rest_framework import serializers
@@ -53,13 +54,26 @@ class HuoltajanLapsiVarhaiskasvatuspaatosSerializer(serializers.ModelSerializer)
 class HuoltajanLapsiLapsiSerializer(serializers.ModelSerializer):
     yhteysosoite = serializers.SerializerMethodField()
     varhaiskasvatuksen_jarjestaja = serializers.SerializerMethodField()
+    aktiivinen_toimija = serializers.SerializerMethodField()
     varhaiskasvatuspaatokset = HuoltajanLapsiVarhaiskasvatuspaatosSerializer(many=True)
 
     def get_yhteysosoite(self, obj):
-        if obj.vakatoimija is not None:
+        aktiivinen_toimija = self.get_aktiivinen_toimija(obj)
+        if obj.vakatoimija is not None and aktiivinen_toimija:
             return obj.vakatoimija.sahkopostiosoite
-        if obj.oma_organisaatio is not None:
+        if obj.oma_organisaatio is not None and aktiivinen_toimija:
             return obj.oma_organisaatio.sahkopostiosoite
+        return None
+
+    def get_aktiivinen_toimija(self, obj):
+        now = datetime.date.today()
+        if obj.vakatoimija is not None:
+            if obj.vakatoimija.paattymis_pvm is not None and obj.vakatoimija.paattymis_pvm < now:
+                return False
+        if obj.oma_organisaatio is not None:
+            if obj.oma_organisaatio.paattymis_pvm is not None and obj.oma_organisaatio.paattymis_pvm < now:
+                return False
+        return True
 
     def get_varhaiskasvatuksen_jarjestaja(self, obj):
         if obj.vakatoimija is not None:

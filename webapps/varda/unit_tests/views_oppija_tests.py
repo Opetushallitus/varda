@@ -4,7 +4,7 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from varda.models import Z3_AdditionalCasUserFields, Z5_AuditLog
+from varda.models import Z3_AdditionalCasUserFields, Z5_AuditLog, VakaJarjestaja
 from varda.unit_tests.test_utils import assert_status_code
 from django.contrib.auth.models import User
 from varda.custom_auth import _oppija_post_login_handler
@@ -53,6 +53,7 @@ class VardaOppijaViewsTests(TestCase):
                 {
                     "yhteysosoite": "frontti@end.com",
                     "varhaiskasvatuksen_jarjestaja": "Frontti organisaatio",
+                    "aktiivinen_toimija": True,
                     "varhaiskasvatuspaatokset": [
                         {
                             "alkamis_pvm": "2019-11-11",
@@ -72,6 +73,7 @@ class VardaOppijaViewsTests(TestCase):
                 {
                     "yhteysosoite": "organization@domain.com",
                     "varhaiskasvatuksen_jarjestaja": "Tester organisaatio",
+                    "aktiivinen_toimija": True,
                     "varhaiskasvatuspaatokset": [
                         {
                             "alkamis_pvm": "2019-11-11",
@@ -110,6 +112,7 @@ class VardaOppijaViewsTests(TestCase):
                 {
                     "yhteysosoite": "organization@domain.com",
                     "varhaiskasvatuksen_jarjestaja": "Tester2 organisaatio",
+                    "aktiivinen_toimija": True,
                     "varhaiskasvatuspaatokset": [
                         {
                             "alkamis_pvm": "2018-10-05",
@@ -139,6 +142,7 @@ class VardaOppijaViewsTests(TestCase):
                 {
                     "yhteysosoite": "organization@domain.com",
                     "varhaiskasvatuksen_jarjestaja": "Tester2 organisaatio",
+                    "aktiivinen_toimija": True,
                     "varhaiskasvatuspaatokset": [
                         {
                             "alkamis_pvm": "2019-02-11",
@@ -225,6 +229,25 @@ class VardaOppijaViewsTests(TestCase):
 
         request_count = Z5_AuditLog.objects.filter(user__username='suomi.fi#010280-952L#010215A951T').count()
         self.assertEqual(request_count, 3)
+
+    def test_vakajarjestaja_paattymis_pvm_yhteystieto_osoite(self):
+        lapsi_oid = '1.2.246.562.24.86012997950'
+        huoltaja_oid = ''
+        vakajarjestaja_oid = '1.2.246.562.10.93957375484'
+        client_suomifi_tester = self._create_oppija_cas_user_and_assert_huoltaja_oid(huoltaja_oid, lapsi_oid)
+        # add end date
+        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid)
+        vakajarjestaja_nimi = vakajarjestaja.nimi
+        vakajarjestaja.paattymis_pvm = '2019-01-01'
+        vakajarjestaja.save()
+        resp_huoltajanlapsi_api = client_suomifi_tester.get('/api/oppija/v1/huoltajanlapsi/{}/'.format(lapsi_oid),
+                                                            content_type='application/json')
+        assert_status_code(resp_huoltajanlapsi_api, status.HTTP_200_OK)
+        resp_json = json.loads(resp_huoltajanlapsi_api.content)
+        for lapsi in resp_json['lapset']:
+            if lapsi['varhaiskasvatuksen_jarjestaja'] == vakajarjestaja_nimi:
+                self.assertEqual(lapsi['yhteysosoite'], None)
+                self.assertFalse(lapsi['aktiivinen_toimija'])
 
     def _create_oppija_cas_user_and_assert_huoltaja_oid(self, huoltaja_oid, lapsi_oid, is_set_huoltaja_oid=True):
         user_suomifi, is_created = User.objects.get_or_create(username='suomi.fi#010280-952L#010215A951T',
