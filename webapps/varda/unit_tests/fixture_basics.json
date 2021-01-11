@@ -470,10 +470,10 @@
     "fields": {
       "name": "delete_request_log_older_than_arg_days",
       "task": "varda.tasks.delete_request_log_older_than_arg_days_task",
-      "interval": 3,
-      "crontab": null,
+      "interval": null,
+      "crontab": 1,
       "solar": null,
-      "args": "[31]",
+      "args": "[90]",
       "kwargs": "{}",
       "queue": null,
       "exchange": null,
