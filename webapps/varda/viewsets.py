@@ -1707,7 +1707,8 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
     """
     filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.MaksutietoFilter
-    queryset = Maksutieto.objects.all().order_by('id')
+    # Only query distinct results, as related object filters can return the same object multiple times
+    queryset = Maksutieto.objects.all().distinct().order_by('id')
     serializer_class = None
     permission_classes = (CustomObjectPermissions,)
 

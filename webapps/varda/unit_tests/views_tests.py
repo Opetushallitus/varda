@@ -15,7 +15,7 @@ from varda.misc import hash_string, encrypt_henkilotunnus
 from varda.models import (VakaJarjestaja, Toimipaikka, PaosOikeus, Huoltaja, Huoltajuussuhde, Henkilo,
                           Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto)
 from varda.permission_groups import assign_object_level_permissions
-from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, assert_validation_error
+from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, assert_validation_error, mock_admin_user
 
 # Well known test organizations (name corresponds to oid)
 test_org_34683023489 = '1.2.246.562.10.34683023489'  # Tester2 organisaatio
@@ -2605,6 +2605,42 @@ class VardaViewsTests(TestCase):
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
         assert_status_code(resp, 400)
         assert_validation_error(resp, 'errors', 'MA008', 'Lapsi does not have Varhaiskasvatuspaatos. Add Varhaiskasvatuspaatos before adding Maksutieto.')
+
+    def test_api_maksutieto_multiple_huoltaja_list_admin(self):
+        # Maksutieto should only be listed once even if it has multiple huoltajat and lapsi-filter is used
+        # (related object filter, many-to-many relationship)
+        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
+        lapsi = Lapsi.objects.get(henkilo__henkilo_oid='1.2.246.562.24.6779627637492', vakatoimija=vakajarjestaja)
+
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+        resp = client.get(f'/api/v1/maksutiedot/?lapsi={lapsi.id}')
+        assert_status_code(resp, status.HTTP_200_OK)
+        resp_json = json.loads(resp.content)
+        self.assertEqual(resp_json['count'], 1)
+
+    def test_api_maksutieto_distinct_order_by(self):
+        def _get_id_list_from_json(resp):
+            json_resp = json.loads(resp.content)['results']
+            return [maksutieto['id'] for maksutieto in json_resp]
+
+        url = '/api/v1/maksutiedot/'
+        maksutieto_qs = Maksutieto.objects.all()
+
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        id_list_order_id = list(maksutieto_qs.order_by('id').values_list('id', flat=True))
+        resp_order_id = client.get(url)
+        resp_id_list_order_id = _get_id_list_from_json(resp_order_id)
+        self.assertListEqual(id_list_order_id, resp_id_list_order_id)
+
+        with mock.patch('varda.viewsets.MaksutietoViewSet.queryset',
+                        Maksutieto.objects.all().order_by('perheen_koko', 'id').distinct()):
+            id_list_order_perheen_koko = list(maksutieto_qs.order_by('perheen_koko', 'id').values_list('id', flat=True))
+            resp_order_perheen_koko = client.get(url)
+            resp_id_list_order_perheen_koko = _get_id_list_from_json(resp_order_perheen_koko)
+            self.assertListEqual(id_list_order_perheen_koko, resp_id_list_order_perheen_koko)
 
     def test_push_duplicate_paos_toiminta(self):
         paos_toiminta = {
