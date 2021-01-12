@@ -32,32 +32,12 @@
   width: 100%;
 }
 
-.vakapaatos-panel .mat-expansion-panel-header-title,
-.vakapaatos-panel .mat-expansion-panel-header-description {
-  color: var(--black);
-}
-
-.maksutieto-panel .mat-expansion-panel-header-title,
-.maksutieto-panel .mat-expansion-panel-header-description,
-.vakasuhde-panel .mat-expansion-panel-header-title,
-.vakasuhde-panel .mat-expansion-panel-header-description {
-  color: var(--blue-lighten-1);
-}
-
 .maksutieto-panel {
   margin-bottom: 1em;
 }
 
 .vakatieto-container {
   margin-bottom: 2em;
-}
-
-.vakapaatos-panel {
-  background: var(--blue-lighten-4);
-}
-
-.vakapaatos-panel .mat-table {
-  background: initial;
 }
 
 .vakasuhde-panel {

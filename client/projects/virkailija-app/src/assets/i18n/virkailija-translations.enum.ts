@@ -509,6 +509,8 @@ export enum VirkailijaTranslations {
   katsele_tietoja_tyontekija_poissaolot = 'katsele-tietoja.tyontekija.poissaolot',
   katsele_tietoja_tyontekija_tehtavanimike = 'katsele-tietoja.tyontekija.tehtavanimike',
   katsele_tietoja_tyontekija_tehtavanimike_taydennyskoulutus = 'katsele-tietoja.tyontekija.tehtavanimike-taydennyskoulutus',
+  katsele_tietoja_tyontekija_kiertava = 'katsele-tietoja.tyontekija.kiertava',
+  katsele_tietoja_tyontekija_kiertava_description = 'katsele-tietoja.tyontekija.kiertava-description',
 
   yhteenveto_lapset_lkm = 'yhteenveto.lapset-lkm',
   yhteenveto_lapset_vakapaatos_voimassaoleva = 'yhteenveto.vakapaatokset-voimassa',

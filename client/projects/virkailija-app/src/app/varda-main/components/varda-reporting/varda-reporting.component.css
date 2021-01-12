@@ -336,6 +336,30 @@ tr.selected-row .mat-cell {
   color: var(--white);
 }
 
+.varda-reporting-wrapper .mat-expansion-panel-header-title {
+  display: initial;
+}
+
+.white-panel .mat-expansion-panel-header-title,
+.white-panel .mat-expansion-panel-header-title,
+.white-panel .mat-expansion-panel-header-description,
+.white-panel .mat-expansion-panel-header-description {
+  color: var(--blue-lighten-1);
+}
+
+.white-panel .mat-expansion-panel-header:focus, .white-panel .mat-expansion-panel-header:focus {
+  background: var(--blue-lighten-4);
+}
+
+.blue-panel .mat-expansion-panel-header-title,
+.blue-panel .mat-expansion-panel-header-description {
+  color: var(--black);
+}
+
+.blue-panel, .blue-panel .mat-table {
+  background: var(--blue-lighten-4);
+}
+
 @media (min-width: 768px) {
   .varda-date-range-container {
     max-width: 400px;

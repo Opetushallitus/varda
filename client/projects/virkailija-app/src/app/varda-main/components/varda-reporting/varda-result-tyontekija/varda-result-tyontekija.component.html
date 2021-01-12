@@ -72,12 +72,12 @@
           {{i18n.katsele_tietoja_tyontekija_no_palvelussuhteet | translate}}
         </div>
         <ng-container *ngFor="let palvelussuhde of tyontekijaKooste.palvelussuhteet">
-          <mat-expansion-panel class="palvelussuhde-panel">
+          <mat-expansion-panel class="palvelussuhde-panel blue-panel">
             <mat-expansion-panel-header>
-              <mat-panel-title>{{i18n.palvelussuhde | translate}}</mat-panel-title>
-              <mat-panel-description>
+              <mat-panel-title>
+                {{i18n.palvelussuhde | translate}}
                 {{getDateRangeDisplayValue(palvelussuhde.alkamis_pvm, palvelussuhde.paattymis_pvm)}}
-              </mat-panel-description>
+              </mat-panel-title>
             </mat-expansion-panel-header>
             <div class="table-responsive">
               <table class="mat-table">
@@ -120,12 +120,13 @@
           </mat-expansion-panel>
           <div class="tyontekija-section-inner tyoskentelypaikka-container" *ngIf="palvelussuhde.tyoskentelypaikat.length > 0">
             <div *ngFor="let tyoskentelypaikka of palvelussuhde.tyoskentelypaikat" class="tree-child-container">
-              <mat-expansion-panel class="tyoskentelypaikka-panel tree-child">
+              <mat-expansion-panel class="tyoskentelypaikka-panel white-panel tree-child">
                 <mat-expansion-panel-header>
-                  <mat-panel-title>{{i18n.tyoskentelypaikka | translate}}</mat-panel-title>
-                  <mat-panel-description>
+                  <mat-panel-title>
+                    {{tyoskentelypaikka.toimipaikka_nimi}}
                     {{getDateRangeDisplayValue(tyoskentelypaikka.alkamis_pvm, tyoskentelypaikka.paattymis_pvm)}}
-                  </mat-panel-description>
+                    <span class="font-italic" [libKoodistoValue]="koodistoEnum.tehtavanimike">{{tyoskentelypaikka.tehtavanimike_koodi}}</span>
+                  </mat-panel-title>
                 </mat-expansion-panel-header>
                 <div class="table-responsive">
                   <table class="mat-table">
@@ -133,13 +134,17 @@
                       <th scope="row" class="mat-header-cell">{{i18n.id | translate}}</th>
                       <td class="mat-cell">{{tyoskentelypaikka.id}}</td>
                     </tr>
-                    <tr class="mat-row">
+                    <tr class="mat-row" *ngIf="!tyoskentelypaikka.kiertava_tyontekija_kytkin">
                       <th scope="row" class="mat-header-cell">{{i18n.toimipaikka | translate}}</th>
                       <td class="mat-cell">{{tyoskentelypaikka.toimipaikka_nimi}}</td>
                     </tr>
-                    <tr class="mat-row">
+                    <tr class="mat-row" *ngIf="!tyoskentelypaikka.kiertava_tyontekija_kytkin">
                       <th scope="row" class="mat-header-cell">{{i18n.toimipaikka_id | translate}}</th>
                       <td class="mat-cell">{{tyoskentelypaikka.toimipaikka_id}}</td>
+                    </tr>
+                    <tr class="mat-row">
+                      <th scope="row" class="mat-header-cell">{{i18n.tyoskentelypaikka_kiertava_kytkin | translate}}</th>
+                      <td class="mat-cell">{{getBooleanLabel(tyoskentelypaikka.kiertava_tyontekija_kytkin) | translate}}</td>
                     </tr>
                     <tr class="mat-row">
                       <th scope="row" class="mat-header-cell">{{i18n.tyoskentelypaikka_tehtavanimike | translate}}</th>
@@ -150,10 +155,6 @@
                     <tr class="mat-row">
                       <th scope="row" class="mat-header-cell">{{i18n.tyoskentelypaikka_kelpoisuus_kytkin | translate}}</th>
                       <td class="mat-cell">{{getBooleanLabel(tyoskentelypaikka.kelpoisuus_kytkin) | translate}}</td>
-                    </tr>
-                    <tr class="mat-row">
-                      <th scope="row" class="mat-header-cell">{{i18n.tyoskentelypaikka_kiertava_kytkin | translate}}</th>
-                      <td class="mat-cell">{{getBooleanLabel(tyoskentelypaikka.kiertava_tyontekija_kytkin) | translate}}</td>
                     </tr>
                     <tr class="mat-row">
                       <th scope="row" class="mat-header-cell">{{i18n.alkamis_pvm | translate}}</th>
@@ -200,14 +201,13 @@
         <div class="varda-text-secondary d-block" *ngIf="tyontekijaKooste.taydennyskoulutukset.length === 0">
           {{i18n.katsele_tietoja_tyontekija_no_taydennyskoulutukset | translate}}
         </div>
-        <mat-expansion-panel *ngFor="let taydennyskoulutus of tyontekijaKooste.taydennyskoulutukset" class="taydennyskoulutus-panel">
+        <mat-expansion-panel *ngFor="let taydennyskoulutus of tyontekijaKooste.taydennyskoulutukset" class="taydennyskoulutus-panel blue-panel">
           <mat-expansion-panel-header>
             <mat-panel-title>
-              {{i18n.taydennyskoulutus | translate}}
-            </mat-panel-title>
-            <mat-panel-description>
               {{getDateDisplayValue(taydennyskoulutus.suoritus_pvm)}}
-            </mat-panel-description>
+              <span class="font-italic">{{taydennyskoulutus.nimi}}</span>
+              ({{i18n.taydennyskoulutus_COUNT_paivaa | translate: {count: taydennyskoulutus.koulutuspaivia} }})
+            </mat-panel-title>
           </mat-expansion-panel-header>
           <div class="table-responsive">
             <table class="mat-table">

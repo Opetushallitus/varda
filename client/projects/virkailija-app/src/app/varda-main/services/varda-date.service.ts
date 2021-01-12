@@ -8,6 +8,7 @@ export class VardaDateService {
   public static uiDateFormat = 'd.M.yyyy';
   public static uiLongTimeFormat = 'dd.MM.yyyy HH:mm:SS';
   public static vardaApiDateFormat = 'YYYY-MM-DD';
+  public static uiDateFormatMoment = 'D.M.YYYY';
   public static henkilostoReleaseDate = new Date('2020-09-01');
 
   /**
@@ -71,14 +72,22 @@ export class VardaDateService {
     return date1.isBefore(date2);
   }
 
+  apiDateToUiDate(date: string): string {
+    const momentDate = moment(date, VardaDateService.vardaApiDateFormat);
+    if (!momentDate.isValid()) {
+      return '';
+    }
+    return momentDate.format(VardaDateService.uiDateFormatMoment);
+  }
+
   getDateDisplayValue(date: string): string {
-    const dateUi = this.vardaDateToUIStrDate(date);
+    const dateUi = this.apiDateToUiDate(date);
     return dateUi ? dateUi : '-';
   }
 
   getDateRangeDisplayValue(startDate: string, endDate: string): string {
-    const startDateUi = this.vardaDateToUIStrDate(startDate);
-    const endDateUi = this.vardaDateToUIStrDate(endDate);
+    const startDateUi = this.apiDateToUiDate(startDate);
+    const endDateUi = this.apiDateToUiDate(endDate);
 
     if (!startDateUi && !endDateUi) {
       return '-';

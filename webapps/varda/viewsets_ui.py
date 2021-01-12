@@ -22,6 +22,7 @@ from varda.cas.varda_permissions import IsVardaPaakayttaja
 from varda.filters import TyontekijahakuUiFilter, LapsihakuUiFilter
 from varda.misc import parse_toimipaikka_id_list
 from varda.misc_queries import get_paos_toimipaikat
+from varda.misc_viewsets import ExtraKwargsFilterBackend
 from varda.models import (Toimipaikka, VakaJarjestaja, PaosToiminta, PaosOikeus, Lapsi, Henkilo,
                           Tyontekija, Z4_CasKayttoOikeudet)
 from varda.pagination import ChangeablePageSizePagination, ChangeablePageSizePaginationLarge
@@ -29,7 +30,7 @@ from varda.permissions import (CustomObjectPermissions, get_taydennyskoulutus_ty
                                get_toimipaikat_group_has_access, get_organisaatio_oids_from_groups,
                                HenkilostohakuPermissions, LapsihakuPermissions, auditlog, auditlogclass,
                                permission_groups_in_organization, get_tyontekija_filters_for_taydennyskoulutus_groups,
-                               user_has_vakajarjestaja_level_permission)
+                               user_has_vakajarjestaja_level_permission, is_oph_staff)
 from varda.serializers import PaosToimipaikkaSerializer, PaosVakaJarjestajaSerializer
 from varda.serializers_ui import (VakaJarjestajaUiSerializer, ToimipaikkaUiSerializer, UiLapsiSerializer,
                                   TyontekijaHenkiloUiSerializer, LapsihakuHenkiloUiSerializer,
@@ -461,7 +462,7 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
         tehtavanimike=str
         tutkinto=str
     """
-    filter_backends = (DjangoFilterBackend, SearchFilter,)
+    filter_backends = (ExtraKwargsFilterBackend, SearchFilter,)
     filterset_class = filters.UiTyontekijaFilter
     search_fields = ('henkilo__etunimet',
                      'henkilo__sukunimi',
@@ -475,6 +476,7 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
 
     vakajarjestaja_id = None
     vakajarjestaja_oid = ''
+    has_vakajarjestaja_tyontekija_permissions = False
 
     def get_tyontekija_ids_user_has_view_permissions(self):
         model_name = 'tyontekija'
@@ -486,11 +488,18 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
 
         tyontekija_organization_groups_qs = permission_groups_in_organization(self.request.user, self.vakajarjestaja_oid,
                                                                               [Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
-                                                                               Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
-                                                                               Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,
-                                                                               Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA])
-        # Get all tyontekijat for superuser and vakajarjestaja level permissions
-        if not self.request.user.is_superuser and not tyontekija_organization_groups_qs.exists():
+                                                                               Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA])
+
+        user = self.request.user
+        is_superuser_or_oph_staff = user.is_superuser or is_oph_staff(user)
+        self.has_vakajarjestaja_tyontekija_permissions = is_superuser_or_oph_staff or tyontekija_organization_groups_qs.exists()
+
+        taydennyskoulutus_organization_groups_qs = permission_groups_in_organization(self.request.user, self.vakajarjestaja_oid,
+                                                                                     [Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,
+                                                                                      Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA])
+
+        # Get all tyontekijat for superuser, oph user, and vakajarjestaja level permissions
+        if not self.has_vakajarjestaja_tyontekija_permissions and not taydennyskoulutus_organization_groups_qs.exists():
             # Get only tyontekijat user has object permissions to, or tyontekijat that belong to user's
             # taydennyskoulutus groups
             tyontekija_ids_user_has_view_permissions = self.get_tyontekija_ids_user_has_view_permissions()
@@ -498,6 +507,9 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
             tyontekija_filter = (tyontekija_filter & (Q(id__in=tyontekija_ids_user_has_view_permissions) | tyontekija_taydennyskoulutus_filters))
 
         return Tyontekija.objects.filter(tyontekija_filter).order_by('henkilo__sukunimi', 'henkilo__etunimet')
+
+    def get_filterset_kwargs(self):
+        return {'has_vakajarjestaja_tyontekija_permissions': self.has_vakajarjestaja_tyontekija_permissions}
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):

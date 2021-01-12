@@ -403,10 +403,15 @@ class UiTyontekijaFilter(djangofilters.FilterSet):
     may get tyontekija that has tyoskentelypaikka in toimipaikka=1 with tehtavanimike=002 and in toimipaikka=3 with
     tehtavanimike=001.
     """
+    has_vakajarjestaja_tyontekija_permissions = False
 
     class Meta:
         model = Tyontekija
         fields = []
+
+    def __init__(self, *args, **kwargs):
+        self.has_vakajarjestaja_tyontekija_permissions = kwargs.pop('has_vakajarjestaja_tyontekija_permissions', False)
+        super(UiTyontekijaFilter, self).__init__(*args, **kwargs)
 
     def get_rajaus_filters(self):
         query_params = self.request.query_params
@@ -457,12 +462,13 @@ class UiTyontekijaFilter(djangofilters.FilterSet):
             return (Q(**{prefix + 'alkamis_pvm__lte': alkamis_pvm}) &
                     (Q(**{prefix + 'paattymis_pvm__gte': paattymis_pvm}) | Q(**{prefix + 'paattymis_pvm__isnull': True})))
 
-    def apply_kiertava_filter(self, toimipaikka_filter):
+    def apply_kiertava_filter(self, tyontekija_filter):
         kiertava_arg = self.request.query_params.get('kiertava', '').lower()
-        if kiertava_arg == 'true' or kiertava_arg == 'false':
+        # Filter by kiertava_kytkin only with vakajarjestaja level permissions
+        if self.has_vakajarjestaja_tyontekija_permissions and (kiertava_arg == 'true' or kiertava_arg == 'false'):
             kiertava_boolean = True if kiertava_arg == 'true' else False
-            return toimipaikka_filter | Q(palvelussuhteet__tyoskentelypaikat__kiertava_tyontekija_kytkin=kiertava_boolean)
-        return toimipaikka_filter
+            return tyontekija_filter | Q(palvelussuhteet__tyoskentelypaikat__kiertava_tyontekija_kytkin=kiertava_boolean)
+        return tyontekija_filter
 
     def filter_queryset(self, queryset):
         user = self.request.user

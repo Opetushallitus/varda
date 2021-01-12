@@ -1,22 +1,23 @@
-"""
-Validation functionality specifically for viewsets.
-The functions here are built around an error dictionary.
-
-All validation errors are added to the dictionary for field-specific key, as an array.
-After all validations are done, there can be multiple fields and errors per field in
-the error dictionary.
-
-The error dictionary itself is a context manager, making it easy to use and not forget
-to throw the potential validation errors:
-
-     with ViewSetValidator() as validator:
-        if condition:
-            validator.error('some_field', 'Some message.')
-"""
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import ValidationError
 
 
 class ViewSetValidator:
+    """
+    Validation functionality specifically for viewsets.
+    The functions here are built around an error dictionary.
+
+    All validation errors are added to the dictionary for field-specific key, as an array.
+    After all validations are done, there can be multiple fields and errors per field in
+    the error dictionary.
+
+    The error dictionary itself is a context manager, making it easy to use and not forget
+    to throw the potential validation errors:
+
+         with ViewSetValidator() as validator:
+            if condition:
+                validator.error('some_field', 'Some message.')
+    """
     def __init__(self):
         self.messages = {}
 
@@ -97,3 +98,17 @@ class ValidationErrorWrapper:
         if exc_type is ValidationError:
             self.validator.errors(exc_val.detail)
             return True
+
+
+class ExtraKwargsFilterBackend(DjangoFilterBackend):
+    """
+    DjangoFilterBackend that supports passing extra arguments to FilterSet
+    https://github.com/carltongibson/django-filter/issues/857#issuecomment-360788150
+    """
+    def get_filterset_kwargs(self, request, queryset, view):
+        kwargs = super(ExtraKwargsFilterBackend, self).get_filterset_kwargs(request, queryset, view)
+
+        if hasattr(view, 'get_filterset_kwargs'):
+            kwargs.update(view.get_filterset_kwargs())
+
+        return kwargs

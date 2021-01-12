@@ -13,7 +13,8 @@
                    placeholder="{{i18n.katsele_tietoja_select_toimipaikat | translate}}"
                    #toimipaikkaInput
                    [matAutocomplete]="auto"
-                   (input)="toimipaikkaSelectInputChange($event)">
+                   (input)="toimipaikkaSelectInputChange($event)"
+                   [disabled]="filterParams.kiertava">
           </div>
           <mat-autocomplete #auto="matAutocomplete"
                             (optionSelected)="toimipaikkaAutocompleteSelected($event)">
@@ -35,7 +36,7 @@
           </div>
         </div>
       </div>
-      <div class="col-md col-lg-4 order-3 order-md-2 margin-top-md">
+      <div class="col-md col-lg-4 order-4 order-md-2 margin-top-md">
         <label for="tyontekijaSearchInput"
                class="oph-bold">{{i18n.katsele_tietoja_nimi_tunniste | translate}}</label>
         <button mat-icon-button
@@ -52,7 +53,7 @@
                [(ngModel)]="searchValue"
                (keydown.enter)="search()">
       </div>
-      <div class="col-md-auto order-4 order-md-3">
+      <div class="col-md-auto order-5 order-md-3">
         <button class="varda-button varda-icon-button search-button margin-top-md"
                 type="button"
                 (click)="search()">
@@ -60,7 +61,8 @@
           {{i18n.katsele_tietoja_search | translate}}
         </button>
       </div>
-      <div class="toimipaikka-chip-container col-12 order-2 order-md-4">
+      <div class="toimipaikka-chip-container col-12 order-2 order-md-4"
+           *ngIf="!filterParams.kiertava">
         <mat-chip-list aria-label="valitut toimipaikat"
                        #toimipaikkaChipList>
           <mat-chip *ngIf="isAllToimipaikatSelected"
@@ -77,8 +79,19 @@
           </mat-chip>
         </mat-chip-list>
       </div>
+      <div class="col-md-auto order-3 order-md-5 margin-top varda-theme"
+           *ngIf="isVakajarjestajaTyontekijaPermission">
+        <mat-checkbox name="tyontekijaKiertavaCheckbox"
+                      class="varda-checkbox"
+                      [(ngModel)]="filterParams.kiertava"
+                      labelPosition="after"
+                      (change)="search()">
+          <span class="oph-bold">{{i18n.katsele_tietoja_tyontekija_kiertava | translate}}</span>
+          <span class="varda-small-text"> ({{i18n.katsele_tietoja_tyontekija_kiertava_description | translate}})</span>
+        </mat-checkbox>
+      </div>
 
-      <div class="oph-bg-gray-lighten-5 filter-form order-5"
+      <div class="oph-bg-gray-lighten-5 filter-form order-6"
            *ngIf="isFiltersVisible">
         <div class="col-md-auto">
           <label class="varda-link varda-filter-close"
@@ -228,7 +241,7 @@
           </div>
         </div>
       </div>
-      <div class="varda-link col-12 order-6 margin-top-md"
+      <div class="varda-link col-12 order-7 margin-top-md"
            *ngIf="!isFiltersVisible"
            (click)="isFiltersVisible = true">
         {{i18n.katsele_tietoja_apply_filters | translate}}

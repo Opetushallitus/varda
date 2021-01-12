@@ -162,6 +162,7 @@
               "projects/virkailija-app/src/assets"
             ],
             "styles": [
+              "projects/virkailija-app/src/assets/css/varda-theme.scss",
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
               "projects/virkailija-app/src/styles.css",
               "projects/virkailija-app/src/override.css",

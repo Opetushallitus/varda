@@ -49,10 +49,6 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
     this.tilapainenHenkilostoOnly = this.authService.hasAccessOnlyTo([UserAccessKeys.tilapainenHenkilosto]);
   }
 
-  getVakajarjestajaId() {
-    return this.selectedVakajarjestaja.id;
-  }
-
   ngOnDestroy() {
     this.subscriptions.forEach(subscription => subscription.unsubscribe());
   }

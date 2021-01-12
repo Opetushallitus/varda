@@ -1,16 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { BehaviorSubject, forkJoin } from 'rxjs';
 import { CodeDTO, KoodistoDTO, VardaKoodistoService } from 'varda-shared';
-import {
-  FilterStringParam,
-  FilterStringType,
-  VardaSearchAbstractComponent
-} from '../varda-search-abstract.component';
+import { FilterStringParam, FilterStringType, VardaSearchAbstractComponent } from '../varda-search-abstract.component';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaVakajarjestajaService } from '../../../../core/services/varda-vakajarjestaja.service';
-import { Moment } from 'moment';
 import * as moment from 'moment';
+import { Moment } from 'moment';
 import { VardaDateService } from '../../../services/varda-date.service';
 import { VardaApiWrapperService } from '../../../../core/services/varda-api-wrapper.service';
 import { AuthService } from '../../../../core/auth/auth.service';
@@ -45,15 +41,17 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
     tehtavanimike: CodeDTO;
     tutkinto: CodeDTO;
     tehtavanimikeTaydennyskoulutus: CodeDTO;
+    kiertava: boolean;
   } = {
-      rajaus: this.rajaus.PALVELUSSUHTEET,
-      voimassaolo: this.voimassaolo.VOIMASSA,
-      alkamisPvm: moment(),
-      paattymisPvm: moment(),
-      tehtavanimike: null,
-      tutkinto: null,
-      tehtavanimikeTaydennyskoulutus: null
-    };
+    rajaus: this.rajaus.PALVELUSSUHTEET,
+    voimassaolo: this.voimassaolo.VOIMASSA,
+    alkamisPvm: moment(),
+    paattymisPvm: moment(),
+    tehtavanimike: null,
+    tutkinto: null,
+    tehtavanimikeTaydennyskoulutus: null,
+    kiertava: false
+  };
 
   isRajausFiltersInactive = false;
 
@@ -62,6 +60,8 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
 
   tutkinnot: Array<CodeDTO> = [];
   filteredTutkintoOptions: BehaviorSubject<Array<CodeDTO>> = new BehaviorSubject([]);
+
+  isVakajarjestajaTyontekijaPermission = false;
 
   constructor(
     koodistoService: VardaKoodistoService,
@@ -90,6 +90,7 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
       this.tutkinnot = (<KoodistoDTO>data[1]).codes;
       this.filteredTutkintoOptions.next(this.tutkinnot);
     });
+    this.isVakajarjestajaTyontekijaPermission = this.authService.getUserAccess().tyontekijatiedot.katselija;
   }
 
   search(paginatorParams?: PaginatorParams): void {
@@ -127,7 +128,11 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
       searchParams['tutkinto'] = this.filterParams.tutkinto.code_value;
     }
 
-    if (!this.isAllToimipaikatSelected) {
+    if (this.filterParams.kiertava) {
+      searchParams['kiertava'] = true;
+    }
+
+    if (!this.isAllToimipaikatSelected && !this.filterParams.kiertava) {
       searchParams['toimipaikat'] = this.selectedToimipaikat.map(toimipaikka => toimipaikka.id).join(',');
     }
 

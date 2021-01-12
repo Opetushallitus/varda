@@ -15,26 +15,6 @@
   margin-bottom: 1em !important;
 }
 
-.tyoskentelypaikka-panel .mat-expansion-panel-header-title,
-.taydennyskoulutus-panel .mat-expansion-panel-header-title,
-.tyoskentelypaikka-panel .mat-expansion-panel-header-description,
-.taydennyskoulutus-panel .mat-expansion-panel-header-description {
-  color: var(--blue-lighten-1);
-}
-
-.palvelussuhde-panel, .palvelussuhde-panel .mat-table {
-  background: var(--blue-lighten-4);
-}
-
-.palvelussuhde-panel .mat-expansion-panel-header-title,
-.palvelussuhde-panel .mat-expansion-panel-header-description {
-  color: var(--black);
-}
-
 .palvelussuhde-panel:not(:nth-of-type(1)) {
   margin-top: 2em;
-}
-
-.tyoskentelypaikka-panel .mat-expansion-panel-header:focus, .taydennyskoulutus-panel .mat-expansion-panel-header:focus {
-  background: var(--blue-lighten-4);
 }

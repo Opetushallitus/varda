@@ -63,12 +63,12 @@
         </div>
         <div *ngIf="lapsiKooste.varhaiskasvatuspaatokset && lapsiKooste.varhaiskasvatuspaatokset.length > 0">
           <div class="vakatieto-container" *ngFor="let vakapaatos of lapsiKooste.varhaiskasvatuspaatokset">
-            <mat-expansion-panel class="vakapaatos-panel">
+            <mat-expansion-panel class="vakapaatos-panel blue-panel">
               <mat-expansion-panel-header class="toimipaikan-lapset-header">
-                <mat-panel-title>{{i18n.varhaiskasvatuspaatos | translate}}</mat-panel-title>
-                <mat-panel-description>
+                <mat-panel-title>
+                  {{i18n.varhaiskasvatuspaatos | translate}}
                   {{getDateRangeDisplayValue(vakapaatos.alkamis_pvm, vakapaatos.paattymis_pvm)}}
-                </mat-panel-description>
+                </mat-panel-title>
               </mat-expansion-panel-header>
               <div class="table-responsive">
                 <table class="mat-table">
@@ -116,12 +116,12 @@
             <div class="toimipaikan-lapset-container-margin-bottom vakasuhteet-wrapper">
               <div class="tree-child-container"
                    *ngFor="let vakasuhde of getVakasuhteetForVakapaatos(vakapaatos.id)">
-                <mat-expansion-panel class="vakasuhde-panel tree-child">
+                <mat-expansion-panel class="vakasuhde-panel white-panel tree-child">
                   <mat-expansion-panel-header class="toimipaikan-lapset-header">
-                    <mat-panel-title>{{i18n.varhaiskasvatussuhde | translate}}</mat-panel-title>
-                    <mat-panel-description>
+                    <mat-panel-title>
+                      {{vakasuhde.toimipaikka_nimi}}
                       {{getDateRangeDisplayValue(vakasuhde.alkamis_pvm, vakasuhde.paattymis_pvm)}}
-                    </mat-panel-description>
+                    </mat-panel-title>
                   </mat-expansion-panel-header>
                   <div class="table-responsive">
                     <table class="mat-table">
@@ -162,12 +162,12 @@
         </div>
         <div *ngIf="lapsiKooste.maksutiedot && lapsiKooste.maksutiedot.length > 0">
           <div *ngFor="let maksutieto of lapsiKooste.maksutiedot">
-            <mat-expansion-panel class="maksutieto-panel">
+            <mat-expansion-panel class="maksutieto-panel blue-panel">
               <mat-expansion-panel-header class="toimipaikan-lapset-header">
-                <mat-panel-title>{{i18n.maksutieto | translate}}</mat-panel-title>
-                <mat-panel-description>
+                <mat-panel-title>
+                  {{i18n.maksutieto | translate}}
                   {{getDateRangeDisplayValue(maksutieto.alkamis_pvm, maksutieto.paattymis_pvm)}}
-                </mat-panel-description>
+                </mat-panel-title>
               </mat-expansion-panel-header>
               <div class="table-responsive">
                 <table class="mat-table">

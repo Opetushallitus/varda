@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { VardaVakajarjestajaService } from '../../../../core/services/varda-vakajarjestaja.service';
 import {
   FilterStringParam,
@@ -8,7 +8,6 @@ import {
 import { VardaKoodistoService } from 'varda-shared';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { TranslateService } from '@ngx-translate/core';
-import { VardaApiService } from '../../../../core/services/varda-api.service';
 import * as moment from 'moment';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { PaginatorParams } from '../varda-result-list/varda-result-list.component';
@@ -42,8 +41,7 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
     translateService: TranslateService,
     koosteService: VardaKoosteApiService,
     vakajarjestajaService: VardaVakajarjestajaService,
-    authService: AuthService,
-    private apiService: VardaApiService
+    authService: AuthService
   ) {
     super(koodistoService, breakpointObserver, translateService, koosteService, authService, vakajarjestajaService);
     this.isFiltersInactive = true;

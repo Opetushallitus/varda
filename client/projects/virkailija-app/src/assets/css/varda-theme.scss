@@ -1,0 +1,66 @@
+@import '~@angular/material/theming';
+
+@include mat-core();
+
+// Default material theme
+$default-primary: mat-palette($mat-indigo);
+$default-accent:  mat-palette($mat-pink, A200, A100, A400);
+$default-warn:    mat-palette($mat-red);
+$default-theme: mat-light-theme((
+  color: (
+    primary: $default-primary,
+    accent: $default-accent,
+    warn: $default-warn,
+  )
+));
+@include angular-material-theme($default-theme);
+
+// Varda theme
+$varda-primary-palette: (
+  50 : #e3f3f9,
+  100 : #b9e2ef,
+  200 : #8acfe5,
+  300 : #5bbbdb,
+  400 : #38add3,
+  500 : #159ecb,
+  600 : #1296c6,
+  700 : #0f8cbe,
+  800 : #0c82b8,
+  900 : #0670ac,
+  A100 : #d6efff,
+  A200 : #a3daff,
+  A400 : #70c6ff,
+  A700 : #57bcff,
+  contrast: (
+    50 : #000000,
+    100 : #000000,
+    200 : #000000,
+    300 : #000000,
+    400 : #000000,
+    500 : #ffffff,
+    600 : #ffffff,
+    700 : #ffffff,
+    800 : #ffffff,
+    900 : #ffffff,
+    A100 : #000000,
+    A200 : #000000,
+    A400 : #000000,
+    A700 : #000000,
+  )
+);
+
+$varda-primary: mat-palette($varda-primary-palette);
+$varda-accent:  mat-palette($varda-primary-palette);
+$varda-warn:    mat-palette($mat-red);
+$varda-theme:   mat-light-theme((
+  color: (
+    primary: $varda-primary,
+    accent: $varda-accent,
+    warn: $varda-warn,
+  )
+));
+
+// All components inside .varda-theme CSS class use this theme
+.varda-theme {
+  @include angular-material-color($varda-theme);
+}

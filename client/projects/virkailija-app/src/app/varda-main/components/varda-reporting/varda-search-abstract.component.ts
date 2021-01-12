@@ -8,7 +8,7 @@ import { MatChipList } from '@angular/material/chips';
 import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
-import { SaveAccess, UserAccess } from '../../../utilities/models/varda-user-access.model';
+import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 import { AuthService } from '../../../core/auth/auth.service';
 import { PaginatorParams, VardaResultListComponent } from './varda-result-list/varda-result-list.component';
 import { VardaVakajarjestajaUi } from '../../../utilities/models';
@@ -30,12 +30,6 @@ export interface SearchResult {
   id: number;
   textPrimary: string;
   textSecondary?: string;
-}
-
-export interface SearchResults {
-  filterString: string;
-  count: number;
-  results: Array<SearchResult>;
 }
 
 @Component({
@@ -169,6 +163,8 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
       this.toimipaikkaChipList.chips.last.focus();
     });
     this.isNoToimipaikkaResults = false;
+
+    this.search();
   }
 
   removeSelectedToimipaikka(removedToimipaikka: VardaToimipaikkaMinimalDto) {
@@ -187,6 +183,8 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
 
     this.toimipaikkaInput.nativeElement.value = '';
     this.isNoToimipaikkaResults = false;
+
+    this.search();
   }
 
   toimipaikkaSelectInputChange(event: Event) {
@@ -202,13 +200,6 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
       this.isNoToimipaikkaResults = false;
       this.filteredToimipaikkaOptions.next(results);
     }
-  }
-
-  resetToimipaikkaSelect() {
-    this.selectedToimipaikat = [];
-    this.isAllToimipaikatSelected = true;
-    this.isNoToimipaikkaResults = false;
-    this.filteredToimipaikkaOptions.next([...this.toimipaikat]);
   }
 
   getSecondaryText(vakajarjestaja: string): string | null {
@@ -236,6 +227,8 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
   }
 
   abstract isFiltersFilled(): boolean;
+
+  abstract search(paginatorParams?: PaginatorParams): void;
 
   ngOnDestroy(): void {
     this.resizeSubscription.unsubscribe();
