@@ -19,7 +19,7 @@ from rest_framework.viewsets import GenericViewSet
 from varda import filters
 from varda.cache import create_cache_key, get_object_ids_user_has_permissions
 from varda.cas.varda_permissions import IsVardaPaakayttaja
-from varda.filters import TyontekijahakuUiFilter, LapsihakuUiFilter
+from varda.filters import TyontekijahakuUiFilter
 from varda.misc import parse_toimipaikka_id_list
 from varda.misc_queries import get_paos_toimipaikat
 from varda.misc_viewsets import ExtraKwargsFilterBackend
@@ -97,24 +97,64 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixi
     @action(methods=['get'], detail=True, url_path='lapsi-list', url_name='lapsi_list',
             serializer_class=LapsihakuHenkiloUiSerializer,
             queryset=Henkilo.objects.all(),
-            filter_backends=[SearchFilter, DjangoFilterBackend],
+            filter_backends=[SearchFilter],
             pagination_class=ChangeablePageSizePagination,
             permission_classes=[LapsihakuPermissions],
             )
     def lapsi_list(self, request, pk=None):
+        """
+        Query-parametrit:
+            *  toimipaikka_id = int
+            *  toimipaikka_oid = str
+            *  vakapaatos_voimassa = iso date string esim. "2020-01-01"
+        """
         # Putting these to keyword arguments raises exception
-        self.filterset_class = LapsihakuUiFilter
         self.search_fields = ['etunimet', 'sukunimi', '=henkilotunnus_unique_hash', '=henkilo_oid']
-        vakatoimija_condition = Q(lapsi__vakatoimija=pk) | Q(lapsi__oma_organisaatio=pk) | Q(lapsi__paos_organisaatio=pk)
-        self.queryset = self.queryset.filter(vakatoimija_condition).order_by('sukunimi', 'etunimet').distinct()
-        permission_context = self._get_lapsi_permission_context()
+
+        filter_condition = self.get_lapsi_list_filter_conditions(pk, request.query_params, 'lapsi__')
+        self.queryset = self.queryset.filter(filter_condition).order_by('sukunimi', 'etunimet').distinct()
+        return super().list(request, pk=pk)
+
+    def _prefix_Q(self, prefix):
+        def decorate_q(*args, **kwargs):
+            prefixed_kwargs = {prefix + key: value for key, value in kwargs.items()}
+            return Q(*args, **prefixed_kwargs)
+        return decorate_q
+
+    def get_lapsi_list_filter_conditions(self, vakajarjestaja_id, query_params, prefix='', permission_context=None):
+        """
+        This needs to be done manually since django-filter (or more precisely feature in django queryset filtering)
+        chains qs.filter() which causes lapsi table to be joined multiple times to henkilo. Doing that makes these
+        conditions OR isntead of AND causing weird results in paos cases where same lapsi can be found multiple times.
+        https://code.djangoproject.com/ticket/18437
+        :param vakajarjestaja_id: ID for Vakajarjestaja
+        :param query_params:
+        :param prefix: prefix for
+        :param permission_context: Context
+        :return: None
+        """
+        prefixed_Q = self._prefix_Q(prefix)
+        # This is the condition that causes django filter not being useful here
+        filter_condition = (prefixed_Q(vakatoimija=vakajarjestaja_id) |
+                            prefixed_Q(oma_organisaatio=vakajarjestaja_id) |
+                            prefixed_Q(paos_organisaatio=vakajarjestaja_id))
+        if toimipaikka_id := query_params.get('toimipaikka_id'):
+            filter_condition &= prefixed_Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__id=toimipaikka_id)
+        if toimipaikka_oid := query_params.get('toimipaikka_oid'):
+            filter_condition &= prefixed_Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__organisaatio_oid=toimipaikka_oid)
+        if vakapaatos_voimassa := query_params.get('vakapaatos_voimassa'):
+            filter_condition &= (prefixed_Q(varhaiskasvatuspaatokset__alkamis_pvm__lte=vakapaatos_voimassa) &
+                                 (prefixed_Q(varhaiskasvatuspaatokset__paattymis_pvm__gte=vakapaatos_voimassa) |
+                                  prefixed_Q(varhaiskasvatuspaatokset__paattymis_pvm__isnull=True)))
+        if not permission_context:
+            permission_context = self._get_lapsi_permission_context()
         is_superuser, vakajarjestaja_oid, user_organisaatio_oids = itemgetter('is_superuser', 'vakajarjestaja_oid', 'user_organisaatio_oids')(permission_context)
         if not is_superuser and vakajarjestaja_oid not in user_organisaatio_oids:
             toimipaikka_oids = permission_context['toimipaikka_oids']
             # Check toimipaikka level. Since object level permissions for lapset without toimipaikka are not set
             # we don't check it here.
-            self.queryset = self.queryset.filter(lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__organisaatio_oid__in=toimipaikka_oids)
-        return super().list(request, pk=pk)
+            filter_condition &= prefixed_Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__organisaatio_oid__in=toimipaikka_oids)
+        return filter_condition
 
     def get_serializer_context(self):
         context = super(UiVakajarjestajatViewSet, self).get_serializer_context()

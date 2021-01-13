@@ -182,9 +182,13 @@ class LapsihakuLapsetUiListSerializer(serializers.ListSerializer):
         return super(LapsihakuLapsetUiListSerializer, self).update(instance, validated_data)
 
     def to_representation(self, lapsi_list_data):
-        vakajarjestaja_pk = self.context['view'].kwargs['pk']
-        filter_condition = Q(vakatoimija=vakajarjestaja_pk) | Q(oma_organisaatio=vakajarjestaja_pk) | Q(paos_organisaatio=vakajarjestaja_pk)
-        filtered_lapsi_list_data = lapsi_list_data.filter(filter_condition)
+        view = self.context['view']
+        vakajarjestaja_pk = view.kwargs['pk']
+        query_params = view.request.query_params
+
+        # We use same conditions as when doing the initial henkilo filtering.
+        filter_condition = view.get_lapsi_list_filter_conditions(vakajarjestaja_pk, query_params, permission_context=self.context)
+        filtered_lapsi_list_data = lapsi_list_data.filter(filter_condition).distinct()
         return super(LapsihakuLapsetUiListSerializer, self).to_representation(filtered_lapsi_list_data)
 
 

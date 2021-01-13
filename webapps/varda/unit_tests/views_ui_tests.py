@@ -331,6 +331,34 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp = client.get('/api/ui/vakajarjestajat/1/lapset/?toimipaikat=2&format=json')
         self.assertEqual(json.loads(resp.content), accepted_response_json)
 
+    def test_api_lapset_paos_toimipaikka_filter(self):
+        # Tested lapsi (henkilo 16 010215A951T) is paos-lapsi between vakajarjestaja 1.2.246.562.10.34683023489 and
+        # 1.2.246.562.10.93957375488 as well as own one in both vakajarjestajat.
+        client = SetUpTestClient('tester5').client()  # VARDA-TALLENTAJA_1.2.246.562.10.93957375488
+        vakajarjestaja_oid = '1.2.246.562.10.93957375488'
+        vakajarjestaja_id = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid).id
+        toimipaikka_oid = '1.2.246.562.10.9395737548817'
+        toimipaikka_id = Toimipaikka.objects.get(organisaatio_oid=toimipaikka_oid).id
+        resp_ui_list_lapset = client.get(f'/api/ui/vakajarjestajat/{vakajarjestaja_id}/lapsi-list/?toimipaikka_id={toimipaikka_id}')
+        assert_status_code(resp_ui_list_lapset, status.HTTP_200_OK)
+        expected_henkilo_oid = '1.2.246.562.24.86012997950'
+        henkilo_result = next(henkilo for henkilo in resp_ui_list_lapset.data['results'] if henkilo['henkilo_oid'] == expected_henkilo_oid)
+        lapset_results = henkilo_result['lapset']
+        self.assertEqual(len(lapset_results), 1)
+        lapset_result = lapset_results[0]
+        expected_results = {
+            'vakatoimija_oid': None,
+            'oma_organisaatio_oid': '1.2.246.562.10.34683023489',
+            'paos_organisaatio_oid': '1.2.246.562.10.93957375488',
+        }
+        self.assertTrue(expected_results.items() <= lapset_result.items())
+        self.assertEqual(len(lapset_result['toimipaikat']), 1)
+        expected_toimipaikka_results = {
+            'organisaatio_oid': toimipaikka_oid,
+        }
+        toimipaikka_result = lapset_result['toimipaikat'][0]
+        self.assertTrue(expected_toimipaikka_results.items() <= toimipaikka_result.items())
+
     def test_api_lapset_paos_permissions(self):
         # PAOS-organisaatio should not see non-PAOS Lapsi objects in selected Toimipaikka
         paos_client = SetUpTestClient('tester2').client()
