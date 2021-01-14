@@ -242,7 +242,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         ]
         self._mock_responses(organisaatiot, organisaatio_oid, username)
         responses.add(responses.GET,
-                      'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/hae?aktiiviset=true&oid={}'.format(
+                      'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oid={}'.format(
                           organisaatio_oid2),
                       json={'numHits': 1, 'organisaatiot': self._get_parikkala_organisaatio_json(organisaatio_oid2)},
                       status=status.HTTP_200_OK)
@@ -280,11 +280,6 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         responses.add(responses.GET,
                       'https://virkailija.testiopintopolku.fi/kayttooikeus-service/henkilo/current/omattiedot',
                       json=self._get_kayttooikeudet_json(organisaatiot, username),
-                      status=status.HTTP_200_OK)
-        responses.add(responses.GET,
-                      'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/hae?aktiiviset=true&oid={}'.format(
-                          organisaatio_oid),
-                      json={'numHits': 1, 'organisaatiot': self._get_parikkala_organisaatio_json(organisaatio_oid)},
                       status=status.HTTP_200_OK)
         responses.add(responses.GET,
                       'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oid={}'.format(

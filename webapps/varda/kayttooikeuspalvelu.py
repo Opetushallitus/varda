@@ -31,11 +31,11 @@ def set_permissions_for_cas_user(user_id):
     except User.DoesNotExist:
         return None  # Cas library creates user on login so we should come here basically never
 
-    service_name = "kayttooikeus-service"
+    service_name = 'kayttooikeus-service'
     user_info = get_user_info(service_name, user.username)
-    if user_info["is_ok"]:
-        henkilo_oid = user_info["json_msg"]["henkilo_oid"]
-        henkilo_kayttajatyyppi = user_info["json_msg"]["henkilo_kayttajatyyppi"]
+    if user_info['is_ok']:
+        henkilo_oid = user_info['json_msg']['henkilo_oid']
+        henkilo_kayttajatyyppi = user_info['json_msg']['henkilo_kayttajatyyppi']
     else:
         return None  # not ok
 
@@ -44,8 +44,8 @@ def set_permissions_for_cas_user(user_id):
     """
 
     user_data = get_user_data(henkilo_oid)
-    if user.email != user_data["sahkoposti"]:
-        user.email = user_data["sahkoposti"]
+    if user.email != user_data['sahkoposti']:
+        user.email = user_data['sahkoposti']
         user.save()
 
     Z3_AdditionalCasUserFields.objects.update_or_create(
@@ -53,7 +53,7 @@ def set_permissions_for_cas_user(user_id):
         defaults={
             'kayttajatyyppi': henkilo_kayttajatyyppi,
             'henkilo_oid': henkilo_oid,
-            'asiointikieli_koodi': user_data["asiointikieli"]
+            'asiointikieli_koodi': user_data['asiointikieli']
         })
 
     set_user_kayttooikeudet(service_name, henkilo_oid, user)
@@ -74,7 +74,7 @@ def set_user_kayttooikeudet(service_name, henkilo_oid, user):
         return None
 
     """
-    We need to delete the "kayttooikeus" groups first (there might be removed access rights).
+    We need to delete the 'kayttooikeus' groups first (there might be removed access rights).
     Delete + creation is not handled in one atomic-transaction since it involves
     multiple queries to other systems, and this might leave transactions open for too long time.
     These DB-actions are not viewed as critical, since if something goes wrong here, the next
@@ -96,7 +96,7 @@ def set_user_kayttooikeudet(service_name, henkilo_oid, user):
     """
     dict_of_organizations_user_has_permissions, organisations = _get_organizations_and_perm_groups_of_user(service_name, henkilo_oid, user)
     for organization_oid, permission_group_list in dict_of_organizations_user_has_permissions.items():
-        varda_permissions = [perm["oikeus"] for perm in permission_group_list if perm["palvelu"] == 'VARDA']
+        varda_permissions = [perm['oikeus'] for perm in permission_group_list if perm['palvelu'] == 'VARDA']
         fetch_permissions_roles_for_organization(user.id,
                                                  henkilo_oid,
                                                  organisations[organization_oid],
@@ -104,7 +104,7 @@ def set_user_kayttooikeudet(service_name, henkilo_oid, user):
 
 
 def set_user_permissions(user, organisation, role):
-    organization_oid = organisation["oid"]
+    organization_oid = organisation['oid']
     organization_type_vakajarjestaja = organisaatio_client.is_vakajarjestaja(organisation)
     try:
         Z4_CasKayttoOikeudet.objects.create(user=user, organisaatio_oid=organization_oid, kayttooikeus=role)
@@ -122,7 +122,7 @@ def set_user_permissions(user, organisation, role):
         """
         if not organization_type_vakajarjestaja:
             # Assumes vakajarjestaja is directly above toimipaikka
-            vakajarjestaja_oid = organisation.get("parentOid", None)
+            vakajarjestaja_oid = organisation.get('parentOid', None)
             if vakajarjestaja_oid is not None:
                 vakajarjestaja_query = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_oid)
                 if len(vakajarjestaja_query) == 1:
@@ -133,15 +133,15 @@ def set_user_permissions(user, organisation, role):
 
 def fetch_permissions_roles_for_organization(user_id, henkilo_oid, organisation, permission_group_list):
     user = User.objects.get(id=user_id)
-    organization_oid = organisation["oid"]
+    organization_oid = organisation['oid']
     """
-    User might have multiple of VARDA-permissions to one single organization. We take into account only the "highest" permission the user has.
+    User might have multiple of VARDA-permissions to one single organization. We take into account only the 'highest' permission the user has.
     Order from highest to lowest:
     - Z4_CasKayttoOikeudet.TALLENTAJA
     - Z4_CasKayttoOikeudet.KATSELIJA
 
-    There is an exception to this rule: If organization is an "integraatio-organisaatio",
-    then the highest possible VARDA-permission for "virkailija" is KATSELIJA.
+    There is an exception to this rule: If organization is an 'integraatio-organisaatio',
+    then the highest possible VARDA-permission for 'virkailija' is KATSELIJA.
     """
     role_vakatiedot = select_highest_kayttooikeusrooli(permission_group_list,
                                                        organization_oid,
@@ -149,13 +149,13 @@ def fetch_permissions_roles_for_organization(user_id, henkilo_oid, organisation,
                                                        Z4_CasKayttoOikeudet.TALLENTAJA,
                                                        Z4_CasKayttoOikeudet.KATSELIJA)
     """
-    User might have multiple of VARDA-permissions to one single organization. We take into account only the "highest" permission the user has.
+    User might have multiple of VARDA-permissions to one single organization. We take into account only the 'highest' permission the user has.
     Order from highest to lowest:
     - Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA
     - Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA
 
-    There is an exception to this rule: If organization is an "integraatio-organisaatio",
-    then the highest possible VARDA-HUOLTAJA-permission for "virkailija" is HUOLTAJATIEDOT_KATSELIJA.
+    There is an exception to this rule: If organization is an 'integraatio-organisaatio',
+    then the highest possible VARDA-HUOLTAJA-permission for 'virkailija' is HUOLTAJATIEDOT_KATSELIJA.
     """
     role_huoltajatiedot = select_highest_kayttooikeusrooli(permission_group_list,
                                                            organization_oid,
@@ -216,7 +216,7 @@ def fetch_permissions_roles_for_organization(user_id, henkilo_oid, organisation,
 
     [set_user_permissions(user, organisation, role) for role in roles if role is not None]
 
-    group = Group.objects.get(name="vakajarjestaja_view_henkilo")
+    group = Group.objects.get(name='vakajarjestaja_view_henkilo')
     group.user_set.add(user)
 
 
@@ -227,7 +227,7 @@ def create_vakajarjestaja_or_toimipaikka_if_needed(organization_type_vakajarjest
             VakaJarjestaja doesn't exist yet, let's create it.
             """
             create_vakajarjestaja_using_oid(organization_oid, user_id)
-    else:  # organization_type is "vakatoimipaikka"
+    else:  # organization_type is 'vakatoimipaikka'
         if not Toimipaikka.objects.filter(organisaatio_oid=organization_oid).exists():
             """
             Toimipaikka doesn't exist yet, let's create it.
@@ -236,62 +236,62 @@ def create_vakajarjestaja_or_toimipaikka_if_needed(organization_type_vakajarjest
 
 
 def get_user_data(henkilo_oid):
-    service_name = "oppijanumerorekisteri-service"
-    henkilo_url = "/henkilo/" + henkilo_oid
-    DEFAULT_ASIOINTIKIELI = "fi"
-    user_data = {"asiointikieli": DEFAULT_ASIOINTIKIELI, "sahkoposti": ""}
+    service_name = 'oppijanumerorekisteri-service'
+    henkilo_url = '/henkilo/' + henkilo_oid
+    DEFAULT_ASIOINTIKIELI = 'fi'
+    user_data = {'asiointikieli': DEFAULT_ASIOINTIKIELI, 'sahkoposti': ''}
 
     reply_msg = get_json_from_external_service(service_name, henkilo_url)
-    if not reply_msg["is_ok"]:
+    if not reply_msg['is_ok']:
         return user_data
 
-    reply_json = reply_msg["json_msg"]
+    reply_json = reply_msg['json_msg']
 
-    if "asiointiKieli" not in reply_json:
+    if 'asiointiKieli' not in reply_json:
         logger.error('Missing info from /' + service_name + henkilo_url + ' reply.')
-    elif reply_json["asiointiKieli"] is None or "kieliKoodi" not in reply_json["asiointiKieli"] or reply_json["asiointiKieli"]["kieliKoodi"] is None:
+    elif reply_json['asiointiKieli'] is None or 'kieliKoodi' not in reply_json['asiointiKieli'] or reply_json['asiointiKieli']['kieliKoodi'] is None:
         pass
     else:
-        user_data["asiointikieli"] = reply_json["asiointiKieli"]["kieliKoodi"]
+        user_data['asiointikieli'] = reply_json['asiointiKieli']['kieliKoodi']
 
-    user_data["sahkoposti"] = get_user_sahkoposti(reply_json)
+    user_data['sahkoposti'] = get_user_sahkoposti(reply_json)
     return user_data
 
 
 def get_user_sahkoposti(reply_json):
-    if "yhteystiedotRyhma" not in reply_json or len(reply_json["yhteystiedotRyhma"]) == 0 or "yhteystieto" not in reply_json["yhteystiedotRyhma"][0]:
-        return ""
+    if 'yhteystiedotRyhma' not in reply_json or len(reply_json['yhteystiedotRyhma']) == 0 or 'yhteystieto' not in reply_json['yhteystiedotRyhma'][0]:
+        return ''
 
-    yhteystiedot = reply_json["yhteystiedotRyhma"][0]["yhteystieto"]
+    yhteystiedot = reply_json['yhteystiedotRyhma'][0]['yhteystieto']
     for yhteystieto in yhteystiedot:
-        if "yhteystietoTyyppi" in yhteystieto and yhteystieto["yhteystietoTyyppi"] == "YHTEYSTIETO_SAHKOPOSTI":
-            sahkoposti = yhteystieto["yhteystietoArvo"]
+        if 'yhteystietoTyyppi' in yhteystieto and yhteystieto['yhteystietoTyyppi'] == 'YHTEYSTIETO_SAHKOPOSTI':
+            sahkoposti = yhteystieto['yhteystietoArvo']
             if sahkoposti is not None:
                 return sahkoposti
 
-    return ""
+    return ''
 
 
 def get_user_info(service_name, username):
     """
     Fetch henkilo_oid and kayttajaTyyppi, based on the username.
     """
-    henkilo_url = "/henkilo/kayttajatunnus=" + username
+    henkilo_url = '/henkilo/kayttajatunnus=' + username
     reply_msg = get_json_from_external_service(service_name, henkilo_url)
-    if not reply_msg["is_ok"]:
+    if not reply_msg['is_ok']:
         return get_reply_json(is_ok=False)
 
-    reply_json = reply_msg["json_msg"]
-    if "oid" not in reply_json or "kayttajaTyyppi" not in reply_json:
+    reply_json = reply_msg['json_msg']
+    if 'oid' not in reply_json or 'kayttajaTyyppi' not in reply_json:
         logger.error('Missing info from /' + service_name + henkilo_url + ' reply.')
         return get_reply_json(is_ok=False)
 
-    henkilo_oid = reply_json["oid"]
-    henkilo_kayttajatyyppi = reply_json["kayttajaTyyppi"]
+    henkilo_oid = reply_json['oid']
+    henkilo_kayttajatyyppi = reply_json['kayttajaTyyppi']
 
-    if henkilo_kayttajatyyppi != "PALVELU":
-        json_msg = {"henkilo_oid": henkilo_oid, "henkilo_kayttajatyyppi": henkilo_kayttajatyyppi}
-        return get_reply_json(is_ok=True, json_msg=json_msg)  # kayttajatyyppi can be e.g. VIRKAILIJA, OPPIJA, "", ...
+    if henkilo_kayttajatyyppi != 'PALVELU':
+        json_msg = {'henkilo_oid': henkilo_oid, 'henkilo_kayttajatyyppi': henkilo_kayttajatyyppi}
+        return get_reply_json(is_ok=True, json_msg=json_msg)  # kayttajatyyppi can be e.g. VIRKAILIJA, OPPIJA, '', ...
     else:
         return get_reply_json(is_ok=False)
 
@@ -338,13 +338,13 @@ def _get_organizations_and_perm_groups_of_user(service_name, henkilo_oid, user):
     kayttooikeudet_by_organisaatio_oid = [item for item in first_user.get('organisaatiot', []) if len(item['kayttooikeudet']) > 0]
     organisaatio_oids = [item['organisaatioOid'] for item in kayttooikeudet_by_organisaatio_oid]
     organisations = organisaatio_client.get_multiple_organisaatio(organisaatio_oids)
-    active_organisation_oids = [org['oid'] for org in organisations if organisaatio_client.is_active(org)]
+    valid_organisation_oids = [org['oid'] for org in organisations if organisaatio_client.is_valid_vaka_organization(org)]
     if settings.OPETUSHALLITUS_ORGANISAATIO_OID in organisaatio_oids:
         oph_staff_group = Group.objects.get(name='oph_staff')
         oph_staff_group.user_set.add(user)
     active_kayttooikeus_by_organisation_oid = dict((kayttooikeus['organisaatioOid'], kayttooikeus['kayttooikeudet'])
                                                    for kayttooikeus
                                                    in kayttooikeudet_by_organisaatio_oid
-                                                   if kayttooikeus['organisaatioOid'] in active_organisation_oids
+                                                   if kayttooikeus['organisaatioOid'] in valid_organisation_oids
                                                    )
     return active_kayttooikeus_by_organisation_oid, {org['oid']: org for org in organisations}

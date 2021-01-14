@@ -19,7 +19,7 @@ from rest_framework.authentication import BasicAuthentication
 from rest_framework.authtoken.models import Token
 
 from varda import kayttooikeuspalvelu
-from varda.clients.organisaatio_client import organization_is_not_active_vaka_organization
+from varda.clients.organisaatio_client import is_not_valid_vaka_organization_in_organisaatiopalvelu
 from varda.enums.error_messages import ErrorMessages
 from varda.enums.tietosisalto_ryhma import TietosisaltoRyhma
 from varda.oph_yhteiskayttopalvelu_autentikaatio import get_authentication_header
@@ -175,7 +175,7 @@ class CustomBasicAuthentication(BasicAuthentication):
                 raise exceptions.AuthenticationFailed(msg)
 
         """
-        Authenticate user via CAS, and get "omattiedot" for the user.
+        Authenticate user via CAS, and get 'omattiedot' for the user.
         """
         omattiedot = self._authenticate_and_get_omattiedot(userid, password)
         cas_henkilo_kayttajaTyyppi = omattiedot['kayttajaTyyppi']
@@ -213,7 +213,7 @@ class CustomBasicAuthentication(BasicAuthentication):
         Z3_AdditionalCasUserFields.objects.update_or_create(user=user, defaults={'kayttajatyyppi': cas_henkilo_kayttajaTyyppi, 'henkilo_oid': cas_henkilo_oid})
 
         """
-        We need to delete the "kayttooikeus" groups first (there might be removed access rights).
+        We need to delete the 'kayttooikeus' groups first (there might be removed access rights).
         After removal, let's update the access rights.
         """
         Z4_CasKayttoOikeudet.objects.filter(user=user).delete()
@@ -251,14 +251,14 @@ class CustomBasicAuthentication(BasicAuthentication):
                     organization_specific_permission_group.user_set.add(user)  # Assign the user to this permission_group
 
             """
-            Finally, add palvelukayttaja to the "vakajarjestaja_view_henkilo" group
+            Finally, add palvelukayttaja to the 'vakajarjestaja_view_henkilo' group
             """
-            group = Group.objects.get(name="vakajarjestaja_view_henkilo")
+            group = Group.objects.get(name='vakajarjestaja_view_henkilo')
             group.user_set.add(user)
 
         else:
             """
-            Decline the access to Varda if the "palvelukayttaja" doesn't have correct
+            Decline the access to Varda if the 'palvelukayttaja' doesn't have correct
             permissions to VARDA-service in one active vaka-organization.
             """
             raise exceptions.AuthenticationFailed({'errors': [ErrorMessages.PE008.value]})
@@ -323,6 +323,6 @@ class CustomBasicAuthentication(BasicAuthentication):
                                               ]
         valid_cas_henkilo_organisaatiot = [organisaatio for organisaatio in cas_henkilo_organisaatiot
                                            if organisaatio['kayttooikeudet'] and
-                                           not organization_is_not_active_vaka_organization(organisaatio['organisaatioOid'], must_be_vakajarjestaja=True)
+                                           not is_not_valid_vaka_organization_in_organisaatiopalvelu(organisaatio['organisaatioOid'], must_be_vakajarjestaja=True)
                                            ]
         return valid_cas_henkilo_organisaatiot

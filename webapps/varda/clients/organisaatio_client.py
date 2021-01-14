@@ -94,7 +94,7 @@ def get_parent_oid(child_oid):
         return organization_data['parentOid']
 
 
-def organization_is_not_active_vaka_organization(organisaatio_oid, must_be_vakajarjestaja=False):
+def is_not_valid_vaka_organization_in_organisaatiopalvelu(organisaatio_oid, must_be_vakajarjestaja=False):
     """
     We need to exclude the organizations which don't have a label
     'Varhaiskasvatuksen jarjestaja',  i.e. 'organisaatiotyyppi_07' or
@@ -103,7 +103,7 @@ def organization_is_not_active_vaka_organization(organisaatio_oid, must_be_vakaj
 
     If you need to check explicitly that the organization is not 'Varhaiskasvatuksen jarjestaja', set the must_be_vakajarjestaja to True.
     """
-    organisaatio_url = ORGANISAATIOPALVELU_API_V4 + 'hae?aktiiviset=true&oid=' + organisaatio_oid
+    organisaatio_url = ORGANISAATIOPALVELU_API_V4 + 'hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oid=' + organisaatio_oid
     reply_msg = get_json_from_external_service(SERVICE_NAME, organisaatio_url, auth=True)
     if not reply_msg['is_ok']:
         return True
@@ -123,10 +123,10 @@ def organization_is_not_active_vaka_organization(organisaatio_oid, must_be_vakaj
     if 'organisaatiotyypit' not in organization_data or 'status' not in organization_data:
         logger.error('Organisaatio missing required data: /' + SERVICE_NAME + organisaatio_url)
         return True
-    return is_not_active(organization_data, must_be_vakajarjestaja)
+    return is_not_valid_vaka_organization(organization_data, must_be_vakajarjestaja)
 
 
-def is_not_active(organization_data, must_be_vakajarjestaja=False):
+def is_not_valid_vaka_organization(organization_data, must_be_vakajarjestaja=False):
     if not organization_data:
         logger.error('Organisaatio data not found')
         return True
@@ -135,19 +135,15 @@ def is_not_active(organization_data, must_be_vakajarjestaja=False):
         return True
     if not is_of_type(organization_data, 'organisaatiotyyppi_07', 'organisaatiotyyppi_08'):
         return True
-
     if must_be_vakajarjestaja and not is_of_type(organization_data, 'organisaatiotyyppi_07'):
         return True
 
-    if organization_data['status'] == 'AKTIIVINEN':
-        return False  # This is expected result
-    else:
-        logger.error('Organisaatio status not AKTIIVINEN: {}'.format(organization_data['oid']))
-        return True
+    # Is valid organization
+    return False
 
 
-def is_active(organization_data, must_be_vakajarjestaja=False):
-    return not is_not_active(organization_data, must_be_vakajarjestaja)
+def is_valid_vaka_organization(organization_data, must_be_vakajarjestaja=False):
+    return not is_not_valid_vaka_organization(organization_data, must_be_vakajarjestaja)
 
 
 def is_of_type(organisation_data, *args):
