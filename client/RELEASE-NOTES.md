@@ -1,6 +1,12 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.2 (14.01.2021)
+- OPHVARDA-1905 Jos toimijan toiminta on päättynyt (toimijalla päättymispäivämäärä, joka ohitettu) näytetään yhteystiedoissa varda@opintopolku.fi
+- OPHVARDA-1967 Katsele tietoja: täydennyskoulutus haitarien päivitys
+- OPHVARDA-1812 Katsele tietoja: Työntekijän haun toteutus osa 4
+- OPHVARDA-2127 Vardan lokalisointirajapinnasta julkinen
+
 1.5.1 (04.01.2021)
 CSCVARDA-2142: Bugikorjauksia työntekijän lomakkeeseen, korjaus täydennyskoulutuksen poistoon
 
