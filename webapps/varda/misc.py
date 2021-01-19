@@ -54,7 +54,8 @@ def decrypt_henkilotunnus(encrypted_henkilotunnus):
         logger.error('Decrypt henkilotunnus: Fernet token is not bytes.')
         raise CustomServerErrorException
     except InvalidToken:
-        logger.error('Decrypt henkilotunnus: Invalid token.')
+        henkilo = Henkilo.objects.filter(henkilotunnus=encrypted_henkilotunnus).first()
+        logger.error('Decrypt henkilotunnus: Invalid token. Henkilo id: {}'.format(henkilo.id))
         raise CustomServerErrorException
     return resolved_token.decode('utf-8')  # convert bytes -> string
 
