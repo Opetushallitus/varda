@@ -360,7 +360,7 @@ def _create_common_kela_filters():
     luonti_pvm_filter = Q(varhaiskasvatuspaatos__luonti_pvm__date__gte=luonti_pvm_date)
 
     # Only henkilo with hetu
-    hetu_filter = Q(varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus__isnull=False)
+    hetu_filter = ~Q(varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus__exact='')
 
     return jarjestamismuoto_filter & luonti_pvm_filter & tilapainen_vaka_filter & hetu_filter
 
