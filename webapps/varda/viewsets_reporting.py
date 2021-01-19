@@ -238,8 +238,7 @@ class KelaEtuusmaksatusKorjaustiedotViewSet(GenericViewSet, ListModelMixin):
         time_window_filter = Q(muutos_pvm__date__gte=muutos_pvm) & Q(luonti_pvm__date__lt=muutos_pvm)
 
         # Must be active at or after
-        # TO-DO change filter to 2021-18-01
-        paattymis_pvm_date_gte = datetime.datetime(2019, 9, 4)
+        paattymis_pvm_date_gte = datetime.datetime(2021, 1, 18)
         paattymis_pvm_filter = (Q(paattymis_pvm__isnull=True) | Q(paattymis_pvm__gte=paattymis_pvm_date_gte))
 
         history_type_filter = ~Q(history_type='-')
@@ -309,8 +308,7 @@ class KelaEtuusmaksatusKorjaustiedotPoistetutViewSet(GenericViewSet, ListModelMi
         time_window_filter = Q(history_date__date__gte=poisto_pvm)
 
         # Must be active at or after
-        # TO-DO change filter to 2021-18-01
-        paattymis_pvm_date_gte = datetime.datetime(2019, 9, 4)
+        paattymis_pvm_date_gte = datetime.datetime(2021, 1, 18)
         paattymis_pvm_filter = (Q(paattymis_pvm__isnull=True) | Q(paattymis_pvm__gte=paattymis_pvm_date_gte))
 
         # Only deleted objects
@@ -358,8 +356,7 @@ def _create_common_kela_filters():
     tilapainen_vaka_filter = Q(varhaiskasvatuspaatos__tilapainen_vaka_kytkin=False)
 
     # Date from which data is transfered
-    # TO-DO Change filter to 2021, 1, 4
-    luonti_pvm_date = datetime.date(2019, 9, 4)
+    luonti_pvm_date = datetime.date(2021, 1, 4)
     luonti_pvm_filter = Q(varhaiskasvatuspaatos__luonti_pvm__date__gte=luonti_pvm_date)
 
     # Only henkilo with hetu
