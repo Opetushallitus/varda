@@ -394,6 +394,7 @@ if "VARDA_ENVIRONMENT_TYPE" not in os.environ:
 OPINTOPOLKU_DOMAIN = 'https://virkailija.testiopintopolku.fi'
 OPPIJA_OPINTOPOLKU_DOMAIN = 'https://testiopintopolku.fi'
 PRODUCTION_ENV = False
+QA_ENV = False
 
 
 # CAS-authentication (OPH autentikointipalvelu)

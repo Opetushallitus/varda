@@ -151,7 +151,8 @@ def update_huoltajasuhteet_task():
 @shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
 def send_audit_log_to_aws_task():
-    audit_log.collect_audit_log_and_send_to_aws()
+    if settings.PRODUCTION_ENV or settings.QA_ENV:
+        audit_log.collect_audit_log_and_send_to_aws()
 
 
 @shared_task
