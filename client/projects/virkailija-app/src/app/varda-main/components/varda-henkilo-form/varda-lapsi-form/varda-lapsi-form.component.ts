@@ -96,7 +96,6 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
       paos_kytkin: new FormControl(false),
       vakatoimija: new FormControl(this.selectedVakajarjestaja.url),
       oma_organisaatio: new FormControl(null),
-      lp_organisaatio: new FormControl(null),
       paos_organisaatio: new FormControl(null),
     });
 
@@ -197,7 +196,7 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
       oma_organisaatio_nimi: lapsiDTO.oma_organisaatio_nimi,
       paos_organisaatio_oid: lapsiDTO.paos_organisaatio_oid,
       paos_organisaatio_nimi: lapsiDTO.paos_organisaatio_nimi,
-      tallentaja_organisaatio_oid: null,
+      tallentaja_organisaatio_oid: lapsiDTO.oma_organisaatio_oid ? this.selectedVakajarjestaja.organisaatio_oid : null,
       toimipaikat: [],
     };
 
