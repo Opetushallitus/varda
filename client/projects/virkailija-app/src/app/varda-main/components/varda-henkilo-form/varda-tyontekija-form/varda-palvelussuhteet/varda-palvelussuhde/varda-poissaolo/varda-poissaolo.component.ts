@@ -42,9 +42,7 @@ export class VardaPoissaoloComponent extends VardaHenkiloFormAccordionAbstractCo
   subscriptions: Array<Subscription> = [];
   i18n = VirkailijaTranslations;
   isEdit: boolean;
-  firstAllowedDate = VardaDateService.henkilostoReleaseDate;
-  startDateRange = { min: null, max: null };
-  endDateRange = { min: null, max: null };
+  endDateRange = { min: VardaDateService.henkilostoReleaseDate, max: null };
 
   poissaoloFormErrors: Observable<Array<ErrorTree>>;
   private henkilostoErrorService: HenkilostoErrorMessageService;
@@ -79,7 +77,6 @@ export class VardaPoissaoloComponent extends VardaHenkiloFormAccordionAbstractCo
     }
 
     this.checkFormErrors(this.henkilostoService, 'poissaolo', this.poissaolo?.id);
-    this.initDateFilters();
   }
 
   ngOnDestroy() {
@@ -172,20 +169,13 @@ export class VardaPoissaoloComponent extends VardaHenkiloFormAccordionAbstractCo
     this.poissaoloForm.enable();
   }
 
-  initDateFilters() {
-    if (this.palvelussuhde) {
-      this.startDateRange.min = new Date(this.palvelussuhde.alkamis_pvm);
-      this.startDateChange(this.poissaoloForm.controls.alkamis_pvm?.value);
-
-      if (this.palvelussuhde.paattymis_pvm) {
-        this.startDateRange.max = new Date(this.palvelussuhde.paattymis_pvm);
-      }
-    }
-  }
-
   startDateChange(startDate: Moment) {
-    const endDate = startDate?.clone().add(60, 'days');
-    this.endDateRange.min = endDate?.toDate() || new Date(this.palvelussuhde.alkamis_pvm);
+    const endDate = startDate?.clone().add(59, 'days');
+    this.endDateRange.min = endDate?.toDate() || VardaDateService.henkilostoReleaseDate;
+    if (this.endDateRange.min < VardaDateService.henkilostoReleaseDate) {
+      this.endDateRange.min = VardaDateService.henkilostoReleaseDate;
+    }
+
     setTimeout(() => this.poissaoloForm.controls.paattymis_pvm?.updateValueAndValidity(), 100);
   }
 }

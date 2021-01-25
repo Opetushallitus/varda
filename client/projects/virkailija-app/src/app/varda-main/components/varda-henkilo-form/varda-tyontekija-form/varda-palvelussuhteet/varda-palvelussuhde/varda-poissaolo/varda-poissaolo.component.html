@@ -34,8 +34,6 @@
                               ]"
                               [instructionText]="i18n.poissaolo_instruction_alkamis_pvm | translate">
           <app-varda-datepicker #fieldItem
-                                [min]="startDateRange.min"
-                                [max]="startDateRange.max"
                                 (dateChange)="startDateChange($event.value)"
                                 formControlName='alkamis_pvm'></app-varda-datepicker>
         </app-varda-form-field>
