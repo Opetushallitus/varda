@@ -88,7 +88,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             ('search=1.2.246.562.24.2431884920044',
              result_qs.filter(henkilo_oid__iexact='1.2.246.562.24.2431884920044')
              ),
-            ('palvelussuhde_voimassa=2020-03-01',
+            ('voimassa_pvm=2020-03-01',
              result_qs.filter(Q(tyontekijat__palvelussuhteet__alkamis_pvm__lte='2020-03-01') &
                               (Q(tyontekijat__palvelussuhteet__paattymis_pvm__gte='2020-03-01') |
                                Q(tyontekijat__palvelussuhteet__paattymis_pvm__isnull=True)))
@@ -176,10 +176,10 @@ class VardaHenkilostoViewSetTests(TestCase):
             ('search=1.2.246.562.24.6815981182311',
              result_qs.filter(henkilo_oid__iexact='1.2.246.562.24.6815981182311')
              ),
-            ('vakapaatos_voimassa=2020-01-01',
-             result_qs.filter(Q(lapsi__varhaiskasvatuspaatokset__alkamis_pvm__lte='2020-01-01') &
-                              (Q(lapsi__varhaiskasvatuspaatokset__paattymis_pvm__gte='2020-01-01') |
-                               Q(lapsi__varhaiskasvatuspaatokset__paattymis_pvm__isnull=True)))
+            ('voimassa_pvm=2020-01-01',
+             result_qs.filter(Q(lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm__lte='2020-01-01') &
+                              (Q(lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__gte='2020-01-01') |
+                               Q(lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True)))
              ),
         ]
         for query, exptected_value in query_result_list:

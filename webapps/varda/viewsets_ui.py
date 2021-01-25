@@ -106,7 +106,7 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixi
         Query-parametrit:
             *  toimipaikka_id = int
             *  toimipaikka_oid = str
-            *  vakapaatos_voimassa = iso date string esim. "2020-01-01"
+            *  voimassa_pvm = iso date string esim. "2020-01-01"
         """
         # Putting these to keyword arguments raises exception
         self.search_fields = ['etunimet', 'sukunimi', '=henkilotunnus_unique_hash', '=henkilo_oid']
@@ -142,10 +142,10 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixi
             filter_condition &= prefixed_Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__id=toimipaikka_id)
         if toimipaikka_oid := query_params.get('toimipaikka_oid'):
             filter_condition &= prefixed_Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__organisaatio_oid=toimipaikka_oid)
-        if vakapaatos_voimassa := query_params.get('vakapaatos_voimassa'):
-            filter_condition &= (prefixed_Q(varhaiskasvatuspaatokset__alkamis_pvm__lte=vakapaatos_voimassa) &
-                                 (prefixed_Q(varhaiskasvatuspaatokset__paattymis_pvm__gte=vakapaatos_voimassa) |
-                                  prefixed_Q(varhaiskasvatuspaatokset__paattymis_pvm__isnull=True)))
+        if voimassa_pvm := query_params.get('voimassa_pvm'):
+            filter_condition &= (prefixed_Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm__lte=voimassa_pvm) &
+                                 (prefixed_Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__gte=voimassa_pvm) |
+                                  prefixed_Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True)))
         if not permission_context:
             permission_context = self._get_lapsi_permission_context()
         is_superuser, vakajarjestaja_oid, user_organisaatio_oids = itemgetter('is_superuser', 'vakajarjestaja_oid', 'user_organisaatio_oids')(permission_context)
