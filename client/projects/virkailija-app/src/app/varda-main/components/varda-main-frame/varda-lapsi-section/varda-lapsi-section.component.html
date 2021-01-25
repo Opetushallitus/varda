@@ -16,7 +16,7 @@
     </button>
   </div>
 
-  <div class="henkilo-section-filter-search">
+  <div class="henkilo-section-filter">
     <mat-form-field>
       <mat-label>{{ i18n.henkilo_hae_nimella | translate }}</mat-label>
       <input autocomplete="off"
@@ -33,6 +33,15 @@
         <mat-icon>search</mat-icon>
       </button>
     </mat-form-field>
+
+    <div class="checkbox-filter varda-theme">
+      <mat-checkbox [value]="!searchFilter.voimassa_pvm"
+                    (change)="toggleAktiiviset()"
+                    [disabled]="isLoading | async">
+        {{ i18n.henkilo_lapset_voimassa_kytkin | translate }}
+      </mat-checkbox>
+    </div>
+
   </div>
 
   <div *ngIf="henkilot?.length === 0"

@@ -26,6 +26,14 @@
 
 .henkilo-section-filter {
   display: flex;
+  gap: 0rem 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.henkilo-section-filter .checkbox-filter {
+  display: flex;
+  flex-direction: column;
 }
 
 .mat-progress-bar {

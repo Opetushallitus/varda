@@ -16,7 +16,7 @@
     </button>
   </div>
 
-  <div class="henkilo-section-filter-search">
+  <div class="henkilo-section-filter">
     <mat-form-field>
       <mat-label>{{ i18n.henkilo_hae_nimella | translate }}</mat-label>
       <input autocomplete="off"
@@ -34,13 +34,24 @@
       </button>
     </mat-form-field>
 
-    <ng-container *ngIf="!selectedToimipaikka">
-      <mat-checkbox [(ngModel)]="searchFilter.kiertava_tyontekija_kytkin"
-                    [disabled]="isLoading | async"
-                    (change)="searchHenkilot()">
-        {{ i18n.henkilo_vain_kiertavat_tyontekijat | translate }}
+
+    <div class="checkbox-filter varda-theme">
+      <mat-checkbox [value]="!searchFilter.voimassa_pvm"
+                    (change)="toggleAktiiviset()"
+                    [disabled]="isLoading | async">
+        {{ i18n.henkilo_tyontekijat_voimassa_kytkin | translate }}
       </mat-checkbox>
-    </ng-container>
+
+      <ng-container *ngIf="!selectedToimipaikka">
+        <mat-checkbox [(ngModel)]="searchFilter.kiertava_tyontekija_kytkin"
+                      [disabled]="isLoading | async"
+                      (change)="searchHenkilot()">
+          {{ i18n.henkilo_vain_kiertavat_tyontekijat | translate }}
+        </mat-checkbox>
+      </ng-container>
+    </div>
+
+
   </div>
 
   <div *ngIf="henkilot?.length === 0"

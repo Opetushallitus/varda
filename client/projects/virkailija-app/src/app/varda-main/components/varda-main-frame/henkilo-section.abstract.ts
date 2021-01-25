@@ -8,6 +8,7 @@ import { LapsiListDTO } from '../../../utilities/models/dto/varda-lapsi-dto.mode
 import { TyontekijaListDTO } from '../../../utilities/models/dto/varda-tyontekija-dto.model';
 import { VardaUtilityService } from '../../../core/services/varda-utility.service';
 
+
 export interface HenkiloSearchFilter {
   page?: number;
   page_size?: number;
@@ -16,6 +17,7 @@ export interface HenkiloSearchFilter {
   kiertava_tyontekija_kytkin?: boolean;
   toimipaikka_oid?: string;
   toimipaikka_id?: string;
+  voimassa_pvm?: string;
 }
 
 @Component({
@@ -33,7 +35,8 @@ export abstract class AbstractHenkiloSectionComponent implements OnChanges, OnDe
   searchFilter: HenkiloSearchFilter = {
     page_size: 20,
     page: 1,
-    count: 0
+    count: 0,
+    voimassa_pvm: new Date().toLocaleDateString('fr-ca') // 'fr-ca' -> yyyy-mm-dd thats required by backend
   };
 
   constructor(
@@ -78,6 +81,11 @@ export abstract class AbstractHenkiloSectionComponent implements OnChanges, OnDe
     }
 
     this.getHenkilot();
+  }
+
+  toggleAktiiviset() {
+    this.searchFilter.voimassa_pvm = this.searchFilter.voimassa_pvm ? null : new Date().toLocaleDateString('fr-ca');
+    this.searchHenkilot();
   }
 
   abstract getHenkilot(): void;
