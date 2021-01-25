@@ -278,7 +278,6 @@ class VardaViewsTests(TestCase):
                 organisaatio_oid='1.2.246.562.10.34683023489',
                 kunta_koodi='091',
                 sahkopostiosoite='organization@domain.com',
-                tilinumero='FI37 1590 3000 0007 76',
                 kayntiosoite='Testerkatu 2',
                 kayntiosoite_postinumero='00001',
                 kayntiosoite_postitoimipaikka='Testilä',
@@ -1410,7 +1409,6 @@ class VardaViewsTests(TestCase):
                         'http://testserver/api/v1/toimipaikat/3/?format=json'
                     ],
                     'sahkopostiosoite': 'organization@domain.com',
-                    'tilinumero': 'FI37 1590 3000 0007 76',
                     'ipv4_osoitteet': None,
                     'ipv6_osoitteet': None,
                     'puhelinnumero': '+358101234567'
@@ -1484,7 +1482,6 @@ class VardaViewsTests(TestCase):
             'y_tunnus': '0201244-2',
             'kunta_koodi': '091',
             'sahkopostiosoite': 'fake@helsiki.fi',
-            'tilinumero': 'FI00 0000 0000 0000 99',
             'puhelinnumero': '112'
         }
         client = SetUpTestClient('tester').client()
@@ -1504,7 +1501,6 @@ class VardaViewsTests(TestCase):
             'postiosoite': 'Testerkatu 2',
             'postitoimipaikka': 'Testilä',
             'postinumero': '00001',
-            'tilinumero': 'FI59 5542 8540 0041 21',
             'puhelinnumero': '+3589123123'
         }
         client = SetUpTestClient('credadmin').client()
@@ -1526,7 +1522,6 @@ class VardaViewsTests(TestCase):
             'postiosoite': 'Testerkatu 2',
             'postitoimipaikka': 'Testilä',
             'postinumero': '00001',
-            'tilinumero': 'FI59 5542 8540 0041 21',
             'puhelinnumero': '+3589112112'
         }
         client = SetUpTestClient('credadmin').client()
@@ -1731,66 +1726,6 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/toiminnallisetpainotukset/', toiminnallinenpainotus)
         assert_status_code(resp, 201)
-
-    def test_push_incorrect_iban_1(self):
-        vakajarjestaja = {
-            'nimi': 'Testikylä',
-            'y_tunnus': '2913769-2',
-            'kunta_koodi': '091',
-            'kayntiosoite': 'Testerkatu 2',
-            'kayntiosoite_postinumero': '00001',
-            'kayntiosoite_postitoimipaikka': 'Testilä',
-            'postiosoite': 'Testerkatu 2',
-            'postitoimipaikka': 'Testilä',
-            'postinumero': '00001',
-            'sahkopostiosoite': 'iban@ibanila.iban',
-            'tilinumero': 'FI92 2046 1800 0628 0',
-            'puhelinnumero': '+358400987654'
-        }   # too short IBAN
-        client = SetUpTestClient('credadmin').client()
-        resp = client.post('/api/v1/vakajarjestajat/', vakajarjestaja)
-        assert_status_code(resp, 400)
-        assert_validation_error(resp, 'tilinumero', 'VJ009', 'Not a valid IBAN code.')
-
-    def test_push_incorrect_iban_2(self):
-        vakajarjestaja = {
-            'nimi': 'Testikylä',
-            'y_tunnus': '2913769-2',
-            'kunta_koodi': '091',
-            'kayntiosoite': 'Testerkatu 2',
-            'kayntiosoite_postinumero': '00001',
-            'kayntiosoite_postitoimipaikka': 'Testilä',
-            'postiosoite': 'Testerkatu 2',
-            'postitoimipaikka': 'Testilä',
-            'postinumero': '00001',
-            'sahkopostiosoite': 'iban@ibanila.iban',
-            'tilinumero': 'IF92 2046 1800 0628 04',
-            'puhelinnumero': '+358400987654'
-        }  # IBAN country code incorrect
-        client = SetUpTestClient('credadmin').client()
-        resp = client.post('/api/v1/vakajarjestajat/', vakajarjestaja)
-        assert_status_code(resp, 400)
-        assert_validation_error(resp, 'tilinumero', 'VJ009', 'Not a valid IBAN code.')
-
-    def test_push_incorrect_iban_3(self):
-        vakajarjestaja = {
-            'nimi': 'Testikylä',
-            'y_tunnus': '2913769-2',
-            'kunta_koodi': '091',
-            'kayntiosoite': 'Testerkatu 2',
-            'kayntiosoite_postinumero': '00001',
-            'kayntiosoite_postitoimipaikka': 'Testilä',
-            'postiosoite': 'Testerkatu 2',
-            'postitoimipaikka': 'Testilä',
-            'postinumero': '00001',
-            'sahkopostiosoite': 'iban@ibanila.iban',
-            'tilinumero': 'FI92 2046 1800 0628 05',
-            'puhelinnumero': '+358400987654'
-        }   # last number in IBAN code changed
-        client = SetUpTestClient('credadmin').client()
-        resp = client.post('/api/v1/vakajarjestajat/', vakajarjestaja)
-        assert_status_code(resp, 400)
-        assert_validation_error(resp, 'tilinumero', 'VJ009', 'Not a valid IBAN code.')
 
     def test_api_filter_vakajarjestajat_kunnallinen_kytkin(self):
         client = SetUpTestClient('credadmin').client()

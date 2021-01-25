@@ -33,7 +33,6 @@ class VakaJarjestaja(models.Model):
     organisaatio_oid = models.CharField(max_length=50, unique=True, blank=True, null=True, validators=[validators.validate_organisaatio_oid])
     kunta_koodi = models.CharField(max_length=20, blank=False, validators=[validators.validate_kunta_koodi])
     sahkopostiosoite = models.CharField(max_length=200, blank=True, null=True, validators=[validators.validate_email])
-    tilinumero = models.CharField(max_length=25, blank=True, validators=[validators.validate_IBAN_koodi])
     ipv4_osoitteet = ArrayField(models.CharField(max_length=20, blank=True, validators=[validators.validate_ipv4_address]), blank=True, null=True)
     ipv6_osoitteet = ArrayField(models.CharField(max_length=50, blank=True, validators=[validators.validate_ipv6_address]), blank=True, null=True)
     kayntiosoite = models.CharField(max_length=100, blank=True)
@@ -87,7 +86,7 @@ class VakaJarjestaja(models.Model):
         return [YtjYritysmuoto.KUNTA.name, YtjYritysmuoto.KUNTAYHTYMA.name]
 
     class Meta:
-        verbose_name_plural = "vakajarjestajat"
+        verbose_name_plural = 'vakajarjestajat'
 
 
 class Toimipaikka(models.Model):

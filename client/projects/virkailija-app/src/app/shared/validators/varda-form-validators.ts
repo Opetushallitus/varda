@@ -133,18 +133,6 @@ export class VardaFormValidators {
     }
   }
 
-  static validOrEmptyIBAN(fc: FormControl) {
-    try {
-      const ibanValue = fc.value.replace(/ /g, '');
-      const ibanLengthCorrect = (ibanValue.length === 18) ? true : false;
-      const fiPrefix = ibanValue.substring(0, 2);
-      const fiPrefixFound = (fiPrefix.toLowerCase() === 'fi') ? true : false;
-      return ibanValue.length === 0 || fiPrefixFound && ibanLengthCorrect ? null : { invalidIBAN: true };
-    } catch (e) {
-      return null;
-    }
-  }
-
   static validHenkiloName(fc: FormControl) {
     try {
       const fcValue = fc.value;

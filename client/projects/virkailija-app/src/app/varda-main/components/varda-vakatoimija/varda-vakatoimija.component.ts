@@ -55,8 +55,6 @@ export class VardaVakatoimijaComponent {
       sahkopostiosoite: new FormControl(vakajarjestaja.sahkopostiosoite,
         [Validators.required, VardaFormValidators.validStringFormat.bind(null, { regex: '^[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+(\\.[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+)*@[A-Za-z0-9][A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*(\\.[A-Za-z]{2,})$' })]),
       puhelinnumero: new FormControl(vakajarjestaja.puhelinnumero, [Validators.required, VardaFormValidators.validStringFormat.bind(null, { regex: '^(\\+358)[1-9]\\d{5,10}$' })]),
-      tilinumero: new FormControl(vakajarjestaja.tilinumero,
-        this.selectedVakajarjestaja.kunnallinen_kytkin ? [VardaFormValidators.validOrEmptyIBAN] : [Validators.required, VardaFormValidators.validOrEmptyIBAN]),
     });
 
     this.disableForm();

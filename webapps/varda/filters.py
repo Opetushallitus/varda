@@ -106,7 +106,6 @@ class VakaJarjestajaFilter(djangofilters.FilterSet):
     organisaatio_oid = CustomCharFilter(field_name='organisaatio_oid', lookup_expr='exact')
     kunta_koodi = djangofilters.CharFilter(field_name='kunta_koodi', lookup_expr='exact')
     sahkopostiosoite = CustomCharFilter(field_name='sahkopostiosoite', lookup_expr='exact')
-    tilinumero = djangofilters.CharFilter(field_name='tilinumero', lookup_expr='exact')
     kayntiosoite = djangofilters.CharFilter(field_name='kayntiosoite', lookup_expr='icontains')
     kayntiosoite_postitoimipaikka = djangofilters.CharFilter(field_name='kayntiosoite_postitoimipaikka', lookup_expr='icontains')
     kayntiosoite_postinumero = djangofilters.CharFilter(field_name='kayntiosoite_postinumero', lookup_expr='exact')

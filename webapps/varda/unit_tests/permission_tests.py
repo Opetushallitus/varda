@@ -85,7 +85,6 @@ class VardaPermissionsTests(TestCase):
             'nimi': 'Testikaupunki',
             'y_tunnus': '5482703-8',
             'sahkopostiosoite': 'testi@kaupunki.fi',
-            'tilinumero': 'FI12 3456 7890 1234 56',
             'puhelinnumero': '00112'
         }
         resp = self.client.post('/api/v1/vakajarjestajat/', vakajarjestaja)

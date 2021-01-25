@@ -19,7 +19,6 @@ export const vakajarjestajatStub = [
           'https://localhost:8000/api/v1/toimipaikat/7/'
         ],
         'sahkopostiosoite': null,
-        'tilinumero': '',
         'ipv4_osoitteet': null,
         'ipv6_osoitteet': null,
         'puhelinnumero': ''
@@ -44,7 +43,6 @@ export const vakajarjestajatStub = [
           'https://localhost:8000/api/v1/toimipaikat/7/'
         ],
         'sahkopostiosoite': null,
-        'tilinumero': '',
         'ipv4_osoitteet': null,
         'ipv6_osoitteet': null,
         'puhelinnumero': ''

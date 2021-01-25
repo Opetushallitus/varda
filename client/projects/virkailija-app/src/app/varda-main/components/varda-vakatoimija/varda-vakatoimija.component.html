@@ -57,28 +57,6 @@
       </ng-template>
     </app-varda-form-field>
 
-    <app-varda-form-field name="tilinumero"
-                          [form]="vakatoimijaForm"
-                          [label]="i18n.yhteystiedot_tilinumero | translate"
-                          [errorText]="i18n.yhteystiedot_error_tilinumero | translate"
-                          [placeholder]="i18n.yhteystiedot_placeholder_tilinumero | translate"
-                          [instructionText]="i18n.yhteystiedot_instruction_tilinumero | translate">
-      <input #fieldItem
-             *ngIf="saveAccess; else noEditIBAN"
-             type="text"
-             class="oph-input"
-             formControlName="tilinumero" />
-      <ng-template #noEditIBAN>
-        <span class="yhteystieto-field-missing"
-              *ngIf="!vakajarjestajaDetails.tilinumero; else showIBAN">
-          {{ i18n.yhteystiedot_missing_tilinumero | translate }}
-        </span>
-        <ng-template #showIBAN>
-          {{ vakajarjestajaDetails.tilinumero }}
-        </ng-template>
-      </ng-template>
-    </app-varda-form-field>
-
     <app-varda-error-field [errors]="vakatoimijaFormErrors"></app-varda-error-field>
 
     <div *ngIf="saveSuccess"

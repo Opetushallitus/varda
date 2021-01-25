@@ -8,7 +8,6 @@ export class VardaVakajarjestaja {
   organisaatio_oid?: string;
   kunta_koodi?: string;
   sahkopostiosoite?: string;
-  tilinumero?: string;
   ip_osoite?: string;
   katuosoite?: string;
   postitoimipaikka?: string;
