@@ -30,7 +30,7 @@ export class LoginPageComponent implements OnInit {
     const today = new Date();
     today.setMonth(today.getMonth() + 2);
 
-    localStorage.setItem(VardaCookieEnum.api_token, JSON.stringify({
+    sessionStorage.setItem(VardaCookieEnum.api_token, JSON.stringify({
       token: token,
       expiryTime: today.toISOString()
     }));

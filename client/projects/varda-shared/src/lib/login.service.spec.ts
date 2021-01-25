@@ -7,7 +7,7 @@ import {HttpService} from './http.service';
 import {CookieService} from 'ngx-cookie-service';
 
 describe('LoginService', () => {
-  let localStorageGetItemSpy;
+  let sessionStorageGetItemSpy;
   let loginService;
   let validTokenObj;
   let expiredTokenObj;
@@ -38,7 +38,7 @@ describe('LoginService', () => {
   });
 
   it('Should return true for loggedIn status if token exists and is not expired', () => {
-    localStorageGetItemSpy = spyOn(localStorage, 'getItem').and.returnValue(validTokenObj);
+    sessionStorageGetItemSpy = spyOn(sessionStorage, 'getItem').and.returnValue(validTokenObj);
     loginService.checkApiTokenValidity('huoltaja', '/').subscribe((d) => {
       const isLoggedIn = d;
       expect(isLoggedIn).toBeTruthy();
@@ -46,7 +46,7 @@ describe('LoginService', () => {
   });
 
   it('Should return false for loggedIn status if token is expired', () => {
-    localStorageGetItemSpy = spyOn(localStorage, 'getItem').and.returnValue(expiredTokenObj);
+    sessionStorageGetItemSpy = spyOn(sessionStorage, 'getItem').and.returnValue(expiredTokenObj);
     loginService.checkApiTokenValidity('huoltaja', '/').subscribe((d) => {
       const isLoggedIn = d;
       expect(isLoggedIn).toBeFalsy();

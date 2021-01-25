@@ -42,7 +42,7 @@ export class LoginService {
           apiTokenValidityObs.complete();
         };
 
-        const tokenData = localStorage.getItem(`${nameSpace}.api.token`);
+        const tokenData = sessionStorage.getItem(`${nameSpace}.api.token`);
         if (!tokenData) {
           return completeObs(false);
         }
@@ -96,7 +96,7 @@ export class LoginService {
             expiryTime: this.createExpiryTime()
           };
           this.http.setApiKey(newToken);
-          localStorage.setItem(`${nameSpace}.api.token`, JSON.stringify(authObj));
+          sessionStorage.setItem(`${nameSpace}.api.token`, JSON.stringify(authObj));
           this.fetchedApiTokenSubject.next(true);
           resolve(newToken);
         }, (error) => {
@@ -112,6 +112,25 @@ export class LoginService {
 
   isValidApiToken(): Observable<boolean> {
     return this.isValidApiTokenSubject.asObservable();
+  }
+
+  initBroadcastChannel(apiToken: string) {
+    if ('BroadcastChannel' in self) {
+      const originalRoute = window.location.pathname;
+      const [requestToken, sendToken] = ['requestToken', 'sendToken'];
+      const channel = new BroadcastChannel(apiToken);
+      channel.onmessage = (e) => {
+        const token = sessionStorage.getItem(apiToken);
+        if (token && e.data.action === requestToken) {
+          channel.postMessage({ action: sendToken, token: token });
+        } else if (!token && e.data.action === sendToken) {
+          sessionStorage.setItem(apiToken, e.data.token);
+          window.location.href = originalRoute;
+        }
+      };
+
+      channel.postMessage({ action: requestToken });
+    }
   }
 
   private refreshApiToken(apiKeyUrl): Observable<any> {

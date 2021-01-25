@@ -1,7 +1,7 @@
 import { Component, OnInit, Inject } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { Title } from '@angular/platform-browser';
-import { LoadingHttpService } from 'varda-shared';
+import { LoadingHttpService, LoginService } from 'varda-shared';
 import { Observable } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { DOCUMENT } from '@angular/common';
@@ -27,9 +27,11 @@ export class AppComponent implements OnInit {
     private translateService: TranslateService,
     private titleService: Title,
     private loadingHttpService: LoadingHttpService,
+    private loginService: LoginService,
     @Inject(DOCUMENT) private _document: any
   ) {
     this.initLanguage();
+    this.loginService.initBroadcastChannel('huoltaja.api.token');
     this.isLoading = this.loadingHttpService.isLoadingWithDebounce();
 
     this.huoltajaApi.getCurrentUser().pipe(filter(Boolean)).subscribe((user: HuoltajanLapsiDTO) => {

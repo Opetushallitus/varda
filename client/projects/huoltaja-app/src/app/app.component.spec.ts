@@ -1,9 +1,9 @@
 import { TestBed, async } from '@angular/core/testing';
 import { AppComponent } from './app.component';
 import { TranslateService } from '@ngx-translate/core';
-import { VardaSharedModule, LoadingHttpService, LoginService, HttpService } from 'varda-shared';
+import { VardaSharedModule, LoadingHttpService, LoginService } from 'varda-shared';
 import { RouterTestingModule } from '@angular/router/testing';
-import { EMPTY, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 
 describe('AppComponent', () => {
   let loadingHttpService: LoadingHttpService;
@@ -19,7 +19,7 @@ describe('AppComponent', () => {
         AppComponent
       ],
       providers: [
-        { provide: LoginService, useValue: EMPTY },
+        { provide: LoginService, useValue: { initBroadcastChannel: () => { } } },
         { provide: LoadingHttpService, useValue: { isLoading: () => { }, isLoadingWithDebounce: () => { } } },
         { provide: TranslateService, useValue: { use: () => { }, setDefaultLang: () => { }, getBrowserLang: () => { } } }
       ]
