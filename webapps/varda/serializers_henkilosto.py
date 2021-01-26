@@ -472,7 +472,8 @@ class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
         if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
             start = parse_paivamaara(validated_data['alkamis_pvm'])
             end = parse_paivamaara(validated_data['paattymis_pvm'])
-            if (end - start).days < 60:
+            # The day difference of datetime subtraction does not include the start date
+            if (end - start).days < 59:
                 validator.error('paattymis_pvm', ErrorMessages.PP003.value)
 
     def validate_dates_palvelussuhde(self, validated_data, palvelussuhde, validator):

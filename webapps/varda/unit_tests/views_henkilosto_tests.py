@@ -1788,10 +1788,11 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2')
 
+        # Duration is exactly 60 days
         pidempipoissaolo = {
             'palvelussuhde': '/api/henkilosto/v1/palvelussuhteet/{}/'.format(palvelussuhde.id),
-            'alkamis_pvm': '2021-06-01',
-            'paattymis_pvm': '2021-09-01',
+            'alkamis_pvm': '2021-01-01',
+            'paattymis_pvm': '2021-03-01',
             'lahdejarjestelma': '1',
             'tunniste': 'foo'
         }
@@ -1846,6 +1847,8 @@ class VardaHenkilostoViewSetTests(TestCase):
             ('1999-03-01', '2021-01-01', 'alkamis_pvm', 'PP005', 'alkamis_pvm must be equal to or after Palvelussuhde alkamis_pvm.'),
             ('2031-03-01', '2032-01-01', 'alkamis_pvm', 'PP006', 'alkamis_pvm must be before Palvelussuhde paattymis_pvm.'),
             ('2022-01-01', '2022-01-30', 'paattymis_pvm', 'PP003', 'Poissaolo duration must be 60 days or more.'),
+            ('2021-01-01', '2021-02-28', 'paattymis_pvm', 'PP003', 'Poissaolo duration must be 60 days or more.'),
+            ('2021-01-01', '2021-02-29', 'paattymis_pvm', 'GE006', 'This field must be a date string in YYYY-MM-DD format.'),
         ]
 
         for (start, end, key, expected_error_code, expected_message) in cases:
