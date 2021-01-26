@@ -22,8 +22,7 @@ from varda.serializers import (HenkiloHLField, VakaJarjestajaPermissionCheckedHL
 
 from varda.serializers_common import OidRelatedField, TunnisteRelatedField
 from varda.validators import (validate_paattymispvm_same_or_after_alkamispvm, validate_paivamaara1_after_paivamaara2,
-                              validate_paivamaara1_before_paivamaara2, parse_paivamaara,
-                              fill_missing_fields_for_validations)
+                              parse_paivamaara, fill_missing_fields_for_validations)
 
 
 class TyontekijaHLField(serializers.HyperlinkedRelatedField):
@@ -445,7 +444,7 @@ class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
     def validate(self, data):
         if not self.instance:
             with ViewSetValidator() as validator:
-                self.validate_dates(data, data['palvelussuhde'], validator)
+                self.validate_dates(data, validator)
                 with validator.wrap():
                     related_object_validations.check_overlapping_pidempipoissaolo_object(data, PidempiPoissaolo)
         else:
@@ -453,7 +452,7 @@ class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
             fill_missing_fields_for_validations(data, pidempipoissaolo_obj)
 
             with ViewSetValidator() as validator:
-                self.validate_dates(data, pidempipoissaolo_obj.palvelussuhde, validator)
+                self.validate_dates(data, validator)
 
                 with validator.wrap():
                     related_object_validations.check_overlapping_pidempipoissaolo_object(data, PidempiPoissaolo, pidempipoissaolo_obj.id)
@@ -461,12 +460,11 @@ class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
 
         return data
 
-    def validate_dates(self, validated_data, palvelussuhde, validator):
+    def validate_dates(self, validated_data, validator):
         with validator.wrap():
             validate_paattymispvm_same_or_after_alkamispvm(validated_data)
 
         self.validate_duration(validated_data, validator)
-        self.validate_dates_palvelussuhde(validated_data, palvelussuhde, validator)
 
     def validate_duration(self, validated_data, validator):
         if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
@@ -475,16 +473,6 @@ class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
             # The day difference of datetime subtraction does not include the start date
             if (end - start).days < 59:
                 validator.error('paattymis_pvm', ErrorMessages.PP003.value)
-
-    def validate_dates_palvelussuhde(self, validated_data, palvelussuhde, validator):
-        if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
-            if palvelussuhde.paattymis_pvm is not None and not validate_paivamaara1_before_paivamaara2(validated_data['paattymis_pvm'], palvelussuhde.paattymis_pvm, can_be_same=True):
-                validator.error('paattymis_pvm', ErrorMessages.PP004.value)
-        if 'alkamis_pvm' in validated_data and validated_data['alkamis_pvm'] is not None:
-            if not validate_paivamaara1_after_paivamaara2(validated_data['alkamis_pvm'], palvelussuhde.alkamis_pvm, can_be_same=True):
-                validator.error('alkamis_pvm', ErrorMessages.PP005.value)
-            if not validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], palvelussuhde.paattymis_pvm, can_be_same=False):
-                validator.error('alkamis_pvm', ErrorMessages.PP006.value)
 
 
 class PermissionCheckedTaydennyskoulutusTyontekijaListSerializer(serializers.ListSerializer):

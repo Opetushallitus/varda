@@ -1843,9 +1843,6 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         cases = [
             ('2020-10-01', '2020-09-01', 'paattymis_pvm', 'MI004', 'paattymis_pvm must be equal to or after alkamis_pvm.'),
-            ('2020-03-01', '2031-01-01', 'paattymis_pvm', 'PP004', 'paattymis_pvm must be before or equal to Palvelussuhde paattymis_pvm.'),
-            ('1999-03-01', '2021-01-01', 'alkamis_pvm', 'PP005', 'alkamis_pvm must be equal to or after Palvelussuhde alkamis_pvm.'),
-            ('2031-03-01', '2032-01-01', 'alkamis_pvm', 'PP006', 'alkamis_pvm must be before Palvelussuhde paattymis_pvm.'),
             ('2022-01-01', '2022-01-30', 'paattymis_pvm', 'PP003', 'Poissaolo duration must be 60 days or more.'),
             ('2021-01-01', '2021-02-28', 'paattymis_pvm', 'PP003', 'Poissaolo duration must be 60 days or more.'),
             ('2021-01-01', '2021-02-29', 'paattymis_pvm', 'GE006', 'This field must be a date string in YYYY-MM-DD format.'),
