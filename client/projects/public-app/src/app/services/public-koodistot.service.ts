@@ -8,6 +8,7 @@ import { KoodistoDto } from '../models/koodisto-dto';
   providedIn: 'root'
 })
 export class PublicKoodistotService {
+  private currentLang: string;
   private koodistotObject: Object = {};
   private koodistot: BehaviorSubject<Array<KoodistoDto>> = new BehaviorSubject<Array<KoodistoDto>>([]);
   private koodistoIndexMap: Object = {};
@@ -15,9 +16,14 @@ export class PublicKoodistotService {
   private selectedKoodisto: BehaviorSubject<string> = new BehaviorSubject<string>('');
 
   constructor(private publicApiService: PublicApiService, private translateService: TranslateService) {
+    this.currentLang = this.determineLanguage(this.translateService.currentLang);
+    this.getKoodistotFromObjectOrApi(this.currentLang);
     this.translateService.onLangChange.subscribe((params: LangChangeEvent) => {
-      const lang = this.determineLanguage(params.lang);
-      this.getKoodistotFromObjectOrApi(lang);
+      const newLang = this.determineLanguage(params.lang);
+      if (newLang !== this.currentLang) {
+        this.currentLang = newLang;
+        this.getKoodistotFromObjectOrApi(this.currentLang);
+      }
     });
   }
 

@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     'token_resolved',
     'django.contrib.postgres',
     'drf_yasg',
+    'django_spaghetti',
 ]
 
 MIDDLEWARE = [
@@ -338,18 +339,15 @@ TIME_ZONE = 'UTC'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/dev/howto/static-files/
-# In non-local environment, nginx default path is '/static/', and STATIC_URL cannot be '/', because MEDIA_URL
-# cannot also be '/' and MEDIA_URL cannot be child of STATIC_URL. So in '/static/' we have folders '/static/' and
-# '/media/' to work with nginx root path.
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static', 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'rest_framework', 'static'),
 ]
-STATIC_URL = '/static/static/'
+STATIC_URL = '/static/'
 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'static', 'media')
-MEDIA_URL = '/static/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
 
 
 # Swagger (online API documentation)
@@ -377,8 +375,9 @@ CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
 # Content-Secure Policy, Keep our policy as strict as possible
 CSP_DEFAULT_SRC = ("'self'",)
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'", 'maxcdn.bootstrapcdn.com', 'fonts.gstatic.com', 'fonts.googleapis.com')
-CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", 'ajax.googleapis.com')
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'", 'maxcdn.bootstrapcdn.com', 'fonts.gstatic.com',
+                 'fonts.googleapis.com', 'cdnjs.cloudflare.com')
+CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", 'ajax.googleapis.com', 'cdnjs.cloudflare.com')
 CSP_FONT_SRC = ("'self'", 'maxcdn.bootstrapcdn.com', 'fonts.gstatic.com', 'fonts.googleapis.com')
 CSP_IMG_SRC = ("'self'", 'data:')
 

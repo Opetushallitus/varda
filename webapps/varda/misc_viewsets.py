@@ -1,4 +1,8 @@
+import re
+
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg.generators import OpenAPISchemaGenerator
+from drf_yasg.renderers import SwaggerUIRenderer
 from rest_framework.exceptions import ValidationError
 
 
@@ -112,3 +116,28 @@ class ExtraKwargsFilterBackend(DjangoFilterBackend):
             kwargs.update(view.get_filterset_kwargs())
 
         return kwargs
+
+
+class PublicSwaggerRenderer(SwaggerUIRenderer):
+    def set_context(self, renderer_context, swagger=None):
+        super(PublicSwaggerRenderer, self).set_context(renderer_context, swagger=swagger)
+        # Disable Django login feature
+        renderer_context['USE_SESSION_AUTH'] = False
+
+    def get_swagger_ui_settings(self):
+        settings = super(PublicSwaggerRenderer, self).get_swagger_ui_settings()
+        # Disable 'Try it out' feature
+        settings['supportedSubmitMethods'] = []
+        return settings
+
+
+class PublicSchemaGenerator(OpenAPISchemaGenerator):
+    exclude_url_pattern = re.compile(r'^/api/admin.*$')
+
+    def get_security_definitions(self):
+        # Disable all authentication features
+        return None
+
+    def should_include_endpoint(self, path, method, view, public):
+        should_include = super(PublicSchemaGenerator, self).should_include_endpoint(path, method, view, public)
+        return should_include and not self.exclude_url_pattern.fullmatch(path)

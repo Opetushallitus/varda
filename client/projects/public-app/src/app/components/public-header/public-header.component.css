@@ -1,12 +1,28 @@
 .public-header {
   padding-top: 1em;
   padding-bottom: 1em;
-  text-align: right;
+  display: flex;
 }
 
 .public-header .form-control {
   display: inline;
   width: auto;
+}
+
+.menu-inline {
+  flex-grow: 1;
+}
+
+.menu-inline a {
+  color: white;
+  padding-right: 2em;
+}
+
+.menu-inline .active-link {
+  font-weight: bold;
+  text-decoration: underline;
+  cursor: default;
+  pointer-events: none;
 }
 
 .language-wrapper {
@@ -15,9 +31,20 @@
   padding: .15em .75em
 }
 
+.language-link {
+  cursor: pointer;
+}
+
 a.active-language {
   font-weight: bold;
   color: inherit;
   cursor: default;
   pointer-events: none;
+}
+
+@media (max-width: 991px) {
+  .menu-inline a {
+    display: block;
+    padding-right: 0;
+  }
 }

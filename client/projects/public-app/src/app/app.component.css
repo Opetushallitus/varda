@@ -1,20 +1,21 @@
 .main-wrapper {
-    display: flex;
-    flex-flow: column;
-    min-height: 100vh;
+  display: flex;
+  flex-flow: column;
+  min-height: 100vh;
 }
 
 header.main-header {
-    background-color: #3d9fcc;
+  background-color: #3d9fcc;
 }
 
 main {
-    margin: 3em 0;
-    flex-grow: 1;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 footer.main-footer {
-    background-color: #f0f3f8;
-    padding-top: 1em;
-    padding-bottom: 1em;
+  background-color: #f0f3f8;
+  padding-top: 1em;
+  padding-bottom: 1em;
 }

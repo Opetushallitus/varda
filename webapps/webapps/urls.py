@@ -13,19 +13,28 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import re
+
 import django_cas_ng.views as django_cas_ng_views
+from django.apps import apps
+from django.conf import settings
 
 from django.contrib import admin
 from django.urls import include, re_path
-from rest_framework import routers
+from django.views.decorators.clickjacking import xframe_options_exempt, xframe_options_sameorigin
+from django_spaghetti.views import Plate
+from drf_yasg import openapi
+from drf_yasg.views import get_schema_view as get_schema_view_yasg
+from rest_framework import routers, permissions
+from rest_framework.renderers import CoreJSONRenderer
+from rest_framework.schemas import get_schema_view
 from rest_framework_nested import routers as nested_routers
 
-import varda.viewsets_ui
 from varda import (views, viewsets, viewsets_reporting, viewsets_ui, viewsets_oppija, viewsets_henkilosto,
                    viewsets_julkinen)
 from varda.cas.oppija_cas_views import OppijaCasLoginView
-from rest_framework.renderers import CoreJSONRenderer
-from rest_framework.schemas import get_schema_view
+from varda.misc_viewsets import PublicSwaggerRenderer, PublicSchemaGenerator
+
 
 schema_view = get_schema_view(title='VARDA API', renderer_classes=[CoreJSONRenderer])
 router_admin = routers.DefaultRouter()
@@ -73,14 +82,14 @@ nested_vakajarjestaja_router_ui.register(r'lapset', viewsets_ui.UiNestedLapsiVie
 nested_vakajarjestaja_router_ui.register(r'tyontekijat', viewsets_ui.UiNestedTyontekijaViewSet)
 # /api/ui/all-vakajarjestajat/<id>/toimipaikat/
 all_toimipaikat_router = nested_routers.NestedSimpleRouter(router, r'vakajarjestajat', lookup='vakajarjestaja')
-all_toimipaikat_router.register(r'all-toimipaikat', varda.viewsets_ui.NestedAllToimipaikkaViewSet)
+all_toimipaikat_router.register(r'all-toimipaikat', viewsets_ui.NestedAllToimipaikkaViewSet)
 # /api/ui/toimipaikat/
 ui_toimipaikat_router = routers.SimpleRouter()
 ui_toimipaikat_router.register(r'toimipaikat', viewsets.ToimipaikkaViewSet)
 
 # /api/ui/all-vakajarjestajat/
 vakajarjestaja_router = routers.SimpleRouter()
-vakajarjestaja_router.register(r'all-vakajarjestajat', varda.viewsets_ui.AllVakajarjestajaViewSet, basename='all-vakajarjestajat')
+vakajarjestaja_router.register(r'all-vakajarjestajat', viewsets_ui.AllVakajarjestajaViewSet, basename='all-vakajarjestajat')
 # /api/v1/vakajarjestajat/{id}/toimipaikat/
 nested_vakajarjestaja_router = nested_routers.NestedSimpleRouter(router, r'vakajarjestajat', lookup='vakajarjestaja')
 nested_vakajarjestaja_router.register(r'toimipaikat', viewsets.NestedToimipaikkaViewSet)
@@ -183,6 +192,35 @@ router_julkinen.register(r'koodistot', viewsets_julkinen.KoodistotViewSet)
 # /api/julkinen/v1/localisation/
 router_julkinen.register(r'localisation', viewsets_julkinen.LocalisationViewSet, basename='get-localisation')
 
+# In production environment public-app accesses iframes via nginx proxy, so we can use a stricter policy
+xframe_options = xframe_options_sameorigin if settings.PRODUCTION_ENV or settings.QA_ENV else xframe_options_exempt
+
+schema_view_public = get_schema_view_yasg(
+    openapi.Info(
+        title='VARDA REST API',
+        default_version='v1',
+    ),
+    public=True,
+    url='https://varda.example.com/api/',
+    permission_classes=(permissions.AllowAny,),
+    generator_class=PublicSchemaGenerator,
+)
+public_swagger_view = xframe_options(
+    schema_view_public.as_cached_view(cache_timeout=0, cache_kwargs=None,
+                                      renderer_classes=(PublicSwaggerRenderer,) + schema_view_public.renderer_classes)
+)
+
+excluded_model_regex = re.compile(r'^(historical.*)|(z\d.*)|(logdata)|(aikaleima)|(batcherror)$')
+model_visualization_view = xframe_options(
+    Plate.as_view(
+        settings={
+            'apps': ['varda'],
+            'show_fields': False,
+            'exclude': {'varda': [model.__name__.lower() for model in apps.get_app_config('varda').get_models()
+                                  if excluded_model_regex.fullmatch(model.__name__.lower())]}}
+    )
+)
+
 urlpatterns = [
     re_path(r'^$', views.index, name='index'),
     re_path(r'^admin/', admin.site.urls),
@@ -217,4 +255,6 @@ urlpatterns = [
     re_path(r'^api/oppija/v1/huoltajanlapsi/(?P<henkilo_oid>[.0-9]{26,})/$',
             viewsets_oppija.HuoltajanLapsiViewSet.as_view({'get': 'retrieve'}), name='huoltajanlapsi'),
     re_path(r'^api/julkinen/v1/', include(router_julkinen.urls), name='julkinen'),
+    re_path(r'^api/julkinen/v1/swagger/$', public_swagger_view, name='swagger-public'),
+    re_path(r'^api/julkinen/v1/data-model/$', model_visualization_view, name='data-model-public'),
 ]

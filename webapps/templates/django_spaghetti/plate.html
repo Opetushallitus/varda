@@ -1,0 +1,126 @@
+<!--
+Overrides https://github.com/LegoStormtroopr/django-spaghetti-and-meatballs/blob/master/django_spaghetti/templates/django_spaghetti/plate.html
+with custom visjs settings
+-->
+{% load static %}
+{% block extra_scripts %}
+  <script src="//cdnjs.cloudflare.com/ajax/libs/vis/4.20.0/vis.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.20.0/vis.min.css" rel="stylesheet" type="text/css" />
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+{% endblock %}
+<div id="visualization"></div>
+
+<script>
+  const vakatiedot_models = ['lapsi', 'varhaiskasvatuspaatos', 'varhaiskasvatussuhde', 'huoltaja', 'huoltajuussuhde',
+    'maksutieto', 'kielipainotus', 'toiminnallinenpainotus', 'paostoiminta', 'paosoikeus'];
+  const henkilosto_models = ['tyontekija', 'tutkinto', 'palvelussuhde', 'tyoskentelypaikka', 'pidempipoissaolo',
+    'taydennyskoulutus', 'taydennyskoulutustyontekija', 'tilapainenhenkilosto'];
+
+  const nodesRaw = {{ meatballs|safe }};
+  // Clean node labels and re-group
+  nodesRaw.forEach(node => {
+    node.label = node.label.trim();
+    const modelName = node.id.replace('varda__', '')
+    node.group = vakatiedot_models.includes(modelName) ? 'vaka' : henkilosto_models.includes(modelName) ? 'henkilosto' : 'varda';
+  });
+
+  let edgesRaw = {{ spaghetti|safe }};
+  // Filter out duplicate connections
+  edgesRaw = edgesRaw.filter((edge, index) => {
+    return index === edgesRaw.findIndex(edgeIndex => {
+      return edge.from === edgeIndex.from && edge.to === edgeIndex.to;
+    })
+  });
+
+  const nodes = new vis.DataSet(nodesRaw);
+  const edges = new vis.DataSet(edgesRaw);
+  const data = {
+    nodes: nodes,
+    edges: edges
+  };
+
+  const container = document.getElementById('visualization');
+  const options = {
+    physics: {
+      enabled: false,
+      stabilization: {
+        enabled: true
+      },
+      hierarchicalRepulsion: {
+        nodeDistance: 200
+      },
+      solver: 'repulsion',
+      repulsion: {
+        nodeDistance: 150
+      }
+    },
+    edges: {
+      smooth: {
+        type: 'dynamic'
+      },
+      length: 200,
+      arrowStrikethrough: false,
+      arrows: {
+        to: {
+          type: 'arrow'
+        }
+      }
+    },
+    nodes: {
+      font: {
+        face: 'Open Sans'
+      },
+      margin: 10,
+      scaling: {
+        label: {
+          enabled: true
+        }
+      }
+    },
+    layout: {
+      hierarchical: {
+        enabled: false,
+        levelSeparation: 200,
+        sortMethod: 'hubsize',
+        direction: 'LR',
+        nodeSpacing: 200
+      }
+    },
+    groups: {
+      varda: {
+        color: {
+          background: '#64b5f6',
+          border: '#0288d1',
+          highlight: {
+            background: '#b3e5fc',
+            border: '#64b5f6'
+          }
+        }
+      },
+      vaka: {
+        color: {
+          background: '#4db6ac',
+          border: '#00796b',
+          highlight: {
+            background: '#b2dfdb',
+            border: '#4db6ac'
+          }
+        }
+      },
+      henkilosto: {
+        color: {
+          background: '#aed581',
+          border: '#689f38',
+          highlight: {
+            background: '#dcedc8',
+            border: '#aed581'
+          }
+        }
+      }
+    }
+  };
+
+  const network = new vis.Network(container, data, options);
+  network.stabilize();
+</script>

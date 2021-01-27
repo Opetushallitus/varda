@@ -2,7 +2,7 @@
   <div class="koodistot-wrapper">
     <div class="koodistot-header">
       <h1 class="page-header">
-        {{ translation.koodistot | translate}}
+        {{ translation.koodistot_title | translate}}
       </h1>
     </div>
     <div class="koodistot-nav">
@@ -10,7 +10,7 @@
               [ngModel]="selectedKoodisto"
               (ngModelChange)="selectKoodisto($event)"
               class="form-control">
-        <option value="" disabled>--{{ translation.choose | translate }}--</option>
+        <option value="" disabled>--{{ translation.koodistot_select | translate }}--</option>
         <option *ngFor="let koodistoName of koodistoNames | async"
                 [ngValue]="koodistoName">
           {{koodistoName}}
@@ -25,7 +25,7 @@
       </div>
     </div>
     <div class="koodistot-content">
-      <p *ngIf="selectedKoodisto === ''">{{ translation.prompt_koodistot_select_koodisto | translate}}</p>
+      <p *ngIf="selectedKoodisto === ''">{{ translation.koodistot_no_selection | translate}}</p>
       <router-outlet></router-outlet>
     </div>
   </div>

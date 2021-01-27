@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subject, Subscription, BehaviorSubject } from 'rxjs';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { PublicKoodistotService } from '../../services/public-koodistot.service';
 import { PublicResponsiveService } from '../../services/public-responsive.service';
 import { PublicTranslations } from 'projects/public-app/src/assets/i18n/translations.enum';
@@ -10,7 +10,7 @@ import { PublicTranslations } from 'projects/public-app/src/assets/i18n/translat
   templateUrl: './public-koodistot.component.html',
   styleUrls: ['./public-koodistot.component.css']
 })
-export class PublicKoodistotComponent  implements OnInit, OnDestroy {
+export class PublicKoodistotComponent implements OnInit, OnDestroy {
   translation = PublicTranslations;
   koodistoNames: Subject<Array<string>>;
   isSmall: BehaviorSubject<boolean>;
@@ -41,5 +41,6 @@ export class PublicKoodistotComponent  implements OnInit, OnDestroy {
     this.subscriptions.forEach(subscription => {
       subscription.unsubscribe();
     });
+    this.publicKoodistotService.updateSelectedKoodisto('');
   }
 }

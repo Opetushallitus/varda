@@ -1,4 +1,5 @@
 .koodistot-wrapper {
+  margin: 3em 0;
   display: grid;
   grid-template-columns: min-content auto;
   grid-template-areas:

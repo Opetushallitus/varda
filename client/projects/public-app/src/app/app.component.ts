@@ -45,7 +45,7 @@ export class AppComponent implements OnInit {
     this.pageTitleTranslations = [];
     this.pageTitleStatic = [];
 
-    this.pageTitleTranslations.push(this.translation.varda_virallinen);
+    this.pageTitleTranslations.push(this.translation.varda_title);
 
     let snapshot = this.router.routerState.root.snapshot.firstChild;
     while (snapshot) {

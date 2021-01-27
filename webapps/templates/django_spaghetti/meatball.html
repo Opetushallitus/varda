@@ -1,0 +1,29 @@
+<!--
+Overrides https://github.com/LegoStormtroopr/django-spaghetti-and-meatballs/blob/master/django_spaghetti/templates/django_spaghetti/meatball.html
+-->
+{% load i18n %}
+<div style="max-width: 350px;white-space: normal;font-family: 'Open Sans', sans-serif;">
+  <div style="border-bottom: 1px solid black">
+    {% if model_meta.is_proxy %}
+      {% trans 'Proxy for:' %} {{ model_meta.proxy }} <br>
+    {% endif %}
+    {% trans 'Model:' %} {{ model_meta.model_name }}<br>
+    {% trans 'App:' %} {{ model_meta.app_label }}
+  </div>
+  <div style="white-space: pre-line">
+    {{ model.doc }}
+  </div>
+  <br>
+  {% if fields %}
+    <b>{% trans 'Fields:' %}</b>
+    <ul>
+      {% for field in fields %}
+        <li>
+          {% if field.unique %}<u>{{field.name}}</u>{%else%}{{field.name}}{%endif%}
+          <small>{{field.get_internal_type}}</small><br>
+          <small>{{field.help_text}}</small>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</div>

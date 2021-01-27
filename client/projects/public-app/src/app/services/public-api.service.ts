@@ -4,11 +4,13 @@ import { HttpHeaders } from '@angular/common/http';
 import { LoadingHttpService } from 'varda-shared';
 import { environment } from '../../environments/environment';
 import { KoodistoDto } from '../models/koodisto-dto';
+import { VardaApiServiceInterface } from 'varda-shared/lib/dto/vardaApiService.interface';
+import { PublicTranslations } from '../../assets/i18n/translations.enum';
 
 @Injectable({
   providedIn: 'root'
 })
-export class PublicApiService {
+export class PublicApiService implements VardaApiServiceInterface {
   private julkinenApiPath = `${environment.publicAppUrl}/api/julkinen`;
 
   constructor(private http: LoadingHttpService) { }
@@ -29,5 +31,17 @@ export class PublicApiService {
       });
       return url.slice(0, -1);
     }
+  }
+
+  getLocalizationApi(): string {
+    return `${environment.publicAppUrl}/api/julkinen/v1/localisation`;
+  }
+
+  getTranslationCategory(): string {
+    return environment.localizationCategory;
+  }
+
+  getTranslationEnum(): object {
+    return PublicTranslations;
   }
 }

@@ -6,25 +6,29 @@ import { AppComponent } from './app.component';
 import { PublicHeaderComponent } from './components/public-header/public-header.component';
 import { PublicKoodistotComponent } from './components/public-koodistot/public-koodistot.component';
 import { PublicKoodistotDetailComponent } from './components/public-koodistot/public-koodistot-detail/public-koodistot-detail.component';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { TranslateHttpLoader } from '@ngx-translate/http-loader';
+import { HttpClientModule } from '@angular/common/http';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 import { MatIconModule } from '@angular/material/icon';
-import { VardaSharedModule } from 'varda-shared';
+import { HttpService, VardaSharedModule, VardaTranslateLoader } from 'varda-shared';
 import { FormsModule } from '@angular/forms';
-
-// AoT requires an exported function for factories
-export function HttpLoaderFactory(http: HttpClient) {
-  const path = './assets/i18n/';
-  return new TranslateHttpLoader(http, path, '.json');
-}
+import { PublicIframeComponent } from './components/public-iframe/public-iframe.component';
+import { IFrameResizerDirective } from './directives/iframe-resizer.directive';
+import { PublicSwaggerComponent } from './components/public-swagger/public-swagger.component';
+import { PublicDataModelComponent } from './components/public-model-visualization/public-data-model.component';
+import { PublicApiService } from './services/public-api.service';
+import { PublicNotFoundComponent } from './components/public-not-found/public-not-found.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     PublicHeaderComponent,
     PublicKoodistotComponent,
-    PublicKoodistotDetailComponent
+    PublicKoodistotDetailComponent,
+    PublicIframeComponent,
+    PublicSwaggerComponent,
+    PublicDataModelComponent,
+    PublicNotFoundComponent,
+    IFrameResizerDirective
   ],
   imports: [
     BrowserModule,
@@ -34,8 +38,8 @@ export function HttpLoaderFactory(http: HttpClient) {
     TranslateModule.forRoot({
       loader: {
         provide: TranslateLoader,
-        useFactory: (HttpLoaderFactory),
-        deps: [HttpClient]
+        useClass: VardaTranslateLoader,
+        deps: [HttpService, PublicApiService]
       }
     }),
     MatIconModule,
