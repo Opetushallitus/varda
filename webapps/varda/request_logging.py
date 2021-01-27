@@ -49,9 +49,9 @@ def _request_log_dispatch_decorator(function, target_path):
                 request_body = json.dumps(request_body_object, cls=DjangoJSONEncoder)
                 lahdejarjestelma = str(request_body_object.get('lahdejarjestelma', ''))
                 validate_lahdejarjestelma_koodi(lahdejarjestelma)
-            except JSONDecodeError as decodeError:
-                logger.warning(f'{decodeError}, request body: {request.body}')
-                request_body = request.body.decode('utf-8')
+            except (JSONDecodeError, UnicodeDecodeError) as decodeError:
+                request_body = request.body.decode('utf-8', 'ignore')
+                logger.warning(f'{decodeError}, request body: {request_body}')
             except (ValidationError, AttributeError):
                 # Error validating lahdejarjestelma code
                 lahdejarjestelma = None
