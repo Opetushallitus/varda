@@ -134,12 +134,10 @@ nested_vakajarjestaja_router.register(r'paos-toimijat', viewsets.NestedVakajarje
 nested_vakajarjestaja_router.register(r'paos-toimipaikat', viewsets.NestedVakajarjestajaPaosToimipaikatViewSet)
 
 # Routes for ONR-URLs
-
 router_onr = routers.DefaultRouter()
 router_onr.register(r'external-permissions', viewsets.ExternalPermissionsViewSet, 'external-permissions')
 
 # Routes for Reporting-URLs
-
 router_reporting = routers.DefaultRouter()
 # /api/reporting/v1/tiedonsiirtotilasto/
 router_reporting.register(r'tiedonsiirtotilasto', viewsets_reporting.TiedonsiirtotilastoViewSet, basename="tiedonsiirtotilasto")
@@ -164,13 +162,18 @@ router_kela_reporting.register(r'korjaustiedotpoistetut', viewsets_reporting.Kel
 router_reporting.register(r'lapset-ryhmittain', viewsets_reporting.LapsetRyhmittainViewSet, 'lapset-ryhmittain')
 """
 
-"""
-Routers for oppija
-"""
+# Routes for Oppija-URLs
 router_oppija = routers.DefaultRouter()
+# /api/oppija/v1/henkilotiedot/{oid}/
+router_oppija.register(r'henkilotiedot', viewsets_oppija.HenkilotiedotViewSet)
+# /api/oppija/v1/varhaiskasvatustiedot/{oid}/
+router_oppija.register(r'varhaiskasvatustiedot', viewsets_oppija.VarhaiskasvatustiedotViewSet)
+# /api/oppija/v1/huoltajatiedot/{oid}/
+router_oppija.register(r'huoltajatiedot', viewsets_oppija.HuoltajatiedotViewSet)
+# /api/oppija/v1/tyontekijatiedot/{oid}/
+router_oppija.register(r'tyontekijatiedot', viewsets_oppija.TyontekijatiedotViewSet)
 
 # Routes for Henkilöstö-URLs
-
 router_henkilosto = routers.DefaultRouter()
 router_henkilosto.register(r'tyontekijat', viewsets_henkilosto.TyontekijaViewSet)
 router_henkilosto.register(r'tilapainen-henkilosto', viewsets_henkilosto.TilapainenHenkilostoViewSet)
@@ -185,7 +188,6 @@ nested_tyontekija_router = nested_routers.NestedSimpleRouter(router_henkilosto, 
 nested_tyontekija_router.register(r'kooste', viewsets_henkilosto.NestedTyontekijaKoosteViewSet)
 
 # Routes for Julkinen-URLs
-
 router_julkinen = routers.DefaultRouter()
 # /api/julkinen/v1/koodistot/
 router_julkinen.register(r'koodistot', viewsets_julkinen.KoodistotViewSet)
@@ -251,10 +253,8 @@ urlpatterns = [
     re_path(r'^varda/', include('varda.urls'), name='varda'),
     re_path(r'^api/henkilosto/v1/', include(router_henkilosto.urls), name='api-henkilosto-v1'),
     re_path(r'^api/henkilosto/v1/', include(nested_tyontekija_router.urls), name='api-nested-tyontekija-v1'),
-    re_path(r'^api/oppija/v1/', include(router_oppija.urls), name='oppija-api-v1'),
-    re_path(r'^api/oppija/v1/huoltajanlapsi/(?P<henkilo_oid>[.0-9]{26,})/$',
-            viewsets_oppija.HuoltajanLapsiViewSet.as_view({'get': 'retrieve'}), name='huoltajanlapsi'),
-    re_path(r'^api/julkinen/v1/', include(router_julkinen.urls), name='julkinen'),
+    re_path(r'^api/oppija/v1/', include(router_oppija.urls), name='api-oppija-v1'),
+    re_path(r'^api/julkinen/v1/', include(router_julkinen.urls), name='api-julkinen-v1'),
     re_path(r'^api/julkinen/v1/swagger/$', public_swagger_view, name='swagger-public'),
     re_path(r'^api/julkinen/v1/data-model/$', model_visualization_view, name='data-model-public'),
 ]

@@ -1,68 +1,62 @@
-from rest_framework import mixins
+import logging
+
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.http import Http404
+from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.viewsets import GenericViewSet
 
-import datetime
-import logging
-from rest_framework.response import Response
-from django.db.models import Q
-from django.http import Http404
-from varda.cas import varda_permissions
-from varda.models import Varhaiskasvatuspaatos, Henkilo, Lapsi
-from varda.serializers_oppija import HuoltajanLapsiSerializer
+from varda.cas.varda_permissions import HasOppijaPermissions
+from varda.models import Henkilo
+from varda.serializers_oppija import (HuoltajatiedotSerializer, TyontekijatiedotSerializer, HenkilotiedotSerializer,
+                                      VarhaiskasvatustiedotSerializer)
 from varda.permissions import auditlogclass
 
 logger = logging.getLogger(__name__)
 
 
-@auditlogclass
-class HuoltajanLapsiViewSet(GenericViewSet, mixins.RetrieveModelMixin):
-    """
-    Returns data for Huoltaja
-    """
-    queryset = Henkilo.objects.none()
-    serializer_class = HuoltajanLapsiSerializer
-    permission_classes = (varda_permissions.IsHuoltajaForChild, )
+class AbstractOppijaViewSet(GenericViewSet, RetrieveModelMixin):
+    queryset = Henkilo.objects.all()
+    permission_classes = (HasOppijaPermissions,)
     lookup_field = 'henkilo_oid'
+    lookup_value_regex = r'[.0-9]{26,}'
 
-    def retrieve(self, request, **kwargs):
-        henkilo_oid = kwargs['henkilo_oid']
-
-        data = self.get_queryset(henkilo_oid=henkilo_oid)
-        serializer = self.get_serializer(instance=data)
-
-        return Response(serializer.data)
-
-    def get_queryset(self, henkilo_oid=None, *args, **kwargs):
-        """
-        Note: related permission handling is done in custom_auth.py oppija_post_login_handler function
-        """
-        today = datetime.datetime.now(datetime.timezone.utc)
+    def get_object(self):
+        henkilo_oid = self.kwargs[self.lookup_field]
 
         try:
-            henkilo = Henkilo.objects.get(henkilo_oid=henkilo_oid)
-        except Henkilo.DoesNotExist:
+            henkilo = self.get_queryset().get(henkilo_oid=henkilo_oid)
+        except ObjectDoesNotExist:
             raise Http404
-        except Henkilo.MultipleObjectsReturned:  # This should not be possible
+        except MultipleObjectsReturned:
+            # This should not be possible
             logger.error('Multiple of henkilot was found with henkilo_oid: {}'.format(henkilo_oid))
             raise Http404
 
-        if henkilo.turvakielto:
+        user = self.request.user
+        if (hasattr(user, 'additional_user_info') and
+                ((huollettava_oid_list := getattr(user.additional_user_info, 'huollettava_oid_list', None)) and
+                 henkilo_oid in huollettava_oid_list) and henkilo.turvakielto):
+            # If user gets information of huollettava and target henkilo has turvakielto, raise 404
             raise Http404
 
-        lapset = (Lapsi.objects.filter(henkilo=henkilo)
-                               .prefetch_related('varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja')
-                               .select_related('oma_organisaatio'))
+        return henkilo
 
-        voimassaolo_filter = (Q(alkamis_pvm__lte=today) & (Q(paattymis_pvm__gte=today) | Q(paattymis_pvm=None)))
 
-        voimassaolevat_vakapaatokset = (Varhaiskasvatuspaatos.objects
-                                        .filter(voimassaolo_filter & Q(lapsi__henkilo=henkilo))
-                                        .distinct('id')
-                                        .order_by('id', 'alkamis_pvm')
-                                        .count()
-                                        )
+@auditlogclass
+class HenkilotiedotViewSet(AbstractOppijaViewSet):
+    serializer_class = HenkilotiedotSerializer
 
-        return {'henkilo': henkilo,
-                'lapset': lapset,
-                'voimassaolevia_varhaiskasvatuspaatoksia': voimassaolevat_vakapaatokset,
-                }
+
+@auditlogclass
+class VarhaiskasvatustiedotViewSet(AbstractOppijaViewSet):
+    serializer_class = VarhaiskasvatustiedotSerializer
+
+
+@auditlogclass
+class HuoltajatiedotViewSet(AbstractOppijaViewSet):
+    serializer_class = HuoltajatiedotSerializer
+
+
+@auditlogclass
+class TyontekijatiedotViewSet(AbstractOppijaViewSet):
+    serializer_class = TyontekijatiedotSerializer

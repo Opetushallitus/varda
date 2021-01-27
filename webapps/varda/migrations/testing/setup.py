@@ -2451,7 +2451,7 @@ def create_user_data():
     Z3_AdditionalCasUserFields.objects.create(
         user_id=tester2_user.id,
         kayttajatyyppi='VIRKAILIJA',
-        henkilo_oid='1.2.345678911',
+        henkilo_oid='1.2.246.562.24.6722258949565',
         asiointikieli_koodi='fi',
         approved_oph_staff=False,
         last_modified='2019-01-24 12:00:00+1459'

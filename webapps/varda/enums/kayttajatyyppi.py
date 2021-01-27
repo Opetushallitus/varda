@@ -1,0 +1,10 @@
+import enum
+
+
+class Kayttajatyyppi(enum.Enum):
+    ADMIN = 'ADMIN'
+    OPH_STAFF = 'OPH_STAFF'
+    VIRKAILIJA = 'VIRKAILIJA'
+    PALVELU = 'PALVELU'
+    OPPIJA_CAS = 'OPPIJA_CAS'
+    OPPIJA_CAS_VALTUUDET = 'OPPIJA_CAS_VALTUUDET'

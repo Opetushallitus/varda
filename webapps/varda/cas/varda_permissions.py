@@ -2,27 +2,37 @@ from django.contrib.auth.models import Group
 from rest_framework.permissions import IsAdminUser
 from rest_framework.viewsets import GenericViewSet
 
-from varda.models import Henkilo, Z4_CasKayttoOikeudet
+from varda.enums.kayttajatyyppi import Kayttajatyyppi
+from varda.models import Z4_CasKayttoOikeudet
 
 
-class IsHuoltajaForChild(IsAdminUser):
+class HasOppijaPermissions(IsAdminUser):
     """
-    Allow huoltaja access child data when impersonating the child. Basically the child has access to his own data and
-    parent logs in as the child.
+    Return True if user has logged in from Oppija CAS and user's henkilo_oid or huoltaja_oid is same as requested
     """
     def has_permission(self, request, view):
-        user = request.user
-        if super().has_permission(request, view):
+        if super(HasOppijaPermissions, self).has_permission(request, view):
             return True
-        if (not user.is_anonymous and
-                isinstance(view, GenericViewSet) and
-                view.queryset.model == Henkilo and
-                hasattr(user, 'additional_user_info') and
-                getattr(user.additional_user_info, 'henkilo_oid', False) and
-                hasattr(user.additional_user_info, 'huoltaja_oid')):
-            henkilo_oid = view.kwargs.get('henkilo_oid')
-            return henkilo_oid and henkilo_oid == user.additional_user_info.henkilo_oid
-        return False
+
+        user = request.user
+        additional_user_info = getattr(user, 'additional_user_info', None)
+
+        if user.is_anonymous or not additional_user_info:
+            return False
+
+        kayttajatyyppi = getattr(additional_user_info, 'kayttajatyyppi', None)
+        if kayttajatyyppi not in [Kayttajatyyppi.OPPIJA_CAS.value, Kayttajatyyppi.OPPIJA_CAS_VALTUUDET.value]:
+            return False
+
+        requested_henkilo_oid = view.kwargs.get('henkilo_oid')
+
+        allowed_oid_list = []
+        if henkilo_oid := getattr(additional_user_info, 'henkilo_oid', None):
+            allowed_oid_list.append(henkilo_oid)
+        if huollettava_oid_list := getattr(additional_user_info, 'huollettava_oid_list', None):
+            allowed_oid_list.extend(huollettava_oid_list)
+
+        return requested_henkilo_oid in allowed_oid_list
 
 
 class IsVardaPaakayttaja(IsAdminUser):

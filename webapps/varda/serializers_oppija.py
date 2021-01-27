@@ -1,25 +1,75 @@
 import datetime
-from varda.models import Henkilo, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Lapsi
+
+from django.contrib.postgres.aggregates import ArrayAgg
+from django.db.models import Q
+
+from varda.models import (Henkilo, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Lapsi, Huoltajuussuhde, Maksutieto,
+                          Tyontekija, Palvelussuhde, TaydennyskoulutusTyontekija, Tyoskentelypaikka, PidempiPoissaolo,
+                          Tutkinto, Toimipaikka)
 from varda.misc import decrypt_henkilotunnus
 from rest_framework import serializers
 
 
-"""
-Huoltajanakyma serializers
-"""
+class AbstractAktiivinenToimijaYhteystietoSerializer(serializers.ModelSerializer):
+    """
+    Serializers extending this serializer need to define vakajarjestaja_path in Meta class.
+    e.g.
+    class Meta:
+        vakajarjestaja_path = ['lapsi', 'vakatoimija']
+    or for multiple choices (parsed in order and first match is accepted)
+    class Meta:
+        vakajarjestaja_path = [['lapsi', 'vakatoimija'], ['lapsi', 'oma_organisaatio']]
+    """
+    yhteysosoite = serializers.SerializerMethodField(read_only=True)
+    aktiivinen_toimija = serializers.SerializerMethodField(read_only=True)
+
+    def _parse_vakajarjestaja_path(self, instance, vakajarjestaja_path):
+        vakajarjestaja = instance
+        for path_item in vakajarjestaja_path:
+            if isinstance(path_item, list):
+                vakajarjestaja = self._parse_vakajarjestaja_path(instance, path_item)
+                if vakajarjestaja:
+                    return vakajarjestaja
+            else:
+                vakajarjestaja = getattr(vakajarjestaja, path_item, None)
+        return vakajarjestaja
+
+    def _get_vakajarjestaja_object(self, instance):
+        if not hasattr(self, 'Meta') or not hasattr(self.Meta, 'vakajarjestaja_path'):
+            raise NotImplementedError('Meta.vakajarjestaja_path')
+        return self._parse_vakajarjestaja_path(instance, self.Meta.vakajarjestaja_path)
+
+    def get_yhteysosoite(self, instance):
+        aktiivinen_toimija = self.get_aktiivinen_toimija(instance)
+        vakajarjestaja = self._get_vakajarjestaja_object(instance)
+        if vakajarjestaja and aktiivinen_toimija:
+            return vakajarjestaja.sahkopostiosoite
+        return None
+
+    def get_aktiivinen_toimija(self, instance):
+        now = datetime.date.today()
+        vakajarjestaja = self._get_vakajarjestaja_object(instance)
+        if not vakajarjestaja:
+            return None
+        return vakajarjestaja.paattymis_pvm is None or vakajarjestaja.paattymis_pvm >= now
 
 
-class HuoltajanLapsiToimipaikkaSerializer(serializers.Serializer):
+class OppijaVarhaiskasvatussuhdeToimipaikkaSerializer(serializers.ModelSerializer):
     toimipaikka_nimi = serializers.ReadOnlyField(source='nimi')
     toimipaikka_kunta_koodi = serializers.ReadOnlyField(source='kunta_koodi')
 
+    class Meta:
+        model = Toimipaikka
+        fields = ('toimipaikka_nimi', 'toimipaikka_kunta_koodi')
 
-class HuoltajanLapsiVarhaiskasvatussuhdeSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField()
-    alkamis_pvm = serializers.ReadOnlyField()
-    paattymis_pvm = serializers.ReadOnlyField()
-    toimipaikka = HuoltajanLapsiToimipaikkaSerializer()
-    yhteysosoite = serializers.SerializerMethodField()
+
+class OppijaVarhaiskasvatussuhdeSerializer(serializers.ModelSerializer):
+    toimipaikka = OppijaVarhaiskasvatussuhdeToimipaikkaSerializer(read_only=True)
+    yhteysosoite = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Varhaiskasvatussuhde
+        fields = ('id', 'alkamis_pvm', 'paattymis_pvm', 'toimipaikka', 'yhteysosoite')
 
     def get_yhteysosoite(self, obj):
         if obj.toimipaikka.toimintamuoto_koodi in ['tm02', 'tm03']:
@@ -27,53 +77,27 @@ class HuoltajanLapsiVarhaiskasvatussuhdeSerializer(serializers.ModelSerializer):
         else:
             return obj.toimipaikka.sahkopostiosoite
 
-    class Meta:
-        model = Varhaiskasvatussuhde
-        exclude = ('luonti_pvm', 'changed_by', 'muutos_pvm', 'varhaiskasvatuspaatos')
 
-
-class HuoltajanLapsiVarhaiskasvatuspaatosSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField()
-    alkamis_pvm = serializers.ReadOnlyField()
-    hakemus_pvm = serializers.ReadOnlyField()
-    paattymis_pvm = serializers.ReadOnlyField()
-    paivittainen_vaka_kytkin = serializers.ReadOnlyField()
-    kokopaivainen_vaka_kytkin = serializers.ReadOnlyField()
-    tilapainen_vaka_kytkin = serializers.ReadOnlyField()
-    jarjestamismuoto_koodi = serializers.ReadOnlyField()
-    vuorohoito_kytkin = serializers.ReadOnlyField()
-    pikakasittely_kytkin = serializers.ReadOnlyField()
-    tuntimaara_viikossa = serializers.ReadOnlyField()
-    varhaiskasvatussuhteet = HuoltajanLapsiVarhaiskasvatussuhdeSerializer(many=True)
+class OppijaVarhaiskasvatuspaatosSerializer(serializers.ModelSerializer):
+    varhaiskasvatussuhteet = OppijaVarhaiskasvatussuhdeSerializer(many=True, read_only=True)
 
     class Meta:
         model = Varhaiskasvatuspaatos
-        exclude = ('luonti_pvm', 'lapsi', 'changed_by', 'muutos_pvm',)
+        fields = ('id', 'alkamis_pvm', 'hakemus_pvm', 'paattymis_pvm', 'paivittainen_vaka_kytkin',
+                  'kokopaivainen_vaka_kytkin', 'tilapainen_vaka_kytkin', 'jarjestamismuoto_koodi', 'vuorohoito_kytkin',
+                  'pikakasittely_kytkin', 'tuntimaara_viikossa', 'varhaiskasvatussuhteet')
 
 
-class HuoltajanLapsiLapsiSerializer(serializers.ModelSerializer):
-    yhteysosoite = serializers.SerializerMethodField()
-    varhaiskasvatuksen_jarjestaja = serializers.SerializerMethodField()
-    aktiivinen_toimija = serializers.SerializerMethodField()
-    varhaiskasvatuspaatokset = HuoltajanLapsiVarhaiskasvatuspaatosSerializer(many=True)
+class OppijaLapsiSerializer(AbstractAktiivinenToimijaYhteystietoSerializer):
+    yhteysosoite = serializers.SerializerMethodField(read_only=True)
+    varhaiskasvatuksen_jarjestaja = serializers.SerializerMethodField(read_only=True)
+    aktiivinen_toimija = serializers.SerializerMethodField(read_only=True)
+    varhaiskasvatuspaatokset = OppijaVarhaiskasvatuspaatosSerializer(many=True, read_only=True)
 
-    def get_yhteysosoite(self, obj):
-        aktiivinen_toimija = self.get_aktiivinen_toimija(obj)
-        if obj.vakatoimija is not None and aktiivinen_toimija:
-            return obj.vakatoimija.sahkopostiosoite
-        if obj.oma_organisaatio is not None and aktiivinen_toimija:
-            return obj.oma_organisaatio.sahkopostiosoite
-        return None
-
-    def get_aktiivinen_toimija(self, obj):
-        now = datetime.date.today()
-        if obj.vakatoimija is not None:
-            if obj.vakatoimija.paattymis_pvm is not None and obj.vakatoimija.paattymis_pvm < now:
-                return False
-        if obj.oma_organisaatio is not None:
-            if obj.oma_organisaatio.paattymis_pvm is not None and obj.oma_organisaatio.paattymis_pvm < now:
-                return False
-        return True
+    class Meta:
+        model = Lapsi
+        fields = ('id', 'yhteysosoite', 'varhaiskasvatuksen_jarjestaja', 'aktiivinen_toimija', 'varhaiskasvatuspaatokset')
+        vakajarjestaja_path = [['vakatoimija'], ['oma_organisaatio']]
 
     def get_varhaiskasvatuksen_jarjestaja(self, obj):
         if obj.vakatoimija is not None:
@@ -87,27 +111,179 @@ class HuoltajanLapsiLapsiSerializer(serializers.ModelSerializer):
                 return vakasuhde_first.toimipaikka.vakajarjestaja.nimi
         return None
 
+
+class OppijaMaksutietoSerializer(serializers.ModelSerializer):
+    huoltaja_lkm = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
-        model = Lapsi
-        exclude = ('vakatoimija', 'paos_kytkin', 'oma_organisaatio', 'paos_organisaatio', 'henkilo', 'luonti_pvm',
-                   'changed_by', 'muutos_pvm',)
+        model = Maksutieto
+        fields = ('id', 'yksityinen_jarjestaja', 'maksun_peruste_koodi', 'palveluseteli_arvo', 'asiakasmaksu',
+                  'perheen_koko', 'alkamis_pvm', 'paattymis_pvm', 'huoltaja_lkm')
+
+    def get_huoltaja_lkm(self, maksutieto):
+        return maksutieto.huoltajuussuhteet.count()
 
 
-class HuoltajanLapsiHenkiloSerializer(serializers.ModelSerializer):
-    henkilotunnus = serializers.SerializerMethodField()
+class OppijaHuoltajuussuhdeSerializer(AbstractAktiivinenToimijaYhteystietoSerializer):
+    lapsi_etunimet = serializers.ReadOnlyField(source='lapsi.henkilo.etunimet')
+    lapsi_kutsumanimi = serializers.ReadOnlyField(source='lapsi.henkilo.kutsumanimi')
+    lapsi_sukunimi = serializers.ReadOnlyField(source='lapsi.henkilo.sukunimi')
+    lapsi_henkilo_id = serializers.ReadOnlyField(source='lapsi.henkilo_id')
+    lapsi_henkilo_oid = serializers.ReadOnlyField(source='lapsi.henkilo.henkilo_oid')
+    vakatoimija_id = serializers.ReadOnlyField(source='lapsi.vakatoimija_id')
+    vakatoimija_oid = serializers.ReadOnlyField(source='lapsi.vakatoimija.organisaatio_oid')
+    vakatoimija_nimi = serializers.ReadOnlyField(source='lapsi.vakatoimija.nimi')
+    oma_organisaatio_id = serializers.ReadOnlyField(source='lapsi.oma_organisaatio_id')
+    oma_organisaatio_oid = serializers.ReadOnlyField(source='lapsi.oma_organisaatio.organisaatio_oid')
+    oma_organisaatio_nimi = serializers.ReadOnlyField(source='lapsi.oma_organisaatio.nimi')
+    paos_organisaatio_id = serializers.ReadOnlyField(source='lapsi.paos_organisaatio_id')
+    paos_organisaatio_oid = serializers.ReadOnlyField(source='lapsi.paos_organisaatio.organisaatio_oid')
+    paos_organisaatio_nimi = serializers.ReadOnlyField(source='lapsi.paos_organisaatio.nimi')
+    maksutiedot = OppijaMaksutietoSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Huoltajuussuhde
+        fields = ('lapsi_id', 'lapsi_etunimet', 'lapsi_kutsumanimi', 'lapsi_sukunimi', 'lapsi_henkilo_id',
+                  'lapsi_henkilo_oid', 'vakatoimija_id', 'vakatoimija_oid', 'vakatoimija_nimi', 'oma_organisaatio_id',
+                  'oma_organisaatio_oid', 'oma_organisaatio_nimi', 'paos_organisaatio_id', 'paos_organisaatio_oid',
+                  'paos_organisaatio_nimi', 'aktiivinen_toimija', 'yhteysosoite', 'voimassa_kytkin', 'maksutiedot')
+        vakajarjestaja_path = [['lapsi', 'vakatoimija'], ['lapsi', 'oma_organisaatio']]
+
+
+class OppijaPidempiPoissaoloSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PidempiPoissaolo
+        fields = ('id', 'alkamis_pvm', 'paattymis_pvm')
+
+
+class OppijaTyoskentelypaikkaSerializer(serializers.ModelSerializer):
+    toimipaikka_nimi = serializers.ReadOnlyField(source='toimipaikka.nimi')
+    toimipaikka_oid = serializers.ReadOnlyField(source='toimipaikka.organisaatio_oid')
+
+    class Meta:
+        model = Tyoskentelypaikka
+        fields = ('id', 'toimipaikka_id', 'toimipaikka_oid', 'toimipaikka_nimi', 'tehtavanimike_koodi',
+                  'kelpoisuus_kytkin', 'kiertava_tyontekija_kytkin', 'alkamis_pvm', 'paattymis_pvm')
+
+
+class OppijaPalvelussuhdeSerializer(serializers.ModelSerializer):
+    tyoskentelypaikat = OppijaTyoskentelypaikkaSerializer(many=True, read_only=True)
+    pidemmat_poissaolot = OppijaPidempiPoissaoloSerializer(source='pidemmatpoissaolot', many=True, read_only=True)
+
+    class Meta:
+        model = Palvelussuhde
+        fields = ('id', 'tyosuhde_koodi', 'tyoaika_koodi', 'tyoaika_viikossa', 'tutkinto_koodi', 'alkamis_pvm',
+                  'paattymis_pvm', 'tyoskentelypaikat', 'pidemmat_poissaolot')
+
+
+class OppijaTaydennyskoulutusSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField(source='taydennyskoulutus__id')
+    nimi = serializers.ReadOnlyField(source='taydennyskoulutus__nimi')
+    suoritus_pvm = serializers.ReadOnlyField(source='taydennyskoulutus__suoritus_pvm')
+    koulutuspaivia = serializers.ReadOnlyField(source='taydennyskoulutus__koulutuspaivia')
+    tehtavanimike_koodi_list = serializers.ReadOnlyField()
+
+    class Meta:
+        model = TaydennyskoulutusTyontekija
+        fields = ('id', 'tehtavanimike_koodi_list', 'nimi', 'suoritus_pvm', 'koulutuspaivia')
+
+
+class OppijaTutkintoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tutkinto
+        fields = ('id', 'tutkinto_koodi')
+
+
+class OppijaTyontekijaSerializer(AbstractAktiivinenToimijaYhteystietoSerializer):
+    vakajarjestaja_nimi = serializers.ReadOnlyField(source='vakajarjestaja.nimi')
+    vakajarjestaja_oid = serializers.ReadOnlyField(source='vakajarjestaja.organisaatio_oid')
+    tutkinnot = serializers.SerializerMethodField(read_only=True)
+    palvelussuhteet = OppijaPalvelussuhdeSerializer(many=True, read_only=True)
+    taydennyskoulutukset = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Tyontekija
+        fields = ('id', 'vakajarjestaja_id', 'vakajarjestaja_oid', 'vakajarjestaja_nimi', 'aktiivinen_toimija',
+                  'yhteysosoite', 'tutkinnot', 'palvelussuhteet', 'taydennyskoulutukset')
+        vakajarjestaja_path = ['vakajarjestaja']
+
+    def get_tutkinnot(self, tyontekija):
+        tutkinnot_qs = tyontekija.henkilo.tutkinnot.filter(vakajarjestaja=tyontekija.vakajarjestaja)
+        return OppijaTutkintoSerializer(instance=tutkinnot_qs, many=True).data
+
+    def get_taydennyskoulutukset(self, tyontekija):
+        qs = tyontekija.taydennyskoulutukset_tyontekijat
+        qs = (qs.values('taydennyskoulutus__id', 'taydennyskoulutus__nimi',
+                        'taydennyskoulutus__suoritus_pvm', 'taydennyskoulutus__koulutuspaivia')
+              .annotate(tehtavanimike_koodi_list=ArrayAgg('tehtavanimike_koodi')))
+        return OppijaTaydennyskoulutusSerializer(instance=qs, many=True, read_only=True).data
+
+
+class HenkilotiedotSerializer(serializers.ModelSerializer):
+    henkilotunnus = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Henkilo
-        lookup_field = 'henkilo_oid'
-        fields = ('henkilo_oid', 'henkilotunnus', 'etunimet', 'kutsumanimi', 'sukunimi', 'aidinkieli_koodi',
+        fields = ('id', 'henkilo_oid', 'henkilotunnus', 'etunimet', 'kutsumanimi', 'sukunimi', 'aidinkieli_koodi',
                   'sukupuoli_koodi', 'syntyma_pvm', 'kotikunta_koodi', 'katuosoite', 'postinumero', 'postitoimipaikka')
 
-    def get_henkilotunnus(self, obj):
-        henkilotunnus = decrypt_henkilotunnus(obj.henkilotunnus)
-        return henkilotunnus
+    def get_henkilotunnus(self, henkilo):
+        """
+        Return decrypted henkilotunnus if huoltaja is getting henkilotiedot for huollettava, otherwise return None
+        :param henkilo: Henkilo object instance
+        :return: Decrypted henkilotunnus or None
+        """
+        viewset = self.context['view']
+        requested_henkilo_oid = viewset.kwargs[viewset.lookup_field]
+        user = self.context['request'].user
+        if (hasattr(user, 'additional_user_info') and
+                ((huollettava_oid_list := getattr(user.additional_user_info, 'huollettava_oid_list', None)) and
+                 requested_henkilo_oid in huollettava_oid_list)):
+            # User is getting henkilotiedot for huollettava
+            return decrypt_henkilotunnus(henkilo.henkilotunnus)
+        return None
 
 
-class HuoltajanLapsiSerializer(serializers.Serializer):
-    henkilo = HuoltajanLapsiHenkiloSerializer()
-    voimassaolevia_varhaiskasvatuspaatoksia = serializers.ReadOnlyField()
-    lapset = HuoltajanLapsiLapsiSerializer(many=True)
+class HuoltajatiedotSerializer(serializers.ModelSerializer):
+    huoltaja_id = serializers.ReadOnlyField(source='huoltaja.id')
+    huoltajuussuhteet = OppijaHuoltajuussuhdeSerializer(source='huoltaja.huoltajuussuhteet',
+                                                        many=True, read_only=True)
+
+    class Meta:
+        model = Henkilo
+        fields = ('huoltaja_id', 'huoltajuussuhteet')
+
+
+class TyontekijatiedotSerializer(serializers.ModelSerializer):
+    tyontekijat = OppijaTyontekijaSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Henkilo
+        fields = ('tyontekijat',)
+
+    def to_representation(self, henkilo):
+        data = super(TyontekijatiedotSerializer, self).to_representation(henkilo)
+        if not data['tyontekijat']:
+            data['tyontekijat'] = None
+        return data
+
+
+class VarhaiskasvatustiedotSerializer(serializers.ModelSerializer):
+    lapset = OppijaLapsiSerializer(many=True, source='lapsi', read_only=True)
+    voimassaolevia_varhaiskasvatuspaatoksia = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Henkilo
+        fields = ('lapset', 'voimassaolevia_varhaiskasvatuspaatoksia')
+
+    def to_representation(self, henkilo):
+        data = super(VarhaiskasvatustiedotSerializer, self).to_representation(henkilo)
+        if not data['lapset']:
+            data['lapset'] = None
+        return data
+
+    def get_voimassaolevia_varhaiskasvatuspaatoksia(self, henkilo):
+        today = datetime.date.today()
+        voimassa_filter = Q(alkamis_pvm__lte=today) & (Q(paattymis_pvm__gte=today) | Q(paattymis_pvm=None))
+
+        return Varhaiskasvatuspaatos.objects.filter(voimassa_filter & Q(lapsi__henkilo=henkilo)).distinct('id').count()

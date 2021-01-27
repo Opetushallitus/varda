@@ -13,13 +13,14 @@ from varda import validators
 from varda.cache import caching_to_representation
 from varda.constants import JARJESTAMISMUODOT_YKSITYINEN
 from varda.enums.error_messages import ErrorMessages
+from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.misc import list_of_dicts_has_duplicate_values
 from varda.misc_viewsets import ViewSetValidator
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Maksutieto, Henkilo,
                           Lapsi, Huoltaja, Huoltajuussuhde, PaosOikeus, PaosToiminta, Varhaiskasvatuspaatos,
                           Varhaiskasvatussuhde, Z3_AdditionalCasUserFields, Tyontekija)
 from varda.permissions import (check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement,
-                               user_belongs_to_correct_groups)
+                               user_belongs_to_correct_groups, is_oph_staff)
 from varda.serializers_common import OidRelatedField
 from varda.validators import (fill_missing_fields_for_validations, validate_henkilo_oid, validate_nimi,
                               validate_henkilotunnus_or_oid_needed, validate_organisaatio_oid)
@@ -95,53 +96,74 @@ User-specific viewsets below
 """
 
 
+class ActiveUserHuollettavaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Henkilo
+        fields = ('henkilo_oid', 'etunimet', 'kutsumanimi', 'sukunimi')
+
+
 class ActiveUserSerializer(serializers.ModelSerializer):
-    asiointikieli_koodi = serializers.SerializerMethodField()
-    henkilo_oid = serializers.SerializerMethodField()
+    asiointikieli_koodi = serializers.ReadOnlyField()
+    henkilo_oid = serializers.ReadOnlyField()
+    etunimet = serializers.ReadOnlyField()
+    kutsumanimi = serializers.ReadOnlyField()
+    sukunimi = serializers.ReadOnlyField()
+    huollettava_list = serializers.ReadOnlyField()
     kayttajatyyppi = serializers.SerializerMethodField()
     kayttooikeudet = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'asiointikieli_koodi', 'henkilo_oid', 'kayttajatyyppi', 'kayttooikeudet')
+        fields = ('username', 'email', 'asiointikieli_koodi', 'henkilo_oid', 'etunimet', 'kutsumanimi', 'sukunimi',
+                  'huollettava_list', 'kayttajatyyppi', 'kayttooikeudet')
 
-    def get_asiointikieli_koodi(self, obj):
-        try:
-            cas_user_obj = Z3_AdditionalCasUserFields.objects.get(user_id=obj.id)
-        except Z3_AdditionalCasUserFields.DoesNotExist:
-            return 'fi'
-        return cas_user_obj.asiointikieli_koodi
+    def to_representation(self, instance):
+        data = super(ActiveUserSerializer, self).to_representation(instance)
 
-    def get_henkilo_oid(self, obj):
-        try:
-            cas_user_obj = Z3_AdditionalCasUserFields.objects.get(user_id=obj.id)
-        except Z3_AdditionalCasUserFields.DoesNotExist:
-            return ''
-        return cas_user_obj.henkilo_oid
+        additional_user_info = Z3_AdditionalCasUserFields.objects.filter(user_id=instance.id).first()
+        if not additional_user_info:
+            data['asiointikieli_koodi'] = 'fi'
+            data['henkilo_oid'] = ''
+            return data
 
-    def get_kayttajatyyppi(self, obj):
-        user = obj
-        additional_details = getattr(user, 'additional_user_info', None)
-        is_oph_staff = getattr(additional_details, 'approved_oph_staff', False)
+        data['asiointikieli_koodi'] = additional_user_info.asiointikieli_koodi
+        henkilo_oid = additional_user_info.henkilo_oid
+        data['henkilo_oid'] = henkilo_oid
 
+        if additional_user_info.kayttajatyyppi in [Kayttajatyyppi.OPPIJA_CAS.value, Kayttajatyyppi.OPPIJA_CAS_VALTUUDET.value]:
+            # Extra info for CAS users
+            if henkilo_oid and (henkilo := Henkilo.objects.filter(henkilo_oid=henkilo_oid).first()):
+                data['etunimet'] = henkilo.etunimet
+                data['kutsumanimi'] = henkilo.kutsumanimi
+                data['sukunimi'] = henkilo.sukunimi
+            else:
+                # No Henkilo object for this user
+                data['etunimet'] = additional_user_info.etunimet
+                data['kutsumanimi'] = additional_user_info.kutsumanimi
+                data['sukunimi'] = additional_user_info.sukunimi
+
+            if huollettava_oid_list := additional_user_info.huollettava_oid_list:
+                data['huollettava_list'] = ActiveUserHuollettavaSerializer(
+                    instance=Henkilo.objects.filter(henkilo_oid__in=huollettava_oid_list), many=True
+                ).data
+
+        return data
+
+    def get_kayttajatyyppi(self, user):
         if user.is_superuser:
-            return 'ADMIN'
-        if is_oph_staff:
-            return 'OPH-STAFF'
-
+            return Kayttajatyyppi.ADMIN.value
+        if is_oph_staff(user):
+            return Kayttajatyyppi.OPH_STAFF.value
         try:
             cas_user_obj = Z3_AdditionalCasUserFields.objects.get(user_id=user.id)
         except Z3_AdditionalCasUserFields.DoesNotExist:
-            return ""
+            return ''
         return cas_user_obj.kayttajatyyppi
 
-    def get_kayttooikeudet(self, obj):
+    def get_kayttooikeudet(self, user):
         kayttooikeudet = []
-        user_groups = obj.groups.filter(Q(name__startswith='VARDA-') |
-                                        Q(name__startswith='HUOLTAJATIETO_') |
-                                        Q(name__startswith='HENKILOSTO_') |
-                                        Q(name__startswith='VARDA_')
-                                        )
+        user_groups = user.groups.filter(Q(name__startswith='VARDA-') | Q(name__startswith='HUOLTAJATIETO_') |
+                                         Q(name__startswith='HENKILOSTO_') | Q(name__startswith='VARDA_'))
         for user_group in user_groups:
             user_group_name = user_group.name.rsplit('_', maxsplit=1)
             kayttooikeus = user_group_name[0]

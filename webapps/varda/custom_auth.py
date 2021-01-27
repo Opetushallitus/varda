@@ -21,6 +21,7 @@ from rest_framework.authtoken.models import Token
 from varda import kayttooikeuspalvelu
 from varda.clients.organisaatio_client import is_not_valid_vaka_organization_in_organisaatiopalvelu
 from varda.enums.error_messages import ErrorMessages
+from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.enums.tietosisalto_ryhma import TietosisaltoRyhma
 from varda.oph_yhteiskayttopalvelu_autentikaatio import get_authentication_header
 from varda.models import VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet
@@ -54,14 +55,33 @@ def _oppija_post_login_handler(user):
     :return: None
     """
     if getattr(user, 'personOid', None):
-        lapsi_oid = user.personOid
-        huoltaja_oid = getattr(user, 'impersonatorPersonOid', None)
+        # If user has impersonatorPersonOid-attribute, user has logged in with Valtuudet
+        kayttajatyyppi = (Kayttajatyyppi.OPPIJA_CAS_VALTUUDET.value
+                          if hasattr(user, 'impersonatorPersonOid')
+                          else Kayttajatyyppi.OPPIJA_CAS.value)
+
+        if kayttajatyyppi == Kayttajatyyppi.OPPIJA_CAS_VALTUUDET.value:
+            etunimi = getattr(user, 'impersonatorGivenName', '')
+            sukunimi = getattr(user, 'impersonatorSn', '')
+            # Huoltaja OID
+            henkilo_oid = getattr(user, 'impersonatorPersonOid', None)
+            # Lapsi OID
+            huollettava_oid_list = [user.personOid]
+        else:
+            etunimi = getattr(user, 'givenName', '')
+            sukunimi = getattr(user, 'sn', '')
+            henkilo_oid = user.personOid
+            huollettava_oid_list = None
 
         # external service validates permissions for user
         Z3_AdditionalCasUserFields.objects.update_or_create(user=user,
                                                             defaults={
-                                                                'henkilo_oid': lapsi_oid,
-                                                                'huoltaja_oid': huoltaja_oid,
+                                                                'etunimet': etunimi,
+                                                                'kutsumanimi': etunimi,
+                                                                'sukunimi': sukunimi,
+                                                                'henkilo_oid': henkilo_oid,
+                                                                'huollettava_oid_list': huollettava_oid_list,
+                                                                'kayttajatyyppi': kayttajatyyppi,
                                                             })
 
 

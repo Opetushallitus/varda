@@ -1334,7 +1334,7 @@ class VardaViewsTests(TestCase):
             'personOidsForSamePerson': ['1', '1.2.246.562.24.47279942650'],
             'organisationOids': ['string'],
             'loggedInUserRoles': ['string'],
-            'loggedInUserOid': '1.2.345678911'
+            'loggedInUserOid': '1.2.246.562.24.6722258949565'
         }
         resp = client.post('/api/onr/external-permissions/', post_data)
         assert_status_code(resp, 200)

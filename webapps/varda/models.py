@@ -976,11 +976,14 @@ class Z2_CodeTranslation(models.Model):
 class Z3_AdditionalCasUserFields(models.Model):
     user = models.OneToOneField(User, related_name='additional_user_info', on_delete=models.PROTECT, primary_key=True)
     kayttajatyyppi = models.CharField(max_length=50, blank=True)
-    henkilo_oid = models.CharField(max_length=50, blank=True, validators=[validators.validate_henkilo_oid])
+    henkilo_oid = models.CharField(max_length=50, blank=True, null=True, validators=[validators.validate_henkilo_oid])
+    etunimet = models.CharField(max_length=100, blank=True, null=True)
+    kutsumanimi = models.CharField(max_length=100, blank=True, null=True)
+    sukunimi = models.CharField(max_length=100, blank=True, null=True)
+    huollettava_oid_list = ArrayField(models.CharField(max_length=50, blank=True, validators=[validators.validate_henkilo_oid]), null=True, validators=[validators.validate_arrayfield])
     asiointikieli_koodi = models.CharField(max_length=3, blank=True)
     approved_oph_staff = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
-    huoltaja_oid = models.CharField(max_length=50, blank=True, null=True, validators=[validators.validate_henkilo_oid])
 
     def __str__(self):
         return str(self.user_id)
