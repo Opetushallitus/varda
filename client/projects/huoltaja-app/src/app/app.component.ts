@@ -1,15 +1,14 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit, Inject, HostListener } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { Title } from '@angular/platform-browser';
-import { LoadingHttpService, LoginService } from 'varda-shared';
+import { LoadingHttpService, LoginService, VardaUserDTO } from 'varda-shared';
 import { Observable } from 'rxjs';
-import { filter } from 'rxjs/operators';
+import { filter, take } from 'rxjs/operators';
 import { DOCUMENT } from '@angular/common';
-import { HuoltajaApiService } from './services/huoltaja-api.service';
 import { CookieService } from 'ngx-cookie-service';
 import { HuoltajaTranslations } from '../assets/i18n/translations.enum';
 import { OppijaRaamitService } from './services/oppija-raamit.service';
-import { HuoltajanLapsiDTO } from './utilities/models/dto/huoltajan-lapsi-dto';
+import { HuoltajaCookieEnum } from './utilities/models/enum/huoltaja-cookie.enum';
 
 @Component({
   selector: 'app-root',
@@ -23,22 +22,21 @@ export class AppComponent implements OnInit {
   constructor(
     private oppijaRaamit: OppijaRaamitService,
     private cookieService: CookieService,
-    private huoltajaApi: HuoltajaApiService,
+    private loginService: LoginService,
     private translateService: TranslateService,
     private titleService: Title,
     private loadingHttpService: LoadingHttpService,
-    private loginService: LoginService,
     @Inject(DOCUMENT) private _document: any
   ) {
     this.initLanguage();
     this.loginService.initBroadcastChannel('huoltaja.api.token');
     this.isLoading = this.loadingHttpService.isLoadingWithDebounce();
 
-    this.huoltajaApi.getCurrentUser().pipe(filter(Boolean)).subscribe((user: HuoltajanLapsiDTO) => {
-      this.oppijaRaamit.initRaamit(user.henkilo?.kutsumanimi);
-    }, () => {
-      this.oppijaRaamit.initRaamit();
-    });
+    this.oppijaRaamit.initRaamit();
+
+    this.loginService.getCurrentUser().pipe(filter(Boolean), take(1)).subscribe((henkilotiedot: VardaUserDTO) =>
+      this.oppijaRaamit.setUsername(henkilotiedot?.kutsumanimi || henkilotiedot.username)
+    );
   }
 
   ngOnInit() {
@@ -49,9 +47,9 @@ export class AppComponent implements OnInit {
 
   initLanguage() {
     const getLanguage = () => {
-      const languageCookie = this.cookieService.get('lang')?.toLocaleLowerCase();
+      const languageCookie = this.cookieService.get(HuoltajaCookieEnum.lang);
       const language = languageCookie || this.translateService.getBrowserLang();
-      return language === 'sv' ? 'sv' : 'fi';
+      return language?.toLocaleLowerCase() === 'sv' ? 'sv' : 'fi';
     };
 
     const defaultLanguage = getLanguage();
@@ -60,6 +58,11 @@ export class AppComponent implements OnInit {
     this._document.documentElement.lang = defaultLanguage;
   }
 
+  @HostListener('document:keydown', ['$event'])
+  @HostListener('document:click', ['$event'])
+  documentClick(event: MouseEvent) {
+    this.oppijaRaamit.clearLogoutInterval();
+  }
 }
 
 

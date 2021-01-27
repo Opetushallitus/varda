@@ -1,0 +1,38 @@
+<mat-expansion-panel class="maksutieto">
+  <mat-expansion-panel-header class="huoltaja-header">
+    <mat-panel-title>
+      <app-expansion-panel-title icon="square_foot"
+                                 [title]="taydennyskoulutus.nimi +
+                                       ' ('+(i18n.taydennyskoulutukset_koulutuspaivia_COUNT | translate: { count: taydennyskoulutus.koulutuspaivia })+')'"
+                                 [endDate]="taydennyskoulutus.suoritus_pvm"
+                                 [secondaryTitle]="tehtavanimikeList | async">
+      </app-expansion-panel-title>
+    </mat-panel-title>
+  </mat-expansion-panel-header>
+
+  <table class="mat-table huoltaja-table m-b-2">
+    <app-table-row [header]="i18n.taydennyskoulutus_tehtavanimike_koodi"
+                   [tooltip]="i18n.tooltip_taydennyskoulutus_tehtavanimike_koodi">
+      <ng-container *ngFor="let tehtavanimike_koodi of taydennyskoulutus.tehtavanimike_koodi_list">
+        <div [libKoodistoValue]="koodistoEnum.tehtavanimike"
+             format="long">{{ tehtavanimike_koodi }}</div>
+      </ng-container>
+    </app-table-row>
+
+    <app-table-row [header]="i18n.taydennyskoulutus_nimi"
+                   [content]="taydennyskoulutus.nimi"
+                   [tooltip]="i18n.tooltip_taydennyskoulutus_nimi"></app-table-row>
+
+    <app-table-row [header]="i18n.taydennyskoulutus_suoritus_pvm"
+                   [content]="taydennyskoulutus.suoritus_pvm | huoltajaDate"
+                   [tooltip]="i18n.tooltip_taydennyskoulutus_suoritus_pvm"></app-table-row>
+
+    <app-table-row [header]="i18n.taydennyskoulutus_koulutuspaivia"
+                   [content]="taydennyskoulutus.koulutuspaivia"
+                   [tooltip]="i18n.tooltip_taydennyskoulutus_koulutuspaivia"></app-table-row>
+  </table>
+
+  <div class="extension-info">
+    {{ i18n.info_taydennyskoulutus | translate }}
+  </div>
+</mat-expansion-panel>

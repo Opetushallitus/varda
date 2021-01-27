@@ -1,0 +1,14 @@
+<h2 mat-dialog-title>
+  <span *ngIf="!data.title">{{ i18n.contact_dialog_otsikko | translate }}</span>
+  <span *ngIf="data.title">{{ data.title | translate }}</span>
+</h2>
+<mat-dialog-content class="mat-typography">
+  <div class="dialog-content"
+       role="dialog-content">
+    {{ data.content | translate }}
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button class="dialog-button"
+          mat-dialog-close>{{ i18n.poistu | translate }}</button>
+</mat-dialog-actions>

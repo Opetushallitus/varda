@@ -5,6 +5,7 @@ export interface VarhaiskasvatuspaatosDTO {
   alkamis_pvm: string;
   hakemus_pvm: string;
   paattymis_pvm?: string;
+  tilapainen_vaka_kytkin?: boolean;
   paivittainen_vaka_kytkin?: boolean;
   kokopaivainen_vaka_kytkin?: boolean;
   jarjestamismuoto_koodi: string;

@@ -1,9 +1,9 @@
 .huoltaja-container {
   position: relative;
-  margin: 0 auto;
-  width: 75%;
+  margin: 1rem auto;
+  width: calc(100% - 2rem);
   max-width: 1000px;
-  padding: 20px 0 25px 0;
+  min-height: 50vh;
 }
 
 .huoltaja-versio {
@@ -11,4 +11,10 @@
   margin: 0 auto;
   padding: 0.5rem 1rem;
   max-width: 1160px;
+}
+
+@media (max-width: 740px) {
+  .huoltaja-container {
+    width: calc(100% - 1rem);
+  }
 }

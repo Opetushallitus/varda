@@ -1,0 +1,14 @@
+<main class="ei-tietoja">
+  <app-henkilotiedot></app-henkilotiedot>
+
+  <mat-expansion-panel class="ei-tietoja-warning"
+                       [expanded]="true">
+    <p>
+      <mat-icon aria-ignore>warning</mat-icon>
+      {{ i18n.ei_tietoja_warning_1 | translate }}
+    </p>
+    <ng-container *ngIf="henkilot$ | async as henkilot">
+      <p *ngIf="henkilot.length > 1">{{ i18n.ei_tietoja_warning_2 | translate }}</p>
+    </ng-container>
+  </mat-expansion-panel>
+</main>

@@ -1,0 +1,80 @@
+.varda-login-page {
+  width: 95%;
+  max-width: 600px;
+  margin: 2rem auto;
+  text-align: center;
+
+  border: 2px solid black;
+}
+
+.varda-login-page>.varda-page-content {
+  padding: 3rem;
+  width: stretch;
+}
+
+.mat-progress-spinner {
+  margin: 1rem auto;
+}
+
+.login-links {
+  width: 100%;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.login-links>a {
+  text-decoration: none;
+  color: var(--text-color);
+}
+
+a>button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 1.5rem 0.5rem;
+}
+
+a>button>.material-icons {
+  margin-right: 0.5rem;
+}
+
+.localhost {
+  background-color: var(--oph-lila-lighten-2);
+}
+
+form {
+  margin-top: 2rem;
+  border-radius: 4px;
+  width: stretch;
+  padding: 1rem;
+}
+
+form label {
+  margin-top: 1rem;
+}
+
+form input {
+  width: stretch;
+  padding: 0.5rem;
+}
+
+form button {
+  width: 100%;
+  border: 1px solid black;
+  border-radius: 4px;
+  padding: 0.25rem;
+  margin-top: 1rem;
+}
+
+
+@media (max-width: 767px) {
+  .varda-login-page {
+    margin: 0.5rem auto;
+  }
+
+  .varda-login-page>.varda-page-content {
+    margin-top: 0rem;
+    padding: 1rem;
+  }
+}

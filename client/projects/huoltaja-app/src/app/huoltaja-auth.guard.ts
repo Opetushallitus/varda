@@ -7,6 +7,9 @@ import { HuoltajaApiService } from './services/huoltaja-api.service';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 
+const loginRoute = '/login';
+const loginFailedRoute = '/login-failed';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -15,7 +18,8 @@ export class HuoltajaAuthGuard implements CanActivate {
     private loginService: LoginService,
     private apiService: HuoltajaApiService,
     private koodistoService: VardaKoodistoService,
-    private translateService: TranslateService
+    private translateService: TranslateService,
+    private router: Router
   ) { }
 
   canActivate(
@@ -28,35 +32,27 @@ export class HuoltajaAuthGuard implements CanActivate {
         this.loginService.checkApiTokenValidity('huoltaja', url).subscribe((isValid) => {
           if (!isValid) {
             // Redirect to login
-            if (environment.production) {
-              window.location.href = this.getLoginUrl();
-            } else {
-              console.log('You are in dev mode. Set localstorage "huoltaja.api.token" manually. This is because CSRF protection is ' +
-                'preventing our token cookie catching from other domain. See README for more details..');
-            }
+            this.router.navigate([loginRoute]);
             authGuardObs.next(false);
             authGuardObs.complete();
           } else {
             // Save userdata
-            this.apiService.getUserInfo().subscribe(userdata => {
-              this.loginService.setCurrentUser(userdata);
-              this.koodistoService.initKoodistot(environment.huoltajaBackendUrl, this.translateService.currentLang);
-              authGuardObs.next(true);
-              authGuardObs.complete();
-            }, (err) => {
-              console.error('getUser Error', err);
-              this.loginService.setCurrentUser({});
-              authGuardObs.next(true);
-              authGuardObs.complete();
+            this.apiService.getUserInfo().subscribe({
+              next: userdata => {
+                this.loginService.setCurrentUser(userdata);
+                this.koodistoService.initKoodistot(environment.huoltajaBackendUrl, this.translateService.currentLang);
+                authGuardObs.next(true);
+                authGuardObs.complete();
+              }, error: err => {
+                console.error('getUser Error', err);
+                this.router.navigate([loginFailedRoute]);
+                authGuardObs.next(false);
+                authGuardObs.complete();
+              }
             });
           }
         });
       });
     });
-  }
-
-  private getLoginUrl(): string {
-    const next = encodeURIComponent(environment.huoltajaFrontendUrl + '/');
-    return `${environment.huoltajaBackendUrl}/accounts/huoltaja-login?next=${next}`;
   }
 }

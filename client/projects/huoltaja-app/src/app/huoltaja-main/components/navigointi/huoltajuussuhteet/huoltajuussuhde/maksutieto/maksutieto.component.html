@@ -1,0 +1,46 @@
+<mat-expansion-panel class="maksutieto">
+  <mat-expansion-panel-header class="huoltaja-header">
+    <app-expansion-panel-title icon="euro"
+                               [title]="i18n.maksutieto"
+                               [startDate]="maksutieto.alkamis_pvm"
+                               [endDate]="maksutieto.paattymis_pvm"
+                               [expanded]="expanded">
+    </app-expansion-panel-title>
+  </mat-expansion-panel-header>
+
+  <table class="mat-table huoltaja-table m-b-2">
+    <app-table-row [header]="i18n.maksutieto_lapsen_nimi"
+                   [content]="lapsenNimi"
+                   [tooltip]="i18n.tooltip_maksutieto_lapsen_nimi"></app-table-row>
+
+    <app-table-row *ngIf="!maksutieto.yksityinen_jarjestaja"
+                   [header]="i18n.maksutieto_palvelusetelin_arvo"
+                   [content]="maksutieto.palveluseteli_arvo || (i18n.maksutieto_ei_palvelusetelia | translate)"
+                   [tooltip]="i18n.tooltip_maksutieto_palvelusetelin_arvo"></app-table-row>
+
+    <app-table-row [header]="i18n.maksutieto_maksun_peruste"
+                   [content]="maksutieto.maksun_peruste_koodi"
+                   [tooltip]="i18n.tooltip_maksutieto_maksun_peruste"
+                   [koodisto]="koodistoEnum.maksunperuste"
+                   format="long"></app-table-row>
+
+    <app-table-row [header]="i18n.maksutieto_asiakasmaksu"
+                   [content]="maksutieto.asiakasmaksu"
+                   [tooltip]="i18n.tooltip_maksutieto_asiakasmaksu"></app-table-row>
+
+    <app-table-row *ngIf="!maksutieto.yksityinen_jarjestaja"
+                   [header]="i18n.maksutieto_perheen_koko"
+                   [content]="maksutieto.perheen_koko"
+                   [tooltip]="i18n.tooltip_maksutieto_perheen_koko"></app-table-row>
+
+    <app-table-row *ngIf="maksutieto.huoltaja_lkm > 1"
+                   [header]="i18n.maksutieto_huoltaja_lkm"
+                   [content]="i18n.maksutieto_huoltaja_lkm_COUNT | translate: { count: maksutieto.huoltaja_lkm }"
+                   [tooltip]="i18n.tooltip_maksutieto_huoltaja_lkm"></app-table-row>
+
+  </table>
+
+  <div class="extension-info">
+    {{ i18n.info_maksutieto | translate }}
+  </div>
+</mat-expansion-panel>

@@ -1,0 +1,10 @@
+<div class="timeout">
+  <span>
+    <div>{{ i18n.timeout_inactive_text | translate }}</div>
+    <div>{{ i18n.timeout_logout_seconds_COUNT | translate: { count: seconds | async } }}</div>
+  </span>
+  <div class="mat-simple-snackbar-action">
+    <button mat-button
+            (click)="dismiss()">{{ i18n.timeout_action_text | translate }}</button>
+  </div>
+</div>

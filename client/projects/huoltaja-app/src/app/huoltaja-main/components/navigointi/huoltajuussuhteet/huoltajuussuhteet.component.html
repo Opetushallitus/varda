@@ -1,0 +1,49 @@
+<main class="huoltajuussuhteet">
+  <h1>{{ i18n.huoltajuussuhteet | translate}}</h1>
+  <p>{{ i18n.huoltajuussuhteet_intro_paragraph_1 | translate}}</p>
+  <p>{{ i18n.huoltajuussuhteet_intro_paragraph_2 | translate}}</p>
+  <p>
+    <span aria-ignore>{{ i18n.huoltajuussuhteet_intro_paragraph_3 | translate}}&nbsp;</span>
+    <a target="_blank"
+       [attr.aria-label]="i18n.huoltajuussuhteet_intro_paragraph_3 | translate"
+       [href]="i18n.huoltajuussuhteet_intro_link_href | translate">{{
+      i18n.huoltajuussuhteet_intro_link_text | translate
+      }}</a>
+  </p>
+
+  <ng-container *ngIf="huoltajatiedot$ | async as huoltajatiedot">
+    <app-henkilotiedot></app-henkilotiedot>
+
+    <section class="huollettavat">
+
+      <div class="section-header">
+        <h2>{{ i18n.maksutiedot | translate }} ({{ huoltajatiedot.huoltajuussuhteet.length }})</h2>
+
+        <span class="button-group">
+          <button class="button h5"
+                  (click)="openDialog(i18n.info, i18n.tooltip_info_huoltajuussuhteet)">
+            <mat-icon>help_outline</mat-icon>
+            <span>{{ i18n.info | translate }}</span>
+          </button>
+
+          <button class="button h5"
+                  (click)="openDialog(i18n.onko_tiedoissa_puutteita, i18n.huoltajuussuhteet_dialog_ota_yhteytta_vakajarjestajaan)">
+            <mat-icon>help_outline</mat-icon>
+            <span>{{ i18n.onko_tiedoissa_puutteita | translate }}</span>
+          </button>
+        </span>
+      </div>
+
+      <div class="green-info">{{ i18n.info_huoltajuussuhteet | translate }}</div>
+
+      <div class="no-results"
+           *ngIf="huoltajatiedot.huoltajuussuhteet.length === 0">
+        {{ i18n.huoltajuussuhteet_ei_huoltajuussuhteita | translate }}
+      </div>
+      <mat-accordion>
+        <app-huoltajuussuhde *ngFor="let huoltajuussuhde of huoltajatiedot.huoltajuussuhteet"
+                             [huoltajuussuhde]="huoltajuussuhde"></app-huoltajuussuhde>
+      </mat-accordion>
+    </section>
+  </ng-container>
+</main>

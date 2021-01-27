@@ -1,0 +1,26 @@
+<div class="expansion-panel-title-grid">
+  <div class="icon">
+    <i class="material-icons material-icons-outlined"
+       aria-hidden="true">{{ icon }}</i>
+  </div>
+
+  <div class="title">{{ title | translate }}</div>
+  <div class="range"
+       [class.voimassa]="voimassa">
+    <ng-container *ngIf="endDate; else alkaen">
+      <ng-container *ngIf="startDate; else suorituspvm">
+        {{ startDate | huoltajaDate }} - {{ endDate | huoltajaDate }}
+      </ng-container>
+      <ng-template #suorituspvm>
+        {{ endDate | huoltajaDate }}
+      </ng-template>
+    </ng-container>
+    <ng-template #alkaen>
+      {{ i18n.alkaen | translate:{ date: startDate | huoltajaDate } }}
+    </ng-template>
+
+  </div>
+  <div class="secondaryTitle">{{ secondaryTitle }}</div>
+
+  <button class="toggle">{{ expanded ? (i18n.close | translate) : (i18n.open | translate) }}</button>
+</div>

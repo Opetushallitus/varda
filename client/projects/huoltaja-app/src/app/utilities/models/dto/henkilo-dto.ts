@@ -1,4 +1,4 @@
-export interface HenkiloDTO {
+export interface HenkilotiedotDTO {
   henkilo_oid?: string;
   henkilotunnus?: string;
   etunimet?: string;
@@ -12,5 +12,4 @@ export interface HenkiloDTO {
   postinumero?: string;
   postitoimipaikka?: string;
   muut_osoitteet?: Array<string>;
-  toggle_expanded?: boolean;
 }

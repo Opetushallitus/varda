@@ -1,0 +1,43 @@
+<h2 mat-dialog-title>
+  {{ i18n.contact_dialog_otsikko | translate }}
+</h2>
+<mat-dialog-content class="mat-typography">
+  <div class="dialog-content"
+       role="dialog-content">
+    <ng-container *ngIf="data.toimija; else genericDialog">
+      <div class="jarjestaja">{{ i18n.varhaiskasvatussuhteet_jarjestaja | translate }}: {{ data.toimija }}</div>
+      <ng-container *ngIf="data.lakkautettu; else voimassa">
+        <div class="lakkautettu">
+          <mat-icon aria-ignore>warning</mat-icon>
+          {{ i18n.contact_dialog_toiminta_lakkautettu | translate }}
+        </div>
+        {{ i18n.contact_dialog_toiminta_lakkautettu_ota_yhteytta | translate }}:
+        <address>
+          <a [href]="'mailto:' + (i18n.varda_email | translate)"
+             target="_blank">{{ i18n.varda_email | translate }}</a>
+        </address>.
+        {{ i18n.contact_dialog_muista_mainita | translate }}
+      </ng-container>
+      <ng-template #voimassa>
+        <ng-container *ngIf="data.email; else genericDialog">
+          {{ i18n.contact_dialog_ota_yhteytta_osoitteeseen | translate: {
+          toimija: data.toimija, email: data.email
+          } }}:
+          <address><a [href]="'mailto:'+data.email"
+               target="_blank">{{ data.email }}</a></address>
+          <span *ngIf="data.toimija"> ({{ data.toimija }})</span>.
+          {{ i18n.contact_dialog_muista_mainita | translate }}
+        </ng-container>
+      </ng-template>
+    </ng-container>
+
+    <ng-template #genericDialog>
+      {{ i18n.contact_dialog_ota_yhteytta_vakajarjestajaan | translate }}2
+    </ng-template>
+
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button class="dialog-button"
+          mat-dialog-close>{{ i18n.poistu | translate }}</button>
+</mat-dialog-actions>

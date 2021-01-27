@@ -1,0 +1,24 @@
+table {
+  margin-bottom: 1rem;
+  width: 100%;
+  border-spacing: 0;
+}
+
+table td,
+table th {
+  text-align: left;
+  padding: 0.25rem 0.25rem;
+}
+
+app-table-row {
+  width: 100%;
+}
+.mat-cell {
+  font-size: clamp(0.8rem, 1.9vw, 1.0rem);
+  word-break: break-word;
+}
+
+app-table-row:nth-child(even),
+tr:nth-child(even) {
+  background-color: var(--oph-gray-lighten-1);
+}

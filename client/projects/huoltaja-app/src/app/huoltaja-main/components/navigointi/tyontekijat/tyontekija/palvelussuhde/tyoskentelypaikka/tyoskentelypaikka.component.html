@@ -1,0 +1,41 @@
+<mat-expansion-panel class="no-padding"
+                     (opened)="togglePanel(true)"
+                     (closed)="togglePanel(false)">
+  <mat-expansion-panel-header>
+    <mat-panel-title>
+      <app-expansion-panel-title [title]="tyoskentelypaikka.toimipaikka_nimi || i18n.tyoskentelypaikka_kiertava_kytkin | translate"
+                                 [startDate]="tyoskentelypaikka.alkamis_pvm"
+                                 [endDate]="tyoskentelypaikka.paattymis_pvm"
+                                 [secondaryTitle]="tyoskentelypaikka.tehtavanimike_koodi | koodisto: { koodisto: koodistoEnum.tehtavanimike } | async"
+                                 [expanded]="expanded">
+      </app-expansion-panel-title>
+    </mat-panel-title>
+  </mat-expansion-panel-header>
+
+  <table class="mat-table">
+    <app-table-row *ngIf="tyoskentelypaikka.kiertava_tyontekija_kytkin"
+                   [header]="i18n.tyoskentelypaikka_kiertava_kytkin"
+                   [content]="tyoskentelypaikka.kiertava_tyontekija_kytkin ?
+                i18n.tyoskentelypaikka_kiertava_kytkin_kylla :
+                i18n.tyoskentelypaikka_kiertava_kytkin_ei"
+                   [tooltip]="i18n.tooltip_tyoskentelypaikka_kiertava_kytkin"></app-table-row>
+
+    <app-table-row [header]="i18n.tyoskentelypaikka_kelpoisuus_kytkin"
+                   [content]="tyoskentelypaikka.kelpoisuus_kytkin ?
+            i18n.tyoskentelypaikka_kelpoisuus_kytkin_kylla :
+            i18n.tyoskentelypaikka_kelpoisuus_kytkin_ei"
+                   [tooltip]="i18n.tooltip_tyoskentelypaikka_kelpoisuus_kytkin"></app-table-row>
+
+    <app-table-row [header]="i18n.tyoskentelypaikka_tehtavanimike_koodi"
+                   [content]="tyoskentelypaikka.tehtavanimike_koodi"
+                   [tooltip]="i18n.tooltip_tyoskentelypaikka_tehtavanimike_koodi"
+                   [koodisto]="koodistoEnum.tehtavanimike"
+                   format="long"></app-table-row>
+
+
+  </table>
+
+  <div class="extension-info">
+    {{ i18n.info_tyoskentelypaikka | translate }}
+  </div>
+</mat-expansion-panel>

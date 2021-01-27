@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { HuoltajaTranslations } from 'projects/huoltaja-app/src/assets/i18n/translations.enum';
 
 @Component({
@@ -6,9 +6,9 @@ import { HuoltajaTranslations } from 'projects/huoltaja-app/src/assets/i18n/tran
   templateUrl: './huoltaja-dashboard.component.html',
   styleUrls: ['./huoltaja-dashboard.component.css']
 })
-export class HuoltajaDashboardComponent  {
+export class HuoltajaDashboardComponent {
   i18n = HuoltajaTranslations;
 
-
+  constructor() { }
 
 }

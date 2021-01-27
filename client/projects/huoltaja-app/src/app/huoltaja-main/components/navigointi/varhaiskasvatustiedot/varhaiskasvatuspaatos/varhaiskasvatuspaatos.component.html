@@ -1,0 +1,100 @@
+<mat-expansion-panel class="varhaiskasvatuspaatos"
+                     (opened)="togglePanel(vakapaatos)"
+                     (closed)="togglePanel(vakapaatos)"
+                     hideToggle="false">
+  <mat-expansion-panel-header class="huoltaja-header vakapaatos-header">
+    <mat-panel-title [attr.aria-expanded]="vakapaatos.toggle_expanded">
+      <app-expansion-panel-title [title]="i18n.varhaiskasvatuspaatos"
+                                 [startDate]="vakapaatos.alkamis_pvm"
+                                 [endDate]="vakapaatos.paattymis_pvm"
+                                 [secondaryTitle]="toimipaikkaList"
+                                 [expanded]="vakapaatos.toggle_expanded">
+      </app-expansion-panel-title>
+    </mat-panel-title>
+  </mat-expansion-panel-header>
+
+  <table class="mat-table huoltaja-table">
+    <app-table-row [header]="i18n.varhaiskasvatuspaatos_hakemus_pvm"
+                   [content]="vakapaatos.hakemus_pvm |  date:'d.M.yyyy'"
+                   [tooltip]="i18n.tooltip_hakemus_pvm"></app-table-row>
+
+    <app-table-row [header]="i18n.varhaiskasvatuspaatos_tuntimaara_viikossa"
+                   [content]="vakapaatos.tuntimaara_viikossa"
+                   [tooltip]="i18n.tooltip_tuntimaara_viikossa"></app-table-row>
+
+    <app-table-row [header]="i18n.varhaiskasvatuspaatos_jarjestamismuoto"
+                   [content]="vakapaatos.jarjestamismuoto_koodi"
+                   [tooltip]="i18n.tooltip_jarjestamismuoto"
+                   [koodisto]="koodistoEnum.jarjestamismuoto"></app-table-row>
+
+    <app-table-row [header]="i18n.varhaiskasvatuspaatos_paivittainen_varhaiskasvatus"
+                   [content]="vakapaatos.paivittainen_vaka_kytkin ?
+                i18n.varhaiskasvatuspaatos_paivittainen_varhaiskasvatus_kylla :
+                i18n.varhaiskasvatuspaatos_paivittainen_varhaiskasvatus_ei"
+                   [tooltip]="i18n.tooltip_paivittainen_varhaiskasvatus"></app-table-row>
+
+    <app-table-row [header]="i18n.varhaiskasvatuspaatos_kokoaikainen_varhaiskasvatus"
+                   [content]="vakapaatos.kokopaivainen_vaka_kytkin ?
+                i18n.varhaiskasvatuspaatos_kokoaikainen_varhaiskasvatus_kylla :
+                i18n.varhaiskasvatuspaatos_kokoaikainen_varhaiskasvatus_ei"
+                   [tooltip]="i18n.tooltip_kokoaikainen_varhaiskasvatus"></app-table-row>
+
+    <app-table-row [header]="i18n.varhaiskasvatuspaatos_vuorohoito"
+                   [content]="vakapaatos.vuorohoito_kytkin ?
+            i18n.varhaiskasvatuspaatos_vuorohoito_kylla :
+            i18n.varhaiskasvatuspaatos_vuorohoito_ei"
+                   [tooltip]="i18n.tooltip_vuorohoito"></app-table-row>
+
+    <app-table-row [header]="i18n.varhaiskasvatuspaatos_pikakasittely"
+                   [content]="vakapaatos.pikakasittely_kytkin ?
+            i18n.varhaiskasvatuspaatos_pikakasittely_kylla :
+            i18n.varhaiskasvatuspaatos_pikakasittely_ei"
+                   [tooltip]="i18n.tooltip_pikakasittely"></app-table-row>
+
+    <app-table-row *ngIf="isKunnallinen && vakapaatos.tilapainen_vaka_kytkin"
+                   [header]="i18n.varhaiskasvatuspaatos_tilapainen_varhaiskasvatus"
+                   [content]="vakapaatos.tilapainen_vaka_kytkin ?
+                i18n.varhaiskasvatuspaatos_tilapainen_varhaiskasvatus_kylla :
+                i18n.varhaiskasvatuspaatos_tilapainen_varhaiskasvatus_ei"
+                   [tooltip]="i18n.tooltip_tilapainen_varhaiskasvatus"></app-table-row>
+  </table>
+  <div>
+    <button class="onko-tiedoissa-virhe"
+            (click)="openDialog(lapsi)">{{ i18n.varhaiskasvatuspaatos_onko_tiedoissa_virhe | translate}}
+    </button>
+    <div class="extension-info">{{ i18n.info_varhaiskasvatuspaatos | translate }}</div>
+  </div>
+
+  <div class="sub-sections">
+    <h3>{{ i18n.varhaiskasvatussuhteet | translate }} ({{ vakapaatos.varhaiskasvatussuhteet.length}})</h3>
+    <div *ngIf="!vakapaatos.varhaiskasvatussuhteet.length"
+         class="no-results">{{ i18n.varhaiskasvatussuhteet_nolla_suhdetta | translate }}</div>
+
+    <mat-accordion>
+      <mat-expansion-panel class="vakasuhde-panel"
+                           *ngFor="let vakasuhde of vakapaatos.varhaiskasvatussuhteet">
+        <mat-expansion-panel-header style="position:relative;">
+          <mat-panel-title>
+            <app-expansion-panel-title icon="location_city"
+                                       [title]="vakasuhde.toimipaikka.toimipaikka_nimi"
+                                       [startDate]="vakasuhde.alkamis_pvm"
+                                       [endDate]="vakasuhde.paattymis_pvm"
+                                       [secondaryTitle]="vakasuhde.toimipaikka.toimipaikka_kunta_koodi | koodisto: { koodisto: koodistoEnum.kunta } | async">
+            </app-expansion-panel-title>
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+        <table class="mat-table huoltaja-table">
+          <app-table-row [header]="i18n.lapsi_postitoimipaikka"
+                         [content]="vakasuhde.toimipaikka.toimipaikka_kunta_koodi"
+                         [tooltip]="i18n.tooltip_toimipaikka_postitoimipaikka"
+                         [koodisto]="koodistoEnum.kunta"></app-table-row>
+
+          <app-table-row [header]="i18n.varhaiskasvatussuhteet_jarjestaja"
+                         [content]="lapsi.varhaiskasvatuksen_jarjestaja"
+                         [tooltip]="i18n.tooltip_toimipaikka_jarjestaja"></app-table-row>
+
+        </table>
+      </mat-expansion-panel>
+    </mat-accordion>
+  </div>
+</mat-expansion-panel>

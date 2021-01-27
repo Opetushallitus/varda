@@ -1,0 +1,10 @@
+.mat-snack-bar-container {
+  max-width: 90vw;
+}
+
+.timeout {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}

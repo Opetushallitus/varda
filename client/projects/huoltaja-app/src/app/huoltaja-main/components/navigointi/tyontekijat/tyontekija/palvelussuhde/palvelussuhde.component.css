@@ -1,0 +1,23 @@
+.poissaolot {
+  margin-bottom: 1rem;
+}
+
+.poissaolot h5 {
+  margin-bottom: 0.5rem;
+}
+
+.poissaolot .mat-list-item {
+  height: auto;
+  font-size: clamp(0.8rem, 3vw, 0.9rem);
+  margin-bottom: 0.25rem;
+}
+
+.poissaolot .mat-list-base .mat-list-item .mat-line {
+  white-space: normal;
+}
+
+@media (max-width: 740px) {
+  .sub-sections {
+    margin-left: 1rem;
+  }
+}

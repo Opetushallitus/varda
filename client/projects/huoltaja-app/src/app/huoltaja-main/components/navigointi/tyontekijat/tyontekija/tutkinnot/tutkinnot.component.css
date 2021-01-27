@@ -1,0 +1,13 @@
+h4 {
+  margin-bottom: 0;
+}
+
+.tutkinnot .mat-list-item {
+  height: auto;
+  font-size: clamp(0.9rem, 3vw, 1rem);
+  margin-bottom: 0.25rem;
+}
+
+.tutkinnot .mat-list-base .mat-list-item .mat-line {
+  white-space: normal;
+}

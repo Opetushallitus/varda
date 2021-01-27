@@ -1,0 +1,50 @@
+<div class="varda-page-content">
+  <div *ngIf="this.henkilot"
+       class="henkilot">
+    <mat-form-field *ngIf="henkilot?.length > 1;else eiHuollettavia">
+      <mat-label>{{ i18n.navigointi_henkilot_label | translate }} ({{ this.henkilot.length }})</mat-label>
+      <mat-select [(ngModel)]="henkilo"
+                  (selectionChange)="changeHenkilo(henkilo)">
+        <mat-option *ngFor="let lapsi of henkilot"
+                    [value]="lapsi">
+          {{ lapsi.sukunimi }}, {{ lapsi.etunimet }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <ng-template #eiHuollettavia>
+      <div class="ei-huollettavia">
+        <mat-icon aria-ignore>warning</mat-icon>
+        {{ i18n.navigointi_henkilot_ei_huollettavia | translate }}
+      </div>
+    </ng-template>
+  </div>
+  <nav class="raportit-nav"
+       mat-tab-nav-bar>
+    <a mat-tab-link
+       *ngIf="availableTabs.varhaiskasvatustiedot"
+       [routerLink]="huoltajaRoute.varhaiskasvatustiedot"
+       (click)="activeLink = huoltajaRoute.varhaiskasvatustiedot"
+       [active]="activeLink === huoltajaRoute.varhaiskasvatustiedot">
+      <mat-icon>hotel</mat-icon>
+      {{ i18n.varhaiskasvatustiedot | translate }}
+    </a>
+    <a mat-tab-link
+       *ngIf="availableTabs.huoltajatiedot"
+       [routerLink]="huoltajaRoute.huoltajuussuhteet"
+       (click)="activeLink = huoltajaRoute.huoltajuussuhteet"
+       [active]="activeLink === huoltajaRoute.huoltajuussuhteet">
+      <mat-icon>escalator_warning</mat-icon>
+      {{ i18n.huoltajuussuhteet | translate }}
+    </a>
+    <a mat-tab-link
+       *ngIf="availableTabs.tyontekijatiedot"
+       [routerLink]="huoltajaRoute.tyontekijatiedot"
+       (click)="activeLink = huoltajaRoute.tyontekijatiedot"
+       [active]="activeLink === huoltajaRoute.tyontekijatiedot">
+      <mat-icon>person</mat-icon>
+      {{ i18n.tyontekijatiedot | translate }}
+    </a>
+  </nav>
+  <router-outlet></router-outlet>
+</div>

@@ -1,0 +1,26 @@
+<th scope="row"
+    class="mat-cell">{{ header | translate }}</th>
+<ng-container *ngIf="content; else useTemplate">
+  <td *ngIf="!koodisto"
+      class="mat-cell content">{{ content | translate }}</td>
+  <td *ngIf="koodisto"
+      [libKoodistoValue]="koodisto"
+      [format]="format"
+      class="mat-cell content">{{ content | translate }}</td>
+</ng-container>
+<ng-template #useTemplate>
+  <td class="mat-cell content">
+    <ng-content></ng-content>
+  </td>
+</ng-template>
+<td class="mat-cell tooltip">
+  <button *ngIf="tooltip"
+          [matTooltip]="tooltip | translate"
+          matTooltipClass="tooltip"
+          #tooltipButton="matTooltip"
+          (click)="tooltipButton.toggle()"
+          (mouseenter)="$event.stopImmediatePropagation()"
+          (mouseleave)="$event.stopImmediatePropagation()">
+    <mat-icon>help_outline</mat-icon>
+  </button>
+</td>

@@ -1,0 +1,40 @@
+<mat-expansion-panel [expanded]="first"
+                     class="tyontekija padded-panel">
+  <mat-expansion-panel-header class="bold">
+    <mat-panel-title>
+      {{ tyontekija.vakajarjestaja_nimi }} ({{ tyontekija.palvelussuhteet.length }})
+    </mat-panel-title>
+    <mat-panel-description>
+      <div class="subheader">({{tyontekija.vakajarjestaja_oid}})</div>
+    </mat-panel-description>
+  </mat-expansion-panel-header>
+
+  <app-tutkinnot [tutkinnot]="tyontekija.tutkinnot"></app-tutkinnot>
+
+  <h3>{{ i18n.palvelussuhteet | translate }} ({{ tyontekija.palvelussuhteet.length }})</h3>
+
+  <div class="green-info"
+       *ngIf="tyontekija.palvelussuhteet?.length > 1">
+    <span>{{ i18n.info_palvelussuhteet | translate}}</span>
+  </div>
+
+  <div *ngIf="!tyontekija.palvelussuhteet.length"
+       class="no-results">{{ i18n.palvelussuhteet_ei_palvelussuhteita | translate }}</div>
+  <mat-accordion>
+    <app-palvelussuhde *ngFor="let palvelussuhde of tyontekija.palvelussuhteet"
+                       [palvelussuhde]="palvelussuhde"></app-palvelussuhde>
+  </mat-accordion>
+
+  <h3>{{ i18n.taydennyskoulutukset | translate }} ({{ tyontekija.taydennyskoulutukset.length }})</h3>
+  <div class="green-info">{{ i18n.info_taydennyskoulutukset | translate }}</div>
+  <div *ngIf="!tyontekija.taydennyskoulutukset.length"
+       class="no-results">{{ i18n.taydennyskoulutukset_ei_taydennyskoulutuksia | translate }}</div>
+  <mat-accordion>
+    <app-taydennyskoulutus *ngFor="let taydennyskoulutus of tyontekija.taydennyskoulutukset"
+                           [taydennyskoulutus]="taydennyskoulutus"></app-taydennyskoulutus>
+  </mat-accordion>
+
+  <button class="onko-tiedoissa-virhe"
+          (click)="openDialog(tyontekija)">{{ i18n.varhaiskasvatuspaatos_onko_tiedoissa_virhe | translate}}
+  </button>
+</mat-expansion-panel>

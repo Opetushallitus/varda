@@ -1,0 +1,62 @@
+<main class="varhaiskasvatustiedot">
+  <div class="section-intro">
+    <h1>{{ i18n.varhaiskasvatustiedot | translate}}</h1>
+    <p>{{ i18n.varhaiskasvatustiedot_intro_paragraph_1 | translate}}</p>
+    <p>{{ i18n.varhaiskasvatustiedot_intro_paragraph_2 | translate}}</p>
+    <p>
+      <span aria-ignore> {{ i18n.varhaiskasvatustiedot_intro_paragraph_3 | translate}} </span>
+      <a target="_blank"
+         [attr.aria-label]="i18n.varhaiskasvatustiedot_intro_paragraph_3 | translate"
+         [href]="i18n.varhaiskasvatustiedot_intro_link_href | translate">{{
+        i18n.varhaiskasvatustiedot_intro_link_text | translate
+        }}</a>
+    </p>
+  </div>
+
+  <section *ngIf="showError"
+           role="alert"
+           class="error-field">
+    <p>{{ i18n.error_child_not_found_1 | translate }}</p>
+    <p>{{ i18n.error_child_not_found_2 | translate }}</p>
+    <p>{{ i18n.error_child_not_found_3 | translate }}</p>
+  </section>
+  <app-henkilotiedot></app-henkilotiedot>
+
+  <section *ngIf="varhaiskasvatustiedot"
+           class="varhaiskasvatuspaatokset">
+    <div class="section-header">
+      <h2>{{ i18n.varhaiskasvatustiedot | translate}} ({{ this.varhaiskasvatustiedot.lapset?.length}})</h2>
+      <span class="button-group">
+        <button class="button h5"
+                (click)="openDialog(i18n.info, i18n.tooltip_info)">
+          <mat-icon>help_outline</mat-icon>
+          <span>{{ i18n.info | translate }}</span>
+        </button>
+
+        <button class="button h5"
+                (click)="openDialog(i18n.onko_tiedoissa_puutteita, i18n.contact_dialog_ota_yhteytta_vakajarjestajaan)">
+          <mat-icon>help_outline</mat-icon>
+          <span>{{ i18n.onko_tiedoissa_puutteita | translate }}</span>
+        </button>
+      </span>
+    </div>
+
+    <ng-container *ngIf="varhaiskasvatustiedot.voimassaolevia_varhaiskasvatuspaatoksia > 0">
+      <div class="green-info">
+        <span>{{ i18n.voimassa_useita_vakapaatoksia | translate}}</span>
+      </div>
+    </ng-container>
+
+    <div class="no-results"
+         *ngIf="!varhaiskasvatustiedot.lapset?.length">
+      {{ i18n.ei_vakapaatoksia | translate}}
+    </div>
+
+    <ng-container *ngFor="let toimijanLapsi of varhaiskasvatustiedot.lapset">
+      <app-varhaiskasvatuspaatos [lapsi]="toimijanLapsi"
+                                 [oma_organisaatio_sahkoposti]="toimijanLapsi.yhteysosoite"
+                                 [vakapaatos]="toimijanLapsi.varhaiskasvatuspaatos">
+      </app-varhaiskasvatuspaatos>
+    </ng-container>
+  </section>
+</main>

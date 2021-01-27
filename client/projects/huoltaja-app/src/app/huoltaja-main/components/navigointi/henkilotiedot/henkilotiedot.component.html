@@ -1,0 +1,71 @@
+<ng-container *ngIf="henkilotiedot$ | async as henkilotiedot">
+  <h2 class="henkilotiedot-header">
+    <mat-icon aria-ignore>person</mat-icon>
+    {{ henkilotiedot.etunimet }} {{ henkilotiedot.sukunimi }}
+  </h2>
+
+  <mat-expansion-panel class="huoltaja-expansion-panel"
+                       expanded="true">
+    <table class="mat-table henkilotiedot-table mb-2">
+      <app-table-row [header]="i18n.lapsi_oppijanumero"
+                     [content]="henkilotiedot.henkilo_oid"
+                     [tooltip]="i18n.tooltip_henkilotiedot_oppijanumero"></app-table-row>
+
+      <app-table-row [header]="i18n.lapsi_henkilotunnus"
+                     [content]="henkilotiedot.henkilotunnus"
+                     [tooltip]="i18n.tooltip_henkilotiedot_henkilotunnus"></app-table-row>
+
+      <app-table-row [header]="i18n.lapsi_etunimet"
+                     [content]="henkilotiedot.etunimet"
+                     [tooltip]="i18n.tooltip_henkilotiedot_etunimet"></app-table-row>
+
+      <app-table-row [header]="i18n.lapsi_kutsumanimi"
+                     [content]="henkilotiedot.kutsumanimi"
+                     [tooltip]="i18n.tooltip_henkilotiedot_kutsumanimi"></app-table-row>
+
+      <app-table-row [header]="i18n.lapsi_sukunimi"
+                     [content]="henkilotiedot.sukunimi"
+                     [tooltip]="i18n.tooltip_henkilotiedot_sukunimi"></app-table-row>
+
+      <app-table-row [header]="i18n.lapsi_aidinkieli"
+                     [content]="henkilotiedot.aidinkieli_koodi"
+                     [tooltip]="i18n.tooltip_henkilotiedot_aidinkieli"
+                     [koodisto]="koodistoEnum.kieli"></app-table-row>
+
+      <app-table-row [header]="i18n.lapsi_syntymaaika"
+                     [content]="henkilotiedot.syntyma_pvm | huoltajaDate"
+                     [tooltip]="i18n.tooltip_henkilotiedot_syntymaaika"></app-table-row>
+
+      <app-table-row [header]="i18n.lapsi_sukupuoli"
+                     [content]="henkilotiedot.sukupuoli_koodi"
+                     [tooltip]="i18n.tooltip_henkilotiedot_sukupuoli"
+                     [koodisto]="koodistoEnum.sukupuoli"></app-table-row>
+
+      <app-table-row *ngIf="henkilotiedot.kotikunta_koodi"
+                     [header]="i18n.lapsi_kotikunta"
+                     [content]="henkilotiedot.kotikunta_koodi"
+                     [tooltip]="i18n.tooltip_henkilotiedot_kotikunta"
+                     [koodisto]="koodistoEnum.kunta"></app-table-row>
+
+      <app-table-row *ngIf="henkilotiedot.katuosoite"
+                     [header]="i18n.lapsi_katuosoite"
+                     [content]="henkilotiedot.katuosoite"
+                     [tooltip]="i18n.tooltip_henkilotiedot_katuosoite"></app-table-row>
+
+      <app-table-row *ngIf="henkilotiedot.postinumero"
+                     [header]="i18n.lapsi_postinumero"
+                     [content]="henkilotiedot.postinumero"
+                     [tooltip]="i18n.tooltip_henkilotiedot_postinumero"></app-table-row>
+
+      <app-table-row *ngIf="henkilotiedot.postitoimipaikka"
+                     [header]="i18n.lapsi_postitoimipaikka"
+                     [content]="henkilotiedot.postitoimipaikka"
+                     [tooltip]="i18n.tooltip_henkilotiedot_postitoimipaikka"></app-table-row>
+
+    </table>
+
+    <div class="extension-info">
+      {{ i18n.info_henkilotiedot | translate }}
+    </div>
+  </mat-expansion-panel>
+</ng-container>

@@ -1,5 +1,7 @@
 @import "~@angular/material/prebuilt-themes/indigo-pink.css";
 @import "./assets/css/variables.css";
+@import "./assets/css/tables.css";
+@import "./assets/css/panels.css";
 
 html {
   font-size: 16px;
@@ -16,7 +18,7 @@ html {
 }
 
 #header-overflow-menu-container {
-  z-index: 1;
+  z-index: 2;
 }
 
 #header-profile-icon {
@@ -24,7 +26,7 @@ html {
 }
 
 body {
-  font-size: clamp(0.9rem, 2.0vw, 1.0rem);
+  font-size: clamp(0.8rem, 2.0vw, 1.0rem);
 }
 
 h1,
@@ -52,14 +54,13 @@ h5,
   font-size: clamp(0.8rem, 3vw, 0.9rem);
 }
 
-.mat-cell {
-  font-size: clamp(0.8rem, 1.9vw, 1.0rem);
-  word-break: break-word;
-}
-
 td {
   padding-left: 0.25em;
   padding-right: 0.25em;
+}
+
+.bold {
+  font-weight: bold;
 }
 
 .m-b-05 {
@@ -124,35 +125,18 @@ mat-icon {
   background-color: var(--oph-gray-lighten-1);
 }
 
+.green-info {
+  display: flex;
+  margin-bottom: 1em;
+  border-left: 12px solid var(--oph-green);
+  padding: 0.25em 1em;
+}
+
 mat-expansion-panel mat-expansion-panel-header {
   min-height: 48px;
   height: auto !important;
 }
 
-@media (min-width: 700px) {
-  .mat-tooltip {
-    animation: scaleTooltip 1s forwards;
-  }
-
-  @keyframes scaleTooltip {
-    0% {
-      transform: scale(0.9);
-    }
-
-    100% {
-      transform: scale(1.3);
-    }
-  }
-}
-
-@media (min-width: 1000px) {
-  @keyframes scaleTooltip {
-    0% {
-      transform: scale(0.9);
-    }
-
-    100% {
-      transform: scale(1.5);
-    }
-  }
+.mat-tooltip.tooltip {
+  font-size: clamp(0.9rem, 3vw, 1.0rem);
 }

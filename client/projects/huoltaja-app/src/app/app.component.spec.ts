@@ -3,7 +3,8 @@ import { AppComponent } from './app.component';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaSharedModule, LoadingHttpService, LoginService } from 'varda-shared';
 import { RouterTestingModule } from '@angular/router/testing';
-import { Observable } from 'rxjs';
+import { EMPTY, Observable, of } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 describe('AppComponent', () => {
   let loadingHttpService: LoadingHttpService;
@@ -19,7 +20,8 @@ describe('AppComponent', () => {
         AppComponent
       ],
       providers: [
-        { provide: LoginService, useValue: { initBroadcastChannel: () => { } } },
+        { provide: MatSnackBar, useValue: EMPTY },
+        { provide: LoginService, useValue: { getCurrentUser: () => of(null), setUsername: () => { }, initBroadcastChannel: () => { } } },
         { provide: LoadingHttpService, useValue: { isLoading: () => { }, isLoadingWithDebounce: () => { } } },
         { provide: TranslateService, useValue: { use: () => { }, setDefaultLang: () => { }, getBrowserLang: () => { } } }
       ]

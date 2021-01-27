@@ -1,0 +1,45 @@
+<main class="tyontekijatiedot">
+  <div class="section-intro">
+    <h1>{{ i18n.tyontekijatiedot | translate}}</h1>
+    <p>{{ i18n.tyontekijatiedot_intro_paragraph_1 | translate}}</p>
+    <p>{{ i18n.tyontekijatiedot_intro_paragraph_2 | translate}}</p>
+    <p>
+      <span aria-ignore>{{ i18n.tyontekijatiedot_intro_paragraph_3 | translate}}&nbsp;</span>
+      <a target="_blank"
+         [attr.aria-label]="i18n.tyontekijatiedot_intro_paragraph_3 | translate"
+         [href]="i18n.tyontekijatiedot_intro_link_href | translate">{{
+        i18n.tyontekijatiedot_intro_link_text | translate
+        }}</a>
+    </p>
+  </div>
+
+  <ng-container *ngIf="tyontekijatiedot">
+    <app-henkilotiedot></app-henkilotiedot>
+    <section class="tyontekijat"
+             *ngIf="tyontekijatiedot.tyontekijat">
+      <div class="section-header">
+        <h2>{{ i18n.tyontekijatiedot | translate }} ({{ tyontekijatiedot.tyontekijat?.length }})</h2>
+
+        <span class="button-group">
+          <button class="button h5"
+                  (click)="openDialog(i18n.info, i18n.tooltip_info_tyontekijatiedot)">
+            <mat-icon>help_outline</mat-icon>
+            <span>{{ i18n.info | translate }}</span>
+          </button>
+
+          <button class="button h5"
+                  (click)="openDialog(i18n.onko_tiedoissa_puutteita, i18n.tyontekijatiedot_dialog_ota_yhteytta_tyonantajaan)">
+            <mat-icon>help_outline</mat-icon>
+            <span>{{ i18n.onko_tiedoissa_puutteita | translate }}</span>
+          </button>
+        </span>
+      </div>
+      <mat-accordion>
+        <app-tyontekija *ngFor="let tyontekija of tyontekijatiedot.tyontekijat"
+                        [first]="tyontekijatiedot.tyontekijat.length === 1"
+                        [tyontekija]="tyontekija">
+        </app-tyontekija>
+      </mat-accordion>
+    </section>
+  </ng-container>
+</main>

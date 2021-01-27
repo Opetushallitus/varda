@@ -1,0 +1,27 @@
+<mat-expansion-panel>
+  <mat-expansion-panel-header>
+    <mat-panel-title class="bold">
+      {{ huoltajuussuhde.lapsi_sukunimi }} {{ huoltajuussuhde.lapsi_etunimet }}
+    </mat-panel-title>
+    <mat-panel-description>
+      <div class="subheader">
+        {{ huoltajuussuhde.vakatoimija_nimi || huoltajuussuhde.oma_organisaatio_nimi }}
+      </div>
+    </mat-panel-description>
+  </mat-expansion-panel-header>
+
+  <div class="no-results"
+       *ngIf="!huoltajuussuhde.maksutiedot.length">
+    {{ i18n.maksutiedot_ei_maksutietoja | translate }}
+  </div>
+
+  <mat-accordion>
+    <app-maksutieto *ngFor="let maksutieto of huoltajuussuhde.maksutiedot"
+                    [huoltajuussuhde]="huoltajuussuhde"
+                    [maksutieto]="maksutieto"></app-maksutieto>
+  </mat-accordion>
+
+  <button class="onko-tiedoissa-virhe"
+          (click)="openDialog(huoltajuussuhde)">{{ i18n.varhaiskasvatuspaatos_onko_tiedoissa_virhe | translate}}
+  </button>
+</mat-expansion-panel>

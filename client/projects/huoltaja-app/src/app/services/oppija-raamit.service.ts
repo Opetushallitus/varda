@@ -1,21 +1,29 @@
 import { Injectable } from '@angular/core';
-import { LoadingHttpService } from 'varda-shared';
-import { TranslateService } from '@ngx-translate/core';
-import { take } from 'rxjs/operators';
-import { interval } from 'rxjs';
+import { filter, take } from 'rxjs/operators';
+import { BehaviorSubject, interval } from 'rxjs';
 import { HuoltajaTranslations } from '../../assets/i18n/translations.enum';
 import { environment } from '../../environments/environment';
 import { HuoltajaApiService } from './huoltaja-api.service';
+import { MatSnackBar, MatSnackBarRef } from '@angular/material/snack-bar';
+import { HuoltajaTimeoutComponent } from '../huoltaja-main/components/utility-components/huoltaja-timeout/huoltaja-timeout.component';
 
 @Injectable({
   providedIn: 'root'
 })
 export class OppijaRaamitService {
   translation = HuoltajaTranslations;
+  private lastHttpRequest = Date.now();
+  private redirectURL = encodeURI(`${window.location.origin}/oma-opintopolku/`);
+  private logoutURL = `${window.location.origin}/cas-oppija/logout?service=${this.redirectURL}`;
+  private username$ = new BehaviorSubject<string>(null);
+  private snackbarVisible = false;
 
-  constructor(private translateService: TranslateService, private huoltajaApiService: HuoltajaApiService) { }
+  constructor(
+    private huoltajaApiService: HuoltajaApiService,
+    private snackbar: MatSnackBar
+  ) { }
 
-  initRaamit(kutsumanimi?: string) {
+  initRaamit() {
     const vardaDomains = this.huoltajaApiService.getVardaDomains();
     if (!vardaDomains.some(hostname => window.location.hostname.endsWith(hostname))) {
       return false;
@@ -33,20 +41,16 @@ export class OppijaRaamitService {
     node.async = true;
     document.getElementsByTagName('head')[0].appendChild(node);
 
-    if (!kutsumanimi) { // logout after 90s for unknown user
-      this.logoutInterval(90);
-    } else {
-      this.logoutInterval(1800); // logout from oppija after 30 minutes
-    }
 
     globalThis.Service = {
       getUser: () => {
-        return new Promise((resolve) => resolve({ name: kutsumanimi || this.translateService.instant(this.translation.logout) }));
+        return new Promise((resolve) =>
+          this.username$.pipe(filter(Boolean)).subscribe(username => resolve({ name: username }))
+        );
       },
 
       login: () => console.error('login to huoltaja-app should never happen through oppija-raamit'),
-
-      logout: () => window.location.href = `${window.location.origin}/cas-oppija/logout`,
+      logout: () => window.location.href = this.logoutURL,
 
       changeLanguage: function (language: string) {
         return new Promise(resolve => {
@@ -59,18 +63,42 @@ export class OppijaRaamitService {
   }
 
   private logoutInterval(seconds: number) {
-    const logoutWarning = 60;
-    const sekuntiInterval = interval(1000).pipe(take(seconds));
+    const logoutWarning = 180;
+    const secondInterval = interval(1000);
+    let snackBarRef: MatSnackBarRef<any> = null;
+    let lastCheckAt = 0;
 
-    sekuntiInterval.subscribe({
+    secondInterval.subscribe({
       next: counter => {
-        const timeRemaining = seconds - counter;
-        if (timeRemaining < logoutWarning) {
-          const loginName = document.getElementsByClassName('header-logged-in-name')[0];
-          loginName.innerHTML = `${this.translateService.instant(this.translation.poistu_palvelusta)} (${timeRemaining}s)`;
+        const now = Date.now() / 1000;
+        const logoutAt = this.lastHttpRequest / 1000 + seconds;
+        const timeRemaining = Math.floor(logoutAt - now);
+
+        if (lastCheckAt !== this.lastHttpRequest) {
+          snackBarRef?.dismiss();
+          lastCheckAt = this.lastHttpRequest;
         }
-      },
-      complete: () => window.location.href = `${window.location.origin}/cas-oppija/logout`,
+
+        if (timeRemaining < logoutWarning) {
+          if (!this.snackbarVisible) {
+            snackBarRef = this.snackbar.openFromComponent(HuoltajaTimeoutComponent, {
+              data: {
+                seconds: timeRemaining,
+                dismiss: () => snackBarRef.dismiss()
+              }
+            });
+            snackBarRef.afterOpened().pipe(take(1)).subscribe(() => this.snackbarVisible = true);
+            snackBarRef.afterDismissed().pipe(take(1)).subscribe(() => {
+              this.snackbarVisible = false;
+              this.clearLogoutInterval();
+            });
+          }
+
+          if (timeRemaining < 0 && window.location.hostname !== 'localhost') {
+            window.location.href = this.logoutURL;
+          }
+        }
+      }
     });
   }
 
@@ -98,5 +126,16 @@ export class OppijaRaamitService {
     })();
     `;
     document.getElementsByTagName('head')[0].appendChild(node);
+  }
+
+  setUsername(username: string) {
+    this.logoutInterval(1200);
+    this.username$.next(username);
+  }
+
+  clearLogoutInterval() {
+    if (!this.snackbarVisible) {
+      this.lastHttpRequest = Date.now();
+    }
   }
 }
