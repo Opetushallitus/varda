@@ -88,7 +88,7 @@ class KelaEtuusmaksatusAloittaneetViewset(GenericViewSet, ListModelMixin):
                                             .values('varhaiskasvatuspaatos__lapsi_id', 'alkamis_pvm',
                                                     'varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus',
                                                     'varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi')
-                                            .order_by('varhaiskasvatuspaatos__lapsi', 'alkamis_pvm').distinct('varhaiskasvatuspaatos__lapsi'))
+                                            .order_by('id', 'varhaiskasvatuspaatos__lapsi', 'alkamis_pvm').distinct('id'))
 
 
 @auditlogclass
@@ -210,8 +210,8 @@ class KelaEtuusmaksatusMaaraaikaisetViewSet(GenericViewSet, ListModelMixin):
                                             .values('varhaiskasvatuspaatos__lapsi_id', 'alkamis_pvm', 'paattymis_pvm',
                                                     'varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus',
                                                     'varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi')
-                                            .order_by('varhaiskasvatuspaatos__lapsi', 'alkamis_pvm', 'paattymis_pvm')
-                                            .distinct('varhaiskasvatuspaatos__lapsi'))
+                                            .order_by('id', 'varhaiskasvatuspaatos__lapsi', 'alkamis_pvm', 'paattymis_pvm')
+                                            .distinct('id'))
 
 
 @auditlogclass
