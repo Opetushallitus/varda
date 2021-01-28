@@ -1,6 +1,12 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.3 (28.01.2021)
+- OPHVARDA-2175: Poissaolo alkamispäivämäärän validoinnin poisto
+- OPHVARDA-2174: lapsiform korjaus PAOS-lapsen luonnissa
+- OPHVARDA-1907: Aktiiviset lapset- ja työntekijät listaus
+- OPHVARDA-2161: auth-token sessionStorageen
+
 1.5.2 (14.01.2021)
 - OPHVARDA-1905 Jos toimijan toiminta on päättynyt (toimijalla päättymispäivämäärä, joka ohitettu) näytetään yhteystiedoissa varda@opintopolku.fi
 - OPHVARDA-1967 Katsele tietoja: täydennyskoulutus haitarien päivitys
