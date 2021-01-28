@@ -9,14 +9,16 @@
       <mat-icon>warning</mat-icon>
       {{ i18n.puutteelliset_tiedot | translate }}
     </a>
-    <a mat-tab-link
-       routerLink="tiedonsiirrot"
-       (click)="activeLink = 'tiedonsiirrot'"
-       [active]="activeLink == 'tiedonsiirrot'">
-      <mat-icon>cloud_upload</mat-icon>
-      {{ i18n.tiedonsiirrot | translate }}
-    </a>
-    <ng-container *ngIf="isOPHUser">
+    <ng-container *ngIf="toimijaAccess.raportit.katselija || toimijaAccess.oph.katselija">
+      <a mat-tab-link
+         routerLink="tiedonsiirrot"
+         (click)="activeLink = 'tiedonsiirrot'"
+         [active]="activeLink == 'tiedonsiirrot'">
+        <mat-icon>cloud_upload</mat-icon>
+        {{ i18n.tiedonsiirrot | translate }}
+      </a>
+    </ng-container>
+    <ng-container *ngIf="toimijaAccess.oph.katselija">
       <a mat-tab-link
          routerLink="yksiloimattomat"
          (click)="activeLink = 'yksiloimattomat'"

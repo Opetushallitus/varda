@@ -4,6 +4,7 @@ import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { AuthService } from '../../../core/auth/auth.service';
+import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 
 
 @Component({
@@ -15,15 +16,15 @@ export class VardaRaportitComponent implements OnDestroy {
   i18n = VirkailijaTranslations;
   pageHeader: string;
   activeLink: string;
-  isOPHUser: boolean;
+  toimijaAccess: UserAccess;
+  hasRaportitAccess: boolean;
   subscriptions: Array<Subscription> = [];
 
   constructor(
     private authService: AuthService,
     private router: Router,
   ) {
-
-    this.isOPHUser = this.authService.isOPHUser;
+    this.toimijaAccess = this.authService.getUserAccess();
 
     this.subscriptions.push(
       this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe((navigation: NavigationEnd) => {
