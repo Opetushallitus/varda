@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { Observable } from 'rxjs';
 import { environment } from '../environments/environment';
-import { LoginService, VardaKoodistoService } from 'varda-shared';
+import { LoginService, SupportedLanguage, VardaKoodistoService } from 'varda-shared';
 import { HuoltajaApiService } from './services/huoltaja-api.service';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
@@ -40,7 +40,7 @@ export class HuoltajaAuthGuard implements CanActivate {
             this.apiService.getUserInfo().subscribe({
               next: userdata => {
                 this.loginService.setCurrentUser(userdata);
-                this.koodistoService.initKoodistot(environment.huoltajaBackendUrl, this.translateService.currentLang);
+                this.koodistoService.initKoodistot(environment.huoltajaBackendUrl, this.translateService.currentLang as SupportedLanguage);
                 authGuardObs.next(true);
                 authGuardObs.complete();
               }, error: err => {

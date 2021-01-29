@@ -3,10 +3,10 @@ import { TranslateService } from '@ngx-translate/core';
 import { VardaDomService } from './core/services/varda-dom.service';
 import { DOCUMENT } from '@angular/common';
 import { Title } from '@angular/platform-browser';
-import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
 import { LoadingHttpService, LoginService, VardaKoodistoService, VardaUserDTO } from 'varda-shared';
-import { interval, Observable } from 'rxjs';
-import { delayWhen, filter } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 import { VardaCookieEnum } from './utilities/models/enums/varda-cookie.enum';
 

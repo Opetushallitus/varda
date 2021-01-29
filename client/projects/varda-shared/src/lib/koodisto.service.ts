@@ -3,6 +3,13 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { CodeDTO, KoodistoDTO, KoodistoEnum, KoodistoSortBy } from './dto/koodisto-models';
 import { LoadingHttpService } from './loading-http.service';
 import { HttpHeaders } from '@angular/common/http';
+import { SupportedLanguage } from './dto/translation-dto';
+
+interface KoodistoCache {
+  timestamp: number;
+  language: SupportedLanguage;
+  koodistot: Array<KoodistoDTO>;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -11,6 +18,7 @@ export class VardaKoodistoService {
   private static primaryLanguages = ['FI', 'SV', 'SEPO', 'RU', 'ET', 'EN', 'AR', 'SO', 'DE', 'FR'];
   private vardaApiUrl: string;
   private koodistot$ = new BehaviorSubject<Array<KoodistoDTO>>(null);
+  private koodistoCache = 'varda.koodistoCache';
 
   constructor(
     private http: LoadingHttpService
@@ -63,13 +71,13 @@ export class VardaKoodistoService {
     fieldResult.options = VardaKoodistoService.mapCodesToFormOptions(koodisto);
   }
 
-  initKoodistot(vardaApiUrl: string, lang: string) {
-    this.vardaApiUrl = vardaApiUrl;
-    this.getKoodistot(lang).subscribe(koodistoJSON => this.koodistot$.next(koodistoJSON));
+  private getKoodistot(lang: SupportedLanguage): Observable<Array<KoodistoDTO>> {
+    return this.http.get(`${this.vardaApiUrl}/api/julkinen/v1/koodistot/?lang=${lang}`, null, new HttpHeaders());
   }
 
-  private getKoodistot(lang: string): Observable<Array<KoodistoDTO>> {
-    return this.http.get(`${this.vardaApiUrl}/api/julkinen/v1/koodistot/?lang=${lang}`, null, new HttpHeaders());
+  initKoodistot(vardaApiUrl: string, lang: SupportedLanguage) {
+    this.vardaApiUrl = vardaApiUrl;
+    this.checkCache(lang);
   }
 
   getKoodisto(koodistoNimi: KoodistoEnum, sortBy?: KoodistoSortBy): Observable<KoodistoDTO> {
@@ -116,4 +124,28 @@ export class VardaKoodistoService {
       obs.error('Koodisto has not been initiated');
     });
   }
+
+  checkCache(lang: SupportedLanguage) {
+    const existingCache: KoodistoCache = JSON.parse(localStorage.getItem(this.koodistoCache));
+    if (Date.now() - existingCache?.timestamp < 300000 && existingCache.language === lang) {
+      return this.koodistot$.next(existingCache.koodistot);
+    } else {
+      this.getKoodistot(lang).subscribe({
+        next: koodistoJSON => this.saveCache(koodistoJSON, lang),
+        error: err => {
+          if (existingCache) {
+            this.koodistot$.next(existingCache.koodistot);
+          } else {
+            console.error(err.message);
+          }
+        }
+      });
+    }
+  }
+
+  saveCache(koodistoJSON: Array<KoodistoDTO>, lang: SupportedLanguage) {
+    this.koodistot$.next(koodistoJSON);
+    localStorage.setItem(this.koodistoCache, JSON.stringify({ timestamp: Date.now(), koodistot: koodistoJSON, language: lang }));
+  }
+
 }

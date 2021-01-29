@@ -1,7 +1,7 @@
 import { Component, OnInit, Inject, HostListener } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { Title } from '@angular/platform-browser';
-import { LoadingHttpService, LoginService, VardaUserDTO } from 'varda-shared';
+import { LoadingHttpService, LoginService, SupportedLanguage, VardaUserDTO } from 'varda-shared';
 import { Observable } from 'rxjs';
 import { filter, take } from 'rxjs/operators';
 import { DOCUMENT } from '@angular/common';
@@ -48,7 +48,7 @@ export class AppComponent implements OnInit {
   initLanguage() {
     const getLanguage = () => {
       const languageCookie = this.cookieService.get(HuoltajaCookieEnum.lang);
-      const language = languageCookie || this.translateService.getBrowserLang();
+      const language = (languageCookie || this.translateService.getBrowserLang()) as SupportedLanguage;
       return language?.toLocaleLowerCase() === 'sv' ? 'sv' : 'fi';
     };
 

@@ -1,3 +1,5 @@
+export type SupportedLanguage = 'fi' | 'sv';
+
 export interface TranslationDTO {
   accesscount: number;
   id: number;
@@ -9,7 +11,7 @@ export interface TranslationDTO {
   modified: string;
   modifiedBy: string;
   force: boolean;
-  locale: string;
+  locale: SupportedLanguage;
   value: string;
 }
 
