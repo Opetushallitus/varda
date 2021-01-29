@@ -36,7 +36,7 @@ export abstract class AbstractHenkiloSectionComponent implements OnChanges, OnDe
     page_size: 20,
     page: 1,
     count: 0,
-    voimassa_pvm: new Date().toLocaleDateString('fr-ca') // 'fr-ca' -> yyyy-mm-dd thats required by backend
+    voimassa_pvm: this.getTodayAsDate()
   };
 
   constructor(
@@ -84,8 +84,15 @@ export abstract class AbstractHenkiloSectionComponent implements OnChanges, OnDe
   }
 
   toggleAktiiviset() {
-    this.searchFilter.voimassa_pvm = this.searchFilter.voimassa_pvm ? null : new Date().toLocaleDateString('fr-ca');
+    this.searchFilter.voimassa_pvm = this.searchFilter.voimassa_pvm ? null : this.getTodayAsDate();
     this.searchHenkilot();
+  }
+
+  getTodayAsDate(): string {
+    const today = new Date();
+    const offset = today.getTimezoneOffset();
+    const localDate = new Date(today.getTime() - (offset * 60 * 1000));
+    return localDate.toISOString().split('T')[0];
   }
 
   abstract getHenkilot(): void;
