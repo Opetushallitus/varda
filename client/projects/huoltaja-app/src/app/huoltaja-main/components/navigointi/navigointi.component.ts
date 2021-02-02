@@ -6,6 +6,7 @@ import { filter, take } from 'rxjs/operators';
 import { LoginService, UserHuollettavaDTO, VardaUserDTO } from 'varda-shared';
 import { HuoltajaApiService } from '../../../services/huoltaja-api.service';
 import { HuoltajaRoute } from '../../../utilities/models/enum/huoltaja-route.enum';
+import { VardaKayttajatyyppi } from '../../../../../../varda-shared/src/lib/models/varda-kayttajatyyppi.enum';
 
 
 @Component({
@@ -22,6 +23,9 @@ export class NavigointiComponent implements OnDestroy {
   subscriptions: Array<Subscription> = [];
   henkilot: Array<UserHuollettavaDTO> = [];
   henkilo: UserHuollettavaDTO;
+  kayttajatyyppi: string;
+
+  VardaKayttajatyyppi = VardaKayttajatyyppi;
 
   availableTabs = {
     varhaiskasvatustiedot: false,
@@ -70,6 +74,8 @@ export class NavigointiComponent implements OnDestroy {
       sukunimi: user?.sukunimi,
       henkilo_oid: user?.henkilo_oid
     };
+
+    this.kayttajatyyppi = user.kayttajatyyppi;
 
     this.henkilot = [userAsHuollettavaDTO, ...user.huollettava_list || []];
     this.henkilo = this.henkilot[this.henkilot.length - 1];

@@ -228,20 +228,7 @@ class HenkilotiedotSerializer(serializers.ModelSerializer):
                   'sukupuoli_koodi', 'syntyma_pvm', 'kotikunta_koodi', 'katuosoite', 'postinumero', 'postitoimipaikka')
 
     def get_henkilotunnus(self, henkilo):
-        """
-        Return decrypted henkilotunnus if huoltaja is getting henkilotiedot for huollettava, otherwise return None
-        :param henkilo: Henkilo object instance
-        :return: Decrypted henkilotunnus or None
-        """
-        viewset = self.context['view']
-        requested_henkilo_oid = viewset.kwargs[viewset.lookup_field]
-        user = self.context['request'].user
-        if (hasattr(user, 'additional_user_info') and
-                ((huollettava_oid_list := getattr(user.additional_user_info, 'huollettava_oid_list', None)) and
-                 requested_henkilo_oid in huollettava_oid_list)):
-            # User is getting henkilotiedot for huollettava
-            return decrypt_henkilotunnus(henkilo.henkilotunnus)
-        return None
+        return decrypt_henkilotunnus(henkilo.henkilotunnus)
 
 
 class HuoltajatiedotSerializer(serializers.ModelSerializer):

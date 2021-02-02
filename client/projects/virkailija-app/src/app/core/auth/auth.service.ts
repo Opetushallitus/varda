@@ -2,17 +2,13 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { VardaApiService } from '../services/varda-api.service';
 import { VardaVakajarjestajaService } from '../services/varda-vakajarjestaja.service';
-import {
-  VardaKayttajatyyppi,
-  VardaKayttooikeusRoles,
-  VardaToimipaikkaDTO,
-  VardaVakajarjestajaUi
-} from '../../utilities/models';
+import { VardaKayttooikeusRoles, VardaToimipaikkaDTO, VardaVakajarjestajaUi } from '../../utilities/models';
 import { VardaToimipaikkaMinimalDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { SaveAccess, UserAccess, UserAccessKeys, ViewAccess } from '../../utilities/models/varda-user-access.model';
 import { environment } from 'projects/huoltaja-app/src/environments/environment';
 import { filter } from 'rxjs/operators';
 import { VardaUserDTO } from 'varda-shared';
+import { VardaKayttajatyyppi } from '../../../../../varda-shared/src/lib/models/varda-kayttajatyyppi.enum';
 
 class Kayttooikeus {
   kayttooikeus: VardaKayttooikeusRoles;

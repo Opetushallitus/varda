@@ -1,5 +1,5 @@
 <div class="varda-page-content">
-  <div *ngIf="this.henkilot"
+  <div *ngIf="kayttajatyyppi === VardaKayttajatyyppi.OPPIJA_CAS_VALTUUDET && this.henkilot"
        class="henkilot">
     <mat-form-field *ngIf="henkilot?.length > 1;else eiHuollettavia">
       <mat-label>{{ i18n.navigointi_henkilot_label | translate }} ({{ this.henkilot.length }})</mat-label>

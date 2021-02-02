@@ -15,7 +15,7 @@ import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { VardaKoodistoService } from 'varda-shared';
-import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/dto/koodisto-models';
+import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/services/varda-date.service';
 import { Moment } from 'moment';

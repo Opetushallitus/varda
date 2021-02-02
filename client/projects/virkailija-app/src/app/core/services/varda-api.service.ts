@@ -5,7 +5,7 @@ import { environment } from '../../../environments/environment';
 import { VardaUtilityService } from './varda-utility.service';
 import { LoadingHttpService, VardaUserDTO } from 'varda-shared';
 import { VardaHenkiloDTO } from '../../utilities/models';
-import { VardaApiServiceInterface } from 'varda-shared/lib/dto/vardaApiService.interface';
+import { VardaApiServiceInterface } from 'varda-shared/lib/models/vardaApiService.interface';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
 @Injectable()

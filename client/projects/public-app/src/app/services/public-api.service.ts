@@ -4,7 +4,7 @@ import { HttpHeaders } from '@angular/common/http';
 import { LoadingHttpService } from 'varda-shared';
 import { environment } from '../../environments/environment';
 import { KoodistoDto } from '../models/koodisto-dto';
-import { VardaApiServiceInterface } from 'varda-shared/lib/dto/vardaApiService.interface';
+import { VardaApiServiceInterface } from 'varda-shared/lib/models/vardaApiService.interface';
 import { PublicTranslations } from '../../assets/i18n/translations.enum';
 
 @Injectable({

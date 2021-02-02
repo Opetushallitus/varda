@@ -8,7 +8,7 @@ import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { ErrorTree, HenkilostoErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
 import * as moment from 'moment';
 import { TyontekijaListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tyontekija-dto.model';
-import { KoodistoDTO } from 'projects/varda-shared/src/lib/dto/koodisto-models';
+import { KoodistoDTO } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { VardaFormValidators } from 'projects/virkailija-app/src/app/shared/validators/varda-form-validators';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { MatExpansionPanelHeader } from '@angular/material/expansion';

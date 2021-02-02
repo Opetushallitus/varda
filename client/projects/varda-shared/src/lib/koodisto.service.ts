@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { CodeDTO, KoodistoDTO, KoodistoEnum, KoodistoSortBy } from './dto/koodisto-models';
+import { CodeDTO, KoodistoDTO, KoodistoEnum, KoodistoSortBy } from './models/koodisto-models';
 import { LoadingHttpService } from './loading-http.service';
 import { HttpHeaders } from '@angular/common/http';
-import { SupportedLanguage } from './dto/translation-dto';
+import { SupportedLanguage } from './models/translation-dto';
 
 interface KoodistoCache {
   timestamp: number;

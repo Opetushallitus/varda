@@ -1,6 +1,6 @@
 import { Directive, ElementRef, Input, AfterContentInit, OnChanges, SimpleChanges } from '@angular/core';
 import { VardaKoodistoService } from '../koodisto.service';
-import { KoodistoEnum } from '../dto/koodisto-models';
+import { KoodistoEnum } from '../models/koodisto-models';
 
 export type CodeFormat = 'short' | 'long';
 

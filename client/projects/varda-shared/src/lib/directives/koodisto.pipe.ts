@@ -1,7 +1,7 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { Observable } from 'rxjs';
 import { take } from 'rxjs/operators';
-import { KoodistoEnum } from '../dto/koodisto-models';
+import { KoodistoEnum } from '../models/koodisto-models';
 import { VardaKoodistoService } from '../koodisto.service';
 
 interface KoodistoPipeArgs {

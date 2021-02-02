@@ -4,7 +4,7 @@ import * as moment_ from 'moment';
 const moment = moment_;
 import { HttpService } from './http.service';
 import { CookieService } from 'ngx-cookie-service';
-import { VardaUserDTO } from './dto/user-dto';
+import { VardaUserDTO } from './models/user-dto';
 
 @Injectable({
   providedIn: 'root'

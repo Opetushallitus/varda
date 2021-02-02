@@ -14,6 +14,5 @@ export { VardaToimintapainotusDTO } from './models/dto/varda-toimintapainotus-dt
 export { VardaExtendedHenkiloModel } from './models/varda-extended-henkilo.model';
 export { VardaVarhaiskasvatuspaatosDTO } from './models/dto/varda-varhaiskasvatuspaatos-dto.model';
 export { VardaKayttooikeusRoles } from './varda-kayttooikeus-roles';
-export { VardaKayttajatyyppi } from './varda-kayttajatyyppi';
 export { VardaEndpoints } from './varda-endpoints';
 

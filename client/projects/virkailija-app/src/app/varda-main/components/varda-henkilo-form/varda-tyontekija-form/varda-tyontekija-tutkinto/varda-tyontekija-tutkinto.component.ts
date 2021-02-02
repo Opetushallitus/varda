@@ -9,7 +9,7 @@ import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { HenkilostoErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { VardaKoodistoService } from 'varda-shared';
-import { KoodistoEnum, KoodistoSortBy, KoodistoDTO, CodeDTO } from 'projects/varda-shared/src/lib/dto/koodisto-models';
+import { KoodistoEnum, KoodistoSortBy, KoodistoDTO, CodeDTO } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';

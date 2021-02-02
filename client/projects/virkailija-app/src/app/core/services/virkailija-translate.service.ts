@@ -1,7 +1,7 @@
 import { TranslateLoader } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
 import { LoadingHttpService, AngularTranslateDTO, SupportedLanguage, TranslationDTO } from 'varda-shared';
-import { VardaApiServiceInterface } from 'projects/varda-shared/src/lib/dto/vardaApiService.interface';
+import { VardaApiServiceInterface } from 'projects/varda-shared/src/lib/models/vardaApiService.interface';
 import { HttpHeaders } from '@angular/common/http';
 
 interface LocalizationCache {
