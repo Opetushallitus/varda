@@ -9,7 +9,9 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.management import call_command
-from django.db.models import Q
+from django.db import transaction
+from django.db.models import Q, IntegerField
+from django.db.models.functions import Cast
 from django.db.models.signals import post_save
 from guardian.models import UserObjectPermission, GroupObjectPermission
 
@@ -18,7 +20,8 @@ from varda import organisaatiopalvelu
 from varda import permission_groups
 from varda import permissions
 from varda.audit_log import audit_log
-from varda.models import Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog
+from varda.models import Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog, Lapsi, Varhaiskasvatuspaatos
+from varda.permissions import assign_lapsi_permissions, assign_vakapaatos_vakasuhde_permissions
 from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups
 
 
@@ -253,3 +256,37 @@ def delete_request_log_older_than_arg_days_task(days):
     timestamp_lower_limit = timestamp_lower_limit.replace(tzinfo=datetime.timezone.utc)
 
     Z6_RequestLog.objects.filter(timestamp__lt=timestamp_lower_limit).delete()
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def fix_orphan_vakatiedot_permissions():
+    """
+    Before Lapsi required vakatoimija-field, Vakajarjestaja-level permissions were set after first Varhaiskasvatussuhde
+    was added for Lapsi (we got Vakajarjestaja via Toimipaikka). If Varhaiskasvatussuhde has not been created, there are
+    Lapsi and Varhaiskasvatuspaatos objects that only users who created them have access to.
+
+    Here we go through every such object and assign permissions for Vakajarjestaja groups if vakatoimija-field of Lapsi
+    is filled.
+    """
+    lapsi_content_type_id = ContentType.objects.get_for_model(Lapsi).id
+    orphan_lapsi_id_list = (UserObjectPermission.objects.filter(content_type=lapsi_content_type_id)
+                            .annotate(object_id=Cast('object_pk', IntegerField()))
+                            .distinct('object_id').values_list('object_id', flat=True))
+    lapsi_qs = Lapsi.objects.filter(vakatoimija__isnull=False, id__in=orphan_lapsi_id_list).distinct()
+    for lapsi in lapsi_qs:
+        with transaction.atomic():
+            UserObjectPermission.objects.filter(content_type=lapsi_content_type_id, object_pk=lapsi.id).delete()
+            assign_lapsi_permissions(lapsi.vakatoimija.organisaatio_oid, lapsi)
+
+    vakapaatos_content_type_id = ContentType.objects.get_for_model(Varhaiskasvatuspaatos).id
+    orphan_vakapaatos_id_list = (UserObjectPermission.objects.filter(content_type=vakapaatos_content_type_id)
+                                 .annotate(object_id=Cast('object_pk', IntegerField()))
+                                 .distinct('object_id').values_list('object_id', flat=True))
+    vakapaatos_qs = Varhaiskasvatuspaatos.objects.filter(lapsi__vakatoimija__isnull=False,
+                                                         id__in=orphan_vakapaatos_id_list).distinct()
+    for vakapaatos in vakapaatos_qs:
+        with transaction.atomic():
+            UserObjectPermission.objects.filter(content_type=vakapaatos_content_type_id, object_pk=vakapaatos.id).delete()
+            assign_vakapaatos_vakasuhde_permissions(Varhaiskasvatuspaatos, vakapaatos.lapsi.vakatoimija.organisaatio_oid,
+                                                    None, vakapaatos)
