@@ -2,21 +2,22 @@
   <main class="varda-page-content">
     <h1 class="oph-h2 oph-bold"
         aria-live="polite">
-      Kirjaudu sisään / Logga in
+      {{ i18n.login_header | translate }}
     </h1>
 
     <div class="login-links">
-      <a [href]="loginURL+'&valtuudet=true'">
-        <button class="button">
-          <mat-icon aria-ignore>escalator_warning</mat-icon>
-          <span>Kirjaudu huoltajana / Logga in som vårdnadshavare</span>
-        </button>
+      <a class="button"
+         [href]="loginURL+'&valtuudet=true'">
+
+        <mat-icon aria-ignore>escalator_warning</mat-icon>
+        <span>{{ i18n.login_valtuudet | translate }}</span>
+
       </a>
-      <a [href]="loginURL+'&valtuudet=false'">
-        <button class="button">
-          <mat-icon aria-ignore>person</mat-icon>
-          <span>Omien tietojen katselu / Granska egna uppgifter</span>
-        </button>
+      <a class="button"
+         [href]="loginURL+'&valtuudet=false'">
+
+        <mat-icon aria-ignore>person</mat-icon>
+        <span>{{ i18n.login_omat_tiedot | translate }}</span>
       </a>
     </div>
   </main>

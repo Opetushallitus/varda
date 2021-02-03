@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { HuoltajaTranslations } from 'projects/huoltaja-app/src/assets/i18n/translations.enum';
 
 @Component({
   selector: 'app-login-failed',
@@ -6,6 +7,7 @@ import { Component } from '@angular/core';
   styleUrls: ['./login-failed.component.css', '../login.component.css']
 })
 export class LoginFailedComponent {
+  i18n = HuoltajaTranslations;
   originLink: string = window.origin;
   constructor() { }
 

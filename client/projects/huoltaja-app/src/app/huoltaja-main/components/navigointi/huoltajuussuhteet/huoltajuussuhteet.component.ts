@@ -23,6 +23,6 @@ export class HuoltajuussuhteetComponent {
   }
 
   openDialog(title: string, content: string) {
-    this.dialog.open(ContactDialogComponent, { data: { title: title, content: content } });
+    this.dialog.open(ContactDialogComponent, { data: { title: title, content: content }, autoFocus: false });
   }
 }

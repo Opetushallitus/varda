@@ -43,7 +43,7 @@
   <div class="sub-sections">
     <div class="tyoskentelypaikat"
          [class.left-border]="palvelussuhde.pidemmat_poissaolot">
-      <h5>{{ i18n.tyoskentelypaikat | translate }} ({{ palvelussuhde.tyoskentelypaikat.length }})</h5>
+      <h4 class="h5">{{ i18n.tyoskentelypaikat | translate }} ({{ palvelussuhde.tyoskentelypaikat.length }})</h4>
       <div class="no-results"
            *ngIf="!palvelussuhde.tyoskentelypaikat.length">
         {{ i18n.palvelussuhde_ei_tyoskentelypaikkoja | translate }}
@@ -56,7 +56,7 @@
 
     <div class="poissaolot">
       <div class="section-header">
-        <h5>{{ i18n.poissaolot | translate }} ({{ palvelussuhde.pidemmat_poissaolot.length }})</h5>
+        <h4 class="h5">{{ i18n.poissaolot | translate }} ({{ palvelussuhde.pidemmat_poissaolot.length }})</h4>
 
         <span class="button-group">
           <button [matTooltip]="i18n.tooltip_poissaolot | translate"

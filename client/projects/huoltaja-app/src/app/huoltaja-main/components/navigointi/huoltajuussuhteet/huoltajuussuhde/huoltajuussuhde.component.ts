@@ -26,7 +26,8 @@ export class HuoltajuussuhdeComponent implements OnInit {
         email: huoltajuussuhde?.yhteysosoite,
         toimija: huoltajuussuhde?.vakatoimija_nimi || huoltajuussuhde?.oma_organisaatio_nimi,
         lakkautettu: huoltajuussuhde?.aktiivinen_toimija === false
-      }
+      },
+      autoFocus: false
     });
   }
 }

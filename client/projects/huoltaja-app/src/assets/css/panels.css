@@ -30,9 +30,13 @@
   flex-grow: 1;
 }
 
-.section-header .button-group .mat-icon {
-  margin-right: 0.5em;
-  top: 0.25em;
+.section-header .button-group .button:focus {
+  outline: none;
+  border: 2px solid black;
+}
+
+.section-header .button-group .mat-icon:not(:last-child) {
+  margin-right: 0.25em;
 }
 
 .section-header .button-group>button>span {
@@ -65,6 +69,10 @@ mat-expansion-panel .mat-expansion-panel-body {
   background: var(--oph-gray-lighten-1) !important;
 }
 
+.mat-expansion-panel-header:focus-within {
+  border: 1px solid black;
+}
+
 .mat-expansion-panel-header .mat-content {
   flex-wrap: wrap;
 }
@@ -78,6 +86,7 @@ mat-expansion-panel .mat-expansion-panel-body {
   font-weight: bold;
   text-decoration: underline;
   padding: 0.5rem;
+  margin-top: 0.5rem;
 }
 
 .subheader {

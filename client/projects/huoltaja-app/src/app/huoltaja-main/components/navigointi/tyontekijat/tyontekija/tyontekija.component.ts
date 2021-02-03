@@ -23,7 +23,8 @@ export class TyontekijaComponent {
         email: tyontekija?.yhteysosoite,
         toimija: tyontekija?.vakajarjestaja_nimi,
         lakkautettu: tyontekija?.aktiivinen_toimija === false
-      }
+      },
+      autoFocus: false
     });
   }
 }

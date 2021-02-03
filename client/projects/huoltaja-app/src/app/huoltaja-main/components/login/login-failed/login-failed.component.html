@@ -2,16 +2,16 @@
   <main class="varda-page-content">
     <h1 class="oph-bold"
         aria-live="polite">
-      Kirjautuminen epäonnistui / Inloggningen misslyckades
+        {{ i18n.login_failed_header | translate }}
     </h1>
 
     <div class="login-failed-message">
-      Henkilön tietoja ei löydy Vardasta / Personens uppgifter finns inte i Varda
+      {{ i18n.login_failed_message | translate }}
     </div>
 
     <a class="oph-h3 origin-link"
        [href]="originLink">
-      <mat-icon>keyboard_return</mat-icon>
+      <mat-icon aria-ignore>keyboard_return</mat-icon>
       {{ originLink }}
     </a>
   </main>

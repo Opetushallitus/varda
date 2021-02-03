@@ -18,6 +18,11 @@
   border-radius: 4px;
 }
 
+.dialog-button:focus {
+  outline: none;
+  border-width: 2px;
+}
+
 address {
   display: inline;
   font-style: normal;

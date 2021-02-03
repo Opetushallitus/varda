@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { HuoltajaTranslations } from 'projects/huoltaja-app/src/assets/i18n/translations.enum';
 import { environment } from 'projects/huoltaja-app/src/environments/environment';
 import { HuoltajaCookieEnum } from '../../../utilities/models/enum/huoltaja-cookie.enum';
 
@@ -9,6 +10,7 @@ import { HuoltajaCookieEnum } from '../../../utilities/models/enum/huoltaja-cook
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent {
+  i18n = HuoltajaTranslations;
   loginURL = `${environment.huoltajaBackendUrl}/accounts/huoltaja-login?next=/varda/`;
   tokenInput = {
     show: !environment.production && environment.huoltajaFrontendUrl === 'http://localhost:4200',

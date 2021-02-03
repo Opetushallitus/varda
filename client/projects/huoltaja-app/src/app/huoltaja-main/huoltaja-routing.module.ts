@@ -45,12 +45,12 @@ const routes: Routes = [
       },
       {
         path: 'login',
-        data: { title: 'Kirjaudu sisään / Logga in' },
+        data: { title: HuoltajaTranslations.login_header },
         component: LoginComponent
       },
       {
         path: 'login-failed',
-        data: { title: 'Kirjautuminen epäonnistui / Inloggningen misslyckades' },
+        data: { title: HuoltajaTranslations.login_failed_header },
         component: LoginFailedComponent
       },
       {

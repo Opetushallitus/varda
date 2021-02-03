@@ -21,21 +21,23 @@
   display: flex;
   gap: 1rem;
   justify-content: space-between;
+  flex-wrap: wrap;
 }
 
 .login-links>a {
+  flex: 1 1 200px;
   text-decoration: none;
   color: var(--text-color);
-}
-
-a>button {
-  width: 100%;
+  max-width: calc(100% - 1rem);
   display: flex;
   align-items: center;
+  justify-content: center;
   padding: 1.5rem 0.5rem;
+  overflow-x: hidden;
+  word-break: break-word;
 }
 
-a>button>.material-icons {
+a>.material-icons {
   margin-right: 0.5rem;
 }
 

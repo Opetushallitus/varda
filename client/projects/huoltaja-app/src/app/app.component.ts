@@ -9,6 +9,9 @@ import { CookieService } from 'ngx-cookie-service';
 import { HuoltajaTranslations } from '../assets/i18n/translations.enum';
 import { OppijaRaamitService } from './services/oppija-raamit.service';
 import { HuoltajaCookieEnum } from './utilities/models/enum/huoltaja-cookie.enum';
+import { NavigationEnd, Router } from '@angular/router';
+
+declare const vardaPageChange: any;
 
 @Component({
   selector: 'app-root',
@@ -25,6 +28,7 @@ export class AppComponent implements OnInit {
     private loginService: LoginService,
     private translateService: TranslateService,
     private titleService: Title,
+    private router: Router,
     private loadingHttpService: LoadingHttpService,
     @Inject(DOCUMENT) private _document: any
   ) {
@@ -37,13 +41,13 @@ export class AppComponent implements OnInit {
     this.loginService.getCurrentUser().pipe(filter(Boolean), take(1)).subscribe((henkilotiedot: VardaUserDTO) =>
       this.oppijaRaamit.setUsername(henkilotiedot?.kutsumanimi || henkilotiedot.username)
     );
-  }
 
-  ngOnInit() {
-    this.translateService.get(this.translation.page_title).subscribe(name => {
-      this.titleService.setTitle(name);
+    this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(event => {
+      this.setTitle(router);
     });
   }
+
+  ngOnInit() { }
 
   initLanguage() {
     const getLanguage = () => {
@@ -62,6 +66,33 @@ export class AppComponent implements OnInit {
   @HostListener('document:click', ['$event'])
   documentClick(event: MouseEvent) {
     this.oppijaRaamit.clearLogoutInterval();
+  }
+
+
+  setTitle(router: Router): void {
+    const titles: Array<string> = [...this.getTitle(router.routerState, router.routerState.root).reverse(), 'Varda'];
+    this.translateService.get(titles).subscribe(
+      translation => {
+        const nextTitle = titles.map(title => translation[title]).join(' - ');
+        this.titleService.setTitle(nextTitle);
+        try {
+          vardaPageChange(nextTitle, window.location.pathname);
+        } catch (e) { }
+      }
+    );
+  }
+
+  getTitle(state: any, parent: any): string[] {
+    const data = [];
+    if (parent && parent.snapshot.data && parent.snapshot.data.title) {
+      data.push(parent.snapshot.data.title);
+    }
+
+    if (state && parent) {
+      data.push(...this.getTitle(state, state.firstChild(parent)));
+    }
+
+    return data;
   }
 }
 

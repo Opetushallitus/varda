@@ -43,7 +43,8 @@ export class VarhaiskasvatuspaatosComponent implements OnInit {
         email: lapsi?.yhteysosoite,
         toimija: lapsi?.varhaiskasvatuksen_jarjestaja,
         lakkautettu: lapsi?.aktiivinen_toimija === false
-      }
+      },
+      autoFocus: false
     });
   }
 

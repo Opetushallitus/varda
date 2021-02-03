@@ -1,5 +1,6 @@
 <div class="varda-page-content">
-  <div *ngIf="kayttajatyyppi === VardaKayttajatyyppi.OPPIJA_CAS_VALTUUDET && this.henkilot"
+  <nav *ngIf="kayttajatyyppi === VardaKayttajatyyppi.OPPIJA_CAS_VALTUUDET && this.henkilot"
+       [attr.aria-label]="i18n.navigointi_henkilot_aria_label | translate"
        class="henkilot">
     <mat-form-field *ngIf="henkilot?.length > 1;else eiHuollettavia">
       <mat-label>{{ i18n.navigointi_henkilot_label | translate }} ({{ this.henkilot.length }})</mat-label>
@@ -13,12 +14,13 @@
     </mat-form-field>
 
     <ng-template #eiHuollettavia>
-      <div class="ei-huollettavia">
+      <div class="ei-huollettavia"
+           role="alert">
         <mat-icon aria-ignore>warning</mat-icon>
         {{ i18n.navigointi_henkilot_ei_huollettavia | translate }}
       </div>
     </ng-template>
-  </div>
+  </nav>
   <nav class="raportit-nav"
        mat-tab-nav-bar>
     <a mat-tab-link

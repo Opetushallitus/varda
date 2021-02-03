@@ -224,8 +224,16 @@ export enum HuoltajaTranslations {
   tooltip_taydennyskoulutus_suoritus_pvm = 'tooltip.taydennyskoulutus.suoritus_pvm',
   tooltip_taydennyskoulutus_koulutuspaivia = 'tooltip.taydennyskoulutus.koulutuspaivia',
 
+  navigointi_henkilot_aria_label = 'navigointi.henkilot.aria-label',
   navigointi_henkilot_label = 'navigointi.henkilot.label',
   navigointi_henkilot_ei_huollettavia = 'navigointi.henkilot.ei-huollettavia',
+
+  login_header = 'login.header',
+  login_valtuudet = 'login.valtuudet',
+  login_omat_tiedot = 'login.omat-tiedot',
+  login_failed_header = 'login.failed.header',
+  login_failed_message = 'login.failed.message',
+
 
   ei_tietoja_warning_1 = 'ei-tietoja.warning-1',
   ei_tietoja_warning_2 = 'ei-tietoja.warning-2',
