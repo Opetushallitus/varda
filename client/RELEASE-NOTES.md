@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.4 (04.02.2021)
+- OPHVARDA-2180: Lokalisointi- ja koodisto-cache
+
 1.5.3 (28.01.2021)
 - OPHVARDA-2175: Poissaolo alkamispäivämäärän validoinnin poisto
 - OPHVARDA-2174: lapsiform korjaus PAOS-lapsen luonnissa

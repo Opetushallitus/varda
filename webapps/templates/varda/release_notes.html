@@ -2,8 +2,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>VARDA</title>
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <title>VARDA</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+        integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 </head>
 <body background="{% static 'varda/images/gradient-bg.png' %}">
 {% load i18n %}
@@ -12,243 +13,248 @@
   <div class="row">
     <h1> {% trans "VARDA - Release notes" %}</h1><br>
   </div>
-
-    <div class="row">
-      <ul><b>1.6.0</b> (28.01.2021)
-        <li>{% trans "OPHVARDA-1947: Syötä tietoja -hakurajapintoihin voimassa-filtterit" %}</li>
-        <li>{% trans "OPHVARDA-2136: Tilinumeron poisto Vakajärjestäjän tiedoista" %}</li>
-        <li>{% trans "OPHVARDA-1803: Omien tietojen katselunäkymän rajapinnat" %}</li>
-        <li>{% trans "OPHVARDA-2173: Poissaolon pituuden validoinnin korjaus" %}</li>
-        <li>{% trans "OPHVARDA-2166: Poistetaan poissaolon päivämäärien riippuvuus palvelussuhteesta" %}</li>
-        <li>{% trans "OPHVARDA-2138: Anonymisointiin muutoksia" %}</li>
-        <li>{% trans "OPHVARDA-2149: Kela tiedonsiirron korjauksia" %}</li>
-      </ul>
-    </div>
-
-    <div class="row">
-      <ul><b>1.5.2</b> (14.01.2021)
-        <li>{% trans "OPHVARDA-2146 Puutteellisten raportilla näkyy maksutiedot tuplina" %}</li>
-        <li>{% trans "OPHVARDA-2140 Salli passiivisen vakajärjestäjän käyttöoikeusryhmien käyttö" %}</li>
-        <li>{% trans "OPHVARDA-1812 Katsele tietoja: Työntekijän haun toteutus osa 4" %}</li>
-        <li>{% trans "OPHVARDA-2127 Vardan lokalisointirajapinnasta julkinen" %}</li>
-        <li>{% trans "OPHVARDA-2143 Syötä tietoja paos toimipaikkojen listaus" %}</li>
-        <li>{% trans "OPHVARDA-2145 Celery-tulosten siivous" %}</li>
-        <li>{% trans "OPHVARDA-2148 Tiedonsiirtolokin tyhjennysaikataulu" %}</li>
-      </ul>
-    </div>
-
-    <div class="row">
-      <ul><b>1.5.1</b> (04.01.2021)
-        <li>{% trans "CSCVARDA-2135: Pakotus rajapintasiirtoihin tieto tilapäisestä varhaiskasvatuksesta" %}</li>
-        <li>{% trans "CSCVARDA-2133: Työajan pitää voida olla 0" %}</li>
-        <li>{% trans "CSCVARDA-2108: Tietojen anonymisointiin muutoksia" %}</li>
-        <li>{% trans "CSCVARDA-2141: Kelan tiedonsiirtoon liittyviä valmistelutöitä" %}</li>
-        <li>{% trans "CSCVARDA-2067: Versiopäivityksiä" %}</li>
-      </ul>
-    </div>
-
-    <div class="row">
-      <ul><b>1.5.0</b> (17.12.2020)
-        <li>{% trans "CSCVARDA-2125, CSCVARDA-2001, CSCVARDA-2026: Lasten ja henkilöstön puutteelliset tiedot" %}</li>
-        <li>{% trans "CSCVARDA-2002: Tiedonsiirtojen virheraportti" %}</li>
-        <li>{% trans "CSCVARDA-2115: Koodistojen järjestys nimen mukaan" %}</li>
-        <li>{% trans "CSCVARDA-2056: Puhelinnumeron validoinnin tarkennus" %}</li>
-        <li>{% trans "CSCVARDA-2104: Henkilöstötietojen luonnin käyttöoikeustarkennuksia" %}</li>
-        <li>{% trans "CSCVARDA-2131: Katsele tietoja PAOS-käyttöoikeuksien korjaus" %}</li>
-        <li>{% trans "CSCVARDA-2116: Kelan tiedonsiirtoon liittyviä valmistelutöitä" %}</li>
-      </ul>
-    </div>
-
-    <div class="row">
-      <ul><b>1.4.12</b> (03.12.2020)
-        <li>{% trans "CSCVARDA-1740: Virhekoodisto ja virheviestien uudistus" %}</li>
-        <li>{% trans "CSCVARDA-2112: Lisäys, muokkaus ja poisto kutsujen päivittäisen määrän nostaminen" %}</li>
-        <li>{% trans "Kelan tiedonsiirtoihin valmistautumista" %}</li>
-        <ul>
-          <li>CSCVARDA-753, CSCVARDA-601, CSCVARDA-603, CSCVARDA-603</li>
-        </ul>
-      </ul>
-    </div>
-
-    <div class="row">
-        <ul><b>1.4.11</b> (26.11.2020)
-            <li>{% trans "CSCVARDA-2039: Varhaiskasvatuspäätökselle tilapainen_vaka_kytkin" %}</li>
-            <li>{% trans "CSCVARDA-2103: Postinumerokoodiston käyttöönotto" %}</li>
-            <li>{% trans "CSCVARDA-2106: PAOS-lapsen tallentajaorganisaatio käyttöliittymän rajapinnassa" %}</li>
-            <li>{% trans "CSCVARDA-2076: Täydennyskoulutuksen luonnin nopeutus" %}</li>
-        </ul>
-    </div>
-
-    <div class="row">
-        <ul><b>1.4.10</b> (12.11.2020)
-            <li>{% trans "CSCVARDA-1941: Toimijan yhteystietojen tallennus pääkäyttäjäoikeuksilla" %}</li>
-        </ul>
-    </div>
-
-    <div class="row">
-        <ul><b>1.4.8</b> (29.10.2020)
-            <li>{% trans "CSCVARDA-2001 CSCVARDA-2026 Vardan UI:n rajapinnan muutoksia, /api/v1/vakajarjestajat/{id}/toimipaikat/ 'voimassaolo' query parametri poistui johon korvaajana alkamis_pvm ja paattymis_pvm" %}</li>
-        </ul>
-    </div>
-
-    <div class="row">
-        <ul><b>1.4.7</b> (22.10.2020)
-            <li>{% trans "CSCVARDA-1886 PO116 Toimipaikkakohtaisilla oikeuksilla täydennyskoulutuksen tallennus" %}</li>
-            <li>{% trans "CSCVARDA-1938 Yksityinen toimija ei saa tallentaa maksutietoa, joka päättyy ennen 1.9.2020" %}</li>
-            <li>{% trans "CSCVARDA-1850 PO14 Työskentelypaikan päättymispvmn validointi" %}</li>
-            <li>{% trans "CSCVARDA-1939 Vardaan ei voi tallentaa poissaolotietoja, joissa päättymispäivämäärä on ennen 1.9.2020" %}</li>
-            <li>{% trans "CSCVARDA-2046 Lisää työntekijän koosteeseen tunnistetiedot" %}</li>
-        </ul>
-    </div>
-
-    <div class="row">
-        <ul><b>1.4.6</b> (12.10.2020)
-            <li>{% trans "CSCVARDA-2008 oph-käyttäjät eivät saa haettua vakasuhteita" %}</li>
-            <li>{% trans "CSCVARDA-2000 Tehdään tilapäiseen toimipaikkaan mahdolliseksi jm02/03 lapsen tallentaminen" %}</li>
-            <li>{% trans "CSCVARDA-1766 Lakkautettuun toimipaikkaa pitäisi voida syöttää lapsia" %}</li>
-            <li>{% trans "CSCVARDA-2027 Täydennyskoulutus total-osallistujamäärä" %}</li>
-        </ul>
-    </div>
-
-    <div class="row">
-        <ul><b>1.4.5</b> (01.10.2020)
-            <li>{% trans "CSCVARDA-1959: Lisäys opintopolun rajapintakutsuihin tulevaan CALLER-ID pakotukseen liittyen" %}</li>
-            <li>{% trans "CSCVARDA-1961: Tunniste kentän tarkennus: Erikoismerkeistä sallitaan vain piste, viiva ja alaviiva (.-_)" %}</li>
-            <li>{% trans "CSCVARDA-1958: Varhaiskasvatuspäätöksiin lapsi-suodatin, varhaiskasvatussuhteisiin varhaiskasvatuspäätös-suodatin" %}</li>
-            <li>{% trans "CSCVARDA-1783: Tilapäisen henkilöstön tietoja ei voi tallentaa tulevaisuuteen" %}</li>
-            <li>{% trans "CSCVARDA-1964: Maksutieto salli maksutiedon päivämäärien olevan sama kuin vakapäätöksen" %}</li>
-            <li>{% trans "CSCVARDA-1867: Pidempi poissaolo: Toimipaikkakohtaisten käyttöoikeuksien parannuksia" %}</li>
-            <li>{% trans "CSCVARDA-1969: Työskentelypaikan validoinnin parannusta" %}</li>
-            <li>{% trans "CSCVARDA-1962: Työskentelypaikan luonnin nopeutus" %}</li>
-            <li>{% trans "CSCVARDA-1535: Henkilo_oid pakolliseksi vardan tallentaessa henkilön tietoja ONR:stä" %}</li>
-            <li>{% trans "CSCVARDA-1952: Työntekijän uniikkiuden virheviesti palautuu loppukäyttäjälle" %}</li>
-        </ul>
-    </div>
-
-    <div class="row">
-        <ul><b>1.4.4</b> (23.09.2020)
-            <li>{% trans "CSCVARDA-1940: Palvelussuhde voi alkaa ennen toimipaikan alkamista" %}</li>
-            <li>{% trans "CSCVARDA-1915: Täydennyskoulutuksen työntekijän lisää ja poista järjestyksen korjaus" %}</li>
-            <li>{% trans "CSCVARDA-1879: Täydennyskoulutuksen kesto voi olla maksimissaan 160 pv" %}</li>
-        </ul>
-    </div>
-
-    <div class="row">
-        <ul><b>1.4.3</b> (10.09.2020)
-            <li>{% trans "Bugikorjaus työntekijän uniikkiuden validointiin" %}</li>
-            <li>{% trans "Caller-Id käyttöoikeuspalvelun kutsuihin" %}</li>
-            <li>{% trans "CSCVARDA-1942: Lapsen päivitys (PUT/PATCH) palauttaa aina 200_OK. Rajapinnalla ei voi päivityksiä tehdä lapsi-objektiin." %}</li>
-            <li>{% trans "CSCVARDA-1889: Vakajärjestäjien haku kunnan nimen perusteella (PAOS)" %}</li>
-            <li>{% trans "CSCVARDA-1677: Henkilötietojen päivitys" %}</li>
-        </ul>
-    </div>
-
-    <div class="row">
-        <ul><b>1.4.2</b> (03.09.2020)
-            <li>{% trans "CSCVARDA-1909 Yhteenvetonäkymän hakupäivämäärän korjaus" %}</li>
-            <li>{% trans "CSCVARDA-1883 Syötä tietoja näkymään hetu ja oppijanumerohaku" %}</li>
-        </ul>
-    </div>
-
-    <div class="row">
-        <ul><b>1.4.1</b> (01.09.2020)
-            <li>{% trans "CSCVARDA-1876 Muutetaan lapsen vakatoimija kenttä pakolliseksi" %}</li>
-            <li>{% trans "CSCVARDA-1895 OPH käyttäjille henkilöstöoikeudet" %}</li>
-        </ul>
-    </div>
-
-    <div class="row">
-        <ul><b>1.4.0</b> (27.08.2020)
-            <li>{% trans "Henkilöstökokonaisuuden käyttöönotto" %}</li>
-            <li>{% trans "Huoltajan katselunäkymän käyttöönotto" %}</li>
-            <li>{% trans "CSCVARDA-1837: Oppijanumero palautuu myös silloin kuin henkilö lisätään ensimmäistä kertaa" %}</li>
-            <li>{% trans "CSCVARDA-1874: Toimipaikan alkamispäivämäärää ei voi päivittää olemaan päättymispäivämäärän jälkeen" %}</li>
-            <li>{% trans "Tietoturvapäivityksiä:" %}</li>
-            <ul>
-                <li>CSCVARDA-1869, CSCVARDA-909</li>
-            </ul>
-        </ul>
-    </div>
-
-    <div class="row">
-        <ul><b>1.3.22</b> (06.08.2020)
-            <li>{% trans "CSCVARDA-1705: Lapsi objektin voi poistaa jos vaka- ja huoltajatiedot ovat poistettu" %}</li>
-            <li>{% trans "CSCVARDA-1836: Yksityisten maksutietojen tallennukseen parannus" %}</li>
-            <li>{% trans "Henkilöstön käyttöönottoon valmistautumista:" %}</li>
-            <ul>
-                <li>CSCVARDA-1795, CSCVARDA-1271, CSCVARDA-1834, CSCVARDA-1801</li>
-            </ul>
-        </ul>
-    </div>
-
-    <div class="row">
-        <ul><b>1.3.21</b> (30.07.2020)
-            <li>{% trans "CSCVARDA-1829 ja CSCVARDA-1830: Yhteenvetonäkyman laskentakaavojen tarkennuksia" %}</li>
-            <li>{% trans "CSCVARDA-1802: Paos lupiin korjaus kuntien välisessä toiminnassa" %}</li>
-            <li>{% trans "CSCVARDA-1476: Hae ja muokkaa rajapintamuutoksia" %}</li>
-            <li>{% trans "Henkilöstön käyttöönottoon valmistautumista:" %}</li>
-            <ul>
-                <li>CSCVARDA-1776</li>
-            </ul>
-        </ul>
-     </div>
-
-    <div class="row">
-        <ul><b>1.3.20</b> (16.07.2020)
-            <li>{% trans "CSCVARDA-1403 Validointi: järjestämismuodot" %}</li>
-            <li>{% trans "CSCVARDA-1679 Vakatoimijalle lisätään tieto sisältötyyppien mukaan (integraatio)" %}</li>
-            <li>{% trans "CSCVARDA-1779 Työskentelypaikan mitätöinnin validointi" %}</li>
-            <li>{% trans "CSCVARDA-1639 Muokkaa toimipaikan lähdejärjestelmäkenttä hallinnointijärjestelmäksi" %}</li>
-        </ul>
-    </div>
-
-    <div class="row">
-        <ul><b>1.3.19</b> (09.07.2020)
-            <li>{% trans "CSCVARDA-996 Työntekijän osoitetietojen poisto" %}</li>
-            <li>{% trans "CSCVARDA-1744 Henkilöstön päivämäärien lisävalidointeja" %}</li>
-            <ul>
-                <li>CSCVARDA-1646, CSCVARDA-1647</li>
-            </ul>
-        </ul>
-    </div>
-
-    <div class="row">
-        <ul><b>1.3.18</b> (02.07.2020)
-            <li>{% trans "CSCVARDA-1648: Batcherror henkilömuutoksiin" %}</li>
-            <li>{% trans "CSCVARDA-1753: Paos lasten maksutietojen käyttöoikeuksien parannuksia" %}</li>
-            <li>{% trans "CSCVARDA-1791: Vakajärjestäjän ja toimipaikan välisen päivämäärätarkastuksen poistaminen" %}</li>
-            <li>{% trans "Henkilöstön käyttöönottoon valmistautumista" %}</li>
-            <ul>
-                <li>CSCVARDA-1461, CSCVARDA-1459, CSCVARDA-1648, CSCVARDA-1719</li>
-            </ul>
-            <li>{% trans "Sisäisiä toiminnallisuuksia" %}</li>
-            <ul>
-                <li>CSCVARDA-1433, CSCVARDA-1611</li>
-            </ul>
-        </ul>
-    </div>
-
   <div class="row">
-      <ul><b>1.3.17</b> (11.06.2020)
-          <li>{% trans "Lokituksen parannusta puuttuville käyttäjäryhmille" %}</li>
-          <li>{% trans "CSCVARDA-1732: Lokalisointipalvelu-proxy käyttöliittymälle" %}</li>
-          <li>{% trans "CSCVARDA-1504: Päivämäärävalidointeja" %}</li>
-          <ul>
-              <li>{% trans "Kieli- ja toiminnallisenpainotuksen päivämäärät pitää olla toimipaikan päivämäärien sisällä" %}</li>
-              <li>{% trans "Toimipaikan alkamis- ja päättymispäivämäärä pitää olla vakajärjestäjän alkamis- ja päättymispäivämäärän sisällä" %}</li>
-          </ul>
-          <li>{%  trans "Tietoturvapäivityksiä" %}</li>
-          <li>{%  trans "Asiakaspalvelun yhteysosoite päivitetty" %}</li>
-      </ul>
+    <ul><b>1.6.1</b> (04.02.2021)
+      <li>{% trans "OPHVARDA-2153: Lasten ja vakapäätösten käyttöoikeuksien korjaus" %}</li>
+    </ul>
   </div>
 
   <div class="row">
-      <ul><b>1.3.16</b> (04.06.2020)
-          <li>{% trans "CSCVARDA-1591: Yksityisten toimijoiden maksutietojen muutokset, perheen_koko minimiarvo nostettu 2:een" %}</li>
-          <li>{% trans "CSCVARDA-1712: Yhdellä virkailijatunnuksella on jatkossa mahdollista syöttää useampaan organisaation saman henkilön tietoja" %}</li>
-          <li>{% trans "CSCVARDA-1735: Huoltajien katselunäkymään valmistautumista" %}</li>
-          <li>{% trans "CSCVARDA-1460: Henkilöstön käyttöönottoon valmistautumista" %}</li>
+    <ul><b>1.6.0</b> (28.01.2021)
+      <li>{% trans "OPHVARDA-1947: Syötä tietoja -hakurajapintoihin voimassa-filtterit" %}</li>
+      <li>{% trans "OPHVARDA-2136: Tilinumeron poisto Vakajärjestäjän tiedoista" %}</li>
+      <li>{% trans "OPHVARDA-1803: Omien tietojen katselunäkymän rajapinnat" %}</li>
+      <li>{% trans "OPHVARDA-2173: Poissaolon pituuden validoinnin korjaus" %}</li>
+      <li>{% trans "OPHVARDA-2166: Poistetaan poissaolon päivämäärien riippuvuus palvelussuhteesta" %}</li>
+      <li>{% trans "OPHVARDA-2138: Anonymisointiin muutoksia" %}</li>
+      <li>{% trans "OPHVARDA-2149: Kela tiedonsiirron korjauksia" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.5.2</b> (14.01.2021)
+      <li>{% trans "OPHVARDA-2146 Puutteellisten raportilla näkyy maksutiedot tuplina" %}</li>
+      <li>{% trans "OPHVARDA-2140 Salli passiivisen vakajärjestäjän käyttöoikeusryhmien käyttö" %}</li>
+      <li>{% trans "OPHVARDA-1812 Katsele tietoja: Työntekijän haun toteutus osa 4" %}</li>
+      <li>{% trans "OPHVARDA-2127 Vardan lokalisointirajapinnasta julkinen" %}</li>
+      <li>{% trans "OPHVARDA-2143 Syötä tietoja paos toimipaikkojen listaus" %}</li>
+      <li>{% trans "OPHVARDA-2145 Celery-tulosten siivous" %}</li>
+      <li>{% trans "OPHVARDA-2148 Tiedonsiirtolokin tyhjennysaikataulu" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.5.1</b> (04.01.2021)
+      <li>{% trans "CSCVARDA-2135: Pakotus rajapintasiirtoihin tieto tilapäisestä varhaiskasvatuksesta" %}</li>
+      <li>{% trans "CSCVARDA-2133: Työajan pitää voida olla 0" %}</li>
+      <li>{% trans "CSCVARDA-2108: Tietojen anonymisointiin muutoksia" %}</li>
+      <li>{% trans "CSCVARDA-2141: Kelan tiedonsiirtoon liittyviä valmistelutöitä" %}</li>
+      <li>{% trans "CSCVARDA-2067: Versiopäivityksiä" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.5.0</b> (17.12.2020)
+      <li>{% trans "CSCVARDA-2125, CSCVARDA-2001, CSCVARDA-2026: Lasten ja henkilöstön puutteelliset tiedot" %}</li>
+      <li>{% trans "CSCVARDA-2002: Tiedonsiirtojen virheraportti" %}</li>
+      <li>{% trans "CSCVARDA-2115: Koodistojen järjestys nimen mukaan" %}</li>
+      <li>{% trans "CSCVARDA-2056: Puhelinnumeron validoinnin tarkennus" %}</li>
+      <li>{% trans "CSCVARDA-2104: Henkilöstötietojen luonnin käyttöoikeustarkennuksia" %}</li>
+      <li>{% trans "CSCVARDA-2131: Katsele tietoja PAOS-käyttöoikeuksien korjaus" %}</li>
+      <li>{% trans "CSCVARDA-2116: Kelan tiedonsiirtoon liittyviä valmistelutöitä" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.4.12</b> (03.12.2020)
+      <li>{% trans "CSCVARDA-1740: Virhekoodisto ja virheviestien uudistus" %}</li>
+      <li>{% trans "CSCVARDA-2112: Lisäys, muokkaus ja poisto kutsujen päivittäisen määrän nostaminen" %}</li>
+      <li>{% trans "Kelan tiedonsiirtoihin valmistautumista" %}</li>
+      <ul>
+        <li>CSCVARDA-753, CSCVARDA-601, CSCVARDA-603, CSCVARDA-603</li>
       </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.4.11</b> (26.11.2020)
+      <li>{% trans "CSCVARDA-2039: Varhaiskasvatuspäätökselle tilapainen_vaka_kytkin" %}</li>
+      <li>{% trans "CSCVARDA-2103: Postinumerokoodiston käyttöönotto" %}</li>
+      <li>{% trans "CSCVARDA-2106: PAOS-lapsen tallentajaorganisaatio käyttöliittymän rajapinnassa" %}</li>
+      <li>{% trans "CSCVARDA-2076: Täydennyskoulutuksen luonnin nopeutus" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.4.10</b> (12.11.2020)
+      <li>{% trans "CSCVARDA-1941: Toimijan yhteystietojen tallennus pääkäyttäjäoikeuksilla" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.4.8</b> (29.10.2020)
+      <li>{% trans "CSCVARDA-2001 CSCVARDA-2026 Vardan UI:n rajapinnan muutoksia, /api/v1/vakajarjestajat/{id}/toimipaikat/ 'voimassaolo' query parametri poistui johon korvaajana alkamis_pvm ja paattymis_pvm" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.4.7</b> (22.10.2020)
+      <li>{% trans "CSCVARDA-1886 PO116 Toimipaikkakohtaisilla oikeuksilla täydennyskoulutuksen tallennus" %}</li>
+      <li>{% trans "CSCVARDA-1938 Yksityinen toimija ei saa tallentaa maksutietoa, joka päättyy ennen 1.9.2020" %}</li>
+      <li>{% trans "CSCVARDA-1850 PO14 Työskentelypaikan päättymispvmn validointi" %}</li>
+      <li>{% trans "CSCVARDA-1939 Vardaan ei voi tallentaa poissaolotietoja, joissa päättymispäivämäärä on ennen 1.9.2020" %}</li>
+      <li>{% trans "CSCVARDA-2046 Lisää työntekijän koosteeseen tunnistetiedot" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.4.6</b> (12.10.2020)
+      <li>{% trans "CSCVARDA-2008 oph-käyttäjät eivät saa haettua vakasuhteita" %}</li>
+      <li>{% trans "CSCVARDA-2000 Tehdään tilapäiseen toimipaikkaan mahdolliseksi jm02/03 lapsen tallentaminen" %}</li>
+      <li>{% trans "CSCVARDA-1766 Lakkautettuun toimipaikkaa pitäisi voida syöttää lapsia" %}</li>
+      <li>{% trans "CSCVARDA-2027 Täydennyskoulutus total-osallistujamäärä" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.4.5</b> (01.10.2020)
+      <li>{% trans "CSCVARDA-1959: Lisäys opintopolun rajapintakutsuihin tulevaan CALLER-ID pakotukseen liittyen" %}</li>
+      <li>{% trans "CSCVARDA-1961: Tunniste kentän tarkennus: Erikoismerkeistä sallitaan vain piste, viiva ja alaviiva (.-_)" %}</li>
+      <li>{% trans "CSCVARDA-1958: Varhaiskasvatuspäätöksiin lapsi-suodatin, varhaiskasvatussuhteisiin varhaiskasvatuspäätös-suodatin" %}</li>
+      <li>{% trans "CSCVARDA-1783: Tilapäisen henkilöstön tietoja ei voi tallentaa tulevaisuuteen" %}</li>
+      <li>{% trans "CSCVARDA-1964: Maksutieto salli maksutiedon päivämäärien olevan sama kuin vakapäätöksen" %}</li>
+      <li>{% trans "CSCVARDA-1867: Pidempi poissaolo: Toimipaikkakohtaisten käyttöoikeuksien parannuksia" %}</li>
+      <li>{% trans "CSCVARDA-1969: Työskentelypaikan validoinnin parannusta" %}</li>
+      <li>{% trans "CSCVARDA-1962: Työskentelypaikan luonnin nopeutus" %}</li>
+      <li>{% trans "CSCVARDA-1535: Henkilo_oid pakolliseksi vardan tallentaessa henkilön tietoja ONR:stä" %}</li>
+      <li>{% trans "CSCVARDA-1952: Työntekijän uniikkiuden virheviesti palautuu loppukäyttäjälle" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.4.4</b> (23.09.2020)
+      <li>{% trans "CSCVARDA-1940: Palvelussuhde voi alkaa ennen toimipaikan alkamista" %}</li>
+      <li>{% trans "CSCVARDA-1915: Täydennyskoulutuksen työntekijän lisää ja poista järjestyksen korjaus" %}</li>
+      <li>{% trans "CSCVARDA-1879: Täydennyskoulutuksen kesto voi olla maksimissaan 160 pv" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.4.3</b> (10.09.2020)
+      <li>{% trans "Bugikorjaus työntekijän uniikkiuden validointiin" %}</li>
+      <li>{% trans "Caller-Id käyttöoikeuspalvelun kutsuihin" %}</li>
+      <li>{% trans "CSCVARDA-1942: Lapsen päivitys (PUT/PATCH) palauttaa aina 200_OK. Rajapinnalla ei voi päivityksiä tehdä lapsi-objektiin." %}</li>
+      <li>{% trans "CSCVARDA-1889: Vakajärjestäjien haku kunnan nimen perusteella (PAOS)" %}</li>
+      <li>{% trans "CSCVARDA-1677: Henkilötietojen päivitys" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.4.2</b> (03.09.2020)
+      <li>{% trans "CSCVARDA-1909 Yhteenvetonäkymän hakupäivämäärän korjaus" %}</li>
+      <li>{% trans "CSCVARDA-1883 Syötä tietoja näkymään hetu ja oppijanumerohaku" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.4.1</b> (01.09.2020)
+      <li>{% trans "CSCVARDA-1876 Muutetaan lapsen vakatoimija kenttä pakolliseksi" %}</li>
+      <li>{% trans "CSCVARDA-1895 OPH käyttäjille henkilöstöoikeudet" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.4.0</b> (27.08.2020)
+      <li>{% trans "Henkilöstökokonaisuuden käyttöönotto" %}</li>
+      <li>{% trans "Huoltajan katselunäkymän käyttöönotto" %}</li>
+      <li>{% trans "CSCVARDA-1837: Oppijanumero palautuu myös silloin kuin henkilö lisätään ensimmäistä kertaa" %}</li>
+      <li>{% trans "CSCVARDA-1874: Toimipaikan alkamispäivämäärää ei voi päivittää olemaan päättymispäivämäärän jälkeen" %}</li>
+      <li>{% trans "Tietoturvapäivityksiä:" %}</li>
+      <ul>
+        <li>CSCVARDA-1869, CSCVARDA-909</li>
+      </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.3.22</b> (06.08.2020)
+      <li>{% trans "CSCVARDA-1705: Lapsi objektin voi poistaa jos vaka- ja huoltajatiedot ovat poistettu" %}</li>
+      <li>{% trans "CSCVARDA-1836: Yksityisten maksutietojen tallennukseen parannus" %}</li>
+      <li>{% trans "Henkilöstön käyttöönottoon valmistautumista:" %}</li>
+      <ul>
+        <li>CSCVARDA-1795, CSCVARDA-1271, CSCVARDA-1834, CSCVARDA-1801</li>
+      </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.3.21</b> (30.07.2020)
+      <li>{% trans "CSCVARDA-1829 ja CSCVARDA-1830: Yhteenvetonäkyman laskentakaavojen tarkennuksia" %}</li>
+      <li>{% trans "CSCVARDA-1802: Paos lupiin korjaus kuntien välisessä toiminnassa" %}</li>
+      <li>{% trans "CSCVARDA-1476: Hae ja muokkaa rajapintamuutoksia" %}</li>
+      <li>{% trans "Henkilöstön käyttöönottoon valmistautumista:" %}</li>
+      <ul>
+        <li>CSCVARDA-1776</li>
+      </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.3.20</b> (16.07.2020)
+      <li>{% trans "CSCVARDA-1403 Validointi: järjestämismuodot" %}</li>
+      <li>{% trans "CSCVARDA-1679 Vakatoimijalle lisätään tieto sisältötyyppien mukaan (integraatio)" %}</li>
+      <li>{% trans "CSCVARDA-1779 Työskentelypaikan mitätöinnin validointi" %}</li>
+      <li>{% trans "CSCVARDA-1639 Muokkaa toimipaikan lähdejärjestelmäkenttä hallinnointijärjestelmäksi" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.3.19</b> (09.07.2020)
+      <li>{% trans "CSCVARDA-996 Työntekijän osoitetietojen poisto" %}</li>
+      <li>{% trans "CSCVARDA-1744 Henkilöstön päivämäärien lisävalidointeja" %}</li>
+      <ul>
+        <li>CSCVARDA-1646, CSCVARDA-1647</li>
+      </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.3.18</b> (02.07.2020)
+      <li>{% trans "CSCVARDA-1648: Batcherror henkilömuutoksiin" %}</li>
+      <li>{% trans "CSCVARDA-1753: Paos lasten maksutietojen käyttöoikeuksien parannuksia" %}</li>
+      <li>{% trans "CSCVARDA-1791: Vakajärjestäjän ja toimipaikan välisen päivämäärätarkastuksen poistaminen" %}</li>
+      <li>{% trans "Henkilöstön käyttöönottoon valmistautumista" %}</li>
+      <ul>
+        <li>CSCVARDA-1461, CSCVARDA-1459, CSCVARDA-1648, CSCVARDA-1719</li>
+      </ul>
+      <li>{% trans "Sisäisiä toiminnallisuuksia" %}</li>
+      <ul>
+        <li>CSCVARDA-1433, CSCVARDA-1611</li>
+      </ul>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.3.17</b> (11.06.2020)
+      <li>{% trans "Lokituksen parannusta puuttuville käyttäjäryhmille" %}</li>
+      <li>{% trans "CSCVARDA-1732: Lokalisointipalvelu-proxy käyttöliittymälle" %}</li>
+      <li>{% trans "CSCVARDA-1504: Päivämäärävalidointeja" %}</li>
+      <ul>
+        <li>{% trans "Kieli- ja toiminnallisenpainotuksen päivämäärät pitää olla toimipaikan päivämäärien sisällä" %}</li>
+        <li>{% trans "Toimipaikan alkamis- ja päättymispäivämäärä pitää olla vakajärjestäjän alkamis- ja päättymispäivämäärän sisällä" %}</li>
+      </ul>
+      <li>{% trans "Tietoturvapäivityksiä" %}</li>
+      <li>{% trans "Asiakaspalvelun yhteysosoite päivitetty" %}</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <ul><b>1.3.16</b> (04.06.2020)
+      <li>{% trans "CSCVARDA-1591: Yksityisten toimijoiden maksutietojen muutokset, perheen_koko minimiarvo nostettu 2:een" %}</li>
+      <li>{% trans "CSCVARDA-1712: Yhdellä virkailijatunnuksella on jatkossa mahdollista syöttää useampaan organisaation saman henkilön tietoja" %}</li>
+      <li>{% trans "CSCVARDA-1735: Huoltajien katselunäkymään valmistautumista" %}</li>
+      <li>{% trans "CSCVARDA-1460: Henkilöstön käyttöönottoon valmistautumista" %}</li>
+    </ul>
   </div>
 
   <div class="row">
@@ -257,38 +263,38 @@
       <li>{% trans "CSCVARDA-1710: Vardan koodistot julkisesti saataville sekä koodistopalveluintegraatio" %}</li>
       <li>{% trans "CSCVARDA-1042: Huoltajien katselunäkymään valmistautumista" %}</li>
       <li>{% trans "Henkilöstön käyttöönottoon valmistautumista" %}</li>
-        <ul>
-          <li>CSCVARDA-992, CSCVARDA-1463, CSCVARDA-1462</li>
-        </ul>
+      <ul>
+        <li>CSCVARDA-992, CSCVARDA-1463, CSCVARDA-1462</li>
+      </ul>
       <li>{% trans "Sisäisiä parannuksia" %}</li>
-        <ul>
-          <li>CSCVARDA-1717, CSCVARDA-1723</li>
-        </ul>
+      <ul>
+        <li>CSCVARDA-1717, CSCVARDA-1723</li>
+      </ul>
     </ul>
   </div>
 
-    <div class="row">
-        <ul><b>1.3.14</b> (11.05.2020)
-            <li>{% trans "CSCVARDA-1670: Paos toiminnallisuuksien parannuksia" %}</li>
-            <li>{% trans "CSCVARDA-1235: Päivämäärävalidoinnin tarkennus" %}</li>
-            <ul>
-                <li>{% trans "Varhaiskasvatuspäätösten, -suhteiden ja maksutietojen päivämäärät tulee olla vuoden 2000 jälkeen" %}</li>
-            </ul>
-            <li>{% trans "CSCVARDA-1525: Varhaiskasvatussuhteen validointitarkennus" %}</li>
-            <ul>
-                <li>{% trans "Mikäli varhaiskasvatuspäätöksellä on päättymispäivämäärä, tulee varhaiskasvatussuhteella olla päättymispäivämäärä" %}</li>
-            </ul>
-            <li>{% trans "CSCVARDA-1682: Sisäisiä toiminnallisuusparannuksia" %}</li>
-            <li>{% trans "Bugikorjaus: Palautetaan validointivirhe mikäli yritetään päivittää maksutietoa lapselle jolta puuttuu varhaiskasvatustiedot" %}</li>
-        </ul>
-    </div>
+  <div class="row">
+    <ul><b>1.3.14</b> (11.05.2020)
+      <li>{% trans "CSCVARDA-1670: Paos toiminnallisuuksien parannuksia" %}</li>
+      <li>{% trans "CSCVARDA-1235: Päivämäärävalidoinnin tarkennus" %}</li>
+      <ul>
+        <li>{% trans "Varhaiskasvatuspäätösten, -suhteiden ja maksutietojen päivämäärät tulee olla vuoden 2000 jälkeen" %}</li>
+      </ul>
+      <li>{% trans "CSCVARDA-1525: Varhaiskasvatussuhteen validointitarkennus" %}</li>
+      <ul>
+        <li>{% trans "Mikäli varhaiskasvatuspäätöksellä on päättymispäivämäärä, tulee varhaiskasvatussuhteella olla päättymispäivämäärä" %}</li>
+      </ul>
+      <li>{% trans "CSCVARDA-1682: Sisäisiä toiminnallisuusparannuksia" %}</li>
+      <li>{% trans "Bugikorjaus: Palautetaan validointivirhe mikäli yritetään päivittää maksutietoa lapselle jolta puuttuu varhaiskasvatustiedot" %}</li>
+    </ul>
+  </div>
 
   <div class="row">
     <ul><b>1.3.13</b> (24.04.2020)
       <li>{% trans "CSCVARDA-1190: Maksutiedot voi syöttää uudelle lapselle samantien jos lapsen huoltajatiedot jo löytyvät Vardasta" %}</li>
-        <ul>
-          <li>{% trans "Aikaisemmin tässä oli ohjeistuksena että maksutietojen syöttö vasta seuraavana päivänä" %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "Aikaisemmin tässä oli ohjeistuksena että maksutietojen syöttö vasta seuraavana päivänä" %}</li>
+      </ul>
       <li>{% trans "CSCVARDA-1593: Bugikorjaus liittyen maksutietoihin PAOS-lapsilla" %}</li>
       <li>{% trans "CSCVARDA-1464: HR-rajapintojen valmistelua" %}</li>
       <li>{% trans "CSCVARDA-1485: Sisäisiä virheenkäsittelyparannuksia" %}</li>
@@ -297,45 +303,45 @@
   </div>
 
   <div class="row">
-        <ul><b>1.3.12</b> (16.04.2020)
-            <li>{% trans "CSCVARDA-1484: Paos-lapsen ja vakatietojen lisäyksessä käyttöoikeudet heti toimijatasolle" %}</li>
-            <li>{% trans "CSCVARDA-1492: Järjestäjätieto-kenttä mukaan lasta lisättäessä" %}</li>
-            <li>{% trans "CSCVARDA-1492: Lapsen ja vakatietojen lisäyksessä käyttöoikeudet heti toimijatasolle jos järjestäjätieto on annettu" %}</li>
-        </ul>
+    <ul><b>1.3.12</b> (16.04.2020)
+      <li>{% trans "CSCVARDA-1484: Paos-lapsen ja vakatietojen lisäyksessä käyttöoikeudet heti toimijatasolle" %}</li>
+      <li>{% trans "CSCVARDA-1492: Järjestäjätieto-kenttä mukaan lasta lisättäessä" %}</li>
+      <li>{% trans "CSCVARDA-1492: Lapsen ja vakatietojen lisäyksessä käyttöoikeudet heti toimijatasolle jos järjestäjätieto on annettu" %}</li>
+    </ul>
   </div>
 
   <div class="row">
-        <ul><b>1.3.11</b> (08.04.2020)
-            <li>{% trans "Parannuksia ajastettuihin ajoihin" %}</li>
-        </ul>
+    <ul><b>1.3.11</b> (08.04.2020)
+      <li>{% trans "Parannuksia ajastettuihin ajoihin" %}</li>
+    </ul>
   </div>
 
   <div class="row">
-        <ul><b>1.3.10</b> (02.04.2020)
-            <li>{% trans "CSCVARDA-1559: Salli toimipaikan toimintamuodon muokkaus" %}</li>
-            <li>{% trans "CSCVARDA-1398: Katsele tietoja: lasten tietojen suodatus päivämäärien mukaan" %}</li>
-        </ul>
+    <ul><b>1.3.10</b> (02.04.2020)
+      <li>{% trans "CSCVARDA-1559: Salli toimipaikan toimintamuodon muokkaus" %}</li>
+      <li>{% trans "CSCVARDA-1398: Katsele tietoja: lasten tietojen suodatus päivämäärien mukaan" %}</li>
+    </ul>
   </div>
 
   <div class="row">
-      <ul><b>1.3.9</b> (26.03.2020)
-          <li>{% trans "CSCVARDA-1478: Toimipaikan nimikenttä hyväksyy kaksoispisteen" %}</li>
-          <li>{% trans "CSCVARDA-1299: Maksutietojen päivämäärät validoidaan vakatietojen perusteella" %}</li>
-      </ul>
+    <ul><b>1.3.9</b> (26.03.2020)
+      <li>{% trans "CSCVARDA-1478: Toimipaikan nimikenttä hyväksyy kaksoispisteen" %}</li>
+      <li>{% trans "CSCVARDA-1299: Maksutietojen päivämäärät validoidaan vakatietojen perusteella" %}</li>
+    </ul>
   </div>
 
   <div class="row">
-      <ul><b>1.3.8</b> (12.03.2020)
-          <li>{% trans "CSCVARDA-1064: Perhepäivähoitajien ja ryhmäperhepäivähoitajien toimipaikat siirtyvät jatkossa organisaatiopalveluun" %}</li>
-      </ul>
+    <ul><b>1.3.8</b> (12.03.2020)
+      <li>{% trans "CSCVARDA-1064: Perhepäivähoitajien ja ryhmäperhepäivähoitajien toimipaikat siirtyvät jatkossa organisaatiopalveluun" %}</li>
+    </ul>
   </div>
 
   <div class="row">
-      <ul><b>1.3.7</b> (12.03.2020)
-          <li>{% trans "CSCVARDA-1064: Perhepäivähoitajien ja ryhmäperhepäivähoitajien oiditus" %}</li>
-          <li>{% trans "CSCVARDA-1532: Sähköpostivalidoinnin parannuksia" %}</li>
-          <li>{% trans "CSCVARDA-1310: Palvelun sisäisiä parannuksia" %}</li>
-      </ul>
+    <ul><b>1.3.7</b> (12.03.2020)
+      <li>{% trans "CSCVARDA-1064: Perhepäivähoitajien ja ryhmäperhepäivähoitajien oiditus" %}</li>
+      <li>{% trans "CSCVARDA-1532: Sähköpostivalidoinnin parannuksia" %}</li>
+      <li>{% trans "CSCVARDA-1310: Palvelun sisäisiä parannuksia" %}</li>
+    </ul>
   </div>
 
   <div class="row">
@@ -465,10 +471,10 @@
     <ul><b>1.2.1</b> (16.09.2019)
       <li>{% trans "Bugikorjauksia" %}</li>
       <li>{% trans "Maksutiedot:" %}</li>
-        <ul>
-          <li>{% trans "Koodiarvot MP02, MP03: Lisätty mahdollisuus luoda maksutietoja, joissa sekä asiakasmaksu että palvelusetelin arvo ovat 0" %}</li>
-          <li>{% trans "Parannettu validointeja" %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "Koodiarvot MP02, MP03: Lisätty mahdollisuus luoda maksutietoja, joissa sekä asiakasmaksu että palvelusetelin arvo ovat 0" %}</li>
+        <li>{% trans "Parannettu validointeja" %}</li>
+      </ul>
     </ul>
   </div>
 
@@ -495,13 +501,15 @@
 
   <div class="row">
     <ul><b>1.1.3</b> (01.07.2019)
-      <li><b>{% trans "Henkilön syöttäminen oppijanumerolla (hetuton henkilö): Tähän vaaditaan nimitiedot jatkossa mukaan, samaan tapaan kuin hetullisen henkilön syöttäminen on jo ollut." %}</b></li>
+      <li>
+        <b>{% trans "Henkilön syöttäminen oppijanumerolla (hetuton henkilö): Tähän vaaditaan nimitiedot jatkossa mukaan, samaan tapaan kuin hetullisen henkilön syöttäminen on jo ollut." %}</b>
+      </li>
       <li>{% trans "POST /api/v1/henkilot/ palauttaa" %}</li>
-        <ul>
-          <li>{% trans "HTTP 400 jos validointi ei onnistu" %}</li>
-          <li>{% trans "HTTP 201 jos henkilön luonti onnistui" %}</li>
-          <li>{% trans "HTTP 409 jos henkilö on jo Vardassa. Tällöin Varda palauttaa henkilön perustiedot, jonka jälkeen /api/v1/hae-henkilo/ kutsua ei tarvitse enää suorittaa." %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "HTTP 400 jos validointi ei onnistu" %}</li>
+        <li>{% trans "HTTP 201 jos henkilön luonti onnistui" %}</li>
+        <li>{% trans "HTTP 409 jos henkilö on jo Vardassa. Tällöin Varda palauttaa henkilön perustiedot, jonka jälkeen /api/v1/hae-henkilo/ kutsua ei tarvitse enää suorittaa." %}</li>
+      </ul>
       <li>{% trans "Varhaiskasvatuspäätöksen tuntimäärä oltava jatkossa minimissään 1h" %}</li>
       <li>{% trans "Validointeja päivitetty" %}</li>
       <li>{% trans "Bugikorjauksia" %}</li>
@@ -513,10 +521,10 @@
       <li>{% trans "Uusi rajapinta /api/v1/varhaiskasvatuspaatokset/xx/varhaiskasvatussuhteet/ lisätty" %}</li>
       <li>{% trans "Tietoturvapäivityksiä" %}</li>
       <li>{% trans "Validointeja kehitetty" %}</li>
-        <ul>
-          <li>{% trans "Toimipaikan osoitteen (kayntiosoite, postiosoite) pituus oltava 3-100 merkkiä." %}</li>
-          <li>{% trans "Ns. tilapäiset henkilötunnukset ei sallittuja enää tuotannossa. Eli järjestysnumero 9:llä alkavat." %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "Toimipaikan osoitteen (kayntiosoite, postiosoite) pituus oltava 3-100 merkkiä." %}</li>
+        <li>{% trans "Ns. tilapäiset henkilötunnukset ei sallittuja enää tuotannossa. Eli järjestysnumero 9:llä alkavat." %}</li>
+      </ul>
     </ul>
   </div>
 
@@ -524,115 +532,120 @@
     <ul><b>1.1.1</b> (16.05.2019)
       <li>{% trans "/api/v1/vakajarjestajat/ sivun pituus muutettu 200 -> 20" %}</li>
       <li>{% trans "Bugikorjaus" %}</li>
-        <ul>
-          <li>{% trans "varhaiskasvatuspaatoksen ja vakasuhteen paivamaarien synkkaus." %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "varhaiskasvatuspaatoksen ja vakasuhteen paivamaarien synkkaus." %}</li>
+      </ul>
     </ul>
   </div>
 
   <div class="row">
     <ul><b>1.1.0</b> (15.05.2019)
       <li>{% trans "Uudet api-throttle rajat" %}</li>
-        <ul>
-          <li>{% trans "15 req/s" %}</li>
-          <li>{% trans "GET: 10 000 req/päivä" %}</li>
-          <li>{% trans "POST, PUT, PATCH, DELETE: 50 000 req/päivä" %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "15 req/s" %}</li>
+        <li>{% trans "GET: 10 000 req/päivä" %}</li>
+        <li>{% trans "POST, PUT, PATCH, DELETE: 50 000 req/päivä" %}</li>
+      </ul>
       <li>{% trans "Rajapintatulosten sorttaukset" %}</li>
-        <ul>
-          <li>{% trans "/api/v1/vakajarjestajat/xx/toimipaikat/ toimipaikan nimen mukaan." %}</li>
-          <li>{% trans "/api/v1/toimipaikat/xx/lapset/ sukunimen ja etunimien mukaan." %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "/api/v1/vakajarjestajat/xx/toimipaikat/ toimipaikan nimen mukaan." %}</li>
+        <li>{% trans "/api/v1/toimipaikat/xx/lapset/ sukunimen ja etunimien mukaan." %}</li>
+      </ul>
       <li>{% trans "Validointeja kehitetty" %}</li>
-        <ul>
-          <li>{% trans "alkamis- ja paattymis_pvm ei voi olla sama. Poikkeus: Tilapaisesti hoidossa olevien varhaiskasvatuspaatos ja -suhde voi kestaa yhden paivan." %}</li>
-          <li>{% trans "varhaiskasvatuspaatos ei voi päättyä ennen kuin varhaiskasvatussuhde on päättynyt." %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "alkamis- ja paattymis_pvm ei voi olla sama. Poikkeus: Tilapaisesti hoidossa olevien varhaiskasvatuspaatos ja -suhde voi kestaa yhden paivan." %}</li>
+        <li>{% trans "varhaiskasvatuspaatos ei voi päättyä ennen kuin varhaiskasvatussuhde on päättynyt." %}</li>
+      </ul>
     </ul>
   </div>
 
   <div class="row">
     <ul><b>1.0.3</b> (15.04.2019)
       <li>{% trans "Varhaiskasvatuspäätös" %}</li>
+      <ul>
+        <li>{% trans "Vuorohoitokytkinten validointi." %}</li>
         <ul>
-          <li>{% trans "Vuorohoitokytkinten validointi." %}</li>
-            <ul>
-              <li>Mikäli lapsi on vuorohoidossa, kokoaikainen_vaka_kytkin ja paivittainen_vaka_kytkin merkitään tyhjäksi</li>
-              <li>Mikäli lapsi ei ole vuorohoidossa, vaaditaan sekä kokoaikainen_vaka_kytkin, että paivittainen_vaka_kytkin</li>
-            </ul>
-          <li>{% trans "Yhteenvetonäkymä." %}</li>
-            <ul>
-              <li>Jokaiselle varhaiskasvatustoimijalle tulossa yhteenvetonäkymä heidän organisaatioonsa syötetyistä tiedoista</li>
-            </ul>
+          <li>Mikäli lapsi on vuorohoidossa, kokoaikainen_vaka_kytkin ja paivittainen_vaka_kytkin merkitään tyhjäksi
+          </li>
+          <li>Mikäli lapsi ei ole vuorohoidossa, vaaditaan sekä kokoaikainen_vaka_kytkin, että
+            paivittainen_vaka_kytkin
+          </li>
         </ul>
+        <li>{% trans "Yhteenvetonäkymä." %}</li>
+        <ul>
+          <li>Jokaiselle varhaiskasvatustoimijalle tulossa yhteenvetonäkymä heidän organisaatioonsa syötetyistä
+            tiedoista
+          </li>
+        </ul>
+      </ul>
       <li>{% trans "Nimi ja yhteystiedot menevät Organisaatiopalveluun kolmella kielellä (suomi, ruotsi ja englanti)" %}</li>
       <li>{% trans "Bugikorjauksia" %}</li>
-        <ul>
-          <li>{% trans "Korjattu suuri viive toimipaikan muutoksissa / kieli- ja toiminnallisissa painotuksissa (lisäykset/muutokset)." %}</li>
-          <li>{% trans "Henkilön nimivalidointi: Aikaisemmin ei sallinut esim. merkkiä é." %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "Korjattu suuri viive toimipaikan muutoksissa / kieli- ja toiminnallisissa painotuksissa (lisäykset/muutokset)." %}</li>
+        <li>{% trans "Henkilön nimivalidointi: Aikaisemmin ei sallinut esim. merkkiä é." %}</li>
+      </ul>
     </ul>
   </div>
 
   <div class="row">
     <ul><b>1.0.2</b> (26.02.2019)
       <li>{% trans "Bugikorjauksia" %}</li>
-        <ul>
-          <li>{% trans "Varhaiskasvatuspäätöksen muokkaaminen (PUT/PATCH) ei palauttanut kaikkia päätöksen tietoja, ainoastaan pvm-kentät." %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "Varhaiskasvatuspäätöksen muokkaaminen (PUT/PATCH) ei palauttanut kaikkia päätöksen tietoja, ainoastaan pvm-kentät." %}</li>
+      </ul>
     </ul>
   </div>
 
   <div class="row">
     <ul><b>1.0.1</b> (20.02.2019)
       <li>{% trans "Bugikorjauksia" %}</li>
-        <ul>
-          <li>{% trans 'Yhden ja saman toimipaikan pystyi syöttämään "vahingossa" monta kertaa Vardan kautta Org.palveluun.' %}</li>
-        </ul>
+      <ul>
+        <li>{% trans 'Yhden ja saman toimipaikan pystyi syöttämään "vahingossa" monta kertaa Vardan kautta Org.palveluun.' %}</li>
+      </ul>
     </ul>
   </div>
 
   <div class="row">
     <ul><b>1.0.0</b> (05.02.2019)
       <li>{% trans "Varhaiskasvatussuhde" %}</li>
-        <ul>
-          <li>{% trans "Päätöslinkkiä ei voi muuttaa syötön jälkeen." %}</li>
-          <li>{% trans "Toimipaikkalinkkiä ei voi muuttaa syötön jälkeen." %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "Päätöslinkkiä ei voi muuttaa syötön jälkeen." %}</li>
+        <li>{% trans "Toimipaikkalinkkiä ei voi muuttaa syötön jälkeen." %}</li>
+      </ul>
       <li>{% trans "Varhaiskasvatuspäätös" %}</li>
-        <ul>
-          <li>{% trans "Muita kuin päivämäärätietoja ei voi muokata." %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "Muita kuin päivämäärätietoja ei voi muokata." %}</li>
+      </ul>
       <li>{% trans "Kielikoodisto" %}</li>
+      <ul>
+        <li>{% trans "Varda käyttää jatkossa kielikoodia: https://virkailija.testiopintopolku.fi/koodisto-service/rest/json/kielikoodistoopetushallinto/koodi" %}</li>
+        <li>{% trans 'HUOM! Edellisessä koodistossa arvoja, joita ei uudessa ole esim. koodiarvo "98" ja "se" poistuvat käytöstä' %}</li>
         <ul>
-          <li>{% trans "Varda käyttää jatkossa kielikoodia: https://virkailija.testiopintopolku.fi/koodisto-service/rest/json/kielikoodistoopetushallinto/koodi" %}</li>
-          <li>{% trans 'HUOM! Edellisessä koodistossa arvoja, joita ei uudessa ole esim. koodiarvo "98" ja "se" poistuvat käytöstä' %}</li>
-            <ul>
-              <li>{% trans "https://virkailija.testiopintopolku.fi/koodisto-service/rest/json/kieli/koodi" %}</li>
-            </ul>
+          <li>{% trans "https://virkailija.testiopintopolku.fi/koodisto-service/rest/json/kieli/koodi" %}</li>
         </ul>
+      </ul>
     </ul>
   </div>
 
   <div class="row">
     <ul><b>0.9.5</b> (30.01.2019)
       <li>{% trans "Hetullisen henkilön VTJ-yksilöinti" %}</li>
-        <ul>
-          <li>{% trans "Jos tämä epäonnistuu → Vardan ylläpito ottaa kuntaan yhteyttä asian ratkaisemiseksi." %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "Jos tämä epäonnistuu → Vardan ylläpito ottaa kuntaan yhteyttä asian ratkaisemiseksi." %}</li>
+      </ul>
       <li>{% trans "Validointeja päivitetty" %}</li>
+      <ul>
+        <li>{% trans "Toimipaikan nimessä sallittu numeroiden ja kirjaimien lisäksi merkit: '/', '&', '+', '(', ')', '-', ','" %}</li>
+        <li>{% trans "Henkilön kutsumanimen tarkastamiseen tiukennuksia." %}</li>
         <ul>
-          <li>{% trans "Toimipaikan nimessä sallittu numeroiden ja kirjaimien lisäksi merkit: '/', '&', '+', '(', ')', '-', ','" %}</li>
-          <li>{% trans "Henkilön kutsumanimen tarkastamiseen tiukennuksia." %}</li>
-            <ul>
-              <li>{% trans "Esim. etunimi 'Liisa-Marjatta Tuulikki'. Tämän sallitut kutsumanimet: 'Liisa', 'Marjatta', 'Liisa-Marjatta' ja 'Tuulikki'. 'Marja' ei käy." %}</li>
-            </ul>
+          <li>{% trans "Esim. etunimi 'Liisa-Marjatta Tuulikki'. Tämän sallitut kutsumanimet: 'Liisa', 'Marjatta', 'Liisa-Marjatta' ja 'Tuulikki'. 'Marja' ei käy." %}</li>
         </ul>
+      </ul>
       <li>{% trans "Bugikorjauksia" %}</li>
-        <ul>
-          <li>{% trans "Varhaiskasvatuspäätöksen paattymis_pvm ei voinut asettaa ilman aloitus_pvm (PATCH-request)." %}</li>
-          <li>{% trans "Käyttöoikeusongelma liittyen PAOS-toimipaikkoihin korjattu." %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "Varhaiskasvatuspäätöksen paattymis_pvm ei voinut asettaa ilman aloitus_pvm (PATCH-request)." %}</li>
+        <li>{% trans "Käyttöoikeusongelma liittyen PAOS-toimipaikkoihin korjattu." %}</li>
+      </ul>
     </ul>
   </div>
 
@@ -640,15 +653,15 @@
     <ul><b>0.9.0</b> (08.01.2019)
       <li>{% trans "Toimipaikan painotusten päivittäminen Organisaatiopalveluun lisätty." %}</li>
       <li>{% trans "Jokaiselle vakajärjestäjälle lisätty toimipaikka: <i>'Palveluseteli ja ostopalvelu' + vakajärjestäjän nimi</i>." %}</li>
-        <ul>
-          <li>{% trans "Esimerkki: Palveluseteli ja ostopalvelu Helsingin kaupunki." %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "Esimerkki: Palveluseteli ja ostopalvelu Helsingin kaupunki." %}</li>
+      </ul>
       <li>{% trans "Perhepäivähoitajia (toimipaikkoja) ei viedä Organisaatiopalveluun." %}</li>
       <li>{% trans "Käyttöoikeuksia päivitetty virkailijoiden osalta." %}</li>
       <li>{% trans "Tietomalli" %}</li>
-        <ul>
-          <li>{% trans "Vakapäätöksen tuntimaara_viikossa: max-arvo muutettu 168 → 120." %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "Vakapäätöksen tuntimaara_viikossa: max-arvo muutettu 168 → 120." %}</li>
+      </ul>
       <li>{% trans "Bugikorjauksia." %}</li>
     </ul>
   </div>
@@ -656,9 +669,9 @@
   <div class="row">
     <ul><b>0.8.5</b> (20.12.2018)
       <li>{% trans "Tietomalliin muutos: toimipaikan kaikki osoitetiedot ovat nyt pakollisia." %}</li>
-        <ul>
-          <li>{% trans "Pakollisuus koskee siis jatkossa myös  kenttiä: Käyntiosoite, Käyntiosoitteen_postinumero ja Käyntiosoite_postitoimipaikka." %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "Pakollisuus koskee siis jatkossa myös  kenttiä: Käyntiosoite, Käyntiosoitteen_postinumero ja Käyntiosoite_postitoimipaikka." %}</li>
+      </ul>
     </ul>
   </div>
 
@@ -692,34 +705,34 @@
   <div class="row">
     <ul><b>0.8.0</b> (11.12.2018)
       <li>{% trans "Mittavia muutoksia liittyen" %}</li>
-        <ul>
-          <li>{% trans "käyttäjän/vaka-organisaation kirjautumiseen/rekisteröitymiseen" %}</li>
-          <li>{% trans "käyttöoikeuksiin" %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "käyttäjän/vaka-organisaation kirjautumiseen/rekisteröitymiseen" %}</li>
+        <li>{% trans "käyttöoikeuksiin" %}</li>
+      </ul>
       <li>{% trans "Vakajarjestaja: mahdollisuus lisätä/muokata" %}</li>
-        <ul>
-          <li>{% trans "sähköpostiosoite" %}</li>
-          <li>{% trans "tilinumero" %}</li>
-          <li>{% trans "puhelinnumero" %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "sähköpostiosoite" %}</li>
+        <li>{% trans "tilinumero" %}</li>
+        <li>{% trans "puhelinnumero" %}</li>
+      </ul>
       <li>{% trans "Toimipaikan lisäys" %}</li>
-        <ul>
-          <li>{% trans "toimipaikka lisätään Organisaatiopalveluun, ja paluuviestissä toimitetaan organisaatio_oid." %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "toimipaikka lisätään Organisaatiopalveluun, ja paluuviestissä toimitetaan organisaatio_oid." %}</li>
+      </ul>
       <li>{% trans "Toimipaikan poisto" %}</li>
-        <ul>
-          <li>{% trans "tämä ei ole enää mahdollista. Käytä paattymis_pvm vanhentuneelle toimipaikalle." %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "tämä ei ole enää mahdollista. Käytä paattymis_pvm vanhentuneelle toimipaikalle." %}</li>
+      </ul>
       <li>{% trans "Tietomallimuutokset" %}</li>
-        <ul>
-          <li>{% trans "Toimipaikan nimen max-pituus kasvatettu 200 merkkiin. Oli aikaisemmin 100 merkkiä." %}</li>
-          <li>{% trans "Varhaiskasvatuspaatos/jarjestamismuoto_koodi listamuodosta stringiksi." %}</li>
-          <li>{% trans "Toimipaikan asiointikieli muutettu stringistä listaksi." %}</li>
-          <li>{% trans "hoitopaikat => varhaiskasvatuspaikat" %}</li>
-          <li>{% trans "kokoaikainen_vaka_kytkin => kokopaivainen_vaka_kytkin" %}</li>
-          <li>{% trans "oppijanumero-kenttä poistettu henkilö-taulusta. Käytä henkilo_oid." %}</li>
-          <li>{% trans "id-kenttä lisätty rajapintaan eri näkymiin" %}</li>
-        </ul>
+      <ul>
+        <li>{% trans "Toimipaikan nimen max-pituus kasvatettu 200 merkkiin. Oli aikaisemmin 100 merkkiä." %}</li>
+        <li>{% trans "Varhaiskasvatuspaatos/jarjestamismuoto_koodi listamuodosta stringiksi." %}</li>
+        <li>{% trans "Toimipaikan asiointikieli muutettu stringistä listaksi." %}</li>
+        <li>{% trans "hoitopaikat => varhaiskasvatuspaikat" %}</li>
+        <li>{% trans "kokoaikainen_vaka_kytkin => kokopaivainen_vaka_kytkin" %}</li>
+        <li>{% trans "oppijanumero-kenttä poistettu henkilö-taulusta. Käytä henkilo_oid." %}</li>
+        <li>{% trans "id-kenttä lisätty rajapintaan eri näkymiin" %}</li>
+      </ul>
       <li>{% trans "Koodistoa päivitetty" %}</li>
       <li>{% trans "Validointeja päivitetty" %}</li>
       <li>{% trans "Bugeja korjattu" %}</li>
@@ -789,19 +802,17 @@
     <a href="/" class="navbar-btn btn-info btn pull-left">
       <span class="glyphicon glyphicon-arrow-left"></span> {% trans "Takaisin" %}</a>
   </div>
-
 </div>
 
 <div class="navbar navbar-default navbar-fixed-bottom">
-    <div class="container">
-      <p class="navbar-text pull-left">
-          <b>{% trans "Versio" %}: 1.6.0</b>
-      </p>
+  <div class="container">
+    <p class="navbar-text pull-left">
+      <b>{% trans "Versio" %}: 1.6.1</b>
+    </p>
 
-      <a href="mailto:varda@opintopolku.fi" class="navbar-btn btn-danger btn pull-right">
+    <a href="mailto:varda@opintopolku.fi" class="navbar-btn btn-danger btn pull-right">
       <span class="glyphicon glyphicon-envelope"></span> varda@opintopolku.fi</a>
-    </div>
+  </div>
 </div>
-
 </body>
 </html>
