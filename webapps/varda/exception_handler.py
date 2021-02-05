@@ -38,6 +38,7 @@ error_templates = {
             'max_value': (re.compile(r'less than or equal to ([\d.]+?)[.]'), ErrorMessages.DY005.value),
             'max_decimal_places': (re.compile(r'no more than ([\d]+) decimal places'), ErrorMessages.DY006.value),
             'max_digits': (re.compile(r'no more than ([\d]+) digits'), ErrorMessages.DY007.value),
+            'max_whole_digits': (re.compile(r'no more than ([\d]+) digits'), ErrorMessages.DY009.value),
         },
         UNIQUE: {
             'Combination of nimi and vakajarjestaja fields should be unique': ErrorMessages.TP001.value,

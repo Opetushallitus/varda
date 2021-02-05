@@ -580,7 +580,7 @@ class Tyontekija(models.Model):
 class TilapainenHenkilosto(models.Model):
     vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='tilapainen_henkilosto', on_delete=models.PROTECT)
     kuukausi = models.DateField()
-    tuntimaara = models.DecimalField(max_digits=6, decimal_places=2)
+    tuntimaara = models.DecimalField(max_digits=8, decimal_places=2)
     tyontekijamaara = models.IntegerField()
     lahdejarjestelma = models.CharField(max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
     tunniste = models.CharField(max_length=120, null=True, blank=True, validators=[validators.validate_tunniste])

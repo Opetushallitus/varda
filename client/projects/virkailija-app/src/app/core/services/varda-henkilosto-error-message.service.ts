@@ -154,6 +154,12 @@ export class HenkilostoErrorMessageService {
       case 'DY007':
         regex = /no more than (\d+) digits in total/;
         break;
+      case 'DY008':
+        regex = /again in (\d+) seconds/;
+        break;
+      case 'DY009':
+        regex = /no more than (\d+) digits before/;
+        break;
       default:
         return null;
     }

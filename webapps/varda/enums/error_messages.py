@@ -36,6 +36,7 @@ class ErrorMessages(enum.Enum):
     GE019 = get_error_dict('GE019', 'Time period exceeds allowed timeframe.')
 
     # Dynamic errors, prefix: DY
+    # If dynamic errors are added or changed, changes should be reflected in frontend virkailija-app parseDynamicValue
     DY001 = get_error_dict('DY001', 'Ensure this field has no more than {} characters.')
     DY002 = get_error_dict('DY002', 'Ensure this field has at least {} characters.')
     DY003 = get_error_dict('DY003', 'This list should contain no more than {} items.')
@@ -44,6 +45,7 @@ class ErrorMessages(enum.Enum):
     DY006 = get_error_dict('DY006', 'Ensure that there are no more than {} decimal places.')
     DY007 = get_error_dict('DY007', 'Ensure that there are no more than {} digits in total.')
     DY008 = get_error_dict('DY008', 'Request was throttled. Try again in {} seconds.')
+    DY009 = get_error_dict('DY009', 'Ensure that there are no more than {} digits before the decimal point.')
 
     # VakaJarjestaja errors, prefix: VJ
     VJ001 = get_error_dict('VJ001', 'Cannot delete Vakajarjestaja. There are objects referencing it that need to be deleted first.')
