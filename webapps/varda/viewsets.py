@@ -23,7 +23,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 from rest_framework_guardian.filters import ObjectPermissionsFilter
 
-from varda import filters, related_object_validations, validators, permission_groups
+from varda import filters, validators, permission_groups
 from varda.cache import (cached_list_response, cached_retrieve_response, delete_toimipaikan_lapset_cache,
                          delete_cache_keys_related_model, get_object_ids_user_has_permissions)
 from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid,
@@ -54,15 +54,21 @@ from varda.permissions import (throw_if_not_tallentaja_permissions,
                                user_has_huoltajatieto_tallennus_permissions_to_correct_organization,
                                grant_or_deny_access_to_paos_toimipaikka, user_has_tallentaja_permission_in_organization,
                                auditlogclass, save_audit_log, ToimipaikkaPermissions, get_toimipaikka_or_404, auditlog)
+from varda.related_object_validations import (check_if_user_has_add_toimipaikka_permissions_under_vakajarjestaja,
+                                              check_toimipaikka_and_vakajarjestaja_have_oids,
+                                              toimipaikka_is_valid_to_organisaatiopalvelu,
+                                              check_overlapping_toiminnallinen_painotus,
+                                              check_overlapping_kielipainotus, check_overlapping_varhaiskasvatuspaatos,
+                                              check_overlapping_varhaiskasvatussuhde)
 from varda.request_logging import request_log_viewset_decorator_factory
 from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer,
                                UpdateHenkiloWithOidSerializer, UpdateOphStaffSerializer, ClearCacheSerializer,
                                ActiveUserSerializer, AuthTokenSerializer, VakaJarjestajaSerializer,
                                ToimipaikkaSerializer, ToiminnallinenPainotusSerializer, KieliPainotusSerializer,
                                HaeHenkiloSerializer, HenkiloSerializer, HenkiloSerializerAdmin,
-                               YksiloimattomatHenkilotSerializer, LapsiSerializer, LapsiSerializerAdmin, HuoltajaSerializer,
-                               HuoltajuussuhdeSerializer, MaksutietoPostSerializer, MaksutietoUpdateSerializer,
-                               MaksutietoGetSerializer, VarhaiskasvatuspaatosSerializer,
+                               YksiloimattomatHenkilotSerializer, LapsiSerializer, LapsiSerializerAdmin,
+                               HuoltajaSerializer, HuoltajuussuhdeSerializer, MaksutietoPostSerializer,
+                               MaksutietoUpdateSerializer, MaksutietoGetSerializer, VarhaiskasvatuspaatosSerializer,
                                VarhaiskasvatuspaatosPutSerializer, VarhaiskasvatuspaatosPatchSerializer,
                                VarhaiskasvatussuhdeSerializer, VakaJarjestajaYhteenvetoSerializer,
                                HenkilohakuLapsetSerializer, PaosToimintaSerializer, PaosToimijatSerializer,
@@ -599,7 +605,7 @@ class ToimipaikkaViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin, P
         vakajarjestaja_obj = validated_data['vakajarjestaja']
         vakajarjestaja_id = vakajarjestaja_obj.id
 
-        related_object_validations.check_if_user_has_add_toimipaikka_permissions_under_vakajarjestaja(vakajarjestaja_id, user)
+        check_if_user_has_add_toimipaikka_permissions_under_vakajarjestaja(vakajarjestaja_id, user)
 
         if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
             if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm']):
@@ -732,14 +738,14 @@ class ToiminnallinenPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveMo
         vakajarjestaja_obj = toimipaikka_obj.vakajarjestaja
         vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
 
-        related_object_validations.check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
+        check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
         throw_if_not_tallentaja_permissions(vakajarjestaja_organisaatio_oid, toimipaikka_obj, user)
 
         if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
             if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm']):
                 raise ValidationError({'paattymis_pvm': [ErrorMessages.MI003.value]})
 
-        related_object_validations.check_overlapping_koodi(validated_data, ToiminnallinenPainotus)
+        check_overlapping_toiminnallinen_painotus(validated_data)
 
         with transaction.atomic():
             saved_object = serializer.save(changed_by=user)
@@ -760,7 +766,7 @@ class ToiminnallinenPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveMo
         toiminnallinenpainotus_id = url.split('/')[-2]
         toiminnallinenpainotus_obj = ToiminnallinenPainotus.objects.get(id=toiminnallinenpainotus_id)
 
-        related_object_validations.check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
+        check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
         if not user.has_perm('change_toiminnallinenpainotus', toiminnallinenpainotus_obj):
             raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
 
@@ -769,7 +775,8 @@ class ToiminnallinenPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveMo
             paattymis_pvm = validated_data['paattymis_pvm'] if 'paattymis_pvm' in validated_data else toiminnallinenpainotus_obj.paattymis_pvm
             if not validators.validate_paivamaara1_before_paivamaara2(alkamis_pvm, paattymis_pvm):
                 raise ValidationError({'paattymis_pvm': [ErrorMessages.MI003.value]})
-        related_object_validations.check_overlapping_koodi(validated_data, ToiminnallinenPainotus, toiminnallinenpainotus_id)
+
+        check_overlapping_toiminnallinen_painotus(validated_data, toiminnallinenpainotus_id)
 
         saved_object = serializer.save(changed_by=user)
         delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
@@ -833,13 +840,14 @@ class KieliPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin,
         vakajarjestaja_obj = toimipaikka_obj.vakajarjestaja
         vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
 
-        related_object_validations.check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
+        check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
         throw_if_not_tallentaja_permissions(vakajarjestaja_organisaatio_oid, toimipaikka_obj, user)
 
         if 'paattymis_pvm' in validated_data:
             if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm']):
                 raise ValidationError({'paattymis_pvm': [ErrorMessages.MI003.value]})
-        related_object_validations.check_overlapping_koodi(validated_data, KieliPainotus)
+
+        check_overlapping_kielipainotus(validated_data)
 
         with transaction.atomic():
             saved_object = serializer.save(changed_by=user)
@@ -860,7 +868,7 @@ class KieliPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin,
         kielipainotus_id = url.split('/')[-2]
         kielipainotus_obj = KieliPainotus.objects.get(id=kielipainotus_id)
 
-        related_object_validations.check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
+        check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
         if not user.has_perm('change_kielipainotus', kielipainotus_obj):
             raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
 
@@ -869,7 +877,8 @@ class KieliPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin,
             paattymis_pvm = validated_data['paattymis_pvm'] if 'paattymis_pvm' in validated_data else kielipainotus_obj.paattymis_pvm
             if not validators.validate_paivamaara1_before_paivamaara2(alkamis_pvm, paattymis_pvm):
                 raise ValidationError({'paattymis_pvm': [ErrorMessages.MI003.value]})
-        related_object_validations.check_overlapping_koodi(validated_data, KieliPainotus, kielipainotus_id)
+
+        check_overlapping_kielipainotus(validated_data, self_id=kielipainotus_id)
 
         saved_object = serializer.save(changed_by=user)
         delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
@@ -1355,7 +1364,7 @@ class VarhaiskasvatuspaatosViewSet(viewsets.ModelViewSet):
         if timediff.days <= 14:
             validated_data['pikakasittely_kytkin'] = True
 
-        related_object_validations.check_overlapping_varhaiskasvatus_object(validated_data, Varhaiskasvatuspaatos)
+        check_overlapping_varhaiskasvatuspaatos(validated_data)
 
         with transaction.atomic():
             saved_object = serializer.save(changed_by=user)
@@ -1423,7 +1432,8 @@ class VarhaiskasvatuspaatosViewSet(viewsets.ModelViewSet):
         else:
             validated_data['pikakasittely_kytkin'] = False
 
-        related_object_validations.check_overlapping_varhaiskasvatus_object(validated_data, Varhaiskasvatuspaatos, varhaiskasvatuspaatos_id)
+        check_overlapping_varhaiskasvatuspaatos(validated_data, varhaiskasvatuspaatos_id)
+
         saved_object = serializer.save(changed_by=user)
         """
         No need to delete the related-lapsi cache, since user cannot change the lapsi-relation.
@@ -1583,11 +1593,12 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
         vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
         lapsi_obj = validated_data['varhaiskasvatuspaatos'].lapsi
 
-        related_object_validations.check_overlapping_varhaiskasvatus_object(validated_data, Varhaiskasvatussuhde)
+        check_overlapping_varhaiskasvatussuhde(validated_data)
+
         self.validate_lapsi_not_under_different_vakajarjestaja(lapsi_obj, vakajarjestaja_obj)
 
         is_paos_lapsi = lapsi_obj.paos_kytkin
-        toimipaikka_added_to_org_palvelu = related_object_validations.toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=toimipaikka_obj)
+        toimipaikka_added_to_org_palvelu = toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=toimipaikka_obj)
         toimipaikka_organisaatio_oid = ''
         if not toimipaikka_added_to_org_palvelu:
             """
@@ -1599,7 +1610,7 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
                 raise ValidationError({'errors': [ErrorMessages.VS002.value]})
         else:
             toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
-            related_object_validations.check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
+            check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
         throw_if_not_tallentaja_permissions(vakajarjestaja_organisaatio_oid, toimipaikka_obj, user, lapsi_obj.oma_organisaatio)
 
         with transaction.atomic():
@@ -1650,7 +1661,7 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
         varhaiskasvatussuhde_id = url.split('/')[-2]
         varhaiskasvatussuhde_obj = Varhaiskasvatussuhde.objects.get(id=varhaiskasvatussuhde_id)
 
-        related_object_validations.check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
+        check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
         if not user.has_perm('change_varhaiskasvatussuhde', varhaiskasvatussuhde_obj):
             raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
 
@@ -1658,7 +1669,9 @@ class VarhaiskasvatussuhdeViewSet(viewsets.ModelViewSet):
             raise ValidationError({'varhaiskasvatuspaatos': [ErrorMessages.VS003.value]})
         if 'toimipaikka' in validated_data and varhaiskasvatussuhde_obj.toimipaikka != validated_data['toimipaikka']:
             raise ValidationError({'toimipaikka': [ErrorMessages.VS004.value]})
-        related_object_validations.check_overlapping_varhaiskasvatus_object(validated_data, Varhaiskasvatussuhde, varhaiskasvatussuhde_id)
+
+        check_overlapping_varhaiskasvatussuhde(validated_data, varhaiskasvatussuhde_id)
+
         saved_object = serializer.save(changed_by=user)
         """
         No need to delete the related-object caches. User cannot change toimipaikka or varhaiskasvatuspaatos.
@@ -1896,7 +1909,7 @@ class MaksutietoViewSet(viewsets.ModelViewSet):
         else:
             assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Maksutieto, saved_object)
             for toimipaikka in toimipaikka_qs:
-                if related_object_validations.toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=toimipaikka):
+                if toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=toimipaikka):
                     assign_object_level_permissions(toimipaikka.organisaatio_oid, Maksutieto, saved_object)
 
     def create(self, request, *args, **kwargs):

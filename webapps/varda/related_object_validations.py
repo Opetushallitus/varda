@@ -8,7 +8,7 @@ from rest_framework.exceptions import ValidationError
 from varda.enums.error_messages import ErrorMessages
 from varda.models import (VakaJarjestaja, Henkilo, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Lapsi, Huoltaja,
                           Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Palvelussuhde, Tyoskentelypaikka,
-                          PidempiPoissaolo)
+                          PidempiPoissaolo, ToiminnallinenPainotus, KieliPainotus)
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 DateRange = namedtuple('DateRange', ['start_date', 'end_date'])
 
 
-def create_daterange(start_date, end_date):
+def create_date_range(start_date, end_date):
     """Creates a DateRange object with given start and end dates """
     if not isinstance(start_date, datetime.date):  # if start_date is a datetime.date object, use it
         try:
@@ -34,7 +34,7 @@ def create_daterange(start_date, end_date):
     return DateRange(start_date=start_date, end_date=end_date)
 
 
-def daterange_overlap(range1, range2):
+def date_range_overlap(range1, range2):
     latest_start = max(range1.start_date, range2.start_date)
     earliest_end = min(range1.end_date, range2.end_date)
     overlap_in_days = (earliest_end - latest_start).days + 1
@@ -148,188 +148,53 @@ def check_if_immutable_object_is_changed(instance, data, key, attr=None, many=Fa
                 raise ValidationError(msg, code='invalid')
 
 
-def check_overlapping_koodi(validated_data, modelobj, *args):
+def _check_overlapping_object(model, parent_path, limit, error, data, extra_filters=(), self_id=None):
     """
-    Checks that there are no overlapping (same code at the overlapping time period) kielipainotus or
-    toiminnallinenpainotus codes.
+    Generic function to check if maximum number of overlapping objects by date (alkamis_pvm, paattymis_pvm) is
+    exceeded. Raises ValidationError if overlap is detected.
+
+    :param model: Model class
+    :param parent_path: list of attributes to reach parent with which overlap is evaluated
+                        (e.g Lapsi can have 3 overlapping Varhaiskasvatussuhde,
+                        path is ['varhaiskasvatuspaatos', 'lapsi'])
+    :param limit: int describing how many overlapping objects there can be
+    :param error: ErrorMessages value
+    :param extra_filters: list of attributes that also need to be equal to count as overlap
+                          (e.g. ['kielipainotus_koodi'])
+    :param data: validated_data from Serializer
+    :param self_id: id if object already has one (PUT, PATCH)
     """
-    (model, koodi, overlap_error_message) = (('toiminnallinenpainotus', 'toimintapainotus_koodi', ErrorMessages.TO001.value)
-                                             if 'toimintapainotus_koodi' in dir(modelobj) else
-                                             ('kielipainotus', 'kielipainotus_koodi', ErrorMessages.KP001.value))
-    if args:
-        model_id, original = get_model_id_and_original(modelobj, args[0])
-    else:
-        model_id, original = get_model_id_and_original(modelobj)
+    original_object = model.objects.get(id=self_id) if self_id else None
 
-    if args:  # for PUT/PATCH one needs to obtain the existing information, so the id needs to be given
-        model_id = args[0]
-        try:
-            original = modelobj.objects.get(id=model_id)  # modelobj either KieliPainotus or ToiminnallinenPainotus
-        except Exception:
-            raise ValidationError({'errors': [ErrorMessages.GE016.value]})
-    else:  # for POST one starts from scratch
-        model_id = "0"
-        original = None
+    path_child = parent_path[0]
+    parent_object = data[path_child] if path_child in data else getattr(original_object, path_child)
+    filter_key = path_child
+    for path_child in parent_path[1:]:
+        parent_object = getattr(parent_object, path_child)
+        filter_key += f'__{path_child}'
+    filter_object = Q(**{filter_key: parent_object.id})
+    if self_id:
+        # PUT or PATCH so do not include self to evaluation
+        filter_object &= ~Q(pk=self_id)
+    for filter_attribute in extra_filters:
+        # Apply extra filters
+        self_value = data[filter_attribute] if filter_attribute in data else getattr(original_object, filter_attribute)
+        filter_object &= Q(**{filter_attribute: self_value})
 
-    toimipaikka_id = validated_data['toimipaikka'].id if 'toimipaikka' in validated_data else original.toimipaikka.id
-    data_koodi = validated_data[koodi] if koodi in validated_data else original[koodi]
-    alkamis_pvm, paattymis_pvm = get_alkamis_paattymis_pvm(validated_data, original)
-    daterange_new = create_daterange(alkamis_pvm, paattymis_pvm)
-    queryset = modelobj.objects.filter(toimipaikka=toimipaikka_id)
+    qs = model.objects.filter(filter_object)
+    alkamis_pvm_new, paattymis_pvm_new = _get_alkamis_paattymis_pvm(data, original_object)
+    date_range_new = create_date_range(alkamis_pvm_new, paattymis_pvm_new)
 
-    for item in queryset:
-        code = item.toimintapainotus_koodi if 'toimintapainotus_koodi' in dir(item) else item.kielipainotus_koodi
-        if item.id != int(model_id) and data_koodi == code:  # in case of update, do not compare to the record itself
-            daterange_existing = create_daterange(item.alkamis_pvm, item.paattymis_pvm)
-            overlapping = daterange_overlap(daterange_existing, daterange_new)
-            if overlapping:
-                raise ValidationError({'errors': [overlap_error_message]})
-
-
-def check_overlapping_varhaiskasvatus_object(validated_data, modelobj, *args):
-    """
-    Checks that the number of varhaiskasvatussuhde or varhaiskasvatuspaatos during any time period is less than
-    the given maximum
-    """
-    if args:
-        model_id, original = get_model_id_and_original(modelobj, args[0])
-    else:
-        model_id, original = get_model_id_and_original(modelobj)
-
-    if 'varhaiskasvatuspaatos' in dir(modelobj):  # Varhaiskasvatussuhde
-        varhaiskasvatuspaatos_id = validated_data['varhaiskasvatuspaatos'].id if 'varhaiskasvatuspaatos' in validated_data else original.varhaiskasvatuspaatos.id
-        lapsi_id = Varhaiskasvatuspaatos.objects.get(id=varhaiskasvatuspaatos_id).lapsi.id
-        queryset = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=lapsi_id)
-        overlap_error_message = ErrorMessages.VS013.value
-    else:  # Varhaiskasvatuspaatos
-        lapsi_id = validated_data['lapsi'].id if 'lapsi' in validated_data else original.lapsi.id
-        queryset = Varhaiskasvatuspaatos.objects.filter(lapsi=lapsi_id)
-        overlap_error_message = ErrorMessages.VP011.value
-
-    alkamis_pvm, paattymis_pvm = get_alkamis_paattymis_pvm(validated_data, original)
-    daterange_new = create_daterange(alkamis_pvm, paattymis_pvm)
-    MAX_OVERLAPS = 3
     counter = 1
-    for item in queryset:
-        if item.id != int(model_id):
-            daterange_existing = create_daterange(item.alkamis_pvm, item.paattymis_pvm)
-            overlap = daterange_overlap(daterange_existing, daterange_new)
-            if overlap:
-                counter += 1
-    if counter > MAX_OVERLAPS:
-        raise ValidationError({'errors': [overlap_error_message]})
+    for instance in qs:
+        date_range_instance = create_date_range(instance.alkamis_pvm, instance.paattymis_pvm)
+        if date_range_overlap(date_range_instance, date_range_new):
+            counter += 1
+    if counter > limit:
+        raise ValidationError({'errors': [error]})
 
 
-def check_overlapping_palvelussuhde_object(validated_data, modelobj, *args):
-    """
-    Checks that the number of palvelussuhde during any time period is less than the maximum
-    """
-    if args:
-        model_id, original = get_model_id_and_original(modelobj, args[0])
-    else:
-        model_id, original = get_model_id_and_original(modelobj)
-
-    tyontekija_id = validated_data['tyontekija'].id if 'tyontekija' in validated_data else original.tyontekija.id
-
-    if original is not None:
-        q_obj = Q(Q(tyontekija=tyontekija_id) & ~Q(pk=original.id))
-    else:
-        q_obj = Q(tyontekija=tyontekija_id)
-
-    queryset = Palvelussuhde.objects.filter(q_obj)
-
-    alkamis_pvm, paattymis_pvm = get_alkamis_paattymis_pvm(validated_data, original)
-    daterange_new = create_daterange(alkamis_pvm, paattymis_pvm)
-    MAX_OVERLAPS = 7
-    counter = 1
-    for item in queryset:
-        if item.id != int(model_id):
-            daterange_existing = create_daterange(item.alkamis_pvm, item.paattymis_pvm)
-            overlap = daterange_overlap(daterange_existing, daterange_new)
-            if overlap:
-                counter += 1
-    if counter > MAX_OVERLAPS:
-        raise ValidationError({'errors': [ErrorMessages.PS006.value]})
-
-
-def check_overlapping_tyoskentelypaikka_object(validated_data, modelobj, *args):
-    """
-    Checks that the number of tyoskentelypaikka during any time period is less than the maximum
-    """
-    if args:
-        model_id, original = get_model_id_and_original(modelobj, args[0])
-    else:
-        model_id, original = get_model_id_and_original(modelobj)
-
-    palvelussuhde_id = validated_data['palvelussuhde'].id if 'palvelussuhde' in validated_data else original.palvelussuhde.id
-
-    if original is not None:
-        q_obj = Q(Q(palvelussuhde=palvelussuhde_id) & ~Q(pk=original.id))
-    else:
-        q_obj = Q(palvelussuhde=palvelussuhde_id)
-
-    queryset = Tyoskentelypaikka.objects.filter(q_obj)
-
-    alkamis_pvm, paattymis_pvm = get_alkamis_paattymis_pvm(validated_data, original)
-    daterange_new = create_daterange(alkamis_pvm, paattymis_pvm)
-    MAX_OVERLAPS = 3
-    counter = 1
-    for item in queryset:
-        if item.id != int(model_id):
-            daterange_existing = create_daterange(item.alkamis_pvm, item.paattymis_pvm)
-            overlap = daterange_overlap(daterange_existing, daterange_new)
-            if overlap:
-                counter += 1
-    if counter > MAX_OVERLAPS:
-        raise ValidationError({'errors': [ErrorMessages.TA011.value]})
-
-
-def check_overlapping_pidempipoissaolo_object(validated_data, modelobj, *args):
-    """
-    Checks that the number of pidempipoissaolo during any time period is less than the maximum
-    """
-    if args:
-        model_id, original = get_model_id_and_original(modelobj, args[0])
-    else:
-        model_id, original = get_model_id_and_original(modelobj)
-
-    palvelussuhde_id = validated_data['palvelussuhde'].id if 'palvelussuhde' in validated_data else original.palvelussuhde.id
-
-    if original is not None:
-        q_obj = Q(Q(palvelussuhde=palvelussuhde_id) & ~Q(pk=original.id))
-    else:
-        q_obj = Q(palvelussuhde=palvelussuhde_id)
-
-    queryset = PidempiPoissaolo.objects.filter(q_obj)
-
-    alkamis_pvm, paattymis_pvm = get_alkamis_paattymis_pvm(validated_data, original)
-    daterange_new = create_daterange(alkamis_pvm, paattymis_pvm)
-    MAX_OVERLAPS = 1
-    counter = 1
-    for item in queryset:
-        if item.id != int(model_id):
-            daterange_existing = create_daterange(item.alkamis_pvm, item.paattymis_pvm)
-            overlap = daterange_overlap(daterange_existing, daterange_new)
-            if overlap:
-                counter += 1
-    if counter > MAX_OVERLAPS:
-        raise ValidationError({'palvelussuhde': [ErrorMessages.PP007.value]})
-
-
-def get_model_id_and_original(modelobj, *args):
-    if args:
-        model_id = args[0]  # PUT/PATCH: changing existing object
-        try:
-            original = modelobj.objects.get(id=model_id)
-        except modelobj.DoesNotExist:
-            raise ValidationError({'errors': [ErrorMessages.GE016.value]})
-    else:
-        model_id = '0'  # POST: there is nothing existing for this object
-        original = None
-    return model_id, original
-
-
-def get_alkamis_paattymis_pvm(data, original):
+def _get_alkamis_paattymis_pvm(data, original):
     alkamis_pvm = data['alkamis_pvm'] if 'alkamis_pvm' in data else original.alkamis_pvm
     if 'paattymis_pvm' in data:
         paattymis_pvm = data['paattymis_pvm']
@@ -338,6 +203,37 @@ def get_alkamis_paattymis_pvm(data, original):
     else:
         paattymis_pvm = None
     return alkamis_pvm, paattymis_pvm
+
+
+def check_overlapping_toiminnallinen_painotus(data, self_id=None):
+    _check_overlapping_object(ToiminnallinenPainotus, ['toimipaikka'], 1, ErrorMessages.TO001.value, data,
+                              extra_filters=['toimintapainotus_koodi'], self_id=self_id)
+
+
+def check_overlapping_kielipainotus(data, self_id=None):
+    _check_overlapping_object(KieliPainotus, ['toimipaikka'], 1, ErrorMessages.KP001.value, data,
+                              extra_filters=['kielipainotus_koodi'], self_id=self_id)
+
+
+def check_overlapping_varhaiskasvatuspaatos(data, self_id=None):
+    _check_overlapping_object(Varhaiskasvatuspaatos, ['lapsi'], 3, ErrorMessages.VP011.value, data, self_id=self_id)
+
+
+def check_overlapping_varhaiskasvatussuhde(data, self_id=None):
+    _check_overlapping_object(Varhaiskasvatussuhde, ['varhaiskasvatuspaatos', 'lapsi'], 3, ErrorMessages.VS013.value,
+                              data, self_id=self_id)
+
+
+def check_overlapping_palvelussuhde(data, self_id=None):
+    _check_overlapping_object(Palvelussuhde, ['tyontekija'], 7, ErrorMessages.PS006.value, data, self_id=self_id)
+
+
+def check_overlapping_tyoskentelypaikka(data, self_id=None):
+    _check_overlapping_object(Tyoskentelypaikka, ['palvelussuhde'], 3, ErrorMessages.TA011.value, data, self_id=self_id)
+
+
+def check_overlapping_pidempi_poissaolo(data, self_id=None):
+    _check_overlapping_object(PidempiPoissaolo, ['palvelussuhde'], 1, ErrorMessages.PP007.value, data, self_id=self_id)
 
 
 def toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=None, nimi=None):

@@ -3,7 +3,7 @@ import datetime
 from django.db.models import Q
 from rest_framework import serializers
 
-from varda import related_object_validations, validators
+from varda import validators
 from varda.cache import caching_to_representation, get_object_ids_for_user_by_model
 from varda.enums.error_messages import ErrorMessages
 from varda.misc_viewsets import ViewSetValidator
@@ -13,10 +13,10 @@ from varda.models import (Henkilo, TilapainenHenkilosto, Tutkinto, Tyontekija, V
 from varda.permissions import (is_correct_taydennyskoulutus_tyontekija_permission,
                                filter_authorized_taydennyskoulutus_tyontekijat, permission_groups_in_organization,
                                get_permission_checked_pidempi_poissaolo_katselija_queryset_for_user)
-from varda.related_object_validations import (create_daterange, daterange_overlap,
-                                              check_overlapping_tyoskentelypaikka_object,
-                                              check_overlapping_palvelussuhde_object,
-                                              check_if_admin_mutable_object_is_changed)
+from varda.related_object_validations import (create_date_range, date_range_overlap,
+                                              check_if_admin_mutable_object_is_changed, check_overlapping_palvelussuhde,
+                                              check_overlapping_tyoskentelypaikka, check_overlapping_pidempi_poissaolo,
+                                              check_if_immutable_object_is_changed)
 from varda.serializers import (HenkiloHLField, VakaJarjestajaPermissionCheckedHLField,
                                PermissionCheckedHLFieldMixin, ToimipaikkaPermissionCheckedHLField)
 
@@ -113,10 +113,7 @@ class TyontekijaSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedMode
             if self.instance:
                 instance = self.instance
                 if 'henkilo' in data:
-                    related_object_validations.check_if_admin_mutable_object_is_changed(self.context['request'].user,
-                                                                                        instance,
-                                                                                        data,
-                                                                                        'henkilo')
+                    check_if_admin_mutable_object_is_changed(self.context['request'].user, instance, data, 'henkilo')
                 if 'vakajarjestaja' in data and data['vakajarjestaja'].id != instance.vakajarjestaja.id:
                     validator.error('vakajarjestaja', ErrorMessages.GE013.value)
 
@@ -264,7 +261,7 @@ class PalvelussuhdeSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedM
                     check_if_admin_mutable_object_is_changed(self.context['request'].user, palvelussuhde, data, 'tyontekija')
 
                 with validator.wrap():
-                    check_overlapping_palvelussuhde_object(data, Palvelussuhde, palvelussuhde.id)
+                    check_overlapping_palvelussuhde(data, palvelussuhde.id)
 
         # CREATE
         else:
@@ -277,7 +274,7 @@ class PalvelussuhdeSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedM
                 self.validate_tutkinto(data['tyontekija'], data['tutkinto_koodi'], validator)
 
                 with validator.wrap():
-                    check_overlapping_palvelussuhde_object(data, Palvelussuhde)
+                    check_overlapping_palvelussuhde(data)
 
         return data
 
@@ -348,9 +345,9 @@ def validate_tyoskentelypaikka_general(validator, data, toimipaikka, palvelussuh
     if not kiertava_tyontekija_kytkin:
         with validator.wrap():
             if tyoskentelypaikka_id:
-                check_overlapping_tyoskentelypaikka_object(data, Tyoskentelypaikka, tyoskentelypaikka_id)
+                check_overlapping_tyoskentelypaikka(data, tyoskentelypaikka_id)
             else:
-                check_overlapping_tyoskentelypaikka_object(data, Tyoskentelypaikka)
+                check_overlapping_tyoskentelypaikka(data)
 
 
 def validate_tyoskentelypaikka_dates(validated_data, palvelussuhde, validator):
@@ -377,10 +374,10 @@ def validate_overlapping_kiertavyys(data, palvelussuhde, kiertava_tyontekija_kyt
     inverse_kiertava_kytkin = not kiertava_tyontekija_kytkin
     related_palvelussuhde_tyoskentelypaikat = Tyoskentelypaikka.objects.filter(palvelussuhde=palvelussuhde, kiertava_tyontekija_kytkin=inverse_kiertava_kytkin)
 
-    range_this = create_daterange(data['alkamis_pvm'], data.get('paattymis_pvm', None))
+    range_this = create_date_range(data['alkamis_pvm'], data.get('paattymis_pvm', None))
     for item in related_palvelussuhde_tyoskentelypaikat:
-        range_other = create_daterange(item.alkamis_pvm, item.paattymis_pvm)
-        if daterange_overlap(range_this, range_other):
+        range_other = create_date_range(item.alkamis_pvm, item.paattymis_pvm)
+        if date_range_overlap(range_this, range_other):
             validator.error('kiertava_tyontekija_kytkin', ErrorMessages.TA010.value)
             break
 
@@ -446,7 +443,7 @@ class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
             with ViewSetValidator() as validator:
                 self.validate_dates(data, validator)
                 with validator.wrap():
-                    related_object_validations.check_overlapping_pidempipoissaolo_object(data, PidempiPoissaolo)
+                    check_overlapping_pidempi_poissaolo(data)
         else:
             pidempipoissaolo_obj = self.instance
             fill_missing_fields_for_validations(data, pidempipoissaolo_obj)
@@ -455,8 +452,8 @@ class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
                 self.validate_dates(data, validator)
 
                 with validator.wrap():
-                    related_object_validations.check_overlapping_pidempipoissaolo_object(data, PidempiPoissaolo, pidempipoissaolo_obj.id)
-            related_object_validations.check_if_immutable_object_is_changed(pidempipoissaolo_obj, data, 'palvelussuhde')
+                    check_overlapping_pidempi_poissaolo(data, pidempipoissaolo_obj.id)
+            check_if_immutable_object_is_changed(pidempipoissaolo_obj, data, 'palvelussuhde')
 
         return data
 

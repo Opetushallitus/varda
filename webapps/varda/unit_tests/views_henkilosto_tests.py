@@ -1900,7 +1900,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             pidempipoissaolo.update(alkamis_pvm=start, paattymis_pvm=end, tunniste=extra)
             resp = client.post('/api/henkilosto/v1/pidemmatpoissaolot/', json.dumps(pidempipoissaolo), content_type='application/json')
             assert_status_code(resp, 400, extra)
-            assert_validation_error(resp, 'palvelussuhde', 'PP007',
+            assert_validation_error(resp, 'errors', 'PP007',
                                     'Palvelussuhde already has 1 overlapping PidempiPoissaolo on the given date range.',
                                     extra)
 
