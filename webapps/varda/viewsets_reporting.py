@@ -181,8 +181,9 @@ class KelaEtuusmaksatusMaaraaikaisetViewSet(GenericViewSet, ListModelMixin):
         # time window for fetching data
         luonti_pvm_filter = Q(luonti_pvm__date__gte=luonti_pvm)
 
-        # maaraaikainen must always have an end date
-        paattymis_pvm_filter = Q(paattymis_pvm__isnull=False)
+        # maaraaikainen must always have an end date and be active after
+        paattymis_pvm_date_gte = datetime.datetime(2021, 1, 18)
+        paattymis_pvm_filter = Q(paattymis_pvm__gte=paattymis_pvm_date_gte)
 
         return (luonti_pvm_filter &
                 common_filters &
@@ -267,8 +268,8 @@ class KelaEtuusmaksatusKorjaustiedotViewSet(GenericViewSet, ListModelMixin):
         latest_changed_objects = Varhaiskasvatussuhde.history.filter(dataset_filters)
         id_filter = Q(id__in=latest_changed_objects.values('id'))
 
-        alkamis_pvm_subquery = Varhaiskasvatussuhde.history.filter(id=OuterRef('id')).order_by('history_id')
-        paattymis_pvm_subquery = Varhaiskasvatussuhde.history.filter(id=OuterRef('id'), paattymis_pvm__isnull=False).order_by('history_id')
+        alkamis_pvm_subquery = Varhaiskasvatussuhde.history.filter(id=OuterRef('id')).order_by('-history_id')
+        paattymis_pvm_subquery = Varhaiskasvatussuhde.history.filter(id=OuterRef('id'), paattymis_pvm__isnull=False).order_by('-history_id')
 
         return (Varhaiskasvatussuhde.objects.select_related('varhaiskasvatuspaatos__lapsi', 'varhaiskasvatuspaatos__lapsi__henkilo')
                                             .annotate(old_alkamis_pvm=(Case(When(alkamis_pvm=Subquery(alkamis_pvm_subquery.values('alkamis_pvm')[:1]), then=Value('0001-01-01')),
@@ -281,7 +282,8 @@ class KelaEtuusmaksatusKorjaustiedotViewSet(GenericViewSet, ListModelMixin):
                                                     'old_alkamis_pvm', 'old_paattymis_pvm',
                                                     'varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus',
                                                     'varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi')
-                                            .order_by('id', 'varhaiskasvatuspaatos__lapsi', 'alkamis_pvm'))
+                                            .order_by('id', 'varhaiskasvatuspaatos__lapsi', 'alkamis_pvm')
+                                            .distinct('id'))
 
 
 @auditlogclass
