@@ -1,6 +1,11 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.5 (11.02.2021)
+- OPHVARDA-2078: Uloskirjautumis-prompt
+- OPHVARDA-1156: Request rate limiter
+- OPHVARDA-2053: Toimipaikkalomakkeen refaktorointi
+
 1.5.4 (04.02.2021)
 - OPHVARDA-2180: Lokalisointi- ja koodisto-cache
 
