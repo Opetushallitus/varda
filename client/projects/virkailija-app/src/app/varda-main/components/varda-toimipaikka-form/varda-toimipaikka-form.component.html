@@ -1,7 +1,7 @@
 <div class="modal-header varda-modal-header">
-  <div class="modal-title varda-modal-title"
-       [id]="'vardaModalTitleLabeltoimipaikkaModal'">
-    {{isEdit ? formTitle : 'label.add-toimipaikka' | translate}}
+  <div class="modal-title varda-modal-title">
+    <span *ngIf="toimipaikka; else addToimipaikka">{{ toimipaikka.nimi }}</span>
+    <ng-template #addToimipaikka>{{ i18n.lisaa_toimipaikka | translate }}</ng-template>
   </div>
   <button type="button"
           class="close"
@@ -11,307 +11,375 @@
   </button>
 </div>
 
-<div class="varda-form-main-feedback">
-  <div class="alert alert-danger"
-       role="alert"
-       aria-live="assertive"
-       *ngIf="ui.toimipaikkaFormHasErrors">
-    <div *ngIf="ui.showErrorMessageInfo">
-      {{this.ui.errorMessageInfo}}
-    </div>
-    <ul>
-      <li *ngFor="let errItem of toimipaikkaFormErrors">
-        {{errItem.key | translate}}. {{errItem.msg | translate}}
-      </li>
-    </ul>
-  </div>
-
-  <div class="alert alert-success"
-       role="alert"
-       aria-live="polite"
-       *ngIf="ui.toimipaikkaFormSaveSuccess">
-    {{ui.formSaveSuccessMsg | translate}}
-  </div>
-</div>
 <div class="form-continues-text-wrapper"
-     *ngIf="ui.showFormContinuesWarning">
+     *ngIf="showFormContinuesWarning">
   <div class="form-continues-text">{{'alert.lomake-continues' | translate}}</div>
   <i class="material-icons">arrow_downward</i>
 </div>
 
+<ng-container *ngIf="!toimipaikkaForm">
+  <app-varda-error-field [errors]="toimipaikkaFormErrors"></app-varda-error-field>
+  <mat-progress-spinner diameter="40"
+                        mode="indeterminate"
+                        color="accent"></mat-progress-spinner>
+</ng-container>
 <div #formContent
-     class="modal-body varda-modal-body"
-     id="toimipaikkaFormContent">
-  <div class="varda-modal-form-wrapper">
-    <div class="varda-modal-form-content">
-      <div class="toimipaikka-form-content"
-           *ngIf="toimipaikkaFieldSets">
-        <div class="toimipaikka-form-form-wrapper toimipaikka-form-perustiedot">
-          <form [formGroup]="toimipaikkaForm"
-                autocomplete="off">
-            <div class="modal-form-intro">
-              {{'label.toimipaikka-stepper.toimipaikka-details' | translate}}<br />
-              <span *ngIf="!isEdit">
-                {{'label.toimipaikka-stepper.toimipaikka-details-add' | translate}}
-                <a target="_blank"
-                   [href]="'ohjeet.url.lisaaminen-ja-muokkaaminen.toimipaikan-lisaaminen' | translate">{{'label.taalta' | translate}}</a>.
-              </span>
-              <span *ngIf="isEdit">
-                {{'label.toimipaikka-stepper.toimipaikka-details-edit' | translate}}
-                <a target="_blank"
-                   [href]="'ohjeet.url.lisaaminen-ja-muokkaaminen.toimipaikan-tietojen-muokkaaminen' | translate">{{'label.taalta' | translate}}</a>.
-              </span>
-            </div>
-            <fieldset *ngFor="let toimipaikkaFieldSet of toimipaikkaFieldSets; let i = index"
-                      class="form-group varda-fieldset"
-                      [id]="'toimipaikka' + i"
-                      [formGroupName]="toimipaikkaFieldSet.id">
-              <legend class="varda-fieldset-legend">{{getFieldsetTitle(toimipaikkaFieldSet)}}</legend>
-              <app-varda-form-question [field]="field"
-                                       [fieldIndex]="x"
-                                       [fieldSet]="toimipaikkaFieldSet"
-                                       [fieldSetIndex]="i"
-                                       [fieldSetName]="'toimipaikka'"
-                                       [form]="toimipaikkaForm.get(toimipaikkaFieldSet.id)"
-                                       [isReadOnly]="isReadOnly"
-                                       *ngFor="let field of toimipaikkaFieldSet.fields; let x = index">
-              </app-varda-form-question>
-            </fieldset>
-            <div class="varda-form-btn-wrapper"
-                 *ngIf="!isReadOnly">
-              <button class="varda-button responsive"
-                      type="button"
-                      id="toimipaikkaFormSaveToimipaikkaBtn"
-                      (click)="saveToimipaikka()"
-                      [ngClass]="{'varda-disabled-button': !toimipaikkaForm.valid || isReadOnly}"
-                      [disabled]="!toimipaikkaForm.valid || isReadOnly">{{getNextButtonText() | translate}} </button>
-            </div>
-          </form>
-        </div>
-        <div class="varda-painotukset"
-             *ngIf="isEdit">
-          <form [formGroup]="kielipainotuksetForm">
-            <div class="form-section-heading"
-                 id="kielipainotuksetLabel">
-              {{'label.toimipaikka-stepper.kielipainotukset' | translate}}
-            </div>
-            <div class="varda-painotukset-wrapper oph-field-inputs">
-              <mat-radio-group [name]="'kielipainotukset_enabled'"
-                               aria-labelledby="kielipainotuksetLabel"
-                               [formControlName]="'kielipainotukset_enabled'"
-                               (change)="painotusFieldChange('kielipainotus', $event)">
-                <mat-radio-button [id]="'kielipainotuksetYes'"
-                                  [value]="true"
-                                  #kielipainotuksetYes>
-                  {{'label.yes' | translate}}
-                </mat-radio-button>
-                <mat-radio-button [id]="'kielipainotuksetNo'"
-                                  [value]="false"
-                                  [disabled]="kielipainotukset && kielipainotukset.length > 0">
-                  {{'label.no' | translate}}
-                </mat-radio-button>
-              </mat-radio-group>
-            </div>
-            <div class="varda-painotukset-panel"
-                 *ngIf="kielipainotuksetForm.get('kielipainotukset_enabled').value">
-              <div class="varda-painotukset-header">{{'label.kielipainotukset' | translate}}:</div>
-              <!-- HEADLINE, IF KIELIPAINOTUS EXISTS -->
-              <mat-accordion>
-                <mat-expansion-panel formArrayName="kielipainotusFormArr"
-                                     *ngFor="let item of kielipainotuksetForm.get('kielipainotusFormArr')['controls']; let k = index;"
-                                     [expanded]="ui.openedKielipainotusIndex === k"
-                                     (opened)="onExpansionPanelOpen($event, k, 'kielipainotus')"
-                                     #kielipainotuksetPanels>
-                  <mat-expansion-panel-header>
-                    <div class="oph-h4 oph-bold">{{getRecurringFieldValue('kielipainotus', k)}}</div>
-                  </mat-expansion-panel-header>
-                  <fieldset *ngFor="let kielipainotusFieldSet of kielipainotuksetFieldSets; let i = index"
-                            class="form-group varda-fieldset"
-                            [id]="'kielipainotus' + k"
-                            [formGroup]="kielipainotuksetForm.get('kielipainotusFormArr')['controls'][k].get('kielipainotus_perustiedot')">
-                    <div *ngFor="let field of kielipainotusFieldSet.fields; let x = index">
-                      <app-varda-form-question [field]="field"
-                                               [fieldIndex]="x"
-                                               [partOfInline]="false"
-                                               [fieldSet]="kielipainotusFieldSet"
-                                               [fieldSetIndex]="k"
-                                               [fieldSetName]="'kielipainotus'"
-                                               [isReadOnly]="isReadOnly"
-                                               [form]="kielipainotuksetForm.get('kielipainotusFormArr')['controls'][k].get('kielipainotus_perustiedot')">
-                      </app-varda-form-question>
-                    </div>
-                    <div>
-                      <div [id]="'saveKielipainotusBtnWrapper' + k"
-                           *ngIf="!isReadOnly">
-                        <div class="varda-form-btn-wrapper"
-                             *ngIf="ui.selectedKielipainotusIndexToDelete !== k">
-                          <button class="varda-button responsive"
-                                  type="button"
-                                  [id]="'saveKielipainotus' + k"
-                                  (click)="saveKielipainotus(k)"
-                                  [ngClass]="{'varda-disabled-button': kielipainotuksetForm.get('kielipainotusFormArr')['controls'][k].get('kielipainotus_perustiedot').invalid || ui.isSubmitting}"
-                                  [disabled]="kielipainotuksetForm.get('kielipainotusFormArr')['controls'][k].get('kielipainotus_perustiedot').invalid || ui.isSubmitting">{{getSaveKielipainotusText(k) | translate}}
-                          </button>
-                          <button class="varda-button responsive"
-                                  type="button"
-                                  (click)="displayDeleteWarning('kielipainotus', k)"
-                                  [ngClass]="getDeleteButtonStyles('kielipainotus', k)"
-                                  [disabled]="ui.isSubmitting">{{getDeleteKielipainotusText(k) | translate}}
-                          </button>
-                        </div>
-                        <div *ngIf="ui.selectedKielipainotusIndexToDelete === k"
-                             role="alert"
-                             aria-live="assertive">
-                          <div class="oph-bold">{{'label.confirm-delete-kielipainotus' | translate}}</div>
-                          <div class="varda-form-btn-wrapper">
-                            <button [id]="'kielipainotusConfirmDeleteBtn' + k"
-                                    class="varda-button responsive varda-button-danger"
-                                    (click)="confirmDeletePainotusEntity(k, true, 'kielipainotus')"
-                                    [disabled]="ui.isSubmitting"
-                                    [ngClass]="{'varda-disabled-button': ui.isSubmitting}">
-                              {{'label.delete' | translate}}
-                            </button>
-
-                            <button [id]="'kielipainotusCancelDeleteBtn' + k"
-                                    class="varda-button responsive varda-button-neutral"
-                                    (click)="cancelDelete('kielipainotus')"
-                                    [disabled]="ui.isSubmitting"
-                                    [ngClass]="{'varda-disabled-button': ui.isSubmitting}">
-                              {{'label.cancel' | translate}}
-                            </button>
-
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </fieldset>
-                </mat-expansion-panel>
-              </mat-accordion>
-
-              <div class="varda-recurring-field-add-new-wrapper"
-                   *ngIf="!isReadOnly">
-                <a [routerLink]=""
-                   (click)="addNewKielipainotus()"
-                   class=""
-                   id="addNewKielipainotusLink">
-                  {{'label.add-new-kielipainotus' | translate}}</a>
-              </div>
-            </div>
-          </form>
-
-        </div>
-        <div class="varda-painotukset"
-             *ngIf="isEdit">
-          <form [formGroup]="toimintapainotuksetForm">
-            <div class="form-section-heading"
-                 id="toimintapainotuksetLabel">
-              {{'label.toimipaikka-stepper.toimintapainotukset' | translate}}
-            </div>
-            <div class="varda-painotukset-wrapper">
-              <mat-radio-group [name]="'toimintapainotukset_enabled'"
-                               aria-labelledby="toimintapainotuksetLabel"
-                               [formControlName]="'toimintapainotukset_enabled'"
-                               (change)="painotusFieldChange('toimintapainotus', $event)">
-                <mat-radio-button #toimintapainotuksetYes
-                                  [id]="'toimintapainotuksetYes'"
-                                  [value]="true">
-                  {{'label.yes' | translate}}
-                </mat-radio-button>
-                <mat-radio-button [id]="'toimintapainotuksetNo'"
-                                  [value]="false"
-                                  [disabled]="toimintapainotukset && toimintapainotukset.length > 0">
-                  {{'label.no' | translate}}
-                </mat-radio-button>
-              </mat-radio-group>
-            </div>
-            <div class="varda-painotukset-panel"
-                 *ngIf="toimintapainotuksetForm.get('toimintapainotukset_enabled').value">
-              <div class="varda-painotukset-header">{{'label.toimintapainotukset' | translate}}:</div>
-              <!-- HEADLINE, IF TOIMINTAPAINOTUS EXISTS -->
-              <mat-accordion>
-                <mat-expansion-panel formArrayName="toimintapainotusFormArr"
-                                     *ngFor="let item of toimintapainotuksetForm.get('toimintapainotusFormArr')['controls']; let k = index;"
-                                     [expanded]="ui.openedToimintapainotusIndex === k"
-                                     (opened)="onExpansionPanelOpen($event, k, 'toimintapainotus')"
-                                     #toimintapainotuksetPanels>
-                  <mat-expansion-panel-header>
-                    <div class="oph-h4 oph-bold">{{getRecurringFieldValue('toimintapainotus', k)}}</div>
-                  </mat-expansion-panel-header>
-                  <div *ngFor="let toimintapainotusFieldSet of toimintapainotuksetFieldSets; let i = index"
-                       class="form-group varda-fieldset"
-                       [id]="'toimintapainotus' + k"
-                       [formGroup]="toimintapainotuksetForm.get('toimintapainotusFormArr')['controls'][k].get('toimintapainotus_perustiedot')">
-                    <div *ngFor="let field of toimintapainotusFieldSet.fields; let x = index">
-                      <app-varda-form-question [field]="field"
-                                               [fieldIndex]="x"
-                                               [partOfInline]="false"
-                                               [fieldSet]="toimintapainotusFieldSet"
-                                               [fieldSetIndex]="k"
-                                               [fieldSetName]="'toimintapainotus'"
-                                               [isReadOnly]="isReadOnly"
-                                               [form]="toimintapainotuksetForm.get('toimintapainotusFormArr')['controls'][k].get('toimintapainotus_perustiedot')">
-                      </app-varda-form-question>
-                    </div>
-                    <div>
-                      <div [id]="'saveToimintapainotusBtnWrapper' + k"
-                           *ngIf="!isReadOnly">
-                        <div class="varda-form-btn-wrapper"
-                             *ngIf="ui.selectedToimintapainotusIndexToDelete !== k">
-                          <button class="varda-button responsive"
-                                  type="button"
-                                  [id]="'saveToimintapainotus' + k"
-                                  (click)="saveToimintapainotus(k)"
-                                  [ngClass]="{'varda-disabled-button': toimintapainotuksetForm.get('toimintapainotusFormArr')['controls'][k].get('toimintapainotus_perustiedot').invalid || ui.isSubmitting}"
-                                  [disabled]="toimintapainotuksetForm.get('toimintapainotusFormArr')['controls'][k].get('toimintapainotus_perustiedot').invalid || ui.isSubmitting">
-                            {{getSaveToimintapainotusText(k) | translate}}
-                          </button>
-
-                          <button class="varda-button responsive"
-                                  type="button"
-                                  [ngClass]="getDeleteButtonStyles('toimintapainotus', k)"
-                                  [disabled]="ui.isSubmitting"
-                                  (click)="displayDeleteWarning('toimintapainotus', k)">
-                            {{getDeleteToimintapainotusText(k) | translate}}
-                          </button>
-                        </div>
-                        <div *ngIf="ui.selectedToimintapainotusIndexToDelete === k"
-                             role="alert"
-                             aria-live="assertive">
-                          <div class="oph-bold">{{'label.confirm-delete-toimintapainotus' | translate}}</div>
-                          <div class="varda-form-btn-wrapper">
-                            <button [id]="'toimintapainotusCancelDeleteBtn' + k"
-                                    class="varda-button responsive varda-button-neutral"
-                                    (click)="cancelDelete('toimintapainotus')"
-                                    [disabled]="ui.isSubmitting"
-                                    [ngClass]="{'varda-disabled-button': ui.isSubmitting}">
-                              {{'label.cancel' | translate}}
-                            </button>
-                            <button [id]="'toimintapainotusConfirmDeleteBtn' + k"
-                                    class="varda-button responsive varda-button-danger"
-                                    (click)="confirmDeletePainotusEntity(k, true, 'toimintapainotus')"
-                                    [disabled]="ui.isSubmitting"
-                                    [ngClass]="{'varda-disabled-button': ui.isSubmitting}">
-                              {{'label.delete' | translate}}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </mat-expansion-panel>
-              </mat-accordion>
-              <div class="varda-recurring-field-add-new-wrapper"
-                   *ngIf="!isReadOnly">
-                <a [routerLink]=""
-                   (click)="addNewToimintapainotus()"
-                   class=""
-                   id="addNewToimintapainotusLink">
-                  {{'label.add-new-toimintapainotus' | translate}}</a>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
+     *ngIf="toimipaikkaForm"
+     class="modal-body toimipaikka-form-content">
+  <div class="modal-form-intro">
+    {{ i18n.toimipaikka_intro_paragraph | translate }}
+    <div *ngIf="!isEdit">
+      {{ i18n.toimipaikka_create_paragraph | translate}}
+      <a target="_blank"
+         [href]="i18n.toimipaikka_create_link_href | translate">{{ i18n.toimipaikka_create_link_text | translate }}</a>
+    </div>
+    <div *ngIf="isEdit">
+      {{ i18n.toimipaikka_edit_paragraph | translate}}
+      <a target="_blank"
+         [href]="i18n.toimipaikka_edit_link_href | translate">{{ i18n.toimipaikka_edit_link_text | translate }}</a>
     </div>
   </div>
+  <form [formGroup]="toimipaikkaForm"
+        (submit)="saveToimipaikka(toimipaikkaForm)"
+        autocomplete="off">
+    <fieldset>
+      <legend>{{ i18n.toimipaikka_legend_nimi | translate }}</legend>
+      <app-varda-form-field name="nimi"
+                            [form]="toimipaikkaForm"
+                            [label]="i18n.toimipaikka_nimi | translate"
+                            [errorText]="i18n.toimipaikka_error_nimi | translate"
+                            [placeholder]="i18n.toimipaikka_placeholder_nimi | translate"
+                            [instructionText]="i18n.toimipaikka_instruction_nimi | translate">
+        <input #fieldItem
+               type="text"
+               class="oph-input"
+               formControlName="nimi" />
+      </app-varda-form-field>
+
+      <app-varda-form-field name="organisaatio_oid"
+                            *ngIf="toimipaikka?.organisaatio_oid"
+                            [form]="toimipaikkaForm"
+                            [label]="i18n.toimipaikka_oid | translate">
+        <span>{{ toimipaikka.organisaatio_oid }}</span>
+      </app-varda-form-field>
+    </fieldset>
+
+    <fieldset>
+      <mat-expansion-panel [expanded]="true">
+        <mat-expansion-panel-header>
+          <legend>{{ i18n.toimipaikka_legend_yhteystiedot | translate }}</legend>
+        </mat-expansion-panel-header>
+        <app-varda-form-field name="kayntiosoite"
+                              [form]="toimipaikkaForm"
+                              [label]="i18n.toimipaikka_kayntiosoite | translate"
+                              [errorText]="i18n.toimipaikka_error_kayntiosoite | translate"
+                              [placeholder]="i18n.toimipaikka_placeholder_kayntiosoite | translate"
+                              [instructionText]="i18n.toimipaikka_instruction_kayntiosoite | translate">
+          <input #fieldItem
+                 type="text"
+                 class="oph-input"
+                 (change)="checkPostiosoiteToggle()"
+                 formControlName="kayntiosoite" />
+        </app-varda-form-field>
+
+        <app-varda-form-field name="kayntiosoite_postinumero"
+                              [form]="toimipaikkaForm"
+                              [label]="i18n.toimipaikka_kayntiosoite_postinumero | translate"
+                              [errorText]="i18n.toimipaikka_error_kayntiosoite_postinumero | translate"
+                              [placeholder]="i18n.toimipaikka_placeholder_kayntiosoite_postinumero | translate"
+                              [instructionText]="i18n.toimipaikka_instruction_kayntiosoite_postinumero | translate">
+          <input #fieldItem
+                 type="text"
+                 minlength="5"
+                 maxlength="5"
+                 class="oph-input"
+                 (change)="checkPostiosoiteToggle()"
+                 [matAutocomplete]="kayntiosoite_postinumero"
+                 formControlName="kayntiosoite_postinumero" />
+          <mat-autocomplete #kayntiosoite_postinumero="matAutocomplete">
+            <mat-option *ngFor="let option of filteredKayntiosoitePostitoimipaikat"
+                        [value]="option.code_value">
+              {{option.name}} ({{ option.code_value }})
+            </mat-option>
+          </mat-autocomplete>
+        </app-varda-form-field>
+
+        <app-varda-form-field name="kayntiosoite_postitoimipaikka"
+                              [form]="toimipaikkaForm"
+                              [label]="i18n.toimipaikka_kayntiosoite_postitoimipaikka | translate"
+                              [errorText]="i18n.toimipaikka_error_kayntiosoite_postitoimipaikka | translate"
+                              [placeholder]="i18n.toimipaikka_placeholder_kayntiosoite_postitoimipaikka | translate"
+                              [instructionText]="i18n.toimipaikka_instruction_kayntiosoite_postitoimipaikka | translate">
+          <input #fieldItem
+                 type="text"
+                 class="oph-input"
+                 readonly="true"
+                 formControlName="kayntiosoite_postitoimipaikka" />
+        </app-varda-form-field>
+
+        <app-varda-form-field name="postiosoite"
+                              [form]="toimipaikkaForm"
+                              [label]="i18n.toimipaikka_postiosoite | translate"
+                              [errorText]="i18n.toimipaikka_error_postiosoite | translate"
+                              [placeholder]="i18n.toimipaikka_placeholder_postiosoite | translate"
+                              [instructionText]="i18n.toimipaikka_instruction_postiosoite | translate">
+          <mat-checkbox [disabled]="!toimipaikkaForm.value.kayntiosoite_postitoimipaikka"
+                        [checked]="postiosoiteToggleBoolean"
+                        *ngIf="isEdit"
+                        (change)="togglePostinumero($event)">{{ i18n.toimipaikka_postiosoite_checkbox | translate }}
+          </mat-checkbox>
+          <input #fieldItem
+                 type="text"
+                 class="oph-input"
+                 [readonly]="postiosoiteToggleBoolean"
+                 formControlName="postiosoite" />
+        </app-varda-form-field>
+
+        <app-varda-form-field name="postinumero"
+                              [form]="toimipaikkaForm"
+                              [label]="i18n.toimipaikka_postinumero | translate"
+                              [errorText]="i18n.toimipaikka_error_postinumero | translate"
+                              [placeholder]="i18n.toimipaikka_placeholder_postinumero | translate"
+                              [instructionText]="i18n.toimipaikka_instruction_postinumero | translate">
+          <input #fieldItem
+                 type="text"
+                 minlength="5"
+                 maxlength="5"
+                 class="oph-input"
+                 [matAutocomplete]="postinumero"
+                 [readonly]="postiosoiteToggleBoolean"
+                 formControlName="postinumero" />
+          <mat-autocomplete #postinumero="matAutocomplete">
+            <mat-option *ngFor="let option of filteredPostitoimipaikat"
+                        [value]="option.code_value">
+              {{option.name}} ({{ option.code_value }})
+            </mat-option>
+          </mat-autocomplete>
+        </app-varda-form-field>
+
+        <app-varda-form-field name="postitoimipaikka"
+                              [form]="toimipaikkaForm"
+                              [label]="i18n.toimipaikka_postitoimipaikka | translate"
+                              [errorText]="i18n.toimipaikka_error_postitoimipaikka | translate"
+                              [placeholder]="i18n.toimipaikka_placeholder_postitoimipaikka | translate"
+                              [instructionText]="i18n.toimipaikka_instruction_postitoimipaikka | translate">
+          <input #fieldItem
+                 type="text"
+                 class="oph-input"
+                 readonly="true"
+                 formControlName="postitoimipaikka" />
+        </app-varda-form-field>
+
+
+        <app-varda-form-field name="kunta_koodi"
+                              [form]="toimipaikkaForm"
+                              [label]="i18n.toimipaikka_kunta_koodi | translate"
+                              [errorText]="i18n.toimipaikka_error_kunta_koodi | translate"
+                              [instructionText]="i18n.toimipaikka_instruction_kunta_koodi | translate">
+          <ng-container *ngIf="kuntaOptions$ | async as kuntaOptions">
+            <mat-select #fieldItem
+                        placeholder="-- {{ 'label.choose' | translate }} --"
+                        class="oph-input oph-select"
+                        formControlName="kunta_koodi">
+              <mat-option *ngFor="let option of kuntaOptions.codes"
+                          [value]="option.code_value">
+                {{ option.name }} ({{ option.code_value }})
+              </mat-option>
+            </mat-select>
+          </ng-container>
+        </app-varda-form-field>
+
+        <app-varda-form-field name="puhelinnumero"
+                              [form]="toimipaikkaForm"
+                              [label]="i18n.toimipaikka_puhelinnumero | translate"
+                              [errorText]="i18n.toimipaikka_error_puhelinnumero | translate"
+                              [placeholder]="i18n.toimipaikka_placeholder_puhelinnumero | translate"
+                              [instructionText]="i18n.toimipaikka_instruction_puhelinnumero | translate">
+          <input #fieldItem
+                 type="text"
+                 class="oph-input"
+                 formControlName="puhelinnumero" />
+        </app-varda-form-field>
+
+        <app-varda-form-field name="sahkopostiosoite"
+                              [form]="toimipaikkaForm"
+                              [label]="i18n.toimipaikka_sahkopostiosoite | translate"
+                              [errorText]="i18n.toimipaikka_error_sahkopostiosoite | translate"
+                              [placeholder]="i18n.toimipaikka_placeholder_sahkopostiosoite | translate"
+                              [instructionText]="i18n.toimipaikka_instruction_sahkopostiosoite | translate">
+          <input #fieldItem
+                 type="text"
+                 class="oph-input"
+                 formControlName="sahkopostiosoite" />
+        </app-varda-form-field>
+      </mat-expansion-panel>
+    </fieldset>
+
+    <fieldset>
+      <mat-expansion-panel [expanded]="true">
+        <mat-expansion-panel-header>
+          <legend>{{ i18n.toimipaikka_legend_lisatiedot | translate }}</legend>
+        </mat-expansion-panel-header>
+        <div class="panel-content"
+             mat-expansion-panel-content>
+          <app-varda-form-field name="toimintamuoto_koodi"
+                                [form]="toimipaikkaForm"
+                                [label]="i18n.toimipaikka_toimintamuoto_koodi | translate"
+                                [errorText]="i18n.toimipaikka_error_toimintamuoto_koodi | translate"
+                                [instructionText]="i18n.toimipaikka_instruction_toimintamuoto_koodi | translate">
+            <ng-container *ngIf="toimintamuotoOptions$ | async as toimintamuotoOptions">
+              <mat-select #fieldItem
+                          placeholder="-- {{ i18n.choose | translate }} --"
+                          class="oph-input oph-select"
+                          formControlName="toimintamuoto_koodi">
+                <mat-option *ngFor="let option of toimintamuotoOptions.codes"
+                            [value]="option.code_value">
+                  {{ option.name }} ({{ option.code_value }})
+                </mat-option>
+              </mat-select>
+            </ng-container>
+          </app-varda-form-field>
+
+          <app-varda-form-field name="jarjestamismuoto_koodi"
+                                [form]="toimipaikkaForm"
+                                [label]="i18n.toimipaikka_jarjestamismuoto_koodi | translate"
+                                [errorText]="i18n.toimipaikka_error_jarjestamismuoto_koodi | translate"
+                                [instructionText]="i18n.toimipaikka_instruction_jarjestamismuoto_koodi | translate">
+            <ng-container *ngIf="!isEdit; else showTrigger">
+              <div *ngFor="let koodi of toimipaikkaForm.controls.jarjestamismuoto_koodi.value"
+                   [libKoodistoValue]="koodistoEnum.jarjestamismuoto"
+                   format="long"
+                   class="ml-2">{{ koodi }}</div>
+            </ng-container>
+            <ng-template #showTrigger>
+              <mat-select #fieldItem
+                          placeholder="-- {{ i18n.choose | translate }} --"
+                          multiple
+                          class="oph-input oph-select"
+                          formControlName="jarjestamismuoto_koodi">
+                <mat-select-trigger>
+                  <span libKoodistoValue="vardajarjestamismuoto"
+                        format="long"
+                        *ngIf="toimipaikkaForm.controls.jarjestamismuoto_koodi?.value?.length === 1; else jmList">
+                    {{ toimipaikkaForm.controls.jarjestamismuoto_koodi?.value }}
+                  </span>
+                  <ng-template #jmList>
+                    {{ toimipaikkaForm.controls.jarjestamismuoto_koodi?.value?.join(", ") }}
+                  </ng-template>
+                </mat-select-trigger>
+                <ng-container *ngIf="jarjestamismuotoOptions$ | async as jarjestamismuotoOptions">
+                  <mat-option *ngFor="let option of jarjestamismuotoOptions.codes"
+                              [value]="option.code_value">
+                    {{ option.name }} ({{ option.code_value }})
+                  </mat-option>
+                </ng-container>
+              </mat-select>
+            </ng-template>
+          </app-varda-form-field>
+          <app-varda-form-field name="asiointikieli_koodi"
+                                [form]="toimipaikkaForm"
+                                [label]="i18n.toimipaikka_asiointikieli_koodi | translate"
+                                [errorText]="i18n.toimipaikka_error_asiointikieli_koodi | translate"
+                                [instructionText]="i18n.toimipaikka_instruction_asiointikieli_koodi | translate">
+            <mat-select #fieldItem
+                        placeholder="-- {{ i18n.choose | translate }} --"
+                        multiple
+                        class="oph-input oph-select"
+                        formControlName="asiointikieli_koodi">
+              <mat-optgroup [label]="i18n.painotukset_kielipainotus_yleiset | translate">
+                <ng-container *ngFor="let option of kielikoodisto | slice:0:10">
+                  <mat-option [value]="option.code_value">
+                    {{ option.name }} ({{ option.code_value }})
+                  </mat-option>
+                </ng-container>
+              </mat-optgroup>
+              <mat-optgroup [label]="i18n.painotukset_kielipainotus_muut | translate">
+                <ng-container *ngFor="let option of kielikoodisto | slice:10">
+                  <mat-option [value]="option.code_value">
+                    {{ option.name }} ({{ option.code_value }})
+                  </mat-option>
+                </ng-container>
+              </mat-optgroup>
+            </mat-select>
+          </app-varda-form-field>
+
+          <app-varda-form-field name="kasvatusopillinen_jarjestelma_koodi"
+                                [form]="toimipaikkaForm"
+                                [label]="i18n.toimipaikka_kasvatusopillinen_jarjestelma_koodi | translate"
+                                [errorText]="i18n.toimipaikka_error_kasvatusopillinen_jarjestelma_koodi | translate"
+                                [instructionText]="i18n.toimipaikka_instruction_kasvatusopillinen_jarjestelma_koodi | translate">
+            <ng-container *ngIf="kasvatusopillinenOptions$ | async as kasvatusopillinenOptions">
+              <mat-select #fieldItem
+                          placeholder="-- {{ i18n.choose | translate }} --"
+                          class="oph-input oph-select"
+                          formControlName="kasvatusopillinen_jarjestelma_koodi">
+                <mat-option *ngFor="let option of kasvatusopillinenOptions.codes"
+                            [value]="option.code_value">
+                  {{ option.name }} ({{ option.code_value }})
+                </mat-option>
+              </mat-select>
+            </ng-container>
+          </app-varda-form-field>
+
+          <app-varda-form-field name="varhaiskasvatuspaikat"
+                                [form]="toimipaikkaForm"
+                                [label]="i18n.toimipaikka_varhaiskasvatuspaikat | translate"
+                                [errorText]="i18n.toimipaikka_error_varhaiskasvatuspaikat | translate"
+                                [instructionText]="i18n.toimipaikka_instruction_varhaiskasvatuspaikat | translate">
+            <input #fieldItem
+                   type="number"
+                   class="oph-input"
+                   min="1"
+                   step="1"
+                   max="9999"
+                   formControlName="varhaiskasvatuspaikat" />
+          </app-varda-form-field>
+
+          <app-varda-form-field name="alkamis_pvm"
+                                [form]="toimipaikkaForm"
+                                [label]="i18n.toimipaikka_alkamis_pvm | translate"
+                                [errorText]="i18n.toimipaikka_error_alkamis_pvm | translate"
+                                [instructionText]="i18n.toimipaikka_instruction_alkamis_pvm | translate">
+            <app-varda-datepicker #fieldItem
+                                  (dateChange)="startDateChange($event.value)"
+                                  formControlName='alkamis_pvm'></app-varda-datepicker>
+          </app-varda-form-field>
+
+          <app-varda-form-field name="paattymis_pvm"
+                                [form]="toimipaikkaForm"
+                                [label]="i18n.toimipaikka_paattymis_pvm | translate"
+                                [errorText]="i18n.toimipaikka_error_paattymis_pvm | translate"
+                                [instructionText]="i18n.toimipaikka_instruction_paattymis_pvm | translate">
+            <app-varda-datepicker #fieldItem
+                                  [min]="minEndDate"
+                                  formControlName='paattymis_pvm'></app-varda-datepicker>
+          </app-varda-form-field>
+        </div>
+      </mat-expansion-panel>
+    </fieldset>
+
+    <fieldset>
+      <app-toimipaikka-painotukset [toimipaikka]="toimipaikka"
+                                   [kielikoodisto]="kielikoodisto"
+                                   [saveAccess]="tallentajaAccess"
+                                   [isEdit]="isEdit"
+                                   [minStartDate]="minEndDate"
+                                   [maxEndDate]="maxEndDate"
+                                   (toggleKielipainotukset)="toggleKielipainotukset($event)"
+                                   (toggleToimintapainotukset)="toggleToimintapainotukset($event)">
+      </app-toimipaikka-painotukset>
+    </fieldset>
+
+    <app-varda-error-field [errors]="toimipaikkaFormErrors"></app-varda-error-field>
+
+    <app-varda-action-row [saveDisabled]="toimipaikkaForm.pristine || (isSubmitting | async)"
+                          [saveAccess]="tallentajaAccess"
+                          [formExists]="!!toimipaikka"
+                          [isEdit]="isEdit"
+                          [noDelete]="true"
+                          [noToggle]="!!toimipaikka?.id"
+                          (enableEdit)="enableForm()"
+                          (disableEdit)="disableForm()"></app-varda-action-row>
+
+  </form>
 </div>

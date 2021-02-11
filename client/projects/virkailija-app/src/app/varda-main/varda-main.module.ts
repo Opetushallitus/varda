@@ -87,6 +87,9 @@ import { VardaHenkiloFormAccordionAbstractComponent } from './components/varda-h
 import { TiedonsiirtoFilterHeaderComponent } from './components/varda-raportit/varda-tiedonsiirrot/tiedonsiirto-filter-header/tiedonsiirto-filter-header.component';
 import { TiedonsiirtoFilterComponent } from './components/varda-raportit/varda-tiedonsiirrot/tiedonsiirto-filter/tiedonsiirto-filter.component';
 import { PuutteellisetHenkilotListComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-henkilot-list/puutteelliset-henkilot-list.component';
+import { ToimipaikkaPainotuksetComponent } from './components/varda-toimipaikka-form/toimipaikka-painotukset/toimipaikka-painotukset.component';
+import { KielipainotusComponent } from './components/varda-toimipaikka-form/toimipaikka-painotukset/kielipainotus/kielipainotus.component';
+import { ToimintapainotusComponent } from './components/varda-toimipaikka-form/toimipaikka-painotukset/toimintapainotus/toimintapainotus.component';
 
 @NgModule({
   imports: [
@@ -175,6 +178,9 @@ import { PuutteellisetHenkilotListComponent } from './components/varda-raportit/
     TiedonsiirtoFilterHeaderComponent,
     TiedonsiirtoFilterComponent,
     PuutteellisetHenkilotListComponent,
+    ToimipaikkaPainotuksetComponent,
+    KielipainotusComponent,
+    ToimintapainotusComponent,
   ],
   entryComponents: [EiHenkilostoaDialogComponent],
   exports: [

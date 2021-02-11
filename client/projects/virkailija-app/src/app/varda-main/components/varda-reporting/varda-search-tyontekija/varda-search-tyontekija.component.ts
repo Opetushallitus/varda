@@ -8,7 +8,6 @@ import { VardaVakajarjestajaService } from '../../../../core/services/varda-vaka
 import * as moment from 'moment';
 import { Moment } from 'moment';
 import { VardaDateService } from '../../../services/varda-date.service';
-import { VardaApiWrapperService } from '../../../../core/services/varda-api-wrapper.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { PaginatorParams } from '../varda-result-list/varda-result-list.component';
 import { VardaKoosteApiService } from 'projects/virkailija-app/src/app/core/services/varda-kooste-api.service';
@@ -70,7 +69,6 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
     koosteService: VardaKoosteApiService,
     authService: AuthService,
     vakajarjestajaService: VardaVakajarjestajaService,
-    private apiWrapperService: VardaApiWrapperService,
     private dateService: VardaDateService
   ) {
     super(koodistoService, breakpointObserver, translateService, koosteService, authService, vakajarjestajaService);

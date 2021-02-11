@@ -90,10 +90,14 @@
 
 }
 
+.mat-select-disabled.oph-input,
+.mat-select-disabled .mat-select-value,
 .oph-input[disabled],
 .oph-input[readonly] {
   border: 0;
   color: var(--black);
+  background-color: transparent;
+  box-shadow: none;
 }
 
 .oph-field label,

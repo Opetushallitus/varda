@@ -77,67 +77,8 @@ export class VardaApiService implements VardaApiServiceInterface {
     return this.http.get(`${this.henkilotApiPath}${henkiloId}/`);
   }
 
-  getKielipainotuksetByToimipaikka(toimipaikkaId: string): Observable<any> {
-    const url = `${environment.vardaApiUrl}/toimipaikat/${toimipaikkaId}/kielipainotukset/`;
-    return this.http.get(url).pipe(map((resp: any) => {
-      return resp.results;
-    }));
-  }
-
-  getToimintapainotuksetByToimipaikka(toimipaikkaId: string): Observable<any> {
-    const url = `${environment.vardaApiUrl}/toimipaikat/${toimipaikkaId}/toiminnallisetpainotukset/`;
-    return this.http.get(url).pipe(map((resp: any) => {
-      return resp.results;
-    }));
-  }
-
-
-  getToimipaikkaFields(): Observable<any> {
-    return this.http.get(`${this.fieldDefinitionsPath}toimipaikat.json`);
-  }
-
-  getToimintapainotusFields(): Observable<any> {
-    return this.http.get(`${this.fieldDefinitionsPath}toimintapainotukset.json`);
-  }
-
-  getKielipainotusFields(): Observable<any> {
-    return this.http.get(`${this.fieldDefinitionsPath}kielipainotukset.json`);
-  }
-
   createHenkilo(createParam: any): Observable<any> {
     return this.http.post(this.henkilotApiPath, createParam);
-  }
-
-  createToimipaikka(data: any): Observable<any> {
-    return this.http.post(this.toimipaikatApiPath, data);
-  }
-
-  editToimipaikka(toimipaikkaId: string, data: any): Observable<any> {
-    return this.http.put(`${environment.vardaApiUrl}/toimipaikat/${toimipaikkaId}/`, data);
-  }
-
-  createToimintapainotus(data: any): Observable<any> {
-    return this.http.post(this.toimintapainotuksetApiPath, data);
-  }
-
-  editToimintapainotus(toimintapainotusId: string, data: any): Observable<any> {
-    return this.http.put(`${environment.vardaApiUrl}/toiminnallisetpainotukset/${toimintapainotusId}/`, data);
-  }
-
-  createKielipainotus(data: any): Observable<any> {
-    return this.http.post(this.kielipainotuksetApiPath, data);
-  }
-
-  editKielipainotus(kielipainotusId: string, data: any): Observable<any> {
-    return this.http.put(`${environment.vardaApiUrl}/kielipainotukset/${kielipainotusId}/`, data);
-  }
-
-  deleteKielipainotus(kielipainotusId: string): Observable<any> {
-    return this.http.delete(`${environment.vardaApiUrl}/kielipainotukset/${kielipainotusId}/`);
-  }
-
-  deleteToimintapainotus(toimintapainotusId: string): Observable<any> {
-    return this.http.delete(`${environment.vardaApiUrl}/toiminnallisetpainotukset/${toimintapainotusId}/`);
   }
 
   getOpintopolkuUrlFromHost(): string {

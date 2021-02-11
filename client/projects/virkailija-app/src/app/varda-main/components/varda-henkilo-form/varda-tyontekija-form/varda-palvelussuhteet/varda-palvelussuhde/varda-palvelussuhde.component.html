@@ -7,7 +7,8 @@
     </var>
     <mat-icon class="d-none d-md-block">assignment</mat-icon>
 
-    <mat-expansion-panel [class.before-icon]="true"
+    <mat-expansion-panel [id]="'palvelussuhde-panel_'+ palvelussuhde?.id"
+                         [class.before-icon]="true"
                          (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)"
                          [expanded]="expandPanel">

@@ -105,7 +105,7 @@ export class VardaHenkilostoTilapainenComponent implements OnDestroy {
             this.henkilostoKytkin.editable = false;
             this.vuosiArvot.months++;
             this.vuosiArvot.employees += parseInt(`${result.tyontekijamaara}`) || 0;
-            this.vuosiArvot.hours += parseInt(`${result.tuntimaara}`) || 0;
+            this.vuosiArvot.hours += parseFloat(`${result.tuntimaara}`) || 0;
           }
 
           if (result.muutos_pvm && result.muutos_pvm > this.lastUpdated) {

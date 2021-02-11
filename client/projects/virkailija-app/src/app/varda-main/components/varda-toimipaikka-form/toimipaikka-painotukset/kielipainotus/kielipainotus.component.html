@@ -1,0 +1,112 @@
+<ng-container *ngIf="painotusForm">
+  <div [id]="'kielipainotus_'+ painotus?.id"
+       class="painotus">
+    <app-robo-id [tunniste]="painotus?.id"
+                 nimi="kielipainotus"
+                 [alkamis_pvm]="painotus?.alkamis_pvm"
+                 [paattymis_pvm]="painotus?.paattymis_pvm"></app-robo-id>
+    <mat-expansion-panel [expanded]="expandPanel"
+                         [hideToggle]="savePending"
+                         (opened)="togglePanel(true)"
+                         (closed)="togglePanel(false)">
+      <mat-expansion-panel-header>
+        <mat-panel-title *ngIf="painotus; else addPainotus">
+          <span [libKoodistoValue]="koodistoEnum.kieli"
+                format="long">{{ painotus.kielipainotus_koodi }}</span>&nbsp;
+          <span *ngIf="!painotus.paattymis_pvm; else hasPaattymispvm">
+            {{ i18n.alkaen_PVM | translate: {pvm: painotus.alkamis_pvm | vardaDate} }}
+          </span>
+          <ng-template #hasPaattymispvm>
+            <span>{{painotus.alkamis_pvm | vardaDate }} - {{painotus.paattymis_pvm | vardaDate }}</span>
+          </ng-template>
+        </mat-panel-title>
+
+        <ng-template #addPainotus>
+          <mat-panel-title>
+            {{ i18n.painotukset_lisaa_kielipainotus | translate }}
+          </mat-panel-title>
+        </ng-template>
+      </mat-expansion-panel-header>
+      <form [formGroup]="painotusForm"
+            autocomplete="off"
+            (submit)="savePainotus(painotusForm)">
+        <app-varda-form-field name="kielipainotus_koodi"
+                              [form]="painotusForm"
+                              [label]="i18n.painotukset_kielipainotus_koodi | translate"
+                              [errorText]="i18n.painotukset_error_kielipainotus_koodi | translate"
+                              [instructionText]="i18n.painotukset_instruction_kielipainotus_koodi | translate">
+          <mat-select #fieldItem
+                      placeholder="-- {{ i18n.choose | translate }} --"
+                      class="oph-input oph-select"
+                      formControlName="kielipainotus_koodi">
+            <mat-optgroup [label]="i18n.painotukset_kielipainotus_yleiset | translate">
+              <ng-container *ngFor="let option of kielikoodisto; let index = index">
+                <mat-option *ngIf="index < 10"
+                            [value]="option.code_value">
+                  {{ option.name }} ({{ option.code_value }})
+                </mat-option>
+              </ng-container>
+            </mat-optgroup>
+            <mat-optgroup [label]="i18n.painotukset_kielipainotus_muut | translate">
+              <ng-container *ngFor="let option of kielikoodisto; let index = index">
+                <mat-option *ngIf="index >= 10"
+                            [value]="option.code_value">
+                  {{ option.name }} ({{ option.code_value }})
+                </mat-option>
+              </ng-container>
+            </mat-optgroup>
+          </mat-select>
+
+        </app-varda-form-field>
+
+        <app-varda-form-field name="alkamis_pvm"
+                              [form]="painotusForm"
+                              [label]="i18n.painotukset_kielipainotus_alkamis_pvm | translate"
+                              [errorText]="i18n.painotukset_kielipainotus_error_alkamis_pvm | translate"
+                              [errorMap]="[
+                              { key: 'matDatepickerMin', value: i18n.painotukset_kielipainotus_error_min_alkamis_pvm },
+                              { key: 'matDatepickerMax', value: i18n.painotukset_kielipainotus_error_max_alkamis_pvm }
+                              ]"
+                              [instructionText]="i18n.painotukset_kielipainotus_instruction_alkamis_pvm | translate">
+          <app-varda-datepicker #fieldItem
+                                [min]="startDateRange.min"
+                                [max]="startDateRange.max"
+                                (dateChange)="startDateChange($event.value)"
+                                formControlName='alkamis_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+
+        <app-varda-form-field name="paattymis_pvm"
+                              [form]="painotusForm"
+                              [label]="i18n.painotukset_kielipainotus_paattymis_pvm | translate"
+                              [errorText]="i18n.painotukset_kielipainotus_error_paattymis_pvm | translate"
+                              [errorMap]="[
+                              { key: 'matDatepickerMin', value: i18n.painotukset_kielipainotus_error_min_paattymis_pvm },
+                              { key: 'matDatepickerMax', value: i18n.painotukset_kielipainotus_error_max_paattymis_pvm }
+                              ]"
+                              [instructionText]="i18n.painotukset_kielipainotus_instruction_paattymis_pvm | translate">
+          <app-varda-datepicker #fieldItem
+                                [min]="endDateRange.min"
+                                [max]="endDateRange.max"
+                                formControlName='paattymis_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+
+        <app-varda-error-field [errors]="formErrors"></app-varda-error-field>
+
+        <div class="save-pending"
+             *ngIf="savePending">
+          <mat-icon>warning</mat-icon>
+          {{ i18n.painotukset_kielipainotus_save_pending | translate }}
+        </div>
+
+        <app-varda-action-row *ngIf="!savePending"
+                              [saveDisabled]="painotusForm.pristine || (isSubmitting | async)"
+                              [saveAccess]="saveAccess"
+                              [formExists]="!!painotus"
+                              [isEdit]="isEdit"
+                              (togglePanel)="togglePanel($event)"
+                              (deleteForm)="deletePainotus()"
+                              (enableEdit)="enableForm()"></app-varda-action-row>
+      </form>
+    </mat-expansion-panel>
+  </div>
+</ng-container>

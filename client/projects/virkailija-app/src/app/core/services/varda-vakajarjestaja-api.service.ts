@@ -5,7 +5,7 @@ import { LoadingHttpService } from 'varda-shared';
 import { environment } from '../../../environments/environment';
 import { VardaVakajarjestaja, VardaVakajarjestajaUi } from '../../utilities/models';
 import { VardaPageDto } from '../../utilities/models/dto/varda-page-dto';
-import { VardaToimipaikkaDTO, VardaToimipaikkaMinimalDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
+import { KielipainotusDTO, ToiminnallinenPainotusDTO, VardaToimipaikkaDTO, VardaToimipaikkaMinimalDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
 
 
 @Injectable()
@@ -42,5 +42,52 @@ export class VardaVakajarjestajaApiService {
     return this.http.get(`${this.toimipaikatApiPath}/${toimipaikkaId}/`);
   }
 
+  createToimipaikka(toimipaikkaDTO: VardaToimipaikkaDTO): Observable<VardaToimipaikkaDTO> {
+    return this.http.post(`${this.toimipaikatApiPath}/`, toimipaikkaDTO);
+  }
+
+  updateToimipaikka(toimipaikkaDTO: VardaToimipaikkaDTO): Observable<VardaToimipaikkaDTO> {
+    return this.http.put(`${this.toimipaikatApiPath}/${toimipaikkaDTO.id}/`, toimipaikkaDTO);
+  }
+
+  patchToimipaikka(toimipaikkaDTO: VardaToimipaikkaDTO): Observable<VardaToimipaikkaDTO> {
+    return this.http.patch(`${this.toimipaikatApiPath}/${toimipaikkaDTO.id}/`, toimipaikkaDTO);
+  }
+
+  deleteToimipaikka(toimipaikkaId: number): Observable<void> {
+    return this.http.delete(`${this.toimipaikatApiPath}/${toimipaikkaId}/`);
+  }
+
+  getKielipainotukset(toimipaikkaId: number): Observable<VardaPageDto<KielipainotusDTO>> {
+    return this.http.get(`${environment.vardaApiUrl}/toimipaikat/${toimipaikkaId}/kielipainotukset/`);
+  }
+
+  createKielipainotus(kielipainotusDTO: KielipainotusDTO): Observable<KielipainotusDTO> {
+    return this.http.post(`${environment.vardaApiUrl}/kielipainotukset/`, kielipainotusDTO);
+  }
+
+  updateKielipainotus(kielipainotusDTO: KielipainotusDTO): Observable<KielipainotusDTO> {
+    return this.http.put(`${environment.vardaApiUrl}/kielipainotukset/${kielipainotusDTO.id}/`, kielipainotusDTO);
+  }
+
+  deleteKielipainotus(kielipainotusId: number): Observable<void> {
+    return this.http.delete(`${environment.vardaApiUrl}/kielipainotukset/${kielipainotusId}/`);
+  }
+
+  getToimintapainotukset(toimipaikkaId: number): Observable<VardaPageDto<ToiminnallinenPainotusDTO>> {
+    return this.http.get(`${environment.vardaApiUrl}/toimipaikat/${toimipaikkaId}/toiminnallisetpainotukset/`);
+  }
+
+  createToimintapainotus(toimintapainotusDTO: KielipainotusDTO): Observable<ToiminnallinenPainotusDTO> {
+    return this.http.post(`${environment.vardaApiUrl}/toiminnallisetpainotukset/`, toimintapainotusDTO);
+  }
+
+  updateToimintapainotus(toimintapainotusDTO: KielipainotusDTO): Observable<ToiminnallinenPainotusDTO> {
+    return this.http.put(`${environment.vardaApiUrl}/toiminnallisetpainotukset/${toimintapainotusDTO.id}/`, toimintapainotusDTO);
+  }
+
+  deleteToimintapainotus(toimintapainotusId: number): Observable<void> {
+    return this.http.delete(`${environment.vardaApiUrl}/toiminnallisetpainotukset/${toimintapainotusId}/`);
+  }
 
 }

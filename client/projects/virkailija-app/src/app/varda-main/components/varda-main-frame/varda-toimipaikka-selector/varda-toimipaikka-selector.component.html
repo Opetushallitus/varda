@@ -66,9 +66,7 @@
                       [closeWithoutConfirm]="confirmedToimipaikkaFormLeave"
                       (events)="handleFormClose($event)">
   <app-varda-toimipaikka-form *ngIf="toimipaikkaFormOpen"
-                              [toimipaikka]="toimipaikkaData"
-                              [isEdit]="editToimipaikkaAction"
-                              [isReadOnly]="!!formToimipaikka && (formToimipaikka.hallinnointijarjestelma !== hallinnointijarjestelmaTypes.VARDA || formToimipaikka.paos_toimipaikka_kytkin)"
+                              [toimipaikka]="formToimipaikka"
                               (saveToimipaikkaFormSuccess)="updateToimipaikat($event)"
                               (valuesChanged)="toimipaikkaFormValuesChanged($event)"></app-varda-toimipaikka-form>
 </app-varda-modal-form>

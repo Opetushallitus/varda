@@ -68,4 +68,11 @@ export class VardaUtilityService {
     return rawHetu;
   }
 
+  sortByAlkamisPaattymisPvm(list: Array<{ alkamis_pvm?: string, paattymis_pvm?: string }>) {
+    list.sort((a, b) => {
+      const compareA = a.paattymis_pvm ? `${a.alkamis_pvm}-${a.paattymis_pvm}` : `X${a.alkamis_pvm}`;
+      const compareB = b.paattymis_pvm ? `${b.alkamis_pvm}-${b.paattymis_pvm}` : `X${b.alkamis_pvm}`;
+      return compareB.localeCompare(compareA);
+    });
+  }
 }

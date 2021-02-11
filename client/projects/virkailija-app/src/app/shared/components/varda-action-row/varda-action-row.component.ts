@@ -15,6 +15,7 @@ export class VardaActionRowComponent {
   @Input() isEdit: boolean;
   @Input() noToggle: boolean; // will not hide the form after cancel
   @Input() noMargin: boolean;
+  @Input() noDelete: boolean;
   @Output() togglePanel = new EventEmitter<boolean>(true);
   @Output() deleteForm = new EventEmitter<boolean>(true);
   @Output() enableEdit = new EventEmitter<boolean>(true);

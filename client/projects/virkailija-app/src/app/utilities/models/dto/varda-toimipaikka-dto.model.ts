@@ -1,4 +1,4 @@
-import {Hallinnointijarjestelma} from '../enums/hallinnointijarjestelma';
+import { Hallinnointijarjestelma } from '../enums/hallinnointijarjestelma';
 
 export class VardaToimipaikkaDTO {
   id?: number;
@@ -8,6 +8,7 @@ export class VardaToimipaikkaDTO {
   oid?: string;
   organisaatio_oid?: string;
   katuosoite?: string;
+  postiosoite?: string;
   postitoimipaikka?: string;
   postinumero?: string;
   kunta_koodi?: string;
@@ -15,19 +16,23 @@ export class VardaToimipaikkaDTO {
   sahkopostiosoite?: string;
   kasvatusopillinen_jarjestelma_koodi?: string;
   toimintamuoto_koodi?: string;
-  asiointikieli_koodi?: any;
-  jarjestamismuoto_koodi?: any;
-  varhaiskasvatuspaikat?: any;
+  asiointikieli_koodi?: Array<string>;
+  jarjestamismuoto_koodi?: Array<string>;
+  varhaiskasvatuspaikat?: number;
   kielipainotus_kytkin?: boolean;
   toiminnallinenpainotus_kytkin?: boolean;
   toimipaikka?: VardaToimipaikkaDTO;
   alkamis_pvm?: string;
   paattymis_pvm?: string;
+  muutos_pvm?: string;
   hallinnointijarjestelma?: Hallinnointijarjestelma;
   paos_toimipaikka_kytkin?: boolean;
   paos_oma_organisaatio_url?: string;
   paos_organisaatio_url?: string;
   paos_organisaatio_nimi?: string;
+  kayntiosoite?: string;
+  kayntiosoite_postinumero?: string;
+  kayntiosoite_postitoimipaikka?: string;
 }
 
 export class VardaToimipaikkaMinimalDto {
@@ -52,8 +57,8 @@ export class ToimipaikkaKooste {
   id: number;
   vakajarjestaja_id: number;
   vakajarjestaja_nimi: string;
-  kielipainotukset: Array<Kielipainotus>;
-  toiminnalliset_painotukset: Array<ToiminnallinenPainotus>;
+  kielipainotukset: Array<KielipainotusDTO>;
+  toiminnalliset_painotukset: Array<ToiminnallinenPainotusDTO>;
   nimi: string;
   nimi_sv: string;
   organisaatio_oid: string;
@@ -78,16 +83,20 @@ export class ToimipaikkaKooste {
   hallinnointijarjestelma: string;
 }
 
-export class Kielipainotus {
+export class KielipainotusDTO {
   id: number;
-  kielipainotus_koodi: string;
-  alkamis_pvm: string;
-  paattymis_pvm: string;
+  url?: string;
+  toimipaikka?: string;
+  kielipainotus_koodi?: string;
+  alkamis_pvm?: string;
+  paattymis_pvm?: string;
 }
 
-export class ToiminnallinenPainotus {
+export class ToiminnallinenPainotusDTO {
   id: number;
-  toimintapainotus_koodi: string;
-  alkamis_pvm: string;
-  paattymis_pvm: string;
+  url?: string;
+  toimipaikka?: string;
+  toimintapainotus_koodi?: string;
+  alkamis_pvm?: string;
+  paattymis_pvm?: string;
 }

@@ -9,8 +9,6 @@ export { VardaLapsiDTO } from './models/dto/varda-lapsi-dto.model';
 export { VardaHenkiloDTO } from './models/dto/varda-henkilo-dto.model';
 export { VardaHenkiloSearchConfiguration } from './models/varda-henkilo-search.model';
 export { VardaVarhaiskasvatussuhdeDTO } from './models/dto/varda-varhaiskasvatussuhde-dto.model';
-export { VardaKielipainotusDTO } from './models/dto/varda-kielipainotus-dto.model';
-export { VardaToimintapainotusDTO } from './models/dto/varda-toimintapainotus-dto.model';
 export { VardaExtendedHenkiloModel } from './models/varda-extended-henkilo.model';
 export { VardaVarhaiskasvatuspaatosDTO } from './models/dto/varda-varhaiskasvatuspaatos-dto.model';
 export { VardaKayttooikeusRoles } from './varda-kayttooikeus-roles';

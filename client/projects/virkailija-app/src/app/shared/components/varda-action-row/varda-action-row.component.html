@@ -41,7 +41,7 @@
       </ng-container>
     </div>
     <div class="right"
-         *ngIf="isEdit && saveAccess">
+         *ngIf="isEdit && saveAccess && !noDelete">
       <button *ngIf="formExists && !promptDelete"
               type="button"
               robot="prompt-delete-button"

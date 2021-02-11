@@ -185,4 +185,19 @@ export class VardaFormValidators {
       return null;
     };
   }
+
+  static hasCharacters() {
+    return (control: FormControl) => {
+      if (control.invalid) {
+        return null;
+      }
+
+      const matchCharacters = control.value?.match(/^.*[a-zåäöÅÄÖA-Z]+.*$/);
+      if (!matchCharacters) {
+        return { hasOnlyNumbers: true };
+      }
+
+      return null;
+    };
+  }
 }

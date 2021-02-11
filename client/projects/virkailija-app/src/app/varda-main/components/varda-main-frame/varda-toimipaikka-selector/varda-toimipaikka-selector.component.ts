@@ -27,7 +27,6 @@ export class VardaToimipaikkaSelectorComponent implements OnInit, OnDestroy {
   toimipaikkaData: VardaToimipaikkaDTO;
   selectedVakajarjestaja: VardaVakajarjestajaUi;
   toimipaikkaFormOpen: boolean;
-  editToimipaikkaAction: boolean;
   hallinnointijarjestelmaTypes = Hallinnointijarjestelma;
   anyToimijaKatselija: boolean;
   subscriptions: Array<Subscription> = [];
@@ -78,26 +77,12 @@ export class VardaToimipaikkaSelectorComponent implements OnInit, OnDestroy {
   }
 
   openToimipaikka(toimipaikka: VardaToimipaikkaMinimalDto): void {
-    this.editToimipaikkaAction = true;
     this.formToimipaikka = toimipaikka;
-    this.openToimipaikkaForm(toimipaikka.id);
+    this.toimipaikkaFormOpen = true;
   }
 
   toimipaikkaFormValuesChanged(hasChanged: boolean) {
     this.confirmedToimipaikkaFormLeave = !hasChanged;
-  }
-
-  openToimipaikkaForm(toimipaikkaId?: number): void {
-    this.toimipaikkaData = null;
-
-    if (toimipaikkaId) {
-      this.vakajarjestajaApiService.getToimipaikka(toimipaikkaId).subscribe(toimipaikkaData => {
-        this.toimipaikkaData = toimipaikkaData;
-        this.toimipaikkaFormOpen = true;
-      });
-    } else {
-      this.toimipaikkaFormOpen = true;
-    }
   }
 
   handleFormClose($eventObject: ModalEvent): void {
@@ -108,9 +93,8 @@ export class VardaToimipaikkaSelectorComponent implements OnInit, OnDestroy {
   }
 
   addToimipaikka(): void {
-    this.editToimipaikkaAction = false;
+    this.toimipaikkaFormOpen = true;
     this.formToimipaikka = null;
-    this.openToimipaikkaForm();
   }
 
   updateToimipaikat(data: any): void {

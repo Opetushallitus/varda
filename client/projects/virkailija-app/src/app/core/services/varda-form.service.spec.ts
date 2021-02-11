@@ -1,6 +1,5 @@
 import { TestBed, inject } from '@angular/core/testing';
 import { VardaFormService } from './varda-form.service';
-import { VardaApiWrapperService } from './varda-api-wrapper.service';
 import { VardaVakajarjestajaService } from './varda-vakajarjestaja.service';
 import { VardaDateService } from '../../varda-main/services/varda-date.service';
 import { fieldsets } from '../../shared/testmocks/fieldsets';
@@ -34,7 +33,6 @@ describe('VardaFormService', () => {
     TestBed.configureTestingModule({
       providers: [
         VardaFormService,
-        {provide: VardaApiWrapperService, useValue: {}},
         {provide: VardaVakajarjestajaService, useValue: {}},
         VardaDateService
       ]

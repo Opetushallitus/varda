@@ -55,6 +55,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { VardaAutocompleteSelectorComponent } from './components/varda-autocomplete-selector/varda-autocomplete-selector.component';
 import { SnackbarTimers } from '../core/services/varda-snackbar.service';
 import { BrowserNotSupportedGuard } from '../varda-main/components/public-components/public-components';
+import { RoboIdComponent } from './components/robo-id/robo-id.component';
 
 const cookieConfig: NgcCookieConsentConfig = {
   cookie: {
@@ -136,6 +137,7 @@ const cookieConfig: NgcCookieConsentConfig = {
     VardaDatepickerComponent,
     VardaDatepickerHeaderComponent,
     VardaAutocompleteSelectorComponent,
+    RoboIdComponent,
   ],
   providers: [
     BrowserNotSupportedGuard,
@@ -216,7 +218,8 @@ const cookieConfig: NgcCookieConsentConfig = {
     SlideHideDirective,
     ToimipaikkaNimiDirective,
     VardaDatepickerComponent,
-    VardaAutocompleteSelectorComponent
+    VardaAutocompleteSelectorComponent,
+    RoboIdComponent
   ],
   entryComponents: [VardaDatepickerHeaderComponent]
 })
