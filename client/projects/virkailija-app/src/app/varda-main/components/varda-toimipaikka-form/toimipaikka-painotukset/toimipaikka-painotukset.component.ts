@@ -1,5 +1,5 @@
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
-import { HenkilostoErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaUtilityService } from 'projects/virkailija-app/src/app/core/services/varda-utility.service';
 import { VardaVakajarjestajaApiService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja-api.service';
@@ -19,7 +19,7 @@ export class ToimipaikkaPainotuksetComponent implements OnChanges {
   @Input() kielikoodisto: Array<CodeDTO>;
   @Input() saveAccess: boolean;
   @Input() isEdit: boolean;
-  @Input() errorService: HenkilostoErrorMessageService;
+  @Input() errorService: VardaErrorMessageService;
   @Input() minStartDate: Date;
   @Input() maxEndDate: Date;
   @Output() toggleKielipainotukset = new EventEmitter<boolean>(true);

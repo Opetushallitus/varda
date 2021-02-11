@@ -7,7 +7,7 @@ import { VardaPalvelussuhdeDTO } from 'projects/virkailija-app/src/app/utilities
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
-import { ErrorTree, HenkilostoErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
+import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { MatExpansionPanelHeader } from '@angular/material/expansion';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
@@ -45,7 +45,7 @@ export class VardaPoissaoloComponent extends VardaHenkiloFormAccordionAbstractCo
   endDateRange = { min: VardaDateService.henkilostoReleaseDate, max: null };
 
   poissaoloFormErrors: Observable<Array<ErrorTree>>;
-  private henkilostoErrorService: HenkilostoErrorMessageService;
+  private henkilostoErrorService: VardaErrorMessageService;
 
   constructor(
     private henkilostoService: VardaHenkilostoApiService,
@@ -54,7 +54,7 @@ export class VardaPoissaoloComponent extends VardaHenkiloFormAccordionAbstractCo
     translateService: TranslateService
   ) {
     super();
-    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
+    this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.poissaoloFormErrors = this.henkilostoErrorService.initErrorList();
   }
 
@@ -101,7 +101,7 @@ export class VardaPoissaoloComponent extends VardaHenkiloFormAccordionAbstractCo
     form.markAllAsTouched();
     this.henkilostoErrorService.resetErrorList();
 
-    if (HenkilostoErrorMessageService.formIsValid(form)) {
+    if (VardaErrorMessageService.formIsValid(form)) {
       const poissaoloJson: VardaPoissaoloDTO = {
         ...form.value,
         alkamis_pvm: form.value.alkamis_pvm.format(VardaDateService.vardaApiDateFormat),

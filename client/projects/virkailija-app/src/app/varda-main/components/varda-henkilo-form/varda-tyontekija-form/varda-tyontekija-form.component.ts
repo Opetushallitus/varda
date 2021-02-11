@@ -1,6 +1,6 @@
 import { Component, OnChanges, Input, Output, EventEmitter, SimpleChanges, OnDestroy } from '@angular/core';
 import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
-import { HenkilostoErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
+import { VardaErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
@@ -32,8 +32,8 @@ export class VardaTyontekijaFormComponent implements OnChanges, OnDestroy {
 
 
   i18n = VirkailijaTranslations;
-  private henkilostoErrorService: HenkilostoErrorMessageService;
-  private deleteTyontekijaErrorService: HenkilostoErrorMessageService;
+  private henkilostoErrorService: VardaErrorMessageService;
+  private deleteTyontekijaErrorService: VardaErrorMessageService;
   subscriptions: Array<Subscription> = [];
   toimipaikkaAccess: UserAccess;
   henkilonTutkinnot: Array<VardaTutkintoDTO>;
@@ -48,8 +48,8 @@ export class VardaTyontekijaFormComponent implements OnChanges, OnDestroy {
     private snackBarService: VardaSnackBarService,
     private translateService: TranslateService
   ) {
-    this.henkilostoErrorService = new HenkilostoErrorMessageService(this.translateService);
-    this.deleteTyontekijaErrorService = new HenkilostoErrorMessageService(this.translateService);
+    this.henkilostoErrorService = new VardaErrorMessageService(this.translateService);
+    this.deleteTyontekijaErrorService = new VardaErrorMessageService(this.translateService);
 
     this.tyontekijaFormErrors = this.henkilostoErrorService.initErrorList();
     this.deleteTyontekijaErrors = this.deleteTyontekijaErrorService.initErrorList();

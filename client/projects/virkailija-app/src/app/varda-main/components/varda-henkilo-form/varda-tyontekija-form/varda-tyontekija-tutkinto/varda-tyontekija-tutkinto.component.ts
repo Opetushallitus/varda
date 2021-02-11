@@ -6,7 +6,7 @@ import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
 import { BehaviorSubject, forkJoin, Observable } from 'rxjs';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
-import { HenkilostoErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
+import { VardaErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { VardaKoodistoService } from 'varda-shared';
 import { KoodistoEnum, KoodistoSortBy, KoodistoDTO, CodeDTO } from 'projects/varda-shared/src/lib/models/koodisto-models';
@@ -37,7 +37,7 @@ export class VardaTyontekijaTutkintoComponent implements OnChanges {
   @Output() updateTyontekija = new EventEmitter<TyontekijaListDTO>(true);
 
   tutkintoFormErrors: Observable<Array<ErrorTree>>;
-  private henkilostoErrorService: HenkilostoErrorMessageService;
+  private henkilostoErrorService: VardaErrorMessageService;
   i18n = VirkailijaTranslations;
   tutkintoViewLimit = 3;
   tutkintoOptions: Array<CodeDTO>;
@@ -57,7 +57,7 @@ export class VardaTyontekijaTutkintoComponent implements OnChanges {
     private snackBarService: VardaSnackBarService,
     translateService: TranslateService
   ) {
-    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
+    this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.tutkintoFormErrors = this.henkilostoErrorService.initErrorList();
     this.henkilonTutkinnot.subscribe(tutkinnot => {
       this.changeTutkinnot.emit(tutkinnot);

@@ -2,10 +2,10 @@ import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChange
 import { FormGroup } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
 import * as moment from 'moment';
-import { ErrorTree, HenkilostoErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
+import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaVakajarjestajaApiService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja-api.service';
-import { KielipainotusDTO, ToiminnallinenPainotusDTO, VardaToimipaikkaDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
+import { VardaToimipaikkaDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { KoodistoEnum } from 'varda-shared';
@@ -31,14 +31,14 @@ export abstract class PainotusAbstractComponent<T> implements OnChanges {
   endDateRange = { min: null, max: null };
   savePending: boolean;
   formErrors: Observable<Array<ErrorTree>>;
-  protected errorService: HenkilostoErrorMessageService;
+  protected errorService: VardaErrorMessageService;
 
   constructor(
     protected translateService: TranslateService,
     protected vakajarjestajaApiService: VardaVakajarjestajaApiService,
     protected snackBarService: VardaSnackBarService
   ) {
-    this.errorService = new HenkilostoErrorMessageService(translateService);
+    this.errorService = new VardaErrorMessageService(translateService);
     this.formErrors = this.errorService.initErrorList();
   }
 

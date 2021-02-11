@@ -2,7 +2,7 @@ import { Component, OnInit, Input, ViewChild, ElementRef, OnDestroy, EventEmitte
 import { TyontekijaListDTO } from '../../../utilities/models/dto/varda-tyontekija-dto.model';
 import { LapsiListDTO } from '../../../utilities/models/dto/varda-lapsi-dto.model';
 import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
-import { HenkilostoErrorMessageService, ErrorTree } from '../../../core/services/varda-henkilosto-error-message.service';
+import { VardaErrorMessageService, ErrorTree } from '../../../core/services/varda-error-message.service';
 import { VardaApiService } from '../../../core/services/varda-api.service';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { fromEvent, Observable, Subscription, BehaviorSubject } from 'rxjs';
@@ -37,7 +37,7 @@ export class VardaHenkiloFormComponent implements OnInit, OnDestroy {
   isLoading = new BehaviorSubject<boolean>(false);
 
   constructor(
-    private henkilostoErrorService: HenkilostoErrorMessageService,
+    private henkilostoErrorService: VardaErrorMessageService,
     private vardaApiService: VardaApiService,
     private snackBarService: VardaSnackBarService,
   ) {
@@ -107,7 +107,7 @@ export class VardaHenkiloFormComponent implements OnInit, OnDestroy {
     henkiloForm.markAllAsTouched();
     this.henkilostoErrorService.resetErrorList();
 
-    if (HenkilostoErrorMessageService.formIsValid(henkiloForm)) {
+    if (VardaErrorMessageService.formIsValid(henkiloForm)) {
       this.isLoading.next(true);
 
       this.vardaApiService.createHenkilo(henkiloForm.value).subscribe({

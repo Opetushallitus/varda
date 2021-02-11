@@ -1,7 +1,7 @@
 import { Input, Output, EventEmitter, OnDestroy, Component, OnInit } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 import { TranslateService } from '@ngx-translate/core';
-import { HenkilostoErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
+import { VardaErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaUtilityService } from 'projects/virkailija-app/src/app/core/services/varda-utility.service';
 import { HenkiloListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-henkilo-dto.model';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
@@ -26,7 +26,7 @@ export abstract class AbstractPuutteellisetHenkilotComponent<T> implements OnIni
   @Input() toimipaikkaAccess: UserAccess;
   @Output() openHenkiloForm = new EventEmitter<T>(true);
 
-  protected errorService: HenkilostoErrorMessageService;
+  protected errorService: VardaErrorMessageService;
   formErrors: Observable<Array<ErrorTree>>;
   subscriptions: Array<Subscription> = [];
   henkilot: Array<HenkiloListDTO>;
@@ -42,7 +42,7 @@ export abstract class AbstractPuutteellisetHenkilotComponent<T> implements OnIni
     protected utilityService: VardaUtilityService,
     protected translateService: TranslateService,
   ) {
-    this.errorService = new HenkilostoErrorMessageService(this.translateService);
+    this.errorService = new VardaErrorMessageService(this.translateService);
     this.formErrors = this.errorService.initErrorList();
   }
 

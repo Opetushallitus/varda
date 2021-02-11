@@ -4,7 +4,7 @@ import { MatExpansionPanelHeader } from '@angular/material/expansion';
 import * as moment from 'moment';
 import { Moment } from 'moment';
 import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
-import { ErrorTree, HenkilostoErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
+import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
@@ -54,7 +54,7 @@ export class VardaVarhaiskasvatussuhdeComponent extends VardaHenkiloFormAccordio
   endDateRange = { min: null, max: null };
 
   varhaiskasvatussuhdeFormErrors: Observable<Array<ErrorTree>>;
-  private henkilostoErrorService: HenkilostoErrorMessageService;
+  private henkilostoErrorService: VardaErrorMessageService;
 
   constructor(
     private authService: AuthService,
@@ -67,7 +67,7 @@ export class VardaVarhaiskasvatussuhdeComponent extends VardaHenkiloFormAccordio
   ) {
     super();
     this.toimijaAccess = this.authService.getUserAccess();
-    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
+    this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.varhaiskasvatussuhdeFormErrors = this.henkilostoErrorService.initErrorList();
     this.koodistoService.getKoodisto(KoodistoEnum.tehtavanimike).subscribe(koodisto => this.tehtavanimikkeet = koodisto);
     this.initToimipaikat();
@@ -134,7 +134,7 @@ export class VardaVarhaiskasvatussuhdeComponent extends VardaHenkiloFormAccordio
     form.markAllAsTouched();
     this.henkilostoErrorService.resetErrorList();
 
-    if (HenkilostoErrorMessageService.formIsValid(form)) {
+    if (VardaErrorMessageService.formIsValid(form)) {
       const varhaiskasvatussuhdeJson: VardaVarhaiskasvatussuhdeDTO = {
         ...form.value,
         toimipaikka: form.value.toimipaikka || this.varhaiskasvatussuhde.toimipaikka,

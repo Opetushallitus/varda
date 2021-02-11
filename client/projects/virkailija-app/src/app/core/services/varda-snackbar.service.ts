@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { MatSnackBar, MatSnackBarConfig } from '@angular/material/snack-bar';
 import { TranslateService } from '@ngx-translate/core';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
-import { ErrorValue } from './varda-henkilosto-error-message.service';
+import { ErrorValue } from './varda-error-message.service';
 
 export enum SnackbarTimers {
   flash = 2000,

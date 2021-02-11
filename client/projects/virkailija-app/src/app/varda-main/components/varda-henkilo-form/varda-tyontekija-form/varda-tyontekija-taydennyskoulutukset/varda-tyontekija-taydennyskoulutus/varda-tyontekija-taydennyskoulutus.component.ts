@@ -5,7 +5,7 @@ import { VardaTaydennyskoulutusDTO, VardaTaydennyskoulutusTyontekijaDTO } from '
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
-import { ErrorTree, HenkilostoErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
+import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import * as moment from 'moment';
 import { TyontekijaListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tyontekija-dto.model';
 import { KoodistoDTO } from 'projects/varda-shared/src/lib/models/koodisto-models';
@@ -48,7 +48,7 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
   taydennyskoulutusFormErrors: Observable<Array<ErrorTree>>;
   limitedEditAccess: boolean;
   firstAllowedDate = VardaDateService.henkilostoReleaseDate;
-  private henkilostoErrorService: HenkilostoErrorMessageService;
+  private henkilostoErrorService: VardaErrorMessageService;
 
   constructor(
     private el: ElementRef,
@@ -58,7 +58,7 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
     translateService: TranslateService
   ) {
     this.element = this.el;
-    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
+    this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.taydennyskoulutusFormErrors = this.henkilostoErrorService.initErrorList();
 
   }
@@ -110,7 +110,7 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
     form.markAllAsTouched();
     this.henkilostoErrorService.resetErrorList();
 
-    if (HenkilostoErrorMessageService.formIsValid(form)) {
+    if (VardaErrorMessageService.formIsValid(form)) {
       const taydennyskoulutusJson: VardaTaydennyskoulutusDTO = {
         ...form.value,
         suoritus_pvm: form.value.suoritus_pvm.format(VardaDateService.vardaApiDateFormat)

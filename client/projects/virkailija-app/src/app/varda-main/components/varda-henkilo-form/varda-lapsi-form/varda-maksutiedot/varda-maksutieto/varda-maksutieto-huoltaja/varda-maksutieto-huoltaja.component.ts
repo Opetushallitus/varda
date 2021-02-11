@@ -1,7 +1,7 @@
 import { Component, Input, OnInit, Output, EventEmitter, ElementRef } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { MatRadioChange } from '@angular/material/radio';
-import { ErrorTree, HenkilostoErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
+import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { HuoltajaDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-maksutieto-dto.model';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { Observable } from 'rxjs';
@@ -34,14 +34,14 @@ export class VardaMaksutietoHuoltajaComponent implements OnInit {
   element: ElementRef;
   expandPanel: boolean;
   maksutietoFormErrors: Observable<Array<ErrorTree>>;
-  private henkilostoErrorService: HenkilostoErrorMessageService;
+  private henkilostoErrorService: VardaErrorMessageService;
 
   constructor(
     private el: ElementRef,
     translateService: TranslateService
   ) {
     this.element = this.el;
-    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
+    this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.maksutietoFormErrors = this.henkilostoErrorService.initErrorList();
   }
 

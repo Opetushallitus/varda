@@ -17,6 +17,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../../core/auth/auth.service';
 import { VardaDatepickerHeaderComponent } from './varda-datepicker-header/varda-datepicker-header.component';
 import { Observable, Subject, BehaviorSubject } from 'rxjs';
+import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
 export interface VardaDatepickerEvent {
   valid: boolean;
@@ -78,7 +79,7 @@ export class VardaDatepickerComponent implements OnInit, ControlValueAccessor {
 
   ngOnInit(): void {
     if (!this.placeholder) {
-      this.placeholder = this.translateService.instant('label.date-placeholder');
+      this.placeholder = this.translateService.instant(VirkailijaTranslations.datepicker_placeholder);
     }
 
     if (this.translateService.getDefaultLang() === 'sv') {

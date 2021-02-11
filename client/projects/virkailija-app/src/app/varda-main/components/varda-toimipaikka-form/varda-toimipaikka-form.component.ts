@@ -5,12 +5,11 @@ import { TranslateService } from '@ngx-translate/core';
 import * as moment from 'moment';
 import { Moment } from 'moment';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
-import { BehaviorSubject, forkJoin, fromEvent, Observable, Subscription } from 'rxjs';
+import { BehaviorSubject, fromEvent, Observable, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, filter, mergeMap, take } from 'rxjs/operators';
 import { CodeDTO, KoodistoDTO, KoodistoEnum, KoodistoSortBy, VardaKoodistoService } from 'varda-shared';
 import { AuthService } from '../../../core/auth/auth.service';
-import { VardaApiService } from '../../../core/services/varda-api.service';
-import { ErrorTree, HenkilostoErrorMessageService } from '../../../core/services/varda-henkilosto-error-message.service';
+import { ErrorTree, VardaErrorMessageService } from '../../../core/services/varda-error-message.service';
 import { VardaSnackBarService } from '../../../core/services/varda-snackbar.service';
 import { VardaVakajarjestajaApiService } from '../../../core/services/varda-vakajarjestaja-api.service';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
@@ -31,7 +30,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
   @Output() saveToimipaikkaFormSuccess = new EventEmitter<boolean>(true);
   @Output() valuesChanged = new EventEmitter<boolean>(true);
   @ViewChild('formContent') formContent: ElementRef;
-  private errorService: HenkilostoErrorMessageService;
+  private errorService: VardaErrorMessageService;
   i18n = VirkailijaTranslations;
   koodistoEnum = KoodistoEnum;
   toimijaAccess: UserAccess;
@@ -63,7 +62,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
     private koodistoService: VardaKoodistoService,
     private translateService: TranslateService,
   ) {
-    this.errorService = new HenkilostoErrorMessageService(this.translateService);
+    this.errorService = new VardaErrorMessageService(this.translateService);
     this.toimijaAccess = this.authService.getUserAccess();
     this.tallentajaAccess = true;
     this.toimipaikkaFormErrors = this.errorService.initErrorList();
@@ -203,7 +202,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
     form.markAllAsTouched();
     this.errorService.resetErrorList();
 
-    if (HenkilostoErrorMessageService.formIsValid(form)) {
+    if (VardaErrorMessageService.formIsValid(form)) {
       const toimipaikkaDTO: VardaToimipaikkaDTO = {
         ...form.value,
         alkamis_pvm: form.value.alkamis_pvm.format(VardaDateService.vardaApiDateFormat),

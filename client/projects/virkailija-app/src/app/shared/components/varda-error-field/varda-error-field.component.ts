@@ -1,7 +1,7 @@
 import { Component, OnInit, Input, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { BehaviorSubject, Subscription } from 'rxjs';
-import { ErrorTree } from '../../../core/services/varda-henkilosto-error-message.service';
+import { ErrorTree } from '../../../core/services/varda-error-message.service';
 
 
 

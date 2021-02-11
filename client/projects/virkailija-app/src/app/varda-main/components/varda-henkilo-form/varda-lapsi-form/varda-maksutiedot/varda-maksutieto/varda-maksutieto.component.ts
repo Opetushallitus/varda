@@ -2,7 +2,7 @@ import { Component, OnInit, Input, Output, ViewChildren, EventEmitter, ElementRe
 import { FormGroup, FormControl, Validators, FormArray } from '@angular/forms';
 import * as moment from 'moment';
 import { Moment } from 'moment';
-import { ErrorTree, HenkilostoErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
+import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
@@ -48,7 +48,7 @@ export class VardaMaksutietoComponent extends VardaHenkiloFormAccordionAbstractC
   maksutietoForm: FormGroup;
   maksutietoFormErrors: Observable<Array<ErrorTree>>;
   subscriptions: Array<Subscription> = [];
-  private henkilostoErrorService: HenkilostoErrorMessageService;
+  private henkilostoErrorService: VardaErrorMessageService;
   maksunperusteKoodisto: KoodistoDTO;
   huoltajaSaveStatus: { success: number, failure: number };
   minEndDate: Date;
@@ -66,7 +66,7 @@ export class VardaMaksutietoComponent extends VardaHenkiloFormAccordionAbstractC
   ) {
     super();
     this.element = this.el;
-    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
+    this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.maksutietoFormErrors = this.henkilostoErrorService.initErrorList();
     this.koodistoService.getKoodisto(KoodistoEnum.maksunperuste).subscribe(koodisto => this.maksunperusteKoodisto = koodisto);
   }
@@ -120,7 +120,7 @@ export class VardaMaksutietoComponent extends VardaHenkiloFormAccordionAbstractC
     if (this.maksutietoForm.controls.huoltajat.invalid) {
       this.disableSubmit();
       setTimeout(() => this.huoltajaElements.first.element.nativeElement.scrollIntoView({ behavior: 'smooth' }), 100);
-    } else if (HenkilostoErrorMessageService.formIsValid(form)) {
+    } else if (VardaErrorMessageService.formIsValid(form)) {
       const maksutietoDTO: VardaMaksutietoDTO = {
         ...form.value,
         alkamis_pvm: form.value.alkamis_pvm?.format(VardaDateService.vardaApiDateFormat) || this.maksutieto?.alkamis_pvm,

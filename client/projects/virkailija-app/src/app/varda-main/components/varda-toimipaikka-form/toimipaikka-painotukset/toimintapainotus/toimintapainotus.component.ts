@@ -2,10 +2,10 @@ import { Component, Input, OnInit } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
 import * as moment from 'moment';
-import { HenkilostoErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
+import { VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaVakajarjestajaApiService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja-api.service';
-import { KielipainotusDTO, ToiminnallinenPainotusDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
+import { ToiminnallinenPainotusDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { KoodistoDTO } from 'varda-shared';
 import { VardaDateService } from '../../../../services/varda-date.service';
 import { PainotusAbstractComponent } from '../painotus.abstract';
@@ -61,7 +61,7 @@ export class ToimintapainotusComponent extends PainotusAbstractComponent<Toiminn
     form.markAllAsTouched();
     this.errorService.resetErrorList();
 
-    if (HenkilostoErrorMessageService.formIsValid(form)) {
+    if (VardaErrorMessageService.formIsValid(form)) {
       const toimintapainotusJson: ToiminnallinenPainotusDTO = {
         ...form.value,
         toimipaikka: this.toimipaikka?.url,

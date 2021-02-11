@@ -1,189 +1,200 @@
 import { Injectable } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { FormGroup } from '@angular/forms';
+import { VardaSnackBarService } from './varda-snackbar.service';
+import { TranslateService } from '@ngx-translate/core';
+
+interface VardaErrorLine {
+  [key: string]: Array<string | VardaErrorMessage> | VardaErrorLine;
+}
+
+export interface VardaErrorTranslation {
+  language: string;
+  description: string;
+}
+
+export interface VardaErrorMessage {
+  error_code: string;
+  description: string;
+  translations: Array<VardaErrorTranslation>;
+}
+
+export interface VardaErrorResponse {
+  status?: number;
+  error: VardaErrorLine;
+}
+
+export interface ErrorValue {
+  errorCode: string;
+  errorTranslation: string;
+  dynamicValue: string;
+}
+
+export interface ErrorTree {
+  keys: Array<string>;
+  values: Array<ErrorValue>;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class VardaErrorMessageService {
+  private errorList$ = new BehaviorSubject<Array<ErrorTree>>(null);
+  private errorLines: Array<ErrorTree> = [];
 
-  errorMessageKeys = {
-    'Not a valid kunta_koodi.': 'field.kunta_koodi.invalid',
-    'Not a valid kieli_koodi.': 'field.kieli_koodi.invalid',
-    'Not a valid toimintapainotus_koodi.': 'field.toimintapainotus_koodi.invalid',
-    'Not a valid Finnish phone number.': 'field.puhelinnumero.invalid',
-    'Not a valid tutkinto_koodi.': 'field.tutkinto_koodi.invalid',
-    'Not a valid kasvatusopillinen_jarjestelma_koodi.': 'field.kasvatusopillinen_jarjestelma_koodi.invalid',
-    'Not a valid toimintamuoto_koodi.': 'field.toimintamuoto_koodi.invalid',
-    'Not a valid jarjestamismuoto_koodi.': 'field.jarjestamismuoto_koodi.invalid',
-    'Not a valid opiskeluoikeudentila_koodi.': 'field.opiskeluoikeudentila_koodi.invalid',
-    'paattymis_pvm must be after alkamis_pvm (or same).': 'paattymis_pvm must be after alkamis_pvm',
-    'Cannot delete varhaiskasvatuspaatos. There are objects referencing it that need to be deleted first.': 'field.vakapaatos_cannot_be_deleted',
-    'Postinumero is incorrect.': 'field.postinumero.invalid',
-    'hakemus_pvm must be before alkamis_pvm (or same).': 'field.hakemus_pvm.before_alkamis_pvm',
-    'Changing of varhaiskasvatuspaatos is not allowed': 'field.vakasuhde-vakapaatos-change-not-allowed',
-    'Not a valid IBAN code.': 'field.iban.invalid',
-    'Toimipaikan nimi has disallowed characters.': 'alert.toimipaikka-has-disallowed-characters',
-    'Incorrect format.': 'alert.toimipaikka-has-disallowed-characters',
-    'varhaiskasvatussuhde.alkamis_pvm must be after varhaiskasvatuspaatos.alkamis_pvm (or same)': 'varhaiskasvatussuhde.alkamis_pvm must be after varhaiskasvatuspaatos.alkamis_pvm',
-    'varhaiskasvatuspaatos.paattymis_pvm must be after varhaiskasvatussuhde.paattymis_pvm (or same)': 'varhaiskasvatuspaatos.paattymis_pvm must be after varhaiskasvatussuhde.paattymis_pvm',
-    'varhaiskasvatussuhde.alkamis_pvm must be before varhaiskasvatuspaatos.paattymis_pvm (or same)': 'varhaiskasvatussuhde.alkamis_pvm must be before varhaiskasvatuspaatos.paattymis_pvm',
-    'varhaiskasvatussuhde must have paattymis_pvm because varhaiskasvatuspaatos has paattymis_pvm': 'field.varhaiskasvatussuhde_paattymis_pvm.required',
-    'Combination of nimi and vakajarjestaja fields should be unique': 'fields.unique.nimi-vakajarjestaja',
-    'Tämän luvun on oltava vähintään 1.0.': 'field.minvalue.one',
-    'varhaiskasvatussuhde.alkamis_pvm cannot be same or after toimipaikka.paattymis_pvm.': 'varhaiskasvatussuhde.paivamaarat cannot be after toimipaikka.paattymis_pvm',
-    'varhaiskasvatussuhde.paattymis_pvm cannot be after toimipaikka.paattymis_pvm.': 'varhaiskasvatussuhde.paivamaarat cannot be after toimipaikka.paattymis_pvm',
-    'Name must have at least 2 characters.': 'alert.toimipaikka-minimum-length',
-    'Maximum 2 consecutively repeating special characters are allowed.': 'alert.toimipaikka-maximum-repeating-special-characters',
-    'Invalid code for paos-lapsi.': 'field.jarjestamismuoto_koodi.paos-lapsi-invalid-code',
-    'There is no active paos-agreement to this toimipaikka.': 'alert.paos-lapsi-creation-failed',
-    'There is no active paos-agreement.': 'alert.paos-lapsi-creation-failed',
-    'Vakajarjestaja is different than paos_organisaatio for lapsi.': 'alert.vakajarjestaja-eri-kuin-lapsen-paos-toimija',
-    'Arvo tulee olla vähintään 3 merkkiä pitkä.': 'field.postiosoite.invalid',
-    'oma_organisaatio cannot be same as paos_organisaatio.': 'alert.oma_organisaatio_same_as_paos',
-    'Date must be greater than or equal to 2000-01-01.': 'field.date-after-1999',
-    'maksutieto.alkamis_pvm must be after earliest varhaiskasvatuspaatos.alkamis_pvm': 'field.maksutieto_alkamis_pvm.before.varhaiskasvatuspaatos_alkamis_pvm',
-    'maksutieto.alkamis_pvm must be before the latest varhaiskasvatuspaatos.paattymis_pvm': 'field.maksutieto_alkamis_pvm.after.varhaiskasvatuspaatos_paattymis_pvm',
-    'maksutieto.paattymis_pvm must be before latest varhaiskasvatuspaatos.paattymis_pvm': 'field.maksutieto_paattymis_pvm.after.varhaiskasvatuspaatos_paattymis_pvm',
-    'lapsi already has 2 active maksutieto during that time period': 'field.two_maksutieto_during_time_period',
-    'Tässä luvussa saa olla enintään 1 desimaalia.': 'alert.max-one-decimal',
-    'For PAOS-lapsi both oma_organisaatio and paos_organisaatio are needed.': 'error.paos-lapsi-both-organisations-required',
-    'Lapsi cannot be paos and regular one same time.': 'error.lapsi-cannot-be-paos-and-regular',
-    'Invalid hyperlink - Object does not exist.': 'error.invalid-hyperlink',
-    'User does not have permissions for provided vakatoimija.': 'error.user-doesnt-not-have-permission-for-vakatoimija',
-    'Changing of vakatoimija is not allowed': 'error.change-of-vakatoimija-not-allowed',
-    'Changing of oma_organisaatio is not allowed': 'error.change-of-oma-organisaatio-not-allowed',
-    'Changing of paos_organisaatio is not allowed': 'error.change-of-paos-organisaatio-not-allowed',
-    'alkamis_pvm must be before toimipaikka paattymis_pvm': 'error.alkamispvm-should-be-before-toimipaikka-paattymispvm',
-    'alkamis_pvm must be after or equal to toimipaikka alkamis_pvm': 'error.alkamispvm-should-be-after-toimipaikka-alkamispvm',
-    'paattymis_pvm must be before or equal to toimipaikka paattymis_pvm': 'error.paattymispvm-should-be-before-toimipaikka-paattymispvm',
-    'alkamis_pvm must be before vakajarjestaja paattymis_pvm': 'error.alkamispvm-should-be-before-vakajarjestaja-paattymispvm',
-    'alkamis_pvm must be after or equal to vakajarjestaja alkamis_pvm': 'error.alkamispvm-should-be-after-vakajarjestaja-alkamispvm',
-    'paattymis_pvm must be before or equal to vakajarjestaja paattymis_pvm': 'error.paattymispvm-should-be-before-vakajarjestaja-paattymispvm',
-  };
-
-  dynamicErrorMessageKeys = {
-    'has already 3 overlapping varhaiskasvatuspaatos on the defined time range.': 'field.lapsi-has-already-three-overlapping-vakapaatos',
-    'has already 3 overlapping varhaiskasvatussuhde on the defined time range.': 'field.lapsi-has-already-three-overlapping-vakasuhde',
-    'Ensure this field has no more than 20 characters.': 'field.maxlength.20',
-    'Se till att detta fält inte har fler än 20 tecken.': 'field.maxlength.20',
-    'Arvo saa olla enintään 20 merkkiä pitkä.': 'field.maxlength.20',
-    'Ensure this field has no more than 200 characters.': 'field.maxlength.200',
-    'Se till att detta fält inte har fler än 200 tecken.': 'field.maxlength.200',
-    'Arvo saa olla enintään 200 merkkiä pitkä.': 'field.maxlength.200'
-  };
-
-  /*
-  DIFFERENT CASES
-  "kayntiosoite_postinumero": [
-    "00000 : Postinumero is incorrect."
-  ],
-  "hakemus_pvm": [
-    "hakemus_pvm must be before alkamis_pvm (or same)."
-  ]
-  {"tuntimaara_viikossa":[
-    "Tässä luvussa voi olla yhteensä enintään 4 numeroa."
-  ]}
-  {"asiointikieli_koodi": {
-    "0": [
-      "SEPO : Not a valid kieli_koodi."
-    ]
-  }}
-  {"error message"}
-  */
-
-  constructor() { }
-
-  getErrorMessages(errorResponse: any): any {
-    const errorObj = errorResponse;
-    let formattedErrors = null;
-    if (errorObj) {
-      formattedErrors = this.formatErrorHttpResponse(errorObj);
-    }
-    return formattedErrors;
+  constructor(private translateService: TranslateService) {
   }
 
-  handleArrayErrorMsg(errorEntry: any): any {
-    let translatedErrorMsg = '';
-
-    const errorContentsParts = typeof (errorEntry[0]) === 'string' ? errorEntry[0].split(':') : ['', errorEntry[0].detail];
-    const errorMsgFirstPart = errorContentsParts[0];
-    const errorMsgSecondPart = errorContentsParts[1];
-
-    const dynamicErrorMsg = this.getFromDynamicErrorMessages(errorMsgFirstPart);
-
-    if (dynamicErrorMsg) {
-      translatedErrorMsg = dynamicErrorMsg;
+  public static formIsValid(form: FormGroup): boolean {
+    if (form.valid) {
+      return true;
     }
 
-    if (this.errorMessageKeys[errorMsgFirstPart]) {
-      translatedErrorMsg = this.errorMessageKeys[errorMsgFirstPart];
-    }
-
-    if (errorMsgSecondPart) {
-      const errorMessageKey = errorMsgSecondPart.trim();
-      if (this.errorMessageKeys[errorMessageKey]) {
-        translatedErrorMsg = this.errorMessageKeys[errorMessageKey];
+    Object.keys(form.controls).some(key => {
+      if (form.controls[key]?.errors) {
+        form.controls[key].setErrors({ ...form.controls[key].errors, scrollTo: true });
+        return true;
       }
-    }
+    });
 
-    return translatedErrorMsg;
+    return false;
   }
 
-  getFromDynamicErrorMessages(errorMessageKey: string): string {
-    let rv = '';
-    for (const x in this.dynamicErrorMessageKeys) {
-      if (this.dynamicErrorMessageKeys.hasOwnProperty(x)) {
-        const subStr = x;
-        const foundInErrorMsg = errorMessageKey.indexOf(subStr);
-        if (foundInErrorMsg !== -1) {
-          rv = this.dynamicErrorMessageKeys[x];
-          break;
+  private loopThrough(error: object | Array<string> | string, errorTree: ErrorTree = { keys: [], values: [] }) {
+    if (Array.isArray(error)) {
+      errorTree.values = error.map(text => this.parseBackendError(text));
+      this.errorLines.push(errorTree);
+    } else if (typeof (error) === 'string') {
+      errorTree.values.push(this.parseBackendError(error));
+      this.errorLines.push(errorTree);
+    } else {
+      Object.keys(error).forEach(key => {
+        this.loopThrough(error[key], { ...errorTree, keys: [...errorTree.keys, key] });
+      });
+    }
+  }
+
+  private parseBackendError(error: VardaErrorMessage | string): ErrorValue {
+    let errorCode, errorTranslation, dynamicValue;
+    if (typeof error === 'object' && error !== null) {
+      errorCode = error.error_code;
+      errorTranslation = this.getErrorTranslation(error);
+      if (errorTranslation) {
+        // If translation was found, show: errorTranslation (errorCode)
+        errorTranslation = errorTranslation + ` (${errorCode})`;
+      } else {
+        // If no translation was found, show: errorCode
+        errorTranslation = errorCode;
+      }
+      if (errorCode.startsWith('DY')) {
+        dynamicValue = this.parseDynamicValue(errorCode, error.description);
+        if (errorTranslation) {
+          // Translations include {{}} signifying dynamic value position
+          errorTranslation = errorTranslation.replace(/{{}}/g, dynamicValue);
         }
       }
+    } else {
+      errorCode = error;
     }
-    return rv;
-  }
 
-  createErrorObjEntry(key: string, msgContent: string): any {
-    const errorKey = `field.${key}.label`;
-    const errorMsg = msgContent;
     return {
-      key: errorKey,
-      msg: errorMsg
+      errorCode: errorCode,
+      errorTranslation: errorTranslation,
+      dynamicValue: dynamicValue
     };
   }
 
-  formatErrorHttpResponse(errorObj: any): any {
-    const rv = [];
-    errorObj = errorObj.error;
-    const errorKeys = Object.keys(errorObj);
-    errorKeys.forEach((key) => {
-      try {
-        const errorEntry = errorObj[key];
-        let errorContent = '';
-        let translatedErrorMsgObj;
+  private getErrorTranslation(error: VardaErrorMessage): string {
+    const currentLang = this.translateService.currentLang;
+    return error.translations.find(errorTranslation => {
+      return errorTranslation.language.toLocaleLowerCase() === currentLang.toLocaleLowerCase();
+    })?.description;
+  }
 
-        if (Array.isArray(errorObj[key])) {
-          errorContent = this.handleArrayErrorMsg(errorEntry);
-          translatedErrorMsgObj = this.createErrorObjEntry(key, errorContent);
-          rv.push(translatedErrorMsgObj);
+  private checkFormErrors(formGroup: FormGroup) {
+    this.errorLines.forEach(line => line.keys.forEach(key => formGroup.controls[key]?.setErrors({ backend: line.values, scrollTo: true })));
+  }
 
-        } else if (typeof errorEntry === 'string') {
-          translatedErrorMsgObj = this.createErrorObjEntry(key, this.errorMessageKeys[errorEntry]);
-          rv.push(translatedErrorMsgObj);
+  private parseDynamicValue(errorCode: string, errorDescription: string): string {
+    /**
+     * Parses dynamic error messages returned from Varda backend. If dynamic error messages are added or modified
+     * in backend (error_messages.py), any modifications should be reflected here.
+     */
+    let regex;
+    switch (errorCode) {
+      case 'DY001':
+        regex = /no more than (\d+) characters/;
+        break;
+      case 'DY002':
+        regex = /at least (\d+) characters/;
+        break;
+      case 'DY003':
+        regex = /no more than (\d+) items/;
+        break;
+      case 'DY004':
+        regex = /greater than or equal to ([\d.]+?)[.]/;
+        break;
+      case 'DY005':
+        regex = /less than or equal to ([\d.]+?)[.]/;
+        break;
+      case 'DY006':
+        regex = /no more than (\d+) decimal places/;
+        break;
+      case 'DY007':
+        regex = /no more than (\d+) digits in total/;
+        break;
+      case 'DY008':
+        regex = /again in (\d+) seconds/;
+        break;
+      case 'DY009':
+        regex = /no more than (\d+) digits before/;
+        break;
+      default:
+        return null;
+    }
 
-        } else {
-          const errorObjKeys = Object.keys(errorEntry);
-          errorObjKeys.forEach((k) => {
-            errorContent = this.handleArrayErrorMsg(errorEntry[k]);
-            translatedErrorMsgObj = this.createErrorObjEntry(key, errorContent);
-            rv.push(translatedErrorMsgObj);
-          });
+    const match = errorDescription.match(regex);
+    if (match.length > 1) {
+      return match[1];
+    }
 
-        }
-      } catch (e) {
-        console.log(e);
+    return null;
+  }
+
+  resetErrorList(): void {
+    this.errorList$.next(null);
+  }
+
+  initErrorList(): Observable<Array<ErrorTree>> {
+    return this.errorList$;
+  }
+
+  handleError(response: VardaErrorResponse, snackBar?: VardaSnackBarService, formGroup?: FormGroup): void {
+    console.error(response.status, response.error);
+    const generalErrors = [404, 500, 504];
+    this.errorLines = [];
+
+    if (generalErrors.includes(response?.status)) {
+      const generalError: ErrorTree = {
+        keys: ['server'],
+        values: [{
+          errorCode: 'UI002',
+          errorTranslation: this.translateService.instant('backend.api-timeout-or-not-found'),
+          dynamicValue: null
+        }]
+      };
+      this.errorLines.push(generalError);
+    } else {
+      this.loopThrough(response.error);
+      if (formGroup) {
+        this.checkFormErrors(formGroup);
       }
-    });
-    return { errorsArr: rv };
+    }
+    this.errorList$.next(this.errorLines);
+
+    if (snackBar) {
+      const errorFlat: Array<ErrorValue> = [].concat(...this.errorLines.map(line => line.values));
+      snackBar.errorFromBackend(errorFlat);
+    }
   }
 }

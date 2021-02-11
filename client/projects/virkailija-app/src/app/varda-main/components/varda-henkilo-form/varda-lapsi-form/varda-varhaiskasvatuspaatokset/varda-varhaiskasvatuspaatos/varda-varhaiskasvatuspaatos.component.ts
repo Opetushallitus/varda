@@ -2,7 +2,7 @@ import { Component, OnInit, OnChanges, Input, Output, EventEmitter, ElementRef, 
 import { FormGroup, FormControl, Validators, AbstractControl, ValidatorFn } from '@angular/forms';
 import * as moment from 'moment';
 import { Moment } from 'moment';
-import { ErrorTree, HenkilostoErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
+import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
@@ -58,7 +58,7 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaHenkiloFormAccordi
   tilapainenVarhaiskasvatusBoolean: boolean;
   minStartDate: Date;
   minEndDate: Date;
-  private henkilostoErrorService: HenkilostoErrorMessageService;
+  private henkilostoErrorService: VardaErrorMessageService;
 
   constructor(
     private el: ElementRef,
@@ -71,7 +71,7 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaHenkiloFormAccordi
   ) {
     super();
     this.element = this.el;
-    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
+    this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.varhaiskasvatuspaatosFormErrors = this.henkilostoErrorService.initErrorList();
 
     this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
@@ -138,7 +138,7 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaHenkiloFormAccordi
     form.markAllAsTouched();
     this.henkilostoErrorService.resetErrorList();
 
-    if (HenkilostoErrorMessageService.formIsValid(form)) {
+    if (VardaErrorMessageService.formIsValid(form)) {
       const varhaiskasvatuspaatosDTO: VardaVarhaiskasvatuspaatosDTO = {
         ...form.value,
         hakemus_pvm: form.value.hakemus_pvm.format(VardaDateService.vardaApiDateFormat),

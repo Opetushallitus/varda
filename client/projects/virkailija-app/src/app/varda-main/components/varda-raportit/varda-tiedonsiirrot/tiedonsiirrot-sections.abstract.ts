@@ -4,7 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { Moment } from 'moment';
 import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
-import { ErrorTree, HenkilostoErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
+import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaRaportitService } from 'projects/virkailija-app/src/app/core/services/varda-raportit.service';
 import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
 import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';
@@ -45,7 +45,7 @@ export interface TiedonsiirrotColumnFields {
   template: ''
 })
 export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, OnDestroy {
-  protected errorService: HenkilostoErrorMessageService;
+  protected errorService: VardaErrorMessageService;
   abstract columnFields: Array<TiedonsiirrotColumnFields>;
   isLoading = new BehaviorSubject<boolean>(true);
   toimijaAccess: UserAccess;
@@ -82,7 +82,7 @@ export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, 
     protected vakajarjestajaService: VardaVakajarjestajaService,
     protected raportitService: VardaRaportitService
   ) {
-    this.errorService = new HenkilostoErrorMessageService(this.translateService);
+    this.errorService = new VardaErrorMessageService(this.translateService);
     this.formErrors = this.errorService.initErrorList();
 
     this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();

@@ -4,7 +4,7 @@ import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/var
 import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
 import { VardaTaydennyskoulutusDTO, VardaTaydennyskoulutusTyontekijaDTO, VardaTaydennyskoulutusTyontekijaListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-taydennyskoulutus-dto.model';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
-import { HenkilostoErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
+import { VardaErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
 import * as moment from 'moment';
@@ -34,7 +34,7 @@ export class VardaTaydennyskoulutusFormComponent implements OnInit {
   editFormBoolean: boolean;
   limitedEditAccess: boolean;
   firstAllowedDate = VardaDateService.henkilostoReleaseDate;
-  private henkilostoErrorService: HenkilostoErrorMessageService;
+  private henkilostoErrorService: VardaErrorMessageService;
   isLoading = new BehaviorSubject<boolean>(false);
 
   constructor(
@@ -44,7 +44,7 @@ export class VardaTaydennyskoulutusFormComponent implements OnInit {
     private henkilostoService: VardaHenkilostoApiService,
     private translateService: TranslateService
   ) {
-    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
+    this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.taydennyskoulutusFormErrors = this.henkilostoErrorService.initErrorList();
   }
 
@@ -84,7 +84,7 @@ export class VardaTaydennyskoulutusFormComponent implements OnInit {
     form.markAllAsTouched();
     this.henkilostoErrorService.resetErrorList();
 
-    if (HenkilostoErrorMessageService.formIsValid(form) && this.checkRoster()) {
+    if (VardaErrorMessageService.formIsValid(form) && this.checkRoster()) {
       this.isLoading.next(true);
       const taydennyskoulutusJson: VardaTaydennyskoulutusDTO = {
         ...form.value,

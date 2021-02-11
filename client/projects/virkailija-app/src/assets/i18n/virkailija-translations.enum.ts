@@ -777,4 +777,6 @@ export enum VirkailijaTranslations {
   form_continues = 'form.continues',
   form_leave = 'form.leave',
   form_exit_prompt = 'form.exit-prompt',
+
+  datepicker_placeholder = 'datepicker.placeholder',
 }

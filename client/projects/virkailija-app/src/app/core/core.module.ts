@@ -8,7 +8,6 @@ import { VardaVakajarjestajaService } from './services/varda-vakajarjestaja.serv
 import { VardaVakajarjestajaApiService } from './services/varda-vakajarjestaja-api.service';
 import { VardaUtilityService } from './services/varda-utility.service';
 import { VardaModalService } from './services/varda-modal.service';
-import { VardaErrorMessageService } from './services/varda-error-message.service';
 import { VardaDomService } from './services/varda-dom.service';
 import { VardaHenkilostoApiService } from './services/varda-henkilosto.service';
 import { VardaLapsiService } from './services/varda-lapsi.service';
@@ -30,7 +29,6 @@ import { VardaKoosteApiService } from './services/varda-kooste-api.service';
     VardaVakajarjestajaApiService,
     VardaUtilityService,
     VardaModalService,
-    VardaErrorMessageService,
     VardaDomService,
     VardaHenkilostoApiService,
     VardaLapsiService,

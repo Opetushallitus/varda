@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { TranslateService } from '@ngx-translate/core';
-import { ErrorTree, HenkilostoErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
+import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaRaportitService } from 'projects/virkailija-app/src/app/core/services/varda-raportit.service';
 import { VardaYksiloimatonDTO, YksiloimatonSearchFilter } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-yksiloimaton-dto.model';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
@@ -22,7 +22,7 @@ export class VardaYksiloimattomatComponent implements OnInit {
   isLoading = new BehaviorSubject<boolean>(true);
   yksiloimattomat: MatTableDataSource<VardaYksiloimatonDTO>;
   yksiloimatonFormErrors: Observable<Array<ErrorTree>>;
-  private errorService: HenkilostoErrorMessageService;
+  private errorService: VardaErrorMessageService;
   displayedColumns: Array<string>;
   columnFields = [
     { key: 'id', name: 'ID', selected: true },
@@ -43,7 +43,7 @@ export class VardaYksiloimattomatComponent implements OnInit {
     private raportitService: VardaRaportitService,
     private translateService: TranslateService,
   ) {
-    this.errorService = new HenkilostoErrorMessageService(this.translateService);
+    this.errorService = new VardaErrorMessageService(this.translateService);
     this.yksiloimatonFormErrors = this.errorService.initErrorList();
     this.toggleColumn();
   }

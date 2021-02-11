@@ -6,7 +6,7 @@ import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajar
 import { AuthService } from '../../../core/auth/auth.service';
 import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 import { VardaApiService } from '../../../core/services/varda-api.service';
-import { ErrorTree, HenkilostoErrorMessageService } from '../../../core/services/varda-henkilosto-error-message.service';
+import { ErrorTree, VardaErrorMessageService } from '../../../core/services/varda-error-message.service';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { VardaVakajarjestajaApiService } from '../../../core/services/varda-vakajarjestaja-api.service';
@@ -28,7 +28,7 @@ export class VardaVakatoimijaComponent {
   saveAccess: boolean;
   isLoading = new BehaviorSubject<boolean>(false);
   saveSuccess: boolean;
-  private errorService: HenkilostoErrorMessageService;
+  private errorService: VardaErrorMessageService;
 
   constructor(
     private vakajarjestajaService: VardaVakajarjestajaService,
@@ -37,7 +37,7 @@ export class VardaVakatoimijaComponent {
     private authService: AuthService,
     translateService: TranslateService
   ) {
-    this.errorService = new HenkilostoErrorMessageService(translateService);
+    this.errorService = new VardaErrorMessageService(translateService);
     this.vakatoimijaFormErrors = this.errorService.initErrorList();
     this.toimijaAccess = this.authService.getUserAccess();
     this.saveAccess = this.toimijaAccess.toimijatiedot.tallentaja;
@@ -64,7 +64,7 @@ export class VardaVakatoimijaComponent {
     form.markAllAsTouched();
     this.errorService.resetErrorList();
 
-    if (HenkilostoErrorMessageService.formIsValid(form)) {
+    if (VardaErrorMessageService.formIsValid(form)) {
       this.isLoading.next(true);
       const vakatoimijaDTO: VardaVakajarjestaja = { ...form.value };
 

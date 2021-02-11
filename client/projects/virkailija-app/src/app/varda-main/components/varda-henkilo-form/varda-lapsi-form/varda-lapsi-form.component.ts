@@ -3,7 +3,7 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatRadioChange } from '@angular/material/radio';
 import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
 import { VardaApiService } from 'projects/virkailija-app/src/app/core/services/varda-api.service';
-import { HenkilostoErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
+import { VardaErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { VardaPaosApiService } from 'projects/virkailija-app/src/app/core/services/varda-paos-api.service';
@@ -45,8 +45,8 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
   selectedVakajarjestaja: VardaVakajarjestajaUi;
   selectedToimipaikka: VardaToimipaikkaMinimalDto;
 
-  private lapsiErrorService: HenkilostoErrorMessageService;
-  private deleteLapsiErrorService: HenkilostoErrorMessageService;
+  private lapsiErrorService: VardaErrorMessageService;
+  private deleteLapsiErrorService: VardaErrorMessageService;
   subscriptions: Array<Subscription> = [];
   toimipaikkaAccess: UserAccess;
   henkilonTutkinnot: Array<VardaTutkintoDTO>;
@@ -63,8 +63,8 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
     private snackBarService: VardaSnackBarService,
     translateService: TranslateService
   ) {
-    this.lapsiErrorService = new HenkilostoErrorMessageService(translateService);
-    this.deleteLapsiErrorService = new HenkilostoErrorMessageService(translateService);
+    this.lapsiErrorService = new VardaErrorMessageService(translateService);
+    this.deleteLapsiErrorService = new VardaErrorMessageService(translateService);
 
     this.lapsiFormErrors = this.lapsiErrorService.initErrorList();
     this.deleteLapsiErrors = this.deleteLapsiErrorService.initErrorList();
@@ -152,7 +152,7 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
     form.markAllAsTouched();
     this.lapsiErrorService.resetErrorList();
 
-    if (HenkilostoErrorMessageService.formIsValid(form)) {
+    if (VardaErrorMessageService.formIsValid(form)) {
       const vardaCreateLapsiDTO: VardaLapsiDTO = {
         ...form.value
       };

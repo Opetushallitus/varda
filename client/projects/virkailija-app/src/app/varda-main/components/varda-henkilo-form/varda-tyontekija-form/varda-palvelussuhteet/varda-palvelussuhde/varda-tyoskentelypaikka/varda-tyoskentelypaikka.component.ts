@@ -12,7 +12,7 @@ import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/util
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
 import { VardaKoodistoService } from 'varda-shared';
 import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
-import { HenkilostoErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
+import { VardaErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { MatExpansionPanelHeader } from '@angular/material/expansion';
@@ -58,7 +58,7 @@ export class VardaTyoskentelypaikkaComponent extends VardaHenkiloFormAccordionAb
 
 
   palvelussuhdeFormErrors: Observable<Array<ErrorTree>>;
-  private henkilostoErrorService: HenkilostoErrorMessageService;
+  private henkilostoErrorService: VardaErrorMessageService;
 
   constructor(
     @Inject(DOCUMENT) private document,
@@ -72,7 +72,7 @@ export class VardaTyoskentelypaikkaComponent extends VardaHenkiloFormAccordionAb
   ) {
     super();
     this.toimijaAccess = this.authService.getUserAccess();
-    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
+    this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.palvelussuhdeFormErrors = this.henkilostoErrorService.initErrorList();
     this.koodistoService.getKoodisto(KoodistoEnum.tehtavanimike).subscribe(koodisto => this.tehtavanimikkeet = koodisto);
   }
@@ -140,7 +140,7 @@ export class VardaTyoskentelypaikkaComponent extends VardaHenkiloFormAccordionAb
         form.controls.toimipaikka_oid.setErrors({ required: true });
       }
 
-      HenkilostoErrorMessageService.formIsValid(form);
+      VardaErrorMessageService.formIsValid(form);
       this.disableSubmit();
     } else {
       const tyoskentelypaikkaJson: VardaTyoskentelypaikkaDTO = {

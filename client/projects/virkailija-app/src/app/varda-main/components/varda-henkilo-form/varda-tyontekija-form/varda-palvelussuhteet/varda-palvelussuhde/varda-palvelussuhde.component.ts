@@ -10,7 +10,7 @@ import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { TyontekijaListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tyontekija-dto.model';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
-import { HenkilostoErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto-error-message.service';
+import { VardaErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
@@ -56,7 +56,7 @@ export class VardaPalvelussuhdeComponent extends VardaHenkiloFormAccordionAbstra
   tyosuhdeKoodisto: KoodistoDTO;
   tyoaikaKoodisto: KoodistoDTO;
   minEndDate: Date;
-  private henkilostoErrorService: HenkilostoErrorMessageService;
+  private henkilostoErrorService: VardaErrorMessageService;
 
   constructor(
     private el: ElementRef,
@@ -68,7 +68,7 @@ export class VardaPalvelussuhdeComponent extends VardaHenkiloFormAccordionAbstra
   ) {
     super();
     this.element = this.el;
-    this.henkilostoErrorService = new HenkilostoErrorMessageService(translateService);
+    this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.palvelussuhdeFormErrors = this.henkilostoErrorService.initErrorList();
 
     this.koodistoService.getKoodisto(KoodistoEnum.tyosuhde).subscribe(koodisto => this.tyosuhdeKoodisto = koodisto);
@@ -125,7 +125,7 @@ export class VardaPalvelussuhdeComponent extends VardaHenkiloFormAccordionAbstra
     form.markAllAsTouched();
     this.henkilostoErrorService.resetErrorList();
 
-    if (HenkilostoErrorMessageService.formIsValid(form)) {
+    if (VardaErrorMessageService.formIsValid(form)) {
       const palvelussuhdeDTO: VardaPalvelussuhdeDTO = {
         ...form.value,
         alkamis_pvm: form.value.alkamis_pvm.format(VardaDateService.vardaApiDateFormat),
