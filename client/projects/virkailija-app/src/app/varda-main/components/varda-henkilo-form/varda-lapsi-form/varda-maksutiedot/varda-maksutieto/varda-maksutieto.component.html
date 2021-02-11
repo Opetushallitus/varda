@@ -1,5 +1,11 @@
 <ng-container *ngIf="maksutietoForm">
-  <div class="maksutieto taydennyskoulutus">
+  <div [id]="'maksutieto_' + maksutieto?.id"
+       class="maksutieto taydennyskoulutus">
+    <app-robo-id [tunniste]="maksutieto?.id"
+                 nimi="maksutieto"
+                 [alkamis_pvm]="maksutieto?.alkamis_pvm"
+                 [paattymis_pvm]="maksutieto?.paattymis_pvm"></app-robo-id>
+
     <mat-expansion-panel [expanded]="expandPanel"
                          (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)">

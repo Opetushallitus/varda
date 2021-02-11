@@ -1,10 +1,11 @@
 <ng-container *ngIf="poissaoloForm">
   <div [id]="'poissaolo_'+ poissaolo?.id"
        class="tyoskentelypaikka poissaolo">
-    <var aria-ignore
-         [attr.robot]="'poissaolo_'+poissaolo?.alkamis_pvm+'-'+ poissaolo?.paattymis_pvm">
-      {{ poissaolo?.id }}
-    </var>
+    <app-robo-id [tunniste]="poissaolo?.id"
+                 nimi="poissaolo"
+                 [alkamis_pvm]="poissaolo?.alkamis_pvm"
+                 [paattymis_pvm]="poissaolo?.paattymis_pvm"></app-robo-id>
+
     <mat-expansion-panel [expanded]="expandPanel"
                          (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)">

@@ -1,8 +1,15 @@
 <ng-container *ngIf="varhaiskasvatuspaatosForm">
-  <div class="palvelussuhde">
+  <div [id]="'varhaiskasvatuspaatos_'+ varhaiskasvatuspaatos?.id"
+       class="palvelussuhde">
+    <app-robo-id [tunniste]="varhaiskasvatuspaatos?.id"
+                 nimi="varhaiskasvatuspaatos"
+                 [alkamis_pvm]="varhaiskasvatuspaatos?.alkamis_pvm"
+                 [paattymis_pvm]="varhaiskasvatuspaatos?.paattymis_pvm"></app-robo-id>
+
     <mat-icon class="d-none d-md-block">assignment</mat-icon>
 
-    <mat-expansion-panel [class.before-icon]="true"
+    <mat-expansion-panel [id]="'varhaiskasvatuspaatos-panel_' + varhaiskasvatuspaatos?.id"
+     [class.before-icon]="true"
                          (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)"
                          [expanded]="expandPanel">
@@ -10,7 +17,8 @@
         <mat-panel-title *ngIf="varhaiskasvatuspaatos; else addVarhaiskasvatussuhde">
           <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
           <span *ngIf="!varhaiskasvatuspaatos.paattymis_pvm; else hasPaattymispvm">
-            {{ i18n.varhaiskasvatuspaatos_alkaen_PVM | translate: {pvm: varhaiskasvatuspaatos.alkamis_pvm | vardaDate} }}
+            {{ i18n.varhaiskasvatuspaatos_alkaen_PVM | translate: {pvm: varhaiskasvatuspaatos.alkamis_pvm | vardaDate}
+            }}
           </span>
           <ng-template #hasPaattymispvm>
             <span *ngIf="varhaiskasvatuspaatos.paattymis_pvm">

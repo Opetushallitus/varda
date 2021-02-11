@@ -1,10 +1,11 @@
 <ng-container *ngIf="palvelussuhdeForm">
   <div [id]="'palvelussuhde_'+ palvelussuhde?.id"
        class="palvelussuhde">
-    <var aria-ignore
-         [attr.robot]="'palvelussuhde_'+palvelussuhde?.alkamis_pvm+'-'+palvelussuhde?.paattymis_pvm">
-      {{ palvelussuhde?.id }}
-    </var>
+    <app-robo-id [tunniste]="palvelussuhde?.id"
+                 nimi="palvelussuhde"
+                 [alkamis_pvm]="palvelussuhde?.alkamis_pvm"
+                 [paattymis_pvm]="palvelussuhde?.paattymis_pvm"></app-robo-id>
+
     <mat-icon class="d-none d-md-block">assignment</mat-icon>
 
     <mat-expansion-panel [id]="'palvelussuhde-panel_'+ palvelussuhde?.id"

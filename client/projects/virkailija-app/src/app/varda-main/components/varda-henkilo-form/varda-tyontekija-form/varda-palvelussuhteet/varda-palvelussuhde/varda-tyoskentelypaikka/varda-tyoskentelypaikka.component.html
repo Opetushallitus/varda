@@ -1,10 +1,11 @@
 <ng-container *ngIf="tyoskentelypaikkaForm">
   <div [id]="'tyoskentelypaikka_'+ tyoskentelypaikka?.id"
        class="tyoskentelypaikka">
-    <var aria-ignore
-         [attr.robot]="'tyoskentelypaikka_'+tyoskentelypaikka?.alkamis_pvm+'-'+tyoskentelypaikka?.paattymis_pvm">
-      {{ tyoskentelypaikka?.id }}
-    </var>
+    <app-robo-id [tunniste]="tyoskentelypaikka?.id"
+                 nimi="tyoskentelypaikka"
+                 [alkamis_pvm]="tyoskentelypaikka?.alkamis_pvm"
+                 [paattymis_pvm]="tyoskentelypaikka?.paattymis_pvm"></app-robo-id>
+
     <mat-expansion-panel [expanded]="expandPanel"
                          (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)">
@@ -124,7 +125,8 @@
         <div class="oph-field">
           <div class="oph-field-inputs">
             <label id="tyoskentelypaikkaTutkinto"
-                   class="oph-label"><b>{{ i18n.tyoskentelypaikka_palvelussuhteeseen_lisatty_tutkinto | translate }}</b></label>
+                   class="oph-label"><b>{{ i18n.tyoskentelypaikka_palvelussuhteeseen_lisatty_tutkinto | translate
+                }}</b></label>
             <span for="tyoskentelypaikkaTutkinto"
                   libKoodistoValue="vardatutkinto">{{ palvelussuhde.tutkinto_koodi }}</span>
           </div>

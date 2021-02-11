@@ -1,5 +1,11 @@
 <ng-container *ngIf="varhaiskasvatussuhdeForm">
-  <div class="tyoskentelypaikka">
+  <div [id]="'varhaiskasvatussuhde_' + varhaiskasvatussuhde?.id"
+       class="tyoskentelypaikka">
+    <app-robo-id [tunniste]="varhaiskasvatussuhde?.id"
+                 nimi="varhaiskasvatussuhde"
+                 [alkamis_pvm]="varhaiskasvatussuhde?.alkamis_pvm"
+                 [paattymis_pvm]="varhaiskasvatussuhde?.paattymis_pvm"></app-robo-id>
+
     <mat-expansion-panel [expanded]="expandPanel"
                          (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)">
