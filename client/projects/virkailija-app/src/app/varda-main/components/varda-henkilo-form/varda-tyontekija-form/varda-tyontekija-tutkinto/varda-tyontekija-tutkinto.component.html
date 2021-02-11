@@ -90,7 +90,7 @@
                       [class.mb-4]="tutkintoFormErrors | async"
                       formControlName="tutkinto_koodi">
             <mat-option [value]="null"
-                        disabled>-- {{ 'label.choose' | translate }} --</mat-option>
+                        disabled>-- {{ i18n.choose | translate }} --</mat-option>
             <mat-option *ngFor="let tutkintoOption of tutkintoOptions"
                         [value]="tutkintoOption.code_value">
               {{ tutkintoOption.name }} ({{ tutkintoOption.code_value }})

@@ -25,7 +25,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import {
   VardaAccessibilitySettingsComponent,
   VardaModalFormComponent,
-  VardaFormQuestionComponent,
   VardaSuccessModalComponent,
   VardaFormFieldComponent
 } from '../utilities/components';
@@ -122,7 +121,6 @@ const cookieConfig: NgcCookieConsentConfig = {
     VardaLongDate,
     KeysPipe,
     VardaModalFormComponent,
-    VardaFormQuestionComponent,
     VardaFormFieldComponent,
     VardaSuccessModalComponent,
     VardaDeleteButtonComponent,
@@ -180,7 +178,6 @@ const cookieConfig: NgcCookieConsentConfig = {
     ClickOutsideDirective,
     VardaAccessibilitySettingsComponent,
     VardaModalFormComponent,
-    VardaFormQuestionComponent,
     VardaFormFieldComponent,
     VardaSuccessModalComponent,
     VardaDate,

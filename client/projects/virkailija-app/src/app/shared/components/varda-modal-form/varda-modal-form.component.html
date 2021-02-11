@@ -22,7 +22,7 @@
        aria-describedby="vardaPromptModalDesc">
     <div class="varda-prompt-modal-content">
       <div>
-        <h2 id="vardaPromptModalDesc">{{'generic-modal-exit-prompt' | translate}}</h2>
+        <h2 id="vardaPromptModalDesc">{{ i18n.form_exit_prompt | translate}}</h2>
       </div>
       <div class="varda-prompt-modal-btn-wrapper">
         <div>
@@ -30,14 +30,14 @@
                   id="vardaPromptModalStay"
                   (click)="stayOnForm()"
                   (keydown.tab)="moveToLeave($event)"
-                  (keydown.shift.tab)="moveToLeave($event)">{{'label.cancel' | translate}}</button>
+                  (keydown.shift.tab)="moveToLeave($event)">{{ i18n.cancel | translate}}</button>
         </div>
         <div>
           <button class="varda-button varda-button-neutral prompt-yes"
                   id="vardaPromptModalLeave"
                   (click)="leaveFormByPrompt()"
                   (keydown.tab)="moveToCancel($event)"
-                  (keydown.shift.tab)="moveToCancel($event)">{{'label.leave-form' | translate}}</button>
+                  (keydown.shift.tab)="moveToCancel($event)">{{ i18n.form_leave | translate}}</button>
         </div>
       </div>
     </div>

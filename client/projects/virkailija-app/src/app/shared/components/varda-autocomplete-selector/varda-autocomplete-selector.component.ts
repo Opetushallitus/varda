@@ -12,6 +12,7 @@ import {
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { BehaviorSubject } from 'rxjs';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
 interface OptionFormat {
   format: string;
@@ -39,6 +40,7 @@ export class VardaAutocompleteSelectorComponent<T> implements ControlValueAccess
   @Input() invalidInputLabel = '';
   @ViewChild('textInput') textInput: ElementRef<HTMLInputElement>;
 
+  i18n = VirkailijaTranslations;
   inputValue = '';
   filteredOptions: BehaviorSubject<Array<T>> = new BehaviorSubject<Array<T>>([]);
   selectedOption: T;

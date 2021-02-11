@@ -12,14 +12,14 @@
       </span>
       <ng-template #showRooli>
         <span *ngIf="henkilonSuhde.rooli===HenkiloRooliEnum.lapsi">
-          <span
-                *ngIf="henkilonToimipaikka; else lapsiToimipaikaton">{{ i18n.henkilo_lisaa_lapsi_TOIMIPAIKKA | translate: { toimipaikka: henkilonToimipaikka?.nimi} }}</span>
+          <span *ngIf="henkilonToimipaikka; else lapsiToimipaikaton">{{ i18n.henkilo_lisaa_lapsi_TOIMIPAIKKA |
+            translate: { toimipaikka: henkilonToimipaikka?.nimi} }}</span>
           <ng-template #lapsiToimipaikaton>{{ i18n.henkilo_lisaa_lapsi | translate }}</ng-template>
         </span>
 
         <span *ngIf="henkilonSuhde.rooli === HenkiloRooliEnum.tyontekija">
-          <span
-                *ngIf="henkilonToimipaikka; else lapsiToimipaikaton">{{ i18n.henkilo_lisaa_tyontekija_TOIMIPAIKKA | translate: { toimipaikka: henkilonToimipaikka?.nimi} }}</span>
+          <span *ngIf="henkilonToimipaikka; else lapsiToimipaikaton">{{ i18n.henkilo_lisaa_tyontekija_TOIMIPAIKKA |
+            translate: { toimipaikka: henkilonToimipaikka?.nimi} }}</span>
           <ng-template #lapsiToimipaikaton>{{ i18n.henkilo_lisaa_tyontekija | translate }}</ng-template>
         </span>
       </ng-template>
@@ -35,7 +35,7 @@
 
 <div class="form-continues-text-wrapper"
      *ngIf="formContinuesBoolean">
-  <div class="form-continues-text">{{'alert.lomake-continues' | translate}}</div>
+  <div class="form-continues-text">{{ i18n.form_continues | translate}}</div>
   <i class="material-icons">arrow_downward</i>
 </div>
 

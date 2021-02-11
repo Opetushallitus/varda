@@ -5,8 +5,8 @@
   <div class="varda-error-alert-column2">
     <button class="varda-button-close"
             type="button"
-            [title]="'label.close' | translate"
-            aria-label="Close"
+            [title]="i18n.close | translate"
+            [attr.aria-label]="i18n.close | translate"
             (click)="isOpen = false">
       <span aria-hidden="true">×</span>
     </button>

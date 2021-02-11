@@ -1,4 +1,5 @@
 import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import {Observable, Subscription} from 'rxjs';
 
 @Component({
@@ -9,7 +10,7 @@ import {Observable, Subscription} from 'rxjs';
 export class VardaErrorAlertComponent implements OnInit, OnDestroy {
   @Input() errorMessageKey$: Observable<string>;
   isOpen: boolean;
-
+  i18n = VirkailijaTranslations;
   errorMessageSubscription: Subscription;
   errorMessageKey: string;
 

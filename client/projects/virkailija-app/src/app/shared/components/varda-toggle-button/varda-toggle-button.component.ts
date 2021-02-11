@@ -1,4 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
+import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
 @Component({
   selector: 'app-varda-toggle-button',
@@ -7,6 +8,7 @@ import {Component, Input, OnInit} from '@angular/core';
 })
 export class VardaToggleButtonComponent implements OnInit {
   // Is show or hide button displayed
+  i18n = VirkailijaTranslations;
   @Input() isUp: boolean;
   @Input() showTextKey: string;
   @Input() hideTextKey: string;

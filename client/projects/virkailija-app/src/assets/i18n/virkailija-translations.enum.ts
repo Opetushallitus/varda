@@ -774,4 +774,7 @@ export enum VirkailijaTranslations {
   timeout_expired_close_seconds_COUNT = 'timeout.expired.close-seconds-COUNT',
   timeout_expired_action_text = 'timeout.expired.action-text',
 
+  form_continues = 'form.continues',
+  form_leave = 'form.leave',
+  form_exit_prompt = 'form.exit-prompt',
 }

@@ -1,4 +1,5 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import {Subject} from 'rxjs';
 
 @Component({
@@ -7,6 +8,7 @@ import {Subject} from 'rxjs';
   styleUrls: ['./varda-prompt-modal.component.css']
 })
 export class VardaPromptModalComponent implements OnInit {
+  i18n = VirkailijaTranslations;
   showModal: boolean;
   @Input() show$: Subject<boolean>;
   @Output() saveEvent = new EventEmitter(true);

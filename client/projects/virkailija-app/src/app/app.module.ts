@@ -9,8 +9,7 @@ import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { CookieService } from 'ngx-cookie-service';
 import { AppComponent } from './app.component';
-import { VardaSharedModule, HttpService, VardaHttpInterceptor } from 'varda-shared';
-import { VirkailijaTranslateLoader } from './core/services/virkailija-translate.service';
+import { VardaSharedModule, HttpService, VardaHttpInterceptor, VardaTranslateLoader } from 'varda-shared';
 import { VardaApiService } from './core/services/varda-api.service';
 
 // AoT requires an exported function for factories
@@ -34,7 +33,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     TranslateModule.forRoot({
       loader: {
         provide: TranslateLoader,
-        useClass: VirkailijaTranslateLoader,
+        useClass: VardaTranslateLoader,
         deps: [HttpService, VardaApiService]
       }
     })

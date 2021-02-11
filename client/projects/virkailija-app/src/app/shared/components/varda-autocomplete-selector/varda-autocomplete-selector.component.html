@@ -9,7 +9,7 @@
   </div>
   <mat-autocomplete #autocomplete="matAutocomplete" (optionSelected)="autocompleteSelected($event)">
     <mat-option [value]="nullValue">{{nullOptionLabel}}</mat-option>
-    <mat-option *ngIf="isNoResults" disabled>{{'alert.no-results' | translate}}</mat-option>
+    <mat-option *ngIf="isNoResults" disabled>{{ i18n.katsele_tietoja_no_results | translate}}</mat-option>
     <mat-option *ngFor="let option of filteredOptions | async"
                 [value]="option"
                 [title]="getFormattedOption(option)">

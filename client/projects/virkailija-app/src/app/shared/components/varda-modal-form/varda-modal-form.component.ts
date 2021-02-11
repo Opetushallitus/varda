@@ -1,4 +1,5 @@
 import {Component, OnInit, Input, OnChanges, SimpleChanges, SimpleChange, ViewChild, ElementRef, Output, EventEmitter} from '@angular/core';
+import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
 // Since we are using native bootstrap instead of angular one we need this to access the modal
 declare var $: any;
@@ -25,6 +26,7 @@ export class VardaModalFormComponent implements OnInit, OnChanges {
 
   confirmedVardaFormLeave: boolean;
   showPrompt: boolean;
+  i18n = VirkailijaTranslations;
 
   @Output() events: EventEmitter<ModalEvent> = new EventEmitter(true);
 

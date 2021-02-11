@@ -13,7 +13,7 @@
 
 <div class="form-continues-text-wrapper"
      *ngIf="showFormContinuesWarning">
-  <div class="form-continues-text">{{'alert.lomake-continues' | translate}}</div>
+  <div class="form-continues-text">{{ i18n.form_continues | translate}}</div>
   <i class="material-icons">arrow_downward</i>
 </div>
 
@@ -178,7 +178,7 @@
                               [instructionText]="i18n.toimipaikka_instruction_kunta_koodi | translate">
           <ng-container *ngIf="kuntaOptions$ | async as kuntaOptions">
             <mat-select #fieldItem
-                        placeholder="-- {{ 'label.choose' | translate }} --"
+                        placeholder="-- {{ i18n.choose | translate }} --"
                         class="oph-input oph-select"
                         formControlName="kunta_koodi">
               <mat-option *ngFor="let option of kuntaOptions.codes"

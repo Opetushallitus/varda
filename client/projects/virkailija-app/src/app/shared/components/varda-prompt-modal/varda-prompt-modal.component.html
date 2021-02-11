@@ -7,9 +7,9 @@
     <div class="promt-modal-button-wrapper">
       <button class="varda-button varda-button-neutral"
               (click)="showModal = false">
-        {{'label.cancel' | translate}}
+        {{ i18n.cancel | translate}}
       </button>
-      <app-varda-delete-button (click)="saveAndHide()">{{'label.delete' | translate}}</app-varda-delete-button>
+      <app-varda-delete-button (click)="saveAndHide()">{{ i18n.delete | translate}}</app-varda-delete-button>
     </div>
   </div>
 </div>

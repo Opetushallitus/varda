@@ -10,7 +10,6 @@ export { VardaModalFormComponent } from '../shared/components/varda-modal-form/v
 export { VardaLapsiFormComponent } from '../varda-main/components/varda-henkilo-form/varda-lapsi-form/varda-lapsi-form.component';
 export { VardaTyontekijaFormComponent } from '../varda-main/components/varda-henkilo-form/varda-tyontekija-form/varda-tyontekija-form.component';
 export { VardaHenkiloFormComponent } from '../varda-main/components/varda-henkilo-form/varda-henkilo-form.component';
-export { VardaFormQuestionComponent } from '../shared/components/varda-form-question/varda-form-question.component';
 export { VardaFormFieldComponent } from '../shared/components/varda-form-field/varda-form-field.component';
 export { VardaToimipaikkaFormComponent } from '../varda-main/components/varda-toimipaikka-form/varda-toimipaikka-form.component';
 export { VardaSuccessModalComponent } from '../shared/components/varda-success-modal/varda-success-modal.component';
