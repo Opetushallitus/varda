@@ -1,11 +1,10 @@
 import { Injectable } from '@angular/core';
-import { filter, take } from 'rxjs/operators';
-import { BehaviorSubject, interval } from 'rxjs';
+import { filter } from 'rxjs/operators';
+import { BehaviorSubject } from 'rxjs';
 import { HuoltajaTranslations } from '../../assets/i18n/translations.enum';
 import { environment } from '../../environments/environment';
 import { HuoltajaApiService } from './huoltaja-api.service';
-import { MatSnackBar, MatSnackBarRef } from '@angular/material/snack-bar';
-import { HuoltajaTimeoutComponent } from '../huoltaja-main/components/utility-components/huoltaja-timeout/huoltaja-timeout.component';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslateService } from '@ngx-translate/core';
 
 @Injectable({
@@ -13,7 +12,6 @@ import { TranslateService } from '@ngx-translate/core';
 })
 export class OppijaRaamitService {
   translation = HuoltajaTranslations;
-  private lastHttpRequest = Date.now();
   private redirectURL = encodeURI(`${window.location.origin}/oma-opintopolku/`);
   private logoutURL = `${window.location.origin}/cas-oppija/logout?service=${this.redirectURL}`;
   private username$ = new BehaviorSubject<string>(null);
@@ -37,46 +35,6 @@ export class OppijaRaamitService {
 
     this.raamitScript();
     this.cookieScript();
-  }
-
-  private logoutInterval(seconds: number) {
-    const logoutWarning = 180;
-    const secondInterval = interval(1000);
-    let snackBarRef: MatSnackBarRef<any> = null;
-    let lastCheckAt = 0;
-
-    secondInterval.subscribe({
-      next: counter => {
-        const now = Date.now() / 1000;
-        const logoutAt = this.lastHttpRequest / 1000 + seconds;
-        const timeRemaining = Math.floor(logoutAt - now);
-
-        if (lastCheckAt !== this.lastHttpRequest) {
-          snackBarRef?.dismiss();
-          lastCheckAt = this.lastHttpRequest;
-        }
-
-        if (timeRemaining < logoutWarning) {
-          if (!this.snackbarVisible) {
-            snackBarRef = this.snackbar.openFromComponent(HuoltajaTimeoutComponent, {
-              data: {
-                seconds: timeRemaining,
-                dismiss: () => snackBarRef.dismiss()
-              }
-            });
-            snackBarRef.afterOpened().pipe(take(1)).subscribe(() => this.snackbarVisible = true);
-            snackBarRef.afterDismissed().pipe(take(1)).subscribe(() => {
-              this.snackbarVisible = false;
-              this.clearLogoutInterval();
-            });
-          }
-
-          if (timeRemaining < 0 && window.location.hostname !== 'localhost') {
-            window.location.href = this.logoutURL;
-          }
-        }
-      }
-    });
   }
 
   initMatomo() {
@@ -110,14 +68,7 @@ export class OppijaRaamitService {
   }
 
   setUsername(username: string) {
-    this.logoutInterval(1200);
     this.username$.next(username);
-  }
-
-  clearLogoutInterval() {
-    if (!this.snackbarVisible) {
-      this.lastHttpRequest = Date.now();
-    }
   }
 
   raamitScript() {
@@ -156,5 +107,9 @@ export class OppijaRaamitService {
     node.lang = this.translate.getDefaultLang();
     node.setAttribute('sdg', 'false');
     document.getElementsByTagName('head')[0].appendChild(node);
+  }
+
+  getLogoutURL() {
+    return this.logoutURL;
   }
 }

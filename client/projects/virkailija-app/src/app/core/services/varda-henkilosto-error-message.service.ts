@@ -1,29 +1,26 @@
-import { Inject, Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { FormGroup } from '@angular/forms';
 import { VardaErrorMessageService } from './varda-error-message.service';
-import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { VardaSnackBarService } from './varda-snackbar.service';
-import { KoodistoEnum, VardaKoodistoService } from 'varda-shared';
-import { AppModule } from '../../app.module';
 import { TranslateService } from '@ngx-translate/core';
 
 interface VardaErrorLine {
   [key: string]: Array<string | VardaErrorMessage> | VardaErrorLine;
 }
 
-interface VardaErrorTranslation {
+export interface VardaErrorTranslation {
   language: string;
   description: string;
 }
 
-interface VardaErrorMessage {
+export interface VardaErrorMessage {
   error_code: string;
   description: string;
   translations: Array<VardaErrorTranslation>;
 }
 
-interface VardaErrorResponse {
+export interface VardaErrorResponse {
   status?: number;
   error: VardaErrorLine;
 }

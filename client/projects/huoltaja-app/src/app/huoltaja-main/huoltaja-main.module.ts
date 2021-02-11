@@ -37,7 +37,6 @@ import { VarhaiskasvatustiedotContactDialogComponent } from './components/utilit
 import { HuoltajuussuhteetContactDialogComponent } from './components/utility-components/contact-dialog/huoltajuussuhteet-contact-dialog/huoltajuussuhteet-contact-dialog.component';
 import { TyontekijatiedotContactDialogComponent } from './components/utility-components/contact-dialog/tyontekijatiedot-contact-dialog/tyontekijatiedot-contact-dialog.component';
 import { EiTietojaComponent } from './components/navigointi/ei-tietoja/ei-tietoja.component';
-import { HuoltajaTimeoutComponent } from './components/utility-components/huoltaja-timeout/huoltaja-timeout.component';
 
 @NgModule({
   imports: [
@@ -82,7 +81,6 @@ import { HuoltajaTimeoutComponent } from './components/utility-components/huolta
     HuoltajuussuhteetContactDialogComponent,
     TyontekijatiedotContactDialogComponent,
     EiTietojaComponent,
-    HuoltajaTimeoutComponent,
     TableRowComponent
   ],
   entryComponents: [ContactDialogComponent],

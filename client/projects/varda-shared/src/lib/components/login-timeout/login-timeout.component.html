@@ -1,0 +1,11 @@
+<div class="timeout">
+  <span>
+    <div *ngIf="reasonText">{{ reasonText }}</div>
+    <div *ngIf="visibleCounterText">{{ visibleCounterText }}</div>
+  </span>
+  <div *ngIf="actionText"
+       class="mat-simple-snackbar-action">
+    <button mat-button
+            (click)="dismiss()">{{ actionText }}</button>
+  </div>
+</div>

@@ -238,6 +238,9 @@ export enum HuoltajaTranslations {
   ei_tietoja_warning_1 = 'ei-tietoja.warning-1',
   ei_tietoja_warning_2 = 'ei-tietoja.warning-2',
   timeout_inactive_text = 'timeout.inactive-text',
-  timeout_logout_seconds_COUNT = 'timeout.logout_seconds_COUNT',
+  timeout_logout_seconds_COUNT = 'timeout.logout-seconds-COUNT',
   timeout_action_text = 'timeout.action-text',
+  timeout_expired_text = 'timeout.expired.text',
+  timeout_expired_close_seconds_COUNT = 'timeout.expired.close-seconds-COUNT',
+  timeout_expired_action_text = 'timeout.expired.action-text',
 }

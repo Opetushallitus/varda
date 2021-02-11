@@ -38,9 +38,10 @@ export class AppComponent implements OnInit {
 
     this.oppijaRaamit.initRaamit();
 
-    this.loginService.getCurrentUser().pipe(filter(Boolean), take(1)).subscribe((henkilotiedot: VardaUserDTO) =>
-      this.oppijaRaamit.setUsername(henkilotiedot?.kutsumanimi || henkilotiedot.username)
-    );
+    this.loginService.getCurrentUser().pipe(filter(Boolean), take(1)).subscribe((henkilotiedot: VardaUserDTO) => {
+      this.oppijaRaamit.setUsername(henkilotiedot?.kutsumanimi || henkilotiedot.username);
+      this.loginService.initLogoutInterval(20 * 60, this.translateService, this.oppijaRaamit.getLogoutURL());
+    });
 
     this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(event => {
       this.setTitle(router);
@@ -65,7 +66,7 @@ export class AppComponent implements OnInit {
   @HostListener('document:keydown', ['$event'])
   @HostListener('document:click', ['$event'])
   documentClick(event: MouseEvent) {
-    this.oppijaRaamit.clearLogoutInterval();
+    this.loginService.clearLogoutInterval();
   }
 
 

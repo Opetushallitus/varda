@@ -20,20 +20,15 @@ export class AuthService {
 
   selectedVakajarjestaja: VardaVakajarjestajaUi;
   allToimipaikat: Array<VardaToimipaikkaMinimalDto>;
-
-  redirectUrl: string;
   loggedInUserKayttooikeudet: Array<Kayttooikeus> = [];
   loggedInUserAfterAuthCheckUrl: string;
   selectedOrganisationLevelKayttooikeusRole: string;
   hasToimipaikkaLevelTallentajaRole: boolean;
+  redirectUrl: string;
   isAdminUser = false;
   isOPHUser = false;
-
   loggedInUserVakajarjestajaLevelKayttooikeudet: Array<Kayttooikeus> = [];
   loggedInUserToimipaikkaLevelKayttooikeudet: Array<Kayttooikeus> = [];
-
-  sessionInactivityTimeout: any = null;
-
   toimipaikkaAccessToAnyToimipaikka$ = new BehaviorSubject<UserAccess>(null);
 
   constructor(
@@ -142,15 +137,6 @@ export class AuthService {
       userObs.complete();
     });
 
-  }
-
-  setSessionInactivityTimeout(): void {
-    if (window.location.hostname !== 'localhost') {
-      if (this.sessionInactivityTimeout) {
-        clearTimeout(this.sessionInactivityTimeout);
-      }
-      this.sessionInactivityTimeout = setTimeout(() => window.location.href = this.vardaApiService.getLogoutCasUrl(), 3600000);
-    }
   }
 
   isCurrentUserSelectedVakajarjestajaRole(...roles: VardaKayttooikeusRoles[]): boolean {

@@ -5,12 +5,15 @@ import {HttpClient} from '@angular/common/http';
 import { CookieService } from 'ngx-cookie-service';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { EMPTY } from 'rxjs';
 
 describe('HuoltajaAuthGuard', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
         HuoltajaAuthGuard,
+        { provide: MatSnackBar, useValue: EMPTY },
         { provide: HttpClient, useValue: {} },
         { provide: CookieService, useValue: {} },
         { provide: Router, useValue: {} },

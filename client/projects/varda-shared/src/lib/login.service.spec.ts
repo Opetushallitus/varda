@@ -5,6 +5,7 @@ import * as moment from 'moment';
 import {EMPTY, of} from 'rxjs';
 import {HttpService} from './http.service';
 import {CookieService} from 'ngx-cookie-service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 describe('LoginService', () => {
   let sessionStorageGetItemSpy;
@@ -17,6 +18,7 @@ describe('LoginService', () => {
       providers: [
         LoginService,
         CookieService,
+        { provide: MatSnackBar, useValue: EMPTY },
         {
           provide: HttpService,
           useValue: {

@@ -766,4 +766,12 @@ export enum VirkailijaTranslations {
   yksiloimattomat_haku = 'yksiloimattomat.haku',
   yksiloimattomat_ei_hakutuloksia = 'yksiloimattomat.ei-hakutuloksia',
   yksiloimattomat_checkbox_warning = 'yksiloimattomat.checkbox-warning',
+
+  timeout_inactive_text = 'timeout.inactive-text',
+  timeout_logout_seconds_COUNT = 'timeout.logout-seconds-COUNT',
+  timeout_action_text = 'timeout.action-text',
+  timeout_expired_text = 'timeout.expired.text',
+  timeout_expired_close_seconds_COUNT = 'timeout.expired.close-seconds-COUNT',
+  timeout_expired_action_text = 'timeout.expired.action-text',
+
 }

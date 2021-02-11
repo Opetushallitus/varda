@@ -9,6 +9,7 @@ import { Observable } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 import { VardaCookieEnum } from './utilities/models/enums/varda-cookie.enum';
+import { VardaApiService } from './core/services/varda-api.service';
 
 @Component({
   selector: 'app-root',
@@ -21,6 +22,7 @@ export class AppComponent implements OnInit {
   constructor(
     private titleService: Title,
     private router: Router,
+    private apiService: VardaApiService,
     private translateService: TranslateService,
     private koodistoService: VardaKoodistoService,
     private vardaDomService: VardaDomService,
@@ -77,6 +79,7 @@ export class AppComponent implements OnInit {
       this.translateService.use(userLanguage);
       this.setTitle(this.router);
       this.koodistoService.initKoodistot(environment.vardaAppUrl, userLanguage);
+      this.loginService.initLogoutInterval(90 * 60, this.translateService, this.apiService.getLogoutCasUrl());
     });
   }
 }

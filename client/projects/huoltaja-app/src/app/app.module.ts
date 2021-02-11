@@ -8,8 +8,7 @@ import { AppComponent } from './app.component';
 import { VardaSharedModule, HttpService } from 'varda-shared';
 import { CookieService } from 'ngx-cookie-service';
 import { HuoltajaApiService } from './services/huoltaja-api.service';
-import { VardaTranslateLoader } from 'varda-shared';
-import { HuoltajaHttpInterceptor } from './services/huoltaja-http.interceptor';
+import { VardaTranslateLoader, VardaHttpInterceptor } from 'varda-shared';
 
 @NgModule({
   declarations: [
@@ -29,7 +28,7 @@ import { HuoltajaHttpInterceptor } from './services/huoltaja-http.interceptor';
       }
     })
   ],
-  providers: [CookieService, { provide: HTTP_INTERCEPTORS, useClass: HuoltajaHttpInterceptor, multi: true }],
+  providers: [CookieService, { provide: HTTP_INTERCEPTORS, useClass: VardaHttpInterceptor, multi: true }],
   bootstrap: [AppComponent],
   exports: []
 })

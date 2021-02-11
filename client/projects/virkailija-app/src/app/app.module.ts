@@ -9,8 +9,7 @@ import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { CookieService } from 'ngx-cookie-service';
 import { AppComponent } from './app.component';
-import { VardaHttpInterceptor } from './core/services/varda-http-interceptor';
-import { VardaSharedModule, HttpService } from 'varda-shared';
+import { VardaSharedModule, HttpService, VardaHttpInterceptor } from 'varda-shared';
 import { VirkailijaTranslateLoader } from './core/services/virkailija-translate.service';
 import { VardaApiService } from './core/services/varda-api.service';
 
