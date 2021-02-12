@@ -97,13 +97,12 @@ export class VardaToimipaikkaSelectorComponent implements OnInit, OnDestroy {
     this.formToimipaikka = null;
   }
 
-  updateToimipaikat(data: any): void {
-    if (data.toimipaikka) {
-      this.activeToimipaikka = data.toimipaikka;
-      this.setToimipaikka(this.activeToimipaikka);
-
+  updateToimipaikat(toimipaikka: VardaToimipaikkaDTO): void {
+    if (toimipaikka?.id) {
       this.vakajarjestajaApiService.getToimipaikat(this.selectedVakajarjestaja.id).subscribe({
         next: toimipaikat => {
+          this.activeToimipaikka = this.toimipaikat.find(paikka => paikka.id === toimipaikka.id) || this.activeToimipaikka;
+          this.setToimipaikka(this.activeToimipaikka);
           this.vardaVakajarjestajaService.setToimipaikat(toimipaikat);
         },
         error: err => console.error(err)

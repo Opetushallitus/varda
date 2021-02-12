@@ -27,7 +27,7 @@ import { VardaDateService } from '../../services/varda-date.service';
 })
 export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
   @Input() toimipaikka: VardaToimipaikkaDTO;
-  @Output() saveToimipaikkaFormSuccess = new EventEmitter<boolean>(true);
+  @Output() saveToimipaikkaFormSuccess = new EventEmitter<VardaToimipaikkaDTO>(true);
   @Output() valuesChanged = new EventEmitter<boolean>(true);
   @ViewChild('formContent') formContent: ElementRef;
   private errorService: VardaErrorMessageService;
@@ -215,6 +215,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
         next: toimipaikkaData => {
           if (showSnackbar) {
             this.snackBarService.success(this.i18n.toimipaikka_save_success);
+            this.saveToimipaikkaFormSuccess.emit(toimipaikkaData);
           }
           this.disableForm();
           this.getToimipaikka(toimipaikkaData.id);
