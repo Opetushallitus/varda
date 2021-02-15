@@ -4,8 +4,8 @@ import { BehaviorSubject } from 'rxjs';
 import { HuoltajaTranslations } from '../../assets/i18n/translations.enum';
 import { environment } from '../../environments/environment';
 import { HuoltajaApiService } from './huoltaja-api.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslateService } from '@ngx-translate/core';
+import { MatomoService } from 'varda-shared';
 
 @Injectable({
   providedIn: 'root'
@@ -15,12 +15,11 @@ export class OppijaRaamitService {
   private redirectURL = encodeURI(`${window.location.origin}/oma-opintopolku/`);
   private logoutURL = `${window.location.origin}/cas-oppija/logout?service=${this.redirectURL}`;
   private username$ = new BehaviorSubject<string>(null);
-  private snackbarVisible = false;
 
   constructor(
     private huoltajaApiService: HuoltajaApiService,
-    private snackbar: MatSnackBar,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private matomo: MatomoService
   ) { }
 
   initRaamit() {
@@ -30,41 +29,12 @@ export class OppijaRaamitService {
     }
 
     if (environment.production) {
-      this.initMatomo();
+      const [productionID, qaID] = [25, 26];
+      this.matomo.initMatomo(vardaDomains.includes(window.location.hostname) ? productionID : qaID);
     }
 
     this.raamitScript();
     this.cookieScript();
-  }
-
-  initMatomo() {
-    let siteID = 26;
-    if (window.location.hostname === 'opintopolku.fi' || window.location.hostname === 'studieinfo.fi' || window.location.hostname === 'studyinfo.fi') {
-      siteID = 25;
-    }
-    const node = document.createElement('script');
-    node.id = 'matomo';
-    node.type = 'text/javascript';
-    node.async = true;
-    node.innerHTML = `
-    var _paq = window._paq || [];
-
-    function vardaPageChange(title, path) {
-      _paq.push(['setCustomUrl', path]);
-      _paq.push(['setDocumentTitle', title]);
-      _paq.push(['trackPageView']);
-      _paq.push(['enableLinkTracking']);
-    }
-
-    (function() {
-      var u="//analytiikka.opintopolku.fi/matomo/";
-      _paq.push(['setTrackerUrl', u+'matomo.php']);
-      _paq.push(['setSiteId', '${siteID}']);
-      var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
-      g.type='text/javascript'; g.id='matomoX'; g.async=true; g.defer=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
-    })();
-    `;
-    document.getElementsByTagName('head')[0].appendChild(node);
   }
 
   setUsername(username: string) {

@@ -17,3 +17,4 @@ export * from './lib/directives/koodisto.pipe';
 export * from './lib/models/koodisto-models';
 export * from './lib/models/varda-kayttajatyyppi.enum';
 export * from './lib/varda-http.interceptor';
+export * from './lib/matomo.service';

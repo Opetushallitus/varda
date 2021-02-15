@@ -3,6 +3,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { NgcCookieConsentService } from 'ngx-cookieconsent';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { switchMap } from 'rxjs/operators';
+import { MatomoService } from 'varda-shared';
 import { VardaUtilityService } from '../../../core/services/varda-utility.service';
 
 @Component({
@@ -17,6 +18,7 @@ export class VardaBodyComponent implements OnInit {
     private vardaUtilityService: VardaUtilityService,
     private translateService: TranslateService,
     private ccService: NgcCookieConsentService,
+    private matomo: MatomoService
   ) { }
 
   ngOnInit(): void {
@@ -36,6 +38,9 @@ export class VardaBodyComponent implements OnInit {
 
       if (!window.location.hostname.includes('opintopolku.fi')) {
         setTimeout(() => window.document.dispatchEvent(new Event('DOMContentLoaded')), 500);
+      } else {
+        const [productionID, qaID] = [29, 30];
+        this.matomo.initMatomo(window.location.hostname.includes('testiopintopolku') ? qaID : productionID);
       }
     }
   }

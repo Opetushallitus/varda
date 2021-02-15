@@ -11,6 +11,8 @@ import { environment } from '../environments/environment';
 import { VardaCookieEnum } from './utilities/models/enums/varda-cookie.enum';
 import { VardaApiService } from './core/services/varda-api.service';
 
+declare const matomoPageChange: any;
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -48,7 +50,11 @@ export class AppComponent implements OnInit {
     const titles: Array<string> = [...this.getTitle(router.routerState, router.routerState.root).reverse(), 'Varda'];
     this.translateService.get(titles).subscribe(
       translation => {
-        this.titleService.setTitle(titles.map(title => translation[title]).join(' - '));
+        const nextTitle = titles.map(title => translation[title]).join(' - ');
+        this.titleService.setTitle(nextTitle);
+        try {
+          matomoPageChange(nextTitle, window.location.pathname);
+        } catch (e) { }
       }
     );
   }

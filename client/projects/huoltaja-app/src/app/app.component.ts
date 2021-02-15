@@ -11,7 +11,7 @@ import { OppijaRaamitService } from './services/oppija-raamit.service';
 import { HuoltajaCookieEnum } from './utilities/models/enum/huoltaja-cookie.enum';
 import { NavigationEnd, Router } from '@angular/router';
 
-declare const vardaPageChange: any;
+declare const matomoPageChange: any;
 
 @Component({
   selector: 'app-root',
@@ -77,7 +77,7 @@ export class AppComponent implements OnInit {
         const nextTitle = titles.map(title => translation[title]).join(' - ');
         this.titleService.setTitle(nextTitle);
         try {
-          vardaPageChange(nextTitle, window.location.pathname);
+          matomoPageChange(nextTitle, window.location.pathname);
         } catch (e) { }
       }
     );
