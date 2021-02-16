@@ -30,9 +30,11 @@
       <div class="paos-list-flexbox">
         <div>
           <div>{{i18n.organisaatio_oid | translate}}:
-            <span class='text-nowrap'>{{paosToiminta.toimijaOID}}</span></div>
+            <span class='text-nowrap'>{{paosToiminta.toimijaOID}}</span>
+          </div>
           <div>{{i18n.organisaatio_y_tunnus | translate}}:
-            <span class='text-nowrap'>{{paosToiminta.toimijaYTunnus}}</span></div>
+            <span class='text-nowrap'>{{paosToiminta.toimijaYTunnus}}</span>
+          </div>
           <div>{{i18n.id | translate}}: {{paosToiminta.toimijaId}}</div>
         </div>
         <app-varda-toggle-button [isUp]="openToimija !== paosToiminta.toimijaId"
@@ -65,10 +67,10 @@
             </div>
             <div class="paos-toimipaikat-list-tallennusvastuu-column"
                  *ngIf="openTallennusvastuu === paosToiminta.toimijaId">
-              <select [value]="paosToiminta.paosOikeus.tallentaja_organisaatio_id"
+              <select [(ngModel)]="paosToiminta.paosOikeus.tallentaja_organisaatio_id"
                       (change)="changeTallennusvastuu($event.target.value, paosToiminta)"
                       class="varda-select">
-                <option [value]="this.selectedVakajarjestaja.id | number">{{ this.selectedVakajarjestaja.nimi }}
+                <option [value]="this.selectedVakajarjestaja.id">{{ this.selectedVakajarjestaja.nimi }}
                 </option>
                 <option [value]="paosToiminta.toimijaId">{{ paosToiminta.toimijaNimi }}</option>
               </select>
