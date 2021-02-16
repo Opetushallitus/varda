@@ -568,13 +568,13 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
     def verify_permissions(self):
         user = self.request.user
 
-        valid_permission_groups_vakatiedot = [Z4_CasKayttoOikeudet.PAAKAYTTAJA,
+        valid_permission_groups_vakatiedot = [Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
                                               Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.KATSELIJA]
         user_group_vakatiedot_qs = permission_groups_in_organization(user, self.vakajarjestaja_oid,
                                                                      valid_permission_groups_vakatiedot)
         self.is_vakatiedot_permissions = user.is_superuser | user_group_vakatiedot_qs.exists()
 
-        valid_permission_groups_huoltajatiedot = [Z4_CasKayttoOikeudet.PAAKAYTTAJA,
+        valid_permission_groups_huoltajatiedot = [Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
                                                   Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,
                                                   Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA]
         user_group_huoltajatiedot_qs = permission_groups_in_organization(user, self.vakajarjestaja_oid,
