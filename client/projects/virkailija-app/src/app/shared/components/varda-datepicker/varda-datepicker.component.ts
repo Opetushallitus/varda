@@ -82,7 +82,7 @@ export class VardaDatepickerComponent implements OnInit, ControlValueAccessor {
       this.placeholder = this.translateService.instant(VirkailijaTranslations.datepicker_placeholder);
     }
 
-    if (this.translateService.getDefaultLang() === 'sv') {
+    if (this.translateService.currentLang === 'sv') {
       this.dateAdapter.setLocale('sv-SV');
     } else {
       this.dateAdapter.setLocale('fi-FI');
