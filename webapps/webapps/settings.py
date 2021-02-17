@@ -250,12 +250,12 @@ LOGGING = {
             'propagate': False,
         },
         'django': {
-            'handlers': ['mail_admins', 'syslog', 'console'],
+            'handlers': ['syslog', 'console'],
             'level': 'INFO'
         },
         'django.request': {
             'level': 'ERROR',
-            'handlers': ['mail_admins', 'syslog', 'console'],
+            'handlers': ['syslog', 'console'],
             'propagate': False,
         },
         'django.security': {
