@@ -268,8 +268,8 @@ class KelaEtuusmaksatusKorjaustiedotViewSet(GenericViewSet, ListModelMixin):
         latest_changed_objects = Varhaiskasvatussuhde.history.filter(dataset_filters)
         id_filter = Q(id__in=latest_changed_objects.values('id'))
 
-        alkamis_pvm_subquery = Varhaiskasvatussuhde.history.filter(id=OuterRef('id')).order_by('-history_id')
-        paattymis_pvm_subquery = Varhaiskasvatussuhde.history.filter(id=OuterRef('id'), paattymis_pvm__isnull=False).order_by('-history_id')
+        alkamis_pvm_subquery = Varhaiskasvatussuhde.history.filter(id=OuterRef('id'), muutos_pvm__date__lt=muutos_pvm).order_by('-history_id')
+        paattymis_pvm_subquery = Varhaiskasvatussuhde.history.filter(id=OuterRef('id'), paattymis_pvm__isnull=False, muutos_pvm__date__lt=muutos_pvm).order_by('-history_id')
 
         return (Varhaiskasvatussuhde.objects.select_related('varhaiskasvatuspaatos__lapsi', 'varhaiskasvatuspaatos__lapsi__henkilo')
                                             .annotate(old_alkamis_pvm=(Case(When(alkamis_pvm=Subquery(alkamis_pvm_subquery.values('alkamis_pvm')[:1]), then=Value('0001-01-01')),
