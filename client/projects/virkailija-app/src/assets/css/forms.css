@@ -30,6 +30,9 @@
   margin: auto 0.5em !important;
 }
 
+label.mat-checkbox-layout {
+  margin-bottom: 0;
+}
 
 .oph-field.oph-field-inline+.oph-field.oph-field-inline {
   margin-top: 0px;

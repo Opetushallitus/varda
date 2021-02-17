@@ -384,6 +384,8 @@ export enum VirkailijaTranslations {
   tilapainen_henkilosto_fetch_failure = 'tilapainen_henkilosto.fetch-failure',
   tilapainen_henkilosto_save_success = 'tilapainen_henkilosto.save-success',
   tilapainen_henkilosto_ohje = 'tilapainen-henkilosto.ohje',
+  tilapainen_henkilosto_ohje_list_1 = 'tilapainen-henkilosto.ohje.list-1',
+  tilapainen_henkilosto_ohje_list_2 = 'tilapainen-henkilosto.ohje.list-2',
   tilapainen_henkilosto_ei_tilapaista_henkilostoa = 'tilapainen-henkilosto.ei-tilapaista-henkilostoa',
   tilapainen_henkilosto_tooltip_ei_tilapaista_henkilostoa = 'tilapainen-henkilosto.tooltip.ei-tilapaista-henkilostoa',
   tilapainen_henkilosto_tunnit_yhteensa = 'tilapainen-henkilosto.tunnit-yhteensa',
@@ -402,6 +404,8 @@ export enum VirkailijaTranslations {
   tilapainen_henkilosto_HOURS_tuntia = 'tilapainen-henkilosto.HOURS-tuntia',
   tilapainen_henkilosto_COUNT_henkiloa_per_kk = 'tilapainen-henkilosto.COUNT-henkiloa_per_kk',
   tilapainen_henkilosto_HOURS_tuntia_per_kk = 'tilapainen-henkilosto.HOURS-tuntia_per_kk',
+  tilapainen_henkilosto_first_half = 'tilapainen-henkilosto.first-half',
+  tilapainen_henkilosto_last_half = 'tilapainen-henkilosto.last-half',
 
   tilapainen_henkilosto_dialog_ei_henkilostoa_title = 'tilapainen-henkilosto.dialog.ei-henkilostoa.title',
   tilapainen_henkilosto_dialog_ei_henkilostoa_info = 'tilapainen-henkilosto.dialog.ei-henkilostoa.info',

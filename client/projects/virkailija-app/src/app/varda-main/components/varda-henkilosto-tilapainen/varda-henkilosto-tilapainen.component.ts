@@ -1,12 +1,11 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 import { AuthService } from '../../../core/auth/auth.service';
 import { FormArray, FormGroup, FormControl, Validators } from '@angular/forms';
 import { LoadingHttpService } from 'varda-shared';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
-import { VardaVakajarjestajaUi } from '../../../utilities/models';
+import { VardaVakajarjestaja, VardaVakajarjestajaUi } from '../../../utilities/models';
 import { Observable, forkJoin, of } from 'rxjs';
-import { VardaTilapainenHenkiloDTO } from '../../../utilities/models/dto/varda-tilapainen-henkilo-dto.model';
 import { MatDialog } from '@angular/material/dialog';
 import { EiHenkilostoaDialogComponent } from './ei-henkilostoa-dialog/ei-henkilostoa-dialog.component';
 import { catchError } from 'rxjs/operators';
@@ -16,168 +15,222 @@ import { ErrorTree, VardaErrorMessageService } from '../../../core/services/vard
 import { Lahdejarjestelma } from '../../../utilities/models/enums/hallinnointijarjestelma';
 import { VardaSnackBarService } from '../../../core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
+import { VardaVakajarjestajaApiService } from '../../../core/services/varda-vakajarjestaja-api.service';
+import { VardaDateService } from '../../services/varda-date.service';
+
+enum TilapainenPrefix {
+  spring = VirkailijaTranslations.tilapainen_henkilosto_first_half,
+  autumn = VirkailijaTranslations.tilapainen_henkilosto_last_half
+}
+
+interface TilapainenYearPicker {
+  earliest: number;
+  latest: number;
+  year: number;
+  prefix: TilapainenPrefix;
+}
 
 @Component({
   selector: 'app-varda-henkilosto-tilapainen',
   templateUrl: './varda-henkilosto-tilapainen.component.html',
   styleUrls: ['./varda-henkilosto-tilapainen.component.css']
 })
-export class VardaHenkilostoTilapainenComponent implements OnDestroy {
-  private START_YEAR = 2020;
-  private disableEditingAfterMonthNr = 5;
-  lastEditableYear: number;
+export class VardaHenkilostoTilapainenComponent implements OnInit {
   toimijaAccess: UserAccess;
-  monthArray = new FormArray([]);
-  henkilostoKytkin = { value: false, hidden: false, editable: true };
-  vuosiArvot = { hours: 0, employees: 0, months: 0 };
-  vuodet: Array<number> = [];
-  lastUpdated: string;
-  henkilostoVuosi: number;
-
   selectedVakajarjestaja: VardaVakajarjestajaUi;
-  isLoading$: Observable<boolean>;
+  isSubmitting: Observable<boolean>;
   i18n = VirkailijaTranslations;
   henkilostoFormErrors: Observable<Array<ErrorTree>>;
   private henkilostoErrorService: VardaErrorMessageService;
+  lastAllowedDate: Date;
+  isEdit: boolean;
+  monthArray = new FormArray([]);
+  vuodet: Array<TilapainenYearPicker> = [];
+  vuosiArvot = { hours: 0, employees: 0, months: 0 };
+  henkilostoVuosi: TilapainenYearPicker;
+  henkilostoKytkin = { value: false, disabled: true };
+  lastUpdated: string;
+
+  months = [
+    this.i18n.aika_tammikuu,
+    this.i18n.aika_helmikuu,
+    this.i18n.aika_maaliskuu,
+    this.i18n.aika_huhtikuu,
+    this.i18n.aika_toukokuu,
+    this.i18n.aika_kesäkuu,
+    this.i18n.aika_heinäkuu,
+    this.i18n.aika_elokuu,
+    this.i18n.aika_syyskuu,
+    this.i18n.aika_lokakuu,
+    this.i18n.aika_marraskuu,
+    this.i18n.aika_joulukuu,
+  ];
 
   constructor(
     private dialog: MatDialog,
     private vakajarjestajaService: VardaVakajarjestajaService,
+    private vakajarjestajaApiService: VardaVakajarjestajaApiService,
     private http: LoadingHttpService,
     private authService: AuthService,
     private henkilostoService: VardaHenkilostoApiService,
     private snackBarService: VardaSnackBarService,
     translateService: TranslateService
   ) {
-    this.isLoading$ = this.http.isLoading();
+    this.isSubmitting = this.http.isLoading();
     this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
-    this.toimijaAccess = this.authService.getUserAccess();
     this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.henkilostoFormErrors = this.henkilostoErrorService.initErrorList();
-    this.initiateYears();
+
+
+
   }
 
-  ngOnDestroy() { }
+  ngOnInit() {
+    this.toimijaAccess = this.authService.getUserAccess();
+    this.vakajarjestajaApiService.getVakajarjestaja(this.selectedVakajarjestaja.id).subscribe((vakajarjestajaData: VardaVakajarjestaja) => {
+      this.initiateYears(vakajarjestajaData);
+    });
+  }
 
-  initiateMonths(year: number) {
-    const months = [
-      this.i18n.aika_tammikuu,
-      this.i18n.aika_helmikuu,
-      this.i18n.aika_maaliskuu,
-      this.i18n.aika_huhtikuu,
-      this.i18n.aika_toukokuu,
-      this.i18n.aika_kesäkuu,
-      this.i18n.aika_heinäkuu,
-      this.i18n.aika_elokuu,
-      this.i18n.aika_syyskuu,
-      this.i18n.aika_lokakuu,
-      this.i18n.aika_marraskuu,
-      this.i18n.aika_joulukuu,
-    ];
-    this.lastUpdated = '';
-    this.henkilostoKytkin = { value: false, editable: true, hidden: false };
-    this.vuosiArvot = { hours: 0, employees: 0, months: 0 };
+  initiateYears(vakajarjestaja: VardaVakajarjestaja) {
+    const july = 6;
+    const today = new Date();
+    const seasonEndingDate = today.getMonth() < july ? new Date(today.getUTCFullYear(), 5, 30) : new Date(today.getUTCFullYear(), 11, 31);
+    const vakajarjestajaStartDate = vakajarjestaja.alkamis_pvm ? new Date(vakajarjestaja.alkamis_pvm) : VardaDateService.henkilostoReleaseDate;
+    const lastAllowedDate = vakajarjestaja.paattymis_pvm ? new Date(vakajarjestaja.paattymis_pvm) : seasonEndingDate;
 
-    this.henkilostoService.getTilapainenHenkilostoByYear(year, this.selectedVakajarjestaja.organisaatio_oid).subscribe({
-      next: data => {
-        const results: Array<VardaTilapainenHenkiloDTO> = data.results;
-        this.monthArray = new FormArray([]);
+    let earliestAllowedDate = VardaDateService.henkilostoReleaseDate;
 
-        months.forEach((month, index) => {
-          // block first 8 months on the start year. this filter can be removed 3/2021
-          if (`${year}` === this.START_YEAR.toString() && index < 8) {
-            return;
+    if (vakajarjestajaStartDate > earliestAllowedDate) {
+      earliestAllowedDate = vakajarjestajaStartDate;
+    }
+
+
+    for (let i = earliestAllowedDate.getUTCFullYear(); i <= lastAllowedDate.getUTCFullYear(); ++i) {
+      for (let j = 0; j < 2; j++) {
+        const monthComparison = j * july;
+        const pickerData: TilapainenYearPicker = {
+          earliest: monthComparison,
+          latest: monthComparison + 5,
+          year: i,
+          prefix: monthComparison < july ? TilapainenPrefix.spring : TilapainenPrefix.autumn
+        };
+
+        if (i === earliestAllowedDate.getUTCFullYear()) {
+          pickerData.earliest = earliestAllowedDate.getMonth();
+          // skip first half of the year as the first allowed month is august or later
+          if (j === 0 && pickerData.earliest >= july) {
+            continue;
           }
+        }
 
-          const thisMonth = new Date().toISOString().substr(0, 7);
-          const yymm = new Date(Date.UTC(year, index, 1)).toISOString().substr(0, 7);
-          const result = results.find(res => res.kuukausi.startsWith(yymm)) || {
+        if (i === lastAllowedDate.getUTCFullYear()) {
+          const lastAllowedMonth = lastAllowedDate.getMonth();
+          pickerData.latest = lastAllowedMonth < pickerData.latest ? lastAllowedMonth : pickerData.latest;
+          // skip last half of the year as the last allowed month is before august
+          if (j === 1 && lastAllowedMonth < july) {
+            continue;
+          }
+        }
+
+        this.vuodet.push(pickerData);
+      }
+    }
+
+    this.vuodet.reverse();
+    this.henkilostoVuosi = this.vuodet?.[0];
+    this.initiateMonths(this.henkilostoVuosi);
+  }
+
+  initiateMonths(vuosi: TilapainenYearPicker) {
+    this.lastUpdated = null;
+    const today = new Date();
+    const lastAllowedMonth = today.toISOString().substr(0, 7);
+    this.monthArray = new FormArray([]);
+    this.henkilostoKytkin.disabled = false;
+    this.vuosiArvot = { hours: 0, employees: 0, months: 0 };
+    const tyontekijatByMonth = [];
+
+    if (this.vuodet.indexOf(vuosi) > 1 || !this.toimijaAccess.tilapainenHenkilosto.tallentaja) {
+      this.henkilostoKytkin.disabled = true;
+    }
+
+    this.henkilostoService.getTilapainenHenkilostoByYear(vuosi.year, this.selectedVakajarjestaja.organisaatio_oid).subscribe({
+      next: data => {
+        for (let month = vuosi.earliest; month <= vuosi.latest; ++month) {
+          const yymm = new Date(Date.UTC(vuosi.year, month, 1)).toISOString().substr(0, 7);
+          const monthData = data.results.find(res => res.kuukausi.startsWith(yymm)) || {
             id: null,
+            url: null,
             kuukausi: `${yymm}-01`,
             tuntimaara: null,
             tyontekijamaara: null,
             vakajarjestaja_oid: this.selectedVakajarjestaja.organisaatio_oid,
             lahdejarjestelma: Lahdejarjestelma.kayttoliittyma,
-            url: null
+            muutos_pvm: ''
           };
 
-          if (result.tuntimaara !== null || result.tyontekijamaara !== null) {
-            this.henkilostoKytkin.editable = false;
-            this.vuosiArvot.months++;
-            this.vuosiArvot.employees += parseInt(`${result.tyontekijamaara}`) || 0;
-            this.vuosiArvot.hours += parseFloat(`${result.tuntimaara}`) || 0;
+          const formGroup = new FormGroup({
+            id: new FormControl(monthData.id),
+            name: new FormControl(this.months[month]),
+            url: new FormControl(monthData.url),
+            kuukausi: new FormControl(monthData.kuukausi),
+            tuntimaara: new FormControl(monthData.tuntimaara, [...this.tuntimaaraValidators()]),
+            tyontekijamaara: new FormControl(monthData.tyontekijamaara, [...this.tyontekijamaaraValidators()]),
+            vakajarjestaja_oid: new FormControl(monthData.vakajarjestaja_oid),
+            lahdejarjestelma: new FormControl(monthData.lahdejarjestelma),
+            readonly: new FormControl(yymm > lastAllowedMonth)
+          });
+
+          this.monthArray.push(formGroup);
+
+          if (!this.lastUpdated && monthData?.muutos_pvm || monthData?.muutos_pvm > this.lastUpdated) {
+            this.lastUpdated = monthData.muutos_pvm;
           }
 
-          if (result.muutos_pvm && result.muutos_pvm > this.lastUpdated) {
-            this.lastUpdated = result.muutos_pvm;
+          if (monthData.tyontekijamaara !== null) {
+            tyontekijatByMonth.push(monthData.tyontekijamaara);
+            this.vuosiArvot.employees += monthData.tyontekijamaara || 0;
+            this.vuosiArvot.hours += parseFloat(`${monthData.tuntimaara}`) || 0;
           }
-
-
-          if (yymm <= thisMonth) {
-            this.monthArray.push(new FormGroup({
-              id: new FormControl(result.id),
-              name: new FormControl(month),
-              url: new FormControl(result.url),
-              kuukausi: new FormControl(result.kuukausi),
-              tuntimaara: new FormControl(result.tuntimaara, [...this.tuntimaaraValidators()]),
-              tyontekijamaara: new FormControl(result.tyontekijamaara, [...this.tyontekijamaaraValidators()]),
-              vakajarjestaja_oid: new FormControl(this.selectedVakajarjestaja.organisaatio_oid),
-              lahdejarjestelma: new FormControl(Lahdejarjestelma.kayttoliittyma)
-            }));
-          } else {
-            this.henkilostoKytkin.hidden = true;
-          }
-        });
-
-        if (!this.monthArray.controls.some(formGroup =>
-          parseInt(formGroup.get('tuntimaara').value) !== 0 || parseInt(formGroup.get('tyontekijamaara').value) !== 0)) {
-          this.henkilostoKytkin.value = this.monthArray.controls.length === 12;
         }
 
-        if (year < this.lastEditableYear || !this.toimijaAccess.tilapainenHenkilosto.tallentaja) {
-          this.monthArray.disable();
+        this.vuosiArvot.months = tyontekijatByMonth.length;
+        this.henkilostoKytkin.value = !!tyontekijatByMonth.length && tyontekijatByMonth.reduce((a, b) => a + b, 0) === 0;
+
+        this.disableForm();
+        if (!tyontekijatByMonth.length) {
+          this.enableForm();
         }
 
       }, error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
     });
   }
 
-  initiateYears() {
-    const today = new Date();
-    this.lastEditableYear = today.getMonth() > this.disableEditingAfterMonthNr ? today.getUTCFullYear() : today.getUTCFullYear() - 1;
-
-    for (let i = this.START_YEAR; i <= today.getUTCFullYear(); ++i) {
-      this.vuodet.push(i);
-    }
-    this.henkilostoVuosi = today.getUTCFullYear();
-    this.initiateMonths(this.henkilostoVuosi);
-  }
-
-
   toggleHenkilosto() {
-    if (this.monthArray.disabled) {
+    if (this.henkilostoKytkin.disabled) {
       return;
     }
 
-    if (!this.henkilostoKytkin.value) {
-      if (this.henkilostoKytkin.editable) {
-        const dialogRef = this.dialog.open(EiHenkilostoaDialogComponent, {});
+    if (this.henkilostoKytkin.value) {
+      const dialogRef = this.dialog.open(EiHenkilostoaDialogComponent, {});
+      dialogRef.afterClosed().subscribe(result => {
+        if (result) {
+          this.monthArray.enable();
+          this.monthArray.controls.map(formGroup => {
+            formGroup.get('tuntimaara').setValue(0);
+            formGroup.get('tyontekijamaara').setValue(0);
+            formGroup.markAsDirty();
+          });
 
-        dialogRef.afterClosed().subscribe(result => {
-          if (result) {
-            this.henkilostoKytkin.value = !this.henkilostoKytkin.value;
-            this.monthArray.controls.map(formGroup => {
-              formGroup.get('tuntimaara').setValue(0);
-              formGroup.get('tyontekijamaara').setValue(0);
-              formGroup.markAsDirty();
-            });
+          this.saveHenkilosto(this.monthArray);
+        } else {
+          this.henkilostoKytkin.value = false;
+        }
+      });
 
-            this.saveHenkilosto(this.monthArray);
-          }
-        });
-      }
     } else {
-      this.henkilostoKytkin.value = !this.henkilostoKytkin.value;
+      this.enableForm();
     }
   }
 
@@ -200,6 +253,18 @@ export class VardaHenkilostoTilapainenComponent implements OnDestroy {
       },
       error: (err) => this.henkilostoErrorService.handleError(err, this.snackBarService)
     });
+  }
+
+  disableForm() {
+    this.isEdit = false;
+    this.monthArray.disable();
+  }
+
+  enableForm() {
+    if (!this.henkilostoKytkin.disabled) {
+      this.isEdit = true;
+      this.monthArray.enable();
+    }
   }
 
 

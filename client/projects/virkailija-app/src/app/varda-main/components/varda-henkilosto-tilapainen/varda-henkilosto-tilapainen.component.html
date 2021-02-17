@@ -1,7 +1,13 @@
 <ng-container *ngIf="toimijaAccess.tilapainenHenkilosto.katselija">
   <h1 class="varda-page-header">{{ i18n.tilapainen_henkilosto | translate }}</h1>
   <main class="varda-page-content">
-    <div class="modal-form-intro">{{ i18n.tilapainen_henkilosto_ohje | translate }}</div>
+    <div class="modal-form-intro">
+      <p>{{ i18n.tilapainen_henkilosto_ohje | translate }}</p>
+      <ul>
+        <li>{{ i18n.tilapainen_henkilosto_ohje_list_1 | translate }}</li>
+        <li>{{ i18n.tilapainen_henkilosto_ohje_list_2 | translate }}</li>
+      </ul>
+    </div>
 
     <div class="oph-field oph-field-inline year-picker">
       <label class="oph-label">{{ i18n.aika_vuosi | translate }}</label>
@@ -9,23 +15,20 @@
               (change)="initiateMonths(henkilostoVuosi)"
               [(ngModel)]="henkilostoVuosi">
         <option *ngFor="let vuosi of vuodet"
-                [value]="vuosi">{{ vuosi }}</option>
+                [ngValue]="vuosi">{{ vuosi.prefix | translate }} / {{ vuosi.year }}</option>
       </select>
     </div>
     <ng-container *ngIf="monthArray">
       <form (submit)="saveHenkilosto(monthArray)">
-        <div class="toggle-henkilosto"
-             *ngIf="!henkilostoKytkin.hidden">
-          <button class="henkilostoKytkin varda-text-button"
-                  [disabled]="monthArray.disabled || (!henkilostoKytkin.value && !henkilostoKytkin.editable)"
-                  [class.no-pointer]="monthArray.disabled || !henkilostoKytkin.editable"
-                  (keydown.enter)="toggleHenkilosto()"
-                  (click)="toggleHenkilosto()">
-            <i *ngIf="henkilostoKytkin.value"
-               class="material-icons material-icons-outlined">check_box</i>
-            <mat-icon *ngIf="!henkilostoKytkin.value">check_box_outline_blank</mat-icon>
+        <div class="toggle-henkilosto">
+          <mat-checkbox class="henkilostoKytkin"
+                        [disabled]="henkilostoKytkin.disabled"
+                        [ngModelOptions]="{standalone: true}"
+                        (change)="toggleHenkilosto()"
+                        [(ngModel)]="henkilostoKytkin.value">
             {{ i18n.tilapainen_henkilosto_ei_tilapaista_henkilostoa | translate }}
-          </button>
+          </mat-checkbox>
+
           <button class="varda-text-button"
                   [matTooltip]="i18n.tilapainen_henkilosto_tooltip_ei_tilapaista_henkilostoa | translate"
                   matTooltipClass="varda-tooltip"
@@ -36,7 +39,7 @@
             <mat-icon>help_outline</mat-icon>
           </button>
         </div>
-        <ng-container *ngIf="!henkilostoKytkin.value">
+        <ng-container>
           <div class="table-responsive">
             <table class="table">
               <thead>
@@ -54,7 +57,7 @@
                 </tr>
                 <tr *ngFor="let month of monthArray.controls; let index = index">
                   <ng-container [formGroup]="month">
-                    <td>{{ month.value.name  | translate }}</td>
+                    <td>{{ month.value.name | translate }}</td>
                     <td>
                       <input type="number"
                              class="oph-input"
@@ -62,9 +65,10 @@
                              formControlName="tyontekijamaara"
                              min="0"
                              (change)="valueChanged(month)"
+                             [readonly]="month.get('readonly').value"
                              [placeholder]="i18n.tilapainen_henkilosto_henkilomaara | translate" />
                       <div class="error-field oph-error"
-                           *ngIf="month.touched">
+                           *ngIf="month.touched && !month.get('readonly').value">
                         <span *ngIf="month.get('tyontekijamaara').hasError('required')">
                           {{ i18n.tilapainen_henkilosto_error_tyontekijamaara | translate }}
                         </span>
@@ -84,9 +88,10 @@
                              min="0"
                              step="0.5"
                              (change)="valueChanged(month)"
+                             [readonly]="month.get('readonly').value"
                              [placeholder]="i18n.tilapainen_henkilosto_tyotunnit | translate" />
                       <div class="error-field oph-error"
-                           *ngIf="month.touched">
+                           *ngIf="month.touched && !month.get('readonly').value">
                         <span *ngIf="month.get('tuntimaara').hasError('required')">
                           {{ i18n.tilapainen_henkilosto_error_tuntimaara | translate }}
                         </span>
@@ -102,13 +107,15 @@
                 </tr>
 
                 <ng-container *ngIf="vuosiArvot.months > 0">
-                  <tr>
+                  <tr class="black-border">
                     <td>{{ i18n.keskimaarin | translate }}</td>
                     <td>
-                      {{ i18n.tilapainen_henkilosto_COUNT_henkiloa_per_kk | translate: { count:  vuosiArvot.employees / vuosiArvot.months | number:'1.1-1' } }}
+                      {{ i18n.tilapainen_henkilosto_COUNT_henkiloa_per_kk | translate: { count: vuosiArvot.employees /
+                      vuosiArvot.months | number:'1.1-1' } }}
                     </td>
                     <td>
-                      {{ i18n.tilapainen_henkilosto_HOURS_tuntia_per_kk | translate: { hours: vuosiArvot.hours / vuosiArvot.months | number:'1.2-2' } }}
+                      {{ i18n.tilapainen_henkilosto_HOURS_tuntia_per_kk | translate: { hours: vuosiArvot.hours /
+                      vuosiArvot.months | number:'1.2-2' } }}
                     </td>
                   </tr>
                   <tr>
@@ -124,13 +131,15 @@
 
           <app-varda-error-field [errors]="henkilostoFormErrors"></app-varda-error-field>
 
-          <div class="varda-form-btn-wrapper"
-               *ngIf="!monthArray.disabled">
-            <button type="submit"
-                    *ngIf="toimijaAccess.tilapainenHenkilosto.tallentaja"
-                    class="varda-button varda-button-wide responsive-md"
-                    [disabled]="monthArray.pristine || (isLoading$ | async)">{{ i18n.save | translate}}</button>
-          </div>
+          <app-varda-action-row *ngIf="!henkilostoKytkin.disabled"
+                                [saveDisabled]="monthArray.pristine || (isSubmitting | async)"
+                                [saveAccess]="toimijaAccess.tilapainenHenkilosto.tallentaja"
+                                [formExists]="true"
+                                [isEdit]="isEdit"
+                                [noDelete]="true"
+                                [noToggle]="true"
+                                (enableEdit)="enableForm()"
+                                (disableEdit)="disableForm()"></app-varda-action-row>
         </ng-container>
       </form>
     </ng-container>
