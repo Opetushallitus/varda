@@ -86,7 +86,8 @@
              routerLink="/raportit"
              (keydown.tab)="$event.stopPropagation()"
              (keydown.shift.tab)="$event.stopPropagation()"
-             mat-menu-item>
+             mat-menu-item
+             appHighContrast>
             <mat-icon [class.warning]="puutteellisetWarning | async"
                       aria-ignore="true">warning</mat-icon>
             <span>{{i18n.raportit | translate }}</span>

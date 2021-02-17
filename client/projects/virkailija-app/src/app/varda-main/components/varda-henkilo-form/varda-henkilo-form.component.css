@@ -86,7 +86,7 @@ mat-expansion-panel mat-expansion-panel-header {
 }
 
 .tyontekija-panel-content {
-  padding-left: 5em;
+  padding-left: 70px;
 }
 
 .missing-info {
@@ -179,15 +179,15 @@ mat-panel-description>.varda-text-button .mat-icon:first-child {
   }
 
   .tree-border::before {
-    left: 15px;
+    left: 0px;
   }
 
   .tyoskentelypaikka::before {
-    left: -17px;
+    left: -14px;
   }
 
   .tyontekija-panel-content {
-    padding-left: 2rem;
+    padding-left: 14px;
   }
 }
 
@@ -201,7 +201,7 @@ mat-panel-description>.varda-text-button .mat-icon:first-child {
   }
 
   .tyoskentelypaikka::before {
-    left: -14px;
+    left: -16px;
   }
 
   .mat-expansion-panel form {
