@@ -3178,7 +3178,7 @@ def create_henkilosto():
     crud_permissions_tilapainen_henkilosto = ['view_tilapainenhenkilosto', 'change_tilapainenhenkilosto', 'add_tilapainenhenkilosto', 'delete_tilapainenhenkilosto']
     tilapainen_henkilosto_1 = TilapainenHenkilosto.objects.create(
         vakajarjestaja=vakajarjestaja_34683023489,
-        kuukausi='2020-03-01',
+        kuukausi='2020-09-01',
         tuntimaara='37.50',
         tyontekijamaara=5,
         lahdejarjestelma='1',

@@ -1,6 +1,7 @@
 import json
-from datetime import date
-from unittest.mock import patch
+import datetime
+from functools import wraps
+from unittest.mock import patch, MagicMock
 
 from django.contrib.auth.models import User, Group
 from django.test import TestCase
@@ -11,6 +12,27 @@ from varda.models import (VakaJarjestaja, Henkilo, Tyontekija, Palvelussuhde, Ty
                           TilapainenHenkilosto, Taydennyskoulutus, TaydennyskoulutusTyontekija, PidempiPoissaolo,
                           Tutkinto)
 from varda.viewsets_henkilosto import TyontekijaViewSet
+
+
+def _date_side_effect(*args, **kwargs):
+    return datetime.date(*args, **kwargs)
+
+
+def _timedelta_side_effect(*args, **kwargs):
+    return datetime.timedelta(*args, **kwargs)
+
+
+def mock_date_decorator_factory(mock_date):
+    def _mock_date_decorator(original_function):
+        @wraps(original_function)
+        def _mock_date_wrapper(*args, **kwargs):
+            with patch('varda.serializers_henkilosto.datetime') as mock_datetime:
+                mock_datetime.date = MagicMock(side_effect=_date_side_effect)
+                mock_datetime.timedelta = MagicMock(side_effect=_timedelta_side_effect)
+                mock_datetime.date.today.return_value = datetime.datetime.strptime(mock_date, '%Y-%m-%d').date()
+                return original_function(*args, **kwargs)
+        return _mock_date_wrapper
+    return _mock_date_decorator
 
 
 class VardaHenkilostoViewSetTests(TestCase):
@@ -357,12 +379,13 @@ class VardaHenkilostoViewSetTests(TestCase):
         self.assertFalse(henkilo_obj.kotikunta_koodi or henkilo_obj.katuosoite or
                          henkilo_obj.postinumero or henkilo_obj.postitoimipaikka)
 
+    @mock_date_decorator_factory('2020-12-01')
     def test_api_push_tilapainen_henkilosto_correct(self):
         client = SetUpTestClient('tilapaiset_tallentaja').client()
 
         tilapainen_henkilosto_1 = {
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
-            'kuukausi': '2020-04-01',
+            'kuukausi': '2020-11-01',
             'tuntimaara': '47.53',
             'tyontekijamaara': 5,
             'tunniste': 'tunniste',
@@ -374,7 +397,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         tilapainen_henkilosto_2 = {
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
-            'kuukausi': '2020-05-01',
+            'kuukausi': '2020-12-01',
             'tuntimaara': '47.53',
             'tyontekijamaara': 5,
             'tunniste': 'tunniste2',
@@ -384,12 +407,13 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp_2 = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto_2)
         assert_status_code(resp_2, status.HTTP_201_CREATED)
 
-    def test_api_push_tilapainen_henkilosto_correct_oid(self):
+    @mock_date_decorator_factory('2020-12-01')
+    def test_api_push_tilapainen_henkilosto_correct_oid(self,):
         client = SetUpTestClient('tilapaiset_tallentaja').client()
 
         tilapainen_henkilosto = {
             'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
-            'kuukausi': '2020-04-01',
+            'kuukausi': '2020-12-01',
             'tuntimaara': '47.53',
             'tyontekijamaara': 5,
             'tunniste': 'tunniste',
@@ -399,6 +423,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
         assert_status_code(resp, status.HTTP_201_CREATED)
 
+    @mock_date_decorator_factory('2020-12-01')
     def test_api_push_tilapainen_henkilosto_delete(self):
         # No user has permissions to this
         admin_user = User.objects.get(username='credadmin')
@@ -417,7 +442,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         tilapainen_henkilosto_1 = {
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
-            'kuukausi': '2020-04-01',
+            'kuukausi': '2020-12-01',
             'tuntimaara': '47.53',
             'tyontekijamaara': 5,
             'tunniste': 'tunniste',
@@ -430,11 +455,12 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp_delete_2 = client.delete('/api/henkilosto/v1/tilapainen-henkilosto/{}/'.format(tilapinen_id))
         assert_status_code(resp_delete_2, status.HTTP_204_NO_CONTENT)
 
+    @mock_date_decorator_factory('2020-12-01')
     def test_api_push_tilapainen_henkilosto_missing_vakajarjestaja(self):
         client = SetUpTestClient('tilapaiset_tallentaja').client()
 
         tilapainen_henkilosto = {
-            'kuukausi': '2020-03-31',
+            'kuukausi': '2020-10-31',
             'tuntimaara': '47.53',
             'tyontekijamaara': 5,
             'lahdejarjestelma': '1'
@@ -443,6 +469,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
 
+    @mock_date_decorator_factory('2020-12-01')
     def test_api_push_tilapainen_henkilosto_missing_kuukausi(self):
         client = SetUpTestClient('tilapaiset_tallentaja').client()
 
@@ -457,13 +484,14 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
 
+    @mock_date_decorator_factory('2020-12-01')
     def test_api_push_tilapainen_henkilosto_missing_tyontekijamaara(self):
         client = SetUpTestClient('tilapaiset_tallentaja').client()
 
         tilapainen_henkilosto = {
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
             'tuntimaara': '47.53',
-            'kuukausi': '2020-03-31',
+            'kuukausi': '2020-12-31',
             'lahdejarjestelma': '1',
             'tunniste': 'tunniste'
         }
@@ -471,13 +499,14 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
 
+    @mock_date_decorator_factory('2020-12-01')
     def test_api_push_tilapainen_henkilosto_missing_lahdejarjestelma(self):
         client = SetUpTestClient('tilapaiset_tallentaja').client()
 
         tilapainen_henkilosto = {
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
             'tuntimaara': '47.53',
-            'kuukausi': '2020-03-31',
+            'kuukausi': '2020-12-31',
             'tyontekijamaara': 5,
             'tunniste': 'tunniste'
         }
@@ -485,12 +514,13 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
 
+    @mock_date_decorator_factory('2020-12-01')
     def test_api_push_tilapainen_henkilosto_missing_tuntimaara(self):
         client = SetUpTestClient('tilapaiset_tallentaja').client()
 
         tilapainen_henkilosto = {
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
-            'kuukausi': '2020-03-31',
+            'kuukausi': '2020-12-31',
             'tyontekijamaara': 5,
             'lahdejarjestelma': '1',
             'tunniste': 'tunniste'
@@ -499,12 +529,13 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
 
+    @mock_date_decorator_factory('2020-12-01')
     def test_api_push_tilapainen_henkilosto_incorrect_tunniste(self):
         client = SetUpTestClient('tilapaiset_tallentaja').client()
 
         tilapainen_henkilosto = {
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
-            'kuukausi': '2020-03-31',
+            'kuukausi': '2020-12-31',
             'tuntimaara': '50',
             'tyontekijamaara': 99,
             'tunniste': '070501A2296',
@@ -514,12 +545,13 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
 
+    @mock_date_decorator_factory('2020-12-01')
     def test_api_push_tilapainen_henkilosto_lahdejarjestelma_tunniste_not_unique(self):
         client = SetUpTestClient('tilapaiset_tallentaja').client()
 
         tilapainen_henkilosto_1 = {
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
-            'kuukausi': '2020-04-01',
+            'kuukausi': '2020-11-01',
             'tuntimaara': '50',
             'tyontekijamaara': 99,
             'tunniste': 'tunniste',
@@ -531,7 +563,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         tilapainen_henkilosto_2 = {
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
-            'kuukausi': '2020-05-01',
+            'kuukausi': '2020-12-01',
             'tuntimaara': '47.53',
             'tyontekijamaara': 5,
             'tunniste': 'tunniste',
@@ -541,12 +573,13 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp_2 = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto_2)
         assert_status_code(resp_2, status.HTTP_400_BAD_REQUEST)
 
+    @mock_date_decorator_factory('2020-12-01')
     def test_api_push_tilapainen_henkilosto_double_month(self):
         client = SetUpTestClient('tilapaiset_tallentaja').client()
 
         tilapainen_henkilosto_1 = {
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
-            'kuukausi': '2020-04-01',
+            'kuukausi': '2020-12-01',
             'tuntimaara': '50',
             'tyontekijamaara': 99,
             'tunniste': 'tunniste',
@@ -558,7 +591,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         tilapainen_henkilosto_2 = {
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
-            'kuukausi': '2020-04-02',
+            'kuukausi': '2020-12-02',
             'tuntimaara': '47.53',
             'tyontekijamaara': 5,
             'tunniste': 'tunniste2',
@@ -568,12 +601,13 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp_2 = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto_2)
         assert_status_code(resp_2, status.HTTP_400_BAD_REQUEST)
 
+    @mock_date_decorator_factory('2020-12-01')
     def test_api_put_tilapainen_henkilosto_vakajarjestaja_edit(self):
         client = SetUpTestClient('tilapaiset_tallentaja').client()
 
         tilapainen_henkilosto = {
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
-            'kuukausi': '2020-04-01',
+            'kuukausi': '2020-12-01',
             'tuntimaara': '47.53',
             'tyontekijamaara': 5,
             'tunniste': 'tunniste',
@@ -590,12 +624,13 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp_edit = client.patch(json.loads(resp.content)['url'], tilapainen_henkilosto_edit)
         assert_status_code(resp_edit, status.HTTP_400_BAD_REQUEST)
 
+    @mock_date_decorator_factory('2020-12-01')
     def test_api_put_tilapainen_henkilosto_vakajarjestaja_edit_oid(self):
         client = SetUpTestClient('tilapaiset_tallentaja').client()
 
         tilapainen_henkilosto = {
             'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
-            'kuukausi': '2020-04-01',
+            'kuukausi': '2020-12-01',
             'tuntimaara': '47.53',
             'tyontekijamaara': 5,
             'tunniste': 'tunniste',
@@ -612,12 +647,13 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp_edit = client.patch(json.loads(resp.content)['url'], tilapainen_henkilosto_edit)
         assert_status_code(resp_edit, status.HTTP_400_BAD_REQUEST)
 
+    @mock_date_decorator_factory('2020-12-01')
     def test_api_push_tilapainen_henkilosto_tuntimaara_is_zero(self):
         client = SetUpTestClient('tilapaiset_tallentaja').client()
 
         tilapainen_henkilosto = {
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
-            'kuukausi': '2020-03-31',
+            'kuukausi': '2020-12-31',
             'tyontekijamaara': 5,
             'tuntimaara': 0,
             'lahdejarjestelma': '1',
@@ -627,12 +663,13 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
 
+    @mock_date_decorator_factory('2020-12-01')
     def test_api_push_tilapainen_henkilosto_tyontekijamaara_is_zero(self):
         client = SetUpTestClient('tilapaiset_tallentaja').client()
 
         tilapainen_henkilosto = {
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
-            'kuukausi': '2020-03-31',
+            'kuukausi': '2020-12-31',
             'tyontekijamaara': 0,
             'tuntimaara': 5,
             'lahdejarjestelma': '1',
@@ -642,12 +679,13 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
 
+    @mock_date_decorator_factory('2020-12-01')
     def test_api_push_tilapainen_henkilosto_tyontekijamaara_and_tuntimaara_is_zero(self):
         client = SetUpTestClient('tilapaiset_tallentaja').client()
 
         tilapainen_henkilosto = {
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
-            'kuukausi': '2020-04-01',
+            'kuukausi': '2020-12-01',
             'tyontekijamaara': 0,
             'tuntimaara': 0,
             'lahdejarjestelma': '1',
@@ -657,13 +695,14 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
         assert_status_code(resp, status.HTTP_201_CREATED)
 
+    @mock_date_decorator_factory('2020-12-01')
     def test_api_tilapainen_henkilosto_filter(self):
         vakajarjestaja_oid = '1.2.246.562.10.34683023489'
         vakajarjestaja_id = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid).id
 
         tilapainen_henkilosto = {
             'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
-            'kuukausi': '2020-04-01',
+            'kuukausi': '2020-12-01',
             'tuntimaara': '47.53',
             'tyontekijamaara': 5,
             'tunniste': 'tunniste',
@@ -674,16 +713,16 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
         assert_status_code(resp, status.HTTP_201_CREATED)
 
-        correct_queries_1 = ['?vakajarjestaja={0}&vuosi=2020&kuukausi=3'.format(vakajarjestaja_id),
-                             '?vakajarjestaja={0}&vuosi=2020&kuukausi=3'.format(vakajarjestaja_oid),
-                             '?vuosi=2020&kuukausi=3', '?kuukausi=3']
+        correct_queries_1 = ['?vakajarjestaja={0}&vuosi=2020&kuukausi=9'.format(vakajarjestaja_id),
+                             '?vakajarjestaja={0}&vuosi=2020&kuukausi=9'.format(vakajarjestaja_oid),
+                             '?vuosi=2020&kuukausi=9', '?kuukausi=9']
 
         correct_queries_2 = ['?vakajarjestaja={0}'.format(vakajarjestaja_oid),
                              '?vakajarjestaja={0}'.format(vakajarjestaja_id), '?vuosi=2020']
 
-        incorrect_queries = ['?vakajarjestaja=999', '?vakajarjestaja=test', '?vuosi=2020&kuukausi=5',
-                             '?vakajarjestaja={0}&vuosi=2020&kuukausi=2'.format(vakajarjestaja_id),
-                             '?vuosi=2019', '?kuukausi=5']
+        incorrect_queries = ['?vakajarjestaja=999', '?vakajarjestaja=test', '?vuosi=2020&kuukausi=10',
+                             '?vakajarjestaja={0}&vuosi=2020&kuukausi=11'.format(vakajarjestaja_id),
+                             '?vuosi=2021', '?kuukausi=11']
 
         for query in correct_queries_1:
             resp_filter_correct = client.get('/api/henkilosto/v1/tilapainen-henkilosto/' + query)
@@ -704,6 +743,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp_filter_error = client.get('/api/henkilosto/v1/tilapainen-henkilosto/?kuukausi=2020-03-32')
         assert_status_code(resp_filter_error, status.HTTP_400_BAD_REQUEST)
 
+    @mock_date_decorator_factory('2020-09-01')
     def test_tilapainen_henkilosto_lahdejarjestelma_tunniste_get_put_patch_delete(self):
         lahdejarjestelma = '1'
         tunniste = 'testing-tilapainenhenkilosto1'
@@ -721,7 +761,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         tilapainen_henkilosto_put = {
             'vakajarjestaja': f'/api/v1/vakajarjestajat/{tilapainen_henkilosto.vakajarjestaja.id}/',
-            'kuukausi': '2020-03-01',
+            'kuukausi': '2020-09-01',
             'tuntimaara': '50',
             'tyontekijamaara': 40,
             'lahdejarjestelma': '1',
@@ -743,10 +783,44 @@ class VardaHenkilostoViewSetTests(TestCase):
         self.assertFalse(TilapainenHenkilosto.objects.filter(id=tilapainen_henkilosto.id).exists())
 
     @patch('varda.serializers_henkilosto.datetime')
-    def test_api_push_tilapainen_henkilosto_kuukausi_in_future(self, mock_datetime):
-        # Freeze date used in validation
-        mock_datetime.date.today.return_value = date(2020, 9, 1)
+    def test_api_push_tilapainen_henkilosto_kuukausi_in_allowed_period(self, mock_datetime):
+        mock_datetime.date = MagicMock(side_effect=_date_side_effect)
+        mock_datetime.timedelta = MagicMock(side_effect=_timedelta_side_effect)
 
+        client = SetUpTestClient('tilapaiset_tallentaja').client()
+
+        tilapainen_henkilosto = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'tuntimaara': '0.00',
+            'tyontekijamaara': 0,
+            'lahdejarjestelma': '1'
+        }
+
+        # Freeze date used in validation (period 1)
+        invalid_dates_period_1 = ('2021-06-01', '2022-07-01', '2022-12-01', '2020-01-01', '2023-01-01',)
+        valid_dates_period_1 = ('2021-07-01', '2021-12-01', '2022-01-01', '2022-06-01',)
+
+        # Freeze date used in validation (period 2)
+        invalid_dates_period_2 = ('2021-12-01', '2023-01-01', '2023-06-01', '2020-01-01',)
+        valid_dates_period_2 = ('2022-07-01', '2022-02-01', '2022-12-01')
+
+        test_cases = ((datetime.date(2022, 1, 1), invalid_dates_period_1, valid_dates_period_1,),
+                      (datetime.date(2022, 7, 1), invalid_dates_period_2, valid_dates_period_2),)
+
+        for test_case in test_cases:
+            mock_datetime.date.today.return_value = test_case[0]
+            for invalid_case in test_case[1]:
+                tilapainen_henkilosto['kuukausi'] = invalid_case
+                resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+                assert_status_code(resp, status.HTTP_400_BAD_REQUEST, f'{test_case[0], invalid_case}')
+                assert_validation_error(resp, 'kuukausi', 'TH007', 'TilapainenHenkilosto can be saved for either the previous, or the current period.')
+            for valid_case in test_case[2]:
+                tilapainen_henkilosto['kuukausi'] = valid_case
+                resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+                assert_status_code(resp, status.HTTP_201_CREATED, f'{test_case[0], valid_case}')
+
+    @mock_date_decorator_factory('2020-09-01')
+    def test_api_push_tilapainen_henkilosto_in_advance(self):
         client = SetUpTestClient('tilapaiset_tallentaja').client()
 
         tilapainen_henkilosto = {
@@ -759,7 +833,23 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp, 'kuukausi', 'TH006', 'kuukausi must be in the past.')
+        assert_validation_error(resp, 'errors', 'TH009', 'tuntimaara and tyontekijamaara must be 0 if TilapainenHenkilosto is saved in advance.')
+
+    @mock_date_decorator_factory('2020-09-01')
+    def test_api_push_tilapainen_henkilosto_before_2020_09(self):
+        client = SetUpTestClient('tilapaiset_tallentaja').client()
+
+        tilapainen_henkilosto = {
+            'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
+            'kuukausi': '2020-08-01',
+            'tuntimaara': '50',
+            'tyontekijamaara': 99,
+            'lahdejarjestelma': '1'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'kuukausi', 'TH008', 'kuukausi must be equal to or after 2020-09-01.')
 
     def test_api_push_tutkinto_correct(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()

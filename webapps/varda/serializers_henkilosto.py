@@ -144,7 +144,7 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
             if self.context['request'].method == 'POST':
                 self.verify_unique_month(data, validator)
                 self.validate_workers_and_working_hours(data, validator)
-                self.validate_date_not_in_future(data, validator)
+                self.validate_date_in_allowed_period(data, validator)
                 with validator.wrap():
                     self.validate_date_within_vakajarjestaja(data, validator)
 
@@ -169,9 +169,9 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
     def validate_date_within_vakajarjestaja(self, data, validator):
         vakajarjestaja = data['vakajarjestaja']
         kuukausi = data['kuukausi']
-        if kuukausi < vakajarjestaja.alkamis_pvm:
+        if kuukausi < self._get_first_day_of_month(vakajarjestaja.alkamis_pvm):
             validator.error('kuukausi', ErrorMessages.TH002.value)
-        if vakajarjestaja.paattymis_pvm is not None and kuukausi > vakajarjestaja.paattymis_pvm:
+        if vakajarjestaja.paattymis_pvm is not None and kuukausi > self._get_last_day_of_month(vakajarjestaja.paattymis_pvm):
             validator.error('kuukausi', ErrorMessages.TH003.value)
 
     def validate_workers_and_working_hours(self, data, validator):
@@ -182,10 +182,38 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
         if tyontekijat_count != 0 and hours_count == 0:
             validator.error('tyontekijamaara', ErrorMessages.TH005.value)
 
-    def validate_date_not_in_future(self, data, validator):
+        future_limit = self._get_last_day_of_month(datetime.date.today())
+
+        if data['kuukausi'] > future_limit and (tyontekijat_count != 0 or hours_count != 0):
+            validator.error('errors', ErrorMessages.TH009.value)
+
+    def validate_date_in_allowed_period(self, data, validator):
         kuukausi = data['kuukausi']
-        if kuukausi > datetime.date.today():
-            validator.error('kuukausi', ErrorMessages.TH006.value)
+
+        if kuukausi < datetime.date(year=2020, month=9, day=1):
+            validator.error('kuukausi', ErrorMessages.TH008.value)
+
+        today = datetime.date.today()
+
+        # TilapainenHenkilosto can be saved for the current, and the previous period
+        if today.month < 7:
+            upper_limit = today.replace(month=6, day=30)
+            lower_limit = today.replace(year=today.year - 1, month=7, day=1)
+        else:
+            upper_limit = today.replace(month=12, day=31)
+            lower_limit = today.replace(month=1, day=1)
+
+        if kuukausi < lower_limit or kuukausi > upper_limit:
+            validator.error('kuukausi', ErrorMessages.TH007.value)
+
+    def _get_first_day_of_month(self, date):
+        return date.replace(day=1)
+
+    def _get_last_day_of_month(self, date):
+        if date.month == 12:
+            return date.replace(day=31)
+        else:
+            return date.replace(month=date.month + 1, day=1) - datetime.timedelta(days=1)
 
 
 class TutkintoSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
