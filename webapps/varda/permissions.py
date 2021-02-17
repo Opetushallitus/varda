@@ -20,10 +20,8 @@ from varda.models import (VakaJarjestaja, Toimipaikka, Lapsi, Varhaiskasvatuspaa
                           PaosToiminta, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog,
                           Maksutieto, Tyontekija, Tyoskentelypaikka, PidempiPoissaolo, TaydennyskoulutusTyontekija)
 from varda.permission_groups import assign_object_level_permissions, remove_object_level_permissions
-
-
-# Get an instance of a logger
 from varda.related_object_validations import toimipaikka_is_valid_to_organisaatiopalvelu
+
 
 logger = logging.getLogger(__name__)
 
@@ -655,12 +653,15 @@ def user_belongs_to_correct_groups(field, user, field_object):
                 # User can also have permissions to Toimipaikka of specified VakaJarjestaja
                 toimipaikka_oid_list = list(field_object.toimipaikat.values_list('organisaatio_oid', flat=True))
                 oid_list = oid_list + toimipaikka_oid_list
-
-        group_name_list = [f'{group}_{oid}' for oid in oid_list for group in field.permission_groups]
-        return user.groups.filter(name__in=group_name_list).exists()
+        return user_belongs_to_at_least_one_group(user, oid_list, field.permission_groups)
     else:
         # User is admin, oph_staff or permission groups not specified
         return True
+
+
+def user_belongs_to_at_least_one_group(user, oid_list, permission_group_list):
+    group_name_list = [f'{group}_{oid}' for oid in oid_list for group in permission_group_list]
+    return user.groups.filter(name__in=group_name_list).exists()
 
 
 def get_vakajarjestajat_filter_for_raportit(request):
@@ -700,3 +701,37 @@ def is_oph_staff(user):
     """
     additional_details = getattr(user, 'additional_user_info', None)
     return getattr(additional_details, 'approved_oph_staff', False)
+
+
+def parse_toimipaikka_id_list(user, toimipaikka_ids_string, required_permission_groups, include_paos=False):
+    """
+    Return parsed list of toimipaikka ids based on user permissions
+    :param user: request user
+    :param toimipaikka_ids_string: comma separated string of ids
+    :param required_permission_groups: list of permission groups that user must belong to under toimipaikka or
+                                       vakajarjestaja of toimipaikka
+    :param include_paos: boolean to determine if user can also have permissions to Vakajarjestaja
+                         linked via PAOS to toimipaikka
+    :return: verified list of toimipaikka ids
+    """
+    toimipaikka_id_list = []
+    toimipaikka_ids_splitted = toimipaikka_ids_string.split(',')
+    for toimipaikka_id in toimipaikka_ids_splitted:
+        if not toimipaikka_id.isdigit():
+            continue
+        toimipaikka = Toimipaikka.objects.filter(pk=toimipaikka_id).first()
+        if not toimipaikka or not user.has_perm('view_toimipaikka', toimipaikka):
+            continue
+
+        oid_list = [toimipaikka.organisaatio_oid, toimipaikka.vakajarjestaja.organisaatio_oid]
+
+        if include_paos:
+            paos_oid_list = set(PaosToiminta.objects.filter(Q(paos_toimipaikka=toimipaikka) & Q(voimassa_kytkin=True))
+                                .values_list('oma_organisaatio__organisaatio_oid', flat=True))
+            oid_list.extend(paos_oid_list)
+
+        if (user.is_superuser or is_oph_staff(user) or
+                user_belongs_to_at_least_one_group(user, oid_list, required_permission_groups)):
+            toimipaikka_id_list.append(toimipaikka_id)
+
+    return toimipaikka_id_list

@@ -41,6 +41,7 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
     tutkinto: CodeDTO;
     tehtavanimikeTaydennyskoulutus: CodeDTO;
     kiertava: boolean;
+    tyosuhde: CodeDTO;
   } = {
     rajaus: this.rajaus.PALVELUSSUHTEET,
     voimassaolo: this.voimassaolo.VOIMASSA,
@@ -49,7 +50,8 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
     tehtavanimike: null,
     tutkinto: null,
     tehtavanimikeTaydennyskoulutus: null,
-    kiertava: false
+    kiertava: false,
+    tyosuhde: null
   };
 
   isRajausFiltersInactive = false;
@@ -59,6 +61,8 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
 
   tutkinnot: Array<CodeDTO> = [];
   filteredTutkintoOptions: BehaviorSubject<Array<CodeDTO>> = new BehaviorSubject([]);
+
+  tyosuhteet: Array<CodeDTO> = [];
 
   isVakajarjestajaTyontekijaPermission = false;
 
@@ -81,12 +85,14 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
     this.search();
     forkJoin([
       this.getKoodistoFromKoodistoService(this.koodistoEnum.tehtavanimike),
-      this.getKoodistoFromKoodistoService(this.koodistoEnum.tutkinto)
-    ]).subscribe(data => {
-      this.tehtavanimikkeet = (<KoodistoDTO>data[0]).codes;
+      this.getKoodistoFromKoodistoService(this.koodistoEnum.tutkinto),
+      this.getKoodistoFromKoodistoService(this.koodistoEnum.tyosuhde)
+    ]).subscribe((data: Array<KoodistoDTO>) => {
+      this.tehtavanimikkeet = data[0].codes;
       this.filteredTehtavanimikeOptions.next(this.tehtavanimikkeet);
-      this.tutkinnot = (<KoodistoDTO>data[1]).codes;
+      this.tutkinnot = data[1].codes;
       this.filteredTutkintoOptions.next(this.tutkinnot);
+      this.tyosuhteet = data[2].codes;
     });
     this.isVakajarjestajaTyontekijaPermission = this.authService.getUserAccess().tyontekijatiedot.katselija;
   }
@@ -132,6 +138,10 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
 
     if (!this.isAllToimipaikatSelected && !this.filterParams.kiertava) {
       searchParams['toimipaikat'] = this.selectedToimipaikat.map(toimipaikka => toimipaikka.id).join(',');
+    }
+
+    if (this.filterParams.tyosuhde) {
+      searchParams['tyosuhde'] = this.filterParams.tyosuhde.code_value;
     }
 
     this.updateFilterString();
@@ -185,6 +195,7 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
   clearFilters() {
     this.filterParams.tehtavanimike = null;
     this.filterParams.tutkinto = null;
+    this.filterParams.tyosuhde = null;
     this.isFiltersInactive = true;
     this.clearRajausFilter();
     this.search();
@@ -192,7 +203,7 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
 
   isFiltersFilled(): boolean {
     return this.isRajausFiltersFilled() || (this.filterParams.rajaus === this.rajaus.NONE &&
-      (this.filterParams.tehtavanimike !== null || this.filterParams.tutkinto !== null));
+      (this.filterParams.tehtavanimike !== null || this.filterParams.tutkinto !== null || this.filterParams.tyosuhde !== null));
   }
 
   isRajausFiltersFilled(): boolean {
@@ -209,7 +220,7 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
       if (this.filterParams.rajaus !== this.rajaus.TAYDENNYSKOULUTUKSET) {
         stringParams.push({ value: this.filterParams.voimassaolo, type: FilterStringType.TRANSLATED_STRING, lowercase: true });
       } else {
-        stringParams.push({ value: this.filterParams.tehtavanimikeTaydennyskoulutus?.code_value, type: FilterStringType.RAW });
+        stringParams.push({ value: this.getCodeUiString(this.filterParams.tehtavanimikeTaydennyskoulutus), type: FilterStringType.RAW, lowercase: true });
       }
       if (this.filterParams.alkamisPvm && this.filterParams.paattymisPvm) {
         stringParams.push({ value: 'aikavali', type: FilterStringType.TRANSLATED_STRING, lowercase: true });
@@ -223,9 +234,10 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
     }
 
     if (this.filterParams.rajaus !== this.rajaus.TAYDENNYSKOULUTUKSET) {
-      stringParams.push({ value: this.filterParams.tehtavanimike?.code_value, type: FilterStringType.RAW });
+      stringParams.push({ value: this.getCodeUiString(this.filterParams.tehtavanimike), type: FilterStringType.RAW, lowercase: true });
     }
-    stringParams.push({ value: this.filterParams.tutkinto?.code_value, type: FilterStringType.RAW });
+    stringParams.push({ value: this.getCodeUiString(this.filterParams.tutkinto), type: FilterStringType.RAW, lowercase: true });
+    stringParams.push({ value: this.filterParams.tyosuhde?.name, type: FilterStringType.RAW, lowercase: true });
 
     setTimeout(() => {
       this.filterString = this.getFilterString(stringParams);

@@ -1,6 +1,5 @@
 import datetime
 
-from django.db.models import Q
 from rest_framework import serializers
 
 from varda import validators
@@ -12,7 +11,7 @@ from varda.models import (Henkilo, TilapainenHenkilosto, Tutkinto, Tyontekija, V
                           Taydennyskoulutus, Z4_CasKayttoOikeudet)
 from varda.permissions import (is_correct_taydennyskoulutus_tyontekija_permission,
                                filter_authorized_taydennyskoulutus_tyontekijat, permission_groups_in_organization,
-                               get_permission_checked_pidempi_poissaolo_katselija_queryset_for_user)
+                               is_oph_staff)
 from varda.related_object_validations import (create_date_range, date_range_overlap,
                                               check_if_admin_mutable_object_is_changed, check_overlapping_palvelussuhde,
                                               check_overlapping_tyoskentelypaikka, check_overlapping_pidempi_poissaolo,
@@ -790,26 +789,7 @@ class TyontekijaKoosteTyoskentelypaikkaSerializer(serializers.ModelSerializer):
                   'tunniste', 'muutos_pvm')
 
     def to_representation(self, instance):
-        """
-        Override to_representation so we can filter tyoskentelypaikat based on user permissions
-        :param instance: all tyoskentelypaikat of palvelussuhde
-        :return: list of tyoskentelypaikat user has permissions to
-        """
-        if not instance.exists():
-            return []
-
-        user = self.context['request'].user
-        vakajarjestaja_oid = instance.first().palvelussuhde.tyontekija.vakajarjestaja.organisaatio_oid
-        tyontekija_organization_groups_qs = permission_groups_in_organization(user, vakajarjestaja_oid,
-                                                                              [Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
-                                                                               Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA])
-        if not user.is_superuser and not tyontekija_organization_groups_qs.exists():
-            instance = instance.filter(Q(id__in=get_object_ids_for_user_by_model(user, 'tyoskentelypaikka')))
-
-        filtered_list = []
-        for tyoskentelypaikka in instance.all():
-            filtered_list.append(super(TyontekijaKoosteTyoskentelypaikkaSerializer, self).to_representation(tyoskentelypaikka))
-        return filtered_list
+        return _get_permission_checked_henkilosto_tyontekija_objects(self, instance)
 
 
 class TyontekijaKoostePidempiPoissaoloSerializer(serializers.ModelSerializer):
@@ -818,16 +798,38 @@ class TyontekijaKoostePidempiPoissaoloSerializer(serializers.ModelSerializer):
         fields = ('id', 'alkamis_pvm', 'paattymis_pvm', 'lahdejarjestelma', 'tunniste', 'muutos_pvm')
 
     def to_representation(self, instance):
-        user = self.context['request'].user
-        data = get_permission_checked_pidempi_poissaolo_katselija_queryset_for_user(user)
-        if not data.exists():
-            return []
-        return super(TyontekijaKoostePidempiPoissaoloSerializer, self).to_representation(data.filter(id=instance.id).first())
+        return _get_permission_checked_henkilosto_tyontekija_objects(self, instance)
+
+
+def _get_permission_checked_henkilosto_tyontekija_objects(serializer_instance, queryset):
+    """
+    Override to_representation so we can filter Tyoskentelypaikka and PidempiPoissaolo objects based on user permissions
+    :param serializer_instance: serializer instance
+    :param queryset: unfiltered list of object instances
+    :return: list of objects user actually has permissions to
+    """
+    if not queryset.exists():
+        return []
+
+    user = serializer_instance.context['request'].user
+    vakajarjestaja_oid = queryset.first().palvelussuhde.tyontekija.vakajarjestaja.organisaatio_oid
+
+    tyontekija_groups_qs = permission_groups_in_organization(user, vakajarjestaja_oid,
+                                                             [Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
+                                                              Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA])
+    if not user.is_superuser and not is_oph_staff(user) and not tyontekija_groups_qs.exists():
+        model_name = queryset.model.__name__.lower()
+        queryset = queryset.filter(id__in=get_object_ids_for_user_by_model(user, model_name))
+
+    filtered_list = []
+    for instance in queryset.all():
+        filtered_list.append(super(serializer_instance.__class__, serializer_instance).to_representation(instance))
+    return filtered_list
 
 
 class TyontekijaKoostePalvelussuhdeSerializer(serializers.ModelSerializer):
     tyoskentelypaikat = TyontekijaKoosteTyoskentelypaikkaSerializer()
-    pidemmatpoissaolot = TyontekijaKoostePidempiPoissaoloSerializer(many=True)
+    pidemmatpoissaolot = TyontekijaKoostePidempiPoissaoloSerializer()
 
     class Meta:
         model = Palvelussuhde

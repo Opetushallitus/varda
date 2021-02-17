@@ -2980,6 +2980,7 @@ class VardaViewsTests(TestCase):
             'kielipainotukset_maara': 2,
             'tyontekijat_lkm': 1,
             'palvelussuhteet_voimassaoleva': 1,
+            'palvelussuhteet_maaraaikaiset': 0,
             'varhaiskasvatusalan_tutkinnot': 1,
             'tyoskentelypaikat_kelpoiset': 2,
             'taydennyskoulutukset_kuluva_vuosi': 0,

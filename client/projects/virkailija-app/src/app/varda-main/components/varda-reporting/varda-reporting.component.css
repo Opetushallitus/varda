@@ -366,6 +366,12 @@ tr.selected-row .mat-cell {
   }
 }
 
+@media (max-width: 991px) {
+  .margin-top-lg {
+    margin-top: 1em;
+  }
+}
+
 @media (max-width: 767px) {
   .filter-clear {
     width: 100%;

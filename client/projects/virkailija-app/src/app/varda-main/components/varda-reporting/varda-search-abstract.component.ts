@@ -108,7 +108,10 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
     return this.koodistoService.getKoodisto(name);
   }
 
-  getCodeUiString(code: CodeDTO): string {
+  getCodeUiString(code: CodeDTO | null): string {
+    if (!code) {
+      return null;
+    }
     return `${code.name} (${code.code_value})`;
   }
 

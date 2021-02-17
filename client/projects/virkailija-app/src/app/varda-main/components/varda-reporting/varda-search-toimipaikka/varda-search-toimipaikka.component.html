@@ -36,9 +36,9 @@
                     id="toimintamuotoSelect"
                     (change)="search()"
                     [(ngModel)]="filterParams.toimintamuoto">
-              <option value="">{{i18n.katsele_tietoja_toimipaikka_toimintamuoto_all | translate}}</option>
+              <option [ngValue]="null">{{i18n.katsele_tietoja_toimipaikka_toimintamuoto_all | translate}}</option>
               <option *ngFor="let code of (getKoodistoFromKoodistoService(koodistoEnum.toimintamuoto) | async)?.codes"
-                      [ngValue]="code.code_value"
+                      [ngValue]="code"
                       [title]="getCodeUiString(code)">
                 {{getCodeUiString(code)}}
               </option>
@@ -54,9 +54,9 @@
                     id="jarjestamismuotoSelect"
                     (change)="search()"
                     [(ngModel)]="filterParams.jarjestamismuoto">
-              <option value="">{{i18n.katsele_tietoja_toimipaikka_jarjestamismuoto_all | translate}}</option>
+              <option [ngValue]="null">{{i18n.katsele_tietoja_toimipaikka_jarjestamismuoto_all | translate}}</option>
               <option *ngFor="let code of (getKoodistoFromKoodistoService(koodistoEnum.jarjestamismuoto) | async)?.codes"
-                      [ngValue]="code.code_value"
+                      [ngValue]="code"
                       [title]="getCodeUiString(code)">
                 {{getCodeUiString(code)}}
               </option>

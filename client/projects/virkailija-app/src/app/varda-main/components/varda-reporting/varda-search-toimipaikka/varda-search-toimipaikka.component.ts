@@ -5,7 +5,7 @@ import {
   FilterStringType,
   VardaSearchAbstractComponent
 } from '../varda-search-abstract.component';
-import { VardaKoodistoService } from 'varda-shared';
+import { CodeDTO, VardaKoodistoService } from 'varda-shared';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { TranslateService } from '@ngx-translate/core';
 import * as moment from 'moment';
@@ -26,12 +26,12 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
   };
 
   filterParams: {
-    toimintamuoto: string;
-    jarjestamismuoto: string;
+    toimintamuoto: CodeDTO;
+    jarjestamismuoto: CodeDTO;
     voimassaolo: string;
   } = {
-      toimintamuoto: '',
-      jarjestamismuoto: '',
+      toimintamuoto: null,
+      jarjestamismuoto: null,
       voimassaolo: this.voimassaolo.KAIKKI
     };
 
@@ -62,11 +62,11 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
     if (this.searchValue) {
       searchParams['nimi'] = this.searchValue;
     }
-    if (this.filterParams.jarjestamismuoto !== '') {
-      searchParams['jarjestamismuoto_koodi'] = this.filterParams.jarjestamismuoto.toLowerCase();
+    if (this.filterParams.jarjestamismuoto) {
+      searchParams['jarjestamismuoto_koodi'] = this.filterParams.jarjestamismuoto.code_value.toLowerCase();
     }
-    if (this.filterParams.toimintamuoto !== '') {
-      searchParams['toimintamuoto_koodi'] = this.filterParams.toimintamuoto.toLowerCase();
+    if (this.filterParams.toimintamuoto) {
+      searchParams['toimintamuoto_koodi'] = this.filterParams.toimintamuoto.code_value.toLowerCase();
     }
 
     const today = moment().format('YYYY-MM-DD');
@@ -104,8 +104,8 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
       stringParams.push({ value: this.filterParams.voimassaolo, type: FilterStringType.TRANSLATED_STRING });
     }
 
-    stringParams.push({ value: this.filterParams.toimintamuoto, type: FilterStringType.RAW });
-    stringParams.push({ value: this.filterParams.jarjestamismuoto, type: FilterStringType.RAW });
+    stringParams.push({ value: this.getCodeUiString(this.filterParams.toimintamuoto), type: FilterStringType.RAW, lowercase: true });
+    stringParams.push({ value: this.getCodeUiString(this.filterParams.jarjestamismuoto), type: FilterStringType.RAW, lowercase: true });
 
     setTimeout(() => {
       this.filterString = this.getFilterString(stringParams);
@@ -114,13 +114,13 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
 
   isFiltersFilled(): boolean {
     return this.filterParams.voimassaolo !== this.voimassaolo.KAIKKI ||
-      this.filterParams.jarjestamismuoto !== '' || this.filterParams.toimintamuoto !== '';
+      this.filterParams.jarjestamismuoto !== null || this.filterParams.toimintamuoto !== null;
   }
 
   clearFilters(): void {
     this.filterParams.voimassaolo = this.voimassaolo.KAIKKI;
-    this.filterParams.toimintamuoto = '';
-    this.filterParams.jarjestamismuoto = '';
+    this.filterParams.toimintamuoto = null;
+    this.filterParams.jarjestamismuoto = null;
     this.isFiltersInactive = true;
     this.search();
   }

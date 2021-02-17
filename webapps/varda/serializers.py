@@ -1150,6 +1150,7 @@ class VakaJarjestajaYhteenvetoSerializer(serializers.Serializer):
     kielipainotukset_maara = serializers.IntegerField(read_only=True)
     tyontekijat_lkm = serializers.IntegerField(read_only=True)
     palvelussuhteet_voimassaoleva = serializers.IntegerField(read_only=True)
+    palvelussuhteet_maaraaikaiset = serializers.IntegerField(read_only=True)
     varhaiskasvatusalan_tutkinnot = serializers.IntegerField(read_only=True)
     tyoskentelypaikat_kelpoiset = serializers.IntegerField(read_only=True)
     taydennyskoulutukset_kuluva_vuosi = serializers.IntegerField(read_only=True)

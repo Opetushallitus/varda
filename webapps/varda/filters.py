@@ -15,8 +15,9 @@ from varda.enums.koodistot import Koodistot
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
                           Maksutieto, PaosToiminta, PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
                           TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
-                          PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Z2_Code)
-from varda.misc import parse_toimipaikka_id_list
+                          PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Z2_Code,
+                          Z4_CasKayttoOikeudet)
+from varda.permissions import parse_toimipaikka_id_list
 
 
 class CustomCharFilter(djangofilters.CharFilter):
@@ -459,7 +460,12 @@ class UiTyontekijaFilter(djangofilters.FilterSet):
 
         tyontekija_filter = Q()
 
-        toimipaikka_id_list = parse_toimipaikka_id_list(user, query_params.get('toimipaikat', ''))
+        required_permission_groups = (Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
+                                      Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
+                                      Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
+                                      Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,)
+        toimipaikka_id_list = parse_toimipaikka_id_list(user, query_params.get('toimipaikat', ''),
+                                                        required_permission_groups)
         if len(toimipaikka_id_list) > 0:
             tyontekija_filter = Q(palvelussuhteet__tyoskentelypaikat__toimipaikka__id__in=toimipaikka_id_list)
         tyontekija_filter = self.apply_kiertava_filter(tyontekija_filter)
@@ -471,6 +477,10 @@ class UiTyontekijaFilter(djangofilters.FilterSet):
         tutkinto_arg = query_params.get('tutkinto', None)
         if tutkinto_arg:
             tyontekija_filter = tyontekija_filter & Q(palvelussuhteet__tutkinto_koodi__iexact=tutkinto_arg)
+
+        tyosuhde_arg = query_params.get('tyosuhde', None)
+        if tyosuhde_arg:
+            tyontekija_filter = tyontekija_filter & Q(palvelussuhteet__tyosuhde_koodi__iexact=tyosuhde_arg)
 
         # Apply custom filters
         return queryset.filter(tyontekija_filter & self.get_rajaus_filters()).distinct('henkilo__sukunimi',

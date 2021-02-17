@@ -16,10 +16,10 @@ from time import sleep
 from urllib.parse import urlparse
 
 from varda.enums.error_messages import ErrorMessages
-from varda.models import Henkilo, Toimipaikka
+from varda.models import Henkilo
 from varda.oph_yhteiskayttopalvelu_autentikaatio import get_authentication_header, get_contenttype_header
 
-# Get an instance of a logger
+
 logger = logging.getLogger(__name__)
 
 
@@ -326,23 +326,3 @@ def update_all_vakajarjestaja_permissiongroups():
                                                       organisaatio_data=toimipaikka_data_dict.get(toimipaikka_oid))
             assign_permissions_to_toimipaikka_obj(toimipaikka_oid, vakajarjestaja_oid)
     logger.info('Finished setting toimipaikka permissions')
-
-
-def parse_toimipaikka_id_list(user, toimipaikka_ids_string):
-    """
-    Return parsed list of toimipaikka ids based on user permissions
-    :param user: request user
-    :param toimipaikka_ids_string: comma separated string of ids
-    :return:
-    """
-    toimipaikka_id_list = []
-    toimipaikka_ids_splitted = toimipaikka_ids_string.split(',')
-    for toimipaikka_id in toimipaikka_ids_splitted:
-        if not toimipaikka_id.isdigit():
-            continue
-        toimipaikka_qs = Toimipaikka.objects.filter(pk=toimipaikka_id)
-        if not toimipaikka_qs.exists() or not user.has_perm('view_toimipaikka', toimipaikka_qs.first()):
-            continue
-        toimipaikka_id_list.append(toimipaikka_id)
-
-    return toimipaikka_id_list

@@ -218,7 +218,7 @@
           </div>
           <div class="col-md-6 col-lg-4 margin-top-md">
             <label for="tyontekijaTutkintoInput"
-                   class="oph-bold">{{ i18n.tutkinto | translate }}</label>
+                   class="oph-bold">{{i18n.tutkinto | translate}}</label>
             <app-varda-autocomplete-selector [options]="tutkinnot"
                                              id="tyontekijaTutkintoInput"
                                              name="tyontekijaTutkintoInput"
@@ -231,7 +231,25 @@
                                              (ngModelChange)="autofillOnChange()">
             </app-varda-autocomplete-selector>
           </div>
-          <div class="col-md-12 col-lg-4 filter-clear-container">
+          <div class="col-md-6 col-lg-4 margin-top-lg">
+            <label for="tyontekijaTyosuhdeSelect"
+                   class="oph-bold">{{i18n.palvelussuhde_tyosuhde | translate}}</label>
+            <div class="oph-select-container">
+              <select class="oph-input oph-select"
+                      name="tyontekijaTyosuhdeSelect"
+                      id="tyontekijaTyosuhdeSelect"
+                      (change)="search()"
+                      [(ngModel)]="filterParams.tyosuhde">
+                <option [ngValue]="null">{{i18n.katsele_tietoja_tyontekija_tyosuhde_all | translate}}</option>
+                <option *ngFor="let code of tyosuhteet"
+                        [ngValue]="code"
+                        [title]="code.name">
+                  {{code.name}}
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-12 filter-clear-container">
             <button class="varda-button varda-icon-button filter-clear"
                     type="button"
                     (click)="clearFilters()"

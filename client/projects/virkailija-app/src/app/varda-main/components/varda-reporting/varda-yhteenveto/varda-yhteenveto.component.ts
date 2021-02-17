@@ -58,6 +58,7 @@ export class VardaYhteenvetoComponent implements OnInit {
       this.datasourceTyontekijat = [
         [this.i18n.yhteenveto_tyontekijat_lkm, yhteenveto.tyontekijat_lkm],
         [this.i18n.yhteenveto_palvelussuhteet_voimassaoleva, yhteenveto.palvelussuhteet_voimassaoleva],
+        [this.i18n.yhteenveto_palvelussuhteet_maaraaikaiset, yhteenveto.palvelussuhteet_maaraaikaiset],
         [this.i18n.yhteenveto_varhaiskasvatusalan_tutkinnot, yhteenveto.varhaiskasvatusalan_tutkinnot],
         [this.i18n.yhteenveto_tyoskentelypaikat_kelpoiset, yhteenveto.tyoskentelypaikat_kelpoiset],
         [this.i18n.yhteenveto_taydennyskoulutukset_kuluva_vuosi, yhteenveto.taydennyskoulutukset_kuluva_vuosi],

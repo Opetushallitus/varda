@@ -12,6 +12,7 @@ export class VardaVakajarjestajaYhteenvetoDTO {
   kielipainotukset_maara: number;
   tyontekijat_lkm: number;
   palvelussuhteet_voimassaoleva: number;
+  palvelussuhteet_maaraaikaiset: number;
   varhaiskasvatusalan_tutkinnot: number;
   tyoskentelypaikat_kelpoiset: number;
   taydennyskoulutukset_kuluva_vuosi: number;

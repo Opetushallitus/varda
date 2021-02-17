@@ -2355,6 +2355,7 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
                 'kielipainotukset_maara': self.get_toimipaikkojen_kielipainotukset(),
                 'tyontekijat_lkm': self.get_tyontekija_count(),
                 'palvelussuhteet_voimassaoleva': self.get_active_palvelussuhde_count(),
+                'palvelussuhteet_maaraaikaiset': self.get_active_palvelussuhde_maaraaikainen_count(),
                 'varhaiskasvatusalan_tutkinnot': self.get_vaka_tutkinto_count(),
                 'tyoskentelypaikat_kelpoiset': self.get_kelpoinen_tyoskentelypaikka_count(),
                 'taydennyskoulutukset_kuluva_vuosi': self.get_taydennyskoulutus_count_this_year(),
@@ -2552,6 +2553,15 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
         date_filter = self.get_active_filter('')
         vakajarjestaja_filter = Q(tyontekija__vakajarjestaja__id=self.vakajarjestaja_id)
         return Palvelussuhde.objects.filter(date_filter & vakajarjestaja_filter).distinct().count()
+
+    def get_active_palvelussuhde_maaraaikainen_count(self):
+        """
+        :return: number of active palvelussuhteet that have tyosuhde_koodi = 2 (maaraaikainen)
+        """
+        date_filter = self.get_active_filter('')
+        vakajarjestaja_filter = Q(tyontekija__vakajarjestaja_id=self.vakajarjestaja_id)
+        tyosuhde_filter = Q(tyosuhde_koodi=2)
+        return Palvelussuhde.objects.filter(date_filter & vakajarjestaja_filter & tyosuhde_filter).distinct().count()
 
     def get_taydennyskoulutus_count_this_year(self):
         """

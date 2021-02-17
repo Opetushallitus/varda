@@ -20,7 +20,6 @@ from varda import filters
 from varda.cache import create_cache_key, get_object_ids_user_has_permissions
 from varda.cas.varda_permissions import IsVardaPaakayttaja
 from varda.filters import TyontekijahakuUiFilter
-from varda.misc import parse_toimipaikka_id_list
 from varda.misc_queries import get_paos_toimipaikat
 from varda.misc_viewsets import ExtraKwargsFilterBackend
 from varda.models import (Toimipaikka, VakaJarjestaja, PaosToiminta, PaosOikeus, Lapsi, Henkilo,
@@ -30,7 +29,7 @@ from varda.permissions import (CustomObjectPermissions, get_taydennyskoulutus_ty
                                get_toimipaikat_group_has_access, get_organisaatio_oids_from_groups,
                                HenkilostohakuPermissions, LapsihakuPermissions, auditlog, auditlogclass,
                                permission_groups_in_organization, get_tyontekija_filters_for_taydennyskoulutus_groups,
-                               user_has_vakajarjestaja_level_permission, is_oph_staff)
+                               user_has_vakajarjestaja_level_permission, is_oph_staff, parse_toimipaikka_id_list)
 from varda.serializers import PaosToimipaikkaSerializer, PaosVakaJarjestajaSerializer
 from varda.serializers_ui import (VakaJarjestajaUiSerializer, ToimipaikkaUiSerializer, UiLapsiSerializer,
                                   TyontekijaHenkiloUiSerializer, LapsihakuHenkiloUiSerializer,
@@ -446,7 +445,12 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
         vakajarjestaja_obj = parse_vakajarjestaja(user, kwargs['vakajarjestaja_pk'])
         self.vakajarjestaja_id = vakajarjestaja_obj.id
         self.vakajarjestaja_oid = vakajarjestaja_obj.organisaatio_oid
-        self.toimipaikka_id_list = parse_toimipaikka_id_list(user, request.query_params.get('toimipaikat', ''))
+
+        required_permission_groups = (Z4_CasKayttoOikeudet.KATSELIJA, Z4_CasKayttoOikeudet.TALLENTAJA,
+                                      Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
+                                      Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,)
+        self.toimipaikka_id_list = parse_toimipaikka_id_list(user, request.query_params.get('toimipaikat', ''),
+                                                             required_permission_groups, include_paos=True)
 
         """
         We can differentiate results based on e.g. user-id, and this is needed since queryset
@@ -488,7 +492,7 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
         vakajärjestäjän ID:n
 
         Työntekijöitä voi suodattaa etu- ja sukunimien, OID:n tai henkilötunnuksen mukaan,
-        sekä palvelussuhteen alkamis- ja päättymispäivämäärien, tehtävänimikkeen ja tutkinnon perusteella
+        sekä palvelussuhteen alkamis- ja päättymispäivämäärien, tehtävänimikkeen, tutkinnon ja työsuhteen perusteella
 
         Henkilötunnus täytyy olla SHA-256 hash heksadesimaalimuodossa (utf-8 enkoodatusta tekstistä)
 
@@ -501,6 +505,7 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
         paattymis_pvm=YYYY-mm-dd
         tehtavanimike=str
         tutkinto=str
+        tyosuhde=str
     """
     filter_backends = (ExtraKwargsFilterBackend, SearchFilter,)
     filterset_class = filters.UiTyontekijaFilter
