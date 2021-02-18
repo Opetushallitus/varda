@@ -302,3 +302,4 @@ class ErrorMessages(enum.Enum):
     MI014 = get_error_dict('MI014', 'This date must be equal to or after 2000-01-01.')
     MI015 = get_error_dict('MI015', 'Not found.')
     MI016 = get_error_dict('MI016', 'A server error occurred. Team is investigating this.')
+    MI017 = get_error_dict('MI017', 'Query parameters are invalid.')

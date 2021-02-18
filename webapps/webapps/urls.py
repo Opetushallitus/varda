@@ -30,8 +30,8 @@ from rest_framework.renderers import CoreJSONRenderer
 from rest_framework.schemas import get_schema_view
 from rest_framework_nested import routers as nested_routers
 
-from varda import (views, viewsets, viewsets_reporting, viewsets_ui, viewsets_oppija, viewsets_henkilosto,
-                   viewsets_julkinen)
+from varda import (views, viewsets, viewsets_admin, viewsets_reporting, viewsets_ui, viewsets_oppija,
+                   viewsets_henkilosto, viewsets_julkinen)
 from varda.cas.oppija_cas_views import OppijaCasLoginView
 from varda.misc_viewsets import PublicSwaggerRenderer, PublicSchemaGenerator
 
@@ -46,6 +46,7 @@ router_admin.register(r'huoltajat', viewsets.HuoltajaViewSet)
 router_admin.register(r'huoltajuussuhteet', viewsets.HuoltajuussuhdeViewSet)
 router_admin.register(r'clear-cache', viewsets.ClearCacheViewSet, basename='clear-cache')
 router_admin.register(r'hae-yksiloimattomat', viewsets.HaeYksiloimattomatHenkilotViewSet, basename='hae-yksiloimattomat')
+router_admin.register(r'anonymisointi-yhteenveto', viewsets_admin.AnonymisointiYhteenvetoViewSet, basename='anonymisointi-yhteenveto')
 
 router_user = routers.DefaultRouter()
 router_user.register(r'data', viewsets.ActiveUserViewSet)
