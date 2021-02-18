@@ -1,6 +1,14 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.6 (18.02.2021)
+- OPHVARDA-2134: Käyttäjäanalytiikka
+- OPHVARDA-1763: Lokalisaatiopalveluun siirtymisen viimeistely
+- OPHVARDA-2194: ErrorMessageService päivitys
+- OPHVARDA-1655: PAOS-tallennusoikeuden päivityksen korjaus
+- OPHVARDA-2151: Tilapäisen henkilöstön tallennus
+- OPHVARDA-1781: Katsele tietoja työntekijän haun ja yhteenvedon muutoksia
+
 1.5.5 (11.02.2021)
 - OPHVARDA-2078: Uloskirjautumis-prompt
 - OPHVARDA-1156: Request rate limiter
