@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { BehaviorSubject } from 'rxjs';
@@ -8,7 +8,7 @@ import { BehaviorSubject } from 'rxjs';
   templateUrl: './varda-action-row.component.html',
   styleUrls: ['./varda-action-row.component.css']
 })
-export class VardaActionRowComponent {
+export class VardaActionRowComponent implements OnChanges {
   @Input() saveDisabled: boolean;
   @Input() saveAccess: boolean;
   @Input() formExists: boolean;
@@ -22,6 +22,12 @@ export class VardaActionRowComponent {
   @Output() disableEdit = new EventEmitter<boolean>(true);
   i18n = VirkailijaTranslations;
   promptDelete = false;
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes.isEdit) {
+      this.promptDelete = false;
+    }
+  }
 
   _togglePanel(open: boolean) {
     this.promptDelete = false;
