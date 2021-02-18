@@ -757,6 +757,7 @@ export enum VirkailijaTranslations {
   tiedonsiirrot_placeholder_request_method = 'tiedonsiirrot.placeholder.request-method',
   tiedonsiirrot_placeholder_request_url = 'tiedonsiirrot.placeholder.request-url',
   tiedonsiirrot_placeholder_response_body = 'tiedonsiirrot.placeholder.response-body',
+  tiedonsiirrot_placeholder_request_body = 'tiedonsiirrot.placeholder.request-body',
   tiedonsiirrot_placeholder_username = 'tiedonsiirrot.placeholder.username',
   tiedonsiirrot_kaikki_lahdejarjestelmat = 'tiedonsiirrot.kaikki-lahdejarjestelmat',
 
