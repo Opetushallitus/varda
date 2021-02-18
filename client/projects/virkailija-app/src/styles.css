@@ -255,7 +255,11 @@ mat-expansion-panel mat-expansion-panel-header {
 .varda-high-contrast tr.selected-row:hover,
 .varda-high-contrast .mat-button-toggle-group .mat-button-toggle-checked,
 .varda-high-contrast .mat-expansion-panel-header.toimipaikan-lapset-header:focus,
-.varda-high-contrast .mat-expansion-panel-header:focus-within {
+.varda-high-contrast .mat-expansion-panel-header:focus-within,
+.varda-high-contrast .mat-expansion-panel-header:focus-within .material-icons,
+.varda-high-contrast .mat-expansion-panel-header:focus-within .mat-content > *,
+.varda-high-contrast .mat-expansion-panel-header:focus-within .mat-expansion-panel-header-description,
+.varda-high-contrast .mat-expansion-panel-header:focus-within .mat-expansion-panel-header-description > * {
   background-color: var(--black) !important;
   color: var(--white) !important;
 }

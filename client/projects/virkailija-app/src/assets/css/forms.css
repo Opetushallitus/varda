@@ -218,6 +218,10 @@ label.mat-checkbox-layout {
   color: var(--black);
 }
 
+.mat-expansion-panel-header .mat-content {
+  flex-wrap: wrap;
+}
+
 @media (max-width: 767px) {
   .form-continues-text-wrapper {
     display: none;
