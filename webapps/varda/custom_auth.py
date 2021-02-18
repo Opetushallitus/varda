@@ -10,6 +10,7 @@ import uuid
 
 from datetime import datetime, timedelta, timezone
 from django.conf import settings
+from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.utils.translation import gettext_lazy as _
@@ -184,7 +185,7 @@ class CustomBasicAuthentication(BasicAuthentication):
     def authenticate_credentials(self, userid, password, request=None):
         """
         Basic authentication, in the first place, is only allowed for fetching the apikey-token.
-        Never in any other situation.
+        Never in any other situation. Except "local staff users", as commented below.
         """
         if request is not None:
             path = request.get_full_path()
@@ -193,6 +194,19 @@ class CustomBasicAuthentication(BasicAuthentication):
             else:
                 msg = _('Basic authentication not allowed.')
                 raise exceptions.AuthenticationFailed(msg)
+
+        """
+        Allow fetching api-key for local staff users.
+
+        https://github.com/encode/django-rest-framework/blob/3e956df6eb7e3b645d334fec372ad7f8a487d765/rest_framework/authentication.py#L89
+        """
+        credentials = {
+            get_user_model().USERNAME_FIELD: userid,
+            'password': password
+        }
+        user = authenticate(request=request, **credentials)
+        if user is not None and user.is_active and user.is_staff:
+            return (user, None)
 
         """
         Authenticate user via CAS, and get 'omattiedot' for the user.
