@@ -1,6 +1,6 @@
 import responses
 from django.contrib.auth.models import User, Group
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -96,7 +96,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
             TietosisaltoRyhma.TYONTEKIJATIEDOT.value,
             TietosisaltoRyhma.TAYDENNYSKOULUTUSTIEDOT.value,
         ]
-        self.assertEqual(jarjestaja.integraatio_organisaatio, expected_integraatio)
+        self.assertCountEqual(jarjestaja.integraatio_organisaatio, expected_integraatio)
 
     @responses.activate
     def test_palvelukayttaja_multiple_permissions(self):
@@ -201,7 +201,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
             TietosisaltoRyhma.TILAPAINENHENKILOSTOTIEDOT.value,
             TietosisaltoRyhma.VAKATIEDOT.value,
         ]
-        self.assertEqual(jarjestaja.integraatio_organisaatio, expected_integraatio)
+        self.assertCountEqual(jarjestaja.integraatio_organisaatio, expected_integraatio)
 
     @responses.activate
     def test_palvelukayttaja_no_active_organisaatio(self):
@@ -275,6 +275,63 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         resp_apikey = client.get('/api/user/apikey/')
         assert_status_code(resp_apikey, status.HTTP_403_FORBIDDEN)
         assert_validation_error(resp_apikey, 'errors', 'PE008', 'User does not have permissions to just one active organization.')
+
+    @responses.activate
+    @override_settings(BASIC_AUTHENTICATION_LOGIN_INTERVAL_IN_SECONDS=0)
+    def test_multiple_palvelukayttaja_different_permissions(self):
+        organisaatio_oid = '1.2.246.562.10.27580498759'
+        vakajarjestaja_qs = VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid)
+        client = APIClient()
+
+        username_1 = 'palvelukayttaja1'
+        mock_response_1 = [
+            {
+                'organisaatioOid': organisaatio_oid,
+                'kayttooikeudet': [
+                    {
+                        'palvelu': 'VARDA',
+                        'oikeus': Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                    },
+                ]
+            }
+        ]
+
+        self._mock_responses(mock_response_1, organisaatio_oid, username_1)
+        basic_auth_token_1 = base64_encoding(f'{username_1}:password')
+
+        client.credentials(HTTP_AUTHORIZATION='Basic {}'.format(basic_auth_token_1))
+        resp_apikey = client.get('/api/user/apikey/')
+        assert_status_code(resp_apikey, status.HTTP_200_OK)
+
+        expected_group_names_1 = ['vakajarjestaja_view_henkilo', 'VARDA-PALVELUKAYTTAJA_1.2.246.562.10.27580498759']
+        self._assert_user_permissiongroups(expected_group_names_1, username_1)
+        self.assertCountEqual(vakajarjestaja_qs.first().integraatio_organisaatio, [TietosisaltoRyhma.VAKATIEDOT.value])
+
+        username_2 = 'palvelukayttaja2'
+        mock_response_2 = [
+            {
+                'organisaatioOid': organisaatio_oid,
+                'kayttooikeudet': [
+                    {
+                        'palvelu': 'VARDA',
+                        'oikeus': Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
+                    },
+                ]
+            }
+        ]
+
+        responses.reset()
+        self._mock_responses(mock_response_2, organisaatio_oid, username_2)
+        basic_auth_token_2 = base64_encoding(f'{username_2}:password')
+
+        client.credentials(HTTP_AUTHORIZATION='Basic {}'.format(basic_auth_token_2))
+        resp_apikey = client.get('/api/user/apikey/')
+        assert_status_code(resp_apikey, status.HTTP_200_OK)
+
+        expected_group_names_2 = ['vakajarjestaja_view_henkilo', 'HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.27580498759']
+        self._assert_user_permissiongroups(expected_group_names_2, username_2)
+        self.assertCountEqual(vakajarjestaja_qs.first().integraatio_organisaatio,
+                              [TietosisaltoRyhma.VAKATIEDOT.value, TietosisaltoRyhma.TYONTEKIJATIEDOT.value])
 
     def _mock_responses(self, organisaatiot, organisaatio_oid, username):
         responses.add(responses.GET,

@@ -83,10 +83,32 @@ class TaydennyskoulutusAdmin(AdminWithGuardianAndHistory):
     raw_id_fields = ('tyontekijat', )
 
 
+class VakajarjestajaAdmin(AdminWithGuardianAndHistory):
+    # Override fieldsets to include description about integraatio_organisaatio-field
+    fieldsets = (
+        (None, {
+            'fields': ('nimi', 'y_tunnus', 'organisaatio_oid', 'kunta_koodi', 'sahkopostiosoite', 'ipv4_osoitteet',
+                       'ipv6_osoitteet', 'kayntiosoite', 'kayntiosoite_postinumero', 'kayntiosoite_postitoimipaikka',
+                       'postiosoite', 'postinumero', 'postitoimipaikka', 'puhelinnumero', 'ytjkieli', 'yritysmuoto',
+                       'alkamis_pvm', 'paattymis_pvm', 'changed_by',)
+        }), ('Integration flags', {
+            'fields': ('integraatio_organisaatio',),
+            'description': 'To clear all integration flags, enter a single hyphen (-)'
+        }),
+    )
+
+    def save_model(self, request, obj, form, change):
+        # Allow clearing integraatio_organisaatio-field in Admin-form by inputting a hyphen (-)
+        # It is very difficult to override field validations (would need to override SimpleArrayField clean-method)
+        if obj.integraatio_organisaatio == ['-']:
+            obj.integraatio_organisaatio = []
+        return super(VakajarjestajaAdmin, self).save_model(request, obj, form, change)
+
+
 admin.site.unregister(User)
 
 admin.site.register(User, AuthUserAdmin)
-admin.site.register(VakaJarjestaja, AdminWithGuardianAndHistory)
+admin.site.register(VakaJarjestaja, VakajarjestajaAdmin)
 admin.site.register(Toimipaikka, AdminWithGuardianAndHistory)
 admin.site.register(ToiminnallinenPainotus, ToiminnallinenPainotusAdmin)
 admin.site.register(KieliPainotus, KieliPainotusAdmin)

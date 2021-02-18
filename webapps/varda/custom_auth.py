@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 import json
 import logging
 import os
-from collections import OrderedDict
 
 import requests
 import uuid
@@ -305,7 +304,7 @@ class CustomBasicAuthentication(BasicAuthentication):
         :param user: user logging in
         :return: None
         """
-        # Having any of these permissions changes vakajarjestaja to integraatio organisaatio
+        # Having any of these permissions means that it is allowed to transfer that data only via integration
         integraatio_permissions = {
             Z4_CasKayttoOikeudet.PALVELUKAYTTAJA: TietosisaltoRyhma.VAKATIEDOT.value,
             Z4_CasKayttoOikeudet.TALLENTAJA: TietosisaltoRyhma.VAKATIEDOT.value,
@@ -323,22 +322,19 @@ class CustomBasicAuthentication(BasicAuthentication):
             if not created:
                 logger.info('Already had kayttooikeus {} for user: {}, organisaatio_oid: {}'
                             .format(kayttooikeus, user.username, organisaatio_oid))
-        vakajarjestaja = VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid)
-        integraatio_organisaatio_list = [integraatio_permissions.get(kayttooikeus)
-                                         for kayttooikeus in kayttooikeus_list
-                                         if kayttooikeus in integraatio_permissions]
-        integraatio_organisaatio_list = list(OrderedDict.fromkeys(integraatio_organisaatio_list))  # Remove duplicates
-        if vakajarjestaja.exists():  # There is only one vakajarjestaja, organisaatio_oid is unique
-            vakajarjestaja_obj = vakajarjestaja[0]
-            if not VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_obj.organisaatio_oid,
-                                                 integraatio_organisaatio__contains=integraatio_organisaatio_list,
-                                                 integraatio_organisaatio__contained_by=integraatio_organisaatio_list,
-                                                 ).exists():
-                vakajarjestaja_obj.integraatio_organisaatio = integraatio_organisaatio_list
+        vakajarjestaja_obj = VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid).first()
+        integration_flags_set = {integraatio_permissions.get(kayttooikeus) for kayttooikeus in kayttooikeus_list
+                                 if kayttooikeus in integraatio_permissions}
+        if vakajarjestaja_obj:
+            # There is only one vakajarjestaja, organisaatio_oid is unique
+            existing_integration_flags_set = set(vakajarjestaja_obj.integraatio_organisaatio)
+            if not integration_flags_set.issubset(existing_integration_flags_set):
+                # User has new permissions, so add integraatio flags for Vakajarjestaja
+                vakajarjestaja_obj.integraatio_organisaatio = tuple(existing_integration_flags_set.union(integration_flags_set))
                 vakajarjestaja_obj.save()
         else:
             # VakaJarjestaja doesn't exist yet, let's create it.
-            create_vakajarjestaja_using_oid(organisaatio_oid, user.id, integraatio_organisaatio=integraatio_organisaatio_list)
+            create_vakajarjestaja_using_oid(organisaatio_oid, user.id, integraatio_organisaatio=tuple(integration_flags_set))
 
     def _exclude_non_valid_permissions(self, cas_henkilo_organisaatiot):
         accepted_palvelukayttaja_permissions = [Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
