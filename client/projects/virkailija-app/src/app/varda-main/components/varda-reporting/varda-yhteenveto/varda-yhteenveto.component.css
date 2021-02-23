@@ -9,5 +9,10 @@
 }
 
 .mat-table .mat-header-cell:nth-child(2), .mat-table .mat-cell:nth-child(2) {
+  text-align: center;
+}
+
+.mat-table .mat-header-cell:nth-child(3), .mat-table .mat-cell:nth-child(3) {
   width: 1%;
+  padding-right: 0;
 }
