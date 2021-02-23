@@ -230,7 +230,7 @@ LOGGING = {
     },
     'loggers': {
         '': {
-            'handlers': ['mail_admins', 'syslog', 'console'],
+            'handlers': ['syslog', 'console'],
             'level': 'INFO',
             'propagate': False,
         },
@@ -265,7 +265,7 @@ LOGGING = {
         },
         'django.server': {
             'level': 'ERROR',
-            'handlers': ['mail_admins', 'syslog', 'console'],
+            'handlers': ['syslog', 'console'],
             'propagate': False,
         },
         'webapps.celery': {
