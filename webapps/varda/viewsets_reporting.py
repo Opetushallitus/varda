@@ -2,7 +2,7 @@ import datetime
 
 from dateutil.relativedelta import relativedelta
 from django.contrib.postgres.aggregates import StringAgg
-from django.db.models import Q, Case, Value, When, OuterRef, Subquery, CharField, F, DateField, Count, IntegerField
+from django.db.models import Q, Case, Value, When, OuterRef, Subquery, CharField, F, DateField, Count, IntegerField, Exists
 from django.db.models.functions import Cast
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -79,7 +79,7 @@ class KelaEtuusmaksatusAloittaneetViewset(GenericViewSet, ListModelMixin):
             if (now - luonti_pvm.date()).days > 365:
                 raise ValidationError({'luonti_pvm': [ErrorMessages.GE019.value]})
         else:
-            luonti_pvm = now - datetime.timedelta(days=7)
+            luonti_pvm = now - datetime.timedelta(days=6)
 
         dataset_filters = self.create_filters_for_data(luonti_pvm)
 
@@ -114,26 +114,26 @@ class KelaEtuusmaksatusLopettaneetViewSet(GenericViewSet, ListModelMixin):
 
         muutos_pvm_filter = Q(muutos_pvm__date__gte=muutos_pvm)
 
-        paattymis_pvm_filter = Q(paattymis_pvm__isnull=True)
-
-        history_type_filter = ~Q(history_type='-')
-
-        return common_filters & muutos_pvm_filter & paattymis_pvm_filter & history_type_filter
+        return common_filters & muutos_pvm_filter
 
     def get_queryset(self):
         muutos_pvm = self.get_muutos_pvm()
 
         dataset_filters = self.create_filters_for_data(muutos_pvm)
 
-        latest_end_dates = (Varhaiskasvatussuhde.history.filter(dataset_filters)
-                                                        .values('id')
-                                                        .distinct('id')
-                                                        .order_by('id'))
-
-        id_filter = Q(id__in=latest_end_dates)
+        # get the status before muutos_pvm
+        latest_end_dates = (Varhaiskasvatussuhde.history.filter(Q(id=OuterRef('id')) &
+                                                                Q(muutos_pvm__date__lt=muutos_pvm)
+                                                                ).order_by('-history_id'))
 
         return (Varhaiskasvatussuhde.objects.select_related('varhaiskasvatuspaatos__lapsi', 'lapsi__henkilo')
-                                            .filter(id_filter & Q(paattymis_pvm__isnull=False))
+                                            .annotate(last_paattymis_pvm=Case(When(Exists(latest_end_dates),
+                                                                                   then=Subquery(latest_end_dates.values('paattymis_pvm')[:1])),
+                                                                              default=Value('0001-01-01')))
+                                            .filter(dataset_filters &
+                                                    Q(last_paattymis_pvm__isnull=True) &
+                                                    Q(paattymis_pvm__isnull=False) &
+                                                    Q(muutos_pvm__date__gte=muutos_pvm))
                                             .values('varhaiskasvatuspaatos__lapsi_id', 'paattymis_pvm',
                                                     'varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus',
                                                     'varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi')
@@ -152,7 +152,7 @@ class KelaEtuusmaksatusLopettaneetViewSet(GenericViewSet, ListModelMixin):
             if (now - muutos_pvm.date()).days > 365:
                 raise ValidationError({'muutos_pvm': [ErrorMessages.GE019.value]})
         else:
-            muutos_pvm = now - datetime.timedelta(days=7)
+            muutos_pvm = now - datetime.timedelta(days=6)
 
         return muutos_pvm
 
@@ -202,7 +202,7 @@ class KelaEtuusmaksatusMaaraaikaisetViewSet(GenericViewSet, ListModelMixin):
             if (now - luonti_pvm).days > 365:
                 raise ValidationError({'luonti_pvm': [ErrorMessages.GE019.value]})
         else:
-            luonti_pvm = now - datetime.timedelta(days=7)
+            luonti_pvm = now - datetime.timedelta(days=6)
 
         dataset_filters = self.create_filters_for_data(luonti_pvm)
 
@@ -235,8 +235,8 @@ class KelaEtuusmaksatusKorjaustiedotViewSet(GenericViewSet, ListModelMixin):
     def create_filters_for_data(self, muutos_pvm):
         common_filters = _create_common_kela_filters()
 
-        # time window for fetching data
-        time_window_filter = Q(muutos_pvm__date__gte=muutos_pvm) & Q(luonti_pvm__date__lt=muutos_pvm)
+        # Only object that have been changed after given date
+        time_window_filter = Q(muutos_pvm__date__gte=muutos_pvm)
 
         # Must be active at or after
         paattymis_pvm_date_gte = datetime.datetime(2021, 1, 18)
@@ -261,7 +261,7 @@ class KelaEtuusmaksatusKorjaustiedotViewSet(GenericViewSet, ListModelMixin):
             if (now - muutos_pvm.date()).days > 365:
                 raise ValidationError({'muutos_pvm': [ErrorMessages.GE019.value]})
         else:
-            muutos_pvm = now - datetime.timedelta(days=7)
+            muutos_pvm = now - datetime.timedelta(days=6)
 
         dataset_filters = self.create_filters_for_data(muutos_pvm)
 
@@ -269,7 +269,7 @@ class KelaEtuusmaksatusKorjaustiedotViewSet(GenericViewSet, ListModelMixin):
         id_filter = Q(id__in=latest_changed_objects.values('id'))
 
         alkamis_pvm_subquery = Varhaiskasvatussuhde.history.filter(id=OuterRef('id'), muutos_pvm__date__lt=muutos_pvm).order_by('-history_id')
-        paattymis_pvm_subquery = Varhaiskasvatussuhde.history.filter(id=OuterRef('id'), paattymis_pvm__isnull=False, muutos_pvm__date__lt=muutos_pvm).order_by('-history_id')
+        paattymis_pvm_subquery = Varhaiskasvatussuhde.history.filter(id=OuterRef('id'), muutos_pvm__date__lt=muutos_pvm).order_by('-history_id')
 
         return (Varhaiskasvatussuhde.objects.select_related('varhaiskasvatuspaatos__lapsi', 'varhaiskasvatuspaatos__lapsi__henkilo')
                                             .annotate(old_alkamis_pvm=(Case(When(alkamis_pvm=Subquery(alkamis_pvm_subquery.values('alkamis_pvm')[:1]), then=Value('0001-01-01')),
@@ -277,7 +277,9 @@ class KelaEtuusmaksatusKorjaustiedotViewSet(GenericViewSet, ListModelMixin):
                                                       old_paattymis_pvm=(Case(When(paattymis_pvm=Subquery(paattymis_pvm_subquery.values('paattymis_pvm')[:1]), then=Value('0001-01-01')),
                                                                               default=Subquery(paattymis_pvm_subquery.values('paattymis_pvm')[:1])))
                                                       )
-                                            .filter(id_filter & ~Q(Q(old_alkamis_pvm='0001-01-01') & Q(old_paattymis_pvm='0001-01-01')))
+                                            .filter(id_filter &
+                                                    ~Q(Q(old_alkamis_pvm='0001-01-01') & Q(old_paattymis_pvm='0001-01-01')) &
+                                                    ~Q(Q(old_alkamis_pvm='0001-01-01') & Q(old_paattymis_pvm__isnull=True)))
                                             .values('id', 'varhaiskasvatuspaatos__lapsi_id', 'alkamis_pvm', 'paattymis_pvm',
                                                     'old_alkamis_pvm', 'old_paattymis_pvm',
                                                     'varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus',
@@ -297,29 +299,11 @@ class KelaEtuusmaksatusKorjaustiedotPoistetutViewSet(GenericViewSet, ListModelMi
         poisto_pvm: get deleted after set poisto_pvm
     """
     filter_backends = (DjangoFilterBackend,)
-    filterset_class = filters.KelaEtuusmaksatusKorjaustiedotPoistetutFilter
+    filterset_class = None  # This api cannot use filters because of raw query
     queryset = Varhaiskasvatussuhde.history.none()
     serializer_class = KelaEtuusmaksatusKorjaustiedotPoistetutSerializer
     permission_classes = (CustomReportingViewAccess, )
     pagination_class = ChangeablePageSizePagination
-
-    def create_filters_for_data(self, poisto_pvm):
-        common_filters = _create_common_kela_filters()
-
-        # time window for fetching data
-        time_window_filter = Q(history_date__date__gte=poisto_pvm)
-
-        # Must be active at or after
-        paattymis_pvm_date_gte = datetime.datetime(2021, 1, 18)
-        paattymis_pvm_filter = (Q(paattymis_pvm__isnull=True) | Q(paattymis_pvm__gte=paattymis_pvm_date_gte))
-
-        # Only deleted objects
-        history_filter = Q(history_type='-')
-
-        return (time_window_filter &
-                paattymis_pvm_filter &
-                history_filter &
-                common_filters)
 
     def get_queryset(self):
         now = datetime.datetime.now().date()
@@ -333,22 +317,23 @@ class KelaEtuusmaksatusKorjaustiedotPoistetutViewSet(GenericViewSet, ListModelMi
             if (now - poisto_pvm.date()).days > 365:
                 raise ValidationError({'poisto_pvm': [ErrorMessages.GE019.value]})
         else:
-            poisto_pvm = now - datetime.timedelta(days=7)
+            poisto_pvm = now - datetime.timedelta(days=6)
 
-        dataset_filters = self.create_filters_for_data(poisto_pvm)
-
-        return (Varhaiskasvatussuhde.history.select_related('varhaiskasvatuspaatos__lapsi', 'varhaiskasvatuspaatos__lapsi__henkilo')
-                                            .annotate(new_alkamis_pvm=Value('0001-01-01', output_field=DateField()),
-                                                      new_paattymis_pvm=Value('0001-01-01', output_field=DateField()))
-                                            .filter(dataset_filters)
-                                            .values('id', 'varhaiskasvatuspaatos__lapsi_id', 'alkamis_pvm', 'paattymis_pvm',
-                                                    'new_alkamis_pvm', 'new_paattymis_pvm',
-                                                    'varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus',
-                                                    'varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi')
-                                            .order_by('id', 'history_id', 'varhaiskasvatuspaatos__lapsi', 'alkamis_pvm').distinct('id'))
+        return (Varhaiskasvatussuhde.history.raw("""select DISTINCT ON (vas.id) vas.id, vas.history_id as history_id, vas.alkamis_pvm as alkamis_pvm, vas.paattymis_pvm as paattymis_pvm,
+                                                    '0001-01-01' as new_alkamis_pvm, '0001-01-01' as new_paattymis_pvm, he.henkilotunnus as henkilotunnus, he.kotikunta_koodi as kotikunta_koodi
+                                                    from varda_historicalvarhaiskasvatussuhde vas
+                                                    join (select distinct(id), history_id, lapsi_id from varda_historicalvarhaiskasvatuspaatos
+                                                          where lower(jarjestamismuoto_koodi) in ('jm01', 'jm02', 'jm03') and
+                                                          tilapainen_vaka_kytkin='f' and luonti_pvm >= '2021-01-04' order by id) vap on vap.id = vas.varhaiskasvatuspaatos_id
+                                                    join (select distinct(id), history_id, henkilo_id from varda_historicallapsi order by id) la on la.id = vap.lapsi_id
+                                                    join (select distinct(id), history_id, henkilotunnus, kotikunta_koodi from varda_historicalhenkilo where henkilotunnus <> '' order by id) he on he.id = la.henkilo_id
+                                                    where vas.history_date >= %s and vas.history_type = '-' and (vas.paattymis_pvm is null or vas.paattymis_pvm >= '2021-01-18') order by vas.id""", [poisto_pvm]))
 
 
 def _create_common_kela_filters():
+    # Making changes here does not affect filters on poistetut, if you update these check if you need
+    # to update poistetut as well
+
     # Kunnallinen
     jarjestamismuoto_filter = (Q(varhaiskasvatuspaatos__jarjestamismuoto_koodi__iexact='JM01') |
                                Q(varhaiskasvatuspaatos__jarjestamismuoto_koodi__iexact='JM02') |

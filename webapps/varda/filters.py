@@ -537,15 +537,6 @@ class KelaEtuusmaksatusKorjaustiedotFilter(djangofilters.FilterSet):
         fields = []
 
 
-class KelaEtuusmaksatusKorjaustiedotPoistetutFilter(djangofilters.FilterSet):
-    kunta_koodi = djangofilters.CharFilter(field_name='varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi', lookup_expr='exact', label='kotikunta_koodi')
-    syntyma_pvm = djangofilters.DateFilter(field_name='varhaiskasvatuspaatos__lapsi__henkilo__syntyma_pvm', lookup_expr='gte', label='syntyma_pvm')
-
-    class Meta:
-        model: Varhaiskasvatussuhde
-        fields = []
-
-
 class TiedonsiirtoFilter(djangofilters.FilterSet):
     timestamp = djangofilters.IsoDateTimeFromToRangeFilter()
     request_url = djangofilters.CharFilter(lookup_expr='icontains')
