@@ -326,3 +326,18 @@ def update_all_vakajarjestaja_permissiongroups():
                                                       organisaatio_data=toimipaikka_data_dict.get(toimipaikka_oid))
             assign_permissions_to_toimipaikka_obj(toimipaikka_oid, vakajarjestaja_oid)
     logger.info('Finished setting toimipaikka permissions')
+
+
+def update_painotus_kytkin(toimipaikka, related_painotus_attribute, kytkin_name):
+    """
+    Automatically update toimipaikka.(kieli/toiminnallinen)painotus_kytkin when painotus is created, updated or deleted
+    :param toimipaikka: Toimipaikka instance
+    :param related_painotus_attribute: name of the related field attribute (toiminnallisetpainotukset/kielipainotukset)
+    :param kytkin_name: name of the kytkin attribute (toiminnallinenpainotus_kytkin/kielipainotus_kytkin)
+    """
+    current_kytkin_value = getattr(toimipaikka, kytkin_name)
+    new_kytkin_value = getattr(toimipaikka, related_painotus_attribute).exists()
+
+    if current_kytkin_value != new_kytkin_value:
+        setattr(toimipaikka, kytkin_name, new_kytkin_value)
+        toimipaikka.save()

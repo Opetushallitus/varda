@@ -32,7 +32,8 @@ from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid,
 from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
 from varda.enums.error_messages import ErrorMessages
 from varda.exceptions.conflict_error import ConflictError
-from varda.misc import CustomServerErrorException, decrypt_henkilotunnus, encrypt_henkilotunnus, hash_string
+from varda.misc import (CustomServerErrorException, decrypt_henkilotunnus, encrypt_henkilotunnus, hash_string,
+                        update_painotus_kytkin)
 from varda.misc_queries import get_paos_toimipaikat
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, PaosToiminta,
                           Lapsi, Huoltaja, Huoltajuussuhde, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto,
@@ -724,6 +725,9 @@ class ToiminnallinenPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveMo
             self.throttle_classes = [BurstRateThrottle, SustainedModifyRateThrottle]
         return super(ToiminnallinenPainotusViewSet, self).get_throttles()
 
+    def _toggle_toimipaikka_kytkin(self, toimipaikka):
+        update_painotus_kytkin(toimipaikka, 'toiminnallisetpainotukset', 'toiminnallinenpainotus_kytkin')
+
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
 
@@ -749,6 +753,7 @@ class ToiminnallinenPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveMo
 
         with transaction.atomic():
             saved_object = serializer.save(changed_by=user)
+            self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
             delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
             cache.delete('vakajarjestaja_yhteenveto_' + str(saved_object.toimipaikka.vakajarjestaja.id))
             assign_object_level_permissions(vakajarjestaja_organisaatio_oid, ToiminnallinenPainotus, saved_object)
@@ -778,8 +783,10 @@ class ToiminnallinenPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveMo
 
         check_overlapping_toiminnallinen_painotus(validated_data, toiminnallinenpainotus_id)
 
-        saved_object = serializer.save(changed_by=user)
-        delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
+        with transaction.atomic():
+            saved_object = serializer.save(changed_by=user)
+            self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
+            delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
 
     def destroy(self, request, *args, **kwargs):
         user = request.user
@@ -791,9 +798,12 @@ class ToiminnallinenPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveMo
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def perform_destroy(self, instance):
-        delete_cache_keys_related_model('toimipaikka', instance.toimipaikka.id)
-        cache.delete('vakajarjestaja_yhteenveto_' + str(instance.toimipaikka.vakajarjestaja.id))
-        instance.delete()
+        with transaction.atomic():
+            toimipaikka = instance.toimipaikka
+            instance.delete()
+            self._toggle_toimipaikka_kytkin(toimipaikka)
+            delete_cache_keys_related_model('toimipaikka', instance.toimipaikka.id)
+            cache.delete('vakajarjestaja_yhteenveto_' + str(instance.toimipaikka.vakajarjestaja.id))
 
 
 @auditlogclass
@@ -826,6 +836,9 @@ class KieliPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin,
             self.throttle_classes = [BurstRateThrottle, SustainedModifyRateThrottle]
         return super(KieliPainotusViewSet, self).get_throttles()
 
+    def _toggle_toimipaikka_kytkin(self, toimipaikka):
+        update_painotus_kytkin(toimipaikka, 'kielipainotukset', 'kielipainotus_kytkin')
+
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
 
@@ -851,6 +864,7 @@ class KieliPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin,
 
         with transaction.atomic():
             saved_object = serializer.save(changed_by=user)
+            self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
             delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
             cache.delete('vakajarjestaja_yhteenveto_' + str(saved_object.toimipaikka.vakajarjestaja.id))
             assign_object_level_permissions(vakajarjestaja_organisaatio_oid, KieliPainotus, saved_object)
@@ -880,8 +894,10 @@ class KieliPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin,
 
         check_overlapping_kielipainotus(validated_data, self_id=kielipainotus_id)
 
-        saved_object = serializer.save(changed_by=user)
-        delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
+        with transaction.atomic():
+            saved_object = serializer.save(changed_by=user)
+            self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
+            delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
 
     def destroy(self, request, *args, **kwargs):
         user = request.user
@@ -893,9 +909,12 @@ class KieliPainotusViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin,
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def perform_destroy(self, instance):
-        delete_cache_keys_related_model('toimipaikka', instance.toimipaikka.id)
-        cache.delete('vakajarjestaja_yhteenveto_' + str(instance.toimipaikka.vakajarjestaja.id))
-        instance.delete()
+        with transaction.atomic():
+            toimipaikka = instance.toimipaikka
+            instance.delete()
+            self._toggle_toimipaikka_kytkin(toimipaikka)
+            delete_cache_keys_related_model('toimipaikka', instance.toimipaikka.id)
+            cache.delete('vakajarjestaja_yhteenveto_' + str(instance.toimipaikka.vakajarjestaja.id))
 
 
 class HaeHenkiloViewSet(GenericViewSet, CreateModelMixin):

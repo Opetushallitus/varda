@@ -3142,3 +3142,103 @@ class VardaViewsTests(TestCase):
         client_yksityinen = SetUpTestClient('tester').client()
         resp_yksityinen = client_yksityinen.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos_yksityinen)
         assert_status_code(resp_yksityinen, status.HTTP_201_CREATED)
+
+    def test_api_toiminnallinen_painotus_update_kytkin(self):
+        toimipaikka_oid = '1.2.246.562.10.6727877596658'
+        toimipaikka_qs = Toimipaikka.objects.filter(organisaatio_oid=toimipaikka_oid)
+        toimipaikka_id = toimipaikka_qs.first().id
+
+        self.assertFalse(toimipaikka_qs.first().toiminnallisetpainotukset.exists())
+        self.assertFalse(toimipaikka_qs.first().toiminnallinenpainotus_kytkin)
+
+        client = SetUpTestClient('tester10').client()
+
+        painotus_json_1 = {
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_id}/',
+            'toimintapainotus_koodi': 'TP01',
+            'alkamis_pvm': '2021-01-01'
+        }
+        resp_1 = client.post('/api/v1/toiminnallisetpainotukset/', painotus_json_1)
+        painotus_1_id = json.loads(resp_1.content)['id']
+        assert_status_code(resp_1, status.HTTP_201_CREATED)
+
+        self.assertTrue(toimipaikka_qs.first().toiminnallinenpainotus_kytkin)
+
+        toimipaikka_obj = toimipaikka_qs.first()
+        toimipaikka_obj.toiminnallinenpainotus_kytkin = False
+        toimipaikka_obj.save()
+
+        painotus_update_json = {
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_id}/',
+            'toimintapainotus_koodi': 'TP01',
+            'alkamis_pvm': '2021-01-02'
+        }
+        resp_2 = client.put(f'/api/v1/toiminnallisetpainotukset/{painotus_1_id}/', painotus_update_json)
+        assert_status_code(resp_2, status.HTTP_200_OK)
+
+        painotus_json_2 = {
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_id}/',
+            'toimintapainotus_koodi': 'TP02',
+            'alkamis_pvm': '2021-01-01'
+        }
+        resp_3 = client.post('/api/v1/toiminnallisetpainotukset/', painotus_json_2)
+        painotus_2_id = json.loads(resp_3.content)['id']
+        assert_status_code(resp_3, status.HTTP_201_CREATED)
+
+        resp_4 = client.delete(f'/api/v1/toiminnallisetpainotukset/{painotus_2_id}/')
+        assert_status_code(resp_4, status.HTTP_204_NO_CONTENT)
+        self.assertTrue(toimipaikka_qs.first().toiminnallinenpainotus_kytkin)
+
+        resp_5 = client.delete(f'/api/v1/toiminnallisetpainotukset/{painotus_1_id}/')
+        assert_status_code(resp_5, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(toimipaikka_qs.first().toiminnallinenpainotus_kytkin)
+
+    def test_api_kielipainotus_update_kytkin(self):
+        toimipaikka_oid = '1.2.246.562.10.6727877596658'
+        toimipaikka_qs = Toimipaikka.objects.filter(organisaatio_oid=toimipaikka_oid)
+        toimipaikka_id = toimipaikka_qs.first().id
+
+        self.assertFalse(toimipaikka_qs.first().kielipainotukset.exists())
+        self.assertFalse(toimipaikka_qs.first().kielipainotus_kytkin)
+
+        client = SetUpTestClient('tester10').client()
+
+        painotus_json_1 = {
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_id}/',
+            'kielipainotus_koodi': 'FI',
+            'alkamis_pvm': '2021-01-01'
+        }
+        resp_1 = client.post('/api/v1/kielipainotukset/', painotus_json_1)
+        painotus_1_id = json.loads(resp_1.content)['id']
+        assert_status_code(resp_1, status.HTTP_201_CREATED)
+
+        self.assertTrue(toimipaikka_qs.first().kielipainotus_kytkin)
+
+        toimipaikka_obj = toimipaikka_qs.first()
+        toimipaikka_obj.kielipainotus_kytkin = False
+        toimipaikka_obj.save()
+
+        painotus_update_json = {
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_id}/',
+            'kielipainotus_koodi': 'FI',
+            'alkamis_pvm': '2021-01-02'
+        }
+        resp_2 = client.put(f'/api/v1/kielipainotukset/{painotus_1_id}/', painotus_update_json)
+        assert_status_code(resp_2, status.HTTP_200_OK)
+
+        painotus_json_2 = {
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_id}/',
+            'kielipainotus_koodi': 'SV',
+            'alkamis_pvm': '2021-01-01'
+        }
+        resp_3 = client.post('/api/v1/kielipainotukset/', painotus_json_2)
+        painotus_2_id = json.loads(resp_3.content)['id']
+        assert_status_code(resp_3, status.HTTP_201_CREATED)
+
+        resp_4 = client.delete(f'/api/v1/kielipainotukset/{painotus_2_id}/')
+        assert_status_code(resp_4, status.HTTP_204_NO_CONTENT)
+        self.assertTrue(toimipaikka_qs.first().kielipainotus_kytkin)
+
+        resp_5 = client.delete(f'/api/v1/kielipainotukset/{painotus_1_id}/')
+        assert_status_code(resp_5, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(toimipaikka_qs.first().kielipainotus_kytkin)
