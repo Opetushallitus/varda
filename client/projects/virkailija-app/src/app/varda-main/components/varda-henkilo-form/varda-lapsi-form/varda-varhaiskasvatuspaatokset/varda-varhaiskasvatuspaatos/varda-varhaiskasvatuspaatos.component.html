@@ -9,7 +9,7 @@
     <mat-icon class="d-none d-md-block">assignment</mat-icon>
 
     <mat-expansion-panel [id]="'varhaiskasvatuspaatos-panel_' + varhaiskasvatuspaatos?.id"
-     [class.before-icon]="true"
+                         [class.before-icon]="true"
                          (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)"
                          [expanded]="expandPanel">
@@ -80,19 +80,26 @@
                               [label]="i18n.varhaiskasvatuspaatos_jarjestamismuoto_koodi | translate"
                               [errorText]="i18n.varhaiskasvatuspaatos_error_jarjestamismuoto_koodi | translate"
                               [instructionText]="i18n.varhaiskasvatuspaatos_instruction_jarjestamismuoto_koodi | translate">
-          <select #fieldItem
-                  (ngModelChange)="changeJarjestajismuoto($event)"
-                  class="oph-input oph-select"
-                  formControlName="jarjestamismuoto_koodi">
-            <option [value]="null"
-                    disabled>-- {{ i18n.choose | translate }} --</option>
-            <option *ngFor="let jarjestamismuoto of jarjestamismuotoKoodisto"
-                    [disabled]="jarjestamismuoto.disabled"
-                    [value]="jarjestamismuoto.code_value">
-              <span *ngIf="jarjestamismuoto.disabled">x</span>
-              {{ jarjestamismuoto.name }} ({{ jarjestamismuoto.code_value }})
-            </option>
-          </select>
+          <ng-container *ngIf="varhaiskasvatuspaatosForm.controls.jarjestamismuoto_koodi.disabled; else showTrigger">
+            <div [libKoodistoValue]="koodistoEnum.jarjestamismuoto"
+                 format="long"
+                 class="ml-2 my-2">{{ varhaiskasvatuspaatosForm.controls.jarjestamismuoto_koodi?.value }}</div>
+          </ng-container>
+          <ng-template #showTrigger>
+            <select #fieldItem
+                    (ngModelChange)="changeJarjestajismuoto($event)"
+                    class="oph-input oph-select"
+                    formControlName="jarjestamismuoto_koodi">
+              <option [value]="null"
+                      disabled>-- {{ i18n.choose | translate }} --</option>
+              <option *ngFor="let jarjestamismuoto of jarjestamismuotoKoodisto"
+                      [disabled]="jarjestamismuoto.disabled"
+                      [value]="jarjestamismuoto.code_value">
+                <span *ngIf="jarjestamismuoto.disabled">x</span>
+                {{ jarjestamismuoto.name }} ({{ jarjestamismuoto.code_value }})
+              </option>
+            </select>
+          </ng-template>
         </app-varda-form-field>
 
         <app-varda-form-field name="tilapainen_vaka_kytkin"

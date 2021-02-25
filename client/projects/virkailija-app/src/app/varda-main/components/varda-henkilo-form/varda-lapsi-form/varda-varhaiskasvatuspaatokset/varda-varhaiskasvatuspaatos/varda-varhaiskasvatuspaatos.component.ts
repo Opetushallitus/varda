@@ -44,6 +44,7 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaHenkiloFormAccordi
   @Output() closeAddVarhaiskasvatuspaatos = new EventEmitter<boolean>(true);
   @Output() changedVarhaiskasvatuspaatos = new EventEmitter<boolean>(true);
   i18n = VirkailijaTranslations;
+  koodistoEnum = KoodistoEnum;
   element: ElementRef;
   expandPanel: boolean;
   varhaiskasvatussuhteet: Array<VardaVarhaiskasvatussuhdeDTO>;

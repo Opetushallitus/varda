@@ -160,8 +160,6 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
       varhaiskasvatuspaikat: new FormControl(toimipaikka?.varhaiskasvatuspaikat, [Validators.required, Validators.min(0)]),
       alkamis_pvm: new FormControl(toimipaikka ? moment(toimipaikka?.alkamis_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
       paattymis_pvm: new FormControl(toimipaikka?.paattymis_pvm ? moment(toimipaikka?.paattymis_pvm, VardaDateService.vardaApiDateFormat) : null),
-      kielipainotus_kytkin: new FormControl(toimipaikka?.kielipainotus_kytkin || false),
-      toiminnallinenpainotus_kytkin: new FormControl(toimipaikka?.toiminnallinenpainotus_kytkin || false),
       vakajarjestaja: new FormControl(toimipaikka?.vakajarjestaja || this.selectedVakajarjestaja.url)
     });
 
@@ -197,7 +195,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
     });
   }
 
-  saveToimipaikka(form: FormGroup, showSnackbar = true) {
+  saveToimipaikka(form: FormGroup) {
     this.isSubmitting.next(true);
     form.markAllAsTouched();
     this.errorService.resetErrorList();
@@ -213,10 +211,9 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
 
       updateToimipaikka.subscribe({
         next: toimipaikkaData => {
-          if (showSnackbar) {
-            this.snackBarService.success(this.i18n.toimipaikka_save_success);
-            this.saveToimipaikkaFormSuccess.emit(toimipaikkaData);
-          }
+          this.snackBarService.success(this.i18n.toimipaikka_save_success);
+          this.saveToimipaikkaFormSuccess.emit(toimipaikkaData);
+
           this.disableForm();
           this.getToimipaikka(toimipaikkaData.id);
         },
@@ -300,29 +297,5 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
     this.maxEndDate = endDate?.clone().toDate();
   }
 
-  toggleKielipainotukset(value: boolean) {
-    const painotusCtrl = this.toimipaikkaForm.get('kielipainotus_kytkin');
-
-    if (painotusCtrl.value !== value) {
-      painotusCtrl.setValue(value);
-
-      if (this.toimipaikka?.id) {
-        this.saveToimipaikka(this.toimipaikkaForm, false);
-      }
-    }
-  }
-
-  toggleToimintapainotukset(value: boolean) {
-    const painotusCtrl = this.toimipaikkaForm.get('toiminnallinenpainotus_kytkin');
-
-    if (painotusCtrl.value !== value) {
-      painotusCtrl.setValue(value);
-
-      if (this.toimipaikka?.id) {
-        this.saveToimipaikka(this.toimipaikkaForm, false);
-      }
-    }
-
-  }
 }
 

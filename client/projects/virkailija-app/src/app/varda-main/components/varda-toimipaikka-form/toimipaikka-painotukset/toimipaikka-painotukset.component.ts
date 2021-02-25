@@ -22,8 +22,6 @@ export class ToimipaikkaPainotuksetComponent implements OnChanges {
   @Input() errorService: VardaErrorMessageService;
   @Input() minStartDate: Date;
   @Input() maxEndDate: Date;
-  @Output() toggleKielipainotukset = new EventEmitter<boolean>(true);
-  @Output() toggleToimintapainotukset = new EventEmitter<boolean>(true);
   i18n = VirkailijaTranslations;
   kielipainotukset: Array<KielipainotusDTO> = [];
   toimintapainotukset: Array<ToiminnallinenPainotusDTO> = [];
@@ -53,7 +51,6 @@ export class ToimipaikkaPainotuksetComponent implements OnChanges {
       next: kielipainotuksetData => {
         this.kielipainotukset = kielipainotuksetData.results;
         this.utilityService.sortByAlkamisPaattymisPvm(this.kielipainotukset);
-        this.toggleKielipainotukset.emit(!!this.kielipainotukset.length);
       },
       error: err => console.error(err)
     });
@@ -64,8 +61,6 @@ export class ToimipaikkaPainotuksetComponent implements OnChanges {
       next: toimintapainotuksetData => {
         this.toimintapainotukset = toimintapainotuksetData.results;
         this.utilityService.sortByAlkamisPaattymisPvm(this.toimintapainotukset);
-        this.toggleToimintapainotukset.emit(!!this.toimintapainotukset.length);
-
       },
       error: err => console.error(err)
     });
