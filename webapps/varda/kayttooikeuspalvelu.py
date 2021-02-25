@@ -69,7 +69,7 @@ def set_user_kayttooikeudet(service_name, henkilo_oid, user):
     """
     If user is OPH-staff, let the permissions be as they are, and exit.
     """
-    additional_details = getattr(user, 'additional_user_info', None)
+    additional_details = getattr(user, 'additional_cas_user_fields', None)
     if getattr(additional_details, 'approved_oph_staff', False):
         return None
 

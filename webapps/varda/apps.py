@@ -87,17 +87,42 @@ def load_dev_testing_data():
         load_testing_data()
 
 
-def receiver_auth_user(**kwargs):
+def receiver_save_user(**kwargs):
+    from django.utils import timezone
+
     from varda.cache import delete_object_ids_user_has_permissions
+    from varda.models import Z7_AdditionalUserFields
+
     created = kwargs['created']
     update_fields = kwargs['update_fields']
+    user = kwargs['instance']
     if not created and update_fields is None:
         """
         User permissions changed "on-the-fly".
         We need to remove the cache for user - varda.cache.get_object_ids_user_has_permissions
         """
-        user_id = kwargs['instance'].id
+        user_id = user.id
         delete_object_ids_user_has_permissions(user_id)
+    elif created and user.is_staff and user.has_usable_password():
+        # Update password_changed_timestamp when staff user is created
+        now = timezone.now()
+        Z7_AdditionalUserFields.objects.update_or_create(user=user, defaults={'password_changed_timestamp': now})
+
+
+def receiver_pre_save_user(**kwargs):
+    from django.utils import timezone
+    from varda.models import User, Z7_AdditionalUserFields
+
+    instance = kwargs['instance']
+    if not getattr(instance, 'pk', None):
+        # User is created, handle in post_save so that we can create related Z7_AdditionalUserFields object
+        return
+
+    user = User.objects.get(pk=instance.pk)
+    if instance.is_staff and instance.has_usable_password() and instance.password != user.password:
+        # Update password_changed_timestamp when staff user password is changed
+        now = timezone.now()
+        Z7_AdditionalUserFields.objects.update_or_create(user=instance, defaults={'password_changed_timestamp': now})
 
 
 def receiver_pre_save(sender, **kwargs):
@@ -183,8 +208,9 @@ class VardaConfig(AppConfig):
 
         pre_save.connect(receiver_pre_save, sender='varda.VakaJarjestaja')
         pre_save.connect(receiver_pre_save, sender='varda.PaosOikeus')
+        pre_save.connect(receiver_pre_save_user, sender='auth.User')
 
-        post_save.connect(receiver_auth_user, sender='auth.User')
+        post_save.connect(receiver_save_user, sender='auth.User')
         post_save.connect(receiver_save, sender='varda.VakaJarjestaja')
         post_save.connect(receiver_save, sender='varda.Toimipaikka')
         post_save.connect(receiver_save, sender='varda.ToiminnallinenPainotus')

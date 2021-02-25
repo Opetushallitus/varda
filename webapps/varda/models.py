@@ -974,7 +974,7 @@ class Z2_CodeTranslation(models.Model):
 
 
 class Z3_AdditionalCasUserFields(models.Model):
-    user = models.OneToOneField(User, related_name='additional_user_info', on_delete=models.PROTECT, primary_key=True)
+    user = models.OneToOneField(User, related_name='additional_cas_user_fields', on_delete=models.PROTECT, primary_key=True)
     kayttajatyyppi = models.CharField(max_length=50, blank=True)
     henkilo_oid = models.CharField(max_length=50, blank=True, null=True, validators=[validators.validate_henkilo_oid])
     etunimet = models.CharField(max_length=100, blank=True, null=True)
@@ -989,7 +989,7 @@ class Z3_AdditionalCasUserFields(models.Model):
         return str(self.user_id)
 
     class Meta:
-        verbose_name_plural = 'Additional user fields'
+        verbose_name_plural = 'Additional CAS-user fields'
 
 
 class Z4_CasKayttoOikeudet(models.Model):
@@ -1069,3 +1069,14 @@ class Z6_RequestLog(models.Model):
 
     class Meta:
         verbose_name_plural = 'Request log'
+
+
+class Z7_AdditionalUserFields(models.Model):
+    user = models.OneToOneField(User, related_name='additional_user_fields', on_delete=models.PROTECT, primary_key=True)
+    password_changed_timestamp = models.DateTimeField()
+
+    def __str__(self):
+        return str(self.user_id)
+
+    class Meta:
+        verbose_name_plural = 'Additional user fields'

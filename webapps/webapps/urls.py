@@ -20,6 +20,7 @@ from django.apps import apps
 from django.conf import settings
 
 from django.contrib import admin
+from django.contrib.auth import views as auth_views
 from django.urls import include, re_path
 from django.views.decorators.clickjacking import xframe_options_exempt, xframe_options_sameorigin
 from django_spaghetti.views import Plate
@@ -232,6 +233,10 @@ urlpatterns = [
     re_path(r'^accounts/callback$', django_cas_ng_views.CallbackView.as_view(), name='cas_ng_proxy_callback'),
     re_path(r'^accounts/huoltaja-login$', OppijaCasLoginView.as_view(), name='oppija_cas_ng_login'),
     re_path(r'^accounts/huoltaja-logout$', django_cas_ng_views.LogoutView.as_view(), name='oppija_cas_ng_logout'),
+    re_path(r'^accounts/password-reset/?$', auth_views.PasswordResetView.as_view(), name='admin_password_reset'),
+    re_path(r'^accounts/password-reset/done/?$', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
+    re_path(r'^accounts/reset/(?P<uidb64>.+)/(?P<token>.+)/?$', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    re_path(r'^accounts/reset/done/?$', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
     re_path(r'^api/admin/', include(router_admin.urls), name='api_admin'),
     re_path(r'^api/pulssi/', include(router_pulssi.urls), name='api-pulssi'),
     re_path(r'^api/ui/', include(router_ui.urls), name='api-ui'),

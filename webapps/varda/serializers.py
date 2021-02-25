@@ -120,17 +120,17 @@ class ActiveUserSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super(ActiveUserSerializer, self).to_representation(instance)
 
-        additional_user_info = Z3_AdditionalCasUserFields.objects.filter(user_id=instance.id).first()
-        if not additional_user_info:
+        additional_cas_user_fields = Z3_AdditionalCasUserFields.objects.filter(user_id=instance.id).first()
+        if not additional_cas_user_fields:
             data['asiointikieli_koodi'] = 'fi'
             data['henkilo_oid'] = ''
             return data
 
-        data['asiointikieli_koodi'] = additional_user_info.asiointikieli_koodi
-        henkilo_oid = additional_user_info.henkilo_oid
+        data['asiointikieli_koodi'] = additional_cas_user_fields.asiointikieli_koodi
+        henkilo_oid = additional_cas_user_fields.henkilo_oid
         data['henkilo_oid'] = henkilo_oid
 
-        if additional_user_info.kayttajatyyppi in [Kayttajatyyppi.OPPIJA_CAS.value, Kayttajatyyppi.OPPIJA_CAS_VALTUUDET.value]:
+        if additional_cas_user_fields.kayttajatyyppi in [Kayttajatyyppi.OPPIJA_CAS.value, Kayttajatyyppi.OPPIJA_CAS_VALTUUDET.value]:
             # Extra info for CAS users
             if henkilo_oid and (henkilo := Henkilo.objects.filter(henkilo_oid=henkilo_oid).first()):
                 data['etunimet'] = henkilo.etunimet
@@ -138,11 +138,11 @@ class ActiveUserSerializer(serializers.ModelSerializer):
                 data['sukunimi'] = henkilo.sukunimi
             else:
                 # No Henkilo object for this user
-                data['etunimet'] = additional_user_info.etunimet
-                data['kutsumanimi'] = additional_user_info.kutsumanimi
-                data['sukunimi'] = additional_user_info.sukunimi
+                data['etunimet'] = additional_cas_user_fields.etunimet
+                data['kutsumanimi'] = additional_cas_user_fields.kutsumanimi
+                data['sukunimi'] = additional_cas_user_fields.sukunimi
 
-            if huollettava_oid_list := additional_user_info.huollettava_oid_list:
+            if huollettava_oid_list := additional_cas_user_fields.huollettava_oid_list:
                 data['huollettava_list'] = ActiveUserHuollettavaSerializer(
                     instance=Henkilo.objects.filter(henkilo_oid__in=huollettava_oid_list), many=True
                 ).data

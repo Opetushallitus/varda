@@ -10,9 +10,11 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone as django_timezone
 from django_cas_ng.signals import cas_user_logout
 from rest_framework import exceptions
 from rest_framework.authentication import BasicAuthentication
@@ -24,7 +26,7 @@ from varda.enums.error_messages import ErrorMessages
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.enums.tietosisalto_ryhma import TietosisaltoRyhma
 from varda.oph_yhteiskayttopalvelu_autentikaatio import get_authentication_header
-from varda.models import VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet
+from varda.models import VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z7_AdditionalUserFields
 from varda.permission_groups import get_permission_group
 from varda.organisaatiopalvelu import create_vakajarjestaja_using_oid
 from webapps.celery import app
@@ -356,3 +358,19 @@ class CustomBasicAuthentication(BasicAuthentication):
                                            not is_not_valid_vaka_organization_in_organisaatiopalvelu(organisaatio['organisaatioOid'], must_be_vakajarjestaja=True)
                                            ]
         return valid_cas_henkilo_organisaatiot
+
+
+class PasswordExpirationModelBackend(ModelBackend):
+    def user_can_authenticate(self, user):
+        if user.is_staff and user.has_usable_password() and (settings.PRODUCTION_ENV or settings.QA_ENV):
+            # Only check password expiration in production and QA where actual emails can be sent
+            additional_user_fields = Z7_AdditionalUserFields.objects.filter(user=user).first()
+            if not additional_user_fields:
+                # AdditionalUserFields for this user are missing, force password change
+                return False
+            expiration_limit = django_timezone.now() - timedelta(days=200)
+            if additional_user_fields.password_changed_timestamp < expiration_limit:
+                # Password has not been changed in a defined time, force password change
+                return False
+
+        return super(PasswordExpirationModelBackend, self).user_can_authenticate(user)

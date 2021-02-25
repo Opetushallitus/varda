@@ -15,21 +15,21 @@ class HasOppijaPermissions(IsAdminUser):
             return True
 
         user = request.user
-        additional_user_info = getattr(user, 'additional_user_info', None)
+        additional_cas_user_fields = getattr(user, 'additional_cas_user_fields', None)
 
-        if user.is_anonymous or not additional_user_info:
+        if user.is_anonymous or not additional_cas_user_fields:
             return False
 
-        kayttajatyyppi = getattr(additional_user_info, 'kayttajatyyppi', None)
+        kayttajatyyppi = getattr(additional_cas_user_fields, 'kayttajatyyppi', None)
         if kayttajatyyppi not in [Kayttajatyyppi.OPPIJA_CAS.value, Kayttajatyyppi.OPPIJA_CAS_VALTUUDET.value]:
             return False
 
         requested_henkilo_oid = view.kwargs.get('henkilo_oid')
 
         allowed_oid_list = []
-        if henkilo_oid := getattr(additional_user_info, 'henkilo_oid', None):
+        if henkilo_oid := getattr(additional_cas_user_fields, 'henkilo_oid', None):
             allowed_oid_list.append(henkilo_oid)
-        if huollettava_oid_list := getattr(additional_user_info, 'huollettava_oid_list', None):
+        if huollettava_oid_list := getattr(additional_cas_user_fields, 'huollettava_oid_list', None):
             allowed_oid_list.extend(huollettava_oid_list)
 
         return requested_henkilo_oid in allowed_oid_list

@@ -2844,7 +2844,7 @@ class NestedLapsiKoosteViewSet(GenericViewSet):
         """
         Return vakapaatokset for given lapsi_id
         """
-        additional_details = getattr(user, 'additional_user_info', None)
+        additional_details = getattr(user, 'additional_cas_user_fields', None)
         if user.is_superuser or getattr(additional_details, 'approved_oph_staff', False):
             user_vakapaatos_ids_q = Q()
         else:
@@ -2861,7 +2861,7 @@ class NestedLapsiKoosteViewSet(GenericViewSet):
         """
         Return vakasuhteet for given lapsi_id
         """
-        additional_details = getattr(user, 'additional_user_info', None)
+        additional_details = getattr(user, 'additional_cas_user_fields', None)
         if user.is_superuser or getattr(additional_details, 'approved_oph_staff', False):
             user_vakasuhde_ids_q = Q()
         else:
@@ -2879,7 +2879,7 @@ class NestedLapsiKoosteViewSet(GenericViewSet):
         """
         Return maksutiedot for given lapsi_id
         """
-        additional_details = getattr(user, 'additional_user_info', None)
+        additional_details = getattr(user, 'additional_cas_user_fields', None)
         if user.is_superuser or getattr(additional_details, 'approved_oph_staff', False):
             user_maksutieto_ids_q = Q()
         else:

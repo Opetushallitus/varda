@@ -148,7 +148,7 @@ TESTING = sys.argv[1:2] == ['test']
 # https://github.com/django-guardian/django-guardian
 
 AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',  # default
+    'varda.custom_auth.PasswordExpirationModelBackend',  # default override
     'guardian.backends.ObjectPermissionBackend',
     'varda.cas.oppija_cas_views.OppijaCASBackend',  # Before CASBackend because has view check
     'django_cas_ng.backends.CASBackend',
@@ -416,6 +416,8 @@ OPPIJA_CAS_APPLY_ATTRIBUTES_TO_USER = True
 # Validation hash must be in header CAS_NEXT_HASH
 CAS_ACCEPT_PROXY_URL_FROM_HEADER = 'CAS_NEXT'
 CAS_SALT = os.environ.get('VARDA_SALT', DEFAULT_CAS_SALT_FOR_TESTING_ONLY)
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 """
 TODO: This does not currently work. Login fails with 403 forbidden.

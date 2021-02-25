@@ -590,7 +590,7 @@ def permission_groups_in_organization(user, organisaatio_oid, z4_groups):
 
 
 def get_permission_checked_pidempi_poissaolo_katselija_queryset_for_user(user):
-    additional_details = getattr(user, 'additional_user_info', None)
+    additional_details = getattr(user, 'additional_cas_user_fields', None)
     extra_view_perms = getattr(additional_details, 'approved_oph_staff', False)
     permission = 'HENKILOSTO_TYONTEKIJA'
     return _get_permission_checked_pidempi_poissaolo_queryset_for_user(user, permission, extra_view_perms)
@@ -699,7 +699,7 @@ def is_oph_staff(user):
     :param user: User object
     :return: boolean
     """
-    additional_details = getattr(user, 'additional_user_info', None)
+    additional_details = getattr(user, 'additional_cas_user_fields', None)
     return getattr(additional_details, 'approved_oph_staff', False)
 
 

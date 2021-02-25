@@ -33,8 +33,8 @@ class AbstractOppijaViewSet(GenericViewSet, RetrieveModelMixin):
             raise Http404
 
         user = self.request.user
-        if (hasattr(user, 'additional_user_info') and
-                ((huollettava_oid_list := getattr(user.additional_user_info, 'huollettava_oid_list', None)) and
+        if (hasattr(user, 'additional_cas_user_fields') and
+                ((huollettava_oid_list := getattr(user.additional_cas_user_fields, 'huollettava_oid_list', None)) and
                  henkilo_oid in huollettava_oid_list) and henkilo.turvakielto):
             # If user gets information of huollettava and target henkilo has turvakielto, raise 404
             raise Http404

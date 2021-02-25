@@ -269,10 +269,10 @@ class VardaOppijaViewsTests(TestCase):
         user_suomifi.impersonatorPersonOid = huoltaja_oid
         _oppija_post_login_handler(user_suomifi)
 
-        additional_user_info = Z3_AdditionalCasUserFields.objects.filter(user=user_suomifi).first()
-        expected_huoltaja_oid = additional_user_info.henkilo_oid
+        additional_cas_user_fields = Z3_AdditionalCasUserFields.objects.filter(user=user_suomifi).first()
+        expected_huoltaja_oid = additional_cas_user_fields.henkilo_oid
         self.assertEqual(expected_huoltaja_oid, huoltaja_oid)
-        expected_huollettava_oid = additional_user_info.huollettava_oid_list[0]
+        expected_huollettava_oid = additional_cas_user_fields.huollettava_oid_list[0]
         self.assertEqual(expected_huollettava_oid, lapsi_oid)
 
         return SetUpTestClient(user_suomifi.username).client()
