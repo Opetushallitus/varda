@@ -1,6 +1,10 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.7 (25.02.2021)
+- OPHVARDA-2073: Angular 11 päivitys
+- OPHVARDA-2058: Katsele tietoja yhteenveto info-kentät
+
 1.5.6 (18.02.2021)
 - OPHVARDA-2134: Käyttäjäanalytiikka
 - OPHVARDA-1763: Lokalisaatiopalveluun siirtymisen viimeistely
