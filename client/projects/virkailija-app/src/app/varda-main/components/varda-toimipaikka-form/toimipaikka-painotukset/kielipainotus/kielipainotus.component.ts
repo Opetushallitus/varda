@@ -6,6 +6,7 @@ import { VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/s
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaVakajarjestajaApiService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja-api.service';
 import { KielipainotusDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
+import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { CodeDTO } from 'varda-shared';
 import { VardaDateService } from '../../../../services/varda-date.service';
 import { PainotusAbstractComponent } from '../painotus.abstract';
@@ -34,6 +35,7 @@ export class KielipainotusComponent extends PainotusAbstractComponent<Kielipaino
 
   initForm() {
     this.painotusForm = new FormGroup({
+      lahdejarjestelma: new FormControl(this.painotus?.lahdejarjestelma || Lahdejarjestelma.kayttoliittyma),
       id: new FormControl(this.painotus?.id),
       toimipaikka: new FormControl(this.toimipaikka?.url),
       kielipainotus_koodi: new FormControl(this.painotus?.kielipainotus_koodi, Validators.required),

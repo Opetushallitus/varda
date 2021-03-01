@@ -19,6 +19,7 @@ import { Subscription, Observable, BehaviorSubject } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { TranslateService } from '@ngx-translate/core';
 import { HenkiloRooliEnum } from 'projects/virkailija-app/src/app/utilities/models/enums/henkilorooli.enum';
+import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 
 
 @Component({
@@ -91,6 +92,7 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
 
   initLapsiForm() {
     this.lapsiForm = new FormGroup({
+      lahdejarjestelma: new FormControl(Lahdejarjestelma.kayttoliittyma),
       henkilo_oid: new FormControl(this.henkilo.henkilo_oid, Validators.required),
       paos_jarjestaja_toimipaikka: new FormControl(null),
       paos_kytkin: new FormControl(false),

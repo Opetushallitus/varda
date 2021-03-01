@@ -1,6 +1,7 @@
-import { Hallinnointijarjestelma } from '../enums/hallinnointijarjestelma';
+import { Hallinnointijarjestelma, Lahdejarjestelma } from '../enums/hallinnointijarjestelma';
 
 export class VardaToimipaikkaDTO {
+  lahdejarjestelma?: Lahdejarjestelma;
   id?: number;
   url?: string;
   vakajarjestaja?: string;
@@ -84,6 +85,7 @@ export class ToimipaikkaKooste {
 }
 
 export class KielipainotusDTO {
+  lahdejarjestelma?: Lahdejarjestelma;
   id: number;
   url?: string;
   toimipaikka?: string;
@@ -93,6 +95,7 @@ export class KielipainotusDTO {
 }
 
 export class ToiminnallinenPainotusDTO {
+  lahdejarjestelma?: Lahdejarjestelma;
   id: number;
   url?: string;
   toimipaikka?: string;

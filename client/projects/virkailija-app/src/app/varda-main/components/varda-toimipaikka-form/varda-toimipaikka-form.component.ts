@@ -16,7 +16,7 @@ import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajar
 import { VardaFormValidators } from '../../../shared/validators/varda-form-validators';
 import { VardaVakajarjestajaUi } from '../../../utilities/models';
 import { VardaToimipaikkaDTO, VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
-import { Hallinnointijarjestelma } from '../../../utilities/models/enums/hallinnointijarjestelma';
+import { Hallinnointijarjestelma, Lahdejarjestelma } from '../../../utilities/models/enums/hallinnointijarjestelma';
 import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 import { VardaDateService } from '../../services/varda-date.service';
 
@@ -138,6 +138,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
   initForm(toimipaikka?: VardaToimipaikkaDTO) {
     this.toimipaikka = toimipaikka;
     this.toimipaikkaForm = new FormGroup({
+      lahdejarjestelma: new FormControl(this.toimipaikka?.lahdejarjestelma || Lahdejarjestelma.kayttoliittyma),
       id: new FormControl(toimipaikka?.id),
       nimi: new FormControl(toimipaikka?.nimi,
         [Validators.required, Validators.minLength(3), Validators.maxLength(200), VardaFormValidators.hasCharacters(), VardaFormValidators.rejectSpecialChars]),
