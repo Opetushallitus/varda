@@ -7,8 +7,6 @@ import { PaosCreateEvent, PaosToimintaService } from '../paos-toiminta.service';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { VardaPaosApiService } from 'projects/virkailija-app/src/app/core/services/varda-paos-api.service';
 import { VirkailijaTranslations } from '../../../../../assets/i18n/virkailija-translations.enum';
-import { VardaVakajarjestajaApiService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja-api.service';
-import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
 
 @Component({
   selector: 'app-paos-added-toimipaikat',
@@ -38,9 +36,7 @@ export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoC
 
   constructor(
     private paosService: VardaPaosApiService,
-    private paosToimintaService: PaosToimintaService,
-    private vakajarjestajaApiService: VardaVakajarjestajaApiService,
-    private vakajarjestajaService: VardaVakajarjestajaService
+    private paosToimintaService: PaosToimintaService
   ) {
     super();
   }
@@ -117,6 +113,7 @@ export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoC
         this.paosToimintaService.pushDeletedToimintaOrganisaatio(this.paosToimintaToDelete.toimipaikka_id, PaosCreateEvent.Toimipaikka);
         this.clearTallenusvastuu();
         this.getPaosToiminnat();
+        this.paosToimintaService.updateToimipaikkalist();
       },
       error: this.paosToimintaService.pushGenericErrorMessage,
     });
@@ -149,8 +146,7 @@ export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoC
           next: value => {
             this.clearTallenusvastuu();
             this.getPaosToiminnat();
-
-            this.vakajarjestajaApiService.getToimipaikat(this.selectedVakajarjestaja.id).subscribe(toimipaikat => this.vakajarjestajaService.setToimipaikat(toimipaikat));
+            this.paosToimintaService.updateToimipaikkalist();
           },
           error: this.paosToimintaService.pushGenericErrorMessage,
         });

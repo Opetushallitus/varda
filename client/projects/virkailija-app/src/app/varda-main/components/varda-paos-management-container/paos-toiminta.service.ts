@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 import { VirkailijaTranslations } from '../../../../assets/i18n/virkailija-translations.enum';
+import { VardaVakajarjestajaApiService } from '../../../core/services/varda-vakajarjestaja-api.service';
+import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
 
 export enum PaosCreateEvent {
   Toimipaikka,
@@ -35,7 +37,10 @@ export class PaosToimintaService {
     return [...this._createdPaosToimintaOrganisaatioUrl];
   }
 
-  constructor() {
+  constructor(
+    private vakajarjestajaApiService: VardaVakajarjestajaApiService,
+    private vakajarjestajaService: VardaVakajarjestajaService
+  ) {
     this._createdPaosToimintaOrganisaatioUrl = [];
   }
 
@@ -43,6 +48,7 @@ export class PaosToimintaService {
   pushCreateEvent(paosCreateEvent: PaosCreateEvent, url: string) {
     this._createdPaosToimintaOrganisaatioUrl.push(url);
     this.createEventsSource.next(paosCreateEvent);
+    this.updateToimipaikkalist();
   }
 
   pushToimintaOrganisaatio(organisaatioId: number, type: PaosCreateEvent) {
@@ -51,6 +57,12 @@ export class PaosToimintaService {
 
   pushDeletedToimintaOrganisaatio(organisaatioId: number, type: PaosCreateEvent) {
     this._toimintaDeletedOrganisaatioIdSource.next({ id: organisaatioId, type });
+  }
+
+  updateToimipaikkalist() {
+    this.vakajarjestajaApiService.getToimipaikat(this.vakajarjestajaService.getSelectedVakajarjestaja().id).subscribe(
+      toimipaikat => this.vakajarjestajaService.setToimipaikat(toimipaikat)
+    );
   }
 
   pushGenericErrorMessage = (err) => {
