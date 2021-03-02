@@ -93,6 +93,7 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
   initLapsiForm() {
     this.lapsiForm = new FormGroup({
       lahdejarjestelma: new FormControl(Lahdejarjestelma.kayttoliittyma),
+      toimipaikka_oid: new FormControl(this.henkilonToimipaikka?.organisaatio_oid),
       henkilo_oid: new FormControl(this.henkilo.henkilo_oid, Validators.required),
       paos_jarjestaja_toimipaikka: new FormControl(null),
       paos_kytkin: new FormControl(false),
