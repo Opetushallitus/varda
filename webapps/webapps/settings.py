@@ -190,6 +190,9 @@ LOGGING = {
         'require_debug_true': {
             '()': 'django.utils.log.RequireDebugTrue',
         },
+        'require_prod_env': {
+            '()': 'webapps.logging.ProductionFilter',
+        },
     },
     'formatters': {
         'verbose': {
@@ -217,7 +220,7 @@ LOGGING = {
         },
         'mail_admins': {
             'level': 'ERROR',
-            'filters': ['require_debug_false'],
+            'filters': ['require_prod_env'],
             'class': 'django.utils.log.AdminEmailHandler',
             'include_html': True
         },
