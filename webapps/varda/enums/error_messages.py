@@ -303,3 +303,4 @@ class ErrorMessages(enum.Enum):
     MI015 = get_error_dict('MI015', 'Not found.')
     MI016 = get_error_dict('MI016', 'A server error occurred. Team is investigating this.')
     MI017 = get_error_dict('MI017', 'Query parameters are invalid.')
+    MI018 = get_error_dict('MI018', 'lahdejarjestelma field is required if tunniste field is not empty.')

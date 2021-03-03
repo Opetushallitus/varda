@@ -9,8 +9,6 @@ from django.db.models import ProtectedError, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_yasg import openapi
-from drf_yasg.inspectors import SwaggerAutoSchema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
@@ -24,6 +22,7 @@ from varda.cache import (cached_retrieve_response, delete_cache_keys_related_mod
                          get_object_ids_for_user_by_model)
 from varda.enums.error_messages import ErrorMessages
 from varda.exceptions.conflict_error import ConflictError
+from varda.misc_viewsets import ObjectByTunnisteMixin
 from varda.models import (VakaJarjestaja, TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
                           PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Z4_CasKayttoOikeudet)
 from varda.permission_groups import (assign_object_permissions_to_tyontekija_groups,
@@ -48,48 +47,7 @@ from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, Palveluss
 from varda.tasks import assign_taydennyskoulutus_permissions_for_all_toimipaikat_task
 
 
-# Get an instance of a logger
 logger = logging.getLogger(__name__)
-
-
-class TunnisteIdSchema(SwaggerAutoSchema):
-    def get_query_parameters(self):
-        query_params = super(TunnisteIdSchema, self).get_query_parameters()
-        path_list = self.path.split('/')
-        if path_list[-2] == '{id}':
-            # Override id path parameter description to include lahdejarjestelma:tunniste option
-            model_name = self.view.get_queryset().model.__name__
-            query_params.append(
-                openapi.Parameter('id', openapi.IN_PATH,
-                                  description=f'A unique integer value identifying this {model_name}. Can also be '
-                                              'lahdejarjestelma and tunniste pair (lahdejarjestelma:tunniste).',
-                                  type=openapi.TYPE_STRING)
-            )
-        return query_params
-
-
-class ObjectByTunnisteMixin:
-    """
-    @DynamicAttrs
-    """
-    swagger_schema = TunnisteIdSchema
-    lookup_value_regex = '[^/]+'
-
-    def get_object(self):
-        path_param = self.kwargs[self.lookup_field]
-
-        if not path_param.isdigit():
-            params = path_param.split(':', 1)
-            # Check that both lahdejarjestelma and tunniste have been provided and that they are not empty
-            if len(params) != 2 or (len(params) == 2 and (not params[0] or not params[1])):
-                raise Http404
-
-            model_qs = self.get_queryset().filter(lahdejarjestelma=params[0], tunniste=params[1])
-            if not model_qs.exists():
-                raise Http404
-            self.kwargs[self.lookup_field] = str(model_qs.first().id)
-
-        return super().get_object()
 
 
 @auditlogclass

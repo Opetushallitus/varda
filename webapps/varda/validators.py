@@ -415,6 +415,14 @@ def validate_unique_lahdejarjestelma_tunniste_pair(self, model):
     so implement custom unique validation for lahdejarjestelma tunniste pair
     """
 
+    # TODO: Remove this if else block when lahdejarjestelma is mandatory for vakatiedot
+    if not self.lahdejarjestelma:
+        if self.tunniste:
+            raise ValidationErrorRest({'errors': [ErrorMessages.MI018.value]})
+        else:
+            # lahdejarjestelma and tunniste are empty
+            return
+
     # Ignored if tunniste is not given
     if not self.tunniste:
         return

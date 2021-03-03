@@ -129,23 +129,28 @@ def check_if_admin_mutable_object_is_changed(user, instance, data, key, **kwargs
     check_if_immutable_object_is_changed(instance, data, key, **kwargs)
 
 
-def check_if_immutable_object_is_changed(instance, data, key, attr=None, many=False):
-    if attr is None:
-        def get_id(x):
-            return x.id
-        attr = get_id
+def check_if_immutable_object_is_changed(instance, data, key, compare_id=True):
+    """
+    Use this function to determine if some value has changed in PUT/PATCH requests compared to the existing object.
+    By default id-field is used in comparison (e.g. id of Lapsi, VakaJarjestaja, Toimipaikka...), use compare_id=False
+    to compare values directly.
+    :param instance: object instance
+    :param data: new data dictionary
+    :param key: key to compare
+    :param compare_id: pass True if you want to compare the values directly
+    """
+    if compare_id:
+        def compare_function(value):
+            return getattr(value, 'id', None)
+    else:
+        def compare_function(value):
+            return value
+    compare_value_getter = compare_function
 
     if key in data:
-        if not many:
-            if attr(data[key]) != attr(getattr(instance, key)):
-                msg = ({key: [ErrorMessages.GE013.value]})
-                raise ValidationError(msg, code='invalid')
-        else:
-            datas = [attr(elem[key]) for elem in data]
-            instances = [attr(getattr(instance, key)) for elem in instance]
-            if datas != instances:
-                msg = ({key: [ErrorMessages.GE013.value]})
-                raise ValidationError(msg, code='invalid')
+        if compare_value_getter(data[key]) != compare_value_getter(getattr(instance, key)):
+            msg = ({key: [ErrorMessages.GE013.value]})
+            raise ValidationError(msg, code='invalid')
 
 
 def _check_overlapping_object(model, parent_path, limit, error, data, extra_filters=(), self_id=None):

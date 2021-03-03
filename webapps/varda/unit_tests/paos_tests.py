@@ -40,7 +40,8 @@ class VardaPaosTests(TestCase):
         data_lapsi = {
             'henkilo': henkilo_url,
             'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
-            'paos_organisaatio': '/api/v1/vakajarjestajat/2/'
+            'paos_organisaatio': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
         }
         resp_lapsi = client_tester2.post('/api/v1/lapset/', data_lapsi)
         assert_status_code(resp_lapsi, 201)
@@ -54,7 +55,8 @@ class VardaPaosTests(TestCase):
             'tilapainen_vaka_kytkin': False,
             'vuorohoito': True,
             'alkamis_pvm': '2020-01-05',
-            'hakemus_pvm': '2020-01-01'
+            'hakemus_pvm': '2020-01-01',
+            'lahdejarjestelma': '1',
         }
 
         resp_vakapaatos = client_tester2.post('/api/v1/varhaiskasvatuspaatokset/', data_vakapaatos)
@@ -66,7 +68,8 @@ class VardaPaosTests(TestCase):
             'varhaiskasvatuspaatos': vakapaatos_url,
             'toimipaikka': '/api/v1/toimipaikat/5/',
             'alkamis_pvm': '2020-01-05',
-            'paattymis_pvm': '2021-01-01'
+            'paattymis_pvm': '2021-01-01',
+            'lahdejarjestelma': '1',
         }
 
         resp_vakasuhde = client_tester2.post('/api/v1/varhaiskasvatussuhteet/', data_vakasuhde)
@@ -126,7 +129,8 @@ class VardaPaosTests(TestCase):
         data_lapsi = {
             'henkilo': henkilo_url,
             'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
-            'paos_organisaatio': '/api/v1/vakajarjestajat/2/'
+            'paos_organisaatio': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
         }
         resp_lapsi = client_tester2.post('/api/v1/lapset/', data_lapsi)
         assert_status_code(resp_lapsi, 201)
@@ -141,7 +145,8 @@ class VardaPaosTests(TestCase):
             'tilapainen_vaka_kytkin': False,
             'vuorohoito': True,
             'alkamis_pvm': '2020-01-05',
-            'hakemus_pvm': '2020-01-01'
+            'hakemus_pvm': '2020-01-01',
+            'lahdejarjestelma': '1',
         }
 
         resp_vakapaatos = client_tester2.post('/api/v1/varhaiskasvatuspaatokset/', data_vakapaatos)
@@ -153,7 +158,8 @@ class VardaPaosTests(TestCase):
             'varhaiskasvatuspaatos': vakapaatos_url,
             'toimipaikka': '/api/v1/toimipaikat/5/',
             'alkamis_pvm': '2020-01-05',
-            'paattymis_pvm': '2021-01-01'
+            'paattymis_pvm': '2021-01-01',
+            'lahdejarjestelma': '1',
         }
 
         resp_vakasuhde = client_tester2.post('/api/v1/varhaiskasvatussuhteet/', data_vakasuhde)
@@ -177,7 +183,8 @@ class VardaPaosTests(TestCase):
             'asiakasmaksu': 0,
             'perheen_koko': 2,
             'alkamis_pvm': '2020-01-05',
-            'paattymis_pvm': '2021-05-05'
+            'paattymis_pvm': '2021-05-05',
+            'lahdejarjestelma': '1',
         }
 
         resp_maksutieto_tester7 = client_tester7.post('/api/v1/maksutiedot/', json.dumps(data_maksutieto), content_type='application/json')
@@ -294,14 +301,17 @@ class VardaPaosTests(TestCase):
         resp_tester2 = tester2_client.put('/api/v1/varhaiskasvatussuhteet/4/', vakasuhde_4, content_type='application/json')
         assert_status_code(resp_tester2, 200)
         resp_tester5 = tester5_client.put('/api/v1/varhaiskasvatussuhteet/4/', vakasuhde_4, content_type='application/json')
-        assert_status_code(resp_tester5, 403)
+        # No change_varhaiskasvatuspaatos permissions to linked vakapaatos, masked as 400
+        assert_status_code(resp_tester5, 400)
+        assert_validation_error(resp_tester5, 'varhaiskasvatuspaatos', 'GE008', 'Invalid hyperlink, object does not exist.')
         resp_tester5 = tester5_client.get('/api/v1/varhaiskasvatussuhteet/4/')
         assert_status_code(resp_tester5, 200)
 
         resp_tester2 = tester2_client.put('/api/v1/varhaiskasvatuspaatokset/4/', vakapaatos_4, content_type='application/json')
         assert_status_code(resp_tester2, 200)
         resp_tester5 = tester5_client.put('/api/v1/varhaiskasvatuspaatokset/4/', vakapaatos_4, content_type='application/json')
-        assert_status_code(resp_tester5, 403)
+        assert_status_code(resp_tester5, 400)
+        assert_validation_error(resp_tester5, 'lapsi', 'GE008', 'Invalid hyperlink, object does not exist.')
         resp_tester5 = tester5_client.get('/api/v1/varhaiskasvatuspaatokset/4/')
         assert_status_code(resp_tester5, 200)
 
@@ -316,14 +326,16 @@ class VardaPaosTests(TestCase):
                                             tallentaja_organisaatio_id, voimassa_kytkin)
 
         resp_tester2 = tester2_client.put('/api/v1/varhaiskasvatussuhteet/4/', vakasuhde_4, content_type='application/json')
-        assert_status_code(resp_tester2, 403)
+        assert_status_code(resp_tester2, 400)
+        assert_validation_error(resp_tester2, 'varhaiskasvatuspaatos', 'GE008', 'Invalid hyperlink, object does not exist.')
         resp_tester2 = tester2_client.get('/api/v1/varhaiskasvatussuhteet/4/')
         assert_status_code(resp_tester2, 200)
         resp_tester5 = tester5_client.put('/api/v1/varhaiskasvatussuhteet/4/', vakasuhde_4, content_type='application/json')
         assert_status_code(resp_tester5, 200)
 
         resp_tester2 = tester2_client.put('/api/v1/varhaiskasvatuspaatokset/4/', vakapaatos_4, content_type='application/json')
-        assert_status_code(resp_tester2, 403)
+        assert_status_code(resp_tester2, 400)
+        assert_validation_error(resp_tester2, 'lapsi', 'GE008', 'Invalid hyperlink, object does not exist.')
         resp_tester2 = tester2_client.get('/api/v1/varhaiskasvatuspaatokset/4/')
         assert_status_code(resp_tester2, 200)
         resp_tester5 = tester5_client.put('/api/v1/varhaiskasvatuspaatokset/4/', vakapaatos_4, content_type='application/json')
@@ -337,18 +349,18 @@ class VardaPaosTests(TestCase):
                                             tallentaja_organisaatio_id, voimassa_kytkin)
 
         resp_tester2 = tester2_client.put('/api/v1/varhaiskasvatussuhteet/4/', vakasuhde_4, content_type='application/json')
-        assert_status_code(resp_tester2, 403)
-        assert_validation_error(resp_tester2, 'errors', 'PE001', 'User does not have permissions to change this object.')
+        assert_status_code(resp_tester2, 400)
+        assert_validation_error(resp_tester2, 'varhaiskasvatuspaatos', 'GE008', 'Invalid hyperlink, object does not exist.')
         resp_tester5 = tester5_client.put('/api/v1/varhaiskasvatussuhteet/4/', vakasuhde_4, content_type='application/json')
-        assert_status_code(resp_tester5, 403)
-        assert_validation_error(resp_tester5, 'errors', 'PE001', 'User does not have permissions to change this object.')
+        assert_status_code(resp_tester5, 400)
+        assert_validation_error(resp_tester5, 'varhaiskasvatuspaatos', 'GE008', 'Invalid hyperlink, object does not exist.')
 
         resp_tester2 = tester2_client.put('/api/v1/varhaiskasvatuspaatokset/4/', vakapaatos_4, content_type='application/json')
-        assert_status_code(resp_tester2, 403)
-        assert_validation_error(resp_tester2, 'errors', 'PE001', 'User does not have permissions to change this object.')
+        assert_status_code(resp_tester2, 400)
+        assert_validation_error(resp_tester2, 'lapsi', 'GE008', 'Invalid hyperlink, object does not exist.')
         resp_tester5 = tester5_client.put('/api/v1/varhaiskasvatuspaatokset/4/', vakapaatos_4, content_type='application/json')
-        assert_status_code(resp_tester5, 403)
-        assert_validation_error(resp_tester5, 'errors', 'PE001', 'User does not have permissions to change this object.')
+        assert_status_code(resp_tester5, 400)
+        assert_validation_error(resp_tester5, 'lapsi', 'GE008', 'Invalid hyperlink, object does not exist.')
 
         resp_tester2 = tester2_client.get('/api/v1/varhaiskasvatussuhteet/4/')
         assert_status_code(resp_tester2, 200)

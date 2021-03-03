@@ -431,7 +431,9 @@ def create_toimipaikat_and_painotukset():
         alkamis_pvm='2017-02-03',
         paattymis_pvm=None,
         changed_by=tester_user,
-        hallinnointijarjestelma='ORGANISAATIO'
+        hallinnointijarjestelma='ORGANISAATIO',
+        lahdejarjestelma='1',
+        tunniste='testing-toimipaikka1'
     )
 
     Toimipaikka.objects.create(
@@ -457,7 +459,9 @@ def create_toimipaikat_and_painotukset():
         kielipainotus_kytkin=False,
         alkamis_pvm='2017-08-02',
         paattymis_pvm=None,
-        changed_by=tester2_user
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='testing-toimipaikka2'
     )
 
     toimipaikka_3 = Toimipaikka.objects.create(
@@ -483,7 +487,9 @@ def create_toimipaikat_and_painotukset():
         kielipainotus_kytkin=False,
         alkamis_pvm='2015-08-22',
         paattymis_pvm=None,
-        changed_by=tester2_user
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='testing-toimipaikka3'
     )
 
     toimipaikka_4 = Toimipaikka.objects.create(
@@ -509,7 +515,9 @@ def create_toimipaikat_and_painotukset():
         kielipainotus_kytkin=True,
         alkamis_pvm='2017-01-03',
         paattymis_pvm=None,
-        changed_by=tester_user
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-toimipaikka4'
     )
 
     Toimipaikka.objects.create(
@@ -535,7 +543,9 @@ def create_toimipaikat_and_painotukset():
         kielipainotus_kytkin=True,
         alkamis_pvm='2017-01-03',
         paattymis_pvm=None,
-        changed_by=tester_user
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-toimipaikka5'
     )
 
     Toimipaikka.objects.create(
@@ -561,7 +571,9 @@ def create_toimipaikat_and_painotukset():
         kielipainotus_kytkin=True,
         alkamis_pvm='2017-01-03',
         paattymis_pvm=None,
-        changed_by=tester_e2e_user
+        changed_by=tester_e2e_user,
+        lahdejarjestelma='1',
+        tunniste='testing-toimipaikka6'
     )
 
     Toimipaikka.objects.create(
@@ -587,7 +599,9 @@ def create_toimipaikat_and_painotukset():
         kielipainotus_kytkin=False,
         alkamis_pvm='2020-02-20',
         paattymis_pvm=None,
-        changed_by=tester_user
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-toimipaikka7'
     )
 
     Toimipaikka.objects.create(
@@ -613,7 +627,9 @@ def create_toimipaikat_and_painotukset():
         kielipainotus_kytkin=False,
         alkamis_pvm='2018-05-01',
         paattymis_pvm=None,
-        changed_by=tester10_user
+        changed_by=tester10_user,
+        lahdejarjestelma='1',
+        tunniste='testing-toimipaikka8'
     )
 
     Toimipaikka.objects.create(
@@ -639,7 +655,9 @@ def create_toimipaikat_and_painotukset():
         kielipainotus_kytkin=False,
         alkamis_pvm='2018-09-01',
         paattymis_pvm=None,
-        changed_by=tester10_user
+        changed_by=tester10_user,
+        lahdejarjestelma='1',
+        tunniste='testing-toimipaikka9'
     )
 
     Toimipaikka.objects.create(
@@ -665,7 +683,9 @@ def create_toimipaikat_and_painotukset():
         kielipainotus_kytkin=False,
         alkamis_pvm='2019-03-01',
         paattymis_pvm=None,
-        changed_by=tester11_user
+        changed_by=tester11_user,
+        lahdejarjestelma='1',
+        tunniste='testing-toimipaikka10'
     )
 
     assign_permissions_to_toimipaikka_obj('1.2.246.562.10.9395737548810', '1.2.246.562.10.93957375488')
@@ -687,7 +707,9 @@ def create_toimipaikat_and_painotukset():
         toimintapainotus_koodi='tp01',
         alkamis_pvm='2017-02-10',
         paattymis_pvm=None,
-        changed_by=tester_user
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-toiminnallinenpainotus1'
     )
 
     toiminnallinenpainotus_2 = ToiminnallinenPainotus.objects.create(
@@ -695,7 +717,9 @@ def create_toimipaikat_and_painotukset():
         toimintapainotus_koodi='tp03',
         alkamis_pvm='2017-12-29',
         paattymis_pvm=None,
-        changed_by=tester_user
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-toiminnallinenpainotus2'
     )
 
     kielipainotus_1 = KieliPainotus.objects.create(
@@ -703,7 +727,9 @@ def create_toimipaikat_and_painotukset():
         kielipainotus_koodi='FI',
         alkamis_pvm='2017-02-10',
         paattymis_pvm=None,
-        changed_by=tester_user
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-kielipainotus1'
     )
 
     kielipainotus_2 = KieliPainotus.objects.create(
@@ -711,7 +737,9 @@ def create_toimipaikat_and_painotukset():
         kielipainotus_koodi='EN',
         alkamis_pvm='2017-12-30',
         paattymis_pvm=None,
-        changed_by=tester_user
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-kielipainotus2'
     )
 
     assign_object_level_permissions('1.2.246.562.10.9395737548810', ToiminnallinenPainotus, toiminnallinenpainotus_1)
@@ -993,38 +1021,38 @@ def create_henkilot():
     # 010280-952L Huoltaja jolla lapsi 010215A951T
     henkilo_15 = Henkilo.objects.create(
         henkilotunnus='gAAAAABdiMQHWzMtv1WMLLnWDaiTONIkyMsK5ugZUJm3Ke4d4PR8wLLUs27QVA-iK1t9Lev3zEwCwSbYiSp0Pw_tNix1Hx05mA==',
-        henkilotunnus_unique_hash="94d31d49afa408f076996b5ba0317671f185f71b39ac0d1980f341b5b04fb07d",
-        syntyma_pvm="1980-03-11",
-        henkilo_oid="1.2.246.562.24.99924839517",
-        etunimet="Tessa",
-        kutsumanimi="Tessa",
-        sukunimi="Testilä",
-        aidinkieli_koodi="FI",
-        kotikunta_koodi="915",
+        henkilotunnus_unique_hash='94d31d49afa408f076996b5ba0317671f185f71b39ac0d1980f341b5b04fb07d',
+        syntyma_pvm='1980-03-11',
+        henkilo_oid='1.2.246.562.24.99924839517',
+        etunimet='Tessa',
+        kutsumanimi='Tessa',
+        sukunimi='Testilä',
+        aidinkieli_koodi='FI',
+        kotikunta_koodi='915',
         turvakielto=False,
         sukupuoli_koodi=1,
-        katuosoite="Koivukuja 4",
-        postinumero="01230",
-        postitoimipaikka="Vantaa",
+        katuosoite='Koivukuja 4',
+        postinumero='01230',
+        postitoimipaikka='Vantaa',
         changed_by=tester_user
     )
 
     # huoltajan lapsi 010215A951T
     henkilo_16 = Henkilo.objects.create(
         henkilotunnus='gAAAAABdiMQH-7x0FQ8sN7JIIP1bFUgEBpWlqb7-fdHXWXVdpAU6iKR37gQYe48qLrKs-JRNm20gJQMkKNK3tY5nvYSN5y73rw==',
-        henkilotunnus_unique_hash="eca80ee4b264ceb572db5a6244bae9c5141400921ec5b80a7d9a2262de495b11",
-        syntyma_pvm="2018-03-11",
-        henkilo_oid="1.2.246.562.24.86012997950",
-        etunimet="Teila Aamu Runelma",
-        kutsumanimi="Teila",
-        sukunimi="Testilä",
-        aidinkieli_koodi="FI",
-        kotikunta_koodi="915",
+        henkilotunnus_unique_hash='eca80ee4b264ceb572db5a6244bae9c5141400921ec5b80a7d9a2262de495b11',
+        syntyma_pvm='2018-03-11',
+        henkilo_oid='1.2.246.562.24.86012997950',
+        etunimet='Teila Aamu Runelma',
+        kutsumanimi='Teila',
+        sukunimi='Testilä',
+        aidinkieli_koodi='FI',
+        kotikunta_koodi='915',
         turvakielto=False,
         sukupuoli_koodi=1,
-        katuosoite="Koivukuja 4",
-        postinumero="01230",
-        postitoimipaikka="Vantaa",
+        katuosoite='Koivukuja 4',
+        postinumero='01230',
+        postitoimipaikka='Vantaa',
         changed_by=tester_user
     )
 
@@ -1351,7 +1379,9 @@ def create_lapset():
     lapsi_1 = Lapsi.objects.create(
         henkilo=henkilo_2,
         vakatoimija=vakajarjestaja_2,
-        changed_by=tester_user
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-lapsi1'
     )
 
     henkilo_3 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('120516A123V'))
@@ -1359,13 +1389,17 @@ def create_lapset():
         henkilo=henkilo_3,
         vakatoimija=vakajarjestaja_2,
         changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-lapsi2'
     )
 
     henkilo_7 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('170334-130B'))
     lapsi_3 = Lapsi.objects.create(
         henkilo=henkilo_7,
         vakatoimija=vakajarjestaja_1,
-        changed_by=tester2_user
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='testing-lapsi3'
     )
 
     henkilo_9 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('120699-985W'))
@@ -1373,7 +1407,9 @@ def create_lapset():
         henkilo=henkilo_9,
         oma_organisaatio=vakajarjestaja_1,
         paos_organisaatio=vakajarjestaja_2,
-        changed_by=tester2_user
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='testing-lapsi4'
     )
 
     henkilo_11 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('220616A322J'))
@@ -1381,75 +1417,97 @@ def create_lapset():
         henkilo=henkilo_11,
         oma_organisaatio=vakajarjestaja_4,
         paos_organisaatio=vakajarjestaja_2,
-        changed_by=tester4_user
+        changed_by=tester4_user,
+        lahdejarjestelma='1',
+        tunniste='testing-lapsi5'
     )
 
     henkilo_16 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('010215A951T'))
     lapsi_6 = Lapsi.objects.create(
         henkilo=henkilo_16,
         vakatoimija=vakajarjestaja_1,
-        changed_by=tester_user
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-lapsi6'
     )
 
     lapsi_7 = Lapsi.objects.create(
         henkilo=henkilo_16,
         vakatoimija=vakajarjestaja_2,
-        changed_by=tester2_user
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='testing-lapsi7'
     )
 
     lapsi_8 = Lapsi.objects.create(
         henkilo=henkilo_16,
         oma_organisaatio=vakajarjestaja_1,
         paos_organisaatio=vakajarjestaja_2,
-        changed_by=tester2_user
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='testing-lapsi8'
     )
 
     lapsi_9 = Lapsi.objects.create(
         henkilo=henkilo_16,
         vakatoimija=vakajarjestaja_4,
-        changed_by=tester4_user
+        changed_by=tester4_user,
+        lahdejarjestelma='1',
+        tunniste='testing-lapsi9'
     )
 
     henkilo_331A = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('290116A331A'))
     lapsi_331A = Lapsi.objects.create(
         henkilo=henkilo_331A,
         vakatoimija=vakajarjestaja_2,
-        changed_by=tester_user
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-lapsi10'
     )
 
     henkilo_807L = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('010116A807L'))
     lapsi_807L = Lapsi.objects.create(
         henkilo=henkilo_807L,
         vakatoimija=vakajarjestaja_57294396385,
-        changed_by=tester10_user
+        changed_by=tester10_user,
+        lahdejarjestelma='1',
+        tunniste='testing-lapsi11'
     )
 
     henkilo_020X = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('141117A020X'))
     lapsi_020X = Lapsi.objects.create(
         henkilo=henkilo_020X,
         vakatoimija=vakajarjestaja_57294396385,
-        changed_by=tester10_user
+        changed_by=tester10_user,
+        lahdejarjestelma='1',
+        tunniste='testing-lapsi12'
     )
 
     henkilo_706Y = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('130317A706Y'))
     lapsi_706Y = Lapsi.objects.create(
         henkilo=henkilo_706Y,
         vakatoimija=vakajarjestaja_57294396385,
-        changed_by=tester10_user
+        changed_by=tester10_user,
+        lahdejarjestelma='1',
+        tunniste='testing-lapsi13'
     )
 
     henkilo_273S = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('120617A273S'))
     lapsi_273S = Lapsi.objects.create(
         henkilo=henkilo_273S,
         vakatoimija=vakajarjestaja_52966755795,
-        changed_by=tester11_user
+        changed_by=tester11_user,
+        lahdejarjestelma='1',
+        tunniste='testing-lapsi14'
     )
 
     henkilo_5155 = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('241217A5155'))
     lapsi_5155 = Lapsi.objects.create(
         henkilo=henkilo_5155,
         vakatoimija=vakajarjestaja_52966755795,
-        changed_by=tester11_user
+        changed_by=tester11_user,
+        lahdejarjestelma='1',
+        tunniste='testing-lapsi15'
     )
 
     vakapaatos_1 = Varhaiskasvatuspaatos.objects.create(
@@ -1464,7 +1522,9 @@ def create_lapset():
         hakemus_pvm='2017-01-12',
         alkamis_pvm='2017-02-11',
         paattymis_pvm='2022-02-24',
-        changed_by=tester_user
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatuspaatos1'
     )
 
     vakapaatos_2 = Varhaiskasvatuspaatos.objects.create(
@@ -1479,7 +1539,9 @@ def create_lapset():
         hakemus_pvm='2018-09-05',
         alkamis_pvm='2018-09-05',
         paattymis_pvm=None,
-        changed_by=tester_user
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatuspaatos2'
     )
 
     vakapaatos_3 = Varhaiskasvatuspaatos.objects.create(
@@ -1494,7 +1556,9 @@ def create_lapset():
         hakemus_pvm='2018-09-05',
         alkamis_pvm='2018-09-05',
         paattymis_pvm=None,
-        changed_by=tester2_user
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatuspaatos3'
     )
 
     vakapaatos_4 = Varhaiskasvatuspaatos.objects.create(
@@ -1509,7 +1573,9 @@ def create_lapset():
         hakemus_pvm='2018-09-05',
         alkamis_pvm='2018-09-05',
         paattymis_pvm=None,
-        changed_by=tester2_user
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatuspaatos4'
     )
 
     vakapaatos_5 = Varhaiskasvatuspaatos.objects.create(
@@ -1524,7 +1590,9 @@ def create_lapset():
         hakemus_pvm='2018-10-05',
         alkamis_pvm='2018-10-05',
         paattymis_pvm=None,
-        changed_by=tester4_user
+        changed_by=tester4_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatuspaatos5'
     )
 
     vakapaatos_6 = Varhaiskasvatuspaatos.objects.create(
@@ -1535,11 +1603,13 @@ def create_lapset():
         paivittainen_vaka_kytkin=None,
         kokopaivainen_vaka_kytkin=None,
         tilapainen_vaka_kytkin=False,
-        jarjestamismuoto_koodi="jm03",
-        hakemus_pvm="2019-01-01",
-        alkamis_pvm="2019-02-11",
-        paattymis_pvm="2019-10-24",
-        changed_by=tester2_user
+        jarjestamismuoto_koodi='jm03',
+        hakemus_pvm='2019-01-01',
+        alkamis_pvm='2019-02-11',
+        paattymis_pvm='2019-10-24',
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatuspaatos6'
     )
 
     vakapaatos_7 = Varhaiskasvatuspaatos.objects.create(
@@ -1550,11 +1620,13 @@ def create_lapset():
         paivittainen_vaka_kytkin=True,
         kokopaivainen_vaka_kytkin=False,
         tilapainen_vaka_kytkin=False,
-        jarjestamismuoto_koodi="jm03",
-        hakemus_pvm="2019-11-01",
-        alkamis_pvm="2019-11-11",
-        paattymis_pvm="2019-12-22",
-        changed_by=tester2_user
+        jarjestamismuoto_koodi='jm03',
+        hakemus_pvm='2019-11-01',
+        alkamis_pvm='2019-11-11',
+        paattymis_pvm='2019-12-22',
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatuspaatos7'
     )
 
     # no vakasuhde to test huoltajanlapsi error situations
@@ -1566,11 +1638,13 @@ def create_lapset():
         paivittainen_vaka_kytkin=True,
         kokopaivainen_vaka_kytkin=False,
         tilapainen_vaka_kytkin=False,
-        jarjestamismuoto_koodi="jm04",
-        hakemus_pvm="2019-01-01",
-        alkamis_pvm="2019-11-11",
-        paattymis_pvm="2019-12-22",
-        changed_by=tester2_user
+        jarjestamismuoto_koodi='jm04',
+        hakemus_pvm='2019-01-01',
+        alkamis_pvm='2019-11-11',
+        paattymis_pvm='2019-12-22',
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatuspaatos8'
     )
 
     vakapaatos_9 = Varhaiskasvatuspaatos.objects.create(
@@ -1585,7 +1659,9 @@ def create_lapset():
         hakemus_pvm='2018-10-05',
         alkamis_pvm='2018-10-05',
         paattymis_pvm=None,
-        changed_by=tester4_user
+        changed_by=tester4_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatuspaatos9'
     )
 
     vakapaatos_331A = Varhaiskasvatuspaatos.objects.create(
@@ -1600,7 +1676,9 @@ def create_lapset():
         hakemus_pvm='2020-04-01',
         alkamis_pvm='2020-04-15',
         paattymis_pvm=None,
-        changed_by=tester_user
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatuspaatos10'
     )
 
     vakapaatos_807L = Varhaiskasvatuspaatos.objects.create(
@@ -1615,7 +1693,9 @@ def create_lapset():
         hakemus_pvm='2019-09-05',
         alkamis_pvm='2019-09-06',
         paattymis_pvm=None,
-        changed_by=tester10_user
+        changed_by=tester10_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatuspaatos11'
     )
 
     vakapaatos_020X = Varhaiskasvatuspaatos.objects.create(
@@ -1630,7 +1710,9 @@ def create_lapset():
         hakemus_pvm='2019-10-05',
         alkamis_pvm='2019-11-06',
         paattymis_pvm=None,
-        changed_by=tester10_user
+        changed_by=tester10_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatuspaatos12'
     )
 
     vakapaatos_706Y = Varhaiskasvatuspaatos.objects.create(
@@ -1645,7 +1727,9 @@ def create_lapset():
         hakemus_pvm='2020-01-01',
         alkamis_pvm='2020-01-02',
         paattymis_pvm=None,
-        changed_by=tester10_user
+        changed_by=tester10_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatuspaatos13'
     )
 
     vakapaatos_273S = Varhaiskasvatuspaatos.objects.create(
@@ -1660,7 +1744,9 @@ def create_lapset():
         hakemus_pvm='2020-03-03',
         alkamis_pvm='2020-03-03',
         paattymis_pvm=None,
-        changed_by=tester11_user
+        changed_by=tester11_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatuspaatos14'
     )
 
     vakapaatos_5155 = Varhaiskasvatuspaatos.objects.create(
@@ -1675,7 +1761,9 @@ def create_lapset():
         hakemus_pvm='2019-09-30',
         alkamis_pvm='2019-09-30',
         paattymis_pvm=None,
-        changed_by=tester11_user
+        changed_by=tester11_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatuspaatos15'
     )
 
     vakasuhde_1 = Varhaiskasvatussuhde.objects.create(
@@ -1683,7 +1771,9 @@ def create_lapset():
         varhaiskasvatuspaatos=vakapaatos_1,
         alkamis_pvm='2017-02-11',
         paattymis_pvm='2018-02-24',
-        changed_by=tester_user
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatussuhde1'
     )
 
     vakasuhde_2 = Varhaiskasvatussuhde.objects.create(
@@ -1691,7 +1781,9 @@ def create_lapset():
         varhaiskasvatuspaatos=vakapaatos_2,
         alkamis_pvm='2018-09-05',
         paattymis_pvm=None,
-        changed_by=tester_user
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatussuhde2'
     )
 
     vakasuhde_3 = Varhaiskasvatussuhde.objects.create(
@@ -1699,7 +1791,9 @@ def create_lapset():
         varhaiskasvatuspaatos=vakapaatos_3,
         alkamis_pvm='2018-09-05',
         paattymis_pvm=None,
-        changed_by=tester2_user
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatussuhde3'
     )
 
     vakasuhde_4 = Varhaiskasvatussuhde.objects.create(
@@ -1707,7 +1801,9 @@ def create_lapset():
         varhaiskasvatuspaatos=vakapaatos_4,
         alkamis_pvm='2018-09-05',
         paattymis_pvm=None,
-        changed_by=tester2_user
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatussuhde4'
     )
 
     vakasuhde_5 = Varhaiskasvatussuhde.objects.create(
@@ -1715,15 +1811,19 @@ def create_lapset():
         varhaiskasvatuspaatos=vakapaatos_5,
         alkamis_pvm='2018-09-05',
         paattymis_pvm=None,
-        changed_by=tester4_user
+        changed_by=tester4_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatussuhde5'
     )
 
     vakasuhde_6 = Varhaiskasvatussuhde.objects.create(
         toimipaikka=toimipaikka_2,
         varhaiskasvatuspaatos=vakapaatos_6,
-        alkamis_pvm="2018-02-11",
-        paattymis_pvm="2019-02-24",
-        changed_by=tester_user
+        alkamis_pvm='2018-02-11',
+        paattymis_pvm='2019-02-24',
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatussuhde6'
     )
 
     vakasuhde_7 = Varhaiskasvatussuhde.objects.create(
@@ -1731,7 +1831,9 @@ def create_lapset():
         varhaiskasvatuspaatos=vakapaatos_7,
         alkamis_pvm='2018-09-05',
         paattymis_pvm='2019-04-20',
-        changed_by=tester2_user
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatussuhde7'
     )
 
     vakasuhde_8 = Varhaiskasvatussuhde.objects.create(
@@ -1739,7 +1841,9 @@ def create_lapset():
         varhaiskasvatuspaatos=vakapaatos_7,
         alkamis_pvm='2018-05-01',
         paattymis_pvm='2019-10-24',
-        changed_by=tester2_user
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatussuhde8'
     )
 
     vakasuhde_9 = Varhaiskasvatussuhde.objects.create(
@@ -1747,7 +1851,9 @@ def create_lapset():
         varhaiskasvatuspaatos=vakapaatos_9,
         alkamis_pvm='2019-11-11',
         paattymis_pvm=None,
-        changed_by=tester2_user
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatussuhde9'
     )
 
     vakasuhde_331A = Varhaiskasvatussuhde.objects.create(
@@ -1755,7 +1861,9 @@ def create_lapset():
         varhaiskasvatuspaatos=vakapaatos_331A,
         alkamis_pvm='2020-05-01',
         paattymis_pvm=None,
-        changed_by=tester_user
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatussuhde10'
     )
 
     vakasuhde_807L = Varhaiskasvatussuhde.objects.create(
@@ -1763,7 +1871,9 @@ def create_lapset():
         varhaiskasvatuspaatos=vakapaatos_807L,
         alkamis_pvm='2019-10-05',
         paattymis_pvm=None,
-        changed_by=tester10_user
+        changed_by=tester10_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatussuhde11'
     )
 
     vakasuhde_020X = Varhaiskasvatussuhde.objects.create(
@@ -1771,7 +1881,9 @@ def create_lapset():
         varhaiskasvatuspaatos=vakapaatos_020X,
         alkamis_pvm='2019-12-12',
         paattymis_pvm=None,
-        changed_by=tester10_user
+        changed_by=tester10_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatussuhde12'
     )
 
     vakasuhde_706Y = Varhaiskasvatussuhde.objects.create(
@@ -1779,7 +1891,9 @@ def create_lapset():
         varhaiskasvatuspaatos=vakapaatos_706Y,
         alkamis_pvm='2020-02-05',
         paattymis_pvm=None,
-        changed_by=tester10_user
+        changed_by=tester10_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatussuhde13'
     )
 
     vakasuhde_273S = Varhaiskasvatussuhde.objects.create(
@@ -1787,7 +1901,9 @@ def create_lapset():
         varhaiskasvatuspaatos=vakapaatos_273S,
         alkamis_pvm='2020-04-01',
         paattymis_pvm=None,
-        changed_by=tester11_user
+        changed_by=tester11_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatussuhde14'
     )
 
     vakasuhde_5155 = Varhaiskasvatussuhde.objects.create(
@@ -1795,7 +1911,9 @@ def create_lapset():
         varhaiskasvatuspaatos=vakapaatos_5155,
         alkamis_pvm='2020-01-10',
         paattymis_pvm=None,
-        changed_by=tester11_user
+        changed_by=tester11_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatussuhde15'
     )
 
     assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Lapsi, lapsi_1)
@@ -1843,12 +1961,12 @@ def create_lapset():
     assign_toimipaikka_vakatiedot_paos_permissions(toimipaikka_5_organisaatio_oid, vakajarjestaja_4_organisaatio_oid,
                                                    Varhaiskasvatussuhde, vakasuhde_5)
 
-    assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Lapsi, lapsi_6)
-    assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Lapsi, lapsi_6)
-    assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_6)
-    assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_6)
-    assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_6)
-    assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_6)
+    assign_object_level_permissions(toimipaikka_2_organisaatio_oid, Lapsi, lapsi_6)
+    assign_object_level_permissions(vakajarjestaja_1_organisaatio_oid, Lapsi, lapsi_6)
+    assign_object_level_permissions(toimipaikka_2_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_6)
+    assign_object_level_permissions(toimipaikka_2_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_6)
+    assign_object_level_permissions(vakajarjestaja_1_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_6)
+    assign_object_level_permissions(vakajarjestaja_1_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_6)
 
     assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Lapsi, lapsi_7)
     assign_object_level_permissions(toimipaikka_4_organisaatio_oid, Lapsi, lapsi_7)
@@ -2149,7 +2267,9 @@ def create_maksutiedot():
         asiakasmaksu=0.00,
         perheen_koko=3,
         alkamis_pvm='2019-09-01',
-        changed_by=tester_user
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-maksutieto1'
     )
     assign_perm('view_maksutieto', group_tester_toimipaikka_1, mp1)
     assign_perm('change_maksutieto', group_tester_toimipaikka_1, mp1)
@@ -2164,7 +2284,9 @@ def create_maksutiedot():
         perheen_koko=3,
         alkamis_pvm='2019-09-01',
         paattymis_pvm='2025-01-01',
-        changed_by=tester2_user
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='testing-maksutieto2'
     )
     assign_perm('view_maksutieto', group_tester2, mp2)
     assign_perm('change_maksutieto', group_tester2, mp2)
@@ -2178,7 +2300,9 @@ def create_maksutiedot():
         asiakasmaksu=150,
         perheen_koko=2,
         alkamis_pvm='2019-09-01',
-        changed_by=tester_user
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-maksutieto3'
     )
     assign_perm('view_maksutieto', group_tester_toimipaikka_1, mp3)
     assign_perm('change_maksutieto', group_tester_toimipaikka_1, mp3)
@@ -2192,7 +2316,9 @@ def create_maksutiedot():
         asiakasmaksu=150,
         perheen_koko=2,
         alkamis_pvm='2019-09-01',
-        changed_by=tester4_user
+        changed_by=tester4_user,
+        lahdejarjestelma='1',
+        tunniste='testing-maksutieto4'
     )
     assign_perm('view_maksutieto', group_tester4, mp4)
     assign_perm('change_maksutieto', group_tester4, mp4)
@@ -2209,7 +2335,9 @@ def create_maksutiedot():
         asiakasmaksu=150,
         perheen_koko=None,
         alkamis_pvm='2020-05-20',
-        changed_by=tester_user
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-maksutieto5'
     )
     assign_perm('view_maksutieto', group_tester, mp_331A)
     assign_perm('change_maksutieto', group_tester, mp_331A)
@@ -2229,7 +2357,9 @@ def create_maksutiedot():
         asiakasmaksu=50.00,
         perheen_koko=3,
         alkamis_pvm='2020-01-11',
-        changed_by=tester10_user
+        changed_by=tester10_user,
+        lahdejarjestelma='1',
+        tunniste='testing-maksutieto6'
     )
     assign_perm('add_maksutieto', group_57294396385, mp_807L)
     assign_perm('view_maksutieto', group_57294396385, mp_807L)
@@ -2252,7 +2382,9 @@ def create_maksutiedot():
         asiakasmaksu=55.00,
         perheen_koko=4,
         alkamis_pvm='2020-02-11',
-        changed_by=tester11_user
+        changed_by=tester11_user,
+        lahdejarjestelma='1',
+        tunniste='testing-maksutieto7'
     )
     assign_perm('add_maksutieto', group_52966755795, mp_273S)
     assign_perm('view_maksutieto', group_52966755795, mp_273S)
@@ -2693,7 +2825,7 @@ def get_vakajarjestaja_oids(create_all_vakajarjestajat):
 def fetch_huoltajat_if_applicable():
     import os
     from varda.tasks import fetch_huoltajat_task
-    if "VARDA_ENVIRONMENT_TYPE" in os.environ:
+    if 'VARDA_ENVIRONMENT_TYPE' in os.environ:
         fetch_huoltajat_task.delay()
 
 

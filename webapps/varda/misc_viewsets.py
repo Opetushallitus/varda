@@ -1,7 +1,10 @@
 import re
 
+from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg import openapi
 from drf_yasg.generators import OpenAPISchemaGenerator
+from drf_yasg.inspectors import SwaggerAutoSchema
 from drf_yasg.renderers import SwaggerUIRenderer
 from rest_framework.exceptions import ValidationError
 
@@ -141,3 +144,43 @@ class PublicSchemaGenerator(OpenAPISchemaGenerator):
     def should_include_endpoint(self, path, method, view, public):
         should_include = super(PublicSchemaGenerator, self).should_include_endpoint(path, method, view, public)
         return should_include and not self.exclude_url_pattern.fullmatch(path)
+
+
+class TunnisteIdSchema(SwaggerAutoSchema):
+    def get_query_parameters(self):
+        query_params = super(TunnisteIdSchema, self).get_query_parameters()
+        path_list = self.path.split('/')
+        if path_list[-2] == '{id}':
+            # Override id path parameter description to include lahdejarjestelma:tunniste option
+            model_name = self.view.get_queryset().model.__name__
+            query_params.append(
+                openapi.Parameter('id', openapi.IN_PATH,
+                                  description=f'A unique integer value identifying this {model_name}. Can also be '
+                                              'lahdejarjestelma and tunniste pair (lahdejarjestelma:tunniste).',
+                                  type=openapi.TYPE_STRING)
+            )
+        return query_params
+
+
+class ObjectByTunnisteMixin:
+    """
+    @DynamicAttrs
+    """
+    swagger_schema = TunnisteIdSchema
+    lookup_value_regex = '[^/]+'
+
+    def get_object(self):
+        path_param = self.kwargs[self.lookup_field]
+
+        if not path_param.isdigit():
+            params = path_param.split(':', 1)
+            # Check that both lahdejarjestelma and tunniste have been provided and that they are not empty
+            if len(params) != 2 or (len(params) == 2 and (not params[0] or not params[1])):
+                raise Http404
+
+            model_qs = self.get_queryset().filter(lahdejarjestelma=params[0], tunniste=params[1])
+            if not model_qs.exists():
+                raise Http404
+            self.kwargs[self.lookup_field] = str(model_qs.first().id)
+
+        return super().get_object()

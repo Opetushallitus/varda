@@ -13,7 +13,8 @@ from rest_framework.exceptions import ValidationError as ValidationErrorRest
 
 from varda.misc import hash_string, encrypt_henkilotunnus
 from varda.models import (VakaJarjestaja, Toimipaikka, PaosOikeus, Huoltaja, Huoltajuussuhde, Henkilo,
-                          Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto)
+                          Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto, ToiminnallinenPainotus,
+                          KieliPainotus)
 from varda.permission_groups import assign_object_level_permissions
 from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, assert_validation_error, mock_admin_user
 
@@ -407,7 +408,8 @@ class VardaViewsTests(TestCase):
             'tilapainen_vaka_kytkin': False,
             'hakemus_pvm': '2020-04-06',
             'alkamis_pvm': '2009-02-02',
-            'paattymis_pvm': '2008-01-05'
+            'paattymis_pvm': '2008-01-05',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', vaka_paatos)
@@ -420,6 +422,7 @@ class VardaViewsTests(TestCase):
             'toimipaikka': '/api/v1/toimipaikat/1/',
             'alkamis_pvm': '2018-02-02',
             'paattymis_pvm': '2018-01-02',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/varhaiskasvatussuhteet/', vaka_suhde)
@@ -648,7 +651,7 @@ class VardaViewsTests(TestCase):
     def test_api_varhaiskasvatussuhteet_filtering(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/varhaiskasvatussuhteet/?muutos_pvm=2017-04-12')
-        self.assertEqual(json.loads(resp.content)['count'], 6)
+        self.assertEqual(json.loads(resp.content)['count'], 5)
 
     def test_api_lapset(self):
         client = SetUpTestClient('tester').client()
@@ -728,7 +731,7 @@ class VardaViewsTests(TestCase):
     def test_api_varhaiskasvatuspaatokset_filtering(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/varhaiskasvatuspaatokset/?hakemus_pvm=2017-01-12')
-        self.assertEqual(json.loads(resp.content)['count'], 5)
+        self.assertEqual(json.loads(resp.content)['count'], 4)
 
     def test_api_get_lapsi_json(self):
         lapsi_json = {
@@ -745,7 +748,9 @@ class VardaViewsTests(TestCase):
             'henkilo_oid': '1.2.246.562.24.47279942650',
             'varhaiskasvatuspaatokset_top': [
                 'http://testserver/api/v1/varhaiskasvatuspaatokset/1/?format=json'
-            ]
+            ],
+            'lahdejarjestelma': '1',
+            'tunniste': 'testing-lapsi1'
         }
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/lapset/1/?format=json')
@@ -761,6 +766,7 @@ class VardaViewsTests(TestCase):
             'paos_organisaatio_oid': None,
             'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
             'paos_organisaatio': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
         }
 
         resp = client.post('/api/v1/lapset/', json.dumps(data), content_type='application/json')
@@ -776,6 +782,7 @@ class VardaViewsTests(TestCase):
             'paos_organisaatio_oid': test_org_93957375488,
             'oma_organisaatio': None,
             'paos_organisaatio': None,
+            'lahdejarjestelma': '1',
         }
 
         resp = client.post('/api/v1/lapset/', json.dumps(data), content_type='application/json')
@@ -795,7 +802,7 @@ class VardaViewsTests(TestCase):
             'kutsumanimi': 'Pentti',
             'sukunimi': 'Kivimäki'
         }
-        client = SetUpTestClient('tester').client()
+        client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
         self.assertEqual(resp.status_code, 200)
         henkilo_url = json.loads(resp.content)['url']
@@ -806,6 +813,7 @@ class VardaViewsTests(TestCase):
             'vakatoimija': 'http://testserver/api/v1/vakajarjestajat/{}/'.format(vakajarjestaja_id_34683023489),
             'oma_organisaatio': None,
             'paos_organisaatio': None,
+            'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/lapset/', json.dumps(lapsi), content_type='application/json')
         self.assertEqual(resp.status_code, 201)
@@ -816,6 +824,7 @@ class VardaViewsTests(TestCase):
             'henkilo': '/api/v1/henkilot/7/',
             'oma_organisaatio_oid': test_org_34683023489,
             'paos_organisaatio_oid': test_org_93957375488,
+            'lahdejarjestelma': '1',
         }
 
         resp = client.post('/api/v1/lapset/', json.dumps(data), content_type='application/json')
@@ -824,23 +833,19 @@ class VardaViewsTests(TestCase):
         self.assertEqual(json.loads(resp.content)['paos_organisaatio'], 'http://testserver/api/v1/vakajarjestajat/2/')
 
     def test_api_oid_related_field_lapsi_change_denied(self):
-        # PUT/PATCH functions will be re-enabled in CSCVARDA-1942
         client = SetUpTestClient('tester2').client()
-        expected_data = client.get('/api/v1/lapset/4/')
         data = {
             'url': '/api/v1/lapset/4/',
             'henkilo': '/api/v1/henkilot/9/',
             'oma_organisaatio_oid': test_org_93957375484,
             'paos_organisaatio_oid': test_org_93957375488,
+            'lahdejarjestelma': '1',
+            'tunniste': 'testing-lapsi4',
         }
 
         resp = client.put('/api/v1/lapset/4/', json.dumps(data), content_type='application/json')
-        """
         assert_status_code(resp, 400)
-        self.assertEqual(json.loads(resp.content), {'oma_organisaatio': ['Changing of oma_organisaatio is not allowed']})
-        """
-        assert_status_code(resp, 200)
-        self.assertEqual(json.loads(expected_data.content), json.loads(resp.content))
+        assert_validation_error(resp, 'oma_organisaatio', 'GE013', 'Changing of this field is not allowed.')
 
     def test_api_oid_related_field_lapsi_no_paos_organisaatio(self):
         client = SetUpTestClient('tester2').client()
@@ -849,6 +854,8 @@ class VardaViewsTests(TestCase):
             'url': '/api/v1/lapset/4/',
             'henkilo': '/api/v1/henkilot/9/',
             'oma_organisaatio_oid': test_org_93957375484,
+            'lahdejarjestelma': '1',
+            'tunniste': 'testing-lapsi4',
             # no paos_organisaatio_oid
         }
 
@@ -862,6 +869,8 @@ class VardaViewsTests(TestCase):
             'oma_organisaatio_oid': test_org_34683023489,
             # no oma_organisaatio as it is via oid
             'paos_organisaatio': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
+            'tunniste': 'testing-lapsi-test',
         }
 
         resp = client.post('/api/v1/lapset/', json.dumps(data), content_type='application/json')
@@ -887,6 +896,8 @@ class VardaViewsTests(TestCase):
             'paos_organisaatio_oid': None,
             'oma_organisaatio': '/api/v1/vakajarjestajat/4/',  # id=4
             'paos_organisaatio': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
+            'tunniste': 'testing-lapsi4',
         }
 
         resp = client.put('/api/v1/lapset/4/', json.dumps(data), content_type='application/json')
@@ -900,6 +911,8 @@ class VardaViewsTests(TestCase):
             'henkilo': '/api/v1/henkilot/9/',
             'oma_organisaatio_oid': 'some_invalid_oid',
             'paos_organisaatio': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
+            'tunniste': 'testing-lapsi4',
         }
 
         resp = client.put('/api/v1/lapset/4/', json.dumps(data), content_type='application/json')
@@ -923,7 +936,7 @@ class VardaViewsTests(TestCase):
             'kutsumanimi': 'Anton',
             'sukunimi': 'Kivimäki'
         }
-        client = SetUpTestClient('tester').client()
+        client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
         self.assertEqual(resp.status_code, 201)
         henkilo_url = json.loads(resp.content)['url']
@@ -932,6 +945,7 @@ class VardaViewsTests(TestCase):
         lapsi = {
             'henkilo': henkilo_url,
             'vakatoimija': 'http://testserver/api/v1/vakajarjestajat/{}/'.format(vakajarjestaja_id_34683023489),
+            'lahdejarjestelma': '1',
         }
         resp2 = client.post('/api/v1/lapset/', lapsi)
         self.assertEqual(resp2.status_code, 201)
@@ -943,7 +957,8 @@ class VardaViewsTests(TestCase):
             'jarjestamismuoto_koodi': 'jm01',
             'tilapainen_vaka_kytkin': False,
             'hakemus_pvm': '2018-08-15',
-            'alkamis_pvm': '2018-09-30'
+            'alkamis_pvm': '2018-09-30',
+            'lahdejarjestelma': '1',
         }
         resp3 = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
         self.assertEqual(resp3.status_code, 201)
@@ -952,7 +967,8 @@ class VardaViewsTests(TestCase):
         varhaiskasvatussuhde = {
             # no toimipaikka
             'varhaiskasvatuspaatos': varhaiskasvatuspaatos_url,
-            'alkamis_pvm': '2018-10-01'
+            'alkamis_pvm': '2018-10-01',
+            'lahdejarjestelma': '1',
         }
         resp4 = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         self.assertEqual(resp4.status_code, 400)
@@ -965,7 +981,8 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester2').client()
         lapsi = {
             'henkilo_oid': henkilo_oid,
-            'vakatoimija_oid': '1.2.246.562.10.34683023489'
+            'vakatoimija_oid': '1.2.246.562.10.34683023489',
+            'lahdejarjestelma': '1',
         }
 
         resp = client.post('/api/v1/lapset/', lapsi)
@@ -979,7 +996,8 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester2').client()
         lapsi = {
             'henkilo_oid': '1.2.246.562.24.77777777777555',
-            'vakatoimija_oid': '1.2.246.562.10.34683023489'
+            'vakatoimija_oid': '1.2.246.562.10.34683023489',
+            'lahdejarjestelma': '1',
         }
 
         resp = client.post('/api/v1/lapset/', lapsi)
@@ -1007,7 +1025,9 @@ class VardaViewsTests(TestCase):
             'huoltajuussuhteet': [
                 'http://testserver/api/admin/huoltajuussuhteet/1/?format=json',
                 'http://testserver/api/admin/huoltajuussuhteet/2/?format=json'
-            ]
+            ],
+            'lahdejarjestelma': '1',
+            'tunniste': 'testing-lapsi1',
         }
         client = SetUpTestClient('credadmin').client()
         resp = client.get('/api/v1/lapset/1/?format=json')
@@ -1027,7 +1047,8 @@ class VardaViewsTests(TestCase):
         lapsi_json = {
             'henkilo': '/api/v1/henkilot/7/',
             'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
-            'paos_organisaatio': '/api/v1/vakajarjestajat/2/'
+            'paos_organisaatio': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/lapset/', data=lapsi_json)
         assert_status_code(resp, status.HTTP_201_CREATED)
@@ -1060,6 +1081,7 @@ class VardaViewsTests(TestCase):
         lapsi = {
             'henkilo': henkilo_url,
             'vakatoimija': 'http://testserver/api/v1/vakajarjestajat/{}/'.format(vakajarjestaja_id_93957375488),
+            'lahdejarjestelma': '1',
         }
         resp2 = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp2, 201)
@@ -1071,6 +1093,7 @@ class VardaViewsTests(TestCase):
             'jarjestamismuoto_koodi': 'jm04',
             'hakemus_pvm': '2018-08-15',
             'alkamis_pvm': '2018-09-30',
+            'lahdejarjestelma': '1',
         }
         resp3 = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
         assert_status_code(resp3, 201)
@@ -1082,6 +1105,7 @@ class VardaViewsTests(TestCase):
             'toimipaikka': 'http://testserver/api/v1/toimipaikat/{}/'.format(toimipaikka_id),
             'varhaiskasvatuspaatos': varhaiskasvatuspaatos_url,
             'alkamis_pvm': '2018-10-01',
+            'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         assert_status_code(resp, 201)
@@ -1093,7 +1117,8 @@ class VardaViewsTests(TestCase):
         assert_status_code(resp, 404)
 
         lapsi = {
-            'henkilo': henkilo_url
+            'henkilo': henkilo_url,
+            'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, 400)
@@ -1108,7 +1133,8 @@ class VardaViewsTests(TestCase):
             'jarjestamismuoto_koodi': 'jm01',
             'tilapainen_vaka_kytkin': False,
             'hakemus_pvm': '2018-08-15',
-            'alkamis_pvm': '2018-09-30'
+            'alkamis_pvm': '2018-09-30',
+            'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
         assert_status_code(resp, 201)
@@ -1117,7 +1143,8 @@ class VardaViewsTests(TestCase):
         varhaiskasvatussuhde = {
             'toimipaikka': '/api/v1/toimipaikat/6/',
             'varhaiskasvatuspaatos': vakapaatos_url,
-            'alkamis_pvm': '2019-10-01'
+            'alkamis_pvm': '2019-10-01',
+            'lahdejarjestelma': '1',
         }
         resp2 = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         assert_validation_error(resp2, 'errors', 'VS001', 'This Lapsi is already under another Vakajarjestaja. Please create a new one.')
@@ -1127,7 +1154,8 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester').client()
         lapsi = {
             'henkilo': '/api/v1/henkilot/9/',
-            'oma_organisaatio': '/api/v1/vakajarjestajat/2/'
+            'oma_organisaatio': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, 400)
@@ -1135,7 +1163,8 @@ class VardaViewsTests(TestCase):
 
         lapsi = {
             'henkilo': '/api/v1/henkilot/9/',
-            'paos_organisaatio': '/api/v1/vakajarjestajat/2/'
+            'paos_organisaatio': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
         }
         resp2 = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp2, 400)
@@ -1146,7 +1175,8 @@ class VardaViewsTests(TestCase):
         lapsi = {
             'henkilo': '/api/v1/henkilot/1/',
             'oma_organisaatio': '/api/v1/vakajarjestajat/2/',
-            'paos_organisaatio': '/api/v1/vakajarjestajat/1/'
+            'paos_organisaatio': '/api/v1/vakajarjestajat/1/',
+            'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, 403)
@@ -1157,7 +1187,8 @@ class VardaViewsTests(TestCase):
         lapsi = {
             'henkilo': '/api/v1/henkilot/9/',
             'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
-            'paos_organisaatio': '/api/v1/vakajarjestajat/2/'
+            'paos_organisaatio': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, status.HTTP_200_OK)  # already created
@@ -1167,7 +1198,8 @@ class VardaViewsTests(TestCase):
         lapsi = {
             'henkilo': '/api/v1/henkilot/1/',
             'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
-            'paos_organisaatio': '/api/v1/vakajarjestajat/2/'
+            'paos_organisaatio': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, 201)
@@ -1179,7 +1211,8 @@ class VardaViewsTests(TestCase):
             'jarjestamismuoto_koodi': 'jm02',
             'tilapainen_vaka_kytkin': False,
             'alkamis_pvm': '2018-09-01',
-            'hakemus_pvm': '2018-08-08'
+            'hakemus_pvm': '2018-08-08',
+            'lahdejarjestelma': '1',
         }
         resp2 = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
         assert_status_code(resp2, 201)
@@ -1188,7 +1221,8 @@ class VardaViewsTests(TestCase):
         varhaiskasvatussuhde = {
             'toimipaikka': 'http://testserver/api/v1/toimipaikat/2/',
             'varhaiskasvatuspaatos': vakapaatos_url,
-            'alkamis_pvm': '2018-12-01'
+            'alkamis_pvm': '2018-12-01',
+            'lahdejarjestelma': '1',
         }
         resp3 = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         assert_status_code(resp3, 400)
@@ -1197,7 +1231,8 @@ class VardaViewsTests(TestCase):
         varhaiskasvatussuhde = {
             'toimipaikka': 'http://testserver/api/v1/toimipaikat/1/',
             'varhaiskasvatuspaatos': vakapaatos_url,
-            'alkamis_pvm': '2018-12-01'
+            'alkamis_pvm': '2018-12-01',
+            'lahdejarjestelma': '1',
         }
         resp4 = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         assert_validation_error(resp4, 'errors', 'PT010', 'There is no active PaosToiminta to this Toimipaikka.')
@@ -1206,7 +1241,8 @@ class VardaViewsTests(TestCase):
         varhaiskasvatussuhde = {
             'toimipaikka': 'http://testserver/api/v1/toimipaikat/5/',
             'varhaiskasvatuspaatos': vakapaatos_url,
-            'alkamis_pvm': '2018-12-01'
+            'alkamis_pvm': '2018-12-01',
+            'lahdejarjestelma': '1',
         }
         resp5 = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         assert_status_code(resp5, 201)
@@ -1216,7 +1252,8 @@ class VardaViewsTests(TestCase):
         lapsi = {
             'henkilo': '/api/v1/henkilot/1/',
             'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
-            'paos_organisaatio': '/api/v1/vakajarjestajat/2/'
+            'paos_organisaatio': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, 201)
@@ -1237,7 +1274,8 @@ class VardaViewsTests(TestCase):
         lapsi = {
             'henkilo': '/api/v1/henkilot/1/',
             'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
-            'paos_organisaatio': '/api/v1/vakajarjestajat/2/'
+            'paos_organisaatio': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, 201)
@@ -1249,7 +1287,8 @@ class VardaViewsTests(TestCase):
             'jarjestamismuoto_koodi': 'jm01',
             'tilapainen_vaka_kytkin': False,
             'hakemus_pvm': '2018-08-15',
-            'alkamis_pvm': '2018-09-30'
+            'alkamis_pvm': '2018-09-30',
+            'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
         assert_validation_error(resp, 'jarjestamismuoto_koodi', 'VP005', 'Invalid code for PAOS Lapsi.')
@@ -1265,7 +1304,8 @@ class VardaViewsTests(TestCase):
             'tuntimaara_viikossa': '37.5',
             'jarjestamismuoto_koodi': 'jm03',
             'hakemus_pvm': '2018-08-15',
-            'alkamis_pvm': '2018-09-30'
+            'alkamis_pvm': '2018-09-30',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
@@ -1426,6 +1466,7 @@ class VardaViewsTests(TestCase):
             'url': 'http://testserver/api/v1/toimipaikat/1/?format=json',
             'id': 1,
             'vakajarjestaja': 'http://testserver/api/v1/vakajarjestajat/2/?format=json',
+            'vakajarjestaja_oid': '1.2.246.562.10.93957375488',
             'toiminnallisetpainotukset_top': [
                 'http://testserver/api/v1/toiminnallisetpainotukset/1/?format=json'
             ],
@@ -1462,7 +1503,9 @@ class VardaViewsTests(TestCase):
             'kielipainotus_kytkin': True,
             'alkamis_pvm': '2017-02-03',
             'paattymis_pvm': None,
-            'hallinnointijarjestelma': 'ORGANISAATIO'
+            'hallinnointijarjestelma': 'ORGANISAATIO',
+            'lahdejarjestelma': '1',
+            'tunniste': 'testing-toimipaikka1',
         }
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/toimipaikat/1/?format=json')
@@ -1535,7 +1578,8 @@ class VardaViewsTests(TestCase):
             'tuntimaara_viikossa': 45,
             'jarjestamismuoto_koodi': 'no_code',
             'alkamis_pvm': '2018-09-01',
-            'hakemus_pvm': '2018-08-08'
+            'hakemus_pvm': '2018-08-08',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
@@ -1562,7 +1606,8 @@ class VardaViewsTests(TestCase):
             'asiointikieli_koodi': ['FI'],
             'jarjestamismuoto_koodi': ['jm01', 'jm03'],
             'varhaiskasvatuspaikat': 1000,
-            'alkamis_pvm': '2018-01-01'
+            'alkamis_pvm': '2018-01-01',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/toimipaikat/', toimipaikka)
@@ -1586,7 +1631,8 @@ class VardaViewsTests(TestCase):
             'asiointikieli_koodi': ['FI'],
             'jarjestamismuoto_koodi': ['jm01', 'jm03'],
             'varhaiskasvatuspaikat': 1000,
-            'alkamis_pvm': '2018-01-01'
+            'alkamis_pvm': '2018-01-01',
+            'lahdejarjestelma': '1',
         }
 
         client = SetUpTestClient('tester2').client()
@@ -1627,7 +1673,8 @@ class VardaViewsTests(TestCase):
             'asiointikieli_koodi': ['FI'],
             'jarjestamismuoto_koodi': ['jm01', 'jm03'],
             'varhaiskasvatuspaikat': 1000,
-            'alkamis_pvm': '2018-01-01'
+            'alkamis_pvm': '2018-01-01',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/toimipaikat/', toimipaikka)
@@ -1652,7 +1699,8 @@ class VardaViewsTests(TestCase):
             'asiointikieli_koodi': ['FI'],
             'jarjestamismuoto_koodi': ['jm01', 'jm03'],
             'varhaiskasvatuspaikat': 1000,
-            'alkamis_pvm': '2018-01-01'
+            'alkamis_pvm': '2018-01-01',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/toimipaikat/', toimipaikka)
@@ -1663,7 +1711,8 @@ class VardaViewsTests(TestCase):
         toiminnallinenpainotus = {
             'toimipaikka': 'http://testserver/api/v1/toimipaikat/1/',
             'alkamis_pvm': '2018-07-01',
-            'toimintapainotus_koodi': 'noc'
+            'toimintapainotus_koodi': 'noc',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/toiminnallisetpainotukset/', toiminnallinenpainotus)
@@ -1674,7 +1723,8 @@ class VardaViewsTests(TestCase):
         kielipainotus = {
             'toimipaikka': 'http://testserver/api/v1/toimipaikat/1/',
             'alkamis_pvm': '2018-07-01',
-            'kielipainotus_koodi': 'UU'
+            'kielipainotus_koodi': 'UU',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/kielipainotukset/', kielipainotus)
@@ -1686,6 +1736,7 @@ class VardaViewsTests(TestCase):
             'toimipaikka': 'http://testserver/api/v1/toimipaikat/1/',
             'kielipainotus_koodi': 'FI',
             'alkamis_pvm': '2018-08-09',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/kielipainotukset/', kielipainotus)
@@ -1697,7 +1748,8 @@ class VardaViewsTests(TestCase):
         kielipainotus = {
             'toimipaikka': 'http://testserver/api/v1/toimipaikat/1/',
             'kielipainotus_koodi': 'SV',
-            'alkamis_pvm': '2019-08-09'
+            'alkamis_pvm': '2019-08-09',
+            'lahdejarjestelma': '1',
         }
 
         client = SetUpTestClient('tester').client()
@@ -1709,6 +1761,7 @@ class VardaViewsTests(TestCase):
             'toimipaikka': 'http://testserver/api/v1/toimipaikat/1/',
             'toimintapainotus_koodi': 'tp01',
             'alkamis_pvm': '2018-08-09',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/toiminnallisetpainotukset/', toiminnallinenpainotus)
@@ -1720,7 +1773,8 @@ class VardaViewsTests(TestCase):
         toiminnallinenpainotus = {
             'toimipaikka': 'http://testserver/api/v1/toimipaikat/1/',
             'toimintapainotus_koodi': 'tp02',
-            'alkamis_pvm': '2019-08-09'
+            'alkamis_pvm': '2019-08-09',
+            'lahdejarjestelma': '1',
         }
 
         client = SetUpTestClient('tester').client()
@@ -1755,7 +1809,8 @@ class VardaViewsTests(TestCase):
             'tuntimaara_viikossa': 200,
             'jarjestamismuoto_koodi': 'jm01',
             'hakemus_pvm': '2018-07-30',
-            'alkamis_pvm': '2018-10-01'
+            'alkamis_pvm': '2018-10-01',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', json.dumps(varhaiskasvatuspaatos), content_type='application/json')
@@ -1769,7 +1824,8 @@ class VardaViewsTests(TestCase):
             'tuntimaara_viikossa': 30,
             'jarjestamismuoto_koodi': 'jm04',
             'hakemus_pvm': '2018-01-01',
-            'alkamis_pvm': '2018-01-15'
+            'alkamis_pvm': '2018-01-15',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', json.dumps(varhaiskasvatuspaatos), content_type='application/json')
@@ -1784,7 +1840,8 @@ class VardaViewsTests(TestCase):
             'tuntimaara_viikossa': 30,
             'jarjestamismuoto_koodi': 'jm04',
             'hakemus_pvm': '2018-01-01',
-            'alkamis_pvm': '2018-01-16'
+            'alkamis_pvm': '2018-01-16',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', json.dumps(varhaiskasvatuspaatos), content_type='application/json')
@@ -1799,7 +1856,8 @@ class VardaViewsTests(TestCase):
             'lapsi': '/api/v1/lapset/2/',
             'vuorohoito_kytkin': True,
             'tuntimaara_viikossa': 30,
-            'jarjestamismuoto_koodi': 'jm04'
+            'jarjestamismuoto_koodi': 'jm04',
+            'lahdejarjestelma': '1',
         }
 
         ok_cases = [
@@ -1853,7 +1911,8 @@ class VardaViewsTests(TestCase):
 
         varhaiskasvatussuhde = {
             'varhaiskasvatuspaatos': '/api/v1/varhaiskasvatuspaatokset/1/',
-            'toimipaikka': '/api/v1/toimipaikat/1/'
+            'toimipaikka': '/api/v1/toimipaikat/1/',
+            'lahdejarjestelma': '1',
         }
 
         # varhaiskasvatuspaatos with id 1: alkamis_pvm=2017-02-11, paattymis_pvm=2018-02-24
@@ -1917,11 +1976,14 @@ class VardaViewsTests(TestCase):
             ],
             'id': 1,
             'lapsi': 'http://testserver/api/v1/lapset/1/',
+            'lapsi_tunniste': 'testing-lapsi1',
             'maksun_peruste_koodi': 'mp01',
             'paattymis_pvm': None,
             'palveluseteli_arvo': '0.00',
             'perheen_koko': 3,
-            'url': 'http://testserver/api/v1/maksutiedot/1/'
+            'url': 'http://testserver/api/v1/maksutiedot/1/',
+            'lahdejarjestelma': '1',
+            'tunniste': 'testing-maksutieto1',
         }
 
         client = SetUpTestClient('tester').client()
@@ -1938,7 +2000,8 @@ class VardaViewsTests(TestCase):
             'asiakasmaksu': 0,
             'perheen_koko': 2,
             'alkamis_pvm': '2019-01-01',
-            'paattymis_pvm': '2020-01-01'
+            'paattymis_pvm': '2020-01-01',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
@@ -1954,7 +2017,8 @@ class VardaViewsTests(TestCase):
             'asiakasmaksu': 0,
             'perheen_koko': 2,
             'alkamis_pvm': '2019-01-01',
-            'paattymis_pvm': '2020-01-01'
+            'paattymis_pvm': '2020-01-01',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
@@ -1974,7 +2038,8 @@ class VardaViewsTests(TestCase):
             'asiakasmaksu': 0,
             'perheen_koko': 2,
             'alkamis_pvm': '2020-01-02',
-            'paattymis_pvm': '2021-01-01'
+            'paattymis_pvm': '2021-01-01',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
@@ -1996,6 +2061,7 @@ class VardaViewsTests(TestCase):
                 }
             ],
             'lapsi': 'http://testserver/api/v1/lapset/3/',
+            'lapsi_tunniste': 'testing-lapsi3',
             'maksun_peruste_koodi': 'mp02',
             'palveluseteli_arvo': 120.0,
             'asiakasmaksu': 0.0,
@@ -2004,6 +2070,8 @@ class VardaViewsTests(TestCase):
             'paattymis_pvm': '2021-01-01',
             'tallennetut_huoltajat_count': 1,
             'ei_tallennetut_huoltajat_count': 2,
+            'lahdejarjestelma': '1',
+            'tunniste': None
         }
         self.assertEqual(json.loads(resp.content), accepted_response)
 
@@ -2025,7 +2093,8 @@ class VardaViewsTests(TestCase):
             'asiakasmaksu': 0,
             'perheen_koko': 2,
             'alkamis_pvm': '2018-02-23',
-            'paattymis_pvm': '2021-02-24'
+            'paattymis_pvm': '2021-02-24',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         client.delete('/api/v1/maksutiedot/1/')  # remove 1 maksutieto, otherwise error: more than two active maksutieto
@@ -2053,6 +2122,7 @@ class VardaViewsTests(TestCase):
                 }
             ],
             'lapsi': 'http://testserver/api/v1/lapset/1/',
+            'lapsi_tunniste': 'testing-lapsi1',
             'maksun_peruste_koodi': 'mp02',
             'palveluseteli_arvo': None,
             'asiakasmaksu': 0.0,
@@ -2061,6 +2131,8 @@ class VardaViewsTests(TestCase):
             'paattymis_pvm': '2021-02-24',
             'tallennetut_huoltajat_count': 2,
             'ei_tallennetut_huoltajat_count': 1,
+            'lahdejarjestelma': '1',
+            'tunniste': None,
         }
         self.assertEqual(json.loads(resp.content), accepted_response)
 
@@ -2078,7 +2150,8 @@ class VardaViewsTests(TestCase):
             'asiakasmaksu': 0,
             'perheen_koko': 4,
             'alkamis_pvm': '2020-05-25',
-            'paattymis_pvm': '2021-01-01'
+            'paattymis_pvm': '2021-01-01',
+            'lahdejarjestelma': '1',
         }
 
         client = SetUpTestClient('tester').client()
@@ -2106,7 +2179,8 @@ class VardaViewsTests(TestCase):
             'asiakasmaksu': 0,
             'perheen_koko': 4,
             'alkamis_pvm': '2020-05-25',
-            'paattymis_pvm': '2020-08-30'
+            'paattymis_pvm': '2020-08-30',
+            'lahdejarjestelma': '1',
         }
 
         client = SetUpTestClient('tester').client()
@@ -2147,7 +2221,8 @@ class VardaViewsTests(TestCase):
         )
         lapsi = Lapsi.objects.create(
             henkilo=lapsi_henkilo,
-            changed_by=adminuser
+            changed_by=adminuser,
+            lahdejarjestelma='1',
         )
         assign_object_level_permissions(oid_of_client, Henkilo, lapsi_henkilo)
         assign_object_level_permissions(oid_of_client, Lapsi, lapsi)
@@ -2191,7 +2266,8 @@ class VardaViewsTests(TestCase):
             alkamis_pvm='2018-01-01',
             paattymis_pvm='2019-12-31',
             hakemus_pvm='2017-11-01',
-            changed_by=adminuser
+            changed_by=adminuser,
+            lahdejarjestelma='1',
         )
         assign_object_level_permissions(oid_of_client, Varhaiskasvatuspaatos, vakapaatos)
 
@@ -2200,7 +2276,8 @@ class VardaViewsTests(TestCase):
             varhaiskasvatuspaatos=vakapaatos,
             alkamis_pvm='2018-01-01',
             paattymis_pvm='2019-12-31',
-            changed_by=adminuser
+            changed_by=adminuser,
+            lahdejarjestelma='1',
         )
         assign_object_level_permissions(oid_of_client, Varhaiskasvatussuhde, vakasuhde)
 
@@ -2210,7 +2287,8 @@ class VardaViewsTests(TestCase):
             jarjestamismuoto_koodi='jm02',
             alkamis_pvm='2021-01-01',
             hakemus_pvm='2017-11-01',
-            changed_by=adminuser
+            changed_by=adminuser,
+            lahdejarjestelma='1',
         )
         assign_object_level_permissions(oid_of_client, Varhaiskasvatuspaatos, vakapaatos_2)
 
@@ -2218,7 +2296,8 @@ class VardaViewsTests(TestCase):
             toimipaikka=toimipaikka_1,
             varhaiskasvatuspaatos=vakapaatos_2,
             alkamis_pvm='2021-01-01',
-            changed_by=adminuser
+            changed_by=adminuser,
+            lahdejarjestelma='1',
         )
         assign_object_level_permissions(oid_of_client, Varhaiskasvatussuhde, vakasuhde_2)
 
@@ -2256,6 +2335,7 @@ class VardaViewsTests(TestCase):
             'palveluseteli_arvo': 120,
             'asiakasmaksu': 0,
             'perheen_koko': 2,
+            'lahdejarjestelma': '1',
         }
 
         for (start, end) in ok_cases:
@@ -2330,7 +2410,8 @@ class VardaViewsTests(TestCase):
             'asiakasmaksu': 0,
             'perheen_koko': 2,
             'alkamis_pvm': '2020-01-02',
-            'paattymis_pvm': '2021-01-01'
+            'paattymis_pvm': '2021-01-01',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         maksutieto = json.dumps(maksutieto)
@@ -2352,7 +2433,8 @@ class VardaViewsTests(TestCase):
             'asiakasmaksu': 0,
             'perheen_koko': 2,
             'alkamis_pvm': '2020-01-02',
-            'paattymis_pvm': '2021-01-01'
+            'paattymis_pvm': '2021-01-01',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         maksutieto = json.dumps(maksutieto)
@@ -2374,7 +2456,8 @@ class VardaViewsTests(TestCase):
             'asiakasmaksu': 0,
             'perheen_koko': 2,
             'alkamis_pvm': '2020-01-02',
-            'paattymis_pvm': '2021-01-01'
+            'paattymis_pvm': '2021-01-01',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         maksutieto = json.dumps(maksutieto)
@@ -2395,7 +2478,8 @@ class VardaViewsTests(TestCase):
             'palveluseteli_arvo': 0,
             'asiakasmaksu': 0,
             'perheen_koko': 2,
-            'paattymis_pvm': '2021-01-01'
+            'paattymis_pvm': '2021-01-01',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         maksutieto = json.dumps(maksutieto)
@@ -2417,7 +2501,8 @@ class VardaViewsTests(TestCase):
             'asiakasmaksu': 0,
             'perheen_koko': 2,
             'alkamis_pvm': '2022-01-01',
-            'paattymis_pvm': '2021-01-01'
+            'paattymis_pvm': '2021-01-01',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         maksutieto = json.dumps(maksutieto)
@@ -2439,7 +2524,8 @@ class VardaViewsTests(TestCase):
             'asiakasmaksu': 0,
             'perheen_koko': 2,
             'alkamis_pvm': '2022-01-01',
-            'paattymis_pvm': '2022-01-01'
+            'paattymis_pvm': '2022-01-01',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
@@ -2456,7 +2542,8 @@ class VardaViewsTests(TestCase):
             'asiakasmaksu': 0,
             'perheen_koko': 2,
             'alkamis_pvm': '2008-01-02',
-            'paattymis_pvm': '2021-01-01'
+            'paattymis_pvm': '2021-01-01',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         maksutieto = json.dumps(maksutieto)
@@ -2476,7 +2563,8 @@ class VardaViewsTests(TestCase):
             'asiakasmaksu': 0,
             'perheen_koko': 2,
             'alkamis_pvm': '2019-03-02',
-            'paattymis_pvm': '2021-06-01'
+            'paattymis_pvm': '2021-06-01',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         maksutieto = json.dumps(maksutieto)
@@ -2494,7 +2582,8 @@ class VardaViewsTests(TestCase):
             'asiakasmaksu': 0,
             'perheen_koko': 2,
             'alkamis_pvm': '2019-01-01',
-            'paattymis_pvm': '2020-01-01'
+            'paattymis_pvm': '2020-01-01',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
@@ -2523,6 +2612,7 @@ class VardaViewsTests(TestCase):
         lapsi = {
             'henkilo': henkilo_url,
             'vakatoimija': 'http://testserver/api/v1/vakajarjestajat/{}/'.format(vakajarjestaja_id_34683023489),
+            'lahdejarjestelma': '1',
         }
         resp2 = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp2, 201)
@@ -2536,6 +2626,7 @@ class VardaViewsTests(TestCase):
             'perheen_koko': 2,
             'alkamis_pvm': '2019-01-01',
             'paattymis_pvm': '2020-01-01',
+            'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
         assert_status_code(resp, 400)
@@ -2631,7 +2722,8 @@ class VardaViewsTests(TestCase):
         lapsi_json = {
             'henkilo': '/api/v1/henkilot/9/',
             'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
-            'paos_organisaatio': '/api/v1/vakajarjestajat/2/'
+            'paos_organisaatio': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/lapset/', lapsi_json)
         assert_status_code(resp, status.HTTP_200_OK)  # lapsi is already created
@@ -2642,7 +2734,8 @@ class VardaViewsTests(TestCase):
             'jarjestamismuoto_koodi': 'jm03',
             'tilapainen_vaka_kytkin': False,
             'hakemus_pvm': '2018-08-15',
-            'alkamis_pvm': '2018-09-30'
+            'alkamis_pvm': '2018-09-30',
+            'lahdejarjestelma': '1',
         }
         resp3 = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
         assert_status_code(resp3, status.HTTP_201_CREATED)
@@ -2651,7 +2744,8 @@ class VardaViewsTests(TestCase):
         varhaiskasvatussuhde = {
             'toimipaikka': 'http://testserver/api/v1/toimipaikat/5/',
             'varhaiskasvatuspaatos': varhaiskasvatuspaatos_url,
-            'alkamis_pvm': '2018-10-01'
+            'alkamis_pvm': '2018-10-01',
+            'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         assert_status_code(resp, status.HTTP_201_CREATED)
@@ -2933,7 +3027,8 @@ class VardaViewsTests(TestCase):
             'tuntimaara_viikossa': 40,
             'jarjestamismuoto_koodi': 'jm04',
             'hakemus_pvm': '2018-09-15',
-            'alkamis_pvm': '2018-10-20'
+            'alkamis_pvm': '2018-10-20',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
@@ -2948,7 +3043,8 @@ class VardaViewsTests(TestCase):
         varhaiskasvatussuhde = {
             'toimipaikka': 'http://testserver/api/v1/toimipaikat/1/',
             'varhaiskasvatuspaatos': 'http://testserver/api/v1/varhaiskasvatuspaatokset/10/',
-            'alkamis_pvm': '2020-05-01'
+            'alkamis_pvm': '2020-05-01',
+            'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester').client()
         client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
@@ -3061,7 +3157,8 @@ class VardaViewsTests(TestCase):
             'jarjestamismuoto_koodi': ['jm01'],
             'varhaiskasvatuspaikat': 200,
             'alkamis_pvm': '2020-09-02',
-            'paattymis_pvm': '2021-09-02'
+            'paattymis_pvm': '2021-09-02',
+            'lahdejarjestelma': '1',
         }
 
         client = SetUpTestClient('tester2').client()
@@ -3070,8 +3167,6 @@ class VardaViewsTests(TestCase):
 
     @mock.patch('varda.organisaatiopalvelu.check_if_toimipaikka_exists_by_name',
                 mock_check_if_toimipaikka_exists_by_name)
-    @mock.patch('varda.organisaatiopalvelu.create_organisaatio',
-                mock_create_organisaatio)
     def test_api_toimipaikka_add_duplicate_name(self):
         vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
 
@@ -3093,7 +3188,8 @@ class VardaViewsTests(TestCase):
             'jarjestamismuoto_koodi': ['jm01'],
             'varhaiskasvatuspaikat': 200,
             'alkamis_pvm': '2020-09-02',
-            'paattymis_pvm': '2021-09-02'
+            'paattymis_pvm': '2021-09-02',
+            'lahdejarjestelma': '1',
         }
 
         client = SetUpTestClient('tester2').client()
@@ -3112,7 +3208,8 @@ class VardaViewsTests(TestCase):
             'tuntimaara_viikossa': '39.0',
             'jarjestamismuoto_koodi': 'jm01',
             'alkamis_pvm': '2020-12-01',
-            'hakemus_pvm': '2020-12-01'
+            'hakemus_pvm': '2020-12-01',
+            'lahdejarjestelma': '1',
         }
 
         client_kunta = SetUpTestClient('tester2').client()
@@ -3136,7 +3233,8 @@ class VardaViewsTests(TestCase):
             'tuntimaara_viikossa': '39.0',
             'jarjestamismuoto_koodi': 'jm04',
             'alkamis_pvm': '2020-12-01',
-            'hakemus_pvm': '2020-12-01'
+            'hakemus_pvm': '2020-12-01',
+            'lahdejarjestelma': '1',
         }
 
         client_yksityinen = SetUpTestClient('tester').client()
@@ -3156,7 +3254,8 @@ class VardaViewsTests(TestCase):
         painotus_json_1 = {
             'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_id}/',
             'toimintapainotus_koodi': 'TP01',
-            'alkamis_pvm': '2021-01-01'
+            'alkamis_pvm': '2021-01-01',
+            'lahdejarjestelma': '1',
         }
         resp_1 = client.post('/api/v1/toiminnallisetpainotukset/', painotus_json_1)
         painotus_1_id = json.loads(resp_1.content)['id']
@@ -3171,7 +3270,8 @@ class VardaViewsTests(TestCase):
         painotus_update_json = {
             'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_id}/',
             'toimintapainotus_koodi': 'TP01',
-            'alkamis_pvm': '2021-01-02'
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': '1',
         }
         resp_2 = client.put(f'/api/v1/toiminnallisetpainotukset/{painotus_1_id}/', painotus_update_json)
         assert_status_code(resp_2, status.HTTP_200_OK)
@@ -3179,7 +3279,8 @@ class VardaViewsTests(TestCase):
         painotus_json_2 = {
             'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_id}/',
             'toimintapainotus_koodi': 'TP02',
-            'alkamis_pvm': '2021-01-01'
+            'alkamis_pvm': '2021-01-01',
+            'lahdejarjestelma': '1',
         }
         resp_3 = client.post('/api/v1/toiminnallisetpainotukset/', painotus_json_2)
         painotus_2_id = json.loads(resp_3.content)['id']
@@ -3206,7 +3307,8 @@ class VardaViewsTests(TestCase):
         painotus_json_1 = {
             'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_id}/',
             'kielipainotus_koodi': 'FI',
-            'alkamis_pvm': '2021-01-01'
+            'alkamis_pvm': '2021-01-01',
+            'lahdejarjestelma': '1',
         }
         resp_1 = client.post('/api/v1/kielipainotukset/', painotus_json_1)
         painotus_1_id = json.loads(resp_1.content)['id']
@@ -3221,7 +3323,8 @@ class VardaViewsTests(TestCase):
         painotus_update_json = {
             'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_id}/',
             'kielipainotus_koodi': 'FI',
-            'alkamis_pvm': '2021-01-02'
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': '1',
         }
         resp_2 = client.put(f'/api/v1/kielipainotukset/{painotus_1_id}/', painotus_update_json)
         assert_status_code(resp_2, status.HTTP_200_OK)
@@ -3229,7 +3332,8 @@ class VardaViewsTests(TestCase):
         painotus_json_2 = {
             'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_id}/',
             'kielipainotus_koodi': 'SV',
-            'alkamis_pvm': '2021-01-01'
+            'alkamis_pvm': '2021-01-01',
+            'lahdejarjestelma': '1',
         }
         resp_3 = client.post('/api/v1/kielipainotukset/', painotus_json_2)
         painotus_2_id = json.loads(resp_3.content)['id']
@@ -3242,3 +3346,1142 @@ class VardaViewsTests(TestCase):
         resp_5 = client.delete(f'/api/v1/kielipainotukset/{painotus_1_id}/')
         assert_status_code(resp_5, status.HTTP_204_NO_CONTENT)
         self.assertFalse(toimipaikka_qs.first().kielipainotus_kytkin)
+
+    @mock.patch('varda.organisaatiopalvelu.check_if_toimipaikka_exists_by_name',
+                mock_check_if_toimipaikka_exists_by_name)
+    def test_api_toimipaikka_lahdejarjestelma_tunniste_not_unique(self):
+        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+
+        toimipaikka = {
+            'vakajarjestaja': f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/',
+            'nimi': 'Testitoimipaikka',
+            'kayntiosoite': 'Katukaksi',
+            'kayntiosoite_postitoimipaikka': 'Postitoimipaikkakolme',
+            'kayntiosoite_postinumero': '00109',
+            'postiosoite': 'Katukaksi',
+            'postitoimipaikka': 'Postitoimipaikkakolme',
+            'postinumero': '00109',
+            'kunta_koodi': '091',
+            'puhelinnumero': '+35810123456',
+            'sahkopostiosoite': 'test2@domain.com',
+            'kasvatusopillinen_jarjestelma_koodi': 'kj03',
+            'toimintamuoto_koodi': 'tm01',
+            'asiointikieli_koodi': ['FI', 'SV'],
+            'jarjestamismuoto_koodi': ['jm01'],
+            'varhaiskasvatuspaikat': 200,
+            'alkamis_pvm': '2020-09-02',
+            'paattymis_pvm': '2021-09-02',
+            'lahdejarjestelma': '1',
+            'tunniste': 'testing-toimipaikka1',
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp = client.post('/api/v1/toimipaikat/', toimipaikka)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'errors', 'MI013', 'Combination of lahdejarjestelma and tunniste fields should be unique.')
+
+    @mock.patch('varda.organisaatiopalvelu.check_if_toimipaikka_exists_by_name',
+                mock_check_if_toimipaikka_exists_by_name)
+    def test_api_toimipaikka_missing_lahdejarjestelma(self):
+        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+
+        toimipaikka = {
+            'vakajarjestaja': f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/',
+            'nimi': 'Testitoimipaikka',
+            'kayntiosoite': 'Katukaksi',
+            'kayntiosoite_postitoimipaikka': 'Postitoimipaikkakolme',
+            'kayntiosoite_postinumero': '00109',
+            'postiosoite': 'Katukaksi',
+            'postitoimipaikka': 'Postitoimipaikkakolme',
+            'postinumero': '00109',
+            'kunta_koodi': '091',
+            'puhelinnumero': '+35810123456',
+            'sahkopostiosoite': 'test2@domain.com',
+            'kasvatusopillinen_jarjestelma_koodi': 'kj03',
+            'toimintamuoto_koodi': 'tm01',
+            'asiointikieli_koodi': ['FI', 'SV'],
+            'jarjestamismuoto_koodi': ['jm01'],
+            'varhaiskasvatuspaikat': 200,
+            'alkamis_pvm': '2020-09-02',
+            'paattymis_pvm': '2021-09-02',
+            'tunniste': 'testing-toimipaikka',
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp = client.post('/api/v1/toimipaikat/', toimipaikka)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'errors', 'MI018', 'lahdejarjestelma field is required if tunniste field is not empty.')
+
+    def test_api_toimipaikka_lahdejarjestelma_tunniste_get_put_patch(self):
+        lahdejarjestelma = '1'
+        tunniste = 'testing-toimipaikka2'
+        new_tunniste = 'testing-toimipaikka'
+
+        toimipaikka = Toimipaikka.objects.get(lahdejarjestelma=lahdejarjestelma, tunniste=tunniste)
+        toimipaikka_url = f'/api/v1/toimipaikat/{lahdejarjestelma}:{tunniste}/'
+
+        client = SetUpTestClient('tester2').client()
+        resp_toimipaikka_get = client.get(toimipaikka_url)
+        assert_status_code(resp_toimipaikka_get, status.HTTP_200_OK)
+        self.assertEqual(toimipaikka.id, json.loads(resp_toimipaikka_get.content)['id'])
+
+        resp_toimipaikka_get_404 = client.get('/api/v1/toimipaikat/5:no/')
+        assert_status_code(resp_toimipaikka_get_404, status.HTTP_404_NOT_FOUND)
+
+        toimipaikka_put = {
+            'vakajarjestaja': f'/api/v1/vakajarjestajat/{toimipaikka.vakajarjestaja.id}/',
+            'nimi': 'Testitoimipaikka',
+            'kayntiosoite': 'Katukaksi',
+            'kayntiosoite_postitoimipaikka': 'Postitoimipaikkakolme',
+            'kayntiosoite_postinumero': '00109',
+            'postiosoite': 'Katukaksi',
+            'postitoimipaikka': 'Postitoimipaikkakolme',
+            'postinumero': '00109',
+            'kunta_koodi': '091',
+            'puhelinnumero': '+35810123456',
+            'sahkopostiosoite': 'test2@domain.com',
+            'kasvatusopillinen_jarjestelma_koodi': 'kj03',
+            'toimintamuoto_koodi': 'tm01',
+            'asiointikieli_koodi': ['FI', 'SV'],
+            'jarjestamismuoto_koodi': ['jm01'],
+            'varhaiskasvatuspaikat': 200,
+            'alkamis_pvm': '2020-09-02',
+            'paattymis_pvm': '2021-09-02',
+            'tunniste': new_tunniste,
+        }
+        resp_toimipaikka_put = client.put(toimipaikka_url, toimipaikka_put)
+        assert_status_code(resp_toimipaikka_put, status.HTTP_200_OK)
+
+        toimipaikka_patch = {
+            'tunniste': tunniste
+        }
+        toimipaikka_url_patch = f'/api/v1/toimipaikat/{lahdejarjestelma}:{new_tunniste}/'
+        resp_toimipaikka_patch = client.patch(toimipaikka_url_patch, toimipaikka_patch)
+        assert_status_code(resp_toimipaikka_patch, status.HTTP_200_OK)
+
+    def test_api_toiminnallinen_painotus_lahdejarjestelma_tunniste_not_unique(self):
+        toimipaikka_oid = '1.2.246.562.10.9395737548815'
+        painotus = {
+            'toimipaikka_oid': toimipaikka_oid,
+            'toimintapainotus_koodi': 'TP01',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': '1',
+            'tunniste': 'testing-toiminnallinenpainotus1',
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp = client.post('/api/v1/toiminnallisetpainotukset/', painotus)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'errors', 'MI013', 'Combination of lahdejarjestelma and tunniste fields should be unique.')
+
+    def test_api_toiminnallinen_painotus_missing_lahdejarjestelma(self):
+        toimipaikka_oid = '1.2.246.562.10.9395737548815'
+        painotus = {
+            'toimipaikka_oid': toimipaikka_oid,
+            'toimintapainotus_koodi': 'TP01',
+            'alkamis_pvm': '2021-01-02',
+            'tunniste': 'testing-toiminnallinenpainotus',
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp = client.post('/api/v1/toiminnallisetpainotukset/', painotus)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'errors', 'MI018', 'lahdejarjestelma field is required if tunniste field is not empty.')
+
+    def test_api_toiminnallinen_painotus_toimipaikka_tunniste(self):
+        lahdejarjestelma = '1'
+        toimipaikka_tunniste = 'testing-toimipaikka2'
+
+        toimipaikka = Toimipaikka.objects.get(lahdejarjestelma=lahdejarjestelma, tunniste=toimipaikka_tunniste)
+
+        painotus_1 = {
+            'toimipaikka_tunniste': toimipaikka_tunniste,
+            'toimintapainotus_koodi': 'TP02',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': '1',
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp_1 = client.post('/api/v1/toiminnallisetpainotukset/', painotus_1)
+        assert_status_code(resp_1, status.HTTP_201_CREATED)
+        resp_1_json = json.loads(resp_1.content)
+        painotus_object = ToiminnallinenPainotus.objects.get(id=resp_1_json['id'])
+        self.assertEqual(painotus_object.toimipaikka.id, toimipaikka.id)
+        self.assertEqual(resp_1_json['toimipaikka_oid'], toimipaikka.organisaatio_oid)
+
+        painotus_2 = {
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka.id}/',
+            'toimintapainotus_koodi': 'TP03',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': '1',
+        }
+        resp_2 = client.post('/api/v1/toiminnallisetpainotukset/', painotus_2)
+        assert_status_code(resp_2, status.HTTP_201_CREATED)
+        self.assertEqual(json.loads(resp_2.content)['toimipaikka_tunniste'], toimipaikka_tunniste)
+
+        painotus_3 = {
+            'toimipaikka_tunniste': 'no',
+            'toimintapainotus_koodi': 'TP01',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': '1',
+        }
+        resp_3 = client.post('/api/v1/toiminnallisetpainotukset/', painotus_3)
+        assert_status_code(resp_3, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_3, 'toimipaikka_tunniste', 'RF003', 'Could not find matching object.')
+
+    def test_api_toiminnallinen_painotus_toimipaikka_related_match(self):
+        toimipaikka_1 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548810')
+        toimipaikka_2 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548811')
+        toimipaikka_3 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548817')
+        lahdejarjestelma = '1'
+
+        painotus_1 = {
+            'toimipaikka_tunniste': toimipaikka_1.tunniste,
+            'toimipaikka_oid': toimipaikka_2.organisaatio_oid,
+            'toimintapainotus_koodi': 'TP01',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+
+        client = SetUpTestClient('tester5').client()
+        resp_1 = client.post('/api/v1/toiminnallisetpainotukset/', painotus_1)
+        assert_status_code(resp_1, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_1, 'toimipaikka_oid', 'RF004', 'Differs from parent field.')
+        assert_validation_error(resp_1, 'toimipaikka_tunniste', 'RF004', 'Differs from parent field.')
+
+        painotus_2 = {
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_3.id}/',
+            'toimipaikka_tunniste': toimipaikka_1.tunniste,
+            'toimintapainotus_koodi': 'TP01',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+
+        resp_2 = client.post('/api/v1/toiminnallisetpainotukset/', painotus_2)
+        assert_status_code(resp_2, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_1, 'toimipaikka_tunniste', 'RF004', 'Differs from parent field.')
+
+        painotus_3 = {
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_3.id}/',
+            'toimipaikka_tunniste': toimipaikka_1.tunniste,
+            'toimipaikka_oid': toimipaikka_1.organisaatio_oid,
+            'toimintapainotus_koodi': 'TP01',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+
+        resp_3 = client.post('/api/v1/toiminnallisetpainotukset/', painotus_3)
+        assert_status_code(resp_3, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_1, 'toimipaikka_oid', 'RF004', 'Differs from parent field.')
+        assert_validation_error(resp_1, 'toimipaikka_tunniste', 'RF004', 'Differs from parent field.')
+
+        painotus_4 = {
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_1.id}/',
+            'toimipaikka_tunniste': toimipaikka_1.tunniste,
+            'toimipaikka_oid': toimipaikka_1.organisaatio_oid,
+            'toimintapainotus_koodi': 'TP01',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+
+        resp_4 = client.post('/api/v1/toiminnallisetpainotukset/', painotus_4)
+        assert_status_code(resp_4, status.HTTP_201_CREATED)
+
+    def test_api_toiminnallinen_painotus_lahdejarjestelma_tunniste_get_put_patch_delete(self):
+        lahdejarjestelma = '1'
+        tunniste = 'testing-toiminnallinenpainotus98'
+        new_tunniste = 'testing-toiminnallinenpainotus99'
+
+        client = SetUpTestClient('tester2').client()
+        painotus_post = {
+            'toimipaikka_oid': '1.2.246.562.10.9395737548815',
+            'toimintapainotus_koodi': 'TP01',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+            'tunniste': tunniste,
+        }
+        resp_painotus_post = client.post('/api/v1/toiminnallisetpainotukset/', painotus_post)
+        assert_status_code(resp_painotus_post, status.HTTP_201_CREATED)
+        painotus = ToiminnallinenPainotus.objects.get(lahdejarjestelma=lahdejarjestelma, tunniste=tunniste)
+
+        painotus_url = f'/api/v1/toiminnallisetpainotukset/{lahdejarjestelma}:{tunniste}/'
+        resp_painotus_get = client.get(painotus_url)
+        assert_status_code(resp_painotus_get, status.HTTP_200_OK)
+        self.assertEqual(painotus.id, json.loads(resp_painotus_get.content)['id'])
+
+        resp_painotus_get_404 = client.get('/api/v1/toiminnallisetpainotukset/5:no/')
+        assert_status_code(resp_painotus_get_404, status.HTTP_404_NOT_FOUND)
+
+        painotus_put = {
+            'toimipaikka_oid': '1.2.246.562.10.9395737548815',
+            'toimintapainotus_koodi': 'TP01',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+            'tunniste': new_tunniste,
+        }
+        resp_painotus_put = client.put(painotus_url, painotus_put)
+        assert_status_code(resp_painotus_put, status.HTTP_200_OK)
+
+        painotus_patch = {
+            'tunniste': tunniste
+        }
+        painotus_url_patch = f'/api/v1/toiminnallisetpainotukset/{lahdejarjestelma}:{new_tunniste}/'
+        resp_painotus_patch = client.patch(painotus_url_patch, painotus_patch)
+        assert_status_code(resp_painotus_patch, status.HTTP_200_OK)
+
+        resp_painotus_delete = client.delete(painotus_url)
+        assert_status_code(resp_painotus_delete, status.HTTP_204_NO_CONTENT)
+
+        self.assertFalse(ToiminnallinenPainotus.objects.filter(id=painotus.id).exists())
+
+    def test_api_kielipainotus_lahdejarjestelma_tunniste_not_unique(self):
+        toimipaikka_oid = '1.2.246.562.10.9395737548815'
+        painotus = {
+            'toimipaikka_oid': toimipaikka_oid,
+            'kielipainotus_koodi': 'SV',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': '1',
+            'tunniste': 'testing-kielipainotus1',
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp = client.post('/api/v1/kielipainotukset/', painotus)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'errors', 'MI013', 'Combination of lahdejarjestelma and tunniste fields should be unique.')
+
+    def test_api_kielipainotus_missing_lahdejarjestelma(self):
+        toimipaikka_oid = '1.2.246.562.10.9395737548815'
+        painotus = {
+            'toimipaikka_oid': toimipaikka_oid,
+            'kielipainotus_koodi': 'SV',
+            'alkamis_pvm': '2021-01-02',
+            'tunniste': 'testing-kielipainotus1',
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp = client.post('/api/v1/kielipainotukset/', painotus)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'errors', 'MI018', 'lahdejarjestelma field is required if tunniste field is not empty.')
+
+    def test_api_kielipainotus_toimipaikka_tunniste(self):
+        lahdejarjestelma = '1'
+        toimipaikka_tunniste = 'testing-toimipaikka2'
+
+        toimipaikka = Toimipaikka.objects.get(lahdejarjestelma=lahdejarjestelma, tunniste=toimipaikka_tunniste)
+
+        painotus_1 = {
+            'toimipaikka_tunniste': toimipaikka_tunniste,
+            'kielipainotus_koodi': 'SV',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': '1',
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp_1 = client.post('/api/v1/kielipainotukset/', painotus_1)
+        assert_status_code(resp_1, status.HTTP_201_CREATED)
+        resp_1_json = json.loads(resp_1.content)
+        painotus_object = KieliPainotus.objects.get(id=resp_1_json['id'])
+        self.assertEqual(painotus_object.toimipaikka.id, toimipaikka.id)
+        self.assertEqual(resp_1_json['toimipaikka_oid'], toimipaikka.organisaatio_oid)
+
+        painotus_2 = {
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka.id}/',
+            'kielipainotus_koodi': 'EN',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': '1',
+        }
+        resp_2 = client.post('/api/v1/kielipainotukset/', painotus_2)
+        assert_status_code(resp_2, status.HTTP_201_CREATED)
+        self.assertEqual(json.loads(resp_2.content)['toimipaikka_tunniste'], toimipaikka_tunniste)
+
+        painotus_3 = {
+            'toimipaikka_tunniste': 'no',
+            'kielipainotus_koodi': 'FR',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': '1',
+        }
+        resp_3 = client.post('/api/v1/kielipainotukset/', painotus_3)
+        assert_status_code(resp_3, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_3, 'toimipaikka_tunniste', 'RF003', 'Could not find matching object.')
+
+    def test_api_kielipainotus_toimipaikka_related_match(self):
+        toimipaikka_1 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548810')
+        toimipaikka_2 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548811')
+        toimipaikka_3 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548817')
+        lahdejarjestelma = '1'
+
+        painotus_1 = {
+            'toimipaikka_tunniste': toimipaikka_1.tunniste,
+            'toimipaikka_oid': toimipaikka_2.organisaatio_oid,
+            'kielipainotus_koodi': 'SV',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+
+        client = SetUpTestClient('tester5').client()
+        resp_1 = client.post('/api/v1/kielipainotukset/', painotus_1)
+        assert_status_code(resp_1, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_1, 'toimipaikka_oid', 'RF004', 'Differs from parent field.')
+        assert_validation_error(resp_1, 'toimipaikka_tunniste', 'RF004', 'Differs from parent field.')
+
+        painotus_2 = {
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_3.id}/',
+            'toimipaikka_tunniste': toimipaikka_1.tunniste,
+            'kielipainotus_koodi': 'SV',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+
+        resp_2 = client.post('/api/v1/kielipainotukset/', painotus_2)
+        assert_status_code(resp_2, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_1, 'toimipaikka_tunniste', 'RF004', 'Differs from parent field.')
+
+        painotus_3 = {
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_3.id}/',
+            'toimipaikka_tunniste': toimipaikka_1.tunniste,
+            'toimipaikka_oid': toimipaikka_1.organisaatio_oid,
+            'kielipainotus_koodi': 'SV',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+
+        resp_3 = client.post('/api/v1/kielipainotukset/', painotus_3)
+        assert_status_code(resp_3, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_1, 'toimipaikka_oid', 'RF004', 'Differs from parent field.')
+        assert_validation_error(resp_1, 'toimipaikka_tunniste', 'RF004', 'Differs from parent field.')
+
+        painotus_4 = {
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_1.id}/',
+            'toimipaikka_tunniste': toimipaikka_1.tunniste,
+            'toimipaikka_oid': toimipaikka_1.organisaatio_oid,
+            'kielipainotus_koodi': 'SV',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+
+        resp_4 = client.post('/api/v1/kielipainotukset/', painotus_4)
+        assert_status_code(resp_4, status.HTTP_201_CREATED)
+
+    def test_api_kielipainotus_lahdejarjestelma_tunniste_get_put_patch_delete(self):
+        lahdejarjestelma = '1'
+        tunniste = 'testing-keilipainotus98'
+        new_tunniste = 'testing-kielipainotus99'
+
+        client = SetUpTestClient('tester2').client()
+        painotus_post = {
+            'toimipaikka_oid': '1.2.246.562.10.9395737548815',
+            'kielipainotus_koodi': 'FI',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+            'tunniste': tunniste,
+        }
+        resp_painotus_post = client.post('/api/v1/kielipainotukset/', painotus_post)
+        assert_status_code(resp_painotus_post, status.HTTP_201_CREATED)
+        painotus = KieliPainotus.objects.get(lahdejarjestelma=lahdejarjestelma, tunniste=tunniste)
+
+        painotus_url = f'/api/v1/kielipainotukset/{lahdejarjestelma}:{tunniste}/'
+        resp_painotus_get = client.get(painotus_url)
+        assert_status_code(resp_painotus_get, status.HTTP_200_OK)
+        self.assertEqual(painotus.id, json.loads(resp_painotus_get.content)['id'])
+
+        resp_painotus_get_404 = client.get('/api/v1/kielipainotukset/5:no/')
+        assert_status_code(resp_painotus_get_404, status.HTTP_404_NOT_FOUND)
+
+        painotus_put = {
+            'toimipaikka_oid': '1.2.246.562.10.9395737548815',
+            'kielipainotus_koodi': 'FI',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+            'tunniste': new_tunniste,
+        }
+        resp_painotus_put = client.put(painotus_url, painotus_put)
+        assert_status_code(resp_painotus_put, status.HTTP_200_OK)
+
+        painotus_patch = {
+            'tunniste': tunniste
+        }
+        painotus_url_patch = f'/api/v1/kielipainotukset/{lahdejarjestelma}:{new_tunniste}/'
+        resp_painotus_patch = client.patch(painotus_url_patch, painotus_patch)
+        assert_status_code(resp_painotus_patch, status.HTTP_200_OK)
+
+        resp_painotus_delete = client.delete(painotus_url)
+        assert_status_code(resp_painotus_delete, status.HTTP_204_NO_CONTENT)
+
+        self.assertFalse(KieliPainotus.objects.filter(id=painotus.id).exists())
+
+    def test_api_lapsi_lahdejarjestelma_tunniste_not_unique(self):
+        vakajarjestaja_oid = '1.2.246.562.10.34683023489'
+        henkilo_oid = '1.2.246.562.24.4338669286936'
+        lapsi = {
+            'henkilo_oid': henkilo_oid,
+            'vakatoimija_oid': vakajarjestaja_oid,
+            'lahdejarjestelma': '1',
+            'tunniste': 'testing-lapsi1',
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp = client.post('/api/v1/lapset/', lapsi)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'errors', 'MI013', 'Combination of lahdejarjestelma and tunniste fields should be unique.')
+
+    def test_api_lapsi_missing_lahdejarjestelma(self):
+        vakajarjestaja_oid = '1.2.246.562.10.34683023489'
+        henkilo_oid = '1.2.246.562.24.4338669286936'
+        lapsi = {
+            'henkilo_oid': henkilo_oid,
+            'vakatoimija_oid': vakajarjestaja_oid,
+            'tunniste': 'testing-lapsi',
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp = client.post('/api/v1/lapset/', lapsi)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'errors', 'MI018', 'lahdejarjestelma field is required if tunniste field is not empty.')
+
+    def test_api_lapsi_lahdejarjestelma_tunniste_get_put_patch_delete(self):
+        lahdejarjestelma = '1'
+        new_lahdejarjestelma = '2'
+        tunniste = 'testing-lapsi98'
+        new_tunniste = 'testing-lapsi99'
+
+        vakajarjestaja_oid = '1.2.246.562.10.34683023489'
+        henkilo_oid = '1.2.246.562.24.4338669286936'
+
+        client = SetUpTestClient('tester2').client()
+        lapsi_post = {
+            'henkilo_oid': henkilo_oid,
+            'vakatoimija_oid': vakajarjestaja_oid,
+            'lahdejarjestelma': lahdejarjestelma,
+            'tunniste': tunniste,
+        }
+        resp_lapsi_post = client.post('/api/v1/lapset/', lapsi_post)
+        assert_status_code(resp_lapsi_post, status.HTTP_201_CREATED)
+        lapsi = Lapsi.objects.get(lahdejarjestelma=lahdejarjestelma, tunniste=tunniste)
+
+        lapsi_url = f'/api/v1/lapset/{lahdejarjestelma}:{tunniste}/'
+        resp_lapsi_get = client.get(lapsi_url)
+        assert_status_code(resp_lapsi_get, status.HTTP_200_OK)
+        self.assertEqual(lapsi.id, json.loads(resp_lapsi_get.content)['id'])
+
+        resp_lapsi_get_404 = client.get('/api/v1/lapset/5:no/')
+        assert_status_code(resp_lapsi_get_404, status.HTTP_404_NOT_FOUND)
+
+        lapsi_put = {
+            'henkilo_oid': henkilo_oid,
+            'vakatoimija_oid': vakajarjestaja_oid,
+            'lahdejarjestelma': new_lahdejarjestelma,
+            'tunniste': new_tunniste,
+        }
+        resp_lapsi_put = client.put(lapsi_url, lapsi_put)
+        assert_status_code(resp_lapsi_put, status.HTTP_200_OK)
+
+        lapsi_patch = {
+            'lahdejarjestelma': lahdejarjestelma,
+            'tunniste': tunniste,
+        }
+        lapsi_url_patch = f'/api/v1/lapset/{new_lahdejarjestelma}:{new_tunniste}/'
+        resp_lapsi_patch = client.patch(lapsi_url_patch, lapsi_patch)
+        assert_status_code(resp_lapsi_patch, status.HTTP_200_OK)
+
+        resp_lapsi_delete = client.delete(lapsi_url)
+        assert_status_code(resp_lapsi_delete, status.HTTP_204_NO_CONTENT)
+
+        self.assertFalse(Lapsi.objects.filter(id=lapsi.id).exists())
+
+    def test_api_vakapaatos_lahdejarjestelma_tunniste_not_unique(self):
+        lapsi_tunniste = 'testing-lapsi3'
+        vakapaatos = {
+            'lapsi_tunniste': lapsi_tunniste,
+            'tuntimaara_viikossa': '37.5',
+            'jarjestamismuoto_koodi': 'jm01',
+            'hakemus_pvm': '2021-01-02',
+            'alkamis_pvm': '2021-01-02',
+            'tilapainen_vaka_kytkin': False,
+            'lahdejarjestelma': '1',
+            'tunniste': 'testing-varhaiskasvatuspaatos1',
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'errors', 'MI013', 'Combination of lahdejarjestelma and tunniste fields should be unique.')
+
+    def test_api_vakapaatos_missing_lahdejarjestelma(self):
+        lahdejarjestelma = '1'
+        lapsi_tunniste = 'testing-lapsi3'
+        lapsi = Lapsi.objects.get(lahdejarjestelma=lahdejarjestelma, tunniste=lapsi_tunniste)
+
+        vakapaatos = {
+            'lapsi': f'/api/v1/lapset/{lapsi.id}/',
+            'tuntimaara_viikossa': '37.5',
+            'jarjestamismuoto_koodi': 'jm01',
+            'hakemus_pvm': '2021-01-02',
+            'alkamis_pvm': '2021-01-02',
+            'tilapainen_vaka_kytkin': False,
+            'tunniste': 'testing-varhaiskasvatuspaatos',
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'errors', 'MI018', 'lahdejarjestelma field is required if tunniste field is not empty.')
+
+    def test_api_vakapaatos_lapsi_tunniste(self):
+        lahdejarjestelma = '1'
+        lapsi_tunniste = 'testing-lapsi3'
+
+        lapsi = Lapsi.objects.get(lahdejarjestelma=lahdejarjestelma, tunniste=lapsi_tunniste)
+
+        vakapaatos_1 = {
+            'lapsi_tunniste': lapsi_tunniste,
+            'tuntimaara_viikossa': '37.5',
+            'jarjestamismuoto_koodi': 'jm01',
+            'hakemus_pvm': '2021-01-02',
+            'alkamis_pvm': '2021-01-02',
+            'tilapainen_vaka_kytkin': False,
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp_1 = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos_1)
+        assert_status_code(resp_1, status.HTTP_201_CREATED)
+        resp_1_json = json.loads(resp_1.content)
+        vakapaatos_object = Varhaiskasvatuspaatos.objects.get(id=resp_1_json['id'])
+        self.assertEqual(vakapaatos_object.lapsi.id, lapsi.id)
+
+        vakapaatos_2 = {
+            'lapsi': f'/api/v1/lapset/{lapsi.id}/',
+            'tuntimaara_viikossa': '37.5',
+            'jarjestamismuoto_koodi': 'jm01',
+            'hakemus_pvm': '2021-01-02',
+            'alkamis_pvm': '2021-01-02',
+            'tilapainen_vaka_kytkin': False,
+            'lahdejarjestelma': lahdejarjestelma,
+            'tunniste': 'testing-varhaiskasvatuspaatos',
+        }
+        resp_2 = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos_2)
+        assert_status_code(resp_2, status.HTTP_201_CREATED)
+        self.assertEqual(json.loads(resp_2.content)['lapsi_tunniste'], lapsi_tunniste)
+
+        vakapaatos_3 = {
+            'lapsi_tunniste': 'no',
+            'tuntimaara_viikossa': '37.5',
+            'jarjestamismuoto_koodi': 'jm01',
+            'hakemus_pvm': '2021-01-02',
+            'alkamis_pvm': '2021-01-02',
+            'tilapainen_vaka_kytkin': False,
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+        resp_3 = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos_3)
+        assert_status_code(resp_3, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_3, 'lapsi_tunniste', 'RF003', 'Could not find matching object.')
+
+    def test_api_vakapaatos_lapsi_related_match(self):
+        lapsi_1 = Lapsi.objects.get(tunniste='testing-lapsi3')
+        lapsi_2 = Lapsi.objects.get(tunniste='testing-lapsi6')
+        lahdejarjestelma = '1'
+
+        vakapaatos_1 = {
+            'lapsi': f'/api/v1/lapset/{lapsi_1.id}/',
+            'lapsi_tunniste': lapsi_2.tunniste,
+            'tuntimaara_viikossa': '37.5',
+            'jarjestamismuoto_koodi': 'jm01',
+            'hakemus_pvm': '2021-01-02',
+            'alkamis_pvm': '2021-01-02',
+            'tilapainen_vaka_kytkin': False,
+            'lahdejarjestelma': lahdejarjestelma,
+            'tunniste': 'testing-varhaiskasvatuspaatos',
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp_1 = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos_1)
+        assert_status_code(resp_1, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_1, 'lapsi_tunniste', 'RF004', 'Differs from parent field.')
+
+        vakapaatos_2 = {
+            'lapsi': f'/api/v1/lapset/{lapsi_1.id}/',
+            'lapsi_tunniste': lapsi_1.tunniste,
+            'tuntimaara_viikossa': '37.5',
+            'jarjestamismuoto_koodi': 'jm01',
+            'hakemus_pvm': '2021-01-02',
+            'alkamis_pvm': '2021-01-02',
+            'tilapainen_vaka_kytkin': False,
+            'lahdejarjestelma': lahdejarjestelma,
+            'tunniste': 'testing-varhaiskasvatuspaatos',
+        }
+
+        resp_2 = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos_2)
+        assert_status_code(resp_2, status.HTTP_201_CREATED)
+
+    def test_api_vakapaatos_lahdejarjestelma_tunniste_get_put_patch_delete(self):
+        lahdejarjestelma = '1'
+        tunniste = 'testing-varhaiskasvatuspaatos98'
+        new_tunniste = 'testing-varhaiskasvatuspaatos99'
+
+        lapsi_tunniste = 'testing-lapsi3'
+
+        client = SetUpTestClient('tester2').client()
+        vakapaatos_post = {
+            'lapsi_tunniste': lapsi_tunniste,
+            'tuntimaara_viikossa': '37.5',
+            'jarjestamismuoto_koodi': 'jm01',
+            'hakemus_pvm': '2021-01-02',
+            'alkamis_pvm': '2021-01-02',
+            'tilapainen_vaka_kytkin': False,
+            'lahdejarjestelma': lahdejarjestelma,
+            'tunniste': tunniste,
+        }
+        resp_vakapaatos_post = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos_post)
+        assert_status_code(resp_vakapaatos_post, status.HTTP_201_CREATED)
+        vakapaatos = Varhaiskasvatuspaatos.objects.get(lahdejarjestelma=lahdejarjestelma, tunniste=tunniste)
+
+        vakapaatos_url = f'/api/v1/varhaiskasvatuspaatokset/{lahdejarjestelma}:{tunniste}/'
+        resp_vakapaatos_get = client.get(vakapaatos_url)
+        assert_status_code(resp_vakapaatos_get, status.HTTP_200_OK)
+        self.assertEqual(vakapaatos.id, json.loads(resp_vakapaatos_get.content)['id'])
+
+        resp_vakapaatos_get_404 = client.get('/api/v1/varhaiskasvatuspaatokset/5:no/')
+        assert_status_code(resp_vakapaatos_get_404, status.HTTP_404_NOT_FOUND)
+
+        vakapaatos_put = {
+            'lapsi_tunniste': lapsi_tunniste,
+            'tuntimaara_viikossa': '37.5',
+            'jarjestamismuoto_koodi': 'jm01',
+            'hakemus_pvm': '2021-01-02',
+            'alkamis_pvm': '2021-01-02',
+            'tilapainen_vaka_kytkin': False,
+            'lahdejarjestelma': lahdejarjestelma,
+            'tunniste': new_tunniste,
+        }
+        resp_vakapaatos_put = client.put(vakapaatos_url, vakapaatos_put)
+        assert_status_code(resp_vakapaatos_put, status.HTTP_200_OK)
+
+        vakapaatos_patch = {
+            'tunniste': tunniste
+        }
+        vakapaatos_url_patch = f'/api/v1/varhaiskasvatuspaatokset/{lahdejarjestelma}:{new_tunniste}/'
+        resp_vakapaatos_patch = client.patch(vakapaatos_url_patch, vakapaatos_patch)
+        assert_status_code(resp_vakapaatos_patch, status.HTTP_200_OK)
+
+        resp_vakapaatos_delete = client.delete(vakapaatos_url)
+        assert_status_code(resp_vakapaatos_delete, status.HTTP_204_NO_CONTENT)
+
+        self.assertFalse(Varhaiskasvatuspaatos.objects.filter(id=vakapaatos.id).exists())
+
+    def test_api_vakasuhde_lahdejarjestelma_tunniste_not_unique(self):
+        vakapaatos_tunniste = 'testing-varhaiskasvatuspaatos2'
+        toimipaikka_oid = '1.2.246.562.10.9395737548810'
+
+        vakasuhde = {
+            'varhaiskasvatuspaatos_tunniste': vakapaatos_tunniste,
+            'toimipaikka_oid': toimipaikka_oid,
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': '1',
+            'tunniste': 'testing-varhaiskasvatussuhde1',
+        }
+
+        client = SetUpTestClient('tester5').client()
+        resp = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'errors', 'MI013', 'Combination of lahdejarjestelma and tunniste fields should be unique.')
+
+    def test_api_vakasuhde_missing_lahdejarjestelma(self):
+        vakapaatos = Varhaiskasvatuspaatos.objects.get(tunniste='testing-varhaiskasvatuspaatos2')
+        toimipaikka = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548810')
+
+        vakasuhde = {
+            'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos.id}/',
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka.id}/',
+            'alkamis_pvm': '2021-01-02',
+            'tunniste': 'testing-varhaiskasvatussuhde',
+        }
+
+        client = SetUpTestClient('tester5').client()
+        resp = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'errors', 'MI018', 'lahdejarjestelma field is required if tunniste field is not empty.')
+
+    def test_api_vakasuhde_vakapaatos_toimipaikka_tunniste(self):
+        lahdejarjestelma = '1'
+        vakapaatos = Varhaiskasvatuspaatos.objects.get(tunniste='testing-varhaiskasvatuspaatos2')
+        toimipaikka = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548810')
+
+        vakasuhde_1 = {
+            'varhaiskasvatuspaatos_tunniste': vakapaatos.tunniste,
+            'toimipaikka_tunniste': toimipaikka.tunniste,
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+
+        client = SetUpTestClient('tester5').client()
+        resp_1 = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde_1)
+        assert_status_code(resp_1, status.HTTP_201_CREATED)
+        resp_1_json = json.loads(resp_1.content)
+        vakasuhde_object = Varhaiskasvatussuhde.objects.get(id=resp_1_json['id'])
+        self.assertEqual(vakasuhde_object.varhaiskasvatuspaatos.id, vakapaatos.id)
+        self.assertEqual(vakasuhde_object.toimipaikka.id, toimipaikka.id)
+        self.assertEqual(resp_1_json['toimipaikka_oid'], toimipaikka.organisaatio_oid)
+
+        vakasuhde_2 = {
+            'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos.id}/',
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka.id}/',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+        resp_2 = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde_2)
+        assert_status_code(resp_2, status.HTTP_201_CREATED)
+        resp_2_json = json.loads(resp_2.content)
+        self.assertEqual(resp_2_json['toimipaikka_tunniste'], toimipaikka.tunniste)
+        self.assertEqual(resp_2_json['toimipaikka_oid'], toimipaikka.organisaatio_oid)
+        self.assertEqual(resp_2_json['varhaiskasvatuspaatos_tunniste'], vakapaatos.tunniste)
+
+        vakasuhde_3 = {
+            'varhaiskasvatuspaatos_tunniste': 'no',
+            'toimipaikka_tunniste': 'no',
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+        resp_3 = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde_3)
+        assert_status_code(resp_3, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_3, 'varhaiskasvatuspaatos_tunniste', 'RF003', 'Could not find matching object.')
+        assert_validation_error(resp_3, 'toimipaikka_tunniste', 'RF003', 'Could not find matching object.')
+
+    def test_api_vakasuhde_vakapaatos_toimipaikka_related_match(self):
+        vakapaatos_1 = Varhaiskasvatuspaatos.objects.get(tunniste='testing-varhaiskasvatuspaatos1')
+        vakapaatos_2 = Varhaiskasvatuspaatos.objects.get(tunniste='testing-varhaiskasvatuspaatos2')
+        toimipaikka_1 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548810')
+        toimipaikka_2 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548811')
+        toimipaikka_3 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548817')
+        lahdejarjestelma = '1'
+
+        vakasuhde_1 = {
+            'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatussuhteet/{vakapaatos_1.id}/',
+            'varhaiskasvatuspaatos_tunniste': vakapaatos_2.tunniste,
+            'toimipaikka_oid': toimipaikka_2.organisaatio_oid,
+            'toimipaikka_tunniste': toimipaikka_1.tunniste,
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+
+        client = SetUpTestClient('tester5').client()
+        resp_1 = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde_1)
+        assert_status_code(resp_1, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_1, 'varhaiskasvatuspaatos_tunniste', 'RF004', 'Differs from parent field.')
+        assert_validation_error(resp_1, 'toimipaikka_oid', 'RF004', 'Differs from parent field.')
+        assert_validation_error(resp_1, 'toimipaikka_tunniste', 'RF004', 'Differs from parent field.')
+
+        vakasuhde_2 = {
+            'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos_1.id}/',
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_1.id}/',
+            'toimipaikka_oid': toimipaikka_2.organisaatio_oid,
+            'toimipaikka_tunniste': toimipaikka_3.tunniste,
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+
+        client = SetUpTestClient('tester5').client()
+        resp_2 = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde_2)
+        assert_status_code(resp_2, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_2, 'toimipaikka_oid', 'RF004', 'Differs from parent field.')
+        assert_validation_error(resp_2, 'toimipaikka_tunniste', 'RF004', 'Differs from parent field.')
+
+        vakasuhde_3 = {
+            'varhaiskasvatuspaatos_tunniste': vakapaatos_2.tunniste,
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_1.id}/',
+            'toimipaikka_tunniste': toimipaikka_3.tunniste,
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+
+        client = SetUpTestClient('tester5').client()
+        resp_3 = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde_3)
+        assert_status_code(resp_3, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_3, 'toimipaikka_tunniste', 'RF004', 'Differs from parent field.')
+
+        vakasuhde_4 = {
+            'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos_2.id}/',
+            'varhaiskasvatuspaatos_tunniste': vakapaatos_2.tunniste,
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_1.id}/',
+            'toimipaikka_oid': toimipaikka_1.organisaatio_oid,
+            'toimipaikka_tunniste': toimipaikka_1.tunniste,
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+
+        resp_4 = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde_4)
+        assert_status_code(resp_4, status.HTTP_201_CREATED)
+
+    def test_api_vakasuhde_lahdejarjestelma_tunniste_get_put_patch_delete(self):
+        lahdejarjestelma = '1'
+        tunniste = 'testing-varhaiskasvatussuhde98'
+        new_tunniste = 'testing-varhaiskasvatussuhde99'
+
+        vakapaatos_tunniste = 'testing-varhaiskasvatuspaatos3'
+        toimipaikka_tunniste = 'testing-toimipaikka2'
+
+        client = SetUpTestClient('tester2').client()
+        vakasuhde_post = {
+            'varhaiskasvatuspaatos_tunniste': vakapaatos_tunniste,
+            'toimipaikka_tunniste': toimipaikka_tunniste,
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+            'tunniste': tunniste,
+        }
+        resp_vakasuhde_post = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde_post)
+        assert_status_code(resp_vakasuhde_post, status.HTTP_201_CREATED)
+        vakasuhde = Varhaiskasvatussuhde.objects.get(lahdejarjestelma=lahdejarjestelma, tunniste=tunniste)
+
+        vakasuhde_url = f'/api/v1/varhaiskasvatussuhteet/{lahdejarjestelma}:{tunniste}/'
+        resp_vakasuhde_get = client.get(vakasuhde_url)
+        assert_status_code(resp_vakasuhde_get, status.HTTP_200_OK)
+        self.assertEqual(vakasuhde.id, json.loads(resp_vakasuhde_get.content)['id'])
+
+        resp_vakasuhde_get_404 = client.get('/api/v1/varhaiskasvatussuhteet/5:no/')
+        assert_status_code(resp_vakasuhde_get_404, status.HTTP_404_NOT_FOUND)
+
+        vakasuhde_put = {
+            'varhaiskasvatuspaatos_tunniste': vakapaatos_tunniste,
+            'toimipaikka_tunniste': toimipaikka_tunniste,
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': lahdejarjestelma,
+            'tunniste': new_tunniste,
+        }
+        resp_vakasuhde_put = client.put(vakasuhde_url, vakasuhde_put)
+        assert_status_code(resp_vakasuhde_put, status.HTTP_200_OK)
+
+        vakasuhde_patch = {
+            'tunniste': tunniste
+        }
+        vakasuhde_url_patch = f'/api/v1/varhaiskasvatussuhteet/{lahdejarjestelma}:{new_tunniste}/'
+        resp_vakasuhde_patch = client.patch(vakasuhde_url_patch, vakasuhde_patch)
+        assert_status_code(resp_vakasuhde_patch, status.HTTP_200_OK)
+
+        resp_vakasuhde_delete = client.delete(vakasuhde_url)
+        assert_status_code(resp_vakasuhde_delete, status.HTTP_204_NO_CONTENT)
+
+        self.assertFalse(Varhaiskasvatussuhde.objects.filter(id=vakasuhde.id).exists())
+
+    def test_api_maksutieto_lahdejarjestelma_tunniste_not_unique(self):
+        lapsi_tunniste = 'testing-lapsi3'
+        maksutieto = {
+            'lapsi_tunniste': lapsi_tunniste,
+            'huoltajat': [{
+                'henkilotunnus': '120386-109V',
+                'etunimet': 'Pertti',
+                'sukunimi': 'Virtanen',
+            }],
+            'maksun_peruste_koodi': 'mp01',
+            'palveluseteli_arvo': 0,
+            'asiakasmaksu': 10,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2021-02-01',
+            'lahdejarjestelma': '1',
+            'tunniste': 'testing-maksutieto1',
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'errors', 'MI013', 'Combination of lahdejarjestelma and tunniste fields should be unique.')
+
+    def test_api_maksutieto_missing_lahdejarjestelma(self):
+        lahdejarjestelma = '1'
+        lapsi_tunniste = 'testing-lapsi3'
+        lapsi = Lapsi.objects.get(lahdejarjestelma=lahdejarjestelma, tunniste=lapsi_tunniste)
+
+        maksutieto = {
+            'lapsi': f'/api/v1/lapset/{lapsi.id}/',
+            'huoltajat': [{
+                'henkilotunnus': '120386-109V',
+                'etunimet': 'Pertti',
+                'sukunimi': 'Virtanen',
+            }],
+            'maksun_peruste_koodi': 'mp01',
+            'palveluseteli_arvo': 0,
+            'asiakasmaksu': 10,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2021-02-01',
+            'tunniste': 'testing-maksutieto',
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'errors', 'MI018', 'lahdejarjestelma field is required if tunniste field is not empty.')
+
+    def test_api_maksutieto_lapsi_tunniste(self):
+        lahdejarjestelma = '1'
+        lapsi_tunniste = 'testing-lapsi3'
+
+        lapsi = Lapsi.objects.get(lahdejarjestelma=lahdejarjestelma, tunniste=lapsi_tunniste)
+
+        maksutieto_1 = {
+            'lapsi_tunniste': lapsi_tunniste,
+            'huoltajat': [{
+                'henkilotunnus': '120386-109V',
+                'etunimet': 'Pertti',
+                'sukunimi': 'Virtanen',
+            }],
+            'maksun_peruste_koodi': 'mp01',
+            'palveluseteli_arvo': 0,
+            'asiakasmaksu': 10,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2021-02-01',
+            'paattymis_pvm': '2021-02-02',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp_1 = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto_1), content_type='application/json')
+        assert_status_code(resp_1, status.HTTP_201_CREATED)
+        resp_1_json = json.loads(resp_1.content)
+        maksutieto_object = Maksutieto.objects.get(id=resp_1_json['id'])
+        self.assertEqual(maksutieto_object.huoltajuussuhteet.first().lapsi.id, lapsi.id)
+
+        maksutieto_2 = {
+            'lapsi': f'/api/v1/lapset/{lapsi.id}/',
+            'huoltajat': [{
+                'henkilotunnus': '120386-109V',
+                'etunimet': 'Pertti',
+                'sukunimi': 'Virtanen',
+            }],
+            'maksun_peruste_koodi': 'mp01',
+            'palveluseteli_arvo': 0,
+            'asiakasmaksu': 10,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2021-02-04',
+            'paattymis_pvm': '2021-02-05',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+        resp_2 = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto_2), content_type='application/json')
+        assert_status_code(resp_2, status.HTTP_201_CREATED)
+        self.assertEqual(json.loads(resp_2.content)['lapsi_tunniste'], lapsi_tunniste)
+
+        maksutieto_3 = {
+            'lapsi_tunniste': 'no',
+            'huoltajat': [{
+                'henkilotunnus': '120386-109V',
+                'etunimet': 'Pertti',
+                'sukunimi': 'Virtanen',
+            }],
+            'maksun_peruste_koodi': 'mp01',
+            'palveluseteli_arvo': 0,
+            'asiakasmaksu': 10,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2021-03-01',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+        resp_3 = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto_3), content_type='application/json')
+        assert_status_code(resp_3, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_3, 'lapsi_tunniste', 'RF003', 'Could not find matching object.')
+
+    def test_api_maksutieto_lapsi_related_match(self):
+        lapsi_1 = Lapsi.objects.get(tunniste='testing-lapsi3')
+        lapsi_2 = Lapsi.objects.get(tunniste='testing-lapsi6')
+        lahdejarjestelma = '1'
+
+        maksutieto_1 = {
+            'lapsi': f'/api/v1/lapset/{lapsi_1.id}/',
+            'lapsi_tunniste': lapsi_2.tunniste,
+            'huoltajat': [{
+                'henkilotunnus': '120386-109V',
+                'etunimet': 'Pertti',
+                'sukunimi': 'Virtanen',
+            }],
+            'maksun_peruste_koodi': 'mp01',
+            'palveluseteli_arvo': 0,
+            'asiakasmaksu': 10,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2021-03-01',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp_1 = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto_1), content_type='application/json')
+        assert_status_code(resp_1, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_1, 'lapsi_tunniste', 'RF004', 'Differs from parent field.')
+
+        maksutieto_2 = {
+            'lapsi': f'/api/v1/lapset/{lapsi_1.id}/',
+            'lapsi_tunniste': lapsi_1.tunniste,
+            'huoltajat': [{
+                'henkilotunnus': '120386-109V',
+                'etunimet': 'Pertti',
+                'sukunimi': 'Virtanen',
+            }],
+            'maksun_peruste_koodi': 'mp01',
+            'palveluseteli_arvo': 0,
+            'asiakasmaksu': 10,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2021-03-01',
+            'lahdejarjestelma': lahdejarjestelma,
+        }
+
+        resp_2 = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto_2), content_type='application/json')
+        assert_status_code(resp_2, status.HTTP_201_CREATED)
+
+    def test_api_maksutieto_lahdejarjestelma_tunniste_get_put_patch_delete(self):
+        lahdejarjestelma = '1'
+        tunniste = 'testing-maksutieto98'
+        new_tunniste = 'testing-maksutieto99'
+
+        lapsi_tunniste = 'testing-lapsi3'
+
+        client = SetUpTestClient('tester2').client()
+        maksutieto_post = {
+            'lapsi_tunniste': lapsi_tunniste,
+            'huoltajat': [{
+                'henkilotunnus': '120386-109V',
+                'etunimet': 'Pertti',
+                'sukunimi': 'Virtanen',
+            }],
+            'maksun_peruste_koodi': 'mp01',
+            'palveluseteli_arvo': 0,
+            'asiakasmaksu': 10,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2021-03-01',
+            'lahdejarjestelma': lahdejarjestelma,
+            'tunniste': tunniste,
+        }
+        resp_maksutieto_post = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto_post), content_type='application/json')
+        assert_status_code(resp_maksutieto_post, status.HTTP_201_CREATED)
+        maksutieto = Maksutieto.objects.get(lahdejarjestelma=lahdejarjestelma, tunniste=tunniste)
+
+        maksutieto_url = f'/api/v1/maksutiedot/{lahdejarjestelma}:{tunniste}/'
+        resp_maksutieto_get = client.get(maksutieto_url)
+        assert_status_code(resp_maksutieto_get, status.HTTP_200_OK)
+        self.assertEqual(maksutieto.id, json.loads(resp_maksutieto_get.content)['id'])
+
+        resp_maksutieto_get_404 = client.get('/api/v1/maksutiedot/5:no/')
+        assert_status_code(resp_maksutieto_get_404, status.HTTP_404_NOT_FOUND)
+
+        maksutieto_put = {
+            'lapsi_tunniste': lapsi_tunniste,
+            'huoltajat': [{
+                'henkilotunnus': '120386-109V',
+                'etunimet': 'Pertti',
+                'sukunimi': 'Virtanen',
+            }],
+            'maksun_peruste_koodi': 'mp01',
+            'palveluseteli_arvo': 0,
+            'asiakasmaksu': 10,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2021-03-01',
+            'paattymis_pvm': None,
+            'lahdejarjestelma': lahdejarjestelma,
+            'tunniste': new_tunniste,
+        }
+        resp_maksutieto_put = client.put(maksutieto_url, json.dumps(maksutieto_put), content_type='application/json')
+        assert_status_code(resp_maksutieto_put, status.HTTP_200_OK)
+
+        maksutieto_patch = {
+            'tunniste': tunniste
+        }
+        maksutieto_url_patch = f'/api/v1/maksutiedot/{lahdejarjestelma}:{new_tunniste}/'
+        resp_maksutieto_patch = client.patch(maksutieto_url_patch, json.dumps(maksutieto_patch), content_type='application/json')
+        assert_status_code(resp_maksutieto_patch, status.HTTP_200_OK)
+
+        resp_maksutieto_delete = client.delete(maksutieto_url)
+        assert_status_code(resp_maksutieto_delete, status.HTTP_204_NO_CONTENT)
+
+        self.assertFalse(Maksutieto.objects.filter(id=maksutieto.id).exists())

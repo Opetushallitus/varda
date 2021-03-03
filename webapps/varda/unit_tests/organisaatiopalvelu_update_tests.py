@@ -24,7 +24,6 @@ class VardaOrganisaatiopalveluTests(TestCase):
     toimipaikka_2_regex = toimipaikka_2_organisaatio_oid
 
     def test_organisaatio_update_json(self):
-        self.maxDiff = None
         old_toimipaikka_json = {
             "oid": "1.2.246.562.10.29565860110",
             "nimi": {

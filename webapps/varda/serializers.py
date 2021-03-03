@@ -18,15 +18,17 @@ from varda.misc import list_of_dicts_has_duplicate_values
 from varda.misc_viewsets import ViewSetValidator
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Maksutieto, Henkilo,
                           Lapsi, Huoltaja, Huoltajuussuhde, PaosOikeus, PaosToiminta, Varhaiskasvatuspaatos,
-                          Varhaiskasvatussuhde, Z3_AdditionalCasUserFields, Tyontekija)
+                          Varhaiskasvatussuhde, Z3_AdditionalCasUserFields, Tyontekija, Z4_CasKayttoOikeudet)
 from varda.permissions import (check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement,
                                user_belongs_to_correct_groups, is_oph_staff)
-from varda.serializers_common import OidRelatedField
+from varda.related_object_validations import check_if_immutable_object_is_changed
+from varda.serializers_common import OidRelatedField, TunnisteRelatedField
 from varda.validators import (fill_missing_fields_for_validations, validate_henkilo_oid, validate_nimi,
                               validate_henkilotunnus_or_oid_needed, validate_organisaatio_oid)
 
-# Get an instance of a logger
+
 logger = logging.getLogger(__name__)
+
 
 """
 Admin serializers
@@ -274,6 +276,10 @@ class VarhaiskasvatuspaatosHLField(serializers.HyperlinkedRelatedField):
         return queryset
 
 
+class VarhaiskasvatuspaatosPermissionCheckedHLField(PermissionCheckedHLFieldMixin, VarhaiskasvatuspaatosHLField):
+    check_permission = 'change_varhaiskasvatuspaatos'
+
+
 class VarhaiskasvatussuhdeHLField(serializers.HyperlinkedRelatedField):
     def get_queryset(self):
         user = self.context['request'].user
@@ -312,6 +318,10 @@ class LapsiHLField(serializers.HyperlinkedRelatedField):
         else:
             queryset = Lapsi.objects.none()
         return queryset
+
+
+class LapsiPermissionCheckedHLField(PermissionCheckedHLFieldMixin, LapsiHLField):
+    check_permission = 'change_lapsi'
 
 
 class MaksutietoHLField(serializers.HyperlinkedRelatedField):
@@ -360,7 +370,14 @@ class VakaJarjestajaSerializer(serializers.HyperlinkedModelSerializer):
 
 class ToimipaikkaSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
-    vakajarjestaja = VakaJarjestajaHLField(view_name='vakajarjestaja-detail')
+    vakajarjestaja = VakaJarjestajaPermissionCheckedHLField(view_name='vakajarjestaja-detail', required=False,
+                                                            permission_groups=[Z4_CasKayttoOikeudet.TALLENTAJA,
+                                                                               Z4_CasKayttoOikeudet.PALVELUKAYTTAJA])
+    vakajarjestaja_oid = OidRelatedField(object_type=VakaJarjestaja,
+                                         parent_field='vakajarjestaja',
+                                         parent_attribute='organisaatio_oid',
+                                         prevalidator=validators.validate_organisaatio_oid,
+                                         either_required=True)
     organisaatio_oid = serializers.CharField(read_only=True, required=False)
     kayntiosoite = serializers.CharField(min_length=3, max_length=100)
     postiosoite = serializers.CharField(min_length=3, max_length=100)
@@ -374,19 +391,18 @@ class ToimipaikkaSerializer(serializers.HyperlinkedModelSerializer):
         exclude = ('nimi_sv', 'luonti_pvm', 'changed_by',)
 
     def validate(self, data):
-        if 'vakajarjestaja' in data and 'nimi' in data:
-            unique_name_qs = Toimipaikka.objects.filter(vakajarjestaja=data['vakajarjestaja'], nimi=data['nimi'])
-            if self.instance:
-                # Exclude current instance
-                unique_name_qs = unique_name_qs.exclude(pk=self.instance.pk)
-            if unique_name_qs.exists():
-                raise serializers.ValidationError({'errors': [ErrorMessages.TP001.value]})
+        if self.instance:
+            fill_missing_fields_for_validations(data, self.instance)
 
-        if ('vakajarjestaja' in data and
-                not self.context['request'].user.has_perm('view_vakajarjestaja', data['vakajarjestaja'])):
-            raise serializers.ValidationError({'vakajarjestaja': [ErrorMessages.GE008.value]}, code='invalid')
+        unique_name_qs = Toimipaikka.objects.filter(vakajarjestaja=data['vakajarjestaja'], nimi=data['nimi'])
+        if self.instance:
+            # Exclude current instance
+            unique_name_qs = unique_name_qs.exclude(pk=self.instance.pk)
+        if unique_name_qs.exists():
+            raise serializers.ValidationError({'errors': [ErrorMessages.TP001.value]})
+
         # Names that collide with temporary toimipaikka are not allowed
-        if 'nimi' in data and data['nimi'].lower().startswith('palveluseteli ja ostopalvelu'):
+        if data['nimi'].lower().startswith('palveluseteli ja ostopalvelu'):
             raise serializers.ValidationError({'nimi': [ErrorMessages.TP006.value]}, code='invalid')
         validators.validate_toimipaikan_nimi(data['nimi'])
 
@@ -399,7 +415,20 @@ class ToimipaikkaSerializer(serializers.HyperlinkedModelSerializer):
 
 class ToiminnallinenPainotusSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
-    toimipaikka = ToimipaikkaHLField(view_name='toimipaikka-detail')
+    toimipaikka = ToimipaikkaPermissionCheckedHLField(required=False, view_name='toimipaikka-detail',
+                                                      permission_groups=[Z4_CasKayttoOikeudet.TALLENTAJA,
+                                                                         Z4_CasKayttoOikeudet.PALVELUKAYTTAJA])
+    toimipaikka_oid = OidRelatedField(object_type=Toimipaikka,
+                                      parent_field='toimipaikka',
+                                      parent_attribute='organisaatio_oid',
+                                      prevalidator=validators.validate_organisaatio_oid,
+                                      either_required=True,
+                                      secondary_field='toimipaikka_tunniste')
+    toimipaikka_tunniste = TunnisteRelatedField(object_type=Toimipaikka,
+                                                parent_field='toimipaikka',
+                                                prevalidator=validators.validate_tunniste,
+                                                either_required=True,
+                                                secondary_field='toimipaikka_oid')
 
     class Meta:
         model = ToiminnallinenPainotus
@@ -407,8 +436,8 @@ class ToiminnallinenPainotusSerializer(serializers.HyperlinkedModelSerializer):
 
     def validate(self, data):
         if self.instance:  # PUT/PATCH
-            if 'toimipaikka' in data and data['toimipaikka'] != self.instance.toimipaikka:
-                raise serializers.ValidationError({'toimipaikka': [ErrorMessages.GE013.value]})
+            fill_missing_fields_for_validations(data, self.instance)
+            check_if_immutable_object_is_changed(self.instance, data, 'toimipaikka')
             validators.validate_dates_within_toimipaikka(data, self.instance.toimipaikka)
         else:  # POST
             validators.validate_dates_within_toimipaikka(data, data['toimipaikka'])
@@ -417,7 +446,20 @@ class ToiminnallinenPainotusSerializer(serializers.HyperlinkedModelSerializer):
 
 class KieliPainotusSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
-    toimipaikka = ToimipaikkaHLField(view_name='toimipaikka-detail')
+    toimipaikka = ToimipaikkaPermissionCheckedHLField(required=False, view_name='toimipaikka-detail',
+                                                      permission_groups=[Z4_CasKayttoOikeudet.TALLENTAJA,
+                                                                         Z4_CasKayttoOikeudet.PALVELUKAYTTAJA])
+    toimipaikka_oid = OidRelatedField(object_type=Toimipaikka,
+                                      parent_field='toimipaikka',
+                                      parent_attribute='organisaatio_oid',
+                                      prevalidator=validators.validate_organisaatio_oid,
+                                      either_required=True,
+                                      secondary_field='toimipaikka_tunniste')
+    toimipaikka_tunniste = TunnisteRelatedField(object_type=Toimipaikka,
+                                                parent_field='toimipaikka',
+                                                prevalidator=validators.validate_tunniste,
+                                                either_required=True,
+                                                secondary_field='toimipaikka_oid')
 
     class Meta:
         model = KieliPainotus
@@ -425,8 +467,8 @@ class KieliPainotusSerializer(serializers.HyperlinkedModelSerializer):
 
     def validate(self, data):
         if self.instance:  # PUT/PATCH
-            if 'toimipaikka' in data and data['toimipaikka'] != self.instance.toimipaikka:
-                raise serializers.ValidationError({'toimipaikka': [ErrorMessages.GE013.value]})
+            fill_missing_fields_for_validations(data, self.instance)
+            check_if_immutable_object_is_changed(self.instance, data, 'toimipaikka')
             validators.validate_dates_within_toimipaikka(data, self.instance.toimipaikka)
         else:  # POST
             validators.validate_dates_within_toimipaikka(data, data['toimipaikka'])
@@ -598,7 +640,11 @@ class MaksutietoPostSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     url = serializers.ReadOnlyField()
     huoltajat = MaksutietoPostHuoltajaSerializer(required=True, allow_empty=False, many=True)
-    lapsi = LapsiHLField(required=True, view_name='lapsi-detail')
+    lapsi = LapsiHLField(required=False, view_name='lapsi-detail')
+    lapsi_tunniste = TunnisteRelatedField(object_type=Lapsi,
+                                          parent_field='lapsi',
+                                          prevalidator=validators.validate_tunniste,
+                                          either_required=True)
     alkamis_pvm = serializers.DateField(required=True, validators=[validators.validate_vaka_date])
 
     class Meta:
@@ -606,9 +652,7 @@ class MaksutietoPostSerializer(serializers.HyperlinkedModelSerializer):
         exclude = ('luonti_pvm', 'changed_by', 'yksityinen_jarjestaja',)
 
     def validate(self, data):
-        if 'lapsi' in data and self.context['request'].user.has_perm('view_lapsi', data['lapsi']):
-            pass
-        else:
+        if not self.context['request'].user.has_perm('view_lapsi', data['lapsi']):
             msg = {'lapsi': [ErrorMessages.GE008.value]}
             raise serializers.ValidationError(msg, code='invalid')
 
@@ -634,61 +678,46 @@ class MaksutietoGetHuoltajaSerializer(serializers.ModelSerializer):
         fields = ('henkilo_oid', 'etunimet', 'sukunimi')
 
 
-class MaksutietoGetSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-    huoltajat = serializers.SerializerMethodField('get_huoltajat_for_maksutieto')
-    lapsi = serializers.SerializerMethodField('get_lapsi_for_maksutieto')
+def _get_lapsi_for_maksutieto(maksutieto):
+    lapsi = maksutieto.huoltajuussuhteet.all().values('lapsi').distinct()
+    if len(lapsi) != 1:
+        logger.error('Could not find just one lapsi for maksutieto-id: {}'.format(maksutieto.id))
+        raise APIException
+    return Lapsi.objects.get(id=lapsi[0].get('lapsi'))
 
-    def get_huoltajat_for_maksutieto(self, obj):
+
+class MaksutietoGetUpdateSerializer(serializers.HyperlinkedModelSerializer):
+    id = serializers.ReadOnlyField()
+    huoltajat = serializers.SerializerMethodField()
+    lapsi = serializers.SerializerMethodField()
+    lapsi_tunniste = TunnisteRelatedField(object_type=Lapsi,
+                                          parent_field='lapsi',
+                                          read_only=True,
+                                          prevalidator=validators.validate_tunniste,
+                                          parent_value_getter=_get_lapsi_for_maksutieto)
+    paattymis_pvm = serializers.DateField(allow_null=True, validators=[validators.validate_vaka_date])
+
+    def get_huoltajat(self, obj):
         huoltajuussuhteet = obj.huoltajuussuhteet.all()
         huoltajat = Henkilo.objects.filter(huoltaja__huoltajuussuhteet__in=huoltajuussuhteet)
         return MaksutietoGetHuoltajaSerializer(huoltajat, many=True).data
 
-    def get_lapsi_for_maksutieto(self, obj):
-        lapsi = obj.huoltajuussuhteet.all().values('lapsi').distinct()
-        if len(lapsi) != 1:
-            logger.error('Could not find just one lapsi for maksutieto-id: {}'.format(obj.id))
-            raise APIException
-        else:
-            lapsi = lapsi[0].get('lapsi')
-        return self.context['request'].build_absolute_uri(reverse('lapsi-detail', args=[lapsi]))
-
-    class Meta:
-        model = Maksutieto
-        fields = ('url', 'id', 'huoltajat', 'lapsi', 'maksun_peruste_koodi', 'palveluseteli_arvo', 'asiakasmaksu',
-                  'perheen_koko', 'alkamis_pvm', 'paattymis_pvm')
-
-
-class MaksutietoUpdateSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-    huoltajat = serializers.SerializerMethodField('get_huoltajat_for_maksutieto')
-    lapsi = serializers.SerializerMethodField('get_lapsi_for_maksutieto')
-    paattymis_pvm = serializers.DateField(allow_null=True, required=True, validators=[validators.validate_vaka_date])
-
-    def get_huoltajat_for_maksutieto(self, obj):
-        huoltajuussuhteet = obj.huoltajuussuhteet.all()
-        huoltajat = Henkilo.objects.filter(huoltaja__huoltajuussuhteet__in=huoltajuussuhteet)
-        return MaksutietoGetHuoltajaSerializer(huoltajat, many=True).data
-
-    def get_lapsi_for_maksutieto(self, obj):
-        lapsi = obj.huoltajuussuhteet.all().values('lapsi').distinct()
-        if len(lapsi) != 1:
-            logger.error('Could not find just one lapsi for maksutieto-id: {}'.format(obj.id))
-            raise APIException
-        else:
-            lapsi = lapsi[0].get('lapsi')
+    def get_lapsi(self, obj):
+        lapsi = _get_lapsi_for_maksutieto(obj)
         return self.context['request'].build_absolute_uri(reverse('lapsi-detail', args=[lapsi]))
 
     def validate(self, data):
         if len(data) == 0:
             raise serializers.ValidationError({'errors': [ErrorMessages.GE014.value]})
+        fill_missing_fields_for_validations(data, self.instance)
         return data
 
     class Meta:
         model = Maksutieto
-        read_only_fields = ['url', 'id', 'huoltajat', 'lapsi', 'alkamis_pvm', 'perheen_koko', 'maksun_peruste_koodi',
-                            'palveluseteli_arvo', 'asiakasmaksu']
-        exclude = ('luonti_pvm', 'changed_by', 'yksityinen_jarjestaja',)
+        read_only_fields = ('url', 'id', 'huoltajat', 'lapsi', 'lapsi_tunniste', 'alkamis_pvm', 'perheen_koko',
+                            'maksun_peruste_koodi', 'palveluseteli_arvo', 'asiakasmaksu')
+        fields = ('url', 'id', 'huoltajat', 'lapsi', 'lapsi_tunniste', 'maksun_peruste_koodi', 'palveluseteli_arvo',
+                  'asiakasmaksu', 'perheen_koko', 'alkamis_pvm', 'paattymis_pvm', 'lahdejarjestelma', 'tunniste',)
 
 
 class LapsiSerializer(serializers.HyperlinkedModelSerializer):
@@ -699,7 +728,11 @@ class LapsiSerializer(serializers.HyperlinkedModelSerializer):
                                   parent_attribute='henkilo_oid',
                                   prevalidator=validate_henkilo_oid,
                                   either_required=True)
-    vakatoimija = VakaJarjestajaHLField(allow_null=True, required=False, view_name='vakajarjestaja-detail')
+    vakatoimija = VakaJarjestajaPermissionCheckedHLField(view_name='vakajarjestaja-detail', required=False,
+                                                         allow_null=True,
+                                                         permission_groups=[Z4_CasKayttoOikeudet.TALLENTAJA,
+                                                                            Z4_CasKayttoOikeudet.PALVELUKAYTTAJA],
+                                                         accept_toimipaikka_permission=True)
     vakatoimija_oid = OidRelatedField(object_type=VakaJarjestaja,
                                       parent_field='vakatoimija',
                                       parent_attribute='organisaatio_oid',
@@ -725,6 +758,9 @@ class LapsiSerializer(serializers.HyperlinkedModelSerializer):
 
     def validate(self, data):
         with ViewSetValidator() as validator:
+            if self.instance:
+                fill_missing_fields_for_validations(data, self.instance)
+
             vakatoimija = data.get('vakatoimija')
             oma_organisaatio = data.get('oma_organisaatio')
             paos_organisaatio = data.get('paos_organisaatio')
@@ -859,12 +895,16 @@ class HuoltajuussuhdeSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Huoltajuussuhde
-        exclude = ('luonti_pvm', 'changed_by')
+        exclude = ('luonti_pvm', 'changed_by',)
 
 
 class VarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
-    lapsi = LapsiHLField(view_name='lapsi-detail')
+    lapsi = LapsiPermissionCheckedHLField(required=False, view_name='lapsi-detail')
+    lapsi_tunniste = TunnisteRelatedField(object_type=Lapsi,
+                                          parent_field='lapsi',
+                                          prevalidator=validators.validate_tunniste,
+                                          either_required=True)
     varhaiskasvatussuhteet_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='varhaiskasvatussuhde-detail')
     alkamis_pvm = serializers.DateField(validators=[validators.validate_vaka_date])
     hakemus_pvm = serializers.DateField(validators=[validators.validate_vaka_date])
@@ -874,16 +914,30 @@ class VarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Varhaiskasvatuspaatos
         exclude = ('luonti_pvm', 'changed_by',)
-        read_only_fields = ['pikakasittely_kytkin']
+        read_only_fields = ('pikakasittely_kytkin',)
 
     def validate(self, data):
-        lapsi_obj = data['lapsi']
-        jarjestamismuoto_koodi = data['jarjestamismuoto_koodi'].lower()
-        paattymis_pvm = data.get('paattymis_pvm', None)
+        if self.instance:
+            if len(data) == 0:
+                raise serializers.ValidationError({'errors': [ErrorMessages.GE014.value]})
+            fill_missing_fields_for_validations(data, self.instance)
 
+        lapsi_obj = data['lapsi']
         if not self.context['request'].user.has_perm('view_lapsi', lapsi_obj):
             msg = {'lapsi': [ErrorMessages.GE008.value]}
             raise serializers.ValidationError(msg, code='invalid')
+
+        if self.instance:
+            check_if_immutable_object_is_changed(self.instance, data, 'lapsi')
+            check_if_immutable_object_is_changed(self.instance, data, 'vuorohoito_kytkin', compare_id=False)
+            check_if_immutable_object_is_changed(self.instance, data, 'tuntimaara_viikossa', compare_id=False)
+            check_if_immutable_object_is_changed(self.instance, data, 'paivittainen_vaka_kytkin', compare_id=False)
+            check_if_immutable_object_is_changed(self.instance, data, 'kokopaivainen_vaka_kytkin', compare_id=False)
+            check_if_immutable_object_is_changed(self.instance, data, 'tilapainen_vaka_kytkin', compare_id=False)
+            check_if_immutable_object_is_changed(self.instance, data, 'jarjestamismuoto_koodi', compare_id=False)
+
+        jarjestamismuoto_koodi = data['jarjestamismuoto_koodi'].lower()
+        paattymis_pvm = data.get('paattymis_pvm', None)
 
         self._validate_paos_specific_data(lapsi_obj, jarjestamismuoto_koodi, paattymis_pvm)
         self._validate_jarjestamismuoto(lapsi_obj, jarjestamismuoto_koodi, paattymis_pvm)
@@ -944,7 +998,9 @@ class VarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSerializer):
 
     def _validate_tilapainen_vaka_kytkin(self, data):
         if not data['jarjestamismuoto_koodi'].lower() in JARJESTAMISMUODOT_YKSITYINEN:
-            if self.initial_data.get('tilapainen_vaka_kytkin', None) is None:
+            is_patch = self.context['request'].method == 'PATCH'
+            if self.initial_data.get('tilapainen_vaka_kytkin', None) is None and not is_patch:
+                # Tilapainen vaka_kytkin if required, however not in PATCH
                 raise serializers.ValidationError({'tilapainen_vaka_kytkin': [ErrorMessages.VP014.value]})
 
     @caching_to_representation('varhaiskasvatuspaatos')
@@ -952,46 +1008,25 @@ class VarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSerializer):
         return super(VarhaiskasvatuspaatosSerializer, self).to_representation(instance)
 
 
-class VarhaiskasvatuspaatosPutSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-    varhaiskasvatussuhteet_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='varhaiskasvatussuhde-detail')
-    alkamis_pvm = serializers.DateField(required=True, validators=[validators.validate_vaka_date])
-    hakemus_pvm = serializers.DateField(required=True, validators=[validators.validate_vaka_date])
-
-    class Meta:
-        model = Varhaiskasvatuspaatos
-        exclude = ('luonti_pvm', 'changed_by',)
-        read_only_fields = ('lapsi', 'vuorohoito_kytkin', 'pikakasittely_kytkin', 'tuntimaara_viikossa', 'paivittainen_vaka_kytkin',
-                            'kokopaivainen_vaka_kytkin', 'tilapainen_vaka_kytkin', 'jarjestamismuoto_koodi')
-
-
-class VarhaiskasvatuspaatosPatchSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-    varhaiskasvatussuhteet_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='varhaiskasvatussuhde-detail')
-    alkamis_pvm = serializers.DateField(required=False, validators=[validators.validate_vaka_date])
-    hakemus_pvm = serializers.DateField(required=False, validators=[validators.validate_vaka_date])
-
-    class Meta:
-        model = Varhaiskasvatuspaatos
-        exclude = ('luonti_pvm', 'changed_by',)
-        read_only_fields = ('lapsi', 'vuorohoito_kytkin', 'pikakasittely_kytkin', 'tuntimaara_viikossa', 'paivittainen_vaka_kytkin',
-                            'kokopaivainen_vaka_kytkin', 'tilapainen_vaka_kytkin', 'jarjestamismuoto_koodi')
-
-    def validate(self, data):
-        if len(data) == 0:
-            raise serializers.ValidationError({'errors': [ErrorMessages.GE014.value]})
-        return data
-
-
 class VarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
-    varhaiskasvatuspaatos = VarhaiskasvatuspaatosHLField(view_name='varhaiskasvatuspaatos-detail')
+    varhaiskasvatuspaatos = VarhaiskasvatuspaatosPermissionCheckedHLField(required=False, view_name='varhaiskasvatuspaatos-detail')
+    varhaiskasvatuspaatos_tunniste = TunnisteRelatedField(object_type=Varhaiskasvatuspaatos,
+                                                          parent_field='varhaiskasvatuspaatos',
+                                                          prevalidator=validators.validate_tunniste,
+                                                          either_required=True)
     toimipaikka = ToimipaikkaHLField(required=False, view_name='toimipaikka-detail')
-    toimipaikka_oid = OidRelatedField(either_required=True,
-                                      object_type=Toimipaikka,
+    toimipaikka_oid = OidRelatedField(object_type=Toimipaikka,
                                       parent_field='toimipaikka',
                                       parent_attribute='organisaatio_oid',
-                                      prevalidator=validate_organisaatio_oid)
+                                      prevalidator=validators.validate_organisaatio_oid,
+                                      either_required=True,
+                                      secondary_field='toimipaikka_tunniste')
+    toimipaikka_tunniste = TunnisteRelatedField(object_type=Toimipaikka,
+                                                parent_field='toimipaikka',
+                                                prevalidator=validators.validate_tunniste,
+                                                either_required=True,
+                                                secondary_field='toimipaikka_oid')
 
     class Meta:
         model = Varhaiskasvatussuhde
@@ -1166,31 +1201,29 @@ class ToimipaikanLapsetKatseluSerializer(serializers.Serializer):
 
 
 class LapsiKoosteVarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
     toimipaikka_nimi = serializers.ReadOnlyField(source='toimipaikka.nimi')
 
     class Meta:
         model = Varhaiskasvatussuhde
-        exclude = ('url', 'luonti_pvm', 'changed_by')
+        fields = ('id', 'alkamis_pvm', 'paattymis_pvm', 'toimipaikka', 'toimipaikka_nimi',
+                  'varhaiskasvatuspaatos', 'lahdejarjestelma', 'tunniste', 'muutos_pvm',)
 
 
 class LapsiKoosteHenkiloSerializer(serializers.HyperlinkedModelSerializer):
-
     class Meta:
         model = Henkilo
-        fields = ['id', 'etunimet', 'kutsumanimi', 'sukunimi', 'henkilo_oid', 'syntyma_pvm']
+        fields = ('id', 'etunimet', 'kutsumanimi', 'sukunimi', 'henkilo_oid', 'syntyma_pvm',)
 
 
 class LapsiKoosteVarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-
     class Meta:
         model = Varhaiskasvatuspaatos
-        exclude = ('url', 'lapsi', 'luonti_pvm', 'changed_by')
+        fields = ('id', 'hakemus_pvm', 'alkamis_pvm', 'paattymis_pvm', 'jarjestamismuoto_koodi', 'tuntimaara_viikossa',
+                  'paivittainen_vaka_kytkin', 'kokopaivainen_vaka_kytkin', 'vuorohoito_kytkin', 'pikakasittely_kytkin',
+                  'tilapainen_vaka_kytkin', 'lahdejarjestelma', 'tunniste', 'muutos_pvm',)
 
 
 class LapsiKoosteMaksutietoSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
     huoltajat = serializers.SerializerMethodField('get_huoltajat_for_maksutieto')
 
     def get_huoltajat_for_maksutieto(self, obj):
@@ -1200,7 +1233,8 @@ class LapsiKoosteMaksutietoSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Maksutieto
-        exclude = ('url', 'luonti_pvm', 'changed_by')
+        fields = ('id', 'huoltajat', 'alkamis_pvm', 'paattymis_pvm', 'yksityinen_jarjestaja', 'maksun_peruste_koodi',
+                  'asiakasmaksu', 'palveluseteli_arvo', 'perheen_koko', 'lahdejarjestelma', 'tunniste', 'muutos_pvm',)
 
 
 class LapsiKoosteSerializer(serializers.Serializer):
@@ -1212,6 +1246,8 @@ class LapsiKoosteSerializer(serializers.Serializer):
     varhaiskasvatuspaatokset = LapsiKoosteVarhaiskasvatuspaatosSerializer(many=True)
     varhaiskasvatussuhteet = LapsiKoosteVarhaiskasvatussuhdeSerializer(many=True)
     maksutiedot = LapsiKoosteMaksutietoSerializer(many=True)
+    lahdejarjestelma = serializers.ReadOnlyField()
+    tunniste = serializers.ReadOnlyField()
 
 
 class NestedPaosOikeusSerializer(serializers.ModelSerializer):
@@ -1302,13 +1338,13 @@ class PaosToimipaikkaSerializer(serializers.HyperlinkedModelSerializer):
 class ToimipaikkaKoosteToiminnallinenPainotusSerializer(serializers.ModelSerializer):
     class Meta:
         model = ToiminnallinenPainotus
-        fields = ('id', 'toimintapainotus_koodi', 'alkamis_pvm', 'paattymis_pvm')
+        fields = ('id', 'toimintapainotus_koodi', 'alkamis_pvm', 'paattymis_pvm', 'lahdejarjestelma', 'tunniste',)
 
 
 class ToimipaikkaKoosteKieliPainotusSerializer(serializers.ModelSerializer):
     class Meta:
         model = KieliPainotus
-        fields = ('id', 'kielipainotus_koodi', 'alkamis_pvm', 'paattymis_pvm')
+        fields = ('id', 'kielipainotus_koodi', 'alkamis_pvm', 'paattymis_pvm', 'lahdejarjestelma', 'tunniste',)
 
 
 class ToimipaikkaKoosteSerializer(serializers.ModelSerializer):
@@ -1320,4 +1356,4 @@ class ToimipaikkaKoosteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Toimipaikka
-        exclude = ('changed_by', 'vakajarjestaja', 'luonti_pvm', 'muutos_pvm', )
+        exclude = ('changed_by', 'vakajarjestaja', 'luonti_pvm', 'muutos_pvm',)

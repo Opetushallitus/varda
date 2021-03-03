@@ -112,13 +112,15 @@ class Toimipaikka(models.Model):
     kielipainotus_kytkin = models.BooleanField(default=False)
     alkamis_pvm = models.DateField(blank=False, null=False)
     paattymis_pvm = models.DateField(default=None, blank=True, null=True)
+    hallinnointijarjestelma = models.CharField(choices=Hallinnointijarjestelma.choices(),
+                                               max_length=50,
+                                               default=Hallinnointijarjestelma.VARDA)
+    lahdejarjestelma = models.CharField(null=True, max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
+    tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
     changed_by = models.ForeignKey('auth.User', related_name='toimipaikat', on_delete=models.PROTECT)
     history = HistoricalRecords()
-    hallinnointijarjestelma = models.CharField(choices=Hallinnointijarjestelma.choices(),
-                                               max_length=50,
-                                               default=Hallinnointijarjestelma.VARDA)
 
     def __str__(self):
         return str(self.id)
@@ -134,6 +136,14 @@ class Toimipaikka(models.Model):
     @_history_user.setter
     def _history_user(self, value):
         self.changed_by = value
+
+    def validate_unique(self, *args, **kwargs):
+        super(Toimipaikka, self).validate_unique(*args, **kwargs)
+        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, Toimipaikka)
+
+    def save(self, *args, **kwargs):
+        self.validate_unique()
+        super(Toimipaikka, self).save(*args, **kwargs)
 
     @property
     def varhaiskasvatussuhteet_top(self):
@@ -159,10 +169,12 @@ class Toimipaikka(models.Model):
 
 
 class ToiminnallinenPainotus(models.Model):
-    toimipaikka = models.ForeignKey(Toimipaikka, related_name="toiminnallisetpainotukset", on_delete=models.PROTECT)
+    toimipaikka = models.ForeignKey(Toimipaikka, related_name='toiminnallisetpainotukset', on_delete=models.PROTECT)
     toimintapainotus_koodi = models.CharField(max_length=6, blank=False, null=False, validators=[validators.validate_toimintapainotus_koodi])
     alkamis_pvm = models.DateField(blank=False, null=False)
     paattymis_pvm = models.DateField(default=None, blank=True, null=True)
+    lahdejarjestelma = models.CharField(null=True, max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
+    tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
     changed_by = models.ForeignKey('auth.User', related_name='toiminnallisetpainotukset', on_delete=models.PROTECT)
@@ -183,15 +195,25 @@ class ToiminnallinenPainotus(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
+    def validate_unique(self, *args, **kwargs):
+        super(ToiminnallinenPainotus, self).validate_unique(*args, **kwargs)
+        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, ToiminnallinenPainotus)
+
+    def save(self, *args, **kwargs):
+        self.validate_unique()
+        super(ToiminnallinenPainotus, self).save(*args, **kwargs)
+
     class Meta:
-        verbose_name_plural = "toiminnalliset painotukset"
+        verbose_name_plural = 'toiminnalliset painotukset'
 
 
 class KieliPainotus(models.Model):
-    toimipaikka = models.ForeignKey(Toimipaikka, related_name="kielipainotukset", on_delete=models.PROTECT)
+    toimipaikka = models.ForeignKey(Toimipaikka, related_name='kielipainotukset', on_delete=models.PROTECT)
     kielipainotus_koodi = models.CharField(max_length=4, blank=False, null=False, validators=[validators.validate_kieli_koodi])
     alkamis_pvm = models.DateField(blank=False, null=False)
     paattymis_pvm = models.DateField(default=None, blank=True, null=True)
+    lahdejarjestelma = models.CharField(null=True, max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
+    tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
     changed_by = models.ForeignKey('auth.User', related_name='kielipainotukset', on_delete=models.PROTECT)
@@ -212,8 +234,16 @@ class KieliPainotus(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
+    def validate_unique(self, *args, **kwargs):
+        super(KieliPainotus, self).validate_unique(*args, **kwargs)
+        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, KieliPainotus)
+
+    def save(self, *args, **kwargs):
+        self.validate_unique()
+        super(KieliPainotus, self).save(*args, **kwargs)
+
     class Meta:
-        verbose_name_plural = "kielipainotukset"
+        verbose_name_plural = 'kielipainotukset'
 
 
 class Henkilo(models.Model):
@@ -273,6 +303,8 @@ class Lapsi(models.Model):
     oma_organisaatio = models.ForeignKey(VakaJarjestaja, related_name='paos_lapsi_oma_organisaatio', on_delete=models.PROTECT, null=True)
     paos_organisaatio = models.ForeignKey(VakaJarjestaja, related_name='paos_lapsi_paos_organisaatio', on_delete=models.PROTECT, null=True)
     paos_kytkin = models.BooleanField(default=False)
+    lahdejarjestelma = models.CharField(null=True, max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
+    tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
     changed_by = models.ForeignKey('auth.User', related_name='lapset', on_delete=models.PROTECT)
@@ -292,6 +324,14 @@ class Lapsi(models.Model):
     @_history_user.setter
     def _history_user(self, value):
         self.changed_by = value
+
+    def validate_unique(self, *args, **kwargs):
+        super(Lapsi, self).validate_unique(*args, **kwargs)
+        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, Lapsi)
+
+    def save(self, *args, **kwargs):
+        self.validate_unique()
+        super(Lapsi, self).save(*args, **kwargs)
 
     @property
     def varhaiskasvatuspaatokset_top(self):
@@ -334,7 +374,7 @@ class Huoltaja(models.Model):
         self.changed_by = value
 
     class Meta:
-        verbose_name_plural = "huoltajat"
+        verbose_name_plural = 'huoltajat'
 
 
 class Varhaiskasvatuspaatos(models.Model):
@@ -349,6 +389,8 @@ class Varhaiskasvatuspaatos(models.Model):
     hakemus_pvm = models.DateField(blank=False, null=False, validators=[validators.validate_vaka_date])
     alkamis_pvm = models.DateField(blank=False, null=False, validators=[validators.validate_vaka_date])
     paattymis_pvm = models.DateField(default=None, blank=True, null=True, validators=[validators.validate_vaka_date])
+    lahdejarjestelma = models.CharField(null=True, max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
+    tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
     changed_by = models.ForeignKey('auth.User', related_name='varhaiskasvatuspaatokset', on_delete=models.PROTECT)
@@ -369,13 +411,21 @@ class Varhaiskasvatuspaatos(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
+    def validate_unique(self, *args, **kwargs):
+        super(Varhaiskasvatuspaatos, self).validate_unique(*args, **kwargs)
+        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, Varhaiskasvatuspaatos)
+
+    def save(self, *args, **kwargs):
+        self.validate_unique()
+        super(Varhaiskasvatuspaatos, self).save(*args, **kwargs)
+
     @property
     def varhaiskasvatussuhteet_top(self):
         items_to_show = 3
         return self.varhaiskasvatussuhteet.all().order_by('id')[:items_to_show]
 
     class Meta:
-        verbose_name_plural = "varhaiskasvatuspaatokset"
+        verbose_name_plural = 'varhaiskasvatuspaatokset'
 
 
 class Varhaiskasvatussuhde(models.Model):
@@ -383,6 +433,8 @@ class Varhaiskasvatussuhde(models.Model):
     varhaiskasvatuspaatos = models.ForeignKey(Varhaiskasvatuspaatos, related_name='varhaiskasvatussuhteet', on_delete=models.PROTECT)
     alkamis_pvm = models.DateField(blank=False, null=False, validators=[validators.validate_vaka_date])
     paattymis_pvm = models.DateField(default=None, blank=True, null=True, validators=[validators.validate_vaka_date])
+    lahdejarjestelma = models.CharField(null=True, max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
+    tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
     changed_by = models.ForeignKey('auth.User', related_name='varhaiskasvatussuhteet', on_delete=models.PROTECT)
@@ -403,8 +455,16 @@ class Varhaiskasvatussuhde(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
+    def validate_unique(self, *args, **kwargs):
+        super(Varhaiskasvatussuhde, self).validate_unique(*args, **kwargs)
+        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, Varhaiskasvatussuhde)
+
+    def save(self, *args, **kwargs):
+        self.validate_unique()
+        super(Varhaiskasvatussuhde, self).save(*args, **kwargs)
+
     class Meta:
-        verbose_name_plural = "varhaiskasvatussuhteet"
+        verbose_name_plural = 'varhaiskasvatussuhteet'
 
 
 class Maksutieto(models.Model):
@@ -415,6 +475,8 @@ class Maksutieto(models.Model):
     perheen_koko = models.IntegerField(blank=True, null=True, validators=[MinValueValidator(2), MaxValueValidator(50)])
     alkamis_pvm = models.DateField(blank=True, null=True, validators=[validators.validate_vaka_date])
     paattymis_pvm = models.DateField(default=None, blank=True, null=True, validators=[validators.validate_vaka_date])
+    lahdejarjestelma = models.CharField(null=True, max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
+    tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
     changed_by = models.ForeignKey('auth.User', related_name='maksutiedot', on_delete=models.PROTECT)
@@ -435,15 +497,23 @@ class Maksutieto(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
+    def validate_unique(self, *args, **kwargs):
+        super(Maksutieto, self).validate_unique(*args, **kwargs)
+        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, Maksutieto)
+
+    def save(self, *args, **kwargs):
+        self.validate_unique()
+        super(Maksutieto, self).save(*args, **kwargs)
+
     class Meta:
-        verbose_name_plural = "maksutiedot"
+        verbose_name_plural = 'maksutiedot'
 
 
 class Huoltajuussuhde(models.Model):
     lapsi = models.ForeignKey(Lapsi, related_name='huoltajuussuhteet', on_delete=models.PROTECT)
-    huoltaja = models.ForeignKey(Huoltaja, related_name="huoltajuussuhteet", on_delete=models.PROTECT)
+    huoltaja = models.ForeignKey(Huoltaja, related_name='huoltajuussuhteet', on_delete=models.PROTECT)
     voimassa_kytkin = models.BooleanField(default=True)
-    maksutiedot = models.ManyToManyField(Maksutieto, related_name="huoltajuussuhteet", blank=True)
+    maksutiedot = models.ManyToManyField(Maksutieto, related_name='huoltajuussuhteet', blank=True)
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
     changed_by = models.ForeignKey('auth.User', related_name='huoltajuussuhteet', on_delete=models.PROTECT)
@@ -461,13 +531,13 @@ class Huoltajuussuhde(models.Model):
         self.changed_by = value
 
     class Meta:
-        verbose_name_plural = "huoltajuussuhteet"
+        verbose_name_plural = 'huoltajuussuhteet'
 
 
 class PaosToiminta(models.Model):
-    oma_organisaatio = models.ForeignKey(VakaJarjestaja, related_name="paos_toiminnat_oma_organisaatio",
+    oma_organisaatio = models.ForeignKey(VakaJarjestaja, related_name='paos_toiminnat_oma_organisaatio',
                                          on_delete=models.PROTECT)
-    paos_organisaatio = models.ForeignKey(VakaJarjestaja, related_name="paos_toiminnat_paos_organisaatio",
+    paos_organisaatio = models.ForeignKey(VakaJarjestaja, related_name='paos_toiminnat_paos_organisaatio',
                                           on_delete=models.PROTECT, null=True, blank=True)
     paos_toimipaikka = models.ForeignKey(Toimipaikka, related_name='paos_toiminnat_paos_toimipaikka',
                                          on_delete=models.PROTECT, null=True, blank=True)
@@ -493,7 +563,7 @@ class PaosToiminta(models.Model):
         self.changed_by = value
 
     class Meta:
-        verbose_name_plural = "Paos-toiminnat"
+        verbose_name_plural = 'Paos-toiminnat'
         constraints = [
             UniqueConstraint(fields=['oma_organisaatio', 'paos_organisaatio'],
                              name='oma_organisaatio_paos_organisaatio_unique_constraint'),
@@ -503,9 +573,9 @@ class PaosToiminta(models.Model):
 
 
 class PaosOikeus(models.Model):
-    jarjestaja_kunta_organisaatio = models.ForeignKey(VakaJarjestaja, related_name="paos_oikeudet_jarjestaja_kunta", on_delete=models.PROTECT)
-    tuottaja_organisaatio = models.ForeignKey(VakaJarjestaja, related_name="paos_oikeudet_tuottaja", on_delete=models.PROTECT)
-    tallentaja_organisaatio = models.ForeignKey(VakaJarjestaja, related_name="paos_oikeudet_tallentaja_organisaatio", on_delete=models.PROTECT)
+    jarjestaja_kunta_organisaatio = models.ForeignKey(VakaJarjestaja, related_name='paos_oikeudet_jarjestaja_kunta', on_delete=models.PROTECT)
+    tuottaja_organisaatio = models.ForeignKey(VakaJarjestaja, related_name='paos_oikeudet_tuottaja', on_delete=models.PROTECT)
+    tallentaja_organisaatio = models.ForeignKey(VakaJarjestaja, related_name='paos_oikeudet_tallentaja_organisaatio', on_delete=models.PROTECT)
     voimassa_kytkin = models.BooleanField(default=False)
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
@@ -528,7 +598,7 @@ class PaosOikeus(models.Model):
         self.changed_by = value
 
     class Meta:
-        verbose_name_plural = "Paos-oikeudet"
+        verbose_name_plural = 'Paos-oikeudet'
         constraints = [
             UniqueConstraint(fields=['jarjestaja_kunta_organisaatio', 'tuottaja_organisaatio'],
                              name='jarjestaja_kunta_organisaatio_tuottaja_organisaatio_unique_constraint'),
@@ -851,7 +921,7 @@ class Aikaleima(models.Model):
     aikaleima = models.DateTimeField(default=django.utils.timezone.now)
 
     class Meta:
-        verbose_name_plural = "aikaleimat"
+        verbose_name_plural = 'aikaleimat'
 
 
 class LogData(models.Model):
@@ -862,7 +932,7 @@ class LogData(models.Model):
     log_seq = models.BigIntegerField(default=0)
 
     class Meta:
-        verbose_name_plural = "log data"
+        verbose_name_plural = 'log data'
 
 
 class BatchError(models.Model):
@@ -877,7 +947,7 @@ class BatchError(models.Model):
     error_message = models.TextField()
 
     class Meta:
-        verbose_name_plural = "batcherrors"
+        verbose_name_plural = 'batcherrors'
 
     def update_next_retry(self):
         """
@@ -908,7 +978,7 @@ class Z1_OphAuthentication(models.Model):
         return str(self.id)
 
     class Meta:
-        verbose_name_plural = "OPH autentikaatio"
+        verbose_name_plural = 'OPH autentikaatio'
 
 
 def maksun_peruste_koodit_default():

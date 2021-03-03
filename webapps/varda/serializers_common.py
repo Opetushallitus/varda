@@ -21,8 +21,6 @@ class AbstractCustomRelatedField(serializers.Field):
     If a field should be required, set the parent required=False and
     either_required=True here. This field then makes sure that a value
     is provided in at least one of the fields.
-
-    Permission
     """
 
     _does_not_exist = object()
@@ -31,14 +29,28 @@ class AbstractCustomRelatedField(serializers.Field):
                  parent_field,
                  prevalidator,
                  either_required=False,
+                 secondary_field=None,
+                 parent_value_getter=None,
                  required_in_patch=False,
                  **kwargs):
+        """
+        :param parent_field: name of the parent field (e.g. 'lapsi_tunniste' -> parent field is 'lapsi'
+        :param prevalidator: function that validates the input value (e.g. validate OID)
+        :param either_required: True, if one of the fields is required, either False
+        :param secondary_field: name of a secondary CustomRelatedField (e.g. 'toimipaikka_oid' and 'toimipaikka_tunniste')
+        :param parent_value_getter: override function that gets the parent value of CustomRelatedField
+                                    (e.g. Lapsi is not directly linked to Maksutieto)
+        :param required_in_patch: True if this (or one of the fields) should be required in PATCH-calls
+        :param kwargs:
+        """
         if type(self) is AbstractCustomRelatedField:
             raise TypeError('AbstractCustomRelatedField must be subclassed')
 
         self.parent_field = parent_field
         self.prevalidator = prevalidator
         self.either_required = either_required
+        self.secondary_field = secondary_field
+        self.parent_value_getter = parent_value_getter
         self.required_in_patch = required_in_patch
 
         kwargs['source'] = '*'
@@ -47,17 +59,31 @@ class AbstractCustomRelatedField(serializers.Field):
         super().__init__(**kwargs)
 
     def run_validation(self, data=serializers.empty):
-        val = self.to_internal_value(data).get(self.parent_field, serializers.empty)
-        if val is serializers.empty:
-            val = self._get_parent_value_id()
+        self_value = None if data is serializers.empty else data
+        self_object = self.to_internal_value(data).get(self.parent_field, None)
+        object_id = None if not self_object else self_object.id
+
+        parent_value = self.parent.initial_data.get(self.parent_field, None)
+        parent_value_id = self._get_parent_value_id()
+
+        secondary_value = None
+        secondary_value_id = None
+        if self.secondary_field:
+            secondary_value = self.parent.initial_data.get(self.secondary_field, None)
+            secondary_value_id = self._get_secondary_value_id(secondary_value)
 
         request_is_patch = self.context['request'].method == 'PATCH'
         required_and_in_patch = request_is_patch and self.required_in_patch
         required_and_not_patch = self.either_required and not request_is_patch
 
         # Check if either of the fields is required, or if the request is PATCH request and the field is required
-        if (required_and_not_patch or required_and_in_patch) and val is serializers.empty:
+        if (required_and_not_patch or required_and_in_patch) and not (self_value or parent_value or secondary_value):
             raise serializers.ValidationError([ErrorMessages.RF001.value], code='invalid')
+
+        # If the linked parent field or secondary field have values, make sure they equal to the one in this field
+        if (object_id and ((parent_value_id and object_id != parent_value_id) or
+                           (secondary_value_id and object_id != secondary_value_id))):
+            raise serializers.ValidationError([ErrorMessages.RF004.value], code='invalid')
 
         return super().run_validation(data)
 
@@ -70,7 +96,30 @@ class AbstractCustomRelatedField(serializers.Field):
                 raise serializers.ValidationError([ErrorMessages.RF002.value], code='invalid')
 
             return parent_value_id
-        return serializers.empty
+        return None
+
+    def _get_secondary_value_id(self, value):
+        secondary_field_object = self.parent.fields.fields.get(self.secondary_field, None)
+        secondary_value_id = None
+        if secondary_field_object:
+            secondary_value_id = secondary_field_object.get_id_as_secondary_field(value)
+        return secondary_value_id
+
+    def get_id_as_secondary_field(self, value):
+        """
+        This function is used to validate a secondary field object, if object can be referenced by three fields
+        (e.g. hyperlinked, oid, tunniste)
+        :param value: secondary value (oid or tunniste)
+        :return: ID of the secondary referenced object or None
+        """
+        if self.is_value_empty(value):
+            return None
+
+        referenced_object = self.get_referenced_object_by_value(value)
+        if referenced_object is None or referenced_object is AbstractCustomRelatedField._does_not_exist:
+            return None
+
+        return referenced_object.id
 
     def to_internal_value(self, value):
         if self.is_value_empty(value):
@@ -100,17 +149,15 @@ class AbstractCustomRelatedField(serializers.Field):
         if referenced_object is AbstractCustomRelatedField._does_not_exist:
             raise serializers.ValidationError([ErrorMessages.RF003.value], code='invalid')
 
-        # If the linked parent field has a value, make sure it equals to the one in this field
-        parent_value_id = self._get_parent_value_id()
-        if parent_value_id is not serializers.empty and referenced_object.id != parent_value_id:
-            raise serializers.ValidationError([ErrorMessages.RF004.value], code='invalid')
-
         return {
             self.parent_field: referenced_object
         }
 
     def to_representation(self, obj):
-        parent_value = getattr(obj, self.parent_field)
+        if self.parent_value_getter:
+            parent_value = self.parent_value_getter(obj)
+        else:
+            parent_value = getattr(obj, self.parent_field)
         if parent_value:
             return self.get_value_by_referenced_object(parent_value)
         return None

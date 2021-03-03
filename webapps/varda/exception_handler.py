@@ -27,6 +27,7 @@ error_templates = {
             'invalid_choice': ErrorMessages.GE007.value,
             'does_not_exist': ErrorMessages.GE008.value,
             'no_match': ErrorMessages.GE009.value,
+            'incorrect_match': ErrorMessages.GE009.value,
         },
         DYNAMIC: {
             'max_length': [
