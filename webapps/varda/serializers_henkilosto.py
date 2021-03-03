@@ -870,7 +870,3 @@ class TyontekijaKoosteSerializer(serializers.Serializer):
     tutkinnot = TyontekijaKoosteTutkintoSerializer(many=True)
     palvelussuhteet = TyontekijaKoostePalvelussuhdeSerializer(many=True)
     taydennyskoulutukset = TyontekijaKoosteTaydennyskoulutusSerializer(many=True)
-
-    class Meta:
-        fields = ('id', 'vakajarjestaja_id', 'vakajarjestaja_nimi', 'vakajarjestaja_organisaatio_oid', 'tutkinnot', 'henkilo',
-                  'palvelussuhteet', 'taydennyskoulutukset', 'lahdejarjestelma', 'tunniste')

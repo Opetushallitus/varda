@@ -25,7 +25,8 @@ from rest_framework_guardian.filters import ObjectPermissionsFilter
 
 from varda import filters, validators, permission_groups
 from varda.cache import (cached_list_response, cached_retrieve_response, delete_toimipaikan_lapset_cache,
-                         delete_cache_keys_related_model, get_object_ids_user_has_permissions)
+                         delete_cache_keys_related_model, get_object_ids_user_has_permissions,
+                         get_object_ids_for_user_by_model)
 from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid,
                                                         add_henkilo_to_oppijanumerorekisteri,
                                                         get_henkilo_by_henkilotunnus)
@@ -54,7 +55,8 @@ from varda.permissions import (throw_if_not_tallentaja_permissions,
                                check_if_user_has_paakayttaja_permissions, ReadAdminOrOPHUser, CustomObjectPermissions,
                                user_has_huoltajatieto_tallennus_permissions_to_correct_organization,
                                grant_or_deny_access_to_paos_toimipaikka, user_has_tallentaja_permission_in_organization,
-                               auditlogclass, save_audit_log, ToimipaikkaPermissions, get_toimipaikka_or_404, auditlog)
+                               auditlogclass, save_audit_log, ToimipaikkaPermissions, get_toimipaikka_or_404, auditlog,
+                               is_oph_staff, user_belongs_to_at_least_one_group, permission_groups_in_organization)
 from varda.related_object_validations import (check_if_user_has_add_toimipaikka_permissions_under_vakajarjestaja,
                                               check_toimipaikka_and_vakajarjestaja_have_oids,
                                               toimipaikka_is_valid_to_organisaatiopalvelu,
@@ -2793,104 +2795,81 @@ class NestedVarhaiskasvatuspaatosViewSet(GenericViewSet, ListModelMixin):
 
 
 @auditlogclass
-class NestedLapsiKoosteViewSet(GenericViewSet):
+class NestedLapsiKoosteViewSet(GenericViewSet, ListModelMixin):
     """
     list:
         Nouda kooste tietyn lapsen tiedoista.
     """
-    filter_backends = (DjangoFilterBackend, )
-    filterset_class = None
-    queryset = Lapsi.objects.none()
+    queryset = Lapsi.objects.all().order_by('id')
     serializer_class = LapsiKoosteSerializer
     permission_classes = (CustomObjectPermissions, )
 
-    def get_lapsi(self, request, lapsi_pk=None):
-        lapsi = get_object_or_404(Lapsi.objects.all(), pk=lapsi_pk)
-        user = request.user
-        if user.has_perm('view_lapsi', lapsi):
+    def get_object(self):
+        lapsi = super(NestedLapsiKoosteViewSet, self).get_object()
+        if self.request.user.has_perm('view_lapsi', lapsi):
             return lapsi
         else:
             raise Http404
 
-    @transaction.atomic
     def list(self, request, *args, **kwargs):
-        if not kwargs['lapsi_pk'].isdigit():
-            raise Http404
+        self.kwargs['pk'] = self.kwargs['lapsi_pk']
 
-        user = self.request.user
+        user = request.user
+        is_superuser_or_oph_staff = user.is_superuser or is_oph_staff(user)
 
-        lapsi = self.get_lapsi(request, lapsi_pk=kwargs['lapsi_pk'])
-        data = {
+        lapsi = self.get_object()
+        lapsi_data = {
             'id': lapsi.id,
             'yksityinen_kytkin': lapsi.yksityinen_kytkin,
             'oma_organisaatio': lapsi.oma_organisaatio,
             'paos_organisaatio': lapsi.paos_organisaatio,
-            'henkilo': self.get_henkilo(lapsi),
-            'varhaiskasvatuspaatokset': self.get_vakapaatokset(lapsi.id, user),
-            'varhaiskasvatussuhteet': self.get_vakasuhteet(lapsi.id, user),
-            'maksutiedot': self.get_maksutiedot(lapsi.id, user)
+            'henkilo': lapsi.henkilo,
         }
 
-        serializer = self.get_serializer(data, many=False)
+        paos_organisaatio_oid = None
+        if lapsi.vakatoimija:
+            oma_organisaatio_oid = lapsi.vakatoimija.organisaatio_oid
+        elif lapsi.oma_organisaatio and lapsi.paos_organisaatio:
+            oma_organisaatio_oid = lapsi.oma_organisaatio.organisaatio_oid
+            paos_organisaatio_oid = lapsi.paos_organisaatio.organisaatio_oid
+        else:
+            oma_organisaatio_oid = lapsi.varhaiskasvatuspaatokset.values_list(
+                'varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__organisaatio_oid', flat=True).first()
+
+        # Get vakapaatokset
+        vakapaatos_filter = Q(lapsi=lapsi)
+        is_vakatiedot_organization_permissions = user_belongs_to_at_least_one_group(user, (oma_organisaatio_oid, paos_organisaatio_oid,),
+                                                                                    (Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                                                                                     Z4_CasKayttoOikeudet.TALLENTAJA,
+                                                                                     Z4_CasKayttoOikeudet.KATSELIJA,))
+        if not is_superuser_or_oph_staff and not is_vakatiedot_organization_permissions:
+            vakapaatos_filter &= Q(id__in=get_object_ids_for_user_by_model(user, 'varhaiskasvatuspaatos'))
+
+        vakapaatokset = Varhaiskasvatuspaatos.objects.filter(vakapaatos_filter).distinct().order_by('-alkamis_pvm')
+        lapsi_data['varhaiskasvatuspaatokset'] = vakapaatokset
+
+        # Get vakasuhteet
+        vakasuhde_filter = Q(varhaiskasvatuspaatos__lapsi=lapsi)
+        if not is_superuser_or_oph_staff and not is_vakatiedot_organization_permissions:
+            vakasuhde_filter &= Q(id__in=get_object_ids_for_user_by_model(user, 'varhaiskasvatussuhde'))
+
+        vakasuhteet = Varhaiskasvatussuhde.objects.filter(vakasuhde_filter).distinct().order_by('-alkamis_pvm')
+        lapsi_data['varhaiskasvatussuhteet'] = vakasuhteet
+
+        # Get maksutiedot
+        maksutieto_filter = Q(huoltajuussuhteet__lapsi=lapsi)
+        huoltajatiedot_organization_groups_qs = permission_groups_in_organization(user, oma_organisaatio_oid,
+                                                                                  (Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                                                                                   Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
+                                                                                   Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA))
+        if not is_superuser_or_oph_staff and not huoltajatiedot_organization_groups_qs.exists():
+            maksutieto_filter &= Q(id__in=get_object_ids_for_user_by_model(user, 'maksutieto'))
+
+        maksutiedot = Maksutieto.objects.filter(maksutieto_filter).distinct().order_by('-alkamis_pvm')
+        lapsi_data['maksutiedot'] = maksutiedot
+
+        serializer = self.get_serializer(lapsi_data, many=False)
         return Response(serializer.data)
-
-    def get_henkilo(self, lapsi):
-        """
-        Return henkilo for given lapsi
-        """
-        return lapsi.henkilo
-
-    def get_vakapaatokset(self, lapsi_id, user):
-        """
-        Return vakapaatokset for given lapsi_id
-        """
-        additional_details = getattr(user, 'additional_cas_user_fields', None)
-        if user.is_superuser or getattr(additional_details, 'approved_oph_staff', False):
-            user_vakapaatos_ids_q = Q()
-        else:
-            model_name = 'varhaiskasvatuspaatos'
-            content_type = ContentType.objects.get(model=model_name)
-            varhaiskasvatuspaatos_id_list = get_object_ids_user_has_permissions(user, model_name, content_type)
-            user_vakapaatos_ids_q = Q(id__in=varhaiskasvatuspaatos_id_list)
-        vakapaatokset = (Varhaiskasvatuspaatos.objects.filter(Q(lapsi=lapsi_id) & user_vakapaatos_ids_q)
-                                                      .distinct()
-                                                      .order_by('-alkamis_pvm'))
-        return vakapaatokset
-
-    def get_vakasuhteet(self, lapsi_id, user):
-        """
-        Return vakasuhteet for given lapsi_id
-        """
-        additional_details = getattr(user, 'additional_cas_user_fields', None)
-        if user.is_superuser or getattr(additional_details, 'approved_oph_staff', False):
-            user_vakasuhde_ids_q = Q()
-        else:
-            model_name = 'varhaiskasvatussuhde'
-            content_type = ContentType.objects.get(model=model_name)
-            varhaiskasvatussuhde_id_list = get_object_ids_user_has_permissions(user, model_name, content_type)
-            user_vakasuhde_ids_q = Q(id__in=varhaiskasvatussuhde_id_list)
-        vakasuhteet = (Varhaiskasvatussuhde.objects.filter(Q(varhaiskasvatuspaatos__lapsi=lapsi_id) & user_vakasuhde_ids_q)
-                                                   .select_related('toimipaikka')
-                                                   .distinct()
-                                                   .order_by('-alkamis_pvm'))
-        return vakasuhteet
-
-    def get_maksutiedot(self, lapsi_id, user):
-        """
-        Return maksutiedot for given lapsi_id
-        """
-        additional_details = getattr(user, 'additional_cas_user_fields', None)
-        if user.is_superuser or getattr(additional_details, 'approved_oph_staff', False):
-            user_maksutieto_ids_q = Q()
-        else:
-            model_name = 'maksutieto'
-            content_type = ContentType.objects.get(model=model_name)
-            maksutieto_id_list = get_object_ids_user_has_permissions(user, model_name, content_type)
-            user_maksutieto_ids_q = Q(id__in=maksutieto_id_list)
-        maksutiedot = (Maksutieto.objects.filter(Q(huoltajuussuhteet__lapsi=lapsi_id) & user_maksutieto_ids_q)
-                                         .distinct()
-                                         .order_by('-alkamis_pvm'))
-        return maksutiedot
 
 
 @auditlogclass

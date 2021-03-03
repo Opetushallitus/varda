@@ -1213,10 +1213,6 @@ class LapsiKoosteSerializer(serializers.Serializer):
     varhaiskasvatussuhteet = LapsiKoosteVarhaiskasvatussuhdeSerializer(many=True)
     maksutiedot = LapsiKoosteMaksutietoSerializer(many=True)
 
-    class Meta:
-        fields = ('id', 'yksityinen_kytkin', 'henkilo', 'varhaiskasvatuspaatokset',
-                  'varhaiskasvatussuhteet', 'maksutiedot', 'oma_organisaatio_nimi', 'paos_organisaatio_nimi')
-
 
 class NestedPaosOikeusSerializer(serializers.ModelSerializer):
     tallentaja_organisaatio_oid = serializers.ReadOnlyField(source='tallentaja_organisaatio.organisaatio_oid')

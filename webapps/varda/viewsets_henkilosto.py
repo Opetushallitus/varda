@@ -37,7 +37,7 @@ from varda.permissions import (CustomObjectPermissions, delete_object_permission
                                get_permission_checked_pidempi_poissaolo_katselija_queryset_for_user,
                                get_permission_checked_pidempi_poissaolo_tallentaja_queryset_for_user,
                                toimipaikka_tallentaja_pidempipoissaolo_has_perm_to_add,
-                               get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus)
+                               get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus, is_oph_staff)
 from varda.request_logging import request_log_viewset_decorator_factory
 from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, PalvelussuhdeSerializer,
                                           PidempiPoissaoloSerializer,
@@ -223,6 +223,8 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
         self.kwargs['pk'] = self.kwargs['tyontekija_pk']
 
         user = request.user
+        is_superuser_or_oph_staff = user.is_superuser or is_oph_staff(user)
+
         tyontekija = self.get_object()
         tyontekija_data = {
             'tyontekija': tyontekija
@@ -233,7 +235,7 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
         tyontekija_organization_groups_qs = permission_groups_in_organization(user, tyontekija.vakajarjestaja.organisaatio_oid,
                                                                               [Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
                                                                                Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA])
-        if not user.is_superuser and not tyontekija_organization_groups_qs.exists():
+        if not is_superuser_or_oph_staff and not tyontekija_organization_groups_qs.exists():
             palvelussuhde_filter = palvelussuhde_filter & Q(id__in=get_object_ids_for_user_by_model(user, 'palvelussuhde'))
 
         palvelussuhteet = Palvelussuhde.objects.filter(palvelussuhde_filter).distinct().order_by('-alkamis_pvm')
@@ -244,7 +246,7 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
         taydennyskoulutus_organization_groups_qs = permission_groups_in_organization(user, tyontekija.vakajarjestaja.organisaatio_oid,
                                                                                      [Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
                                                                                       Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA])
-        if not user.is_superuser and not taydennyskoulutus_organization_groups_qs.exists():
+        if not is_superuser_or_oph_staff and not taydennyskoulutus_organization_groups_qs.exists():
             taydennyskoulutus_filter = taydennyskoulutus_filter & Q(taydennyskoulutus__id__in=get_object_ids_for_user_by_model(user, 'taydennyskoulutus'))
 
         taydennyskoulutukset = (TaydennyskoulutusTyontekija.objects
@@ -255,7 +257,7 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
 
         # Get tutkinnot
         tutkinto_filter = Q(henkilo=tyontekija.henkilo) & Q(vakajarjestaja=tyontekija.vakajarjestaja)
-        if not user.is_superuser:
+        if not is_superuser_or_oph_staff and not tyontekija_organization_groups_qs.exists():
             tutkinto_filter = tutkinto_filter & Q(id__in=get_object_ids_for_user_by_model(user, 'tutkinto'))
 
         tutkinnot = set(Tutkinto.objects
