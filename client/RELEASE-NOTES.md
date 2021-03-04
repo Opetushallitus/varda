@@ -1,6 +1,11 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.8 (04.03.2021)
+- OPHVARDA-2209: Lähdejärjestelmä-kenttä vakatiedoille
+- OPHVARDA-2210: Toimipaikkalistan päivitys PAOS-linkityksen jälkeen
+- OPHVARDA-2212: Toimipaikkatieto lapsen ja vakapäätöksen luonnissa
+
 1.5.7 (25.02.2021)
 - OPHVARDA-2073: Angular 11 päivitys
 - OPHVARDA-2058: Katsele tietoja yhteenveto info-kentät
