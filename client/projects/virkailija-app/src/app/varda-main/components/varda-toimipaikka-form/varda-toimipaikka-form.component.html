@@ -29,12 +29,10 @@
   <div class="modal-form-intro">
     {{ i18n.toimipaikka_intro_paragraph | translate }}
     <div *ngIf="!isEdit">
-      {{ i18n.toimipaikka_create_paragraph | translate}}
       <a target="_blank"
          [href]="i18n.toimipaikka_create_link_href | translate">{{ i18n.toimipaikka_create_link_text | translate }}</a>
     </div>
     <div *ngIf="isEdit">
-      {{ i18n.toimipaikka_edit_paragraph | translate}}
       <a target="_blank"
          [href]="i18n.toimipaikka_edit_link_href | translate">{{ i18n.toimipaikka_edit_link_text | translate }}</a>
     </div>

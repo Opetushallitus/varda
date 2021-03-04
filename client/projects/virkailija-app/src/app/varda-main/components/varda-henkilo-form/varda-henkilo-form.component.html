@@ -53,7 +53,6 @@
           <ng-container *ngIf="henkilonSuhde.rooli === HenkiloRooliEnum.lapsi; else tyontekijaInfo"
                         role="alert">
             {{ i18n.lapsi_instruction_creation_paragraph_1 | translate }}<br />
-            {{ i18n.lapsi_instruction_creation_paragraph_2 | translate }}
             <a target="_blank"
                [href]="i18n.lapsi_instruction_creation_link_href | translate">
               {{ i18n.lapsi_instruction_creation_link_text | translate}}
@@ -61,7 +60,6 @@
           </ng-container>
           <ng-template #tyontekijaInfo>
             {{ i18n.tyontekija_instruction_creation_paragraph_1 | translate }}<br />
-            {{ i18n.tyontekija_instruction_creation_paragraph_2 | translate }}
             <a target="_blank"
                [href]="i18n.tyontekija_instruction_creation_link_href | translate">
               {{ i18n.tyontekija_instruction_creation_link_text | translate}}

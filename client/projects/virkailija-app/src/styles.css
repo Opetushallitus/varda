@@ -108,6 +108,7 @@ var[robot] {
   margin-right: auto;
   margin-left: auto;
   padding: 1rem 0;
+  line-height: 1.2rem;
 }
 
 .varda-page-header {
@@ -187,7 +188,13 @@ mat-expansion-panel mat-expansion-panel-header {
 .mat-expansion-panel-header,
 .mat-expansion-panel-content {
   font-size: 1rem;
+  line-height: 1rem;
 }
+
+.mat-cell, .mat-menu-item {
+  font-size: 0.9rem;
+}
+
 
 .varda-accessibility-settings-container {
   box-shadow: 0px 7px 8px -2px var(--gray-lighten-1);
