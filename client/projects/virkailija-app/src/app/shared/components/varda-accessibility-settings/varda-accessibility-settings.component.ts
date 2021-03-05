@@ -18,6 +18,8 @@ export class VardaAccessibilitySettingsComponent implements OnInit, AfterViewIni
   documentRootFontSize: number;
   instructionPanelContentElem: any;
   instructionPanelHeaderElem: any;
+  minFontSize = 16;
+  maxFontSize = 26;
 
   constructor(
     private accessibilityService: VardaAccessibilityService,
@@ -25,7 +27,7 @@ export class VardaAccessibilitySettingsComponent implements OnInit, AfterViewIni
   ) {
     this.highContrastEnabled = false;
     this.displayAccessibilitySettings = false;
-    this.documentRootFontSize = 16;
+    this.documentRootFontSize = this.minFontSize;
   }
 
   closeAccessibilitySettings(): void {
@@ -50,8 +52,8 @@ export class VardaAccessibilitySettingsComponent implements OnInit, AfterViewIni
 
   increaseFontSize(): void {
     let fontSize = this.documentRootFontSize + 1;
-    if (fontSize > 30) {
-      fontSize = 30;
+    if (fontSize > this.maxFontSize) {
+      fontSize = this.maxFontSize;
     }
 
     this.setFontSize(fontSize);
@@ -59,8 +61,8 @@ export class VardaAccessibilitySettingsComponent implements OnInit, AfterViewIni
 
   decreaseFontSize(): void {
     let fontSize = this.documentRootFontSize - 1;
-    if (fontSize < 16) {
-      fontSize = 16;
+    if (fontSize < this.minFontSize) {
+      fontSize = this.minFontSize;
     }
 
     this.setFontSize(fontSize);
@@ -68,7 +70,7 @@ export class VardaAccessibilitySettingsComponent implements OnInit, AfterViewIni
 
   ngAfterViewInit() {
     this.accessibilityService.getFontSize().subscribe((fontSize) => {
-      fontSize = fontSize >= 16 && fontSize <= 30 ? fontSize : 16;
+      fontSize = fontSize >= this.minFontSize && fontSize <= this.maxFontSize ? fontSize : this.minFontSize;
       this.setFontSize(fontSize);
     });
   }

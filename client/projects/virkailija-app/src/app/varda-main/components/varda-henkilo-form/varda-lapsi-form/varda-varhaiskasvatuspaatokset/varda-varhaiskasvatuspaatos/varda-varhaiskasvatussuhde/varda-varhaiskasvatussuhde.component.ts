@@ -20,6 +20,7 @@ import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { KoodistoDTO, VardaKoodistoService, KoodistoEnum } from 'varda-shared';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaHenkiloFormAccordionAbstractComponent } from '../../../../varda-henkilo-form-accordion/varda-henkilo-form-accordion.abstract';
+import { LapsiListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-lapsi-dto.model';
 
 @Component({
   selector: 'app-varda-varhaiskasvatussuhde',
@@ -36,7 +37,7 @@ export class VardaVarhaiskasvatussuhdeComponent extends VardaHenkiloFormAccordio
   @Input() lapsitiedotTallentaja: boolean;
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
   @Input() varhaiskasvatuspaatos: VardaVarhaiskasvatuspaatosDTO;
-  @Input() henkilo: VardaHenkiloDTO;
+  @Input() lapsi: LapsiListDTO;
   @Input() varhaiskasvatussuhde: VardaVarhaiskasvatussuhdeDTO;
   @Output() closeVarhaiskasvatussuhde = new EventEmitter<boolean>(true);
   @ViewChild(MatExpansionPanelHeader) panelHeader: MatExpansionPanelHeader;

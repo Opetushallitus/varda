@@ -158,7 +158,7 @@ var[robot] {
   border: 1px solid #888;
   border-radius: 8px;
   max-width: 400px;
-  height: 180px;
+  min-height: 180px;
   position: relative;
   text-align: center;
 }
@@ -216,6 +216,7 @@ mat-expansion-panel mat-expansion-panel-header {
 /*HIGH CONTRAST DEFAULT STYLES*/
 .varda-high-contrast,
 .varda-high-contrast a,
+.varda-high-contrast .alert-success,
 .varda-high-contrast .mat-expansion-panel,
 .varda-high-contrast .oph-alert-info,
 .varda-high-contrast .modal-form-intro,
@@ -232,6 +233,7 @@ mat-expansion-panel mat-expansion-panel-header {
 .varda-high-contrast .varda-info,
 .varda-high-contrast .mat-expansion-panel,
 .varda-high-contrast .oph-alert-info,
+.varda-high-contrast .alert-success,
 .varda-high-contrast .varda-main-frame-henkilo-section-container>div:first-child,
 .varda-high-contrast .varda-main-frame-toimipaikka-section-container>div:first-child,
 .varda-high-contrast .varda-mat-table tr:hover {

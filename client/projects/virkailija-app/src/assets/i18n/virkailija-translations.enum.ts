@@ -148,13 +148,10 @@ export enum VirkailijaTranslations {
   henkilo_fetch_failure = 'henkilo.fetch-failure',
 
   lapsi_instruction_creation_paragraph_1 = 'lapsi.instruction.creation-paragraph-1',
-  /* lapsi_instruction_creation_paragraph_2 = 'lapsi.instruction.creation-paragraph-2', */
   lapsi_instruction_creation_link_text = 'lapsi.instruction.creation-link-text',
   lapsi_instruction_creation_link_href = 'lapsi.instruction.creation-link-href',
   lapsi_instruction_delete = 'lapsi.instruction.delete',
   lapsi_intro_paragraph_1 = 'lapsi.intro.paragraph-1',
-  /* lapsi_intro_paragraph_2 = 'lapsi.intro.paragraph-2',
-  lapsi_intro_paragraph_3 = 'lapsi.intro.paragraph-3', */
   lapsi_intro_link_1_text = 'lapsi.intro.link-1.text',
   lapsi_intro_link_1_href = 'lapsi.intro.link-1.href',
   lapsi_intro_link_2_text = 'lapsi.intro.link-2.text',
@@ -448,11 +445,9 @@ export enum VirkailijaTranslations {
 
 
   tyontekija_instruction_creation_paragraph_1 = 'tyontekija.instruction.creation-paragraph-1',
-  /* tyontekija_instruction_creation_paragraph_2 = 'tyontekija.instruction.creation-paragraph-2', */
   tyontekija_instruction_creation_link_text = 'tyontekija.instruction.creation-link-text',
   tyontekija_instruction_creation_link_href = 'tyontekija.instruction.creation-link-href',
   tyontekija_intro_paragraph_1 = 'tyontekija.intro.paragraph-1',
-  /* tyontekija_intro_paragraph_2 = 'tyontekija.intro.paragraph-2', */
   tyontekija_intro_link_1_text = 'tyontekija.intro.link-1.text',
   tyontekija_intro_link_1_href = 'tyontekija.intro.link-1.href',
   tyontekija_instruction_delete = 'tyontekija.instruction.delete',
@@ -577,8 +572,6 @@ export enum VirkailijaTranslations {
   organisaatio_y_tunnus = 'organisaatio.y-tunnus',
 
   toimipaikka_intro_paragraph = 'toimipaikka.intro.paragraph',
-  /* toimipaikka_create_paragraph = 'toimipaikka.create.paragraph', */
-  /* toimipaikka_edit_paragraph = 'toimipaikka.edit.paragraph', */
   toimipaikka_create_link_text = 'toimipaikka.create.link.text',
   toimipaikka_create_link_href = 'toimipaikka.create.link.href',
   toimipaikka_edit_link_text = 'toimipaikka.edit.link.text',

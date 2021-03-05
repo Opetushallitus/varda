@@ -46,6 +46,7 @@ export class VardaToimipaikkaMinimalDto {
   paos_oma_organisaatio_url?: string;
   paos_organisaatio_nimi?: string;
   paos_organisaatio_url?: string;
+  paos_organisaatio_oid?: string;
   paos_toimipaikka_kytkin: boolean;
   url: string;
 }
