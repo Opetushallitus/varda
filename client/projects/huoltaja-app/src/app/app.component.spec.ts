@@ -10,7 +10,7 @@ describe('AppComponent', () => {
   let loadingHttpService: LoadingHttpService;
   let loadingHttpServiceSpy;
 
-  beforeEach(async(() => {
+  beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [
         VardaSharedModule,
@@ -29,7 +29,7 @@ describe('AppComponent', () => {
 
     loadingHttpService = TestBed.inject<LoadingHttpService>(LoadingHttpService);
     loadingHttpServiceSpy = spyOn(loadingHttpService, 'isLoading').and.returnValue(new Observable());
-  }));
+  });
 
   it('should create the app', () => {
     const fixture = TestBed.createComponent(AppComponent);

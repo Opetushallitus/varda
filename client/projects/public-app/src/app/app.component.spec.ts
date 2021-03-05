@@ -15,7 +15,7 @@ class MockPublicHeaderComponent {
 }
 
 describe('AppComponent', () => {
-  beforeEach(async(() => {
+  beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [
         RouterTestingModule,
@@ -40,7 +40,7 @@ describe('AppComponent', () => {
         },
       ]
     }).compileComponents();
-  }));
+  });
 
   it('should create the app', () => {
     const fixture = TestBed.createComponent(AppComponent);

@@ -1,13 +1,14 @@
+import { VardaToimipaikkaDTO } from '../../utilities/models';
 import {Hallinnointijarjestelma} from '../../utilities/models/enums/hallinnointijarjestelma';
 
-export const toimipaikatStub = [
+export const toimipaikatStub: Array<VardaToimipaikkaDTO> = [
     {
       'hallinnointijarjestelma': Hallinnointijarjestelma.VARDA,
       'paos_toimipaikka_kytkin': false,
       'url': 'https://varda-manual-testing-370.rahtiapp.fi/api/v1/toimipaikat/1/',
       'vakajarjestaja': 'https://varda-manual-testing-370.rahtiapp.fi/api/v1/vakajarjestajat/2/',
       'nimi': 'Espoo',
-      'organisaatio_oid': '12312',
+      'organisaatio_oid': 'toimipaikka_0001',
       'katuosoite': 'Keilaranta 14',
       'postitoimipaikka': 'Espoo',
       'postinumero': '02100',
@@ -29,7 +30,7 @@ export const toimipaikatStub = [
       'url': 'https://varda-manual-testing-370.rahtiapp.fi/api/v1/toimipaikat/4/',
       'vakajarjestaja': 'https://varda-manual-testing-370.rahtiapp.fi/api/v1/vakajarjestajat/2/',
       'nimi': 'Toimipaikka5',
-      'organisaatio_oid': '123123',
+      'organisaatio_oid': 'toimipaikka_0004',
       'katuosoite': 'asdfasasdfasdf',
       'postitoimipaikka': 'asdfasdfhas',
       'postinumero': '20900',
@@ -51,7 +52,7 @@ export const toimipaikatStub = [
       'url': 'https://varda-manual-testing-370.rahtiapp.fi/api/v1/toimipaikat/5/',
       'vakajarjestaja': 'https://varda-manual-testing-370.rahtiapp.fi/api/v1/vakajarjestajat/2/',
       'nimi': 'Kivelän päiväkoti',
-      'organisaatio_oid': '98765346777',
+      'organisaatio_oid': 'toimipaikka_0005',
       'katuosoite': 'Kiveläntie 2',
       'postitoimipaikka': 'Espoo',
       'postinumero': '00150',
@@ -73,7 +74,7 @@ export const toimipaikatStub = [
       'url': 'https://varda-manual-testing-370.rahtiapp.fi/api/v1/toimipaikat/6/',
       'vakajarjestaja': 'https://varda-manual-testing-370.rahtiapp.fi/api/v1/vakajarjestajat/2/',
       'nimi': '1111aggdgf554saf',
-      'organisaatio_oid': 'asdf',
+      'organisaatio_oid': 'toimipaikka_0006',
       'katuosoite': 'asdfas11111',
       'postitoimipaikka': 'asdfasdfg',
       'postinumero': '20900',

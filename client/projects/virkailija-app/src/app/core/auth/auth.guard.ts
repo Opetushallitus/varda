@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router, CanDeactivate } from '@angular/router';
+import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router } from '@angular/router';
 import { Observable, Subject, Subscriber, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
@@ -7,8 +7,7 @@ import { LoginService } from 'varda-shared';
 import { VardaApiService } from '../services/varda-api.service';
 import { VardaVakajarjestajaApiService } from '../services/varda-vakajarjestaja-api.service';
 import { VardaVakajarjestajaService } from '../services/varda-vakajarjestaja.service';
-import { TranslateService } from '@ngx-translate/core';
-import { mergeMap, switchMap, take } from 'rxjs/operators';
+import { switchMap, take } from 'rxjs/operators';
 
 const loginRoute = '/login';
 const loginFailedRoute = '/login-failed';
@@ -46,7 +45,7 @@ export class AuthGuard implements CanActivate {
 
         this.casLoginSubject.asObservable().subscribe((data) => {
           if (!this.login.validApiToken && environment.production) {
-            this.authService.casSessionExists().subscribe(() => window.location.href = this.getLoginUrl());
+            this.vardaApiService.isLoggedInToCas().subscribe(() => window.location.href = this.getLoginUrl());
           }
         });
 

@@ -7,13 +7,13 @@ describe('VardaModalFormComponent', () => {
   let component: VardaModalFormComponent;
   let fixture: ComponentFixture<VardaModalFormComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(() => {
     TestBed.configureTestingModule({
       declarations: [ VardaModalFormComponent ],
       imports: [TranslateModule.forRoot()]
     })
     .compileComponents();
-  }));
+  });
 
   beforeEach(() => {
     fixture = TestBed.createComponent(VardaModalFormComponent);

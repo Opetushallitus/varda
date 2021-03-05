@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { SharedModule } from '../shared/shared.module';
 import { VardaApiService } from './services/varda-api.service';
 import { VardaAccessibilityService } from './services/varda-accessibility.service';
-import { VardaFormService } from './services/varda-form.service';
 import { VardaVakajarjestajaService } from './services/varda-vakajarjestaja.service';
 import { VardaVakajarjestajaApiService } from './services/varda-vakajarjestaja-api.service';
 import { VardaUtilityService } from './services/varda-utility.service';
@@ -24,7 +23,6 @@ import { VardaKoosteApiService } from './services/varda-kooste-api.service';
   providers: [
     VardaApiService,
     VardaAccessibilityService,
-    VardaFormService,
     VardaVakajarjestajaService,
     VardaVakajarjestajaApiService,
     VardaUtilityService,

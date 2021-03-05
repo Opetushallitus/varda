@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { VardaApiService } from '../services/varda-api.service';
 import { VardaVakajarjestajaService } from '../services/varda-vakajarjestaja.service';
 import { VardaKayttooikeusRoles, VardaToimipaikkaDTO, VardaVakajarjestajaUi } from '../../utilities/models';
 import { VardaToimipaikkaMinimalDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
@@ -32,8 +31,7 @@ export class AuthService {
   toimipaikkaAccessToAnyToimipaikka$ = new BehaviorSubject<UserAccess>(null);
 
   constructor(
-    private vardaApiService: VardaApiService,
-    private vardaVakajarjestajaService: VardaVakajarjestajaService,
+    private vardaVakajarjestajaService: VardaVakajarjestajaService
   ) {
     /** when login process has fetched toimipaikat its time to assign user access */
     this.vardaVakajarjestajaService.getToimipaikat().pipe(filter(Boolean)).subscribe((toimipaikat: Array<VardaToimipaikkaMinimalDto>) => {
@@ -113,10 +111,6 @@ export class AuthService {
           return false;
       }
     });
-  }
-
-  casSessionExists(): Observable<any> {
-    return this.vardaApiService.isLoggedInToCas();
   }
 
   setKayttooikeudet(user: VardaUserDTO): Observable<VardaUserDTO> {

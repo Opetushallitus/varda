@@ -6,12 +6,11 @@ describe('LoadingIndicatorComponent', () => {
   let component: LoadingIndicatorComponent;
   let fixture: ComponentFixture<LoadingIndicatorComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(() => {
     TestBed.configureTestingModule({
-      declarations: [ LoadingIndicatorComponent ]
-    })
-    .compileComponents();
-  }));
+      declarations: [LoadingIndicatorComponent]
+    }).compileComponents();
+  });
 
   beforeEach(() => {
     fixture = TestBed.createComponent(LoadingIndicatorComponent);
