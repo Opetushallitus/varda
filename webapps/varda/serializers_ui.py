@@ -34,13 +34,14 @@ class ToimipaikkaUiSerializer(serializers.HyperlinkedModelSerializer):
     paos_oma_organisaatio_url = serializers.SerializerMethodField()
     paos_organisaatio_url = serializers.SerializerMethodField()
     paos_organisaatio_nimi = serializers.SerializerMethodField()
+    paos_organisaatio_oid = serializers.SerializerMethodField()
     paos_tallentaja_organisaatio_id_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Toimipaikka
         fields = ('hallinnointijarjestelma', 'id', 'nimi_original', 'nimi', 'url', 'organisaatio_oid',
                   'paos_toimipaikka_kytkin', 'paos_oma_organisaatio_url', 'paos_organisaatio_url',
-                  'paos_organisaatio_nimi', 'paos_tallentaja_organisaatio_id_list')
+                  'paos_organisaatio_nimi', 'paos_organisaatio_oid', 'paos_tallentaja_organisaatio_id_list',)
 
     def get_nimi(self, toimipaikka_obj):
         if self.get_paos_toimipaikka_kytkin(toimipaikka_obj):
@@ -74,6 +75,12 @@ class ToimipaikkaUiSerializer(serializers.HyperlinkedModelSerializer):
     def get_paos_organisaatio_nimi(self, toimipaikka_obj):
         if self.get_paos_toimipaikka_kytkin(toimipaikka_obj):
             return toimipaikka_obj['vakajarjestaja__nimi']
+        else:
+            return ''
+
+    def get_paos_organisaatio_oid(self, toimipaikka_obj):
+        if self.get_paos_toimipaikka_kytkin(toimipaikka_obj):
+            return toimipaikka_obj['vakajarjestaja__organisaatio_oid']
         else:
             return ''
 

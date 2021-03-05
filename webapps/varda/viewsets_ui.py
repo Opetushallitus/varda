@@ -221,7 +221,7 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
 
         return (Toimipaikka.objects.filter(toimipaikka_filter)
                 .values('id', 'nimi', 'organisaatio_oid', 'hallinnointijarjestelma', 'vakajarjestaja__id',
-                        'vakajarjestaja__nimi')
+                        'vakajarjestaja__nimi', 'vakajarjestaja__organisaatio_oid',)
                 .order_by('nimi'))
 
     def get_serializer_context(self):
