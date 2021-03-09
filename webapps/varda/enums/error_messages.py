@@ -212,6 +212,7 @@ class ErrorMessages(enum.Enum):
     TA012 = get_error_dict('TA012', 'toimipaikka is required if kiertava_tyontekija_kytkin is false.')
     TA013 = get_error_dict('TA013', 'Tyoskentelypaikka must have paattymis_pvm because Palvelussuhde has paattymis_pvm.')
     TA014 = get_error_dict('TA014', 'Palvelussuhde must have at least one Tyoskentelypaikka.')
+    TA015 = get_error_dict('TA015', 'Cannot change tehtavanimike_koodi. There are Taydennyskoulutus objects that use this tehtavanimike_koodi.')
 
     # PidempiPoissaolo errors, prefix: PP
     PP001 = get_error_dict('PP001', 'Cannot delete PidempiPoissaolo. There are objects referencing it that need to be deleted first.')

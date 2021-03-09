@@ -1870,8 +1870,24 @@ class VardaHenkilostoViewSetTests(TestCase):
         client = SetUpTestClient('tyontekija_tallentaja').client()
         resp = client.delete(f'/api/henkilosto/v1/tyoskentelypaikat/{tyoskentelypaikka.id}/')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp, 'errors', 'TA002', 'Cannot delete Tyoskentelypaikka. Taydennyskoulutus objects '
-                                                         'with this tehtavanimike_koodi must be deleted first.')
+        assert_validation_error(resp, 'tehtavanimike_koodi', 'TA002',
+                                'Cannot delete Tyoskentelypaikka. Taydennyskoulutus objects with this '
+                                'tehtavanimike_koodi must be deleted first.')
+
+    def test_tyoskentelypaikka_tehtavanimike_patch_invalid(self):
+        lahdejarjestelma = '1'
+        tunniste = 'testing-tyoskentelypaikka2'
+
+        tyoskentelypaikka_patch = {
+            'tehtavanimike_koodi': '84724'
+        }
+        client = SetUpTestClient('tyontekija_tallentaja').client()
+        resp = client.patch(f'/api/henkilosto/v1/tyoskentelypaikat/{lahdejarjestelma}:{tunniste}/',
+                            tyoskentelypaikka_patch)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'tehtavanimike_koodi', 'TA015',
+                                'Cannot change tehtavanimike_koodi. There are Taydennyskoulutus objects that use this '
+                                'tehtavanimike_koodi.')
 
     def test_pidempipoissaolo_add_correct(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()

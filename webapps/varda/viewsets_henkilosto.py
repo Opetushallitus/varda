@@ -502,6 +502,19 @@ class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
     filterset_class = filters.TyoskentelypaikkaFilter
     queryset = Tyoskentelypaikka.objects.all().order_by('id')
 
+    def _validate_relation_to_taydennyskoulutus(self, tyoskentelypaikka, error_message):
+        tyontekija = tyoskentelypaikka.palvelussuhde.tyontekija
+        tehtavanimike = tyoskentelypaikka.tehtavanimike_koodi
+
+        taydennyskoulutus_qs = TaydennyskoulutusTyontekija.objects.filter(tyontekija=tyontekija,
+                                                                          tehtavanimike_koodi=tehtavanimike)
+        tyoskentelypaikka_qs = (Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija,
+                                                                 tehtavanimike_koodi=tehtavanimike)
+                                .exclude(id=tyoskentelypaikka.id))
+
+        if taydennyskoulutus_qs.exists() and not tyoskentelypaikka_qs.exists():
+            raise ValidationError({'tehtavanimike_koodi': [error_message]})
+
     def get_serializer_class(self):
         request = self.request
         if request.method == 'PUT' or request.method == 'PATCH':
@@ -547,20 +560,18 @@ class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
     def perform_update(self, serializer):
         user = self.request.user
+
+        tyoskentelypaikka = self.get_object()
+        validated_data = serializer.validated_data
+        if tyoskentelypaikka.tehtavanimike_koodi != validated_data.get('tehtavanimike_koodi', None):
+            # Validate relation to Taydennyskoulutus objects if tehtavanimike_koodi has been changed
+            self._validate_relation_to_taydennyskoulutus(tyoskentelypaikka, ErrorMessages.TA015.value)
+
         tyoskentelypaikka = serializer.save(changed_by=user)
         cache.delete('vakajarjestaja_yhteenveto_' + str(tyoskentelypaikka.palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def perform_destroy(self, tyoskentelypaikka):
-        tyontekija = tyoskentelypaikka.palvelussuhde.tyontekija
-        tehtavanimike = tyoskentelypaikka.tehtavanimike_koodi
-        taydennyskoulutus_qs = TaydennyskoulutusTyontekija.objects.filter(tyontekija=tyontekija,
-                                                                          tehtavanimike_koodi=tehtavanimike)
-        tyoskentelypaikka_qs = (Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija,
-                                                                 tehtavanimike_koodi=tehtavanimike)
-                                .exclude(id=tyoskentelypaikka.id))
-
-        if taydennyskoulutus_qs.exists() and not tyoskentelypaikka_qs.exists():
-            raise ValidationError({'errors': [ErrorMessages.TA002.value]})
+        self._validate_relation_to_taydennyskoulutus(tyoskentelypaikka, ErrorMessages.TA002.value)
 
         with transaction.atomic():
             delete_object_permissions_explicitly(Tyoskentelypaikka, tyoskentelypaikka)
