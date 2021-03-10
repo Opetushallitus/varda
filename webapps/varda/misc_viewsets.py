@@ -8,6 +8,8 @@ from drf_yasg.inspectors import SwaggerAutoSchema
 from drf_yasg.renderers import SwaggerUIRenderer
 from rest_framework.exceptions import ValidationError
 
+from webapps.api_throttles import SustainedModifyRateThrottle, BurstRateThrottle
+
 
 class ViewSetValidator:
     """
@@ -184,3 +186,16 @@ class ObjectByTunnisteMixin:
             self.kwargs[self.lookup_field] = str(model_qs.first().id)
 
         return super().get_object()
+
+
+class IncreasedModifyThrottleMixin:
+    """
+    Mixin that uses different throttle rates for GET and POST/PUT/PATCH/DELETE requests
+    @DynamicAttrs
+    """
+    THROTTLING_MODIFY_HTTP_METHODS = ['post', 'put', 'patch', 'delete']
+
+    def get_throttles(self):
+        if self.request.method.lower() in self.THROTTLING_MODIFY_HTTP_METHODS:
+            self.throttle_classes = [BurstRateThrottle, SustainedModifyRateThrottle]
+        return super().get_throttles()

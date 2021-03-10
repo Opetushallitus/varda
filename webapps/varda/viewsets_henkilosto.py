@@ -22,7 +22,7 @@ from varda.cache import (cached_retrieve_response, delete_cache_keys_related_mod
                          get_object_ids_for_user_by_model)
 from varda.enums.error_messages import ErrorMessages
 from varda.exceptions.conflict_error import ConflictError
-from varda.misc_viewsets import ObjectByTunnisteMixin
+from varda.misc_viewsets import IncreasedModifyThrottleMixin, ObjectByTunnisteMixin
 from varda.models import (VakaJarjestaja, TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
                           PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Z4_CasKayttoOikeudet)
 from varda.permission_groups import (assign_object_permissions_to_tyontekija_groups,
@@ -52,7 +52,7 @@ logger = logging.getLogger(__name__)
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=[])
-class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
+class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
         Nouda kaikki tyontekijät.
@@ -229,7 +229,7 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
 
 @auditlogclass
 @request_log_viewset_decorator_factory()
-class TilapainenHenkilostoViewSet(ObjectByTunnisteMixin, ModelViewSet):
+class TilapainenHenkilostoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
         Nouda kaikki tilapaiset henkilöstötiedot.
@@ -283,7 +283,8 @@ class TilapainenHenkilostoViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=['henkilo'])
-class TutkintoViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, ListModelMixin, GenericViewSet):
+class TutkintoViewSet(IncreasedModifyThrottleMixin, CreateModelMixin, RetrieveModelMixin, DestroyModelMixin,
+                      ListModelMixin, GenericViewSet):
     """
     list:
         Nouda kaikki tutkinnot joita käyttäjä pystyy muokkaamaan.
@@ -398,7 +399,7 @@ class TutkintoViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, L
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=['tyontekija'])
-class PalvelussuhdeViewSet(ObjectByTunnisteMixin, ModelViewSet):
+class PalvelussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
         Nouda kaikki palvelussuhteet.
@@ -476,7 +477,7 @@ class PalvelussuhdeViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=['palvelussuhde', 'tyontekija'])
-class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
+class TyoskentelypaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
         Nouda kaikki tyoskentelypaikat.
@@ -588,7 +589,7 @@ class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=['palvelussuhde', 'tyontekija'])
-class PidempiPoissaoloViewSet(ObjectByTunnisteMixin, ModelViewSet):
+class PidempiPoissaoloViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
         Nouda kaikki pidemmatpoissaolot.
@@ -664,7 +665,7 @@ class PidempiPoissaoloViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
 @auditlogclass
 @request_log_viewset_decorator_factory()
-class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
+class TaydennyskoulutusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
         Nouda kaikki taydennyskoulutukset.

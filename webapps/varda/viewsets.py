@@ -36,7 +36,7 @@ from varda.exceptions.conflict_error import ConflictError
 from varda.misc import (CustomServerErrorException, decrypt_henkilotunnus, encrypt_henkilotunnus, hash_string,
                         update_painotus_kytkin)
 from varda.misc_queries import get_paos_toimipaikat
-from varda.misc_viewsets import ObjectByTunnisteMixin
+from varda.misc_viewsets import IncreasedModifyThrottleMixin, ObjectByTunnisteMixin
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, PaosToiminta,
                           Lapsi, Huoltaja, Huoltajuussuhde, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto,
                           PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Tyontekija, Palvelussuhde,
@@ -80,13 +80,10 @@ from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer,
                                ToimipaikkaKoosteSerializer)
 from varda.tasks import (update_oph_staff_to_vakajarjestaja_groups,
                          assign_taydennyskoulutus_permissions_for_toimipaikka_task)
-from webapps.api_throttles import (BurstRateThrottle, BurstRateThrottleStrict, SustainedModifyRateThrottle,
-                                   SustainedRateThrottleStrict)
+from webapps.api_throttles import (BurstRateThrottleStrict, SustainedRateThrottleStrict)
 
-# Get an instance of a logger
+
 logger = logging.getLogger(__name__)
-
-THROTTLING_MODIFY_HTTP_METHODS = ['post', 'put', 'patch', 'delete']
 
 
 """
@@ -497,7 +494,7 @@ When a new instance is created (POST-request), we give object-level permissions 
 
 @auditlogclass
 @request_log_viewset_decorator_factory()
-class VakaJarjestajaViewSet(ModelViewSet):
+class VakaJarjestajaViewSet(IncreasedModifyThrottleMixin, ModelViewSet):
     """
     list:
         Nouda kaikki vakajarjestajat.
@@ -523,11 +520,6 @@ class VakaJarjestajaViewSet(ModelViewSet):
     serializer_class = VakaJarjestajaSerializer
     permission_classes = (CustomModelPermissions,)
 
-    def get_throttles(self):
-        if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
-            self.throttle_classes = [BurstRateThrottle, SustainedModifyRateThrottle]
-        return super(VakaJarjestajaViewSet, self).get_throttles()
-
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
 
@@ -550,8 +542,8 @@ class VakaJarjestajaViewSet(ModelViewSet):
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=[])
-class ToimipaikkaViewSet(ObjectByTunnisteMixin, GenericViewSet, CreateModelMixin, RetrieveModelMixin, UpdateModelMixin,
-                         ListModelMixin):
+class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, GenericViewSet, CreateModelMixin,
+                         RetrieveModelMixin, UpdateModelMixin, ListModelMixin):
     """
     list:
         Nouda kaikki toimipaikat.
@@ -573,11 +565,6 @@ class ToimipaikkaViewSet(ObjectByTunnisteMixin, GenericViewSet, CreateModelMixin
     queryset = Toimipaikka.objects.all().order_by('id')
     serializer_class = ToimipaikkaSerializer
     permission_classes = (CustomModelPermissions,)
-
-    def get_throttles(self):
-        if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
-            self.throttle_classes = [BurstRateThrottle, SustainedModifyRateThrottle]
-        return super(ToimipaikkaViewSet, self).get_throttles()
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
@@ -675,7 +662,7 @@ class ToimipaikkaViewSet(ObjectByTunnisteMixin, GenericViewSet, CreateModelMixin
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=['toimipaikka'])
-class ToiminnallinenPainotusViewSet(ObjectByTunnisteMixin, ModelViewSet):
+class ToiminnallinenPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
         Nouda kaikki toiminnalliset painotukset.
@@ -700,11 +687,6 @@ class ToiminnallinenPainotusViewSet(ObjectByTunnisteMixin, ModelViewSet):
     queryset = ToiminnallinenPainotus.objects.all().order_by('id')
     serializer_class = ToiminnallinenPainotusSerializer
     permission_classes = (CustomModelPermissions,)
-
-    def get_throttles(self):
-        if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
-            self.throttle_classes = [BurstRateThrottle, SustainedModifyRateThrottle]
-        return super(ToiminnallinenPainotusViewSet, self).get_throttles()
 
     def _toggle_toimipaikka_kytkin(self, toimipaikka):
         update_painotus_kytkin(toimipaikka, 'toiminnallisetpainotukset', 'toiminnallinenpainotus_kytkin')
@@ -785,7 +767,7 @@ class ToiminnallinenPainotusViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=['toimipaikka'])
-class KieliPainotusViewSet(ObjectByTunnisteMixin, ModelViewSet):
+class KieliPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
         Nouda kaikki kielipainotukset.
@@ -810,11 +792,6 @@ class KieliPainotusViewSet(ObjectByTunnisteMixin, ModelViewSet):
     queryset = KieliPainotus.objects.all().order_by('id')
     serializer_class = KieliPainotusSerializer
     permission_classes = (CustomModelPermissions,)
-
-    def get_throttles(self):
-        if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
-            self.throttle_classes = [BurstRateThrottle, SustainedModifyRateThrottle]
-        return super(KieliPainotusViewSet, self).get_throttles()
 
     def _toggle_toimipaikka_kytkin(self, toimipaikka):
         update_painotus_kytkin(toimipaikka, 'kielipainotukset', 'kielipainotus_kytkin')
@@ -958,7 +935,7 @@ class HaeHenkiloViewSet(GenericViewSet, CreateModelMixin):
 
 @auditlogclass
 @request_log_viewset_decorator_factory()
-class HenkiloViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
+class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModelMixin, CreateModelMixin):
     """
     retrieve:
         Nouda yksittäinen henkilö.
@@ -971,11 +948,6 @@ class HenkiloViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
     queryset = Henkilo.objects.all().order_by('id')
     serializer_class = None
     permission_classes = (CustomModelPermissions,)
-
-    def get_throttles(self):
-        if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
-            self.throttle_classes = [BurstRateThrottle, SustainedModifyRateThrottle]
-        return super(HenkiloViewSet, self).get_throttles()
 
     def get_serializer_class(self):
         request = self.request
@@ -1100,7 +1072,7 @@ class HenkiloViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=[])
-class LapsiViewSet(ObjectByTunnisteMixin, ModelViewSet):
+class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
         Nouda kaikki lapset.
@@ -1125,11 +1097,6 @@ class LapsiViewSet(ObjectByTunnisteMixin, ModelViewSet):
     queryset = Lapsi.objects.all().order_by('id')
     serializer_class = None
     permission_classes = (CustomModelPermissions,)
-
-    def get_throttles(self):
-        if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
-            self.throttle_classes = [BurstRateThrottle, SustainedModifyRateThrottle]
-        return super(LapsiViewSet, self).get_throttles()
 
     def get_serializer_class(self):
         request = self.request
@@ -1279,7 +1246,7 @@ class LapsiViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=['lapsi'])
-class VarhaiskasvatuspaatosViewSet(ObjectByTunnisteMixin, ModelViewSet):
+class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
         Nouda kaikki varhaiskasvatuspäätökset.
@@ -1304,11 +1271,6 @@ class VarhaiskasvatuspaatosViewSet(ObjectByTunnisteMixin, ModelViewSet):
     queryset = Varhaiskasvatuspaatos.objects.all().order_by('id')
     serializer_class = VarhaiskasvatuspaatosSerializer
     permission_classes = (CustomModelPermissions,)
-
-    def get_throttles(self):
-        if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
-            self.throttle_classes = [BurstRateThrottle, SustainedModifyRateThrottle]
-        return super(VarhaiskasvatuspaatosViewSet, self).get_throttles()
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
@@ -1439,7 +1401,7 @@ class VarhaiskasvatuspaatosViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=['varhaiskasvatuspaatos', 'lapsi'])
-class VarhaiskasvatussuhdeViewSet(ObjectByTunnisteMixin, ModelViewSet):
+class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
         Nouda kaikki varhaiskasvatussuhteet.
@@ -1464,11 +1426,6 @@ class VarhaiskasvatussuhdeViewSet(ObjectByTunnisteMixin, ModelViewSet):
     queryset = Varhaiskasvatussuhde.objects.all().order_by('id')
     serializer_class = VarhaiskasvatussuhdeSerializer
     permission_classes = (CustomModelPermissions,)
-
-    def get_throttles(self):
-        if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
-            self.throttle_classes = [BurstRateThrottle, SustainedModifyRateThrottle]
-        return super(VarhaiskasvatussuhdeViewSet, self).get_throttles()
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
@@ -1656,7 +1613,7 @@ class VarhaiskasvatussuhdeViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
 @auditlogclass
 @request_log_viewset_decorator_factory()
-class MaksutietoViewSet(ObjectByTunnisteMixin, ModelViewSet):
+class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
     """
     list:
         hae maksutiedot
@@ -1682,11 +1639,6 @@ class MaksutietoViewSet(ObjectByTunnisteMixin, ModelViewSet):
     queryset = Maksutieto.objects.all().distinct().order_by('id')
     serializer_class = None
     permission_classes = (CustomModelPermissions,)
-
-    def get_throttles(self):
-        if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
-            self.throttle_classes = [BurstRateThrottle, SustainedModifyRateThrottle]
-        return super(MaksutietoViewSet, self).get_throttles()
 
     def get_serializer_class(self):
         request = self.request
@@ -2013,7 +1965,8 @@ class MaksutietoViewSet(ObjectByTunnisteMixin, ModelViewSet):
 
 @auditlogclass
 @request_log_viewset_decorator_factory()
-class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, CreateModelMixin, DestroyModelMixin):
+class PaosToimintaViewSet(IncreasedModifyThrottleMixin, GenericViewSet, ListModelMixin, RetrieveModelMixin,
+                          CreateModelMixin, DestroyModelMixin):
     """
     list:
         hae palveluseteli- ja ostopalvelutoiminnat
@@ -2032,11 +1985,6 @@ class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cr
     queryset = PaosToiminta.objects.filter(voimassa_kytkin=True).order_by('id')
     serializer_class = PaosToimintaSerializer
     permission_classes = (CustomModelPermissions,)
-
-    def get_throttles(self):
-        if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
-            self.throttle_classes = [BurstRateThrottle, SustainedModifyRateThrottle]
-        return super(PaosToimintaViewSet, self).get_throttles()
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
@@ -2209,7 +2157,8 @@ class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cr
 
 @auditlogclass
 @request_log_viewset_decorator_factory()
-class PaosOikeusViewSet(GenericViewSet, UpdateModelMixin, ListModelMixin, RetrieveModelMixin):
+class PaosOikeusViewSet(IncreasedModifyThrottleMixin, GenericViewSet, UpdateModelMixin, ListModelMixin,
+                        RetrieveModelMixin):
     """
     list:
         hae organisaatioiden väliset palveluseteli- ja ostopalveluoikeudet
@@ -2228,11 +2177,6 @@ class PaosOikeusViewSet(GenericViewSet, UpdateModelMixin, ListModelMixin, Retrie
     queryset = PaosOikeus.objects.all().order_by('id')
     serializer_class = PaosOikeusSerializer
     permission_classes = (CustomModelPermissions,)
-
-    def get_throttles(self):
-        if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
-            self.throttle_classes = [BurstRateThrottle, SustainedModifyRateThrottle]
-        return super(PaosOikeusViewSet, self).get_throttles()
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
