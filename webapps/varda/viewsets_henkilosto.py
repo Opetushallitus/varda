@@ -28,10 +28,10 @@ from varda.models import (VakaJarjestaja, TilapainenHenkilosto, Tutkinto, Tyonte
 from varda.permission_groups import (assign_object_permissions_to_tyontekija_groups,
                                      assign_object_permissions_to_tilapainenhenkilosto_groups,
                                      assign_object_permissions_to_taydennyskoulutus_groups)
-from varda.permissions import (CustomObjectPermissions, delete_object_permissions_explicitly, is_user_permission,
+from varda.permissions import (CustomModelPermissions, delete_object_permissions_explicitly, is_user_permission,
                                is_correct_taydennyskoulutus_tyontekija_permission, get_tyontekija_vakajarjestaja_oid,
                                filter_authorized_taydennyskoulutus_tyontekijat_list, auditlog, auditlogclass,
-                               permission_groups_in_organization, HenkilostohakuPermissions,
+                               user_permission_groups_in_organization, HenkilostohakuPermissions,
                                get_tyontekija_filters_for_taydennyskoulutus_groups,
                                get_permission_checked_pidempi_poissaolo_katselija_queryset_for_user,
                                get_permission_checked_pidempi_poissaolo_tallentaja_queryset_for_user,
@@ -73,7 +73,7 @@ class TyontekijaViewSet(ObjectByTunnisteMixin, ModelViewSet):
         Päivitä yhden työntekijän kaikki kentät.
     """
     serializer_class = TyontekijaSerializer
-    permission_classes = (CustomObjectPermissions, )
+    permission_classes = (CustomModelPermissions,)
     filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
     filterset_class = filters.TyontekijaFilter
     queryset = Tyontekija.objects.all().order_by('id')
@@ -190,9 +190,9 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
 
         # Get palvelussuhteet
         palvelussuhde_filter = Q(tyontekija=tyontekija)
-        tyontekija_organization_groups_qs = permission_groups_in_organization(user, tyontekija.vakajarjestaja.organisaatio_oid,
-                                                                              [Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
-                                                                               Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA])
+        tyontekija_organization_groups_qs = user_permission_groups_in_organization(user, tyontekija.vakajarjestaja.organisaatio_oid,
+                                                                                   [Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
+                                                                                    Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA])
         if not is_superuser_or_oph_staff and not tyontekija_organization_groups_qs.exists():
             palvelussuhde_filter = palvelussuhde_filter & Q(id__in=get_object_ids_for_user_by_model(user, 'palvelussuhde'))
 
@@ -201,9 +201,9 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
 
         # Get täydennyskoulutukset
         taydennyskoulutus_filter = Q(tyontekija=tyontekija)
-        taydennyskoulutus_organization_groups_qs = permission_groups_in_organization(user, tyontekija.vakajarjestaja.organisaatio_oid,
-                                                                                     [Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
-                                                                                      Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA])
+        taydennyskoulutus_organization_groups_qs = user_permission_groups_in_organization(user, tyontekija.vakajarjestaja.organisaatio_oid,
+                                                                                          [Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
+                                                                                           Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA])
         if not is_superuser_or_oph_staff and not taydennyskoulutus_organization_groups_qs.exists():
             taydennyskoulutus_filter = taydennyskoulutus_filter & Q(taydennyskoulutus__id__in=get_object_ids_for_user_by_model(user, 'taydennyskoulutus'))
 
@@ -250,7 +250,7 @@ class TilapainenHenkilostoViewSet(ObjectByTunnisteMixin, ModelViewSet):
         Päivitä yhden tilapäinen henkilöstö -tietueen kaikki kentät.
     """
     serializer_class = TilapainenHenkilostoSerializer
-    permission_classes = (CustomObjectPermissions, )
+    permission_classes = (CustomModelPermissions,)
     filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
     filterset_class = filters.TilapainenHenkilostoFilter
     queryset = TilapainenHenkilosto.objects.all().order_by('id')
@@ -298,7 +298,7 @@ class TutkintoViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, L
         Nouda yksittäinen tutkinto.
     """
     serializer_class = TutkintoSerializer
-    permission_classes = (CustomObjectPermissions, )
+    permission_classes = (CustomModelPermissions,)
     filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend,)
     filterset_class = filters.TutkintoFilter
     queryset = Tutkinto.objects.all().order_by('id')
@@ -419,7 +419,7 @@ class PalvelussuhdeViewSet(ObjectByTunnisteMixin, ModelViewSet):
         Päivitä yhden palvelussuhteen kaikki kentät.
     """
     serializer_class = PalvelussuhdeSerializer
-    permission_classes = (CustomObjectPermissions, )
+    permission_classes = (CustomModelPermissions,)
     filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
     filterset_class = filters.PalvelussuhdeFilter
     queryset = Palvelussuhde.objects.all().order_by('id')
@@ -497,7 +497,7 @@ class TyoskentelypaikkaViewSet(ObjectByTunnisteMixin, ModelViewSet):
         Päivitä yhden tyoskentelypaikan kaikki kentät.
     """
     serializer_class = None
-    permission_classes = (CustomObjectPermissions, )
+    permission_classes = (CustomModelPermissions,)
     filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
     filterset_class = filters.TyoskentelypaikkaFilter
     queryset = Tyoskentelypaikka.objects.all().order_by('id')
@@ -609,7 +609,7 @@ class PidempiPoissaoloViewSet(ObjectByTunnisteMixin, ModelViewSet):
         Päivitä yhden pidempipoissaolo-tietueen kaikki kentät.
     """
     serializer_class = PidempiPoissaoloSerializer
-    permission_classes = (CustomObjectPermissions, )
+    permission_classes = (CustomModelPermissions,)
     filter_backends = (DjangoFilterBackend, )
     filterset_class = filters.PidempiPoissaoloFilter
     queryset = PidempiPoissaolo.objects.none()
@@ -685,7 +685,7 @@ class TaydennyskoulutusViewSet(ObjectByTunnisteMixin, ModelViewSet):
         Päivitä yhden taydennyskoulutuksen kaikki kentät.
     """
     serializer_class = None
-    permission_classes = (CustomObjectPermissions, )
+    permission_classes = (CustomModelPermissions,)
     filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
     filterset_class = filters.TaydennyskoulutusFilter
     queryset = Taydennyskoulutus.objects.all().order_by('id')

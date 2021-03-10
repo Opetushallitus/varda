@@ -10,7 +10,7 @@ from varda.models import (Henkilo, TilapainenHenkilosto, Tutkinto, Tyontekija, V
                           Tyoskentelypaikka, Toimipaikka, PidempiPoissaolo, TaydennyskoulutusTyontekija,
                           Taydennyskoulutus, Z4_CasKayttoOikeudet)
 from varda.permissions import (is_correct_taydennyskoulutus_tyontekija_permission,
-                               filter_authorized_taydennyskoulutus_tyontekijat, permission_groups_in_organization,
+                               filter_authorized_taydennyskoulutus_tyontekijat, user_permission_groups_in_organization,
                                is_oph_staff)
 from varda.related_object_validations import (create_date_range, date_range_overlap,
                                               check_if_admin_mutable_object_is_changed, check_overlapping_palvelussuhde,
@@ -814,9 +814,9 @@ def _get_permission_checked_henkilosto_tyontekija_objects(serializer_instance, q
     user = serializer_instance.context['request'].user
     vakajarjestaja_oid = queryset.first().palvelussuhde.tyontekija.vakajarjestaja.organisaatio_oid
 
-    tyontekija_groups_qs = permission_groups_in_organization(user, vakajarjestaja_oid,
-                                                             [Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
-                                                              Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA])
+    tyontekija_groups_qs = user_permission_groups_in_organization(user, vakajarjestaja_oid,
+                                                                  [Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
+                                                                   Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA])
     if not user.is_superuser and not is_oph_staff(user) and not tyontekija_groups_qs.exists():
         model_name = queryset.model.__name__.lower()
         queryset = queryset.filter(id__in=get_object_ids_for_user_by_model(user, model_name))

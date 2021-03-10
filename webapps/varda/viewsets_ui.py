@@ -25,10 +25,11 @@ from varda.misc_viewsets import ExtraKwargsFilterBackend
 from varda.models import (Toimipaikka, VakaJarjestaja, PaosToiminta, PaosOikeus, Lapsi, Henkilo,
                           Tyontekija, Z4_CasKayttoOikeudet)
 from varda.pagination import ChangeablePageSizePagination, ChangeablePageSizePaginationLarge
-from varda.permissions import (CustomObjectPermissions, get_taydennyskoulutus_tyontekija_group_organisaatio_oids,
+from varda.permissions import (CustomModelPermissions, get_taydennyskoulutus_tyontekija_group_organisaatio_oids,
                                get_toimipaikat_group_has_access, get_organisaatio_oids_from_groups,
                                HenkilostohakuPermissions, LapsihakuPermissions, auditlog, auditlogclass,
-                               permission_groups_in_organization, get_tyontekija_filters_for_taydennyskoulutus_groups,
+                               user_permission_groups_in_organization,
+                               get_tyontekija_filters_for_taydennyskoulutus_groups,
                                user_has_vakajarjestaja_level_permission, is_oph_staff, parse_toimipaikka_id_list)
 from varda.serializers import PaosToimipaikkaSerializer, PaosVakaJarjestajaSerializer
 from varda.serializers_ui import (VakaJarjestajaUiSerializer, ToimipaikkaUiSerializer, UiLapsiSerializer,
@@ -192,7 +193,7 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
     filterset_class = filters.ToimipaikkaFilter
     queryset = Toimipaikka.objects.none()
     serializer_class = ToimipaikkaUiSerializer
-    permission_classes = (CustomObjectPermissions, )
+    permission_classes = (CustomModelPermissions,)
     pagination_class = ChangeablePageSizePaginationLarge
 
     vakajarjestaja_id = None
@@ -354,7 +355,7 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
                      '=henkilo__henkilo_oid',
                      '=id')
     serializer_class = UiLapsiSerializer
-    permission_classes = (CustomObjectPermissions,)
+    permission_classes = (CustomModelPermissions,)
     pagination_class = ChangeablePageSizePagination
 
     vakajarjestaja_id = None
@@ -421,11 +422,11 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
                             Q(paos_organisaatio=self.vakajarjestaja_id) |
                             Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=self.vakajarjestaja_id))
 
-        lapsi_organization_groups_qs = permission_groups_in_organization(self.request.user, self.vakajarjestaja_oid,
-                                                                         [Z4_CasKayttoOikeudet.KATSELIJA,
-                                                                          Z4_CasKayttoOikeudet.TALLENTAJA,
-                                                                          Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
-                                                                          Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA])
+        lapsi_organization_groups_qs = user_permission_groups_in_organization(self.request.user, self.vakajarjestaja_oid,
+                                                                              [Z4_CasKayttoOikeudet.KATSELIJA,
+                                                                               Z4_CasKayttoOikeudet.TALLENTAJA,
+                                                                               Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
+                                                                               Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA])
         # Get all children for superuser and vakajarjestaja level permissions
         if not self.request.user.is_superuser and not lapsi_organization_groups_qs.exists():
             lapsi_object_ids_user_has_view_permissions = self.get_lapsi_object_ids_user_has_view_permissions()
@@ -532,17 +533,17 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
     def get_queryset(self):
         tyontekija_filter = Q(vakajarjestaja__id=self.vakajarjestaja_id)
 
-        tyontekija_organization_groups_qs = permission_groups_in_organization(self.request.user, self.vakajarjestaja_oid,
-                                                                              [Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
-                                                                               Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA])
+        tyontekija_organization_groups_qs = user_permission_groups_in_organization(self.request.user, self.vakajarjestaja_oid,
+                                                                                   [Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
+                                                                                    Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA])
 
         user = self.request.user
         is_superuser_or_oph_staff = user.is_superuser or is_oph_staff(user)
         self.has_vakajarjestaja_tyontekija_permissions = is_superuser_or_oph_staff or tyontekija_organization_groups_qs.exists()
 
-        taydennyskoulutus_organization_groups_qs = permission_groups_in_organization(self.request.user, self.vakajarjestaja_oid,
-                                                                                     [Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,
-                                                                                      Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA])
+        taydennyskoulutus_organization_groups_qs = user_permission_groups_in_organization(self.request.user, self.vakajarjestaja_oid,
+                                                                                          [Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,
+                                                                                           Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA])
 
         # Get all tyontekijat for superuser, oph user, and vakajarjestaja level permissions
         if not self.has_vakajarjestaja_tyontekija_permissions and not taydennyskoulutus_organization_groups_qs.exists():

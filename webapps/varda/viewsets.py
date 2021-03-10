@@ -53,11 +53,12 @@ from varda.permission_groups import (assign_object_level_permissions, create_per
                                      assign_object_permissions_to_all_henkilosto_groups)
 from varda.permissions import (throw_if_not_tallentaja_permissions,
                                check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement,
-                               check_if_user_has_paakayttaja_permissions, ReadAdminOrOPHUser, CustomObjectPermissions,
+                               check_if_user_has_paakayttaja_permissions, ReadAdminOrOPHUser, CustomModelPermissions,
                                user_has_huoltajatieto_tallennus_permissions_to_correct_organization,
                                grant_or_deny_access_to_paos_toimipaikka, user_has_tallentaja_permission_in_organization,
                                auditlogclass, save_audit_log, ToimipaikkaPermissions, get_toimipaikka_or_404, auditlog,
-                               is_oph_staff, user_belongs_to_at_least_one_group, permission_groups_in_organization)
+                               is_oph_staff, user_permission_groups_in_organizations,
+                               user_permission_groups_in_organization, CustomObjectPermissions)
 from varda.related_object_validations import (check_toimipaikka_and_vakajarjestaja_have_oids,
                                               toimipaikka_is_valid_to_organisaatiopalvelu,
                                               check_overlapping_toiminnallinen_painotus,
@@ -520,7 +521,7 @@ class VakaJarjestajaViewSet(ModelViewSet):
     filterset_class = filters.VakaJarjestajaFilter
     queryset = VakaJarjestaja.objects.all().order_by('id')
     serializer_class = VakaJarjestajaSerializer
-    permission_classes = (CustomObjectPermissions,)
+    permission_classes = (CustomModelPermissions,)
 
     def get_throttles(self):
         if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
@@ -571,7 +572,7 @@ class ToimipaikkaViewSet(ObjectByTunnisteMixin, GenericViewSet, CreateModelMixin
     filterset_class = filters.ToimipaikkaFilter
     queryset = Toimipaikka.objects.all().order_by('id')
     serializer_class = ToimipaikkaSerializer
-    permission_classes = (CustomObjectPermissions,)
+    permission_classes = (CustomModelPermissions,)
 
     def get_throttles(self):
         if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
@@ -664,7 +665,8 @@ class ToimipaikkaViewSet(ObjectByTunnisteMixin, GenericViewSet, CreateModelMixin
         cache.delete('vakajarjestaja_yhteenveto_' + str(saved_object.vakajarjestaja.id))
 
     @auditlog
-    @action(methods=['get'], detail=True, serializer_class=ToimipaikkaKoosteSerializer, filter_backends=(ObjectPermissionsFilter, ))
+    @action(methods=['get'], detail=True, serializer_class=ToimipaikkaKoosteSerializer,
+            permission_classes=(CustomModelPermissions, CustomObjectPermissions,))
     def kooste(self, request, pk=None):
         toimipaikka_obj = self.get_object()
         serialized_data = self.get_serializer(toimipaikka_obj).data
@@ -697,7 +699,7 @@ class ToiminnallinenPainotusViewSet(ObjectByTunnisteMixin, ModelViewSet):
     filterset_class = filters.ToiminnallinenPainotusFilter
     queryset = ToiminnallinenPainotus.objects.all().order_by('id')
     serializer_class = ToiminnallinenPainotusSerializer
-    permission_classes = (CustomObjectPermissions,)
+    permission_classes = (CustomModelPermissions,)
 
     def get_throttles(self):
         if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
@@ -807,7 +809,7 @@ class KieliPainotusViewSet(ObjectByTunnisteMixin, ModelViewSet):
     filterset_class = filters.KieliPainotusFilter
     queryset = KieliPainotus.objects.all().order_by('id')
     serializer_class = KieliPainotusSerializer
-    permission_classes = (CustomObjectPermissions,)
+    permission_classes = (CustomModelPermissions,)
 
     def get_throttles(self):
         if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
@@ -901,7 +903,7 @@ class HaeHenkiloViewSet(GenericViewSet, CreateModelMixin):
     serializer_class = HaeHenkiloSerializer
     # We need more strict throttling on henkilo-haku, due to security reasons.
     throttle_classes = (BurstRateThrottleStrict, SustainedRateThrottleStrict)
-    permission_classes = (CustomObjectPermissions,)
+    permission_classes = (CustomModelPermissions,)
 
     def get_henkilo(self, query_param, query_param_value):
         try:
@@ -968,7 +970,7 @@ class HenkiloViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
     filterset_class = None
     queryset = Henkilo.objects.all().order_by('id')
     serializer_class = None
-    permission_classes = (CustomObjectPermissions,)
+    permission_classes = (CustomModelPermissions,)
 
     def get_throttles(self):
         if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
@@ -1122,7 +1124,7 @@ class LapsiViewSet(ObjectByTunnisteMixin, ModelViewSet):
     filterset_class = filters.LapsiFilter
     queryset = Lapsi.objects.all().order_by('id')
     serializer_class = None
-    permission_classes = (CustomObjectPermissions,)
+    permission_classes = (CustomModelPermissions,)
 
     def get_throttles(self):
         if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
@@ -1301,7 +1303,7 @@ class VarhaiskasvatuspaatosViewSet(ObjectByTunnisteMixin, ModelViewSet):
     filterset_class = filters.VarhaiskasvatuspaatosFilter
     queryset = Varhaiskasvatuspaatos.objects.all().order_by('id')
     serializer_class = VarhaiskasvatuspaatosSerializer
-    permission_classes = (CustomObjectPermissions,)
+    permission_classes = (CustomModelPermissions,)
 
     def get_throttles(self):
         if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
@@ -1461,7 +1463,7 @@ class VarhaiskasvatussuhdeViewSet(ObjectByTunnisteMixin, ModelViewSet):
     filterset_class = filters.VarhaiskasvatussuhdeFilter
     queryset = Varhaiskasvatussuhde.objects.all().order_by('id')
     serializer_class = VarhaiskasvatussuhdeSerializer
-    permission_classes = (CustomObjectPermissions,)
+    permission_classes = (CustomModelPermissions,)
 
     def get_throttles(self):
         if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
@@ -1679,7 +1681,7 @@ class MaksutietoViewSet(ObjectByTunnisteMixin, ModelViewSet):
     # Only query distinct results, as related object filters can return the same object multiple times
     queryset = Maksutieto.objects.all().distinct().order_by('id')
     serializer_class = None
-    permission_classes = (CustomObjectPermissions,)
+    permission_classes = (CustomModelPermissions,)
 
     def get_throttles(self):
         if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
@@ -2029,7 +2031,7 @@ class PaosToimintaViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cr
     filterset_class = filters.PaosToimintaFilter
     queryset = PaosToiminta.objects.filter(voimassa_kytkin=True).order_by('id')
     serializer_class = PaosToimintaSerializer
-    permission_classes = (CustomObjectPermissions,)
+    permission_classes = (CustomModelPermissions,)
 
     def get_throttles(self):
         if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
@@ -2225,7 +2227,7 @@ class PaosOikeusViewSet(GenericViewSet, UpdateModelMixin, ListModelMixin, Retrie
     filterset_class = filters.PaosOikeusFilter
     queryset = PaosOikeus.objects.all().order_by('id')
     serializer_class = PaosOikeusSerializer
-    permission_classes = (CustomObjectPermissions,)
+    permission_classes = (CustomModelPermissions,)
 
     def get_throttles(self):
         if self.request.method.lower() in THROTTLING_MODIFY_HTTP_METHODS:
@@ -2269,11 +2271,9 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
     list:
         Nouda varhaiskasvatustoimijan yhteenvetotiedot
     """
-    filter_backends = (ObjectPermissionsFilter, )
-    filterset_class = None
-    queryset = VakaJarjestaja.objects.none()
+    queryset = VakaJarjestaja.objects.all()
     serializer_class = VakaJarjestajaYhteenvetoSerializer
-    permission_classes = (CustomObjectPermissions,)
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
     today = None
     vakajarjestaja_id = None
 
@@ -2281,23 +2281,16 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
         return (Q(**{prefix + 'alkamis_pvm__lte': self.today}) &
                 (Q(**{prefix + 'paattymis_pvm__isnull': True}) | Q(**{prefix + 'paattymis_pvm__gte': self.today})))
 
-    def get_vakajarjestaja(self, vakajarjestaja_pk=None):
-        vakajarjestaja = get_object_or_404(VakaJarjestaja.objects.all(), pk=vakajarjestaja_pk)
-        user = self.request.user
-        if user.has_perm('view_vakajarjestaja', vakajarjestaja):
-            return vakajarjestaja
-        else:
-            raise Http404
-
     @transaction.atomic
     def list(self, request, *args, **kwargs):
         self.today = datetime.datetime.now()
-        self.vakajarjestaja_id = kwargs['vakajarjestaja_pk']
+
+        self.kwargs['pk'] = self.kwargs['vakajarjestaja_pk']
+        self.vakajarjestaja_id = self.kwargs['pk']
         if not self.vakajarjestaja_id.isdigit():
             raise Http404
-
-        vakajarjestaja_obj = self.get_vakajarjestaja(vakajarjestaja_pk=self.vakajarjestaja_id)
-        data = cache.get('vakajarjestaja_yhteenveto_' + kwargs['vakajarjestaja_pk'])
+        vakajarjestaja_obj = self.get_object()
+        data = cache.get('vakajarjestaja_yhteenveto_' + self.vakajarjestaja_id)
         if data is None:
             data = {
                 'vakajarjestaja_nimi': vakajarjestaja_obj.nimi,
@@ -2320,7 +2313,7 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
                 'tilapainen_henkilosto_maara_kuluva_vuosi': self.get_tilapainen_henkilosto_maara_this_year(),
                 'tilapainen_henkilosto_tunnit_kuluva_vuosi': self.get_tilapainen_henkilosto_tunnit_this_year()
             }
-            cache.set('vakajarjestaja_yhteenveto_' + kwargs['vakajarjestaja_pk'], data, 8 * 60 * 60)
+            cache.set('vakajarjestaja_yhteenveto_' + self.vakajarjestaja_id, data, 8 * 60 * 60)
 
         serializer = self.get_serializer(data, many=False)
         return Response(serializer.data)
@@ -2576,7 +2569,7 @@ class NestedVarhaiskasvatussuhdeViewSet(GenericViewSet, ListModelMixin):
     filterset_class = filters.VarhaiskasvatussuhdeFilter
     queryset = Varhaiskasvatussuhde.objects.none()
     serializer_class = VarhaiskasvatussuhdeSerializer
-    permission_classes = (CustomObjectPermissions, )
+    permission_classes = (CustomModelPermissions,)
 
     def get_varhaiskasvatuspaatos(self, request, varhaiskasvatuspaatos_pk=None):
         varhaiskasvatuspaatos = get_object_or_404(Varhaiskasvatuspaatos.objects.all(), pk=varhaiskasvatuspaatos_pk)
@@ -2607,7 +2600,7 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
     filterset_class = filters.ToimipaikkaFilter
     queryset = Toimipaikka.objects.none()
     serializer_class = ToimipaikkaSerializer
-    permission_classes = (CustomObjectPermissions, )
+    permission_classes = (CustomModelPermissions,)
 
     def get_vakajarjestaja(self, request, vakajarjestaja_pk=None):
         vakajarjestaja = get_object_or_404(VakaJarjestaja.objects.all(), pk=vakajarjestaja_pk)
@@ -2687,7 +2680,7 @@ class NestedVarhaiskasvatussuhdeToimipaikkaViewSet(GenericViewSet, ListModelMixi
     filterset_class = filters.VarhaiskasvatussuhdeFilter
     queryset = Varhaiskasvatussuhde.objects.none()
     serializer_class = VarhaiskasvatussuhdeSerializer
-    permission_classes = (CustomObjectPermissions, )
+    permission_classes = (CustomModelPermissions,)
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
@@ -2710,7 +2703,7 @@ class NestedVarhaiskasvatuspaatosViewSet(GenericViewSet, ListModelMixin):
     filterset_class = filters.VarhaiskasvatuspaatosFilter
     queryset = Varhaiskasvatuspaatos.objects.none()
     serializer_class = VarhaiskasvatuspaatosSerializer
-    permission_classes = (CustomObjectPermissions, )
+    permission_classes = (CustomModelPermissions,)
 
     def get_lapsi(self, request, lapsi_pk=None):
         lapsi = get_object_or_404(Lapsi.objects.all(), pk=lapsi_pk)
@@ -2737,11 +2730,9 @@ class NestedLapsiKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListModelM
     list:
         Nouda kooste tietyn lapsen tiedoista.
     """
-    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
-    filterset_class = None
     queryset = Lapsi.objects.all().order_by('id')
     serializer_class = LapsiKoosteSerializer
-    permission_classes = (CustomObjectPermissions, )
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
 
     def list(self, request, *args, **kwargs):
         self.kwargs['pk'] = self.kwargs['lapsi_pk']
@@ -2772,11 +2763,11 @@ class NestedLapsiKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListModelM
 
         # Get vakapaatokset
         vakapaatos_filter = Q(lapsi=lapsi)
-        is_vakatiedot_organization_permissions = user_belongs_to_at_least_one_group(user, (oma_organisaatio_oid, paos_organisaatio_oid,),
+        vakatiedot_organization_groups_qs = user_permission_groups_in_organizations(user, (oma_organisaatio_oid, paos_organisaatio_oid,),
                                                                                     (Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
                                                                                      Z4_CasKayttoOikeudet.TALLENTAJA,
                                                                                      Z4_CasKayttoOikeudet.KATSELIJA,))
-        if not is_superuser_or_oph_staff and not is_vakatiedot_organization_permissions:
+        if not is_superuser_or_oph_staff and not vakatiedot_organization_groups_qs.exists():
             vakapaatos_filter &= Q(id__in=get_object_ids_for_user_by_model(user, 'varhaiskasvatuspaatos'))
 
         vakapaatokset = Varhaiskasvatuspaatos.objects.filter(vakapaatos_filter).distinct().order_by('-alkamis_pvm')
@@ -2784,7 +2775,7 @@ class NestedLapsiKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListModelM
 
         # Get vakasuhteet
         vakasuhde_filter = Q(varhaiskasvatuspaatos__lapsi=lapsi)
-        if not is_superuser_or_oph_staff and not is_vakatiedot_organization_permissions:
+        if not is_superuser_or_oph_staff and not vakatiedot_organization_groups_qs.exists():
             vakasuhde_filter &= Q(id__in=get_object_ids_for_user_by_model(user, 'varhaiskasvatussuhde'))
 
         vakasuhteet = Varhaiskasvatussuhde.objects.filter(vakasuhde_filter).distinct().order_by('-alkamis_pvm')
@@ -2792,10 +2783,10 @@ class NestedLapsiKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListModelM
 
         # Get maksutiedot
         maksutieto_filter = Q(huoltajuussuhteet__lapsi=lapsi)
-        huoltajatiedot_organization_groups_qs = permission_groups_in_organization(user, oma_organisaatio_oid,
-                                                                                  (Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
-                                                                                   Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
-                                                                                   Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA))
+        huoltajatiedot_organization_groups_qs = user_permission_groups_in_organization(user, oma_organisaatio_oid,
+                                                                                       (Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                                                                                        Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
+                                                                                        Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA))
         if not is_superuser_or_oph_staff and not huoltajatiedot_organization_groups_qs.exists():
             maksutieto_filter &= Q(id__in=get_object_ids_for_user_by_model(user, 'maksutieto'))
 
@@ -2816,7 +2807,7 @@ class NestedLapsenVarhaiskasvatussuhdeViewSet(GenericViewSet, ListModelMixin):
     filterset_class = filters.VarhaiskasvatussuhdeFilter
     queryset = Varhaiskasvatussuhde.objects.none()
     serializer_class = VarhaiskasvatussuhdeSerializer
-    permission_classes = (CustomObjectPermissions, )
+    permission_classes = (CustomModelPermissions,)
 
     def get_lapsi(self, request, lapsi_pk=None):
         lapsi = get_object_or_404(Lapsi.objects.all(), pk=lapsi_pk)
@@ -2848,7 +2839,7 @@ class NestedLapsiMaksutietoViewSet(GenericViewSet, ListModelMixin):
     filterset_class = filters.MaksutietoFilter
     queryset = Maksutieto.objects.none()
     serializer_class = MaksutietoGetUpdateSerializer
-    permission_classes = (CustomObjectPermissions, )
+    permission_classes = (CustomModelPermissions,)
 
     def get_lapsi(self, request, lapsi_pk=None):
         lapsi = get_object_or_404(Lapsi.objects.all(), pk=lapsi_pk)
@@ -2885,7 +2876,7 @@ class NestedVakajarjestajaPaosToimijatViewSet(GenericViewSet, ListModelMixin):
     filterset_class = None
     queryset = VakaJarjestaja.objects.none()
     serializer_class = PaosToimijatSerializer
-    permission_classes = (CustomObjectPermissions,)
+    permission_classes = (CustomModelPermissions,)
     today = datetime.datetime.now()
 
     def get_vakajarjestaja(self, vakajarjestaja_pk=None):
@@ -2931,7 +2922,7 @@ class NestedVakajarjestajaPaosToimipaikatViewSet(GenericViewSet, ListModelMixin)
     filterset_class = None
     queryset = VakaJarjestaja.objects.none()
     serializer_class = PaosToimipaikatSerializer
-    permission_classes = (CustomObjectPermissions,)
+    permission_classes = (CustomModelPermissions,)
     today = datetime.datetime.now()
 
     def get_vakajarjestaja(self, vakajarjestaja_pk=None):
@@ -2993,7 +2984,7 @@ class HenkilohakuLapset(GenericViewSet, ListModelMixin):
     serializer_class = HenkilohakuLapsetSerializer
     queryset = Lapsi.objects.none()
     filter_backends = None
-    permission_classes = (CustomObjectPermissions, )
+    permission_classes = (CustomModelPermissions,)
     search_fields = ('henkilo__etunimet', 'henkilo__sukunimi', '=henkilo__henkilotunnus_unique_hash', '=henkilo__henkilo_oid', )
     tz = pytz.timezone('Europe/Helsinki')
     today = datetime.datetime.now(tz=tz)

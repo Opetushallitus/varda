@@ -4,7 +4,7 @@ from functools import wraps
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction, IntegrityError
-from django.db.models import IntegerField, Q
+from django.db.models import IntegerField, Q, Model
 from django.db.models.functions import Cast
 from django.forms import model_to_dict
 from django.http import Http404
@@ -27,7 +27,22 @@ logger = logging.getLogger(__name__)
 
 
 # https://github.com/rpkilby/django-rest-framework-guardian
-class CustomObjectPermissions(permissions.DjangoModelPermissions):
+class CustomModelPermissions(permissions.DjangoModelPermissions):
+    """
+    Similar to `DjangoModelPermissions`, but adding 'view' permissions.
+    """
+    perms_map = {
+        'GET': ['%(app_label)s.view_%(model_name)s'],
+        'OPTIONS': ['%(app_label)s.view_%(model_name)s'],
+        'HEAD': ['%(app_label)s.view_%(model_name)s'],
+        'POST': ['%(app_label)s.add_%(model_name)s'],
+        'PUT': ['%(app_label)s.change_%(model_name)s'],
+        'PATCH': ['%(app_label)s.change_%(model_name)s'],
+        'DELETE': ['%(app_label)s.delete_%(model_name)s'],
+    }
+
+
+class CustomObjectPermissions(permissions.DjangoObjectPermissions):
     """
     Similar to `DjangoObjectPermissions`, but adding 'view' permissions.
     """
@@ -40,6 +55,14 @@ class CustomObjectPermissions(permissions.DjangoModelPermissions):
         'PATCH': ['%(app_label)s.change_%(model_name)s'],
         'DELETE': ['%(app_label)s.delete_%(model_name)s'],
     }
+
+    def has_object_permission(self, request, view, obj):
+        if not isinstance(obj, Model):
+            # Object permissions are checked again in Django REST browserable API, sometimes object is not a Model
+            # instance anymore (e.g. NestedLapsiKoosteViewSet, NestedVakajarjestajaYhteenvetoViewSet),
+            # so don't check permissions
+            return True
+        return super(CustomObjectPermissions, self).has_object_permission(request, view, obj)
 
 
 class CustomReportingViewAccess(permissions.BasePermission):
@@ -584,9 +607,13 @@ def get_toimipaikka_or_404(user, toimipaikka_pk=None):
     raise Http404
 
 
-def permission_groups_in_organization(user, organisaatio_oid, z4_groups):
-    group_names = [group + '_' + organisaatio_oid for group in z4_groups]
-    return user.groups.filter(name__in=group_names)
+def user_permission_groups_in_organization(user, organisaatio_oid, permission_group_list):
+    return user_permission_groups_in_organizations(user, (organisaatio_oid,), permission_group_list)
+
+
+def user_permission_groups_in_organizations(user, oid_list, permission_group_list):
+    group_name_list = [f'{group}_{oid}' for oid in oid_list for group in permission_group_list]
+    return user.groups.filter(name__in=group_name_list)
 
 
 def get_permission_checked_pidempi_poissaolo_katselija_queryset_for_user(user):
@@ -653,15 +680,10 @@ def user_belongs_to_correct_groups(field, user, field_object):
                 # User can also have permissions to Toimipaikka of specified VakaJarjestaja
                 toimipaikka_oid_list = list(field_object.toimipaikat.values_list('organisaatio_oid', flat=True))
                 oid_list = oid_list + toimipaikka_oid_list
-        return user_belongs_to_at_least_one_group(user, oid_list, field.permission_groups)
+        return user_permission_groups_in_organizations(user, oid_list, field.permission_groups).exists()
     else:
         # User is admin, oph_staff or permission groups not specified
         return True
-
-
-def user_belongs_to_at_least_one_group(user, oid_list, permission_group_list):
-    group_name_list = [f'{group}_{oid}' for oid in oid_list for group in permission_group_list]
-    return user.groups.filter(name__in=group_name_list).exists()
 
 
 def get_vakajarjestajat_filter_for_raportit(request):
@@ -686,8 +708,8 @@ def get_vakajarjestajat_filter_for_raportit(request):
         if not vakajarjestaja_qs.exists():
             continue
         vakajarjestaja_obj = vakajarjestaja_qs.first()
-        permission_group_qs = permission_groups_in_organization(user, vakajarjestaja_obj.organisaatio_oid,
-                                                                [Z4_CasKayttoOikeudet.RAPORTTIEN_KATSELIJA])
+        permission_group_qs = user_permission_groups_in_organization(user, vakajarjestaja_obj.organisaatio_oid,
+                                                                     [Z4_CasKayttoOikeudet.RAPORTTIEN_KATSELIJA])
         if user.is_superuser or is_oph_staff or permission_group_qs.exists():
             vakajarjestaja_id_list.append(vakajarjestaja_id)
     return Q(vakajarjestaja__in=vakajarjestaja_id_list)
@@ -731,7 +753,7 @@ def parse_toimipaikka_id_list(user, toimipaikka_ids_string, required_permission_
             oid_list.extend(paos_oid_list)
 
         if (user.is_superuser or is_oph_staff(user) or
-                user_belongs_to_at_least_one_group(user, oid_list, required_permission_groups)):
+                user_permission_groups_in_organizations(user, oid_list, required_permission_groups).exists()):
             toimipaikka_id_list.append(toimipaikka_id)
 
     return toimipaikka_id_list

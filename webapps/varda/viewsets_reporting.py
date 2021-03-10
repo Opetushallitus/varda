@@ -26,7 +26,7 @@ from varda.serializers_reporting import (KelaEtuusmaksatusAloittaneetSerializer,
                                          TiedonsiirtotilastoSerializer, ErrorReportLapsetSerializer,
                                          ErrorReportTyontekijatSerializer, TiedonsiirtoSerializer,
                                          TiedonsiirtoYhteenvetoSerializer)
-from varda.permissions import permission_groups_in_organization, CustomObjectPermissions
+from varda.permissions import user_permission_groups_in_organization, CustomModelPermissions
 from varda.enums.ytj import YtjYritysmuoto
 from varda.models import (KieliPainotus, Lapsi, Maksutieto, PaosOikeus, ToiminnallinenPainotus, Toimipaikka,
                           VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z6_RequestLog,
@@ -545,7 +545,7 @@ class AbstractErrorReportViewSet(GenericViewSet, ListModelMixin):
 class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
     serializer_class = ErrorReportLapsetSerializer
     queryset = Lapsi.objects.none()
-    permission_classes = (CustomObjectPermissions,)
+    permission_classes = (CustomModelPermissions,)
 
     is_vakatiedot_permissions = False
     is_huoltajatiedot_permissions = False
@@ -555,15 +555,16 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
 
         valid_permission_groups_vakatiedot = [Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
                                               Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.KATSELIJA]
-        user_group_vakatiedot_qs = permission_groups_in_organization(user, self.vakajarjestaja_oid,
-                                                                     valid_permission_groups_vakatiedot)
+        user_group_vakatiedot_qs = user_permission_groups_in_organization(user, self.vakajarjestaja_oid,
+                                                                          valid_permission_groups_vakatiedot)
         self.is_vakatiedot_permissions = user.is_superuser | user_group_vakatiedot_qs.exists()
 
-        valid_permission_groups_huoltajatiedot = [Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+        valid_permission_groups_huoltajatiedot = [Z4_CasKayttoOikeudet.PAAKAYTTAJA,
+                                                  Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
                                                   Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,
                                                   Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA]
-        user_group_huoltajatiedot_qs = permission_groups_in_organization(user, self.vakajarjestaja_oid,
-                                                                         valid_permission_groups_huoltajatiedot)
+        user_group_huoltajatiedot_qs = user_permission_groups_in_organization(user, self.vakajarjestaja_oid,
+                                                                              valid_permission_groups_huoltajatiedot)
         self.is_huoltajatiedot_permissions = user.is_superuser | user_group_huoltajatiedot_qs.exists()
 
         if not self.is_vakatiedot_permissions and not self.is_huoltajatiedot_permissions:
@@ -673,7 +674,7 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
 class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
     serializer_class = ErrorReportTyontekijatSerializer
     queryset = Tyontekija.objects.none()
-    permission_classes = (CustomObjectPermissions,)
+    permission_classes = (CustomModelPermissions,)
 
     def verify_permissions(self):
         user = self.request.user
@@ -681,8 +682,8 @@ class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
         valid_permission_groups = [Z4_CasKayttoOikeudet.PAAKAYTTAJA,
                                    Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
                                    Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA]
-        user_group_qs = permission_groups_in_organization(user, self.vakajarjestaja_oid,
-                                                          valid_permission_groups)
+        user_group_qs = user_permission_groups_in_organization(user, self.vakajarjestaja_oid,
+                                                               valid_permission_groups)
 
         if not user.is_superuser and not user_group_qs.exists():
             raise Http404()
