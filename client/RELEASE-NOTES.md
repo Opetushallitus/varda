@@ -1,6 +1,11 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.9 (11.03.2021)
+- OPHVARDA-1694: Tekstin koon muutoksen korjauksia
+- OPHVARDA-1695: Linkkien saavutettavuuskorjauksia
+- OPHVARDA-2080: Testejä tärkeimmille komponenteille
+
 1.5.8 (04.03.2021)
 - OPHVARDA-2209: Lähdejärjestelmä-kenttä vakatiedoille
 - OPHVARDA-2210: Toimipaikkalistan päivitys PAOS-linkityksen jälkeen
