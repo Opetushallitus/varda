@@ -5,9 +5,11 @@ import requests
 from django.conf import settings
 from time import sleep
 from urllib.parse import urlencode
+
+from varda.constants import OPINTOPOLKU_HEADERS
 from varda.models import Z1_OphAuthentication
 
-# Get an instance of a logger
+
 logger = logging.getLogger(__name__)
 
 """
@@ -26,20 +28,20 @@ def get_new_ticketing_granting_ticket(username, password, external_request):
         password = os.getenv('OPINTOPOLKU_PASSWORD', 'password')
 
     credentials = urlencode({
-        "username": username,
-        "password": password
+        'username': username,
+        'password': password
     })
 
-    headers = {"Content-Type": "application/x-www-form-urlencoded", "Caller-Id": "csc.varda"}
+    headers = {'Content-Type': 'application/x-www-form-urlencoded', **OPINTOPOLKU_HEADERS}
 
     try:
-        r = requests.post(settings.OPINTOPOLKU_DOMAIN + "/cas/v1/tickets", data=credentials, headers=headers)
+        r = requests.post(settings.OPINTOPOLKU_DOMAIN + '/cas/v1/tickets', data=credentials, headers=headers)
     except requests.exceptions.RequestException as e:
         logger.error('RequestException for /cas/v1/tickets. Error: {}.'.format(e))
         return None
 
     if r.status_code == 201:  # successful
-        ticket = r.headers["Location"]
+        ticket = r.headers['Location']
         if not external_request:  # internal request -> save to DB
             tgt = Z1_OphAuthentication.objects.get_or_create(id=1, defaults={'ticketing_granting_ticket': ''})[0]
             tgt.ticketing_granting_ticket = ticket
@@ -47,20 +49,20 @@ def get_new_ticketing_granting_ticket(username, password, external_request):
         return ticket
     else:
         if username is None:
-            username = "None"  # For printing
-        logger.warning("Error fetching tgt for user: " + username + ", status code: " + str(r.status_code) + ". " + str(r.content))
+            username = 'None'  # For printing
+        logger.warning('Error fetching tgt for user: ' + username + ', status code: ' + str(r.status_code) + '. ' + str(r.content))
         return None
 
 
 def get_service_ticket(service_suffix, username, password, external_request):
-    service_ticket_url = "service=" + settings.OPINTOPOLKU_DOMAIN + "/" + service_suffix
+    service_ticket_url = 'service=' + settings.OPINTOPOLKU_DOMAIN + '/' + service_suffix
 
     LOOP_NUMBER = 0
     MAX_NO_OF_LOOPS = 4
 
     while LOOP_NUMBER < MAX_NO_OF_LOOPS:
         LOOP_NUMBER += 1
-        headers = {"Content-Type": "application/x-www-form-urlencoded", "Caller-Id": "csc.varda"}
+        headers = {'Content-Type': 'application/x-www-form-urlencoded', **OPINTOPOLKU_HEADERS}
         if external_request:
             ticket_granting_ticket_location = get_new_ticketing_granting_ticket(username, password, external_request)
         else:
@@ -92,16 +94,16 @@ def get_service_ticket(service_suffix, username, password, external_request):
         tgt.save()
         continue
 
-    logger.error("Error: Did not get a service ticket for user: " + str(username) + ". TGT: " + str(ticket_granting_ticket_location))
-    return ""
+    logger.error('Error: Did not get a service ticket for user: ' + str(username) + '. TGT: ' + str(ticket_granting_ticket_location))
+    return ''
 
 
 def get_authentication_header(service_name, username=None, password=None, external_request=True):
     service_ticket_url = get_service_ticket(service_name + '/j_spring_cas_security_check', username, password, external_request)
     # Add 'clientSubSystemCode' rajapintakutsuihin: https://confluence.csc.fi/pages/viewpage.action?pageId=50858064
     # https://github.com/Opetushallitus/dokumentaatio/blob/master/http.md
-    return {"CasSecurityTicket": service_ticket_url, "Caller-Id": "csc.varda", "Content-Type": "application/json"}
+    return {'CasSecurityTicket': service_ticket_url, 'Content-Type': 'application/json', **OPINTOPOLKU_HEADERS}
 
 
 def get_contenttype_header():
-    return {"Content-Type": "application/json", "Caller-Id": "csc.varda"}
+    return {'Content-Type': 'application/json', **OPINTOPOLKU_HEADERS}

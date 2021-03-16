@@ -4,6 +4,7 @@ import sys
 from rest_framework import status
 
 from varda.cas.cas_settings import settings
+from varda.constants import OPINTOPOLKU_HEADERS
 
 
 def load_in_new_module(library_name, name):
@@ -20,7 +21,7 @@ cas_oppija_views = load_in_new_module('django_cas_ng.views', 'views')
 cas_oppija_utils = load_in_new_module('django_cas_ng.utils', 'utils')
 cas_oppija_backends = load_in_new_module('django_cas_ng.backends', 'backends')
 
-# Overriding these for caller-id decoration
+# Overriding these for Caller-Id and CSRF decoration
 cas = load_in_new_module('cas', 'cas')
 requests_api = load_in_new_module('requests.api', 'requests_api')
 
@@ -28,7 +29,7 @@ requests_api = load_in_new_module('requests.api', 'requests_api')
 def get_with_callerid(url, params=None, **kwargs):
     kwargs.setdefault('allow_redirects', True)
     old_headers = kwargs.get('headers', {})
-    headers = {**old_headers, **{'Caller-Id': 'csc.varda'}}
+    headers = {**old_headers, **OPINTOPOLKU_HEADERS}
     return requests_api.request('get', url, params=params, headers=headers, **kwargs)
 
 
