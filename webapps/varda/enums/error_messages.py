@@ -46,6 +46,7 @@ class ErrorMessages(enum.Enum):
     DY007 = get_error_dict('DY007', 'Ensure that there are no more than {} digits in total.')
     DY008 = get_error_dict('DY008', 'Request was throttled. Try again in {} seconds.')
     DY009 = get_error_dict('DY009', 'Ensure that there are no more than {} digits before the decimal point.')
+    DY010 = get_error_dict('DY010', 'Request could not be parsed: {}')
 
     # VakaJarjestaja errors, prefix: VJ
     VJ001 = get_error_dict('VJ001', 'Cannot delete Vakajarjestaja. There are objects referencing it that need to be deleted first.')

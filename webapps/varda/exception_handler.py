@@ -40,6 +40,10 @@ error_templates = {
             'max_decimal_places': (re.compile(r'no more than ([\d]+) decimal places'), ErrorMessages.DY006.value),
             'max_digits': (re.compile(r'no more than ([\d]+) digits'), ErrorMessages.DY007.value),
             'max_whole_digits': (re.compile(r'no more than ([\d]+) digits'), ErrorMessages.DY009.value),
+            'parse_error': [
+                (re.compile(r'JSON parse error - (.*)'), ErrorMessages.DY010.value),
+                (re.compile(r'Multipart form parse error - (.*)'), ErrorMessages.DY010.value)
+            ],
         },
         UNIQUE: {
             'Combination of nimi and vakajarjestaja fields should be unique': ErrorMessages.TP001.value,
