@@ -96,8 +96,8 @@
     <mat-paginator [disabled]="isLoading | async"
                    [length]="resultCount"
                    [pageSize]="searchFilter.page_size"
-                   [pageIndex]="searchFilter.page - 1"
-                   (page)="changePage($event)">
+                   (page)="changePage($event)"
+                   #tiedonsiirtoPaginator>
     </mat-paginator>
   </div>
 </section>

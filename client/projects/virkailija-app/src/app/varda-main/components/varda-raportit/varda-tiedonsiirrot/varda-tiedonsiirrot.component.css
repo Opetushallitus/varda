@@ -22,3 +22,7 @@ app-varda-datepicker {
   display: block;
   min-width: 150px;
 }
+
+.tiedonsiirrot-section .mat-paginator-range-label {
+  display: none;
+}

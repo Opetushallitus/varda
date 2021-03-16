@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { VardaRaportitService } from 'projects/virkailija-app/src/app/core/services/varda-raportit.service';
 import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
@@ -15,7 +15,8 @@ import { filter } from 'rxjs/operators';
   styleUrls: [
     './varda-tiedonsiirrot.component.css',
     '../varda-raportit.component.css'
-  ]
+  ],
+  encapsulation: ViewEncapsulation.None,
 })
 export class VardaTiedonsiirrotComponent implements OnDestroy {
   i18n = VirkailijaTranslations;

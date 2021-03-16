@@ -2,7 +2,7 @@ import re
 
 from django.core.paginator import Paginator as DjangoPaginator
 from django.utils.functional import cached_property
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import PageNumberPagination, CursorPagination
 from rest_framework.exceptions import NotFound
 
 
@@ -88,3 +88,24 @@ class ChangeableReportingPageSizePagination(PageNumberPagination):
 
 class ChangeablePageSizePaginationLarge(ChangeablePageSizePagination):
     max_page_size = 500
+
+
+class ChangeablePageSizeCursorPagination(CursorPagination):
+    max_page_size = 100
+    page_size_query_param = 'page_size'
+
+
+class TimestampCursorPagination(ChangeablePageSizeCursorPagination):
+    ordering = '-timestamp'
+
+
+class TimestampReverseCursorPagination(ChangeablePageSizeCursorPagination):
+    ordering = 'timestamp'
+
+
+class DateCursorPagination(ChangeablePageSizeCursorPagination):
+    ordering = '-date'
+
+
+class DateReverseCursorPagination(ChangeablePageSizeCursorPagination):
+    ordering = 'date'

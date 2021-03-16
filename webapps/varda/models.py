@@ -1132,7 +1132,7 @@ class Z6_RequestLog(models.Model):
     lahdejarjestelma = models.CharField(null=True, max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
     vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='request_log', on_delete=models.PROTECT, null=True)
     user = models.ForeignKey(User, related_name='request_log', on_delete=models.PROTECT)
-    timestamp = models.DateTimeField(auto_now=True)
+    timestamp = models.DateTimeField(auto_now=True, db_index=True)
 
     def __str__(self):
         return str(self.id)

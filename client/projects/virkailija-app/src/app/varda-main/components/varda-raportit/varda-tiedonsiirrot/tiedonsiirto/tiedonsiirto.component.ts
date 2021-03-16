@@ -81,13 +81,14 @@ export class VardaTiedonsiirtoComponent extends AbstractTiedonsiirrotSectionsCom
     this.isLoading.next(true);
 
     if (firstPage) {
-      this.searchFilter.page = 1;
+      this.searchFilter.cursor = null;
+      this.searchFilter.reverse = false;
     }
 
     this.raportitService.getTiedonsiirrot(this.getSearchFilter()).subscribe({
       next: tiedonsiirrotData => {
+        this.parseCursors(tiedonsiirrotData);
         this.tiedonsiirrot = this.mapTiedonsiirrot(tiedonsiirrotData.results);
-        this.resultCount = tiedonsiirrotData.count;
       },
       error: (err) => this.errorService.handleError(err, this.snackBarService)
     }).add(() => setTimeout(() => this.isLoading.next(false), 500));

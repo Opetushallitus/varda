@@ -338,11 +338,11 @@ class VardaViewsReportingTests(TestCase):
         # Must use vakajarjestajat filter if not admin or oph user
         resp_1 = client.get('/api/reporting/v1/tiedonsiirto/')
         assert_status_code(resp_1, status.HTTP_200_OK)
-        self.assertEqual(0, json.loads(resp_1.content)['count'])
+        self.assertEqual(0, len(json.loads(resp_1.content)['results']))
 
         resp_2 = client.get('/api/reporting/v1/tiedonsiirto/?vakajarjestajat=1')
         assert_status_code(resp_2, status.HTTP_200_OK)
-        self.assertEqual(1, json.loads(resp_2.content)['count'])
+        self.assertEqual(1, len(json.loads(resp_2.content)['results']))
 
     def test_api_tiedonsiirto_admin(self):
         client = SetUpTestClient('credadmin').client()
@@ -350,7 +350,7 @@ class VardaViewsReportingTests(TestCase):
 
         resp = client.get('/api/reporting/v1/tiedonsiirto/')
         assert_status_code(resp, status.HTTP_200_OK)
-        self.assertEqual(1, json.loads(resp.content)['count'])
+        self.assertEqual(1, len(json.loads(resp.content)['results']))
 
     def test_tiedonsiirto_yhteenveto(self):
         client = SetUpTestClient('tester2').client()

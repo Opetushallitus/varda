@@ -2,7 +2,8 @@ import datetime
 
 from dateutil.relativedelta import relativedelta
 from django.contrib.postgres.aggregates import StringAgg
-from django.db.models import Q, Case, Value, When, OuterRef, Subquery, CharField, F, DateField, Count, IntegerField, Exists
+from django.db.models import (Q, Case, Value, When, OuterRef, Subquery, CharField, F, DateField, Count, IntegerField,
+                              Exists)
 from django.db.models.functions import Cast
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -17,7 +18,8 @@ from rest_framework.viewsets import GenericViewSet
 from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
 from varda.enums.error_messages import ErrorMessages
 from varda.filters import TiedonsiirtoFilter
-from varda.pagination import ChangeablePageSizePagination
+from varda.pagination import (ChangeablePageSizePagination, TimestampCursorPagination, DateCursorPagination,
+                              DateReverseCursorPagination, TimestampReverseCursorPagination)
 from varda import filters
 from varda.serializers_reporting import (KelaEtuusmaksatusAloittaneetSerializer, KelaEtuusmaksatusLopettaneetSerializer,
                                          KelaEtuusmaksatusMaaraaikaisetSerializer,
@@ -752,9 +754,16 @@ class TiedonsiirtoViewSet(GenericViewSet, ListModelMixin):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TiedonsiirtoFilter
     permission_classes = (TiedonsiirtoPermissions,)
-    pagination_class = ChangeablePageSizePagination
 
     vakajarjestaja_filter = None
+
+    @property
+    def pagination_class(self):
+        reverse_param = self.request.query_params.get('reverse', 'False')
+        if reverse_param in ('true', 'True',):
+            return TimestampReverseCursorPagination
+        else:
+            return TimestampCursorPagination
 
     def get_queryset(self):
         queryset = Z6_RequestLog.objects.filter(self.vakajarjestaja_filter).order_by('-timestamp')
@@ -771,9 +780,16 @@ class TiedonsiirtoYhteenvetoViewSet(GenericViewSet, ListModelMixin):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TiedonsiirtoFilter
     permission_classes = (TiedonsiirtoPermissions,)
-    pagination_class = ChangeablePageSizePagination
 
     vakajarjestaja_filter = None
+
+    @property
+    def pagination_class(self):
+        reverse_param = self.request.query_params.get('reverse', 'False')
+        if reverse_param in ('true', 'True',):
+            return DateReverseCursorPagination
+        else:
+            return DateCursorPagination
 
     def get_queryset(self):
         queryset = (Z6_RequestLog.objects.filter(self.vakajarjestaja_filter)

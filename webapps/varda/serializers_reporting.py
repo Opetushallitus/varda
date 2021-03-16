@@ -176,6 +176,16 @@ class ErrorReportTyontekijatSerializer(AbstractErrorReportSerializer):
         fields = ('tyontekija_id', 'henkilo_id', 'henkilo_oid', 'etunimet', 'sukunimi', 'errors')
 
 
+class TiedonsiirtoListSerializer(serializers.ListSerializer):
+    def to_representation(self, data):
+        reverse_param = self.context['request'].query_params.get('reverse', 'False')
+        if reverse_param in ('true', 'True',):
+            # If reverse is activated, i.e. user has clicked to the last page (sorting by timestamp ascending),
+            # reverse the list so that results in a page are ordered by timestamp descending
+            data.reverse()
+        return super(TiedonsiirtoListSerializer, self).to_representation(data)
+
+
 class TiedonsiirtoSerializer(serializers.ModelSerializer):
     target = serializers.SerializerMethodField(read_only=True)
     user_id = serializers.IntegerField(read_only=True, source='user.id')
@@ -188,6 +198,7 @@ class TiedonsiirtoSerializer(serializers.ModelSerializer):
         fields = ('request_url', 'request_method', 'request_body', 'response_code', 'response_body',
                   'lahdejarjestelma', 'target', 'user_id', 'username', 'vakajarjestaja_id', 'vakajarjestaja_name',
                   'timestamp')
+        list_serializer_class = TiedonsiirtoListSerializer
 
     def get_target(self, instance):
         target_model = instance.target_model
@@ -218,3 +229,6 @@ class TiedonsiirtoYhteenvetoSerializer(serializers.Serializer):
     unsuccessful = serializers.IntegerField(read_only=True)
     user_id = serializers.IntegerField(read_only=True, source='user__id')
     username = serializers.CharField(read_only=True, source='user__username')
+
+    class Meta:
+        list_serializer_class = TiedonsiirtoListSerializer

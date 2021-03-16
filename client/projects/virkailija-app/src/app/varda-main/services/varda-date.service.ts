@@ -6,7 +6,7 @@ import { Moment } from 'moment';
 export class VardaDateService {
   public static vardaDefaultDateFormat = 'DD.MM.YYYY';
   public static uiDateFormat = 'd.M.yyyy';
-  public static uiLongTimeFormat = 'dd.MM.yyyy HH:mm:SS';
+  public static uiLongTimeFormat = 'dd.MM.yyyy HH:mm:ss';
   public static vardaApiDateFormat = 'YYYY-MM-DD';
   public static uiDateFormatMoment = 'D.M.YYYY';
   public static henkilostoReleaseDate = new Date('2020-09-01');

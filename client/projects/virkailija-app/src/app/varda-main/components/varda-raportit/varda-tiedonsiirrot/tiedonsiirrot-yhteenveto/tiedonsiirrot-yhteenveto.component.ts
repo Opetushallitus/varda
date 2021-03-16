@@ -45,13 +45,14 @@ export class VardaTiedonsiirrotYhteenvetoComponent extends AbstractTiedonsiirrot
     this.isLoading.next(true);
 
     if (firstPage) {
-      this.searchFilter.page = 1;
+      this.searchFilter.cursor = null;
+      this.searchFilter.reverse = false;
     }
 
     this.raportitService.getTiedonsiirrotYhteenveto(this.getSearchFilter()).subscribe({
       next: yhteenvetoData => {
+        this.parseCursors(yhteenvetoData);
         this.yhteenvedot = new MatTableDataSource(yhteenvetoData.results);
-        this.resultCount = yhteenvetoData.count;
       },
       error: (err) => this.errorService.handleError(err)
     }).add(() => setTimeout(() => this.isLoading.next(false), 500));

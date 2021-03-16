@@ -1,5 +1,5 @@
-import { OnDestroy, Component, OnInit } from '@angular/core';
-import { PageEvent } from '@angular/material/paginator';
+import { OnDestroy, Component, OnInit, ViewChild } from '@angular/core';
+import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { ActivatedRoute } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { Moment } from 'moment';
@@ -13,11 +13,17 @@ import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/
 import { Subscription, BehaviorSubject, Observable } from 'rxjs';
 import { KoodistoEnum } from 'varda-shared';
 import { VardaDateService } from '../../../services/varda-date.service';
+import { VardaPageDto } from '../../../../utilities/models/dto/varda-page-dto';
+import {
+  VardaTiedonsiirtoDTO,
+  VardaTiedonsiirtoYhteenvetoDTO
+} from '../../../../utilities/models/dto/varda-tiedonsiirto-dto.model';
 
 
 
 export interface TiedonsiirrotSearchFilter {
-  page: number;
+  cursor?: string;
+  reverse?: boolean;
   page_size: number;
   search?: string;
   vakajarjestajat?: Array<number>;
@@ -45,6 +51,7 @@ export interface TiedonsiirrotColumnFields {
   template: ''
 })
 export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, OnDestroy {
+  @ViewChild('tiedonsiirtoPaginator') tiedonsiirtoPaginator: MatPaginator;
   protected errorService: VardaErrorMessageService;
   abstract columnFields: Array<TiedonsiirrotColumnFields>;
   isLoading = new BehaviorSubject<boolean>(true);
@@ -57,10 +64,13 @@ export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, 
   vakajarjestajat$: Observable<Array<VardaVakajarjestajaUi>>;
   koodistoEnum = KoodistoEnum;
   resultCount = 0;
+  nextCursor = null;
+  prevCursor = null;
 
   searchFilter: TiedonsiirrotSearchFilter = {
     page_size: 20,
-    page: 1,
+    cursor: null,
+    reverse: null,
     vakajarjestajat: [],
     successful: null,
     timestamp_after: null,
@@ -106,10 +116,23 @@ export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, 
   }
 
   changePage(pageEvent: PageEvent) {
-    this.searchFilter.page = pageEvent.pageIndex + 1;
+    if (pageEvent.pageIndex === 0) {
+      // First page
+      this.searchFilter.reverse = false;
+      this.searchFilter.cursor = null;
+    } else if (pageEvent.pageIndex === pageEvent.previousPageIndex + 1) {
+      // Next page
+      this.searchFilter.cursor = this.nextCursor;
+    } else if (pageEvent.pageIndex > pageEvent.previousPageIndex) {
+      // More than next page -> last page
+      this.searchFilter.reverse = true;
+      this.searchFilter.cursor = null;
+    } else if (pageEvent.pageIndex < pageEvent.previousPageIndex) {
+      // Previous page
+      this.searchFilter.cursor = this.prevCursor;
+    }
+
     this.searchFilter.page_size = pageEvent.pageSize;
-
-
     this.getPage();
   }
 
@@ -125,7 +148,6 @@ export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, 
   getSearchFilter(): TiedonsiirrotSearchFilter {
     const returnFilter: TiedonsiirrotSearchFilter = {
       page_size: 20,
-      page: 1,
     };
 
     Object.entries(this.searchFilter).filter(([key, value]) => typeof value === 'boolean' || value)
@@ -139,8 +161,44 @@ export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, 
       returnFilter.timestamp_before = (returnFilter.timestamp_before as Moment).format(`${VardaDateService.vardaApiDateFormat}T23:59:59`);
     }
 
-
     return returnFilter;
+  }
+
+  parseCursors(data: VardaPageDto<VardaTiedonsiirtoDTO | VardaTiedonsiirtoYhteenvetoDTO>) {
+    const nextCursor = this.extractCursorFromUrl(data.next);
+    const prevCursor = this.extractCursorFromUrl(data.previous);
+
+    if (this.searchFilter.reverse) {
+      this.nextCursor = prevCursor;
+      this.prevCursor = nextCursor;
+    } else {
+      this.nextCursor = nextCursor;
+      this.prevCursor = prevCursor;
+    }
+
+    if (this.prevCursor) {
+      // If there is a previous page, pretend that we are on page 2 so we can move to
+      // previous page (1) or first page (0)
+      this.tiedonsiirtoPaginator.pageIndex = 2;
+    } else {
+      // If there is no previous page, we are on the first page
+      this.tiedonsiirtoPaginator.pageIndex = 0;
+    }
+
+    this.resultCount = (this.tiedonsiirtoPaginator.pageIndex + 1) * this.searchFilter.page_size;
+    if (this.nextCursor) {
+      // If there is next page available, pretend that there are two more pages available so we can distinguish
+      // between moving to the next page (current index + 1) vs. moving to the last page (current index + 2)
+      this.resultCount = this.resultCount + 2 * this.searchFilter.page_size;
+    }
+  }
+
+  private extractCursorFromUrl(url: string): string {
+    if (!url || typeof url !== 'string') {
+      return null;
+    }
+    const cursorRegex = /cursor=(.*?)(&|$)/;
+    return unescape(url.match(cursorRegex)[1]);
   }
 
   abstract getPage(firstPage?: boolean): void;
