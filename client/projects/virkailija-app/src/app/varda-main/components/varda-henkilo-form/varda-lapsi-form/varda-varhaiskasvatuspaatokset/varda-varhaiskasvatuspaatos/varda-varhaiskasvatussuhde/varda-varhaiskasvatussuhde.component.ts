@@ -127,6 +127,15 @@ export class VardaVarhaiskasvatussuhdeComponent extends VardaHenkiloFormAccordio
     } else {
       this.toimipaikat = filteredToimipaikat.toimipaikat;
     }
+
+    if (this.lapsi?.tallentaja_organisaatio_oid) {
+      const vakajarjestajaOID = this.vardaVakajarjestajaService.getSelectedVakajarjestaja().organisaatio_oid;
+      if (this.lapsi.paos_organisaatio_oid === vakajarjestajaOID) {
+        this.toimipaikat = this.toimipaikat.filter(toimipaikka => !toimipaikka.paos_organisaatio_url);
+      } else {
+        this.toimipaikat = this.toimipaikat.filter(toimipaikka => toimipaikka.paos_organisaatio_oid === this.lapsi.paos_organisaatio_oid);
+      }
+    }
   }
 
 
