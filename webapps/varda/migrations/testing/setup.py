@@ -1302,7 +1302,7 @@ def create_henkilot():
         henkilotunnus='gAAAAABfK90_SFbRRu7lXJaLvCe4SJMVG_oOdr1Ui8aSwWDNoTVLUqU-lWcceHV9LEQVN4TlSJhv2frKjrbyCokPLTyA1X-3hg==',
         henkilotunnus_unique_hash='5d92e7c9f631645e2e86e6636cb4f5ba270557f4ee27118ae1884fc354e2db1a',
         syntyma_pvm='1993-10-24',
-        henkilo_oid='1.2.246.562.24.2395579772672',
+        henkilo_oid='1.2.246.562.24.2395579772673',
         etunimet='Pentti Jr',
         kutsumanimi='Pentti',
         sukunimi='Kivimäki',

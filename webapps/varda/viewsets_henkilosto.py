@@ -122,6 +122,8 @@ class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
             except DjangoValidationError as error:
                 # Catch Tyontekija model's UniqueConstraint, otherwise it will return 500
                 if 'Tyontekija with this Henkilo and Vakajarjestaja already exists' in ' '.join(error.messages):
+                    # Try to return the existing Tyontekija object again
+                    self.return_tyontekija_if_already_created(validated_data, toimipaikka_oid)
                     raise ValidationError({'errors': [ErrorMessages.TY005.value]})
                 else:
                     raise error

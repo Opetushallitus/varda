@@ -97,6 +97,9 @@ class ErrorMessages(enum.Enum):
     HE011 = get_error_dict('HE011', 'kutsumanimi is not valid.')
     HE012 = get_error_dict('HE012', 'Name has disallowed characters.')
     HE013 = get_error_dict('HE013', 'Name is not in the correct format.')
+    HE014 = get_error_dict('HE014', 'Henkilo with this henkilotunnus already exists.')
+    HE015 = get_error_dict('HE015', 'Henkilo with this henkilo_oid already exists.')
+    HE016 = get_error_dict('HE016', 'Combination of henkilo_oid and henkilotunnus fields should be unique.')
 
     # Lapsi errors, prefix: LA
     LA001 = get_error_dict('LA001', 'Error while creating Lapsi.')

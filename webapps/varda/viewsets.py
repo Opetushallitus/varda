@@ -5,6 +5,7 @@ import pytz
 from django.contrib.auth.models import Group, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Prefetch, ProtectedError, Q, Subquery, Sum
 from django.http import Http404
@@ -944,8 +945,6 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
     create:
         Luo yksi uusi henkilö.
     """
-    filter_backends = ()
-    filterset_class = None
     queryset = Henkilo.objects.all().order_by('id')
     serializer_class = None
     permission_classes = (CustomModelPermissions,)
@@ -990,83 +989,40 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
             # Don't assign user specific permissions if user already has a permission via permission group
             assign_perm('view_henkilo', self.request.user, henkilo)
 
-    def perform_create(self, serializer):
+    def _get_henkilo_data_by_henkilotunnus(self, validated_data, henkilotunnus, etunimet, kutsumanimi, sukunimi):
+        validators.validate_henkilotunnus(henkilotunnus)
         """
-        We need either henkilotunnus or henkilo_oid (in case of "hetuton").
+        We are ready to create a new henkilo, let's first create a unique hash so that we are sure every
+        henkilotunnus exists in the DB only once, and definately not more often.
+        Return HTTP 200 if henkilo already exists in DB.
+        After that, let's encrypt henkilotunnus due to security reasons.
         """
-        validated_data = serializer.validated_data
-        etunimet = validated_data['etunimet']
-        kutsumanimi = validated_data['kutsumanimi']
-        sukunimi = validated_data['sukunimi']
-        validators.validate_kutsumanimi(etunimet, kutsumanimi)
+        henkilotunnus_unique_hash = hash_string(henkilotunnus)
+        henkilotunnus_encrypted = encrypt_henkilotunnus(henkilotunnus)
+        self.validate_henkilo_uniqueness_henkilotunnus(henkilotunnus_unique_hash, etunimet, sukunimi)
 
-        henkilotunnus = validated_data.get('henkilotunnus', None)
-        henkilo_oid = validated_data.get('henkilo_oid', None)
-        if henkilotunnus:
-            validators.validate_henkilotunnus(henkilotunnus)
+        # It is possible we get different hetu than user provided
+        henkilo_result = get_henkilo_by_henkilotunnus(henkilotunnus, etunimet, kutsumanimi, sukunimi)
+        henkilo_data = henkilo_result['result']
+        if henkilo_data and henkilo_data.get('hetu', None):
+            self.validate_henkilo_uniqueness_henkilotunnus(hash_string(henkilo_data['hetu']), etunimet, sukunimi)
+            henkilotunnus_unique_hash = hash_string(henkilo_data['hetu'])
+            henkilotunnus_encrypted = encrypt_henkilotunnus(henkilo_data['hetu'])
 
-            """
-            We are ready to create a new henkilo, let's first create a unique hash so that we are sure every
-            henkilotunnus exists in the DB only once, and definately not more often.
-            Return HTTP 200 if henkilo already exists in DB.
-            After that, let's encrypt henkilotunnus due to security reasons.
-            """
-            henkilotunnus_unique_hash = hash_string(henkilotunnus)
-            henkilotunnus_encrypted = encrypt_henkilotunnus(henkilotunnus)
-            self.validate_henkilo_uniqueness_henkilotunnus(henkilotunnus_unique_hash, etunimet, sukunimi)
+        validated_data['henkilotunnus_unique_hash'] = henkilotunnus_unique_hash
+        validated_data['henkilotunnus'] = henkilotunnus_encrypted
+        return henkilo_data
 
-            # It is possible we get different hetu than user provided
-            henkilo_result = get_henkilo_by_henkilotunnus(henkilotunnus, etunimet, kutsumanimi, sukunimi)
-            henkilo_data = henkilo_result['result']
-            if henkilo_data and henkilo_data.get('hetu', None):
-                self.validate_henkilo_uniqueness_henkilotunnus(hash_string(henkilo_data['hetu']), etunimet, sukunimi)
-                henkilotunnus_unique_hash = hash_string(henkilo_data['hetu'])
-                henkilotunnus_encrypted = encrypt_henkilotunnus(henkilo_data['hetu'])
-
-            serializer.validated_data['henkilotunnus_unique_hash'] = henkilotunnus_unique_hash
-            serializer.validated_data['henkilotunnus'] = henkilotunnus_encrypted
-
-        else:  # "henkilo_oid" in validated_data
-            validators.validate_henkilo_oid(henkilo_oid)
-            # checking we don't have this henkilo already (return HTTP 200 if so)
-            self.validate_henkilo_uniqueness_oid(henkilo_oid, etunimet, sukunimi)
-            henkilo_data = get_henkilo_data_by_oid(henkilo_oid)
-
-        self.validate_henkilo_data(henkilo_data)
-
-        # It is possible we get different oid than user provided
-        if henkilo_data and henkilo_data.get('oidHenkilo', None):
-            self.validate_henkilo_uniqueness_oid(henkilo_data['oidHenkilo'], etunimet, sukunimi)
-            serializer.validated_data['henkilo_oid'] = henkilo_data['oidHenkilo']
-
-        """
-        Save the new henkilo in DB
-        """
-
-        user = self.request.user
-        with transaction.atomic():
-            # Fetch henkilo-data from Oppijanumerorekisteri
-            if henkilotunnus and not henkilo_data:
-                henkilo_result = add_henkilo_to_oppijanumerorekisteri(etunimet, kutsumanimi, sukunimi, henkilotunnus=henkilotunnus)
-                henkilo_data = henkilo_result['result']
-            if henkilo_oid and not henkilo_data:
-                # If adding henkilo to varda using oid he should always be found from ONR. Later adding henkilo with
-                # just name data might be possible here when manual yksilointi is functional.
-                raise ValidationError({'henkilo_oid': [ErrorMessages.HE003.value]})
-            # in order to return henkilo_oid and syntyma_pvm in create we need to wait until the new henkilo has been
-            # added to oppijanumerorekisteri before saving to database
-            if henkilo_data and 'henkilo_oid' not in serializer.validated_data:
-                serializer.validated_data['henkilo_oid'] = henkilo_data['oidHenkilo']
-                serializer.validated_data['syntyma_pvm'] = henkilo_data.get('syntymaaika', None)
-            saved_object = serializer.save(changed_by=user)
-
-            # Give user object level permissions to Henkilo object, until we can determine related VakaJarjestaja from
-            # Lapsi or Tyontekija object
-            self._assign_henkilo_permissions(user, saved_object)
-
-            henkilo_id = serializer.data['id']
-            if henkilo_data is not None:
-                save_henkilo_to_db(henkilo_id, henkilo_data)
+    def _get_henkilo_data_by_oid(self, henkilo_oid, etunimet, sukunimi):
+        validators.validate_henkilo_oid(henkilo_oid)
+        # checking we don't have this henkilo already (return HTTP 200 if so)
+        self.validate_henkilo_uniqueness_oid(henkilo_oid, etunimet, sukunimi)
+        henkilo_data = get_henkilo_data_by_oid(henkilo_oid)
+        if not henkilo_data:
+            # If adding henkilo to varda using OID they should always be found from ONR. Later adding henkilo with
+            # just name data might be possible here when manual yksilointi is functional.
+            raise ValidationError({'henkilo_oid': [ErrorMessages.HE003.value]})
+        return henkilo_data
 
     def validate_henkilo_data(self, henkilo_data):
         """
@@ -1078,6 +1034,71 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
                                     henkilo_data.get('yksiloity', None))
             if not is_hetullinen and not is_hetuton_yksiloity:
                 raise ValidationError({'henkilo_oid': [ErrorMessages.HE002.value, ]})
+
+    def _handle_validation_error(self, validation_error, henkilotunnus, henkilo_oid, etunimet, sukunimi):
+        # If same henkilo was created twice in a short period of time, it is possible that henkilo is already
+        # created (because we wait for ONR response) and ValidationError is thrown, so check uniqueness again
+        if henkilotunnus:
+            self.validate_henkilo_uniqueness_henkilotunnus(hash_string(henkilotunnus), etunimet, sukunimi)
+        else:
+            self.validate_henkilo_uniqueness_oid(henkilo_oid, etunimet, sukunimi)
+        if ('Henkilo with this Henkilo oid and Henkilotunnus unique hash already exists' in
+                ' '.join(validation_error.messages)):
+            # Catch unique_constraint error so that 500 error is not returned
+            raise ValidationError({'errors': [ErrorMessages.TY005.value]})
+        raise validation_error
+
+    def perform_create(self, serializer):
+        validated_data = serializer.validated_data
+        etunimet = validated_data['etunimet']
+        kutsumanimi = validated_data['kutsumanimi']
+        sukunimi = validated_data['sukunimi']
+        validators.validate_kutsumanimi(etunimet, kutsumanimi)
+
+        henkilotunnus = validated_data.get('henkilotunnus', None)
+        henkilo_oid = validated_data.get('henkilo_oid', None)
+        if henkilotunnus:
+            henkilo_data = self._get_henkilo_data_by_henkilotunnus(validated_data, henkilotunnus, etunimet,
+                                                                   kutsumanimi, sukunimi)
+        else:
+            # Henkilo created using henkilo_oid
+            henkilo_data = self._get_henkilo_data_by_oid(henkilo_oid, etunimet, sukunimi)
+
+        self.validate_henkilo_data(henkilo_data)
+
+        # It is possible we get different oid than user provided
+        if henkilo_data and henkilo_data.get('oidHenkilo', None):
+            self.validate_henkilo_uniqueness_oid(henkilo_data['oidHenkilo'], etunimet, sukunimi)
+
+        user = self.request.user
+        with transaction.atomic():
+            if henkilotunnus and not henkilo_data:
+                # Create henkilo in Oppijanumerorekisteri if it did not exist there
+                henkilo_result = add_henkilo_to_oppijanumerorekisteri(etunimet, kutsumanimi, sukunimi,
+                                                                      henkilotunnus=henkilotunnus)
+                henkilo_data = henkilo_result['result']
+
+            # In order to return henkilo_oid and syntyma_pvm in create we need to wait until the new henkilo has been
+            # added to oppijanumerorekisteri before saving to database
+            if henkilo_data:
+                validated_data['etunimet'] = henkilo_data.get('etunimet', etunimet)
+                validated_data['kutsumanimi'] = henkilo_data.get('kutsumanimi', kutsumanimi)
+                validated_data['sukunimi'] = henkilo_data.get('sukunimi', sukunimi)
+                validated_data['syntyma_pvm'] = henkilo_data.get('syntymaaika', None)
+                validated_data['henkilo_oid'] = henkilo_data.get('oidHenkilo', henkilo_oid)
+
+            try:
+                saved_object = serializer.save(changed_by=user)
+                # Give user object level permissions to Henkilo object, until we can determine related VakaJarjestaja
+                # from Lapsi or Tyontekija object
+                self._assign_henkilo_permissions(user, saved_object)
+
+                henkilo_id = serializer.data['id']
+                if henkilo_data is not None:
+                    # Save remaining ONR-related data for Henkilo
+                    save_henkilo_to_db(henkilo_id, henkilo_data)
+            except (ValidationError, DjangoValidationError) as validation_error:
+                self._handle_validation_error(validation_error, henkilotunnus, henkilo_oid, etunimet, sukunimi)
 
 
 @auditlogclass

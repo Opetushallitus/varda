@@ -7,12 +7,14 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.db.models import CheckConstraint, UniqueConstraint, F, Q
 import django.utils.timezone
+from rest_framework.exceptions import ValidationError
 from simple_history.models import HistoricalRecords
 
 from varda import validators
 from varda.constants import JARJESTAMISMUODOT_YKSITYINEN
 from varda.enums.aikaleima_avain import AikaleimaAvain
 from varda.enums.batcherror_type import BatchErrorType
+from varda.enums.error_messages import ErrorMessages
 from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
 from varda.enums.ytj import YtjYritysmuoto
 
@@ -282,6 +284,22 @@ class Henkilo(models.Model):
     @_history_user.setter
     def _history_user(self, value):
         self.changed_by = value
+
+    def validate_unique(self, *args, **kwargs):
+        super(Henkilo, self).validate_unique(*args, **kwargs)
+        if (self.henkilotunnus_unique_hash and
+                Henkilo.objects.filter(~Q(pk=self.pk) &
+                                       Q(henkilotunnus_unique_hash=self.henkilotunnus_unique_hash)).exists()):
+            # Validate hetu uniqueness if hetu is set
+            raise ValidationError({'henkilotunnus': [ErrorMessages.HE014.value]})
+        if (self.henkilo_oid and
+                Henkilo.objects.filter(~Q(pk=self.pk) & Q(henkilo_oid=self.henkilo_oid)).exists()):
+            # Validate OID uniqueness if OID is set
+            raise ValidationError({'henkilo_oid': [ErrorMessages.HE015.value]})
+
+    def save(self, *args, **kwargs):
+        self.validate_unique()
+        super(Henkilo, self).save(*args, **kwargs)
 
     def remove_address_information(self):
         self.kotikunta_koodi = ''
