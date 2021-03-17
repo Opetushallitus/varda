@@ -4,6 +4,7 @@ import sys
 from rest_framework import status
 
 from varda.cas.cas_settings import settings
+from varda.cas.misc_cas import is_local_url_decorator
 from varda.constants import OPINTOPOLKU_HEADERS
 
 
@@ -70,6 +71,7 @@ class OppijaCasLoginView(cas_oppija_views.LoginView):
 
         # Monkey patching django settings super class module uses
         cas_oppija_views.settings = settings
+        cas_oppija_views.is_local_url = is_local_url_decorator(cas_oppija_views.is_local_url)
         cas_oppija_utils.django_settings = settings
         cas_oppija_views.get_cas_client = cas_oppija_utils.get_cas_client
         self.get = get_login_forward_decorator(self.get)

@@ -15,10 +15,10 @@ Including another URLconf
 """
 import re
 
-import django_cas_ng.views as django_cas_ng_views
 from django.apps import apps
 from django.conf import settings
 
+import django_cas_ng.views as django_cas_ng_views
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, re_path
@@ -33,6 +33,7 @@ from rest_framework_nested import routers as nested_routers
 
 from varda import (views, viewsets, viewsets_admin, viewsets_reporting, viewsets_ui, viewsets_oppija,
                    viewsets_henkilosto, viewsets_julkinen)
+from varda.cas.misc_cas import is_local_url_decorator
 from varda.cas.oppija_cas_views import OppijaCasLoginView
 from varda.misc_viewsets import PublicSwaggerRenderer, PublicSchemaGenerator
 
@@ -224,6 +225,9 @@ model_visualization_view = xframe_options(
                                   if excluded_model_regex.fullmatch(model.__name__.lower())]}}
     )
 )
+
+# Monkey patch django_cas_ng.views.is_local_url function to prevent redirection to third party services
+django_cas_ng_views.is_local_url = is_local_url_decorator(django_cas_ng_views.is_local_url)
 
 urlpatterns = [
     re_path(r'^$', views.index, name='index'),
