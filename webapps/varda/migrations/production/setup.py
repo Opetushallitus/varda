@@ -46,7 +46,8 @@ def get_huoltajatiedot_tallentaja_permissions():
         'view_toimipaikka',
         'view_kielipainotus',
         'view_toiminnallinenpainotus',
-        'view_lapsi'
+        'view_lapsi',
+        'view_henkilo'
     ]
 
 
@@ -57,7 +58,8 @@ def get_huoltajatiedot_katselija_permissions():
         'view_toimipaikka',
         'view_kielipainotus',
         'view_toiminnallinenpainotus',
-        'view_lapsi'
+        'view_lapsi',
+        'view_henkilo'
     ]
 
 

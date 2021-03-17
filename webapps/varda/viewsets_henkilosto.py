@@ -1,6 +1,4 @@
-import functools
 import logging
-import operator
 
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -22,6 +20,7 @@ from varda.cache import (cached_retrieve_response, delete_cache_keys_related_mod
                          get_object_ids_for_user_by_model)
 from varda.enums.error_messages import ErrorMessages
 from varda.exceptions.conflict_error import ConflictError
+from varda.misc import flatten_nested_list
 from varda.misc_viewsets import IncreasedModifyThrottleMixin, ObjectByTunnisteMixin
 from varda.models import (VakaJarjestaja, TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
                           PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Z4_CasKayttoOikeudet)
@@ -36,7 +35,8 @@ from varda.permissions import (CustomModelPermissions, delete_object_permissions
                                get_permission_checked_pidempi_poissaolo_katselija_queryset_for_user,
                                get_permission_checked_pidempi_poissaolo_tallentaja_queryset_for_user,
                                toimipaikka_tallentaja_pidempipoissaolo_has_perm_to_add,
-                               get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus, is_oph_staff)
+                               get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus, is_oph_staff,
+                               assign_tyontekija_henkilo_permissions, assign_tyoskentelypaikka_henkilo_permissions)
 from varda.request_logging import request_log_viewset_decorator_factory
 from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, PalvelussuhdeSerializer,
                                           PidempiPoissaoloSerializer,
@@ -84,6 +84,9 @@ class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
         if tyontekija_obj:
             if toimipaikka_oid:
                 self._assign_toimipaikka_permissions(toimipaikka_oid, tyontekija_obj)
+                # Assign Toimipaikka level permissions to Henkilo object
+                assign_tyontekija_henkilo_permissions(tyontekija_obj, user=self.request.user,
+                                                      toimipaikka_oid=toimipaikka_oid)
             raise ConflictError(self.get_serializer(tyontekija_obj).data, status_code=status.HTTP_200_OK)
 
     def _assign_toimipaikka_permissions(self, toimipaikka_oid, tyontekija_obj):
@@ -132,6 +135,8 @@ class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
             delete_cache_keys_related_model('henkilo', tyontekija_obj.henkilo.id)
             delete_cache_keys_related_model('vakajarjestaja', tyontekija_obj.vakajarjestaja.id)
             cache.delete('vakajarjestaja_yhteenveto_' + str(tyontekija_obj.vakajarjestaja.id))
+
+            assign_tyontekija_henkilo_permissions(tyontekija_obj, user=user, toimipaikka_oid=toimipaikka_oid)
 
     def perform_update(self, serializer):
         user = self.request.user
@@ -554,6 +559,8 @@ class TyoskentelypaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
                 tutkinnot = Tutkinto.objects.filter(henkilo=tyontekija.henkilo, vakajarjestaja=tyontekija.vakajarjestaja)
                 [assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Tutkinto, tutkinto) for tutkinto in tutkinnot]
 
+                assign_tyoskentelypaikka_henkilo_permissions(tyoskentelypaikka)
+
             delete_cache_keys_related_model('palvelussuhde', tyoskentelypaikka.palvelussuhde.id)
             cache.delete('vakajarjestaja_yhteenveto_' + str(tyoskentelypaikka.palvelussuhde.tyontekija.vakajarjestaja.id))
             if tyoskentelypaikka.toimipaikka:
@@ -741,7 +748,7 @@ class TaydennyskoulutusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
                 tyontekija_id_list, toimipaikka_oid_list_list = get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus(
                     taydennyskoulutus.taydennyskoulutukset_tyontekijat.all()
                 )
-                toimipaikka_oid_list_flat = functools.reduce(operator.iconcat, toimipaikka_oid_list_list, [])
+                toimipaikka_oid_list_flat = flatten_nested_list(toimipaikka_oid_list_list)
                 [assign_object_permissions_to_taydennyskoulutus_groups(toimipaikka_oid, Taydennyskoulutus, taydennyskoulutus)
                  for toimipaikka_oid in set(toimipaikka_oid_list_flat)]
 

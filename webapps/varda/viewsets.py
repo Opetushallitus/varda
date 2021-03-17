@@ -58,7 +58,8 @@ from varda.permissions import (throw_if_not_tallentaja_permissions,
                                grant_or_deny_access_to_paos_toimipaikka, user_has_tallentaja_permission_in_organization,
                                auditlogclass, save_audit_log, ToimipaikkaPermissions, get_toimipaikka_or_404, auditlog,
                                is_oph_staff, user_permission_groups_in_organizations,
-                               user_permission_groups_in_organization, CustomObjectPermissions)
+                               user_permission_groups_in_organization, CustomObjectPermissions,
+                               assign_lapsi_henkilo_permissions, assign_vakasuhde_henkilo_permissions)
 from varda.related_object_validations import (check_toimipaikka_and_vakajarjestaja_have_oids,
                                               toimipaikka_is_valid_to_organisaatiopalvelu,
                                               check_overlapping_toiminnallinen_painotus,
@@ -978,9 +979,16 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
         henkilo_etunimet_list = henkilo.etunimet.split(' ')
         henkilo_etunimet_list_lowercase = [x.lower() for x in henkilo_etunimet_list]
         if set(etunimet_list_lowercase) & set(henkilo_etunimet_list_lowercase) or sukunimi.lower() == henkilo.sukunimi.lower():
+            # Set permissions to Henkilo object for current user
+            self._assign_henkilo_permissions(self.request.user, henkilo)
             raise ConflictError(self.get_serializer(henkilo).data, status_code=status.HTTP_200_OK)
         else:
             raise ValidationError({'errors': [ErrorMessages.HE001.value]})
+
+    def _assign_henkilo_permissions(self, user, henkilo):
+        if not user.has_perm('view_henkilo', henkilo):
+            # Don't assign user specific permissions if user already has a permission via permission group
+            assign_perm('view_henkilo', self.request.user, henkilo)
 
     def perform_create(self, serializer):
         """
@@ -1036,7 +1044,6 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
         """
 
         user = self.request.user
-        group = Group.objects.get(name='vakajarjestaja_view_henkilo')
         with transaction.atomic():
             # Fetch henkilo-data from Oppijanumerorekisteri
             if henkilotunnus and not henkilo_data:
@@ -1052,7 +1059,10 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
                 serializer.validated_data['henkilo_oid'] = henkilo_data['oidHenkilo']
                 serializer.validated_data['syntyma_pvm'] = henkilo_data.get('syntymaaika', None)
             saved_object = serializer.save(changed_by=user)
-            assign_perm('view_henkilo', group, saved_object)
+
+            # Give user object level permissions to Henkilo object, until we can determine related VakaJarjestaja from
+            # Lapsi or Tyontekija object
+            self._assign_henkilo_permissions(user, saved_object)
 
             henkilo_id = serializer.data['id']
             if henkilo_data is not None:
@@ -1145,6 +1155,8 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
         else:
             lapsi_obj = lapsi_qs.first()
         if lapsi_obj:
+            # Assign Toimipaikka level permissions to Henkilo object
+            assign_lapsi_henkilo_permissions(lapsi_obj, user=user)
             raise ConflictError(self.get_serializer(lapsi_obj).data, status_code=status.HTTP_200_OK)
         return serializer.save(changed_by=user)
 
@@ -1204,6 +1216,8 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
                 assign_perm('view_lapsi', user, saved_object)
                 assign_perm('change_lapsi', user, saved_object)
                 assign_perm('delete_lapsi', user, saved_object)
+
+                assign_lapsi_henkilo_permissions(saved_object, user=user)
         except IntegrityError as e:
             logger.error('IntegrityError at LapsiViewSet: {}'.format(e))
             raise CustomServerErrorException
@@ -1565,6 +1579,8 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
             remove_perm('view_lapsi', user, lapsi_obj)
             remove_perm('change_lapsi', user, lapsi_obj)
             remove_perm('delete_lapsi', user, lapsi_obj)
+
+            assign_vakasuhde_henkilo_permissions(varhaiskasvatussuhde_obj)
 
     def perform_update(self, serializer):
         user = self.request.user

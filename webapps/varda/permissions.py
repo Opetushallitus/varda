@@ -795,3 +795,71 @@ def parse_toimipaikka_id_list(user, toimipaikka_ids_string, required_permission_
             toimipaikka_id_list.append(toimipaikka_id)
 
     return toimipaikka_id_list
+
+
+def assign_henkilo_permissions_for_vaka_groups(oid_list, henkilo_object):
+    permission_group_list = (Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                             Z4_CasKayttoOikeudet.KATSELIJA, Z4_CasKayttoOikeudet.TALLENTAJA,
+                             Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
+                             Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,)
+    _assign_henkilo_permissions_for_groups(permission_group_list, oid_list, henkilo_object)
+
+
+def assign_henkilo_permissions_for_tyontekija_groups(oid_list, henkilo_object):
+    permission_group_list = (Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
+                             Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,)
+    _assign_henkilo_permissions_for_groups(permission_group_list, oid_list, henkilo_object)
+
+
+def _assign_henkilo_permissions_for_groups(permission_group_list, oid_list, henkilo_object):
+    permission_name = 'view_henkilo'
+    view_henkilo_permission = Permission.objects.get(codename=permission_name)
+
+    group_name_list = [f'{group}_{oid}' for oid in oid_list for group in permission_group_list]
+    group_qs = Group.objects.filter(name__in=group_name_list)
+
+    for group in group_qs:
+        assign_perm(view_henkilo_permission, group, henkilo_object)
+
+
+def assign_lapsi_henkilo_permissions(lapsi, user=None, toimipaikka_oid=None):
+    if lapsi.vakatoimija:
+        oid_list = [lapsi.vakatoimija.organisaatio_oid]
+    elif lapsi.oma_organisaatio and lapsi.paos_organisaatio:
+        oid_list = [lapsi.oma_organisaatio.organisaatio_oid, lapsi.paos_organisaatio.organisaatio_oid]
+    else:
+        oid_list = []
+    if toimipaikka_oid:
+        oid_list.append(toimipaikka_oid)
+
+    henkilo = lapsi.henkilo
+    assign_henkilo_permissions_for_vaka_groups(oid_list, henkilo)
+
+    if user:
+        # Remove permission from user since they are now set on Vakajarjestaja level
+        remove_perm('view_henkilo', user, henkilo)
+
+
+def assign_vakasuhde_henkilo_permissions(vakasuhde):
+    oid_list = (vakasuhde.toimipaikka.organisaatio_oid,)
+    henkilo = vakasuhde.varhaiskasvatuspaatos.lapsi.henkilo
+    assign_henkilo_permissions_for_vaka_groups(oid_list, henkilo)
+
+
+def assign_tyontekija_henkilo_permissions(tyontekija, user=None, toimipaikka_oid=None):
+    oid_list = [tyontekija.vakajarjestaja.organisaatio_oid]
+    if toimipaikka_oid:
+        oid_list.append(toimipaikka_oid)
+
+    henkilo = tyontekija.henkilo
+    assign_henkilo_permissions_for_tyontekija_groups(oid_list, henkilo)
+
+    if user:
+        # Remove permission from user since they are now set on Vakajarjestaja level
+        remove_perm('view_henkilo', user, henkilo)
+
+
+def assign_tyoskentelypaikka_henkilo_permissions(tyoskentelypaikka):
+    oid_list = (tyoskentelypaikka.toimipaikka.organisaatio_oid,)
+    henkilo = tyoskentelypaikka.palvelussuhde.tyontekija.henkilo
+    assign_henkilo_permissions_for_tyontekija_groups(oid_list, henkilo)

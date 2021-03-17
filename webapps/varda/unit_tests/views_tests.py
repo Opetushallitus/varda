@@ -16,7 +16,8 @@ from varda.models import (VakaJarjestaja, Toimipaikka, PaosOikeus, Huoltaja, Huo
                           Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto, ToiminnallinenPainotus,
                           KieliPainotus)
 from varda.permission_groups import assign_object_level_permissions
-from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, assert_validation_error, mock_admin_user
+from varda.unit_tests.test_utils import (assert_status_code, SetUpTestClient, assert_validation_error, mock_admin_user,
+                                         post_henkilo_to_get_permissions)
 
 # Well known test organizations (name corresponds to oid)
 test_org_34683023489 = '1.2.246.562.10.34683023489'  # Tester2 organisaatio
@@ -694,18 +695,18 @@ class VardaViewsTests(TestCase):
         assert_validation_error(resp, 'errors', 'MI015', 'Not found.')
 
     def test_hae_henkilo_found_oid(self):
-        data = {'henkilo_oid': '1.2.246.562.24.47279942650'}
+        data = {'henkilo_oid': '1.2.246.562.24.49084901392'}
         client = SetUpTestClient('tester').client()
+        resp = client.post('/api/v1/hae-henkilo/', data)
+        assert_status_code(resp, 200)
+        self.assertEqual(json.loads(resp.content)['url'], 'http://testserver/api/v1/henkilot/7/')
+
+    def test_hae_henkilo_found_henkilotunnus(self):
+        data = {'henkilotunnus': '010114A0013'}
+        client = SetUpTestClient('tester5').client()
         resp = client.post('/api/v1/hae-henkilo/', data)
         assert_status_code(resp, 200)
         self.assertEqual(json.loads(resp.content)['url'], 'http://testserver/api/v1/henkilot/2/')
-
-    def test_hae_henkilo_found_henkilotunnus(self):
-        data = {'henkilotunnus': '020476-321F'}
-        client = SetUpTestClient('tester').client()
-        resp = client.post('/api/v1/hae-henkilo/', data)
-        assert_status_code(resp, 200)
-        self.assertEqual(json.loads(resp.content)['url'], 'http://testserver/api/v1/henkilot/4/')
 
     def test_hae_henkilo_anonymous(self):
         data = {'henkilotunnus': '020476-321F'}
@@ -979,6 +980,7 @@ class VardaViewsTests(TestCase):
         henkilo_obj = Henkilo.objects.get(henkilo_oid=henkilo_oid)
 
         client = SetUpTestClient('tester2').client()
+        post_henkilo_to_get_permissions(client, henkilo_oid=henkilo_oid)
         lapsi = {
             'henkilo_oid': henkilo_oid,
             'vakatoimija_oid': '1.2.246.562.10.34683023489',
@@ -1172,6 +1174,7 @@ class VardaViewsTests(TestCase):
 
     def test_api_push_lapsi_incorrect_paos_2(self):
         client = SetUpTestClient('tester2').client()
+        post_henkilo_to_get_permissions(client, henkilo_id=1)
         lapsi = {
             'henkilo': '/api/v1/henkilot/1/',
             'oma_organisaatio': '/api/v1/vakajarjestajat/2/',
@@ -1195,6 +1198,7 @@ class VardaViewsTests(TestCase):
 
     def test_api_push_lapsi_correct_paos_2(self):
         client = SetUpTestClient('tester2').client()
+        post_henkilo_to_get_permissions(client, henkilo_id=1)
         lapsi = {
             'henkilo': '/api/v1/henkilot/1/',
             'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
@@ -1249,6 +1253,7 @@ class VardaViewsTests(TestCase):
 
     def test_api_push_paos_lapsi_duplicate(self):
         client = SetUpTestClient('tester2').client()
+        post_henkilo_to_get_permissions(client, henkilo_id=1)
         lapsi = {
             'henkilo': '/api/v1/henkilot/1/',
             'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
@@ -1271,6 +1276,7 @@ class VardaViewsTests(TestCase):
         user.groups.add(group_obj)
 
         client = SetUpTestClient('tester').client()
+        post_henkilo_to_get_permissions(client, henkilo_id=1)
         lapsi = {
             'henkilo': '/api/v1/henkilot/1/',
             'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
@@ -1515,6 +1521,7 @@ class VardaViewsTests(TestCase):
 
     def test_api_get_henkilo_syntyma_pvm(self):
         client = SetUpTestClient('tester').client()
+        post_henkilo_to_get_permissions(client, henkilo_id=1)
         resp = client.get('/api/v1/henkilot/1/')
         henkilo = json.loads(resp.content)
         self.assertEqual(henkilo['syntyma_pvm'], '1956-04-12')
@@ -3820,6 +3827,7 @@ class VardaViewsTests(TestCase):
         }
 
         client = SetUpTestClient('tester2').client()
+        post_henkilo_to_get_permissions(client, henkilo_oid=henkilo_oid)
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'MI013', 'Combination of lahdejarjestelma and tunniste fields should be unique.')
@@ -3834,6 +3842,7 @@ class VardaViewsTests(TestCase):
         }
 
         client = SetUpTestClient('tester2').client()
+        post_henkilo_to_get_permissions(client, henkilo_oid=henkilo_oid)
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'MI018', 'lahdejarjestelma field is required if tunniste field is not empty.')
@@ -3848,6 +3857,7 @@ class VardaViewsTests(TestCase):
         henkilo_oid = '1.2.246.562.24.4338669286936'
 
         client = SetUpTestClient('tester2').client()
+        post_henkilo_to_get_permissions(client, henkilo_oid=henkilo_oid)
         lapsi_post = {
             'henkilo_oid': henkilo_oid,
             'vakatoimija_oid': vakajarjestaja_oid,

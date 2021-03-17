@@ -8,7 +8,7 @@ from rest_framework import status
 
 from varda.misc import hash_string
 from varda.models import VakaJarjestaja, Tyontekija, Henkilo, Lapsi, Toimipaikka, Palvelussuhde
-from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient
+from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, post_henkilo_to_get_permissions
 
 
 class VardaHenkilostoViewSetTests(TestCase):
@@ -370,6 +370,8 @@ class VardaHenkilostoViewSetTests(TestCase):
         vakajarjestaja_oid = '1.2.246.562.10.93957375488'
         paos_vakajarjestaja_oid = '1.2.246.562.10.34683023489'
         paos_vakajarjestaja_id = VakaJarjestaja.objects.get(organisaatio_oid=paos_vakajarjestaja_oid)
+
+        post_henkilo_to_get_permissions(toimipaikka_client, henkilo_oid=henkilo_oid)
 
         lapsi = {
             'henkilo_oid': henkilo_oid,

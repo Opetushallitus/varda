@@ -100,12 +100,12 @@ def add_test_users():
     group_palvelukayttaja = Group.objects.get(name='vakajarjestaja_palvelukayttaja')
     group_palvelukayttaja_vakajarjestaja_1 = Group.objects.get(name='VARDA-PALVELUKAYTTAJA_1.2.246.562.10.34683023489')
     group_palvelukayttaja_vakajarjestaja_2 = Group.objects.get(name='VARDA-PALVELUKAYTTAJA_1.2.246.562.10.93957375488')
-    group_view_henkilo = Group.objects.get(name='vakajarjestaja_view_henkilo')
     group_tallentaja_vakajarjestaja_2 = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.93957375488')
     group_tallentaja_toimipaikka_1 = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.9395737548810')
     group_katselija_toimipaikka_4 = Group.objects.get(name='VARDA-KATSELIJA_1.2.246.562.10.9395737548811')
     group_tallentaja_vakajarjestaja_1 = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.34683023489')
     group_tallentaja_toimipaikka_5 = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.9395737548817')
+    group_tallentaja_toimipaikka_9395737548815 = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.9395737548815')
     group_paakayttaja_vakajarjestaja_1 = Group.objects.get(name='VARDA-PAAKAYTTAJA_1.2.246.562.10.34683023489')
     group_paakayttaja_vakajarjestaja_2 = Group.objects.get(name='VARDA-PAAKAYTTAJA_1.2.246.562.10.93957375488')
     group_huoltajatiedot_tallentaja_toimipaikka_1 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.9395737548810')
@@ -135,7 +135,6 @@ def add_test_users():
 
     user_tester = User.objects.create(username='tester', password='pbkdf2_sha256$120000$4IdDHxUJJSE6$N18zHZK02yA3KxNeTcDS4t6Ytsn2ZOLO6QLDXNT/8Yo=')
     Token.objects.create(user=user_tester, key='916b7ca8f1687ec3462b4a35d0c5c6da0dbeedf3')
-    user_tester.groups.add(group_view_henkilo)
     user_tester.groups.add(group_tallentaja_toimipaikka_1)
     user_tester.groups.add(group_katselija_toimipaikka_4)
     user_tester.groups.add(group_huoltajatiedot_tallentaja_toimipaikka_1)
@@ -145,63 +144,52 @@ def add_test_users():
     user_tester.user_permissions.add(add_toimipaikka_permission)  # Needed for varda/examples/add_toimipaikka -test
 
     user_tester2 = User.objects.create(username='tester2', password='pbkdf2_sha256$120000$gNFFj5K8ZgTu$quUQQlMXZCs+1mG+nbBpTS/VXRZAy47XkR7EoioNLkQ=')
-    user_tester2.groups.add(group_view_henkilo)
     user_tester2.groups.add(group_tallentaja_vakajarjestaja_1)
     user_tester2.groups.add(group_huoltajatiedot_tallentaja_vakajarjestaja_1)
     user_tester2.groups.add(group_toimijatiedot_tallentaja_34683023489)
     user_tester2.groups.add(group_raporttien_katselija_34683023489)
 
     user_tester3 = User.objects.create(username='tester3', password='pbkdf2_sha256$150000$kfJSJbENiF5k$tZ3aa9ErAy1Ciszx40KdRMU787p7HnKHjVOQ+lzDF7U=')
-    user_tester3.groups.add(group_view_henkilo)
     user_tester3.groups.add(group_paakayttaja_vakajarjestaja_2)
 
     user_tester4 = User.objects.create(username='tester4', password='pbkdf2_sha256$150000$LFrFAT6FakMM$VuLb0n11tVR0tlIBAmykLWP4an5zv4XWseGHJDlnsWk=')
-    user_tester4.groups.add(group_view_henkilo)
     user_tester4.groups.add(group_paakayttaja_vakajarjestaja_1)
 
     user_tester5 = User.objects.create(username='tester5', password='pbkdf2_sha256$150000$ZX2pJZZ34sR6$XUs0RUe6IZYNdn7vYxIvm+05Ruw4brTbYG70Q3oH31s=')
     user_tester5.groups.add(group_tallentaja_vakajarjestaja_2)
-    user_tester5.groups.add(group_view_henkilo)
 
     user_varda_testi = User.objects.create(username='varda-testi', password='pbkdf2_sha256$120000$0wwPCIArT7tR$OVGZGiJoJe7wqcP1CG4orfA31MUrMXlI5fHcnOUzcIw=')
     user_varda_testi.groups.add(group_palvelukayttaja)
-    user_varda_testi.groups.add(group_view_henkilo)
 
     user_tester_e2e = User.objects.create(username='tester-e2e', password='pbkdf2_sha256$120000$6ihvwx47epob$a2xDB6OLThL4eeEuMVw8+3QB1QBxi5hU2gZxnMwA2nE=')
     user_tester_e2e.groups.add(group_palvelukayttaja)
-    user_tester_e2e.groups.add(group_view_henkilo)
 
     user_palvelukayttaja_vakajarjestaja_1 = User.objects.create(username='pkvakajarjestaja1', password='pbkdf2_sha256$150000$rBZO8vnXaxun$MhKN0NOCnasVgrMsIkYfIBXaBDdRiRy8J7WQM62bARY=')
     user_palvelukayttaja_vakajarjestaja_1.groups.add(group_palvelukayttaja_vakajarjestaja_1)
-    user_palvelukayttaja_vakajarjestaja_1.groups.add(group_view_henkilo)
 
     user_palvelukayttaja_vakajarjestaja_2 = User.objects.create(username='pkvakajarjestaja2', password='pbkdf2_sha256$150000$ptRhdza1ttgB$IJdKerCPdzhC/wDME/rUVzFTKflh2coUuaCGWomg+Lo=')
     user_palvelukayttaja_vakajarjestaja_2.groups.add(group_palvelukayttaja_vakajarjestaja_2)
-    user_palvelukayttaja_vakajarjestaja_2.groups.add(group_view_henkilo)
 
     huoltajatietojen_tallentaja = User.objects.create(username='huoltajatietojen_tallentaja', password='pbkdf2_sha256$150000$S3mQ66CWYdSO$o9T08pdVyIZFqbdC8pK5cMk2O64d3xfQdw2x2vzr4M8=')
     huoltajatietojen_tallentaja.groups.add(group_huoltajatiedot_tallentaja_vakajarjestaja_1)
-    huoltajatietojen_tallentaja.groups.add(group_view_henkilo)
 
     vakatietojen_tallentaja = User.objects.create(username='vakatietojen_tallentaja', password='pbkdf2_sha256$150000$S3mQ66CWYdSO$o9T08pdVyIZFqbdC8pK5cMk2O64d3xfQdw2x2vzr4M8=')
     vakatietojen_tallentaja.groups.add(group_tallentaja_vakajarjestaja_1)
-    vakatietojen_tallentaja.groups.add(group_view_henkilo)
 
     vakatietojen_toimipaikka_tallentaja = User.objects.create(username='vakatietojen_toimipaikka_tallentaja', password='pbkdf2_sha256$150000$S3mQ66CWYdSO$o9T08pdVyIZFqbdC8pK5cMk2O64d3xfQdw2x2vzr4M8=')
     vakatietojen_toimipaikka_tallentaja.groups.add(group_tallentaja_toimipaikka_1)
-    vakatietojen_toimipaikka_tallentaja.groups.add(group_view_henkilo)
+
+    vakatietojen_toimipaikka_tallentaja_9395737548815 = User.objects.create(username='vakatietojen_toimipaikka_tallentaja_9395737548815', password='pbkdf2_sha256$150000$ntAfCrXVuXnI$A63mBzAb7EzHDdR6jTSGZDmmYj0OtfbgetIFbtBZXBo=')
+    vakatietojen_toimipaikka_tallentaja_9395737548815.groups.add(group_tallentaja_toimipaikka_9395737548815)
 
     user_tester7 = User.objects.create(username='tester7', password='pbkdf2_sha256$150000$9fuSiDHlpxu4$qpRt5+aPs8Fd9VsI0XPjOvMHCN7LF+VbSJLyIghrNks=')
     user_tester7.groups.add(group_huoltajatiedot_tallentaja_vakajarjestaja_2)
-    user_tester7.groups.add(group_view_henkilo)
 
     user_tester8 = User.objects.create(username='tester8', password='pbkdf2_sha256$150000$e5HLX1BadPnp$4H0r3yNEbiaTZ2yJ07HFK+8GsUM5JwKGNa/O727IOtI=')
     user_tester8.groups.add(group_tallentaja_toimipaikka_5)
-    user_tester8.groups.add(group_view_henkilo)
 
     user_tester9 = User.objects.create(username='tester9', password='pbkdf2_sha256$150000$ntAfCrXVuXnI$A63mBzAb7EzHDdR6jTSGZDmmYj0OtfbgetIFbtBZXBo=')
     user_tester9.groups.add(group_huoltajatiedot_tallentaja_toimipaikka_5)
-    user_tester9.groups.add(group_view_henkilo)
 
     tyontekija_tallentaja = User.objects.create(username='tyontekija_tallentaja', password='pbkdf2_sha256$150000$ntAfCrXVuXnI$A63mBzAb7EzHDdR6jTSGZDmmYj0OtfbgetIFbtBZXBo=')
     tyontekija_tallentaja.groups.add(group_tyontekija_tallentaja_vakajarjestaja1)
@@ -231,13 +219,11 @@ def add_test_users():
     taydennyskoulutus_toimipaikka_katselija.groups.add(group_taydennys_katselija_toimipaikka1)
 
     user_tester10 = User.objects.create(username='tester10', password='pbkdf2_sha256$150000$OULQV9qeoPsD$dH1fxZUMGFNjSM3xQzknGRJjndCUMNTj3+nyK+ET0Gc=')
-    user_tester10.groups.add(group_view_henkilo)
     user_tester10.groups.add(group_paakayttaja_vakajarjestaja_57294396385)
     user_tester10.groups.add(group_tallentaja_vakajarjestaja_57294396385)
     user_tester10.groups.add(group_huoltajatiedot_tallentaja_vakajarjestaja_57294396385)
 
     user_tester11 = User.objects.create(username='tester11', password='pbkdf2_sha256$150000$9HnlY5WRksmT$J5TselErYqb9w2upEbgzsFwJ8tvfbU5U8y7Zj5QQJPk=')
-    user_tester11.groups.add(group_view_henkilo)
     user_tester11.groups.add(group_tallentaja_vakajarjestaja_52966755795)
     user_tester11.groups.add(group_huoltajatiedot_tallentaja_vakajarjestaja_52966755795)
 
@@ -754,8 +740,7 @@ def create_toimipaikat_and_painotukset():
 
 
 def create_henkilot():
-    from django.contrib.auth.models import Group, User
-    from guardian.shortcuts import assign_perm
+    from django.contrib.auth.models import User
     from varda.models import Henkilo
     from varda.misc import hash_string
 
@@ -763,9 +748,9 @@ def create_henkilot():
     tester2_user = User.objects.get(username='tester2')
     tester10_user = User.objects.get(username='tester10')
     tester11_user = User.objects.get(username='tester11')
-    vakajarjestaja_view_henkilo_group = Group.objects.get(name='vakajarjestaja_view_henkilo')
 
-    henkilo_1 = Henkilo.objects.create(
+    # 120456-123C
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABbo6PKTYHJdBqTmqyMAOuRy1coM2sTowZQjpt9xXfcJD8A-d68wCsKUpBKRvBO1TbP52cwIwd4OLUqNGtPSgVv_rC4Xg==',
         henkilotunnus_unique_hash='c0fb153e45c67559455852a690ab27cb39dff5d9703963b115230c44ea7444fb',
         syntyma_pvm='1956-04-12',
@@ -783,7 +768,8 @@ def create_henkilot():
         changed_by=tester_user
     )
 
-    henkilo_2 = Henkilo.objects.create(
+    # 010114A0013
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABbo6TgMvkrjjiNaT1xGPvUk1rqbhfjqdI0y5P3nU2Xdp9b-2PYYY4nLezsmbYnEOk6knStVmKySdaZZ_1C9z9yr3b-zg==',
         henkilotunnus_unique_hash='4f69af70513bb6d4bc581137ecfb8582e079217b514ac0f3e7113f8a1367ff9f',
         syntyma_pvm='2014-01-01',
@@ -801,7 +787,8 @@ def create_henkilot():
         changed_by=tester_user
     )
 
-    henkilo_3 = Henkilo.objects.create(
+    # 120516A123V
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABbo6UfCt9BdvOHbmIJy8PP6PkX1AjRiqF1gIRyqJtOO2LXKvPln7ZKKm1VQ5wiavuQtTh0ZGOj2qnGIIwtHVLIyNF57w==',
         henkilotunnus_unique_hash='2a84ca78ca692571d8db910a39d2734c49fa6149afc36bf5d02162061c6b5343',
         syntyma_pvm='2016-05-12',
@@ -820,7 +807,7 @@ def create_henkilot():
     )
 
     # 020476-321F
-    henkilo_4 = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABbo6VJ1ljhlAW352ePbRt2_xz926jBsXlyFpzy2tkX8iqHhz7QVOeHHboUQZ-aZfqtXt8R0DLQSOXFF6D7DoBbYNXnAQ==',
         henkilotunnus_unique_hash='520313b75faa8b56589e39c32b550f9ccb96c5cdff4fc137d118d04446773fc2',
         syntyma_pvm='1976-04-02',
@@ -838,7 +825,8 @@ def create_henkilot():
         changed_by=tester_user
     )
 
-    henkilo_5 = Henkilo.objects.create(
+    # 120386-109V
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABbo6WBxWFYoGcrNFHRrASpVO5w8srRrqkj34EaAwXz1rJm2kApH8aYc4E0o7SswHsMLtGeWrSgpHI0av3q7tKErR2d_Q==',
         henkilotunnus_unique_hash='c4ca5208ff889171f704c288586833d902fb1286e638330975a66095dad6e9df',
         syntyma_pvm='1986-03-12',
@@ -856,7 +844,8 @@ def create_henkilot():
         changed_by=tester_user
     )
 
-    henkilo_6 = Henkilo.objects.create(
+    # 130266-915J
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABbo6WgYC0e12aJEf84P68IweQwa7wpnyoByGQsrtwM-McKU6SEXPB85_LObZa-DYWN4GQ7DOT2iqvsnkzgpW5BAHK5zA==',
         henkilotunnus_unique_hash='fda31b3595f9a7734f098bee191467825aeba25e2ee1811270801b9d015d7b62',
         syntyma_pvm='1966-02-13',
@@ -874,7 +863,8 @@ def create_henkilot():
         changed_by=tester_user
     )
 
-    henkilo_7 = Henkilo.objects.create(
+    # 170334-130B
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABbo6XWDtGt7DtER5vt3boz4t7zxK5F4LRnDplK8-DQ-pGVPBWLsATHP3CFGZrL1OIixjfI3dwCo1GW-9BfDj7AT5FZSw==',
         henkilotunnus_unique_hash='b91f70282091d40bc3e49a9dbe85c6a785d661690c4b9a95435356c4cc414417',
         syntyma_pvm='1934-03-17',
@@ -892,7 +882,8 @@ def create_henkilot():
         changed_by=tester2_user
     )
 
-    henkilo_8 = Henkilo.objects.create(
+    # 110548-316P
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABbo6X6VW8yiNVQqpFKGl_4JS-VEA12mMn-ajatHro5RR1_fYyocLrV1197TvFU5J0Yz51LZ6_1TyU7Erb3UasXVtUR6Q==',
         henkilotunnus_unique_hash='cb31a7a3d13fbb0e1419e5c4cdf8e93d6c67a2274659266a8d51c44896ddd292',
         syntyma_pvm='1948-05-11',
@@ -911,7 +902,7 @@ def create_henkilot():
     )
 
     # 120699-985W
-    henkilo_9 = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABdAQLPSh7CX77-E6zYwR7A8XmG-DuuIft_X-4ImEdKeMDEDnizZCAzOeUjVYl_uj3ihLh-fZBA7oRyBfFjLlMUiyFV6g==',
         henkilotunnus_unique_hash='6a9769730421705f70bac9a06ed68e70d1344c28a22878037b16a6099fb0f1a6',
         syntyma_pvm='1948-05-11',
@@ -929,7 +920,7 @@ def create_henkilot():
         changed_by=tester2_user
     )
 
-    henkilo_10 = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='',
         henkilotunnus_unique_hash='',
         syntyma_pvm='1948-05-11',
@@ -948,7 +939,7 @@ def create_henkilot():
     )
 
     # 220616A322J
-    henkilo_11 = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABenZxubIsJZrpDfyDegO9lStbOzddn4FYEbg3v-TS1xM0bMWXQ7m0LtMGL2pyQZPVpje6y2jDXxvpteLy1EoJOANG0Qw==',
         henkilotunnus_unique_hash='3b9ae94f89f3f56270b200485f3ecc47e966e542665402ebc30c1b77cebc2784',
         syntyma_pvm='2016-06-22',
@@ -967,7 +958,7 @@ def create_henkilot():
     )
 
     # 291090-398U
-    henkilo_12 = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABenaWG3mvY4m1yDf9vOD5kmM6zPAj0Lm9evTQrkRU4AuTEt0PPTmyxBaN7RAvo7HIycpmQzUKsFw-rrSpqwB9z8izObw==',
         henkilotunnus_unique_hash='71759fee33ea6ef42c7c0a064a9369370411d7d9a989fb58148379ee69634862',
         syntyma_pvm='1990-10-29',
@@ -986,7 +977,7 @@ def create_henkilot():
     )
 
     # 071119A884T
-    henkilo_13 = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABeqDLLKoxnhplzrNEgkPbv0TUQvS2dx_ft0lsIBrhlMJX7VLkUhhnCEtERjW_bZZAbgjavc9GGvFIk-6_bzGQv9qIqCQ==',
         henkilotunnus_unique_hash='c0a057089d3f1c7b5b6e03c07b8f9e3caea4a566aae3ba76b42509d47adcd55f',
         syntyma_pvm='1990-10-29',
@@ -1005,7 +996,7 @@ def create_henkilot():
     )
 
     # 291180-7071
-    henkilo_14 = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABeqDPZvYP3UiGMdjk3DUieipMnFY8yOQ0HgxkukZh9kTYvDmWjzvjZ2BcSQS9mMYWh2YAIQf8NQPkNCNmzmpir_ytkPA==',
         henkilotunnus_unique_hash='da3d4187e11092380164be1feb310544671c1f36d9164db7202340195a91f0c3',
         syntyma_pvm='1990-10-29',
@@ -1024,7 +1015,7 @@ def create_henkilot():
     )
 
     # 010280-952L Huoltaja jolla lapsi 010215A951T
-    henkilo_15 = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABdiMQHWzMtv1WMLLnWDaiTONIkyMsK5ugZUJm3Ke4d4PR8wLLUs27QVA-iK1t9Lev3zEwCwSbYiSp0Pw_tNix1Hx05mA==',
         henkilotunnus_unique_hash='94d31d49afa408f076996b5ba0317671f185f71b39ac0d1980f341b5b04fb07d',
         syntyma_pvm='1980-03-11',
@@ -1043,7 +1034,7 @@ def create_henkilot():
     )
 
     # huoltajan lapsi 010215A951T
-    henkilo_16 = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABdiMQH-7x0FQ8sN7JIIP1bFUgEBpWlqb7-fdHXWXVdpAU6iKR37gQYe48qLrKs-JRNm20gJQMkKNK3tY5nvYSN5y73rw==',
         henkilotunnus_unique_hash='eca80ee4b264ceb572db5a6244bae9c5141400921ec5b80a7d9a2262de495b11',
         syntyma_pvm='2018-03-11',
@@ -1062,7 +1053,7 @@ def create_henkilot():
     )
 
     # Henkilo (020400A925B) that is a Tyontekija and has a Palvelussuhde and a Tyoskentelypaikka
-    henkilo_925B = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABe1MWYFHThAaVTNtD0e5eqLrILocRrHLcnWIT3wWY1Q9HL81fFBqT6ZsynVVpG66tY--pZAFVzLTiJkZpeY5ykZWNlYA==',
         henkilotunnus_unique_hash=hash_string('020400A925B'),
         henkilo_oid='1.2.246.562.24.2431884920041',
@@ -1073,7 +1064,7 @@ def create_henkilot():
     )
 
     # Henkilo (020400A926C) that is a Tyontekija and has two Palvelussuhde
-    henkilo_926C = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABe1MWYXUPykNlwVdEnV-RGUEIP5SbXSfIMku8S4feee__16334ZkaMohmiiuS0M93jrsgHHFHQHIH2ZG-Rg1bh8w5dqQ==',
         henkilotunnus_unique_hash=hash_string('020400A926C'),
         etunimet='Bella',
@@ -1084,7 +1075,7 @@ def create_henkilot():
     )
 
     #  Henkilo (020400A927D) that is a Tyontekija
-    henkilo_927D = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABe1MWYNPBAkDqIfzXfqNd4bSTi11R3Y8KfyxAlhj0BKnKd1Z0u9oxiIkJ6P-y4QhUHsHB2jo0bbz67-WLDf-HLZK7UOg==',
         henkilotunnus_unique_hash=hash_string('020400A927D'),
         etunimet='Calervo',
@@ -1095,7 +1086,7 @@ def create_henkilot():
     )
 
     # Henkilo (020400A928E) that is a Tyontekija
-    henkilo_928E = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='020400A928E',
         henkilotunnus_unique_hash=hash_string('020400A928E'),
         henkilo_oid='1.2.246.562.24.2431884920044',
@@ -1106,7 +1097,7 @@ def create_henkilot():
     )
 
     # Henkilo (210700A919U) that is a Tyontekija
-    henkilo_919U = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='210700A919U',
         henkilotunnus_unique_hash=hash_string('210700A919U'),
         henkilo_oid='1.2.246.562.24.2431884920045',
@@ -1117,7 +1108,7 @@ def create_henkilot():
     )
 
     # 290116A331A
-    henkilo_331A = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABey190QZiEOSVXu4lhwaCn5xRAOdf3cwrqVrXHbIA8ToTidxonHNm3hhMQmJYCfe-X3VPQfv577HBlzq08zLrJ7lWtLw==',
         henkilotunnus_unique_hash='d0c2a82170fbb611ed9776dc21d8ed8451077dcb424c6e955c32e08514072e49',
         syntyma_pvm='2016-01-29',
@@ -1136,7 +1127,7 @@ def create_henkilot():
     )
 
     # 260980-642C
-    henkilo_642C = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABey2Iqol63qQBcaQtLfNlqZWT_4kdqpsLCFBQEMFFdEeMQdZH5Kol2-nDupuLlgbjo7pan-4ozE_559Za7i7FNRaguDw==',
         henkilotunnus_unique_hash='d393febc6ead367a3fa83e44d8df38df492f02821c2b572deb76ebde84fa143b',
         syntyma_pvm='1980-09-26',
@@ -1155,7 +1146,7 @@ def create_henkilot():
     )
 
     # 010116A807L
-    henkilo_807L = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABenXh49bqI1Qr_zfwoh9_EVKL3wDkWJY7HnV3anQwzO_cbiuWLsQ1q4yhBTcjeiv9SjxsQmyB5C0A6cGzrBwMdUSGXrQ==',
         henkilotunnus_unique_hash='e56b712fdeeec1887d56a77bfe79a586c2d58352b52ee517b6216589af86a81d',
         syntyma_pvm='2016-01-01',
@@ -1174,7 +1165,7 @@ def create_henkilot():
     )
 
     # 141117A020X
-    henkilo_020X = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABenXlgsNb5RnMtGvuteM0wjUe_Dy81APFQLcrq-fToYTeebR_MqgkjfBCqgmoLDHtRUIanaSjLLCbMz0YQS3Fkr8tdLw==',
         henkilotunnus_unique_hash='6131fbc7247d7da4df72ffbce1f878f8b658bb374f71478f344407fb36ca370d',
         syntyma_pvm='2017-11-14',
@@ -1193,7 +1184,7 @@ def create_henkilot():
     )
 
     # 130317A706Y
-    henkilo_706Y = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABenXpOeM3Vwk77oSwDnnAFReTSpJYSd1zXuOqPaScj9dXDaxF0GgqS87I0BzUpN250P77huqN_QZ6Vc_umILmuykGy3Q==',
         henkilotunnus_unique_hash='d1b5e8fe7bea1e5708c298f3d945398e9c567753c5cbd0ac1239e0e523ad5002',
         syntyma_pvm='2017-03-13',
@@ -1212,7 +1203,7 @@ def create_henkilot():
     )
 
     # 120617A273S
-    henkilo_273S = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABenXr9ZTjOCihMFsN_USeTeQ-GxhOarvvMGgbgknzGf1qthbVPhKTzhRsCvCEuqNkcbPmCIDp7giNDPGQ-13GSEBcnaA==',
         henkilotunnus_unique_hash='ba854e4ffaa6aad557c48c91a8e2d9482a9afe18306ca60538297b03de2a8f84',
         syntyma_pvm='2017-06-12',
@@ -1231,7 +1222,7 @@ def create_henkilot():
     )
 
     # 241217A5155
-    henkilo_5155 = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABenXx0UxAmdYg96djFHoCtRa55tAVZaxBw-exZdc7GCdWqhVwY06r8-3BOZBdNMHnTnJ-7UHYpyUMm_KTAclDJdob5eg==',
         henkilotunnus_unique_hash='346685bbd8d303bdca9f0445cb682962dc80992e89dbffaf75aa003908718284',
         syntyma_pvm='2017-12-24',
@@ -1250,7 +1241,7 @@ def create_henkilot():
     )
 
     # 130780-753Y
-    henkilo_753Y = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABenZ_1sORkNH6zABta2uQ8sV934GEnO3coo2UrJrOYoGiJEyCQKJRYD-Yx6d_ez0l4Vi9Bv9gt7FWdR14Ec4tTwPStow==',
         henkilotunnus_unique_hash='b9496e91fcd1f21558b80030c87b9dd01bacff5a28593b3bbe2885a8968e2a2a',
         syntyma_pvm='1980-07-13',
@@ -1269,7 +1260,7 @@ def create_henkilot():
     )
 
     # 010177-0520
-    henkilo_0520 = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABenaDaqT29a4sEhdR81vox-mOxW-JU_al1t3vHgqITdvvgZhY1tafdboKuzWbjVRoDKTLgumsBIfMcV_eBZlQz1d-8yg==',
         henkilotunnus_unique_hash='db98de5bffe5ad70633547c1bf909066547e12d0f3f6f4619d5e18a30563c9ab',
         syntyma_pvm='1977-01-01',
@@ -1288,7 +1279,7 @@ def create_henkilot():
     )
 
     # 241093-031J
-    henkilo_031J = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABenaGQh-7GdNDjqp2fpEKrmSfn7JJXkhKJOSkE5WIvHnax4g7bfHAj7Wzs5TA-NRl6J1sgYbSyktpweClcENeUrrmRjw==',
         henkilotunnus_unique_hash='20a1d791974eee539e683b94a85b45055a25130353e6255ac929caed5e71283a',
         syntyma_pvm='1993-10-24',
@@ -1307,7 +1298,7 @@ def create_henkilot():
     )
 
     # 240219A149T
-    henkilo_149T = Henkilo.objects.create(
+    Henkilo.objects.create(
         henkilotunnus='gAAAAABfK90_SFbRRu7lXJaLvCe4SJMVG_oOdr1Ui8aSwWDNoTVLUqU-lWcceHV9LEQVN4TlSJhv2frKjrbyCokPLTyA1X-3hg==',
         henkilotunnus_unique_hash='5d92e7c9f631645e2e86e6636cb4f5ba270557f4ee27118ae1884fc354e2db1a',
         syntyma_pvm='1993-10-24',
@@ -1325,22 +1316,16 @@ def create_henkilot():
         changed_by=tester10_user
     )
 
-    henkilo_list = {
-        henkilo_1, henkilo_2, henkilo_3, henkilo_4, henkilo_5, henkilo_6, henkilo_7, henkilo_8, henkilo_9, henkilo_10,
-        henkilo_11, henkilo_12, henkilo_13, henkilo_14, henkilo_15, henkilo_16, henkilo_331A, henkilo_642C,
-        henkilo_807L, henkilo_020X, henkilo_706Y, henkilo_273S, henkilo_5155, henkilo_753Y, henkilo_0520, henkilo_031J,
-        henkilo_925B, henkilo_926C, henkilo_927D, henkilo_928E, henkilo_919U, henkilo_149T
-    }
-    for henkilo in henkilo_list:
-        assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo)
-
 
 def create_lapset():
     from django.contrib.auth.models import User
     from varda.misc import hash_string
     from varda.models import Henkilo, Lapsi, Toimipaikka, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, VakaJarjestaja
-    from varda.permission_groups import (assign_object_level_permissions, assign_toimipaikka_vakatiedot_paos_permissions,
-                                         assign_vakajarjestaja_lapsi_paos_permissions, assign_vakajarjestaja_vakatiedot_paos_permissions,
+    from varda.permissions import assign_lapsi_henkilo_permissions, assign_vakasuhde_henkilo_permissions
+    from varda.permission_groups import (assign_object_level_permissions,
+                                         assign_toimipaikka_vakatiedot_paos_permissions,
+                                         assign_vakajarjestaja_lapsi_paos_permissions,
+                                         assign_vakajarjestaja_vakatiedot_paos_permissions,
                                          assign_toimipaikka_lapsi_paos_permissions)
 
     tester_user = User.objects.get(username='tester')
@@ -1514,6 +1499,11 @@ def create_lapset():
         lahdejarjestelma='1',
         tunniste='testing-lapsi15'
     )
+
+    lapsi_list = (lapsi_1, lapsi_2, lapsi_3, lapsi_4, lapsi_5, lapsi_6, lapsi_7, lapsi_8, lapsi_9, lapsi_331A,
+                  lapsi_807L, lapsi_020X, lapsi_706Y, lapsi_273S, lapsi_5155,)
+    for lapsi in lapsi_list:
+        assign_lapsi_henkilo_permissions(lapsi)
 
     vakapaatos_1 = Varhaiskasvatuspaatos.objects.create(
         lapsi=lapsi_1,
@@ -1920,6 +1910,12 @@ def create_lapset():
         lahdejarjestelma='1',
         tunniste='testing-varhaiskasvatussuhde15'
     )
+
+    vakasuhde_list = (vakasuhde_1, vakasuhde_2, vakasuhde_3, vakasuhde_4, vakasuhde_5, vakasuhde_6, vakasuhde_7,
+                      vakasuhde_8, vakasuhde_9, vakasuhde_331A, vakasuhde_807L, vakasuhde_020X, vakasuhde_706Y,
+                      vakasuhde_273S, vakasuhde_5155,)
+    for vakasuhde in vakasuhde_list:
+        assign_vakasuhde_henkilo_permissions(vakasuhde)
 
     assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Lapsi, lapsi_1)
     assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_1)
@@ -2845,7 +2841,6 @@ def create_onr_lapsi_huoltajat(create_all_vakajarjestajat=False):
 
     print('Adding lapset + huoltajat (from ONR) in test data.')
 
-    vakajarjestaja_view_henkilo_group = Group.objects.get(name='vakajarjestaja_view_henkilo')
     admin_user = User.objects.get(username='credadmin')
 
     henkilo_1, henkilo_1_created = Henkilo.objects.get_or_create(
@@ -2942,7 +2937,6 @@ def create_onr_lapsi_huoltajat(create_all_vakajarjestajat=False):
                                             group_huoltajatiedot_tallentaja, group_huoltajatiedot_katselija]
 
         if henkilo_1_created:
-            assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_1)
             lapsi_1 = Lapsi.objects.create(
                 henkilo=henkilo_1,
                 changed_by=admin_user
@@ -2951,7 +2945,6 @@ def create_onr_lapsi_huoltajat(create_all_vakajarjestajat=False):
                 assign_perm('change_lapsi', permission_group, lapsi_1)
 
         if henkilo_2_created:
-            assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_2)
             lapsi_2 = Lapsi.objects.create(
                 henkilo=henkilo_2,
                 changed_by=admin_user
@@ -2960,7 +2953,6 @@ def create_onr_lapsi_huoltajat(create_all_vakajarjestajat=False):
                 assign_perm('view_lapsi', permission_group, lapsi_2)
 
         if henkilo_3_created:
-            assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_3)
             lapsi_3 = Lapsi.objects.create(
                 henkilo=henkilo_3,
                 changed_by=admin_user
@@ -2969,7 +2961,6 @@ def create_onr_lapsi_huoltajat(create_all_vakajarjestajat=False):
                 assign_perm('view_lapsi', permission_group, lapsi_3)
 
         if henkilo_4_created:
-            assign_perm('view_henkilo', vakajarjestaja_view_henkilo_group, henkilo_4)
             lapsi_4 = Lapsi.objects.create(
                 henkilo=henkilo_4,
                 changed_by=admin_user
@@ -2986,6 +2977,7 @@ def create_henkilosto():
                               Toimipaikka, Tutkinto, Taydennyskoulutus, TaydennyskoulutusTyontekija,
                               TilapainenHenkilosto)
     from varda.misc import hash_string
+    from varda.permissions import assign_tyontekija_henkilo_permissions, assign_tyoskentelypaikka_henkilo_permissions
     from guardian.shortcuts import assign_perm
 
     group_tyontekija_tallentaja_vakajarjestaja_34683023489 = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.34683023489')
@@ -3099,6 +3091,10 @@ def create_henkilosto():
     [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja_93957375488, tyontekija_5) for crud_permission in crud_permissions_tyontekija]
     [assign_perm(crud_permission, group_tyontekija_tallentaja_toimipaikka_9395737548810, tyontekija_5) for crud_permission in crud_permissions_tyontekija]
     [assign_perm(crud_permission, group_tyontekija_katselija_toimipaikka_9395737548810, tyontekija_5) for crud_permission in crud_permissions_tyontekija]
+
+    tyontekija_list = (tyontekija_1, tyontekija_2, tyontekija_3, tyontekija_4, tyontekija_5,)
+    for tyontekija in tyontekija_list:
+        assign_tyontekija_henkilo_permissions(tyontekija)
 
     crud_permissions_palvelussuhde = ['view_palvelussuhde', 'change_palvelussuhde', 'add_palvelussuhde', 'delete_palvelussuhde']
     palvelussuhde_1 = Palvelussuhde.objects.create(
@@ -3311,6 +3307,11 @@ def create_henkilosto():
     [assign_perm(crud_permission, group_tyontekija_tallentaja_vakajarjestaja_93957375488, tyoskentelypaikka_5_2) for crud_permission in crud_permissions_tyoskentelypaikka]
     [assign_perm(crud_permission, group_tyontekija_tallentaja_toimipaikka_9395737548810, tyoskentelypaikka_5_2) for crud_permission in crud_permissions_tyoskentelypaikka]
     [assign_perm(crud_permission, group_tyontekija_katselija_toimipaikka_9395737548810, tyoskentelypaikka_5_2) for crud_permission in crud_permissions_tyoskentelypaikka]
+
+    tyoskentelypaikka_list = (tyoskentelypaikka_1, tyoskentelypaikka_1_1, tyoskentelypaikka_2, tyoskentelypaikka_2_1,
+                              tyoskentelypaikka_3, tyoskentelypaikka_5_1, tyoskentelypaikka_5_2,)
+    for tyoskentelypaikka in tyoskentelypaikka_list:
+        assign_tyoskentelypaikka_henkilo_permissions(tyoskentelypaikka)
 
     crud_permissions_tilapainen_henkilosto = ['view_tilapainenhenkilosto', 'change_tilapainenhenkilosto', 'add_tilapainenhenkilosto', 'delete_tilapainenhenkilosto']
     tilapainen_henkilosto_1 = TilapainenHenkilosto.objects.create(

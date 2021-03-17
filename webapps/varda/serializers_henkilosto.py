@@ -16,8 +16,8 @@ from varda.related_object_validations import (create_date_range, date_range_over
                                               check_if_admin_mutable_object_is_changed, check_overlapping_palvelussuhde,
                                               check_overlapping_tyoskentelypaikka, check_overlapping_pidempi_poissaolo,
                                               check_if_immutable_object_is_changed)
-from varda.serializers import (HenkiloHLField, VakaJarjestajaPermissionCheckedHLField,
-                               PermissionCheckedHLFieldMixin, ToimipaikkaPermissionCheckedHLField)
+from varda.serializers import (VakaJarjestajaPermissionCheckedHLField, PermissionCheckedHLFieldMixin,
+                               ToimipaikkaPermissionCheckedHLField, HenkiloPermissionCheckedHLField)
 
 from varda.serializers_common import OidRelatedField, TunnisteRelatedField
 from varda.validators import (validate_paattymispvm_same_or_after_alkamispvm, validate_paivamaara1_after_paivamaara2,
@@ -79,7 +79,7 @@ class OptionalToimipaikkaMixin(metaclass=serializers.SerializerMetaclass):
 
 class TyontekijaSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
-    henkilo = HenkiloHLField(view_name='henkilo-detail', required=False)
+    henkilo = HenkiloPermissionCheckedHLField(view_name='henkilo-detail', required=False)
     henkilo_oid = OidRelatedField(object_type=Henkilo,
                                   parent_field='henkilo',
                                   parent_attribute='henkilo_oid',
@@ -217,7 +217,7 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
 
 class TutkintoSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
-    henkilo = HenkiloHLField(view_name='henkilo-detail', required=False)
+    henkilo = HenkiloPermissionCheckedHLField(view_name='henkilo-detail', required=False)
     henkilo_oid = OidRelatedField(object_type=Henkilo,
                                   parent_field='henkilo',
                                   parent_attribute='henkilo_oid',

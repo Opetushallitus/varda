@@ -7,7 +7,8 @@ from django.contrib.auth.models import User, Group
 from django.test import TestCase
 from rest_framework import status
 
-from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, assert_validation_error
+from varda.unit_tests.test_utils import (assert_status_code, SetUpTestClient, assert_validation_error,
+                                         post_henkilo_to_get_permissions)
 from varda.models import (VakaJarjestaja, Henkilo, Tyontekija, Palvelussuhde, Tyoskentelypaikka, Toimipaikka,
                           TilapainenHenkilosto, Taydennyskoulutus, TaydennyskoulutusTyontekija, PidempiPoissaolo,
                           Tutkinto)
@@ -42,6 +43,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         client_tallentaja = SetUpTestClient('tyontekija_tallentaja').client()
         client_katselija = SetUpTestClient('tyontekija_katselija').client()
 
+        post_henkilo_to_get_permissions(client_tallentaja, henkilo_id=1)
         tyontekija = {
             'henkilo': '/api/v1/henkilot/1/',
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
@@ -110,6 +112,7 @@ class VardaHenkilostoViewSetTests(TestCase):
     def test_tyontekija_add_twice(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
 
+        post_henkilo_to_get_permissions(client, henkilo_id=1)
         tyontekija = {
             'henkilo': '/api/v1/henkilot/1/',
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
@@ -133,6 +136,7 @@ class VardaHenkilostoViewSetTests(TestCase):
     def test_tyontekija_add_twice_unique_constraint(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
 
+        post_henkilo_to_get_permissions(client, henkilo_id=1)
         tyontekija = {
             'henkilo': '/api/v1/henkilot/1/',
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
@@ -149,8 +153,10 @@ class VardaHenkilostoViewSetTests(TestCase):
     def test_api_push_tyontekija_correct_oid(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
 
+        henkilo_oid = '1.2.246.562.24.6815481182312'
+        post_henkilo_to_get_permissions(client, henkilo_oid=henkilo_oid)
         tyontekija = {
-            'henkilo_oid': '1.2.246.562.24.6815481182312',
+            'henkilo_oid': henkilo_oid,
             'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
             'tunniste': 'tunniste',
             'lahdejarjestelma': '1'
@@ -213,6 +219,7 @@ class VardaHenkilostoViewSetTests(TestCase):
     def test_api_push_tyontekija_lahdejarjestelma_tunniste_not_unique(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
 
+        post_henkilo_to_get_permissions(client, henkilo_id=1)
         tyontekija_1 = {
             'henkilo': '/api/v1/henkilot/1/',
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
@@ -272,6 +279,7 @@ class VardaHenkilostoViewSetTests(TestCase):
     def test_api_put_tyontekija_vakajarjestaja_edit(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
 
+        post_henkilo_to_get_permissions(client, henkilo_id=1)
         tyontekija = {
             'henkilo': '/api/v1/henkilot/1/',
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
@@ -293,10 +301,12 @@ class VardaHenkilostoViewSetTests(TestCase):
         lahdejarjestelma = '1'
         tunniste = 'testing-tyontekija98'
         new_tunniste = 'testing-tyontekija99'
+        henkilo_oid = '1.2.246.562.24.2434693467574'
 
         client = SetUpTestClient('tyontekija_tallentaja').client()
+        post_henkilo_to_get_permissions(client, henkilo_oid=henkilo_oid)
         tyontekija_post = {
-            'henkilo_oid': '1.2.246.562.24.2434693467574',
+            'henkilo_oid': henkilo_oid,
             'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
             'lahdejarjestelma': '1',
             'tunniste': tunniste
@@ -372,6 +382,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         }
 
         client = SetUpTestClient('tyontekija_tallentaja').client()
+        post_henkilo_to_get_permissions(client, henkilo_id=henkilo_obj.id)
         resp = client.post('/api/henkilosto/v1/tyontekijat/', tyontekija)
         assert_status_code(resp, status.HTTP_201_CREATED)
 
@@ -854,6 +865,7 @@ class VardaHenkilostoViewSetTests(TestCase):
     def test_api_push_tutkinto_correct(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
 
+        post_henkilo_to_get_permissions(client, henkilo_id=1)
         tyontekija = {
             'henkilo': '/api/v1/henkilot/1/',
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
@@ -875,8 +887,10 @@ class VardaHenkilostoViewSetTests(TestCase):
     def test_api_push_tutkinto_correct_oid(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
 
+        henkilo_oid = '1.2.246.562.24.6815481182312'
+        post_henkilo_to_get_permissions(client, henkilo_oid=henkilo_oid)
         tyontekija = {
-            'henkilo_oid': '1.2.246.562.24.6815481182312',
+            'henkilo_oid': henkilo_oid,
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
             'lahdejarjestelma': '1',
             'tunniste': 'tunniste'
@@ -896,6 +910,7 @@ class VardaHenkilostoViewSetTests(TestCase):
     def test_api_push_tutkinto_twice(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
 
+        post_henkilo_to_get_permissions(client, henkilo_id=10)
         tyontekija1 = {
             'henkilo': '/api/v1/henkilot/10/',
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
@@ -914,6 +929,8 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp_1 = client.post('/api/henkilosto/v1/tutkinnot/', tutkinto_1)
         assert_status_code(resp_1, status.HTTP_201_CREATED)
 
+        henkilo_oid = '1.2.246.562.24.6815481182312'
+        post_henkilo_to_get_permissions(client, henkilo_oid=henkilo_oid)
         tyontekija2 = {
             'henkilo_oid': '1.2.246.562.24.6815481182312',
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
@@ -955,6 +972,7 @@ class VardaHenkilostoViewSetTests(TestCase):
     def test_api_delete_tutkinto(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
 
+        post_henkilo_to_get_permissions(client, henkilo_id=1)
         tyontekija = {
             'henkilo': '/api/v1/henkilot/1/',
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
@@ -980,8 +998,10 @@ class VardaHenkilostoViewSetTests(TestCase):
     def test_api_delete_tutkinto_by_oid(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
 
+        henkilo_oid = '1.2.246.562.24.6815481182312'
+        post_henkilo_to_get_permissions(client, henkilo_oid=henkilo_oid)
         tyontekija = {
-            'henkilo_oid': '1.2.246.562.24.6815481182312',
+            'henkilo_oid': henkilo_oid,
             'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
             'tunniste': 'tunniste',
             'lahdejarjestelma': '1'
@@ -1007,6 +1027,7 @@ class VardaHenkilostoViewSetTests(TestCase):
     def test_api_delete_tutkinto_with_tutkinto_koodi_in_use(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()
 
+        post_henkilo_to_get_permissions(client, henkilo_id=1)
         tyontekija = {
             'henkilo': '/api/v1/henkilot/1/',
             'vakajarjestaja': '/api/v1/vakajarjestajat/1/',
@@ -1056,6 +1077,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             'tunniste': 'tunniste'
         }
         client = SetUpTestClient('tyontekija_tallentaja').client()
+        post_henkilo_to_get_permissions(client, henkilo_oid=henkilo_oid)
         resp = client.post('/api/henkilosto/v1/tyontekijat/', tyontekija)
         assert_status_code(resp, status.HTTP_201_CREATED)
 
@@ -2918,7 +2940,10 @@ class VardaHenkilostoViewSetTests(TestCase):
     def test_toimipaikka_tyontekija_create_all(self):
         client_tyontekija_tallentaja = SetUpTestClient('tyontekija_toimipaikka_tallentaja').client()
         client_tyontekija_katselija = SetUpTestClient('tyontekija_toimipaikka_katselija').client()
+
         henkilo_url = '/api/v1/henkilot/1/'
+        post_henkilo_to_get_permissions(client_tyontekija_tallentaja, henkilo_id=1)
+
         vakajarjestaja_url = '/api/v1/vakajarjestajat/2/'
         toimipaikka_oid = '1.2.246.562.10.9395737548810'
         # Tyontekija
@@ -3070,6 +3095,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         user.groups.add(permission_group)
 
         client = SetUpTestClient('tester2').client()
+        post_henkilo_to_get_permissions(client, henkilo_id=1)
 
         tyontekija_invalid_1 = {
             'henkilo': '/api/v1/henkilot/1/',

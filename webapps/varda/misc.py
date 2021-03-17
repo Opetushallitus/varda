@@ -1,6 +1,8 @@
+import functools
 import hashlib
 import json
 import logging
+import operator
 import re
 from collections import Counter
 
@@ -8,6 +10,7 @@ import requests
 from celery import shared_task
 from cryptography.fernet import Fernet, InvalidToken
 from django.conf import settings
+from django.core.paginator import Paginator
 from django.db import transaction
 from requests.exceptions import RequestException, ConnectionError, Timeout
 from rest_framework import status
@@ -341,3 +344,22 @@ def update_painotus_kytkin(toimipaikka, related_painotus_attribute, kytkin_name)
     if current_kytkin_value != new_kytkin_value:
         setattr(toimipaikka, kytkin_name, new_kytkin_value)
         toimipaikka.save()
+
+
+def flatten_nested_list(nested_list):
+    return functools.reduce(operator.iconcat, nested_list, [])
+
+
+def memory_efficient_queryset_iterator(queryset, chunk_size=1000):
+    """
+    When iterating large querysets (e.g. Henkilo.objects.all()) Django caches the results and uses a lot of memory.
+    Using a built in paginator helps with memory usage, but decreases performance.
+    :param queryset: QuerySet, must be ordered (e.g. Henkilo.objects.order_by('id))
+    :param chunk_size: default size of a single page
+    :return: returns a generator that can be iterated over (e.g. for instance in memory_efficient_queryset_iterator(..))
+    """
+    paginator = Paginator(queryset, chunk_size)
+    for page_number in paginator.page_range:
+        page = paginator.get_page(page_number)
+        for instance in page.object_list:
+            yield instance

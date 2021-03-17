@@ -2,7 +2,11 @@ import json
 import base64
 
 from django.contrib.auth.models import User
+from rest_framework import status
 from rest_framework.test import APIClient
+
+from varda.misc import hash_string, decrypt_henkilotunnus
+from varda.models import Henkilo
 
 
 def assert_status_code(response, expected_code, extra_message=None):
@@ -87,3 +91,29 @@ def mock_admin_user(username):
     mock_admin = User.objects.get(username=username)
     mock_admin.is_superuser = True
     mock_admin.save()
+
+
+def post_henkilo_to_get_permissions(client, henkilo_id=None, hetu=None, henkilo_oid=None):
+    if henkilo_id:
+        henkilo = Henkilo.objects.get(id=henkilo_id)
+    elif hetu:
+        henkilo = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string(hetu))
+    elif henkilo_oid:
+        henkilo = Henkilo.objects.get(henkilo_oid=henkilo_oid)
+    else:
+        return
+
+    henkilo_json = {
+        'etunimet': henkilo.etunimet,
+        'kutsumanimi': henkilo.kutsumanimi,
+        'sukunimi': henkilo.sukunimi,
+    }
+    if henkilo.henkilo_oid:
+        henkilo_json['henkilo_oid'] = henkilo.henkilo_oid
+    elif henkilo.henkilotunnus:
+        henkilo_json['henkilotunnus'] = decrypt_henkilotunnus(henkilo.henkilotunnus)
+    else:
+        return
+
+    resp = client.post('/api/v1/henkilot/', henkilo_json)
+    assert_status_code(resp, status.HTTP_200_OK)

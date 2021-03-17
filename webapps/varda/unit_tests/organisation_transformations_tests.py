@@ -12,7 +12,7 @@ from varda.models import (VakaJarjestaja, Toimipaikka, Varhaiskasvatussuhde, Var
 from varda.organisation_transformations import (transfer_toimipaikat_to_vakajarjestaja,
                                                 merge_toimipaikka_to_other_toimipaikka)
 from varda.permissions import object_ids_organization_has_permissions_to
-from varda.unit_tests.test_utils import assert_status_code
+from varda.unit_tests.test_utils import assert_status_code, post_henkilo_to_get_permissions
 
 
 class SetUpTestClient:
@@ -167,6 +167,7 @@ class OrganisationTransformationsTests(TestCase):
 
         client = SetUpTestClient('tester11').client()
         # Create lapsi
+        post_henkilo_to_get_permissions(client, henkilo_id=lapsi_henkilo.id)
         lapsi = {
             'henkilo': '/api/v1/henkilot/{0}/'.format(lapsi_henkilo.id),
             'vakatoimija_oid': new_vakajarjestaja_oid
@@ -258,6 +259,7 @@ class OrganisationTransformationsTests(TestCase):
         assert_status_code(resp_paos_toiminta_2, 201)
 
         client_paos_lapsi = SetUpTestClient('tester2').client()
+        post_henkilo_to_get_permissions(client_paos_lapsi, henkilo_id=paos_henkilo.id)
         paos_lapsi = {
             'henkilo': '/api/v1/henkilot/{0}/'.format(paos_henkilo.id),
             'oma_organisaatio': '/api/v1/vakajarjestajat/{0}/'.format(paos_vakajarjestaja.id),

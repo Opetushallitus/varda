@@ -300,6 +300,10 @@ class HenkiloHLField(serializers.HyperlinkedRelatedField):
         return queryset
 
 
+class HenkiloPermissionCheckedHLField(PermissionCheckedHLFieldMixin, HenkiloHLField):
+    check_permission = 'view_henkilo'
+
+
 class HuoltajaHLField(serializers.HyperlinkedRelatedField):
     def get_queryset(self):
         user = self.context['request'].user
@@ -722,7 +726,7 @@ class MaksutietoGetUpdateSerializer(serializers.HyperlinkedModelSerializer):
 
 class LapsiSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
-    henkilo = HenkiloHLField(view_name='henkilo-detail', required=False)
+    henkilo = HenkiloPermissionCheckedHLField(view_name='henkilo-detail', required=False)
     henkilo_oid = OidRelatedField(object_type=Henkilo,
                                   parent_field='henkilo',
                                   parent_attribute='henkilo_oid',
@@ -764,9 +768,6 @@ class LapsiSerializer(serializers.HyperlinkedModelSerializer):
             vakatoimija = data.get('vakatoimija')
             oma_organisaatio = data.get('oma_organisaatio')
             paos_organisaatio = data.get('paos_organisaatio')
-
-            if 'henkilo' in data and not self.context['request'].user.has_perm('view_henkilo', data['henkilo']):
-                validator.error('henkilo', ErrorMessages.GE008.value)
 
             if not (vakatoimija or oma_organisaatio or paos_organisaatio):
                 validator.error('errors', ErrorMessages.LA005.value)
