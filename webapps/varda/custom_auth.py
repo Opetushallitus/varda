@@ -26,9 +26,10 @@ from varda.enums.error_messages import ErrorMessages
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.enums.tietosisalto_ryhma import TietosisaltoRyhma
 from varda.oph_yhteiskayttopalvelu_autentikaatio import get_authentication_header
-from varda.models import VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z7_AdditionalUserFields
+from varda.models import VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z7_AdditionalUserFields, LoginCertificate
 from varda.permission_groups import get_permission_group
 from varda.organisaatiopalvelu import create_vakajarjestaja_using_oid
+from varda.permissions import get_certificate_login_info
 from webapps.celery import app
 from celery.signals import task_prerun
 from log_request_id import local
@@ -253,8 +254,15 @@ class CustomBasicAuthentication(BasicAuthentication):
         """
         Z4_CasKayttoOikeudet.objects.filter(user=user).delete()
         self._update_permission_groups(user, cas_henkilo_organisaatiot)
+        is_cert_auth, common_name = get_certificate_login_info(request)
+        # We are making sure user authenticates this way before accessing certificate required apis. This is cleared
+        # on regular login.
+        if is_cert_auth:
+            LoginCertificate.objects.filter(common_name=common_name).update(user=user)
+        else:
+            LoginCertificate.objects.filter(user=user).update(user=None)
 
-        return (user, None)
+        return user, None
 
     def ratelimit_basic_auth_user(self, user):
         try:
@@ -345,19 +353,23 @@ class CustomBasicAuthentication(BasicAuthentication):
                                                 Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
                                                 Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,
                                                 Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA,
-                                                Z4_CasKayttoOikeudet.TOIMIJATIEDOT_TALLENTAJA
+                                                Z4_CasKayttoOikeudet.TOIMIJATIEDOT_TALLENTAJA,
                                                 ]
         for organisaatio in cas_henkilo_organisaatiot:
             # Filter out permissions we are not interested
             organisaatio['kayttooikeudet'] = [kayttooikeus for kayttooikeus in organisaatio['kayttooikeudet']
                                               if kayttooikeus['palvelu'] == 'VARDA' and
-                                              kayttooikeus['oikeus'] in accepted_palvelukayttaja_permissions
+                                              (kayttooikeus['oikeus'] in accepted_palvelukayttaja_permissions or
+                                               self.is_opetushallitus_accepted_permission(organisaatio['organisaatioOid'], kayttooikeus['oikeus']))
                                               ]
         valid_cas_henkilo_organisaatiot = [organisaatio for organisaatio in cas_henkilo_organisaatiot
                                            if organisaatio['kayttooikeudet'] and
                                            not is_not_valid_vaka_organization_in_organisaatiopalvelu(organisaatio['organisaatioOid'], must_be_vakajarjestaja=True)
                                            ]
         return valid_cas_henkilo_organisaatiot
+
+    def is_opetushallitus_accepted_permission(self, organisaatio_oid, permission_group_name):
+        return organisaatio_oid == settings.OPETUSHALLITUS_ORGANISAATIO_OID and permission_group_name == Z4_CasKayttoOikeudet.LUOVUTUSPALVELU
 
 
 class PasswordExpirationModelBackend(ModelBackend):

@@ -33,7 +33,7 @@ from varda.enums.ytj import YtjYritysmuoto
 from varda.models import (KieliPainotus, Lapsi, Maksutieto, PaosOikeus, ToiminnallinenPainotus, Toimipaikka,
                           VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z6_RequestLog,
                           Z4_CasKayttoOikeudet, Tyontekija)
-from varda.permissions import (CustomReportingViewAccess, auditlogclass, get_vakajarjestajat_filter_for_raportit,
+from varda.permissions import (IsCertificateAccess, auditlogclass, get_vakajarjestajat_filter_for_raportit,
                                TiedonsiirtoPermissions)
 
 
@@ -52,7 +52,7 @@ class KelaEtuusmaksatusAloittaneetViewset(GenericViewSet, ListModelMixin):
     filterset_class = filters.KelaEtuusmaksatusAloittaneetFilter
     queryset = Varhaiskasvatussuhde.objects.none()
     serializer_class = KelaEtuusmaksatusAloittaneetSerializer
-    permission_classes = (CustomReportingViewAccess, )
+    permission_classes = (IsCertificateAccess,)
     pagination_class = ChangeablePageSizePagination
 
     def create_filters_for_data(self, luonti_pvm):
@@ -108,7 +108,7 @@ class KelaEtuusmaksatusLopettaneetViewSet(GenericViewSet, ListModelMixin):
     filterset_class = filters.KelaEtuusmaksatusLopettaneetFilter
     queryset = Varhaiskasvatussuhde.objects.none()
     serializer_class = KelaEtuusmaksatusLopettaneetSerializer
-    permission_classes = (CustomReportingViewAccess, )
+    permission_classes = (IsCertificateAccess,)
     pagination_class = ChangeablePageSizePagination
 
     def create_filters_for_data(self, muutos_pvm):
@@ -174,7 +174,7 @@ class KelaEtuusmaksatusMaaraaikaisetViewSet(GenericViewSet, ListModelMixin):
     filterset_class = filters.KelaEtuusmaksatusLopettaneetFilter
     queryset = Varhaiskasvatussuhde.history.none()
     serializer_class = KelaEtuusmaksatusMaaraaikaisetSerializer
-    permission_classes = (CustomReportingViewAccess, )
+    permission_classes = (IsCertificateAccess,)
     pagination_class = ChangeablePageSizePagination
 
     def create_filters_for_data(self, luonti_pvm):
@@ -231,7 +231,7 @@ class KelaEtuusmaksatusKorjaustiedotViewSet(GenericViewSet, ListModelMixin):
     filterset_class = filters.KelaEtuusmaksatusKorjaustiedotFilter
     queryset = Varhaiskasvatussuhde.history.none()
     serializer_class = KelaEtuusmaksatusKorjaustiedotSerializer
-    permission_classes = (CustomReportingViewAccess, )
+    permission_classes = (IsCertificateAccess,)
     pagination_class = ChangeablePageSizePagination
 
     def create_filters_for_data(self, muutos_pvm):
@@ -304,7 +304,7 @@ class KelaEtuusmaksatusKorjaustiedotPoistetutViewSet(GenericViewSet, ListModelMi
     filterset_class = None  # This api cannot use filters because of raw query
     queryset = Varhaiskasvatussuhde.history.none()
     serializer_class = KelaEtuusmaksatusKorjaustiedotPoistetutSerializer
-    permission_classes = (CustomReportingViewAccess, )
+    permission_classes = (IsCertificateAccess,)
     pagination_class = ChangeablePageSizePagination
 
     def get_queryset(self):

@@ -84,6 +84,7 @@ def add_groups_with_permissions():
         ('HUOLTAJATIETO_KATSELU_1.2.246.562.10.9395737548815', get_huoltajatiedot_katselija_permissions()),
         ('VARDA_TOIMIJATIEDOT_TALLENTAJA_1.2.246.562.10.34683023489', get_toimijatiedot_tallentaja_permissions()),
         ('VARDA_RAPORTTIEN_KATSELIJA_1.2.246.562.10.34683023489', get_raporttien_katselija_permissions()),
+        ('VARDA_LUOVUTUSPALVELU_1.2.246.562.10.15869252719', [])
     ]
 
     for group_tuple in group_permission_array:
@@ -130,6 +131,7 @@ def add_test_users():
     group_huoltajatiedot_tallentaja_vakajarjestaja_52966755795 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.52966755795')
     group_toimijatiedot_tallentaja_34683023489 = Group.objects.get(name='VARDA_TOIMIJATIEDOT_TALLENTAJA_1.2.246.562.10.34683023489')
     group_raporttien_katselija_34683023489 = Group.objects.get(name='VARDA_RAPORTTIEN_KATSELIJA_1.2.246.562.10.34683023489')
+    group_kela_luovutuspalvelu = Group.objects.get(name='VARDA_LUOVUTUSPALVELU_1.2.246.562.10.15869252719')
 
     user_tester = User.objects.create(username='tester', password='pbkdf2_sha256$120000$4IdDHxUJJSE6$N18zHZK02yA3KxNeTcDS4t6Ytsn2ZOLO6QLDXNT/8Yo=')
     Token.objects.create(user=user_tester, key='916b7ca8f1687ec3462b4a35d0c5c6da0dbeedf3')
@@ -244,6 +246,9 @@ def add_test_users():
     henkilosto_tallentaja_93957375488 = User.objects.create(username='henkilosto_tallentaja_93957375488', password='pbkdf2_sha256$150000$WMst0ZmwKf3p$Fqyz4SSdybbBdAexKCjxXyqiUfYafn7XxGaxQsALqoo=')
     henkilosto_tallentaja_93957375488.groups.add(group_tyontekija_tallentaja_vakajarjestaja2)
     henkilosto_tallentaja_93957375488.groups.add(group_taydennys_tallentaja_vakajarjestaja2)
+
+    kela_luovutuspalvelu = User.objects.create(username='kela_luovutuspalvelu', password='pbkdf2_sha256$150000$WMst0ZmwKQ5P$Fqyz1KLMdybbBdjLmKCjxXyqiUfYafn7XxGaxQsALqoo=')
+    kela_luovutuspalvelu.groups.add(group_kela_luovutuspalvelu)
 
 
 def create_vakajarjestajat():
@@ -3376,6 +3381,17 @@ def create_aikaleima():
     Aikaleima.objects.create(avain=AikaleimaAvain.HENKILOMUUTOS_LAST_UPDATE)
 
 
+def create_login_certs():
+    from varda.models import LoginCertificate
+    from django.contrib.auth.models import User
+    user = User.objects.get(username='kela_luovutuspalvelu')
+    LoginCertificate.objects.update_or_create(organisation_name='kela', api_path='/api/reporting/v1/kela/etuusmaksatus/aloittaneet/', common_name='kela cert', user=user)
+    LoginCertificate.objects.update_or_create(organisation_name='kela', api_path='/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', common_name='kela cert', user=user)
+    LoginCertificate.objects.update_or_create(organisation_name='kela', api_path='/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/', common_name='kela cert', user=user)
+    LoginCertificate.objects.update_or_create(organisation_name='kela', api_path='/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', common_name='kela cert', user=user)
+    LoginCertificate.objects.update_or_create(organisation_name='kela', api_path='/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/', common_name='kela cert', user=user)
+
+
 def create_test_data():
     from django.conf import settings
     import os
@@ -3392,6 +3408,7 @@ def create_test_data():
     create_paos_oikeus()
     create_henkilosto()
     create_aikaleima()
+    create_login_certs()
 
     """
     Currently do not populate lapset+huoltajat in db if

@@ -306,6 +306,12 @@ def create_raportit_template_groups():
     _create_groups_with_permissions(group_permissions_list)
 
 
+def create_oph_luovutuspalvelu_group():
+    from django.contrib.auth.models import Group
+    from django.conf import settings
+    Group.objects.get_or_create(name='VARDA_LUOVUTUSPALVELU_{}'.format(settings.OPETUSHALLITUS_ORGANISAATIO_OID))
+
+
 def load_initial_users():
     from django.contrib.auth.models import User
     User.objects.create(username='credadmin',

@@ -1,4 +1,5 @@
 import responses
+from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.test import TestCase, override_settings
 from rest_framework import status
@@ -45,6 +46,47 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
 
         jarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=organisaatio_oid)
         self.assertEqual(jarjestaja.integraatio_organisaatio, [TietosisaltoRyhma.VAKATIEDOT.value])
+
+    @responses.activate
+    def test_palvelukayttaja_luovutuspalvelu(self):
+        username = 'palvelukayttaja'
+        organisaatio_oid = settings.OPETUSHALLITUS_ORGANISAATIO_OID
+        organisaatiot = [
+            {
+                'organisaatioOid': organisaatio_oid,
+                'kayttooikeudet': [
+                    {
+                        'palvelu': 'VARDA',
+                        'oikeus': Z4_CasKayttoOikeudet.LUOVUTUSPALVELU,
+                    },
+                ]
+            }
+        ]
+        headers = {
+            'HTTP_X_SSL_Authenticated': 'SUCCESS',
+            'HTTP_X_SSL_User_DN': 'CN=kela cert,O=user1 company,ST=Some-State,C=FI',
+        }
+        self._mock_responses(organisaatiot, organisaatio_oid, username)
+        basic_auth_token = base64_encoding('{}:password'.format(username))
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION='Basic {}'.format(basic_auth_token))
+        resp_apikey = client.get('/api/user/apikey/', **headers)
+        assert_status_code(resp_apikey, status.HTTP_200_OK)
+        token = resp_apikey.json().get('token')
+        self.assertIsNotNone(token)
+
+        client.credentials(HTTP_AUTHORIZATION='Token {}'.format(token))
+        resp = client.get('/api/user/data/', **headers)
+        assert_status_code(resp, status.HTTP_200_OK)
+
+        expected_group_names = ['vakajarjestaja_view_henkilo', 'VARDA_LUOVUTUSPALVELU_{}'.format(organisaatio_oid)]
+        self._assert_user_permissiongroups(expected_group_names, username)
+
+        jarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=organisaatio_oid)
+        self.assertEqual(jarjestaja.integraatio_organisaatio, [])
+
+        kela_api_response = client.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/', **headers)
+        self.assertEqual(kela_api_response.status_code, status.HTTP_200_OK)
 
     @responses.activate
     def test_palvelukayttaja_henkilosto_only_permissions(self):

@@ -103,6 +103,8 @@ def is_not_valid_vaka_organization_in_organisaatiopalvelu(organisaatio_oid, must
 
     If you need to check explicitly that the organization is not 'Varhaiskasvatuksen jarjestaja', set the must_be_vakajarjestaja to True.
     """
+    if organisaatio_oid == settings.OPETUSHALLITUS_ORGANISAATIO_OID:
+        return False
     organisaatio_url = ORGANISAATIOPALVELU_API_V4 + 'hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oid=' + organisaatio_oid
     reply_msg = get_json_from_external_service(SERVICE_NAME, organisaatio_url, auth=True)
     if not reply_msg['is_ok']:
@@ -123,10 +125,10 @@ def is_not_valid_vaka_organization_in_organisaatiopalvelu(organisaatio_oid, must
     if 'organisaatiotyypit' not in organization_data or 'status' not in organization_data:
         logger.error('Organisaatio missing required data: /' + SERVICE_NAME + organisaatio_url)
         return True
-    return is_not_valid_vaka_organization(organization_data, must_be_vakajarjestaja)
+    return _is_not_valid_vaka_organization(organization_data, must_be_vakajarjestaja)
 
 
-def is_not_valid_vaka_organization(organization_data, must_be_vakajarjestaja=False):
+def _is_not_valid_vaka_organization(organization_data, must_be_vakajarjestaja=False):
     if not organization_data:
         logger.error('Organisaatio data not found')
         return True
@@ -143,7 +145,7 @@ def is_not_valid_vaka_organization(organization_data, must_be_vakajarjestaja=Fal
 
 
 def is_valid_vaka_organization(organization_data, must_be_vakajarjestaja=False):
-    return not is_not_valid_vaka_organization(organization_data, must_be_vakajarjestaja)
+    return not _is_not_valid_vaka_organization(organization_data, must_be_vakajarjestaja)
 
 
 def is_of_type(organisation_data, *args):

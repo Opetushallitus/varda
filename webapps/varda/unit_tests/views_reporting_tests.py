@@ -7,19 +7,22 @@ from rest_framework import status
 
 from varda.models import (VakaJarjestaja, Lapsi, Henkilo, Maksutieto, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
                           Tyontekija, Tyoskentelypaikka, Palvelussuhde, PidempiPoissaolo, Tutkinto)
-from varda.unit_tests.test_utils import SetUpTestClient, assert_validation_error, mock_admin_user, assert_status_code
+from varda.unit_tests.test_utils import SetUpTestClient, assert_validation_error, assert_status_code
 
 
 class VardaViewsReportingTests(TestCase):
     fixtures = ['varda/unit_tests/fixture_basics.json']
+    headers = {
+        'HTTP_X_SSL_Authenticated': 'SUCCESS',
+        'HTTP_X_SSL_User_DN': 'CN=kela cert,O=user1 company,ST=Some-State,C=FI',
+    }
 
     """
     Reporting related view-tests
     """
 
     def test_reporting_api(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
         resp = client.get('/api/reporting/v1/')
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(json.loads(resp.content), {
@@ -29,8 +32,7 @@ class VardaViewsReportingTests(TestCase):
         })
 
     def test_kela_reporting_api(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/')
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(json.loads(resp.content), {'aloittaneet': 'http://testserver/api/reporting/v1/kela/etuusmaksatus/aloittaneet/',
@@ -40,26 +42,27 @@ class VardaViewsReportingTests(TestCase):
                                                     'korjaustiedotpoistetut': 'http://testserver/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/'})
 
     def test_reporting_api_kelaetuusmaksatusaloittaneet_get(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
-        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/')
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/', **self.headers)
         self.assertEqual(resp.status_code, 200)
 
-        client = SetUpTestClient('tester3').client()
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/')
         self.assertEqual(resp.status_code, 403)
 
+        client = SetUpTestClient('tester3').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/', **self.headers)
+        self.assertEqual(resp.status_code, 403)
+
     def test_reporting_api_kelaetuusmaksatusaloittaneet_alkamis_pvm_filter(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
-        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/?luonti_pvm=2018-01-01')
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/?luonti_pvm=2018-01-01', **self.headers)
         self.assertEqual(resp.status_code, 400)
         assert_validation_error(resp, 'luonti_pvm', 'GE019', 'Time period exceeds allowed timeframe.')
 
     def test_reporting_api_kelaetuusmaksatusalopettaneet_get(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
-        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/')
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
         self.assertEqual(resp.status_code, 200)
 
         client = SetUpTestClient('tester3').client()
@@ -67,16 +70,14 @@ class VardaViewsReportingTests(TestCase):
         self.assertEqual(resp.status_code, 403)
 
     def test_reporting_api_kelaetuusmaksatusalopettaneet_get_date_filters(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
-        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/?muutos_pvm=2010-01-01')
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/?muutos_pvm=2010-01-01', **self.headers)
         self.assertEqual(resp.status_code, 400)
         assert_validation_error(resp, 'muutos_pvm', 'GE019', 'Time period exceeds allowed timeframe.')
 
     def test_reporting_api_kelaetuusmaksatusmaaraaikaiset_get(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
-        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/')
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/', **self.headers)
         self.assertEqual(resp.status_code, 200)
 
         client = SetUpTestClient('tester3').client()
@@ -84,16 +85,14 @@ class VardaViewsReportingTests(TestCase):
         self.assertEqual(resp.status_code, 403)
 
     def test_reporting_api_kelaetuusmaksatusmaaraaikaiset_alkamis_pvm_filter(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
-        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/?luonti_pvm=2018-01-01')
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/?luonti_pvm=2018-01-01', **self.headers)
         self.assertEqual(resp.status_code, 400)
         assert_validation_error(resp, 'luonti_pvm', 'GE019', 'Time period exceeds allowed timeframe.')
 
     def test_reporting_api_kelaetuusmaksatuskorjaustiedot_get(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
-        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/')
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
         self.assertEqual(resp.status_code, 200)
 
         client = SetUpTestClient('tester3').client()
@@ -101,16 +100,14 @@ class VardaViewsReportingTests(TestCase):
         self.assertEqual(resp.status_code, 403)
 
     def test_reporting_api_kelaetuusmaksatuskorjaustiedot_get_alkamis_pvm_filter(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
-        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/?muutos_pvm=2018-01-01')
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/?muutos_pvm=2018-01-01', **self.headers)
         self.assertEqual(resp.status_code, 400)
         assert_validation_error(resp, 'muutos_pvm', 'GE019', 'Time period exceeds allowed timeframe.')
 
     def test_reporting_api_kelaetuusmaksatuskorjaustiedot_poistetut_get(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
-        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/')
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/', **self.headers)
         self.assertEqual(resp.status_code, 200)
 
         client = SetUpTestClient('tester3').client()
@@ -118,9 +115,8 @@ class VardaViewsReportingTests(TestCase):
         self.assertEqual(resp.status_code, 403)
 
     def test_reporting_api_kelaetuusmaksatuskorjaustiedot_poistetut_get_alkamis_pvm(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
-        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/?poisto_pvm=2018-01-01')
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/?poisto_pvm=2018-01-01', **self.headers)
         self.assertEqual(resp.status_code, 400)
         assert_validation_error(resp, 'poisto_pvm', 'GE019', 'Time period exceeds allowed timeframe.')
 

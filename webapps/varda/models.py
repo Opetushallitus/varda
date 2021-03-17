@@ -962,6 +962,19 @@ class BatchError(models.Model):
             logger.warning('Very high retry_count for BatchError {}'.format(self.id))
 
 
+class LoginCertificate(models.Model):
+    organisation_name = models.CharField(max_length=50)
+    api_path = models.CharField(max_length=200)
+    common_name = models.CharField(max_length=500)
+    user = models.ForeignKey(User, null=True, related_name='logincertificate', on_delete=models.PROTECT)
+
+    def __str__(self):
+        return str(self.id)
+
+    class Meta:
+        verbose_name_plural = 'Login certificates'
+
+
 """
 Miscellaneous
 
@@ -1079,6 +1092,7 @@ class Z4_CasKayttoOikeudet(models.Model):
     TOIMIJATIEDOT_KATSELIJA = 'VARDA_TOIMIJATIEDOT_KATSELIJA'
     TOIMIJATIEDOT_TALLENTAJA = 'VARDA_TOIMIJATIEDOT_TALLENTAJA'
     RAPORTTIEN_KATSELIJA = 'VARDA_RAPORTTIEN_KATSELIJA'
+    LUOVUTUSPALVELU = 'VARDA_LUOVUTUSPALVELU'
     KAYTTOOIKEUSROOLIT = (
         (PAAKAYTTAJA, 'Varda-Pääkäyttäjä'),
         (TALLENTAJA, 'Varda-Tallentaja'),
@@ -1094,7 +1108,8 @@ class Z4_CasKayttoOikeudet(models.Model):
         (HENKILOSTO_TYONTEKIJA_TALLENTAJA, 'Varda-Työntekijätietojen tallentaja'),
         (TOIMIJATIEDOT_KATSELIJA, 'Varda-Toimijatietojen katselija'),
         (TOIMIJATIEDOT_TALLENTAJA, 'Varda-Toimijatietojen tallentaja'),
-        (RAPORTTIEN_KATSELIJA, 'Varda-Raporttien katselija')
+        (RAPORTTIEN_KATSELIJA, 'Varda-Raporttien katselija'),
+        (LUOVUTUSPALVELU, 'VARDA_LUOVUTUSPALVELU'),
     )
 
     user = models.ForeignKey(User, related_name='kayttooikeudet', on_delete=models.PROTECT)

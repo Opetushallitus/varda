@@ -13,7 +13,7 @@ from varda.clients import organisaatio_client
 from varda.enums.tietosisalto_ryhma import TietosisaltoRyhma
 from varda.exceptions.invalid_koodi_uri_exception import InvalidKoodiUriException
 from varda.misc import get_json_from_external_service, get_reply_json
-from varda.models import Toimipaikka, VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet
+from varda.models import Toimipaikka, VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, LoginCertificate
 from varda.organisaatiopalvelu import create_toimipaikka_using_oid, create_vakajarjestaja_using_oid
 from varda.permission_groups import get_permission_group
 
@@ -30,6 +30,10 @@ def set_permissions_for_cas_user(user_id):
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
         return None  # Cas library creates user on login so we should come here basically never
+
+    # Cleared so service users can't find way to login through here as regular user.
+    if settings.QA_ENV or settings.PRODUCTION_ENV:
+        LoginCertificate.objects.filter(user=user).update(user=None)
 
     service_name = 'kayttooikeus-service'
     user_info = get_user_info(service_name, user.username)
@@ -94,13 +98,10 @@ def set_user_kayttooikeudet(service_name, henkilo_oid, user):
     """
     After removal, let's set the user permissions.
     """
-    dict_of_organizations_user_has_permissions, organisations = _get_organizations_and_perm_groups_of_user(service_name, henkilo_oid, user)
-    for organization_oid, permission_group_list in dict_of_organizations_user_has_permissions.items():
+    user_organisation_permission_and_data_list = _get_organizations_and_perm_groups_of_user(service_name, henkilo_oid, user)
+    for permission_group_list, organisation_data in user_organisation_permission_and_data_list:
         varda_permissions = [perm['oikeus'] for perm in permission_group_list if perm['palvelu'] == 'VARDA']
-        fetch_permissions_roles_for_organization(user.id,
-                                                 henkilo_oid,
-                                                 organisations[organization_oid],
-                                                 varda_permissions)
+        fetch_permissions_roles_for_organization(user.id, henkilo_oid, organisation_data, varda_permissions)
 
 
 def set_user_permissions(user, organisation, role):
@@ -328,6 +329,13 @@ def select_highest_kayttooikeusrooli(kayttooikeusrooli_list, organization_oid, t
 
 
 def _get_organizations_and_perm_groups_of_user(service_name, henkilo_oid, user):
+    """
+    Fetch user permissions and organisation data for organisations user har permissions
+    :param service_name: kayttooikeus service name
+    :param henkilo_oid: user henkilo oid
+    :param user: local user object
+    :return: tuple(list(kayttooikeudet), dict(organisaatio_data))
+    """
     kayttooikeus_ryhma_url = '/kayttooikeus/kayttaja?oidHenkilo={}'.format(henkilo_oid)
     reply_msg = get_json_from_external_service(service_name, kayttooikeus_ryhma_url)
     if not reply_msg['is_ok']:
@@ -335,16 +343,17 @@ def _get_organizations_and_perm_groups_of_user(service_name, henkilo_oid, user):
 
     reply_json = reply_msg['json_msg']
     first_user = next(iter(reply_json), {})
-    kayttooikeudet_by_organisaatio_oid = [item for item in first_user.get('organisaatiot', []) if len(item['kayttooikeudet']) > 0]
-    organisaatio_oids = [item['organisaatioOid'] for item in kayttooikeudet_by_organisaatio_oid]
+    organisaatio_kayttooikeudet = first_user.get('organisaatiot', [])
+    kayttooikeudet_by_organisaatio_oid = [user_info for user_info in organisaatio_kayttooikeudet if len(user_info['kayttooikeudet']) > 0]
+    organisaatio_oids = [user_info['organisaatioOid'] for user_info in kayttooikeudet_by_organisaatio_oid]
     organisations = organisaatio_client.get_multiple_organisaatio(organisaatio_oids)
     valid_organisation_oids = [org['oid'] for org in organisations if organisaatio_client.is_valid_vaka_organization(org)]
+    organisation_data_dict = {org['oid']: org for org in organisations}
     if settings.OPETUSHALLITUS_ORGANISAATIO_OID in organisaatio_oids:
         oph_staff_group = Group.objects.get(name='oph_staff')
         oph_staff_group.user_set.add(user)
-    active_kayttooikeus_by_organisation_oid = dict((kayttooikeus['organisaatioOid'], kayttooikeus['kayttooikeudet'])
-                                                   for kayttooikeus
-                                                   in kayttooikeudet_by_organisaatio_oid
-                                                   if kayttooikeus['organisaatioOid'] in valid_organisation_oids
-                                                   )
-    return active_kayttooikeus_by_organisation_oid, {org['oid']: org for org in organisations}
+    return ((kayttooikeus['kayttooikeudet'], organisation_data_dict[organisaatio_oid])
+            for kayttooikeus
+            in kayttooikeudet_by_organisaatio_oid
+            if (organisaatio_oid := kayttooikeus['organisaatioOid']) in valid_organisation_oids
+            )

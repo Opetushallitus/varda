@@ -17,7 +17,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from varda.enums.error_messages import ErrorMessages
 from varda.misc import path_parse
 from varda.models import (VakaJarjestaja, Toimipaikka, Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-                          PaosToiminta, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog,
+                          PaosToiminta, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog, LoginCertificate,
                           Maksutieto, Tyontekija, Tyoskentelypaikka, PidempiPoissaolo, TaydennyskoulutusTyontekija)
 from varda.permission_groups import assign_object_level_permissions, remove_object_level_permissions
 from varda.related_object_validations import toimipaikka_is_valid_to_organisaatiopalvelu
@@ -65,16 +65,15 @@ class CustomObjectPermissions(permissions.DjangoObjectPermissions):
         return super(CustomObjectPermissions, self).has_object_permission(request, view, obj)
 
 
-class CustomReportingViewAccess(permissions.BasePermission):
+class IsCertificateAccess(permissions.IsAdminUser):
     """
-    Allow access to reporting apis for users requiring data.
+    Allow access to reporting apis for users requiring data. Nginx validates client certificate here.
     """
     def has_permission(self, request, view):
         user = request.user
-        if user.is_superuser:
+        if super().has_permission(request, view):
             return True
-        else:
-            return False
+        return _user_has_certificate_access(user, request)
 
 
 class ReadAdminOrOPHUser(permissions.BasePermission):
@@ -123,6 +122,45 @@ class TiedonsiirtoPermissions(permissions.BasePermission):
 
 def _is_user_group_permissions(accepted_permissions, user):
     return user.is_superuser or user.groups.filter(permissions__codename__in=accepted_permissions).exists()
+
+
+def _user_has_certificate_access(user, request):
+    """
+    Check required permission group and certificate authentication headers provided by nginx for request path.
+    :param user: user object
+    :param request: request
+    :return: Has user certificate access to current api
+    """
+    if user.groups.filter(name__icontains='VARDA_LUOVUTUSPALVELU').exists():
+        api_path = request.path
+        is_cert_auth, common_name = get_certificate_login_info(request)
+        return is_cert_auth and LoginCertificate.objects.filter(api_path=api_path, common_name=common_name, user=user).exists()
+    return False
+
+
+def get_certificate_login_info(request):
+    """
+    Checks request if user has certificate login info and returns that.
+    :param request: request
+    :return: tuple( common_name, is_cert_auth )
+    """
+    is_cert_auth = request.headers.get('X-SSL-Authenticated') == 'SUCCESS'
+    subject_string = request.headers.get('X-SSL-User-DN')
+    subject_dict = _parse_nginx_subject(subject_string)
+    common_name = subject_dict.get('CN')  # We match cert with common name!
+    return is_cert_auth, common_name
+
+
+def _parse_nginx_subject(subject_dn_string):
+    """
+    Nginx current version uses comma ',' to split subject distinguished name separate data.
+    :param subject_dn_string: subject DN in nginx format e.g. CN=kela cert,O=user1 company,ST=Some-State,C=FI
+    :type subject_dn_string: string
+    :return: dict of subject distinguished name data
+    """
+    subject_data_list = subject_dn_string.split(',') if subject_dn_string else []
+    return {subject_data_pair[0]: subject_data_pair[1] for subject_data in subject_data_list
+            if len(subject_data_pair := subject_data.split('=', 1)) == 2}
 
 
 def user_has_tallentaja_permission_in_organization(organisaatio_oid, user):
