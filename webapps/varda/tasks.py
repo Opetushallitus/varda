@@ -21,6 +21,7 @@ from varda import organisaatiopalvelu
 from varda import permission_groups
 from varda import permissions
 from varda.audit_log import audit_log
+from varda.excel_export import delete_excel_reports_earlier_than
 from varda.misc import flatten_nested_list, memory_efficient_queryset_iterator
 from varda.models import (Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog, Lapsi, Varhaiskasvatuspaatos,
                           Z4_CasKayttoOikeudet)
@@ -30,7 +31,6 @@ from varda.permissions import (assign_lapsi_permissions, assign_vakapaatos_vakas
 from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups
 
 
-# Get an instance of a logger
 logger = logging.getLogger(__name__)
 
 
@@ -343,3 +343,11 @@ def modify_view_henkilo_permission():
         tyontekija_oid_set = set(tyontekija_oid_list)
         tyontekija_oid_set.discard(None)
         assign_henkilo_permissions_for_tyontekija_groups(tyontekija_oid_set, henkilo)
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def delete_excel_reports_older_than_arg_hours_task(hours):
+    timestamp_lower_limit = datetime.datetime.now() - datetime.timedelta(hours=hours)
+    timestamp_lower_limit = timestamp_lower_limit.replace(tzinfo=datetime.timezone.utc)
+    delete_excel_reports_earlier_than(timestamp_lower_limit)

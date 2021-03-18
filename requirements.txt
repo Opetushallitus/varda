@@ -40,3 +40,4 @@ requests==2.25.0  # Apache 2.0-license
 simplejson==3.17.2  # MIT-license
 uritemplate==3.0.1  # BSD 3-Clause License or Apache License, Version 2.0
 responses==0.12.1  # Mocks. Apache 2.0-license
+XlsxWriter==1.3.7  # BSD-2-Clause License

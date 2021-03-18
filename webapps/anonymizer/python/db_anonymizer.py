@@ -17,7 +17,8 @@ from pathlib import Path
 from timeit import default_timer as timer
 from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
 from varda.models import (Henkilo, HistoricalHenkilo, Toimipaikka, VakaJarjestaja,
-                          Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog, Z6_RequestLog)
+                          Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog, Z6_RequestLog,
+                          Z7_AdditionalUserFields, Z8_ExcelReport, Z8_ExcelReportLog)
 
 
 BATCH_SIZE = 50000
@@ -90,7 +91,7 @@ def run_and_time_operation(operation_type, operation, operation_name):
 def finalize_data_dump():
     """
     - Remove historical-henkilot
-    - Remove Z3, Z4, Z5, Z6
+    - Remove Z3, Z4, Z5, Z6, Z7, Z8
     - Remove users 3 & 4, plus references to VakaJarjestaja + Toimipaikka
     - Load testdata (fixtures), huoltajat etc.
     """
@@ -100,6 +101,9 @@ def finalize_data_dump():
     Z4_CasKayttoOikeudet.objects.all().delete()
     Z5_AuditLog.objects.all().delete()
     Z6_RequestLog.objects.all().delete()
+    Z7_AdditionalUserFields.objects.all().delete()
+    Z8_ExcelReport.objects.all().delete()
+    Z8_ExcelReportLog.objects.all().delete()
 
     user = User.objects.get(id=2)
     vakajarjestaja_1 = VakaJarjestaja.objects.get(id=1)

@@ -290,6 +290,9 @@ class ErrorMessages(enum.Enum):
     KO003 = get_error_dict('KO003', 'Not a valid code.')
     KO004 = get_error_dict('KO004', 'Problem with Koodistopalvelu.')
 
+    # Excel errors, prefix: ER
+    ER001 = get_error_dict('ER001', 'Cannot create report for given Toimipaikka.')
+
     # Miscellaneous errors, prefix: MI
     MI001 = get_error_dict('MI001', 'Token was not refreshed.')
     MI002 = get_error_dict('MI002', 'Organisaatio_oid(s) missing.')

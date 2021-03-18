@@ -14,7 +14,7 @@ from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid,
 from varda.enums.aikaleima_avain import AikaleimaAvain
 from varda.enums.batcherror_type import BatchErrorType
 from varda.enums.yhteystieto import Yhteystietoryhmatyyppi, YhteystietoAlkupera, YhteystietoTyyppi
-from varda.misc import (CustomServerErrorException, encrypt_henkilotunnus, get_json_from_external_service,
+from varda.misc import (CustomServerErrorException, encrypt_string, get_json_from_external_service,
                         hash_string)
 from varda.models import Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Aikaleima, BatchError
 
@@ -69,7 +69,7 @@ def save_henkilo_to_db(henkilo_id, henkilo_json):
             setattr(henkilo, field_name, henkilo_json[key])
 
     if 'hetu' in henkilo_json and henkilo_json['hetu']:
-        henkilo.henkilotunnus = encrypt_henkilotunnus(henkilo_json['hetu'])
+        henkilo.henkilotunnus = encrypt_string(henkilo_json['hetu'])
         henkilo.henkilotunnus_unique_hash = hash_string(henkilo_json['hetu'])
     else:
         henkilo.henkilotunnus = ''

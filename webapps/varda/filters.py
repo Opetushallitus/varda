@@ -46,7 +46,7 @@ class KunnallinenKytkinFilter(djangofilters.BooleanFilter):
             return qs.filter(~Q(yritysmuoto__in=VakaJarjestaja.get_kuntatyypit()))
 
 
-class VakaJarjestajaFieldFilter(djangofilters.CharFilter):
+class OrganisaatioFieldFilter(djangofilters.CharFilter):
     def filter(self, qs, value):
         if value.isdigit():
             self.field_name += '__id'
@@ -265,7 +265,7 @@ class VarhaiskasvatussuhdeFilter(djangofilters.FilterSet):
 
 
 class TilapainenHenkilostoFilter(djangofilters.FilterSet):
-    vakajarjestaja = VakaJarjestajaFieldFilter(field_name='vakajarjestaja')
+    vakajarjestaja = OrganisaatioFieldFilter(field_name='vakajarjestaja')
     vuosi = djangofilters.NumberFilter(field_name='kuukausi__year', lookup_expr='exact')
     kuukausi = djangofilters.NumberFilter(field_name='kuukausi__month', lookup_expr='exact')
 
@@ -277,7 +277,7 @@ class TilapainenHenkilostoFilter(djangofilters.FilterSet):
 class TutkintoFilter(djangofilters.FilterSet):
     henkilo = HenkiloFieldFilter(field_name='henkilo')
     tutkinto_koodi = djangofilters.CharFilter(field_name='tutkinto_koodi', lookup_expr='exact')
-    vakajarjestaja = VakaJarjestajaFieldFilter(field_name='vakajarjestaja')
+    vakajarjestaja = OrganisaatioFieldFilter(field_name='vakajarjestaja')
 
     class Meta:
         model = Tutkinto
@@ -595,3 +595,12 @@ class TiedonsiirtoFilter(djangofilters.FilterSet):
                          then=self._get_target_filter_annotation(Toimipaikka, ['organisaatio_oid', 'nimi'])),
                     output_field=CharField()
                 )).filter(search_filter))
+
+
+class ExcelReportFilter(djangofilters.FilterSet):
+    vakajarjestaja = OrganisaatioFieldFilter()
+    toimipaikka = OrganisaatioFieldFilter()
+    user_id = djangofilters.NumberFilter(field_name='user__id')
+    username = djangofilters.NumberFilter(lookup_expr='iexact', field_name='user__username')
+    status = djangofilters.CharFilter()
+    type = djangofilters.CharFilter()

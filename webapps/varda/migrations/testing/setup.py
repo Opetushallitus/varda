@@ -2568,6 +2568,7 @@ def create_user_data():
     tester7_user = User.objects.get(username='tester7')
     tester8_user = User.objects.get(username='tester8')
     tester9_user = User.objects.get(username='tester9')
+    tester10_user = User.objects.get(username='tester10')
 
     pk_vakajarjestaja_1_user = User.objects.get(username='pkvakajarjestaja1')
     pk_vakajarjestaja_2_user = User.objects.get(username='pkvakajarjestaja2')
@@ -2630,6 +2631,15 @@ def create_user_data():
         user_id=tester9_user.id,
         kayttajatyyppi='VIRKAILIJA',
         henkilo_oid='1.2.345680001',
+        asiointikieli_koodi='fi',
+        approved_oph_staff=False,
+        last_modified='2019-01-24 12:00:00+1459'
+    )
+
+    Z3_AdditionalCasUserFields.objects.create(
+        user_id=tester10_user.id,
+        kayttajatyyppi='VIRKAILIJA',
+        henkilo_oid='1.2.345680002',
         asiointikieli_koodi='fi',
         approved_oph_staff=False,
         last_modified='2019-01-24 12:00:00+1459'

@@ -1183,3 +1183,42 @@ class Z7_AdditionalUserFields(models.Model):
 
     class Meta:
         verbose_name_plural = 'Additional user fields'
+
+
+class Z8_ExcelReport(models.Model):
+    filename = models.CharField(max_length=200)
+    s3_object_path = models.CharField(max_length=200, null=True)
+    password = models.CharField(max_length=150)  # Currently encrypted password length is 120 characters
+    status = models.CharField(max_length=50)
+    report_type = models.CharField(max_length=50)
+    target_date = models.DateField(null=True)
+    language = models.CharField(max_length=2)
+    vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='excel_reports', on_delete=models.PROTECT)
+    toimipaikka = models.ForeignKey(Toimipaikka, null=True, related_name='excel_reports', on_delete=models.PROTECT)
+    user = models.ForeignKey(User, related_name='excel_reports', on_delete=models.PROTECT)
+    timestamp = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return str(self.id)
+
+    class Meta:
+        verbose_name_plural = 'Excel reports'
+
+
+class Z8_ExcelReportLog(models.Model):
+    report_type = models.CharField(max_length=50)
+    target_date = models.DateField(null=True)
+    vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='excel_report_logs', on_delete=models.PROTECT)
+    toimipaikka = models.ForeignKey(Toimipaikka, null=True, related_name='excel_report_logs', on_delete=models.PROTECT)
+    user = models.ForeignKey(User, related_name='excel_report_logs', on_delete=models.PROTECT)
+    started_timestamp = models.DateTimeField()
+    finished_timestamp = models.DateTimeField()
+    duration = models.IntegerField()
+    file_size = models.IntegerField()
+    number_of_rows = ArrayField(models.IntegerField(), validators=[validators.validate_arrayfield])
+
+    def __str__(self):
+        return str(self.id)
+
+    class Meta:
+        verbose_name_plural = 'Excel report logs'

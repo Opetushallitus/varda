@@ -69,7 +69,7 @@ def run_post_migration_tasks(sender, **kwargs):
             '0036_postinumero_koodit': [create_postinumero_koodisto_data],
             '0037_auto_20201126_1055': [create_virhe_koodisto_data],
             '0038_auto_20201201_1237': [create_raportit_template_groups],
-            '0045_auto_20210317_0821': [create_oph_luovutuspalvelu_group,
+            '0045_auto_20210318_0953': [create_oph_luovutuspalvelu_group,
                                         load_dev_testing_data],
         }
 

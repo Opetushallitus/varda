@@ -49,8 +49,10 @@ def decrypt_henkilotunnus(encrypted_henkilotunnus):
     Original key generated with: Fernet.generate_key().decode('utf-8')
     Details: https://cryptography.io/en/latest/fernet/
     """
-    f = _get_fernet()
+    if not encrypted_henkilotunnus:
+        return None
 
+    f = _get_fernet()
     try:
         resolved_token = f.decrypt(encrypted_henkilotunnus.encode('utf-8'))
     except TypeError:
@@ -67,20 +69,30 @@ def _get_fernet():
     decoded_key = settings.FERNET_SECRET_KEY
     key = decoded_key.encode('utf-8')
     if not key:
-        logger.error('Henkilotunnus decryption failed. No secret key available.')
+        logger.error('Fernet error. No secret key available.')
         raise CustomServerErrorException
     return Fernet(key)
 
 
-def encrypt_henkilotunnus(henkilotunnus):
+def encrypt_string(original_string):
     f = _get_fernet()
 
     try:
-        token = f.encrypt(henkilotunnus.encode('utf-8'))
+        token = f.encrypt(original_string.encode('utf-8'))
     except TypeError:
-        logger.error('Encrypt henkilotunnus: Data is not bytes.')
+        logger.error('Encryption error: Data is not bytes.')
         raise CustomServerErrorException
     return token.decode('utf-8')  # convert bytes -> string
+
+
+def decrypt_excel_report_password(encrypted_password, report_id):
+    f = _get_fernet()
+    try:
+        resolved_token = f.decrypt(encrypted_password.encode('utf-8'))
+    except (TypeError, InvalidToken) as decryptException:
+        logger.error(f'Failed to decrypt Excel password with id {report_id}: {decryptException}')
+        raise CustomServerErrorException
+    return resolved_token.decode('utf-8')
 
 
 @transaction.atomic

@@ -143,11 +143,13 @@ router_onr.register(r'external-permissions', viewsets.ExternalPermissionsViewSet
 # Routes for Reporting-URLs
 router_reporting = routers.DefaultRouter()
 # /api/reporting/v1/tiedonsiirtotilasto/
-router_reporting.register(r'tiedonsiirtotilasto', viewsets_reporting.TiedonsiirtotilastoViewSet, basename="tiedonsiirtotilasto")
+router_reporting.register(r'tiedonsiirtotilasto', viewsets_reporting.TiedonsiirtotilastoViewSet, basename='tiedonsiirtotilasto')
 # /api/reporting/v1/tiedonsiirto/
 router_reporting.register(r'tiedonsiirto', viewsets_reporting.TiedonsiirtoViewSet, basename='tiedonsiirto')
 # /api/reporting/v1/tiedonsiirto/yhteenveto/
 router_reporting.register(r'tiedonsiirto/yhteenveto', viewsets_reporting.TiedonsiirtoYhteenvetoViewSet, basename='tiedonsiirto-yhteenveto')
+# /api/reporting/v1/excel-reports/
+router_reporting.register(r'excel-reports', viewsets_reporting.ExcelReportViewSet, basename='excel-reports')
 
 router_kela_reporting = routers.DefaultRouter()
 # /api/reporting/v1/kela/etuusmaksatus/aloittaneet

@@ -1,40 +1,52 @@
 import datetime
+import logging
+from wsgiref.util import FileWrapper
 
 from dateutil.relativedelta import relativedelta
+from django.conf import settings
+from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import StringAgg
+from django.db import transaction
 from django.db.models import (Q, Case, Value, When, OuterRef, Subquery, CharField, F, DateField, Count, IntegerField,
                               Exists)
 from django.db.models.functions import Cast
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
-from rest_framework.mixins import ListModelMixin
+from rest_framework.mixins import ListModelMixin, CreateModelMixin, RetrieveModelMixin
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
 from varda.enums.error_messages import ErrorMessages
-from varda.filters import TiedonsiirtoFilter
+from varda.enums.supported_language import SupportedLanguage
+from varda.excel_export import ExcelReportStatus, create_excel_report_task, generate_filename, get_excel_local_file_path
+from varda.filters import (TiedonsiirtoFilter, ExcelReportFilter, KelaEtuusmaksatusAloittaneetFilter,
+                           KelaEtuusmaksatusLopettaneetFilter, KelaEtuusmaksatusKorjaustiedotFilter)
+from varda.misc import encrypt_string
 from varda.pagination import (ChangeablePageSizePagination, TimestampCursorPagination, DateCursorPagination,
                               DateReverseCursorPagination, TimestampReverseCursorPagination)
-from varda import filters
 from varda.serializers_reporting import (KelaEtuusmaksatusAloittaneetSerializer, KelaEtuusmaksatusLopettaneetSerializer,
                                          KelaEtuusmaksatusMaaraaikaisetSerializer,
                                          KelaEtuusmaksatusKorjaustiedotSerializer,
                                          KelaEtuusmaksatusKorjaustiedotPoistetutSerializer,
                                          TiedonsiirtotilastoSerializer, ErrorReportLapsetSerializer,
                                          ErrorReportTyontekijatSerializer, TiedonsiirtoSerializer,
-                                         TiedonsiirtoYhteenvetoSerializer)
-from varda.permissions import user_permission_groups_in_organization, CustomModelPermissions
+                                         TiedonsiirtoYhteenvetoSerializer, ExcelReportSerializer)
+from varda.permissions import user_permission_groups_in_organization, CustomModelPermissions, is_oph_staff
 from varda.enums.ytj import YtjYritysmuoto
 from varda.models import (KieliPainotus, Lapsi, Maksutieto, PaosOikeus, ToiminnallinenPainotus, Toimipaikka,
                           VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z6_RequestLog,
-                          Z4_CasKayttoOikeudet, Tyontekija)
-from varda.permissions import (IsCertificateAccess, auditlogclass, get_vakajarjestajat_filter_for_raportit,
-                               TiedonsiirtoPermissions)
+                          Z4_CasKayttoOikeudet, Tyontekija, Z8_ExcelReport, PaosToiminta)
+from varda.permissions import (auditlogclass, get_vakajarjestajat_filter_for_raportit, RaportitPermissions,
+                               IsCertificateAccess)
+
+
+logger = logging.getLogger(__name__)
 
 
 @auditlogclass
@@ -49,7 +61,7 @@ class KelaEtuusmaksatusAloittaneetViewset(GenericViewSet, ListModelMixin):
         luonti_pvm: fetch data after given luonti_pvm
     """
     filter_backends = (DjangoFilterBackend,)
-    filterset_class = filters.KelaEtuusmaksatusAloittaneetFilter
+    filterset_class = KelaEtuusmaksatusAloittaneetFilter
     queryset = Varhaiskasvatussuhde.objects.none()
     serializer_class = KelaEtuusmaksatusAloittaneetSerializer
     permission_classes = (IsCertificateAccess,)
@@ -105,7 +117,7 @@ class KelaEtuusmaksatusLopettaneetViewSet(GenericViewSet, ListModelMixin):
         muutos_pvm: Pick starting date for muutos_pvm
     """
     filter_backends = (DjangoFilterBackend,)
-    filterset_class = filters.KelaEtuusmaksatusLopettaneetFilter
+    filterset_class = KelaEtuusmaksatusLopettaneetFilter
     queryset = Varhaiskasvatussuhde.objects.none()
     serializer_class = KelaEtuusmaksatusLopettaneetSerializer
     permission_classes = (IsCertificateAccess,)
@@ -171,7 +183,7 @@ class KelaEtuusmaksatusMaaraaikaisetViewSet(GenericViewSet, ListModelMixin):
         luonti_pvm: Change alkamis_pvm of fetched data
     """
     filter_backends = (DjangoFilterBackend,)
-    filterset_class = filters.KelaEtuusmaksatusLopettaneetFilter
+    filterset_class = KelaEtuusmaksatusLopettaneetFilter
     queryset = Varhaiskasvatussuhde.history.none()
     serializer_class = KelaEtuusmaksatusMaaraaikaisetSerializer
     permission_classes = (IsCertificateAccess,)
@@ -228,7 +240,7 @@ class KelaEtuusmaksatusKorjaustiedotViewSet(GenericViewSet, ListModelMixin):
         muutos_pvm: change starting date for returned changes
     """
     filter_backends = (DjangoFilterBackend,)
-    filterset_class = filters.KelaEtuusmaksatusKorjaustiedotFilter
+    filterset_class = KelaEtuusmaksatusKorjaustiedotFilter
     queryset = Varhaiskasvatussuhde.history.none()
     serializer_class = KelaEtuusmaksatusKorjaustiedotSerializer
     permission_classes = (IsCertificateAccess,)
@@ -753,7 +765,7 @@ class TiedonsiirtoViewSet(GenericViewSet, ListModelMixin):
     serializer_class = TiedonsiirtoSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TiedonsiirtoFilter
-    permission_classes = (TiedonsiirtoPermissions,)
+    permission_classes = (RaportitPermissions,)
 
     vakajarjestaja_filter = None
 
@@ -779,7 +791,7 @@ class TiedonsiirtoYhteenvetoViewSet(GenericViewSet, ListModelMixin):
     serializer_class = TiedonsiirtoYhteenvetoSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TiedonsiirtoFilter
-    permission_classes = (TiedonsiirtoPermissions,)
+    permission_classes = (RaportitPermissions,)
 
     vakajarjestaja_filter = None
 
@@ -805,3 +817,67 @@ class TiedonsiirtoYhteenvetoViewSet(GenericViewSet, ListModelMixin):
     def list(self, request, *args, **kwargs):
         self.vakajarjestaja_filter = get_vakajarjestajat_filter_for_raportit(request)
         return super(TiedonsiirtoYhteenvetoViewSet, self).list(request, *args, **kwargs)
+
+
+@auditlogclass
+class ExcelReportViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, CreateModelMixin):
+    serializer_class = ExcelReportSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = ExcelReportFilter
+    permission_classes = (RaportitPermissions,)
+    pagination_class = ChangeablePageSizePagination
+
+    def _validate_toimipaikka_belongs_to_vakajarjestaja(self, vakajarjestaja, toimipaikka):
+        paos_qs = PaosToiminta.objects.filter(Q(oma_organisaatio=vakajarjestaja) & Q(paos_toimipaikka=toimipaikka))
+        if not toimipaikka.vakajarjestaja == vakajarjestaja and not paos_qs.exists():
+            # Toimipaikka should be one of vakajarjestaja, or PAOS-toimipaikka of vakajarjestaja
+            raise ValidationError({'toimipaikka': [ErrorMessages.ER001.value]})
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser or is_oph_staff(user):
+            report_filter = Q()
+        else:
+            report_filter = Q(user=user)
+        return Z8_ExcelReport.objects.filter(report_filter).distinct().order_by('-timestamp')
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        data = serializer.validated_data
+        vakajarjestaja = data.get('vakajarjestaja')
+
+        if toimipaikka := data.get('toimipaikka'):
+            self._validate_toimipaikka_belongs_to_vakajarjestaja(vakajarjestaja, toimipaikka)
+
+        language = (SupportedLanguage.SV.value if data.get('language').upper() == SupportedLanguage.SV.value
+                    else SupportedLanguage.FI.value)
+
+        with transaction.atomic():
+            filename = generate_filename(data.get('report_type'), language)
+            while Z8_ExcelReport.objects.filter(filename=filename).exists():
+                # Ensure filename is unique
+                filename = generate_filename(data.get('report_type'), language)
+
+            password = encrypt_string(User.objects.make_random_password(length=16))
+            excel_report = serializer.save(user=user, password=password, status=ExcelReportStatus.PENDING.value,
+                                           filename=filename, language=language)
+            transaction.on_commit(lambda: create_excel_report_task.delay(excel_report.id))
+
+    @action(methods=['get'], detail=True, url_path='download', url_name='download')
+    def download_report(self, request, pk=None):
+        if settings.PRODUCTION_ENV or settings.QA_ENV:
+            # In production and QA Excel files are downloaded from S3
+            raise Http404
+
+        instance = self.get_object()
+        try:
+            excel_file = open(get_excel_local_file_path(instance), 'rb')
+        except OSError as osException:
+            logger.error(f'Error opening Excel file with id {instance.id}: {osException}')
+            raise Http404
+
+        response = HttpResponse(FileWrapper(excel_file),
+                                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename="{instance.filename}"'
+        excel_file.close()
+        return response

@@ -26,6 +26,7 @@ class VardaViewsReportingTests(TestCase):
         resp = client.get('/api/reporting/v1/')
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(json.loads(resp.content), {
+            'excel-reports': 'http://testserver/api/reporting/v1/excel-reports/',
             'tiedonsiirto': 'http://testserver/api/reporting/v1/tiedonsiirto/',
             'tiedonsiirto/yhteenveto': 'http://testserver/api/reporting/v1/tiedonsiirto/yhteenveto/',
             'tiedonsiirtotilasto': 'http://testserver/api/reporting/v1/tiedonsiirtotilasto/'

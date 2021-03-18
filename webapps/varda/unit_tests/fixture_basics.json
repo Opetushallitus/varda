@@ -482,10 +482,35 @@
       "one_off": false,
       "start_time": null,
       "expires": null,
-      "enabled": false,
+      "enabled": true,
       "last_run_at": null,
       "total_run_count": 0,
       "date_changed": "2020-07-01T16:00:00.000Z",
+      "description": ""
+    }
+  },
+  {
+    "model": "django_celery_beat.periodictask",
+    "pk": 16,
+    "fields": {
+      "name": "delete_excel_reports_older_than_arg_hours",
+      "task": "varda.tasks.delete_excel_reports_older_than_arg_hours_task",
+      "interval": null,
+      "crontab": 1,
+      "solar": null,
+      "args": "[48]",
+      "kwargs": "{}",
+      "queue": null,
+      "exchange": null,
+      "routing_key": null,
+      "priority": null,
+      "one_off": false,
+      "start_time": null,
+      "expires": null,
+      "enabled": true,
+      "last_run_at": null,
+      "total_run_count": 0,
+      "date_changed": "2021-02-23T16:00:00.000Z",
       "description": ""
     }
   }

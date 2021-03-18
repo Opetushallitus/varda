@@ -34,7 +34,7 @@ from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid,
 from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
 from varda.enums.error_messages import ErrorMessages
 from varda.exceptions.conflict_error import ConflictError
-from varda.misc import (CustomServerErrorException, decrypt_henkilotunnus, encrypt_henkilotunnus, hash_string,
+from varda.misc import (CustomServerErrorException, decrypt_henkilotunnus, encrypt_string, hash_string,
                         update_painotus_kytkin)
 from varda.misc_queries import get_paos_toimipaikat
 from varda.misc_viewsets import IncreasedModifyThrottleMixin, ObjectByTunnisteMixin
@@ -998,7 +998,7 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
         After that, let's encrypt henkilotunnus due to security reasons.
         """
         henkilotunnus_unique_hash = hash_string(henkilotunnus)
-        henkilotunnus_encrypted = encrypt_henkilotunnus(henkilotunnus)
+        henkilotunnus_encrypted = encrypt_string(henkilotunnus)
         self.validate_henkilo_uniqueness_henkilotunnus(henkilotunnus_unique_hash, etunimet, sukunimi)
 
         # It is possible we get different hetu than user provided
@@ -1007,7 +1007,7 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
         if henkilo_data and henkilo_data.get('hetu', None):
             self.validate_henkilo_uniqueness_henkilotunnus(hash_string(henkilo_data['hetu']), etunimet, sukunimi)
             henkilotunnus_unique_hash = hash_string(henkilo_data['hetu'])
-            henkilotunnus_encrypted = encrypt_henkilotunnus(henkilo_data['hetu'])
+            henkilotunnus_encrypted = encrypt_string(henkilo_data['hetu'])
 
         validated_data['henkilotunnus_unique_hash'] = henkilotunnus_unique_hash
         validated_data['henkilotunnus'] = henkilotunnus_encrypted

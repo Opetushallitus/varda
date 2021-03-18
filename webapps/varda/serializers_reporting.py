@@ -1,9 +1,18 @@
 import datetime
 from django.apps import apps
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
-from varda.models import Varhaiskasvatussuhde, Lapsi, Tyontekija, Z6_RequestLog
-from varda.misc import decrypt_henkilotunnus
+from rest_framework.reverse import reverse
+
+from varda import validators
+from varda.clients.allas_s3_client import Client as S3Client
+from varda.excel_export import ExcelReportStatus, get_s3_object_name
+from varda.models import (Varhaiskasvatussuhde, Lapsi, Tyontekija, Z6_RequestLog, Z8_ExcelReport, Toimipaikka,
+                          Z4_CasKayttoOikeudet, VakaJarjestaja)
+from varda.misc import decrypt_henkilotunnus, decrypt_excel_report_password
+from varda.serializers import ToimipaikkaHLField, VakaJarjestajaPermissionCheckedHLField
+from varda.serializers_common import OidRelatedField
 
 
 class KelaEtuusmaksatusAloittaneetSerializer(serializers.Serializer):
@@ -232,3 +241,46 @@ class TiedonsiirtoYhteenvetoSerializer(serializers.Serializer):
 
     class Meta:
         list_serializer_class = TiedonsiirtoListSerializer
+
+
+class ExcelReportSerializer(serializers.ModelSerializer):
+    report_type = serializers.CharField()
+    language = serializers.CharField()
+    vakajarjestaja = VakaJarjestajaPermissionCheckedHLField(view_name='vakajarjestaja-detail', required=False,
+                                                            permission_groups=[Z4_CasKayttoOikeudet.RAPORTTIEN_KATSELIJA])
+    vakajarjestaja_oid = OidRelatedField(object_type=VakaJarjestaja,
+                                         parent_field='vakajarjestaja',
+                                         parent_attribute='organisaatio_oid',
+                                         prevalidator=validators.validate_organisaatio_oid,
+                                         either_required=True)
+    toimipaikka = ToimipaikkaHLField(view_name='toimipaikka-detail', required=False)
+    toimipaikka_oid = OidRelatedField(object_type=Toimipaikka,
+                                      parent_field='toimipaikka',
+                                      parent_attribute='organisaatio_oid',
+                                      prevalidator=validators.validate_organisaatio_oid,
+                                      either_required=False)
+    toimipaikka_nimi = serializers.CharField(read_only=True, source='toimipaikka.nimi')
+    url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Z8_ExcelReport
+        exclude = ('password', 's3_object_path',)
+        read_only_fields = ('id', 'filename', 'status', 'password', 'user', 'timestamp', 's3_object_path')
+
+    def get_url(self, instance):
+        kwargs = self.context['view'].kwargs
+        if not kwargs.get('pk', None) or instance.status != ExcelReportStatus.FINISHED.value:
+            # Not retrieve or Excel report not finished
+            return None
+
+        if settings.PRODUCTION_ENV or settings.QA_ENV:
+            s3_client = S3Client()
+            # Creates a temporary link to the file, which is valid for 10 seconds
+            return s3_client.create_presigned_url(get_s3_object_name(instance), expiration=10)
+        else:
+            return reverse('excel-reports-download', kwargs=kwargs, request=self.context['request'])
+
+    def get_password(self, instance):
+        # TODO: If encryption support is added (https://jira.eduuni.fi/browse/OPHVARDA-2221), use this function to
+        #       send password with the report data
+        return decrypt_excel_report_password(instance.password, instance.id)

@@ -8,7 +8,7 @@ from calendar import monthrange
 from django.db.models import Max
 from timeit import default_timer as timer
 from varda.models import Henkilo
-from varda.misc import encrypt_henkilotunnus, hash_string
+from varda.misc import encrypt_string, hash_string
 
 DB_ANONYMIZER_ZIP_FILE_PATH = 'anonymizer/python/anonymized_names.zip'
 KUNTAKOODI_FILE = 'anonymizer/python/kuntakoodit.zip'
@@ -91,14 +91,14 @@ def create_henkilo(henkilo, henkilotunnus_unique_hash_set, file, etunimet_miehet
 
     # Henkilotunnus
     henkilotunnus = create_hetu_from_birthday(syntyma_pvm, sukupuoli_koodi)
-    encrypted_henkilotunnus = encrypt_henkilotunnus(henkilotunnus)
+    encrypted_henkilotunnus = encrypt_string(henkilotunnus)
     henkilotunnus_unique_hash = hash_string(henkilotunnus)
 
     # counter is to prevent infinite loop if there are duplicates in the data the max amount could be adjusted
     counter = 0
     while henkilotunnus_unique_hash in henkilotunnus_unique_hash_set and counter <= 50:
         henkilotunnus = create_hetu_from_birthday(syntyma_pvm, sukupuoli_koodi)
-        encrypted_henkilotunnus = encrypt_henkilotunnus(henkilotunnus)
+        encrypted_henkilotunnus = encrypt_string(henkilotunnus)
         henkilotunnus_unique_hash = hash_string(henkilotunnus)
         counter += 1
 

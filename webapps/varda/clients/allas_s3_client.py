@@ -5,7 +5,7 @@ import os
 from botocore.exceptions import ClientError, NoCredentialsError, ParamValidationError
 from django.conf import settings
 
-# Get an instance of a logger
+
 logger = logging.getLogger(__name__)
 
 
@@ -51,7 +51,7 @@ class Client:
 
     def create_presigned_url(self, object_name, expiration=3600):
         """
-        Generate a presigned URL to share an S3 object
+        Generate a presigned URL to share an S3 object.
 
         :param object_name: string
         :param expiration: Time in seconds for the presigned URL to remain valid
@@ -81,18 +81,26 @@ class Client:
 
     def delete_file(self, object_name):
         """
-        Delete file. If file is not found, do nothing.
+        Delete file.
 
         :param object_name: string
-        :return: None
+        :return: True if request was successful, otherwise False
         """
         bucket_name = settings.ALLAS_USER_FILES_BUCKET
         if not bucket_name:
             logger.error('Could not delete file. Check bucket name.')
-            return None
+            return False
 
         if not object_name:
             logger.error('Could not delete file. Check object_name.')
-            return None
+            return False
 
-        self.client.delete_object(Bucket=bucket_name, Key=object_name)
+        try:
+            self.client.delete_object(Bucket=bucket_name, Key=object_name)
+        except (ClientError, NoCredentialsError, ParamValidationError) as e:
+            logger.error(f'Could not delete file. Error: {e}.')
+            return False
+
+        # We cannot determine if file was actually deleted or not, so return True if request is successful
+        # https://github.com/boto/boto3/issues/759
+        return True

@@ -11,7 +11,7 @@ from guardian.core import ObjectPermissionChecker
 from rest_framework import status
 from rest_framework.exceptions import ValidationError as ValidationErrorRest
 
-from varda.misc import hash_string, encrypt_henkilotunnus
+from varda.misc import hash_string, encrypt_string
 from varda.models import (VakaJarjestaja, Toimipaikka, PaosOikeus, Huoltaja, Huoltajuussuhde, Henkilo,
                           Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto, ToiminnallinenPainotus,
                           KieliPainotus)
@@ -2218,7 +2218,7 @@ class VardaViewsTests(TestCase):
         huoltaja_hetu = '180200A941K'
 
         lapsi_henkilo = Henkilo.objects.create(
-            henkilotunnus=encrypt_henkilotunnus(lapsi_hetu),
+            henkilotunnus=encrypt_string(lapsi_hetu),
             henkilotunnus_unique_hash=hash_string(lapsi_hetu),
             henkilo_oid='1.2.246.562.24.158201550073654912',
             etunimet='Juniori',
@@ -2235,7 +2235,7 @@ class VardaViewsTests(TestCase):
         assign_object_level_permissions(oid_of_client, Lapsi, lapsi)
 
         huoltaja_henkilo = Henkilo.objects.create(
-            henkilotunnus=encrypt_henkilotunnus(huoltaja_hetu),
+            henkilotunnus=encrypt_string(huoltaja_hetu),
             henkilotunnus_unique_hash=hash_string(huoltaja_hetu),
             henkilo_oid='1.2.246.562.24.158201550073654911',
             etunimet='Seniori',

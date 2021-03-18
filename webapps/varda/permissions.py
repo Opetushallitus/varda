@@ -108,7 +108,7 @@ class ToimipaikkaPermissions(permissions.BasePermission):
         return _is_user_group_permissions(accepted_permissions, user)
 
 
-class TiedonsiirtoPermissions(permissions.BasePermission):
+class RaportitPermissions(permissions.BasePermission):
     """
     Allows access to admin, OPH users, and users who belong to a VARDA_RAPORTTIEN_KATSELIJA group
     """
