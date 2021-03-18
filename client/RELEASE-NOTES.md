@@ -1,6 +1,10 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.10 (18.03.2021)
+- OPHVARDA-1800: Vakasuhteen toimipaikka-filtteröinnin parantaminen
+- OPHVARDA-2185: Käyttöliittymä Excel-raporteille
+
 1.5.9 (11.03.2021)
 - OPHVARDA-1694: Tekstin koon muutoksen korjauksia
 - OPHVARDA-1695: Linkkien saavutettavuuskorjauksia
