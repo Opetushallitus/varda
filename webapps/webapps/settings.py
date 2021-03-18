@@ -422,6 +422,9 @@ CAS_SALT = os.environ.get('VARDA_SALT', DEFAULT_CAS_SALT_FOR_TESTING_ONLY)
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+# Allas s3
+ALLAS_USER_FILES_BUCKET = None
+
 """
 TODO: This does not currently work. Login fails with 403 forbidden.
 if "VARDA_HOSTNAME" in os.environ:
