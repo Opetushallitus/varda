@@ -1,3 +1,7 @@
 .autocomplete-input::placeholder {
   color: inherit;
 }
+
+.oph-select-container::after, .oph-select-container::before {
+  pointer-events: none;
+}

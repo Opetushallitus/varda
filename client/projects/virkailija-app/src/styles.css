@@ -213,6 +213,36 @@ mat-expansion-panel mat-expansion-panel-header {
   margin-right: .5em;
 }
 
+.full-width-row {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.margin-top {
+  margin-top: 1em;
+}
+
+.margin-top-large {
+  margin-top: 2em;
+}
+
+@media (max-width: 767px) {
+  .margin-top-md {
+    margin-top: 1em;
+  }
+}
+
+@media (max-width: 576px) {
+  .margin-top-sm {
+    margin-top: 1em;
+  }
+}
+
+.varda-checkbox {
+  font-family: inherit;
+}
+
 /*HIGH CONTRAST DEFAULT STYLES*/
 .varda-high-contrast,
 .varda-high-contrast a,

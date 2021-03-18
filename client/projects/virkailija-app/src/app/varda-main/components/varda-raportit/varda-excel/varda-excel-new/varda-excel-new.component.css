@@ -1,0 +1,7 @@
+.datepicker-container {
+  min-width: 12em;
+}
+
+.report-type-select-container {
+  width: calc(100% - 40px);
+}

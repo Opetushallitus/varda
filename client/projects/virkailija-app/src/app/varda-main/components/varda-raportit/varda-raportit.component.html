@@ -27,6 +27,15 @@
         {{ i18n.yksiloimattomat | translate }}
       </a>
     </ng-container>
+    <ng-container *ngIf="toimijaAccess.raportit.katselija || toimijaAccess.oph.katselija">
+      <a mat-tab-link
+         routerLink="excel"
+         (click)="activeLink = 'excel'"
+         [active]="activeLink == 'excel'">
+        <mat-icon>table_view</mat-icon>
+        {{ i18n.excel | translate }}
+      </a>
+    </ng-container>
   </nav>
 
   <router-outlet></router-outlet>

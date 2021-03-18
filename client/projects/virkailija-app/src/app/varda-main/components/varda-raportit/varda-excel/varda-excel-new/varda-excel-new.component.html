@@ -1,0 +1,94 @@
+<div class="full-width-row">
+  <div class="modal-form-intro col-12">
+    {{ i18n.excel_new_instructions | translate }}
+  </div>
+  <div class="full-width-row">
+    <div class="col-md-7 col-lg-5">
+      <label for="reportTypeSelect"
+             class="oph-bold">{{i18n.excel_report_type | translate}}</label>
+      <div class="full-width-row">
+        <div class="oph-select-container report-type-select-container">
+          <select class="oph-input oph-select"
+                  name="reportTypeSelect"
+                  id="reportTypeSelect"
+                  (change)="updateToimipaikat()"
+                  [(ngModel)]="newReport.report_type">
+            <option *ngFor="let reportTypeOption of reportTypeOptions"
+                    [ngValue]="reportTypeOption[0]"
+                    [title]="reportTypeOption[1] | translate">
+              {{reportTypeOption[1] | translate}}
+            </option>
+          </select>
+        </div>
+        <button mat-icon-button
+                class="varda-text-button"
+                [matTooltip]="getTooltipTranslation(newReport.report_type)  | translate"
+                matTooltipClass="varda-tooltip">
+          <mat-icon>help_outline</mat-icon>
+        </button>
+      </div>
+    </div>
+    <div class="col-md-5 col-lg-3 margin-top-md datepicker-container" *ngIf="newReport.report_type === ReportType.VAKATIEDOT_VOIMASSA">
+      <label for="targetDatePicker"
+             class="oph-bold">{{i18n.excel_new_voimassa_date | translate}}</label>
+      <app-varda-datepicker #targetDatePicker="ngModel"
+                            name="targetDatePicker"
+                            id="targetDatePicker"
+                            [(ngModel)]="targetDate"
+                            [required]="true">
+      </app-varda-datepicker>
+      <div aria-live="assertive"
+           class="varda-error-message-block"
+           role="alert"
+           *ngIf="targetDatePicker.invalid">
+        <p>{{i18n.katsele_tietoja_error_date_format | translate}}</p>
+      </div>
+    </div>
+  </div>
+  <div class="full-width-row margin-top">
+    <div class="col-md-auto varda-theme">
+      <mat-checkbox name="vakajarjestajaLevelCheckbox"
+                    class="varda-checkbox"
+                    [(ngModel)]="vakajarjestajaLevel"
+                    labelPosition="after">
+        {{i18n.excel_new_vakajarjestaja_level | translate}}
+      </mat-checkbox>
+    </div>
+  </div>
+  <div class="full-width-row margin-top" *ngIf="!vakajarjestajaLevel">
+    <div class="col-md-6" *ngIf="!vakajarjestajaLevel">
+      <label for="toimipaikkaInput"
+             class="oph-bold">{{ i18n.excel_new_toimipaikka | translate }}</label>
+      <app-varda-autocomplete-selector #toimipaikkaSelector
+                                       [options]="toimipaikkaOptions"
+                                       id="toimipaikkaInput"
+                                       name="toimipaikkaInput"
+                                       [optionFormat]="{format: '{0}', properties:['nimi']}"
+                                       [nullValue]="null"
+                                       [placeholder]="i18n.excel_new_toimipaikka_placeholder | translate"
+                                       [nullOptionLabel]="i18n.excel_new_toimipaikka_placeholder | translate"
+                                       [isNullOption]="false"
+                                       [invalidInputLabel]="i18n.excel_new_toimipaikka_invalid | translate"
+                                       [(ngModel)]="selectedToimipaikka">
+      </app-varda-autocomplete-selector>
+    </div>
+  </div>
+  <app-varda-error-field [errors]="errors"></app-varda-error-field>
+  <div class="col-md-auto margin-top-large">
+    <button class="varda-button varda-button-neutral varda-icon-button"
+            type="button"
+            routerLink="../">
+      <mat-icon>keyboard_backspace</mat-icon>
+      {{i18n.excel_new_cancel | translate}}
+    </button>
+  </div>
+  <div class="col-md-auto margin-top-large margin-top-md">
+    <button class="varda-button varda-icon-button"
+            type="button"
+            (click)="create()"
+            [disabled]="isLoading">
+      <mat-icon>add</mat-icon>
+      {{i18n.excel_new_create | translate}}
+    </button>
+  </div>
+</div>

@@ -10,6 +10,7 @@ import { VardaTiedonsiirtoDTO, VardaTiedonsiirtoYhteenvetoDTO } from '../../util
 import { TiedonsiirrotSearchFilter } from '../../varda-main/components/varda-raportit/varda-tiedonsiirrot/tiedonsiirrot-sections.abstract';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { VardaExcelReportDTO, VardaExcelReportPostDTO } from '../../utilities/models/dto/varda-excel-report-dto.model';
 
 @Injectable()
 export class VardaRaportitService {
@@ -71,4 +72,19 @@ export class VardaRaportitService {
     return this.selectedVakajarjestajat$.asObservable();
   }
 
+  getExcelReportList(vakajarjestajaId: number, searchParams: Object): Observable<VardaPageDto<VardaExcelReportDTO>> {
+    return this.http.get(`${this.reportingApi}/v1/excel-reports/?vakajarjestaja=${vakajarjestajaId}`, searchParams);
+  }
+
+  getExcelReport(reportId: number): Observable<VardaExcelReportDTO> {
+    return this.http.get(`${this.reportingApi}/v1/excel-reports/${reportId}/`);
+  }
+
+  postExcelReport(report: VardaExcelReportPostDTO) {
+    return this.http.post(`${this.reportingApi}/v1/excel-reports/`, report);
+  }
+
+  downloadExcelReport(url: string): Observable<any> {
+    return this.http.get(url, undefined, undefined, {responseType: 'arraybuffer'});
+  }
 }

@@ -90,6 +90,8 @@ import { PuutteellisetHenkilotListComponent } from './components/varda-raportit/
 import { ToimipaikkaPainotuksetComponent } from './components/varda-toimipaikka-form/toimipaikka-painotukset/toimipaikka-painotukset.component';
 import { KielipainotusComponent } from './components/varda-toimipaikka-form/toimipaikka-painotukset/kielipainotus/kielipainotus.component';
 import { ToimintapainotusComponent } from './components/varda-toimipaikka-form/toimipaikka-painotukset/toimintapainotus/toimintapainotus.component';
+import { VardaExcelComponent } from './components/varda-raportit/varda-excel/varda-excel.component';
+import { VardaExcelNewComponent } from './components/varda-raportit/varda-excel/varda-excel-new/varda-excel-new.component';
 
 @NgModule({
   imports: [
@@ -181,6 +183,8 @@ import { ToimintapainotusComponent } from './components/varda-toimipaikka-form/t
     ToimipaikkaPainotuksetComponent,
     KielipainotusComponent,
     ToimintapainotusComponent,
+    VardaExcelComponent,
+    VardaExcelNewComponent
   ],
   entryComponents: [EiHenkilostoaDialogComponent],
   exports: [

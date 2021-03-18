@@ -1,11 +1,9 @@
 import {
   Component,
   ElementRef,
-  EventEmitter,
   forwardRef,
   Input,
   OnChanges,
-  Output,
   SimpleChanges,
   ViewChild
 } from '@angular/core';
@@ -37,6 +35,7 @@ export class VardaAutocompleteSelectorComponent<T> implements ControlValueAccess
   @Input() placeholder: string;
   @Input() nullValue: any = null;
   @Input() nullOptionLabel = '-';
+  @Input() isNullOption = true;
   @Input() invalidInputLabel = '';
   @ViewChild('textInput') textInput: ElementRef<HTMLInputElement>;
 
@@ -45,6 +44,7 @@ export class VardaAutocompleteSelectorComponent<T> implements ControlValueAccess
   filteredOptions: BehaviorSubject<Array<T>> = new BehaviorSubject<Array<T>>([]);
   selectedOption: T;
   isNoResults = false;
+  isInvalid = false;
 
   private propagateChange = (_: any) => {};
   private propagateTouch = () => {};
@@ -52,6 +52,7 @@ export class VardaAutocompleteSelectorComponent<T> implements ControlValueAccess
   constructor() { }
 
   inputChange(event: Event) {
+    this.isInvalid = false;
     this.inputValue = '';
     this.selectedOption = this.nullValue;
     const targetValue = (<HTMLInputElement> event.target).value;
@@ -74,6 +75,7 @@ export class VardaAutocompleteSelectorComponent<T> implements ControlValueAccess
   }
 
   autocompleteSelected(event: MatAutocompleteSelectedEvent) {
+    this.isInvalid = false;
     const option = event.option.value;
     this.selectedOption = option;
     this.filteredOptions.next(this.options);
@@ -87,6 +89,10 @@ export class VardaAutocompleteSelectorComponent<T> implements ControlValueAccess
       return false;
     }
     return this.textInput.nativeElement.value !== '' && this.selectedOption === this.nullValue;
+  }
+
+  setInvalid() {
+    this.isInvalid = true;
   }
 
   getFormattedOption(option: T) {
@@ -107,7 +113,11 @@ export class VardaAutocompleteSelectorComponent<T> implements ControlValueAccess
 
   fillTextInput(value: T) {
     if (this.textInput) {
-      this.textInput.nativeElement.value = this.getFormattedOption(value);
+      if (value) {
+        this.textInput.nativeElement.value = this.getFormattedOption(value);
+      } else {
+        this.textInput.nativeElement.value = '';
+      }
     }
   }
 

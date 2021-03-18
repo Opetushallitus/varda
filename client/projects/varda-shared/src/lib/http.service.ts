@@ -78,13 +78,13 @@ export class HttpService extends AbstractHttpService {
     super(http);
   }
 
-  get(url: string, options?: any, httpHeadersParam?: HttpHeaders): Observable<any> {
+  get(url: string, urlParams?: any, httpHeadersParam?: HttpHeaders, options?: any): Observable<any> {
     const authToken = ` Token ${this.apiKey}`;
     const httpHeaders = httpHeadersParam || new HttpHeaders({ 'Authorization': authToken });
     const params = new HttpParams({
-      fromObject: options,
+      fromObject: urlParams,
     });
-    return this.http.get(url, { headers: httpHeaders, params })
+    return this.http.get(url, { headers: httpHeaders, params, ...options })
       .pipe(
         this.httpRetry(),
         map((resp: any) => {

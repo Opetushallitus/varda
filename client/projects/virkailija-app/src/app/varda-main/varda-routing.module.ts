@@ -4,12 +4,18 @@ import { AuthGuard } from '../core/auth/auth.guard';
 import { RoleGuard } from '../core/auth/role.guard';
 import {
   VardaDashboardComponent,
-  VardaReportingComponent,
   VardaMainFrameComponent,
-  VardaVakatoimijaComponent,
+  VardaReportingComponent,
   VardaTaydennyskoulutusComponent,
+  VardaVakatoimijaComponent,
 } from '../utilities/components';
-import { BrowserNotSupportedComponent, BrowserNotSupportedGuard, LoginFailedComponent, LoginPageComponent, PageNotFoundComponent } from './components/public-components/public-components';
+import {
+  BrowserNotSupportedComponent,
+  BrowserNotSupportedGuard,
+  LoginFailedComponent,
+  LoginPageComponent,
+  PageNotFoundComponent
+} from './components/public-components/public-components';
 import { VardaPaosManagementContainerComponent } from './components/varda-paos-management-container/varda-paos-management-container.component';
 import { VardaHenkilostoTilapainenComponent } from './components/varda-henkilosto-tilapainen/varda-henkilosto-tilapainen.component';
 import { VirkailijaTranslations } from '../../assets/i18n/virkailija-translations.enum';
@@ -25,6 +31,8 @@ import { VardaTiedonsiirtoComponent } from './components/varda-raportit/varda-ti
 import { VardaTiedonsiirrotYhteenvetoComponent } from './components/varda-raportit/varda-tiedonsiirrot/tiedonsiirrot-yhteenveto/tiedonsiirrot-yhteenveto.component';
 import { VardaTiedonsiirrotComponent } from './components/varda-raportit/varda-tiedonsiirrot/varda-tiedonsiirrot.component';
 import { VardaYksiloimattomatComponent } from './components/varda-raportit/varda-yksiloimattomat/varda-yksiloimattomat.component';
+import { VardaExcelComponent } from './components/varda-raportit/varda-excel/varda-excel.component';
+import { VardaExcelNewComponent } from './components/varda-raportit/varda-excel/varda-excel-new/varda-excel-new.component';
 
 const routes: Routes = [
   {
@@ -198,6 +206,22 @@ const routes: Routes = [
                     redirectTo: 'yhteenveto'
                   }
                 ]
+              },
+              {
+                path: 'excel/new',
+                component: VardaExcelNewComponent,
+                data: {
+                  title: VirkailijaTranslations.excel_new,
+                  toimijaRoles: [UserAccessKeys.raportit, UserAccessKeys.oph]
+                }
+              },
+              {
+                path: 'excel',
+                component: VardaExcelComponent,
+                data: {
+                  title: VirkailijaTranslations.excel,
+                  toimijaRoles: [UserAccessKeys.raportit, UserAccessKeys.oph]
+                }
               },
             ]
           },

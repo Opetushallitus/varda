@@ -23,14 +23,6 @@ h3 {
   border: 2px solid transparent;
 }
 
-.margin-top {
-  margin-top: 1em;
-}
-
-.margin-top-large {
-  margin-top: 2em;
-}
-
 .varda-text-large {
   font-size: var(--h3);
   font-weight: 500;
@@ -376,10 +368,6 @@ tr.selected-row .mat-cell {
   .filter-clear {
     width: 100%;
   }
-
-  .margin-top-md {
-    margin-top: 1em;
-  }
 }
 
 @media (max-width: 576px) {
@@ -407,9 +395,5 @@ tr.selected-row .mat-cell {
 
   .mat-expansion-panel-header .mat-content {
     flex-direction: column;
-  }
-
-  .margin-top-sm {
-    margin-top: 1em;
   }
 }

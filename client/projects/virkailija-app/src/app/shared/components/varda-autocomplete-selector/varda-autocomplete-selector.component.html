@@ -1,4 +1,4 @@
-<div [class.oph-invalid-container]="isOptionInvalid()">
+<div [class.oph-invalid-container]="isInvalid || isOptionInvalid()">
   <div class="oph-select-container">
     <input class="oph-input autocomplete-input"
            type="text"
@@ -8,7 +8,7 @@
            (input)="inputChange($event)">
   </div>
   <mat-autocomplete #autocomplete="matAutocomplete" (optionSelected)="autocompleteSelected($event)">
-    <mat-option [value]="nullValue">{{nullOptionLabel}}</mat-option>
+    <mat-option *ngIf="isNullOption" [value]="nullValue">{{nullOptionLabel}}</mat-option>
     <mat-option *ngIf="isNoResults" disabled>{{ i18n.katsele_tietoja_no_results | translate}}</mat-option>
     <mat-option *ngFor="let option of filteredOptions | async"
                 [value]="option"
@@ -19,7 +19,7 @@
   <div class="varda-error-message-block"
        aria-live="assertive"
        role="alert"
-       *ngIf="isOptionInvalid()">
+       *ngIf="isInvalid || isOptionInvalid()">
     <p>{{invalidInputLabel}}</p>
   </div>
 </div>
