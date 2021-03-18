@@ -11,7 +11,7 @@ export class VardaHttpInterceptor implements HttpInterceptor {
   private rateLimit$ = new BehaviorSubject(this.availableThreads);
   private lastAuthFailed = 0;
 
-  private authenticationErrorsList = ['PE005', 'PE006', 'PE007'];
+  private authenticationErrorsList = ['PE007'];
   constructor(private loginService: LoginService) { }
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
