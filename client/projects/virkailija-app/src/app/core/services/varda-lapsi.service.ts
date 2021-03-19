@@ -60,7 +60,7 @@ export class VardaLapsiService {
   }
 
   updateVarhaiskasvatuspaatos(varhaiskasvatuspaatosDTO: VardaVarhaiskasvatuspaatosDTO): Observable<VardaVarhaiskasvatuspaatosDTO> {
-    return this.http.put(`${this.apiPath}/varhaiskasvatuspaatokset/${varhaiskasvatuspaatosDTO.id}/`, varhaiskasvatuspaatosDTO);
+    return this.http.patch(`${this.apiPath}/varhaiskasvatuspaatokset/${varhaiskasvatuspaatosDTO.id}/`, varhaiskasvatuspaatosDTO);
   }
 
   deleteVarhaiskasvatuspaatos(varhaiskasvatuspaatosId: number): Observable<void> {
