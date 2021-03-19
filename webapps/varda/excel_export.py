@@ -84,8 +84,11 @@ class AutofitWorksheet(Worksheet):
 
     Also keeps track of number of rows
     """
-    min_width = 0
-    last_row = 0
+    def __init__(self):
+        super().__init__()
+        self.min_width = 0
+        self.last_row = 0
+        self.max_column_widths = {}
 
     @convert_cell_args
     def write(self, row, col, *args):
@@ -114,20 +117,19 @@ class AutofitWorkbook(Workbook):
 
     Also keeps track of number of rows per worksheet
     """
-    number_of_rows_per_worksheet = []
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.number_of_rows_per_worksheet = []
 
     def add_worksheet(self, *args, **kwargs):
         worksheet = super(AutofitWorkbook, self).add_worksheet(*args, **kwargs, worksheet_class=AutofitWorksheet)
-        worksheet.max_column_widths = {}
         return worksheet
 
     def close(self):
         for worksheet in self.worksheets():
             for column, width in worksheet.max_column_widths.items():
                 worksheet.set_column(column, column, width)
-
             self.number_of_rows_per_worksheet.append(worksheet.last_row)
-
         return super(AutofitWorkbook, self).close()
 
 
@@ -228,6 +230,7 @@ def _create_vakatiedot_report(workbook, language, vakajarjestaja_id, toimipaikka
                               'varhaiskasvatuspaatos__lapsi__henkilo__etunimet'))
 
     jarjestamismuoto_codes = _get_koodisto_with_translations(Koodistot.jarjestamismuoto_koodit.value, language)
+    lahdejarjestelma_codes = _get_koodisto_with_translations(Koodistot.lahdejarjestelma_koodit.value, language)
 
     vakasuhde_sheet = workbook.add_worksheet(translations.get(VAKASUHDE_SHEET_NAME))
     _write_headers(vakasuhde_sheet, translations, VAKASUHDE_HEADERS)
@@ -249,7 +252,7 @@ def _create_vakatiedot_report(workbook, language, vakajarjestaja_id, toimipaikka
         else:
             vakasuhde_values.extend([None, None])
 
-        vakasuhde_values.extend([lapsi.lahdejarjestelma])
+        vakasuhde_values.extend([_get_code_translation(lahdejarjestelma_codes, lapsi.lahdejarjestelma)])
 
         # Vakapaatos information
         vakasuhde_values.extend([vakapaatos.id, vakapaatos.hakemus_pvm, vakapaatos.alkamis_pvm,
