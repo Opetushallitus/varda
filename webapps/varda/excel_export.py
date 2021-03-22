@@ -334,6 +334,8 @@ def _get_koodisto_with_translations(koodisto, language):
 
 
 def _get_code_translation(code_list, code):
+    if not code:
+        return None
     for code_list_item in code_list:
         if code_list_item.get('code_value').lower() == code.lower():
             return f'{code_list_item.get("name")} ({code.lower()})'
