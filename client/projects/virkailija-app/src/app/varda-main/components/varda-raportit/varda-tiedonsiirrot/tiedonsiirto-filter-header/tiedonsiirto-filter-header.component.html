@@ -5,7 +5,8 @@
   </ng-container>
   <ng-template #expanded>
     <mat-icon class="oph-red"
-              [attr.alt]="i18n.show_less | translate">close</mat-icon>
+              [attr.alt]="i18n.show_less | translate"
+              alt="">close</mat-icon>
   </ng-template>
 </div>
 <form [class.text-nowrap]="!multiline"
@@ -13,7 +14,7 @@
   <ng-content></ng-content>
   <button mat-button
           type="submit">
-    <mat-icon>search</mat-icon>
+    <mat-icon alt="">search</mat-icon>
     {{ i18n.tiedonsiirrot_search | translate }}
   </button>
 </form>

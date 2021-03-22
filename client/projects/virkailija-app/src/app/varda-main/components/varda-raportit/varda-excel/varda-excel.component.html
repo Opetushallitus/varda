@@ -3,7 +3,7 @@
     <button class="varda-button varda-icon-button"
             type="button"
             routerLink="new">
-      <mat-icon>add</mat-icon>
+      <mat-icon alt="">add</mat-icon>
       {{i18n.excel_new | translate}}
     </button>
   </div>
@@ -20,7 +20,7 @@
                 *ngIf="resultCount !== 0"
                 (click)="getExcelReportList()"
                 [disabled]="isLoading">
-          <mat-icon>refresh</mat-icon>
+          <mat-icon alt="">refresh</mat-icon>
           {{i18n.excel_refresh | translate}}
         </button>
       </div>
@@ -54,7 +54,7 @@
                     class="varda-button varda-icon-button"
                     #downloadButton
                     (click)="downloadReport(excelReport.id, downloadButton)">
-              <mat-icon>download</mat-icon>
+              <mat-icon alt="">download</mat-icon>
               {{i18n.excel_download | translate}}
             </button>
             <mat-progress-bar *ngIf="excelReport.status === ReportStatus.PENDING ||

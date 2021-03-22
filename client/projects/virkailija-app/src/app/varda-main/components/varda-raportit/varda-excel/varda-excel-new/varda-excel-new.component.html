@@ -24,7 +24,7 @@
                 class="varda-text-button"
                 [matTooltip]="getTooltipTranslation(newReport.report_type)  | translate"
                 matTooltipClass="varda-tooltip">
-          <mat-icon>help_outline</mat-icon>
+          <mat-icon alt="">help_outline</mat-icon>
         </button>
       </div>
     </div>
@@ -78,7 +78,7 @@
     <button class="varda-button varda-button-neutral varda-icon-button"
             type="button"
             routerLink="../">
-      <mat-icon>keyboard_backspace</mat-icon>
+      <mat-icon alt="">keyboard_backspace</mat-icon>
       {{i18n.excel_new_cancel | translate}}
     </button>
   </div>
@@ -87,7 +87,7 @@
             type="button"
             (click)="create()"
             [disabled]="isLoading">
-      <mat-icon>add</mat-icon>
+      <mat-icon alt="">add</mat-icon>
       {{i18n.excel_new_create | translate}}
     </button>
   </div>

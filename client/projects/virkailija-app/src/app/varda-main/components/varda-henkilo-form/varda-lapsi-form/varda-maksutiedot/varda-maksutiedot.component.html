@@ -13,8 +13,8 @@
           <button class="varda-text-button"
                   (keydown.enter)="initMaksutieto()"
                   (click)="initMaksutieto()">
-            <mat-icon class="d-none d-md-inline-block">assignment_outline</mat-icon>
-            <mat-icon>add</mat-icon>{{ i18n.maksutiedot_lisaa_maksutieto | translate }}
+            <mat-icon class="d-none d-md-inline-block" alt="">assignment_outline</mat-icon>
+            <mat-icon alt="">add</mat-icon>{{ i18n.maksutiedot_lisaa_maksutieto | translate }}
           </button>
         </mat-panel-description>
       </ng-container>
@@ -38,7 +38,7 @@
             <button class="varda-text-button"
                     *ngIf="!addMaksutieto"
                     (click)="initMaksutieto()">
-              <mat-icon>add</mat-icon>{{ i18n.maksutiedot_lisaa_maksutieto | translate }}
+              <mat-icon alt="">add</mat-icon>{{ i18n.maksutiedot_lisaa_maksutieto | translate }}
             </button>
           </ng-container>
         </div>

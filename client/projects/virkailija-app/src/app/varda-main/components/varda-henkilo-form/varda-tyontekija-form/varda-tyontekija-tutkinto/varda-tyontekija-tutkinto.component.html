@@ -18,12 +18,12 @@
                   (click)="tutkinto.edit = !tutkinto.edit">
               <button class="varda-text-button"
                       *ngIf="!tutkinto.edit">
-                <mat-icon>edit</mat-icon>
+                <mat-icon alt="">edit</mat-icon>
                 {{ i18n.edit | translate }}
               </button>
               <button class="varda-text-button"
                       *ngIf="tutkinto.edit">
-                <mat-icon>close</mat-icon>
+                <mat-icon alt="">close</mat-icon>
                 {{ i18n.cancel | translate }}
               </button>
             </span>
@@ -33,7 +33,7 @@
                       type="button"
                       [disabled]="false"
                       (click)="deleteTutkinto(tutkinto.id)">
-                <mat-icon>restore_from_trash</mat-icon>
+                <mat-icon alt="">restore_from_trash</mat-icon>
                 {{ i18n.delete | translate }}
               </button>
             </span>
@@ -45,14 +45,14 @@
           <button class="varda-text-button"
                   (click)="henkilonTutkinnotExpand = true">
             {{ i18n.show_more | translate }}
-            <mat-icon>expand_more</mat-icon>
+            <mat-icon alt="">expand_more</mat-icon>
           </button>
         </li>
         <li *ngIf="henkilonTutkinnotExpand">
           <button class="varda-text-button"
                   (click)="henkilonTutkinnotExpand = false">
             {{ i18n.show_less | translate }}
-            <mat-icon>expand_less</mat-icon>
+            <mat-icon alt="">expand_less</mat-icon>
           </button>
         </li>
       </ng-container>
@@ -73,7 +73,7 @@
            *ngIf="!addTutkinto">
         <button class="varda-text-button"
                 (click)="addTutkinto = true">
-          <mat-icon>add</mat-icon> {{ i18n.tutkinnot_lisaa_tutkinto | translate }}
+          <mat-icon alt="">add</mat-icon> {{ i18n.tutkinnot_lisaa_tutkinto | translate }}
         </button>
       </div>
 
@@ -84,7 +84,7 @@
         <mat-form-field appereance="standard">
 
           <mat-label>
-            <mat-icon>school</mat-icon> {{ i18n.tutkinnot_lisaa_tutkinto | translate }}
+            <mat-icon alt="">school</mat-icon> {{ i18n.tutkinnot_lisaa_tutkinto | translate }}
           </mat-label>
           <mat-select panelClass="mt-3"
                       [class.mb-4]="tutkintoFormErrors | async"

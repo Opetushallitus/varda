@@ -43,7 +43,7 @@
                 [matTooltip]="i18n.katsele_tietoja_lapsi_tooltip_search | translate"
                 matTooltipClass="varda-tooltip"
                 aria-label="katsele tietoja ohje">
-          <mat-icon>info</mat-icon>
+          <mat-icon alt="">info</mat-icon>
         </button>
         <input class="oph-input"
                name="reportingLapsiSearchInput"
@@ -57,7 +57,7 @@
         <button class="varda-button varda-icon-button search-button margin-top-md"
                 type="button"
                 (click)="search()">
-          <mat-icon>search</mat-icon>
+          <mat-icon alt="">search</mat-icon>
           {{i18n.katsele_tietoja_search | translate}}
         </button>
       </div>
@@ -174,7 +174,7 @@
                   type="button"
                   (click)="clearFilters()"
                   [disabled]="isFiltersInactive">
-            <mat-icon>delete</mat-icon>
+            <mat-icon alt="">delete</mat-icon>
             {{i18n.katsele_tietoja_clear_filters | translate}}
           </button>
         </div>

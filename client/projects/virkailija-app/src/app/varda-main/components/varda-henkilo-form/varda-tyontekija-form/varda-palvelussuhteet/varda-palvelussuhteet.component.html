@@ -15,8 +15,8 @@
           <button class="varda-text-button"
                   (keydown.enter)="initPalvelussuhde()"
                   (click)="initPalvelussuhde()">
-            <mat-icon class="d-none d-md-inline-block">assignment_outline</mat-icon>
-            <mat-icon>add</mat-icon>{{ i18n.palvelussuhteet_lisaa_palvelussuhde | translate }}
+            <mat-icon class="d-none d-md-inline-block" alt="">assignment_outline</mat-icon>
+            <mat-icon alt="">add</mat-icon>{{ i18n.palvelussuhteet_lisaa_palvelussuhde | translate }}
           </button>
         </mat-panel-description>
       </ng-container>
@@ -43,7 +43,7 @@
             <button class="varda-text-button"
                     *ngIf="!addPalvelussuhdeBoolean"
                     (click)="initPalvelussuhde()">
-              <mat-icon>add</mat-icon>{{ i18n.palvelussuhteet_lisaa_palvelussuhde | translate }}
+              <mat-icon alt="">add</mat-icon>{{ i18n.palvelussuhteet_lisaa_palvelussuhde | translate }}
             </button>
           </ng-container>
         </div>

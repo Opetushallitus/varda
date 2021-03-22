@@ -6,7 +6,7 @@
     <div class="varda-error-header">
       <header class="oph-h3"
               #scrollTo>
-        <mat-icon>error_outline</mat-icon>
+        <mat-icon alt="">error_outline</mat-icon>
         <span
               *ngIf="errorArr.length > 1; else singlemistake">{{ i18n.error_multiple | translate: { count: errorArr.length } }}</span>
         <ng-template #singlemistake>
@@ -28,7 +28,7 @@
       </label>
 
       <span *ngFor="let key of errorBranch.keys">
-        <i> {{ key }} <mat-icon>chevron_right</mat-icon></i>
+        <i> {{ key }} <mat-icon alt="">chevron_right</mat-icon></i>
       </span>
       <b *ngFor="let errorValue of errorBranch.values">
         {{ errorValue.errorTranslation }}

@@ -17,13 +17,13 @@
               type="submit"
               (click)="getYksiloimattomat()"
               matSuffix>
-        <mat-icon>search</mat-icon>
+        <mat-icon alt="">search</mat-icon>
       </button>
     </mat-form-field>
   </div>
 
   <div class="mt-2">
-    <mat-icon>info_outline</mat-icon> {{ i18n.yksiloimattomat_checkbox_warning | translate }}
+    <mat-icon alt="">info_outline</mat-icon> {{ i18n.yksiloimattomat_checkbox_warning | translate }}
   </div>
   <div class="varda-table-column-selector">
     <ng-container *ngFor="let column of columnFields">

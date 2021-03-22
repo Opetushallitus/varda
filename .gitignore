@@ -43,6 +43,7 @@ nosetests.xml
 coverage.xml
 *,cover
 .hypothesis/
+env-robot-variables.py
 
 # Translations
 *.mo

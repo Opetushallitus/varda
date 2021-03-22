@@ -28,7 +28,7 @@
        [routerLink]="huoltajaRoute.varhaiskasvatustiedot"
        (click)="activeLink = huoltajaRoute.varhaiskasvatustiedot"
        [active]="activeLink === huoltajaRoute.varhaiskasvatustiedot">
-      <mat-icon>hotel</mat-icon>
+      <mat-icon alt="">hotel</mat-icon>
       {{ i18n.varhaiskasvatustiedot | translate }}
     </a>
     <a mat-tab-link
@@ -36,7 +36,7 @@
        [routerLink]="huoltajaRoute.huoltajuussuhteet"
        (click)="activeLink = huoltajaRoute.huoltajuussuhteet"
        [active]="activeLink === huoltajaRoute.huoltajuussuhteet">
-      <mat-icon>escalator_warning</mat-icon>
+      <mat-icon alt="">escalator_warning</mat-icon>
       {{ i18n.huoltajuussuhteet | translate }}
     </a>
     <a mat-tab-link
@@ -44,7 +44,7 @@
        [routerLink]="huoltajaRoute.tyontekijatiedot"
        (click)="activeLink = huoltajaRoute.tyontekijatiedot"
        [active]="activeLink === huoltajaRoute.tyontekijatiedot">
-      <mat-icon>person</mat-icon>
+      <mat-icon alt="">person</mat-icon>
       {{ i18n.tyontekijatiedot | translate }}
     </a>
   </nav>

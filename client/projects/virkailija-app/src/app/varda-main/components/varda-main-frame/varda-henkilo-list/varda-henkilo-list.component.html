@@ -30,7 +30,7 @@
                 (click)="openItem(lapsi, henkilo)"
                 *ngFor="let lapsi of henkilo.lapset">
               <td>
-                <mat-icon>perm_identity</mat-icon>
+                <mat-icon alt="">perm_identity</mat-icon>
               </td>
               <td>{{ henkilo.sukunimi }} {{ henkilo.etunimet }}</td>
               <td><i>{{ getPaosText(lapsi) }}</i></td>
@@ -45,12 +45,12 @@
                 (keydown.enter)="clickItem(henkilo)"
                 (click)="clickItem(henkilo)">
               <td>
-                <mat-icon>perm_identity</mat-icon>
+                <mat-icon alt="">perm_identity</mat-icon>
               </td>
               <td>{{ henkilo.sukunimi }} {{ henkilo.etunimet }}</td>
               <td *ngIf="tyontekija.tyoskentelypaikat.length === 0; else tyoskentelypaikat"
                   class="henkilo-warning">
-                <mat-icon>error_outline</mat-icon>
+                <mat-icon alt="">error_outline</mat-icon>
                 {{ i18n.henkilo_tyontekija_tiedot_puuttuu | translate }}
               </td>
               <ng-template #tyoskentelypaikat>

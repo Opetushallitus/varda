@@ -6,7 +6,7 @@
                  [alkamis_pvm]="varhaiskasvatuspaatos?.alkamis_pvm"
                  [paattymis_pvm]="varhaiskasvatuspaatos?.paattymis_pvm"></app-robo-id>
 
-    <mat-icon class="d-none d-md-block">assignment</mat-icon>
+    <mat-icon class="d-none d-md-block" alt="">assignment</mat-icon>
 
     <mat-expansion-panel [id]="'varhaiskasvatuspaatos-panel_' + varhaiskasvatuspaatos?.id"
                          [class.before-icon]="true"
@@ -190,7 +190,7 @@
 
       <div class="missing-info"
            *ngIf="varhaiskasvatussuhteet.length === 0">
-        <mat-icon>error_outline</mat-icon>
+        <mat-icon alt="">error_outline</mat-icon>
         {{ i18n.varhaiskasvatuspaatos_ei_varhaiskasvatussuhteita | translate }}
       </div>
 
@@ -214,7 +214,7 @@
       <button class="varda-text-button"
               *ngIf="!addVarhaiskasvatussuhdeBoolean && lapsitiedotTallentaja"
               (click)="addVarhaiskasvatussuhdeBoolean = true">
-        <mat-icon>add</mat-icon> {{ i18n.varhaiskasvatuspaatos_lisaa_varhaiskasvatussuhde | translate }}
+        <mat-icon alt="">add</mat-icon> {{ i18n.varhaiskasvatuspaatos_lisaa_varhaiskasvatussuhde | translate }}
       </button>
     </div>
   </ng-container>

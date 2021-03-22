@@ -6,7 +6,7 @@
                  [alkamis_pvm]="palvelussuhde?.alkamis_pvm"
                  [paattymis_pvm]="palvelussuhde?.paattymis_pvm"></app-robo-id>
 
-    <mat-icon class="d-none d-md-block">assignment</mat-icon>
+    <mat-icon class="d-none d-md-block" alt="">assignment</mat-icon>
 
     <mat-expansion-panel [id]="'palvelussuhde-panel_'+ palvelussuhde?.id"
                          [class.before-icon]="true"
@@ -142,7 +142,7 @@
 
       <div class="missing-info"
            *ngIf="tyoskentelypaikat.length === 0">
-        <mat-icon>error_outline</mat-icon>
+        <mat-icon alt="">error_outline</mat-icon>
         {{ i18n.palvelussuhde_ei_tyoskentelypaikkoja | translate }}
       </div>
 
@@ -166,7 +166,7 @@
       <button class="varda-text-button"
               *ngIf="!addTyoskentelypaikkaBoolean && toimipaikkaAccess.tyontekijatiedot.tallentaja"
               (click)="addTyoskentelypaikkaBoolean = true">
-        <mat-icon>add</mat-icon> {{ i18n.palvelussuhde_lisaa_tyoskentelypaikka | translate }}
+        <mat-icon alt="">add</mat-icon> {{ i18n.palvelussuhde_lisaa_tyoskentelypaikka | translate }}
       </button>
     </div>
 
@@ -200,7 +200,7 @@
       <button class="varda-text-button"
               *ngIf="!addPoissaoloBoolean && toimipaikkaAccess.tyontekijatiedot.tallentaja"
               (click)="addPoissaoloBoolean = true">
-        <mat-icon>add</mat-icon> {{ i18n.palvelussuhde_lisaa_poissaolo | translate }}
+        <mat-icon alt="">add</mat-icon> {{ i18n.palvelussuhde_lisaa_poissaolo | translate }}
       </button>
     </div>
   </ng-container>

@@ -6,7 +6,7 @@
        routerLink="/raportit"
        (click)="activeLink = 'raportit'"
        [active]="activeLink == 'raportit'">
-      <mat-icon>warning</mat-icon>
+      <mat-icon alt="">warning</mat-icon>
       {{ i18n.puutteelliset_tiedot | translate }}
     </a>
     <ng-container *ngIf="toimijaAccess.raportit.katselija || toimijaAccess.oph.katselija">
@@ -14,7 +14,7 @@
          routerLink="tiedonsiirrot"
          (click)="activeLink = 'tiedonsiirrot'"
          [active]="activeLink == 'tiedonsiirrot'">
-        <mat-icon>cloud_upload</mat-icon>
+        <mat-icon alt="">cloud_upload</mat-icon>
         {{ i18n.tiedonsiirrot | translate }}
       </a>
     </ng-container>
@@ -23,7 +23,7 @@
          routerLink="yksiloimattomat"
          (click)="activeLink = 'yksiloimattomat'"
          [active]="activeLink == 'yksiloimattomat'">
-        <mat-icon>ac_unit</mat-icon>
+        <mat-icon alt="">ac_unit</mat-icon>
         {{ i18n.yksiloimattomat | translate }}
       </a>
     </ng-container>
@@ -32,7 +32,7 @@
          routerLink="excel"
          (click)="activeLink = 'excel'"
          [active]="activeLink == 'excel'">
-        <mat-icon>table_view</mat-icon>
+        <mat-icon alt="">table_view</mat-icon>
         {{ i18n.excel | translate }}
       </a>
     </ng-container>

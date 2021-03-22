@@ -88,7 +88,7 @@
           </mat-select>
           <ng-template #eiNimikkeita>
             <div class="oph-error">
-              <mat-icon>error_outline</mat-icon> {{ i18n.taydennyskoulutus_ei_nimikkeita | translate }}
+              <mat-icon alt="">error_outline</mat-icon> {{ i18n.taydennyskoulutus_ei_nimikkeita | translate }}
             </div>
           </ng-template>
         </app-varda-form-field>
@@ -96,7 +96,7 @@
         <div class="taydennyskoulutus-rajoitettu"
              *ngIf="limitedEditAccess"
              role="alert">
-          <mat-icon>info_outlined</mat-icon>
+          <mat-icon alt="">info_outlined</mat-icon>
           {{ i18n.taydennyskoulutus_instruction_muokkaus_rajoitettu | translate }}
         </div>
 
