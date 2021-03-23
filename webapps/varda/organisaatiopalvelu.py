@@ -542,6 +542,7 @@ def update_vakatieto(new_toimipaikka_json, toimipaikka_obj):
     # These have separate update api
     vakatieto['varhaiskasvatuksenKielipainotukset'] = get_kielipainotukset_in_toimipaikka(toimipaikka_id)
     vakatieto['varhaiskasvatuksenToiminnallinenpainotukset'] = get_toiminnallisetpainotukset_in_toimipaikka(toimipaikka_id)
+    new_toimipaikka_json['varhaiskasvatuksenToimipaikkaTiedot'] = vakatieto
 
 
 def update_yhteystiedot(new_toimipaikka_json, toimipaikka_obj):
@@ -602,6 +603,7 @@ def update_yhteystiedot(new_toimipaikka_json, toimipaikka_obj):
                        yhteystiedot,
                        lambda _yhteystieto: 'osoiteTyyppi' in _yhteystieto and 'ulkomainen_kaynti' == _yhteystieto['osoiteTyyppi'],
                        ['kieli_en#1'])
+    new_toimipaikka_json['yhteystiedot'] = yhteystiedot
 
 
 def upsert_yhteystieto(yhteystieto_template, yhteystiedot, condition, lang_urls):
@@ -636,11 +638,17 @@ def get_kielipainotukset_in_toimipaikka(toimipaikka_id):
     kielipainotukset = []
 
     for kielipainotus in queryset:
-        painotus = {}
-        painotus['kielipainotus'] = 'kieli_' + kielipainotus.kielipainotus_koodi.lower()
-        painotus['alkupvm'] = str(kielipainotus.alkamis_pvm)
-        painotus['loppupvm'] = str(kielipainotus.paattymis_pvm) if kielipainotus.paattymis_pvm else None
-        kielipainotukset.append(painotus)
+        kielipainotus_koodi = kielipainotus.kielipainotus_koodi.lower()
+        if kielipainotus_koodi.startswith('se'):
+            # If kielipainotus_koodi is one of saame variants (se*), send just generic saame (se)
+            # Organisaatiopalvelu does not support saame variants
+            kielipainotus_koodi = 'se'
+
+        kielipainotukset.append({
+            'kielipainotus': 'kieli_' + kielipainotus_koodi,
+            'alkupvm': str(kielipainotus.alkamis_pvm),
+            'loppupvm': str(kielipainotus.paattymis_pvm) if kielipainotus.paattymis_pvm else None
+        })
 
     if not kielipainotukset:  # Add default
         kielipainotukset.append({'kielipainotus': 'kieli_99', 'alkupvm': str(datetime.date.today())})

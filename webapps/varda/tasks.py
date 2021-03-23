@@ -351,3 +351,15 @@ def delete_excel_reports_older_than_arg_hours_task(hours):
     timestamp_lower_limit = datetime.datetime.now() - datetime.timedelta(hours=hours)
     timestamp_lower_limit = timestamp_lower_limit.replace(tzinfo=datetime.timezone.utc)
     delete_excel_reports_earlier_than(timestamp_lower_limit)
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def update_toimipaikka_in_organisaatiopalvelu_by_id_task(toimipaikka_id):
+    organisaatiopalvelu.update_all_toimipaikat_in_organisaatiopalvelu(toimipaikka_filter=Q(pk=toimipaikka_id))
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def force_update_toimipaikat_in_organisaatiopalvelu_task():
+    organisaatiopalvelu.update_all_toimipaikat_in_organisaatiopalvelu()
