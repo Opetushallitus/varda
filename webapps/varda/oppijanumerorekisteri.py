@@ -79,10 +79,13 @@ def save_henkilo_to_db(henkilo_id, henkilo_json):
     if aidinkieli is not None and 'kieliKoodi' in aidinkieli:
         henkilo.aidinkieli_koodi = aidinkieli['kieliKoodi']
 
-    # Remove address information if henkilo is only related to Tyontekijat
     if henkilo.tyontekijat.exists() and not hasattr(henkilo, 'huoltaja'):
+        # Remove address information if Henkilo is only related to Tyontekijat
         henkilo.remove_address_information()
     else:
+        if hasattr(henkilo, 'huoltaja') and not henkilo.tyontekijat.exists():
+            # Remove birthdate if Henkilo is only related to Huoltaja
+            henkilo.syntyma_pvm = None
         _set_address_to_henkilo(henkilo_json, henkilo)
 
     henkilo.save()

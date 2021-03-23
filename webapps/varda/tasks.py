@@ -363,3 +363,15 @@ def update_toimipaikka_in_organisaatiopalvelu_by_id_task(toimipaikka_id):
 @single_instance_task(timeout_in_minutes=8 * 60)
 def force_update_toimipaikat_in_organisaatiopalvelu_task():
     organisaatiopalvelu.update_all_toimipaikat_in_organisaatiopalvelu()
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def remove_birthdate_from_huoltajat_only_task():
+    henkilot = Henkilo.objects.filter(syntyma_pvm__isnull=False, huoltaja__isnull=False,
+                                      tyontekijat__isnull=True).distinct()
+
+    # Loop through each Henkilo so that save signals are processed correctly
+    for henkilo in henkilot:
+        henkilo.syntyma_pvm = None
+        henkilo.save()

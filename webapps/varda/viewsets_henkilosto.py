@@ -44,8 +44,7 @@ from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, Palveluss
                                           TyoskentelypaikkaUpdateSerializer, TaydennyskoulutusSerializer,
                                           TaydennyskoulutusUpdateSerializer, TaydennyskoulutusTyontekijaListSerializer,
                                           TyontekijaKoosteSerializer)
-from varda.tasks import assign_taydennyskoulutus_permissions_for_all_toimipaikat_task
-
+from varda.tasks import assign_taydennyskoulutus_permissions_for_all_toimipaikat_task, update_henkilo_data_by_oid
 
 logger = logging.getLogger(__name__)
 
@@ -139,6 +138,12 @@ class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
             cache.delete('vakajarjestaja_yhteenveto_' + str(tyontekija_obj.vakajarjestaja.id))
 
             assign_tyontekija_henkilo_permissions(tyontekija_obj, user=user, toimipaikka_oid=toimipaikka_oid)
+
+            henkilo = tyontekija_obj.henkilo
+            if henkilo.henkilo_oid and not henkilo.syntyma_pvm:
+                # If Henkilo has only been related to a Huoltaja, syntyma_pvm field may have been removed,
+                # so fetch Henkilo data again from ONR
+                update_henkilo_data_by_oid.delay(henkilo.henkilo_oid, henkilo.id)
 
     def perform_update(self, serializer):
         user = self.request.user
