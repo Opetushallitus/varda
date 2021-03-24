@@ -309,6 +309,7 @@ class VardaViewsTests(TestCase):
             'sukunimi': 'Manner',
             'henkilo_oid': '',
             'syntyma_pvm': '1966-02-13',
+            'turvakielto': False,
             'lapsi': [],
             'tyontekija': []
         }
@@ -332,6 +333,7 @@ class VardaViewsTests(TestCase):
             'sukunimi': 'Manner',
             'henkilo_oid': '',
             'syntyma_pvm': '1966-02-13',
+            'turvakielto': False,
             'lapsi': [],
             'tyontekija': []
         }
@@ -355,6 +357,7 @@ class VardaViewsTests(TestCase):
             'sukunimi': 'Manner',
             'henkilo_oid': '',
             'syntyma_pvm': '1966-02-13',
+            'turvakielto': False,
             'lapsi': [],
             'tyontekija': []
         }
@@ -378,6 +381,7 @@ class VardaViewsTests(TestCase):
             'sukunimi': 'Manner',
             'henkilo_oid': '',
             'syntyma_pvm': '1966-02-13',
+            'turvakielto': False,
             'lapsi': [],
             'tyontekija': []
         }
@@ -504,6 +508,7 @@ class VardaViewsTests(TestCase):
             'sukunimi': 'Virtanen',
             'henkilo_oid': '1.2.246.562.24.58672764848',
             'syntyma_pvm': '2016-05-12',
+            'turvakielto': False,
             'lapsi': ['http://testserver/api/v1/lapset/2/'],
             'tyontekija': []
         }
@@ -527,6 +532,7 @@ class VardaViewsTests(TestCase):
             'sukunimi': 'Virtanen',
             'henkilo_oid': '1.2.246.562.24.58672764848',
             'syntyma_pvm': '2016-05-12',
+            'turvakielto': False,
             'lapsi': ['http://testserver/api/v1/lapset/2/'],
             'tyontekija': []
         }

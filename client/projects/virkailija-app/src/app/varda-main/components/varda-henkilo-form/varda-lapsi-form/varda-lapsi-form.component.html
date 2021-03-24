@@ -21,6 +21,10 @@
 
   <form class="henkilo-perustiedot">
     <h2 class="varda-fieldset-legend">{{ i18n.perustiedot | translate }}</h2>
+    <div class="alert-container"
+       *ngIf="henkilo.turvakielto">
+      <mat-icon>visibility</mat-icon> {{i18n.turvakielto | translate}}
+    </div>
     <div class="oph-field oph-field-inline">
       <label class="oph-label">{{ i18n.nimi | translate }}:</label>
       <span>{{henkilo.sukunimi}}, {{henkilo.etunimet}}</span>

@@ -352,6 +352,10 @@ tr.selected-row .mat-cell {
   background: var(--blue-lighten-4);
 }
 
+.varda-reporting-card .mat-card-title-group {
+  margin-bottom: 0.5em;
+}
+
 @media (min-width: 768px) {
   .varda-date-range-container {
     max-width: 400px;

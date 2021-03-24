@@ -1,9 +1,5 @@
 .tyontekija-section {
-  margin-top: 1em;
-}
-
-.tyontekija-section:not(:first-child) {
-  margin-top: 2em;
+  margin-bottom: 2em;
 }
 
 .tyontekija-section-inner {

@@ -501,12 +501,13 @@ class HenkiloSerializer(serializers.HyperlinkedModelSerializer):
     lapsi = serializers.SerializerMethodField()
     tyontekija = serializers.SerializerMethodField()
     henkilotunnus = serializers.CharField(required=False, write_only=True)
+    turvakielto = serializers.ReadOnlyField()
 
     class Meta:
         model = Henkilo
-        exclude = ('henkilotunnus_unique_hash', 'aidinkieli_koodi', 'sukupuoli_koodi', 'katuosoite', 'turvakielto',
-                   'vtj_yksiloity', 'vtj_yksilointi_yritetty', 'postinumero', 'postitoimipaikka', 'kotikunta_koodi',
-                   'luonti_pvm', 'muutos_pvm', 'changed_by')
+        exclude = ('henkilotunnus_unique_hash', 'aidinkieli_koodi', 'sukupuoli_koodi', 'katuosoite', 'vtj_yksiloity',
+                   'vtj_yksilointi_yritetty', 'postinumero', 'postitoimipaikka', 'kotikunta_koodi', 'luonti_pvm',
+                   'muutos_pvm', 'changed_by')
 
     def validate_etunimet(self, value):
         validate_nimi(value)
@@ -1213,7 +1214,7 @@ class LapsiKoosteVarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSeri
 class LapsiKoosteHenkiloSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Henkilo
-        fields = ('id', 'etunimet', 'kutsumanimi', 'sukunimi', 'henkilo_oid', 'syntyma_pvm',)
+        fields = ('id', 'etunimet', 'kutsumanimi', 'sukunimi', 'henkilo_oid', 'syntyma_pvm', 'turvakielto',)
 
 
 class LapsiKoosteVarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSerializer):

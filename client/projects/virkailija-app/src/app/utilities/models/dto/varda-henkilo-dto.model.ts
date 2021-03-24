@@ -9,6 +9,7 @@ export class VardaHenkiloDTO {
   kutsumanimi?: string;
   syntyma_pvm?: string;
   henkilo_oid?: string;
+  turvakielto?: boolean;
   lapsi?: Array<string>;
   tyontekija?: Array<string>;
 }

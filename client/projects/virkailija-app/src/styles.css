@@ -243,6 +243,19 @@ mat-expansion-panel mat-expansion-panel-header {
   font-family: inherit;
 }
 
+.alert-container {
+  display: flex;
+  align-items: center;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  font-weight: var(--font-weight-bold);
+  color: var(--red);
+}
+
+.alert-container .mat-icon {
+  margin-right: 0.5em;
+}
+
 /*HIGH CONTRAST DEFAULT STYLES*/
 .varda-high-contrast,
 .varda-high-contrast a,

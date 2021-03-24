@@ -775,7 +775,7 @@ class TaydennyskoulutusTyontekijaListSerializer(serializers.ModelSerializer):
 class TyontekijaKoosteHenkiloSerializer(serializers.ModelSerializer):
     class Meta:
         model = Henkilo
-        fields = ('id', 'etunimet', 'sukunimi', 'henkilo_oid')
+        fields = ('id', 'etunimet', 'sukunimi', 'henkilo_oid', 'turvakielto',)
 
 
 class TyontekijaKoosteTyoskentelypaikkaSerializer(serializers.ModelSerializer):

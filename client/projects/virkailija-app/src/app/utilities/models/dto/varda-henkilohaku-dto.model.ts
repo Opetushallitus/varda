@@ -48,30 +48,31 @@ export class LapsiByToimipaikkaDTO {
 export class LapsiKooste {
   id?: number;
   yksityinen_kytkin: boolean;
-  henkilo: ToimipaikanLapsiHenkilo;
-  varhaiskasvatuspaatokset: Array<ToimipaikanLapsiVakapaatos>;
-  varhaiskasvatussuhteet: Array<ToimipaikanLapsiVakasuhde>;
-  maksutiedot: Array<ToimipaikanLapsiMaksutieto>;
+  henkilo: LapsiKoosteHenkilo;
+  varhaiskasvatuspaatokset: Array<LapsiKoosteVakapaatos>;
+  varhaiskasvatussuhteet: Array<LapsiKoosteVakasuhde>;
+  maksutiedot: Array<LapsiKoosteMaksutieto>;
   oma_organisaatio_nimi?: string;
   paos_organisaatio_nimi?: string;
 }
 
-export class ToimipaikanLapsiHenkilo {
+export class LapsiKoosteHenkilo {
   etunimet: string;
   kutsumanimi: string;
   sukunimi: string;
   id: number;
   henkilo_oid: string;
   syntyma_pvm: string;
+  turvakielto: boolean;
 }
 
-export class ToimipaikanLapsiHuoltaja {
+export class LapsiKoosteHuoltaja {
   henkilo_oid: string;
   etunimet: string;
   sukunimi: string;
 }
 
-export class ToimipaikanLapsiMaksutieto {
+export class LapsiKoosteMaksutieto {
   id: number;
   maksun_peruste_koodi: string;
   palveluseteli_arvo: number;
@@ -79,10 +80,10 @@ export class ToimipaikanLapsiMaksutieto {
   perheen_koko: number;
   alkamis_pvm: string;
   paattymis_pvm: string;
-  huoltajat: Array<ToimipaikanLapsiHuoltaja>;
+  huoltajat: Array<LapsiKoosteHuoltaja>;
 }
 
-export class ToimipaikanLapsiVakapaatos {
+export class LapsiKoosteVakapaatos {
   id: number;
   alkamis_pvm: string;
   paattymis_pvm: string;
@@ -95,7 +96,7 @@ export class ToimipaikanLapsiVakapaatos {
   pikakasittely_kytkin: boolean;
 }
 
-export class ToimipaikanLapsiVakasuhde {
+export class LapsiKoosteVakasuhde {
   id: number;
   alkamis_pvm: string;
   paattymis_pvm: string;
@@ -132,6 +133,7 @@ export class TyontekijaHenkilo {
   etunimet: string;
   sukunimi: string;
   henkilo_oid: string;
+  turvakielto: string;
 }
 
 export class TyontekijaTaydennyskoulutus {

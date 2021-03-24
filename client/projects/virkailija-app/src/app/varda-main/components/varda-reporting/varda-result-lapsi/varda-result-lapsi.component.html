@@ -6,6 +6,10 @@
     </mat-card-title>
   </mat-card-title-group>
   <mat-card-content>
+    <div class="alert-container"
+         *ngIf="lapsiKooste.henkilo.turvakielto">
+      <mat-icon>visibility</mat-icon> {{i18n.turvakielto | translate}}
+    </div>
     <div class="toimipaikan-lapset-container-margin-bottom">
       <h3 class="oph-bold">{{i18n.katsele_tietoja_perustiedot | translate}}</h3>
       <div class="table-responsive">

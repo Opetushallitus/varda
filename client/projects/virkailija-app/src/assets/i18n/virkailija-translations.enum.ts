@@ -44,6 +44,7 @@ export enum VirkailijaTranslations {
   no_autofill_results = 'no-autofill-results',
   ohjeet = 'ohjeet',
   lahdejarjestelma = 'lahdejarjestelma',
+  turvakielto = 'turvakielto',
 
   versio_VALUE = 'versio.VALUE',
   accessibility_info = 'accessibility.info',

@@ -6,6 +6,10 @@
     </mat-card-title>
   </mat-card-title-group>
   <mat-card-content>
+    <div class="alert-container"
+         *ngIf="tyontekijaKooste.henkilo.turvakielto">
+      <mat-icon>visibility</mat-icon> {{i18n.turvakielto | translate}}
+    </div>
     <div class="tyontekija-section">
       <h3 class="oph-bold">{{i18n.perustiedot | translate}}</h3>
       <div class="table-responsive">
