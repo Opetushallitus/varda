@@ -1,6 +1,6 @@
 import logging
 
-# Get an instance of a logger
+
 logger = logging.getLogger(__name__)
 
 
@@ -214,7 +214,6 @@ def create_initial_template_groups():
     vakajarjestaja_katselija_permissions = get_vakajarjestaja_katselija_permissions()
     toimipaikka_tallentaja_permissions = get_toimipaikka_tallentaja_permissions()
     toimipaikka_katselija_permissions = vakajarjestaja_katselija_permissions.copy()
-    vakajarjestaja_view_henkilo_permissions = ['view_henkilo']
     oph_staff_permissions = []
 
     group_permission_array = [
@@ -223,7 +222,6 @@ def create_initial_template_groups():
         ('vakajarjestaja_katselija', vakajarjestaja_katselija_permissions),
         ('toimipaikka_tallentaja', toimipaikka_tallentaja_permissions),
         ('toimipaikka_katselija', toimipaikka_katselija_permissions),
-        ('vakajarjestaja_view_henkilo', vakajarjestaja_view_henkilo_permissions),
         ('oph_staff', oph_staff_permissions)
     ]
 

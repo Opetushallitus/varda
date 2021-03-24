@@ -201,9 +201,6 @@ def fetch_permissions_roles_for_organization(user_id, henkilo_oid, organisation,
 
     [set_user_permissions(user, organisation, role) for role in roles if role is not None]
 
-    group = Group.objects.get(name='vakajarjestaja_view_henkilo')
-    group.user_set.add(user)
-
 
 def create_vakajarjestaja_or_toimipaikka_if_needed(organization_type_vakajarjestaja, organization_oid, user_id):
     if organization_type_vakajarjestaja:

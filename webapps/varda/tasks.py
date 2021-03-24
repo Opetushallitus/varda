@@ -393,3 +393,13 @@ def modify_view_vakajarjestaja_permission():
         with transaction.atomic():
             assign_object_level_permissions(toimipaikka_oid, VakaJarjestaja, vakajarjestaja)
             assign_object_permissions_to_all_henkilosto_groups(toimipaikka_oid, VakaJarjestaja, vakajarjestaja)
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def delete_vakajarjestaja_view_henkilo_group():
+    """
+    Removes vakajarjestaja_view_henkilo permission group that was previously used to handle Henkilo object permissions
+    """
+    if view_henkilo_group := Group.objects.filter(name='vakajarjestaja_view_henkilo').first():
+        view_henkilo_group.delete()

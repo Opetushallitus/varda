@@ -48,7 +48,6 @@ class TestKayttooikeus(TestCase):
             Z4_CasKayttoOikeudet.KATSELIJA + '_' + organisaatio_oid,
             Z4_CasKayttoOikeudet.PAAKAYTTAJA + '_' + organisaatio_oid,
             Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA + '_' + organisaatio_oid,
-            'vakajarjestaja_view_henkilo',
         ]
         self.assertCountEqual(group_names, expected_group_names)
 
@@ -98,7 +97,6 @@ class TestKayttooikeus(TestCase):
             Z4_CasKayttoOikeudet.TALLENTAJA + '_' + organisaatio_oid,
             Z4_CasKayttoOikeudet.PAAKAYTTAJA + '_' + organisaatio_oid,
             Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA + '_' + organisaatio_oid,
-            'vakajarjestaja_view_henkilo',
         ]
         self.assertCountEqual(group_names, expected_group_names)
 

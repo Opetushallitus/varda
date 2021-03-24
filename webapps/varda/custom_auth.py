@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.backends import ModelBackend
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import User
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone as django_timezone
@@ -292,13 +292,6 @@ class CustomBasicAuthentication(BasicAuthentication):
                 organization_specific_permission_group = get_permission_group(kayttooikeus, organisaatio_oid)
                 if organization_specific_permission_group is not None:
                     organization_specific_permission_group.user_set.add(user)  # Assign the user to this permission_group
-
-            """
-            Finally, add palvelukayttaja to the 'vakajarjestaja_view_henkilo' group
-            """
-            group = Group.objects.get(name='vakajarjestaja_view_henkilo')
-            group.user_set.add(user)
-
         else:
             """
             Decline the access to Varda if the 'palvelukayttaja' doesn't have correct

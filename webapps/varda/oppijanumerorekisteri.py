@@ -2,9 +2,7 @@ import datetime
 import logging
 
 from django.conf import settings
-from django.contrib.auth.models import Group
 from django.db import IntegrityError, transaction
-from guardian.shortcuts import assign_perm
 from pytz import timezone
 from requests import RequestException
 from rest_framework.exceptions import NotFound, APIException
@@ -352,9 +350,6 @@ def _update_lapsi_huoltaja(lapsi_id, huoltaja_master_data):
                                                       )
     # Update henkilo
     _fetch_henkilo_data_by_oid(oid, henkilo_huoltaja_obj.id, huoltaja_master_data)
-    if henkilo_huoltaja_created:
-        group = Group.objects.get(name="vakajarjestaja_view_henkilo")
-        assign_perm('view_henkilo', group, henkilo_huoltaja_obj)
 
     huoltaja_obj, huoltaja_created = (Huoltaja.objects
                                       .get_or_create(henkilo=henkilo_huoltaja_obj,

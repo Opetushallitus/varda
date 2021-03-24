@@ -41,7 +41,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         resp = client.get('/api/user/data/')
         assert_status_code(resp, status.HTTP_200_OK)
 
-        expected_group_names = ['vakajarjestaja_view_henkilo', 'VARDA-PALVELUKAYTTAJA_1.2.246.562.10.27580498759']
+        expected_group_names = ['VARDA-PALVELUKAYTTAJA_1.2.246.562.10.27580498759']
         self._assert_user_permissiongroups(expected_group_names, username)
 
         jarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=organisaatio_oid)
@@ -79,7 +79,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         resp = client.get('/api/user/data/', **headers)
         assert_status_code(resp, status.HTTP_200_OK)
 
-        expected_group_names = ['vakajarjestaja_view_henkilo', 'VARDA_LUOVUTUSPALVELU_{}'.format(organisaatio_oid)]
+        expected_group_names = ['VARDA_LUOVUTUSPALVELU_{}'.format(organisaatio_oid)]
         self._assert_user_permissiongroups(expected_group_names, username)
 
         jarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=organisaatio_oid)
@@ -125,7 +125,6 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         assert_status_code(resp, status.HTTP_200_OK)
 
         expected_group_names = [
-            'vakajarjestaja_view_henkilo',
             'HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.27580498759',
             'HENKILOSTO_TILAPAISET_TALLENTAJA_1.2.246.562.10.27580498759',
             'HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA_1.2.246.562.10.27580498759',
@@ -173,7 +172,6 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         assert_status_code(resp, status.HTTP_200_OK)
 
         expected_group_names = [
-            'vakajarjestaja_view_henkilo',
             'HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.27580498759',
             'VARDA-TALLENTAJA_1.2.246.562.10.27580498759',
         ]
@@ -227,7 +225,6 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         assert_status_code(resp, status.HTTP_200_OK)
 
         expected_group_names = [
-            'vakajarjestaja_view_henkilo',
             'HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.27580498759',
             'VARDA-TALLENTAJA_1.2.246.562.10.27580498759',
             'HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.27580498759',
@@ -345,7 +342,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         resp_apikey = client.get('/api/user/apikey/')
         assert_status_code(resp_apikey, status.HTTP_200_OK)
 
-        expected_group_names_1 = ['vakajarjestaja_view_henkilo', 'VARDA-PALVELUKAYTTAJA_1.2.246.562.10.27580498759']
+        expected_group_names_1 = ['VARDA-PALVELUKAYTTAJA_1.2.246.562.10.27580498759']
         self._assert_user_permissiongroups(expected_group_names_1, username_1)
         self.assertCountEqual(vakajarjestaja_qs.first().integraatio_organisaatio, [TietosisaltoRyhma.VAKATIEDOT.value])
 
@@ -370,7 +367,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         resp_apikey = client.get('/api/user/apikey/')
         assert_status_code(resp_apikey, status.HTTP_200_OK)
 
-        expected_group_names_2 = ['vakajarjestaja_view_henkilo', 'HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.27580498759']
+        expected_group_names_2 = ['HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.27580498759']
         self._assert_user_permissiongroups(expected_group_names_2, username_2)
         self.assertCountEqual(vakajarjestaja_qs.first().integraatio_organisaatio,
                               [TietosisaltoRyhma.VAKATIEDOT.value, TietosisaltoRyhma.TYONTEKIJATIEDOT.value])
