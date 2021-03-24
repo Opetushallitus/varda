@@ -737,7 +737,7 @@ class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
     def _update_tyontekijat(self, instance, validated_data):
         if 'taydennyskoulutukset_tyontekijat' in validated_data:
             # Remove previous tyontekijat from this taydennyskoulutus
-            TaydennyskoulutusTyontekija.objects.filter(taydennyskoulutus=instance).delete()
+            instance.taydennyskoulutukset_tyontekijat.all().delete()
 
             tyontekijat = validated_data.pop('taydennyskoulutukset_tyontekijat', [])
             for tyontekija in tyontekijat:
@@ -753,8 +753,8 @@ class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
         if 'taydennyskoulutus_tyontekijat_remove' in validated_data:
             tyontekijat_remove = validated_data.pop('taydennyskoulutus_tyontekijat_remove', [])
             for tyontekija_remove in tyontekijat_remove:
-                TaydennyskoulutusTyontekija.objects.filter(tyontekija=tyontekija_remove['tyontekija'],
-                                                           tehtavanimike_koodi=tyontekija_remove['tehtavanimike_koodi']).delete()
+                instance.taydennyskoulutukset_tyontekijat.filter(tyontekija=tyontekija_remove['tyontekija'],
+                                                                 tehtavanimike_koodi=tyontekija_remove['tehtavanimike_koodi']).delete()
 
 
 class TaydennyskoulutusTyontekijaListSerializer(serializers.ModelSerializer):
