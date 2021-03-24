@@ -24,12 +24,13 @@ from varda.audit_log import audit_log
 from varda.excel_export import delete_excel_reports_earlier_than
 from varda.misc import flatten_nested_list, memory_efficient_queryset_iterator
 from varda.models import (Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog, Lapsi, Varhaiskasvatuspaatos,
-                          Z4_CasKayttoOikeudet)
+                          Z4_CasKayttoOikeudet, VakaJarjestaja)
 from varda.permissions import (assign_lapsi_permissions, assign_vakapaatos_vakasuhde_permissions,
                                assign_henkilo_permissions_for_vaka_groups,
                                assign_henkilo_permissions_for_tyontekija_groups)
-from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups
-
+from varda.permission_groups import (assign_object_permissions_to_taydennyskoulutus_groups,
+                                     assign_object_level_permissions,
+                                     assign_object_permissions_to_all_henkilosto_groups)
 
 logger = logging.getLogger(__name__)
 
@@ -375,3 +376,20 @@ def remove_birthdate_from_huoltajat_only_task():
     for henkilo in henkilot:
         henkilo.syntyma_pvm = None
         henkilo.save()
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def modify_view_vakajarjestaja_permission():
+    """
+    Assigns VakaJarjestaja permissions (view_vakajarjestaja) to all related Toimipaikka groups, previously
+    view_vakajarjestaja permission was assigned directly to users
+    """
+    toimipaikka_qs = Toimipaikka.objects.filter(organisaatio_oid__isnull=False)
+    for toimipaikka in toimipaikka_qs:
+        toimipaikka_oid = toimipaikka.organisaatio_oid
+        vakajarjestaja = toimipaikka.vakajarjestaja
+
+        with transaction.atomic():
+            assign_object_level_permissions(toimipaikka_oid, VakaJarjestaja, vakajarjestaja)
+            assign_object_permissions_to_all_henkilosto_groups(toimipaikka_oid, VakaJarjestaja, vakajarjestaja)

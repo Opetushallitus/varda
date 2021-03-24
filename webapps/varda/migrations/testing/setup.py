@@ -45,6 +45,7 @@ def add_groups_with_permissions():
         ('VARDA-TALLENTAJA_1.2.246.562.10.9395737548817', get_toimipaikka_tallentaja_permissions()),  # toimipaikka_5
         ('VARDA-TALLENTAJA_1.2.246.562.10.57294396385', get_vakajarjestaja_palvelukayttaja_permissions()),  # vakajarjestaja_5
         ('VARDA-TALLENTAJA_1.2.246.562.10.52966755795', get_vakajarjestaja_palvelukayttaja_permissions()),  # vakajarjestaja_6
+        ('VARDA-TALLENTAJA_1.2.246.562.10.2935996863483', get_vakajarjestaja_palvelukayttaja_permissions()),  # Espoo yksityinen
         ('VARDA-PALVELUKAYTTAJA_1.2.246.562.10.34683023489', get_vakajarjestaja_palvelukayttaja_permissions()),
         ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.9395737548810', get_huoltajatiedot_tallentaja_permissions()),  # Espoo
         ('HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.2935996863483', get_huoltajatiedot_tallentaja_permissions()),  # Espoo yksityinen
@@ -113,6 +114,7 @@ def add_test_users():
     group_huoltajatiedot_tallentaja_vakajarjestaja_2 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.93957375488')
     group_huoltajatiedot_tallentaja_toimipaikka_5 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.9395737548817')
     group_huoltajatiedot_tallentaja_toimipaikka_2935996863483 = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_1.2.246.562.10.2935996863483')
+    group_tallentaja_toimipaikka_2935996863483 = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.2935996863483')
     group_tyontekija_tallentaja_vakajarjestaja1 = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.34683023489')
     group_tyontekija_tallentaja_vakajarjestaja2 = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.93957375488')
     group_tyontekija_katselija_vakajarjestaja1 = Group.objects.get(name='HENKILOSTO_TYONTEKIJA_KATSELIJA_1.2.246.562.10.34683023489')
@@ -138,6 +140,7 @@ def add_test_users():
     user_tester.groups.add(group_tallentaja_toimipaikka_1)
     user_tester.groups.add(group_katselija_toimipaikka_4)
     user_tester.groups.add(group_huoltajatiedot_tallentaja_toimipaikka_1)
+    user_tester.groups.add(group_tallentaja_toimipaikka_2935996863483)
     user_tester.groups.add(group_huoltajatiedot_tallentaja_toimipaikka_2935996863483)
     user_tester.groups.add(group_huoltajatiedot_tallentaja_vakajarjestaja_1)
     add_toimipaikka_permission = Permission.objects.get(codename='add_toimipaikka')
@@ -241,7 +244,6 @@ def create_vakajarjestajat():
     from django.contrib.auth.models import User
     from varda.permission_groups import assign_permissions_to_vakajarjestaja_obj
     from varda.models import VakaJarjestaja
-    from guardian.shortcuts import assign_perm
 
     tester_user = User.objects.get(username='tester')
     tester2_user = User.objects.get(username='tester2')
@@ -249,7 +251,6 @@ def create_vakajarjestajat():
     tester_e2e_user = User.objects.get(username='tester-e2e')
     tester10_user = User.objects.get(username='tester10')
     tester11_user = User.objects.get(username='tester11')
-    tyontekija_toimipaikka_tallentaja = User.objects.get(username='tyontekija_toimipaikka_tallentaja')
 
     VakaJarjestaja.objects.create(
         nimi='Tester2 organisaatio',
@@ -271,7 +272,7 @@ def create_vakajarjestajat():
         integraatio_organisaatio=[TietosisaltoRyhma.VAKATIEDOT.value]
     )
 
-    vakajarjestaja_2 = VakaJarjestaja.objects.create(
+    VakaJarjestaja.objects.create(
         nimi='Tester organisaatio',
         y_tunnus='1825748-8',
         organisaatio_oid='1.2.246.562.10.93957375488',
@@ -291,7 +292,6 @@ def create_vakajarjestajat():
         changed_by=tester_user,
         integraatio_organisaatio=[]
     )
-    assign_perm('view_vakajarjestaja', tyontekija_toimipaikka_tallentaja, vakajarjestaja_2)
 
     VakaJarjestaja.objects.create(
         nimi='varda-testi organisaatio',
@@ -1975,7 +1975,7 @@ def create_lapset():
     assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_7)
     assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_7)
     assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_7)
-    assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_7)
+    assign_object_level_permissions(toimipaikka_4_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_7)
     assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_8)
     assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_8)
 

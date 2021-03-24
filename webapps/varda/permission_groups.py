@@ -9,7 +9,6 @@ from guardian.shortcuts import assign_perm, remove_perm
 from varda.misc import get_json_from_external_service
 from varda.models import Toimipaikka, VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Lapsi
 
-# Get an instance of a logger
 
 logger = logging.getLogger(__name__)
 
@@ -28,10 +27,19 @@ def assign_permissions_to_toimipaikka_obj(toimipaikka_organisaatio_oid, vakajarj
     toimipaikka_query = Toimipaikka.objects.filter(organisaatio_oid=toimipaikka_organisaatio_oid)
     if len(toimipaikka_query) == 1:
         toimipaikka_obj = toimipaikka_query[0]
-        assign_object_level_permissions(toimipaikka_organisaatio_oid, Toimipaikka, toimipaikka_obj)
-        assign_object_permissions_to_all_henkilosto_groups(toimipaikka_organisaatio_oid, Toimipaikka, toimipaikka_obj)
-        assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Toimipaikka, toimipaikka_obj)  # Remember also vakajarjestaja-level
-        assign_object_permissions_to_all_henkilosto_groups(vakajarjestaja_organisaatio_oid, Toimipaikka, toimipaikka_obj)
+
+        with transaction.atomic():
+            assign_object_level_permissions(toimipaikka_organisaatio_oid, Toimipaikka, toimipaikka_obj)
+            assign_object_permissions_to_all_henkilosto_groups(toimipaikka_organisaatio_oid, Toimipaikka, toimipaikka_obj)
+
+            # Remember also vakajarjestaja-level
+            assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Toimipaikka, toimipaikka_obj)
+            assign_object_permissions_to_all_henkilosto_groups(vakajarjestaja_organisaatio_oid, Toimipaikka, toimipaikka_obj)
+
+            # Assign view_vakajarjestaja permission for Toimipaikka permission groups
+            vakajarjestaja_obj = toimipaikka_obj.vakajarjestaja
+            assign_object_level_permissions(toimipaikka_organisaatio_oid, VakaJarjestaja, vakajarjestaja_obj)
+            assign_object_permissions_to_all_henkilosto_groups(toimipaikka_organisaatio_oid, VakaJarjestaja, vakajarjestaja_obj)
     else:
         logger.error('Toimipaikka: Could not assign obj-level permissions to: ' + toimipaikka_organisaatio_oid)
 
@@ -426,7 +434,7 @@ def get_permission_groups_for_organization(organisaatio_oid):
              TOIMIJATIEDOT_KATSELIJA, TOIMIJATIEDOT_TALLENTAJA,
              RAPORTTIEN_KATSELIJA]
 
-    all_organization_groups = Group.objects.filter(name__contains=organisaatio_oid)
+    all_organization_groups = Group.objects.filter(name__endswith=organisaatio_oid)
     for group in all_organization_groups:
         if any(x in group.name for x in roles):
             permission_groups.append(group)

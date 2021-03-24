@@ -6,7 +6,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 from django.db.models import Q
 from guardian.models import UserObjectPermission
-from guardian.shortcuts import assign_perm
 
 from varda.cache import delete_cached_user_permissions_for_model
 from varda.clients import organisaatio_client
@@ -106,7 +105,6 @@ def set_user_kayttooikeudet(service_name, henkilo_oid, user):
 
 def set_user_permissions(user, organisation, role):
     organization_oid = organisation['oid']
-    organization_type_vakajarjestaja = organisaatio_client.is_vakajarjestaja(organisation)
     try:
         Z4_CasKayttoOikeudet.objects.create(user=user, organisaatio_oid=organization_oid, kayttooikeus=role)
     except IntegrityError:
@@ -116,20 +114,6 @@ def set_user_permissions(user, organisation, role):
     organization_specific_permission_group = get_permission_group(role, organization_oid)
     if organization_specific_permission_group is not None:
         organization_specific_permission_group.user_set.add(user)  # Assign the user to this permission_group
-
-        """
-        If it's toimipaikka-permission, We also need to give permission to the vakajarjestaja-object.
-        It is required by Frontend-app. Otherwise /api/ui/vakajarjestajat/ gives HTTP 403 Permission denied.
-        """
-        if not organization_type_vakajarjestaja:
-            # Assumes vakajarjestaja is directly above toimipaikka
-            vakajarjestaja_oid = organisation.get('parentOid', None)
-            if vakajarjestaja_oid is not None:
-                vakajarjestaja_query = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_oid)
-                if len(vakajarjestaja_query) == 1:
-                    assign_perm('view_vakajarjestaja', user, vakajarjestaja_query[0])
-                else:
-                    logger.error('Not just one vakajarjestaja with oid: ' + vakajarjestaja_oid)
 
 
 def fetch_permissions_roles_for_organization(user_id, henkilo_oid, organisation, permission_group_list):
