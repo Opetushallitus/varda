@@ -136,7 +136,7 @@ class ErrorMessages(enum.Enum):
     VS006 = get_error_dict('VS006', 'jarjestamismuoto_koodi is invalid for Toimipaikka.')
     VS007 = get_error_dict('VS007', 'jarjestamismuoto_koodi is invalid for kunnallinen Toimipaikka.')
     VS008 = get_error_dict('VS008', 'jarjestamismuoto_koodi is invalid for yksityinen Toimipaikka.')
-    VS009 = get_error_dict('VS009', 'Varhaiskasvatussuhde alkamis_pvm cannot be same or after Toimipaikka paattymis_pvm.')
+    VS009 = get_error_dict('VS009', 'Varhaiskasvatussuhde alkamis_pvm cannot be after Toimipaikka paattymis_pvm.')
     VS010 = get_error_dict('VS010', 'Varhaiskasvatussuhde paattymis_pvm cannot be after Toimipaikka paattymis_pvm.')
     VS011 = get_error_dict('VS011', 'Varhaiskasvatussuhde alkamis_pvm must be before or equal to Varhaiskasvatuspaatos paattymis_pvm.')
     VS012 = get_error_dict('VS012', 'Varhaiskasvatussuhde must have paattymis_pvm because Varhaiskasvatuspaatos has paattymis_pvm.')

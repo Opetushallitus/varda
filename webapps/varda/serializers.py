@@ -1084,7 +1084,7 @@ class VarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSerializer):
         vakasuhde_paattymis_pvm = data.get('paattymis_pvm', None)
 
         if toimipaikka_paattymis_pvm is not None:
-            if not validators.validate_paivamaara1_before_paivamaara2(data['alkamis_pvm'], toimipaikka_paattymis_pvm):
+            if not validators.validate_paivamaara1_before_paivamaara2(data['alkamis_pvm'], toimipaikka_paattymis_pvm, can_be_same=True):
                 raise ValidationError({'errors': [ErrorMessages.VS009.value]})
             if(vakasuhde_paattymis_pvm is not None and
                     not validators.validate_paivamaara1_before_paivamaara2(vakasuhde_paattymis_pvm, toimipaikka_paattymis_pvm, can_be_same=True)):
