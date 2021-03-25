@@ -339,9 +339,9 @@ def _assign_paos_vakajarjestaja_permissions(oma_organisaatio_oid, paos_organisaa
     model_name = model_class._meta.model.__name__.lower()
     group_organisation_oids = [oma_organisaatio_oid, paos_organisaatio_oid]
 
-    katselija_permission_groups = _get_permission_groups(group_organisation_oids, katselija_group_roles)
+    katselija_permission_groups = get_permission_groups(group_organisation_oids, katselija_group_roles)
 
-    tallentaja_permission_groups = _get_permission_groups(group_organisation_oids, tallentaja_group_roles, tallentaja_organisaatio_oid)
+    tallentaja_permission_groups = get_permission_groups(group_organisation_oids, tallentaja_group_roles, tallentaja_organisaatio_oid)
 
     [assign_perm('view_' + model_name, group, saved_object) for group in katselija_permission_groups]
     [assign_perm('change_' + model_name, group, saved_object) for group in tallentaja_permission_groups]
@@ -355,18 +355,18 @@ def _assign_toimipaikka_paos_permissions(paos_toimipaikka_organisaatio_oid, tall
     tallentaja = Toimipaikka.objects.filter(organisaatio_oid=paos_toimipaikka_organisaatio_oid,
                                             vakajarjestaja__organisaatio_oid=tallentaja_organisaatio_oid).exists()
 
-    toimipaikka_katselija_groups = _get_permission_groups([paos_toimipaikka_organisaatio_oid], toimipaikka_katselija_group_roles)
+    toimipaikka_katselija_groups = get_permission_groups([paos_toimipaikka_organisaatio_oid], toimipaikka_katselija_group_roles)
 
     [assign_perm('view_' + model_name, group, saved_object) for group in toimipaikka_katselija_groups]
 
     if tallentaja:
-        toimipaikka_tallentaja_groups = _get_permission_groups([paos_toimipaikka_organisaatio_oid], toimipaikka_tallentaja_group_roles)
+        toimipaikka_tallentaja_groups = get_permission_groups([paos_toimipaikka_organisaatio_oid], toimipaikka_tallentaja_group_roles)
         [assign_perm('change_' + model_name, group, saved_object) for group in toimipaikka_tallentaja_groups]
         [assign_perm('delete_' + model_name, group, saved_object) for group in toimipaikka_tallentaja_groups]
 
 
-def _get_permission_groups(group_organisation_oids, group_roles, tallentaja_organisaatio_oid=None):
-    group_names = [group_role + "_" + group_organisation_oid
+def get_permission_groups(group_organisation_oids, group_roles, tallentaja_organisaatio_oid=None):
+    group_names = [f'{group_role}_{group_organisation_oid}'
                    for group_role in group_roles
                    for group_organisation_oid in group_organisation_oids
                    if not tallentaja_organisaatio_oid or tallentaja_organisaatio_oid == group_organisation_oid]

@@ -299,7 +299,8 @@ class VardaPermissionsTests(TestCase):
 
         new_henkilo_url = json.loads(resp.content)['url']
         lapsi = {
-            'henkilo': new_henkilo_url
+            'henkilo': new_henkilo_url,
+            'vakatoimija': '/api/v1/vakajarjestajat/1/'
         }
 
         resp = client.post('/api/v1/lapset/', lapsi)

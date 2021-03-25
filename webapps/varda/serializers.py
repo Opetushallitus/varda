@@ -19,10 +19,12 @@ from varda.misc_viewsets import ViewSetValidator
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Maksutieto, Henkilo,
                           Lapsi, Huoltaja, Huoltajuussuhde, PaosOikeus, PaosToiminta, Varhaiskasvatuspaatos,
                           Varhaiskasvatussuhde, Z3_AdditionalCasUserFields, Tyontekija, Z4_CasKayttoOikeudet)
-from varda.permissions import (check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement,
-                               user_belongs_to_correct_groups, is_oph_staff)
+from varda.permissions import check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement, is_oph_staff
 from varda.related_object_validations import check_if_immutable_object_is_changed
-from varda.serializers_common import OidRelatedField, TunnisteRelatedField
+from varda.serializers_common import (OidRelatedField, TunnisteRelatedField, PermissionCheckedHLFieldMixin,
+                                      OptionalToimipaikkaMixin, ToimipaikkaPermissionCheckedHLField,
+                                      VakaJarjestajaPermissionCheckedHLField, VakaJarjestajaHLField, HenkiloHLField,
+                                      ToimipaikkaHLField, HenkiloPermissionCheckedHLField)
 from varda.validators import (fill_missing_fields_for_validations, validate_henkilo_oid, validate_nimi,
                               validate_henkilotunnus_or_oid_needed, validate_organisaatio_oid)
 
@@ -205,67 +207,6 @@ Show only relevant options in the dropdown menus (where changed_by=user)
 """
 
 
-class PermissionCheckedHLFieldMixin:
-    """
-    @DynamicAttrs
-    Mixin class for checking hyperlink related field permission.
-    Note: This needs to be before HyperlinkedRelatedField in class signature because of inheritance order.
-    """
-    def get_object(self, view_name, view_args, view_kwargs):
-        hlfield_object = super(PermissionCheckedHLFieldMixin, self).get_object(view_name, view_args, view_kwargs)
-        user = self.context['request'].user
-
-        if (not user.has_perm(self.check_permission, hlfield_object) or
-                not user_belongs_to_correct_groups(self, user, hlfield_object)):
-            self.fail('does_not_exist')
-
-        return hlfield_object
-
-
-class VakaJarjestajaHLField(serializers.HyperlinkedRelatedField):
-    """
-    https://medium.com/django-rest-framework/limit-related-data-choices-with-django-rest-framework-c54e96f5815e
-    """
-    def get_queryset(self):
-        user = self.context['request'].user
-        if user.is_authenticated:
-            queryset = VakaJarjestaja.objects.all().order_by('id')
-        else:
-            queryset = VakaJarjestaja.objects.none()
-        return queryset
-
-
-class VakaJarjestajaPermissionCheckedHLField(PermissionCheckedHLFieldMixin, VakaJarjestajaHLField):
-    check_permission = 'view_vakajarjestaja'
-    permission_groups = []
-    accept_toimipaikka_permission = False
-
-    def __init__(self, *args, **kwargs):
-        self.permission_groups = kwargs.pop('permission_groups', [])
-        self.accept_toimipaikka_permission = kwargs.pop('accept_toimipaikka_permission', False)
-
-        super(VakaJarjestajaPermissionCheckedHLField, self).__init__(*args, **kwargs)
-
-
-class ToimipaikkaHLField(serializers.HyperlinkedRelatedField):
-    def get_queryset(self):
-        user = self.context['request'].user
-        if user.is_authenticated:
-            queryset = Toimipaikka.objects.all().order_by('id')
-        else:
-            queryset = Toimipaikka.objects.none()
-        return queryset
-
-
-class ToimipaikkaPermissionCheckedHLField(PermissionCheckedHLFieldMixin, ToimipaikkaHLField):
-    check_permission = 'view_toimipaikka'
-    permission_groups = []
-
-    def __init__(self, *args, **kwargs):
-        self.permission_groups = kwargs.pop('permission_groups', [])
-        super(ToimipaikkaPermissionCheckedHLField, self).__init__(*args, **kwargs)
-
-
 class VarhaiskasvatuspaatosHLField(serializers.HyperlinkedRelatedField):
     def get_queryset(self):
         user = self.context['request'].user
@@ -288,20 +229,6 @@ class VarhaiskasvatussuhdeHLField(serializers.HyperlinkedRelatedField):
         else:
             queryset = Varhaiskasvatussuhde.objects.none()
         return queryset
-
-
-class HenkiloHLField(serializers.HyperlinkedRelatedField):
-    def get_queryset(self):
-        user = self.context['request'].user
-        if user.is_authenticated:
-            queryset = Henkilo.objects.all().order_by('id')
-        else:
-            queryset = Henkilo.objects.none()
-        return queryset
-
-
-class HenkiloPermissionCheckedHLField(PermissionCheckedHLFieldMixin, HenkiloHLField):
-    check_permission = 'view_henkilo'
 
 
 class HuoltajaHLField(serializers.HyperlinkedRelatedField):
@@ -336,6 +263,13 @@ class MaksutietoHLField(serializers.HyperlinkedRelatedField):
         else:
             queryset = Maksutieto.objects.none()
         return queryset
+
+
+class LapsiOptionalToimipaikkaMixin(OptionalToimipaikkaMixin):
+    toimipaikka = ToimipaikkaPermissionCheckedHLField(view_name='toimipaikka-detail', required=False, write_only=True,
+                                                      permission_groups=[Z4_CasKayttoOikeudet.TALLENTAJA,
+                                                                         Z4_CasKayttoOikeudet.PALVELUKAYTTAJA],
+                                                      check_paos=True)
 
 
 """
@@ -725,7 +659,7 @@ class MaksutietoGetUpdateSerializer(serializers.HyperlinkedModelSerializer):
                   'asiakasmaksu', 'perheen_koko', 'alkamis_pvm', 'paattymis_pvm', 'lahdejarjestelma', 'tunniste',)
 
 
-class LapsiSerializer(serializers.HyperlinkedModelSerializer):
+class LapsiSerializer(LapsiOptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     henkilo = HenkiloPermissionCheckedHLField(view_name='henkilo-detail', required=False)
     henkilo_oid = OidRelatedField(object_type=Henkilo,
@@ -765,6 +699,11 @@ class LapsiSerializer(serializers.HyperlinkedModelSerializer):
         with ViewSetValidator() as validator:
             if self.instance:
                 fill_missing_fields_for_validations(data, self.instance)
+            elif toimipaikka := data.get('toimipaikka', None):
+                # Only validate in POST
+                vakajarjestaja = data.get('vakatoimija') or data.get('paos_organisaatio')
+                if toimipaikka.vakajarjestaja != vakajarjestaja:
+                    validator.error('toimipaikka', ErrorMessages.MI019.value)
 
             vakatoimija = data.get('vakatoimija')
             oma_organisaatio = data.get('oma_organisaatio')
@@ -900,7 +839,7 @@ class HuoltajuussuhdeSerializer(serializers.HyperlinkedModelSerializer):
         exclude = ('luonti_pvm', 'changed_by',)
 
 
-class VarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSerializer):
+class VarhaiskasvatuspaatosSerializer(LapsiOptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     lapsi = LapsiPermissionCheckedHLField(required=False, view_name='lapsi-detail')
     lapsi_tunniste = TunnisteRelatedField(object_type=Lapsi,
@@ -923,11 +862,9 @@ class VarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSerializer):
             if len(data) == 0:
                 raise serializers.ValidationError({'errors': [ErrorMessages.GE014.value]})
             fill_missing_fields_for_validations(data, self.instance)
-
-        lapsi_obj = data['lapsi']
-        if not self.context['request'].user.has_perm('view_lapsi', lapsi_obj):
-            msg = {'lapsi': [ErrorMessages.GE008.value]}
-            raise serializers.ValidationError(msg, code='invalid')
+        elif toimipaikka := data.get('toimipaikka', None):
+            # Only validate in POST
+            _validate_toimipaikka_with_vakajarjestaja_of_lapsi(toimipaikka, data['lapsi'])
 
         if self.instance:
             check_if_immutable_object_is_changed(self.instance, data, 'lapsi')
@@ -939,8 +876,12 @@ class VarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSerializer):
             check_if_immutable_object_is_changed(self.instance, data, 'jarjestamismuoto_koodi', compare_id=False)
 
         jarjestamismuoto_koodi = data['jarjestamismuoto_koodi'].lower()
+        hakemus_pvm = data['hakemus_pvm']
+        alkamis_pvm = data['alkamis_pvm']
         paattymis_pvm = data.get('paattymis_pvm', None)
+        lapsi_obj = data['lapsi']
 
+        self._validate_dates(hakemus_pvm, alkamis_pvm, paattymis_pvm)
         self._validate_paos_specific_data(lapsi_obj, jarjestamismuoto_koodi, paattymis_pvm)
         self._validate_jarjestamismuoto(lapsi_obj, jarjestamismuoto_koodi, paattymis_pvm)
         self._validate_vuorohoito(data)
@@ -1005,9 +946,33 @@ class VarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSerializer):
                 # Tilapainen vaka_kytkin if required, however not in PATCH
                 raise serializers.ValidationError({'tilapainen_vaka_kytkin': [ErrorMessages.VP014.value]})
 
+    def _validate_dates(self, hakemus_pvm, alkamis_pvm, paattymis_pvm):
+        if not validators.validate_paivamaara1_before_paivamaara2(hakemus_pvm, alkamis_pvm, can_be_same=True):
+            raise ValidationError({'hakemus_pvm': [ErrorMessages.VP001.value]})
+        if paattymis_pvm:
+            if not validators.validate_paivamaara1_before_paivamaara2(alkamis_pvm, paattymis_pvm, can_be_same=True):
+                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI004.value]})
+
     @caching_to_representation('varhaiskasvatuspaatos')
     def to_representation(self, instance):
         return super(VarhaiskasvatuspaatosSerializer, self).to_representation(instance)
+
+
+def _validate_toimipaikka_with_vakajarjestaja_of_lapsi(toimipaikka, lapsi):
+    """
+    Validate that given toimipaikka belongs to VakaJarjestaja that Lapsi is linked to
+    (vakatoimija or paos_organisaatio)
+    :param toimipaikka: Toimipaikka object instance
+    :param lapsi: Lapsi object instance
+    """
+    vakasuhde_vakajarjestaja_id = (lapsi.varhaiskasvatuspaatokset
+                                   .values_list('varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id')
+                                   .first())
+    vakajarjestaja_id = (getattr(lapsi.vakatoimija, 'id', None) or
+                         getattr(lapsi.paos_organisaatio, 'id', None) or
+                         vakasuhde_vakajarjestaja_id)
+    if toimipaikka.vakajarjestaja.id != vakajarjestaja_id:
+        raise serializers.ValidationError({'toimipaikka': [ErrorMessages.MI019.value]})
 
 
 class VarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSerializer):
@@ -1038,12 +1003,13 @@ class VarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSerializer):
         instance = self.instance
         if instance:
             fill_missing_fields_for_validations(data, instance)
+        else:
+            # Only validate in POST
+            _validate_toimipaikka_with_vakajarjestaja_of_lapsi(data['toimipaikka'],
+                                                               data['varhaiskasvatuspaatos'].lapsi)
 
         if not self.context['request'].user.has_perm('view_varhaiskasvatuspaatos', data['varhaiskasvatuspaatos']):
             msg = {'varhaiskasvatuspaatos': [ErrorMessages.GE008.value]}
-            raise serializers.ValidationError(msg, code='invalid')
-        elif data['varhaiskasvatuspaatos'].lapsi.paos_kytkin and data['varhaiskasvatuspaatos'].lapsi.paos_organisaatio != data['toimipaikka'].vakajarjestaja:
-            msg = {'toimipaikka': [ErrorMessages.VS005.value]}
             raise serializers.ValidationError(msg, code='invalid')
 
         self._validate_jarjestamismuoto(data)

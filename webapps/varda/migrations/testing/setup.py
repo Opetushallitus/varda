@@ -41,6 +41,7 @@ def add_groups_with_permissions():
         ('VARDA-TALLENTAJA_1.2.246.562.10.93957375488', get_vakajarjestaja_palvelukayttaja_permissions()),
         ('VARDA-TALLENTAJA_1.2.246.562.10.9395737548810', get_toimipaikka_tallentaja_permissions()),
         ('VARDA-TALLENTAJA_1.2.246.562.10.34683023489', get_vakajarjestaja_palvelukayttaja_permissions()),
+        ('VARDA-TALLENTAJA_1.2.246.562.10.93957375484', get_vakajarjestaja_palvelukayttaja_permissions()),  # vakajarjestaja_4
         ('VARDA-TALLENTAJA_1.2.246.562.10.9395737548815', get_toimipaikka_tallentaja_permissions()),  # toimipaikka_2
         ('VARDA-TALLENTAJA_1.2.246.562.10.9395737548817', get_toimipaikka_tallentaja_permissions()),  # toimipaikka_5
         ('VARDA-TALLENTAJA_1.2.246.562.10.57294396385', get_vakajarjestaja_palvelukayttaja_permissions()),  # vakajarjestaja_5
@@ -103,6 +104,7 @@ def add_test_users():
     group_palvelukayttaja_vakajarjestaja_2 = Group.objects.get(name='VARDA-PALVELUKAYTTAJA_1.2.246.562.10.93957375488')
     group_tallentaja_vakajarjestaja_2 = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.93957375488')
     group_tallentaja_toimipaikka_1 = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.9395737548810')
+    group_tallentaja_toimipaikka_2 = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.9395737548815')
     group_katselija_toimipaikka_4 = Group.objects.get(name='VARDA-KATSELIJA_1.2.246.562.10.9395737548811')
     group_tallentaja_vakajarjestaja_1 = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.34683023489')
     group_tallentaja_toimipaikka_5 = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.9395737548817')
@@ -181,6 +183,7 @@ def add_test_users():
 
     vakatietojen_toimipaikka_tallentaja = User.objects.create(username='vakatietojen_toimipaikka_tallentaja', password='pbkdf2_sha256$150000$S3mQ66CWYdSO$o9T08pdVyIZFqbdC8pK5cMk2O64d3xfQdw2x2vzr4M8=')
     vakatietojen_toimipaikka_tallentaja.groups.add(group_tallentaja_toimipaikka_1)
+    vakatietojen_toimipaikka_tallentaja.groups.add(group_tallentaja_toimipaikka_2)
 
     vakatietojen_toimipaikka_tallentaja_9395737548815 = User.objects.create(username='vakatietojen_toimipaikka_tallentaja_9395737548815', password='pbkdf2_sha256$150000$ntAfCrXVuXnI$A63mBzAb7EzHDdR6jTSGZDmmYj0OtfbgetIFbtBZXBo=')
     vakatietojen_toimipaikka_tallentaja_9395737548815.groups.add(group_tallentaja_toimipaikka_9395737548815)

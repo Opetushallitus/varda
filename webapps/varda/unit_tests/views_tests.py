@@ -1155,7 +1155,7 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp2 = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
-        assert_validation_error(resp2, 'errors', 'VS001', 'This Lapsi is already under another Vakajarjestaja. Please create a new one.')
+        assert_validation_error(resp2, 'toimipaikka', 'MI019', 'Given Toimipaikka does not belong to the correct VakaJarjestaja.')
         assert_status_code(resp2, 400)
 
     def test_api_push_lapsi_incorrect_paos(self):
@@ -1236,7 +1236,7 @@ class VardaViewsTests(TestCase):
         }
         resp3 = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         assert_status_code(resp3, 400)
-        assert_validation_error(resp3, 'toimipaikka', 'VS005', 'Vakajarjestaja is different than paos_organisaatio for Lapsi.')
+        assert_validation_error(resp3, 'toimipaikka', 'MI019', 'Given Toimipaikka does not belong to the correct VakaJarjestaja.')
 
         varhaiskasvatussuhde = {
             'toimipaikka': 'http://testserver/api/v1/toimipaikat/1/',
@@ -4501,3 +4501,82 @@ class VardaViewsTests(TestCase):
         assert_status_code(resp_maksutieto_delete, status.HTTP_204_NO_CONTENT)
 
         self.assertFalse(Maksutieto.objects.filter(id=maksutieto.id).exists())
+
+    @responses.activate
+    def test_toimipaikka_lapsi_create_all(self):
+        vakajarjestaja_oid = '1.2.246.562.10.93957375488'
+        toimipaikka_oid_1 = '1.2.246.562.10.9395737548810'
+        toimipaikka_oid_2 = '1.2.246.562.10.9395737548815'
+        toimipaikka_oid_3 = '1.2.246.562.10.9395737548811'
+        henkilo_oid = '1.2.246.562.24.47279942111'
+
+        responses.add(responses.GET,
+                      f'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/{henkilo_oid}/master',
+                      json={'hetu': '030518A055C', 'yksiloityVTJ': True},
+                      status=status.HTTP_200_OK)
+
+        client = SetUpTestClient('vakatietojen_toimipaikka_tallentaja').client()
+
+        henkilo = {
+            'henkilo_oid': henkilo_oid,
+            'etunimet': 'Erkki',
+            'kutsumanimi': 'Erkki',
+            'sukunimi': 'Esimerkki'
+        }
+        resp_henkilo = client.post('/api/v1/henkilot/', henkilo)
+        assert_status_code(resp_henkilo, status.HTTP_201_CREATED)
+
+        lapsi_tunniste = 'testing-lapsi'
+        lapsi = {
+            'toimipaikka_oid': toimipaikka_oid_3,
+            'vakatoimija_oid': vakajarjestaja_oid,
+            'henkilo_oid': henkilo_oid,
+            'lahdejarjestelma': 1,
+            'tunniste': lapsi_tunniste
+        }
+        resp_lapsi_1 = client.post('/api/v1/lapset/', lapsi)
+        assert_status_code(resp_lapsi_1, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_lapsi_1, 'toimipaikka_oid', 'RF003', 'Could not find matching object.')
+
+        lapsi['toimipaikka_oid'] = toimipaikka_oid_2
+        resp_lapsi_2 = client.post('/api/v1/lapset/', lapsi)
+        assert_status_code(resp_lapsi_2, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_lapsi_2, 'toimipaikka', 'MI019', 'Given Toimipaikka does not belong to the correct VakaJarjestaja.')
+
+        lapsi['toimipaikka_oid'] = toimipaikka_oid_1
+        resp_lapsi_3 = client.post('/api/v1/lapset/', lapsi)
+        assert_status_code(resp_lapsi_3, status.HTTP_201_CREATED)
+
+        vakapaatos_tunniste = 'testing-varhaiskasvatuspaatos'
+        vakapaatos = {
+            'toimipaikka_oid': toimipaikka_oid_2,
+            'lapsi_tunniste': lapsi_tunniste,
+            'tuntimaara_viikossa': '37.5',
+            'jarjestamismuoto_koodi': 'jm04',
+            'hakemus_pvm': '2021-01-02',
+            'alkamis_pvm': '2021-01-02',
+            'tilapainen_vaka_kytkin': False,
+            'lahdejarjestelma': '1',
+            'tunniste': vakapaatos_tunniste
+        }
+        resp_vakapaatos_1 = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos)
+        assert_status_code(resp_vakapaatos_1, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_vakapaatos_1, 'toimipaikka', 'MI019', 'Given Toimipaikka does not belong to the correct VakaJarjestaja.')
+
+        vakapaatos['toimipaikka_oid'] = toimipaikka_oid_1
+        resp_vakapaatos_2 = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos)
+        assert_status_code(resp_vakapaatos_2, status.HTTP_201_CREATED)
+
+        vakasuhde = {
+            'toimipaikka_oid': toimipaikka_oid_2,
+            'varhaiskasvatuspaatos_tunniste': vakapaatos_tunniste,
+            'alkamis_pvm': '2021-01-02',
+            'lahdejarjestelma': '1'
+        }
+        resp_vakasuhde_1 = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
+        assert_status_code(resp_vakasuhde_1, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_vakasuhde_1, 'toimipaikka', 'MI019', 'Given Toimipaikka does not belong to the correct VakaJarjestaja.')
+
+        vakasuhde['toimipaikka_oid'] = toimipaikka_oid_1
+        resp_vakasuhde_2 = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
+        assert_status_code(resp_vakasuhde_2, status.HTTP_201_CREATED)

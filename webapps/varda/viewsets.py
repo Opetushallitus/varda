@@ -3,7 +3,6 @@ import datetime
 
 import pytz
 from django.contrib.auth.models import Group, User
-from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
@@ -26,8 +25,7 @@ from rest_framework_guardian.filters import ObjectPermissionsFilter
 
 from varda import filters, validators, permission_groups
 from varda.cache import (cached_list_response, cached_retrieve_response, delete_toimipaikan_lapset_cache,
-                         delete_cache_keys_related_model, get_object_ids_user_has_permissions,
-                         get_object_ids_for_user_by_model)
+                         delete_cache_keys_related_model, get_object_ids_for_user_by_model)
 from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid,
                                                         add_henkilo_to_oppijanumerorekisteri,
                                                         get_henkilo_by_henkilotunnus)
@@ -60,7 +58,8 @@ from varda.permissions import (throw_if_not_tallentaja_permissions,
                                auditlogclass, save_audit_log, ToimipaikkaPermissions, get_toimipaikka_or_404, auditlog,
                                is_oph_staff, user_permission_groups_in_organizations,
                                user_permission_groups_in_organization, CustomObjectPermissions,
-                               assign_lapsi_henkilo_permissions, assign_vakasuhde_henkilo_permissions)
+                               assign_lapsi_henkilo_permissions, assign_vakasuhde_henkilo_permissions,
+                               assign_permissions_for_non_paos_lapsi)
 from varda.related_object_validations import (check_toimipaikka_and_vakajarjestaja_have_oids,
                                               toimipaikka_is_valid_to_organisaatiopalvelu,
                                               check_overlapping_toiminnallinen_painotus,
@@ -1141,8 +1140,9 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
     def retrieve(self, request, *args, **kwargs):
         return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
-    def save_or_return_lapsi_if_already_created(self, validated_data, serializer):
+    def save_or_return_lapsi_if_already_created(self, validated_data, serializer, toimipaikka_oid, paos_oikeus):
         user = self.request.user
+        q_obj = Q()
         if 'paos_organisaatio' in validated_data and validated_data['paos_organisaatio'] is not None:
             q_obj = Q(henkilo=validated_data['henkilo'],
                       oma_organisaatio=validated_data['oma_organisaatio'],
@@ -1152,32 +1152,17 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
                       Q(Q(vakatoimija=validated_data['vakatoimija']) |
                       (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja=validated_data['vakatoimija'],
                          paos_kytkin=False))))
-        else:
-            kayttajatyyppi = (Z3_AdditionalCasUserFields
-                              .objects
-                              .filter(user=user)
-                              .values_list('kayttajatyyppi', flat=True))
-            if kayttajatyyppi and kayttajatyyppi[0] == 'PALVELU':
-                q_obj = Q(henkilo=validated_data['henkilo'],
-                          paos_kytkin=False,
-                          changed_by=user)
-            else:
-                model_name = 'lapsi'
-                content_type = ContentType.objects.get(model=model_name)
-                lapsi_ids = get_object_ids_user_has_permissions(user, model_name, content_type)
-                q_obj = Q(henkilo=validated_data['henkilo'],
-                          paos_kytkin=False,
-                          id__in=lapsi_ids)
 
         lapsi_qs = Lapsi.objects.filter(q_obj).distinct()
         if len(lapsi_qs) > 1:
-            logger.error('unable to fetch a single child for {} with henkilo {}'.format(user, validated_data['henkilo']))
-            raise ValidationError(ErrorMessages.LA001.value, code='invalid')
+            logger.error(f'unable to fetch a single child for {user} with henkilo {validated_data["henkilo"]}')
+            raise ValidationError({'errors': [ErrorMessages.LA001.value]})
         else:
             lapsi_obj = lapsi_qs.first()
         if lapsi_obj:
-            # Assign Toimipaikka level permissions to Henkilo object
-            assign_lapsi_henkilo_permissions(lapsi_obj, user=user)
+            if toimipaikka_oid:
+                # Assign permissions again to include Toimipaikka related groups
+                self._assign_permissions_for_lapsi_obj(lapsi_obj, paos_oikeus, toimipaikka_oid)
             raise ConflictError(self.get_serializer(lapsi_obj).data, status_code=status.HTTP_200_OK)
         return serializer.save(changed_by=user)
 
@@ -1194,15 +1179,30 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
                 # huoltajuussuhteet copied, no need to loop through other lapset
                 break
 
+    def _assign_permissions_for_lapsi_obj(self, lapsi, paos_oikeus, toimipaikka_oid):
+        if lapsi.paos_kytkin and paos_oikeus:
+            tallentaja_organisaatio_oid = paos_oikeus.tallentaja_organisaatio.organisaatio_oid
+            assign_vakajarjestaja_lapsi_paos_permissions(lapsi.oma_organisaatio.organisaatio_oid,
+                                                         lapsi.paos_organisaatio.organisaatio_oid,
+                                                         tallentaja_organisaatio_oid, lapsi)
+            if toimipaikka_oid:
+                assign_toimipaikka_lapsi_paos_permissions(toimipaikka_oid, tallentaja_organisaatio_oid, lapsi)
+        elif lapsi.vakatoimija:
+            assign_permissions_for_non_paos_lapsi(lapsi, lapsi.vakatoimija.organisaatio_oid,
+                                                  toimipaikka_oid=toimipaikka_oid)
+
+        assign_lapsi_henkilo_permissions(lapsi, user=self.request.user, toimipaikka_oid=toimipaikka_oid)
+
     def perform_create(self, serializer):
         user = self.request.user
         validated_data = serializer.validated_data
+        toimipaikka_oid = validated_data.get('toimipaikka') and validated_data.get('toimipaikka').organisaatio_oid
 
         try:
             with transaction.atomic():
                 oma_organisaatio = validated_data.get('oma_organisaatio')
                 paos_organisaatio = validated_data.get('paos_organisaatio')
-                vakatoimija = validated_data.get('vakatoimija')
+                paos_oikeus = None
                 if paos_organisaatio:
                     """
                     This is a "PAOS-lapsi"
@@ -1215,30 +1215,13 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
                     throw_if_not_tallentaja_permissions(paos_organisaatio_oid, paos_toimipaikka, user, oma_organisaatio)
 
                 # This can be performed only after all permission checks are done!
-                saved_object = self.save_or_return_lapsi_if_already_created(validated_data, serializer)
-                if paos_organisaatio:
-                    assign_vakajarjestaja_lapsi_paos_permissions(oma_organisaatio.organisaatio_oid,
-                                                                 paos_organisaatio.organisaatio_oid,
-                                                                 paos_oikeus.tallentaja_organisaatio.organisaatio_oid,
-                                                                 saved_object)
-                elif vakatoimija:
-                    vakajarjestaja_organisaatio_oid = vakatoimija.organisaatio_oid
-                    assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Lapsi, saved_object)
-                    group_huoltajatieto_katselu_vaka = Group.objects.get(name='HUOLTAJATIETO_KATSELU_' + vakajarjestaja_organisaatio_oid)
-                    group_huoltajatieto_tallennus_vaka = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_' + vakajarjestaja_organisaatio_oid)
-                    assign_perm('view_lapsi', group_huoltajatieto_katselu_vaka, saved_object)
-                    assign_perm('view_lapsi', group_huoltajatieto_tallennus_vaka, saved_object)
+                saved_object = self.save_or_return_lapsi_if_already_created(validated_data, serializer,
+                                                                            toimipaikka_oid, paos_oikeus)
+                self._assign_permissions_for_lapsi_obj(saved_object, paos_oikeus, toimipaikka_oid)
 
                 self.copy_huoltajuussuhteet(saved_object)
 
                 delete_cache_keys_related_model('henkilo', saved_object.henkilo.id)
-
-                # User specific permissions need to be assigned for Toimipaikka level users
-                assign_perm('view_lapsi', user, saved_object)
-                assign_perm('change_lapsi', user, saved_object)
-                assign_perm('delete_lapsi', user, saved_object)
-
-                assign_lapsi_henkilo_permissions(saved_object, user=user)
         except IntegrityError as e:
             logger.error('IntegrityError at LapsiViewSet: {}'.format(e))
             raise CustomServerErrorException
@@ -1317,12 +1300,8 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
         user = self.request.user
         validated_data = serializer.validated_data
         lapsi = validated_data['lapsi']
+        toimipaikka_oid = validated_data.get('toimipaikka') and validated_data.get('toimipaikka').organisaatio_oid
 
-        if not validators.validate_paivamaara1_before_paivamaara2(validated_data['hakemus_pvm'], validated_data['alkamis_pvm'], can_be_same=True):
-            raise ValidationError({'hakemus_pvm': [ErrorMessages.VP001.value]})
-        if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
-            if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm'], can_be_same=True):
-                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI004.value]})
         if validated_data['vuorohoito_kytkin']:
             validated_data['paivittainen_vaka_kytkin'] = None
             validated_data['kokopaivainen_vaka_kytkin'] = None
@@ -1344,13 +1323,20 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
                 tallentaja_organisaatio_oid = paos_oikeus.tallentaja_organisaatio.organisaatio_oid
                 assign_vakajarjestaja_vakatiedot_paos_permissions(oma_organisaatio_oid, paos_organisaatio_oid, tallentaja_organisaatio_oid,
                                                                   Varhaiskasvatuspaatos, saved_object)
+                if toimipaikka_oid:
+                    assign_toimipaikka_vakatiedot_paos_permissions(toimipaikka_oid, tallentaja_organisaatio_oid,
+                                                                   Varhaiskasvatuspaatos, saved_object)
             else:
                 if lapsi.vakatoimija:
                     assign_object_level_permissions(lapsi.vakatoimija.organisaatio_oid, Varhaiskasvatuspaatos, saved_object)
-                # User specific permissions need to be assigned for Toimipaikka level users
-                assign_perm('view_varhaiskasvatuspaatos', user, saved_object)
-                assign_perm('change_varhaiskasvatuspaatos', user, saved_object)
-                assign_perm('delete_varhaiskasvatuspaatos', user, saved_object)
+                else:
+                    # This Lapsi is still missing vakatoimija-field, so we need to assign user specific permissions
+                    # so that Varhaiskasvatussuhde can be created
+                    assign_perm('view_varhaiskasvatuspaatos', user, saved_object)
+                    assign_perm('change_varhaiskasvatuspaatos', user, saved_object)
+                    assign_perm('delete_varhaiskasvatuspaatos', user, saved_object)
+                if toimipaikka_oid:
+                    assign_object_level_permissions(toimipaikka_oid, Varhaiskasvatuspaatos, saved_object)
 
     def perform_update(self, serializer):
         user = self.request.user
@@ -1362,21 +1348,12 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
         if not user.has_perm('change_varhaiskasvatuspaatos', instance):
             raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
 
-        if not validators.validate_paivamaara1_before_paivamaara2(validated_data['hakemus_pvm'],
-                                                                  validated_data['alkamis_pvm'],
-                                                                  can_be_same=True):
-            raise ValidationError({'hakemus_pvm': [ErrorMessages.VP001.value]})
-
         for varhaiskasvatussuhde_obj in varhaiskasvatussuhteet:
             self.validate_paivamaarat_varhaiskasvatussuhteet(validated_data['alkamis_pvm'],
                                                              varhaiskasvatussuhde_obj.alkamis_pvm,
                                                              {'alkamis_pvm': [ErrorMessages.VP002.value]})
 
         if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
-            if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'],
-                                                                      validated_data['paattymis_pvm'],
-                                                                      can_be_same=True):
-                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI004.value]})
             for varhaiskasvatussuhde_obj in varhaiskasvatussuhteet:
                 self.validate_paivamaarat_varhaiskasvatussuhteet(varhaiskasvatussuhde_obj.paattymis_pvm,
                                                                  validated_data['paattymis_pvm'],
@@ -1518,23 +1495,21 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
         """
         assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Varhaiskasvatussuhde, varhaiskasvatussuhde_obj)
         assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Varhaiskasvatuspaatos, varhaiskasvatuspaatos_obj)
-        assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Lapsi, lapsi_obj)
-        group_huoltajatieto_katselu_vaka = Group.objects.get(name='HUOLTAJATIETO_KATSELU_' + vakajarjestaja_organisaatio_oid)
-        group_huoltajatieto_tallennus_vaka = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_' + vakajarjestaja_organisaatio_oid)
-        assign_perm('view_lapsi', group_huoltajatieto_katselu_vaka, lapsi_obj)
-        assign_perm('view_lapsi', group_huoltajatieto_tallennus_vaka, lapsi_obj)
-
-        if toimipaikka_organisaatio_oid != '':
+        assign_permissions_for_non_paos_lapsi(lapsi_obj, vakajarjestaja_organisaatio_oid,
+                                              toimipaikka_oid=toimipaikka_organisaatio_oid)
+        if toimipaikka_organisaatio_oid:
             """
             TODO: Add these to every case after dummy-toimipaikat are removed.
             """
             assign_object_level_permissions(toimipaikka_organisaatio_oid, Varhaiskasvatussuhde, varhaiskasvatussuhde_obj)
             assign_object_level_permissions(toimipaikka_organisaatio_oid, Varhaiskasvatuspaatos, varhaiskasvatuspaatos_obj)
-            assign_object_level_permissions(toimipaikka_organisaatio_oid, Lapsi, lapsi_obj)
-            group_huoltajatieto_katselu_toimipaikka = Group.objects.get(name='HUOLTAJATIETO_KATSELU_' + toimipaikka_organisaatio_oid)
-            group_huoltajatieto_tallennus_toimipaikka = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_' + toimipaikka_organisaatio_oid)
-            assign_perm('view_lapsi', group_huoltajatieto_katselu_toimipaikka, lapsi_obj)
-            assign_perm('view_lapsi', group_huoltajatieto_tallennus_toimipaikka, lapsi_obj)
+
+        # Remove user specific permissions from Varhaiskasvatuspaatos object, since they might have been assigned if
+        # Lapsi is still missing vakatoimija-field
+        user = self.request.user
+        remove_perm('view_varhaiskasvatuspaatos', user, varhaiskasvatuspaatos_obj)
+        remove_perm('change_varhaiskasvatuspaatos', user, varhaiskasvatuspaatos_obj)
+        remove_perm('delete_varhaiskasvatuspaatos', user, varhaiskasvatuspaatos_obj)
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -1580,8 +1555,8 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
                 self.assign_paos_lapsi_permissions(lapsi_obj, varhaiskasvatussuhde_obj, varhaiskasvatuspaatos_obj,
                                                    toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid)
                 cache.delete('vakajarjestaja_yhteenveto_' + str(lapsi_obj.oma_organisaatio.id))
-
-            else:  # Not PAOS-lapsi (i.e. normal case)
+            else:
+                # Not PAOS-lapsi (i.e. normal case)
                 try:
                     self.assign_non_paos_lapsi_permissions(lapsi_obj, varhaiskasvatussuhde_obj, varhaiskasvatuspaatos_obj,
                                                            vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
@@ -1589,17 +1564,6 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
                     logger.error('Missing Group for toimija {} and toimipaikka {}'
                                  .format(vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid))
                     raise CustomServerErrorException
-
-            """
-            Finally remove user-level permissions from the vakasuhde/vakapaatos/lapsi objects.
-            They are not needed after group-level permissions are added.
-            """
-            remove_perm('view_varhaiskasvatuspaatos', user, varhaiskasvatuspaatos_obj)
-            remove_perm('change_varhaiskasvatuspaatos', user, varhaiskasvatuspaatos_obj)
-            remove_perm('delete_varhaiskasvatuspaatos', user, varhaiskasvatuspaatos_obj)
-            remove_perm('view_lapsi', user, lapsi_obj)
-            remove_perm('change_lapsi', user, lapsi_obj)
-            remove_perm('delete_lapsi', user, lapsi_obj)
 
             assign_vakasuhde_henkilo_permissions(varhaiskasvatussuhde_obj)
 

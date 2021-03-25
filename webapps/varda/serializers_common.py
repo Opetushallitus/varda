@@ -2,7 +2,9 @@ from rest_framework import serializers
 
 from varda.enums.error_messages import ErrorMessages
 from varda.misc import get_object_id_from_path
+from varda.models import VakaJarjestaja, Toimipaikka, Henkilo
 from varda.permissions import user_belongs_to_correct_groups
+from varda.validators import validate_organisaatio_oid
 
 
 class AbstractCustomRelatedField(serializers.Field):
@@ -227,3 +229,104 @@ class TunnisteRelatedField(AbstractCustomRelatedField):
 
     def get_value_by_referenced_object(self, parent_value):
         return parent_value.tunniste
+
+
+class PermissionCheckedHLFieldMixin:
+    """
+    @DynamicAttrs
+    Mixin class for checking hyperlink related field permission.
+    Note: This needs to be before HyperlinkedRelatedField in class signature because of inheritance order.
+    """
+    def get_object(self, view_name, view_args, view_kwargs):
+        hlfield_object = super(PermissionCheckedHLFieldMixin, self).get_object(view_name, view_args, view_kwargs)
+        user = self.context['request'].user
+
+        if (not user.has_perm(self.check_permission, hlfield_object) or
+                not user_belongs_to_correct_groups(self, user, hlfield_object)):
+            self.fail('does_not_exist')
+
+        return hlfield_object
+
+
+class VakaJarjestajaHLField(serializers.HyperlinkedRelatedField):
+    """
+    https://medium.com/django-rest-framework/limit-related-data-choices-with-django-rest-framework-c54e96f5815e
+    """
+    def get_queryset(self):
+        user = self.context['request'].user
+        if user.is_authenticated:
+            queryset = VakaJarjestaja.objects.all().order_by('id')
+        else:
+            queryset = VakaJarjestaja.objects.none()
+        return queryset
+
+
+class VakaJarjestajaPermissionCheckedHLField(PermissionCheckedHLFieldMixin, VakaJarjestajaHLField):
+    check_permission = 'view_vakajarjestaja'
+    permission_groups = []
+    accept_toimipaikka_permission = False
+
+    def __init__(self, *args, **kwargs):
+        self.permission_groups = kwargs.pop('permission_groups', [])
+        self.accept_toimipaikka_permission = kwargs.pop('accept_toimipaikka_permission', False)
+
+        super(VakaJarjestajaPermissionCheckedHLField, self).__init__(*args, **kwargs)
+
+
+class ToimipaikkaHLField(serializers.HyperlinkedRelatedField):
+    def get_queryset(self):
+        user = self.context['request'].user
+        if user.is_authenticated:
+            queryset = Toimipaikka.objects.all().order_by('id')
+        else:
+            queryset = Toimipaikka.objects.none()
+        return queryset
+
+
+class ToimipaikkaPermissionCheckedHLField(PermissionCheckedHLFieldMixin, ToimipaikkaHLField):
+    check_permission = 'view_toimipaikka'
+    permission_groups = []
+    check_paos = False
+
+    def __init__(self, *args, **kwargs):
+        self.permission_groups = kwargs.pop('permission_groups', [])
+        self.check_paos = kwargs.pop('check_paos', False)
+        super(ToimipaikkaPermissionCheckedHLField, self).__init__(*args, **kwargs)
+
+
+class OptionalToimipaikkaMixin(metaclass=serializers.SerializerMetaclass):
+    """
+    Mixin class to be used with HyperlinkedModelSerializer
+    """
+    # Only user with toimipaikka permissions need to provide this field
+    toimipaikka = ToimipaikkaPermissionCheckedHLField(view_name='toimipaikka-detail', required=False, write_only=True)
+    toimipaikka_oid = OidRelatedField(object_type=Toimipaikka,
+                                      parent_field='toimipaikka',
+                                      parent_attribute='organisaatio_oid',
+                                      prevalidator=validate_organisaatio_oid,
+                                      either_required=False,
+                                      write_only=True)
+
+    def create(self, validated_data):
+        """
+        NOTE: Since toimipaikka is removed here we need to pick toimipaikka before calling serializer.save()
+        :param validated_data: Serializer validated data
+        :return: Created object
+        """
+        validated_data.pop('toimipaikka', None)
+        validated_data.pop('toimipaikka_oid', None)
+        return super(OptionalToimipaikkaMixin, self).create(validated_data)
+
+
+class HenkiloHLField(serializers.HyperlinkedRelatedField):
+    def get_queryset(self):
+        user = self.context['request'].user
+        if user.is_authenticated:
+            queryset = Henkilo.objects.all().order_by('id')
+        else:
+            queryset = Henkilo.objects.none()
+        return queryset
+
+
+class HenkiloPermissionCheckedHLField(PermissionCheckedHLFieldMixin, HenkiloHLField):
+    check_permission = 'view_henkilo'

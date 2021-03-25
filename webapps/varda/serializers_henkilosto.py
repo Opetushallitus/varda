@@ -16,10 +16,9 @@ from varda.related_object_validations import (create_date_range, date_range_over
                                               check_if_admin_mutable_object_is_changed, check_overlapping_palvelussuhde,
                                               check_overlapping_tyoskentelypaikka, check_overlapping_pidempi_poissaolo,
                                               check_if_immutable_object_is_changed)
-from varda.serializers import (VakaJarjestajaPermissionCheckedHLField, PermissionCheckedHLFieldMixin,
-                               ToimipaikkaPermissionCheckedHLField, HenkiloPermissionCheckedHLField)
-
-from varda.serializers_common import OidRelatedField, TunnisteRelatedField
+from varda.serializers_common import (OidRelatedField, TunnisteRelatedField, HenkiloPermissionCheckedHLField,
+                                      VakaJarjestajaPermissionCheckedHLField, PermissionCheckedHLFieldMixin,
+                                      ToimipaikkaPermissionCheckedHLField, OptionalToimipaikkaMixin)
 from varda.validators import (validate_paattymispvm_same_or_after_alkamispvm, validate_paivamaara1_after_paivamaara2,
                               parse_paivamaara, fill_missing_fields_for_validations)
 
@@ -53,31 +52,12 @@ class PalvelussuhdePermissionCheckedHLField(PermissionCheckedHLFieldMixin, seria
         return queryset
 
 
-class OptionalToimipaikkaMixin(metaclass=serializers.SerializerMetaclass):
-    """
-    Mixin class to be used with HyperlinkedModelSerializer
-    """
-    # Only user with toimipaikka permissions need to provide this field
-    toimipaikka = ToimipaikkaPermissionCheckedHLField(view_name='toimipaikka-detail', required=False, write_only=True)
-    toimipaikka_oid = OidRelatedField(object_type=Toimipaikka,
-                                      parent_field='toimipaikka',
-                                      parent_attribute='organisaatio_oid',
-                                      prevalidator=validators.validate_organisaatio_oid,
-                                      either_required=False,
-                                      write_only=True)
-
-    def create(self, validated_data):
-        """
-        NOTE: Since toimipaikka is removed here we need to pick toimipaikka before calling serializer.save()
-        :param validated_data: Serializer validated data
-        :return: Created object
-        """
-        validated_data.pop('toimipaikka', None)
-        validated_data.pop('toimipaikka_oid', None)
-        return super(OptionalToimipaikkaMixin, self).create(validated_data)
+class TyontekijaOptionalToimipaikkaMixin(OptionalToimipaikkaMixin):
+    toimipaikka = ToimipaikkaPermissionCheckedHLField(view_name='toimipaikka-detail', required=False, write_only=True,
+                                                      permission_groups=[Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA])
 
 
-class TyontekijaSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
+class TyontekijaSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     henkilo = HenkiloPermissionCheckedHLField(view_name='henkilo-detail', required=False)
     henkilo_oid = OidRelatedField(object_type=Henkilo,
@@ -115,6 +95,10 @@ class TyontekijaSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedMode
                     check_if_admin_mutable_object_is_changed(self.context['request'].user, instance, data, 'henkilo')
                 if 'vakajarjestaja' in data and data['vakajarjestaja'].id != instance.vakajarjestaja.id:
                     validator.error('vakajarjestaja', ErrorMessages.GE013.value)
+            elif toimipaikka := data.get('toimipaikka', None):
+                # Only validate in POST
+                if toimipaikka.vakajarjestaja != data['vakajarjestaja']:
+                    validator.error('toimipaikka', ErrorMessages.MI019.value)
 
         return data
 
@@ -215,7 +199,7 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
             return date.replace(month=date.month + 1, day=1) - datetime.timedelta(days=1)
 
 
-class TutkintoSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
+class TutkintoSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     henkilo = HenkiloPermissionCheckedHLField(view_name='henkilo-detail', required=False)
     henkilo_oid = OidRelatedField(object_type=Henkilo,
@@ -252,7 +236,7 @@ class TutkintoSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelS
         return data
 
 
-class PalvelussuhdeSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
+class PalvelussuhdeSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     tyontekija = TyontekijaPermissionCheckedHLField(view_name='tyontekija-detail', required=False)
     tyontekija_tunniste = TunnisteRelatedField(object_type=Tyontekija,
@@ -302,6 +286,10 @@ class PalvelussuhdeSerializer(OptionalToimipaikkaMixin, serializers.HyperlinkedM
 
                 with validator.wrap():
                     check_overlapping_palvelussuhde(data)
+
+                if toimipaikka := data.get('toimipaikka', None):
+                    if toimipaikka.vakajarjestaja != data['tyontekija'].vakajarjestaja:
+                        validator.error('toimipaikka', ErrorMessages.MI019.value)
 
         return data
 

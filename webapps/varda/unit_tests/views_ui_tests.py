@@ -374,6 +374,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         post_henkilo_to_get_permissions(toimipaikka_client, henkilo_oid=henkilo_oid)
 
         lapsi = {
+            'toimipaikka_oid': toimipaikka_oid,
             'henkilo_oid': henkilo_oid,
             'vakatoimija_oid': vakajarjestaja_oid
         }
@@ -382,6 +383,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         lapsi_id = json.loads(resp_lapsi.content)['id']
 
         vakapaatos = {
+            'toimipaikka_oid': toimipaikka_oid,
             'lapsi': f'/api/v1/lapset/{lapsi_id}/',
             'alkamis_pvm': '2020-12-01',
             'hakemus_pvm': '2020-12-01',

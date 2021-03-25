@@ -19,7 +19,8 @@ from varda.misc import path_parse
 from varda.models import (VakaJarjestaja, Toimipaikka, Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
                           PaosToiminta, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog, LoginCertificate,
                           Maksutieto, Tyontekija, Tyoskentelypaikka, PidempiPoissaolo, TaydennyskoulutusTyontekija)
-from varda.permission_groups import assign_object_level_permissions, remove_object_level_permissions
+from varda.permission_groups import (assign_object_level_permissions, remove_object_level_permissions,
+                                     get_permission_groups)
 from varda.related_object_validations import toimipaikka_is_valid_to_organisaatiopalvelu
 
 
@@ -712,6 +713,12 @@ def user_belongs_to_correct_groups(field, user, field_object):
         oid_list = []
         if isinstance(field_object, Toimipaikka):
             oid_list = [field_object.organisaatio_oid, field_object.vakajarjestaja.organisaatio_oid]
+            if getattr(field, 'check_paos', False):
+                # Include VakaJarjestaja objects that have permissions to this Toimipaikka via PAOS
+                paos_organisaatio_oid_list = (PaosToiminta.objects.filter(paos_toimipaikka=field_object,
+                                                                          voimassa_kytkin=True)
+                                              .values_list('oma_organisaatio__organisaatio_oid', flat=True))
+                oid_list.extend(paos_organisaatio_oid_list)
         elif isinstance(field_object, VakaJarjestaja):
             oid_list = [field_object.organisaatio_oid]
             if hasattr(field, 'accept_toimipaikka_permission') and field.accept_toimipaikka_permission:
@@ -795,6 +802,23 @@ def parse_toimipaikka_id_list(user, toimipaikka_ids_string, required_permission_
             toimipaikka_id_list.append(toimipaikka_id)
 
     return toimipaikka_id_list
+
+
+def assign_permissions_for_non_paos_lapsi(lapsi, organisaatio_oid, toimipaikka_oid=None):
+    assign_object_level_permissions(organisaatio_oid, Lapsi, lapsi)
+    vakajarjestaja_huoltaja_groups = get_permission_groups((organisaatio_oid,),
+                                                           (Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
+                                                            Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,))
+    for permission_group in vakajarjestaja_huoltaja_groups:
+        assign_perm('view_lapsi', permission_group, lapsi)
+
+    if toimipaikka_oid:
+        assign_object_level_permissions(toimipaikka_oid, Lapsi, lapsi)
+        toimipaikka_huoltaja_groups = get_permission_groups((toimipaikka_oid,),
+                                                            (Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
+                                                             Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,))
+        for permission_group in toimipaikka_huoltaja_groups:
+            assign_perm('view_lapsi', permission_group, lapsi)
 
 
 def assign_henkilo_permissions_for_vaka_groups(oid_list, henkilo_object):
