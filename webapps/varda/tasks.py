@@ -369,11 +369,11 @@ def force_update_toimipaikat_in_organisaatiopalvelu_task():
 @shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
 def remove_birthdate_from_huoltajat_only_task():
-    henkilot = Henkilo.objects.filter(syntyma_pvm__isnull=False, huoltaja__isnull=False,
-                                      tyontekijat__isnull=True).distinct()
+    henkilo_qs = Henkilo.objects.filter(syntyma_pvm__isnull=False, huoltaja__isnull=False,
+                                        tyontekijat__isnull=True).distinct()
 
     # Loop through each Henkilo so that save signals are processed correctly
-    for henkilo in henkilot:
+    for henkilo in memory_efficient_queryset_iterator(henkilo_qs):
         henkilo.syntyma_pvm = None
         henkilo.save()
 
