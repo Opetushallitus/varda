@@ -306,7 +306,7 @@ class VardaHenkilostoViewSetTests(TestCase):
     def test_toimipaikan_lapset_huoltajatieto_tallentaja(self):
         client = SetUpTestClient('huoltajatietojen_tallentaja').client()
         accepted_response_json = {
-            'count': 2,
+            'count': 3,
             'next': None,
             'previous': None,
             'results': [
@@ -317,6 +317,14 @@ class VardaHenkilostoViewSetTests(TestCase):
                     'syntyma_pvm': '2018-03-11',
                     'lapsi_id': 6,
                     'lapsi_url': 'http://testserver/api/v1/lapset/6/?format=json'
+                },
+                {
+                    'etunimet': 'Anni',
+                    'henkilo_oid': '1.2.246.562.24.2395579779541',
+                    'lapsi_id': 16,
+                    'lapsi_url': 'http://testserver/api/v1/lapset/16/?format=json',
+                    'sukunimi': 'Testinen',
+                    'syntyma_pvm': '2020-10-27'
                 },
                 {
                     'etunimet': 'Tuula-Testi',

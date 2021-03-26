@@ -42,7 +42,7 @@ class VardaViewsReportingTests(TestCase):
                                                     'korjaustiedot': 'http://testserver/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/',
                                                     'korjaustiedotpoistetut': 'http://testserver/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/'})
 
-    def test_reporting_api_kelaetuusmaksatusaloittaneet_get(self):
+    def test_reporting_api_kela_etuusmaksatus_aloittaneet_get(self):
         client = SetUpTestClient('kela_luovutuspalvelu').client()
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/', **self.headers)
         self.assertEqual(resp.status_code, 200)
@@ -55,71 +55,669 @@ class VardaViewsReportingTests(TestCase):
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/', **self.headers)
         self.assertEqual(resp.status_code, 403)
 
-    def test_reporting_api_kelaetuusmaksatusaloittaneet_alkamis_pvm_filter(self):
+    def test_reporting_api_kela_etuusmaksatus_aloittaneet_alkamis_pvm_filter(self):
         client = SetUpTestClient('kela_luovutuspalvelu').client()
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/?luonti_pvm=2018-01-01', **self.headers)
         self.assertEqual(resp.status_code, 400)
         assert_validation_error(resp, 'luonti_pvm', 'GE019', 'Time period exceeds allowed timeframe.')
 
-    def test_reporting_api_kelaetuusmaksatusalopettaneet_get(self):
+    def test_reporting_api_kela_etuusmaksatus_aloittaneet_correct_data(self):
+        client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
+        client_tester_kela = SetUpTestClient('kela_luovutuspalvelu').client()
+        vakapaatos_url = _load_base_data_for_kela_success_testing()
+
+        data_vakasuhde = {
+            'varhaiskasvatuspaatos': vakapaatos_url,
+            'toimipaikka': '/api/v1/toimipaikat/5/',
+            'alkamis_pvm': '2021-01-05',
+        }
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        existing_count = resp_content['count']
+
+        resp_vakasuhde = client_tester2.post('/api/v1/varhaiskasvatussuhteet/', data_vakasuhde)
+        assert_status_code(resp_vakasuhde, 201)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        expected_result = {'kotikunta_koodi': '049', 'henkilotunnus': '071119A884T', 'tietue': 'A', 'vakasuhde_alkamis_pvm': '2021-01-05'}
+        self.assertEqual(resp_content['count'], existing_count + 1)
+        self.assertIn(expected_result, resp_content['results'])
+
+    def test_reporting_api_kela_etuusmaksatus_aloittaneet_non_applicable_data(self):
+        client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
+        client_tester5 = SetUpTestClient('tester5').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
+        client_tester_kela = SetUpTestClient('kela_luovutuspalvelu').client()
+        vakapaatos_public_url, vakapaatos_private_url = _load_base_data_for_kela_error_testing()
+
+        data_vakasuhde_public = {
+            'varhaiskasvatuspaatos': vakapaatos_public_url,
+            'toimipaikka': '/api/v1/toimipaikat/2/',
+            'alkamis_pvm': '2021-01-05',
+        }
+
+        data_vakasuhde_private = {
+            'varhaiskasvatuspaatos': vakapaatos_private_url,
+            'toimipaikka': '/api/v1/toimipaikat/5/',
+            'alkamis_pvm': '2021-01-05',
+        }
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        existing_count = resp_content['count']
+
+        resp_vakasuhde = client_tester2.post('/api/v1/varhaiskasvatussuhteet/', data_vakasuhde_public)
+        assert_status_code(resp_vakasuhde, 201)
+
+        resp_vakasuhde = client_tester5.post('/api/v1/varhaiskasvatussuhteet/', data_vakasuhde_private)
+        assert_status_code(resp_vakasuhde, 201)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        self.assertEqual(existing_count, resp_content['count'])
+
+    def test_reporting_api_kela_etuusmaksatus_lopettaneet_get(self):
         client = SetUpTestClient('kela_luovutuspalvelu').client()
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
         self.assertEqual(resp.status_code, 200)
 
         client = SetUpTestClient('tester3').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
+        self.assertEqual(resp.status_code, 403)
+
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/')
         self.assertEqual(resp.status_code, 403)
 
-    def test_reporting_api_kelaetuusmaksatusalopettaneet_get_date_filters(self):
+    def test_reporting_api_kela_etuusmaksatus_lopettaneet_get_date_filters(self):
         client = SetUpTestClient('kela_luovutuspalvelu').client()
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/?muutos_pvm=2010-01-01', **self.headers)
         self.assertEqual(resp.status_code, 400)
         assert_validation_error(resp, 'muutos_pvm', 'GE019', 'Time period exceeds allowed timeframe.')
 
-    def test_reporting_api_kelaetuusmaksatusmaaraaikaiset_get(self):
+    def test_reporting_api_kela_etuusmaksatus_lopettaneet_update(self):
+        client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
+        client_tester_kela = SetUpTestClient('kela_luovutuspalvelu').client()
+        vakapaatos = Varhaiskasvatuspaatos.objects.get(lahdejarjestelma=1, tunniste='testing-varhaiskasvatuspaatos3')
+        vakasuhde = Varhaiskasvatussuhde.objects.get(lahdejarjestelma=1, tunniste='testing-varhaiskasvatussuhde3')
+
+        resp_kela_api_lopettaneet = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
+        resp_lopettaneet_content = json.loads(resp_kela_api_lopettaneet.content)
+        existing_lopettaneet_count = resp_lopettaneet_content['count']
+
+        # Because korjaustiedot and lopettaneet are both based on changes verify that the added end date here does not
+        # appear on korjaustiedot API
+        resp_kela_api_korjaustiedot = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
+        resp_korjaustiedot_content = json.loads(resp_kela_api_korjaustiedot.content)
+        existing_korjaustiedot_count = resp_korjaustiedot_content['count']
+
+        update_end_date = {
+            'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos.id}/',
+            'toimipaikka': '/api/v1/toimipaikat/2/',
+            'alkamis_pvm': '2018-09-05',
+            'paattymis_pvm': '2021-06-10'
+        }
+
+        resp_vakasuhde_update = client_tester2.put(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde.id}/', update_end_date)
+        assert_status_code(resp_vakasuhde_update, 200)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        expected_result = {'kotikunta_koodi': '091', 'henkilotunnus': '170334-130B', 'tietue': 'L', 'vakasuhde_paattymis_pvm': '2021-06-10'}
+        self.assertEqual(resp_content['count'], existing_lopettaneet_count + 1)
+        self.assertIn(expected_result, resp_content['results'])
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        self.assertEqual(resp_content['count'], existing_korjaustiedot_count)
+
+    def test_reporting_api_kela_etuusmaksatus_lopettaneet_non_applicable_data_update(self):
+        client_tester5 = SetUpTestClient('tester5').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 2
+        client_tester_kela = SetUpTestClient('kela_luovutuspalvelu').client()
+        private_vakasuhde = Varhaiskasvatussuhde.objects.get(lahdejarjestelma=1, tunniste='kela_testing_private')
+
+        resp_kela_api_lopettaneet = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
+        resp_lopettaneet_content = json.loads(resp_kela_api_lopettaneet.content)
+        existing_lopettaneet_count = resp_lopettaneet_content['count']
+
+        # Because korjaustiedot and lopettaneet are both based on changes verify that the added end date here does not
+        # appear on korjaustiedot API
+        resp_kela_api_korjaustiedot = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
+        resp_korjaustiedot_content = json.loads(resp_kela_api_korjaustiedot.content)
+        existing_korjaustiedot_count = resp_korjaustiedot_content['count']
+
+        update_end_date = {
+            'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{private_vakasuhde.varhaiskasvatuspaatos_id}/',
+            'toimipaikka': '/api/v1/toimipaikat/5/',
+            'alkamis_pvm': '2021-04-15',
+            'paattymis_pvm': '2021-06-10'
+        }
+
+        resp_vakasuhde_update = client_tester5.put(f'/api/v1/varhaiskasvatussuhteet/{private_vakasuhde.id}/', update_end_date)
+        assert_status_code(resp_vakasuhde_update, 200)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        self.assertEqual(resp_content['count'], existing_lopettaneet_count)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        self.assertEqual(resp_content['count'], existing_korjaustiedot_count)
+
+    def test_reporting_api_kela_etuusmaksatus_lopettaneet_same_day_update(self):
+        client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
+        client_tester_kela = SetUpTestClient('kela_luovutuspalvelu').client()
+        public_vakapaatos_url = _load_base_data_for_kela_success_testing()
+
+        resp_kela_api_lopettaneet = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
+        resp_lopettaneet_content = json.loads(resp_kela_api_lopettaneet.content)
+        existing_lopettaneet_count = resp_lopettaneet_content['count']
+
+        resp_kela_api_maaraaikaiset = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/', **self.headers)
+        resp_maaraaikaiset_content = json.loads(resp_kela_api_maaraaikaiset.content)
+        existing_maaraaikaiset_count = resp_maaraaikaiset_content['count']
+
+        # Because korjaustiedot and lopettaneet are both based on changes verify that the added end date here does not
+        # appear on korjaustiedot API
+        resp_kela_api_korjaustiedot = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
+        resp_korjaustiedot_content = json.loads(resp_kela_api_korjaustiedot.content)
+        existing_korjaustiedot_count = resp_korjaustiedot_content['count']
+
+        create_aloittanut = {
+            'varhaiskasvatuspaatos': public_vakapaatos_url,
+            'toimipaikka': '/api/v1/toimipaikat/5/',
+            'alkamis_pvm': '2021-09-05'
+        }
+
+        resp_vakasuhde_create = client_tester2.post('/api/v1/varhaiskasvatussuhteet/', create_aloittanut)
+        assert_status_code(resp_vakasuhde_create, 201)
+
+        created_vakasuhde_id = json.loads(resp_vakasuhde_create.content)['id']
+
+        add_end_date = {
+            'varhaiskasvatuspaatos': public_vakapaatos_url,
+            'toimipaikka': '/api/v1/toimipaikat/5/',
+            'alkamis_pvm': '2021-09-05',
+            'paattymis_pvm': '2021-11-10'
+        }
+
+        resp_vakasuhde_update = client_tester2.put(f'/api/v1/varhaiskasvatussuhteet/{created_vakasuhde_id}/', add_end_date)
+        assert_status_code(resp_vakasuhde_update, 200)
+
+        # even though this could be considered as aloittanut + lopettanut it is treated as maaraaikainen since the end
+        # date was added the same day . If data transfer is between the operation eg. create morning and add date on evening
+        # this will generate a maaraaikainen instead of lopettanut even though an aloittanut has been transfered
+
+        resp_kela_api_maaraaikaiset = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/', **self.headers)
+        resp_content = json.loads(resp_kela_api_maaraaikaiset.content)
+        self.assertEqual(resp_content['count'], existing_maaraaikaiset_count + 1)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        self.assertEqual(resp_content['count'], existing_lopettaneet_count)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        self.assertEqual(resp_content['count'], existing_korjaustiedot_count)
+
+    def test_reporting_api_kela_etuusmaksatus_lopettaneet_same_day_add_and_update(self):
+        client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
+        client_tester_kela = SetUpTestClient('kela_luovutuspalvelu').client()
+        vakapaatos = Varhaiskasvatuspaatos.objects.get(lahdejarjestelma=1, tunniste='testing-varhaiskasvatuspaatos3')
+        vakasuhde = Varhaiskasvatussuhde.objects.get(lahdejarjestelma=1, tunniste='testing-varhaiskasvatussuhde3')
+
+        resp_kela_api_lopettaneet = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
+        resp_lopettaneet_content = json.loads(resp_kela_api_lopettaneet.content)
+        existing_lopettaneet_count = resp_lopettaneet_content['count']
+
+        resp_kela_api_maaraaikaiset = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/', **self.headers)
+        resp_maaraaikaiset_content = json.loads(resp_kela_api_maaraaikaiset.content)
+        existing_maaraaikaiset_count = resp_maaraaikaiset_content['count']
+
+        # Because korjaustiedot and lopettaneet are both based on changes verify that the added end date here does not
+        # appear on korjaustiedot API
+        resp_kela_api_korjaustiedot = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
+        resp_korjaustiedot_content = json.loads(resp_kela_api_korjaustiedot.content)
+        existing_korjaustiedot_count = resp_korjaustiedot_content['count']
+
+        add_end_date = {
+            'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos.id}/',
+            'toimipaikka': '/api/v1/toimipaikat/2/',
+            'alkamis_pvm': '2018-09-05',
+            'paattymis_pvm': '2021-11-10'
+        }
+
+        resp_vakasuhde_update = client_tester2.put(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde.id}/', add_end_date)
+        assert_status_code(resp_vakasuhde_update, 200)
+
+        resp_kela_api_maaraaikaiset = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/', **self.headers)
+        resp_content = json.loads(resp_kela_api_maaraaikaiset.content)
+        self.assertEqual(resp_content['count'], existing_maaraaikaiset_count)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        self.assertEqual(resp_content['count'], existing_lopettaneet_count + 1)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        self.assertEqual(resp_content['count'], existing_korjaustiedot_count)
+
+        alter_end_date = {
+            'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos.id}/',
+            'toimipaikka': '/api/v1/toimipaikat/2/',
+            'alkamis_pvm': '2018-09-05',
+            'paattymis_pvm': '2021-12-10'
+        }
+
+        resp_vakasuhde_update = client_tester2.put(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde.id}/', alter_end_date)
+        assert_status_code(resp_vakasuhde_update, 200)
+
+        resp_kela_api_maaraaikaiset = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/', **self.headers)
+        resp_content = json.loads(resp_kela_api_maaraaikaiset.content)
+        self.assertEqual(resp_content['count'], existing_maaraaikaiset_count)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        expected_lopettanut_response = {'kotikunta_koodi': '091', 'henkilotunnus': '170334-130B', 'tietue': 'L',
+                                        'vakasuhde_paattymis_pvm': '2021-12-10'}
+        self.assertEqual(resp_content['count'], existing_lopettaneet_count + 1)
+        self.assertIn(expected_lopettanut_response, resp_content['results'])
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        self.assertEqual(resp_content['count'], existing_korjaustiedot_count)
+
+    def test_reporting_api_kela_etuusmaksatus_maaraaikaiset_get(self):
         client = SetUpTestClient('kela_luovutuspalvelu').client()
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/', **self.headers)
         self.assertEqual(resp.status_code, 200)
 
         client = SetUpTestClient('tester3').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/', **self.headers)
+        self.assertEqual(resp.status_code, 403)
+
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/')
         self.assertEqual(resp.status_code, 403)
 
-    def test_reporting_api_kelaetuusmaksatusmaaraaikaiset_alkamis_pvm_filter(self):
+    def test_reporting_api_kela_etuusmaksatus_maaraaikaiset_alkamis_pvm_filter(self):
         client = SetUpTestClient('kela_luovutuspalvelu').client()
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/?luonti_pvm=2018-01-01', **self.headers)
         self.assertEqual(resp.status_code, 400)
         assert_validation_error(resp, 'luonti_pvm', 'GE019', 'Time period exceeds allowed timeframe.')
 
-    def test_reporting_api_kelaetuusmaksatuskorjaustiedot_get(self):
+    def test_reporting_api_kela_etuusmaksatus_maaraaikaiset_correct_data(self):
+        client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
+        client_tester_kela = SetUpTestClient('kela_luovutuspalvelu').client()
+        vakapaatos_url = _load_base_data_for_kela_success_testing()
+
+        resp_kela_api_maaraaikaiset = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/', **self.headers)
+        resp_maaraaikaiset_content = json.loads(resp_kela_api_maaraaikaiset.content)
+        existing_maaraaikaiset_count = resp_maaraaikaiset_content['count']
+
+        create_vakasuhde = {
+            'varhaiskasvatuspaatos': vakapaatos_url,
+            'toimipaikka': '/api/v1/toimipaikat/5/',
+            'alkamis_pvm': '2021-01-05',
+            'paattymis_pvm': '2021-06-10'
+        }
+
+        resp_vakasuhde = client_tester2.post('/api/v1/varhaiskasvatussuhteet/', create_vakasuhde)
+        assert_status_code(resp_vakasuhde, 201)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        expected_result = {'kotikunta_koodi': '049', 'henkilotunnus': '071119A884T', 'tietue': 'M',
+                           'vakasuhde_alkamis_pvm': '2021-01-05', 'vakasuhde_paattymis_pvm': '2021-06-10'}
+        self.assertEqual(resp_content['count'], existing_maaraaikaiset_count + 1)
+        self.assertIn(expected_result, resp_content['results'])
+
+    def test_reporting_api_kela_etuusmaksatus_maaraaikainen_non_applicable_data(self):
+        client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
+        client_tester5 = SetUpTestClient('tester5').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 2
+        client_tester_kela = SetUpTestClient('kela_luovutuspalvelu').client()
+        vakapaatos_public_url, vakapaatos_private_url = _load_base_data_for_kela_error_testing()
+
+        data_vakasuhde_public = {
+            'varhaiskasvatuspaatos': vakapaatos_public_url,
+            'toimipaikka': '/api/v1/toimipaikat/2/',
+            'alkamis_pvm': '2021-01-05',
+            'paattymis_pvm': '2022-02-01'
+        }
+
+        data_vakasuhde_private = {
+            'varhaiskasvatuspaatos': vakapaatos_private_url,
+            'toimipaikka': '/api/v1/toimipaikat/5/',
+            'alkamis_pvm': '2021-01-05',
+            'paattymis_pvm': '2022-02-01'
+        }
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        existing_count = resp_content['count']
+
+        resp_vakasuhde = client_tester2.post('/api/v1/varhaiskasvatussuhteet/', data_vakasuhde_public)
+        assert_status_code(resp_vakasuhde, 201)
+
+        resp_vakasuhde = client_tester5.post('/api/v1/varhaiskasvatussuhteet/', data_vakasuhde_private)
+        assert_status_code(resp_vakasuhde, 201)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        self.assertEqual(existing_count, resp_content['count'])
+
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_get(self):
         client = SetUpTestClient('kela_luovutuspalvelu').client()
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
         self.assertEqual(resp.status_code, 200)
 
         client = SetUpTestClient('tester3').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
+        self.assertEqual(resp.status_code, 403)
+
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/')
         self.assertEqual(resp.status_code, 403)
 
-    def test_reporting_api_kelaetuusmaksatuskorjaustiedot_get_alkamis_pvm_filter(self):
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_get_alkamis_pvm_filter(self):
         client = SetUpTestClient('kela_luovutuspalvelu').client()
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/?muutos_pvm=2018-01-01', **self.headers)
         self.assertEqual(resp.status_code, 400)
         assert_validation_error(resp, 'muutos_pvm', 'GE019', 'Time period exceeds allowed timeframe.')
 
-    def test_reporting_api_kelaetuusmaksatuskorjaustiedot_poistetut_get(self):
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_add_end_date_alter_start_date(self):
+        client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
+        client_tester_kela = SetUpTestClient('kela_luovutuspalvelu').client()
+        vakapaatos = Varhaiskasvatuspaatos.objects.get(lahdejarjestelma=1, tunniste='testing-varhaiskasvatuspaatos3')
+        vakasuhde = Varhaiskasvatussuhde.objects.get(lahdejarjestelma=1, tunniste='testing-varhaiskasvatussuhde3')
+
+        resp_kela_api_lopettaneet = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
+        resp_lopettaneet_content = json.loads(resp_kela_api_lopettaneet.content)
+        existing_lopettaneet_count = resp_lopettaneet_content['count']
+
+        # Altering start date and adding end date creates both korjaus and lopettaneet set
+        resp_kela_api_korjaustiedot = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
+        resp_korjaustiedot_content = json.loads(resp_kela_api_korjaustiedot.content)
+        existing_korjaustiedot_count = resp_korjaustiedot_content['count']
+
+        update_start_and_end_date = {
+            'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos.id}/',
+            'toimipaikka': '/api/v1/toimipaikat/2/',
+            'alkamis_pvm': '2018-09-07',
+            'paattymis_pvm': '2021-06-10'
+        }
+
+        resp_vakasuhde_update = client_tester2.put(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde.id}/', update_start_and_end_date)
+        assert_status_code(resp_vakasuhde_update, 200)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
+        resp_lopettaneet_content = json.loads(resp_kela_api.content)
+        self.assertEqual(resp_lopettaneet_content['count'], existing_lopettaneet_count + 1)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        self.assertEqual(resp_content['count'], existing_korjaustiedot_count + 1)
+
+        # verify that the end date remains 0001-01-01 and alkamis_pvm is updated
+        expected_korjaus_result = {'kotikunta_koodi': '091',
+                                   'henkilotunnus': '170334-130B',
+                                   'tietue': 'K',
+                                   'vakasuhde_alkamis_pvm': '2018-09-07',
+                                   'vakasuhde_paattymis_pvm': '0001-01-01',
+                                   'vakasuhde_alkuperainen_alkamis_pvm': '2018-09-05',
+                                   'vakasuhde_alkuperainen_paattymis_pvm': '0001-01-01'}
+
+        # verify that the corresponding lopettanut is generated
+        expected_lopettaneet_result = {'kotikunta_koodi': '091', 'henkilotunnus': '170334-130B', 'tietue': 'L',
+                                       'vakasuhde_paattymis_pvm': '2021-06-10'}
+        self.assertIn(expected_korjaus_result, resp_content['results'])
+        self.assertIn(expected_lopettaneet_result, resp_lopettaneet_content['results'])
+
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_alter_start_and_end_date(self):
+        client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
+        client_tester_kela = SetUpTestClient('kela_luovutuspalvelu').client()
+        vakapaatos = Varhaiskasvatuspaatos.objects.get(lahdejarjestelma=1, tunniste='testing-varhaiskasvatuspaatos4')
+        vakasuhde = Varhaiskasvatussuhde.objects.get(lahdejarjestelma=1, tunniste='kela_testing_jm03')
+
+        resp_kela_api_lopettaneet = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
+        resp_lopettaneet_content = json.loads(resp_kela_api_lopettaneet.content)
+        existing_lopettaneet_count = resp_lopettaneet_content['count']
+
+        # Altering start date and adding end date creates both korjaus and lopettaneet set
+        resp_kela_api_korjaustiedot = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
+        resp_korjaustiedot_content = json.loads(resp_kela_api_korjaustiedot.content)
+        existing_korjaustiedot_count = resp_korjaustiedot_content['count']
+
+        update_start_and_end_date = {
+            'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos.id}/',
+            'toimipaikka': '/api/v1/toimipaikat/5/',
+            'alkamis_pvm': '2021-01-07',
+            'paattymis_pvm': '2022-01-10'
+        }
+
+        resp_vakasuhde_update = client_tester2.put(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde.id}/', update_start_and_end_date)
+        assert_status_code(resp_vakasuhde_update, 200)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
+        resp_lopettaneet_content = json.loads(resp_kela_api.content)
+        self.assertEqual(resp_lopettaneet_content['count'], existing_lopettaneet_count)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        self.assertEqual(resp_content['count'], existing_korjaustiedot_count + 1)
+
+        # verify that both dates are updated and previous dates are included
+        expected_korjaus_result = {'kotikunta_koodi': '091', 'henkilotunnus': '120699-985W', 'tietue': 'K',
+                                   'vakasuhde_alkamis_pvm': '2021-01-07',
+                                   'vakasuhde_paattymis_pvm': '2022-01-10',
+                                   'vakasuhde_alkuperainen_alkamis_pvm': '2021-01-05',
+                                   'vakasuhde_alkuperainen_paattymis_pvm': '2022-01-03'}
+        self.assertIn(expected_korjaus_result, resp_content['results'])
+
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_alter_end_date(self):
+        client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
+        client_tester_kela = SetUpTestClient('kela_luovutuspalvelu').client()
+        vakapaatos = Varhaiskasvatuspaatos.objects.get(lahdejarjestelma=1, tunniste='testing-varhaiskasvatuspaatos4')
+        vakasuhde = Varhaiskasvatussuhde.objects.get(lahdejarjestelma=1, tunniste='kela_testing_jm03')
+
+        resp_kela_api_lopettaneet = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
+        resp_lopettaneet_content = json.loads(resp_kela_api_lopettaneet.content)
+        existing_lopettaneet_count = resp_lopettaneet_content['count']
+
+        # Altering end date generates a korjaustieto
+        resp_kela_api_korjaustiedot = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
+        resp_korjaustiedot_content = json.loads(resp_kela_api_korjaustiedot.content)
+        existing_korjaustiedot_count = resp_korjaustiedot_content['count']
+
+        update_end_date = {
+            'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos.id}/',
+            'toimipaikka': '/api/v1/toimipaikat/5/',
+            'alkamis_pvm': '2021-01-05',
+            'paattymis_pvm': '2022-01-10'
+        }
+
+        resp_vakasuhde_update = client_tester2.put(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde.id}/', update_end_date)
+        assert_status_code(resp_vakasuhde_update, 200)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
+        resp_lopettaneet_content = json.loads(resp_kela_api.content)
+        self.assertEqual(resp_lopettaneet_content['count'], existing_lopettaneet_count)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        self.assertEqual(resp_content['count'], existing_korjaustiedot_count + 1)
+
+        # verify that the alkamis_pvm remains 0001-01-01 and paattymis_pvm is updated
+        expected_korjaus_result = {'kotikunta_koodi': '091',
+                                   'henkilotunnus': '120699-985W',
+                                   'tietue': 'K',
+                                   'vakasuhde_alkamis_pvm': '0001-01-01',
+                                   'vakasuhde_paattymis_pvm': '2022-01-10',
+                                   'vakasuhde_alkuperainen_alkamis_pvm': '0001-01-01',
+                                   'vakasuhde_alkuperainen_paattymis_pvm': '2022-01-03'}
+        self.assertIn(expected_korjaus_result, resp_content['results'])
+
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_non_applicable_data(self):
+        client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 11
+        client_tester5 = SetUpTestClient('tester5').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 2
+        client_tester_kela = SetUpTestClient('kela_luovutuspalvelu').client()
+        public_vakasuhde = Varhaiskasvatussuhde.objects.get(lahdejarjestelma='1', tunniste='kela_testing_public_tilapainen')
+        public_vakapaatos = Varhaiskasvatuspaatos.objects.get(lahdejarjestelma='1', tunniste='testing-varhaiskasvatuspaatos_kela_tilapainen')
+        private_vakapaatos = Varhaiskasvatuspaatos.objects.get(lahdejarjestelma='1', tunniste='testing-varhaiskasvatuspaatos_kela_private')
+        private_vakasuhde = Varhaiskasvatussuhde.objects.get(lahdejarjestelma='1', tunniste='kela_testing_private')
+
+        resp_kela_api_lopettaneet = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
+        resp_lopettaneet_content = json.loads(resp_kela_api_lopettaneet.content)
+        existing_lopettaneet_count = resp_lopettaneet_content['count']
+
+        resp_kela_api_korjaustiedot = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
+        resp_korjaustiedot_content = json.loads(resp_kela_api_korjaustiedot.content)
+        existing_korjaustiedot_count = resp_korjaustiedot_content['count']
+
+        update_public_start_and_end_date = {
+            'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{public_vakapaatos.id}/',
+            'toimipaikka': f'/api/v1/toimipaikat/{public_vakasuhde.toimipaikka_id}/',
+            'alkamis_pvm': '2021-09-29',
+            'paattymis_pvm': '2021-10-01'
+        }
+
+        update_private_start_and_end_date = {
+            'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{private_vakapaatos.id}/',
+            'toimipaikka': f'/api/v1/toimipaikat/{private_vakasuhde.toimipaikka_id}/',
+            'alkamis_pvm': '2021-04-18',
+            'paattymis_pvm': '2022-05-05'
+        }
+
+        resp_vakasuhde_update = client_tester2.put(f'/api/v1/varhaiskasvatussuhteet/{public_vakasuhde.id}/', update_public_start_and_end_date)
+        assert_status_code(resp_vakasuhde_update, 200)
+
+        resp_vakasuhde_update = client_tester5.put(f'/api/v1/varhaiskasvatussuhteet/{private_vakasuhde.id}/', update_private_start_and_end_date)
+        assert_status_code(resp_vakasuhde_update, 200)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', **self.headers)
+        resp_lopettaneet_content = json.loads(resp_kela_api.content)
+        self.assertEqual(resp_lopettaneet_content['count'], existing_lopettaneet_count)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        self.assertEqual(resp_content['count'], existing_korjaustiedot_count)
+
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_poistetut_get(self):
         client = SetUpTestClient('kela_luovutuspalvelu').client()
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/', **self.headers)
         self.assertEqual(resp.status_code, 200)
 
         client = SetUpTestClient('tester3').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/', **self.headers)
+        self.assertEqual(resp.status_code, 403)
+
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/')
         self.assertEqual(resp.status_code, 403)
 
-    def test_reporting_api_kelaetuusmaksatuskorjaustiedot_poistetut_get_alkamis_pvm(self):
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_poistetut_get_alkamis_pvm(self):
         client = SetUpTestClient('kela_luovutuspalvelu').client()
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/?poisto_pvm=2018-01-01', **self.headers)
         self.assertEqual(resp.status_code, 400)
         assert_validation_error(resp, 'poisto_pvm', 'GE019', 'Time period exceeds allowed timeframe.')
+
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_poistetut_deleted_varhaiskasvatussuhde(self):
+        client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
+        client_tester_kela = SetUpTestClient('kela_luovutuspalvelu').client()
+        vakasuhde_id = Varhaiskasvatussuhde.objects.get(lahdejarjestelma=1, tunniste='kela_testing_jm03')
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        existing_korjaustiedot_poistetut_count = resp_content['count']
+
+        resp_vakasuhde_delete = client_tester2.delete(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde_id}/')
+        assert_status_code(resp_vakasuhde_delete, 204)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        expected_result = {'kotikunta_koodi': '091', 'henkilotunnus': '120699-985W', 'tietue': 'K',
+                           'vakasuhde_alkamis_pvm': '0001-01-01',
+                           'vakasuhde_paattymis_pvm': '0001-01-01',
+                           'vakasuhde_alkuperainen_alkamis_pvm': '2021-01-05',
+                           'vakasuhde_alkuperainen_paattymis_pvm': '2022-01-03'}
+        self.assertEqual(resp_content['count'], existing_korjaustiedot_poistetut_count + 1)
+        self.assertIn(expected_result, resp_content['results'])
+
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_poistetut_deleted_varhaiskasvatuspaatos(self):
+        client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
+        client_tester_kela = SetUpTestClient('kela_luovutuspalvelu').client()
+        vakapaatos = Varhaiskasvatuspaatos.objects.get(lahdejarjestelma=1, tunniste='testing-varhaiskasvatuspaatos4')
+        vakasuhteet = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos_id=vakapaatos.id)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        existing_korjaustiedot_poistetut_count = resp_content['count']
+
+        for vakasuhde in vakasuhteet:
+            resp_vakasuhde_delete = client_tester2.delete(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde.id}/')
+            assert_status_code(resp_vakasuhde_delete, 204)
+
+        resp_vakapaatos_delete = client_tester2.delete(f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos.id}/')
+        assert_status_code(resp_vakapaatos_delete, 204)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        expected_result = {'kotikunta_koodi': '091', 'henkilotunnus': '120699-985W', 'tietue': 'K',
+                           'vakasuhde_alkamis_pvm': '0001-01-01',
+                           'vakasuhde_paattymis_pvm': '0001-01-01',
+                           'vakasuhde_alkuperainen_alkamis_pvm': '2021-01-05',
+                           'vakasuhde_alkuperainen_paattymis_pvm': '2022-01-03'}
+        self.assertEqual(resp_content['count'], existing_korjaustiedot_poistetut_count + len(vakasuhteet))
+        self.assertIn(expected_result, resp_content['results'])
+
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_poistetut_deleted_lapsi(self):
+        client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
+        client_tester_kela = SetUpTestClient('kela_luovutuspalvelu').client()
+        vakapaatos = Varhaiskasvatuspaatos.objects.get(lahdejarjestelma=1, tunniste='testing-varhaiskasvatuspaatos4')
+        vakasuhteet = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos_id=vakapaatos.id)
+        lapsi = Lapsi.objects.get(id=vakapaatos.lapsi_id)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        existing_korjaustiedot_poistetut_count = resp_content['count']
+
+        for vakasuhde in vakasuhteet:
+            resp_vakasuhde_delete = client_tester2.delete(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde.id}/')
+            assert_status_code(resp_vakasuhde_delete, 204)
+
+        resp_vakapaatos_delete = client_tester2.delete(f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos.id}/')
+        assert_status_code(resp_vakapaatos_delete, 204)
+
+        resp_lapsi_delete = client_tester2.delete(f'/api/v1/lapset/{lapsi.id}/')
+        assert_status_code(resp_lapsi_delete, 204)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        expected_result = {'kotikunta_koodi': '091', 'henkilotunnus': '120699-985W', 'tietue': 'K',
+                           'vakasuhde_alkamis_pvm': '0001-01-01',
+                           'vakasuhde_paattymis_pvm': '0001-01-01',
+                           'vakasuhde_alkuperainen_alkamis_pvm': '2021-01-05',
+                           'vakasuhde_alkuperainen_paattymis_pvm': '2022-01-03'}
+        self.assertEqual(resp_content['count'], existing_korjaustiedot_poistetut_count + len(vakasuhteet))
+        self.assertIn(expected_result, resp_content['results'])
+
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_poistetut_non_applicable_data(self):
+        client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 11
+        client_tester5 = SetUpTestClient('tester5').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 2
+        client_tester_kela = SetUpTestClient('kela_luovutuspalvelu').client()
+        public_vakasuhde = Varhaiskasvatussuhde.objects.get(lahdejarjestelma='1', tunniste='kela_testing_public_tilapainen')
+        private_vakasuhde = Varhaiskasvatussuhde.objects.get(lahdejarjestelma='1', tunniste='kela_testing_private')
+
+        resp_kela_api_poistetut = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/', **self.headers)
+        resp_poistetut_content = json.loads(resp_kela_api_poistetut.content)
+        existing_poistetut_count = resp_poistetut_content['count']
+
+        resp_vakasuhde_update = client_tester2.delete(f'/api/v1/varhaiskasvatussuhteet/{public_vakasuhde.id}/')
+        assert_status_code(resp_vakasuhde_update, 204)
+
+        resp_vakasuhde_update = client_tester5.delete(f'/api/v1/varhaiskasvatussuhteet/{private_vakasuhde.id}/')
+        assert_status_code(resp_vakasuhde_update, 204)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        self.assertEqual(resp_content['count'], existing_poistetut_count)
 
     def test_api_error_report_lapset(self):
         vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
@@ -364,3 +962,115 @@ class VardaViewsReportingTests(TestCase):
             'username': 'tester2'
         }
         self.assertDictEqual(json.loads(resp.content)['results'][0], accepted_response)
+
+
+def _load_base_data_for_kela_success_testing():
+    client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
+
+    data_henkilo = {
+        'henkilotunnus': '071119A884T',
+        'etunimet': 'Minna Maija',
+        'kutsumanimi': 'Maija',
+        'sukunimi': 'Suroinen'
+    }
+    resp_henkilo = client_tester2.post('/api/v1/henkilot/', data_henkilo)
+    assert_status_code(resp_henkilo, 200)
+    henkilo_url = json.loads(resp_henkilo.content)['url']
+
+    # public daycare child
+    data_lapsi = {
+        'henkilo': henkilo_url,
+        'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
+        'paos_organisaatio': '/api/v1/vakajarjestajat/2/'
+    }
+    resp_public_lapsi = client_tester2.post('/api/v1/lapset/', data_lapsi)
+    assert_status_code(resp_public_lapsi, 201)
+
+    public_lapsi_url = json.loads(resp_public_lapsi.content)['url']
+
+    data_vakapaatos = {
+        'lapsi': public_lapsi_url,
+        'tuntimaara_viikossa': 45,
+        'jarjestamismuoto_koodi': 'jm03',
+        'tilapainen_vaka_kytkin': False,
+        'vuorohoito': True,
+        'alkamis_pvm': '2021-01-05',
+        'hakemus_pvm': '2021-01-01'
+    }
+
+    resp_vakapaatos = client_tester2.post('/api/v1/varhaiskasvatuspaatokset/', data_vakapaatos)
+    assert_status_code(resp_vakapaatos, 201)
+
+    vakapaatos_url = json.loads(resp_vakapaatos.content)['url']
+
+    return vakapaatos_url
+
+
+def _load_base_data_for_kela_error_testing():
+    client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
+    client_tester5 = SetUpTestClient('tester5').client()  # tallentaja, vakajarjestaja 2
+
+    data_henkilo = {
+        'henkilotunnus': '071119A884T',
+        'etunimet': 'Minna Maija',
+        'kutsumanimi': 'Maija',
+        'sukunimi': 'Suroinen'
+    }
+    resp_henkilo = client_tester2.post('/api/v1/henkilot/', data_henkilo)
+    assert_status_code(resp_henkilo, 200)
+
+    resp_henkilo = client_tester5.post('/api/v1/henkilot/', data_henkilo)
+    assert_status_code(resp_henkilo, 200)
+
+    henkilo_url = json.loads(resp_henkilo.content)['url']
+
+    # public daycare child
+    data_public_lapsi = {
+        'henkilo': henkilo_url,
+        'vakatoimija': '/api/v1/vakajarjestajat/1/'
+    }
+    resp_public_lapsi = client_tester2.post('/api/v1/lapset/', data_public_lapsi)
+    assert_status_code(resp_public_lapsi, 201)
+
+    public_lapsi_url = json.loads(resp_public_lapsi.content)['url']
+
+    data_private_lapsi = {
+        'henkilo': henkilo_url,
+        'vakatoimija': '/api/v1/vakajarjestajat/2/'
+    }
+
+    resp_private_lapsi = client_tester5.post('/api/v1/lapset/', data_private_lapsi)
+    assert_status_code(resp_private_lapsi, 201)
+
+    private_lapsi_url = json.loads(resp_private_lapsi.content)['url']
+
+    data_private_vakapaatos = {
+        'lapsi': private_lapsi_url,
+        'tuntimaara_viikossa': 45,
+        'jarjestamismuoto_koodi': 'jm04',
+        'tilapainen_vaka_kytkin': False,
+        'vuorohoito': True,
+        'alkamis_pvm': '2021-01-05',
+        'hakemus_pvm': '2021-01-01'
+    }
+
+    data_public_vakapaatos = {
+        'lapsi': public_lapsi_url,
+        'tuntimaara_viikossa': 45,
+        'jarjestamismuoto_koodi': 'jm01',
+        'tilapainen_vaka_kytkin': True,
+        'vuorohoito': True,
+        'alkamis_pvm': '2021-01-05',
+        'hakemus_pvm': '2021-01-01'
+    }
+
+    resp_public_vakapaatos = client_tester2.post('/api/v1/varhaiskasvatuspaatokset/', data_public_vakapaatos)
+    assert_status_code(resp_public_vakapaatos, 201)
+
+    resp_private_vakapaatos = client_tester5.post('/api/v1/varhaiskasvatuspaatokset/', data_private_vakapaatos)
+    assert_status_code(resp_public_vakapaatos, 201)
+
+    public_vakapaatos_url = json.loads(resp_public_vakapaatos.content)['url']
+    private_vakapaatos_url = json.loads(resp_private_vakapaatos.content)['url']
+
+    return public_vakapaatos_url, private_vakapaatos_url

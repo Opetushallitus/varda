@@ -1319,6 +1319,25 @@ def create_henkilot():
         changed_by=tester10_user
     )
 
+    # 271020A212F
+    Henkilo.objects.create(
+        henkilotunnus='gAAAAABgT2zNnKt87-rBEeT9epdXTjvF67Yk7q4-qDrO6FW1d4MgJFT6djQ0QY-QWHgIIoticjgwvznBky69_boDFwv3B3R_Nw==',
+        henkilotunnus_unique_hash='8cea74b21e513e051399bd00b864af7184e03c814d92dee55172e3928dd541ab',
+        syntyma_pvm='2020-10-27',
+        henkilo_oid='1.2.246.562.24.2395579779541',
+        etunimet='Anni',
+        kutsumanimi='Anni',
+        sukunimi='Testinen',
+        aidinkieli_koodi='FI',
+        kotikunta_koodi='297',
+        turvakielto=False,
+        sukupuoli_koodi=2,
+        katuosoite='Tukkarinkatu 4c',
+        postinumero='12345',
+        postitoimipaikka='Testilä',
+        changed_by=tester2_user
+    )
+
 
 def create_lapset():
     from django.contrib.auth.models import User
@@ -1503,8 +1522,17 @@ def create_lapset():
         tunniste='testing-lapsi15'
     )
 
+    henkilo_212F = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string('271020A212F'))
+    lapsi_212F = Lapsi.objects.create(
+        henkilo=henkilo_212F,
+        vakatoimija=vakajarjestaja_1,
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='lapsi_tilapainen_vaka'
+    )
+
     lapsi_list = (lapsi_1, lapsi_2, lapsi_3, lapsi_4, lapsi_5, lapsi_6, lapsi_7, lapsi_8, lapsi_9, lapsi_331A,
-                  lapsi_807L, lapsi_020X, lapsi_706Y, lapsi_273S, lapsi_5155,)
+                  lapsi_807L, lapsi_020X, lapsi_706Y, lapsi_273S, lapsi_5155, lapsi_212F,)
     for lapsi in lapsi_list:
         assign_lapsi_henkilo_permissions(lapsi)
 
@@ -1764,6 +1792,40 @@ def create_lapset():
         tunniste='testing-varhaiskasvatuspaatos15'
     )
 
+    vakapaatos_212F = Varhaiskasvatuspaatos.objects.create(
+        lapsi=lapsi_212F,
+        vuorohoito_kytkin=False,
+        pikakasittely_kytkin=False,
+        tuntimaara_viikossa=35.5,
+        paivittainen_vaka_kytkin=True,
+        kokopaivainen_vaka_kytkin=True,
+        tilapainen_vaka_kytkin=True,
+        jarjestamismuoto_koodi='jm01',
+        hakemus_pvm='2021-09-30',
+        alkamis_pvm='2021-09-25',
+        paattymis_pvm='2021-10-02',
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatuspaatos_kela_tilapainen'
+    )
+
+    vakapaatos_331A_2 = Varhaiskasvatuspaatos.objects.create(
+        lapsi=lapsi_331A,
+        vuorohoito_kytkin=False,
+        pikakasittely_kytkin=False,
+        tuntimaara_viikossa=39.0,
+        paivittainen_vaka_kytkin=True,
+        kokopaivainen_vaka_kytkin=True,
+        tilapainen_vaka_kytkin=False,
+        jarjestamismuoto_koodi='jm05',
+        hakemus_pvm='2021-04-01',
+        alkamis_pvm='2021-04-15',
+        paattymis_pvm=None,
+        changed_by=tester_user,
+        lahdejarjestelma='1',
+        tunniste='testing-varhaiskasvatuspaatos_kela_private'
+    )
+
     vakasuhde_1 = Varhaiskasvatussuhde.objects.create(
         toimipaikka=toimipaikka_1,
         varhaiskasvatuspaatos=vakapaatos_1,
@@ -1914,11 +1976,60 @@ def create_lapset():
         tunniste='testing-varhaiskasvatussuhde15'
     )
 
+    vakasuhde_130B = Varhaiskasvatussuhde.objects.create(
+        toimipaikka=toimipaikka_5,
+        varhaiskasvatuspaatos=vakapaatos_4,
+        alkamis_pvm='2021-01-05',
+        paattymis_pvm='2022-01-03',
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='kela_testing_jm03'
+    )
+
+    vakasuhde_331A_2 = Varhaiskasvatussuhde.objects.create(
+        toimipaikka=toimipaikka_5,
+        varhaiskasvatuspaatos=vakapaatos_331A_2,
+        alkamis_pvm='2021-04-05',
+        paattymis_pvm='2021-04-15',
+        changed_by=tester2_user,
+        lahdejarjestelma='1',
+        tunniste='kela_testing_private'
+    )
+
+    vakasuhde_212F = Varhaiskasvatussuhde.objects.create(
+        toimipaikka=toimipaikka_2,
+        varhaiskasvatuspaatos=vakapaatos_212F,
+        alkamis_pvm='2021-09-30',
+        paattymis_pvm='2021-10-02',
+        changed_by=tester11_user,
+        lahdejarjestelma='1',
+        tunniste='kela_testing_public_tilapainen'
+    )
+
     vakasuhde_list = (vakasuhde_1, vakasuhde_2, vakasuhde_3, vakasuhde_4, vakasuhde_5, vakasuhde_6, vakasuhde_7,
                       vakasuhde_8, vakasuhde_9, vakasuhde_331A, vakasuhde_807L, vakasuhde_020X, vakasuhde_706Y,
-                      vakasuhde_273S, vakasuhde_5155,)
+                      vakasuhde_273S, vakasuhde_5155, vakasuhde_130B, vakasuhde_331A_2, vakasuhde_212F,)
     for vakasuhde in vakasuhde_list:
         assign_vakasuhde_henkilo_permissions(vakasuhde)
+
+    # vakasuhde 3 used in kela testing
+    vakasuhde_3.luonti_pvm = '2021-01-04 00:00:00.00000+02'
+    vakasuhde_3.muutos_pvm = '2021-01-04 00:00:00.00000+02'
+    vakasuhde_3.save()
+
+    # vakasuhde_130B used in kela testing so history needs earlier dates as well
+    historical_vakasuhde_130B = Varhaiskasvatussuhde.history.get(id=vakasuhde_130B.id, history_type='+')
+    historical_vakasuhde_130B.luonti_pvm = '2021-01-04 00:00:00.00000+02'
+    historical_vakasuhde_130B.muutos_pvm = '2021-01-04 00:00:00.00000+02'
+    historical_vakasuhde_130B.history_date = '2021-01-04 00:00:00.00000+02'
+    historical_vakasuhde_130B.save()
+
+    # used in kela testing so history needs earlier dates as well
+    historical_vakas_3 = Varhaiskasvatussuhde.history.get(id=vakasuhde_3.id, history_type='+')
+    historical_vakas_3.luonti_pvm = '2021-01-04 00:00:00.00000+02'
+    historical_vakas_3.muutos_pvm = '2021-01-04 00:00:00.00000+02'
+    historical_vakas_3.history_date = '2021-01-04 00:00:00.00000+02'
+    historical_vakas_3.save()
 
     assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Lapsi, lapsi_1)
     assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_1)
@@ -1944,6 +2055,8 @@ def create_lapset():
                                                       vakajarjestaja_1_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_4)
     assign_vakajarjestaja_vakatiedot_paos_permissions(vakajarjestaja_1_organisaatio_oid, vakajarjestaja_2_organisaatio_oid,
                                                       vakajarjestaja_1_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_4)
+    assign_vakajarjestaja_vakatiedot_paos_permissions(vakajarjestaja_1_organisaatio_oid, vakajarjestaja_2_organisaatio_oid,
+                                                      vakajarjestaja_1_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_130B)
 
     assign_toimipaikka_lapsi_paos_permissions(toimipaikka_5_organisaatio_oid, vakajarjestaja_1_organisaatio_oid, lapsi_4)
     assign_toimipaikka_vakatiedot_paos_permissions(toimipaikka_5_organisaatio_oid, vakajarjestaja_1_organisaatio_oid,
@@ -2004,6 +2117,10 @@ def create_lapset():
     assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_331A)
     assign_object_level_permissions(toimipaikka_2935996863483.organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_331A)
     assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_331A)
+    assign_object_level_permissions(toimipaikka_2935996863483.organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_331A_2)
+    assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_331A_2)
+    assign_object_level_permissions(toimipaikka_2935996863483.organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_331A_2)
+    assign_object_level_permissions(vakajarjestaja_2_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_331A_2)
 
     assign_object_level_permissions(toimipaikka_6727877596658_organisaatio_oid, Lapsi, lapsi_807L)
     assign_object_level_permissions(toimipaikka_6727877596658_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_807L)
@@ -2039,6 +2156,13 @@ def create_lapset():
     assign_object_level_permissions(vakajarjestaja_52966755795_organisaatio_oid, Lapsi, lapsi_5155)
     assign_object_level_permissions(vakajarjestaja_52966755795_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_5155)
     assign_object_level_permissions(vakajarjestaja_52966755795_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_5155)
+
+    assign_object_level_permissions(toimipaikka_2_organisaatio_oid, Lapsi, lapsi_212F)
+    assign_object_level_permissions(toimipaikka_2_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_212F)
+    assign_object_level_permissions(toimipaikka_2_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_212F)
+    assign_object_level_permissions(vakajarjestaja_1_organisaatio_oid, Lapsi, lapsi_212F)
+    assign_object_level_permissions(vakajarjestaja_1_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_212F)
+    assign_object_level_permissions(vakajarjestaja_1_organisaatio_oid, Varhaiskasvatussuhde, vakasuhde_212F)
 
 
 def create_huoltajat():

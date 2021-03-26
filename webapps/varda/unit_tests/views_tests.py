@@ -658,7 +658,7 @@ class VardaViewsTests(TestCase):
     def test_api_varhaiskasvatussuhteet_filtering(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/varhaiskasvatussuhteet/?muutos_pvm=2017-04-12')
-        self.assertEqual(json.loads(resp.content)['count'], 5)
+        self.assertEqual(json.loads(resp.content)['count'], 6)
 
     def test_api_lapset(self):
         client = SetUpTestClient('tester').client()
@@ -738,7 +738,7 @@ class VardaViewsTests(TestCase):
     def test_api_varhaiskasvatuspaatokset_filtering(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/varhaiskasvatuspaatokset/?hakemus_pvm=2017-01-12')
-        self.assertEqual(json.loads(resp.content)['count'], 4)
+        self.assertEqual(json.loads(resp.content)['count'], 5)
 
     def test_api_get_lapsi_json(self):
         lapsi_json = {
@@ -2710,6 +2710,8 @@ class VardaViewsTests(TestCase):
         assert_status_code(resp, status.HTTP_204_NO_CONTENT)
         resp = admin_client.delete('/api/v1/varhaiskasvatussuhteet/9/')
         assert_status_code(resp, status.HTTP_204_NO_CONTENT)
+        resp = admin_client.delete('/api/v1/varhaiskasvatussuhteet/16/')
+        assert_status_code(resp, status.HTTP_204_NO_CONTENT)
 
         client = SetUpTestClient('tester3').client()
         vakajarjestaja_group = Group.objects.get(name='VARDA-PAAKAYTTAJA_1.2.246.562.10.34683023489')
@@ -2784,6 +2786,8 @@ class VardaViewsTests(TestCase):
         resp2 = admin_client.delete('/api/v1/varhaiskasvatussuhteet/5/')
         assert_status_code(resp2, status.HTTP_204_NO_CONTENT)
         resp3 = admin_client.delete('/api/v1/varhaiskasvatussuhteet/9/')
+        assert_status_code(resp3, status.HTTP_204_NO_CONTENT)
+        resp3 = admin_client.delete('/api/v1/varhaiskasvatussuhteet/16/')
         assert_status_code(resp3, status.HTTP_204_NO_CONTENT)
 
         client = SetUpTestClient('tester4').client()
@@ -3030,6 +3034,7 @@ class VardaViewsTests(TestCase):
         Huoltajuussuhde.objects.get(id=5).delete()  # This is required before lapsi can be removed.
         client = SetUpTestClient('tester2').client()
         client.delete('/api/v1/varhaiskasvatussuhteet/4/')
+        client.delete('/api/v1/varhaiskasvatussuhteet/16/')
         client.delete('/api/v1/varhaiskasvatuspaatokset/4/')
         resp = client.delete('/api/v1/lapset/4/')
         assert_status_code(resp, 204)
