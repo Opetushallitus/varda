@@ -1,4 +1,3 @@
-import datetime
 import logging
 
 from django.contrib.auth.models import User, Group
@@ -891,15 +890,6 @@ class VarhaiskasvatuspaatosSerializer(LapsiOptionalToimipaikkaMixin, serializers
 
     def _validate_paos_specific_data(self, lapsi_obj, jarjestamismuoto_koodi, paattymis_pvm):
         jarjestamismuoto_koodit_paos = ['jm02', 'jm03']
-
-        if (lapsi_obj.paos_organisaatio is None and
-                paattymis_pvm and
-                paattymis_pvm < datetime.date(year=2020, month=1, day=1)):
-            # If paattymis_pvm is set and is before 2020, do not validate paos-koodit. Lapsi may be related to
-            # tilapäinen toimipaikka. TODO: Remove this condition after tilapaiset toimipaikat are not in use.
-            # https://jira.eduuni.fi/browse/CSCVARDA-1807
-            return
-
         if lapsi_obj.paos_organisaatio is not None:
             check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(lapsi_obj.oma_organisaatio, lapsi_obj.paos_organisaatio)
             if jarjestamismuoto_koodi not in jarjestamismuoto_koodit_paos:
@@ -912,15 +902,6 @@ class VarhaiskasvatuspaatosSerializer(LapsiOptionalToimipaikkaMixin, serializers
     def _validate_jarjestamismuoto(self, lapsi_obj, jarjestamismuoto_koodi, paattymis_pvm):
         jarjestamismuoto_koodit_kunta = ['jm01']
         jarjestamismuoto_koodit_yksityinen = ['jm04', 'jm05']
-
-        if paattymis_pvm and paattymis_pvm < datetime.date(year=2020, month=1, day=1):
-            # If paattymis_pvm is set and is before 2020, lapsi may be related to tilapäinen toimipaikka and thus have
-            # jm02 or jm03, while also having kunnallinen vakatoimija.
-            # TODO: Remove this condition after tilapaiset toimipaikat are not in use.
-            # https://jira.eduuni.fi/browse/CSCVARDA-1807
-            jarjestamismuoto_koodit_paos = ['jm02', 'jm03']
-            jarjestamismuoto_koodit_kunta.extend(jarjestamismuoto_koodit_paos)
-
         if lapsi_obj.vakatoimija is not None:
             if lapsi_obj.vakatoimija.kunnallinen_kytkin and jarjestamismuoto_koodi not in jarjestamismuoto_koodit_kunta:
                 msg = {'jarjestamismuoto_koodi': [ErrorMessages.VP007.value]}
@@ -1024,13 +1005,6 @@ class VarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSerializer):
         vakapaatos = data['varhaiskasvatuspaatos']
         jarjestamismuoto_koodi = vakapaatos.jarjestamismuoto_koodi.lower()
         toimipaikka = data['toimipaikka']
-
-        if toimipaikka.nimi.lower().startswith('palveluseteli ja ostopalvelu'):
-            # If toimipaikka is tilapäinen toimipaikka, jarjestamismuoto can be paos-jarjestamismuoto as well
-            # TODO: Remove this condition after tilapaiset toimipaikat are not in use.
-            # https://jira.eduuni.fi/browse/CSCVARDA-1807
-            jarjestamismuoto_koodit_paos = ['jm02', 'jm03']
-            jarjestamismuoto_koodit_kunta.extend(jarjestamismuoto_koodit_paos)
 
         if jarjestamismuoto_koodi not in (koodi.lower() for koodi in toimipaikka.jarjestamismuoto_koodi):
             msg = {'varhaiskasvatuspaatos': [ErrorMessages.VS006.value]}
