@@ -50,7 +50,10 @@ export class OppijaRaamitService {
       },
 
       login: () => console.error('login to huoltaja-app should never happen through oppija-raamit'),
-      logout: () => window.location.href = this.logoutURL,
+      logout: () => {
+        sessionStorage.clear();
+        window.location.href = this.logoutURL;
+      },
 
       changeLanguage: function (language: string) {
         return new Promise(resolve => {
