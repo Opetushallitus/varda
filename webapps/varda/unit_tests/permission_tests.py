@@ -234,13 +234,10 @@ class VardaPermissionsTests(TestCase):
         vakajarjestaja_id_93957375488 = VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid_93957375488).first().id
         vakajarjestaja_url_93957375488 = 'http://testserver/api/v1/vakajarjestajat/{}/'.format(vakajarjestaja_id_93957375488)
         lapsi.update({'vakatoimija': vakajarjestaja_url_93957375488})
-        client = SetUpTestClient('tester5').client()
-        resp = client.post('/api/v1/lapset/', lapsi)
-        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp, 'henkilo', 'GE008', 'Invalid hyperlink, object does not exist.')
 
-        resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, status.HTTP_200_OK)
+        # In Lapsi/Tyontekija/Tutkinto creation, any Henkilo object can be used even if user does not have permissions
+        # to it
+        client = SetUpTestClient('tester5').client()
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, status.HTTP_201_CREATED)
 
