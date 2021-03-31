@@ -76,6 +76,9 @@ class ErrorMessages(enum.Enum):
     TP014 = get_error_dict('TP014', 'nimi must have at least 2 characters.')
     TP015 = get_error_dict('TP015', 'No more than 2 consecutively repeating special characters are allowed.')
     TP016 = get_error_dict('TP016', 'nimi is not in the correct format.')
+    TP017 = get_error_dict('TP017', 'Invalid codes for kunnallinen Toimipaikka.')
+    TP018 = get_error_dict('TP018', 'Invalid codes for yksityinen Toimipaikka.')
+    TP019 = get_error_dict('TP019', 'There are duplicate jarjestamismuoto codes.')
 
     # ToiminnallinenPainotus errors, prefix: TO
     TO001 = get_error_dict('TO001', 'ToiminnallinenPainotus with this toimintapainotus_koodi already exists for toimipaikka on the given date range.')

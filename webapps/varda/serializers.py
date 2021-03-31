@@ -10,7 +10,7 @@ from rest_framework.exceptions import APIException, ValidationError
 
 from varda import validators
 from varda.cache import caching_to_representation
-from varda.constants import JARJESTAMISMUODOT_YKSITYINEN
+from varda.constants import JARJESTAMISMUODOT_YKSITYINEN, JARJESTAMISMUODOT_PAOS, JARJESTAMISMUODOT_KUNTA
 from varda.enums.error_messages import ErrorMessages
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.misc import list_of_dicts_has_duplicate_values
@@ -327,6 +327,10 @@ class ToimipaikkaSerializer(serializers.HyperlinkedModelSerializer):
         model = Toimipaikka
         exclude = ('nimi_sv', 'luonti_pvm', 'changed_by',)
 
+    @caching_to_representation('toimipaikka')
+    def to_representation(self, instance):
+        return super(ToimipaikkaSerializer, self).to_representation(instance)
+
     def validate(self, data):
         if self.instance:
             fill_missing_fields_for_validations(data, self.instance)
@@ -343,11 +347,29 @@ class ToimipaikkaSerializer(serializers.HyperlinkedModelSerializer):
             raise serializers.ValidationError({'nimi': [ErrorMessages.TP006.value]}, code='invalid')
         validators.validate_toimipaikan_nimi(data['nimi'])
 
+        self._validate_jarjestamismuoto_codes(data)
         return data
 
-    @caching_to_representation('toimipaikka')
-    def to_representation(self, instance):
-        return super(ToimipaikkaSerializer, self).to_representation(instance)
+    def _validate_jarjestamismuoto_codes(self, data):
+        jarjestamismuoto_codes_list = [code.lower() for code in data['jarjestamismuoto_koodi']]
+        jarjestamismuoto_codes_set = set(jarjestamismuoto_codes_list)
+
+        with ViewSetValidator() as validator:
+            if len(jarjestamismuoto_codes_list) != len(jarjestamismuoto_codes_set):
+                validator.error('jarjestamismuoto_koodi', ErrorMessages.TP019.value)
+
+            jarjestamismuoto_codes_kunta = set(JARJESTAMISMUODOT_KUNTA + JARJESTAMISMUODOT_PAOS)
+            jarjestamismuoto_codes_yksityinen = set(JARJESTAMISMUODOT_YKSITYINEN + JARJESTAMISMUODOT_PAOS)
+            vakajarjestaja = data['vakajarjestaja']
+
+            if (vakajarjestaja.kunnallinen_kytkin and
+                    not jarjestamismuoto_codes_set.issubset(jarjestamismuoto_codes_kunta)):
+                # jarjestamismuoto_koodi field has values that are not allowed for kunnallinen Toimipaikka
+                validator.error('jarjestamismuoto_koodi', ErrorMessages.TP017.value)
+            elif (not vakajarjestaja.kunnallinen_kytkin and
+                  not jarjestamismuoto_codes_set.issubset(jarjestamismuoto_codes_yksityinen)):
+                # jarjestamismuoto_koodi field has values that are not allowed for yksityinen Toimipaikka
+                validator.error('jarjestamismuoto_koodi', ErrorMessages.TP018.value)
 
 
 class ToiminnallinenPainotusSerializer(serializers.HyperlinkedModelSerializer):
@@ -952,7 +974,8 @@ def _validate_toimipaikka_with_vakajarjestaja_of_lapsi(toimipaikka, lapsi):
     vakajarjestaja_id = (getattr(lapsi.vakatoimija, 'id', None) or
                          getattr(lapsi.paos_organisaatio, 'id', None) or
                          vakasuhde_vakajarjestaja_id)
-    if toimipaikka.vakajarjestaja.id != vakajarjestaja_id:
+    if vakajarjestaja_id and toimipaikka.vakajarjestaja.id != vakajarjestaja_id:
+        # If Lapsi is still missing vakatoimija-field, vakajarjestaja_id cannot be determined
         raise serializers.ValidationError({'toimipaikka': [ErrorMessages.MI019.value]})
 
 

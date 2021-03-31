@@ -1720,6 +1720,44 @@ class VardaViewsTests(TestCase):
         assert_status_code(resp, 400)
         assert_validation_error(resp, 'kasvatusopillinen_jarjestelma_koodi', 'KO001', 'Code cannot have spaces.')
 
+    def test_toimipaikka_incorrect_jarjestamismuoto(self):
+        client_kunta = SetUpTestClient('tester2').client()
+        vakajarjestaja_oid_kunta = '1.2.246.562.10.34683023489'
+        client_yksityinen = SetUpTestClient('tester5').client()
+        vakajarjestaja_oid_yksityinen = '1.2.246.562.10.93957375488'
+
+        toimipaikka = {
+            'vakajarjestaja_oid': vakajarjestaja_oid_kunta,
+            'nimi': 'Testila',
+            'kunta_koodi': '091',
+            'puhelinnumero': '+35892323234',
+            'kayntiosoite': 'Testerkatu 2',
+            'kayntiosoite_postinumero': '00001',
+            'kayntiosoite_postitoimipaikka': 'Testilä',
+            'postiosoite': 'Testerkatu 2',
+            'postitoimipaikka': 'Testilä',
+            'postinumero': '00001',
+            'sahkopostiosoite': 'hel1234@helsinki.fi',
+            'kasvatusopillinen_jarjestelma_koodi': 'kj01',
+            'toimintamuoto_koodi': 'tm01',
+            'asiointikieli_koodi': ['FI'],
+            'jarjestamismuoto_koodi': ['jm01', 'jm03', 'JM01', 'jm05'],
+            'varhaiskasvatuspaikat': 1000,
+            'alkamis_pvm': '2018-01-01',
+            'lahdejarjestelma': '1',
+        }
+
+        resp_1 = client_kunta.post('/api/v1/toimipaikat/', toimipaikka)
+        assert_status_code(resp_1, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_1, 'jarjestamismuoto_koodi', 'TP017', 'Invalid codes for kunnallinen Toimipaikka.')
+        assert_validation_error(resp_1, 'jarjestamismuoto_koodi', 'TP019', 'There are duplicate jarjestamismuoto codes.')
+
+        toimipaikka['vakajarjestaja_oid'] = vakajarjestaja_oid_yksityinen
+        toimipaikka['jarjestamismuoto_koodi'] = ['jm03', 'jm05', 'jm01']
+        resp_2 = client_yksityinen.post('/api/v1/toimipaikat/', toimipaikka)
+        assert_status_code(resp_2, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_2, 'jarjestamismuoto_koodi', 'TP018', 'Invalid codes for yksityinen Toimipaikka.')
+
     def test_api_push_incorrect_toimintapainotus_koodi(self):
         toiminnallinenpainotus = {
             'toimipaikka': 'http://testserver/api/v1/toimipaikat/1/',

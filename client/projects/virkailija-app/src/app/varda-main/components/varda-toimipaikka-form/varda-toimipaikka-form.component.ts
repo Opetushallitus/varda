@@ -6,7 +6,7 @@ import * as moment from 'moment';
 import { Moment } from 'moment';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { BehaviorSubject, fromEvent, Observable, Subscription } from 'rxjs';
-import { debounceTime, distinctUntilChanged, filter, mergeMap, take } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, filter, map, take } from 'rxjs/operators';
 import { CodeDTO, KoodistoDTO, KoodistoEnum, KoodistoSortBy, VardaKoodistoService } from 'varda-shared';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ErrorTree, VardaErrorMessageService } from '../../../core/services/varda-error-message.service';
@@ -15,7 +15,7 @@ import { VardaVakajarjestajaApiService } from '../../../core/services/varda-vaka
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
 import { VardaFormValidators } from '../../../shared/validators/varda-form-validators';
 import { VardaVakajarjestajaUi } from '../../../utilities/models';
-import { VardaToimipaikkaDTO, VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
+import { VardaToimipaikkaDTO } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { Hallinnointijarjestelma, Lahdejarjestelma } from '../../../utilities/models/enums/hallinnointijarjestelma';
 import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 import { VardaDateService } from '../../services/varda-date.service';
@@ -69,11 +69,16 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
     this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
     this.toimintamuotoOptions$ = this.koodistoService.getKoodisto(KoodistoEnum.toimintamuoto, KoodistoSortBy.codeValue);
     this.kuntaOptions$ = this.koodistoService.getKoodisto(KoodistoEnum.kunta, KoodistoSortBy.codeValue);
-    this.jarjestamismuotoOptions$ = this.koodistoService.getKoodisto(KoodistoEnum.jarjestamismuoto, KoodistoSortBy.codeValue);
     this.kasvatusopillinenOptions$ = this.koodistoService.getKoodisto(KoodistoEnum.kasvatusopillinenjarjestelma, KoodistoSortBy.codeValue);
     this.postitoimipaikkaOptions$ = this.koodistoService.getKoodisto(KoodistoEnum.posti, KoodistoSortBy.codeValue);
 
-
+    // Depending on if current Vakajarjestaja is kunnallinen or yksityinen, exclude jarjestamismuoto options
+    const excludeJarjestamismuotoCodes = this.vakajarjestajaService.getSelectedVakajarjestaja().kunnallinen_kytkin ? ['jm04', 'jm05'] : ['jm01'];
+    this.jarjestamismuotoOptions$ = this.koodistoService.getKoodisto(KoodistoEnum.jarjestamismuoto, KoodistoSortBy.codeValue)
+      .pipe(map(koodisto => {
+        koodisto.codes = koodisto.codes.filter(code => !excludeJarjestamismuotoCodes.includes(code.code_value.toLowerCase()));
+        return koodisto;
+      }));
 
     this.koodistoService.getKoodisto(KoodistoEnum.kieli, KoodistoSortBy.name).pipe(take(1)).subscribe(kielikoodisto => {
       const languagePriority = ['FI', 'SV', 'SEPO', 'RU', 'ET', 'EN', 'AR', 'SO', 'DE', 'FR', '99'];

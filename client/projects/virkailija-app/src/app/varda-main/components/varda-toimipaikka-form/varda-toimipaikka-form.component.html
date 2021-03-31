@@ -267,7 +267,8 @@
                 </mat-select-trigger>
                 <ng-container *ngIf="jarjestamismuotoOptions$ | async as jarjestamismuotoOptions">
                   <mat-option *ngFor="let option of jarjestamismuotoOptions.codes"
-                              [value]="option.code_value">
+                              [value]="option.code_value"
+                              [title]="option.name + ' (' + option.code_value + ')'">
                     {{ option.name }} ({{ option.code_value }})
                   </mat-option>
                 </ng-container>
