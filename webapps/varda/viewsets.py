@@ -2,6 +2,7 @@ import logging
 import datetime
 
 import pytz
+from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -31,7 +32,9 @@ from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid,
                                                         get_henkilo_by_henkilotunnus)
 from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
 from varda.enums.error_messages import ErrorMessages
+from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.exceptions.conflict_error import ConflictError
+from varda.kayttooikeuspalvelu import set_user_info_from_onr
 from varda.misc import (CustomServerErrorException, decrypt_henkilotunnus, encrypt_string, hash_string,
                         update_painotus_kytkin)
 from varda.misc_queries import get_paos_toimipaikat
@@ -371,9 +374,17 @@ class ActiveUserViewSet(GenericViewSet, ListModelMixin):
     permission_classes = (permissions.IsAuthenticated, )
 
     def list(self, request, *args, **kwargs):
-        user = request.user
-        queryset = User.objects.get(id=user.id)
-        serializer = self.get_serializer(queryset, many=False)
+        request_user = request.user
+        user_object = User.objects.get(id=request_user.id)
+
+        if ((additional_cas_user_fields := getattr(user_object, 'additional_cas_user_fields', None)) and
+                getattr(additional_cas_user_fields, 'kayttajatyyppi', None) == Kayttajatyyppi.VIRKAILIJA.value and
+                (settings.PRODUCTION_ENV or settings.QA_ENV)):
+            # In production and QA, if user is CAS Virkailija user, refresh user info from ONR
+            # (e.g. if user language has changed)
+            set_user_info_from_onr(additional_cas_user_fields)
+
+        serializer = self.get_serializer(user_object, many=False)
         return Response(serializer.data)
 
 

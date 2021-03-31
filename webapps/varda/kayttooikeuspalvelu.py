@@ -16,53 +16,75 @@ from varda.models import Toimipaikka, VakaJarjestaja, Z3_AdditionalCasUserFields
 from varda.organisaatiopalvelu import create_toimipaikka_using_oid, create_vakajarjestaja_using_oid
 from varda.permission_groups import get_permission_group
 
-# Get an instance of a logger
+
 logger = logging.getLogger(__name__)
+SERVICE_NAME = 'kayttooikeus-service'
 
 
 def set_permissions_for_cas_user(user_id):
     """
     Set virkailija CAS authenticated user privileges.
     """
-
     try:
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
-        return None  # Cas library creates user on login so we should come here basically never
+        # Cas library creates user on login so we should come here basically never
+        return None
 
     # Cleared so service users can't find way to login through here as regular user.
     if settings.QA_ENV or settings.PRODUCTION_ENV:
         LoginCertificate.objects.filter(user=user).update(user=None)
 
-    service_name = 'kayttooikeus-service'
-    user_info = get_user_info(service_name, user.username)
+    henkilo_oid = set_user_info_for_cas_user(user)
+    set_user_kayttooikeudet(henkilo_oid, user)
+
+
+def set_user_info_for_cas_user(user):
+    """
+    Get basic information for CAS-user from kayttooikeus-service
+    :param user: User instance
+    :return: User henkilo_oid
+    """
+    user_info = get_user_info(user.username)
     if user_info['is_ok']:
         henkilo_oid = user_info['json_msg']['henkilo_oid']
         henkilo_kayttajatyyppi = user_info['json_msg']['henkilo_kayttajatyyppi']
     else:
-        return None  # not ok
+        # not ok
+        return None
 
-    """
-    Add/Update miscellaneous user-fields
-    """
-
-    user_data = get_user_data(henkilo_oid)
-    if user.email != user_data['sahkoposti']:
-        user.email = user_data['sahkoposti']
-        user.save()
-
-    Z3_AdditionalCasUserFields.objects.update_or_create(
+    additional_cas_user_fields, created = Z3_AdditionalCasUserFields.objects.update_or_create(
         user=user,
         defaults={
             'kayttajatyyppi': henkilo_kayttajatyyppi,
             'henkilo_oid': henkilo_oid,
-            'asiointikieli_koodi': user_data['asiointikieli']
+            'asiointikieli_koodi': 'fi'
         })
 
-    set_user_kayttooikeudet(service_name, henkilo_oid, user)
+    set_user_info_from_onr(additional_cas_user_fields)
+
+    return henkilo_oid
 
 
-def set_user_kayttooikeudet(service_name, henkilo_oid, user):
+def set_user_info_from_onr(additional_cas_user_fields):
+    """
+    Get basic information for CAS-user from oppijanumerorekisteri-service, and update Z3_AdditionalCasUserFields
+    :param additional_cas_user_fields: Z3_AdditionalCasUserFields instance
+    """
+    user = additional_cas_user_fields.user
+    henkilo_oid = additional_cas_user_fields.henkilo_oid
+
+    user_data = get_user_data(henkilo_oid)
+    email = user_data.get('sahkoposti', '')
+    if user.email != email:
+        user.email = email
+        user.save()
+
+    additional_cas_user_fields.asiointikieli_koodi = user_data.get('asiointikieli', '')
+    additional_cas_user_fields.save()
+
+
+def set_user_kayttooikeudet(henkilo_oid, user):
     """
     Clear vakajarjestaja-ui cache.
     """
@@ -97,7 +119,7 @@ def set_user_kayttooikeudet(service_name, henkilo_oid, user):
     """
     After removal, let's set the user permissions.
     """
-    user_organisation_permission_and_data_list = _get_organizations_and_perm_groups_of_user(service_name, henkilo_oid, user)
+    user_organisation_permission_and_data_list = _get_organizations_and_perm_groups_of_user(henkilo_oid, user)
     for permission_group_list, organisation_data in user_organisation_permission_and_data_list:
         varda_permissions = [perm['oikeus'] for perm in permission_group_list if perm['palvelu'] == 'VARDA']
         fetch_permissions_roles_for_organization(user.id, henkilo_oid, organisation_data, varda_permissions)
@@ -254,18 +276,18 @@ def get_user_sahkoposti(reply_json):
     return ''
 
 
-def get_user_info(service_name, username):
+def get_user_info(username):
     """
     Fetch henkilo_oid and kayttajaTyyppi, based on the username.
     """
     henkilo_url = '/henkilo/kayttajatunnus=' + username
-    reply_msg = get_json_from_external_service(service_name, henkilo_url)
+    reply_msg = get_json_from_external_service(SERVICE_NAME, henkilo_url)
     if not reply_msg['is_ok']:
         return get_reply_json(is_ok=False)
 
     reply_json = reply_msg['json_msg']
     if 'oid' not in reply_json or 'kayttajaTyyppi' not in reply_json:
-        logger.error('Missing info from /' + service_name + henkilo_url + ' reply.')
+        logger.error('Missing info from /' + SERVICE_NAME + henkilo_url + ' reply.')
         return get_reply_json(is_ok=False)
 
     henkilo_oid = reply_json['oid']
@@ -309,16 +331,15 @@ def select_highest_kayttooikeusrooli(kayttooikeusrooli_list, organization_oid, t
     return next(iter([role for role in args if role in kayttooikeusrooli_list]), None)
 
 
-def _get_organizations_and_perm_groups_of_user(service_name, henkilo_oid, user):
+def _get_organizations_and_perm_groups_of_user(henkilo_oid, user):
     """
     Fetch user permissions and organisation data for organisations user har permissions
-    :param service_name: kayttooikeus service name
     :param henkilo_oid: user henkilo oid
     :param user: local user object
     :return: tuple(list(kayttooikeudet), dict(organisaatio_data))
     """
     kayttooikeus_ryhma_url = '/kayttooikeus/kayttaja?oidHenkilo={}'.format(henkilo_oid)
-    reply_msg = get_json_from_external_service(service_name, kayttooikeus_ryhma_url)
+    reply_msg = get_json_from_external_service(SERVICE_NAME, kayttooikeus_ryhma_url)
     if not reply_msg['is_ok']:
         return {}, {}
 
