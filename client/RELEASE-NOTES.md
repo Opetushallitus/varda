@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.12 (01.04.2021)
+- OPHVARDA-1788: Toimipaikan järjestämismuodon validointi
+
 1.5.11 (25.03.2021)
 - OPHVARDA-1262: Tieto mahdollisesta turvakiellosta
 
