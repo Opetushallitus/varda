@@ -2967,98 +2967,118 @@ def fetch_huoltajat_if_applicable():
         fetch_huoltajat_task.delay()
 
 
+def create_or_update_henkilo(henkilo_defaults, henkilo_hetu, henkilo_hetu_hash, henkilo_oid):
+    from varda.models import Henkilo
+
+    henkilo = None
+    henkilo_created = False
+    if henkilo_query := Henkilo.objects.filter(henkilotunnus_unique_hash=henkilo_hetu_hash):
+        henkilo_query.update(**henkilo_defaults, henkilo_oid=henkilo_oid)
+    elif henkilo_query := Henkilo.objects.filter(henkilo_oid=henkilo_oid):
+        henkilo_query.update(**henkilo_defaults, henkilotunnus=henkilo_hetu, henkilotunnus_unique_hash=henkilo_hetu_hash)
+    else:
+        henkilo = Henkilo.objects.create(
+            **henkilo_defaults,
+            henkilotunnus=henkilo_hetu,
+            henkilotunnus_unique_hash=henkilo_hetu_hash,
+            henkilo_oid=henkilo_oid
+        )
+        henkilo_created = True
+    return henkilo_created, henkilo
+
+
 def create_onr_lapsi_huoltajat(create_all_vakajarjestajat=False):
     """
     https://wiki.eduuni.fi/display/CscVarda/Testihuoltajat
     """
     from django.contrib.auth.models import Group, User
     from guardian.shortcuts import assign_perm
-    from varda.models import Henkilo, Lapsi
+    from varda.models import Lapsi
     from varda.organisaatiopalvelu import create_vakajarjestaja_using_oid
 
     print('Adding lapset + huoltajat (from ONR) in test data.')
 
     admin_user = User.objects.get(username='credadmin')
 
-    henkilo_1, henkilo_1_created = Henkilo.objects.get_or_create(
-        henkilo_oid='1.2.246.562.24.68159811823',
-        defaults={
-            'henkilotunnus': 'gAAAAABeOX1kRyEYLW_6z3YCD3vApCjVNJwR4M-ExlfAKqWLvQJZ__6Ztxqha-S0DmuxjZchXlNN2hVIMisYZLDXXzY2fk1IJQ==',
-            'henkilotunnus_unique_hash': 'd1206ea57e7fd86f2f7c50fe572936a1b6639128a8ca9941b1c8f66037e0fa83',
-            'syntyma_pvm': '2012-01-14',
-            'etunimet': 'Jokke',
-            'kutsumanimi': 'Jokke',
-            'sukunimi': 'Jokunen',
-            'aidinkieli_koodi': 'FI',
-            'kotikunta_koodi': '091',
-            'turvakielto': False,
-            'sukupuoli_koodi': 1,
-            'katuosoite': '',
-            'postinumero': '',
-            'postitoimipaikka': '',
-            'changed_by': admin_user
-        }
-    )
+    henkilo_1_oid = '1.2.246.562.24.68159811823'
+    henkilo_1_hetu = 'gAAAAABeOX1kRyEYLW_6z3YCD3vApCjVNJwR4M-ExlfAKqWLvQJZ__6Ztxqha-S0DmuxjZchXlNN2hVIMisYZLDXXzY2fk1IJQ=='
+    henkilo_1_hetu_hash = 'd1206ea57e7fd86f2f7c50fe572936a1b6639128a8ca9941b1c8f66037e0fa83'
 
-    henkilo_2, henkilo_2_created = Henkilo.objects.get_or_create(
-        henkilo_oid='1.2.246.562.24.49084901393',
-        defaults={
-            'henkilotunnus': 'gAAAAABeOX14By1klio088ccJeF6-hSRJ7LZdneYM85hdQQzq1D2N7JS1rYTOQk_gwftL1wkMog4sjXlA_RXDPBNGKT1gUvNDw==',
-            'henkilotunnus_unique_hash': 'd9becaf41cd69a312f39a9bb1d0974257423a84b2b6b8d95d7c51922ad6a8bbc',
-            'syntyma_pvm': '2012-10-15',
-            'etunimet': 'Jaska',
-            'kutsumanimi': 'Jaska',
-            'sukunimi': 'Joku',
-            'aidinkieli_koodi': 'FI',
-            'kotikunta_koodi': '091',
-            'turvakielto': False,
-            'sukupuoli_koodi': 2,
-            'katuosoite': '',
-            'postinumero': '',
-            'postitoimipaikka': '',
-            'changed_by': admin_user
-        }
-    )
+    henkilo_2_oid = '1.2.246.562.24.49084901393'
+    henkilo_2_hetu = 'gAAAAABeOX14By1klio088ccJeF6-hSRJ7LZdneYM85hdQQzq1D2N7JS1rYTOQk_gwftL1wkMog4sjXlA_RXDPBNGKT1gUvNDw=='
+    henkilo_2_hetu_hash = 'd9becaf41cd69a312f39a9bb1d0974257423a84b2b6b8d95d7c51922ad6a8bbc'
 
-    henkilo_3, henkilo_3_created = Henkilo.objects.get_or_create(
-        henkilo_oid='1.2.246.562.24.65027773627',
-        defaults={
-            'henkilotunnus': 'gAAAAABeOX2KpfzGhI-8NHJeD6y5GN-2AW-rBNljGHN-dATt4vnhuwXANY8lS3yk2OKb7Ap_ChaZxpg4wpQ6OR2MuyoI9yzl-w==',
-            'henkilotunnus_unique_hash': '05b5dce8a3c078b9861dda10a01290c085473b9764e083935d30ba8baadc09a7',
-            'syntyma_pvm': '2015-06-24',
-            'etunimet': 'Matti Mikael',
-            'kutsumanimi': 'Matti',
-            'sukunimi': 'Esimerkki',
-            'aidinkieli_koodi': 'FI',
-            'kotikunta_koodi': '091',
-            'turvakielto': False,
-            'sukupuoli_koodi': 1,
-            'katuosoite': '',
-            'postinumero': '',
-            'postitoimipaikka': '',
-            'changed_by': admin_user
-        }
-    )
+    henkilo_3_oid = '1.2.246.562.24.65027773627'
+    henkilo_3_hetu = 'gAAAAABeOX2KpfzGhI-8NHJeD6y5GN-2AW-rBNljGHN-dATt4vnhuwXANY8lS3yk2OKb7Ap_ChaZxpg4wpQ6OR2MuyoI9yzl-w=='
+    henkilo_3_hetu_hash = '05b5dce8a3c078b9861dda10a01290c085473b9764e083935d30ba8baadc09a7'
 
-    henkilo_4, henkilo_4_created = Henkilo.objects.get_or_create(
-        henkilo_oid='1.2.246.562.24.86721655046',
-        defaults={
-            'henkilotunnus': 'gAAAAABeOX2cvW10r98xVX8XEcoYQeeSkQrlduGif7O0goMcaN5WBolz625GBHl_JF64lMsm5RAIWEcs7JO3qfGO0VGMwe5BRw==',
-            'henkilotunnus_unique_hash': '1dad3c4e6e1fc076cd11ecb49f39d88a40678425a129394a51d02709b3168f55',
-            'syntyma_pvm': '2019-06-04',
-            'etunimet': 'Matti',
-            'kutsumanimi': 'Matti',
-            'sukunimi': 'Tolonen',
-            'aidinkieli_koodi': 'FI',
-            'kotikunta_koodi': '091',
-            'turvakielto': False,
-            'sukupuoli_koodi': 1,
-            'katuosoite': '',
-            'postinumero': '',
-            'postitoimipaikka': '',
-            'changed_by': admin_user
-        }
-    )
+    henkilo_4_oid = '1.2.246.562.24.86721655046'
+    henkilo_4_hetu = 'gAAAAABeOX2cvW10r98xVX8XEcoYQeeSkQrlduGif7O0goMcaN5WBolz625GBHl_JF64lMsm5RAIWEcs7JO3qfGO0VGMwe5BRw=='
+    henkilo_4_hetu_hash = '1dad3c4e6e1fc076cd11ecb49f39d88a40678425a129394a51d02709b3168f55'
+
+    henkilo_1_defaults = {
+        'syntyma_pvm': '2012-01-14',
+        'etunimet': 'Jokke',
+        'kutsumanimi': 'Jokke',
+        'sukunimi': 'Jokunen',
+        'aidinkieli_koodi': 'FI',
+        'kotikunta_koodi': '091',
+        'turvakielto': False,
+        'sukupuoli_koodi': 1,
+        'katuosoite': '',
+        'postinumero': '',
+        'postitoimipaikka': '',
+        'changed_by': admin_user
+    }
+    henkilo_1_created, henkilo_1 = create_or_update_henkilo(henkilo_1_defaults, henkilo_1_hetu, henkilo_1_hetu_hash, henkilo_1_oid)
+
+    henkilo_2_defaults = {
+        'syntyma_pvm': '2012-10-15',
+        'etunimet': 'Jaska',
+        'kutsumanimi': 'Jaska',
+        'sukunimi': 'Joku',
+        'aidinkieli_koodi': 'FI',
+        'kotikunta_koodi': '091',
+        'turvakielto': False,
+        'sukupuoli_koodi': 2,
+        'katuosoite': '',
+        'postinumero': '',
+        'postitoimipaikka': '',
+        'changed_by': admin_user
+    }
+    henkilo_2_created, henkilo_2 = create_or_update_henkilo(henkilo_2_defaults, henkilo_2_hetu, henkilo_2_hetu_hash, henkilo_2_oid)
+
+    henkilo_3_defaults = {
+        'syntyma_pvm': '2015-06-24',
+        'etunimet': 'Matti Mikael',
+        'kutsumanimi': 'Matti',
+        'sukunimi': 'Esimerkki',
+        'aidinkieli_koodi': 'FI',
+        'kotikunta_koodi': '091',
+        'turvakielto': False,
+        'sukupuoli_koodi': 1,
+        'katuosoite': '',
+        'postinumero': '',
+        'postitoimipaikka': '',
+        'changed_by': admin_user
+    }
+    henkilo_3_created, henkilo_3 = create_or_update_henkilo(henkilo_3_defaults, henkilo_3_hetu, henkilo_3_hetu_hash, henkilo_3_oid)
+
+    henkilo_4_defaults = {
+        'syntyma_pvm': '2019-06-04',
+        'etunimet': 'Matti',
+        'kutsumanimi': 'Matti',
+        'sukunimi': 'Tolonen',
+        'aidinkieli_koodi': 'FI',
+        'kotikunta_koodi': '091',
+        'turvakielto': False,
+        'sukupuoli_koodi': 1,
+        'katuosoite': '',
+        'postinumero': '',
+        'postitoimipaikka': '',
+        'changed_by': admin_user
+    }
+    henkilo_4_created, henkilo_4 = create_or_update_henkilo(henkilo_4_defaults, henkilo_4_hetu, henkilo_4_hetu_hash, henkilo_4_oid)
 
     vakajarjestaja_oids = get_vakajarjestaja_oids(create_all_vakajarjestajat)
     for organisaatio_oid in vakajarjestaja_oids:
