@@ -6,9 +6,13 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 from django.db.models import Q
 from guardian.models import UserObjectPermission
+from rest_framework.exceptions import AuthenticationFailed
 
 from varda.cache import delete_cached_user_permissions_for_model
 from varda.clients import organisaatio_client
+from varda.clients.organisaatio_client import is_not_valid_vaka_organization_in_organisaatiopalvelu
+from varda.enums.error_messages import ErrorMessages
+from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.enums.tietosisalto_ryhma import TietosisaltoRyhma
 from varda.exceptions.invalid_koodi_uri_exception import InvalidKoodiUriException
 from varda.misc import get_json_from_external_service, get_reply_json
@@ -35,8 +39,12 @@ def set_permissions_for_cas_user(user_id):
     if settings.QA_ENV or settings.PRODUCTION_ENV:
         LoginCertificate.objects.filter(user=user).update(user=None)
 
-    henkilo_oid = set_user_info_for_cas_user(user)
-    set_user_kayttooikeudet(henkilo_oid, user)
+    henkilo_oid, kayttajatyyppi = set_user_info_for_cas_user(user)
+
+    if kayttajatyyppi == Kayttajatyyppi.PALVELU.value:
+        set_service_user_permissions(user, henkilo_oid=henkilo_oid)
+    else:
+        set_user_kayttooikeudet(henkilo_oid, user)
 
 
 def set_user_info_for_cas_user(user):
@@ -63,7 +71,7 @@ def set_user_info_for_cas_user(user):
 
     set_user_info_from_onr(additional_cas_user_fields)
 
-    return henkilo_oid
+    return henkilo_oid, henkilo_kayttajatyyppi
 
 
 def set_user_info_from_onr(additional_cas_user_fields):
@@ -293,7 +301,7 @@ def get_user_info(username):
     henkilo_oid = reply_json['oid']
     henkilo_kayttajatyyppi = reply_json['kayttajaTyyppi']
 
-    if henkilo_kayttajatyyppi != 'PALVELU':
+    if henkilo_kayttajatyyppi:
         json_msg = {'henkilo_oid': henkilo_oid, 'henkilo_kayttajatyyppi': henkilo_kayttajatyyppi}
         return get_reply_json(is_ok=True, json_msg=json_msg)  # kayttajatyyppi can be e.g. VIRKAILIJA, OPPIJA, '', ...
     else:
@@ -338,14 +346,11 @@ def _get_organizations_and_perm_groups_of_user(henkilo_oid, user):
     :param user: local user object
     :return: tuple(list(kayttooikeudet), dict(organisaatio_data))
     """
-    kayttooikeus_ryhma_url = '/kayttooikeus/kayttaja?oidHenkilo={}'.format(henkilo_oid)
-    reply_msg = get_json_from_external_service(SERVICE_NAME, kayttooikeus_ryhma_url)
-    if not reply_msg['is_ok']:
+    organisaatio_kayttooikeudet = _get_permissions_by_organization(henkilo_oid)
+    if organisaatio_kayttooikeudet is None:
+        # Error while getting permissions
         return {}, {}
 
-    reply_json = reply_msg['json_msg']
-    first_user = next(iter(reply_json), {})
-    organisaatio_kayttooikeudet = first_user.get('organisaatiot', [])
     kayttooikeudet_by_organisaatio_oid = [user_info for user_info in organisaatio_kayttooikeudet if len(user_info['kayttooikeudet']) > 0]
     organisaatio_oids = [user_info['organisaatioOid'] for user_info in kayttooikeudet_by_organisaatio_oid]
     organisations = organisaatio_client.get_multiple_organisaatio(organisaatio_oids)
@@ -354,8 +359,122 @@ def _get_organizations_and_perm_groups_of_user(henkilo_oid, user):
     if settings.OPETUSHALLITUS_ORGANISAATIO_OID in organisaatio_oids:
         oph_staff_group = Group.objects.get(name='oph_staff')
         oph_staff_group.user_set.add(user)
+
     return ((kayttooikeus['kayttooikeudet'], organisation_data_dict[organisaatio_oid])
             for kayttooikeus
             in kayttooikeudet_by_organisaatio_oid
             if (organisaatio_oid := kayttooikeus['organisaatioOid']) in valid_organisation_oids
             )
+
+
+def _get_permissions_by_organization(henkilo_oid):
+    url = f'/kayttooikeus/kayttaja?oidHenkilo={henkilo_oid}'
+    result = get_json_from_external_service(SERVICE_NAME, url)
+    if not result['is_ok']:
+        return None
+
+    result_msg = result.get('json_msg', [])
+    first_user = next(iter(result_msg), {})
+    return first_user.get('organisaatiot', [])
+
+
+def set_service_user_permissions(user, permissions_by_organization=None, henkilo_oid=None):
+    if permissions_by_organization is None:
+        # Coming from CAS login
+        if henkilo_oid:
+            permissions_by_organization = _get_permissions_by_organization(henkilo_oid)
+            if permissions_by_organization is None:
+                # Error while getting permissions
+                return
+        else:
+            logger.error(f'Service user with id: {user.id}, does not have an OID.')
+            return
+
+    # Delete old permissions as some of them may have been removed
+    Z4_CasKayttoOikeudet.objects.filter(user=user).delete()
+
+    valid_permissions_by_organization = _exclude_non_valid_permissions(permissions_by_organization)
+
+    if len(valid_permissions_by_organization) == 1:
+        # PALVELUKAYTTAJA should have permissions only to one organization.
+        organization = valid_permissions_by_organization[0]
+        organisaatio_oid = organization['organisaatioOid']
+        permission_list = [permission['oikeus'] for permission in organization['kayttooikeudet']]
+        _create_or_update_vakajarjestaja(permission_list, organisaatio_oid, user)
+
+        # Clear user's permission groups
+        user.groups.clear()
+        for permission in permission_list:
+            organization_specific_permission_group = get_permission_group(permission, organisaatio_oid)
+            if organization_specific_permission_group is not None:
+                # Assign the user to this permission group
+                organization_specific_permission_group.user_set.add(user)
+    else:
+        # Decline access to Varda if the service user doesn't have correct permissions to VARDA-service
+        # in one active vaka-organization.
+        raise AuthenticationFailed({'errors': [ErrorMessages.PE008.value]})
+
+
+def _exclude_non_valid_permissions(permissions_by_organization):
+    accepted_service_user_permissions = (Z4_CasKayttoOikeudet.PALVELUKAYTTAJA, Z4_CasKayttoOikeudet.TALLENTAJA,
+                                         Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,
+                                         Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
+                                         Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,
+                                         Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA,
+                                         Z4_CasKayttoOikeudet.TOIMIJATIEDOT_TALLENTAJA,)
+    for organization in permissions_by_organization:
+        # Filter out permissions we are not interested in
+        organization['kayttooikeudet'] = [permission for permission in organization['kayttooikeudet']
+                                          if permission['palvelu'] == 'VARDA' and
+                                          (permission['oikeus'] in accepted_service_user_permissions or
+                                           _is_opetushallitus_accepted_permission(organization['organisaatioOid'],
+                                                                                  permission['oikeus']))]
+    valid_permissions_by_organization = [organization for organization in permissions_by_organization
+                                         if organization['kayttooikeudet'] and
+                                         not is_not_valid_vaka_organization_in_organisaatiopalvelu(organization['organisaatioOid'],
+                                                                                                   must_be_vakajarjestaja=True)]
+    return valid_permissions_by_organization
+
+
+def _is_opetushallitus_accepted_permission(organisaatio_oid, permission_group_name):
+    return (organisaatio_oid == settings.OPETUSHALLITUS_ORGANISAATIO_OID and
+            permission_group_name == Z4_CasKayttoOikeudet.LUOVUTUSPALVELU)
+
+
+def _create_or_update_vakajarjestaja(permission_list, organisaatio_oid, user):
+    """
+    Creates vakajarjestaja if one does not exist yet. Marks vakajarjestaja integraatio organisaatio if needed.
+    :param permission_list: List of permission strings user has for accessing varda
+    :param organisaatio_oid: Oid of the vakajarjestaja user has permissions to
+    :param user: user logging in
+    """
+    # Having any of these permissions means that it is allowed to transfer that data only via integration
+    integraatio_permissions = {
+        Z4_CasKayttoOikeudet.PALVELUKAYTTAJA: TietosisaltoRyhma.VAKATIEDOT.value,
+        Z4_CasKayttoOikeudet.TALLENTAJA: TietosisaltoRyhma.VAKATIEDOT.value,
+        Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA: TietosisaltoRyhma.VAKATIEDOT.value,
+        Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA: TietosisaltoRyhma.TYONTEKIJATIEDOT.value,
+        Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA: TietosisaltoRyhma.TAYDENNYSKOULUTUSTIEDOT.value,
+        Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA: TietosisaltoRyhma.TILAPAINENHENKILOSTOTIEDOT.value,
+        Z4_CasKayttoOikeudet.TOIMIJATIEDOT_TALLENTAJA: TietosisaltoRyhma.TOIMIJATIEDOT.value
+    }
+
+    for permission in permission_list:
+        k, created = Z4_CasKayttoOikeudet.objects.get_or_create(user=user, organisaatio_oid=organisaatio_oid,
+                                                                kayttooikeus=permission)
+        if not created:
+            logger.info('Already had permission {} for user: {}, organisaatio_oid: {}'
+                        .format(permission, user.username, organisaatio_oid))
+    vakajarjestaja_obj = VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid).first()
+    integration_flags_set = {integraatio_permissions.get(permission) for permission in permission_list
+                             if permission in integraatio_permissions}
+    if vakajarjestaja_obj:
+        # There is only one vakajarjestaja, organisaatio_oid is unique
+        existing_integration_flags_set = set(vakajarjestaja_obj.integraatio_organisaatio)
+        if not integration_flags_set.issubset(existing_integration_flags_set):
+            # User has new permissions, so add integraatio flags for Vakajarjestaja
+            vakajarjestaja_obj.integraatio_organisaatio = tuple(existing_integration_flags_set.union(integration_flags_set))
+            vakajarjestaja_obj.save()
+    else:
+        # VakaJarjestaja doesn't exist yet, let's create it.
+        create_vakajarjestaja_using_oid(organisaatio_oid, user.id, integraatio_organisaatio=tuple(integration_flags_set))

@@ -5,6 +5,8 @@ from django.test import TestCase, override_settings
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from varda import kayttooikeuspalvelu
+from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.enums.tietosisalto_ryhma import TietosisaltoRyhma
 from varda.models import Z4_CasKayttoOikeudet, VakaJarjestaja
 from varda.unit_tests.test_utils import assert_status_code, base64_encoding, assert_validation_error
@@ -372,10 +374,87 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         self.assertCountEqual(vakajarjestaja_qs.first().integraatio_organisaatio,
                               [TietosisaltoRyhma.VAKATIEDOT.value, TietosisaltoRyhma.TYONTEKIJATIEDOT.value])
 
+    @responses.activate
+    def test_service_user_cas_login(self):
+        organisaatio_oid = '1.2.246.562.10.27580498759'
+        username = 'tester-no-known-privileges'
+        henkilo_oid = '1.2.246.562.24.10000000001'
+        user_data_json = [
+            {
+                'oidHenkilo': henkilo_oid,
+                'username': username,
+                'kayttajaTyyppi': 'PALVELU',
+                'organisaatiot': [
+                    {
+                        'organisaatioOid': organisaatio_oid,
+                        'kayttooikeudet': [
+                            {
+                                'palvelu': 'VARDA',
+                                'oikeus': Z4_CasKayttoOikeudet.TALLENTAJA
+                            },
+                            {
+                                'palvelu': 'VARDA',
+                                'oikeus': Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA
+                            },
+                            {
+                                'palvelu': 'VARDA',
+                                'oikeus': Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA
+                            },
+                            {
+                                'palvelu': 'VARDA',
+                                'oikeus': Z4_CasKayttoOikeudet.PALVELUKAYTTAJA
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+        self._mock_cas_responses(user_data_json, organisaatio_oid, username, henkilo_oid)
+        user = User.objects.get(username=username)
+        kayttooikeuspalvelu.set_permissions_for_cas_user(user.id)
+
+        expected_group_names = (f'{Z4_CasKayttoOikeudet.PALVELUKAYTTAJA}_{organisaatio_oid}',
+                                f'{Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA}_{organisaatio_oid}',
+                                f'{Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA}_{organisaatio_oid}',
+                                f'{Z4_CasKayttoOikeudet.TALLENTAJA}_{organisaatio_oid}',)
+        self._assert_user_permissiongroups(expected_group_names, username)
+
+        cas_permissions = Z4_CasKayttoOikeudet.objects.filter(user=user).values('kayttooikeus', 'organisaatio_oid')
+        expected_cas_permissions = (
+            {'kayttooikeus': Z4_CasKayttoOikeudet.TALLENTAJA, 'organisaatio_oid': organisaatio_oid},
+            {'kayttooikeus': Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA, 'organisaatio_oid': organisaatio_oid},
+            {'kayttooikeus': Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA, 'organisaatio_oid': organisaatio_oid},
+            {'kayttooikeus': Z4_CasKayttoOikeudet.PALVELUKAYTTAJA, 'organisaatio_oid': organisaatio_oid},
+        )
+        self.assertCountEqual(cas_permissions, expected_cas_permissions)
+
+        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=organisaatio_oid)
+        expected_integraatio = (TietosisaltoRyhma.TYONTEKIJATIEDOT.value, TietosisaltoRyhma.VAKATIEDOT.value,)
+        self.assertCountEqual(vakajarjestaja.integraatio_organisaatio, expected_integraatio)
+
     def _mock_responses(self, organisaatiot, organisaatio_oid, username):
         responses.add(responses.GET,
                       'https://virkailija.testiopintopolku.fi/kayttooikeus-service/henkilo/current/omattiedot',
                       json=self._get_kayttooikeudet_json(organisaatiot, username),
+                      status=status.HTTP_200_OK)
+        responses.add(responses.GET,
+                      'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oid={}'.format(
+                          organisaatio_oid),
+                      json={'numHits': 1, 'organisaatiot': self._get_parikkala_organisaatio_json(organisaatio_oid)},
+                      status=status.HTTP_200_OK)
+
+    def _mock_cas_responses(self, user_data, organisaatio_oid, username, henkilo_oid):
+        responses.add(responses.GET,
+                      f'https://virkailija.testiopintopolku.fi/kayttooikeus-service/henkilo/kayttajatunnus={username}',
+                      json={'oid': henkilo_oid, 'kayttajaTyyppi': Kayttajatyyppi.PALVELU.value},
+                      status=status.HTTP_200_OK)
+        responses.add(responses.GET,
+                      f'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/{henkilo_oid}',
+                      json={},
+                      status=status.HTTP_200_OK)
+        responses.add(responses.GET,
+                      f'https://virkailija.testiopintopolku.fi/kayttooikeus-service/kayttooikeus/kayttaja?oidHenkilo={henkilo_oid}',
+                      json=user_data,
                       status=status.HTTP_200_OK)
         responses.add(responses.GET,
                       'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oid={}'.format(
