@@ -55,14 +55,14 @@
                                    [palvelussuhde]="palvelussuhde"
                                    [henkilonTutkinnot]="henkilonTutkinnot"
                                    (changedPalvelussuhde)="getPalvelussuhteet()"
-                                   (closeAddPalvelussuhde)="closeAddPalvelussuhde($event)"
+                                   (closeEmitter)="closePalvelussuhde($event)"
                                    *ngFor="let palvelussuhde of palvelussuhteet"></app-varda-palvelussuhde>
           <app-varda-palvelussuhde *ngIf="addPalvelussuhdeBoolean && toimipaikkaAccess.tyontekijatiedot.tallentaja"
                                    [henkilonToimipaikka]="henkilonToimipaikka"
                                    [tyontekija]="tyontekija"
                                    [toimipaikkaAccess]="toimipaikkaAccess"
                                    [henkilonTutkinnot]="henkilonTutkinnot"
-                                   (closeAddPalvelussuhde)="closeAddPalvelussuhde($event)"></app-varda-palvelussuhde>
+                                   (closeEmitter)="closePalvelussuhde($event, true)"></app-varda-palvelussuhde>
         </mat-accordion>
       </ng-container>
     </div>

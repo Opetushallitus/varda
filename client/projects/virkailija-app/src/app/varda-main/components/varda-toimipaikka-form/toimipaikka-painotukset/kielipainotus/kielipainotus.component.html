@@ -5,7 +5,7 @@
                  nimi="kielipainotus"
                  [alkamis_pvm]="painotus?.alkamis_pvm"
                  [paattymis_pvm]="painotus?.paattymis_pvm"></app-robo-id>
-    <mat-expansion-panel [expanded]="expandPanel"
+    <mat-expansion-panel #matPanel
                          [hideToggle]="savePending"
                          (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)">

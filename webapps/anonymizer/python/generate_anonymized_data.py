@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import random
 import zipfile
@@ -9,6 +10,9 @@ from django.db.models import Max
 from timeit import default_timer as timer
 from varda.models import Henkilo
 from varda.misc import encrypt_string, hash_string
+
+
+logger = logging.getLogger(__name__)
 
 DB_ANONYMIZER_ZIP_FILE_PATH = 'anonymizer/python/anonymized_names.zip'
 KUNTAKOODI_FILE = 'anonymizer/python/kuntakoodit.zip'
@@ -29,8 +33,8 @@ def create_hetu_from_birthday(syntyma_pvm, sukupuoli_koodi):
 
     year = syntyma_pvm.year
 
-    # make sure people are not born in the future
-    if year >= current_year:
+    # make sure people are not born in the future or are not too old either
+    if year >= current_year or year < 1800:
         year = current_year
         month = random.randint(1, current_month)
     else:
@@ -96,11 +100,14 @@ def create_henkilo(henkilo, henkilotunnus_unique_hash_set, file, etunimet_miehet
 
     # counter is to prevent infinite loop if there are duplicates in the data the max amount could be adjusted
     counter = 0
-    while henkilotunnus_unique_hash in henkilotunnus_unique_hash_set and counter <= 50:
+    while henkilotunnus_unique_hash in henkilotunnus_unique_hash_set and counter <= 100:
         henkilotunnus = create_hetu_from_birthday(syntyma_pvm, sukupuoli_koodi)
         encrypted_henkilotunnus = encrypt_string(henkilotunnus)
         henkilotunnus_unique_hash = hash_string(henkilotunnus)
         counter += 1
+
+    if counter > 10:
+        logger.info(f'Counter value for looping through duplicates: {counter}.')
 
     # Names
     if sukupuoli_koodi == '1':
@@ -139,7 +146,7 @@ def create_henkilo(henkilo, henkilotunnus_unique_hash_set, file, etunimet_miehet
 def create_anonymized_data_dump():
     start = timer()
     henkilotunnus_unique_hash_set = set()
-    print('Creating the anonymized datadump...')
+    logger.info('Creating the anonymized datadump...')
     # Unzip the dummy data and read the files
     with zipfile.ZipFile(DB_ANONYMIZER_ZIP_FILE_PATH, 'r') as zip_ref:
         etunimet_miehet = read_lines_file(zip_ref, 'etunimet_miehet.txt')
@@ -153,7 +160,11 @@ def create_anonymized_data_dump():
         f.write('[')
 
     with open(DB_ANONYMIZED_JSON_FILE, 'a+', encoding='utf-8') as f:
-        henkilot = Henkilo.objects.all().values('syntyma_pvm', 'id', 'sukupuoli_koodi', 'kotikunta_koodi')
+        henkilot = (Henkilo
+                    .objects
+                    .all()
+                    .order_by('id')
+                    .values('syntyma_pvm', 'id', 'sukupuoli_koodi', 'kotikunta_koodi'))
         max_id = Henkilo.objects.all().aggregate(Max('id'))['id__max']
         for henkilo in henkilot:
             create_henkilo(henkilo, henkilotunnus_unique_hash_set, f, etunimet_miehet, etunimet_naiset, sukunimet)
@@ -187,4 +198,4 @@ def create_anonymized_data_dump():
     os.remove(DB_ANONYMIZED_JSON_FILE)
 
     end = timer()
-    print('Creation finished in {} seconds'.format(end - start))
+    logger.info('Creation finished in {} seconds'.format(end - start))

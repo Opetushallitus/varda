@@ -294,12 +294,9 @@ class PalvelussuhdeSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.Hy
         return data
 
     def validate_tutkinto(self, tyontekija, tutkinto_koodi, validator):
-        if tutkinto_koodi == '003':  # Ei tutkintoa
-            if tyontekija.henkilo.tutkinnot.exclude(tutkinto_koodi='003').exists():
-                validator.error('tutkinto_koodi', ErrorMessages.PS004.value)
-        else:
-            if not tyontekija.henkilo.tutkinnot.filter(tutkinto_koodi=tutkinto_koodi).exists():
-                validator.error('tutkinto_koodi', ErrorMessages.PS005.value)
+        if not tyontekija.henkilo.tutkinnot.filter(tutkinto_koodi=tutkinto_koodi,
+                                                   vakajarjestaja=tyontekija.vakajarjestaja).exists():
+            validator.error('tutkinto_koodi', ErrorMessages.PS005.value)
 
 
 class TyoskentelypaikkaSerializer(serializers.HyperlinkedModelSerializer):

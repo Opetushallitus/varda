@@ -1,6 +1,12 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.14 (15.04.2021)
+- OPHVARDA-2065: Lomakkeiden haitareiden avauksen korjaus
+
+1.5.13 (08.04.2021)
+- OPHVARDA-2220: Tiedonsiirtojen oletusrajaus kuluvalta päivältä
+
 1.5.12 (01.04.2021)
 - OPHVARDA-1788: Toimipaikan järjestämismuodon validointi
 

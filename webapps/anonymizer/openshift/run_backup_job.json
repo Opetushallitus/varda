@@ -1,0 +1,102 @@
+{
+  "kind": "Job",
+  "apiVersion": "batch/v1",
+  "metadata": {
+    "name": "varda-backup-job"
+  },
+  "spec": {
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "varda-backup-job"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "varda-backup-job",
+            "env": [
+              {
+                "name": "POSTGRESQL_USER",
+                "value": "postgres"
+              },
+              {
+                "name": "POSTGRESQL_PASSWORD",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "database-admin-password",
+                    "name": "postgresql"
+                  }
+                }
+              },
+              {
+                "name": "POSTGRESQL_DATABASE",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "database-name",
+                    "name": "postgresql"
+                  }
+                }
+              },
+              {
+                "name": "CRYPT_KEY",
+                "value": "CRYPT_KEY_VALUE"
+              },
+              {
+                "name": "AWS_TARGET",
+                "value": "AWS_TARGET_VALUE"
+              },
+              {
+                "name": "AWS_ACCESS_KEY_ID",
+                "value": "AWS_ACCESS_KEY_ID_VALUE"
+              },
+              {
+                "name": "AWS_SECRET_ACCESS_KEY",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "backup-aws-secret-access-key",
+                    "name": "varda-backup"
+                  }
+                }
+              },
+              {
+                "name": "POSTGRESQL_SERVICE_HOST",
+                "value": "POSTGRESQL_SERVICE_HOST_VALUE"
+              },
+              {
+                "name": "SCHEDULE",
+                "value": null
+              },
+              {
+                "name": "LOG_LEVEL",
+                "value": "INFO"
+              },
+              {
+                "name": "KEEP_LATEST",
+                "value": "180"
+              },
+              {
+                "name": "PREFIX",
+                "value": "PREFIX_VALUE"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "4",
+                "memory": "8Gi"
+              },
+              "requests": {
+                "cpu": "200m",
+                "memory": "200Mi"
+              }
+            },
+            "image": "varda-docker-preprod.ARTIFACTORY_DOMAIN_VALUE/varda-backup:b2",
+            "command": ["/bin/sh", "-c", "BACKUP_COMMAND_VALUE"]
+          }
+        ],
+        "restartPolicy": "Never"
+      },
+      "backoffLimit": 3
+    }
+  }
+}

@@ -1336,7 +1336,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/',
             'tyosuhde_koodi': '1',
             'tyoaika_koodi': '1',
-            'tutkinto_koodi': '003',
+            'tutkinto_koodi': '001',
             'tyoaika_viikossa': '38.73',
             'alkamis_pvm': '2020-03-01',
             'paattymis_pvm': '2021-03-02',
@@ -1345,7 +1345,7 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         resp = client.post('/api/henkilosto/v1/palvelussuhteet/', json.dumps(palvelussuhde), content_type='application/json')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp, 'tutkinto_koodi', 'PS004', 'Tyontekija has Tutkinto objects other than just 003.')
+        assert_validation_error(resp, 'tutkinto_koodi', 'PS005', 'Tyontekija does not have the given Tutkinto.')
 
     def test_palvelussuhde_add_and_edit_tyosuhde_koodi_2(self):
         # tyosuhde_koodi 2 is for fixed term employees. Paattymis_pvm can't be undefined in these cases.

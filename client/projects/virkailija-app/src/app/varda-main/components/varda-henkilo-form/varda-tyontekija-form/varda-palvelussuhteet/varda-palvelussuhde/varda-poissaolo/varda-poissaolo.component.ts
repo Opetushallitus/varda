@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, Input, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VardaPoissaoloDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-poissolo-dto.model';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
@@ -8,7 +8,6 @@ import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/util
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
-import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { MatExpansionPanelHeader } from '@angular/material/expansion';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/services/varda-date.service';
@@ -34,14 +33,9 @@ export class VardaPoissaoloComponent extends VardaHenkiloFormAccordionAbstractCo
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
   @Input() palvelussuhde: VardaPalvelussuhdeDTO;
   @Input() poissaolo: VardaPoissaoloDTO;
-  @Output() closePoissaolo = new EventEmitter<boolean>(true);
   @ViewChild(MatExpansionPanelHeader) panelHeader: MatExpansionPanelHeader;
-  expandPanel: boolean;
-  poissaoloForm: FormGroup;
   isSubmitting = new BehaviorSubject<boolean>(false);
   subscriptions: Array<Subscription> = [];
-  i18n = VirkailijaTranslations;
-  isEdit: boolean;
   endDateRange = { min: VardaDateService.henkilostoReleaseDate, max: null };
 
   poissaoloFormErrors: Observable<Array<ErrorTree>>;
@@ -49,20 +43,22 @@ export class VardaPoissaoloComponent extends VardaHenkiloFormAccordionAbstractCo
 
   constructor(
     private henkilostoService: VardaHenkilostoApiService,
-    private modalService: VardaModalService,
     private snackBarService: VardaSnackBarService,
-    translateService: TranslateService
+    translateService: TranslateService,
+    modalService: VardaModalService
   ) {
-    super();
+    super(modalService);
     this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.poissaoloFormErrors = this.henkilostoErrorService.initErrorList();
   }
 
 
   ngOnInit() {
-    this.expandPanel = !this.poissaolo;
+    if (!this.poissaolo) {
+      this.togglePanel(true, undefined, true);
+    }
 
-    this.poissaoloForm = new FormGroup({
+    this.formGroup = new FormGroup({
       id: new FormControl(this.poissaolo?.id),
       lahdejarjestelma: new FormControl(this.poissaolo?.lahdejarjestelma || Lahdejarjestelma.kayttoliittyma),
       palvelussuhde: new FormControl(this.palvelussuhde.url),
@@ -89,12 +85,11 @@ export class VardaPoissaoloComponent extends VardaHenkiloFormAccordionAbstractCo
     }
 
     this.subscriptions.push(
-      this.poissaoloForm.statusChanges
-        .pipe(filter(() => !this.poissaoloForm.pristine), distinctUntilChanged())
+      this.formGroup.statusChanges
+        .pipe(filter(() => !this.formGroup.pristine), distinctUntilChanged())
         .subscribe(() => this.modalService.setFormValuesChanged(true))
     );
   }
-
 
   savePoissaolo(form: FormGroup) {
     this.isSubmitting.next(true);
@@ -111,7 +106,7 @@ export class VardaPoissaoloComponent extends VardaHenkiloFormAccordionAbstractCo
       if (this.poissaolo) {
         this.henkilostoService.updatePoissaolo(poissaoloJson).subscribe({
           next: poissaoloData => {
-            this.togglePanel(false, true);
+            this.togglePanel(false, true, true);
             this.snackBarService.success(this.i18n.poissaolo_save_success);
             this.henkilostoService.sendHenkilostoListUpdate();
           },
@@ -120,7 +115,7 @@ export class VardaPoissaoloComponent extends VardaHenkiloFormAccordionAbstractCo
       } else {
         this.henkilostoService.createPoissaolo(poissaoloJson).subscribe({
           next: poissaoloData => {
-            this.togglePanel(false, true);
+            this.togglePanel(false, true, true);
             this.snackBarService.success(this.i18n.poissaolo_save_success);
           },
           error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
@@ -135,38 +130,20 @@ export class VardaPoissaoloComponent extends VardaHenkiloFormAccordionAbstractCo
   deletePoissaolo(): void {
     this.henkilostoService.deletePoissaolo(this.poissaolo.id).subscribe({
       next: deleted => {
-        this.togglePanel(false, true);
+        this.togglePanel(false, true, true);
         this.snackBarService.warning(this.i18n.poissaolo_delete_success);
       },
       error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
     });
   }
 
-  togglePanel(open: boolean, refreshList?: boolean) {
-    this.expandPanel = open;
-
-    if (!open || refreshList) {
-      this.disableForm();
-      this.closePoissaolo?.emit(refreshList);
-      if (refreshList) {
-        this.henkilostoService.sendHenkilostoListUpdate();
-      }
-    }
-  }
-
   disableSubmit() {
     setTimeout(() => this.isSubmitting.next(false), 500);
   }
 
-  disableForm() {
-    this.isEdit = false;
-    this.poissaoloForm.disable();
-    this.modalService.setFormValuesChanged(false);
-  }
-
   enableForm() {
     this.isEdit = true;
-    this.poissaoloForm.enable();
+    this.formGroup.enable();
   }
 
   startDateChange(startDate: Moment) {
@@ -176,6 +153,10 @@ export class VardaPoissaoloComponent extends VardaHenkiloFormAccordionAbstractCo
       this.endDateRange.min = VardaDateService.henkilostoReleaseDate;
     }
 
-    setTimeout(() => this.poissaoloForm.controls.paattymis_pvm?.updateValueAndValidity(), 100);
+    setTimeout(() => this.formGroup.controls.paattymis_pvm?.updateValueAndValidity(), 100);
+  }
+
+  sendUpdateList() {
+    this.henkilostoService.sendHenkilostoListUpdate();
   }
 }

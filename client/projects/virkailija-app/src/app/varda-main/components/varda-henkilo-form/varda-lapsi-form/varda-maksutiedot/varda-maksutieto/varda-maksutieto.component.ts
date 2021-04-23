@@ -12,13 +12,11 @@ import { VardaMaksutietoDTO } from 'projects/virkailija-app/src/app/utilities/mo
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/services/varda-date.service';
-import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { KoodistoDTO, VardaKoodistoService, KoodistoEnum } from 'varda-shared';
 import { VardaMaksutietoHuoltajaComponent } from './varda-maksutieto-huoltaja/varda-maksutieto-huoltaja.component';
 import { TranslateService } from '@ngx-translate/core';
-import { HenkiloListErrorDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-henkilo-dto.model';
 import { VardaHenkiloFormAccordionAbstractComponent } from '../../../varda-henkilo-form-accordion/varda-henkilo-form-accordion.abstract';
 
 
@@ -37,15 +35,10 @@ export class VardaMaksutietoComponent extends VardaHenkiloFormAccordionAbstractC
   @Input() toimipaikkaAccess: UserAccess;
   @Input() maksutieto: VardaMaksutietoDTO;
   @Input() yksityinenBoolean: boolean;
-  @Output() closeAddMaksutieto = new EventEmitter<boolean>(true);
   @Output() changedMaksutieto = new EventEmitter<boolean>(true);
   @ViewChildren(VardaMaksutietoHuoltajaComponent) huoltajaElements: QueryList<VardaMaksutietoHuoltajaComponent>;
-  i18n = VirkailijaTranslations;
   element: ElementRef;
-  expandPanel: boolean;
-  isEdit: boolean;
   huoltajat: FormArray;
-  maksutietoForm: FormGroup;
   maksutietoFormErrors: Observable<Array<ErrorTree>>;
   subscriptions: Array<Subscription> = [];
   private henkilostoErrorService: VardaErrorMessageService;
@@ -55,27 +48,27 @@ export class VardaMaksutietoComponent extends VardaHenkiloFormAccordionAbstractC
   disableForMaksuttomuus = false;
   isSubmitting = new BehaviorSubject<boolean>(false);
 
-
   constructor(
     private el: ElementRef,
     private lapsiService: VardaLapsiService,
-    private modalService: VardaModalService,
     private koodistoService: VardaKoodistoService,
     private snackBarService: VardaSnackBarService,
-    translateService: TranslateService
+    translateService: TranslateService,
+    modalService: VardaModalService
   ) {
-    super();
+    super(modalService);
     this.element = this.el;
     this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.maksutietoFormErrors = this.henkilostoErrorService.initErrorList();
     this.koodistoService.getKoodisto(KoodistoEnum.maksunperuste).subscribe(koodisto => this.maksunperusteKoodisto = koodisto);
   }
 
-
   ngOnInit() {
-    this.expandPanel = !this.maksutieto;
+    if (!this.maksutieto) {
+      this.togglePanel(true, undefined, true);
+    }
 
-    this.maksutietoForm = new FormGroup({
+    this.formGroup = new FormGroup({
       id: new FormControl(this.maksutieto?.id),
       lahdejarjestelma: new FormControl(this.maksutieto?.lahdejarjestelma || Lahdejarjestelma.kayttoliittyma),
       lapsi: new FormControl(this.maksutieto?.lapsi || `/api/v1/lapset/${this.lapsi.id}/`),
@@ -88,7 +81,7 @@ export class VardaMaksutietoComponent extends VardaHenkiloFormAccordionAbstractC
       huoltajat: new FormArray([], Validators.required)
     });
 
-    this.huoltajat = this.maksutietoForm.get('huoltajat') as FormArray;
+    this.huoltajat = this.formGroup.get('huoltajat') as FormArray;
     if (!this.maksutieto) {
       this.addHuoltaja();
     } else {
@@ -102,8 +95,8 @@ export class VardaMaksutietoComponent extends VardaHenkiloFormAccordionAbstractC
     }
 
     this.subscriptions.push(
-      this.maksutietoForm.statusChanges
-        .pipe(filter(() => !this.maksutietoForm.pristine), distinctUntilChanged())
+      this.formGroup.statusChanges
+        .pipe(filter(() => !this.formGroup.pristine), distinctUntilChanged())
         .subscribe(() => this.modalService.setFormValuesChanged(true))
     );
   }
@@ -117,7 +110,7 @@ export class VardaMaksutietoComponent extends VardaHenkiloFormAccordionAbstractC
     form.markAllAsTouched();
     this.henkilostoErrorService.resetErrorList();
 
-    if (this.maksutietoForm.controls.huoltajat.invalid) {
+    if (this.formGroup.controls.huoltajat.invalid) {
       this.disableSubmit();
       setTimeout(() => this.huoltajaElements.first.element.nativeElement.scrollIntoView({ behavior: 'smooth' }), 100);
     } else if (VardaErrorMessageService.formIsValid(form)) {
@@ -130,7 +123,7 @@ export class VardaMaksutietoComponent extends VardaHenkiloFormAccordionAbstractC
       if (this.maksutieto) {
         this.lapsiService.updateMaksutieto(maksutietoDTO).subscribe({
           next: maksutietoData => {
-            this.togglePanel(false, true);
+            this.togglePanel(false, true, true);
             this.snackBarService.success(this.i18n.maksutieto_save_success);
           },
           error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
@@ -147,7 +140,7 @@ export class VardaMaksutietoComponent extends VardaHenkiloFormAccordionAbstractC
 
             setTimeout(() => {
               this.huoltajaSaveStatus = null;
-              this.togglePanel(false, true);
+              this.togglePanel(false, true, true);
             }, 5000);
 
           },
@@ -159,22 +152,10 @@ export class VardaMaksutietoComponent extends VardaHenkiloFormAccordionAbstractC
     }
   }
 
-  togglePanel(open: boolean, refreshList?: boolean) {
-    this.expandPanel = open;
-
-    if (!open || refreshList) {
-      this.disableForm();
-      this.closeAddMaksutieto?.emit(refreshList);
-      if (refreshList) {
-        this.lapsiService.sendLapsiListUpdate();
-      }
-    }
-  }
-
   deleteMaksutieto(): void {
     this.lapsiService.deleteMaksutieto(this.maksutieto.id).subscribe({
       next: deleted => {
-        this.togglePanel(false, true);
+        this.togglePanel(false, true, true);
         this.snackBarService.warning(this.i18n.maksutieto_delete_success);
       },
       error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
@@ -185,26 +166,20 @@ export class VardaMaksutietoComponent extends VardaHenkiloFormAccordionAbstractC
     setTimeout(() => this.isSubmitting.next(false), 500);
   }
 
-  disableForm() {
-    this.isEdit = false;
-    this.maksutietoForm.disable();
-    this.modalService.setFormValuesChanged(false);
-  }
-
   enableForm() {
     this.isEdit = true;
-    this.maksutietoForm.enable();
+    this.formGroup.enable();
     if (this.maksutieto) {
-      this.maksutietoForm.controls.huoltajat.disable();
-      this.maksutietoForm.controls.alkamis_pvm.disable();
-      this.maksutietoForm.controls.maksun_peruste_koodi.disable();
-      this.maksutietoForm.controls.palveluseteli_arvo.disable();
-      this.maksutietoForm.controls.asiakasmaksu.disable();
-      this.maksutietoForm.controls.perheen_koko.disable();
+      this.formGroup.controls.huoltajat.disable();
+      this.formGroup.controls.alkamis_pvm.disable();
+      this.formGroup.controls.maksun_peruste_koodi.disable();
+      this.formGroup.controls.palveluseteli_arvo.disable();
+      this.formGroup.controls.asiakasmaksu.disable();
+      this.formGroup.controls.perheen_koko.disable();
     }
     if (this.yksityinenBoolean) {
-      this.maksutietoForm.controls.palveluseteli_arvo.disable();
-      this.maksutietoForm.controls.perheen_koko.disable();
+      this.formGroup.controls.palveluseteli_arvo.disable();
+      this.formGroup.controls.perheen_koko.disable();
     }
   }
 
@@ -225,8 +200,8 @@ export class VardaMaksutietoComponent extends VardaHenkiloFormAccordionAbstractC
   }
 
   changeMaksunPeruste(maksunperusteKoodi: string) {
-    const palveluseteli = this.maksutietoForm.get('palveluseteli_arvo');
-    const asiakasmaksu = this.maksutietoForm.get('asiakasmaksu');
+    const palveluseteli = this.formGroup.get('palveluseteli_arvo');
+    const asiakasmaksu = this.formGroup.get('asiakasmaksu');
     if (maksunperusteKoodi.toLocaleUpperCase() === 'MP01') {
       palveluseteli.setValue(0);
       asiakasmaksu.setValue(0);
@@ -240,6 +215,10 @@ export class VardaMaksutietoComponent extends VardaHenkiloFormAccordionAbstractC
 
   startDateChange(startDate: Moment) {
     this.minEndDate = startDate?.clone().toDate();
-    setTimeout(() => this.maksutietoForm.controls.paattymis_pvm?.updateValueAndValidity(), 100);
+    setTimeout(() => this.formGroup.controls.paattymis_pvm?.updateValueAndValidity(), 100);
+  }
+
+  sendUpdateList() {
+    this.lapsiService.sendLapsiListUpdate();
   }
 }

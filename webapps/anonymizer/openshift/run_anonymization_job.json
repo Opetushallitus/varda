@@ -1,0 +1,132 @@
+{
+  "kind": "Job",
+  "apiVersion": "batch/v1",
+  "metadata": {
+    "name": "varda-anonymization"
+  },
+  "spec": {
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "varda-anonymization"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "varda-anonymization",
+            "env": [
+              {
+                "name": "POSTGRESQL_SERVICE_HOST",
+                "value": "POSTGRESQL_SERVICE_HOST_VALUE"
+              },
+              {
+                "name": "POSTGRESQL_USER",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "database-username",
+                    "name": "postgresql"
+                  }
+                }
+              },
+              {
+                "name": "POSTGRESQL_PASSWORD",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "database-password",
+                    "name": "postgresql"
+                  }
+                }
+              },
+              {
+                "name": "POSTGRESQL_DATABASE",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "database-name",
+                    "name": "postgresql"
+                  }
+                }
+              },
+              {
+                "name": "POSTGRESQL_ADMIN_PASSWORD",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "postgresql-admin-password",
+                    "name": "varda"
+                  }
+                }
+              },
+              {
+                "name": "DJANGO_SECRET_KEY",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "django-secret-key",
+                    "name": "varda"
+                  }
+                }
+              },
+              {
+                "name": "VARDA_ENVIRONMENT_TYPE",
+                "value": "env-varda-testing"
+              },
+              {
+                "name": "VARDA_HOSTNAME",
+                "value": "VARDA_HOSTNAME_VALUE"
+              },
+              {
+                "name": "OPINTOPOLKU_USERNAME",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "opintopolku-username",
+                    "name": "varda"
+                  }
+                }
+              },
+              {
+                "name": "OPINTOPOLKU_PASSWORD",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "opintopolku-password",
+                    "name": "varda"
+                  }
+                }
+              },
+              {
+                "name": "ARTIFACTORY_USERNAME",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "artifactory-username",
+                    "name": "varda"
+                  }
+                }
+              },
+              {
+                "name": "ARTIFACTORY_PASSWORD",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "artifactory-password",
+                    "name": "varda"
+                  }
+                }
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "4",
+                "memory": "8Gi"
+              },
+              "requests": {
+                "cpu": "200m",
+                "memory": "200Mi"
+              }
+            },
+            "image": "varda-docker-preprod.ARTIFACTORY_DOMAIN_VALUE/varda:VARDA_BACKEND_IMAGE_TAG_VALUE",
+            "command": ["/bin/sh", "-c", "cd webapps; python manage.py anonymize_data"]
+          }
+        ],
+        "restartPolicy": "Never"
+      },
+      "backoffLimit": 3
+    }
+  }
+}

@@ -1,25 +1,32 @@
 import base64
+import datetime
 import hashlib
 import json
+import logging
 import os
 import random
-import string
 import requests
+import string
+import sys
+import time
 import zipfile
-import datetime
 
-from django.contrib.auth.models import User
-from django.core.management import call_command
+from django.conf import settings
+from django.contrib.auth.models import Group, User
 from django.db import connection
 from django.db.models import Max
 from django_pg_bulk_update import bulk_update
+from json.decoder import JSONDecodeError
 from pathlib import Path
 from timeit import default_timer as timer
-from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
+
+from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.models import (Henkilo, HistoricalHenkilo, Toimipaikka, VakaJarjestaja,
                           Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog, Z6_RequestLog,
                           Z7_AdditionalUserFields, Z8_ExcelReport, Z8_ExcelReportLog)
 
+
+logger = logging.getLogger(__name__)
 
 BATCH_SIZE = 50000
 DB_ANONYMIZER_SQL_FILE_PATH_SETUP = 'anonymizer/sql/anonymizer_setup.sql'
@@ -29,8 +36,11 @@ DB_ANONYMIZER_SQL_FILE_PATH_VAKATIEDOT = 'anonymizer/sql/anonymizer_vakatiedot.s
 DB_ANONYMIZER_SQL_FILE_PATH_HENKILOSTO = 'anonymizer/sql/anonymizer_henkilosto.sql'
 DB_ANONYMIZER_SQL_FILE_PATH_CLEANUP = 'anonymizer/sql/anonymizer_cleanup.sql'
 DB_ANONYMIZER_ZIP_FILE_PATH = 'anonymizer/python/anonymized_data.zip'
-CORRECT_MD5SUM_OF_ZIP_FILE = '7fceecbc4bdc2021ea8c9a18816018ab'
 SAFETY_MARGIN_HENKILOT = 10
+ARTIFACTORY_DOMAIN = settings.ARTIFACTORY_DOMAIN
+ARTIFACTORY_GENERIC_REPO_KEY = 'varda-generic-python-local'
+ANONYMIZED_DATA_FILE_PATH = 'anonymized_data.zip'
+SLEEP_SECONDS_BETWEEN_FAILED_ATTEMPTS = 10
 
 
 def anonymize_data():
@@ -74,18 +84,99 @@ def get_md5sum(fname):
 def run_and_time_operation(operation_type, operation, operation_name):
     start = timer()
     if operation_type == 'sql':
-        print('Running anonymizer SQL {}...'.format(operation_name))
+        logger.info('Running anonymizer SQL {}...'.format(operation_name))
         with open(Path(operation), encoding='utf-8') as f:
             with connection.cursor() as c:
                 c.execute(f.read())
         end = timer()
-        print('{} SQL part successfully executed in {} seconds'.format(operation_name, end - start))
+        logger.info('{} SQL part successfully executed in {} seconds'.format(operation_name, end - start))
     elif operation_type == 'python':
         operation()
         end = timer()
-        print('{} python successfully executed in {} seconds'.format(operation_name, end - start))
+        logger.info('{} python successfully executed in {} seconds'.format(operation_name, end - start))
     else:
-        print('Unknown operation, nothing executed')
+        logger.warning('Unknown operation, nothing executed')
+
+
+def get_test_accounts():
+    """
+    :return: Test accounts dict
+    """
+    test_accounts_json = '/tmp/anonymization/test_accounts.json'
+    try:
+        data_file = open(test_accounts_json, encoding='utf-8')
+        with data_file:
+            try:
+                return json.loads(data_file.read())
+            except JSONDecodeError as e:
+                logger.warning(f'Could not load json: {test_accounts_json}.')
+                logger.warning(f'Error: {e}')
+    except OSError:
+        logger.warning(f'Could not open: {test_accounts_json}')
+
+    empty_test_accounts = {
+        'admin_users': [],
+        'local_staff_users': [],
+        'oph_superusers': [],
+        'oph_staff_users': []
+    }
+    return empty_test_accounts
+
+
+def add_admin_users(admin_users):
+    for admin_user in admin_users:
+        username = admin_user['username']
+        user = User.objects.get_or_create(username=username)[0]
+        user.is_superuser = True
+        user.is_staff = True
+        user.is_active = True
+        user.set_password(admin_user['password'])
+        user.save()
+
+
+def add_local_staff(local_staff_users):
+    for local_staff_user in local_staff_users:
+        username = local_staff_user['username']
+        user = User.objects.get_or_create(username=username)[0]
+        user.is_staff = True
+        user.is_active = True
+        user.set_password(local_staff_user['password'])
+        user.save()
+
+
+def add_oph_staff(oph_superusers, oph_staff_users):
+    try:
+        oph_group = Group.objects.get(name='oph_staff')
+    except Group.DoesNotExist:
+        logger.warning('oph_staff group missing.')
+        return None
+
+    for oph_superuser in oph_superusers:
+        user_id = oph_superuser['user_id']
+        user = User.objects.get(id=user_id)
+        user.username = oph_superuser['username']
+        user.is_superuser = True
+        user.is_staff = True
+        user.is_active = True
+        user.save()
+        user.set_unusable_password()
+
+    for oph_staff_user in oph_staff_users:
+        user_id = oph_staff_user['user_id']
+        user = User.objects.get(id=user_id)
+        user.username = oph_staff_user['username']
+        user.is_staff = True
+        user.is_active = True
+        user.save()
+        user.set_unusable_password()
+        oph_group.user_set.add(user)
+        Z3_AdditionalCasUserFields.objects.create(
+            user=user,
+            kayttajatyyppi=Kayttajatyyppi.VIRKAILIJA,
+            henkilo_oid=oph_staff_user['henkilo_oid'],
+            asiointikieli_koodi='fi',
+            approved_oph_staff=True
+        )
 
 
 def finalize_data_dump():
@@ -95,8 +186,10 @@ def finalize_data_dump():
     - Remove users 3 & 4, plus references to VakaJarjestaja + Toimipaikka
     - Load testdata (fixtures), huoltajat etc.
     """
-    HistoricalHenkilo.objects.all().delete()
+    logger.info('Finalizing the data dump.')
 
+    logger.info('Removing unnecessary data.')
+    HistoricalHenkilo.objects.all().delete()
     Z3_AdditionalCasUserFields.objects.all().delete()
     Z4_CasKayttoOikeudet.objects.all().delete()
     Z5_AuditLog.objects.all().delete()
@@ -113,69 +206,113 @@ def finalize_data_dump():
     toimipaikka_1.changed_by = user
     toimipaikka_1.save()
 
-    user_qs = User.objects.all()
+    logger.info('Anonymize the users.')
+    user_qs = User.objects.all().exclude(username='anonymous')
     anonymize_users(user_qs)
+    logger.info('Add test-accounts.')
+    test_accounts = get_test_accounts()
+    add_admin_users(test_accounts['admin_users'])
+    add_local_staff(test_accounts['local_staff_users'])
+    add_oph_staff(test_accounts['oph_superusers'], test_accounts['oph_staff_users'])
 
-    call_command('loaddata', 'varda/unit_tests/fixture_qa_only.json')
 
-    create_onr_lapsi_huoltajat(create_all_vakajarjestajat=True)
+def fetch_generated_data_and_verify_checksum():
+    """
+    First check if the anonymized_data is found locally. If not, fetch it.
+    In case of problems, sleep for a while, and try once again.
+
+    :return: True if zip-file is ok, else False
+    """
+    for x in range(2):
+        try:
+            with open(DB_ANONYMIZER_ZIP_FILE_PATH):
+                logger.info('Anonymized data was found locally.')
+        except IOError:
+            logger.info('Anonymized data was not found locally. Lets fetch it.')
+
+            file_url = f'{ARTIFACTORY_DOMAIN}/artifactory/{ARTIFACTORY_GENERIC_REPO_KEY}/{ANONYMIZED_DATA_FILE_PATH}'
+            r = requests.get(file_url, headers=get_authentication_headers_artifactory())
+
+            if r.status_code == 200:
+                logger.info('Fetching the zip-file finished.')
+            else:
+                logger.warning(f'Failed to download the anonymized_data. Status code: {r.status_code}')
+                if x == 0:
+                    time.sleep(SLEEP_SECONDS_BETWEEN_FAILED_ATTEMPTS)
+                    continue
+                else:
+                    return False
+
+            with open(DB_ANONYMIZER_ZIP_FILE_PATH, 'wb') as f:
+                f.write(r.content)
+
+        # Verify the zip-file checksum
+        file_info_url = f'{ARTIFACTORY_DOMAIN}/artifactory/api/storage/' \
+                        f'{ARTIFACTORY_GENERIC_REPO_KEY}/{ANONYMIZED_DATA_FILE_PATH}'
+        r = requests.get(file_info_url, headers=get_authentication_headers_artifactory())
+
+        if r.status_code == 200:
+            correct_md5sum_of_zip_file = r.json()['checksums']['md5']
+        else:
+            logger.warning(f'Failed to fetch checksum. Status code: {r.status_code}')
+            if x == 0:
+                time.sleep(SLEEP_SECONDS_BETWEEN_FAILED_ATTEMPTS)
+                continue
+            else:
+                return False
+
+        md5sum_of_zip_file = get_md5sum(DB_ANONYMIZER_ZIP_FILE_PATH)
+        if md5sum_of_zip_file == correct_md5sum_of_zip_file:
+            logger.info('Zip-file checksum OK.')
+            break
+        else:
+            logger.warning('Error: Downloaded zip-file is corrupted, checksum doesnt match.')
+            if x == 0:
+                os.remove(DB_ANONYMIZER_ZIP_FILE_PATH)
+                logger.info('Removed the corrupted zip-file.')
+                time.sleep(SLEEP_SECONDS_BETWEEN_FAILED_ATTEMPTS)
+                continue
+            else:
+                return False
+
+    return True
 
 
 def anonymize_henkilot():
-    """
-    Using https://github.com/M1hacka/django-pg-bulk-update
-    Maybe could use Django's own bulk_update when this is fixed: https://code.djangoproject.com/ticket/31202
-    """
-
-    # First check if the anonymized_data is found locally. If not fetch it.
-    try:
-        with open(DB_ANONYMIZER_ZIP_FILE_PATH):
-            print('Anonymized data was found locally.')
-    except IOError:
-        print('Anonymized data was not found locally. Lets fetch it.')
-
-        url = os.getenv('ANONYMIZED_DATA_LOCATION_URL')
-        r = requests.get(url, headers=get_authentication_headers_artifactory())
-        if r.status_code != 200:
-            print('Failed to download the anonymized_data. Status_code: {}'.format(r.status_code))
-            return None
-        with open(DB_ANONYMIZER_ZIP_FILE_PATH, 'wb') as f:
-            f.write(r.content)
-
-    zipfile_info = zipfile.ZipInfo.from_file(DB_ANONYMIZER_ZIP_FILE_PATH)
-    if (zipfile_info.date_time[0] == datetime.datetime.now().year and
-            zipfile_info.date_time[1] == datetime.datetime.now().month and
-            zipfile_info.date_time[2] == datetime.datetime.now().day):
-        pass
-    else:
-        md5sum_of_zip_file = get_md5sum(DB_ANONYMIZER_ZIP_FILE_PATH)
-        if md5sum_of_zip_file != CORRECT_MD5SUM_OF_ZIP_FILE:
-            print('Error: Downloaded file is corrupted, md5sum doesnt match.')
-            return None
+    zip_file_is_ok = fetch_generated_data_and_verify_checksum()
+    if not zip_file_is_ok:
+        sys.exit(1)
 
     # Unzip the dummy Hetu / sukunimi files and read them
     try:
         with zipfile.ZipFile(DB_ANONYMIZER_ZIP_FILE_PATH, 'r') as zip_ref:
             anonymized_data = read_lines_file(zip_ref, 'anonymized_data.json')
     except zipfile.BadZipFile:
-        print('Error: Bad zip-file.')
+        logger.error('Error: Bad zip-file.')
         return None
 
     if anonymized_data is None:
-        print('Error: Could not unzip the anonymized_data.zip properly.')
+        logger.error('Error: Could not unzip the anonymized_data.zip properly.')
         return None
 
     last_henkilo_id = Henkilo.objects.all().aggregate(Max('id'))['id__max']
     if len(anonymized_data) < last_henkilo_id + SAFETY_MARGIN_HENKILOT:
-        print('Not enough anonymized_data. Create more. Last henkilo-id is: {}'.format(last_henkilo_id))
+        logger.warning(f'Not enough anonymized_data. Create more. Last henkilo-id is: {last_henkilo_id}')
         return None
 
     """
     Let's slice the anonymized_data list. No need for more anonymized_data than what we have henkilot in DB.
     """
+    logger.info('Loading the preset in memory...')
     list_of_anonymized_data = json.loads(anonymized_data)[:last_henkilo_id + SAFETY_MARGIN_HENKILOT]
+
+    """
+    Using https://github.com/M1hacka/django-pg-bulk-update
+    Maybe could use Django's own bulk_update when this is fixed: https://code.djangoproject.com/ticket/31202
+    """
+    logger.info('Starting to update henkilot...')
     updated = bulk_update(Henkilo, list_of_anonymized_data, key_fields='id', batch_size=BATCH_SIZE)
-    print('This is how many were actually updated: {}'.format(updated))
+    logger.info(f'This is how many were actually updated: {updated}')
 
 
 def read_lines_file(zip_ref, file):

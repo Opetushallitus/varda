@@ -25,7 +25,8 @@ from varda.serializers_common import (OidRelatedField, TunnisteRelatedField, Per
                                       VakaJarjestajaPermissionCheckedHLField, VakaJarjestajaHLField, HenkiloHLField,
                                       ToimipaikkaHLField)
 from varda.validators import (fill_missing_fields_for_validations, validate_henkilo_oid, validate_nimi,
-                              validate_henkilotunnus_or_oid_needed, validate_organisaatio_oid)
+                              validate_henkilotunnus_or_oid_needed, validate_organisaatio_oid,
+                              validate_instance_uniqueness)
 
 
 logger = logging.getLogger(__name__)
@@ -883,11 +884,7 @@ class VarhaiskasvatuspaatosSerializer(LapsiOptionalToimipaikkaMixin, serializers
             if len(data) == 0:
                 raise serializers.ValidationError({'errors': [ErrorMessages.GE014.value]})
             fill_missing_fields_for_validations(data, self.instance)
-        elif toimipaikka := data.get('toimipaikka', None):
-            # Only validate in POST
-            _validate_toimipaikka_with_vakajarjestaja_of_lapsi(toimipaikka, data['lapsi'])
 
-        if self.instance:
             check_if_immutable_object_is_changed(self.instance, data, 'lapsi')
             check_if_immutable_object_is_changed(self.instance, data, 'vuorohoito_kytkin', compare_id=False)
             check_if_immutable_object_is_changed(self.instance, data, 'tuntimaara_viikossa', compare_id=False)
@@ -895,6 +892,13 @@ class VarhaiskasvatuspaatosSerializer(LapsiOptionalToimipaikkaMixin, serializers
             check_if_immutable_object_is_changed(self.instance, data, 'kokopaivainen_vaka_kytkin', compare_id=False)
             check_if_immutable_object_is_changed(self.instance, data, 'tilapainen_vaka_kytkin', compare_id=False)
             check_if_immutable_object_is_changed(self.instance, data, 'jarjestamismuoto_koodi', compare_id=False)
+        elif toimipaikka := data.get('toimipaikka', None):
+            # Only validate in POST
+            _validate_toimipaikka_with_vakajarjestaja_of_lapsi(toimipaikka, data['lapsi'])
+
+        validate_instance_uniqueness(Varhaiskasvatuspaatos, data, ErrorMessages.VP015.value,
+                                     instance_id=getattr(self.instance, 'id', None),
+                                     ignore_fields=('pikakasittely_kytkin',))
 
         jarjestamismuoto_koodi = data['jarjestamismuoto_koodi'].lower()
         hakemus_pvm = data['hakemus_pvm']
@@ -903,14 +907,14 @@ class VarhaiskasvatuspaatosSerializer(LapsiOptionalToimipaikkaMixin, serializers
         lapsi_obj = data['lapsi']
 
         self._validate_dates(hakemus_pvm, alkamis_pvm, paattymis_pvm)
-        self._validate_paos_specific_data(lapsi_obj, jarjestamismuoto_koodi, paattymis_pvm)
-        self._validate_jarjestamismuoto(lapsi_obj, jarjestamismuoto_koodi, paattymis_pvm)
+        self._validate_paos_specific_data(lapsi_obj, jarjestamismuoto_koodi)
+        self._validate_jarjestamismuoto(lapsi_obj, jarjestamismuoto_koodi)
         self._validate_vuorohoito(data)
         self._validate_tilapainen_vaka_kytkin(data)
 
         return data
 
-    def _validate_paos_specific_data(self, lapsi_obj, jarjestamismuoto_koodi, paattymis_pvm):
+    def _validate_paos_specific_data(self, lapsi_obj, jarjestamismuoto_koodi):
         jarjestamismuoto_koodit_paos = ['jm02', 'jm03']
         if lapsi_obj.paos_organisaatio is not None:
             check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(lapsi_obj.oma_organisaatio, lapsi_obj.paos_organisaatio)
@@ -921,7 +925,7 @@ class VarhaiskasvatuspaatosSerializer(LapsiOptionalToimipaikkaMixin, serializers
             msg = {'jarjestamismuoto_koodi': [ErrorMessages.VP006.value]}
             raise serializers.ValidationError(msg, code='invalid')
 
-    def _validate_jarjestamismuoto(self, lapsi_obj, jarjestamismuoto_koodi, paattymis_pvm):
+    def _validate_jarjestamismuoto(self, lapsi_obj, jarjestamismuoto_koodi):
         jarjestamismuoto_koodit_kunta = ['jm01']
         jarjestamismuoto_koodit_yksityinen = ['jm04', 'jm05']
         if lapsi_obj.vakatoimija is not None:

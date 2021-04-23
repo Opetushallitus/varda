@@ -336,12 +336,14 @@ class KelaEtuusmaksatusKorjaustiedotPoistetutViewSet(GenericViewSet, ListModelMi
         return (Varhaiskasvatussuhde.history.raw("""select DISTINCT ON (vas.id) vas.id, vas.history_id as history_id, vas.alkamis_pvm as alkamis_pvm, vas.paattymis_pvm as paattymis_pvm,
                                                     '0001-01-01' as new_alkamis_pvm, '0001-01-01' as new_paattymis_pvm, he.henkilotunnus as henkilotunnus, he.kotikunta_koodi as kotikunta_koodi
                                                     from varda_historicalvarhaiskasvatussuhde vas
+                                                    join (select id, muutos_pvm from varda_historicalvarhaiskasvatussuhde where history_type='+') luonti on luonti.id = vas.id
                                                     join (select DISTINCT ON (id) id, lapsi_id from varda_historicalvarhaiskasvatuspaatos
                                                           where lower(jarjestamismuoto_koodi) in ('jm01', 'jm02', 'jm03') and
                                                           tilapainen_vaka_kytkin='f' and luonti_pvm >= '2021-01-04' order by id) vap on vap.id = vas.varhaiskasvatuspaatos_id
                                                     join (select DISTINCT ON (id) id, henkilo_id from varda_historicallapsi order by id) la on la.id = vap.lapsi_id
                                                     join (select DISTINCT ON (id) id, henkilotunnus, kotikunta_koodi from varda_henkilo where henkilotunnus <> '' order by id) he on he.id = la.henkilo_id
-                                                    where vas.history_date >= %s and vas.history_type = '-' and (vas.paattymis_pvm is null or vas.paattymis_pvm >= '2021-01-18') order by vas.id""", [poisto_pvm]))
+                                                    where vas.history_date >= %s and vas.history_type = '-' and (vas.paattymis_pvm is null or vas.paattymis_pvm >= '2021-01-18') and
+                                                    vas.muutos_pvm > (luonti.muutos_pvm + interval '10 seconds') order by vas.id""", [poisto_pvm]))
 
 
 def _create_common_kela_filters():

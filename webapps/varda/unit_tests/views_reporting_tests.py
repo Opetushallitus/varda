@@ -698,6 +698,33 @@ class VardaViewsReportingTests(TestCase):
         self.assertEqual(resp_content['count'], existing_korjaustiedot_poistetut_count + len(vakasuhteet))
         self.assertIn(expected_result, resp_content['results'])
 
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_poistetut_instant_delete(self):
+        client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 11
+        client_tester_kela = SetUpTestClient('kela_luovutuspalvelu').client()
+        vakapaatos = Varhaiskasvatuspaatos.objects.get(lahdejarjestelma=1, tunniste='testing-varhaiskasvatuspaatos4')
+
+        resp_kela_api_poistetut = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/', **self.headers)
+        resp_poistetut_content = json.loads(resp_kela_api_poistetut.content)
+        existing_poistetut_count = resp_poistetut_content['count']
+
+        vakasuhde = {
+            'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos.id}/',
+            'toimipaikka': '/api/v1/toimipaikat/5/',
+            'alkamis_pvm': '2021-02-01',
+            'paattymis_pvm': '2022-03-02'
+        }
+
+        resp_vakasuhde_create = client_tester2.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
+        assert_status_code(resp_vakasuhde_create, 201)
+        create_id = json.loads(resp_vakasuhde_create.content)['id']
+
+        resp_vakasuhde_delete = client_tester2.delete(f'/api/v1/varhaiskasvatussuhteet/{create_id}/')
+        assert_status_code(resp_vakasuhde_delete, 204)
+
+        resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/', **self.headers)
+        resp_content = json.loads(resp_kela_api.content)
+        self.assertEqual(resp_content['count'], existing_poistetut_count)
+
     def test_reporting_api_kela_etuusmaksatus_korjaustiedot_poistetut_non_applicable_data(self):
         client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 11
         client_tester5 = SetUpTestClient('tester5').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 2

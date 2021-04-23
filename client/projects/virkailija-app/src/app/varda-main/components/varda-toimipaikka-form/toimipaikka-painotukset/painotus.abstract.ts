@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
 import * as moment from 'moment';
@@ -9,11 +9,13 @@ import { VardaToimipaikkaDTO } from 'projects/virkailija-app/src/app/utilities/m
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { KoodistoEnum } from 'varda-shared';
+import { MatExpansionPanel } from '@angular/material/expansion';
 
 @Component({
   template: '',
 })
 export abstract class PainotusAbstractComponent<T> implements OnChanges {
+  @ViewChild('matPanel') matPanel: MatExpansionPanel;
   @Input() toimipaikka: VardaToimipaikkaDTO;
   @Input() painotus: T;
   @Input() saveAccess: boolean;
@@ -23,7 +25,6 @@ export abstract class PainotusAbstractComponent<T> implements OnChanges {
   @Output() pendingPainotus = new EventEmitter<T>(true);
   i18n = VirkailijaTranslations;
   koodistoEnum = KoodistoEnum;
-  expandPanel: boolean;
   painotusForm: FormGroup;
   isEdit: boolean;
   isSubmitting = new BehaviorSubject<boolean>(false);
@@ -64,10 +65,10 @@ export abstract class PainotusAbstractComponent<T> implements OnChanges {
     }
   }
 
-
-
   init() {
-    this.expandPanel = !this.painotus;
+    if (!this.painotus) {
+      this.togglePanel(true, undefined, true);
+    }
 
     this.initForm();
 
@@ -80,8 +81,16 @@ export abstract class PainotusAbstractComponent<T> implements OnChanges {
     this.initDateFilters();
   }
 
-  togglePanel(open: boolean, refreshList?: boolean) {
-    this.expandPanel = open;
+  togglePanel(open: boolean, refreshList?: boolean, forceState?: boolean) {
+    if (forceState) {
+      setTimeout(() => {
+        if (open) {
+          this.matPanel?.open();
+        } else {
+          this.matPanel?.close();
+        }
+      }, 100);
+    }
 
     if (!open || refreshList) {
       this.disableForm();

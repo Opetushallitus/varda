@@ -1,4 +1,4 @@
-<ng-container *ngIf="varhaiskasvatussuhdeForm">
+<ng-container *ngIf="formGroup">
   <div [id]="'varhaiskasvatussuhde_' + varhaiskasvatussuhde?.id"
        class="tyoskentelypaikka">
     <app-robo-id [tunniste]="varhaiskasvatussuhde?.id"
@@ -6,7 +6,7 @@
                  [alkamis_pvm]="varhaiskasvatussuhde?.alkamis_pvm"
                  [paattymis_pvm]="varhaiskasvatussuhde?.paattymis_pvm"></app-robo-id>
 
-    <mat-expansion-panel [expanded]="expandPanel"
+    <mat-expansion-panel #matPanel
                          (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)">
       <mat-expansion-panel-header>
@@ -30,11 +30,11 @@
         </mat-panel-title>
       </mat-expansion-panel-header>
 
-      <form [formGroup]="varhaiskasvatussuhdeForm"
-            (submit)="saveVarhaiskasvatussuhde(varhaiskasvatussuhdeForm)">
+      <form [formGroup]="formGroup"
+            (submit)="saveVarhaiskasvatussuhde(formGroup)">
         <app-varda-henkilo-form-error-list [errors]="errorList"></app-varda-henkilo-form-error-list>
         <app-varda-form-field name="toimipaikka"
-                              [form]="varhaiskasvatussuhdeForm"
+                              [form]="formGroup"
                               [label]="i18n.varhaiskasvatussuhde_toimipaikka | translate"
                               [errorText]="i18n.varhaiskasvatussuhde_error_toimipaikka | translate"
                               [instructionText]="i18n.varhaiskasvatussuhde_instruction_toimipaikka | translate">
@@ -46,7 +46,7 @@
 
           <ng-template #toimipaikkaSelector>
             <select #fieldItem
-                    *ngIf="!varhaiskasvatussuhdeForm.controls.toimipaikka.disabled"
+                    *ngIf="!formGroup.controls.toimipaikka.disabled"
                     class="oph-input oph-select"
                     formControlName="toimipaikka">
               <option [value]="null"
@@ -59,7 +59,7 @@
           </ng-template>
         </app-varda-form-field>
         <app-varda-form-field name="alkamis_pvm"
-                              [form]="varhaiskasvatussuhdeForm"
+                              [form]="formGroup"
                               [label]="i18n.varhaiskasvatussuhde_alkamis_pvm | translate"
                               [errorText]="i18n.varhaiskasvatussuhde_error_alkamis_pvm | translate"
                               [errorMap]="[
@@ -75,7 +75,7 @@
         </app-varda-form-field>
 
         <app-varda-form-field name="paattymis_pvm"
-                              [form]="varhaiskasvatussuhdeForm"
+                              [form]="formGroup"
                               [label]="i18n.varhaiskasvatussuhde_paattymis_pvm | translate"
                               [errorText]="i18n.varhaiskasvatussuhde_error_paattymis_pvm | translate"
                               [errorMap]="[
@@ -91,7 +91,7 @@
 
         <app-varda-error-field [errors]="varhaiskasvatussuhdeFormErrors"></app-varda-error-field>
 
-        <app-varda-action-row [saveDisabled]="varhaiskasvatussuhdeForm.pristine || (isSubmitting | async)"
+        <app-varda-action-row [saveDisabled]="formGroup.pristine || (isSubmitting | async)"
                               [saveAccess]="lapsitiedotTallentaja"
                               [formExists]="!!varhaiskasvatussuhde"
                               [isEdit]="isEdit"

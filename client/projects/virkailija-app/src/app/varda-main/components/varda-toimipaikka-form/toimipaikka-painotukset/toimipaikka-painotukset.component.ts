@@ -66,20 +66,23 @@ export class ToimipaikkaPainotuksetComponent implements OnChanges {
     });
   }
 
-  closeKielipainotus(refresh?: boolean) {
-    this.addKielipainotusBoolean = false;
+  closeKielipainotus(refresh?: boolean, hideAddKielipainotus?: boolean) {
+    if (hideAddKielipainotus) {
+      this.addKielipainotusBoolean = false;
+    }
+
     if (refresh) {
       this.getKielipainotukset();
     }
   }
 
-  closeToimintapainotus(refresh?: boolean) {
-    this.addToimintapainotusBoolean = false;
+  closeToimintapainotus(refresh?: boolean, hideAddToimintapainotus?: boolean) {
+    if (hideAddToimintapainotus) {
+      this.addToimintapainotusBoolean = false;
+    }
+
     if (refresh) {
       this.getToimintapainotukset();
     }
   }
-
-
 }
-

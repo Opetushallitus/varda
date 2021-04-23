@@ -23,7 +23,7 @@
                        [maxEndDate]="maxEndDate"
                        [saveAccess]="isEdit && saveAccess"
                        [toimipaikka]="toimipaikka"
-                       (refreshList)="closeKielipainotus($event)"></app-kielipainotus>
+                       (refreshList)="closeKielipainotus($event, true)"></app-kielipainotus>
   </mat-accordion>
   <button class="varda-text-button"
           *ngIf="isEdit && !addKielipainotusBoolean && saveAccess"
@@ -59,7 +59,7 @@
                           [maxEndDate]="maxEndDate"
                           [saveAccess]="isEdit && saveAccess"
                           [toimipaikka]="toimipaikka"
-                          (refreshList)="closeToimintapainotus($event)"></app-toimintapainotus>
+                          (refreshList)="closeToimintapainotus($event, true)"></app-toimintapainotus>
   </mat-accordion>
   <button class="varda-text-button"
           *ngIf="isEdit && !addToimintapainotusBoolean && saveAccess"

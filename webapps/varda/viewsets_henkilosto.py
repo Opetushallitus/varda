@@ -13,7 +13,6 @@ from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, ListModelMixin
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
-from rest_framework_guardian.filters import ObjectPermissionsFilter
 
 from varda import filters
 from varda.cache import (cached_retrieve_response, delete_cache_keys_related_model, cached_list_response,
@@ -36,7 +35,8 @@ from varda.permissions import (CustomModelPermissions, delete_object_permissions
                                get_permission_checked_pidempi_poissaolo_tallentaja_queryset_for_user,
                                toimipaikka_tallentaja_pidempipoissaolo_has_perm_to_add,
                                get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus, is_oph_staff,
-                               assign_tyontekija_henkilo_permissions, assign_tyoskentelypaikka_henkilo_permissions)
+                               assign_tyontekija_henkilo_permissions, assign_tyoskentelypaikka_henkilo_permissions,
+                               CustomObjectPermissions)
 from varda.request_logging import request_log_viewset_decorator_factory
 from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, PalvelussuhdeSerializer,
                                           PidempiPoissaoloSerializer,
@@ -72,8 +72,8 @@ class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
         Päivitä yhden työntekijän kaikki kentät.
     """
     serializer_class = TyontekijaSerializer
-    permission_classes = (CustomModelPermissions,)
-    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.TyontekijaFilter
     queryset = Tyontekija.objects.all().order_by('id')
 
@@ -262,8 +262,8 @@ class TilapainenHenkilostoViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
         Päivitä yhden tilapäinen henkilöstö -tietueen kaikki kentät.
     """
     serializer_class = TilapainenHenkilostoSerializer
-    permission_classes = (CustomModelPermissions,)
-    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.TilapainenHenkilostoFilter
     queryset = TilapainenHenkilosto.objects.all().order_by('id')
 
@@ -311,8 +311,8 @@ class TutkintoViewSet(IncreasedModifyThrottleMixin, CreateModelMixin, RetrieveMo
         Nouda yksittäinen tutkinto.
     """
     serializer_class = TutkintoSerializer
-    permission_classes = (CustomModelPermissions,)
-    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend,)
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.TutkintoFilter
     queryset = Tutkinto.objects.all().order_by('id')
 
@@ -432,8 +432,8 @@ class PalvelussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
         Päivitä yhden palvelussuhteen kaikki kentät.
     """
     serializer_class = PalvelussuhdeSerializer
-    permission_classes = (CustomModelPermissions,)
-    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.PalvelussuhdeFilter
     queryset = Palvelussuhde.objects.all().order_by('id')
 
@@ -510,8 +510,8 @@ class TyoskentelypaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
         Päivitä yhden tyoskentelypaikan kaikki kentät.
     """
     serializer_class = None
-    permission_classes = (CustomModelPermissions,)
-    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.TyoskentelypaikkaFilter
     queryset = Tyoskentelypaikka.objects.all().order_by('id')
 
@@ -700,8 +700,8 @@ class TaydennyskoulutusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
         Päivitä yhden taydennyskoulutuksen kaikki kentät.
     """
     serializer_class = None
-    permission_classes = (CustomModelPermissions,)
-    filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend, )
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
+    filter_backends = (DjangoFilterBackend, )
     filterset_class = filters.TaydennyskoulutusFilter
     queryset = Taydennyskoulutus.objects.all().order_by('id')
 

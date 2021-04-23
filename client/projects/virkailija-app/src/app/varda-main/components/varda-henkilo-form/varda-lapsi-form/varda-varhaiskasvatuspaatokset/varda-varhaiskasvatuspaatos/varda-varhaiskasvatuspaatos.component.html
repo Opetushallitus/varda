@@ -1,5 +1,5 @@
 <div [id]="'varhaiskasvatuspaatos-'+ varhaiskasvatuspaatos?.id">
-  <ng-container *ngIf="varhaiskasvatuspaatosForm">
+  <ng-container *ngIf="formGroup">
     <div [id]="'varhaiskasvatuspaatos_'+ varhaiskasvatuspaatos?.id"
          class="palvelussuhde">
       <app-robo-id [tunniste]="varhaiskasvatuspaatos?.id"
@@ -14,7 +14,7 @@
                            [class.before-icon]="true"
                            (opened)="togglePanel(true)"
                            (closed)="togglePanel(false)"
-                           [expanded]="expandPanel">
+                           #matPanel>
         <mat-expansion-panel-header>
           <mat-panel-title *ngIf="varhaiskasvatuspaatos; else addVarhaiskasvatussuhde">
             <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
@@ -39,12 +39,12 @@
             </mat-panel-title>
           </ng-template>
         </mat-expansion-panel-header>
-        <form [formGroup]="varhaiskasvatuspaatosForm"
+        <form [formGroup]="formGroup"
               autocomplete="off"
-              (submit)="saveVarhaiskasvatuspaatos(varhaiskasvatuspaatosForm)">
+              (submit)="saveVarhaiskasvatuspaatos(formGroup)">
           <app-varda-henkilo-form-error-list [errors]="errorList"></app-varda-henkilo-form-error-list>
           <app-varda-form-field name="hakemus_pvm"
-                                [form]="varhaiskasvatuspaatosForm"
+                                [form]="formGroup"
                                 [label]="i18n.varhaiskasvatuspaatos_hakemus_pvm | translate"
                                 [errorText]="i18n.varhaiskasvatuspaatos_error_hakemus_pvm | translate"
                                 [instructionText]="i18n.varhaiskasvatuspaatos_instruction_hakemus_pvm | translate">
@@ -54,7 +54,7 @@
           </app-varda-form-field>
 
           <app-varda-form-field name="alkamis_pvm"
-                                [form]="varhaiskasvatuspaatosForm"
+                                [form]="formGroup"
                                 [label]="i18n.varhaiskasvatuspaatos_alkamis_pvm | translate"
                                 [errorText]="i18n.varhaiskasvatuspaatos_error_alkamis_pvm | translate"
                                 [instructionText]="i18n.varhaiskasvatuspaatos_instruction_alkamis_pvm | translate">
@@ -66,7 +66,7 @@
           </app-varda-form-field>
 
           <app-varda-form-field name="paattymis_pvm"
-                                [form]="varhaiskasvatuspaatosForm"
+                                [form]="formGroup"
                                 [label]="i18n.varhaiskasvatuspaatos_paattymis_pvm | translate"
                                 [errorMap]="[
                               { key: 'matDatepickerMin', value: i18n.varhaiskasvatuspaatos_error_min_paattymis_pvm },
@@ -79,18 +79,18 @@
           </app-varda-form-field>
 
           <app-varda-form-field name="jarjestamismuoto_koodi"
-                                [form]="varhaiskasvatuspaatosForm"
+                                [form]="formGroup"
                                 [label]="i18n.varhaiskasvatuspaatos_jarjestamismuoto_koodi | translate"
                                 [errorText]="i18n.varhaiskasvatuspaatos_error_jarjestamismuoto_koodi | translate"
                                 [instructionText]="i18n.varhaiskasvatuspaatos_instruction_jarjestamismuoto_koodi | translate">
-            <ng-container *ngIf="varhaiskasvatuspaatosForm.controls.jarjestamismuoto_koodi.disabled; else showTrigger">
+            <ng-container *ngIf="formGroup.controls.jarjestamismuoto_koodi.disabled; else showTrigger">
               <div [libKoodistoValue]="koodistoEnum.jarjestamismuoto"
                    format="long"
-                   class="ml-2 my-2">{{ varhaiskasvatuspaatosForm.controls.jarjestamismuoto_koodi?.value }}</div>
+                   class="ml-2 my-2">{{ formGroup.controls.jarjestamismuoto_koodi?.value }}</div>
             </ng-container>
             <ng-template #showTrigger>
               <select #fieldItem
-                      (ngModelChange)="changeJarjestajismuoto($event)"
+                      (ngModelChange)="changeJarjestamismuoto($event)"
                       class="oph-input oph-select"
                       formControlName="jarjestamismuoto_koodi">
                 <option [value]="null"
@@ -107,7 +107,7 @@
 
           <app-varda-form-field name="tilapainen_vaka_kytkin"
                                 *ngIf="tilapainenVarhaiskasvatusBoolean"
-                                [form]="varhaiskasvatuspaatosForm"
+                                [form]="formGroup"
                                 [label]="i18n.varhaiskasvatuspaatos_tilapainen_vaka_kytkin | translate"
                                 [errorText]="i18n.varhaiskasvatuspaatos_error_tilapainen_vaka_kytkin | translate"
                                 [instructionText]="i18n.varhaiskasvatuspaatos_instruction_tilapainen_vaka_kytkin | translate">
@@ -119,7 +119,7 @@
           </app-varda-form-field>
 
           <app-varda-form-field name="tuntimaara_viikossa"
-                                [form]="varhaiskasvatuspaatosForm"
+                                [form]="formGroup"
                                 [label]="i18n.varhaiskasvatuspaatos_tuntimaara_viikossa | translate"
                                 [errorText]="i18n.varhaiskasvatuspaatos_error_tuntimaara_viikossa | translate"
                                 [instructionText]="i18n.varhaiskasvatuspaatos_instruction_tuntimaara_viikossa | translate">
@@ -133,7 +133,7 @@
           </app-varda-form-field>
 
           <app-varda-form-field name="vuorohoito_kytkin"
-                                [form]="varhaiskasvatuspaatosForm"
+                                [form]="formGroup"
                                 [label]="i18n.varhaiskasvatuspaatos_vuorohoito_kytkin | translate"
                                 [errorText]="i18n.varhaiskasvatuspaatos_error_vuorohoito_kytkin | translate"
                                 [instructionText]="i18n.varhaiskasvatuspaatos_instruction_vuorohoito_kytkin | translate">
@@ -144,9 +144,9 @@
               <mat-radio-button [value]="false">{{ i18n.no | translate }}</mat-radio-button>
             </mat-radio-group>
           </app-varda-form-field>
-          <ng-container *ngIf="!varhaiskasvatuspaatosForm.get('vuorohoito_kytkin').value">
+          <ng-container *ngIf="!formGroup.get('vuorohoito_kytkin').value">
             <app-varda-form-field name="paivittainen_vaka_kytkin"
-                                  [form]="varhaiskasvatuspaatosForm"
+                                  [form]="formGroup"
                                   [label]="i18n.varhaiskasvatuspaatos_paivittainen_vaka_kytkin | translate"
                                   [errorText]="i18n.varhaiskasvatuspaatos_error_paivittainen_vaka_kytkin | translate"
                                   [instructionText]="i18n.varhaiskasvatuspaatos_instruction_paivittainen_vaka_kytkin | translate">
@@ -158,7 +158,7 @@
             </app-varda-form-field>
 
             <app-varda-form-field name="kokopaivainen_vaka_kytkin"
-                                  [form]="varhaiskasvatuspaatosForm"
+                                  [form]="formGroup"
                                   [label]="i18n.varhaiskasvatuspaatos_kokopaivainen_vaka_kytkin | translate"
                                   [errorText]="i18n.varhaiskasvatuspaatos_error_kokopaivainen_vaka_kytkin | translate"
                                   [instructionText]="i18n.varhaiskasvatuspaatos_instruction_kokopaivainen_vaka_kytkin | translate">
@@ -171,7 +171,7 @@
           </ng-container>
           <app-varda-error-field [errors]="varhaiskasvatuspaatosFormErrors"></app-varda-error-field>
 
-          <app-varda-action-row [saveDisabled]="varhaiskasvatuspaatosForm.pristine || (isSubmitting | async)"
+          <app-varda-action-row [saveDisabled]="formGroup.pristine || (isSubmitting | async)"
                                 [saveAccess]="lapsitiedotTallentaja"
                                 [formExists]="!!varhaiskasvatuspaatos"
                                 [isEdit]="isEdit"
@@ -204,14 +204,14 @@
                                           [varhaiskasvatuspaatos]="varhaiskasvatuspaatos"
                                           [lapsitiedotTallentaja]="lapsitiedotTallentaja"
                                           [varhaiskasvatussuhde]="varhaiskasvatussuhde"
-                                          (closeVarhaiskasvatussuhde)="closeVarhaiskasvatussuhde($event)">
+                                          (closeEmitter)="closeVarhaiskasvatussuhde($event)">
           </app-varda-varhaiskasvatussuhde>
           <app-varda-varhaiskasvatussuhde *ngIf="addVarhaiskasvatussuhdeBoolean"
                                           [henkilonToimipaikka]="henkilonToimipaikka"
                                           [varhaiskasvatuspaatos]="varhaiskasvatuspaatos"
                                           [lapsitiedotTallentaja]="lapsitiedotTallentaja"
                                           [lapsi]="lapsi"
-                                          (closeVarhaiskasvatussuhde)="closeVarhaiskasvatussuhde($event)">
+                                          (closeEmitter)="closeVarhaiskasvatussuhde($event, true)">
           </app-varda-varhaiskasvatussuhde>
         </mat-accordion>
 

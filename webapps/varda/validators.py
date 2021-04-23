@@ -5,7 +5,7 @@ import decimal
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
-from django.db.models import Q
+from django.db.models import Q, CharField
 from django.forms.models import model_to_dict
 from django.utils.deconstruct import deconstructible
 from rest_framework.exceptions import ValidationError as ValidationErrorRest
@@ -483,3 +483,33 @@ def fill_missing_fields_for_validations(data, instance):
     for field in instance_dictionary:
         if field not in data and field not in excluded_fields:
             data[field] = getattr(instance, field)
+
+
+def validate_instance_uniqueness(model, data, error, instance_id=None, ignore_fields=()):
+    """
+    Function that validates that the data is unique withing the provided model.
+    :param model: Model class
+    :param data: dict of data
+    :param error: error message
+    :param instance_id: existing instance ID
+    :param ignore_fields: Model specific fields that are excluded in validation
+    """
+    ignore_fields_list = (('id', 'lahdejarjestelma', 'tunniste', 'luonti_pvm', 'muutos_pvm', 'changed_by',) +
+                          ignore_fields)
+    qs_filter = Q()
+    for model_field in model._meta.get_fields():
+        if model_field.name not in ignore_fields_list and model_field.many_to_one is not False:
+            # Only include fields which are not in ignore_fields_list and are not related fields from other models
+            # (e.g. Varhaiskasvatuspaatos has varhaiskasvatussuhteet-field, we do not want to include it in validation)
+            if isinstance(model_field, CharField):
+                # Use iexact lookup in string comparisons
+                lookup_expr = '__iexact'
+            else:
+                lookup_expr = ''
+            qs_filter &= Q(**{f'{model_field.name}{lookup_expr}': data.get(model_field.name, None)})
+
+    if instance_id:
+        qs_filter &= ~Q(id=instance_id)
+
+    if model.objects.filter(qs_filter).exists():
+        raise ValidationErrorRest({'errors': [error]})

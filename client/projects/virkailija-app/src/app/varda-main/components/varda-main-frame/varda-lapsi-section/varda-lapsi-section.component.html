@@ -24,12 +24,14 @@
              type="text"
              [disabled]="isLoading | async"
              (change)="searchHenkilot()"
-             [(ngModel)]="searchFilter.search" />
+             [(ngModel)]="searchFilter.search"
+             id="searchLapsiInput" />
       <button mat-button
               [title]="i18n.henkilo_hae_nimella | translate"
               [disabled]="isLoading | async"
               (click)="searchHenkilot()"
-              matSuffix>
+              matSuffix
+              id="searchLapsiButton">
         <mat-icon alt="">search</mat-icon>
       </button>
     </mat-form-field>
@@ -37,7 +39,8 @@
     <div class="checkbox-filter varda-theme">
       <mat-checkbox [value]="!searchFilter.voimassa_pvm"
                     (change)="toggleAktiiviset()"
-                    [disabled]="isLoading | async">
+                    [disabled]="isLoading | async"
+                    id="allLapsiCheckbox">
         {{ i18n.henkilo_lapset_voimassa_kytkin | translate }}
       </mat-checkbox>
     </div>

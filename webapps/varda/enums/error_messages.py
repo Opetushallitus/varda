@@ -129,6 +129,7 @@ class ErrorMessages(enum.Enum):
     VP012 = get_error_dict('VP012', 'Lapsi must have at least one Varhaiskasvatuspaatos.')
     VP013 = get_error_dict('VP013', 'Varhaiskasvatuspaatos must have paattymis_pvm because Lapsi is over 8 years old.')
     VP014 = get_error_dict('VP014', 'tilapainen_vaka_kytkin is required for kunnallinen Lapsi.')
+    VP015 = get_error_dict('VP015', 'Identical Varhaiskasvatuspaatos already exists.')
 
     # Varhaiskasvatussuhde errors, prefix: VS
     VS001 = get_error_dict('VS001', 'This Lapsi is already under another Vakajarjestaja. Please create a new one.')

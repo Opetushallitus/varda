@@ -7,43 +7,43 @@
   <mat-card-content>
     <div class="table-responsive">
       <table class="mat-table">
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaId">
           <th scope="row" class="mat-header-cell">{{i18n.id | translate}}</th>
           <td class="mat-cell">{{toimipaikkaKooste.id}}</td>
         </tr>
-        <tr class="mat-row">
-          <th scope="row" class="mat-header-cell">{{i18n.organisaatio_oid | translate}}</th>
+        <tr class="mat-row" id="toimipaikkaOrganisaatioOid">
+          <th scope="row" class="mat-header-cell">{{i18n.toimipaikka_oid | translate}}</th>
           <td class="mat-cell">{{toimipaikkaKooste.organisaatio_oid}}</td>
         </tr>
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaNimi">
           <th scope="row" class="mat-header-cell">{{i18n.nimi | translate}}</th>
           <td class="mat-cell">{{toimipaikkaKooste.nimi}}</td>
         </tr>
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaKayntiosoite">
           <th scope="row" class="mat-header-cell">{{i18n.organisaatio_kayntiosoite | translate}}</th>
           <td class="mat-cell">{{toimipaikkaKooste.kayntiosoite}}</td>
         </tr>
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaKayntiosoitePostinumero">
           <th scope="row" class="mat-header-cell">{{i18n.organisaatio_kayntiosoite_postinumero | translate}}</th>
           <td class="mat-cell">{{toimipaikkaKooste.kayntiosoite_postinumero}}</td>
         </tr>
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaKayntiosoitePostitoimipaikka">
           <th scope="row" class="mat-header-cell">{{i18n.organisaatio_kayntiosoite_postitoimipaikka | translate}}</th>
           <td class="mat-cell">{{toimipaikkaKooste.kayntiosoite_postitoimipaikka}}</td>
         </tr>
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaPostiosoite">
           <th scope="row" class="mat-header-cell">{{i18n.organisaatio_postiosoite | translate}}</th>
           <td class="mat-cell">{{toimipaikkaKooste.postiosoite}}</td>
         </tr>
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaPostinumero">
           <th scope="row" class="mat-header-cell">{{i18n.organisaatio_postinumero | translate}}</th>
           <td class="mat-cell">{{toimipaikkaKooste.postinumero}}</td>
         </tr>
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaPostitoimipaikka">
           <th scope="row" class="mat-header-cell">{{i18n.organisaatio_postitoimipaikka | translate}}</th>
           <td class="mat-cell">{{toimipaikkaKooste.postitoimipaikka}}</td>
         </tr>
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaKunta">
           <th scope="row" class="mat-header-cell">{{i18n.organisaatio_kuntakoodi | translate}}</th>
           <td class="mat-cell"
               [libKoodistoValue]="koodistoEnum.kunta"
@@ -51,15 +51,15 @@
               format="long">
           </td>
         </tr>
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaPuhelinnumero">
           <th scope="row" class="mat-header-cell">{{i18n.yhteystiedot_puhelinnumero | translate}}</th>
           <td class="mat-cell">{{toimipaikkaKooste.puhelinnumero}}</td>
         </tr>
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaSahkopostiosoite">
           <th scope="row" class="mat-header-cell">{{i18n.yhteystiedot_sahkopostiosoite | translate}}</th>
           <td class="mat-cell">{{toimipaikkaKooste.sahkopostiosoite}}</td>
         </tr>
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaKasvatusopillinenJarjestelma">
           <th scope="row" class="mat-header-cell">{{i18n.toimipaikka_kasvatusopillinen_jarjestelma | translate}}</th>
           <td class="mat-cell"
               [libKoodistoValue]="koodistoEnum.kasvatusopillinenjarjestelma"
@@ -67,11 +67,11 @@
               format="long">
           </td>
         </tr>
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaVarhaiskasvatuspaikat">
           <th scope="row" class="mat-header-cell">{{i18n.toimipaikka_varhaiskasvatuspaikat | translate}}</th>
           <td class="mat-cell">{{toimipaikkaKooste.varhaiskasvatuspaikat}}</td>
         </tr>
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaToimintamuoto">
           <th scope="row" class="mat-header-cell">{{i18n.toimipaikka_toimintamuoto | translate}}</th>
           <td class="mat-cell"
               [libKoodistoValue]="koodistoEnum.toimintamuoto"
@@ -79,7 +79,7 @@
               format="long">
           </td>
         </tr>
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaAsiointikieli">
           <th scope="row" class="mat-header-cell">{{i18n.toimipaikka_asiointikieli | translate}}</th>
           <td class="mat-cell">
             <ng-container *ngFor="let asiointikieli of toimipaikkaKooste.asiointikieli_koodi;
@@ -91,7 +91,7 @@
             </ng-container>
           </td>
         </tr>
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaJarjestamismuoto">
           <th scope="row" class="mat-header-cell">{{i18n.toimipaikka_jarjestamismuoto | translate}}</th>
           <td class="mat-cell">
             <ng-container *ngFor="let jarjestamismuoto of toimipaikkaKooste.jarjestamismuoto_koodi;
@@ -103,19 +103,19 @@
             </ng-container>
           </td>
         </tr>
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaKielipainotus">
           <th scope="row" class="mat-header-cell">{{i18n.toimipaikka_kielipainotus | translate}}</th>
           <td class="mat-cell">{{getBooleanLabel(toimipaikkaKooste.kielipainotus_kytkin) | translate}}</td>
         </tr>
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaToiminnallinenPainotus">
           <th scope="row" class="mat-header-cell">{{i18n.toimipaikka_toiminnallinen_painotus | translate}}</th>
           <td class="mat-cell">{{getBooleanLabel(toimipaikkaKooste.toiminnallinenpainotus_kytkin) | translate}}</td>
         </tr>
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaAlkamisPvm">
           <th scope="row" class="mat-header-cell">{{i18n.alkamis_pvm | translate}}</th>
           <td class="mat-cell">{{getDateDisplayValue(toimipaikkaKooste.alkamis_pvm)}}</td>
         </tr>
-        <tr class="mat-row">
+        <tr class="mat-row" id="toimipaikkaPaattymisPvm">
           <th scope="row" class="mat-header-cell">{{i18n.paattymis_pvm | translate}}</th>
           <td class="mat-cell">{{getDateDisplayValue(toimipaikkaKooste.paattymis_pvm)}}</td>
         </tr>
@@ -126,18 +126,18 @@
       <div class="table-responsive"
            *ngFor="let kielipainotus of toimipaikkaKooste.kielipainotukset"
            [class.margin-top]="toimipaikkaKooste.kielipainotukset.indexOf(kielipainotus) !== 0">
-        <table class="mat-table">
-          <tr class="mat-row">
+        <table class="mat-table" [id]="'toimipaikkaKielipainotus-' + kielipainotus.id">
+          <tr class="mat-row" [id]="'toimipaikkaKielipainotusKoodi-' + kielipainotus.id">
             <th scope="row" class="mat-header-cell">{{i18n.toimipaikka_kielipainotus | translate }}</th>
             <td class="mat-cell" [libKoodistoValue]="koodistoEnum.kieli" format="long">
               {{kielipainotus.kielipainotus_koodi}}
             </td>
           </tr>
-          <tr class="mat-row">
+          <tr class="mat-row" [id]="'toimipaikkaKielipainotusAlkamisPvm-' + kielipainotus.id">
             <th scope="row" class="mat-header-cell">{{i18n.alkamis_pvm | translate }}</th>
             <td class="mat-cell">{{getDateDisplayValue(kielipainotus.alkamis_pvm)}}</td>
           </tr>
-          <tr class="mat-row">
+          <tr class="mat-row" [id]="'toimipaikkaKielipainotusPaattymisPvm-' + kielipainotus.id">
             <th scope="row" class="mat-header-cell">{{i18n.paattymis_pvm | translate }}</th>
             <td class="mat-cell">{{getDateDisplayValue(kielipainotus.paattymis_pvm)}}</td>
           </tr>
@@ -150,18 +150,18 @@
       <div class="table-responsive"
            *ngFor="let toimintapainotus of toimipaikkaKooste.toiminnalliset_painotukset"
            [class.margin-top]="toimipaikkaKooste.toiminnalliset_painotukset.indexOf(toimintapainotus) !== 0">
-        <table class="mat-table">
-          <tr class="mat-row">
+        <table class="mat-table" [id]="'toimipaikkaToiminnallinenPainotus-' + toimintapainotus.id">
+          <tr class="mat-row" [id]="'toimipaikkaToiminnallinenPainotusKoodi-' + toimintapainotus.id">
             <th scope="row" class="mat-header-cell">{{i18n.toimipaikka_toiminnallinen_painotus | translate }}</th>
             <td class="mat-cell" [libKoodistoValue]="koodistoEnum.toiminnallinenpainotus" format="long">
               {{toimintapainotus.toimintapainotus_koodi}}
             </td>
           </tr>
-          <tr class="mat-row">
+          <tr class="mat-row" [id]="'toimipaikkaToiminnallinenPainotusAlkamisPvm-' + toimintapainotus.id">
             <th scope="row" class="mat-header-cell">{{i18n.alkamis_pvm | translate }}</th>
             <td class="mat-cell">{{getDateDisplayValue(toimintapainotus.alkamis_pvm)}}</td>
           </tr>
-          <tr class="mat-row">
+          <tr class="mat-row" [id]="'toimipaikkaToiminnallinenPainotusPaattymisPvm-' + toimintapainotus.id">
             <th scope="row" class="mat-header-cell">{{i18n.paattymis_pvm | translate }}</th>
             <td class="mat-cell">{{getDateDisplayValue(toimintapainotus.paattymis_pvm)}}</td>
           </tr>

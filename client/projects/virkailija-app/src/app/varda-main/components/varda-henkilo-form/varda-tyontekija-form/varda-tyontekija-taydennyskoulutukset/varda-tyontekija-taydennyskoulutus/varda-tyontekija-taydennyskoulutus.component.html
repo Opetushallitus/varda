@@ -1,11 +1,11 @@
-<ng-container *ngIf="taydennyskoulutusForm">
+<ng-container *ngIf="formGroup">
   <div [id]="'taydennyskoulutus_'+ taydennyskoulutus?.id"
        class="taydennyskoulutus">
     <app-robo-id [tunniste]="taydennyskoulutus?.id"
                  nimi="taydennyskoulutus"
                  [alkamis_pvm]="taydennyskoulutus?.suoritus_pvm"></app-robo-id>
 
-    <mat-expansion-panel [expanded]="expandPanel"
+    <mat-expansion-panel #matPanel
                          (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)">
       <mat-expansion-panel-header>
@@ -24,11 +24,11 @@
           </span>
         </mat-panel-title>
       </mat-expansion-panel-header>
-      <form [formGroup]="taydennyskoulutusForm"
-            (submit)="saveTaydennyskoulutus(taydennyskoulutusForm)">
+      <form [formGroup]="formGroup"
+            (submit)="saveTaydennyskoulutus(formGroup)">
 
         <app-varda-form-field name="nimi"
-                              [form]="taydennyskoulutusForm"
+                              [form]="formGroup"
                               [label]="i18n.taydennyskoulutus_nimi | translate"
                               [errorText]="i18n.taydennyskoulutus_error_nimi | translate"
                               [instructionText]="i18n.taydennyskoulutus_instruction_nimi | translate">
@@ -40,7 +40,7 @@
         </app-varda-form-field>
 
         <app-varda-form-field name="suoritus_pvm"
-                              [form]="taydennyskoulutusForm"
+                              [form]="formGroup"
                               [label]="i18n.taydennyskoulutus_suoritus_pvm | translate"
                               [errorText]="i18n.taydennyskoulutus_error_suoritus_pvm | translate"
                               [errorMap]="[
@@ -54,7 +54,7 @@
         </app-varda-form-field>
 
         <app-varda-form-field name="koulutuspaivia"
-                              [form]="taydennyskoulutusForm"
+                              [form]="formGroup"
                               [label]="i18n.taydennyskoulutus_koulutuspaivia | translate"
                               [errorText]="i18n.taydennyskoulutus_error_koulutuspaivia | translate"
                               [instructionText]="i18n.taydennyskoulutus_instruction_koulutuspaivia | translate">
@@ -69,7 +69,7 @@
         </app-varda-form-field>
 
         <app-varda-form-field name="tehtavanimike_koodit"
-                              [form]="taydennyskoulutusForm"
+                              [form]="formGroup"
                               [label]="i18n.taydennyskoulutus_tehtavanimike | translate"
                               [errorText]="i18n.taydennyskoulutus_error_tehtavanimike | translate"
                               [instructionText]="i18n.taydennyskoulutus_instruction_tehtavanimike | translate">
@@ -102,7 +102,7 @@
 
         <app-varda-error-field [errors]="taydennyskoulutusFormErrors"></app-varda-error-field>
 
-        <app-varda-action-row [saveDisabled]="taydennyskoulutusForm.pristine || (isSubmitting | async)"
+        <app-varda-action-row [saveDisabled]="formGroup.pristine || (isSubmitting | async)"
                               [saveAccess]="toimipaikkaAccess?.taydennyskoulutustiedot.tallentaja"
                               [formExists]="!!taydennyskoulutus"
                               [isEdit]="isEdit"

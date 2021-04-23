@@ -12,6 +12,7 @@ import { Observable } from 'rxjs';
 import { KoodistoDTO, KoodistoEnum, VardaKoodistoService } from 'varda-shared';
 import { AbstractTiedonsiirrotSectionsComponent, TiedonsiirrotColumnFields, TiedonsiirrotSearchFilter } from '../tiedonsiirrot-sections.abstract';
 import { TiedonsiirtoDialogComponent, TiedonsiirtoDialogData } from '../tiedonsiirto-dialog/tiedonsiirto-dialog.component';
+import * as moment from 'moment';
 
 
 @Component({
@@ -40,7 +41,9 @@ export class VardaTiedonsiirtoComponent extends AbstractTiedonsiirrotSectionsCom
   ];
 
   searchFilter: TiedonsiirrotSearchFilter = {
-    ...this.searchFilter
+    ...this.searchFilter,
+    timestamp_after: moment(),
+    timestamp_before: moment(),
   };
 
   constructor(

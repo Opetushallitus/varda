@@ -308,6 +308,8 @@ def fetch_huoltajat():
     Fetch missing huoltajat.
     """
     lapset_without_huoltajuussuhteet = Henkilo.objects.filter(lapsi__huoltajuussuhteet__isnull=True).exclude(lapsi=None)
+    no_of_lapset_without_huoltajuussuhteet = lapset_without_huoltajuussuhteet.count()
+    logger.info(f'Number of lapset without huoltajuussuhteet: {no_of_lapset_without_huoltajuussuhteet}.')
     for henkilo_obj in lapset_without_huoltajuussuhteet:
         if henkilo_obj.henkilo_oid != "":
             try:

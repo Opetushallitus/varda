@@ -50,7 +50,7 @@ export class KielipainotusComponent extends PainotusAbstractComponent<Kielipaino
   deletePainotus() {
     this.vakajarjestajaApiService.deleteKielipainotus(this.painotus.id).subscribe({
       next: deleted => {
-        this.togglePanel(false, true);
+        this.togglePanel(false, true, true);
         this.snackBarService.warning(this.i18n.painotukset_kielipainotus_delete_success);
       },
       error: err => this.errorService.handleError(err, this.snackBarService)
@@ -80,7 +80,7 @@ export class KielipainotusComponent extends PainotusAbstractComponent<Kielipaino
 
       updatePainotus.subscribe({
         next: kielipainotusData => {
-          this.togglePanel(false, true);
+          this.togglePanel(false, true, true);
           this.snackBarService.success(this.i18n.painotukset_kielipainotus_save_success);
         },
         error: err => {

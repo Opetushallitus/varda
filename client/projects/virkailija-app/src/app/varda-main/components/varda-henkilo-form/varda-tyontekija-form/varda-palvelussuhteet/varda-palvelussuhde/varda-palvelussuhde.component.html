@@ -1,5 +1,5 @@
 <div [id]="'palvelussuhde-'+ palvelussuhde?.id">
-  <ng-container *ngIf="palvelussuhdeForm">
+  <ng-container *ngIf="formGroup">
     <div [id]="'palvelussuhde_'+ palvelussuhde?.id"
          class="palvelussuhde">
       <app-robo-id [tunniste]="palvelussuhde?.id"
@@ -14,7 +14,7 @@
                            [class.before-icon]="true"
                            (opened)="togglePanel(true)"
                            (closed)="togglePanel(false)"
-                           [expanded]="expandPanel">
+                           #matPanel>
         <mat-expansion-panel-header>
           <mat-panel-title *ngIf="palvelussuhde; else addPalvelussuhde">
             <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
@@ -37,11 +37,11 @@
             </mat-panel-title>
           </ng-template>
         </mat-expansion-panel-header>
-        <form [formGroup]="palvelussuhdeForm"
-              (submit)="savePalvelussuhde(palvelussuhdeForm)">
+        <form [formGroup]="formGroup"
+              (submit)="savePalvelussuhde(formGroup)">
           <app-varda-henkilo-form-error-list [errors]="errorList"></app-varda-henkilo-form-error-list>
           <app-varda-form-field name="tyosuhde_koodi"
-                                [form]="palvelussuhdeForm"
+                                [form]="formGroup"
                                 [label]="i18n.palvelussuhde_palvelussuhteen_tyyppi | translate"
                                 [errorText]="i18n.palvelussuhde_error_palvelussuhteen_tyyppi | translate"
                                 [instructionText]="i18n.palvelussuhde_instruction_palvelussuhteen_tyyppi | translate">
@@ -55,7 +55,7 @@
           </app-varda-form-field>
 
           <app-varda-form-field name="alkamis_pvm"
-                                [form]="palvelussuhdeForm"
+                                [form]="formGroup"
                                 [label]="i18n.palvelussuhde_alkamis_pvm | translate"
                                 [errorText]="i18n.palvelussuhde_error_alkamis_pvm | translate"
                                 [instructionText]="i18n.palvelussuhde_instruction_alkamis_pvm | translate">
@@ -65,7 +65,7 @@
           </app-varda-form-field>
 
           <app-varda-form-field name="paattymis_pvm"
-                                [form]="palvelussuhdeForm"
+                                [form]="formGroup"
                                 [label]="i18n.palvelussuhde_paattymis_pvm | translate"
                                 [errorText]="i18n.palvelussuhde_error_paattymis_pvm | translate"
                                 [instructionText]="i18n.palvelussuhde_instruction_paattymis_pvm | translate">
@@ -75,7 +75,7 @@
           </app-varda-form-field>
 
           <app-varda-form-field name="tyoaika_koodi"
-                                [form]="palvelussuhdeForm"
+                                [form]="formGroup"
                                 [label]="i18n.palvelussuhde_tyoajan_tyyppi | translate"
                                 [errorText]="i18n.palvelussuhde_error_tyoajan_tyyppi | translate"
                                 [instructionText]="i18n.palvelussuhde_instruction_tyoajan_tyyppi | translate">
@@ -89,7 +89,7 @@
           </app-varda-form-field>
 
           <app-varda-form-field name="tyoaika_viikossa"
-                                [form]="palvelussuhdeForm"
+                                [form]="formGroup"
                                 [label]="i18n.palvelussuhde_tyoaika_viikossa | translate"
                                 [errorText]="i18n.palvelussuhde_error_tyoaika_viikossa | translate"
                                 [instructionText]="i18n.palvelussuhde_instruction_tyoaika_viikossa | translate">
@@ -103,7 +103,7 @@
           </app-varda-form-field>
 
           <app-varda-form-field name="tutkinto_koodi"
-                                [form]="palvelussuhdeForm"
+                                [form]="formGroup"
                                 [label]="i18n.palvelussuhde_tutkinto | translate"
                                 [errorText]="i18n.palvelussuhde_error_tutkinto | translate"
                                 [instructionText]="i18n.palvelussuhde_instruction_tutkinto | translate">
@@ -121,7 +121,7 @@
 
           <app-varda-error-field [errors]="palvelussuhdeFormErrors"></app-varda-error-field>
 
-          <app-varda-action-row [saveDisabled]="palvelussuhdeForm.pristine || (isSubmitting | async)"
+          <app-varda-action-row [saveDisabled]="formGroup.pristine || (isSubmitting | async)"
                                 [saveAccess]="toimipaikkaAccess?.tyontekijatiedot.tallentaja"
                                 [formExists]="!!palvelussuhde"
                                 [isEdit]="isEdit"
@@ -155,13 +155,13 @@
                                        [toimipaikkaAccess]="toimipaikkaAccess"
                                        [henkilonToimipaikka]="henkilonToimipaikka"
                                        [tyoskentelypaikka]="tyoskentelypaikka"
-                                       (closeTyoskentelypaikka)="closeTyoskentelypaikka($event)">
+                                       (closeEmitter)="closeTyoskentelypaikka($event)">
           </app-varda-tyoskentelypaikka>
           <app-varda-tyoskentelypaikka *ngIf="addTyoskentelypaikkaBoolean"
                                        [palvelussuhde]="palvelussuhde"
                                        [toimipaikkaAccess]="toimipaikkaAccess"
                                        [henkilonToimipaikka]="henkilonToimipaikka"
-                                       (closeTyoskentelypaikka)="closeTyoskentelypaikka($event)">
+                                       (closeEmitter)="closeTyoskentelypaikka($event, true)">
           </app-varda-tyoskentelypaikka>
         </mat-accordion>
 
@@ -190,12 +190,12 @@
                                [palvelussuhde]="palvelussuhde"
                                [toimipaikkaAccess]="toimipaikkaAccess"
                                [poissaolo]="poissaolo"
-                               (closePoissaolo)="closePoissaolo($event)"></app-varda-poissaolo>
+                               (closeEmitter)="closePoissaolo($event)"></app-varda-poissaolo>
           <app-varda-poissaolo *ngIf="addPoissaoloBoolean"
                                [henkilonToimipaikka]="henkilonToimipaikka"
                                [palvelussuhde]="palvelussuhde"
                                [toimipaikkaAccess]="toimipaikkaAccess"
-                               (closePoissaolo)="closePoissaolo($event)">
+                               (closeEmitter)="closePoissaolo($event, true)">
           </app-varda-poissaolo>
         </mat-accordion>
 

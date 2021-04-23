@@ -82,8 +82,11 @@ export class VardaTyontekijaTaydennyskoulutuksetComponent implements OnInit, OnC
     setTimeout(() => this.taydennyskoulutusElements.last.element.nativeElement.scrollIntoView({ behavior: 'smooth' }), 100);
   }
 
-  closeAddTaydennyskoulutus(refreshSuhteet?: boolean) {
-    this.addTaydennyskoulutus = false;
+  closeAddTaydennyskoulutus(refreshSuhteet?: boolean, hideAddTaydennyskoulutus?: boolean) {
+    if (hideAddTaydennyskoulutus) {
+      this.addTaydennyskoulutus = false;
+    }
+
     if (refreshSuhteet) {
       this.getTaydennyskoulutukset();
     }

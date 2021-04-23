@@ -2012,24 +2012,18 @@ def create_lapset():
     for vakasuhde in vakasuhde_list:
         assign_vakasuhde_henkilo_permissions(vakasuhde)
 
-    # vakasuhde 3 used in kela testing
-    vakasuhde_3.luonti_pvm = '2021-01-04 00:00:00.00000+02'
-    vakasuhde_3.muutos_pvm = '2021-01-04 00:00:00.00000+02'
-    vakasuhde_3.save()
+    kela_testing_vakasuhteet = (vakasuhde_3, vakasuhde_4, vakasuhde_130B, )
 
-    # vakasuhde_130B used in kela testing so history needs earlier dates as well
-    historical_vakasuhde_130B = Varhaiskasvatussuhde.history.get(id=vakasuhde_130B.id, history_type='+')
-    historical_vakasuhde_130B.luonti_pvm = '2021-01-04 00:00:00.00000+02'
-    historical_vakasuhde_130B.muutos_pvm = '2021-01-04 00:00:00.00000+02'
-    historical_vakasuhde_130B.history_date = '2021-01-04 00:00:00.00000+02'
-    historical_vakasuhde_130B.save()
+    for vakasuhde in kela_testing_vakasuhteet:
+        vakasuhde.luonti_pvm = '2021-01-04 00:00:00.00000+02'
+        vakasuhde.muutos_pvm = '2021-01-04 00:00:00.00000+02'
+        vakasuhde.save()
 
-    # used in kela testing so history needs earlier dates as well
-    historical_vakas_3 = Varhaiskasvatussuhde.history.get(id=vakasuhde_3.id, history_type='+')
-    historical_vakas_3.luonti_pvm = '2021-01-04 00:00:00.00000+02'
-    historical_vakas_3.muutos_pvm = '2021-01-04 00:00:00.00000+02'
-    historical_vakas_3.history_date = '2021-01-04 00:00:00.00000+02'
-    historical_vakas_3.save()
+        historical_vakasuhde = Varhaiskasvatussuhde.history.get(id=vakasuhde.id, history_type='+')
+        historical_vakasuhde.luonti_pvm = '2021-01-04 00:00:00.00000+02'
+        historical_vakasuhde.muutos_pvm = '2021-01-04 00:00:00.00000+02'
+        historical_vakasuhde.history_date = '2021-01-04 00:00:00.00000+02'
+        historical_vakasuhde.save()
 
     assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Lapsi, lapsi_1)
     assign_object_level_permissions(toimipaikka_1_organisaatio_oid, Varhaiskasvatuspaatos, vakapaatos_1)

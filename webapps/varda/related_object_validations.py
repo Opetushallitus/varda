@@ -2,6 +2,8 @@ import datetime
 import logging
 
 from collections import namedtuple
+from operator import itemgetter
+
 from django.db.models import Q
 from rest_framework.exceptions import ValidationError
 
@@ -153,11 +155,50 @@ def check_if_immutable_object_is_changed(instance, data, key, compare_id=True):
             raise ValidationError(msg, code='invalid')
 
 
+def _find_overlap_for_period(start_date, end_date, date_pair_list, limit, error):
+    """
+    Find overlapping objects. If number of overlapping objects exceeds limit, raise an error.
+    :param start_date: alkamis_pvm of new object
+    :param end_date: paattymis_pvm of new object
+    :param date_pair_list: list of (alkamis_pvm, paattymis_pvm,) tuples of existing objects
+    :param limit: threshold limit
+    :param error: error message
+    """
+    # Add new dates to the list
+    date_pair_list.append((start_date, end_date))
+
+    # Create tuples containing date and type of the date (alkamis_pvm=1, paattymis_pvm=2)
+    date_list = []
+    for date_pair in date_pair_list:
+        date_list.append((date_pair[0], 1))
+        if date_pair[1]:
+            # paattymis_pvm can be None, in which case do not add it to the list
+            date_list.append((date_pair[1], 2))
+
+    # Sort the list of dates, ordering alkamis_pvm before paattymis_pvm
+    date_list.sort(key=itemgetter(0, 1))
+
+    counter = 0
+    for date_instance in date_list:
+        date_value = date_instance[0]
+        date_type = date_instance[1]
+
+        if date_type == 1:
+            # alkamis_pvm
+            counter += 1
+        elif date_type == 2:
+            # paattymis_pvm
+            counter -= 1
+
+        if (date_value >= start_date and (not end_date or date_value <= end_date)) and counter > limit:
+            # If current date is between start_date and end_date, validate overlap
+            raise ValidationError({'errors': [error]})
+
+
 def _check_overlapping_object(model, parent_path, limit, error, data, extra_filters=(), self_id=None):
     """
     Generic function to check if maximum number of overlapping objects by date (alkamis_pvm, paattymis_pvm) is
-    exceeded. Raises ValidationError if overlap is detected.
-
+    exceeded.
     :param model: Model class
     :param parent_path: list of attributes to reach parent with which overlap is evaluated
                         (e.g Lapsi can have 3 overlapping Varhaiskasvatussuhde,
@@ -186,17 +227,13 @@ def _check_overlapping_object(model, parent_path, limit, error, data, extra_filt
         self_value = data[filter_attribute] if filter_attribute in data else getattr(original_object, filter_attribute)
         filter_object &= Q(**{filter_attribute: self_value})
 
-    qs = model.objects.filter(filter_object)
     alkamis_pvm_new, paattymis_pvm_new = _get_alkamis_paattymis_pvm(data, original_object)
-    date_range_new = create_date_range(alkamis_pvm_new, paattymis_pvm_new)
 
-    counter = 1
-    for instance in qs:
-        date_range_instance = create_date_range(instance.alkamis_pvm, instance.paattymis_pvm)
-        if date_range_overlap(date_range_instance, date_range_new):
-            counter += 1
-    if counter > limit:
-        raise ValidationError({'errors': [error]})
+    # Only include objects that end after new object has started
+    qs = model.objects.filter(filter_object & (Q(paattymis_pvm__isnull=True) | Q(paattymis_pvm__gte=alkamis_pvm_new)))
+    date_pair_list = list(qs.values_list('alkamis_pvm', 'paattymis_pvm'))
+
+    _find_overlap_for_period(alkamis_pvm_new, paattymis_pvm_new, date_pair_list, limit, error)
 
 
 def _get_alkamis_paattymis_pvm(data, original):

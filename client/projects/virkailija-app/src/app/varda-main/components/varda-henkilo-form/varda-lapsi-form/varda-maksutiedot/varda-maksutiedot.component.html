@@ -49,13 +49,13 @@
                                 [lapsi]="lapsi"
                                 [yksityinenBoolean]="!selectedVakajarjestaja.kunnallinen_kytkin"
                                 [maksutieto]="maksutieto"
-                                (closeAddMaksutieto)="closeAddMaksutieto($event)">
+                                (closeEmitter)="closeAddMaksutieto($event)">
           </app-varda-maksutieto>
           <app-varda-maksutieto *ngIf="addMaksutieto && toimipaikkaAccess?.huoltajatiedot.tallentaja"
                                 [toimipaikkaAccess]="toimipaikkaAccess"
                                 [lapsi]="lapsi"
                                 [yksityinenBoolean]="!selectedVakajarjestaja.kunnallinen_kytkin"
-                                (closeAddMaksutieto)="closeAddMaksutieto($event)">
+                                (closeEmitter)="closeAddMaksutieto($event, true)">
           </app-varda-maksutieto>
         </mat-accordion>
       </ng-container>

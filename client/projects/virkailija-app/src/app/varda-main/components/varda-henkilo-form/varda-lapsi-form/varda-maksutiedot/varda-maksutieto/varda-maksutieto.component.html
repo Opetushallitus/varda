@@ -1,4 +1,4 @@
-<ng-container *ngIf="maksutietoForm">
+<ng-container *ngIf="formGroup">
   <div [id]="'maksutieto_' + maksutieto?.id"
        class="maksutieto taydennyskoulutus">
     <app-robo-id [tunniste]="maksutieto?.id"
@@ -6,7 +6,7 @@
                  [alkamis_pvm]="maksutieto?.alkamis_pvm"
                  [paattymis_pvm]="maksutieto?.paattymis_pvm"></app-robo-id>
 
-    <mat-expansion-panel [expanded]="expandPanel"
+    <mat-expansion-panel #matPanel
                          (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)">
       <mat-expansion-panel-header>
@@ -31,8 +31,8 @@
           </mat-panel-title>
         </ng-template>
       </mat-expansion-panel-header>
-      <form [formGroup]="maksutietoForm"
-            (submit)="saveMaksutieto(maksutietoForm)"
+      <form [formGroup]="formGroup"
+            (submit)="saveMaksutieto(formGroup)"
             autocomplete="off">
         <app-varda-henkilo-form-error-list [errors]="errorList"></app-varda-henkilo-form-error-list>
         <div class="huoltajat">
@@ -61,7 +61,7 @@
         </div>
 
         <app-varda-form-field name="maksun_peruste_koodi"
-                              [form]="maksutietoForm"
+                              [form]="formGroup"
                               [label]="i18n.maksutieto_maksunperuste_koodi | translate"
                               [errorText]="i18n.maksutieto_error_maksunperuste_koodi | translate"
                               [instructionText]="i18n.maksutieto_instruction_maksunperuste_koodi | translate">
@@ -85,7 +85,7 @@
 
         <app-varda-form-field name="palveluseteli_arvo"
                               *ngIf="!yksityinenBoolean"
-                              [form]="maksutietoForm"
+                              [form]="formGroup"
                               [label]="i18n.maksutieto_palveluseteli_arvo | translate"
                               [placeholder]="i18n.maksutieto_placeholder_palveluseteli_arvo | translate"
                               [errorText]="i18n.maksutieto_error_palveluseteli_arvo | translate"
@@ -101,7 +101,7 @@
         </app-varda-form-field>
 
         <app-varda-form-field name="asiakasmaksu"
-                              [form]="maksutietoForm"
+                              [form]="formGroup"
                               [label]="i18n.maksutieto_asiakasmaksu | translate"
                               [placeholder]="i18n.maksutieto_placeholder_asiakasmaksu | translate"
                               [errorText]="i18n.maksutieto_error_asiakasmaksu | translate"
@@ -118,7 +118,7 @@
 
         <app-varda-form-field name="perheen_koko"
                               *ngIf="!yksityinenBoolean"
-                              [form]="maksutietoForm"
+                              [form]="formGroup"
                               [label]="i18n.maksutieto_perheen_koko | translate"
                               [placeholder]="i18n.maksutieto_placeholder_perheen_koko | translate"
                               [errorText]="i18n.maksutieto_error_perheen_koko | translate"
@@ -133,7 +133,7 @@
         </app-varda-form-field>
 
         <app-varda-form-field name="alkamis_pvm"
-                              [form]="maksutietoForm"
+                              [form]="formGroup"
                               [label]="i18n.varhaiskasvatussuhde_alkamis_pvm | translate"
                               [errorText]="i18n.varhaiskasvatussuhde_error_alkamis_pvm | translate"
                               [instructionText]="i18n.varhaiskasvatussuhde_instruction_alkamis_pvm | translate">
@@ -143,7 +143,7 @@
         </app-varda-form-field>
 
         <app-varda-form-field name="paattymis_pvm"
-                              [form]="maksutietoForm"
+                              [form]="formGroup"
                               [label]="i18n.varhaiskasvatussuhde_paattymis_pvm | translate"
                               [errorText]="i18n.varhaiskasvatussuhde_error_paattymis_pvm | translate"
                               [instructionText]="i18n.varhaiskasvatussuhde_instruction_paattymis_pvm | translate">
@@ -168,7 +168,7 @@
           </ng-template>
         </div>
 
-        <app-varda-action-row [saveDisabled]="maksutietoForm.pristine || (isSubmitting | async)"
+        <app-varda-action-row [saveDisabled]="formGroup.pristine || (isSubmitting | async)"
                               [saveAccess]="toimipaikkaAccess?.huoltajatiedot.tallentaja"
                               [formExists]="!!maksutieto"
                               [isEdit]="isEdit"

@@ -49,13 +49,13 @@
                                                   [tyontekija]="tyontekija"
                                                   [taydennyskoulutus]="taydennyskoulutus"
                                                   [tehtavanimikkeet]="tehtavanimikkeet"
-                                                  (closeTaydennyskoulutus)="closeAddTaydennyskoulutus($event)">
+                                                  (closeEmitter)="closeAddTaydennyskoulutus($event)">
           </app-varda-tyontekija-taydennyskoulutus>
           <app-varda-tyontekija-taydennyskoulutus *ngIf="addTaydennyskoulutus && toimipaikkaAccess.taydennyskoulutustiedot.tallentaja"
                                                   [toimipaikkaAccess]="toimipaikkaAccess"
                                                   [tyontekija]="tyontekija"
                                                   [tehtavanimikkeet]="tehtavanimikkeet"
-                                                  (closeTaydennyskoulutus)="closeAddTaydennyskoulutus($event)">
+                                                  (closeEmitter)="closeAddTaydennyskoulutus($event, true)">
           </app-varda-tyontekija-taydennyskoulutus>
         </mat-accordion>
       </ng-container>

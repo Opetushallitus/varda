@@ -55,13 +55,13 @@
                                            [varhaiskasvatuspaatos]="varhaiskasvatuspaatos"
                                            [henkilonToimipaikka]="henkilonToimipaikka"
                                            (changedVarhaiskasvatuspaatos)="getVarhaiskasvatuspaatokset()"
-                                           (closeAddVarhaiskasvatuspaatos)="closeAddVarhaiskasvatuspaatos($event)">
+                                           (closeEmitter)="closeAddVarhaiskasvatuspaatos($event)">
           </app-varda-varhaiskasvatuspaatos>
           <app-varda-varhaiskasvatuspaatos *ngIf="addVarhaiskasvatuspaatosBoolean && lapsitiedotTallentaja"
                                            [lapsitiedotTallentaja]="lapsitiedotTallentaja"
                                            [lapsi]="lapsi"
                                            [henkilonToimipaikka]="henkilonToimipaikka"
-                                           (closeAddVarhaiskasvatuspaatos)="closeAddVarhaiskasvatuspaatos($event)">
+                                           (closeEmitter)="closeAddVarhaiskasvatuspaatos($event, true)">
           </app-varda-varhaiskasvatuspaatos>
         </mat-accordion>
       </ng-container>

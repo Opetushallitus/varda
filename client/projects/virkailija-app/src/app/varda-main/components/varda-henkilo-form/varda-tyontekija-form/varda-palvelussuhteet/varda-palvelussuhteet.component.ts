@@ -34,10 +34,7 @@ export class VardaPalvelussuhteetComponent implements OnInit {
   constructor(
     private henkilostoService: VardaHenkilostoApiService,
     private snackBarService: VardaSnackBarService,
-  ) {
-
-  }
-
+  ) { }
 
   ngOnInit() {
     if (this.toimipaikkaAccess.tyontekijatiedot.katselija) {
@@ -66,8 +63,11 @@ export class VardaPalvelussuhteetComponent implements OnInit {
     setTimeout(() => this.palvelussuhdeElements.last.element.nativeElement.scrollIntoView({ behavior: 'smooth' }), 100);
   }
 
-  closeAddPalvelussuhde(refreshSuhteet?: boolean) {
-    this.addPalvelussuhdeBoolean = false;
+  closePalvelussuhde(refreshSuhteet?: boolean, hideAddPalvelussuhde?: boolean) {
+    if (hideAddPalvelussuhde) {
+      this.addPalvelussuhdeBoolean = false;
+    }
+
     if (refreshSuhteet) {
       this.getPalvelussuhteet();
     }

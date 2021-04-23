@@ -1,4 +1,4 @@
-<ng-container *ngIf="tyoskentelypaikkaForm">
+<ng-container *ngIf="formGroup">
   <div [id]="'tyoskentelypaikka_'+ tyoskentelypaikka?.id"
        class="tyoskentelypaikka">
     <app-robo-id [tunniste]="tyoskentelypaikka?.id"
@@ -6,9 +6,9 @@
                  [alkamis_pvm]="tyoskentelypaikka?.alkamis_pvm"
                  [paattymis_pvm]="tyoskentelypaikka?.paattymis_pvm"></app-robo-id>
 
-    <mat-expansion-panel [expanded]="expandPanel"
-                         (opened)="togglePanel(true)"
-                         (closed)="togglePanel(false)">
+    <mat-expansion-panel (opened)="togglePanel(true)"
+                         (closed)="togglePanel(false)"
+                         #matPanel>
       <mat-expansion-panel-header>
         <mat-panel-title *ngIf="tyoskentelypaikka">
           <h4>
@@ -35,12 +35,12 @@
         </mat-panel-title>
       </mat-expansion-panel-header>
 
-      <form [formGroup]="tyoskentelypaikkaForm"
+      <form [formGroup]="formGroup"
             autocomplete="off"
-            (submit)="SaveTyoskentelypaikka(tyoskentelypaikkaForm)">
+            (submit)="saveTyoskentelypaikka(formGroup)">
         <app-varda-henkilo-form-error-list [errors]="errorList"></app-varda-henkilo-form-error-list>
         <app-varda-form-field name="kiertava_tyontekija_kytkin"
-                              [form]="tyoskentelypaikkaForm"
+                              [form]="formGroup"
                               [label]="i18n.tyoskentelypaikka_kiertava_kytkin | translate"
                               [errorText]="i18n.tyoskentelypaikka_error_kiertava_kytkin | translate"
                               [instructionText]="i18n.tyoskentelypaikka_instruction_kiertava_kytkin | translate">
@@ -51,9 +51,9 @@
           </mat-radio-group>
         </app-varda-form-field>
 
-        <app-varda-form-field *ngIf="!tyoskentelypaikkaForm.controls.kiertava_tyontekija_kytkin.value"
+        <app-varda-form-field *ngIf="!formGroup.controls.kiertava_tyontekija_kytkin.value"
                               name="toimipaikka_oid"
-                              [form]="tyoskentelypaikkaForm"
+                              [form]="formGroup"
                               [label]="i18n.tyoskentelypaikka_tyoskentelypaikka_valitsin | translate"
                               [errorText]="i18n.tyoskentelypaikka_error_tyoskentelypaikka_valitsin | translate"
                               [instructionText]="i18n.tyoskentelypaikka_instruction_tyoskentelypaikka_valitsin | translate">
@@ -73,7 +73,7 @@
 
 
         <app-varda-form-field name="alkamis_pvm"
-                              [form]="tyoskentelypaikkaForm"
+                              [form]="formGroup"
                               [label]="i18n.tyoskentelypaikka_alkamis_pvm | translate"
                               [errorText]="i18n.tyoskentelypaikka_error_alkamis_pvm | translate"
                               [errorMap]="[
@@ -89,7 +89,7 @@
         </app-varda-form-field>
 
         <app-varda-form-field name="paattymis_pvm"
-                              [form]="tyoskentelypaikkaForm"
+                              [form]="formGroup"
                               [label]="i18n.tyoskentelypaikka_paattymis_pvm | translate"
                               [errorText]="i18n.tyoskentelypaikka_error_paattymis_pvm | translate"
                               [errorMap]="[
@@ -104,7 +104,7 @@
         </app-varda-form-field>
 
         <app-varda-form-field name="tehtavanimike_koodi"
-                              [form]="tyoskentelypaikkaForm"
+                              [form]="formGroup"
                               [label]="i18n.tyoskentelypaikka_tehtavanimike | translate"
                               [errorText]="i18n.tyoskentelypaikka_error_tehtavanimike | translate"
                               [instructionText]="i18n.tyoskentelypaikka_instruction_tehtavanimike | translate">
@@ -134,7 +134,7 @@
         </div>
 
         <app-varda-form-field name="kelpoisuus_kytkin"
-                              [form]="tyoskentelypaikkaForm"
+                              [form]="formGroup"
                               [label]="i18n.tyoskentelypaikka_kelpoisuus_kytkin | translate"
                               [errorText]="i18n.tyoskentelypaikka_error_kelpoisuus_kytkin | translate"
                               [instructionText]="i18n.tyoskentelypaikka_instruction_kelpoisuus_kytkin | translate">
@@ -147,7 +147,7 @@
 
         <app-varda-error-field [errors]="palvelussuhdeFormErrors"></app-varda-error-field>
 
-        <app-varda-action-row [saveDisabled]="tyoskentelypaikkaForm.pristine || (isSubmitting | async)"
+        <app-varda-action-row [saveDisabled]="formGroup.pristine || (isSubmitting | async)"
                               [saveAccess]="toimipaikkaAccess?.tyontekijatiedot.tallentaja"
                               [formExists]="!!tyoskentelypaikka"
                               [isEdit]="isEdit"

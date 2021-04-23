@@ -24,12 +24,14 @@
              type="text"
              [disabled]="isLoading | async"
              (change)="searchHenkilot()"
-             [(ngModel)]="searchFilter.search" />
+             [(ngModel)]="searchFilter.search"
+             id="searchTyontekijaInput" />
       <button mat-button
               [title]="i18n.henkilo_hae_nimella | translate"
               [disabled]="isLoading | async"
               (click)="searchHenkilot()"
-              matSuffix>
+              matSuffix
+              id="searchTyontekijaButton">
         <mat-icon alt="">search</mat-icon>
       </button>
     </mat-form-field>
@@ -38,14 +40,16 @@
     <div class="checkbox-filter varda-theme">
       <mat-checkbox [value]="!searchFilter.voimassa_pvm"
                     (change)="toggleAktiiviset()"
-                    [disabled]="isLoading | async">
+                    [disabled]="isLoading | async"
+                    id="allTyontekijaCheckbox">
         {{ i18n.henkilo_tyontekijat_voimassa_kytkin | translate }}
       </mat-checkbox>
 
       <ng-container *ngIf="!selectedToimipaikka">
         <mat-checkbox [(ngModel)]="searchFilter.kiertava_tyontekija_kytkin"
                       [disabled]="isLoading | async"
-                      (change)="searchHenkilot()">
+                      (change)="searchHenkilot()"
+                      id="kiertavaTyontekijaCheckbox">
           {{ i18n.henkilo_vain_kiertavat_tyontekijat | translate }}
         </mat-checkbox>
       </ng-container>

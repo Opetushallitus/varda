@@ -9,7 +9,7 @@ from django.db.models import QuerySet, Q
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 
-from varda.misc import hide_hetu
+from varda.helper_functions import hide_hetu
 from varda.models import Z6_RequestLog, VakaJarjestaja
 from varda.validators import validate_lahdejarjestelma_koodi
 

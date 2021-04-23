@@ -51,7 +51,7 @@ export class ToimintapainotusComponent extends PainotusAbstractComponent<Toiminn
   deletePainotus() {
     this.vakajarjestajaApiService.deleteToimintapainotus(this.painotus.id).subscribe({
       next: deleted => {
-        this.togglePanel(false, true);
+        this.togglePanel(false, true, true);
         this.snackBarService.warning(this.i18n.painotukset_toimintapainotus_delete_success);
       },
       error: err => this.errorService.handleError(err, this.snackBarService)
@@ -81,7 +81,7 @@ export class ToimintapainotusComponent extends PainotusAbstractComponent<Toiminn
 
       updatePainotus.subscribe({
         next: toimintapainotusData => {
-          this.togglePanel(false, true);
+          this.togglePanel(false, true, true);
           this.snackBarService.success(this.i18n.painotukset_toimintapainotus_save_success);
         },
         error: err => {

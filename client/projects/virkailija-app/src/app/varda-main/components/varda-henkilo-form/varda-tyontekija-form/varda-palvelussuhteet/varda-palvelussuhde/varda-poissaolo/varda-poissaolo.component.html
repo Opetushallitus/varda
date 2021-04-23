@@ -1,4 +1,4 @@
-<ng-container *ngIf="poissaoloForm">
+<ng-container *ngIf="formGroup">
   <div [id]="'poissaolo_'+ poissaolo?.id"
        class="tyoskentelypaikka poissaolo">
     <app-robo-id [tunniste]="poissaolo?.id"
@@ -6,9 +6,9 @@
                  [alkamis_pvm]="poissaolo?.alkamis_pvm"
                  [paattymis_pvm]="poissaolo?.paattymis_pvm"></app-robo-id>
 
-    <mat-expansion-panel [expanded]="expandPanel"
-                         (opened)="togglePanel(true)"
-                         (closed)="togglePanel(false)">
+    <mat-expansion-panel (opened)="togglePanel(true)"
+                         (closed)="togglePanel(false)"
+                         #matPanel>
       <mat-expansion-panel-header>
         <mat-panel-title>
           <span *ngIf="poissaolo; else addPoissaolo">
@@ -21,12 +21,12 @@
           </ng-template>
         </mat-panel-title>
       </mat-expansion-panel-header>
-      <form [formGroup]="poissaoloForm"
+      <form [formGroup]="formGroup"
             autocomplete="off"
-            (submit)="savePoissaolo(poissaoloForm)">
+            (submit)="savePoissaolo(formGroup)">
         <app-varda-henkilo-form-error-list [errors]="errorList"></app-varda-henkilo-form-error-list>
         <app-varda-form-field name="alkamis_pvm"
-                              [form]="poissaoloForm"
+                              [form]="formGroup"
                               [label]="i18n.poissaolo_alkamis_pvm | translate"
                               [errorText]="i18n.poissaolo_error_alkamis_pvm | translate"
                               [errorMap]="[
@@ -40,7 +40,7 @@
         </app-varda-form-field>
 
         <app-varda-form-field name="paattymis_pvm"
-                              [form]="poissaoloForm"
+                              [form]="formGroup"
                               [label]="i18n.poissaolo_paattymis_pvm | translate"
                               [errorText]="i18n.poissaolo_error_paattymis_pvm | translate"
                               [errorMap]="[
@@ -55,7 +55,7 @@
 
         <app-varda-error-field [errors]="poissaoloFormErrors"></app-varda-error-field>
 
-        <app-varda-action-row [saveDisabled]="poissaoloForm.pristine || (isSubmitting | async)"
+        <app-varda-action-row [saveDisabled]="formGroup.pristine || (isSubmitting | async)"
                               [saveAccess]="toimipaikkaAccess?.tyontekijatiedot.tallentaja"
                               [formExists]="!!poissaolo"
                               [isEdit]="isEdit"

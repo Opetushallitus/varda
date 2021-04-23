@@ -501,7 +501,7 @@ class VardaPermissionsTests(TestCase):
 
         resp_fail = client.patch(f'/api/v1/vakajarjestajat/{vakajarjestaja_qs.first().id}/', vakajarjestaja_patch)
         assert_status_code(resp_fail, status.HTTP_403_FORBIDDEN)
-        assert_validation_error(resp_fail, 'errors', 'PE001', 'User does not have permissions to change this object.')
+        assert_validation_error(resp_fail, 'errors', 'PE006', 'User does not have permission to perform this action.')
 
     @responses.activate
     def test_henkilo_lapsi_permissions(self):

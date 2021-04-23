@@ -14,6 +14,7 @@ from django.db import transaction
 from django.db.models import Q, IntegerField
 from django.db.models.functions import Cast
 from django.db.models.signals import post_save
+from django.utils import timezone
 from guardian.models import UserObjectPermission, GroupObjectPermission
 
 from varda import oppijanumerorekisteri, koodistopalvelu
@@ -22,9 +23,10 @@ from varda import permission_groups
 from varda import permissions
 from varda.audit_log import audit_log
 from varda.excel_export import delete_excel_reports_earlier_than
+from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
 from varda.misc import flatten_nested_list, memory_efficient_queryset_iterator
 from varda.models import (Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog, Lapsi, Varhaiskasvatuspaatos,
-                          Z4_CasKayttoOikeudet, VakaJarjestaja)
+                          Z4_CasKayttoOikeudet, VakaJarjestaja, Huoltaja)
 from varda.permissions import (assign_lapsi_permissions, assign_vakapaatos_vakasuhde_permissions,
                                assign_henkilo_permissions_for_vaka_groups,
                                assign_henkilo_permissions_for_tyontekija_groups)
@@ -121,6 +123,12 @@ def update_toimipaikat_in_organisaatiopalvelu_task():
 @single_instance_task(timeout_in_minutes=8 * 60)
 def fetch_huoltajat_task():
     oppijanumerorekisteri.fetch_huoltajat()
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def create_onr_lapsi_huoltajat_task():
+    create_onr_lapsi_huoltajat(create_all_vakajarjestajat=True)
 
 
 @shared_task
@@ -403,3 +411,27 @@ def delete_vakajarjestaja_view_henkilo_group():
     """
     if view_henkilo_group := Group.objects.filter(name='vakajarjestaja_view_henkilo').first():
         view_henkilo_group.delete()
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def delete_huoltajat_without_relations_task():
+    """
+    Task that deletes Huoltaja objects that have no relations to Lapsi (Lapsi has been deleted).
+    """
+    huoltaja_qs = Huoltaja.objects.filter(huoltajuussuhteet__isnull=True)
+    huoltaja_qs.delete()
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def delete_henkilot_without_relations_task():
+    """
+    Task that deletes Henkilo objects without relations to Lapsi, Huoltaja or Tyontekija objects. Henkilo object must
+    be older than certain limit, so recently created objects are not deleted.
+    """
+    created_datetime_limit = timezone.now() - datetime.timedelta(days=90)
+    henkilo_qs = Henkilo.objects.filter(lapsi__isnull=True, tyontekijat__isnull=True, huoltaja__isnull=True,
+                                        luonti_pvm__lt=created_datetime_limit)
+    for henkilo in henkilo_qs:
+        henkilo.delete()

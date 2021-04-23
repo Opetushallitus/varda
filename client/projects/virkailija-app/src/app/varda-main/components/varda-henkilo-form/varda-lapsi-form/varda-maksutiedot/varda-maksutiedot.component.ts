@@ -35,9 +35,7 @@ export class VardaMaksutiedotComponent implements OnInit, OnChanges {
   constructor(
     private lapsiService: VardaLapsiService,
     private snackBarService: VardaSnackBarService,
-  ) {
-
-  }
+  ) { }
 
   ngOnInit() {
     this.paosTarkastelu();
@@ -56,7 +54,6 @@ export class VardaMaksutiedotComponent implements OnInit, OnChanges {
   }
 
   getMaksutiedot() {
-
     this.maksutiedot = null;
     this.lapsiService.getMaksutiedot(this.lapsi.id).subscribe({
       next: taydennyskoulutusData => this.maksutiedot = taydennyskoulutusData,
@@ -70,8 +67,11 @@ export class VardaMaksutiedotComponent implements OnInit, OnChanges {
     setTimeout(() => this.maksutietoElements.last.element.nativeElement.scrollIntoView({ behavior: 'smooth' }), 100);
   }
 
-  closeAddMaksutieto(refreshSuhteet?: boolean) {
-    this.addMaksutieto = false;
+  closeAddMaksutieto(refreshSuhteet?: boolean, hideAddMaksutieto?: boolean) {
+    if (hideAddMaksutieto) {
+      this.addMaksutieto = false;
+    }
+
     if (refreshSuhteet) {
       this.getMaksutiedot();
     }
@@ -83,5 +83,4 @@ export class VardaMaksutiedotComponent implements OnInit, OnChanges {
       this.maksutietoOikeus = true;
     }
   }
-
 }

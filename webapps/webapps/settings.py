@@ -196,9 +196,11 @@ LOGGING = {
     },
     'formatters': {
         'verbose': {
+            '()': 'webapps.logging.SensitiveFormatter',
             'format': '%(process)-5d %(thread)d [%(request_id)s] "%(request_host)s" %(name)-50s %(levelname)-8s %(message)s'
         },
         'simple': {
+            '()': 'webapps.logging.SensitiveFormatter',
             'format': '[%(asctime)s] %(name)s %(levelname)s %(message)s',
             'datefmt': '%d/%b/%Y %H:%M:%S'
         },
@@ -254,7 +256,8 @@ LOGGING = {
         },
         'django': {
             'handlers': ['syslog', 'console'],
-            'level': 'INFO'
+            'level': 'INFO',
+            'propagate': False,
         },
         'django.request': {
             'level': 'ERROR',

@@ -4,7 +4,6 @@ import os
 from socket import gaierror, gethostbyname_ex
 
 
-# Get an instance of a logger
 logger = logging.getLogger(__name__)
 
 

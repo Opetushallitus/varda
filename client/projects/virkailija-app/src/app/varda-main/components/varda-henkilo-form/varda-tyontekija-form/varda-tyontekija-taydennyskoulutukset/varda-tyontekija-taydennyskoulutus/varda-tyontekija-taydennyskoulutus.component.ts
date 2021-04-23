@@ -18,6 +18,7 @@ import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/services/varda-date.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
+import { VardaHenkiloFormAccordionAbstractComponent } from '../../../varda-henkilo-form-accordion/varda-henkilo-form-accordion.abstract';
 
 @Component({
   selector: 'app-varda-tyontekija-taydennyskoulutus',
@@ -29,20 +30,15 @@ import { TranslateService } from '@ngx-translate/core';
     '../../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterViewInit, OnDestroy {
+export class VardaTyontekijaTaydennyskoulutusComponent extends VardaHenkiloFormAccordionAbstractComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() toimipaikkaAccess: UserAccess;
   @Input() tyontekija: TyontekijaListDTO;
   @Input() taydennyskoulutus: VardaTaydennyskoulutusDTO;
   @Input() tehtavanimikkeet: KoodistoDTO;
   @Input() henkilonTutkinnot: Array<VardaTutkintoDTO>;
-  @Output() closeTaydennyskoulutus = new EventEmitter<boolean>(true);
   @ViewChild(MatExpansionPanelHeader) panelHeader: MatExpansionPanelHeader;
-  i18n = VirkailijaTranslations;
   element: ElementRef;
-  expandPanel: boolean;
-  taydennyskoulutusForm: FormGroup;
   subscriptions: Array<Subscription> = [];
-  isEdit: boolean;
   tehtavanimike_koodit: Array<string>;
   isSubmitting = new BehaviorSubject<boolean>(false);
   taydennyskoulutusFormErrors: Observable<Array<ErrorTree>>;
@@ -53,10 +49,11 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
   constructor(
     private el: ElementRef,
     private henkilostoService: VardaHenkilostoApiService,
-    private modalService: VardaModalService,
     private snackBarService: VardaSnackBarService,
-    translateService: TranslateService
+    translateService: TranslateService,
+    modalService: VardaModalService
   ) {
+    super(modalService);
     this.element = this.el;
     this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.taydennyskoulutusFormErrors = this.henkilostoErrorService.initErrorList();
@@ -64,12 +61,15 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
   }
 
   ngOnInit() {
-    this.expandPanel = !this.taydennyskoulutus;
+    if (!this.taydennyskoulutus) {
+      this.togglePanel(true, undefined, true);
+    }
+
     this.tehtavanimike_koodit = this.taydennyskoulutus?.taydennyskoulutus_tyontekijat.
       filter(tyontekija => tyontekija.henkilo_oid === this.tyontekija.henkilo_oid)
       .map(tyontekija => tyontekija.tehtavanimike_koodi) || [];
 
-    this.taydennyskoulutusForm = new FormGroup({
+    this.formGroup = new FormGroup({
       id: new FormControl(this.taydennyskoulutus?.id),
       lahdejarjestelma: new FormControl(this.taydennyskoulutus?.lahdejarjestelma || Lahdejarjestelma.kayttoliittyma),
       nimi: new FormControl(this.taydennyskoulutus?.nimi, Validators.required),
@@ -98,12 +98,11 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
     }
 
     this.subscriptions.push(
-      this.taydennyskoulutusForm.statusChanges
-        .pipe(filter(() => !this.taydennyskoulutusForm.pristine), distinctUntilChanged())
+      this.formGroup.statusChanges
+        .pipe(filter(() => !this.formGroup.pristine), distinctUntilChanged())
         .subscribe(() => this.modalService.setFormValuesChanged(true))
     );
   }
-
 
   saveTaydennyskoulutus(form: FormGroup) {
     this.isSubmitting.next(true);
@@ -129,14 +128,14 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
         }
 
         this.henkilostoService.updateTaydennyskoulutus(taydennyskoulutusJson).subscribe({
-          next: () => this.togglePanel(false, true),
+          next: () => this.togglePanel(false, true, true),
           error: err => this.henkilostoErrorService.handleError(err)
         }).add(() => this.disableSubmit());
       } else {
         taydennyskoulutusJson.taydennyskoulutus_tyontekijat = tehtavanimikkeetToAdd;
 
         this.henkilostoService.createTaydennyskoulutus(taydennyskoulutusJson).subscribe({
-          next: () => this.togglePanel(false, true),
+          next: () => this.togglePanel(false, true, true),
           error: err => this.henkilostoErrorService.handleError(err)
         }).add(() => this.disableSubmit());
       }
@@ -146,17 +145,16 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
     }
   }
 
-
   deleteTaydennyskoulutus(nimikkeetToDelete?: Array<VardaTaydennyskoulutusTyontekijaDTO>): void {
     const taydennyskoulutusJson: VardaTaydennyskoulutusDTO = {
-      ...this.taydennyskoulutusForm.value,
-      suoritus_pvm: this.taydennyskoulutusForm.value.suoritus_pvm.format(VardaDateService.vardaApiDateFormat),
+      ...this.formGroup.value,
+      suoritus_pvm: this.formGroup.value.suoritus_pvm.format(VardaDateService.vardaApiDateFormat),
       taydennyskoulutus_tyontekijat_remove: nimikkeetToDelete || this.compareTehtavanimikkeet(this.tehtavanimike_koodit)
     };
 
     this.henkilostoService.updateTaydennyskoulutus(taydennyskoulutusJson).subscribe({
       next: () => {
-        this.togglePanel(false, true);
+        this.togglePanel(false, true, true);
         this.snackBarService.warning(this.i18n.taydennyskoulutus_delete_success);
       },
       error: err => {
@@ -165,7 +163,7 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
           if (lastPersonError) {
             this.henkilostoService.deleteTaydennyskoulutus(this.taydennyskoulutus.id).subscribe({
               next: deleted => {
-                this.togglePanel(false, true);
+                this.togglePanel(false, true, true);
                 this.snackBarService.warning(this.i18n.taydennyskoulutus_delete_success);
               },
               error: subErr => this.henkilostoErrorService.handleError(subErr, this.snackBarService)
@@ -180,28 +178,13 @@ export class VardaTyontekijaTaydennyskoulutusComponent implements OnInit, AfterV
     });
   }
 
-  togglePanel(open: boolean, refreshList?: boolean) {
-    this.expandPanel = open;
-
-    if (!open || refreshList) {
-      this.disableForm();
-      this.closeTaydennyskoulutus?.emit(refreshList);
-    }
-  }
-
   disableSubmit() {
     setTimeout(() => this.isSubmitting.next(false), 500);
   }
 
-  disableForm() {
-    this.isEdit = false;
-    this.taydennyskoulutusForm.disable();
-    this.modalService.setFormValuesChanged(false);
-  }
-
   enableForm() {
     this.isEdit = true;
-    this.taydennyskoulutusForm.enable();
+    this.formGroup.enable();
   }
 
   compareTehtavanimikkeet(newNimikkeet: Array<string>, existingNimikkeet: Array<string> = []): Array<VardaTaydennyskoulutusTyontekijaDTO> {

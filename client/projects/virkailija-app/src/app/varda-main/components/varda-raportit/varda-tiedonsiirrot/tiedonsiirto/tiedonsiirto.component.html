@@ -1,13 +1,17 @@
 <section class="tiedonsiirto">
   <div class="varda-info">
-    <ng-container *ngIf="searchFilter.successful; else unsuccessful">
-      {{ i18n.tiedonsiirrot_instruction_successful_paragraph_1 | translate }}<br />
-      {{ i18n.tiedonsiirrot_instruction_successful_paragraph_2 | translate }}
-    </ng-container>
-    <ng-template #unsuccessful>
-      {{ i18n.tiedonsiirrot_instruction_unsuccessful_paragraph_1 | translate }}<br />
-      {{ i18n.tiedonsiirrot_instruction_unsuccessful_paragraph_2 | translate }}
-    </ng-template>
+    <p>
+      <ng-container *ngIf="searchFilter.successful; else unsuccessful">
+        {{ i18n.tiedonsiirrot_successful_instruction | translate }}
+      </ng-container>
+      <ng-template #unsuccessful>
+        {{ i18n.tiedonsiirrot_unsuccessful_instruction | translate }}
+      </ng-template>
+    </p>
+    <ul>
+      <li>{{ i18n.tiedonsiirrot_instruction_paragraph_1 | translate }}</li>
+      <li>{{ i18n.tiedonsiirrot_instruction_paragraph_2 | translate }}</li>
+    </ul>
   </div>
 
   <app-tiedonsiirto-filter *ngIf="toimijaAccess.oph.katselija"

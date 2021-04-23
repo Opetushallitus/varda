@@ -530,7 +530,7 @@ class VakaJarjestajaViewSet(IncreasedModifyThrottleMixin, ModelViewSet):
     filterset_class = filters.VakaJarjestajaFilter
     queryset = VakaJarjestaja.objects.all().order_by('id')
     serializer_class = VakaJarjestajaSerializer
-    permission_classes = (CustomModelPermissions,)
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
@@ -540,9 +540,6 @@ class VakaJarjestajaViewSet(IncreasedModifyThrottleMixin, ModelViewSet):
 
     def perform_update(self, serializer):
         user = self.request.user
-        original_object = self.get_object()
-        if not user.has_perm('change_vakajarjestaja', original_object):
-            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
         serializer.save(changed_by=user)
 
     def perform_destroy(self, instance):
@@ -576,7 +573,7 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
     filterset_class = filters.ToimipaikkaFilter
     queryset = Toimipaikka.objects.all().order_by('id')
     serializer_class = ToimipaikkaSerializer
-    permission_classes = (CustomModelPermissions,)
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
@@ -643,9 +640,6 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
         validated_data = serializer.validated_data
         toimipaikka_obj = self.get_object()
 
-        if not user.has_perm('change_toimipaikka', toimipaikka_obj):
-            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
-
         if Hallinnointijarjestelma[toimipaikka_obj.hallinnointijarjestelma] is not Hallinnointijarjestelma.VARDA:
             raise ValidationError({'hallinnointijarjestelma': [ErrorMessages.TP003.value]})
         if validated_data['toimintamuoto_koodi'] != toimipaikka_obj.toimintamuoto_koodi and toimipaikka_obj.organisaatio_oid is None:
@@ -698,7 +692,7 @@ class ToiminnallinenPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnis
     filterset_class = filters.ToiminnallinenPainotusFilter
     queryset = ToiminnallinenPainotus.objects.all().order_by('id')
     serializer_class = ToiminnallinenPainotusSerializer
-    permission_classes = (CustomModelPermissions,)
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
 
     def _toggle_toimipaikka_kytkin(self, toimipaikka):
         update_painotus_kytkin(toimipaikka, 'toiminnallisetpainotukset', 'toiminnallinenpainotus_kytkin')
@@ -743,8 +737,6 @@ class ToiminnallinenPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnis
         vakajarjestaja_organisaatio_oid = toimipaikka_obj.vakajarjestaja.organisaatio_oid
 
         check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
-        if not user.has_perm('change_toiminnallinenpainotus', instance):
-            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
 
         if 'alkamis_pvm' in validated_data or 'paattymis_pvm' in validated_data:
             alkamis_pvm = validated_data['alkamis_pvm'] if 'alkamis_pvm' in validated_data else instance.alkamis_pvm
@@ -760,11 +752,7 @@ class ToiminnallinenPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnis
             delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
 
     def destroy(self, request, *args, **kwargs):
-        user = request.user
         instance = self.get_object()
-        if not user.has_perm('delete_toiminnallinenpainotus', instance):
-            raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
-
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -803,7 +791,7 @@ class KieliPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
     filterset_class = filters.KieliPainotusFilter
     queryset = KieliPainotus.objects.all().order_by('id')
     serializer_class = KieliPainotusSerializer
-    permission_classes = (CustomModelPermissions,)
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
 
     def _toggle_toimipaikka_kytkin(self, toimipaikka):
         update_painotus_kytkin(toimipaikka, 'kielipainotukset', 'kielipainotus_kytkin')
@@ -849,8 +837,6 @@ class KieliPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
         vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
 
         check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
-        if not user.has_perm('change_kielipainotus', instance):
-            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
 
         if 'alkamis_pvm' in validated_data or 'paattymis_pvm' in validated_data:
             alkamis_pvm = validated_data['alkamis_pvm'] if 'alkamis_pvm' in validated_data else instance.alkamis_pvm
@@ -866,11 +852,7 @@ class KieliPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
             delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
 
     def destroy(self, request, *args, **kwargs):
-        user = request.user
         instance = self.get_object()
-        if not user.has_perm('delete_kielipainotus', instance):
-            raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
-
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -1137,7 +1119,7 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
     filterset_class = filters.LapsiFilter
     queryset = Lapsi.objects.all().order_by('id')
     serializer_class = None
-    permission_classes = (CustomModelPermissions,)
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
 
     def get_serializer_class(self):
         request = self.request
@@ -1241,9 +1223,6 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
         user = self.request.user
         lapsi_obj = self.get_object()
 
-        if not user.has_perm('change_lapsi', lapsi_obj):
-            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
-
         validated_data = serializer.validated_data
 
         check_if_immutable_object_is_changed(lapsi_obj, validated_data, 'henkilo')
@@ -1254,10 +1233,6 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
         serializer.save(changed_by=user)
 
     def perform_destroy(self, instance):
-        user = self.request.user
-        if not user.has_perm('delete_lapsi', instance):
-            raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
-
         if Huoltajuussuhde.objects.filter(lapsi__id=instance.id).filter(maksutiedot__isnull=False).exists():
             raise ValidationError({'errors': [ErrorMessages.LA003.value]})
 
@@ -1299,7 +1274,7 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
     filterset_class = filters.VarhaiskasvatuspaatosFilter
     queryset = Varhaiskasvatuspaatos.objects.all().order_by('id')
     serializer_class = VarhaiskasvatuspaatosSerializer
-    permission_classes = (CustomModelPermissions,)
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
@@ -1356,9 +1331,6 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
         instance = self.get_object()
         varhaiskasvatussuhteet = instance.varhaiskasvatussuhteet.all()
 
-        if not user.has_perm('change_varhaiskasvatuspaatos', instance):
-            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
-
         for varhaiskasvatussuhde_obj in varhaiskasvatussuhteet:
             self.validate_paivamaarat_varhaiskasvatussuhteet(validated_data['alkamis_pvm'],
                                                              varhaiskasvatussuhde_obj.alkamis_pvm,
@@ -1386,9 +1358,6 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
         self.delete_vakajarjestaja_yhteenveto_cache(saved_object)
 
     def perform_destroy(self, instance):
-        user = self.request.user
-        if not user.has_perm('delete_varhaiskasvatuspaatos', instance):
-            raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
         lapsi_id = instance.lapsi.id
         try:
             instance.delete()
@@ -1448,7 +1417,7 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
     filterset_class = filters.VarhaiskasvatussuhdeFilter
     queryset = Varhaiskasvatussuhde.objects.all().order_by('id')
     serializer_class = VarhaiskasvatussuhdeSerializer
-    permission_classes = (CustomModelPermissions,)
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
@@ -1589,8 +1558,6 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
         vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
 
         check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
-        if not user.has_perm('change_varhaiskasvatussuhde', instance):
-            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
 
         if 'varhaiskasvatuspaatos' in validated_data and instance.varhaiskasvatuspaatos != validated_data['varhaiskasvatuspaatos']:
             raise ValidationError({'varhaiskasvatuspaatos': [ErrorMessages.VS003.value]})
@@ -1610,9 +1577,6 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
             cache.delete('vakajarjestaja_yhteenveto_' + str(lapsi_obj.oma_organisaatio.id))
 
     def perform_destroy(self, instance):
-        user = self.request.user
-        if not user.has_perm('delete_varhaiskasvatussuhde', instance):
-            raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
         delete_toimipaikan_lapset_cache(str(instance.toimipaikka.id))
         cache.delete('vakajarjestaja_yhteenveto_' + str(instance.toimipaikka.vakajarjestaja.id))
         delete_cache_keys_related_model('toimipaikka', instance.toimipaikka.id)
@@ -1650,7 +1614,7 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
     # Only query distinct results, as related object filters can return the same object multiple times
     queryset = Maksutieto.objects.all().distinct().order_by('id')
     serializer_class = None
-    permission_classes = (CustomModelPermissions,)
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
 
     def get_serializer_class(self):
         request = self.request
@@ -1907,9 +1871,6 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
         data = serializer.validated_data
         paattymis_pvm_q = Q()
 
-        if not user.has_perm('change_maksutieto', maksutieto_obj):
-            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
-
         if 'paattymis_pvm' in data and data['paattymis_pvm'] is not None:
             if validators.validate_paivamaara1_after_paivamaara2(data['alkamis_pvm'], data['paattymis_pvm'],
                                                                  can_be_same=False):
@@ -1951,7 +1912,6 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
             cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja.id))
 
     def destroy(self, request, *args, **kwargs):
-        user = request.user
         instance = self.get_object()
 
         lapsi_objects = Lapsi.objects.filter(huoltajuussuhteet__maksutiedot=instance).distinct()
@@ -1960,8 +1920,6 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
             raise CustomServerErrorException
         lapsi_object = lapsi_objects[0]
 
-        if not user.has_perm('delete_maksutieto', instance):
-            raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
         self.perform_destroy(instance)
 
         toimipaikka_obj = (Toimipaikka
@@ -1996,7 +1954,7 @@ class PaosToimintaViewSet(IncreasedModifyThrottleMixin, GenericViewSet, ListMode
     filterset_class = filters.PaosToimintaFilter
     queryset = PaosToiminta.objects.filter(voimassa_kytkin=True).order_by('id')
     serializer_class = PaosToimintaSerializer
-    permission_classes = (CustomModelPermissions,)
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
@@ -2130,12 +2088,8 @@ class PaosToimintaViewSet(IncreasedModifyThrottleMixin, GenericViewSet, ListMode
         """
         Make voimassa_kytkin false when organisation permissions is deleted or when last toimipaikka permission is deleted
         """
-        user = self.request.user
         paos_oikeus_object = None
         is_delete = False  # If toimipaikka permissions are removed instance should also be deleted
-
-        if not user.has_perm('delete_paostoiminta', instance):
-            raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
 
         with transaction.atomic():
             if instance.paos_organisaatio is not None:
@@ -2188,7 +2142,7 @@ class PaosOikeusViewSet(IncreasedModifyThrottleMixin, GenericViewSet, UpdateMode
     filterset_class = filters.PaosOikeusFilter
     queryset = PaosOikeus.objects.all().order_by('id')
     serializer_class = PaosOikeusSerializer
-    permission_classes = (CustomModelPermissions,)
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
@@ -2200,9 +2154,6 @@ class PaosOikeusViewSet(IncreasedModifyThrottleMixin, GenericViewSet, UpdateMode
         user = self.request.user
         paos_oikeus_obj = self.get_object()
         validated_data = serializer.validated_data
-
-        if not user.has_perm('change_paosoikeus', paos_oikeus_obj):
-            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
 
         if (validated_data['tallentaja_organisaatio'] != paos_oikeus_obj.jarjestaja_kunta_organisaatio and
                 validated_data['tallentaja_organisaatio'] != paos_oikeus_obj.tuottaja_organisaatio):

@@ -3077,23 +3077,91 @@ class VardaViewsTests(TestCase):
         resp = client.delete('/api/v1/lapset/4/')
         assert_status_code(resp, 204)
 
-    def test_api_push_too_many_overlapping_varhaiskasvatuspaatos(self):
+    def test_api_push_overlapping_varhaiskasvatuspaatos(self):
+        client = SetUpTestClient('tester10').client()
+
+        henkilo_oid = '1.2.246.562.24.47279942650'
+        post_henkilo_to_get_permissions(client, henkilo_oid=henkilo_oid)
+        lapsi_tunniste = 'testing-lapsi'
+        lapsi = {
+            'henkilo_oid': henkilo_oid,
+            'vakatoimija_oid': '1.2.246.562.10.57294396385',
+            'lahdejarjestelma': '1',
+            'tunniste': lapsi_tunniste
+        }
+        resp_lapsi = client.post('/api/v1/lapset/', lapsi)
+        assert_status_code(resp_lapsi, status.HTTP_201_CREATED)
+
         varhaiskasvatuspaatos = {
-            'lapsi': 'http://testserver/api/v1/lapset/1/',
-            'tuntimaara_viikossa': 40,
-            'jarjestamismuoto_koodi': 'jm04',
-            'hakemus_pvm': '2018-09-15',
-            'alkamis_pvm': '2018-10-20',
+            'lapsi_tunniste': lapsi_tunniste,
+            'tuntimaara_viikossa': 20,
+            'jarjestamismuoto_koodi': 'jm01',
+            'vuorohoito_kytkin': False,
+            'tilapainen_vaka_kytkin': False,
+            'kokopaivainen_vaka_kytkin': True,
+            'paivittainen_vaka_kytkin': True,
             'lahdejarjestelma': '1',
         }
-        client = SetUpTestClient('tester').client()
-        client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
-        client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
-        client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
-        resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
-        assert_status_code(resp, 400)
-        assert_validation_error(resp, 'errors', 'VP011',
-                                'Lapsi already has 3 overlapping Varhaiskasvatuspaatos on the given date range.')
+
+        test_cases_list = ((('2021-01-01', None), ('2021-01-01', None), ('2021-01-01', None), ('2021-01-01', None),),
+                           (('2020-01-01', '2021-01-01',), ('2021-01-01', None), ('2021-01-01', None), ('2021-01-01', None),),
+                           (('2021-01-01', None), ('2021-01-01', None), ('2020-08-01', '2020-12-31'), ('2020-06-01', '2020-07-31'),
+                            ('2019-08-01', '2020-05-31'), ('2020-01-07', None), ('2020-12-01', None)),
+                           (('2021-01-01', '2021-01-01'), ('2021-01-01', '2021-01-01'),
+                            ('2021-01-01', '2021-01-01'), ('2021-01-01', '2021-01-01'),),
+                           (('2020-12-01', None), ('2021-01-01', '2021-01-01'), ('2021-01-01', '2021-01-01'), ('2020-07-01', None),),)
+
+        for test_cases in test_cases_list:
+            vakapaatos_id_list = []
+            for index, test_case in enumerate(test_cases):
+                varhaiskasvatuspaatos['hakemus_pvm'] = test_case[0]
+                varhaiskasvatuspaatos['alkamis_pvm'] = test_case[0]
+                varhaiskasvatuspaatos['paattymis_pvm'] = test_case[1]
+                varhaiskasvatuspaatos['tuntimaara_viikossa'] += 0.5
+
+                resp_post = client.post('/api/v1/varhaiskasvatuspaatokset/', json.dumps(varhaiskasvatuspaatos),
+                                        content_type='application/json')
+
+                if index == len(test_cases) - 1:
+                    # Last one
+                    assert_status_code(resp_post, status.HTTP_400_BAD_REQUEST)
+                    assert_validation_error(resp_post, 'errors', 'VP011',
+                                            'Lapsi already has 3 overlapping Varhaiskasvatuspaatos on the given date range.')
+                else:
+                    assert_status_code(resp_post, status.HTTP_201_CREATED)
+                    vakapaatos_id_list.append(json.loads(resp_post.content)['id'])
+
+            for vakapaatos_id in vakapaatos_id_list:
+                resp_delete = client.delete(f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos_id}/')
+                assert_status_code(resp_delete, status.HTTP_204_NO_CONTENT)
+
+    def test_varhaiskasvatuspaatos_not_unique(self):
+        client = SetUpTestClient('tester2').client()
+        vakapaatos = {
+            'lapsi': '/api/v1/lapset/3/',
+            'tuntimaara_viikossa': 40,
+            'jarjestamismuoto_koodi': 'jm01',
+            'hakemus_pvm': '2018-09-15',
+            'alkamis_pvm': '2018-10-20',
+            'tilapainen_vaka_kytkin': False,
+            'lahdejarjestelma': '1',
+        }
+
+        resp_1 = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos)
+        assert_status_code(resp_1, status.HTTP_201_CREATED)
+
+        resp_2 = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos)
+        assert_status_code(resp_2, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_2, 'errors', 'VP015', 'Identical Varhaiskasvatuspaatos already exists.')
+
+        vakapaatos['alkamis_pvm'] = '2018-10-21'
+        resp_3 = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos)
+        assert_status_code(resp_3, status.HTTP_201_CREATED)
+        vakapaatos_id = json.loads(resp_3.content)['id']
+
+        resp_4 = client.patch(f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos_id}/', {'alkamis_pvm': '2018-10-20'})
+        assert_status_code(resp_4, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_4, 'errors', 'VP015', 'Identical Varhaiskasvatuspaatos already exists.')
 
     def test_api_push_too_many_varhaiskasvatussuhde(self):
         varhaiskasvatussuhde = {
@@ -4010,7 +4078,7 @@ class VardaViewsTests(TestCase):
 
         vakapaatos_2 = {
             'lapsi': f'/api/v1/lapset/{lapsi.id}/',
-            'tuntimaara_viikossa': '37.5',
+            'tuntimaara_viikossa': '38.5',
             'jarjestamismuoto_koodi': 'jm01',
             'hakemus_pvm': '2021-01-02',
             'alkamis_pvm': '2021-01-02',
@@ -4024,7 +4092,7 @@ class VardaViewsTests(TestCase):
 
         vakapaatos_3 = {
             'lapsi_tunniste': 'no',
-            'tuntimaara_viikossa': '37.5',
+            'tuntimaara_viikossa': '39.5',
             'jarjestamismuoto_koodi': 'jm01',
             'hakemus_pvm': '2021-01-02',
             'alkamis_pvm': '2021-01-02',

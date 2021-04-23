@@ -2,7 +2,7 @@ import { Component, OnInit, Input, ViewChildren, QueryList } from '@angular/core
 import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
-import { VardaToimipaikkaDTO, VardaVakajarjestajaUi, VardaVarhaiskasvatuspaatosDTO } from 'projects/virkailija-app/src/app/utilities/models';
+import { VardaVakajarjestajaUi, VardaVarhaiskasvatuspaatosDTO } from 'projects/virkailija-app/src/app/utilities/models';
 import { LapsiListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-lapsi-dto.model';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
@@ -26,20 +26,15 @@ export class VardaVarhaiskasvatuspaatoksetComponent implements OnInit {
   @ViewChildren(VardaVarhaiskasvatuspaatosComponent) varhaiskasvatuspaatosElements: QueryList<VardaVarhaiskasvatuspaatosComponent>;
   i18n = VirkailijaTranslations;
   expandPanel = true;
-  currentToimipaikka: VardaToimipaikkaDTO;
   varhaiskasvatuspaatokset: Array<VardaVarhaiskasvatuspaatosDTO>;
   addVarhaiskasvatuspaatosBoolean: boolean;
   lapsitiedotTallentaja: boolean;
-
 
   constructor(
     private lapsiService: VardaLapsiService,
     private modalService: VardaModalService,
     private snackBarService: VardaSnackBarService,
-  ) {
-
-  }
-
+  ) { }
 
   ngOnInit() {
     this.lapsitiedotTallentaja = this.toimipaikkaAccess.lapsitiedot.tallentaja;
@@ -81,11 +76,13 @@ export class VardaVarhaiskasvatuspaatoksetComponent implements OnInit {
     setTimeout(() => this.varhaiskasvatuspaatosElements.last.element.nativeElement.scrollIntoView({ behavior: 'smooth' }), 100);
   }
 
-  closeAddVarhaiskasvatuspaatos(refreshSuhteet?: boolean) {
-    this.addVarhaiskasvatuspaatosBoolean = false;
+  closeAddVarhaiskasvatuspaatos(refreshSuhteet?: boolean, hideAddVarhaiskasvatuspaatos?: boolean) {
+    if (hideAddVarhaiskasvatuspaatos) {
+      this.addVarhaiskasvatuspaatosBoolean = false;
+    }
+
     if (refreshSuhteet) {
       this.getVarhaiskasvatuspaatokset();
     }
   }
-
 }

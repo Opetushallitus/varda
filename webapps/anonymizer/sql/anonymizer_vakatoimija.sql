@@ -68,15 +68,6 @@ UPDATE varda_toimipaikka SET puhelinnumero = concat('+358', trunc(random() * 899
 UPDATE varda_toimipaikka SET sahkopostiosoite = concat('email-', trunc(random() * 8999 + 1000)::text, '@example.com');
 
 
--- alkamis_pvm (subtract random number of days 0 - 365 from the existing date)
-UPDATE varda_toimipaikka SET alkamis_pvm = date(alkamis_pvm - trunc(random() * 365) * '1 day'::interval * random()) WHERE alkamis_pvm IS NOT NULL and toimintamuoto_koodi <> 'tm01';
-
-
--- paattymis_pvm (add random number of days 0 - 365 to the existing date)
-UPDATE varda_toimipaikka SET paattymis_pvm = date(paattymis_pvm + trunc(random() * 365) * '1 day'::interval * random()) WHERE paattymis_pvm IS NOT NULL and toimintamuoto_koodi <> 'tm01';
-
-
-
 
 
 

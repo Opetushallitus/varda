@@ -1,5 +1,5 @@
-import { Component, OnInit, OnChanges, Input, Output, EventEmitter, Inject, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
-import { VardaHenkiloDTO, VardaToimipaikkaDTO } from 'projects/virkailija-app/src/app/utilities/models';
+import { Component, OnInit, OnChanges, Input, Inject, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
+import { VardaHenkiloDTO } from 'projects/virkailija-app/src/app/utilities/models';
 import { UserAccess, SaveAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
 import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
@@ -14,7 +14,6 @@ import { VardaKoodistoService } from 'varda-shared';
 import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { VardaErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
-import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { MatExpansionPanelHeader } from '@angular/material/expansion';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/services/varda-date.service';
@@ -41,21 +40,14 @@ export class VardaTyoskentelypaikkaComponent extends VardaHenkiloFormAccordionAb
   @Input() palvelussuhde: VardaPalvelussuhdeDTO;
   @Input() henkilo: VardaHenkiloDTO;
   @Input() tyoskentelypaikka: VardaTyoskentelypaikkaDTO;
-  @Output() closeTyoskentelypaikka = new EventEmitter<boolean>(true);
   @ViewChild(MatExpansionPanelHeader) panelHeader: MatExpansionPanelHeader;
   toimijaAccess: UserAccess;
-  i18n = VirkailijaTranslations;
-  expandPanel: boolean;
-  currentToimipaikka: VardaToimipaikkaDTO;
-  tyoskentelypaikkaForm: FormGroup;
   subscriptions: Array<Subscription> = [];
   tehtavanimikkeet: KoodistoDTO;
   toimipaikat: Array<VardaToimipaikkaMinimalDto>;
   isSubmitting = new BehaviorSubject<boolean>(false);
-  isEdit: boolean;
   startDateRange = { min: null, max: null };
   endDateRange = { min: null, max: null };
-
 
   palvelussuhdeFormErrors: Observable<Array<ErrorTree>>;
   private henkilostoErrorService: VardaErrorMessageService;
@@ -66,11 +58,11 @@ export class VardaTyoskentelypaikkaComponent extends VardaHenkiloFormAccordionAb
     private henkilostoService: VardaHenkilostoApiService,
     private koodistoService: VardaKoodistoService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
-    private modalService: VardaModalService,
     private snackBarService: VardaSnackBarService,
-    translateService: TranslateService
+    translateService: TranslateService,
+    modalService: VardaModalService
   ) {
-    super();
+    super(modalService);
     this.toimijaAccess = this.authService.getUserAccess();
     this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.palvelussuhdeFormErrors = this.henkilostoErrorService.initErrorList();
@@ -78,9 +70,7 @@ export class VardaTyoskentelypaikkaComponent extends VardaHenkiloFormAccordionAb
   }
 
   ngOnInit() {
-    this.expandPanel = !this.tyoskentelypaikka;
-
-    this.tyoskentelypaikkaForm = new FormGroup({
+    this.formGroup = new FormGroup({
       id: new FormControl(this.tyoskentelypaikka?.id),
       lahdejarjestelma: new FormControl(this.tyoskentelypaikka?.lahdejarjestelma || Lahdejarjestelma.kayttoliittyma),
       palvelussuhde: new FormControl(this.palvelussuhde.url),
@@ -112,13 +102,17 @@ export class VardaTyoskentelypaikkaComponent extends VardaHenkiloFormAccordionAb
     }
 
     this.subscriptions.push(
-      this.tyoskentelypaikkaForm.statusChanges
-        .pipe(filter(() => !this.tyoskentelypaikkaForm.pristine), distinctUntilChanged())
+      this.formGroup.statusChanges
+        .pipe(filter(() => !this.formGroup.pristine), distinctUntilChanged())
         .subscribe(() => this.modalService.setFormValuesChanged(true))
     );
   }
 
   ngOnChanges() {
+    if (!this.tyoskentelypaikka) {
+      this.togglePanel(true, undefined, true);
+    }
+
     if (this.toimipaikkaAccess.tyontekijatiedot.tallentaja) {
       this.toimipaikat = this.authService.getAuthorizedToimipaikat(this.vardaVakajarjestajaService.getFilteredToimipaikat().tallentajaToimipaikat, SaveAccess.tyontekijatiedot);
       this.toimipaikat = this.toimipaikat.filter(toimipaikka => toimipaikka.organisaatio_oid);
@@ -127,8 +121,7 @@ export class VardaTyoskentelypaikkaComponent extends VardaHenkiloFormAccordionAb
     }
   }
 
-
-  SaveTyoskentelypaikka(form: FormGroup): void {
+  saveTyoskentelypaikka(form: FormGroup): void {
     this.isSubmitting.next(true);
     form.markAllAsTouched();
     this.henkilostoErrorService.resetErrorList();
@@ -157,7 +150,7 @@ export class VardaTyoskentelypaikkaComponent extends VardaHenkiloFormAccordionAb
       if (this.tyoskentelypaikka) {
         this.henkilostoService.updateTyoskentelypaikka(tyoskentelypaikkaJson).subscribe({
           next: () => {
-            this.togglePanel(false, true);
+            this.togglePanel(false, true, true);
             this.snackBarService.success(this.i18n.tyoskentelypaikka_save_success);
             this.henkilostoService.sendHenkilostoListUpdate();
           },
@@ -166,7 +159,7 @@ export class VardaTyoskentelypaikkaComponent extends VardaHenkiloFormAccordionAb
       } else {
         this.henkilostoService.createTyoskentelypaikka(tyoskentelypaikkaJson).subscribe({
           next: () => {
-            this.togglePanel(false, true);
+            this.togglePanel(false, true, true);
             this.snackBarService.success(this.i18n.tyoskentelypaikka_save_success);
           },
           error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
@@ -175,23 +168,11 @@ export class VardaTyoskentelypaikkaComponent extends VardaHenkiloFormAccordionAb
     }
   }
 
-  togglePanel(open: boolean, refreshList?: boolean) {
-    this.expandPanel = open;
-
-    if (!open || refreshList) {
-      this.disableForm();
-      this.closeTyoskentelypaikka?.emit(refreshList);
-      if (refreshList) {
-        this.henkilostoService.sendHenkilostoListUpdate();
-      }
-    }
-  }
-
   deleteTyoskentelypaikka(): void {
     this.henkilostoService.deleteTyoskentelypaikka(this.tyoskentelypaikka.id).subscribe({
       next: () => {
-        this.togglePanel(false, true);
-        this.snackBarService.warning(this.i18n.tyoskentelypaikka_save_success);
+        this.togglePanel(false, true, true);
+        this.snackBarService.warning(this.i18n.tyoskentelypaikka_delete_success);
       },
       error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
     });
@@ -201,29 +182,22 @@ export class VardaTyoskentelypaikkaComponent extends VardaHenkiloFormAccordionAb
     setTimeout(() => this.isSubmitting.next(false), 500);
   }
 
-  disableForm() {
-    this.isEdit = false;
-    this.tyoskentelypaikkaForm.disable();
-
-    this.modalService.setFormValuesChanged(false);
-  }
-
   enableForm() {
     this.isEdit = true;
-    this.tyoskentelypaikkaForm.enable();
+    this.formGroup.enable();
     if (this.tyoskentelypaikka) {
-      this.tyoskentelypaikkaForm.controls.kiertava_tyontekija_kytkin.disable();
-      this.tyoskentelypaikkaForm.controls.toimipaikka_oid.disable();
+      this.formGroup.controls.kiertava_tyontekija_kytkin.disable();
+      this.formGroup.controls.toimipaikka_oid.disable();
     }
     if (!this.toimijaAccess.tyontekijatiedot.tallentaja) {
-      this.tyoskentelypaikkaForm.controls.kiertava_tyontekija_kytkin.disable();
+      this.formGroup.controls.kiertava_tyontekija_kytkin.disable();
     }
   }
 
   initDateFilters() {
     if (this.palvelussuhde) {
       this.startDateRange.min = new Date(this.palvelussuhde.alkamis_pvm);
-      this.startDateChange(this.tyoskentelypaikkaForm.controls.alkamis_pvm?.value);
+      this.startDateChange(this.formGroup.controls.alkamis_pvm?.value);
 
       if (this.palvelussuhde.paattymis_pvm) {
         this.startDateRange.max = new Date(this.palvelussuhde.paattymis_pvm);
@@ -234,7 +208,10 @@ export class VardaTyoskentelypaikkaComponent extends VardaHenkiloFormAccordionAb
 
   startDateChange(startDate: Moment) {
     this.endDateRange.min = startDate?.clone().toDate() || new Date(this.palvelussuhde.alkamis_pvm);
-    setTimeout(() => this.tyoskentelypaikkaForm.controls.paattymis_pvm?.updateValueAndValidity(), 100);
+    setTimeout(() => this.formGroup.controls.paattymis_pvm?.updateValueAndValidity(), 100);
   }
 
+  sendUpdateList() {
+    this.henkilostoService.sendHenkilostoListUpdate();
+  }
 }
