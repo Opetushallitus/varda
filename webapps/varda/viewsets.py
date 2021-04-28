@@ -37,7 +37,7 @@ from varda.kayttooikeuspalvelu import set_user_info_from_onr
 from varda.misc import (CustomServerErrorException, decrypt_henkilotunnus, encrypt_string, hash_string,
                         update_painotus_kytkin)
 from varda.misc_queries import get_paos_toimipaikat
-from varda.misc_viewsets import IncreasedModifyThrottleMixin, ObjectByTunnisteMixin
+from varda.misc_viewsets import IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, IntegerIdSchema
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, PaosToiminta,
                           Lapsi, Huoltaja, Huoltajuussuhde, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto,
                           PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Tyontekija, Palvelussuhde,
@@ -250,6 +250,8 @@ class NestedHuoltajaViewSet(GenericViewSet, ListModelMixin):
     queryset = Huoltaja.objects.none()
     serializer_class = HuoltajaSerializer
     permission_classes = (permissions.IsAdminUser, )
+    swagger_schema = IntegerIdSchema
+    swagger_path_model = Lapsi
 
     def get_lapsi(self, request, lapsi_pk=None):
         lapsi = get_object_or_404(Lapsi.objects.all(), pk=lapsi_pk)
@@ -2183,6 +2185,7 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
     permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
     today = None
     vakajarjestaja_id = None
+    swagger_schema = IntegerIdSchema
 
     def get_active_filter(self, prefix):
         return (Q(**{prefix + 'alkamis_pvm__lte': self.today}) &
@@ -2477,6 +2480,8 @@ class NestedVarhaiskasvatussuhdeViewSet(GenericViewSet, ListModelMixin):
     queryset = Varhaiskasvatussuhde.objects.none()
     serializer_class = VarhaiskasvatussuhdeSerializer
     permission_classes = (CustomModelPermissions,)
+    swagger_schema = IntegerIdSchema
+    swagger_path_model = Varhaiskasvatuspaatos
 
     def get_varhaiskasvatuspaatos(self, request, varhaiskasvatuspaatos_pk=None):
         varhaiskasvatuspaatos = get_object_or_404(Varhaiskasvatuspaatos.objects.all(), pk=varhaiskasvatuspaatos_pk)
@@ -2508,6 +2513,8 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
     queryset = Toimipaikka.objects.none()
     serializer_class = ToimipaikkaSerializer
     permission_classes = (CustomModelPermissions,)
+    swagger_schema = IntegerIdSchema
+    swagger_path_model = VakaJarjestaja
 
     def get_vakajarjestaja(self, request, vakajarjestaja_pk=None):
         vakajarjestaja = get_object_or_404(VakaJarjestaja.objects.all(), pk=vakajarjestaja_pk)
@@ -2544,6 +2551,8 @@ class NestedToiminnallinenPainotusViewSet(GenericViewSet, ListModelMixin):
     queryset = ToiminnallinenPainotus.objects.none()
     serializer_class = ToiminnallinenPainotusSerializer
     permission_classes = (ToimipaikkaPermissions, )
+    swagger_schema = IntegerIdSchema
+    swagger_path_model = Toimipaikka
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
@@ -2566,6 +2575,8 @@ class NestedKieliPainotusViewSet(GenericViewSet, ListModelMixin):
     queryset = KieliPainotus.objects.none()
     serializer_class = KieliPainotusSerializer
     permission_classes = (ToimipaikkaPermissions, )
+    swagger_schema = IntegerIdSchema
+    swagger_path_model = Toimipaikka
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
@@ -2588,6 +2599,8 @@ class NestedVarhaiskasvatussuhdeToimipaikkaViewSet(GenericViewSet, ListModelMixi
     queryset = Varhaiskasvatussuhde.objects.none()
     serializer_class = VarhaiskasvatussuhdeSerializer
     permission_classes = (CustomModelPermissions,)
+    swagger_schema = IntegerIdSchema
+    swagger_path_model = Toimipaikka
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
@@ -2611,6 +2624,8 @@ class NestedVarhaiskasvatuspaatosViewSet(GenericViewSet, ListModelMixin):
     queryset = Varhaiskasvatuspaatos.objects.none()
     serializer_class = VarhaiskasvatuspaatosSerializer
     permission_classes = (CustomModelPermissions,)
+    swagger_schema = IntegerIdSchema
+    swagger_path_model = Lapsi
 
     def get_lapsi(self, request, lapsi_pk=None):
         lapsi = get_object_or_404(Lapsi.objects.all(), pk=lapsi_pk)
@@ -2640,6 +2655,7 @@ class NestedLapsiKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListModelM
     queryset = Lapsi.objects.all().order_by('id')
     serializer_class = LapsiKoosteSerializer
     permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
+    swagger_schema = IntegerIdSchema
 
     def list(self, request, *args, **kwargs):
         self.kwargs['pk'] = self.kwargs['lapsi_pk']
@@ -2715,6 +2731,8 @@ class NestedLapsenVarhaiskasvatussuhdeViewSet(GenericViewSet, ListModelMixin):
     queryset = Varhaiskasvatussuhde.objects.none()
     serializer_class = VarhaiskasvatussuhdeSerializer
     permission_classes = (CustomModelPermissions,)
+    swagger_schema = IntegerIdSchema
+    swagger_path_model = Lapsi
 
     def get_lapsi(self, request, lapsi_pk=None):
         lapsi = get_object_or_404(Lapsi.objects.all(), pk=lapsi_pk)
@@ -2747,6 +2765,8 @@ class NestedLapsiMaksutietoViewSet(GenericViewSet, ListModelMixin):
     queryset = Maksutieto.objects.none()
     serializer_class = MaksutietoGetUpdateSerializer
     permission_classes = (CustomModelPermissions,)
+    swagger_schema = IntegerIdSchema
+    swagger_path_model = Lapsi
 
     def get_lapsi(self, request, lapsi_pk=None):
         lapsi = get_object_or_404(Lapsi.objects.all(), pk=lapsi_pk)
@@ -2785,6 +2805,7 @@ class NestedVakajarjestajaPaosToimijatViewSet(GenericViewSet, ListModelMixin):
     serializer_class = PaosToimijatSerializer
     permission_classes = (CustomModelPermissions,)
     today = datetime.datetime.now()
+    swagger_schema = IntegerIdSchema
 
     def get_vakajarjestaja(self, vakajarjestaja_pk=None):
         vakajarjestaja = get_object_or_404(VakaJarjestaja.objects.all(), pk=vakajarjestaja_pk)
@@ -2831,6 +2852,7 @@ class NestedVakajarjestajaPaosToimipaikatViewSet(GenericViewSet, ListModelMixin)
     serializer_class = PaosToimipaikatSerializer
     permission_classes = (CustomModelPermissions,)
     today = datetime.datetime.now()
+    swagger_schema = IntegerIdSchema
 
     def get_vakajarjestaja(self, vakajarjestaja_pk=None):
         vakajarjestaja = get_object_or_404(VakaJarjestaja.objects.all(), pk=vakajarjestaja_pk)

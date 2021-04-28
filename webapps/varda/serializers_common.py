@@ -123,6 +123,19 @@ class AbstractCustomRelatedField(serializers.Field):
 
         return referenced_object.id
 
+    def _run_prevalidator(self, value):
+        try:
+            self.prevalidator(value)
+        except serializers.ValidationError as e:
+            if isinstance(e.detail, dict):
+                # If raised error is already a dict, move errors to a single list so that error messages are
+                # not nested multiple times
+                error_list = []
+                for error_key, error_value in e.detail.items():
+                    error_list = error_list + error_value
+                e.detail = error_list
+            raise e
+
     def to_internal_value(self, value):
         if self.is_value_empty(value):
             # Value is optional: if empty or not given do nothing
@@ -133,7 +146,7 @@ class AbstractCustomRelatedField(serializers.Field):
             raise serializers.ValidationError([ErrorMessages.GE015.value], code='invalid')
 
         # Django validators work too late, so we use our own here
-        self.prevalidator(value)
+        self._run_prevalidator(value)
 
         referenced_object = self.get_referenced_object_by_value(value)
         if referenced_object is None:

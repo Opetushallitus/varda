@@ -28,6 +28,7 @@ from varda.excel_export import ExcelReportStatus, create_excel_report_task, gene
 from varda.filters import (TiedonsiirtoFilter, ExcelReportFilter, KelaEtuusmaksatusAloittaneetFilter,
                            KelaEtuusmaksatusLopettaneetFilter, KelaEtuusmaksatusKorjaustiedotFilter)
 from varda.misc import encrypt_string
+from varda.misc_viewsets import IntegerIdSchema
 from varda.pagination import (ChangeablePageSizePagination, TimestampCursorPagination, DateCursorPagination,
                               DateReverseCursorPagination, TimestampReverseCursorPagination)
 from varda.serializers_reporting import (KelaEtuusmaksatusAloittaneetSerializer, KelaEtuusmaksatusLopettaneetSerializer,
@@ -562,6 +563,8 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
     serializer_class = ErrorReportLapsetSerializer
     queryset = Lapsi.objects.none()
     permission_classes = (CustomModelPermissions,)
+    swagger_schema = IntegerIdSchema
+    swagger_path_model = VakaJarjestaja
 
     is_vakatiedot_permissions = False
     is_huoltajatiedot_permissions = False
@@ -691,6 +694,8 @@ class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
     serializer_class = ErrorReportTyontekijatSerializer
     queryset = Tyontekija.objects.none()
     permission_classes = (CustomModelPermissions,)
+    swagger_schema = IntegerIdSchema
+    swagger_path_model = VakaJarjestaja
 
     def verify_permissions(self):
         user = self.request.user

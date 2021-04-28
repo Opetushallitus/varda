@@ -149,17 +149,22 @@ class PublicSchemaGenerator(OpenAPISchemaGenerator):
 
 
 class TunnisteIdSchema(SwaggerAutoSchema):
+    param_type = openapi.TYPE_STRING
+    param_description = ('A unique integer value identifying this {}. Can also be lahdejarjestelma and '
+                         'tunniste pair (lahdejarjestelma:tunniste).')
+
     def get_query_parameters(self):
-        query_params = super(TunnisteIdSchema, self).get_query_parameters()
-        path_list = self.path.split('/')
-        if path_list[-2] == '{id}':
+        query_params = super().get_query_parameters()
+        lookup_regex = re.compile(r'{((.*_)?(id|pk))}')
+        match = lookup_regex.search(self.path)
+        if match and match.group(1):
             # Override id path parameter description to include lahdejarjestelma:tunniste option
-            model_name = self.view.get_queryset().model.__name__
+            path_model = getattr(getattr(self.view, 'swagger_path_model', None), '__name__', None)
+            model_name = path_model or self.view.get_queryset().model.__name__
             query_params.append(
-                openapi.Parameter('id', openapi.IN_PATH,
-                                  description=f'A unique integer value identifying this {model_name}. Can also be '
-                                              'lahdejarjestelma and tunniste pair (lahdejarjestelma:tunniste).',
-                                  type=openapi.TYPE_STRING)
+                openapi.Parameter(match.group(1), openapi.IN_PATH,
+                                  description=self.param_description.format(model_name),
+                                  type=self.param_type)
             )
         return query_params
 
@@ -199,3 +204,8 @@ class IncreasedModifyThrottleMixin:
         if self.request.method.lower() in self.THROTTLING_MODIFY_HTTP_METHODS:
             self.throttle_classes = [BurstRateThrottle, SustainedModifyRateThrottle]
         return super().get_throttles()
+
+
+class IntegerIdSchema(TunnisteIdSchema):
+    param_type = openapi.TYPE_INTEGER
+    param_description = 'A unique integer value identifying this {}.'

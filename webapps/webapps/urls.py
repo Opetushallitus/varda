@@ -35,6 +35,7 @@ from varda import (views, viewsets, viewsets_admin, viewsets_reporting, viewsets
                    viewsets_henkilosto, viewsets_julkinen)
 from varda.cas.misc_cas import is_local_url_decorator
 from varda.cas.oppija_cas_views import OppijaCasLoginView
+from varda.constants import SWAGGER_DESCRIPTION
 from varda.misc_viewsets import PublicSwaggerRenderer, PublicSchemaGenerator
 
 
@@ -206,6 +207,7 @@ schema_view_public = get_schema_view_yasg(
     openapi.Info(
         title='VARDA REST API',
         default_version='v1',
+        description=SWAGGER_DESCRIPTION
     ),
     public=True,
     url='https://varda.example.com/api/',

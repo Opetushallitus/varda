@@ -8,6 +8,7 @@ from rest_framework.viewsets import GenericViewSet
 from varda import koodistopalvelu
 from varda.cache import get_koodistot_cache, set_koodistot_cache
 from varda.enums.error_messages import ErrorMessages
+from varda.filters import CustomParametersFilterBackend, CustomParameter
 from varda.lokalisointipalvelu import get_localisation_data
 from varda.models import Z2_Koodisto, Z2_Code
 from webapps.api_throttles import PublicAnonThrottle
@@ -17,13 +18,12 @@ class KoodistotViewSet(GenericViewSet, ListModelMixin):
     queryset = Z2_Koodisto.objects.all().order_by('name_koodistopalvelu')
     permission_classes = (AllowAny,)
     throttle_classes = (PublicAnonThrottle,)
+    pagination_class = None
+    filter_backends = (CustomParametersFilterBackend,)
+    custom_parameters = (CustomParameter(name='lang', required=False, location='query', data_type='string',
+                                         description='Locale code (fi/sv)'),)
 
     def list(self, request, *args, **kwargs):
-        """
-        filter:
-            lang=string
-            e.g. /api/julkinen/v1/koodistot/?lang=sv
-        """
         query_params = self.request.query_params
         language = query_params.get('lang', 'FI')
         if language.upper() not in koodistopalvelu.LANGUAGE_CODES:
@@ -77,13 +77,15 @@ class LocalisationViewSet(GenericViewSet, ListModelMixin):
     """
     list:
         Get localisations from lokalisointipalvelu for given category and locale
-
-        parameters:
-            category=string (required)
-            locale=string
     """
     permission_classes = (AllowAny,)
     throttle_classes = (PublicAnonThrottle,)
+    pagination_class = None
+    filter_backends = (CustomParametersFilterBackend,)
+    custom_parameters = (CustomParameter(name='category', required=True, location='query', data_type='string',
+                                         description='Category name in lokalisointipalvelu'),
+                         CustomParameter(name='locale', required=False, location='query', data_type='string',
+                                         description='Locale code (fi/sv)'),)
 
     def get_queryset(self):
         return None

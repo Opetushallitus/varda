@@ -3,12 +3,16 @@ import re
 from datetime import datetime
 from functools import reduce
 
+import coreapi
+import coreschema
 from django.contrib.postgres.aggregates import StringAgg
 from django.db.models import Q, Case, When, Subquery, OuterRef, CharField, Value
 from django.db.models.functions import Concat
 from django.http import Http404
+from django.template import loader
 from django_filters import rest_framework as djangofilters
 from django_filters.constants import EMPTY_VALUES
+from rest_framework.filters import BaseFilterBackend
 
 from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
 from varda.enums.koodistot import Koodistot
@@ -18,6 +22,57 @@ from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, K
                           PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Z2_Code,
                           Z4_CasKayttoOikeudet)
 from varda.permissions import parse_toimipaikka_id_list
+
+
+class CustomParameter:
+    def __init__(self, name, data_type, required, location, description):
+        self.name = name
+        self.data_type = data_type
+        self.required = required
+        self.location = location
+        self.description = description
+
+
+class CustomParametersFilterBackend(BaseFilterBackend):
+    template = 'varda/custom_filters.html'
+
+    def _get_schema(self, data_type, description):
+        if data_type == 'integer':
+            schema = coreschema.Integer
+        elif data_type == 'number':
+            schema = coreschema.Number
+        elif data_type == 'boolean':
+            schema = coreschema.Boolean
+        else:
+            schema = coreschema.String
+
+        return schema(description=description)
+
+    def filter_queryset(self, request, queryset, view):
+        pass
+
+    def get_schema_fields(self, view):
+        custom_parameters = getattr(view, 'custom_parameters', ())
+        schema_fields = []
+        for custom_parameter in custom_parameters:
+            schema_fields.append(coreapi.Field(name=custom_parameter.name, location=custom_parameter.location,
+                                               required=custom_parameter.required,
+                                               schema=self._get_schema(custom_parameter.data_type,
+                                                                       custom_parameter.description)))
+        return schema_fields
+
+    def get_schema_operation_parameters(self, view):
+        custom_parameters = getattr(view, 'custom_parameters', ())
+        schema_operations = []
+        for custom_parameter in custom_parameters:
+            schema_operations.append({'name': custom_parameter.name, 'required': custom_parameter.required,
+                                      'description': custom_parameter.description, 'in': custom_parameter.location,
+                                      'schema': {'type': custom_parameter.data_type}})
+        return schema_operations
+
+    def to_html(self, request, queryset, view):
+        template = loader.get_template(self.template)
+        return template.render({'fields': getattr(view, 'custom_parameters', ())})
 
 
 class CustomCharFilter(djangofilters.CharFilter):
@@ -603,4 +658,4 @@ class ExcelReportFilter(djangofilters.FilterSet):
     user_id = djangofilters.NumberFilter(field_name='user__id')
     username = djangofilters.NumberFilter(lookup_expr='iexact', field_name='user__username')
     status = djangofilters.CharFilter()
-    type = djangofilters.CharFilter()
+    report_type = djangofilters.CharFilter()

@@ -4,12 +4,13 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
 from . import views
-
+from .constants import SWAGGER_DESCRIPTION
 
 schema_view = get_schema_view(
     openapi.Info(
         title='VARDA REST API',
         default_version='v1',
+        description=SWAGGER_DESCRIPTION,
     ),
     public=False,
     permission_classes=(permissions.AllowAny,),

@@ -294,6 +294,10 @@ if 'test' in sys.argv:
 
 # TODO:_Set the strict-throttles to very strict, after initial loading has been performed. This is important for security reasons!
 REST_FRAMEWORK = {
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'varda.custom_renderer.ShowFiltersBrowsableAPIRenderer',
+    ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',

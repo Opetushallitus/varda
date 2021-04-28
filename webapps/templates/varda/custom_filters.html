@@ -1,0 +1,12 @@
+{% load i18n %}
+<form class="form" action="" method="get">
+  {% for parameter in fields %}
+    <div id="div_id_{{ parameter.name }}" class="form-group">
+      <label for="id_{{ parameter.name }}" class="control-label">{{ parameter.name }}</label>
+      <div class="controls">
+        <input type="text" name="{{ parameter.name }}" class="textinput textInput form-control" id="id_{{ parameter.name }}">
+      </div>
+    </div>
+  {% endfor %}
+  <button type="submit" class="btn btn-primary">{% trans "Submit" %}</button>
+</form>
