@@ -13,6 +13,7 @@ import zipfile
 
 from django.conf import settings
 from django.contrib.auth.models import Group, User
+from django.contrib.sessions.models import Session
 from django.db import connection
 from django.db.models import Max
 from django_pg_bulk_update import bulk_update
@@ -189,6 +190,8 @@ def finalize_data_dump():
     logger.info('Finalizing the data dump.')
 
     logger.info('Removing unnecessary data.')
+
+    Session.objects.all().delete()
     HistoricalHenkilo.objects.all().delete()
     Z3_AdditionalCasUserFields.objects.all().delete()
     Z4_CasKayttoOikeudet.objects.all().delete()
