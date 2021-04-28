@@ -49,8 +49,8 @@ export class VardaHenkilostoApiService {
     return this.http.get(`${this.henkilostoApiPath}/tutkinnot/${tutkintoId}/`);
   }
 
-  getTutkinnot(henkiloOid: string): Observable<Array<VardaTutkintoDTO>> {
-    return this.http.getAllResults(`${this.henkilostoApiPath}/tutkinnot/`, environment.vardaAppUrl, { henkilo: henkiloOid });
+  getTutkinnot(henkiloOid: string, vakajarjestajaOid: string): Observable<Array<VardaTutkintoDTO>> {
+    return this.http.getAllResults(`${this.henkilostoApiPath}/tutkinnot/`, environment.vardaAppUrl, { henkilo: henkiloOid, vakajarjestaja: vakajarjestajaOid });
   }
 
   createTutkinto(tutkintoDTO: VardaTutkintoDTO): Observable<VardaTutkintoDTO> {

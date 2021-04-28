@@ -17,8 +17,6 @@ import { TyontekijaListDTO, VardaTyontekijaDTO } from 'projects/virkailija-app/s
 import { HenkiloRooliEnum } from 'projects/virkailija-app/src/app/utilities/models/enums/henkilorooli.enum';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 
-
-
 @Component({
   selector: 'app-varda-tyontekija-tutkinto',
   templateUrl: './varda-tyontekija-tutkinto.component.html',
@@ -75,13 +73,18 @@ export class VardaTyontekijaTutkintoComponent implements OnChanges {
     this.initTutkintoForm();
     forkJoin([
       this.koodistoService.getKoodisto(KoodistoEnum.tutkinto, KoodistoSortBy.codeValue),
-      this.henkilostoService.getTutkinnot(this.henkilo.henkilo_oid)
+      this.henkilostoService.getTutkinnot(this.henkilo.henkilo_oid, this.vardaVakajarjestajaService.getSelectedVakajarjestaja().organisaatio_oid)
     ]).subscribe({
       next: ([tutkintoKoodisto, henkilonTutkinnot]) => {
         if (henkilonTutkinnot && tutkintoKoodisto) {
           this.tutkintoOptions = tutkintoKoodisto.codes.filter(koodisto => !henkilonTutkinnot.some(tutkinto => tutkinto.tutkinto_koodi === koodisto.code_value)).reverse();
           this.henkilonTutkinnot.next(this.fillTutkinnot(henkilonTutkinnot, tutkintoKoodisto));
           this.addTutkinto = !henkilonTutkinnot.length;
+
+          if (!this.addTutkinto && !this.tyontekija.id) {
+            // Henkilo has Tutkinto objects -> trying to create an existing Tyontekija
+            this.createTyontekija(true);
+          }
         }
       },
       error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
@@ -140,8 +143,7 @@ export class VardaTyontekijaTutkintoComponent implements OnChanges {
   }
 
 
-  createTyontekija() {
-
+  createTyontekija(createExistingTyontekija?: boolean) {
     const tyontekijaDTO: VardaTyontekijaDTO = {
       henkilo_oid: this.henkilo.henkilo_oid,
       vakajarjestaja_oid: this.vardaVakajarjestajaService.getSelectedVakajarjestaja().organisaatio_oid,
@@ -151,7 +153,6 @@ export class VardaTyontekijaTutkintoComponent implements OnChanges {
 
     this.henkilostoService.createTyontekija(tyontekijaDTO).subscribe({
       next: tyontekijaData => {
-
         this.tyontekija = {
           id: tyontekijaData.id,
           url: tyontekijaData.url,
@@ -164,10 +165,12 @@ export class VardaTyontekijaTutkintoComponent implements OnChanges {
         this.snackBarService.success(this.i18n.tyontekija_save_success);
         this.henkilostoService.sendHenkilostoListUpdate();
         this.updateTyontekija.emit(this.tyontekija);
-        this.createTutkinto(this.tutkintoForm);
+
+        if (!createExistingTyontekija) {
+          this.createTutkinto(this.tutkintoForm);
+        }
       },
       error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
     });
   }
-
 }
