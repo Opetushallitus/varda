@@ -1,3 +1,4 @@
+import datetime
 import logging
 
 from django.contrib.auth.models import User, Group
@@ -12,14 +13,19 @@ from varda import validators
 from varda.cache import caching_to_representation
 from varda.constants import JARJESTAMISMUODOT_YKSITYINEN, JARJESTAMISMUODOT_PAOS, JARJESTAMISMUODOT_KUNTA
 from varda.enums.error_messages import ErrorMessages
+from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
-from varda.misc import list_of_dicts_has_duplicate_values
+from varda.misc import list_of_dicts_has_duplicate_values, TemporaryObject, CustomServerErrorException
 from varda.misc_viewsets import ViewSetValidator
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Maksutieto, Henkilo,
                           Lapsi, Huoltaja, Huoltajuussuhde, PaosOikeus, PaosToiminta, Varhaiskasvatuspaatos,
                           Varhaiskasvatussuhde, Z3_AdditionalCasUserFields, Tyontekija, Z4_CasKayttoOikeudet)
 from varda.permissions import check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement, is_oph_staff
-from varda.related_object_validations import check_if_immutable_object_is_changed
+from varda.related_object_validations import (check_if_immutable_object_is_changed,
+                                              check_toimipaikka_and_vakajarjestaja_have_oids,
+                                              check_overlapping_toiminnallinen_painotus,
+                                              check_overlapping_kielipainotus, check_overlapping_varhaiskasvatuspaatos,
+                                              check_overlapping_varhaiskasvatussuhde, check_overlapping_maksutieto)
 from varda.serializers_common import (OidRelatedField, TunnisteRelatedField, PermissionCheckedHLFieldMixin,
                                       OptionalToimipaikkaMixin, ToimipaikkaPermissionCheckedHLField,
                                       VakaJarjestajaPermissionCheckedHLField, VakaJarjestajaHLField, HenkiloHLField,
@@ -336,6 +342,14 @@ class ToimipaikkaSerializer(serializers.HyperlinkedModelSerializer):
         if self.instance:
             fill_missing_fields_for_validations(data, self.instance)
 
+            check_if_immutable_object_is_changed(self.instance, data, 'vakajarjestaja')
+
+            if self.instance.hallinnointijarjestelma != Hallinnointijarjestelma.VARDA.value:
+                raise ValidationError({'hallinnointijarjestelma': [ErrorMessages.TP003.value]})
+            if (data['toimintamuoto_koodi'].lower() != self.instance.toimintamuoto_koodi.lower() and
+                    self.instance.organisaatio_oid is None):
+                raise ValidationError({'toimintamuoto_koodi': [ErrorMessages.TP005.value]})
+
         unique_name_qs = Toimipaikka.objects.filter(vakajarjestaja=data['vakajarjestaja'], nimi=data['nimi'])
         if self.instance:
             # Exclude current instance
@@ -349,6 +363,8 @@ class ToimipaikkaSerializer(serializers.HyperlinkedModelSerializer):
         validators.validate_toimipaikan_nimi(data['nimi'])
 
         self._validate_jarjestamismuoto_codes(data)
+        validators.validate_alkamis_pvm_before_paattymis_pvm(data)
+
         return data
 
     def _validate_jarjestamismuoto_codes(self, data):
@@ -395,12 +411,19 @@ class ToiminnallinenPainotusSerializer(serializers.HyperlinkedModelSerializer):
         exclude = ('luonti_pvm', 'changed_by',)
 
     def validate(self, data):
-        if self.instance:  # PUT/PATCH
+        if self.instance:
             fill_missing_fields_for_validations(data, self.instance)
             check_if_immutable_object_is_changed(self.instance, data, 'toimipaikka')
-            validators.validate_dates_within_toimipaikka(data, self.instance.toimipaikka)
-        else:  # POST
-            validators.validate_dates_within_toimipaikka(data, data['toimipaikka'])
+            check_overlapping_toiminnallinen_painotus(data, self_id=self.instance.id)
+        else:
+            check_overlapping_toiminnallinen_painotus(data)
+
+        toimipaikka = data['toimipaikka']
+        validators.validate_dates_within_toimipaikka(data, toimipaikka)
+        check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka, toimipaikka.vakajarjestaja.organisaatio_oid,
+                                                       toimipaikka.organisaatio_oid)
+        validators.validate_alkamis_pvm_before_paattymis_pvm(data)
+
         return data
 
 
@@ -426,12 +449,19 @@ class KieliPainotusSerializer(serializers.HyperlinkedModelSerializer):
         exclude = ('luonti_pvm', 'changed_by',)
 
     def validate(self, data):
-        if self.instance:  # PUT/PATCH
+        if self.instance:
             fill_missing_fields_for_validations(data, self.instance)
             check_if_immutable_object_is_changed(self.instance, data, 'toimipaikka')
-            validators.validate_dates_within_toimipaikka(data, self.instance.toimipaikka)
-        else:  # POST
-            validators.validate_dates_within_toimipaikka(data, data['toimipaikka'])
+            check_overlapping_kielipainotus(data, self_id=self.instance.id)
+        else:
+            check_overlapping_kielipainotus(data)
+
+        toimipaikka = data['toimipaikka']
+        validators.validate_dates_within_toimipaikka(data, toimipaikka)
+        check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka, toimipaikka.vakajarjestaja.organisaatio_oid,
+                                                       toimipaikka.organisaatio_oid)
+        validators.validate_alkamis_pvm_before_paattymis_pvm(data)
+
         return data
 
 
@@ -597,6 +627,49 @@ class MaksutietoPostHuoltajaSerializer(serializers.ModelSerializer):
         fields = ('henkilo_oid', 'henkilotunnus', 'etunimet', 'sukunimi')
 
 
+def _validate_maksutieto_dates(data, lapsi_obj=None):
+    lapsi = data.get('lapsi', None) or lapsi_obj
+    alkamis_pvm = data['alkamis_pvm']
+    paattymis_pvm = data.get('paattymis_pvm', None)
+
+    validators.validate_paattymispvm_same_or_after_alkamispvm(data)
+
+    vakapaatokset = lapsi.varhaiskasvatuspaatokset.all()
+    if vakapaatokset.count() > 0:
+        earliest_alkamis_pvm = vakapaatokset.earliest('alkamis_pvm').alkamis_pvm
+        latest_paattymis_pvm = vakapaatokset.latest('paattymis_pvm').paattymis_pvm
+
+        if validators.validate_paivamaara1_before_paivamaara2(alkamis_pvm, earliest_alkamis_pvm, can_be_same=False):
+            raise ValidationError({'alkamis_pvm': [ErrorMessages.MA005.value]})
+
+        if all((v.paattymis_pvm is not None) for v in vakapaatokset):
+            if not validators.validate_paivamaara1_after_paivamaara2(latest_paattymis_pvm, alkamis_pvm,
+                                                                     can_be_same=True):
+                raise ValidationError({'alkamis_pvm': [ErrorMessages.MA006.value]})
+
+        """
+        While it is possible to leave out the end date, it must fall within vakapaatokset if given.
+        Make this check only if all vakapaatokset have a paattymis_pvm.
+        """
+        if paattymis_pvm is not None:
+            if all((v.paattymis_pvm is not None) for v in vakapaatokset):
+                if not validators.validate_paivamaara1_after_paivamaara2(latest_paattymis_pvm, paattymis_pvm,
+                                                                         can_be_same=True):
+                    raise ValidationError({'paattymis_pvm': [ErrorMessages.MA007.value]})
+
+    if lapsi.yksityinen_kytkin and paattymis_pvm and paattymis_pvm < datetime.date(2020, 9, 1):
+        raise ValidationError({'paattymis_pvm': [ErrorMessages.MA014.value]})
+
+
+def _validate_maksutieto_overlap(data, lapsi_obj=None, maksutieto_id=None):
+    # Temporarily assign huoltajuussuhdeet.lapsi value to data so that overlap validation is run correctly
+    temp_object = TemporaryObject()
+    temp_object.lapsi = data.get('lapsi', None) or lapsi_obj
+    data['huoltajuussuhteet'] = temp_object
+    check_overlapping_maksutieto(data, self_id=maksutieto_id)
+    data.pop('huoltajuussuhteet')
+
+
 class MaksutietoPostSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     url = serializers.ReadOnlyField()
@@ -617,16 +690,42 @@ class MaksutietoPostSerializer(serializers.HyperlinkedModelSerializer):
             msg = {'lapsi': [ErrorMessages.GE008.value]}
             raise serializers.ValidationError(msg, code='invalid')
 
-        if len(data['huoltajat']) > 7:
+        if not Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=data['lapsi']).exists():
+            raise ValidationError({'errors': [ErrorMessages.MA009.value]})
+
+        self._validate_huoltajat(data['huoltajat'])
+        self._validate_yksityinen_lapsi(data)
+        self._validate_maksun_peruste(data)
+        _validate_maksutieto_dates(data)
+        _validate_maksutieto_overlap(data)
+        return data
+
+    def _validate_huoltajat(self, huoltajat):
+        if len(huoltajat) > 7:
             raise serializers.ValidationError({'huoltajat': [ErrorMessages.MA011.value]})
 
-        if list_of_dicts_has_duplicate_values(data['huoltajat'], 'henkilotunnus'):
+        if list_of_dicts_has_duplicate_values(huoltajat, 'henkilotunnus'):
             raise serializers.ValidationError({'huoltajat': [ErrorMessages.MA012.value]})
 
-        if list_of_dicts_has_duplicate_values(data['huoltajat'], 'henkilo_oid'):
+        if list_of_dicts_has_duplicate_values(huoltajat, 'henkilo_oid'):
             raise serializers.ValidationError({'huoltajat': [ErrorMessages.MA013.value]})
 
-        return data
+    def _validate_yksityinen_lapsi(self, data):
+        if data['lapsi'].yksityinen_kytkin:
+            # Yksityinen lapsi, palveluseteli_arvo and perheen_koko are not stored
+            data['yksityinen_jarjestaja'] = True
+            data['palveluseteli_arvo'] = None
+            data['perheen_koko'] = None
+        else:
+            # Kunnallinen lapsi
+            if 'perheen_koko' not in data:
+                raise ValidationError({'perheen_koko': [ErrorMessages.MA001.value]})
+
+    def _validate_maksun_peruste(self, data):
+        if data['maksun_peruste_koodi'].lower() == 'mp01':
+            # If maksun peruste is mp01, asiakasmaksu and palveluseteli_arvo are not stored
+            data['asiakasmaksu'] = 0
+            data['palveluseteli_arvo'] = 0.00
 
 
 class MaksutietoGetHuoltajaSerializer(serializers.ModelSerializer):
@@ -671,6 +770,14 @@ class MaksutietoGetUpdateSerializer(serializers.HyperlinkedModelSerializer):
         if len(data) == 0:
             raise serializers.ValidationError({'errors': [ErrorMessages.GE014.value]})
         fill_missing_fields_for_validations(data, self.instance)
+
+        lapsi_qs = Lapsi.objects.filter(huoltajuussuhteet__maksutiedot__id=self.instance.id).distinct()
+        if lapsi_qs.count() != 1:
+            logger.error('Error getting lapsi for maksutieto ' + str(self.instance.id))
+            raise CustomServerErrorException
+        _validate_maksutieto_dates(data, lapsi_obj=lapsi_qs.first())
+        _validate_maksutieto_overlap(data, lapsi_obj=lapsi_qs.first(), maksutieto_id=self.instance.id)
+
         return data
 
     class Meta:
@@ -721,6 +828,10 @@ class LapsiSerializer(LapsiOptionalToimipaikkaMixin, serializers.HyperlinkedMode
         with ViewSetValidator() as validator:
             if self.instance:
                 fill_missing_fields_for_validations(data, self.instance)
+                check_if_immutable_object_is_changed(self.instance, data, 'henkilo')
+                check_if_immutable_object_is_changed(self.instance, data, 'vakatoimija')
+                check_if_immutable_object_is_changed(self.instance, data, 'oma_organisaatio')
+                check_if_immutable_object_is_changed(self.instance, data, 'paos_organisaatio')
             elif toimipaikka := data.get('toimipaikka', None):
                 # Only validate in POST
                 vakajarjestaja = data.get('vakatoimija') or data.get('paos_organisaatio')
@@ -892,21 +1003,21 @@ class VarhaiskasvatuspaatosSerializer(LapsiOptionalToimipaikkaMixin, serializers
             check_if_immutable_object_is_changed(self.instance, data, 'kokopaivainen_vaka_kytkin', compare_id=False)
             check_if_immutable_object_is_changed(self.instance, data, 'tilapainen_vaka_kytkin', compare_id=False)
             check_if_immutable_object_is_changed(self.instance, data, 'jarjestamismuoto_koodi', compare_id=False)
-        elif toimipaikka := data.get('toimipaikka', None):
-            # Only validate in POST
-            _validate_toimipaikka_with_vakajarjestaja_of_lapsi(toimipaikka, data['lapsi'])
+
+            check_overlapping_varhaiskasvatuspaatos(data, self_id=self.instance.id)
+        else:
+            if toimipaikka := data.get('toimipaikka', None):
+                _validate_toimipaikka_with_vakajarjestaja_of_lapsi(toimipaikka, data['lapsi'])
+            check_overlapping_varhaiskasvatuspaatos(data)
 
         validate_instance_uniqueness(Varhaiskasvatuspaatos, data, ErrorMessages.VP015.value,
                                      instance_id=getattr(self.instance, 'id', None),
                                      ignore_fields=('pikakasittely_kytkin',))
 
         jarjestamismuoto_koodi = data['jarjestamismuoto_koodi'].lower()
-        hakemus_pvm = data['hakemus_pvm']
-        alkamis_pvm = data['alkamis_pvm']
-        paattymis_pvm = data.get('paattymis_pvm', None)
         lapsi_obj = data['lapsi']
 
-        self._validate_dates(hakemus_pvm, alkamis_pvm, paattymis_pvm)
+        self._validate_dates(data)
         self._validate_paos_specific_data(lapsi_obj, jarjestamismuoto_koodi)
         self._validate_jarjestamismuoto(lapsi_obj, jarjestamismuoto_koodi)
         self._validate_vuorohoito(data)
@@ -953,12 +1064,12 @@ class VarhaiskasvatuspaatosSerializer(LapsiOptionalToimipaikkaMixin, serializers
                 # Tilapainen vaka_kytkin if required, however not in PATCH
                 raise serializers.ValidationError({'tilapainen_vaka_kytkin': [ErrorMessages.VP014.value]})
 
-    def _validate_dates(self, hakemus_pvm, alkamis_pvm, paattymis_pvm):
+    def _validate_dates(self, data):
+        hakemus_pvm = data['hakemus_pvm']
+        alkamis_pvm = data['alkamis_pvm']
         if not validators.validate_paivamaara1_before_paivamaara2(hakemus_pvm, alkamis_pvm, can_be_same=True):
             raise ValidationError({'hakemus_pvm': [ErrorMessages.VP001.value]})
-        if paattymis_pvm:
-            if not validators.validate_paivamaara1_before_paivamaara2(alkamis_pvm, paattymis_pvm, can_be_same=True):
-                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI004.value]})
+        validators.validate_paattymispvm_same_or_after_alkamispvm(data)
 
     @caching_to_representation('varhaiskasvatuspaatos')
     def to_representation(self, instance):
@@ -1011,14 +1122,15 @@ class VarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSerializer):
         instance = self.instance
         if instance:
             fill_missing_fields_for_validations(data, instance)
+            check_if_immutable_object_is_changed(self.instance, data, 'varhaiskasvatuspaatos')
+            check_if_immutable_object_is_changed(self.instance, data, 'toimipaikka')
+            check_overlapping_varhaiskasvatussuhde(data, self_id=instance.id)
         else:
-            # Only validate in POST
-            _validate_toimipaikka_with_vakajarjestaja_of_lapsi(data['toimipaikka'],
-                                                               data['varhaiskasvatuspaatos'].lapsi)
-
-        if not self.context['request'].user.has_perm('view_varhaiskasvatuspaatos', data['varhaiskasvatuspaatos']):
-            msg = {'varhaiskasvatuspaatos': [ErrorMessages.GE008.value]}
-            raise serializers.ValidationError(msg, code='invalid')
+            toimipaikka = data['toimipaikka']
+            _validate_toimipaikka_with_vakajarjestaja_of_lapsi(toimipaikka, data['varhaiskasvatuspaatos'].lapsi)
+            check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka, toimipaikka.vakajarjestaja.organisaatio_oid,
+                                                           toimipaikka.organisaatio_oid)
+            check_overlapping_varhaiskasvatussuhde(data)
 
         self._validate_jarjestamismuoto(data)
         self._validate_paivamaarat_varhaiskasvatussuhde_toimipaikka(data)
@@ -1068,9 +1180,8 @@ class VarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSerializer):
         if not validators.validate_paivamaara1_before_paivamaara2(alkamis_pvm, vakapaatos.paattymis_pvm, can_be_same=True):
             raise ValidationError({'alkamis_pvm': [ErrorMessages.VS011.value]})
 
+        validators.validate_paattymispvm_same_or_after_alkamispvm(data)
         if paattymis_pvm:
-            if not validators.validate_paivamaara1_before_paivamaara2(alkamis_pvm, paattymis_pvm, can_be_same=True):
-                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI004.value]})
             if not validators.validate_paivamaara1_before_paivamaara2(paattymis_pvm, vakapaatos.paattymis_pvm, can_be_same=True):
                 raise ValidationError({'paattymis_pvm': [ErrorMessages.VP003.value]})
         elif vakapaatos.paattymis_pvm:

@@ -415,7 +415,7 @@ class VardaViewsTests(TestCase):
             'tilapainen_vaka_kytkin': False,
             'hakemus_pvm': '2020-04-06',
             'alkamis_pvm': '2009-02-02',
-            'paattymis_pvm': '2008-01-05',
+            'paattymis_pvm': '2010-01-05',
             'lahdejarjestelma': '1',
         }
         client = SetUpTestClient('tester2').client()
@@ -2594,7 +2594,7 @@ class VardaViewsTests(TestCase):
             'palveluseteli_arvo': 120,
             'asiakasmaksu': 0,
             'perheen_koko': 2,
-            'alkamis_pvm': '2008-01-02',
+            'alkamis_pvm': '2018-01-02',
             'paattymis_pvm': '2021-01-01',
             'lahdejarjestelma': '1',
         }
@@ -2629,16 +2629,16 @@ class VardaViewsTests(TestCase):
     def test_push_api_maksutieto_no_matching_huoltajat(self):
         maksutieto = {
             'huoltajat': [{'henkilotunnus': '110494-9153', 'etunimet': 'Jukka', 'sukunimi': 'Pekkarinen'}],
-            'lapsi': '/api/v1/lapset/1/',
+            'lapsi': '/api/v1/lapset/3/',
             'maksun_peruste_koodi': 'mp02',
             'palveluseteli_arvo': 120,
             'asiakasmaksu': 0,
             'perheen_koko': 2,
             'alkamis_pvm': '2019-01-01',
-            'paattymis_pvm': '2020-01-01',
+            'paattymis_pvm': '2019-02-01',
             'lahdejarjestelma': '1',
         }
-        client = SetUpTestClient('tester').client()
+        client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
         assert_status_code(resp, 400)
         assert_validation_error(resp, 'huoltajat', 'MA003', 'No matching huoltaja found.')
@@ -2683,7 +2683,7 @@ class VardaViewsTests(TestCase):
         }
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
         assert_status_code(resp, 400)
-        assert_validation_error(resp, 'errors', 'MA008', 'Lapsi does not have Varhaiskasvatuspaatos. Add Varhaiskasvatuspaatos before adding Maksutieto.')
+        assert_validation_error(resp, 'errors', 'MA009', 'Lapsi does not have Varhaiskasvatussuhde. Add Varhaiskasvatussuhde before adding Maksutieto.')
 
     def test_api_maksutieto_multiple_huoltaja_list_admin(self):
         # Maksutieto should only be listed once even if it has multiple huoltajat and lapsi-filter is used

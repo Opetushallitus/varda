@@ -364,3 +364,7 @@ def memory_efficient_queryset_iterator(queryset, chunk_size=1000):
         page = paginator.get_page(page_number)
         for instance in page.object_list:
             yield instance
+
+
+class TemporaryObject(object):
+    pass

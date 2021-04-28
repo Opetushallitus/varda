@@ -29,7 +29,6 @@ from varda.cache import (cached_list_response, cached_retrieve_response, delete_
 from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid,
                                                         add_henkilo_to_oppijanumerorekisteri,
                                                         get_henkilo_by_henkilotunnus)
-from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
 from varda.enums.error_messages import ErrorMessages
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.exceptions.conflict_error import ConflictError
@@ -62,12 +61,7 @@ from varda.permissions import (throw_if_not_tallentaja_permissions,
                                user_permission_groups_in_organization, CustomObjectPermissions,
                                assign_lapsi_henkilo_permissions, assign_vakasuhde_henkilo_permissions,
                                assign_permissions_for_non_paos_lapsi)
-from varda.related_object_validations import (check_toimipaikka_and_vakajarjestaja_have_oids,
-                                              toimipaikka_is_valid_to_organisaatiopalvelu,
-                                              check_overlapping_toiminnallinen_painotus,
-                                              check_overlapping_kielipainotus, check_overlapping_varhaiskasvatuspaatos,
-                                              check_overlapping_varhaiskasvatussuhde,
-                                              check_if_immutable_object_is_changed)
+from varda.related_object_validations import toimipaikka_is_valid_to_organisaatiopalvelu
 from varda.request_logging import request_log_viewset_decorator_factory
 from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer,
                                UpdateHenkiloWithOidSerializer, UpdateOphStaffSerializer, ClearCacheSerializer,
@@ -126,7 +120,7 @@ class UpdateHenkiloWithOid(GenericViewSet, CreateModelMixin):
     def create(self, request, *args, **kwargs):
         user = request.user
         if user.is_anonymous:
-            raise NotAuthenticated("Not authenticated.")
+            raise NotAuthenticated('Not authenticated.')
         else:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -135,8 +129,8 @@ class UpdateHenkiloWithOid(GenericViewSet, CreateModelMixin):
             return Response(result, status=status.HTTP_200_OK, headers=headers)
 
     def perform_create(self, serializer):
-        fetch_henkilo_with_oid(serializer.validated_data["henkilo_oid"])
-        return {"result": "Henkilo-data fetched."}
+        fetch_henkilo_with_oid(serializer.validated_data['henkilo_oid'])
+        return {'result': 'Henkilo-data fetched.'}
 
 
 class UpdateOphStaff(GenericViewSet, CreateModelMixin):
@@ -151,7 +145,7 @@ class UpdateOphStaff(GenericViewSet, CreateModelMixin):
     def create(self, request, *args, **kwargs):
         user = request.user
         if user.is_anonymous:
-            raise NotAuthenticated("Not authenticated.")
+            raise NotAuthenticated('Not authenticated.')
         else:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -161,7 +155,7 @@ class UpdateOphStaff(GenericViewSet, CreateModelMixin):
 
     def perform_create(self, serializer):
         update_oph_staff_to_vakajarjestaja_groups.delay()
-        return {"result": "Update-task started."}
+        return {'result': 'Update-task started.'}
 
 
 class ClearCacheViewSet(GenericViewSet, CreateModelMixin):
@@ -175,7 +169,7 @@ class ClearCacheViewSet(GenericViewSet, CreateModelMixin):
     def create(self, request, *args, **kwargs):
         user = request.user
         if user.is_anonymous:
-            raise NotAuthenticated("Not authenticated.")
+            raise NotAuthenticated('Not authenticated.')
         else:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -185,7 +179,7 @@ class ClearCacheViewSet(GenericViewSet, CreateModelMixin):
 
     def perform_create(self, serializer):
         cache.clear()
-        return {"result": "Cache was cleared successfully."}
+        return {'result': 'Cache was cleared successfully.'}
 
 
 @auditlogclass
@@ -256,7 +250,7 @@ class NestedHuoltajaViewSet(GenericViewSet, ListModelMixin):
     def get_lapsi(self, request, lapsi_pk=None):
         lapsi = get_object_or_404(Lapsi.objects.all(), pk=lapsi_pk)
         user = request.user
-        if user.has_perm("view_lapsi", lapsi):
+        if user.has_perm('view_lapsi', lapsi):
             return lapsi
         else:
             raise Http404
@@ -319,7 +313,7 @@ class NestedLapsiViewSet(GenericViewSet, ListModelMixin):
     def get_huoltaja(self, request, huoltaja_pk=None):
         huoltaja = get_object_or_404(Huoltaja.objects.all(), pk=huoltaja_pk)
         user = request.user
-        if user.has_perm("view_huoltaja", huoltaja):
+        if user.has_perm('view_huoltaja', huoltaja):
             return huoltaja
         else:
             raise Http404
@@ -355,7 +349,7 @@ class PulssiVakajarjestajat(GenericViewSet, ListModelMixin):
 
     def list(self, request, *args, **kwargs):
         return Response(
-            {"number_of_vakajarjestajat": VakaJarjestaja.objects.count()}
+            {'number_of_vakajarjestajat': VakaJarjestaja.objects.count()}
         )
 
 
@@ -405,7 +399,7 @@ class ApikeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin):
     def list(self, request, *args, **kwargs):
         user = request.user
         token = Token.objects.get_or_create(user=user)
-        return Response({"token": token[0].key})
+        return Response({'token': token[0].key})
 
     @auditlog
     def create(self, request, *args, **kwargs):
@@ -423,7 +417,7 @@ class ApikeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin):
         user = self.request.user
         Token.objects.get(user=user).delete()
         token = Token.objects.get_or_create(user=user)
-        return {"token": token[0].key}
+        return {'token': token[0].key}
 
 
 class ExternalPermissionsViewSet(GenericViewSet, CreateModelMixin):
@@ -450,7 +444,7 @@ class ExternalPermissionsViewSet(GenericViewSet, CreateModelMixin):
         try:
             cas_user_obj = Z3_AdditionalCasUserFields.objects.get(henkilo_oid=data['loggedInUserOid'])
         except Z3_AdditionalCasUserFields.DoesNotExist:
-            return Response({"accessAllowed": permit_identification, "errorMessage": "loggedInUserOid was not found"}, status=status.HTTP_200_OK, headers=headers)
+            return Response({'accessAllowed': permit_identification, 'errorMessage': 'loggedInUserOid was not found'}, status=status.HTTP_200_OK, headers=headers)
         user = cas_user_obj.user
 
         henkilot_qs = Henkilo.objects.filter(henkilo_oid__in=data['personOidsForSamePerson'])
@@ -460,7 +454,7 @@ class ExternalPermissionsViewSet(GenericViewSet, CreateModelMixin):
         Henkilo not found
         """
         if henkilot_qs_length == 0:
-            return Response({"accessAllowed": permit_identification, "errorMessage": "Person not found"}, status=status.HTTP_200_OK, headers=headers)
+            return Response({'accessAllowed': permit_identification, 'errorMessage': 'Person not found'}, status=status.HTTP_200_OK, headers=headers)
         elif henkilot_qs_length > 1:
             logger.error('Multiple of henkilot was found with oids: ' + ', '.join(data['personOidsForSamePerson']))
             raise CustomServerErrorException
@@ -479,11 +473,11 @@ class ExternalPermissionsViewSet(GenericViewSet, CreateModelMixin):
         If virkailija can view the lapsi in any organization, return True, otherwise return False.
         """
         for lapsi in lapset:
-            if user.has_perm("view_lapsi", lapsi):
+            if user.has_perm('view_lapsi', lapsi):
                 permit_identification = True
                 break
 
-        return Response({"accessAllowed": permit_identification, "errorMessage": ""}, status=status.HTTP_200_OK, headers=headers)
+        return Response({'accessAllowed': permit_identification, 'errorMessage': ''}, status=status.HTTP_200_OK, headers=headers)
 
 
 """
@@ -588,10 +582,6 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
         vakajarjestaja_obj = validated_data['vakajarjestaja']
         vakajarjestaja_id = vakajarjestaja_obj.id
 
-        if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
-            if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm']):
-                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI003.value]})
-
         check_if_toimipaikka_exists_in_organisaatiopalvelu(vakajarjestaja_id, validated_data['nimi'])
         """
         Toimipaikka was not found in Organisaatiopalvelu. We can POST it there.
@@ -638,21 +628,6 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
 
     def perform_update(self, serializer):
         user = self.request.user
-        validated_data = serializer.validated_data
-        toimipaikka_obj = self.get_object()
-
-        if Hallinnointijarjestelma[toimipaikka_obj.hallinnointijarjestelma] is not Hallinnointijarjestelma.VARDA:
-            raise ValidationError({'hallinnointijarjestelma': [ErrorMessages.TP003.value]})
-        if validated_data['toimintamuoto_koodi'] != toimipaikka_obj.toimintamuoto_koodi and toimipaikka_obj.organisaatio_oid is None:
-            raise ValidationError({'toimintamuoto_koodi': [ErrorMessages.TP005.value]})
-        check_if_immutable_object_is_changed(toimipaikka_obj, validated_data, 'vakajarjestaja')
-
-        # Validate that paattymis_pvm is after alkamis_pvm if toimipaikka has paattymis_pvm, or if paattymis_pvm
-        # is other than null in request
-        paattymis_pvm = validated_data.get('paattymis_pvm', None) or toimipaikka_obj.paattymis_pvm
-        if paattymis_pvm and not ('paattymis_pvm' in validated_data and not validated_data['paattymis_pvm']):
-            if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], paattymis_pvm):
-                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI003.value]})
 
         saved_object = serializer.save(changed_by=user)
         delete_cache_keys_related_model('vakajarjestaja', saved_object.vakajarjestaja.id)
@@ -712,14 +687,6 @@ class ToiminnallinenPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnis
         vakajarjestaja_obj = toimipaikka_obj.vakajarjestaja
         vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
 
-        check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
-
-        if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
-            if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm']):
-                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI003.value]})
-
-        check_overlapping_toiminnallinen_painotus(validated_data)
-
         with transaction.atomic():
             saved_object = serializer.save(changed_by=user)
             self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
@@ -730,23 +697,6 @@ class ToiminnallinenPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnis
 
     def perform_update(self, serializer):
         user = self.request.user
-        validated_data = serializer.validated_data
-
-        instance = self.get_object()
-        toimipaikka_obj = instance.toimipaikka
-        toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
-        vakajarjestaja_organisaatio_oid = toimipaikka_obj.vakajarjestaja.organisaatio_oid
-
-        check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
-
-        if 'alkamis_pvm' in validated_data or 'paattymis_pvm' in validated_data:
-            alkamis_pvm = validated_data['alkamis_pvm'] if 'alkamis_pvm' in validated_data else instance.alkamis_pvm
-            paattymis_pvm = validated_data['paattymis_pvm'] if 'paattymis_pvm' in validated_data else instance.paattymis_pvm
-            if not validators.validate_paivamaara1_before_paivamaara2(alkamis_pvm, paattymis_pvm):
-                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI003.value]})
-
-        check_overlapping_toiminnallinen_painotus(validated_data, instance.id)
-
         with transaction.atomic():
             saved_object = serializer.save(changed_by=user)
             self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
@@ -811,14 +761,6 @@ class KieliPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
         vakajarjestaja_obj = toimipaikka_obj.vakajarjestaja
         vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
 
-        check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
-
-        if 'paattymis_pvm' in validated_data:
-            if not validators.validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm']):
-                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI003.value]})
-
-        check_overlapping_kielipainotus(validated_data)
-
         with transaction.atomic():
             saved_object = serializer.save(changed_by=user)
             self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
@@ -829,24 +771,6 @@ class KieliPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
 
     def perform_update(self, serializer):
         user = self.request.user
-        validated_data = serializer.validated_data
-
-        instance = self.get_object()
-        toimipaikka_obj = instance.toimipaikka
-        toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
-        vakajarjestaja_obj = toimipaikka_obj.vakajarjestaja
-        vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
-
-        check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
-
-        if 'alkamis_pvm' in validated_data or 'paattymis_pvm' in validated_data:
-            alkamis_pvm = validated_data['alkamis_pvm'] if 'alkamis_pvm' in validated_data else instance.alkamis_pvm
-            paattymis_pvm = validated_data['paattymis_pvm'] if 'paattymis_pvm' in validated_data else instance.paattymis_pvm
-            if not validators.validate_paivamaara1_before_paivamaara2(alkamis_pvm, paattymis_pvm):
-                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI003.value]})
-
-        check_overlapping_kielipainotus(validated_data, self_id=instance.id)
-
         with transaction.atomic():
             saved_object = serializer.save(changed_by=user)
             self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
@@ -1223,15 +1147,6 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
 
     def perform_update(self, serializer):
         user = self.request.user
-        lapsi_obj = self.get_object()
-
-        validated_data = serializer.validated_data
-
-        check_if_immutable_object_is_changed(lapsi_obj, validated_data, 'henkilo')
-        check_if_immutable_object_is_changed(lapsi_obj, validated_data, 'vakatoimija')
-        check_if_immutable_object_is_changed(lapsi_obj, validated_data, 'oma_organisaatio')
-        check_if_immutable_object_is_changed(lapsi_obj, validated_data, 'paos_organisaatio')
-
         serializer.save(changed_by=user)
 
     def perform_destroy(self, instance):
@@ -1297,8 +1212,6 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
         if timediff.days <= 14:
             validated_data['pikakasittely_kytkin'] = True
 
-        check_overlapping_varhaiskasvatuspaatos(validated_data)
-
         with transaction.atomic():
             saved_object = serializer.save(changed_by=user)
             delete_cache_keys_related_model('lapsi', lapsi.id)
@@ -1330,27 +1243,11 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
         user = self.request.user
         validated_data = serializer.validated_data
 
-        instance = self.get_object()
-        varhaiskasvatussuhteet = instance.varhaiskasvatussuhteet.all()
-
-        for varhaiskasvatussuhde_obj in varhaiskasvatussuhteet:
-            self.validate_paivamaarat_varhaiskasvatussuhteet(validated_data['alkamis_pvm'],
-                                                             varhaiskasvatussuhde_obj.alkamis_pvm,
-                                                             {'alkamis_pvm': [ErrorMessages.VP002.value]})
-
-        if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
-            for varhaiskasvatussuhde_obj in varhaiskasvatussuhteet:
-                self.validate_paivamaarat_varhaiskasvatussuhteet(varhaiskasvatussuhde_obj.paattymis_pvm,
-                                                                 validated_data['paattymis_pvm'],
-                                                                 {'paattymis_pvm': [ErrorMessages.VP003.value]})
-
         timediff = validated_data['alkamis_pvm'] - validated_data['hakemus_pvm']
         if timediff.days <= 14:
             validated_data['pikakasittely_kytkin'] = True
         else:
             validated_data['pikakasittely_kytkin'] = False
-
-        check_overlapping_varhaiskasvatuspaatos(validated_data, instance.id)
 
         saved_object = serializer.save(changed_by=user)
         """
@@ -1388,10 +1285,6 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
         if vakasuhde is not None:
             cache.delete('vakajarjestaja_yhteenveto_' + str(vakasuhde.toimipaikka.vakajarjestaja.id))
 
-    def validate_paivamaarat_varhaiskasvatussuhteet(self, alkamis_pvm, paattymis_pvm, error_text):
-        if not validators.validate_paivamaara1_before_paivamaara2(alkamis_pvm, paattymis_pvm, can_be_same=True):
-            raise ValidationError(error_text)
-
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=['varhaiskasvatuspaatos', 'lapsi'])
@@ -1426,19 +1319,6 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
 
     def retrieve(self, request, *args, **kwargs):
         return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
-
-    def validate_lapsi_not_under_different_vakajarjestaja(self, lapsi_obj, new_vakajarjestaja_obj):
-        """
-        Make sure lapsi will not end up under two different vakajarjestajat. Without this validation a virkailija
-        with permissions to two different vakajarjestajat could potentially add one and same lapsi to two
-        different vakajarjestajat/toimipaikat.
-        """
-        vakasuhteet = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=lapsi_obj)
-        vakajarjestajat = VakaJarjestaja.objects.filter(toimipaikat__varhaiskasvatussuhteet__in=vakasuhteet).distinct()
-        if vakajarjestajat.count() > 1:
-            logger.error('Lapsi under multiple vakajarjestajat. Lapsi-id: {}'.format(lapsi_obj.id))
-        if vakajarjestajat and new_vakajarjestaja_obj not in vakajarjestajat:
-            raise ValidationError({'errors': [ErrorMessages.VS001.value]})
 
     def assign_paos_lapsi_permissions(self, lapsi_obj, varhaiskasvatussuhde_obj, varhaiskasvatuspaatos_obj,
                                       toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid):
@@ -1480,9 +1360,7 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
         assign_permissions_for_non_paos_lapsi(lapsi_obj, vakajarjestaja_organisaatio_oid,
                                               toimipaikka_oid=toimipaikka_organisaatio_oid)
         if toimipaikka_organisaatio_oid:
-            """
-            TODO: Add these to every case after dummy-toimipaikat are removed.
-            """
+            # TODO: Add these to every case after dummy-toimipaikat are removed.
             assign_object_level_permissions(toimipaikka_organisaatio_oid, Varhaiskasvatussuhde, varhaiskasvatussuhde_obj)
             assign_object_level_permissions(toimipaikka_organisaatio_oid, Varhaiskasvatuspaatos, varhaiskasvatuspaatos_obj)
 
@@ -1501,25 +1379,10 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
         vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
         lapsi_obj = validated_data['varhaiskasvatuspaatos'].lapsi
 
-        check_overlapping_varhaiskasvatussuhde(validated_data)
-
-        self.validate_lapsi_not_under_different_vakajarjestaja(lapsi_obj, vakajarjestaja_obj)
-
         is_paos_lapsi = lapsi_obj.paos_kytkin
-        toimipaikka_added_to_org_palvelu = toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=toimipaikka_obj)
-        toimipaikka_organisaatio_oid = ''
-        if not toimipaikka_added_to_org_palvelu:
-            """
-            TODO: Remove this when dummy-toimipaikat are removed.
-            User needs tallentaja-permissions on vakajarjestaja-level.
-            """
-            if vakajarjestaja_organisaatio_oid == '':
-                logger.error('Missing organisaatio_oid for vakajarjestaja: ' + str(vakajarjestaja_obj.id))
-                raise ValidationError({'errors': [ErrorMessages.VS002.value]})
-        else:
-            toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
-            check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
-        throw_if_not_tallentaja_permissions(vakajarjestaja_organisaatio_oid, toimipaikka_obj, user, lapsi_obj.oma_organisaatio)
+        throw_if_not_tallentaja_permissions(vakajarjestaja_organisaatio_oid, toimipaikka_obj, user,
+                                            lapsi_obj.oma_organisaatio)
+        toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
 
         with transaction.atomic():
             saved_object = serializer.save(changed_by=user)
@@ -1551,27 +1414,8 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
 
     def perform_update(self, serializer):
         user = self.request.user
-        validated_data = serializer.validated_data
-
-        instance = self.get_object()
-        toimipaikka_obj = instance.toimipaikka
-        toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
-        vakajarjestaja_obj = toimipaikka_obj.vakajarjestaja
-        vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
-
-        check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka_obj, vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
-
-        if 'varhaiskasvatuspaatos' in validated_data and instance.varhaiskasvatuspaatos != validated_data['varhaiskasvatuspaatos']:
-            raise ValidationError({'varhaiskasvatuspaatos': [ErrorMessages.VS003.value]})
-        if 'toimipaikka' in validated_data and instance.toimipaikka != validated_data['toimipaikka']:
-            raise ValidationError({'toimipaikka': [ErrorMessages.VS004.value]})
-
-        check_overlapping_varhaiskasvatussuhde(validated_data, instance.id)
-
         saved_object = serializer.save(changed_by=user)
-        """
-        No need to delete the related-object caches. User cannot change toimipaikka or varhaiskasvatuspaatos.
-        """
+        # No need to delete the related-object caches. User cannot change toimipaikka or varhaiskasvatuspaatos.
         delete_toimipaikan_lapset_cache(str(saved_object.toimipaikka.id))
         cache.delete('vakajarjestaja_yhteenveto_' + str(saved_object.toimipaikka.vakajarjestaja.id))
         lapsi_obj = saved_object.varhaiskasvatuspaatos.lapsi
@@ -1631,87 +1475,11 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
     def retrieve(self, request, *args, **kwargs):
         return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
-    def validate_user_data(self, data):
-        # data validations
-        paattymis_pvm_filter = Q()
-
-        if not data['yksityinen_jarjestaja']:
-            if 'perheen_koko' not in data:
-                raise ValidationError({'perheen_koko': [ErrorMessages.MA001.value]})
-
-        alkamis_pvm_filter = (Q(huoltajuussuhteet__lapsi=data['lapsi']) &
-                              (Q(paattymis_pvm=None) | Q(paattymis_pvm__gte=data['alkamis_pvm']))
-                              )
-
-        if 'paattymis_pvm' in data and data['paattymis_pvm'] is not None:
-            if not validators.validate_paivamaara1_before_paivamaara2(data['alkamis_pvm'], data['paattymis_pvm'], can_be_same=True):
-                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI004.value]})
-            paattymis_pvm_filter = (Q(alkamis_pvm__lte=data['paattymis_pvm']))
-
-        if not data['huoltajat'] or len(data['huoltajat']) == 0:
-            raise ValidationError({'huoltajat': [ErrorMessages.MA002.value]})
-
+    def get_vtj_huoltajuudet(self, data):
         vtj_huoltajuudet = self.fetch_and_match_huoltajuudet(data)
         if vtj_huoltajuudet.count() == 0:
             raise ValidationError({'huoltajat': [ErrorMessages.MA003.value]})
-
-        samanaikaiset_maksutiedot = Maksutieto.objects.filter(Q(alkamis_pvm_filter & paattymis_pvm_filter)).distinct().count()
-        if samanaikaiset_maksutiedot >= 2:
-            raise ValidationError({'errors': [ErrorMessages.MA004.value]})
-
         return vtj_huoltajuudet
-
-    def validate_yksityinen_maksutieto(self, validated_data, lapsi):
-        """
-        If maksutieto is yksityinen, palveluseteli_arvo and perheen_koko are not stored.
-        :param lapsi: lapsi object
-        :param validated_data: serializer.validated_data
-        :return:
-        """
-        if lapsi.yksityinen_kytkin:
-            validated_data['yksityinen_jarjestaja'] = True
-            validated_data['palveluseteli_arvo'] = None
-            validated_data['perheen_koko'] = None
-
-    def validate_maksun_peruste(self, validated_data):
-        """
-        If maksun peruste is mp01, asiakasmaksu and palveluseteli_arvo are not stored
-        :param validated_data: serializer.validated_data
-        :return:
-        """
-        if validated_data['maksun_peruste_koodi'].lower() == 'mp01':
-            validated_data['asiakasmaksu'] = 0
-            validated_data['palveluseteli_arvo'] = 0.00
-
-    def validate_start_and_end_dates(self, vakapaatokset, start_date, end_date, lapsi):
-        """
-        Validate the dates for the maksutieto:
-        :param vakapaatokset: vakapaatokset of lapsi
-        :param start_date: must be after the earliest vakapaatos start
-        :param end_date: if given, must be before the latest vakapaatos end
-        :param lapsi: lapsi object
-        """
-        earliest_alkamis_pvm = vakapaatokset.earliest('alkamis_pvm').alkamis_pvm
-        latest_paattymis_pvm = vakapaatokset.latest('paattymis_pvm').paattymis_pvm
-
-        if start_date is not None and validators.validate_paivamaara1_before_paivamaara2(start_date, earliest_alkamis_pvm, can_be_same=False):
-            raise ValidationError({'alkamis_pvm': [ErrorMessages.MA005.value]})
-
-        if all((v.paattymis_pvm is not None) for v in vakapaatokset):
-            if start_date is not None and not validators.validate_paivamaara1_after_paivamaara2(latest_paattymis_pvm, start_date, can_be_same=True):
-                raise ValidationError({'alkamis_pvm': [ErrorMessages.MA006.value]})
-
-        """
-        While it is possible to leave out the end date, it must fall within vakapaatokset if given.
-        Make this check only if all vakapaatokset have a paattymis_pvm.
-        """
-        if end_date is not None:
-            if all((v.paattymis_pvm is not None) for v in vakapaatokset):
-                if not validators.validate_paivamaara1_after_paivamaara2(latest_paattymis_pvm, end_date, can_be_same=True):
-                    raise ValidationError({'paattymis_pvm': [ErrorMessages.MA007.value]})
-
-        if lapsi.yksityinen_kytkin and end_date and end_date < datetime.date(2020, 9, 1):
-            raise ValidationError({'paattymis_pvm': [ErrorMessages.MA014.value]})
 
     def fetch_and_match_huoltajuudet(self, data):
         queryset_filter = Q()
@@ -1723,7 +1491,6 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
                             )
 
         # validate VTJ_huoltaja to be one of the persons in the data
-
         for user_huoltaja in data['huoltajat']:
             etunimi_q = Q()
             etunimet_list = user_huoltaja['etunimet'].split()
@@ -1806,14 +1573,6 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
         serializer = self.get_serializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
         lapsi = serializer.validated_data['lapsi']
-        serializer.validated_data['yksityinen_jarjestaja'] = False
-
-        vakapaatokset = Varhaiskasvatuspaatos.objects.filter(lapsi=lapsi).order_by('-alkamis_pvm')
-        vakapaatos = vakapaatokset.first()
-        if not vakapaatos:
-            raise ValidationError({'errors': [ErrorMessages.MA008.value]})
-
-        self.validate_yksityinen_maksutieto(serializer.validated_data, lapsi)
 
         """
         In order to be able to add maksutieto to lapsi, we need to know the organizations
@@ -1821,9 +1580,7 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
         We need this info for permissions.
         """
         toimipaikka_qs = Toimipaikka.objects.filter(varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi__id=lapsi.id)
-        if not toimipaikka_qs:
-            raise ValidationError({'errors': [ErrorMessages.MA009.value]})
-        vakajarjestaja = toimipaikka_qs[0].vakajarjestaja
+        vakajarjestaja = lapsi.vakatoimija or toimipaikka_qs.first().vakajarjestaja
         vakajarjestaja_organisaatio_oid = vakajarjestaja.organisaatio_oid
 
         if lapsi.paos_kytkin:
@@ -1834,16 +1591,11 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
                 raise PermissionDenied({'errors': [ErrorMessages.MA010.value]})
 
         data = dict(serializer.validated_data)
-        vtj_huoltajuudet = self.validate_user_data(data)
-
-        self.validate_maksun_peruste(serializer.validated_data)
+        vtj_huoltajuudet = self.get_vtj_huoltajuudet(data)
 
         # remove fields not directly in database
         serializer.validated_data.pop('huoltajat')
         serializer.validated_data.pop('lapsi')
-
-        self.validate_start_and_end_dates(vakapaatokset, serializer.validated_data['alkamis_pvm'],
-                                          serializer.validated_data.get('paattymis_pvm', None), lapsi)
 
         """
         Save maksutieto
@@ -1870,39 +1622,12 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
     def perform_update(self, serializer):
         user = self.request.user
         maksutieto_obj = self.get_object()
-        data = serializer.validated_data
-        paattymis_pvm_q = Q()
-
-        if 'paattymis_pvm' in data and data['paattymis_pvm'] is not None:
-            if validators.validate_paivamaara1_after_paivamaara2(data['alkamis_pvm'], data['paattymis_pvm'],
-                                                                 can_be_same=False):
-                raise ValidationError({'paattymis_pvm': [ErrorMessages.MI004.value]})
-            paattymis_pvm_q = Q(alkamis_pvm__lte=data['paattymis_pvm'])
 
         lapsi_objects = Lapsi.objects.filter(huoltajuussuhteet__maksutiedot__id=maksutieto_obj.id).distinct()
         if len(lapsi_objects) != 1:
             logger.error('Error getting lapsi for maksutieto ' + str(maksutieto_obj.id))
             raise CustomServerErrorException
         lapsi_object = lapsi_objects[0]
-
-        vakapaatokset = Varhaiskasvatuspaatos.objects.filter(lapsi=lapsi_object).order_by('-alkamis_pvm')
-        if not vakapaatokset.exists():
-            raise ValidationError({'errors': [ErrorMessages.MA008.value]})
-        if not Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__in=vakapaatokset).exists():
-            raise ValidationError({'errors': [ErrorMessages.MA009.value]})
-
-        self.validate_start_and_end_dates(vakapaatokset, data.get('alkamis_pvm', None),
-                                          data.get('paattymis_pvm', None), lapsi_object)
-
-        samanaikaiset_maksutiedot = Maksutieto.objects.filter(
-            Q(huoltajuussuhteet__lapsi=lapsi_object) &
-            ~Q(id=maksutieto_obj.id) &
-            paattymis_pvm_q &
-            (Q(paattymis_pvm=None) | Q(paattymis_pvm__gte=maksutieto_obj.alkamis_pvm))
-        ).distinct().count()
-
-        if samanaikaiset_maksutiedot >= 2:
-            raise ValidationError({'paattymis_pvm': [ErrorMessages.MA004.value]})
 
         serializer.save(changed_by=user)
 
@@ -1924,9 +1649,7 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
 
         self.perform_destroy(instance)
 
-        toimipaikka_obj = (Toimipaikka
-                           .objects
-                           .filter(varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi=lapsi_object)
+        toimipaikka_obj = (Toimipaikka.objects.filter(varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi=lapsi_object)
                            .first())
         if toimipaikka_obj:
             vakajarjestaja = toimipaikka_obj.vakajarjestaja
@@ -2302,8 +2025,8 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
                                 Q(paos_organisaatio=self.vakajarjestaja_id) &
                                 Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__isnull=False))
 
-        jarjestamismuoto_filter = Q(Q(varhaiskasvatuspaatokset__jarjestamismuoto_koodi__iexact="JM02") |
-                                    Q(varhaiskasvatuspaatokset__jarjestamismuoto_koodi__iexact="JM03"))
+        jarjestamismuoto_filter = Q(Q(varhaiskasvatuspaatokset__jarjestamismuoto_koodi__iexact='JM02') |
+                                    Q(varhaiskasvatuspaatokset__jarjestamismuoto_koodi__iexact='JM03'))
 
         date_filter = Q(Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm__lte=self.today) &
                         (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True) |
@@ -2992,10 +2715,10 @@ class HenkilohakuLapset(GenericViewSet, ListModelMixin):
         maksutiedot_query = None
 
         query_params = self.request.query_params
-        filter_status = query_params.get('filter_status', "")
-        filter_object = query_params.get('filter_object', "")
+        filter_status = query_params.get('filter_status', '')
+        filter_object = query_params.get('filter_object', '')
 
-        if filter_status != "" and filter_object != "":
+        if filter_status != '' and filter_object != '':
 
             # Vakapaatokset
             if filter_object == 'vakapaatokset':

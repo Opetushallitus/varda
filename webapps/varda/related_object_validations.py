@@ -10,7 +10,7 @@ from rest_framework.exceptions import ValidationError
 from varda.enums.error_messages import ErrorMessages
 from varda.models import (VakaJarjestaja, Henkilo, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Lapsi, Huoltaja,
                           Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Palvelussuhde, Tyoskentelypaikka,
-                          PidempiPoissaolo, ToiminnallinenPainotus, KieliPainotus)
+                          PidempiPoissaolo, ToiminnallinenPainotus, KieliPainotus, Maksutieto)
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -150,7 +150,15 @@ def check_if_immutable_object_is_changed(instance, data, key, compare_id=True):
     compare_value_getter = compare_function
 
     if key in data:
-        if compare_value_getter(data[key]) != compare_value_getter(getattr(instance, key)):
+        new_value = compare_value_getter(data[key])
+        if isinstance(new_value, str):
+            new_value = new_value.lower()
+
+        old_value = compare_value_getter(getattr(instance, key))
+        if isinstance(old_value, str):
+            old_value = old_value.lower()
+
+        if new_value != old_value:
             msg = ({key: [ErrorMessages.GE013.value]})
             raise ValidationError(msg, code='invalid')
 
@@ -264,6 +272,11 @@ def check_overlapping_varhaiskasvatuspaatos(data, self_id=None):
 def check_overlapping_varhaiskasvatussuhde(data, self_id=None):
     _check_overlapping_object(Varhaiskasvatussuhde, ['varhaiskasvatuspaatos', 'lapsi'], 3, ErrorMessages.VS013.value,
                               data, self_id=self_id)
+
+
+def check_overlapping_maksutieto(data, self_id=None):
+    _check_overlapping_object(Maksutieto, ['huoltajuussuhteet', 'lapsi'], 2, ErrorMessages.MA004.value, data,
+                              self_id=self_id)
 
 
 def check_overlapping_palvelussuhde(data, self_id=None):
