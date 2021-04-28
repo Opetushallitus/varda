@@ -824,14 +824,18 @@ class LapsiSerializer(LapsiOptionalToimipaikkaMixin, serializers.HyperlinkedMode
         model = Lapsi
         exclude = ('luonti_pvm', 'changed_by')
 
+    @caching_to_representation('lapsi')
+    def to_representation(self, instance):
+        return super(LapsiSerializer, self).to_representation(instance)
+
     def validate(self, data):
         with ViewSetValidator() as validator:
             if self.instance:
                 fill_missing_fields_for_validations(data, self.instance)
                 check_if_immutable_object_is_changed(self.instance, data, 'henkilo')
-                check_if_immutable_object_is_changed(self.instance, data, 'vakatoimija')
                 check_if_immutable_object_is_changed(self.instance, data, 'oma_organisaatio')
                 check_if_immutable_object_is_changed(self.instance, data, 'paos_organisaatio')
+                self._validate_vakatoimija_update(data)
             elif toimipaikka := data.get('toimipaikka', None):
                 # Only validate in POST
                 vakajarjestaja = data.get('vakatoimija') or data.get('paos_organisaatio')
@@ -853,9 +857,15 @@ class LapsiSerializer(LapsiOptionalToimipaikkaMixin, serializers.HyperlinkedMode
                 validator.error('errors', ErrorMessages.LA008.value)
         return data
 
-    @caching_to_representation('lapsi')
-    def to_representation(self, instance):
-        return super(LapsiSerializer, self).to_representation(instance)
+    def _validate_vakatoimija_update(self, data):
+        if self.instance.vakatoimija:
+            # If instance has vakatoimija-field, check that it has not changed. If the field is not set,
+            # it is possible to update the field.
+            check_if_immutable_object_is_changed(self.instance, data, 'vakatoimija')
+        elif vakatoimija := data.get('vakatoimija', None):
+            vakasuhde_toimipaikka = Toimipaikka.objects.filter(varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi=self.instance).first()
+            if vakasuhde_toimipaikka and vakatoimija != vakasuhde_toimipaikka.vakajarjestaja:
+                raise ValidationError({'vakatoimija': [ErrorMessages.LA011.value]})
 
 
 class LapsiSerializerAdmin(serializers.HyperlinkedModelSerializer):

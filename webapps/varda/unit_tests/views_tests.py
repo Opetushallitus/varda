@@ -1013,6 +1013,47 @@ class VardaViewsTests(TestCase):
         resp = client.post('/api/v1/lapset/', lapsi)
         self.assertEqual(resp.status_code, 400)
 
+    def test_api_update_lapsi_vakatoimija(self):
+        vakajarjestaja_oid_correct = '1.2.246.562.10.34683023489'
+        vakajarjestaja_oid_invalid = '1.2.246.562.10.93957375488'
+
+        user = User.objects.get(username='tester2')
+        group = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.93957375488')
+        group.user_set.add(user)
+
+        lapsi = Lapsi.objects.filter(vakatoimija__organisaatio_oid=vakajarjestaja_oid_correct).first()
+        lapsi.vakatoimija = None
+        lapsi.save()
+
+        lapsi_json = {
+            'henkilo_oid': lapsi.henkilo.henkilo_oid,
+            'vakatoimija_oid': vakajarjestaja_oid_invalid,
+            'lahdejarjestelma': '1',
+        }
+
+        client = SetUpTestClient('tester2').client()
+        resp_1 = client.put(f'/api/v1/lapset/{lapsi.id}/', json.dumps(lapsi_json), content_type='application/json')
+        assert_status_code(resp_1, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_1, 'vakatoimija', 'LA011',
+                                'Lapsi already has Varhaiskasvatussuhde objects linked to different VakaJarjestaja.')
+
+        lapsi_json['vakatoimija_oid'] = vakajarjestaja_oid_correct
+        resp_2 = client.put(f'/api/v1/lapset/{lapsi.id}/', json.dumps(lapsi_json), content_type='application/json')
+        assert_status_code(resp_2, status.HTTP_200_OK)
+
+        lapsi_json['vakatoimija_oid'] = vakajarjestaja_oid_invalid
+        resp_3 = client.put(f'/api/v1/lapset/{lapsi.id}/', json.dumps(lapsi_json), content_type='application/json')
+        assert_status_code(resp_3, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_3, 'vakatoimija', 'GE013', 'Changing of this field is not allowed.')
+
+        Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=lapsi).delete()
+        lapsi.vakatoimija = None
+        lapsi.save()
+
+        lapsi_json['vakatoimija_oid'] = vakajarjestaja_oid_correct
+        resp_4 = client.put(f'/api/v1/lapset/{lapsi.id}/', json.dumps(lapsi_json), content_type='application/json')
+        assert_status_code(resp_4, status.HTTP_200_OK)
+
     def test_api_get_lapsi_json_admin(self):
         """
         TODO: Sort nested resources // CSCVARDA-1113

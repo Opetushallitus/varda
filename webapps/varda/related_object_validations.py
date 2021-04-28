@@ -238,7 +238,9 @@ def _check_overlapping_object(model, parent_path, limit, error, data, extra_filt
     alkamis_pvm_new, paattymis_pvm_new = _get_alkamis_paattymis_pvm(data, original_object)
 
     # Only include objects that end after new object has started
-    qs = model.objects.filter(filter_object & (Q(paattymis_pvm__isnull=True) | Q(paattymis_pvm__gte=alkamis_pvm_new)))
+    qs = (model.objects
+          .filter(filter_object & (Q(paattymis_pvm__isnull=True) | Q(paattymis_pvm__gte=alkamis_pvm_new)))
+          .distinct('id'))
     date_pair_list = list(qs.values_list('alkamis_pvm', 'paattymis_pvm'))
 
     _find_overlap_for_period(alkamis_pvm_new, paattymis_pvm_new, date_pair_list, limit, error)
