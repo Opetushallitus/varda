@@ -217,7 +217,7 @@ public_swagger_view = xframe_options(
                                       renderer_classes=(PublicSwaggerRenderer,) + schema_view_public.renderer_classes)
 )
 
-excluded_model_regex = re.compile(r'^(historical.*)|(z\d.*)|(logdata)|(aikaleima)|(batcherror)$')
+excluded_model_regex = re.compile(r'^(historical.*)|(z\d.*)|(logdata)|(aikaleima)|(batcherror)|(logincertificate)$')
 model_visualization_view = xframe_options(
     Plate.as_view(
         settings={
