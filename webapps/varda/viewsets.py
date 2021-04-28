@@ -5,7 +5,6 @@ import pytz
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.core.cache import cache
-from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Prefetch, ProtectedError, Q, Subquery, Sum
 from django.http import Http404
@@ -1028,16 +1027,14 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
                 raise ValidationError({'henkilo_oid': [ErrorMessages.HE002.value, ]})
 
     def _handle_validation_error(self, validation_error, henkilotunnus, henkilo_oid, etunimet, sukunimi):
-        # If same henkilo was created twice in a short period of time, it is possible that henkilo is already
-        # created (because we wait for ONR response) and ValidationError is thrown, so check uniqueness again
-        if henkilotunnus:
-            self.validate_henkilo_uniqueness_henkilotunnus(hash_string(henkilotunnus), etunimet, sukunimi)
-        else:
-            self.validate_henkilo_uniqueness_oid(henkilo_oid, etunimet, sukunimi)
-        if ('Henkilo with this Henkilo oid and Henkilotunnus unique hash already exists' in
-                ' '.join(validation_error.messages)):
-            # Catch unique_constraint error so that 500 error is not returned
-            raise ValidationError({'errors': [ErrorMessages.TY005.value]})
+        validation_error_message = str(validation_error.detail)
+        if 'HE014' in validation_error_message or 'HE015' in validation_error_message:
+            # If same henkilo was created twice in a short period of time, it is possible that henkilo is already
+            # created (because we wait for ONR response) and ValidationError is thrown, so check uniqueness again
+            if henkilotunnus:
+                self.validate_henkilo_uniqueness_henkilotunnus(hash_string(henkilotunnus), etunimet, sukunimi)
+            else:
+                self.validate_henkilo_uniqueness_oid(henkilo_oid, etunimet, sukunimi)
         raise validation_error
 
     def perform_create(self, serializer):
@@ -1089,7 +1086,7 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
                 if henkilo_data is not None:
                     # Save remaining ONR-related data for Henkilo
                     save_henkilo_to_db(henkilo_id, henkilo_data)
-            except (ValidationError, DjangoValidationError) as validation_error:
+            except ValidationError as validation_error:
                 self._handle_validation_error(validation_error, henkilotunnus, henkilo_oid, etunimet, sukunimi)
 
 
@@ -1133,7 +1130,7 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
     def retrieve(self, request, *args, **kwargs):
         return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
-    def save_or_return_lapsi_if_already_created(self, validated_data, serializer, toimipaikka_oid, paos_oikeus):
+    def return_lapsi_if_already_created(self, validated_data, toimipaikka_oid, paos_oikeus):
         user = self.request.user
         q_obj = Q()
         if 'paos_organisaatio' in validated_data and validated_data['paos_organisaatio'] is not None:
@@ -1157,7 +1154,6 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
                 # Assign permissions again to include Toimipaikka related groups
                 self._assign_permissions_for_lapsi_obj(lapsi_obj, paos_oikeus, toimipaikka_oid)
             raise ConflictError(self.get_serializer(lapsi_obj).data, status_code=status.HTTP_200_OK)
-        return serializer.save(changed_by=user)
 
     def copy_huoltajuussuhteet(self, saved_object):
         for lapsi in saved_object.henkilo.lapsi.all():
@@ -1191,33 +1187,37 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
         validated_data = serializer.validated_data
         toimipaikka_oid = validated_data.get('toimipaikka') and validated_data.get('toimipaikka').organisaatio_oid
 
+        oma_organisaatio = validated_data.get('oma_organisaatio')
+        paos_organisaatio = validated_data.get('paos_organisaatio')
+        paos_oikeus = None
+        if paos_organisaatio:
+            """
+            This is a "PAOS-lapsi"
+            - oma_organisaatio must have permission to add this lapsi to PAOS-toimipaikka (under paos-organisaatio)
+            - user must have tallentaja-permission in oma_organisaatio (vakajarjestaja-level) or palvelukayttaja.
+            """
+            paos_organisaatio_oid = paos_organisaatio.organisaatio_oid
+            paos_toimipaikka = None
+            paos_oikeus = check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(oma_organisaatio,
+                                                                                              paos_organisaatio)
+            throw_if_not_tallentaja_permissions(paos_organisaatio_oid, paos_toimipaikka, user, oma_organisaatio)
+
         try:
             with transaction.atomic():
-                oma_organisaatio = validated_data.get('oma_organisaatio')
-                paos_organisaatio = validated_data.get('paos_organisaatio')
-                paos_oikeus = None
-                if paos_organisaatio:
-                    """
-                    This is a "PAOS-lapsi"
-                    - oma_organisaatio must have permission to add this lapsi to PAOS-toimipaikka (under paos-organisaatio)
-                    - user must have tallentaja-permission in oma_organisaatio (vakajarjestaja-level) or palvelukayttaja.
-                    """
-                    paos_organisaatio_oid = paos_organisaatio.organisaatio_oid
-                    paos_toimipaikka = None
-                    paos_oikeus = check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(oma_organisaatio, paos_organisaatio)
-                    throw_if_not_tallentaja_permissions(paos_organisaatio_oid, paos_toimipaikka, user, oma_organisaatio)
-
                 # This can be performed only after all permission checks are done!
-                saved_object = self.save_or_return_lapsi_if_already_created(validated_data, serializer,
-                                                                            toimipaikka_oid, paos_oikeus)
+                self.return_lapsi_if_already_created(validated_data, toimipaikka_oid, paos_oikeus)
+                saved_object = serializer.save(changed_by=user)
+
                 self._assign_permissions_for_lapsi_obj(saved_object, paos_oikeus, toimipaikka_oid)
-
                 self.copy_huoltajuussuhteet(saved_object)
-
                 delete_cache_keys_related_model('henkilo', saved_object.henkilo.id)
-        except IntegrityError as e:
-            logger.error('IntegrityError at LapsiViewSet: {}'.format(e))
-            raise CustomServerErrorException
+        except ValidationError as validation_error:
+            validation_error_message = str(validation_error.detail)
+            if 'LA009' in validation_error_message or 'LA010' in validation_error_message:
+                # If same Lapsi was created twice in a short period of time, it is possible that Lapsi is
+                # already created and IntegrityError is thrown, so check uniqueness again
+                self.return_lapsi_if_already_created(validated_data, toimipaikka_oid, paos_oikeus)
+            raise validation_error
 
     def perform_update(self, serializer):
         user = self.request.user

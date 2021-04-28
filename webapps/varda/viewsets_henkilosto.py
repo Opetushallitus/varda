@@ -1,7 +1,6 @@
 import logging
 
 from django.core.cache import cache
-from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import ProtectedError, Q
 from django.http import Http404
@@ -115,35 +114,31 @@ class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
         toimipaikka_oid = validated_data.get('toimipaikka') and validated_data.get('toimipaikka').organisaatio_oid
         self.return_tyontekija_if_already_created(validated_data, toimipaikka_oid)
 
-        with transaction.atomic():
-            try:
+        try:
+            with transaction.atomic():
                 tyontekija_obj = serializer.save(changed_by=user)
-            except DjangoValidationError as error:
-                # Catch Tyontekija model's UniqueConstraint, otherwise it will return 500
-                if 'Tyontekija with this Henkilo and Vakajarjestaja already exists' in ' '.join(error.messages):
-                    # Try to return the existing Tyontekija object again
-                    self.return_tyontekija_if_already_created(validated_data, toimipaikka_oid)
-                    raise ValidationError({'errors': [ErrorMessages.TY005.value]})
-                else:
-                    raise error
 
-            self.remove_address_information_from_henkilo(tyontekija_obj.henkilo)
-            delete_cache_keys_related_model('henkilo', tyontekija_obj.henkilo.id)
-            vakajarjestaja_oid = vakajarjestaja.organisaatio_oid
-            assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Tyontekija, tyontekija_obj)
-            if toimipaikka_oid:
-                self._assign_toimipaikka_permissions(toimipaikka_oid, tyontekija_obj)
-            delete_cache_keys_related_model('henkilo', tyontekija_obj.henkilo.id)
-            delete_cache_keys_related_model('vakajarjestaja', tyontekija_obj.vakajarjestaja.id)
-            cache.delete('vakajarjestaja_yhteenveto_' + str(tyontekija_obj.vakajarjestaja.id))
+                vakajarjestaja_oid = vakajarjestaja.organisaatio_oid
+                assign_tyontekija_henkilo_permissions(tyontekija_obj, user=user, toimipaikka_oid=toimipaikka_oid)
+                assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Tyontekija, tyontekija_obj)
+                if toimipaikka_oid:
+                    self._assign_toimipaikka_permissions(toimipaikka_oid, tyontekija_obj)
 
-            assign_tyontekija_henkilo_permissions(tyontekija_obj, user=user, toimipaikka_oid=toimipaikka_oid)
+                delete_cache_keys_related_model('henkilo', tyontekija_obj.henkilo.id)
+                delete_cache_keys_related_model('vakajarjestaja', tyontekija_obj.vakajarjestaja.id)
+                cache.delete('vakajarjestaja_yhteenveto_' + str(tyontekija_obj.vakajarjestaja.id))
 
-            henkilo = tyontekija_obj.henkilo
-            if henkilo.henkilo_oid and not henkilo.syntyma_pvm:
-                # If Henkilo has only been related to a Huoltaja, syntyma_pvm field may have been removed,
-                # so fetch Henkilo data again from ONR
-                update_henkilo_data_by_oid.delay(henkilo.henkilo_oid, henkilo.id)
+                henkilo = tyontekija_obj.henkilo
+                self.remove_address_information_from_henkilo(henkilo)
+                if henkilo.henkilo_oid and not henkilo.syntyma_pvm:
+                    # If Henkilo has only been related to a Huoltaja, syntyma_pvm field may have been removed,
+                    # so fetch Henkilo data again from ONR
+                    update_henkilo_data_by_oid.delay(henkilo.henkilo_oid, henkilo.id)
+        except ValidationError as validation_error:
+            if 'TY005' in str(validation_error.detail):
+                # Try to return the existing Tyontekija object again
+                self.return_tyontekija_if_already_created(validated_data, toimipaikka_oid)
+            raise validation_error
 
     def perform_update(self, serializer):
         user = self.request.user

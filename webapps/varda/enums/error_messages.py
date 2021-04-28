@@ -113,6 +113,8 @@ class ErrorMessages(enum.Enum):
     LA006 = get_error_dict('LA006', 'Lapsi cannot be PAOS and regular at the same time.')
     LA007 = get_error_dict('LA007', 'For PAOS, both oma_organisaatio and paos_organisaatio are required.')
     LA008 = get_error_dict('LA008', 'oma_organisaatio cannot be same as paos_organisaatio.')
+    LA009 = get_error_dict('LA009', 'Combination of henkilo and vakatoimija fields should be unique.')
+    LA010 = get_error_dict('LA010', 'Combination of henkilo, oma_organisaatio and paos_organisaatio fields should be unique.')
 
     # Varhaiskasvatuspaatos errors, prefix: VP
     VP001 = get_error_dict('VP001', 'hakemus_pvm must be before or equal to alkamis_pvm.')

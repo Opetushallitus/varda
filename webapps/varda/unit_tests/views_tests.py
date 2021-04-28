@@ -18,6 +18,8 @@ from varda.models import (VakaJarjestaja, Toimipaikka, PaosOikeus, Huoltaja, Huo
 from varda.permission_groups import assign_object_level_permissions
 from varda.unit_tests.test_utils import (assert_status_code, SetUpTestClient, assert_validation_error, mock_admin_user,
                                          post_henkilo_to_get_permissions)
+from varda.viewsets import HenkiloViewSet, LapsiViewSet
+
 
 # Well known test organizations (name corresponds to oid)
 test_org_34683023489 = '1.2.246.562.10.34683023489'  # Tester2 organisaatio
@@ -4691,3 +4693,110 @@ class VardaViewsTests(TestCase):
         vakasuhde['toimipaikka_oid'] = toimipaikka_oid_1
         resp_vakasuhde_2 = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
         assert_status_code(resp_vakasuhde_2, status.HTTP_201_CREATED)
+
+    def _add_post_henkilo_responses(self, henkilo_hetu, henkilo_oid):
+        responses.reset()
+        henkilo_response_oid = {
+            'method': responses.GET,
+            'url': f'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/{henkilo_oid}/master',
+            'json': {'hetu': henkilo_hetu, 'yksiloityVTJ': True, 'yksiloity': True},
+            'status': status.HTTP_200_OK
+        }
+        henkilo_response_hetu = {
+            'method': responses.GET,
+            'url': f'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/hetu={henkilo_hetu}',
+            'json': {'oidHenkilo': henkilo_oid, 'hetu': henkilo_hetu},
+            'status': status.HTTP_200_OK
+        }
+        responses.add(**henkilo_response_oid)
+        responses.add(**henkilo_response_hetu)
+
+    def mock_validate_henkilo_uniqueness_henkilotunnus(self, *args, **kwargs):
+        return None
+
+    def mock_validate_henkilo_uniqueness_oid(self, *args, **kwargs):
+        return None
+
+    @responses.activate
+    @patch.object(HenkiloViewSet, 'validate_henkilo_uniqueness_henkilotunnus',
+                  mock_validate_henkilo_uniqueness_henkilotunnus)
+    @patch.object(HenkiloViewSet, 'validate_henkilo_uniqueness_oid', mock_validate_henkilo_uniqueness_oid)
+    def test_henkilo_unique_constraint(self):
+        henkilo_oid = '1.2.246.562.24.47279942111'
+        henkilo_hetu = '030518A055C'
+        self._add_post_henkilo_responses(henkilo_hetu, henkilo_oid)
+
+        henkilo_base = {
+            'etunimet': 'Erkki',
+            'kutsumanimi': 'Erkki',
+            'sukunimi': 'Esimerkki'
+        }
+        client = SetUpTestClient('tester2').client()
+
+        henkilo_with_oid = {**henkilo_base, 'henkilo_oid': henkilo_oid}
+        resp_1 = client.post('/api/v1/henkilot/', henkilo_with_oid)
+        assert_status_code(resp_1, status.HTTP_201_CREATED)
+        resp_2 = client.post('/api/v1/henkilot/', henkilo_with_oid)
+        assert_status_code(resp_2, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_2, 'henkilo_oid', 'HE015', 'Henkilo with this henkilo_oid already exists.')
+
+        henkilo_with_hetu = {**henkilo_base, 'henkilotunnus': henkilo_hetu}
+        resp_3 = client.post('/api/v1/henkilot/', henkilo_with_hetu)
+        assert_status_code(resp_3, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_3, 'henkilotunnus', 'HE014', 'Henkilo with this henkilotunnus already exists.')
+
+        self._add_post_henkilo_responses(henkilo_hetu, '1.2.246.562.24.47279942112')
+        henkilo_with_hetu = {**henkilo_base, 'henkilotunnus': henkilo_hetu}
+        resp_4 = client.post('/api/v1/henkilot/', henkilo_with_hetu)
+        assert_status_code(resp_4, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_4, 'henkilotunnus', 'HE014', 'Henkilo with this henkilotunnus already exists.')
+
+        # Can add two Henkilo objects without hetu and different OID:s
+        self._add_post_henkilo_responses(None, '1.2.246.562.24.47279942113')
+        henkilo_with_oid = {**henkilo_base, 'henkilo_oid': '1.2.246.562.24.47279942113'}
+        resp_5 = client.post('/api/v1/henkilot/', henkilo_with_oid)
+        assert_status_code(resp_5, status.HTTP_201_CREATED)
+
+        self._add_post_henkilo_responses(None, '1.2.246.562.24.47279942114')
+        henkilo_with_oid = {**henkilo_base, 'henkilo_oid': '1.2.246.562.24.47279942114'}
+        resp_6 = client.post('/api/v1/henkilot/', henkilo_with_oid)
+        assert_status_code(resp_6, status.HTTP_201_CREATED)
+
+    def mock_return_lapsi_if_already_created(self, *args, **kwargs):
+        pass
+
+    @patch.object(LapsiViewSet, 'return_lapsi_if_already_created', mock_return_lapsi_if_already_created)
+    def test_lapsi_unique_constraint(self):
+        client = SetUpTestClient('tester2').client()
+
+        henkilo_oid = '1.2.246.562.24.4473262898463'
+        vakajarjestaja_oid = '1.2.246.562.10.34683023489'
+        vakajarjestaja_paos_oid = '1.2.246.562.10.93957375488'
+        post_henkilo_to_get_permissions(client, henkilo_oid=henkilo_oid)
+
+        lapsi = {
+            'henkilo_oid': henkilo_oid,
+            'vakatoimija_oid': vakajarjestaja_oid,
+            'lahdejarjestelma': '1'
+        }
+        resp_1 = client.post('/api/v1/lapset/', lapsi)
+        assert_status_code(resp_1, status.HTTP_201_CREATED)
+
+        resp_2 = client.post('/api/v1/lapset/', lapsi)
+        assert_status_code(resp_2, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_2, 'errors', 'LA009',
+                                'Combination of henkilo and vakatoimija fields should be unique.')
+
+        lapsi_paos = {
+            'henkilo_oid': henkilo_oid,
+            'oma_organisaatio_oid': vakajarjestaja_oid,
+            'paos_organisaatio_oid': vakajarjestaja_paos_oid,
+            'lahdejarjestelma': '1'
+        }
+        resp_3 = client.post('/api/v1/lapset/', lapsi_paos)
+        assert_status_code(resp_3, status.HTTP_201_CREATED)
+
+        resp_4 = client.post('/api/v1/lapset/', lapsi_paos)
+        assert_status_code(resp_4, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_4, 'errors', 'LA010', 'Combination of henkilo, oma_organisaatio and '
+                                                           'paos_organisaatio fields should be unique.')

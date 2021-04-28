@@ -409,29 +409,6 @@ def validate_tunniste(tunniste):
         raise ValidationErrorRest([ErrorMessages.MI012.value])
 
 
-def validate_unique_lahdejarjestelma_tunniste_pair(self, model):
-    """
-    17.04.2020 UniqueConstraint with condition increments primary key on every validation check,
-    so implement custom unique validation for lahdejarjestelma tunniste pair
-    """
-
-    # TODO: Remove this if else block when lahdejarjestelma is mandatory for vakatiedot
-    if not self.lahdejarjestelma:
-        if self.tunniste:
-            raise ValidationErrorRest({'errors': [ErrorMessages.MI018.value]})
-        else:
-            # lahdejarjestelma and tunniste are empty
-            return
-
-    # Ignored if tunniste is not given
-    if not self.tunniste:
-        return
-
-    if model.objects.filter(~Q(pk=self.pk) & Q(lahdejarjestelma=self.lahdejarjestelma) &
-                            Q(tunniste=self.tunniste)).exists():
-        raise ValidationErrorRest({'errors': [ErrorMessages.MI013.value]})
-
-
 def validate_vaka_date(date):
     date_limit = datetime.date(2000, 1, 1)
     if not validate_paivamaara1_after_paivamaara2(date, date_limit, can_be_same=True):

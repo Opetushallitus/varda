@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.db import models
+from django.db import models, IntegrityError
 from django.db.models import CheckConstraint, UniqueConstraint, F, Q, Index
 import django.utils.timezone
 from rest_framework.exceptions import ValidationError
@@ -23,10 +23,25 @@ logger = logging.getLogger(__name__)
 
 """
 Preserve the order of the tables (to keep the logical structure coherent):
-- Organization first
-- Person next
-- Miscellaneous at the bottom
+1. Organizations
+2. Child models
+3. Employee models
+4. Miscellaneous models
 """
+
+
+class UniqueLahdejarjestelmaTunnisteMixin:
+    def save(self, *args, **kwargs):
+        # TODO: Remove this if block when lahdejarjestelma is mandatory for vakatiedot
+        if not self.lahdejarjestelma and self.tunniste:
+            raise ValidationError({'errors': [ErrorMessages.MI018.value]})
+
+        try:
+            super().save(*args, **kwargs)
+        except IntegrityError as integrity_error:
+            if 'lahdejarjestelma_tunniste_unique' in str(integrity_error):
+                raise ValidationError({'errors': [ErrorMessages.MI013.value]})
+            raise integrity_error
 
 
 class VakaJarjestaja(models.Model):
@@ -91,7 +106,7 @@ class VakaJarjestaja(models.Model):
         verbose_name_plural = 'vakajarjestajat'
 
 
-class Toimipaikka(models.Model):
+class Toimipaikka(UniqueLahdejarjestelmaTunnisteMixin, models.Model):
     vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='toimipaikat', on_delete=models.PROTECT)
     nimi = models.CharField(max_length=200, blank=False)
     nimi_sv = models.CharField(max_length=200, blank=True)
@@ -139,14 +154,6 @@ class Toimipaikka(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
-    def validate_unique(self, *args, **kwargs):
-        super(Toimipaikka, self).validate_unique(*args, **kwargs)
-        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, Toimipaikka)
-
-    def save(self, *args, **kwargs):
-        self.validate_unique()
-        super(Toimipaikka, self).save(*args, **kwargs)
-
     @property
     def varhaiskasvatussuhteet_top(self):
         items_to_show = 3
@@ -165,12 +172,14 @@ class Toimipaikka(models.Model):
     class Meta:
         verbose_name_plural = 'toimipaikat'
         constraints = [
-            UniqueConstraint(fields=['nimi', 'vakajarjestaja'],
-                             name='nimi_vakajarjestaja_unique_constraint')
+            UniqueConstraint(fields=['nimi', 'vakajarjestaja'], name='nimi_vakajarjestaja_unique_constraint'),
+            UniqueConstraint(fields=['lahdejarjestelma', 'tunniste'],
+                             condition=Q(tunniste__isnull=False) & ~Q(tunniste=''),
+                             name='toimipaikka_lahdejarjestelma_tunniste_unique_constraint')
         ]
 
 
-class ToiminnallinenPainotus(models.Model):
+class ToiminnallinenPainotus(UniqueLahdejarjestelmaTunnisteMixin, models.Model):
     toimipaikka = models.ForeignKey(Toimipaikka, related_name='toiminnallisetpainotukset', on_delete=models.PROTECT)
     toimintapainotus_koodi = models.CharField(max_length=6, blank=False, null=False, validators=[validators.validate_toimintapainotus_koodi])
     alkamis_pvm = models.DateField(blank=False, null=False)
@@ -197,19 +206,16 @@ class ToiminnallinenPainotus(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
-    def validate_unique(self, *args, **kwargs):
-        super(ToiminnallinenPainotus, self).validate_unique(*args, **kwargs)
-        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, ToiminnallinenPainotus)
-
-    def save(self, *args, **kwargs):
-        self.validate_unique()
-        super(ToiminnallinenPainotus, self).save(*args, **kwargs)
-
     class Meta:
         verbose_name_plural = 'toiminnalliset painotukset'
+        constraints = [
+            UniqueConstraint(fields=['lahdejarjestelma', 'tunniste'],
+                             condition=Q(tunniste__isnull=False) & ~Q(tunniste=''),
+                             name='toiminnallinen_painotus_lahdejarjestelma_tunniste_unique_constraint')
+        ]
 
 
-class KieliPainotus(models.Model):
+class KieliPainotus(UniqueLahdejarjestelmaTunnisteMixin, models.Model):
     toimipaikka = models.ForeignKey(Toimipaikka, related_name='kielipainotukset', on_delete=models.PROTECT)
     kielipainotus_koodi = models.CharField(max_length=4, blank=False, null=False, validators=[validators.validate_kieli_koodi])
     alkamis_pvm = models.DateField(blank=False, null=False)
@@ -236,16 +242,13 @@ class KieliPainotus(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
-    def validate_unique(self, *args, **kwargs):
-        super(KieliPainotus, self).validate_unique(*args, **kwargs)
-        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, KieliPainotus)
-
-    def save(self, *args, **kwargs):
-        self.validate_unique()
-        super(KieliPainotus, self).save(*args, **kwargs)
-
     class Meta:
         verbose_name_plural = 'kielipainotukset'
+        constraints = [
+            UniqueConstraint(fields=['lahdejarjestelma', 'tunniste'],
+                             condition=Q(tunniste__isnull=False) & ~Q(tunniste=''),
+                             name='kielipainotus_lahdejarjestelma_tunniste_unique_constraint')
+        ]
 
 
 class Henkilo(models.Model):
@@ -285,21 +288,15 @@ class Henkilo(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
-    def validate_unique(self, *args, **kwargs):
-        super(Henkilo, self).validate_unique(*args, **kwargs)
-        if (self.henkilotunnus_unique_hash and
-                Henkilo.objects.filter(~Q(pk=self.pk) &
-                                       Q(henkilotunnus_unique_hash=self.henkilotunnus_unique_hash)).exists()):
-            # Validate hetu uniqueness if hetu is set
-            raise ValidationError({'henkilotunnus': [ErrorMessages.HE014.value]})
-        if (self.henkilo_oid and
-                Henkilo.objects.filter(~Q(pk=self.pk) & Q(henkilo_oid=self.henkilo_oid)).exists()):
-            # Validate OID uniqueness if OID is set
-            raise ValidationError({'henkilo_oid': [ErrorMessages.HE015.value]})
-
     def save(self, *args, **kwargs):
-        self.validate_unique()
-        super(Henkilo, self).save(*args, **kwargs)
+        try:
+            super().save(*args, **kwargs)
+        except IntegrityError as integrity_error:
+            if 'henkilo_henkilotunnus_unique_hash_unique_constraint' in str(integrity_error):
+                raise ValidationError({'henkilotunnus': [ErrorMessages.HE014.value]})
+            elif 'henkilo_oid_unique_constraint' in str(integrity_error):
+                raise ValidationError({'henkilo_oid': [ErrorMessages.HE015.value]})
+            raise integrity_error
 
     def remove_address_information(self):
         self.kotikunta_koodi = ''
@@ -310,12 +307,14 @@ class Henkilo(models.Model):
     class Meta:
         verbose_name_plural = 'henkilöt'
         constraints = [
-            UniqueConstraint(fields=['henkilo_oid', 'henkilotunnus_unique_hash'],
-                             name='henkilo_oid_henkilotunnus_unique_hash_unique_constraint')
+            UniqueConstraint(fields=['henkilotunnus_unique_hash'], condition=~Q(henkilotunnus_unique_hash=''),
+                             name='henkilo_henkilotunnus_unique_hash_unique_constraint'),
+            UniqueConstraint(fields=['henkilo_oid'], condition=~Q(henkilo_oid=''),
+                             name='henkilo_oid_unique_constraint')
         ]
 
 
-class Lapsi(models.Model):
+class Lapsi(UniqueLahdejarjestelmaTunnisteMixin, models.Model):
     henkilo = models.ForeignKey(Henkilo, related_name='lapsi', on_delete=models.PROTECT)
     vakatoimija = models.ForeignKey(VakaJarjestaja, related_name='lapsi_vakatoimija', on_delete=models.PROTECT, null=True)
     oma_organisaatio = models.ForeignKey(VakaJarjestaja, related_name='paos_lapsi_oma_organisaatio', on_delete=models.PROTECT, null=True)
@@ -343,14 +342,6 @@ class Lapsi(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
-    def validate_unique(self, *args, **kwargs):
-        super(Lapsi, self).validate_unique(*args, **kwargs)
-        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, Lapsi)
-
-    def save(self, *args, **kwargs):
-        self.validate_unique()
-        super(Lapsi, self).save(*args, **kwargs)
-
     @property
     def varhaiskasvatuspaatokset_top(self):
         items_to_show = 3
@@ -365,11 +356,29 @@ class Lapsi(models.Model):
         vakapaatos = self.varhaiskasvatuspaatokset.first()
         return vakapaatos and vakapaatos.jarjestamismuoto_koodi.lower() in JARJESTAMISMUODOT_YKSITYINEN
 
+    def save(self, *args, **kwargs):
+        try:
+            super().save(*args, **kwargs)
+        except IntegrityError as integrity_error:
+            if 'lapsi_vakatoimija_unique_constraint' in str(integrity_error):
+                raise ValidationError({'errors': [ErrorMessages.LA009.value]})
+            elif 'lapsi_paos_unique_constraint' in str(integrity_error):
+                raise ValidationError({'errors': [ErrorMessages.LA010.value]})
+            raise integrity_error
+
     class Meta:
         verbose_name_plural = 'lapset'
         constraints = [
             CheckConstraint(check=~Q(oma_organisaatio=F('paos_organisaatio')),
                             name='oma_organisaatio_is_not_paos_organisaatio'),
+            UniqueConstraint(fields=['henkilo', 'vakatoimija'], condition=Q(vakatoimija__isnull=False),
+                             name='lapsi_vakatoimija_unique_constraint'),
+            UniqueConstraint(fields=['henkilo', 'oma_organisaatio', 'paos_organisaatio'],
+                             condition=Q(oma_organisaatio__isnull=False) & Q(paos_organisaatio__isnull=False),
+                             name='lapsi_paos_unique_constraint'),
+            UniqueConstraint(fields=['lahdejarjestelma', 'tunniste'],
+                             condition=Q(tunniste__isnull=False) & ~Q(tunniste=''),
+                             name='lapsi_lahdejarjestelma_tunniste_unique_constraint')
         ]
 
 
@@ -395,7 +404,7 @@ class Huoltaja(models.Model):
         verbose_name_plural = 'huoltajat'
 
 
-class Varhaiskasvatuspaatos(models.Model):
+class Varhaiskasvatuspaatos(UniqueLahdejarjestelmaTunnisteMixin, models.Model):
     lapsi = models.ForeignKey(Lapsi, related_name='varhaiskasvatuspaatokset', on_delete=models.PROTECT)
     vuorohoito_kytkin = models.BooleanField(default=False)
     pikakasittely_kytkin = models.BooleanField(default=False)
@@ -429,14 +438,6 @@ class Varhaiskasvatuspaatos(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
-    def validate_unique(self, *args, **kwargs):
-        super(Varhaiskasvatuspaatos, self).validate_unique(*args, **kwargs)
-        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, Varhaiskasvatuspaatos)
-
-    def save(self, *args, **kwargs):
-        self.validate_unique()
-        super(Varhaiskasvatuspaatos, self).save(*args, **kwargs)
-
     @property
     def varhaiskasvatussuhteet_top(self):
         items_to_show = 3
@@ -444,9 +445,14 @@ class Varhaiskasvatuspaatos(models.Model):
 
     class Meta:
         verbose_name_plural = 'varhaiskasvatuspaatokset'
+        constraints = [
+            UniqueConstraint(fields=['lahdejarjestelma', 'tunniste'],
+                             condition=Q(tunniste__isnull=False) & ~Q(tunniste=''),
+                             name='vakapaatos_lahdejarjestelma_tunniste_unique_constraint')
+        ]
 
 
-class Varhaiskasvatussuhde(models.Model):
+class Varhaiskasvatussuhde(UniqueLahdejarjestelmaTunnisteMixin, models.Model):
     toimipaikka = models.ForeignKey(Toimipaikka, related_name='varhaiskasvatussuhteet', on_delete=models.PROTECT)
     varhaiskasvatuspaatos = models.ForeignKey(Varhaiskasvatuspaatos, related_name='varhaiskasvatussuhteet', on_delete=models.PROTECT)
     alkamis_pvm = models.DateField(blank=False, null=False, validators=[validators.validate_vaka_date])
@@ -473,19 +479,16 @@ class Varhaiskasvatussuhde(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
-    def validate_unique(self, *args, **kwargs):
-        super(Varhaiskasvatussuhde, self).validate_unique(*args, **kwargs)
-        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, Varhaiskasvatussuhde)
-
-    def save(self, *args, **kwargs):
-        self.validate_unique()
-        super(Varhaiskasvatussuhde, self).save(*args, **kwargs)
-
     class Meta:
         verbose_name_plural = 'varhaiskasvatussuhteet'
+        constraints = [
+            UniqueConstraint(fields=['lahdejarjestelma', 'tunniste'],
+                             condition=Q(tunniste__isnull=False) & ~Q(tunniste=''),
+                             name='vakasuhde_lahdejarjestelma_tunniste_unique_constraint')
+        ]
 
 
-class Maksutieto(models.Model):
+class Maksutieto(UniqueLahdejarjestelmaTunnisteMixin, models.Model):
     yksityinen_jarjestaja = models.BooleanField(default=False)
     maksun_peruste_koodi = models.CharField(max_length=5, blank=False, validators=[validators.validate_maksun_peruste_koodi])
     palveluseteli_arvo = models.DecimalField(max_digits=6, decimal_places=2, default=0.00, blank=True, null=True, validators=[MinValueValidator(0.0)])
@@ -515,16 +518,13 @@ class Maksutieto(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
-    def validate_unique(self, *args, **kwargs):
-        super(Maksutieto, self).validate_unique(*args, **kwargs)
-        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, Maksutieto)
-
-    def save(self, *args, **kwargs):
-        self.validate_unique()
-        super(Maksutieto, self).save(*args, **kwargs)
-
     class Meta:
         verbose_name_plural = 'maksutiedot'
+        constraints = [
+            UniqueConstraint(fields=['lahdejarjestelma', 'tunniste'],
+                             condition=Q(tunniste__isnull=False) & ~Q(tunniste=''),
+                             name='maksutieto_lahdejarjestelma_tunniste_unique_constraint')
+        ]
 
 
 class Huoltajuussuhde(models.Model):
@@ -625,7 +625,7 @@ class PaosOikeus(models.Model):
         ]
 
 
-class Tyontekija(models.Model):
+class Tyontekija(UniqueLahdejarjestelmaTunnisteMixin, models.Model):
     henkilo = models.ForeignKey(Henkilo, related_name='tyontekijat', on_delete=models.PROTECT)
     vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='tyontekijat', on_delete=models.PROTECT)
     lahdejarjestelma = models.CharField(max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
@@ -650,22 +650,25 @@ class Tyontekija(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
-    def validate_unique(self, *args, **kwargs):
-        super(Tyontekija, self).validate_unique(*args, **kwargs)
-        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, Tyontekija)
-
     def save(self, *args, **kwargs):
-        self.validate_unique()
-        super(Tyontekija, self).save(*args, **kwargs)
+        try:
+            super().save(*args, **kwargs)
+        except IntegrityError as integrity_error:
+            if 'unique_tyontekija' in str(integrity_error):
+                raise ValidationError({'errors': [ErrorMessages.TY005.value]})
+            raise integrity_error
 
     class Meta:
         verbose_name_plural = 'tyontekijat'
         constraints = [
-            models.UniqueConstraint(fields=['henkilo', 'vakajarjestaja'], name='unique_tyontekija')
+            models.UniqueConstraint(fields=['henkilo', 'vakajarjestaja'], name='unique_tyontekija'),
+            UniqueConstraint(fields=['lahdejarjestelma', 'tunniste'],
+                             condition=Q(tunniste__isnull=False) & ~Q(tunniste=''),
+                             name='tyontekija_lahdejarjestelma_tunniste_unique_constraint')
         ]
 
 
-class TilapainenHenkilosto(models.Model):
+class TilapainenHenkilosto(UniqueLahdejarjestelmaTunnisteMixin, models.Model):
     vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='tilapainen_henkilosto', on_delete=models.PROTECT)
     kuukausi = models.DateField()
     tuntimaara = models.DecimalField(max_digits=8, decimal_places=2)
@@ -692,16 +695,13 @@ class TilapainenHenkilosto(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
-    def validate_unique(self, *args, **kwargs):
-        super(TilapainenHenkilosto, self).validate_unique(*args, **kwargs)
-        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, TilapainenHenkilosto)
-
-    def save(self, *args, **kwargs):
-        self.validate_unique()
-        super(TilapainenHenkilosto, self).save(*args, **kwargs)
-
     class Meta:
         verbose_name_plural = 'tilapainen henkilosto'
+        constraints = [
+            UniqueConstraint(fields=['lahdejarjestelma', 'tunniste'],
+                             condition=Q(tunniste__isnull=False) & ~Q(tunniste=''),
+                             name='tilapainen_henkilosto_lahdejarjestelma_tunniste_unique_constraint')
+        ]
 
 
 class Tutkinto(models.Model):
@@ -732,7 +732,7 @@ class Tutkinto(models.Model):
         verbose_name_plural = 'tutkinnot'
 
 
-class Palvelussuhde(models.Model):
+class Palvelussuhde(UniqueLahdejarjestelmaTunnisteMixin, models.Model):
     tyontekija = models.ForeignKey(Tyontekija, related_name='palvelussuhteet', on_delete=models.PROTECT)
     tyosuhde_koodi = models.CharField(max_length=50, validators=[validators.validate_tyosuhde_koodi])
     tyoaika_koodi = models.CharField(max_length=50, validators=[validators.validate_tyoaika_koodi])
@@ -763,19 +763,16 @@ class Palvelussuhde(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
-    def validate_unique(self, *args, **kwargs):
-        super(Palvelussuhde, self).validate_unique(*args, **kwargs)
-        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, Palvelussuhde)
-
-    def save(self, *args, **kwargs):
-        self.validate_unique()
-        super(Palvelussuhde, self).save(*args, **kwargs)
-
     class Meta:
         verbose_name_plural = 'palvelussuhteet'
+        constraints = [
+            UniqueConstraint(fields=['lahdejarjestelma', 'tunniste'],
+                             condition=Q(tunniste__isnull=False) & ~Q(tunniste=''),
+                             name='palvelussuhde_lahdejarjestelma_tunniste_unique_constraint')
+        ]
 
 
-class Tyoskentelypaikka(models.Model):
+class Tyoskentelypaikka(UniqueLahdejarjestelmaTunnisteMixin, models.Model):
     palvelussuhde = models.ForeignKey(Palvelussuhde, related_name='tyoskentelypaikat', on_delete=models.PROTECT)
     toimipaikka = models.ForeignKey(Toimipaikka, blank=True, null=True, related_name='tyoskentelypaikat', on_delete=models.PROTECT)
     tehtavanimike_koodi = models.CharField(max_length=120, validators=[validators.validate_tehtavanimike_koodi])
@@ -806,23 +803,20 @@ class Tyoskentelypaikka(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
-    def validate_unique(self, *args, **kwargs):
-        super(Tyoskentelypaikka, self).validate_unique(*args, **kwargs)
-        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, Tyoskentelypaikka)
-
-    def save(self, *args, **kwargs):
-        self.validate_unique()
-        super(Tyoskentelypaikka, self).save(*args, **kwargs)
-
     class Meta:
         verbose_name_plural = 'tyoskentelypaikat'
+        constraints = [
+            UniqueConstraint(fields=['lahdejarjestelma', 'tunniste'],
+                             condition=Q(tunniste__isnull=False) & ~Q(tunniste=''),
+                             name='tyoskentelypaikka_lahdejarjestelma_tunniste_unique_constraint')
+        ]
 
 
 def paattymis_pvm_default():
     return '9999-01-01'
 
 
-class PidempiPoissaolo(models.Model):
+class PidempiPoissaolo(UniqueLahdejarjestelmaTunnisteMixin, models.Model):
     palvelussuhde = models.ForeignKey(Palvelussuhde, related_name='pidemmatpoissaolot', on_delete=models.PROTECT)
     alkamis_pvm = models.DateField()
     paattymis_pvm = models.DateField(default=paattymis_pvm_default, validators=[validators.validate_pidempi_poissaolo_paattymis_pvm])
@@ -849,19 +843,16 @@ class PidempiPoissaolo(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
-    def validate_unique(self, *args, **kwargs):
-        super(PidempiPoissaolo, self).validate_unique(*args, **kwargs)
-        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, PidempiPoissaolo)
-
-    def save(self, *args, **kwargs):
-        self.validate_unique()
-        super(PidempiPoissaolo, self).save(*args, **kwargs)
-
     class Meta:
         verbose_name_plural = 'pidemmatpoissaolot'
+        constraints = [
+            UniqueConstraint(fields=['lahdejarjestelma', 'tunniste'],
+                             condition=Q(tunniste__isnull=False) & ~Q(tunniste=''),
+                             name='pidempi_poissaolo_lahdejarjestelma_tunniste_unique_constraint')
+        ]
 
 
-class Taydennyskoulutus(models.Model):
+class Taydennyskoulutus(UniqueLahdejarjestelmaTunnisteMixin, models.Model):
     tyontekijat = models.ManyToManyField(Tyontekija, through='TaydennyskoulutusTyontekija', related_name='taydennyskoulutukset')
     nimi = models.CharField(max_length=120)
     suoritus_pvm = models.DateField(validators=[validators.validate_taydennyskoulutus_suoritus_pvm])
@@ -889,16 +880,13 @@ class Taydennyskoulutus(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
-    def validate_unique(self, *args, **kwargs):
-        super(Taydennyskoulutus, self).validate_unique(*args, **kwargs)
-        validators.validate_unique_lahdejarjestelma_tunniste_pair(self, Taydennyskoulutus)
-
-    def save(self, *args, **kwargs):
-        self.validate_unique()
-        super(Taydennyskoulutus, self).save(*args, **kwargs)
-
     class Meta:
         verbose_name_plural = 'taydennyskoulutukset'
+        constraints = [
+            UniqueConstraint(fields=['lahdejarjestelma', 'tunniste'],
+                             condition=Q(tunniste__isnull=False) & ~Q(tunniste=''),
+                             name='taydennyskoulutus_lahdejarjestelma_tunniste_unique_constraint')
+        ]
 
 
 class TaydennyskoulutusTyontekija(models.Model):
