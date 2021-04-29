@@ -4823,10 +4823,13 @@ class VardaViewsTests(TestCase):
         resp_1 = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp_1, status.HTTP_201_CREATED)
 
+        # TODO: Activate this test in https://jira.eduuni.fi/browse/OPHVARDA-2255
+        """
         resp_2 = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp_2, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp_2, 'errors', 'LA009',
                                 'Combination of henkilo and vakatoimija fields should be unique.')
+        """
 
         lapsi_paos = {
             'henkilo_oid': henkilo_oid,

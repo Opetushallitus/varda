@@ -368,11 +368,15 @@ class Lapsi(UniqueLahdejarjestelmaTunnisteMixin, models.Model):
 
     class Meta:
         verbose_name_plural = 'lapset'
+        # TODO: Add the following constraint when there are no duplicate henkilo+vakatoimija lapset in production
+        #       https://jira.eduuni.fi/browse/OPHVARDA-2255
+        """
+        UniqueConstraint(fields=['henkilo', 'vakatoimija'], condition=Q(vakatoimija__isnull=False),
+                         name='lapsi_vakatoimija_unique_constraint'),
+        """
         constraints = [
             CheckConstraint(check=~Q(oma_organisaatio=F('paos_organisaatio')),
                             name='oma_organisaatio_is_not_paos_organisaatio'),
-            UniqueConstraint(fields=['henkilo', 'vakatoimija'], condition=Q(vakatoimija__isnull=False),
-                             name='lapsi_vakatoimija_unique_constraint'),
             UniqueConstraint(fields=['henkilo', 'oma_organisaatio', 'paos_organisaatio'],
                              condition=Q(oma_organisaatio__isnull=False) & Q(paos_organisaatio__isnull=False),
                              name='lapsi_paos_unique_constraint'),

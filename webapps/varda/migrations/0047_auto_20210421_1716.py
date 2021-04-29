@@ -28,10 +28,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='lapsi',
-            constraint=models.UniqueConstraint(condition=models.Q(vakatoimija__isnull=False), fields=('henkilo', 'vakatoimija'), name='lapsi_vakatoimija_unique_constraint'),
-        ),
-        migrations.AddConstraint(
-            model_name='lapsi',
             constraint=models.UniqueConstraint(condition=models.Q(('oma_organisaatio__isnull', False), ('paos_organisaatio__isnull', False)), fields=('henkilo', 'oma_organisaatio', 'paos_organisaatio'), name='lapsi_paos_unique_constraint'),
         ),
         migrations.AddConstraint(
