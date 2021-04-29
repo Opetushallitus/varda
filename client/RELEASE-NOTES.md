@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.15 (29.04.2021)
+- OPHVARDA-2250: Olemassa olevan työntekijän luonnin korjaus
+
 1.5.14 (15.04.2021)
 - OPHVARDA-2065: Lomakkeiden haitareiden avauksen korjaus
 
