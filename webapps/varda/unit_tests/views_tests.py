@@ -3577,7 +3577,7 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/toimipaikat/', toimipaikka)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp, 'errors', 'MI018', 'lahdejarjestelma field is required if tunniste field is not empty.')
+        assert_validation_error(resp, 'lahdejarjestelma', 'GE001', 'This field is required.')
 
     def test_api_toimipaikka_lahdejarjestelma_tunniste_get_put_patch(self):
         lahdejarjestelma = '1'
@@ -3614,6 +3614,7 @@ class VardaViewsTests(TestCase):
             'varhaiskasvatuspaikat': 200,
             'alkamis_pvm': '2020-09-02',
             'paattymis_pvm': '2021-09-02',
+            'lahdejarjestelma': '1',
             'tunniste': new_tunniste,
         }
         resp_toimipaikka_put = client.put(toimipaikka_url, toimipaikka_put)
@@ -3653,7 +3654,7 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/toiminnallisetpainotukset/', painotus)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp, 'errors', 'MI018', 'lahdejarjestelma field is required if tunniste field is not empty.')
+        assert_validation_error(resp, 'lahdejarjestelma', 'GE001', 'This field is required.')
 
     def test_api_toiminnallinen_painotus_toimipaikka_tunniste(self):
         lahdejarjestelma = '1'
@@ -3828,7 +3829,7 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/kielipainotukset/', painotus)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp, 'errors', 'MI018', 'lahdejarjestelma field is required if tunniste field is not empty.')
+        assert_validation_error(resp, 'lahdejarjestelma', 'GE001', 'This field is required.')
 
     def test_api_kielipainotus_toimipaikka_tunniste(self):
         lahdejarjestelma = '1'
@@ -4005,7 +4006,7 @@ class VardaViewsTests(TestCase):
         post_henkilo_to_get_permissions(client, henkilo_oid=henkilo_oid)
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp, 'errors', 'MI018', 'lahdejarjestelma field is required if tunniste field is not empty.')
+        assert_validation_error(resp, 'lahdejarjestelma', 'GE001', 'This field is required.')
 
     def test_api_lapsi_lahdejarjestelma_tunniste_get_put_patch_delete(self):
         lahdejarjestelma = '1'
@@ -4094,7 +4095,7 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp, 'errors', 'MI018', 'lahdejarjestelma field is required if tunniste field is not empty.')
+        assert_validation_error(resp, 'lahdejarjestelma', 'GE001', 'This field is required.')
 
     def test_api_vakapaatos_lapsi_tunniste(self):
         lahdejarjestelma = '1'
@@ -4269,7 +4270,7 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester5').client()
         resp = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp, 'errors', 'MI018', 'lahdejarjestelma field is required if tunniste field is not empty.')
+        assert_validation_error(resp, 'lahdejarjestelma', 'GE001', 'This field is required.')
 
     def test_api_vakasuhde_vakapaatos_toimipaikka_tunniste(self):
         lahdejarjestelma = '1'
@@ -4477,7 +4478,7 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp, 'errors', 'MI018', 'lahdejarjestelma field is required if tunniste field is not empty.')
+        assert_validation_error(resp, 'lahdejarjestelma', 'GE001', 'This field is required.')
 
     def test_api_maksutieto_lapsi_tunniste(self):
         lahdejarjestelma = '1'

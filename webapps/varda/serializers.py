@@ -278,6 +278,18 @@ class LapsiOptionalToimipaikkaMixin(OptionalToimipaikkaMixin):
                                                       check_paos=True)
 
 
+class RequiredLahdejarjestelmaMixin(metaclass=serializers.SerializerMetaclass):
+    lahdejarjestelma = serializers.CharField(required=True, max_length=2,
+                                             validators=[validators.validate_lahdejarjestelma_koodi])
+
+    def validate(self, data):
+        data = super().validate(data)
+        if self.instance and not self.instance.lahdejarjestelma and not data.get('lahdejarjestelma'):
+            # If instance does not have lahdejarjestelma, it is required in update-requests
+            raise ValidationError({'lahdejarjestelma': [ErrorMessages.GE001.value]})
+        return data
+
+
 """
 VARDA serializers
 """
@@ -312,7 +324,7 @@ class VakaJarjestajaSerializer(serializers.HyperlinkedModelSerializer):
         return super(VakaJarjestajaSerializer, self).to_representation(instance)
 
 
-class ToimipaikkaSerializer(serializers.HyperlinkedModelSerializer):
+class ToimipaikkaSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     vakajarjestaja = VakaJarjestajaPermissionCheckedHLField(view_name='vakajarjestaja-detail', required=False,
                                                             permission_groups=[Z4_CasKayttoOikeudet.TALLENTAJA,
@@ -339,6 +351,7 @@ class ToimipaikkaSerializer(serializers.HyperlinkedModelSerializer):
         return super(ToimipaikkaSerializer, self).to_representation(instance)
 
     def validate(self, data):
+        data = super().validate(data)
         if self.instance:
             fill_missing_fields_for_validations(data, self.instance)
 
@@ -389,7 +402,7 @@ class ToimipaikkaSerializer(serializers.HyperlinkedModelSerializer):
                 validator.error('jarjestamismuoto_koodi', ErrorMessages.TP018.value)
 
 
-class ToiminnallinenPainotusSerializer(serializers.HyperlinkedModelSerializer):
+class ToiminnallinenPainotusSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     toimipaikka = ToimipaikkaPermissionCheckedHLField(required=False, view_name='toimipaikka-detail',
                                                       permission_groups=[Z4_CasKayttoOikeudet.TALLENTAJA,
@@ -411,6 +424,7 @@ class ToiminnallinenPainotusSerializer(serializers.HyperlinkedModelSerializer):
         exclude = ('luonti_pvm', 'changed_by',)
 
     def validate(self, data):
+        data = super().validate(data)
         if self.instance:
             fill_missing_fields_for_validations(data, self.instance)
             check_if_immutable_object_is_changed(self.instance, data, 'toimipaikka')
@@ -427,7 +441,7 @@ class ToiminnallinenPainotusSerializer(serializers.HyperlinkedModelSerializer):
         return data
 
 
-class KieliPainotusSerializer(serializers.HyperlinkedModelSerializer):
+class KieliPainotusSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     toimipaikka = ToimipaikkaPermissionCheckedHLField(required=False, view_name='toimipaikka-detail',
                                                       permission_groups=[Z4_CasKayttoOikeudet.TALLENTAJA,
@@ -449,6 +463,7 @@ class KieliPainotusSerializer(serializers.HyperlinkedModelSerializer):
         exclude = ('luonti_pvm', 'changed_by',)
 
     def validate(self, data):
+        data = super().validate(data)
         if self.instance:
             fill_missing_fields_for_validations(data, self.instance)
             check_if_immutable_object_is_changed(self.instance, data, 'toimipaikka')
@@ -670,7 +685,7 @@ def _validate_maksutieto_overlap(data, lapsi_obj=None, maksutieto_id=None):
     data.pop('huoltajuussuhteet')
 
 
-class MaksutietoPostSerializer(serializers.HyperlinkedModelSerializer):
+class MaksutietoPostSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     url = serializers.ReadOnlyField()
     huoltajat = MaksutietoPostHuoltajaSerializer(required=True, allow_empty=False, many=True)
@@ -686,6 +701,7 @@ class MaksutietoPostSerializer(serializers.HyperlinkedModelSerializer):
         exclude = ('luonti_pvm', 'changed_by', 'yksityinen_jarjestaja',)
 
     def validate(self, data):
+        data = super().validate(data)
         if not self.context['request'].user.has_perm('view_lapsi', data['lapsi']):
             msg = {'lapsi': [ErrorMessages.GE008.value]}
             raise serializers.ValidationError(msg, code='invalid')
@@ -746,7 +762,7 @@ def _get_lapsi_for_maksutieto(maksutieto):
     return Lapsi.objects.get(id=lapsi[0].get('lapsi'))
 
 
-class MaksutietoGetUpdateSerializer(serializers.HyperlinkedModelSerializer):
+class MaksutietoGetUpdateSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     huoltajat = serializers.SerializerMethodField()
     lapsi = serializers.SerializerMethodField()
@@ -767,6 +783,7 @@ class MaksutietoGetUpdateSerializer(serializers.HyperlinkedModelSerializer):
         return self.context['request'].build_absolute_uri(reverse('lapsi-detail', args=[lapsi]))
 
     def validate(self, data):
+        data = super().validate(data)
         if len(data) == 0:
             raise serializers.ValidationError({'errors': [ErrorMessages.GE014.value]})
         fill_missing_fields_for_validations(data, self.instance)
@@ -788,7 +805,8 @@ class MaksutietoGetUpdateSerializer(serializers.HyperlinkedModelSerializer):
                   'asiakasmaksu', 'perheen_koko', 'alkamis_pvm', 'paattymis_pvm', 'lahdejarjestelma', 'tunniste',)
 
 
-class LapsiSerializer(LapsiOptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
+class LapsiSerializer(RequiredLahdejarjestelmaMixin, LapsiOptionalToimipaikkaMixin,
+                      serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     henkilo = HenkiloHLField(view_name='henkilo-detail', required=False)
     henkilo_oid = OidRelatedField(object_type=Henkilo,
@@ -829,6 +847,7 @@ class LapsiSerializer(LapsiOptionalToimipaikkaMixin, serializers.HyperlinkedMode
         return super(LapsiSerializer, self).to_representation(instance)
 
     def validate(self, data):
+        data = super().validate(data)
         with ViewSetValidator() as validator:
             if self.instance:
                 fill_missing_fields_for_validations(data, self.instance)
@@ -868,7 +887,7 @@ class LapsiSerializer(LapsiOptionalToimipaikkaMixin, serializers.HyperlinkedMode
                 raise ValidationError({'vakatoimija': [ErrorMessages.LA011.value]})
 
 
-class LapsiSerializerAdmin(serializers.HyperlinkedModelSerializer):
+class LapsiSerializerAdmin(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
     """
     Do not inherit from LapsiSerializer, it messes up the cache!
     to_representation should not be run twice.
@@ -982,7 +1001,8 @@ class HuoltajuussuhdeSerializer(serializers.HyperlinkedModelSerializer):
         exclude = ('luonti_pvm', 'changed_by',)
 
 
-class VarhaiskasvatuspaatosSerializer(LapsiOptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
+class VarhaiskasvatuspaatosSerializer(RequiredLahdejarjestelmaMixin, LapsiOptionalToimipaikkaMixin,
+                                      serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     lapsi = LapsiPermissionCheckedHLField(required=False, view_name='lapsi-detail')
     lapsi_tunniste = TunnisteRelatedField(object_type=Lapsi,
@@ -1001,6 +1021,7 @@ class VarhaiskasvatuspaatosSerializer(LapsiOptionalToimipaikkaMixin, serializers
         read_only_fields = ('pikakasittely_kytkin',)
 
     def validate(self, data):
+        data = super().validate(data)
         if self.instance:
             if len(data) == 0:
                 raise serializers.ValidationError({'errors': [ErrorMessages.GE014.value]})
@@ -1104,7 +1125,7 @@ def _validate_toimipaikka_with_vakajarjestaja_of_lapsi(toimipaikka, lapsi):
         raise serializers.ValidationError({'toimipaikka': [ErrorMessages.MI019.value]})
 
 
-class VarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSerializer):
+class VarhaiskasvatussuhdeSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     varhaiskasvatuspaatos = VarhaiskasvatuspaatosPermissionCheckedHLField(required=False, view_name='varhaiskasvatuspaatos-detail')
     varhaiskasvatuspaatos_tunniste = TunnisteRelatedField(object_type=Varhaiskasvatuspaatos,
@@ -1129,6 +1150,7 @@ class VarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSerializer):
         exclude = ('luonti_pvm', 'changed_by',)
 
     def validate(self, data):
+        data = super().validate(data)
         instance = self.instance
         if instance:
             fill_missing_fields_for_validations(data, instance)

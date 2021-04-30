@@ -384,7 +384,8 @@ class VardaHenkilostoViewSetTests(TestCase):
         lapsi = {
             'toimipaikka_oid': toimipaikka_oid,
             'henkilo_oid': henkilo_oid,
-            'vakatoimija_oid': vakajarjestaja_oid
+            'vakatoimija_oid': vakajarjestaja_oid,
+            'lahdejarjestelma': '1'
         }
         resp_lapsi = toimipaikka_client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp_lapsi, status.HTTP_201_CREATED)
@@ -401,7 +402,8 @@ class VardaHenkilostoViewSetTests(TestCase):
             'tuntimaara_viikossa': '32.0',
             'paivittainen_vaka_kytkin': True,
             'kokopaivainen_vaka_kytkin': True,
-            'jarjestamismuoto_koodi': 'jm04'
+            'jarjestamismuoto_koodi': 'jm04',
+            'lahdejarjestelma': '1'
         }
         resp_vakapaatos = toimipaikka_client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos)
         assert_status_code(resp_vakapaatos, status.HTTP_201_CREATED)
@@ -410,7 +412,8 @@ class VardaHenkilostoViewSetTests(TestCase):
         vakasuhde = {
             'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos_id}/',
             'toimipaikka_oid': toimipaikka_oid,
-            'alkamis_pvm': '2020-12-01'
+            'alkamis_pvm': '2020-12-01',
+            'lahdejarjestelma': '1'
         }
         resp_vakasuhde = toimipaikka_client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
         assert_status_code(resp_vakasuhde, status.HTTP_201_CREATED)

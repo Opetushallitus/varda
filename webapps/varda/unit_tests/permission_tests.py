@@ -116,7 +116,8 @@ class VardaPermissionsTests(TestCase):
             'asiointikieli_koodi': 'FI',
             'jarjestamismuoto_koodi': ['jm01', 'jm03'],
             'varhaiskasvatuspaikat': 1000,
-            'alkamis_pvm': '2018-01-01'
+            'alkamis_pvm': '2018-01-01',
+            'lahdejarjestelma': '1'
         }
         resp = self.client.post('/api/v1/toimipaikat/', toimipaikka)
         assert_status_code(resp, status.HTTP_403_FORBIDDEN)  # anonymous not allowed
@@ -143,7 +144,8 @@ class VardaPermissionsTests(TestCase):
             'asiointikieli_koodi': 'FI',
             'jarjestamismuoto_koodi': ['jm01', 'jm03'],
             'varhaiskasvatuspaikat': 1000,
-            'alkamis_pvm': '2018-01-01'
+            'alkamis_pvm': '2018-01-01',
+            'lahdejarjestelma': '1'
         }
         client = SetUpTestClient('tester2').client()
         resp2 = client.post('/api/v1/toimipaikat/', toimipaikka)
@@ -225,6 +227,7 @@ class VardaPermissionsTests(TestCase):
         lapsi = {
             'henkilo': new_henkilo_url,
             'vakatoimija': 'http://testserver/api/v1/vakajarjestajat/{}/'.format(vakajarjestaja_id_34683023489),
+            'lahdejarjestelma': '1'
         }
 
         resp = client.post('/api/v1/lapset/', lapsi)
@@ -297,7 +300,8 @@ class VardaPermissionsTests(TestCase):
         new_henkilo_url = json.loads(resp.content)['url']
         lapsi = {
             'henkilo': new_henkilo_url,
-            'vakatoimija': '/api/v1/vakajarjestajat/1/'
+            'vakatoimija': '/api/v1/vakajarjestajat/1/',
+            'lahdejarjestelma': '1'
         }
 
         resp = client.post('/api/v1/lapset/', lapsi)
@@ -330,6 +334,7 @@ class VardaPermissionsTests(TestCase):
         lapsi = {
             'henkilo': henkilo_url,
             'vakatoimija': vakatoimija_url,
+            'lahdejarjestelma': '1'
         }
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, status.HTTP_200_OK)  # Lapsi is already added
@@ -342,7 +347,8 @@ class VardaPermissionsTests(TestCase):
         lapsi = {
             'henkilo': '/api/v1/henkilot/9/',
             'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
-            'paos_organisaatio': '/api/v1/vakajarjestajat/2/'
+            'paos_organisaatio': '/api/v1/vakajarjestajat/2/',
+            'lahdejarjestelma': '1'
         }
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, status.HTTP_403_FORBIDDEN)
@@ -356,6 +362,7 @@ class VardaPermissionsTests(TestCase):
         lapsi = {
             'henkilo': 'http://testserver/api/v1/henkilot/8/',
             'vakatoimija': 'http://testserver/api/v1/vakajarjestajat/{}/'.format(vakajarjestaja_id),
+            'lahdejarjestelma': '1'
         }
         resp = client.put('/api/v1/lapset/1/', lapsi)
         assert_status_code(resp, 400)

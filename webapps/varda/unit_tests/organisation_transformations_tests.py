@@ -137,7 +137,8 @@ class OrganisationTransformationsTests(TestCase):
         vakasuhde = {
             'varhaiskasvatuspaatos': '/api/v1/varhaiskasvatuspaatokset/{0}/'.format(vakapaatos.id),
             'toimipaikka_oid': '1.2.246.562.10.2565458382544',
-            'alkamis_pvm': '2020-02-02'
+            'alkamis_pvm': '2020-02-02',
+            'lahdejarjestelma': '1'
         }
         client = SetUpTestClient('tester10').client()
         vakasuhde_resp = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
@@ -170,7 +171,8 @@ class OrganisationTransformationsTests(TestCase):
         post_henkilo_to_get_permissions(client, henkilo_id=lapsi_henkilo.id)
         lapsi = {
             'henkilo': '/api/v1/henkilot/{0}/'.format(lapsi_henkilo.id),
-            'vakatoimija_oid': new_vakajarjestaja_oid
+            'vakatoimija_oid': new_vakajarjestaja_oid,
+            'lahdejarjestelma': '1'
         }
         lapsi_resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(lapsi_resp, 201)
@@ -183,7 +185,8 @@ class OrganisationTransformationsTests(TestCase):
             'jarjestamismuoto_koodi': 'jm01',
             'tilapainen_vaka_kytkin': False,
             'hakemus_pvm': '2020-03-01',
-            'alkamis_pvm': '2020-03-01'
+            'alkamis_pvm': '2020-03-01',
+            'lahdejarjestelma': '1'
         }
         vakapaatos_resp = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos)
         assert_status_code(vakapaatos_resp, 201)
@@ -192,7 +195,8 @@ class OrganisationTransformationsTests(TestCase):
         vakasuhde = {
             'toimipaikka_oid': other_toimipaikka_oid,
             'varhaiskasvatuspaatos': json.loads(vakapaatos_resp.content)['url'],
-            'alkamis_pvm': '2020-03-20'
+            'alkamis_pvm': '2020-03-20',
+            'lahdejarjestelma': '1'
         }
         vakasuhde_resp = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
         assert_status_code(vakasuhde_resp, 201)
@@ -263,7 +267,8 @@ class OrganisationTransformationsTests(TestCase):
         paos_lapsi = {
             'henkilo': '/api/v1/henkilot/{0}/'.format(paos_henkilo.id),
             'oma_organisaatio': '/api/v1/vakajarjestajat/{0}/'.format(paos_vakajarjestaja.id),
-            'paos_organisaatio': '/api/v1/vakajarjestajat/{0}/'.format(old_vakajarjestaja.id)
+            'paos_organisaatio': '/api/v1/vakajarjestajat/{0}/'.format(old_vakajarjestaja.id),
+            'lahdejarjestelma': '1'
         }
         resp_paos_lapsi = client_paos_lapsi.post('/api/v1/lapset/', paos_lapsi)
         assert_status_code(resp_paos_lapsi, 201)
@@ -275,7 +280,8 @@ class OrganisationTransformationsTests(TestCase):
             'jarjestamismuoto_koodi': 'jm03',
             'tilapainen_vaka_kytkin': False,
             'hakemus_pvm': '2020-04-01',
-            'alkamis_pvm': '2020-04-01'
+            'alkamis_pvm': '2020-04-01',
+            'lahdejarjestelma': '1'
         }
         resp_paos_vakapaatos = client_paos_lapsi.post('/api/v1/varhaiskasvatuspaatokset/', paos_vakapaatos)
         assert_status_code(resp_paos_vakapaatos, 201)
@@ -283,7 +289,8 @@ class OrganisationTransformationsTests(TestCase):
         paos_vakasuhde = {
             'toimipaikka_oid': toimipaikka_oid,
             'varhaiskasvatuspaatos': json.loads(resp_paos_vakapaatos.content)['url'],
-            'alkamis_pvm': '2020-04-20'
+            'alkamis_pvm': '2020-04-20',
+            'lahdejarjestelma': '1'
         }
         paos_vakasuhde_resp = client_paos_lapsi.post('/api/v1/varhaiskasvatussuhteet/', paos_vakasuhde)
         assert_status_code(paos_vakasuhde_resp, 201)
@@ -371,7 +378,8 @@ class OrganisationTransformationsTests(TestCase):
         vakasuhde_1 = {
             'varhaiskasvatuspaatos': '/api/v1/varhaiskasvatuspaatokset/{0}/'.format(vakapaatos_1.id),
             'toimipaikka_oid': '1.2.246.562.10.2565458382544',
-            'alkamis_pvm': '2020-02-02'
+            'alkamis_pvm': '2020-02-02',
+            'lahdejarjestelma': '1'
         }
         client = SetUpTestClient('tester10').client()
         vakasuhde_1_resp = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde_1)
@@ -387,7 +395,8 @@ class OrganisationTransformationsTests(TestCase):
             'tilapainen_vaka_kytkin': False,
             'hakemus_pvm': '2020-03-01',
             'alkamis_pvm': '2020-03-01',
-            'paattymis_pvm': '2020-04-10'
+            'paattymis_pvm': '2020-04-10',
+            'lahdejarjestelma': '1'
         }
         vakapaatos_2_resp = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos_2)
         assert_status_code(vakapaatos_2_resp, 201)
@@ -396,7 +405,8 @@ class OrganisationTransformationsTests(TestCase):
             'toimipaikka_oid': old_toimipaikka_oid,
             'varhaiskasvatuspaatos': json.loads(vakapaatos_2_resp.content)['url'],
             'alkamis_pvm': '2020-03-20',
-            'paattymis_pvm': '2020-04-01'
+            'paattymis_pvm': '2020-04-01',
+            'lahdejarjestelma': '1'
         }
         vakasuhde_2_resp = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde_2)
         assert_status_code(vakasuhde_2_resp, 201)

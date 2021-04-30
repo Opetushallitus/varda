@@ -70,6 +70,7 @@ class VardaViewsReportingTests(TestCase):
             'varhaiskasvatuspaatos': vakapaatos_url,
             'toimipaikka': '/api/v1/toimipaikat/5/',
             'alkamis_pvm': '2021-01-05',
+            'lahdejarjestelma': '1'
         }
 
         resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/', **self.headers)
@@ -95,12 +96,14 @@ class VardaViewsReportingTests(TestCase):
             'varhaiskasvatuspaatos': vakapaatos_public_url,
             'toimipaikka': '/api/v1/toimipaikat/2/',
             'alkamis_pvm': '2021-01-05',
+            'lahdejarjestelma': '1'
         }
 
         data_vakasuhde_private = {
             'varhaiskasvatuspaatos': vakapaatos_private_url,
             'toimipaikka': '/api/v1/toimipaikat/5/',
             'alkamis_pvm': '2021-01-05',
+            'lahdejarjestelma': '1'
         }
 
         resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/', **self.headers)
@@ -155,7 +158,8 @@ class VardaViewsReportingTests(TestCase):
             'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos.id}/',
             'toimipaikka': '/api/v1/toimipaikat/2/',
             'alkamis_pvm': '2018-09-05',
-            'paattymis_pvm': '2021-06-10'
+            'paattymis_pvm': '2021-06-10',
+            'lahdejarjestelma': '1'
         }
 
         resp_vakasuhde_update = client_tester2.put(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde.id}/', update_end_date)
@@ -190,7 +194,8 @@ class VardaViewsReportingTests(TestCase):
             'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{private_vakasuhde.varhaiskasvatuspaatos_id}/',
             'toimipaikka': '/api/v1/toimipaikat/5/',
             'alkamis_pvm': '2021-04-15',
-            'paattymis_pvm': '2021-06-10'
+            'paattymis_pvm': '2021-06-10',
+            'lahdejarjestelma': '1'
         }
 
         resp_vakasuhde_update = client_tester5.put(f'/api/v1/varhaiskasvatussuhteet/{private_vakasuhde.id}/', update_end_date)
@@ -226,7 +231,8 @@ class VardaViewsReportingTests(TestCase):
         create_aloittanut = {
             'varhaiskasvatuspaatos': public_vakapaatos_url,
             'toimipaikka': '/api/v1/toimipaikat/5/',
-            'alkamis_pvm': '2021-09-05'
+            'alkamis_pvm': '2021-09-05',
+            'lahdejarjestelma': '1'
         }
 
         resp_vakasuhde_create = client_tester2.post('/api/v1/varhaiskasvatussuhteet/', create_aloittanut)
@@ -238,7 +244,8 @@ class VardaViewsReportingTests(TestCase):
             'varhaiskasvatuspaatos': public_vakapaatos_url,
             'toimipaikka': '/api/v1/toimipaikat/5/',
             'alkamis_pvm': '2021-09-05',
-            'paattymis_pvm': '2021-11-10'
+            'paattymis_pvm': '2021-11-10',
+            'lahdejarjestelma': '1'
         }
 
         resp_vakasuhde_update = client_tester2.put(f'/api/v1/varhaiskasvatussuhteet/{created_vakasuhde_id}/', add_end_date)
@@ -284,7 +291,8 @@ class VardaViewsReportingTests(TestCase):
             'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos.id}/',
             'toimipaikka': '/api/v1/toimipaikat/2/',
             'alkamis_pvm': '2018-09-05',
-            'paattymis_pvm': '2021-11-10'
+            'paattymis_pvm': '2021-11-10',
+            'lahdejarjestelma': '1'
         }
 
         resp_vakasuhde_update = client_tester2.put(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde.id}/', add_end_date)
@@ -306,7 +314,8 @@ class VardaViewsReportingTests(TestCase):
             'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos.id}/',
             'toimipaikka': '/api/v1/toimipaikat/2/',
             'alkamis_pvm': '2018-09-05',
-            'paattymis_pvm': '2021-12-10'
+            'paattymis_pvm': '2021-12-10',
+            'lahdejarjestelma': '1'
         }
 
         resp_vakasuhde_update = client_tester2.put(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde.id}/', alter_end_date)
@@ -358,7 +367,8 @@ class VardaViewsReportingTests(TestCase):
             'varhaiskasvatuspaatos': vakapaatos_url,
             'toimipaikka': '/api/v1/toimipaikat/5/',
             'alkamis_pvm': '2021-01-05',
-            'paattymis_pvm': '2021-06-10'
+            'paattymis_pvm': '2021-06-10',
+            'lahdejarjestelma': '1'
         }
 
         resp_vakasuhde = client_tester2.post('/api/v1/varhaiskasvatussuhteet/', create_vakasuhde)
@@ -381,14 +391,16 @@ class VardaViewsReportingTests(TestCase):
             'varhaiskasvatuspaatos': vakapaatos_public_url,
             'toimipaikka': '/api/v1/toimipaikat/2/',
             'alkamis_pvm': '2021-01-05',
-            'paattymis_pvm': '2022-02-01'
+            'paattymis_pvm': '2022-02-01',
+            'lahdejarjestelma': '1'
         }
 
         data_vakasuhde_private = {
             'varhaiskasvatuspaatos': vakapaatos_private_url,
             'toimipaikka': '/api/v1/toimipaikat/5/',
             'alkamis_pvm': '2021-01-05',
-            'paattymis_pvm': '2022-02-01'
+            'paattymis_pvm': '2022-02-01',
+            'lahdejarjestelma': '1'
         }
 
         resp_kela_api = client_tester_kela.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/', **self.headers)
@@ -442,7 +454,8 @@ class VardaViewsReportingTests(TestCase):
             'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos.id}/',
             'toimipaikka': '/api/v1/toimipaikat/2/',
             'alkamis_pvm': '2018-09-07',
-            'paattymis_pvm': '2021-06-10'
+            'paattymis_pvm': '2021-06-10',
+            'lahdejarjestelma': '1'
         }
 
         resp_vakasuhde_update = client_tester2.put(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde.id}/', update_start_and_end_date)
@@ -490,7 +503,8 @@ class VardaViewsReportingTests(TestCase):
             'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos.id}/',
             'toimipaikka': '/api/v1/toimipaikat/5/',
             'alkamis_pvm': '2021-01-07',
-            'paattymis_pvm': '2022-01-10'
+            'paattymis_pvm': '2022-01-10',
+            'lahdejarjestelma': '1'
         }
 
         resp_vakasuhde_update = client_tester2.put(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde.id}/', update_start_and_end_date)
@@ -531,7 +545,8 @@ class VardaViewsReportingTests(TestCase):
             'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos.id}/',
             'toimipaikka': '/api/v1/toimipaikat/5/',
             'alkamis_pvm': '2021-01-05',
-            'paattymis_pvm': '2022-01-10'
+            'paattymis_pvm': '2022-01-10',
+            'lahdejarjestelma': '1'
         }
 
         resp_vakasuhde_update = client_tester2.put(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde.id}/', update_end_date)
@@ -576,14 +591,16 @@ class VardaViewsReportingTests(TestCase):
             'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{public_vakapaatos.id}/',
             'toimipaikka': f'/api/v1/toimipaikat/{public_vakasuhde.toimipaikka_id}/',
             'alkamis_pvm': '2021-09-29',
-            'paattymis_pvm': '2021-10-01'
+            'paattymis_pvm': '2021-10-01',
+            'lahdejarjestelma': '1'
         }
 
         update_private_start_and_end_date = {
             'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{private_vakapaatos.id}/',
             'toimipaikka': f'/api/v1/toimipaikat/{private_vakasuhde.toimipaikka_id}/',
             'alkamis_pvm': '2021-04-18',
-            'paattymis_pvm': '2022-05-05'
+            'paattymis_pvm': '2022-05-05',
+            'lahdejarjestelma': '1'
         }
 
         resp_vakasuhde_update = client_tester2.put(f'/api/v1/varhaiskasvatussuhteet/{public_vakasuhde.id}/', update_public_start_and_end_date)
@@ -711,7 +728,8 @@ class VardaViewsReportingTests(TestCase):
             'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos.id}/',
             'toimipaikka': '/api/v1/toimipaikat/5/',
             'alkamis_pvm': '2021-02-01',
-            'paattymis_pvm': '2022-03-02'
+            'paattymis_pvm': '2022-03-02',
+            'lahdejarjestelma': '1'
         }
 
         resp_vakasuhde_create = client_tester2.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
@@ -1008,7 +1026,8 @@ def _load_base_data_for_kela_success_testing():
     data_lapsi = {
         'henkilo': henkilo_url,
         'oma_organisaatio': '/api/v1/vakajarjestajat/1/',
-        'paos_organisaatio': '/api/v1/vakajarjestajat/2/'
+        'paos_organisaatio': '/api/v1/vakajarjestajat/2/',
+        'lahdejarjestelma': '1'
     }
     resp_public_lapsi = client_tester2.post('/api/v1/lapset/', data_lapsi)
     assert_status_code(resp_public_lapsi, 201)
@@ -1022,7 +1041,8 @@ def _load_base_data_for_kela_success_testing():
         'tilapainen_vaka_kytkin': False,
         'vuorohoito': True,
         'alkamis_pvm': '2021-01-05',
-        'hakemus_pvm': '2021-01-01'
+        'hakemus_pvm': '2021-01-01',
+        'lahdejarjestelma': '1'
     }
 
     resp_vakapaatos = client_tester2.post('/api/v1/varhaiskasvatuspaatokset/', data_vakapaatos)
@@ -1054,7 +1074,8 @@ def _load_base_data_for_kela_error_testing():
     # public daycare child
     data_public_lapsi = {
         'henkilo': henkilo_url,
-        'vakatoimija': '/api/v1/vakajarjestajat/1/'
+        'vakatoimija': '/api/v1/vakajarjestajat/1/',
+        'lahdejarjestelma': '1'
     }
     resp_public_lapsi = client_tester2.post('/api/v1/lapset/', data_public_lapsi)
     assert_status_code(resp_public_lapsi, 201)
@@ -1063,7 +1084,8 @@ def _load_base_data_for_kela_error_testing():
 
     data_private_lapsi = {
         'henkilo': henkilo_url,
-        'vakatoimija': '/api/v1/vakajarjestajat/2/'
+        'vakatoimija': '/api/v1/vakajarjestajat/2/',
+        'lahdejarjestelma': '1'
     }
 
     resp_private_lapsi = client_tester5.post('/api/v1/lapset/', data_private_lapsi)
@@ -1078,7 +1100,8 @@ def _load_base_data_for_kela_error_testing():
         'tilapainen_vaka_kytkin': False,
         'vuorohoito': True,
         'alkamis_pvm': '2021-01-05',
-        'hakemus_pvm': '2021-01-01'
+        'hakemus_pvm': '2021-01-01',
+        'lahdejarjestelma': '1'
     }
 
     data_public_vakapaatos = {
@@ -1088,7 +1111,8 @@ def _load_base_data_for_kela_error_testing():
         'tilapainen_vaka_kytkin': True,
         'vuorohoito': True,
         'alkamis_pvm': '2021-01-05',
-        'hakemus_pvm': '2021-01-01'
+        'hakemus_pvm': '2021-01-01',
+        'lahdejarjestelma': '1'
     }
 
     resp_public_vakapaatos = client_tester2.post('/api/v1/varhaiskasvatuspaatokset/', data_public_vakapaatos)

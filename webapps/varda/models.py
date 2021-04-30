@@ -32,10 +32,6 @@ Preserve the order of the tables (to keep the logical structure coherent):
 
 class UniqueLahdejarjestelmaTunnisteMixin:
     def save(self, *args, **kwargs):
-        # TODO: Remove this if block when lahdejarjestelma is mandatory for vakatiedot
-        if not self.lahdejarjestelma and self.tunniste:
-            raise ValidationError({'errors': [ErrorMessages.MI018.value]})
-
         try:
             super().save(*args, **kwargs)
         except IntegrityError as integrity_error:
