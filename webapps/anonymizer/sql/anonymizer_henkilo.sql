@@ -2,11 +2,9 @@
 -- Table: varda_henkilo
 -- Columns: henkilo_oid, etunimet, kutsumanimi, katuosoite, postinumero, postitoimipaikka
 
--- henkilo_oid (generate random strings)
-UPDATE varda_henkilo SET henkilo_oid = concat('1.2.246.562.24.', trunc(id + 90000000000)::text) WHERE henkilo_oid <> '';
-
--- katuosoite & postiosoite for history tables
-UPDATE varda_henkilo SET katuosoite = 'Placeholder', postinumero = '00000';
+-- varda_henkilo (to avoid duplicates in the python bulk-update)
+UPDATE varda_henkilo SET henkilotunnus_unique_hash = '', henkilotunnus = '', henkilo_oid = '',
+                         katuosoite = 'Placeholder', postinumero = '00000';
 
 -- postitoimipaikka (shuffle not-null and non-empty values)
 WITH p1 AS (

@@ -109,6 +109,10 @@ def create_henkilo(henkilo, henkilotunnus_unique_hash_set, file, etunimet_miehet
     if counter > 10:
         logger.info(f'Counter value for looping through duplicates: {counter}.')
 
+    # Henkilo oid
+    henkilo_oid_suffix = henkilo['id'] + 10000000000
+    henkilo_oid = f'1.2.246.562.24.{henkilo_oid_suffix}'
+
     # Names
     if sukupuoli_koodi == '1':
         etunimi = random.choice(etunimet_miehet).decode('utf-8').rstrip('\n\r')
@@ -129,6 +133,7 @@ def create_henkilo(henkilo, henkilotunnus_unique_hash_set, file, etunimet_miehet
         'id': henkilo['id'],
         'henkilotunnus': encrypted_henkilotunnus,
         'henkilotunnus_unique_hash': henkilotunnus_unique_hash,
+        'henkilo_oid': henkilo_oid,
         'etunimet': etunimi,
         'kutsumanimi': kutsumanimi,
         'sukunimi': sukunimi,
