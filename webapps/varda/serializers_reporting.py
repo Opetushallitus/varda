@@ -9,8 +9,8 @@ from varda import validators
 from varda.clients.allas_s3_client import Client as S3Client
 from varda.excel_export import ExcelReportStatus, get_s3_object_name
 from varda.models import (Varhaiskasvatussuhde, Lapsi, Tyontekija, Z6_RequestLog, Z8_ExcelReport, Toimipaikka,
-                          Z4_CasKayttoOikeudet, VakaJarjestaja)
-from varda.misc import decrypt_henkilotunnus, decrypt_excel_report_password
+                          Z4_CasKayttoOikeudet, VakaJarjestaja, Henkilo, Varhaiskasvatuspaatos)
+from varda.misc import decrypt_henkilotunnus, decrypt_excel_report_password, CustomServerErrorException
 from varda.serializers import ToimipaikkaHLField, VakaJarjestajaPermissionCheckedHLField
 from varda.serializers_common import OidRelatedField
 
@@ -284,3 +284,60 @@ class ExcelReportSerializer(serializers.ModelSerializer):
         # TODO: If encryption support is added (https://jira.eduuni.fi/browse/OPHVARDA-2221), use this function to
         #       send password with the report data
         return decrypt_excel_report_password(instance.password, instance.id)
+
+
+class DuplicateLapsiVarhaiskasvatuspaatosSerializer(serializers.ModelSerializer):
+    varhaiskasvatussuhde_list = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Varhaiskasvatuspaatos
+        fields = ('id', 'varhaiskasvatussuhde_list',)
+
+    def get_varhaiskasvatussuhde_list(self, instance):
+        return instance.varhaiskasvatussuhteet.values_list('id', flat=True)
+
+
+class DuplicateLapsiLapsiSerializer(serializers.ModelSerializer):
+    varhaiskasvatuspaatos_list = DuplicateLapsiVarhaiskasvatuspaatosSerializer(many=True,
+                                                                               source='varhaiskasvatuspaatokset')
+    maksutieto_list = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Lapsi
+        fields = ('id', 'varhaiskasvatuspaatos_list', 'maksutieto_list',)
+
+    def get_maksutieto_list(self, instance):
+        maksutieto_id_set = set(instance.huoltajuussuhteet.values_list('maksutiedot__id', flat=True).distinct('id'))
+        # There may be None values if Huoltajuussuhde does not have related Maksutieto objects
+        maksutieto_id_set.discard(None)
+        return maksutieto_id_set
+
+
+class DuplicateLapsiSerializer(serializers.Serializer):
+    henkilo_id = serializers.CharField(source='henkilo.id')
+    etunimet = serializers.CharField(source='henkilo.etunimet')
+    kutsumanimi = serializers.CharField(source='henkilo.kutsumanimi')
+    sukunimi = serializers.CharField(source='henkilo.sukunimi')
+    henkilo_oid = serializers.CharField(source='henkilo.henkilo_oid')
+    henkilotunnus = serializers.SerializerMethodField()
+    vakatoimija_id = serializers.CharField(source='vakatoimija.id')
+    vakatoimija_nimi = serializers.CharField(source='vakatoimija.nimi')
+    vakatoimija_oid = serializers.CharField(source='vakatoimija.organisaatio_oid')
+    lapsi_list = DuplicateLapsiLapsiSerializer(many=True)
+
+    class Meta:
+        fields = ('henkilo_id', 'etunimet', 'kutsumanimi', 'sukunimi', 'henkilo_oid', 'henkilotunnus',
+                  'vakatoimija_id', 'vakatoimija_nimi', 'vakatoimija_oid',)
+
+    def to_representation(self, instance):
+        instance['henkilo'] = Henkilo.objects.get(id=instance['henkilo'])
+        instance['vakatoimija'] = VakaJarjestaja.objects.get(id=instance['vakatoimija'])
+        instance['lapsi_list'] = instance['henkilo'].lapsi.filter(vakatoimija=instance['vakatoimija'])
+        return super().to_representation(instance)
+
+    def get_henkilotunnus(self, instance):
+        try:
+            decrypted_hetu = decrypt_henkilotunnus(instance['henkilo'].henkilotunnus)
+            return decrypted_hetu
+        except CustomServerErrorException:
+            return None

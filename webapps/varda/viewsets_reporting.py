@@ -18,6 +18,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import ListModelMixin, CreateModelMixin, RetrieveModelMixin
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
@@ -30,14 +31,16 @@ from varda.filters import (TiedonsiirtoFilter, ExcelReportFilter, KelaEtuusmaksa
 from varda.misc import encrypt_string
 from varda.misc_viewsets import IntegerIdSchema
 from varda.pagination import (ChangeablePageSizePagination, TimestampCursorPagination, DateCursorPagination,
-                              DateReverseCursorPagination, TimestampReverseCursorPagination)
+                              DateReverseCursorPagination, TimestampReverseCursorPagination,
+                              ChangeableReportingPageSizePagination)
 from varda.serializers_reporting import (KelaEtuusmaksatusAloittaneetSerializer, KelaEtuusmaksatusLopettaneetSerializer,
                                          KelaEtuusmaksatusMaaraaikaisetSerializer,
                                          KelaEtuusmaksatusKorjaustiedotSerializer,
                                          KelaEtuusmaksatusKorjaustiedotPoistetutSerializer,
                                          TiedonsiirtotilastoSerializer, ErrorReportLapsetSerializer,
                                          ErrorReportTyontekijatSerializer, TiedonsiirtoSerializer,
-                                         TiedonsiirtoYhteenvetoSerializer, ExcelReportSerializer)
+                                         TiedonsiirtoYhteenvetoSerializer, ExcelReportSerializer,
+                                         DuplicateLapsiSerializer)
 from varda.permissions import user_permission_groups_in_organization, CustomModelPermissions, is_oph_staff
 from varda.enums.ytj import YtjYritysmuoto
 from varda.models import (KieliPainotus, Lapsi, Maksutieto, PaosOikeus, ToiminnallinenPainotus, Toimipaikka,
@@ -888,3 +891,19 @@ class ExcelReportViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cre
         response['Content-Disposition'] = f'attachment; filename="{instance.filename}"'
         excel_file.close()
         return response
+
+
+@auditlogclass
+class DuplicateLapsiViewSet(GenericViewSet, ListModelMixin):
+    """
+    Temporary ViewSet for fetching information about duplicate Lapsi objects.
+    """
+    permission_classes = (IsAdminUser,)
+    pagination_class = ChangeableReportingPageSizePagination
+    serializer_class = DuplicateLapsiSerializer
+
+    def get_queryset(self):
+        duplicate_lapsi_qs = (Lapsi.objects.values('henkilo', 'vakatoimija').annotate(count=Count('id'))
+                              .filter(vakatoimija__isnull=False, count__gt=1)
+                              .order_by('vakatoimija', 'henkilo__sukunimi', 'henkilo__etunimet'))
+        return duplicate_lapsi_qs
