@@ -327,31 +327,3 @@ def load_initial_data():
 
 def load_paos_data():
     create_paos_template_groups()
-
-
-def modify_change_vakajarjestaja_permission():
-    """
-    Removes change_vakajarjestaja permission from VARDA-TALLENTAJA groups. Also modifies all object level permissions.
-    """
-    from django.contrib.auth.models import Group, Permission
-    from django.db.models import Q
-    from guardian.shortcuts import remove_perm
-    from varda.models import VakaJarjestaja, Z4_CasKayttoOikeudet
-    from varda.permission_groups import get_permission_group
-
-    permission_name = 'change_vakajarjestaja'
-    change_vakajarjestaja_permission = Permission.objects.get(codename=permission_name)
-
-    # Remove the permission from tallentaja template group
-    tallentaja_group_qs = Group.objects.filter(Q(name='vakajarjestaja_tallentaja') &
-                                               Q(permissions__codename=permission_name))
-    if tallentaja_group_qs.exists():
-        tallentaja_group_qs.first().permissions.remove(change_vakajarjestaja_permission)
-
-    # Go through each vakajarjestaja with OID and modify TALLENTAJA permissions
-    vakajarjestaja_qs = VakaJarjestaja.objects.exclude(Q(organisaatio_oid__isnull=True) | Q(organisaatio_oid=''))
-    for vakajarjestaja in vakajarjestaja_qs:
-        tallentaja_group = get_permission_group(Z4_CasKayttoOikeudet.TALLENTAJA, vakajarjestaja.organisaatio_oid)
-        if tallentaja_group:
-            # Remove permission from the TALLENTAJA group and from the vakajarjestaja object
-            remove_perm(permission_name, tallentaja_group, vakajarjestaja)

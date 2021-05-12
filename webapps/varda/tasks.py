@@ -6,7 +6,6 @@ from functools import wraps
 from celery import shared_task
 
 from django.conf import settings
-from django.contrib.auth.models import Permission, Group
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.management import call_command
@@ -24,15 +23,10 @@ from varda import permissions
 from varda.audit_log import audit_log
 from varda.excel_export import delete_excel_reports_earlier_than
 from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
-from varda.misc import flatten_nested_list, memory_efficient_queryset_iterator
-from varda.models import (Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog, Lapsi, Varhaiskasvatuspaatos,
-                          Z4_CasKayttoOikeudet, VakaJarjestaja, Huoltaja)
-from varda.permissions import (assign_lapsi_permissions, assign_vakapaatos_vakasuhde_permissions,
-                               assign_henkilo_permissions_for_vaka_groups,
-                               assign_henkilo_permissions_for_tyontekija_groups)
-from varda.permission_groups import (assign_object_permissions_to_taydennyskoulutus_groups,
-                                     assign_object_level_permissions,
-                                     assign_object_permissions_to_all_henkilosto_groups)
+from varda.misc import memory_efficient_queryset_iterator
+from varda.models import Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog, Lapsi, Varhaiskasvatuspaatos, Huoltaja
+from varda.permissions import assign_lapsi_permissions, assign_vakapaatos_vakasuhde_permissions
+from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups
 
 logger = logging.getLogger(__name__)
 
@@ -308,54 +302,6 @@ def fix_orphan_vakatiedot_permissions():
 
 @shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
-def modify_view_henkilo_permission():
-    """
-    Add view_henkilo permission to HUOLTAJATIETO_TALLENNUS and HUOLTAJATIETO_KATSELU groups
-    Add object level permissions for Henkilo objects based on related Lapsi and Tyontekija objects
-    """
-    permission_name = 'view_henkilo'
-    view_henkilo_permission = Permission.objects.get(codename=permission_name)
-
-    # Add view_henkilo permission to huoltajatieto template groups
-    huoltajatieto_template_group_names = ['vakajarjestaja_huoltajatiedot_tallentaja',
-                                          'vakajarjestaja_huoltajatiedot_katselija',
-                                          'toimipaikka_huoltajatiedot_tallentaja',
-                                          'toimipaikka_huoltajatiedot_katselija']
-    huoltajatieto_template_group_qs = Group.objects.filter(name__in=huoltajatieto_template_group_names)
-    for huoltajatieto_template_group in huoltajatieto_template_group_qs:
-        huoltajatieto_template_group.permissions.add(view_henkilo_permission)
-
-    # Add view_henkilo permission to existing groups
-    huoltajatieto_group_qs = Group.objects.filter(Q(name__startswith=Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA) |
-                                                  Q(name__startswith=Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA))
-    for huoltajatieto_group in huoltajatieto_group_qs:
-        huoltajatieto_group.permissions.add(view_henkilo_permission)
-
-    # Add object level permissions for existing Henkilo objects
-    # Only assign permissions for those that have Lapsi and Tyontekija objects
-    # (nobody has access to Henkilo of Huoltaja)
-    henkilo_qs = Henkilo.objects.filter(Q(lapsi__isnull=False) | Q(tyontekijat__isnull=False)).order_by('id')
-    for henkilo in memory_efficient_queryset_iterator(henkilo_qs):
-        lapsi_nested_oid_list = henkilo.lapsi.values_list('vakatoimija__organisaatio_oid',
-                                                          'oma_organisaatio__organisaatio_oid',
-                                                          'paos_organisaatio__organisaatio_oid',
-                                                          'varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__organisaatio_oid',
-                                                          'varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__organisaatio_oid')
-        lapsi_oid_list = flatten_nested_list(lapsi_nested_oid_list)
-        lapsi_oid_set = set(lapsi_oid_list)
-        lapsi_oid_set.discard(None)
-        assign_henkilo_permissions_for_vaka_groups(lapsi_oid_set, henkilo)
-
-        tyontekija_nested_oid_list = henkilo.tyontekijat.values_list('vakajarjestaja__organisaatio_oid',
-                                                                     'palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid')
-        tyontekija_oid_list = flatten_nested_list(tyontekija_nested_oid_list)
-        tyontekija_oid_set = set(tyontekija_oid_list)
-        tyontekija_oid_set.discard(None)
-        assign_henkilo_permissions_for_tyontekija_groups(tyontekija_oid_set, henkilo)
-
-
-@shared_task
-@single_instance_task(timeout_in_minutes=8 * 60)
 def delete_excel_reports_older_than_arg_hours_task(hours):
     timestamp_lower_limit = datetime.datetime.now() - datetime.timedelta(hours=hours)
     timestamp_lower_limit = timestamp_lower_limit.replace(tzinfo=datetime.timezone.utc)
@@ -384,33 +330,6 @@ def remove_birthdate_from_huoltajat_only_task():
     for henkilo in memory_efficient_queryset_iterator(henkilo_qs):
         henkilo.syntyma_pvm = None
         henkilo.save()
-
-
-@shared_task
-@single_instance_task(timeout_in_minutes=8 * 60)
-def modify_view_vakajarjestaja_permission():
-    """
-    Assigns VakaJarjestaja permissions (view_vakajarjestaja) to all related Toimipaikka groups, previously
-    view_vakajarjestaja permission was assigned directly to users
-    """
-    toimipaikka_qs = Toimipaikka.objects.filter(organisaatio_oid__isnull=False)
-    for toimipaikka in toimipaikka_qs:
-        toimipaikka_oid = toimipaikka.organisaatio_oid
-        vakajarjestaja = toimipaikka.vakajarjestaja
-
-        with transaction.atomic():
-            assign_object_level_permissions(toimipaikka_oid, VakaJarjestaja, vakajarjestaja)
-            assign_object_permissions_to_all_henkilosto_groups(toimipaikka_oid, VakaJarjestaja, vakajarjestaja)
-
-
-@shared_task
-@single_instance_task(timeout_in_minutes=8 * 60)
-def delete_vakajarjestaja_view_henkilo_group():
-    """
-    Removes vakajarjestaja_view_henkilo permission group that was previously used to handle Henkilo object permissions
-    """
-    if view_henkilo_group := Group.objects.filter(name='vakajarjestaja_view_henkilo').first():
-        view_henkilo_group.delete()
 
 
 @shared_task

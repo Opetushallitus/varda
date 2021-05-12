@@ -7,7 +7,6 @@ from varda.enums.error_messages import ErrorMessages
 from varda.migrations.production.setup import (load_initial_data, create_huoltajatiedot_template_groups,
                                                create_paos_template_groups,
                                                create_henkilosto_template_groups, clear_old_permissions,
-                                               modify_change_vakajarjestaja_permission,
                                                create_toimijatiedot_template_groups, create_raportit_template_groups,
                                                create_oph_luovutuspalvelu_group)
 from varda.migrations.testing.setup import (load_testing_data, create_initial_koodisto_data,
@@ -64,8 +63,7 @@ def run_post_migration_tasks(sender, **kwargs):
             '0012_auto_20191031_0926': [create_paos_template_groups, clear_old_permissions],
             '0021_auto_20200528_0732': [create_initial_koodisto_data],
             '0023_historicalpidempipoissaolo_pidempipoissaolo': [create_henkilosto_template_groups],
-            '0034_auto_20201029_1603': [create_toimijatiedot_template_groups,
-                                        modify_change_vakajarjestaja_permission],
+            '0034_auto_20201029_1603': [create_toimijatiedot_template_groups],
             '0036_postinumero_koodit': [create_postinumero_koodisto_data],
             '0037_auto_20201126_1055': [create_virhe_koodisto_data],
             '0038_auto_20201201_1237': [create_raportit_template_groups],
