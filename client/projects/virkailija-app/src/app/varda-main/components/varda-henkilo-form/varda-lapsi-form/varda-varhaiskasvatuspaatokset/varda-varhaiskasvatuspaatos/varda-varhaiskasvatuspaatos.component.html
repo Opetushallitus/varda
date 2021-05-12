@@ -42,7 +42,7 @@
         <form [formGroup]="formGroup"
               autocomplete="off"
               (submit)="saveVarhaiskasvatuspaatos(formGroup)">
-          <app-varda-henkilo-form-error-list [errors]="errorList"></app-varda-henkilo-form-error-list>
+          <app-varda-form-error-list [errors]="errorList"></app-varda-form-error-list>
           <app-varda-form-field name="hakemus_pvm"
                                 [form]="formGroup"
                                 [label]="i18n.varhaiskasvatuspaatos_hakemus_pvm | translate"

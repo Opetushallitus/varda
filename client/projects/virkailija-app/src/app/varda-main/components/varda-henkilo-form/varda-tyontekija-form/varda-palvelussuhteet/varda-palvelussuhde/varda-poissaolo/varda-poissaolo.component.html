@@ -24,7 +24,7 @@
       <form [formGroup]="formGroup"
             autocomplete="off"
             (submit)="savePoissaolo(formGroup)">
-        <app-varda-henkilo-form-error-list [errors]="errorList"></app-varda-henkilo-form-error-list>
+        <app-varda-form-error-list [errors]="errorList"></app-varda-form-error-list>
         <app-varda-form-field name="alkamis_pvm"
                               [form]="formGroup"
                               [label]="i18n.poissaolo_alkamis_pvm | translate"

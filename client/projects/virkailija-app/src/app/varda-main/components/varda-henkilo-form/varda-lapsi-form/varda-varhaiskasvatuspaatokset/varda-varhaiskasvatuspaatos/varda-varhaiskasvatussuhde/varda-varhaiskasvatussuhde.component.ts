@@ -18,7 +18,7 @@ import { Subscription, Observable, BehaviorSubject } from 'rxjs';
 import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { KoodistoDTO, VardaKoodistoService, KoodistoEnum } from 'varda-shared';
 import { TranslateService } from '@ngx-translate/core';
-import { VardaHenkiloFormAccordionAbstractComponent } from '../../../../varda-henkilo-form-accordion/varda-henkilo-form-accordion.abstract';
+import { VardaFormAccordionAbstractComponent } from '../../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 import { LapsiListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-lapsi-dto.model';
 
 @Component({
@@ -32,7 +32,7 @@ import { LapsiListDTO } from 'projects/virkailija-app/src/app/utilities/models/d
     '../../../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaVarhaiskasvatussuhdeComponent extends VardaHenkiloFormAccordionAbstractComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
+export class VardaVarhaiskasvatussuhdeComponent extends VardaFormAccordionAbstractComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   @Input() lapsitiedotTallentaja: boolean;
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
   @Input() varhaiskasvatuspaatos: VardaVarhaiskasvatuspaatosDTO;

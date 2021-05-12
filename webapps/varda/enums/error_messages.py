@@ -79,12 +79,24 @@ class ErrorMessages(enum.Enum):
     TP017 = get_error_dict('TP017', 'Invalid codes for kunnallinen Toimipaikka.')
     TP018 = get_error_dict('TP018', 'Invalid codes for yksityinen Toimipaikka.')
     TP019 = get_error_dict('TP019', 'There are duplicate jarjestamismuoto codes.')
+    TP020 = get_error_dict('TP020', 'varhaiskasvatuspaikat cannot be zero when Toimipaikka has related Varhaiskasvatussuhde objects that are active.')
+    TP021 = get_error_dict('TP021', 'There are Varhaiskasvatussuhde objects linked to this Toimipaikka which are active longer than Toimipaikka itself.')
+    TP022 = get_error_dict('TP022', 'There are Tyoskentelypaikka objects linked to this Toimipaikka which are active longer than Toimipaikka itself.')
+    TP023 = get_error_dict('TP023', 'Toimipaikka is active but there are no Tyoskentelypaikka objects linked to it.')
 
     # ToiminnallinenPainotus errors, prefix: TO
     TO001 = get_error_dict('TO001', 'ToiminnallinenPainotus with this toimintapainotus_koodi already exists for toimipaikka on the given date range.')
+    TO002 = get_error_dict('TO002', 'paattymis_pvm must be before or equal to Toimipaikka paattymis_pvm.')
+    TO003 = get_error_dict('TO003', 'ToiminnallinenPainotus must have paattymis_pvm because Toimipaikka has paattymis_pvm.')
+    TO004 = get_error_dict('TO004', 'toiminnallinenpainotus_kytkin should be true because Toimipaikka has ToiminnallinenPainotus objects.')
+    TO005 = get_error_dict('TO005', 'toiminnallinenpainotus_kytkin should be false because Toimipaikka does not have ToiminnallinenPainotus objects.')
 
     # KieliPainotus errors, prefix: KP
     KP001 = get_error_dict('KP001', 'KieliPainotus with this kielipainotus_koodi already exists for toimipaikka on the given date range.')
+    KP002 = get_error_dict('KP002', 'paattymis_pvm must be before or equal to Toimipaikka paattymis_pvm.')
+    KP003 = get_error_dict('KP003', 'KieliPainotus must have paattymis_pvm because Toimipaikka has paattymis_pvm.')
+    KP004 = get_error_dict('KP004', 'kielipainotus_kytkin should be true because Toimipaikka has KieliPainotus objects.')
+    KP005 = get_error_dict('KP005', 'kielipainotus_kytkin should be false because Toimipaikka does not have KieliPainotus objects.')
 
     # Henkilo errors, prefix: HE
     HE001 = get_error_dict('HE001', 'Person data does not match with the entered data.')
@@ -149,6 +161,7 @@ class ErrorMessages(enum.Enum):
     VS012 = get_error_dict('VS012', 'Varhaiskasvatussuhde must have paattymis_pvm because Varhaiskasvatuspaatos has paattymis_pvm.')
     VS013 = get_error_dict('VS013', 'Lapsi already has 3 overlapping Varhaiskasvatussuhde on the given date range.')
     VS014 = get_error_dict('VS014', 'Varhaiskasvatuspaatos must have at least one Varhaiskasvatussuhde.')
+    VS015 = get_error_dict('VS015', 'Varhaiskasvatussuhde is active longer than related Toimipaikka.')
 
     # Maksutieto errors, prefix: MA
     MA001 = get_error_dict('MA001', 'perheen_koko field is required.')
@@ -224,6 +237,7 @@ class ErrorMessages(enum.Enum):
     TA013 = get_error_dict('TA013', 'Tyoskentelypaikka must have paattymis_pvm because Palvelussuhde has paattymis_pvm.')
     TA014 = get_error_dict('TA014', 'Palvelussuhde must have at least one Tyoskentelypaikka.')
     TA015 = get_error_dict('TA015', 'Cannot change tehtavanimike_koodi. There are Taydennyskoulutus objects that use this tehtavanimike_koodi.')
+    TA016 = get_error_dict('TA016', 'Tyoskentelypaikka is active longer than related Toimipaikka.')
 
     # PidempiPoissaolo errors, prefix: PP
     PP001 = get_error_dict('PP001', 'Cannot delete PidempiPoissaolo. There are objects referencing it that need to be deleted first.')

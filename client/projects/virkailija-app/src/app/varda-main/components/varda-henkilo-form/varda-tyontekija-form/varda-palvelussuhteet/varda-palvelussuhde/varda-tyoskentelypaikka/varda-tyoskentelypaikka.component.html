@@ -38,7 +38,7 @@
       <form [formGroup]="formGroup"
             autocomplete="off"
             (submit)="saveTyoskentelypaikka(formGroup)">
-        <app-varda-henkilo-form-error-list [errors]="errorList"></app-varda-henkilo-form-error-list>
+        <app-varda-form-error-list [errors]="errorList"></app-varda-form-error-list>
         <app-varda-form-field name="kiertava_tyontekija_kytkin"
                               [form]="formGroup"
                               [label]="i18n.tyoskentelypaikka_kiertava_kytkin | translate"

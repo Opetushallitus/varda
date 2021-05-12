@@ -1,4 +1,4 @@
-<ng-container *ngIf="painotusForm">
+<ng-container *ngIf="formGroup">
   <div [id]="'toimintapainotus_'+ painotus?.id"
        class="painotus">
     <app-robo-id [tunniste]="painotus?.id"
@@ -11,6 +11,7 @@
                          (closed)="togglePanel(false)">
       <mat-expansion-panel-header>
         <mat-panel-title *ngIf="painotus; else addPainotus">
+          <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
           <span [libKoodistoValue]="koodistoEnum.toiminnallinenpainotus"
                 format="long">{{ painotus.toimintapainotus_koodi }}</span>&nbsp;
           <span *ngIf="!painotus.paattymis_pvm; else hasPaattymispvm">
@@ -27,11 +28,12 @@
           </mat-panel-title>
         </ng-template>
       </mat-expansion-panel-header>
-      <form [formGroup]="painotusForm"
+      <form [formGroup]="formGroup"
             autocomplete="off"
-            (submit)="savePainotus(painotusForm)">
+            (submit)="savePainotus(formGroup)">
+        <app-varda-form-error-list [errors]="errorList"></app-varda-form-error-list>
         <app-varda-form-field name="toimintapainotus_koodi"
-                              [form]="painotusForm"
+                              [form]="formGroup"
                               [label]="i18n.painotukset_toimintapainotus_koodi | translate"
                               [errorText]="i18n.painotukset_error_toimintapainotus_koodi | translate"
                               [instructionText]="i18n.painotukset_instruction_toimintapainotus_koodi | translate">
@@ -48,7 +50,7 @@
         </app-varda-form-field>
 
         <app-varda-form-field name="alkamis_pvm"
-                              [form]="painotusForm"
+                              [form]="formGroup"
                               [label]="i18n.painotukset_toimintapainotus_alkamis_pvm | translate"
                               [errorText]="i18n.painotukset_toimintapainotus_error_alkamis_pvm | translate"
                               [errorMap]="[
@@ -64,7 +66,7 @@
         </app-varda-form-field>
 
         <app-varda-form-field name="paattymis_pvm"
-                              [form]="painotusForm"
+                              [form]="formGroup"
                               [label]="i18n.painotukset_toimintapainotus_paattymis_pvm | translate"
                               [errorText]="i18n.painotukset_toimintapainotus_error_paattymis_pvm | translate"
                               [errorMap]="[
@@ -87,7 +89,7 @@
         </div>
 
         <app-varda-action-row *ngIf="!savePending"
-                              [saveDisabled]="painotusForm.pristine || (isSubmitting | async)"
+                              [saveDisabled]="formGroup.pristine || (isSubmitting | async)"
                               [saveAccess]="saveAccess"
                               [formExists]="!!painotus"
                               [isEdit]="isEdit"

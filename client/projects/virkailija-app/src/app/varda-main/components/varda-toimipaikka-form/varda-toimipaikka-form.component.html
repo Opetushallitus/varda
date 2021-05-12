@@ -216,10 +216,14 @@
     <fieldset>
       <mat-expansion-panel [expanded]="true">
         <mat-expansion-panel-header>
-          <legend>{{ i18n.toimipaikka_legend_lisatiedot | translate }}</legend>
+          <mat-panel-title>
+            <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
+            <legend>{{ i18n.toimipaikka_legend_lisatiedot | translate }}</legend>
+          </mat-panel-title>
         </mat-expansion-panel-header>
         <div class="panel-content"
              mat-expansion-panel-content>
+          <app-varda-form-error-list [errors]="errorList"></app-varda-form-error-list>
           <app-varda-form-field name="toimintamuoto_koodi"
                                 [form]="toimipaikkaForm"
                                 [label]="i18n.toimipaikka_toimintamuoto_koodi | translate"
@@ -376,7 +380,8 @@
                           [noDelete]="true"
                           [noToggle]="!!toimipaikka?.id"
                           (enableEdit)="enableForm()"
-                          (disableEdit)="disableForm()"></app-varda-action-row>
+                          (disableEdit)="disableForm()"
+                          (togglePanel)="togglePanel($event)"></app-varda-action-row>
 
   </form>
 </div>

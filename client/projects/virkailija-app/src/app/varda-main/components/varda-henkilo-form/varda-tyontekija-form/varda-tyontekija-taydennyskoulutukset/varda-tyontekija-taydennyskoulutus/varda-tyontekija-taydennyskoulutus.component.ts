@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, Input, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VardaTutkintoDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tutkinto-dto.model';
 import { VardaTaydennyskoulutusDTO, VardaTaydennyskoulutusTyontekijaDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-taydennyskoulutus-dto.model';
@@ -10,7 +10,6 @@ import * as moment from 'moment';
 import { TyontekijaListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tyontekija-dto.model';
 import { KoodistoDTO } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { VardaFormValidators } from 'projects/virkailija-app/src/app/shared/validators/varda-form-validators';
-import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { MatExpansionPanelHeader } from '@angular/material/expansion';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
@@ -18,7 +17,7 @@ import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/services/varda-date.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
-import { VardaHenkiloFormAccordionAbstractComponent } from '../../../varda-henkilo-form-accordion/varda-henkilo-form-accordion.abstract';
+import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 
 @Component({
   selector: 'app-varda-tyontekija-taydennyskoulutus',
@@ -30,7 +29,7 @@ import { VardaHenkiloFormAccordionAbstractComponent } from '../../../varda-henki
     '../../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaTyontekijaTaydennyskoulutusComponent extends VardaHenkiloFormAccordionAbstractComponent implements OnInit, AfterViewInit, OnDestroy {
+export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordionAbstractComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() toimipaikkaAccess: UserAccess;
   @Input() tyontekija: TyontekijaListDTO;
   @Input() taydennyskoulutus: VardaTaydennyskoulutusDTO;

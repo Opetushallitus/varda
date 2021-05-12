@@ -742,6 +742,8 @@ export enum VirkailijaTranslations {
   puutteelliset_tiedot_dialog_header = 'puutteelliset-tiedot.dialog.header',
   puutteelliset_tiedot_dialog_content = 'puutteelliset-tiedot.dialog.content',
   puutteelliset_tiedot_dialog_button = 'puutteelliset-tiedot.dialog.button',
+  puutteelliset_tiedot_toimipaikat_no_results = 'puutteelliset-tiedot.toimipaikat.no-results',
+  puutteelliset_tiedot_toimipaikat_search = 'puutteelliset-tiedot.toimipaikat.search',
 
   tiedonsiirrot = 'tiedonsiirrot',
   tiedonsiirrot_navigointi_label = 'tiedonsiirrot.navigointi-label',

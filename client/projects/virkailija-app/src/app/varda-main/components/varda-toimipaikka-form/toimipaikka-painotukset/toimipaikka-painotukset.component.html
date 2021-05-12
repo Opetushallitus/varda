@@ -14,16 +14,16 @@
                        [maxEndDate]="maxEndDate"
                        [toimipaikka]="toimipaikka"
                        [painotus]="kielipainotus"
-                       (refreshList)="closeKielipainotus($event)"
-                       [saveAccess]="isEdit && saveAccess"></app-kielipainotus>
+                       (closeEmitter)="closeKielipainotus($event)"
+                       [saveAccess]="saveAccess"></app-kielipainotus>
 
     <app-kielipainotus *ngIf="addKielipainotusBoolean"
                        [kielikoodisto]="kielikoodisto"
                        [minStartDate]="minStartDate"
                        [maxEndDate]="maxEndDate"
-                       [saveAccess]="isEdit && saveAccess"
+                       [saveAccess]="saveAccess"
                        [toimipaikka]="toimipaikka"
-                       (refreshList)="closeKielipainotus($event, true)"></app-kielipainotus>
+                       (closeEmitter)="closeKielipainotus($event, true)"></app-kielipainotus>
   </mat-accordion>
   <button class="varda-text-button"
           *ngIf="isEdit && !addKielipainotusBoolean && saveAccess"
@@ -50,7 +50,7 @@
                           [maxEndDate]="maxEndDate"
                           [toimipaikka]="toimipaikka"
                           [painotus]="toimintapainotus"
-                          (refreshList)="closeToimintapainotus($event)"
+                          (closeEmitter)="closeToimintapainotus($event)"
                           [saveAccess]="isEdit && saveAccess"></app-toimintapainotus>
 
     <app-toimintapainotus *ngIf="addToimintapainotusBoolean"
@@ -59,7 +59,7 @@
                           [maxEndDate]="maxEndDate"
                           [saveAccess]="isEdit && saveAccess"
                           [toimipaikka]="toimipaikka"
-                          (refreshList)="closeToimintapainotus($event, true)"></app-toimintapainotus>
+                          (closeEmitter)="closeToimintapainotus($event, true)"></app-toimintapainotus>
   </mat-accordion>
   <button class="varda-text-button"
           *ngIf="isEdit && !addToimintapainotusBoolean && saveAccess"

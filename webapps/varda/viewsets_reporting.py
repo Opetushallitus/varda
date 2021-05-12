@@ -40,7 +40,7 @@ from varda.serializers_reporting import (KelaEtuusmaksatusAloittaneetSerializer,
                                          TiedonsiirtotilastoSerializer, ErrorReportLapsetSerializer,
                                          ErrorReportTyontekijatSerializer, TiedonsiirtoSerializer,
                                          TiedonsiirtoYhteenvetoSerializer, ExcelReportSerializer,
-                                         DuplicateLapsiSerializer)
+                                         ErrorReportToimipaikatSerializer, DuplicateLapsiSerializer)
 from varda.permissions import user_permission_groups_in_organization, CustomModelPermissions, is_oph_staff
 from varda.enums.ytj import YtjYritysmuoto
 from varda.models import (KieliPainotus, Lapsi, Maksutieto, PaosOikeus, ToiminnallinenPainotus, Toimipaikka,
@@ -496,15 +496,21 @@ class AbstractErrorReportViewSet(GenericViewSet, ListModelMixin):
     search=str (nimi/hetu (SHA-256 hash as hexadecimal)/OID)
     """
     filter_backends = (SearchFilter, )
-    search_fields = ('henkilo__etunimet',
-                     'henkilo__sukunimi',
-                     '=henkilo__henkilotunnus_unique_hash',
-                     '=henkilo__henkilo_oid',
-                     '=id')
     pagination_class = ChangeablePageSizePagination
 
-    vakajarjestaja_oid = None
-    vakajarjestaja_id = None
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.vakajarjestaja_oid = None
+        self.vakajarjestaja_id = None
+
+    @property
+    def search_fields(self):
+        if self.queryset.model in (Lapsi, Tyontekija,):
+            return ('henkilo__etunimet', 'henkilo__sukunimi', '=henkilo__henkilotunnus_unique_hash',
+                    '=henkilo__henkilo_oid', '=id',)
+        elif self.queryset.model == Toimipaikka:
+            return 'nimi', '=organisaatio_oid', '=id'
+        return ()
 
     def get_annotation_for_filter(self, filter_object, id_lookup):
         return StringAgg(Case(When(filter_object, then=Cast(id_lookup, CharField()))), delimiter=',')
@@ -569,8 +575,10 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
     swagger_schema = IntegerIdSchema
     swagger_path_model = VakaJarjestaja
 
-    is_vakatiedot_permissions = False
-    is_huoltajatiedot_permissions = False
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.is_vakatiedot_permissions = False
+        self.is_huoltajatiedot_permissions = False
 
     def verify_permissions(self):
         user = self.request.user
@@ -579,7 +587,7 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
                                               Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.KATSELIJA]
         user_group_vakatiedot_qs = user_permission_groups_in_organization(user, self.vakajarjestaja_oid,
                                                                           valid_permission_groups_vakatiedot)
-        self.is_vakatiedot_permissions = user.is_superuser | user_group_vakatiedot_qs.exists()
+        self.is_vakatiedot_permissions = user.is_superuser or user_group_vakatiedot_qs.exists()
 
         valid_permission_groups_huoltajatiedot = [Z4_CasKayttoOikeudet.PAAKAYTTAJA,
                                                   Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
@@ -587,7 +595,7 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
                                                   Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA]
         user_group_huoltajatiedot_qs = user_permission_groups_in_organization(user, self.vakajarjestaja_oid,
                                                                               valid_permission_groups_huoltajatiedot)
-        self.is_huoltajatiedot_permissions = user.is_superuser | user_group_huoltajatiedot_qs.exists()
+        self.is_huoltajatiedot_permissions = user.is_superuser or user_group_huoltajatiedot_qs.exists()
 
         if not self.is_vakatiedot_permissions and not self.is_huoltajatiedot_permissions:
             raise Http404()
@@ -642,6 +650,15 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
                     'varhaiskasvatuspaatokset__id'
                 ),
                 'vakapaatos'
+            ),
+            ErrorMessages.VS015: (
+                self.get_annotation_for_filter(
+                    Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__paattymis_pvm__lt=F('varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm')) |
+                    (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__paattymis_pvm__lt=today) &
+                     Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True)),
+                    'varhaiskasvatuspaatokset__varhaiskasvatussuhteet__id'
+                ),
+                'vakasuhde'
             )
         }
 
@@ -713,6 +730,7 @@ class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
             raise Http404()
 
     def get_error_tuples(self):
+        today = datetime.date.today()
         return {
             ErrorMessages.PS008: (
                 self.get_annotation_for_filter(
@@ -759,6 +777,15 @@ class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
                     'palvelussuhteet__tyoskentelypaikat__id'
                 ),
                 'tyoskentelypaikka'
+            ),
+            ErrorMessages.TA016: (
+                self.get_annotation_for_filter(
+                    Q(palvelussuhteet__tyoskentelypaikat__toimipaikka__paattymis_pvm__lt=F('palvelussuhteet__tyoskentelypaikat__paattymis_pvm')) |
+                    (Q(palvelussuhteet__tyoskentelypaikat__toimipaikka__paattymis_pvm__lt=today) &
+                     Q(palvelussuhteet__tyoskentelypaikat__paattymis_pvm__isnull=True)),
+                    'palvelussuhteet__tyoskentelypaikat__id'
+                ),
+                'tyoskentelypaikka'
             )
         }
 
@@ -768,6 +795,146 @@ class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
 
         annotations = self.get_annotations()
         return queryset.annotate(**annotations).filter(self.get_include_filter(annotations)).order_by('henkilo__sukunimi')
+
+
+@auditlogclass
+class ErrorReportToimipaikatViewSet(AbstractErrorReportViewSet):
+    serializer_class = ErrorReportToimipaikatSerializer
+    queryset = Toimipaikka.objects.none()
+    permission_classes = (CustomModelPermissions,)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.is_vakatiedot_permissions = False
+        self.is_tyontekijatiedot_permissions = False
+
+    def verify_permissions(self):
+        user = self.request.user
+
+        valid_permission_groups_vakatiedot = [Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                                              Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.KATSELIJA]
+        user_group_vakatiedot_qs = user_permission_groups_in_organization(user, self.vakajarjestaja_oid,
+                                                                          valid_permission_groups_vakatiedot)
+        self.is_vakatiedot_permissions = user.is_superuser or user_group_vakatiedot_qs.exists()
+
+        valid_permission_groups_tyontekijatiedot = [Z4_CasKayttoOikeudet.PAAKAYTTAJA,
+                                                    Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
+                                                    Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA]
+        user_group_tyontekijatiedot_qs = user_permission_groups_in_organization(user, self.vakajarjestaja_oid,
+                                                                                valid_permission_groups_tyontekijatiedot)
+        self.is_tyontekijatiedot_permissions = user.is_superuser or user_group_tyontekijatiedot_qs.exists()
+
+        if not self.is_vakatiedot_permissions and not self.is_tyontekijatiedot_permissions:
+            raise Http404()
+
+    def get_error_tuples(self):
+        today = datetime.date.today()
+
+        vakatiedot_error_tuples = {
+            ErrorMessages.TO002: (
+                self.get_annotation_for_filter(
+                    Q(paattymis_pvm__lt=F('toiminnallisetpainotukset__paattymis_pvm')),
+                    'toiminnallisetpainotukset__id'
+                ),
+                'toiminnallinen_painotus'
+            ),
+            ErrorMessages.TO003: (
+                self.get_annotation_for_filter(
+                    Q(paattymis_pvm__isnull=False) &
+                    Q(toiminnallisetpainotukset__isnull=False) &
+                    Q(toiminnallisetpainotukset__paattymis_pvm__isnull=True),
+                    'toiminnallisetpainotukset__id'
+                ),
+                'toiminnallinen_painotus'
+            ),
+            ErrorMessages.TO004: (
+                self.get_annotation_for_filter(Q(toiminnallinenpainotus_kytkin=False) &
+                                               Q(toiminnallisetpainotukset__isnull=False),
+                                               'id'),
+                'toimipaikka'
+            ),
+            ErrorMessages.TO005: (
+                self.get_annotation_for_filter(Q(toiminnallinenpainotus_kytkin=True) &
+                                               Q(toiminnallisetpainotukset__isnull=True),
+                                               'id'),
+                'toimipaikka'
+            ),
+            ErrorMessages.KP002: (
+                self.get_annotation_for_filter(
+                    Q(paattymis_pvm__lt=F('kielipainotukset__paattymis_pvm')),
+                    'kielipainotukset__id'
+                ),
+                'kielipainotus'
+            ),
+            ErrorMessages.KP003: (
+                self.get_annotation_for_filter(
+                    Q(paattymis_pvm__isnull=False) &
+                    Q(kielipainotukset__isnull=False) &
+                    Q(kielipainotukset__paattymis_pvm__isnull=True),
+                    'kielipainotukset__id'
+                ),
+                'kielipainotus'
+            ),
+            ErrorMessages.KP004: (
+                self.get_annotation_for_filter(Q(kielipainotus_kytkin=False) &
+                                               Q(kielipainotukset__isnull=False),
+                                               'id'),
+                'toimipaikka'
+            ),
+            ErrorMessages.KP005: (
+                self.get_annotation_for_filter(Q(kielipainotus_kytkin=True) &
+                                               Q(kielipainotukset__isnull=True),
+                                               'id'),
+                'toimipaikka'
+            ),
+            ErrorMessages.TP020: (
+                self.get_annotation_for_filter(Q(varhaiskasvatuspaikat=0) &
+                                               Q(varhaiskasvatussuhteet__alkamis_pvm__lte=today) &
+                                               (Q(varhaiskasvatussuhteet__paattymis_pvm__gte=today) |
+                                                Q(varhaiskasvatussuhteet__paattymis_pvm__isnull=True)),
+                                               'id'),
+                'toimipaikka'
+            ),
+            ErrorMessages.TP021: (
+                self.get_annotation_for_filter(Q(paattymis_pvm__lt=F('varhaiskasvatussuhteet__paattymis_pvm')) |
+                                               (Q(paattymis_pvm__lt=today) &
+                                                Q(varhaiskasvatussuhteet__isnull=False) &
+                                                Q(varhaiskasvatussuhteet__paattymis_pvm__isnull=True)),
+                                               'id'),
+                'toimipaikka'
+            )
+        }
+
+        tyontekijatiedot_error_tuples = {
+            ErrorMessages.TP022: (
+                self.get_annotation_for_filter(Q(paattymis_pvm__lt=F('tyoskentelypaikat__paattymis_pvm')) |
+                                               (Q(paattymis_pvm__lt=today) &
+                                                Q(tyoskentelypaikat__isnull=False) &
+                                                Q(tyoskentelypaikat__paattymis_pvm__isnull=True)),
+                                               'id'),
+                'toimipaikka'
+            ),
+            ErrorMessages.TP023: (
+                self.get_annotation_for_filter(Q(tyoskentelypaikat__isnull=True) &
+                                               Q(alkamis_pvm__lte=today) &
+                                               (Q(paattymis_pvm__gte=today) | Q(paattymis_pvm__isnull=True)),
+                                               'id'),
+                'toimipaikka'
+            )
+        }
+
+        vakatiedot_dict = vakatiedot_error_tuples if self.is_vakatiedot_permissions else {}
+        tyontekijatiedot_dict = (tyontekijatiedot_error_tuples
+                                 if self.is_vakatiedot_permissions or self.is_tyontekijatiedot_permissions
+                                 else {})
+        return {**vakatiedot_dict, **tyontekijatiedot_dict}
+
+    def get_queryset(self):
+        queryset = Toimipaikka.objects.filter(vakajarjestaja=self.vakajarjestaja_id)
+        queryset = self.filter_queryset(queryset)
+
+        annotations = self.get_annotations()
+        return queryset.annotate(**annotations).filter(self.get_include_filter(annotations)).order_by('nimi')
 
 
 @auditlogclass

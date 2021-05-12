@@ -1,5 +1,6 @@
 import { TyontekijaListDTO } from './varda-tyontekija-dto.model';
 import { LapsiListDTO } from './varda-lapsi-dto.model';
+import { PuutteellinenErrorDTO } from './varda-puutteellinen-dto.model';
 
 export class VardaHenkiloDTO {
   id?: number;
@@ -14,7 +15,6 @@ export class VardaHenkiloDTO {
   tyontekija?: Array<string>;
 }
 
-
 export interface HenkiloListDTO {
   id: number;
   url: string;
@@ -28,13 +28,5 @@ export interface HenkiloListDTO {
 
   lapsi_id?: number;
   tyontekija_id?: number;
-  errors?: Array<HenkiloListErrorDTO>;
-}
-
-
-export interface HenkiloListErrorDTO {
-  description: string;
-  error_code: string;
-  model_id_list: Array<number>;
-  model_name: string;
+  errors?: Array<PuutteellinenErrorDTO>;
 }

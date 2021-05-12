@@ -135,16 +135,12 @@ class TiedonsiirtotilastoSerializer(serializers.Serializer):
 
 
 class AbstractErrorReportSerializer(serializers.ModelSerializer):
-    henkilo_id = serializers.ReadOnlyField(source='henkilo.id')
-    henkilo_oid = serializers.ReadOnlyField(source='henkilo.henkilo_oid')
-    etunimet = serializers.ReadOnlyField(source='henkilo.etunimet')
-    sukunimi = serializers.ReadOnlyField(source='henkilo.sukunimi')
     errors = serializers.SerializerMethodField()
 
     def get_errors(self, obj):
         """
-        This function parses the list of errors from different error attributes in the Lapsi/Tyontekija object.
-        :param obj: Lapsi/Tyontekija object with annotated errors
+        This function parses the list of errors from different error attributes in the object.
+        :param obj: object with annotated errors
         :return: list of errors
         """
         error_list = []
@@ -160,7 +156,14 @@ class AbstractErrorReportSerializer(serializers.ModelSerializer):
         return error_list
 
 
-class ErrorReportLapsetSerializer(AbstractErrorReportSerializer):
+class AbstractHenkiloErrorReportSerializer(AbstractErrorReportSerializer):
+    henkilo_id = serializers.ReadOnlyField(source='henkilo.id')
+    henkilo_oid = serializers.ReadOnlyField(source='henkilo.henkilo_oid')
+    etunimet = serializers.ReadOnlyField(source='henkilo.etunimet')
+    sukunimi = serializers.ReadOnlyField(source='henkilo.sukunimi')
+
+
+class ErrorReportLapsetSerializer(AbstractHenkiloErrorReportSerializer):
     lapsi_id = serializers.ReadOnlyField(source='id')
     oma_organisaatio_id = serializers.ReadOnlyField(source='oma_organisaatio.id')
     oma_organisaatio_oid = serializers.ReadOnlyField(source='oma_organisaatio.organisaatio_oid')
@@ -177,12 +180,20 @@ class ErrorReportLapsetSerializer(AbstractErrorReportSerializer):
                   'errors')
 
 
-class ErrorReportTyontekijatSerializer(AbstractErrorReportSerializer):
+class ErrorReportTyontekijatSerializer(AbstractHenkiloErrorReportSerializer):
     tyontekija_id = serializers.ReadOnlyField(source='id')
 
     class Meta:
         model = Tyontekija
         fields = ('tyontekija_id', 'henkilo_id', 'henkilo_oid', 'etunimet', 'sukunimi', 'errors')
+
+
+class ErrorReportToimipaikatSerializer(AbstractErrorReportSerializer):
+    toimipaikka_id = serializers.ReadOnlyField(source='id')
+
+    class Meta:
+        model = Toimipaikka
+        fields = ('toimipaikka_id', 'nimi', 'organisaatio_oid', 'vakajarjestaja_id', 'errors')
 
 
 class TiedonsiirtoListSerializer(serializers.ListSerializer):

@@ -5,12 +5,13 @@ import { environment } from '../../../environments/environment';
 import { YksiloimatonSearchFilter, VardaYksiloimatonDTO } from '../../utilities/models/dto/varda-yksiloimaton-dto.model';
 import { VardaPageDto } from '../../utilities/models/dto/varda-page-dto';
 import { HenkiloListDTO } from '../../utilities/models/dto/varda-henkilo-dto.model';
-import { HenkiloSearchFilter } from '../../varda-main/components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-henkilot.abstract';
+import { PuutteellinenSearchFilter } from '../../varda-main/components/varda-raportit/varda-puutteelliset-tiedot/abstract-puutteelliset.component';
 import { VardaTiedonsiirtoDTO, VardaTiedonsiirtoYhteenvetoDTO } from '../../utilities/models/dto/varda-tiedonsiirto-dto.model';
 import { TiedonsiirrotSearchFilter } from '../../varda-main/components/varda-raportit/varda-tiedonsiirrot/tiedonsiirrot-sections.abstract';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { VardaExcelReportDTO, VardaExcelReportPostDTO } from '../../utilities/models/dto/varda-excel-report-dto.model';
+import { PuutteellinenToimipaikkaListDTO } from '../../utilities/models/dto/varda-puutteellinen-dto.model';
 
 @Injectable()
 export class VardaRaportitService {
@@ -37,16 +38,20 @@ export class VardaRaportitService {
     return this.http.get(`${this.reportingApi}/v1/tiedonsiirto/`, searchFilter);
   }
 
-  getLapsiErrorList(vakajarjestajaId: number, searchFilter: HenkiloSearchFilter): Observable<VardaPageDto<HenkiloListDTO>> {
+  getLapsiErrorList(vakajarjestajaId: number, searchFilter: PuutteellinenSearchFilter): Observable<VardaPageDto<HenkiloListDTO>> {
     return this.http.get(`${this.apiPath}/vakajarjestajat/${vakajarjestajaId}/error-report-lapset/`, searchFilter);
   }
 
-  getTyontekijaErrorList(vakajarjestajaId: number, searchFilter: HenkiloSearchFilter): Observable<VardaPageDto<HenkiloListDTO>> {
+  getTyontekijaErrorList(vakajarjestajaId: number, searchFilter: PuutteellinenSearchFilter): Observable<VardaPageDto<HenkiloListDTO>> {
     return this.http.get(`${this.apiPath}/vakajarjestajat/${vakajarjestajaId}/error-report-tyontekijat/`, searchFilter);
   }
 
+  getToimipaikkaErrorList(vakajarjestajaId: number, searchFilter: PuutteellinenSearchFilter): Observable<VardaPageDto<PuutteellinenToimipaikkaListDTO>> {
+    return this.http.get(`${this.apiPath}/vakajarjestajat/${vakajarjestajaId}/error-report-toimipaikat/`, searchFilter);
+  }
+
   getPuutteellisetCount(vakajarjestajaId: number): Observable<boolean> {
-    const searchFilter: HenkiloSearchFilter = {
+    const searchFilter: PuutteellinenSearchFilter = {
       page_size: 1,
       page: 1
     };
@@ -54,9 +59,10 @@ export class VardaRaportitService {
     return new Observable(obs => {
       forkJoin([
         this.getLapsiErrorList(vakajarjestajaId, searchFilter).pipe(catchError((err: Error) => of({ count: 0 }))),
-        this.getTyontekijaErrorList(vakajarjestajaId, searchFilter).pipe(catchError((err: Error) => of({ count: 0 })))
-      ]).subscribe(([lapsiData, tyontekijaData]) => {
-        const showPuutteellisetError = lapsiData?.count > 0 || tyontekijaData?.count > 0;
+        this.getTyontekijaErrorList(vakajarjestajaId, searchFilter).pipe(catchError((err: Error) => of({ count: 0 }))),
+        this.getToimipaikkaErrorList(vakajarjestajaId, searchFilter).pipe(catchError((err: Error) => of({ count: 0 })))
+      ]).subscribe(([lapsiData, tyontekijaData, toimipaikkaData]) => {
+        const showPuutteellisetError = lapsiData?.count > 0 || tyontekijaData?.count > 0 || toimipaikkaData?.count > 0;
         this.showPuutteellisetError$.next(showPuutteellisetError);
         obs.next(showPuutteellisetError);
         obs.complete();

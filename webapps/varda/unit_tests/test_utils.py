@@ -1,5 +1,8 @@
+import datetime
 import json
 import base64
+from functools import wraps
+from unittest.mock import patch, MagicMock
 
 from django.contrib.auth.models import User
 from rest_framework import status
@@ -117,3 +120,24 @@ def post_henkilo_to_get_permissions(client, henkilo_id=None, hetu=None, henkilo_
 
     resp = client.post('/api/v1/henkilot/', henkilo_json)
     assert_status_code(resp, status.HTTP_200_OK)
+
+
+def date_side_effect(*args, **kwargs):
+    return datetime.date(*args, **kwargs)
+
+
+def timedelta_side_effect(*args, **kwargs):
+    return datetime.timedelta(*args, **kwargs)
+
+
+def mock_date_decorator_factory(datetime_path, mock_date):
+    def _mock_date_decorator(original_function):
+        @wraps(original_function)
+        def _mock_date_wrapper(*args, **kwargs):
+            with patch(datetime_path) as mock_datetime:
+                mock_datetime.date = MagicMock(side_effect=date_side_effect)
+                mock_datetime.timedelta = MagicMock(side_effect=timedelta_side_effect)
+                mock_datetime.date.today.return_value = datetime.datetime.strptime(mock_date, '%Y-%m-%d').date()
+                return original_function(*args, **kwargs)
+        return _mock_date_wrapper
+    return _mock_date_decorator

@@ -1,5 +1,4 @@
 import { Component, OnInit, OnChanges, Input, ViewChildren, QueryList } from '@angular/core';
-import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
 import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';

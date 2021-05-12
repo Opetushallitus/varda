@@ -181,6 +181,7 @@ class VakaJarjestajaFilter(djangofilters.FilterSet):
 
 
 class ToimipaikkaFilter(djangofilters.FilterSet):
+    id = djangofilters.NumberFilter(lookup_expr='exact')
     nimi = djangofilters.CharFilter(field_name='nimi', lookup_expr='icontains')
     organisaatio_oid = CustomCharFilter(field_name='organisaatio_oid', lookup_expr='exact')
     kayntiosoite = djangofilters.CharFilter(field_name='kayntiosoite', lookup_expr='icontains')

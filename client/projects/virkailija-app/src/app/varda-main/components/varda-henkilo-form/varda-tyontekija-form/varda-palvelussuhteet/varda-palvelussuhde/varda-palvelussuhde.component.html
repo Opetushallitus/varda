@@ -39,7 +39,7 @@
         </mat-expansion-panel-header>
         <form [formGroup]="formGroup"
               (submit)="savePalvelussuhde(formGroup)">
-          <app-varda-henkilo-form-error-list [errors]="errorList"></app-varda-henkilo-form-error-list>
+          <app-varda-form-error-list [errors]="errorList"></app-varda-form-error-list>
           <app-varda-form-field name="tyosuhde_koodi"
                                 [form]="formGroup"
                                 [label]="i18n.palvelussuhde_palvelussuhteen_tyyppi | translate"

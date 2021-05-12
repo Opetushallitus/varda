@@ -10,8 +10,9 @@ import { TyontekijaListDTO } from 'projects/virkailija-app/src/app/utilities/mod
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { Subscription } from 'rxjs';
+import { VardaToimipaikkaMinimalDto } from '../../../../utilities/models/dto/varda-toimipaikka-dto.model';
 
-type HenkiloSection = 'lapset' | 'tyontekijat';
+type PuutteellisetSection = 'lapset' | 'tyontekijat' | 'toimipaikat';
 
 @Component({
   selector: 'app-varda-puutteelliset-tiedot',
@@ -24,15 +25,17 @@ type HenkiloSection = 'lapset' | 'tyontekijat';
 export class VardaPuutteellisetTiedotComponent implements OnInit, OnDestroy {
   i18n = VirkailijaTranslations;
   toimijaAccess: UserAccess;
-  activeSuhde: TyontekijaListDTO | LapsiListDTO;
-  activeSection: HenkiloSection;
-  confirmedHenkiloFormLeave = true;
+  activeHenkilo: TyontekijaListDTO | LapsiListDTO;
+  activeToimipaikka: VardaToimipaikkaMinimalDto;
+  activeSection: PuutteellisetSection;
+  confirmedFormLeave = true;
   selectedVakajarjestaja: VardaVakajarjestajaUi;
   subscriptions: Array<Subscription> = [];
   showLapset: boolean;
   showTyontekijat: boolean;
-  defaultFragment: HenkiloSection;
-  allowedFragments: Array<HenkiloSection> = [];
+  showToimipaikat: boolean;
+  defaultFragment: PuutteellisetSection;
+  allowedFragments: Array<PuutteellisetSection> = [];
 
   constructor(
     private authService: AuthService,
@@ -43,7 +46,7 @@ export class VardaPuutteellisetTiedotComponent implements OnInit, OnDestroy {
     this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
     this.checkUserAccess();
 
-    this.route.fragment.subscribe((fragment: HenkiloSection) =>
+    this.route.fragment.subscribe((fragment: PuutteellisetSection) =>
       this.activeSection = this.allowedFragments.includes(fragment) ? fragment : this.defaultFragment
     );
 
@@ -54,7 +57,7 @@ export class VardaPuutteellisetTiedotComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.subscriptions.push(this.modalService.getModalOpen().subscribe(open => {
       if (!open) {
-        this.activeSuhde = null;
+        this.activeHenkilo = null;
       }
     }));
   }
@@ -63,26 +66,37 @@ export class VardaPuutteellisetTiedotComponent implements OnInit, OnDestroy {
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
-  openHenkilo(suhde: LapsiListDTO | TyontekijaListDTO): void {
-    this.activeSuhde = suhde;
+  openHenkilo(instance: LapsiListDTO | TyontekijaListDTO): void {
+    this.activeHenkilo = instance;
+  }
+
+  openToimipaikka(instance: VardaToimipaikkaMinimalDto): void {
+    this.activeToimipaikka = instance;
   }
 
   handleFormClose(event: ModalEvent) {
     if (event === ModalEvent.hidden) {
-      this.activeSuhde = null;
-      this.confirmedHenkiloFormLeave = true;
+      this.activeHenkilo = null;
+      this.activeToimipaikka = null;
+      this.confirmedFormLeave = true;
     }
   }
 
-  henkiloFormValuesChanged(hasChanged: boolean): void {
-    this.confirmedHenkiloFormLeave = !hasChanged;
+  formValuesChanged(hasChanged: boolean): void {
+    this.confirmedFormLeave = !hasChanged;
   }
 
   checkUserAccess() {
     this.toimijaAccess = this.authService.getUserAccess();
+    if (this.toimijaAccess.raportit.katselija || this.toimijaAccess.lapsitiedot.katselija || this.toimijaAccess.tyontekijatiedot.katselija) {
+      this.showToimipaikat = true;
+      this.defaultFragment = 'toimipaikat';
+      this.allowedFragments.push('toimipaikat');
+    }
+
     if (this.toimijaAccess.raportit.katselija || this.toimijaAccess.lapsitiedot.katselija || this.toimijaAccess.huoltajatiedot.katselija) {
       this.showLapset = true;
-      this.defaultFragment = 'lapset';
+      this.defaultFragment = this.defaultFragment || 'lapset';
       this.allowedFragments.push('lapset');
     }
 

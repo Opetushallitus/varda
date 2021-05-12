@@ -16,7 +16,7 @@ import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { Moment } from 'moment';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
-import { VardaHenkiloFormAccordionAbstractComponent } from '../../../../varda-henkilo-form-accordion/varda-henkilo-form-accordion.abstract';
+import { VardaFormAccordionAbstractComponent } from '../../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 
 @Component({
   selector: 'app-varda-poissaolo',
@@ -28,7 +28,7 @@ import { VardaHenkiloFormAccordionAbstractComponent } from '../../../../varda-he
     '../../../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaPoissaoloComponent extends VardaHenkiloFormAccordionAbstractComponent implements OnInit, AfterViewInit, OnDestroy {
+export class VardaPoissaoloComponent extends VardaFormAccordionAbstractComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() toimipaikkaAccess: UserAccess;
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
   @Input() palvelussuhde: VardaPalvelussuhdeDTO;

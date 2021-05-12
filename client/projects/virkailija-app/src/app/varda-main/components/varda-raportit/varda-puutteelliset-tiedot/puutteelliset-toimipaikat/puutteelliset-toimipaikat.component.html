@@ -1,7 +1,7 @@
 <section class="henkilo-section varda-page-content">
   <div class="henkilo-section-header">
     <h3 class="oph-h4 oph-bold">
-      {{ i18n.henkilo_tyontekijat | translate }}
+      {{ i18n.toimipaikka_plural | translate }}
       <span *ngIf="searchFilter.count"
             class="henkilo-section-header-counter">
         ({{ searchFilter.count }})
@@ -11,7 +11,7 @@
 
   <div class="henkilo-section-filter-search">
     <mat-form-field>
-      <mat-label>{{ i18n.henkilo_hae_nimella | translate }}</mat-label>
+      <mat-label>{{ i18n.puutteelliset_tiedot_toimipaikat_search | translate }}</mat-label>
       <input autocomplete="off"
              matInput
              type="text"
@@ -19,7 +19,7 @@
              (change)="searchErrors()"
              [(ngModel)]="searchFilter.search" />
       <button mat-button
-              [title]="i18n.henkilo_hae_nimella | translate"
+              [title]="i18n.puutteelliset_tiedot_toimipaikat_search | translate"
               [disabled]="isLoading | async"
               (click)="searchErrors()"
               matSuffix>
@@ -28,19 +28,19 @@
     </mat-form-field>
   </div>
 
-  <div *ngIf="henkilot?.length === 0"
+  <div *ngIf="toimipaikat?.length === 0"
        class="varda-muted">
-    {{ i18n.henkilo_toimipaikasta_ei_loydy_tyontekijoita | translate }}
+    {{ i18n.puutteelliset_tiedot_toimipaikat_no_results | translate }}
   </div>
 
-  <mat-progress-bar *ngIf="!henkilot && isLoading | async"
+  <mat-progress-bar *ngIf="!toimipaikat && isLoading | async"
                     mode="indeterminate"></mat-progress-bar>
 
   <app-varda-error-field [errors]="formErrors"></app-varda-error-field>
 
-  <ng-container *ngIf="henkilot?.length > 0">
+  <ng-container *ngIf="toimipaikat?.length > 0">
     <app-puutteelliset-list (openErrorForm)="findInstance($event)"
-                            [errorList]="henkilot">
+                            [errorList]="toimipaikat">
     </app-puutteelliset-list>
     <mat-paginator *ngIf="searchFilter.count"
                    [disabled]="isLoading | async"

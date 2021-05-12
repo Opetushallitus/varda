@@ -32,7 +32,7 @@
 
       <form [formGroup]="formGroup"
             (submit)="saveVarhaiskasvatussuhde(formGroup)">
-        <app-varda-henkilo-form-error-list [errors]="errorList"></app-varda-henkilo-form-error-list>
+        <app-varda-form-error-list [errors]="errorList"></app-varda-form-error-list>
         <app-varda-form-field name="toimipaikka"
                               [form]="formGroup"
                               [label]="i18n.varhaiskasvatussuhde_toimipaikka | translate"

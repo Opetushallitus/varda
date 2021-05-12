@@ -16,12 +16,12 @@
              matInput
              type="text"
              [disabled]="isLoading | async"
-             (change)="searchHenkilot()"
+             (change)="searchErrors()"
              [(ngModel)]="searchFilter.search" />
       <button mat-button
               [title]="i18n.henkilo_hae_nimella | translate"
               [disabled]="isLoading | async"
-              (click)="searchHenkilot()"
+              (click)="searchErrors()"
               matSuffix>
         <mat-icon alt="">search</mat-icon>
       </button>
@@ -40,16 +40,15 @@
   <app-varda-error-field [errors]="formErrors"></app-varda-error-field>
 
   <ng-container *ngIf="henkilot?.length > 0">
-    <app-puutteelliset-henkilot-list (openErrorForm)="findHenkilo($event)"
-                            henkiloRooli="lapsi"
-                            [henkiloList]="henkilot">
-    </app-puutteelliset-henkilot-list>
+    <app-puutteelliset-list (openErrorForm)="findInstance($event)"
+                            [errorList]="henkilot">
+    </app-puutteelliset-list>
     <mat-paginator *ngIf="searchFilter.count"
                    [disabled]="isLoading | async"
                    [length]="searchFilter.count"
                    [pageSize]="searchFilter.page_size"
                    [pageIndex]="searchFilter.page - 1"
-                   (page)="searchHenkilot($event)">
+                   (page)="searchErrors($event)">
     </mat-paginator>
   </ng-container>
 

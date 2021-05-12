@@ -17,7 +17,6 @@ export class VardaHenkiloListComponent implements OnInit {
   @Input() henkiloList: Array<HenkiloListDTO>;
   @Input() henkiloRooli: HenkiloRooliEnum;
   @Output() openHenkiloForm = new EventEmitter<LapsiListDTO | TyontekijaListDTO>(true);
-  @Output() openErrorForm = new EventEmitter<HenkiloListDTO>(true);
   i18n = VirkailijaTranslations;
   koodistoEnum = KoodistoEnum;
   selectedVakajarjestaja: VardaVakajarjestajaUi;

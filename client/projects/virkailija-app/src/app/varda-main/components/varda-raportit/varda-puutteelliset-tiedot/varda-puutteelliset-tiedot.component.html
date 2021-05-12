@@ -1,17 +1,25 @@
 <main class="puutteelliset-tiedot-section">
-  <mat-button-toggle-group *ngIf="showLapset && showTyontekijat"
-                           class="puutteelliset-navi"
+  <mat-button-toggle-group class="puutteelliset-navi"
                            aria-role="navigation"
                            name="henkiloSection"
                            [value]="activeSection"
                            [attr.aria-label]="i18n.tiedonsiirrot_navigointi_label | translate">
-    <mat-button-toggle routerLink="."
+    <mat-button-toggle *ngIf="showToimipaikat"
+                       routerLink="."
+                       [fragment]="'toimipaikat'"
+                       value="toimipaikat">
+      <mat-icon aria-ignore>home</mat-icon>
+      {{ i18n.toimipaikka_plural | translate }}
+    </mat-button-toggle>
+    <mat-button-toggle *ngIf="showLapset"
+                       routerLink="."
                        [fragment]="'lapset'"
                        value="lapset">
       <mat-icon aria-ignore>child_friendly</mat-icon>
       {{ i18n.henkilo_lapset | translate }}
     </mat-button-toggle>
-    <mat-button-toggle routerLink="."
+    <mat-button-toggle *ngIf="showTyontekijat"
+                       routerLink="."
                        [fragment]="'tyontekijat'"
                        value="tyontekijat">
       <mat-icon aria-ignore>group</mat-icon>
@@ -29,23 +37,32 @@
        role="region">
     <app-varda-puutteelliset-tyontekijat *ngIf="activeSection === 'tyontekijat' && showTyontekijat"
                                          [selectedVakajarjestaja]="selectedVakajarjestaja"
-                                         (openHenkiloForm)="openHenkilo($event)"
-                                         [toimipaikkaAccess]="toimijaAccess"></app-varda-puutteelliset-tyontekijat>
-
+                                         (openHenkiloForm)="openHenkilo($event)"></app-varda-puutteelliset-tyontekijat>
     <app-varda-puutteelliset-lapset *ngIf="activeSection === 'lapset' && showLapset"
                                     [selectedVakajarjestaja]="selectedVakajarjestaja"
-                                    (openHenkiloForm)="openHenkilo($event)"
-                                    [toimipaikkaAccess]="toimijaAccess"></app-varda-puutteelliset-lapset>
+                                    (openHenkiloForm)="openHenkilo($event)"></app-varda-puutteelliset-lapset>
+    <app-varda-puutteelliset-toimipaikat *ngIf="activeSection === 'toimipaikat' && showToimipaikat"
+                                         [selectedVakajarjestaja]="selectedVakajarjestaja"
+                                         (openToimipaikkaForm)="openToimipaikka($event)"></app-varda-puutteelliset-toimipaikat>
   </div>
 
   <app-varda-modal-form [identifier]="'henkiloModal'"
                         [isLg]="true"
-                        [openModal]="!!activeSuhde"
-                        [closeWithoutConfirm]="confirmedHenkiloFormLeave"
+                        [openModal]="!!activeHenkilo"
+                        [closeWithoutConfirm]="confirmedFormLeave"
                         (events)="handleFormClose($event)">
-    <app-varda-henkilo-form *ngIf="!!activeSuhde"
-                            [henkilonSuhde]="activeSuhde"
+    <app-varda-henkilo-form *ngIf="!!activeHenkilo"
+                            [henkilonSuhde]="activeHenkilo"
                             (closeHenkiloForm)="handleFormClose('hidden')"
-                            (valuesChanged)="henkiloFormValuesChanged($event)"></app-varda-henkilo-form>
+                            (valuesChanged)="formValuesChanged($event)"></app-varda-henkilo-form>
+  </app-varda-modal-form>
+  <app-varda-modal-form [identifier]="'toimipaikkaModal'"
+                        [isLg]="true"
+                        [openModal]="!!activeToimipaikka"
+                        [closeWithoutConfirm]="confirmedFormLeave"
+                        (events)="handleFormClose($event)">
+    <app-varda-toimipaikka-form *ngIf="!!activeToimipaikka"
+                                [toimipaikka]="activeToimipaikka"
+                                (valuesChanged)="formValuesChanged($event)"></app-varda-toimipaikka-form>
   </app-varda-modal-form>
 </main>

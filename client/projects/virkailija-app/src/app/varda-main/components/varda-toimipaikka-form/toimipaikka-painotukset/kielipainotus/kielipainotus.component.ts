@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
 import * as moment from 'moment';
@@ -10,6 +10,7 @@ import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/mode
 import { CodeDTO } from 'varda-shared';
 import { VardaDateService } from '../../../../services/varda-date.service';
 import { PainotusAbstractComponent } from '../painotus.abstract';
+import { VardaModalService } from '../../../../../core/services/varda-modal.service';
 @Component({
   selector: 'app-kielipainotus',
   templateUrl: './kielipainotus.component.html',
@@ -19,22 +20,20 @@ import { PainotusAbstractComponent } from '../painotus.abstract';
     '../../varda-toimipaikka-form.component.css'
   ]
 })
-export class KielipainotusComponent extends PainotusAbstractComponent<KielipainotusDTO> implements OnInit {
+export class KielipainotusComponent extends PainotusAbstractComponent<KielipainotusDTO> {
   @Input() kielikoodisto: Array<CodeDTO>;
 
   constructor(
     protected translateService: TranslateService,
     protected vakajarjestajaApiService: VardaVakajarjestajaApiService,
-    protected snackBarService: VardaSnackBarService
+    protected snackBarService: VardaSnackBarService,
+    modalService: VardaModalService,
   ) {
-    super(translateService, vakajarjestajaApiService, snackBarService);
-  }
-
-  ngOnInit(): void {
+    super(translateService, vakajarjestajaApiService, snackBarService, modalService);
   }
 
   initForm() {
-    this.painotusForm = new FormGroup({
+    this.formGroup = new FormGroup({
       lahdejarjestelma: new FormControl(this.painotus?.lahdejarjestelma || Lahdejarjestelma.kayttoliittyma),
       id: new FormControl(this.painotus?.id),
       toimipaikka: new FormControl(this.toimipaikka?.url),
@@ -45,6 +44,8 @@ export class KielipainotusComponent extends PainotusAbstractComponent<Kielipaino
         this.toimipaikka?.paattymis_pvm ? Validators.required : null
       ),
     });
+
+    this.checkFormErrors(this.vakajarjestajaApiService, 'kielipainotus', this.painotus?.id);
   }
 
   deletePainotus() {
@@ -67,7 +68,7 @@ export class KielipainotusComponent extends PainotusAbstractComponent<Kielipaino
         ...form.value,
         toimipaikka: this.toimipaikka?.url,
         alkamis_pvm: form.value.alkamis_pvm.format(VardaDateService.vardaApiDateFormat),
-        paattymis_pvm: form.value.paattymis_pvm?.format(VardaDateService.vardaApiDateFormat)
+        paattymis_pvm: form.value.paattymis_pvm?.format(VardaDateService.vardaApiDateFormat) || null
       };
 
       if (!this.toimipaikka?.id) {

@@ -3,13 +3,13 @@ import { LoadingHttpService } from 'varda-shared';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { environment } from 'projects/virkailija-app/src/environments/environment';
 import { VardaLapsiDTO, VardaVarhaiskasvatuspaatosDTO, VardaVarhaiskasvatussuhdeDTO } from '../../utilities/models';
-import { HenkiloListDTO, HenkiloListErrorDTO } from '../../utilities/models/dto/varda-henkilo-dto.model';
+import { HenkiloListDTO } from '../../utilities/models/dto/varda-henkilo-dto.model';
 import { VardaPageDto } from '../../utilities/models/dto/varda-page-dto';
 import { VardaMaksutietoDTO } from '../../utilities/models/dto/varda-maksutieto-dto.model';
 import { HenkiloSearchFilter } from '../../varda-main/components/varda-main-frame/henkilo-section.abstract';
-import { TyontekijaListDTO } from '../../utilities/models/dto/varda-tyontekija-dto.model';
 import { VardaRaportitService } from './varda-raportit.service';
 import { LapsiListDTO } from '../../utilities/models/dto/varda-lapsi-dto.model';
+import { PuutteellinenErrorDTO } from '../../utilities/models/dto/varda-puutteellinen-dto.model';
 
 
 @Injectable()
@@ -17,7 +17,7 @@ export class VardaLapsiService {
 
   private apiPath = `${environment.vardaAppUrl}/api/v1`;
   private updateLapsiList$ = new Subject();
-  private lapsiFormErrorList = new BehaviorSubject<Array<HenkiloListErrorDTO>>(null);
+  private lapsiFormErrorList = new BehaviorSubject<Array<PuutteellinenErrorDTO>>(null);
 
   constructor(
     private http: LoadingHttpService,
@@ -120,7 +120,7 @@ export class VardaLapsiService {
     }
   }
 
-  getFormErrorList(): Observable<Array<HenkiloListErrorDTO>> {
+  getFormErrorList(): Observable<Array<PuutteellinenErrorDTO>> {
     return this.lapsiFormErrorList.asObservable();
   }
 }

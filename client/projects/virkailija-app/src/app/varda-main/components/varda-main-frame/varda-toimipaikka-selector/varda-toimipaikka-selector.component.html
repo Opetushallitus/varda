@@ -68,7 +68,8 @@
   <app-varda-toimipaikka-form *ngIf="toimipaikkaFormOpen"
                               [toimipaikka]="formToimipaikka"
                               (saveToimipaikkaFormSuccess)="updateToimipaikat($event)"
-                              (valuesChanged)="toimipaikkaFormValuesChanged($event)"></app-varda-toimipaikka-form>
+                              (valuesChanged)="toimipaikkaFormValuesChanged($event)"
+                              (closeEmitter)="closeToimipaikkaForm()"></app-varda-toimipaikka-form>
 </app-varda-modal-form>
 
 <app-varda-success-modal [identifier]="'toimipaikkaSuccessModal'"

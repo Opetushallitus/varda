@@ -7,7 +7,6 @@ import { VardaCookieEnum } from '../../utilities/models/enums/varda-cookie.enum'
 
 @Injectable()
 export class VardaVakajarjestajaService {
-
   private vakaJarjestajat$ = new BehaviorSubject<Array<VardaVakajarjestajaUi>>(null);
   private selectedVakajarjestaja: VardaVakajarjestajaUi;
   private selectedVakajarjestaja$ = new BehaviorSubject<VardaVakajarjestajaUi>(null);

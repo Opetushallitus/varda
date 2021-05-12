@@ -121,6 +121,10 @@ export class VardaToimipaikkaSelectorComponent implements OnInit, OnDestroy {
     this.changeToimipaikka.emit({ toimipaikka: activeToimipaikka, toimipaikat: this.toimipaikat });
   }
 
+  closeToimipaikkaForm() {
+    this.handleFormClose(ModalEvent.hidden);
+  }
+
   ngOnDestroy() {
     this.subscriptions.forEach(sub => sub.unsubscribe);
   }

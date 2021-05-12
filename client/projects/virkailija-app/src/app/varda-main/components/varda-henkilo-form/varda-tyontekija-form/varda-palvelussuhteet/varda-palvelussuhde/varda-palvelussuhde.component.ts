@@ -20,7 +20,7 @@ import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/ser
 import { Moment } from 'moment';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
-import { VardaHenkiloFormAccordionAbstractComponent } from '../../../varda-henkilo-form-accordion/varda-henkilo-form-accordion.abstract';
+import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 
 @Component({
   selector: 'app-varda-palvelussuhde',
@@ -32,7 +32,7 @@ import { VardaHenkiloFormAccordionAbstractComponent } from '../../../varda-henki
     '../../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaPalvelussuhdeComponent extends VardaHenkiloFormAccordionAbstractComponent implements OnInit, OnChanges, OnDestroy {
+export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractComponent implements OnInit, OnChanges, OnDestroy {
   @Input() tyontekija: TyontekijaListDTO;
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
   @Input() toimipaikkaAccess: UserAccess;

@@ -14,7 +14,7 @@
         <button class="varda-button varda-button-wide varda-button-neutral responsive-md secondary"
                 type="button"
                 robot="cancel-button"
-                *ngIf="!noToggle; else noToggleCancelBtn"
+                *ngIf="!noToggle && isEdit; else noToggleCancelBtn"
                 (click)="_togglePanel(false)">
           {{ i18n.cancel | translate }}
         </button>

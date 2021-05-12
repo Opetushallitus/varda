@@ -10,6 +10,7 @@ import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/mode
 import { KoodistoDTO } from 'varda-shared';
 import { VardaDateService } from '../../../../services/varda-date.service';
 import { PainotusAbstractComponent } from '../painotus.abstract';
+import { VardaModalService } from '../../../../../core/services/varda-modal.service';
 
 @Component({
   selector: 'app-toimintapainotus',
@@ -20,22 +21,20 @@ import { PainotusAbstractComponent } from '../painotus.abstract';
     '../../varda-toimipaikka-form.component.css'
   ]
 })
-export class ToimintapainotusComponent extends PainotusAbstractComponent<ToiminnallinenPainotusDTO> implements OnInit {
+export class ToimintapainotusComponent extends PainotusAbstractComponent<ToiminnallinenPainotusDTO> {
   @Input() toimintakoodisto: KoodistoDTO;
 
   constructor(
     protected translateService: TranslateService,
     protected vakajarjestajaApiService: VardaVakajarjestajaApiService,
-    protected snackBarService: VardaSnackBarService
+    protected snackBarService: VardaSnackBarService,
+    modalService: VardaModalService,
   ) {
-    super(translateService, vakajarjestajaApiService, snackBarService);
-  }
-
-  ngOnInit(): void {
+    super(translateService, vakajarjestajaApiService, snackBarService, modalService);
   }
 
   initForm() {
-    this.painotusForm = new FormGroup({
+    this.formGroup = new FormGroup({
       lahdejarjestelma: new FormControl(this.painotus?.lahdejarjestelma || Lahdejarjestelma.kayttoliittyma),
       id: new FormControl(this.painotus?.id),
       toimipaikka: new FormControl(this.toimipaikka?.url),
@@ -46,6 +45,8 @@ export class ToimintapainotusComponent extends PainotusAbstractComponent<Toiminn
         this.toimipaikka?.paattymis_pvm ? Validators.required : null
       ),
     });
+
+    this.checkFormErrors(this.vakajarjestajaApiService, 'toiminnallinen_painotus', this.painotus?.id);
   }
 
   deletePainotus() {

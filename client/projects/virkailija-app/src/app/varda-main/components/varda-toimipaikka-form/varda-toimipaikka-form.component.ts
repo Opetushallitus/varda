@@ -19,13 +19,15 @@ import { VardaToimipaikkaDTO } from '../../../utilities/models/dto/varda-toimipa
 import { Hallinnointijarjestelma, Lahdejarjestelma } from '../../../utilities/models/enums/hallinnointijarjestelma';
 import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 import { VardaDateService } from '../../services/varda-date.service';
+import { VardaFormAccordionAbstractComponent } from '../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
+import { VardaModalService } from '../../../core/services/varda-modal.service';
 
 @Component({
   selector: 'app-varda-toimipaikka-form',
   templateUrl: './varda-toimipaikka-form.component.html',
   styleUrls: ['./varda-toimipaikka-form.component.css']
 })
-export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
+export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractComponent implements OnInit, OnDestroy {
   @Input() toimipaikka: VardaToimipaikkaDTO;
   @Output() saveToimipaikkaFormSuccess = new EventEmitter<VardaToimipaikkaDTO>(true);
   @Output() valuesChanged = new EventEmitter<boolean>(true);
@@ -61,7 +63,9 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
     private snackBarService: VardaSnackBarService,
     private koodistoService: VardaKoodistoService,
     private translateService: TranslateService,
+    modalService: VardaModalService,
   ) {
+    super(modalService);
     this.errorService = new VardaErrorMessageService(this.translateService);
     this.toimijaAccess = this.authService.getUserAccess();
     this.tallentajaAccess = true;
@@ -110,6 +114,13 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
     } else {
       this.initForm();
     }
+
+    if (this.toimipaikka) {
+      this.vakajarjestajaApiService.initFormErrorList(this.selectedVakajarjestaja.id, this.toimipaikka);
+    }
+    this.subscriptions.push(
+      this.vakajarjestajaApiService.listenToimipaikkaListUpdate().subscribe(() => this.vakajarjestajaApiService.initFormErrorList(this.selectedVakajarjestaja.id, this.toimipaikka))
+    );
   }
 
   ngOnDestroy() {
@@ -142,6 +153,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
 
   initForm(toimipaikka?: VardaToimipaikkaDTO) {
     this.toimipaikka = toimipaikka;
+
     this.toimipaikkaForm = new FormGroup({
       lahdejarjestelma: new FormControl(this.toimipaikka?.lahdejarjestelma || Lahdejarjestelma.kayttoliittyma),
       id: new FormControl(toimipaikka?.id),
@@ -192,6 +204,8 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
         this.changePostinumero(postinumero)
       ),
     );
+
+    this.checkFormErrors(this.vakajarjestajaApiService, 'toimipaikka', this.toimipaikka?.id);
   }
 
   getToimipaikka(toimipaikka_id: number) {
@@ -222,6 +236,7 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
 
           this.disableForm();
           this.getToimipaikka(toimipaikkaData.id);
+          this.vakajarjestajaApiService.sendToimipaikkaListUpdate();
         },
         error: err => this.errorService.handleError(err, this.snackBarService)
       }).add(() => this.disableSubmit());
@@ -232,6 +247,10 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
 
   changePostinumero(postinumero: string, kayntiosoite?: boolean) {
     this.postitoimipaikkaOptions$.pipe(take(1)).subscribe(postitoimipaikkaOptions => {
+      if (!postinumero) {
+        return;
+      }
+
       const filteredPostitoimipaikat = postinumero.length > 1 ? postitoimipaikkaOptions.codes.filter(toimipaikka => toimipaikka.code_value.startsWith(postinumero)) : [];
       const postitoimipaikka = filteredPostitoimipaikat.find(toimipaikka => toimipaikka.code_value === postinumero);
 
@@ -259,7 +278,6 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
       }
     });
   }
-
 
   changePostitoimipaikka(postinumero: string, toimipaikkaControl: AbstractControl) {
     this.postitoimipaikkaOptions$.pipe(take(1)).subscribe(postitoimipaikat => {
@@ -302,6 +320,4 @@ export class VardaToimipaikkaFormComponent implements OnInit, OnDestroy {
   endDateChange(endDate: Moment) {
     this.maxEndDate = endDate?.clone().toDate();
   }
-
 }
-

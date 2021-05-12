@@ -81,17 +81,18 @@ import { VardaTiedonsiirtoComponent } from './components/varda-raportit/varda-ti
 import { VardaTiedonsiirrotYhteenvetoComponent } from './components/varda-raportit/varda-tiedonsiirrot/tiedonsiirrot-yhteenveto/tiedonsiirrot-yhteenveto.component';
 import { TiedonsiirtoDialogComponent } from './components/varda-raportit/varda-tiedonsiirrot/tiedonsiirto-dialog/tiedonsiirto-dialog.component';
 import { PuutteellisetDialogComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-dialog/puutteelliset-dialog.component';
-import { VardaFormErrorIconComponent } from './components/varda-henkilo-form/varda-form-error-icon/varda-form-error-icon.component';
-import { VardaHenkiloFormErrorListComponent } from './components/varda-henkilo-form/varda-henkilo-form-error-list/varda-henkilo-form-error-list.component';
-import { VardaHenkiloFormAccordionAbstractComponent } from './components/varda-henkilo-form/varda-henkilo-form-accordion/varda-henkilo-form-accordion.abstract';
+import { VardaFormErrorIconComponent } from './components/varda-form-error-icon/varda-form-error-icon.component';
+import { VardaFormErrorListComponent } from './components/varda-form-error-list/varda-form-error-list.component';
+import { VardaFormAccordionAbstractComponent } from './components/varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 import { TiedonsiirtoFilterHeaderComponent } from './components/varda-raportit/varda-tiedonsiirrot/tiedonsiirto-filter-header/tiedonsiirto-filter-header.component';
 import { TiedonsiirtoFilterComponent } from './components/varda-raportit/varda-tiedonsiirrot/tiedonsiirto-filter/tiedonsiirto-filter.component';
-import { PuutteellisetHenkilotListComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-henkilot-list/puutteelliset-henkilot-list.component';
+import { PuutteellisetListComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-list/puutteelliset-list.component';
 import { ToimipaikkaPainotuksetComponent } from './components/varda-toimipaikka-form/toimipaikka-painotukset/toimipaikka-painotukset.component';
 import { KielipainotusComponent } from './components/varda-toimipaikka-form/toimipaikka-painotukset/kielipainotus/kielipainotus.component';
 import { ToimintapainotusComponent } from './components/varda-toimipaikka-form/toimipaikka-painotukset/toimintapainotus/toimintapainotus.component';
 import { VardaExcelComponent } from './components/varda-raportit/varda-excel/varda-excel.component';
 import { VardaExcelNewComponent } from './components/varda-raportit/varda-excel/varda-excel-new/varda-excel-new.component';
+import { VardaPuutteellisetToimipaikatComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-toimipaikat/puutteelliset-toimipaikat.component';
 
 @NgModule({
   imports: [
@@ -169,17 +170,18 @@ import { VardaExcelNewComponent } from './components/varda-raportit/varda-excel/
     VardaPuutteellisetTiedotComponent,
     VardaPuutteellisetTyontekijatComponent,
     VardaPuutteellisetLapsetComponent,
+    VardaPuutteellisetToimipaikatComponent,
     VardaTiedonsiirrotComponent,
     VardaTiedonsiirtoComponent,
     VardaTiedonsiirrotYhteenvetoComponent,
     TiedonsiirtoDialogComponent,
     PuutteellisetDialogComponent,
     VardaFormErrorIconComponent,
-    VardaHenkiloFormErrorListComponent,
-    VardaHenkiloFormAccordionAbstractComponent,
+    VardaFormErrorListComponent,
+    VardaFormAccordionAbstractComponent,
     TiedonsiirtoFilterHeaderComponent,
     TiedonsiirtoFilterComponent,
-    PuutteellisetHenkilotListComponent,
+    PuutteellisetListComponent,
     ToimipaikkaPainotuksetComponent,
     KielipainotusComponent,
     ToimintapainotusComponent,

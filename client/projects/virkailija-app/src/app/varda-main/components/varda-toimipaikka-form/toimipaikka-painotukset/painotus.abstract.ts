@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewChild } from '@angular/core';
-import { FormGroup } from '@angular/forms';
+import { FormGroup, Validators } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
 import * as moment from 'moment';
 import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
@@ -10,11 +10,13 @@ import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/
 import { BehaviorSubject, Observable } from 'rxjs';
 import { KoodistoEnum } from 'varda-shared';
 import { MatExpansionPanel } from '@angular/material/expansion';
+import { VardaFormAccordionAbstractComponent } from '../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
+import { VardaModalService } from '../../../../core/services/varda-modal.service';
 
 @Component({
   template: '',
 })
-export abstract class PainotusAbstractComponent<T> implements OnChanges {
+export abstract class PainotusAbstractComponent<T> extends VardaFormAccordionAbstractComponent implements OnChanges {
   @ViewChild('matPanel') matPanel: MatExpansionPanel;
   @Input() toimipaikka: VardaToimipaikkaDTO;
   @Input() painotus: T;
@@ -25,7 +27,7 @@ export abstract class PainotusAbstractComponent<T> implements OnChanges {
   @Output() pendingPainotus = new EventEmitter<T>(true);
   i18n = VirkailijaTranslations;
   koodistoEnum = KoodistoEnum;
-  painotusForm: FormGroup;
+  formGroup: FormGroup;
   isEdit: boolean;
   isSubmitting = new BehaviorSubject<boolean>(false);
   startDateRange = { min: null, max: null };
@@ -37,14 +39,16 @@ export abstract class PainotusAbstractComponent<T> implements OnChanges {
   constructor(
     protected translateService: TranslateService,
     protected vakajarjestajaApiService: VardaVakajarjestajaApiService,
-    protected snackBarService: VardaSnackBarService
+    protected snackBarService: VardaSnackBarService,
+    modalService: VardaModalService,
   ) {
+    super(modalService);
     this.errorService = new VardaErrorMessageService(translateService);
     this.formErrors = this.errorService.initErrorList();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (!this.painotusForm) {
+    if (!this.formGroup) {
       this.init();
     } else if (changes.toimipaikka?.currentValue) {
       this.initDateFilters();
@@ -53,7 +57,7 @@ export abstract class PainotusAbstractComponent<T> implements OnChanges {
         if (this.savePending) {
           this.painotus = null;
           this.enableForm();
-          this.savePainotus(this.painotusForm, true);
+          this.savePainotus(this.formGroup, true);
         }
       }
     }
@@ -81,38 +85,15 @@ export abstract class PainotusAbstractComponent<T> implements OnChanges {
     this.initDateFilters();
   }
 
-  togglePanel(open: boolean, refreshList?: boolean, forceState?: boolean) {
-    if (forceState) {
-      setTimeout(() => {
-        if (open) {
-          this.matPanel?.open();
-        } else {
-          this.matPanel?.close();
-        }
-      }, 100);
-    }
-
-    if (!open || refreshList) {
-      this.disableForm();
-      this.refreshList?.emit(refreshList);
-    }
-  }
-
   disableSubmit() {
     setTimeout(() => this.isSubmitting.next(false), 500);
-  }
-
-  disableForm() {
-    this.isEdit = false;
-    this.painotusForm.disable();
   }
 
   enableForm() {
     this.isEdit = true;
     this.savePending = false;
-    this.painotusForm.enable();
+    this.formGroup.enable();
   }
-
 
   initDateFilters() {
     this.startDateRange.min = new Date(this.minStartDate);
@@ -120,6 +101,10 @@ export abstract class PainotusAbstractComponent<T> implements OnChanges {
     this.startDateChange(moment(this.minStartDate?.valueOf()));
 
     this.startDateRange.max = new Date(this.maxEndDate);
+
+    const paattymisPvmControl = this.formGroup.controls['paattymis_pvm'];
+    paattymisPvmControl.setValidators(this.toimipaikka?.paattymis_pvm ? Validators.required : null);
+    paattymisPvmControl.updateValueAndValidity();
   }
 
   startDateChange(startDate: moment.Moment) {
@@ -128,7 +113,11 @@ export abstract class PainotusAbstractComponent<T> implements OnChanges {
     if (this.endDateRange?.max < this.endDateRange?.min) {
       this.endDateRange.min = this.endDateRange.max;
     }
-    setTimeout(() => this.painotusForm.controls.paattymis_pvm?.updateValueAndValidity(), 100);
+    setTimeout(() => this.formGroup.controls.paattymis_pvm?.updateValueAndValidity(), 100);
+  }
+
+  sendUpdateList() {
+    this.vakajarjestajaApiService.sendToimipaikkaListUpdate();
   }
 
   abstract initForm(): void;

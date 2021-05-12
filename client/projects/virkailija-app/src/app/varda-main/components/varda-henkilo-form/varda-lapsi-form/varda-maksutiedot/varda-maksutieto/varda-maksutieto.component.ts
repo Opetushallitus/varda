@@ -17,7 +17,7 @@ import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { KoodistoDTO, VardaKoodistoService, KoodistoEnum } from 'varda-shared';
 import { VardaMaksutietoHuoltajaComponent } from './varda-maksutieto-huoltaja/varda-maksutieto-huoltaja.component';
 import { TranslateService } from '@ngx-translate/core';
-import { VardaHenkiloFormAccordionAbstractComponent } from '../../../varda-henkilo-form-accordion/varda-henkilo-form-accordion.abstract';
+import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 
 
 @Component({
@@ -30,7 +30,7 @@ import { VardaHenkiloFormAccordionAbstractComponent } from '../../../varda-henki
     '../../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaMaksutietoComponent extends VardaHenkiloFormAccordionAbstractComponent implements OnInit, OnDestroy {
+export class VardaMaksutietoComponent extends VardaFormAccordionAbstractComponent implements OnInit, OnDestroy {
   @Input() lapsi: LapsiListDTO;
   @Input() toimipaikkaAccess: UserAccess;
   @Input() maksutieto: VardaMaksutietoDTO;

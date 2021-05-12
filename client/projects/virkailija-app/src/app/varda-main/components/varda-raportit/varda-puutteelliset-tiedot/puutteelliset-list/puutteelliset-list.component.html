@@ -1,0 +1,32 @@
+<div class="table-responsive">
+  <table class="henkilo-list">
+    <tbody>
+      <ng-container *ngFor="let instance of errorList">
+        <tr class="henkilo-list-item"
+            tabindex="0"
+            (keydown.enter)="clickErrorItem(instance)"
+            (click)="clickErrorItem(instance)">
+          <ng-container *ngIf="instance.henkilo_id; else toimipaikkaInstance">
+            <td>
+              <mat-icon alt="">perm_identity</mat-icon>
+            </td>
+            <td>{{ instance.sukunimi }} {{ instance.etunimet }}</td>
+          </ng-container>
+          <ng-template #toimipaikkaInstance>
+            <td>
+              <mat-icon alt="">home</mat-icon>
+            </td>
+            <td>{{ instance.nimi }}</td>
+          </ng-template>
+          <td>
+            <div *ngFor="let error of instance.errors; let index = index">
+              <span [libKoodistoValue]="koodistoEnum.virhe"
+                    format="long">{{ error.error_code }}</span>
+              <span *ngIf="error.model_id_list?.length > 1"> x{{ error.model_id_list?.length }}</span>
+            </div>
+          </td>
+        </tr>
+      </ng-container>
+    </tbody>
+  </table>
+</div>

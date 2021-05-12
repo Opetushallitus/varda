@@ -9,16 +9,18 @@ import { HenkiloListDTO } from 'projects/virkailija-app/src/app/utilities/models
 import { TyontekijaListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tyontekija-dto.model';
 import { HenkiloRooliEnum } from 'projects/virkailija-app/src/app/utilities/models/enums/henkilorooli.enum';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
-import { AbstractPuutteellisetHenkilotComponent } from '../puutteelliset-henkilot.abstract';
+import { AbstractPuutteellisetComponent } from '../abstract-puutteelliset.component';
 
 @Component({
   selector: 'app-varda-puutteelliset-tyontekijat',
   templateUrl: './puutteelliset-tyontekijat.component.html',
   styleUrls: ['./puutteelliset-tyontekijat.component.css', '../varda-puutteelliset-tiedot.component.css']
 })
-export class VardaPuutteellisetTyontekijatComponent extends AbstractPuutteellisetHenkilotComponent<TyontekijaListDTO> {
+export class VardaPuutteellisetTyontekijatComponent extends AbstractPuutteellisetComponent<HenkiloListDTO, TyontekijaListDTO> {
   @Input() selectedVakajarjestaja: VardaVakajarjestajaUi;
   i18n = VirkailijaTranslations;
+  henkilot: Array<HenkiloListDTO>;
+
   constructor(
     private henkilostoService: VardaHenkilostoApiService,
     private raportitService: VardaRaportitService,
@@ -27,11 +29,10 @@ export class VardaPuutteellisetTyontekijatComponent extends AbstractPuutteellise
     protected translateService: TranslateService,
   ) {
     super(utilityService, translateService);
-
-    this.subscriptions.push(this.henkilostoService.listenHenkilostoListUpdate().subscribe(() => this.getHenkilot()));
+    this.subscriptions.push(this.henkilostoService.listenHenkilostoListUpdate().subscribe(() => this.getErrors()));
   }
 
-  getHenkilot(): void {
+  getErrors(): void {
     this.henkilot = null;
     this.isLoading.next(true);
 
@@ -44,16 +45,16 @@ export class VardaPuutteellisetTyontekijatComponent extends AbstractPuutteellise
     }).add(() => setTimeout(() => this.isLoading.next(false), 500));
   }
 
-  openHenkilo(suhde: TyontekijaListDTO): void {
+  openForm(suhde: TyontekijaListDTO): void {
     this.openHenkiloForm.emit({ ...suhde, rooli: HenkiloRooliEnum.tyontekija });
   }
 
-  findHenkilo(henkilo: HenkiloListDTO) {
+  findInstance(henkilo: HenkiloListDTO) {
     this.henkilostoService.getVakajarjestajaTyontekijat(this.selectedVakajarjestaja.id, { search: henkilo.henkilo_oid }).subscribe({
       next: henkiloData => {
         const foundTyontekija = henkiloData.results.find(tyontekija => tyontekija.henkilo_oid === henkilo.henkilo_oid);
         const foundSuhde = foundTyontekija?.tyontekijat.find(suhde => suhde.id === henkilo.tyontekija_id);
-        this.openHenkilo({ ...foundSuhde, henkilo_id: foundTyontekija.id, henkilo_oid: foundTyontekija.henkilo_oid });
+        this.openForm({ ...foundSuhde, henkilo_id: foundTyontekija.id, henkilo_oid: foundTyontekija.henkilo_oid });
       },
       error: (err) => this.errorService.handleError(err, this.snackBarService)
     });
