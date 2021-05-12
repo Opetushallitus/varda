@@ -2,15 +2,13 @@ import datetime
 import logging
 
 from django.conf import settings
-from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db import transaction
 from functools import wraps
 from hashlib import sha1
 from rest_framework.exceptions import NotFound
-from rest_framework.response import Response
-from varda.misc import get_object_id_from_path, intersection, path_parse, hash_string
+from varda.misc import intersection, path_parse, hash_string
 from varda.pagination import CustomPagination, get_requested_page_and_query_params
 from varda.permissions import get_object_ids_user_has_view_permissions
 
@@ -20,21 +18,21 @@ logger = logging.getLogger(__name__)
 
 def get_model_name_from_view_name(view_name):
     """
-    Get model_name from view_name: e.g. Vaka Jarjestaja List, return -> "vakajarjestaja"
-    Or Vaka Jarjestaja Instance, return -> "vakajarjestaja"
-    Or Nested Toimipaikka List, return -> "toimipaikka"
+    Get model_name from view_name: e.g. Vaka Jarjestaja List, return -> 'vakajarjestaja'
+    Or Vaka Jarjestaja Instance, return -> 'vakajarjestaja'
+    Or Nested Toimipaikka List, return -> 'toimipaikka'
     """
-    splitted_view_name = view_name.replace(" ", "").lower()
+    splitted_view_name = view_name.replace(' ', '').lower()
     if splitted_view_name.endswith('instance'):
-        return splitted_view_name.split("instance")[0]
+        return splitted_view_name.split('instance')[0]
     elif splitted_view_name == 'nestedlapsenvarhaiskasvatussuhdelist':
         return 'varhaiskasvatussuhde'
     elif splitted_view_name == 'nestedvarhaiskasvatussuhdetoimipaikkalist':
         return 'varhaiskasvatussuhde'
     elif splitted_view_name.startswith('nested'):
-        return splitted_view_name.split("nested")[1][:-4]
+        return splitted_view_name.split('nested')[1][:-4]
     else:
-        return splitted_view_name.split("list")[0]
+        return splitted_view_name.split('list')[0]
 
 
 def create_cache_key(id, unique_string):
@@ -260,38 +258,6 @@ def cached_list_response(original_list_viewset, user, request_full_path,
     serializer = original_list_viewset.get_serializer(page, many=True)
     serializer_data = serializer.data
     return original_list_viewset.get_paginated_response(serializer_data)
-
-
-@transaction.atomic
-def cached_retrieve_response(original_view, user, request_path, object_id=None):
-    """
-    Each object from DB should be located in cache only once.
-    There is no need to separate these based on user-id etc.
-
-    N.B. Probably no reason to cache the object, since we need it for permission checking anyhow.
-    """
-    view_name = original_view.get_view_name()
-    model_name = get_model_name_from_view_name(view_name)
-    if object_id is None:
-        # If object_id wasn't supplied in function call, get it from request_path
-        object_id = get_object_id_from_path(request_path)
-        if object_id is None:
-            # If object_id is still none, raise 404
-            raise NotFound
-
-    ct = ContentType.objects.get(model=model_name)
-    try:
-        obj = ct.get_object_for_this_type(pk=str(object_id))
-    except ct.model_class().DoesNotExist:
-        raise NotFound
-
-    view_permission = Permission.objects.get(codename__startswith='view', content_type=ct)
-    app_view_permission = 'varda.' + view_permission.codename
-    if not user.has_perm(app_view_permission, obj):
-        raise NotFound
-
-    serializer = original_view.get_serializer(obj)
-    return Response(serializer.data)
 
 
 def invalidate_cache(model_name, object_id):

@@ -4326,7 +4326,7 @@ class VardaViewsTests(TestCase):
         lahdejarjestelma = '1'
 
         vakasuhde_1 = {
-            'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatussuhteet/{vakapaatos_1.id}/',
+            'varhaiskasvatuspaatos': f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos_1.id}/',
             'varhaiskasvatuspaatos_tunniste': vakapaatos_2.tunniste,
             'toimipaikka_oid': toimipaikka_2.organisaatio_oid,
             'toimipaikka_tunniste': toimipaikka_1.tunniste,

@@ -14,8 +14,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from varda import filters
-from varda.cache import (cached_retrieve_response, delete_cache_keys_related_model, cached_list_response,
-                         get_object_ids_for_user_by_model)
+from varda.cache import delete_cache_keys_related_model, cached_list_response, get_object_ids_for_user_by_model
 from varda.enums.error_messages import ErrorMessages
 from varda.exceptions.conflict_error import ConflictError
 from varda.misc import flatten_nested_list
@@ -103,9 +102,6 @@ class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
-
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
     def perform_create(self, serializer):
         validated_data = serializer.validated_data
@@ -265,9 +261,6 @@ class TilapainenHenkilostoViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
 
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
-
     def perform_create(self, serializer):
         with transaction.atomic():
             user = self.request.user
@@ -313,9 +306,6 @@ class TutkintoViewSet(IncreasedModifyThrottleMixin, CreateModelMixin, RetrieveMo
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
-
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path)
 
     def return_henkilo_already_has_tutkinto(self, validated_data):
         tutkinto_condition = Q(henkilo=validated_data['henkilo'],
@@ -435,9 +425,6 @@ class PalvelussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
 
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
-
     def perform_create(self, serializer):
         validated_data = serializer.validated_data
         toimipaikka_oid = validated_data.get('toimipaikka') and validated_data.get('toimipaikka').organisaatio_oid
@@ -532,9 +519,6 @@ class TyoskentelypaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
-
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -732,9 +716,6 @@ class TaydennyskoulutusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
         page = self.paginate_queryset(tyontekija_filter.qs)
         serializer = TaydennyskoulutusTyontekijaListSerializer(page, many=True, context=self.get_serializer_context())
         return self.get_paginated_response(serializer.data)
-
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
     def perform_create(self, serializer):
         with transaction.atomic():

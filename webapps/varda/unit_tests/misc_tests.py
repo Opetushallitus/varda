@@ -49,10 +49,10 @@ class MiscTests(TestCase):
                       status=status.HTTP_201_CREATED
                       )
         henkilo = {
-            "henkilotunnus": hetu,
-            "etunimet": "Pauliina",
-            "kutsumanimi": "Pauliina",
-            "sukunimi": "Virtanen"
+            'henkilotunnus': hetu,
+            'etunimet': 'Pauliina',
+            'kutsumanimi': 'Pauliina',
+            'sukunimi': 'Virtanen'
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
@@ -65,12 +65,12 @@ class MiscTests(TestCase):
         request_path_empty_string = ''
         request_path_empty_byte = b''
 
-        object_id_string = misc.get_object_id_from_path(request_path_string)
-        object_id_bytes = misc.get_object_id_from_path(request_path_bytes)
-        object_id_empty_string = misc.get_object_id_from_path(request_path_empty_string)
-        object_id_empty_byte = misc.get_object_id_from_path(request_path_empty_byte)
+        url_string = misc.path_parse(request_path_string)
+        url_bytes = misc.path_parse(request_path_bytes)
+        url_empty_string = misc.path_parse(request_path_empty_string)
+        url_empty_byte = misc.path_parse(request_path_empty_byte)
 
-        self.assertEqual(object_id_string, 55)
-        self.assertEqual(object_id_bytes, 55)
-        self.assertEqual(object_id_empty_string, None)
-        self.assertEqual(object_id_empty_byte, None)
+        self.assertEqual(url_string, request_path_string)
+        self.assertEqual(url_bytes, request_path_string)
+        self.assertEqual(url_empty_string, '')
+        self.assertEqual(url_empty_byte, '')

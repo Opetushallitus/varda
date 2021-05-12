@@ -1,7 +1,7 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from varda.enums.error_messages import ErrorMessages
-from varda.misc import get_object_id_from_path
 from varda.models import VakaJarjestaja, Toimipaikka, Henkilo
 from varda.permissions import user_belongs_to_correct_groups
 from varda.validators import validate_organisaatio_oid
@@ -90,14 +90,15 @@ class AbstractCustomRelatedField(serializers.Field):
         return super().run_validation(data)
 
     def _get_parent_value_id(self):
-        if self.parent.initial_data.get(self.parent_field):
-            parent_value = self.parent.initial_data[self.parent_field]
-            parent_value_id = get_object_id_from_path(parent_value)
-
-            if parent_value_id is None:
-                raise serializers.ValidationError([ErrorMessages.RF002.value], code='invalid')
-
-            return parent_value_id
+        if parent_value := self.parent.initial_data.get(self.parent_field):
+            parent_field = self.parent.fields.get(self.parent_field)
+            try:
+                parent_object = parent_field.to_internal_value(parent_value)
+                return parent_object.id
+            except ValidationError:
+                # Error parsing HyperlinkedRelatedField to object, ValidationError is raised from the field itself
+                # so do not raise here
+                pass
         return None
 
     def _get_secondary_value_id(self, value):

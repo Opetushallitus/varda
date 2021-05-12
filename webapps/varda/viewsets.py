@@ -24,8 +24,8 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_guardian.filters import ObjectPermissionsFilter
 
 from varda import filters, validators, permission_groups
-from varda.cache import (cached_list_response, cached_retrieve_response, delete_toimipaikan_lapset_cache,
-                         delete_cache_keys_related_model, get_object_ids_for_user_by_model)
+from varda.cache import (cached_list_response, delete_toimipaikan_lapset_cache, delete_cache_keys_related_model,
+                         get_object_ids_for_user_by_model)
 from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid,
                                                         add_henkilo_to_oppijanumerorekisteri,
                                                         get_henkilo_by_henkilotunnus)
@@ -530,9 +530,6 @@ class VakaJarjestajaViewSet(IncreasedModifyThrottleMixin, ModelViewSet):
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
 
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path)
-
     def perform_update(self, serializer):
         user = self.request.user
         serializer.save(changed_by=user)
@@ -572,9 +569,6 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
-
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -628,7 +622,6 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
 
     def perform_update(self, serializer):
         user = self.request.user
-
         saved_object = serializer.save(changed_by=user)
         delete_cache_keys_related_model('vakajarjestaja', saved_object.vakajarjestaja.id)
         cache.delete('vakajarjestaja_yhteenveto_' + str(saved_object.vakajarjestaja.id))
@@ -675,9 +668,6 @@ class ToiminnallinenPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnis
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
-
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -749,9 +739,6 @@ class KieliPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
-
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -864,16 +851,13 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
     """
     queryset = Henkilo.objects.all().order_by('id')
     serializer_class = None
-    permission_classes = (CustomModelPermissions,)
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
 
     def get_serializer_class(self):
         request = self.request
         if request is not None and request.user.is_superuser:
             return HenkiloSerializerAdmin
         return HenkiloSerializer
-
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path)
 
     def validate_henkilo_uniqueness_henkilotunnus(self, henkilotunnus_hash, etunimet, sukunimi):
         try:
@@ -1053,9 +1037,6 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
 
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
-
     def return_lapsi_if_already_created(self, validated_data, toimipaikka_oid, paos_oikeus):
         user = self.request.user
         q_obj = Q()
@@ -1196,9 +1177,6 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
 
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
-
     def perform_create(self, serializer):
         user = self.request.user
         validated_data = serializer.validated_data
@@ -1316,9 +1294,6 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
-
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
     def assign_paos_lapsi_permissions(self, lapsi_obj, varhaiskasvatussuhde_obj, varhaiskasvatuspaatos_obj,
                                       toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid):
@@ -1471,9 +1446,6 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
-
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path, object_id=self.get_object().id)
 
     def get_vtj_huoltajuudet(self, data):
         vtj_huoltajuudet = self.fetch_and_match_huoltajuudet(data)
@@ -1684,9 +1656,6 @@ class PaosToimintaViewSet(IncreasedModifyThrottleMixin, GenericViewSet, ListMode
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
 
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path)
-
     def get_paos_toiminta_is_active_q(self, validated_data):
         paos_toiminta_is_active_q = Q()
 
@@ -1871,9 +1840,6 @@ class PaosOikeusViewSet(IncreasedModifyThrottleMixin, GenericViewSet, UpdateMode
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
-
-    def retrieve(self, request, *args, **kwargs):
-        return cached_retrieve_response(self, request.user, request.path)
 
     def perform_update(self, serializer):
         user = self.request.user
