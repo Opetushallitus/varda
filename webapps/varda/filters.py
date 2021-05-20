@@ -271,9 +271,9 @@ class MaksutietoFilter(djangofilters.FilterSet):
 
 
 class PaosToimintaFilter(djangofilters.FilterSet):
-    oma_organisaatio = djangofilters.NumberFilter(field_name='oma_organisaatio', lookup_expr='exact')
-    paos_organisaatio = djangofilters.NumberFilter(field_name='paos_organisaatio', lookup_expr='exact')
-    paos_toimipaikka = djangofilters.NumberFilter(field_name='paos_toimipaikka', lookup_expr='exact')
+    oma_organisaatio = OrganisaatioFieldFilter(field_name='oma_organisaatio', lookup_expr='exact')
+    paos_organisaatio = OrganisaatioFieldFilter(field_name='paos_organisaatio', lookup_expr='exact')
+    paos_toimipaikka = OrganisaatioFieldFilter(field_name='paos_toimipaikka', lookup_expr='exact')
     voimassa_kytkin = djangofilters.BooleanFilter(field_name='voimassa_kytkin', lookup_expr='exact')
 
     class Meta:
@@ -282,8 +282,8 @@ class PaosToimintaFilter(djangofilters.FilterSet):
 
 
 class PaosOikeusFilter(djangofilters.FilterSet):
-    jarjestaja_kunta_organisaatio = djangofilters.NumberFilter(field_name='jarjestaja_kunta_organisaatio', lookup_expr='exact')
-    tuottaja_organisaatio = djangofilters.NumberFilter(field_name='tuottaja_organisaatio', lookup_expr='exact')
+    jarjestaja_kunta_organisaatio = OrganisaatioFieldFilter(field_name='jarjestaja_kunta_organisaatio', lookup_expr='exact')
+    tuottaja_organisaatio = OrganisaatioFieldFilter(field_name='tuottaja_organisaatio', lookup_expr='exact')
 
     class Meta:
         model = PaosOikeus

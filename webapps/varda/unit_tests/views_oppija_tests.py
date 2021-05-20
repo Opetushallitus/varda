@@ -57,9 +57,9 @@ class VardaOppijaViewsTests(TestCase):
                             'paivittainen_vaka_kytkin': True,
                             'kokopaivainen_vaka_kytkin': False,
                             'tilapainen_vaka_kytkin': False,
-                            'jarjestamismuoto_koodi': 'jm04',
+                            'jarjestamismuoto_koodi': 'jm01',
                             'vuorohoito_kytkin': False,
-                            'pikakasittely_kytkin': True,
+                            'pikakasittely_kytkin': False,
                             'tuntimaara_viikossa': '30.5',
                             'varhaiskasvatussuhteet': []
                         }
@@ -71,13 +71,13 @@ class VardaOppijaViewsTests(TestCase):
                     'aktiivinen_toimija': True,
                     'varhaiskasvatuspaatokset': [
                         {
-                            'alkamis_pvm': '2019-11-11',
-                            'hakemus_pvm': '2019-11-01',
+                            'alkamis_pvm': '2018-01-11',
+                            'hakemus_pvm': '2018-01-01',
                             'paattymis_pvm': '2019-12-22',
                             'paivittainen_vaka_kytkin': True,
                             'kokopaivainen_vaka_kytkin': False,
                             'tilapainen_vaka_kytkin': False,
-                            'jarjestamismuoto_koodi': 'jm03',
+                            'jarjestamismuoto_koodi': 'jm04',
                             'vuorohoito_kytkin': False,
                             'pikakasittely_kytkin': True,
                             'tuntimaara_viikossa': '30.5',
@@ -118,7 +118,7 @@ class VardaOppijaViewsTests(TestCase):
                             'tilapainen_vaka_kytkin': False,
                             'jarjestamismuoto_koodi': 'jm03',
                             'vuorohoito_kytkin': False,
-                            'pikakasittely_kytkin': False,
+                            'pikakasittely_kytkin': True,
                             'tuntimaara_viikossa': '39.0',
                             'varhaiskasvatussuhteet': [
                                 {
@@ -146,13 +146,13 @@ class VardaOppijaViewsTests(TestCase):
                             'paivittainen_vaka_kytkin': None,
                             'kokopaivainen_vaka_kytkin': None,
                             'tilapainen_vaka_kytkin': False,
-                            'jarjestamismuoto_koodi': 'jm03',
+                            'jarjestamismuoto_koodi': 'jm01',
                             'vuorohoito_kytkin': True,
-                            'pikakasittely_kytkin': True,
+                            'pikakasittely_kytkin': False,
                             'tuntimaara_viikossa': '37.5',
                             'varhaiskasvatussuhteet': [
                                 {
-                                    'alkamis_pvm': '2018-02-11',
+                                    'alkamis_pvm': '2019-02-11',
                                     'paattymis_pvm': '2019-02-24',
                                     'toimipaikka': {
                                         'toimipaikka_nimi': 'Tester2 toimipaikka',

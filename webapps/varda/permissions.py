@@ -181,6 +181,9 @@ def user_has_tallentaja_permission_in_organization(organisaatio_oid, user):
 
     acceptable_group_names = [PALVELUKAYTTAJA_GROUP_NAME, TALLENTAJA_GROUP_NAME]
 
+    if user.is_superuser:
+        return True
+
     user_groups_query = user.groups.all()
     for user_group in user_groups_query:
         if user_group.name in acceptable_group_names:
@@ -304,6 +307,9 @@ def user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, v
     User must be "palvelukayttaja" or have HUOLTAJATIETO_TALLENNUS-permission under the vakajarjestaja/toimipaikka.
     This is needed since user can have permissions to multiple organizations.
     """
+    if user.is_superuser:
+        return True
+
     try:
         user_details = Z3_AdditionalCasUserFields.objects.get(user=user)
     except Z3_AdditionalCasUserFields.DoesNotExist:

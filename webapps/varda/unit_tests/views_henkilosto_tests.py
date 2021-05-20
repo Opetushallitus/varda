@@ -2792,7 +2792,7 @@ class VardaHenkilostoViewSetTests(TestCase):
     def test_taydennyskoulutus_invalid_tyontekija_permission_create(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
 
-        tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija-without-permission')
+        tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija5')
 
         taydennyskoulutus = {
             'taydennyskoulutus_tyontekijat': [{'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '39407'}],
@@ -2948,7 +2948,7 @@ class VardaHenkilostoViewSetTests(TestCase):
             'tutkinto_koodi': tutkinto_koodi,
             'toimipaikka_oid': toimipaikka_oid
         }
-        self._assert_create_and_list(client_tyontekija_katselija, client_tyontekija_tallentaja, tutkinto, '/api/henkilosto/v1/tutkinnot/')
+        self._assert_create_and_list(client_tyontekija_katselija, client_tyontekija_tallentaja, tutkinto, '/api/henkilosto/v1/tutkinnot/', expected_count=2)
 
         # Palvelussuhde
         palvelussuhde = {

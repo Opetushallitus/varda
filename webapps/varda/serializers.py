@@ -1234,9 +1234,24 @@ class PaosToimintaSerializer(serializers.HyperlinkedModelSerializer):
     """
 
     id = serializers.ReadOnlyField()
-    oma_organisaatio = VakaJarjestajaHLField(view_name='vakajarjestaja-detail', required=True)
+    oma_organisaatio = VakaJarjestajaHLField(view_name='vakajarjestaja-detail', required=False)
+    oma_organisaatio_oid = OidRelatedField(object_type=VakaJarjestaja,
+                                           parent_field='oma_organisaatio',
+                                           parent_attribute='organisaatio_oid',
+                                           prevalidator=validators.validate_organisaatio_oid,
+                                           either_required=True)
     paos_organisaatio = VakaJarjestajaHLField(view_name='vakajarjestaja-detail', required=False)
+    paos_organisaatio_oid = OidRelatedField(object_type=VakaJarjestaja,
+                                            parent_field='paos_organisaatio',
+                                            parent_attribute='organisaatio_oid',
+                                            prevalidator=validators.validate_organisaatio_oid,
+                                            either_required=False)
     paos_toimipaikka = ToimipaikkaHLField(view_name='toimipaikka-detail', required=False)
+    paos_toimipaikka_oid = OidRelatedField(object_type=Toimipaikka,
+                                           parent_field='paos_toimipaikka',
+                                           parent_attribute='organisaatio_oid',
+                                           prevalidator=validators.validate_organisaatio_oid,
+                                           either_required=False)
     voimassa_kytkin = serializers.ReadOnlyField()
 
     class Meta:
@@ -1266,7 +1281,12 @@ class PaosOikeusSerializer(serializers.HyperlinkedModelSerializer):
     jarjestaja_kunta_organisaatio = VakaJarjestajaHLField(view_name='vakajarjestaja-detail', read_only=True)
     tuottaja_organisaatio = VakaJarjestajaHLField(view_name='vakajarjestaja-detail', read_only=True)
     voimassa_kytkin = serializers.ReadOnlyField()
-    tallentaja_organisaatio = VakaJarjestajaHLField(view_name='vakajarjestaja-detail', required=True)
+    tallentaja_organisaatio = VakaJarjestajaHLField(view_name='vakajarjestaja-detail', required=False)
+    tallentaja_organisaatio_oid = OidRelatedField(object_type=VakaJarjestaja,
+                                                  parent_field='tallentaja_organisaatio',
+                                                  parent_attribute='organisaatio_oid',
+                                                  prevalidator=validators.validate_organisaatio_oid,
+                                                  either_required=True)
 
     class Meta:
         model = PaosOikeus

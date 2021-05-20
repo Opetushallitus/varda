@@ -1790,12 +1790,13 @@ class PaosToimintaViewSet(IncreasedModifyThrottleMixin, GenericViewSet, ListMode
                 paos_oikeus_object = PaosOikeus.objects.filter(
                     Q(jarjestaja_kunta_organisaatio=instance.paos_organisaatio, tuottaja_organisaatio=instance.oma_organisaatio)
                 ).first()
-                # Remove view access to all toimipaikka where tuottaja has not added any children
+                # Remove view access to all toimipaikka where jarjestaja has not added any children
                 grant_or_deny_access_to_paos_toimipaikka(False, paos_oikeus_object.jarjestaja_kunta_organisaatio, paos_oikeus_object.tuottaja_organisaatio)
                 is_delete = True
             elif instance.paos_toimipaikka is not None:
-                # Remove view access to this toimipaikka if tuottaja has not added any children there
-                if not VakaJarjestaja.objects.filter(paos_lapsi_oma_organisaatio__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka=instance.paos_toimipaikka).exists():
+                # Remove view access to this toimipaikka if jarjestaja has not added any children there
+                if not Varhaiskasvatussuhde.objects.filter(toimipaikka=instance.paos_toimipaikka,
+                                                           varhaiskasvatuspaatos__lapsi__oma_organisaatio=instance.oma_organisaatio).exists():
                     permission_groups.remove_object_level_permissions(instance.oma_organisaatio.organisaatio_oid, Toimipaikka, instance.paos_toimipaikka, paos_kytkin=True)
                     is_delete = True
                 paos_toimipaikka_count = PaosToiminta.objects.filter(

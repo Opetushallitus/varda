@@ -971,6 +971,8 @@ class VardaViewsReportingTests(TestCase):
 
     def test_api_error_report_lapset_filter(self):
         vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        Varhaiskasvatussuhde.objects.filter(tunniste='testing-varhaiskasvatussuhde3').update(alkamis_pvm='2017-01-01')
+
         url = f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-lapset/'
         client = SetUpTestClient('tester2').client()
 

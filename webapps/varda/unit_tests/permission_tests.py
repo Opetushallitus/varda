@@ -473,7 +473,7 @@ class VardaPermissionsTests(TestCase):
         tester2 can see.
         """
         client = SetUpTestClient('tester2').client()
-        resp = client.get('/api/v1/maksutiedot/2/')
+        resp = client.get('/api/v1/maksutiedot/1:testing-maksutieto2/')
         lapsi_url = json.loads(resp.content)['lapsi']
         resp = client.get(lapsi_url)
         assert_status_code(resp, status.HTTP_200_OK)
@@ -482,7 +482,7 @@ class VardaPermissionsTests(TestCase):
         assert_status_code(resp, status.HTTP_200_OK)
 
         client = SetUpTestClient('tester').client()
-        resp = client.get('/api/v1/maksutiedot/2/')
+        resp = client.get('/api/v1/maksutiedot/1:testing-maksutieto2/')
         lapsi_url = json.loads(resp.content)['lapsi']
         resp = client.get(lapsi_url)
         assert_status_code(resp, status.HTTP_200_OK)

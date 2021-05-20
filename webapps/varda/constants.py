@@ -1,3 +1,5 @@
+import re
+
 from rest_framework import status
 
 JARJESTAMISMUODOT_KUNTA = ['jm01']
@@ -12,3 +14,5 @@ SWAGGER_DESCRIPTION = ('This page contains an interactive documentation of Varda
                        'Dates (e.g. alkamis_pvm, paattymis_pvm) must be in the following format: YYYY-MM-DD\n'
                        'Some fields (e.g. *_koodi) are validated against related list of codes: '
                        'https://virkailija.opintopolku.fi/varda/julkinen/koodistot')
+
+HETU_REGEX = re.compile('(\\d{6})([A+\\-]\\d{3}[0-9A-FHJ-NPR-Y])')
