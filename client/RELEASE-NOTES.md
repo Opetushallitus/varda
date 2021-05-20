@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.17 (20.05.2021)
+- OPHVARDA-2037: Älä hae puutteellisia virheitä toimipaikan luonnissa
+
 1.5.16 (12.05.2021)
 - OPHVARDA-2037: Puutteellisten raportti toimipaikoille
 
