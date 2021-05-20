@@ -63,7 +63,7 @@ export class VardaHeaderComponent implements OnChanges, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (this.selectedVakajarjestaja) {
+    if (changes.selectedVakajarjestaja) {
       this.checkPuutteelliset();
     }
   }

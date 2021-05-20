@@ -111,13 +111,11 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
       }
 
       this.getToimipaikka(this.toimipaikka.id);
+      this.vakajarjestajaApiService.initFormErrorList(this.selectedVakajarjestaja.id, this.toimipaikka);
     } else {
       this.initForm();
     }
 
-    if (this.toimipaikka) {
-      this.vakajarjestajaApiService.initFormErrorList(this.selectedVakajarjestaja.id, this.toimipaikka);
-    }
     this.subscriptions.push(
       this.vakajarjestajaApiService.listenToimipaikkaListUpdate().subscribe(() => this.vakajarjestajaApiService.initFormErrorList(this.selectedVakajarjestaja.id, this.toimipaikka))
     );
@@ -227,16 +225,21 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
         paattymis_pvm: form.value.paattymis_pvm?.isValid() ? form.value.paattymis_pvm.format(VardaDateService.vardaApiDateFormat) : null
       };
 
-      const updateToimipaikka = this.toimipaikka ? this.vakajarjestajaApiService.updateToimipaikka(toimipaikkaDTO) : this.vakajarjestajaApiService.createToimipaikka(toimipaikkaDTO);
+      const isUpdate = this.toimipaikka;
+      const apiFunction = isUpdate ? this.vakajarjestajaApiService.updateToimipaikka(toimipaikkaDTO) : this.vakajarjestajaApiService.createToimipaikka(toimipaikkaDTO);
 
-      updateToimipaikka.subscribe({
+      apiFunction.subscribe({
         next: toimipaikkaData => {
           this.snackBarService.success(this.i18n.toimipaikka_save_success);
           this.saveToimipaikkaFormSuccess.emit(toimipaikkaData);
 
           this.disableForm();
           this.getToimipaikka(toimipaikkaData.id);
-          this.vakajarjestajaApiService.sendToimipaikkaListUpdate();
+
+          if (isUpdate) {
+            // If Toimipaikka is created, do not call sendToimipaikkaListUpdate to prevent immediate error report
+            this.vakajarjestajaApiService.sendToimipaikkaListUpdate();
+          }
         },
         error: err => this.errorService.handleError(err, this.snackBarService)
       }).add(() => this.disableSubmit());

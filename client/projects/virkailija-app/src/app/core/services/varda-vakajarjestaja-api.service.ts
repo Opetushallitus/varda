@@ -17,7 +17,7 @@ export class VardaVakajarjestajaApiService {
   private vardaUiPath = `${environment.vardaAppUrl}/api/ui`;
 
   private updateToimipaikkaList$ = new Subject();
-  private toimipaikkaFormErrorList = new BehaviorSubject<Array<PuutteellinenErrorDTO>>(null);
+  private toimipaikkaFormErrorList = new BehaviorSubject<Array<PuutteellinenErrorDTO>>([]);
 
   constructor(private http: LoadingHttpService, private raportitService: VardaRaportitService) { }
 

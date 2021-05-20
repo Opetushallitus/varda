@@ -69,6 +69,7 @@
       <button *ngIf="isEdit"
               [disabled]="(isLoading | async) || vakatoimijaForm.pristine"
               type="submit"
+              id="submit-button"
               class="varda-button varda-button-wide responsive-md">
         {{ i18n.save | translate }}
       </button>
@@ -76,6 +77,7 @@
       <button *ngIf="!isEdit"
               (click)="enableForm()"
               type="button"
+              id="edit-button"
               class="varda-button varda-button-wide secondary responsive-md">
         {{ i18n.edit | translate }}
       </button>
@@ -83,6 +85,7 @@
       <button *ngIf="isEdit"
               (click)="disableForm()"
               type="button"
+              id="cancel-button"
               class="varda-button varda-button-neutral varda-button-wide secondary responsive-md">
         {{ i18n.cancel | translate }}
       </button>
