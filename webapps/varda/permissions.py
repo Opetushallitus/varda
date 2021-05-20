@@ -391,11 +391,7 @@ def change_paos_tallentaja_organization(jarjestaja_kunta_organisaatio_id, tuotta
             jarjestaja_kunta_organisaatio = VakaJarjestaja.objects.get(id=jarjestaja_kunta_organisaatio_id)
             tuottaja_organisaatio = VakaJarjestaja.objects.get(id=tuottaja_organisaatio_id)
             tallentaja_organisaatio = VakaJarjestaja.objects.get(id=tallentaja_organisaatio_id)
-
-            if jarjestaja_kunta_organisaatio == tallentaja_organisaatio:
-                katselija_organisaatio = tuottaja_organisaatio
-            else:
-                katselija_organisaatio = jarjestaja_kunta_organisaatio
+            katselija_organisaatio = jarjestaja_kunta_organisaatio if tallentaja_organisaatio == tuottaja_organisaatio else tuottaja_organisaatio
 
             tallentaja_organisaatio_tallentaja_group = Group.objects.get(name='VARDA-TALLENTAJA_' + tallentaja_organisaatio.organisaatio_oid)
             tallentaja_organisaatio_palvelukayttaja_group = Group.objects.get(name='VARDA-PALVELUKAYTTAJA_' + tallentaja_organisaatio.organisaatio_oid)
@@ -446,6 +442,26 @@ def change_paos_tallentaja_organization(jarjestaja_kunta_organisaatio_id, tuotta
                 else:
                     [remove_perm('change_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in tallentaja_organization_permission_groups]
                     [remove_perm('delete_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in tallentaja_organization_permission_groups]
+
+                # Assign or remove Toimipaikka specific permissions
+                toimipaikka_group = Group.objects.get(name='VARDA-TALLENTAJA_' + vakasuhde.toimipaikka.organisaatio_oid)
+                vakapaatos = vakasuhde.varhaiskasvatuspaatos
+                lapsi = vakapaatos.lapsi
+                if voimassa_kytkin and vakasuhde.toimipaikka.vakajarjestaja.id == tallentaja_organisaatio_id:
+                    # If toimipaikka belongs to tallentaja_organisaatio, assign permissions for Toimipaikka level groups
+                    assign_perm('change_lapsi', toimipaikka_group, lapsi)
+                    assign_perm('delete_lapsi', toimipaikka_group, lapsi)
+                    assign_perm('change_varhaiskasvatuspaatos', toimipaikka_group, vakapaatos)
+                    assign_perm('delete_varhaiskasvatuspaatos', toimipaikka_group, vakapaatos)
+                    assign_perm('change_varhaiskasvatussuhde', toimipaikka_group, vakasuhde)
+                    assign_perm('delete_varhaiskasvatussuhde', toimipaikka_group, vakasuhde)
+                else:
+                    remove_perm('change_lapsi', toimipaikka_group, lapsi)
+                    remove_perm('delete_lapsi', toimipaikka_group, lapsi)
+                    remove_perm('change_varhaiskasvatuspaatos', toimipaikka_group, vakapaatos)
+                    remove_perm('delete_varhaiskasvatuspaatos', toimipaikka_group, vakapaatos)
+                    remove_perm('change_varhaiskasvatussuhde', toimipaikka_group, vakasuhde)
+                    remove_perm('delete_varhaiskasvatussuhde', toimipaikka_group, vakasuhde)
     except VakaJarjestaja.DoesNotExist:
         logger.error('Could not find one of the VakaJarjestajat: {}, {}, {}'.format(jarjestaja_kunta_organisaatio_id,
                                                                                     tuottaja_organisaatio_id,

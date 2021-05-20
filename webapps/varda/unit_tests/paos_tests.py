@@ -292,6 +292,7 @@ class VardaPaosTests(TestCase):
         """
         tester2_client = SetUpTestClient('tester2').client()  # tallentaja_vakajarjestaja_1
         tester5_client = SetUpTestClient('tester5').client()  # tallentaja_vakajarjestaja_2
+        tester8_client = SetUpTestClient('tester8').client()  # tallentaja_toimipaikka_5
 
         resp = tester2_client.get('/api/v1/varhaiskasvatussuhteet/4/')
         vakasuhde_4 = resp.content
@@ -299,21 +300,10 @@ class VardaPaosTests(TestCase):
         resp = tester2_client.get('/api/v1/varhaiskasvatuspaatokset/4/')
         vakapaatos_4 = resp.content
 
-        resp_tester2 = tester2_client.put('/api/v1/varhaiskasvatussuhteet/4/', vakasuhde_4, content_type='application/json')
-        assert_status_code(resp_tester2, status.HTTP_200_OK)
-        resp_tester5 = tester5_client.put('/api/v1/varhaiskasvatussuhteet/4/', vakasuhde_4, content_type='application/json')
-        assert_status_code(resp_tester5, status.HTTP_403_FORBIDDEN)
-        assert_validation_error(resp_tester5, 'errors', 'PE006', 'User does not have permission to perform this action.')
-        resp_tester5 = tester5_client.get('/api/v1/varhaiskasvatussuhteet/4/')
-        assert_status_code(resp_tester5, status.HTTP_200_OK)
-
-        resp_tester2 = tester2_client.put('/api/v1/varhaiskasvatuspaatokset/4/', vakapaatos_4, content_type='application/json')
-        assert_status_code(resp_tester2, status.HTTP_200_OK)
-        resp_tester5 = tester5_client.put('/api/v1/varhaiskasvatuspaatokset/4/', vakapaatos_4, content_type='application/json')
-        assert_status_code(resp_tester5, status.HTTP_403_FORBIDDEN)
-        assert_validation_error(resp_tester5, 'errors', 'PE006', 'User does not have permission to perform this action.')
-        resp_tester5 = tester5_client.get('/api/v1/varhaiskasvatuspaatokset/4/')
-        assert_status_code(resp_tester5, status.HTTP_200_OK)
+        self._test_paos_get_put('/api/v1/varhaiskasvatussuhteet/4/', vakasuhde_4, edit_client_list=(tester2_client,),
+                                no_edit_client_list=(tester5_client, tester8_client,))
+        self._test_paos_get_put('/api/v1/varhaiskasvatuspaatokset/4/', vakapaatos_4, edit_client_list=(tester2_client,),
+                                no_edit_client_list=(tester5_client, tester8_client,))
 
         """
         Change paos-tallentaja.
@@ -325,21 +315,12 @@ class VardaPaosTests(TestCase):
         change_paos_tallentaja_organization(jarjestaja_kunta_organisaatio_id, tuottaja_organisaatio_id,
                                             tallentaja_organisaatio_id, voimassa_kytkin)
 
-        resp_tester2 = tester2_client.put('/api/v1/varhaiskasvatussuhteet/4/', vakasuhde_4, content_type='application/json')
-        assert_status_code(resp_tester2, status.HTTP_403_FORBIDDEN)
-        assert_validation_error(resp_tester2, 'errors', 'PE006', 'User does not have permission to perform this action.')
-        resp_tester2 = tester2_client.get('/api/v1/varhaiskasvatussuhteet/4/')
-        assert_status_code(resp_tester2, status.HTTP_200_OK)
-        resp_tester5 = tester5_client.put('/api/v1/varhaiskasvatussuhteet/4/', vakasuhde_4, content_type='application/json')
-        assert_status_code(resp_tester5, status.HTTP_200_OK)
-
-        resp_tester2 = tester2_client.put('/api/v1/varhaiskasvatuspaatokset/4/', vakapaatos_4, content_type='application/json')
-        assert_status_code(resp_tester2, status.HTTP_403_FORBIDDEN)
-        assert_validation_error(resp_tester2, 'errors', 'PE006', 'User does not have permission to perform this action.')
-        resp_tester2 = tester2_client.get('/api/v1/varhaiskasvatuspaatokset/4/')
-        assert_status_code(resp_tester2, status.HTTP_200_OK)
-        resp_tester5 = tester5_client.put('/api/v1/varhaiskasvatuspaatokset/4/', vakapaatos_4, content_type='application/json')
-        assert_status_code(resp_tester5, status.HTTP_200_OK)
+        self._test_paos_get_put('/api/v1/varhaiskasvatussuhteet/4/', vakasuhde_4,
+                                edit_client_list=(tester5_client, tester8_client,),
+                                no_edit_client_list=(tester2_client,))
+        self._test_paos_get_put('/api/v1/varhaiskasvatuspaatokset/4/', vakapaatos_4,
+                                edit_client_list=(tester5_client, tester8_client,),
+                                no_edit_client_list=(tester2_client,))
 
         """
         Disable the paos-link between the organizations.
@@ -348,26 +329,20 @@ class VardaPaosTests(TestCase):
         change_paos_tallentaja_organization(jarjestaja_kunta_organisaatio_id, tuottaja_organisaatio_id,
                                             tallentaja_organisaatio_id, voimassa_kytkin)
 
-        resp_tester2 = tester2_client.put('/api/v1/varhaiskasvatussuhteet/4/', vakasuhde_4, content_type='application/json')
-        assert_status_code(resp_tester2, status.HTTP_403_FORBIDDEN)
-        assert_validation_error(resp_tester2, 'errors', 'PE006', 'User does not have permission to perform this action.')
-        resp_tester5 = tester5_client.put('/api/v1/varhaiskasvatussuhteet/4/', vakasuhde_4, content_type='application/json')
-        assert_status_code(resp_tester5, status.HTTP_403_FORBIDDEN)
-        assert_validation_error(resp_tester5, 'errors', 'PE006', 'User does not have permission to perform this action.')
+        self._test_paos_get_put('/api/v1/varhaiskasvatussuhteet/4/', vakasuhde_4,
+                                no_edit_client_list=(tester2_client, tester5_client, tester8_client,))
+        self._test_paos_get_put('/api/v1/varhaiskasvatuspaatokset/4/', vakapaatos_4,
+                                no_edit_client_list=(tester2_client, tester5_client, tester8_client,))
 
-        resp_tester2 = tester2_client.put('/api/v1/varhaiskasvatuspaatokset/4/', vakapaatos_4, content_type='application/json')
-        assert_status_code(resp_tester2, status.HTTP_403_FORBIDDEN)
-        assert_validation_error(resp_tester2, 'errors', 'PE006', 'User does not have permission to perform this action.')
-        resp_tester5 = tester5_client.put('/api/v1/varhaiskasvatuspaatokset/4/', vakapaatos_4, content_type='application/json')
-        assert_status_code(resp_tester5, status.HTTP_403_FORBIDDEN)
-        assert_validation_error(resp_tester5, 'errors', 'PE006', 'User does not have permission to perform this action.')
+    def _test_paos_get_put(self, url, json_message, edit_client_list=(), no_edit_client_list=()):
+        for edit_client in edit_client_list:
+            resp = edit_client.put(url, json_message, content_type='application/json')
+            assert_status_code(resp, status.HTTP_200_OK)
 
-        resp_tester2 = tester2_client.get('/api/v1/varhaiskasvatussuhteet/4/')
-        assert_status_code(resp_tester2, status.HTTP_200_OK)
-        resp_tester5 = tester5_client.get('/api/v1/varhaiskasvatussuhteet/4/')
-        assert_status_code(resp_tester5, status.HTTP_200_OK)
+        for no_edit_client in no_edit_client_list:
+            resp_put = no_edit_client.put(url, json_message, content_type='application/json')
+            assert_status_code(resp_put, status.HTTP_403_FORBIDDEN)
+            assert_validation_error(resp_put, 'errors', 'PE006', 'User does not have permission to perform this action.')
 
-        resp_tester2 = tester2_client.get('/api/v1/varhaiskasvatuspaatokset/4/')
-        assert_status_code(resp_tester2, status.HTTP_200_OK)
-        resp_tester5 = tester5_client.get('/api/v1/varhaiskasvatuspaatokset/4/')
-        assert_status_code(resp_tester5, status.HTTP_200_OK)
+            resp_get = no_edit_client.get(url)
+            assert_status_code(resp_get, status.HTTP_200_OK)
