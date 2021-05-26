@@ -371,3 +371,19 @@ def delete_lapsi_objects_without_vakatoimija():
     for lapsi in memory_efficient_queryset_iterator(lapsi_qs):
         Huoltajuussuhde.objects.filter(lapsi=lapsi).delete()
         lapsi.delete()
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def delete_lapsi_huoltaja_lapsi_objects():
+    """
+    Deletes Lapsi objects that do not have any related information if Henkilo is also huoltaja
+
+    TEMPORARY FUNCTION
+    """
+    henkilo_qs = Henkilo.objects.filter(lapsi__isnull=False, huoltaja__isnull=False).order_by('id')
+    for henkilo in memory_efficient_queryset_iterator(henkilo_qs):
+        for lapsi in henkilo.lapsi.filter(varhaiskasvatuspaatokset__isnull=True,
+                                          huoltajuussuhteet__maksutiedot__isnull=True).distinct('id'):
+            Huoltajuussuhde.objects.filter(lapsi=lapsi).delete()
+            lapsi.delete()
