@@ -24,7 +24,8 @@ from varda.audit_log import audit_log
 from varda.excel_export import delete_excel_reports_earlier_than
 from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
 from varda.misc import memory_efficient_queryset_iterator
-from varda.models import Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog, Lapsi, Varhaiskasvatuspaatos, Huoltaja
+from varda.models import (Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog, Lapsi, Varhaiskasvatuspaatos,
+                          Huoltaja, Huoltajuussuhde)
 from varda.permissions import assign_object_level_permissions_for_instance
 from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups
 
@@ -353,3 +354,20 @@ def delete_henkilot_without_relations_task():
                                         luonti_pvm__lt=created_datetime_limit)
     for henkilo in henkilo_qs:
         henkilo.delete()
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def delete_lapsi_objects_without_vakatoimija():
+    """
+    Delete non-PAOS Lapsi objects that do not have vakatoimija and have not related Varhaiskasvatuspaatos,
+    Varhaiskasvatussuhde or Maksutieto objects.
+
+    TEMPORARY FUNCTION
+    """
+    lapsi_qs = Lapsi.objects.filter(vakatoimija__isnull=True, oma_organisaatio__isnull=True,
+                                    paos_organisaatio__isnull=True, varhaiskasvatuspaatokset__isnull=True,
+                                    huoltajuussuhteet__maksutiedot__isnull=True).distinct('id')
+    for lapsi in memory_efficient_queryset_iterator(lapsi_qs):
+        Huoltajuussuhde.objects.filter(lapsi=lapsi).delete()
+        lapsi.delete()
