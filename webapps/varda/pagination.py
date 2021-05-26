@@ -95,12 +95,12 @@ class ChangeablePageSizeCursorPagination(CursorPagination):
     page_size_query_param = 'page_size'
 
 
-class TimestampCursorPagination(ChangeablePageSizeCursorPagination):
-    ordering = '-timestamp'
+class IdCursorPagination(ChangeablePageSizeCursorPagination):
+    ordering = '-id'
 
 
-class TimestampReverseCursorPagination(ChangeablePageSizeCursorPagination):
-    ordering = 'timestamp'
+class IdReverseCursorPagination(ChangeablePageSizeCursorPagination):
+    ordering = 'id'
 
 
 class DateCursorPagination(ChangeablePageSizeCursorPagination):

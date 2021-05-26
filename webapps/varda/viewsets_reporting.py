@@ -30,8 +30,8 @@ from varda.filters import (TiedonsiirtoFilter, ExcelReportFilter, KelaEtuusmaksa
                            KelaEtuusmaksatusLopettaneetFilter, KelaEtuusmaksatusKorjaustiedotFilter)
 from varda.misc import encrypt_string
 from varda.misc_viewsets import IntegerIdSchema
-from varda.pagination import (ChangeablePageSizePagination, TimestampCursorPagination, DateCursorPagination,
-                              DateReverseCursorPagination, TimestampReverseCursorPagination,
+from varda.pagination import (ChangeablePageSizePagination, IdCursorPagination, DateCursorPagination,
+                              DateReverseCursorPagination, IdReverseCursorPagination,
                               ChangeableReportingPageSizePagination)
 from varda.serializers_reporting import (KelaEtuusmaksatusAloittaneetSerializer, KelaEtuusmaksatusLopettaneetSerializer,
                                          KelaEtuusmaksatusMaaraaikaisetSerializer,
@@ -950,12 +950,12 @@ class TiedonsiirtoViewSet(GenericViewSet, ListModelMixin):
     def pagination_class(self):
         reverse_param = self.request.query_params.get('reverse', 'False')
         if reverse_param in ('true', 'True',):
-            return TimestampReverseCursorPagination
+            return IdReverseCursorPagination
         else:
-            return TimestampCursorPagination
+            return IdCursorPagination
 
     def get_queryset(self):
-        queryset = Z6_RequestLog.objects.filter(self.vakajarjestaja_filter).order_by('-timestamp')
+        queryset = Z6_RequestLog.objects.filter(self.vakajarjestaja_filter).order_by('-id')
         return queryset
 
     def list(self, request, *args, **kwargs):
