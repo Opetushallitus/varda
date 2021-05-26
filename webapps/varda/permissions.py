@@ -17,11 +17,10 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from varda.enums.error_messages import ErrorMessages
 from varda.misc import path_parse
 from varda.models import (VakaJarjestaja, Toimipaikka, Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-                          PaosToiminta, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog, LoginCertificate,
-                          Maksutieto, Tyontekija, Tyoskentelypaikka, PidempiPoissaolo, TaydennyskoulutusTyontekija)
-from varda.permission_groups import (assign_object_level_permissions, remove_object_level_permissions,
-                                     get_permission_groups)
-from varda.related_object_validations import toimipaikka_is_valid_to_organisaatiopalvelu
+                          PaosToiminta, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog,
+                          LoginCertificate, Maksutieto, Tyontekija, Tyoskentelypaikka, PidempiPoissaolo,
+                          TaydennyskoulutusTyontekija,)
+from varda.permission_groups import assign_object_level_permissions, remove_object_level_permissions
 
 
 logger = logging.getLogger(__name__)
@@ -484,45 +483,24 @@ def delete_object_permissions_explicitly(model, instance_id):
     GroupObjectPermission.objects.filter(**filters).delete()
 
 
-def assign_lapsi_permissions(organisaatio_oid, instance):
-    assign_object_level_permissions(organisaatio_oid, Lapsi, instance)
-    group_huoltajatieto_katselu_vaka = Group.objects.get(name='HUOLTAJATIETO_KATSELU_' + organisaatio_oid)
-    group_huoltajatieto_tallennus_vaka = Group.objects.get(name='HUOLTAJATIETO_TALLENNUS_' + organisaatio_oid)
-    assign_perm('view_lapsi', group_huoltajatieto_katselu_vaka, instance)
-    assign_perm('view_lapsi', group_huoltajatieto_tallennus_vaka, instance)
+def assign_object_level_permissions_for_instance(instance, oid_list=()):
+    for organization_oid in oid_list:
+        assign_object_level_permissions(organization_oid, type(instance), instance)
 
 
-def assign_vakapaatos_vakasuhde_permissions(model, vakajarjestaja_oid, toimipaikka_oid, instance):
-    assign_object_level_permissions(vakajarjestaja_oid, model, instance)
-    if toimipaikka_oid and toimipaikka_oid != '':
-        assign_object_level_permissions(toimipaikka_oid, model, instance)
-
-
-def assign_maksutieto_permissions(vakajarjestaja_oid, toimipaikka_obj, instance):
+def assign_maksutieto_permissions(vakajarjestaja_oid, instance, toimipaikka_oid_list=()):
     assign_object_level_permissions(vakajarjestaja_oid, Maksutieto, instance)
-    if toimipaikka_obj and toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj, toimipaikka_obj.nimi):
-        assign_object_level_permissions(toimipaikka_obj.organisaatio_oid, Maksutieto, instance)
+    for toimipaikka_oid in toimipaikka_oid_list:
+        if toimipaikka_oid:
+            assign_object_level_permissions(toimipaikka_oid, Maksutieto, instance)
 
 
 def object_ids_organization_has_permissions_to(organisaatio_oid, model):
     content_type = ContentType.objects.get_for_model(model)
-    permission_group_1 = Group.objects.get(name=Z4_CasKayttoOikeudet.PAAKAYTTAJA + '_' + organisaatio_oid)
-    permission_group_2 = Group.objects.get(name=Z4_CasKayttoOikeudet.PALVELUKAYTTAJA + '_' + organisaatio_oid)
-    model_permissions_for_group_1 = set(permission_group_1.permissions.filter(content_type=content_type.id)
-                                        .values_list('id', flat=True))
-    model_permissions_for_group_2 = set(permission_group_2.permissions.filter(content_type=content_type.id)
-                                        .values_list('id', flat=True))
-    model_permissions = list(model_permissions_for_group_1 | model_permissions_for_group_2)
-
-    group_permission_objects = (GroupObjectPermission
-                                .objects
-                                .filter(group__in=[permission_group_1.id, permission_group_2.id],
-                                        permission__in=model_permissions,
-                                        content_type=content_type.id)
-                                .annotate(object_pk_as_int=Cast('object_pk', IntegerField()))
-                                .values_list('object_pk_as_int', flat=True).distinct())
-
-    return group_permission_objects
+    return set(GroupObjectPermission.objects.filter(group__name__endswith=organisaatio_oid,
+                                                    content_type=content_type.id)
+               .annotate(object_pk_as_int=Cast('object_pk', IntegerField()))
+               .values_list('object_pk_as_int', flat=True))
 
 
 def get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus(taydennyskoulutus_tyontekija_list):
@@ -826,23 +804,6 @@ def parse_toimipaikka_id_list(user, toimipaikka_ids_string, required_permission_
     return toimipaikka_id_list
 
 
-def assign_permissions_for_non_paos_lapsi(lapsi, organisaatio_oid, toimipaikka_oid=None):
-    assign_object_level_permissions(organisaatio_oid, Lapsi, lapsi)
-    vakajarjestaja_huoltaja_groups = get_permission_groups((organisaatio_oid,),
-                                                           (Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
-                                                            Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,))
-    for permission_group in vakajarjestaja_huoltaja_groups:
-        assign_perm('view_lapsi', permission_group, lapsi)
-
-    if toimipaikka_oid:
-        assign_object_level_permissions(toimipaikka_oid, Lapsi, lapsi)
-        toimipaikka_huoltaja_groups = get_permission_groups((toimipaikka_oid,),
-                                                            (Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
-                                                             Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,))
-        for permission_group in toimipaikka_huoltaja_groups:
-            assign_perm('view_lapsi', permission_group, lapsi)
-
-
 def assign_henkilo_permissions_for_vaka_groups(oid_list, henkilo_object):
     permission_group_list = (Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
                              Z4_CasKayttoOikeudet.KATSELIJA, Z4_CasKayttoOikeudet.TALLENTAJA,
@@ -909,3 +870,9 @@ def assign_tyoskentelypaikka_henkilo_permissions(tyoskentelypaikka):
     oid_list = (tyoskentelypaikka.toimipaikka.organisaatio_oid,)
     henkilo = tyoskentelypaikka.palvelussuhde.tyontekija.henkilo
     assign_henkilo_permissions_for_tyontekija_groups(oid_list, henkilo)
+
+
+def delete_permissions_from_object_instance_by_oid(instance, organisaatio_oid):
+    content_type = ContentType.objects.get_for_model(type(instance))
+    GroupObjectPermission.objects.filter(content_type=content_type, object_pk=instance.id,
+                                         group__name__endswith=organisaatio_oid).delete()

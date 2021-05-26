@@ -1,529 +1,364 @@
-import datetime
-
-from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Q
-from guardian.models import UserObjectPermission
 from rest_framework import serializers
 
-from varda.cache import delete_cache_keys_related_model, delete_toimipaikan_lapset_cache
-from varda.enums.ytj import YtjYritysmuoto
-from varda.models import (Toimipaikka, VakaJarjestaja, PaosToiminta, Lapsi, Varhaiskasvatussuhde, Varhaiskasvatuspaatos,
-                          Maksutieto, Huoltajuussuhde)
-from varda.permission_groups import (assign_object_level_permissions, remove_object_level_permissions,
-                                     get_permission_groups_for_organization)
-from varda.permissions import (delete_object_permissions_explicitly, assign_lapsi_permissions,
-                               assign_vakapaatos_vakasuhde_permissions, assign_maksutieto_permissions,
-                               object_ids_organization_has_permissions_to)
+from varda.misc import flatten_nested_list
+from varda.models import (Toimipaikka, Lapsi, Varhaiskasvatussuhde, Varhaiskasvatuspaatos, Maksutieto, Huoltajuussuhde,
+                          Tyontekija, Tutkinto, Taydennyskoulutus, TaydennyskoulutusTyontekija, Palvelussuhde,
+                          Tyoskentelypaikka, PidempiPoissaolo, TilapainenHenkilosto)
+from varda.permission_groups import (get_all_permission_groups_for_organization, assign_permissions_for_toimipaikka,
+                                     assign_object_permissions_to_all_henkilosto_groups,
+                                     assign_object_permissions_to_taydennyskoulutus_groups,
+                                     assign_object_permissions_to_tyontekija_groups,
+                                     assign_object_permissions_to_tilapainenhenkilosto_groups)
+from varda.permissions import (delete_object_permissions_explicitly, assign_object_level_permissions_for_instance,
+                               assign_maksutieto_permissions, assign_lapsi_henkilo_permissions,
+                               delete_permissions_from_object_instance_by_oid, assign_tyontekija_henkilo_permissions,
+                               get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus)
 
 
-PAOS_JARJESTAMISMUOTO_LIST = ['jm02', 'jm03']
-
-
-def transfer_toimipaikat_to_vakajarjestaja(user, new_vakajarjestaja_id, toimipaikka_id_list):
+def transfer_toimipaikat_to_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja):
     """
-    Transfer toimipaikat to an existing organisaatio. End existing vakapaatokset, vakasuhteet, maksutiedot
-    and start new ones.
-    TODO: In the future also transfer henkilöstötiedot https://jira.eduuni.fi/browse/CSCVARDA-1749
-    :param user: user object making the changes (needed for Model.changed_by)
-    :param new_vakajarjestaja_id: ID of the vakajarjestaja that toimipaikat are transferred to
-    :param toimipaikka_id_list: list of IDs of toimipaikat to be transferred
-    :return:
+    Transfer all Toimipaikka objects from old_vakajarjestaja to new_vakajarjestaja.
+    :param new_vakajarjestaja: VakaJarjestaja object to which Toimipaikka objects are transferred
+    :param old_vakajarjestaja: VakaJarjestaja object from which Toimipaikka objects are transferred
     """
-
-    today = datetime.date.today()
-
-    # Check that new vakajarjestaja exists
-    new_vakajarjestaja_obj = VakaJarjestaja.objects.filter(id=new_vakajarjestaja_id).first()
-    if new_vakajarjestaja_obj is None:
-        _raise_error('new_vakajarjestaja does not exist')
-
-    # Get all toimipaikka objects that are transferred
-    toimipaikka_list = Toimipaikka.objects.filter(id__in=toimipaikka_id_list)
-
+    _verify_transfer_is_supported(new_vakajarjestaja, old_vakajarjestaja)
     with transaction.atomic():
-        for toimipaikka_obj in toimipaikka_list:
-            old_vakajarjestaja_obj = toimipaikka_obj.vakajarjestaja
+        # Handle Lapsi object permissions
+        _transfer_lapsi_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja)
 
-            if old_vakajarjestaja_obj == new_vakajarjestaja_obj:
-                # Old and new vakajarjestaja are the same, raise error
-                _raise_error('toimipaikka already belongs to new_vakajarjestaja')
+        # Handle Tyontekija object permissions
+        _transfer_tyontekija_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja)
 
-            _raise_if_not_supported_transfer(old_vakajarjestaja_obj, new_vakajarjestaja_obj)
+        # Handle Toimipaikka transfer
+        _transfer_toimipaikka_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja)
 
-            if _toimipaikka_has_paos(toimipaikka_obj):
-                _raise_error('toimipaikka has paos, transfer is not supported')
-
-            """
-            Remove permissions
-            """
-            # Disassociate all users from toimipaikka specific permission groups
-            for group in get_permission_groups_for_organization(toimipaikka_obj.organisaatio_oid):
-                group.user_set.clear()
-
-            # Remove object level permissions from old vakajarjestaja permission groups
-            remove_object_level_permissions(old_vakajarjestaja_obj.organisaatio_oid, Toimipaikka, toimipaikka_obj)
-
-            # Remove user specific permissions explicitly
-            UserObjectPermission.objects.filter(content_type=ContentType.objects.get_for_model(Toimipaikka),
-                                                object_pk=toimipaikka_obj.id).delete()
-
-            """
-            Add permissions
-            """
-            # Add object level permisions to new vakajarjestaja permission groups
-            assign_object_level_permissions(new_vakajarjestaja_obj.organisaatio_oid, Toimipaikka, toimipaikka_obj)
-
-            """
-            Handle lapsi, varhaiskasvatuspaatos, varhaiskasvatussuhde, and maksutieto permissions
-            """
-            lapsi_list = _get_toimipaikka_lapset(toimipaikka_obj)
-            existing_lapsi_list = _get_vakajarjestaja_lapset_matching_lapsi_list(new_vakajarjestaja_obj, lapsi_list)
-
-            # Handle lapsi permissions
-            _transfer_lapsi_permissions_to_new_vakajarjestaja(user,
-                                                              today,
-                                                              new_vakajarjestaja_obj,
-                                                              toimipaikka_obj,
-                                                              lapsi_list,
-                                                              existing_lapsi_list,
-                                                              transfer_old=True)
-
-            # Update toimipaikka.vakajarjestaja and save
-            toimipaikka_obj.vakajarjestaja = new_vakajarjestaja_obj
-            toimipaikka_obj.changed_by = user
-            toimipaikka_obj.save()
-
-            # Clear toimipaikka and old vakajarjestaja cache
-            _delete_toimipaikka_cache(toimipaikka_obj.id)
-            _delete_vakajarjestaja_cache(old_vakajarjestaja_obj.id)
-
-        # Clear new vakajarjestaja cache
-        _delete_vakajarjestaja_cache(new_vakajarjestaja_obj.id)
+        # Clear cache
+        cache.clear()
 
 
-def merge_toimipaikka_to_other_toimipaikka(user, master_toimipaikka_id, old_toimipaikka_id):
+def _verify_transfer_is_supported(new_vakajarjestaja, old_vakajarjestaja):
+    # Check that new_vakajarjestaja and old_vakajarjestaja are different
+    if new_vakajarjestaja == old_vakajarjestaja:
+        _raise_error('new_vakajarjestaja and old_vakajarjestaja cannot be the same')
+
+    # Check that transfer is kunta -> kunta or yksityinen -> yksityinen
+    if new_vakajarjestaja.kunnallinen_kytkin != old_vakajarjestaja.kunnallinen_kytkin:
+        _raise_error('only kunta -> kunta and yksityinen -> yksityinen transfers are supported')
+
+    # Check that old_vakajarjestaja does not have PAOS Lapsi objects
+    if Lapsi.objects.filter(paos_organisaatio=old_vakajarjestaja).exists():
+        _raise_error('old_vakajarjestaja has PAOS Lapsi objects in its Toimipaikka objects')
+
+
+def _transfer_toimipaikka_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja):
+    toimipaikka_id_list = old_vakajarjestaja.toimipaikat.values_list('id', flat=True)
+    toimipaikka_qs = Toimipaikka.objects.filter(id__in=toimipaikka_id_list)
+
+    for toimipaikka in toimipaikka_qs:
+        # Disassociate all users from Toimipaikka specific permission groups
+        for group in get_all_permission_groups_for_organization(toimipaikka.organisaatio_oid):
+            group.user_set.clear()
+
+        # Delete permissions
+        delete_object_permissions_explicitly(Toimipaikka, toimipaikka.id)
+
+        # Chance VakaJarjestaja reference of Toimipaikka
+        toimipaikka.vakajarjestaja = new_vakajarjestaja
+        toimipaikka.save()
+
+        # Assign permissions
+        assign_permissions_for_toimipaikka(toimipaikka, new_vakajarjestaja.organisaatio_oid)
+
+        _transfer_painotus_permissions_to_new_vakajarjestaja(new_vakajarjestaja, toimipaikka)
+
+
+def _transfer_painotus_permissions_to_new_vakajarjestaja(new_vakajarjestaja, toimipaikka):
+    toiminnallinen_painotus_qs = toimipaikka.toiminnallisetpainotukset.all()
+    kielipainotus_qs = toimipaikka.kielipainotukset.all()
+    for painotus in (*toiminnallinen_painotus_qs, *kielipainotus_qs,):
+        # Delete permissions
+        delete_object_permissions_explicitly(type(painotus), painotus.id)
+
+        # Assign permissions
+        assign_object_level_permissions_for_instance(painotus, (new_vakajarjestaja.organisaatio_oid,
+                                                                toimipaikka.organisaatio_oid,))
+
+
+def _get_vakajarjestaja_lapset_qs(vakajarjestaja):
+    return Lapsi.objects.filter(Q(vakatoimija=vakajarjestaja) |
+                                (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja=vakajarjestaja) &
+                                 Q(paos_organisaatio=None))).distinct('id')
+
+
+def _transfer_lapsi_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja):
     """
-    Merge toimipaikka to an existing toimipaikka. Active information is transferred to new toimipaikka, but old
-    toimipaikka retains historical information.
-    TODO: In the future also transfer tyontekijat, tyoskentelypaikat
-    :param user: user object making the changes (needed for Model.changed_by)
-    :param master_toimipaikka_id: ID of the toimipaikka that receives vakatiedot from old_toimipaikka
-    :param old_toimipaikka_id: ID of the toimipaikka that is to be merged to master_toimipaikka
-    :return:
+    Parent method for transferring Lapsi related permissions (Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
+    Huoltajuussuhde, Maksutieto) to new VakaJarjestaja
+    :param new_vakajarjestaja: VakaJarjestaja object which Lapsi related data is transferred to
+    :param old_vakajarjestaja: VakaJarjestaja object which Lapsi related data is transferred from
     """
+    lapsi_qs = _get_vakajarjestaja_lapset_qs(old_vakajarjestaja)
+    existing_lapsi_qs = _get_vakajarjestaja_lapset_qs(new_vakajarjestaja)
+    for lapsi in lapsi_qs:
+        toimipaikka_oid_set = set(lapsi.varhaiskasvatuspaatokset
+                                  .values_list('varhaiskasvatussuhteet__toimipaikka__organisaatio_oid', flat=True))
 
-    today = datetime.date.today()
+        # Check if new_vakajarjestaja already has same Lapsi object
+        existing_lapsi = None
+        if existing_lapsi_obj := existing_lapsi_qs.filter(henkilo=lapsi.henkilo).first():
+            existing_lapsi = existing_lapsi_obj
 
-    # Check master_toimipaikka is different from old_toimipaikka
-    if master_toimipaikka_id == old_toimipaikka_id:
-        raise serializers.ValidationError({'detail': ['master_toimipaikka and old_toimipaikka are the same object']})
+        if not existing_lapsi:
+            # Change vakatoimija of Lapsi object
+            lapsi.vakatoimija = new_vakajarjestaja
+            lapsi.save()
 
-    # Check master_toimipaikka exists
-    master_toimipaikka_obj = Toimipaikka.objects.filter(id=master_toimipaikka_id).first()
-    if master_toimipaikka_obj is None:
-        raise serializers.ValidationError({'master_toimipaikka_id': ['master_toimipaikka does not exist']})
+            # Delete Henkilo permissions, only from old_vakajarjestaja, if old_vakajarjestaja does not have PAOS-lapsi
+            # that remains
+            if not Lapsi.objects.filter(oma_organisaatio=old_vakajarjestaja, henkilo=lapsi.henkilo).exists():
+                delete_permissions_from_object_instance_by_oid(lapsi.henkilo, old_vakajarjestaja.organisaatio_oid)
 
-    # Check old toimipaikka exists
-    old_toimipaikka_obj = Toimipaikka.objects.filter(id=old_toimipaikka_id).first()
-    if old_toimipaikka_obj is None:
-        raise serializers.ValidationError({'old_toimipaikka_id': ['old_toimipaikka does not exist']})
+            # Assign Henkilo permissions, only for new_vakajarjestaja
+            assign_lapsi_henkilo_permissions(lapsi)
 
-    master_vakajarjestaja_obj = master_toimipaikka_obj.vakajarjestaja
-    old_vakajarjestaja_obj = old_toimipaikka_obj.vakajarjestaja
+            # Delete Lapsi permissions
+            delete_object_permissions_explicitly(Lapsi, lapsi.id)
 
-    _raise_if_not_supported_transfer(old_vakajarjestaja_obj, master_vakajarjestaja_obj)
+            # Assign Lapsi permissions
+            assign_object_level_permissions_for_instance(lapsi, (new_vakajarjestaja.organisaatio_oid,
+                                                                 toimipaikka_oid_set))
 
-    if _toimipaikka_has_paos(old_toimipaikka_obj):
-        _raise_error('toimipaikka has paos, transfer is not supported')
+        _transfer_vakapaatos_permissions_to_new_vakajarjestaja(new_vakajarjestaja, lapsi, existing_lapsi=existing_lapsi)
+        _transfer_maksutieto_permissions_to_new_vakajarjestaja(new_vakajarjestaja, toimipaikka_oid_set, lapsi,
+                                                               existing_lapsi=existing_lapsi)
 
-    with transaction.atomic():
-        lapsi_list = _get_toimipaikka_lapset(old_toimipaikka_obj)
-        existing_lapsi_list = _get_vakajarjestaja_lapset_matching_lapsi_list(master_vakajarjestaja_obj, lapsi_list)
-
-        # Handle lapsi permissions
-        _transfer_lapsi_permissions_to_new_vakajarjestaja(user,
-                                                          today,
-                                                          master_vakajarjestaja_obj,
-                                                          old_toimipaikka_obj,
-                                                          lapsi_list,
-                                                          existing_lapsi_list,
-                                                          new_toimipaikka_obj=master_toimipaikka_obj)
-
-        # Set old_toimipaikka inactive
-        if old_toimipaikka_obj.paattymis_pvm is None or old_toimipaikka_obj.paattymis_pvm > today:
-            old_toimipaikka_obj.paattymis_pvm = today
-            old_toimipaikka_obj.save()
-
-        # Clear old vakajarjestaja and toimipaikka cache
-        _delete_toimipaikka_cache(old_toimipaikka_id)
-        _delete_vakajarjestaja_cache(old_toimipaikka_obj.vakajarjestaja.id)
-
-        # Clear master vakajarjestaja and toimipaikka cache
-        _delete_toimipaikka_cache(master_toimipaikka_id)
-        _delete_vakajarjestaja_cache(master_vakajarjestaja_obj.id)
+        if existing_lapsi:
+            # Lapsi related data was transferred to an existing Lapsi object, so delete the old one
+            Huoltajuussuhde.objects.filter(lapsi=lapsi).delete()
+            lapsi.delete()
 
 
-def _transfer_lapsi_permissions_to_new_vakajarjestaja(user,
-                                                      today,
-                                                      new_vakajarjestaja_obj,
-                                                      toimipaikka_obj,
-                                                      lapsi_list,
-                                                      existing_lapsi_list,
-                                                      new_toimipaikka_obj=None,
-                                                      transfer_old=False):
+def _transfer_vakapaatos_permissions_to_new_vakajarjestaja(new_vakajarjestaja, lapsi, existing_lapsi=None):
+    for vakapaatos in lapsi.varhaiskasvatuspaatokset.all():
+        # Delete permissions
+        delete_object_permissions_explicitly(Varhaiskasvatuspaatos, vakapaatos.id)
+
+        # Assign permissions
+        toimipaikka_oid_set = set(vakapaatos.varhaiskasvatussuhteet
+                                  .values_list('toimipaikka__organisaatio_oid', flat=True))
+        assign_object_level_permissions_for_instance(vakapaatos, (new_vakajarjestaja.organisaatio_oid,
+                                                                  toimipaikka_oid_set))
+
+        if existing_lapsi:
+            # Transfer vakapaatos to existing lapsi
+            vakapaatos.lapsi = existing_lapsi
+            vakapaatos.save()
+
+        _transfer_vakasuhde_permissions_to_new_vakajarjestaja(new_vakajarjestaja, vakapaatos)
+
+
+def _transfer_vakasuhde_permissions_to_new_vakajarjestaja(new_vakajarjestaja, vakapaatos):
+    for vakasuhde in vakapaatos.varhaiskasvatussuhteet.all():
+        # Delete permissions
+        delete_object_permissions_explicitly(Varhaiskasvatussuhde, vakasuhde.id)
+
+        # Assign permissions
+        assign_object_level_permissions_for_instance(vakasuhde, (new_vakajarjestaja.organisaatio_oid,
+                                                                 vakasuhde.toimipaikka.organisaatio_oid,))
+
+
+def _transfer_maksutieto_permissions_to_new_vakajarjestaja(new_vakajarjestaja, toimipaikka_oid_set, lapsi,
+                                                           existing_lapsi=None):
+    for maksutieto in Maksutieto.objects.filter(huoltajuussuhteet__lapsi=lapsi).distinct():
+        # Delete permissions
+        delete_object_permissions_explicitly(Maksutieto, maksutieto.id)
+
+        # Assign permissions
+        assign_maksutieto_permissions(new_vakajarjestaja.organisaatio_oid, maksutieto,
+                                      toimipaikka_oid_list=toimipaikka_oid_set)
+
+        if existing_lapsi:
+            # Transfer Maksutieto object for existing Lapsi object
+            for huoltajuussuhde in maksutieto.huoltajuussuhteet.all():
+                Huoltajuussuhde.objects.get(lapsi=existing_lapsi,
+                                            huoltaja=huoltajuussuhde.huoltaja).maksutiedot.add(maksutieto.id)
+
+
+def _transfer_tyontekija_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja):
     """
-    Parent method for transferring lapsi related data (lapsi, vakapaatos, vakasuhde, huoltajuussuhde, maksutieto)
-    to new vakajarjestaja (and new toimipaikka)
-    :param user: User object used in changed_by-fields
-    :param today: current date object
-    :param new_vakajarjestaja_obj: VakaJarjestaja object data is transferred to
-    :param toimipaikka_obj: Toimipaikka object that is modified
-    :param lapsi_list: QuerySet of Lapsi objects in toimipaikka
-    :param existing_lapsi_list: QuerySet of Lapsi objects that belong to new_vakajarjestaja
-    :param new_toimipaikka_obj: Toimipaikka object data is transferred to (additional)
-    :param transfer_old: bool to signify if old data is transferred to new_vakajarjestaja or not
-    :return:
+    Parent method for transferring Tyontekija related permissions (Tyontekija, Tutkinto, Palvelussuhde,
+    Tyoskentelypaikka, PidempiPoissaolo, Taydennyskoulutus) and TilapainenHenkilosto to new VakaJarjestaja
+    :param new_vakajarjestaja: VakaJarjestaja object which Tyontekija related data is transferred to
+    :param old_vakajarjestaja: VakaJarjestaja object which Tyontekija related data is transferred from
     """
-    for lapsi_obj in lapsi_list:
-        new_lapsi_obj = _get_existing_lapsi_or_create_new(user, lapsi_obj.henkilo, existing_lapsi_list,
-                                                          new_vakajarjestaja_obj, toimipaikka_obj)
+    _transfer_tilapainen_henkilosto_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja)
+    _transfer_taydennyskoulutus_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja)
+    _transfer_tutkinto_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja)
 
-        # Handle varhaiskasvatuspaatos permissions
-        _transfer_vakapaatos_permissions_to_new_vakajarjestaja(user,
-                                                               today,
-                                                               new_vakajarjestaja_obj,
-                                                               toimipaikka_obj,
-                                                               lapsi_obj,
-                                                               new_lapsi_obj,
-                                                               new_toimipaikka_obj=new_toimipaikka_obj,
-                                                               transfer_old=transfer_old)
+    tyontekija_qs = Tyontekija.objects.filter(vakajarjestaja=old_vakajarjestaja)
+    existing_tyontekija_qs = Tyontekija.objects.filter(vakajarjestaja=new_vakajarjestaja)
+    for tyontekija in tyontekija_qs:
+        tyontekija_oid_set = _get_tyontekija_oid_set(new_vakajarjestaja, tyontekija)
 
-        # Transfer all huoltajuussuhde objects to new lapsi
-        _transfer_huoltajuussuhteet_to_new_lapsi(lapsi_obj, new_lapsi_obj)
+        # Check if new_vakajarjestaja already has same Tyontekija object
+        existing_tyontekija = None
+        if existing_tyontekija_obj := existing_tyontekija_qs.filter(henkilo=tyontekija.henkilo).first():
+            existing_tyontekija = existing_tyontekija_obj
 
-        # Handle maksutieto permissions
-        _transfer_maksutieto_permissions_to_new_vakajarjestaja(user,
-                                                               today,
-                                                               new_vakajarjestaja_obj,
-                                                               toimipaikka_obj,
-                                                               lapsi_obj,
-                                                               new_lapsi_obj,
-                                                               new_toimipaikka_obj=new_toimipaikka_obj,
-                                                               transfer_old=transfer_old)
+        if not existing_tyontekija:
+            # Change vakajarjestaja of Tyontekija object
+            tyontekija.vakajarjestaja = new_vakajarjestaja
+            tyontekija.save()
 
-        if transfer_old:
-            # Delete old huoltajuussuhteet, maksutiedot have been transferred
-            Huoltajuussuhde.objects.filter(lapsi=lapsi_obj).delete()
-            # Delete old lapsi object, everything has been transferred
-            lapsi_obj.delete()
+            # Delete Henkilo permissions, only from old_vakajarjestaja
+            delete_permissions_from_object_instance_by_oid(tyontekija.henkilo, old_vakajarjestaja.organisaatio_oid)
 
+            # Assign Henkilo permissions, only for new_vakajarjestaja
+            assign_tyontekija_henkilo_permissions(tyontekija)
 
-def _transfer_vakapaatos_permissions_to_new_vakajarjestaja(user,
-                                                           today,
-                                                           new_vakajarjestaja_obj,
-                                                           toimipaikka_obj,
-                                                           lapsi_obj,
-                                                           new_lapsi_obj,
-                                                           new_toimipaikka_obj=None,
-                                                           transfer_old=False):
-    for vakapaatos_obj in lapsi_obj.varhaiskasvatuspaatokset.all():
-        # End all valid vakapaatokset and create new ones so that toimipaikka owner change is reported correctly
-        new_vakapaatos_obj = None
-        if vakapaatos_obj.paattymis_pvm is None or vakapaatos_obj.paattymis_pvm > today:
-            # Create new vakapaatos if vakapaatos has active vakasuhde in toimipaikka
-            vakasuhde_filter = Q(toimipaikka=toimipaikka_obj) & (Q(paattymis_pvm=None) | Q(paattymis_pvm__gt=today))
-            if vakapaatos_obj.varhaiskasvatussuhteet.filter(vakasuhde_filter).exists():
-                new_vakapaatos_obj = (Varhaiskasvatuspaatos
-                                      .objects
-                                      .create(lapsi=new_lapsi_obj,
-                                              vuorohoito_kytkin=vakapaatos_obj.vuorohoito_kytkin,
-                                              pikakasittely_kytkin=vakapaatos_obj.pikakasittely_kytkin,
-                                              tuntimaara_viikossa=vakapaatos_obj.tuntimaara_viikossa,
-                                              paivittainen_vaka_kytkin=vakapaatos_obj.paivittainen_vaka_kytkin,
-                                              kokopaivainen_vaka_kytkin=vakapaatos_obj.kokopaivainen_vaka_kytkin,
-                                              jarjestamismuoto_koodi=vakapaatos_obj.jarjestamismuoto_koodi,
-                                              hakemus_pvm=vakapaatos_obj.hakemus_pvm,
-                                              alkamis_pvm=today,
-                                              paattymis_pvm=vakapaatos_obj.paattymis_pvm,
-                                              changed_by=user))
+            # Delete Tyontekija permissions
+            delete_object_permissions_explicitly(Tyontekija, tyontekija.id)
 
-                vakapaatos_toimipaikka_obj = toimipaikka_obj if not new_toimipaikka_obj else new_toimipaikka_obj
+            # Assign Tyontekija permissions
+            for organisaatio_oid in tyontekija_oid_set:
+                if organisaatio_oid:
+                    assign_object_permissions_to_all_henkilosto_groups(organisaatio_oid, Tyontekija, tyontekija)
 
-                # Assign new vakapaatos permissions to new vakajarjestaja and to toimipaikka
-                assign_vakapaatos_vakasuhde_permissions(Varhaiskasvatuspaatos,
-                                                        new_vakajarjestaja_obj.organisaatio_oid,
-                                                        vakapaatos_toimipaikka_obj.organisaatio_oid,
-                                                        new_vakapaatos_obj)
+        _transfer_palvelussuhde_permissions_to_new_vakajarjestaja(new_vakajarjestaja, tyontekija_oid_set, tyontekija,
+                                                                  existing_tyontekija=existing_tyontekija)
 
-            # End old vakapaatos
-            vakapaatos_obj.paattymis_pvm = today
-            vakapaatos_obj.changed_by = user
-            vakapaatos_obj.save()
-
-        if transfer_old:
-            # Remove user and group specific permissions explicitly
-            delete_object_permissions_explicitly(Varhaiskasvatuspaatos, vakapaatos_obj.id)
-            # Assign permissions to new vakajarjestaja and again to toimipaikka
-            assign_vakapaatos_vakasuhde_permissions(Varhaiskasvatuspaatos,
-                                                    new_vakajarjestaja_obj.organisaatio_oid,
-                                                    toimipaikka_obj.organisaatio_oid,
-                                                    vakapaatos_obj)
-            # Transfer vakapaatos to new lapsi object
-            vakapaatos_obj.lapsi = new_lapsi_obj
-            vakapaatos_obj.changed_by = user
-            # Save changes (lapsi and possible paattymis_pvm)
-            vakapaatos_obj.save()
-
-        # Handle varhaiskasvatussuhde permissions
-        _transfer_vakasuhde_permissions_to_new_vakajarjestaja(user,
-                                                              today,
-                                                              new_vakajarjestaja_obj,
-                                                              toimipaikka_obj,
-                                                              vakapaatos_obj,
-                                                              new_vakapaatos_obj=new_vakapaatos_obj,
-                                                              new_toimipaikka_obj=new_toimipaikka_obj,
-                                                              transfer_old=transfer_old)
-
-        # Clear vakapaatos cache
-        delete_cache_keys_related_model('varhaiskasvatuspaatos', vakapaatos_obj.id)
+        if existing_tyontekija:
+            # Tyontekija related data was transferred to an existing Tyontekija object, so delete the old one
+            tyontekija.delete()
 
 
-def _transfer_vakasuhde_permissions_to_new_vakajarjestaja(user,
-                                                          today,
-                                                          new_vakajarjestaja_obj,
-                                                          toimipaikka_obj,
-                                                          vakapaatos_obj,
-                                                          new_vakapaatos_obj=None,
-                                                          new_toimipaikka_obj=None,
-                                                          transfer_old=False):
-    for vakasuhde_obj in vakapaatos_obj.varhaiskasvatussuhteet.all():
-        if transfer_old:
-            # Remove user and group specific permissions explicitly
-            delete_object_permissions_explicitly(Varhaiskasvatussuhde, vakasuhde_obj.id)
-            # Assign permissions to new vakajarjestaja and again to toimipaikka
-            assign_vakapaatos_vakasuhde_permissions(Varhaiskasvatussuhde,
-                                                    new_vakajarjestaja_obj.organisaatio_oid,
-                                                    toimipaikka_obj.organisaatio_oid,
-                                                    vakasuhde_obj)
-
-        # Check if vakasuhde is active and linked to different toimipaikka
-        if (vakasuhde_obj.toimipaikka.id != toimipaikka_obj.id and
-                (vakasuhde_obj.paattymis_pvm is None or vakasuhde_obj.paattymis_pvm > today)):
-            # End vakasuhde, old vakajarjestaja has to create new vakapaatos and vakasuhde
-            vakasuhde_obj.paattymis_pvm = today
-            vakasuhde_obj.changed_by = user
-            vakasuhde_obj.save()
-
-        # Check if new vakapaatos was created and vakasuhde is still valid
-        if new_vakapaatos_obj and (vakasuhde_obj.paattymis_pvm is None or vakasuhde_obj.paattymis_pvm > today):
-            # Create new_vakasuhde to new_toimipaikka if it was provided
-            vakasuhde_toimipaikka_obj = toimipaikka_obj if not new_toimipaikka_obj else new_toimipaikka_obj
-
-            # Create new vakasuhde
-            new_vakasuhde_obj = (Varhaiskasvatussuhde
-                                 .objects
-                                 .create(toimipaikka=vakasuhde_toimipaikka_obj,
-                                         varhaiskasvatuspaatos=new_vakapaatos_obj,
-                                         alkamis_pvm=today,
-                                         paattymis_pvm=vakasuhde_obj.paattymis_pvm,
-                                         changed_by=user))
-
-            # Assign new vakasuhde permissions to new vakajarjestaja and to toimipaikka
-            assign_vakapaatos_vakasuhde_permissions(Varhaiskasvatussuhde,
-                                                    new_vakajarjestaja_obj.organisaatio_oid,
-                                                    vakasuhde_toimipaikka_obj.organisaatio_oid,
-                                                    new_vakasuhde_obj)
-
-            # End old vakasuhde
-            vakasuhde_obj.paattymis_pvm = today
-            vakasuhde_obj.changed_by = user
-            vakasuhde_obj.save()
+def _transfer_tilapainen_henkilosto_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja):
+    for tilapainen_henkilosto in TilapainenHenkilosto.objects.filter(vakajarjestaja=old_vakajarjestaja):
+        existing_tilapainen_henkilosto = (TilapainenHenkilosto.objects
+                                          .filter(vakajarjestaja=new_vakajarjestaja,
+                                                  kuukausi__month=tilapainen_henkilosto.kuukausi.month,
+                                                  kuukausi__year=tilapainen_henkilosto.kuukausi.year)
+                                          .first())
+        if existing_tilapainen_henkilosto:
+            # new_vakajarjestaja already has TilapainenHenkilosto object for this month
+            existing_tilapainen_henkilosto.tuntimaara += tilapainen_henkilosto.tuntimaara
+            existing_tilapainen_henkilosto.tyontekijamaara += tilapainen_henkilosto.tyontekijamaara
+            existing_tilapainen_henkilosto.save()
+            # Delete old TilapainenHenkilosto object
+            tilapainen_henkilosto.delete()
+        else:
+            # new_vakajarjestaja does not have TilapainenHenkilosto object for this month so object can be
+            # transferred
+            delete_object_permissions_explicitly(TilapainenHenkilosto, tilapainen_henkilosto.id)
+            assign_object_permissions_to_tilapainenhenkilosto_groups(new_vakajarjestaja.organisaatio_oid,
+                                                                     TilapainenHenkilosto, tilapainen_henkilosto)
+            tilapainen_henkilosto.vakajarjestaja = new_vakajarjestaja
+            tilapainen_henkilosto.save()
 
 
-def _transfer_huoltajuussuhteet_to_new_lapsi(lapsi_obj, new_lapsi_obj):
-    for huoltajuussuhde_obj in lapsi_obj.huoltajuussuhteet.all():
-        # Create new huoltajuussuhde in case new_lapsi doesn't already have it
-        new_huoltajuussuhde_obj = (Huoltajuussuhde
-                                   .objects
-                                   .get_or_create(lapsi=new_lapsi_obj,
-                                                  huoltaja=huoltajuussuhde_obj.huoltaja,
-                                                  defaults={'voimassa_kytkin': huoltajuussuhde_obj.voimassa_kytkin,
-                                                            'changed_by': new_lapsi_obj.changed_by}))
+def _transfer_tutkinto_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja):
+    for tutkinto in Tutkinto.objects.filter(vakajarjestaja=old_vakajarjestaja):
+        if Tutkinto.objects.filter(vakajarjestaja=new_vakajarjestaja, henkilo=tutkinto.henkilo,
+                                   tutkinto_koodi=tutkinto.tutkinto_koodi).exists():
+            # If new_vakajarjestaja already has duplicate Tutkinto object, delete the old one
+            tutkinto.delete()
+        else:
+            # new_vakajarjestaja does not yet have a similar Tutkinto object
+            # Delete permissions
+            delete_object_permissions_explicitly(Tutkinto, tutkinto.id)
 
-        # Set voimassa_kytkin True if other huoltajuussuhde was active
-        if not new_huoltajuussuhde_obj[0].voimassa_kytkin and huoltajuussuhde_obj.voimassa_kytkin:
-            new_huoltajuussuhde_obj.voimassa_kytkin = True
-            new_huoltajuussuhde_obj.save()
+            # Assign permissions
+            tyontekija = Tyontekija.objects.get(vakajarjestaja=old_vakajarjestaja, henkilo=tutkinto.henkilo)
+            tyontekija_oid_set = _get_tyontekija_oid_set(new_vakajarjestaja, tyontekija)
+            for organisaatio_oid in tyontekija_oid_set:
+                if organisaatio_oid:
+                    assign_object_permissions_to_tyontekija_groups(organisaatio_oid, Tutkinto, tutkinto)
 
-
-def _transfer_maksutieto_permissions_to_new_vakajarjestaja(user,
-                                                           today,
-                                                           new_vakajarjestaja_obj,
-                                                           toimipaikka_obj,
-                                                           lapsi_obj,
-                                                           new_lapsi_obj,
-                                                           new_toimipaikka_obj=None,
-                                                           transfer_old=False):
-    for maksutieto_obj in Maksutieto.objects.filter(huoltajuussuhteet__lapsi=lapsi_obj).distinct():
-        if transfer_old:
-            # Remove user and group specific permissions explicitly
-            delete_object_permissions_explicitly(Maksutieto, maksutieto_obj.id)
-            # Assign permissions to new vakajarjestaja and again to toimipaikka
-            assign_maksutieto_permissions(new_vakajarjestaja_obj.organisaatio_oid, toimipaikka_obj, maksutieto_obj)
-
-        # Check if maksutieto is still valid
-        # End all valid maksutiedot and create new ones so that toimipaikka change is reported correctly
-        new_maksutieto_obj = None
-        if maksutieto_obj.paattymis_pvm is None or maksutieto_obj.paattymis_pvm > today:
-            # Create new maksutieto
-            new_maksutieto_obj = (Maksutieto
-                                  .objects
-                                  .create(yksityinen_jarjestaja=False,
-                                          maksun_peruste_koodi=maksutieto_obj.maksun_peruste_koodi,
-                                          palveluseteli_arvo=maksutieto_obj.palveluseteli_arvo,
-                                          asiakasmaksu=maksutieto_obj.asiakasmaksu,
-                                          perheen_koko=maksutieto_obj.perheen_koko,
-                                          alkamis_pvm=today,
-                                          paattymis_pvm=maksutieto_obj.paattymis_pvm,
-                                          changed_by=user))
-
-            maksutieto_toimipaikka_obj = toimipaikka_obj if not new_toimipaikka_obj else new_toimipaikka_obj
-            # Assign new maksutieto permissions to new vakajarjestaja and to toimipaikka
-            assign_maksutieto_permissions(new_vakajarjestaja_obj.organisaatio_oid,
-                                          maksutieto_toimipaikka_obj,
-                                          new_maksutieto_obj)
-
-            # End old maksutieto
-            maksutieto_obj.paattymis_pvm = today
-            maksutieto_obj.changed_by = user
-            maksutieto_obj.save()
-
-        # Add maksutieto (and new_maksutieto) to huoltajuussuhteet under new_lapsi
-        for huoltajuussuhde_obj in maksutieto_obj.huoltajuussuhteet.all():
-            maksutieto_id_list = []
-            if transfer_old:
-                maksutieto_id_list.append(maksutieto_obj.id)
-            if new_maksutieto_obj:
-                maksutieto_id_list.append(new_maksutieto_obj.id)
-
-            Huoltajuussuhde.objects.get(lapsi=new_lapsi_obj,
-                                        huoltaja=huoltajuussuhde_obj.huoltaja).maksutiedot.add(*maksutieto_id_list)
+            # Update vakajarjestaja field
+            tutkinto.vakajarjestaja = new_vakajarjestaja
+            tutkinto.save()
 
 
-def _vakajarjestaja_is_yksityinen(vakajarjestaja):
-    return vakajarjestaja.yritysmuoto not in [YtjYritysmuoto.KUNTA.name, YtjYritysmuoto.KUNTAYHTYMA.name]
+def _transfer_palvelussuhde_permissions_to_new_vakajarjestaja(new_vakajarjestaja, tyontekija_oid_set, tyontekija, existing_tyontekija=None):
+    for palvelussuhde in tyontekija.palvelussuhteet.all():
+        # Delete permissions
+        delete_object_permissions_explicitly(Palvelussuhde, palvelussuhde.id)
+
+        # Assign permissions
+        for organisaatio_oid in tyontekija_oid_set:
+            if organisaatio_oid:
+                assign_object_permissions_to_all_henkilosto_groups(organisaatio_oid, Palvelussuhde, palvelussuhde)
+
+        if existing_tyontekija:
+            # Transfer Palvelussuhde to existing Tyontekija
+            palvelussuhde.tyontekija = existing_tyontekija
+            palvelussuhde.save()
+
+        _transfer_tyoskentelypaikka_permissions_to_new_vakajarjestaja(tyontekija_oid_set, palvelussuhde)
+        _transfer_pidempi_poissaolo_permissions_to_new_vakajarjestaja(new_vakajarjestaja, palvelussuhde)
 
 
-def _raise_if_not_supported_transfer(old_vakajarjestaja, new_vakajarjestaja):
-    """
-    Only yksityinen -> yksityinen and kunnallinen -> kunnallinen transfers are supported
-    :param old_vakajarjestaja: VakaJarjestaja object 1
-    :param new_vakajarjestaja: VakaJarjestaja object 2
-    :return:
-    """
-    old_is_yksityinen = _vakajarjestaja_is_yksityinen(old_vakajarjestaja)
-    new_is_yksityinen = _vakajarjestaja_is_yksityinen(new_vakajarjestaja)
+def _transfer_tyoskentelypaikka_permissions_to_new_vakajarjestaja(tyontekija_oid_set, palvelussuhde):
+    for tyoskentelypaikka in palvelussuhde.tyoskentelypaikat.all():
+        # Delete permissions
+        delete_object_permissions_explicitly(Tyoskentelypaikka, tyoskentelypaikka.id)
 
-    if not old_is_yksityinen == new_is_yksityinen:
-        _raise_error('only yksityinen->yksityinen and kunnallinen->kunnallinen transfers are supported')
+        # Assign permissions
+        for organisaatio_oid in tyontekija_oid_set:
+            if organisaatio_oid:
+                assign_object_permissions_to_tyontekija_groups(organisaatio_oid, Tyoskentelypaikka, tyoskentelypaikka)
 
 
-def _get_toimipaikka_lapset(toimipaikka):
-    """
-    Get lapset with vakasuhde in this toimipaikka
-    :param toimipaikka: Toimipaikka object
-    :return: QuerySet of Lapsi objects that have vakasuhde in toimipaikka
-    """
+def _transfer_pidempi_poissaolo_permissions_to_new_vakajarjestaja(new_vakajarjestaja, palvelussuhde):
+    for pidempi_poissaolo in palvelussuhde.pidemmatpoissaolot.all():
+        # Delete permissions
+        delete_object_permissions_explicitly(PidempiPoissaolo, pidempi_poissaolo.id)
 
-    # There might be lapsi that have old vakasuhde in this toimipaikka but belong to some other vakajarjestaja
-    # We do not want to transfer those, so get only lapset toimipaikka.vakajarjestaja has permissions to
-    vakajarjestaja_lapsi_id_list = object_ids_organization_has_permissions_to(toimipaikka.vakajarjestaja.organisaatio_oid, Lapsi)
-    return Lapsi.objects.filter(id__in=vakajarjestaja_lapsi_id_list,
-                                varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka=toimipaikka,
-                                paos_organisaatio=None).distinct()
+        # PidempiPoissaolo permissions are only assigned on VakaJarjestaja level, until Toimipaikka level is supported
+        # TODO: https://jira.eduuni.fi/browse/OPHVARDA-1868
+        assign_object_permissions_to_tyontekija_groups(new_vakajarjestaja.organisaatio_oid, PidempiPoissaolo,
+                                                       pidempi_poissaolo)
 
 
-def _toimipaikka_has_paos(toimipaikka):
-    """
-    Determine if Toimipaikka has paos-toiminta
-    :param toimipaikka: Toimipaikka object
-    :return: boolean
-    """
-    # Check if paos-jarjestamismuoto is listed in toimipaikka.jarjestamismuodot
-    if any(koodi in PAOS_JARJESTAMISMUOTO_LIST for koodi in toimipaikka.jarjestamismuoto_koodi):
-        return True
+def _transfer_taydennyskoulutus_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja):
+    existing_tyontekija_qs = Tyontekija.objects.filter(vakajarjestaja=new_vakajarjestaja)
 
-    # Check if toimipaikka is linked to PaosToiminta
-    paos_toiminta_qs = PaosToiminta.objects.filter(paos_toimipaikka=toimipaikka)
-    # Check if there are any vakapaatos with paos-jarjestamismuoto
-    vakapaatos_qs = Varhaiskasvatuspaatos.objects.filter(jarjestamismuoto_koodi__in=PAOS_JARJESTAMISMUOTO_LIST,
-                                                         varhaiskasvatussuhteet__toimipaikka=toimipaikka)
-    # Check if there are lapsi with paos_organisaatio
-    lapsi_qs = Lapsi.objects.filter(Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka=toimipaikka) &
-                                    ~Q(paos_organisaatio=None))
+    for taydennyskoulutus in (Taydennyskoulutus.objects.filter(tyontekijat__vakajarjestaja=old_vakajarjestaja).distinct()):
+        # Delete permissions
+        delete_object_permissions_explicitly(Taydennyskoulutus, taydennyskoulutus.id)
 
-    return paos_toiminta_qs.exists() or vakapaatos_qs.exists() or lapsi_qs.exists()
+        # Assign permissions
+        tyontekija_id_list, toimipaikka_oid_list_list = get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus(
+            taydennyskoulutus.taydennyskoulutukset_tyontekijat.all()
+        )
+        taydennyskoulutus_oid_set = set(flatten_nested_list(toimipaikka_oid_list_list))
+        taydennyskoulutus_oid_set.add(new_vakajarjestaja.organisaatio_oid)
+        for organisaatio_oid in taydennyskoulutus_oid_set:
+            if organisaatio_oid:
+                assign_object_permissions_to_taydennyskoulutus_groups(organisaatio_oid, Taydennyskoulutus,
+                                                                      taydennyskoulutus)
 
-
-def _get_vakajarjestaja_lapset_matching_lapsi_list(vakajarjestaja, lapsi_list):
-    """
-    Get lapset of vakajarjestaja that reference same henkilot as lapset in lapsi_list
-    Only get lapset that vakajarjestaja has permissions to and who are not paos-lapsi
-    :param vakajarjestaja: VakaJarjestaja object
-    :param lapsi_list: QuerySet of Lapsi objects that are used in matching
-    :return: QuerySet of Lapsi objects that belong to vakajarjestaja and match lapsi_list
-    """
-
-    henkilo_id_list = lapsi_list.values_list('henkilo', flat=True)
-    new_vakajarjestaja_lapsi_id_list = object_ids_organization_has_permissions_to(vakajarjestaja.organisaatio_oid,
-                                                                                  Lapsi)
-    return (Lapsi.objects
-            .filter(Q(id__in=new_vakajarjestaja_lapsi_id_list) & Q(henkilo__in=henkilo_id_list) &
-                    (Q(vakatoimija=vakajarjestaja) |
-                     (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja=vakajarjestaja) &
-                      Q(paos_organisaatio=None)))))
+        for taydennyskoulutus_tyontekija in taydennyskoulutus.taydennyskoulutukset_tyontekijat.all():
+            if (existing_tyontekija := existing_tyontekija_qs
+                    .filter(henkilo=taydennyskoulutus_tyontekija.tyontekija.henkilo).first()):
+                # If new_vakajarjestaja already has Tyontekija referencing to the same Henkilo, add it to the
+                # Taydennyskoulutus object and remove the old one
+                TaydennyskoulutusTyontekija.objects.create(taydennyskoulutus=taydennyskoulutus,
+                                                           tehtavanimike_koodi=taydennyskoulutus_tyontekija.tehtavanimike_koodi,
+                                                           tyontekija=existing_tyontekija,
+                                                           changed_by=taydennyskoulutus_tyontekija.changed_by)
+                taydennyskoulutus_tyontekija.delete()
 
 
-def _get_existing_lapsi_or_create_new(user, henkilo, lapsi_list, vakajarjestaja, toimipaikka):
-    """
-    If vakajarjestaja already has a lapsi that references henkilo, we don't want to create a new one
-    because vakajarjestaja can have only one lapsi referencing speficic henkilo. Vakatiedot are transferred to
-    that lapsi. If no such lapsi exists, it is created, with permissions to vakajarjestaja and toimipaikka
-    :param user: User object (used in changed_by-field)
-    :param henkilo: Henkilo object used in matching
-    :param lapsi_list: QuerySet of Lapsi objects used in matching
-    :param vakajarjestaja: VakaJarjestaja object lapsi belongs to
-    :param toimipaikka: Toimipaikka object lapsi belongs to
-    :return: new or existing Lapsi object
-    """
-    colliding_lapsi = lapsi_list.filter(henkilo=henkilo)
-    if colliding_lapsi.exists():
-        lapsi = colliding_lapsi.first()
-    else:
-        # Create new Lapsi object
-        lapsi = Lapsi.objects.create(henkilo=henkilo, vakatoimija=vakajarjestaja, changed_by=user)
-
-        # Assign permissions to vakajarjestaja
-        assign_lapsi_permissions(vakajarjestaja.organisaatio_oid, lapsi)
-
-    # Assign permissions to toimipaikka
-    if toimipaikka.organisaatio_oid != '':
-        assign_lapsi_permissions(toimipaikka.organisaatio_oid, lapsi)
-
-    return lapsi
-
-
-def _delete_toimipaikka_cache(toimipaikka_id):
-    delete_cache_keys_related_model('toimipaikka', toimipaikka_id)
-    delete_toimipaikan_lapset_cache(str(toimipaikka_id))
-
-
-def _delete_vakajarjestaja_cache(vakajarjestaja_id):
-    delete_cache_keys_related_model('vakajarjestaja', vakajarjestaja_id)
-    cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja_id))
+def _get_tyontekija_oid_set(new_vakajarjestaja, tyontekija):
+    tyontekija_oid_set = set(tyontekija.palvelussuhteet
+                             .values_list('tyoskentelypaikat__toimipaikka__organisaatio_oid', flat=True))
+    tyontekija_oid_set.add(new_vakajarjestaja.organisaatio_oid)
+    return tyontekija_oid_set
 
 
 def _raise_error(msg):
-    raise serializers.ValidationError({'detail': [msg]})
+    raise serializers.ValidationError({'errors': [msg]})

@@ -60,7 +60,7 @@ from varda.permissions import (throw_if_not_tallentaja_permissions,
                                is_oph_staff, user_permission_groups_in_organizations,
                                user_permission_groups_in_organization, CustomObjectPermissions,
                                assign_lapsi_henkilo_permissions, assign_vakasuhde_henkilo_permissions,
-                               assign_permissions_for_non_paos_lapsi)
+                               assign_object_level_permissions_for_instance)
 from varda.related_object_validations import toimipaikka_is_valid_to_organisaatiopalvelu
 from varda.request_logging import request_log_viewset_decorator_factory
 from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer,
@@ -1084,8 +1084,7 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
             if toimipaikka_oid:
                 assign_toimipaikka_lapsi_paos_permissions(toimipaikka_oid, tallentaja_organisaatio_oid, lapsi)
         elif lapsi.vakatoimija:
-            assign_permissions_for_non_paos_lapsi(lapsi, lapsi.vakatoimija.organisaatio_oid,
-                                                  toimipaikka_oid=toimipaikka_oid)
+            assign_object_level_permissions_for_instance(lapsi, (lapsi.vakatoimija.organisaatio_oid, toimipaikka_oid,))
 
         assign_lapsi_henkilo_permissions(lapsi, user=self.request.user, toimipaikka_oid=toimipaikka_oid)
 
@@ -1332,8 +1331,8 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
         """
         assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Varhaiskasvatussuhde, varhaiskasvatussuhde_obj)
         assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Varhaiskasvatuspaatos, varhaiskasvatuspaatos_obj)
-        assign_permissions_for_non_paos_lapsi(lapsi_obj, vakajarjestaja_organisaatio_oid,
-                                              toimipaikka_oid=toimipaikka_organisaatio_oid)
+        assign_object_level_permissions_for_instance(lapsi_obj, (vakajarjestaja_organisaatio_oid,
+                                                                 toimipaikka_organisaatio_oid,))
         if toimipaikka_organisaatio_oid:
             # TODO: Add these to every case after dummy-toimipaikat are removed.
             assign_object_level_permissions(toimipaikka_organisaatio_oid, Varhaiskasvatussuhde, varhaiskasvatussuhde_obj)

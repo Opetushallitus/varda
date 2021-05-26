@@ -27,21 +27,26 @@ def assign_permissions_to_toimipaikka_obj(toimipaikka_organisaatio_oid, vakajarj
     toimipaikka_query = Toimipaikka.objects.filter(organisaatio_oid=toimipaikka_organisaatio_oid)
     if len(toimipaikka_query) == 1:
         toimipaikka_obj = toimipaikka_query[0]
-
-        with transaction.atomic():
-            assign_object_level_permissions(toimipaikka_organisaatio_oid, Toimipaikka, toimipaikka_obj)
-            assign_object_permissions_to_all_henkilosto_groups(toimipaikka_organisaatio_oid, Toimipaikka, toimipaikka_obj)
-
-            # Remember also vakajarjestaja-level
-            assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Toimipaikka, toimipaikka_obj)
-            assign_object_permissions_to_all_henkilosto_groups(vakajarjestaja_organisaatio_oid, Toimipaikka, toimipaikka_obj)
-
-            # Assign view_vakajarjestaja permission for Toimipaikka permission groups
-            vakajarjestaja_obj = toimipaikka_obj.vakajarjestaja
-            assign_object_level_permissions(toimipaikka_organisaatio_oid, VakaJarjestaja, vakajarjestaja_obj)
-            assign_object_permissions_to_all_henkilosto_groups(toimipaikka_organisaatio_oid, VakaJarjestaja, vakajarjestaja_obj)
+        assign_permissions_for_toimipaikka(toimipaikka_obj, vakajarjestaja_organisaatio_oid)
     else:
         logger.error('Toimipaikka: Could not assign obj-level permissions to: ' + toimipaikka_organisaatio_oid)
+
+
+def assign_permissions_for_toimipaikka(toimipaikka, vakajarjestaja_oid):
+    with transaction.atomic():
+        # Assign permissions to VakaJarjestaja permission groups
+        assign_object_level_permissions(vakajarjestaja_oid, Toimipaikka, toimipaikka)
+        assign_object_permissions_to_all_henkilosto_groups(vakajarjestaja_oid, Toimipaikka, toimipaikka)
+
+        if toimipaikka_oid := toimipaikka.organisaatio_oid:
+            # Assign permissions to Toimipaikka permission groups
+            assign_object_level_permissions(toimipaikka_oid, Toimipaikka, toimipaikka)
+            assign_object_permissions_to_all_henkilosto_groups(toimipaikka_oid, Toimipaikka, toimipaikka)
+
+            # Assign view_vakajarjestaja permission for Toimipaikka permission groups
+            vakajarjestaja_obj = toimipaikka.vakajarjestaja
+            assign_object_level_permissions(toimipaikka_oid, VakaJarjestaja, vakajarjestaja_obj)
+            assign_object_permissions_to_all_henkilosto_groups(toimipaikka_oid, VakaJarjestaja, vakajarjestaja_obj)
 
 
 def get_organization_type(organisaatio_oid):
@@ -396,6 +401,9 @@ def _assign_object_permissions_to_groups(group_name_prefix, group_name_suffix, m
 
 
 def assign_object_level_permissions(organisaatio_oid, model_class, model_obj, paos_kytkin=False):
+    if not organisaatio_oid:
+        return
+
     all_organization_permission_groups = get_permission_groups_for_organization(organisaatio_oid)
     _assign_or_remove_object_level_permissions(model_class, model_obj, all_organization_permission_groups, paos_kytkin, assign=True)
 
@@ -440,6 +448,12 @@ def get_permission_groups_for_organization(organisaatio_oid):
             permission_groups.append(group)
 
     return permission_groups
+
+
+def get_all_permission_groups_for_organization(organisaatio_oid):
+    if not organisaatio_oid:
+        return Group.objects.none()
+    return Group.objects.filter(name__endswith=organisaatio_oid)
 
 
 def add_oph_staff_to_vakajarjestaja_katselija_groups():

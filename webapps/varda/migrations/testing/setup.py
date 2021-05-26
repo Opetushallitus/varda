@@ -2925,7 +2925,7 @@ def create_henkilosto():
         },
         {
             'vakajarjestaja_oid': '1.2.246.562.10.52966755795',
-            'kuukausi': '2020-09-01',
+            'kuukausi': '2020-10-01',
             'tuntimaara': '37.50',
             'tyontekijamaara': 5,
             'lahdejarjestelma': '1',

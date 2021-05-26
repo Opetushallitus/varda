@@ -25,7 +25,7 @@ from varda.excel_export import delete_excel_reports_earlier_than
 from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
 from varda.misc import memory_efficient_queryset_iterator
 from varda.models import Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog, Lapsi, Varhaiskasvatuspaatos, Huoltaja
-from varda.permissions import assign_lapsi_permissions, assign_vakapaatos_vakasuhde_permissions
+from varda.permissions import assign_object_level_permissions_for_instance
 from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups
 
 logger = logging.getLogger(__name__)
@@ -285,7 +285,7 @@ def fix_orphan_vakatiedot_permissions():
     for lapsi in lapsi_qs:
         with transaction.atomic():
             UserObjectPermission.objects.filter(content_type=lapsi_content_type_id, object_pk=lapsi.id).delete()
-            assign_lapsi_permissions(lapsi.vakatoimija.organisaatio_oid, lapsi)
+            assign_object_level_permissions_for_instance(lapsi, (lapsi.vakatoimija.organisaatio_oid,))
 
     vakapaatos_content_type_id = ContentType.objects.get_for_model(Varhaiskasvatuspaatos).id
     orphan_vakapaatos_id_list = (UserObjectPermission.objects.filter(content_type=vakapaatos_content_type_id)
@@ -296,8 +296,7 @@ def fix_orphan_vakatiedot_permissions():
     for vakapaatos in vakapaatos_qs:
         with transaction.atomic():
             UserObjectPermission.objects.filter(content_type=vakapaatos_content_type_id, object_pk=vakapaatos.id).delete()
-            assign_vakapaatos_vakasuhde_permissions(Varhaiskasvatuspaatos, vakapaatos.lapsi.vakatoimija.organisaatio_oid,
-                                                    None, vakapaatos)
+            assign_object_level_permissions_for_instance(vakapaatos, (vakapaatos.lapsi.vakatoimija.organisaatio_oid,))
 
 
 @shared_task

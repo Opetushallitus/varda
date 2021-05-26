@@ -1,183 +1,77 @@
 import datetime
 import json
 
-from django.contrib.auth.models import User
 from django.db.models import Q
 from django.test import TestCase
-from rest_framework import serializers
-from rest_framework.test import APIClient
+from rest_framework import serializers, status
 
 from varda.models import (VakaJarjestaja, Toimipaikka, Varhaiskasvatussuhde, Varhaiskasvatuspaatos, Maksutieto, Lapsi,
-                          Henkilo, Huoltajuussuhde)
-from varda.organisation_transformations import (transfer_toimipaikat_to_vakajarjestaja,
-                                                merge_toimipaikka_to_other_toimipaikka)
+                          Henkilo, ToiminnallinenPainotus, KieliPainotus, PidempiPoissaolo, Tyoskentelypaikka,
+                          Palvelussuhde, Tutkinto, Tyontekija, Taydennyskoulutus, TilapainenHenkilosto)
+from varda.organisation_transformations import transfer_toimipaikat_to_vakajarjestaja
 from varda.permissions import object_ids_organization_has_permissions_to
-from varda.unit_tests.test_utils import assert_status_code, post_henkilo_to_get_permissions
-
-
-class SetUpTestClient:
-    def __init__(self, name):
-        self.name = name
-
-    def client(self):
-        user = User.objects.get(username=self.name)
-        api_c = APIClient()
-        api_c.force_authenticate(user=user)
-        return api_c
+from varda.unit_tests.test_utils import assert_status_code, post_henkilo_to_get_permissions, SetUpTestClient
 
 
 class OrganisationTransformationsTests(TestCase):
     fixtures = ['varda/unit_tests/fixture_basics.json']
 
-    def test_transfer_simple_toimipaikka(self):
-        today = datetime.date.today()
-        admin = User.objects.get(username='credadmin')
-
+    def test_toimipaikat_transfer_simple(self):
         old_vakajarjestaja_oid = '1.2.246.562.10.57294396385'
         new_vakajarjestaja_oid = '1.2.246.562.10.52966755795'
-        toimipaikka_oid = '1.2.246.562.10.6727877596658'
 
         old_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=old_vakajarjestaja_oid)
         new_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=new_vakajarjestaja_oid)
-        toimipaikka = Toimipaikka.objects.get(organisaatio_oid=toimipaikka_oid)
 
-        lapsi_qs = (Lapsi.objects
-                    .filter(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka=toimipaikka)
-                    .distinct())
-        lapsi_id_list_1 = list(lapsi_qs.values_list('id', flat=True))
-
-        active_filter = Q(paattymis_pvm=None) | Q(paattymis_pvm__gt=today)
-
-        vakapaatos_qs = Varhaiskasvatuspaatos.objects.filter(lapsi__in=lapsi_qs)
-        vakapaatos_id_list_1 = list(vakapaatos_qs.values_list('id', flat=True))
-        vakapaatos_active_count = vakapaatos_qs.filter(active_filter).count()
-
-        vakasuhde_qs = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__in=vakapaatos_qs)
-        vakasuhde_id_list_1 = list(vakasuhde_qs.values_list('id', flat=True))
-        vakasuhde_active_count = vakasuhde_qs.filter(active_filter).count()
-
-        maksutieto_qs = Maksutieto.objects.filter(huoltajuussuhteet__lapsi__in=lapsi_qs).distinct()
-        maksutieto_id_list_1 = list(maksutieto_qs.values_list('id', flat=True))
-        maksutieto_active_count = maksutieto_qs.filter(active_filter).count()
-
-        huoltajuussuhde_count = Huoltajuussuhde.objects.all().count()
+        permission_id_list_nested_before_old = self._get_id_list_nested_for_vakajarjestaja(old_vakajarjestaja)
+        permission_id_list_nested_before_new = self._get_id_list_nested_for_vakajarjestaja(new_vakajarjestaja)
 
         # Assert permissions before transfer
-        check_if_organization_has_permissions(self, old_vakajarjestaja_oid, toimipaikka.id, lapsi_id_list_1,
-                                              vakapaatos_id_list_1, vakasuhde_id_list_1, maksutieto_id_list_1,
-                                              has_permissions=True)
-        check_if_organization_has_permissions(self, new_vakajarjestaja_oid, toimipaikka.id, lapsi_id_list_1,
-                                              vakapaatos_id_list_1, vakasuhde_id_list_1, maksutieto_id_list_1,
-                                              has_permissions=False)
+        self._assert_organization_has_permissions(old_vakajarjestaja_oid, permission_id_list_nested_before_old, has_permissions=True)
+        self._assert_organization_has_permissions(new_vakajarjestaja_oid, permission_id_list_nested_before_old, has_permissions=False)
 
-        # Transfer toimipaikka 1.2.246.562.10.6727877596658 to vakajarjestaja 1.2.246.562.10.52966755795
-        transfer_toimipaikat_to_vakajarjestaja(admin, new_vakajarjestaja.id, [toimipaikka.id])
-
-        # Assert old lapsi objects don't exist (they are deleted)
-        self.assertFalse(Lapsi.objects.filter(id__in=lapsi_id_list_1).exists())
-        # Assert number of lapset hasn't changed
-        self.assertEqual(lapsi_qs.count(), len(lapsi_id_list_1))
-
-        # Assert new vakapaatokset, vakasuhteet and maksutiedot were created to replace active ones
-        self.assertEqual(vakapaatos_qs.count(), len(vakapaatos_id_list_1) + vakapaatos_active_count)
-        self.assertEqual(vakasuhde_qs.count(), len(vakasuhde_id_list_1) + vakasuhde_active_count)
-        self.assertEqual(maksutieto_qs.count(), len(maksutieto_id_list_1) + maksutieto_active_count)
-
-        # Assert number of huoltajuussuhteet didn't change (old ones removed)
-        self.assertEqual(huoltajuussuhde_count, Huoltajuussuhde.objects.all().count())
+        # Transfer Toimipaikat of VakaJarjestaja 1.2.246.562.10.57294396385 to
+        # VakaJarjestaja 1.2.246.562.10.52966755795
+        transfer_toimipaikat_to_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja)
 
         # Assert permissions after transfer
-        new_lapsi_id_list_1 = list(lapsi_qs.values_list('id', flat=True))
-        check_if_organization_has_permissions(self, old_vakajarjestaja_oid, toimipaikka.id, new_lapsi_id_list_1,
-                                              vakapaatos_id_list_1, vakasuhde_id_list_1, maksutieto_id_list_1,
-                                              has_permissions=False)
-        check_if_organization_has_permissions(self, new_vakajarjestaja_oid, toimipaikka.id, new_lapsi_id_list_1,
-                                              vakapaatos_id_list_1, vakasuhde_id_list_1, maksutieto_id_list_1,
-                                              has_permissions=True)
+        self._assert_organization_has_permissions(old_vakajarjestaja_oid, permission_id_list_nested_before_old, has_permissions=False)
+        self._assert_organization_has_permissions(new_vakajarjestaja_oid, permission_id_list_nested_before_old, has_permissions=True)
 
-        lapsi_id_list_2 = list(lapsi_qs.values_list('id', flat=True))
-        vakapaatos_id_list_2 = list(vakapaatos_qs.values_list('id', flat=True))
-        vakasuhde_id_list_2 = list(vakasuhde_qs.values_list('id', flat=True))
-        maksutieto_id_list_2 = list(maksutieto_qs.values_list('id', flat=True))
-        # Transfer toimipaikka 1.2.246.562.10.6727877596658 back to vakajarjestaja 1.2.246.562.10.57294396385
-        transfer_toimipaikat_to_vakajarjestaja(admin, old_vakajarjestaja.id, [toimipaikka.id])
+        # Assert new_vakajarjestaja has correct number of related objects
+        permission_id_list_nested_after_new = self._get_id_list_nested_for_vakajarjestaja(new_vakajarjestaja)
+        for index in range(0, len(permission_id_list_nested_before_old)):
+            self.assertEqual(len(permission_id_list_nested_after_new[index]),
+                             len(permission_id_list_nested_before_new[index]) + len(permission_id_list_nested_before_old[index]))
 
-        # Assert old lapsi objects don't exist (they are deleted)
-        self.assertFalse(Lapsi.objects.filter(id__in=lapsi_id_list_2).exists())
-        # Assert number of lapset hasn't changed
-        self.assertEqual(lapsi_qs.count(), len(lapsi_id_list_2))
-
-        # Assert new vakapaatokset, vakasuhteet and maksutiedot were created to replace active ones
-        self.assertEqual(vakapaatos_qs.count(), len(vakapaatos_id_list_2) + vakapaatos_active_count)
-        self.assertEqual(vakasuhde_qs.count(), len(vakasuhde_id_list_2) + vakasuhde_active_count)
-        self.assertEqual(maksutieto_qs.count(), len(maksutieto_id_list_2) + maksutieto_active_count)
-
-        # Assert number of huoltajuussuhteet didn't change (old ones removed)
-        self.assertEqual(huoltajuussuhde_count, Huoltajuussuhde.objects.all().count())
-
-        new_lapsi_id_list_2 = list(lapsi_qs.values_list('id', flat=True))
-        # Assert permissions are same as in the beginning
-        check_if_organization_has_permissions(self, old_vakajarjestaja_oid, toimipaikka.id, new_lapsi_id_list_2,
-                                              vakapaatos_id_list_2, vakasuhde_id_list_2, maksutieto_id_list_2,
-                                              has_permissions=True)
-        check_if_organization_has_permissions(self, new_vakajarjestaja_oid, toimipaikka.id, new_lapsi_id_list_2,
-                                              vakapaatos_id_list_2, vakasuhde_id_list_2, maksutieto_id_list_2,
-                                              has_permissions=False)
-
-    def test_transfer_toimipaikka_vakasuhde_in_other_toimipaikka(self):
-        admin = User.objects.get(username='credadmin')
-
-        new_vakajarjestaja_oid = '1.2.246.562.10.52966755795'
-        toimipaikka_oid = '1.2.246.562.10.6727877596658'
-        new_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=new_vakajarjestaja_oid)
-        toimipaikka = Toimipaikka.objects.get(organisaatio_oid=toimipaikka_oid)
-
-        # Create vakasuhde to other toimipaikka
-        vakapaatos = Varhaiskasvatuspaatos.objects.filter(varhaiskasvatussuhteet__toimipaikka=toimipaikka).first()
-        vakasuhde = {
-            'varhaiskasvatuspaatos': '/api/v1/varhaiskasvatuspaatokset/{0}/'.format(vakapaatos.id),
-            'toimipaikka_oid': '1.2.246.562.10.2565458382544',
-            'alkamis_pvm': '2020-02-02',
-            'lahdejarjestelma': '1'
-        }
-        client = SetUpTestClient('tester10').client()
-        vakasuhde_resp = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
-        assert_status_code(vakasuhde_resp, 201)
-        vakasuhde_id = json.loads(vakasuhde_resp.content)['id']
-
-        # Transfer toimipaikka 1.2.246.562.10.6727877596658 to vakajarjestaja 1.2.246.562.10.52966755795
-        transfer_toimipaikat_to_vakajarjestaja(admin, new_vakajarjestaja.id, [toimipaikka.id])
-
-        # Assert vakasuhde has paattymis_pvm
-        self.assertNotEqual(Varhaiskasvatussuhde.objects.get(id=vakasuhde_id).paattymis_pvm, None)
+        # Assert old_vakajarjestaja does not have related objects
+        permission_id_list_nested_after_old = self._get_id_list_nested_for_vakajarjestaja(old_vakajarjestaja)
+        for permission_list in permission_id_list_nested_after_old:
+            self.assertEqual(0, len(permission_list))
 
     def test_transfer_new_vakajarjestaja_has_existing_lapsi(self):
-        admin = User.objects.get(username='credadmin')
-
+        old_vakajarjestaja_oid = '1.2.246.562.10.57294396385'
         new_vakajarjestaja_oid = '1.2.246.562.10.52966755795'
-        toimipaikka_oid = '1.2.246.562.10.6727877596658'
-        lapsi_henkilo_oid = '1.2.246.562.24.6779627637492'
-        other_toimipaikka_oid = '1.2.246.562.10.9625978384762'
-        new_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=new_vakajarjestaja_oid)
-        toimipaikka = Toimipaikka.objects.get(organisaatio_oid=toimipaikka_oid)
-        lapsi_henkilo = Henkilo.objects.get(henkilo_oid=lapsi_henkilo_oid)
 
-        old_lapsi_id = (Lapsi.objects.get(henkilo__henkilo_oid=lapsi_henkilo_oid,
-                                          varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka=toimipaikka.id)
-                        .id)
+        old_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=old_vakajarjestaja_oid)
+        new_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=new_vakajarjestaja_oid)
+
+        lapsi_henkilo_oid = '1.2.246.562.24.6779627637492'
+        lapsi_henkilo = Henkilo.objects.get(henkilo_oid=lapsi_henkilo_oid)
+        old_lapsi_id = Lapsi.objects.get(henkilo__henkilo_oid=lapsi_henkilo_oid, vakatoimija=old_vakajarjestaja).id
+        maksutieto = Maksutieto.objects.filter(huoltajuussuhteet__lapsi=old_lapsi_id).first()
 
         client = SetUpTestClient('tester11').client()
-        # Create lapsi
         post_henkilo_to_get_permissions(client, henkilo_id=lapsi_henkilo.id)
         lapsi = {
             'henkilo': '/api/v1/henkilot/{0}/'.format(lapsi_henkilo.id),
             'vakatoimija_oid': new_vakajarjestaja_oid,
-            'lahdejarjestelma': '1'
+            'lahdejarjestelma': '1',
         }
         lapsi_resp = client.post('/api/v1/lapset/', lapsi)
-        assert_status_code(lapsi_resp, 201)
+        lapsi_qs = Lapsi.objects.filter(id=json.loads(lapsi_resp.content)['id'])
+        assert_status_code(lapsi_resp, status.HTTP_201_CREATED)
 
-        # Create vakapaatos
         vakapaatos = {
             'lapsi': json.loads(lapsi_resp.content)['url'],
             'vuorohoito_kytkin': True,
@@ -186,57 +80,46 @@ class OrganisationTransformationsTests(TestCase):
             'tilapainen_vaka_kytkin': False,
             'hakemus_pvm': '2020-03-01',
             'alkamis_pvm': '2020-03-01',
-            'lahdejarjestelma': '1'
+            'lahdejarjestelma': '1',
         }
         vakapaatos_resp = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos)
-        assert_status_code(vakapaatos_resp, 201)
+        assert_status_code(vakapaatos_resp, status.HTTP_201_CREATED)
 
-        # Create vakasuhde
+        new_vakajarjestaja_toimipaikka_oid = '1.2.246.562.10.9625978384762'
         vakasuhde = {
-            'toimipaikka_oid': other_toimipaikka_oid,
+            'toimipaikka_oid': new_vakajarjestaja_toimipaikka_oid,
             'varhaiskasvatuspaatos': json.loads(vakapaatos_resp.content)['url'],
             'alkamis_pvm': '2020-03-20',
-            'lahdejarjestelma': '1'
+            'lahdejarjestelma': '1',
         }
         vakasuhde_resp = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
-        assert_status_code(vakasuhde_resp, 201)
+        assert_status_code(vakasuhde_resp, status.HTTP_201_CREATED)
 
-        total_huoltajuussuhde_count = Huoltajuussuhde.objects.all().count()
-        lapsi_huoltajuussuhde_count = Huoltajuussuhde.objects.filter(lapsi=old_lapsi_id).all().count()
-
-        # Transfer toimipaikka 1.2.246.562.10.6727877596658 to vakajarjestaja 1.2.246.562.10.52966755795
-        transfer_toimipaikat_to_vakajarjestaja(admin, new_vakajarjestaja.id, [toimipaikka.id])
+        # Transfer Toimipaikat of VakaJarjestaja 1.2.246.562.10.57294396385 to
+        # VakaJarjestaja 1.2.246.562.10.52966755795
+        transfer_toimipaikat_to_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja)
 
         # Assert old lapsi object doesn't exist
         self.assertFalse(Lapsi.objects.filter(id=old_lapsi_id).exists())
 
-        lapsi_id_list = object_ids_organization_has_permissions_to(new_vakajarjestaja_oid, Lapsi)
-        new_lapsi = (Lapsi.objects.filter(id__in=lapsi_id_list,
-                                          henkilo__henkilo_oid=lapsi_henkilo_oid,
-                                          varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka=toimipaikka.id)
-                     .distinct())
         # Assert new vakajarjestaja has only one lapsi linked to henkilo 1.2.246.562.24.6779627637492
-        self.assertEqual(new_lapsi.count(), 1)
+        self.assertEqual(1, Lapsi.objects.filter(henkilo=lapsi_henkilo, vakatoimija=new_vakajarjestaja).count())
 
-        # Assert it has three different vakapaatos (two to transferred toimipaikka, inactive and new active)
-        self.assertEqual(new_lapsi.first().varhaiskasvatuspaatokset.count(), 3)
+        # Assert it has two different vakapaatos (existing and transferred)
+        self.assertEqual(lapsi_qs.first().varhaiskasvatuspaatokset.count(), 2)
 
-        # Assert number of huoltajuussuhteet decreased as existing lapsi already had them
-        self.assertEqual(total_huoltajuussuhde_count - lapsi_huoltajuussuhde_count,
-                         Huoltajuussuhde.objects.all().count())
+        # Assert Maksutieto has been transferred to the new Lapsi
+        self.assertEqual(len(set(maksutieto.huoltajuussuhteet.values_list('lapsi', flat=True))), 1)
+        self.assertEqual(maksutieto.huoltajuussuhteet.values_list('lapsi', flat=True)[0], lapsi_qs.first().id)
 
     def test_transfer_toimipaikka_has_paos_lapsi(self):
-        admin = User.objects.get(username='credadmin')
-
-        old_vakajarjestaja_oid = '1.2.246.562.10.57294396385'
-        new_vakajarjestaja_oid = '1.2.246.562.10.52966755795'
-        paos_vakajarjestaja_oid = '1.2.246.562.10.34683023489'
+        paos_vakajarjestaja_oid = '1.2.246.562.10.57294396385'
+        oma_vakajarjestaja_oid = '1.2.246.562.10.52966755795'
         toimipaikka_oid = '1.2.246.562.10.6727877596658'
         paos_henkilo_oid = '1.2.246.562.24.58672764848'
 
-        old_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=old_vakajarjestaja_oid)
-        new_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=new_vakajarjestaja_oid)
         paos_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=paos_vakajarjestaja_oid)
+        oma_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=oma_vakajarjestaja_oid)
         toimipaikka = Toimipaikka.objects.get(organisaatio_oid=toimipaikka_oid)
         paos_henkilo = Henkilo.objects.get(henkilo_oid=paos_henkilo_oid)
 
@@ -246,32 +129,33 @@ class OrganisationTransformationsTests(TestCase):
 
         client_paos_toiminta_1 = SetUpTestClient('tester10').client()
         paos_toiminta = {
-            'oma_organisaatio': '/api/v1/vakajarjestajat/{0}/'.format(old_vakajarjestaja.id),
-            'paos_organisaatio': '/api/v1/vakajarjestajat/{0}/'.format(paos_vakajarjestaja.id)
+            'oma_organisaatio': '/api/v1/vakajarjestajat/{0}/'.format(paos_vakajarjestaja.id),
+            'paos_organisaatio': '/api/v1/vakajarjestajat/{0}/'.format(oma_vakajarjestaja.id)
         }
 
         resp_paos_toiminta_1 = client_paos_toiminta_1.post('/api/v1/paos-toiminnat/', paos_toiminta)
-        assert_status_code(resp_paos_toiminta_1, 201)
+        assert_status_code(resp_paos_toiminta_1, status.HTTP_201_CREATED)
 
-        client_paos_toiminta_2 = SetUpTestClient('tester4').client()
+        client_paos_toiminta_2 = SetUpTestClient('tester11').client()
         paos_toiminta = {
-            'oma_organisaatio': '/api/v1/vakajarjestajat/{0}/'.format(paos_vakajarjestaja.id),
+            'oma_organisaatio': '/api/v1/vakajarjestajat/{0}/'.format(oma_vakajarjestaja.id),
             'paos_toimipaikka': '/api/v1/toimipaikat/{0}/'.format(toimipaikka.id)
         }
 
         resp_paos_toiminta_2 = client_paos_toiminta_2.post('/api/v1/paos-toiminnat/', paos_toiminta)
-        assert_status_code(resp_paos_toiminta_2, 201)
+        assert_status_code(resp_paos_toiminta_2, status.HTTP_201_CREATED)
 
-        client_paos_lapsi = SetUpTestClient('tester2').client()
+        client_paos_lapsi = SetUpTestClient('tester11').client()
         post_henkilo_to_get_permissions(client_paos_lapsi, henkilo_id=paos_henkilo.id)
         paos_lapsi = {
             'henkilo': '/api/v1/henkilot/{0}/'.format(paos_henkilo.id),
-            'oma_organisaatio': '/api/v1/vakajarjestajat/{0}/'.format(paos_vakajarjestaja.id),
-            'paos_organisaatio': '/api/v1/vakajarjestajat/{0}/'.format(old_vakajarjestaja.id),
+            'oma_organisaatio': '/api/v1/vakajarjestajat/{0}/'.format(oma_vakajarjestaja.id),
+            'paos_organisaatio': '/api/v1/vakajarjestajat/{0}/'.format(paos_vakajarjestaja.id),
             'lahdejarjestelma': '1'
         }
         resp_paos_lapsi = client_paos_lapsi.post('/api/v1/lapset/', paos_lapsi)
-        assert_status_code(resp_paos_lapsi, 201)
+        paos_lapsi_id = json.loads(resp_paos_lapsi.content)['id']
+        assert_status_code(resp_paos_lapsi, status.HTTP_201_CREATED)
 
         paos_vakapaatos = {
             'lapsi': json.loads(resp_paos_lapsi.content)['url'],
@@ -284,7 +168,7 @@ class OrganisationTransformationsTests(TestCase):
             'lahdejarjestelma': '1'
         }
         resp_paos_vakapaatos = client_paos_lapsi.post('/api/v1/varhaiskasvatuspaatokset/', paos_vakapaatos)
-        assert_status_code(resp_paos_vakapaatos, 201)
+        assert_status_code(resp_paos_vakapaatos, status.HTTP_201_CREATED)
 
         paos_vakasuhde = {
             'toimipaikka_oid': toimipaikka_oid,
@@ -293,184 +177,191 @@ class OrganisationTransformationsTests(TestCase):
             'lahdejarjestelma': '1'
         }
         paos_vakasuhde_resp = client_paos_lapsi.post('/api/v1/varhaiskasvatussuhteet/', paos_vakasuhde)
-        assert_status_code(paos_vakasuhde_resp, 201)
+        assert_status_code(paos_vakasuhde_resp, status.HTTP_201_CREATED)
 
         with self.assertRaises(serializers.ValidationError):
-            # Transfer toimipaikka 1.2.246.562.10.6727877596658 to vakajarjestaja 1.2.246.562.10.52966755795
-            transfer_toimipaikat_to_vakajarjestaja(admin, new_vakajarjestaja.id, [toimipaikka.id])
+            # Transfer Toimipaikat of paos_vakajarjestaja to oma_vakajarjestaja
+            transfer_toimipaikat_to_vakajarjestaja(oma_vakajarjestaja, paos_vakajarjestaja)
 
-    def test_merge_simple_toimipaikka(self):
-        today = datetime.date.today()
-        admin = User.objects.get(username='credadmin')
+        # However, we can transfer Toimipaikat of oma_vakajarjestaja to paos_vakajarjestaja
+        transfer_toimipaikat_to_vakajarjestaja(paos_vakajarjestaja, oma_vakajarjestaja)
 
+        # Assert oma_vakajarjestaja has only permissions to the created PAOS-lapsi
+        self.assertCountEqual((paos_lapsi_id,),
+                              object_ids_organization_has_permissions_to(oma_vakajarjestaja_oid, Lapsi))
+
+    def test_transfer_new_vakajarjestaja_has_existing_tyontekija(self):
         old_vakajarjestaja_oid = '1.2.246.562.10.57294396385'
-        master_vakajarjestaja_oid = '1.2.246.562.10.52966755795'
-        old_toimipaikka_oid = '1.2.246.562.10.6727877596658'
-        master_toimipaikka_oid = '1.2.246.562.10.9625978384762'
+        new_vakajarjestaja_oid = '1.2.246.562.10.52966755795'
 
-        old_toimipaikka = Toimipaikka.objects.get(organisaatio_oid=old_toimipaikka_oid)
-        master_toimipaikka = Toimipaikka.objects.get(organisaatio_oid=master_toimipaikka_oid)
+        old_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=old_vakajarjestaja_oid)
+        new_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=new_vakajarjestaja_oid)
 
-        active_filter = Q(paattymis_pvm=None) | Q(paattymis_pvm__gt=today)
-        active_old_vakasuhde_qs = Varhaiskasvatussuhde.objects.filter(Q(toimipaikka=old_toimipaikka) & active_filter)
-        active_master_vakasuhde_qs = Varhaiskasvatussuhde.objects.filter(Q(toimipaikka=master_toimipaikka) &
-                                                                         active_filter)
-        old_vakasuhde_count = active_old_vakasuhde_qs.count()
-        master_vakasuhde_count = active_master_vakasuhde_qs.count()
+        tyontekija_henkilo_oid = '1.2.246.562.24.4645229637988'
+        tyontekija_henkilo = Henkilo.objects.get(henkilo_oid=tyontekija_henkilo_oid)
+        old_tyontekija_id = Tyontekija.objects.get(henkilo=tyontekija_henkilo, vakajarjestaja=old_vakajarjestaja).id
+        tutkinto_code = '321901'
+        old_tutkinto_id = Tutkinto.objects.get(henkilo=tyontekija_henkilo, vakajarjestaja=old_vakajarjestaja,
+                                               tutkinto_koodi=tutkinto_code).id
+        taydennyskoulutus = Taydennyskoulutus.objects.get(tunniste='testing-taydennyskoulutus3')
 
-        # Merge toimipaikka 1.2.246.562.10.6727877596658 to toimipaikka 1.2.246.562.10.52966755795
-        merge_toimipaikka_to_other_toimipaikka(admin, master_toimipaikka.id, old_toimipaikka.id)
+        client = SetUpTestClient('tester11').client()
+        post_henkilo_to_get_permissions(client, henkilo_id=tyontekija_henkilo.id)
 
-        old_lapsi_qs = (Lapsi.objects
-                        .filter(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka=old_toimipaikka)
-                        .distinct())
-        old_lapsi_id_list = list(old_lapsi_qs.values_list('id', flat=True))
-        old_henkilo_set = set(old_lapsi_qs
-                              .filter(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__in=active_old_vakasuhde_qs)
-                              .values_list('henkilo', flat=True))
-        master_lapsi_qs = (Lapsi.objects
-                           .filter(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka=master_toimipaikka)
-                           .distinct())
-
-        old_vakapaatos_qs = Varhaiskasvatuspaatos.objects.filter(lapsi__in=old_lapsi_qs)
-        old_vakapaatos_id_list = list(old_vakapaatos_qs.values_list('id', flat=True))
-
-        old_vakasuhde_qs = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__in=old_vakapaatos_qs)
-        old_vakasuhde_id_list = list(old_vakasuhde_qs.values_list('id', flat=True))
-
-        old_maksutieto_qs = Maksutieto.objects.filter(huoltajuussuhteet__lapsi__in=old_lapsi_qs).distinct()
-        old_maksutieto_id_list = list(old_maksutieto_qs.values_list('id', flat=True))
-
-        # Assert master_vakajarjestaja doesn't have permissions to old_toimipaikka information
-        check_if_organization_has_permissions(self, master_vakajarjestaja_oid, old_toimipaikka.id, old_lapsi_id_list,
-                                              old_vakapaatos_id_list, old_vakasuhde_id_list, old_maksutieto_id_list,
-                                              has_permissions=False)
-
-        # Assert old_vakajarjestaja still has permissions to old_toimipaikka information
-        check_if_organization_has_permissions(self, old_vakajarjestaja_oid, old_toimipaikka.id, old_lapsi_id_list,
-                                              old_vakapaatos_id_list, old_vakasuhde_id_list, old_maksutieto_id_list,
-                                              has_permissions=True)
-
-        # Assert number of vakasuhteet in master_toimipaikka have increased by number of active ones in old_toimipaikka
-        self.assertEqual(active_master_vakasuhde_qs.count(), master_vakasuhde_count + old_vakasuhde_count)
-
-        # Assert that old_toimipaikka doesn't have active vakasuhteet
-        self.assertEqual(active_old_vakasuhde_qs.count(), 0)
-
-        # Assert master_toimipaikka has lapset referencing old_toimipaikka henkilot with active vakasuhde
-        master_toimipaikka_henkilo_list = list(master_lapsi_qs.values_list('henkilo', flat=True))
-        self.assertTrue(old_henkilo_set.issubset(master_toimipaikka_henkilo_list))
-
-    def test_merge_vakasuhde_in_other_toimipaikka_and_history(self):
-        today = datetime.date.today()
-        admin = User.objects.get(username='credadmin')
-
-        old_toimipaikka_oid = '1.2.246.562.10.6727877596658'
-        master_toimipaikka_oid = '1.2.246.562.10.9625978384762'
-
-        old_toimipaikka = Toimipaikka.objects.get(organisaatio_oid=old_toimipaikka_oid)
-        master_toimipaikka = Toimipaikka.objects.get(organisaatio_oid=master_toimipaikka_oid)
-
-        vakapaatos_1 = Varhaiskasvatuspaatos.objects.filter(varhaiskasvatussuhteet__toimipaikka=old_toimipaikka).first()
-        # vakasuhde that is transferred to new toimipaikka
-        vakasuhde_merged = vakapaatos_1.varhaiskasvatussuhteet.first()
-        # Create active vakasuhde to other_toimipaikka
-        vakasuhde_1 = {
-            'varhaiskasvatuspaatos': '/api/v1/varhaiskasvatuspaatokset/{0}/'.format(vakapaatos_1.id),
-            'toimipaikka_oid': '1.2.246.562.10.2565458382544',
-            'alkamis_pvm': '2020-02-02',
-            'lahdejarjestelma': '1'
+        tyontekija = {
+            'henkilo': f'/api/v1/henkilot/{tyontekija_henkilo.id}/',
+            'vakajarjestaja_oid': new_vakajarjestaja_oid,
+            'lahdejarjestelma': '1',
         }
-        client = SetUpTestClient('tester10').client()
-        vakasuhde_1_resp = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde_1)
-        assert_status_code(vakasuhde_1_resp, 201)
-        vakasuhde_1_id = json.loads(vakasuhde_1_resp.content)['id']
+        tyontekija_resp = client.post('/api/henkilosto/v1/tyontekijat/', tyontekija)
+        tyontekija_qs = Tyontekija.objects.filter(id=json.loads(tyontekija_resp.content)['id'])
+        assert_status_code(tyontekija_resp, status.HTTP_201_CREATED)
 
-        # Create inactive vakapaatos and vakasuhde to old_toimipaikka
-        vakapaatos_2 = {
-            'lapsi': '/api/v1/lapset/{0}/'.format(vakapaatos_1.lapsi.id),
-            'vuorohoito_kytkin': True,
-            'tuntimaara_viikossa': '37.5',
-            'jarjestamismuoto_koodi': 'jm01',
-            'tilapainen_vaka_kytkin': False,
-            'hakemus_pvm': '2020-03-01',
-            'alkamis_pvm': '2020-03-01',
-            'paattymis_pvm': '2020-04-10',
-            'lahdejarjestelma': '1'
+        tutkinto = {
+            'vakajarjestaja_oid': new_vakajarjestaja_oid,
+            'henkilo_oid': tyontekija_henkilo_oid,
+            'tutkinto_koodi': tutkinto_code
         }
-        vakapaatos_2_resp = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos_2)
-        assert_status_code(vakapaatos_2_resp, 201)
 
-        vakasuhde_2 = {
-            'toimipaikka_oid': old_toimipaikka_oid,
-            'varhaiskasvatuspaatos': json.loads(vakapaatos_2_resp.content)['url'],
-            'alkamis_pvm': '2020-03-20',
-            'paattymis_pvm': '2020-04-01',
-            'lahdejarjestelma': '1'
+        tutkinto_resp = client.post('/api/henkilosto/v1/tutkinnot/', tutkinto)
+        assert_status_code(tutkinto_resp, status.HTTP_201_CREATED)
+
+        palvelussuhde = {
+            'tyontekija': json.loads(tyontekija_resp.content)['url'],
+            'tyosuhde_koodi': 1,
+            'tyoaika_koodi': 1,
+            'tutkinto_koodi': tutkinto_code,
+            'tyoaika_viikossa': '38.73',
+            'alkamis_pvm': '2020-09-01',
+            'lahdejarjestelma': '1',
         }
-        vakasuhde_2_resp = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde_2)
-        assert_status_code(vakasuhde_2_resp, 201)
+        palvelussuhde_resp = client.post('/api/henkilosto/v1/palvelussuhteet/', palvelussuhde)
+        assert_status_code(palvelussuhde_resp, status.HTTP_201_CREATED)
 
-        # Merge toimipaikka 1.2.246.562.10.6727877596658 to toimipaikka 1.2.246.562.10.52966755795
-        merge_toimipaikka_to_other_toimipaikka(admin, master_toimipaikka.id, old_toimipaikka.id)
+        new_vakajarjestaja_toimipaikka_oid = '1.2.246.562.10.9625978384762'
+        tyoskentelypaikka = {
+            'toimipaikka_oid': new_vakajarjestaja_toimipaikka_oid,
+            'palvelussuhde': json.loads(palvelussuhde_resp.content)['url'],
+            'alkamis_pvm': '2020-09-20',
+            'tehtavanimike_koodi': '39407',
+            'kelpoisuus_kytkin': True,
+            'kiertava_tyontekija_kytkin': False,
+            'lahdejarjestelma': '1',
+        }
+        tyoskentelypaikka_resp = client.post('/api/henkilosto/v1/tyoskentelypaikat/', tyoskentelypaikka)
+        assert_status_code(tyoskentelypaikka_resp, status.HTTP_201_CREATED)
 
-        # Assert vakapaatos_1.paattymis_pvm, vakasuhde_merged.paattymis_pvm and vakasuhde_1.paattymis_pvm is today
-        self.assertEqual(Varhaiskasvatuspaatos.objects.get(id=vakapaatos_1.id).paattymis_pvm, today)
-        self.assertEqual(Varhaiskasvatussuhde.objects.get(id=vakasuhde_1_id).paattymis_pvm, today)
-        self.assertEqual(Varhaiskasvatussuhde.objects.get(id=vakasuhde_merged.id).paattymis_pvm, today)
+        # Transfer Toimipaikat of VakaJarjestaja 1.2.246.562.10.57294396385 to
+        # VakaJarjestaja 1.2.246.562.10.52966755795
+        transfer_toimipaikat_to_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja)
 
-        new_lapsi = Lapsi.objects.get(henkilo=vakapaatos_1.lapsi.henkilo,
-                                      varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka=master_toimipaikka)
-        new_vakapaatos = new_lapsi.varhaiskasvatuspaatokset.first()
-        # Assert merged lapsi only has one vakapaatos with one vakasuhde
-        self.assertEqual(new_lapsi.varhaiskasvatuspaatokset.count(), 1)
-        self.assertEqual(new_vakapaatos.varhaiskasvatussuhteet.count(), 1)
+        # Assert old Tyontekija object doesn't exist
+        self.assertFalse(Tyontekija.objects.filter(id=old_tyontekija_id).exists())
 
-        # Assert new vakasuhde is active
-        self.assertEqual(new_vakapaatos.varhaiskasvatussuhteet
-                         .filter(Q(paattymis_pvm=None) | Q(paattymis_pvm__gt=today))
-                         .exists(), True)
+        # Assert old Tutkinto object doesn't exist
+        self.assertFalse(Tutkinto.objects.filter(id=old_tutkinto_id).exists())
 
+        # Assert new_vakajarjestaja has only one Tyontekija linked to Henkilo 1.2.246.562.24.4645229637988
+        self.assertEqual(1, Tyontekija.objects.filter(henkilo=tyontekija_henkilo,
+                                                      vakajarjestaja=new_vakajarjestaja).count())
 
-def check_if_organization_has_permissions(self,
-                                          organisaatio_oid,
-                                          toimipaikka_id,
-                                          lapsi_id_list,
-                                          vakapaatos_id_list,
-                                          vakasuhde_id_list,
-                                          maksutieto_id_list,
-                                          has_permissions=True):
-    # List of toimipaikat organization has permissions to
-    toimipaikka_list_permissions = object_ids_organization_has_permissions_to(organisaatio_oid, Toimipaikka)
-    # List of lapset organization has permissions to
-    lapsi_list_permissions = object_ids_organization_has_permissions_to(organisaatio_oid, Lapsi)
-    # List of varhaiskasvatuspaatokset organization has permissions to
-    vakapaatos_list_permissions = object_ids_organization_has_permissions_to(organisaatio_oid, Varhaiskasvatuspaatos)
-    # List of varhaiskasvatussuhteet organization has permissions to
-    vakasuhde_list_permissions = object_ids_organization_has_permissions_to(organisaatio_oid, Varhaiskasvatussuhde)
-    # List of maksutiedot organization has permissions to
-    maksutieto_list_permissions = object_ids_organization_has_permissions_to(organisaatio_oid, Maksutieto)
+        # Assert it has two different Palvelussuhde (existing and transferred)
+        self.assertEqual(tyontekija_qs.first().palvelussuhteet.count(), 2)
 
-    # Assert user has or doesn't have permissions
-    if has_permissions:
-        # Assert user has permissions to toimipaikka
-        self.assertIn(toimipaikka_id, toimipaikka_list_permissions)
-        # Assert user has permissions to lapset
-        self.assertTrue(set(lapsi_id_list).issubset(lapsi_list_permissions))
-        # Assert user has permissions to vakapaatokset
-        self.assertTrue(set(vakapaatos_id_list).issubset(vakapaatos_list_permissions))
-        # Assert user has permissions to vakasuhteet
-        self.assertTrue(set(vakasuhde_id_list).issubset(vakasuhde_list_permissions))
-        # Assert user has permissions to vakasuhteet
-        self.assertTrue(set(maksutieto_id_list).issubset(maksutieto_list_permissions))
-    else:
-        # Assert user doesn't have permissions to toimipaikka
-        self.assertNotIn(toimipaikka_id, toimipaikka_list_permissions)
-        # Assert user doesn't have permissions to lapset
-        self.assertFalse(set(lapsi_id_list).issubset(lapsi_list_permissions))
-        # Assert user doesn't have permissions to vakapaatokset
-        self.assertFalse(set(vakapaatos_id_list).issubset(vakapaatos_list_permissions))
-        # Assert user doesn't have permissions to vakasuhteet
-        self.assertFalse(set(vakasuhde_id_list).issubset(vakasuhde_list_permissions))
-        # Assert user doesn't have permissions to vakasuhteet
-        self.assertFalse(set(maksutieto_id_list).issubset(maksutieto_list_permissions))
+        # Assert existing Tyontekija has been added to Taydennyskoulutus
+        self.assertEqual(len(set(taydennyskoulutus.taydennyskoulutukset_tyontekijat
+                                 .values_list('tyontekija', flat=True))), 1)
+        self.assertEqual(taydennyskoulutus.tyontekijat.all()[0].id, tyontekija_qs.first().id)
+
+    def test_transfer_new_vakajarjestaja_has_existing_tilapainen_henkilosto(self):
+        old_vakajarjestaja_oid = '1.2.246.562.10.57294396385'
+        new_vakajarjestaja_oid = '1.2.246.562.10.52966755795'
+
+        old_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=old_vakajarjestaja_oid)
+        new_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=new_vakajarjestaja_oid)
+
+        old_tilapainen_henkilosto = TilapainenHenkilosto.objects.get(tunniste='testing-tilapainenhenkilosto2')
+        old_tilapainen_henkilosto.kuukausi = datetime.date(year=2020, month=9, day=1)
+        old_tilapainen_henkilosto.save()
+        existing_tilapainen_henkilosto = TilapainenHenkilosto.objects.get(tunniste='testing-tilapainenhenkilosto3')
+        existing_tilapainen_henkilosto.kuukausi = datetime.date(year=2020, month=9, day=2)
+        existing_tilapainen_henkilosto.save()
+
+        transfer_toimipaikat_to_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja)
+
+        # Old TilapainenHenkilosto object has been deleted
+        self.assertFalse(TilapainenHenkilosto.objects.filter(id=old_tilapainen_henkilosto.id).exists())
+
+        # Information has been united
+        tilapainen_henkilosto = TilapainenHenkilosto.objects.get(id=existing_tilapainen_henkilosto.id)
+        self.assertEqual(tilapainen_henkilosto.tuntimaara,
+                         old_tilapainen_henkilosto.tuntimaara + existing_tilapainen_henkilosto.tuntimaara)
+        self.assertEqual(tilapainen_henkilosto.tyontekijamaara,
+                         old_tilapainen_henkilosto.tyontekijamaara + existing_tilapainen_henkilosto.tyontekijamaara)
+
+    def _get_id_list_nested_for_vakajarjestaja(self, vakajarjestaja):
+        toimipaikka_qs = Toimipaikka.objects.filter(vakajarjestaja=vakajarjestaja).distinct()
+        permission_id_list_nested = [list(toimipaikka_qs.values_list('id', flat=True))]
+
+        toiminnallinen_painotus_qs = ToiminnallinenPainotus.objects.filter(toimipaikka__in=toimipaikka_qs)
+        permission_id_list_nested.append(list(toiminnallinen_painotus_qs.values_list('id', flat=True)))
+
+        kielipainotus_qs = KieliPainotus.objects.filter(toimipaikka__in=toimipaikka_qs)
+        permission_id_list_nested.append(list(kielipainotus_qs.values_list('id', flat=True)))
+
+        henkilo_qs = Henkilo.objects.filter(Q(lapsi__vakatoimija=vakajarjestaja) |
+                                            Q(tyontekijat__vakajarjestaja=vakajarjestaja)).distinct()
+        permission_id_list_nested.append(list(henkilo_qs.values_list('id', flat=True)))
+
+        lapsi_qs = Lapsi.objects.filter(vakatoimija=vakajarjestaja)
+        permission_id_list_nested.append(list(lapsi_qs.values_list('id', flat=True)))
+
+        vakapaatos_qs = Varhaiskasvatuspaatos.objects.filter(lapsi__in=lapsi_qs)
+        permission_id_list_nested.append(list(vakapaatos_qs.values_list('id', flat=True)))
+
+        vakasuhde_qs = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__in=vakapaatos_qs)
+        permission_id_list_nested.append(list(vakasuhde_qs.values_list('id', flat=True)))
+
+        maksutieto_qs = Maksutieto.objects.filter(huoltajuussuhteet__lapsi__in=lapsi_qs).distinct()
+        permission_id_list_nested.append(list(maksutieto_qs.values_list('id', flat=True)))
+
+        tyontekija_qs = Tyontekija.objects.filter(vakajarjestaja=vakajarjestaja)
+        permission_id_list_nested.append(list(tyontekija_qs.values_list('id', flat=True)))
+
+        tutkinto_qs = Tutkinto.objects.filter(vakajarjestaja=vakajarjestaja)
+        permission_id_list_nested.append(list(tutkinto_qs.values_list('id', flat=True)))
+
+        palvelussuhde_qs = Palvelussuhde.objects.filter(tyontekija__in=tyontekija_qs)
+        permission_id_list_nested.append(list(palvelussuhde_qs.values_list('id', flat=True)))
+
+        tyoskentelypaikka_qs = Tyoskentelypaikka.objects.filter(palvelussuhde__in=palvelussuhde_qs)
+        permission_id_list_nested.append(list(tyoskentelypaikka_qs.values_list('id', flat=True)))
+
+        pidempi_poissaolo_qs = PidempiPoissaolo.objects.filter(palvelussuhde__in=palvelussuhde_qs)
+        permission_id_list_nested.append(list(pidempi_poissaolo_qs.values_list('id', flat=True)))
+
+        taydennyskoulutus_qs = Taydennyskoulutus.objects.filter(tyontekijat__vakajarjestaja=vakajarjestaja).distinct()
+        permission_id_list_nested.append(list(taydennyskoulutus_qs.values_list('id', flat=True)))
+
+        tilapainen_henkilosto_qs = TilapainenHenkilosto.objects.filter(vakajarjestaja=vakajarjestaja)
+        permission_id_list_nested.append(list(tilapainen_henkilosto_qs.values_list('id', flat=True)))
+
+        return permission_id_list_nested
+
+    def _assert_organization_has_permissions(self, organisaatio_oid, permission_id_list_nested, has_permissions=True):
+        model_list = (Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Varhaiskasvatuspaatos,
+                      Varhaiskasvatussuhde, Maksutieto, Tyontekija, Tutkinto, Palvelussuhde, Tyoskentelypaikka,
+                      PidempiPoissaolo, Taydennyskoulutus, TilapainenHenkilosto,)
+        existing_permission_id_list_nested = [object_ids_organization_has_permissions_to(organisaatio_oid, model)
+                                              for model in model_list]
+
+        assert_function = self.assertTrue if has_permissions else self.assertFalse
+
+        for index in range(0, len(model_list)):
+            permissions = permission_id_list_nested[index]
+            existing_permissions = existing_permission_id_list_nested[index]
+
+            if not permissions:
+                continue
+
+            assert_function(set(permissions).issubset(existing_permissions))
