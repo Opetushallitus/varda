@@ -207,7 +207,7 @@ def update_koodistot_task():
 def remove_address_information_from_tyontekijat_only_task():
     henkilot = Henkilo.objects.filter(~Q(kotikunta_koodi='') | ~Q(katuosoite='') |
                                       ~Q(postinumero='') | ~Q(postitoimipaikka=''),
-                                      huoltaja__isnull=True, tyontekijat__isnull=False).distinct()
+                                      huoltaja__isnull=True, lapsi__isnull=True, tyontekijat__isnull=False).distinct()
 
     # Loop through each Henkilo so that save signals are processed correctly
     for henkilo in henkilot:
@@ -324,7 +324,7 @@ def force_update_toimipaikat_in_organisaatiopalvelu_task():
 @single_instance_task(timeout_in_minutes=8 * 60)
 def remove_birthdate_from_huoltajat_only_task():
     henkilo_qs = Henkilo.objects.filter(syntyma_pvm__isnull=False, huoltaja__isnull=False,
-                                        tyontekijat__isnull=True).distinct()
+                                        tyontekijat__isnull=True, lapsi__isnull=True).distinct()
 
     # Loop through each Henkilo so that save signals are processed correctly
     for henkilo in memory_efficient_queryset_iterator(henkilo_qs):
@@ -387,3 +387,17 @@ def delete_lapsi_huoltaja_lapsi_objects():
                                           huoltajuussuhteet__maksutiedot__isnull=True).distinct('id'):
             Huoltajuussuhde.objects.filter(lapsi=lapsi).delete()
             lapsi.delete()
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def update_henkilo_information_for_lapsi_huoltaja():
+    """
+    Some Henkilo objects are related to Lapsi and Huoltaja objects, and syntyma_pvm has previously been removed from
+    Huoltaja objects even if Henkilo also has Lapsi object.
+
+    TEMPORARY FUNCTION
+    """
+    henkilo_qs = Henkilo.objects.filter(lapsi__isnull=False, syntyma_pvm__isnull=True)
+    for henkilo in memory_efficient_queryset_iterator(henkilo_qs):
+        update_henkilo_data_by_oid(henkilo.henkilo_oid, henkilo.id)

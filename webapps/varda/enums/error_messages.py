@@ -128,6 +128,8 @@ class ErrorMessages(enum.Enum):
     LA009 = get_error_dict('LA009', 'Combination of henkilo and vakatoimija fields should be unique.')
     LA010 = get_error_dict('LA010', 'Combination of henkilo, oma_organisaatio and paos_organisaatio fields should be unique.')
     LA011 = get_error_dict('LA011', 'Lapsi already has Varhaiskasvatussuhde objects linked to different VakaJarjestaja.')
+    LA012 = get_error_dict('LA012', 'This Henkilo is already referenced by Tyontekija objects.')
+    LA013 = get_error_dict('LA013', 'This Henkilo is already referenced by Huoltaja object.')
 
     # Varhaiskasvatuspaatos errors, prefix: VP
     VP001 = get_error_dict('VP001', 'hakemus_pvm must be before or equal to alkamis_pvm.')

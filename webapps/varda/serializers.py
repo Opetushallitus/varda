@@ -849,6 +849,12 @@ class LapsiSerializer(RequiredLahdejarjestelmaMixin, LapsiOptionalToimipaikkaMix
     def validate(self, data):
         data = super().validate(data)
         with ViewSetValidator() as validator:
+            henkilo = data.get('henkilo')
+            if henkilo and henkilo.tyontekijat.exists():
+                validator.error('henkilo', ErrorMessages.LA012.value)
+            if henkilo and hasattr(henkilo, 'huoltaja'):
+                validator.error('henkilo', ErrorMessages.LA013.value)
+
             if self.instance:
                 fill_missing_fields_for_validations(data, self.instance)
                 check_if_immutable_object_is_changed(self.instance, data, 'henkilo')

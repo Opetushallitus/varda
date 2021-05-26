@@ -4839,3 +4839,33 @@ class VardaViewsTests(TestCase):
         assert_status_code(resp_4, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp_4, 'errors', 'LA010', 'Combination of henkilo, oma_organisaatio and '
                                                            'paos_organisaatio fields should be unique.')
+
+    def test_lapsi_tyontekija(self):
+        client = SetUpTestClient('tester2').client()
+        henkilo_oid = '1.2.246.562.24.2431884920041'
+        post_henkilo_to_get_permissions(client, henkilo_oid=henkilo_oid)
+
+        lapsi = {
+            'henkilo_oid': henkilo_oid,
+            'vakatoimija_oid': '1.2.246.562.10.34683023489',
+            'lahdejarjestelma': '1'
+        }
+
+        resp = client.post('/api/v1/lapset/', lapsi)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'henkilo', 'LA012', 'This Henkilo is already referenced by Tyontekija objects.')
+
+    def test_lapsi_huoltaja(self):
+        client = SetUpTestClient('tester2').client()
+        henkilo_oid = '1.2.246.562.24.2395579772672'
+        post_henkilo_to_get_permissions(client, henkilo_oid=henkilo_oid)
+
+        lapsi = {
+            'henkilo_oid': henkilo_oid,
+            'vakatoimija_oid': '1.2.246.562.10.34683023489',
+            'lahdejarjestelma': '1'
+        }
+
+        resp = client.post('/api/v1/lapset/', lapsi)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'henkilo', 'LA013', 'This Henkilo is already referenced by Huoltaja object.')
