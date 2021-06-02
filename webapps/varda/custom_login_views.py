@@ -39,9 +39,13 @@ class RatelimitedLoginView(views.LoginView):
     Current limit is 50 login requests/hour per IP.
     This might need more evaluation in case many active users behind NAT for example.
     """
-    @method_decorator(ratelimit(key='header:x-real-ip', rate='50/h', block=False))
-    @method_decorator(ratelimit(key='post:username', rate='4/h', method=['POST'], block=False))
-    @method_decorator(ratelimit(key='post:password', rate='4/h', method=['POST'], block=False))
+    @method_decorator(ratelimit(key='header:x-real-ip',
+                                rate=settings.CUSTOM_LOGIN_RATELIMIT['header_x_real_ip'],
+                                block=False))
+    @method_decorator(ratelimit(key='post:username', rate=settings.CUSTOM_LOGIN_RATELIMIT['post_form'],
+                                method=['POST'], block=False))
+    @method_decorator(ratelimit(key='post:password', rate=settings.CUSTOM_LOGIN_RATELIMIT['post_form'],
+                                method=['POST'], block=False))
     @method_decorator(sensitive_post_parameters())  # Original decorator
     @method_decorator(csrf_protect)                 # Original decorator
     @method_decorator(never_cache)                  # Original decorator

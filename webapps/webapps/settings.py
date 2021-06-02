@@ -291,6 +291,10 @@ API-Throttling:
 if 'test' in sys.argv:
     CACHES['default'] = {'BACKEND': 'django.core.cache.backends.dummy.DummyCache', }
 
+CUSTOM_LOGIN_RATELIMIT = {
+    'header_x_real_ip': '50/h',
+    'post_form': '4/h'
+}
 
 # TODO:_Set the strict-throttles to very strict, after initial loading has been performed. This is important for security reasons!
 REST_FRAMEWORK = {
