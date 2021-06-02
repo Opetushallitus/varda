@@ -17,7 +17,7 @@ from varda.models import (VakaJarjestaja, Toimipaikka, PaosOikeus, Huoltaja, Huo
                           KieliPainotus, PaosToiminta)
 from varda.permission_groups import assign_object_level_permissions
 from varda.unit_tests.test_utils import (assert_status_code, SetUpTestClient, assert_validation_error, mock_admin_user,
-                                         post_henkilo_to_get_permissions)
+                                         post_henkilo_to_get_permissions, mock_date_decorator_factory)
 from varda.viewsets import HenkiloViewSet, LapsiViewSet
 
 
@@ -4869,3 +4869,50 @@ class VardaViewsTests(TestCase):
         resp = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'henkilo', 'LA013', 'This Henkilo is already referenced by Huoltaja object.')
+
+    @mock_date_decorator_factory('varda.serializers.datetime', '2021-06-01')
+    def test_toimipaikka_dates_within_vakajarjestaja(self):
+        vakajarjestaja_oid = '1.2.246.562.10.34683023489'
+        toimipaikka = {
+            'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
+            'nimi': 'Testila',
+            'kunta_koodi': '091',
+            'puhelinnumero': '+35892323234',
+            'kayntiosoite': 'Testerkatu 2',
+            'kayntiosoite_postinumero': '00001',
+            'kayntiosoite_postitoimipaikka': 'Testilä',
+            'postiosoite': 'Testerkatu 2',
+            'postitoimipaikka': 'Testilä',
+            'postinumero': '00001',
+            'sahkopostiosoite': 'hel1234@helsinki.fi',
+            'kasvatusopillinen_jarjestelma_koodi': 'kj03',
+            'toimintamuoto_koodi': 'tm01',
+            'asiointikieli_koodi': ['FI'],
+            'jarjestamismuoto_koodi': ['jm01', 'jm03'],
+            'varhaiskasvatuspaikat': 1000,
+            'alkamis_pvm': '2021-08-01',
+            'lahdejarjestelma': '1',
+        }
+
+        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid)
+        vakajarjestaja.paattymis_pvm = '2021-07-01'
+        vakajarjestaja.save()
+
+        client = SetUpTestClient('tester2').client()
+        resp_1 = client.post('/api/v1/toimipaikat/', toimipaikka)
+        assert_status_code(resp_1, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_1, 'alkamis_pvm', 'TP025', 'alkamis_pvm must be before or equal to VakaJarjestaja paattymis_pvm.')
+
+        vakajarjestaja.paattymis_pvm = '2021-05-31'
+        vakajarjestaja.save()
+        toimipaikka['alkamis_pvm'] = '2021-05-01'
+        resp_2 = client.post('/api/v1/toimipaikat/', toimipaikka)
+        assert_status_code(resp_2, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_2, 'paattymis_pvm', 'TP024', 'Toimipaikka must have paattymis_pvm because VakaJarjestaja is not active.')
+
+        vakajarjestaja.paattymis_pvm = '2021-07-01'
+        vakajarjestaja.save()
+        toimipaikka['paattymis_pvm'] = '2021-08-01'
+        resp_2 = client.post('/api/v1/toimipaikat/', toimipaikka)
+        assert_status_code(resp_2, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_2, 'paattymis_pvm', 'TP026', 'paattymis_pvm must be before or equal to VakaJarjestaja paattymis_pvm.')

@@ -375,6 +375,7 @@ class ToimipaikkaSerializer(RequiredLahdejarjestelmaMixin, serializers.Hyperlink
             raise serializers.ValidationError({'nimi': [ErrorMessages.TP006.value]}, code='invalid')
         validators.validate_toimipaikan_nimi(data['nimi'])
 
+        self._validate_dates_within_vakajarjestaja(data)
         self._validate_jarjestamismuoto_codes(data)
         validators.validate_alkamis_pvm_before_paattymis_pvm(data)
 
@@ -400,6 +401,23 @@ class ToimipaikkaSerializer(RequiredLahdejarjestelmaMixin, serializers.Hyperlink
                   not jarjestamismuoto_codes_set.issubset(jarjestamismuoto_codes_yksityinen)):
                 # jarjestamismuoto_koodi field has values that are not allowed for yksityinen Toimipaikka
                 validator.error('jarjestamismuoto_koodi', ErrorMessages.TP018.value)
+
+    def _validate_dates_within_vakajarjestaja(self, data):
+        vakajarjestaja = data['vakajarjestaja']
+        alkamis_pvm = data['alkamis_pvm']
+        paattymis_pvm = data.get('paattymis_pvm', None)
+
+        today = datetime.date.today()
+        if vakajarjestaja.paattymis_pvm:
+            if validators.validate_paivamaara1_after_paivamaara2(alkamis_pvm, vakajarjestaja.paattymis_pvm,
+                                                                 can_be_same=True):
+                raise ValidationError({'alkamis_pvm': [ErrorMessages.TP025.value]})
+            if vakajarjestaja.paattymis_pvm < today and not paattymis_pvm:
+                raise ValidationError({'paattymis_pvm': [ErrorMessages.TP024.value]})
+            elif (paattymis_pvm and
+                  validators.validate_paivamaara1_after_paivamaara2(paattymis_pvm, vakajarjestaja.paattymis_pvm,
+                                                                    can_be_same=True)):
+                raise ValidationError({'paattymis_pvm': [ErrorMessages.TP026.value]})
 
 
 class ToiminnallinenPainotusSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):

@@ -83,6 +83,9 @@ class ErrorMessages(enum.Enum):
     TP021 = get_error_dict('TP021', 'There are Varhaiskasvatussuhde objects linked to this Toimipaikka which are active longer than Toimipaikka itself.')
     TP022 = get_error_dict('TP022', 'There are Tyoskentelypaikka objects linked to this Toimipaikka which are active longer than Toimipaikka itself.')
     TP023 = get_error_dict('TP023', 'Toimipaikka is active but there are no Tyoskentelypaikka objects linked to it.')
+    TP024 = get_error_dict('TP024', 'Toimipaikka must have paattymis_pvm because VakaJarjestaja is not active.')
+    TP025 = get_error_dict('TP025', 'alkamis_pvm must be before or equal to VakaJarjestaja paattymis_pvm.')
+    TP026 = get_error_dict('TP026', 'paattymis_pvm must be before or equal to VakaJarjestaja paattymis_pvm.')
 
     # ToiminnallinenPainotus errors, prefix: TO
     TO001 = get_error_dict('TO001', 'ToiminnallinenPainotus with this toimintapainotus_koodi already exists for toimipaikka on the given date range.')
