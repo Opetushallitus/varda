@@ -395,6 +395,7 @@ CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", 'ajax.googleapis.com', 'cdnjs.clo
 CSP_FONT_SRC = ("'self'", 'maxcdn.bootstrapcdn.com', 'fonts.gstatic.com', 'fonts.googleapis.com')
 CSP_IMG_SRC = ("'self'", 'data:')
 
+CSRF_COOKIE_HTTPONLY = True
 
 if "VARDA_ENVIRONMENT_TYPE" not in os.environ:
     # Celery configuration for local dev server. Override this block in real environment
