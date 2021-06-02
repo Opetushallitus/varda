@@ -25,9 +25,10 @@ from varda.excel_export import delete_excel_reports_earlier_than
 from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
 from varda.misc import memory_efficient_queryset_iterator
 from varda.models import (Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog, Lapsi, Varhaiskasvatuspaatos,
-                          Huoltaja, Huoltajuussuhde)
+                          Huoltaja, Huoltajuussuhde, Maksutieto)
 from varda.permissions import assign_object_level_permissions_for_instance
-from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups
+from varda.permission_groups import (assign_object_permissions_to_taydennyskoulutus_groups,
+                                     assign_object_level_permissions)
 
 logger = logging.getLogger(__name__)
 
@@ -401,3 +402,31 @@ def update_henkilo_information_for_lapsi_huoltaja():
     henkilo_qs = Henkilo.objects.filter(lapsi__isnull=False, syntyma_pvm__isnull=True)
     for henkilo in memory_efficient_queryset_iterator(henkilo_qs):
         update_henkilo_data_by_oid(henkilo.henkilo_oid, henkilo.id)
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def assign_toimipaikka_maksutieto_permissions():
+    """
+    Reassign permissions for Maksutieto objects of non-PAOS lapset on Toimipaikka level. Toimipaikka may not have
+    permissions to Maksutieto if Varhaiskasvatussuhde was created after Maksutieto.
+
+    TEMPORARY FUNCTION
+    """
+    maksutieto_qs = (Maksutieto.objects.filter(huoltajuussuhteet__lapsi__oma_organisaatio__isnull=True)
+                     .distinct('id').order_by('id'))
+    for maksutieto in memory_efficient_queryset_iterator(maksutieto_qs):
+        lapsi_id_set = set(maksutieto.huoltajuussuhteet.values_list('lapsi', flat=True))
+
+        if len(lapsi_id_set) != 1:
+            logger.error(f'Maksutieto {maksutieto.id} is not related to only 1 Lapsi object')
+            continue
+
+        lapsi = Lapsi.objects.get(id=lapsi_id_set.pop())
+        if not lapsi.oma_organisaatio:
+            # PAOS-lapset should not have issues with Maksutieto permissions
+            oid_set = set(lapsi.varhaiskasvatuspaatokset
+                          .values_list('varhaiskasvatussuhteet__toimipaikka__organisaatio_oid', flat=True))
+            oid_set.discard(None)
+            for oid in oid_set:
+                assign_object_level_permissions(oid, Maksutieto, maksutieto)

@@ -7,6 +7,7 @@ from django.contrib.auth.models import Group, User
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
 from django.db.models import Prefetch, ProtectedError, Q, Subquery, Sum
+from django.db.models.query import EmptyQuerySet
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -165,6 +166,8 @@ class ClearCacheViewSet(GenericViewSet, CreateModelMixin):
     """
     serializer_class = ClearCacheSerializer
     permission_classes = (permissions.IsAdminUser, )
+    # QuerySet is required in browserable API
+    queryset = EmptyQuerySet
 
     def create(self, request, *args, **kwargs):
         user = request.user
@@ -1379,6 +1382,11 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
                 try:
                     self.assign_non_paos_lapsi_permissions(lapsi_obj, varhaiskasvatussuhde_obj, varhaiskasvatuspaatos_obj,
                                                            vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
+
+                    # Assign Maksutieto permissions
+                    maksutieto_qs = Maksutieto.objects.filter(huoltajuussuhteet__lapsi=lapsi_obj).distinct('id')
+                    for maksutieto in maksutieto_qs:
+                        assign_object_level_permissions(toimipaikka_organisaatio_oid, Maksutieto, maksutieto)
                 except Group.DoesNotExist:
                     logger.error('Missing Group for toimija {} and toimipaikka {}'
                                  .format(vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid))
