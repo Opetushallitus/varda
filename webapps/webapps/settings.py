@@ -88,6 +88,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'token_resolved.middleware.AddTokenHeaderMiddleware',
     'csp.middleware.CSPMiddleware',
+    'varda.custom_middleware.AdditionalHeadersMiddleware'
 ]
 
 ROOT_URLCONF = 'webapps.urls'
@@ -391,9 +392,10 @@ CRISPY_TEMPLATE_PACK = 'bootstrap3'
 CSP_DEFAULT_SRC = ("'self'",)
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'", 'maxcdn.bootstrapcdn.com', 'fonts.gstatic.com',
                  'fonts.googleapis.com', 'cdnjs.cloudflare.com')
-CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", 'ajax.googleapis.com', 'cdnjs.cloudflare.com')
+CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", 'cdnjs.cloudflare.com')
 CSP_FONT_SRC = ("'self'", 'maxcdn.bootstrapcdn.com', 'fonts.gstatic.com', 'fonts.googleapis.com')
 CSP_IMG_SRC = ("'self'", 'data:')
+CSP_OBJECT_SRC = ("'none'",)
 
 CSRF_COOKIE_HTTPONLY = True
 
