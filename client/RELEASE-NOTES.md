@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.18 (04.06.2021)
+- OPHVARDA-910: Evästeiden vaikutusalueen tarkennus
+
 1.5.17 (20.05.2021)
 - OPHVARDA-2037: Älä hae puutteellisia virheitä toimipaikan luonnissa
 
