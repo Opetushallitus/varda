@@ -45,7 +45,7 @@ local function delete_cookie(name, params)
         s = s .. ';Max-Age=' .. params['max_age']
     end
     local expires = ngx.time() - 86400
-    return name .. "=" .. s ..";Path=/;Expires=" .. ngx.cookie_time(expires)
+    return name .. "=" .. s ..";Path=/varda;Expires=" .. ngx.cookie_time(expires)
 end
 
 local function create_cookie_str(expired)
@@ -61,7 +61,7 @@ local function create_cookie_str(expired)
         local hash = create_cookie_hash(timestamp, session_id)
         cookiestr = timestamp .. ":" .. session_id .. ":" .. hash
     end
-    return ngx.var.sessionname .. "=" .. cookiestr .. ";path=/;"
+    return ngx.var.sessionname .. "=" .. cookiestr .. ";path=/varda;"
             .. ngx.var.sessionsecure .. "HttpOnly;SameSite=Lax;Expires=" .. ngx.cookie_time(expires)
 end
 
