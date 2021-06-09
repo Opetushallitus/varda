@@ -148,6 +148,12 @@ local function get_statistics(stub)
     return res
 end
 
+local function set_content_disposition_header()
+  if (ngx.resp.get_headers()['Content-Type'] == 'application/json') then
+    ngx.header['Content-Disposition'] = 'attachment; filename="api.json"'
+  end
+end
+
 return {
     require_internal_auth = require_internal_auth,
     delete_cookie = delete_cookie,
@@ -157,5 +163,6 @@ return {
     extract_cookie_str = extract_cookie_str,
     validate_cookie_data = validate_cookie_data,
     validate_cookie_str = validate_cookie_str,
-    get_statistics = get_statistics
+    get_statistics = get_statistics,
+    set_content_disposition_header = set_content_disposition_header
 }

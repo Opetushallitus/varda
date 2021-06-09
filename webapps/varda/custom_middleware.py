@@ -17,10 +17,7 @@ class AdditionalHeadersMiddleware(MiddlewareMixin):
         response['Strict-Transport-Security'] = 'max-age=31536000; includeSubdomains'
 
         content_type = response.get('Content-Type', '').lower()
-        if 'application/json' in content_type:
-            # If response is of type application/json add a Content-Disposition header
-            response['Content-Disposition'] = 'attachment; filename="api.json"'
-        elif 'text/html' in content_type:
+        if 'text/html' in content_type:
             # If response is rendered, add X-XSS-Protection header
             response['X-XSS-Protection'] = '1; mode=block'
 
