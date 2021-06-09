@@ -1,14 +1,14 @@
-import { Component, Input } from '@angular/core';
+import { Component } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaRaportitService } from 'projects/virkailija-app/src/app/core/services/varda-raportit.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaUtilityService } from 'projects/virkailija-app/src/app/core/services/varda-utility.service';
-import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { AbstractPuutteellisetComponent } from '../abstract-puutteelliset.component';
 import { PuutteellinenToimipaikkaListDTO } from '../../../../../utilities/models/dto/varda-puutteellinen-dto.model';
 import { VardaVakajarjestajaApiService } from '../../../../../core/services/varda-vakajarjestaja-api.service';
 import { VardaToimipaikkaMinimalDto } from '../../../../../utilities/models/dto/varda-toimipaikka-dto.model';
+import { VardaVakajarjestajaService } from '../../../../../core/services/varda-vakajarjestaja.service';
 
 @Component({
   selector: 'app-varda-puutteelliset-toimipaikat',
@@ -16,19 +16,19 @@ import { VardaToimipaikkaMinimalDto } from '../../../../../utilities/models/dto/
   styleUrls: ['./puutteelliset-toimipaikat.component.css', '../varda-puutteelliset-tiedot.component.css']
 })
 export class VardaPuutteellisetToimipaikatComponent extends AbstractPuutteellisetComponent<PuutteellinenToimipaikkaListDTO, VardaToimipaikkaMinimalDto> {
-  @Input() selectedVakajarjestaja: VardaVakajarjestajaUi;
   i18n = VirkailijaTranslations;
   toimipaikat: Array<PuutteellinenToimipaikkaListDTO>;
 
   constructor(
-    private vakajarjestajaService: VardaVakajarjestajaApiService,
+    private vakajarjestajaApiService: VardaVakajarjestajaApiService,
     private raportitService: VardaRaportitService,
     private snackBarService: VardaSnackBarService,
     protected utilityService: VardaUtilityService,
     protected translateService: TranslateService,
+    vakajarjestajaService: VardaVakajarjestajaService,
   ) {
-    super(utilityService, translateService);
-    this.subscriptions.push(this.vakajarjestajaService.listenToimipaikkaListUpdate().subscribe(() => this.getErrors()));
+    super(utilityService, translateService, vakajarjestajaService);
+    this.subscriptions.push(this.vakajarjestajaApiService.listenToimipaikkaListUpdate().subscribe(() => this.getErrors()));
   }
 
   getErrors(): void {
@@ -49,7 +49,7 @@ export class VardaPuutteellisetToimipaikatComponent extends AbstractPuutteellise
   }
 
   findInstance(instance: PuutteellinenToimipaikkaListDTO) {
-    this.vakajarjestajaService.getToimipaikat(this.selectedVakajarjestaja.id, { id: instance.toimipaikka_id }).subscribe({
+    this.vakajarjestajaApiService.getToimipaikat(this.selectedVakajarjestaja.id, { id: instance.toimipaikka_id }).subscribe({
       next: data => {
         const result = data.find(toimipaikka => toimipaikka.id === instance.toimipaikka_id);
         this.openForm(result);

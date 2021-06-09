@@ -140,6 +140,18 @@
     }
   },
   {
+    "model": "django_celery_beat.crontabschedule",
+    "pk": 10,
+    "fields": {
+      "minute": "00",
+      "hour": "4,16",
+      "day_of_week": "*",
+      "day_of_month": "*",
+      "month_of_year": "*",
+      "timezone": "UTC"
+    }
+  },
+  {
     "model": "django_celery_beat.periodictask",
     "pk": 1,
     "fields": {
@@ -586,6 +598,31 @@
       "last_run_at": null,
       "total_run_count": 0,
       "date_changed": "2020-07-01T16:00:00.000Z",
+      "description": ""
+    }
+  },
+  {
+    "model": "django_celery_beat.periodictask",
+    "pk": 20,
+    "fields": {
+      "name": "update_last_request_table",
+      "task": "varda.tasks.update_last_request_table_task",
+      "interval": null,
+      "crontab": 10,
+      "solar": null,
+      "args": "[]",
+      "kwargs": "{}",
+      "queue": null,
+      "exchange": null,
+      "routing_key": null,
+      "priority": null,
+      "one_off": false,
+      "start_time": null,
+      "expires": null,
+      "enabled": true,
+      "last_run_at": null,
+      "total_run_count": 0,
+      "date_changed": "2021-06-01T16:00:00.000Z",
       "description": ""
     }
   }

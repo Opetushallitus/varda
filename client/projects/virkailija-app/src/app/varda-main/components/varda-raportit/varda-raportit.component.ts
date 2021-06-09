@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { Subscription } from 'rxjs';
@@ -10,7 +10,8 @@ import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 @Component({
   selector: 'app-varda-raportit',
   templateUrl: './varda-raportit.component.html',
-  styleUrls: ['./varda-raportit.component.css']
+  styleUrls: ['./varda-raportit.component.css'],
+  encapsulation: ViewEncapsulation.None
 })
 export class VardaRaportitComponent implements OnDestroy {
   i18n = VirkailijaTranslations;

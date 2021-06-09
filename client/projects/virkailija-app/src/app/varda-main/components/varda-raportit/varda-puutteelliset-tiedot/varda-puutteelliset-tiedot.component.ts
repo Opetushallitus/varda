@@ -1,5 +1,4 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
 import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
@@ -11,8 +10,9 @@ import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/var
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { Subscription } from 'rxjs';
 import { VardaToimipaikkaMinimalDto } from '../../../../utilities/models/dto/varda-toimipaikka-dto.model';
-
-type PuutteellisetSection = 'lapset' | 'tyontekijat' | 'toimipaikat';
+import { filter } from 'rxjs/operators';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { AbstractPuutteellisetComponent } from './abstract-puutteelliset.component';
 
 @Component({
   selector: 'app-varda-puutteelliset-tiedot',
@@ -27,37 +27,40 @@ export class VardaPuutteellisetTiedotComponent implements OnInit, OnDestroy {
   toimijaAccess: UserAccess;
   activeHenkilo: TyontekijaListDTO | LapsiListDTO;
   activeToimipaikka: VardaToimipaikkaMinimalDto;
-  activeSection: PuutteellisetSection;
+  activeLink: string;
   confirmedFormLeave = true;
   selectedVakajarjestaja: VardaVakajarjestajaUi;
   subscriptions: Array<Subscription> = [];
+  childSubscriptions: Array<Subscription> = [];
   showLapset: boolean;
   showTyontekijat: boolean;
   showToimipaikat: boolean;
-  defaultFragment: PuutteellisetSection;
-  allowedFragments: Array<PuutteellisetSection> = [];
+  defaultRoute = '';
+  allowedRoutes = [];
 
   constructor(
     private authService: AuthService,
     private vakajarjestajaService: VardaVakajarjestajaService,
     private modalService: VardaModalService,
+    private router: Router,
     private route: ActivatedRoute,
   ) {
     this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
-    this.checkUserAccess();
 
-    this.route.fragment.subscribe((fragment: PuutteellisetSection) =>
-      this.activeSection = this.allowedFragments.includes(fragment) ? fragment : this.defaultFragment
+    this.subscriptions.push(
+      this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(
+        (navigation: NavigationEnd) => this.setPage()
+      ),
     );
 
     this.checkUserAccess();
   }
 
-
   ngOnInit() {
     this.subscriptions.push(this.modalService.getModalOpen().subscribe(open => {
       if (!open) {
         this.activeHenkilo = null;
+        this.activeToimipaikka = null;
       }
     }));
   }
@@ -90,20 +93,40 @@ export class VardaPuutteellisetTiedotComponent implements OnInit, OnDestroy {
     this.toimijaAccess = this.authService.getUserAccess();
     if (this.toimijaAccess.raportit.katselija || this.toimijaAccess.lapsitiedot.katselija || this.toimijaAccess.tyontekijatiedot.katselija) {
       this.showToimipaikat = true;
-      this.defaultFragment = 'toimipaikat';
-      this.allowedFragments.push('toimipaikat');
+      this.defaultRoute = 'toimipaikat';
+      this.allowedRoutes.push('toimipaikat');
     }
 
     if (this.toimijaAccess.raportit.katselija || this.toimijaAccess.lapsitiedot.katselija || this.toimijaAccess.huoltajatiedot.katselija) {
       this.showLapset = true;
-      this.defaultFragment = this.defaultFragment || 'lapset';
-      this.allowedFragments.push('lapset');
+      this.defaultRoute = this.defaultRoute || 'lapset';
+      this.allowedRoutes.push('lapset');
     }
 
     if (this.toimijaAccess.raportit.katselija || this.toimijaAccess.tyontekijatiedot.katselija) {
       this.showTyontekijat = true;
-      this.defaultFragment = this.defaultFragment || 'tyontekijat';
-      this.allowedFragments.push('tyontekijat');
+      this.defaultRoute = this.defaultRoute || 'tyontekijat';
+      this.allowedRoutes.push('tyontekijat');
     }
+
+    this.setPage();
+  }
+
+  setPage() {
+    this.activeLink = this.router.url.split('?').shift().split('/').pop();
+    if (!this.allowedRoutes.includes(this.activeLink)) {
+      this.router.navigate([this.defaultRoute], { relativeTo: this.route });
+    }
+  }
+
+  onActivateChild(childComponent: AbstractPuutteellisetComponent<any, any>) {
+    this.childSubscriptions.push(
+      childComponent.openHenkiloForm.subscribe(value => this.openHenkilo(value)),
+      childComponent.openToimipaikkaForm.subscribe(value => this.openToimipaikka(value))
+    );
+  }
+
+  onDeactivateChild() {
+    this.childSubscriptions.forEach(sub => sub.unsubscribe());
   }
 }

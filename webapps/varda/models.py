@@ -1169,6 +1169,24 @@ class Z6_RequestLog(models.Model):
         verbose_name_plural = 'Request log'
 
 
+class Z6_LastRequest(models.Model):
+    user = models.ForeignKey(User, related_name='last_requests', on_delete=models.PROTECT)
+    vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='last_requests', on_delete=models.PROTECT, null=True)
+    lahdejarjestelma = models.CharField(null=True, max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
+    last_successful = models.DateTimeField(null=True)
+    last_unsuccessful = models.DateTimeField(null=True)
+
+    def __str__(self):
+        return str(self.id)
+
+    class Meta:
+        verbose_name_plural = 'Last requests'
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'vakajarjestaja', 'lahdejarjestelma'],
+                                    name='last_request_user_vakajarjestaja_lahdejarjestelma_unique_constraint')
+        ]
+
+
 class Z7_AdditionalUserFields(models.Model):
     user = models.OneToOneField(User, related_name='additional_user_fields', on_delete=models.PROTECT, primary_key=True)
     password_changed_timestamp = models.DateTimeField()

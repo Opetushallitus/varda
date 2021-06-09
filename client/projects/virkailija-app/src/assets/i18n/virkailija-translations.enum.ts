@@ -45,6 +45,7 @@ export enum VirkailijaTranslations {
   ohjeet = 'ohjeet',
   lahdejarjestelma = 'lahdejarjestelma',
   turvakielto = 'turvakielto',
+  username = 'username',
 
   versio_VALUE = 'versio.VALUE',
   accessibility_info = 'accessibility.info',
@@ -830,4 +831,12 @@ export enum VirkailijaTranslations {
   excel_none = 'excel.none',
   excel_instructions = 'excel.instructions',
   excel_refresh = 'excel.refresh',
+
+  transfer_outage = 'transfer-outage',
+  transfer_outage_no_results = 'transfer-outage.no-results',
+  transfer_outage_instructions = 'transfer-outage.instructions',
+  transfer_outage_service_user = 'transfer-outage.service-user',
+  transfer_outage_vakajarjestaja = 'transfer-outage.vakajarjestaja',
+  transfer_outage_last_successful = 'transfer-outage.last-successful',
+  transfer_outage_last_unsuccessful = 'transfer-outage.last-unsuccessful'
 }

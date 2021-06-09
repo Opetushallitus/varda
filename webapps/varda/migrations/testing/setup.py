@@ -3004,7 +3004,7 @@ def create_login_certs():
 def create_test_data():
     import os
     from django.conf import settings
-    from varda.models import Z6_RequestLog
+    from varda.models import Z6_RequestLog, Z6_LastRequest
 
     create_vakajarjestajat()
     create_toimipaikat_and_painotukset()
@@ -3018,6 +3018,7 @@ def create_test_data():
 
     # Remove RequestLog instances created during test data creation
     Z6_RequestLog.objects.all().delete()
+    Z6_LastRequest.objects.all().delete()
 
     """
     Currently do not populate lapset+huoltajat in db if

@@ -62,3 +62,7 @@
 .mat-button-toggle-checked .material-icons {
   color: white !important;
 }
+
+.mat-ink-bar {
+  background-color: var(--blue-lighten-1) !important;
+}

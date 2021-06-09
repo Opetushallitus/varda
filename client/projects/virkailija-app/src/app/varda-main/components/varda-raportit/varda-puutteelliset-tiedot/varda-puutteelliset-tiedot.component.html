@@ -2,25 +2,22 @@
   <mat-button-toggle-group class="puutteelliset-navi"
                            aria-role="navigation"
                            name="henkiloSection"
-                           [value]="activeSection"
+                           [value]="activeLink"
                            [attr.aria-label]="i18n.tiedonsiirrot_navigointi_label | translate">
     <mat-button-toggle *ngIf="showToimipaikat"
-                       routerLink="."
-                       [fragment]="'toimipaikat'"
+                       routerLink="toimipaikat"
                        value="toimipaikat">
       <mat-icon aria-ignore>home</mat-icon>
       {{ i18n.toimipaikka_plural | translate }}
     </mat-button-toggle>
     <mat-button-toggle *ngIf="showLapset"
-                       routerLink="."
-                       [fragment]="'lapset'"
+                       routerLink="lapset"
                        value="lapset">
       <mat-icon aria-ignore>child_friendly</mat-icon>
       {{ i18n.henkilo_lapset | translate }}
     </mat-button-toggle>
     <mat-button-toggle *ngIf="showTyontekijat"
-                       routerLink="."
-                       [fragment]="'tyontekijat'"
+                       routerLink="tyontekijat"
                        value="tyontekijat">
       <mat-icon aria-ignore>group</mat-icon>
       {{ i18n.henkilo_tyontekijat | translate }}
@@ -35,15 +32,7 @@
   <div class="henkilo-sections"
        aria-live="polite"
        role="region">
-    <app-varda-puutteelliset-tyontekijat *ngIf="activeSection === 'tyontekijat' && showTyontekijat"
-                                         [selectedVakajarjestaja]="selectedVakajarjestaja"
-                                         (openHenkiloForm)="openHenkilo($event)"></app-varda-puutteelliset-tyontekijat>
-    <app-varda-puutteelliset-lapset *ngIf="activeSection === 'lapset' && showLapset"
-                                    [selectedVakajarjestaja]="selectedVakajarjestaja"
-                                    (openHenkiloForm)="openHenkilo($event)"></app-varda-puutteelliset-lapset>
-    <app-varda-puutteelliset-toimipaikat *ngIf="activeSection === 'toimipaikat' && showToimipaikat"
-                                         [selectedVakajarjestaja]="selectedVakajarjestaja"
-                                         (openToimipaikkaForm)="openToimipaikka($event)"></app-varda-puutteelliset-toimipaikat>
+    <router-outlet (activate)="onActivateChild($event)" (deactivate)="onDeactivateChild()"></router-outlet>
   </div>
 
   <app-varda-modal-form [identifier]="'henkiloModal'"

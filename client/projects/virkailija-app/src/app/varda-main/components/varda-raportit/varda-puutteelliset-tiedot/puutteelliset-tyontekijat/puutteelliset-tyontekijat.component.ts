@@ -1,15 +1,15 @@
-import { Component, Input } from '@angular/core';
+import { Component } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
 import { VardaRaportitService } from 'projects/virkailija-app/src/app/core/services/varda-raportit.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaUtilityService } from 'projects/virkailija-app/src/app/core/services/varda-utility.service';
-import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';
 import { HenkiloListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-henkilo-dto.model';
 import { TyontekijaListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tyontekija-dto.model';
 import { HenkiloRooliEnum } from 'projects/virkailija-app/src/app/utilities/models/enums/henkilorooli.enum';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { AbstractPuutteellisetComponent } from '../abstract-puutteelliset.component';
+import { VardaVakajarjestajaService } from '../../../../../core/services/varda-vakajarjestaja.service';
 
 @Component({
   selector: 'app-varda-puutteelliset-tyontekijat',
@@ -17,7 +17,6 @@ import { AbstractPuutteellisetComponent } from '../abstract-puutteelliset.compon
   styleUrls: ['./puutteelliset-tyontekijat.component.css', '../varda-puutteelliset-tiedot.component.css']
 })
 export class VardaPuutteellisetTyontekijatComponent extends AbstractPuutteellisetComponent<HenkiloListDTO, TyontekijaListDTO> {
-  @Input() selectedVakajarjestaja: VardaVakajarjestajaUi;
   i18n = VirkailijaTranslations;
   henkilot: Array<HenkiloListDTO>;
 
@@ -27,8 +26,9 @@ export class VardaPuutteellisetTyontekijatComponent extends AbstractPuutteellise
     private snackBarService: VardaSnackBarService,
     protected utilityService: VardaUtilityService,
     protected translateService: TranslateService,
+    vakajarjestajaService: VardaVakajarjestajaService,
   ) {
-    super(utilityService, translateService);
+    super(utilityService, translateService, vakajarjestajaService);
     this.subscriptions.push(this.henkilostoService.listenHenkilostoListUpdate().subscribe(() => this.getErrors()));
   }
 

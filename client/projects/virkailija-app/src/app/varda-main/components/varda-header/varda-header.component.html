@@ -69,7 +69,7 @@
             {{ i18n.yhteystiedot | translate }}
           </a>
           <a routerLink="/paos-hallinta"
-             *ngIf="!tilapainenHenkilostoOnly"
+             *ngIf="toimipaikkaAccessToAnyToimipaikka.lapsitiedot.katselija"
              (keydown.tab)="$event.stopPropagation()"
              (keydown.shift.tab)="$event.stopPropagation()"
              mat-menu-item>

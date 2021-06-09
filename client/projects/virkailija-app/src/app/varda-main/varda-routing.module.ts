@@ -33,6 +33,10 @@ import { VardaTiedonsiirrotComponent } from './components/varda-raportit/varda-t
 import { VardaYksiloimattomatComponent } from './components/varda-raportit/varda-yksiloimattomat/varda-yksiloimattomat.component';
 import { VardaExcelComponent } from './components/varda-raportit/varda-excel/varda-excel.component';
 import { VardaExcelNewComponent } from './components/varda-raportit/varda-excel/varda-excel-new/varda-excel-new.component';
+import { VardaTransferOutageComponent } from './components/varda-raportit/varda-transfer-outage/varda-transfer-outage.component';
+import { VardaPuutteellisetToimipaikatComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-toimipaikat/puutteelliset-toimipaikat.component';
+import { VardaPuutteellisetLapsetComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-lapset/puutteelliset-lapset.component';
+import { VardaPuutteellisetTyontekijatComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-tyontekijat/puutteelliset-tyontekijat.component';
 
 const routes: Routes = [
   {
@@ -155,7 +159,7 @@ const routes: Routes = [
             data: { title: VirkailijaTranslations.raportit },
             children: [
               {
-                path: '',
+                path: 'puutteelliset-tiedot',
                 component: VardaPuutteellisetTiedotComponent,
                 data: {
                   title: VirkailijaTranslations.puutteelliset_tiedot,
@@ -165,7 +169,41 @@ const routes: Routes = [
                     UserAccessKeys.tyontekijatiedot,
                     UserAccessKeys.huoltajatiedot
                   ]
-                }
+                },
+                children: [
+                  {
+                    path: 'toimipaikat',
+                    component: VardaPuutteellisetToimipaikatComponent,
+                    data: {
+                      title: VirkailijaTranslations.toimipaikka_plural,
+                      toimijaRoles: [
+                        UserAccessKeys.raportit,
+                        UserAccessKeys.lapsitiedot,
+                        UserAccessKeys.tyontekijatiedot
+                      ]
+                    }
+                  },
+                  {
+                    path: 'lapset',
+                    component: VardaPuutteellisetLapsetComponent,
+                    data: {
+                      title: VirkailijaTranslations.henkilo_lapset,
+                      toimijaRoles: [
+                        UserAccessKeys.raportit,
+                        UserAccessKeys.lapsitiedot,
+                        UserAccessKeys.huoltajatiedot
+                      ]
+                    }
+                  },
+                  {
+                    path: 'tyontekijat',
+                    component: VardaPuutteellisetTyontekijatComponent,
+                    data: {
+                      title: VirkailijaTranslations.henkilo_tyontekijat,
+                      toimijaRoles: [UserAccessKeys.raportit, UserAccessKeys.tyontekijatiedot]
+                    }
+                  }
+                ]
               },
               {
                 path: 'yksiloimattomat',
@@ -176,6 +214,33 @@ const routes: Routes = [
                     UserAccessKeys.oph
                   ]
                 }
+              },
+              {
+                path: 'transfer-outage',
+                component: VardaTransferOutageComponent,
+                data: {
+                  title: VirkailijaTranslations.transfer_outage,
+                  toimijaRoles: [
+                    UserAccessKeys.oph
+                  ]
+                },
+                children: [
+                  {
+                    path: 'user',
+                    component: VardaTransferOutageComponent,
+                    data: { title: VirkailijaTranslations.transfer_outage_service_user }
+                  },
+                  {
+                    path: 'lahdejarjestelma',
+                    component: VardaTransferOutageComponent,
+                    data: { title: VirkailijaTranslations.lahdejarjestelma }
+                  },
+                  {
+                    path: '',
+                    pathMatch: 'full',
+                    redirectTo: 'user'
+                  },
+                ]
               },
               {
                 path: 'tiedonsiirrot',
@@ -223,6 +288,11 @@ const routes: Routes = [
                   toimijaRoles: [UserAccessKeys.raportit, UserAccessKeys.oph]
                 }
               },
+              {
+                path: '',
+                pathMatch: 'full',
+                redirectTo: 'puutteelliset-tiedot'
+              }
             ]
           },
         ]

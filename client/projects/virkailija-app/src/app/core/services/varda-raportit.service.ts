@@ -12,10 +12,13 @@ import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { VardaExcelReportDTO, VardaExcelReportPostDTO } from '../../utilities/models/dto/varda-excel-report-dto.model';
 import { PuutteellinenToimipaikkaListDTO } from '../../utilities/models/dto/varda-puutteellinen-dto.model';
+import {
+  TransferOutageLahdejarjestelma,
+  TransferOutageUser
+} from '../../utilities/models/dto/varda-transfer-outage-dto.model';
 
 @Injectable()
 export class VardaRaportitService {
-
   private apiPath = `${environment.vardaAppUrl}/api/v1`;
   private adminApiPath = `${environment.vardaAppUrl}/api/admin`;
   private reportingApi = `${environment.vardaAppUrl}/api/reporting`;
@@ -24,7 +27,6 @@ export class VardaRaportitService {
   private selectedVakajarjestajat$ = new BehaviorSubject<Array<number>>(null);
 
   constructor(private http: LoadingHttpService) { }
-
 
   getYksiloimattomat(searchFilter: YksiloimatonSearchFilter): Observable<VardaPageDto<VardaYksiloimatonDTO>> {
     return this.http.get(`${this.adminApiPath}/hae-yksiloimattomat/`, searchFilter);
@@ -92,5 +94,13 @@ export class VardaRaportitService {
 
   downloadExcelReport(url: string): Observable<any> {
     return this.http.get(url, undefined, undefined, {responseType: 'arraybuffer'});
+  }
+
+  getTransferOutageUser(searchFilter: Object): Observable<VardaPageDto<TransferOutageUser>> {
+    return this.http.get(`${this.reportingApi}/v1/transfer-outage/`, searchFilter);
+  }
+
+  getTransferOutageLahdejarjestelma(searchFilter: Object): Observable<VardaPageDto<TransferOutageLahdejarjestelma>> {
+    return this.http.get(`${this.reportingApi}/v1/transfer-outage-lahdejarjestelma/`, searchFilter);
   }
 }

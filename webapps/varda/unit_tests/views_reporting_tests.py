@@ -31,7 +31,9 @@ class VardaViewsReportingTests(TestCase):
             'excel-reports': 'http://testserver/api/reporting/v1/excel-reports/',
             'tiedonsiirto': 'http://testserver/api/reporting/v1/tiedonsiirto/',
             'tiedonsiirto/yhteenveto': 'http://testserver/api/reporting/v1/tiedonsiirto/yhteenveto/',
-            'tiedonsiirtotilasto': 'http://testserver/api/reporting/v1/tiedonsiirtotilasto/'
+            'tiedonsiirtotilasto': 'http://testserver/api/reporting/v1/tiedonsiirtotilasto/',
+            'transfer-outage': 'http://testserver/api/reporting/v1/transfer-outage/',
+            'transfer-outage-lahdejarjestelma': 'http://testserver/api/reporting/v1/transfer-outage-lahdejarjestelma/'
         })
 
     def test_kela_reporting_api(self):
@@ -790,7 +792,7 @@ class VardaViewsReportingTests(TestCase):
         # No view_lapsi permission
         client_no_permissions_2 = SetUpTestClient('henkilosto_tallentaja_93957375488').client()
         resp_no_permissions_2 = client_no_permissions_2.get(url)
-        assert_status_code(resp_no_permissions_2, status.HTTP_403_FORBIDDEN)
+        assert_status_code(resp_no_permissions_2, status.HTTP_404_NOT_FOUND)
 
     def test_api_error_report_lapset_huoltajatiedot(self):
         vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
@@ -957,7 +959,7 @@ class VardaViewsReportingTests(TestCase):
         # No view_tyontekija permissions
         client_no_permissions_1 = SetUpTestClient('tester2').client()
         resp_no_permissions_1 = client_no_permissions_1.get(url)
-        assert_status_code(resp_no_permissions_1, status.HTTP_403_FORBIDDEN)
+        assert_status_code(resp_no_permissions_1, status.HTTP_404_NOT_FOUND)
 
         # No permissions to correct groups
         client_no_permissions_2 = SetUpTestClient('tyontekija_toimipaikka_tallentaja_9395737548815').client()

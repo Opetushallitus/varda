@@ -1,16 +1,16 @@
 import json
 import logging
-import re
 from functools import wraps
 from json import JSONDecodeError
 
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models import QuerySet, Q
+from django.db.models import QuerySet
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 
 from varda.helper_functions import hide_hetu
-from varda.models import Z6_RequestLog, VakaJarjestaja
+from varda.misc import get_user_vakajarjestaja
+from varda.models import Z6_RequestLog
 from varda.validators import validate_lahdejarjestelma_koodi
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ def _request_log_dispatch_decorator(function, target_path):
             return response
 
         # Run this after request has been processed so that user attribute is correctly set
-        vakajarjestaja = _get_user_vakajarjestaja(request.user)
+        vakajarjestaja = get_user_vakajarjestaja(request.user)
 
         response_body = _parse_response_body(response.data)
         response_body = hide_hetu(response_body, hide_date=False)
@@ -91,29 +91,6 @@ def _request_log_dispatch_decorator(function, target_path):
 
         return response
     return decorator
-
-
-def _get_user_vakajarjestaja(user):
-    """
-    Determine which Vakajarjestaja user has permissions to and return it
-    :param user: User object
-    :return: Vakajarjestaja object if user has permissions to only one Vakajarjestaja, otherwise None
-    """
-    user_group_names = user.groups.values_list('name', flat=True)
-
-    regex_pattern = re.compile(r'.*_([\d\.]*)')
-    organisaatio_oid_set = {match.group(1) for group_name in user_group_names
-                            if (match := regex_pattern.fullmatch(group_name)) and match.group(1)}
-
-    # organisaatio_oid might be that of Vakajarjestaja or Toimipaikka
-    vakajarjestaja_qs = VakaJarjestaja.objects.filter(Q(organisaatio_oid__in=organisaatio_oid_set) |
-                                                      Q(toimipaikat__organisaatio_oid__in=organisaatio_oid_set)).distinct()
-    if not vakajarjestaja_qs.exists() or vakajarjestaja_qs.count() > 1:
-        # User has permissions to multiple Vakajarjestaja or has no permissions at all
-        logger.warning(f'Could not determine Vakajarjestaja for user: {user}')
-        return None
-
-    return vakajarjestaja_qs.first()
 
 
 def _parse_response_body(response_data):

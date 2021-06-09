@@ -6,6 +6,10 @@ import { VardaUtilityService } from 'projects/virkailija-app/src/app/core/servic
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { Subscription, BehaviorSubject, Observable } from 'rxjs';
+import { VardaVakajarjestajaService } from '../../../../core/services/varda-vakajarjestaja.service';
+import { VardaVakajarjestajaUi } from '../../../../utilities/models/varda-vakajarjestaja-ui.model';
+import { filter } from 'rxjs/operators';
+import { NavigationEnd } from '@angular/router';
 
 export interface PuutteellinenSearchFilter {
   page: number;
@@ -19,9 +23,10 @@ export interface PuutteellinenSearchFilter {
 })
 export abstract class AbstractPuutteellisetComponent<T, Y> implements OnInit, OnDestroy {
   @Input() selectedToimipaikka: VardaToimipaikkaMinimalDto;
-  @Input() toimipaikkaAccess: UserAccess;
   @Output() openHenkiloForm = new EventEmitter<Y>(true);
   @Output() openToimipaikkaForm = new EventEmitter<Y>(true);
+
+  selectedVakajarjestaja: VardaVakajarjestajaUi;
 
   protected errorService: VardaErrorMessageService;
   formErrors: Observable<Array<ErrorTree>>;
@@ -36,9 +41,11 @@ export abstract class AbstractPuutteellisetComponent<T, Y> implements OnInit, On
   constructor(
     protected utilityService: VardaUtilityService,
     protected translateService: TranslateService,
+    vakajarjestajaService: VardaVakajarjestajaService,
   ) {
     this.errorService = new VardaErrorMessageService(this.translateService);
     this.formErrors = this.errorService.initErrorList();
+    this.selectedVakajarjestaja = vakajarjestajaService.getSelectedVakajarjestaja();
   }
 
   ngOnInit() {

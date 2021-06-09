@@ -49,7 +49,7 @@ class CustomParametersFilterBackend(BaseFilterBackend):
         return schema(description=description)
 
     def filter_queryset(self, request, queryset, view):
-        pass
+        return queryset
 
     def get_schema_fields(self, view):
         custom_parameters = getattr(view, 'custom_parameters', ())
@@ -660,3 +660,9 @@ class ExcelReportFilter(djangofilters.FilterSet):
     username = djangofilters.NumberFilter(lookup_expr='iexact', field_name='user__username')
     status = djangofilters.CharFilter()
     report_type = djangofilters.CharFilter()
+
+
+class TransferOutageReportFilter(djangofilters.FilterSet):
+    vakajarjestaja = OrganisaatioFieldFilter()
+    lahdejarjestelma = djangofilters.CharFilter(lookup_expr='exact')
+    username = djangofilters.CharFilter(lookup_expr='icontains', field_name='user__username')

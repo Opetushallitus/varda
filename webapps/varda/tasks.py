@@ -21,11 +21,12 @@ from varda import organisaatiopalvelu
 from varda import permission_groups
 from varda import permissions
 from varda.audit_log import audit_log
+from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
 from varda.excel_export import delete_excel_reports_earlier_than
 from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
 from varda.misc import memory_efficient_queryset_iterator
 from varda.models import (Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog, Lapsi, Varhaiskasvatuspaatos,
-                          Huoltaja, Huoltajuussuhde, Maksutieto)
+                          Huoltaja, Huoltajuussuhde, Maksutieto, Z6_LastRequest)
 from varda.permissions import assign_object_level_permissions_for_instance
 from varda.permission_groups import (assign_object_permissions_to_taydennyskoulutus_groups,
                                      assign_object_level_permissions)
@@ -430,3 +431,40 @@ def assign_toimipaikka_maksutieto_permissions():
             oid_set.discard(None)
             for oid in oid_set:
                 assign_object_level_permissions(oid, Maksutieto, maksutieto)
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def update_last_request_table_task(init=False):
+    """
+    Updates Z6_LastRequest table by going through existing Z6_RequestLog objects. By default goes through requests
+    from the last 24 hours.
+
+    :param init: True if table is initialized and all Z6_RequestLog objects are considered
+    """
+    timestamp_filter = Q() if init else Q(timestamp__gte=timezone.now() - datetime.timedelta(days=1))
+
+    successful_request_log_qs = (Z6_RequestLog.objects.filter(timestamp_filter &
+                                                              Q(response_code__in=SUCCESSFUL_STATUS_CODE_LIST))
+                                 .distinct('user', 'vakajarjestaja', 'lahdejarjestelma')
+                                 .order_by('user', 'vakajarjestaja', 'lahdejarjestelma', '-timestamp')
+                                 .values_list('user', 'vakajarjestaja', 'lahdejarjestelma', 'timestamp'))
+    unsuccessful_request_log_qs = (Z6_RequestLog.objects.filter(timestamp_filter &
+                                                                ~Q(response_code__in=SUCCESSFUL_STATUS_CODE_LIST))
+                                   .distinct('user', 'vakajarjestaja', 'lahdejarjestelma')
+                                   .order_by('user', 'vakajarjestaja', 'lahdejarjestelma', '-timestamp')
+                                   .values_list('user', 'vakajarjestaja', 'lahdejarjestelma', 'timestamp'))
+
+    for index, request_log_qs in enumerate((successful_request_log_qs, unsuccessful_request_log_qs,)):
+        is_successful = True if index == 0 else False
+        for request_log in request_log_qs:
+            user_id = request_log[0]
+            vakajarjestaja_id = request_log[1]
+            lahdejarjestelma = request_log[2]
+            timestamp = request_log[3]
+
+            last_request_defaults = ({'last_successful': timestamp} if is_successful else
+                                     {'last_unsuccessful': timestamp})
+            Z6_LastRequest.objects.update_or_create(user_id=user_id, vakajarjestaja_id=vakajarjestaja_id,
+                                                    lahdejarjestelma=lahdejarjestelma,
+                                                    defaults=last_request_defaults)

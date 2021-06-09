@@ -9,7 +9,7 @@ from varda import validators
 from varda.clients.allas_s3_client import Client as S3Client
 from varda.excel_export import ExcelReportStatus, get_s3_object_name
 from varda.models import (Varhaiskasvatussuhde, Lapsi, Tyontekija, Z6_RequestLog, Z8_ExcelReport, Toimipaikka,
-                          Z4_CasKayttoOikeudet, VakaJarjestaja, Henkilo, Varhaiskasvatuspaatos)
+                          Z4_CasKayttoOikeudet, VakaJarjestaja, Henkilo, Varhaiskasvatuspaatos, Z6_LastRequest)
 from varda.misc import decrypt_henkilotunnus, decrypt_excel_report_password, CustomServerErrorException
 from varda.serializers import ToimipaikkaHLField, VakaJarjestajaPermissionCheckedHLField
 from varda.serializers_common import OidRelatedField
@@ -352,3 +352,33 @@ class DuplicateLapsiSerializer(serializers.Serializer):
             return decrypted_hetu
         except CustomServerErrorException:
             return None
+
+
+class LahdejarjestelmaTransferOutageReportSerializer(serializers.Serializer):
+    lahdejarjestelma = serializers.SerializerMethodField()
+    last_successful = serializers.SerializerMethodField()
+    last_unsuccessful = serializers.SerializerMethodField()
+
+    def get_lahdejarjestelma(self, instance):
+        return instance
+
+    def get_last_successful(self, instance):
+        return getattr(Z6_LastRequest.objects.filter(lahdejarjestelma=instance, last_successful__isnull=False)
+                       .order_by('-last_successful').first(), 'last_successful', None)
+
+    def get_last_unsuccessful(self, instance):
+        return getattr(Z6_LastRequest.objects.filter(lahdejarjestelma=instance, last_unsuccessful__isnull=False)
+                       .order_by('-last_unsuccessful').first(), 'last_unsuccessful', None)
+
+
+class UserTransferOutageReportSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(source='user.id')
+    username = serializers.CharField(source='user.username')
+    vakajarjestaja_id = serializers.IntegerField(source='vakajarjestaja.id')
+    vakajarjestaja_nimi = serializers.CharField(source='vakajarjestaja.nimi')
+    vakajarjestaja_oid = serializers.CharField(source='vakajarjestaja.organisaatio_oid')
+
+    class Meta:
+        model = Z6_LastRequest
+        fields = ('user_id', 'username', 'vakajarjestaja_id', 'vakajarjestaja_nimi', 'vakajarjestaja_oid',
+                  'lahdejarjestelma', 'last_successful', 'last_unsuccessful')

@@ -24,15 +24,24 @@ from rest_framework.viewsets import GenericViewSet
 
 from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
 from varda.enums.error_messages import ErrorMessages
+from varda.enums.kayttajatyyppi import Kayttajatyyppi
+from varda.enums.koodistot import Koodistot
 from varda.enums.supported_language import SupportedLanguage
+from varda.enums.ytj import YtjYritysmuoto
 from varda.excel_export import ExcelReportStatus, create_excel_report_task, generate_filename, get_excel_local_file_path
 from varda.filters import (TiedonsiirtoFilter, ExcelReportFilter, KelaEtuusmaksatusAloittaneetFilter,
-                           KelaEtuusmaksatusLopettaneetFilter, KelaEtuusmaksatusKorjaustiedotFilter)
+                           KelaEtuusmaksatusLopettaneetFilter, KelaEtuusmaksatusKorjaustiedotFilter,
+                           CustomParametersFilterBackend, CustomParameter, TransferOutageReportFilter)
 from varda.misc import encrypt_string
 from varda.misc_viewsets import IntegerIdSchema
+from varda.models import (KieliPainotus, Lapsi, Maksutieto, PaosOikeus, ToiminnallinenPainotus, Toimipaikka,
+                          VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z6_RequestLog,
+                          Z4_CasKayttoOikeudet, Tyontekija, Z8_ExcelReport, PaosToiminta, Z2_Code, Z6_LastRequest)
 from varda.pagination import (ChangeablePageSizePagination, IdCursorPagination, DateCursorPagination,
                               DateReverseCursorPagination, IdReverseCursorPagination,
                               ChangeableReportingPageSizePagination)
+from varda.permissions import (user_permission_groups_in_organization, is_oph_staff, ReadAdminOrOPHUser, auditlogclass,
+                               get_vakajarjestajat_filter_for_raportit, RaportitPermissions, IsCertificateAccess)
 from varda.serializers_reporting import (KelaEtuusmaksatusAloittaneetSerializer, KelaEtuusmaksatusLopettaneetSerializer,
                                          KelaEtuusmaksatusMaaraaikaisetSerializer,
                                          KelaEtuusmaksatusKorjaustiedotSerializer,
@@ -40,14 +49,9 @@ from varda.serializers_reporting import (KelaEtuusmaksatusAloittaneetSerializer,
                                          TiedonsiirtotilastoSerializer, ErrorReportLapsetSerializer,
                                          ErrorReportTyontekijatSerializer, TiedonsiirtoSerializer,
                                          TiedonsiirtoYhteenvetoSerializer, ExcelReportSerializer,
-                                         ErrorReportToimipaikatSerializer, DuplicateLapsiSerializer)
-from varda.permissions import user_permission_groups_in_organization, CustomModelPermissions, is_oph_staff
-from varda.enums.ytj import YtjYritysmuoto
-from varda.models import (KieliPainotus, Lapsi, Maksutieto, PaosOikeus, ToiminnallinenPainotus, Toimipaikka,
-                          VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z6_RequestLog,
-                          Z4_CasKayttoOikeudet, Tyontekija, Z8_ExcelReport, PaosToiminta)
-from varda.permissions import (auditlogclass, get_vakajarjestajat_filter_for_raportit, RaportitPermissions,
-                               IsCertificateAccess)
+                                         DuplicateLapsiSerializer, ErrorReportToimipaikatSerializer,
+                                         LahdejarjestelmaTransferOutageReportSerializer,
+                                         UserTransferOutageReportSerializer)
 
 
 logger = logging.getLogger(__name__)
@@ -571,7 +575,6 @@ class AbstractErrorReportViewSet(GenericViewSet, ListModelMixin):
 class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
     serializer_class = ErrorReportLapsetSerializer
     queryset = Lapsi.objects.none()
-    permission_classes = (CustomModelPermissions,)
     swagger_schema = IntegerIdSchema
     swagger_path_model = VakaJarjestaja
 
@@ -713,7 +716,6 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
 class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
     serializer_class = ErrorReportTyontekijatSerializer
     queryset = Tyontekija.objects.none()
-    permission_classes = (CustomModelPermissions,)
     swagger_schema = IntegerIdSchema
     swagger_path_model = VakaJarjestaja
 
@@ -801,7 +803,6 @@ class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
 class ErrorReportToimipaikatViewSet(AbstractErrorReportViewSet):
     serializer_class = ErrorReportToimipaikatSerializer
     queryset = Toimipaikka.objects.none()
-    permission_classes = (CustomModelPermissions,)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1074,3 +1075,68 @@ class DuplicateLapsiViewSet(GenericViewSet, ListModelMixin):
                               .filter(vakatoimija__isnull=False, count__gt=1)
                               .order_by('vakatoimija', 'henkilo__sukunimi', 'henkilo__etunimet'))
         return duplicate_lapsi_qs
+
+
+@auditlogclass
+class AbstractTransferOutageReportViewSet(GenericViewSet, ListModelMixin):
+    permission_classes = (ReadAdminOrOPHUser,)
+    pagination_class = ChangeablePageSizePagination
+    filter_backends = (CustomParametersFilterBackend,)
+    custom_parameters = (CustomParameter(name='timestamp_before', required=False, location='query', data_type='string',
+                                         description='ISO Date (YYYY-MM-DD)'),
+                         CustomParameter(name='timestamp_after', required=False, location='query', data_type='string',
+                                         description='ISO Date (YYYY-MM-DD)'),)
+
+    def parse_filters(self):
+        filters = Q()
+
+        if timestamp_before := self.request.query_params.get('timestamp_before', None):
+            try:
+                timestamp_before_datetime = datetime.datetime.strptime(timestamp_before, '%Y-%m-%d')
+                timestamp_before_datetime += datetime.timedelta(days=1)
+                timestamp_before_datetime = timestamp_before_datetime.replace(tzinfo=datetime.timezone.utc)
+                filters = Q(last_successful__gt=timestamp_before_datetime)
+            except ValueError:
+                raise ValidationError({'timestamp_before': [ErrorMessages.GE006.value]})
+
+        if timestamp_after := self.request.query_params.get('timestamp_after', None):
+            try:
+                timestamp_after_datetime = datetime.datetime.strptime(timestamp_after, '%Y-%m-%d')
+                timestamp_after_datetime = timestamp_after_datetime.replace(tzinfo=datetime.timezone.utc)
+
+                if timestamp_before:
+                    filters |= Q(last_successful__lt=timestamp_after_datetime)
+                else:
+                    filters = Q(last_successful__lt=timestamp_after_datetime)
+            except ValueError:
+                raise ValidationError({'timestamp_after': [ErrorMessages.GE006.value]})
+        return filters
+
+
+@auditlogclass
+class UserTransferOutageReportViewSet(AbstractTransferOutageReportViewSet):
+    filter_backends = (CustomParametersFilterBackend, DjangoFilterBackend,)
+    filterset_class = TransferOutageReportFilter
+    serializer_class = UserTransferOutageReportSerializer
+
+    def get_queryset(self):
+        request_filters = self.parse_filters()
+
+        return Z6_LastRequest.objects.filter(Q(user__additional_cas_user_fields__kayttajatyyppi=Kayttajatyyppi.PALVELU.value) &
+                                             request_filters).order_by('user')
+
+
+@auditlogclass
+class LahdejarjestelmaTransferOutageReportViewSet(AbstractTransferOutageReportViewSet):
+    serializer_class = LahdejarjestelmaTransferOutageReportSerializer
+
+    def get_queryset(self):
+        request_filters = self.parse_filters()
+
+        lahdejarjestelma_list = (Z2_Code.objects.filter(koodisto__name=Koodistot.lahdejarjestelma_koodit.value)
+                                 .values_list('code_value', flat=True))
+        active_lahdejarjestelma_list = (Z6_LastRequest.objects.filter(~Q(request_filters) &
+                                                                      Q(last_successful__isnull=False))
+                                        .values_list('lahdejarjestelma', flat=True).distinct())
+        inactive_lahdejarjestelma_set = set(lahdejarjestelma_list).difference(set(active_lahdejarjestelma_list))
+        return sorted(list(inactive_lahdejarjestelma_set), key=lambda x: int(x))

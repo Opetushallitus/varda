@@ -5,13 +5,8 @@ import { AuthService } from './auth.service';
 import { UserAccessKeys } from '../../utilities/models/varda-user-access.model';
 import { take } from 'rxjs/operators';
 
-
-
 @Injectable()
 export class RoleGuard implements CanActivate, CanActivateChild {
-
-
-
   constructor(
     private authService: AuthService,
     private router: Router,
@@ -25,12 +20,10 @@ export class RoleGuard implements CanActivate, CanActivateChild {
     return this.checkActivation(route, state);
   }
 
-
   private checkActivation(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
     return new Observable((roleGuardObs) => {
       const roles: Array<UserAccessKeys> = route.data.roles;
       const toimijaRoles: Array<UserAccessKeys> = route.data.toimijaRoles;
-
       if (!roles && !toimijaRoles) {
         roleGuardObs.next(true);
         roleGuardObs.complete();
@@ -45,8 +38,8 @@ export class RoleGuard implements CanActivate, CanActivateChild {
           roleGuardObs.next(hasAccess || hasToimijaAccess);
           roleGuardObs.complete();
 
-          if (roles && !(hasAccess || hasToimijaAccess)) {
-            this.router.navigate(['/']);
+          if ((roles || toimijaRoles) && !(hasAccess || hasToimijaAccess)) {
+            this.router.navigate(['**'], { skipLocationChange: true, queryParams: { url: state.url } });
           }
         }, error: err => {
           roleGuardObs.next(false);

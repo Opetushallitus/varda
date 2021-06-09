@@ -3,6 +3,7 @@ import hashlib
 import json
 import logging
 import operator
+import re
 from collections import Counter
 
 import requests
@@ -11,6 +12,7 @@ from cryptography.fernet import Fernet, InvalidToken
 from django.conf import settings
 from django.core.paginator import Paginator
 from django.db import transaction
+from django.db.models import Q
 from requests.exceptions import RequestException, ConnectionError, Timeout
 from rest_framework import status
 from rest_framework.exceptions import APIException
@@ -19,7 +21,7 @@ from urllib.parse import urlparse
 
 from varda.enums.error_messages import ErrorMessages
 from varda.helper_functions import hide_hetu
-from varda.models import Henkilo
+from varda.models import Henkilo, VakaJarjestaja
 from varda.oph_yhteiskayttopalvelu_autentikaatio import get_authentication_header, get_contenttype_header
 
 
@@ -347,3 +349,26 @@ def memory_efficient_queryset_iterator(queryset, chunk_size=1000):
 
 class TemporaryObject(object):
     pass
+
+
+def get_user_vakajarjestaja(user):
+    """
+    Determine which Vakajarjestaja user has permissions to and return it
+    :param user: User object
+    :return: Vakajarjestaja object if user has permissions to only one Vakajarjestaja, otherwise None
+    """
+    user_group_names = user.groups.values_list('name', flat=True)
+
+    regex_pattern = re.compile(r'.*_([\d\.]*)')
+    organisaatio_oid_set = {match.group(1) for group_name in user_group_names
+                            if (match := regex_pattern.fullmatch(group_name)) and match.group(1)}
+
+    # organisaatio_oid might be that of Vakajarjestaja or Toimipaikka
+    vakajarjestaja_qs = VakaJarjestaja.objects.filter(Q(organisaatio_oid__in=organisaatio_oid_set) |
+                                                      Q(toimipaikat__organisaatio_oid__in=organisaatio_oid_set)).distinct()
+    if not vakajarjestaja_qs.exists() or vakajarjestaja_qs.count() > 1:
+        # User has permissions to multiple Vakajarjestaja or has no permissions at all
+        logger.warning(f'Could not determine Vakajarjestaja for user: {user}')
+        return None
+
+    return vakajarjestaja_qs.first()
