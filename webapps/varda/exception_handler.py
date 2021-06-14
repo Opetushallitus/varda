@@ -64,7 +64,7 @@ error_templates = {
     },
     status.HTTP_429_TOO_MANY_REQUESTS: {
         DYNAMIC: {
-            'throttled': (re.compile(r'available in ([\d]+) seconds'), ErrorMessages.DY008.value)
+            'throttled': (re.compile(r'available in ([\d]+) second'), ErrorMessages.DY008.value)
         }
     }
 }

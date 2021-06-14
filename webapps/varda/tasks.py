@@ -24,10 +24,10 @@ from varda.audit_log import audit_log
 from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
 from varda.excel_export import delete_excel_reports_earlier_than
 from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
-from varda.misc import memory_efficient_queryset_iterator
+from varda.misc import memory_efficient_queryset_iterator, get_user_vakajarjestaja
 from varda.models import (Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog, Lapsi, Varhaiskasvatuspaatos,
                           Huoltaja, Huoltajuussuhde, Maksutieto, Z6_LastRequest)
-from varda.permissions import assign_object_level_permissions_for_instance
+from varda.permissions import assign_object_level_permissions_for_instance, assign_lapsi_henkilo_permissions
 from varda.permission_groups import (assign_object_permissions_to_taydennyskoulutus_groups,
                                      assign_object_level_permissions)
 
@@ -468,3 +468,36 @@ def update_last_request_table_task(init=False):
             Z6_LastRequest.objects.update_or_create(user_id=user_id, vakajarjestaja_id=vakajarjestaja_id,
                                                     lahdejarjestelma=lahdejarjestelma,
                                                     defaults=last_request_defaults)
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def assign_missing_vakatoimija_field():
+    """
+    Assigns vakatoimija-field for Lapsi objects that do not have it already based on user's permission groups. Also
+    assign permissions for Lapsi related objects.
+
+    TEMPORARY FUNCTION
+    """
+    lapsi_qs = Lapsi.objects.filter(vakatoimija__isnull=True, oma_organisaatio__isnull=True,
+                                    paos_organisaatio__isnull=True).distinct('id').order_by('id')
+    for lapsi in lapsi_qs:
+        user = lapsi.changed_by
+        vakajarjestaja = get_user_vakajarjestaja(user)
+
+        if not vakajarjestaja:
+            # Could not determine vakatoimija of this Lapsi object
+            continue
+
+        with transaction.atomic():
+            lapsi.vakatoimija = vakajarjestaja
+            lapsi.save()
+
+            assign_object_level_permissions_for_instance(lapsi, (vakajarjestaja.organisaatio_oid,))
+            assign_lapsi_henkilo_permissions(lapsi, user=user)
+
+            for vakapaatos in lapsi.varhaiskasvatuspaatokset.all():
+                assign_object_level_permissions_for_instance(vakapaatos, (vakajarjestaja.organisaatio_oid,))
+
+            for maksutieto in Maksutieto.objects.filter(huoltajuussuhteet__lapsi=lapsi).distinct('id').order_by('id'):
+                assign_object_level_permissions_for_instance(maksutieto, (vakajarjestaja.organisaatio_oid,))

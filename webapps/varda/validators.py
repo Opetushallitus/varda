@@ -497,4 +497,4 @@ def validate_alkamis_pvm_before_paattymis_pvm(data):
     paattymis_pvm = data.get('paattymis_pvm', None)
 
     if paattymis_pvm and not validate_paivamaara1_before_paivamaara2(alkamis_pvm, paattymis_pvm):
-        raise ValidationError({'paattymis_pvm': [ErrorMessages.MI003.value]})
+        raise ValidationErrorRest({'paattymis_pvm': [ErrorMessages.MI003.value]})

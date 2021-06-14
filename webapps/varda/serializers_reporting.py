@@ -374,9 +374,9 @@ class LahdejarjestelmaTransferOutageReportSerializer(serializers.Serializer):
 class UserTransferOutageReportSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source='user.id')
     username = serializers.CharField(source='user.username')
-    vakajarjestaja_id = serializers.IntegerField(source='vakajarjestaja.id')
-    vakajarjestaja_nimi = serializers.CharField(source='vakajarjestaja.nimi')
-    vakajarjestaja_oid = serializers.CharField(source='vakajarjestaja.organisaatio_oid')
+    vakajarjestaja_id = serializers.IntegerField(source='vakajarjestaja.id', allow_null=True)
+    vakajarjestaja_nimi = serializers.CharField(source='vakajarjestaja.nimi', allow_null=True)
+    vakajarjestaja_oid = serializers.CharField(source='vakajarjestaja.organisaatio_oid', allow_null=True)
 
     class Meta:
         model = Z6_LastRequest
