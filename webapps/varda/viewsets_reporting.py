@@ -151,7 +151,8 @@ class KelaEtuusmaksatusLopettaneetViewSet(GenericViewSet, ListModelMixin):
         return (Varhaiskasvatussuhde.objects.select_related('varhaiskasvatuspaatos__lapsi', 'lapsi__henkilo')
                                             .annotate(last_paattymis_pvm=Case(When(Exists(latest_end_dates),
                                                                                    then=Subquery(latest_end_dates.values('paattymis_pvm')[:1])),
-                                                                              default=Value('0001-01-01')))
+                                                                              default=Cast(Value('0001-01-01'), output_field=DateField()),
+                                                                              output_field=DateField()))
                                             .filter(dataset_filters &
                                                     Q(last_paattymis_pvm__isnull=True) &
                                                     Q(paattymis_pvm__isnull=False) &
@@ -294,10 +295,14 @@ class KelaEtuusmaksatusKorjaustiedotViewSet(GenericViewSet, ListModelMixin):
         paattymis_pvm_subquery = Varhaiskasvatussuhde.history.filter(id=OuterRef('id'), muutos_pvm__date__lt=muutos_pvm).order_by('-history_id')
 
         return (Varhaiskasvatussuhde.objects.select_related('varhaiskasvatuspaatos__lapsi', 'varhaiskasvatuspaatos__lapsi__henkilo')
-                                            .annotate(old_alkamis_pvm=(Case(When(alkamis_pvm=Subquery(alkamis_pvm_subquery.values('alkamis_pvm')[:1]), then=Value('0001-01-01')),
-                                                                            default=Subquery(alkamis_pvm_subquery.values('alkamis_pvm')[:1]))),
-                                                      old_paattymis_pvm=(Case(When(paattymis_pvm=Subquery(paattymis_pvm_subquery.values('paattymis_pvm')[:1]), then=Value('0001-01-01')),
-                                                                              default=Subquery(paattymis_pvm_subquery.values('paattymis_pvm')[:1])))
+                                            .annotate(old_alkamis_pvm=(Case(When(alkamis_pvm=Subquery(alkamis_pvm_subquery.values('alkamis_pvm')[:1]),
+                                                                                 then=Cast(Value('0001-01-01'), output_field=DateField())),
+                                                                            default=Subquery(alkamis_pvm_subquery.values('alkamis_pvm')[:1]),
+                                                                            output_field=DateField())),
+                                                      old_paattymis_pvm=(Case(When(paattymis_pvm=Subquery(paattymis_pvm_subquery.values('paattymis_pvm')[:1]),
+                                                                                   then=Cast(Value('0001-01-01'), output_field=DateField())),
+                                                                              default=Subquery(paattymis_pvm_subquery.values('paattymis_pvm')[:1]),
+                                                                              output_field=DateField()))
                                                       )
                                             .filter(id_filter &
                                                     ~Q(Q(old_alkamis_pvm='0001-01-01') & Q(old_paattymis_pvm='0001-01-01')) &

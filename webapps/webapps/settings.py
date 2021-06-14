@@ -144,6 +144,8 @@ DATABASES = {
 
 TESTING = sys.argv[1:2] == ['test']
 
+# Default primary key field
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # These were added when django-guardian was added
 # https://github.com/django-guardian/django-guardian
