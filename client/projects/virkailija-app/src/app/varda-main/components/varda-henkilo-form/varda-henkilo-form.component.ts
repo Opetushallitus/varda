@@ -79,8 +79,24 @@ export class VardaHenkiloFormComponent implements OnInit, OnDestroy {
 
   getHenkilo(henkiloId: number): void {
     this.vardaApiService.getHenkilo(henkiloId).subscribe({
-      next: henkilo => this.currentHenkilo = henkilo,
-      error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
+      next: henkilo => {
+        this.currentHenkilo = henkilo;
+        this.currentHenkilo.mock = false;
+      },
+      error: err => {
+        // For example only user does not have permissions to Henkilo with only Taydennyskoulutus permissions
+        this.currentHenkilo = {
+          id: this.henkilonSuhde.henkilo_id,
+          henkilo_oid: this.henkilonSuhde.henkilo_oid,
+          etunimet: this.henkilonSuhde.etunimet,
+          sukunimi: this.henkilonSuhde.sukunimi,
+          mock: true
+        };
+        if (err.status !== 404 && err.status !== 403) {
+          // Do not display error if Henkilo was not found (e.g. only Taydennyskoulutus permissions)
+          this.henkilostoErrorService.handleError(err, this.snackBarService);
+        }
+      }
     });
   }
 

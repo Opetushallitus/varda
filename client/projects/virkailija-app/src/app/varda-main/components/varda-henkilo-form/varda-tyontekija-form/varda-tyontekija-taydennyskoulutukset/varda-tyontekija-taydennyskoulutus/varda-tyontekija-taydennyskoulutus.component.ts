@@ -1,4 +1,14 @@
-import { Component, OnInit, Input, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  Input,
+  ElementRef,
+  ViewChild,
+  AfterViewInit,
+  OnDestroy,
+  OnChanges,
+  SimpleChanges
+} from '@angular/core';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VardaTutkintoDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tutkinto-dto.model';
 import { VardaTaydennyskoulutusDTO, VardaTaydennyskoulutusTyontekijaDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-taydennyskoulutus-dto.model';
@@ -18,6 +28,7 @@ import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/ser
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
+import { KoodistoEnum } from 'varda-shared';
 
 @Component({
   selector: 'app-varda-tyontekija-taydennyskoulutus',
@@ -29,7 +40,7 @@ import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-acco
     '../../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordionAbstractComponent implements OnInit, AfterViewInit, OnDestroy {
+export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordionAbstractComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   @Input() toimipaikkaAccess: UserAccess;
   @Input() tyontekija: TyontekijaListDTO;
   @Input() taydennyskoulutus: VardaTaydennyskoulutusDTO;
@@ -38,7 +49,9 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
   @ViewChild(MatExpansionPanelHeader) panelHeader: MatExpansionPanelHeader;
   element: ElementRef;
   subscriptions: Array<Subscription> = [];
+  koodistoEnum = KoodistoEnum;
   tehtavanimike_koodit: Array<string>;
+  disabledTehtavanimikeCodes: Array<string> = [];
   isSubmitting = new BehaviorSubject<boolean>(false);
   taydennyskoulutusFormErrors: Observable<Array<ErrorTree>>;
   limitedEditAccess: boolean;
@@ -67,6 +80,7 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
     this.tehtavanimike_koodit = this.taydennyskoulutus?.taydennyskoulutus_tyontekijat.
       filter(tyontekija => tyontekija.henkilo_oid === this.tyontekija.henkilo_oid)
       .map(tyontekija => tyontekija.tehtavanimike_koodi) || [];
+    this.initDisabledTehtavanimikeCodes();
 
     this.formGroup = new FormGroup({
       id: new FormControl(this.taydennyskoulutus?.id),
@@ -87,6 +101,12 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
     }
   }
 
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes.tehtavanimikkeet) {
+      this.initDisabledTehtavanimikeCodes();
+    }
+  }
+
   ngOnDestroy() {
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
@@ -101,6 +121,14 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
         .pipe(filter(() => !this.formGroup.pristine), distinctUntilChanged())
         .subscribe(() => this.modalService.setFormValuesChanged(true))
     );
+  }
+
+  initDisabledTehtavanimikeCodes() {
+    if (this.tehtavanimikkeet && this.tehtavanimike_koodit) {
+      this.disabledTehtavanimikeCodes = this.tehtavanimike_koodit.filter(value =>
+        !this.tehtavanimikkeet.codes.some(code => code.code_value.toLocaleLowerCase() === value.toLocaleLowerCase())
+      );
+    }
   }
 
   saveTaydennyskoulutus(form: FormGroup) {

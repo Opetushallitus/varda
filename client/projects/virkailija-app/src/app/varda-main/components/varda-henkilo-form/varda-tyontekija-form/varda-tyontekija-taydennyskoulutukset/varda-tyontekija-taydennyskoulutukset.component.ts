@@ -89,6 +89,7 @@ export class VardaTyontekijaTaydennyskoulutuksetComponent implements OnInit, OnC
 
     if (refreshSuhteet) {
       this.getTaydennyskoulutukset();
+      this.setTehtavanimikkeet();
     }
   }
 }

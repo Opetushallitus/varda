@@ -84,6 +84,10 @@
                           [value]="nimike.code_value">
                 {{ nimike.name }}
               </mat-option>
+              <mat-option *ngFor="let disabledNimike of disabledTehtavanimikeCodes"
+                          [value]="disabledNimike" disabled>
+                {{ disabledNimike | koodisto: { koodisto: koodistoEnum.tehtavanimike } | async }}
+              </mat-option>
             </ng-container>
           </mat-select>
           <ng-template #eiNimikkeita>

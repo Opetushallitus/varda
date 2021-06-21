@@ -13,6 +13,7 @@ export class VardaHenkiloDTO {
   turvakielto?: boolean;
   lapsi?: Array<string>;
   tyontekija?: Array<string>;
+  mock?: boolean;
 }
 
 export interface HenkiloListDTO {

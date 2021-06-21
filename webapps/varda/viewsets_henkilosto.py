@@ -34,7 +34,7 @@ from varda.permissions import (CustomModelPermissions, delete_object_permissions
                                toimipaikka_tallentaja_pidempipoissaolo_has_perm_to_add,
                                get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus, is_oph_staff,
                                assign_tyontekija_henkilo_permissions, assign_tyoskentelypaikka_henkilo_permissions,
-                               CustomObjectPermissions)
+                               CustomObjectPermissions, get_available_tehtavanimike_codes_for_user)
 from varda.request_logging import request_log_viewset_decorator_factory
 from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, PalvelussuhdeSerializer,
                                           PidempiPoissaoloSerializer,
@@ -208,7 +208,10 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
                                                                                           [Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
                                                                                            Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA])
         if not is_superuser_or_oph_staff and not taydennyskoulutus_organization_groups_qs.exists():
-            taydennyskoulutus_filter = taydennyskoulutus_filter & Q(taydennyskoulutus__id__in=get_object_ids_for_user_by_model(user, 'taydennyskoulutus'))
+            available_tehtavanimike_codes = get_available_tehtavanimike_codes_for_user(user, tyontekija)
+            taydennyskoulutus_filter = (taydennyskoulutus_filter &
+                                        Q(taydennyskoulutus__id__in=get_object_ids_for_user_by_model(user, 'taydennyskoulutus')) &
+                                        Q(tehtavanimike_koodi__in=available_tehtavanimike_codes))
 
         taydennyskoulutukset = (TaydennyskoulutusTyontekija.objects
                                 .filter(taydennyskoulutus_filter)

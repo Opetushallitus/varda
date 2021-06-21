@@ -293,6 +293,7 @@ export enum VirkailijaTranslations {
   tutkinnot_fetch_failure = 'tutkinnot.fetch-failure',
   tutkinnot_save_success = 'tutkinnot.save-success',
   tutkinnot_delete_success = 'tutkinnot.delete-success',
+  tutkinnot_ei_oikeuksia = 'tutkinnot.ei-oikeuksia',
 
   palvelussuhteet = 'palvelussuhteet',
   palvelussuhteet_lisaa_palvelussuhde = 'palvelussuhteet.lisaa-palvelussuhde',

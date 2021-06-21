@@ -44,6 +44,8 @@ export class VardaHenkiloListComponent implements OnInit {
   openItem(henkilonSuhde: LapsiListDTO | TyontekijaListDTO, henkilo: HenkiloListDTO) {
     henkilonSuhde.henkilo_id = henkilo.id;
     henkilonSuhde.henkilo_oid = henkilo.henkilo_oid;
+    henkilonSuhde.etunimet = henkilo.etunimet;
+    henkilonSuhde.sukunimi = henkilo.sukunimi;
     this.openHenkiloForm.emit(henkilonSuhde);
   }
 

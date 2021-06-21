@@ -4,16 +4,22 @@
     {{ i18n.tutkinnot | translate }} <span
           *ngIf="henkilonTutkinnot?.getValue().length > 1">({{henkilonTutkinnot.getValue().length}})</span>
   </h2>
-  <mat-progress-spinner *ngIf="!tutkintoOptions; else tutkinnotLoaded"
-                        color="accent"
-                        diameter="40"
-                        mode="indeterminate"></mat-progress-spinner>
-  <ng-template #tutkinnotLoaded>
-    <ul>
-      <ng-container *ngFor="let tutkinto of henkilonTutkinnot | async; index as i;">
-        <li *ngIf="i < tutkintoViewLimit || henkilonTutkinnotExpand">
-          <span tabindex="0">{{tutkinto.tutkinto_nimi}} ({{ tutkinto.tutkinto_koodi }})</span>
-          <ng-container *ngIf="toimipaikkaAccess.tyontekijatiedot.tallentaja">
+  <ng-container *ngIf="!toimipaikkaAccess.tyontekijatiedot.katselija">
+    <div role="alert">
+      <p>{{ i18n.tutkinnot_ei_oikeuksia | translate }}</p>
+    </div>
+  </ng-container>
+  <ng-container *ngIf="toimipaikkaAccess.tyontekijatiedot.katselija">
+    <mat-progress-spinner *ngIf="!tutkintoOptions; else tutkinnotLoaded"
+                          color="accent"
+                          diameter="40"
+                          mode="indeterminate"></mat-progress-spinner>
+    <ng-template #tutkinnotLoaded>
+      <ul>
+        <ng-container *ngFor="let tutkinto of henkilonTutkinnot | async; index as i;">
+          <li *ngIf="i < tutkintoViewLimit || henkilonTutkinnotExpand">
+            <span tabindex="0">{{tutkinto.tutkinto_nimi}} ({{ tutkinto.tutkinto_koodi }})</span>
+            <ng-container *ngIf="toimipaikkaAccess.tyontekijatiedot.tallentaja">
             <span class="tutkintoEdit"
                   (click)="tutkinto.edit = !tutkinto.edit">
               <button class="varda-text-button"
@@ -27,8 +33,8 @@
                 {{ i18n.cancel | translate }}
               </button>
             </span>
-            <span *ngIf="tutkinto.edit"
-                  class="tutkintoDelete">
+              <span *ngIf="tutkinto.edit"
+                    class="tutkintoDelete">
               <button class="varda-button responsive varda-button-danger varda-button-small"
                       type="button"
                       [disabled]="false"
@@ -37,79 +43,79 @@
                 {{ i18n.delete | translate }}
               </button>
             </span>
-          </ng-container>
-        </li>
+            </ng-container>
+          </li>
+        </ng-container>
+        <ng-container *ngIf="henkilonTutkinnot?.getValue().length > tutkintoViewLimit">
+          <li *ngIf="!henkilonTutkinnotExpand">
+            <button class="varda-text-button"
+                    (click)="henkilonTutkinnotExpand = true">
+              {{ i18n.show_more | translate }}
+              <mat-icon alt="">expand_more</mat-icon>
+            </button>
+          </li>
+          <li *ngIf="henkilonTutkinnotExpand">
+            <button class="varda-text-button"
+                    (click)="henkilonTutkinnotExpand = false">
+              {{ i18n.show_less | translate }}
+              <mat-icon alt="">expand_less</mat-icon>
+            </button>
+          </li>
+        </ng-container>
+      </ul>
+
+      <ng-container *ngIf="!toimipaikkaAccess.tyontekijatiedot.tallentaja">
+        <div *ngIf="henkilonTutkinnot.getValue().length === 0">
+          {{ i18n.tutkinnot_ei_tutkintoja | translate }}
+        </div>
       </ng-container>
-      <ng-container *ngIf="henkilonTutkinnot?.getValue().length > tutkintoViewLimit">
-        <li *ngIf="!henkilonTutkinnotExpand">
+      <ng-container *ngIf="toimipaikkaAccess.tyontekijatiedot.tallentaja">
+        <div class="modal-form-intro"
+             *ngIf="henkilonTutkinnot?.getValue().length === 0">
+          {{ i18n.tutkinnot_lisaa_ylin_tutkinto | translate }}
+        </div>
+
+        <div class="mt-4"
+             *ngIf="!addTutkinto">
           <button class="varda-text-button"
-                  (click)="henkilonTutkinnotExpand = true">
-            {{ i18n.show_more | translate }}
-            <mat-icon alt="">expand_more</mat-icon>
-          </button>
-        </li>
-        <li *ngIf="henkilonTutkinnotExpand">
-          <button class="varda-text-button"
-                  (click)="henkilonTutkinnotExpand = false">
-            {{ i18n.show_less | translate }}
-            <mat-icon alt="">expand_less</mat-icon>
-          </button>
-        </li>
-      </ng-container>
-    </ul>
-
-    <ng-container *ngIf="!toimipaikkaAccess.tyontekijatiedot.tallentaja">
-      <div *ngIf="henkilonTutkinnot.getValue().length === 0">
-        {{ i18n.tutkinnot_ei_tutkintoja | translate }}
-      </div>
-    </ng-container>
-    <ng-container *ngIf="toimipaikkaAccess.tyontekijatiedot.tallentaja">
-      <div class="modal-form-intro"
-           *ngIf="henkilonTutkinnot?.getValue().length === 0">
-        {{ i18n.tutkinnot_lisaa_ylin_tutkinto | translate }}
-      </div>
-
-      <div class="mt-4"
-           *ngIf="!addTutkinto">
-        <button class="varda-text-button"
-                (click)="addTutkinto = true">
-          <mat-icon alt="">add</mat-icon> {{ i18n.tutkinnot_lisaa_tutkinto | translate }}
-        </button>
-      </div>
-
-      <form *ngIf="addTutkinto"
-            [formGroup]="tutkintoForm"
-            (submit)="createTutkinto(tutkintoForm)"
-            class="mt-4">
-        <mat-form-field appereance="standard">
-
-          <mat-label>
-            <mat-icon alt="">school</mat-icon> {{ i18n.tutkinnot_lisaa_tutkinto | translate }}
-          </mat-label>
-          <mat-select panelClass="mt-3"
-                      [class.mb-4]="tutkintoFormErrors | async"
-                      formControlName="tutkinto_koodi">
-            <mat-option [value]="null"
-                        disabled>-- {{ i18n.choose | translate }} --</mat-option>
-            <mat-option *ngFor="let tutkintoOption of tutkintoOptions"
-                        [value]="tutkintoOption.code_value">
-              {{ tutkintoOption.name }} ({{ tutkintoOption.code_value }})
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-        <div class="action-button-wrapper">
-          <button class="varda-button varda-button-wide responsive-md"
-                  [disabled]="!tutkintoForm.valid || (isSubmitting | async)"
-                  type="submit">
-            {{ i18n.save | translate}}
-          </button>
-          <button class="varda-button varda-button-wide varda-button-neutral responsive-md secondary"
-                  (click)="addTutkinto = false">{{ i18n.cancel | translate }}
+                  (click)="addTutkinto = true">
+            <mat-icon alt="">add</mat-icon> {{ i18n.tutkinnot_lisaa_tutkinto | translate }}
           </button>
         </div>
-      </form>
-      <app-varda-error-field [errors]="tutkintoFormErrors"></app-varda-error-field>
 
-    </ng-container>
-  </ng-template>
+        <form *ngIf="addTutkinto"
+              [formGroup]="tutkintoForm"
+              (submit)="createTutkinto(tutkintoForm)"
+              class="mt-4">
+          <mat-form-field appereance="standard">
+
+            <mat-label>
+              <mat-icon alt="">school</mat-icon> {{ i18n.tutkinnot_lisaa_tutkinto | translate }}
+            </mat-label>
+            <mat-select panelClass="mt-3"
+                        [class.mb-4]="tutkintoFormErrors | async"
+                        formControlName="tutkinto_koodi">
+              <mat-option [value]="null"
+                          disabled>-- {{ i18n.choose | translate }} --</mat-option>
+              <mat-option *ngFor="let tutkintoOption of tutkintoOptions"
+                          [value]="tutkintoOption.code_value">
+                {{ tutkintoOption.name }} ({{ tutkintoOption.code_value }})
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+          <div class="action-button-wrapper">
+            <button class="varda-button varda-button-wide responsive-md"
+                    [disabled]="!tutkintoForm.valid || (isSubmitting | async)"
+                    type="submit">
+              {{ i18n.save | translate}}
+            </button>
+            <button class="varda-button varda-button-wide varda-button-neutral responsive-md secondary"
+                    (click)="addTutkinto = false">{{ i18n.cancel | translate }}
+            </button>
+          </div>
+        </form>
+        <app-varda-error-field [errors]="tutkintoFormErrors"></app-varda-error-field>
+      </ng-container>
+    </ng-template>
+  </ng-container>
 </form>

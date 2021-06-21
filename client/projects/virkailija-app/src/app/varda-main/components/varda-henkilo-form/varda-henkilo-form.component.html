@@ -157,11 +157,11 @@
 
       </form>
       <ng-template #singleError>
-        <app-varda-error-field [errors]="henkiloFormErrors"></app-varda-error-field>
+        <app-varda-error-field tag="test" [errors]="henkiloFormErrors"></app-varda-error-field>
       </ng-template>
 
       <div *ngIf="currentHenkilo">
-        <ng-container *ngIf="henkilonSuhde.rooli === HenkiloRooliEnum.lapsi">
+        <ng-container *ngIf="!currentHenkilo.mock && henkilonSuhde.rooli === HenkiloRooliEnum.lapsi">
           <app-varda-lapsi-form [henkilo]="currentHenkilo"
                                 [lapsi]="henkilonSuhde"
                                 [henkilonToimipaikka]="henkilonToimipaikka"

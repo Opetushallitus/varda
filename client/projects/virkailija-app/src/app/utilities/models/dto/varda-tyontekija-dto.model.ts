@@ -24,6 +24,8 @@ export interface TyontekijaListDTO {
   rooli: HenkiloRooliEnum;
   tyoskentelypaikat?: Array<TyontekijaListTyoskentelypaikkaDTO>;
   tehtavanimikkeet?: Array<string>;
+  etunimet?: string;
+  sukunimi?: string;
 }
 
 export interface TyontekijaListTyoskentelypaikkaDTO {

@@ -11,7 +11,7 @@ from varda.models import (Henkilo, TilapainenHenkilosto, Tutkinto, Tyontekija, V
                           Taydennyskoulutus, Z4_CasKayttoOikeudet)
 from varda.permissions import (is_correct_taydennyskoulutus_tyontekija_permission,
                                filter_authorized_taydennyskoulutus_tyontekijat, user_permission_groups_in_organization,
-                               is_oph_staff)
+                               is_oph_staff, get_available_tehtavanimike_codes_for_user)
 from varda.related_object_validations import (create_date_range, date_range_overlap,
                                               check_if_admin_mutable_object_is_changed, check_overlapping_palvelussuhde,
                                               check_overlapping_tyoskentelypaikka, check_overlapping_pidempi_poissaolo,
@@ -749,8 +749,7 @@ class TaydennyskoulutusTyontekijaListSerializer(serializers.ModelSerializer):
     tehtavanimike_koodit = serializers.SerializerMethodField()
 
     def get_tehtavanimike_koodit(self, instance):
-        palvelussuhteet = instance.palvelussuhteet.all()
-        return Tyoskentelypaikka.objects.filter(palvelussuhde__in=palvelussuhteet).values_list('tehtavanimike_koodi', flat=True).distinct()
+        return get_available_tehtavanimike_codes_for_user(self.context['request'].user, instance)
 
     class Meta:
         model = Tyontekija

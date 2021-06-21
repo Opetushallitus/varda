@@ -193,6 +193,8 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
       henkilo_id: parseInt(henkiloID, 10),
       henkilo_oid: lapsiDTO.henkilo_oid,
       rooli: HenkiloRooliEnum.lapsi,
+      etunimet: this.henkilo.etunimet,
+      sukunimi: this.henkilo.sukunimi,
       vakatoimija_oid: lapsiDTO.vakatoimija_oid,
       vakatoimija_nimi: null,
       oma_organisaatio_oid: lapsiDTO.oma_organisaatio_oid,
