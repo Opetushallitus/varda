@@ -2,7 +2,7 @@ import {Component, OnInit, Input, OnChanges, SimpleChanges, SimpleChange, ViewCh
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
 // Since we are using native bootstrap instead of angular one we need this to access the modal
-declare var $: any;
+declare let $: any;
 
 export enum ModalEvent {
   opens = 'opens',
@@ -16,22 +16,19 @@ export enum ModalEvent {
   styleUrls: ['./varda-modal-form.component.css']
 })
 export class VardaModalFormComponent implements OnInit, OnChanges {
-
   @Input() identifier: string;
   @Input() modalTitle: string;
   @Input() isLg: boolean;
   @Input() isXl: boolean;
   @Input() openModal: boolean;
   @Input() closeWithoutConfirm: boolean;
+  @Output() events: EventEmitter<ModalEvent> = new EventEmitter(true);
+  @ViewChild('vardamodal', { static: true }) vardaModal: ElementRef;
+  @ViewChild('vardaPromptModal') vardaModalPrompt: ElementRef;
 
   confirmedVardaFormLeave: boolean;
   showPrompt: boolean;
   i18n = VirkailijaTranslations;
-
-  @Output() events: EventEmitter<ModalEvent> = new EventEmitter(true);
-
-  @ViewChild('vardamodal', { static: true }) vardaModal: ElementRef;
-  @ViewChild('vardaPromptModal') vardaModalPrompt: ElementRef;
 
   constructor() {
     this.confirmedVardaFormLeave = false;
@@ -63,19 +60,12 @@ export class VardaModalFormComponent implements OnInit, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     const openModal: SimpleChange = changes.openModal;
     if (openModal) {
-      openModal.currentValue === true ? this.showModal() : this.hideModal();
+      if (openModal.currentValue === true) {
+        this.showModal();
+      } else {
+        this.hideModal();
+      }
     }
-  }
-
-  private showModal() {
-    const modalElement = this.vardaModal.nativeElement;
-    // Open modal
-    $(modalElement).modal('show');
-  }
-
-  private hideModal() {
-    const modalElement = this.vardaModal.nativeElement;
-    $(modalElement).modal('hide');
   }
 
   moveToCancel(e: Event): void {
@@ -100,4 +90,14 @@ export class VardaModalFormComponent implements OnInit, OnChanges {
     this.hideModal();
   }
 
+  private showModal() {
+    const modalElement = this.vardaModal.nativeElement;
+    // Open modal
+    $(modalElement).modal('show');
+  }
+
+  private hideModal() {
+    const modalElement = this.vardaModal.nativeElement;
+    $(modalElement).modal('hide');
+  }
 }

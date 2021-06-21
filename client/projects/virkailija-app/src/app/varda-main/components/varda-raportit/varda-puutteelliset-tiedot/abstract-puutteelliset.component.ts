@@ -27,8 +27,6 @@ export abstract class AbstractPuutteellisetComponent<T, Y> implements OnInit, On
   @Output() openToimipaikkaForm = new EventEmitter<Y>(true);
 
   selectedVakajarjestaja: VardaVakajarjestajaUi;
-
-  protected errorService: VardaErrorMessageService;
   formErrors: Observable<Array<ErrorTree>>;
   subscriptions: Array<Subscription> = [];
   isLoading = new BehaviorSubject<boolean>(false);
@@ -37,6 +35,7 @@ export abstract class AbstractPuutteellisetComponent<T, Y> implements OnInit, On
     page: 1,
     count: 0
   };
+  protected errorService: VardaErrorMessageService;
 
   constructor(
     protected utilityService: VardaUtilityService,

@@ -127,5 +127,3 @@ app-palvelussuhde:nth-child(odd) {
     margin-left: 1rem;
   }
 }
-
-@media (max-width: 576px) {}

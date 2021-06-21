@@ -21,10 +21,10 @@ export class LoginService {
   private currentUser$ = new BehaviorSubject<VardaUserDTO>(null);
   private sessionTimeoutTimer: ReturnType<typeof setTimeout>;
   private timeoutSettings: {
-    timeout: number,
-    translate: TranslateService,
-    logoutURL: string,
-    lifetimeSeconds: number
+    timeout: number;
+    translate: TranslateService;
+    logoutURL: string;
+    lifetimeSeconds: number;
   };
 
   private snackBarRef: MatSnackBarRef<any>;
@@ -135,7 +135,7 @@ export class LoginService {
       channel.onmessage = (e) => {
         const token = sessionStorage.getItem(apiToken);
         if (token && e.data.action === requestToken) {
-          channel.postMessage({ action: sendToken, token: token });
+          channel.postMessage({ action: sendToken, token });
         } else if (!token && e.data.action === sendToken) {
           sessionStorage.setItem(apiToken, e.data.token);
           window.location.href = originalRoute;
@@ -149,8 +149,8 @@ export class LoginService {
   initLogoutInterval(seconds: number, translate: TranslateService, logoutURL: string) {
     this.timeoutSettings = {
       timeout: seconds * 1000,
-      translate: translate,
-      logoutURL: logoutURL,
+      translate,
+      logoutURL,
       lifetimeSeconds: 180
     };
     this.clearLogoutInterval();

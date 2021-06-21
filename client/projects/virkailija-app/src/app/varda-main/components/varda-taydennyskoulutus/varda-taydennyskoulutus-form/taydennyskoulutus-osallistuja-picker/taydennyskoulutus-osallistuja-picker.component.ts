@@ -80,9 +80,11 @@ export class VardaTaydennyskoulutusOsallistujaPickerComponent implements OnChang
   }
 
   masterToggle() {
-    this.isAllSelected() ?
-      this.tableSelection.clear() :
+    if (this.isAllSelected()) {
+      this.tableSelection.clear();
+    } else {
       this.tyontekijatData.data.forEach(row => this.tableSelection.select(row));
+    }
   }
 
   checkboxLabel(row?: VardaTaydennyskoulutusTyontekijaListDTO): string {

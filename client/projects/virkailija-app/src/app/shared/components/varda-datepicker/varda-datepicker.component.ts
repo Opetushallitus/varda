@@ -14,9 +14,8 @@ import { Moment } from 'moment';
 import * as moment from 'moment';
 import { AbstractControl, ControlValueAccessor, FormControl, NG_VALIDATORS, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
-import { AuthService } from '../../../core/auth/auth.service';
 import { VardaDatepickerHeaderComponent } from './varda-datepicker-header/varda-datepicker-header.component';
-import { Observable, Subject, BehaviorSubject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
 export interface VardaDatepickerEvent {
@@ -69,8 +68,6 @@ export class VardaDatepickerComponent implements OnInit, ControlValueAccessor {
   matDateModel: Moment = moment();
   private focus$ = new Subject<boolean>();
   private lastValidState = true;
-  private propagateChange = (_: any) => { };
-  private propagateTouch = () => { };
 
   constructor(
     private dateAdapter: DateAdapter<any>,
@@ -153,4 +150,7 @@ export class VardaDatepickerComponent implements OnInit, ControlValueAccessor {
       return this.pickerControl.validator(control);
     }
   }
+
+  private propagateChange = (_: any) => { };
+  private propagateTouch = () => { };
 }

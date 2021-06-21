@@ -41,7 +41,6 @@ export class VardaHenkilostoTilapainenComponent implements OnInit {
   isSubmitting: Observable<boolean>;
   i18n = VirkailijaTranslations;
   henkilostoFormErrors: Observable<Array<ErrorTree>>;
-  private henkilostoErrorService: VardaErrorMessageService;
   lastAllowedDate: Date;
   isEdit: boolean;
   monthArray = new FormArray([]);
@@ -65,6 +64,8 @@ export class VardaHenkilostoTilapainenComponent implements OnInit {
     this.i18n.aika_marraskuu,
     this.i18n.aika_joulukuu,
   ];
+
+  private henkilostoErrorService: VardaErrorMessageService;
 
   constructor(
     private dialog: MatDialog,

@@ -15,7 +15,6 @@ export enum SnackbarTimers {
 
 @Injectable()
 export class VardaSnackBarService {
-
   i18n = VirkailijaTranslations;
   defaultAction: string;
   defaultError: string;
@@ -28,14 +27,6 @@ export class VardaSnackBarService {
       this.defaultAction = translations[this.i18n.close];
       this.defaultError = translations[this.i18n.error];
     });
-  }
-
-  private open(message: string, action?: string, config?: MatSnackBarConfig) {
-    this.snackBar.open(
-      this.translate.instant(message),
-      action ? this.translate.instant(action) : this.defaultAction,
-      config
-    );
   }
 
   success(message: string, action?: string, config?: MatSnackBarConfig) {
@@ -83,7 +74,7 @@ export class VardaSnackBarService {
   }
 
   /**
-    * does console.error(message, error) and passes your message to snackbar error(message)
+   * does console.error(message, error) and passes your message to snackbar error(message)
    */
   errorWithConsole(message: string, error: Error) {
     console.error(message, '\n', error.message);
@@ -91,9 +82,10 @@ export class VardaSnackBarService {
   }
 
   /**
-    * errorFromBackend is only for varda-backend-format errors. only shows the first error in the list
-    * @remarks
-    * expand this with template if you wish to show multiple error-lines
+   * errorFromBackend is only for varda-backend-format errors. only shows the first error in the list
+   *
+   * @remarks
+   * expand this with template if you wish to show multiple error-lines
    */
   errorFromBackend(messages: Array<ErrorValue>, action?: string, config?: MatSnackBarConfig) {
     const errorConfig = {
@@ -111,4 +103,11 @@ export class VardaSnackBarService {
     );
   }
 
+  private open(message: string, action?: string, config?: MatSnackBarConfig) {
+    this.snackBar.open(
+      this.translate.instant(message),
+      action ? this.translate.instant(action) : this.defaultAction,
+      config
+    );
+  }
 }

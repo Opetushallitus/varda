@@ -43,24 +43,18 @@ export class OppijaRaamitService {
 
   raamitScript() {
     globalThis.Service = {
-      getUser: () => {
-        return new Promise((resolve) =>
-          this.username$.pipe(filter(Boolean)).subscribe(username => resolve({ name: username }))
-        );
-      },
-
+      getUser: () => new Promise((resolve) =>
+        this.username$.pipe(filter(Boolean)).subscribe(username => resolve({ name: username }))
+      ),
       login: () => console.error('login to huoltaja-app should never happen through oppija-raamit'),
       logout: () => {
         sessionStorage.clear();
         window.location.href = this.logoutURL;
       },
-
-      changeLanguage: function (language: string) {
-        return new Promise(resolve => {
-          const lang = language === 'sv' ? 'sv' : 'fi';
-          resolve(lang);
-        });
-      }
+      changeLanguage: (language: string) => new Promise(resolve => {
+        const lang = language === 'sv' ? 'sv' : 'fi';
+        resolve(lang);
+      })
     };
 
     const node = document.createElement('script');

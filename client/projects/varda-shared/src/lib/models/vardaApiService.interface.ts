@@ -1,5 +1,5 @@
 export interface VardaApiServiceInterface {
   getTranslationCategory(): string;
   getLocalizationApi(): string;
-  getTranslationEnum(): object;
+  getTranslationEnum(): Record<string, string>;
 }

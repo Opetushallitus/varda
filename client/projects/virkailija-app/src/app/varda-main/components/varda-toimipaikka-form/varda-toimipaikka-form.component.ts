@@ -32,7 +32,6 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
   @Output() saveToimipaikkaFormSuccess = new EventEmitter<VardaToimipaikkaDTO>(true);
   @Output() valuesChanged = new EventEmitter<boolean>(true);
   @ViewChild('formContent') formContent: ElementRef;
-  private errorService: VardaErrorMessageService;
   i18n = VirkailijaTranslations;
   koodistoEnum = KoodistoEnum;
   toimijaAccess: UserAccess;
@@ -55,6 +54,7 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
   filteredKayntiosoitePostitoimipaikat: Array<CodeDTO> = [];
   filteredPostitoimipaikat: Array<CodeDTO> = [];
   postiosoiteToggleBoolean = false;
+  private errorService: VardaErrorMessageService;
 
   constructor(
     private authService: AuthService,

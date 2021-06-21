@@ -104,7 +104,7 @@
           <app-varda-radio-button-group name="tyontekijaRajausButtonGroup"
                                         responsive="md"
                                         wrap="md"
-                                        (change)="search()"
+                                        (valueChanged)="search()"
                                         [(ngModel)]="filterParams.rajaus">
             <app-varda-radio-button [id]="'filterPalvelussuhteet'"
                                     [value]="rajaus.PALVELUSSUHTEET">
@@ -132,7 +132,7 @@
               <app-varda-radio-button-group name="tyontekijaVoimassaoloButtonGroup"
                                             responsive="md"
                                             wrap="xs"
-                                            (change)="search()"
+                                            (valueChanged)="search()"
                                             [(ngModel)]="filterParams.voimassaolo">
                 <app-varda-radio-button [id]="'filterVoimassa'"
                                         [value]="voimassaolo.VOIMASSA">

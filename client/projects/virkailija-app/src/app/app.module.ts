@@ -13,10 +13,10 @@ import { VardaSharedModule, HttpService, VardaHttpInterceptor, VardaTranslateLoa
 import { VardaApiService } from './core/services/varda-api.service';
 
 // AoT requires an exported function for factories
-export function HttpLoaderFactory(http: HttpClient) {
+export const HttpLoaderFactory = (http: HttpClient) => {
   const path = './assets/i18n/';
   return new TranslateHttpLoader(http, path, '.json');
-}
+};
 
 @NgModule({
   declarations: [

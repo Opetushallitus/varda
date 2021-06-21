@@ -73,9 +73,11 @@ export class VardaTaydennyskoulutusOsallistujaListComponent implements OnChanges
   }
 
   masterToggle() {
-    this.isAllSelected() ?
-      this.tableSelection.clear() :
+    if (this.isAllSelected()) {
+      this.tableSelection.clear();
+    } else {
       this.tyontekijatData.data.forEach(row => this.tableSelection.select(row));
+    }
   }
 
   checkboxLabel(row?: VardaTaydennyskoulutusTyontekijaListDTO): string {
@@ -101,13 +103,11 @@ export class VardaTaydennyskoulutusOsallistujaListComponent implements OnChanges
   changeValitutNimikkeet(tyontekija: VardaTaydennyskoulutusTyontekijaListDTO) {
     const withoutTyontekijaOsallistujat = this.osallistujat.filter(osallistuja => osallistuja.henkilo_oid !== tyontekija.henkilo_oid);
     const tyontekijaOsallistumiset = tyontekija.valitut_nimikkeet.length ?
-      tyontekija.valitut_nimikkeet.map(nimikekoodi => {
-        return {
+      tyontekija.valitut_nimikkeet.map(nimikekoodi => ({
           henkilo_oid: tyontekija.henkilo_oid,
           vakajarjestaja_oid: this.selectedVakajarjestaja.organisaatio_oid,
           tehtavanimike_koodi: nimikekoodi
-        };
-      }) : [{
+        })) : [{
         henkilo_oid: tyontekija.henkilo_oid,
         vakajarjestaja_oid: this.selectedVakajarjestaja.organisaatio_oid,
         tehtavanimike_koodi: null

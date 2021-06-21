@@ -15,10 +15,22 @@ export class PublicApiService implements VardaApiServiceInterface {
 
   constructor(private http: LoadingHttpService) { }
 
-  getKoodistot(params: Object): Observable<Array<KoodistoDto>> {
+  getKoodistot(params: Record<string, unknown>): Observable<Array<KoodistoDto>> {
     const url = this.setParams(`${this.julkinenApiPath}/v1/koodistot/`, params);
     // Overwrite headers so that Authorization isn't required
     return this.http.get(url, null, new HttpHeaders());
+  }
+
+  getLocalizationApi(): string {
+    return `${environment.publicAppUrl}/api/julkinen/v1/localisation`;
+  }
+
+  getTranslationCategory(): string {
+    return environment.localizationCategory;
+  }
+
+  getTranslationEnum(): Record<string, string> {
+    return PublicTranslations;
   }
 
   private setParams(url, params) {
@@ -31,17 +43,5 @@ export class PublicApiService implements VardaApiServiceInterface {
       });
       return url.slice(0, -1);
     }
-  }
-
-  getLocalizationApi(): string {
-    return `${environment.publicAppUrl}/api/julkinen/v1/localisation`;
-  }
-
-  getTranslationCategory(): string {
-    return environment.localizationCategory;
-  }
-
-  getTranslationEnum(): object {
-    return PublicTranslations;
   }
 }

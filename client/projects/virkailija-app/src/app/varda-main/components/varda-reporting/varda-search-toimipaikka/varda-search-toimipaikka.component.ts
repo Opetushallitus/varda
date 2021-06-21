@@ -53,30 +53,30 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
   }
 
   search(paginatorParams?: PaginatorParams): any {
-    const searchParams = {};
+    const searchParams: Record<string, unknown> = {};
     this.setPaginatorParams(searchParams, paginatorParams);
 
     this.isFiltersInactive = !this.isFiltersFilled();
     this.updateFilterString();
 
     if (this.searchValue) {
-      searchParams['nimi'] = this.searchValue;
+      searchParams.nimi = this.searchValue;
     }
     if (this.filterParams.jarjestamismuoto) {
-      searchParams['jarjestamismuoto_koodi'] = this.filterParams.jarjestamismuoto.code_value.toLowerCase();
+      searchParams.jarjestamismuoto_koodi = this.filterParams.jarjestamismuoto.code_value.toLowerCase();
     }
     if (this.filterParams.toimintamuoto) {
-      searchParams['toimintamuoto_koodi'] = this.filterParams.toimintamuoto.code_value.toLowerCase();
+      searchParams.toimintamuoto_koodi = this.filterParams.toimintamuoto.code_value.toLowerCase();
     }
 
     const today = moment().format('YYYY-MM-DD');
     switch (this.filterParams.voimassaolo) {
       case this.voimassaolo.VOIMASSAOLEVAT:
-        searchParams['alkamis_pvm_before'] = today;
-        searchParams['paattymis_pvm_after'] = today;
+        searchParams.alkamis_pvm_before = today;
+        searchParams.paattymis_pvm_after = today;
         break;
       case this.voimassaolo.PAATTYNEET:
-        searchParams['paattymis_pvm_before'] = today;
+        searchParams.paattymis_pvm_before = today;
         break;
     }
 
@@ -87,13 +87,11 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
     this.koosteService.getToimipaikatForVakajarjestaja(this.selectedVakajarjestaja.id, searchParams)
       .subscribe(response => {
         this.resultCount = response.count;
-        this.searchResults = response.results.map(toimipaikka => {
-          return {
+        this.searchResults = response.results.map(toimipaikka => ({
             id: toimipaikka.id,
             textPrimary: toimipaikka.nimi_original,
             textSecondary: this.getSecondaryText(toimipaikka.paos_organisaatio_nimi)
-          };
-        });
+          }));
       });
   }
 

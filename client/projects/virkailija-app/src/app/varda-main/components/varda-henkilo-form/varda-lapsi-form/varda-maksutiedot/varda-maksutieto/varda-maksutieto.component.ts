@@ -41,12 +41,12 @@ export class VardaMaksutietoComponent extends VardaFormAccordionAbstractComponen
   huoltajat: FormArray;
   maksutietoFormErrors: Observable<Array<ErrorTree>>;
   subscriptions: Array<Subscription> = [];
-  private henkilostoErrorService: VardaErrorMessageService;
   maksunperusteKoodisto: KoodistoDTO;
-  huoltajaSaveStatus: { success: number, failure: number };
+  huoltajaSaveStatus: { success: number; failure: number };
   minEndDate: Date;
   disableForMaksuttomuus = false;
   isSubmitting = new BehaviorSubject<boolean>(false);
+  private henkilostoErrorService: VardaErrorMessageService;
 
   constructor(
     private el: ElementRef,

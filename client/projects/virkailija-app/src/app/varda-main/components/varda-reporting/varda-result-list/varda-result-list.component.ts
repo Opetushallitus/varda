@@ -36,14 +36,14 @@ export class VardaResultListComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['searchResults'] && this.selectedId !== null) {
+    if (changes.searchResults && this.selectedId !== null) {
       this.selectResult(null);
     }
     if (this.searchResults && this.searchResults.length > 0) {
       this.selectResult(this.searchResults[0].id);
     }
 
-    if (changes['pageSize'] && this.pageSize) {
+    if (changes.pageSize && this.pageSize) {
       this.paginatorParams.pageSize = this.pageSize;
     }
   }

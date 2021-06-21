@@ -19,7 +19,7 @@ describe('AppComponent', () => {
   let loadingHttpService;
   let translateService: TranslateService;
 
-  let translateServiceUseSpy, loadingHttpServiceSpy;
+  let translateServiceUseSpy; let loadingHttpServiceSpy;
 
   beforeEach((() => {
     TestBed.configureTestingModule({

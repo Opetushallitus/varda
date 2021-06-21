@@ -33,7 +33,7 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
     this.activeRoute = this.router.url.split('/').pop();
     this.subscriptions.push(
       this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(event => {
-        this.activeRoute = (<NavigationEnd>event).url.split('/').pop();
+        this.activeRoute = (event as NavigationEnd).url.split('/').pop();
       })
     );
 

@@ -16,15 +16,15 @@ import {
   TransferOutageLahdejarjestelma,
   TransferOutageUser
 } from '../../utilities/models/dto/varda-transfer-outage-dto.model';
+import { VardaPaginatorParams } from '../../utilities/models/varda-paginator-params.model';
 
 @Injectable()
 export class VardaRaportitService {
+  public showPuutteellisetError$ = new BehaviorSubject<boolean>(false);
+  private selectedVakajarjestajat$ = new BehaviorSubject<Array<number>>(null);
   private apiPath = `${environment.vardaAppUrl}/api/v1`;
   private adminApiPath = `${environment.vardaAppUrl}/api/admin`;
   private reportingApi = `${environment.vardaAppUrl}/api/reporting`;
-
-  public showPuutteellisetError$ = new BehaviorSubject<boolean>(false);
-  private selectedVakajarjestajat$ = new BehaviorSubject<Array<number>>(null);
 
   constructor(private http: LoadingHttpService) { }
 
@@ -80,7 +80,7 @@ export class VardaRaportitService {
     return this.selectedVakajarjestajat$.asObservable();
   }
 
-  getExcelReportList(vakajarjestajaId: number, searchParams: Object): Observable<VardaPageDto<VardaExcelReportDTO>> {
+  getExcelReportList(vakajarjestajaId: number, searchParams: VardaPaginatorParams): Observable<VardaPageDto<VardaExcelReportDTO>> {
     return this.http.get(`${this.reportingApi}/v1/excel-reports/?vakajarjestaja=${vakajarjestajaId}`, searchParams);
   }
 
@@ -96,11 +96,11 @@ export class VardaRaportitService {
     return this.http.get(url, undefined, undefined, {responseType: 'arraybuffer'});
   }
 
-  getTransferOutageUser(searchFilter: Object): Observable<VardaPageDto<TransferOutageUser>> {
+  getTransferOutageUser(searchFilter: Record<string, unknown>): Observable<VardaPageDto<TransferOutageUser>> {
     return this.http.get(`${this.reportingApi}/v1/transfer-outage/`, searchFilter);
   }
 
-  getTransferOutageLahdejarjestelma(searchFilter: Object): Observable<VardaPageDto<TransferOutageLahdejarjestelma>> {
+  getTransferOutageLahdejarjestelma(searchFilter: Record<string, unknown>): Observable<VardaPageDto<TransferOutageLahdejarjestelma>> {
     return this.http.get(`${this.reportingApi}/v1/transfer-outage-lahdejarjestelma/`, searchFilter);
   }
 }

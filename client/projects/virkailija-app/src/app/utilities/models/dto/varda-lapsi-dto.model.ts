@@ -1,14 +1,14 @@
 import { HenkiloRooliEnum } from '../enums/henkilorooli.enum';
 
 export class VardaLapsiCreateDto {
-  public constructor(init?: Partial<VardaLapsiCreateDto>) {
-    Object.assign(this, init);
-  }
-
   henkilo?: string;
   vakatoimija?: string;
   oma_organisaatio?: string;
   paos_organisaatio?: string;
+
+  public constructor(init?: Partial<VardaLapsiCreateDto>) {
+    Object.assign(this, init);
+  }
 }
 
 export class VardaLapsiDTO extends VardaLapsiCreateDto {

@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, Output, EventEmitter, ContentChildren, QueryList, AfterContentInit, ElementRef, ContentChild, ViewChild, OnDestroy } from '@angular/core';
+import { Component, Input, ContentChildren, QueryList, AfterContentInit, ElementRef, ContentChild, ViewChild, OnDestroy } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { VardaField, } from '../../../utilities/models';
 import { MatRadioGroup, MatRadioButton } from '@angular/material/radio';
@@ -9,13 +9,6 @@ import { MatSelect } from '@angular/material/select';
 export interface FormFieldErrorMap {
   key: string;
   value: string;
-}
-
-export enum VardaFormFieldType {
-  text = 'text',
-  number = 'number',
-  select = 'select',
-  datepicker = 'datepicker'
 }
 
 @Component({
@@ -48,7 +41,6 @@ export class VardaFormFieldComponent implements AfterContentInit, OnDestroy {
   instructionRef: string;
   formControl: FormControl;
   focusStatus$ = new Subject<boolean>();
-  vardaFormFieldTypes = VardaFormFieldType;
   showInstructionText: boolean;
   isRequired: boolean;
   private subscriptions: Subscription[] = [];
@@ -76,7 +68,7 @@ export class VardaFormFieldComponent implements AfterContentInit, OnDestroy {
     this.instructionRef = `${this.name}-instruction`;
 
     if (this.form) {
-      this.formControl = <FormControl>this.form.get(this.name);
+      this.formControl = this.form.get(this.name) as FormControl;
       this.formControl.statusChanges.subscribe(change => {
         if (this.formControl.hasError('scrollTo')) {
           this.formField?.nativeElement.scrollIntoView({ behavior: 'smooth' });
@@ -107,7 +99,6 @@ export class VardaFormFieldComponent implements AfterContentInit, OnDestroy {
       this.subscriptions.push(fromEvent(childEl.nativeElement, 'focus').subscribe(() => this.focusStatus$.next(true)));
       this.subscriptions.push(fromEvent(childEl.nativeElement, 'blur').subscribe(() => this.focusStatus$.next(false)));
     });
-
   }
 }
 

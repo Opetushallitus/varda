@@ -67,9 +67,7 @@ export class VardaToimipaikkaSelectorComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.toimipaikat = this.toimipaikat.sort((a, b) => {
-      return a.nimi.toLowerCase().localeCompare(b.nimi.toLowerCase(), 'fi');
-    });
+    this.toimipaikat = this.toimipaikat.sort((a, b) => a.nimi.toLowerCase().localeCompare(b.nimi.toLowerCase(), 'fi'));
 
     const previousToimipaikkaOID = localStorage.getItem(VardaCookieEnum.previous_toimipaikka);
     this.activeToimipaikka = this.toimipaikat.find(toimipaikka => toimipaikka.organisaatio_oid === previousToimipaikkaOID) || null;

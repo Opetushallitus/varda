@@ -18,7 +18,6 @@ export class VardaRadioButtonComponent implements OnInit {
   @Input() id: string;
   @Input() value: any;
   @Input() class?: string;
-  private _checked?: boolean;
   @Input() disabled?: boolean;
   @Input() tabIndex?: number;
   @Input() name?: string;
@@ -27,6 +26,7 @@ export class VardaRadioButtonComponent implements OnInit {
   @Input() ariaLabel?: string;
   @Input() ariaLabelledby?: string;
   @Output() valueChange = new EventEmitter(true);
+  private _checked?: boolean;
 
   constructor(private _changeDetector: ChangeDetectorRef) { }
 
@@ -49,6 +49,6 @@ export class VardaRadioButtonComponent implements OnInit {
   _onChange(event: Event) {
     event.stopPropagation();
     this.checked = true;
-    this.valueChange.emit({ event: event, value: this.value });
+    this.valueChange.emit({ event, value: this.value });
   }
 }

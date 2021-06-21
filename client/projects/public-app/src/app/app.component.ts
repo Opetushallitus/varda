@@ -54,8 +54,8 @@ export class AppComponent implements OnInit {
         this.pageTitleTranslations.push(snapshot.data.title);
       }
       // Get koodisto name from params
-      if (snapshot.params['koodisto']) {
-        this.pageTitleStatic.push(snapshot.params['koodisto']);
+      if (snapshot.params.koodisto) {
+        this.pageTitleStatic.push(snapshot.params.koodisto);
       }
 
       snapshot = snapshot.firstChild;

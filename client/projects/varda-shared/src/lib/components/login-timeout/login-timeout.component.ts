@@ -7,7 +7,7 @@ export interface TimeoutData {
   counterText: string;
   actionText: string;
   seconds: number;
-  dismiss?: () => {};
+  dismiss?: () => void;
 }
 
 export enum TimeoutTranslationKey {
@@ -26,12 +26,12 @@ export enum TimeoutTranslationKey {
   encapsulation: ViewEncapsulation.None,
 })
 export class LoginTimeoutComponent implements OnInit, OnDestroy {
-  private counterText: string;
   reasonText: string;
   actionText: string;
   visibleCounterText: string;
   seconds = new BehaviorSubject<number>(null);
   subscriptions: Array<Subscription> = [];
+  private counterText: string;
 
   constructor(
     @Inject(MAT_SNACK_BAR_DATA) private data: TimeoutData

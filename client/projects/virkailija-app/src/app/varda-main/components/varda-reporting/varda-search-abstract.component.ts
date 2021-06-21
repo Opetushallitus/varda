@@ -49,16 +49,16 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
   isSmall: boolean;
 
   translatedStringMap = {
-    'voimassa': this.i18n.katsele_tietoja_voimassa,
-    'paattynyt': this.i18n.katsele_tietoja_paattynyt,
-    'vakasuhteet': this.i18n.varhaiskasvatussuhde_plural,
-    'vakapaatokset': this.i18n.varhaiskasvatuspaatokset,
-    'maksutiedot': this.i18n.maksutiedot,
-    'alkanut': this.i18n.katsele_tietoja_alkanut,
-    'palvelussuhteet': this.i18n.palvelussuhteet,
-    'poissaolot': this.i18n.katsele_tietoja_tyontekija_poissaolot,
-    'taydennyskoulutukset': this.i18n.taydennyskoulutukset,
-    'aikavali': this.i18n.katsele_tietoja_aikavalilla
+    voimassa: this.i18n.katsele_tietoja_voimassa,
+    paattynyt: this.i18n.katsele_tietoja_paattynyt,
+    vakasuhteet: this.i18n.varhaiskasvatussuhde_plural,
+    vakapaatokset: this.i18n.varhaiskasvatuspaatokset,
+    maksutiedot: this.i18n.maksutiedot,
+    alkanut: this.i18n.katsele_tietoja_alkanut,
+    palvelussuhteet: this.i18n.palvelussuhteet,
+    poissaolot: this.i18n.katsele_tietoja_tyontekija_poissaolot,
+    taydennyskoulutukset: this.i18n.taydennyskoulutukset,
+    aikavali: this.i18n.katsele_tietoja_aikavalilla
   };
 
   searchValue: string;
@@ -151,9 +151,7 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
       this.selectedToimipaikat.push(selectedToimipaikka);
 
       // Remove selected option from Autocomplete
-      this.filteredToimipaikkaOptions.next(this.toimipaikat.filter(toimipaikka => {
-        return toimipaikka.id !== selectedToimipaikka.id && this.selectedToimipaikat.indexOf(toimipaikka) === -1;
-      }));
+      this.filteredToimipaikkaOptions.next(this.toimipaikat.filter(toimipaikka => toimipaikka.id !== selectedToimipaikka.id && this.selectedToimipaikat.indexOf(toimipaikka) === -1));
     } else {
       // All toimipaikat selection is applied
       this.isAllToimipaikatSelected = true;
@@ -175,9 +173,7 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
       this.selectedToimipaikat.splice(this.selectedToimipaikat.indexOf(removedToimipaikka), 1);
 
       // Add removed option back to Autocomplete
-      this.filteredToimipaikkaOptions.next(this.toimipaikat.filter(toimipaikka => {
-        return this.selectedToimipaikat.indexOf(toimipaikka) === -1;
-      }));
+      this.filteredToimipaikkaOptions.next(this.toimipaikat.filter(toimipaikka => this.selectedToimipaikat.indexOf(toimipaikka) === -1));
     } else {
       // Reset input if all toimipaikat selection is cleared
       this.isAllToimipaikatSelected = false;
@@ -191,10 +187,8 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
   }
 
   toimipaikkaSelectInputChange(event: Event) {
-    const targetValue = (<HTMLInputElement>event.target).value;
-    const results = this.toimipaikat.filter(toimipaikka => {
-      return toimipaikka.nimi.toLowerCase().includes(targetValue.toLowerCase()) && this.selectedToimipaikat.indexOf(toimipaikka) === -1;
-    });
+    const targetValue = (event.target as HTMLInputElement).value;
+    const results = this.toimipaikat.filter(toimipaikka => toimipaikka.nimi.toLowerCase().includes(targetValue.toLowerCase()) && this.selectedToimipaikat.indexOf(toimipaikka) === -1);
 
     if (results.length === 0) {
       this.isNoToimipaikkaResults = true;
@@ -213,13 +207,13 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
     return vakajarjestaja.trim().toLowerCase() !== this.vakajarjestajaName ? vakajarjestaja : null;
   }
 
-  setPaginatorParams(searchParams: Object, paginatorParams?: PaginatorParams): Object {
+  setPaginatorParams(searchParams: Record<string, unknown>, paginatorParams?: PaginatorParams): Record<string, unknown> {
     if (paginatorParams) {
       this.pageSize = paginatorParams.pageSize;
     }
 
-    searchParams['page'] = paginatorParams ? paginatorParams.page : 1;
-    searchParams['page_size'] = paginatorParams ? paginatorParams.pageSize : this.pageSize;
+    searchParams.page = paginatorParams ? paginatorParams.page : 1;
+    searchParams.page_size = paginatorParams ? paginatorParams.pageSize : this.pageSize;
     return searchParams;
   }
 
@@ -229,11 +223,10 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
     });
   }
 
-  abstract isFiltersFilled(): boolean;
-
-  abstract search(paginatorParams?: PaginatorParams): void;
-
   ngOnDestroy(): void {
     this.resizeSubscription.unsubscribe();
   }
+
+  abstract isFiltersFilled(): boolean;
+  abstract search(paginatorParams?: PaginatorParams): void;
 }

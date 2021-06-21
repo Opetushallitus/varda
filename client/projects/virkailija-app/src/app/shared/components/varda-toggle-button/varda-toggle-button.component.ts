@@ -8,14 +8,14 @@ import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/
 })
 export class VardaToggleButtonComponent implements OnInit {
   // Is show or hide button displayed
-  i18n = VirkailijaTranslations;
   @Input() isUp: boolean;
   @Input() showTextKey: string;
   @Input() hideTextKey: string;
+
+  i18n = VirkailijaTranslations;
 
   constructor() { }
 
   ngOnInit() {
   }
-
 }

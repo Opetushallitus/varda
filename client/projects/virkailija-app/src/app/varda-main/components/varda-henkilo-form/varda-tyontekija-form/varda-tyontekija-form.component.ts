@@ -30,15 +30,15 @@ export class VardaTyontekijaFormComponent implements OnChanges, OnDestroy {
   @Input() isEdit: boolean;
   @Output() valuesChanged: EventEmitter<boolean> = new EventEmitter<boolean>(true);
 
-
   i18n = VirkailijaTranslations;
-  private henkilostoErrorService: VardaErrorMessageService;
-  private deleteTyontekijaErrorService: VardaErrorMessageService;
   subscriptions: Array<Subscription> = [];
   toimipaikkaAccess: UserAccess;
   henkilonTutkinnot: Array<VardaTutkintoDTO>;
   tyontekijaFormErrors: Observable<Array<ErrorTree>>;
   deleteTyontekijaErrors: Observable<Array<ErrorTree>>;
+
+  private henkilostoErrorService: VardaErrorMessageService;
+  private deleteTyontekijaErrorService: VardaErrorMessageService;
 
   constructor(
     private authService: AuthService,

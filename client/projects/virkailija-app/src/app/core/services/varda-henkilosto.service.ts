@@ -105,7 +105,7 @@ export class VardaHenkilostoApiService {
   }
 
   // täydennyskoulutukset
-  getTaydennyskoulutukset(searchParams: object): Observable<Array<VardaTaydennyskoulutusDTO>> {
+  getTaydennyskoulutukset(searchParams: Record<string, unknown>): Observable<Array<VardaTaydennyskoulutusDTO>> {
     return this.http.getAllResults(`${this.henkilostoApiPath}/taydennyskoulutukset/`, environment.vardaAppUrl, searchParams);
   }
 
@@ -121,7 +121,7 @@ export class VardaHenkilostoApiService {
     return this.http.delete(`${this.henkilostoApiPath}/taydennyskoulutukset/${taydennyskoulutusId}/`);
   }
 
-  getTaydennyskoulutuksetTyontekijat(searchParams: object): Observable<Array<VardaTaydennyskoulutusTyontekijaListDTO>> {
+  getTaydennyskoulutuksetTyontekijat(searchParams: Record<string, unknown>): Observable<Array<VardaTaydennyskoulutusTyontekijaListDTO>> {
     return this.http.getAllResults(`${this.henkilostoApiPath}/taydennyskoulutukset/tyontekija-list/`, environment.vardaAppUrl, searchParams);
   }
 

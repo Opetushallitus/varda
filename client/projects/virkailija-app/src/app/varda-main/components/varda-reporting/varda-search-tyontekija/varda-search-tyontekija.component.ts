@@ -107,41 +107,41 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
       return;
     }
 
-    const searchParams = {};
+    const searchParams: Record<string, unknown> = {};
     this.setPaginatorParams(searchParams, paginatorParams);
 
     this.isFiltersInactive = !this.isFiltersFilled();
 
-    searchParams['search'] = this.searchValue ? this.searchValue : '';
+    searchParams.search = this.searchValue ? this.searchValue : '';
 
     if (this.isRajausFiltersFilled()) {
-      searchParams['rajaus'] = this.filterParams.rajaus;
-      searchParams['voimassaolo'] = this.filterParams.voimassaolo;
-      searchParams['alkamis_pvm'] = this.dateService.momentToVardaDate(this.filterParams.alkamisPvm);
-      searchParams['paattymis_pvm'] = this.dateService.momentToVardaDate(this.filterParams.paattymisPvm);
+      searchParams.rajaus = this.filterParams.rajaus;
+      searchParams.voimassaolo = this.filterParams.voimassaolo;
+      searchParams.alkamis_pvm = this.dateService.momentToVardaDate(this.filterParams.alkamisPvm);
+      searchParams.paattymis_pvm = this.dateService.momentToVardaDate(this.filterParams.paattymisPvm);
 
       if (this.filterParams.rajaus === this.rajaus.TAYDENNYSKOULUTUKSET &&
         this.filterParams.tehtavanimikeTaydennyskoulutus) {
-        searchParams['tehtavanimike_taydennyskoulutus'] = this.filterParams.tehtavanimikeTaydennyskoulutus.code_value;
+        searchParams.tehtavanimike_taydennyskoulutus = this.filterParams.tehtavanimikeTaydennyskoulutus.code_value;
       }
     }
     if (this.filterParams.rajaus !== this.rajaus.TAYDENNYSKOULUTUKSET && this.filterParams.tehtavanimike !== null) {
-      searchParams['tehtavanimike'] = this.filterParams.tehtavanimike.code_value;
+      searchParams.tehtavanimike = this.filterParams.tehtavanimike.code_value;
     }
     if (this.filterParams.tutkinto !== null) {
-      searchParams['tutkinto'] = this.filterParams.tutkinto.code_value;
+      searchParams.tutkinto = this.filterParams.tutkinto.code_value;
     }
 
     if (this.filterParams.kiertava) {
-      searchParams['kiertava'] = true;
+      searchParams.kiertava = true;
     }
 
     if (!this.isAllToimipaikatSelected && !this.filterParams.kiertava) {
-      searchParams['toimipaikat'] = this.selectedToimipaikat.map(toimipaikka => toimipaikka.id).join(',');
+      searchParams.toimipaikat = this.selectedToimipaikat.map(toimipaikka => toimipaikka.id).join(',');
     }
 
     if (this.filterParams.tyosuhde) {
-      searchParams['tyosuhde'] = this.filterParams.tyosuhde.code_value;
+      searchParams.tyosuhde = this.filterParams.tyosuhde.code_value;
     }
 
     this.updateFilterString();
@@ -152,17 +152,15 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
 
     this.koosteService.getTyontekijatForVakajarjestaja(this.selectedVakajarjestaja.id, searchParams).subscribe(response => {
       this.resultCount = response.count;
-      this.searchResults = response.results.map(tyontekija => {
-        return {
+      this.searchResults = response.results.map(tyontekija => ({
           id: tyontekija.tyontekija_id,
           textPrimary: `${tyontekija.sukunimi}, ${tyontekija.etunimet}`,
           textSecondary: null
-        };
-      });
+        }));
     });
   }
 
-  private filter(): boolean {
+  filter(): boolean {
     if (this.isRajausFiltersInactive) {
       this.isRajausFiltersInactive = false;
       this.fillRajausFilter();

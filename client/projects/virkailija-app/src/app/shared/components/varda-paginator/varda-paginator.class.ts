@@ -39,5 +39,5 @@ export class VardaMatPaginator extends MatPaginatorIntl {
     }
 
     return `${this.pageOfMax} ${page + 1} / ${Math.ceil(length / pageSize)}`;
-  }
+  };
 }

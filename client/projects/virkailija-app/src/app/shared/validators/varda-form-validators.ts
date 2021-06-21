@@ -1,7 +1,6 @@
 import { FormControl, FormGroup, ValidatorFn } from '@angular/forms';
 
 export class VardaFormValidators {
-
   static validStringFormat(...args) {
     const fc = args[1];
     const regexPattern = args[0].regex;
@@ -49,8 +48,8 @@ export class VardaFormValidators {
       return null;
     }
     const ssnValue = fc.value.trim();
-    const dd = parseInt(ssnValue.substring(0, 2));
-    const mm = parseInt(ssnValue.substring(2, 4));
+    const dd = parseInt(ssnValue.substring(0, 2), 10);
+    const mm = parseInt(ssnValue.substring(2, 4), 10);
     const yy = ssnValue.substring(4, 6);
 
     const ddIsValid = dd <= 31 && dd > 0;
@@ -173,13 +172,13 @@ export class VardaFormValidators {
     };
   }
 
-  static remainderOf(number: number): ValidatorFn {
+  static remainderOf(value: number): ValidatorFn {
     return (control: FormControl) => {
       if (control.invalid) {
         return null;
       }
 
-      if (control.value % number !== 0) {
+      if (control.value % value !== 0) {
         return { divisionOf: true };
       }
       return null;

@@ -40,7 +40,7 @@ export class AuthService {
       this.initUserAccess(toimipaikat);
 
       this.vardaVakajarjestajaService.setFilteredToimipaikat({
-        toimipaikat: toimipaikat,
+        toimipaikat,
         katselijaToimipaikat: this.getAuthorizedToimipaikat(toimipaikat),
         tallentajaToimipaikat: this.getAuthorizedToimipaikat(toimipaikat, SaveAccess.kaikki)
       });
@@ -237,9 +237,10 @@ export class AuthService {
   /**
    * returns true if you have access only to one or more of these keys, but not to anything else
    * eg. with tilapäpäinen henkilöstö-only
+   *
    * @param accessKeys - checks from toimipaikkaAccessToAnyToimipaikka
    * @param toimijaOnly - turns the check to toimijaAccess only
-  */
+   */
   hasAccessOnlyTo(accessKeys: Array<UserAccessKeys>, toimijaOnly?: boolean): boolean {
     const access = toimijaOnly ? this.getUserAccess() : this.toimipaikkaAccessToAnyToimipaikka$.getValue();
 

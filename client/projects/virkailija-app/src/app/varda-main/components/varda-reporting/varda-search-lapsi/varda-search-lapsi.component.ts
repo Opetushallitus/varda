@@ -76,21 +76,21 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
       return;
     }
 
-    const searchParams = {};
+    const searchParams: Record<string, unknown> = {};
     this.setPaginatorParams(searchParams, paginatorParams);
 
     const searchVal = this.searchValue;
-    searchParams['search'] = searchVal ? searchVal : '';
+    searchParams.search = searchVal ? searchVal : '';
 
     if (this.isFiltersFilled()) {
-      searchParams['rajaus'] = this.filterParams.rajaus;
-      searchParams['voimassaolo'] = this.filterParams.voimassaolo;
-      searchParams['alkamis_pvm'] = this.dateService.momentToVardaDate(this.filterParams.alkamisPvm);
-      searchParams['paattymis_pvm'] = this.dateService.momentToVardaDate(this.filterParams.paattymisPvm);
+      searchParams.rajaus = this.filterParams.rajaus;
+      searchParams.voimassaolo = this.filterParams.voimassaolo;
+      searchParams.alkamis_pvm = this.dateService.momentToVardaDate(this.filterParams.alkamisPvm);
+      searchParams.paattymis_pvm = this.dateService.momentToVardaDate(this.filterParams.paattymisPvm);
     }
 
     if (!this.isAllToimipaikatSelected) {
-      searchParams['toimipaikat'] = this.selectedToimipaikat.map(toimipaikka => toimipaikka.id).join(',');
+      searchParams.toimipaikat = this.selectedToimipaikat.map(toimipaikka => toimipaikka.id).join(',');
     }
 
     this.updateFilterString();
@@ -101,17 +101,15 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
 
     this.koosteService.getLapsetForVakajarjestaja(this.selectedVakajarjestaja.id, searchParams).subscribe(response => {
       this.resultCount = response.count;
-      this.searchResults = response.results.map(lapsi => {
-        return {
+      this.searchResults = response.results.map(lapsi => ({
           id: lapsi.lapsi_id,
           textPrimary: `${lapsi.sukunimi}, ${lapsi.etunimet}`,
           textSecondary: this.getSecondaryText(lapsi.paos_organisaatio_nimi) || this.getSecondaryText(lapsi.oma_organisaatio_nimi)
-        };
-      });
+        }));
     });
   }
 
-  private filter(): boolean {
+  filter(): boolean {
     if (this.isFiltersInactive) {
       this.isFiltersInactive = false;
       this.fillFilters();

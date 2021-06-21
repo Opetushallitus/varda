@@ -45,8 +45,9 @@ export class VardaVakajarjestajaService {
   /**
    * fetches ALL toimipaikat user can see
    * prefiltered toimipaikat can be called with
+   *
    * @remarks eg. vakajarjestajaService.getFilteredToimipaikat()
-  */
+   */
   getToimipaikat() {
     return this.toimipaikat$.asObservable();
   }
@@ -62,8 +63,9 @@ export class VardaVakajarjestajaService {
 
   /**
    * fetches prefiltered toimipaikat user can see
+   *
    * @remarks for more detailed filtering use eg. authService.getAuthorizedToimipaikat(toimipaikat, SaveAccess)
-  */
+   */
   getFilteredToimipaikat(): FilteredToimipaikat {
     return { ...this.filteredToimipaikat };
   }

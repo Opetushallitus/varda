@@ -8,13 +8,15 @@ export type CodeFormat = 'short' | 'long';
   selector: '[libKoodistoValue]'
 })
 export class KoodistoValueDirective implements AfterContentInit, OnChanges {
+  @Input() value: string;
+  @Input() format: CodeFormat = 'short';
+
   private koodistoType: KoodistoEnum;
   @Input()
   set libKoodistoValue(value: KoodistoEnum) {
     this.koodistoType = value;
   }
-  @Input() value: string;
-  @Input() format: CodeFormat = 'short';
+
   private elem: HTMLInputElement;
 
   constructor(
@@ -55,7 +57,7 @@ export class KoodistoValueDirective implements AfterContentInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['value']) {
+    if (changes.value) {
       this.updateTextContent(this.value);
     }
   }

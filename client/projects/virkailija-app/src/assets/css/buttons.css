@@ -164,7 +164,6 @@
 }
 
 @media (max-width: 1200px) {
-
   .oph-radio-button-group.responsive-xl app-varda-radio-button,
   .oph-radio-button-group.responsive-xl {
     width: 100%;
@@ -183,7 +182,6 @@
 }
 
 @media (max-width: 992px) {
-
   .oph-radio-button-group.responsive-lg app-varda-radio-button,
   .oph-radio-button-group.responsive-lg {
     width: 100%;
@@ -202,7 +200,6 @@
 }
 
 @media (max-width: 767px) {
-
   .oph-radio-button-group.responsive-md app-varda-radio-button,
   .oph-radio-button-group.responsive-md {
     width: 100%;
@@ -221,7 +218,6 @@
 }
 
 @media (max-width: 578px) {
-
   .oph-radio-button-group.responsive-sm app-varda-radio-button,
   .oph-radio-button-group.responsive-sm {
     width: 100%;
@@ -241,7 +237,6 @@
 
 
 @media (max-width: 400px) {
-
   .oph-radio-button-group.responsive-xs,
   .oph-radio-button-group.responsive-xs label {
     width: 100%;

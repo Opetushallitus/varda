@@ -28,7 +28,6 @@ const TooltipTranslations = {
 })
 export class VardaExcelNewComponent implements OnInit {
   @ViewChild('toimipaikkaSelector') toimipaikkaSelector: VardaAutocompleteSelectorComponent<VardaToimipaikkaMinimalDto>;
-  private errorService: VardaErrorMessageService;
   errors: Observable<Array<ErrorTree>>;
 
   i18n = VirkailijaTranslations;
@@ -56,6 +55,7 @@ export class VardaExcelNewComponent implements OnInit {
   selectedToimipaikka: VardaToimipaikkaMinimalDto = null;
 
   isLoading = false;
+  private errorService: VardaErrorMessageService;
 
   constructor(
     private vakajarjestajaService: VardaVakajarjestajaService,
@@ -80,9 +80,7 @@ export class VardaExcelNewComponent implements OnInit {
 
     this.newReport.vakajarjestaja_oid = this.selectedVakajarjestaja.organisaatio_oid;
 
-    this.reportTypeOptions = Object.entries(ReportTypeTranslations).map(value => {
-      return [value[0], value[1]];
-    });
+    this.reportTypeOptions = Object.entries(ReportTypeTranslations).map(value => [value[0], value[1]]);
   }
 
   create() {

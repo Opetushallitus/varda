@@ -35,7 +35,6 @@ export class VardaTyontekijaTutkintoComponent implements OnChanges {
   @Output() updateTyontekija = new EventEmitter<TyontekijaListDTO>(true);
 
   tutkintoFormErrors: Observable<Array<ErrorTree>>;
-  private henkilostoErrorService: VardaErrorMessageService;
   i18n = VirkailijaTranslations;
   tutkintoViewLimit = 3;
   tutkintoOptions: Array<CodeDTO>;
@@ -47,6 +46,7 @@ export class VardaTyontekijaTutkintoComponent implements OnChanges {
   isSubmitting = new BehaviorSubject<boolean>(false);
 
   tutkintoForm: FormGroup;
+  private henkilostoErrorService: VardaErrorMessageService;
 
   constructor(
     private henkilostoService: VardaHenkilostoApiService,

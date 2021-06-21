@@ -44,8 +44,8 @@
             *matHeaderCellDef>
           <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_aikaleima"
                                           [multiline]="true"
-                                          (reset)="searchFilter.timestamp_after = null; searchFilter.timestamp_before = null"
-                                          (submit)="getPage(searchFilter.timestamp_after || i18n.tiedonsiirrot_placeholder_timestamp_before)">
+                                          (resetFilter)="searchFilter.timestamp_after = null; searchFilter.timestamp_before = null"
+                                          (submitFilter)="getPage(searchFilter.timestamp_after || i18n.tiedonsiirrot_placeholder_timestamp_before)">
             <app-varda-datepicker [(ngModel)]="searchFilter.timestamp_after"
                                   [placeholder]="i18n.tiedonsiirrot_placeholder_timestamp_after | translate">
             </app-varda-datepicker>
@@ -66,8 +66,8 @@
         <th mat-header-cell
             *matHeaderCellDef>
           <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_json"
-                                          (reset)="searchFilter.request_body = null"
-                                          (submit)="getPage(searchFilter.request_body)">
+                                          (resetFilter)="searchFilter.request_body = null"
+                                          (submitFilter)="getPage(searchFilter.request_body)">
             <input type="text"
                    class="oph-input"
                    [placeholder]="i18n.tiedonsiirrot_placeholder_request_body | translate"
@@ -87,8 +87,8 @@
         <th mat-header-cell
             *matHeaderCellDef>
           <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_kohde"
-                                          (reset)="searchFilter.search_target = null"
-                                          (submit)="getPage(searchFilter.search_target)">
+                                          (resetFilter)="searchFilter.search_target = null"
+                                          (submitFilter)="getPage(searchFilter.search_target)">
             <input type="text"
                    class="oph-input"
                    [placeholder]="i18n.tiedonsiirrot_placeholder_search_target | translate"
@@ -110,8 +110,8 @@
         <th mat-header-cell
             *matHeaderCellDef>
           <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_tyyppi"
-                                          (reset)="searchFilter.request_method = null"
-                                          (submit)="getPage(searchFilter.request_method)">
+                                          (resetFilter)="searchFilter.request_method = null"
+                                          (submitFilter)="getPage(searchFilter.request_method)">
             <input type="text"
                    class="oph-input"
                    [placeholder]="i18n.tiedonsiirrot_placeholder_request_method | translate"
@@ -130,8 +130,8 @@
         <th mat-header-cell
             *matHeaderCellDef>
           <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_rajapinta"
-                                          (reset)="searchFilter.request_url = null"
-                                          (submit)="getPage(searchFilter.request_url)">
+                                          (resetFilter)="searchFilter.request_url = null"
+                                          (submitFilter)="getPage(searchFilter.request_url)">
             <input type="text"
                    class="oph-input"
                    [placeholder]="i18n.tiedonsiirrot_placeholder_request_url | translate"
@@ -155,8 +155,8 @@
             *matHeaderCellDef>
           <div class="error-column">
             <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_syy"
-                                            (reset)="searchFilter.response_body = null"
-                                            (submit)="getPage(searchFilter.response_body)">
+                                            (resetFilter)="searchFilter.response_body = null"
+                                            (submitFilter)="getPage(searchFilter.response_body)">
               <input type="text"
                      class="oph-input"
                      [placeholder]="i18n.tiedonsiirrot_placeholder_response_body | translate"
@@ -206,8 +206,8 @@
         <th mat-header-cell
             *matHeaderCellDef>
           <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_kayttaja"
-                                          (reset)="searchFilter.username = null"
-                                          (submit)="getPage(searchFilter.username)">
+                                          (resetFilter)="searchFilter.username = null"
+                                          (submitFilter)="getPage(searchFilter.username)">
             <input type="text"
                    class="oph-input"
                    [placeholder]="i18n.tiedonsiirrot_placeholder_username | translate"
@@ -226,8 +226,8 @@
             *matHeaderCellDef>
           <app-tiedonsiirto-filter-header [label]="i18n.lahdejarjestelma"
                                           [multiline]="true"
-                                          (reset)="searchFilter.lahdejarjestelma = null"
-                                          (submit)="getPage(searchFilter.lahdejarjestelma)">
+                                          (resetFilter)="searchFilter.lahdejarjestelma = null"
+                                          (submitFilter)="getPage(searchFilter.lahdejarjestelma)">
             <select *ngIf="lahdejarjestelmaKoodisto | async as lahdejarjestelmat"
                     class="oph-input oph-select"
                     (change)="getPage(true)"

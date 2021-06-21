@@ -52,8 +52,6 @@ export interface TiedonsiirrotColumnFields {
 })
 export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, OnDestroy {
   @ViewChild('tiedonsiirtoPaginator') tiedonsiirtoPaginator: MatPaginator;
-  protected errorService: VardaErrorMessageService;
-  abstract columnFields: Array<TiedonsiirrotColumnFields>;
   isLoading = new BehaviorSubject<boolean>(true);
   toimijaAccess: UserAccess;
   i18n = VirkailijaTranslations;
@@ -84,6 +82,8 @@ export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, 
     username: null,
     search_target: null,
   };
+  protected errorService: VardaErrorMessageService;
+  abstract columnFields: Array<TiedonsiirrotColumnFields>;
 
   constructor(
     protected authService: AuthService,

@@ -1,5 +1,4 @@
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { VardaUtilityService } from './varda-utility.service';
@@ -10,12 +9,6 @@ import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/
 
 @Injectable()
 export class VardaApiService implements VardaApiServiceInterface {
-
-  constructor(
-    private vardaUtilityService: VardaUtilityService,
-    private http: LoadingHttpService
-  ) { }
-
   private toimipaikatApiPath = `${environment.vardaApiUrl}/toimipaikat/`;
   private henkilotApiPath = `${environment.vardaApiUrl}/henkilot/`;
   private kielipainotuksetApiPath = `${environment.vardaApiUrl}/kielipainotukset/`;
@@ -33,6 +26,11 @@ export class VardaApiService implements VardaApiServiceInterface {
   private varhaiskasvatussuhteetApiPath = `${environment.vardaApiUrl}/varhaiskasvatussuhteet/`;
   private varhaiskasvatuspaatoksetApiPath = `${environment.vardaApiUrl}/varhaiskasvatuspaatokset/`;
   private henkilostoApiPath = `${environment.vardaAppUrl}/api/henkilosto/v1/`;
+
+  constructor(
+    private vardaUtilityService: VardaUtilityService,
+    private http: LoadingHttpService
+  ) { }
 
   static getVakajarjestajaUrlFromId(id: number) {
     return `/api/v1/vakajarjestajat/${id}/`;

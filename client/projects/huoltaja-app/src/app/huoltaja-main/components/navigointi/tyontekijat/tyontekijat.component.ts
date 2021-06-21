@@ -39,6 +39,6 @@ export class TyontekijatComponent implements OnDestroy {
   }
 
   openDialog(title: string, content: string) {
-    this.dialog.open(ContactDialogComponent, { data: { title: title, content: content }, autoFocus: false });
+    this.dialog.open(ContactDialogComponent, { data: { title, content }, autoFocus: false });
   }
 }

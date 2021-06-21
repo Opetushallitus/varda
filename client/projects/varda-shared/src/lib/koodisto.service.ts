@@ -47,21 +47,17 @@ export class VardaKoodistoService {
   }
 
   static mapCodesToFormOptions(koodisto: KoodistoDTO) {
-    return koodisto.codes.map(code => {
-      return {
+    return koodisto.codes.map(code => ({
         code: koodisto.name === KoodistoEnum.kieli ? code.code_value.toUpperCase() : code.code_value.toLowerCase(),
         displayName: {
           displayNameFi: code.name,
           displayNameSv: code.name
         }
-      };
-    });
+      }));
   }
 
   static updateOptionsIfFound(fields, key, koodisto) {
-    const fieldResult = fields.find(field => {
-      return field.key === key;
-    });
+    const fieldResult = fields.find(field => field.key === key);
 
     if (!fieldResult) {
       console.error(`Form JSON file has been edited, ${key} not found`);
@@ -69,10 +65,6 @@ export class VardaKoodistoService {
     }
 
     fieldResult.options = VardaKoodistoService.mapCodesToFormOptions(koodisto);
-  }
-
-  private getKoodistot(lang: SupportedLanguage): Observable<Array<KoodistoDTO>> {
-    return this.http.get(`${this.vardaApiUrl}/api/julkinen/v1/koodistot/?lang=${lang}`, null, new HttpHeaders());
   }
 
   initKoodistot(vardaApiUrl: string, lang: SupportedLanguage) {
@@ -148,4 +140,7 @@ export class VardaKoodistoService {
     localStorage.setItem(this.koodistoCache, JSON.stringify({ timestamp: Date.now(), koodistot: koodistoJSON, language: lang }));
   }
 
+  private getKoodistot(lang: SupportedLanguage): Observable<Array<KoodistoDTO>> {
+    return this.http.get(`${this.vardaApiUrl}/api/julkinen/v1/koodistot/?lang=${lang}`, null, new HttpHeaders());
+  }
 }

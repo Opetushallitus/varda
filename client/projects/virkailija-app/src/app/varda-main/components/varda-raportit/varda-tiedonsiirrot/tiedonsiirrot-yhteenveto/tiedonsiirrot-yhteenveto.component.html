@@ -17,8 +17,8 @@
             *matHeaderCellDef>
           <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_yhteenveto_date"
                                           [multiline]="true"
-                                          (reset)="searchFilter.timestamp_after = null; searchFilter.timestamp_before = null"
-                                          (submit)="getPage(true)">
+                                          (resetFilter)="searchFilter.timestamp_after = null; searchFilter.timestamp_before = null"
+                                          (submitFilter)="getPage(true)">
             <app-varda-datepicker [(ngModel)]="searchFilter.timestamp_after"
                                   [placeholder]="i18n.tiedonsiirrot_placeholder_timestamp_after | translate">
             </app-varda-datepicker>
@@ -70,8 +70,8 @@
             class="large-cell"
             *matHeaderCellDef>
           <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_kayttaja"
-                                          (reset)="searchFilter.username = null"
-                                          (submit)="getPage(true)">
+                                          (resetFilter)="searchFilter.username = null"
+                                          (submitFilter)="getPage(true)">
             <input type="text"
                    class="oph-input"
                    [placeholder]="i18n.tiedonsiirrot_placeholder_username | translate"

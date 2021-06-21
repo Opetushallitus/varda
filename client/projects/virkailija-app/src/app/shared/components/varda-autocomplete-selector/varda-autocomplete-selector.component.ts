@@ -46,19 +46,14 @@ export class VardaAutocompleteSelectorComponent<T> implements ControlValueAccess
   isNoResults = false;
   isInvalid = false;
 
-  private propagateChange = (_: any) => {};
-  private propagateTouch = () => {};
-
   constructor() { }
 
   inputChange(event: Event) {
     this.isInvalid = false;
     this.inputValue = '';
     this.selectedOption = this.nullValue;
-    const targetValue = (<HTMLInputElement> event.target).value;
-    const results = this.options.filter(option => {
-      return this.getFormattedOption(option).toLowerCase().includes(targetValue.toLowerCase());
-    });
+    const targetValue = (event.target as HTMLInputElement).value;
+    const results = this.options.filter(option => this.getFormattedOption(option).toLowerCase().includes(targetValue.toLowerCase()));
 
     if (results.length === 0) {
       this.isNoResults = true;
@@ -148,4 +143,7 @@ export class VardaAutocompleteSelectorComponent<T> implements ControlValueAccess
   ngOnChanges(changes: SimpleChanges): void {
     this.reset();
   }
+
+  private propagateChange = (_: any) => {};
+  private propagateTouch = () => {};
 }

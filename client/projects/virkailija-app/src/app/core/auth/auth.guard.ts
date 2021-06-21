@@ -120,7 +120,7 @@ export class AuthGuard implements CanActivate {
         console.error('Login error', err);
         authObserver.next(false);
         authObserver.complete();
-        this.router.navigate([loginFailedRoute], { fragment: fragment });
+        this.router.navigate([loginFailedRoute], { fragment });
       }
     });
 

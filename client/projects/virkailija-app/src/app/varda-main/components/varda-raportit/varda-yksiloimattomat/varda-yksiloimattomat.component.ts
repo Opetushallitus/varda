@@ -22,7 +22,6 @@ export class VardaYksiloimattomatComponent implements OnInit {
   isLoading = new BehaviorSubject<boolean>(true);
   yksiloimattomat: MatTableDataSource<VardaYksiloimatonDTO>;
   yksiloimatonFormErrors: Observable<Array<ErrorTree>>;
-  private errorService: VardaErrorMessageService;
   displayedColumns: Array<string>;
   columnFields = [
     { key: 'id', name: 'ID', selected: true },
@@ -31,13 +30,14 @@ export class VardaYksiloimattomatComponent implements OnInit {
     { key: 'vakatoimija_nimi', name: 'vakatoimija_nimi', selected: true },
   ];
 
-
   searchFilter: YksiloimatonSearchFilter = {
     count: 0,
     page: 1,
     page_size: 500,
     vakatoimija_oid: '',
   };
+
+  private errorService: VardaErrorMessageService;
 
   constructor(
     private raportitService: VardaRaportitService,

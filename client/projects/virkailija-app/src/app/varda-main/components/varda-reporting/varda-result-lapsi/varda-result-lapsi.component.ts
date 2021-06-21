@@ -44,9 +44,7 @@ export class VardaResultLapsiComponent extends VardaResultAbstractComponent impl
   }
 
   getVakasuhteetForVakapaatos(id: number) {
-    return this.lapsiKooste.varhaiskasvatussuhteet.filter(vakasuhde => {
-      return String(id) === this.vardaUtilityService.parseIdFromUrl(vakasuhde.varhaiskasvatuspaatos);
-    });
+    return this.lapsiKooste.varhaiskasvatussuhteet.filter(vakasuhde => String(id) === this.vardaUtilityService.parseIdFromUrl(vakasuhde.varhaiskasvatuspaatos));
   }
 
   isKunnallinenJarjestamismuoto(jarjetamismuoto: string) {

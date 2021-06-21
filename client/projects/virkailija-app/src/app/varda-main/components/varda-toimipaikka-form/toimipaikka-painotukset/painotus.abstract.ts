@@ -102,7 +102,7 @@ export abstract class PainotusAbstractComponent<T> extends VardaFormAccordionAbs
 
     this.startDateRange.max = new Date(this.maxEndDate);
 
-    const paattymisPvmControl = this.formGroup.controls['paattymis_pvm'];
+    const paattymisPvmControl = this.formGroup.controls.paattymis_pvm;
     paattymisPvmControl.setValidators(this.toimipaikka?.paattymis_pvm ? Validators.required : null);
     paattymisPvmControl.updateValueAndValidity();
   }

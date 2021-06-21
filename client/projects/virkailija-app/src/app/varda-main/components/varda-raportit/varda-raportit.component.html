@@ -5,7 +5,7 @@
     <a mat-tab-link
        routerLink="puutteelliset-tiedot"
        (click)="activeLink = 'puutteelliset-tiedot'"
-       [active]="activeLink == 'puutteelliset-tiedot'">
+       [active]="activeLink === 'puutteelliset-tiedot'">
       <mat-icon alt="">warning</mat-icon>
       {{ i18n.puutteelliset_tiedot | translate }}
     </a>
@@ -13,7 +13,7 @@
       <a mat-tab-link
          routerLink="tiedonsiirrot"
          (click)="activeLink = 'tiedonsiirrot'"
-         [active]="activeLink == 'tiedonsiirrot'">
+         [active]="activeLink === 'tiedonsiirrot'">
         <mat-icon alt="">cloud_upload</mat-icon>
         {{ i18n.tiedonsiirrot | translate }}
       </a>
@@ -22,7 +22,7 @@
       <a mat-tab-link
          routerLink="excel"
          (click)="activeLink = 'excel'"
-         [active]="activeLink == 'excel'">
+         [active]="activeLink === 'excel'">
         <mat-icon alt="">table_view</mat-icon>
         {{ i18n.excel | translate }}
       </a>
@@ -31,7 +31,7 @@
       <a mat-tab-link
          routerLink="yksiloimattomat"
          (click)="activeLink = 'yksiloimattomat'"
-         [active]="activeLink == 'yksiloimattomat'">
+         [active]="activeLink === 'yksiloimattomat'">
         <mat-icon alt="">ac_unit</mat-icon>
         {{ i18n.yksiloimattomat | translate }}
       </a>
@@ -40,7 +40,7 @@
       <a mat-tab-link
          routerLink="transfer-outage"
          (click)="activeLink = 'transfer-outage'"
-         [active]="activeLink == 'transfer-outage'">
+         [active]="activeLink === 'transfer-outage'">
         <mat-icon alt="">sync_problem</mat-icon>
         {{ i18n.transfer_outage | translate }}
       </a>

@@ -32,9 +32,7 @@ export class VardaKoosteApiService {
   }
 
   getLapsiKooste(id: number): Observable<LapsiKooste> {
-    return this.http.get(`${environment.vardaApiUrl}/lapset/${id}/kooste/`).pipe(map((resp: any) => {
-      return resp;
-    }));
+    return this.http.get(`${environment.vardaApiUrl}/lapset/${id}/kooste/`).pipe(map((resp: any) => resp));
   }
 
   getToimipaikatForVakajarjestaja(vakajarjestajaId: number, searchParams?: any): Observable<VardaPageDto<VardaToimipaikkaMinimalDto>> {

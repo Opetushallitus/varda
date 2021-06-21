@@ -28,7 +28,7 @@ export class VardaModalService {
     } else if (modalName === 'lapsiSuccessModal') {
       subject = this.lapsiSuccessModalSubject;
     }
-    subject.next({ isOpen: isOpen, data: data });
+    subject.next({ isOpen, data });
   }
 
   modalOpenObs(modalName: string): Observable<any> {

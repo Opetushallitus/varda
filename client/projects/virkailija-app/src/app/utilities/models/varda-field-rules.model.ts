@@ -18,7 +18,7 @@ export class VardaFieldRules {
   selectArrMustHaveOneValue?: VardaFieldRule;
   disabledOnEdit?: VardaFieldRule;
   hiddenOnCreate?: VardaFieldRule;
-  modifyExternalFields?: {[key: string]: {disableIfValue: string, replaceValue: string}};
+  modifyExternalFields?: {[key: string]: {disableIfValue: string; replaceValue: string}};
 }
 
 export class VardaFieldRule {

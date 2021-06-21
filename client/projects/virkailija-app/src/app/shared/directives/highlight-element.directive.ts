@@ -28,7 +28,7 @@ export class HighlightElementDirective {
   }
 
   addHighlightToContainer(): void {
-    const parentContainerElemSelector = this.elem.dataset['parentContainer'];
+    const parentContainerElemSelector = this.elem.dataset.parentContainer;
     if (parentContainerElemSelector) {
       const parent = document.getElementById(`${parentContainerElemSelector}`);
       parent.classList.add(this.highlightContainerSelector);

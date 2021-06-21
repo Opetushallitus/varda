@@ -16,11 +16,11 @@ export class VardaFormAccordionAbstractComponent {
   @ViewChild('matPanel') matPanel: MatExpansionPanel;
   @Output() closeEmitter = new EventEmitter<boolean>(true);
 
-  protected errorList: Array<PuutteellinenErrorDTO>;
-
   i18n = VirkailijaTranslations;
   formGroup: FormGroup;
   isEdit: boolean;
+
+  protected errorList: Array<PuutteellinenErrorDTO>;
 
   constructor(protected modalService: VardaModalService) { }
 

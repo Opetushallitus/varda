@@ -99,7 +99,7 @@ export class VardaTiedonsiirtoComponent extends AbstractTiedonsiirrotSectionsCom
 
   openJSON(tiedonsiirto: VardaTiedonsiirtoDTO) {
     const tiedonsiirtoData: TiedonsiirtoDialogData = {
-      tiedonsiirto: tiedonsiirto
+      tiedonsiirto
     };
     const dialogRef = this.dialog.open(TiedonsiirtoDialogComponent, { data: tiedonsiirtoData });
   }

@@ -37,7 +37,6 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
   @Input() isEdit: boolean;
   @Output() valuesChanged: EventEmitter<boolean> = new EventEmitter<boolean>(true);
 
-
   i18n = VirkailijaTranslations;
 
   lapsiForm: FormGroup;
@@ -46,14 +45,15 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
   selectedVakajarjestaja: VardaVakajarjestajaUi;
   selectedToimipaikka: VardaToimipaikkaMinimalDto;
 
-  private lapsiErrorService: VardaErrorMessageService;
-  private deleteLapsiErrorService: VardaErrorMessageService;
   subscriptions: Array<Subscription> = [];
   toimipaikkaAccess: UserAccess;
   henkilonTutkinnot: Array<VardaTutkintoDTO>;
   lapsiFormErrors: Observable<Array<ErrorTree>>;
   deleteLapsiErrors: Observable<Array<ErrorTree>>;
   isSubmitting = new BehaviorSubject<boolean>(false);
+
+  private lapsiErrorService: VardaErrorMessageService;
+  private deleteLapsiErrorService: VardaErrorMessageService;
 
   constructor(
     private authService: AuthService,
@@ -107,7 +107,7 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
 
     this.subscriptions.push(
       this.lapsiForm.get('paos_jarjestaja_toimipaikka').valueChanges.pipe(filter(Boolean)).subscribe((toimipaikkaId: string) => {
-        this.selectedToimipaikka = this.paosToimipaikat.find(toimipaikka => parseInt(toimipaikkaId) === toimipaikka.id);
+        this.selectedToimipaikka = this.paosToimipaikat.find(toimipaikka => parseInt(toimipaikkaId, 10) === toimipaikka.id);
         if (this.selectedToimipaikka) {
           this.fetchPaosJarjestajat(this.selectedToimipaikka?.id);
         }
@@ -190,7 +190,7 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
     const lapsi: LapsiListDTO = {
       id: lapsiDTO.id,
       url: lapsiDTO.url,
-      henkilo_id: parseInt(henkiloID),
+      henkilo_id: parseInt(henkiloID, 10),
       henkilo_oid: lapsiDTO.henkilo_oid,
       rooli: HenkiloRooliEnum.lapsi,
       vakatoimija_oid: lapsiDTO.vakatoimija_oid,

@@ -4,10 +4,9 @@ import { Directive, ElementRef, Input, Output, EventEmitter, HostListener } from
   selector: '[appClickOutside]'
 })
 export class ClickOutsideDirective {
+  @Output() clickOutside: EventEmitter<any> = new EventEmitter();
 
   constructor(private elementRef: ElementRef) {}
-
-  @Output() clickOutside: EventEmitter<any> = new EventEmitter();
 
   @HostListener('document:click', ['$event'])
   onClick(event: any): void {

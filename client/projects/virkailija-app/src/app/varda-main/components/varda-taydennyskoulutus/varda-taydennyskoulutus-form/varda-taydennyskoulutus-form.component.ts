@@ -34,8 +34,8 @@ export class VardaTaydennyskoulutusFormComponent implements OnInit {
   editFormBoolean: boolean;
   limitedEditAccess: boolean;
   firstAllowedDate = VardaDateService.henkilostoReleaseDate;
-  private henkilostoErrorService: VardaErrorMessageService;
   isLoading = new BehaviorSubject<boolean>(false);
+  private henkilostoErrorService: VardaErrorMessageService;
 
   constructor(
     private snackBarService: VardaSnackBarService,
@@ -198,12 +198,10 @@ export class VardaTaydennyskoulutusFormComponent implements OnInit {
       !this.currentOsallistujat.find(
         osallistuja => osallistuja.henkilo_oid === existingTyontekija.henkilo_oid && osallistuja.tehtavanimike_koodi === existingTyontekija.tehtavanimike_koodi
       )
-    ).map(existingTyontekija => {
-      return {
+    ).map(existingTyontekija => ({
         tyontekija: existingTyontekija.tyontekija,
         tehtavanimike_koodi: existingTyontekija.tehtavanimike_koodi
-      };
-    });
+      }));
 
     if (toRemove.length) {
       taydennyskoulutusJson.taydennyskoulutus_tyontekijat_remove = toRemove;

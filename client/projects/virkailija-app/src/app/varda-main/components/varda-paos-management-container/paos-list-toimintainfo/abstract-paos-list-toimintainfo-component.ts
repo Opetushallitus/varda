@@ -6,9 +6,9 @@ import { PaosOikeusTieto, PaosToimintatietoDto, PaosToimipaikkatietoDto } from '
 
 @Directive()
 export abstract class AbstractPaosListToimintainfoComponentDirective<T extends PaosToimipaikkatietoDto & PaosToimintatietoDto> implements OnInit {
-  paosToiminnat: Array<T>;
   @Input() selectedVakajarjestaja: VardaVakajarjestaja;
   @Input() isVardaPaakayttaja: boolean;
+  paosToiminnat: Array<T>;
   showSuccess = false;
   showConfirmModal$ = new Subject<boolean>();
   paosToimintaToDelete: T;

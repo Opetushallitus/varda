@@ -25,7 +25,6 @@ export class VardaTransferOutageComponent implements OnInit, OnDestroy {
   i18n = VirkailijaTranslations;
   isLoading = new BehaviorSubject<boolean>(true);
   errors: Observable<Array<ErrorTree>>;
-  private errorService: VardaErrorMessageService;
   displayedColumns = [];
   koodistoEnum = KoodistoEnum;
 
@@ -45,6 +44,8 @@ export class VardaTransferOutageComponent implements OnInit, OnDestroy {
     lahdejarjestelma: null
   };
   result: Array<TransferOutageUser> | Array<TransferOutageLahdejarjestelma>;
+
+  private errorService: VardaErrorMessageService;
 
   constructor(
     private router: Router,
@@ -75,29 +76,29 @@ export class VardaTransferOutageComponent implements OnInit, OnDestroy {
     this.isLoading.next(true);
     this.result = null;
 
-    const parsedFilter = {
+    const parsedFilter: Record<string, unknown> = {
       page: this.searchFilter.page,
       page_size: this.searchFilter.page_size
     };
 
     if (this.searchFilter.timestamp_after && this.searchFilter.timestamp_after.isValid()) {
-      parsedFilter['timestamp_after'] = this.dateService.momentToVardaDate(this.searchFilter.timestamp_after);
+      parsedFilter.timestamp_after = this.dateService.momentToVardaDate(this.searchFilter.timestamp_after);
     }
 
     if (this.searchFilter.timestamp_before && this.searchFilter.timestamp_before.isValid()) {
-      parsedFilter['timestamp_before'] = this.dateService.momentToVardaDate(this.searchFilter.timestamp_before);
+      parsedFilter.timestamp_before = this.dateService.momentToVardaDate(this.searchFilter.timestamp_before);
     }
 
     if (this.searchFilter.username) {
-      parsedFilter['username'] = this.searchFilter.username;
+      parsedFilter.username = this.searchFilter.username;
     }
 
     if (this.searchFilter.lahdejarjestelma) {
-      parsedFilter['lahdejarjestelma'] = this.searchFilter.lahdejarjestelma;
+      parsedFilter.lahdejarjestelma = this.searchFilter.lahdejarjestelma;
     }
 
     if (this.searchFilter.vakajarjestaja) {
-      parsedFilter['vakajarjestaja'] = this.searchFilter.vakajarjestaja;
+      parsedFilter.vakajarjestaja = this.searchFilter.vakajarjestaja;
     }
 
     let apiFunction;

@@ -48,7 +48,7 @@ export class VardaRadioButtonGroupComponent implements OnInit, OnDestroy, AfterC
   @Input() wrap: Breakpoints;
   @Input() ngModel?: NgModel;
   @Input() _value: any;
-  @Output() readonly change: EventEmitter<RadioButtonResponse> = new EventEmitter<RadioButtonResponse>();
+  @Output() readonly valueChanged: EventEmitter<RadioButtonResponse> = new EventEmitter<RadioButtonResponse>();
   @ContentChildren(forwardRef(() => VardaRadioButtonComponent), { descendants: true }) radioButtons: QueryList<VardaRadioButtonComponent>;
   classes: string[];
   radioOnChange: EventEmitter<RadioButtonResponse> = new EventEmitter(true);
@@ -67,7 +67,7 @@ export class VardaRadioButtonGroupComponent implements OnInit, OnDestroy, AfterC
       if (this._value !== obj.value) {
         this.writeValue(obj.value);
         this.propagateChange(obj.value);
-        this.change.emit(obj);
+        this.valueChanged.emit(obj);
       }
     });
   }

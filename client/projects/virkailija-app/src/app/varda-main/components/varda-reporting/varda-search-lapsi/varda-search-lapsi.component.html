@@ -90,7 +90,7 @@
           <app-varda-radio-button-group name="lapsiRajausButtonGroup"
                                         responsive="lg"
                                         wrap="lg"
-                                        (change)="search()"
+                                        (valueChanged)="search()"
                                         [(ngModel)]="filterParams.rajaus">
             <app-varda-radio-button [id]="'filterVakapaatokset'"
                                     [value]="rajaus.VAKAPAATOKSET">
@@ -118,7 +118,7 @@
               <app-varda-radio-button-group name="lapsiVoimassaoloButtonGroup"
                                             responsive="md"
                                             wrap="xs"
-                                            (change)="search()"
+                                            (valueChanged)="search()"
                                             [(ngModel)]="filterParams.voimassaolo">
                 <app-varda-radio-button [id]="'filterVoimassa'"
                                         [value]="voimassaolo.VOIMASSA">

@@ -26,7 +26,14 @@
             "styles": [
               "projects/huoltaja-app/src/styles.css"
             ],
-            "scripts": []
+            "scripts": [],
+            "aot": false,
+            "vendorChunk": true,
+            "extractLicenses": false,
+            "buildOptimizer": false,
+            "sourceMap": true,
+            "optimization": false,
+            "namedChunks": true
           },
           "configurations": {
             "local": {
@@ -64,7 +71,11 @@
                   "with": "projects/huoltaja-app/src/environments/environment.prod.ts"
                 }
               ],
-              "optimization": true,
+              "optimization": {
+                "styles": {
+                  "inlineCritical": false
+                }
+              },
               "outputHashing": "all",
               "sourceMap": false,
               "namedChunks": false,
@@ -84,7 +95,8 @@
                 }
               ]
             }
-          }
+          },
+          "defaultConfiguration": ""
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
@@ -127,14 +139,11 @@
           }
         },
         "lint": {
-          "builder": "@angular-devkit/build-angular:tslint",
+          "builder": "@angular-eslint/builder:lint",
           "options": {
-            "tsConfig": [
-              "projects/huoltaja-app/tsconfig.app.json",
-              "projects/huoltaja-app/tsconfig.spec.json"
-            ],
-            "exclude": [
-              "**/node_modules/**"
+            "lintFilePatterns": [
+              "projects/huoltaja-app//**/*.ts",
+              "projects/huoltaja-app//**/*.html"
             ]
           }
         }
@@ -171,7 +180,14 @@
               "node_modules/jquery/dist/jquery.min.js",
               "node_modules/bootstrap/dist/js/bootstrap.min.js",
               "node_modules/cookieconsent/build/cookieconsent.min.js"
-            ]
+            ],
+            "aot": false,
+            "vendorChunk": true,
+            "extractLicenses": false,
+            "buildOptimizer": false,
+            "sourceMap": true,
+            "optimization": false,
+            "namedChunks": true
           },
           "configurations": {
             "local": {
@@ -210,7 +226,11 @@
                 }
               ],
               "baseHref": "/varda/",
-              "optimization": true,
+              "optimization": {
+                "styles": {
+                  "inlineCritical": false
+                }
+              },
               "outputHashing": "all",
               "sourceMap": false,
               "namedChunks": false,
@@ -233,7 +253,8 @@
                 }
               ]
             }
-          }
+          },
+          "defaultConfiguration": ""
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
@@ -292,14 +313,11 @@
           }
         },
         "lint": {
-          "builder": "@angular-devkit/build-angular:tslint",
+          "builder": "@angular-eslint/builder:lint",
           "options": {
-            "tsConfig": [
-              "projects/virkailija-app/tsconfig.app.json",
-              "projects/virkailija-app/tsconfig.spec.json"
-            ],
-            "exclude": [
-              "**/node_modules/**"
+            "lintFilePatterns": [
+              "projects/virkailija-app//**/*.ts",
+              "projects/virkailija-app//**/*.html"
             ]
           }
         }
@@ -332,14 +350,11 @@
           }
         },
         "lint": {
-          "builder": "@angular-devkit/build-angular:tslint",
+          "builder": "@angular-eslint/builder:lint",
           "options": {
-            "tsConfig": [
-              "projects/varda-shared/tsconfig.lib.json",
-              "projects/varda-shared/tsconfig.spec.json"
-            ],
-            "exclude": [
-              "**/node_modules/**"
+            "lintFilePatterns": [
+              "projects/varda-shared/**/*.ts",
+              "projects/varda-shared/**/*.html"
             ]
           }
         }
@@ -361,7 +376,6 @@
             "main": "projects/public-app/src/main.ts",
             "polyfills": "projects/public-app/src/polyfills.ts",
             "tsConfig": "projects/public-app/tsconfig.app.json",
-            "aot": true,
             "assets": [
               "projects/public-app/src/favicon.ico",
               "projects/public-app/src/assets"
@@ -370,7 +384,13 @@
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
               "projects/public-app/src/styles.css"
             ],
-            "scripts": []
+            "scripts": [],
+            "vendorChunk": true,
+            "extractLicenses": false,
+            "buildOptimizer": false,
+            "sourceMap": true,
+            "optimization": false,
+            "namedChunks": true
           },
           "configurations": {
             "local": {
@@ -408,7 +428,11 @@
                   "with": "projects/public-app/src/environments/environment.prod.ts"
                 }
               ],
-              "optimization": true,
+              "optimization": {
+                "styles": {
+                  "inlineCritical": false
+                }
+              },
               "outputHashing": "all",
               "sourceMap": false,
               "namedChunks": false,
@@ -428,7 +452,8 @@
                 }
               ]
             }
-          }
+          },
+          "defaultConfiguration": ""
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
@@ -471,14 +496,11 @@
           }
         },
         "lint": {
-          "builder": "@angular-devkit/build-angular:tslint",
+          "builder": "@angular-eslint/builder:lint",
           "options": {
-            "tsConfig": [
-              "projects/public-app/tsconfig.app.json",
-              "projects/public-app/tsconfig.spec.json"
-            ],
-            "exclude": [
-              "**/node_modules/**"
+            "lintFilePatterns": [
+              "projects/public-app/**/*.ts",
+              "projects/public-app/**/*.html"
             ]
           }
         }
@@ -496,6 +518,7 @@
     }
   },
   "cli": {
-    "analytics": false
+    "analytics": false,
+    "defaultCollection": "@angular-eslint/schematics"
   }
 }

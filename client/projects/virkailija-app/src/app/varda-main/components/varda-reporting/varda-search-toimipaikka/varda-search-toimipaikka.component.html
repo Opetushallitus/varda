@@ -70,7 +70,7 @@
                                         id="toimipaikkaVoimassaoloButtonGroup"
                                         responsive="md"
                                         wrap="md"
-                                        (change)="search()"
+                                        (valueChanged)="search()"
                                         [(ngModel)]="filterParams.voimassaolo">
             <app-varda-radio-button [id]="'voimassaoloKaikki'"
                                     [value]="voimassaolo.KAIKKI">

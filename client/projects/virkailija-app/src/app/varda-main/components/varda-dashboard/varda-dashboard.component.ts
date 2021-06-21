@@ -20,9 +20,9 @@ export class VardaDashboardComponent implements OnDestroy {
   tilapainenHenkilostoOnly: boolean;
   subscriptions: Array<Subscription> = [];
   ui: {
-    isLoading: boolean,
-    dashboardInitializationError: boolean,
-    alertMsg: VirkailijaTranslations
+    isLoading: boolean;
+    dashboardInitializationError: boolean;
+    alertMsg: VirkailijaTranslations;
   };
 
   constructor(

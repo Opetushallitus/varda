@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { LoginService } from './login.service';
 import * as moment from 'moment';
-import {EMPTY, of} from 'rxjs';
+import {EMPTY} from 'rxjs';
 import {HttpService} from './http.service';
 import {CookieService} from 'ngx-cookie-service';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -23,7 +23,7 @@ describe('LoginService', () => {
           provide: HttpService,
           useValue: {
             apiKey: '',
-            setApiKey(token) {},
+            setApiKey: (token) => {},
             get: () => EMPTY,
             options: () => EMPTY
           }

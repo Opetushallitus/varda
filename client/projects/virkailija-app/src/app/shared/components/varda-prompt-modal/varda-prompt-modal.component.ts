@@ -8,10 +8,10 @@ import {Subject} from 'rxjs';
   styleUrls: ['./varda-prompt-modal.component.css']
 })
 export class VardaPromptModalComponent implements OnInit {
-  i18n = VirkailijaTranslations;
-  showModal: boolean;
   @Input() show$: Subject<boolean>;
   @Output() saveEvent = new EventEmitter(true);
+  i18n = VirkailijaTranslations;
+  showModal: boolean;
 
   constructor() { }
 

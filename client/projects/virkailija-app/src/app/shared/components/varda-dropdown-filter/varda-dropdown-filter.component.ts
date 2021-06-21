@@ -1,6 +1,6 @@
 import { Component, OnInit, Input, ViewChild, EventEmitter, Output, ElementRef, OnDestroy } from '@angular/core';
 import { MatMenuTrigger } from '@angular/material/menu';
-import { fromEvent, Subject, Subscription } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 
 
@@ -11,17 +11,17 @@ import { debounceTime } from 'rxjs/operators';
 })
 export class VardaDropdownFilterComponent implements OnInit, OnDestroy {
   @Input() filterBy: Array<string>;
-  @Input() list: Array<object>;
+  @Input() list: Array<Record<string, string>>;
   @Input() label: string;
   @Input() ariaLabel: string;
   @Input() placeholder: string;
   @Input() noResults: string;
-  @Output() select = new EventEmitter(true);
+  @Output() valueSelected = new EventEmitter(true);
   @ViewChild('dropdownFilterInput') dropdownFilterInput: ElementRef;
   @ViewChild(MatMenuTrigger, { static: true }) trigger: MatMenuTrigger;
   subscriptions: Array<Subscription> = [];
   showDropdown: boolean;
-  filteredList: Array<object>;
+  filteredList: Array<Record<string, string>>;
   filterText = '';
   searchFieldChanged = new Subject<boolean>();
 
@@ -60,9 +60,7 @@ export class VardaDropdownFilterComponent implements OnInit, OnDestroy {
       return this.filteredList = this.list;
     }
     text = text.toLowerCase().trim();
-    this.filteredList = this.list.filter(item => {
-      return this.filterBy.some(key => item[key] && item[key].toLowerCase().includes(text));
-    });
+    this.filteredList = this.list.filter(item => this.filterBy.some(key => item[key] && item[key].toLowerCase().includes(text)));
 
     if (this.filteredList.length === 1 && enter) {
       setTimeout(() => this.selectItem(this.filteredList[0]), 500);
@@ -70,7 +68,7 @@ export class VardaDropdownFilterComponent implements OnInit, OnDestroy {
   }
 
   selectItem(item: any) {
-    this.select.emit(item);
+    this.valueSelected.emit(item);
     this.trigger.closeMenu();
   }
 }

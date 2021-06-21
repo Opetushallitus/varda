@@ -48,6 +48,12 @@ export class AppComponent implements OnInit {
     });
   }
 
+  @HostListener('document:keydown', ['$event'])
+  @HostListener('document:click', ['$event'])
+  documentClick(event: MouseEvent) {
+    this.loginService.clearLogoutInterval();
+  }
+
   ngOnInit() { }
 
   initLanguage() {
@@ -62,13 +68,6 @@ export class AppComponent implements OnInit {
     this.translateService.use(defaultLanguage);
     this._document.documentElement.lang = defaultLanguage;
   }
-
-  @HostListener('document:keydown', ['$event'])
-  @HostListener('document:click', ['$event'])
-  documentClick(event: MouseEvent) {
-    this.loginService.clearLogoutInterval();
-  }
-
 
   setTitle(router: Router): void {
     const titles: Array<string> = [...this.getTitle(router.routerState, router.routerState.root).reverse(), 'Varda'];

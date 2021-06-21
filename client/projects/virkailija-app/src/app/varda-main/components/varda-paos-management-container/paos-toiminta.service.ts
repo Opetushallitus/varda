@@ -18,12 +18,12 @@ export class OrganisaatioIdentity {
   providedIn: 'root'
 })
 export class PaosToimintaService {
-  private createEventsSource = new Subject<PaosCreateEvent>();
+  createEventsSource = new Subject<PaosCreateEvent>();
   // Contains vakajarjestaja and toimipaikka urls
-  private readonly _createdPaosToimintaOrganisaatioUrl: Array<string>;
-  private readonly _allToimintaOrganisaatioOidsSource = new Subject<OrganisaatioIdentity>();
-  private readonly _toimintaDeletedOrganisaatioIdSource = new Subject<OrganisaatioIdentity>();
-  private readonly errorMessageSource = new Subject<string>();
+  readonly _createdPaosToimintaOrganisaatioUrl: Array<string>;
+  readonly _allToimintaOrganisaatioOidsSource = new Subject<OrganisaatioIdentity>();
+  readonly _toimintaDeletedOrganisaatioIdSource = new Subject<OrganisaatioIdentity>();
+  readonly errorMessageSource = new Subject<string>();
 
   i18n = VirkailijaTranslations;
 
@@ -52,7 +52,7 @@ export class PaosToimintaService {
   }
 
   pushToimintaOrganisaatio(organisaatioId: number, type: PaosCreateEvent) {
-    this._allToimintaOrganisaatioOidsSource.next({ id: organisaatioId, type: type });
+    this._allToimintaOrganisaatioOidsSource.next({ id: organisaatioId, type });
   }
 
   pushDeletedToimintaOrganisaatio(organisaatioId: number, type: PaosCreateEvent) {
@@ -68,7 +68,7 @@ export class PaosToimintaService {
   pushGenericErrorMessage = (err) => {
     console.error(err);
     this.pushErrorMessage(this.i18n.paos_error_generic);
-  }
+  };
 
   private pushErrorMessage(errorKey: string) {
     this.errorMessageSource.next(errorKey);

@@ -5,7 +5,7 @@ export class HenkilohakuResultDTO {
   url: string;
   henkilo: VardaHenkiloDTO;
   maksutiedot: Array<string>;
-  toimipaikat: Array<{nimi: string, nimi_sv: string, organisaatio_oid: string, }>;
+  toimipaikat: Array<{nimi: string; nimi_sv: string; organisaatio_oid: string }>;
 }
 
 export enum HenkilohakuType {

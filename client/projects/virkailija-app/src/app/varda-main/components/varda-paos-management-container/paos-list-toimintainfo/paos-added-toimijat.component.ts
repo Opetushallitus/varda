@@ -22,13 +22,11 @@ import { VirkailijaTranslations } from '../../../../../assets/i18n/virkailija-tr
   ]
 })
 export class PaosAddedToimijatComponent extends AbstractPaosListToimintainfoComponentDirective<PaosToimintatietoDto> implements OnInit, OnDestroy {
-  private createEventSubscription: Subscription;
   i18n = VirkailijaTranslations;
   highlighted: Array<string>;
   openToimija: number;
   filteredToiminnat: Array<PaosToimintatietoDto>;
-  apiServiceMethod = () => this.paosService.getPaosToimijat(this.selectedVakajarjestaja.id);
-  pushToimintaOrganisaatioId = paosToiminta => this.paosToimintaService.pushToimintaOrganisaatio(paosToiminta.vakajarjestaja_id, PaosCreateEvent.Toimija);
+  private createEventSubscription: Subscription;
 
   constructor(
     private paosService: VardaPaosApiService,
@@ -53,6 +51,9 @@ export class PaosAddedToimijatComponent extends AbstractPaosListToimintainfoComp
       error: this.paosToimintaService.pushGenericErrorMessage,
     });
   }
+
+  apiServiceMethod = () => this.paosService.getPaosToimijat(this.selectedVakajarjestaja.id);
+  pushToimintaOrganisaatioId = paosToiminta => this.paosToimintaService.pushToimintaOrganisaatio(paosToiminta.vakajarjestaja_id, PaosCreateEvent.Toimija);
 
   ngOnDestroy(): void {
     this.createEventSubscription.unsubscribe();

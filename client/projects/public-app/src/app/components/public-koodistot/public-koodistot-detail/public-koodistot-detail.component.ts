@@ -17,12 +17,12 @@ export class PublicKoodistotDetailComponent implements OnInit, OnDestroy {
   translation = PublicTranslations;
   selectedKoodistoName: string = null;
   isValidKoodistoName = false;
-  private koodistot: Array<KoodistoDto> = [];
   codes: Array<CodeDto> = [];
   version = 0;
   update_datetime = moment();
-  private subscriptions = [];
   isExtraSmall: BehaviorSubject<boolean>;
+  private koodistot: Array<KoodistoDto> = [];
+  private subscriptions = [];
 
   constructor(private activatedRoute: ActivatedRoute, private publicKoodistotService: PublicKoodistotService,
               private responsiveService: PublicResponsiveService) { }
@@ -44,6 +44,12 @@ export class PublicKoodistotDetailComponent implements OnInit, OnDestroy {
     );
   }
 
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(subscription => {
+      subscription.unsubscribe();
+    });
+  }
+
   private displayKoodisto() {
     const koodistoIndex = this.publicKoodistotService.getKoodistoIndex(this.selectedKoodistoName);
     if (koodistoIndex !== -1) {
@@ -54,11 +60,4 @@ export class PublicKoodistotDetailComponent implements OnInit, OnDestroy {
       this.update_datetime = moment(koodisto.update_datetime);
     }
   }
-
-  ngOnDestroy(): void {
-    this.subscriptions.forEach(subscription => {
-      subscription.unsubscribe();
-    });
-  }
-
 }

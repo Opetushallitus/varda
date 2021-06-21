@@ -265,11 +265,7 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
   }
 
   tilapainenVakaChange(value: boolean) {
-    const tilapainenValidator = (): ValidatorFn => {
-      return (control: AbstractControl) => {
-        return control.value ? null : { tilapainen: true };
-      };
-    };
+    const tilapainenValidator = (): ValidatorFn => (control: AbstractControl) => control.value ? null : { tilapainen: true };
 
     const paattymisCtrl = this.formGroup.get('paattymis_pvm');
     if (value) {

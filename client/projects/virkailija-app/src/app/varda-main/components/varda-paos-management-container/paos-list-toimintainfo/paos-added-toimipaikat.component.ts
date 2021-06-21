@@ -22,17 +22,14 @@ import { VirkailijaTranslations } from '../../../../../assets/i18n/virkailija-tr
   ]
 })
 export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoComponentDirective<PaosToimipaikkatietoDto> implements OnInit, OnDestroy {
-  private createEventSubscription: Subscription;
   i18n = VirkailijaTranslations;
   highlighted: Array<string>;
   toimipaikatByToimija: Array<PaosToimijaInternalDto>;
   filteredToiminnat: Array<PaosToimijaInternalDto>;
   openToimija: number;
   openTallennusvastuu: number;
-  changedTallennusvastuu: { toimijaId: number, newTallentaja: number, };
-
-  apiServiceMethod = () => this.paosService.getPaosToimipaikat(this.selectedVakajarjestaja.id);
-  pushToimintaOrganisaatioId = (paosToiminta: PaosToimipaikkatietoDto) => this.paosToimintaService.pushToimintaOrganisaatio(paosToiminta.toimipaikka_id, PaosCreateEvent.Toimipaikka);
+  changedTallennusvastuu: { toimijaId: number; newTallentaja: number };
+  private createEventSubscription: Subscription;
 
   constructor(
     private paosService: VardaPaosApiService,
@@ -57,8 +54,10 @@ export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoC
       },
       error: this.paosToimintaService.pushGenericErrorMessage,
     });
-
   }
+
+  apiServiceMethod = () => this.paosService.getPaosToimipaikat(this.selectedVakajarjestaja.id);
+  pushToimintaOrganisaatioId = (paosToiminta: PaosToimipaikkatietoDto) => this.paosToimintaService.pushToimintaOrganisaatio(paosToiminta.toimipaikka_id, PaosCreateEvent.Toimipaikka);
 
   ngOnDestroy(): void {
     this.createEventSubscription.unsubscribe();
@@ -132,10 +131,10 @@ export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoC
   }
 
   changeTallennusvastuu(tallennusvastuuId: string, paosToiminta: PaosToimijaInternalDto) {
-    const newTallentaja = parseInt(tallennusvastuuId) === this.selectedVakajarjestaja.id ? this.selectedVakajarjestaja.id : paosToiminta.toimijaId;
+    const newTallentaja = parseInt(tallennusvastuuId, 10) === this.selectedVakajarjestaja.id ? this.selectedVakajarjestaja.id : paosToiminta.toimijaId;
     this.changedTallennusvastuu = {
       toimijaId: paosToiminta.toimijaId,
-      newTallentaja: newTallentaja,
+      newTallentaja,
     };
   }
 
@@ -153,12 +152,12 @@ export class PaosAddedToimipaikatComponent extends AbstractPaosListToimintainfoC
     }
   }
 
+  isTallentajaChanged(paosToiminta: PaosToimijaInternalDto) {
+    return !this.changedTallennusvastuu.newTallentaja || this.changedTallennusvastuu.newTallentaja === paosToiminta.paosOikeus.tallentaja_organisaatio_id;
+  }
+
   private clearTallenusvastuu() {
     this.openTallennusvastuu = null;
     this.changedTallennusvastuu = { toimijaId: null, newTallentaja: null };
-  }
-
-  isTallentajaChanged(paosToiminta: PaosToimijaInternalDto) {
-    return !this.changedTallennusvastuu.newTallentaja || this.changedTallennusvastuu.newTallentaja === paosToiminta.paosOikeus.tallentaja_organisaatio_id;
   }
 }

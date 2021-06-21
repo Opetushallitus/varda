@@ -25,7 +25,7 @@ export class LoginComponent {
     today.setMonth(today.getMonth() + 2);
 
     sessionStorage.setItem(HuoltajaCookieEnum.api_token, JSON.stringify({
-      token: token,
+      token,
       expiryTime: today.toISOString()
     }));
     this.router.navigate(['/']);

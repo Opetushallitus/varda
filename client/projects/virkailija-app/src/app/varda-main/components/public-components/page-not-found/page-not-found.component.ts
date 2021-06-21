@@ -19,7 +19,7 @@ export class PageNotFoundComponent implements OnInit {
   }
 
   ngOnInit() {
-    const replaceUrl = this.activatedRoute.snapshot.queryParams['url'];
+    const replaceUrl = this.activatedRoute.snapshot.queryParams.url;
     if (replaceUrl) {
       this.location.replaceState(replaceUrl);
     }

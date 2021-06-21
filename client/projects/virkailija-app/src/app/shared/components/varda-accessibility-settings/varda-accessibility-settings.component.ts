@@ -3,7 +3,7 @@ import { VardaAccessibilityService } from '../../../core/services/varda-accessib
 import { VardaDomService } from '../../../core/services/varda-dom.service';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 
-declare var $: any;
+declare let $: any;
 
 @Component({
   selector: 'app-varda-accessibility-settings',
@@ -44,8 +44,8 @@ export class VardaAccessibilitySettingsComponent implements OnInit, AfterViewIni
     if (fontSize !== this.documentRootFontSize) {
       this.documentRootFontSize = fontSize;
       this.documentRootElem.style.fontSize = `${fontSize}px`;
-      this.instructionPanelHeaderElem?.css({ 'fontSize': `${fontSize}px` });
-      this.instructionPanelContentElem?.css({ 'fontSize': `${fontSize}px` });
+      this.instructionPanelHeaderElem?.css({ fontSize: `${fontSize}px` });
+      this.instructionPanelContentElem?.css({ fontSize: `${fontSize}px` });
       this.accessibilityService.saveFontSize(fontSize);
     }
   }
@@ -91,7 +91,7 @@ export class VardaAccessibilitySettingsComponent implements OnInit, AfterViewIni
 
     this.documentRootElem = document.documentElement;
     const initialFontSize = window.getComputedStyle(this.documentRootElem).fontSize;
-    this.documentRootFontSize = parseInt(initialFontSize.substring(0, 2));
+    this.documentRootFontSize = parseInt(initialFontSize.substring(0, 2), 10);
   }
 
 }

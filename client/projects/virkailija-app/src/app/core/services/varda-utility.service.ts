@@ -46,9 +46,9 @@ export class VardaUtilityService {
     }
   }
 
-  parseSearchParams(url: string, searchParams: Object): string {
-    if (searchParams['search']) {
-      searchParams['search'] = this.hashHetu(searchParams['search']);
+  parseSearchParams(url: string, searchParams: Record<string, string>): string {
+    if (searchParams.search) {
+      searchParams.search = this.hashHetu(searchParams.search);
     }
 
     url += '?';
@@ -68,7 +68,7 @@ export class VardaUtilityService {
     return rawHetu;
   }
 
-  sortByAlkamisPaattymisPvm(list: Array<{ alkamis_pvm?: string, paattymis_pvm?: string }>) {
+  sortByAlkamisPaattymisPvm(list: Array<{ alkamis_pvm?: string; paattymis_pvm?: string }>) {
     list.sort((a, b) => {
       const compareA = a.paattymis_pvm ? `${a.alkamis_pvm}-${a.paattymis_pvm}` : `X${a.alkamis_pvm}`;
       const compareB = b.paattymis_pvm ? `${b.alkamis_pvm}-${b.paattymis_pvm}` : `X${b.alkamis_pvm}`;

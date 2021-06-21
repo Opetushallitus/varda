@@ -73,9 +73,9 @@ export class VardaYhteenvetoComponent implements OnInit {
   createDatasourceElement(label: string, value: number, tooltip: string, id: string): YhteenvetoElement {
     return {
       name: label,
-      value: value,
-      tooltip: tooltip,
-      id: id,
+      value,
+      tooltip,
+      id,
       status: '',
     };
   }

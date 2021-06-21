@@ -60,7 +60,44 @@ export class VardaErrorMessageService {
     return false;
   }
 
-  private loopThrough(error: object | Array<string> | string, errorTree: ErrorTree = { keys: [], values: [] }) {
+  resetErrorList(): void {
+    this.errorList$.next(null);
+  }
+
+  initErrorList(): Observable<Array<ErrorTree>> {
+    return this.errorList$;
+  }
+
+  handleError(response: VardaErrorResponse, snackBar?: VardaSnackBarService, formGroup?: FormGroup): void {
+    console.error(response.status, response.error);
+    const generalErrors = [404, 500, 504];
+    this.errorLines = [];
+
+    if (generalErrors.includes(response?.status)) {
+      const generalError: ErrorTree = {
+        keys: ['server'],
+        values: [{
+          errorCode: 'UI002',
+          errorTranslation: this.translateService.instant('backend.api-timeout-or-not-found'),
+          dynamicValue: null
+        }]
+      };
+      this.errorLines.push(generalError);
+    } else {
+      this.loopThrough(response.error);
+      if (formGroup) {
+        this.checkFormErrors(formGroup);
+      }
+    }
+    this.errorList$.next(this.errorLines);
+
+    if (snackBar) {
+      const errorFlat: Array<ErrorValue> = [].concat(...this.errorLines.map(line => line.values));
+      snackBar.errorFromBackend(errorFlat);
+    }
+  }
+
+  private loopThrough(error: VardaErrorLine | Array<string|VardaErrorMessage> | string, errorTree: ErrorTree = { keys: [], values: [] }) {
     if (Array.isArray(error)) {
       errorTree.values = error.map(text => this.parseBackendError(text));
       this.errorLines.push(errorTree);
@@ -75,7 +112,7 @@ export class VardaErrorMessageService {
   }
 
   private parseBackendError(error: VardaErrorMessage | string): ErrorValue {
-    let errorCode, errorTranslation, dynamicValue;
+    let errorCode; let errorTranslation; let dynamicValue;
     if (typeof error === 'object' && error !== null) {
       errorCode = error.error_code;
       errorTranslation = this.getErrorTranslation(error);
@@ -98,17 +135,15 @@ export class VardaErrorMessageService {
     }
 
     return {
-      errorCode: errorCode,
-      errorTranslation: errorTranslation,
-      dynamicValue: dynamicValue
+      errorCode,
+      errorTranslation,
+      dynamicValue
     };
   }
 
   private getErrorTranslation(error: VardaErrorMessage): string {
     const currentLang = this.translateService.currentLang;
-    return error.translations.find(errorTranslation => {
-      return errorTranslation.language.toLocaleLowerCase() === currentLang.toLocaleLowerCase();
-    })?.description;
+    return error.translations.find(errorTranslation => errorTranslation.language.toLocaleLowerCase() === currentLang.toLocaleLowerCase())?.description;
   }
 
   private checkFormErrors(formGroup: FormGroup) {
@@ -159,42 +194,5 @@ export class VardaErrorMessageService {
     }
 
     return null;
-  }
-
-  resetErrorList(): void {
-    this.errorList$.next(null);
-  }
-
-  initErrorList(): Observable<Array<ErrorTree>> {
-    return this.errorList$;
-  }
-
-  handleError(response: VardaErrorResponse, snackBar?: VardaSnackBarService, formGroup?: FormGroup): void {
-    console.error(response.status, response.error);
-    const generalErrors = [404, 500, 504];
-    this.errorLines = [];
-
-    if (generalErrors.includes(response?.status)) {
-      const generalError: ErrorTree = {
-        keys: ['server'],
-        values: [{
-          errorCode: 'UI002',
-          errorTranslation: this.translateService.instant('backend.api-timeout-or-not-found'),
-          dynamicValue: null
-        }]
-      };
-      this.errorLines.push(generalError);
-    } else {
-      this.loopThrough(response.error);
-      if (formGroup) {
-        this.checkFormErrors(formGroup);
-      }
-    }
-    this.errorList$.next(this.errorLines);
-
-    if (snackBar) {
-      const errorFlat: Array<ErrorValue> = [].concat(...this.errorLines.map(line => line.values));
-      snackBar.errorFromBackend(errorFlat);
-    }
   }
 }

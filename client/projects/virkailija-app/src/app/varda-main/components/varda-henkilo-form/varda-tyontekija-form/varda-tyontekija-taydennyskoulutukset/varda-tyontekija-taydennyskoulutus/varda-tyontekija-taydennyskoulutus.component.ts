@@ -187,12 +187,10 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
   }
 
   compareTehtavanimikkeet(newNimikkeet: Array<string>, existingNimikkeet: Array<string> = []): Array<VardaTaydennyskoulutusTyontekijaDTO> {
-    const comparableNimikkeet = newNimikkeet.filter(nimikekoodi => !existingNimikkeet.includes(nimikekoodi)).map(nimikekoodi => {
-      return {
+    const comparableNimikkeet = newNimikkeet.filter(nimikekoodi => !existingNimikkeet.includes(nimikekoodi)).map(nimikekoodi => ({
         tyontekija: this.tyontekija.url,
         tehtavanimike_koodi: nimikekoodi
-      };
-    });
+      }));
 
     return comparableNimikkeet;
   }

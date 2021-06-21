@@ -42,7 +42,7 @@ export class VardaAccessibilityService {
   }
 
   initFontSizeObservable(): BehaviorSubject<number> {
-    const fontSize = parseInt(localStorage.getItem(VardaCookieEnum.font_size));
+    const fontSize = parseInt(localStorage.getItem(VardaCookieEnum.font_size), 10);
     const rv = isNaN(fontSize) ? 16 : fontSize;
     return new BehaviorSubject(rv);
   }
