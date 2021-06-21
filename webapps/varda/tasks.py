@@ -27,7 +27,8 @@ from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
 from varda.misc import memory_efficient_queryset_iterator, get_user_vakajarjestaja
 from varda.models import (Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog, Lapsi, Varhaiskasvatuspaatos,
                           Huoltaja, Huoltajuussuhde, Maksutieto, Z6_LastRequest)
-from varda.permissions import assign_object_level_permissions_for_instance, assign_lapsi_henkilo_permissions
+from varda.permissions import (assign_object_level_permissions_for_instance, assign_lapsi_henkilo_permissions,
+                               delete_object_permissions_explicitly)
 from varda.permission_groups import (assign_object_permissions_to_taydennyskoulutus_groups,
                                      assign_object_level_permissions)
 
@@ -171,10 +172,18 @@ def send_audit_log_to_aws_task():
 
 @shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
-def guardian_clean_orphan_objects():
-    # from guardian.utils import clean_orphan_obj_perms
-    # clean_orphan_obj_perms() - We do not want to run this currently.
-    pass
+def guardian_clean_orphan_object_permissions():
+    """
+    Delete orphan permission instances that were not deleted for some reason when object was deleted
+    """
+    for permission_model in (UserObjectPermission, GroupObjectPermission,):
+        permission_qs = (permission_model.objects
+                         .distinct('object_pk', 'content_type')
+                         .order_by('object_pk', 'content_type'))
+        for permission in memory_efficient_queryset_iterator(permission_qs, chunk_size=2000):
+            model_class = permission.content_type.model_class()
+            if not model_class.objects.filter(id=permission.object_pk).exists():
+                delete_object_permissions_explicitly(model_class, permission.object_pk)
 
 
 @shared_task(acks_late=True)
@@ -183,19 +192,6 @@ def change_paos_tallentaja_organization_task(jarjestaja_kunta_organisaatio_id, t
                                              tallentaja_organisaatio_id, voimassa_kytkin):
     permissions.change_paos_tallentaja_organization(jarjestaja_kunta_organisaatio_id, tuottaja_organisaatio_id,
                                                     tallentaja_organisaatio_id, voimassa_kytkin)
-
-
-@shared_task(acks_late=True)
-@single_instance_task(timeout_in_minutes=8 * 60)
-def delete_object_permissions_explicitly_task(content_type_id, instance_id):
-    """
-    Object permissions need to be deleted explicitly:
-    https://django-guardian.readthedocs.io/en/stable/userguide/caveats.html
-    """
-    content_type = ContentType.objects.get(id=content_type_id)
-    filters = Q(content_type=content_type, object_pk=str(instance_id))
-    UserObjectPermission.objects.filter(filters).delete()
-    GroupObjectPermission.objects.filter(filters).delete()
 
 
 @shared_task

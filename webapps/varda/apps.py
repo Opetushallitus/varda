@@ -179,15 +179,16 @@ def receiver_save(sender, **kwargs):
 
 
 def receiver_pre_delete(sender, **kwargs):
-    from django.contrib.contenttypes.models import ContentType
     from varda.cache import invalidate_cache
-    from varda.tasks import change_paos_tallentaja_organization_task, delete_object_permissions_explicitly_task
-    model_name = sender._meta.model.__name__.lower()
+    from varda.permissions import delete_object_permissions_explicitly
+    from varda.tasks import change_paos_tallentaja_organization_task
+    model = sender._meta.model
+    model_name = model.__name__.lower()
     instance = kwargs['instance']
     instance_id = instance.id
 
     invalidate_cache(model_name, instance_id)
-    delete_object_permissions_explicitly_task.delay(ContentType.objects.get_for_model(instance).id, instance_id)
+    delete_object_permissions_explicitly(model, instance_id)
 
     if model_name == 'paosoikeus' and instance.voimassa_kytkin:
         """
