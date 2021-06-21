@@ -13,7 +13,9 @@ django-crispy-forms==1.11.*  # MIT-license
 django-csp==3.7  # BSD-license
 django-filter==2.4.*  # BSD-license
 django-guardian==2.4.*  # BSD-license
-django-pg-bulk-update==3.4.*  # BSD-license
+# Currently not working https://github.com/M1ha-Shvn/django-pg-bulk-update/issues/72
+# django-pg-bulk-update==3.4.*  # BSD-license
+git+git://github.com/vhelke/django-pg-bulk-update
 django-pylibmc==0.6.*  # BSD-license
 django-ratelimit==3.0.*  # Apache 2.0-license
 django-simple-history==3.0.*  # BSD-license

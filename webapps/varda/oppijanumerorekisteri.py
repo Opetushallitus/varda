@@ -272,7 +272,7 @@ def update_huoltajuussuhde(henkilo_oid):
             henkilo = Henkilo.objects.get(henkilo_oid=henkilo_oid)
             _fetch_lapsen_huoltajat(henkilo.id)
     except Henkilo.DoesNotExist:
-        logger.info("Skipped huoltajasuhde update for child with oid {} since he was not added to varda"
+        logger.info('Skipped huoltajasuhde update for child with oid {} since he was not added to varda'
                     .format(henkilo_oid))
 
 
@@ -296,11 +296,11 @@ def _get_huoltajat_from_onr(henkilo_id):
             (not settings.PRODUCTION_ENV and henkilo_lapsi_obj.henkilo_oid not in test_lapsi_oids)):
         return []
 
-    huoltajat_url = "/henkilo/" + henkilo_lapsi_obj.henkilo_oid + "/huoltajat"
+    huoltajat_url = '/henkilo/' + henkilo_lapsi_obj.henkilo_oid + '/huoltajat'
     reply_msg = get_json_from_external_service(SERVICE_NAME, huoltajat_url)
-    if not reply_msg["is_ok"]:
+    if not reply_msg['is_ok']:
         raise APIException('Could not fetch huoltajat from oppijanumerorekisteri for henkilo {}'.format(henkilo_id))
-    return reply_msg["json_msg"]
+    return reply_msg['json_msg']
 
 
 def fetch_huoltajat():
@@ -329,7 +329,7 @@ def _fetch_lapsen_huoltajat(henkilo_id):
     """
     lapsi_id_list = Henkilo.objects.filter(id=henkilo_id).exclude(lapsi=None).values_list('lapsi__id', flat=True)
     huoltajat = _get_huoltajat_from_onr(henkilo_id)
-    huoltajat_master_data = [get_henkilo_data_by_oid(huoltaja["oidHenkilo"]) for huoltaja in huoltajat]
+    huoltajat_master_data = [get_henkilo_data_by_oid(huoltaja['oidHenkilo']) for huoltaja in huoltajat]
     with transaction.atomic():
         # Invalidate all current huoltajuussuhde and set ones returned valid
         [Lapsi.objects.get(id=lapsi_id).huoltajuussuhteet.update(voimassa_kytkin=False) for lapsi_id in lapsi_id_list]
@@ -340,7 +340,7 @@ def _fetch_lapsen_huoltajat(henkilo_id):
 def _update_lapsi_huoltaja(lapsi_id, huoltaja_master_data):
     lapsi_obj = Lapsi.objects.get(id=lapsi_id)
     # Oid should be used alone as unique identifier in query since hetu can change
-    oid = huoltaja_master_data["oidHenkilo"]
+    oid = huoltaja_master_data['oidHenkilo']
     default_henkilo = {
         'henkilo_oid': oid,
         'changed_by': lapsi_obj.changed_by,
