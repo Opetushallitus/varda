@@ -560,12 +560,19 @@ def is_correct_taydennyskoulutus_tyontekija_permission(user, taydennyskoulutus_t
 
 
 def get_available_tehtavanimike_codes_for_user(user, tyontekija):
-    organisaatio_oid_set = get_organisaatio_oids_from_groups(user, 'HENKILOSTO_TAYDENNYSKOULUTUS_')
-    tehtavanimike_set = set(Tyoskentelypaikka.objects
-                            .filter((Q(toimipaikka__organisaatio_oid__in=organisaatio_oid_set) |
-                                     Q(toimipaikka__vakajarjestaja__organisaatio_oid__in=organisaatio_oid_set)) &
-                                    Q(palvelussuhde__tyontekija=tyontekija))
-                            .values_list('tehtavanimike_koodi', flat=True))
+    if user_permission_groups_in_organization(user, tyontekija.vakajarjestaja.organisaatio_oid,
+                                              (Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
+                                               Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,)).exists():
+        # User has Vakajarjestaja level permissions, return all tehtavanimike codes
+        tehtavanimike_set = set(tyontekija.palvelussuhteet.all().values_list('tyoskentelypaikat__tehtavanimike_koodi',
+                                                                             flat=True))
+    else:
+        organisaatio_oid_set = get_organisaatio_oids_from_groups(user, 'HENKILOSTO_TAYDENNYSKOULUTUS_')
+        tehtavanimike_set = set(Tyoskentelypaikka.objects
+                                .filter((Q(toimipaikka__organisaatio_oid__in=organisaatio_oid_set) |
+                                         Q(toimipaikka__vakajarjestaja__organisaatio_oid__in=organisaatio_oid_set)) &
+                                        Q(palvelussuhde__tyontekija=tyontekija))
+                                .values_list('tehtavanimike_koodi', flat=True))
     # Discard None just in case
     tehtavanimike_set.discard(None)
     return tehtavanimike_set
