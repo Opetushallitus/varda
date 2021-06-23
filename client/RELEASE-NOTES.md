@@ -1,6 +1,10 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.20 (23.06.2021)
+- OPHVARDA-2264: Angular 12 päivitys
+- OPHVARDA-1966: Toimipaikkakohtaisten täydennyskoulutusoikeuksien tarkennusta
+
 1.5.19 (10.06.2021)
 - OPHVARDA-2157: Tiedonsiirron katkosten raportti
 - Työkalujen päivityksiä
