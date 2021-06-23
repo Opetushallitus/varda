@@ -12,7 +12,7 @@
       </mat-panel-title>
       <ng-container *ngIf="lapsitiedotTallentaja">
         <mat-panel-description *ngIf="varhaiskasvatuspaatokset.length">
-          <button class="varda-text-button"
+          <button class="varda-text-button" id="add-varhaiskasvatuspaatos"
                   (keydown.enter)="initVarhaiskasvatuspaatos()"
                   (click)="initVarhaiskasvatuspaatos()">
             <mat-icon class="d-none d-md-inline-block" alt="">assignment_outline</mat-icon>
@@ -40,7 +40,7 @@
           </p>
 
           <ng-container *ngIf="lapsitiedotTallentaja">
-            <button class="varda-text-button"
+            <button class="varda-text-button" id="add-varhaiskasvatuspaatos-empty"
                     *ngIf="!addVarhaiskasvatuspaatosBoolean"
                     (click)="initVarhaiskasvatuspaatos()">
               <mat-icon alt="">add</mat-icon>{{ i18n.varhaiskasvatuspaatokset_lisaa_varhaiskasvatuspaatos | translate }}

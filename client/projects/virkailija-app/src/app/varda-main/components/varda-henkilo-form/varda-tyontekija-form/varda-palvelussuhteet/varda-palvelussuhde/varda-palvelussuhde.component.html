@@ -165,7 +165,7 @@
           </app-varda-tyoskentelypaikka>
         </mat-accordion>
 
-        <button class="varda-text-button"
+        <button class="varda-text-button" id="add-tyoskentelypaikka"
                 *ngIf="!addTyoskentelypaikkaBoolean && toimipaikkaAccess.tyontekijatiedot.tallentaja"
                 (click)="addTyoskentelypaikkaBoolean = true">
           <mat-icon alt="">add</mat-icon> {{ i18n.palvelussuhde_lisaa_tyoskentelypaikka | translate }}
@@ -199,7 +199,7 @@
           </app-varda-poissaolo>
         </mat-accordion>
 
-        <button class="varda-text-button"
+        <button class="varda-text-button" id="add-poissaolo"
                 *ngIf="!addPoissaoloBoolean && toimipaikkaAccess.tyontekijatiedot.tallentaja"
                 (click)="addPoissaoloBoolean = true">
           <mat-icon alt="">add</mat-icon> {{ i18n.palvelussuhde_lisaa_poissaolo | translate }}

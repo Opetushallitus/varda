@@ -10,7 +10,7 @@
       </mat-panel-title>
       <ng-container *ngIf="toimipaikkaAccess?.taydennyskoulutustiedot.tallentaja">
         <mat-panel-description *ngIf="taydennyskoulutukset.length">
-          <button class="varda-text-button"
+          <button class="varda-text-button" id="add-taydennyskoulutus"
                   (keydown.enter)="initTaydennyskoulutus()"
                   (click)="initTaydennyskoulutus()">
             <mat-icon class="d-none d-md-inline-block" alt="">assignment_outline</mat-icon>
@@ -35,7 +35,7 @@
           <p>{{ i18n.taydennyskoulutukset_ei_taydennyskoulutuksia | translate }}</p>
 
           <ng-container *ngIf="toimipaikkaAccess?.taydennyskoulutustiedot.tallentaja">
-            <button class="varda-text-button"
+            <button class="varda-text-button" id="add-taydennyskoulutus-empty"
                     *ngIf="!addTaydennyskoulutus"
                     (click)="initTaydennyskoulutus()">
               <mat-icon alt="">add</mat-icon>{{ i18n.taydennyskoulutukset_lisaa_taydennyskoulutus | translate }}

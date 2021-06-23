@@ -563,7 +563,7 @@ def get_available_tehtavanimike_codes_for_user(user, tyontekija):
     organisaatio_oid_set = get_organisaatio_oids_from_groups(user, 'HENKILOSTO_TAYDENNYSKOULUTUS_')
     tehtavanimike_set = set(Tyoskentelypaikka.objects
                             .filter((Q(toimipaikka__organisaatio_oid__in=organisaatio_oid_set) |
-                                     Q(toimipaikka__vakajarjestaja__organisaatio_oid=organisaatio_oid_set)) &
+                                     Q(toimipaikka__vakajarjestaja__organisaatio_oid__in=organisaatio_oid_set)) &
                                     Q(palvelussuhde__tyontekija=tyontekija))
                             .values_list('tehtavanimike_koodi', flat=True))
     # Discard None just in case

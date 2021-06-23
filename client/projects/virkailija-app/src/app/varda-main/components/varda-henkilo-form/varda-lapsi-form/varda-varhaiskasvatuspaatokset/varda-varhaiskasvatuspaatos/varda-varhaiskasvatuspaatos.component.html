@@ -215,7 +215,7 @@
           </app-varda-varhaiskasvatussuhde>
         </mat-accordion>
 
-        <button class="varda-text-button"
+        <button class="varda-text-button" id="add-varhaiskasvatussuhde"
                 *ngIf="!addVarhaiskasvatussuhdeBoolean && lapsitiedotTallentaja"
                 (click)="addVarhaiskasvatussuhdeBoolean = true">
           <mat-icon alt="">add</mat-icon> {{ i18n.varhaiskasvatuspaatos_lisaa_varhaiskasvatussuhde | translate }}

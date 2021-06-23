@@ -25,7 +25,7 @@
                        [toimipaikka]="toimipaikka"
                        (closeEmitter)="closeKielipainotus($event, true)"></app-kielipainotus>
   </mat-accordion>
-  <button class="varda-text-button"
+  <button class="varda-text-button" id="add-kielipainotus"
           *ngIf="isEdit && !addKielipainotusBoolean && saveAccess"
           (click)="addKielipainotusBoolean = true">
     <mat-icon alt="">add</mat-icon>
@@ -61,7 +61,7 @@
                           [toimipaikka]="toimipaikka"
                           (closeEmitter)="closeToimintapainotus($event, true)"></app-toimintapainotus>
   </mat-accordion>
-  <button class="varda-text-button"
+  <button class="varda-text-button" id="add-toiminnallinenpainotus"
           *ngIf="isEdit && !addToimintapainotusBoolean && saveAccess"
           (click)="addToimintapainotusBoolean = true">
     <mat-icon alt="">add</mat-icon>

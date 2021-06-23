@@ -10,7 +10,7 @@
       </mat-panel-title>
       <ng-container *ngIf="maksutietoOikeus && toimipaikkaAccess?.huoltajatiedot.tallentaja">
         <mat-panel-description *ngIf="maksutiedot.length">
-          <button class="varda-text-button"
+          <button class="varda-text-button" id="add-maksutieto"
                   (keydown.enter)="initMaksutieto()"
                   (click)="initMaksutieto()">
             <mat-icon class="d-none d-md-inline-block" alt="">assignment_outline</mat-icon>
@@ -35,7 +35,7 @@
           <p>{{ i18n.maksutiedot_ei_maksutietoja | translate }}</p>
 
           <ng-container *ngIf="toimipaikkaAccess?.huoltajatiedot.tallentaja">
-            <button class="varda-text-button"
+            <button class="varda-text-button" id="add-maksutieto-empty"
                     *ngIf="!addMaksutieto"
                     (click)="initMaksutieto()">
               <mat-icon alt="">add</mat-icon>{{ i18n.maksutiedot_lisaa_maksutieto | translate }}

@@ -12,7 +12,7 @@
       </mat-panel-title>
       <ng-container *ngIf="toimipaikkaAccess?.tyontekijatiedot.tallentaja">
         <mat-panel-description *ngIf="palvelussuhteet.length">
-          <button class="varda-text-button"
+          <button class="varda-text-button" id="add-palvelussuhde"
                   (keydown.enter)="initPalvelussuhde()"
                   (click)="initPalvelussuhde()">
             <mat-icon class="d-none d-md-inline-block" alt="">assignment_outline</mat-icon>
@@ -40,7 +40,7 @@
             {{ i18n.palvelussuhteet_ei_palvelussuhteita | translate }}
           </div>
           <ng-container *ngIf="toimipaikkaAccess?.tyontekijatiedot.tallentaja">
-            <button class="varda-text-button"
+            <button class="varda-text-button" id="add-palvelussuhde-empty"
                     *ngIf="!addPalvelussuhdeBoolean"
                     (click)="initPalvelussuhde()">
               <mat-icon alt="">add</mat-icon>{{ i18n.palvelussuhteet_lisaa_palvelussuhde | translate }}
