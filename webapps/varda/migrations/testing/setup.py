@@ -2574,6 +2574,9 @@ def _create_tyontekija_and_related_data(tyontekija, tutkinto_list=(), palvelussu
 
 
 def create_henkilosto():
+    import datetime
+    from varda.models import TilapainenHenkilosto
+
     _create_tyontekija_and_related_data(
         {
             'henkilo_oid': '1.2.246.562.24.2431884920041',
@@ -2932,8 +2935,27 @@ def create_henkilosto():
             'tunniste': 'testing-tilapainenhenkilosto3'
         },
     )
+    # Because TilapainenHenkilosto can be saved for current or previous period, we need to save with temporary date and
+    # then update the intended date
+    date_iterator_init = datetime.date.today()
+    date_iterator_init = date_iterator_init.replace(day=1)
+    date_iterator_dict = {}
     for tilapainen_henkilosto in tilapainen_henkilosto_list:
-        _make_post_request('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+        vakajarjestaja_oid = tilapainen_henkilosto['vakajarjestaja_oid']
+        date_iterator = date_iterator_dict.get(vakajarjestaja_oid, None)
+        if not date_iterator:
+            date_iterator = date_iterator_init
+
+        original_date = tilapainen_henkilosto['kuukausi']
+        tilapainen_henkilosto['kuukausi'] = date_iterator.strftime('%Y-%m-%d')
+        resp = _make_post_request('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+        tilapainen_henkilosto_obj = TilapainenHenkilosto.objects.get(id=json.loads(resp.content)['id'])
+        tilapainen_henkilosto_obj.kuukausi = original_date
+        tilapainen_henkilosto_obj.save()
+
+        # Move to first day of previous month
+        date_iterator -= datetime.timedelta(days=1)
+        date_iterator_dict[vakajarjestaja_oid] = date_iterator.replace(day=1)
 
     taydennyskoulutus_list = (
         {
