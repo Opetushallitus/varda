@@ -1,9 +1,0 @@
-.vakasuhde-panel {
-  position: relative;
-  overflow: visible;
-  margin-bottom: 1em;
-}
-
-.vakasuhde-panel .mat-expansion-panel-content {
-  overflow: hidden;
-}
