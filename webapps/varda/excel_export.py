@@ -66,13 +66,23 @@ TRANSLATIONS = {
         ExcelReportType.VAKATIEDOT_VOIMASSA.value: 'Varhaiskasvatustiedot_voimassa'
     },
     SupportedLanguage.SV.value: {
-        VAKASUHDE_SHEET_NAME: 'TODO',
-        VAKASUHDE_HEADERS: ('',),
-        MAKSUTIETO_SHEET_NAME: 'TODO',
-        MAKSUTIETO_HEADERS: ('',),
+        VAKASUHDE_SHEET_NAME: 'Småbarnspedagogik',
+        VAKASUHDE_HEADERS: ('Studentnummer', 'Förnamn', 'Efternamn', 'Personbeteckning', 'Spärrmarkering', 'Barnets ID',
+                            'Köptjänst-/servicesedelverksamhet (ja/nej)', 'Köptjänst-/servicesedelaktörens namn',
+                            'Köptjänst-/servicesedelaktörens OID', 'Källsystem', 'ID för beslut om småbarnspedagogik',
+                            'Ansökningsdatum', 'Begynnelsedatum', 'Slutdatum', 'Form för anordnande',
+                            'Småbarnspedagogik varje dag (ja/nej)', 'Heldagsverksamhet inom småbarnspedagogik (ja/nej)',
+                            'Skiftomsorg', 'Timantal per vecka', 'Tillfällig (ja/nej)',
+                            'ID för deltagande i småbarnspedagogik', 'Begynnelsedatum', 'Slutdatum',
+                            'Verksamhetsställets namn', 'Verksamhetsställets OID', 'Verksamhetsställets ID',),
+        MAKSUTIETO_SHEET_NAME: 'Avgiftsuppgift',
+        MAKSUTIETO_HEADERS: ('Studentnummer', 'Förnamn', 'Efternamn', 'Personbeteckning', 'Spärrmarkering',
+                             'Barnets ID', 'ID för avgiftsuppgiften', 'Begynnelsedatum', 'Slutdatum',
+                             'Familjens storlek', 'Kod för avgiftsgrunden', 'Klientavgift', 'Servicesedelns värde',
+                             'Vårdnadshavarens studentnummer', 'Vårdnadshavarens förnamn', 'Vårdnadshavarens efternamn',),
         YES: 'Ja',
         NO: 'Nej',
-        ExcelReportType.VAKATIEDOT_VOIMASSA.value: ''
+        ExcelReportType.VAKATIEDOT_VOIMASSA.value: 'Uppgifterna_om_småbarnspedagogik_i_kraft'
     }
 }
 

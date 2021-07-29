@@ -81,6 +81,8 @@ export class VardaExcelNewComponent implements OnInit {
     this.newReport.vakajarjestaja_oid = this.selectedVakajarjestaja.organisaatio_oid;
 
     this.reportTypeOptions = Object.entries(ReportTypeTranslations).map(value => [value[0], value[1]]);
+
+    this.newReport.language = this.translateService.currentLang;
   }
 
   create() {
