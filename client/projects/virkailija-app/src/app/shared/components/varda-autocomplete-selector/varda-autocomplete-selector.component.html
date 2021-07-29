@@ -1,11 +1,12 @@
 <div [class.oph-invalid-container]="isInvalid || isOptionInvalid()">
-  <div class="oph-select-container">
+  <div class="oph-select-container" [attr.disabled]="disabled">
     <input class="oph-input autocomplete-input"
            type="text"
            #textInput
            [placeholder]="placeholder"
            [matAutocomplete]="autocomplete"
-           (input)="inputChange($event)">
+           (input)="inputChange($event)"
+           [disabled]="disabled">
   </div>
   <mat-autocomplete #autocomplete="matAutocomplete" (optionSelected)="autocompleteSelected($event)">
     <mat-option *ngIf="isNullOption" [value]="nullValue">{{nullOptionLabel}}</mat-option>

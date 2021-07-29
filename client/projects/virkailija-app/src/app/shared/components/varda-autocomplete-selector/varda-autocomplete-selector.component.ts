@@ -37,6 +37,7 @@ export class VardaAutocompleteSelectorComponent<T> implements ControlValueAccess
   @Input() nullOptionLabel = '-';
   @Input() isNullOption = true;
   @Input() invalidInputLabel = '';
+  @Input() disabled = false;
   @ViewChild('textInput') textInput: ElementRef<HTMLInputElement>;
 
   i18n = VirkailijaTranslations;

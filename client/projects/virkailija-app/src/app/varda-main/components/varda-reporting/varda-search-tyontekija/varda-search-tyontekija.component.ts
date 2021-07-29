@@ -245,4 +245,10 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
   autofillOnChange() {
     this.search();
   }
+
+  afterUserAccessInit() {
+    if (!this.userAccess.tyontekijatiedot.katselija && this.userAccess.taydennyskoulutustiedot.katselija) {
+      this.filterParams.rajaus = this.rajaus.TAYDENNYSKOULUTUKSET;
+    }
+  }
 }

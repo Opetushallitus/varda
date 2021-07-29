@@ -96,11 +96,16 @@ label.mat-checkbox-layout {
 .mat-select-disabled.oph-input,
 .mat-select-disabled .mat-select-value,
 .oph-input[disabled],
-.oph-input[readonly] {
+.oph-input[readonly],
+.mat-select-disabled.oph-input > option,
+.mat-select-disabled .mat-select-value > option,
+.oph-input[disabled] > option,
+.oph-input[readonly] > option {
   border: 0;
   color: var(--black);
   background-color: transparent;
   box-shadow: none;
+  opacity: 0.7;
 }
 
 .oph-field label,
@@ -220,6 +225,14 @@ label.mat-checkbox-layout {
 
 .mat-expansion-panel-header .mat-content {
   flex-wrap: wrap;
+}
+
+.oph-select-container[disabled='true']:after, .oph-select-container[disabled='true']:before {
+  content: none;
+}
+
+.oph-select-container::after, .oph-select-container::before {
+  pointer-events: none;
 }
 
 @media (max-width: 767px) {

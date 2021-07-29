@@ -5,7 +5,7 @@
         <label for="tyontekijaToimipaikkaInput"
                class="oph-bold">{{i18n.toimipaikka_plural | translate}}</label>
         <div [class.oph-invalid-container]="!isAllToimipaikatSelected && selectedToimipaikat.length === 0">
-          <div class="oph-select-container">
+          <div class="oph-select-container" [attr.disabled]="filterParams.kiertava">
             <input class="oph-input"
                    id="tyontekijaToimipaikkaInput"
                    name="tyontekijaToimipaikkaInput"
@@ -107,15 +107,18 @@
                                         (valueChanged)="search()"
                                         [(ngModel)]="filterParams.rajaus">
             <app-varda-radio-button [id]="'filterPalvelussuhteet'"
-                                    [value]="rajaus.PALVELUSSUHTEET">
+                                    [value]="rajaus.PALVELUSSUHTEET"
+                                    [disabled]="!userAccess.tyontekijatiedot.katselija">
               {{i18n.palvelussuhteet | translate}}
             </app-varda-radio-button>
             <app-varda-radio-button [id]="'filterPoissaolot'"
-                                    [value]="rajaus.POISSAOLOT">
+                                    [value]="rajaus.POISSAOLOT"
+                                    [disabled]="!userAccess.tyontekijatiedot.katselija">
               {{i18n.katsele_tietoja_tyontekija_poissaolot | translate}}
             </app-varda-radio-button>
             <app-varda-radio-button [id]="'filterTaydennyskoulutukset'"
-                                    [value]="rajaus.TAYDENNYSKOULUTUKSET">
+                                    [value]="rajaus.TAYDENNYSKOULUTUKSET"
+                                    [disabled]="!userAccess.taydennyskoulutustiedot.katselija">
               {{i18n.taydennyskoulutukset | translate}}
             </app-varda-radio-button>
             <app-varda-radio-button [id]="'filterNone'"
@@ -212,7 +215,8 @@
                                                [nullOptionLabel]="i18n.katsele_tietoja_tyontekija_tehtavanimike_all | translate"
                                                [invalidInputLabel]="i18n.katsele_tietoja_error_no_tehtavanimike_selected | translate"
                                                [(ngModel)]="filterParams.tehtavanimike"
-                                               (ngModelChange)="autofillOnChange()">
+                                               (ngModelChange)="autofillOnChange()"
+                                               [disabled]="!userAccess.tyontekijatiedot.katselija">
               </app-varda-autocomplete-selector>
             </ng-template>
           </div>
@@ -228,18 +232,20 @@
                                              [nullOptionLabel]="i18n.katsele_tietoja_tyontekija_tutkinto_all | translate"
                                              [invalidInputLabel]="i18n.katsele_tietoja_error_no_tutkinto_selected | translate"
                                              [(ngModel)]="filterParams.tutkinto"
-                                             (ngModelChange)="autofillOnChange()">
+                                             (ngModelChange)="autofillOnChange()"
+                                             [disabled]="!userAccess.tyontekijatiedot.katselija">
             </app-varda-autocomplete-selector>
           </div>
           <div class="col-md-6 col-lg-4 margin-top-lg">
             <label for="tyontekijaTyosuhdeSelect"
                    class="oph-bold">{{i18n.palvelussuhde_tyosuhde | translate}}</label>
-            <div class="oph-select-container">
+            <div class="oph-select-container" [attr.disabled]="!userAccess.tyontekijatiedot.katselija">
               <select class="oph-input oph-select"
                       name="tyontekijaTyosuhdeSelect"
                       id="tyontekijaTyosuhdeSelect"
                       (change)="search()"
-                      [(ngModel)]="filterParams.tyosuhde">
+                      [(ngModel)]="filterParams.tyosuhde"
+                      [disabled]="!userAccess.tyontekijatiedot.katselija">
                 <option [ngValue]="null">{{i18n.katsele_tietoja_tyontekija_tyosuhde_all | translate}}</option>
                 <option *ngFor="let code of tyosuhteet"
                         [ngValue]="code"

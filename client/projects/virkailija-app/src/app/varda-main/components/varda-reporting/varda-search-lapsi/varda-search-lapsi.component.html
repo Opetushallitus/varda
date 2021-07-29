@@ -93,15 +93,18 @@
                                         (valueChanged)="search()"
                                         [(ngModel)]="filterParams.rajaus">
             <app-varda-radio-button [id]="'filterVakapaatokset'"
-                                    [value]="rajaus.VAKAPAATOKSET">
+                                    [value]="rajaus.VAKAPAATOKSET"
+                                    [disabled]="!userAccess.lapsitiedot.katselija">
               {{i18n.varhaiskasvatuspaatokset | translate}}
             </app-varda-radio-button>
             <app-varda-radio-button [id]="'filterVakasuhteet'"
-                                    [value]="rajaus.VAKASUHTEET">
+                                    [value]="rajaus.VAKASUHTEET"
+                                    [disabled]="!userAccess.lapsitiedot.katselija">
               {{i18n.varhaiskasvatussuhde_plural | translate}}
             </app-varda-radio-button>
             <app-varda-radio-button [id]="'filterMaksutiedot'"
-                                    [value]="rajaus.MAKSUTIEDOT">
+                                    [value]="rajaus.MAKSUTIEDOT"
+                                    [disabled]="!userAccess.huoltajatiedot.katselija">
               {{i18n.maksutiedot | translate}}
             </app-varda-radio-button>
             <app-varda-radio-button [id]="'filterNone'"

@@ -101,7 +101,10 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
 
     this.vakajarjestajaName = this.vakajarjestajaService.getSelectedVakajarjestaja().nimi.trim().toLowerCase();
     this.katselijaToimipaikat = this.vakajarjestajaService.getFilteredToimipaikat().katselijaToimipaikat;
-    this.authService.getToimipaikkaAccessToAnyToimipaikka().subscribe(accessIfAny => this.userAccess = accessIfAny);
+    this.authService.getToimipaikkaAccessToAnyToimipaikka().subscribe(accessIfAny => {
+      this.userAccess = accessIfAny;
+      this.afterUserAccessInit();
+    });
   }
 
   getKoodistoFromKoodistoService(name: KoodistoEnum): Observable<KoodistoDTO> {
@@ -221,6 +224,10 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
     setTimeout(() => {
       this.selectedId = id;
     });
+  }
+
+  afterUserAccessInit(): void {
+    return;
   }
 
   ngOnDestroy(): void {

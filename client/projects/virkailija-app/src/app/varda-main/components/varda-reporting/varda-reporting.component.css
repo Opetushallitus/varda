@@ -9,6 +9,12 @@ h3 {
   --tree-border: 0.1em solid var(--gray-lighten-1);
 }
 
+.varda-reporting-wrapper input::-moz-placeholder, .varda-reporting-wrapper input:-moz-placeholder,
+.varda-reporting-wrapper input:-ms-input-placeholder, .varda-reporting-wrapper input::-webkit-input-placeholder,
+.varda-reporting-wrapper input::placeholder {
+  opacity: 1;
+}
+
 .varda-card-top {
   background-color: var(--white);
   border-radius: 0.25em 0.25em 0 0;

@@ -168,4 +168,10 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
       this.filterParams.voimassaolo !== null && this.filterParams.alkamisPvm !== null &&
       this.filterParams.paattymisPvm !== null;
   }
+
+  afterUserAccessInit() {
+    if (!this.userAccess.lapsitiedot.katselija && this.userAccess.huoltajatiedot.katselija) {
+      this.filterParams.rajaus = this.rajaus.MAKSUTIEDOT;
+    }
+  }
 }
