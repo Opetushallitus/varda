@@ -6,6 +6,12 @@
     <p>
       {{(selectedVakajarjestaja.kunnallinen_kytkin ? i18n.paos_instruction : i18n.paos_instruction_yksityinen) | translate}}
     </p>
+    <p>
+      <a [href]="(selectedVakajarjestaja.kunnallinen_kytkin ? i18n.paos_instruction_url : i18n.paos_instruction_url_yksityinen) | translate"
+         target="_blank">
+        {{ i18n.paos_instruction_url_text | translate }}
+      </a>
+    </p>
     <app-varda-error-alert [errorMessageKey$]="errorMessage$"></app-varda-error-alert>
     <app-paos-add-paos-toiminta [isVardaPaakayttaja]="isVardaPaakayttaja"
                                 [isVakajarjestajaKunta]="selectedVakajarjestaja.kunnallinen_kytkin"

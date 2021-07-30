@@ -20,5 +20,6 @@
   width: 50%;
 }
 
-
-
+.varda-paos-hallinta-wrapper a {
+  color: var(--link-color);
+}

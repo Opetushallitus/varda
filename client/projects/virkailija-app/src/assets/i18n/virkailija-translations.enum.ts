@@ -736,6 +736,9 @@ export enum VirkailijaTranslations {
   paos_toimipaikat_instruction = 'paos.toimipaikat.instruction',
   paos_toimipaikat_empty = 'paos.toimipaikat.empty',
   paos_toimipaikat_delete_confirm = 'paos.toimipaikat.delete-confirm',
+  paos_instruction_url = 'paos.instruction-url',
+  paos_instruction_url_yksityinen = 'paos.instruction-url.yksityinen',
+  paos_instruction_url_text = 'paos.instruction-url.text',
   raportit = 'raportit',
 
   puutteelliset_tiedot = 'puutteelliset-tiedot',
