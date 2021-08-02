@@ -17,8 +17,9 @@ def load_in_new_module(library_name, name):
     return cas_oppija_specific_library
 
 
-# Loading in separate module to avoid conflicting with django settings
+# Loading in separate module to avoid conflicting with django settings and monkey patch
 cas_oppija_views = load_in_new_module('django_cas_ng.views', 'views')
+cas_oppija_views.is_local_url = is_local_url_decorator(cas_oppija_views.is_local_url)
 cas_oppija_utils = load_in_new_module('django_cas_ng.utils', 'utils')
 cas_oppija_backends = load_in_new_module('django_cas_ng.backends', 'backends')
 
@@ -71,7 +72,6 @@ class OppijaCasLoginView(cas_oppija_views.LoginView):
 
         # Monkey patching django settings super class module uses
         cas_oppija_views.settings = settings
-        cas_oppija_views.is_local_url = is_local_url_decorator(cas_oppija_views.is_local_url)
         cas_oppija_utils.django_settings = settings
         cas_oppija_views.get_cas_client = cas_oppija_utils.get_cas_client
         self.get = get_login_forward_decorator(self.get)
