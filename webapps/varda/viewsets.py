@@ -884,6 +884,8 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
         if set(etunimet_list_lowercase) & set(henkilo_etunimet_list_lowercase) or sukunimi.lower() == henkilo.sukunimi.lower():
             # Set permissions to Henkilo object for current user
             self._assign_henkilo_permissions(self.request.user, henkilo)
+            # Make sure that ConflictError is not raised inside a transaction, otherwise permission changes
+            # are rolled back
             raise ConflictError(self.get_serializer(henkilo).data, status_code=status.HTTP_200_OK)
         else:
             raise ValidationError({'errors': [ErrorMessages.HE001.value]})
@@ -959,12 +961,9 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
 
         henkilotunnus = validated_data.get('henkilotunnus', None)
         henkilo_oid = validated_data.get('henkilo_oid', None)
-        if henkilotunnus:
-            henkilo_data = self._get_henkilo_data_by_henkilotunnus(validated_data, henkilotunnus, etunimet,
-                                                                   kutsumanimi, sukunimi)
-        else:
-            # Henkilo created using henkilo_oid
-            henkilo_data = self._get_henkilo_data_by_oid(henkilo_oid, etunimet, sukunimi)
+        henkilo_data = (self._get_henkilo_data_by_henkilotunnus(validated_data, henkilotunnus, etunimet,
+                                                                kutsumanimi, sukunimi) if henkilotunnus else
+                        self._get_henkilo_data_by_oid(henkilo_oid, etunimet, sukunimi))
 
         self.validate_henkilo_data(henkilo_data)
 
@@ -973,23 +972,24 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
             self.validate_henkilo_uniqueness_oid(henkilo_data['oidHenkilo'], etunimet, sukunimi)
 
         user = self.request.user
-        with transaction.atomic():
-            if henkilotunnus and not henkilo_data:
-                # Create henkilo in Oppijanumerorekisteri if it did not exist there
-                henkilo_result = add_henkilo_to_oppijanumerorekisteri(etunimet, kutsumanimi, sukunimi,
-                                                                      henkilotunnus=henkilotunnus)
-                henkilo_data = henkilo_result['result']
 
-            # In order to return henkilo_oid and syntyma_pvm in create we need to wait until the new henkilo has been
-            # added to oppijanumerorekisteri before saving to database
-            if henkilo_data:
-                validated_data['etunimet'] = henkilo_data.get('etunimet', etunimet)
-                validated_data['kutsumanimi'] = henkilo_data.get('kutsumanimi', kutsumanimi)
-                validated_data['sukunimi'] = henkilo_data.get('sukunimi', sukunimi)
-                validated_data['syntyma_pvm'] = henkilo_data.get('syntymaaika', None)
-                validated_data['henkilo_oid'] = henkilo_data.get('oidHenkilo', henkilo_oid)
+        if henkilotunnus and not henkilo_data:
+            # Create henkilo in Oppijanumerorekisteri if it did not exist there
+            henkilo_result = add_henkilo_to_oppijanumerorekisteri(etunimet, kutsumanimi, sukunimi,
+                                                                  henkilotunnus=henkilotunnus)
+            henkilo_data = henkilo_result['result']
 
-            try:
+        # In order to return henkilo_oid and syntyma_pvm in create we need to wait until the new henkilo has been
+        # added to oppijanumerorekisteri before saving to database
+        if henkilo_data:
+            validated_data['etunimet'] = henkilo_data.get('etunimet', etunimet)
+            validated_data['kutsumanimi'] = henkilo_data.get('kutsumanimi', kutsumanimi)
+            validated_data['sukunimi'] = henkilo_data.get('sukunimi', sukunimi)
+            validated_data['syntyma_pvm'] = henkilo_data.get('syntymaaika', None)
+            validated_data['henkilo_oid'] = henkilo_data.get('oidHenkilo', henkilo_oid)
+
+        try:
+            with transaction.atomic():
                 saved_object = serializer.save(changed_by=user)
                 # Give user object level permissions to Henkilo object, until we can determine related VakaJarjestaja
                 # from Lapsi or Tyontekija object
@@ -999,8 +999,8 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
                 if henkilo_data is not None:
                     # Save remaining ONR-related data for Henkilo
                     save_henkilo_to_db(henkilo_id, henkilo_data)
-            except ValidationError as validation_error:
-                self._handle_validation_error(validation_error, henkilotunnus, henkilo_oid, etunimet, sukunimi)
+        except ValidationError as validation_error:
+            self._handle_validation_error(validation_error, henkilotunnus, henkilo_oid, etunimet, sukunimi)
 
 
 @auditlogclass
@@ -1063,6 +1063,8 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
             if toimipaikka_oid:
                 # Assign permissions again to include Toimipaikka related groups
                 self._assign_permissions_for_lapsi_obj(lapsi_obj, paos_oikeus, toimipaikka_oid)
+            # Make sure that ConflictError is not raised inside a transaction, otherwise permission changes
+            # are rolled back
             raise ConflictError(self.get_serializer(lapsi_obj).data, status_code=status.HTTP_200_OK)
 
     def copy_huoltajuussuhteet(self, saved_object):
@@ -1111,12 +1113,12 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
                                                                                               paos_organisaatio)
             throw_if_not_tallentaja_permissions(paos_organisaatio_oid, paos_toimipaikka, user, oma_organisaatio)
 
+        self.return_lapsi_if_already_created(validated_data, toimipaikka_oid, paos_oikeus)
+
         try:
             with transaction.atomic():
                 # This can be performed only after all permission checks are done!
-                self.return_lapsi_if_already_created(validated_data, toimipaikka_oid, paos_oikeus)
                 saved_object = serializer.save(changed_by=user)
-
                 self._assign_permissions_for_lapsi_obj(saved_object, paos_oikeus, toimipaikka_oid)
                 self.copy_huoltajuussuhteet(saved_object)
                 delete_cache_keys_related_model('henkilo', saved_object.henkilo.id)

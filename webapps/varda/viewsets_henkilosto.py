@@ -84,6 +84,8 @@ class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
                 # Assign Toimipaikka level permissions to Henkilo object
                 assign_tyontekija_henkilo_permissions(tyontekija_obj, user=self.request.user,
                                                       toimipaikka_oid=toimipaikka_oid)
+            # Make sure that ConflictError is not raised inside a transaction, otherwise permission changes
+            # are rolled back
             raise ConflictError(self.get_serializer(tyontekija_obj).data, status_code=status.HTTP_200_OK)
 
     def _assign_toimipaikka_permissions(self, toimipaikka_oid, tyontekija_obj):
@@ -318,6 +320,8 @@ class TutkintoViewSet(IncreasedModifyThrottleMixin, CreateModelMixin, RetrieveMo
         if tutkinto:
             # Toimipaikka user might be trying to add existing tutkinto he simply doesn't have permissions
             self._assign_toimipaikka_permissions(tutkinto, validated_data)
+            # Make sure that ConflictError is not raised inside a transaction, otherwise permission changes
+            # are rolled back
             raise ConflictError(self.get_serializer(tutkinto).data, status_code=status.HTTP_200_OK)
 
     def perform_create(self, serializer):

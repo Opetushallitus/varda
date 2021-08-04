@@ -4916,3 +4916,53 @@ class VardaViewsTests(TestCase):
         resp_2 = client.post('/api/v1/toimipaikat/', toimipaikka)
         assert_status_code(resp_2, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp_2, 'paattymis_pvm', 'TP026', 'paattymis_pvm must be before or equal to VakaJarjestaja paattymis_pvm.')
+
+    @responses.activate
+    def test_henkilo_lapsi_duplicate_already_exists(self):
+        henkilo_oid = '1.2.246.562.24.47279942111'
+        responses.add(responses.GET,
+                      f'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/{henkilo_oid}/master',
+                      json={'hetu': '100382-456R', 'yksiloityVTJ': True},
+                      status=status.HTTP_200_OK)
+        henkilo = {
+            'henkilo_oid': henkilo_oid,
+            'etunimet': 'Erkki',
+            'kutsumanimi': 'Erkki',
+            'sukunimi': 'Esimerkki'
+        }
+
+        client_vakajarjestaja = SetUpTestClient('vakatietojen_tallentaja').client()
+        client_toimipaikka = SetUpTestClient('vakatietojen_toimipaikka_tallentaja').client()
+
+        resp = client_vakajarjestaja.post('/api/v1/henkilot/', henkilo)
+        assert_status_code(resp, status.HTTP_201_CREATED)
+        henkilo_id_1 = json.loads(resp.content)['id']
+        resp = client_vakajarjestaja.get(f'/api/v1/henkilot/{henkilo_id_1}/')
+        assert_status_code(resp, status.HTTP_200_OK)
+
+        lapsi = {
+            'henkilo_oid': henkilo_oid,
+            'vakatoimija_oid': '1.2.246.562.10.34683023489',
+            'lahdejarjestelma': '1'
+        }
+
+        resp = client_vakajarjestaja.post('/api/v1/lapset/', lapsi)
+        assert_status_code(resp, status.HTTP_201_CREATED)
+        lapsi_id_1 = json.loads(resp.content)['id']
+        resp = client_vakajarjestaja.get(f'/api/v1/lapset/{lapsi_id_1}/')
+        assert_status_code(resp, status.HTTP_200_OK)
+
+        resp = client_toimipaikka.post('/api/v1/henkilot/', henkilo)
+        assert_status_code(resp, status.HTTP_200_OK)
+        henkilo_id_2 = json.loads(resp.content)['id']
+        self.assertEqual(henkilo_id_1, henkilo_id_2)
+        resp = client_toimipaikka.get(f'/api/v1/henkilot/{henkilo_id_2}/')
+        assert_status_code(resp, status.HTTP_200_OK)
+
+        lapsi['toimipaikka_oid'] = '1.2.246.562.10.9395737548815'
+        resp = client_toimipaikka.post('/api/v1/lapset/', lapsi)
+        assert_status_code(resp, status.HTTP_200_OK)
+        lapsi_id_2 = json.loads(resp.content)['id']
+        self.assertEqual(lapsi_id_1, lapsi_id_2)
+        resp = client_toimipaikka.get(f'/api/v1/lapset/{lapsi_id_2}/')
+        assert_status_code(resp, status.HTTP_200_OK)

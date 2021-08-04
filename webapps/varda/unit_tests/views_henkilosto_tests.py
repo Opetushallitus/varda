@@ -1,5 +1,6 @@
 import json
 import datetime
+import responses
 from unittest.mock import patch, MagicMock
 
 from django.contrib.auth.models import User, Group
@@ -3162,3 +3163,73 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         resp_valid = client.post('/api/henkilosto/v1/tyoskentelypaikat/', tyoskentelypaikka_valid)
         assert_status_code(resp_valid, status.HTTP_201_CREATED)
+
+    @responses.activate
+    def test_henkilo_tyontekija_tutkinto_duplicate_already_exists(self):
+        henkilo_oid = '1.2.246.562.24.47279942111'
+        responses.add(responses.GET,
+                      f'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/{henkilo_oid}/master',
+                      json={'hetu': '100382-456R', 'yksiloityVTJ': True},
+                      status=status.HTTP_200_OK)
+        henkilo = {
+            'henkilo_oid': henkilo_oid,
+            'etunimet': 'Erkki',
+            'kutsumanimi': 'Erkki',
+            'sukunimi': 'Esimerkki'
+        }
+
+        client_vakajarjestaja = SetUpTestClient('tyontekija_tallentaja').client()
+        client_toimipaikka = SetUpTestClient('tyontekija_toimipaikka_tallentaja_9395737548815').client()
+
+        resp = client_vakajarjestaja.post('/api/v1/henkilot/', henkilo)
+        assert_status_code(resp, status.HTTP_201_CREATED)
+        henkilo_id_1 = json.loads(resp.content)['id']
+        resp = client_vakajarjestaja.get(f'/api/v1/henkilot/{henkilo_id_1}/')
+        assert_status_code(resp, status.HTTP_200_OK)
+
+        tyontekija = {
+            'henkilo_oid': henkilo_oid,
+            'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
+            'lahdejarjestelma': '1'
+        }
+
+        resp = client_vakajarjestaja.post('/api/henkilosto/v1/tyontekijat/', tyontekija)
+        assert_status_code(resp, status.HTTP_201_CREATED)
+        tyontekija_id_1 = json.loads(resp.content)['id']
+        resp = client_vakajarjestaja.get(f'/api/henkilosto/v1/tyontekijat/{tyontekija_id_1}/')
+        assert_status_code(resp, status.HTTP_200_OK)
+
+        tutkinto = {
+            'henkilo_oid': henkilo_oid,
+            'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
+            'tutkinto_koodi': '002'
+        }
+
+        resp = client_vakajarjestaja.post('/api/henkilosto/v1/tutkinnot/', tutkinto)
+        assert_status_code(resp, status.HTTP_201_CREATED)
+        tutkinto_id_1 = json.loads(resp.content)['id']
+        resp = client_vakajarjestaja.get(f'/api/henkilosto/v1/tutkinnot/{tutkinto_id_1}/')
+        assert_status_code(resp, status.HTTP_200_OK)
+
+        resp = client_toimipaikka.post('/api/v1/henkilot/', henkilo)
+        assert_status_code(resp, status.HTTP_200_OK)
+        henkilo_id_2 = json.loads(resp.content)['id']
+        self.assertEqual(henkilo_id_1, henkilo_id_2)
+        resp = client_toimipaikka.get(f'/api/v1/henkilot/{henkilo_id_2}/')
+        assert_status_code(resp, status.HTTP_200_OK)
+
+        tyontekija['toimipaikka_oid'] = '1.2.246.562.10.9395737548815'
+        resp = client_toimipaikka.post('/api/henkilosto/v1/tyontekijat/', tyontekija)
+        assert_status_code(resp, status.HTTP_200_OK)
+        tyontekija_id_2 = json.loads(resp.content)['id']
+        self.assertEqual(tyontekija_id_1, tyontekija_id_2)
+        resp = client_toimipaikka.get(f'/api/henkilosto/v1/tyontekijat/{tyontekija_id_2}/')
+        assert_status_code(resp, status.HTTP_200_OK)
+
+        tutkinto['toimipaikka_oid'] = '1.2.246.562.10.9395737548815'
+        resp = client_vakajarjestaja.post('/api/henkilosto/v1/tutkinnot/', tutkinto)
+        assert_status_code(resp, status.HTTP_200_OK)
+        tutkinto_id_2 = json.loads(resp.content)['id']
+        self.assertEqual(tutkinto_id_1, tutkinto_id_2)
+        resp = client_vakajarjestaja.get(f'/api/henkilosto/v1/tutkinnot/{tutkinto_id_2}/')
+        assert_status_code(resp, status.HTTP_200_OK)
