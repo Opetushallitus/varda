@@ -339,3 +339,13 @@ class ErrorMessages(enum.Enum):
     MI017 = get_error_dict('MI017', 'Query parameters are invalid.')
     MI018 = get_error_dict('MI018', 'lahdejarjestelma field is required if tunniste field is not empty.')
     MI019 = get_error_dict('MI019', 'Given Toimipaikka does not belong to the correct VakaJarjestaja.')
+
+    # Nginx errors
+    NG001 = get_error_dict('NG001', 'Session is required.')
+    NG002 = get_error_dict('NG002', 'Session is invalid.')
+    NG003 = get_error_dict('NG003', 'Session has expired.')
+    NG004 = get_error_dict('NG004', 'Request is throttled.')
+    NG005 = get_error_dict('NG005', 'Internal server error.')
+    NG006 = get_error_dict('NG006', 'Method not allowed.')
+    NG007 = get_error_dict('NG007', 'Unauthorized.')
+    NG008 = get_error_dict('NG008', 'Forbidden.')
