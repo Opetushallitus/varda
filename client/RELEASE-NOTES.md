@@ -1,6 +1,12 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.21 (05.08.2021)
+- OPHVARDA-2172: Nginx virheet virhekoodistoon
+- OPHVARDA-2049: Katsele tietoja -filtterit käyttöoikeuksien mukaan
+- OPHVARDA-2231: Linkki PAOS-ohjeistukseen
+- OPHVARDA-2222: Excel-raporttien käännökset
+
 1.5.20 (23.06.2021)
 - OPHVARDA-2264: Angular 12 päivitys
 - OPHVARDA-1966: Toimipaikkakohtaisten täydennyskoulutusoikeuksien tarkennusta
