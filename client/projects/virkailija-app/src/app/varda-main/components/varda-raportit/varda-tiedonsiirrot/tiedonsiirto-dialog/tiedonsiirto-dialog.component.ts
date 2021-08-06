@@ -24,9 +24,10 @@ export class TiedonsiirtoDialogComponent {
   }
 
   toJSON(jsonString: string) {
-    return JSON.parse(jsonString);
+    try {
+      return JSON.parse(jsonString);
+    } catch (error) {
+      return undefined;
+    }
   }
 }
-
-
-
