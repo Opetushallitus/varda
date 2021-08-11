@@ -90,7 +90,7 @@
                 "memory": "200Mi"
               }
             },
-            "image": "varda-docker-preprod.ARTIFACTORY_DOMAIN_VALUE/varda-backup:b2",
+            "image": "varda-docker-preprod.ARTIFACTORY_DOMAIN_VALUE/varda-backup:c1",
             "command": ["/bin/sh", "-c", "BACKUP_COMMAND_VALUE"]
           }
         ],
