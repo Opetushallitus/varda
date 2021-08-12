@@ -227,6 +227,14 @@ mat-expansion-panel mat-expansion-panel-header {
   margin-top: 2em;
 }
 
+.margin-bottom {
+  margin-bottom: 1em;
+}
+
+.margin-bottom-large {
+  margin-bottom: 2em;
+}
+
 @media (max-width: 767px) {
   .margin-top-md {
     margin-top: 1em;

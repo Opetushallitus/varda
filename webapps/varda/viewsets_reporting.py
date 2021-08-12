@@ -714,7 +714,7 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
 
         annotations = self.get_annotations()
 
-        return queryset.annotate(**annotations).filter(self.get_include_filter(annotations)).order_by('henkilo__sukunimi')
+        return queryset.annotate(**annotations).filter(self.get_include_filter(annotations)).order_by('-muutos_pvm', 'henkilo__sukunimi')
 
 
 @auditlogclass
@@ -801,7 +801,7 @@ class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
         queryset = self.filter_queryset(queryset)
 
         annotations = self.get_annotations()
-        return queryset.annotate(**annotations).filter(self.get_include_filter(annotations)).order_by('henkilo__sukunimi')
+        return queryset.annotate(**annotations).filter(self.get_include_filter(annotations)).order_by('-muutos_pvm', 'henkilo__sukunimi')
 
 
 @auditlogclass
@@ -940,7 +940,7 @@ class ErrorReportToimipaikatViewSet(AbstractErrorReportViewSet):
         queryset = self.filter_queryset(queryset)
 
         annotations = self.get_annotations()
-        return queryset.annotate(**annotations).filter(self.get_include_filter(annotations)).order_by('nimi')
+        return queryset.annotate(**annotations).filter(self.get_include_filter(annotations)).order_by('-muutos_pvm', 'nimi')
 
 
 @auditlogclass

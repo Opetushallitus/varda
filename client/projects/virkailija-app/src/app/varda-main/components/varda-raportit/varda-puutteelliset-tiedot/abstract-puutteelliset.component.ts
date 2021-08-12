@@ -16,6 +16,7 @@ export interface PuutteellinenSearchFilter {
   page_size: number;
   search?: string;
   count?: number;
+  error?: string;
 }
 
 @Component({

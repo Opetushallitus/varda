@@ -9,23 +9,37 @@
     </h3>
   </div>
 
-  <div class="henkilo-section-filter-search">
-    <mat-form-field>
-      <mat-label>{{ i18n.henkilo_hae_nimella | translate }}</mat-label>
-      <input autocomplete="off"
-             matInput
+  <div class="row puutteelliset-filter margin-bottom">
+    <div class="col-sm col-md-5">
+      <label for="puutteellinenSearchInput"
+             class="oph-bold">{{i18n.katsele_tietoja_nimi_tunniste | translate}}</label>
+      <input class="oph-input"
+             name="puutteellinenSearchInput"
+             id="puutteellinenSearchInput"
              type="text"
-             [disabled]="isLoading | async"
-             (change)="searchErrors()"
-             [(ngModel)]="searchFilter.search" />
-      <button mat-button
-              [title]="i18n.henkilo_hae_nimella | translate"
-              [disabled]="isLoading | async"
-              (click)="searchErrors()"
-              matSuffix>
+             [placeholder]="i18n.henkilo_hae_nimella | translate"
+             [(ngModel)]="searchFilter.search"
+             (keydown.enter)="searchErrors()">
+    </div>
+    <div class="col-sm col-md-3 margin-top-sm">
+      <label for="puutteellinenErrorInput"
+             class="oph-bold">{{i18n.error | translate}}</label>
+      <input class="oph-input"
+             name="puutteellinenErrorInput"
+             id="puutteellinenErrorInput"
+             type="text"
+             [placeholder]="i18n.puutteelliset_tiedot_error_placeholder | translate"
+             [(ngModel)]="searchFilter.error"
+             (keydown.enter)="searchErrors()">
+    </div>
+    <div class="col-sm-auto">
+      <button class="varda-button varda-icon-button margin-top-sm"
+              type="button"
+              (click)="searchErrors()">
         <mat-icon alt="">search</mat-icon>
+        {{i18n.search | translate}}
       </button>
-    </mat-form-field>
+    </div>
   </div>
 
   <div *ngIf="henkilot?.length === 0"

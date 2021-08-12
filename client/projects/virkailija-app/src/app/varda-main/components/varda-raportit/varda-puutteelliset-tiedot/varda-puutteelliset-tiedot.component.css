@@ -29,6 +29,10 @@
   display: flex;
 }
 
+.puutteelliset-filter {
+  align-items: flex-end;
+}
+
 
 @media (max-width: 992px) {
   .henkilo-sections {
