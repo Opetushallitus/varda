@@ -80,9 +80,9 @@ export class VardaTyontekijaFormComponent implements OnChanges, OnDestroy {
   }
 
   poistaTyontekija() {
-
     this.henkilostoService.deleteTyontekija(this.tyontekija.id).subscribe({
       next: () => {
+        this.modalService.setModalCloseWithoutConfirmation(true);
         this.snackBarService.warning(this.i18n.tyontekija_delete_success);
         this.henkilostoService.sendHenkilostoListUpdate();
         this.modalService.setModalOpen(false);

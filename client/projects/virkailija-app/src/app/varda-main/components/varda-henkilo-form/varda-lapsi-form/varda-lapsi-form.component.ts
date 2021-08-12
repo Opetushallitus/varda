@@ -177,6 +177,7 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
   poistaLapsi() {
     this.lapsiService.deleteLapsi(this.lapsi.id).subscribe({
       next: () => {
+        this.modalService.setModalCloseWithoutConfirmation(true);
         this.lapsiService.sendLapsiListUpdate();
         this.modalService.setModalOpen(false);
         this.snackBarService.warning(this.i18n.lapsi_delete_success);

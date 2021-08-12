@@ -44,11 +44,16 @@ export class VardaMainFrameComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.toimijaAccess = this.authService.getUserAccess();
 
-    this.subscriptions.push(this.modalService.getModalOpen().subscribe(open => {
-      if (!open) {
-        this.activeSuhde = null;
-      }
-    }));
+    this.subscriptions.push(
+      this.modalService.getModalOpen().subscribe(open => {
+        if (!open) {
+          this.activeSuhde = null;
+        }
+      }),
+      this.modalService.getModalCloseWithoutConfirmation().subscribe(isCloseWithoutConfirmation => {
+        this.confirmedHenkiloFormLeave = isCloseWithoutConfirmation;
+      })
+    );
   }
 
   ngOnDestroy() {

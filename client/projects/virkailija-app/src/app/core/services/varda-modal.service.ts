@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
-import { Observable, Subject, BehaviorSubject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
 @Injectable()
 export class VardaModalService {
-
   private formValuesChanged$ = new Subject<boolean>();
   private modalOpen$ = new Subject<boolean>();
+  private modalCloseWithoutConfirmation$ = new Subject<boolean>();
 
   private henkiloFormSubject = new Subject<any>();
   private fileUploadFormSubject = new Subject<any>();
@@ -63,4 +63,11 @@ export class VardaModalService {
     return this.modalOpen$.asObservable();
   }
 
+  getModalCloseWithoutConfirmation(): Observable<boolean> {
+    return this.modalCloseWithoutConfirmation$;
+  }
+
+  setModalCloseWithoutConfirmation(isCloseWithoutConfirmation: boolean) {
+    this.modalCloseWithoutConfirmation$.next(isCloseWithoutConfirmation);
+  }
 }
