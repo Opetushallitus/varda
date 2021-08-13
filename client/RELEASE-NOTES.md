@@ -1,6 +1,11 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.22 (13.08.2021)
+- OPHVARDA-2168: Puutteellisten tietojen jatkokehitys
+- OPHVARDA-2240: JSON-viestin sulje-napin korjaus
+- OPHVARDA-2283: Lomakkeelta poistumisen vahvistuksen poisto lapsen poiston jälkeen
+
 1.5.21 (05.08.2021)
 - OPHVARDA-2172: Nginx virheet virhekoodistoon
 - OPHVARDA-2049: Katsele tietoja -filtterit käyttöoikeuksien mukaan
