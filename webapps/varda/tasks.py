@@ -26,11 +26,11 @@ from varda.excel_export import delete_excel_reports_earlier_than
 from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
 from varda.misc import memory_efficient_queryset_iterator, get_user_vakajarjestaja
 from varda.models import (Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog, Lapsi, Varhaiskasvatuspaatos,
-                          Huoltaja, Huoltajuussuhde, Maksutieto, Z6_LastRequest)
+                          Huoltaja, Huoltajuussuhde, Maksutieto, PidempiPoissaolo, Z6_LastRequest)
 from varda.permissions import (assign_object_level_permissions_for_instance, assign_lapsi_henkilo_permissions,
                                delete_object_permissions_explicitly)
 from varda.permission_groups import (assign_object_permissions_to_taydennyskoulutus_groups,
-                                     assign_object_level_permissions)
+                                     assign_object_level_permissions, assign_object_permissions_to_tyontekija_groups)
 
 logger = logging.getLogger(__name__)
 
@@ -497,3 +497,20 @@ def assign_missing_vakatoimija_field():
 
             for maksutieto in Maksutieto.objects.filter(huoltajuussuhteet__lapsi=lapsi).distinct('id').order_by('id'):
                 assign_object_level_permissions_for_instance(maksutieto, (vakajarjestaja.organisaatio_oid,))
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def assign_toimipaikka_pidempi_poissaolo_permissions():
+    """
+    Assigns Toimipaikka level permissions for PidempiPoissaolo objects.
+
+    TEMPORARY FUNCTION
+    """
+    for pidempi_poissaolo in memory_efficient_queryset_iterator(PidempiPoissaolo.objects.all().order_by('id')):
+        palvelussuhde = pidempi_poissaolo.palvelussuhde
+        toimipaikka_oid_set = set(palvelussuhde.tyoskentelypaikat
+                                  .values_list('toimipaikka__organisaatio_oid', flat=True))
+        toimipaikka_oid_set.discard(None)
+        for toimipaikka_oid in toimipaikka_oid_set:
+            assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, PidempiPoissaolo, pidempi_poissaolo)

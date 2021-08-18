@@ -18,8 +18,7 @@ from varda.enums.error_messages import ErrorMessages
 from varda.misc import path_parse
 from varda.models import (VakaJarjestaja, Toimipaikka, Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
                           PaosToiminta, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog,
-                          LoginCertificate, Maksutieto, Tyontekija, Tyoskentelypaikka, PidempiPoissaolo,
-                          TaydennyskoulutusTyontekija,)
+                          LoginCertificate, Maksutieto, Tyontekija, Tyoskentelypaikka, TaydennyskoulutusTyontekija)
 from varda.permission_groups import assign_object_level_permissions, remove_object_level_permissions
 
 
@@ -672,34 +671,6 @@ def user_permission_groups_in_organization(user, organisaatio_oid, permission_gr
 def user_permission_groups_in_organizations(user, oid_list, permission_group_list):
     group_name_list = [f'{group}_{oid}' for oid in oid_list for group in permission_group_list]
     return user.groups.filter(name__in=group_name_list)
-
-
-def get_permission_checked_pidempi_poissaolo_katselija_queryset_for_user(user):
-    additional_details = getattr(user, 'additional_cas_user_fields', None)
-    extra_view_perms = getattr(additional_details, 'approved_oph_staff', False)
-    permission = 'HENKILOSTO_TYONTEKIJA'
-    return _get_permission_checked_pidempi_poissaolo_queryset_for_user(user, permission, extra_view_perms)
-
-
-def get_permission_checked_pidempi_poissaolo_tallentaja_queryset_for_user(user):
-    permission = 'HENKILOSTO_TYONTEKIJA_TALLENTAJA'
-    return _get_permission_checked_pidempi_poissaolo_queryset_for_user(user, permission)
-
-
-def _get_permission_checked_pidempi_poissaolo_queryset_for_user(user, permission, extra_perms=False):
-    if user.is_superuser or extra_perms:
-        return PidempiPoissaolo.objects.all()
-    else:
-        # since we cannot distinguish between toimipaikka user and toimija user we need to fetch for both
-        # either the user has permission for the vakatoimija that the tyontekija is linked to or toimipaikka that is
-        # related to tyoskentelypaikka
-        user_perm_oids = get_organisaatio_oids_from_groups(user, permission)
-        # vakajarjestaja permissions
-        tyontekijat = Tyontekija.objects.filter(vakajarjestaja__organisaatio_oid__in=user_perm_oids)
-        # toimipaikka permissions
-        tyoskentelypaikat = Tyoskentelypaikka.objects.filter(toimipaikka__organisaatio_oid__in=user_perm_oids)
-        palvelussuhde_ids = [tyoskentelypaikka.palvelussuhde_id for tyoskentelypaikka in tyoskentelypaikat]
-        return PidempiPoissaolo.objects.filter(Q(palvelussuhde_id__in=palvelussuhde_ids) | Q(palvelussuhde__tyontekija__in=tyontekijat))
 
 
 def toimipaikka_tallentaja_pidempipoissaolo_has_perm_to_add(user, vakajarjestaja_oid, validated_data):

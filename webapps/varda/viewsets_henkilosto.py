@@ -29,8 +29,6 @@ from varda.permissions import (CustomModelPermissions, delete_object_permissions
                                filter_authorized_taydennyskoulutus_tyontekijat_list, auditlog, auditlogclass,
                                user_permission_groups_in_organization, HenkilostohakuPermissions,
                                get_tyontekija_filters_for_taydennyskoulutus_groups,
-                               get_permission_checked_pidempi_poissaolo_katselija_queryset_for_user,
-                               get_permission_checked_pidempi_poissaolo_tallentaja_queryset_for_user,
                                toimipaikka_tallentaja_pidempipoissaolo_has_perm_to_add,
                                get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus, is_oph_staff,
                                assign_tyontekija_henkilo_permissions, assign_tyoskentelypaikka_henkilo_permissions,
@@ -334,12 +332,22 @@ class TutkintoViewSet(IncreasedModifyThrottleMixin, CreateModelMixin, RetrieveMo
         vakajarjestaja_oid = validated_data['vakajarjestaja'].organisaatio_oid
         assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Tutkinto, tutkinto)
         self._assign_toimipaikka_permissions(tutkinto, validated_data)
+        self._assign_all_toimipaikka_permissions(tutkinto)
         cache.delete('vakajarjestaja_yhteenveto_' + str(validated_data['vakajarjestaja'].id))
 
     def _assign_toimipaikka_permissions(self, tutkinto, validated_data):
         toimipaikka_oid = validated_data.get('toimipaikka') and validated_data.get('toimipaikka').organisaatio_oid
         if toimipaikka_oid:
             assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Tutkinto, tutkinto)
+
+    def _assign_all_toimipaikka_permissions(self, tutkinto):
+        tyontekija = Tyontekija.objects.filter(vakajarjestaja=tutkinto.vakajarjestaja, henkilo=tutkinto.henkilo).first()
+        if tyontekija:
+            oid_set = set(Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija)
+                          .values_list('toimipaikka__organisaatio_oid', flat=True))
+            oid_set.discard(None)
+            for oid in oid_set:
+                assign_object_permissions_to_tyontekija_groups(oid, Tutkinto, tutkinto)
 
     def perform_destroy(self, tutkinto):
         henkilo = tutkinto.henkilo
@@ -545,8 +553,8 @@ class TyoskentelypaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
                 # tyoskentelypaikka in related objects toimipaikka permissions need to be filled here to make sure
                 palvelussuhde = tyoskentelypaikka.palvelussuhde
                 assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Palvelussuhde, palvelussuhde)
-                # toimipaikka permissions are not added to pidempipoissaolo objects until they are directly linked to tyoskentelypaikka
-                # CSCVARDA-1868
+                [assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, PidempiPoissaolo, pidempi_poissaolo)
+                 for pidempi_poissaolo in palvelussuhde.pidemmatpoissaolot.all()]
                 tyontekija = palvelussuhde.tyontekija
                 assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Tyontekija, tyontekija)
                 tutkinnot = Tutkinto.objects.filter(henkilo=tyontekija.henkilo, vakajarjestaja=tyontekija.vakajarjestaja)
@@ -610,49 +618,41 @@ class PidempiPoissaoloViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixi
         Päivitä yhden pidempipoissaolo-tietueen kaikki kentät.
     """
     serializer_class = PidempiPoissaoloSerializer
-    permission_classes = (CustomModelPermissions,)
-    filter_backends = (DjangoFilterBackend, )
+    permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.PidempiPoissaoloFilter
-    queryset = PidempiPoissaolo.objects.none()
+    queryset = PidempiPoissaolo.objects.all()
 
-    def get_queryset(self):
-        user = self.request.user
-        method = self.request.method
-        if method == 'GET' or method == 'RETRIEVE':
-            queryset = get_permission_checked_pidempi_poissaolo_katselija_queryset_for_user(user).order_by('id')
-        else:
-            queryset = get_permission_checked_pidempi_poissaolo_tallentaja_queryset_for_user(user).order_by('id')
-        return queryset
+    def list(self, request, *args, **kwargs):
+        return cached_list_response(self, request.user, request.get_full_path())
 
     def perform_create(self, serializer):
         with transaction.atomic():
             user = self.request.user
             validated_data = serializer.validated_data
-            vakajarjestaja_oid = validated_data['palvelussuhde'].tyontekija.vakajarjestaja.organisaatio_oid
+            palvelussuhde = validated_data['palvelussuhde']
+            vakajarjestaja_oid = palvelussuhde.tyontekija.vakajarjestaja.organisaatio_oid
             if not toimipaikka_tallentaja_pidempipoissaolo_has_perm_to_add(user, vakajarjestaja_oid, validated_data):
                 raise ValidationError({'tyoskentelypaikka': [ErrorMessages.PP002.value]})
             pidempipoissaolo = serializer.save(changed_by=user)
             assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, PidempiPoissaolo, pidempipoissaolo)
-            # toimipaikka permissions are not added to pidempipoissaolo objects until they are directly linked to tyoskentelypaikkas
-            # CSCVARDA-1868
+
+            # Assign Toimipaikka permissions
+            toimipaikka_oid_set = set(palvelussuhde.tyoskentelypaikat
+                                      .values_list('toimipaikka__organisaatio_oid', flat=True))
+            toimipaikka_oid_set.discard(None)
+            for toimipaikka_oid in toimipaikka_oid_set:
+                assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, PidempiPoissaolo, pidempipoissaolo)
+
             delete_cache_keys_related_model('palvelussuhde', pidempipoissaolo.palvelussuhde.id)
             cache.delete('vakajarjestaja_yhteenveto_' + str(pidempipoissaolo.palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def perform_update(self, serializer):
-        user = self.request.user
-        queryset = self.get_queryset()
-
-        if not queryset.filter(id=self.get_object().id):
-            raise PermissionDenied({'errors': [ErrorMessages.PE001.value]})
-        pidempipoissaolo = serializer.save(changed_by=user)
+        pidempipoissaolo = serializer.save(changed_by=self.request.user)
         delete_cache_keys_related_model('palvelussuhde', pidempipoissaolo.palvelussuhde.id)
         cache.delete('vakajarjestaja_yhteenveto_' + str(pidempipoissaolo.palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def perform_destroy(self, pidempipoissaolo):
-        queryset = self.get_queryset()
-
-        if not queryset.filter(id=self.get_object().id):
-            raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
         with transaction.atomic():
             delete_object_permissions_explicitly(PidempiPoissaolo, pidempipoissaolo)
             try:

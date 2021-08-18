@@ -150,7 +150,7 @@ def _transfer_vakapaatos_permissions_to_new_vakajarjestaja(new_vakajarjestaja, l
         toimipaikka_oid_set = set(vakapaatos.varhaiskasvatussuhteet
                                   .values_list('toimipaikka__organisaatio_oid', flat=True))
         assign_object_level_permissions_for_instance(vakapaatos, (new_vakajarjestaja.organisaatio_oid,
-                                                                  toimipaikka_oid_set))
+                                                                  toimipaikka_oid_set,))
 
         if existing_lapsi:
             # Transfer vakapaatos to existing lapsi
@@ -227,7 +227,7 @@ def _transfer_tyontekija_permissions_to_new_vakajarjestaja(new_vakajarjestaja, o
                 if organisaatio_oid:
                     assign_object_permissions_to_all_henkilosto_groups(organisaatio_oid, Tyontekija, tyontekija)
 
-        _transfer_palvelussuhde_permissions_to_new_vakajarjestaja(new_vakajarjestaja, tyontekija_oid_set, tyontekija,
+        _transfer_palvelussuhde_permissions_to_new_vakajarjestaja(new_vakajarjestaja, tyontekija,
                                                                   existing_tyontekija=existing_tyontekija)
 
         if existing_tyontekija:
@@ -282,13 +282,17 @@ def _transfer_tutkinto_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old
             tutkinto.save()
 
 
-def _transfer_palvelussuhde_permissions_to_new_vakajarjestaja(new_vakajarjestaja, tyontekija_oid_set, tyontekija, existing_tyontekija=None):
+def _transfer_palvelussuhde_permissions_to_new_vakajarjestaja(new_vakajarjestaja, tyontekija, existing_tyontekija=None):
     for palvelussuhde in tyontekija.palvelussuhteet.all():
         # Delete permissions
         delete_object_permissions_explicitly(Palvelussuhde, palvelussuhde.id)
 
         # Assign permissions
-        for organisaatio_oid in tyontekija_oid_set:
+        palvelussuhde_oid_set = set(palvelussuhde.tyoskentelypaikat.all()
+                                    .values_list('toimipaikka__organisaatio_oid', flat=True))
+        palvelussuhde_oid_set.add(new_vakajarjestaja.organisaatio_oid)
+        palvelussuhde_oid_set.discard(None)
+        for organisaatio_oid in palvelussuhde_oid_set:
             if organisaatio_oid:
                 assign_object_permissions_to_all_henkilosto_groups(organisaatio_oid, Palvelussuhde, palvelussuhde)
 
@@ -297,30 +301,29 @@ def _transfer_palvelussuhde_permissions_to_new_vakajarjestaja(new_vakajarjestaja
             palvelussuhde.tyontekija = existing_tyontekija
             palvelussuhde.save()
 
-        _transfer_tyoskentelypaikka_permissions_to_new_vakajarjestaja(tyontekija_oid_set, palvelussuhde)
-        _transfer_pidempi_poissaolo_permissions_to_new_vakajarjestaja(new_vakajarjestaja, palvelussuhde)
+        _transfer_tyoskentelypaikka_permissions_to_new_vakajarjestaja(new_vakajarjestaja, palvelussuhde)
+        _transfer_pidempi_poissaolo_permissions_to_new_vakajarjestaja(palvelussuhde_oid_set, palvelussuhde)
 
 
-def _transfer_tyoskentelypaikka_permissions_to_new_vakajarjestaja(tyontekija_oid_set, palvelussuhde):
+def _transfer_tyoskentelypaikka_permissions_to_new_vakajarjestaja(new_vakajarjestaja, palvelussuhde):
     for tyoskentelypaikka in palvelussuhde.tyoskentelypaikat.all():
         # Delete permissions
         delete_object_permissions_explicitly(Tyoskentelypaikka, tyoskentelypaikka.id)
 
         # Assign permissions
-        for organisaatio_oid in tyontekija_oid_set:
+        for organisaatio_oid in (new_vakajarjestaja.organisaatio_oid, tyoskentelypaikka.toimipaikka.organisaatio_oid,):
             if organisaatio_oid:
                 assign_object_permissions_to_tyontekija_groups(organisaatio_oid, Tyoskentelypaikka, tyoskentelypaikka)
 
 
-def _transfer_pidempi_poissaolo_permissions_to_new_vakajarjestaja(new_vakajarjestaja, palvelussuhde):
+def _transfer_pidempi_poissaolo_permissions_to_new_vakajarjestaja(palvelussuhde_oid_set, palvelussuhde):
     for pidempi_poissaolo in palvelussuhde.pidemmatpoissaolot.all():
         # Delete permissions
         delete_object_permissions_explicitly(PidempiPoissaolo, pidempi_poissaolo.id)
 
-        # PidempiPoissaolo permissions are only assigned on VakaJarjestaja level, until Toimipaikka level is supported
-        # TODO: https://jira.eduuni.fi/browse/OPHVARDA-1868
-        assign_object_permissions_to_tyontekija_groups(new_vakajarjestaja.organisaatio_oid, PidempiPoissaolo,
-                                                       pidempi_poissaolo)
+        for organisaatio_oid in palvelussuhde_oid_set:
+            if organisaatio_oid:
+                assign_object_permissions_to_tyontekija_groups(organisaatio_oid, PidempiPoissaolo, pidempi_poissaolo)
 
 
 def _transfer_taydennyskoulutus_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja):
