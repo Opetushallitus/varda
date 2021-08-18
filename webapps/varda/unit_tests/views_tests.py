@@ -1022,9 +1022,6 @@ class VardaViewsTests(TestCase):
         group.user_set.add(user)
 
         lapsi = Lapsi.objects.filter(vakatoimija__organisaatio_oid=vakajarjestaja_oid_correct).first()
-        lapsi.vakatoimija = None
-        lapsi.save()
-
         lapsi_json = {
             'henkilo_oid': lapsi.henkilo.henkilo_oid,
             'vakatoimija_oid': vakajarjestaja_oid_invalid,
@@ -1032,27 +1029,11 @@ class VardaViewsTests(TestCase):
         }
 
         client = SetUpTestClient('tester2').client()
-        resp_1 = client.put(f'/api/v1/lapset/{lapsi.id}/', json.dumps(lapsi_json), content_type='application/json')
-        assert_status_code(resp_1, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp_1, 'vakatoimija', 'LA011',
-                                'Lapsi already has Varhaiskasvatussuhde objects linked to different VakaJarjestaja.')
-
-        lapsi_json['vakatoimija_oid'] = vakajarjestaja_oid_correct
-        resp_2 = client.put(f'/api/v1/lapset/{lapsi.id}/', json.dumps(lapsi_json), content_type='application/json')
-        assert_status_code(resp_2, status.HTTP_200_OK)
 
         lapsi_json['vakatoimija_oid'] = vakajarjestaja_oid_invalid
-        resp_3 = client.put(f'/api/v1/lapset/{lapsi.id}/', json.dumps(lapsi_json), content_type='application/json')
-        assert_status_code(resp_3, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp_3, 'vakatoimija', 'GE013', 'Changing of this field is not allowed.')
-
-        Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=lapsi).delete()
-        lapsi.vakatoimija = None
-        lapsi.save()
-
-        lapsi_json['vakatoimija_oid'] = vakajarjestaja_oid_correct
-        resp_4 = client.put(f'/api/v1/lapset/{lapsi.id}/', json.dumps(lapsi_json), content_type='application/json')
-        assert_status_code(resp_4, status.HTTP_200_OK)
+        resp = client.put(f'/api/v1/lapset/{lapsi.id}/', json.dumps(lapsi_json), content_type='application/json')
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'vakatoimija', 'GE013', 'Changing of this field is not allowed.')
 
     def test_api_get_lapsi_json_admin(self):
         """
@@ -2313,10 +2294,12 @@ class VardaViewsTests(TestCase):
             sukunimi='Nieminen',
             changed_by=adminuser
         )
+        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
         lapsi = Lapsi.objects.create(
             henkilo=lapsi_henkilo,
             changed_by=adminuser,
             lahdejarjestelma='1',
+            vakatoimija=vakajarjestaja,
         )
         assign_object_level_permissions(oid_of_client, Henkilo, lapsi_henkilo)
         assign_object_level_permissions(oid_of_client, Lapsi, lapsi)
@@ -2351,7 +2334,7 @@ class VardaViewsTests(TestCase):
         )
         assign_object_level_permissions(oid_of_client, Huoltajuussuhde, hs)
 
-        toimipaikka_1 = Toimipaikka.objects.filter(organisaatio_oid='1.2.246.562.10.9395737548810')[0]
+        toimipaikka_1 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548815')
 
         vakapaatos = Varhaiskasvatuspaatos.objects.create(
             lapsi=lapsi,

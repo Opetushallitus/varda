@@ -876,9 +876,9 @@ class LapsiSerializer(RequiredLahdejarjestelmaMixin, LapsiOptionalToimipaikkaMix
             if self.instance:
                 fill_missing_fields_for_validations(data, self.instance)
                 check_if_immutable_object_is_changed(self.instance, data, 'henkilo')
+                check_if_immutable_object_is_changed(self.instance, data, 'vakatoimija')
                 check_if_immutable_object_is_changed(self.instance, data, 'oma_organisaatio')
                 check_if_immutable_object_is_changed(self.instance, data, 'paos_organisaatio')
-                self._validate_vakatoimija_update(data)
             elif toimipaikka := data.get('toimipaikka', None):
                 # Only validate in POST
                 vakajarjestaja = data.get('vakatoimija') or data.get('paos_organisaatio')
@@ -899,16 +899,6 @@ class LapsiSerializer(RequiredLahdejarjestelmaMixin, LapsiOptionalToimipaikkaMix
             if oma_organisaatio and oma_organisaatio == paos_organisaatio:
                 validator.error('errors', ErrorMessages.LA008.value)
         return data
-
-    def _validate_vakatoimija_update(self, data):
-        if self.instance.vakatoimija:
-            # If instance has vakatoimija-field, check that it has not changed. If the field is not set,
-            # it is possible to update the field.
-            check_if_immutable_object_is_changed(self.instance, data, 'vakatoimija')
-        elif vakatoimija := data.get('vakatoimija', None):
-            vakasuhde_toimipaikka = Toimipaikka.objects.filter(varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi=self.instance).first()
-            if vakasuhde_toimipaikka and vakatoimija != vakasuhde_toimipaikka.vakajarjestaja:
-                raise ValidationError({'vakatoimija': [ErrorMessages.LA011.value]})
 
 
 class LapsiSerializerAdmin(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
@@ -1138,12 +1128,7 @@ def _validate_toimipaikka_with_vakajarjestaja_of_lapsi(toimipaikka, lapsi):
     :param toimipaikka: Toimipaikka object instance
     :param lapsi: Lapsi object instance
     """
-    vakasuhde_vakajarjestaja_id = (lapsi.varhaiskasvatuspaatokset
-                                   .values_list('varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id')
-                                   .first())
-    vakajarjestaja_id = (getattr(lapsi.vakatoimija, 'id', None) or
-                         getattr(lapsi.paos_organisaatio, 'id', None) or
-                         vakasuhde_vakajarjestaja_id)
+    vakajarjestaja_id = getattr(lapsi.vakatoimija, 'id', None) or getattr(lapsi.paos_organisaatio, 'id', None)
     if vakajarjestaja_id and toimipaikka.vakajarjestaja.id != vakajarjestaja_id:
         # If Lapsi is still missing vakatoimija-field, vakajarjestaja_id cannot be determined
         raise serializers.ValidationError({'toimipaikka': [ErrorMessages.MI019.value]})

@@ -702,11 +702,9 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
 
     def get_vakajarjestaja_filter(self):
         vakatoimija_filter = Q(vakatoimija=self.vakajarjestaja_id)
-        no_vakatoimija_filter = (Q(vakatoimija__isnull=True) & Q(paos_organisaatio__isnull=True) &
-                                 Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja=self.vakajarjestaja_id))
         paos_filter = Q(oma_organisaatio=self.vakajarjestaja_id) | Q(paos_organisaatio=self.vakajarjestaja_id)
 
-        return vakatoimija_filter | no_vakatoimija_filter | paos_filter
+        return vakatoimija_filter | paos_filter
 
     def get_queryset(self):
         queryset = Lapsi.objects.filter(self.get_vakajarjestaja_filter())

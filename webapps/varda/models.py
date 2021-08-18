@@ -11,7 +11,6 @@ from rest_framework.exceptions import ValidationError
 from simple_history.models import HistoricalRecords
 
 from varda import validators
-from varda.constants import JARJESTAMISMUODOT_YKSITYINEN
 from varda.enums.aikaleima_avain import AikaleimaAvain
 from varda.enums.batcherror_type import BatchErrorType
 from varda.enums.error_messages import ErrorMessages
@@ -346,11 +345,9 @@ class Lapsi(UniqueLahdejarjestelmaTunnisteMixin, models.Model):
     @property
     def yksityinen_kytkin(self):
         """
-        TODO: Use vakatoimija-field when it is set for all lapset https://jira.eduuni.fi/browse/CSCVARDA-1946
         :return: True if lapsi is yksityinen, otherwise False
         """
-        vakapaatos = self.varhaiskasvatuspaatokset.first()
-        return vakapaatos and vakapaatos.jarjestamismuoto_koodi.lower() in JARJESTAMISMUODOT_YKSITYINEN
+        return self.vakatoimija and not self.vakatoimija.kunnallinen_kytkin
 
     def save(self, *args, **kwargs):
         try:

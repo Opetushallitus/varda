@@ -413,14 +413,11 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
         if len(self.toimipaikka_id_list) > 0:
             # If paos-lapsi, return only the ones that are linked to this vakajarjestaja
             lapsi_filter = (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__id__in=self.toimipaikka_id_list) &
-                            ((Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=self.vakajarjestaja_id) &
-                              Q(oma_organisaatio__isnull=True) & Q(paos_organisaatio__isnull=True)) |
-                             (Q(oma_organisaatio=self.vakajarjestaja_id) | Q(paos_organisaatio=self.vakajarjestaja_id))))
+                            (Q(oma_organisaatio=self.vakajarjestaja_id) | Q(paos_organisaatio=self.vakajarjestaja_id) |
+                             Q(vakatoimija=self.vakajarjestaja_id)))
         else:
-            lapsi_filter = (Q(vakatoimija=self.vakajarjestaja_id) |
-                            Q(oma_organisaatio=self.vakajarjestaja_id) |
-                            Q(paos_organisaatio=self.vakajarjestaja_id) |
-                            Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=self.vakajarjestaja_id))
+            lapsi_filter = (Q(vakatoimija=self.vakajarjestaja_id) | Q(oma_organisaatio=self.vakajarjestaja_id) |
+                            Q(paos_organisaatio=self.vakajarjestaja_id))
 
         lapsi_organization_groups_qs = user_permission_groups_in_organization(self.request.user, self.vakajarjestaja_oid,
                                                                               [Z4_CasKayttoOikeudet.KATSELIJA,

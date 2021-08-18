@@ -222,8 +222,7 @@ def _create_vakatiedot_report(workbook, language, vakajarjestaja_id, toimipaikka
                               vakasuhde_filter=Q(), maksutieto_filter=Q()):
     translations = TRANSLATIONS.get(language, TRANSLATIONS.get(SupportedLanguage.FI.value))
 
-    vakajarjestaja_filter = (Q(toimipaikka__vakajarjestaja=vakajarjestaja_id) |
-                             Q(varhaiskasvatuspaatos__lapsi__vakatoimija=vakajarjestaja_id) |
+    vakajarjestaja_filter = (Q(varhaiskasvatuspaatos__lapsi__vakatoimija=vakajarjestaja_id) |
                              Q(varhaiskasvatuspaatos__lapsi__oma_organisaatio=vakajarjestaja_id) |
                              Q(varhaiskasvatuspaatos__lapsi__paos_organisaatio=vakajarjestaja_id))
     if toimipaikka_id:
@@ -285,9 +284,7 @@ def _create_vakatiedot_report(workbook, language, vakajarjestaja_id, toimipaikka
         # Get maksutiedot only on Vakajarjestaja-level
         # Get maksutieto only if Lapsi belongs to Vakajarjestaja, or if Vakajarjestaja is oma_organisaatio
         vakajarjestaja_filter = (Q(huoltajuussuhteet__lapsi__vakatoimija=vakajarjestaja_id) |
-                                 Q(huoltajuussuhteet__lapsi__oma_organisaatio=vakajarjestaja_id) |
-                                 (Q(huoltajuussuhteet__lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja=vakajarjestaja_id) &
-                                  Q(huoltajuussuhteet__lapsi__paos_organisaatio__isnull=True)))
+                                 Q(huoltajuussuhteet__lapsi__oma_organisaatio=vakajarjestaja_id))
         maksutieto_qs = (Maksutieto.objects
                          .filter(vakajarjestaja_filter & maksutieto_filter)
                          .prefetch_related('huoltajuussuhteet__lapsi__henkilo', 'huoltajuussuhteet__huoltaja__henkilo')
