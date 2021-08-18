@@ -18,7 +18,7 @@ from varda.related_object_validations import (create_date_range, date_range_over
                                               check_if_immutable_object_is_changed)
 from varda.serializers_common import (OidRelatedField, TunnisteRelatedField, VakaJarjestajaPermissionCheckedHLField,
                                       PermissionCheckedHLFieldMixin, ToimipaikkaPermissionCheckedHLField,
-                                      OptionalToimipaikkaMixin, HenkiloHLField)
+                                      OptionalToimipaikkaMixin, HenkiloPermissionCheckedHLField)
 from varda.validators import (validate_paattymispvm_same_or_after_alkamispvm, validate_paivamaara1_after_paivamaara2,
                               parse_paivamaara, fill_missing_fields_for_validations)
 
@@ -59,7 +59,7 @@ class TyontekijaOptionalToimipaikkaMixin(OptionalToimipaikkaMixin):
 
 class TyontekijaSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
-    henkilo = HenkiloHLField(view_name='henkilo-detail', required=False)
+    henkilo = HenkiloPermissionCheckedHLField(view_name='henkilo-detail', required=False)
     henkilo_oid = OidRelatedField(object_type=Henkilo,
                                   parent_field='henkilo',
                                   parent_attribute='henkilo_oid',
@@ -201,7 +201,7 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
 
 class TutkintoSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
-    henkilo = HenkiloHLField(view_name='henkilo-detail', required=False)
+    henkilo = HenkiloPermissionCheckedHLField(view_name='henkilo-detail', required=False)
     henkilo_oid = OidRelatedField(object_type=Henkilo,
                                   parent_field='henkilo',
                                   parent_attribute='henkilo_oid',

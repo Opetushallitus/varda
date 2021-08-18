@@ -29,7 +29,7 @@ from varda.related_object_validations import (check_if_immutable_object_is_chang
 from varda.serializers_common import (OidRelatedField, TunnisteRelatedField, PermissionCheckedHLFieldMixin,
                                       OptionalToimipaikkaMixin, ToimipaikkaPermissionCheckedHLField,
                                       VakaJarjestajaPermissionCheckedHLField, VakaJarjestajaHLField, HenkiloHLField,
-                                      ToimipaikkaHLField)
+                                      ToimipaikkaHLField, HenkiloPermissionCheckedHLField)
 from varda.validators import (fill_missing_fields_for_validations, validate_henkilo_oid, validate_nimi,
                               validate_henkilotunnus_or_oid_needed, validate_organisaatio_oid,
                               validate_instance_uniqueness)
@@ -826,7 +826,7 @@ class MaksutietoGetUpdateSerializer(RequiredLahdejarjestelmaMixin, serializers.H
 class LapsiSerializer(RequiredLahdejarjestelmaMixin, LapsiOptionalToimipaikkaMixin,
                       serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
-    henkilo = HenkiloHLField(view_name='henkilo-detail', required=False)
+    henkilo = HenkiloPermissionCheckedHLField(view_name='henkilo-detail', required=False)
     henkilo_oid = OidRelatedField(object_type=Henkilo,
                                   parent_field='henkilo',
                                   parent_attribute='henkilo_oid',
