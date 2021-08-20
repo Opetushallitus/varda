@@ -210,7 +210,7 @@ def finalize_data_dump():
     toimipaikka_1.save()
 
     logger.info('Anonymize the users.')
-    user_qs = User.objects.all().exclude(username='anonymous')
+    user_qs = User.objects.all().exclude(username__in=('anonymous', 'varda_system'))
     anonymize_users(user_qs)
     logger.info('Add test-accounts.')
     test_accounts = get_test_accounts()

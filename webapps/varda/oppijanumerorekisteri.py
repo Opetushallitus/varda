@@ -14,7 +14,7 @@ from varda.enums.batcherror_type import BatchErrorType
 from varda.enums.yhteystieto import Yhteystietoryhmatyyppi, YhteystietoAlkupera, YhteystietoTyyppi
 from varda.misc import (CustomServerErrorException, encrypt_string, get_json_from_external_service,
                         hash_string)
-from varda.models import Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Aikaleima, BatchError
+from varda.models import Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Aikaleima, BatchError, User
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ def batch_error_decorator(batch_error_type):
     return decorator
 
 
-def save_henkilo_to_db(henkilo_id, henkilo_json):
+def save_henkilo_to_db(henkilo_id, henkilo_json, changed=False):
     henkilo = Henkilo.objects.get(id=henkilo_id)
 
     # Field mapping: first field is Oppijanumerorekisteri - second attribute-name in Varda
@@ -86,7 +86,12 @@ def save_henkilo_to_db(henkilo_id, henkilo_json):
             henkilo.syntyma_pvm = None
         _set_address_to_henkilo(henkilo_json, henkilo)
 
-    henkilo.save()
+    if changed:
+        varda_system_user = User.objects.get(username='varda_system')
+        henkilo.changed_by = varda_system_user
+        henkilo.save()
+    else:
+        henkilo.save()
 
 
 def _set_address_to_henkilo(henkilo_json, henkilo):
@@ -136,7 +141,7 @@ def _fetch_henkilo_data_by_oid(henkilo_oid, henkilo_id, henkilo_data=None):
     if not henkilo_data:
         henkilo_data = get_henkilo_data_by_oid(henkilo_oid)
     if henkilo_data:
-        save_henkilo_to_db(henkilo_id, henkilo_data)
+        save_henkilo_to_db(henkilo_id, henkilo_data, changed=True)
     else:
         raise RequestException('Could not get data from oppijanumerorekisteri for henkilo {} {}'
                                .format(henkilo_id, henkilo_oid))
@@ -338,12 +343,13 @@ def _fetch_lapsen_huoltajat(henkilo_id):
 
 @transaction.atomic
 def _update_lapsi_huoltaja(lapsi_id, huoltaja_master_data):
+    varda_system_user = User.objects.get(username='varda_system')
     lapsi_obj = Lapsi.objects.get(id=lapsi_id)
     # Oid should be used alone as unique identifier in query since hetu can change
     oid = huoltaja_master_data['oidHenkilo']
     default_henkilo = {
         'henkilo_oid': oid,
-        'changed_by': lapsi_obj.changed_by,
+        'changed_by': varda_system_user,
     }
     # Create henkilo stub for updating if not already exist
     henkilo_huoltaja_obj, henkilo_huoltaja_created = (Henkilo.objects.select_for_update(nowait=True)
@@ -356,13 +362,13 @@ def _update_lapsi_huoltaja(lapsi_id, huoltaja_master_data):
     huoltaja_obj, huoltaja_created = (Huoltaja.objects
                                       .get_or_create(henkilo=henkilo_huoltaja_obj,
                                                      defaults={
-                                                         'changed_by': lapsi_obj.changed_by,
+                                                         'changed_by': varda_system_user,
                                                      })
                                       )
 
     Huoltajuussuhde.objects.update_or_create(lapsi=lapsi_obj,
                                              huoltaja=huoltaja_obj,
                                              defaults={
-                                                 'changed_by': lapsi_obj.changed_by,
+                                                 'changed_by': varda_system_user,
                                                  'voimassa_kytkin': True,  # ONR returns only valid huoltaja
                                              })

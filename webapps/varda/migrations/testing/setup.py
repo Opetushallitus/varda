@@ -55,6 +55,7 @@ def add_test_users():
     User.objects.create(username='tester-no-known-privileges', password='pbkdf2_sha256$120000$6ihvwx47epob$a2xDB6OLThL4eeEuMVw8+3QB1QBxi5hU2gZxnMwA2nE=')
     User.objects.create(username='henkilosto_tallentaja_93957375488', password='pbkdf2_sha256$150000$WMst0ZmwKf3p$Fqyz4SSdybbBdAexKCjxXyqiUfYafn7XxGaxQsALqoo=')
     User.objects.create(username='kela_luovutuspalvelu', password='pbkdf2_sha256$150000$WMst0ZmwKQ5P$Fqyz1KLMdybbBdjLmKCjxXyqiUfYafn7XxGaxQsALqoo=')
+    User.objects.create(username='varda_system', password='pbkdf2_sha256$150000$WMst9QvKQ5P$Fqyz1HDLdybbBdjiKlCjxXyqiUfYafn7XxGaxQsALqoo=')
 
 
 def add_test_user_permissions():

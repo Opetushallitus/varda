@@ -69,6 +69,8 @@ def update_vakajarjestaja(vakajarjestaja, result_organisaatiopalvelu):
     # paattymis_pvm can have a null-value in VARDA
     vakajarjestaja.paattymis_pvm = paattymis_pvm or None
     if vakajarjestaja_changed(vakajarjestaja, vakajarjestaja_original):
+        varda_system_user = User.objects.get(username='varda_system')
+        vakajarjestaja.changed_by = varda_system_user
         vakajarjestaja.save()
 
 
@@ -802,6 +804,8 @@ def _update_toimipaikka_chunk(oid_chunk):
             logger.error('Organisaatio-service managed toimipaikka not found from organisaatio-service with oid %s', toimipaikka.organisaatio_oid)
         else:
             _fill_toimipaikka_data(organisaatio, toimipaikka)
+            varda_system_user = User.objects.get(username='varda_system')
+            toimipaikka.changed_by = varda_system_user
             toimipaikka.save()
 
 

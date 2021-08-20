@@ -5,7 +5,7 @@ from django.test import TestCase
 
 from varda.enums.aikaleima_avain import AikaleimaAvain
 from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
-from varda.models import Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Aikaleima
+from varda.models import Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Aikaleima, User
 from varda.organisaatiopalvelu import update_all_organisaatio_service_organisations
 from varda.unit_tests.organisaatiopalvelu.fetch_and_save_tests import TestFetchAndSaveToimipaikkaData
 
@@ -29,6 +29,9 @@ class TestUpdateChangedOrganisaatio(TestCase):
                       json=[TestFetchAndSaveToimipaikkaData.get_organisaatio_json(oid=oid_with_changes)],
                       status=200)
         update_all_organisaatio_service_organisations()
+
+        varda_system_user = User.objects.get(username='varda_system')
+        varda_system_user_id = varda_system_user.id
 
         toimipaikka = Toimipaikka.objects.get(organisaatio_oid=oid_with_changes)
         self.assertEqual(toimipaikka.vakajarjestaja_id, 2)
@@ -54,7 +57,8 @@ class TestUpdateChangedOrganisaatio(TestCase):
         self.assertEqual(toimipaikka.alkamis_pvm, datetime.date(2018, 10, 1))
         self.assertEqual(toimipaikka.paattymis_pvm, None)
         # Not assigned in this method but when toimipaikka is created
-        self.assertEqual(toimipaikka.changed_by_id, 3)
+        # IF a toimipaikka is managed in Organisaatiopalvelu it will be kept up to date by system
+        self.assertEqual(toimipaikka.changed_by_id, varda_system_user_id)
         self.assertEqual(toimipaikka.hallinnointijarjestelma, str(Hallinnointijarjestelma.ORGANISAATIO))
 
         painotus_dicts = list((ToiminnallinenPainotus.objects
