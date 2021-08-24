@@ -110,6 +110,9 @@ def _transfer_lapsi_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_va
         existing_lapsi = None
         if existing_lapsi_obj := existing_lapsi_qs.filter(henkilo=lapsi.henkilo).first():
             existing_lapsi = existing_lapsi_obj
+            # Add toimipaikka_oids of existing Lapsi to the set
+            toimipaikka_oid_set |= set(existing_lapsi.varhaiskasvatuspaatokset
+                                       .values_list('varhaiskasvatussuhteet__toimipaikka__organisaatio_oid', flat=True))
 
         if not existing_lapsi:
             # Change vakatoimija of Lapsi object
@@ -333,16 +336,11 @@ def _transfer_taydennyskoulutus_permissions_to_new_vakajarjestaja(new_vakajarjes
         # Delete permissions
         delete_object_permissions_explicitly(Taydennyskoulutus, taydennyskoulutus.id)
 
-        # Assign permissions
-        tyontekija_id_list, toimipaikka_oid_list_list = get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus(
+        tyontekija_id_list, toimipaikka_oid_list_list_original = get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus(
             taydennyskoulutus.taydennyskoulutukset_tyontekijat.all()
         )
-        taydennyskoulutus_oid_set = set(flatten_nested_list(toimipaikka_oid_list_list))
+        taydennyskoulutus_oid_set = set(flatten_nested_list(toimipaikka_oid_list_list_original))
         taydennyskoulutus_oid_set.add(new_vakajarjestaja.organisaatio_oid)
-        for organisaatio_oid in taydennyskoulutus_oid_set:
-            if organisaatio_oid:
-                assign_object_permissions_to_taydennyskoulutus_groups(organisaatio_oid, Taydennyskoulutus,
-                                                                      taydennyskoulutus)
 
         for taydennyskoulutus_tyontekija in taydennyskoulutus.taydennyskoulutukset_tyontekijat.all():
             if (existing_tyontekija := existing_tyontekija_qs
@@ -355,11 +353,27 @@ def _transfer_taydennyskoulutus_permissions_to_new_vakajarjestaja(new_vakajarjes
                                                            changed_by=taydennyskoulutus_tyontekija.changed_by)
                 taydennyskoulutus_tyontekija.delete()
 
+        # Assign permissions after changes have been made
+        tyontekija_id_list, toimipaikka_oid_list_list = get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus(
+            taydennyskoulutus.taydennyskoulutukset_tyontekijat.all()
+        )
+        # Combine toimipaikka_oids of old and existing tyontekija
+        taydennyskoulutus_oid_set |= set(flatten_nested_list(toimipaikka_oid_list_list))
+        for organisaatio_oid in taydennyskoulutus_oid_set:
+            if organisaatio_oid:
+                assign_object_permissions_to_taydennyskoulutus_groups(organisaatio_oid, Taydennyskoulutus,
+                                                                      taydennyskoulutus)
+
 
 def _get_tyontekija_oid_set(new_vakajarjestaja, tyontekija):
     tyontekija_oid_set = set(tyontekija.palvelussuhteet
                              .values_list('tyoskentelypaikat__toimipaikka__organisaatio_oid', flat=True))
     tyontekija_oid_set.add(new_vakajarjestaja.organisaatio_oid)
+
+    if existing_tyontekija := Tyontekija.objects.filter(henkilo=tyontekija.henkilo, vakajarjestaja=new_vakajarjestaja).first():
+        # Add toimipaikka_oids of potentially existing tyontekija
+        tyontekija_oid_set |= set(existing_tyontekija.palvelussuhteet
+                                  .values_list('tyoskentelypaikat__toimipaikka__organisaatio_oid', flat=True))
     return tyontekija_oid_set
 
 
