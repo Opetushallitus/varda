@@ -105,7 +105,12 @@ class AbstractCustomRelatedField(serializers.Field):
         secondary_field_object = self.parent.fields.fields.get(self.secondary_field, None)
         secondary_value_id = None
         if secondary_field_object:
-            secondary_value_id = secondary_field_object.get_id_as_secondary_field(value)
+            try:
+                secondary_value_id = secondary_field_object.get_id_as_secondary_field(value)
+            except ValidationError:
+                # Error parsing AbstractCustomRelatedField to object, ValidationError is raised from the field itself
+                # so do not raise here
+                pass
         return secondary_value_id
 
     def get_id_as_secondary_field(self, value):
@@ -117,6 +122,8 @@ class AbstractCustomRelatedField(serializers.Field):
         """
         if self.is_value_empty(value):
             return None
+
+        self._run_prevalidator(value)
 
         referenced_object = self.get_referenced_object_by_value(value)
         if referenced_object is None or referenced_object is AbstractCustomRelatedField._does_not_exist:
