@@ -836,6 +836,7 @@ export enum VirkailijaTranslations {
   excel_none = 'excel.none',
   excel_instructions = 'excel.instructions',
   excel_refresh = 'excel.refresh',
+  excel_password = 'excel.password',
 
   transfer_outage = 'transfer-outage',
   transfer_outage_no_results = 'transfer-outage.no-results',

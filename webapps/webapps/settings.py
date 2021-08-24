@@ -441,6 +441,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Allas s3
 ALLAS_USER_FILES_BUCKET = None
 
+# Java application
+JAVA_URL = 'http://localhost:8080'
+
 """
 TODO: This does not currently work. Login fails with 403 forbidden.
 if "VARDA_HOSTNAME" in os.environ:

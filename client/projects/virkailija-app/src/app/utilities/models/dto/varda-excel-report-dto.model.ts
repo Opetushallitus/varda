@@ -13,6 +13,7 @@ export interface VardaExcelReportDTO {
   url?: string;
   timestamp: string;
   user: number;
+  password: string;
 }
 
 export interface VardaExcelReportPostDTO {

@@ -3,13 +3,16 @@ import enum
 import logging
 import math
 import os
+import shutil
 import uuid
 from pathlib import Path
 
+import requests
 from celery import shared_task
 from django.conf import settings
 from django.db.models import Q, F
 from django.utils import timezone
+from rest_framework import status
 from xlsxwriter import Workbook
 from xlsxwriter.exceptions import XlsxFileError
 from xlsxwriter.worksheet import Worksheet, convert_cell_args
@@ -17,7 +20,7 @@ from xlsxwriter.worksheet import Worksheet, convert_cell_args
 from varda.clients.allas_s3_client import Client as S3Client
 from varda.enums.koodistot import Koodistot
 from varda.enums.supported_language import SupportedLanguage
-from varda.misc import decrypt_henkilotunnus, CustomServerErrorException
+from varda.misc import decrypt_henkilotunnus, CustomServerErrorException, decrypt_excel_report_password
 from varda.models import Varhaiskasvatussuhde, Z8_ExcelReport, Maksutieto, Z2_Code, Z8_ExcelReportLog
 
 logger = logging.getLogger(__name__)
@@ -186,6 +189,16 @@ def create_excel_report_task(report_id):
 
     excel_log.file_size = os.stat(file_path).st_size
     excel_log.number_of_rows = workbook.number_of_rows_per_worksheet
+
+    password = decrypt_excel_report_password(report.password, report.id)
+    encryption_start_timestamp = timezone.now()
+    encryption_result = _encrypt_excel_file(file_path, password)
+    if not encryption_result:
+        logger.error(f'Error encrypting Excel file with id {report.id}')
+        report.status = ExcelReportStatus.FAILED.value
+        report.save()
+        return
+    excel_log.encryption_duration = math.ceil((timezone.now() - encryption_start_timestamp).total_seconds())
 
     if settings.PRODUCTION_ENV or settings.QA_ENV:
         s3_object_path = _get_s3_object_path(report.vakajarjestaja_id, toimipaikka_id=report.toimipaikka_id)
@@ -427,3 +440,18 @@ def _decrypt_hetu(encrypted_hetu):
     except CustomServerErrorException:
         # Error decrypting hetu, return None
         return None
+
+
+def _encrypt_excel_file(file_path, password):
+    with open(file_path, 'rb') as excel_file:
+        resp = requests.post(f'{settings.JAVA_URL}/upload', files={'excel': excel_file, 'password': (None, password,)},
+                             stream=True)
+
+    if resp and resp.status_code == status.HTTP_200_OK:
+        with open(file_path, 'wb') as file:
+            shutil.copyfileobj(resp.raw, file)
+        return True
+
+    # Remove local file if encryption was unsuccessful
+    os.remove(file_path)
+    return False

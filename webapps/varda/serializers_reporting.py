@@ -272,10 +272,11 @@ class ExcelReportSerializer(serializers.ModelSerializer):
                                       either_required=False)
     toimipaikka_nimi = serializers.CharField(read_only=True, source='toimipaikka.nimi')
     url = serializers.SerializerMethodField()
+    password = serializers.SerializerMethodField()
 
     class Meta:
         model = Z8_ExcelReport
-        exclude = ('password', 's3_object_path',)
+        exclude = ('s3_object_path',)
         read_only_fields = ('id', 'filename', 'status', 'password', 'user', 'timestamp', 's3_object_path')
 
     def get_url(self, instance):
@@ -292,8 +293,6 @@ class ExcelReportSerializer(serializers.ModelSerializer):
             return reverse('excel-reports-download', kwargs=kwargs, request=self.context['request'])
 
     def get_password(self, instance):
-        # TODO: If encryption support is added (https://jira.eduuni.fi/browse/OPHVARDA-2221), use this function to
-        #       send password with the report data
         return decrypt_excel_report_password(instance.password, instance.id)
 
 

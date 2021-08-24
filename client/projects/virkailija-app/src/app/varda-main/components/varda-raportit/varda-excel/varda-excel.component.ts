@@ -41,7 +41,7 @@ export class VardaExcelComponent implements OnInit, OnDestroy {
 
   selectedVakajarjestaja: VardaVakajarjestajaUi;
   excelReportList: Array<VardaExcelReportDTO> = [];
-  tableColumns = ['reportType', 'targetDate', 'toimipaikka', 'timestamp', 'status', 'download'];
+  tableColumns = ['reportType', 'targetDate', 'toimipaikka', 'timestamp', 'status', 'password', 'download'];
   updateInterval = interval(10000);
   intervalSubscription: Subscription;
 

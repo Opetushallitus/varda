@@ -1226,6 +1226,7 @@ class Z8_ExcelReportLog(models.Model):
     duration = models.IntegerField()
     file_size = models.IntegerField()
     number_of_rows = ArrayField(models.IntegerField(), validators=[validators.validate_arrayfield])
+    encryption_duration = models.IntegerField(default=0)
 
     def __str__(self):
         return str(self.id)
