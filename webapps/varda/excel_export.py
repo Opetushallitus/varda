@@ -9,8 +9,10 @@ from pathlib import Path
 
 import requests
 from celery import shared_task
+from django.apps import apps
 from django.conf import settings
-from django.db.models import Q, F
+from django.db.models import Q, F, Model
+from django.http import Http404
 from django.utils import timezone
 from rest_framework import status
 from xlsxwriter import Workbook
@@ -20,8 +22,9 @@ from xlsxwriter.worksheet import Worksheet, convert_cell_args
 from varda.clients.allas_s3_client import Client as S3Client
 from varda.enums.koodistot import Koodistot
 from varda.enums.supported_language import SupportedLanguage
-from varda.misc import decrypt_henkilotunnus, CustomServerErrorException, decrypt_excel_report_password
-from varda.models import Varhaiskasvatussuhde, Z8_ExcelReport, Maksutieto, Z2_Code, Z8_ExcelReportLog
+from varda.misc import decrypt_henkilotunnus, CustomServerErrorException, TemporaryObject, decrypt_excel_report_password
+from varda.models import (Varhaiskasvatussuhde, Z8_ExcelReport, Maksutieto, Z2_Code, Z8_ExcelReportLog, Lapsi,
+                          Tyontekija, Toimipaikka)
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +38,9 @@ class ExcelReportStatus(enum.Enum):
 
 class ExcelReportType(enum.Enum):
     VAKATIEDOT_VOIMASSA = 'VAKATIEDOT_VOIMASSA'
+    PUUTTEELLISET_TOIMIPAIKKA = 'PUUTTEELLISET_TOIMIPAIKKA'
+    PUUTTEELLISET_LAPSI = 'PUUTTEELLISET_LAPSI'
+    PUUTTEELLISET_TYONTEKIJA = 'PUUTTEELLISET_TYONTEKIJA'
 
 
 if 'VARDA_ENVIRONMENT_TYPE' in os.environ:
@@ -48,6 +54,10 @@ VAKASUHDE_SHEET_NAME = 'VAKASUHDE_SHEET_NAME'
 VAKASUHDE_HEADERS = 'VAKASUHDE_HEADERS'
 MAKSUTIETO_SHEET_NAME = 'MAKSUTIETO_SHEET_NAME'
 MAKSUTIETO_HEADERS = 'MAKSUTIETO_HEADERS'
+PUUTTEELLISET_SHEET_NAME = 'PUUTTEELLISET_SHEET_NAME'
+PUUTTEELLISET_TOIMIPAIKKA_HEADERS = 'PUUTTEELLISET_TOIMIPAIKKA_HEADERS'
+PUUTTEELLISET_LAPSI_HEADERS = 'PUUTTEELLISET_LAPSI_HEADERS'
+PUUTTEELLISET_TYONTEKIJA_HEADERS = 'PUUTTEELLISET_TYONTEKIJA_HEADERS'
 YES = 'YES'
 NO = 'NO'
 TRANSLATIONS = {
@@ -64,9 +74,21 @@ TRANSLATIONS = {
                              'Alkamispvm', 'Päättymispvm', 'Perheen koko', 'Maksun perustekoodi', 'Asiakasmaksu',
                              'Palvelusetelin arvo', 'Huoltajan oppijanumero', 'Huoltajan etunimet',
                              'Huoltajan sukunimi',),
+        PUUTTEELLISET_SHEET_NAME: 'Puutteelliset tiedot',
+        PUUTTEELLISET_TOIMIPAIKKA_HEADERS: ('Toimipaikan nimi', 'Toimipaikan OID', 'Toimipaikan ID', 'Lähdejärjestelmä',
+                                            'Virhe', 'Tietosisältö', 'Objektin ID', 'Voimassaolo',),
+        PUUTTEELLISET_LAPSI_HEADERS: ('Oppijanumero', 'Etunimet', 'Sukunimi', 'Hetu', 'Turvakielto', 'Lapsen ID',
+                                      'PAOS (kyllä/ei)', 'PAOS-toimijan nimi', 'PAOS-toimijan OID', 'Lähdejärjestelmä',
+                                      'Virhe', 'Tietosisältö', 'Objektin ID', 'Voimassaolo',),
+        PUUTTEELLISET_TYONTEKIJA_HEADERS: ('Oppijanumero', 'Etunimet', 'Sukunimi', 'Hetu', 'Turvakielto',
+                                           'Työntekijän ID', 'Lähdejärjestelmä', 'Virhe', 'Tietosisältö',
+                                           'Objektin ID', 'Voimassaolo',),
         YES: 'Kyllä',
         NO: 'Ei',
-        ExcelReportType.VAKATIEDOT_VOIMASSA.value: 'Varhaiskasvatustiedot_voimassa'
+        ExcelReportType.VAKATIEDOT_VOIMASSA.value: 'Varhaiskasvatustiedot_voimassa',
+        ExcelReportType.PUUTTEELLISET_TOIMIPAIKKA.value: 'Puutteelliset_toimipaikka',
+        ExcelReportType.PUUTTEELLISET_LAPSI.value: 'Puutteelliset_lapsi',
+        ExcelReportType.PUUTTEELLISET_TYONTEKIJA.value: 'Puutteelliset_tyontekija'
     },
     SupportedLanguage.SV.value: {
         VAKASUHDE_SHEET_NAME: 'Småbarnspedagogik',
@@ -83,9 +105,23 @@ TRANSLATIONS = {
                              'Barnets ID', 'ID för avgiftsuppgiften', 'Begynnelsedatum', 'Slutdatum',
                              'Familjens storlek', 'Kod för avgiftsgrunden', 'Klientavgift', 'Servicesedelns värde',
                              'Vårdnadshavarens studentnummer', 'Vårdnadshavarens förnamn', 'Vårdnadshavarens efternamn',),
+        PUUTTEELLISET_SHEET_NAME: 'Bristfälliga uppgifter',
+        PUUTTEELLISET_TOIMIPAIKKA_HEADERS: ('Verksamhetsställets namn', 'Verksamhetsställets OID',
+                                            'Verksamhetsställets ID', 'Källsystem', 'Fel', 'Uppgiftsinnehåll',
+                                            'Objektens ID', 'Giltighetstid',),
+        PUUTTEELLISET_LAPSI_HEADERS: ('Studentnummer', 'Förnamn', 'Efternamn', 'Personbeteckning', 'Spärrmarkering',
+                                      'Barnets ID', 'Köptjänst/servicesedel (ja/nej)',
+                                      'Servicesedel-/köptjänstaktörens namn', 'Servicesedel-/köptjänstaktörens OID',
+                                      'Källsystem', 'Fel', 'Uppgiftsinnehåll', 'Objektens ID', 'Giltighetstid',),
+        PUUTTEELLISET_TYONTEKIJA_HEADERS: ('Studentnummer', 'Förnamn', 'Efternamn', 'Personbeteckning',
+                                           'Spärrmarkering', 'Arbetstagarens ID', 'Källsystem', 'Fel',
+                                           'Uppgiftsinnehåll', 'Objektens ID', 'Giltighetstid',),
         YES: 'Ja',
         NO: 'Nej',
-        ExcelReportType.VAKATIEDOT_VOIMASSA.value: 'Uppgifterna_om_småbarnspedagogik_i_kraft'
+        ExcelReportType.VAKATIEDOT_VOIMASSA.value: 'Uppgifterna_om_småbarnspedagogik_i_kraft',
+        ExcelReportType.PUUTTEELLISET_TOIMIPAIKKA.value: 'Bristfälliga_verksamhetsställen',
+        ExcelReportType.PUUTTEELLISET_LAPSI.value: 'Bristfälliga_uppgifter_om_barn',
+        ExcelReportType.PUUTTEELLISET_TYONTEKIJA.value: 'Bristfälliga_uppgifter_om_arbetstagare'
     }
 }
 
@@ -163,10 +199,7 @@ def create_excel_report_task(report_id):
     file_path = get_excel_local_file_path(report)
     workbook = AutofitWorkbook(file_path, {'default_date_format': 'd.m.yyyy'})
 
-    if report.report_type == ExcelReportType.VAKATIEDOT_VOIMASSA.value:
-        _create_vakatiedot_voimassa_report(workbook, report.language, report.vakajarjestaja_id,
-                                           toimipaikka_id=report.toimipaikka_id,
-                                           target_date=report.target_date)
+    _create_excel_report(workbook, report)
 
     # Make sure excel folder exists
     try:
@@ -215,6 +248,17 @@ def create_excel_report_task(report_id):
     excel_log.finished_timestamp = timezone.now()
     excel_log.duration = math.ceil((excel_log.finished_timestamp - excel_log.started_timestamp).total_seconds())
     excel_log.save()
+
+
+def _create_excel_report(workbook, report):
+    if report.report_type == ExcelReportType.VAKATIEDOT_VOIMASSA.value:
+        _create_vakatiedot_voimassa_report(workbook, report.language, report.vakajarjestaja_id,
+                                           toimipaikka_id=report.toimipaikka_id,
+                                           target_date=report.target_date)
+    elif report.report_type in (ExcelReportType.PUUTTEELLISET_TOIMIPAIKKA.value,
+                                ExcelReportType.PUUTTEELLISET_LAPSI.value,
+                                ExcelReportType.PUUTTEELLISET_TYONTEKIJA.value,):
+        _create_puutteelliset_report(workbook, report.report_type, report.language, report.vakajarjestaja, report.user)
 
 
 def _create_vakatiedot_voimassa_report(workbook, language, vakajarjestaja_id, toimipaikka_id=None, target_date=None):
@@ -338,6 +382,127 @@ def _create_vakatiedot_report(workbook, language, vakajarjestaja_id, toimipaikka
             _write_row(maksutieto_sheet, index, maksutieto_values)
 
 
+def _create_puutteelliset_report(workbook, report_type, language, vakajarjestaja, user):
+    # Import locally to avoid circular reference
+    from varda.viewsets_reporting import (ErrorReportLapsetViewSet, ErrorReportTyontekijatViewSet,
+                                          ErrorReportToimipaikatViewSet)
+
+    if report_type == ExcelReportType.PUUTTEELLISET_TOIMIPAIKKA.value:
+        viewset = ErrorReportToimipaikatViewSet()
+        headers = PUUTTEELLISET_TOIMIPAIKKA_HEADERS
+        data_handler_function = _create_puutteelliset_toimipaikka_report
+    elif report_type == ExcelReportType.PUUTTEELLISET_LAPSI.value:
+        viewset = ErrorReportLapsetViewSet()
+        headers = PUUTTEELLISET_LAPSI_HEADERS
+        data_handler_function = _create_puutteelliset_lapsi_report
+    else:
+        viewset = ErrorReportTyontekijatViewSet()
+        headers = PUUTTEELLISET_TYONTEKIJA_HEADERS
+        data_handler_function = _create_puutteelliset_tyontekija_report
+
+    translations = TRANSLATIONS.get(language, TRANSLATIONS.get(SupportedLanguage.FI.value))
+    worksheet = workbook.add_worksheet(translations.get(PUUTTEELLISET_SHEET_NAME))
+    _write_headers(worksheet, translations, headers)
+
+    # Initialize ViewSet by setting properties
+    viewset.vakajarjestaja_id = vakajarjestaja.id
+    viewset.vakajarjestaja_oid = vakajarjestaja.organisaatio_oid
+    viewset.format_kwarg = None
+    temp_request_object = TemporaryObject()
+    temp_request_object.user = user
+    temp_request_object.query_params = {}
+    viewset.request = temp_request_object
+
+    try:
+        # Verify permissions and set internal properties
+        viewset.verify_permissions()
+    except Http404:
+        # No permissions
+        return
+
+    queryset = viewset.get_queryset()
+    serializer_data = viewset.get_serializer(queryset, many=True).data
+    data_handler_function(worksheet, language, vakajarjestaja.id, serializer_data)
+
+
+def _create_puutteelliset_toimipaikka_report(worksheet, language, vakajarjestaja_id, data):
+    error_koodisto = _get_koodisto_with_translations(Koodistot.virhe_koodit.value, language)
+    lahdejarjestelma_koodisto = _get_koodisto_with_translations(Koodistot.lahdejarjestelma_koodit.value, language)
+
+    index = 1
+    for instance in data:
+        toimipaikka = Toimipaikka.objects.get(id=instance['toimipaikka_id'])
+        for error in instance['errors']:
+            for model_id in error['model_id_list']:
+                # Toimipaikka information
+                error_values = [toimipaikka.nimi, toimipaikka.organisaatio_oid, toimipaikka.id,
+                                _get_code_translation(lahdejarjestelma_koodisto, toimipaikka.lahdejarjestelma)]
+
+                error_values.extend([_get_code_translation(error_koodisto, error['error_code']),
+                                     error['model_name'], model_id,
+                                     _get_dates_for_model_and_id(error['model_name'], model_id)])
+
+                _write_row(worksheet, index, error_values)
+                index += 1
+
+
+def _create_puutteelliset_lapsi_report(worksheet, language, vakajarjestaja_id, data):
+    translations = TRANSLATIONS.get(language, TRANSLATIONS.get(SupportedLanguage.FI.value))
+    error_koodisto = _get_koodisto_with_translations(Koodistot.virhe_koodit.value, language)
+    lahdejarjestelma_koodisto = _get_koodisto_with_translations(Koodistot.lahdejarjestelma_koodit.value, language)
+
+    index = 1
+    for instance in data:
+        lapsi = Lapsi.objects.get(id=instance['lapsi_id'])
+        henkilo = lapsi.henkilo
+        for error in instance['errors']:
+            for model_id in error['model_id_list']:
+                # Lapsi information
+                error_values = [henkilo.henkilo_oid, henkilo.etunimet, henkilo.sukunimi,
+                                _decrypt_hetu(henkilo.henkilotunnus),
+                                _get_boolean_translation(translations, henkilo.turvakielto), lapsi.id,
+                                _get_boolean_translation(translations, lapsi.paos_kytkin)]
+
+                if lapsi.paos_kytkin:
+                    paos_organisaatio = (lapsi.paos_organisaatio if vakajarjestaja_id != lapsi.paos_organisaatio else
+                                         lapsi.oma_organisaatio)
+                    error_values.extend([paos_organisaatio.nimi, paos_organisaatio.organisaatio_oid])
+                else:
+                    error_values.extend([None, None])
+
+                error_values.extend([_get_code_translation(lahdejarjestelma_koodisto, lapsi.lahdejarjestelma),
+                                     _get_code_translation(error_koodisto, error['error_code']), error['model_name'],
+                                     model_id, _get_dates_for_model_and_id(error['model_name'], model_id)])
+
+                _write_row(worksheet, index, error_values)
+                index += 1
+
+
+def _create_puutteelliset_tyontekija_report(worksheet, language, vakajarjestaja_id, data):
+    translations = TRANSLATIONS.get(language, TRANSLATIONS.get(SupportedLanguage.FI.value))
+    error_koodisto = _get_koodisto_with_translations(Koodistot.virhe_koodit.value, language)
+    lahdejarjestelma_koodisto = _get_koodisto_with_translations(Koodistot.lahdejarjestelma_koodit.value, language)
+
+    index = 1
+    for instance in data:
+        tyontekija = Tyontekija.objects.get(id=instance['tyontekija_id'])
+        henkilo = tyontekija.henkilo
+        for error in instance['errors']:
+            for model_id in error['model_id_list']:
+                # Tyontekija information
+                error_values = [henkilo.henkilo_oid, henkilo.etunimet, henkilo.sukunimi,
+                                _decrypt_hetu(henkilo.henkilotunnus),
+                                _get_boolean_translation(translations, henkilo.turvakielto), tyontekija.id,
+                                _get_code_translation(lahdejarjestelma_koodisto, tyontekija.lahdejarjestelma)]
+
+                error_values.extend([_get_code_translation(error_koodisto, error['error_code']),
+                                     error['model_name'], model_id,
+                                     _get_dates_for_model_and_id(error['model_name'], model_id)])
+
+                _write_row(worksheet, index, error_values)
+                index += 1
+
+
 def _write_headers(worksheet, translations, headers_name):
     headers = translations.get(headers_name)
     for index, headers in enumerate(headers):
@@ -360,6 +525,17 @@ def _get_code_translation(code_list, code):
         if code_list_item.get('code_value').lower() == code.lower():
             return f'{code_list_item.get("name")} ({code.lower()})'
     return code
+
+
+def _get_dates_for_model_and_id(model_name, model_id):
+    app_config = apps.get_app_config('varda')
+    model = app_config.get_model(model_name)
+    if isinstance(model(), Model):
+        if model_instance := model.objects.filter(id=model_id).first():
+            if hasattr(model_instance, 'alkamis_pvm') and hasattr(model_instance, 'paattymis_pvm'):
+                alkamis_pvm = model_instance.alkamis_pvm.strftime('%d.%m.%Y') if model_instance.alkamis_pvm else ''
+                paattymis_pvm = model_instance.paattymis_pvm.strftime('%d.%m.%Y') if model_instance.paattymis_pvm else ''
+                return f'{alkamis_pvm}-{paattymis_pvm}'
 
 
 def _write_row(worksheet, row, values):

@@ -86,7 +86,7 @@ export class VardaVarhaiskasvatussuhdeComponent extends VardaFormAccordionAbstra
       this.enableForm();
     }
 
-    this.checkFormErrors(this.lapsiService, 'vakasuhde', this.varhaiskasvatussuhde?.id);
+    this.checkFormErrors(this.lapsiService, 'varhaiskasvatussuhde', this.varhaiskasvatussuhde?.id);
 
     this.initDateFilters();
   }

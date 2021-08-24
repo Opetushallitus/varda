@@ -3,11 +3,13 @@ from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from rest_framework.reverse import reverse
 
 from varda import validators
 from varda.clients.allas_s3_client import Client as S3Client
-from varda.excel_export import ExcelReportStatus, get_s3_object_name
+from varda.enums.error_messages import ErrorMessages
+from varda.excel_export import ExcelReportStatus, get_s3_object_name, ExcelReportType
 from varda.models import (Varhaiskasvatussuhde, Lapsi, Tyontekija, Z6_RequestLog, Z8_ExcelReport, Toimipaikka,
                           Z4_CasKayttoOikeudet, VakaJarjestaja, Henkilo, Varhaiskasvatuspaatos, Z6_LastRequest)
 from varda.misc import decrypt_henkilotunnus, decrypt_excel_report_password, CustomServerErrorException
@@ -278,6 +280,11 @@ class ExcelReportSerializer(serializers.ModelSerializer):
         model = Z8_ExcelReport
         exclude = ('s3_object_path',)
         read_only_fields = ('id', 'filename', 'status', 'password', 'user', 'timestamp', 's3_object_path')
+
+    def validate_report_type(self, value):
+        if value not in [report_type.value for report_type in ExcelReportType]:
+            raise ValidationError([ErrorMessages.ER002.value])
+        return value
 
     def get_url(self, instance):
         kwargs = self.context['view'].kwargs

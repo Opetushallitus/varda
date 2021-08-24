@@ -45,34 +45,36 @@
       </div>
     </div>
   </div>
-  <div class="full-width-row margin-top">
-    <div class="col-md-auto varda-theme">
-      <mat-checkbox name="vakajarjestajaLevelCheckbox"
-                    class="varda-checkbox"
-                    [(ngModel)]="vakajarjestajaLevel"
-                    labelPosition="after">
-        {{i18n.excel_new_vakajarjestaja_level | translate}}
-      </mat-checkbox>
+  <ng-container *ngIf="newReport.report_type === ReportType.VAKATIEDOT_VOIMASSA">
+    <div class="full-width-row margin-top">
+      <div class="col-md-auto varda-theme">
+        <mat-checkbox name="vakajarjestajaLevelCheckbox"
+                      class="varda-checkbox"
+                      [(ngModel)]="vakajarjestajaLevel"
+                      labelPosition="after">
+          {{i18n.excel_new_vakajarjestaja_level | translate}}
+        </mat-checkbox>
+      </div>
     </div>
-  </div>
-  <div class="full-width-row margin-top" *ngIf="!vakajarjestajaLevel">
-    <div class="col-md-6" *ngIf="!vakajarjestajaLevel">
-      <label for="toimipaikkaInput"
-             class="oph-bold">{{ i18n.excel_new_toimipaikka | translate }}</label>
-      <app-varda-autocomplete-selector #toimipaikkaSelector
-                                       [options]="toimipaikkaOptions"
-                                       id="toimipaikkaInput"
-                                       name="toimipaikkaInput"
-                                       [optionFormat]="{format: '{0}', properties:['nimi']}"
-                                       [nullValue]="null"
-                                       [placeholder]="i18n.excel_new_toimipaikka_placeholder | translate"
-                                       [nullOptionLabel]="i18n.excel_new_toimipaikka_placeholder | translate"
-                                       [isNullOption]="false"
-                                       [invalidInputLabel]="i18n.excel_new_toimipaikka_invalid | translate"
-                                       [(ngModel)]="selectedToimipaikka">
-      </app-varda-autocomplete-selector>
+    <div class="full-width-row margin-top" *ngIf="!vakajarjestajaLevel">
+      <div class="col-md-6" *ngIf="!vakajarjestajaLevel">
+        <label for="toimipaikkaInput"
+               class="oph-bold">{{ i18n.excel_new_toimipaikka | translate }}</label>
+        <app-varda-autocomplete-selector #toimipaikkaSelector
+                                         [options]="toimipaikkaOptions"
+                                         id="toimipaikkaInput"
+                                         name="toimipaikkaInput"
+                                         [optionFormat]="{format: '{0}', properties:['nimi']}"
+                                         [nullValue]="null"
+                                         [placeholder]="i18n.excel_new_toimipaikka_placeholder | translate"
+                                         [nullOptionLabel]="i18n.excel_new_toimipaikka_placeholder | translate"
+                                         [isNullOption]="false"
+                                         [invalidInputLabel]="i18n.excel_new_toimipaikka_invalid | translate"
+                                         [(ngModel)]="selectedToimipaikka">
+        </app-varda-autocomplete-selector>
+      </div>
     </div>
-  </div>
+  </ng-container>
   <app-varda-error-field [errors]="errors"></app-varda-error-field>
   <div class="col-md-auto margin-top-large">
     <button class="varda-button varda-button-neutral varda-icon-button"

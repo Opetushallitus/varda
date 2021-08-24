@@ -96,7 +96,7 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
 
     if (this.varhaiskasvatuspaatos) {
       this.changeJarjestamismuoto(this.varhaiskasvatuspaatos.jarjestamismuoto_koodi);
-      this.checkFormErrors(this.lapsiService, 'vakapaatos', this.varhaiskasvatuspaatos?.id);
+      this.checkFormErrors(this.lapsiService, 'varhaiskasvatuspaatos', this.varhaiskasvatuspaatos?.id);
     }
 
     if (!this.lapsitiedotTallentaja || this.varhaiskasvatuspaatos) {

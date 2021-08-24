@@ -46,7 +46,7 @@ export class ToimintapainotusComponent extends PainotusAbstractComponent<Toiminn
       ),
     });
 
-    this.checkFormErrors(this.vakajarjestajaApiService, 'toiminnallinen_painotus', this.painotus?.id);
+    this.checkFormErrors(this.vakajarjestajaApiService, 'toiminnallinenpainotus', this.painotus?.id);
   }
 
   deletePainotus() {

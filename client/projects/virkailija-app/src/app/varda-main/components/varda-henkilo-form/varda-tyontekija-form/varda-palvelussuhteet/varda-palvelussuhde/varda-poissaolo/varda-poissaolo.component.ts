@@ -72,7 +72,7 @@ export class VardaPoissaoloComponent extends VardaFormAccordionAbstractComponent
       this.enableForm();
     }
 
-    this.checkFormErrors(this.henkilostoService, 'poissaolo', this.poissaolo?.id);
+    this.checkFormErrors(this.henkilostoService, 'pidempipoissaolo', this.poissaolo?.id);
   }
 
   ngOnDestroy() {

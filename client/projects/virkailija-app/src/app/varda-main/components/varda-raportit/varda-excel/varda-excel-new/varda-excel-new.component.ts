@@ -18,7 +18,10 @@ import * as moment from 'moment';
 import { VardaDateService } from '../../../../services/varda-date.service';
 
 const TooltipTranslations = {
-  [ReportType.VAKATIEDOT_VOIMASSA]: VirkailijaTranslations.excel_report_type_description_vakatiedot_voimassa
+  [ReportType.VAKATIEDOT_VOIMASSA]: VirkailijaTranslations.excel_report_type_description_vakatiedot_voimassa,
+  [ReportType.PUUTTEELLISET_TOIMIPAIKKA]: VirkailijaTranslations.excel_report_type_description_puutteelliset_toimipaikka,
+  [ReportType.PUUTTEELLISET_LAPSI]: VirkailijaTranslations.excel_report_type_description_puutteelliset_lapsi,
+  [ReportType.PUUTTEELLISET_TYONTEKIJA]: VirkailijaTranslations.excel_report_type_description_puutteelliset_tyontekija
 };
 
 @Component({
@@ -86,7 +89,7 @@ export class VardaExcelNewComponent implements OnInit {
   }
 
   create() {
-    if (!this.vakajarjestajaLevel) {
+    if (!this.vakajarjestajaLevel && this.newReport.report_type === ReportType.VAKATIEDOT_VOIMASSA) {
       if (this.selectedToimipaikka && !this.toimipaikkaSelector.isOptionInvalid()) {
         this.newReport.toimipaikka_oid = this.selectedToimipaikka.organisaatio_oid;
       } else {

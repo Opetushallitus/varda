@@ -318,6 +318,7 @@ class ErrorMessages(enum.Enum):
 
     # Excel errors, prefix: ER
     ER001 = get_error_dict('ER001', 'Cannot create report for given Toimipaikka.')
+    ER002 = get_error_dict('ER002', 'Invalid report type.')
 
     # Miscellaneous errors, prefix: MI
     MI001 = get_error_dict('MI001', 'Token was not refreshed.')

@@ -10,11 +10,17 @@ import { environment } from '../../../../../environments/environment';
 import { interval, Subscription } from 'rxjs';
 
 export enum ReportType {
-  VAKATIEDOT_VOIMASSA = 'VAKATIEDOT_VOIMASSA'
+  VAKATIEDOT_VOIMASSA = 'VAKATIEDOT_VOIMASSA',
+  PUUTTEELLISET_TOIMIPAIKKA = 'PUUTTEELLISET_TOIMIPAIKKA',
+  PUUTTEELLISET_LAPSI = 'PUUTTEELLISET_LAPSI',
+  PUUTTEELLISET_TYONTEKIJA = 'PUUTTEELLISET_TYONTEKIJA'
 }
 
 export const ReportTypeTranslations = {
   [ReportType.VAKATIEDOT_VOIMASSA]: VirkailijaTranslations.excel_report_type_vakatiedot_voimassa,
+  [ReportType.PUUTTEELLISET_TOIMIPAIKKA]: VirkailijaTranslations.excel_report_type_puutteelliset_toimipaikka,
+  [ReportType.PUUTTEELLISET_LAPSI]: VirkailijaTranslations.excel_report_type_puutteelliset_lapsi,
+  [ReportType.PUUTTEELLISET_TYONTEKIJA]: VirkailijaTranslations.excel_report_type_puutteelliset_tyontekija,
 };
 
 enum ReportStatus {

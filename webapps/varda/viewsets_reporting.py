@@ -28,7 +28,7 @@ from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.enums.koodistot import Koodistot
 from varda.enums.supported_language import SupportedLanguage
 from varda.enums.ytj import YtjYritysmuoto
-from varda.excel_export import ExcelReportStatus, create_excel_report_task, generate_filename, get_excel_local_file_path
+from varda.excel_export import generate_filename, get_excel_local_file_path, ExcelReportStatus, create_excel_report_task
 from varda.filters import (TiedonsiirtoFilter, ExcelReportFilter, KelaEtuusmaksatusAloittaneetFilter,
                            KelaEtuusmaksatusLopettaneetFilter, KelaEtuusmaksatusKorjaustiedotFilter,
                            CustomParametersFilterBackend, CustomParameter, TransferOutageReportFilter)
@@ -36,7 +36,8 @@ from varda.misc import encrypt_string
 from varda.misc_viewsets import IntegerIdSchema
 from varda.models import (KieliPainotus, Lapsi, Maksutieto, PaosOikeus, ToiminnallinenPainotus, Toimipaikka,
                           VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z6_RequestLog,
-                          Z4_CasKayttoOikeudet, Tyontekija, Z8_ExcelReport, PaosToiminta, Z2_Code, Z6_LastRequest)
+                          Z4_CasKayttoOikeudet, Tyontekija, Z8_ExcelReport, PaosToiminta, Z2_Code, Z6_LastRequest,
+                          Tyoskentelypaikka, Palvelussuhde)
 from varda.pagination import (ChangeablePageSizePagination, IdCursorPagination, DateCursorPagination,
                               DateReverseCursorPagination, IdReverseCursorPagination,
                               ChangeableReportingPageSizePagination)
@@ -618,14 +619,14 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
                     Q(varhaiskasvatuspaatokset__alkamis_pvm__gt=F('varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm')),
                     'varhaiskasvatuspaatokset__varhaiskasvatussuhteet__id'
                 ),
-                'vakasuhde'
+                Varhaiskasvatussuhde.__name__.lower()
             ),
             ErrorMessages.VP003: (
                 self.get_annotation_for_filter(
                     Q(varhaiskasvatuspaatokset__paattymis_pvm__lt=F('varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm')),
                     'varhaiskasvatuspaatokset__varhaiskasvatussuhteet__id'
                 ),
-                'vakasuhde'
+                Varhaiskasvatussuhde.__name__.lower()
             ),
             ErrorMessages.VS012: (
                 self.get_annotation_for_filter(
@@ -634,14 +635,14 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
                     Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True),
                     'varhaiskasvatuspaatokset__varhaiskasvatussuhteet__id'
                 ),
-                'vakasuhde'
+                Varhaiskasvatussuhde.__name__.lower()
             ),
             ErrorMessages.VP012: (
                 self.get_annotation_for_filter(
                     Q(varhaiskasvatuspaatokset__isnull=True),
                     'id'
                 ),
-                'lapsi'
+                Lapsi.__name__.lower()
             ),
             ErrorMessages.VS014: (
                 self.get_annotation_for_filter(
@@ -649,7 +650,7 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
                     Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__isnull=True),
                     'varhaiskasvatuspaatokset__id'
                 ),
-                'vakapaatos'
+                Varhaiskasvatuspaatos.__name__.lower()
             ),
             ErrorMessages.VP013: (
                 self.get_annotation_for_filter(
@@ -657,7 +658,7 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
                     Q(henkilo__syntyma_pvm__lt=overage_date),
                     'varhaiskasvatuspaatokset__id'
                 ),
-                'vakapaatos'
+                Varhaiskasvatuspaatos.__name__.lower()
             ),
             ErrorMessages.VS015: (
                 self.get_annotation_for_filter(
@@ -666,7 +667,7 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
                      Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True)),
                     'varhaiskasvatuspaatokset__varhaiskasvatussuhteet__id'
                 ),
-                'vakasuhde'
+                Varhaiskasvatussuhde.__name__.lower()
             )
         }
 
@@ -683,7 +684,7 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
                     Q(huoltajuussuhteet__maksutiedot__paattymis_pvm__isnull=True),
                     'huoltajuussuhteet__maksutiedot__id'
                 ),
-                'maksutieto'
+                Maksutieto.__name__.lower()
             ),
             ErrorMessages.MA016: (
                 self.get_annotation_for_filter(
@@ -692,7 +693,7 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
                     Q(henkilo__syntyma_pvm__lt=overage_date),
                     'huoltajuussuhteet__maksutiedot__id'
                 ),
-                'maksutieto'
+                Maksutieto.__name__.lower()
             )
         }
 
@@ -742,14 +743,14 @@ class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
                     Q(henkilo__tutkinnot__vakajarjestaja=F('vakajarjestaja')) & Q(palvelussuhteet__isnull=True),
                     'id'
                 ),
-                'tyontekija'
+                Tyontekija.__name__.lower()
             ),
             ErrorMessages.TA014: (
                 self.get_annotation_for_filter(
                     Q(palvelussuhteet__isnull=False) & Q(palvelussuhteet__tyoskentelypaikat__isnull=True),
                     'palvelussuhteet__id'
                 ),
-                'palvelussuhde'
+                Palvelussuhde.__name__.lower()
             ),
             ErrorMessages.TU004: (
                 self.get_annotation_for_filter(
@@ -758,21 +759,21 @@ class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
                         .exclude(henkilo__tutkinnot__vakajarjestaja=self.vakajarjestaja_id).values('id'))),
                     'id'
                 ),
-                'tyontekija'
+                Tyontekija.__name__.lower()
             ),
             ErrorMessages.TA008: (
                 self.get_annotation_for_filter(
                     Q(palvelussuhteet__alkamis_pvm__gt=F('palvelussuhteet__tyoskentelypaikat__alkamis_pvm')),
                     'palvelussuhteet__tyoskentelypaikat__id'
                 ),
-                'tyoskentelypaikka'
+                Tyoskentelypaikka.__name__.lower()
             ),
             ErrorMessages.TA006: (
                 self.get_annotation_for_filter(
                     Q(palvelussuhteet__paattymis_pvm__lt=F('palvelussuhteet__tyoskentelypaikat__paattymis_pvm')),
                     'palvelussuhteet__tyoskentelypaikat__id'
                 ),
-                'tyoskentelypaikka'
+                Tyoskentelypaikka.__name__.lower()
             ),
             ErrorMessages.TA013: (
                 self.get_annotation_for_filter(
@@ -781,7 +782,7 @@ class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
                     Q(palvelussuhteet__tyoskentelypaikat__paattymis_pvm__isnull=True),
                     'palvelussuhteet__tyoskentelypaikat__id'
                 ),
-                'tyoskentelypaikka'
+                Tyoskentelypaikka.__name__.lower()
             ),
             ErrorMessages.TA016: (
                 self.get_annotation_for_filter(
@@ -790,7 +791,7 @@ class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
                      Q(palvelussuhteet__tyoskentelypaikat__paattymis_pvm__isnull=True)),
                     'palvelussuhteet__tyoskentelypaikat__id'
                 ),
-                'tyoskentelypaikka'
+                Tyoskentelypaikka.__name__.lower()
             )
         }
 
@@ -840,7 +841,7 @@ class ErrorReportToimipaikatViewSet(AbstractErrorReportViewSet):
                     Q(paattymis_pvm__lt=F('toiminnallisetpainotukset__paattymis_pvm')),
                     'toiminnallisetpainotukset__id'
                 ),
-                'toiminnallinen_painotus'
+                ToiminnallinenPainotus.__name__.lower()
             ),
             ErrorMessages.TO003: (
                 self.get_annotation_for_filter(
@@ -849,26 +850,26 @@ class ErrorReportToimipaikatViewSet(AbstractErrorReportViewSet):
                     Q(toiminnallisetpainotukset__paattymis_pvm__isnull=True),
                     'toiminnallisetpainotukset__id'
                 ),
-                'toiminnallinen_painotus'
+                ToiminnallinenPainotus.__name__.lower()
             ),
             ErrorMessages.TO004: (
                 self.get_annotation_for_filter(Q(toiminnallinenpainotus_kytkin=False) &
                                                Q(toiminnallisetpainotukset__isnull=False),
                                                'id'),
-                'toimipaikka'
+                Toimipaikka.__name__.lower()
             ),
             ErrorMessages.TO005: (
                 self.get_annotation_for_filter(Q(toiminnallinenpainotus_kytkin=True) &
                                                Q(toiminnallisetpainotukset__isnull=True),
                                                'id'),
-                'toimipaikka'
+                Toimipaikka.__name__.lower()
             ),
             ErrorMessages.KP002: (
                 self.get_annotation_for_filter(
                     Q(paattymis_pvm__lt=F('kielipainotukset__paattymis_pvm')),
                     'kielipainotukset__id'
                 ),
-                'kielipainotus'
+                KieliPainotus.__name__.lower()
             ),
             ErrorMessages.KP003: (
                 self.get_annotation_for_filter(
@@ -877,19 +878,19 @@ class ErrorReportToimipaikatViewSet(AbstractErrorReportViewSet):
                     Q(kielipainotukset__paattymis_pvm__isnull=True),
                     'kielipainotukset__id'
                 ),
-                'kielipainotus'
+                KieliPainotus.__name__.lower()
             ),
             ErrorMessages.KP004: (
                 self.get_annotation_for_filter(Q(kielipainotus_kytkin=False) &
                                                Q(kielipainotukset__isnull=False),
                                                'id'),
-                'toimipaikka'
+                Toimipaikka.__name__.lower()
             ),
             ErrorMessages.KP005: (
                 self.get_annotation_for_filter(Q(kielipainotus_kytkin=True) &
                                                Q(kielipainotukset__isnull=True),
                                                'id'),
-                'toimipaikka'
+                Toimipaikka.__name__.lower()
             ),
             ErrorMessages.TP020: (
                 self.get_annotation_for_filter(Q(varhaiskasvatuspaikat=0) &
@@ -897,7 +898,7 @@ class ErrorReportToimipaikatViewSet(AbstractErrorReportViewSet):
                                                (Q(varhaiskasvatussuhteet__paattymis_pvm__gte=today) |
                                                 Q(varhaiskasvatussuhteet__paattymis_pvm__isnull=True)),
                                                'id'),
-                'toimipaikka'
+                Toimipaikka.__name__.lower()
             ),
             ErrorMessages.TP021: (
                 self.get_annotation_for_filter(Q(paattymis_pvm__lt=F('varhaiskasvatussuhteet__paattymis_pvm')) |
@@ -905,7 +906,7 @@ class ErrorReportToimipaikatViewSet(AbstractErrorReportViewSet):
                                                 Q(varhaiskasvatussuhteet__isnull=False) &
                                                 Q(varhaiskasvatussuhteet__paattymis_pvm__isnull=True)),
                                                'id'),
-                'toimipaikka'
+                Toimipaikka.__name__.lower()
             )
         }
 
@@ -916,14 +917,14 @@ class ErrorReportToimipaikatViewSet(AbstractErrorReportViewSet):
                                                 Q(tyoskentelypaikat__isnull=False) &
                                                 Q(tyoskentelypaikat__paattymis_pvm__isnull=True)),
                                                'id'),
-                'toimipaikka'
+                Toimipaikka.__name__.lower()
             ),
             ErrorMessages.TP023: (
                 self.get_annotation_for_filter(Q(tyoskentelypaikat__isnull=True) &
                                                Q(alkamis_pvm__lte=today) &
                                                (Q(paattymis_pvm__gte=today) | Q(paattymis_pvm__isnull=True)),
                                                'id'),
-                'toimipaikka'
+                Toimipaikka.__name__.lower()
             )
         }
 
@@ -1025,8 +1026,8 @@ class ExcelReportViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cre
     def perform_create(self, serializer):
         user = self.request.user
         data = serializer.validated_data
-        vakajarjestaja = data.get('vakajarjestaja')
 
+        vakajarjestaja = data.get('vakajarjestaja')
         if toimipaikka := data.get('toimipaikka'):
             self._validate_toimipaikka_belongs_to_vakajarjestaja(vakajarjestaja, toimipaikka)
 
