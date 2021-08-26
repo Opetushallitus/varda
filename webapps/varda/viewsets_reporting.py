@@ -5,10 +5,10 @@ from wsgiref.util import FileWrapper
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.postgres.aggregates import StringAgg
+from django.contrib.postgres.aggregates import StringAgg, ArrayAgg
 from django.db import transaction
 from django.db.models import (Q, Case, Value, When, OuterRef, Subquery, CharField, F, DateField, Count, IntegerField,
-                              Exists)
+                              Exists, FloatField, Sum)
 from django.db.models.functions import Cast
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
@@ -31,13 +31,14 @@ from varda.enums.ytj import YtjYritysmuoto
 from varda.excel_export import generate_filename, get_excel_local_file_path, ExcelReportStatus, create_excel_report_task
 from varda.filters import (TiedonsiirtoFilter, ExcelReportFilter, KelaEtuusmaksatusAloittaneetFilter,
                            KelaEtuusmaksatusLopettaneetFilter, KelaEtuusmaksatusKorjaustiedotFilter,
-                           CustomParametersFilterBackend, CustomParameter, TransferOutageReportFilter)
+                           CustomParametersFilterBackend, CustomParameter, TransferOutageReportFilter,
+                           RequestSummaryFilter)
 from varda.misc import encrypt_string
 from varda.misc_viewsets import IntegerIdSchema
 from varda.models import (KieliPainotus, Lapsi, Maksutieto, PaosOikeus, ToiminnallinenPainotus, Toimipaikka,
                           VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z6_RequestLog,
                           Z4_CasKayttoOikeudet, Tyontekija, Z8_ExcelReport, PaosToiminta, Z2_Code, Z6_LastRequest,
-                          Tyoskentelypaikka, Palvelussuhde)
+                          Tyoskentelypaikka, Palvelussuhde, Z6_RequestSummary)
 from varda.pagination import (ChangeablePageSizePagination, IdCursorPagination, DateCursorPagination,
                               DateReverseCursorPagination, IdReverseCursorPagination,
                               ChangeableReportingPageSizePagination)
@@ -52,7 +53,8 @@ from varda.serializers_reporting import (KelaEtuusmaksatusAloittaneetSerializer,
                                          TiedonsiirtoYhteenvetoSerializer, ExcelReportSerializer,
                                          DuplicateLapsiSerializer, ErrorReportToimipaikatSerializer,
                                          LahdejarjestelmaTransferOutageReportSerializer,
-                                         UserTransferOutageReportSerializer)
+                                         UserTransferOutageReportSerializer, RequestSummarySerializer,
+                                         RequestSummaryGroupSerializer)
 
 
 logger = logging.getLogger(__name__)
@@ -1144,3 +1146,56 @@ class LahdejarjestelmaTransferOutageReportViewSet(AbstractTransferOutageReportVi
                                         .values_list('lahdejarjestelma', flat=True).distinct())
         inactive_lahdejarjestelma_set = set(lahdejarjestelma_list).difference(set(active_lahdejarjestelma_list))
         return sorted(list(inactive_lahdejarjestelma_set), key=lambda x: int(x))
+
+
+@auditlogclass
+class RequestSummaryViewSet(GenericViewSet, ListModelMixin):
+    permission_classes = (ReadAdminOrOPHUser,)
+    pagination_class = ChangeablePageSizePagination
+    serializer_class = RequestSummarySerializer
+    filter_backends = (CustomParametersFilterBackend, DjangoFilterBackend, SearchFilter,)
+    filterset_class = RequestSummaryFilter
+    search_fields = ('user__username', 'vakajarjestaja__nimi', '=vakajarjestaja__organisaatio_oid',
+                     'request_url_simple',)
+    custom_parameters = (CustomParameter(name='categories', required=False, location='query', data_type='string',
+                                         description='Comma separated list of categories'),)
+
+    def get_serializer_class(self):
+        if self.request.query_params.get('group', '').lower() == 'true':
+            return RequestSummaryGroupSerializer
+        return RequestSummarySerializer
+
+    def _parse_filters(self):
+        category_list = self.request.query_params.get('categories', '').split(',')
+        query_filter = Q()
+        if 'user' in category_list:
+            query_filter |= Q(user__isnull=False)
+        if 'vakajarjestaja' in category_list:
+            query_filter |= Q(vakajarjestaja__isnull=False)
+        if 'lahdejarjestelma' in category_list:
+            query_filter |= Q(lahdejarjestelma__isnull=False)
+        if 'url' in category_list:
+            query_filter |= Q(request_url_simple__isnull=False)
+        return query_filter
+
+    def get_queryset(self):
+        query_filters = self._parse_filters()
+
+        if self.request.query_params.get('group', '').lower() == 'true':
+            return (Z6_RequestSummary.objects
+                    .filter(query_filters)
+                    .values('user', 'vakajarjestaja', 'lahdejarjestelma', 'request_url_simple')
+                    .annotate(successful_sum=Sum('successful_count'), unsuccessful_sum=Sum('unsuccessful_count'),
+                              ratio=Cast(F('unsuccessful_sum'), output_field=FloatField()) /
+                              Cast(F('successful_sum') + F('unsuccessful_sum'), output_field=FloatField()),
+                              id_list=ArrayAgg('id', distinct=True))
+                    .values('user__id', 'user__username', 'vakajarjestaja__id', 'vakajarjestaja__nimi',
+                            'vakajarjestaja__organisaatio_oid', 'lahdejarjestelma', 'request_url_simple', 'ratio',
+                            'successful_sum', 'unsuccessful_sum', 'id_list')
+                    .order_by('-ratio', '-unsuccessful_sum'))
+        else:
+            return (Z6_RequestSummary.objects
+                    .filter(query_filters)
+                    .annotate(ratio=Cast(F('unsuccessful_count'), output_field=FloatField()) /
+                              Cast(F('successful_count') + F('unsuccessful_count'), output_field=FloatField()))
+                    .order_by('-ratio', '-unsuccessful_count', '-summary_date'))

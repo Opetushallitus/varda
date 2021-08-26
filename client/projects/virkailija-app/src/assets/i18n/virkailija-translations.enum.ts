@@ -850,5 +850,17 @@ export enum VirkailijaTranslations {
   transfer_outage_service_user = 'transfer-outage.service-user',
   transfer_outage_vakajarjestaja = 'transfer-outage.vakajarjestaja',
   transfer_outage_last_successful = 'transfer-outage.last-successful',
-  transfer_outage_last_unsuccessful = 'transfer-outage.last-unsuccessful'
+  transfer_outage_last_unsuccessful = 'transfer-outage.last-unsuccessful',
+
+  request_summary = 'request-summary',
+  request_summary_instructions = 'request-summary.instructions',
+  request_summary_no_results = 'request-summary.no-results',
+  request_summary_target_placeholder = 'request-summary.target-placeholder',
+  request_summary_ratio = 'request-summary.ratio',
+  request_summary_filter_categories = 'request-summary.filter.categories',
+  request_summary_url = 'request-summary.url',
+  request_summary_request_method = 'request-summary.request-method',
+  request_summary_response_code = 'request-summary.response-code',
+  request_summary_request_count = 'request-summary.request-count',
+  request_summary_group = 'request-summary.group'
 }

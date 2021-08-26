@@ -37,6 +37,7 @@ import { VardaTransferOutageComponent } from './components/varda-raportit/varda-
 import { VardaPuutteellisetToimipaikatComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-toimipaikat/puutteelliset-toimipaikat.component';
 import { VardaPuutteellisetLapsetComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-lapset/puutteelliset-lapset.component';
 import { VardaPuutteellisetTyontekijatComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-tyontekijat/puutteelliset-tyontekijat.component';
+import { VardaRequestSummaryComponent } from './components/varda-raportit/varda-request-summary/varda-request-summary.component';
 
 const routes: Routes = [
   {
@@ -241,6 +242,16 @@ const routes: Routes = [
                     redirectTo: 'user'
                   },
                 ]
+              },
+              {
+                path: 'request-summary',
+                component: VardaRequestSummaryComponent,
+                data: {
+                  title: VirkailijaTranslations.request_summary,
+                  toimijaRoles: [
+                    UserAccessKeys.oph
+                  ]
+                }
               },
               {
                 path: 'tiedonsiirrot',

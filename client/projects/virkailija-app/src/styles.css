@@ -235,6 +235,25 @@ mat-expansion-panel mat-expansion-panel-header {
   margin-bottom: 2em;
 }
 
+.varda-date-range-dash {
+  font-weight: bold;
+  margin: .5em -10px 0 -10px;
+}
+
+.varda-date-range-container {
+  min-width: 320px;
+}
+
+.varda-date-range-container p {
+  margin-bottom: 0;
+}
+
+@media (min-width: 768px) {
+  .varda-date-range-container {
+    max-width: 400px;
+  }
+}
+
 @media (max-width: 767px) {
   .margin-top-md {
     margin-top: 1em;
@@ -244,6 +263,24 @@ mat-expansion-panel mat-expansion-panel-header {
 @media (max-width: 576px) {
   .margin-top-sm {
     margin-top: 1em;
+  }
+
+  .varda-date-range-container {
+    min-width: initial;
+  }
+
+  .varda-date-range-container .varda-date-range-row {
+    justify-content: center;
+  }
+
+  .varda-date-range-container .varda-date-range-row > div {
+    width: 100%;
+    flex-basis: initial;
+    padding: 0 15px;
+  }
+
+  .varda-date-range-dash {
+    margin: 0;
   }
 }
 

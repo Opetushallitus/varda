@@ -66,3 +66,9 @@
 .mat-ink-bar {
   background-color: var(--blue-lighten-1) !important;
 }
+
+app-tiedonsiirto-filter-header .oph-input {
+  min-width: 150px;
+  max-width: calc(100% - 80px);
+}
+

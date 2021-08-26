@@ -666,3 +666,11 @@ class TransferOutageReportFilter(djangofilters.FilterSet):
     vakajarjestaja = OrganisaatioFieldFilter()
     lahdejarjestelma = djangofilters.CharFilter(lookup_expr='exact')
     username = djangofilters.CharFilter(lookup_expr='icontains', field_name='user__username')
+
+
+class RequestSummaryFilter(djangofilters.FilterSet):
+    summary_date = djangofilters.DateFromToRangeFilter()
+    vakajarjestaja = OrganisaatioFieldFilter()
+    lahdejarjestelma = djangofilters.CharFilter(lookup_expr='exact')
+    username = djangofilters.CharFilter(lookup_expr='icontains', field_name='user__username')
+    request_url_simple = djangofilters.CharFilter(lookup_expr='icontains')

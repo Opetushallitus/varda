@@ -158,6 +158,8 @@ router_reporting.register(r'excel-reports', viewsets_reporting.ExcelReportViewSe
 router_reporting.register(r'transfer-outage', viewsets_reporting.UserTransferOutageReportViewSet, basename='transfer-outage')
 # /api/reporting/v1/transfer-outage-lahdejarjestelma/
 router_reporting.register(r'transfer-outage-lahdejarjestelma', viewsets_reporting.LahdejarjestelmaTransferOutageReportViewSet, basename='transfer-outage-lahdejarjestelma')
+# /api/reporting/v1/request-summary/
+router_reporting.register(r'request-summary', viewsets_reporting.RequestSummaryViewSet, basename='request-summary')
 
 router_kela_reporting = routers.DefaultRouter()
 # /api/reporting/v1/kela/etuusmaksatus/aloittaneet

@@ -13,11 +13,6 @@ th button .material-icons {
   margin-left: 0.25rem;
 }
 
-app-tiedonsiirto-filter-header .oph-input {
-  min-width: 150px;
-  max-width: calc(100% - 80px);
-}
-
 app-varda-datepicker {
   display: block;
   min-width: 150px;

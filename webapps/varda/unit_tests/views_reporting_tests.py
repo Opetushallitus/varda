@@ -33,7 +33,8 @@ class VardaViewsReportingTests(TestCase):
             'tiedonsiirto/yhteenveto': 'http://testserver/api/reporting/v1/tiedonsiirto/yhteenveto/',
             'tiedonsiirtotilasto': 'http://testserver/api/reporting/v1/tiedonsiirtotilasto/',
             'transfer-outage': 'http://testserver/api/reporting/v1/transfer-outage/',
-            'transfer-outage-lahdejarjestelma': 'http://testserver/api/reporting/v1/transfer-outage-lahdejarjestelma/'
+            'transfer-outage-lahdejarjestelma': 'http://testserver/api/reporting/v1/transfer-outage-lahdejarjestelma/',
+            'request-summary': 'http://testserver/api/reporting/v1/request-summary/'
         })
 
     def test_kela_reporting_api(self):

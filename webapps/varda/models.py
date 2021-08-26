@@ -1184,6 +1184,54 @@ class Z6_LastRequest(models.Model):
         ]
 
 
+class Z6_RequestSummary(models.Model):
+    user = models.ForeignKey(User, related_name='request_summaries', on_delete=models.PROTECT, null=True)
+    vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='request_summaries', on_delete=models.PROTECT, null=True)
+    lahdejarjestelma = models.CharField(null=True, max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
+    request_url_simple = models.CharField(null=True, max_length=200)
+    summary_date = models.DateField()
+    successful_count = models.IntegerField()
+    unsuccessful_count = models.IntegerField()
+
+    def __str__(self):
+        return str(self.id)
+
+    class Meta:
+        verbose_name_plural = 'Request summaries'
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'summary_date'],
+                                    condition=Q(user__isnull=False),
+                                    name='request_summary_user_summary_date_unique_constraint'),
+            models.UniqueConstraint(fields=['vakajarjestaja', 'summary_date'],
+                                    condition=Q(vakajarjestaja__isnull=False),
+                                    name='request_summary_vakajarjestaja_summary_date_unique_constraint'),
+            models.UniqueConstraint(fields=['lahdejarjestelma', 'summary_date'],
+                                    condition=Q(lahdejarjestelma__isnull=False),
+                                    name='request_summary_lahdejarjestelma_summary_date_unique_constraint'),
+            models.UniqueConstraint(fields=['request_url_simple', 'summary_date'],
+                                    condition=Q(request_url_simple__isnull=False),
+                                    name='request_summary_request_url_simple_summary_date_unique_constraint')
+        ]
+
+
+class Z6_RequestCount(models.Model):
+    request_summary = models.ForeignKey(Z6_RequestSummary, related_name='request_counts', on_delete=models.PROTECT)
+    request_url_simple = models.CharField(max_length=200)
+    request_method = models.CharField(max_length=10)
+    response_code = models.IntegerField()
+    count = models.IntegerField()
+
+    def __str__(self):
+        return str(self.id)
+
+    class Meta:
+        verbose_name_plural = 'Request counts'
+        constraints = [
+            models.UniqueConstraint(fields=['request_summary', 'request_url_simple', 'request_method', 'response_code'],
+                                    name='request_count_unique_constraint')
+        ]
+
+
 class Z7_AdditionalUserFields(models.Model):
     user = models.OneToOneField(User, related_name='additional_user_fields', on_delete=models.PROTECT, primary_key=True)
     password_changed_timestamp = models.DateTimeField()

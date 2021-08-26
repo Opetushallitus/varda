@@ -2,16 +2,19 @@ import datetime
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Sum
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.reverse import reverse
 
 from varda import validators
 from varda.clients.allas_s3_client import Client as S3Client
+from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
 from varda.enums.error_messages import ErrorMessages
 from varda.excel_export import ExcelReportStatus, get_s3_object_name, ExcelReportType
 from varda.models import (Varhaiskasvatussuhde, Lapsi, Tyontekija, Z6_RequestLog, Z8_ExcelReport, Toimipaikka,
-                          Z4_CasKayttoOikeudet, VakaJarjestaja, Henkilo, Varhaiskasvatuspaatos, Z6_LastRequest)
+                          Z4_CasKayttoOikeudet, VakaJarjestaja, Henkilo, Varhaiskasvatuspaatos, Z6_LastRequest,
+                          Z6_RequestSummary, Z6_RequestCount)
 from varda.misc import decrypt_henkilotunnus, decrypt_excel_report_password, CustomServerErrorException
 from varda.serializers import ToimipaikkaHLField, VakaJarjestajaPermissionCheckedHLField
 from varda.serializers_common import OidRelatedField
@@ -388,3 +391,68 @@ class UserTransferOutageReportSerializer(serializers.ModelSerializer):
         model = Z6_LastRequest
         fields = ('user_id', 'username', 'vakajarjestaja_id', 'vakajarjestaja_nimi', 'vakajarjestaja_oid',
                   'lahdejarjestelma', 'last_successful', 'last_unsuccessful')
+
+
+class RequestCountSerializer(serializers.ModelSerializer):
+    successful = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Z6_RequestCount
+        fields = ('request_url_simple', 'request_method', 'response_code', 'count', 'successful')
+
+    def get_successful(self, instance):
+        return instance.response_code in SUCCESSFUL_STATUS_CODE_LIST
+
+
+class RequestSummarySerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(source='user.id', allow_null=True)
+    username = serializers.CharField(source='user.username', allow_null=True)
+    vakajarjestaja_id = serializers.IntegerField(source='vakajarjestaja.id', allow_null=True)
+    vakajarjestaja_nimi = serializers.CharField(source='vakajarjestaja.nimi', allow_null=True)
+    vakajarjestaja_oid = serializers.CharField(source='vakajarjestaja.organisaatio_oid', allow_null=True)
+    ratio = serializers.FloatField()
+    request_counts = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Z6_RequestSummary
+        fields = ('user_id', 'username', 'vakajarjestaja_id', 'vakajarjestaja_nimi', 'vakajarjestaja_oid',
+                  'lahdejarjestelma', 'request_url_simple', 'summary_date', 'successful_count', 'unsuccessful_count',
+                  'ratio', 'request_counts',)
+
+    def get_request_counts(self, instance):
+        request_count_qs = instance.request_counts.all().order_by('-count')
+        return RequestCountSerializer(request_count_qs, many=True).data
+
+
+class RequestCountGroupSerializer(serializers.Serializer):
+    request_url_simple = serializers.CharField()
+    request_method = serializers.CharField()
+    response_code = serializers.IntegerField()
+    count = serializers.IntegerField(source='sum')
+    successful = serializers.SerializerMethodField()
+
+    def get_successful(self, instance):
+        return instance['response_code'] in SUCCESSFUL_STATUS_CODE_LIST
+
+
+class RequestSummaryGroupSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField(source='user__id', allow_null=True)
+    username = serializers.CharField(source='user__username', allow_null=True)
+    vakajarjestaja_id = serializers.IntegerField(source='vakajarjestaja__id', allow_null=True)
+    vakajarjestaja_nimi = serializers.CharField(source='vakajarjestaja__nimi', allow_null=True)
+    vakajarjestaja_oid = serializers.CharField(source='vakajarjestaja__organisaatio_oid', allow_null=True)
+    lahdejarjestelma = serializers.CharField(allow_null=True)
+    request_url_simple = serializers.CharField(allow_null=True)
+    ratio = serializers.FloatField()
+    successful_count = serializers.IntegerField(source='successful_sum')
+    unsuccessful_count = serializers.IntegerField(source='unsuccessful_sum')
+    request_counts = serializers.SerializerMethodField()
+
+    def get_request_counts(self, instance):
+        request_count_qs = (Z6_RequestCount.objects
+                            .filter(request_summary__id__in=instance['id_list'])
+                            .values('request_url_simple', 'request_method', 'response_code')
+                            .annotate(sum=Sum('count'))
+                            .values('request_url_simple', 'request_method', 'response_code', 'sum')
+                            .order_by('-sum'))
+        return RequestCountGroupSerializer(request_count_qs, many=True).data

@@ -45,6 +45,15 @@
         {{ i18n.transfer_outage | translate }}
       </a>
     </ng-container>
+    <ng-container *ngIf="toimijaAccess.oph.katselija">
+      <a mat-tab-link
+         routerLink="request-summary"
+         (click)="activeLink = 'request-summary'"
+         [active]="activeLink === 'request-summary'">
+        <mat-icon alt="">trending_up</mat-icon>
+        {{ i18n.request_summary | translate }}
+      </a>
+    </ng-container>
   </nav>
 
   <router-outlet></router-outlet>

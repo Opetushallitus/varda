@@ -108,7 +108,7 @@
                     class="oph-input oph-select"
                     (change)="searchTransferOutage()"
                     [(ngModel)]="searchFilter.lahdejarjestelma">
-              <option [value]="null">{{ i18n.tiedonsiirrot_kaikki_lahdejarjestelmat | translate }}</option>
+              <option [ngValue]="null">{{ i18n.tiedonsiirrot_kaikki_lahdejarjestelmat | translate }}</option>
               <option *ngFor="let lahdejarjestelmaOption of lahdejarjestelmat.codes"
                       [value]="lahdejarjestelmaOption.code_value">
                 {{ lahdejarjestelmaOption.name }} ({{ lahdejarjestelmaOption.code_value }})

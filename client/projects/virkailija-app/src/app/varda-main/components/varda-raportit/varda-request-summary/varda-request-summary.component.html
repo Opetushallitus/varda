@@ -1,0 +1,205 @@
+<main class="request-summary-section">
+  <div class="varda-info">
+    {{ i18n.request_summary_instructions | translate }}
+  </div>
+
+  <form class="request_summary-form">
+    <div class="row">
+      <div class="col-12">
+        <label class="oph-bold">{{i18n.tiedonsiirrot_yhteenveto_date | translate}}</label>
+        <div class="varda-date-range-container">
+          <div class="row varda-date-range-row">
+            <div class="col">
+              <app-varda-datepicker #summaryDateAfter="ngModel"
+                                    name="filterSummaryDateAfter"
+                                    [(ngModel)]="searchFilter.summary_date_after"
+                                    [required]="false">
+              </app-varda-datepicker>
+              <div aria-live="assertive"
+                   class="varda-error-message-block"
+                   role="alert"
+                   *ngIf="summaryDateAfter.invalid">
+                <p>{{i18n.katsele_tietoja_error_date_format | translate}}</p>
+              </div>
+            </div>
+            <span class="varda-date-range-dash">–</span>
+            <div class="col">
+              <app-varda-datepicker #summaryDateBefore="ngModel"
+                                    name="filterSummaryDateBefore"
+                                    [(ngModel)]="searchFilter.summary_date_before"
+                                    [required]="false">
+              </app-varda-datepicker>
+              <div aria-live="assertive"
+                   class="varda-error-message-block"
+                   role="alert"
+                   *ngIf="summaryDateBefore.invalid">
+                <p>{{i18n.katsele_tietoja_error_date_format | translate}}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 margin-top varda-theme categories-container">
+        <label class="oph-bold d-block">{{i18n.request_summary_filter_categories | translate}}</label>
+        <mat-checkbox name="categoryUserCheckbox"
+                      class="varda-checkbox"
+                      [(ngModel)]="searchFilter.categories.user"
+                      labelPosition="after">
+          {{ i18n.transfer_outage_service_user | translate }}
+        </mat-checkbox>
+        <mat-checkbox name="categoryUserCheckbox"
+                      class="varda-checkbox"
+                      [(ngModel)]="searchFilter.categories.vakajarjestaja"
+                      labelPosition="after">
+          {{ i18n.transfer_outage_vakajarjestaja | translate }}
+        </mat-checkbox>
+        <mat-checkbox name="categoryUserCheckbox"
+                      class="varda-checkbox"
+                      [(ngModel)]="searchFilter.categories.lahdejarjestelma"
+                      labelPosition="after">
+          {{ i18n.lahdejarjestelma | translate }}
+        </mat-checkbox>
+        <mat-checkbox name="categoryUserCheckbox"
+                      class="varda-checkbox"
+                      [(ngModel)]="searchFilter.categories.url"
+                      labelPosition="after">
+          {{ i18n.request_summary_url | translate }}
+        </mat-checkbox>
+      </div>
+      <div class="col-12 margin-top varda-theme">
+        <label class="oph-bold d-block">{{i18n.request_summary_group | translate}}</label>
+        <mat-radio-group [(ngModel)]="searchFilter.group" name="groupBy">
+          <mat-radio-button value="false">{{ i18n.no | translate }}</mat-radio-button>
+          <mat-radio-button value="true">{{ i18n.yes | translate }}</mat-radio-button>
+        </mat-radio-group>
+      </div>
+      <div class="col-md-auto margin-top">
+        <button class="varda-button varda-icon-button search-button"
+                type="button"
+                (click)="searchRequestSummary()"
+                [disabled]="isLoading | async">
+          <mat-icon alt="">search</mat-icon>
+          {{i18n.search | translate}}
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <div class="table-responsive margin-top">
+    <table mat-table
+           [dataSource]="result"
+           multiTemplateDataRows>
+      <ng-container matColumnDef="target">
+        <th mat-header-cell *matHeaderCellDef>
+          <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_kohde"
+                                          (reset)="searchFilter.search = null; searchFilter.lahdejarjestelma = null"
+                                          (submit)="searchRequestSummary()"
+                                          [multiline]="true">
+            <input type="text"
+                   class="oph-input"
+                   [placeholder]="i18n.request_summary_target_placeholder | translate"
+                   [(ngModel)]="searchFilter.search" />
+            <select *ngIf="lahdejarjestelmaKoodisto | async as lahdejarjestelmat"
+                    class="oph-input oph-select"
+                    (change)="searchRequestSummary()"
+                    [(ngModel)]="searchFilter.lahdejarjestelma">
+              <option [ngValue]="null">{{ i18n.tiedonsiirrot_kaikki_lahdejarjestelmat | translate }}</option>
+              <option *ngFor="let lahdejarjestelmaOption of lahdejarjestelmat.codes"
+                      [value]="lahdejarjestelmaOption.code_value">
+                {{ lahdejarjestelmaOption.name }} ({{ lahdejarjestelmaOption.code_value }})
+              </option>
+            </select>
+          </app-tiedonsiirto-filter-header>
+        </th>
+        <td mat-cell *matCellDef="let instance">
+          <ng-container *ngIf="instance.username">{{ instance.username }}</ng-container>
+          <ng-container *ngIf="instance.vakajarjestaja_nimi">
+            {{ instance.vakajarjestaja_nimi }} ({{ instance.vakajarjestaja_oid }})
+          </ng-container>
+          <ng-container *ngIf="instance.lahdejarjestelma">
+            {{ instance.lahdejarjestelma | koodisto: { koodisto: koodistoEnum.lahdejarjestelma, format: 'long' } | async }}
+          </ng-container>
+          <ng-container *ngIf="instance.request_url_simple">{{ instance.request_url_simple }}</ng-container>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="ratio">
+        <th mat-header-cell *matHeaderCellDef>{{ i18n.request_summary_ratio | translate }}</th>
+        <td mat-cell *matCellDef="let instance" [class.oph-red]="instance.ratio > 0.5">
+          {{ instance.ratio | number: '1.1-2' }}
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="successfulCount">
+        <th mat-header-cell *matHeaderCellDef>{{ i18n.tiedonsiirrot_onnistuneet | translate }}</th>
+        <td mat-cell *matCellDef="let instance" class="oph-green">{{ instance.successful_count }}</td>
+      </ng-container>
+      <ng-container matColumnDef="unsuccessfulCount">
+        <th mat-header-cell *matHeaderCellDef>{{ i18n.tiedonsiirrot_epaonnistuneet | translate }}</th>
+        <td mat-cell *matCellDef="let instance" class="oph-red">{{ instance.unsuccessful_count }}</td>
+      </ng-container>
+      <ng-container matColumnDef="summaryDate">
+        <th mat-header-cell *matHeaderCellDef>{{ i18n.tiedonsiirrot_yhteenveto_date | translate }}</th>
+        <td mat-cell *matCellDef="let instance">{{ instance.summary_date | vardaDate }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="expandedDetail">
+        <td mat-cell *matCellDef="let instance" [attr.colspan]="displayedColumns.length">
+          <div class="table-hidden-row-detail"
+               [class.detail-expanded]="instance === expandedInstance">
+            <div class="table-responsive">
+              <table mat-table
+                     [dataSource]="instance.request_counts"
+                     multiTemplateDataRows>
+                <ng-container matColumnDef="requestUrl">
+                  <th mat-header-cell *matHeaderCellDef>{{ i18n.request_summary_url | translate }}</th>
+                  <td mat-cell *matCellDef="let instance">{{ instance.request_url_simple }}</td>
+                </ng-container>
+                <ng-container matColumnDef="requestMethod">
+                  <th mat-header-cell *matHeaderCellDef>{{ i18n.request_summary_request_method | translate }}</th>
+                  <td mat-cell *matCellDef="let instance">{{ instance.request_method }}</td>
+                </ng-container>
+                <ng-container matColumnDef="requestResponseCode">
+                  <th mat-header-cell *matHeaderCellDef>{{ i18n.request_summary_response_code | translate }}</th>
+                  <td mat-cell *matCellDef="let instance"
+                      [class.oph-red]="[200, 201, 204].indexOf(instance.response_code) === -1"
+                      [class.oph-green]="[200, 201, 204].indexOf(instance.response_code) !== -1">
+                    {{ instance.response_code }}
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="requestCount">
+                  <th mat-header-cell *matHeaderCellDef>{{ i18n.request_summary_request_count | translate }}</th>
+                  <td mat-cell *matCellDef="let instance">{{ instance.count }}</td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedHiddenColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedHiddenColumns;"></tr>
+              </table>
+            </div>
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+          class="table-hidden-row-parent"
+          [class.row-expanded]="expandedInstance === row"
+          (click)="expandedInstance = expandedInstance === row ? null : row"></tr>
+      <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="table-hidden-row"></tr>
+    </table>
+
+    <p *ngIf="result?.length === 0" class="margin-top">{{ i18n.request_summary_no_results | translate }}</p>
+
+    <mat-progress-bar *ngIf="isLoading | async"
+                      mode="indeterminate"
+                      color="accent"></mat-progress-bar>
+
+    <app-varda-error-field [errors]="errors"></app-varda-error-field>
+
+    <mat-paginator *ngIf="searchFilter.count"
+                   [disabled]="isLoading | async"
+                   [length]="searchFilter.count"
+                   [pageSize]="searchFilter.page_size"
+                   [pageIndex]="searchFilter.page - 1"
+                   (page)="searchRequestSummary($event)">
+    </mat-paginator>
+  </div>
+</main>

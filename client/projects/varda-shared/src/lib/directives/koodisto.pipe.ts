@@ -6,23 +6,21 @@ import { VardaKoodistoService } from '../koodisto.service';
 
 interface KoodistoPipeArgs {
   koodisto: KoodistoEnum;
+  format: 'short' | 'long';
 }
 
 @Pipe({
   name: 'koodisto'
 })
 export class KoodistoPipe implements PipeTransform {
-  constructor(private koodistoService: VardaKoodistoService) {
-
-  }
+  constructor(private koodistoService: VardaKoodistoService) { }
 
   transform(code: string, args: KoodistoPipeArgs): unknown {
     return new Observable(obs => {
       this.koodistoService.getCodeValueFromKoodisto(args.koodisto, code).pipe(take(1)).subscribe(koodistoValue => {
-        obs.next(koodistoValue.name);
+        obs.next(args.format === 'long' ? `${koodistoValue.name} (${koodistoValue.code_value})` : koodistoValue.name);
         obs.complete();
       });
     });
   }
-
 }
