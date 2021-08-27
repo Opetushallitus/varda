@@ -29,10 +29,19 @@ class AnonymisointiYhteenvetoViewSet(GenericViewSet, ListModelMixin):
             else:
                 raise ValidationError({attribute: [ErrorMessages.MI015.value]})
 
+    def _get_query_param(self, param_name):
+        """
+        :param param_name: query_param_name
+        :return: parameter value as integer or None
+        """
+        query_param = self.request.query_params.get(param_name, None)
+        if query_param and query_param.isdigit():
+            return int(query_param)
+
     def validate_henkilo_ids_general(self):
-        first_henkilo_id = self.request.query_params.get('first_henkilo_id', None)
-        middle_henkilo_id = self.request.query_params.get('middle_henkilo_id', None)
-        last_henkilo_id = self.request.query_params.get('last_henkilo_id', None)
+        first_henkilo_id = self._get_query_param('first_henkilo_id')
+        middle_henkilo_id = self._get_query_param('middle_henkilo_id')
+        last_henkilo_id = self._get_query_param('last_henkilo_id')
 
         if first_henkilo_id and middle_henkilo_id and first_henkilo_id >= middle_henkilo_id:
             raise ValidationError({'first_henkilo_id': [ErrorMessages.MI017.value]})
