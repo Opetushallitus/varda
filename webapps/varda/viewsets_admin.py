@@ -14,6 +14,7 @@ class AnonymisointiYhteenvetoViewSet(GenericViewSet, ListModelMixin):
     list:
         Nouda anonymisointi-yhteenveto.
     """
+    queryset = Henkilo.objects.none()
     permission_classes = (permissions.IsAdminUser, )
     serializer_class = AnonymisointiYhteenvetoSerializer
 
