@@ -21,3 +21,15 @@ app-varda-datepicker {
 .tiedonsiirrot-section .mat-paginator-range-label {
   display: none;
 }
+
+.tiedonsiirrot-section .handy-scroll, .tiedonsiirrot-section .handy-scroll div {
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+.tiedonsiirrot-section .handy-scroll {
+  bottom: 4.5em;
+}
+
+.tiedonsiirrot-section .handy-scroll-hidden {
+  bottom: 9999px;
+}

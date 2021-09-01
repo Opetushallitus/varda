@@ -9,8 +9,10 @@ import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/
 export class TiedonsiirtoFilterHeaderComponent implements OnInit {
   @Input() label: string;
   @Input() multiline: boolean;
-  @Output() resetFilter = new EventEmitter<string>(true);
+  @Input() hideSearchButton = false;
+  @Output() resetFilter = new EventEmitter<boolean>(true);
   @Output() submitFilter = new EventEmitter<boolean>(true);
+  @Output() emitToggle = new EventEmitter<boolean>(true);
 
   i18n = VirkailijaTranslations;
   expand = false;
@@ -23,8 +25,9 @@ export class TiedonsiirtoFilterHeaderComponent implements OnInit {
   toggle() {
     this.expand = !this.expand;
     if (!this.expand) {
-      this.resetFilter.emit();
-      this.submitFilter.emit();
+      this.resetFilter.emit(true);
+      this.submitFilter.emit(true);
     }
+    this.emitToggle.emit(this.expand);
   }
 }

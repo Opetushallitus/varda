@@ -10,9 +10,11 @@
   </ng-template>
 </div>
 <form [class.text-nowrap]="!multiline"
-      *ngIf="expand">
+      *ngIf="expand"
+      (ngSubmit)="submitFilter.emit(true)">
   <ng-content></ng-content>
   <button mat-button
+          *ngIf="!hideSearchButton"
           type="submit">
     <mat-icon alt="">search</mat-icon>
     {{ i18n.tiedonsiirrot_search | translate }}

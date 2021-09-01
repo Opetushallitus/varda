@@ -6,6 +6,7 @@
 @import "./assets/css/lists.css";
 @import "./assets/css/tables.css";
 @import "./assets/css/snackbars.css";
+@import "~handy-scroll/dist/handy-scroll.css";
 
 /* virkailija-raamifixit */
 :root {

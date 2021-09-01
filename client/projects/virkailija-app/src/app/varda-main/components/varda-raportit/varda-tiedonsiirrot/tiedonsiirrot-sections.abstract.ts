@@ -1,4 +1,4 @@
-import { OnDestroy, Component, OnInit, ViewChild } from '@angular/core';
+import { OnDestroy, Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { ActivatedRoute } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
@@ -18,7 +18,7 @@ import {
   VardaTiedonsiirtoDTO,
   VardaTiedonsiirtoYhteenvetoDTO
 } from '../../../../utilities/models/dto/varda-tiedonsiirto-dto.model';
-
+import handyScroll from 'handy-scroll';
 
 
 export interface TiedonsiirrotSearchFilter {
@@ -50,8 +50,10 @@ export interface TiedonsiirrotColumnFields {
 @Component({
   template: ''
 })
-export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, OnDestroy {
+export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('tiedonsiirtoPaginator') tiedonsiirtoPaginator: MatPaginator;
+  @ViewChild('scrollContainer') scrollContainer: ElementRef;
+  @ViewChild('tiedonsiirtoTable', { read: ElementRef }) tiedonsiirtoTable: ElementRef;
   isLoading = new BehaviorSubject<boolean>(true);
   toimijaAccess: UserAccess;
   i18n = VirkailijaTranslations;
@@ -83,6 +85,7 @@ export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, 
     search_target: null,
   };
   protected errorService: VardaErrorMessageService;
+  private resizeObserver: ResizeObserver;
   abstract columnFields: Array<TiedonsiirrotColumnFields>;
 
   constructor(
@@ -108,11 +111,21 @@ export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, 
         this.getPage(true);
       })
     );
+
+    this.resizeObserver = new ResizeObserver(entries => {
+      this.updateHandyScroller();
+    });
   }
 
+  ngAfterViewInit() {
+    handyScroll.mount(this.scrollContainer.nativeElement);
+    this.resizeObserver.observe(this.tiedonsiirtoTable.nativeElement);
+  }
 
   ngOnDestroy() {
     this.subscriptions.forEach(subscription => subscription.unsubscribe());
+    handyScroll.destroy(this.scrollContainer.nativeElement);
+    this.resizeObserver.unobserve(this.tiedonsiirtoTable.nativeElement);
   }
 
   changePage(pageEvent: PageEvent) {
@@ -191,6 +204,11 @@ export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, 
       // between moving to the next page (current index + 1) vs. moving to the last page (current index + 2)
       this.resultCount = this.resultCount + 2 * this.searchFilter.page_size;
     }
+  }
+
+  updateHandyScroller() {
+    // This function should be called every time table width changes (e.g. new data, show/hide filters...)
+    handyScroll.update(this.scrollContainer.nativeElement);
   }
 
   private extractCursorFromUrl(url: string): string {

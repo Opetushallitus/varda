@@ -33,8 +33,9 @@
     {{ i18n.tiedonsiirrot_virhekoodisto_text | translate }}
   </a>
 
-  <div class="table-responsive">
+  <div class="table-responsive" #scrollContainer>
     <table mat-table
+           #tiedonsiirtoTable
            [dataSource]="tiedonsiirrot"
            class="onnistuneet-tiedonsiirrot-table">
       <ng-container *ngIf="displayedColumns.includes('timestamp')"
@@ -45,7 +46,7 @@
           <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_aikaleima"
                                           [multiline]="true"
                                           (resetFilter)="searchFilter.timestamp_after = null; searchFilter.timestamp_before = null"
-                                          (submitFilter)="getPage(searchFilter.timestamp_after || i18n.tiedonsiirrot_placeholder_timestamp_before)">
+                                          (submitFilter)="getPage(true)">
             <app-varda-datepicker [(ngModel)]="searchFilter.timestamp_after"
                                   [placeholder]="i18n.tiedonsiirrot_placeholder_timestamp_after | translate">
             </app-varda-datepicker>
@@ -67,7 +68,7 @@
             *matHeaderCellDef>
           <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_json"
                                           (resetFilter)="searchFilter.request_body = null"
-                                          (submitFilter)="getPage(searchFilter.request_body)">
+                                          (submitFilter)="getPage(true)">
             <input type="text"
                    class="oph-input"
                    [placeholder]="i18n.tiedonsiirrot_placeholder_request_body | translate"
@@ -88,7 +89,7 @@
             *matHeaderCellDef>
           <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_kohde"
                                           (resetFilter)="searchFilter.search_target = null"
-                                          (submitFilter)="getPage(searchFilter.search_target)">
+                                          (submitFilter)="getPage(true)">
             <input type="text"
                    class="oph-input"
                    [placeholder]="i18n.tiedonsiirrot_placeholder_search_target | translate"
@@ -111,7 +112,7 @@
             *matHeaderCellDef>
           <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_tyyppi"
                                           (resetFilter)="searchFilter.request_method = null"
-                                          (submitFilter)="getPage(searchFilter.request_method)">
+                                          (submitFilter)="getPage(true)">
             <input type="text"
                    class="oph-input"
                    [placeholder]="i18n.tiedonsiirrot_placeholder_request_method | translate"
@@ -131,7 +132,7 @@
             *matHeaderCellDef>
           <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_rajapinta"
                                           (resetFilter)="searchFilter.request_url = null"
-                                          (submitFilter)="getPage(searchFilter.request_url)">
+                                          (submitFilter)="getPage(true)">
             <input type="text"
                    class="oph-input"
                    [placeholder]="i18n.tiedonsiirrot_placeholder_request_url | translate"
@@ -156,7 +157,7 @@
           <div class="error-column">
             <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_syy"
                                             (resetFilter)="searchFilter.response_body = null"
-                                            (submitFilter)="getPage(searchFilter.response_body)">
+                                            (submitFilter)="getPage(true)">
               <input type="text"
                      class="oph-input"
                      [placeholder]="i18n.tiedonsiirrot_placeholder_response_body | translate"
@@ -207,7 +208,7 @@
             *matHeaderCellDef>
           <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_kayttaja"
                                           (resetFilter)="searchFilter.username = null"
-                                          (submitFilter)="getPage(searchFilter.username)">
+                                          (submitFilter)="getPage(true)">
             <input type="text"
                    class="oph-input"
                    [placeholder]="i18n.tiedonsiirrot_placeholder_username | translate"
@@ -226,13 +227,13 @@
             *matHeaderCellDef>
           <app-tiedonsiirto-filter-header [label]="i18n.lahdejarjestelma"
                                           [multiline]="true"
-                                          (resetFilter)="searchFilter.lahdejarjestelma = null"
-                                          (submitFilter)="getPage(searchFilter.lahdejarjestelma)">
+                                          [hideSearchButton]="true"
+                                          (resetFilter)="searchFilter.lahdejarjestelma = null">
             <select *ngIf="lahdejarjestelmaKoodisto | async as lahdejarjestelmat"
                     class="oph-input oph-select"
                     (change)="getPage(true)"
                     [(ngModel)]="searchFilter.lahdejarjestelma">
-              <option [value]="null">{{ i18n.tiedonsiirrot_kaikki_lahdejarjestelmat | translate }}</option>
+              <option [ngValue]="null">{{ i18n.tiedonsiirrot_kaikki_lahdejarjestelmat | translate }}</option>
               <option *ngFor="let lahdejarjestelmaOption of lahdejarjestelmat.codes"
                       [value]="lahdejarjestelmaOption.code_value">
                 {{ lahdejarjestelmaOption.name }} ({{ lahdejarjestelmaOption.code_value }})
