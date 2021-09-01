@@ -3,7 +3,7 @@
 -- NOTE: Information is related to each other so if the order needs to be changed then relations need to be taken into account
 
 -- Table varda_tutkinto
-UPDATE varda_tutkinto SET tutkinto_koodi = random_code_value('tutkinto_koodit');
+UPDATE varda_tutkinto SET tutkinto_koodi = unique_tutkinto_code(henkilo_id, vakajarjestaja_id, tutkinto_koodi);
 
 -- Table varda_palvelussuhde
 UPDATE varda_palvelussuhde ps SET alkamis_pvm = date(ps2.alkamis_pvm - trunc(random() * 365) * '1 day'::interval * random()),

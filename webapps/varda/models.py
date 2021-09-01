@@ -725,8 +725,19 @@ class Tutkinto(models.Model):
     def _history_user(self, value):
         self.changed_by = value
 
+    def save(self, *args, **kwargs):
+        try:
+            super().save(*args, **kwargs)
+        except IntegrityError as integrity_error:
+            if 'unique_tutkinto' in str(integrity_error):
+                raise ValidationError({'errors': [ErrorMessages.TU005.value]})
+            raise integrity_error
+
     class Meta:
         verbose_name_plural = 'tutkinnot'
+        constraints = [
+            UniqueConstraint(fields=['henkilo', 'vakajarjestaja', 'tutkinto_koodi'], name='unique_tutkinto'),
+        ]
 
 
 class Palvelussuhde(UniqueLahdejarjestelmaTunnisteMixin, models.Model):

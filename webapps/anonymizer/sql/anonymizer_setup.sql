@@ -26,10 +26,29 @@ END;
 $$ language plpgsql;
 
 -- Create a function that return random code value from codes
-Create or replace function random_code_value(koodiston_nimi CHAR)
+Create or replace function random_code_value(koodiston_nimi CHAR, exclude_codes CHAR[] default '{}')
     RETURNS CHAR AS
 $$
 BEGIN
-    RETURN (select code_value from varda_z2_code c join varda_z2_koodisto k on k.id=c.koodisto_id where k.name=koodiston_nimi order by random() limit 1);
+    RETURN (select code_value from varda_z2_code c join varda_z2_koodisto k on k.id=c.koodisto_id where k.name=koodiston_nimi and not c.code_value = any(exclude_codes) order by random() limit 1);
+END;
+$$ language plpgsql;
+
+
+-- Create a function that returns unique tutkinto code for henkilo-vakajarjestaja pair
+Create or replace function unique_tutkinto_code(_henkilo_id INT, _vakajarjestaja_id INT, _tutkinto_koodi CHAR)
+    RETURNS CHAR AS
+$$
+DECLARE
+    existing_codes VARCHAR[];
+    code_value VARCHAR;
+BEGIN
+    existing_codes := (select ARRAY(select tutkinto_koodi from varda_tutkinto where henkilo_id=_henkilo_id and vakajarjestaja_id=_vakajarjestaja_id));
+    code_value := random_code_value('tutkinto_koodit', existing_codes);
+    if code_value is null then
+        -- Leave as is because no suitable code was found
+        return _tutkinto_koodi;
+    end if;
+    return code_value;
 END;
 $$ language plpgsql;

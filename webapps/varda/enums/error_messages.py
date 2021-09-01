@@ -215,6 +215,7 @@ class ErrorMessages(enum.Enum):
     TU002 = get_error_dict('TU002', 'Given Vakajarjestaja has not added this Henkilo as Tyontekija.')
     TU003 = get_error_dict('TU003', 'Given Toimipaikka is not matching provided Vakajarjestaja.')
     TU004 = get_error_dict('TU004', 'Tyontekija must have at least one Tutkinto.')
+    TU005 = get_error_dict('TU005', 'Combination of henkilo, vakajarjestaja and tutkinto_koodi fields should be unique.')
 
     # Palvelussuhde errors, prefix: PS
     PS001 = get_error_dict('PS001', 'Cannot delete Palvelussuhde. There are objects referencing it that need to be deleted first.')
