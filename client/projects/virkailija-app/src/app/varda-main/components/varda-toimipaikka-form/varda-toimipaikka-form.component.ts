@@ -106,6 +106,8 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
   ngOnInit() {
     this.tallentajaAccess = this.toimijaAccess.lapsitiedot.tallentaja;
     if (this.toimipaikka) {
+      // User can also have Toimipaikka level tallentaja access
+      this.tallentajaAccess = this.tallentajaAccess || this.authService.getUserAccess(this.toimipaikka.organisaatio_oid).lapsitiedot.tallentaja;
       if (this.toimipaikka.paos_organisaatio_url || this.toimipaikka.hallinnointijarjestelma !== Hallinnointijarjestelma.VARDA) {
         this.tallentajaAccess = false;
       }

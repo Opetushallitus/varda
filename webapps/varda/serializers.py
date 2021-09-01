@@ -420,6 +420,19 @@ class ToimipaikkaSerializer(RequiredLahdejarjestelmaMixin, serializers.Hyperlink
                 raise ValidationError({'paattymis_pvm': [ErrorMessages.TP026.value]})
 
 
+class ToimipaikkaUpdateSerializer(ToimipaikkaSerializer):
+    """
+    Different PUT/PATCH serializer so that Toimipaikka can be updated with only Toimipaikka permissions
+    (no VakaJarjestajaPermissionCheckedHLField)
+    """
+    vakajarjestaja = VakaJarjestajaHLField(view_name='vakajarjestaja-detail', required=False, read_only=True)
+    vakajarjestaja_oid = OidRelatedField(object_type=VakaJarjestaja,
+                                         parent_field='vakajarjestaja',
+                                         parent_attribute='organisaatio_oid',
+                                         prevalidator=validators.validate_organisaatio_oid,
+                                         read_only=True)
+
+
 class ToiminnallinenPainotusSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     toimipaikka = ToimipaikkaPermissionCheckedHLField(required=False, view_name='toimipaikka-detail',

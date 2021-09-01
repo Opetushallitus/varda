@@ -75,7 +75,7 @@ from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer,
                                VarhaiskasvatussuhdeSerializer, VakaJarjestajaYhteenvetoSerializer,
                                HenkilohakuLapsetSerializer, PaosToimintaSerializer, PaosToimijatSerializer,
                                PaosToimipaikatSerializer, PaosOikeusSerializer, LapsiKoosteSerializer, UserSerializer,
-                               ToimipaikkaKoosteSerializer)
+                               ToimipaikkaKoosteSerializer, ToimipaikkaUpdateSerializer)
 from varda.tasks import (update_oph_staff_to_vakajarjestaja_groups,
                          assign_taydennyskoulutus_permissions_for_toimipaikka_task)
 from webapps.api_throttles import (BurstRateThrottleStrict, SustainedRateThrottleStrict)
@@ -567,8 +567,15 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
     filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.ToimipaikkaFilter
     queryset = Toimipaikka.objects.all().order_by('id')
-    serializer_class = ToimipaikkaSerializer
+    serializer_class = None
     permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
+
+    def get_serializer_class(self):
+        request = self.request
+        if request.method == 'PUT' or request.method == 'PATCH':
+            return ToimipaikkaUpdateSerializer
+        else:
+            return ToimipaikkaSerializer
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
