@@ -574,6 +574,8 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
         request = self.request
         if request.method == 'PUT' or request.method == 'PATCH':
             return ToimipaikkaUpdateSerializer
+        elif self.action == 'kooste':
+            return ToimipaikkaKoosteSerializer
         else:
             return ToimipaikkaSerializer
 
@@ -637,8 +639,7 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
         cache.delete('vakajarjestaja_yhteenveto_' + str(saved_object.vakajarjestaja.id))
 
     @auditlog
-    @action(methods=['get'], detail=True, serializer_class=ToimipaikkaKoosteSerializer,
-            permission_classes=(CustomModelPermissions, CustomObjectPermissions,))
+    @action(methods=['get'], detail=True, permission_classes=(CustomModelPermissions, CustomObjectPermissions,))
     def kooste(self, request, pk=None):
         toimipaikka_obj = self.get_object()
         serialized_data = self.get_serializer(toimipaikka_obj).data
