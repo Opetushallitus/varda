@@ -1,6 +1,11 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.24 (03.09.2021)
+- OPHVARDA-271: Käyttöliittymäkutsujen erottelu
+- OPHVARDA-2288: Tiedonsiirtoraportin jatkokehitys
+- OPHVARDA-2289: Toimipaikan muokkaus toimipaikkaoikeuksilla
+
 1.5.23 (26.08.2021)
 - OPHVARDA-2221: Excel-raporttien salaus
 - OPHVARDA-2225: Puutteellisten tietojen Excel-raportit
