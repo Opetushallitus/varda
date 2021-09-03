@@ -6,6 +6,7 @@ class AdditionalHeadersMiddleware(MiddlewareMixin):
     Adds additional headers to response
     """
     def __call__(self, *args, **kwargs):
+        request = args[0]
         response = super().__call__(*args, **kwargs)
 
         # Add cache related headers to response so that response data is not cached in the client (browser)
@@ -20,5 +21,10 @@ class AdditionalHeadersMiddleware(MiddlewareMixin):
         if 'text/html' in content_type:
             # If response is rendered, add X-XSS-Protection header
             response['X-XSS-Protection'] = '1; mode=block'
+
+        if proxied_from := request.headers.get('X-Proxied-From'):
+            response['X-Proxied-From'] = proxied_from
+        else:
+            response['X-Proxied-From'] = 'varda-backend'
 
         return response
