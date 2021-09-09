@@ -372,3 +372,28 @@ def get_user_vakajarjestaja(user):
         return None
 
     return vakajarjestaja_qs.first()
+
+
+def merge_lapsi_maksutiedot(new_lapsi, old_maksutiedot, new_huoltajuussuhteet, merged_lapsi_toimipaikat):
+    from varda.permissions import assign_object_level_permissions
+    from varda.models import Maksutieto
+
+    for maksutieto in old_maksutiedot:
+        maksutieto_old_huoltajuussuhteet = maksutieto.huoltajuussuhteet.all()
+        # We need to evaluate the queryset before .clear() otherwise the queryset will end up empty
+        maksutieto_old_huoltaja_ids = set(maksutieto_old_huoltajuussuhteet.values_list('huoltaja_id', flat=True).distinct())
+        maksutieto_new_huoltajuussuhteet = new_huoltajuussuhteet.filter(huoltaja_id__in=maksutieto_old_huoltaja_ids)
+        old_maksutieto_huoltaja_count = maksutieto_old_huoltajuussuhteet.count()
+        maksutieto.huoltajuussuhteet.clear()
+
+        for new_huoltajuussuhde in maksutieto_new_huoltajuussuhteet:
+            maksutieto.huoltajuussuhteet.add(new_huoltajuussuhde.id)
+
+        new_maksutieto_huoltajat_count = maksutieto.huoltajuussuhteet.all().count()
+
+        if old_maksutieto_huoltaja_count != new_maksutieto_huoltajat_count:
+            raise ValueError(f'Error transferring huoltajuussuhteet on maksutieto {maksutieto} to new child {new_lapsi}')
+
+        # Vakatoimija stays the same but old_child and new_child might have different toimipaikkas
+        for oid in merged_lapsi_toimipaikat:
+            assign_object_level_permissions(oid, Maksutieto, maksutieto)

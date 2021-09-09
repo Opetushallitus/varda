@@ -608,3 +608,69 @@ def update_request_summary_table_task():
     # Update Aikaleima instance
     aikaleima.aikaleima = now
     aikaleima.save()
+
+
+@shared_task
+def merge_duplicate_child(merge_list):
+    """
+    Merges duplicate child-objects
+
+    Pre-requisite: Get a list of ID:s that are supposed to be merged and confirm the list with end-user
+
+    Usage: to merge for example child 1 (old_lapsi) into child 2 (new_lapsi) use input [[2,1]]
+           for multiple merges use a list of lists eg [[2,1], [3,4], [5,10]]
+
+    merge_list: list of lists of lapsi_id to be merged
+
+    :return:
+    """
+    from varda.validators import validate_merge_duplicate_child_list, validate_merge_duplicate_child_lapsi_objs
+    from varda.misc import merge_lapsi_maksutiedot
+    from django.db import IntegrityError
+
+    validate_merge_duplicate_child_list(merge_list)
+
+    merged_lapsi_counter = 0
+
+    for lapsi in merge_list:
+        try:
+            with transaction.atomic():
+                try:
+                    new_lapsi = Lapsi.objects.get(id=lapsi[0])
+                    old_lapsi = Lapsi.objects.get(id=lapsi[1])
+                except Lapsi.DoesNotExist:
+                    logger.warning(f'No child with id {lapsi[0]} or {lapsi[1]}')
+                    raise IntegrityError
+
+                validate_lapsi = validate_merge_duplicate_child_lapsi_objs(new_lapsi, old_lapsi)
+
+                if not validate_lapsi['is_ok']:
+                    logger.warning(validate_lapsi['error_msg'])
+                    continue
+
+                old_vakapaatokset = Varhaiskasvatuspaatos.objects.filter(lapsi_id=old_lapsi.id)
+
+                for old_vakapaatos in old_vakapaatokset:
+                    old_vakapaatos.lapsi = new_lapsi
+                    old_vakapaatos.save()
+
+                merged_lapsi_toimipaikat = (Toimipaikka.objects
+                                                       .filter(Q(varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi=old_lapsi) |
+                                                               Q(varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi=new_lapsi))
+                                                       .exclude(organisaatio_oid__exact='')
+                                                       .values_list('organisaatio_oid', flat=True)
+                                                       .distinct())
+
+                old_maksutiedot = Maksutieto.objects.filter(huoltajuussuhteet__lapsi=old_lapsi).distinct('id')
+                new_huoltajuussuhteet = Huoltajuussuhde.objects.filter(lapsi=new_lapsi)
+
+                merge_lapsi_maksutiedot(new_lapsi, old_maksutiedot, new_huoltajuussuhteet, merged_lapsi_toimipaikat)
+
+                old_lapsi.huoltajuussuhteet.all().delete()
+                old_lapsi.delete()
+                merged_lapsi_counter += 1
+
+        except IntegrityError:
+            logger.warning(f'IntegrityError for lapsi {lapsi}')
+
+    logger.info(f'Merged {merged_lapsi_counter} lapsi objects')
