@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.25 (09.09.2021)
+- OPHVARDA-2261: Validoi koodiston koodien voimassaolo
+
 1.5.24 (03.09.2021)
 - OPHVARDA-271: Käyttöliittymäkutsujen erottelu
 - OPHVARDA-2288: Tiedonsiirtoraportin jatkokehitys
