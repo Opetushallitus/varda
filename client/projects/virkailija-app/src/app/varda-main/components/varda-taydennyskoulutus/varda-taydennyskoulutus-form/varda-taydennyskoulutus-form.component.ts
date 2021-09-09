@@ -10,7 +10,7 @@ import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/
 import * as moment from 'moment';
 import { VardaFormValidators } from 'projects/virkailija-app/src/app/shared/validators/varda-form-validators';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
-import { VardaDateService } from '../../../services/varda-date.service';
+import { VardaDateService } from 'varda-shared';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';

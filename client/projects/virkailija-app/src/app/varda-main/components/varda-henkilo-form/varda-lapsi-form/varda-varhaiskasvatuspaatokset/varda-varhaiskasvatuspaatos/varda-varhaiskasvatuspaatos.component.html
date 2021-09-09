@@ -98,8 +98,8 @@
                 <option *ngFor="let jarjestamismuoto of jarjestamismuotoKoodisto"
                         [disabled]="jarjestamismuoto.disabled"
                         [value]="jarjestamismuoto.code_value">
-                  <span *ngIf="jarjestamismuoto.disabled">x</span>
-                  {{ jarjestamismuoto.name }} ({{ jarjestamismuoto.code_value }})
+                  <span *ngIf="jarjestamismuoto.disabled">x </span>
+                  <span [libKoodistoValue]="koodistoEnum.jarjestamismuoto" format="long">{{ jarjestamismuoto.code_value }}</span>
                 </option>
               </select>
             </ng-template>

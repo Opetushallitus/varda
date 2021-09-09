@@ -4,12 +4,11 @@ import {
   FilterStringType,
   VardaSearchAbstractComponent
 } from '../varda-search-abstract.component';
-import { VardaKoodistoService } from 'varda-shared';
+import { VardaKoodistoService, VardaDateService } from 'varda-shared';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { TranslateService } from '@ngx-translate/core';
 import { Moment } from 'moment';
 import * as moment from 'moment';
-import { VardaDateService } from '../../../services/varda-date.service';
 import { VardaVakajarjestajaService } from '../../../../core/services/varda-vakajarjestaja.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { PaginatorParams } from '../varda-result-list/varda-result-list.component';

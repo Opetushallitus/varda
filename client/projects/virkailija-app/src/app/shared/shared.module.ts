@@ -42,7 +42,7 @@ import { VardaRadioButtonGroupComponent } from './components/varda-radio-button-
 import { VardaRadioButtonComponent } from './components/varda-radio-button-group/varda-radio-button/varda-radio-button.component';
 import { SlideHideDirective } from './directives/slide-hide.directive';
 import { VardaDatepickerComponent } from './components/varda-datepicker/varda-datepicker.component';
-import { VardaDateService } from '../varda-main/services/varda-date.service';
+import { VardaDateService } from 'varda-shared';
 import { VardaDatepickerHeaderComponent } from './components/varda-datepicker/varda-datepicker-header/varda-datepicker-header.component';
 import { MatPaginatorIntl, MatPaginatorModule, MAT_PAGINATOR_DEFAULT_OPTIONS } from '@angular/material/paginator';
 import { VardaMatPaginator } from './components/varda-paginator/varda-paginator.class';

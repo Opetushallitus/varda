@@ -18,3 +18,5 @@ export * from './lib/models/koodisto-models';
 export * from './lib/models/varda-kayttajatyyppi.enum';
 export * from './lib/varda-http.interceptor';
 export * from './lib/matomo.service';
+export * from './lib/varda-date.service';
+export * from './lib/helper.service';

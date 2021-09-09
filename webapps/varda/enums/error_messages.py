@@ -316,6 +316,7 @@ class ErrorMessages(enum.Enum):
     KO002 = get_error_dict('KO002', 'Code cannot have special characters.')
     KO003 = get_error_dict('KO003', 'Not a valid code.')
     KO004 = get_error_dict('KO004', 'Problem with Koodistopalvelu.')
+    KO005 = get_error_dict('KO005', 'Code is not active during the time period.')
 
     # Excel errors, prefix: ER
     ER001 = get_error_dict('ER001', 'Cannot create report for given Toimipaikka.')

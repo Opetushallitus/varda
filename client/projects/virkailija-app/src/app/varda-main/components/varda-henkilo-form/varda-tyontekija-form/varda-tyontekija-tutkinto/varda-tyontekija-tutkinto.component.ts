@@ -43,6 +43,7 @@ export class VardaTyontekijaTutkintoComponent implements OnChanges {
   henkilonTutkinnotExpand: boolean;
   addTutkinto: boolean;
   pendingTutkinto: boolean;
+  koodistoEnum = KoodistoEnum;
   isSubmitting = new BehaviorSubject<boolean>(false);
 
   tutkintoForm: FormGroup;

@@ -8,7 +8,7 @@ import { VardaVakajarjestajaApiService } from 'projects/virkailija-app/src/app/c
 import { VardaToimipaikkaDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { KoodistoEnum } from 'varda-shared';
+import { KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { MatExpansionPanel } from '@angular/material/expansion';
 import { VardaFormAccordionAbstractComponent } from '../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 import { VardaModalService } from '../../../../core/services/varda-modal.service';

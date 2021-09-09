@@ -1042,6 +1042,8 @@ class Z2_Koodisto(models.Model):
 class Z2_Code(models.Model):
     koodisto = models.ForeignKey(Z2_Koodisto, related_name='codes', on_delete=models.PROTECT)
     code_value = models.CharField(max_length=256)
+    alkamis_pvm = models.DateField(default='1990-01-01')
+    paattymis_pvm = models.DateField(null=True)
 
     def __str__(self):
         return str(self.id)

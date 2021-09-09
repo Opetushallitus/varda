@@ -1,8 +1,7 @@
 import { Component, ElementRef, Input, OnChanges, ViewChild } from '@angular/core';
 import { VardaKoosteApiService } from 'projects/virkailija-app/src/app/core/services/varda-kooste-api.service';
-import { KoodistoEnum } from 'varda-shared';
+import { KoodistoEnum, VardaDateService } from 'varda-shared';
 import { ToimipaikkaKooste } from '../../../../utilities/models/dto/varda-toimipaikka-dto.model';
-import { VardaDateService } from '../../../services/varda-date.service';
 import { VardaResultAbstractComponent } from '../varda-result-abstract.component';
 
 @Component({

@@ -379,6 +379,12 @@ class ToimipaikkaSerializer(RequiredLahdejarjestelmaMixin, serializers.Hyperlink
         self._validate_jarjestamismuoto_codes(data)
         validators.validate_alkamis_pvm_before_paattymis_pvm(data)
 
+        alkamis_pvm = data['alkamis_pvm']
+        paattymis_pvm = data.get('paattymis_pvm')
+        validators.validate_kasvatusopillinen_jarjestelma_koodi(data['kasvatusopillinen_jarjestelma_koodi'],
+                                                                alkamis_pvm, paattymis_pvm)
+        validators.validate_toimintamuoto_koodi(data['toimintamuoto_koodi'], alkamis_pvm, paattymis_pvm)
+
         return data
 
     def _validate_jarjestamismuoto_codes(self, data):
@@ -401,6 +407,11 @@ class ToimipaikkaSerializer(RequiredLahdejarjestelmaMixin, serializers.Hyperlink
                   not jarjestamismuoto_codes_set.issubset(jarjestamismuoto_codes_yksityinen)):
                 # jarjestamismuoto_koodi field has values that are not allowed for yksityinen Toimipaikka
                 validator.error('jarjestamismuoto_koodi', ErrorMessages.TP018.value)
+
+            with validator.wrap():
+                for jarjestamismuoto_code in jarjestamismuoto_codes_set:
+                    validators.validate_jarjestamismuoto_koodi(jarjestamismuoto_code, data['alkamis_pvm'],
+                                                               data.get('paattymis_pvm'))
 
     def _validate_dates_within_vakajarjestaja(self, data):
         vakajarjestaja = data['vakajarjestaja']
@@ -468,6 +479,8 @@ class ToiminnallinenPainotusSerializer(RequiredLahdejarjestelmaMixin, serializer
         check_toimipaikka_and_vakajarjestaja_have_oids(toimipaikka, toimipaikka.vakajarjestaja.organisaatio_oid,
                                                        toimipaikka.organisaatio_oid)
         validators.validate_alkamis_pvm_before_paattymis_pvm(data)
+        validators.validate_toimintapainotus_koodi(data['toimintapainotus_koodi'], data['alkamis_pvm'],
+                                                   data.get('paattymis_pvm'))
 
         return data
 
@@ -773,6 +786,8 @@ class MaksutietoPostSerializer(RequiredLahdejarjestelmaMixin, serializers.Hyperl
             # If maksun peruste is mp01, asiakasmaksu and palveluseteli_arvo are not stored
             data['asiakasmaksu'] = 0
             data['palveluseteli_arvo'] = 0.00
+        validators.validate_maksun_peruste_koodi(data['maksun_peruste_koodi'], data['alkamis_pvm'],
+                                                 data.get('paattymis_pvm'))
 
 
 class MaksutietoGetHuoltajaSerializer(serializers.ModelSerializer):
@@ -825,6 +840,8 @@ class MaksutietoGetUpdateSerializer(RequiredLahdejarjestelmaMixin, serializers.H
             raise CustomServerErrorException
         _validate_maksutieto_dates(data, lapsi_obj=lapsi_qs.first())
         _validate_maksutieto_overlap(data, lapsi_obj=lapsi_qs.first(), maksutieto_id=self.instance.id)
+        validators.validate_maksun_peruste_koodi(data['maksun_peruste_koodi'], data['alkamis_pvm'],
+                                                 data.get('paattymis_pvm'))
 
         return data
 
@@ -1080,6 +1097,8 @@ class VarhaiskasvatuspaatosSerializer(RequiredLahdejarjestelmaMixin, LapsiOption
         self._validate_jarjestamismuoto(lapsi_obj, jarjestamismuoto_koodi)
         self._validate_vuorohoito(data)
         self._validate_tilapainen_vaka_kytkin(data)
+        validators.validate_jarjestamismuoto_koodi(jarjestamismuoto_koodi, data['alkamis_pvm'],
+                                                   data.get('paattymis_pvm'))
 
         return data
 

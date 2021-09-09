@@ -18,6 +18,7 @@ export class PublicKoodistotDetailComponent implements OnInit, OnDestroy {
   selectedKoodistoName: string = null;
   isValidKoodistoName = false;
   codes: Array<CodeDto> = [];
+  codesPassive: Array<CodeDto> = [];
   version = 0;
   update_datetime = moment();
   isExtraSmall: BehaviorSubject<boolean>;
@@ -55,7 +56,8 @@ export class PublicKoodistotDetailComponent implements OnInit, OnDestroy {
     if (koodistoIndex !== -1) {
       this.isValidKoodistoName = true;
       const koodisto = this.koodistot[koodistoIndex];
-      this.codes = koodisto.codes;
+      this.codes = koodisto.codes.filter(code => code.active);
+      this.codesPassive = koodisto.codes.filter(code => !code.active);
       this.version = koodisto.version;
       this.update_datetime = moment(koodisto.update_datetime);
     }

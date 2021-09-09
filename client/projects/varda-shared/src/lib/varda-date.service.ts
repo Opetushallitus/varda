@@ -1,8 +1,12 @@
 import { Injectable } from '@angular/core';
-import * as moment from 'moment';
+// https://github.com/jvandemo/generator-angular2-library/issues/221#issuecomment-355945207
+import * as moment_ from 'moment';
 import { Moment } from 'moment';
+const moment = moment_;
 
-@Injectable()
+@Injectable({
+  providedIn: 'root',
+})
 export class VardaDateService {
   public static vardaDefaultDateFormat = 'DD.MM.YYYY';
   public static uiDateFormat = 'd.M.yyyy';

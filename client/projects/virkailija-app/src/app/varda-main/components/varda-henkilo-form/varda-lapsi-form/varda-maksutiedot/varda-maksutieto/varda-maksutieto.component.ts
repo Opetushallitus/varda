@@ -11,10 +11,10 @@ import { LapsiListDTO } from 'projects/virkailija-app/src/app/utilities/models/d
 import { VardaMaksutietoDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-maksutieto-dto.model';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
-import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/services/varda-date.service';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { filter, distinctUntilChanged } from 'rxjs/operators';
-import { KoodistoDTO, VardaKoodistoService, KoodistoEnum } from 'varda-shared';
+import { VardaKoodistoService, VardaDateService } from 'varda-shared';
+import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { VardaMaksutietoHuoltajaComponent } from './varda-maksutieto-huoltaja/varda-maksutieto-huoltaja.component';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
@@ -46,6 +46,7 @@ export class VardaMaksutietoComponent extends VardaFormAccordionAbstractComponen
   minEndDate: Date;
   disableForMaksuttomuus = false;
   isSubmitting = new BehaviorSubject<boolean>(false);
+  koodistoEnum = KoodistoEnum;
   private henkilostoErrorService: VardaErrorMessageService;
 
   constructor(

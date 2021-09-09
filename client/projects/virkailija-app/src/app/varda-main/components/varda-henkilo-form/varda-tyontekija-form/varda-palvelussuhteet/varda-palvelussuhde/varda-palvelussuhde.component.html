@@ -113,8 +113,10 @@
               <option [value]="null"
                       disabled>-- {{ i18n.tutkinnot_valitse_ylin_tutkinto | translate }} --</option>
               <option *ngFor="let tutkinto of henkilonTutkinnot"
-                      [value]="tutkinto.tutkinto_koodi">
-                {{ tutkinto.tutkinto_nimi }} ({{ tutkinto.tutkinto_koodi }})
+                      [value]="tutkinto.tutkinto_koodi"
+                      [libKoodistoValue]="koodistoEnum.tutkinto"
+                      format="long">
+                {{ tutkinto.tutkinto_koodi }}
               </option>
             </select>
           </app-varda-form-field>

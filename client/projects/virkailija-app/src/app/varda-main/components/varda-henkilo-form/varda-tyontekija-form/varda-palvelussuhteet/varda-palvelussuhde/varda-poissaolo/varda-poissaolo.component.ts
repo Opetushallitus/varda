@@ -10,7 +10,7 @@ import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { MatExpansionPanelHeader } from '@angular/material/expansion';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
-import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/services/varda-date.service';
+import { VardaDateService } from 'varda-shared';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { Moment } from 'moment';

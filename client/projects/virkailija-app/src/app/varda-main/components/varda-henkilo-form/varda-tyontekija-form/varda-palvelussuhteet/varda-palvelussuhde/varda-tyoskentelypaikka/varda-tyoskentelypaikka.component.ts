@@ -10,13 +10,12 @@ import { DOCUMENT } from '@angular/common';
 import { VardaPalvelussuhdeDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-palvelussuhde-dto.model';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
-import { VardaKoodistoService } from 'varda-shared';
+import { VardaKoodistoService, VardaDateService } from 'varda-shared';
 import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { VardaErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { MatExpansionPanelHeader } from '@angular/material/expansion';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
-import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/services/varda-date.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { Moment } from 'moment';
@@ -48,7 +47,7 @@ export class VardaTyoskentelypaikkaComponent extends VardaFormAccordionAbstractC
   isSubmitting = new BehaviorSubject<boolean>(false);
   startDateRange = { min: null, max: null };
   endDateRange = { min: null, max: null };
-
+  koodistoEnum = KoodistoEnum;
   palvelussuhdeFormErrors: Observable<Array<ErrorTree>>;
   private henkilostoErrorService: VardaErrorMessageService;
 

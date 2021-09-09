@@ -11,11 +11,10 @@ import { VardaVakajarjestajaUi, VardaVarhaiskasvatuspaatosDTO, VardaVarhaiskasva
 import { LapsiListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-lapsi-dto.model';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
-import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/services/varda-date.service';
-import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { filter, distinctUntilChanged } from 'rxjs/operators';
-import { VardaKoodistoService, KoodistoEnum, CodeDTO } from 'varda-shared';
+import { VardaKoodistoService, VardaDateService } from 'varda-shared';
+import { KoodistoEnum, CodeDTO } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 

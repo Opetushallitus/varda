@@ -27,7 +27,7 @@
               {{tyoskentelypaikka.alkamis_pvm | vardaDate}} -
               {{tyoskentelypaikka.paattymis_pvm | vardaDate}},
             </span>
-            <i libKoodistoValue="vardatehtavanimike">{{ tyoskentelypaikka.tehtavanimike_koodi }}</i>
+            <i [libKoodistoValue]="koodistoEnum.tehtavanimike">{{ tyoskentelypaikka.tehtavanimike_koodi }}</i>
           </h4>
         </mat-panel-title>
         <mat-panel-title *ngIf="!tyoskentelypaikka">
@@ -115,8 +115,10 @@
                     disabled>-- {{ i18n.choose | translate }} --</option>
             <ng-container *ngIf="tehtavanimikkeet">
               <option *ngFor="let nimike of tehtavanimikkeet.codes"
-                      [value]="nimike.code_value">
-                {{ nimike.name }}
+                      [value]="nimike.code_value"
+                      [libKoodistoValue]="koodistoEnum.tehtavanimike"
+                      format="long">
+                {{ nimike.code_value }}
               </option>
             </ng-container>
           </select>
@@ -128,7 +130,7 @@
                    class="oph-label"><b>{{ i18n.tyoskentelypaikka_palvelussuhteeseen_lisatty_tutkinto | translate
                 }}</b></label>
             <span for="tyoskentelypaikkaTutkinto"
-                  libKoodistoValue="vardatutkinto">{{ palvelussuhde.tutkinto_koodi }}</span>
+                  [libKoodistoValue]="koodistoEnum.tutkinto">{{ palvelussuhde.tutkinto_koodi }}</span>
           </div>
           <div class="oph-field-text"></div>
         </div>

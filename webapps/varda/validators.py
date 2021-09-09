@@ -174,41 +174,94 @@ def validate_koodi_in_general(koodi):
         raise ValidationErrorRest([ErrorMessages.KO002.value])
 
 
-def validate_z2_koodi(koodi, field_name):
+def validate_z2_koodi(code_value, koodisto_name, alkamis_pvm=None, paattymis_pvm=None, field_name=None,
+                      paattymis_pvm_only=True):
     from varda.models import Z2_Koodisto, Z2_Code
 
-    validate_koodi_in_general(koodi)
-    koodisto_qs = Z2_Koodisto.objects.filter(name=field_name)
+    validate_koodi_in_general(code_value)
+    koodisto_qs = Z2_Koodisto.objects.filter(name=koodisto_name)
     if koodisto_qs.exists:
-        koodi_qs = Z2_Code.objects.filter(koodisto=koodisto_qs.first(), code_value__iexact=koodi)
+        koodi_qs = Z2_Code.objects.filter(koodisto=koodisto_qs.first(), code_value__iexact=code_value)
         if not koodi_qs.exists():
             raise ValidationErrorRest([ErrorMessages.KO003.value])
+        koodi_instance = koodi_qs.first()
+
+        code_starts_after_start = False if paattymis_pvm_only else (alkamis_pvm and koodi_instance.alkamis_pvm > alkamis_pvm)
+        code_ends_before_start = alkamis_pvm and koodi_instance.paattymis_pvm and koodi_instance.paattymis_pvm < alkamis_pvm
+        code_ends_before_end = paattymis_pvm and koodi_instance.paattymis_pvm and koodi_instance.paattymis_pvm < paattymis_pvm
+
+        if code_starts_after_start or code_ends_before_start or code_ends_before_end:
+            raise ValidationErrorRest({field_name: [ErrorMessages.KO005.value]})
     else:
         raise ValidationErrorRest([ErrorMessages.KO004.value])
 
 
-def validate_maksun_peruste_koodi(maksun_peruste_koodi):
-    validate_z2_koodi(maksun_peruste_koodi, Koodistot.maksun_peruste_koodit.value)
+def validate_maksun_peruste_koodi(maksun_peruste_koodi, alkamis_pvm=None, paattymis_pvm=None,
+                                  field_name='maksun_peruste_koodi'):
+    validate_z2_koodi(maksun_peruste_koodi, Koodistot.maksun_peruste_koodit.value, alkamis_pvm, paattymis_pvm,
+                      field_name)
 
 
-def validate_kunta_koodi(kunta_koodi):
-    validate_z2_koodi(kunta_koodi, Koodistot.kunta_koodit.value)
+def validate_kunta_koodi(kunta_koodi, alkamis_pvm=None, paattymis_pvm=None, field_name='kunta_koodi'):
+    validate_z2_koodi(kunta_koodi, Koodistot.kunta_koodit.value, alkamis_pvm, paattymis_pvm, field_name)
 
 
-def validate_jarjestamismuoto_koodi(jarjestamismuoto_koodi):
-    validate_z2_koodi(jarjestamismuoto_koodi, Koodistot.jarjestamismuoto_koodit.value)
+def validate_jarjestamismuoto_koodi(jarjestamismuoto_koodi, alkamis_pvm=None, paattymis_pvm=None,
+                                    field_name='jarjestamismuoto_koodi'):
+    validate_z2_koodi(jarjestamismuoto_koodi, Koodistot.jarjestamismuoto_koodit.value, alkamis_pvm, paattymis_pvm,
+                      field_name)
 
 
-def validate_toimintamuoto_koodi(toimintamuoto_koodi):
-    validate_z2_koodi(toimintamuoto_koodi, Koodistot.toimintamuoto_koodit.value)
+def validate_toimintamuoto_koodi(toimintamuoto_koodi, alkamis_pvm=None, paattymis_pvm=None,
+                                 field_name='toimintamuoto_koodi'):
+    validate_z2_koodi(toimintamuoto_koodi, Koodistot.toimintamuoto_koodit.value, alkamis_pvm, paattymis_pvm, field_name)
 
 
-def validate_kasvatusopillinen_jarjestelma_koodi(kasvatusopillinen_jarjestelma_koodi):
-    validate_z2_koodi(kasvatusopillinen_jarjestelma_koodi, Koodistot.kasvatusopillinen_jarjestelma_koodit.value)
+def validate_kasvatusopillinen_jarjestelma_koodi(kasvatusopillinen_jarjestelma_koodi, alkamis_pvm=None,
+                                                 paattymis_pvm=None, field_name='kasvatusopillinen_jarjestelma_koodi'):
+    validate_z2_koodi(kasvatusopillinen_jarjestelma_koodi, Koodistot.kasvatusopillinen_jarjestelma_koodit.value,
+                      alkamis_pvm, paattymis_pvm, field_name)
 
 
-def validate_toimintapainotus_koodi(toimintapainotus_koodi):
-    validate_z2_koodi(toimintapainotus_koodi, Koodistot.toiminnallinen_painotus_koodit.value)
+def validate_toimintapainotus_koodi(toimintapainotus_koodi, alkamis_pvm=None, paattymis_pvm=None,
+                                    field_name='toimintapainotus_koodi'):
+    validate_z2_koodi(toimintapainotus_koodi, Koodistot.toiminnallinen_painotus_koodit.value, alkamis_pvm,
+                      paattymis_pvm, field_name)
+
+
+def validate_tyosuhde_koodi(tyosuhde_koodi, alkamis_pvm=None, paattymis_pvm=None, field_name='tyosuhde_koodi'):
+    validate_z2_koodi(tyosuhde_koodi, Koodistot.tyosuhde_koodit.value, alkamis_pvm, paattymis_pvm, field_name)
+
+
+def validate_tyoaika_koodi(tyoaika_koodi, alkamis_pvm=None, paattymis_pvm=None, field_name='tyoaika_koodi'):
+    validate_z2_koodi(tyoaika_koodi, Koodistot.tyoaika_koodit.value, alkamis_pvm, paattymis_pvm, field_name)
+
+
+def validate_tehtavanimike_koodi(tehtavanimike_koodi, alkamis_pvm=None, paattymis_pvm=None,
+                                 field_name='tehtavanimike_koodi'):
+    validate_z2_koodi(tehtavanimike_koodi, Koodistot.tehtavanimike_koodit.value, alkamis_pvm, paattymis_pvm, field_name)
+
+
+def validate_kieli_koodi(kieli_koodi, alkamis_pvm=None, paattymis_pvm=None, field_name=None):
+    validate_z2_koodi(kieli_koodi, Koodistot.kieli_koodit.value, alkamis_pvm, paattymis_pvm, field_name)
+
+
+def validate_sukupuoli_koodi(sukupuoli_koodi, alkamis_pvm=None, paattymis_pvm=None, field_name='sukupuoli_koodi'):
+    validate_z2_koodi(sukupuoli_koodi, Koodistot.sukupuoli_koodit.value, alkamis_pvm, paattymis_pvm, field_name)
+
+
+def validate_tutkinto_koodi(tutkinto_koodi, alkamis_pvm=None, paattymis_pvm=None, field_name='tutkinto_koodi'):
+    validate_z2_koodi(tutkinto_koodi, Koodistot.tutkinto_koodit.value, alkamis_pvm, paattymis_pvm, field_name)
+
+
+def validate_lahdejarjestelma_koodi(lahdejarjestelma_koodi, alkamis_pvm=None, paattymis_pvm=None,
+                                    field_name='lahdejarjestelma'):
+    validate_z2_koodi(lahdejarjestelma_koodi, Koodistot.lahdejarjestelma_koodit.value, alkamis_pvm, paattymis_pvm,
+                      field_name)
+
+
+def validate_kieli_koodi_array(kieli_koodi):
+    pass
 
 
 def validate_tutkintonimike_koodi(tutkintonimike_koodi):
@@ -223,38 +276,6 @@ def validate_tyotehtava_koodi(tyotehtava_koodi):
     Not in use but referenced in 0001 migration.
     """
     return None
-
-
-def validate_tyosuhde_koodi(tyosuhde_koodi):
-    validate_z2_koodi(tyosuhde_koodi, Koodistot.tyosuhde_koodit.value)
-
-
-def validate_tyoaika_koodi(tyoaika_koodi):
-    validate_z2_koodi(tyoaika_koodi, Koodistot.tyoaika_koodit.value)
-
-
-def validate_tehtavanimike_koodi(tehtavanimike_koodi):
-    validate_z2_koodi(tehtavanimike_koodi, Koodistot.tehtavanimike_koodit.value)
-
-
-def validate_kieli_koodi(kieli_koodi):
-    validate_z2_koodi(kieli_koodi, Koodistot.kieli_koodit.value)
-
-
-def validate_sukupuoli_koodi(sukupuoli_koodi):
-    validate_z2_koodi(sukupuoli_koodi, Koodistot.sukupuoli_koodit.value)
-
-
-def validate_tutkinto_koodi(tutkinto_koodi):
-    validate_z2_koodi(tutkinto_koodi, Koodistot.tutkinto_koodit.value)
-
-
-def validate_lahdejarjestelma_koodi(lahdejarjestelma_koodi):
-    validate_z2_koodi(lahdejarjestelma_koodi, Koodistot.lahdejarjestelma_koodit.value)
-
-
-def validate_kieli_koodi_array(kieli_koodi):
-    pass
 
 
 def validate_IBAN_koodi(IBAN_koodi):

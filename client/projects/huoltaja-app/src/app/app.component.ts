@@ -1,7 +1,7 @@
 import { Component, OnInit, Inject, HostListener } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { Title } from '@angular/platform-browser';
-import { LoadingHttpService, LoginService, SupportedLanguage, VardaUserDTO } from 'varda-shared';
+import { LoadingHttpService, LoginService, SupportedLanguage, HelperService, VardaUserDTO } from 'varda-shared';
 import { Observable } from 'rxjs';
 import { filter, take } from 'rxjs/operators';
 import { DOCUMENT } from '@angular/common';
@@ -30,6 +30,7 @@ export class AppComponent implements OnInit {
     private titleService: Title,
     private router: Router,
     private loadingHttpService: LoadingHttpService,
+    private helperService: HelperService,
     @Inject(DOCUMENT) private _document: any
   ) {
     this.initLanguage();
@@ -54,7 +55,9 @@ export class AppComponent implements OnInit {
     this.loginService.clearLogoutInterval();
   }
 
-  ngOnInit() { }
+  ngOnInit() {
+    this.helperService.setTranslateService(this.translateService);
+  }
 
   initLanguage() {
     const getLanguage = () => {

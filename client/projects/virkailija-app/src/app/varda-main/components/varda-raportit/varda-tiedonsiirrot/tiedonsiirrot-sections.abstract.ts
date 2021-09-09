@@ -11,8 +11,7 @@ import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { Subscription, BehaviorSubject, Observable } from 'rxjs';
-import { KoodistoEnum } from 'varda-shared';
-import { VardaDateService } from '../../../services/varda-date.service';
+import { KoodistoEnum, VardaDateService } from 'varda-shared';
 import { VardaPageDto } from '../../../../utilities/models/dto/varda-page-dto';
 import {
   VardaTiedonsiirtoDTO,

@@ -7,7 +7,8 @@ import { Moment } from 'moment';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { BehaviorSubject, fromEvent, Observable, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, filter, map, take } from 'rxjs/operators';
-import { CodeDTO, KoodistoDTO, KoodistoEnum, KoodistoSortBy, VardaKoodistoService } from 'varda-shared';
+import { VardaKoodistoService, VardaDateService } from 'varda-shared';
+import { CodeDTO, KoodistoDTO, KoodistoEnum, KoodistoSortBy } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ErrorTree, VardaErrorMessageService } from '../../../core/services/varda-error-message.service';
 import { VardaSnackBarService } from '../../../core/services/varda-snackbar.service';
@@ -18,7 +19,6 @@ import { VardaVakajarjestajaUi } from '../../../utilities/models';
 import { VardaToimipaikkaDTO } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { Hallinnointijarjestelma, Lahdejarjestelma } from '../../../utilities/models/enums/hallinnointijarjestelma';
 import { UserAccess } from '../../../utilities/models/varda-user-access.model';
-import { VardaDateService } from '../../services/varda-date.service';
 import { VardaFormAccordionAbstractComponent } from '../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 import { VardaModalService } from '../../../core/services/varda-modal.service';
 
@@ -98,7 +98,7 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
           return indexA < indexB ? -1 : 1;
         }
 
-        return a.name.localeCompare(b.name);
+        return Number(b.active) - Number(a.active) || a.name.localeCompare(b.name);
       });
     });
   }

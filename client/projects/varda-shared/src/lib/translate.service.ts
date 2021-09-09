@@ -4,6 +4,7 @@ import { TranslationDTO, AngularTranslateDTO, SupportedLanguage } from './models
 import { LoadingHttpService } from './loading-http.service';
 import { VardaApiServiceInterface } from './models/vardaApiService.interface';
 import { HttpHeaders } from '@angular/common/http';
+import { CommonTranslations } from '../common-translations.enum';
 
 
 interface LocalizationCache {
@@ -54,7 +55,7 @@ export class VardaTranslateLoader implements TranslateLoader {
 
 
   handleTranslations(translations: Array<TranslationDTO>, lang: SupportedLanguage): AngularTranslateDTO {
-    const translationEnum = this.appApi.getTranslationEnum();
+    const translationEnum = { ...this.appApi.getTranslationEnum(), ...CommonTranslations };
     const i18nTranslations: AngularTranslateDTO = {};
     const i18nExcess = [];
     const enumMissing = Object.values(translationEnum).filter(value => !translations.some(translation => translation.key === value));

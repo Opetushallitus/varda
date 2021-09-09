@@ -42,8 +42,10 @@
                       class="oph-input oph-select"
                       formControlName="toimintapainotus_koodi">
             <mat-option *ngFor="let option of toimintakoodisto.codes"
-                        [value]="option.code_value">
-              {{ option.name }} ({{ option.code_value }})
+                        [value]="option.code_value"
+                        [libKoodistoValue]="koodistoEnum.toiminnallinenpainotus"
+                        format="long">
+              {{ option.code_value }}
             </mat-option>
           </mat-select>
 

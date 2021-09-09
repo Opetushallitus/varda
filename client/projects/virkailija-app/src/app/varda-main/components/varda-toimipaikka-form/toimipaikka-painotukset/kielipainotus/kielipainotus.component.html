@@ -44,16 +44,20 @@
             <mat-optgroup [label]="i18n.painotukset_kielipainotus_yleiset | translate">
               <ng-container *ngFor="let option of kielikoodisto; let index = index">
                 <mat-option *ngIf="index < 10"
-                            [value]="option.code_value">
-                  {{ option.name }} ({{ option.code_value }})
+                            [value]="option.code_value"
+                            [libKoodistoValue]="koodistoEnum.kieli"
+                            format="long">
+                  {{ option.code_value }}
                 </mat-option>
               </ng-container>
             </mat-optgroup>
             <mat-optgroup [label]="i18n.painotukset_kielipainotus_muut | translate">
               <ng-container *ngFor="let option of kielikoodisto; let index = index">
                 <mat-option *ngIf="index >= 10"
-                            [value]="option.code_value">
-                  {{ option.name }} ({{ option.code_value }})
+                            [value]="option.code_value"
+                            [libKoodistoValue]="koodistoEnum.kieli"
+                            format="long">
+                  {{ option.code_value }}
                 </mat-option>
               </ng-container>
             </mat-optgroup>

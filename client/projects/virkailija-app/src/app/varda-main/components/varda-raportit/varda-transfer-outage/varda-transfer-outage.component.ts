@@ -10,10 +10,9 @@ import {
   TransferOutageSearchFilter, TransferOutageLahdejarjestelma
 } from '../../../../utilities/models/dto/varda-transfer-outage-dto.model';
 import * as moment from 'moment';
-import { VardaDateService } from '../../../services/varda-date.service';
 import { filter } from 'rxjs/operators';
 import { NavigationEnd, Router } from '@angular/router';
-import { KoodistoDTO, KoodistoEnum, VardaKoodistoService } from 'varda-shared';
+import { KoodistoDTO, KoodistoEnum, VardaKoodistoService, VardaDateService } from 'varda-shared';
 
 
 @Component({

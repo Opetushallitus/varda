@@ -254,43 +254,35 @@ class PalvelussuhdeSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.Hy
         return super(PalvelussuhdeSerializer, self).to_representation(instance)
 
     def validate(self, data):
-        # Validate only when updating existing
-        palvelussuhde = self.instance
+        with ViewSetValidator() as validator:
+            if self.instance:
+                fill_missing_fields_for_validations(data, self.instance)
 
-        # UPDATE
-        if palvelussuhde:
-            with ViewSetValidator() as validator:
-                fill_missing_fields_for_validations(data, palvelussuhde)
                 with validator.wrap():
-                    validate_paattymispvm_same_or_after_alkamispvm(data)
+                    check_overlapping_palvelussuhde(data, self.instance.id)
 
-                if data['paattymis_pvm'] is None and data['tyosuhde_koodi'] == '2':
-                    validator.error('paattymis_pvm', ErrorMessages.PS003.value)
-
-                self.validate_tutkinto(data['tyontekija'], data['tutkinto_koodi'], validator)
                 if 'tyontekija' in data:
-                    check_if_admin_mutable_object_is_changed(self.context['request'].user, palvelussuhde, data, 'tyontekija')
-
-                with validator.wrap():
-                    check_overlapping_palvelussuhde(data, palvelussuhde.id)
-
-        # CREATE
-        else:
-            with ViewSetValidator() as validator:
-                with validator.wrap():
-                    if data['tyosuhde_koodi'] == '2' and ('paattymis_pvm' not in data or data['paattymis_pvm'] is None):
-                        validator.error('paattymis_pvm', ErrorMessages.PS003.value)
-                    validate_paattymispvm_same_or_after_alkamispvm(data)
-
-                self.validate_tutkinto(data['tyontekija'], data['tutkinto_koodi'], validator)
-
-                with validator.wrap():
-                    check_overlapping_palvelussuhde(data)
-
+                    check_if_admin_mutable_object_is_changed(self.context['request'].user, self.instance, data,
+                                                             'tyontekija')
+            else:
                 if toimipaikka := data.get('toimipaikka', None):
                     if toimipaikka.vakajarjestaja != data['tyontekija'].vakajarjestaja:
                         validator.error('toimipaikka', ErrorMessages.MI019.value)
 
+                with validator.wrap():
+                    check_overlapping_palvelussuhde(data)
+
+            self.validate_tutkinto(data['tyontekija'], data['tutkinto_koodi'], validator)
+
+            if data.get('paattymis_pvm') is None and data['tyosuhde_koodi'] == '2':
+                validator.error('paattymis_pvm', ErrorMessages.PS003.value)
+
+            with validator.wrap():
+                validate_paattymispvm_same_or_after_alkamispvm(data)
+                alkamis_pvm = data['alkamis_pvm']
+                paattymis_pvm = data.get('paattymis_pvm')
+                validators.validate_tyosuhde_koodi(data['tyosuhde_koodi'], alkamis_pvm, paattymis_pvm)
+                validators.validate_tyoaika_koodi(data['tyoaika_koodi'], alkamis_pvm, paattymis_pvm)
         return data
 
     def validate_tutkinto(self, tyontekija, tutkinto_koodi, validator):
@@ -353,6 +345,8 @@ def validate_tyoskentelypaikka_general(validator, data, toimipaikka, palvelussuh
 
     with validator.wrap():
         validate_overlapping_kiertavyys(data, palvelussuhde, kiertava_tyontekija_kytkin, validator)
+        validators.validate_tehtavanimike_koodi(data['tehtavanimike_koodi'], data['alkamis_pvm'],
+                                                data.get('paattymis_pvm'))
 
     if not kiertava_tyontekija_kytkin:
         with validator.wrap():

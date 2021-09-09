@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
 import * as moment from 'moment';
@@ -7,8 +7,7 @@ import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/servi
 import { VardaVakajarjestajaApiService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja-api.service';
 import { ToiminnallinenPainotusDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
-import { KoodistoDTO } from 'varda-shared';
-import { VardaDateService } from '../../../../services/varda-date.service';
+import { KoodistoDTO, VardaDateService } from 'varda-shared';
 import { PainotusAbstractComponent } from '../painotus.abstract';
 import { VardaModalService } from '../../../../../core/services/varda-modal.service';
 

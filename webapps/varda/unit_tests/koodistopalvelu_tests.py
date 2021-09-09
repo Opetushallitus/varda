@@ -19,6 +19,8 @@ def mock_get_koodisto_codes(koodisto_name):
     for i in range(2):
         result.append({
             'koodiArvo': '{0}_{1}'.format(koodisto_name, i),
+            'voimassaAlkuPvm': '1990-01-01',
+            'voimassaLoppuPvm': None,
             'metadata': [
                 {
                     'kieli': 'fi',

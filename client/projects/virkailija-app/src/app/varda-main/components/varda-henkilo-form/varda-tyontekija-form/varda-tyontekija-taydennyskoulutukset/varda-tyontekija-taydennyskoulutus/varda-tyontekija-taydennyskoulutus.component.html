@@ -82,7 +82,7 @@
             <ng-container *ngIf="tehtavanimikkeet">
               <mat-option *ngFor="let nimike of tehtavanimikkeet.codes"
                           [value]="nimike.code_value">
-                {{ nimike.name }}
+                <span [libKoodistoValue]="koodistoEnum.tehtavanimike" format="long">{{ nimike.code_value }}</span>
               </mat-option>
               <mat-option *ngFor="let disabledNimike of disabledTehtavanimikeCodes"
                           [value]="disabledNimike" disabled>

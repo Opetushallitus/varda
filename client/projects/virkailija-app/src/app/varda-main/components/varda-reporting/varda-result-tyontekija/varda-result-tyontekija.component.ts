@@ -1,8 +1,7 @@
 import { Component, ElementRef, Input, OnChanges, ViewChild } from '@angular/core';
 import { TyontekijaKooste } from '../../../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { VardaApiService } from '../../../../core/services/varda-api.service';
-import { KoodistoEnum } from 'varda-shared';
-import { VardaDateService } from '../../../services/varda-date.service';
+import { KoodistoEnum, VardaDateService } from 'varda-shared';
 import { UserAccess } from '../../../../utilities/models/varda-user-access.model';
 import { VardaResultAbstractComponent } from '../varda-result-abstract.component';
 import { VardaKoosteApiService } from 'projects/virkailija-app/src/app/core/services/varda-kooste-api.service';

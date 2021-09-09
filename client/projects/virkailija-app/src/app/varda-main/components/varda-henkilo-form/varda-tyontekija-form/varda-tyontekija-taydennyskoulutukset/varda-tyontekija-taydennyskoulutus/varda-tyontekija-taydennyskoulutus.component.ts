@@ -18,17 +18,16 @@ import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import * as moment from 'moment';
 import { TyontekijaListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tyontekija-dto.model';
-import { KoodistoDTO } from 'projects/varda-shared/src/lib/models/koodisto-models';
+import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { VardaFormValidators } from 'projects/virkailija-app/src/app/shared/validators/varda-form-validators';
 import { MatExpansionPanelHeader } from '@angular/material/expansion';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { filter, distinctUntilChanged } from 'rxjs/operators';
-import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/services/varda-date.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
-import { KoodistoEnum } from 'varda-shared';
+import { VardaDateService } from 'varda-shared';
 
 @Component({
   selector: 'app-varda-tyontekija-taydennyskoulutus',

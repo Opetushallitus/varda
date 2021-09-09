@@ -1,13 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { BehaviorSubject, forkJoin } from 'rxjs';
-import { CodeDTO, KoodistoDTO, VardaKoodistoService } from 'varda-shared';
+import { CodeDTO, KoodistoDTO, VardaKoodistoService, VardaDateService } from 'varda-shared';
 import { FilterStringParam, FilterStringType, VardaSearchAbstractComponent } from '../varda-search-abstract.component';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaVakajarjestajaService } from '../../../../core/services/varda-vakajarjestaja.service';
 import * as moment from 'moment';
 import { Moment } from 'moment';
-import { VardaDateService } from '../../../services/varda-date.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { PaginatorParams } from '../varda-result-list/varda-result-list.component';
 import { VardaKoosteApiService } from 'projects/virkailija-app/src/app/core/services/varda-kooste-api.service';

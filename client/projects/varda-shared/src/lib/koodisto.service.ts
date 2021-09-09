@@ -84,7 +84,8 @@ export class VardaKoodistoService {
           const foundKoodisto = { ...koodistot.find(koodisto => koodistoNimi.toLocaleUpperCase() === koodisto.name.toLocaleUpperCase()) };
 
           if (sortBy) {
-            foundKoodisto.codes.sort((a, b) => a[sortBy].localeCompare(b[sortBy]));
+            foundKoodisto.codes.sort((a, b) =>
+              Number(b.active) - Number(a.active) || a[sortBy].localeCompare(b[sortBy]));
           }
 
           koodistoObs.next(foundKoodisto);

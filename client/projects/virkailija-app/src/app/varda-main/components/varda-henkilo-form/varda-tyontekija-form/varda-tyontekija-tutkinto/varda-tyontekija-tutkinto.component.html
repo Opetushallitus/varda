@@ -18,7 +18,7 @@
       <ul>
         <ng-container *ngFor="let tutkinto of henkilonTutkinnot | async; index as i;">
           <li *ngIf="i < tutkintoViewLimit || henkilonTutkinnotExpand">
-            <span tabindex="0">{{tutkinto.tutkinto_nimi}} ({{ tutkinto.tutkinto_koodi }})</span>
+            <span tabindex="0" [libKoodistoValue]="koodistoEnum.tutkinto" format="long">{{ tutkinto.tutkinto_koodi }}</span>
             <ng-container *ngIf="toimipaikkaAccess.tyontekijatiedot.tallentaja">
             <span class="tutkintoEdit"
                   (click)="tutkinto.edit = !tutkinto.edit">
@@ -98,8 +98,10 @@
               <mat-option [value]="null"
                           disabled>-- {{ i18n.choose | translate }} --</mat-option>
               <mat-option *ngFor="let tutkintoOption of tutkintoOptions"
-                          [value]="tutkintoOption.code_value">
-                {{ tutkintoOption.name }} ({{ tutkintoOption.code_value }})
+                          [value]="tutkintoOption.code_value"
+                          [libKoodistoValue]="koodistoEnum.tutkinto"
+                          format="long">
+                {{ tutkintoOption.code_value }}
               </mat-option>
             </mat-select>
           </mat-form-field>

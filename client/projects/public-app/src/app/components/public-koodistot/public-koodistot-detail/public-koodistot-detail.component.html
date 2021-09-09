@@ -26,6 +26,16 @@
       <td>{{code.name}}</td>
       <td>{{code.description}}</td>
     </tr>
+    <ng-container *ngIf="codesPassive.length > 0">
+      <tr class="koodisto-passive-header">
+        <td colspan="3">{{ translation.koodistot_passive | translate }}</td>
+      </tr>
+      <tr *ngFor="let code of codesPassive" class="koodisto-passive">
+        <td>{{code.code_value}}</td>
+        <td>{{code.name}}</td>
+        <td>{{code.description}}</td>
+      </tr>
+    </ng-container>
     </tbody>
   </table>
   <table *ngIf="isExtraSmall | async">
@@ -53,4 +63,26 @@
     </table>
     <hr>
   </div>
+  <ng-container *ngIf="codesPassive.length > 0">
+    <p class="koodisto-passive-header">{{ translation.koodistot_passive | translate }}</p>
+    <div *ngFor="let code of codesPassive" class="table-responsive">
+      <table class="table table-borderless koodisto-table-small koodisto-passive">
+        <tbody>
+        <tr>
+          <th scope="row">{{ translation.koodistot_code | translate}}</th>
+          <td>{{code.code_value}}</td>
+        </tr>
+        <tr>
+          <th scope="row">{{ translation.koodistot_name | translate}}</th>
+          <td>{{code.name}}</td>
+        </tr>
+        <tr>
+          <th scope="row">{{ translation.koodistot_description | translate}}</th>
+          <td>{{code.description}}</td>
+        </tr>
+        </tbody>
+      </table>
+      <hr>
+    </div>
+  </ng-container>
 </div>

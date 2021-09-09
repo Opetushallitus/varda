@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { VirkailijaTranslations } from '../../../../assets/i18n/virkailija-translations.enum';
-import { VardaDateService } from '../../services/varda-date.service';
+import { VardaDateService } from 'varda-shared';
 
 @Component({
   template: ''

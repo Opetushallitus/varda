@@ -27,6 +27,9 @@ export interface CodeDTO {
   code_value: string;
   name: string;
   description: string;
+  active: boolean;
+  alkamis_pvm: string;
+  paattymis_pvm: string;
 }
 
 export enum KoodistoSortBy {

@@ -1,8 +1,8 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 import { AuthService } from '../../../core/auth/auth.service';
 import { FormArray, FormGroup, FormControl, Validators } from '@angular/forms';
-import { LoadingHttpService } from 'varda-shared';
+import { LoadingHttpService, VardaDateService } from 'varda-shared';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
 import { VardaVakajarjestaja, VardaVakajarjestajaUi } from '../../../utilities/models';
 import { Observable, forkJoin, of } from 'rxjs';
@@ -16,7 +16,6 @@ import { Lahdejarjestelma } from '../../../utilities/models/enums/hallinnointija
 import { VardaSnackBarService } from '../../../core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaVakajarjestajaApiService } from '../../../core/services/varda-vakajarjestaja-api.service';
-import { VardaDateService } from '../../services/varda-date.service';
 
 enum TilapainenPrefix {
   spring = VirkailijaTranslations.tilapainen_henkilosto_first_half,

@@ -15,7 +15,7 @@ import { ErrorTree, VardaErrorMessageService } from '../../../../../core/service
 import { Observable } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import * as moment from 'moment';
-import { VardaDateService } from '../../../../services/varda-date.service';
+import { VardaDateService } from 'varda-shared';
 
 const TooltipTranslations = {
   [ReportType.VAKATIEDOT_VOIMASSA]: VirkailijaTranslations.excel_report_type_description_vakatiedot_voimassa,

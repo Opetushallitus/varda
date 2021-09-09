@@ -60,7 +60,9 @@ def update_koodistot():
         new_code_list = []
         for code in code_list:
             new_code_list.append(code['koodiArvo'])
-            code_obj = Z2_Code.objects.update_or_create(koodisto=koodisto_obj, code_value=code['koodiArvo'])[0]
+            code_obj, created = Z2_Code.objects.update_or_create(koodisto=koodisto_obj, code_value=code['koodiArvo'],
+                                                                 defaults={'alkamis_pvm': code['voimassaAlkuPvm'],
+                                                                           'paattymis_pvm': code['voimassaLoppuPvm']})
 
             new_translation_list = []
             for translation in code['metadata']:

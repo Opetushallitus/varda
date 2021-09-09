@@ -7,8 +7,7 @@ import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/servi
 import { VardaVakajarjestajaApiService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja-api.service';
 import { KielipainotusDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
-import { CodeDTO } from 'varda-shared';
-import { VardaDateService } from '../../../../services/varda-date.service';
+import { CodeDTO, VardaDateService } from 'varda-shared';
 import { PainotusAbstractComponent } from '../painotus.abstract';
 import { VardaModalService } from '../../../../../core/services/varda-modal.service';
 @Component({

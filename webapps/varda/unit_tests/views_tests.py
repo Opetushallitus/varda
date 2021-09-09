@@ -14,7 +14,7 @@ from rest_framework.exceptions import ValidationError as ValidationErrorRest
 from varda.misc import hash_string, encrypt_string
 from varda.models import (VakaJarjestaja, Toimipaikka, PaosOikeus, Huoltaja, Huoltajuussuhde, Henkilo,
                           Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto, ToiminnallinenPainotus,
-                          KieliPainotus, PaosToiminta)
+                          KieliPainotus, PaosToiminta, Z2_Code)
 from varda.permission_groups import assign_object_level_permissions
 from varda.unit_tests.test_utils import (assert_status_code, SetUpTestClient, assert_validation_error, mock_admin_user,
                                          post_henkilo_to_get_permissions, mock_date_decorator_factory)
@@ -4949,3 +4949,75 @@ class VardaViewsTests(TestCase):
         self.assertEqual(lapsi_id_1, lapsi_id_2)
         resp = client_toimipaikka.get(f'/api/v1/lapset/{lapsi_id_2}/')
         assert_status_code(resp, status.HTTP_200_OK)
+
+    def test_code_active_validation(self):
+        client = SetUpTestClient('tester2').client()
+
+        code_instance = Z2_Code.objects.get(code_value__iexact='jm01')
+        vakapaatos_patch_url = '/api/v1/varhaiskasvatuspaatokset/1:testing-varhaiskasvatuspaatos3/'
+
+        vakapaatos_post = {
+            'vuorohoito_kytkin': False,
+            'pikakasittely_kytkin': False,
+            'tuntimaara_viikossa': 39.0,
+            'paivittainen_vaka_kytkin': True,
+            'kokopaivainen_vaka_kytkin': True,
+            'tilapainen_vaka_kytkin': False,
+            'jarjestamismuoto_koodi': 'jm01',
+            'hakemus_pvm': '2018-09-05',
+            'lahdejarjestelma': '1',
+            'lapsi_tunniste': 'testing-lapsi3',
+            'tunniste': 'testing-varhaiskasvatuspaatos'
+        }
+
+        # (((code_alkamis_pvm, code_paattymis_pvm,), ((invalid_alkamis_pvm, invalid_paattymis_pvm,)),
+        # ((valid_alkamis_pvm, valid_paattymis_pvm,)),))
+        test_list = (
+            (
+                ('2019-01-01', '2020-01-01'),
+                (('2018-12-01', '2020-01-02'), ('2019-01-02', '2020-01-02'), ('2020-01-02', None)),
+                (('2019-01-01', None), ('2019-01-01', '2020-01-01'), ('2020-01-01', '2020-01-01'),
+                 ('2018-12-01', None), ('2018-12-01', '2019-06-01'),),
+            ),
+            (
+                ('2019-01-01', None),
+                (),
+                (('2019-01-01', None), ('2019-01-01', '2020-01-01'), ('2018-12-01', None), ('2018-12-01', '2019-06-01'))
+            )
+        )
+
+        for test_set in test_list:
+            code_dates = test_set[0]
+            invalid_cases = test_set[1]
+            valid_cases = test_set[2]
+
+            code_instance.alkamis_pvm = code_dates[0]
+            code_instance.paattymis_pvm = code_dates[1]
+            code_instance.save()
+
+            for invalid_case in invalid_cases:
+                vakapaatos_post['alkamis_pvm'] = invalid_case[0]
+                vakapaatos_post['paattymis_pvm'] = invalid_case[1]
+                invalid_resp_post = client.post('/api/v1/varhaiskasvatuspaatokset/', json.dumps(vakapaatos_post),
+                                                content_type='application/json')
+                assert_status_code(invalid_resp_post, status.HTTP_400_BAD_REQUEST)
+                assert_validation_error(invalid_resp_post, 'jarjestamismuoto_koodi', 'KO005',
+                                        'Code is not active during the time period.')
+                invalid_resp_patch = client.patch(vakapaatos_patch_url, json.dumps({'alkamis_pvm': invalid_case[0],
+                                                                                    'paattymis_pvm': invalid_case[1]}),
+                                                  content_type='application/json')
+                assert_status_code(invalid_resp_patch, status.HTTP_400_BAD_REQUEST)
+                assert_validation_error(invalid_resp_patch, 'jarjestamismuoto_koodi', 'KO005',
+                                        'Code is not active during the time period.')
+
+            for valid_case in valid_cases:
+                vakapaatos_post['alkamis_pvm'] = valid_case[0]
+                vakapaatos_post['paattymis_pvm'] = valid_case[1]
+                valid_resp_post = client.post('/api/v1/varhaiskasvatuspaatokset/', json.dumps(vakapaatos_post),
+                                              content_type='application/json')
+                assert_status_code(valid_resp_post, status.HTTP_201_CREATED)
+                client.delete(f'/api/v1/varhaiskasvatuspaatokset/{json.loads(valid_resp_post.content)["id"]}/')
+                valid_resp_patch = client.patch(vakapaatos_patch_url, json.dumps({'alkamis_pvm': valid_case[0],
+                                                                                  'paattymis_pvm': valid_case[1]}),
+                                                content_type='application/json')
+                assert_status_code(valid_resp_patch, status.HTTP_200_OK)

@@ -4,7 +4,7 @@ import { VardaDomService } from './core/services/varda-dom.service';
 import { DOCUMENT } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { Router, NavigationEnd } from '@angular/router';
-import { LoadingHttpService, LoginService, VardaKoodistoService, VardaUserDTO } from 'varda-shared';
+import { LoadingHttpService, LoginService, HelperService, VardaKoodistoService, VardaUserDTO } from 'varda-shared';
 import { Observable } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { environment } from '../environments/environment';
@@ -30,6 +30,7 @@ export class AppComponent implements OnInit {
     private vardaDomService: VardaDomService,
     private loadingHttpService: LoadingHttpService,
     private loginService: LoginService,
+    private helperService: HelperService,
     @Inject(DOCUMENT) private _document: any) {
 
     this.initKoodistotAndLanguage();
@@ -86,6 +87,8 @@ export class AppComponent implements OnInit {
       this.setTitle(this.router);
       this.koodistoService.initKoodistot(environment.vardaAppUrl, userLanguage);
       this.loginService.initLogoutInterval(90 * 60, this.translateService, this.apiService.getLogoutCasUrl());
+
+      this.helperService.setTranslateService(this.translateService);
     });
   }
 }

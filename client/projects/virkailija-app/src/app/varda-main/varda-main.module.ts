@@ -44,7 +44,6 @@ import {
 import { AuthService } from '../core/auth/auth.service';
 import { AuthGuard } from '../core/auth/auth.guard';
 import { RoleGuard } from '../core/auth/role.guard';
-import { VardaDateService } from './services/varda-date.service';
 import { VardaHenkiloService } from './services/varda-henkilo.service';
 import { MatTableModule } from '@angular/material/table';
 import { VardaSharedModule } from 'varda-shared';
@@ -230,7 +229,6 @@ import { VardaRequestSummaryComponent } from './components/varda-raportit/varda-
     AuthGuard,
     RoleGuard,
     BrowserNotSupportedGuard,
-    VardaDateService,
     VardaHenkiloService
   ]
 })

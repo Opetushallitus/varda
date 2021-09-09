@@ -2,12 +2,11 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { VirkailijaTranslations } from '../../../../../assets/i18n/virkailija-translations.enum';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { ErrorTree, VardaErrorMessageService } from '../../../../core/services/varda-error-message.service';
-import { KoodistoDTO, KoodistoEnum, VardaKoodistoService } from 'varda-shared';
+import { KoodistoDTO, KoodistoEnum, VardaKoodistoService, VardaDateService } from 'varda-shared';
 import * as moment from 'moment';
 import { Router } from '@angular/router';
 import { VardaRaportitService } from '../../../../core/services/varda-raportit.service';
 import { TranslateService } from '@ngx-translate/core';
-import { VardaDateService } from '../../../services/varda-date.service';
 import { PageEvent } from '@angular/material/paginator';
 import {
   RequestSummary,

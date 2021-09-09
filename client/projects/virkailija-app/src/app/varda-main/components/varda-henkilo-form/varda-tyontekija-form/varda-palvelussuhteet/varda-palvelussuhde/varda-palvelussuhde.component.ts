@@ -13,10 +13,9 @@ import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { VardaErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
-import { VardaKoodistoService } from 'varda-shared';
+import { VardaKoodistoService, VardaDateService } from 'varda-shared';
 import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { filter, distinctUntilChanged } from 'rxjs/operators';
-import { VardaDateService } from 'projects/virkailija-app/src/app/varda-main/services/varda-date.service';
 import { Moment } from 'moment';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
@@ -50,6 +49,7 @@ export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractCompo
   tyosuhdeKoodisto: KoodistoDTO;
   tyoaikaKoodisto: KoodistoDTO;
   minEndDate: Date;
+  koodistoEnum = KoodistoEnum;
   private henkilostoErrorService: VardaErrorMessageService;
 
   constructor(

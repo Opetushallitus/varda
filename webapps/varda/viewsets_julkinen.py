@@ -1,4 +1,6 @@
-from django.db.models import F, Value, CharField, Q
+import datetime
+
+from django.db.models import F, Value, CharField, Q, Case, When, BooleanField
 from rest_framework.exceptions import ValidationError
 from rest_framework.mixins import ListModelMixin
 from rest_framework.permissions import AllowAny
@@ -42,12 +44,17 @@ class KoodistotViewSet(GenericViewSet, ListModelMixin):
             codes_with_translation_qs = Z2_Code.objects.filter(translations__language__iexact=language)
             codes_without_translation_qs = Z2_Code.objects.filter(~Q(id__in=codes_with_translation_qs))
 
+            today = datetime.date.today()
+            active_annotation = {'active': Case(When(Q(alkamis_pvm__gt=today) | Q(paattymis_pvm__lt=today), then=False),
+                                                default=True, output_field=BooleanField())}
             translation_qs = (codes_with_translation_qs
-                              .annotate(name=F('translations__name'), description=F('translations__description'))
-                              .values('code_value', 'name', 'description'))
+                              .annotate(name=F('translations__name'), description=F('translations__description'),
+                                        **active_annotation)
+                              .values('code_value', 'name', 'description', 'active', 'alkamis_pvm', 'paattymis_pvm'))
             placeholder_qs = (codes_without_translation_qs
-                              .annotate(name=Value('', CharField()), description=Value('', CharField()))
-                              .values('code_value', 'name', 'description'))
+                              .annotate(name=Value('', CharField()), description=Value('', CharField()),
+                                        **active_annotation)
+                              .values('code_value', 'name', 'description', 'active', 'alkamis_pvm', 'paattymis_pvm'))
 
             koodistot_list = []
             for koodisto in self.get_queryset():
@@ -63,7 +70,7 @@ class KoodistotViewSet(GenericViewSet, ListModelMixin):
                 # We need to combine QuerySets as lists so that annotations are not combined
                 codes_combined = list(codes_translation) + list(codes_placeholder)
                 # Combined list needs to be sorted
-                codes_sorted = sorted(codes_combined, key=lambda item: item['code_value'])
+                codes_sorted = sorted(codes_combined, key=lambda item: (not item['active'], item['code_value']))
 
                 koodisto_obj['codes'] = codes_sorted
                 koodistot_list.append(koodisto_obj)

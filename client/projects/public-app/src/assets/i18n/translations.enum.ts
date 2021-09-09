@@ -12,6 +12,7 @@ export enum PublicTranslations {
   koodistot_title = 'koodistot.title',
   koodistot_invalid_koodisto_name = 'koodistot.invalid-koodisto-name',
   koodistot_no_selection = 'koodistot.no-selection',
+  koodistot_passive = 'koodistot.passive',
   menu_koodistot = 'menu.koodistot',
   menu_swagger = 'menu.swagger',
   menu_data_model = 'menu.data-model',
