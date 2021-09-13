@@ -6,8 +6,13 @@ import os
 from django.apps import apps
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.core.cache import cache
 from django.db.models import Q
+from django.utils import timezone
+
+from varda.apps import init_alive_log
 from varda.clients.oph_audit_log_client import Client
+from varda.constants import ALIVE_BOOT_TIME_CACHE_KEY, ALIVE_SEQ_CACHE_KEY
 from varda.enums.aikaleima_avain import AikaleimaAvain
 from varda.models import Aikaleima, LogData, Z5_AuditLog
 
@@ -265,3 +270,39 @@ def collect_audit_log_and_send_to_aws():
 
     aikaleima.aikaleima = end_datetime
     aikaleima.save()
+
+
+def send_alive_log_to_aws():
+    log_seq = cache.get(ALIVE_SEQ_CACHE_KEY)
+    boot_time = cache.get(ALIVE_BOOT_TIME_CACHE_KEY)
+    if log_seq is None or boot_time is None:
+        log_seq, boot_time = init_alive_log()
+
+    aws_client = Client()
+    stream_name = 'varda-alive-stream'
+
+    hostname = os.getenv('VARDA_HOSTNAME', 'localhost')
+    environment = 'production' if settings.PRODUCTION_ENV else 'testing'
+    timestamp = timezone.now()
+    message = 'started' if log_seq == 0 else 'alive'
+    audit_log_events = [{
+        'timestamp': get_epoch_time_in_ms(timestamp),
+        'message': json.dumps({
+            'version': 1,
+            'logSeq': log_seq,
+            'type': 'alive',
+            'bootTime': str(boot_time),
+            'hostname': hostname,
+            'environment': environment,
+            'timestamp': str(timestamp),
+            'serviceName': 'varda',
+            'applicationType': 'backend',
+            'message': message
+        })
+    }]
+
+    post_http_status_code = aws_client.post_audit_log(stream_name, audit_log_events)  # 200 is successful
+    if post_http_status_code == 200:
+        cache.set(ALIVE_SEQ_CACHE_KEY, log_seq + 1, None)
+    else:
+        logger.warning("Alive log post to aws failed with status code: {}".format(post_http_status_code))

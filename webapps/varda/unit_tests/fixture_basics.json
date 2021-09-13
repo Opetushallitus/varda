@@ -32,6 +32,14 @@
     }
   },
   {
+    "model": "django_celery_beat.intervalschedule",
+    "pk": 4,
+    "fields": {
+      "every": 9,
+      "period": "minutes"
+    }
+  },
+  {
     "model": "django_celery_beat.crontabschedule",
     "pk": 1,
     "fields": {
@@ -648,6 +656,31 @@
       "last_run_at": null,
       "total_run_count": 0,
       "date_changed": "2021-06-01T16:00:00.000Z",
+      "description": ""
+    }
+  },
+  {
+    "model": "django_celery_beat.periodictask",
+    "pk": 22,
+    "fields": {
+      "name": "send_alive_log_to_aws",
+      "task": "varda.tasks.send_alive_log_to_aws_task",
+      "interval": 4,
+      "crontab": null,
+      "solar": null,
+      "args": "[]",
+      "kwargs": "{}",
+      "queue": null,
+      "exchange": null,
+      "routing_key": null,
+      "priority": null,
+      "one_off": false,
+      "start_time": null,
+      "expires": null,
+      "enabled": true,
+      "last_run_at": null,
+      "total_run_count": 0,
+      "date_changed": "2021-09-01T16:00:00.000Z",
       "description": ""
     }
   }

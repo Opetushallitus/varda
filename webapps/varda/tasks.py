@@ -174,6 +174,13 @@ def send_audit_log_to_aws_task():
 
 @shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
+def send_alive_log_to_aws_task():
+    if settings.PRODUCTION_ENV or settings.QA_ENV:
+        audit_log.send_alive_log_to_aws()
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
 def guardian_clean_orphan_object_permissions():
     """
     Delete orphan permission instances that were not deleted for some reason when object was deleted

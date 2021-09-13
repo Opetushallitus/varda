@@ -1,8 +1,12 @@
 import os
 
 from django.apps import AppConfig
+from django.conf import settings
+from django.core.cache import cache
 from django.db.models.signals import post_migrate, post_save, pre_save, pre_delete
+from django.utils import timezone
 
+from varda.constants import ALIVE_BOOT_TIME_CACHE_KEY, ALIVE_SEQ_CACHE_KEY
 from varda.enums.error_messages import ErrorMessages
 from varda.migrations.production.setup import (load_initial_data, create_huoltajatiedot_template_groups,
                                                create_paos_template_groups,
@@ -201,6 +205,16 @@ def receiver_pre_delete(sender, **kwargs):
                                                        deleted_instance_voimassa_kytkin)
 
 
+def init_alive_log():
+    if settings.PRODUCTION_ENV or settings.QA_ENV:
+        log_seq = 0
+        boot_time = timezone.now()
+        cache.set(ALIVE_SEQ_CACHE_KEY, log_seq, None)
+        cache.set(ALIVE_BOOT_TIME_CACHE_KEY, boot_time, None)
+        return log_seq, boot_time
+    return None
+
+
 class VardaConfig(AppConfig):
     name = 'varda'
 
@@ -249,3 +263,5 @@ class VardaConfig(AppConfig):
         pre_delete.connect(receiver_pre_delete, sender='varda.Tyoskentelypaikka')
         pre_delete.connect(receiver_pre_delete, sender='varda.PidempiPoissaolo')
         pre_delete.connect(receiver_pre_delete, sender='varda.Taydennyskoulutus')
+
+        init_alive_log()
