@@ -24,7 +24,7 @@ from varda.enums.koodistot import Koodistot
 from varda.enums.supported_language import SupportedLanguage
 from varda.misc import decrypt_henkilotunnus, CustomServerErrorException, TemporaryObject, decrypt_excel_report_password
 from varda.models import (Varhaiskasvatussuhde, Z8_ExcelReport, Maksutieto, Z2_Code, Z8_ExcelReportLog, Lapsi,
-                          Tyontekija, Toimipaikka)
+                          Tyontekija, Toimipaikka, Palvelussuhde, TaydennyskoulutusTyontekija)
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +41,8 @@ class ExcelReportType(enum.Enum):
     PUUTTEELLISET_TOIMIPAIKKA = 'PUUTTEELLISET_TOIMIPAIKKA'
     PUUTTEELLISET_LAPSI = 'PUUTTEELLISET_LAPSI'
     PUUTTEELLISET_TYONTEKIJA = 'PUUTTEELLISET_TYONTEKIJA'
+    TYONTEKIJATIEDOT_VOIMASSA = 'TYONTEKIJATIEDOT_VOIMASSA'
+    TAYDENNYSKOULUTUSTIEDOT = 'TAYDENNYSKOULUTUSTIEDOT'
 
 
 if 'VARDA_ENVIRONMENT_TYPE' in os.environ:
@@ -58,6 +60,10 @@ PUUTTEELLISET_SHEET_NAME = 'PUUTTEELLISET_SHEET_NAME'
 PUUTTEELLISET_TOIMIPAIKKA_HEADERS = 'PUUTTEELLISET_TOIMIPAIKKA_HEADERS'
 PUUTTEELLISET_LAPSI_HEADERS = 'PUUTTEELLISET_LAPSI_HEADERS'
 PUUTTEELLISET_TYONTEKIJA_HEADERS = 'PUUTTEELLISET_TYONTEKIJA_HEADERS'
+TYONTEKIJA_SHEET_NAME = 'TYONTEKIJA_SHEET_NAME'
+TYONTEKIJA_HEADERS = 'TYONTEKIJA_HEADERS'
+TAYDENNYSKOULUTUS_SHEET_NAME = 'TAYDENNYSKOULUTUS_SHEET_NAME'
+TAYDENNYSKOULUTUS_HEADERS = 'TAYDENNYSKOULUTUS_HEADERS'
 YES = 'YES'
 NO = 'NO'
 TRANSLATIONS = {
@@ -83,12 +89,27 @@ TRANSLATIONS = {
         PUUTTEELLISET_TYONTEKIJA_HEADERS: ('Oppijanumero', 'Etunimet', 'Sukunimi', 'Hetu', 'Turvakielto',
                                            'Työntekijän ID', 'Lähdejärjestelmä', 'Virhe', 'Tietosisältö',
                                            'Objektin ID', 'Voimassaolo',),
+        TYONTEKIJA_SHEET_NAME: 'Työntekijätiedot',
+        TYONTEKIJA_HEADERS: ('Oppijanumero', 'Etunimet', 'Sukunimi', 'Hetu', 'Turvakielto', 'Työntekijän ID',
+                             'Lähdejärjestelmä', 'Palvelussuhteen ID', 'Palvelussuhteen tunniste',
+                             'Palvelussuhteen tyyppi', 'Työajan tyyppi', 'Tutkinto', 'Viikkotyöaika', 'Alkamispvm',
+                             'Päättymispvm', 'Työskentelypaikan ID', 'Työskentelypaikan tunniste',
+                             'Kiertävä (kyllä/ei)', 'Toimipaikan nimi', 'Toimipaikan OID', 'Toimipaikan ID',
+                             'Tehtävänimike', 'Kelpoisuus', 'Alkamispvm', 'Päättymispvm', 'Poissaolon ID',
+                             'Poissaolon tunniste', 'Alkamispvm', 'Päättymispvm',),
+        TAYDENNYSKOULUTUS_SHEET_NAME: 'Täydennyskoulutukset',
+        TAYDENNYSKOULUTUS_HEADERS: ('Oppijanumero', 'Etunimet', 'Sukunimi', 'Hetu', 'Turvakielto', 'Työntekijän ID',
+                                    'Lähdejärjestelmä', 'Täydennyskoulutuksen nimi', 'Täydennyskoulutuksen ID',
+                                    'Täydennyskoulutuksen tunniste', 'Suorituspäivä', 'Koulutuspäivien määrä',
+                                    'Tehtävänimike',),
         YES: 'Kyllä',
         NO: 'Ei',
         ExcelReportType.VAKATIEDOT_VOIMASSA.value: 'Varhaiskasvatustiedot_voimassa',
         ExcelReportType.PUUTTEELLISET_TOIMIPAIKKA.value: 'Puutteelliset_toimipaikka',
         ExcelReportType.PUUTTEELLISET_LAPSI.value: 'Puutteelliset_lapsi',
-        ExcelReportType.PUUTTEELLISET_TYONTEKIJA.value: 'Puutteelliset_tyontekija'
+        ExcelReportType.PUUTTEELLISET_TYONTEKIJA.value: 'Puutteelliset_tyontekija',
+        ExcelReportType.TYONTEKIJATIEDOT_VOIMASSA.value: 'Työntekijätiedot_voimassa',
+        ExcelReportType.TAYDENNYSKOULUTUSTIEDOT.value: 'Täydennyskoulutukset'
     },
     SupportedLanguage.SV.value: {
         VAKASUHDE_SHEET_NAME: 'Småbarnspedagogik',
@@ -116,12 +137,28 @@ TRANSLATIONS = {
         PUUTTEELLISET_TYONTEKIJA_HEADERS: ('Studentnummer', 'Förnamn', 'Efternamn', 'Personbeteckning',
                                            'Spärrmarkering', 'Arbetstagarens ID', 'Källsystem', 'Fel',
                                            'Uppgiftsinnehåll', 'Objektens ID', 'Giltighetstid',),
+        TYONTEKIJA_SHEET_NAME: 'Arbetstagaruppgifter',
+        TYONTEKIJA_HEADERS: ('Studentnummer', 'Förnamn', 'Efternamn', 'Personbeteckning', 'Spärrmarkering',
+                             'Arbetsgarens ID', 'Källsystem', 'Anställningsförhållandets ID',
+                             'Identifikationskod', 'Anställningsförhållandets karaktär',
+                             'Arbetstidens karaktär', 'Examen', 'Arbetstid per vecka', 'Begynnelsedatum', 'Slutdatum',
+                             'Arbetsplatsens ID', 'Identifikationskod', 'Ambulerande (ja/nej)',
+                             'Verksamhetsställets namn', 'Verksamhetsställets OID', 'Verksamhetsställets ID',
+                             'Yrkesbenämning', 'Behörighet', 'Begynnelsedatum', 'Slutdatum', 'Frånvaroperiodens ID',
+                             'Identifikationskod', 'Begynnelsedatum', 'Slutdatum',),
+        TAYDENNYSKOULUTUS_SHEET_NAME: 'Fortbildningar',
+        TAYDENNYSKOULUTUS_HEADERS: ('Studentnummer', 'Förnamn', 'Efternamn', 'Personbeteckning', 'Spärrmarkering',
+                                    'Arbetsgarens ID', 'Källsystem', 'Fortbildningens namn', 'Fortbildningens ID',
+                                    'Identifikationskod', 'Datum då fortbildningen avlagts',
+                                    'Antalet fortbildningsdagar', 'Yrkesbenämning',),
         YES: 'Ja',
         NO: 'Nej',
         ExcelReportType.VAKATIEDOT_VOIMASSA.value: 'Uppgifterna_om_småbarnspedagogik_i_kraft',
         ExcelReportType.PUUTTEELLISET_TOIMIPAIKKA.value: 'Bristfälliga_verksamhetsställen',
         ExcelReportType.PUUTTEELLISET_LAPSI.value: 'Bristfälliga_uppgifter_om_barn',
-        ExcelReportType.PUUTTEELLISET_TYONTEKIJA.value: 'Bristfälliga_uppgifter_om_arbetstagare'
+        ExcelReportType.PUUTTEELLISET_TYONTEKIJA.value: 'Bristfälliga_uppgifter_om_arbetstagare',
+        ExcelReportType.TYONTEKIJATIEDOT_VOIMASSA.value: 'Personal_med_anställningsförhållanden_i_kraft',
+        ExcelReportType.TAYDENNYSKOULUTUSTIEDOT.value: 'Fortbildningar'
     }
 }
 
@@ -193,6 +230,7 @@ def create_excel_report_task(report_id):
     report.save()
 
     excel_log = Z8_ExcelReportLog(report_type=report.report_type, target_date=report.target_date,
+                                  target_date_start=report.target_date_start, target_date_end=report.target_date_end,
                                   vakajarjestaja=report.vakajarjestaja, toimipaikka=report.toimipaikka,
                                   user=report.user, started_timestamp=timezone.now())
 
@@ -259,6 +297,14 @@ def _create_excel_report(workbook, report):
                                 ExcelReportType.PUUTTEELLISET_LAPSI.value,
                                 ExcelReportType.PUUTTEELLISET_TYONTEKIJA.value,):
         _create_puutteelliset_report(workbook, report.report_type, report.language, report.vakajarjestaja, report.user)
+    elif report.report_type == ExcelReportType.TYONTEKIJATIEDOT_VOIMASSA.value:
+        _create_tyontekijatiedot_voimassa_report(workbook, report.language, report.vakajarjestaja_id,
+                                                 toimipaikka_id=report.toimipaikka_id, target_date=report.target_date)
+    elif report.report_type == ExcelReportType.TAYDENNYSKOULUTUSTIEDOT.value:
+        _create_taydennyskoulutustiedot_report(workbook, report.language, report.vakajarjestaja_id,
+                                               toimipaikka_id=report.toimipaikka_id,
+                                               target_date_start=report.target_date_start,
+                                               target_date_end=report.target_date_end)
 
 
 def _create_vakatiedot_voimassa_report(workbook, language, vakajarjestaja_id, toimipaikka_id=None, target_date=None):
@@ -501,6 +547,121 @@ def _create_puutteelliset_tyontekija_report(worksheet, language, vakajarjestaja_
 
                 _write_row(worksheet, index, error_values)
                 index += 1
+
+
+def _create_tyontekijatiedot_voimassa_report(workbook, language, vakajarjestaja_id, toimipaikka_id=None, target_date=None):
+    if not target_date:
+        target_date = datetime.date.today()
+
+    palvelussuhde_filter = Q(alkamis_pvm__lte=target_date) & (Q(paattymis_pvm__gte=target_date) | Q(paattymis_pvm__isnull=True))
+
+    _create_tyontekijatiedot_report(workbook, language, vakajarjestaja_id, toimipaikka_id=toimipaikka_id,
+                                    palvelussuhde_filter=palvelussuhde_filter)
+
+
+def _create_tyontekijatiedot_report(workbook, language, vakajarjestaja_id, toimipaikka_id=None, palvelussuhde_filter=Q()):
+    translations = TRANSLATIONS.get(language, TRANSLATIONS.get(SupportedLanguage.FI.value))
+
+    vakajarjestaja_filter = Q(tyontekija__vakajarjestaja=vakajarjestaja_id)
+    if toimipaikka_id:
+        vakajarjestaja_filter &= Q(tyoskentelypaikat__toimipaikka=toimipaikka_id)
+
+    palvelussuhde_qs = (Palvelussuhde.objects.filter(vakajarjestaja_filter & palvelussuhde_filter).distinct()
+                        .order_by('tyontekija__henkilo__sukunimi', 'tyontekija__henkilo__etunimet', 'alkamis_pvm'))
+
+    tutkinto_codes = _get_koodisto_with_translations(Koodistot.tutkinto_koodit.value, language)
+    tyosuhde_codes = _get_koodisto_with_translations(Koodistot.tyosuhde_koodit.value, language)
+    tyoaika_codes = _get_koodisto_with_translations(Koodistot.tyoaika_koodit.value, language)
+    tehtavanimike_codes = _get_koodisto_with_translations(Koodistot.tehtavanimike_koodit.value, language)
+    lahdejarjestelma_codes = _get_koodisto_with_translations(Koodistot.lahdejarjestelma_koodit.value, language)
+
+    tyontekija_sheet = workbook.add_worksheet(translations.get(TYONTEKIJA_SHEET_NAME))
+    _write_headers(tyontekija_sheet, translations, TYONTEKIJA_HEADERS)
+
+    index = 1
+    for palvelussuhde in palvelussuhde_qs:
+        tyoskentelypaikka_qs = (palvelussuhde.tyoskentelypaikat.filter(toimipaikka=toimipaikka_id)
+                                if toimipaikka_id else palvelussuhde.tyoskentelypaikat.all())
+        tyoskentelypaikka_qs.order_by('alkamis_pvm')
+        tyontekija = palvelussuhde.tyontekija
+        henkilo = tyontekija.henkilo
+        for type_index, data_set in enumerate((tyoskentelypaikka_qs, palvelussuhde.pidemmatpoissaolot.all().order_by('alkamis_pvm'),)):
+            for data_instance in data_set:
+                # Tyontekija information
+                tyontekija_values = [henkilo.henkilo_oid, henkilo.etunimet, henkilo.sukunimi,
+                                     _decrypt_hetu(henkilo.henkilotunnus),
+                                     _get_boolean_translation(translations, henkilo.turvakielto), tyontekija.id,
+                                     _get_code_translation(lahdejarjestelma_codes, tyontekija.lahdejarjestelma)]
+                # Palvelussuhde information
+                tyontekija_values.extend([palvelussuhde.id, palvelussuhde.tunniste,
+                                          _get_code_translation(tyosuhde_codes, palvelussuhde.tyosuhde_koodi),
+                                          _get_code_translation(tyoaika_codes, palvelussuhde.tyoaika_koodi),
+                                          _get_code_translation(tutkinto_codes, palvelussuhde.tutkinto_koodi),
+                                          palvelussuhde.tyoaika_viikossa, palvelussuhde.alkamis_pvm,
+                                          palvelussuhde.paattymis_pvm])
+                if type_index == 0:
+                    # Tyoskentelypaikka
+                    tyontekija_values.extend([data_instance.id, data_instance.tunniste,
+                                              _get_boolean_translation(translations, data_instance.kiertava_tyontekija_kytkin)])
+                    if data_instance.toimipaikka:
+                        tyontekija_values.extend([data_instance.toimipaikka.nimi,
+                                                  data_instance.toimipaikka.organisaatio_oid,
+                                                  data_instance.toimipaikka.id])
+                    else:
+                        tyontekija_values.extend([None, None, None])
+                    tyontekija_values.extend([_get_code_translation(tehtavanimike_codes, data_instance.tehtavanimike_koodi),
+                                              _get_boolean_translation(translations, data_instance.kelpoisuus_kytkin),
+                                              data_instance.alkamis_pvm, data_instance.paattymis_pvm])
+                else:
+                    # Pidempi poissaolo
+                    # Because every row has Tyoskentelypaikka and Pidempi Poissaolo columns, fill Tyoskentelypaikka
+                    # columns with None
+                    tyontekija_values.extend([None] * 10)
+                    tyontekija_values.extend([data_instance.id, data_instance.tunniste, data_instance.alkamis_pvm,
+                                              data_instance.paattymis_pvm])
+                _write_row(tyontekija_sheet, index, tyontekija_values)
+                index += 1
+
+
+def _create_taydennyskoulutustiedot_report(workbook, language, vakajarjestaja_id, toimipaikka_id=None,
+                                           target_date_start=None, target_date_end=None):
+    translations = TRANSLATIONS.get(language, TRANSLATIONS.get(SupportedLanguage.FI.value))
+    tehtavanimike_codes = _get_koodisto_with_translations(Koodistot.tehtavanimike_koodit.value, language)
+    lahdejarjestelma_codes = _get_koodisto_with_translations(Koodistot.lahdejarjestelma_koodit.value, language)
+
+    taydennyskoulutus_filter = Q(tyontekija__vakajarjestaja=vakajarjestaja_id)
+    if target_date_start:
+        taydennyskoulutus_filter &= Q(taydennyskoulutus__suoritus_pvm__gte=target_date_start)
+    if target_date_end:
+        taydennyskoulutus_filter &= Q(taydennyskoulutus__suoritus_pvm__lte=target_date_end)
+    if toimipaikka_id:
+        taydennyskoulutus_filter &= Q(tyontekija__palvelussuhteet__tyoskentelypaikat__toimipaikka_id=toimipaikka_id)
+
+    taydennyskoulutus_qs = (TaydennyskoulutusTyontekija.objects.filter(taydennyskoulutus_filter).distinct()
+                            .order_by('tyontekija__henkilo__sukunimi', 'tyontekija__henkilo__etunimet',
+                                      'taydennyskoulutus__suoritus_pvm', 'taydennyskoulutus__id'))
+
+    taydennyskoulutus_sheet = workbook.add_worksheet(translations.get(TAYDENNYSKOULUTUS_SHEET_NAME))
+    _write_headers(taydennyskoulutus_sheet, translations, TAYDENNYSKOULUTUS_HEADERS)
+
+    for index, taydennyskoulutus in enumerate(taydennyskoulutus_qs, 1):
+        tyontekija = taydennyskoulutus.tyontekija
+        henkilo = tyontekija.henkilo
+        taydennyskoulutus_parent = taydennyskoulutus.taydennyskoulutus
+
+        # Tyontekija information
+        taydennyskoulutus_values = [henkilo.henkilo_oid, henkilo.etunimet, henkilo.sukunimi,
+                                    _decrypt_hetu(henkilo.henkilotunnus),
+                                    _get_boolean_translation(translations, henkilo.turvakielto), tyontekija.id,
+                                    _get_code_translation(lahdejarjestelma_codes, tyontekija.lahdejarjestelma)]
+
+        # Taydennyskoulutus information
+        taydennyskoulutus_values.extend([taydennyskoulutus_parent.nimi, taydennyskoulutus_parent.id,
+                                         taydennyskoulutus_parent.tunniste, taydennyskoulutus_parent.suoritus_pvm,
+                                         taydennyskoulutus_parent.koulutuspaivia,
+                                         _get_code_translation(tehtavanimike_codes, taydennyskoulutus.tehtavanimike_koodi)])
+
+        _write_row(taydennyskoulutus_sheet, index, taydennyskoulutus_values)
 
 
 def _write_headers(worksheet, translations, headers_name):

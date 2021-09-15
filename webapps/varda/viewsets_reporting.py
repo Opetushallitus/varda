@@ -28,7 +28,8 @@ from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.enums.koodistot import Koodistot
 from varda.enums.supported_language import SupportedLanguage
 from varda.enums.ytj import YtjYritysmuoto
-from varda.excel_export import generate_filename, get_excel_local_file_path, ExcelReportStatus, create_excel_report_task
+from varda.excel_export import (generate_filename, get_excel_local_file_path, ExcelReportStatus,
+                                create_excel_report_task, ExcelReportType)
 from varda.filters import (TiedonsiirtoFilter, ExcelReportFilter, KelaEtuusmaksatusAloittaneetFilter,
                            KelaEtuusmaksatusLopettaneetFilter, KelaEtuusmaksatusKorjaustiedotFilter,
                            CustomParametersFilterBackend, CustomParameter, TransferOutageReportFilter,
@@ -1011,9 +1012,10 @@ class ExcelReportViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cre
     permission_classes = (RaportitPermissions,)
     pagination_class = ChangeablePageSizePagination
 
-    def _validate_toimipaikka_belongs_to_vakajarjestaja(self, vakajarjestaja, toimipaikka):
+    def _validate_toimipaikka_belongs_to_vakajarjestaja(self, vakajarjestaja, toimipaikka, accept_paos=False):
         paos_qs = PaosToiminta.objects.filter(Q(oma_organisaatio=vakajarjestaja) & Q(paos_toimipaikka=toimipaikka))
-        if not toimipaikka.vakajarjestaja == vakajarjestaja and not paos_qs.exists():
+        if ((not toimipaikka.vakajarjestaja == vakajarjestaja and not accept_paos) or
+                (not toimipaikka.vakajarjestaja == vakajarjestaja and not paos_qs.exists())):
             # Toimipaikka should be one of vakajarjestaja, or PAOS-toimipaikka of vakajarjestaja
             raise ValidationError({'toimipaikka': [ErrorMessages.ER001.value]})
 
@@ -1031,7 +1033,9 @@ class ExcelReportViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cre
 
         vakajarjestaja = data.get('vakajarjestaja')
         if toimipaikka := data.get('toimipaikka'):
-            self._validate_toimipaikka_belongs_to_vakajarjestaja(vakajarjestaja, toimipaikka)
+            accept_paos_list = [ExcelReportType.VAKATIEDOT_VOIMASSA.value]
+            self._validate_toimipaikka_belongs_to_vakajarjestaja(vakajarjestaja, toimipaikka,
+                                                                 accept_paos=data.get('report_type') in accept_paos_list)
 
         language = (SupportedLanguage.SV.value if data.get('language').upper() == SupportedLanguage.SV.value
                     else SupportedLanguage.FI.value)

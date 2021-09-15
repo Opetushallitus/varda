@@ -21,7 +21,9 @@ const TooltipTranslations = {
   [ReportType.VAKATIEDOT_VOIMASSA]: VirkailijaTranslations.excel_report_type_description_vakatiedot_voimassa,
   [ReportType.PUUTTEELLISET_TOIMIPAIKKA]: VirkailijaTranslations.excel_report_type_description_puutteelliset_toimipaikka,
   [ReportType.PUUTTEELLISET_LAPSI]: VirkailijaTranslations.excel_report_type_description_puutteelliset_lapsi,
-  [ReportType.PUUTTEELLISET_TYONTEKIJA]: VirkailijaTranslations.excel_report_type_description_puutteelliset_tyontekija
+  [ReportType.PUUTTEELLISET_TYONTEKIJA]: VirkailijaTranslations.excel_report_type_description_puutteelliset_tyontekija,
+  [ReportType.TYONTEKIJATIEDOT_VOIMASSA]: VirkailijaTranslations.excel_report_type_description_tyontekijatiedot_voimassa,
+  [ReportType.TAYDENNYSKOULUTUSTIEDOT]: VirkailijaTranslations.excel_report_type_description_taydennyskoulutustiedot
 };
 
 @Component({
@@ -42,7 +44,6 @@ export class VardaExcelNewComponent implements OnInit {
   toimipaikkaOptions: Array<VardaToimipaikkaMinimalDto> = [];
 
   reportTypeOptions: Array<Array<string>>;
-  ReportType = ReportType;
 
   newReport: VardaExcelReportPostDTO = {
     report_type: ReportType.VAKATIEDOT_VOIMASSA,
@@ -50,12 +51,21 @@ export class VardaExcelNewComponent implements OnInit {
     vakajarjestaja_oid: null,
     toimipaikka_oid: null,
     target_date: null,
+    target_date_start: null,
+    target_date_end: null
   };
 
   targetDate = moment();
+  targetDateStart = moment();
+  targetDateEnd = moment();
 
   vakajarjestajaLevel = true;
   selectedToimipaikka: VardaToimipaikkaMinimalDto = null;
+
+  toimipaikkaSelectorReports = [ReportType.VAKATIEDOT_VOIMASSA.toString(), ReportType.TYONTEKIJATIEDOT_VOIMASSA.toString(),
+    ReportType.TAYDENNYSKOULUTUSTIEDOT.toString()];
+  dateSelectorReports = [ReportType.VAKATIEDOT_VOIMASSA.toString(), ReportType.TYONTEKIJATIEDOT_VOIMASSA.toString()];
+  dateRangeSelectorReports = [ReportType.TAYDENNYSKOULUTUSTIEDOT.toString()];
 
   isLoading = false;
   private errorService: VardaErrorMessageService;
@@ -89,7 +99,7 @@ export class VardaExcelNewComponent implements OnInit {
   }
 
   create() {
-    if (!this.vakajarjestajaLevel && this.newReport.report_type === ReportType.VAKATIEDOT_VOIMASSA) {
+    if (!this.vakajarjestajaLevel && this.toimipaikkaSelectorReports.includes(this.newReport.report_type)) {
       if (this.selectedToimipaikka && !this.toimipaikkaSelector.isOptionInvalid()) {
         this.newReport.toimipaikka_oid = this.selectedToimipaikka.organisaatio_oid;
       } else {
@@ -99,11 +109,20 @@ export class VardaExcelNewComponent implements OnInit {
       }
     }
 
-    if (this.newReport.report_type === ReportType.VAKATIEDOT_VOIMASSA) {
+    if (this.dateSelectorReports.includes(this.newReport.report_type)) {
       if (!this.targetDate?.isValid()) {
         return;
       } else {
         this.newReport.target_date = this.dateService.momentToVardaDate(this.targetDate);
+      }
+    }
+
+    if (this.dateRangeSelectorReports.includes(this.newReport.report_type)) {
+      if (!this.targetDateStart?.isValid() || !this.targetDateEnd?.isValid()) {
+        return;
+      } else {
+        this.newReport.target_date_start = this.dateService.momentToVardaDate(this.targetDateStart);
+        this.newReport.target_date_end = this.dateService.momentToVardaDate(this.targetDateEnd);
       }
     }
 
@@ -121,7 +140,20 @@ export class VardaExcelNewComponent implements OnInit {
   }
 
   updateToimipaikat() {
-    console.log('TODO: Update toimipaikat to reflect if report is for vakatiedot or henkilostotiedot');
+    this.vakajarjestajaLevel = true;
+    this.selectedToimipaikka = null;
+    this.newReport.toimipaikka_oid = null;
+    switch (this.newReport.report_type) {
+      case ReportType.VAKATIEDOT_VOIMASSA:
+        this.toimipaikkaOptions = this.toimipaikkaList;
+        break;
+      case ReportType.TYONTEKIJATIEDOT_VOIMASSA:
+      case ReportType.TAYDENNYSKOULUTUSTIEDOT:
+        this.toimipaikkaOptions = this.henkilostoToimipaikkaList;
+        break;
+      default:
+        break;
+    }
   }
 
   getTooltipTranslation(reportType: string) {

@@ -559,9 +559,10 @@ def is_correct_taydennyskoulutus_tyontekija_permission(user, taydennyskoulutus_t
 
 
 def get_available_tehtavanimike_codes_for_user(user, tyontekija):
-    if user_permission_groups_in_organization(user, tyontekija.vakajarjestaja.organisaatio_oid,
-                                              (Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
-                                               Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,)).exists():
+    if (user.is_superuser or is_oph_staff(user) or
+            user_permission_groups_in_organization(user, tyontekija.vakajarjestaja.organisaatio_oid,
+                                                   (Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
+                                                    Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,)).exists()):
         # User has Vakajarjestaja level permissions, return all tehtavanimike codes
         tehtavanimike_set = set(tyontekija.palvelussuhteet.all().values_list('tyoskentelypaikat__tehtavanimike_koodi',
                                                                              flat=True))

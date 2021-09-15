@@ -1263,6 +1263,8 @@ class Z8_ExcelReport(models.Model):
     status = models.CharField(max_length=50)
     report_type = models.CharField(max_length=50)
     target_date = models.DateField(null=True)
+    target_date_start = models.DateField(null=True)
+    target_date_end = models.DateField(null=True)
     language = models.CharField(max_length=2)
     vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='excel_reports', on_delete=models.PROTECT)
     toimipaikka = models.ForeignKey(Toimipaikka, null=True, related_name='excel_reports', on_delete=models.PROTECT)
@@ -1279,6 +1281,8 @@ class Z8_ExcelReport(models.Model):
 class Z8_ExcelReportLog(models.Model):
     report_type = models.CharField(max_length=50)
     target_date = models.DateField(null=True)
+    target_date_start = models.DateField(null=True)
+    target_date_end = models.DateField(null=True)
     vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='excel_report_logs', on_delete=models.PROTECT)
     toimipaikka = models.ForeignKey(Toimipaikka, null=True, related_name='excel_report_logs', on_delete=models.PROTECT)
     user = models.ForeignKey(User, related_name='excel_report_logs', on_delete=models.PROTECT)

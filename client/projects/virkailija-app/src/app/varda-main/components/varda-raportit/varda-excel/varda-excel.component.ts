@@ -13,7 +13,9 @@ export enum ReportType {
   VAKATIEDOT_VOIMASSA = 'VAKATIEDOT_VOIMASSA',
   PUUTTEELLISET_TOIMIPAIKKA = 'PUUTTEELLISET_TOIMIPAIKKA',
   PUUTTEELLISET_LAPSI = 'PUUTTEELLISET_LAPSI',
-  PUUTTEELLISET_TYONTEKIJA = 'PUUTTEELLISET_TYONTEKIJA'
+  PUUTTEELLISET_TYONTEKIJA = 'PUUTTEELLISET_TYONTEKIJA',
+  TYONTEKIJATIEDOT_VOIMASSA = 'TYONTEKIJATIEDOT_VOIMASSA',
+  TAYDENNYSKOULUTUSTIEDOT = 'TAYDENNYSKOULUTUSTIEDOT'
 }
 
 export const ReportTypeTranslations = {
@@ -21,6 +23,8 @@ export const ReportTypeTranslations = {
   [ReportType.PUUTTEELLISET_TOIMIPAIKKA]: VirkailijaTranslations.excel_report_type_puutteelliset_toimipaikka,
   [ReportType.PUUTTEELLISET_LAPSI]: VirkailijaTranslations.excel_report_type_puutteelliset_lapsi,
   [ReportType.PUUTTEELLISET_TYONTEKIJA]: VirkailijaTranslations.excel_report_type_puutteelliset_tyontekija,
+  [ReportType.TYONTEKIJATIEDOT_VOIMASSA]: VirkailijaTranslations.excel_report_type_tyontekijatiedot_voimassa,
+  [ReportType.TAYDENNYSKOULUTUSTIEDOT]: VirkailijaTranslations.excel_report_type_taydennyskoulutustiedot,
 };
 
 enum ReportStatus {

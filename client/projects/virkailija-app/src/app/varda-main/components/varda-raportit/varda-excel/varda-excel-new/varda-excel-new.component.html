@@ -28,7 +28,7 @@
         </button>
       </div>
     </div>
-    <div class="col-md-5 col-lg-3 margin-top-md datepicker-container" *ngIf="newReport.report_type === ReportType.VAKATIEDOT_VOIMASSA">
+    <div class="col-md-5 col-lg-3 margin-top-md datepicker-container" *ngIf="dateSelectorReports.includes(newReport.report_type)">
       <label for="targetDatePicker"
              class="oph-bold">{{i18n.excel_new_voimassa_date | translate}}</label>
       <app-varda-datepicker #targetDatePicker="ngModel"
@@ -44,8 +44,41 @@
         <p>{{i18n.katsele_tietoja_error_date_format | translate}}</p>
       </div>
     </div>
+    <div class="col-lg-12 varda-date-range-container margin-top-lg" *ngIf="dateRangeSelectorReports.includes(newReport.report_type)">
+      <label for="targetDatePicker"
+             class="oph-bold">{{i18n.excel_new_voimassa_date | translate}}</label>
+      <div class="row varda-date-range-row">
+        <div class="col">
+          <app-varda-datepicker #targetDateStartPicker="ngModel"
+                                name="targetDateStartPicker"
+                                [(ngModel)]="targetDateStart"
+                                [required]="true">
+          </app-varda-datepicker>
+          <div aria-live="assertive"
+               class="varda-error-message-block"
+               role="alert"
+               *ngIf="targetDateStartPicker.invalid">
+            <p>{{i18n.katsele_tietoja_error_date_format | translate}}</p>
+          </div>
+        </div>
+        <span class="varda-date-range-dash">–</span>
+        <div class="col">
+          <app-varda-datepicker #targetDateEndPicker="ngModel"
+                                name="targetDateEndPicker"
+                                [(ngModel)]="targetDateEnd"
+                                [required]="true">
+          </app-varda-datepicker>
+          <div aria-live="assertive"
+               class="varda-error-message-block"
+               role="alert"
+               *ngIf="targetDateEndPicker.invalid">
+            <p>{{i18n.katsele_tietoja_error_date_format | translate}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-  <ng-container *ngIf="newReport.report_type === ReportType.VAKATIEDOT_VOIMASSA">
+  <ng-container *ngIf="toimipaikkaSelectorReports.includes(newReport.report_type)">
     <div class="full-width-row margin-top">
       <div class="col-md-auto varda-theme">
         <mat-checkbox name="vakajarjestajaLevelCheckbox"
