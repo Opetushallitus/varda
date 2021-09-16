@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.26 (16.09.2021)
+- OPHVARDA-2272: Henkilöstötietojen Excel-raportit
+
 1.5.25 (09.09.2021)
 - OPHVARDA-2261: Validoi koodiston koodien voimassaolo
 
