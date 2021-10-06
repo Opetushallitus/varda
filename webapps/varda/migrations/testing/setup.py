@@ -3066,6 +3066,7 @@ def load_testing_data():
 
 def _make_post_request(url, json_content):
     import json
+    from django.conf import settings
     from django.contrib.auth.models import User
     from rest_framework import status
     from rest_framework.test import APIClient
@@ -3073,6 +3074,15 @@ def _make_post_request(url, json_content):
 
     client = APIClient()
     client.force_authenticate(user=User.objects.get(username='credadmin'))
-    response = client.post(url, json.dumps(json_content), content_type='application/json')
+
+    # If server is running as HTTPS, use secure requests
+    if settings.SECURE_SSL_REDIRECT:
+        extra = {
+            'secure': True
+        }
+    else:
+        extra = {}
+
+    response = client.post(url, json.dumps(json_content), content_type='application/json', **extra)
     assert_status_code(response, status.HTTP_201_CREATED)
     return response
