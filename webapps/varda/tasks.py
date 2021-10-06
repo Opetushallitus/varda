@@ -567,9 +567,9 @@ def update_request_summary_table_task():
             # e.g. /api/v1/varhaiskasvatuspaatokset/123/ -> /api/v1/varhaiskasvatuspaatokset/*/
             request_log_qs = (Z6_RequestLog.objects
                               .values(*values, 'timestamp__date')
-                              .annotate(request_url_simple=Case(When(request_url__regex=r'^.*\/(\d.*)\/$',
+                              .annotate(request_url_simple=Case(When(request_url__regex=r'^.*\/(\d*(:.*)?|[\d.]*)\/.*$',
                                                                      then=Func(
-                                                                         F('request_url'), Value(r'\/(\d.*)\/$'),
+                                                                         F('request_url'), Value(r'\/(\d*(:.*)?|[\d.]*)\/'),
                                                                          Value('/*/'),
                                                                          function='regexp_replace')
                                                                      ),
