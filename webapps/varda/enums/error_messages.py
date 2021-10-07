@@ -34,6 +34,9 @@ class ErrorMessages(enum.Enum):
     GE017 = get_error_dict('GE017', 'You must give at least one value.')
     GE018 = get_error_dict('GE018', 'Invalid decimal step.')
     GE019 = get_error_dict('GE019', 'Time period exceeds allowed timeframe.')
+    GE020 = get_error_dict('GE020', 'This field must be a datetime string in YYYY-MM-DDTHH:MM:SSZ format.')
+    GE021 = get_error_dict('GE021', 'Both datetime field filters are required.')
+    GE022 = get_error_dict('GE022', 'Greater than date filter value needs to be before less than date filter.')
 
     # Dynamic errors, prefix: DY
     # If dynamic errors are added or changed, changes should be reflected in frontend virkailija-app parseDynamicValue

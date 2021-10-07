@@ -60,11 +60,49 @@ class VardaViewsReportingTests(TestCase):
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/', **self.headers)
         self.assertEqual(resp.status_code, 403)
 
-    def test_reporting_api_kela_etuusmaksatus_aloittaneet_alkamis_pvm_filter(self):
+    def test_reporting_api_kela_etuusmaksatus_aloittaneet_luonti_pvm_lte_date_filter(self):
         client = SetUpTestClient('kela_luovutuspalvelu').client()
-        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/?luonti_pvm=2018-01-01', **self.headers)
+        now = datetime.datetime.now().date()
+        resp = client.get(f'/api/reporting/v1/kela/etuusmaksatus/aloittaneet/?luonti_pvm_gte={now}', **self.headers)
         self.assertEqual(resp.status_code, 400)
-        assert_validation_error(resp, 'luonti_pvm', 'GE019', 'Time period exceeds allowed timeframe.')
+        assert_validation_error(resp, 'luonti_pvm_gte', 'GE020', 'This field must be a datetime string in YYYY-MM-DDTHH:MM:SSZ format.')
+
+    def test_reporting_api_kela_etuusmaksatus_aloittaneet_luonti_pvm_filter_too_far(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/?luonti_pvm_gte=2018-01-01T09:00:00%2B0300', **self.headers)
+        self.assertEqual(resp.status_code, 400)
+        assert_validation_error(resp, 'luonti_pvm_gte', 'GE019', 'Time period exceeds allowed timeframe.')
+
+    def test_reporting_api_kela_etuusmaksatus_aloittaneet_luonti_pvm_filter_no_gte(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/?luonti_pvm_lte=2030-01-01T09:00:00%2B0300', **self.headers)
+        self.assertEqual(resp.status_code, 400)
+        assert_validation_error(resp, 'luonti_pvm_gte', 'GE021', 'Both datetime field filters are required.')
+
+    def test_reporting_api_kela_etuusmaksatus_aloittaneet_luonti_pvm_gte_filter_too_far(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/aloittaneet/?luonti_pvm_gte=2018-01-01T09:00:00Z', **self.headers)
+        self.assertEqual(resp.status_code, 400)
+        assert_validation_error(resp, 'luonti_pvm_gte', 'GE019', 'Time period exceeds allowed timeframe.')
+
+    def test_reporting_api_kela_etuusmaksatus_aloittaneet_filters_wrong_values(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        now = datetime.datetime.now().astimezone()
+        earlier = now - datetime.timedelta(hours=2)
+        now = now.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        earlier = earlier.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        resp = client.get(f'/api/reporting/v1/kela/etuusmaksatus/aloittaneet/?luonti_pvm_gte={now}&luonti_pvm_lte={earlier}', **self.headers)
+        self.assertEqual(resp.status_code, 400)
+        assert_validation_error(resp, 'luonti_pvm_lte', 'GE022', 'Greater than date filter value needs to be before less than date filter.')
+
+    def test_reporting_api_kela_etuusmaksatus_aloittaneet_luonti_pvm_gte_and_lte_filter(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        now = datetime.datetime.now().astimezone()
+        earlier = now - datetime.timedelta(hours=2)
+        now = now.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        earlier = earlier.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        resp = client.get(f'/api/reporting/v1/kela/etuusmaksatus/aloittaneet/?luonti_pvm_gte={earlier}&luonti_pvm_lte={now}', **self.headers)
+        self.assertEqual(resp.status_code, 200)
 
     def test_reporting_api_kela_etuusmaksatus_aloittaneet_correct_data(self):
         client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
@@ -139,9 +177,41 @@ class VardaViewsReportingTests(TestCase):
 
     def test_reporting_api_kela_etuusmaksatus_lopettaneet_get_date_filters(self):
         client = SetUpTestClient('kela_luovutuspalvelu').client()
-        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/?muutos_pvm=2010-01-01', **self.headers)
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/?muutos_pvm_gte=2010-01-01', **self.headers)
         self.assertEqual(resp.status_code, 400)
-        assert_validation_error(resp, 'muutos_pvm', 'GE019', 'Time period exceeds allowed timeframe.')
+        assert_validation_error(resp, 'muutos_pvm_gte', 'GE020', 'This field must be a datetime string in YYYY-MM-DDTHH:MM:SSZ format.')
+
+    def test_reporting_api_kela_etuusmaksatus_lopettaneet_get_date_gte_filter(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        now = datetime.datetime.now().astimezone()
+        now = now.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        resp = client.get(f'/api/reporting/v1/kela/etuusmaksatus/lopettaneet/?muutos_pvm_gte={now}', **self.headers)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_reporting_api_kela_etuusmaksatus_lopettaneet_muutos_pvm_filter_no_gte(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/lopettaneet/?muutos_pvm_lte=2030-01-01T09:00:00%2B0300', **self.headers)
+        self.assertEqual(resp.status_code, 400)
+        assert_validation_error(resp, 'muutos_pvm_gte', 'GE021', 'Both datetime field filters are required.')
+
+    def test_reporting_api_kela_etuusmaksatus_lopettaneet_get_correct_date_filters(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        now = datetime.datetime.now().astimezone()
+        earlier = now - datetime.timedelta(hours=2)
+        now = now.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        earlier = earlier.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        resp = client.get(f'/api/reporting/v1/kela/etuusmaksatus/lopettaneet/?muutos_pvm_gte={earlier}&muutos_pvm_lte={now}', **self.headers)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_reporting_api_kela_etuusmaksatus_lopettaneet_filters_wrong_values(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        now = datetime.datetime.now().astimezone()
+        earlier = now - datetime.timedelta(hours=2)
+        now = now.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        earlier = earlier.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        resp = client.get(f'/api/reporting/v1/kela/etuusmaksatus/lopettaneet/?muutos_pvm_gte={now}&muutos_pvm_lte={earlier}', **self.headers)
+        self.assertEqual(resp.status_code, 400)
+        assert_validation_error(resp, 'muutos_pvm_lte', 'GE022', 'Greater than date filter value needs to be before less than date filter.')
 
     def test_reporting_api_kela_etuusmaksatus_lopettaneet_update(self):
         client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
@@ -353,11 +423,43 @@ class VardaViewsReportingTests(TestCase):
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/')
         self.assertEqual(resp.status_code, 403)
 
-    def test_reporting_api_kela_etuusmaksatus_maaraaikaiset_alkamis_pvm_filter(self):
+    def test_reporting_api_kela_etuusmaksatus_maaraaikaiset_luonti_pvm_filter(self):
         client = SetUpTestClient('kela_luovutuspalvelu').client()
-        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/?luonti_pvm=2018-01-01', **self.headers)
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/?luonti_pvm_gte=2018-01-01T00:00:00Z', **self.headers)
         self.assertEqual(resp.status_code, 400)
-        assert_validation_error(resp, 'luonti_pvm', 'GE019', 'Time period exceeds allowed timeframe.')
+        assert_validation_error(resp, 'luonti_pvm_gte', 'GE019', 'Time period exceeds allowed timeframe.')
+
+    def test_reporting_api_kela_etuusmaksatus_maaraaikaiset_correct_luonti_pvm_filter(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        now = datetime.datetime.now().astimezone()
+        now = now.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        resp = client.get(f'/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/?luonti_pvm_gte={now}', **self.headers)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_reporting_api_kela_etuusmaksatus_maaraaikaiset_luonti_pvm_filter_no_gte(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/?luonti_pvm_lte=2030-01-01T09:00:00%2B0300', **self.headers)
+        self.assertEqual(resp.status_code, 400)
+        assert_validation_error(resp, 'luonti_pvm_gte', 'GE021', 'Both datetime field filters are required.')
+
+    def test_reporting_api_kela_etuusmaksatus_maaraaikaiset_correct_luonti_pvm_dates_filter(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        now = datetime.datetime.now().astimezone()
+        earlier = now - datetime.timedelta(hours=2)
+        now = now.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        earlier = earlier.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        resp = client.get(f'/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/?luonti_pvm_gte={earlier}&luonti_pvm_lte={now}', **self.headers)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_reporting_api_kela_etuusmaksatus_maaraaikaiset_filters_wrong_values(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        now = datetime.datetime.now().astimezone()
+        earlier = now - datetime.timedelta(hours=2)
+        now = now.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        earlier = earlier.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        resp = client.get(f'/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/?luonti_pvm_gte={now}&luonti_pvm_lte={earlier}', **self.headers)
+        self.assertEqual(resp.status_code, 400)
+        assert_validation_error(resp, 'luonti_pvm_lte', 'GE022', 'Greater than date filter value needs to be before less than date filter.')
 
     def test_reporting_api_kela_etuusmaksatus_maaraaikaiset_correct_data(self):
         client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
@@ -434,11 +536,43 @@ class VardaViewsReportingTests(TestCase):
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/')
         self.assertEqual(resp.status_code, 403)
 
-    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_get_alkamis_pvm_filter(self):
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_get_muutos_pvm_filter(self):
         client = SetUpTestClient('kela_luovutuspalvelu').client()
-        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/?muutos_pvm=2018-01-01', **self.headers)
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/?muutos_pvm_gte=2018-01-01T01:00:00%2B00:00', **self.headers)
         self.assertEqual(resp.status_code, 400)
-        assert_validation_error(resp, 'muutos_pvm', 'GE019', 'Time period exceeds allowed timeframe.')
+        assert_validation_error(resp, 'muutos_pvm_gte', 'GE019', 'Time period exceeds allowed timeframe.')
+
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_correct_muutos_pvm_gte_filter(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        now = datetime.datetime.now().astimezone()
+        now = now.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        resp = client.get(f'/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/?muutos_pvm_gte={now}', **self.headers)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_muutos_pvm_filter_no_gte(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/?muutos_pvm_lte=2030-01-01T09:00:00%2B0300', **self.headers)
+        self.assertEqual(resp.status_code, 400)
+        assert_validation_error(resp, 'muutos_pvm_gte', 'GE021', 'Both datetime field filters are required.')
+
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_get_correct_muutos_pvm_filters(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        now = datetime.datetime.now().astimezone()
+        earlier = now - datetime.timedelta(hours=2)
+        now = now.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        earlier = earlier.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        resp = client.get(f'/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/?muutos_pvm_gte={earlier}?muutos_pvm_lte={now}', **self.headers)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_filters_wrong_values(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        now = datetime.datetime.now().astimezone()
+        earlier = now - datetime.timedelta(hours=2)
+        now = now.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        earlier = earlier.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        resp = client.get(f'/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/?muutos_pvm_gte={now}&muutos_pvm_lte={earlier}', **self.headers)
+        self.assertEqual(resp.status_code, 400)
+        assert_validation_error(resp, 'muutos_pvm_lte', 'GE022', 'Greater than date filter value needs to be before less than date filter.')
 
     def test_reporting_api_kela_etuusmaksatus_korjaustiedot_add_end_date_alter_start_date(self):
         client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
@@ -634,11 +768,49 @@ class VardaViewsReportingTests(TestCase):
         resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/')
         self.assertEqual(resp.status_code, 403)
 
-    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_poistetut_get_alkamis_pvm(self):
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_poistetut_get_incorrect_poisto_pvm_date_format(self):
         client = SetUpTestClient('kela_luovutuspalvelu').client()
-        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/?poisto_pvm=2018-01-01', **self.headers)
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/?poisto_pvm_gte=2018-01-01', **self.headers)
         self.assertEqual(resp.status_code, 400)
-        assert_validation_error(resp, 'poisto_pvm', 'GE019', 'Time period exceeds allowed timeframe.')
+        assert_validation_error(resp, 'poisto_pvm_gte', 'GE020', 'This field must be a datetime string in YYYY-MM-DDTHH:MM:SSZ format.')
+
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_poistetut_get_incorrect_poisto_pvm(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/?poisto_pvm_gte=2018-01-01T09:00:00Z', **self.headers)
+        self.assertEqual(resp.status_code, 400)
+        assert_validation_error(resp, 'poisto_pvm_gte', 'GE019', 'Time period exceeds allowed timeframe.')
+
+    def test_reporting_api_kela_etuusmaksatus_maaraaikaiset_correct_poisto_pvm_filter(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        now = datetime.datetime.now().astimezone()
+        now = now.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        resp = client.get(f'/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/?poisto_pvm_gte={now}', **self.headers)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_poisto_pvm_filter_no_gte(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        resp = client.get('/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/?poisto_pvm_lte=2030-01-01T09:00:00%2B0300', **self.headers)
+        self.assertEqual(resp.status_code, 400)
+        assert_validation_error(resp, 'poisto_pvm_gte', 'GE021', 'Both datetime field filters are required.')
+
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_poistetut_get_correct_poisto_pvm_filters(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        now = datetime.datetime.now().astimezone()
+        earlier = now - datetime.timedelta(hours=2)
+        now = now.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        earlier = earlier.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        resp = client.get(f'/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/?poisto_pvm_gte={earlier}&poisto_pvm_lte={now}', **self.headers)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_reporting_api_kela_etuusmaksatus_korjaustiedot_poistetut_filters_wrong_values(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        now = datetime.datetime.now().astimezone()
+        earlier = now - datetime.timedelta(hours=2)
+        now = now.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        earlier = earlier.strftime('%Y-%m-%dT%H:%M:%S%z').replace('+', '%2B')
+        resp = client.get(f'/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/?poisto_pvm_gte={now}&poisto_pvm_lte={earlier}', **self.headers)
+        self.assertEqual(resp.status_code, 400)
+        assert_validation_error(resp, 'poisto_pvm_lte', 'GE022', 'Greater than date filter value needs to be before less than date filter.')
 
     def test_reporting_api_kela_etuusmaksatus_korjaustiedot_poistetut_deleted_varhaiskasvatussuhde(self):
         client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1

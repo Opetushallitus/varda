@@ -544,3 +544,17 @@ def validate_merge_duplicate_child_lapsi_objs(new_lapsi, old_lapsi):
         return {'is_ok': True, 'error_msg': error_msg}
 
     return {'is_ok': False, 'error_msg': error_msg}
+
+
+def validate_kela_api_datetimefield(field, now, name):
+    # Data can be fetched up to a maximum of 1 year ago
+    if field:
+        try:
+            field = datetime.datetime.strptime(field, '%Y-%m-%dT%H:%M:%S%z')
+        except ValueError:
+            raise ValidationErrorRest({name: [ErrorMessages.GE020.value]})
+        if (now.date() - field.date()).days > 365:
+            raise ValidationErrorRest({name: [ErrorMessages.GE019.value]})
+    else:
+        field = now - datetime.timedelta(days=7)
+    return field
