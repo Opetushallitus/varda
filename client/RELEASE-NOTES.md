@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.27 (07.10.2021)
+- Versiopäivityksiä
+
 1.5.26 (16.09.2021)
 - OPHVARDA-2272: Henkilöstötietojen Excel-raportit
 
