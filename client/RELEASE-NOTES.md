@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.28 (19.10.2021)
+- OPHVARDA-2178: Maksutiedon huoltajien muokkaus
+
 1.5.27 (07.10.2021)
 - Versiopäivityksiä
 
