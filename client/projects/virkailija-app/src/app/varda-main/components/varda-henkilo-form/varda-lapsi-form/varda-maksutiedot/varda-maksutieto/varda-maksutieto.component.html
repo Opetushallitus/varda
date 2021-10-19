@@ -36,17 +36,18 @@
             autocomplete="off">
         <app-varda-form-error-list [errors]="errorList"></app-varda-form-error-list>
         <div class="huoltajat">
-          <ng-container *ngIf="maksutieto; else addHuoltajat">
+          <ng-container *ngIf="maksutieto">
             <app-varda-maksutieto-huoltaja *ngFor="let huoltaja of maksutieto.huoltajat; let i = index"
                                            [indexNr]="i"
-                                           [huoltaja]="huoltaja"></app-varda-maksutieto-huoltaja>
+                                           [huoltaja]="huoltaja">
+            </app-varda-maksutieto-huoltaja>
           </ng-container>
-          <ng-template #addHuoltajat>
+          <ng-container *ngIf="isEdit">
             <ng-container formArrayName="huoltajat">
               <app-varda-maksutieto-huoltaja *ngFor="let huoltajaFormGroup of huoltajat.controls, let i = index"
                                              [huoltajaForm]="huoltajaFormGroup"
                                              [indexNr]="i"
-                                             [showDeleteButton]="huoltajat.controls.length > 1"
+                                             [showDeleteButton]="huoltajat.controls.length > 1 || maksutieto !== undefined"
                                              (removeHuoltaja)="removeHuoltajaForm($event)">
               </app-varda-maksutieto-huoltaja>
             </ng-container>
@@ -57,7 +58,7 @@
               <mat-icon alt="">add</mat-icon>
               {{ i18n.maksutieto_lisaa_huoltaja | translate }}
             </button>
-          </ng-template>
+          </ng-container>
         </div>
 
         <app-varda-form-field name="maksun_peruste_koodi"

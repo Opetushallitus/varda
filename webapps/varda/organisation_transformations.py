@@ -6,7 +6,7 @@ from rest_framework import serializers
 from varda.misc import flatten_nested_list
 from varda.models import (Toimipaikka, Lapsi, Varhaiskasvatussuhde, Varhaiskasvatuspaatos, Maksutieto, Huoltajuussuhde,
                           Tyontekija, Tutkinto, Taydennyskoulutus, TaydennyskoulutusTyontekija, Palvelussuhde,
-                          Tyoskentelypaikka, PidempiPoissaolo, TilapainenHenkilosto)
+                          Tyoskentelypaikka, PidempiPoissaolo, TilapainenHenkilosto, MaksutietoHuoltajuussuhde)
 from varda.permission_groups import (get_all_permission_groups_for_organization, assign_permissions_for_toimipaikka,
                                      assign_object_permissions_to_all_henkilosto_groups,
                                      assign_object_permissions_to_taydennyskoulutus_groups,
@@ -140,6 +140,7 @@ def _transfer_lapsi_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_va
 
         if existing_lapsi:
             # Lapsi related data was transferred to an existing Lapsi object, so delete the old one
+            MaksutietoHuoltajuussuhde.objects.filter(huoltajuussuhde__lapsi=lapsi).delete()
             Huoltajuussuhde.objects.filter(lapsi=lapsi).delete()
             lapsi.delete()
 
@@ -185,9 +186,11 @@ def _transfer_maksutieto_permissions_to_new_vakajarjestaja(new_vakajarjestaja, t
 
         if existing_lapsi:
             # Transfer Maksutieto object for existing Lapsi object
-            for huoltajuussuhde in maksutieto.huoltajuussuhteet.all():
-                Huoltajuussuhde.objects.get(lapsi=existing_lapsi,
-                                            huoltaja=huoltajuussuhde.huoltaja).maksutiedot.add(maksutieto.id)
+            for maksutieto_huoltajuussuhde in maksutieto.maksutiedot_huoltajuussuhteet.all():
+                huoltajuussuhde = Huoltajuussuhde.objects.get(lapsi=existing_lapsi,
+                                                              huoltaja=maksutieto_huoltajuussuhde.huoltajuussuhde.huoltaja)
+                MaksutietoHuoltajuussuhde.objects.create(huoltajuussuhde=huoltajuussuhde, maksutieto=maksutieto,
+                                                         changed_by=maksutieto_huoltajuussuhde.changed_by)
 
 
 def _transfer_tyontekija_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja):

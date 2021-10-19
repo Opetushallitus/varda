@@ -10,7 +10,6 @@ from django.db.models import Prefetch, ProtectedError, Q, Subquery, Sum
 from django.db.models.query import EmptyQuerySet
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
 from guardian.shortcuts import assign_perm
 from rest_framework import permissions, status
@@ -34,14 +33,14 @@ from varda.enums.error_messages import ErrorMessages
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.exceptions.conflict_error import ConflictError
 from varda.kayttooikeuspalvelu import set_user_info_from_onr
-from varda.misc import (CustomServerErrorException, decrypt_henkilotunnus, encrypt_string, hash_string,
-                        update_painotus_kytkin)
+from varda.misc import CustomServerErrorException, encrypt_string, hash_string, update_painotus_kytkin
 from varda.misc_queries import get_paos_toimipaikat
 from varda.misc_viewsets import IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, IntegerIdSchema
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, PaosToiminta,
                           Lapsi, Huoltaja, Huoltajuussuhde, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto,
                           PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Tyontekija, Palvelussuhde,
-                          Taydennyskoulutus, Tyoskentelypaikka, TilapainenHenkilosto, Tutkinto)
+                          Taydennyskoulutus, Tyoskentelypaikka, TilapainenHenkilosto, Tutkinto,
+                          MaksutietoHuoltajuussuhde)
 from varda.oppijanumerorekisteri import fetch_henkilo_with_oid, save_henkilo_to_db
 from varda.organisaatiopalvelu import (check_if_toimipaikka_exists_in_organisaatiopalvelu,
                                        create_toimipaikka_in_organisaatiopalvelu)
@@ -70,8 +69,8 @@ from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer,
                                ToimipaikkaSerializer, ToiminnallinenPainotusSerializer, KieliPainotusSerializer,
                                HaeHenkiloSerializer, HenkiloSerializer, HenkiloSerializerAdmin,
                                YksiloimattomatHenkilotSerializer, LapsiSerializer, LapsiSerializerAdmin,
-                               HuoltajaSerializer, HuoltajuussuhdeSerializer, MaksutietoPostSerializer,
-                               MaksutietoGetUpdateSerializer, VarhaiskasvatuspaatosSerializer,
+                               HuoltajaSerializer, HuoltajuussuhdeSerializer, MaksutietoSerializer,
+                               MaksutietoUpdateSerializer, VarhaiskasvatuspaatosSerializer,
                                VarhaiskasvatussuhdeSerializer, VakaJarjestajaYhteenvetoSerializer,
                                HenkilohakuLapsetSerializer, PaosToimintaSerializer, PaosToimijatSerializer,
                                PaosToimipaikatSerializer, PaosOikeusSerializer, LapsiKoosteSerializer, UserSerializer,
@@ -1439,91 +1438,13 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
 
     def get_serializer_class(self):
         request = self.request
-        if request.method == 'POST':
-            return MaksutietoPostSerializer
+        if request.method == 'PUT' or request.method == 'PATCH':
+            return MaksutietoUpdateSerializer
         else:
-            return MaksutietoGetUpdateSerializer
+            return MaksutietoSerializer
 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
-
-    def get_vtj_huoltajuudet(self, data):
-        vtj_huoltajuudet = self.fetch_and_match_huoltajuudet(data)
-        if vtj_huoltajuudet.count() == 0:
-            raise ValidationError({'huoltajat': [ErrorMessages.MA003.value]})
-        return vtj_huoltajuudet
-
-    def fetch_and_match_huoltajuudet(self, data):
-        queryset_filter = Q()
-
-        # get VTJ_huoltajat from database
-        vtj_huoltajuudet = (Huoltajuussuhde.objects
-                            .filter(lapsi=data['lapsi'])
-                            .filter(voimassa_kytkin=True)
-                            )
-
-        # validate VTJ_huoltaja to be one of the persons in the data
-        for user_huoltaja in data['huoltajat']:
-            etunimi_q = Q()
-            etunimet_list = user_huoltaja['etunimet'].split()
-            for etunimi in etunimet_list:
-                etunimi_q = Q(huoltaja__henkilo__etunimet__search=etunimi) | etunimi_q
-            if 'henkilo_oid' in user_huoltaja:
-                henkilo_filter = ((etunimi_q |
-                                  Q(huoltaja__henkilo__sukunimi__iexact=user_huoltaja['sukunimi'])) &
-                                  Q(huoltaja__henkilo__henkilo_oid=user_huoltaja['henkilo_oid'])
-                                  )
-            else:
-                validators.validate_henkilotunnus(user_huoltaja['henkilotunnus'])
-                henkilotunnus = hash_string(user_huoltaja['henkilotunnus'])
-                henkilo_filter = ((etunimi_q |
-                                  Q(huoltaja__henkilo__sukunimi__iexact=user_huoltaja['sukunimi'])) &
-                                  Q(huoltaja__henkilo__henkilotunnus_unique_hash=henkilotunnus)
-                                  )
-            queryset_filter = (queryset_filter | henkilo_filter)
-
-        return vtj_huoltajuudet.filter(queryset_filter)
-
-    def get_maksutieto(self, saved_data, lapsi, huoltajat, inserted_huoltajat_count):
-        return {
-            'url': self.request.build_absolute_uri(reverse('maksutieto-detail', args=[saved_data.id])),
-            'id': saved_data.id,
-            'huoltajat': huoltajat,
-            'lapsi': self.request.build_absolute_uri(reverse('lapsi-detail', args=[lapsi.id])),
-            'lapsi_tunniste': lapsi.tunniste,
-            'maksun_peruste_koodi': saved_data.maksun_peruste_koodi,
-            'palveluseteli_arvo': saved_data.palveluseteli_arvo,
-            'asiakasmaksu': saved_data.asiakasmaksu,
-            'perheen_koko': saved_data.perheen_koko,
-            'alkamis_pvm': saved_data.alkamis_pvm,
-            'paattymis_pvm': saved_data.paattymis_pvm,
-            'tallennetut_huoltajat_count': len(huoltajat),
-            'ei_tallennetut_huoltajat_count': inserted_huoltajat_count - len(huoltajat),
-            'lahdejarjestelma': saved_data.lahdejarjestelma,
-            'tunniste': saved_data.tunniste
-        }
-
-    def process_post_maksutieto_response(self, huoltajat, inserted_huoltaja_data):
-        for huoltaja in huoltajat:
-            """
-            Loop for each found huoltaja in our DB, and compare if its 'henkilotunnus' is the same as inserted one.
-            If a match is found -> return henkilotunnus.
-            If a match is not found -> remove henkilotunnus-attribute from response.
-            """
-            henkilotunnus_found = False
-            henkilotunnus = decrypt_henkilotunnus(huoltaja['henkilotunnus'])
-            for inserted_huoltaja in inserted_huoltaja_data:
-                for key, value in inserted_huoltaja.items():
-                    if key == 'henkilotunnus' and value == henkilotunnus:
-                        henkilotunnus_found = True
-                        break
-                if henkilotunnus_found:
-                    break
-
-            if henkilotunnus_found:
-                huoltaja['henkilotunnus'] = henkilotunnus
-            else:
-                huoltaja.pop('henkilotunnus')
 
     def assign_permissions_for_maksutieto_obj(self, lapsi, vakajarjestaja, toimipaikka_qs, saved_object):
         """
@@ -1538,10 +1459,8 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
                 if toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=toimipaikka):
                     assign_object_level_permissions(toimipaikka.organisaatio_oid, Maksutieto, saved_object)
 
-    def create(self, request, *args, **kwargs):
+    def perform_create(self, serializer):
         user = self.request.user
-        serializer = self.get_serializer(data=self.request.data)
-        serializer.is_valid(raise_exception=True)
         lapsi = serializer.validated_data['lapsi']
 
         toimipaikka_qs = None
@@ -1553,13 +1472,6 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
             if not user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, lapsi.vakatoimija.organisaatio_oid, toimipaikka_qs):
                 raise PermissionDenied({'errors': [ErrorMessages.MA010.value]})
 
-        data = dict(serializer.validated_data)
-        vtj_huoltajuudet = self.get_vtj_huoltajuudet(data)
-
-        # remove fields not directly in database
-        serializer.validated_data.pop('huoltajat')
-        serializer.validated_data.pop('lapsi')
-
         """
         Save maksutieto
         """
@@ -1568,19 +1480,6 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
             vakajarjestaja = lapsi.vakatoimija or lapsi.oma_organisaatio
             cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja.id))
             self.assign_permissions_for_maksutieto_obj(lapsi, vakajarjestaja, toimipaikka_qs, saved_object)
-
-        # make changes to huoltajuussuhteet
-        [huoltajuussuhde.maksutiedot.add(saved_object.id) for huoltajuussuhde in vtj_huoltajuudet]
-
-        henkilo_attributes = ['henkilotunnus', 'henkilo_oid', 'etunimet', 'sukunimi']
-        huoltajat = Henkilo.objects.filter(huoltaja__huoltajuussuhteet__in=vtj_huoltajuudet).values(*henkilo_attributes)
-        self.process_post_maksutieto_response(huoltajat, data['huoltajat'])
-
-        # return saved object and related information
-        return_maksutieto_to_user = self.get_maksutieto(saved_object, lapsi, huoltajat, len(data['huoltajat']))
-
-        headers = self.get_success_headers(saved_object)
-        return Response(return_maksutieto_to_user, status=status.HTTP_201_CREATED, headers=headers)
 
     @transaction.atomic
     def perform_update(self, serializer):
@@ -1607,6 +1506,7 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
             raise CustomServerErrorException
         lapsi_object = lapsi_objects[0]
 
+        MaksutietoHuoltajuussuhde.objects.filter(maksutieto=instance).delete()
         self.perform_destroy(instance)
 
         vakajarjestaja = lapsi_object.vakatoimija or lapsi_object.oma_organisaatio
@@ -2436,7 +2336,7 @@ class NestedLapsiMaksutietoViewSet(GenericViewSet, ListModelMixin):
     filter_backends = (ObjectPermissionsFilter, DjangoFilterBackend)
     filterset_class = filters.MaksutietoFilter
     queryset = Maksutieto.objects.none()
-    serializer_class = MaksutietoGetUpdateSerializer
+    serializer_class = MaksutietoSerializer
     permission_classes = (CustomModelPermissions,)
     swagger_schema = IntegerIdSchema
     swagger_path_model = Lapsi

@@ -14,7 +14,7 @@ from rest_framework.exceptions import ValidationError as ValidationErrorRest
 from varda.misc import hash_string, encrypt_string
 from varda.models import (VakaJarjestaja, Toimipaikka, PaosOikeus, Huoltaja, Huoltajuussuhde, Henkilo,
                           Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto, ToiminnallinenPainotus,
-                          KieliPainotus, PaosToiminta, Z2_Code)
+                          KieliPainotus, PaosToiminta, Z2_Code, MaksutietoHuoltajuussuhde)
 from varda.permission_groups import assign_object_level_permissions
 from varda.unit_tests.test_utils import (assert_status_code, SetUpTestClient, assert_validation_error, mock_admin_user,
                                          post_henkilo_to_get_permissions, mock_date_decorator_factory)
@@ -2138,8 +2138,8 @@ class VardaViewsTests(TestCase):
             'lapsi': 'http://testserver/api/v1/lapset/3/',
             'lapsi_tunniste': 'testing-lapsi3',
             'maksun_peruste_koodi': 'mp02',
-            'palveluseteli_arvo': 120.0,
-            'asiakasmaksu': 0.0,
+            'palveluseteli_arvo': '120.00',
+            'asiakasmaksu': '0.00',
             'perheen_koko': 2,
             'alkamis_pvm': '2020-01-02',
             'paattymis_pvm': '2021-01-01',
@@ -2200,7 +2200,7 @@ class VardaViewsTests(TestCase):
             'lapsi_tunniste': 'testing-lapsi1',
             'maksun_peruste_koodi': 'mp02',
             'palveluseteli_arvo': None,
-            'asiakasmaksu': 0.0,
+            'asiakasmaksu': '0.00',
             'perheen_koko': None,
             'alkamis_pvm': '2018-02-23',
             'paattymis_pvm': '2021-02-24',
@@ -2425,6 +2425,7 @@ class VardaViewsTests(TestCase):
             assert_status_code(resp, 201)
 
             id = json.loads(resp.content)['id']
+            MaksutietoHuoltajuussuhde.objects.filter(maksutieto_id=id).delete()
             Maksutieto.objects.get(id=id).delete()
 
         for (start, end) in fail_cases:
@@ -2456,6 +2457,7 @@ class VardaViewsTests(TestCase):
             assert_status_code(resp, 201)
 
             id = json.loads(resp.content)['id']
+            MaksutietoHuoltajuussuhde.objects.filter(maksutieto_id=id).delete()
             Maksutieto.objects.get(id=id).delete()
 
         close_ended_fail_cases = [
@@ -2518,7 +2520,7 @@ class VardaViewsTests(TestCase):
         client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         resp = client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         assert_status_code(resp, 400)
-        assert_validation_error(resp, 'huoltajat', 'MA012', 'Duplicated henkilotunnus given.')
+        assert_validation_error(resp, 'huoltajat', 'MA017', 'Duplicate huoltajat detected.')
 
     def test_push_api_maksutieto_duplicate_henkilo_oids(self):
         maksutieto = {
@@ -2541,7 +2543,7 @@ class VardaViewsTests(TestCase):
         client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         resp = client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         assert_status_code(resp, 400)
-        assert_validation_error(resp, 'huoltajat', 'MA013', 'Duplicated henkilo_oid given.')
+        assert_validation_error(resp, 'huoltajat', 'MA017', 'Duplicate huoltajat detected.')
 
     def test_push_api_maksutieto_missing_alkamis_pvm(self):
         maksutieto = {
@@ -4959,7 +4961,7 @@ class VardaViewsTests(TestCase):
         vakapaatos_post = {
             'vuorohoito_kytkin': False,
             'pikakasittely_kytkin': False,
-            'tuntimaara_viikossa': 39.0,
+            'tuntimaara_viikossa': '39.0',
             'paivittainen_vaka_kytkin': True,
             'kokopaivainen_vaka_kytkin': True,
             'tilapainen_vaka_kytkin': False,
@@ -5021,3 +5023,132 @@ class VardaViewsTests(TestCase):
                                                                                   'paattymis_pvm': valid_case[1]}),
                                                 content_type='application/json')
                 assert_status_code(valid_resp_patch, status.HTTP_200_OK)
+
+    def test_maksutieto_add_duplicate_huoltaja(self):
+        client = SetUpTestClient('tester10').client()
+        lapsi = Lapsi.objects.get(tunniste='testing-lapsi11')
+
+        maksutieto = {
+            'lapsi': f'/api/v1/lapset/{lapsi.id}/',
+            'huoltajat': [
+                {'henkilo_oid': '1.2.246.562.24.2434693467574', 'etunimet': 'Taneli', 'sukunimi': 'Tattinen'},
+                {'henkilo_oid': '1.2.246.562.24.2434693467574', 'etunimet': 'Taneli', 'sukunimi': 'Tattinen'}
+            ],
+            'maksun_peruste_koodi': 'mp03',
+            'palveluseteli_arvo': '0.00',
+            'asiakasmaksu': '50.00',
+            'perheen_koko': 3,
+            'alkamis_pvm': '2020-01-11',
+            'lahdejarjestelma': '1'
+        }
+        resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'huoltajat', 'MA017', 'Duplicate huoltajat detected.')
+
+        maksutieto_patch = {
+            'huoltajat_add': [
+                {'henkilo_oid': '1.2.246.562.24.2434693467574', 'etunimet': 'Taneli', 'sukunimi': 'Tattinen'},
+                {'henkilotunnus': '130780-753Y', 'etunimet': 'Taneli', 'sukunimi': 'Tattinen'}
+            ]
+        }
+        patch_url = '/api/v1/maksutiedot/1:testing-maksutieto6/'
+        resp = client.patch(patch_url, json.dumps(maksutieto_patch), content_type='application/json')
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'huoltajat_add', 'MA017', 'Duplicate huoltajat detected.')
+
+    def test_maksutieto_update_huoltajat_add_correct(self):
+        client = SetUpTestClient('tester10').client()
+
+        # Delete Huoltaja so that we can potentially add it again
+        MaksutietoHuoltajuussuhde.objects.get(maksutieto__tunniste='testing-maksutieto6',
+                                              huoltajuussuhde__huoltaja__henkilo__henkilo_oid='1.2.246.562.24.3367432256266').delete()
+
+        maksutieto_put = {
+            'lapsi_tunniste': 'testing-lapsi11',
+            'huoltajat_add': [
+                {'henkilo_oid': '1.2.246.562.24.3367432256266', 'etunimet': 'Kirsi', 'sukunimi': 'Taavetti'}
+            ],
+            'maksun_peruste_koodi': 'mp03',
+            'palveluseteli_arvo': '0.00',
+            'asiakasmaksu': '50.00',
+            'perheen_koko': 3,
+            'alkamis_pvm': '2020-01-11',
+            'paattymis_pvm': None,
+            'lahdejarjestelma': '1'
+        }
+        resp = client.put('/api/v1/maksutiedot/1:testing-maksutieto6/', json.dumps(maksutieto_put),
+                          content_type='application/json')
+        assert_status_code(resp, status.HTTP_200_OK)
+        maksutieto_huoltajuussuhde_qs = Maksutieto.objects.get(tunniste='testing-maksutieto6').maksutiedot_huoltajuussuhteet.order_by('id')
+        self.assertEqual(maksutieto_huoltajuussuhde_qs[0].huoltajuussuhde.huoltaja.henkilo.henkilo_oid, '1.2.246.562.24.2434693467574')
+        self.assertEqual(maksutieto_huoltajuussuhde_qs[1].huoltajuussuhde.huoltaja.henkilo.henkilo_oid, '1.2.246.562.24.3367432256266')
+
+    def test_maksutieto_update_huoltajat_add_incorrect(self):
+        client = SetUpTestClient('tester10').client()
+        url = '/api/v1/maksutiedot/1:testing-maksutieto6/'
+
+        # Already exists
+        maksutieto_patch = {
+            'huoltajat_add': [
+                {'henkilo_oid': '1.2.246.562.24.3367432256266', 'etunimet': 'Kirsi', 'sukunimi': 'Taavetti'}
+            ]
+        }
+
+        resp = client.patch(url, json.dumps(maksutieto_patch), content_type='application/json')
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'huoltajat_add', 'MA018', 'Huoltaja is already linked to this Maksutieto.')
+
+        # Missing etunimet and sukunimi
+        maksutieto_patch = {
+            'huoltajat_add': [
+                {'henkilo_oid': '1.2.246.562.24.2434693467574'}
+            ]
+        }
+        resp = client.patch(url, json.dumps(maksutieto_patch), content_type='application/json')
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, ['huoltajat_add', '0', 'etunimet'], 'GE001', 'This field is required.')
+        assert_validation_error(resp, ['huoltajat_add', '0', 'sukunimi'], 'GE001', 'This field is required.')
+
+    def test_maksutieto_too_many_huoltaja(self):
+        client = SetUpTestClient('tester10').client()
+        huoltaja_list = [
+            {'henkilo_oid': '1.2.246.562.24.3367432256266', 'etunimet': 'Kirsi', 'sukunimi': 'Taavetti'},
+            {'henkilo_oid': '1.2.246.562.24.2434693467574', 'etunimet': 'Taneli', 'sukunimi': 'Tattinen'}
+        ]
+        extra_huoltaja_list = [
+            {'henkilo_oid': '1.2.246.562.24.3367432256100', 'etunimet': 'Kalle', 'sukunimi': 'Kalevi'},
+            {'henkilo_oid': '1.2.246.562.24.3367432256101', 'etunimet': 'Kalle', 'sukunimi': 'Kalevi'},
+            {'henkilo_oid': '1.2.246.562.24.3367432256102', 'etunimet': 'Kalle', 'sukunimi': 'Kalevi'},
+            {'henkilo_oid': '1.2.246.562.24.3367432256103', 'etunimet': 'Kalle', 'sukunimi': 'Kalevi'},
+            {'henkilo_oid': '1.2.246.562.24.3367432256104', 'etunimet': 'Kalle', 'sukunimi': 'Kalevi'},
+            {'henkilo_oid': '1.2.246.562.24.3367432256105', 'etunimet': 'Kalle', 'sukunimi': 'Kalevi'},
+            {'henkilo_oid': '1.2.246.562.24.3367432256106', 'etunimet': 'Kalle', 'sukunimi': 'Kalevi'}
+        ]
+
+        maksutieto_post = {'lapsi_tunniste': 'testing-lapsi11', 'maksun_peruste_koodi': 'mp03',
+                           'palveluseteli_arvo': '0.00', 'asiakasmaksu': '50.00', 'perheen_koko': 3,
+                           'alkamis_pvm': '2020-01-12', 'paattymis_pvm': None, 'lahdejarjestelma': '1',
+                           'huoltajat': [huoltaja_list[0], *extra_huoltaja_list]}
+        resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto_post), content_type='application/json')
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'huoltajat', 'MA011', 'Maximum number of huoltajat is 7.')
+
+        maksutieto_post['huoltajat'] = [huoltaja_list[0]]
+        resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto_post), content_type='application/json')
+        assert_status_code(resp, status.HTTP_201_CREATED)
+        maksutieto_id = json.loads(resp.content)['id']
+
+        maksutieto_patch = {
+            'huoltajat_add': [huoltaja_list[1], *extra_huoltaja_list]
+        }
+        resp = client.patch(f'/api/v1/maksutiedot/{maksutieto_id}/', json.dumps(maksutieto_patch),
+                            content_type='application/json')
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'huoltajat_add', 'MA011', 'Maximum number of huoltajat is 7.')
+
+        maksutieto_patch['huoltajat_add'] = [huoltaja_list[1], extra_huoltaja_list[0], extra_huoltaja_list[1]]
+        resp = client.patch(f'/api/v1/maksutiedot/{maksutieto_id}/', json.dumps(maksutieto_patch),
+                            content_type='application/json')
+        assert_status_code(resp, status.HTTP_200_OK)
+        self.assertEqual(1, json.loads(resp.content)['tallennetut_huoltajat_count'])
+        self.assertEqual(2, json.loads(resp.content)['ei_tallennetut_huoltajat_count'])

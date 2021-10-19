@@ -15,11 +15,12 @@ from varda.constants import JARJESTAMISMUODOT_YKSITYINEN, JARJESTAMISMUODOT_PAOS
 from varda.enums.error_messages import ErrorMessages
 from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
-from varda.misc import list_of_dicts_has_duplicate_values, TemporaryObject, CustomServerErrorException
+from varda.misc import TemporaryObject, hash_string, decrypt_henkilotunnus
 from varda.misc_viewsets import ViewSetValidator
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Maksutieto, Henkilo,
                           Lapsi, Huoltaja, Huoltajuussuhde, PaosOikeus, PaosToiminta, Varhaiskasvatuspaatos,
-                          Varhaiskasvatussuhde, Z3_AdditionalCasUserFields, Tyontekija, Z4_CasKayttoOikeudet)
+                          Varhaiskasvatussuhde, Z3_AdditionalCasUserFields, Tyontekija, Z4_CasKayttoOikeudet,
+                          MaksutietoHuoltajuussuhde)
 from varda.permissions import check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement, is_oph_staff
 from varda.related_object_validations import (check_if_immutable_object_is_changed,
                                               check_toimipaikka_and_vakajarjestaja_have_oids,
@@ -663,11 +664,98 @@ class YksiloimattomatHenkilotSerializer(serializers.HyperlinkedModelSerializer):
         return None
 
 
-class MaksutietoPostHuoltajaSerializer(serializers.ModelSerializer):
+class NestedMaksutietoHuoltajaListSerializer(serializers.ListSerializer):
+    def to_internal_value(self, data):
+        self.context['original_count'] = len(data)
+        return super().to_internal_value(data)
+
+    def validate(self, data):
+        data = super().validate(data)
+        lapsi = self.context.get('lapsi', None)
+
+        valid_huoltaja_list = []
+        for huoltaja_data in data:
+            if not huoltaja_data['huoltaja']:
+                # If Huoltaja does not exist, remove it from list
+                continue
+
+            if lapsi:
+                # Validate that Huoltaja is valid for given Lapsi, otherwise remove from list
+                huoltajuussuhde_qs = Huoltajuussuhde.objects.filter(lapsi=lapsi, voimassa_kytkin=True)
+
+                etunimet_filter = Q()
+                for etunimi in huoltaja_data['etunimet'].split():
+                    etunimet_filter |= Q(huoltaja__henkilo__etunimet__search=etunimi)
+                name_filter = etunimet_filter | Q(huoltaja__henkilo__sukunimi__iexact=huoltaja_data['sukunimi'])
+
+                if huoltaja_data.get('henkilo_oid', None):
+                    henkilo_filter = Q(huoltaja__henkilo__henkilo_oid=huoltaja_data['henkilo_oid'])
+                elif huoltaja_data.get('henkilotunnus', None):
+                    validators.validate_henkilotunnus(huoltaja_data['henkilotunnus'])
+                    henkilotunnus_hashed = hash_string(huoltaja_data['henkilotunnus'])
+                    henkilo_filter = Q(huoltaja__henkilo__henkilotunnus_unique_hash=henkilotunnus_hashed)
+                else:
+                    henkilo_filter = Q(id__isnull=True)
+
+                if not huoltajuussuhde_qs.filter(name_filter & henkilo_filter).exists():
+                    continue
+
+            valid_huoltaja_list.append(huoltaja_data)
+        data = valid_huoltaja_list
+
+        # Validate that there are no duplicates
+        huoltaja_id_list = [huoltaja['huoltaja'].id for huoltaja in data if huoltaja['huoltaja']]
+        huoltaja_id_set = set(huoltaja_id_list)
+        if len(huoltaja_id_list) != len(huoltaja_id_set):
+            raise ValidationError({'temporary_wrapper': [ErrorMessages.MA017.value]})
+
+        return data
+
+
+class NestedMaksutietoHuoltajaSerializer(serializers.Serializer):
     henkilotunnus = serializers.CharField(required=False)
     henkilo_oid = serializers.CharField(required=False)
     etunimet = serializers.CharField(required=True)
     sukunimi = serializers.CharField(required=True)
+
+    class Meta:
+        list_serializer_class = NestedMaksutietoHuoltajaListSerializer
+
+    def to_internal_value(self, data):
+        try:
+            data = super().to_internal_value(data)
+        except ValidationError as validation_error:
+            raise validation_error
+
+        if 'henkilotunnus' in data:
+            huoltaja_filter = Q(henkilo__henkilotunnus_unique_hash=hash_string(data['henkilotunnus']))
+        elif 'henkilo_oid' in data:
+            huoltaja_filter = Q(henkilo__henkilo_oid=data['henkilo_oid'])
+        else:
+            huoltaja_filter = Q(id__isnull=True)
+
+        data['huoltaja'] = Huoltaja.objects.filter(huoltaja_filter).first()
+
+        return data
+
+    def to_representation(self, instance):
+        huoltaja = instance.huoltajuussuhde.huoltaja
+        henkilo = huoltaja.henkilo
+        data = {'henkilo_oid': henkilo.henkilo_oid, 'etunimet': henkilo.etunimet, 'sukunimi': henkilo.sukunimi}
+
+        if self.context['request'].method in ['POST', 'PUT', 'PATCH']:
+            # Return henkilotunnus in POST, PUT and PATCH requests if it was present in the request
+            henkilotunnus = decrypt_henkilotunnus(henkilo.henkilotunnus)
+            if henkilotunnus in self.context.get('henkilotunnus_set', []):
+                data['henkilotunnus'] = henkilotunnus
+
+        return data
+
+    def create(self, data):
+        user = self.context['request'].user
+        huoltajuussuhde_obj = Huoltajuussuhde.objects.get(lapsi=data['lapsi'], huoltaja=data['huoltaja'])
+        return MaksutietoHuoltajuussuhde.objects.create(huoltajuussuhde=huoltajuussuhde_obj,
+                                                        maksutieto=data['maksutieto'], changed_by=user)
 
     def validate_etunimet(self, value):
         validate_nimi(value)
@@ -678,12 +766,15 @@ class MaksutietoPostHuoltajaSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, data):
-        validate_henkilotunnus_or_oid_needed(data)
+        with ViewSetValidator() as validator:
+            # These fields are required also in PATCH requests so we need to check them manually
+            if 'etunimet' not in data:
+                validator.error('etunimet', ErrorMessages.GE001.value)
+            if 'sukunimi' not in data:
+                validator.error('sukunimi', ErrorMessages.GE001.value)
+            with validator.wrap():
+                validate_henkilotunnus_or_oid_needed(data)
         return data
-
-    class Meta:
-        model = Henkilo
-        fields = ('henkilo_oid', 'henkilotunnus', 'etunimet', 'sukunimi')
 
 
 def _validate_maksutieto_dates(data, lapsi_obj=None):
@@ -729,23 +820,74 @@ def _validate_maksutieto_overlap(data, lapsi_obj=None, maksutieto_id=None):
     data.pop('huoltajuussuhteet')
 
 
-class MaksutietoPostSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
+def _get_lapsi_for_maksutieto(maksutieto):
+    lapsi = maksutieto.huoltajuussuhteet.all().values('lapsi').distinct()
+    if len(lapsi) != 1:
+        logger.error('Could not find just one lapsi for maksutieto-id: {}'.format(maksutieto.id))
+        raise APIException
+    return Lapsi.objects.get(id=lapsi[0].get('lapsi'))
+
+
+class MaksutietoSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
-    url = serializers.ReadOnlyField()
-    huoltajat = MaksutietoPostHuoltajaSerializer(required=True, allow_empty=False, many=True)
+    huoltajat = NestedMaksutietoHuoltajaSerializer(required=True, allow_empty=False, many=True,
+                                                   source='maksutiedot_huoltajuussuhteet')
     lapsi = LapsiHLField(required=False, view_name='lapsi-detail')
     lapsi_tunniste = TunnisteRelatedField(object_type=Lapsi,
                                           parent_field='lapsi',
                                           prevalidator=validators.validate_tunniste,
-                                          either_required=True)
+                                          either_required=True,
+                                          parent_value_getter=_get_lapsi_for_maksutieto)
     alkamis_pvm = serializers.DateField(required=True, validators=[validators.validate_vaka_date])
+    tallennetut_huoltajat_count = serializers.SerializerMethodField(read_only=True)
+    ei_tallennetut_huoltajat_count = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Maksutieto
-        exclude = ('luonti_pvm', 'changed_by', 'yksityinen_jarjestaja',)
+        exclude = ('luonti_pvm', 'muutos_pvm', 'changed_by', 'yksityinen_jarjestaja',)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.saved_huoltajat_count = 0
+        self.henkilotunnus_set = set()
+
+    def to_representation(self, instance):
+        self.fields['huoltajat'].context['henkilotunnus_set'] = self.henkilotunnus_set
+        setattr(instance, 'lapsi', _get_lapsi_for_maksutieto(instance))
+        instance = super().to_representation(instance)
+        if self.context['request'].method != 'POST':
+            del instance['tallennetut_huoltajat_count']
+            del instance['ei_tallennetut_huoltajat_count']
+        return instance
+
+    def to_internal_value(self, data):
+        data = super().to_internal_value(data)
+        data['huoltajat'] = data.pop('maksutiedot_huoltajuussuhteet', [])
+        return data
+
+    def get_tallennetut_huoltajat_count(self, instance):
+        return self.saved_huoltajat_count
+
+    def get_ei_tallennetut_huoltajat_count(self, instance):
+        return self.fields['huoltajat'].context.get('original_count', 0) - self.saved_huoltajat_count
+
+    def create(self, validated_data):
+        huoltajat = validated_data.pop('huoltajat', [])
+        lapsi = validated_data.pop('lapsi', None)
+        maksutieto = Maksutieto.objects.create(**validated_data)
+
+        for huoltaja in huoltajat:
+            self.henkilotunnus_set.add(huoltaja.get('henkilotunnus', None))
+            huoltaja['lapsi'] = lapsi
+            huoltaja['maksutieto'] = maksutieto
+            NestedMaksutietoHuoltajaSerializer(context=self._context).create(huoltaja)
+
+        self.henkilotunnus_set.discard(None)
+        return maksutieto
 
     def validate(self, data):
         data = super().validate(data)
+
         if not self.context['request'].user.has_perm('view_lapsi', data['lapsi']):
             msg = {'lapsi': [ErrorMessages.GE008.value]}
             raise serializers.ValidationError(msg, code='invalid')
@@ -753,22 +895,26 @@ class MaksutietoPostSerializer(RequiredLahdejarjestelmaMixin, serializers.Hyperl
         if not Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=data['lapsi']).exists():
             raise ValidationError({'errors': [ErrorMessages.MA009.value]})
 
+        # Set lapsi object for huoltajat context so that the field can be validated more accurately
+        lapsi_obj = _get_lapsi_for_maksutieto(self.instance) if self.instance else data['lapsi']
+        self.fields['huoltajat'].context['lapsi'] = lapsi_obj
+        data['huoltajat'] = self.fields['huoltajat'].validate(data['huoltajat'])
+
         self._validate_huoltajat(data['huoltajat'])
         self._validate_yksityinen_lapsi(data)
         self._validate_maksun_peruste(data)
         _validate_maksutieto_dates(data)
         _validate_maksutieto_overlap(data)
+
         return data
 
     def _validate_huoltajat(self, huoltajat):
-        if len(huoltajat) > 7:
+        self.saved_huoltajat_count = len(huoltajat)
+        if self.saved_huoltajat_count == 0:
+            raise ValidationError({'huoltajat': [ErrorMessages.MA003.value]})
+        huoltajat_count = self.fields['huoltajat'].context.get('original_count', 0)
+        if huoltajat_count > 7:
             raise serializers.ValidationError({'huoltajat': [ErrorMessages.MA011.value]})
-
-        if list_of_dicts_has_duplicate_values(huoltajat, 'henkilotunnus'):
-            raise serializers.ValidationError({'huoltajat': [ErrorMessages.MA012.value]})
-
-        if list_of_dicts_has_duplicate_values(huoltajat, 'henkilo_oid'):
-            raise serializers.ValidationError({'huoltajat': [ErrorMessages.MA013.value]})
 
     def _validate_yksityinen_lapsi(self, data):
         if data['lapsi'].yksityinen_kytkin:
@@ -800,17 +946,10 @@ class MaksutietoGetHuoltajaSerializer(serializers.ModelSerializer):
         fields = ('henkilo_oid', 'etunimet', 'sukunimi')
 
 
-def _get_lapsi_for_maksutieto(maksutieto):
-    lapsi = maksutieto.huoltajuussuhteet.all().values('lapsi').distinct()
-    if len(lapsi) != 1:
-        logger.error('Could not find just one lapsi for maksutieto-id: {}'.format(maksutieto.id))
-        raise APIException
-    return Lapsi.objects.get(id=lapsi[0].get('lapsi'))
-
-
-class MaksutietoGetUpdateSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
+class MaksutietoUpdateSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
-    huoltajat = serializers.SerializerMethodField()
+    huoltajat = NestedMaksutietoHuoltajaSerializer(required=False, allow_empty=False, many=True, source='maksutiedot_huoltajuussuhteet', read_only=True)
+    huoltajat_add = NestedMaksutietoHuoltajaSerializer(required=False, allow_empty=False, many=True)
     lapsi = serializers.SerializerMethodField()
     lapsi_tunniste = TunnisteRelatedField(object_type=Lapsi,
                                           parent_field='lapsi',
@@ -818,39 +957,79 @@ class MaksutietoGetUpdateSerializer(RequiredLahdejarjestelmaMixin, serializers.H
                                           prevalidator=validators.validate_tunniste,
                                           parent_value_getter=_get_lapsi_for_maksutieto)
     paattymis_pvm = serializers.DateField(allow_null=True, validators=[validators.validate_vaka_date])
+    tallennetut_huoltajat_count = serializers.SerializerMethodField(read_only=True)
+    ei_tallennetut_huoltajat_count = serializers.SerializerMethodField(read_only=True)
 
-    def get_huoltajat(self, obj):
-        huoltajuussuhteet = obj.huoltajuussuhteet.all()
-        huoltajat = Henkilo.objects.filter(huoltaja__huoltajuussuhteet__in=huoltajuussuhteet)
-        return MaksutietoGetHuoltajaSerializer(huoltajat, many=True).data
+    class Meta:
+        model = Maksutieto
+        read_only_fields = ('lapsi', 'lapsi_tunniste', 'alkamis_pvm', 'perheen_koko', 'maksun_peruste_koodi',
+                            'palveluseteli_arvo', 'asiakasmaksu',)
+        exclude = ('luonti_pvm', 'muutos_pvm', 'changed_by', 'yksityinen_jarjestaja',)
 
-    def get_lapsi(self, obj):
-        lapsi = _get_lapsi_for_maksutieto(obj)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.saved_huoltajat_count = 0
+        self.henkilotunnus_set = set()
+        self.lapsi = None
+
+    def to_internal_value(self, data):
+        self.lapsi = _get_lapsi_for_maksutieto(self.instance)
+        self.fields['huoltajat_add'].context['lapsi'] = self.lapsi
+
+        return super().to_internal_value(data)
+
+    def to_representation(self, instance):
+        self.fields['huoltajat_add'].context['henkilotunnus_set'] = self.henkilotunnus_set
+        return super().to_representation(instance)
+
+    def update(self, instance, validated_data):
+        self._update_huoltajat(instance, validated_data)
+        return super().update(instance, validated_data)
+
+    def _update_huoltajat(self, instance, validated_data):
+        if 'huoltajat_add' in validated_data and (huoltajat := validated_data.pop('huoltajat_add', [])):
+            self.saved_huoltajat_count = len(huoltajat)
+            for huoltaja in huoltajat:
+                self.henkilotunnus_set.add(huoltaja.get('henkilotunnus', None))
+                huoltaja['lapsi'] = self.lapsi
+                huoltaja['maksutieto'] = instance
+                NestedMaksutietoHuoltajaSerializer(context=self._context).create(huoltaja)
+            self.henkilotunnus_set.discard(None)
+
+    def get_lapsi(self, instance):
+        lapsi = _get_lapsi_for_maksutieto(instance)
         return self.context['request'].build_absolute_uri(reverse('lapsi-detail', args=[lapsi]))
 
+    def get_tallennetut_huoltajat_count(self, instance):
+        return self.saved_huoltajat_count
+
+    def get_ei_tallennetut_huoltajat_count(self, instance):
+        return self.fields['huoltajat_add'].context.get('original_count', 0) - self.saved_huoltajat_count
+
     def validate(self, data):
-        data = super().validate(data)
         if len(data) == 0:
             raise serializers.ValidationError({'errors': [ErrorMessages.GE014.value]})
         fill_missing_fields_for_validations(data, self.instance)
 
-        lapsi_qs = Lapsi.objects.filter(huoltajuussuhteet__maksutiedot__id=self.instance.id).distinct()
-        if lapsi_qs.count() != 1:
-            logger.error('Error getting lapsi for maksutieto ' + str(self.instance.id))
-            raise CustomServerErrorException
-        _validate_maksutieto_dates(data, lapsi_obj=lapsi_qs.first())
-        _validate_maksutieto_overlap(data, lapsi_obj=lapsi_qs.first(), maksutieto_id=self.instance.id)
+        _validate_maksutieto_dates(data, lapsi_obj=self.lapsi)
+        _validate_maksutieto_overlap(data, lapsi_obj=self.lapsi, maksutieto_id=self.instance.id)
         validators.validate_maksun_peruste_koodi(data['maksun_peruste_koodi'], data['alkamis_pvm'],
                                                  data.get('paattymis_pvm'))
 
-        return data
+        self._validate_huoltajat_add(self.instance, data)
 
-    class Meta:
-        model = Maksutieto
-        read_only_fields = ('url', 'id', 'huoltajat', 'lapsi', 'lapsi_tunniste', 'alkamis_pvm', 'perheen_koko',
-                            'maksun_peruste_koodi', 'palveluseteli_arvo', 'asiakasmaksu')
-        fields = ('url', 'id', 'huoltajat', 'lapsi', 'lapsi_tunniste', 'maksun_peruste_koodi', 'palveluseteli_arvo',
-                  'asiakasmaksu', 'perheen_koko', 'alkamis_pvm', 'paattymis_pvm', 'lahdejarjestelma', 'tunniste',)
+        existing_huoltaja_count = self.instance.maksutiedot_huoltajuussuhteet.count()
+        huoltajat_add_count = self.fields['huoltajat_add'].context.get('original_count', 0)
+        if existing_huoltaja_count + huoltajat_add_count > 7:
+            raise serializers.ValidationError({'huoltajat_add': [ErrorMessages.MA011.value]})
+
+        return super().validate(data)
+
+    def _validate_huoltajat_add(self, instance, data):
+        huoltajat_add = data.get('huoltajat_add', [])
+        for huoltaja in huoltajat_add:
+            if instance.maksutiedot_huoltajuussuhteet.filter(huoltajuussuhde__huoltaja=huoltaja['huoltaja']).exists():
+                raise ValidationError({'huoltajat_add': [ErrorMessages.MA018.value]})
 
 
 class LapsiSerializer(RequiredLahdejarjestelmaMixin, LapsiOptionalToimipaikkaMixin,

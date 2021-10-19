@@ -21,7 +21,7 @@ from urllib.parse import urlparse
 
 from varda.enums.error_messages import ErrorMessages
 from varda.helper_functions import hide_hetu
-from varda.models import Henkilo, VakaJarjestaja
+from varda.models import Henkilo, VakaJarjestaja, MaksutietoHuoltajuussuhde
 from varda.oph_yhteiskayttopalvelu_autentikaatio import get_authentication_header, get_contenttype_header
 
 
@@ -384,12 +384,12 @@ def merge_lapsi_maksutiedot(new_lapsi, old_maksutiedot, new_huoltajuussuhteet, m
         maksutieto_old_huoltaja_ids = set(maksutieto_old_huoltajuussuhteet.values_list('huoltaja_id', flat=True).distinct())
         maksutieto_new_huoltajuussuhteet = new_huoltajuussuhteet.filter(huoltaja_id__in=maksutieto_old_huoltaja_ids)
         old_maksutieto_huoltaja_count = maksutieto_old_huoltajuussuhteet.count()
-        maksutieto.huoltajuussuhteet.clear()
 
+        new_maksutieto_huoltajat_count = 0
         for new_huoltajuussuhde in maksutieto_new_huoltajuussuhteet:
-            maksutieto.huoltajuussuhteet.add(new_huoltajuussuhde.id)
-
-        new_maksutieto_huoltajat_count = maksutieto.huoltajuussuhteet.all().count()
+            MaksutietoHuoltajuussuhde.objects.create(huoltajuussuhde=new_huoltajuussuhde, maksutieto=maksutieto,
+                                                     changed_by=maksutieto.changed_by)
+            new_maksutieto_huoltajat_count += 1
 
         if old_maksutieto_huoltaja_count != new_maksutieto_huoltajat_count:
             raise ValueError(f'Error transferring huoltajuussuhteet on maksutieto {maksutieto} to new child {new_lapsi}')

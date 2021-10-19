@@ -528,7 +528,7 @@ class Huoltajuussuhde(models.Model):
     lapsi = models.ForeignKey(Lapsi, related_name='huoltajuussuhteet', on_delete=models.PROTECT)
     huoltaja = models.ForeignKey(Huoltaja, related_name='huoltajuussuhteet', on_delete=models.PROTECT)
     voimassa_kytkin = models.BooleanField(default=True)
-    maksutiedot = models.ManyToManyField(Maksutieto, related_name='huoltajuussuhteet', blank=True)
+    maksutiedot = models.ManyToManyField(Maksutieto, related_name='huoltajuussuhteet', through='MaksutietoHuoltajuussuhde', blank=True)
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
     changed_by = models.ForeignKey('auth.User', related_name='huoltajuussuhteet', on_delete=models.PROTECT)
@@ -547,6 +547,33 @@ class Huoltajuussuhde(models.Model):
 
     class Meta:
         verbose_name_plural = 'huoltajuussuhteet'
+
+
+class MaksutietoHuoltajuussuhde(models.Model):
+    huoltajuussuhde = models.ForeignKey(Huoltajuussuhde, related_name='maksutiedot_huoltajuussuhteet', on_delete=models.PROTECT)
+    maksutieto = models.ForeignKey(Maksutieto, related_name='maksutiedot_huoltajuussuhteet', on_delete=models.PROTECT)
+    luonti_pvm = models.DateTimeField(auto_now_add=True)
+    muutos_pvm = models.DateTimeField(auto_now=True)
+    changed_by = models.ForeignKey('auth.User', related_name='maksutiedot_huoltajuussuhteet', on_delete=models.PROTECT)
+    history = HistoricalRecords()
+
+    def __str__(self):
+        return str(self.id)
+
+    @property
+    def audit_loggable(self):
+        return True
+
+    @property
+    def _history_user(self):
+        return self.changed_by
+
+    @_history_user.setter
+    def _history_user(self, value):
+        self.changed_by = value
+
+    class Meta:
+        verbose_name_plural = 'maksutiedot huoltajuussuhteet'
 
 
 class PaosToiminta(models.Model):

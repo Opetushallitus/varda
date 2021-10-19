@@ -16,12 +16,14 @@
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
-
+  align-items: center;
+  gap: 0.5em;
 }
 
 .huoltaja-rivi>.huoltaja-nimi {
   font-weight: bold;
   word-wrap: break-word;
+  flex-grow: 1;
 }
 
 .huoltaja-rivi>.huoltaja-oid {

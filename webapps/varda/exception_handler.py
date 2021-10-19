@@ -100,6 +100,9 @@ def _parse_error_messages(error_messages, status_code=status.HTTP_400_BAD_REQUES
         new_error_messages = {}
         # Loop through each key
         for field_name, error_message_item in error_messages.items():
+            if isinstance(error_message_item, dict) and 'temporary_wrapper' in error_message_item:
+                # Errors raised in ListSerializer may contain temporary_wrapper that needs to be removed
+                error_message_item = error_message_item['temporary_wrapper']
             new_error_messages[field_name] = _parse_error_messages(error_message_item, status_code=status_code)
         return new_error_messages
     elif isinstance(error_messages, list):

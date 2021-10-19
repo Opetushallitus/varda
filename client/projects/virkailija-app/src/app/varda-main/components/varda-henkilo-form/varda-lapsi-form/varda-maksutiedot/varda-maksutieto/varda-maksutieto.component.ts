@@ -8,7 +8,10 @@ import { VardaModalService } from 'projects/virkailija-app/src/app/core/services
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaFormValidators } from 'projects/virkailija-app/src/app/shared/validators/varda-form-validators';
 import { LapsiListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-lapsi-dto.model';
-import { VardaMaksutietoDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-maksutieto-dto.model';
+import {
+  HuoltajaDTO,
+  VardaMaksutietoDTO
+} from 'projects/virkailija-app/src/app/utilities/models/dto/varda-maksutieto-dto.model';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
@@ -79,7 +82,7 @@ export class VardaMaksutietoComponent extends VardaFormAccordionAbstractComponen
       palveluseteli_arvo: new FormControl(this.maksutieto?.palveluseteli_arvo, [Validators.min(0), Validators.max(9999), Validators.pattern('^\\d+([,.]\\d{1,2})?$')]),
       asiakasmaksu: new FormControl(this.maksutieto?.asiakasmaksu, [Validators.required, Validators.min(0), Validators.max(9999), Validators.pattern('^\\d+([,.]\\d{1,2})?$')]),
       perheen_koko: new FormControl(this.maksutieto?.perheen_koko, this.yksityinenBoolean ? null : [Validators.required, Validators.min(2), Validators.max(50)]),
-      huoltajat: new FormArray([], Validators.required)
+      huoltajat: new FormArray([], this.maksutieto ? null : Validators.required)
     });
 
     this.huoltajat = this.formGroup.get('huoltajat') as FormArray;
@@ -111,7 +114,7 @@ export class VardaMaksutietoComponent extends VardaFormAccordionAbstractComponen
     form.markAllAsTouched();
     this.henkilostoErrorService.resetErrorList();
 
-    if (this.formGroup.controls.huoltajat.invalid) {
+    if (this.huoltajat.invalid) {
       this.disableSubmit();
       setTimeout(() => this.huoltajaElements.first.element.nativeElement.scrollIntoView({ behavior: 'smooth' }), 100);
     } else if (VardaErrorMessageService.formIsValid(form)) {
@@ -122,32 +125,31 @@ export class VardaMaksutietoComponent extends VardaFormAccordionAbstractComponen
       };
 
       if (this.maksutieto) {
-        this.lapsiService.updateMaksutieto(maksutietoDTO).subscribe({
-          next: maksutietoData => {
-            this.togglePanel(false, true, true);
-            this.snackBarService.success(this.i18n.maksutieto_save_success);
-          },
-          error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
-        }).add(() => this.disableSubmit());
-      } else {
-        this.lapsiService.createMaksutieto(maksutietoDTO).subscribe({
-          next: maksutietoData => {
-            this.huoltajaSaveStatus = {
-              success: maksutietoData.tallennetut_huoltajat_count,
-              failure: maksutietoData.ei_tallennetut_huoltajat_count
-            };
-            this.snackBarService.success(this.i18n.maksutieto_save_success);
-            this.disableForm();
-
-            setTimeout(() => {
-              this.huoltajaSaveStatus = null;
-              this.togglePanel(false, true, true);
-            }, 5000);
-
-          },
-          error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
-        }).add(() => this.disableSubmit());
+        // Fill huoltajat_add field for update request
+        maksutietoDTO.huoltajat_add = maksutietoDTO.huoltajat || [];
+        if (maksutietoDTO.huoltajat_add.length === 0) {
+          delete maksutietoDTO.huoltajat_add;
+        }
+        delete maksutietoDTO.huoltajat;
       }
+
+      const apiFunction = this.maksutieto ? this.lapsiService.updateMaksutieto(maksutietoDTO) : this.lapsiService.createMaksutieto(maksutietoDTO);
+      apiFunction.subscribe({
+        next: maksutietoData => {
+          this.huoltajaSaveStatus = {
+            success: maksutietoData.tallennetut_huoltajat_count,
+            failure: maksutietoData.ei_tallennetut_huoltajat_count
+          };
+          this.snackBarService.success(this.i18n.maksutieto_save_success);
+          this.disableForm();
+
+          setTimeout(() => {
+            this.huoltajaSaveStatus = null;
+            this.togglePanel(false, true, true);
+          }, 5000);
+        },
+        error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
+      }).add(() => this.disableSubmit());
     } else {
       this.disableSubmit();
     }
@@ -197,6 +199,7 @@ export class VardaMaksutietoComponent extends VardaFormAccordionAbstractComponen
       sukunimi: new FormControl(null, [Validators.required, VardaFormValidators.validHenkiloName])
     });
 
+    huoltajaGroup.markAsDirty();
     this.huoltajat.push(huoltajaGroup);
   }
 

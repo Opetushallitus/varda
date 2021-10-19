@@ -3,7 +3,8 @@ import { Lahdejarjestelma } from '../enums/hallinnointijarjestelma';
 export class VardaMaksutietoDTO {
   url: string;
   id: number;
-  huoltajat: Array<HuoltajaDTO>;
+  huoltajat?: Array<HuoltajaDTO>;
+  huoltajat_add?: Array<HuoltajaDTO>;
   lapsi: string;
   maksun_peruste_koodi: string;
   palveluseteli_arvo: string; // float number
@@ -17,10 +18,10 @@ export class VardaMaksutietoDTO {
 }
 
 export class HuoltajaDTO {
-  henkilo_oid: string;
-  etunimet: string;
-  sukunimi: string;
-  henkilotunnus: string;
+  henkilo_oid?: string;
+  etunimet?: string;
+  sukunimi?: string;
+  henkilotunnus?: string;
 }
 
 export class VardaCreateMaksutietoDTO {

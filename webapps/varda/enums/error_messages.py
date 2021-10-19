@@ -188,6 +188,8 @@ class ErrorMessages(enum.Enum):
     MA014 = get_error_dict('MA014', 'paattymis_pvm must be equal to or after 2020-09-01 for yksityinen Lapsi.')
     MA015 = get_error_dict('MA015', 'Maksutieto must have paattymis_pvm because Lapsi has no active Varhaiskasvatuspaatos.')
     MA016 = get_error_dict('MA016', 'Maksutieto must have paattymis_pvm because Lapsi is over 8 years old.')
+    MA017 = get_error_dict('MA017', 'Duplicate huoltajat detected.')
+    MA018 = get_error_dict('MA018', 'Huoltaja is already linked to this Maksutieto.')
 
     # PaosToiminta errors, prefix: PT
     PT001 = get_error_dict('PT001', 'oma_organisaatio cannot be the same as paos_organisaatio.')

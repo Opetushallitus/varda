@@ -28,7 +28,7 @@ from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
 from varda.misc import memory_efficient_queryset_iterator, get_user_vakajarjestaja
 from varda.models import (Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog, Lapsi, Varhaiskasvatuspaatos,
                           Huoltaja, Huoltajuussuhde, Maksutieto, PidempiPoissaolo, Z6_LastRequest,
-                          Z6_RequestSummary, Z6_RequestCount, Aikaleima)
+                          Z6_RequestSummary, Z6_RequestCount, Aikaleima, MaksutietoHuoltajuussuhde)
 from varda.permissions import (assign_object_level_permissions_for_instance, assign_lapsi_henkilo_permissions,
                                delete_object_permissions_explicitly, delete_permissions_from_object_instance_by_oid)
 from varda.permission_groups import (assign_object_permissions_to_taydennyskoulutus_groups,
@@ -674,6 +674,7 @@ def merge_duplicate_child(merge_list):
 
                 merge_lapsi_maksutiedot(new_lapsi, old_maksutiedot, new_huoltajuussuhteet, merged_lapsi_toimipaikat)
 
+                MaksutietoHuoltajuussuhde.objects.filter(huoltajuussuhde__lapsi=old_lapsi).delete()
                 old_lapsi.huoltajuussuhteet.all().delete()
                 old_lapsi.delete()
                 merged_lapsi_counter += 1

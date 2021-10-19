@@ -32,7 +32,6 @@ export class VardaMaksutietoHuoltajaComponent implements OnInit {
 
   i18n = VirkailijaTranslations;
   element: ElementRef;
-  expandPanel: boolean;
   maksutietoFormErrors: Observable<Array<ErrorTree>>;
   private henkilostoErrorService: VardaErrorMessageService;
 
@@ -44,7 +43,6 @@ export class VardaMaksutietoHuoltajaComponent implements OnInit {
     this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.maksutietoFormErrors = this.henkilostoErrorService.initErrorList();
   }
-
 
   ngOnInit() {
     if (this.huoltajaForm) {
