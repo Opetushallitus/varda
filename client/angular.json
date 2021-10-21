@@ -24,6 +24,7 @@
               "projects/huoltaja-app/src/assets"
             ],
             "styles": [
+              "projects/huoltaja-app/src/assets/css/varda-theme.scss",
               "projects/huoltaja-app/src/styles.css"
             ],
             "scripts": [],

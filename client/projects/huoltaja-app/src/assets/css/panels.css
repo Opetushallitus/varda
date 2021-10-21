@@ -77,10 +77,6 @@ mat-expansion-panel .mat-expansion-panel-body {
   flex-wrap: wrap;
 }
 
-.mat-ink-bar {
-  background-color: var(--oph-blue-alt) !important;
-}
-
 .onko-tiedoissa-virhe {
   color: var(--link-color);
   font-weight: bold;
