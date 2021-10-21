@@ -1,6 +1,10 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.29 (21.10.2021)
+- OPHVARDA-2273: Toimipaikkojen Excel-raportti
+- OPHVARDA-2303: Excel-raportin salasana silmän taakse
+
 1.5.28 (19.10.2021)
 - OPHVARDA-2178: Maksutiedon huoltajien muokkaus
 
