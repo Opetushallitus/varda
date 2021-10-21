@@ -43,6 +43,7 @@ class ExcelReportType(enum.Enum):
     PUUTTEELLISET_TYONTEKIJA = 'PUUTTEELLISET_TYONTEKIJA'
     TYONTEKIJATIEDOT_VOIMASSA = 'TYONTEKIJATIEDOT_VOIMASSA'
     TAYDENNYSKOULUTUSTIEDOT = 'TAYDENNYSKOULUTUSTIEDOT'
+    TOIMIPAIKAT_VOIMASSA = 'TOIMIPAIKAT_VOIMASSA'
 
 
 if 'VARDA_ENVIRONMENT_TYPE' in os.environ:
@@ -64,6 +65,8 @@ TYONTEKIJA_SHEET_NAME = 'TYONTEKIJA_SHEET_NAME'
 TYONTEKIJA_HEADERS = 'TYONTEKIJA_HEADERS'
 TAYDENNYSKOULUTUS_SHEET_NAME = 'TAYDENNYSKOULUTUS_SHEET_NAME'
 TAYDENNYSKOULUTUS_HEADERS = 'TAYDENNYSKOULUTUS_HEADERS'
+TOIMIPAIKKA_SHEET_NAME = 'TOIMIPAIKKA_SHEET_NAME'
+TOIMIPAIKKA_HEADERS = 'TOIMIPAIKKA_HEADERS'
 YES = 'YES'
 NO = 'NO'
 TRANSLATIONS = {
@@ -102,6 +105,14 @@ TRANSLATIONS = {
                                     'Lähdejärjestelmä', 'Täydennyskoulutuksen nimi', 'Täydennyskoulutuksen ID',
                                     'Täydennyskoulutuksen tunniste', 'Suorituspäivä', 'Koulutuspäivien määrä',
                                     'Tehtävänimike',),
+        TOIMIPAIKKA_SHEET_NAME: 'Toimipaikat',
+        TOIMIPAIKKA_HEADERS: ('Nimi', 'OID', 'ID', 'Lähdejärjestelmä', 'Tunniste', 'Palveluntuottajan nimi',
+                              'Palveluntuottajan OID', 'Alkamispvm', 'Päättymispvm', 'Kasvatusopillinen järjestelmä',
+                              'Toimintamuoto', 'Asiointikieli', 'Järjestämismuoto', 'Varhaiskasvatuspaikat',
+                              'Kunta', 'Käyntiosoite', 'Postinumero', 'Postitoimipaikka', 'Postiosoite', 'Postinumero',
+                              'Postitoimipaikka', 'Puhelinnumero', 'Sähköpostiosoite', 'Painotuksen ID',
+                              'Lähdejärjestelmä', 'Tunniste', 'Toiminnallinen painotus', 'Kielipainotus', 'Alkamispvm',
+                              'Päättymispvm',),
         YES: 'Kyllä',
         NO: 'Ei',
         ExcelReportType.VAKATIEDOT_VOIMASSA.value: 'Varhaiskasvatustiedot_voimassa',
@@ -109,7 +120,8 @@ TRANSLATIONS = {
         ExcelReportType.PUUTTEELLISET_LAPSI.value: 'Puutteelliset_lapsi',
         ExcelReportType.PUUTTEELLISET_TYONTEKIJA.value: 'Puutteelliset_tyontekija',
         ExcelReportType.TYONTEKIJATIEDOT_VOIMASSA.value: 'Työntekijätiedot_voimassa',
-        ExcelReportType.TAYDENNYSKOULUTUSTIEDOT.value: 'Täydennyskoulutukset'
+        ExcelReportType.TAYDENNYSKOULUTUSTIEDOT.value: 'Täydennyskoulutukset',
+        ExcelReportType.TOIMIPAIKAT_VOIMASSA.value: 'Toimipaikat_voimassa'
     },
     SupportedLanguage.SV.value: {
         VAKASUHDE_SHEET_NAME: 'Småbarnspedagogik',
@@ -151,6 +163,14 @@ TRANSLATIONS = {
                                     'Arbetsgarens ID', 'Källsystem', 'Fortbildningens namn', 'Fortbildningens ID',
                                     'Identifikationskod', 'Datum då fortbildningen avlagts',
                                     'Antalet fortbildningsdagar', 'Yrkesbenämning',),
+        TOIMIPAIKKA_SHEET_NAME: 'Verksamhetsställen',
+        TOIMIPAIKKA_HEADERS: ('Namn', 'OID', 'ID', 'Källsystem', 'Identifikationskod', 'Serviceproducents namn',
+                              'Serviceproducents OID', 'Begynnelsedatum', 'Slutdatum', 'Pedagogisk inriktning',
+                              'Form för anordnande', 'Kontaktspråk', 'Verksamhetsform',
+                              'Antal platser inom småbarnspedagogiken', 'Kommun', 'Besöksadress', 'Postnummer',
+                              'Postanstalt', 'Postadress', 'Postnummer', 'Postanstalt', 'Telefonnummer', 'E-postadress',
+                              'Betoningens ID', 'Källsystem', 'Identifikationskod', 'Verksamhet som betonas',
+                              'Språk som betonas', 'Begynnelsedatum', 'Slutdatum',),
         YES: 'Ja',
         NO: 'Nej',
         ExcelReportType.VAKATIEDOT_VOIMASSA.value: 'Uppgifterna_om_småbarnspedagogik_i_kraft',
@@ -158,7 +178,8 @@ TRANSLATIONS = {
         ExcelReportType.PUUTTEELLISET_LAPSI.value: 'Bristfälliga_uppgifter_om_barn',
         ExcelReportType.PUUTTEELLISET_TYONTEKIJA.value: 'Bristfälliga_uppgifter_om_arbetstagare',
         ExcelReportType.TYONTEKIJATIEDOT_VOIMASSA.value: 'Personal_med_anställningsförhållanden_i_kraft',
-        ExcelReportType.TAYDENNYSKOULUTUSTIEDOT.value: 'Fortbildningar'
+        ExcelReportType.TAYDENNYSKOULUTUSTIEDOT.value: 'Fortbildningar',
+        ExcelReportType.TOIMIPAIKAT_VOIMASSA.value: 'Verksamhetsställen_i_kraft'
     }
 }
 
@@ -229,7 +250,7 @@ def create_excel_report_task(report_id):
     report.status = ExcelReportStatus.CREATING.value
     report.save()
 
-    excel_log = Z8_ExcelReportLog(report_type=report.report_type, target_date=report.target_date,
+    excel_log = Z8_ExcelReportLog(report_id=report.id, report_type=report.report_type, target_date=report.target_date,
                                   target_date_start=report.target_date_start, target_date_end=report.target_date_end,
                                   vakajarjestaja=report.vakajarjestaja, toimipaikka=report.toimipaikka,
                                   user=report.user, started_timestamp=timezone.now())
@@ -291,8 +312,7 @@ def create_excel_report_task(report_id):
 def _create_excel_report(workbook, report):
     if report.report_type == ExcelReportType.VAKATIEDOT_VOIMASSA.value:
         _create_vakatiedot_voimassa_report(workbook, report.language, report.vakajarjestaja_id,
-                                           toimipaikka_id=report.toimipaikka_id,
-                                           target_date=report.target_date)
+                                           toimipaikka_id=report.toimipaikka_id, target_date=report.target_date)
     elif report.report_type in (ExcelReportType.PUUTTEELLISET_TOIMIPAIKKA.value,
                                 ExcelReportType.PUUTTEELLISET_LAPSI.value,
                                 ExcelReportType.PUUTTEELLISET_TYONTEKIJA.value,):
@@ -305,6 +325,9 @@ def _create_excel_report(workbook, report):
                                                toimipaikka_id=report.toimipaikka_id,
                                                target_date_start=report.target_date_start,
                                                target_date_end=report.target_date_end)
+    elif report.report_type == ExcelReportType.TOIMIPAIKAT_VOIMASSA.value:
+        _create_toimipaikat_voimassa_report(workbook, report.language, report.vakajarjestaja_id,
+                                            toimipaikka_id=report.toimipaikka_id, target_date=report.target_date)
 
 
 def _create_vakatiedot_voimassa_report(workbook, language, vakajarjestaja_id, toimipaikka_id=None, target_date=None):
@@ -664,6 +687,85 @@ def _create_taydennyskoulutustiedot_report(workbook, language, vakajarjestaja_id
         _write_row(taydennyskoulutus_sheet, index, taydennyskoulutus_values)
 
 
+def _create_toimipaikat_voimassa_report(workbook, language, vakajarjestaja_id, toimipaikka_id=None, target_date=None):
+    if not target_date:
+        target_date = datetime.date.today()
+
+    toimipaikka_filter = Q(alkamis_pvm__lte=target_date) & (Q(paattymis_pvm__gte=target_date) | Q(paattymis_pvm__isnull=True))
+
+    _create_toimipaikat_report(workbook, language, vakajarjestaja_id, toimipaikka_id=toimipaikka_id,
+                               toimipaikka_filter=toimipaikka_filter)
+
+
+def _create_toimipaikat_report(workbook, language, vakajarjestaja_id, toimipaikka_id=None, toimipaikka_filter=Q()):
+    translations = TRANSLATIONS.get(language, TRANSLATIONS.get(SupportedLanguage.FI.value))
+
+    vakajarjestaja_filter = (Q(vakajarjestaja=vakajarjestaja_id) |
+                             (Q(paos_toiminnat_paos_toimipaikka__oma_organisaatio=vakajarjestaja_id) &
+                              Q(paos_toiminnat_paos_toimipaikka__voimassa_kytkin=True)))
+    if toimipaikka_id:
+        vakajarjestaja_filter &= Q(id=toimipaikka_id)
+
+    toimipaikka_qs = (Toimipaikka.objects.filter(vakajarjestaja_filter & toimipaikka_filter)
+                      .select_related('vakajarjestaja')
+                      .prefetch_related('toiminnallisetpainotukset', 'kielipainotukset')
+                      .distinct().order_by('nimi', 'vakajarjestaja_id'))
+
+    kunta_codes = _get_koodisto_with_translations(Koodistot.kunta_koodit.value, language)
+    kasvatusjarjestelma_codes = _get_koodisto_with_translations(Koodistot.kasvatusopillinen_jarjestelma_koodit.value, language)
+    toiminnallinen_painotus_codes = _get_koodisto_with_translations(Koodistot.toiminnallinen_painotus_koodit.value, language)
+    kieli_codes = _get_koodisto_with_translations(Koodistot.kieli_koodit.value, language)
+    toimintamuoto_codes = _get_koodisto_with_translations(Koodistot.toimintamuoto_koodit.value, language)
+    jarjestamismuoto_codes = _get_koodisto_with_translations(Koodistot.jarjestamismuoto_koodit.value, language)
+    lahdejarjestelma_codes = _get_koodisto_with_translations(Koodistot.lahdejarjestelma_koodit.value, language)
+
+    toimipaikka_sheet = workbook.add_worksheet(translations.get(TOIMIPAIKKA_SHEET_NAME))
+    _write_headers(toimipaikka_sheet, translations, TOIMIPAIKKA_HEADERS)
+
+    index = 1
+    for toimipaikka in toimipaikka_qs:
+        painotus_list = list(toimipaikka.toiminnallisetpainotukset.all()) + list(toimipaikka.kielipainotukset.all())
+        if len(painotus_list) == 0:
+            # We want at least one row for toimipaikka
+            painotus_list = [TemporaryObject()]
+        for painotus in painotus_list:
+            toimipaikka_values = [toimipaikka.nimi, toimipaikka.organisaatio_oid, toimipaikka.id,
+                                  _get_code_translation(lahdejarjestelma_codes, toimipaikka.lahdejarjestelma),
+                                  toimipaikka.tunniste]
+
+            if toimipaikka.vakajarjestaja_id != vakajarjestaja_id:
+                toimipaikka_values.extend([toimipaikka.vakajarjestaja.nimi, toimipaikka.vakajarjestaja.organisaatio_oid])
+            else:
+                toimipaikka_values.extend([None, None])
+
+            toimipaikka_values.extend([toimipaikka.alkamis_pvm, toimipaikka.paattymis_pvm,
+                                       _get_code_translation(kasvatusjarjestelma_codes, toimipaikka.kasvatusopillinen_jarjestelma_koodi),
+                                       _get_code_translation(toimintamuoto_codes, toimipaikka.toimintamuoto_koodi),
+                                       _get_multiple_code_translations(kieli_codes, toimipaikka.asiointikieli_koodi),
+                                       _get_multiple_code_translations(jarjestamismuoto_codes, toimipaikka.jarjestamismuoto_koodi),
+                                       toimipaikka.varhaiskasvatuspaikat,
+                                       _get_code_translation(kunta_codes, toimipaikka.kunta_koodi),
+                                       toimipaikka.kayntiosoite, toimipaikka.kayntiosoite_postinumero,
+                                       toimipaikka.kayntiosoite_postitoimipaikka, toimipaikka.postiosoite,
+                                       toimipaikka.postinumero, toimipaikka.postitoimipaikka, toimipaikka.puhelinnumero,
+                                       toimipaikka.sahkopostiosoite])
+
+            # Painotus information
+            if not isinstance(painotus, TemporaryObject):
+                toimipaikka_values.extend([painotus.id,
+                                           _get_code_translation(lahdejarjestelma_codes, painotus.lahdejarjestelma),
+                                           painotus.tunniste])
+                if hasattr(painotus, 'toimintapainotus_koodi'):
+                    toimipaikka_values.extend([_get_code_translation(toiminnallinen_painotus_codes, painotus.toimintapainotus_koodi),
+                                               None])
+                elif hasattr(painotus, 'kielipainotus_koodi'):
+                    toimipaikka_values.extend([None, _get_code_translation(kieli_codes, painotus.kielipainotus_koodi)])
+                toimipaikka_values.extend([painotus.alkamis_pvm, painotus.paattymis_pvm])
+
+            _write_row(toimipaikka_sheet, index, toimipaikka_values)
+            index += 1
+
+
 def _write_headers(worksheet, translations, headers_name):
     headers = translations.get(headers_name)
     for index, headers in enumerate(headers):
@@ -686,6 +788,10 @@ def _get_code_translation(code_list, code):
         if code_list_item.get('code_value').lower() == code.lower():
             return f'{code_list_item.get("name")} ({code.lower()})'
     return code
+
+
+def _get_multiple_code_translations(code_list, code_value_list):
+    return ', '.join([_get_code_translation(code_list, code_value) for code_value in code_value_list])
 
 
 def _get_dates_for_model_and_id(model_name, model_id):

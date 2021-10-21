@@ -839,6 +839,8 @@ export enum VirkailijaTranslations {
   excel_report_type_description_tyontekijatiedot_voimassa = 'excel.report-type.description.tyontekijatiedot-voimassa',
   excel_report_type_taydennyskoulutustiedot = 'excel.report-type.taydennyskoulutustiedot',
   excel_report_type_description_taydennyskoulutustiedot = 'excel.report-type.description.taydennyskoulutustiedot',
+  excel_report_type_toimipaikat_voimassa = 'excel.report-type.toimipaikat-voimassa',
+  excel_report_type_description_toimipaikat_voimassa = 'excel.report-type.description.toimipaikat-voimassa',
   excel_actions = 'excel.actions',
   excel_download = 'excel.download',
   excel_timestamp = 'excel.timestamp',
@@ -847,6 +849,7 @@ export enum VirkailijaTranslations {
   excel_instructions = 'excel.instructions',
   excel_refresh = 'excel.refresh',
   excel_password = 'excel.password',
+  excel_password_copied = 'excel.password.copied',
 
   transfer_outage = 'transfer-outage',
   transfer_outage_no_results = 'transfer-outage.no-results',

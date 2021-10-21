@@ -1044,7 +1044,7 @@ class ExcelReportViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cre
 
         vakajarjestaja = data.get('vakajarjestaja')
         if toimipaikka := data.get('toimipaikka'):
-            accept_paos_list = [ExcelReportType.VAKATIEDOT_VOIMASSA.value]
+            accept_paos_list = [ExcelReportType.VAKATIEDOT_VOIMASSA.value, ExcelReportType.TOIMIPAIKAT_VOIMASSA.value]
             self._validate_toimipaikka_belongs_to_vakajarjestaja(vakajarjestaja, toimipaikka,
                                                                  accept_paos=data.get('report_type') in accept_paos_list)
 

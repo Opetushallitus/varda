@@ -8,6 +8,8 @@ import { VardaPaginatorParams } from '../../../../utilities/models/varda-paginat
 import { PageEvent } from '@angular/material/paginator';
 import { environment } from '../../../../../environments/environment';
 import { interval, Subscription } from 'rxjs';
+import { Clipboard } from '@angular/cdk/clipboard';
+import { VardaSnackBarService } from '../../../../core/services/varda-snackbar.service';
 
 export enum ReportType {
   VAKATIEDOT_VOIMASSA = 'VAKATIEDOT_VOIMASSA',
@@ -15,7 +17,8 @@ export enum ReportType {
   PUUTTEELLISET_LAPSI = 'PUUTTEELLISET_LAPSI',
   PUUTTEELLISET_TYONTEKIJA = 'PUUTTEELLISET_TYONTEKIJA',
   TYONTEKIJATIEDOT_VOIMASSA = 'TYONTEKIJATIEDOT_VOIMASSA',
-  TAYDENNYSKOULUTUSTIEDOT = 'TAYDENNYSKOULUTUSTIEDOT'
+  TAYDENNYSKOULUTUSTIEDOT = 'TAYDENNYSKOULUTUSTIEDOT',
+  TOIMIPAIKAT_VOIMASSA = 'TOIMIPAIKAT_VOIMASSA'
 }
 
 export const ReportTypeTranslations = {
@@ -25,6 +28,7 @@ export const ReportTypeTranslations = {
   [ReportType.PUUTTEELLISET_TYONTEKIJA]: VirkailijaTranslations.excel_report_type_puutteelliset_tyontekija,
   [ReportType.TYONTEKIJATIEDOT_VOIMASSA]: VirkailijaTranslations.excel_report_type_tyontekijatiedot_voimassa,
   [ReportType.TAYDENNYSKOULUTUSTIEDOT]: VirkailijaTranslations.excel_report_type_taydennyskoulutustiedot,
+  [ReportType.TOIMIPAIKAT_VOIMASSA]: VirkailijaTranslations.excel_report_type_toimipaikat_voimassa
 };
 
 enum ReportStatus {
@@ -67,6 +71,8 @@ export class VardaExcelComponent implements OnInit, OnDestroy {
   constructor(
     private vakajarjestajaService: VardaVakajarjestajaService,
     private raportitService: VardaRaportitService,
+    private clipboard: Clipboard,
+    private snackbarService: VardaSnackBarService
   ) { }
 
   ngOnInit() {
@@ -141,6 +147,11 @@ export class VardaExcelComponent implements OnInit, OnDestroy {
         }
       }
     });
+  }
+
+  copyToClipboard(text: string) {
+    this.clipboard.copy(text);
+    this.snackbarService.success(this.i18n.excel_password_copied);
   }
 
   ngOnDestroy() {

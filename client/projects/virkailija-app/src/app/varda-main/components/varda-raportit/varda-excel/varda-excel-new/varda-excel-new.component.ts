@@ -23,7 +23,8 @@ const TooltipTranslations = {
   [ReportType.PUUTTEELLISET_LAPSI]: VirkailijaTranslations.excel_report_type_description_puutteelliset_lapsi,
   [ReportType.PUUTTEELLISET_TYONTEKIJA]: VirkailijaTranslations.excel_report_type_description_puutteelliset_tyontekija,
   [ReportType.TYONTEKIJATIEDOT_VOIMASSA]: VirkailijaTranslations.excel_report_type_description_tyontekijatiedot_voimassa,
-  [ReportType.TAYDENNYSKOULUTUSTIEDOT]: VirkailijaTranslations.excel_report_type_description_taydennyskoulutustiedot
+  [ReportType.TAYDENNYSKOULUTUSTIEDOT]: VirkailijaTranslations.excel_report_type_description_taydennyskoulutustiedot,
+  [ReportType.TOIMIPAIKAT_VOIMASSA]: VirkailijaTranslations.excel_report_type_description_toimipaikat_voimassa
 };
 
 @Component({
@@ -63,8 +64,9 @@ export class VardaExcelNewComponent implements OnInit {
   selectedToimipaikka: VardaToimipaikkaMinimalDto = null;
 
   toimipaikkaSelectorReports = [ReportType.VAKATIEDOT_VOIMASSA.toString(), ReportType.TYONTEKIJATIEDOT_VOIMASSA.toString(),
-    ReportType.TAYDENNYSKOULUTUSTIEDOT.toString()];
-  dateSelectorReports = [ReportType.VAKATIEDOT_VOIMASSA.toString(), ReportType.TYONTEKIJATIEDOT_VOIMASSA.toString()];
+    ReportType.TAYDENNYSKOULUTUSTIEDOT.toString(), ReportType.TOIMIPAIKAT_VOIMASSA.toString()];
+  dateSelectorReports = [ReportType.VAKATIEDOT_VOIMASSA.toString(), ReportType.TYONTEKIJATIEDOT_VOIMASSA.toString(),
+    ReportType.TOIMIPAIKAT_VOIMASSA.toString()];
   dateRangeSelectorReports = [ReportType.TAYDENNYSKOULUTUSTIEDOT.toString()];
 
   isLoading = false;
@@ -145,6 +147,7 @@ export class VardaExcelNewComponent implements OnInit {
     this.newReport.toimipaikka_oid = null;
     switch (this.newReport.report_type) {
       case ReportType.VAKATIEDOT_VOIMASSA:
+      case ReportType.TOIMIPAIKAT_VOIMASSA:
         this.toimipaikkaOptions = this.toimipaikkaList;
         break;
       case ReportType.TYONTEKIJATIEDOT_VOIMASSA:

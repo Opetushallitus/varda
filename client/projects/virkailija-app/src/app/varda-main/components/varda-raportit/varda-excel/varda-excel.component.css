@@ -11,12 +11,24 @@
   font-size: 0.85em;
 }
 
+.mat-table.excel-table .password-input .mat-icon {
+  font-size: 150%;
+}
+
 .excel-table .download-cell {
   width: 1px;
 }
 
 .excel-table .mat-cell, .excel-table .mat-header-cell {
   padding-left: 1em;
+}
+
+.excel-table .excel-password-field button:first-child {
+  margin-right: 0.5em;
+}
+
+.excel-table .mat-input-element:disabled {
+  color: inherit;
 }
 
 .excel-list-container {

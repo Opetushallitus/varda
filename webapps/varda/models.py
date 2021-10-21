@@ -1306,6 +1306,7 @@ class Z8_ExcelReport(models.Model):
 
 
 class Z8_ExcelReportLog(models.Model):
+    report_id = models.IntegerField(null=True)
     report_type = models.CharField(max_length=50)
     target_date = models.DateField(null=True)
     target_date_start = models.DateField(null=True)
