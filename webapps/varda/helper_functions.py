@@ -4,7 +4,7 @@ from varda.constants import HETU_REGEX
 
 
 def hide_hetu(string, hide_date=True):
-    replace_regex = r'DDMMYY\2' if hide_date else r'\1XXXXX'
+    replace_regex = r'DDMMYY\2\3' if hide_date else r'\1\2XXXX'
     if string:
         if not isinstance(string, str):
             string = str(string)
