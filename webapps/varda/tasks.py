@@ -28,7 +28,8 @@ from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
 from varda.misc import memory_efficient_queryset_iterator, get_user_vakajarjestaja
 from varda.models import (Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog, Lapsi, Varhaiskasvatuspaatos,
                           Huoltaja, Huoltajuussuhde, Maksutieto, PidempiPoissaolo, Z6_LastRequest,
-                          Z6_RequestSummary, Z6_RequestCount, Aikaleima, MaksutietoHuoltajuussuhde)
+                          Z6_RequestSummary, Z6_RequestCount, Aikaleima, MaksutietoHuoltajuussuhde,
+                          Z3_AdditionalCasUserFields)
 from varda.permissions import (assign_object_level_permissions_for_instance, assign_lapsi_henkilo_permissions,
                                delete_object_permissions_explicitly, delete_permissions_from_object_instance_by_oid)
 from varda.permission_groups import (assign_object_permissions_to_taydennyskoulutus_groups,
@@ -782,3 +783,14 @@ def transfer_toimipaikka_objects_to_correct_vakajarjestaja(toimipaikka_id_list):
 
             # Assign permissions
             assign_permissions_for_toimipaikka(toimipaikka_obj, vakajarjestaja.organisaatio_oid)
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def general_monitoring_task():
+    """
+    This task is used to perform various monitoring tasks
+    """
+    # Check that number of OPH users does not exceed limit
+    if Z3_AdditionalCasUserFields.objects.filter(approved_oph_staff=True).count() > 5:
+        logger.error('There are too many users with approved_oph_staff=True.')

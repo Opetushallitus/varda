@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Q
 from guardian.shortcuts import assign_perm, remove_perm
+from rest_framework.exceptions import ValidationError
 
 from varda.misc import get_json_from_external_service
 from varda.models import Toimipaikka, VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Lapsi
@@ -462,6 +463,12 @@ def add_oph_staff_to_vakajarjestaja_katselija_groups():
     I.e. exclude toimipaikka_oid-groups below.
     """
     approved_oph_staff_query = Z3_AdditionalCasUserFields.objects.filter(approved_oph_staff=True)
+    # Check that number of OPH users does not exceed limit
+    if approved_oph_staff_query.count() > 5:
+        error_msg = 'There are too many users with approved_oph_staff=True.'
+        logger.error(error_msg)
+        raise ValidationError(error_msg)
+
     vakajarjestaja_oids = VakaJarjestaja.objects.values_list('organisaatio_oid', flat=True).exclude(organisaatio_oid=None)
     org_oid_query = Q()
     for organisaatio_oid in vakajarjestaja_oids:

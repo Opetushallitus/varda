@@ -683,5 +683,30 @@
       "date_changed": "2021-09-01T16:00:00.000Z",
       "description": ""
     }
+  },
+  {
+    "model": "django_celery_beat.periodictask",
+    "pk": 23,
+    "fields": {
+      "name": "general_monitoring",
+      "task": "varda.tasks.general_monitoring_task",
+      "interval": 2,
+      "crontab": null,
+      "solar": null,
+      "args": "[]",
+      "kwargs": "{}",
+      "queue": null,
+      "exchange": null,
+      "routing_key": null,
+      "priority": null,
+      "one_off": false,
+      "start_time": null,
+      "expires": null,
+      "enabled": true,
+      "last_run_at": null,
+      "total_run_count": 0,
+      "date_changed": "2021-10-01T16:00:00.000Z",
+      "description": ""
+    }
   }
 ]
