@@ -108,19 +108,20 @@ def get_epoch_time_in_ms(date_time):
     return int(date_time.timestamp() * 1000)
 
 
-def get_log_row(log_seq, hostname, environment, timestamp, operation, target_url, username):
+def get_log_row(log_seq, hostname, environment, timestamp, operation, target_url, query_params, username):
     return json.dumps({
-        "version": 1,
-        "logSeq": log_seq,
-        "type": "log",
-        "hostname": hostname,
-        "timestamp": str(timestamp),
-        "environment": environment,
-        "serviceName": "varda",
-        "applicationType": "backend",
-        "operation": operation,
-        "target": target_url,
-        "user": username
+        'version': 1,
+        'logSeq': log_seq,
+        'type': 'log',
+        'hostname': hostname,
+        'timestamp': str(timestamp),
+        'environment': environment,
+        'serviceName': 'varda',
+        'applicationType': 'backend',
+        'operation': operation,
+        'target': target_url,
+        'query_params': query_params,
+        'user': username
     })
 
 
@@ -136,13 +137,14 @@ def send_read_audit_log(aws_log_client, logs_since, logs_until, hostname, enviro
     for audit_log_event in new_audit_log:
         log_data_state.log_seq += 1
         timestamp = get_epoch_time_in_ms(audit_log_event.time_of_event)
-        audit_log_events.append({"timestamp": timestamp,
-                                 "message": get_log_row(log_data_state.log_seq,
+        audit_log_events.append({'timestamp': timestamp,
+                                 'message': get_log_row(log_data_state.log_seq,
                                                         hostname,
                                                         environment,
                                                         timestamp,
-                                                        "GET",
+                                                        'GET',
                                                         audit_log_event.successful_get_request_path,
+                                                        audit_log_event.query_params,
                                                         audit_log_event.user.username)})
 
     if audit_log_events:
@@ -162,7 +164,7 @@ def send_read_audit_log(aws_log_client, logs_since, logs_until, hostname, enviro
             if post_http_status_code == 200:
                 post_was_successful = True  # If one of the batch-posts was successful, save the log_data_state
             else:
-                logger.warning("Audit log post to aws failed with status code: {}".format(post_http_status_code))
+                logger.warning('Audit log post to aws failed with status code: {}'.format(post_http_status_code))
             start_index = end_index
 
         if post_was_successful:
@@ -171,16 +173,16 @@ def send_read_audit_log(aws_log_client, logs_since, logs_until, hostname, enviro
 
 def get_api_endpoint_from_model_name(model_name_verbose_plural):
     endpoint = model_name_verbose_plural
-    endpoint = endpoint.replace(" ", "")
-    endpoint = endpoint.replace("ö", "o")
-    endpoint = endpoint.replace("ä", "a")
+    endpoint = endpoint.replace(' ', '')
+    endpoint = endpoint.replace('ö', 'o')
+    endpoint = endpoint.replace('ä', 'a')
     return endpoint
 
 
 def send_changed_model_log(aws_log_client, model_name, logs_since, logs_until, hostname, environment):
     changed_model = apps.get_model('varda', model_name)
-    historical_model = apps.get_model('varda', "historical{}".format(model_name))
-    stream_name = "varda-changed-{}-stream".format(model_name)
+    historical_model = apps.get_model('varda', 'historical{}'.format(model_name))
+    stream_name = 'varda-changed-{}-stream'.format(model_name)
     api_endpoint = get_api_endpoint_from_model_name(changed_model._meta.verbose_name_plural)
 
     historical_model_q_obj = Q(history_date__gte=logs_since, history_date__lt=logs_until)
@@ -198,24 +200,25 @@ def send_changed_model_log(aws_log_client, model_name, logs_since, logs_until, h
     for audit_log_event in new_audit_log:
         log_data_state.log_seq += 1
         timestamp = get_epoch_time_in_ms(audit_log_event.history_date)
-        change_url = "/api/v1/{}/{}/".format(api_endpoint, audit_log_event.id)
+        change_url = '/api/v1/{}/{}/'.format(api_endpoint, audit_log_event.id)
         history_user = audit_log_event.history_user
         username = history_user.username if history_user else 'None'
 
-        if audit_log_event.history_type == "+":
-            operation = "CREATE"
-        elif audit_log_event.history_type == "-":
-            operation = "DELETE"
-        else:  # history_type == "~"
-            operation = "CHANGE"
+        if audit_log_event.history_type == '+':
+            operation = 'CREATE'
+        elif audit_log_event.history_type == '-':
+            operation = 'DELETE'
+        else:  # history_type == '~'
+            operation = 'CHANGE'
 
-        audit_log_events.append({"timestamp": timestamp,
-                                 "message": get_log_row(log_data_state.log_seq,
+        audit_log_events.append({'timestamp': timestamp,
+                                 'message': get_log_row(log_data_state.log_seq,
                                                         hostname,
                                                         environment,
                                                         timestamp,
                                                         operation,
                                                         change_url,
+                                                        None,
                                                         username)})
 
     if audit_log_events:
@@ -235,7 +238,7 @@ def send_changed_model_log(aws_log_client, model_name, logs_since, logs_until, h
             if post_http_status_code == 200:
                 post_was_successful = True  # If one of the batch-posts was successful, save the log_data_state
             else:
-                logger.warning("Audit log post to aws failed with status code: {}".format(post_http_status_code))
+                logger.warning('Audit log post to aws failed with status code: {}'.format(post_http_status_code))
             start_index = end_index
 
         if post_was_successful:
@@ -260,7 +263,7 @@ def collect_audit_log_and_send_to_aws():
     CREATE, UPDATE, DELETE (taken from historical-models)
     """
     audit_log_models = []
-    varda_models = [ct.model_class() for ct in ContentType.objects.filter(app_label="varda")]
+    varda_models = [ct.model_class() for ct in ContentType.objects.filter(app_label='varda')]
     for varda_model in varda_models:
         if hasattr(varda_model, 'audit_loggable') and varda_model().audit_loggable:
             audit_log_models.append(varda_model.__name__.lower())
@@ -305,4 +308,4 @@ def send_alive_log_to_aws():
     if post_http_status_code == 200:
         cache.set(ALIVE_SEQ_CACHE_KEY, log_seq + 1, None)
     else:
-        logger.warning("Alive log post to aws failed with status code: {}".format(post_http_status_code))
+        logger.warning('Alive log post to aws failed with status code: {}'.format(post_http_status_code))

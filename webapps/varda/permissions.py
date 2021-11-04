@@ -258,8 +258,10 @@ def check_if_user_has_paakayttaja_permissions(vakajarjestaja_organisaatio_oid, u
 
 
 def save_audit_log(user, url):
-    path = path_parse(url)
-    Z5_AuditLog.objects.create(user=user, successful_get_request_path=path[:100])  # path max-length is 100 characters
+    path, query_params = path_parse(url)
+    # path max-length is 200 characters
+    path = path[:200]
+    Z5_AuditLog.objects.create(user=user, successful_get_request_path=path, query_params=query_params)
 
 
 def auditlog(function):

@@ -251,7 +251,7 @@ def cached_list_response(original_list_viewset, user, request_full_path,
     if user.is_superuser or getattr(additional_details, 'approved_oph_staff', False):  # No caching for superuser
         page = original_list_viewset.paginate_queryset(original_queryset)
     else:
-        request_full_path = path_parse(request_full_path)
+        request_full_path, query_params = path_parse(request_full_path)
         page = get_cached_page_for_non_superuser(original_list_viewset, user, request_full_path,
                                                  original_queryset, cached_time, order_by)
 

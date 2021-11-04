@@ -65,10 +65,10 @@ class MiscTests(TestCase):
         request_path_empty_string = ''
         request_path_empty_byte = b''
 
-        url_string = misc.path_parse(request_path_string)
-        url_bytes = misc.path_parse(request_path_bytes)
-        url_empty_string = misc.path_parse(request_path_empty_string)
-        url_empty_byte = misc.path_parse(request_path_empty_byte)
+        url_string, params_string = misc.path_parse(request_path_string)
+        url_bytes, params_bytes = misc.path_parse(request_path_bytes)
+        url_empty_string, params_empty_string = misc.path_parse(request_path_empty_string)
+        url_empty_byte, params_empty_byte = misc.path_parse(request_path_empty_byte)
 
         self.assertEqual(url_string, request_path_string)
         self.assertEqual(url_bytes, request_path_string)

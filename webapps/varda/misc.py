@@ -228,15 +228,18 @@ def path_parse(request_full_path):
     :param request_full_path: either string or bytes
     :return request_full_path: string
     """
-    request_full_path = urlparse(request_full_path).path
+    parsed_url = urlparse(request_full_path)
+    request_full_path = parsed_url.path
+    query_params = parsed_url.query
     try:
         request_full_path = request_full_path.decode()
+        query_params = query_params.decode()
     except AttributeError:
         pass  # request_full_path is already type:string
     except ValueError:
-        logger.error('Failed to parse url: {}'.format(request_full_path))
+        logger.error(f'Failed to parse url: {request_full_path}, {query_params}')
         raise CustomServerErrorException
-    return request_full_path
+    return request_full_path, query_params
 
 
 def list_to_chunks(list_, size):

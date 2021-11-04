@@ -1170,7 +1170,8 @@ class Z4_CasKayttoOikeudet(models.Model):
 class Z5_AuditLog(models.Model):
     user = models.ForeignKey(User, related_name='audit_log', on_delete=models.PROTECT)
     time_of_event = models.DateTimeField(auto_now=True)
-    successful_get_request_path = models.CharField(max_length=100, blank=False)
+    successful_get_request_path = models.CharField(max_length=200, blank=False)
+    query_params = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return str(self.id)
