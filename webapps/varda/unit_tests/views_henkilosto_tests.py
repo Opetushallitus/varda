@@ -791,15 +791,17 @@ class VardaHenkilostoViewSetTests(TestCase):
         }
 
         # Freeze date used in validation (period 1)
-        invalid_dates_period_1 = ('2021-06-01', '2022-07-01', '2022-12-01', '2020-01-01', '2023-01-01',)
+        invalid_dates_period_1_1 = ('2020-01-01',)
+        invalid_dates_period_1_2 = ('2022-07-01', '2022-12-01', '2023-01-01',)
         valid_dates_period_1 = ('2021-07-01', '2021-12-01', '2022-01-01', '2022-06-01',)
 
         # Freeze date used in validation (period 2)
-        invalid_dates_period_2 = ('2021-12-01', '2023-01-01', '2023-06-01', '2020-01-01',)
+        invalid_dates_period_2_1 = ('2020-01-01',)
+        invalid_dates_period_2_2 = ('2023-01-01', '2023-06-01',)
         valid_dates_period_2 = ('2022-07-01', '2022-02-01', '2022-12-01')
 
-        test_cases = ((datetime.date(2022, 1, 1), invalid_dates_period_1, valid_dates_period_1,),
-                      (datetime.date(2022, 7, 1), invalid_dates_period_2, valid_dates_period_2),)
+        test_cases = ((datetime.date(2022, 1, 1), invalid_dates_period_1_1, invalid_dates_period_1_2, valid_dates_period_1,),
+                      (datetime.date(2022, 7, 1), invalid_dates_period_2_1, invalid_dates_period_2_2, valid_dates_period_2),)
 
         for test_case in test_cases:
             mock_datetime.date.today.return_value = test_case[0]
@@ -807,8 +809,13 @@ class VardaHenkilostoViewSetTests(TestCase):
                 tilapainen_henkilosto['kuukausi'] = invalid_case
                 resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
                 assert_status_code(resp, status.HTTP_400_BAD_REQUEST, f'{test_case[0], invalid_case}')
-                assert_validation_error(resp, 'kuukausi', 'TH007', 'TilapainenHenkilosto can be saved for either the previous, or the current period.')
-            for valid_case in test_case[2]:
+                assert_validation_error(resp, 'kuukausi', 'TH008', 'kuukausi must be equal to or after 2020-09-01.')
+            for invalid_case in test_case[2]:
+                tilapainen_henkilosto['kuukausi'] = invalid_case
+                resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
+                assert_status_code(resp, status.HTTP_400_BAD_REQUEST, f'{test_case[0], invalid_case}')
+                assert_validation_error(resp, 'kuukausi', 'TH007', 'TilapainenHenkilosto can be saved for either the current period or in the past.')
+            for valid_case in test_case[3]:
                 tilapainen_henkilosto['kuukausi'] = valid_case
                 resp = client.post('/api/henkilosto/v1/tilapainen-henkilosto/', tilapainen_henkilosto)
                 assert_status_code(resp, status.HTTP_201_CREATED, f'{test_case[0], valid_case}')

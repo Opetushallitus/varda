@@ -178,15 +178,9 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
 
         today = datetime.date.today()
 
-        # TilapainenHenkilosto can be saved for the current, and the previous period
-        if today.month < 7:
-            upper_limit = today.replace(month=6, day=30)
-            lower_limit = today.replace(year=today.year - 1, month=7, day=1)
-        else:
-            upper_limit = today.replace(month=12, day=31)
-            lower_limit = today.replace(month=1, day=1)
-
-        if kuukausi < lower_limit or kuukausi > upper_limit:
+        # TilapainenHenkilosto can be saved for the current period or in the past
+        upper_limit = today.replace(month=6, day=30) if today.month < 7 else today.replace(month=12, day=31)
+        if kuukausi > upper_limit:
             validator.error('kuukausi', ErrorMessages.TH007.value)
 
     def _get_first_day_of_month(self, date):

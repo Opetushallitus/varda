@@ -267,7 +267,7 @@ class ErrorMessages(enum.Enum):
     TH004 = get_error_dict('TH004', 'tuntimaara cannot be zero if tyontekijamaara is greater than zero.')
     TH005 = get_error_dict('TH005', 'tyontekijamaara cannot be zero if tuntimaara is greater than zero.')
     TH006 = get_error_dict('TH006', 'kuukausi must be in the past.')
-    TH007 = get_error_dict('TH007', 'TilapainenHenkilosto can be saved for either the previous, or the current period.')
+    TH007 = get_error_dict('TH007', 'TilapainenHenkilosto can be saved for either the current period or in the past.')
     TH008 = get_error_dict('TH008', 'kuukausi must be equal to or after 2020-09-01.')
     TH009 = get_error_dict('TH009', 'tuntimaara and tyontekijamaara must be 0 if TilapainenHenkilosto is saved in advance.')
 

@@ -105,7 +105,6 @@ export class VardaHenkilostoTilapainenComponent implements OnInit {
       earliestAllowedDate = vakajarjestajaStartDate;
     }
 
-
     for (let i = earliestAllowedDate.getUTCFullYear(); i <= lastAllowedDate.getUTCFullYear(); ++i) {
       for (let j = 0; j < 2; j++) {
         const monthComparison = j * july;
@@ -151,7 +150,7 @@ export class VardaHenkilostoTilapainenComponent implements OnInit {
     this.vuosiArvot = { hours: 0, employees: 0, months: 0 };
     const tyontekijatByMonth = [];
 
-    if (this.vuodet.indexOf(vuosi) > 1 || !this.toimijaAccess.tilapainenHenkilosto.tallentaja) {
+    if (!this.toimijaAccess.tilapainenHenkilosto.tallentaja) {
       this.henkilostoKytkin.disabled = true;
     }
 
