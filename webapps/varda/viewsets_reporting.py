@@ -169,7 +169,7 @@ class KelaEtuusmaksatusLopettaneetViewSet(GenericViewSet, ListModelMixin):
 
         # get the status before muutos_pvm
         latest_end_dates = (Varhaiskasvatussuhde.history.filter(Q(id=OuterRef('id')) &
-                                                                Q(muutos_pvm__lt=muutos_pvm_gte)
+                                                                Q(history_date__lt=muutos_pvm_gte)
                                                                 ).order_by('-history_id'))
 
         return (Varhaiskasvatussuhde.objects.select_related('varhaiskasvatuspaatos__lapsi', 'lapsi__henkilo')
@@ -269,9 +269,9 @@ class KelaEtuusmaksatusKorjaustiedotViewSet(GenericViewSet, ListModelMixin):
         common_filters = _create_common_kela_filters()
 
         # Only object that have been changed after given date
-        time_window_filter = Q(muutos_pvm__gte=muutos_pvm_gte)
+        time_window_filter = Q(history_date__gte=muutos_pvm_gte)
         if muutos_pvm_lte:
-            time_window_filter = time_window_filter & Q(muutos_pvm__lte=muutos_pvm_lte)
+            time_window_filter = time_window_filter & Q(history_date__lte=muutos_pvm_lte)
 
         # Must be active at or after
         paattymis_pvm_date_gte = datetime.datetime(2021, 1, 18)
@@ -304,7 +304,7 @@ class KelaEtuusmaksatusKorjaustiedotViewSet(GenericViewSet, ListModelMixin):
         latest_changed_objects = Varhaiskasvatussuhde.history.filter(dataset_filters)
         id_filter = Q(id__in=latest_changed_objects.values('id'))
 
-        muutos_pvm_subquery = Varhaiskasvatussuhde.history.filter(id=OuterRef('id'), muutos_pvm__lt=muutos_pvm_gte).order_by('-history_id')
+        muutos_pvm_subquery = Varhaiskasvatussuhde.history.filter(id=OuterRef('id'), history_date__lt=muutos_pvm_gte).order_by('-history_id')
 
         return (Varhaiskasvatussuhde.objects.select_related('varhaiskasvatuspaatos__lapsi', 'varhaiskasvatuspaatos__lapsi__henkilo')
                                             .annotate(old_alkamis_pvm=(Case(When(alkamis_pvm=Subquery(muutos_pvm_subquery.values('alkamis_pvm')[:1]),
