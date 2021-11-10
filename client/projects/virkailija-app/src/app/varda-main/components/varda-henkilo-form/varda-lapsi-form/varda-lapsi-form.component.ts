@@ -51,6 +51,7 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
   lapsiFormErrors: Observable<Array<ErrorTree>>;
   deleteLapsiErrors: Observable<Array<ErrorTree>>;
   isSubmitting = new BehaviorSubject<boolean>(false);
+  deletePermission: boolean;
 
   private lapsiErrorService: VardaErrorMessageService;
   private deleteLapsiErrorService: VardaErrorMessageService;
@@ -84,6 +85,8 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
 
     if (!this.lapsi.id) {
       this.initLapsiForm();
+    } else {
+      this.setDeletePermission();
     }
 
     this.lapsiService.initFormErrorList(this.selectedVakajarjestaja.id, this.lapsi);
@@ -167,6 +170,7 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
           this.lapsiService.sendLapsiListUpdate();
 
           this.lapsi = this.createLapsiListDTO(lapsiData);
+          this.setDeletePermission();
         },
         error: err => this.lapsiErrorService.handleError(err, this.snackBarService)
       }).add(() => setTimeout(() => this.isSubmitting.next(false), 500));
@@ -209,4 +213,10 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
     return lapsi;
   }
 
+  setDeletePermission() {
+    this.deletePermission = this.toimipaikkaAccess.lapsitiedot.tallentaja && this.toimipaikkaAccess.huoltajatiedot.tallentaja;
+    if (this.lapsi.paos_organisaatio_oid && this.lapsi.tallentaja_organisaatio_oid !== this.selectedVakajarjestaja.organisaatio_oid) {
+      this.deletePermission = false;
+    }
+  }
 }

@@ -156,8 +156,7 @@
     </mat-expansion-panel>
   </ng-template>
 
-  <ng-container *ngIf="toimipaikkaAccess.lapsitiedot.tallentaja
-                && toimipaikkaAccess.huoltajatiedot.tallentaja">
+  <ng-container *ngIf="deletePermission">
     <app-varda-error-field [errors]="deleteLapsiErrors"></app-varda-error-field>
     <app-varda-delete-henkilo *ngIf="lapsi?.id"
                               [instructionText]="i18n.lapsi_instruction_delete | translate"
