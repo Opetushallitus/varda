@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.31 (11.11.2021)
+- OPHVARDA-2329: Piilota "Poista lapsi"-nappi jos PAOS-toiminta on poistettu
+
 1.5.30 (05.11.2021)
 - OPHVARDA-2333: Tietoturvapäivityksiä
 
