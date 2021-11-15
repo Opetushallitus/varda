@@ -5,7 +5,7 @@ coreapi==2.3.*  # BSD-license
 coreschema==0.0.*  # BSD-license
 cryptography==3.4.*  # BSD-license
 Django==3.2.*  # BSD-license
-django-cas-ng==4.1.*  # BSD-license
+django-cas-ng==4.2.*  # BSD-license
 django-celery-beat==2.2.*  # BSD-license
 django-celery-results==2.0.*  # BSD-license
 django-cors-headers==3.7.*  # MIT-license
@@ -37,7 +37,7 @@ pycodestyle==2.7.*  # Expat license (same as MIT)
 pyflakes==2.3.*  # MIT-license
 pylibmc==1.6.*  # BSD 3-Clause License
 PyYAML==5.4.*  # MIT-license
-requests==2.25.*  # Apache 2.0-license
+requests==2.26.*  # Apache 2.0-license
 simplejson==3.17.*  # MIT-license
 uritemplate==3.0.*  # BSD 3-Clause License or Apache License, Version 2.0
 responses==0.13.*  # Mocks. Apache 2.0-license

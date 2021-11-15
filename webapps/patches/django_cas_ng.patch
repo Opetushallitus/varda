@@ -1,35 +1,35 @@
 diff --git a/django_cas_ng/__init__.py b/django_cas_ng/__init__.py
-index df71356..a41f80a 100644
+index e998795..4b0d1b7 100644
 --- a/django_cas_ng/__init__.py
 +++ b/django_cas_ng/__init__.py
-@@ -8,6 +8,7 @@ from django.utils.translation import ugettext_lazy as _
+@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
  __all__ = []
- 
+
  _DEFAULTS = {
 +    'CAS_ACCEPT_PROXY_URL_FROM_HEADER': None,
+     'CAS_ADMIN_REDIRECT': True,
      'CAS_ADMIN_PREFIX': None,
      'CAS_CREATE_USER': True,
-     'CAS_EXTRA_LOGIN_PARAMS': None,
 diff --git a/django_cas_ng/utils.py b/django_cas_ng/utils.py
-index 1609289..5f295f3 100644
+index 913381e..59148a1 100644
 --- a/django_cas_ng/utils.py
 +++ b/django_cas_ng/utils.py
-@@ -44,6 +44,10 @@ def get_service_url(request, redirect_to=None):
+@@ -52,6 +52,10 @@ def get_service_url(request: HttpRequest, redirect_to: Optional[str] = None) ->
      """Generates application django service URL for CAS"""
      if hasattr(django_settings, 'CAS_ROOT_PROXIED_AS'):
-         service = django_settings.CAS_ROOT_PROXIED_AS + request.path
+         service = urllib_parse.urljoin(django_settings.CAS_ROOT_PROXIED_AS, request.path)
 +    elif (hasattr(django_settings, 'CAS_ACCEPT_PROXY_URL_FROM_HEADER') and
-+                django_settings.CAS_ACCEPT_PROXY_URL_FROM_HEADER and
-+                request.META.get('HTTP_'+django_settings.CAS_ACCEPT_PROXY_URL_FROM_HEADER, False)):
++          django_settings.CAS_ACCEPT_PROXY_URL_FROM_HEADER and
++          request.META.get('HTTP_'+django_settings.CAS_ACCEPT_PROXY_URL_FROM_HEADER, False)):
 +        service = request.META.get('HTTP_'+django_settings.CAS_ACCEPT_PROXY_URL_FROM_HEADER)
      else:
-         protocol = get_protocol(request)
-         host = request.get_host()
+         if django_settings.CAS_FORCE_SSL_SERVICE_URL:
+             protocol = 'https'
 diff --git a/django_cas_ng/views.py b/django_cas_ng/views.py
-index 3201936..aeeacc3 100644
+index f67dc46..cb99eff 100644
 --- a/django_cas_ng/views.py
 +++ b/django_cas_ng/views.py
-@@ -47,7 +47,11 @@ class LoginView(View):
+@@ -80,7 +80,11 @@ class LoginView(View):
          :param next_page:
          :return:
          """
@@ -39,6 +39,6 @@ index 3201936..aeeacc3 100644
 +        response = HttpResponseRedirect(next_page)
 +        set_cookie(request, response, next_page)
 +        return response
- 
-     def post(self, request):
-         if request.POST.get('logoutRequest'):
+
+     def post(self, request: HttpRequest) -> HttpResponse:
+         next_page = clean_next_page(request, request.POST.get('next', settings.CAS_REDIRECT_URL))
