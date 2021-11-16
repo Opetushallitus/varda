@@ -29,7 +29,7 @@ from varda.misc import memory_efficient_queryset_iterator, get_user_vakajarjesta
 from varda.models import (Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog, Lapsi, Varhaiskasvatuspaatos,
                           Huoltaja, Huoltajuussuhde, Maksutieto, PidempiPoissaolo, Z6_LastRequest,
                           Z6_RequestSummary, Z6_RequestCount, Aikaleima, MaksutietoHuoltajuussuhde,
-                          Z3_AdditionalCasUserFields)
+                          Z3_AdditionalCasUserFields, BatchError)
 from varda.permissions import (assign_object_level_permissions_for_instance, assign_lapsi_henkilo_permissions,
                                delete_object_permissions_explicitly, delete_permissions_from_object_instance_by_oid)
 from varda.permission_groups import (assign_object_permissions_to_taydennyskoulutus_groups,
@@ -362,6 +362,7 @@ def delete_henkilot_without_relations_task():
     henkilo_qs = Henkilo.objects.filter(lapsi__isnull=True, tyontekijat__isnull=True, huoltaja__isnull=True,
                                         luonti_pvm__lt=created_datetime_limit)
     for henkilo in henkilo_qs:
+        BatchError.objects.filter(henkilo=henkilo).delete()
         henkilo.delete()
 
 
