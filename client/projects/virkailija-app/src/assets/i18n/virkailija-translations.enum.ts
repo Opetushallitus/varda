@@ -474,6 +474,7 @@ export enum VirkailijaTranslations {
   katsele_tietoja = 'katsele-tietoja',
   katsele_tietoja_lapsi_tooltip_search = 'katsele-tietoja.lapsi.tooltip-search',
   katsele_tietoja_tyontekija_tooltip_search = 'katsele-tietoja.tyontekija.tooltip-search',
+  katsele_tietoja_toimipaikka_tooltip_search = 'katsele-tietoja.toimipaikka.tooltip-search',
   katsele_tietoja_perustiedot = 'katsele-tietoja.perustiedot',
   katsele_tietoja_lapsi_vakatiedot = 'katsele-tietoja.lapsi.vakatiedot',
   katsele_tietoja_lapsi_no_vakatiedot = 'katsele-tietoja.lapsi.no-vakatiedot',

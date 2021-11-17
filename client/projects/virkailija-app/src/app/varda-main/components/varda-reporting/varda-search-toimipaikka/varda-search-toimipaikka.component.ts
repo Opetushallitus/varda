@@ -60,7 +60,7 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
     this.updateFilterString();
 
     if (this.searchValue) {
-      searchParams.nimi = this.searchValue;
+      searchParams.search = this.searchValue;
     }
     if (this.filterParams.jarjestamismuoto) {
       searchParams.jarjestamismuoto_koodi = this.filterParams.jarjestamismuoto.code_value.toLowerCase();

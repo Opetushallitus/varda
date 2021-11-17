@@ -3,12 +3,19 @@
     <div class="varda-reporting-search-form-content toimipaikka-search-form varda-reporting-row-wrap margin-top">
       <div class="col-sm col-md-6 col-lg-5">
         <label for="toimipaikkaSearchInput"
-               class="oph-bold">{{i18n.toimipaikka_nimi | translate}}</label>
+               class="oph-bold">{{i18n.katsele_tietoja_nimi_tunniste | translate}}</label>
+        <button mat-icon-button
+                class="varda-info-button"
+                [matTooltip]="i18n.katsele_tietoja_toimipaikka_tooltip_search | translate"
+                matTooltipClass="varda-tooltip"
+                aria-label="katsele tietoja ohje">
+          <mat-icon alt="">info</mat-icon>
+        </button>
         <input class="oph-input"
                name="toimipaikkaSearchInput"
                id="toimipaikkaSearchInput"
                type="text"
-               [placeholder]="i18n.toimipaikka_nimi | translate"
+               [placeholder]="i18n.katsele_tietoja_nimi_tunniste | translate"
                [(ngModel)]="searchValue"
                (keydown.enter)="search()">
       </div>

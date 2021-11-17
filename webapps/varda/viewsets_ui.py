@@ -189,16 +189,19 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
     filter:
         voimassaolo=str (voimassa/paattynyt)
     """
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend, SearchFilter,)
+    search_fields = ('nimi', '=organisaatio_oid', '=id',)
     filterset_class = filters.ToimipaikkaFilter
     queryset = Toimipaikka.objects.none()
     serializer_class = ToimipaikkaUiSerializer
     permission_classes = (CustomModelPermissions,)
     pagination_class = ChangeablePageSizePaginationLarge
 
-    vakajarjestaja_id = None
-    vakajarjestaja_obj = None
-    vakajarjestaja_oid = ''
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.vakajarjestaja_id = None
+        self.vakajarjestaja_obj = None
+        self.vakajarjestaja_oid = ''
 
     def get_toimipaikka_ids_user_has_view_permissions(self):
         model_name = 'toimipaikka'
@@ -358,9 +361,11 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
     permission_classes = (CustomModelPermissions,)
     pagination_class = ChangeablePageSizePagination
 
-    vakajarjestaja_id = None
-    vakajarjestaja_oid = ''
-    toimipaikka_id_list = []
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.vakajarjestaja_id = None
+        self.vakajarjestaja_oid = ''
+        self.toimipaikka_id_list = []
 
     def get_lapsi_object_ids_user_has_view_permissions(self):
         model_name = 'lapsi'
@@ -518,9 +523,11 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
     queryset = Tyontekija.objects.none()
     pagination_class = ChangeablePageSizePagination
 
-    vakajarjestaja_id = None
-    vakajarjestaja_oid = ''
-    has_vakajarjestaja_tyontekija_permissions = False
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.vakajarjestaja_id = None
+        self.vakajarjestaja_oid = ''
+        self.has_vakajarjestaja_tyontekija_permissions = False
 
     def get_tyontekija_ids_user_has_view_permissions(self):
         model_name = 'tyontekija'
