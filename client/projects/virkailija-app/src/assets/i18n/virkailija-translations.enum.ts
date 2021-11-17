@@ -512,6 +512,7 @@ export enum VirkailijaTranslations {
   katsele_tietoja_selected_filters = 'katsele-tietoja.selected-filters',
   katsele_tietoja_yhteenveto_key = 'katsele-tietoja.yhteenveto.key',
   katsele_tietoja_yhteenveto_value = 'katsele-tietoja.yhteenveto.value',
+  katsele_tietoja_yhteenveto_not_reported = 'katsele-tietoja.yhteenveto.not-reported',
   katsele_tietoja_tyontekija_poissaolot = 'katsele-tietoja.tyontekija.poissaolot',
   katsele_tietoja_tyontekija_tehtavanimike = 'katsele-tietoja.tyontekija.tehtavanimike',
   katsele_tietoja_tyontekija_tehtavanimike_taydennyskoulutus = 'katsele-tietoja.tyontekija.tehtavanimike-taydennyskoulutus',

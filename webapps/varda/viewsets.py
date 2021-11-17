@@ -2031,7 +2031,7 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
         vakajarjestaja_filter = Q(vakajarjestaja__id=self.vakajarjestaja_id)
         return (TilapainenHenkilosto.objects
                 .filter(kuukausi_filter & vakajarjestaja_filter)
-                .aggregate(sum=Sum('tyontekijamaara')))['sum'] or 0
+                .aggregate(sum=Sum('tyontekijamaara')))['sum']
 
     def get_tilapainen_henkilosto_tunnit_this_year(self):
         """
@@ -2041,7 +2041,7 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
         vakajarjestaja_filter = Q(vakajarjestaja__id=self.vakajarjestaja_id)
         return (TilapainenHenkilosto.objects
                 .filter(kuukausi_filter & vakajarjestaja_filter)
-                .aggregate(sum=Sum('tuntimaara')))['sum'] or 0
+                .aggregate(sum=Sum('tuntimaara')))['sum']
 
 
 @auditlogclass

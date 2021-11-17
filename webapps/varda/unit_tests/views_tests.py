@@ -3226,8 +3226,8 @@ class VardaViewsTests(TestCase):
             'varhaiskasvatusalan_tutkinnot': 1,
             'tyoskentelypaikat_kelpoiset': 2,
             'taydennyskoulutukset_kuluva_vuosi': 0,
-            'tilapainen_henkilosto_maara_kuluva_vuosi': 0,
-            'tilapainen_henkilosto_tunnit_kuluva_vuosi': 0.0
+            'tilapainen_henkilosto_maara_kuluva_vuosi': None,
+            'tilapainen_henkilosto_tunnit_kuluva_vuosi': None
         }
         assert_status_code(resp, 200)
         self.assertEqual(json.loads(resp.content), accepted_response)
