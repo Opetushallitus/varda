@@ -11,12 +11,16 @@ import { CookieService } from 'ngx-cookie-service';
 import { AppComponent } from './app.component';
 import { VardaSharedModule, HttpService, VardaHttpInterceptor, VardaTranslateLoader } from 'varda-shared';
 import { VardaApiService } from './core/services/varda-api.service';
+import { registerLocaleData } from '@angular/common';
+import localeFi from '@angular/common/locales/fi';
 
 // AoT requires an exported function for factories
 export const HttpLoaderFactory = (http: HttpClient) => {
   const path = './assets/i18n/';
   return new TranslateHttpLoader(http, path, '.json');
 };
+
+registerLocaleData(localeFi);
 
 @NgModule({
   declarations: [
