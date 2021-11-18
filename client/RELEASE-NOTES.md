@@ -1,6 +1,11 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.32 (18.11.2021)
+- OPHVARDA-2335: Katsele tietoja toimipaikan tarkempi haku
+- OPHVARDA-2236: Yhteenvedon tilapäisen henkilöstön muutoksia
+- OPHVARDA-2237: Yhteenvedon lukujen formaatti
+
 1.5.31 (11.11.2021)
 - OPHVARDA-2329: Piilota "Poista lapsi"-nappi jos PAOS-toiminta on poistettu
 
