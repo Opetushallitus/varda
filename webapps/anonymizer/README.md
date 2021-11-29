@@ -1,4 +1,4 @@
-## Database anonymization
+### Database anonymization
 
 You can use the following management-command to generate anonymized dataset.
 Creates an anonymized data set from database.
