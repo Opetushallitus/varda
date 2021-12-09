@@ -378,7 +378,8 @@ SWAGGER_SETTINGS = {
             'in': 'header'
         }
     },
-    'LOGOUT_URL': '/api-auth/logout/'
+    'LOGOUT_URL': '/api-auth/logout/',
+    'DEFAULT_AUTO_SCHEMA_CLASS': 'varda.custom_swagger.ReadWriteAutoSchema',
 }
 
 LOGIN_URL = 'rest_framework:login'

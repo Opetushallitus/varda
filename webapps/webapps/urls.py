@@ -36,7 +36,7 @@ from varda import (views, viewsets, viewsets_admin, viewsets_reporting, viewsets
 from varda.cas.misc_cas import is_local_url_decorator
 from varda.cas.oppija_cas_views import OppijaCasLoginView
 from varda.constants import SWAGGER_DESCRIPTION
-from varda.misc_viewsets import PublicSwaggerRenderer, PublicSchemaGenerator
+from varda.custom_swagger import PublicSwaggerRenderer, PublicSchemaGenerator
 
 
 schema_view = get_schema_view(title='VARDA API', renderer_classes=[CoreJSONRenderer])
@@ -85,7 +85,7 @@ nested_vakajarjestaja_router_ui.register(r'toimipaikat', viewsets_ui.NestedToimi
 nested_vakajarjestaja_router_ui.register(r'lapset', viewsets_ui.UiNestedLapsiViewSet)
 # /api/ui/vakajarjestajat/{id}/tyontekijat/
 nested_vakajarjestaja_router_ui.register(r'tyontekijat', viewsets_ui.UiNestedTyontekijaViewSet)
-# /api/ui/all-vakajarjestajat/<id>/toimipaikat/
+# /api/ui/vakajarjestajat/<id>/all-toimipaikat/
 all_toimipaikat_router = nested_routers.NestedSimpleRouter(router, r'vakajarjestajat', lookup='vakajarjestaja')
 all_toimipaikat_router.register(r'all-toimipaikat', viewsets_ui.NestedAllToimipaikkaViewSet)
 # /api/ui/toimipaikat/

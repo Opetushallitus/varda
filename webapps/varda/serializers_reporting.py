@@ -3,6 +3,7 @@ from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Sum
+from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.reverse import reverse
@@ -139,15 +140,19 @@ class TiedonsiirtotilastoSerializer(serializers.Serializer):
     paos_oikeudet = serializers.ReadOnlyField()
 
 
+class AbstractErrorReportErrorsSerializer(serializers.Serializer):
+    error_code = serializers.CharField()
+    description = serializers.CharField()
+    model_name = serializers.CharField()
+    model_id_list = serializers.ListField(child=serializers.IntegerField())
+
+
 class AbstractErrorReportSerializer(serializers.ModelSerializer):
     errors = serializers.SerializerMethodField()
 
+    @swagger_serializer_method(serializer_or_field=AbstractErrorReportErrorsSerializer)
     def get_errors(self, obj):
-        """
-        This function parses the list of errors from different error attributes in the object.
-        :param obj: object with annotated errors
-        :return: list of errors
-        """
+        # This function parses the list of errors from different error attributes in the object.
         error_list = []
         for error_key, error_tuple in self.context['view'].get_error_tuples().items():
             error_attr = getattr(obj, error_key.value['error_code'], '')
@@ -162,20 +167,20 @@ class AbstractErrorReportSerializer(serializers.ModelSerializer):
 
 
 class AbstractHenkiloErrorReportSerializer(AbstractErrorReportSerializer):
-    henkilo_id = serializers.ReadOnlyField(source='henkilo.id')
+    henkilo_id = serializers.IntegerField(source='henkilo.id')
     henkilo_oid = serializers.ReadOnlyField(source='henkilo.henkilo_oid')
     etunimet = serializers.ReadOnlyField(source='henkilo.etunimet')
     sukunimi = serializers.ReadOnlyField(source='henkilo.sukunimi')
 
 
 class ErrorReportLapsetSerializer(AbstractHenkiloErrorReportSerializer):
-    lapsi_id = serializers.ReadOnlyField(source='id')
-    oma_organisaatio_id = serializers.ReadOnlyField(source='oma_organisaatio.id')
-    oma_organisaatio_oid = serializers.ReadOnlyField(source='oma_organisaatio.organisaatio_oid')
-    oma_organisaatio_nimi = serializers.ReadOnlyField(source='oma_organisaatio.nimi')
-    paos_organisaatio_id = serializers.ReadOnlyField(source='paos_organisaatio.id')
-    paos_organisaatio_oid = serializers.ReadOnlyField(source='paos_organisaatio.organisaatio_oid')
-    paos_organisaatio_nimi = serializers.ReadOnlyField(source='paos_organisaatio.nimi')
+    lapsi_id = serializers.IntegerField(source='id')
+    oma_organisaatio_id = serializers.IntegerField(source='oma_organisaatio.id', allow_null=True)
+    oma_organisaatio_oid = serializers.ReadOnlyField(source='oma_organisaatio.organisaatio_oid', allow_null=True)
+    oma_organisaatio_nimi = serializers.ReadOnlyField(source='oma_organisaatio.nimi', allow_null=True)
+    paos_organisaatio_id = serializers.IntegerField(source='paos_organisaatio.id', allow_null=True)
+    paos_organisaatio_oid = serializers.ReadOnlyField(source='paos_organisaatio.organisaatio_oid', allow_null=True)
+    paos_organisaatio_nimi = serializers.ReadOnlyField(source='paos_organisaatio.nimi', allow_null=True)
 
     class Meta:
         model = Lapsi
@@ -186,7 +191,7 @@ class ErrorReportLapsetSerializer(AbstractHenkiloErrorReportSerializer):
 
 
 class ErrorReportTyontekijatSerializer(AbstractHenkiloErrorReportSerializer):
-    tyontekija_id = serializers.ReadOnlyField(source='id')
+    tyontekija_id = serializers.IntegerField(source='id')
 
     class Meta:
         model = Tyontekija
@@ -194,7 +199,7 @@ class ErrorReportTyontekijatSerializer(AbstractHenkiloErrorReportSerializer):
 
 
 class ErrorReportToimipaikatSerializer(AbstractErrorReportSerializer):
-    toimipaikka_id = serializers.ReadOnlyField(source='id')
+    toimipaikka_id = serializers.IntegerField(source='id')
 
     class Meta:
         model = Toimipaikka
@@ -275,7 +280,7 @@ class ExcelReportSerializer(serializers.ModelSerializer):
                                       parent_attribute='organisaatio_oid',
                                       prevalidator=validators.validate_organisaatio_oid,
                                       either_required=False)
-    toimipaikka_nimi = serializers.CharField(read_only=True, source='toimipaikka.nimi')
+    toimipaikka_nimi = serializers.CharField(read_only=True, source='toimipaikka.nimi', allow_null=True)
     url = serializers.SerializerMethodField()
     password = serializers.SerializerMethodField()
 
@@ -289,6 +294,7 @@ class ExcelReportSerializer(serializers.ModelSerializer):
             raise ValidationError([ErrorMessages.ER002.value])
         return value
 
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_url(self, instance):
         kwargs = self.context['view'].kwargs
         if not kwargs.get('pk', None) or instance.status != ExcelReportStatus.FINISHED.value:
@@ -313,6 +319,7 @@ class DuplicateLapsiVarhaiskasvatuspaatosSerializer(serializers.ModelSerializer)
         model = Varhaiskasvatuspaatos
         fields = ('id', 'varhaiskasvatussuhde_list',)
 
+    @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.IntegerField()))
     def get_varhaiskasvatussuhde_list(self, instance):
         return instance.varhaiskasvatussuhteet.values_list('id', flat=True)
 
@@ -326,6 +333,7 @@ class DuplicateLapsiLapsiSerializer(serializers.ModelSerializer):
         model = Lapsi
         fields = ('id', 'varhaiskasvatuspaatos_list', 'maksutieto_list',)
 
+    @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.IntegerField()))
     def get_maksutieto_list(self, instance):
         maksutieto_id_set = set(instance.huoltajuussuhteet.values_list('maksutiedot__id', flat=True).distinct('id'))
         # There may be None values if Huoltajuussuhde does not have related Maksutieto objects
@@ -400,6 +408,7 @@ class RequestCountSerializer(serializers.ModelSerializer):
         model = Z6_RequestCount
         fields = ('request_url_simple', 'request_method', 'response_code', 'count', 'successful')
 
+    @swagger_serializer_method(serializer_or_field=serializers.BooleanField)
     def get_successful(self, instance):
         return instance.response_code in SUCCESSFUL_STATUS_CODE_LIST
 
@@ -419,6 +428,7 @@ class RequestSummarySerializer(serializers.ModelSerializer):
                   'lahdejarjestelma', 'request_url_simple', 'summary_date', 'successful_count', 'unsuccessful_count',
                   'ratio', 'request_counts',)
 
+    @swagger_serializer_method(serializer_or_field=RequestCountSerializer)
     def get_request_counts(self, instance):
         request_count_qs = instance.request_counts.all().order_by('-count')
         return RequestCountSerializer(request_count_qs, many=True).data
@@ -431,6 +441,7 @@ class RequestCountGroupSerializer(serializers.Serializer):
     count = serializers.IntegerField(source='sum')
     successful = serializers.SerializerMethodField()
 
+    @swagger_serializer_method(serializer_or_field=serializers.BooleanField)
     def get_successful(self, instance):
         return instance['response_code'] in SUCCESSFUL_STATUS_CODE_LIST
 
@@ -448,6 +459,7 @@ class RequestSummaryGroupSerializer(serializers.Serializer):
     unsuccessful_count = serializers.IntegerField(source='unsuccessful_sum')
     request_counts = serializers.SerializerMethodField()
 
+    @swagger_serializer_method(serializer_or_field=RequestCountGroupSerializer)
     def get_request_counts(self, instance):
         request_count_qs = (Z6_RequestCount.objects
                             .filter(request_summary__id__in=instance['id_list'])

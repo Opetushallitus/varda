@@ -5,6 +5,7 @@ from django.contrib.auth.models import User, Group
 from django.db.models import Q
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+from drf_yasg.utils import swagger_serializer_method
 from guardian.shortcuts import get_objects_for_user
 from rest_framework import serializers
 from rest_framework.exceptions import APIException, ValidationError
@@ -58,6 +59,7 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
 
 class UpdateHenkiloWithOidSerializer(serializers.Serializer):
     henkilo_oid = serializers.CharField(write_only=True, required=True)
+    result = serializers.CharField(read_only=True)
 
     def validate(self, attrs):
         henkilo_oid = attrs.get('henkilo_oid')
@@ -67,6 +69,7 @@ class UpdateHenkiloWithOidSerializer(serializers.Serializer):
 
 class UpdateOphStaffSerializer(serializers.Serializer):
     virkailija_id = serializers.IntegerField(write_only=True, required=True)
+    result = serializers.CharField(read_only=True)
 
     def validate(self, attrs):
         virkailija_id = attrs.get('virkailija_id')
@@ -94,6 +97,7 @@ class UpdateOphStaffSerializer(serializers.Serializer):
 
 class ClearCacheSerializer(serializers.Serializer):
     clear_cache = serializers.CharField(write_only=True, required=True)
+    result = serializers.CharField(read_only=True)
 
     def validate(self, attrs):
         clear_cache = attrs.get('clear_cache')
@@ -102,9 +106,18 @@ class ClearCacheSerializer(serializers.Serializer):
         return attrs
 
 
+class PulssiVakajarjestajatSerializer(serializers.Serializer):
+    number_of_vakajarjestajat = serializers.IntegerField()
+
+
 """
 User-specific viewsets below
 """
+
+
+class ActiveUserKayttooikeusSerializer(serializers.Serializer):
+    organisaatio = serializers.CharField()
+    kayttooikeus = serializers.CharField()
 
 
 class ActiveUserHuollettavaSerializer(serializers.ModelSerializer):
@@ -160,6 +173,7 @@ class ActiveUserSerializer(serializers.ModelSerializer):
 
         return data
 
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
     def get_kayttajatyyppi(self, user):
         if user.is_superuser:
             return Kayttajatyyppi.ADMIN.value
@@ -171,6 +185,7 @@ class ActiveUserSerializer(serializers.ModelSerializer):
             return ''
         return cas_user_obj.kayttajatyyppi
 
+    @swagger_serializer_method(serializer_or_field=ActiveUserKayttooikeusSerializer(many=True))
     def get_kayttooikeudet(self, user):
         kayttooikeudet = []
         user_groups = user.groups.filter(Q(name__startswith='VARDA-') | Q(name__startswith='HUOLTAJATIETO_') |
@@ -184,7 +199,8 @@ class ActiveUserSerializer(serializers.ModelSerializer):
 
 
 class AuthTokenSerializer(serializers.Serializer):
-    refresh_token = serializers.BooleanField(label=_('Refresh token'))
+    refresh_token = serializers.BooleanField(write_only=True, label=_('Refresh token'))
+    token = serializers.CharField(read_only=True)
 
     def validate(self, attrs):
         refresh = attrs.get('refresh_token')
@@ -202,10 +218,12 @@ class ExternalPermissionsSerializer(serializers.Serializer):
     We use CamelCase here exceptionally for attribute_names only because
     we want to support easy/quick integration for ONR.
     """
-    personOidsForSamePerson = serializers.ListField(required=True)
-    organisationOids = serializers.ListField(required=False)
-    loggedInUserRoles = serializers.ListField(required=False)
-    loggedInUserOid = serializers.CharField(required=True)
+    personOidsForSamePerson = serializers.ListField(write_only=True, required=True)
+    organisationOids = serializers.ListField(write_only=True, required=False)
+    loggedInUserRoles = serializers.ListField(write_only=True, required=False)
+    loggedInUserOid = serializers.CharField(write_only=True, required=True)
+    accessAllowed = serializers.BooleanField(read_only=True)
+    errorMessage = serializers.CharField(read_only=True)
 
 
 """
@@ -297,28 +315,18 @@ VARDA serializers
 
 
 class VakaJarjestajaSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-    nimi = serializers.CharField(read_only=True)
-    y_tunnus = serializers.CharField(read_only=True)
-    yritysmuoto = serializers.CharField(read_only=True)
-    kunnallinen_kytkin = serializers.ReadOnlyField()
-    organisaatio_oid = serializers.CharField(read_only=True)
-    kunta_koodi = serializers.CharField(read_only=True)
-    kayntiosoite = serializers.CharField(read_only=True)
-    kayntiosoite_postinumero = serializers.CharField(read_only=True)
-    kayntiosoite_postitoimipaikka = serializers.CharField(read_only=True)
-    postiosoite = serializers.CharField(read_only=True)
-    postinumero = serializers.CharField(read_only=True)
-    postitoimipaikka = serializers.CharField(read_only=True)
-    alkamis_pvm = serializers.CharField(read_only=True)
-    paattymis_pvm = serializers.CharField(read_only=True)
-    muutos_pvm = serializers.CharField(read_only=True)
+    id = serializers.IntegerField(read_only=True)
+    kunnallinen_kytkin = serializers.BooleanField(read_only=True)
     # Let's use "_top" to decrease the amount of child relations visible. Otherwise the parent-query becomes quickly unreadable.
     toimipaikat_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='toimipaikka-detail')
 
     class Meta:
         model = VakaJarjestaja
         exclude = ('ytjkieli', 'integraatio_organisaatio', 'luonti_pvm', 'changed_by',)
+        read_only_fields = ('id', 'nimi', 'y_tunnus', 'yritysmuoto', 'kunnallinen_kytkin', 'organisaatio_oid',
+                            'kunta_koodi', 'kayntiosoite', 'kayntiosoite_postinumero', 'kayntiosoite_postitoimipaikka',
+                            'postiosoite', 'postinumero', 'postitoimipaikka', 'alkamis_pvm', 'paattymis_pvm',
+                            'muutos_pvm',)
 
     @caching_to_representation('vakajarjestaja')
     def to_representation(self, instance):
@@ -326,7 +334,7 @@ class VakaJarjestajaSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class ToimipaikkaSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     vakajarjestaja = VakaJarjestajaPermissionCheckedHLField(view_name='vakajarjestaja-detail', required=False,
                                                             permission_groups=[Z4_CasKayttoOikeudet.TALLENTAJA,
                                                                                Z4_CasKayttoOikeudet.PALVELUKAYTTAJA])
@@ -335,17 +343,17 @@ class ToimipaikkaSerializer(RequiredLahdejarjestelmaMixin, serializers.Hyperlink
                                          parent_attribute='organisaatio_oid',
                                          prevalidator=validators.validate_organisaatio_oid,
                                          either_required=True)
-    organisaatio_oid = serializers.CharField(read_only=True, required=False)
+    organisaatio_oid = serializers.CharField(read_only=True, allow_blank=True)
     kayntiosoite = serializers.CharField(min_length=3, max_length=100)
     postiosoite = serializers.CharField(min_length=3, max_length=100)
     toiminnallisetpainotukset_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='toiminnallinenpainotus-detail')
     kielipainotukset_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='kielipainotus-detail')
     varhaiskasvatussuhteet_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='varhaiskasvatussuhde-detail')
-    hallinnointijarjestelma = serializers.CharField(read_only=True)
 
     class Meta:
         model = Toimipaikka
         exclude = ('nimi_sv', 'luonti_pvm', 'changed_by',)
+        read_only_fields = ('hallinnointijarjestelma',)
 
     @caching_to_representation('toimipaikka')
     def to_representation(self, instance):
@@ -446,7 +454,7 @@ class ToimipaikkaUpdateSerializer(ToimipaikkaSerializer):
 
 
 class ToiminnallinenPainotusSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     toimipaikka = ToimipaikkaPermissionCheckedHLField(required=False, view_name='toimipaikka-detail',
                                                       permission_groups=[Z4_CasKayttoOikeudet.TALLENTAJA,
                                                                          Z4_CasKayttoOikeudet.PALVELUKAYTTAJA])
@@ -487,7 +495,7 @@ class ToiminnallinenPainotusSerializer(RequiredLahdejarjestelmaMixin, serializer
 
 
 class KieliPainotusSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     toimipaikka = ToimipaikkaPermissionCheckedHLField(required=False, view_name='toimipaikka-detail',
                                                       permission_groups=[Z4_CasKayttoOikeudet.TALLENTAJA,
                                                                          Z4_CasKayttoOikeudet.PALVELUKAYTTAJA])
@@ -538,16 +546,16 @@ class HenkiloSerializer(serializers.HyperlinkedModelSerializer):
     """
     If you update this, notice the HenkiloSerializerAdmin below: do you also need to update that?
     """
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     etunimet = serializers.CharField(required=True)
     kutsumanimi = serializers.CharField(required=True)
     sukunimi = serializers.CharField(required=True)
     henkilo_oid = serializers.CharField(required=False)
     syntyma_pvm = serializers.DateField(read_only=True)
-    lapsi = serializers.SerializerMethodField()
-    tyontekija = serializers.SerializerMethodField()
+    lapsi = serializers.SerializerMethodField(read_only=True)
+    tyontekija = serializers.SerializerMethodField(read_only=True)
     henkilotunnus = serializers.CharField(required=False, write_only=True)
-    turvakielto = serializers.ReadOnlyField()
+    turvakielto = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Henkilo
@@ -571,6 +579,7 @@ class HenkiloSerializer(serializers.HyperlinkedModelSerializer):
         validate_henkilotunnus_or_oid_needed(data)
         return data
 
+    @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.URLField()))
     def get_lapsi(self, obj):
         request = self.context.get('request')
         user = request.user
@@ -584,6 +593,7 @@ class HenkiloSerializer(serializers.HyperlinkedModelSerializer):
 
         return lapset
 
+    @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.URLField()))
     def get_tyontekija(self, obj):
         request = self.context.get('request')
         user = request.user
@@ -600,9 +610,10 @@ class HenkiloSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class HenkiloSerializerAdmin(HenkiloSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     huoltaja = serializers.SerializerMethodField()
 
+    @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.URLField()))
     def get_lapsi(self, obj):
         request = self.context.get('request')
         lapset = []
@@ -614,6 +625,7 @@ class HenkiloSerializerAdmin(HenkiloSerializer):
 
         return lapset
 
+    @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.URLField()))
     def get_tyontekija(self, obj):
         request = self.context.get('request')
         tyontekijat = []
@@ -625,6 +637,7 @@ class HenkiloSerializerAdmin(HenkiloSerializer):
 
         return tyontekijat
 
+    @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.URLField()))
     def get_huoltaja(self, obj):
         request = self.context.get('request')
         huoltajat = []
@@ -638,7 +651,7 @@ class HenkiloSerializerAdmin(HenkiloSerializer):
 
 
 class YksiloimattomatHenkilotSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     vakatoimija_oid = serializers.SerializerMethodField()
     vakatoimija_nimi = serializers.SerializerMethodField()
 
@@ -829,7 +842,7 @@ def _get_lapsi_for_maksutieto(maksutieto):
 
 
 class MaksutietoSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     huoltajat = NestedMaksutietoHuoltajaSerializer(required=True, allow_empty=False, many=True,
                                                    source='maksutiedot_huoltajuussuhteet')
     lapsi = LapsiHLField(required=False, view_name='lapsi-detail')
@@ -839,12 +852,19 @@ class MaksutietoSerializer(RequiredLahdejarjestelmaMixin, serializers.Hyperlinke
                                           either_required=True,
                                           parent_value_getter=_get_lapsi_for_maksutieto)
     alkamis_pvm = serializers.DateField(required=True, validators=[validators.validate_vaka_date])
-    tallennetut_huoltajat_count = serializers.SerializerMethodField(read_only=True)
-    ei_tallennetut_huoltajat_count = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Maksutieto
         exclude = ('luonti_pvm', 'muutos_pvm', 'changed_by', 'yksityinen_jarjestaja',)
+
+    def to_representation(self, instance):
+        setattr(instance, 'lapsi', _get_lapsi_for_maksutieto(instance))
+        return super().to_representation(instance)
+
+
+class MaksutietoPostSerializer(MaksutietoSerializer):
+    tallennetut_huoltajat_count = serializers.SerializerMethodField(read_only=True)
+    ei_tallennetut_huoltajat_count = serializers.SerializerMethodField(read_only=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -853,21 +873,18 @@ class MaksutietoSerializer(RequiredLahdejarjestelmaMixin, serializers.Hyperlinke
 
     def to_representation(self, instance):
         self.fields['huoltajat'].context['henkilotunnus_set'] = self.henkilotunnus_set
-        setattr(instance, 'lapsi', _get_lapsi_for_maksutieto(instance))
-        instance = super().to_representation(instance)
-        if self.context['request'].method != 'POST':
-            del instance['tallennetut_huoltajat_count']
-            del instance['ei_tallennetut_huoltajat_count']
-        return instance
+        return super().to_representation(instance)
 
     def to_internal_value(self, data):
         data = super().to_internal_value(data)
         data['huoltajat'] = data.pop('maksutiedot_huoltajuussuhteet', [])
         return data
 
+    @swagger_serializer_method(serializer_or_field=serializers.IntegerField)
     def get_tallennetut_huoltajat_count(self, instance):
         return self.saved_huoltajat_count
 
+    @swagger_serializer_method(serializer_or_field=serializers.IntegerField)
     def get_ei_tallennetut_huoltajat_count(self, instance):
         return self.fields['huoltajat'].context.get('original_count', 0) - self.saved_huoltajat_count
 
@@ -947,16 +964,16 @@ class MaksutietoGetHuoltajaSerializer(serializers.ModelSerializer):
 
 
 class MaksutietoUpdateSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     huoltajat = NestedMaksutietoHuoltajaSerializer(required=False, allow_empty=False, many=True, source='maksutiedot_huoltajuussuhteet', read_only=True)
-    huoltajat_add = NestedMaksutietoHuoltajaSerializer(required=False, allow_empty=False, many=True)
-    lapsi = serializers.SerializerMethodField()
+    huoltajat_add = NestedMaksutietoHuoltajaSerializer(write_only=True, required=False, allow_empty=False, many=True)
+    lapsi = serializers.SerializerMethodField(read_only=True)
     lapsi_tunniste = TunnisteRelatedField(object_type=Lapsi,
                                           parent_field='lapsi',
                                           read_only=True,
                                           prevalidator=validators.validate_tunniste,
                                           parent_value_getter=_get_lapsi_for_maksutieto)
-    paattymis_pvm = serializers.DateField(allow_null=True, validators=[validators.validate_vaka_date])
+    paattymis_pvm = serializers.DateField(allow_null=True, validators=[validators.validate_vaka_date], required=False)
     tallennetut_huoltajat_count = serializers.SerializerMethodField(read_only=True)
     ei_tallennetut_huoltajat_count = serializers.SerializerMethodField(read_only=True)
 
@@ -996,13 +1013,16 @@ class MaksutietoUpdateSerializer(RequiredLahdejarjestelmaMixin, serializers.Hype
                 NestedMaksutietoHuoltajaSerializer(context=self._context).create(huoltaja)
             self.henkilotunnus_set.discard(None)
 
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_lapsi(self, instance):
         lapsi = _get_lapsi_for_maksutieto(instance)
         return self.context['request'].build_absolute_uri(reverse('lapsi-detail', args=[lapsi]))
 
+    @swagger_serializer_method(serializer_or_field=serializers.IntegerField)
     def get_tallennetut_huoltajat_count(self, instance):
         return self.saved_huoltajat_count
 
+    @swagger_serializer_method(serializer_or_field=serializers.IntegerField)
     def get_ei_tallennetut_huoltajat_count(self, instance):
         return self.fields['huoltajat_add'].context.get('original_count', 0) - self.saved_huoltajat_count
 
@@ -1034,7 +1054,7 @@ class MaksutietoUpdateSerializer(RequiredLahdejarjestelmaMixin, serializers.Hype
 
 class LapsiSerializer(RequiredLahdejarjestelmaMixin, LapsiOptionalToimipaikkaMixin,
                       serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     henkilo = HenkiloPermissionCheckedHLField(view_name='henkilo-detail', required=False)
     henkilo_oid = OidRelatedField(object_type=Henkilo,
                                   parent_field='henkilo',
@@ -1115,7 +1135,7 @@ class LapsiSerializerAdmin(RequiredLahdejarjestelmaMixin, serializers.Hyperlinke
     Do not inherit from LapsiSerializer, it messes up the cache!
     to_representation should not be run twice.
     """
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     henkilo = HenkiloHLField(view_name='henkilo-detail', required=False)
     henkilo_oid = OidRelatedField(object_type=Henkilo,
                                   parent_field='henkilo',
@@ -1144,8 +1164,14 @@ class LapsiSerializerAdmin(RequiredLahdejarjestelmaMixin, serializers.Hyperlinke
         read_only_fields = ('oma_organisaatio', 'paos_organisaatio', 'paos_kytkin', 'luonti_pvm', 'changed_by')
 
 
+class HenkilohakuLapsetToimipaikkaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Toimipaikka
+        fields = ('nimi', 'nimi_sv', 'organisaatio_oid',)
+
+
 class HenkilohakuLapsetSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     henkilo = HenkiloSerializer()
     maksutiedot = serializers.SerializerMethodField()
     toimipaikat = serializers.SerializerMethodField()
@@ -1154,6 +1180,7 @@ class HenkilohakuLapsetSerializer(serializers.HyperlinkedModelSerializer):
         model = Lapsi
         exclude = ('luonti_pvm', 'changed_by', 'muutos_pvm')
 
+    @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.URLField()))
     def get_maksutiedot(self, lapsi_obj):
         request = self.context.get('request')
         maksutiedot_query = (Maksutieto.objects
@@ -1165,6 +1192,7 @@ class HenkilohakuLapsetSerializer(serializers.HyperlinkedModelSerializer):
                 in get_objects_for_user(request.user, 'view_maksutieto', maksutiedot_query)
                 ]
 
+    @swagger_serializer_method(serializer_or_field=HenkilohakuLapsetToimipaikkaSerializer(many=True))
     def get_toimipaikat(self, lapsi_obj):
         request = self.context.get('request')
         view = self.context.get('view')
@@ -1187,10 +1215,8 @@ class HenkilohakuLapsetSerializer(serializers.HyperlinkedModelSerializer):
                              .filter(toimipaikka_filter)
                              .distinct('id')
                              )
-        return [{'nimi': toimipaikka.nimi, 'nimi_sv': toimipaikka.nimi_sv, 'organisaatio_oid': toimipaikka.organisaatio_oid}
-                for toimipaikka
-                in get_objects_for_user(request.user, 'view_toimipaikka', toimipaikat_query)
-                ]
+        return HenkilohakuLapsetToimipaikkaSerializer(get_objects_for_user(request.user, 'view_toimipaikka',
+                                                                           toimipaikat_query), many=True).data
 
     @caching_to_representation('henkilohakulapset')
     def to_representation(self, instance):
@@ -1198,7 +1224,7 @@ class HenkilohakuLapsetSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class HuoltajaSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     henkilo = HenkiloHLField(view_name='henkilo-detail')
     huoltajuussuhteet = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='huoltajuussuhde-detail')
 
@@ -1212,7 +1238,7 @@ class HuoltajaSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class HuoltajuussuhdeSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     lapsi = LapsiHLField(view_name='lapsi-detail')
     huoltaja = HuoltajaHLField(view_name='huoltaja-detail')
     voimassa_kytkin = serializers.BooleanField()
@@ -1226,7 +1252,7 @@ class HuoltajuussuhdeSerializer(serializers.HyperlinkedModelSerializer):
 
 class VarhaiskasvatuspaatosSerializer(RequiredLahdejarjestelmaMixin, LapsiOptionalToimipaikkaMixin,
                                       serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     lapsi = LapsiPermissionCheckedHLField(required=False, view_name='lapsi-detail')
     lapsi_tunniste = TunnisteRelatedField(object_type=Lapsi,
                                           parent_field='lapsi',
@@ -1346,7 +1372,7 @@ def _validate_toimipaikka_with_vakajarjestaja_of_lapsi(toimipaikka, lapsi):
 
 
 class VarhaiskasvatussuhdeSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     varhaiskasvatuspaatos = VarhaiskasvatuspaatosPermissionCheckedHLField(required=False, view_name='varhaiskasvatuspaatos-detail')
     varhaiskasvatuspaatos_tunniste = TunnisteRelatedField(object_type=Varhaiskasvatuspaatos,
                                                           parent_field='varhaiskasvatuspaatos',
@@ -1453,7 +1479,7 @@ class PaosToimintaSerializer(serializers.HyperlinkedModelSerializer):
         Toimipaikka josta palveluseteli/ostopalvelu oikeuksia haetaan (vastapuolen toimipaikka)
     """
 
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     oma_organisaatio = VakaJarjestajaHLField(view_name='vakajarjestaja-detail', required=False)
     oma_organisaatio_oid = OidRelatedField(object_type=VakaJarjestaja,
                                            parent_field='oma_organisaatio',
@@ -1472,7 +1498,7 @@ class PaosToimintaSerializer(serializers.HyperlinkedModelSerializer):
                                            parent_attribute='organisaatio_oid',
                                            prevalidator=validators.validate_organisaatio_oid,
                                            either_required=False)
-    voimassa_kytkin = serializers.ReadOnlyField()
+    voimassa_kytkin = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = PaosToiminta
@@ -1497,10 +1523,10 @@ class PaosToimintaSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class PaosOikeusSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     jarjestaja_kunta_organisaatio = VakaJarjestajaHLField(view_name='vakajarjestaja-detail', read_only=True)
     tuottaja_organisaatio = VakaJarjestajaHLField(view_name='vakajarjestaja-detail', read_only=True)
-    voimassa_kytkin = serializers.ReadOnlyField()
+    voimassa_kytkin = serializers.BooleanField(read_only=True)
     tallentaja_organisaatio = VakaJarjestajaHLField(view_name='vakajarjestaja-detail', required=False)
     tallentaja_organisaatio_oid = OidRelatedField(object_type=VakaJarjestaja,
                                                   parent_field='tallentaja_organisaatio',
@@ -1541,8 +1567,8 @@ class VakaJarjestajaYhteenvetoSerializer(serializers.Serializer):
     varhaiskasvatusalan_tutkinnot = serializers.IntegerField(read_only=True)
     tyoskentelypaikat_kelpoiset = serializers.IntegerField(read_only=True)
     taydennyskoulutukset_kuluva_vuosi = serializers.IntegerField(read_only=True)
-    tilapainen_henkilosto_maara_kuluva_vuosi = serializers.IntegerField(read_only=True)
-    tilapainen_henkilosto_tunnit_kuluva_vuosi = serializers.FloatField(read_only=True)
+    tilapainen_henkilosto_maara_kuluva_vuosi = serializers.IntegerField(read_only=True, allow_null=True)
+    tilapainen_henkilosto_tunnit_kuluva_vuosi = serializers.FloatField(read_only=True, allow_null=True)
 
 
 class ToimipaikanLapsetKatseluSerializer(serializers.Serializer):
@@ -1578,6 +1604,7 @@ class LapsiKoosteVarhaiskasvatuspaatosSerializer(serializers.HyperlinkedModelSer
 class LapsiKoosteMaksutietoSerializer(serializers.HyperlinkedModelSerializer):
     huoltajat = serializers.SerializerMethodField('get_huoltajat_for_maksutieto')
 
+    @swagger_serializer_method(serializer_or_field=MaksutietoGetHuoltajaSerializer(many=True))
     def get_huoltajat_for_maksutieto(self, obj):
         huoltajuussuhteet = obj.huoltajuussuhteet.all()
         huoltajat = Henkilo.objects.filter(huoltaja__huoltajuussuhteet__in=huoltajuussuhteet)
@@ -1590,10 +1617,10 @@ class LapsiKoosteMaksutietoSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class LapsiKoosteSerializer(serializers.Serializer):
-    id = serializers.ReadOnlyField()
-    oma_organisaatio_nimi = serializers.ReadOnlyField(source='oma_organisaatio.nimi')
-    paos_organisaatio_nimi = serializers.ReadOnlyField(source='paos_organisaatio.nimi')
-    yksityinen_kytkin = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
+    oma_organisaatio_nimi = serializers.ReadOnlyField(source='oma_organisaatio.nimi', allow_null=True)
+    paos_organisaatio_nimi = serializers.ReadOnlyField(source='paos_organisaatio.nimi', allow_null=True)
+    yksityinen_kytkin = serializers.BooleanField(read_only=True)
     henkilo = LapsiKoosteHenkiloSerializer(many=False)
     varhaiskasvatuspaatokset = LapsiKoosteVarhaiskasvatuspaatosSerializer(many=True)
     varhaiskasvatussuhteet = LapsiKoosteVarhaiskasvatussuhdeSerializer(many=True)
@@ -1604,6 +1631,7 @@ class LapsiKoosteSerializer(serializers.Serializer):
 
 class NestedPaosOikeusSerializer(serializers.ModelSerializer):
     tallentaja_organisaatio_oid = serializers.ReadOnlyField(source='tallentaja_organisaatio.organisaatio_oid')
+    tallentaja_organisaatio_id = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = PaosOikeus
@@ -1612,13 +1640,14 @@ class NestedPaosOikeusSerializer(serializers.ModelSerializer):
 
 class PaosToimijatSerializer(serializers.HyperlinkedModelSerializer):
     paos_toiminta_url = serializers.HyperlinkedRelatedField(view_name='paostoiminta-detail', source='id', read_only=True)
-    paos_toiminta_id = serializers.ReadOnlyField(source='id')
+    paos_toiminta_id = serializers.IntegerField(source='id', read_only=True)
     vakajarjestaja_url = serializers.HyperlinkedRelatedField(view_name='vakajarjestaja-detail', source='paos_organisaatio.id', read_only=True)
-    vakajarjestaja_id = serializers.ReadOnlyField(source='paos_organisaatio.id')
+    vakajarjestaja_id = serializers.IntegerField(source='paos_organisaatio.id', read_only=True)
     vakajarjestaja_organisaatio_oid = serializers.ReadOnlyField(source='paos_organisaatio.organisaatio_oid')
     vakajarjestaja_nimi = serializers.ReadOnlyField(source='paos_organisaatio.nimi')
     paos_oikeus = serializers.SerializerMethodField('get_paos_oikeus')
 
+    @swagger_serializer_method(serializer_or_field=NestedPaosOikeusSerializer(many=False))
     def get_paos_oikeus(self, instance):
         paos_oikeus = (PaosOikeus.objects.filter(jarjestaja_kunta_organisaatio=instance.paos_organisaatio,
                                                  tuottaja_organisaatio=instance.oma_organisaatio)
@@ -1633,18 +1662,19 @@ class PaosToimijatSerializer(serializers.HyperlinkedModelSerializer):
 
 class PaosToimipaikatSerializer(serializers.HyperlinkedModelSerializer):
     paos_toiminta_url = serializers.HyperlinkedRelatedField(view_name='paostoiminta-detail', source='id', read_only=True)
-    paos_toiminta_id = serializers.ReadOnlyField(source='id')
+    paos_toiminta_id = serializers.IntegerField(source='id', read_only=True)
     toimija_url = serializers.HyperlinkedRelatedField(view_name='vakajarjestaja-detail', source='paos_toimipaikka.vakajarjestaja.id', read_only=True)
-    toimija_id = serializers.ReadOnlyField(source='paos_toimipaikka.vakajarjestaja.id')
+    toimija_id = serializers.IntegerField(source='paos_toimipaikka.vakajarjestaja.id', read_only=True)
     toimija_organisaatio_oid = serializers.ReadOnlyField(source='paos_toimipaikka.vakajarjestaja.organisaatio_oid')
     toimija_y_tunnus = serializers.ReadOnlyField(source='paos_toimipaikka.vakajarjestaja.y_tunnus')
     toimija_nimi = serializers.ReadOnlyField(source='paos_toimipaikka.vakajarjestaja.nimi')
     toimipaikka_url = serializers.HyperlinkedRelatedField(view_name='toimipaikka-detail', source='paos_toimipaikka.id', read_only=True)
-    toimipaikka_id = serializers.ReadOnlyField(source='paos_toimipaikka.id')
+    toimipaikka_id = serializers.IntegerField(source='paos_toimipaikka.id', read_only=True)
     toimipaikka_organisaatio_oid = serializers.ReadOnlyField(source='paos_toimipaikka.organisaatio_oid')
     toimipaikka_nimi = serializers.ReadOnlyField(source='paos_toimipaikka.nimi')
     paos_oikeus = serializers.SerializerMethodField('get_paos_oikeus')
 
+    @swagger_serializer_method(serializer_or_field=NestedPaosOikeusSerializer(many=False))
     def get_paos_oikeus(self, instance):
         paos_oikeus = PaosOikeus.objects.filter(
             jarjestaja_kunta_organisaatio=instance.oma_organisaatio,
@@ -1658,11 +1688,7 @@ class PaosToimipaikatSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class PaosVakaJarjestajaSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-    nimi = serializers.CharField(read_only=True)
-    y_tunnus = serializers.CharField(read_only=True)
-    organisaatio_oid = serializers.CharField(read_only=True)
-    kunnallinen_kytkin = serializers.ReadOnlyField()
+    kunnallinen_kytkin = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = VakaJarjestaja
@@ -1674,10 +1700,6 @@ class PaosVakaJarjestajaSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class PaosToimipaikkaSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
-    nimi = serializers.CharField(read_only=True)
-    organisaatio_oid = serializers.CharField(read_only=True)
-
     class Meta:
         model = Toimipaikka
         fields = ('id', 'url', 'nimi', 'organisaatio_oid')
@@ -1700,7 +1722,7 @@ class ToimipaikkaKoosteKieliPainotusSerializer(serializers.ModelSerializer):
 
 
 class ToimipaikkaKoosteSerializer(serializers.ModelSerializer):
-    vakajarjestaja_id = serializers.ReadOnlyField(source='vakajarjestaja.id')
+    vakajarjestaja_id = serializers.IntegerField(read_only=True, source='vakajarjestaja.id')
     vakajarjestaja_nimi = serializers.ReadOnlyField(source='vakajarjestaja.nimi')
     kielipainotukset = ToimipaikkaKoosteKieliPainotusSerializer(many=True, read_only=True)
     toiminnalliset_painotukset = ToimipaikkaKoosteToiminnallinenPainotusSerializer(source='toiminnallisetpainotukset',

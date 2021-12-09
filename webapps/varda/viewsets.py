@@ -11,6 +11,7 @@ from django.db.models.query import EmptyQuerySet
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg.utils import swagger_auto_schema
 from guardian.shortcuts import assign_perm
 from rest_framework import permissions, status
 from rest_framework.authtoken.models import Token
@@ -29,13 +30,15 @@ from varda.cache import (cached_list_response, delete_toimipaikan_lapset_cache, 
 from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid,
                                                         add_henkilo_to_oppijanumerorekisteri,
                                                         get_henkilo_by_henkilotunnus)
+from varda.custom_swagger import IntegerIdSchema
 from varda.enums.error_messages import ErrorMessages
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.exceptions.conflict_error import ConflictError
+from varda.filters import CustomParametersFilterBackend, CustomParameter
 from varda.kayttooikeuspalvelu import set_user_info_from_onr
 from varda.misc import CustomServerErrorException, encrypt_string, hash_string, update_painotus_kytkin
 from varda.misc_queries import get_paos_toimipaikat
-from varda.misc_viewsets import IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, IntegerIdSchema
+from varda.misc_viewsets import IncreasedModifyThrottleMixin, ObjectByTunnisteMixin
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, PaosToiminta,
                           Lapsi, Huoltaja, Huoltajuussuhde, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto,
                           PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Tyontekija, Palvelussuhde,
@@ -74,7 +77,8 @@ from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer,
                                VarhaiskasvatussuhdeSerializer, VakaJarjestajaYhteenvetoSerializer,
                                HenkilohakuLapsetSerializer, PaosToimintaSerializer, PaosToimijatSerializer,
                                PaosToimipaikatSerializer, PaosOikeusSerializer, LapsiKoosteSerializer, UserSerializer,
-                               ToimipaikkaKoosteSerializer, ToimipaikkaUpdateSerializer)
+                               ToimipaikkaKoosteSerializer, ToimipaikkaUpdateSerializer,
+                               PulssiVakajarjestajatSerializer, MaksutietoPostSerializer)
 from varda.tasks import (update_oph_staff_to_vakajarjestaja_groups,
                          assign_taydennyskoulutus_permissions_for_toimipaikka_task)
 from webapps.api_throttles import (BurstRateThrottleStrict, SustainedRateThrottleStrict)
@@ -347,8 +351,10 @@ class PulssiVakajarjestajat(GenericViewSet, ListModelMixin):
         Nouda vakajarjestajien lukumaara.
     """
     permission_classes = (permissions.AllowAny, )
+    pagination_class = None
     throttle_classes = ()  # TODO: Add ratelimit for Pulssi
 
+    @swagger_auto_schema(responses={status.HTTP_200_OK: PulssiVakajarjestajatSerializer(many=False)})
     def list(self, request, *args, **kwargs):
         return Response(
             {'number_of_vakajarjestajat': VakaJarjestaja.objects.count()}
@@ -369,7 +375,9 @@ class ActiveUserViewSet(GenericViewSet, ListModelMixin):
     queryset = User.objects.none()
     serializer_class = ActiveUserSerializer
     permission_classes = (permissions.IsAuthenticated, )
+    pagination_class = None
 
+    @swagger_auto_schema(responses={status.HTTP_200_OK: ActiveUserSerializer(many=False)})
     def list(self, request, *args, **kwargs):
         request_user = request.user
         user_object = User.objects.get(id=request_user.id)
@@ -397,7 +405,9 @@ class ApikeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin):
     queryset = Token.objects.none()
     permission_classes = (permissions.IsAuthenticated, )
     serializer_class = AuthTokenSerializer
+    pagination_class = None
 
+    @swagger_auto_schema(responses={'200': AuthTokenSerializer(many=False)})
     def list(self, request, *args, **kwargs):
         user = request.user
         token = Token.objects.get_or_create(user=user)
@@ -823,6 +833,7 @@ class HaeHenkiloViewSet(GenericViewSet, CreateModelMixin):
         return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
 
     @auditlog
+    @swagger_auto_schema(responses={status.HTTP_200_OK: HenkiloSerializer(many=False)})
     def create(self, request, *args, **kwargs):
         # Function name (create) is misleading! Here we get the henkilo based on henkilotunnus or henkilo_oid.
         user = request.user
@@ -1440,6 +1451,8 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
         request = self.request
         if request.method == 'PUT' or request.method == 'PATCH':
             return MaksutietoUpdateSerializer
+        elif request.method == 'POST':
+            return MaksutietoPostSerializer
         else:
             return MaksutietoSerializer
 
@@ -1758,15 +1771,20 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
     queryset = VakaJarjestaja.objects.all()
     serializer_class = VakaJarjestajaYhteenvetoSerializer
     permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
-    today = None
-    vakajarjestaja_id = None
+    pagination_class = None
     swagger_schema = IntegerIdSchema
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.today = None
+        self.vakajarjestaja_id = None
 
     def get_active_filter(self, prefix):
         return (Q(**{prefix + 'alkamis_pvm__lte': self.today}) &
                 (Q(**{prefix + 'paattymis_pvm__isnull': True}) | Q(**{prefix + 'paattymis_pvm__gte': self.today})))
 
     @transaction.atomic
+    @swagger_auto_schema(responses={status.HTTP_200_OK: VakaJarjestajaYhteenvetoSerializer(many=False)})
     def list(self, request, *args, **kwargs):
         self.today = datetime.datetime.now()
 
@@ -2231,7 +2249,9 @@ class NestedLapsiKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListModelM
     serializer_class = LapsiKoosteSerializer
     permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
     swagger_schema = IntegerIdSchema
+    pagination_class = None
 
+    @swagger_auto_schema(responses={status.HTTP_200_OK: LapsiKoosteSerializer(many=False)})
     def list(self, request, *args, **kwargs):
         self.kwargs['pk'] = self.kwargs['lapsi_pk']
 
@@ -2485,13 +2505,20 @@ class HenkilohakuLapset(GenericViewSet, ListModelMixin):
     """
     serializer_class = HenkilohakuLapsetSerializer
     queryset = Lapsi.objects.none()
-    filter_backends = None
+    filter_backends = (CustomParametersFilterBackend, SearchFilter,)
     permission_classes = (CustomModelPermissions,)
     search_fields = ('henkilo__etunimet', 'henkilo__sukunimi', '=henkilo__henkilotunnus_unique_hash', '=henkilo__henkilo_oid', )
     tz = pytz.timezone('Europe/Helsinki')
     today = datetime.datetime.now(tz=tz)
+    custom_parameters = (CustomParameter(name='filter_status', required=False, location='query', data_type='string',
+                                         description='Locale code (fi/sv)'),
+                         CustomParameter(name='filter_object', required=False, location='query', data_type='string',
+                                         description='Locale code (fi/sv)'),)
 
     def get_toimipaikka_ids(self):
+        if getattr(self, 'swagger_fake_view', False):
+            # Swagger crashes if 404 is thrown from get_object_or_404
+            return ()
         vakajarjestaja_id = self.kwargs.get('vakajarjestaja_pk', None)
         vakajarjestaja_obj = get_object_or_404(VakaJarjestaja, pk=vakajarjestaja_id)
         paos_toimipaikat = get_paos_toimipaikat(vakajarjestaja_obj, is_only_active_paostoiminta_included=False)
@@ -2517,15 +2544,11 @@ class HenkilohakuLapset(GenericViewSet, ListModelMixin):
         except Z3_AdditionalCasUserFields.DoesNotExist:
             cas_user_obj_found = False
 
-        if cas_user_obj_found and cas_user_obj.approved_oph_staff:
-            self.filter_backends = (SearchFilter, )
-        else:
-            self.filter_backends = (ObjectPermissionsFilter, SearchFilter, )
+        if not cas_user_obj_found or not cas_user_obj.approved_oph_staff:
+            self.filter_backends += (ObjectPermissionsFilter,)
 
     def list(self, request, *args, **kwargs):
-        """
-        Only for throwing not found so swagger doesn't throw tartum.
-        """
+        # Only for throwing not found so swagger doesn't throw tartum.
         vakajarjestaja_id = self.kwargs.get('vakajarjestaja_pk', None)
         if not vakajarjestaja_id or not vakajarjestaja_id.isdigit() or not get_object_or_404(VakaJarjestaja, pk=vakajarjestaja_id):
             raise NotFound

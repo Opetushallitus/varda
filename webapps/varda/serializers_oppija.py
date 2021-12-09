@@ -2,6 +2,7 @@ import datetime
 
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import Q
+from drf_yasg.utils import swagger_serializer_method
 
 from varda.models import (Henkilo, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Lapsi, Huoltajuussuhde, Maksutieto,
                           Tyontekija, Palvelussuhde, TaydennyskoulutusTyontekija, Tyoskentelypaikka, PidempiPoissaolo,
@@ -46,6 +47,7 @@ class AbstractAktiivinenToimijaYhteystietoSerializer(serializers.ModelSerializer
             return vakajarjestaja.sahkopostiosoite
         return None
 
+    @swagger_serializer_method(serializer_or_field=serializers.BooleanField)
     def get_aktiivinen_toimija(self, instance):
         now = datetime.date.today()
         vakajarjestaja = self._get_vakajarjestaja_object(instance)
@@ -120,23 +122,25 @@ class OppijaMaksutietoSerializer(serializers.ModelSerializer):
         fields = ('id', 'yksityinen_jarjestaja', 'maksun_peruste_koodi', 'palveluseteli_arvo', 'asiakasmaksu',
                   'perheen_koko', 'alkamis_pvm', 'paattymis_pvm', 'huoltaja_lkm')
 
+    @swagger_serializer_method(serializer_or_field=serializers.IntegerField)
     def get_huoltaja_lkm(self, maksutieto):
         return maksutieto.huoltajuussuhteet.count()
 
 
 class OppijaHuoltajuussuhdeSerializer(AbstractAktiivinenToimijaYhteystietoSerializer):
+    lapsi_id = serializers.IntegerField(read_only=True)
     lapsi_etunimet = serializers.ReadOnlyField(source='lapsi.henkilo.etunimet')
     lapsi_kutsumanimi = serializers.ReadOnlyField(source='lapsi.henkilo.kutsumanimi')
     lapsi_sukunimi = serializers.ReadOnlyField(source='lapsi.henkilo.sukunimi')
-    lapsi_henkilo_id = serializers.ReadOnlyField(source='lapsi.henkilo_id')
+    lapsi_henkilo_id = serializers.IntegerField(read_only=True, source='lapsi.henkilo_id')
     lapsi_henkilo_oid = serializers.ReadOnlyField(source='lapsi.henkilo.henkilo_oid')
-    vakatoimija_id = serializers.ReadOnlyField(source='lapsi.vakatoimija_id')
+    vakatoimija_id = serializers.IntegerField(read_only=True, source='lapsi.vakatoimija_id')
     vakatoimija_oid = serializers.ReadOnlyField(source='lapsi.vakatoimija.organisaatio_oid')
     vakatoimija_nimi = serializers.ReadOnlyField(source='lapsi.vakatoimija.nimi')
-    oma_organisaatio_id = serializers.ReadOnlyField(source='lapsi.oma_organisaatio_id')
+    oma_organisaatio_id = serializers.IntegerField(read_only=True, source='lapsi.oma_organisaatio_id')
     oma_organisaatio_oid = serializers.ReadOnlyField(source='lapsi.oma_organisaatio.organisaatio_oid')
     oma_organisaatio_nimi = serializers.ReadOnlyField(source='lapsi.oma_organisaatio.nimi')
-    paos_organisaatio_id = serializers.ReadOnlyField(source='lapsi.paos_organisaatio_id')
+    paos_organisaatio_id = serializers.IntegerField(read_only=True, source='lapsi.paos_organisaatio_id')
     paos_organisaatio_oid = serializers.ReadOnlyField(source='lapsi.paos_organisaatio.organisaatio_oid')
     paos_organisaatio_nimi = serializers.ReadOnlyField(source='lapsi.paos_organisaatio.nimi')
     maksutiedot = OppijaMaksutietoSerializer(many=True, read_only=True)
@@ -177,11 +181,12 @@ class OppijaPalvelussuhdeSerializer(serializers.ModelSerializer):
 
 
 class OppijaTaydennyskoulutusSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField(source='taydennyskoulutus__id')
+    id = serializers.IntegerField(read_only=True, source='taydennyskoulutus__id')
     nimi = serializers.ReadOnlyField(source='taydennyskoulutus__nimi')
     suoritus_pvm = serializers.ReadOnlyField(source='taydennyskoulutus__suoritus_pvm')
-    koulutuspaivia = serializers.ReadOnlyField(source='taydennyskoulutus__koulutuspaivia')
-    tehtavanimike_koodi_list = serializers.ReadOnlyField()
+    koulutuspaivia = serializers.DecimalField(read_only=True, max_digits=4, decimal_places=1,
+                                              source='taydennyskoulutus__koulutuspaivia')
+    tehtavanimike_koodi_list = serializers.ListField(read_only=True, child=serializers.CharField())
 
     class Meta:
         model = TaydennyskoulutusTyontekija
@@ -195,6 +200,7 @@ class OppijaTutkintoSerializer(serializers.ModelSerializer):
 
 
 class OppijaTyontekijaSerializer(AbstractAktiivinenToimijaYhteystietoSerializer):
+    vakajarjestaja_id = serializers.IntegerField(read_only=True)
     vakajarjestaja_nimi = serializers.ReadOnlyField(source='vakajarjestaja.nimi')
     vakajarjestaja_oid = serializers.ReadOnlyField(source='vakajarjestaja.organisaatio_oid')
     tutkinnot = serializers.SerializerMethodField(read_only=True)
@@ -207,10 +213,12 @@ class OppijaTyontekijaSerializer(AbstractAktiivinenToimijaYhteystietoSerializer)
                   'yhteysosoite', 'tutkinnot', 'palvelussuhteet', 'taydennyskoulutukset')
         vakajarjestaja_path = ['vakajarjestaja']
 
+    @swagger_serializer_method(serializer_or_field=OppijaTutkintoSerializer)
     def get_tutkinnot(self, tyontekija):
         tutkinnot_qs = tyontekija.henkilo.tutkinnot.filter(vakajarjestaja=tyontekija.vakajarjestaja)
         return OppijaTutkintoSerializer(instance=tutkinnot_qs, many=True).data
 
+    @swagger_serializer_method(serializer_or_field=OppijaTaydennyskoulutusSerializer)
     def get_taydennyskoulutukset(self, tyontekija):
         qs = tyontekija.taydennyskoulutukset_tyontekijat
         qs = (qs.values('taydennyskoulutus__id', 'taydennyskoulutus__nimi',
@@ -232,7 +240,7 @@ class HenkilotiedotSerializer(serializers.ModelSerializer):
 
 
 class HuoltajatiedotSerializer(serializers.ModelSerializer):
-    huoltaja_id = serializers.ReadOnlyField(source='huoltaja.id')
+    huoltaja_id = serializers.IntegerField(read_only=True, source='huoltaja.id')
     huoltajuussuhteet = OppijaHuoltajuussuhdeSerializer(source='huoltaja.huoltajuussuhteet',
                                                         many=True, read_only=True)
 
@@ -269,6 +277,7 @@ class VarhaiskasvatustiedotSerializer(serializers.ModelSerializer):
             data['lapset'] = None
         return data
 
+    @swagger_serializer_method(serializer_or_field=serializers.IntegerField)
     def get_voimassaolevia_varhaiskasvatuspaatoksia(self, henkilo):
         today = datetime.date.today()
         voimassa_filter = Q(alkamis_pvm__lte=today) & (Q(paattymis_pvm__gte=today) | Q(paattymis_pvm=None))

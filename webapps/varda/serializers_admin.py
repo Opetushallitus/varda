@@ -1,8 +1,19 @@
+from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 
 from varda.misc import hash_string
 from varda.models import (VakaJarjestaja, Toimipaikka, Maksutieto, Henkilo, Varhaiskasvatussuhde, Tyontekija,
                           Tyoskentelypaikka)
+
+
+class AnonymisointiYhteenvetoHenkiloSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    henkilotunnus_unique_hash = serializers.CharField()
+    syntyma_pvm = serializers.CharField()
+    etunimet = serializers.CharField()
+    kutsumanimi = serializers.CharField()
+    sukunimi = serializers.CharField()
+    katuosoite = serializers.CharField()
 
 
 class AnonymisointiYhteenvetoSerializer(serializers.Serializer):
@@ -79,14 +90,17 @@ class AnonymisointiYhteenvetoSerializer(serializers.Serializer):
             return int(last_henkilo_id_query_param)
         return Henkilo.objects.order_by('id').last().id
 
+    @swagger_serializer_method(serializer_or_field=AnonymisointiYhteenvetoHenkiloSerializer)
     def get_first_henkilo(self, request):
         first_henkilo_id = self.get_first_henkilo_id(request)
         return self.get_henkilo_data(first_henkilo_id)
 
+    @swagger_serializer_method(serializer_or_field=AnonymisointiYhteenvetoHenkiloSerializer)
     def get_middle_henkilo(self, request):
         middle_henkilo_id = self.get_middle_henkilo_id(request)
         return self.get_henkilo_data(middle_henkilo_id)
 
+    @swagger_serializer_method(serializer_or_field=AnonymisointiYhteenvetoHenkiloSerializer)
     def get_last_henkilo(self, request):
         last_henkilo_id = self.get_last_henkilo_id(request)
         return self.get_henkilo_data(last_henkilo_id)

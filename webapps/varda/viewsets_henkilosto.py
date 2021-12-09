@@ -6,6 +6,8 @@ from django.db.models import ProtectedError, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
@@ -165,6 +167,7 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
     serializer_class = TyontekijaKoosteSerializer
     permission_classes = (HenkilostohakuPermissions, )
     queryset = Tyontekija.objects.all().order_by('id')
+    pagination_class = None
 
     def get_object(self):
         user = self.request.user
@@ -179,6 +182,7 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
         else:
             raise Http404
 
+    @swagger_auto_schema(responses={status.HTTP_200_OK: TyontekijaKoosteSerializer(many=False)})
     def list(self, request, *args, **kwargs):
         # Enable support for ObjectByTunnisteMixin
         self.kwargs['pk'] = self.kwargs['tyontekija_pk']
@@ -366,6 +370,13 @@ class TutkintoViewSet(IncreasedModifyThrottleMixin, CreateModelMixin, RetrieveMo
             cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja.id))
 
     @action(methods=['delete'], detail=False)
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter('henkilo_id', openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
+        openapi.Parameter('henkilo_oid', openapi.IN_QUERY, type=openapi.TYPE_STRING),
+        openapi.Parameter('vakajarjestaja_id', openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
+        openapi.Parameter('vakajarjestaja_oid', openapi.IN_QUERY, type=openapi.TYPE_STRING),
+        openapi.Parameter('tutkinto_koodi', openapi.IN_QUERY, type=openapi.TYPE_STRING, required=True),
+    ])
     def delete(self, request):
         """
         Custom delete method for deleting by henkilo_id or henkilo_oid and tutkinto_koodi
@@ -693,6 +704,8 @@ class TaydennyskoulutusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
 
     def get_serializer_class(self):
         request = self.request
+        if self.action == 'tyontekija_list':
+            return TaydennyskoulutusTyontekijaListSerializer
         if request.method == 'PUT' or request.method == 'PATCH':
             return TaydennyskoulutusUpdateSerializer
         else:

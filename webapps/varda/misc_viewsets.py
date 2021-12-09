@@ -1,13 +1,8 @@
-import re
-
 from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_yasg import openapi
-from drf_yasg.generators import OpenAPISchemaGenerator
-from drf_yasg.inspectors import SwaggerAutoSchema
-from drf_yasg.renderers import SwaggerUIRenderer
 from rest_framework.exceptions import ValidationError
 
+from varda.custom_swagger import TunnisteIdSchema
 from webapps.api_throttles import SustainedModifyRateThrottle, BurstRateThrottle
 
 
@@ -123,52 +118,6 @@ class ExtraKwargsFilterBackend(DjangoFilterBackend):
         return kwargs
 
 
-class PublicSwaggerRenderer(SwaggerUIRenderer):
-    def set_context(self, renderer_context, swagger=None):
-        super(PublicSwaggerRenderer, self).set_context(renderer_context, swagger=swagger)
-        # Disable Django login feature
-        renderer_context['USE_SESSION_AUTH'] = False
-
-    def get_swagger_ui_settings(self):
-        settings = super(PublicSwaggerRenderer, self).get_swagger_ui_settings()
-        # Disable 'Try it out' feature
-        settings['supportedSubmitMethods'] = []
-        return settings
-
-
-class PublicSchemaGenerator(OpenAPISchemaGenerator):
-    exclude_url_pattern = re.compile(r'^/api/admin.*$')
-
-    def get_security_definitions(self):
-        # Disable all authentication features
-        return None
-
-    def should_include_endpoint(self, path, method, view, public):
-        should_include = super(PublicSchemaGenerator, self).should_include_endpoint(path, method, view, public)
-        return should_include and not self.exclude_url_pattern.fullmatch(path)
-
-
-class TunnisteIdSchema(SwaggerAutoSchema):
-    param_type = openapi.TYPE_STRING
-    param_description = ('A unique integer value identifying this {}. Can also be lahdejarjestelma and '
-                         'tunniste pair (lahdejarjestelma:tunniste).')
-
-    def get_query_parameters(self):
-        query_params = super().get_query_parameters()
-        lookup_regex = re.compile(r'{((.*_)?(id|pk))}')
-        match = lookup_regex.search(self.path)
-        if match and match.group(1):
-            # Override id path parameter description to include lahdejarjestelma:tunniste option
-            path_model = getattr(getattr(self.view, 'swagger_path_model', None), '__name__', None)
-            model_name = path_model or self.view.get_queryset().model.__name__
-            query_params.append(
-                openapi.Parameter(match.group(1), openapi.IN_PATH,
-                                  description=self.param_description.format(model_name),
-                                  type=self.param_type)
-            )
-        return query_params
-
-
 class ObjectByTunnisteMixin:
     """
     @DynamicAttrs
@@ -204,8 +153,3 @@ class IncreasedModifyThrottleMixin:
         if self.request.method.lower() in self.THROTTLING_MODIFY_HTTP_METHODS:
             self.throttle_classes = [BurstRateThrottle, SustainedModifyRateThrottle]
         return super().get_throttles()
-
-
-class IntegerIdSchema(TunnisteIdSchema):
-    param_type = openapi.TYPE_INTEGER
-    param_description = 'A unique integer value identifying this {}.'

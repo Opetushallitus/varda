@@ -2,6 +2,7 @@ import datetime
 import logging
 
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db import transaction
@@ -83,6 +84,9 @@ def get_object_ids_user_has_permissions(user, model_name, content_type,
     - cache_key_objs_user_has_permissions = create_cache_key(user.id, model_name + '_obj_permissions')
     - cache_key_list_of_user_ids :: list of user.ids for this model --> Used for cache invalidation
     """
+    if isinstance(user, AnonymousUser):
+        # Swagger uses AnonymousUser so in that case return an empty tuple
+        return ()
     cache_key_objs_user_has_permissions = create_cache_key(user.id, model_name + '_obj_permissions')
     object_ids_user_has_permissions = cache.get(cache_key_objs_user_has_permissions)
     if object_ids_user_has_permissions is None:

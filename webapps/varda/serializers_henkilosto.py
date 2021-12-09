@@ -1,5 +1,6 @@
 import datetime
 
+from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 
 from varda import validators
@@ -58,7 +59,7 @@ class TyontekijaOptionalToimipaikkaMixin(OptionalToimipaikkaMixin):
 
 
 class TyontekijaSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     henkilo = HenkiloPermissionCheckedHLField(view_name='henkilo-detail', required=False)
     henkilo_oid = OidRelatedField(object_type=Henkilo,
                                   parent_field='henkilo',
@@ -104,7 +105,7 @@ class TyontekijaSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.Hyper
 
 
 class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     vakajarjestaja = VakaJarjestajaPermissionCheckedHLField(view_name='vakajarjestaja-detail', required=False,
                                                             permission_groups=[Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA])
     vakajarjestaja_oid = OidRelatedField(object_type=VakaJarjestaja,
@@ -194,7 +195,7 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class TutkintoSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     henkilo = HenkiloPermissionCheckedHLField(view_name='henkilo-detail', required=False)
     henkilo_oid = OidRelatedField(object_type=Henkilo,
                                   parent_field='henkilo',
@@ -231,7 +232,7 @@ class TutkintoSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.Hyperli
 
 
 class PalvelussuhdeSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     tyontekija = TyontekijaPermissionCheckedHLField(view_name='tyontekija-detail', required=False)
     tyontekija_tunniste = TunnisteRelatedField(object_type=Tyontekija,
                                                parent_field='tyontekija',
@@ -420,7 +421,7 @@ class TyoskentelypaikkaUpdateSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     palvelussuhde = PalvelussuhdePermissionCheckedHLField(view_name='palvelussuhde-detail', required=False)
     palvelussuhde_tunniste = TunnisteRelatedField(object_type=Palvelussuhde,
                                                   parent_field='palvelussuhde',
@@ -605,7 +606,7 @@ class NestedTaydennyskoulutusTyontekijaSerializer(serializers.ModelSerializer):
 
 
 class TaydennyskoulutusSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     taydennyskoulutus_tyontekijat = NestedTaydennyskoulutusTyontekijaSerializer(required=True, allow_empty=False, many=True, source='taydennyskoulutukset_tyontekijat')
     taydennyskoulutus_tyontekijat_count = serializers.SerializerMethodField()
 
@@ -635,14 +636,15 @@ class TaydennyskoulutusSerializer(serializers.HyperlinkedModelSerializer):
 
         return data
 
+    @swagger_serializer_method(serializer_or_field=serializers.IntegerField())
     def get_taydennyskoulutus_tyontekijat_count(self, instance):
         return instance.taydennyskoulutukset_tyontekijat.count()
 
 
 class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
     taydennyskoulutus_tyontekijat = NestedTaydennyskoulutusTyontekijaSerializer(required=False, allow_empty=False, many=True, source='taydennyskoulutukset_tyontekijat')
-    taydennyskoulutus_tyontekijat_add = NestedTaydennyskoulutusTyontekijaSerializer(required=False, allow_empty=False, many=True)
-    taydennyskoulutus_tyontekijat_remove = NestedTaydennyskoulutusTyontekijaSerializer(required=False, allow_empty=False, many=True)
+    taydennyskoulutus_tyontekijat_add = NestedTaydennyskoulutusTyontekijaSerializer(write_only=True, required=False, allow_empty=False, many=True)
+    taydennyskoulutus_tyontekijat_remove = NestedTaydennyskoulutusTyontekijaSerializer(write_only=True, required=False, allow_empty=False, many=True)
     taydennyskoulutus_tyontekijat_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -666,6 +668,7 @@ class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
 
         return super(TaydennyskoulutusUpdateSerializer, self).validate(data)
 
+    @swagger_serializer_method(serializer_or_field=serializers.IntegerField())
     def get_taydennyskoulutus_tyontekijat_count(self, instance):
         return instance.taydennyskoulutukset_tyontekijat.count()
 
@@ -736,6 +739,7 @@ class TaydennyskoulutusTyontekijaListSerializer(serializers.ModelSerializer):
     henkilo_oid = serializers.CharField(source='henkilo.henkilo_oid')
     tehtavanimike_koodit = serializers.SerializerMethodField()
 
+    @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.CharField()))
     def get_tehtavanimike_koodit(self, instance):
         return get_available_tehtavanimike_codes_for_user(self.context['request'].user, instance)
 
@@ -811,12 +815,12 @@ class TyontekijaKoostePalvelussuhdeSerializer(serializers.ModelSerializer):
 
 
 class TyontekijaKoosteTaydennyskoulutusSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField(source='taydennyskoulutus.id')
-    nimi = serializers.ReadOnlyField(source='taydennyskoulutus.nimi')
-    suoritus_pvm = serializers.ReadOnlyField(source='taydennyskoulutus.suoritus_pvm')
-    koulutuspaivia = serializers.ReadOnlyField(source='taydennyskoulutus.koulutuspaivia')
-    lahdejarjestelma = serializers.ReadOnlyField(source='taydennyskoulutus.lahdejarjestelma')
-    tunniste = serializers.ReadOnlyField(source='taydennyskoulutus.tunniste')
+    id = serializers.IntegerField(source='taydennyskoulutus.id')
+    nimi = serializers.CharField(source='taydennyskoulutus.nimi')
+    suoritus_pvm = serializers.CharField(source='taydennyskoulutus.suoritus_pvm')
+    koulutuspaivia = serializers.CharField(source='taydennyskoulutus.koulutuspaivia')
+    lahdejarjestelma = serializers.CharField(source='taydennyskoulutus.lahdejarjestelma')
+    tunniste = serializers.CharField(source='taydennyskoulutus.tunniste')
     muutos_pvm = serializers.ReadOnlyField(source='taydennyskoulutus.muutos_pvm')
 
     class Meta:
@@ -832,12 +836,12 @@ class TyontekijaKoosteTutkintoSerializer(serializers.ModelSerializer):
 
 
 class TyontekijaKoosteSerializer(serializers.Serializer):
-    id = serializers.ReadOnlyField(source='tyontekija.id')
-    vakajarjestaja_id = serializers.ReadOnlyField(source='tyontekija.vakajarjestaja.id')
-    vakajarjestaja_nimi = serializers.ReadOnlyField(source='tyontekija.vakajarjestaja.nimi')
-    vakajarjestaja_organisaatio_oid = serializers.ReadOnlyField(source='tyontekija.vakajarjestaja.organisaatio_oid')
-    lahdejarjestelma = serializers.ReadOnlyField(source='tyontekija.lahdejarjestelma')
-    tunniste = serializers.ReadOnlyField(source='tyontekija.tunniste')
+    id = serializers.IntegerField(source='tyontekija.id')
+    vakajarjestaja_id = serializers.IntegerField(source='tyontekija.vakajarjestaja.id')
+    vakajarjestaja_nimi = serializers.CharField(source='tyontekija.vakajarjestaja.nimi')
+    vakajarjestaja_organisaatio_oid = serializers.CharField(source='tyontekija.vakajarjestaja.organisaatio_oid')
+    lahdejarjestelma = serializers.CharField(source='tyontekija.lahdejarjestelma')
+    tunniste = serializers.CharField(source='tyontekija.tunniste')
     henkilo = TyontekijaKoosteHenkiloSerializer(source='tyontekija.henkilo')
     tutkinnot = TyontekijaKoosteTutkintoSerializer(many=True)
     palvelussuhteet = TyontekijaKoostePalvelussuhdeSerializer(many=True)

@@ -2,6 +2,7 @@ from operator import itemgetter
 
 from django.db.models import Q
 from django.urls import reverse
+from drf_yasg.utils import swagger_serializer_method
 from guardian.shortcuts import get_objects_for_user
 from rest_framework import serializers
 
@@ -16,6 +17,8 @@ UI serializers
 
 
 class VakaJarjestajaUiSerializer(serializers.HyperlinkedModelSerializer):
+    kunnallinen_kytkin = serializers.BooleanField(read_only=True)
+
     class Meta:
         model = VakaJarjestaja
         fields = ('nimi', 'id', 'url', 'organisaatio_oid', 'kunnallinen_kytkin', 'y_tunnus')
@@ -53,9 +56,11 @@ class ToimipaikkaUiSerializer(serializers.HyperlinkedModelSerializer):
         request = self.context.get('request')
         return request.build_absolute_uri(reverse('toimipaikka-detail', kwargs={'pk': toimipaikka_obj['id']}))
 
+    @swagger_serializer_method(serializer_or_field=serializers.BooleanField)
     def get_paos_toimipaikka_kytkin(self, toimipaikka_obj):
         return not int(self.context.get('vakajarjestaja_pk')) == toimipaikka_obj['vakajarjestaja__id']
 
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
     def get_paos_oma_organisaatio_url(self, toimipaikka_obj):
         if self.get_paos_toimipaikka_kytkin(toimipaikka_obj):
             request = self.context.get('request')
@@ -64,6 +69,7 @@ class ToimipaikkaUiSerializer(serializers.HyperlinkedModelSerializer):
         else:
             return ''
 
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
     def get_paos_organisaatio_url(self, toimipaikka_obj):
         if self.get_paos_toimipaikka_kytkin(toimipaikka_obj):
             request = self.context.get('request')
@@ -72,20 +78,23 @@ class ToimipaikkaUiSerializer(serializers.HyperlinkedModelSerializer):
         else:
             return ''
 
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
     def get_paos_organisaatio_nimi(self, toimipaikka_obj):
         if self.get_paos_toimipaikka_kytkin(toimipaikka_obj):
             return toimipaikka_obj['vakajarjestaja__nimi']
         else:
             return ''
 
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
     def get_paos_organisaatio_oid(self, toimipaikka_obj):
         if self.get_paos_toimipaikka_kytkin(toimipaikka_obj):
             return toimipaikka_obj['vakajarjestaja__organisaatio_oid']
         else:
             return ''
 
-    # Haetaan kaikki vakajärjestäjät joilla tähän toimipaikkaan tallennusoikeus
+    @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.IntegerField()))
     def get_paos_tallentaja_organisaatio_id_list(self, toimipaikka_obj):
+        # Haetaan kaikki vakajärjestäjät joilla tähän toimipaikkaan tallennusoikeus
         if self.get_paos_toimipaikka_kytkin(toimipaikka_obj):
             oma_organisaatio_id_list = (PaosToiminta.objects.filter(Q(voimassa_kytkin=True) &
                                                                     Q(paos_toimipaikka=toimipaikka_obj['id']))
@@ -106,7 +115,7 @@ class UiLapsiSerializer(serializers.HyperlinkedModelSerializer):
     syntyma_pvm = serializers.ReadOnlyField(source='henkilo.syntyma_pvm')
     oma_organisaatio_nimi = serializers.ReadOnlyField(source='oma_organisaatio.nimi')
     paos_organisaatio_nimi = serializers.ReadOnlyField(source='paos_organisaatio.nimi')
-    lapsi_id = serializers.ReadOnlyField(source='id')
+    lapsi_id = serializers.IntegerField(read_only=True, source='id')
     lapsi_url = serializers.HyperlinkedRelatedField(view_name='lapsi-detail', source='id', read_only=True)
 
     class Meta:
@@ -164,6 +173,7 @@ class TyontekijatUiSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('id', 'url', 'tyoskentelypaikat')
         list_serializer_class = TyontekijatUiListSerializer
 
+    @swagger_serializer_method(serializer_or_field=TyoskentelypaikatUiSerializer)
     def get_tyoskentelypaikat(self, tyontekija):
         tyoskentelypaikat = Tyoskentelypaikka.objects.filter(palvelussuhde__in=tyontekija.palvelussuhteet.all())
         return TyoskentelypaikatUiSerializer(instance=tyoskentelypaikat, many=True, context=self.context).data
@@ -215,6 +225,7 @@ class LapsihakuLapsetUiSerializer(serializers.HyperlinkedModelSerializer):
                   'paos_organisaatio_oid', 'paos_organisaatio_nimi', 'tallentaja_organisaatio_oid', 'toimipaikat')
         list_serializer_class = LapsihakuLapsetUiListSerializer
 
+    @swagger_serializer_method(serializer_or_field=LapsihakuToimipaikkaUiSerializer)
     def get_toimipaikat(self, lapsi):
         permission_context = self.context
         vakasuhteet = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__in=lapsi.varhaiskasvatuspaatokset.all())
@@ -256,7 +267,7 @@ class UiTyontekijaSerializer(serializers.HyperlinkedModelSerializer):
     sukunimi = serializers.ReadOnlyField(source='henkilo.sukunimi')
     henkilo_oid = serializers.ReadOnlyField(source='henkilo.henkilo_oid')
     vakajarjestaja_nimi = serializers.ReadOnlyField(source='vakajarjestaja.nimi')
-    tyontekija_id = serializers.ReadOnlyField(source='id')
+    tyontekija_id = serializers.IntegerField(read_only=True, source='id')
     tyontekija_url = serializers.HyperlinkedRelatedField(view_name='tyontekija-detail', source='id', read_only=True)
 
     class Meta:

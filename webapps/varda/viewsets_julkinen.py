@@ -13,6 +13,7 @@ from varda.enums.error_messages import ErrorMessages
 from varda.filters import CustomParametersFilterBackend, CustomParameter
 from varda.lokalisointipalvelu import get_localisation_data
 from varda.models import Z2_Koodisto, Z2_Code
+from varda.serializers_julkinen import LocalisationSerializer, KoodistotSerializer
 from webapps.api_throttles import PublicAnonThrottle
 
 
@@ -21,6 +22,7 @@ class KoodistotViewSet(GenericViewSet, ListModelMixin):
     permission_classes = (AllowAny,)
     throttle_classes = (PublicAnonThrottle,)
     pagination_class = None
+    serializer_class = KoodistotSerializer
     filter_backends = (CustomParametersFilterBackend,)
     custom_parameters = (CustomParameter(name='lang', required=False, location='query', data_type='string',
                                          description='Locale code (fi/sv)'),)
@@ -77,7 +79,7 @@ class KoodistotViewSet(GenericViewSet, ListModelMixin):
 
             set_koodistot_cache(language, koodistot_list)
 
-        return Response(koodistot_list)
+        return Response(self.get_serializer(koodistot_list, many=True).data)
 
 
 class LocalisationViewSet(GenericViewSet, ListModelMixin):
@@ -88,6 +90,7 @@ class LocalisationViewSet(GenericViewSet, ListModelMixin):
     permission_classes = (AllowAny,)
     throttle_classes = (PublicAnonThrottle,)
     pagination_class = None
+    serializer_class = LocalisationSerializer
     filter_backends = (CustomParametersFilterBackend,)
     custom_parameters = (CustomParameter(name='category', required=True, location='query', data_type='string',
                                          description='Category name in lokalisointipalvelu'),
@@ -113,4 +116,4 @@ class LocalisationViewSet(GenericViewSet, ListModelMixin):
         if not data:
             return Response(status=500)
 
-        return Response(data)
+        return Response(self.get_serializer(data, many=True).data)

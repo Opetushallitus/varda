@@ -9,16 +9,19 @@ from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg.utils import swagger_auto_schema
 from guardian.shortcuts import get_objects_for_user
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
-from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
+from rest_framework.mixins import ListModelMixin
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from varda import filters
 from varda.cache import create_cache_key, get_object_ids_user_has_permissions
 from varda.cas.varda_permissions import IsVardaPaakayttaja
+from varda.custom_swagger import ActionPaginationSwaggerAutoSchema
 from varda.filters import TyontekijahakuUiFilter
 from varda.misc_queries import get_paos_toimipaikat
 from varda.misc_viewsets import ExtraKwargsFilterBackend
@@ -48,7 +51,7 @@ def parse_vakajarjestaja(user, vakajarjestaja_id):
 
 
 @auditlogclass
-class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin):
+class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
     """
     list:
         Nouda vakajarjestajien nimet
@@ -76,6 +79,8 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixi
             pagination_class=ChangeablePageSizePagination,
             permission_classes=[HenkilostohakuPermissions],
             )
+    @swagger_auto_schema(auto_schema=ActionPaginationSwaggerAutoSchema,
+                         responses={status.HTTP_200_OK: TyontekijaHenkiloUiSerializer(many=True)})
     def tyontekija_list(self, request, pk=None):
         # Putting these to keyword arguments raises exception
         self.filterset_class = TyontekijahakuUiFilter
@@ -101,6 +106,8 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixi
             pagination_class=ChangeablePageSizePagination,
             permission_classes=[LapsihakuPermissions],
             )
+    @swagger_auto_schema(auto_schema=ActionPaginationSwaggerAutoSchema,
+                         responses={status.HTTP_200_OK: LapsihakuHenkiloUiSerializer(many=True)})
     def lapsi_list(self, request, pk=None):
         """
         Query-parametrit:
@@ -236,7 +243,7 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
             'request': self.request,
             'format': self.format_kwarg,
             'view': self,
-            'vakajarjestaja_pk': self.kwargs['vakajarjestaja_pk']
+            'vakajarjestaja_pk': self.kwargs.get('vakajarjestaja_pk', None)
         }
 
     def get_vakajarjestaja(self, request, vakajarjestaja_pk=None):
@@ -267,6 +274,8 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
 
     @auditlog
     @action(methods=['get'], detail=True, url_path='paos-jarjestajat', url_name='paos_jarjestajat')
+    @swagger_auto_schema(auto_schema=ActionPaginationSwaggerAutoSchema,
+                         responses={status.HTTP_200_OK: VakaJarjestajaUiSerializer(many=True)})
     def paos_jarjestajat(self, request, vakajarjestaja_pk=None, pk=None):
         """
         Nouda vakajärjestäjän paos-järjestäjät annettuun toimipaikkaan

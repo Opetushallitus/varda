@@ -1,6 +1,7 @@
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 from rest_framework.mixins import ListModelMixin
-from rest_framework import permissions
+from rest_framework import permissions, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.viewsets import GenericViewSet
 
@@ -17,6 +18,7 @@ class AnonymisointiYhteenvetoViewSet(GenericViewSet, ListModelMixin):
     queryset = Henkilo.objects.none()
     permission_classes = (permissions.IsAdminUser, )
     serializer_class = AnonymisointiYhteenvetoSerializer
+    pagination_class = None
 
     def validate_henkilo_query_params(self, attribute):
         henkilo_id = self.request.query_params.get(attribute, None)
@@ -58,6 +60,7 @@ class AnonymisointiYhteenvetoViewSet(GenericViewSet, ListModelMixin):
         self.validate_henkilo_query_params('last_henkilo_id')
         self.validate_henkilo_ids_general()
 
+    @swagger_auto_schema(responses={status.HTTP_200_OK: AnonymisointiYhteenvetoSerializer(many=False)})
     def list(self, request, *args, **kwargs):
         self.validate_query_params()
         serializer = self.get_serializer(request)

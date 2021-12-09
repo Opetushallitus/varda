@@ -4,7 +4,7 @@ from wsgiref.util import FileWrapper
 
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.postgres.aggregates import StringAgg, ArrayAgg
 from django.db import transaction
 from django.db.models import (Q, Case, Value, When, OuterRef, Subquery, CharField, F, DateField, Count, IntegerField,
@@ -13,7 +13,8 @@ from django.db.models.functions import Cast
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import permissions
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
@@ -23,6 +24,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
+from varda.custom_swagger import IntegerIdSchema
 from varda.enums.error_messages import ErrorMessages
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.enums.koodistot import Koodistot
@@ -35,7 +37,6 @@ from varda.filters import (TiedonsiirtoFilter, ExcelReportFilter, KelaEtuusmaksa
                            RequestSummaryFilter)
 from varda.misc import encrypt_string
 from varda.validators import validate_kela_api_datetimefield
-from varda.misc_viewsets import IntegerIdSchema
 from varda.models import (KieliPainotus, Lapsi, Maksutieto, PaosOikeus, ToiminnallinenPainotus, Toimipaikka,
                           VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z6_RequestLog,
                           Z4_CasKayttoOikeudet, Tyontekija, Z8_ExcelReport, PaosToiminta, Z2_Code, Z6_LastRequest,
@@ -413,6 +414,7 @@ class TiedonsiirtotilastoViewSet(GenericViewSet, ListModelMixin):
     """
     queryset = None
     serializer_class = TiedonsiirtotilastoSerializer
+    pagination_class = None
     permission_classes = (permissions.IsAdminUser, )
 
     def get_vakatoimijat(self, kunnat_filter, voimassa_filter):
@@ -478,6 +480,7 @@ class TiedonsiirtotilastoViewSet(GenericViewSet, ListModelMixin):
         else:
             return None
 
+    @swagger_auto_schema(responses={status.HTTP_200_OK: TiedonsiirtotilastoSerializer(many=False)})
     def list(self, request, *args, **kwargs):
         query_params = self.request.query_params
         kunnat_filter = self.validate_boolean_parameter(query_params.get('kunnat', None))
@@ -959,11 +962,11 @@ class ErrorReportToimipaikatViewSet(AbstractErrorReportViewSet):
 @auditlogclass
 class TiedonsiirtoViewSet(GenericViewSet, ListModelMixin):
     serializer_class = TiedonsiirtoSerializer
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = (CustomParametersFilterBackend, DjangoFilterBackend,)
     filterset_class = TiedonsiirtoFilter
     permission_classes = (RaportitPermissions,)
-
-    vakajarjestaja_filter = None
+    custom_parameters = (CustomParameter(name='vakajarjestajat', required=False, location='query', data_type='string',
+                                         description='Comma separated list of vakajarjestaja IDs'),)
 
     @property
     def pagination_class(self):
@@ -974,22 +977,19 @@ class TiedonsiirtoViewSet(GenericViewSet, ListModelMixin):
             return IdCursorPagination
 
     def get_queryset(self):
-        queryset = Z6_RequestLog.objects.filter(self.vakajarjestaja_filter).order_by('-id')
+        vakajarjestaja_filter = get_vakajarjestajat_filter_for_raportit(self.request)
+        queryset = Z6_RequestLog.objects.filter(vakajarjestaja_filter).order_by('-id')
         return queryset
-
-    def list(self, request, *args, **kwargs):
-        self.vakajarjestaja_filter = get_vakajarjestajat_filter_for_raportit(request)
-        return super(TiedonsiirtoViewSet, self).list(request, *args, **kwargs)
 
 
 @auditlogclass
 class TiedonsiirtoYhteenvetoViewSet(GenericViewSet, ListModelMixin):
     serializer_class = TiedonsiirtoYhteenvetoSerializer
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = (CustomParametersFilterBackend, DjangoFilterBackend,)
     filterset_class = TiedonsiirtoFilter
     permission_classes = (RaportitPermissions,)
-
-    vakajarjestaja_filter = None
+    custom_parameters = (CustomParameter(name='vakajarjestajat', required=False, location='query', data_type='string',
+                                         description='Comma separated list of vakajarjestaja IDs'),)
 
     @property
     def pagination_class(self):
@@ -1000,7 +1000,8 @@ class TiedonsiirtoYhteenvetoViewSet(GenericViewSet, ListModelMixin):
             return DateCursorPagination
 
     def get_queryset(self):
-        queryset = (Z6_RequestLog.objects.filter(self.vakajarjestaja_filter)
+        vakajarjestaja_filter = get_vakajarjestajat_filter_for_raportit(self.request)
+        queryset = (Z6_RequestLog.objects.filter(vakajarjestaja_filter)
                     .values('user__id', 'user__username', 'timestamp__date')
                     .annotate(successful=Count(Case(When(response_code__in=SUCCESSFUL_STATUS_CODE_LIST, then=1),
                                                     output_field=IntegerField())),
@@ -1009,10 +1010,6 @@ class TiedonsiirtoYhteenvetoViewSet(GenericViewSet, ListModelMixin):
                               date=Cast('timestamp', DateField()))
                     .order_by('-date'))
         return queryset
-
-    def list(self, request, *args, **kwargs):
-        self.vakajarjestaja_filter = get_vakajarjestajat_filter_for_raportit(request)
-        return super(TiedonsiirtoYhteenvetoViewSet, self).list(request, *args, **kwargs)
 
 
 @auditlogclass
@@ -1032,6 +1029,10 @@ class ExcelReportViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cre
 
     def get_queryset(self):
         user = self.request.user
+        if isinstance(user, AnonymousUser):
+            # Swagger uses AnonymousUser so in that case return an empty queryset
+            return Z8_ExcelReport.objects.none()
+
         if user.is_superuser or is_oph_staff(user):
             report_filter = Q()
         else:
@@ -1173,7 +1174,9 @@ class RequestSummaryViewSet(GenericViewSet, ListModelMixin):
     search_fields = ('user__username', 'vakajarjestaja__nimi', '=vakajarjestaja__organisaatio_oid',
                      'request_url_simple',)
     custom_parameters = (CustomParameter(name='categories', required=False, location='query', data_type='string',
-                                         description='Comma separated list of categories'),)
+                                         description='Comma separated list of categories'),
+                         CustomParameter(name='group', required=False, location='query', data_type='boolean',
+                                         description='Group results for the time window'),)
 
     def get_serializer_class(self):
         if self.request.query_params.get('group', '').lower() == 'true':
