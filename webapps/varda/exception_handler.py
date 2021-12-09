@@ -53,6 +53,7 @@ error_templates = {
             'A valid integer is required.': ErrorMessages.GE010.value,
             'Must be a valid boolean.': ErrorMessages.GE011.value,
             'A valid number is required.': ErrorMessages.GE012.value,
+            'Not a valid string.': ErrorMessages.GE023.value
         }
     },
     status.HTTP_403_FORBIDDEN: {

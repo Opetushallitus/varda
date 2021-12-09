@@ -123,6 +123,8 @@ class AbstractCustomRelatedField(serializers.Field):
         if self.is_value_empty(value):
             return None
 
+        value = self.cast_value_type_to_str(value)
+
         self._run_prevalidator(value)
 
         referenced_object = self.get_referenced_object_by_value(value)
@@ -148,6 +150,8 @@ class AbstractCustomRelatedField(serializers.Field):
         if self.is_value_empty(value):
             # Value is optional: if empty or not given do nothing
             return {}
+
+        value = self.cast_value_type_to_str(value)
 
         # Not sure if this is required, but better be safe?
         if self.read_only:
@@ -206,6 +210,13 @@ class AbstractCustomRelatedField(serializers.Field):
 
     def is_value_empty(self, value):
         return value is None or value is serializers.empty
+
+    def cast_value_type_to_str(self, value):
+        # Value must be string, change if other values are supported in the future
+        # https://github.com/encode/django-rest-framework/blob/master/rest_framework/fields.py#L801
+        if isinstance(value, bool) or not isinstance(value, (str, int, float,)):
+            raise serializers.ValidationError([ErrorMessages.GE023.value], code='invalid')
+        return str(value)
 
 
 class OidRelatedField(AbstractCustomRelatedField):
