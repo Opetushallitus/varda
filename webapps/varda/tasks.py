@@ -25,16 +25,13 @@ from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
 from varda.enums.aikaleima_avain import AikaleimaAvain
 from varda.excel_export import delete_excel_reports_earlier_than
 from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
-from varda.misc import memory_efficient_queryset_iterator, get_user_vakajarjestaja
+from varda.misc import memory_efficient_queryset_iterator
 from varda.models import (Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog, Lapsi, Varhaiskasvatuspaatos,
-                          Huoltaja, Huoltajuussuhde, Maksutieto, PidempiPoissaolo, Z6_LastRequest,
-                          Z6_RequestSummary, Z6_RequestCount, Aikaleima, MaksutietoHuoltajuussuhde,
-                          Z3_AdditionalCasUserFields, BatchError)
-from varda.permissions import (assign_object_level_permissions_for_instance, assign_lapsi_henkilo_permissions,
-                               delete_object_permissions_explicitly, delete_permissions_from_object_instance_by_oid)
-from varda.permission_groups import (assign_object_permissions_to_taydennyskoulutus_groups,
-                                     assign_object_level_permissions, assign_object_permissions_to_tyontekija_groups,
-                                     get_all_permission_groups_for_organization, assign_permissions_for_toimipaikka)
+                          Huoltaja, Huoltajuussuhde, Maksutieto, Z6_LastRequest, Z6_RequestSummary, Z6_RequestCount,
+                          Aikaleima, MaksutietoHuoltajuussuhde, Z3_AdditionalCasUserFields, BatchError,
+                          ToiminnallinenPainotus, KieliPainotus)
+from varda.permissions import assign_object_level_permissions_for_instance, delete_object_permissions_explicitly
+from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups
 
 logger = logging.getLogger(__name__)
 
@@ -368,81 +365,6 @@ def delete_henkilot_without_relations_task():
 
 @shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
-def delete_lapsi_objects_without_vakatoimija():
-    """
-    Delete non-PAOS Lapsi objects that do not have vakatoimija and have not related Varhaiskasvatuspaatos,
-    Varhaiskasvatussuhde or Maksutieto objects.
-
-    TEMPORARY FUNCTION
-    """
-    lapsi_qs = Lapsi.objects.filter(vakatoimija__isnull=True, oma_organisaatio__isnull=True,
-                                    paos_organisaatio__isnull=True, varhaiskasvatuspaatokset__isnull=True,
-                                    huoltajuussuhteet__maksutiedot__isnull=True).distinct('id')
-    for lapsi in memory_efficient_queryset_iterator(lapsi_qs):
-        Huoltajuussuhde.objects.filter(lapsi=lapsi).delete()
-        lapsi.delete()
-
-
-@shared_task
-@single_instance_task(timeout_in_minutes=8 * 60)
-def delete_lapsi_huoltaja_lapsi_objects():
-    """
-    Deletes Lapsi objects that do not have any related information if Henkilo is also huoltaja
-
-    TEMPORARY FUNCTION
-    """
-    henkilo_qs = Henkilo.objects.filter(lapsi__isnull=False, huoltaja__isnull=False).order_by('id')
-    for henkilo in memory_efficient_queryset_iterator(henkilo_qs):
-        for lapsi in henkilo.lapsi.filter(varhaiskasvatuspaatokset__isnull=True,
-                                          huoltajuussuhteet__maksutiedot__isnull=True).distinct('id'):
-            Huoltajuussuhde.objects.filter(lapsi=lapsi).delete()
-            lapsi.delete()
-
-
-@shared_task
-@single_instance_task(timeout_in_minutes=8 * 60)
-def update_henkilo_information_for_lapsi_huoltaja():
-    """
-    Some Henkilo objects are related to Lapsi and Huoltaja objects, and syntyma_pvm has previously been removed from
-    Huoltaja objects even if Henkilo also has Lapsi object.
-
-    TEMPORARY FUNCTION
-    """
-    henkilo_qs = Henkilo.objects.filter(lapsi__isnull=False, syntyma_pvm__isnull=True)
-    for henkilo in memory_efficient_queryset_iterator(henkilo_qs):
-        update_henkilo_data_by_oid(henkilo.henkilo_oid, henkilo.id)
-
-
-@shared_task
-@single_instance_task(timeout_in_minutes=8 * 60)
-def assign_toimipaikka_maksutieto_permissions():
-    """
-    Reassign permissions for Maksutieto objects of non-PAOS lapset on Toimipaikka level. Toimipaikka may not have
-    permissions to Maksutieto if Varhaiskasvatussuhde was created after Maksutieto.
-
-    TEMPORARY FUNCTION
-    """
-    maksutieto_qs = (Maksutieto.objects.filter(huoltajuussuhteet__lapsi__oma_organisaatio__isnull=True)
-                     .distinct('id').order_by('id'))
-    for maksutieto in memory_efficient_queryset_iterator(maksutieto_qs):
-        lapsi_id_set = set(maksutieto.huoltajuussuhteet.values_list('lapsi', flat=True))
-
-        if len(lapsi_id_set) != 1:
-            logger.error(f'Maksutieto {maksutieto.id} is not related to only 1 Lapsi object')
-            continue
-
-        lapsi = Lapsi.objects.get(id=lapsi_id_set.pop())
-        if not lapsi.oma_organisaatio:
-            # PAOS-lapset should not have issues with Maksutieto permissions
-            oid_set = set(lapsi.varhaiskasvatuspaatokset
-                          .values_list('varhaiskasvatussuhteet__toimipaikka__organisaatio_oid', flat=True))
-            oid_set.discard(None)
-            for oid in oid_set:
-                assign_object_level_permissions(oid, Maksutieto, maksutieto)
-
-
-@shared_task
-@single_instance_task(timeout_in_minutes=8 * 60)
 def update_last_request_table_task(init=False):
     """
     Updates Z6_LastRequest table by going through existing Z6_RequestLog objects. By default goes through requests
@@ -476,56 +398,6 @@ def update_last_request_table_task(init=False):
             Z6_LastRequest.objects.update_or_create(user_id=user_id, vakajarjestaja_id=vakajarjestaja_id,
                                                     lahdejarjestelma=lahdejarjestelma,
                                                     defaults=last_request_defaults)
-
-
-@shared_task
-@single_instance_task(timeout_in_minutes=8 * 60)
-def assign_missing_vakatoimija_field():
-    """
-    Assigns vakatoimija-field for Lapsi objects that do not have it already based on user's permission groups. Also
-    assign permissions for Lapsi related objects.
-
-    TEMPORARY FUNCTION
-    """
-    lapsi_qs = Lapsi.objects.filter(vakatoimija__isnull=True, oma_organisaatio__isnull=True,
-                                    paos_organisaatio__isnull=True).distinct('id').order_by('id')
-    for lapsi in lapsi_qs:
-        user = lapsi.changed_by
-        vakajarjestaja = get_user_vakajarjestaja(user)
-
-        if not vakajarjestaja:
-            # Could not determine vakatoimija of this Lapsi object
-            continue
-
-        with transaction.atomic():
-            lapsi.vakatoimija = vakajarjestaja
-            lapsi.save()
-
-            assign_object_level_permissions_for_instance(lapsi, (vakajarjestaja.organisaatio_oid,))
-            assign_lapsi_henkilo_permissions(lapsi, user=user)
-
-            for vakapaatos in lapsi.varhaiskasvatuspaatokset.all():
-                assign_object_level_permissions_for_instance(vakapaatos, (vakajarjestaja.organisaatio_oid,))
-
-            for maksutieto in Maksutieto.objects.filter(huoltajuussuhteet__lapsi=lapsi).distinct('id').order_by('id'):
-                assign_object_level_permissions_for_instance(maksutieto, (vakajarjestaja.organisaatio_oid,))
-
-
-@shared_task
-@single_instance_task(timeout_in_minutes=8 * 60)
-def assign_toimipaikka_pidempi_poissaolo_permissions():
-    """
-    Assigns Toimipaikka level permissions for PidempiPoissaolo objects.
-
-    TEMPORARY FUNCTION
-    """
-    for pidempi_poissaolo in memory_efficient_queryset_iterator(PidempiPoissaolo.objects.all().order_by('id')):
-        palvelussuhde = pidempi_poissaolo.palvelussuhde
-        toimipaikka_oid_set = set(palvelussuhde.tyoskentelypaikat
-                                  .values_list('toimipaikka__organisaatio_oid', flat=True))
-        toimipaikka_oid_set.discard(None)
-        for toimipaikka_oid in toimipaikka_oid_set:
-            assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, PidempiPoissaolo, pidempi_poissaolo)
 
 
 @shared_task
@@ -688,105 +560,6 @@ def merge_duplicate_child(merge_list):
 
 
 @shared_task
-def transfer_lapsi_objects_to_correct_vakajarjestaja(lapsi_id_list):
-    """
-    TEMPORARY FUNCTION
-    """
-    for lapsi_id in lapsi_id_list:
-        with transaction.atomic():
-            lapsi_obj = Lapsi.objects.filter(id=lapsi_id).first()
-            if not lapsi_obj:
-                logger.error(f'Lapsi object {lapsi_id} does not exist')
-                continue
-            if lapsi_obj.vakatoimija is None:
-                logger.error(f'Lapsi object {lapsi_id} is PAOS')
-                continue
-            if lapsi_obj.varhaiskasvatuspaatokset.count() > 0:
-                logger.error(f'Lapsi object {lapsi_id} has related varhaiskasvatuspaatos objects')
-                continue
-            if Maksutieto.objects.filter(huoltajuussuhteet__lapsi=lapsi_obj).distinct().count() > 0:
-                logger.error(f'Lapsi object {lapsi_id} has related maksutieto objects')
-                continue
-
-            old_vakajarjestaja = lapsi_obj.vakatoimija
-            vakajarjestaja = get_user_vakajarjestaja(lapsi_obj.changed_by)
-            if not vakajarjestaja:
-                logger.error(f'Could not determine vakajarjestaja for user {lapsi_obj.changed_by_id}')
-                continue
-            if old_vakajarjestaja == vakajarjestaja:
-                logger.error(f'Lapsi object {lapsi_id} already belongs to vakajarjestaja {vakajarjestaja.id}')
-                continue
-            if Lapsi.objects.filter(vakatoimija=vakajarjestaja, henkilo=lapsi_obj.henkilo).exists():
-                logger.error(f'Lapsi object {lapsi_id} already exists for vakajarjestaja {vakajarjestaja.id}')
-                continue
-
-            # Change vakatoimija of Lapsi object
-            lapsi_obj.vakatoimija = vakajarjestaja
-            lapsi_obj.save()
-
-            # Delete Henkilo permissions, only from old_vakajarjestaja, if old_vakajarjestaja does not have PAOS-lapsi that remains
-            if not Lapsi.objects.filter(oma_organisaatio=old_vakajarjestaja, henkilo=lapsi_obj.henkilo).exists():
-                delete_permissions_from_object_instance_by_oid(lapsi_obj.henkilo, old_vakajarjestaja.organisaatio_oid)
-
-            # Assign Henkilo permissions, only for new_vakajarjestaja
-            assign_lapsi_henkilo_permissions(lapsi_obj)
-
-            # Delete Lapsi permissions
-            delete_object_permissions_explicitly(Lapsi, lapsi_id)
-
-            # Assign Lapsi permissions
-            assign_object_level_permissions_for_instance(lapsi_obj, (vakajarjestaja.organisaatio_oid,))
-
-
-@shared_task
-def transfer_toimipaikka_objects_to_correct_vakajarjestaja(toimipaikka_id_list):
-    """
-    TEMPORARY FUNCTION
-    """
-    for toimipaikka_id in toimipaikka_id_list:
-        with transaction.atomic():
-            toimipaikka_obj = Toimipaikka.objects.filter(id=toimipaikka_id).first()
-            if not toimipaikka_obj:
-                logger.error(f'Toimipaikka object {toimipaikka_id} does not exist')
-                continue
-            if toimipaikka_obj.varhaiskasvatussuhteet.count() > 0:
-                logger.error(f'Toimipaikka object {toimipaikka_id} has related varhaiskasvatussuhde objects')
-                continue
-            if toimipaikka_obj.tyoskentelypaikat.count() > 0:
-                logger.error(f'Toimipaikka object {toimipaikka_id} has related tyoskentelypaikka objects')
-                continue
-            if toimipaikka_obj.kielipainotukset.count() > 0:
-                logger.error(f'Toimipaikka object {toimipaikka_id} has related kielipainotus objects')
-                continue
-            if toimipaikka_obj.toiminnallisetpainotukset.count() > 0:
-                logger.error(f'Toimipaikka object {toimipaikka_id} has related toiminnallinen painotus objects')
-                continue
-
-            old_vakajarjestaja = toimipaikka_obj.vakajarjestaja
-            vakajarjestaja = get_user_vakajarjestaja(toimipaikka_obj.changed_by)
-            if not vakajarjestaja:
-                logger.error(f'Could not determine vakajarjestaja for user {toimipaikka_obj.changed_by_id}')
-                continue
-            if old_vakajarjestaja == vakajarjestaja:
-                logger.error(f'Toimipaikka object {toimipaikka_id} already belongs to vakajarjestaja {vakajarjestaja.id}')
-                continue
-
-            # Disassociate all users from Toimipaikka specific permission groups
-            for group in get_all_permission_groups_for_organization(toimipaikka_obj.organisaatio_oid):
-                group.user_set.clear()
-
-            # Delete permissions
-            delete_object_permissions_explicitly(Toimipaikka, toimipaikka_obj.id)
-
-            # Chance VakaJarjestaja reference of Toimipaikka
-            toimipaikka_obj.vakajarjestaja = vakajarjestaja
-            toimipaikka_obj.save()
-
-            # Assign permissions
-            assign_permissions_for_toimipaikka(toimipaikka_obj, vakajarjestaja.organisaatio_oid)
-
-
-@shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
 def general_monitoring_task():
     """
@@ -795,3 +568,24 @@ def general_monitoring_task():
     # Check that number of OPH users does not exceed limit
     if Z3_AdditionalCasUserFields.objects.filter(approved_oph_staff=True).count() > 5:
         logger.error('There are too many users with approved_oph_staff=True.')
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def reset_painotus_permissions():
+    """
+    TEMPORARY FUNCTION
+    """
+    with transaction.atomic():
+        for queryset in (ToiminnallinenPainotus.objects.all().order_by('id').iterator(),
+                         KieliPainotus.objects.all().order_by('id').iterator(),):
+            index = 0
+            current_model = None
+            for instance in queryset:
+                delete_object_permissions_explicitly(type(instance), instance.id)
+                toimipaikka_oid = instance.toimipaikka.organisaatio_oid
+                vakajarjestaja_oid = instance.toimipaikka.vakajarjestaja.organisaatio_oid
+                assign_object_level_permissions_for_instance(instance, (vakajarjestaja_oid, toimipaikka_oid,))
+                index += 1
+                current_model = type(instance)
+            logger.info(f'Reset permissions for {index} {current_model.__name__} objects')

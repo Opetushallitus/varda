@@ -200,6 +200,7 @@ class ToimipaikkaFilter(djangofilters.FilterSet):
     alkamis_pvm = djangofilters.DateFromToRangeFilter(field_name='alkamis_pvm')
     paattymis_pvm = NoneDateFromToRangeFilter(field_name='paattymis_pvm')
     muutos_pvm = djangofilters.DateTimeFilter(field_name='muutos_pvm', lookup_expr='gte')
+    vakajarjestaja = OrganisaatioFieldFilter()
 
     class Meta:
         model = Toimipaikka
