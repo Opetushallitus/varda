@@ -12,7 +12,14 @@ import { MatDatepickerInputEvent } from '@angular/material/datepicker';
 import { DateAdapter } from '@angular/material/core';
 import { Moment } from 'moment';
 import * as moment from 'moment';
-import { AbstractControl, ControlValueAccessor, FormControl, NG_VALIDATORS, NG_VALUE_ACCESSOR } from '@angular/forms';
+import {
+  AbstractControl,
+  ControlValueAccessor,
+  FormControl,
+  NG_VALIDATORS,
+  NG_VALUE_ACCESSOR,
+  Validator
+} from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaDatepickerHeaderComponent } from './varda-datepicker-header/varda-datepicker-header.component';
 import { Observable, Subject } from 'rxjs';
@@ -41,7 +48,7 @@ export interface VardaDatepickerEvent {
   ],
   encapsulation: ViewEncapsulation.None
 })
-export class VardaDatepickerComponent implements OnInit, ControlValueAccessor {
+export class VardaDatepickerComponent implements OnInit, ControlValueAccessor, Validator {
   @Input() placeholder: string;
   @Input() required = false;
   @Input() readonly = false;

@@ -63,8 +63,10 @@
                               [label]="i18n.varhaiskasvatussuhde_alkamis_pvm | translate"
                               [errorText]="i18n.varhaiskasvatussuhde_error_alkamis_pvm | translate"
                               [errorMap]="[
-                              { key: 'matDatepickerMin', value: i18n.varhaiskasvatussuhde_error_min_alkamis_pvm },
-                              { key: 'matDatepickerMax', value: i18n.varhaiskasvatussuhde_error_max_alkamis_pvm }
+                                { key: 'required', value: i18n.varhaiskasvatussuhde_error_alkamis_pvm },
+                                { key: 'matDatepickerMin', value: i18n.varhaiskasvatussuhde_error_min_alkamis_pvm },
+                                { key: 'matDatepickerMax', value: i18n.varhaiskasvatussuhde_error_max_alkamis_pvm },
+                                { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
                               ]"
                               [instructionText]="i18n.varhaiskasvatussuhde_instruction_alkamis_pvm | translate">
           <app-varda-datepicker #fieldItem
@@ -79,8 +81,9 @@
                               [label]="i18n.varhaiskasvatussuhde_paattymis_pvm | translate"
                               [errorText]="i18n.varhaiskasvatussuhde_error_paattymis_pvm | translate"
                               [errorMap]="[
-                              { key: 'matDatepickerMin', value: i18n.varhaiskasvatussuhde_error_min_paattymis_pvm },
-                              { key: 'matDatepickerMax', value: i18n.varhaiskasvatussuhde_error_max_paattymis_pvm }
+                                { key: 'matDatepickerMin', value: i18n.varhaiskasvatussuhde_error_min_paattymis_pvm },
+                                { key: 'matDatepickerMax', value: i18n.varhaiskasvatussuhde_error_max_paattymis_pvm },
+                                { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
                               ]"
                               [instructionText]="i18n.varhaiskasvatussuhde_instruction_paattymis_pvm | translate">
           <app-varda-datepicker #fieldItem

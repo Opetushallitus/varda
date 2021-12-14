@@ -54,6 +54,7 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
   minStartDate: Date;
   minEndDate: Date;
   private henkilostoErrorService: VardaErrorMessageService;
+  private tilapainenValidator = ((): ValidatorFn => (control: AbstractControl) => control.value ? null : {tilapainen: true})();
 
   constructor(
     private el: ElementRef,
@@ -88,7 +89,6 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
       vuorohoito_kytkin: new FormControl(this.varhaiskasvatuspaatos?.vuorohoito_kytkin, Validators.required),
       paivittainen_vaka_kytkin: new FormControl(this.varhaiskasvatuspaatos?.paivittainen_vaka_kytkin, Validators.required),
       kokopaivainen_vaka_kytkin: new FormControl(this.varhaiskasvatuspaatos?.kokopaivainen_vaka_kytkin, Validators.required),
-      // tilapainen will be enabled later CSCVARDA-2040
       tilapainen_vaka_kytkin: new FormControl(this.varhaiskasvatuspaatos?.tilapainen_vaka_kytkin, Validators.required),
       tuntimaara_viikossa: new FormControl(this.varhaiskasvatuspaatos?.tuntimaara_viikossa, [Validators.pattern('^\\d+([,.]\\d{1})?$'), Validators.min(1), Validators.max(120), Validators.required]),
     });
@@ -264,21 +264,19 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
   }
 
   tilapainenVakaChange(value: boolean) {
-    const tilapainenValidator = (): ValidatorFn => (control: AbstractControl) => control.value ? null : { tilapainen: true };
-
     const paattymisCtrl = this.formGroup.get('paattymis_pvm');
     if (value) {
-      paattymisCtrl.setValidators(tilapainenValidator());
+      paattymisCtrl.addValidators(this.tilapainenValidator);
     } else {
-      paattymisCtrl.setValidators(null);
+      paattymisCtrl.removeValidators(this.tilapainenValidator);
     }
-
     paattymisCtrl.updateValueAndValidity();
   }
 
   hakemusDateChange(hakemusDate: Moment) {
     this.minStartDate = hakemusDate?.clone().toDate();
     this.minEndDate = this.minEndDate || hakemusDate?.clone().toDate();
+    setTimeout(() => this.formGroup.controls.alkamis_pvm?.updateValueAndValidity(), 100);
     setTimeout(() => this.formGroup.controls.paattymis_pvm?.updateValueAndValidity(), 100);
   }
 

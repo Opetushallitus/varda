@@ -196,6 +196,7 @@ export enum VirkailijaTranslations {
   varhaiskasvatuspaatos_instruction_hakemus_pvm = 'varhaiskasvatuspaatos.instruction.hakemus-pvm',
   varhaiskasvatuspaatos_alkamis_pvm = 'varhaiskasvatuspaatos.alkamis-pvm',
   varhaiskasvatuspaatos_error_alkamis_pvm = 'varhaiskasvatuspaatos.error.alkamis-pvm',
+  varhaiskasvatuspaatos_error_min_alkamis_pvm = 'varhaiskasvatuspaatos.error.min.alkamis-pvm',
   varhaiskasvatuspaatos_instruction_alkamis_pvm = 'varhaiskasvatuspaatos.instruction.alkamis-pvm',
   varhaiskasvatuspaatos_paattymis_pvm = 'varhaiskasvatuspaatos.paattymis-pvm',
   varhaiskasvatuspaatos_error_paattymis_pvm = 'varhaiskasvatuspaatos.error.paattymis-pvm',

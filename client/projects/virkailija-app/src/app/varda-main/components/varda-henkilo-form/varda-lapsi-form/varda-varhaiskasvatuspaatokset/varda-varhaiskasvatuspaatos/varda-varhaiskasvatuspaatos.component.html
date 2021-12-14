@@ -46,7 +46,10 @@
           <app-varda-form-field name="hakemus_pvm"
                                 [form]="formGroup"
                                 [label]="i18n.varhaiskasvatuspaatos_hakemus_pvm | translate"
-                                [errorText]="i18n.varhaiskasvatuspaatos_error_hakemus_pvm | translate"
+                                [errorMap]="[
+                                  { key: 'required', value: i18n.varhaiskasvatuspaatos_error_hakemus_pvm },
+                                  { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                                ]"
                                 [instructionText]="i18n.varhaiskasvatuspaatos_instruction_hakemus_pvm | translate">
             <app-varda-datepicker #fieldItem
                                   (dateChange)="hakemusDateChange($event.value)"
@@ -56,7 +59,11 @@
           <app-varda-form-field name="alkamis_pvm"
                                 [form]="formGroup"
                                 [label]="i18n.varhaiskasvatuspaatos_alkamis_pvm | translate"
-                                [errorText]="i18n.varhaiskasvatuspaatos_error_alkamis_pvm | translate"
+                                [errorMap]="[
+                                  { key: 'required', value: i18n.varhaiskasvatuspaatos_error_alkamis_pvm },
+                                  { key: 'matDatepickerMin', value: i18n.varhaiskasvatuspaatos_error_min_alkamis_pvm },
+                                  { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                                ]"
                                 [instructionText]="i18n.varhaiskasvatuspaatos_instruction_alkamis_pvm | translate">
             <app-varda-datepicker #fieldItem
                                   (dateChange)="startDateChange($event.value)"
@@ -69,9 +76,10 @@
                                 [form]="formGroup"
                                 [label]="i18n.varhaiskasvatuspaatos_paattymis_pvm | translate"
                                 [errorMap]="[
-                              { key: 'matDatepickerMin', value: i18n.varhaiskasvatuspaatos_error_min_paattymis_pvm },
-                              { key: 'tilapainen', value: i18n.varhaiskasvatuspaatos_error_paattymis_pvm }
-                              ]"
+                                  { key: 'tilapainen', value: i18n.varhaiskasvatuspaatos_error_paattymis_pvm },
+                                  { key: 'matDatepickerMin', value: i18n.varhaiskasvatuspaatos_error_min_paattymis_pvm },
+                                  { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                                ]"
                                 [instructionText]="i18n.varhaiskasvatuspaatos_instruction_paattymis_pvm | translate">
             <app-varda-datepicker #fieldItem
                                   [min]="minEndDate"
