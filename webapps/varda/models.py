@@ -1199,10 +1199,9 @@ class Z6_RequestLog(models.Model):
     class Meta:
         indexes = [
             Index(fields=['timestamp']),
-            Index(fields=['-timestamp']),
-            Index(fields=['vakajarjestaja']),
-            Index(fields=['lahdejarjestelma']),
-            Index(fields=['user']),
+            Index(fields=['vakajarjestaja', 'timestamp']),
+            Index(fields=['vakajarjestaja', 'user', 'timestamp']),
+            Index(fields=['lahdejarjestelma', 'timestamp'])
         ]
         verbose_name_plural = 'Request log'
 
