@@ -365,7 +365,14 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
                      'henkilo__sukunimi',
                      '=henkilo__henkilotunnus_unique_hash',
                      '=henkilo__henkilo_oid',
-                     '=id')
+                     '=id',
+                     '=tunniste',
+                     '=varhaiskasvatuspaatokset__id',
+                     '=varhaiskasvatuspaatokset__tunniste',
+                     '=varhaiskasvatuspaatokset__varhaiskasvatussuhteet__id',
+                     '=varhaiskasvatuspaatokset__varhaiskasvatussuhteet__tunniste',
+                     '=huoltajuussuhteet__maksutiedot__id',
+                     '=huoltajuussuhteet__maksutiedot__tunniste')
     serializer_class = UiLapsiSerializer
     permission_classes = (CustomModelPermissions,)
     pagination_class = ChangeablePageSizePagination
@@ -526,7 +533,16 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
                      'henkilo__sukunimi',
                      '=henkilo__henkilotunnus_unique_hash',
                      '=henkilo__henkilo_oid',
-                     '=id')
+                     '=id',
+                     '=tunniste',
+                     '=palvelussuhteet__id',
+                     '=palvelussuhteet__tunniste',
+                     '=palvelussuhteet__tyoskentelypaikat__id',
+                     '=palvelussuhteet__tyoskentelypaikat__tunniste',
+                     '=palvelussuhteet__pidemmatpoissaolot__id',
+                     '=palvelussuhteet__pidemmatpoissaolot__tunniste',
+                     '=taydennyskoulutukset__id',
+                     '=taydennyskoulutukset__tunniste')
     serializer_class = UiTyontekijaSerializer
     permission_classes = (HenkilostohakuPermissions,)
     queryset = Tyontekija.objects.none()
