@@ -1,6 +1,10 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.33 (17.12.2021)
+- OPHVARDA-2325: Korjaa käyttöliittymän omien virheviestien näyttö
+- OPHVARDA-2347: Syötä tietoja varhaiskasvatuspäätöksessä päättymispäivämäärän validointi
+
 1.5.32 (18.11.2021)
 - OPHVARDA-2335: Katsele tietoja toimipaikan tarkempi haku
 - OPHVARDA-2236: Yhteenvedon tilapäisen henkilöstön muutoksia
