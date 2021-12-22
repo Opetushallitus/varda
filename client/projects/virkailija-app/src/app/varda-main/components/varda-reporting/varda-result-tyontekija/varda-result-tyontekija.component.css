@@ -14,3 +14,7 @@
 .palvelussuhde-panel:not(:nth-of-type(1)) {
   margin-top: 2em;
 }
+
+.tehtavanimike-item {
+  display: block;
+}

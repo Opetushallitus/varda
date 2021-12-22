@@ -136,6 +136,14 @@ export class TyontekijaHenkilo {
   turvakielto: string;
 }
 
+export class TyontekijaTaydennyskoulutusCombined {
+  id: number;
+  tehtavanimikeList: Array<string>;
+  nimi: string;
+  suoritus_pvm: string;
+  koulutuspaivia: number;
+}
+
 export class TyontekijaTaydennyskoulutus {
   id: number;
   tehtavanimike_koodi: string;
