@@ -1,6 +1,11 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.34 (22.12.2021)
+- OPHVARDA-2296: Asiakasmaksuihin lisää hakumahdollisuuksia
+- OPHVARDA-2164: Tehtävänimikkeiden yhdistys koosteessa
+- OPHVARDA-2292: Päivittäinen ja kokopäiväinen varhaiskasvatus -termien korostus
+
 1.5.33 (17.12.2021)
 - OPHVARDA-2325: Korjaa käyttöliittymän omien virheviestien näyttö
 - OPHVARDA-2347: Syötä tietoja varhaiskasvatuspäätöksessä päättymispäivämäärän validointi
