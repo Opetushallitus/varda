@@ -90,6 +90,7 @@ export class LapsiKoosteVakapaatos {
   hakemus_pvm: string;
   tuntimaara_viikossa: number;
   jarjestamismuoto_koodi: string;
+  tilapainen_vaka_kytkin: boolean;
   paivittainen_vaka_kytkin: boolean;
   kokopaivainen_vaka_kytkin: boolean;
   vuorohoito_kytkin: boolean;

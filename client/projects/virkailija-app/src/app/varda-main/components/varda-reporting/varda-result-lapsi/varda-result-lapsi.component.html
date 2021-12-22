@@ -100,11 +100,15 @@
                   </tr>
                   <tr class="mat-header-row" *ngIf="vakapaatos.paivittainen_vaka_kytkin !== null">
                     <th scope="row" class="mat-header-cell">{{i18n.varhaiskasvatuspaatos_paivittainen_vaka_kytkin | translate}}</th>
-                    <td class="mat-cell">{{getBooleanLabel(vakapaatos.paivittainen_vaka_kytkin) | translate}}</td>
+                    <td class="mat-cell">{{(vakapaatos.paivittainen_vaka_kytkin ?
+                      i18n.varhaiskasvatuspaatos_paivittainen_vaka_kytkin_true :
+                      i18n.varhaiskasvatuspaatos_paivittainen_vaka_kytkin_false) | translate}}</td>
                   </tr>
                   <tr class="mat-header-row" *ngIf="vakapaatos.kokopaivainen_vaka_kytkin !== null">
                     <th scope="row" class="mat-header-cell">{{i18n.varhaiskasvatuspaatos_kokopaivainen_vaka_kytkin | translate}}</th>
-                    <td class="mat-cell">{{getBooleanLabel(vakapaatos.kokopaivainen_vaka_kytkin) | translate}}</td>
+                    <td class="mat-cell">{{(vakapaatos.kokopaivainen_vaka_kytkin ?
+                      i18n.varhaiskasvatuspaatos_kokopaivainen_vaka_kytkin_true :
+                      i18n.varhaiskasvatuspaatos_kokopaivainen_vaka_kytkin_false) | translate}}</td>
                   </tr>
                   <tr class="mat-header-row">
                     <th scope="row" class="mat-header-cell">{{i18n.varhaiskasvatuspaatos_vuorohoito_kytkin | translate}}</th>

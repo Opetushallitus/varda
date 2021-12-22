@@ -19,14 +19,12 @@
           <mat-panel-title *ngIf="varhaiskasvatuspaatos; else addVarhaiskasvatussuhde">
             <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
             <span *ngIf="!varhaiskasvatuspaatos.paattymis_pvm; else hasPaattymispvm">
-              {{ i18n.varhaiskasvatuspaatos_alkaen_PVM | translate: {pvm: varhaiskasvatuspaatos.alkamis_pvm | vardaDate}
-              }}
+              {{ i18n.varhaiskasvatuspaatos_alkaen_PVM | translate: {pvm: varhaiskasvatuspaatos.alkamis_pvm | vardaDate} }}
             </span>
             <ng-template #hasPaattymispvm>
               <span *ngIf="varhaiskasvatuspaatos.paattymis_pvm">
                 {{ i18n.varhaiskasvatuspaatos | translate }}
-                {{varhaiskasvatuspaatos.alkamis_pvm | vardaDate }} - {{varhaiskasvatuspaatos.paattymis_pvm | vardaDate
-                }}
+                {{ varhaiskasvatuspaatos.alkamis_pvm | vardaDate }} - {{ varhaiskasvatuspaatos.paattymis_pvm | vardaDate }}
               </span>
             </ng-template>
           </mat-panel-title>
@@ -160,8 +158,8 @@
                                   [instructionText]="i18n.varhaiskasvatuspaatos_instruction_paivittainen_vaka_kytkin | translate">
               <mat-radio-group #fieldItem
                                formControlName="paivittainen_vaka_kytkin">
-                <mat-radio-button [value]="true">{{ i18n.yes | translate }}</mat-radio-button>
-                <mat-radio-button [value]="false">{{ i18n.no | translate }}</mat-radio-button>
+                <mat-radio-button [value]="true">{{ i18n.varhaiskasvatuspaatos_paivittainen_vaka_kytkin_true | translate }}</mat-radio-button>
+                <mat-radio-button [value]="false">{{ i18n.varhaiskasvatuspaatos_paivittainen_vaka_kytkin_false | translate }}</mat-radio-button>
               </mat-radio-group>
             </app-varda-form-field>
 
@@ -172,8 +170,8 @@
                                   [instructionText]="i18n.varhaiskasvatuspaatos_instruction_kokopaivainen_vaka_kytkin | translate">
               <mat-radio-group #fieldItem
                                formControlName="kokopaivainen_vaka_kytkin">
-                <mat-radio-button [value]="true">{{ i18n.yes | translate }}</mat-radio-button>
-                <mat-radio-button [value]="false">{{ i18n.no | translate }}</mat-radio-button>
+                <mat-radio-button [value]="true">{{ i18n.varhaiskasvatuspaatos_kokopaivainen_vaka_kytkin_true | translate }}</mat-radio-button>
+                <mat-radio-button [value]="false">{{ i18n.varhaiskasvatuspaatos_kokopaivainen_vaka_kytkin_false | translate }}</mat-radio-button>
               </mat-radio-group>
             </app-varda-form-field>
           </ng-container>
