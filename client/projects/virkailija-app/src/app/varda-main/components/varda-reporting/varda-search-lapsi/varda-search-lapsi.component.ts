@@ -4,7 +4,7 @@ import {
   FilterStringType,
   VardaSearchAbstractComponent
 } from '../varda-search-abstract.component';
-import { VardaKoodistoService, VardaDateService } from 'varda-shared';
+import { CodeDTO, KoodistoDTO, VardaKoodistoService, VardaDateService } from 'varda-shared';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { TranslateService } from '@ngx-translate/core';
 import { Moment } from 'moment';
@@ -14,6 +14,7 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { PaginatorParams } from '../varda-result-list/varda-result-list.component';
 import { VardaKoosteApiService } from 'projects/virkailija-app/src/app/core/services/varda-kooste-api.service';
 import { ViewAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
+import { BehaviorSubject, forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-varda-search-lapsi',
@@ -39,12 +40,19 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
     voimassaolo: string;
     alkamisPvm: Moment;
     paattymisPvm: Moment;
+    maksunPeruste: CodeDTO;
+    palveluseteli: boolean;
   } = {
       rajaus: this.rajaus.VAKAPAATOKSET,
       voimassaolo: this.voimassaolo.VOIMASSA,
       alkamisPvm: moment(),
-      paattymisPvm: moment()
+      paattymisPvm: moment(),
+      maksunPeruste: null,
+      palveluseteli: null
     };
+
+  maksunPerusteCodes: Array<CodeDTO> = [];
+  filteredMaksunPerusteOptions: BehaviorSubject<Array<CodeDTO>> = new BehaviorSubject([]);
 
   constructor(
     koodistoService: VardaKoodistoService,
@@ -63,6 +71,12 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
     this.toimipaikat = this.authService.getAuthorizedToimipaikat(this.katselijaToimipaikat, ViewAccess.lapsitiedot);
     this.filteredToimipaikkaOptions.next(this.toimipaikat);
     this.search();
+    forkJoin([
+      this.getKoodistoFromKoodistoService(this.koodistoEnum.maksunperuste)
+    ]).subscribe((data: Array<KoodistoDTO>) => {
+      this.maksunPerusteCodes = data[0].codes;
+      this.filteredMaksunPerusteOptions.next(this.maksunPerusteCodes);
+    });
   }
 
   search(paginatorParams?: PaginatorParams): void {
@@ -86,6 +100,15 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
       searchParams.voimassaolo = this.filterParams.voimassaolo;
       searchParams.alkamis_pvm = this.dateService.momentToVardaDate(this.filterParams.alkamisPvm);
       searchParams.paattymis_pvm = this.dateService.momentToVardaDate(this.filterParams.paattymisPvm);
+    }
+
+    if (this.filterParams.rajaus === this.rajaus.MAKSUTIEDOT) {
+      if (this.filterParams.maksunPeruste) {
+        searchParams.maksun_peruste = this.filterParams.maksunPeruste.code_value;
+      }
+      if (this.filterParams.palveluseteli !== null) {
+        searchParams.palveluseteli = this.filterParams.palveluseteli;
+      }
     }
 
     if (!this.isAllToimipaikatSelected) {
@@ -144,6 +167,16 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
       });
     }
 
+    if (this.filterParams.rajaus === this.rajaus.MAKSUTIEDOT) {
+      stringParams.push({ value: this.getCodeUiString(this.filterParams.maksunPeruste), type: FilterStringType.RAW, lowercase: true });
+      if (this.filterParams.palveluseteli !== null) {
+        stringParams.push({ value: 'palveluseteli', type: FilterStringType.TRANSLATED_STRING, lowercase: true });
+        stringParams.push({ value: ': ', type: FilterStringType.RAW, ignoreComma: true, ignoreSpace: true });
+        stringParams.push({ value: this.filterParams.palveluseteli ? 'yes' : 'no',
+          type: FilterStringType.TRANSLATED_STRING, lowercase: true, ignoreComma: true });
+      }
+    }
+
     setTimeout(() => {
       this.filterString = this.getFilterString(stringParams);
     });
@@ -160,12 +193,18 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
     this.filterParams.voimassaolo = null;
     this.filterParams.alkamisPvm = null;
     this.filterParams.paattymisPvm = null;
+    this.filterParams.maksunPeruste = null;
+    this.filterParams.palveluseteli = null;
   }
 
   isFiltersFilled(): boolean {
     return this.filterParams.rajaus !== this.rajaus.NONE && this.filterParams.rajaus !== null &&
       this.filterParams.voimassaolo !== null && this.filterParams.alkamisPvm !== null &&
       this.filterParams.paattymisPvm !== null;
+  }
+
+  autofillOnChange() {
+    this.search();
   }
 
   afterUserAccessInit() {

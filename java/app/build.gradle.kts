@@ -1,6 +1,6 @@
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.5.10"
-    id("com.adarshr.test-logger") version "3.0.0"
+    id("org.jetbrains.kotlin.jvm") version "1.6.10"
+    id("com.adarshr.test-logger") version "3.1.0"
     application
 }
 
@@ -12,18 +12,18 @@ dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
-    implementation("com.google.guava:guava:30.1-jre")
+    implementation("com.google.guava:guava:31.0.1-jre")
 
-    implementation("io.ktor:ktor-server-core:1.6.0")
-    implementation("io.ktor:ktor-server-netty:1.6.0")
-    implementation("ch.qos.logback:logback-classic:1.2.3")
+    implementation("io.ktor:ktor-server-core:1.6.7")
+    implementation("io.ktor:ktor-server-netty:1.6.7")
+    implementation("ch.qos.logback:logback-classic:1.2.9")
 
-    implementation("org.apache.poi:poi:5.0.0")
-    implementation("org.apache.poi:poi-ooxml:5.0.0")
+    implementation("org.apache.poi:poi:5.1.0")
+    implementation("org.apache.poi:poi-ooxml:5.1.0")
 
-    testImplementation("io.ktor:ktor-server-test-host:1.6.0")
-    testImplementation("org.jetbrains.kotlin:kotlin-test")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
+    testImplementation("io.ktor:ktor-server-test-host:1.6.7")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:1.6.7")
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.6.7")
 }
 
 application {
@@ -43,7 +43,7 @@ tasks {
     jar {
         manifest {
             // Update version code here
-            attributes(mapOf("Main-Class" to "fi.csc.varda.AppKt", "Implementation-Version" to "1.0.0"))
+            attributes(mapOf("Main-Class" to "fi.csc.varda.AppKt", "Implementation-Version" to "1.0.1"))
         }
 
         // Create fat JAR
@@ -60,7 +60,7 @@ tasks {
     }
     compileKotlin {
         kotlinOptions {
-            jvmTarget = JavaVersion.VERSION_16.toString()
+            jvmTarget = JavaVersion.VERSION_17.toString()
         }
     }
 }

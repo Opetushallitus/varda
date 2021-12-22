@@ -24,6 +24,7 @@ export interface FilterStringParam {
   value: string;
   ignoreComma?: boolean;
   lowercase?: boolean;
+  ignoreSpace?: boolean;
 }
 
 export interface SearchResult {
@@ -58,7 +59,10 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
     palvelussuhteet: this.i18n.palvelussuhteet,
     poissaolot: this.i18n.katsele_tietoja_tyontekija_poissaolot,
     taydennyskoulutukset: this.i18n.taydennyskoulutukset,
-    aikavali: this.i18n.katsele_tietoja_aikavalilla
+    aikavali: this.i18n.katsele_tietoja_aikavalilla,
+    palveluseteli: this.i18n.katsele_tietoja_lapsi_palveluseteli,
+    yes: this.i18n.yes,
+    no: this.i18n.no
   };
 
   searchValue: string;
@@ -127,7 +131,8 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
       }
 
       if (resultString !== '') {
-        resultString += param.ignoreComma ? ' ' : ', ';
+        resultString += param.ignoreComma ? '' : ',';
+        resultString += param.ignoreSpace ? '' : ' ';
       }
 
       let newValue;

@@ -22,7 +22,7 @@ from varda import filters
 from varda.cache import create_cache_key, get_object_ids_user_has_permissions
 from varda.cas.varda_permissions import IsVardaPaakayttaja
 from varda.custom_swagger import ActionPaginationSwaggerAutoSchema
-from varda.filters import TyontekijahakuUiFilter
+from varda.filters import TyontekijahakuUiFilter, CustomParametersFilterBackend, CustomParameter
 from varda.misc_queries import get_paos_toimipaikat
 from varda.misc_viewsets import ExtraKwargsFilterBackend
 from varda.models import (Toimipaikka, VakaJarjestaja, PaosToiminta, PaosOikeus, Lapsi, Henkilo,
@@ -358,8 +358,10 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
         voimassaolo=str (alkanut/paattynyt/voimassa)
         alkamis_pvm=YYYY-mm-dd
         paattymis_pvm=YYYY-mm-dd
+        maksun_peruste=str
+        palveluseteli=boolean
     """
-    filter_backends = (SearchFilter,)
+    filter_backends = (CustomParametersFilterBackend, SearchFilter,)
     queryset = Lapsi.objects.none()
     search_fields = ('henkilo__etunimet',
                      'henkilo__sukunimi',
@@ -376,6 +378,20 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
     serializer_class = UiLapsiSerializer
     permission_classes = (CustomModelPermissions,)
     pagination_class = ChangeablePageSizePagination
+    custom_parameters = (CustomParameter(name='toimipaikat', required=False, location='query', data_type='string',
+                                         description='Comma separated list of toimipaikka IDs'),
+                         CustomParameter(name='rajaus', required=False, location='query', data_type='string',
+                                         description='vakasuhteet/vakapaatokset/maksutiedot'),
+                         CustomParameter(name='voimassaolo', required=False, location='query', data_type='string',
+                                         description='alkanut/paattynyt/voimassa'),
+                         CustomParameter(name='alkamis_pvm', required=False, location='query', data_type='string',
+                                         description='ISO Date (YYYY-MM-DD)'),
+                         CustomParameter(name='paattymis_pvm', required=False, location='query', data_type='string',
+                                         description='ISO Date (YYYY-MM-DD)'),
+                         CustomParameter(name='maksun_peruste', required=False, location='query', data_type='string',
+                                         description='Lapsi must have this maksun peruste koodi'),
+                         CustomParameter(name='palveluseteli', required=False, location='query', data_type='boolean',
+                                         description='Lapsi has maksutieto with palveluseteli'),)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -388,7 +404,7 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
         content_type = ContentType.objects.get(model=model_name)
         return get_object_ids_user_has_permissions(self.request.user, model_name, content_type)
 
-    def apply_filters(self, vakasuhde_filter):
+    def apply_rajaus_filters(self, vakasuhde_filter):
         query_params = self.request.query_params
         rajaus = query_params.get('rajaus', None)
         voimassaolo = query_params.get('voimassaolo', None)
@@ -429,6 +445,24 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
                                 Q(**{prefix + 'paattymis_pvm__isnull': True})))
 
         return vakasuhde_filter
+
+    def apply_filters(self, lapsi_filter):
+        lapsi_filter = self.apply_rajaus_filters(lapsi_filter)
+
+        query_params = self.request.query_params
+        maksun_peruste_koodi = query_params.get('maksun_peruste', None)
+        palveluseteli = query_params.get('palveluseteli', None)
+
+        if maksun_peruste_koodi:
+            lapsi_filter &= Q(huoltajuussuhteet__maksutiedot__maksun_peruste_koodi__iexact=maksun_peruste_koodi)
+
+        if palveluseteli is not None:
+            palveluseteli_boolean = True if palveluseteli == 'true' else False
+            lapsi_filter &= (Q(huoltajuussuhteet__maksutiedot__palveluseteli_arvo__gt=0) if palveluseteli_boolean else
+                             (Q(huoltajuussuhteet__maksutiedot__palveluseteli_arvo__isnull=True) |
+                              Q(huoltajuussuhteet__maksutiedot__palveluseteli_arvo=0)))
+
+        return lapsi_filter
 
     def get_queryset(self):
         if len(self.toimipaikka_id_list) > 0:
@@ -527,7 +561,7 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
         tutkinto=str
         tyosuhde=str
     """
-    filter_backends = (ExtraKwargsFilterBackend, SearchFilter,)
+    filter_backends = (CustomParametersFilterBackend, ExtraKwargsFilterBackend, SearchFilter,)
     filterset_class = filters.UiTyontekijaFilter
     search_fields = ('henkilo__etunimet',
                      'henkilo__sukunimi',
@@ -547,6 +581,24 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
     permission_classes = (HenkilostohakuPermissions,)
     queryset = Tyontekija.objects.none()
     pagination_class = ChangeablePageSizePagination
+    custom_parameters = (CustomParameter(name='toimipaikat', required=False, location='query', data_type='string',
+                                         description='Comma separated list of toimipaikka IDs'),
+                         CustomParameter(name='rajaus', required=False, location='query', data_type='string',
+                                         description='palvelussuhteet/tyoskentelypaikat/poissaolot/taydennyskoulutukset'),
+                         CustomParameter(name='voimassaolo', required=False, location='query', data_type='string',
+                                         description='alkanut/paattynyt/voimassa'),
+                         CustomParameter(name='alkamis_pvm', required=False, location='query', data_type='string',
+                                         description='ISO Date (YYYY-MM-DD)'),
+                         CustomParameter(name='paattymis_pvm', required=False, location='query', data_type='string',
+                                         description='ISO Date (YYYY-MM-DD)'),
+                         CustomParameter(name='kiertava', required=False, location='query', data_type='boolean',
+                                         description='Tyontekija has kiertava tyoskentelypaikka'),
+                         CustomParameter(name='tehtavanimike', required=False, location='query', data_type='string',
+                                         description='Tyontekija must have this tehtavanimike koodi'),
+                         CustomParameter(name='tutkinto', required=False, location='query', data_type='string',
+                                         description='Tyontekija must have this tutkinto koodi'),
+                         CustomParameter(name='tyosuhde', required=False, location='query', data_type='string',
+                                         description='Tyontekija must have this tyosuhde koodi'),)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

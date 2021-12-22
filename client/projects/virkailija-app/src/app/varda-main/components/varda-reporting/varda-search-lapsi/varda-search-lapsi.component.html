@@ -172,14 +172,46 @@
             </div>
           </div>
         </div>
-        <div class="col filter-clear-container">
-          <button class="varda-button varda-icon-button filter-clear"
-                  type="button"
-                  (click)="clearFilters()"
-                  [disabled]="isFiltersInactive">
-            <mat-icon alt="">delete</mat-icon>
-            {{i18n.katsele_tietoja_clear_filters | translate}}
-          </button>
+        <div class="varda-reporting-row-wrap">
+          <div class="col-md-6 col-lg-4" *ngIf="filterParams.rajaus === rajaus.MAKSUTIEDOT">
+              <label for="lapsiMaksunPerusteInput"
+                     class="oph-bold">{{i18n.maksutieto_maksunperuste_koodi | translate}}</label>
+              <app-varda-autocomplete-selector [options]="maksunPerusteCodes"
+                                               id="lapsiMaksunPerusteInput"
+                                               name="lapsiMaksunPerusteInput"
+                                               [optionFormat]="{format: '{0} ({1})', properties:['name', 'code_value']}"
+                                               [nullValue]="null"
+                                               [placeholder]="i18n.katsele_tietoja_lapsi_maksun_peruste_all | translate"
+                                               [nullOptionLabel]="i18n.katsele_tietoja_lapsi_maksun_peruste_all | translate"
+                                               [invalidInputLabel]="i18n.katsele_tietoja_error_no_maksun_peruste_selected | translate"
+                                               [(ngModel)]="filterParams.maksunPeruste"
+                                               (ngModelChange)="autofillOnChange()">
+              </app-varda-autocomplete-selector>
+          </div>
+          <div class="col-md-4 col-lg-3 margin-top-md" *ngIf="filterParams.rajaus === rajaus.MAKSUTIEDOT">
+            <label for="lapsiPalveluseteliSelect"
+                   class="oph-bold">{{i18n.katsele_tietoja_lapsi_palveluseteli | translate}}</label>
+            <div class="oph-select-container">
+              <select class="oph-input oph-select"
+                      name="lapsiPalveluseteliSelect"
+                      id="lapsiPalveluseteliSelect"
+                      (change)="search()"
+                      [(ngModel)]="filterParams.palveluseteli">
+                <option [ngValue]="null">{{i18n.all | translate}}</option>
+                <option [ngValue]="true">{{i18n.yes | translate}}</option>
+                <option [ngValue]="false">{{i18n.no | translate}}</option>
+              </select>
+            </div>
+          </div>
+          <div class="col filter-clear-container">
+            <button class="varda-button varda-icon-button filter-clear"
+                    type="button"
+                    (click)="clearFilters()"
+                    [disabled]="isFiltersInactive">
+              <mat-icon alt="">delete</mat-icon>
+              {{i18n.katsele_tietoja_clear_filters | translate}}
+            </button>
+          </div>
         </div>
       </div>
       <div class="modal-form-intro lapsi-filter-instruction order-6"

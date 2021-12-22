@@ -4,7 +4,7 @@ This application is used to encrypt Excel reports using Apache POI.
 
 ## Prerequisites
 
-* Java 16 (OpenJDK)
+* Java 17 (OpenJDK)
 
 ## Development
 

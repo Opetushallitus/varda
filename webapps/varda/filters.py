@@ -444,8 +444,6 @@ class UiTyontekijaFilter(djangofilters.FilterSet):
     may get tyontekija that has tyoskentelypaikka in toimipaikka=1 with tehtavanimike=002 and in toimipaikka=3 with
     tehtavanimike=001.
     """
-    has_vakajarjestaja_tyontekija_permissions = False
-
     class Meta:
         model = Tyontekija
         fields = []
