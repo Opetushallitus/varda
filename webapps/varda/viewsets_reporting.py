@@ -4,21 +4,22 @@ from wsgiref.util import FileWrapper
 
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
-from django.contrib.auth.models import User, AnonymousUser
-from django.contrib.postgres.aggregates import StringAgg, ArrayAgg
+from django.contrib.auth.models import AnonymousUser, User
+from django.contrib.postgres.aggregates import ArrayAgg, StringAgg
 from django.db import transaction
-from django.db.models import (Q, Case, Value, When, OuterRef, Subquery, CharField, F, DateField, Count, IntegerField,
-                              Exists, FloatField, Sum)
+from django.db.models import (Case, CharField, Count, DateField, Exists, F, FloatField, IntegerField, OuterRef, Q,
+                              Subquery, Sum, Value, When)
 from django.db.models.functions import Cast
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
-from rest_framework.mixins import ListModelMixin, CreateModelMixin, RetrieveModelMixin
+from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
@@ -30,34 +31,35 @@ from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.enums.koodistot import Koodistot
 from varda.enums.supported_language import SupportedLanguage
 from varda.enums.ytj import YtjYritysmuoto
-from varda.excel_export import (generate_filename, get_excel_local_file_path, ExcelReportStatus,
-                                create_excel_report_task, ExcelReportType)
-from varda.filters import (TiedonsiirtoFilter, ExcelReportFilter, KelaEtuusmaksatusFilter,
-                           CustomParametersFilterBackend, CustomParameter, TransferOutageReportFilter,
-                           RequestSummaryFilter)
+from varda.excel_export import (create_excel_report_task, ExcelReportStatus, ExcelReportType, generate_filename,
+                                get_excel_local_file_path)
+from varda.filters import (CustomParameter, CustomParametersFilterBackend, ExcelReportFilter, KelaEtuusmaksatusFilter,
+                           RequestSummaryFilter, TiedonsiirtoFilter, TransferOutageReportFilter)
 from varda.misc import encrypt_string
-from varda.validators import validate_kela_api_datetimefield
-from varda.models import (KieliPainotus, Lapsi, Maksutieto, PaosOikeus, ToiminnallinenPainotus, Toimipaikka,
-                          VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z6_RequestLog,
-                          Z4_CasKayttoOikeudet, Tyontekija, Z8_ExcelReport, PaosToiminta, Z2_Code, Z6_LastRequest,
-                          Tyoskentelypaikka, Palvelussuhde, Z6_RequestSummary)
-from varda.pagination import (ChangeablePageSizePagination, IdCursorPagination, DateCursorPagination,
-                              DateReverseCursorPagination, IdReverseCursorPagination,
-                              ChangeableReportingPageSizePagination)
-from varda.permissions import (user_permission_groups_in_organization, is_oph_staff, ReadAdminOrOPHUser, auditlogclass,
-                               get_vakajarjestajat_filter_for_raportit, RaportitPermissions, IsCertificateAccess)
-from varda.serializers_reporting import (KelaEtuusmaksatusAloittaneetSerializer, KelaEtuusmaksatusLopettaneetSerializer,
-                                         KelaEtuusmaksatusMaaraaikaisetSerializer,
-                                         KelaEtuusmaksatusKorjaustiedotSerializer,
+from varda.misc_queries import get_related_object_changed_id_qs
+from varda.misc_viewsets import ViewSetValidator
+from varda.models import (KieliPainotus, Lapsi, Maksutieto, Palvelussuhde, PaosOikeus, PaosToiminta,
+                          ToiminnallinenPainotus, Toimipaikka, Tyontekija, Tyoskentelypaikka, VakaJarjestaja,
+                          Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z2_Code, Z4_CasKayttoOikeudet, Z6_LastRequest,
+                          Z6_RequestLog, Z6_RequestSummary, Z8_ExcelReport)
+from varda.pagination import (ChangeablePageSizePagination, ChangeableReportingPageSizePagination, DateCursorPagination,
+                              DateReverseCursorPagination, IdCursorPagination, IdReverseCursorPagination,
+                              TkCursorPagination)
+from varda.permissions import (auditlogclass, get_vakajarjestajat_filter_for_raportit, is_oph_staff,
+                               IsCertificateAccess, RaportitPermissions, ReadAdminOrOPHUser,
+                               user_permission_groups_in_organization)
+from varda.serializers_reporting import (DuplicateLapsiSerializer, ErrorReportLapsetSerializer,
+                                         ErrorReportToimipaikatSerializer, ErrorReportTyontekijatSerializer,
+                                         ExcelReportSerializer, KelaEtuusmaksatusAloittaneetSerializer,
                                          KelaEtuusmaksatusKorjaustiedotPoistetutSerializer,
-                                         TiedonsiirtotilastoSerializer, ErrorReportLapsetSerializer,
-                                         ErrorReportTyontekijatSerializer, TiedonsiirtoSerializer,
-                                         TiedonsiirtoYhteenvetoSerializer, ExcelReportSerializer,
-                                         DuplicateLapsiSerializer, ErrorReportToimipaikatSerializer,
-                                         LahdejarjestelmaTransferOutageReportSerializer,
-                                         UserTransferOutageReportSerializer, RequestSummarySerializer,
-                                         RequestSummaryGroupSerializer)
-
+                                         KelaEtuusmaksatusKorjaustiedotSerializer,
+                                         KelaEtuusmaksatusLopettaneetSerializer,
+                                         KelaEtuusmaksatusMaaraaikaisetSerializer,
+                                         LahdejarjestelmaTransferOutageReportSerializer, RequestSummaryGroupSerializer,
+                                         RequestSummarySerializer, TiedonsiirtoSerializer,
+                                         TiedonsiirtotilastoSerializer, TiedonsiirtoYhteenvetoSerializer,
+                                         TkOrganisaatiotSerializer, UserTransferOutageReportSerializer)
+from varda.validators import validate_kela_api_datetimefield
 
 logger = logging.getLogger(__name__)
 
@@ -1217,3 +1219,49 @@ class RequestSummaryViewSet(GenericViewSet, ListModelMixin):
                     .annotate(ratio=Cast(F('unsuccessful_count'), output_field=FloatField()) /
                               Cast(F('successful_count') + F('unsuccessful_count'), output_field=FloatField()))
                     .order_by('-ratio', '-unsuccessful_count', '-summary_date'))
+
+
+class TkBaseViewSet(GenericViewSet, ListModelMixin):
+    permission_classes = (IsCertificateAccess,)
+    pagination_class = TkCursorPagination
+    filter_backends = (CustomParametersFilterBackend,)
+    custom_parameters = (CustomParameter(name='datetime_gt', required=False, location='query', data_type='string',
+                                         description='ISO DateTime (YYYY-MM-DDTHH:MM:SSZ), '
+                                                     'e.g. 2021-01-01T00%3A00%3A00%2B0300'),
+                         CustomParameter(name='datetime_lte', required=False, location='query', data_type='string',
+                                         description='ISO DateTime (YYYY-MM-DDTHH:MM:SSZ), '
+                                                     'e.g. 2021-01-01T00%3A00%3A00Z'),)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # If datetime_gt parameter was not provided set datetime_gt to year 2000 so all results are fetched
+        self.datetime_gt = timezone.now().replace(year=2000)
+        # If datetime_lte parameter was not provided set datetime_lte to tomorrow so all results are fetched
+        self.datetime_lte = timezone.now() + datetime.timedelta(days=1)
+
+    def initial(self, *args, **kwargs):
+        super().initial(*args, **kwargs)
+
+        with ViewSetValidator() as validator:
+            for datetime_param in (('datetime_gt', self.request.query_params.get('datetime_gt'),),
+                                   ('datetime_lte', self.request.query_params.get('datetime_lte'),),):
+                field_name = datetime_param[0]
+                if field_value := datetime_param[1]:
+                    datetime_format = '%Y-%m-%dT%H:%M:%S.%f%z' if '.' in field_value else '%Y-%m-%dT%H:%M:%S%z'
+                    try:
+                        setattr(self, field_name, datetime.datetime.strptime(field_value, datetime_format))
+                    except ValueError:
+                        validator.error(field_name, ErrorMessages.GE020.value)
+
+
+@auditlogclass
+class TkOrganisaatiot(TkBaseViewSet):
+    queryset = VakaJarjestaja.objects.none()
+    serializer_class = TkOrganisaatiotSerializer
+
+    def get_queryset(self):
+        id_qs = get_related_object_changed_id_qs(VakaJarjestaja.get_name(), self.datetime_gt, self.datetime_lte)
+        return (VakaJarjestaja.history
+                .filter(id__in=Subquery(id_qs), history_date__lte=self.datetime_lte)
+                .distinct('id').order_by('id', '-history_date'))

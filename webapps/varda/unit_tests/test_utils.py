@@ -1,14 +1,15 @@
+import base64
 import datetime
 import json
-import base64
 from functools import wraps
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from varda.misc import hash_string, decrypt_henkilotunnus
+from varda.misc import decrypt_henkilotunnus, hash_string
 from varda.models import Henkilo
 
 
@@ -91,9 +92,11 @@ def base64_encoding(string_to_be_encoded):
 
 
 def mock_admin_user(username):
-    mock_admin = User.objects.get(username=username)
-    mock_admin.is_superuser = True
-    mock_admin.save()
+    if not settings.PRODUCTION_ENV:
+        mock_admin = User.objects.get(username=username)
+        mock_admin.is_superuser = True
+        mock_admin.is_staff = True
+        mock_admin.save()
 
 
 def post_henkilo_to_get_permissions(client, henkilo_id=None, hetu=None, henkilo_oid=None):

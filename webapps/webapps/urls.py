@@ -15,10 +15,9 @@ Including another URLconf
 """
 import re
 
+import django_cas_ng.views as django_cas_ng_views
 from django.apps import apps
 from django.conf import settings
-
-import django_cas_ng.views as django_cas_ng_views
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, re_path
@@ -26,18 +25,17 @@ from django.views.decorators.clickjacking import xframe_options_exempt, xframe_o
 from django_spaghetti.views import Plate
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view as get_schema_view_yasg
-from rest_framework import routers, permissions
+from rest_framework import permissions, routers
 from rest_framework.renderers import CoreJSONRenderer
 from rest_framework.schemas import get_schema_view
 from rest_framework_nested import routers as nested_routers
 
-from varda import (views, viewsets, viewsets_admin, viewsets_reporting, viewsets_ui, viewsets_oppija,
-                   viewsets_henkilosto, viewsets_julkinen)
+from varda import (views, viewsets, viewsets_admin, viewsets_henkilosto, viewsets_julkinen, viewsets_oppija,
+                   viewsets_reporting, viewsets_ui)
 from varda.cas.misc_cas import is_local_url_decorator
 from varda.cas.oppija_cas_views import OppijaCasLoginView
 from varda.constants import SWAGGER_DESCRIPTION
-from varda.custom_swagger import PublicSwaggerRenderer, PublicSchemaGenerator
-
+from varda.custom_swagger import PublicSchemaGenerator, PublicSwaggerRenderer
 
 schema_view = get_schema_view(title='VARDA API', renderer_classes=[CoreJSONRenderer])
 router_admin = routers.DefaultRouter()
@@ -173,6 +171,10 @@ router_kela_reporting.register(r'korjaustiedot', viewsets_reporting.KelaEtuusmak
 # /api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut
 router_kela_reporting.register(r'korjaustiedotpoistetut', viewsets_reporting.KelaEtuusmaksatusKorjaustiedotPoistetutViewSet, 'korjaustiedotpoistetut')
 
+router_tilastokeskus_reporting = routers.DefaultRouter()
+# /api/reporting/v1/tilastokeskus/organisaatiot/
+router_tilastokeskus_reporting.register(r'organisaatiot', viewsets_reporting.TkOrganisaatiot, basename='organisaatiot')
+
 """
 router_reporting.register(r'lapset-ryhmittain', viewsets_reporting.LapsetRyhmittainViewSet, 'lapset-ryhmittain')
 """
@@ -273,6 +275,7 @@ urlpatterns = [
     re_path(r'^api/onr/', include(router_onr.urls), name='api-onr'),
     re_path(r'^api/reporting/v1/', include(router_reporting.urls), name='api-v1-reporting'),
     re_path(r'^api/reporting/v1/kela/etuusmaksatus/', include(router_kela_reporting.urls), name='kela-v1-reporting'),
+    re_path(r'^api/reporting/v1/tilastokeskus/', include(router_tilastokeskus_reporting.urls), name='tilastokeskus-v1-reporting'),
     re_path(r'^varda/', include('varda.urls'), name='varda'),
     re_path(r'^api/henkilosto/v1/', include(router_henkilosto.urls), name='api-henkilosto-v1'),
     re_path(r'^api/henkilosto/v1/', include(nested_tyontekija_router.urls), name='api-nested-tyontekija-v1'),

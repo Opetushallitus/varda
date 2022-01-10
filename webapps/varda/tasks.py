@@ -1,22 +1,21 @@
 import datetime
 import logging
 import re
-
 from functools import wraps
-from celery import shared_task
 
+from celery import shared_task
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.management import call_command
-from django.db import transaction
-from django.db.models import Q, IntegerField, Count, Case, When, DateField, Func, F, Value
+from django.db import connection, transaction
+from django.db.models import Case, Count, DateField, F, Func, IntegerField, Q, Value, When
 from django.db.models.functions import Cast
 from django.db.models.signals import post_save
 from django.utils import timezone
-from guardian.models import UserObjectPermission, GroupObjectPermission
+from guardian.models import GroupObjectPermission, UserObjectPermission
 
-from varda import oppijanumerorekisteri, koodistopalvelu
+from varda import koodistopalvelu, oppijanumerorekisteri
 from varda import organisaatiopalvelu
 from varda import permission_groups
 from varda import permissions
@@ -26,12 +25,12 @@ from varda.enums.aikaleima_avain import AikaleimaAvain
 from varda.excel_export import delete_excel_reports_earlier_than
 from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
 from varda.misc import memory_efficient_queryset_iterator
-from varda.models import (Henkilo, Taydennyskoulutus, Toimipaikka, Z6_RequestLog, Lapsi, Varhaiskasvatuspaatos,
-                          Huoltaja, Huoltajuussuhde, Maksutieto, Z6_LastRequest, Z6_RequestSummary, Z6_RequestCount,
-                          Aikaleima, MaksutietoHuoltajuussuhde, Z3_AdditionalCasUserFields, BatchError,
-                          ToiminnallinenPainotus, KieliPainotus)
-from varda.permissions import assign_object_level_permissions_for_instance, delete_object_permissions_explicitly
+from varda.models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto,
+                          MaksutietoHuoltajuussuhde, Palvelussuhde, Taydennyskoulutus, TaydennyskoulutusTyontekija,
+                          ToiminnallinenPainotus, Toimipaikka, Tyontekija, VakaJarjestaja, Varhaiskasvatuspaatos,
+                          Z3_AdditionalCasUserFields, Z6_LastRequest, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary)
 from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups
+from varda.permissions import assign_object_level_permissions_for_instance, delete_object_permissions_explicitly
 
 logger = logging.getLogger(__name__)
 
@@ -589,3 +588,74 @@ def reset_painotus_permissions():
                 index += 1
                 current_model = type(instance)
             logger.info(f'Reset permissions for {index} {current_model.__name__} objects')
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def init_related_object_changed_table_task():
+    related_change_tuple = (
+        (
+            VakaJarjestaja.get_name(), 'id', VakaJarjestaja.get_name(), 'id', None, None,
+        ),
+        (
+            Toimipaikka.get_name(), 'id', Toimipaikka.get_name(), 'id',
+            VakaJarjestaja.get_name(), 'vakajarjestaja_id',
+        ),
+        (
+            Lapsi.get_name(), 'id', Lapsi.get_name(), 'id', None, None,
+        ),
+        (
+            Varhaiskasvatuspaatos.get_name(), 'id', Varhaiskasvatuspaatos.get_name(), 'id',
+            Lapsi.get_name(), 'lapsi_id',
+        ),
+        (
+            Tyontekija.get_name(), 'id', Tyontekija.get_name(), 'id', None, None,
+        ),
+        (
+            Palvelussuhde.get_name(), 'id', Palvelussuhde.get_name(), 'id',
+            Tyontekija.get_name(), 'tyontekija_id',
+        ),
+        (
+            Huoltajuussuhde.get_name(), 'id', Lapsi.get_name(), 'lapsi_id', None, None,
+        ),
+        (
+            TaydennyskoulutusTyontekija.get_name(), 'id', Tyontekija.get_name(), 'tyontekija_id',
+            Taydennyskoulutus.get_name(), 'taydennyskoulutus_id',
+        ),
+    )
+
+    with transaction.atomic():
+        for related_change in related_change_tuple:
+            trigger_class = related_change[0]
+            trigger_id_field = related_change[1]
+            model_class = related_change[2]
+            model_id_field = related_change[3]
+            parent_class = related_change[4]
+            parent_id_field = related_change[5]
+
+            with connection.cursor() as cursor:
+                if parent_class and parent_id_field:
+                    cursor.execute(f'''
+                        INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                            instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                        SELECT %s, {trigger_id_field}, %s, {model_id_field}, %s, {parent_id_field}, luonti_pvm, '+'
+                        FROM varda_{trigger_class};
+                    ''', [trigger_class, model_class, parent_class])
+                else:
+                    cursor.execute(f'''
+                        INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                            instance_id, changed_timestamp, history_type)
+                        SELECT %s, {trigger_id_field}, %s, {model_id_field}, luonti_pvm, '+'
+                        FROM varda_{trigger_class};
+                    ''', [trigger_class, model_class])
+
+        # MaksutietoHuoltajuussuhde requires different logic
+        with connection.cursor() as cursor:
+            cursor.execute('''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'maksutietohuoltajuussuhde', mhs.id, 'lapsi', hs.lapsi_id, 'maksutieto', mhs.maksutieto_id,
+                    mhs.luonti_pvm, '+'
+                FROM varda_maksutietohuoltajuussuhde mhs
+                LEFT JOIN varda_huoltajuussuhde hs ON hs.id = mhs.huoltajuussuhde_id;
+            ''')

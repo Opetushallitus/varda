@@ -2,8 +2,8 @@ import re
 
 from django.core.paginator import Paginator as DjangoPaginator
 from django.utils.functional import cached_property
-from rest_framework.pagination import PageNumberPagination, CursorPagination
 from rest_framework.exceptions import NotFound
+from rest_framework.pagination import CursorPagination, PageNumberPagination
 
 
 def get_full_path_without_page_number(request_full_path):
@@ -95,6 +95,10 @@ class ChangeablePageSizeCursorPagination(CursorPagination):
     page_size_query_param = 'page_size'
 
 
+class ChangeablePageSizeCursorPaginationLarge(ChangeablePageSizeCursorPagination):
+    max_page_size = 500
+
+
 class IdCursorPagination(ChangeablePageSizeCursorPagination):
     ordering = '-id'
 
@@ -109,3 +113,7 @@ class DateCursorPagination(ChangeablePageSizeCursorPagination):
 
 class DateReverseCursorPagination(ChangeablePageSizeCursorPagination):
     ordering = 'date'
+
+
+class TkCursorPagination(ChangeablePageSizeCursorPaginationLarge):
+    ordering = ('id', '-history_date')

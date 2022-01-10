@@ -5,6 +5,8 @@ import logging
 import operator
 import re
 from collections import Counter
+from time import sleep
+from urllib.parse import urlparse
 
 import requests
 from celery import shared_task
@@ -13,17 +15,14 @@ from django.conf import settings
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
-from requests.exceptions import RequestException, ConnectionError, Timeout
+from requests.exceptions import ConnectionError, RequestException, Timeout
 from rest_framework import status
 from rest_framework.exceptions import APIException
-from time import sleep
-from urllib.parse import urlparse
 
 from varda.enums.error_messages import ErrorMessages
 from varda.helper_functions import hide_hetu
-from varda.models import Henkilo, VakaJarjestaja, MaksutietoHuoltajuussuhde
+from varda.models import Henkilo, MaksutietoHuoltajuussuhde, VakaJarjestaja
 from varda.oph_yhteiskayttopalvelu_autentikaatio import get_authentication_header, get_contenttype_header
-
 
 logger = logging.getLogger(__name__)
 
@@ -285,11 +284,11 @@ def update_all_vakajarjestaja_permissiongroups():
     Needs to be run after permission template changes.
     :return: None
     """
-    from varda.models import VakaJarjestaja, Toimipaikka
-    from varda.permission_groups import (create_permission_groups_for_organisaatio,
-                                         assign_permissions_to_vakajarjestaja_obj,
-                                         assign_permissions_to_toimipaikka_obj)
     from varda.clients.organisaatio_client import get_multiple_organisaatio
+    from varda.models import Toimipaikka, VakaJarjestaja
+    from varda.permission_groups import (assign_permissions_to_toimipaikka_obj,
+                                         assign_permissions_to_vakajarjestaja_obj,
+                                         create_permission_groups_for_organisaatio)
 
     logger.info('Starting setting vakajarjestaja permissions')
     all_vakajarjestaja_oids = VakaJarjestaja.objects.exclude(organisaatio_oid__exact='').values_list('organisaatio_oid', flat=True)
@@ -378,8 +377,8 @@ def get_user_vakajarjestaja(user):
 
 
 def merge_lapsi_maksutiedot(new_lapsi, old_maksutiedot, new_huoltajuussuhteet, merged_lapsi_toimipaikat):
-    from varda.permissions import assign_object_level_permissions
     from varda.models import Maksutieto
+    from varda.permissions import assign_object_level_permissions
 
     for maksutieto in old_maksutiedot:
         maksutieto_old_huoltajuussuhteet = maksutieto.huoltajuussuhteet.all()
@@ -400,3 +399,9 @@ def merge_lapsi_maksutiedot(new_lapsi, old_maksutiedot, new_huoltajuussuhteet, m
         # Vakatoimija stays the same but old_child and new_child might have different toimipaikkas
         for oid in merged_lapsi_toimipaikat:
             assign_object_level_permissions(oid, Maksutieto, maksutieto)
+
+
+def get_nested_value(instance, field_list):
+    for field in field_list:
+        instance = getattr(instance, field)
+    return instance

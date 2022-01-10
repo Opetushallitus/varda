@@ -1,15 +1,19 @@
 import datetime
 import json
+from unittest import mock
 
 from django.contrib.auth.models import User
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework import status
 
-from varda.models import (VakaJarjestaja, Lapsi, Henkilo, Maksutieto, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-                          Tyontekija, Tyoskentelypaikka, Palvelussuhde, PidempiPoissaolo, Tutkinto, Toimipaikka,
-                          ToiminnallinenPainotus, KieliPainotus)
-from varda.unit_tests.test_utils import SetUpTestClient, assert_validation_error, assert_status_code, \
-    mock_date_decorator_factory
+from varda.enums.change_type import ChangeType
+from varda.models import (Henkilo, KieliPainotus, Lapsi, Maksutieto, Palvelussuhde, PaosToiminta, PidempiPoissaolo,
+                          ToiminnallinenPainotus, Toimipaikka, Tutkinto, Tyontekija, Tyoskentelypaikka, VakaJarjestaja,
+                          Varhaiskasvatuspaatos, Varhaiskasvatussuhde)
+from varda.unit_tests.test_utils import (assert_status_code, assert_validation_error, mock_admin_user,
+                                         mock_date_decorator_factory, SetUpTestClient)
+from varda.unit_tests.views_tests import mock_check_if_toimipaikka_exists_by_name, mock_create_organisaatio
 
 
 class VardaViewsReportingTests(TestCase):
@@ -1295,6 +1299,184 @@ class VardaViewsReportingTests(TestCase):
         }
         self.assertDictEqual(json.loads(resp.content)['results'][0], accepted_response)
 
+    def test_tk_organisaatiot_all(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        vakajarjestaja_count = 0
+        toimipaikka_count = 0
+        kielipainotus_count = 0
+        toiminnallinen_painotus_count = 0
+
+        url = '/api/reporting/v1/tilastokeskus/organisaatiot/'
+        while url:
+            resp = client.get(url)
+            response = json.loads(resp.content)
+            for result in response['results']:
+                vakajarjestaja_count += 1
+                for toimipaikka in result['toimipaikat']:
+                    toimipaikka_count += 1
+                    kielipainotus_count += len(toimipaikka['kielipainotukset'])
+                    toiminnallinen_painotus_count += len(toimipaikka['toiminnalliset_painotukset'])
+            url = response['next']
+
+        self.assertEqual(VakaJarjestaja.objects.count(), vakajarjestaja_count)
+        self.assertEqual(Toimipaikka.objects.count(), toimipaikka_count)
+        self.assertEqual(KieliPainotus.objects.count(), kielipainotus_count)
+        self.assertEqual(ToiminnallinenPainotus.objects.count(), toiminnallinen_painotus_count)
+
+    def test_tk_organisaatiot_invalid_format(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        resp = client.get('/api/reporting/v1/tilastokeskus/organisaatiot/?datetime_gt=2021-01-01T00:00:00'
+                          '&datetime_lte=2022-01-0100:00:00%2B0300')
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'datetime_gt', 'GE020',
+                                'This field must be a datetime string in YYYY-MM-DDTHH:MM:SSZ format.')
+        assert_validation_error(resp, 'datetime_lte', 'GE020',
+                                'This field must be a datetime string in YYYY-MM-DDTHH:MM:SSZ format.')
+
+    def test_tk_organisaatiot_no_change(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        datetime_gt = _get_iso_datetime_now()
+        vakajarjestaja_id = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.93957375488').id
+        toimipaikka_id = Toimipaikka.objects.get(tunniste='testing-toimipaikka1').id
+        kielipainotus = {
+            'toimipaikka_tunniste': 'testing-toimipaikka1',
+            'kielipainotus_koodi': 'de',
+            'alkamis_pvm': '2018-09-05',
+            'lahdejarjestelma': '1'
+        }
+        resp = client.post('/api/v1/kielipainotukset/', kielipainotus)
+        assert_status_code(resp, status.HTTP_201_CREATED)
+        kielipainotus_id = json.loads(resp.content)['id']
+        datetime_lte = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/organisaatiot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        _test_tk_kielipainotus_action(self, resp, vakajarjestaja_id, toimipaikka_id, kielipainotus_id,
+                                      ChangeType.CREATED.value)
+
+        datetime_gt_2 = _get_iso_datetime_now()
+        resp = client.delete(f'/api/v1/kielipainotukset/{kielipainotus_id}/')
+        assert_status_code(resp, status.HTTP_204_NO_CONTENT)
+        datetime_lte = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/organisaatiot/?datetime_gt={datetime_gt_2}'
+                          f'&datetime_lte={datetime_lte}')
+        _test_tk_kielipainotus_action(self, resp, vakajarjestaja_id, toimipaikka_id, kielipainotus_id,
+                                      ChangeType.DELETED.value)
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/organisaatiot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        # Object was created and deleted within the time range
+        self.assertEqual(len(json.loads(resp.content)['results']), 0)
+
+    @mock.patch('varda.organisaatiopalvelu.check_if_toimipaikka_exists_by_name',
+                mock_check_if_toimipaikka_exists_by_name)
+    @mock.patch('varda.organisaatiopalvelu.create_organisaatio',
+                mock_create_organisaatio)
+    def test_tk_organisaatiot_modifified_displayed_as_created(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        datetime_gt = _get_iso_datetime_now()
+        vakajarjestaja_id = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489').id
+        toimipaikka = {
+            'vakajarjestaja': f'/api/v1/vakajarjestajat/{vakajarjestaja_id}/',
+            'nimi': 'Uusi toimipaikka',
+            'kayntiosoite': 'Katukaksi',
+            'kayntiosoite_postitoimipaikka': 'Postitoimipaikkakolme',
+            'kayntiosoite_postinumero': '00109',
+            'postiosoite': 'Katukaksi',
+            'postitoimipaikka': 'Postitoimipaikkakolme',
+            'postinumero': '00109',
+            'kunta_koodi': '091',
+            'puhelinnumero': '+35810123456',
+            'sahkopostiosoite': 'test2@domain.com',
+            'kasvatusopillinen_jarjestelma_koodi': 'kj03',
+            'toimintamuoto_koodi': 'tm01',
+            'asiointikieli_koodi': ['FI', 'SV'],
+            'jarjestamismuoto_koodi': ['jm01'],
+            'varhaiskasvatuspaikat': 200,
+            'alkamis_pvm': '2020-09-02',
+            'paattymis_pvm': '2021-09-02',
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.post('/api/v1/toimipaikat/', toimipaikka)
+        assert_status_code(resp, status.HTTP_201_CREATED)
+        toimipaikka_id = json.loads(resp.content)['id']
+
+        datetime_gt_2 = _get_iso_datetime_now()
+        toimipaikka_patch = {
+            'puhelinnumero': '+35810123457'
+        }
+        resp = client.patch(f'/api/v1/toimipaikat/{toimipaikka_id}/', toimipaikka_patch)
+        assert_status_code(resp, status.HTTP_200_OK)
+
+        datetime_lte = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/organisaatiot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        toimipaikka_result = json.loads(resp.content)['results'][0]['toimipaikat'][0]
+        self.assertEqual(toimipaikka_result['id'], toimipaikka_id)
+        self.assertEqual(toimipaikka_result['action'], ChangeType.CREATED.value)
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/organisaatiot/?datetime_gt={datetime_gt_2}'
+                          f'&datetime_lte={datetime_lte}')
+        toimipaikka_result = json.loads(resp.content)['results'][0]['toimipaikat'][0]
+        self.assertEqual(toimipaikka_result['id'], toimipaikka_id)
+        self.assertEqual(toimipaikka_result['action'], ChangeType.MODIFIED.value)
+
+    def test_tk_organisaatiot_nested_delete(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        toimipaikka = Toimipaikka.objects.get(tunniste='testing-toimipaikka6')
+        toimipaikka_id = toimipaikka.id
+        kielipainotus = {
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_id}/',
+            'kielipainotus_koodi': 'de',
+            'alkamis_pvm': '2018-09-05',
+            'lahdejarjestelma': '1'
+        }
+        resp = client.post('/api/v1/kielipainotukset/', kielipainotus)
+        assert_status_code(resp, status.HTTP_201_CREATED)
+        kielipainotus_id = json.loads(resp.content)['id']
+        toiminnallinen_painotus = {
+            'toimipaikka': f'/api/v1/toimipaikat/{toimipaikka_id}/',
+            'toimintapainotus_koodi': 'tp01',
+            'alkamis_pvm': '2018-09-05',
+            'lahdejarjestelma': '1'
+        }
+        resp = client.post('/api/v1/toiminnallisetpainotukset/', toiminnallinen_painotus)
+        assert_status_code(resp, status.HTTP_201_CREATED)
+        toiminnallinen_painotus_id = json.loads(resp.content)['id']
+
+        datetime_gt = _get_iso_datetime_now()
+        assert_status_code(client.delete(f'/api/v1/kielipainotukset/{kielipainotus_id}/'), status.HTTP_204_NO_CONTENT)
+        assert_status_code(client.delete(f'/api/v1/toiminnallisetpainotukset/{toiminnallinen_painotus_id}/'),
+                           status.HTTP_204_NO_CONTENT)
+        PaosToiminta.objects.filter(paos_toimipaikka=toimipaikka).delete()
+        toimipaikka.delete()
+        datetime_lte = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/organisaatiot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        toimipaikka_result = json.loads(resp.content)['results'][0]['toimipaikat'][0]
+        self.assertEqual(toimipaikka_result['id'], toimipaikka_id)
+        self.assertEqual(toimipaikka_result['action'], ChangeType.DELETED.value)
+        kielipainotus_result = toimipaikka_result['kielipainotukset'][0]
+        self.assertEqual(kielipainotus_result['id'], kielipainotus_id)
+        self.assertEqual(kielipainotus_result['action'], ChangeType.DELETED.value)
+        toiminnallinen_painotus_result = toimipaikka_result['toiminnalliset_painotukset'][0]
+        self.assertEqual(toiminnallinen_painotus_result['id'], toiminnallinen_painotus_id)
+        self.assertEqual(toiminnallinen_painotus_result['action'], ChangeType.DELETED.value)
+
 
 def _load_base_data_for_kela_success_testing():
     client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
@@ -1412,3 +1594,27 @@ def _load_base_data_for_kela_error_testing():
     private_vakapaatos_url = json.loads(resp_private_vakapaatos.content)['url']
 
     return public_vakapaatos_url, private_vakapaatos_url
+
+
+def _get_iso_datetime_now():
+    return timezone.now().isoformat().replace('+', '%2B')
+
+
+def _test_tk_kielipainotus_action(self, resp, vakajarjestaja_id, toimipaikka_id, kielipainotus_id, action):
+    results = json.loads(resp.content)['results']
+    self.assertEqual(len(results), 1)
+
+    vakajarjestaja_result = results[0]
+    self.assertEqual(vakajarjestaja_result['id'], vakajarjestaja_id)
+    self.assertEqual(vakajarjestaja_result['action'], ChangeType.UNCHANGED.value)
+    self.assertEqual(len(vakajarjestaja_result['toimipaikat']), 1)
+
+    toimipaikka_result = vakajarjestaja_result['toimipaikat'][0]
+    self.assertEqual(toimipaikka_result['id'], toimipaikka_id)
+    self.assertEqual(toimipaikka_result['action'], ChangeType.UNCHANGED.value)
+    self.assertEqual(len(toimipaikka_result['toiminnalliset_painotukset']), 0)
+    self.assertEqual(len(toimipaikka_result['kielipainotukset']), 1)
+
+    kielipainotus_result = toimipaikka_result['kielipainotukset'][0]
+    self.assertEqual(kielipainotus_result['id'], kielipainotus_id)
+    self.assertEqual(kielipainotus_result['action'], action)

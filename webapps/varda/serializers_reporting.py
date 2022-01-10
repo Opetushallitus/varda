@@ -1,8 +1,9 @@
 import datetime
+
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Sum
+from django.db.models import Subquery, Sum
 from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -11,12 +12,14 @@ from rest_framework.reverse import reverse
 from varda import validators
 from varda.clients.allas_s3_client import Client as S3Client
 from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
+from varda.enums.change_type import ChangeType
 from varda.enums.error_messages import ErrorMessages
-from varda.excel_export import ExcelReportStatus, get_s3_object_name, ExcelReportType
-from varda.models import (Varhaiskasvatussuhde, Lapsi, Tyontekija, Z6_RequestLog, Z8_ExcelReport, Toimipaikka,
-                          Z4_CasKayttoOikeudet, VakaJarjestaja, Henkilo, Varhaiskasvatuspaatos, Z6_LastRequest,
-                          Z6_RequestSummary, Z6_RequestCount)
-from varda.misc import decrypt_henkilotunnus, decrypt_excel_report_password, CustomServerErrorException
+from varda.excel_export import ExcelReportStatus, ExcelReportType, get_s3_object_name
+from varda.misc import CustomServerErrorException, decrypt_excel_report_password, decrypt_henkilotunnus
+from varda.misc_queries import get_related_object_changed_id_qs
+from varda.models import (Henkilo, KieliPainotus, Lapsi, TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka,
+                          Tyontekija, VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z4_CasKayttoOikeudet,
+                          Z6_LastRequest, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary, Z8_ExcelReport)
 from varda.serializers import ToimipaikkaHLField, VakaJarjestajaPermissionCheckedHLField
 from varda.serializers_common import OidRelatedField
 
@@ -468,3 +471,117 @@ class RequestSummaryGroupSerializer(serializers.Serializer):
                             .values('request_url_simple', 'request_method', 'response_code', 'sum')
                             .order_by('-sum'))
         return RequestCountGroupSerializer(request_count_qs, many=True).data
+
+
+class TkBaseSerializer(serializers.Serializer):
+    action = serializers.SerializerMethodField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'view' in self.context:
+            # view is not present in context in Swagger
+            self.datetime_gt = self.context['view'].datetime_gt
+            self.datetime_lte = self.context['view'].datetime_lte
+        self.secondary_muutos_pvm = None
+
+    def get_action(self, instance):
+        if instance.history_type == '-':
+            return ChangeType.DELETED.value
+        if self.datetime_gt < instance.luonti_pvm <= self.datetime_lte:
+            return ChangeType.CREATED.value
+        if self.datetime_gt < instance.muutos_pvm <= self.datetime_lte:
+            return ChangeType.MODIFIED.value
+
+        # Also verify secondary muutos_pvm (Henkilo.muutos_pvm for Lapsi, Huoltaja and Tyontekija objects)
+        if self.secondary_muutos_pvm and self.datetime_gt < self.secondary_muutos_pvm <= self.datetime_lte:
+            return ChangeType.MODIFIED.value
+
+        return ChangeType.UNCHANGED.value
+
+
+class TkBaseListSerializer(serializers.ListSerializer):
+    def to_representation(self, data):
+        # Remove instances that have been added and deleted during the time range
+        datetime_gt = self.context['view'].datetime_gt
+        data = [instance for instance in data
+                if instance.history_type != '-' or (instance.history_type == '-' and instance.luonti_pvm < datetime_gt)]
+
+        return super().to_representation(data)
+
+
+class TkToiminnallinenPainotusSerializer(TkBaseSerializer, serializers.ModelSerializer):
+    class Meta:
+        model = ToiminnallinenPainotus
+        list_serializer_class = TkBaseListSerializer
+        fields = ('id', 'action', 'toimintapainotus_koodi', 'alkamis_pvm', 'paattymis_pvm')
+
+
+class TkKielipainotusSerializer(TkBaseSerializer, serializers.ModelSerializer):
+    class Meta:
+        model = KieliPainotus
+        list_serializer_class = TkBaseListSerializer
+        fields = ('id', 'action', 'kielipainotus_koodi', 'alkamis_pvm', 'paattymis_pvm')
+
+
+class TkToimipaikkaSerializer(TkBaseSerializer, serializers.ModelSerializer):
+    toiminnalliset_painotukset = serializers.SerializerMethodField()
+    kielipainotukset = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Toimipaikka
+        list_serializer_class = TkBaseListSerializer
+        fields = ('id', 'action', 'nimi', 'organisaatio_oid', 'kunta_koodi', 'sahkopostiosoite', 'kayntiosoite',
+                  'kayntiosoite_postinumero', 'kayntiosoite_postitoimipaikka', 'postiosoite', 'postinumero',
+                  'postitoimipaikka', 'puhelinnumero', 'kasvatusopillinen_jarjestelma_koodi', 'toimintamuoto_koodi',
+                  'asiointikieli_koodi', 'jarjestamismuoto_koodi', 'varhaiskasvatuspaikat', 'alkamis_pvm',
+                  'paattymis_pvm', 'toiminnalliset_painotukset', 'kielipainotukset')
+
+    @swagger_serializer_method(serializer_or_field=TkToiminnallinenPainotusSerializer)
+    def get_toiminnalliset_painotukset(self, instance):
+        painotus_qs = (ToiminnallinenPainotus.history
+                       .filter(toimipaikka_id=instance.id, history_date__gt=self.datetime_gt,
+                               history_date__lte=self.datetime_lte).distinct('id').order_by('id', '-history_date'))
+        return TkToiminnallinenPainotusSerializer(painotus_qs, many=True, context=self.context).data
+
+    @swagger_serializer_method(serializer_or_field=TkKielipainotusSerializer)
+    def get_kielipainotukset(self, instance):
+        painotus_qs = (KieliPainotus.history
+                       .filter(toimipaikka_id=instance.id, history_date__gt=self.datetime_gt,
+                               history_date__lte=self.datetime_lte).distinct('id').order_by('id', '-history_date'))
+        return TkKielipainotusSerializer(painotus_qs, many=True, context=self.context).data
+
+
+class TkTilapainenHenkilostoSerializer(TkBaseSerializer, serializers.ModelSerializer):
+    class Meta:
+        model = TilapainenHenkilosto
+        list_serializer_class = TkBaseListSerializer
+        fields = ('id', 'action', 'kuukausi', 'tuntimaara', 'tyontekijamaara')
+
+
+class TkOrganisaatiotSerializer(TkBaseSerializer, serializers.ModelSerializer):
+    toimipaikat = serializers.SerializerMethodField()
+    tilapainen_henkilosto = serializers.SerializerMethodField()
+
+    class Meta:
+        model = VakaJarjestaja
+        fields = ('id', 'action', 'nimi', 'organisaatio_oid', 'y_tunnus', 'kunta_koodi', 'sahkopostiosoite',
+                  'kayntiosoite', 'kayntiosoite_postinumero', 'kayntiosoite_postitoimipaikka', 'postiosoite',
+                  'postinumero', 'postitoimipaikka', 'puhelinnumero', 'ytjkieli', 'yritysmuoto', 'alkamis_pvm',
+                  'paattymis_pvm', 'toimipaikat', 'tilapainen_henkilosto')
+
+    @swagger_serializer_method(serializer_or_field=TkToimipaikkaSerializer)
+    def get_toimipaikat(self, instance):
+        id_qs = get_related_object_changed_id_qs(Toimipaikka.get_name(), self.datetime_gt, self.datetime_lte,
+                                                 additional_filters={'parent_instance_id': instance.id})
+        toimipaikka_qs = (Toimipaikka.history.filter(id__in=Subquery(id_qs), vakajarjestaja_id=instance.id,
+                                                     history_date__lte=self.datetime_lte)
+                          .distinct('id').order_by('id', '-history_date'))
+        return TkToimipaikkaSerializer(toimipaikka_qs, many=True, context=self.context).data
+
+    @swagger_serializer_method(serializer_or_field=TkTilapainenHenkilostoSerializer)
+    def get_tilapainen_henkilosto(self, instance):
+        tilapainen_henkilosto_qs = (TilapainenHenkilosto.history
+                                    .filter(vakajarjestaja_id=instance.id, history_date__gt=self.datetime_gt,
+                                            history_date__lte=self.datetime_lte)
+                                    .distinct('id').order_by('id', '-history_date'))
+        return TkTilapainenHenkilostoSerializer(tilapainen_henkilosto_qs, many=True, context=self.context).data
