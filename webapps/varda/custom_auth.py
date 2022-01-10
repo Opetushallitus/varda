@@ -279,7 +279,9 @@ class PasswordExpirationModelBackend(ModelBackend):
                 # AdditionalUserFields for this user are missing, force password change
                 return False
             expiration_limit = django_timezone.now() - timedelta(days=200)
-            if additional_user_fields.password_changed_timestamp < expiration_limit:
+            # ANONYMIZATION_CHECKER_USER_NAME does automatic CI-verification. Do not require password_change.
+            if (additional_user_fields.password_changed_timestamp < expiration_limit and
+                    user.username != settings.ANONYMIZATION_CHECKER_USER_NAME):
                 # Password has not been changed in a defined time, force password change
                 return False
 

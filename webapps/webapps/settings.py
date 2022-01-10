@@ -43,7 +43,7 @@ DEFAULT_CACHE_INVALIDATION_TIME = 54000  # 15 hours
 BASIC_AUTHENTICATION_LOGIN_INTERVAL_IN_SECONDS = 300  # 5 minutes
 SESSION_COOKIE_AGE = 43200  # 12 hours
 FERNET_SECRET_KEY = os.getenv('FERNET_SECRET_KEY', DEFAULT_FERNET_KEY_FOR_TESTING_ONLY)
-OPETUSHALLITUS_ORGANISAATIO_OID = "1.2.246.562.10.00000000001"
+OPETUSHALLITUS_ORGANISAATIO_OID = '1.2.246.562.10.00000000001'
 
 # Application definition
 # In order to preserve the content-types in the DB,
@@ -97,7 +97,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            os.path.join(BASE_DIR, "templates"),
+            os.path.join(BASE_DIR, 'templates'),
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -156,8 +156,8 @@ AUTHENTICATION_BACKENDS = (
     'varda.cas.oppija_cas_views.OppijaCASBackend',  # Before CASBackend because has view check
     'django_cas_ng.backends.CASBackend',
 )
-ANONYMOUS_USER_NAME = "anonymous"
-
+ANONYMOUS_USER_NAME = 'anonymous'
+ANONYMIZATION_CHECKER_USER_NAME = 'varda_anonymisointi_tarkistus'
 
 # Password validation
 # https://docs.djangoproject.com/en/dev/ref/settings/#auth-password-validators
@@ -402,7 +402,7 @@ CSP_OBJECT_SRC = ("'none'",)
 
 CSRF_COOKIE_HTTPONLY = True
 
-if "VARDA_ENVIRONMENT_TYPE" not in os.environ:
+if 'VARDA_ENVIRONMENT_TYPE' not in os.environ:
     # Celery configuration for local dev server. Override this block in real environment
     BROKER_BACKEND = 'memory'
     CELERY_TASK_ALWAYS_EAGER = True
@@ -447,8 +447,8 @@ JAVA_URL = 'http://localhost:8080'
 
 """
 TODO: This does not currently work. Login fails with 403 forbidden.
-if "VARDA_HOSTNAME" in os.environ:
-    CAS_PROXY_CALLBACK = "https://" + os.environ["VARDA_HOSTNAME"] + "/accounts/callback"  # The full url to the callback view
+if 'VARDA_HOSTNAME' in os.environ:
+    CAS_PROXY_CALLBACK = 'https://' + os.environ['VARDA_HOSTNAME'] + '/accounts/callback'  # The full url to the callback view
 """
 
 # Extend these default settings with optional settings_environment.py file
