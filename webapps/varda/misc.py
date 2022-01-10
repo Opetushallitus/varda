@@ -350,7 +350,9 @@ def memory_efficient_queryset_iterator(queryset, chunk_size=1000):
 
 
 class TemporaryObject(object):
-    pass
+    def __init__(self, *args, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
 
 def get_user_vakajarjestaja(user):

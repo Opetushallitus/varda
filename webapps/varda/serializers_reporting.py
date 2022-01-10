@@ -3,6 +3,7 @@ import datetime
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import connection
 from django.db.models import Subquery, Sum
 from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
@@ -17,9 +18,10 @@ from varda.enums.error_messages import ErrorMessages
 from varda.excel_export import ExcelReportStatus, ExcelReportType, get_s3_object_name
 from varda.misc import CustomServerErrorException, decrypt_excel_report_password, decrypt_henkilotunnus
 from varda.misc_queries import get_related_object_changed_id_qs
-from varda.models import (Henkilo, KieliPainotus, Lapsi, TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka,
-                          Tyontekija, VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z4_CasKayttoOikeudet,
-                          Z6_LastRequest, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary, Z8_ExcelReport)
+from varda.models import (Henkilo, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto, MaksutietoHuoltajuussuhde,
+                          TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka, Tyontekija, VakaJarjestaja,
+                          Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z4_CasKayttoOikeudet, Z6_LastRequest,
+                          Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary, Z8_ExcelReport)
 from varda.serializers import ToimipaikkaHLField, VakaJarjestajaPermissionCheckedHLField
 from varda.serializers_common import OidRelatedField
 
@@ -585,3 +587,177 @@ class TkOrganisaatiotSerializer(TkBaseSerializer, serializers.ModelSerializer):
                                             history_date__lte=self.datetime_lte)
                                     .distinct('id').order_by('id', '-history_date'))
         return TkTilapainenHenkilostoSerializer(tilapainen_henkilosto_qs, many=True, context=self.context).data
+
+
+class TkVakasuhdeSerializer(TkBaseSerializer, serializers.ModelSerializer):
+    class Meta:
+        model = Varhaiskasvatussuhde
+        list_serializer_class = TkBaseListSerializer
+        fields = ('id', 'action', 'toimipaikka_id', 'alkamis_pvm', 'paattymis_pvm',)
+
+
+class TkVakapaatosSerializer(TkBaseSerializer, serializers.ModelSerializer):
+    varhaiskasvatussuhteet = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Varhaiskasvatuspaatos
+        list_serializer_class = TkBaseListSerializer
+        fields = ('id', 'action', 'pikakasittely_kytkin', 'vuorohoito_kytkin', 'paivittainen_vaka_kytkin',
+                  'kokopaivainen_vaka_kytkin', 'tilapainen_vaka_kytkin', 'jarjestamismuoto_koodi',
+                  'tuntimaara_viikossa', 'hakemus_pvm', 'alkamis_pvm', 'paattymis_pvm', 'varhaiskasvatussuhteet',)
+
+    @swagger_serializer_method(serializer_or_field=TkVakasuhdeSerializer)
+    def get_varhaiskasvatussuhteet(self, instance):
+        vakasuhde_qs = (Varhaiskasvatussuhde.history
+                        .filter(varhaiskasvatuspaatos_id=instance.id, history_date__gt=self.datetime_gt,
+                                history_date__lte=self.datetime_lte).distinct('id').order_by('id', '-history_date'))
+        return TkVakasuhdeSerializer(vakasuhde_qs, many=True, context=self.context).data
+
+
+class TkHuoltajuussuhdeSerializer(TkBaseSerializer, serializers.ModelSerializer):
+    etunimet = serializers.CharField(source='henkilo_instance.etunimet')
+    sukunimi = serializers.CharField(source='henkilo_instance.sukunimi')
+    henkilo_oid = serializers.CharField(source='henkilo_instance.henkilo_oid')
+    henkilotunnus = serializers.SerializerMethodField()
+    katuosoite = serializers.CharField(source='henkilo_instance.katuosoite')
+    postinumero = serializers.CharField(source='henkilo_instance.postinumero')
+    postitoimipaikka = serializers.CharField(source='henkilo_instance.postitoimipaikka')
+
+    class Meta:
+        model = Huoltajuussuhde
+        list_serializer_class = TkBaseListSerializer
+        fields = ('id', 'action', 'etunimet', 'sukunimi', 'henkilo_oid', 'henkilotunnus', 'katuosoite',
+                  'postinumero', 'postitoimipaikka',)
+
+    def to_representation(self, instance):
+        # Get henkilo data from history table or actual table (history is incomplete in test environments)
+        henkilo = Henkilo.history.filter(id=instance.henkilo_id).distinct('id').order_by('id', '-history_date').first()
+        if not henkilo:
+            henkilo = Henkilo.objects.filter(id=instance.henkilo_id).first()
+        self.secondary_muutos_pvm = henkilo.muutos_pvm
+        instance.henkilo_instance = henkilo
+
+        return super().to_representation(instance)
+
+    def get_henkilotunnus(self, instance):
+        return decrypt_henkilotunnus(instance.henkilo_instance.henkilotunnus)
+
+
+class TkMaksutietoHuoltajaSerializer(serializers.Serializer):
+    henkilo_oid = serializers.CharField()
+    henkilotunnus = serializers.CharField()
+
+
+class TkMaksutietoSerializer(TkBaseSerializer, serializers.ModelSerializer):
+    huoltajat = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Maksutieto
+        list_serializer_class = TkBaseListSerializer
+        fields = ('id', 'action', 'maksun_peruste_koodi', 'perheen_koko', 'asiakasmaksu', 'palveluseteli_arvo',
+                  'alkamis_pvm', 'paattymis_pvm', 'huoltajat',)
+
+    @swagger_serializer_method(serializer_or_field=TkMaksutietoHuoltajaSerializer)
+    def get_huoltajat(self, instance):
+        # Get data of Henkilo objects that are related to the Maksutieto object during the time window
+        # Get henkilo data from history table or actual table (history is incomplete in test environments)
+        # We need to join historical tables so raw SQL query is simpler
+        with connection.cursor() as cursor:
+            cursor.execute('''
+                SELECT DISTINCT ON(hhu.henkilo_id) hhe.henkilo_oid, he.henkilo_oid, hhe.henkilotunnus, he.henkilotunnus
+                FROM varda_historicalmaksutietohuoltajuussuhde hmhs
+                LEFT JOIN varda_historicalhuoltajuussuhde hhs ON hmhs.huoltajuussuhde_id = hhs.id
+                LEFT JOIN varda_historicalhuoltaja hhu ON hhs.huoltaja_id = hhu.id
+                LEFT JOIN varda_historicalhenkilo hhe ON hhe.id = hhu.henkilo_id
+                LEFT JOIN varda_henkilo he ON he.id = hhu.henkilo_id
+                WHERE hmhs.maksutieto_id = %s AND hmhs.history_date <= %s
+                ORDER BY hhu.henkilo_id, hhe.history_date DESC;
+            ''', [instance.id, self.datetime_lte])
+
+            huoltaja_list = [{'henkilo_oid': result[0] or result[1],
+                              'henkilotunnus': decrypt_henkilotunnus(result[2]) or decrypt_henkilotunnus(result[3])}
+                             for result in cursor.fetchall()]
+            return TkMaksutietoHuoltajaSerializer(huoltaja_list, many=True).data
+
+
+class TkVakatiedotSerializer(TkBaseSerializer, serializers.ModelSerializer):
+    etunimet = serializers.CharField(source='henkilo_instance.etunimet')
+    sukunimi = serializers.CharField(source='henkilo_instance.sukunimi')
+    henkilo_oid = serializers.CharField(source='henkilo_instance.henkilo_oid')
+    henkilotunnus = serializers.SerializerMethodField()
+    syntyma_pvm = serializers.DateField(source='henkilo_instance.syntyma_pvm')
+    sukupuoli_koodi = serializers.CharField(source='henkilo_instance.sukupuoli_koodi')
+    aidinkieli_koodi = serializers.CharField(source='henkilo_instance.aidinkieli_koodi')
+    kotikunta_koodi = serializers.CharField(source='henkilo_instance.kotikunta_koodi')
+    katuosoite = serializers.CharField(source='henkilo_instance.katuosoite')
+    postinumero = serializers.CharField(source='henkilo_instance.postinumero')
+    postitoimipaikka = serializers.CharField(source='henkilo_instance.postitoimipaikka')
+    varhaiskasvatuspaatokset = serializers.SerializerMethodField()
+    huoltajat = serializers.SerializerMethodField()
+    maksutiedot = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Lapsi
+        list_serializer_class = TkBaseListSerializer
+        fields = ('id', 'action', 'etunimet', 'sukunimi', 'henkilo_oid', 'henkilotunnus', 'syntyma_pvm',
+                  'sukupuoli_koodi', 'aidinkieli_koodi', 'kotikunta_koodi', 'katuosoite', 'postinumero',
+                  'postitoimipaikka', 'vakatoimija_id', 'paos_kytkin', 'oma_organisaatio_id', 'paos_organisaatio_id',
+                  'varhaiskasvatuspaatokset', 'huoltajat', 'maksutiedot',)
+
+    def to_representation(self, instance):
+        # Get henkilo data from history table or actual table (history is incomplete in test environments)
+        henkilo = Henkilo.history.filter(id=instance.henkilo_id).distinct('id').order_by('id', '-history_date').first()
+        if not henkilo:
+            henkilo = Henkilo.objects.filter(id=instance.henkilo_id).first()
+        self.secondary_muutos_pvm = henkilo.muutos_pvm
+        instance.henkilo_instance = henkilo
+
+        # varda_historicallapsi does not contain all vakatoimija_id changes because the field has been updated
+        # directly in db, so try to get it from varda_lapsi table
+        if not instance.paos_kytkin and not instance.vakatoimija_id:
+            instance.vakatoimija_id = getattr(Lapsi.objects.filter(id=instance.id).first(), 'vakatoimija_id', None)
+
+        lapsi = super().to_representation(instance)
+        return lapsi
+
+    def get_henkilotunnus(self, instance):
+        return decrypt_henkilotunnus(instance.henkilo_instance.henkilotunnus)
+
+    @swagger_serializer_method(serializer_or_field=TkVakapaatosSerializer)
+    def get_varhaiskasvatuspaatokset(self, instance):
+        id_qs = get_related_object_changed_id_qs(Varhaiskasvatuspaatos.get_name(), self.datetime_gt,
+                                                 self.datetime_lte, additional_filters={'parent_instance_id': instance.id})
+        vakapaatos_qs = (Varhaiskasvatuspaatos.history.filter(id__in=Subquery(id_qs), lapsi_id=instance.id,
+                                                              history_date__lte=self.datetime_lte)
+                         .distinct('id').order_by('id', '-history_date'))
+        return TkVakapaatosSerializer(vakapaatos_qs, many=True, context=self.context).data
+
+    @swagger_serializer_method(serializer_or_field=TkHuoltajuussuhdeSerializer)
+    def get_huoltajat(self, instance):
+        id_tuple = tuple(get_related_object_changed_id_qs(
+            Lapsi.get_name(), self.datetime_gt, self.datetime_lte, return_value='trigger_instance_id',
+            additional_filters={'instance_id': instance.id, 'trigger_model_name': Huoltajuussuhde.get_name()}
+        )) or (-1,)
+
+        # Get a list of Huoltajuussuhde objects that have been modified, or a related Henkilo object has been modified
+        # during the time window
+        # We need to join historical tables so raw SQL query is simpler (to get henkilo_id)
+        huoltajuussuhde_qs = Huoltajuussuhde.history.raw('''
+            SELECT DISTINCT ON (hhs.id) hhs.*, hh.henkilo_id as henkilo_id
+            FROM varda_historicalhuoltajuussuhde hhs
+            LEFT JOIN varda_historicalhuoltaja hh ON hh.id = hhs.huoltaja_id
+            WHERE hhs.lapsi_id = %s AND hhs.id IN %s AND hhs.history_date <= %s
+            ORDER BY hhs.id, hhs.history_date DESC;
+        ''', [instance.id, id_tuple, self.datetime_lte])
+        return TkHuoltajuussuhdeSerializer(huoltajuussuhde_qs, many=True, context=self.context).data
+
+    @swagger_serializer_method(serializer_or_field=TkMaksutietoSerializer)
+    def get_maksutiedot(self, instance):
+        id_qs = get_related_object_changed_id_qs(
+            Lapsi.get_name(), self.datetime_gt, self.datetime_lte, return_value='parent_instance_id',
+            additional_filters={'instance_id': instance.id,
+                                'trigger_model_name': MaksutietoHuoltajuussuhde.get_name()}
+        )
+        maksutieto_qs = (Maksutieto.history.filter(id__in=Subquery(id_qs), history_date__lte=self.datetime_lte)
+                         .distinct('id').order_by('id', '-history_date'))
+        return TkMaksutietoSerializer(maksutieto_qs, many=True, context=self.context).data

@@ -174,6 +174,8 @@ router_kela_reporting.register(r'korjaustiedotpoistetut', viewsets_reporting.Kel
 router_tilastokeskus_reporting = routers.DefaultRouter()
 # /api/reporting/v1/tilastokeskus/organisaatiot/
 router_tilastokeskus_reporting.register(r'organisaatiot', viewsets_reporting.TkOrganisaatiot, basename='organisaatiot')
+# /api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/
+router_tilastokeskus_reporting.register(r'varhaiskasvatustiedot', viewsets_reporting.TkVakatiedot, basename='varhaiskasvatustiedot')
 
 """
 router_reporting.register(r'lapset-ryhmittain', viewsets_reporting.LapsetRyhmittainViewSet, 'lapset-ryhmittain')

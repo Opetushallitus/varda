@@ -1,5 +1,6 @@
 import datetime
 import json
+import time
 from unittest import mock
 
 from django.contrib.auth.models import User
@@ -8,9 +9,10 @@ from django.utils import timezone
 from rest_framework import status
 
 from varda.enums.change_type import ChangeType
-from varda.models import (Henkilo, KieliPainotus, Lapsi, Maksutieto, Palvelussuhde, PaosToiminta, PidempiPoissaolo,
-                          ToiminnallinenPainotus, Toimipaikka, Tutkinto, Tyontekija, Tyoskentelypaikka, VakaJarjestaja,
-                          Varhaiskasvatuspaatos, Varhaiskasvatussuhde)
+from varda.misc import decrypt_henkilotunnus
+from varda.models import (Henkilo, Huoltaja, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto, Palvelussuhde,
+                          PaosToiminta, PidempiPoissaolo, ToiminnallinenPainotus, Toimipaikka, Tutkinto, Tyontekija,
+                          Tyoskentelypaikka, VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde)
 from varda.unit_tests.test_utils import (assert_status_code, assert_validation_error, mock_admin_user,
                                          mock_date_decorator_factory, SetUpTestClient)
 from varda.unit_tests.views_tests import mock_check_if_toimipaikka_exists_by_name, mock_create_organisaatio
@@ -1477,6 +1479,327 @@ class VardaViewsReportingTests(TestCase):
         self.assertEqual(toiminnallinen_painotus_result['id'], toiminnallinen_painotus_id)
         self.assertEqual(toiminnallinen_painotus_result['action'], ChangeType.DELETED.value)
 
+    def test_tk_vakatiedot_all(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        # Initialize count variables
+        lapsi_count = 0
+        huoltajuussuhde_count = 0
+        maksutieto_count = 0
+        vakapaatos_count = 0
+        vakasuhde_count = 0
+
+        url = '/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/'
+        while url:
+            resp = client.get(url)
+            response = json.loads(resp.content)
+            for result in response['results']:
+                lapsi_count += 1
+                huoltajuussuhde_count += len(result['huoltajat'])
+                maksutieto_count += len(result['maksutiedot'])
+                for vakapaatos in result['varhaiskasvatuspaatokset']:
+                    vakapaatos_count += 1
+                    vakasuhde_count += len(vakapaatos['varhaiskasvatussuhteet'])
+            url = response['next']
+
+        self.assertEqual(Lapsi.objects.count(), lapsi_count)
+        self.assertEqual(Huoltajuussuhde.objects.count(), huoltajuussuhde_count)
+        self.assertEqual(Maksutieto.objects.count(), maksutieto_count)
+        self.assertEqual(Varhaiskasvatuspaatos.objects.count(), vakapaatos_count)
+        self.assertEqual(Varhaiskasvatussuhde.objects.count(), vakasuhde_count)
+
+    def test_tk_vakatiedot_no_change(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        datetime_gt = _get_iso_datetime_now()
+        lapsi_id = Lapsi.objects.get(tunniste='testing-lapsi3').id
+        vakapaatos_id = Varhaiskasvatuspaatos.objects.get(tunniste='testing-varhaiskasvatuspaatos3').id
+        vakasuhde = {
+            'varhaiskasvatuspaatos_tunniste': 'testing-varhaiskasvatuspaatos3',
+            'toimipaikka_oid': '1.2.246.562.10.9395737548815',
+            'alkamis_pvm': '2018-09-05',
+            'lahdejarjestelma': '1'
+        }
+        resp = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
+        assert_status_code(resp, status.HTTP_201_CREATED)
+        vakasuhde_id = json.loads(resp.content)['id']
+        datetime_lte = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        _test_tk_vakasuhde_action(self, resp, lapsi_id, vakapaatos_id, vakasuhde_id, ChangeType.CREATED.value)
+
+        datetime_gt_2 = _get_iso_datetime_now()
+        resp = client.delete(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde_id}/')
+        assert_status_code(resp, status.HTTP_204_NO_CONTENT)
+        datetime_lte = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt_2}'
+                          f'&datetime_lte={datetime_lte}')
+        _test_tk_vakasuhde_action(self, resp, lapsi_id, vakapaatos_id, vakasuhde_id, ChangeType.DELETED.value)
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        # Object was created and deleted within the time range
+        self.assertEqual(len(json.loads(resp.content)['results']), 0)
+
+    def test_tk_vakatiedot_nested_delete(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        datetime_gt = _get_iso_datetime_now()
+        vakasuhde_1_id = Varhaiskasvatussuhde.objects.get(tunniste='testing-varhaiskasvatussuhde10').id
+        vakasuhde_2_id = Varhaiskasvatussuhde.objects.get(tunniste='kela_testing_private').id
+        vakapaatos_1_id = Varhaiskasvatuspaatos.objects.get(tunniste='testing-varhaiskasvatuspaatos10').id
+        vakapaatos_2_id = Varhaiskasvatuspaatos.objects.get(tunniste='testing-varhaiskasvatuspaatos_kela_private').id
+        maksutieto_id = Maksutieto.objects.get(tunniste='testing-maksutieto5').id
+        lapsi_id = Lapsi.objects.get(tunniste='testing-lapsi10').id
+
+        assert_status_code(client.delete(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde_1_id}/'),
+                           status.HTTP_204_NO_CONTENT)
+        assert_status_code(client.delete(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde_2_id}/'),
+                           status.HTTP_204_NO_CONTENT)
+        assert_status_code(client.delete(f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos_1_id}/'),
+                           status.HTTP_204_NO_CONTENT)
+        assert_status_code(client.delete(f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos_2_id}/'),
+                           status.HTTP_204_NO_CONTENT)
+        assert_status_code(client.delete(f'/api/v1/maksutiedot/{maksutieto_id}/'), status.HTTP_204_NO_CONTENT)
+        assert_status_code(client.delete(f'/api/v1/lapset/{lapsi_id}/'), status.HTTP_204_NO_CONTENT)
+        datetime_lte = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        lapsi_result = _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.DELETED.value)
+        for vakapaatos_result in lapsi_result['varhaiskasvatuspaatokset']:
+            self.assertIn(vakapaatos_result['id'], (vakapaatos_1_id, vakapaatos_2_id,))
+            self.assertEqual(vakapaatos_result['action'], ChangeType.DELETED.value)
+            vakasuhde_result = vakapaatos_result['varhaiskasvatussuhteet'][0]
+            self.assertIn(vakasuhde_result['id'], (vakasuhde_1_id, vakasuhde_2_id,))
+            self.assertEqual(vakasuhde_result['action'], ChangeType.DELETED.value)
+        maksutieto_result = lapsi_result['maksutiedot'][0]
+        self.assertEqual(maksutieto_result['id'], maksutieto_id)
+        self.assertEqual(maksutieto_result['action'], ChangeType.DELETED.value)
+
+    def test_tk_vakatiedot_huoltaja(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        lapsi_id = Lapsi.objects.get(tunniste='testing-lapsi2').id
+        henkilo_obj = Henkilo.objects.get(henkilo_oid='1.2.246.562.24.5826267847674')
+        huoltaja_id = Huoltaja.objects.get_or_create(henkilo=henkilo_obj, changed_by_id=1)[0].id
+
+        datetime_gt = _get_iso_datetime_now()
+        # Wait for 0.1 seconds so database action happens after datetime_gt
+        time.sleep(0.1)
+        huoltajuussuhde_obj = Huoltajuussuhde.objects.create(huoltaja_id=huoltaja_id, lapsi_id=lapsi_id,
+                                                             voimassa_kytkin=True, changed_by_id=1)
+        huoltajuussuhde_id = huoltajuussuhde_obj.id
+        datetime_lte = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        lapsi_result = _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
+        self.assertEqual(len(lapsi_result['huoltajat']), 1)
+        huoltaja_result = lapsi_result['huoltajat'][0]
+        self.assertEqual(huoltaja_result['id'], huoltajuussuhde_id)
+        self.assertEqual(huoltaja_result['action'], ChangeType.CREATED.value)
+        self.assertEqual(huoltaja_result['henkilo_oid'], '1.2.246.562.24.5826267847674')
+        self.assertEqual(huoltaja_result['henkilotunnus'], '100646-792P')
+
+        datetime_gt_2 = _get_iso_datetime_now()
+        # Wait for 0.1 seconds so database action happens after datetime_gt_2
+        time.sleep(0.1)
+        henkilo_obj.aidinkieli_koodi = 'SV'
+        henkilo_obj.save()
+        datetime_lte_2 = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt_2}'
+                          f'&datetime_lte={datetime_lte_2}')
+        lapsi_result = _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
+        self.assertEqual(len(lapsi_result['huoltajat']), 1)
+        huoltaja_result = lapsi_result['huoltajat'][0]
+        self.assertEqual(huoltaja_result['id'], huoltajuussuhde_id)
+        self.assertEqual(huoltaja_result['action'], ChangeType.MODIFIED.value)
+        self.assertEqual(huoltaja_result['henkilo_oid'], '1.2.246.562.24.5826267847674')
+        self.assertEqual(huoltaja_result['henkilotunnus'], '100646-792P')
+
+        datetime_gt_3 = _get_iso_datetime_now()
+        # Wait for 0.1 seconds so database action happens after datetime_gt_3
+        time.sleep(0.1)
+        huoltajuussuhde_obj.delete()
+        datetime_lte_3 = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt_3}'
+                          f'&datetime_lte={datetime_lte_3}')
+        lapsi_result = _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
+        self.assertEqual(len(lapsi_result['huoltajat']), 1)
+        huoltaja_result = lapsi_result['huoltajat'][0]
+        self.assertEqual(huoltaja_result['id'], huoltajuussuhde_id)
+        self.assertEqual(huoltaja_result['action'], ChangeType.DELETED.value)
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte_3}')
+        self.assertEqual(len(json.loads(resp.content)['results']), 0)
+
+        datetime_gt_4 = _get_iso_datetime_now()
+        # Wait for 0.1 seconds so database action happens after datetime_gt_4
+        time.sleep(0.1)
+        henkilo_obj.aidinkieli_koodi = 'FI'
+        henkilo_obj.save()
+        datetime_lte_4 = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt_4}'
+                          f'&datetime_lte={datetime_lte_4}')
+        self.assertEqual(len(json.loads(resp.content)['results']), 0)
+
+    def test_tk_vakatiedot_maksutieto(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        lapsi_id = Lapsi.objects.get(tunniste='testing-lapsi11').id
+        huoltaja_1 = Henkilo.objects.get(henkilo_oid='1.2.246.562.24.2434693467574')
+        huoltaja_1_hetu = decrypt_henkilotunnus(huoltaja_1.henkilotunnus)
+        huoltaja_2 = Henkilo.objects.get(henkilo_oid='1.2.246.562.24.3367432256266')
+        huoltaja_2_hetu = decrypt_henkilotunnus(huoltaja_2.henkilotunnus)
+
+        maksutieto = {
+            'lapsi': f'/api/v1/lapset/{lapsi_id}/',
+            'huoltajat': [{
+                'henkilotunnus': huoltaja_1_hetu,
+                'etunimet': huoltaja_1.etunimet,
+                'sukunimi': huoltaja_1.sukunimi,
+            }],
+            'maksun_peruste_koodi': 'mp01',
+            'palveluseteli_arvo': 0,
+            'asiakasmaksu': 10,
+            'perheen_koko': 2,
+            'alkamis_pvm': '2021-02-01',
+            'lahdejarjestelma': '1'
+        }
+
+        datetime_gt = _get_iso_datetime_now()
+        maksutieto_resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
+        assert_status_code(maksutieto_resp, status.HTTP_201_CREATED)
+        maksutieto_id = json.loads(maksutieto_resp.content)['id']
+        datetime_lte = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        lapsi_result = _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
+        self.assertEqual(len(lapsi_result['maksutiedot']), 1)
+        maksutieto_result = lapsi_result['maksutiedot'][0]
+        self.assertEqual(maksutieto_result['id'], maksutieto_id)
+        self.assertEqual(maksutieto_result['action'], ChangeType.CREATED.value)
+        self.assertCountEqual(maksutieto_result['huoltajat'],
+                              [{'henkilotunnus': huoltaja_1_hetu, 'henkilo_oid': huoltaja_1.henkilo_oid}])
+
+        maksutieto_patch = {
+            'huoltajat_add': [{
+                'henkilotunnus': huoltaja_2_hetu,
+                'etunimet': huoltaja_2.etunimet,
+                'sukunimi': huoltaja_2.sukunimi,
+            }]
+        }
+
+        datetime_gt_2 = _get_iso_datetime_now()
+        assert_status_code(client.patch(f'/api/v1/maksutiedot/{maksutieto_id}/', json.dumps(maksutieto_patch),
+                                        content_type='application/json'), status.HTTP_200_OK)
+        datetime_lte_2 = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt_2}'
+                          f'&datetime_lte={datetime_lte_2}')
+        lapsi_result = _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
+        self.assertEqual(len(lapsi_result['maksutiedot']), 1)
+        maksutieto_result = lapsi_result['maksutiedot'][0]
+        self.assertEqual(maksutieto_result['id'], maksutieto_id)
+        self.assertEqual(maksutieto_result['action'], ChangeType.MODIFIED.value)
+        self.assertCountEqual(maksutieto_result['huoltajat'],
+                              [{'henkilotunnus': huoltaja_1_hetu, 'henkilo_oid': huoltaja_1.henkilo_oid},
+                               {'henkilotunnus': huoltaja_2_hetu, 'henkilo_oid': huoltaja_2.henkilo_oid}])
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte_2}')
+        lapsi_result = _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
+        self.assertEqual(len(lapsi_result['maksutiedot']), 1)
+        maksutieto_result = lapsi_result['maksutiedot'][0]
+        self.assertEqual(maksutieto_result['id'], maksutieto_id)
+        self.assertEqual(maksutieto_result['action'], ChangeType.CREATED.value)
+        self.assertCountEqual(maksutieto_result['huoltajat'],
+                              [{'henkilotunnus': huoltaja_1_hetu, 'henkilo_oid': huoltaja_1.henkilo_oid},
+                               {'henkilotunnus': huoltaja_2_hetu, 'henkilo_oid': huoltaja_2.henkilo_oid}])
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        lapsi_result = _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
+        self.assertEqual(len(lapsi_result['maksutiedot']), 1)
+        maksutieto_result = lapsi_result['maksutiedot'][0]
+        self.assertEqual(maksutieto_result['id'], maksutieto_id)
+        self.assertEqual(maksutieto_result['action'], ChangeType.CREATED.value)
+        self.assertCountEqual(maksutieto_result['huoltajat'],
+                              [{'henkilotunnus': huoltaja_1_hetu, 'henkilo_oid': huoltaja_1.henkilo_oid}])
+
+        datetime_gt_3 = _get_iso_datetime_now()
+        assert_status_code(client.delete(f'/api/v1/maksutiedot/{maksutieto_id}/'), status.HTTP_204_NO_CONTENT)
+        datetime_lte_3 = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt_3}'
+                          f'&datetime_lte={datetime_lte_3}')
+        lapsi_result = _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
+        self.assertEqual(len(lapsi_result['maksutiedot']), 1)
+        maksutieto_result = lapsi_result['maksutiedot'][0]
+        self.assertEqual(maksutieto_result['id'], maksutieto_id)
+        self.assertEqual(maksutieto_result['action'], ChangeType.DELETED.value)
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte_3}')
+        self.assertEqual(len(json.loads(resp.content)['results']), 0)
+
+    def test_tk_vakatiedot_henkilo(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        henkilo = Henkilo.objects.get(henkilo_oid='1.2.246.562.24.4473262898463')
+        original_lapsi_id = Lapsi.objects.get(tunniste='testing-lapsi15').id
+
+        lapsi = {
+            'henkilo_oid': henkilo.henkilo_oid,
+            'vakatoimija_oid': '1.2.246.562.10.34683023489',
+            'lahdejarjestelma': '1'
+        }
+        datetime_gt = _get_iso_datetime_now()
+        resp_lapsi = client.post('/api/v1/lapset/', lapsi)
+        assert_status_code(resp_lapsi, status.HTTP_201_CREATED)
+        lapsi_id = json.loads(resp_lapsi.content)['id']
+        datetime_lte = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.CREATED.value)
+
+        datetime_gt_2 = _get_iso_datetime_now()
+        # Wait for 0.1 seconds so database action happens after datetime_gt_2
+        time.sleep(0.1)
+        henkilo.aidinkieli_koodi = 'SV'
+        henkilo.save()
+        datetime_lte_2 = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt_2}'
+                          f'&datetime_lte={datetime_lte_2}')
+        results = json.loads(resp.content)['results']
+        self.assertEqual(len(results), 2)
+        for lapsi_result in results:
+            self.assertEqual(lapsi_result['action'], ChangeType.MODIFIED.value)
+            self.assertIn(lapsi_result['id'], (original_lapsi_id, lapsi_id,))
+
+        assert_status_code(client.delete(f'/api/v1/lapset/{lapsi_id}/'), status.HTTP_204_NO_CONTENT)
+        datetime_lte_3 = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte_3}')
+        _validate_tk_basic_single_result(self, resp, original_lapsi_id, ChangeType.MODIFIED.value)
+
 
 def _load_base_data_for_kela_success_testing():
     client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
@@ -1618,3 +1941,32 @@ def _test_tk_kielipainotus_action(self, resp, vakajarjestaja_id, toimipaikka_id,
     kielipainotus_result = toimipaikka_result['kielipainotukset'][0]
     self.assertEqual(kielipainotus_result['id'], kielipainotus_id)
     self.assertEqual(kielipainotus_result['action'], action)
+
+
+def _test_tk_vakasuhde_action(self, resp, lapsi_id, vakapaatos_id, vakasuhde_id, action):
+    results = json.loads(resp.content)['results']
+    self.assertEqual(len(results), 1)
+
+    lapsi_result = results[0]
+    self.assertEqual(lapsi_result['id'], lapsi_id)
+    self.assertEqual(lapsi_result['action'], ChangeType.UNCHANGED.value)
+    self.assertEqual(len(lapsi_result['maksutiedot']), 0)
+    self.assertEqual(len(lapsi_result['varhaiskasvatuspaatokset']), 1)
+
+    vakapaatos_result = lapsi_result['varhaiskasvatuspaatokset'][0]
+    self.assertEqual(vakapaatos_result['id'], vakapaatos_id)
+    self.assertEqual(vakapaatos_result['action'], ChangeType.UNCHANGED.value)
+    self.assertEqual(len(vakapaatos_result['varhaiskasvatussuhteet']), 1)
+
+    vakasuhde_result = vakapaatos_result['varhaiskasvatussuhteet'][0]
+    self.assertEqual(vakasuhde_result['id'], vakasuhde_id)
+    self.assertEqual(vakasuhde_result['action'], action)
+
+
+def _validate_tk_basic_single_result(self, resp, instance_id, action):
+    results = json.loads(resp.content)['results']
+    self.assertEqual(len(results), 1)
+    single_result = results[0]
+    self.assertEqual(single_result['id'], instance_id)
+    self.assertEqual(single_result['action'], action)
+    return single_result

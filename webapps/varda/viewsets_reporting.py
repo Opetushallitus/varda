@@ -58,7 +58,8 @@ from varda.serializers_reporting import (DuplicateLapsiSerializer, ErrorReportLa
                                          LahdejarjestelmaTransferOutageReportSerializer, RequestSummaryGroupSerializer,
                                          RequestSummarySerializer, TiedonsiirtoSerializer,
                                          TiedonsiirtotilastoSerializer, TiedonsiirtoYhteenvetoSerializer,
-                                         TkOrganisaatiotSerializer, UserTransferOutageReportSerializer)
+                                         TkOrganisaatiotSerializer, TkVakatiedotSerializer,
+                                         UserTransferOutageReportSerializer)
 from varda.validators import validate_kela_api_datetimefield
 
 logger = logging.getLogger(__name__)
@@ -1263,5 +1264,17 @@ class TkOrganisaatiot(TkBaseViewSet):
     def get_queryset(self):
         id_qs = get_related_object_changed_id_qs(VakaJarjestaja.get_name(), self.datetime_gt, self.datetime_lte)
         return (VakaJarjestaja.history
+                .filter(id__in=Subquery(id_qs), history_date__lte=self.datetime_lte)
+                .distinct('id').order_by('id', '-history_date'))
+
+
+@auditlogclass
+class TkVakatiedot(TkBaseViewSet):
+    queryset = Lapsi.objects.none()
+    serializer_class = TkVakatiedotSerializer
+
+    def get_queryset(self):
+        id_qs = get_related_object_changed_id_qs(Lapsi.get_name(), self.datetime_gt, self.datetime_lte)
+        return (Lapsi.history
                 .filter(id__in=Subquery(id_qs), history_date__lte=self.datetime_lte)
                 .distinct('id').order_by('id', '-history_date'))
