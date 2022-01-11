@@ -24,7 +24,7 @@ drf-nested-routers==0.93.*  # Apache 2.0-license
 drf-yasg==1.20.*  # BSD 3-Clause License
 flake8==3.9.*  # MIT-license
 # flower==1.0.*  # BSD-license
-git+git://github.com/mher/flower.git@ad5258b4beff6620ba0ea54ebbed5f69091f1300
+git+https://github.com/mher/flower.git@ad5258b4beff6620ba0ea54ebbed5f69091f1300
 gunicorn==20.1.*  # MIT-license
 itypes==1.2.*  # BSD-license
 Jinja2==3.0.*  # BSD-license
