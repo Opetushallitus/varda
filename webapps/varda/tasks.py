@@ -5,11 +5,12 @@ from functools import wraps
 
 from celery import shared_task
 from django.conf import settings
+from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.management import call_command
 from django.db import connection, transaction
-from django.db.models import Case, Count, DateField, F, Func, IntegerField, Q, Value, When
+from django.db.models import Case, Count, DateField, F, Func, IntegerField, Q, Subquery, Value, When
 from django.db.models.functions import Cast
 from django.db.models.signals import post_save
 from django.utils import timezone
@@ -25,10 +26,10 @@ from varda.enums.aikaleima_avain import AikaleimaAvain
 from varda.excel_export import delete_excel_reports_earlier_than
 from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
 from varda.misc import memory_efficient_queryset_iterator
-from varda.models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto,
+from varda.models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Maksutieto,
                           MaksutietoHuoltajuussuhde, Palvelussuhde, Taydennyskoulutus, TaydennyskoulutusTyontekija,
-                          ToiminnallinenPainotus, Toimipaikka, Tyontekija, VakaJarjestaja, Varhaiskasvatuspaatos,
-                          Z3_AdditionalCasUserFields, Z6_LastRequest, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary)
+                          Toimipaikka, Tyontekija, VakaJarjestaja, Varhaiskasvatuspaatos, Z3_AdditionalCasUserFields,
+                          Z6_LastRequest, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary)
 from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups
 from varda.permissions import assign_object_level_permissions_for_instance, delete_object_permissions_explicitly
 
@@ -571,27 +572,6 @@ def general_monitoring_task():
 
 @shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
-def reset_painotus_permissions():
-    """
-    TEMPORARY FUNCTION
-    """
-    with transaction.atomic():
-        for queryset in (ToiminnallinenPainotus.objects.all().order_by('id').iterator(),
-                         KieliPainotus.objects.all().order_by('id').iterator(),):
-            index = 0
-            current_model = None
-            for instance in queryset:
-                delete_object_permissions_explicitly(type(instance), instance.id)
-                toimipaikka_oid = instance.toimipaikka.organisaatio_oid
-                vakajarjestaja_oid = instance.toimipaikka.vakajarjestaja.organisaatio_oid
-                assign_object_level_permissions_for_instance(instance, (vakajarjestaja_oid, toimipaikka_oid,))
-                index += 1
-                current_model = type(instance)
-            logger.info(f'Reset permissions for {index} {current_model.__name__} objects')
-
-
-@shared_task
-@single_instance_task(timeout_in_minutes=8 * 60)
 def init_related_object_changed_table_task():
     related_change_tuple = (
         (
@@ -659,3 +639,18 @@ def init_related_object_changed_table_task():
                 FROM varda_maksutietohuoltajuussuhde mhs
                 LEFT JOIN varda_huoltajuussuhde hs ON hs.id = mhs.huoltajuussuhde_id;
             ''')
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def delete_toimipaikka_paakayttaja_groups():
+    """
+    TEMPORARY FUNCTION
+    """
+    with transaction.atomic():
+        toimipaikka_oid_qs = Toimipaikka.objects.exclude(organisaatio_oid='').values('organisaatio_oid')
+        group_qs = (Group.objects
+                    .annotate(oid=Func(F('name'), Value(r'.*_(\d.*)'), Value(r'\1'), function='regexp_replace'))
+                    .filter(oid__in=Subquery(toimipaikka_oid_qs), name__contains='PAAKAYTTAJA'))
+        logger.info(f'Deleting {group_qs.count()} toimipaikka PAAKAYTTAJA groups')
+        group_qs.delete()
