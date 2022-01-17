@@ -56,6 +56,7 @@ def add_test_users():
     User.objects.create(username='henkilosto_tallentaja_93957375488', password='pbkdf2_sha256$150000$WMst0ZmwKf3p$Fqyz4SSdybbBdAexKCjxXyqiUfYafn7XxGaxQsALqoo=')
     User.objects.create(username='kela_luovutuspalvelu', password='pbkdf2_sha256$150000$WMst0ZmwKQ5P$Fqyz1KLMdybbBdjLmKCjxXyqiUfYafn7XxGaxQsALqoo=')
     User.objects.create(username='varda_system', password='pbkdf2_sha256$150000$WMst9QvKQ5P$Fqyz1HDLdybbBdjiKlCjxXyqiUfYafn7XxGaxQsALqoo=')
+    User.objects.create(username='user_toimipaikka_9395737548810', password='pbkdf2_sha256$150000$WMst0ZmwKf3p$Fqyz4SSdybbBdAexKCjxXyqiUfYafn7XxGaxQsALqoo=')
 
 
 def add_test_user_permissions():
@@ -155,6 +156,10 @@ def add_test_user_permissions():
 
     vakatietojen_toimipaikka_tallentaja_9395737548815 = User.objects.get(username='vakatietojen_toimipaikka_tallentaja_9395737548815')
     vakatietojen_toimipaikka_tallentaja_9395737548815.groups.add(group_tallentaja_toimipaikka_9395737548815)
+
+    user_toimipaikka_9395737548810 = User.objects.get(username='user_toimipaikka_9395737548810')
+    user_toimipaikka_9395737548810.groups.add(group_tallentaja_toimipaikka_1)
+    user_toimipaikka_9395737548810.groups.add(group_huoltajatiedot_tallentaja_toimipaikka_1)
 
     user_tester7 = User.objects.get(username='tester7')
     user_tester7.groups.add(group_huoltajatiedot_tallentaja_vakajarjestaja_2)

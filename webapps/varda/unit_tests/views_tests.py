@@ -14,7 +14,7 @@ from rest_framework.exceptions import ValidationError as ValidationErrorRest
 from varda.misc import hash_string, encrypt_string
 from varda.models import (VakaJarjestaja, Toimipaikka, PaosOikeus, Huoltaja, Huoltajuussuhde, Henkilo,
                           Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto, ToiminnallinenPainotus,
-                          KieliPainotus, PaosToiminta, Z2_Code, MaksutietoHuoltajuussuhde)
+                          KieliPainotus, PaosToiminta, Z2_Code, MaksutietoHuoltajuussuhde, Z4_CasKayttoOikeudet)
 from varda.permission_groups import assign_object_level_permissions
 from varda.unit_tests.test_utils import (assert_status_code, SetUpTestClient, assert_validation_error, mock_admin_user,
                                          post_henkilo_to_get_permissions, mock_date_decorator_factory)
@@ -5152,3 +5152,107 @@ class VardaViewsTests(TestCase):
         assert_status_code(resp, status.HTTP_200_OK)
         self.assertEqual(1, json.loads(resp.content)['tallennetut_huoltajat_count'])
         self.assertEqual(2, json.loads(resp.content)['ei_tallennetut_huoltajat_count'])
+
+    def test_lapsi_delete_all_palvelukayttaja(self):
+        client = SetUpTestClient('pkvakajarjestaja1').client()
+        invalid_client = SetUpTestClient('pkvakajarjestaja2').client()
+        lapsi = Lapsi.objects.get(tunniste='testing-lapsi3')
+        lapsi_data = self._get_data_ids_for_lapsi(lapsi)
+
+        url = f'/api/v1/lapset/{lapsi.lahdejarjestelma}:{lapsi.tunniste}/delete-all/'
+        resp = invalid_client.delete(url)
+        assert_status_code(resp, status.HTTP_404_NOT_FOUND)
+
+        resp = client.delete(url)
+        assert_status_code(resp, status.HTTP_204_NO_CONTENT)
+        self._verify_lapsi_data_deletion(lapsi_data)
+
+    def test_lapsi_delete_all_paos(self):
+        client = SetUpTestClient('pkvakajarjestaja1').client()
+        invalid_client = SetUpTestClient('pkvakajarjestaja2').client()
+        lapsi = Lapsi.objects.get(tunniste='testing-lapsi4')
+        lapsi_data = self._get_data_ids_for_lapsi(lapsi)
+
+        url = f'/api/v1/lapset/{lapsi.lahdejarjestelma}:{lapsi.tunniste}/delete-all/'
+        resp = invalid_client.delete(url)
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
+        assert_validation_error(resp, 'errors', 'PE006', 'User does not have permission to perform this action.')
+
+        resp = client.delete(url)
+        assert_status_code(resp, status.HTTP_204_NO_CONTENT)
+        self._verify_lapsi_data_deletion(lapsi_data)
+
+    def test_lapsi_delete_all_vakajarjestaja(self):
+        user = User.objects.get(username='tester5')
+        client = SetUpTestClient('tester5').client()
+        lapsi = Lapsi.objects.get(tunniste='testing-lapsi1')
+        lapsi_data = self._get_data_ids_for_lapsi(lapsi)
+
+        url = f'/api/v1/lapset/{lapsi.lahdejarjestelma}:{lapsi.tunniste}/delete-all/'
+        resp = client.delete(url)
+        # Missing HUOLTAJATIEDOT_TALLENTAJA permission
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
+        assert_validation_error(resp, 'errors', 'PE002', 'User does not have permissions to delete this object.')
+
+        organisaatio_oid = '1.2.246.562.10.93957375488'
+        maksutieto_group = Group.objects.get(name=f'{Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA}_{organisaatio_oid}')
+        user.groups.add(maksutieto_group)
+
+        resp = client.delete(url)
+        assert_status_code(resp, status.HTTP_204_NO_CONTENT)
+        self._verify_lapsi_data_deletion(lapsi_data)
+
+    def test_lapsi_delete_all_toimipaikka(self):
+        client_vakajarjestaja = SetUpTestClient('pkvakajarjestaja2').client()
+        user_toimipaikka = User.objects.get(username='user_toimipaikka_9395737548810')
+        client_toimipaikka = SetUpTestClient('user_toimipaikka_9395737548810').client()
+        lapsi = Lapsi.objects.get(tunniste='testing-lapsi1')
+
+        toimipaikka_oid = '1.2.246.562.10.9395737548811'
+        vakasuhde = {
+            'varhaiskasvatuspaatos_tunniste': 'testing-varhaiskasvatuspaatos1',
+            'toimipaikka_oid': toimipaikka_oid,
+            'alkamis_pvm': '2017-02-11',
+            'paattymis_pvm': '2018-02-24',
+            'lahdejarjestelma': '1'
+        }
+        resp = client_vakajarjestaja.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
+        assert_status_code(resp, status.HTTP_201_CREATED)
+
+        lapsi_data = self._get_data_ids_for_lapsi(lapsi)
+
+        url = f'/api/v1/lapset/{lapsi.lahdejarjestelma}:{lapsi.tunniste}/delete-all/'
+        resp = client_toimipaikka.delete(url)
+        # Missing permission to second Toimipaikka
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
+        assert_validation_error(resp, 'errors', 'PE002', 'User does not have permissions to delete this object.')
+
+        tallentaja_group = Group.objects.get(name=f'{Z4_CasKayttoOikeudet.TALLENTAJA}_{toimipaikka_oid}')
+        user_toimipaikka.groups.add(tallentaja_group)
+
+        resp = client_toimipaikka.delete(url)
+        assert_status_code(resp, status.HTTP_204_NO_CONTENT)
+        self._verify_lapsi_data_deletion(lapsi_data)
+
+    def _get_data_ids_for_lapsi(self, lapsi):
+        return {
+            'lapsi_id': lapsi.id,
+            'vakapaatos_id_list': list(lapsi.varhaiskasvatuspaatokset.all().values_list('id', flat=True)),
+            'vakasuhde_id_list': list(Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=lapsi)
+                                      .values_list('id', flat=True)),
+            'huoltajuussuhde_id_list': list(lapsi.huoltajuussuhteet.all().values_list('id', flat=True)),
+            'maksutieto_huoltajuussuhde_id_list': list(MaksutietoHuoltajuussuhde.objects
+                                                       .filter(huoltajuussuhde__lapsi=lapsi)
+                                                       .values_list('id', flat=True)),
+            'maksutieto_id_list': list(Maksutieto.objects.filter(huoltajuussuhteet__lapsi=lapsi)
+                                       .values_list('id', flat=True))
+        }
+
+    def _verify_lapsi_data_deletion(self, lapsi_data):
+        self.assertEqual(Lapsi.objects.filter(id=lapsi_data['lapsi_id']).count(), 0)
+        self.assertEqual(Varhaiskasvatuspaatos.objects.filter(id__in=lapsi_data['vakapaatos_id_list']).count(), 0)
+        self.assertEqual(Varhaiskasvatussuhde.objects.filter(id__in=lapsi_data['vakasuhde_id_list']).count(), 0)
+        self.assertEqual(Huoltajuussuhde.objects.filter(id__in=lapsi_data['huoltajuussuhde_id_list']).count(), 0)
+        self.assertEqual(MaksutietoHuoltajuussuhde.objects
+                         .filter(id__in=lapsi_data['maksutieto_huoltajuussuhde_id_list']).count(), 0)
+        self.assertEqual(Maksutieto.objects.filter(id__in=lapsi_data['maksutieto_id_list']).count(), 0)
