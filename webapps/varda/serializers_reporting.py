@@ -161,7 +161,7 @@ class AbstractErrorReportSerializer(serializers.ModelSerializer):
         error_list = []
         for error_key, error_tuple in self.context['view'].get_error_tuples().items():
             error_attr = getattr(obj, error_key.value['error_code'], '')
-            if error_attr != '':
+            if error_attr is not None and error_attr != '':
                 model_id_list = error_attr.split(',')
                 error_list.append({
                     **error_key.value,

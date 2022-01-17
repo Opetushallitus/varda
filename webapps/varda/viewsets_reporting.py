@@ -1209,7 +1209,7 @@ class RequestSummaryViewSet(GenericViewSet, ListModelMixin):
                     .annotate(successful_sum=Sum('successful_count'), unsuccessful_sum=Sum('unsuccessful_count'),
                               ratio=Cast(F('unsuccessful_sum'), output_field=FloatField()) /
                               Cast(F('successful_sum') + F('unsuccessful_sum'), output_field=FloatField()),
-                              id_list=ArrayAgg('id', distinct=True))
+                              id_list=ArrayAgg('id', distinct=True, default=Value([])))
                     .values('user__id', 'user__username', 'vakajarjestaja__id', 'vakajarjestaja__nimi',
                             'vakajarjestaja__organisaatio_oid', 'lahdejarjestelma', 'request_url_simple', 'ratio',
                             'successful_sum', 'unsuccessful_sum', 'id_list')

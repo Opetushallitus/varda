@@ -1,5 +1,5 @@
 from django.contrib.postgres.aggregates import StringAgg
-from django.db.models import Q
+from django.db.models import Q, Value
 
 from varda.models import PaosOikeus, PaosToiminta, Toimipaikka, Z9_RelatedObjectChanged
 
@@ -30,6 +30,6 @@ def get_related_object_changed_id_qs(model_name, datetime_gt, datetime_lte, addi
             .values('model_name', 'instance_id', 'trigger_model_name', 'trigger_instance_id')
             .filter(model_name=model_name, changed_timestamp__gt=datetime_gt, changed_timestamp__lte=datetime_lte,
                     **additional_filters)
-            .annotate(history_type_list=StringAgg('history_type', ','))
+            .annotate(history_type_list=StringAgg('history_type', ',', default=Value('')))
             .filter(~(Q(history_type_list__contains='+') & Q(history_type_list__contains='-')))
             .values_list(return_value, flat=True).distinct())

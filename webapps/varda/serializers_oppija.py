@@ -1,7 +1,7 @@
 import datetime
 
 from django.contrib.postgres.aggregates import ArrayAgg
-from django.db.models import Q
+from django.db.models import Q, Value
 from drf_yasg.utils import swagger_serializer_method
 
 from varda.models import (Henkilo, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Lapsi, Huoltajuussuhde, Maksutieto,
@@ -223,7 +223,7 @@ class OppijaTyontekijaSerializer(AbstractAktiivinenToimijaYhteystietoSerializer)
         qs = tyontekija.taydennyskoulutukset_tyontekijat
         qs = (qs.values('taydennyskoulutus__id', 'taydennyskoulutus__nimi',
                         'taydennyskoulutus__suoritus_pvm', 'taydennyskoulutus__koulutuspaivia')
-              .annotate(tehtavanimike_koodi_list=ArrayAgg('tehtavanimike_koodi')))
+              .annotate(tehtavanimike_koodi_list=ArrayAgg('tehtavanimike_koodi', default=Value([]))))
         return OppijaTaydennyskoulutusSerializer(instance=qs, many=True, read_only=True).data
 
 
