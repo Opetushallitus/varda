@@ -49,6 +49,9 @@
         ],
         "no-underscore-dangle": [
           "off"
+        ],
+        "@typescript-eslint/member-ordering": [
+          "warn"
         ]
       }
     },

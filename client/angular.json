@@ -27,6 +27,12 @@
               "projects/huoltaja-app/src/assets/css/varda-theme.scss",
               "projects/huoltaja-app/src/styles.css"
             ],
+            "stylePreprocessorOptions": {
+              "includePaths": [
+                "node_modules",
+                "projects/huoltaja-app/src"
+              ]
+            },
             "scripts": [],
             "aot": false,
             "vendorChunk": true,
@@ -177,6 +183,12 @@
               "projects/virkailija-app/src/override.css",
               "node_modules/cookieconsent/build/cookieconsent.min.css"
             ],
+            "stylePreprocessorOptions": {
+              "includePaths": [
+                "node_modules",
+                "projects/virkailija-app/src"
+              ]
+            },
             "scripts": [
               "node_modules/jquery/dist/jquery.min.js",
               "node_modules/bootstrap/dist/js/bootstrap.min.js",

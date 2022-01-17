@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
-import * as moment_ from 'moment';
-const moment = moment_;
+import moment from 'moment';
 import { HttpService } from './http.service';
 import { CookieService } from 'ngx-cookie-service';
 import { VardaUserDTO } from './models/user-dto';
@@ -86,12 +85,12 @@ export class LoginService {
     return this.fetchedApiTokenSubject.asObservable();
   }
 
-  tokenExpired(expiryTime: moment_.Moment): boolean {
+  tokenExpired(expiryTime: moment.Moment): boolean {
     const now = moment();
     return now.isAfter(expiryTime);
   }
 
-  createExpiryTime(): moment_.Moment {
+  createExpiryTime(): moment.Moment {
     const now = moment();
     return now.add(12, 'h');
   }

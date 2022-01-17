@@ -1,6 +1,7 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
     "baseUrl": "./",
     "module": "es2020",
     "outDir": "./dist/out-tsc",
@@ -24,8 +25,5 @@
         "dist/varda-shared/*"
       ]
     }
-  },
-  "angularCompilerOptions": {
-    "enableIvy": true
   }
 }

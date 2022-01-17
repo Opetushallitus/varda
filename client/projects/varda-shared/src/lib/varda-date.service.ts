@@ -1,8 +1,6 @@
 import { Injectable } from '@angular/core';
 // https://github.com/jvandemo/generator-angular2-library/issues/221#issuecomment-355945207
-import * as moment_ from 'moment';
-import { Moment } from 'moment';
-const moment = moment_;
+import moment from 'moment';
 
 @Injectable({
   providedIn: 'root',
@@ -23,7 +21,7 @@ export class VardaDateService {
 
   constructor() { }
 
-  momentToVardaDate(date: Moment): string {
+  momentToVardaDate(date: moment.Moment): string {
     let formattedDate = null;
     if (date) {
       formattedDate = date.format(VardaDateService.vardaApiDateFormat);
@@ -31,7 +29,7 @@ export class VardaDateService {
     return formattedDate;
   }
 
-  vardaDateToMoment(date: string): Moment {
+  vardaDateToMoment(date: string): moment.Moment {
     const momentDate = moment(date, VardaDateService.vardaApiDateFormat);
     if (!momentDate.isValid()) {
       return null;
