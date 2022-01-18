@@ -11,12 +11,12 @@ index e998795..4b0d1b7 100644
      'CAS_ADMIN_PREFIX': None,
      'CAS_CREATE_USER': True,
 diff --git a/django_cas_ng/utils.py b/django_cas_ng/utils.py
-index 913381e..59148a1 100644
+index f0b5ce4..851a344 100644
 --- a/django_cas_ng/utils.py
 +++ b/django_cas_ng/utils.py
 @@ -52,6 +52,10 @@ def get_service_url(request: HttpRequest, redirect_to: Optional[str] = None) ->
      """Generates application django service URL for CAS"""
-     if hasattr(django_settings, 'CAS_ROOT_PROXIED_AS'):
+     if hasattr(django_settings, 'CAS_ROOT_PROXIED_AS') and django_settings.CAS_ROOT_PROXIED_AS:
          service = urllib_parse.urljoin(django_settings.CAS_ROOT_PROXIED_AS, request.path)
 +    elif (hasattr(django_settings, 'CAS_ACCEPT_PROXY_URL_FROM_HEADER') and
 +          django_settings.CAS_ACCEPT_PROXY_URL_FROM_HEADER and
@@ -26,7 +26,7 @@ index 913381e..59148a1 100644
          if django_settings.CAS_FORCE_SSL_SERVICE_URL:
              protocol = 'https'
 diff --git a/django_cas_ng/views.py b/django_cas_ng/views.py
-index f67dc46..cb99eff 100644
+index f50f234..d45c8d3 100644
 --- a/django_cas_ng/views.py
 +++ b/django_cas_ng/views.py
 @@ -80,7 +80,11 @@ class LoginView(View):
