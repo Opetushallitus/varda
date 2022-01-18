@@ -98,7 +98,8 @@ class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
         If henkilo is related only to Tyontekijat, we need to remove address information
         :param henkilo: Henkilo object linked to this Tyontekija
         """
-        if not hasattr(henkilo, 'huoltaja'):
+        if (not hasattr(henkilo, 'huoltaja') and
+                (henkilo.kotikunta_koodi or henkilo.katuosoite or henkilo.postinumero or henkilo.postitoimipaikka)):
             henkilo.remove_address_information()
             henkilo.save()
 

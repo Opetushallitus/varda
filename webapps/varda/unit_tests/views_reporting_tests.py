@@ -11,8 +11,9 @@ from rest_framework import status
 from varda.enums.change_type import ChangeType
 from varda.misc import decrypt_henkilotunnus
 from varda.models import (Henkilo, Huoltaja, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto, Palvelussuhde,
-                          PaosToiminta, PidempiPoissaolo, ToiminnallinenPainotus, Toimipaikka, Tutkinto, Tyontekija,
-                          Tyoskentelypaikka, VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde)
+                          PaosToiminta, PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija,
+                          ToiminnallinenPainotus, Toimipaikka, Tutkinto, Tyontekija, Tyoskentelypaikka, VakaJarjestaja,
+                          Varhaiskasvatuspaatos, Varhaiskasvatussuhde)
 from varda.unit_tests.test_utils import (assert_status_code, assert_validation_error, mock_admin_user,
                                          mock_date_decorator_factory, SetUpTestClient)
 from varda.unit_tests.views_tests import mock_check_if_toimipaikka_exists_by_name, mock_create_organisaatio
@@ -1800,6 +1801,428 @@ class VardaViewsReportingTests(TestCase):
                           f'&datetime_lte={datetime_lte_3}')
         _validate_tk_basic_single_result(self, resp, original_lapsi_id, ChangeType.MODIFIED.value)
 
+    def test_tk_henkilostotiedot_all(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        tyontekija_count = 0
+        tutkinto_count = 0
+        palvelussuhde_count = 0
+        tyoskentelypaikka_count = 0
+        pidempi_poissaolo_count = 0
+        taydennyskoulutus_id_set = set()
+        taydennyskoulutus_tyontekija_count = 0
+
+        url = '/api/reporting/v1/tilastokeskus/henkilostotiedot/'
+        while url:
+            resp = client.get(url)
+            response = json.loads(resp.content)
+            for result in response['results']:
+                tyontekija_count += 1
+                tutkinto_count += len(result['tutkinnot'])
+                for palvelussuhde in result['palvelussuhteet']:
+                    palvelussuhde_count += 1
+                    tyoskentelypaikka_count += len(palvelussuhde['tyoskentelypaikat'])
+                    pidempi_poissaolo_count += len(palvelussuhde['pidemmat_poissaolot'])
+                for taydennyskoulutus in result['taydennyskoulutukset']:
+                    taydennyskoulutus_id_set.add(taydennyskoulutus['id'])
+                    taydennyskoulutus_tyontekija_count += len(taydennyskoulutus['tehtavanimikkeet'])
+            url = response['next']
+
+        self.assertEqual(Tyontekija.objects.count(), tyontekija_count)
+        self.assertEqual(Tutkinto.objects.count(), tutkinto_count)
+        self.assertEqual(Palvelussuhde.objects.count(), palvelussuhde_count)
+        self.assertEqual(Tyoskentelypaikka.objects.count(), tyoskentelypaikka_count)
+        self.assertEqual(PidempiPoissaolo.objects.count(), pidempi_poissaolo_count)
+        self.assertEqual(Taydennyskoulutus.objects.count(), len(taydennyskoulutus_id_set))
+        self.assertEqual(TaydennyskoulutusTyontekija.objects.count(), taydennyskoulutus_tyontekija_count)
+
+    def test_tk_henkilostotiedot_tyoskentelypaikka_no_change(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        datetime_gt = _get_iso_datetime_now()
+        tyontekija_id = Tyontekija.objects.get(tunniste='testing-tyontekija2').id
+        palvelussuhde_id = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2').id
+        tyoskentelypaikka = {
+            'palvelussuhde_tunniste': 'testing-palvelussuhde2',
+            'toimipaikka_oid': '1.2.246.562.10.9395737548815',
+            'alkamis_pvm': '2021-09-05',
+            'paattymis_pvm': '2022-01-01',
+            'tehtavanimike_koodi': '77826',
+            'kelpoisuus_kytkin': True,
+            'kiertava_tyontekija_kytkin': False,
+            'lahdejarjestelma': '1'
+        }
+        resp = client.post('/api/henkilosto/v1/tyoskentelypaikat/', tyoskentelypaikka)
+        assert_status_code(resp, status.HTTP_201_CREATED)
+        tyoskentelypaikka_id = json.loads(resp.content)['id']
+        datetime_lte = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        _test_tk_henkilostotieto_action(self, resp, tyontekija_id, palvelussuhde_id, ChangeType.CREATED.value,
+                                        model=Tyoskentelypaikka, instance_id=tyoskentelypaikka_id)
+
+        datetime_gt_2 = _get_iso_datetime_now()
+        resp = client.delete(f'/api/henkilosto/v1/tyoskentelypaikat/{tyoskentelypaikka_id}/')
+        assert_status_code(resp, status.HTTP_204_NO_CONTENT)
+        datetime_lte = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt_2}'
+                          f'&datetime_lte={datetime_lte}')
+        _test_tk_henkilostotieto_action(self, resp, tyontekija_id, palvelussuhde_id, ChangeType.DELETED.value,
+                                        model=Tyoskentelypaikka, instance_id=tyoskentelypaikka_id)
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        # Object was created and deleted within the time range
+        self.assertEqual(len(json.loads(resp.content)['results']), 0)
+
+    def test_tk_henkilostotiedot_pidempi_poissaolo_no_change(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        datetime_gt = _get_iso_datetime_now()
+        tyontekija_id = Tyontekija.objects.get(tunniste='testing-tyontekija2').id
+        palvelussuhde_id = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde2').id
+        pidempi_poissaolo = {
+            'palvelussuhde_tunniste': 'testing-palvelussuhde2',
+            'alkamis_pvm': '2021-09-05',
+            'paattymis_pvm': '2023-01-01',
+            'lahdejarjestelma': '1'
+        }
+        resp = client.post('/api/henkilosto/v1/pidemmatpoissaolot/', pidempi_poissaolo)
+        assert_status_code(resp, status.HTTP_201_CREATED)
+        pidempi_poissaolo_id = json.loads(resp.content)['id']
+        datetime_lte = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        _test_tk_henkilostotieto_action(self, resp, tyontekija_id, palvelussuhde_id, ChangeType.CREATED.value,
+                                        model=PidempiPoissaolo, instance_id=pidempi_poissaolo_id)
+
+        datetime_gt_2 = _get_iso_datetime_now()
+        resp = client.delete(f'/api/henkilosto/v1/pidemmatpoissaolot/{pidempi_poissaolo_id}/')
+        assert_status_code(resp, status.HTTP_204_NO_CONTENT)
+        datetime_lte = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt_2}'
+                          f'&datetime_lte={datetime_lte}')
+        _test_tk_henkilostotieto_action(self, resp, tyontekija_id, palvelussuhde_id, ChangeType.DELETED.value,
+                                        model=PidempiPoissaolo, instance_id=pidempi_poissaolo_id)
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        # Object was created and deleted within the time range
+        self.assertEqual(len(json.loads(resp.content)['results']), 0)
+
+    def test_tk_henkilostotiedot_nested_delete(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        datetime_gt = _get_iso_datetime_now()
+        tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija7')
+        tyontekija_id = tyontekija.id
+        tutkinto_id = Tutkinto.objects.get(henkilo=tyontekija.henkilo, vakajarjestaja=tyontekija.vakajarjestaja).id
+        taydennyskoulutus_id = Taydennyskoulutus.objects.get(tunniste='testing-taydennyskoulutus4').id
+        tyoskentelypaikka_id = Tyoskentelypaikka.objects.get(tunniste='testing-tyoskentylypaikka7').id
+        pidempi_poissaolo_id = PidempiPoissaolo.objects.get(tunniste='testing-pidempipoissaolo3').id
+        palvelussuhde_id = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde7').id
+
+        assert_status_code(client.delete(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_id}/'),
+                           status.HTTP_204_NO_CONTENT)
+        assert_status_code(client.delete(f'/api/henkilosto/v1/tyoskentelypaikat/{tyoskentelypaikka_id}/'),
+                           status.HTTP_204_NO_CONTENT)
+        assert_status_code(client.delete(f'/api/henkilosto/v1/pidemmatpoissaolot/{pidempi_poissaolo_id}/'),
+                           status.HTTP_204_NO_CONTENT)
+        assert_status_code(client.delete(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_id}/'),
+                           status.HTTP_204_NO_CONTENT)
+        assert_status_code(client.delete(f'/api/henkilosto/v1/tutkinnot/{tutkinto_id}/'),
+                           status.HTTP_204_NO_CONTENT)
+        assert_status_code(client.delete(f'/api/henkilosto/v1/tyontekijat/{tyontekija_id}/'),
+                           status.HTTP_204_NO_CONTENT)
+        datetime_lte = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        tyontekija_result = json.loads(resp.content)['results'][0]
+        self.assertEqual(tyontekija_result['id'], tyontekija_id)
+        self.assertEqual(tyontekija_result['action'], ChangeType.DELETED.value)
+        palvelussuhde_result = tyontekija_result['palvelussuhteet'][0]
+        self.assertEqual(palvelussuhde_result['id'], palvelussuhde_id)
+        self.assertEqual(palvelussuhde_result['action'], ChangeType.DELETED.value)
+        tyoskentelypaikka_result = palvelussuhde_result['tyoskentelypaikat'][0]
+        self.assertEqual(tyoskentelypaikka_result['id'], tyoskentelypaikka_id)
+        self.assertEqual(tyoskentelypaikka_result['action'], ChangeType.DELETED.value)
+        pidempi_poissaolo_result = palvelussuhde_result['pidemmat_poissaolot'][0]
+        self.assertEqual(pidempi_poissaolo_result['id'], pidempi_poissaolo_id)
+        self.assertEqual(pidempi_poissaolo_result['action'], ChangeType.DELETED.value)
+        taydennyskoulutus_result = tyontekija_result['taydennyskoulutukset'][0]
+        self.assertEqual(taydennyskoulutus_result['id'], taydennyskoulutus_id)
+        self.assertEqual(taydennyskoulutus_result['action'], ChangeType.DELETED.value)
+        tutkinto_result = tyontekija_result['tutkinnot'][0]
+        self.assertEqual(tutkinto_result['id'], tutkinto_id)
+        self.assertEqual(tutkinto_result['action'], ChangeType.DELETED.value)
+
+    def test_tk_henkilostotiedot_taydennyskoulutus(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        tyontekija_id = Tyontekija.objects.get(tunniste='testing-tyontekija1').id
+        tyontekija_2_id = Tyontekija.objects.get(tunniste='testing-tyontekija2').id
+
+        taydennyskoulutus = {
+            'taydennyskoulutus_tyontekijat': [{
+                'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_id}/',
+                'tehtavanimike_koodi': '39407'
+            }],
+            'nimi': 'Testikoulutus20',
+            'suoritus_pvm': '2021-09-01',
+            'koulutuspaivia': '1.5',
+            'lahdejarjestelma': '1'
+        }
+
+        datetime_gt = _get_iso_datetime_now()
+        taydennyskoulutus_resp = client.post('/api/henkilosto/v1/taydennyskoulutukset/',
+                                             json.dumps(taydennyskoulutus), content_type='application/json')
+        assert_status_code(taydennyskoulutus_resp, status.HTTP_201_CREATED)
+        taydennyskoulutus_id = json.loads(taydennyskoulutus_resp.content)['id']
+        datetime_lte = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        tyontekija_result = _validate_tk_basic_single_result(self, resp, tyontekija_id, ChangeType.UNCHANGED.value)
+        self.assertEqual(len(tyontekija_result['taydennyskoulutukset']), 1)
+        taydennyskoulutus_result = tyontekija_result['taydennyskoulutukset'][0]
+        self.assertEqual(taydennyskoulutus_result['id'], taydennyskoulutus_id)
+        self.assertEqual(taydennyskoulutus_result['action'], ChangeType.CREATED.value)
+        self.assertCountEqual(taydennyskoulutus_result['tehtavanimikkeet'], ['39407'])
+
+        taydennyskoulutus_patch = {
+            'taydennyskoulutus_tyontekijat_add': [{
+                'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_id}/',
+                'tehtavanimike_koodi': '64212'
+            }]
+        }
+
+        datetime_gt_2 = _get_iso_datetime_now()
+        assert_status_code(client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_id}/',
+                                        json.dumps(taydennyskoulutus_patch), content_type='application/json'),
+                           status.HTTP_200_OK)
+        datetime_lte_2 = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt_2}'
+                          f'&datetime_lte={datetime_lte_2}')
+        tyontekija_result = _validate_tk_basic_single_result(self, resp, tyontekija_id, ChangeType.UNCHANGED.value)
+        self.assertEqual(len(tyontekija_result['taydennyskoulutukset']), 1)
+        taydennyskoulutus_result = tyontekija_result['taydennyskoulutukset'][0]
+        self.assertEqual(taydennyskoulutus_result['id'], taydennyskoulutus_id)
+        self.assertEqual(taydennyskoulutus_result['action'], ChangeType.MODIFIED.value)
+        self.assertCountEqual(taydennyskoulutus_result['tehtavanimikkeet'], ['39407', '64212'])
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte_2}')
+        tyontekija_result = _validate_tk_basic_single_result(self, resp, tyontekija_id, ChangeType.UNCHANGED.value)
+        self.assertEqual(len(tyontekija_result['taydennyskoulutukset']), 1)
+        taydennyskoulutus_result = tyontekija_result['taydennyskoulutukset'][0]
+        self.assertEqual(taydennyskoulutus_result['id'], taydennyskoulutus_id)
+        self.assertEqual(taydennyskoulutus_result['action'], ChangeType.CREATED.value)
+        self.assertCountEqual(taydennyskoulutus_result['tehtavanimikkeet'], ['39407', '64212'])
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        tyontekija_result = _validate_tk_basic_single_result(self, resp, tyontekija_id, ChangeType.UNCHANGED.value)
+        self.assertEqual(len(tyontekija_result['taydennyskoulutukset']), 1)
+        taydennyskoulutus_result = tyontekija_result['taydennyskoulutukset'][0]
+        self.assertEqual(taydennyskoulutus_result['id'], taydennyskoulutus_id)
+        self.assertEqual(taydennyskoulutus_result['action'], ChangeType.CREATED.value)
+        self.assertCountEqual(taydennyskoulutus_result['tehtavanimikkeet'], ['39407'])
+
+        taydennyskoulutus_patch = {
+            'taydennyskoulutus_tyontekijat_add': [{
+                'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_2_id}/',
+                'tehtavanimike_koodi': '77826'
+            }]
+        }
+
+        datetime_gt_3 = _get_iso_datetime_now()
+        assert_status_code(client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_id}/',
+                                        json.dumps(taydennyskoulutus_patch), content_type='application/json'),
+                           status.HTTP_200_OK)
+        datetime_lte_3 = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt_3}'
+                          f'&datetime_lte={datetime_lte_3}')
+        result_list = json.loads(resp.content)['results']
+        self.assertEqual(len(result_list), 2)
+        for result in result_list:
+            result_id = result['id']
+            self.assertIn(result_id, [tyontekija_id, tyontekija_2_id])
+            self.assertEqual(result['action'], ChangeType.UNCHANGED.value)
+            self.assertEqual(len(result['taydennyskoulutukset']), 1)
+            taydennyskoulutus_result = result['taydennyskoulutukset'][0]
+            self.assertEqual(taydennyskoulutus_result['id'], taydennyskoulutus_id)
+            self.assertEqual(taydennyskoulutus_result['action'], ChangeType.MODIFIED.value)
+            tehtavanimike_list = ['39407', '64212'] if result_id == tyontekija_id else ['77826']
+            self.assertCountEqual(taydennyskoulutus_result['tehtavanimikkeet'], tehtavanimike_list)
+
+        taydennyskoulutus_patch = {
+            'taydennyskoulutus_tyontekijat_remove': [{
+                'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_id}/',
+                'tehtavanimike_koodi': '39407'
+            }, {
+                'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_id}/',
+                'tehtavanimike_koodi': '64212'
+            }]
+        }
+
+        datetime_gt_4 = _get_iso_datetime_now()
+        assert_status_code(client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_id}/',
+                                        json.dumps(taydennyskoulutus_patch), content_type='application/json'),
+                           status.HTTP_200_OK)
+        datetime_lte_4 = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt_4}'
+                          f'&datetime_lte={datetime_lte_4}')
+        result_list = json.loads(resp.content)['results']
+        self.assertEqual(len(result_list), 2)
+        for result in result_list:
+            result_id = result['id']
+            self.assertIn(result_id, [tyontekija_id, tyontekija_2_id])
+            self.assertEqual(result['action'], ChangeType.UNCHANGED.value)
+            self.assertEqual(len(result['taydennyskoulutukset']), 1)
+            taydennyskoulutus_result = result['taydennyskoulutukset'][0]
+            self.assertEqual(taydennyskoulutus_result['id'], taydennyskoulutus_id)
+            self.assertEqual(taydennyskoulutus_result['action'], ChangeType.MODIFIED.value)
+            tehtavanimike_list = [] if result_id == tyontekija_id else ['77826']
+            self.assertCountEqual(taydennyskoulutus_result['tehtavanimikkeet'], tehtavanimike_list)
+
+        taydennyskoulutus_patch = {
+            'nimi': 'Testikoulutus21'
+        }
+
+        datetime_gt_5 = _get_iso_datetime_now()
+        assert_status_code(client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_id}/',
+                                        json.dumps(taydennyskoulutus_patch), content_type='application/json'),
+                           status.HTTP_200_OK)
+        datetime_lte_5 = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt_5}'
+                          f'&datetime_lte={datetime_lte_5}')
+        tyontekija_result = _validate_tk_basic_single_result(self, resp, tyontekija_2_id, ChangeType.UNCHANGED.value)
+        self.assertEqual(len(tyontekija_result['taydennyskoulutukset']), 1)
+        taydennyskoulutus_result = tyontekija_result['taydennyskoulutukset'][0]
+        self.assertEqual(taydennyskoulutus_result['id'], taydennyskoulutus_id)
+        self.assertEqual(taydennyskoulutus_result['action'], ChangeType.MODIFIED.value)
+        self.assertEqual(taydennyskoulutus_result['nimi'], 'Testikoulutus21')
+
+        datetime_gt_6 = _get_iso_datetime_now()
+        assert_status_code(client.delete(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_id}/'),
+                           status.HTTP_204_NO_CONTENT)
+        datetime_lte_6 = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt_6}'
+                          f'&datetime_lte={datetime_lte_6}')
+        tyontekija_result = _validate_tk_basic_single_result(self, resp, tyontekija_2_id, ChangeType.UNCHANGED.value)
+        self.assertEqual(len(tyontekija_result['taydennyskoulutukset']), 1)
+        taydennyskoulutus_result = tyontekija_result['taydennyskoulutukset'][0]
+        self.assertEqual(taydennyskoulutus_result['id'], taydennyskoulutus_id)
+        self.assertEqual(taydennyskoulutus_result['action'], ChangeType.DELETED.value)
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte_6}')
+        self.assertEqual(len(json.loads(resp.content)['results']), 0)
+
+    def test_tk_henkilostotiedot_henkilo(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        henkilo = Henkilo.objects.get(henkilo_oid='1.2.246.562.24.2431884920042')
+        original_tyontekija_id = Tyontekija.objects.get(tunniste='testing-tyontekija2').id
+
+        tyontekija = {
+            'henkilo_oid': henkilo.henkilo_oid,
+            'vakajarjestaja_oid': '1.2.246.562.10.52966755795',
+            'lahdejarjestelma': '1'
+        }
+        datetime_gt = _get_iso_datetime_now()
+        resp_tyontekija = client.post('/api/henkilosto/v1/tyontekijat/', tyontekija)
+        assert_status_code(resp_tyontekija, status.HTTP_201_CREATED)
+        tyontekija_id = json.loads(resp_tyontekija.content)['id']
+        datetime_lte = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        _validate_tk_basic_single_result(self, resp, tyontekija_id, ChangeType.CREATED.value)
+
+        datetime_gt_2 = _get_iso_datetime_now()
+        # Wait for 0.1 seconds so database action happens after datetime_gt_2
+        time.sleep(0.1)
+        henkilo.aidinkieli_koodi = 'SV'
+        henkilo.save()
+        datetime_lte_2 = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt_2}'
+                          f'&datetime_lte={datetime_lte_2}')
+        results = json.loads(resp.content)['results']
+        self.assertEqual(len(results), 2)
+        for lapsi_result in results:
+            self.assertEqual(lapsi_result['action'], ChangeType.MODIFIED.value)
+            self.assertIn(lapsi_result['id'], (original_tyontekija_id, tyontekija_id,))
+
+        assert_status_code(client.delete(f'/api/henkilosto/v1/tyontekijat/{tyontekija_id}/'),
+                           status.HTTP_204_NO_CONTENT)
+        datetime_lte_3 = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte_3}')
+        _validate_tk_basic_single_result(self, resp, original_tyontekija_id, ChangeType.MODIFIED.value)
+
+    def test_tk_henkilostotiedot_tutkinto(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        tyontekija_id = Tyontekija.objects.get(tunniste='testing-tyontekija5').id
+        vakajarjestaja_oid = '1.2.246.562.10.93957375488'
+        henkilo_oid = '1.2.246.562.24.2431884920041'
+
+        tutkinto = {
+            'vakajarjestaja_oid': vakajarjestaja_oid,
+            'henkilo_oid': henkilo_oid,
+            'tutkinto_koodi': '712104'
+        }
+
+        datetime_gt = _get_iso_datetime_now()
+        resp_tyontekija = client.post('/api/henkilosto/v1/tutkinnot/', tutkinto)
+        assert_status_code(resp_tyontekija, status.HTTP_201_CREATED)
+        tutkinto_id = json.loads(resp_tyontekija.content)['id']
+        datetime_lte = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        tyontekija_result = _validate_tk_basic_single_result(self, resp, tyontekija_id, ChangeType.UNCHANGED.value)
+        self.assertEqual(len(tyontekija_result['tutkinnot']), 1)
+        tutkinto_result = tyontekija_result['tutkinnot'][0]
+        self.assertEqual(tutkinto_result['id'], tutkinto_id)
+        self.assertEqual(tutkinto_result['action'], ChangeType.CREATED.value)
+
+        datetime_gt_2 = _get_iso_datetime_now()
+        assert_status_code(client.delete(f'/api/henkilosto/v1/tutkinnot/{tutkinto_id}/'), status.HTTP_204_NO_CONTENT)
+        datetime_lte_2 = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt_2}'
+                          f'&datetime_lte={datetime_lte_2}')
+        tyontekija_result = _validate_tk_basic_single_result(self, resp, tyontekija_id, ChangeType.UNCHANGED.value)
+        self.assertEqual(len(tyontekija_result['tutkinnot']), 1)
+        tutkinto_result = tyontekija_result['tutkinnot'][0]
+        self.assertEqual(tutkinto_result['id'], tutkinto_id)
+        self.assertEqual(tutkinto_result['action'], ChangeType.DELETED.value)
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte_2}')
+        self.assertEqual(len(json.loads(resp.content)['results']), 0)
+
 
 def _load_base_data_for_kela_success_testing():
     client_tester2 = SetUpTestClient('tester2').client()  # tallentaja, huoltaja tallentaja vakajarjestaja 1
@@ -1970,3 +2393,30 @@ def _validate_tk_basic_single_result(self, resp, instance_id, action):
     self.assertEqual(single_result['id'], instance_id)
     self.assertEqual(single_result['action'], action)
     return single_result
+
+
+def _test_tk_henkilostotieto_action(self, resp, tyontekija_id, palvelussuhde_id, action, model=None,
+                                    instance_id=None):
+    results = json.loads(resp.content)['results']
+    self.assertEqual(len(results), 1)
+
+    tyontekija_result = results[0]
+    self.assertEqual(tyontekija_result['id'], tyontekija_id)
+    self.assertEqual(tyontekija_result['action'], ChangeType.UNCHANGED.value)
+    self.assertEqual(len(tyontekija_result['taydennyskoulutukset']), 0)
+    self.assertEqual(len(tyontekija_result['palvelussuhteet']), 1)
+
+    palvelussuhde_result = tyontekija_result['palvelussuhteet'][0]
+    self.assertEqual(palvelussuhde_result['id'], palvelussuhde_id)
+    palvelussuhde_action = action if not model else ChangeType.UNCHANGED.value
+    self.assertEqual(palvelussuhde_result['action'], palvelussuhde_action)
+    pidemmat_poissaolot_count = 1 if model == PidempiPoissaolo else 0
+    self.assertEqual(len(palvelussuhde_result['pidemmat_poissaolot']), pidemmat_poissaolot_count)
+    tyoskentelypaikat_count = 1 if model == Tyoskentelypaikka else 0
+    self.assertEqual(len(palvelussuhde_result['tyoskentelypaikat']), tyoskentelypaikat_count)
+
+    if model in (Tyoskentelypaikka, PidempiPoissaolo,):
+        field_name = 'tyoskentelypaikat' if model == Tyoskentelypaikka else 'pidemmat_poissaolot'
+        instance_result = palvelussuhde_result[field_name][0]
+        self.assertEqual(instance_result['id'], instance_id)
+        self.assertEqual(instance_result['action'], action)
