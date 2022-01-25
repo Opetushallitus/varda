@@ -85,6 +85,10 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
       return;
     }
 
+    if (this.searchInput && !this.searchInput.valid) {
+      return;
+    }
+
     if (!this.isAllToimipaikatSelected && this.selectedToimipaikat.length === 0) {
       return;
     }

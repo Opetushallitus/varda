@@ -13,6 +13,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { PaginatorParams, VardaResultListComponent } from './varda-result-list/varda-result-list.component';
 import { VardaVakajarjestajaUi } from '../../../utilities/models';
 import { VardaKoosteApiService } from '../../../core/services/varda-kooste-api.service';
+import { NgModel } from '@angular/forms';
 
 export enum FilterStringType {
   TRANSLATED_STRING = 'translatedString',
@@ -40,6 +41,7 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
   @ViewChild('toimipaikkaInput') toimipaikkaInput: ElementRef<HTMLInputElement>;
   @ViewChild('toimipaikkaChipList') toimipaikkaChipList: MatChipList;
   @ViewChild('resultList') resultListComponent: VardaResultListComponent;
+  @ViewChild('searchInput') searchInput: NgModel;
 
   i18n = VirkailijaTranslations;
   koodistoEnum = KoodistoEnum;

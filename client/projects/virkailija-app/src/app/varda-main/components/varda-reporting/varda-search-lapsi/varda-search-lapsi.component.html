@@ -45,13 +45,17 @@
                 aria-label="katsele tietoja ohje">
           <mat-icon alt="">info</mat-icon>
         </button>
-        <input class="oph-input"
-               name="reportingLapsiSearchInput"
-               id="reportingLapsiSearchInput"
-               type="text"
-               placeholder="{{i18n.katsele_tietoja_nimi_tunniste | translate}}"
-               [(ngModel)]="searchValue"
-               (keydown.enter)="search()">
+        <app-varda-input #searchInput="ngModel"
+                         name="reportingLapsiSearchInput"
+                         id="reportingLapsiSearchInput"
+                         type="text"
+                         placeholder="{{i18n.katsele_tietoja_nimi_tunniste | translate}}"
+                         minlength="3"
+                         [(ngModel)]="searchValue"
+                         [errorMap]="[
+                           { key: 'minlength', value: i18n.katsele_tietoja_error_search_minlength }
+                         ]"
+                         (keydownEnter)="search()"></app-varda-input>
       </div>
       <div class="col-md-auto order-4 order-md-3">
         <button class="varda-button varda-icon-button search-button margin-top-md"

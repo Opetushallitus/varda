@@ -102,6 +102,10 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
       return;
     }
 
+    if (this.searchInput && !this.searchInput.valid) {
+      return;
+    }
+
     if (!this.isAllToimipaikatSelected && this.selectedToimipaikat.length === 0) {
       return;
     }

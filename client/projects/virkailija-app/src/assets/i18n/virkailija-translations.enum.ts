@@ -573,6 +573,7 @@ export enum VirkailijaTranslations {
   katsele_tietoja_error_date_format = 'katsele-tietoja.error.date-format',
   katsele_tietoja_error_no_tehtavanimike_selected = 'katsele-tietoja.error.no-tehtavanimike-selected',
   katsele_tietoja_error_no_tutkinto_selected = 'katsele-tietoja.error.no-tutkinto-selected',
+  katsele_tietoja_error_search_minlength = 'katsele-tietoja.error.search.minlength',
 
   organisaatio_oid = 'organisaatio.oid',
   organisaatio_kayntiosoite = 'organisaatio.kayntiosoite',

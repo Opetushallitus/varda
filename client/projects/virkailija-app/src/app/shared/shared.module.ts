@@ -55,6 +55,7 @@ import { VardaAutocompleteSelectorComponent } from './components/varda-autocompl
 import { SnackbarTimers } from '../core/services/varda-snackbar.service';
 import { BrowserNotSupportedGuard } from '../varda-main/components/public-components/public-components';
 import { RoboIdComponent } from './components/robo-id/robo-id.component';
+import { VardaInputComponent } from './components/varda-input/varda-input.component';
 
 const cookieConfig: NgcCookieConsentConfig = {
   cookie: {
@@ -136,6 +137,7 @@ const cookieConfig: NgcCookieConsentConfig = {
     VardaDatepickerHeaderComponent,
     VardaAutocompleteSelectorComponent,
     RoboIdComponent,
+    VardaInputComponent,
   ],
   providers: [
     BrowserNotSupportedGuard,
@@ -216,7 +218,8 @@ const cookieConfig: NgcCookieConsentConfig = {
     ToimipaikkaNimiDirective,
     VardaDatepickerComponent,
     VardaAutocompleteSelectorComponent,
-    RoboIdComponent
+    RoboIdComponent,
+    VardaInputComponent,
   ],
   entryComponents: [VardaDatepickerHeaderComponent]
 })

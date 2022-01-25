@@ -53,6 +53,10 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
   }
 
   search(paginatorParams?: PaginatorParams): any {
+    if (this.searchInput && !this.searchInput.valid) {
+      return;
+    }
+
     const searchParams: Record<string, unknown> = {};
     this.setPaginatorParams(searchParams, paginatorParams);
 
