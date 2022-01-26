@@ -758,7 +758,7 @@ class NestedMaksutietoHuoltajaSerializer(serializers.Serializer):
 
         if self.context['request'].method in ['POST', 'PUT', 'PATCH']:
             # Return henkilotunnus in POST, PUT and PATCH requests if it was present in the request
-            henkilotunnus = decrypt_henkilotunnus(henkilo.henkilotunnus)
+            henkilotunnus = decrypt_henkilotunnus(henkilo.henkilotunnus, henkilo_id=henkilo.id)
             if henkilotunnus in self.context.get('henkilotunnus_set', []):
                 data['henkilotunnus'] = henkilotunnus
 

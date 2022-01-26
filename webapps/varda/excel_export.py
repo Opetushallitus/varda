@@ -22,7 +22,7 @@ from xlsxwriter.worksheet import Worksheet, convert_cell_args
 from varda.clients.allas_s3_client import Client as S3Client
 from varda.enums.koodistot import Koodistot
 from varda.enums.supported_language import SupportedLanguage
-from varda.misc import decrypt_henkilotunnus, CustomServerErrorException, TemporaryObject, decrypt_excel_report_password
+from varda.misc import decrypt_henkilotunnus, TemporaryObject, decrypt_excel_report_password
 from varda.models import (Varhaiskasvatussuhde, Z8_ExcelReport, Maksutieto, Z2_Code, Z8_ExcelReportLog, Lapsi,
                           Tyontekija, Toimipaikka, Palvelussuhde, TaydennyskoulutusTyontekija)
 
@@ -377,7 +377,7 @@ def _create_vakatiedot_report(workbook, language, vakajarjestaja_id, toimipaikka
 
         # Lapsi information
         vakasuhde_values = [henkilo.henkilo_oid, henkilo.etunimet, henkilo.sukunimi,
-                            _decrypt_hetu(henkilo.henkilotunnus),
+                            decrypt_henkilotunnus(henkilo.henkilotunnus, henkilo_id=henkilo.id, raise_error=False),
                             _get_boolean_translation(translations, henkilo.turvakielto), lapsi.id,
                             _get_boolean_translation(translations, lapsi.paos_kytkin)]
 
@@ -418,6 +418,7 @@ def _create_vakatiedot_report(workbook, language, vakajarjestaja_id, toimipaikka
                                    huoltaja_etunimet=F('huoltajuussuhteet__huoltaja__henkilo__etunimet'),
                                    huoltaja_sukunimi=F('huoltajuussuhteet__huoltaja__henkilo__sukunimi'),
                                    lapsi_id=F('huoltajuussuhteet__lapsi__id'),
+                                   henkilo_id=F('huoltajuussuhteet__lapsi__henkilo_id'),
                                    henkilo_oid=F('huoltajuussuhteet__lapsi__henkilo__henkilo_oid'),
                                    etunimet=F('huoltajuussuhteet__lapsi__henkilo__etunimet'),
                                    sukunimi=F('huoltajuussuhteet__lapsi__henkilo__sukunimi'),
@@ -435,7 +436,7 @@ def _create_vakatiedot_report(workbook, language, vakajarjestaja_id, toimipaikka
         for index, maksutieto in enumerate(maksutieto_qs, 1):
             # Lapsi information
             maksutieto_values = [maksutieto.henkilo_oid, maksutieto.etunimet, maksutieto.sukunimi,
-                                 _decrypt_hetu(maksutieto.henkilotunnus),
+                                 decrypt_henkilotunnus(maksutieto.henkilotunnus, henkilo_id=maksutieto.henkilo_id, raise_error=False),
                                  _get_boolean_translation(translations, maksutieto.turvakielto), maksutieto.lapsi_id]
 
             # Maksutieto information
@@ -528,7 +529,7 @@ def _create_puutteelliset_lapsi_report(worksheet, language, vakajarjestaja_id, d
             for model_id in error['model_id_list']:
                 # Lapsi information
                 error_values = [henkilo.henkilo_oid, henkilo.etunimet, henkilo.sukunimi,
-                                _decrypt_hetu(henkilo.henkilotunnus),
+                                decrypt_henkilotunnus(henkilo.henkilotunnus, henkilo_id=henkilo.id, raise_error=False),
                                 _get_boolean_translation(translations, henkilo.turvakielto), lapsi.id,
                                 _get_boolean_translation(translations, lapsi.paos_kytkin)]
 
@@ -560,7 +561,7 @@ def _create_puutteelliset_tyontekija_report(worksheet, language, vakajarjestaja_
             for model_id in error['model_id_list']:
                 # Tyontekija information
                 error_values = [henkilo.henkilo_oid, henkilo.etunimet, henkilo.sukunimi,
-                                _decrypt_hetu(henkilo.henkilotunnus),
+                                decrypt_henkilotunnus(henkilo.henkilotunnus, henkilo_id=henkilo.id, raise_error=False),
                                 _get_boolean_translation(translations, henkilo.turvakielto), tyontekija.id,
                                 _get_code_translation(lahdejarjestelma_koodisto, tyontekija.lahdejarjestelma)]
 
@@ -612,7 +613,7 @@ def _create_tyontekijatiedot_report(workbook, language, vakajarjestaja_id, toimi
             for data_instance in data_set:
                 # Tyontekija information
                 tyontekija_values = [henkilo.henkilo_oid, henkilo.etunimet, henkilo.sukunimi,
-                                     _decrypt_hetu(henkilo.henkilotunnus),
+                                     decrypt_henkilotunnus(henkilo.henkilotunnus, henkilo_id=henkilo.id, raise_error=False),
                                      _get_boolean_translation(translations, henkilo.turvakielto), tyontekija.id,
                                      _get_code_translation(lahdejarjestelma_codes, tyontekija.lahdejarjestelma)]
                 # Palvelussuhde information
@@ -674,7 +675,7 @@ def _create_taydennyskoulutustiedot_report(workbook, language, vakajarjestaja_id
 
         # Tyontekija information
         taydennyskoulutus_values = [henkilo.henkilo_oid, henkilo.etunimet, henkilo.sukunimi,
-                                    _decrypt_hetu(henkilo.henkilotunnus),
+                                    decrypt_henkilotunnus(henkilo.henkilotunnus, henkilo_id=henkilo.id, raise_error=False),
                                     _get_boolean_translation(translations, henkilo.turvakielto), tyontekija.id,
                                     _get_code_translation(lahdejarjestelma_codes, tyontekija.lahdejarjestelma)]
 
@@ -874,15 +875,6 @@ def delete_excel_reports_earlier_than(timestamp):
                 report.delete()
             except OSError as os_error:
                 logger.error(f'Error deleting Excel file: {os_error}')
-
-
-def _decrypt_hetu(encrypted_hetu):
-    try:
-        decrypted_hetu = decrypt_henkilotunnus(encrypted_hetu)
-        return decrypted_hetu
-    except CustomServerErrorException:
-        # Error decrypting hetu, return None
-        return None
 
 
 def _encrypt_excel_file(file_path, password):

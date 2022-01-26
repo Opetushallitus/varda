@@ -43,7 +43,7 @@ def hash_string(string):
     return hashlib.sha256(string.encode('utf-8')).hexdigest()
 
 
-def decrypt_henkilotunnus(encrypted_henkilotunnus):
+def decrypt_henkilotunnus(encrypted_henkilotunnus, henkilo_id=None, raise_error=True):
     """
     This is needed when updating henkilo-data from Oppijanumerorekisteri.
 
@@ -53,16 +53,23 @@ def decrypt_henkilotunnus(encrypted_henkilotunnus):
     if not encrypted_henkilotunnus:
         return None
 
+    henkilo_id = henkilo_id or getattr(Henkilo.objects.filter(henkilotunnus=encrypted_henkilotunnus).first(), 'id', None)
+
     f = _get_fernet()
     try:
         resolved_token = f.decrypt(encrypted_henkilotunnus.encode('utf-8'))
     except TypeError:
-        logger.error('Decrypt henkilotunnus: Fernet token is not bytes.')
-        raise CustomServerErrorException
+        logger.error(f'Decrypt henkilotunnus: Fernet token is not bytes. Henkilo.id: {henkilo_id}')
+        if raise_error:
+            raise CustomServerErrorException
+        else:
+            return None
     except InvalidToken:
-        henkilo = Henkilo.objects.filter(henkilotunnus=encrypted_henkilotunnus).first()
-        logger.error('Decrypt henkilotunnus: Invalid token. Henkilo id: {}'.format(henkilo.id))
-        raise CustomServerErrorException
+        logger.error(f'Decrypt henkilotunnus: Invalid token. Henkilo.id: {henkilo_id}')
+        if raise_error:
+            raise CustomServerErrorException
+        else:
+            return None
     return resolved_token.decode('utf-8')  # convert bytes -> string
 
 
@@ -272,7 +279,8 @@ def test_decrypt_all_hetus():
     Validate all hetus in db are decryptable. Meant to be run after after fernet key rotation.
     """
     logger.info('Starting decrypting all hetus in db')
-    [decrypt_henkilotunnus(henkilotunnus) for henkilotunnus in Henkilo.objects.exclude(henkilotunnus='').values_list('henkilotunnus', flat=True)]
+    [decrypt_henkilotunnus(henkilo_data[0], henkilo_id=henkilo_data[1])
+     for henkilo_data in Henkilo.objects.exclude(henkilotunnus='').values_list('henkilotunnus', 'id')]
     logger.info('Finished decrypting all hetus in db succesfully')
 
 

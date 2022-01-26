@@ -373,7 +373,7 @@ class DuplicateLapsiSerializer(serializers.Serializer):
 
     def get_henkilotunnus(self, instance):
         try:
-            decrypted_hetu = decrypt_henkilotunnus(instance['henkilo'].henkilotunnus)
+            decrypted_hetu = decrypt_henkilotunnus(instance['henkilo'].henkilotunnus, henkilo_id=instance['henkilo'].id)
             return decrypted_hetu
         except CustomServerErrorException:
             return None
@@ -643,7 +643,8 @@ class TkHuoltajuussuhdeSerializer(TkBaseSerializer, serializers.ModelSerializer)
         return super().to_representation(instance)
 
     def get_henkilotunnus(self, instance):
-        return decrypt_henkilotunnus(instance.henkilo_instance.henkilotunnus)
+        return decrypt_henkilotunnus(instance.henkilo_instance.henkilotunnus,
+                                     henkilo_id=instance.henkilo_instance.id, raise_error=False)
 
 
 class TkMaksutietoHuoltajaSerializer(serializers.Serializer):
@@ -667,7 +668,7 @@ class TkMaksutietoSerializer(TkBaseSerializer, serializers.ModelSerializer):
         # We need to join historical tables so raw SQL query is simpler
         with connection.cursor() as cursor:
             cursor.execute('''
-                SELECT DISTINCT ON(hhu.henkilo_id) hhe.henkilo_oid, he.henkilo_oid, hhe.henkilotunnus, he.henkilotunnus
+                SELECT DISTINCT ON(hhu.henkilo_id) hhu.henkilo_id, hhe.henkilo_oid, he.henkilo_oid, hhe.henkilotunnus, he.henkilotunnus
                 FROM varda_historicalmaksutietohuoltajuussuhde hmhs
                 LEFT JOIN varda_historicalhuoltajuussuhde hhs ON hmhs.huoltajuussuhde_id = hhs.id
                 LEFT JOIN varda_historicalhuoltaja hhu ON hhs.huoltaja_id = hhu.id
@@ -677,8 +678,9 @@ class TkMaksutietoSerializer(TkBaseSerializer, serializers.ModelSerializer):
                 ORDER BY hhu.henkilo_id, hhe.history_date DESC;
             ''', [instance.id, self.datetime_lte])
 
-            huoltaja_list = [{'henkilo_oid': result[0] or result[1],
-                              'henkilotunnus': decrypt_henkilotunnus(result[2]) or decrypt_henkilotunnus(result[3])}
+            huoltaja_list = [{'henkilo_oid': result[1] or result[2],
+                              'henkilotunnus': (decrypt_henkilotunnus(result[3], henkilo_id=result[0], raise_error=False) or
+                                                decrypt_henkilotunnus(result[4], henkilo_id=result[0], raise_error=False))}
                              for result in cursor.fetchall()]
             return TkMaksutietoHuoltajaSerializer(huoltaja_list, many=True).data
 
@@ -724,7 +726,8 @@ class TkVakatiedotSerializer(TkBaseSerializer, serializers.ModelSerializer):
         return lapsi
 
     def get_henkilotunnus(self, instance):
-        return decrypt_henkilotunnus(instance.henkilo_instance.henkilotunnus)
+        return decrypt_henkilotunnus(instance.henkilo_instance.henkilotunnus,
+                                     henkilo_id=instance.henkilo_instance.id, raise_error=False)
 
     @swagger_serializer_method(serializer_or_field=TkVakapaatosSerializer)
     def get_varhaiskasvatuspaatokset(self, instance):
@@ -866,7 +869,8 @@ class TkHenkilostotiedotSerializer(TkBaseSerializer, serializers.ModelSerializer
         return super().to_representation(instance)
 
     def get_henkilotunnus(self, instance):
-        return decrypt_henkilotunnus(instance.henkilo_instance.henkilotunnus)
+        return decrypt_henkilotunnus(instance.henkilo_instance.henkilotunnus,
+                                     henkilo_id=instance.henkilo_instance.id, raise_error=False)
 
     @swagger_serializer_method(serializer_or_field=TkTutkintoSerializer)
     def get_tutkinnot(self, instance):

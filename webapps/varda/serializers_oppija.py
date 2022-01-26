@@ -236,7 +236,7 @@ class HenkilotiedotSerializer(serializers.ModelSerializer):
                   'sukupuoli_koodi', 'syntyma_pvm', 'kotikunta_koodi', 'katuosoite', 'postinumero', 'postitoimipaikka')
 
     def get_henkilotunnus(self, henkilo):
-        return decrypt_henkilotunnus(henkilo.henkilotunnus)
+        return decrypt_henkilotunnus(henkilo.henkilotunnus, henkilo_id=henkilo.id)
 
 
 class HuoltajatiedotSerializer(serializers.ModelSerializer):
