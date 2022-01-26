@@ -1079,6 +1079,13 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
             if toimipaikka_oid:
                 # Assign permissions again to include Toimipaikka related groups
                 self._assign_permissions_for_lapsi_obj(lapsi_obj, paos_oikeus, toimipaikka_oid)
+            if (validated_data['lahdejarjestelma'] != lapsi_obj.lahdejarjestelma or
+                    validated_data.get('tunniste', None) != lapsi_obj.tunniste):
+                # If lahdejarjestelma or tunniste have been changed, update change
+                lapsi_obj.lahdejarjestelma = validated_data['lahdejarjestelma']
+                lapsi_obj.tunniste = validated_data.get('tunniste', None)
+                lapsi_obj.changed_by = user
+                lapsi_obj.save()
             # Make sure that ConflictError is not raised inside a transaction, otherwise permission changes
             # are rolled back
             raise ConflictError(self.get_serializer(lapsi_obj).data, status_code=status.HTTP_200_OK)

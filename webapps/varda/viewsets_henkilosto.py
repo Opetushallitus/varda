@@ -86,6 +86,13 @@ class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
                 # Assign Toimipaikka level permissions to Henkilo object
                 assign_tyontekija_henkilo_permissions(tyontekija_obj, user=self.request.user,
                                                       toimipaikka_oid=toimipaikka_oid)
+            if (validated_data['lahdejarjestelma'] != tyontekija_obj.lahdejarjestelma or
+                    validated_data.get('tunniste', None) != tyontekija_obj.tunniste):
+                # If lahdejarjestelma or tunniste have been changed, update change
+                tyontekija_obj.lahdejarjestelma = validated_data['lahdejarjestelma']
+                tyontekija_obj.tunniste = validated_data.get('tunniste', None)
+                tyontekija_obj.changed_by = self.request.user
+                tyontekija_obj.save()
             # Make sure that ConflictError is not raised inside a transaction, otherwise permission changes
             # are rolled back
             raise ConflictError(self.get_serializer(tyontekija_obj).data, status_code=status.HTTP_200_OK)

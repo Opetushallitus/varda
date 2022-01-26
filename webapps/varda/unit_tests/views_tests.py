@@ -1182,6 +1182,34 @@ class VardaViewsTests(TestCase):
         assert_validation_error(resp2, 'toimipaikka', 'MI019', 'Given Toimipaikka does not belong to the correct VakaJarjestaja.')
         assert_status_code(resp2, 400)
 
+    def test_api_push_lapsi_duplicate(self):
+        client = SetUpTestClient('tester2').client()
+        lapsi_obj = Lapsi.objects.get(tunniste='testing-lapsi3')
+        lapsi_qs = Lapsi.objects.filter(id=lapsi_obj.id)
+
+        lapsi = {
+            'henkilo_oid': '1.2.246.562.24.49084901392',
+            'vakatoimija_oid': '1.2.246.562.10.34683023489',
+            'lahdejarjestelma': '3',
+            'tunniste': 'lapsi300'
+        }
+
+        resp = client.post('/api/v1/lapset/', lapsi)
+        assert_status_code(resp, status.HTTP_200_OK)
+        lapsi_obj = lapsi_qs.first()
+        self.assertEqual(lapsi_obj.lahdejarjestelma, '3')
+        self.assertEqual(lapsi_obj.tunniste, 'lapsi300')
+        self.assertEqual(json.loads(resp.content)['id'], lapsi_obj.id)
+
+        lapsi['lahdejarjestelma'] = '5'
+        del lapsi['tunniste']
+        resp = client.post('/api/v1/lapset/', lapsi)
+        assert_status_code(resp, status.HTTP_200_OK)
+        lapsi_obj = lapsi_qs.first()
+        self.assertEqual(lapsi_obj.tunniste, None)
+        self.assertEqual(lapsi_obj.lahdejarjestelma, '5')
+        self.assertEqual(json.loads(resp.content)['id'], lapsi_obj.id)
+
     def test_api_push_lapsi_incorrect_paos(self):
         client = SetUpTestClient('tester').client()
         lapsi = {

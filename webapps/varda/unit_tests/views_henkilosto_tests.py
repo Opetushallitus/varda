@@ -112,6 +112,34 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         self.assertEqual(tyontekija_url_1, tyontekija_url_2)
 
+    def test_tyontekija_add_twice_edit(self):
+        client = SetUpTestClient('tester10').client()
+        tyontekija_obj = Tyontekija.objects.get(tunniste='testing-tyontekija6')
+        tyontekija_qs = Tyontekija.objects.filter(id=tyontekija_obj.id)
+
+        tyontekija = {
+            'henkilo_oid': '1.2.246.562.24.4645229637988',
+            'vakajarjestaja_oid': '1.2.246.562.10.57294396385',
+            'lahdejarjestelma': '6',
+            'tunniste': 'tyontekija600'
+        }
+
+        resp = client.post('/api/henkilosto/v1/tyontekijat/', tyontekija)
+        assert_status_code(resp, status.HTTP_200_OK)
+        tyontekija_obj = tyontekija_qs.first()
+        self.assertEqual(tyontekija_obj.lahdejarjestelma, '6')
+        self.assertEqual(tyontekija_obj.tunniste, 'tyontekija600')
+        self.assertEqual(json.loads(resp.content)['id'], tyontekija_obj.id)
+
+        tyontekija['lahdejarjestelma'] = '5'
+        del tyontekija['tunniste']
+        resp = client.post('/api/henkilosto/v1/tyontekijat/', tyontekija)
+        assert_status_code(resp, status.HTTP_200_OK)
+        tyontekija_obj = tyontekija_qs.first()
+        self.assertEqual(tyontekija_obj.tunniste, None)
+        self.assertEqual(tyontekija_obj.lahdejarjestelma, '5')
+        self.assertEqual(json.loads(resp.content)['id'], tyontekija_obj.id)
+
     def mock_return_tyontekija_if_already_created(self, *args, **kwargs):
         return
 
