@@ -550,6 +550,10 @@ def is_correct_taydennyskoulutus_tyontekija_permission(user, taydennyskoulutus_t
     :param throws: By default validation fails raise PermissionDenied. Else if this param is False returns False.
     :return: boolean
     """
+    if not taydennyskoulutus_tyontekija_list:
+        # No TaydennyskoulutusTyontekija objects provided, return True (user has permissions to nothing)
+        return True
+
     tyontekija_id_list, toimipaikka_oid_list_list = get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus(taydennyskoulutus_tyontekija_list)
 
     permission_format = 'HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA_{}'

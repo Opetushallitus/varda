@@ -12,7 +12,7 @@ from varda.unit_tests.test_utils import (assert_status_code, SetUpTestClient, as
                                          date_side_effect, timedelta_side_effect)
 from varda.models import (VakaJarjestaja, Henkilo, Tyontekija, Palvelussuhde, Tyoskentelypaikka, Toimipaikka,
                           TilapainenHenkilosto, Taydennyskoulutus, TaydennyskoulutusTyontekija, PidempiPoissaolo,
-                          Tutkinto)
+                          Tutkinto, Z4_CasKayttoOikeudet)
 from varda.viewsets_henkilosto import TyontekijaViewSet
 
 
@@ -3240,3 +3240,133 @@ class VardaHenkilostoViewSetTests(TestCase):
         self.assertEqual(tutkinto_id_1, tutkinto_id_2)
         resp = client_vakajarjestaja.get(f'/api/henkilosto/v1/tutkinnot/{tutkinto_id_2}/')
         assert_status_code(resp, status.HTTP_200_OK)
+
+    def test_tyontekija_delete_all_vakajarjestaja(self):
+        user = User.objects.get(username='tyontekija_tallentaja')
+        invalid_client = SetUpTestClient('tester10').client()
+        client = SetUpTestClient('tyontekija_tallentaja').client()
+        tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija2')
+        tyontekija_data = self._get_data_ids_for_tyontekija(tyontekija)
+
+        url = f'/api/henkilosto/v1/tyontekijat/{tyontekija.lahdejarjestelma}:{tyontekija.tunniste}/delete-all/'
+        resp = invalid_client.delete(url)
+        assert_status_code(resp, status.HTTP_404_NOT_FOUND)
+
+        resp = client.delete(url)
+        # Missing HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA permission
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
+        assert_validation_error(resp, 'errors', 'PE002', 'User does not have permissions to delete this object.')
+
+        organisaatio_oid = '1.2.246.562.10.34683023489'
+        taydennyskoulutus_group = Group.objects.get(name=f'{Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA}_{organisaatio_oid}')
+        user.groups.add(taydennyskoulutus_group)
+
+        resp = client.delete(url)
+        assert_status_code(resp, status.HTTP_204_NO_CONTENT)
+        self._verify_tyontekija_data_deletion(tyontekija_data)
+
+    def test_tyontekija_delete_all_toimipaikka(self):
+        client_vakajarjestaja = SetUpTestClient('henkilosto_tallentaja_93957375488').client()
+        user_toimipaikka = User.objects.get(username='tyontekija_toimipaikka_tallentaja')
+        client_toimipaikka = SetUpTestClient('tyontekija_toimipaikka_tallentaja').client()
+        tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija5')
+
+        toimipaikka_oid = '1.2.246.562.10.9395737548811'
+        toimipaikka_oid_2 = '1.2.246.562.10.9395737548810'
+        taydennyskoulutus = {
+            'taydennyskoulutus_tyontekijat': [
+                {'lahdejarjestelma': '1', 'tunniste': 'testing-tyontekija5', 'tehtavanimike_koodi': '77826'},
+                {'lahdejarjestelma': '1', 'tunniste': 'testing-tyontekija5', 'tehtavanimike_koodi': '43525'}
+            ],
+            'nimi': 'Testikoulutus',
+            'suoritus_pvm': '2020-09-01',
+            'koulutuspaivia': '1.5',
+            'lahdejarjestelma': '1'
+        }
+        resp = client_vakajarjestaja.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus),
+                                          content_type='application/json')
+        assert_status_code(resp, status.HTTP_201_CREATED)
+
+        tyontekija_data = self._get_data_ids_for_tyontekija(tyontekija)
+
+        url = f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/delete-all/'
+        resp = client_toimipaikka.delete(url)
+        # Missing TYONTEKIJA_TALLENTAJA permission to second Toimipaikka
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
+        assert_validation_error(resp, 'errors', 'PE002', 'User does not have permissions to delete this object.')
+
+        toimipaikka_group = Group.objects.get(name=f'{Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA}_{toimipaikka_oid}')
+        user_toimipaikka.groups.add(toimipaikka_group)
+
+        resp = client_toimipaikka.delete(url)
+        # Missing TAYDENNYSKOULUTUS_TALLENTAJA permission to both Toimipaikka
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
+        assert_validation_error(resp, 'errors', 'PE002', 'User does not have permissions to delete this object.')
+
+        toimipaikka_group = Group.objects.get(name=f'{Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA}_{toimipaikka_oid_2}')
+        user_toimipaikka.groups.add(toimipaikka_group)
+
+        resp = client_toimipaikka.delete(url)
+        # Missing TAYDENNYSKOULUTUS_TALLENTAJA permission to second Toimipaikka
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
+        assert_validation_error(resp, 'errors', 'PE002', 'User does not have permissions to delete this object.')
+
+        toimipaikka_group = Group.objects.get(name=f'{Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA}_{toimipaikka_oid}')
+        user_toimipaikka.groups.add(toimipaikka_group)
+
+        resp = client_toimipaikka.delete(url)
+        assert_status_code(resp, status.HTTP_204_NO_CONTENT)
+        self._verify_tyontekija_data_deletion(tyontekija_data)
+
+    def test_tyontekija_delete_all_taydennyskoulutus(self):
+        user = User.objects.get(username='tyontekija_tallentaja')
+        organisaatio_oid = '1.2.246.562.10.34683023489'
+        taydennyskoulutus_group = Group.objects.get(name=f'{Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA}_{organisaatio_oid}')
+        user.groups.add(taydennyskoulutus_group)
+
+        client = SetUpTestClient('tyontekija_tallentaja').client()
+        tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija1')
+        tyontekija_data = self._get_data_ids_for_tyontekija(tyontekija)
+
+        resp = client.delete(f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/delete-all/')
+        assert_status_code(resp, status.HTTP_204_NO_CONTENT)
+        # Taydennyskoulutus object has other related Tyontekija objects
+        self._verify_tyontekija_data_deletion(tyontekija_data, remaining_taydennyskoulutus_count=1)
+
+        # No Taydennyskoulutus objects
+        user.groups.remove(taydennyskoulutus_group)
+        tyontekija_2 = Tyontekija.objects.get(tunniste='testing-tyontekija-kiertava')
+        tyontekija_2_data = self._get_data_ids_for_tyontekija(tyontekija)
+        resp = client.delete(f'/api/henkilosto/v1/tyontekijat/{tyontekija_2.id}/delete-all/')
+        assert_status_code(resp, status.HTTP_204_NO_CONTENT)
+        self._verify_tyontekija_data_deletion(tyontekija_2_data)
+
+    def _get_data_ids_for_tyontekija(self, tyontekija):
+        return {
+            'tyontekija_id': tyontekija.id,
+            'palvelussuhde_id_list': list(tyontekija.palvelussuhteet.all().values_list('id', flat=True)),
+            'tyoskentelypaikka_id_list': list(Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija)
+                                              .values_list('id', flat=True)),
+            'pidempi_poissaolo_id_list': list(PidempiPoissaolo.objects.filter(palvelussuhde__tyontekija=tyontekija)
+                                              .values_list('id', flat=True)),
+            'tutkinto_id_list': list(Tutkinto.objects
+                                     .filter(vakajarjestaja=tyontekija.vakajarjestaja, henkilo=tyontekija.henkilo)
+                                     .values_list('id', flat=True)),
+            'taydennyskoulutus_tyontekija_id_list': list(TaydennyskoulutusTyontekija.objects
+                                                         .filter(tyontekija=tyontekija).values_list('id', flat=True)),
+            'taydennyskoulutus_id_list': list(Taydennyskoulutus.objects.filter(tyontekijat=tyontekija)
+                                              .values_list('id', flat=True))
+        }
+
+    def _verify_tyontekija_data_deletion(self, tyontekija_data, remaining_taydennyskoulutus_count=0):
+        self.assertEqual(Tyontekija.objects.filter(id=tyontekija_data['tyontekija_id']).count(), 0)
+        self.assertEqual(Palvelussuhde.objects.filter(id__in=tyontekija_data['palvelussuhde_id_list']).count(), 0)
+        self.assertEqual(Tyoskentelypaikka.objects
+                         .filter(id__in=tyontekija_data['tyoskentelypaikka_id_list']).count(), 0)
+        self.assertEqual(PidempiPoissaolo.objects
+                         .filter(id__in=tyontekija_data['pidempi_poissaolo_id_list']).count(), 0)
+        self.assertEqual(Tutkinto.objects.filter(id__in=tyontekija_data['tutkinto_id_list']).count(), 0)
+        self.assertEqual(TaydennyskoulutusTyontekija.objects
+                         .filter(id__in=tyontekija_data['taydennyskoulutus_tyontekija_id_list']).count(), 0)
+        self.assertEqual(Taydennyskoulutus.objects.filter(id__in=tyontekija_data['taydennyskoulutus_id_list']).count(),
+                         remaining_taydennyskoulutus_count)
