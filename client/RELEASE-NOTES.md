@@ -1,6 +1,10 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.35 (26.01.2021)
+- OPHVARDA-2380: Tietoturvapäivityksiä
+- OPHVARDA-2339: Katsele tietoja tekstihaun vähimmäismerkkimäärä
+
 1.5.34 (22.12.2021)
 - OPHVARDA-2296: Asiakasmaksuihin lisää hakumahdollisuuksia
 - OPHVARDA-2164: Tehtävänimikkeiden yhdistys koosteessa
