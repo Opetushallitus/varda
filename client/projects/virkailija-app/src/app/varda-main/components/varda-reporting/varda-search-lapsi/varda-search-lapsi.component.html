@@ -36,7 +36,7 @@
         </div>
       </div>
       <div class="col-md col-lg-4 order-3 order-md-2 margin-top-md">
-        <label for="reportingLapsiSearchInput"
+        <label for="lapsiSearchInput"
                class="oph-bold">{{i18n.katsele_tietoja_nimi_tunniste | translate}}</label>
         <button mat-icon-button
                 class="varda-info-button"
@@ -46,8 +46,8 @@
           <mat-icon alt="">info</mat-icon>
         </button>
         <app-varda-input #searchInput="ngModel"
-                         name="reportingLapsiSearchInput"
-                         id="reportingLapsiSearchInput"
+                         [name]="'lapsiSearchInput'"
+                         [id]="'lapsiSearchInput'"
                          type="text"
                          placeholder="{{i18n.katsele_tietoja_nimi_tunniste | translate}}"
                          minlength="3"

@@ -47,8 +47,8 @@
           <mat-icon alt="">info</mat-icon>
         </button>
         <app-varda-input #searchInput="ngModel"
-                         name="tyontekijaSearchInput"
-                         id="tyontekijaSearchInput"
+                         [name]="'tyontekijaSearchInput'"
+                         [id]="'tyontekijaSearchInput'"
                          type="text"
                          placeholder="{{i18n.katsele_tietoja_nimi_tunniste | translate}}"
                          minlength="3"

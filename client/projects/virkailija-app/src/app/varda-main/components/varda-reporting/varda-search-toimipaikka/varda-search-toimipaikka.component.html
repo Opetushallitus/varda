@@ -12,8 +12,8 @@
           <mat-icon alt="">info</mat-icon>
         </button>
         <app-varda-input #searchInput="ngModel"
-                         name="toimipaikkaSearchInput"
-                         id="toimipaikkaSearchInput"
+                         [name]="'toimipaikkaSearchInput'"
+                         [id]="'toimipaikkaSearchInput'"
                          type="text"
                          placeholder="{{i18n.katsele_tietoja_nimi_tunniste | translate}}"
                          minlength="3"
