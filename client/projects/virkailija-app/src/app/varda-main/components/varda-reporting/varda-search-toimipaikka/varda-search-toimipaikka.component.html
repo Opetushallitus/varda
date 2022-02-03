@@ -75,27 +75,69 @@
           </div>
         </div>
         <div class="col-md-auto">
-          <label for="toimipaikkaVoimassaoloButtonGroup"
-                 class="oph-bold">{{i18n.katsele_tietoja_voimassaolo | translate}}</label>
-          <app-varda-radio-button-group name="toimipaikkaVoimassaoloButtonGroup"
-                                        id="toimipaikkaVoimassaoloButtonGroup"
-                                        responsive="md"
-                                        wrap="md"
-                                        (valueChanged)="search()"
-                                        [(ngModel)]="filterParams.voimassaolo">
-            <app-varda-radio-button [id]="'voimassaoloKaikki'"
-                                    [value]="voimassaolo.KAIKKI">
-              {{i18n.all | translate}}
-            </app-varda-radio-button>
-            <app-varda-radio-button [id]="'voimassaoloVoimassaolevat'"
-                                    [value]="voimassaolo.VOIMASSAOLEVAT">
-              {{i18n.katsele_tietoja_voimassa_olevat | translate}}
-            </app-varda-radio-button>
-            <app-varda-radio-button [id]="'voimassaoloPaattyneet'"
-                                    [value]="voimassaolo.PAATTYNEET">
-              {{i18n.katsele_tietoja_paattyneet | translate}}
-            </app-varda-radio-button>
-          </app-varda-radio-button-group>
+          <label class="oph-bold" for="toimipaikkaVoimassaoloButtonGroup">
+            {{i18n.katsele_tietoja_filter_time | translate}}
+          </label>
+          <div class="row filter-time-container">
+            <div class="col-md-auto">
+              <app-varda-radio-button-group name="toimipaikkaVoimassaoloButtonGroup"
+                                            id="toimipaikkaVoimassaoloButtonGroup"
+                                            responsive="md"
+                                            wrap="sm"
+                                            (valueChanged)="search()"
+                                            [(ngModel)]="filterParams.voimassaolo">
+                <app-varda-radio-button [id]="'filterKaikki'"
+                                        [value]="voimassaolo.KAIKKI">
+                  {{i18n.all | translate}}
+                </app-varda-radio-button>
+                <app-varda-radio-button [id]="'filterVoimassa'"
+                                        [value]="voimassaolo.VOIMASSA">
+                  {{i18n.katsele_tietoja_voimassa | translate}}
+                </app-varda-radio-button>
+                <app-varda-radio-button [id]="'filterAlkanut'"
+                                        [value]="voimassaolo.ALKANUT">
+                  {{i18n.katsele_tietoja_alkanut | translate}}
+                </app-varda-radio-button>
+                <app-varda-radio-button [id]="'filterPaattynyt'"
+                                        [value]="voimassaolo.PAATTYNYT">
+                  {{i18n.katsele_tietoja_paattynyt | translate}}
+                </app-varda-radio-button>
+              </app-varda-radio-button-group>
+            </div>
+            <div class="col varda-date-range-container" *ngIf="!isTimeFilterInactive">
+              <div class="row varda-date-range-row">
+                <div class="col">
+                  <app-varda-datepicker #alkamisPvm="ngModel"
+                                        [name]="'filterAlkamisPvm'"
+                                        [(ngModel)]="filterParams.alkamisPvm"
+                                        (dateInput)="search()"
+                                        [required]="true">
+                  </app-varda-datepicker>
+                  <div aria-live="assertive"
+                       class="varda-error-message-block"
+                       role="alert"
+                       *ngIf="alkamisPvm.invalid">
+                    <p>{{i18n.katsele_tietoja_error_date_format | translate}}</p>
+                  </div>
+                </div>
+                <span class="varda-date-range-dash">–</span>
+                <div class="col">
+                  <app-varda-datepicker #paattymisPvm="ngModel"
+                                        [name]="'filterPaattymisPvm'"
+                                        [(ngModel)]="filterParams.paattymisPvm"
+                                        (dateInput)="search()"
+                                        [required]="true">
+                  </app-varda-datepicker>
+                  <div aria-live="assertive"
+                       class="varda-error-message-block"
+                       role="alert"
+                       *ngIf="paattymisPvm.invalid">
+                    <p>{{i18n.katsele_tietoja_error_date_format | translate}}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="col filter-clear-container">
           <button class="varda-button varda-icon-button filter-clear"

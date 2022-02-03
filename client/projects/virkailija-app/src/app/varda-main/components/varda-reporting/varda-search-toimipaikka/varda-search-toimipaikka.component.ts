@@ -5,13 +5,14 @@ import {
   FilterStringType,
   VardaSearchAbstractComponent
 } from '../varda-search-abstract.component';
-import { CodeDTO, VardaKoodistoService } from 'varda-shared';
+import { CodeDTO, VardaDateService, VardaKoodistoService } from 'varda-shared';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { TranslateService } from '@ngx-translate/core';
 import * as moment from 'moment';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { PaginatorParams } from '../varda-result-list/varda-result-list.component';
 import { VardaKoosteApiService } from 'projects/virkailija-app/src/app/core/services/varda-kooste-api.service';
+import { Moment } from 'moment';
 
 @Component({
   selector: 'app-varda-search-toimipaikka',
@@ -21,19 +22,26 @@ import { VardaKoosteApiService } from 'projects/virkailija-app/src/app/core/serv
 export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponent implements OnInit {
   voimassaolo = {
     KAIKKI: 'kaikki',
-    VOIMASSAOLEVAT: 'voimassa',
-    PAATTYNEET: 'paattynyt'
+    ALKANUT: 'alkanut',
+    PAATTYNYT: 'paattynyt',
+    VOIMASSA: 'voimassa'
   };
 
   filterParams: {
     toimintamuoto: CodeDTO;
     jarjestamismuoto: CodeDTO;
     voimassaolo: string;
+    alkamisPvm: Moment;
+    paattymisPvm: Moment;
   } = {
       toimintamuoto: null,
       jarjestamismuoto: null,
-      voimassaolo: this.voimassaolo.KAIKKI
+      voimassaolo: this.voimassaolo.VOIMASSA,
+      alkamisPvm: moment(),
+      paattymisPvm: moment()
     };
+
+  isTimeFilterInactive = false;
 
   constructor(
     koodistoService: VardaKoodistoService,
@@ -41,7 +49,8 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
     translateService: TranslateService,
     koosteService: VardaKoosteApiService,
     vakajarjestajaService: VardaVakajarjestajaService,
-    authService: AuthService
+    authService: AuthService,
+    private dateService: VardaDateService,
   ) {
     super(koodistoService, breakpointObserver, translateService, koosteService, authService, vakajarjestajaService);
     this.isFiltersInactive = true;
@@ -53,6 +62,11 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
   }
 
   search(paginatorParams?: PaginatorParams): any {
+    const continueSearch = this.filter();
+    if (!continueSearch) {
+      return;
+    }
+
     if (this.searchInput && !this.searchInput.valid) {
       return;
     }
@@ -61,6 +75,7 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
     this.setPaginatorParams(searchParams, paginatorParams);
 
     this.isFiltersInactive = !this.isFiltersFilled();
+    this.isTimeFilterInactive = !this.isTimeFilterFilled();
     this.updateFilterString();
 
     if (this.searchValue) {
@@ -73,15 +88,20 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
       searchParams.toimintamuoto_koodi = this.filterParams.toimintamuoto.code_value.toLowerCase();
     }
 
-    const today = moment().format('YYYY-MM-DD');
+    const alkamisPvm = this.dateService.momentToVardaDate(this.filterParams.alkamisPvm);
+    const paattymisPvm = this.dateService.momentToVardaDate(this.filterParams.paattymisPvm);
     switch (this.filterParams.voimassaolo) {
-      case this.voimassaolo.VOIMASSAOLEVAT:
-        searchParams.alkamis_pvm_before = today;
-        searchParams.paattymis_pvm_after = today;
+      case this.voimassaolo.VOIMASSA:
+        searchParams.alkamis_pvm_before = alkamisPvm;
+        searchParams.paattymis_pvm_after = paattymisPvm;
         break;
-      case this.voimassaolo.PAATTYNEET:
-        searchParams.paattymis_pvm_before = today;
+      case this.voimassaolo.PAATTYNYT:
+        searchParams.paattymis_pvm_after = alkamisPvm;
+        searchParams.paattymis_pvm_before = paattymisPvm;
         break;
+      case this.voimassaolo.ALKANUT:
+        searchParams.alkamis_pvm_after = alkamisPvm;
+        searchParams.alkamis_pvm_before = paattymisPvm;
     }
 
     if (!paginatorParams && this.resultListComponent) {
@@ -99,11 +119,35 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
       });
   }
 
+  filter(): boolean {
+    if (this.isTimeFilterInactive && this.filterParams.voimassaolo !== this.voimassaolo.KAIKKI) {
+      this.filterParams.alkamisPvm = moment();
+      this.filterParams.paattymisPvm = moment();
+      this.isTimeFilterInactive = false;
+    } else if (this.filterParams.voimassaolo === this.voimassaolo.KAIKKI) {
+      this.filterParams.alkamisPvm = null;
+      this.filterParams.paattymisPvm = null;
+      this.isTimeFilterInactive = true;
+    } else if (!this.isTimeFilterFilled()) {
+      return false;
+    }
+    return true;
+  }
+
   updateFilterString() {
     const stringParams: Array<FilterStringParam> = [];
 
     if (this.filterParams.voimassaolo !== this.voimassaolo.KAIKKI) {
       stringParams.push({ value: this.filterParams.voimassaolo, type: FilterStringType.TRANSLATED_STRING });
+      if (this.filterParams.alkamisPvm && this.filterParams.paattymisPvm) {
+        stringParams.push({ value: 'aikavali', type: FilterStringType.TRANSLATED_STRING, lowercase: true });
+        stringParams.push({
+          value: `${this.filterParams.alkamisPvm.format(VardaDateService.vardaDefaultDateFormat)} -
+        ${this.filterParams.paattymisPvm.format(VardaDateService.vardaDefaultDateFormat)}`,
+          type: FilterStringType.RAW,
+          ignoreComma: true
+        });
+      }
     }
 
     stringParams.push({ value: this.getCodeUiString(this.filterParams.toimintamuoto), type: FilterStringType.RAW, lowercase: true });
@@ -114,6 +158,11 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
     });
   }
 
+  isTimeFilterFilled(): boolean {
+    return this.filterParams.voimassaolo !== this.voimassaolo.KAIKKI && this.filterParams.alkamisPvm !== null &&
+      this.filterParams.paattymisPvm !== null;
+  }
+
   isFiltersFilled(): boolean {
     return this.filterParams.voimassaolo !== this.voimassaolo.KAIKKI ||
       this.filterParams.jarjestamismuoto !== null || this.filterParams.toimintamuoto !== null;
@@ -121,9 +170,12 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
 
   clearFilters(): void {
     this.filterParams.voimassaolo = this.voimassaolo.KAIKKI;
+    this.filterParams.alkamisPvm = null;
+    this.filterParams.paattymisPvm = null;
     this.filterParams.toimintamuoto = null;
     this.filterParams.jarjestamismuoto = null;
     this.isFiltersInactive = true;
+    this.isTimeFilterInactive = true;
     this.search();
   }
 }
