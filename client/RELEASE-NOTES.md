@@ -1,7 +1,10 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
-1.5.35 (26.01.2021)
+1.5.36 (04.02.2022)
+- OPHVARDA-2297: Toimipaikkojen rajaus aikavälillä
+
+1.5.35 (26.01.2022)
 - OPHVARDA-2380: Tietoturvapäivityksiä
 - OPHVARDA-2339: Katsele tietoja tekstihaun vähimmäismerkkimäärä
 
