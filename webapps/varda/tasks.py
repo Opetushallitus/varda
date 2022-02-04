@@ -7,10 +7,11 @@ from celery import shared_task
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.postgres.aggregates import StringAgg
 from django.core.cache import cache
 from django.core.management import call_command
 from django.db import connection, transaction
-from django.db.models import Case, Count, DateField, F, Func, IntegerField, Q, Subquery, Value, When
+from django.db.models import Case, Count, DateField, F, Func, IntegerField, OuterRef, Q, Subquery, Value, When
 from django.db.models.functions import Cast
 from django.db.models.signals import post_save
 from django.utils import timezone
@@ -28,8 +29,8 @@ from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
 from varda.misc import memory_efficient_queryset_iterator
 from varda.models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Maksutieto,
                           MaksutietoHuoltajuussuhde, Palvelussuhde, Taydennyskoulutus, TaydennyskoulutusTyontekija,
-                          Toimipaikka, Tyontekija, VakaJarjestaja, Varhaiskasvatuspaatos, Z3_AdditionalCasUserFields,
-                          Z6_LastRequest, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary)
+                          Toimipaikka, Tyontekija, VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
+                          Z3_AdditionalCasUserFields, Z6_LastRequest, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary)
 from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups
 from varda.permissions import assign_object_level_permissions_for_instance, delete_object_permissions_explicitly
 
@@ -654,3 +655,32 @@ def delete_toimipaikka_paakayttaja_groups():
                     .filter(oid__in=Subquery(toimipaikka_oid_qs), name__contains='PAAKAYTTAJA'))
         logger.info(f'Deleting {group_qs.count()} toimipaikka PAAKAYTTAJA groups')
         group_qs.delete()
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def create_missing_delete_events():
+    """
+    TEMPORARY FUNCTION
+    """
+    now = timezone.now()
+    for model in (Henkilo, Lapsi, Huoltaja, Huoltajuussuhde, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Toimipaikka):
+        # Gets list of object IDs that are missing a delete-event
+        with transaction.atomic():
+            qs = (model.history.values('id')
+                  .annotate(history_type_list=StringAgg('history_type', ','),
+                            live_id=Subquery(model.objects.filter(id=OuterRef('id')).values('id')))
+                  .filter(~(Q(history_type_list__contains='+') & Q(history_type_list__contains='-')) &
+                          Q(live_id__isnull=True))
+                  .values_list('id', flat=True))
+
+            for object_id in qs:
+                # Get the last history record
+                history_object = model.history.filter(id=object_id).order_by('-history_date').first()
+                # Create delete event
+                history_object.history_id = None
+                history_object.history_date = now
+                history_object.history_type = '-'
+                history_object.save()
+
+            logger.info(f'Created missing delete events for {qs.count()} {model.get_name()} objects.')
