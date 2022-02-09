@@ -11,7 +11,7 @@
   </p>
 
   <ng-container *ngIf="huoltajatiedot$ | async as huoltajatiedot">
-    <app-henkilotiedot></app-henkilotiedot>
+    <app-henkilotiedot [hideSyntymaPvm]="true"></app-henkilotiedot>
 
     <section class="huollettavat">
 

@@ -32,7 +32,8 @@
                      [tooltip]="i18n.tooltip_henkilotiedot_aidinkieli"
                      [koodisto]="koodistoEnum.kieli"></app-table-row>
 
-      <app-table-row [header]="i18n.lapsi_syntymaaika"
+      <app-table-row *ngIf="!hideSyntymaPvm"
+                     [header]="i18n.lapsi_syntymaaika"
                      [content]="henkilotiedot.syntyma_pvm | huoltajaDate"
                      [tooltip]="i18n.tooltip_henkilotiedot_syntymaaika"></app-table-row>
 
