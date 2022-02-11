@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.37 (11.02.2022)
+- OPHVARDA-2327: Vuositilaston summatasoinen raportti
+
 1.5.36 (04.02.2022)
 - OPHVARDA-2297: Toimipaikkojen rajaus aikavälillä
 
