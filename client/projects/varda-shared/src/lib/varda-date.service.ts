@@ -12,6 +12,7 @@ export class VardaDateService {
   public static vardaApiDateFormat = 'YYYY-MM-DD';
   public static uiDateFormatMoment = 'D.M.YYYY';
   public static henkilostoReleaseDate = new Date('2020-09-01');
+  public static ISODateTimeFormat = 'YYYY-MM-DDTHH:mm:ssZ';
 
   /**
    * Varda UI date: view values are always DD.MM.YYYY. Datepicker returns Moment object. See https://material.angular.io/components/datepicker
@@ -25,6 +26,22 @@ export class VardaDateService {
     let formattedDate = null;
     if (date) {
       formattedDate = date.format(VardaDateService.vardaApiDateFormat);
+    }
+    return formattedDate;
+  }
+
+  momentToISODateTime(date: moment.Moment): string {
+    let formattedDate = null;
+    if (date) {
+      formattedDate = date.format(VardaDateService.ISODateTimeFormat);
+    }
+    return formattedDate;
+  }
+
+  momentToUiDate(date: moment.Moment): string {
+    let formattedDate = null;
+    if (date) {
+      formattedDate = date.format(VardaDateService.uiDateFormatMoment);
     }
     return formattedDate;
   }
@@ -76,6 +93,14 @@ export class VardaDateService {
 
   apiDateToUiDate(date: string): string {
     const momentDate = moment(date, VardaDateService.vardaApiDateFormat);
+    if (!momentDate.isValid()) {
+      return '';
+    }
+    return momentDate.format(VardaDateService.uiDateFormatMoment);
+  }
+
+  apiDateTimeToUiDate(dateTime: string): string {
+    const momentDate = moment(dateTime, VardaDateService.ISODateTimeFormat);
     if (!momentDate.isValid()) {
       return '';
     }

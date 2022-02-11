@@ -10,6 +10,7 @@ import { environment } from '../../../../../environments/environment';
 import { interval, Subscription } from 'rxjs';
 import { Clipboard } from '@angular/cdk/clipboard';
 import { VardaSnackBarService } from '../../../../core/services/varda-snackbar.service';
+import { ReportStatus, ReportStatusTranslations } from '../../../../utilities/models/enums/report-status.enum';
 
 export enum ReportType {
   VAKATIEDOT_VOIMASSA = 'VAKATIEDOT_VOIMASSA',
@@ -29,20 +30,6 @@ export const ReportTypeTranslations = {
   [ReportType.TYONTEKIJATIEDOT_VOIMASSA]: VirkailijaTranslations.excel_report_type_tyontekijatiedot_voimassa,
   [ReportType.TAYDENNYSKOULUTUSTIEDOT]: VirkailijaTranslations.excel_report_type_taydennyskoulutustiedot,
   [ReportType.TOIMIPAIKAT_VOIMASSA]: VirkailijaTranslations.excel_report_type_toimipaikat_voimassa
-};
-
-enum ReportStatus {
-  PENDING = 'PENDING',
-  CREATING = 'CREATING',
-  FINISHED = 'FINISHED',
-  FAILED = 'FAILED'
-}
-
-const ReportStatusTranslations = {
-  [ReportStatus.PENDING]: VirkailijaTranslations.excel_status_pending,
-  [ReportStatus.CREATING]: VirkailijaTranslations.excel_status_creating,
-  [ReportStatus.FINISHED]: VirkailijaTranslations.excel_status_finished,
-  [ReportStatus.FAILED]: VirkailijaTranslations.excel_status_failed,
 };
 
 @Component({

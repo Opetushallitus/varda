@@ -27,6 +27,15 @@
         {{ i18n.excel | translate }}
       </a>
     </ng-container>
+    <ng-container *ngIf="toimijaAccess.raportit.katselija || toimijaAccess.oph.katselija">
+      <a mat-tab-link
+         routerLink="vuosiraportti"
+         (click)="activeLink = 'vuosiraportti'"
+         [active]="activeLink === 'vuosiraportti'">
+        <mat-icon alt="">calendar_month</mat-icon>
+        {{ i18n.yearly_report | translate }}
+      </a>
+    </ng-container>
     <ng-container *ngIf="toimijaAccess.oph.katselija">
       <a mat-tab-link
          routerLink="yksiloimattomat"

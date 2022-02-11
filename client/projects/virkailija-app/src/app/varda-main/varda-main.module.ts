@@ -94,6 +94,7 @@ import { VardaExcelNewComponent } from './components/varda-raportit/varda-excel/
 import { VardaPuutteellisetToimipaikatComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-toimipaikat/puutteelliset-toimipaikat.component';
 import { VardaTransferOutageComponent } from './components/varda-raportit/varda-transfer-outage/varda-transfer-outage.component';
 import { VardaRequestSummaryComponent } from './components/varda-raportit/varda-request-summary/varda-request-summary.component';
+import { VardaYearlyReportComponent } from './components/varda-raportit/varda-yearly-report/varda-yearly-report.component';
 
 @NgModule({
   imports: [
@@ -189,7 +190,8 @@ import { VardaRequestSummaryComponent } from './components/varda-raportit/varda-
     VardaExcelComponent,
     VardaExcelNewComponent,
     VardaTransferOutageComponent,
-    VardaRequestSummaryComponent
+    VardaRequestSummaryComponent,
+    VardaYearlyReportComponent
   ],
   entryComponents: [EiHenkilostoaDialogComponent],
   exports: [
