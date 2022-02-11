@@ -11,9 +11,9 @@ from django.contrib.postgres.aggregates import StringAgg
 from django.core.cache import cache
 from django.core.management import call_command
 from django.db import connection, transaction
-from django.db.models import Case, Count, DateField, F, Func, IntegerField, OuterRef, Q, Subquery, Value, When
+from django.db.models import (Case, Count, DateField, F, ForeignObjectRel, Func, IntegerField, ManyToManyField,
+                              OuterRef, Q, Subquery, Value, When)
 from django.db.models.functions import Cast
-from django.db.models.signals import post_save
 from django.utils import timezone
 from guardian.models import GroupObjectPermission, UserObjectPermission
 
@@ -22,17 +22,19 @@ from varda import organisaatiopalvelu
 from varda import permission_groups
 from varda import permissions
 from varda.audit_log import audit_log
+from varda.cache import invalidate_cache
 from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
 from varda.enums.aikaleima_avain import AikaleimaAvain
 from varda.enums.reporting import ReportStatus
 from varda.excel_export import delete_excel_reports_earlier_than
 from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
 from varda.misc import memory_efficient_queryset_iterator
-from varda.models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Maksutieto,
-                          MaksutietoHuoltajuussuhde, Palvelussuhde, Taydennyskoulutus, TaydennyskoulutusTyontekija,
-                          Toimipaikka, Tyontekija, VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-                          YearlyReportSummary, Z3_AdditionalCasUserFields, Z6_LastRequest, Z6_RequestCount,
-                          Z6_RequestLog, Z6_RequestSummary)
+from varda.models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto,
+                          MaksutietoHuoltajuussuhde, Palvelussuhde, PaosOikeus, PaosToiminta, PidempiPoissaolo,
+                          Taydennyskoulutus, TaydennyskoulutusTyontekija, TilapainenHenkilosto, ToiminnallinenPainotus,
+                          Toimipaikka, Tutkinto, Tyontekija, Tyoskentelypaikka, VakaJarjestaja, Varhaiskasvatuspaatos,
+                          Varhaiskasvatussuhde, YearlyReportSummary, Z3_AdditionalCasUserFields, Z6_LastRequest,
+                          Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary)
 from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups
 from varda.permissions import assign_object_level_permissions_for_instance, delete_object_permissions_explicitly
 
@@ -247,8 +249,7 @@ def assign_taydennyskoulutus_permissions_for_all_toimipaikat_task(vakajarjestaja
     [assign_object_permissions_to_taydennyskoulutus_groups(toimipaikka_oid, Taydennyskoulutus, taydennyskoulutus)
      for toimipaikka_oid in toimipaikka_oid_list]
 
-    # Send post_save signal so that cache is updated
-    post_save.send(Taydennyskoulutus, instance=taydennyskoulutus, created=True)
+    invalidate_cache(Taydennyskoulutus.get_name(), taydennyskoulutus_id)
 
 
 @shared_task
@@ -796,3 +797,38 @@ def create_yearly_reporting_summary(user_id, vakajarjestaja_id, tilasto_pvm, poi
     }
 
     YearlyReportSummary.objects.update_or_create(vakajarjestaja=vakajarjestaja_obj, tilasto_pvm=tilasto_pvm, defaults=updated_values)
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def create_missing_history_events():
+    """
+    TEMPORARY FUNCTION
+    """
+    for model in (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
+                  Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto, Huoltajuussuhde, MaksutietoHuoltajuussuhde,
+                  PaosToiminta, PaosOikeus, Tyontekija, TilapainenHenkilosto, Tutkinto, Palvelussuhde,
+                  Tyoskentelypaikka, PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija,):
+        # Get list of database column names for model
+        field_name_list = [field.get_attname_column()[1] for field in model._meta.get_fields()
+                           if not isinstance(field, ForeignObjectRel) and not isinstance(field, ManyToManyField)]
+        # Build filter for finding differences between live object and last history object
+        where_filter = ' OR '.join([f'mo.{field_name} IS DISTINCT FROM hismo.{field_name}'
+                                    for field_name in field_name_list])
+        # Get last history object for each instance and look for differences in column values
+        raw_query = f'''
+            SELECT mo.* FROM varda_{model.get_name()} mo
+            LEFT JOIN
+                (SELECT DISTINCT ON (id) * FROM varda_historical{model.get_name()}
+                 ORDER BY id, history_date DESC) hismo ON hismo.id = mo.id
+            WHERE {where_filter}
+            ORDER BY mo.id;
+        '''
+
+        index = 0
+        for instance in model.objects.raw(raw_query).iterator():
+            # Save instance so that a new historical record is created
+            instance.save()
+            index += 1
+
+        logger.info(f'Created missing history event for {index} {model.get_name()} objects.')
