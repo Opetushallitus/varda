@@ -4,10 +4,10 @@ from django.contrib.auth.models import User
 from guardian.admin import GuardedModelAdmin
 from simple_history.admin import SimpleHistoryAdmin
 
-from .models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto,
-                     Tyoskentelypaikka, Palvelussuhde, PaosOikeus, PaosToiminta, TilapainenHenkilosto,
+from .models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, KieliPainotus, Lapsi, LoginCertificate,
+                     Maksutieto, Tyoskentelypaikka, Palvelussuhde, PaosOikeus, PaosToiminta, TilapainenHenkilosto,
                      ToiminnallinenPainotus, Toimipaikka, Tutkinto, Tyontekija, VakaJarjestaja, Varhaiskasvatuspaatos,
-                     Varhaiskasvatussuhde, PidempiPoissaolo, Taydennyskoulutus, LoginCertificate)
+                     Varhaiskasvatussuhde, PidempiPoissaolo, Taydennyskoulutus, YearlyReportSummary)
 
 
 class AdminWithGuardianAndHistory(GuardedModelAdmin, SimpleHistoryAdmin):
@@ -131,3 +131,4 @@ admin.site.register(Tyoskentelypaikka, TyoskentelypaikkaAdmin)
 admin.site.register(PidempiPoissaolo, PidempipoissaoloAdmin)
 admin.site.register(Taydennyskoulutus, TaydennyskoulutusAdmin)
 admin.site.register(LoginCertificate, AdminWithGuardianAndHistory)
+admin.site.register(YearlyReportSummary, AdminWithGuardianAndHistory)
