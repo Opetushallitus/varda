@@ -5,7 +5,7 @@ from functools import wraps
 
 from celery import shared_task
 from django.conf import settings
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.aggregates import StringAgg
 from django.core.cache import cache
@@ -24,13 +24,15 @@ from varda import permissions
 from varda.audit_log import audit_log
 from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
 from varda.enums.aikaleima_avain import AikaleimaAvain
+from varda.enums.reporting import ReportStatus
 from varda.excel_export import delete_excel_reports_earlier_than
 from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
 from varda.misc import memory_efficient_queryset_iterator
 from varda.models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Maksutieto,
                           MaksutietoHuoltajuussuhde, Palvelussuhde, Taydennyskoulutus, TaydennyskoulutusTyontekija,
                           Toimipaikka, Tyontekija, VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-                          Z3_AdditionalCasUserFields, Z6_LastRequest, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary)
+                          YearlyReportSummary, Z3_AdditionalCasUserFields, Z6_LastRequest, Z6_RequestCount,
+                          Z6_RequestLog, Z6_RequestSummary)
 from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups
 from varda.permissions import assign_object_level_permissions_for_instance, delete_object_permissions_explicitly
 
@@ -684,3 +686,113 @@ def create_missing_delete_events():
                 history_object.save()
 
             logger.info(f'Created missing delete events for {qs.count()} {model.get_name()} objects.')
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def create_yearly_reporting_summary(user_id, vakajarjestaja_id, tilasto_pvm, poiminta_pvm, full_query, history_q):
+    from varda.misc_queries import (get_vakajarjestaja_is_active, get_toimipaikat, get_kielipainotukset, get_toiminnalliset_painotukset,
+                                    get_vakasuhteet, get_omat_vakasuhteet, get_paos_vakasuhteet, get_vakapaatokset,
+                                    get_omat_vakapaatokset, get_paos_vakapaatokset, get_vuorohoito_vakapaatokset,
+                                    get_omat_vuorohoito_vakapaatokset, get_paos_vuorohoito_vakapaatokset, get_lapset,
+                                    get_omat_lapset, get_paos_lapset, get_henkilot, get_maksutiedot)
+
+    user = User.objects.get(id=user_id)
+    tilasto_pvm = datetime.datetime.strptime(tilasto_pvm, '%Y-%m-%dT%H:%M:%S').date()
+
+    if full_query:
+        vakajarjestaja_obj = None
+        with connection.cursor() as cursor:
+            filters = [poiminta_pvm, tilasto_pvm, tilasto_pvm]
+            base_query = """select count(distinct(hvj.id)) from varda_historicalvakajarjestaja hvj
+                            join (select distinct on (id) id, history_type from varda_historicalvakajarjestaja
+                            where history_date <= %s order by id, history_date desc) last_hvj
+                            on hvj.id = last_hvj.id where last_hvj.history_type <> '-' and
+                            hvj.alkamis_pvm <= %s and (hvj.paattymis_pvm >= %s or hvj.paattymis_pvm is Null)
+                            """
+            cursor.execute(base_query + ';', filters)
+            row = cursor.fetchone()
+            vakajarjestaja_count = row[0]
+    else:
+        vakajarjestaja_obj = VakaJarjestaja.objects.get(id=vakajarjestaja_id)
+        vakajarjestaja_count = 1
+
+    vakajarjestaja_active = get_vakajarjestaja_is_active(vakajarjestaja_obj, tilasto_pvm, full_query)
+    toimipaikat = get_toimipaikat(vakajarjestaja_obj, poiminta_pvm, tilasto_pvm, full_query, history_q)
+    kielipainotukset = get_kielipainotukset(toimipaikat, poiminta_pvm, tilasto_pvm, history_q)
+    toimintapainotukset = get_toiminnalliset_painotukset(toimipaikat, poiminta_pvm, tilasto_pvm, history_q)
+
+    vakasuhteet = get_vakasuhteet(vakajarjestaja_obj, poiminta_pvm, tilasto_pvm, full_query, history_q)
+    omat_vakasuhteet = get_omat_vakasuhteet(vakasuhteet, poiminta_pvm, tilasto_pvm, history_q)
+    paos_vakasuhteet = get_paos_vakasuhteet(vakasuhteet, poiminta_pvm, tilasto_pvm, history_q)
+
+    vakapaatokset = get_vakapaatokset(vakasuhteet, poiminta_pvm, tilasto_pvm, history_q)
+    omat_vakapaatokset = get_omat_vakapaatokset(omat_vakasuhteet, poiminta_pvm, tilasto_pvm, history_q)
+    paos_vakapaatokset = get_paos_vakapaatokset(paos_vakasuhteet, poiminta_pvm, tilasto_pvm, history_q)
+
+    vuorohoito = get_vuorohoito_vakapaatokset(vakasuhteet, poiminta_pvm, tilasto_pvm, history_q)
+    omat_vuorohoito = get_omat_vuorohoito_vakapaatokset(omat_vakasuhteet, poiminta_pvm, tilasto_pvm, history_q)
+    paos_vuorohoito = get_paos_vuorohoito_vakapaatokset(paos_vakasuhteet, poiminta_pvm, tilasto_pvm, history_q)
+
+    lapset = get_lapset(vakapaatokset, poiminta_pvm, Q(), history_q)
+    omat_lapset = get_omat_lapset(vakajarjestaja_obj, vakapaatokset, poiminta_pvm, full_query, history_q)
+    paos_lapset = get_paos_lapset(vakajarjestaja_obj, vakapaatokset, poiminta_pvm, full_query, history_q)
+
+    henkilot = get_henkilot(lapset, poiminta_pvm, history_q)
+    omat_henkilot = get_henkilot(omat_lapset, poiminta_pvm, history_q)
+    paos_henkilot = get_henkilot(paos_lapset, poiminta_pvm, history_q)
+
+    maksutiedot_yhteensa = get_maksutiedot(vakajarjestaja_obj, full_query, poiminta_pvm, tilasto_pvm, None, None)
+    maksutiedot_yhteensa_mp1 = get_maksutiedot(vakajarjestaja_obj, full_query, poiminta_pvm, tilasto_pvm, None, 'MP01')
+    maksutiedot_yhteensa_mp2 = get_maksutiedot(vakajarjestaja_obj, full_query, poiminta_pvm, tilasto_pvm, None, 'MP02')
+    maksutiedot_yhteensa_mp3 = get_maksutiedot(vakajarjestaja_obj, full_query, poiminta_pvm, tilasto_pvm, None, 'MP03')
+
+    omat_maksutiedot_yhteensa = get_maksutiedot(vakajarjestaja_obj, full_query, poiminta_pvm, tilasto_pvm, False, None)
+    omat_maksutiedot_yhteensa_mp1 = get_maksutiedot(vakajarjestaja_obj, full_query, poiminta_pvm, tilasto_pvm, False, 'MP01')
+    omat_maksutiedot_yhteensa_mp2 = get_maksutiedot(vakajarjestaja_obj, full_query, poiminta_pvm, tilasto_pvm, False, 'MP02')
+    omat_maksutiedot_yhteensa_mp3 = get_maksutiedot(vakajarjestaja_obj, full_query, poiminta_pvm, tilasto_pvm, False, 'MP03')
+
+    paos_maksutiedot_yhteensa = get_maksutiedot(vakajarjestaja_obj, full_query, poiminta_pvm, tilasto_pvm, True, None)
+    paos_maksutiedot_yhteensa_mp1 = get_maksutiedot(vakajarjestaja_obj, full_query, poiminta_pvm, tilasto_pvm, True, 'MP01')
+    paos_maksutiedot_yhteensa_mp2 = get_maksutiedot(vakajarjestaja_obj, full_query, poiminta_pvm, tilasto_pvm, True, 'MP02')
+    paos_maksutiedot_yhteensa_mp3 = get_maksutiedot(vakajarjestaja_obj, full_query, poiminta_pvm, tilasto_pvm, True, 'MP03')
+
+    updated_values = {
+        'status': ReportStatus.FINISHED.value,
+        'vakajarjestaja_count': vakajarjestaja_count,
+        'vakajarjestaja_is_active': vakajarjestaja_active,
+        'poiminta_pvm': poiminta_pvm,
+        'toimipaikka_count': len(toimipaikat),
+        'kielipainotus_count': len(kielipainotukset),
+        'toimintapainotus_count': len(toimintapainotukset),
+        'yhteensa_henkilo_count': len(henkilot),
+        'yhteensa_lapsi_count': len(lapset),
+        'yhteensa_varhaiskasvatussuhde_count': len(vakasuhteet),
+        'yhteensa_varhaiskasvatuspaatos_count': len(vakapaatokset),
+        'yhteensa_vuorohoito_count': len(vuorohoito),
+        'oma_henkilo_count': len(omat_henkilot),
+        'oma_lapsi_count': len(omat_lapset),
+        'oma_varhaiskasvatussuhde_count': len(omat_vakasuhteet),
+        'oma_varhaiskasvatuspaatos_count': len(omat_vakapaatokset),
+        'oma_vuorohoito_count': len(omat_vuorohoito),
+        'paos_henkilo_count': len(paos_henkilot),
+        'paos_lapsi_count': len(paos_lapset),
+        'paos_varhaiskasvatussuhde_count': len(paos_vakasuhteet),
+        'paos_varhaiskasvatuspaatos_count': len(paos_vakapaatokset),
+        'paos_vuorohoito_count': len(paos_vuorohoito),
+        'yhteensa_maksutieto_count': maksutiedot_yhteensa,
+        'yhteensa_maksutieto_mp01_count': maksutiedot_yhteensa_mp1,
+        'yhteensa_maksutieto_mp02_count': maksutiedot_yhteensa_mp2,
+        'yhteensa_maksutieto_mp03_count': maksutiedot_yhteensa_mp3,
+        'oma_maksutieto_count': omat_maksutiedot_yhteensa,
+        'oma_maksutieto_mp01_count': omat_maksutiedot_yhteensa_mp1,
+        'oma_maksutieto_mp02_count': omat_maksutiedot_yhteensa_mp2,
+        'oma_maksutieto_mp03_count': omat_maksutiedot_yhteensa_mp3,
+        'paos_maksutieto_count': paos_maksutiedot_yhteensa,
+        'paos_maksutieto_mp01_count': paos_maksutiedot_yhteensa_mp1,
+        'paos_maksutieto_mp02_count': paos_maksutiedot_yhteensa_mp2,
+        'paos_maksutieto_mp03_count': paos_maksutiedot_yhteensa_mp3,
+        'changed_by': user
+    }
+
+    YearlyReportSummary.objects.update_or_create(vakajarjestaja=vakajarjestaja_obj, tilasto_pvm=tilasto_pvm, defaults=updated_values)

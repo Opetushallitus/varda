@@ -959,6 +959,64 @@ class LoginCertificate(AbstractModel):
         verbose_name_plural = 'Login certificates'
 
 
+class YearlyReportSummary(AbstractModel):
+    vakajarjestaja = models.ForeignKey(VakaJarjestaja, null=True, related_name='yearlyreportsummary', on_delete=models.PROTECT)
+    status = models.CharField(max_length=50)
+    tilasto_pvm = models.DateField()
+    poiminta_pvm = models.DateTimeField(null=True)
+    vakajarjestaja_count = models.IntegerField(null=True)
+    vakajarjestaja_is_active = models.BooleanField(null=True)
+    toimipaikka_count = models.IntegerField(null=True)
+    toimintapainotus_count = models.IntegerField(null=True)
+    kielipainotus_count = models.IntegerField(null=True)
+    yhteensa_henkilo_count = models.IntegerField(null=True)
+    yhteensa_lapsi_count = models.IntegerField(null=True)
+    yhteensa_varhaiskasvatussuhde_count = models.IntegerField(null=True)
+    yhteensa_varhaiskasvatuspaatos_count = models.IntegerField(null=True)
+    yhteensa_vuorohoito_count = models.IntegerField(null=True)
+    oma_henkilo_count = models.IntegerField(null=True)
+    oma_lapsi_count = models.IntegerField(null=True)
+    oma_varhaiskasvatussuhde_count = models.IntegerField(null=True)
+    oma_varhaiskasvatuspaatos_count = models.IntegerField(null=True)
+    oma_vuorohoito_count = models.IntegerField(null=True)
+    paos_henkilo_count = models.IntegerField(null=True)
+    paos_lapsi_count = models.IntegerField(null=True)
+    paos_varhaiskasvatussuhde_count = models.IntegerField(null=True)
+    paos_varhaiskasvatuspaatos_count = models.IntegerField(null=True)
+    paos_vuorohoito_count = models.IntegerField(null=True)
+    yhteensa_maksutieto_count = models.IntegerField(null=True)
+    yhteensa_maksutieto_mp01_count = models.IntegerField(null=True)
+    yhteensa_maksutieto_mp02_count = models.IntegerField(null=True)
+    yhteensa_maksutieto_mp03_count = models.IntegerField(null=True)
+    oma_maksutieto_count = models.IntegerField(null=True)
+    oma_maksutieto_mp01_count = models.IntegerField(null=True)
+    oma_maksutieto_mp02_count = models.IntegerField(null=True)
+    oma_maksutieto_mp03_count = models.IntegerField(null=True)
+    paos_maksutieto_count = models.IntegerField(null=True)
+    paos_maksutieto_mp01_count = models.IntegerField(null=True)
+    paos_maksutieto_mp02_count = models.IntegerField(null=True)
+    paos_maksutieto_mp03_count = models.IntegerField(null=True)
+    luonti_pvm = models.DateTimeField(auto_now_add=True)
+    muutos_pvm = models.DateTimeField(auto_now=True)
+    changed_by = models.ForeignKey('auth.User', null=True, related_name='yearlyreportsummary', on_delete=models.PROTECT)
+    history = HistoricalRecords()
+
+    @property
+    def audit_loggable(self):
+        return True
+
+    @property
+    def _history_user(self):
+        return self.changed_by
+
+    @_history_user.setter
+    def _history_user(self, value):
+        self.changed_by = value
+
+    class Meta:
+        verbose_name_plural = 'yearlyreportsummaries'
+
+
 """
 Miscellaneous
 

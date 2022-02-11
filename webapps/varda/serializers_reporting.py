@@ -16,13 +16,13 @@ from varda.clients.allas_s3_client import Client as S3Client
 from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
 from varda.enums.change_type import ChangeType
 from varda.enums.error_messages import ErrorMessages
-from varda.excel_export import ExcelReportStatus, ExcelReportType, get_s3_object_name
+from varda.excel_export import ReportStatus, ExcelReportType, get_s3_object_name
 from varda.misc import CustomServerErrorException, decrypt_excel_report_password, decrypt_henkilotunnus
 from varda.misc_queries import get_related_object_changed_id_qs
 from varda.models import (Henkilo, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto, MaksutietoHuoltajuussuhde,
-                          Palvelussuhde, PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija,
-                          TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka, Tutkinto, Tyontekija,
-                          Tyoskentelypaikka, VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
+                          Palvelussuhde, PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Tutkinto,
+                          Tyoskentelypaikka, TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka, Tyontekija,
+                          VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, YearlyReportSummary,
                           Z4_CasKayttoOikeudet, Z6_LastRequest, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary,
                           Z8_ExcelReport)
 from varda.serializers import ToimipaikkaHLField, VakaJarjestajaPermissionCheckedHLField
@@ -305,7 +305,7 @@ class ExcelReportSerializer(serializers.ModelSerializer):
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_url(self, instance):
         kwargs = self.context['view'].kwargs
-        if not kwargs.get('pk', None) or instance.status != ExcelReportStatus.FINISHED.value:
+        if not kwargs.get('pk', None) or instance.status != ReportStatus.FINISHED.value:
             # Not retrieve or Excel report not finished
             return None
 
@@ -901,3 +901,25 @@ class TkHenkilostotiedotSerializer(TkBaseSerializer, serializers.ModelSerializer
                                 .filter(id__in=Subquery(id_qs), history_date__lte=self.datetime_lte)
                                 .distinct('id').order_by('id', '-history_date'))
         return TkTaydennyskoulutusSerializer(taydennyskoulutus_qs, many=True, context=self.context).data
+
+
+class YearlyReportingDataSummarySerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    vakajarjestaja = serializers.ReadOnlyField()
+    vakajarjestaja_input = serializers.CharField(required=True, write_only=True)
+    status = serializers.CharField(read_only=True)
+    tilasto_pvm = serializers.DateField(read_only=True)
+    tilastovuosi = serializers.IntegerField(write_only=True, required=False, allow_null=False)
+
+    class Meta:
+        model = YearlyReportSummary
+        read_only_fields = ('vakajarjestaja_count', 'vakajarjestaja_is_active', 'toimipaikka_count', 'toimintapainotus_count',
+                            'kielipainotus_count', 'yhteensa_henkilo_count', 'yhteensa_lapsi_count', 'yhteensa_varhaiskasvatussuhde_count',
+                            'yhteensa_varhaiskasvatuspaatos_count', 'yhteensa_vuorohoito_count', 'oma_henkilo_count',
+                            'oma_lapsi_count', 'oma_varhaiskasvatussuhde_count', 'oma_varhaiskasvatuspaatos_count',
+                            'oma_vuorohoito_count', 'paos_henkilo_count', 'paos_lapsi_count', 'paos_varhaiskasvatussuhde_count',
+                            'paos_varhaiskasvatuspaatos_count', 'paos_vuorohoito_count', 'yhteensa_maksutieto_count',
+                            'yhteensa_maksutieto_mp01_count', 'yhteensa_maksutieto_mp02_count', 'yhteensa_maksutieto_mp03_count',
+                            'oma_maksutieto_count', 'oma_maksutieto_mp01_count', 'oma_maksutieto_mp02_count', 'oma_maksutieto_mp03_count',
+                            'paos_maksutieto_count', 'paos_maksutieto_mp01_count', 'paos_maksutieto_mp02_count', 'paos_maksutieto_mp03_count')
+        exclude = ('luonti_pvm', 'muutos_pvm', 'changed_by')

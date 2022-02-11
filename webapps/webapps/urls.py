@@ -158,6 +158,8 @@ router_reporting.register(r'transfer-outage', viewsets_reporting.UserTransferOut
 router_reporting.register(r'transfer-outage-lahdejarjestelma', viewsets_reporting.LahdejarjestelmaTransferOutageReportViewSet, basename='transfer-outage-lahdejarjestelma')
 # /api/reporting/v1/request-summary/
 router_reporting.register(r'request-summary', viewsets_reporting.RequestSummaryViewSet, basename='request-summary')
+# /api/reporting/v1/yearly-reporting-summary/
+router_reporting.register(r'yearly-reporting-summary', viewsets_reporting.YearlyReportingDataSummaryViewSet, basename='yearly-reporting-summary')
 
 router_kela_reporting = routers.DefaultRouter()
 # /api/reporting/v1/kela/etuusmaksatus/aloittaneet
@@ -178,10 +180,6 @@ router_tilastokeskus_reporting.register(r'organisaatiot', viewsets_reporting.TkO
 router_tilastokeskus_reporting.register(r'varhaiskasvatustiedot', viewsets_reporting.TkVakatiedot, basename='varhaiskasvatustiedot')
 # /api/reporting/v1/tilastokeskus/henkilostotiedot/
 router_tilastokeskus_reporting.register(r'henkilostotiedot', viewsets_reporting.TkHenkilostotiedot, basename='henkilostotiedot')
-
-"""
-router_reporting.register(r'lapset-ryhmittain', viewsets_reporting.LapsetRyhmittainViewSet, 'lapset-ryhmittain')
-"""
 
 # Routes for Oppija-URLs
 router_oppija = routers.DefaultRouter()

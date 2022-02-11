@@ -41,7 +41,8 @@ class VardaViewsReportingTests(TestCase):
             'tiedonsiirtotilasto': 'http://testserver/api/reporting/v1/tiedonsiirtotilasto/',
             'transfer-outage': 'http://testserver/api/reporting/v1/transfer-outage/',
             'transfer-outage-lahdejarjestelma': 'http://testserver/api/reporting/v1/transfer-outage-lahdejarjestelma/',
-            'request-summary': 'http://testserver/api/reporting/v1/request-summary/'
+            'request-summary': 'http://testserver/api/reporting/v1/request-summary/',
+            'yearly-reporting-summary': 'http://testserver/api/reporting/v1/yearly-reporting-summary/'
         })
 
     def test_kela_reporting_api(self):
@@ -2222,6 +2223,143 @@ class VardaViewsReportingTests(TestCase):
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
                           f'&datetime_lte={datetime_lte_2}')
         self.assertEqual(len(json.loads(resp.content)['results']), 0)
+
+    def test_yearlysummarydata_api_missing_vakajarjestaja(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        data = {
+            'tilastovuosi': 2021
+        }
+
+        resp = client.post('/api/reporting/v1/yearly-reporting-summary/', data)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+
+    def test_yearlysummarydata_varhaiskasvatus_api_get(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        data = {
+            'vakajarjestaja_input': 1,
+            'tilastovuosi': 2021
+        }
+
+        resp = client.post('/api/reporting/v1/yearly-reporting-summary/', data)
+        assert_status_code(resp, status.HTTP_200_OK)
+        report_id = json.loads(resp.content)['id']
+        poiminta_pvm = json.loads(resp.content)['poiminta_pvm']
+
+        accepted_response = {
+            'id': report_id,
+            'vakajarjestaja': 1,
+            'status': 'PENDING',
+            'tilasto_pvm': '2021-12-31',
+            'poiminta_pvm': poiminta_pvm,
+            'vakajarjestaja_count': None,
+            'vakajarjestaja_is_active': None,
+            'toimipaikka_count': None,
+            'toimintapainotus_count': None,
+            'kielipainotus_count': None,
+            'yhteensa_henkilo_count': None,
+            'yhteensa_lapsi_count': None,
+            'yhteensa_varhaiskasvatussuhde_count': None,
+            'yhteensa_varhaiskasvatuspaatos_count': None,
+            'yhteensa_vuorohoito_count': None,
+            'oma_henkilo_count': None,
+            'oma_lapsi_count': None,
+            'oma_varhaiskasvatussuhde_count': None,
+            'oma_varhaiskasvatuspaatos_count': None,
+            'oma_vuorohoito_count': None,
+            'paos_henkilo_count': None,
+            'paos_lapsi_count': None,
+            'paos_varhaiskasvatussuhde_count': None,
+            'paos_varhaiskasvatuspaatos_count': None,
+            'paos_vuorohoito_count': None,
+            'yhteensa_maksutieto_count': None,
+            'yhteensa_maksutieto_mp01_count': None,
+            'yhteensa_maksutieto_mp02_count': None,
+            'yhteensa_maksutieto_mp03_count': None,
+            'oma_maksutieto_count': None,
+            'oma_maksutieto_mp01_count': None,
+            'oma_maksutieto_mp02_count': None,
+            'oma_maksutieto_mp03_count': None,
+            'paos_maksutieto_count': None,
+            'paos_maksutieto_mp01_count': None,
+            'paos_maksutieto_mp02_count': None,
+            'paos_maksutieto_mp03_count': None
+        }
+        self.assertDictEqual(json.loads(resp.content), accepted_response)
+
+        time.sleep(2)
+
+        resp = client.post('/api/reporting/v1/yearly-reporting-summary/', data)
+        assert_status_code(resp, status.HTTP_200_OK)
+
+        accepted_response = {
+            'id': report_id,
+            'vakajarjestaja': 1,
+            'status': 'FINISHED',
+            'tilasto_pvm': '2021-12-31',
+            'poiminta_pvm': poiminta_pvm,
+            'vakajarjestaja_count': 1,
+            'vakajarjestaja_is_active': True,
+            'toimipaikka_count': 2,
+            'toimintapainotus_count': 0,
+            'kielipainotus_count': 0,
+            'yhteensa_henkilo_count': 3,
+            'yhteensa_lapsi_count': 3,
+            'yhteensa_varhaiskasvatussuhde_count': 4,
+            'yhteensa_varhaiskasvatuspaatos_count': 3,
+            'yhteensa_vuorohoito_count': 0,
+            'oma_henkilo_count': 1,
+            'oma_lapsi_count': 1,
+            'oma_varhaiskasvatussuhde_count': 1,
+            'oma_varhaiskasvatuspaatos_count': 1,
+            'oma_vuorohoito_count': 0,
+            'paos_henkilo_count': 2,
+            'paos_lapsi_count': 2,
+            'paos_varhaiskasvatussuhde_count': 3,
+            'paos_varhaiskasvatuspaatos_count': 2,
+            'paos_vuorohoito_count': 0,
+            'yhteensa_maksutieto_count': 1,
+            'yhteensa_maksutieto_mp01_count': 0,
+            'yhteensa_maksutieto_mp02_count': 1,
+            'yhteensa_maksutieto_mp03_count': 0,
+            'oma_maksutieto_count': 1,
+            'oma_maksutieto_mp01_count': 0,
+            'oma_maksutieto_mp02_count': 1,
+            'oma_maksutieto_mp03_count': 0,
+            'paos_maksutieto_count': 0,
+            'paos_maksutieto_mp01_count': 0,
+            'paos_maksutieto_mp02_count': 0,
+            'paos_maksutieto_mp03_count': 0
+        }
+
+        self.assertDictEqual(json.loads(resp.content), accepted_response)
+
+    def test_yearlysummarydata_api_get_all(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester').client()
+        client2 = SetUpTestClient('tester2').client()
+
+        data = {'vakajarjestaja_input': 'all'}
+
+        resp = client.post('/api/reporting/v1/yearly-reporting-summary/', data)
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
+
+        resp = client2.post('/api/reporting/v1/yearly-reporting-summary/', data)
+        assert_status_code(resp, status.HTTP_200_OK)
+
+    def test_yearlysummarydata_api_get_history(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+        past_poiminta_pvm = datetime.datetime.now().astimezone()
+        past_poiminta_pvm = past_poiminta_pvm.strftime('%Y-%m-%dT%H:%M:%S%z')
+
+        data = {'vakajarjestaja_input': 'all', 'poiminta_pvm': past_poiminta_pvm}
+
+        resp = client.post('/api/reporting/v1/yearly-reporting-summary/', data)
+        assert_status_code(resp, status.HTTP_200_OK)
 
 
 def _load_base_data_for_kela_success_testing():

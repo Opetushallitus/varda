@@ -21,19 +21,13 @@ from xlsxwriter.worksheet import Worksheet, convert_cell_args
 
 from varda.clients.allas_s3_client import Client as S3Client
 from varda.enums.koodistot import Koodistot
+from varda.enums.reporting import ReportStatus
 from varda.enums.supported_language import SupportedLanguage
 from varda.misc import decrypt_henkilotunnus, TemporaryObject, decrypt_excel_report_password
 from varda.models import (Varhaiskasvatussuhde, Z8_ExcelReport, Maksutieto, Z2_Code, Z8_ExcelReportLog, Lapsi,
                           Tyontekija, Toimipaikka, Palvelussuhde, TaydennyskoulutusTyontekija)
 
 logger = logging.getLogger(__name__)
-
-
-class ExcelReportStatus(enum.Enum):
-    PENDING = 'PENDING'
-    CREATING = 'CREATING'
-    FINISHED = 'FINISHED'
-    FAILED = 'FAILED'
 
 
 class ExcelReportType(enum.Enum):
@@ -243,11 +237,11 @@ class AutofitWorkbook(Workbook):
 @shared_task(acks_late=True)
 def create_excel_report_task(report_id):
     report = Z8_ExcelReport.objects.filter(id=report_id).first()
-    if not report or report.status != ExcelReportStatus.PENDING.value:
+    if not report or report.status != ReportStatus.PENDING.value:
         logger.error(f'Error starting Excel report creation with id {report_id}')
         return
 
-    report.status = ExcelReportStatus.CREATING.value
+    report.status = ReportStatus.CREATING.value
     report.save()
 
     excel_log = Z8_ExcelReportLog(report_id=report.id, report_type=report.report_type, target_date=report.target_date,
@@ -265,7 +259,7 @@ def create_excel_report_task(report_id):
         Path(EXCEL_PATH).mkdir(parents=True, exist_ok=True)
     except OSError as os_error:
         logger.error(f'Error creating temporary Excel folder: {os_error}')
-        report.status = ExcelReportStatus.FAILED.value
+        report.status = ReportStatus.FAILED.value
         report.save()
         return
 
@@ -273,11 +267,11 @@ def create_excel_report_task(report_id):
         workbook.close()
     except XlsxFileError as excel_error:
         logger.error(f'Error closing Excel file with id {report.id}: {excel_error}')
-        report.status = ExcelReportStatus.FAILED.value
+        report.status = ReportStatus.FAILED.value
         report.save()
         return
 
-    report.status = ExcelReportStatus.FINISHED.value
+    report.status = ReportStatus.FINISHED.value
 
     excel_log.file_size = os.stat(file_path).st_size
     excel_log.number_of_rows = workbook.number_of_rows_per_worksheet
@@ -287,7 +281,7 @@ def create_excel_report_task(report_id):
     encryption_result = _encrypt_excel_file(file_path, password)
     if not encryption_result:
         logger.error(f'Error encrypting Excel file with id {report.id}')
-        report.status = ExcelReportStatus.FAILED.value
+        report.status = ReportStatus.FAILED.value
         report.save()
         return
     excel_log.encryption_duration = math.ceil((timezone.now() - encryption_start_timestamp).total_seconds())
@@ -298,7 +292,7 @@ def create_excel_report_task(report_id):
         upload_result = _upload_excel_to_s3(file_path, f'{s3_object_path}{report.filename}')
 
         if not upload_result:
-            report.status = ExcelReportStatus.FAILED.value
+            report.status = ReportStatus.FAILED.value
         # Remove file from pod
         os.remove(file_path)
 
