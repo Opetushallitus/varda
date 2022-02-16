@@ -193,22 +193,6 @@ class LapsihakuToimipaikkaUiSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('id', 'url', 'organisaatio_oid', 'nimi', )
 
 
-class LapsihakuLapsetUiListSerializer(serializers.ListSerializer):
-
-    def update(self, instance, validated_data):
-        return super(LapsihakuLapsetUiListSerializer, self).update(instance, validated_data)
-
-    def to_representation(self, lapsi_list_data):
-        view = self.context['view']
-        vakajarjestaja_pk = view.kwargs['pk']
-        query_params = view.request.query_params
-
-        # We use same conditions as when doing the initial henkilo filtering.
-        filter_condition = view.get_lapsi_list_filter_conditions(vakajarjestaja_pk, query_params, permission_context=self.context)
-        filtered_lapsi_list_data = lapsi_list_data.filter(filter_condition).distinct()
-        return super(LapsihakuLapsetUiListSerializer, self).to_representation(filtered_lapsi_list_data)
-
-
 class LapsihakuLapsetUiSerializer(serializers.HyperlinkedModelSerializer):
     vakatoimija_oid = serializers.CharField(source='vakatoimija.organisaatio_oid', allow_null=True)
     vakatoimija_nimi = serializers.CharField(source='vakatoimija.nimi', allow_null=True)
@@ -223,7 +207,6 @@ class LapsihakuLapsetUiSerializer(serializers.HyperlinkedModelSerializer):
         model = Lapsi
         fields = ('id', 'url', 'vakatoimija_oid', 'vakatoimija_nimi', 'oma_organisaatio_oid', 'oma_organisaatio_nimi',
                   'paos_organisaatio_oid', 'paos_organisaatio_nimi', 'tallentaja_organisaatio_oid', 'toimipaikat')
-        list_serializer_class = LapsihakuLapsetUiListSerializer
 
     @swagger_serializer_method(serializer_or_field=LapsihakuToimipaikkaUiSerializer)
     def get_toimipaikat(self, lapsi):

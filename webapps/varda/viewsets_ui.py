@@ -5,14 +5,16 @@ from operator import itemgetter
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Prefetch, Q, Subquery
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from guardian.shortcuts import get_objects_for_user
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.fields import BooleanField, DateField
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import ListModelMixin
 from rest_framework.response import Response
@@ -22,9 +24,9 @@ from varda import filters
 from varda.cache import create_cache_key, get_object_ids_user_has_permissions
 from varda.cas.varda_permissions import IsVardaPaakayttaja
 from varda.custom_swagger import ActionPaginationSwaggerAutoSchema
-from varda.filters import TyontekijahakuUiFilter, CustomParametersFilterBackend, CustomParameter
+from varda.filters import CustomParametersFilterBackend, CustomParameter
 from varda.misc_queries import get_paos_toimipaikat
-from varda.misc_viewsets import ExtraKwargsFilterBackend
+from varda.misc_viewsets import ExtraKwargsFilterBackend, parse_query_parameter
 from varda.models import (Toimipaikka, VakaJarjestaja, PaosToiminta, PaosOikeus, Lapsi, Henkilo,
                           Tyontekija, Z4_CasKayttoOikeudet)
 from varda.pagination import ChangeablePageSizePagination, ChangeablePageSizePaginationLarge
@@ -80,23 +82,58 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
             permission_classes=[HenkilostohakuPermissions],
             )
     @swagger_auto_schema(auto_schema=ActionPaginationSwaggerAutoSchema,
-                         responses={status.HTTP_200_OK: TyontekijaHenkiloUiSerializer(many=True)})
+                         responses={status.HTTP_200_OK: TyontekijaHenkiloUiSerializer(many=True)},
+                         manual_parameters=[
+                             openapi.Parameter('toimipaikka_id', openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
+                             openapi.Parameter('toimipaikka_oid', openapi.IN_QUERY, type=openapi.TYPE_STRING),
+                             openapi.Parameter('voimassa_pvm', openapi.IN_QUERY, type=openapi.TYPE_STRING),
+                             openapi.Parameter('kiertava_tyontekija_kytkin', openapi.IN_QUERY, type=openapi.TYPE_BOOLEAN)
+                         ])
     def tyontekija_list(self, request, pk=None):
-        # Putting these to keyword arguments raises exception
-        self.filterset_class = TyontekijahakuUiFilter
+        # Putting this to keyword arguments raises exception
         self.search_fields = ['etunimet', 'sukunimi', '=henkilotunnus_unique_hash', '=henkilo_oid']
-        user = request.user
-        self.queryset = self.queryset.filter(tyontekijat__vakajarjestaja=pk).order_by('sukunimi', 'etunimet').distinct()
+
+        # Use subquery to fetch the required Henkilo objects, and to filter the related Tyontekija objects
+        tyontekija_filter = self.get_tyontekija_filters(pk)
+        tyontekija_id_subquery = Tyontekija.objects.filter(tyontekija_filter).distinct().values('id')
+        self.queryset = (self.queryset
+                         .filter(tyontekijat__id__in=Subquery(tyontekija_id_subquery))
+                         .prefetch_related(Prefetch('tyontekijat',
+                                                    queryset=Tyontekija.objects.filter(id__in=Subquery(tyontekija_id_subquery)).distinct()))
+                         .order_by('sukunimi', 'etunimet').distinct())
+        return super().list(request, pk=pk)
+
+    def get_tyontekija_filters(self, vakajarjestaja_id):
+        filter_condition = Q(vakajarjestaja=vakajarjestaja_id)
+
+        user = self.request.user
         if not user.is_superuser:
             organisaatio_oids = get_taydennyskoulutus_tyontekija_group_organisaatio_oids(user)
-            filter_condition = (Q(tyontekijat__vakajarjestaja__organisaatio_oid__in=organisaatio_oids) |
-                                Q(tyontekijat__palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid__in=organisaatio_oids))
-            # user with tyontekija toimipaikka permissions might have object level permissions to tyontekijat without tyoskentelypaikka
-            if get_toimipaikat_group_has_access(user, pk, 'HENKILOSTO_TYONTEKIJA_').exists():
-                tyontekijat_object_level_permission = get_objects_for_user(user, 'view_tyontekija', klass=Tyontekija, accept_global_perms=False)
-                filter_condition = filter_condition | Q(tyontekijat__in=tyontekijat_object_level_permission)
-            self.queryset = self.queryset.filter(filter_condition)
-        return super().list(request, pk=pk)
+            permission_filter = (Q(vakajarjestaja__organisaatio_oid__in=organisaatio_oids) |
+                                 Q(palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid__in=organisaatio_oids))
+            # user with tyontekija toimipaikka permissions might have object level permissions to tyontekijat
+            # without tyoskentelypaikka
+            if get_toimipaikat_group_has_access(user, vakajarjestaja_id, 'HENKILOSTO_TYONTEKIJA_').exists():
+                tyontekijat_object_level_permission = get_objects_for_user(user, 'view_tyontekija', klass=Tyontekija,
+                                                                           accept_global_perms=False)
+                permission_filter |= Q(id__in=tyontekijat_object_level_permission)
+            filter_condition &= permission_filter
+
+        query_params = self.request.query_params
+        if toimipaikka_id := query_params.get('toimipaikka_id', None):
+            filter_condition &= Q(palvelussuhteet__tyoskentelypaikat__toimipaikka__id=toimipaikka_id)
+        if toimipaikka_oid := query_params.get('toimipaikka_oid', None):
+            filter_condition &= Q(palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid=toimipaikka_oid)
+        if kiertava_tyontekija_kytkin := query_params.get('kiertava_tyontekija_kytkin', None):
+            kiertava_tyontekija_kytkin = parse_query_parameter(kiertava_tyontekija_kytkin, BooleanField)
+            filter_condition &= Q(palvelussuhteet__tyoskentelypaikat__kiertava_tyontekija_kytkin=kiertava_tyontekija_kytkin)
+        if voimassa_pvm := query_params.get('voimassa_pvm', None):
+            voimassa_pvm = parse_query_parameter(voimassa_pvm, DateField, parameter_name='voimassa_pvm')
+            filter_condition &= (Q(palvelussuhteet__alkamis_pvm__lte=voimassa_pvm) &
+                                 (Q(palvelussuhteet__paattymis_pvm__gte=voimassa_pvm) |
+                                  Q(palvelussuhteet__paattymis_pvm__isnull=True)))
+
+        return filter_condition
 
     @auditlog
     @action(methods=['get'], detail=True, url_path='lapsi-list', url_name='lapsi_list',
@@ -107,7 +144,12 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
             permission_classes=[LapsihakuPermissions],
             )
     @swagger_auto_schema(auto_schema=ActionPaginationSwaggerAutoSchema,
-                         responses={status.HTTP_200_OK: LapsihakuHenkiloUiSerializer(many=True)})
+                         responses={status.HTTP_200_OK: LapsihakuHenkiloUiSerializer(many=True)},
+                         manual_parameters=[
+                             openapi.Parameter('toimipaikka_id', openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
+                             openapi.Parameter('toimipaikka_oid', openapi.IN_QUERY, type=openapi.TYPE_STRING),
+                             openapi.Parameter('voimassa_pvm', openapi.IN_QUERY, type=openapi.TYPE_STRING)
+                         ])
     def lapsi_list(self, request, pk=None):
         """
         Query-parametrit:
@@ -115,52 +157,41 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
             *  toimipaikka_oid = str
             *  voimassa_pvm = iso date string esim. "2020-01-01"
         """
-        # Putting these to keyword arguments raises exception
+        # Putting this to keyword arguments raises exception
         self.search_fields = ['etunimet', 'sukunimi', '=henkilotunnus_unique_hash', '=henkilo_oid']
 
-        filter_condition = self.get_lapsi_list_filter_conditions(pk, request.query_params, 'lapsi__')
-        self.queryset = self.queryset.filter(filter_condition).order_by('sukunimi', 'etunimet').distinct()
+        # Use subquery to fetch the required Henkilo objects, and to filter the related Lapsi objects
+        lapsi_filter = self.get_lapsi_filter(pk)
+        lapsi_id_subquery = Lapsi.objects.filter(lapsi_filter).distinct().values('id')
+        self.queryset = (self.queryset
+                         .filter(lapsi__id__in=Subquery(lapsi_id_subquery))
+                         .prefetch_related(Prefetch('lapsi',
+                                                    queryset=Lapsi.objects.filter(id__in=Subquery(lapsi_id_subquery)).distinct()))
+                         .order_by('sukunimi', 'etunimet').distinct())
         return super().list(request, pk=pk)
 
-    def _prefix_Q(self, prefix):
-        def decorate_q(*args, **kwargs):
-            prefixed_kwargs = {prefix + key: value for key, value in kwargs.items()}
-            return Q(*args, **prefixed_kwargs)
-        return decorate_q
+    def get_lapsi_filter(self, vakajarjestaja_id):
+        filter_condition = (Q(vakatoimija=vakajarjestaja_id) | Q(oma_organisaatio=vakajarjestaja_id) |
+                            Q(paos_organisaatio=vakajarjestaja_id))
 
-    def get_lapsi_list_filter_conditions(self, vakajarjestaja_id, query_params, prefix='', permission_context=None):
-        """
-        This needs to be done manually since django-filter (or more precisely feature in django queryset filtering)
-        chains qs.filter() which causes lapsi table to be joined multiple times to henkilo. Doing that makes these
-        conditions OR isntead of AND causing weird results in paos cases where same lapsi can be found multiple times.
-        https://code.djangoproject.com/ticket/18437
-        :param vakajarjestaja_id: ID for Vakajarjestaja
-        :param query_params:
-        :param prefix: prefix for
-        :param permission_context: Context
-        :return: None
-        """
-        prefixed_Q = self._prefix_Q(prefix)
-        # This is the condition that causes django filter not being useful here
-        filter_condition = (prefixed_Q(vakatoimija=vakajarjestaja_id) |
-                            prefixed_Q(oma_organisaatio=vakajarjestaja_id) |
-                            prefixed_Q(paos_organisaatio=vakajarjestaja_id))
-        if toimipaikka_id := query_params.get('toimipaikka_id'):
-            filter_condition &= prefixed_Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__id=toimipaikka_id)
-        if toimipaikka_oid := query_params.get('toimipaikka_oid'):
-            filter_condition &= prefixed_Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__organisaatio_oid=toimipaikka_oid)
-        if voimassa_pvm := query_params.get('voimassa_pvm'):
-            filter_condition &= (prefixed_Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm__lte=voimassa_pvm) &
-                                 (prefixed_Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__gte=voimassa_pvm) |
-                                  prefixed_Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True)))
-        if not permission_context:
-            permission_context = self._get_lapsi_permission_context()
+        query_params = self.request.query_params
+        if toimipaikka_id := query_params.get('toimipaikka_id', None):
+            filter_condition &= Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__id=toimipaikka_id)
+        if toimipaikka_oid := query_params.get('toimipaikka_oid', None):
+            filter_condition &= Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__organisaatio_oid=toimipaikka_oid)
+        if voimassa_pvm := query_params.get('voimassa_pvm', None):
+            voimassa_pvm = parse_query_parameter(voimassa_pvm, DateField, parameter_name='voimassa_pvm')
+            filter_condition &= (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm__lte=voimassa_pvm) &
+                                 (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__gte=voimassa_pvm) |
+                                  Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True)))
+
+        permission_context = self._get_lapsi_permission_context()
         is_superuser, vakajarjestaja_oid, user_organisaatio_oids = itemgetter('is_superuser', 'vakajarjestaja_oid', 'user_organisaatio_oids')(permission_context)
         if not is_superuser and vakajarjestaja_oid not in user_organisaatio_oids:
             toimipaikka_oids = permission_context['toimipaikka_oids']
             # Check toimipaikka level. Since object level permissions for lapset without toimipaikka are not set
             # we don't check it here.
-            filter_condition &= prefixed_Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__organisaatio_oid__in=toimipaikka_oids)
+            filter_condition &= Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__organisaatio_oid__in=toimipaikka_oids)
         return filter_condition
 
     def get_serializer_context(self):
