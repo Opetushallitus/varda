@@ -263,7 +263,7 @@ def get_omat_vuorohoito_vakapaatokset(vakasuhteet, poiminta_pvm, tilasto_pvm, hi
                             on hvp.history_id = last_hvp.history_id
                             join varda_historicalvarhaiskasvatussuhde hvs on hvs.varhaiskasvatuspaatos_id = hvp.id
                             where last_hvp.history_type <> '-' and lower(hvp.jarjestamismuoto_koodi) not in ('jm02', 'jm03')
-                            and hvp.vuorohoito_kytkin = 'false' and hvp.alkamis_pvm <= %s and
+                            and hvp.vuorohoito_kytkin = 'true' and hvp.alkamis_pvm <= %s and
                             (hvp.paattymis_pvm >= %s or hvp.paattymis_pvm is NULL) and hvs.id in %s;'''
             cursor.execute(base_query, filters)
             return cursor.fetchall()

@@ -22,7 +22,7 @@ from pathlib import Path
 from timeit import default_timer as timer
 
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
-from varda.models import (Henkilo, HistoricalHenkilo, Toimipaikka, VakaJarjestaja,
+from varda.models import (Henkilo, HistoricalHenkilo, Toimipaikka, VakaJarjestaja, YearlyReportSummary,
                           Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog, Z6_RequestLog,
                           Z7_AdditionalUserFields, Z8_ExcelReport, Z8_ExcelReportLog)
 
@@ -200,6 +200,7 @@ def finalize_data_dump():
     Z7_AdditionalUserFields.objects.all().delete()
     Z8_ExcelReport.objects.all().delete()
     Z8_ExcelReportLog.objects.all().delete()
+    YearlyReportSummary.objects.all().delete()
 
     user = User.objects.get(id=2)
     vakajarjestaja_1 = VakaJarjestaja.objects.get(id=1)
