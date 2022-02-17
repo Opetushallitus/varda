@@ -17,6 +17,7 @@ from varda.enums.error_messages import ErrorMessages
 from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.misc import TemporaryObject, hash_string, decrypt_henkilotunnus
+from varda.misc_queries import get_top_results
 from varda.misc_viewsets import ViewSetValidator
 from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Maksutieto, Henkilo,
                           Lapsi, Huoltaja, Huoltajuussuhde, PaosOikeus, PaosToiminta, Varhaiskasvatuspaatos,
@@ -317,8 +318,7 @@ VARDA serializers
 class VakaJarjestajaSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.IntegerField(read_only=True)
     kunnallinen_kytkin = serializers.BooleanField(read_only=True)
-    # Let's use "_top" to decrease the amount of child relations visible. Otherwise the parent-query becomes quickly unreadable.
-    toimipaikat_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='toimipaikka-detail')
+    toimipaikat_top = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = VakaJarjestaja
@@ -331,6 +331,19 @@ class VakaJarjestajaSerializer(serializers.HyperlinkedModelSerializer):
     @caching_to_representation('vakajarjestaja')
     def to_representation(self, instance):
         return super(VakaJarjestajaSerializer, self).to_representation(instance)
+
+    @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.URLField()))
+    def get_toimipaikat_top(self, instance):
+        permission_group_list = [Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                                 Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.KATSELIJA,
+                                 Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,
+                                 Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,
+                                 Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
+                                 Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
+                                 Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,
+                                 Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA]
+        oid_list = [instance.organisaatio_oid]
+        return get_top_results(self.context['request'], instance.toimipaikat.all(), permission_group_list, oid_list)
 
 
 class ToimipaikkaSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
@@ -346,9 +359,9 @@ class ToimipaikkaSerializer(RequiredLahdejarjestelmaMixin, serializers.Hyperlink
     organisaatio_oid = serializers.CharField(read_only=True, allow_blank=True)
     kayntiosoite = serializers.CharField(min_length=3, max_length=100)
     postiosoite = serializers.CharField(min_length=3, max_length=100)
-    toiminnallisetpainotukset_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='toiminnallinenpainotus-detail')
-    kielipainotukset_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='kielipainotus-detail')
-    varhaiskasvatussuhteet_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='varhaiskasvatussuhde-detail')
+    toiminnallisetpainotukset_top = serializers.SerializerMethodField(read_only=True)
+    kielipainotukset_top = serializers.SerializerMethodField(read_only=True)
+    varhaiskasvatussuhteet_top = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Toimipaikka
@@ -438,6 +451,34 @@ class ToimipaikkaSerializer(RequiredLahdejarjestelmaMixin, serializers.Hyperlink
                   validators.validate_paivamaara1_after_paivamaara2(paattymis_pvm, vakajarjestaja.paattymis_pvm,
                                                                     can_be_same=True)):
                 raise ValidationError({'paattymis_pvm': [ErrorMessages.TP026.value]})
+
+    @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.URLField()))
+    def get_toiminnallisetpainotukset_top(self, instance):
+        permission_group_list = [Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                                 Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.KATSELIJA,
+                                 Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,
+                                 Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA]
+        oid_list = [instance.organisaatio_oid, instance.vakajarjestaja.organisaatio_oid]
+        return get_top_results(self.context['request'], instance.toiminnallisetpainotukset.all(),
+                               permission_group_list, oid_list)
+
+    @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.URLField()))
+    def get_kielipainotukset_top(self, instance):
+        permission_group_list = [Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                                 Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.KATSELIJA,
+                                 Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,
+                                 Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA]
+        oid_list = [instance.organisaatio_oid, instance.vakajarjestaja.organisaatio_oid]
+        return get_top_results(self.context['request'], instance.kielipainotukset.all(),
+                               permission_group_list, oid_list)
+
+    @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.URLField()))
+    def get_varhaiskasvatussuhteet_top(self, instance):
+        permission_group_list = [Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                                 Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.KATSELIJA]
+        oid_list = [instance.organisaatio_oid, instance.vakajarjestaja.organisaatio_oid]
+        return get_top_results(self.context['request'], instance.varhaiskasvatussuhteet.all(),
+                               permission_group_list, oid_list)
 
 
 class ToimipaikkaUpdateSerializer(ToimipaikkaSerializer):
@@ -1083,7 +1124,7 @@ class LapsiSerializer(RequiredLahdejarjestelmaMixin, LapsiOptionalToimipaikkaMix
                                             parent_attribute='organisaatio_oid',
                                             prevalidator=validate_organisaatio_oid)
     paos_kytkin = serializers.BooleanField(read_only=True)
-    varhaiskasvatuspaatokset_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='varhaiskasvatuspaatos-detail')
+    varhaiskasvatuspaatokset_top = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Lapsi
@@ -1128,6 +1169,15 @@ class LapsiSerializer(RequiredLahdejarjestelmaMixin, LapsiOptionalToimipaikkaMix
             if oma_organisaatio and oma_organisaatio == paos_organisaatio:
                 validator.error('errors', ErrorMessages.LA008.value)
         return data
+
+    @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.URLField()))
+    def get_varhaiskasvatuspaatokset_top(self, instance):
+        permission_group_list = [Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                                 Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.KATSELIJA]
+        oid_list = ([instance.vakatoimija.organisaatio_oid] if instance.vakatoimija
+                    else [instance.oma_organisaatio.organisaatio_oid, instance.paos_organisaatio.organisaatio_oid])
+        return get_top_results(self.context['request'], instance.varhaiskasvatuspaatokset.all(),
+                               permission_group_list, oid_list)
 
 
 class LapsiSerializerAdmin(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):
@@ -1258,7 +1308,7 @@ class VarhaiskasvatuspaatosSerializer(RequiredLahdejarjestelmaMixin, LapsiOption
                                           parent_field='lapsi',
                                           prevalidator=validators.validate_tunniste,
                                           either_required=True)
-    varhaiskasvatussuhteet_top = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='varhaiskasvatussuhde-detail')
+    varhaiskasvatussuhteet_top = serializers.SerializerMethodField(read_only=True)
     alkamis_pvm = serializers.DateField(validators=[validators.validate_vaka_date])
     hakemus_pvm = serializers.DateField(validators=[validators.validate_vaka_date])
     vuorohoito_kytkin = serializers.BooleanField(required=True)
@@ -1356,6 +1406,16 @@ class VarhaiskasvatuspaatosSerializer(RequiredLahdejarjestelmaMixin, LapsiOption
     @caching_to_representation('varhaiskasvatuspaatos')
     def to_representation(self, instance):
         return super(VarhaiskasvatuspaatosSerializer, self).to_representation(instance)
+
+    @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.URLField()))
+    def get_varhaiskasvatussuhteet_top(self, instance):
+        permission_group_list = [Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                                 Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.KATSELIJA]
+        lapsi = instance.lapsi
+        oid_list = ([lapsi.vakatoimija.organisaatio_oid] if lapsi.vakatoimija
+                    else [lapsi.oma_organisaatio.organisaatio_oid, lapsi.paos_organisaatio.organisaatio_oid])
+        return get_top_results(self.context['request'], instance.varhaiskasvatussuhteet.all(),
+                               permission_group_list, oid_list)
 
 
 def _validate_toimipaikka_with_vakajarjestaja_of_lapsi(toimipaikka, lapsi):

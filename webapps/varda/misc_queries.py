@@ -1,9 +1,12 @@
 from django.contrib.postgres.aggregates import StringAgg
 from django.db import connection
 from django.db.models import Q, Value
+from rest_framework.reverse import reverse
 
+from varda.cache import get_object_ids_for_user_by_model
 from varda.models import (Henkilo, KieliPainotus, Lapsi, PaosOikeus, PaosToiminta, Toimipaikka, ToiminnallinenPainotus,
                           Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z9_RelatedObjectChanged)
+from varda.permissions import is_oph_staff, user_permission_groups_in_organizations
 
 
 def get_paos_toimipaikat(vakajarjestaja_obj, is_only_active_paostoiminta_included=True):
@@ -409,3 +412,26 @@ def get_maksutiedot(vakajarjestaja, full_query, poiminta_pvm, reporting_date, pa
         cursor.execute(base_query + ';', filters)
         row = cursor.fetchone()
         return row[0]
+
+
+def get_top_results(request, queryset, permission_group_list, oid_list):
+    """
+    Function that returns limited amount of results from a queryset based on user permissions. Used for x_top fields.
+    :param request: request object
+    :param queryset: base queryset
+    :param permission_group_list: List of accepted permission groups (Z4_CasKayttoOikeudet values)
+    :param oid_list: list of accepted OIDs (e.g. VakaJarjestaja, Toimipaikka)
+    :return: List of object URIs
+    """
+    items_to_show = 3
+    user = request.user
+    queryset_model_name = queryset.model.__name__.lower()
+
+    permission_group_qs = user_permission_groups_in_organizations(user, oid_list, permission_group_list)
+    if not user.is_superuser and not is_oph_staff(user) and not permission_group_qs.exists():
+        # User is not superuser, OPH user and does not belong to correct permission groups
+        id_list = get_object_ids_for_user_by_model(user, queryset_model_name)
+        queryset = queryset.filter(id__in=id_list)
+    queryset = queryset.order_by('id')[:items_to_show].values('pk')
+    return [reverse(viewname=f'{queryset_model_name}-detail', kwargs={'pk': instance['pk']}, request=request)
+            for instance in queryset]

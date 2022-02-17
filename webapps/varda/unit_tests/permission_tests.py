@@ -490,9 +490,7 @@ class VardaPermissionsTests(TestCase):
         lapsi_url = json.loads(resp.content)['lapsi']
         resp = client.get(lapsi_url)
         assert_status_code(resp, status.HTTP_200_OK)
-        vakapaatos_url = json.loads(resp.content)['varhaiskasvatuspaatokset_top'][0]
-        resp = client.get(vakapaatos_url)
-        assert_status_code(resp, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(len(json.loads(resp.content)['varhaiskasvatuspaatokset_top']), 0)
 
     def test_toimijatiedot_update(self):
         vakajarjestaja_qs = VakaJarjestaja.objects.filter(organisaatio_oid='1.2.246.562.10.34683023489')
