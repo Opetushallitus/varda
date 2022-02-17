@@ -24,7 +24,8 @@ KOODISTOPALVELU_DICT = {
     Koodistot.maksun_peruste_koodit: 'vardamaksunperuste',
     Koodistot.lahdejarjestelma_koodit: 'vardalahdejarjestelma',
     Koodistot.postinumero_koodit: 'posti',
-    Koodistot.virhe_koodit: 'vardavirheviestit'
+    Koodistot.virhe_koodit: 'vardavirheviestit',
+    Koodistot.yritysmuoto_koodit: 'yritysmuoto'
 }
 LANGUAGE_CODES = ['FI', 'SV', 'EN']
 

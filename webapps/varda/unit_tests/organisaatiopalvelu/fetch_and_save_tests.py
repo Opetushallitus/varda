@@ -5,7 +5,6 @@ from django.test import TestCase
 
 from varda import organisaatiopalvelu
 from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
-from varda.enums.ytj import YtjYritysmuoto
 from varda.models import Toimipaikka, ToiminnallinenPainotus, KieliPainotus, VakaJarjestaja
 from varda.organisaatiopalvelu import fetch_and_save_toimipaikka_data
 
@@ -81,7 +80,7 @@ class TestFetchAndSaveToimipaikkaData(TestCase):
         self.assertEqual(vakajarjestaja.postiosoite, 'Jokukatu 1')
         self.assertEqual(vakajarjestaja.postinumero, '00000')
         self.assertEqual(vakajarjestaja.postitoimipaikka, 'Inte känd')
-        self.assertEqual(vakajarjestaja.yritysmuoto, YtjYritysmuoto.KUNTA.name)
+        self.assertEqual(vakajarjestaja.yritysmuoto, '41')
         self.assertEqual(vakajarjestaja.kunta_koodi, '018')
         self.assertEqual(vakajarjestaja.alkamis_pvm, datetime.date(2018, 10, 1))
         self.assertEqual(vakajarjestaja.paattymis_pvm, None)
@@ -98,164 +97,164 @@ class TestFetchAndSaveToimipaikkaData(TestCase):
         self.assertEqual(vakajarjestaja.paattymis_pvm, datetime.date(2020, 8, 1))
 
     def __create_painotus_dict(self, toimintapainotus_koodi, alkamis_pvm, paattymis_pvm, changed_by_id):
-        return {"toimintapainotus_koodi": toimintapainotus_koodi, "alkamis_pvm": alkamis_pvm, "paattymis_pvm": paattymis_pvm, "changed_by_id": changed_by_id}
+        return {'toimintapainotus_koodi': toimintapainotus_koodi, 'alkamis_pvm': alkamis_pvm, 'paattymis_pvm': paattymis_pvm, 'changed_by_id': changed_by_id}
 
     def __create_kieli_dict(self, kielipainotus_koodi, alkamis_pvm, paattymis_pvm, changed_by_id):
-        return {"kielipainotus_koodi": kielipainotus_koodi, "alkamis_pvm": alkamis_pvm, "paattymis_pvm": paattymis_pvm, "changed_by_id": changed_by_id}
+        return {'kielipainotus_koodi': kielipainotus_koodi, 'alkamis_pvm': alkamis_pvm, 'paattymis_pvm': paattymis_pvm, 'changed_by_id': changed_by_id}
 
     @staticmethod
-    def get_organisaatio_json(vakajarjestaja=False, paattymis_pvm=None, oid="1.2.246.562.10.34683023489"):
+    def get_organisaatio_json(vakajarjestaja=False, paattymis_pvm=None, oid='1.2.246.562.10.34683023489'):
         org_json = {
-            "oid": oid,
-            "nimi": {
-                "fi": "Päiväkoti nallekarhu"
+            'oid': oid,
+            'nimi': {
+                'fi': 'Päiväkoti nallekarhu'
             },
-            "alkuPvm": "2018-10-01",
-            "toimipistekoodi": "",
-            "ytunnus": None if not vakajarjestaja else '8500570-7',
-            "tyypit": ["organisaatiotyyppi_08" if not vakajarjestaja else 'organisaatiotyyppi_07'],
-            "yritysmuoto": YtjYritysmuoto.EI_YRITYSMUOTOA.value if not vakajarjestaja else YtjYritysmuoto.KUNTA.value,
-            "vuosiluokat": [],
-            "kieletUris": ["oppilaitoksenopetuskieli_1#1"],
-            "kotipaikkaUri": "kunta_018",
-            "maaUri": "maatjavaltiot1_fin",
-            "parentOid": "1.2.246.562.10.346830761110",
-            "postiosoite": {
-                "postinumeroUri": "posti_00000",
-                "osoiteTyyppi": "posti",
-                "yhteystietoOid": "1.2.246.562.5.46256382329",
-                "postitoimipaikka": "Inte känd",
-                "osoite": "Jokukatu 1"
+            'alkuPvm': '2018-10-01',
+            'toimipistekoodi': '',
+            'ytunnus': None if not vakajarjestaja else '8500570-7',
+            'tyypit': ['organisaatiotyyppi_08' if not vakajarjestaja else 'organisaatiotyyppi_07'],
+            'yritysmuoto': 'Ei yritysmuotoa' if not vakajarjestaja else 'Kunta',
+            'vuosiluokat': [],
+            'kieletUris': ['oppilaitoksenopetuskieli_1#1'],
+            'kotipaikkaUri': 'kunta_018',
+            'maaUri': 'maatjavaltiot1_fin',
+            'parentOid': '1.2.246.562.10.346830761110',
+            'postiosoite': {
+                'postinumeroUri': 'posti_00000',
+                'osoiteTyyppi': 'posti',
+                'yhteystietoOid': '1.2.246.562.5.46256382329',
+                'postitoimipaikka': 'Inte känd',
+                'osoite': 'Jokukatu 1'
             },
-            "ryhmatyypit": [],
-            "kayttoryhmat": [],
-            "lisatiedot": [],
-            "kuvaus2": {},
-            "metadata": {
-                "nimi": {},
-                "hakutoimistonNimi": {},
-                "yhteystiedot": [],
-                "hakutoimistoEctsEmail": {},
-                "hakutoimistoEctsNimi": {},
-                "hakutoimistoEctsPuhelin": {},
-                "hakutoimistoEctsTehtavanimike": {},
-                "luontiPvm": 1538736721763,
-                "muokkausPvm": 1538686800000,
-                "data": {
-                    "YLEISKUVAUS": {},
-                    "KANSAINVALISET_KOULUTUSOHJELMAT": {},
-                    "KIELIOPINNOT": {},
-                    "TERVEYDENHUOLTOPALVELUT": {},
-                    "TEHTAVANIMIKE": {},
-                    "SAHKOPOSTIOSOITE": {},
-                    "RAHOITUS": {},
-                    "AIEMMIN_HANKITTU_OSAAMINEN": {},
-                    "sosiaalinenmedia_7#1": {},
-                    "sosiaalinenmedia_5#1": {},
-                    "sosiaalinenmedia_6#1": {},
-                    "OPISKELIJALIIKKUVUUS": {},
-                    "VAKUUTUKSET": {},
-                    "OPISKELIJA_JARJESTOT": {},
-                    "VALINTAMENETTELY": {},
-                    "sosiaalinenmedia_3#1": {},
-                    "sosiaalinenmedia_4#1": {},
-                    "VASTUUHENKILOT": {},
-                    "KUSTANNUKSET": {},
-                    "sosiaalinenmedia_1#1": {},
-                    "OPPIMISYMPARISTO": {},
-                    "sosiaalinenmedia_2#1": {},
-                    "PUHELINNUMERO": {},
-                    "NIMI": {},
-                    "OPISKELIJALIIKUNTA": {},
-                    "VUOSIKELLO": {},
-                    "OPISKELIJARUOKAILU": {},
-                    "ESTEETOMYYS": {},
-                    "VAPAA_AIKA": {},
-                    "TIETOA_ASUMISESTA": {},
-                    "TYOHARJOITTELU": {}
+            'ryhmatyypit': [],
+            'kayttoryhmat': [],
+            'lisatiedot': [],
+            'kuvaus2': {},
+            'metadata': {
+                'nimi': {},
+                'hakutoimistonNimi': {},
+                'yhteystiedot': [],
+                'hakutoimistoEctsEmail': {},
+                'hakutoimistoEctsNimi': {},
+                'hakutoimistoEctsPuhelin': {},
+                'hakutoimistoEctsTehtavanimike': {},
+                'luontiPvm': 1538736721763,
+                'muokkausPvm': 1538686800000,
+                'data': {
+                    'YLEISKUVAUS': {},
+                    'KANSAINVALISET_KOULUTUSOHJELMAT': {},
+                    'KIELIOPINNOT': {},
+                    'TERVEYDENHUOLTOPALVELUT': {},
+                    'TEHTAVANIMIKE': {},
+                    'SAHKOPOSTIOSOITE': {},
+                    'RAHOITUS': {},
+                    'AIEMMIN_HANKITTU_OSAAMINEN': {},
+                    'sosiaalinenmedia_7#1': {},
+                    'sosiaalinenmedia_5#1': {},
+                    'sosiaalinenmedia_6#1': {},
+                    'OPISKELIJALIIKKUVUUS': {},
+                    'VAKUUTUKSET': {},
+                    'OPISKELIJA_JARJESTOT': {},
+                    'VALINTAMENETTELY': {},
+                    'sosiaalinenmedia_3#1': {},
+                    'sosiaalinenmedia_4#1': {},
+                    'VASTUUHENKILOT': {},
+                    'KUSTANNUKSET': {},
+                    'sosiaalinenmedia_1#1': {},
+                    'OPPIMISYMPARISTO': {},
+                    'sosiaalinenmedia_2#1': {},
+                    'PUHELINNUMERO': {},
+                    'NIMI': {},
+                    'OPISKELIJALIIKUNTA': {},
+                    'VUOSIKELLO': {},
+                    'OPISKELIJARUOKAILU': {},
+                    'ESTEETOMYYS': {},
+                    'VAPAA_AIKA': {},
+                    'TIETOA_ASUMISESTA': {},
+                    'TYOHARJOITTELU': {}
                 }
             },
-            "nimet": [{
-                "nimi": {
-                    "fi": "Päiväkoti nallekarhu"
+            'nimet': [{
+                'nimi': {
+                    'fi': 'Päiväkoti nallekarhu'
                 },
-                "alkuPvm": "2018-10-01",
-                "version": 0
+                'alkuPvm': '2018-10-01',
+                'version': 0
             }
             ],
-            "yhteystiedot": [{
-                "osoiteTyyppi": "ulkomainen_posti",
-                "kieli": "kieli_en#1",
-                "yhteystietoOid": "1.2.246.562.5.60611374459",
-                "id": "2190919",
-                "osoite": "tyy"
+            'yhteystiedot': [{
+                'osoiteTyyppi': 'ulkomainen_posti',
+                'kieli': 'kieli_en#1',
+                'yhteystietoOid': '1.2.246.562.5.60611374459',
+                'id': '2190919',
+                'osoite': 'tyy'
             }, {
-                "osoiteTyyppi": "kaynti",
-                "kieli": "kieli_fi#1",
-                "postinumeroUri": "posti_00520",
-                "yhteystietoOid": "1.2.246.562.5.60873990620",
-                "id": "2190926",
-                "postitoimipaikka": "HELSINKI",
-                "osoite": "Jokukatu 1"
+                'osoiteTyyppi': 'kaynti',
+                'kieli': 'kieli_fi#1',
+                'postinumeroUri': 'posti_00520',
+                'yhteystietoOid': '1.2.246.562.5.60873990620',
+                'id': '2190926',
+                'postitoimipaikka': 'HELSINKI',
+                'osoite': 'Jokukatu 1'
             }, {
-                "kieli": "kieli_fi#1",
-                "numero": "1234567788",
-                "tyyppi": "puhelin",
-                "yhteystietoOid": "1.2.246.562.5.51704648487",
-                "id": "2190923"
+                'kieli': 'kieli_fi#1',
+                'numero': '1234567788',
+                'tyyppi': 'puhelin',
+                'yhteystietoOid': '1.2.246.562.5.51704648487',
+                'id': '2190923'
             }, {
-                "kieli": "kieli_fi#1",
-                "yhteystietoOid": "15387367218030.261311521272767",
-                "id": "2190924",
-                "email": "testi@testi.fi"
+                'kieli': 'kieli_fi#1',
+                'yhteystietoOid': '15387367218030.261311521272767',
+                'id': '2190924',
+                'email': 'testi@testi.fi'
             }, {
-                "osoiteTyyppi": "posti",
-                "kieli": "kieli_fi#1",
-                "postinumeroUri": "posti_00520",
-                "yhteystietoOid": "1.2.246.562.5.26171259448",
-                "id": "2190925",
-                "postitoimipaikka": "HELSINKI",
-                "osoite": "Jokukatu 1"
+                'osoiteTyyppi': 'posti',
+                'kieli': 'kieli_fi#1',
+                'postinumeroUri': 'posti_00520',
+                'yhteystietoOid': '1.2.246.562.5.26171259448',
+                'id': '2190925',
+                'postitoimipaikka': 'HELSINKI',
+                'osoite': 'Jokukatu 1'
             }, {
-                "osoiteTyyppi": "kaynti",
-                "kieli": "kieli_sv#1",
-                "yhteystietoOid": "1.2.246.562.5.63222798397",
-                "id": "2190922",
-                "osoite": "Jokukatu 1"
+                'osoiteTyyppi': 'kaynti',
+                'kieli': 'kieli_sv#1',
+                'yhteystietoOid': '1.2.246.562.5.63222798397',
+                'id': '2190922',
+                'osoite': 'Jokukatu 1'
             }
             ],
-            "kayntiosoite": {
-                "postinumeroUri": "posti_00520",
-                "osoiteTyyppi": "kaynti",
-                "yhteystietoOid": "1.2.246.562.5.63222798397",
-                "postitoimipaikka": "uusi_postitoimipaikka",
-                "osoite": "Jokukatu 1"
+            'kayntiosoite': {
+                'postinumeroUri': 'posti_00520',
+                'osoiteTyyppi': 'kaynti',
+                'yhteystietoOid': '1.2.246.562.5.63222798397',
+                'postitoimipaikka': 'uusi_postitoimipaikka',
+                'osoite': 'Jokukatu 1'
             },
-            "parentOidPath": "|1.2.246.562.10.00000000001|1.2.246.562.10.346830761110|",
-            "yhteystietoArvos": [],
-            "varhaiskasvatuksenToimipaikkaTiedot": {
-                "toimintamuoto": "vardatoimintamuoto_tm01",
-                "kasvatusopillinenJarjestelma": "vardakasvatusopillinenjarjestelma_kj03",
-                "varhaiskasvatuksenJarjestamismuodot": ["vardajarjestamismuoto_jm01"],
-                "paikkojenLukumaara": 2,
-                "varhaiskasvatuksenKielipainotukset": [{
-                    "kielipainotus": "kieli_bh",
-                    "alkupvm": "2018-10-01",
-                    "loppupvm": "2018-10-18"
+            'parentOidPath': '|1.2.246.562.10.00000000001|1.2.246.562.10.346830761110|',
+            'yhteystietoArvos': [],
+            'varhaiskasvatuksenToimipaikkaTiedot': {
+                'toimintamuoto': 'vardatoimintamuoto_tm01',
+                'kasvatusopillinenJarjestelma': 'vardakasvatusopillinenjarjestelma_kj03',
+                'varhaiskasvatuksenJarjestamismuodot': ['vardajarjestamismuoto_jm01'],
+                'paikkojenLukumaara': 2,
+                'varhaiskasvatuksenKielipainotukset': [{
+                    'kielipainotus': 'kieli_bh',
+                    'alkupvm': '2018-10-01',
+                    'loppupvm': '2018-10-18'
                 }, {
-                    "kielipainotus": "kieli_bg",
-                    "alkupvm": "2018-10-01"
+                    'kielipainotus': 'kieli_bg',
+                    'alkupvm': '2018-10-01'
                 }
                 ],
-                "varhaiskasvatuksenToiminnallinenpainotukset": [{
-                    "toiminnallinenpainotus": "vardatoiminnallinenpainotus_tp01",
-                    "alkupvm": "2018-10-01"
+                'varhaiskasvatuksenToiminnallinenpainotukset': [{
+                    'toiminnallinenpainotus': 'vardatoiminnallinenpainotus_tp01',
+                    'alkupvm': '2018-10-01'
                 }
                 ]
             } if not vakajarjestaja else None,
-            "version": 32,
-            "status": "AKTIIVINEN"
+            'version': 32,
+            'status': 'AKTIIVINEN'
         }
         if paattymis_pvm:
-            org_json["lakkautusPvm"] = paattymis_pvm
+            org_json['lakkautusPvm'] = paattymis_pvm
         return org_json

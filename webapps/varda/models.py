@@ -11,11 +11,11 @@ from rest_framework.exceptions import ValidationError
 from simple_history.models import HistoricalRecords
 
 from varda import validators
+from varda.constants import YRITYSMUOTO_KUNTA
 from varda.enums.aikaleima_avain import AikaleimaAvain
 from varda.enums.batcherror_type import BatchErrorType
 from varda.enums.error_messages import ErrorMessages
 from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
-from varda.enums.ytj import YtjYritysmuoto
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -67,11 +67,10 @@ class VakaJarjestaja(AbstractModel):
     postitoimipaikka = models.CharField(max_length=50, blank=False)
     puhelinnumero = models.CharField(max_length=20, blank=True, validators=[validators.validate_puhelinnumero])
     ytjkieli = models.CharField(max_length=5, blank=True)
-    yritysmuoto = models.CharField(choices=YtjYritysmuoto.choices(), max_length=50, blank=False,
-                                   default='EI_YRITYSMUOTOA')
+    yritysmuoto = models.CharField(max_length=4, blank=False, default='0', validators=[validators.validate_yritysmuoto_koodi])
     alkamis_pvm = models.DateField(blank=True, null=True)
     paattymis_pvm = models.DateField(default=None, blank=True, null=True)
-    integraatio_organisaatio = ArrayField(models.CharField(max_length=50))  # This is needed for permissions checking
+    integraatio_organisaatio = ArrayField(models.CharField(max_length=50), blank=True)  # This is needed for permissions checking
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
     changed_by = models.ForeignKey('auth.User', related_name='vakajarjestajat', on_delete=models.PROTECT)
@@ -104,7 +103,7 @@ class VakaJarjestaja(AbstractModel):
         Note: Lowercase!
         :return: List of yritysmuoto which belong to kunta in lowercase.
         """
-        return [YtjYritysmuoto.KUNTA.name, YtjYritysmuoto.KUNTAYHTYMA.name]
+        return YRITYSMUOTO_KUNTA
 
     class Meta:
         verbose_name_plural = 'vakajarjestajat'

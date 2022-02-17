@@ -248,7 +248,7 @@ def create_vakajarjestajat():
             postitoimipaikka='Testilä',
             postinumero='00001',
             puhelinnumero='+358101234567',
-            yritysmuoto='KUNTA',
+            yritysmuoto='41',
             alkamis_pvm='2017-02-03',
             paattymis_pvm=None,
             changed_by=tester2_user,
@@ -270,7 +270,7 @@ def create_vakajarjestajat():
             alkamis_pvm='2017-02-03',
             paattymis_pvm=None,
             ytjkieli='FI',
-            yritysmuoto='OSAKEYHTIO',
+            yritysmuoto='16',
             changed_by=tester_user,
             integraatio_organisaatio=[]
         ),
@@ -305,7 +305,7 @@ def create_vakajarjestajat():
             postitoimipaikka='Fronttila',
             postinumero='54321',
             puhelinnumero='+358505432109',
-            yritysmuoto='KUNTAYHTYMA',
+            yritysmuoto='42',
             alkamis_pvm='2018-09-25',
             paattymis_pvm=None,
             changed_by=tester_e2e_user,
@@ -324,7 +324,7 @@ def create_vakajarjestajat():
             postitoimipaikka='Testilä',
             postinumero='12345',
             puhelinnumero='+358501231234',
-            yritysmuoto='KUNTAYHTYMA',
+            yritysmuoto='42',
             alkamis_pvm='2019-01-01',
             paattymis_pvm=None,
             changed_by=tester10_user,
@@ -343,7 +343,7 @@ def create_vakajarjestajat():
             postitoimipaikka='Testilä',
             postinumero='12345',
             puhelinnumero='+358401231234',
-            yritysmuoto='KUNTAYHTYMA',
+            yritysmuoto='42',
             alkamis_pvm='2019-02-01',
             paattymis_pvm=None,
             changed_by=tester11_user,
@@ -2352,6 +2352,31 @@ def create_virhe_koodisto_data():
     koodistopalvelu_name = koodistopalvelu.KOODISTOPALVELU_DICT.get(koodisto_enum)
 
     create_koodisto(name, koodistopalvelu_name, codes)
+
+
+def create_yritysmuoto_koodisto_data():
+    from varda import koodistopalvelu
+    from varda.enums.koodistot import Koodistot
+    from varda.models import Z2_CodeTranslation
+
+    # Load all codes that are used in unit testing
+    codes = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18',
+             '19', '20', '21', '22', '23', '24', '25', '26', '28', '29', '30', '31', '32', '33', '35', '36', '37', '38',
+             '39', '40', '41', '42', '43', '44', '45', '46', '47', '48', '49', '50', '51', '52', '53', '54', '55', '56',
+             '57', '58', '59', '60', '61', '62', '63', '64', '70', '71', '80', '81', '82', '83', '84', '85', '90', '91']
+
+    koodisto_enum = koodistopalvelu.Koodistot.yritysmuoto_koodit
+    name = koodisto_enum.value
+    koodistopalvelu_name = koodistopalvelu.KOODISTOPALVELU_DICT.get(koodisto_enum)
+
+    create_koodisto(name, koodistopalvelu_name, codes)
+
+    for code_translation in (('0', 'Ei yritysmuotoa',), ('16', 'Osakeyhtiö',), ('41', 'Kunta',),
+                             ('42', 'Kuntayhtymä',),):
+        (Z2_CodeTranslation.objects
+         .filter(code__code_value=code_translation[0], code__koodisto__name=Koodistot.yritysmuoto_koodit.value,
+                 language='FI')
+         .update(name=code_translation[1]))
 
 
 def get_vakajarjestaja_oids(create_all_vakajarjestajat):

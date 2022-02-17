@@ -8,13 +8,13 @@ from django.db.models.signals import post_migrate, post_save, pre_delete, pre_sa
 from django.utils import timezone
 
 from varda.constants import ALIVE_BOOT_TIME_CACHE_KEY, ALIVE_SEQ_CACHE_KEY
-from varda.enums.error_messages import ErrorMessages
 from varda.migrations.production.setup import (clear_old_permissions, create_henkilosto_template_groups,
                                                create_huoltajatiedot_template_groups, create_oph_luovutuspalvelu_group,
                                                create_paos_template_groups, create_raportit_template_groups,
                                                create_toimijatiedot_template_groups, load_initial_data)
 from varda.migrations.testing.setup import (create_initial_koodisto_data, create_postinumero_koodisto_data,
-                                            create_virhe_koodisto_data, load_testing_data)
+                                            create_virhe_koodisto_data, create_yritysmuoto_koodisto_data,
+                                            load_testing_data)
 
 
 def run_post_migration_tasks(sender, **kwargs):
@@ -71,8 +71,8 @@ def run_post_migration_tasks(sender, **kwargs):
             '0036_postinumero_koodit': [create_postinumero_koodisto_data],
             '0037_auto_20201126_1055': [create_virhe_koodisto_data],
             '0038_auto_20201201_1237': [create_raportit_template_groups],
-            '0045_auto_20210318_0953': [create_oph_luovutuspalvelu_group,
-                                        load_dev_testing_data],
+            '0045_auto_20210318_0953': [create_oph_luovutuspalvelu_group],
+            '0060_yritysmuoto': [create_yritysmuoto_koodisto_data, load_dev_testing_data]
         }
 
         for migration_plan_tuple in kwargs['plan']:
@@ -99,6 +99,7 @@ def receiver_save_user(**kwargs):
     created = kwargs['created']
     update_fields = kwargs['update_fields']
     user = kwargs['instance']
+
     if not created and update_fields is None:
         """
         User permissions changed "on-the-fly".
@@ -130,15 +131,10 @@ def receiver_pre_save_user(**kwargs):
 
 def receiver_pre_save(sender, **kwargs):
     from django.db import transaction
-    from varda.enums.ytj import YtjYritysmuoto
     from varda.tasks import change_paos_tallentaja_organization_task
 
     model_name = sender._meta.model.__name__.lower()
     instance = kwargs['instance']
-    if model_name == 'vakajarjestaja':
-        if not YtjYritysmuoto.has_value(instance.yritysmuoto):
-            from rest_framework.exceptions import ValidationError as ValidationErrorRest
-            raise ValidationErrorRest({'yritysmuoto': [ErrorMessages.VJ002.value]})
 
     with transaction.atomic():
         if model_name == 'paosoikeus':

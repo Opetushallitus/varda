@@ -17,6 +17,7 @@ class Koodistot(enum.Enum):
     lahdejarjestelma_koodit = 'lahdejarjestelma_koodit'
     postinumero_koodit = 'postinumero_koodit'
     virhe_koodit = 'virhe_koodit'
+    yritysmuoto_koodit = 'yritysmuoto_koodit'
 
     @classmethod
     def list(cls):

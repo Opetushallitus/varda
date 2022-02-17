@@ -260,6 +260,10 @@ def validate_lahdejarjestelma_koodi(lahdejarjestelma_koodi, alkamis_pvm=None, pa
                       field_name)
 
 
+def validate_yritysmuoto_koodi(yritysmuoto_koodi, alkamis_pvm=None, paattymis_pvm=None, field_name='yritysmuoto'):
+    validate_z2_koodi(yritysmuoto_koodi, Koodistot.yritysmuoto_koodit.value, alkamis_pvm, paattymis_pvm, field_name)
+
+
 def validate_kieli_koodi_array(kieli_koodi):
     pass
 

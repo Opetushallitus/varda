@@ -276,10 +276,10 @@ class VardaViewsTests(TestCase):
     def test_post_vakajarjestaja_with_invalid_yritysmuoto(self):
         user = User.objects.get(username='tester')
         with self.assertRaises(ValidationErrorRest) as validation_error:
-            VakaJarjestaja.objects.create(
+            vakajarjestaja = VakaJarjestaja(
                 nimi='Tester2 organisaatio',
                 y_tunnus='8500570-7',
-                organisaatio_oid='1.2.246.562.10.34683023489',
+                organisaatio_oid='1.2.246.562.10.34683023490',
                 kunta_koodi='091',
                 sahkopostiosoite='organization@domain.com',
                 kayntiosoite='Testerkatu 2',
@@ -289,12 +289,15 @@ class VardaViewsTests(TestCase):
                 postitoimipaikka='Testilä',
                 postinumero='00001',
                 puhelinnumero='+358101234567',
-                yritysmuoto='INVALID_OPTION',
+                yritysmuoto='1000',
                 alkamis_pvm='2017-02-03',
                 paattymis_pvm=None,
-                changed_by=user
+                changed_by=user,
+                integraatio_organisaatio=[]
             )
-        self.assertIn('VJ002', str(validation_error.exception))
+            vakajarjestaja.full_clean()
+            vakajarjestaja.save()
+        self.assertIn('KO003', str(validation_error.exception))
 
     def test_api_push_non_unique_henkilo_etunimi_correct_sukunimi_wrong(self):
         henkilo = {
@@ -1496,7 +1499,7 @@ class VardaViewsTests(TestCase):
                     'id': 1,
                     'nimi': 'Tester2 organisaatio',
                     'y_tunnus': '8500570-7',
-                    'yritysmuoto': 'KUNTA',
+                    'yritysmuoto': '41',
                     'kunnallinen_kytkin': True,
                     'organisaatio_oid': '1.2.246.562.10.34683023489',
                     'kunta_koodi': '091',

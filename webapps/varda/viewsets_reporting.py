@@ -25,13 +25,12 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
+from varda.constants import SUCCESSFUL_STATUS_CODE_LIST, YRITYSMUOTO_KUNTA
 from varda.custom_swagger import IntegerIdSchema
 from varda.enums.error_messages import ErrorMessages
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.enums.koodistot import Koodistot
 from varda.enums.supported_language import SupportedLanguage
-from varda.enums.ytj import YtjYritysmuoto
 from varda.excel_export import (create_excel_report_task, ExcelReportType, generate_filename,
                                 get_excel_local_file_path)
 from varda.enums.reporting import ReportStatus
@@ -42,13 +41,13 @@ from varda.misc_queries import get_related_object_changed_id_qs
 from varda.misc_viewsets import ViewSetValidator
 from varda.models import (KieliPainotus, Lapsi, Maksutieto, Palvelussuhde, PaosOikeus, PaosToiminta,
                           ToiminnallinenPainotus, Toimipaikka, Tyontekija, Tyoskentelypaikka, VakaJarjestaja,
-                          Varhaiskasvatuspaatos, Varhaiskasvatussuhde, YearlyReportSummary, Z2_Code, Z4_CasKayttoOikeudet, Z6_LastRequest,
-                          Z6_RequestLog, Z6_RequestSummary, Z8_ExcelReport)
+                          Varhaiskasvatuspaatos, Varhaiskasvatussuhde, YearlyReportSummary, Z2_Code,
+                          Z4_CasKayttoOikeudet, Z6_LastRequest, Z6_RequestLog, Z6_RequestSummary, Z8_ExcelReport)
 from varda.pagination import (ChangeablePageSizePagination, ChangeableReportingPageSizePagination, DateCursorPagination,
                               DateReverseCursorPagination, IdCursorPagination, IdReverseCursorPagination,
                               TkCursorPagination)
-from varda.permissions import (auditlogclass, get_vakajarjestajat_filter_for_raportit, is_oph_staff, IsCertificateAccess,
-                               is_user_permission, RaportitPermissions, ReadAdminOrOPHUser,
+from varda.permissions import (auditlogclass, get_vakajarjestajat_filter_for_raportit, is_oph_staff,
+                               IsCertificateAccess, is_user_permission, RaportitPermissions, ReadAdminOrOPHUser,
                                user_permission_groups_in_organization)
 from varda.serializers_reporting import (DuplicateLapsiSerializer, ErrorReportLapsetSerializer,
                                          ErrorReportToimipaikatSerializer, ErrorReportTyontekijatSerializer,
@@ -60,10 +59,12 @@ from varda.serializers_reporting import (DuplicateLapsiSerializer, ErrorReportLa
                                          LahdejarjestelmaTransferOutageReportSerializer, RequestSummaryGroupSerializer,
                                          RequestSummarySerializer, TiedonsiirtoSerializer,
                                          TiedonsiirtotilastoSerializer, TiedonsiirtoYhteenvetoSerializer,
-                                         TkHenkilostotiedotSerializer, TkOrganisaatiotSerializer, TkVakatiedotSerializer,
-                                         UserTransferOutageReportSerializer, YearlyReportingDataSummarySerializer)
+                                         TkHenkilostotiedotSerializer, TkOrganisaatiotSerializer,
+                                         TkVakatiedotSerializer, UserTransferOutageReportSerializer,
+                                         YearlyReportingDataSummarySerializer)
 from varda.tasks import create_yearly_reporting_summary
 from varda.validators import validate_kela_api_datetimefield
+
 
 logger = logging.getLogger(__name__)
 
@@ -424,13 +425,12 @@ class TiedonsiirtotilastoViewSet(GenericViewSet, ListModelMixin):
     permission_classes = (permissions.IsAdminUser, )
 
     def get_vakatoimijat(self, kunnat_filter, voimassa_filter):
-        kunnallinen = [YtjYritysmuoto.KUNTA.name, YtjYritysmuoto.KUNTAYHTYMA.name]
         if kunnat_filter is None:
             return VakaJarjestaja.objects.filter(voimassa_filter)
         elif kunnat_filter:
-            return VakaJarjestaja.objects.filter(voimassa_filter & Q(yritysmuoto__in=kunnallinen))
+            return VakaJarjestaja.objects.filter(voimassa_filter & Q(yritysmuoto__in=YRITYSMUOTO_KUNTA))
         else:
-            return VakaJarjestaja.objects.filter(voimassa_filter & ~Q(yritysmuoto__in=kunnallinen))
+            return VakaJarjestaja.objects.filter(voimassa_filter & ~Q(yritysmuoto__in=YRITYSMUOTO_KUNTA))
 
     def get_toimipaikat(self, vakatoimijat, voimassa_filter):
         return Toimipaikka.objects.filter(voimassa_filter & Q(vakajarjestaja__in=vakatoimijat))

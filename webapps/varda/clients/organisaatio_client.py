@@ -4,7 +4,8 @@ import requests
 
 from django.conf import settings
 
-from varda.enums.ytj import YtjYritysmuoto
+from varda.enums.koodistot import Koodistot
+from varda.models import Z2_Code
 from varda.oph_yhteiskayttopalvelu_autentikaatio import get_contenttype_header
 from varda.misc import get_json_from_external_service, post_json_to_external_service, put_json_to_external_service
 
@@ -46,6 +47,9 @@ def _parse_organisaatio_data(response, organisaatio_oid):
                      .format(organisaatio_oid, e))
         return {'result_ok': False}
     try:
+        # Get yritysmuoto code from koodisto since API returns translated value and not the code itself
+        yritysmuoto_code = Z2_Code.objects.filter(koodisto__name=Koodistot.yritysmuoto_koodit.value,
+                                                  translations__name=response.get('yritysmuoto', None)).first()
         return {
             'result_ok': True,
             'nimi': nimi,
@@ -59,7 +63,7 @@ def _parse_organisaatio_data(response, organisaatio_oid):
             'postinumero': postios['postinumeroUri'].split('_')[1],
             'postitoimipaikka': postios['postitoimipaikka'],
             'ytjkieli': kieli,
-            'yritysmuoto': YtjYritysmuoto(response.get('yritysmuoto', 'Ei yritysmuotoa')).name,
+            'yritysmuoto': yritysmuoto_code.code_value if yritysmuoto_code else '0',
             'alkamis_pvm': response['alkuPvm'],
             'paattymis_pvm': response.get('lakkautusPvm', '')
         }
