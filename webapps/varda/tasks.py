@@ -33,8 +33,8 @@ from varda.models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussu
                           MaksutietoHuoltajuussuhde, Palvelussuhde, PaosOikeus, PaosToiminta, PidempiPoissaolo,
                           Taydennyskoulutus, TaydennyskoulutusTyontekija, TilapainenHenkilosto, ToiminnallinenPainotus,
                           Toimipaikka, Tutkinto, Tyontekija, Tyoskentelypaikka, VakaJarjestaja, Varhaiskasvatuspaatos,
-                          Varhaiskasvatussuhde, YearlyReportSummary, Z3_AdditionalCasUserFields, Z6_LastRequest,
-                          Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary)
+                          Varhaiskasvatussuhde, YearlyReportSummary, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet,
+                          Z5_AuditLog, Z6_LastRequest, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary)
 from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups
 from varda.permissions import assign_object_level_permissions_for_instance, delete_object_permissions_explicitly
 
@@ -572,6 +572,22 @@ def general_monitoring_task():
     # Check that number of OPH users does not exceed limit
     if Z3_AdditionalCasUserFields.objects.filter(approved_oph_staff=True).count() > 5:
         logger.error('There are too many users with approved_oph_staff=True.')
+
+    # Check that an API is not systematically browsed through using the page-parameter
+    # This task is run every hour so check the last 2 hours
+    # Exclude LUOVUTUSPALVELU users
+    two_hours_ago = timezone.now() - datetime.timedelta(hours=2)
+    page_queryset = (Z5_AuditLog.objects
+                     .exclude(user__groups__name__icontains=Z4_CasKayttoOikeudet.LUOVUTUSPALVELU)
+                     .filter(time_of_event__gte=two_hours_ago, query_params__icontains='page=')
+                     .values('user', 'successful_get_request_path')
+                     .annotate(page_number_count=Count(Func(
+                         F('query_params'), Value(r'.*page=(\d*).*'), Value('\\1'), function='regexp_replace'),
+                         distinct=True))
+                     .values('user', 'successful_get_request_path', 'page_number_count')
+                     .filter(page_number_count__gt=20))
+    if page_queryset.exists():
+        logger.error(f'The following APIs are browsed through: {page_queryset}')
 
 
 @shared_task

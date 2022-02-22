@@ -2,13 +2,15 @@ import datetime
 import json
 
 import responses
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import timezone
 from rest_framework import status
 
 from varda.models import (Lapsi, Huoltaja, Maksutieto, Varhaiskasvatussuhde, Varhaiskasvatuspaatos, Henkilo,
-                          VakaJarjestaja, Huoltajuussuhde)
-from varda.tasks import delete_huoltajat_without_relations_task, delete_henkilot_without_relations_task
+                          VakaJarjestaja, Huoltajuussuhde, Z5_AuditLog)
+from varda.tasks import (delete_huoltajat_without_relations_task, delete_henkilot_without_relations_task,
+                         general_monitoring_task)
 from varda.unit_tests.test_utils import SetUpTestClient, assert_status_code
 
 
@@ -147,3 +149,28 @@ class TaskTests(TestCase):
         delete_henkilot_without_relations_task.delay()
         self.assertEqual(henkilo_qs.count(), 4)
         self.assertFalse(Henkilo.objects.filter(id=henkilo_1_id).exists())
+
+    def test_general_monitoring_task(self):
+        user = User.objects.get(username='tester2')
+        user_luovutuspalvelu = User.objects.get(username='kela_luovutuspalvelu')
+
+        index = 0
+        for index in range(20):
+            Z5_AuditLog.objects.create(user=user, successful_get_request_path='/api/v1/toimipaikat/',
+                                       query_params=f'page={index}')
+
+        with self.assertNoLogs('varda.tasks', level='ERROR'):
+            general_monitoring_task.delay()
+
+        index += 1
+        Z5_AuditLog.objects.create(user=user, successful_get_request_path='/api/v1/toimipaikat/',
+                                   query_params=f'page={index}')
+        with self.assertLogs('varda.tasks', level='ERROR') as cm:
+            general_monitoring_task.delay()
+            self.assertEqual(cm.output, ["ERROR:varda.tasks:The following APIs are browsed through: <QuerySet "
+                                         "[{'user': 4, 'successful_get_request_path': '/api/v1/toimipaikat/', "
+                                         "'page_number_count': 21}]>"])
+
+        Z5_AuditLog.objects.filter(user=user).update(user=user_luovutuspalvelu)
+        with self.assertNoLogs('varda.tasks', level='ERROR'):
+            general_monitoring_task.delay()
