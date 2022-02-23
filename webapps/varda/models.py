@@ -1303,6 +1303,7 @@ class Z9_RelatedObjectChanged(AbstractModel):
         indexes = [
             Index(fields=['model_name', 'changed_timestamp']),
             Index(fields=['model_name', 'parent_instance_id', 'changed_timestamp']),
-            Index(fields=['model_name', 'instance_id', 'trigger_model_name', 'changed_timestamp'])
+            Index(fields=['model_name', 'instance_id', 'trigger_model_name', 'changed_timestamp']),
+            Index(fields=['parent_model_name', 'parent_instance_id', 'changed_timestamp'])
         ]
         verbose_name_plural = 'Related object changed'

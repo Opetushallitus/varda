@@ -6,3 +6,4 @@ class ChangeType(enum.Enum):
     CREATED = 'CREATED'
     MODIFIED = 'MODIFIED'
     DELETED = 'DELETED'
+    MOVED = 'MOVED'

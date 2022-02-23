@@ -12,8 +12,9 @@ from varda.enums.change_type import ChangeType
 from varda.misc import decrypt_henkilotunnus
 from varda.models import (Henkilo, Huoltaja, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto, Palvelussuhde,
                           PaosToiminta, PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija,
-                          ToiminnallinenPainotus, Toimipaikka, Tutkinto, Tyontekija, Tyoskentelypaikka, VakaJarjestaja,
-                          Varhaiskasvatuspaatos, Varhaiskasvatussuhde)
+                          TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka, Tutkinto, Tyontekija,
+                          Tyoskentelypaikka, VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde)
+from varda.organisation_transformations import transfer_toimipaikat_to_vakajarjestaja
 from varda.unit_tests.test_utils import (assert_status_code, assert_validation_error, mock_admin_user,
                                          mock_date_decorator_factory, SetUpTestClient)
 from varda.unit_tests.views_tests import mock_check_if_toimipaikka_exists_by_name, mock_create_organisaatio
@@ -2223,6 +2224,132 @@ class VardaViewsReportingTests(TestCase):
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
                           f'&datetime_lte={datetime_lte_2}')
         self.assertEqual(len(json.loads(resp.content)['results']), 0)
+
+    def test_tk_transferred_data(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        new_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
+        old_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.52966755795')
+
+        # Initiate complicated situation with overlapping Lapsi and Tyontekija objects
+        toimipaikka_id_list = list(Toimipaikka.objects.filter(vakajarjestaja=old_vakajarjestaja)
+                                   .values_list('id', flat=True))
+        tilapainen_henkilosto_id_list = list(TilapainenHenkilosto.objects.filter(vakajarjestaja=old_vakajarjestaja)
+                                             .values_list('id', flat=True))
+        lapsi_id_list = list(Lapsi.objects.filter(vakatoimija=old_vakajarjestaja).values_list('id', flat=True))
+        tyontekija_id_list = list(Tyontekija.objects.filter(vakajarjestaja=old_vakajarjestaja)
+                                  .values_list('id', flat=True))
+        lapsi_oid = '1.2.246.562.24.5289462746686'
+        lapsi = {
+            'henkilo_oid': lapsi_oid,
+            'vakatoimija_oid': new_vakajarjestaja.organisaatio_oid,
+            'lahdejarjestelma': '1'
+        }
+        assert_status_code(client.post('/api/v1/lapset/', lapsi), status.HTTP_201_CREATED)
+
+        tyontekija_oid = '1.2.246.562.24.5826267847674'
+        tyontekija = {
+            'henkilo_oid': tyontekija_oid,
+            'vakajarjestaja_oid': new_vakajarjestaja.organisaatio_oid,
+            'lahdejarjestelma': '1'
+        }
+        assert_status_code(client.post('/api/henkilosto/v1/tyontekijat/', tyontekija), status.HTTP_201_CREATED)
+        tutkinto_1 = {
+            'henkilo_oid': tyontekija_oid,
+            'vakajarjestaja_oid': old_vakajarjestaja.organisaatio_oid,
+            'tutkinto_koodi': '712104',
+            'lahdejarjestelma': '1'
+        }
+        assert_status_code(client.post('/api/henkilosto/v1/tutkinnot/', tutkinto_1), status.HTTP_201_CREATED)
+        tutkinto_2 = {
+            'henkilo_oid': tyontekija_oid,
+            'vakajarjestaja_oid': new_vakajarjestaja.organisaatio_oid,
+            'tutkinto_koodi': '321901',
+            'lahdejarjestelma': '1'
+        }
+        assert_status_code(client.post('/api/henkilosto/v1/tutkinnot/', tutkinto_2), status.HTTP_201_CREATED)
+
+        datetime_gt = _get_iso_datetime_now()
+        transfer_toimipaikat_to_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja)
+        datetime_lte = _get_iso_datetime_now()
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/organisaatiot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        results = json.loads(resp.content)['results']
+        self.assertEqual(len(results), 1)
+        toimipaikka_results = results[0]['toimipaikat']
+        self.assertEqual(len(toimipaikka_results), len(toimipaikka_id_list))
+        for toimipaikka_result in toimipaikka_results:
+            self.assertEqual(toimipaikka_result['action'], ChangeType.MOVED.value)
+            self.assertIn(toimipaikka_result['id'], toimipaikka_id_list)
+        tilapainen_henkilosto_results = results[0]['tilapainen_henkilosto']
+        self.assertEqual(len(tilapainen_henkilosto_results), len(tilapainen_henkilosto_id_list))
+        for tilapainen_henkilosto_result in tilapainen_henkilosto_results:
+            self.assertEqual(tilapainen_henkilosto_result['action'], ChangeType.MOVED.value)
+            self.assertIn(tilapainen_henkilosto_result['id'], tilapainen_henkilosto_id_list)
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        results = json.loads(resp.content)['results']
+        # 1 moved, 1 deleted, 1 existing got new data
+        self.assertEqual(len(results), len(lapsi_id_list) + 1)
+        for lapsi_result in results:
+            if lapsi_result['id'] in lapsi_id_list and lapsi_result['henkilo_oid'] == lapsi_oid:
+                # Old lapsi that was deleted
+                self.assertEqual(lapsi_result['action'], ChangeType.DELETED.value)
+                self.assertEqual(len(lapsi_result['varhaiskasvatuspaatokset']), 0)
+                self.assertEqual(len(lapsi_result['maksutiedot']), 0)
+                self.assertEqual(len(lapsi_result['huoltajat']), 1)
+                self.assertEqual(lapsi_result['huoltajat'][0]['action'], ChangeType.DELETED.value)
+            elif not lapsi_result['id'] in lapsi_id_list:
+                # Existing lapsi that got new data
+                self.assertEqual(lapsi_result['action'], ChangeType.UNCHANGED.value)
+                self.assertEqual(len(lapsi_result['varhaiskasvatuspaatokset']), 1)
+                self.assertEqual(lapsi_result['varhaiskasvatuspaatokset'][0]['action'], ChangeType.MOVED.value)
+                self.assertEqual(len(lapsi_result['maksutiedot']), 1)
+                self.assertEqual(lapsi_result['maksutiedot'][0]['action'], ChangeType.MOVED.value)
+            else:
+                # Lapsi that was moved
+                self.assertEqual(lapsi_result['action'], ChangeType.MODIFIED.value)
+                self.assertEqual(len(lapsi_result['varhaiskasvatuspaatokset']), 0)
+                self.assertEqual(len(lapsi_result['maksutiedot']), 0)
+                self.assertEqual(len(lapsi_result['huoltajat']), 0)
+
+        resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
+                          f'&datetime_lte={datetime_lte}')
+        results = json.loads(resp.content)['results']
+        # 1 deleted, 1 existing got new data
+        self.assertEqual(len(results), len(tyontekija_id_list) + 1)
+        for tyontekija_result in results:
+            if tyontekija_result['id'] in tyontekija_id_list and tyontekija_result['henkilo_oid'] == tyontekija_oid:
+                # Old tyontekija that was deleted
+                self.assertEqual(tyontekija_result['action'], ChangeType.DELETED.value)
+                self.assertEqual(len(tyontekija_result['palvelussuhteet']), 0)
+                self.assertEqual(len(tyontekija_result['tutkinnot']), 1)
+                self.assertEqual(tyontekija_result['tutkinnot'][0]['tutkinto_koodi'], '321901')
+                self.assertEqual(tyontekija_result['tutkinnot'][0]['action'], ChangeType.DELETED.value)
+                self.assertEqual(len(tyontekija_result['taydennyskoulutukset']), 1)
+                self.assertEqual(tyontekija_result['taydennyskoulutukset'][0]['action'], ChangeType.MODIFIED.value)
+                self.assertEqual(len(tyontekija_result['taydennyskoulutukset'][0]['tehtavanimikkeet']), 0)
+            elif not tyontekija_result['id'] in tyontekija_id_list:
+                # Existing tyontekija that got new data
+                self.assertEqual(tyontekija_result['action'], ChangeType.UNCHANGED.value)
+                self.assertEqual(len(tyontekija_result['palvelussuhteet']), 1)
+                self.assertEqual(tyontekija_result['palvelussuhteet'][0]['action'], ChangeType.MOVED.value)
+                self.assertEqual(len(tyontekija_result['tutkinnot']), 1)
+                self.assertEqual(tyontekija_result['tutkinnot'][0]['action'], ChangeType.MOVED.value)
+                self.assertEqual(tyontekija_result['tutkinnot'][0]['tutkinto_koodi'], '712104')
+                self.assertEqual(len(tyontekija_result['taydennyskoulutukset']), 1)
+                self.assertEqual(tyontekija_result['taydennyskoulutukset'][0]['action'], ChangeType.MODIFIED.value)
+                self.assertEqual(len(tyontekija_result['taydennyskoulutukset'][0]['tehtavanimikkeet']), 1)
+                self.assertEqual(tyontekija_result['taydennyskoulutukset'][0]['tehtavanimikkeet'][0], '43525')
+            else:
+                # Tyontekija that was moved
+                self.assertEqual(tyontekija_result['action'], ChangeType.MODIFIED.value)
+                self.assertEqual(len(tyontekija_result['palvelussuhteet']), 0)
+                self.assertEqual(len(tyontekija_result['tutkinnot']), 0)
+                self.assertEqual(len(tyontekija_result['taydennyskoulutukset']), 0)
 
     def test_yearlysummarydata_api_missing_vakajarjestaja(self):
         mock_admin_user('tester2')

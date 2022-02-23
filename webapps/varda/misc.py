@@ -410,6 +410,9 @@ def merge_lapsi_maksutiedot(new_lapsi, old_maksutiedot, new_huoltajuussuhteet, m
         for oid in merged_lapsi_toimipaikat:
             assign_object_level_permissions(oid, Maksutieto, maksutieto)
 
+        # Save Maksutieto without modifications so that new historical record is created
+        maksutieto.save()
+
 
 def get_nested_value(instance, field_list):
     for field in field_list:

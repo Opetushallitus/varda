@@ -192,6 +192,9 @@ def _transfer_maksutieto_permissions_to_new_vakajarjestaja(new_vakajarjestaja, t
                 MaksutietoHuoltajuussuhde.objects.create(huoltajuussuhde=huoltajuussuhde, maksutieto=maksutieto,
                                                          changed_by=maksutieto_huoltajuussuhde.changed_by)
 
+        # Save Maksutieto without modifications so that new historical record is created
+        maksutieto.save()
+
 
 def _transfer_tyontekija_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja):
     """
@@ -366,6 +369,8 @@ def _transfer_taydennyskoulutus_permissions_to_new_vakajarjestaja(new_vakajarjes
             if organisaatio_oid:
                 assign_object_permissions_to_taydennyskoulutus_groups(organisaatio_oid, Taydennyskoulutus,
                                                                       taydennyskoulutus)
+        # Save Taydennyskoulutus without modifications so that new historical record is created
+        taydennyskoulutus.save()
 
 
 def _get_tyontekija_oid_set(new_vakajarjestaja, tyontekija):

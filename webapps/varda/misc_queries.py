@@ -1,6 +1,6 @@
 from django.contrib.postgres.aggregates import StringAgg
 from django.db import connection
-from django.db.models import Q, Value
+from django.db.models import OuterRef, Q, Subquery, Value
 from rest_framework.reverse import reverse
 
 from varda.cache import get_object_ids_for_user_by_model
@@ -435,3 +435,8 @@ def get_top_results(request, queryset, permission_group_list, oid_list):
     queryset = queryset.order_by('id')[:items_to_show].values('pk')
     return [reverse(viewname=f'{queryset_model_name}-detail', kwargs={'pk': instance['pk']}, request=request)
             for instance in queryset]
+
+
+def get_history_value_subquery(model, field_name, datetime_param):
+    return Subquery(model.history.filter(id=OuterRef('id'), history_date__lte=datetime_param)
+                    .distinct('id').order_by('id', '-history_date').values(field_name))

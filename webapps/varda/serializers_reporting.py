@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib.postgres.aggregates import StringAgg
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import connection
-from django.db.models import Q, Subquery, Sum
+from django.db.models import OuterRef, Q, Subquery, Sum
 from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -18,13 +18,13 @@ from varda.enums.change_type import ChangeType
 from varda.enums.error_messages import ErrorMessages
 from varda.excel_export import ReportStatus, ExcelReportType, get_s3_object_name
 from varda.misc import CustomServerErrorException, decrypt_excel_report_password, decrypt_henkilotunnus
-from varda.misc_queries import get_related_object_changed_id_qs
+from varda.misc_queries import get_history_value_subquery, get_related_object_changed_id_qs
 from varda.models import (Henkilo, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto, MaksutietoHuoltajuussuhde,
                           Palvelussuhde, PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Tutkinto,
                           Tyoskentelypaikka, TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka, Tyontekija,
                           VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, YearlyReportSummary,
                           Z4_CasKayttoOikeudet, Z6_LastRequest, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary,
-                          Z8_ExcelReport)
+                          Z8_ExcelReport, Z9_RelatedObjectChanged)
 from varda.serializers import ToimipaikkaHLField, VakaJarjestajaPermissionCheckedHLField
 from varda.serializers_common import OidRelatedField
 
@@ -494,6 +494,10 @@ class TkBaseSerializer(serializers.Serializer):
             return ChangeType.DELETED.value
         if self.datetime_gt < instance.luonti_pvm <= self.datetime_lte:
             return ChangeType.CREATED.value
+        if (getattr(instance, 'last_parent_id', None) is not None and
+                getattr(instance, 'previous_parent_id', None) is not None and
+                instance.last_parent_id != instance.previous_parent_id):
+            return ChangeType.MOVED.value
         if self.datetime_gt < instance.muutos_pvm <= self.datetime_lte:
             return ChangeType.MODIFIED.value
 
@@ -578,16 +582,26 @@ class TkOrganisaatiotSerializer(TkBaseSerializer, serializers.ModelSerializer):
     def get_toimipaikat(self, instance):
         id_qs = get_related_object_changed_id_qs(Toimipaikka.get_name(), self.datetime_gt, self.datetime_lte,
                                                  additional_filters={'parent_instance_id': instance.id})
+
+        last_parent_subquery = get_history_value_subquery(Toimipaikka, 'vakajarjestaja_id', self.datetime_lte)
+        previous_parent_subquery = get_history_value_subquery(Toimipaikka, 'vakajarjestaja_id', self.datetime_gt)
         toimipaikka_qs = (Toimipaikka.history.filter(id__in=Subquery(id_qs), vakajarjestaja_id=instance.id,
                                                      history_date__lte=self.datetime_lte)
+                          .annotate(last_parent_id=last_parent_subquery, previous_parent_id=previous_parent_subquery)
+                          .filter(last_parent_id=instance.id)
                           .distinct('id').order_by('id', '-history_date'))
         return TkToimipaikkaSerializer(toimipaikka_qs, many=True, context=self.context).data
 
     @swagger_serializer_method(serializer_or_field=TkTilapainenHenkilostoSerializer)
     def get_tilapainen_henkilosto(self, instance):
+        last_parent_subquery = get_history_value_subquery(TilapainenHenkilosto, 'vakajarjestaja_id', self.datetime_lte)
+        previous_parent_subquery = get_history_value_subquery(TilapainenHenkilosto, 'vakajarjestaja_id', self.datetime_gt)
         tilapainen_henkilosto_qs = (TilapainenHenkilosto.history
                                     .filter(vakajarjestaja_id=instance.id, history_date__gt=self.datetime_gt,
                                             history_date__lte=self.datetime_lte)
+                                    .annotate(last_parent_id=last_parent_subquery,
+                                              previous_parent_id=previous_parent_subquery)
+                                    .filter(last_parent_id=instance.id)
                                     .distinct('id').order_by('id', '-history_date'))
         return TkTilapainenHenkilostoSerializer(tilapainen_henkilosto_qs, many=True, context=self.context).data
 
@@ -733,8 +747,13 @@ class TkVakatiedotSerializer(TkBaseSerializer, serializers.ModelSerializer):
     def get_varhaiskasvatuspaatokset(self, instance):
         id_qs = get_related_object_changed_id_qs(Varhaiskasvatuspaatos.get_name(), self.datetime_gt,
                                                  self.datetime_lte, additional_filters={'parent_instance_id': instance.id})
-        vakapaatos_qs = (Varhaiskasvatuspaatos.history.filter(id__in=Subquery(id_qs), lapsi_id=instance.id,
-                                                              history_date__lte=self.datetime_lte)
+
+        last_parent_subquery = get_history_value_subquery(Varhaiskasvatuspaatos, 'lapsi_id', self.datetime_lte)
+        previous_parent_subquery = get_history_value_subquery(Varhaiskasvatuspaatos, 'lapsi_id', self.datetime_gt)
+        vakapaatos_qs = (Varhaiskasvatuspaatos.history
+                         .filter(id__in=Subquery(id_qs), lapsi_id=instance.id, history_date__lte=self.datetime_lte)
+                         .annotate(last_parent_id=last_parent_subquery, previous_parent_id=previous_parent_subquery)
+                         .filter(last_parent_id=instance.id)
                          .distinct('id').order_by('id', '-history_date'))
         return TkVakapaatosSerializer(vakapaatos_qs, many=True, context=self.context).data
 
@@ -764,7 +783,24 @@ class TkVakatiedotSerializer(TkBaseSerializer, serializers.ModelSerializer):
             additional_filters={'instance_id': instance.id,
                                 'trigger_model_name': MaksutietoHuoltajuussuhde.get_name()}
         )
+
+        last_parent_subquery = Subquery(
+            Z9_RelatedObjectChanged.objects
+            .filter(parent_instance_id=OuterRef('id'), parent_model_name=Maksutieto.get_name(),
+                    history_type='+', changed_timestamp__lte=self.datetime_lte)
+            .distinct('parent_instance_id').order_by('parent_instance_id', '-changed_timestamp')
+            .values('instance_id')
+        )
+        previous_parent_subquery = Subquery(
+            Z9_RelatedObjectChanged.objects
+            .filter(parent_instance_id=OuterRef('id'), parent_model_name=Maksutieto.get_name(),
+                    history_type='+', changed_timestamp__lte=self.datetime_gt)
+            .distinct('parent_instance_id').order_by('parent_instance_id', '-changed_timestamp')
+            .values('instance_id')
+        )
         maksutieto_qs = (Maksutieto.history.filter(id__in=Subquery(id_qs), history_date__lte=self.datetime_lte)
+                         .annotate(last_parent_id=last_parent_subquery, previous_parent_id=previous_parent_subquery)
+                         .filter(last_parent_id=instance.id)
                          .distinct('id').order_by('id', '-history_date'))
         return TkMaksutietoSerializer(maksutieto_qs, many=True, context=self.context).data
 
@@ -874,9 +910,13 @@ class TkHenkilostotiedotSerializer(TkBaseSerializer, serializers.ModelSerializer
 
     @swagger_serializer_method(serializer_or_field=TkTutkintoSerializer)
     def get_tutkinnot(self, instance):
+        last_parent_subquery = get_history_value_subquery(Tutkinto, 'vakajarjestaja_id', self.datetime_lte)
+        previous_parent_subquery = get_history_value_subquery(Tutkinto, 'vakajarjestaja_id', self.datetime_gt)
         tutkinto_qs = (Tutkinto.history
                        .filter(henkilo_id=instance.henkilo_id, vakajarjestaja_id=instance.vakajarjestaja_id,
                                history_date__gt=self.datetime_gt, history_date__lte=self.datetime_lte)
+                       .annotate(last_parent_id=last_parent_subquery, previous_parent_id=previous_parent_subquery)
+                       .filter(last_parent_id=instance.vakajarjestaja_id)
                        .distinct('id').order_by('id', '-history_date'))
         return TkTutkintoSerializer(tutkinto_qs, many=True, context=self.context).data
 
@@ -884,9 +924,14 @@ class TkHenkilostotiedotSerializer(TkBaseSerializer, serializers.ModelSerializer
     def get_palvelussuhteet(self, instance):
         id_qs = get_related_object_changed_id_qs(Palvelussuhde.get_name(), self.datetime_gt,
                                                  self.datetime_lte, additional_filters={'parent_instance_id': instance.id})
+
+        last_parent_subquery = get_history_value_subquery(Palvelussuhde, 'tyontekija_id', self.datetime_lte)
+        previous_parent_subquery = get_history_value_subquery(Palvelussuhde, 'tyontekija_id', self.datetime_gt)
         palvelussuhde_qs = (Palvelussuhde.history
                             .filter(id__in=Subquery(id_qs), tyontekija_id=instance.id,
                                     history_date__lte=self.datetime_lte)
+                            .annotate(last_parent_id=last_parent_subquery, previous_parent_id=previous_parent_subquery)
+                            .filter(last_parent_id=instance.id)
                             .distinct('id').order_by('id', '-history_date'))
         return TkPalvelussuhdeSerializer(palvelussuhde_qs, many=True, context=self.context).data
 
