@@ -52,7 +52,6 @@ export class VardaResultTyontekijaComponent extends VardaResultAbstractComponent
           });
         }
       });
-
       this.scrollTo.nativeElement.scrollIntoView({behavior: 'smooth', block: 'start'});
     });
   }

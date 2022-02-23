@@ -1,13 +1,13 @@
-import { Component, OnInit, OnChanges, Input, ViewChildren, QueryList } from '@angular/core';
+import { Component, OnInit, Input, ViewChildren, QueryList } from '@angular/core';
 import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';
 import { LapsiListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-lapsi-dto.model';
 import { VardaMaksutietoDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-maksutieto-dto.model';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
-import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { KoodistoDTO } from 'varda-shared';
 import { VardaMaksutietoComponent } from './varda-maksutieto/varda-maksutieto.component';
+import { VardaFormListAbstractComponent } from '../../varda-form-list-abstract.component';
 
 
 @Component({
@@ -19,61 +19,40 @@ import { VardaMaksutietoComponent } from './varda-maksutieto/varda-maksutieto.co
     '../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaMaksutiedotComponent implements OnInit, OnChanges {
+export class VardaMaksutiedotComponent extends VardaFormListAbstractComponent implements OnInit {
   @Input() toimipaikkaAccess: UserAccess;
   @Input() selectedVakajarjestaja: VardaVakajarjestajaUi;
   @Input() lapsi: LapsiListDTO;
-  @ViewChildren(VardaMaksutietoComponent) maksutietoElements: QueryList<VardaMaksutietoComponent>;
-  i18n = VirkailijaTranslations;
-  expandPanel = true;
+  @ViewChildren(VardaMaksutietoComponent) objectElements: QueryList<VardaMaksutietoComponent>;
   maksutiedot: Array<VardaMaksutietoDTO>;
   tehtavanimikkeet: KoodistoDTO;
-  addMaksutieto: boolean;
   maksutietoOikeus: boolean;
 
   constructor(
     private lapsiService: VardaLapsiService,
     private snackBarService: VardaSnackBarService,
-  ) { }
+  ) {
+    super();
+  }
 
   ngOnInit() {
     this.paosTarkastelu();
 
     if (this.maksutietoOikeus && this.toimipaikkaAccess.huoltajatiedot.katselija) {
-      this.getMaksutiedot();
+      this.getObjects();
     } else {
       this.maksutiedot = [];
     }
   }
 
-  ngOnChanges() { }
-
-  togglePanel(open: boolean) {
-    this.expandPanel = open;
-  }
-
-  getMaksutiedot() {
+  getObjects() {
     this.maksutiedot = null;
     this.lapsiService.getMaksutiedot(this.lapsi.id).subscribe({
-      next: taydennyskoulutusData => this.maksutiedot = taydennyskoulutusData,
+      next: taydennyskoulutusData => {
+        this.maksutiedot = taydennyskoulutusData;
+      },
       error: err => this.snackBarService.errorWithConsole(this.i18n.maksutiedot_fetch_failure, err)
     });
-  }
-
-  initMaksutieto() {
-    this.addMaksutieto = true;
-    setTimeout(() => this.togglePanel(true), 0);
-    setTimeout(() => this.maksutietoElements.last.element.nativeElement.scrollIntoView({ behavior: 'smooth' }), 100);
-  }
-
-  closeAddMaksutieto(refreshSuhteet?: boolean, hideAddMaksutieto?: boolean) {
-    if (hideAddMaksutieto) {
-      this.addMaksutieto = false;
-    }
-
-    if (refreshSuhteet) {
-      this.getMaksutiedot();
-    }
   }
 
   paosTarkastelu() {

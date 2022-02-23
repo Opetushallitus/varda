@@ -75,7 +75,7 @@
         <div class="varda-text-secondary d-block" *ngIf="tyontekijaKooste.palvelussuhteet.length === 0">
           {{i18n.katsele_tietoja_tyontekija_no_palvelussuhteet | translate}}
         </div>
-        <ng-container *ngFor="let palvelussuhde of tyontekijaKooste.palvelussuhteet">
+        <ng-container *ngFor="let palvelussuhde of tyontekijaKooste.palvelussuhteet | slice:0:numberOfDisplayed.palvelussuhde">
           <mat-expansion-panel class="palvelussuhde-panel blue-panel">
             <mat-expansion-panel-header>
               <mat-panel-title>
@@ -194,6 +194,11 @@
             </div>
           </div>
         </ng-container>
+        <app-varda-show-more-less *ngIf="tyontekijaKooste.palvelussuhteet"
+                                  [showMoreKey]="i18n.palvelussuhteet_show_more"
+                                  [(numberOfDisplayed)]="numberOfDisplayed.palvelussuhde"
+                                  [numberOfItems]="tyontekijaKooste.palvelussuhteet.length">
+        </app-varda-show-more-less>
       </ng-template>
     </div>
     <div class="tyontekija-section">
@@ -205,7 +210,7 @@
         <div class="varda-text-secondary d-block" *ngIf="taydennyskoulutusList.length === 0">
           {{i18n.katsele_tietoja_tyontekija_no_taydennyskoulutukset | translate}}
         </div>
-        <mat-expansion-panel *ngFor="let taydennyskoulutus of taydennyskoulutusList" class="taydennyskoulutus-panel blue-panel">
+        <mat-expansion-panel *ngFor="let taydennyskoulutus of taydennyskoulutusList | slice:0:numberOfDisplayed.taydennyskoulutus" class="taydennyskoulutus-panel blue-panel">
           <mat-expansion-panel-header>
             <mat-panel-title>
               {{getDateDisplayValue(taydennyskoulutus.suoritus_pvm)}}
@@ -243,6 +248,11 @@
             </table>
           </div>
         </mat-expansion-panel>
+        <app-varda-show-more-less *ngIf="taydennyskoulutusList"
+                                  [showMoreKey]="i18n.taydennyskoulutukset_show_more"
+                                  [(numberOfDisplayed)]="numberOfDisplayed.taydennyskoulutus"
+                                  [numberOfItems]="taydennyskoulutusList.length">
+        </app-varda-show-more-less>
       </ng-template>
     </div>
   </mat-card-content>

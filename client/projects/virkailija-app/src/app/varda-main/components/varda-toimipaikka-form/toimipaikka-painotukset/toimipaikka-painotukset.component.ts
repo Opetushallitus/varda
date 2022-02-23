@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaUtilityService } from 'projects/virkailija-app/src/app/core/services/varda-utility.service';
@@ -8,6 +8,11 @@ import { KielipainotusDTO, ToiminnallinenPainotusDTO } from 'projects/virkailija
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { Observable } from 'rxjs';
 import { CodeDTO, KoodistoDTO, KoodistoEnum, KoodistoSortBy, VardaKoodistoService } from 'varda-shared';
+
+interface NumberOfDisplayed {
+  kielipainotus: number;
+  toiminnallinenpainotus: number;
+}
 
 @Component({
   selector: 'app-toimipaikka-painotukset',
@@ -28,6 +33,8 @@ export class ToimipaikkaPainotuksetComponent implements OnChanges {
   toimintapainotuksetKoodisto$: Observable<KoodistoDTO>;
   addKielipainotusBoolean: boolean;
   addToimintapainotusBoolean: boolean;
+
+  numberOfDisplayed: NumberOfDisplayed = {kielipainotus: 0, toiminnallinenpainotus: 0};
 
   constructor(
     private snackBarService: VardaSnackBarService,

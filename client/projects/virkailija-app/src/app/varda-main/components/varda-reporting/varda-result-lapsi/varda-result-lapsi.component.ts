@@ -21,7 +21,6 @@ export class VardaResultLapsiComponent extends VardaResultAbstractComponent impl
   koodistoEnum = KoodistoEnum;
   lapsiKooste: LapsiKooste = null;
 
-
   constructor(
     private koosteService: VardaKoosteApiService,
     private vardaApiService: VardaApiService,

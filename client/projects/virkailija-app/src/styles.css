@@ -249,6 +249,14 @@ mat-expansion-panel mat-expansion-panel-header {
   margin-bottom: 0;
 }
 
+.mat-expansion-panel .mat-accordion .show-more-container {
+  padding: 0 calc(24px - 0.5em);
+}
+
+.varda-small-text {
+  font-size: .8em;
+}
+
 @media (max-width: 991px) {
   .margin-top-lg {
     margin-top: 1em;
@@ -258,7 +266,7 @@ mat-expansion-panel mat-expansion-panel-header {
 @media (min-width: 768px) {
   .varda-date-range-container {
     max-width: 400px;
-  }    
+  }
 }
 
 @media (max-width: 767px) {

@@ -13,8 +13,8 @@
       <ng-container *ngIf="toimipaikkaAccess?.tyontekijatiedot.tallentaja">
         <mat-panel-description *ngIf="palvelussuhteet.length">
           <button class="varda-text-button" id="add-palvelussuhde"
-                  (keydown.enter)="initPalvelussuhde()"
-                  (click)="initPalvelussuhde()">
+                  (keydown.enter)="initObject()"
+                  (click)="initObject()">
             <mat-icon class="d-none d-md-inline-block" alt="">assignment_outline</mat-icon>
             <mat-icon alt="">add</mat-icon>{{ i18n.palvelussuhteet_lisaa_palvelussuhde | translate }}
           </button>
@@ -41,8 +41,8 @@
           </div>
           <ng-container *ngIf="toimipaikkaAccess?.tyontekijatiedot.tallentaja">
             <button class="varda-text-button" id="add-palvelussuhde-empty"
-                    *ngIf="!addPalvelussuhdeBoolean"
-                    (click)="initPalvelussuhde()">
+                    *ngIf="!addObjectBoolean"
+                    (click)="initObject()">
               <mat-icon alt="">add</mat-icon>{{ i18n.palvelussuhteet_lisaa_palvelussuhde | translate }}
             </button>
           </ng-container>
@@ -54,15 +54,18 @@
                                    [tyontekija]="tyontekija"
                                    [palvelussuhde]="palvelussuhde"
                                    [henkilonTutkinnot]="henkilonTutkinnot"
-                                   (changedPalvelussuhde)="getPalvelussuhteet()"
-                                   (closeEmitter)="closePalvelussuhde($event)"
-                                   *ngFor="let palvelussuhde of palvelussuhteet"></app-varda-palvelussuhde>
-          <app-varda-palvelussuhde *ngIf="addPalvelussuhdeBoolean && toimipaikkaAccess.tyontekijatiedot.tallentaja"
+                                   (changedPalvelussuhde)="getObjects()"
+                                   (closeEmitter)="closeObject($event)"
+                                   *ngFor="let palvelussuhde of palvelussuhteet | slice:0:numberOfDisplayed"></app-varda-palvelussuhde>
+          <app-varda-show-more-less *ngIf="palvelussuhteet" [showMoreKey]="i18n.palvelussuhteet_show_more"
+                                    [(numberOfDisplayed)]="numberOfDisplayed" [numberOfItems]="palvelussuhteet.length">
+          </app-varda-show-more-less>
+          <app-varda-palvelussuhde *ngIf="addObjectBoolean && toimipaikkaAccess.tyontekijatiedot.tallentaja"
                                    [henkilonToimipaikka]="henkilonToimipaikka"
                                    [tyontekija]="tyontekija"
                                    [toimipaikkaAccess]="toimipaikkaAccess"
                                    [henkilonTutkinnot]="henkilonTutkinnot"
-                                   (closeEmitter)="closePalvelussuhde($event, true)"></app-varda-palvelussuhde>
+                                   (closeEmitter)="closeObject($event, true)"></app-varda-palvelussuhde>
         </mat-accordion>
       </ng-container>
     </div>

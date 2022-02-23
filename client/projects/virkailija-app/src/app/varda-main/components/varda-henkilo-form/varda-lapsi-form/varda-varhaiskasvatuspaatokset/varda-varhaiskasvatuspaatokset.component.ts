@@ -6,8 +6,8 @@ import { VardaVakajarjestajaUi, VardaVarhaiskasvatuspaatosDTO } from 'projects/v
 import { LapsiListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-lapsi-dto.model';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
-import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { VardaVarhaiskasvatuspaatosComponent } from './varda-varhaiskasvatuspaatos/varda-varhaiskasvatuspaatos.component';
+import { VardaFormListAbstractComponent } from '../../varda-form-list-abstract.component';
 
 @Component({
   selector: 'app-varda-varhaiskasvatuspaatokset',
@@ -18,23 +18,22 @@ import { VardaVarhaiskasvatuspaatosComponent } from './varda-varhaiskasvatuspaat
     '../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaVarhaiskasvatuspaatoksetComponent implements OnInit {
+export class VardaVarhaiskasvatuspaatoksetComponent extends VardaFormListAbstractComponent implements OnInit {
   @Input() toimipaikkaAccess: UserAccess;
   @Input() lapsi: LapsiListDTO;
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
   @Input() selectedVakajarjestaja: VardaVakajarjestajaUi;
-  @ViewChildren(VardaVarhaiskasvatuspaatosComponent) varhaiskasvatuspaatosElements: QueryList<VardaVarhaiskasvatuspaatosComponent>;
-  i18n = VirkailijaTranslations;
-  expandPanel = true;
+  @ViewChildren(VardaVarhaiskasvatuspaatosComponent) objectElements: QueryList<VardaVarhaiskasvatuspaatosComponent>;
   varhaiskasvatuspaatokset: Array<VardaVarhaiskasvatuspaatosDTO>;
-  addVarhaiskasvatuspaatosBoolean: boolean;
   lapsitiedotTallentaja: boolean;
 
   constructor(
     private lapsiService: VardaLapsiService,
     private modalService: VardaModalService,
     private snackBarService: VardaSnackBarService,
-  ) { }
+  ) {
+    super();
+  }
 
   ngOnInit() {
     this.lapsitiedotTallentaja = this.toimipaikkaAccess.lapsitiedot.tallentaja;
@@ -43,17 +42,13 @@ export class VardaVarhaiskasvatuspaatoksetComponent implements OnInit {
     }
 
     if (this.toimipaikkaAccess.lapsitiedot.katselija) {
-      this.getVarhaiskasvatuspaatokset();
+      this.getObjects();
     } else {
       this.varhaiskasvatuspaatokset = [];
     }
   }
 
-  togglePanel(open: boolean) {
-    this.expandPanel = open;
-  }
-
-  getVarhaiskasvatuspaatokset() {
+  getObjects() {
     this.varhaiskasvatuspaatokset = null;
 
     this.lapsiService.getVarhaiskasvatuspaatokset(this.lapsi.id).subscribe({
@@ -61,28 +56,12 @@ export class VardaVarhaiskasvatuspaatoksetComponent implements OnInit {
         this.varhaiskasvatuspaatokset = palvelussuhdeData;
         if (this.varhaiskasvatuspaatokset.length === 0 && this.lapsitiedotTallentaja) {
           setTimeout(() => {
-            this.initVarhaiskasvatuspaatos();
+            this.initObject();
             this.modalService.setFormValuesChanged(true);
           }, 1000);
         }
       },
       error: err => this.snackBarService.errorWithConsole(this.i18n.varhaiskasvatuspaatokset_fetch_failure, err)
     });
-  }
-
-  initVarhaiskasvatuspaatos() {
-    this.addVarhaiskasvatuspaatosBoolean = true;
-    setTimeout(() => this.togglePanel(true), 0);
-    setTimeout(() => this.varhaiskasvatuspaatosElements.last.element.nativeElement.scrollIntoView({ behavior: 'smooth' }), 100);
-  }
-
-  closeAddVarhaiskasvatuspaatos(refreshSuhteet?: boolean, hideAddVarhaiskasvatuspaatos?: boolean) {
-    if (hideAddVarhaiskasvatuspaatos) {
-      this.addVarhaiskasvatuspaatosBoolean = false;
-    }
-
-    if (refreshSuhteet) {
-      this.getVarhaiskasvatuspaatokset();
-    }
   }
 }

@@ -124,7 +124,7 @@
     <ng-container *ngIf="toimipaikkaKooste.kielipainotukset.length > 0">
       <label class="oph-bold margin-top-large">{{i18n.toimipaikka_kielipainotus_plural | translate}}</label>
       <div class="table-responsive"
-           *ngFor="let kielipainotus of toimipaikkaKooste.kielipainotukset"
+           *ngFor="let kielipainotus of toimipaikkaKooste.kielipainotukset | slice:0:numberOfDisplayed.kielipainotus"
            [class.margin-top]="toimipaikkaKooste.kielipainotukset.indexOf(kielipainotus) !== 0">
         <table class="mat-table" [id]="'toimipaikkaKielipainotus-' + kielipainotus.id">
           <tr class="mat-row" [id]="'toimipaikkaKielipainotusKoodi-' + kielipainotus.id">
@@ -143,12 +143,17 @@
           </tr>
         </table>
       </div>
+      <app-varda-show-more-less *ngIf="toimipaikkaKooste.kielipainotukset"
+                                [showMoreKey]="i18n.painotukset_kielipainotukset_show_more"
+                                [(numberOfDisplayed)]="numberOfDisplayed.kielipainotus"
+                                [numberOfItems]="toimipaikkaKooste.kielipainotukset.length">
+      </app-varda-show-more-less>
     </ng-container>
     <ng-container
       *ngIf="toimipaikkaKooste.toiminnalliset_painotukset.length > 0">
       <label class="oph-bold margin-top-large">{{i18n.toimipaikka_toiminnallinen_painotus_plural | translate}}</label>
       <div class="table-responsive"
-           *ngFor="let toimintapainotus of toimipaikkaKooste.toiminnalliset_painotukset"
+           *ngFor="let toimintapainotus of toimipaikkaKooste.toiminnalliset_painotukset | slice:0:numberOfDisplayed.toiminnallinenpainotus"
            [class.margin-top]="toimipaikkaKooste.toiminnalliset_painotukset.indexOf(toimintapainotus) !== 0">
         <table class="mat-table" [id]="'toimipaikkaToiminnallinenPainotus-' + toimintapainotus.id">
           <tr class="mat-row" [id]="'toimipaikkaToiminnallinenPainotusKoodi-' + toimintapainotus.id">
@@ -167,6 +172,11 @@
           </tr>
         </table>
       </div>
+      <app-varda-show-more-less *ngIf="toimipaikkaKooste.toiminnalliset_painotukset"
+                                [showMoreKey]="i18n.painotukset_toimintapainotukset_show_more"
+                                [(numberOfDisplayed)]="numberOfDisplayed.toiminnallinenpainotus"
+                                [numberOfItems]="toimipaikkaKooste.toiminnalliset_painotukset.length">
+      </app-varda-show-more-less>
     </ng-container>
   </mat-card-content>
 </mat-card>

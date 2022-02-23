@@ -11,8 +11,8 @@
       <ng-container *ngIf="toimipaikkaAccess?.taydennyskoulutustiedot.tallentaja">
         <mat-panel-description *ngIf="taydennyskoulutukset.length">
           <button class="varda-text-button" id="add-taydennyskoulutus"
-                  (keydown.enter)="initTaydennyskoulutus()"
-                  (click)="initTaydennyskoulutus()">
+                  (keydown.enter)="initObject()"
+                  (click)="initObject()">
             <mat-icon class="d-none d-md-inline-block" alt="">assignment_outline</mat-icon>
             <mat-icon alt="">add</mat-icon>{{ i18n.taydennyskoulutukset_lisaa_taydennyskoulutus | translate }}
           </button>
@@ -36,26 +36,29 @@
 
           <ng-container *ngIf="toimipaikkaAccess?.taydennyskoulutustiedot.tallentaja">
             <button class="varda-text-button" id="add-taydennyskoulutus-empty"
-                    *ngIf="!addTaydennyskoulutus"
-                    (click)="initTaydennyskoulutus()">
+                    *ngIf="!addObjectBoolean"
+                    (click)="initObject()">
               <mat-icon alt="">add</mat-icon>{{ i18n.taydennyskoulutukset_lisaa_taydennyskoulutus | translate }}
             </button>
           </ng-container>
         </div>
 
-        <mat-accordion class="">
-          <app-varda-tyontekija-taydennyskoulutus *ngFor="let taydennyskoulutus of taydennyskoulutukset"
+        <mat-accordion>
+          <app-varda-tyontekija-taydennyskoulutus *ngFor="let taydennyskoulutus of taydennyskoulutukset | slice:0:numberOfDisplayed"
                                                   [toimipaikkaAccess]="toimipaikkaAccess"
                                                   [tyontekija]="tyontekija"
                                                   [taydennyskoulutus]="taydennyskoulutus"
                                                   [tehtavanimikkeet]="tehtavanimikkeet"
-                                                  (closeEmitter)="closeAddTaydennyskoulutus($event)">
+                                                  (closeEmitter)="closeObject($event)">
           </app-varda-tyontekija-taydennyskoulutus>
-          <app-varda-tyontekija-taydennyskoulutus *ngIf="addTaydennyskoulutus && toimipaikkaAccess.taydennyskoulutustiedot.tallentaja"
+          <app-varda-show-more-less *ngIf="taydennyskoulutukset" [showMoreKey]="i18n.taydennyskoulutukset_show_more"
+                                    [(numberOfDisplayed)]="numberOfDisplayed" [numberOfItems]="taydennyskoulutukset.length">
+          </app-varda-show-more-less>
+          <app-varda-tyontekija-taydennyskoulutus *ngIf="addObjectBoolean && toimipaikkaAccess.taydennyskoulutustiedot.tallentaja"
                                                   [toimipaikkaAccess]="toimipaikkaAccess"
                                                   [tyontekija]="tyontekija"
                                                   [tehtavanimikkeet]="tehtavanimikkeet"
-                                                  (closeEmitter)="closeAddTaydennyskoulutus($event, true)">
+                                                  (closeEmitter)="closeObject($event, true)">
           </app-varda-tyontekija-taydennyskoulutus>
         </mat-accordion>
       </ng-container>

@@ -66,7 +66,7 @@
           {{i18n.katsele_tietoja_lapsi_no_vakatiedot | translate}}
         </div>
         <div *ngIf="lapsiKooste.varhaiskasvatuspaatokset && lapsiKooste.varhaiskasvatuspaatokset.length > 0">
-          <div class="vakatieto-container" *ngFor="let vakapaatos of lapsiKooste.varhaiskasvatuspaatokset">
+          <div class="vakatieto-container" *ngFor="let vakapaatos of lapsiKooste.varhaiskasvatuspaatokset | slice:0:numberOfDisplayed.vakapaatos">
             <mat-expansion-panel class="vakapaatos-panel blue-panel">
               <mat-expansion-panel-header class="toimipaikan-lapset-header">
                 <mat-panel-title>
@@ -155,6 +155,11 @@
               </div>
             </div>
           </div>
+          <app-varda-show-more-less *ngIf="lapsiKooste.varhaiskasvatuspaatokset"
+                                    [showMoreKey]="i18n.varhaiskasvatuspaatokset_show_more"
+                                    [(numberOfDisplayed)]="numberOfDisplayed.vakapaatos"
+                                    [numberOfItems]="lapsiKooste.varhaiskasvatuspaatokset.length">
+          </app-varda-show-more-less>
         </div>
       </ng-template>
     </div>
@@ -169,7 +174,7 @@
           {{i18n.katsele_tietoja_lapsi_no_maksutiedot | translate}}
         </div>
         <div *ngIf="lapsiKooste.maksutiedot && lapsiKooste.maksutiedot.length > 0">
-          <div *ngFor="let maksutieto of lapsiKooste.maksutiedot">
+          <div *ngFor="let maksutieto of lapsiKooste.maksutiedot | slice:0:numberOfDisplayed.maksutieto">
             <mat-expansion-panel class="maksutieto-panel blue-panel">
               <mat-expansion-panel-header class="toimipaikan-lapset-header">
                 <mat-panel-title>
@@ -236,6 +241,11 @@
               </div>
             </mat-expansion-panel>
           </div>
+          <app-varda-show-more-less *ngIf="lapsiKooste.maksutiedot"
+                                    [showMoreKey]="i18n.maksutiedot_show_more"
+                                    [(numberOfDisplayed)]="numberOfDisplayed.maksutieto"
+                                    [numberOfItems]="lapsiKooste.maksutiedot.length">
+          </app-varda-show-more-less>
         </div>
       </ng-template>
     </div>

@@ -1,5 +1,4 @@
 <mat-expansion-panel class="painotukset kielipainotukset"
-                     [hideToggle]="true"
                      [expanded]="true">
   <mat-expansion-panel-header>
     <legend>{{ i18n.painotukset_kielipainotukset | translate }}</legend>
@@ -8,7 +7,7 @@
   <div *ngIf="!kielipainotukset?.length"
        class="no-results">{{ i18n.painotukset_ei_kielipainotuksia | translate }}</div>
   <mat-accordion>
-    <app-kielipainotus *ngFor="let kielipainotus of kielipainotukset"
+    <app-kielipainotus *ngFor="let kielipainotus of kielipainotukset | slice:0:numberOfDisplayed.kielipainotus"
                        [kielikoodisto]="kielikoodisto"
                        [minStartDate]="minStartDate"
                        [maxEndDate]="maxEndDate"
@@ -16,7 +15,9 @@
                        [painotus]="kielipainotus"
                        (closeEmitter)="closeKielipainotus($event)"
                        [saveAccess]="saveAccess"></app-kielipainotus>
-
+    <app-varda-show-more-less *ngIf="kielipainotukset" [showMoreKey]="i18n.painotukset_kielipainotukset_show_more"
+                              [(numberOfDisplayed)]="numberOfDisplayed.kielipainotus" [numberOfItems]="kielipainotukset.length">
+    </app-varda-show-more-less>
     <app-kielipainotus *ngIf="addKielipainotusBoolean"
                        [kielikoodisto]="kielikoodisto"
                        [minStartDate]="minStartDate"
@@ -35,7 +36,6 @@
 
 
 <mat-expansion-panel class="painotukset kielipainotukset"
-                     [hideToggle]="true"
                      [expanded]="true">
   <mat-expansion-panel-header>
     <legend>{{ i18n.painotukset_toimintapainotukset | translate }}</legend>
@@ -44,7 +44,7 @@
   <div *ngIf="!toimintapainotukset?.length"
        class="no-results">{{ i18n.painotukset_ei_toimintapainotuksia | translate }}</div>
   <mat-accordion>
-    <app-toimintapainotus *ngFor="let toimintapainotus of toimintapainotukset"
+    <app-toimintapainotus *ngFor="let toimintapainotus of toimintapainotukset | slice:0:numberOfDisplayed.toiminnallinenpainotus"
                           [toimintakoodisto]="toimintapainotuksetKoodisto$ | async"
                           [minStartDate]="minStartDate"
                           [maxEndDate]="maxEndDate"
@@ -52,7 +52,9 @@
                           [painotus]="toimintapainotus"
                           (closeEmitter)="closeToimintapainotus($event)"
                           [saveAccess]="isEdit && saveAccess"></app-toimintapainotus>
-
+    <app-varda-show-more-less *ngIf="toimintapainotukset" [showMoreKey]="i18n.painotukset_toimintapainotukset_show_more"
+                              [(numberOfDisplayed)]="numberOfDisplayed.toiminnallinenpainotus" [numberOfItems]="toimintapainotukset.length">
+    </app-varda-show-more-less>
     <app-toimintapainotus *ngIf="addToimintapainotusBoolean"
                           [toimintakoodisto]="toimintapainotuksetKoodisto$ | async"
                           [minStartDate]="minStartDate"

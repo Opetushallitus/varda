@@ -11,6 +11,7 @@ export enum VirkailijaTranslations {
   show = 'show',
   show_more = 'show-more',
   show_less = 'show-less',
+  showing = 'showing',
   hide = 'hide',
   all = 'all',
   search = 'search',
@@ -183,6 +184,7 @@ export enum VirkailijaTranslations {
   varhaiskasvatuspaatokset_ei_oikeuksia = 'varhaiskasvatuspaatokset.ei-oikeuksia',
   varhaiskasvatuspaatokset_ei_varhaiskasvatuspaatoksia = 'varhaiskasvatuspaatokset.ei-varhaiskasvatuspaatoksia',
   varhaiskasvatuspaatokset_fetch_failure = 'varhaiskasvatuspaatokset.fetch-failure',
+  varhaiskasvatuspaatokset_show_more = 'varhaiskasvatuspaatokset.show-more',
 
   varhaiskasvatuspaatos = 'varhaiskasvatuspaatos',
   varhaiskasvatuspaatos_varhaiskasvatussuhteet_varhaiskasvatuspaatoksessa = 'varhaiskasvatuspaatos.varhaiskasvatussuhteet-varhaiskasvatuspaatoksessa',
@@ -253,6 +255,7 @@ export enum VirkailijaTranslations {
   maksutiedot_ei_oikeuksia = 'maksutiedot.ei-oikeuksia',
   maksutiedot_ei_maksutietoja = 'maksutiedot.ei-maksutietoja',
   maksutiedot_fetch_failure = 'maksutiedot.fetch-failure',
+  maksutiedot_show_more = 'maksutiedot.show-more',
 
   maksutieto = 'maksutieto',
   maksutieto_alkaen_PVM = 'maksutieto.maksutieto-alkaen-PVM',
@@ -306,6 +309,7 @@ export enum VirkailijaTranslations {
   palvelussuhteet_ei_oikeuksia = 'palvelussuhteet.ei-oikeuksia',
   palvelussuhteet_ei_palvelussuhteita = 'palvelussuhteet.ei-palvelussuhteita',
   palvelussuhteet_fetch_failure = 'palvelussuhteet.fetch-failure',
+  palvelussuhteet_show_more = 'palvelussuhteet.show-more',
 
   palvelussuhde = 'palvelussuhde',
   palvelussuhde_delete_success = 'palvelussuhde.delete-success',
@@ -425,6 +429,7 @@ export enum VirkailijaTranslations {
   taydennyskoulutukset_osallistujia = 'taydennyskoulutukset.osallistujia',
   taydennyskoulutukset_instruction_tuo_osallistujat_listasta = 'taydennyskoulutukset.instruction.tuo-osallistujat-listasta',
   taydennyskoulutukset_fetch_failure = 'taydennyskoulutukset.fetch-failure',
+  taydennyskoulutukset_show_more = 'taydennyskoulutukset.show-more',
 
   taydennyskoulutus = 'taydennyskoulutus',
   taydennyskoulutus_nimi = 'taydennyskoulutus.nimi',
@@ -670,6 +675,7 @@ export enum VirkailijaTranslations {
   toimipaikka_save_success = 'toimipaikka.save-success',
 
   painotukset_kielipainotukset = 'painotukset.kielipainotukset',
+  painotukset_kielipainotukset_show_more = 'painotukset.kielipainotukset.show-more',
   painotukset_ei_kielipainotuksia = 'painotukset.ei-kielipainotuksia',
   painotukset_lisaa_kielipainotus = 'painotukset.lisaa-kielipainotus',
   painotukset_kielipainotus_koodi = 'painotukset.kielipainotus_koodi',
@@ -691,6 +697,7 @@ export enum VirkailijaTranslations {
   painotukset_instruction_kielipainotukset = 'painotukset.instruction.kielipainotukset',
   painotukset_kielipainotukset_lisaa = 'painotukset.kielipainotukset-lisaa',
   painotukset_toimintapainotukset = 'painotukset.toimintapainotukset',
+  painotukset_toimintapainotukset_show_more = 'painotukset.toimintapainotukset.show-more',
   painotukset_ei_toimintapainotuksia = 'painotukset.ei-toimintapainotuksia',
   painotukset_lisaa_toimintapainotus = 'painotukset.lisaa-toimintapainotus',
   painotukset_toimintapainotus_koodi = 'painotukset_toimintapainotus_koodi',

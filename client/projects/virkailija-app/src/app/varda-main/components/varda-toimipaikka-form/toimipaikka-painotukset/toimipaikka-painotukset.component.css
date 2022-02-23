@@ -1,4 +1,3 @@
-
 .painotukset {
   margin-bottom: 2rem;
 }
@@ -20,4 +19,9 @@
 .save-pending .material-icons {
   color: orange;
   margin-right: 0.5rem;
+}
+
+.painotukset .show-more-container {
+  padding: 0;
+  margin: 1.5em 0 1em 0;
 }

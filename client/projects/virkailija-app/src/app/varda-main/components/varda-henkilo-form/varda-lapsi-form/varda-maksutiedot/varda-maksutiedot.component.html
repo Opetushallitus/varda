@@ -11,8 +11,8 @@
       <ng-container *ngIf="maksutietoOikeus && toimipaikkaAccess?.huoltajatiedot.tallentaja">
         <mat-panel-description *ngIf="maksutiedot.length">
           <button class="varda-text-button" id="add-maksutieto"
-                  (keydown.enter)="initMaksutieto()"
-                  (click)="initMaksutieto()">
+                  (keydown.enter)="initObject()"
+                  (click)="initObject()">
             <mat-icon class="d-none d-md-inline-block" alt="">assignment_outline</mat-icon>
             <mat-icon alt="">add</mat-icon>{{ i18n.maksutiedot_lisaa_maksutieto | translate }}
           </button>
@@ -36,26 +36,29 @@
 
           <ng-container *ngIf="toimipaikkaAccess?.huoltajatiedot.tallentaja">
             <button class="varda-text-button" id="add-maksutieto-empty"
-                    *ngIf="!addMaksutieto"
-                    (click)="initMaksutieto()">
+                    *ngIf="!addObjectBoolean"
+                    (click)="initObject()">
               <mat-icon alt="">add</mat-icon>{{ i18n.maksutiedot_lisaa_maksutieto | translate }}
             </button>
           </ng-container>
         </div>
 
         <mat-accordion class="">
-          <app-varda-maksutieto *ngFor="let maksutieto of maksutiedot"
+          <app-varda-maksutieto *ngFor="let maksutieto of maksutiedot | slice:0:numberOfDisplayed"
                                 [toimipaikkaAccess]="toimipaikkaAccess"
                                 [lapsi]="lapsi"
                                 [yksityinenBoolean]="!selectedVakajarjestaja.kunnallinen_kytkin"
                                 [maksutieto]="maksutieto"
-                                (closeEmitter)="closeAddMaksutieto($event)">
+                                (closeEmitter)="closeObject($event)">
           </app-varda-maksutieto>
-          <app-varda-maksutieto *ngIf="addMaksutieto && toimipaikkaAccess?.huoltajatiedot.tallentaja"
+          <app-varda-show-more-less *ngIf="maksutiedot" [showMoreKey]="i18n.maksutiedot_show_more"
+                                    [(numberOfDisplayed)]="numberOfDisplayed" [numberOfItems]="maksutiedot.length">
+          </app-varda-show-more-less>
+          <app-varda-maksutieto *ngIf="addObjectBoolean && toimipaikkaAccess?.huoltajatiedot.tallentaja"
                                 [toimipaikkaAccess]="toimipaikkaAccess"
                                 [lapsi]="lapsi"
                                 [yksityinenBoolean]="!selectedVakajarjestaja.kunnallinen_kytkin"
-                                (closeEmitter)="closeAddMaksutieto($event, true)">
+                                (closeEmitter)="closeObject($event, true)">
           </app-varda-maksutieto>
         </mat-accordion>
       </ng-container>

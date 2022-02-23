@@ -216,10 +216,6 @@ h3 {
   margin-right: auto;
 }
 
-.varda-small-text {
-  font-size: .8em;
-}
-
 .varda-filter-summary {
   font-weight: normal;
   margin-right: .5em;
@@ -346,6 +342,11 @@ tr.selected-row .mat-cell {
 
 .varda-reporting-card .mat-card-title-group {
   margin-bottom: 0.5em;
+}
+
+.varda-reporting-wrapper .show-more-container {
+  padding: 0;
+  margin: 1.5em 0 1em 0;
 }
 
 @media (max-width: 767px) {
