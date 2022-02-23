@@ -87,7 +87,7 @@ def run_post_migration_tasks(sender, **kwargs):
 def load_dev_testing_data():
     # Note: If you are adding new permissions this might need to be moved to current migration block.
     env_type = os.getenv('VARDA_ENVIRONMENT_TYPE', None)
-    if env_type is None or env_type not in ['env-varda-prod', 'prod']:
+    if env_type is None or env_type != 'env-varda-prod':
         load_testing_data()
 
 
