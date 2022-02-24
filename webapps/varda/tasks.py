@@ -576,9 +576,11 @@ def general_monitoring_task():
     # Check that an API is not systematically browsed through using the page-parameter
     # This task is run every hour so check the last 2 hours
     # Exclude LUOVUTUSPALVELU users
+    # Exclude error-report-x paths
     two_hours_ago = timezone.now() - datetime.timedelta(hours=2)
     page_queryset = (Z5_AuditLog.objects
                      .exclude(user__groups__name__icontains=Z4_CasKayttoOikeudet.LUOVUTUSPALVELU)
+                     .exclude(successful_get_request_path__icontains='error-report-')
                      .filter(time_of_event__gte=two_hours_ago, query_params__icontains='page=')
                      .values('user', 'successful_get_request_path')
                      .annotate(page_number_count=Count(Func(

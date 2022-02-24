@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.38 (24.02.2022)
+- OPHVARDA-2319: Näytä lisää -toiminnallisuus
+
 1.5.37 (11.02.2022)
 - OPHVARDA-2327: Vuositilaston summatasoinen raportti
 
