@@ -90,6 +90,7 @@ class ErrorMessages(enum.Enum):
     TP024 = get_error_dict('TP024', 'Toimipaikka must have paattymis_pvm because VakaJarjestaja is not active.')
     TP025 = get_error_dict('TP025', 'alkamis_pvm must be before or equal to VakaJarjestaja paattymis_pvm.')
     TP026 = get_error_dict('TP026', 'paattymis_pvm must be before or equal to VakaJarjestaja paattymis_pvm.')
+    TP027 = get_error_dict('TP027', 'kasvatusopillinen_jarjestelma_koodi is not active during the time period.')
 
     # ToiminnallinenPainotus errors, prefix: TO
     TO001 = get_error_dict('TO001', 'ToiminnallinenPainotus with this toimintapainotus_koodi already exists for toimipaikka on the given date range.')
@@ -122,6 +123,7 @@ class ErrorMessages(enum.Enum):
     HE014 = get_error_dict('HE014', 'Henkilo with this henkilotunnus already exists.')
     HE015 = get_error_dict('HE015', 'Henkilo with this henkilo_oid already exists.')
     HE016 = get_error_dict('HE016', 'Combination of henkilo_oid and henkilotunnus fields should be unique.')
+    HE017 = get_error_dict('HE017', 'Henkilo was not found from VTJ. Create Henkilo again using correct data.')
 
     # Lapsi errors, prefix: LA
     LA001 = get_error_dict('LA001', 'Error while creating Lapsi.')
@@ -232,6 +234,7 @@ class ErrorMessages(enum.Enum):
     PS006 = get_error_dict('PS006', 'Tyontekija already has 7 overlapping Palvelussuhde on the given date range.')
     PS007 = get_error_dict('PS007', 'paattymis_pvm must be equal to or after 2020-09-01.')
     PS008 = get_error_dict('PS008', 'Tyontekija must have at least one Palvelussuhde.')
+    PS009 = get_error_dict('PS009', 'There must be at least one active Tyoskentelypaikka or PidempiPoissaolo object related to an active Palvelussuhde.')
 
     # Tyoskentelypaikka errors, prefix: TA
     TA001 = get_error_dict('TA001', 'Vakajarjestaja level permissions required for kiertava tyontekija.')

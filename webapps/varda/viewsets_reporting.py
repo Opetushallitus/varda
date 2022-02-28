@@ -5,10 +5,10 @@ from wsgiref.util import FileWrapper
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser, User
-from django.contrib.postgres.aggregates import ArrayAgg, StringAgg
+from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import transaction
-from django.db.models import (Case, CharField, Count, DateField, Exists, F, FloatField, IntegerField, OuterRef, Q,
-                              Subquery, Sum, Value, When)
+from django.db.models import (Case, Count, DateField, Exists, F, FloatField, IntegerField, OuterRef, Q, Subquery, Sum,
+                              Value, When)
 from django.db.models.functions import Cast
 from django.forms.models import model_to_dict
 from django.http import Http404, HttpResponse
@@ -42,7 +42,8 @@ from varda.misc_viewsets import ViewSetValidator
 from varda.models import (KieliPainotus, Lapsi, Maksutieto, Palvelussuhde, PaosOikeus, PaosToiminta,
                           ToiminnallinenPainotus, Toimipaikka, Tyontekija, Tyoskentelypaikka, VakaJarjestaja,
                           Varhaiskasvatuspaatos, Varhaiskasvatussuhde, YearlyReportSummary, Z2_Code,
-                          Z4_CasKayttoOikeudet, Z6_LastRequest, Z6_RequestLog, Z6_RequestSummary, Z8_ExcelReport)
+                          Z2_Koodisto, Z4_CasKayttoOikeudet, Z6_LastRequest, Z6_RequestLog, Z6_RequestSummary,
+                          Z8_ExcelReport)
 from varda.pagination import (ChangeablePageSizePagination, ChangeableReportingPageSizePagination, DateCursorPagination,
                               DateReverseCursorPagination, IdCursorPagination, IdReverseCursorPagination,
                               TkCursorPagination)
@@ -523,12 +524,11 @@ class TiedonsiirtotilastoViewSet(GenericViewSet, ListModelMixin):
 class AbstractErrorReportViewSet(GenericViewSet, ListModelMixin):
     """
     list:
-    Return a list of Lapsi/Tyontekija objects whose data is not completely correct.
-    Rules are defined in get_error_tuples function.
+    Return a list of Lapsi/Tyontekija/Toimipaikka objects that have incomplete data.
+    Rules are defined in get_error_nested_list function.
 
     search=str (nimi/hetu (SHA-256 hash as hexadecimal)/OID)
     """
-    filter_backends = (SearchFilter, )
     pagination_class = ChangeablePageSizePagination
 
     def __init__(self, *args, **kwargs):
@@ -536,37 +536,64 @@ class AbstractErrorReportViewSet(GenericViewSet, ListModelMixin):
         self.vakajarjestaja_oid = None
         self.vakajarjestaja_id = None
 
-    @property
-    def search_fields(self):
-        if self.queryset.model in (Lapsi, Tyontekija,):
-            return ('henkilo__etunimet', 'henkilo__sukunimi', '=henkilo__henkilotunnus_unique_hash',
-                    '=henkilo__henkilo_oid', '=id',)
-        elif self.queryset.model == Toimipaikka:
-            return 'nimi', '=organisaatio_oid', '=id'
-        return ()
+    def get_search_filter(self):
+        """
+        Returns raw SQL to be used in a query:
+        search_filter is used to filter specific objects based on column values
+        search_filter_parameters is used for filtering
+        :return: search_filter, search_parameter_list
+        """
+        search_param = self.request.query_params.get('search', '').lower()
+        search_filter = ''
+        search_parameter_list = []
+        if search_param and self.queryset.model in (Lapsi, Tyontekija,):
+            search_filter = ''' AND (he.etunimet ILIKE CONCAT('%%', %s, '%%') OR
+                                he.sukunimi ILIKE CONCAT('%%', %s, '%%') OR
+                                he.henkilotunnus_unique_hash = %s OR he.henkilo_oid = %s OR '''
+            search_filter += 'la.id::varchar = %s)' if self.queryset.model == Lapsi else 'ty.id::varchar = %s)'
+            search_parameter_list = [search_param] * 5
+        elif search_param and self.queryset.model == Toimipaikka:
+            search_filter = ''' AND (tp.nimi ILIKE CONCAT('%%', %s, '%%') OR tp.organisaatio_oid = %s OR
+                                tp.id::varchar = %s)'''
+            search_parameter_list = [search_param] * 3
+        return search_filter, search_parameter_list
 
-    def get_annotation_for_filter(self, filter_object, id_lookup):
-        return StringAgg(Case(When(filter_object, then=Cast(id_lookup, CharField()))), delimiter=',')
+    def get_sql_content(self, error_list_nested):
+        """
+        Returns raw SQL content to be used in a query:
+        annotation_query is used to annotate specific error situations
+        filter_query is used to filter out errors without any hits
+        parameter_list is a list of parameters for both annotations and filters
+        :param error_list_nested: nested error list from get_errors function
+        :return: annotation_query, filter_query, parameter_list
+        """
+        annotation_list = []
+        filter_list = []
+        parameter_list = []
 
-    def get_annotations(self):
+        for error_list in error_list_nested:
+            error_code = error_list[0]
+            when_filter = error_list[1]
+            filter_parameters = error_list[2]
+            id_lookup = error_list[3]
+
+            base_sql = f"STRING_AGG(CASE WHEN {when_filter} THEN ({id_lookup})::varchar ELSE NULL END, ',')"
+            annotation_list.append(f'{base_sql} AS {error_code.value["error_code"]}')
+            filter_list.append(f'NOT {base_sql} IS NULL')
+            parameter_list += filter_parameters
+
+        annotation_query = ', '.join(annotation_list)
+        filter_query = ' OR '.join(filter_list)
+        return annotation_query, filter_query, parameter_list
+
+    def get_errors(self):
         """
         Desired errors can be filtered with error URL parameter
         (e.g. /api/v1/vakajarjestajat/1/error-report-tyontekijat/?error=TA006)
         """
         error_search_term = self.request.query_params.get('error', None)
-        return {error_key.value['error_code']: error_tuple[0]
-                for error_key, error_tuple in self.get_error_tuples().items()
-                if not error_search_term or error_search_term.lower() in error_key.value['error_code'].lower()}
-
-    def get_include_filter(self, annotations):
-        if not annotations:
-            # No matching annotations found using search, do not return any results
-            return Q(id=None)
-
-        include_filter = Q()
-        for error_name in annotations:
-            include_filter = include_filter | ~Q(**{error_name: None})
-        return include_filter
+        return [error_list for error_list in self.get_error_nested_list()
+                if not error_search_term or error_search_term.lower() in error_list[0].value['error_code'].lower()]
 
     def get_vakajarjestaja_object(self, vakajarjestaja_id):
         vakajarjestaja_obj = get_object_or_404(VakaJarjestaja.objects.all(), pk=vakajarjestaja_id)
@@ -581,14 +608,18 @@ class AbstractErrorReportViewSet(GenericViewSet, ListModelMixin):
         self.verify_permissions()
         return super(AbstractErrorReportViewSet, self).list(request, *args, **kwargs)
 
-    def get_error_tuples(self):
+    def get_error_nested_list(self):
         """
-        Returns a dict of tuples e.g. 'error_key': (error_annotation, model_name)
+        Returns a list of lists containing error related information, e.g.
+        [[error_key, filter_condition, parameters[], id_lookup, model_name]]
         error_key is ErrorMessages enum value, which is used to identify the specific error
-        error_annotation is used in the queryset, model_name is used in the serializer
-        :return: dict of error tuples
+        filter_condition is raw SQL for filtering specific situations
+        parameters[] are used to fill the filter conditions
+        id_lookup is raw SQL path to specific id value
+        model_name is the name of Model for id_lookup
+        :return: list of lists
         """
-        raise NotImplementedError('get_error_tuples')
+        raise NotImplementedError('get_error_nested_list')
 
     def verify_permissions(self):
         """
@@ -632,111 +663,76 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
         if not self.is_vakatiedot_permissions and not self.is_huoltajatiedot_permissions:
             raise Http404()
 
-    def get_error_tuples(self):
+    def get_error_nested_list(self):
         today = datetime.date.today()
         overage_date = today - relativedelta(years=8)
 
-        vakatiedot_error_tuples = {
-            ErrorMessages.VP002: (
-                self.get_annotation_for_filter(
-                    Q(varhaiskasvatuspaatokset__alkamis_pvm__gt=F('varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm')),
-                    'varhaiskasvatuspaatokset__varhaiskasvatussuhteet__id'
-                ),
-                Varhaiskasvatussuhde.__name__.lower()
-            ),
-            ErrorMessages.VP003: (
-                self.get_annotation_for_filter(
-                    Q(varhaiskasvatuspaatokset__paattymis_pvm__lt=F('varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm')),
-                    'varhaiskasvatuspaatokset__varhaiskasvatussuhteet__id'
-                ),
-                Varhaiskasvatussuhde.__name__.lower()
-            ),
-            ErrorMessages.VS012: (
-                self.get_annotation_for_filter(
-                    Q(varhaiskasvatuspaatokset__paattymis_pvm__isnull=False) &
-                    Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__isnull=False) &
-                    Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True),
-                    'varhaiskasvatuspaatokset__varhaiskasvatussuhteet__id'
-                ),
-                Varhaiskasvatussuhde.__name__.lower()
-            ),
-            ErrorMessages.VP012: (
-                self.get_annotation_for_filter(
-                    Q(varhaiskasvatuspaatokset__isnull=True),
-                    'id'
-                ),
-                Lapsi.__name__.lower()
-            ),
-            ErrorMessages.VS014: (
-                self.get_annotation_for_filter(
-                    Q(varhaiskasvatuspaatokset__isnull=False) &
-                    Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__isnull=True),
-                    'varhaiskasvatuspaatokset__id'
-                ),
-                Varhaiskasvatuspaatos.__name__.lower()
-            ),
-            ErrorMessages.VP013: (
-                self.get_annotation_for_filter(
-                    Q(varhaiskasvatuspaatokset__paattymis_pvm__isnull=True) &
-                    Q(henkilo__syntyma_pvm__lt=overage_date),
-                    'varhaiskasvatuspaatokset__id'
-                ),
-                Varhaiskasvatuspaatos.__name__.lower()
-            ),
-            ErrorMessages.VS015: (
-                self.get_annotation_for_filter(
-                    Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__paattymis_pvm__lt=F('varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm')) |
-                    (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__paattymis_pvm__lt=today) &
-                     Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True)),
-                    'varhaiskasvatuspaatokset__varhaiskasvatussuhteet__id'
-                ),
-                Varhaiskasvatussuhde.__name__.lower()
-            )
-        }
+        # [[ErrorMessages, filter condition, parameters[], ID lookup, model name for ID lookup]]
+        vakatiedot_error_nested_list = [
+            [ErrorMessages.VP002, 'vapa.alkamis_pvm > vasu.alkamis_pvm', [], 'vasu.id',
+             Varhaiskasvatussuhde.get_name()],
+            [ErrorMessages.VP003, 'vapa.paattymis_pvm < vasu.paattymis_pvm', [], 'vasu.id',
+             Varhaiskasvatussuhde.get_name()],
+            [ErrorMessages.VS012, '''vapa.paattymis_pvm IS NOT NULL AND vasu.id IS NOT NULL AND
+             vasu.paattymis_pvm IS NULL''', [], 'vasu.id', Varhaiskasvatussuhde.get_name()],
+            [ErrorMessages.VP012, 'vapa.id IS NULL', [], 'la.id', Lapsi.get_name()],
+            [ErrorMessages.VS014, 'vapa.id IS NOT NULL AND vasu.id IS NULL', [], 'vapa.id',
+             Varhaiskasvatuspaatos.get_name()],
+            [ErrorMessages.VP013, 'vapa.paattymis_pvm IS NULL AND he.syntyma_pvm < %s', [overage_date], 'vapa.id',
+             Varhaiskasvatuspaatos.get_name()],
+            [ErrorMessages.VS015, '''tp.paattymis_pvm < vasu.paattymis_pvm OR
+             (tp.paattymis_pvm < %s AND vasu.paattymis_pvm IS NULL)''', [today], 'vasu.id',
+             Varhaiskasvatussuhde.get_name()],
+            [ErrorMessages.HE017, 'he.vtj_yksiloity = FALSE', [], 'la.id', Lapsi.get_name()]
+        ]
 
         # Do not get Maksutieto related errors for Lapsi objects for which vakajarjestaja is paos_organisaatio
-        huoltajatiedot_error_tuples = {
-            # Use Subquery to check that Lapsi is not in a list of Lapsi objects that have active varhaiskasvatuspaatos
-            ErrorMessages.MA015: (
-                self.get_annotation_for_filter(
-                    ~Q(paos_organisaatio=self.vakajarjestaja_id) &
-                    ~Q(id__in=Subquery(
-                        Lapsi.objects.filter(self.get_vakajarjestaja_filter() &
-                                             (Q(varhaiskasvatuspaatokset__paattymis_pvm__isnull=True) |
-                                              Q(varhaiskasvatuspaatokset__paattymis_pvm__gt=today))).values('id'))) &
-                    Q(huoltajuussuhteet__maksutiedot__paattymis_pvm__isnull=True),
-                    'huoltajuussuhteet__maksutiedot__id'
-                ),
-                Maksutieto.__name__.lower()
-            ),
-            ErrorMessages.MA016: (
-                self.get_annotation_for_filter(
-                    ~Q(paos_organisaatio=self.vakajarjestaja_id) &
-                    Q(huoltajuussuhteet__maksutiedot__paattymis_pvm__isnull=True) &
-                    Q(henkilo__syntyma_pvm__lt=overage_date),
-                    'huoltajuussuhteet__maksutiedot__id'
-                ),
-                Maksutieto.__name__.lower()
-            )
-        }
+        # [[ErrorMessages, filter condition, parameters[], ID lookup, model name for ID lookup]]
+        huoltajatiedot_error_nested_list = [
+            [ErrorMessages.MA015, '''la.paos_organisaatio_id IS DISTINCT FROM %s AND ma.paattymis_pvm IS NULL AND
+             NOT EXISTS(SELECT id FROM varda_varhaiskasvatuspaatos WHERE lapsi_id = la.id AND
+              alkamis_pvm <= %s AND (paattymis_pvm IS NULL OR paattymis_pvm >= %s))''',
+             [self.vakajarjestaja_id, today, today], 'ma.id', Maksutieto.get_name()],
+            [ErrorMessages.MA016, '''la.paos_organisaatio_id IS DISTINCT FROM %s AND ma.paattymis_pvm IS NULL AND
+             he.syntyma_pvm < %s''', [self.vakajarjestaja_id, overage_date], 'ma.id', Maksutieto.get_name()]
+        ]
 
-        vakatiedot_dict = vakatiedot_error_tuples if self.is_vakatiedot_permissions else {}
-        huoltajatiedot_dict = huoltajatiedot_error_tuples if self.is_huoltajatiedot_permissions else {}
-        return {**vakatiedot_dict, **huoltajatiedot_dict}
-
-    def get_vakajarjestaja_filter(self):
-        vakatoimija_filter = Q(vakatoimija=self.vakajarjestaja_id)
-        paos_filter = Q(oma_organisaatio=self.vakajarjestaja_id) | Q(paos_organisaatio=self.vakajarjestaja_id)
-
-        return vakatoimija_filter | paos_filter
+        vakatiedot_list = vakatiedot_error_nested_list if self.is_vakatiedot_permissions else []
+        huoltajatiedot_list = huoltajatiedot_error_nested_list if self.is_huoltajatiedot_permissions else []
+        return [*vakatiedot_list, *huoltajatiedot_list]
 
     def get_queryset(self):
-        queryset = Lapsi.objects.filter(self.get_vakajarjestaja_filter())
-        queryset = self.filter_queryset(queryset)
+        errors = self.get_errors()
+        annotation_query, filter_query, parameter_list = self.get_sql_content(errors)
+        search_filter, search_parameter_list = self.get_search_filter()
 
-        annotations = self.get_annotations()
+        # If user has partial permissions, only join required tables
+        vakatiedot_join = '''
+            LEFT JOIN varda_varhaiskasvatuspaatos vapa ON vapa.lapsi_id = la.id
+            LEFT JOIN varda_varhaiskasvatussuhde vasu ON vasu.varhaiskasvatuspaatos_id = vapa.id
+            LEFT JOIN varda_toimipaikka tp ON tp.id = vasu.toimipaikka_id
+        ''' if self.is_vakatiedot_permissions else ''
+        huoltajatiedot_join = '''
+            LEFT JOIN varda_huoltajuussuhde hu ON hu.lapsi_id = la.id
+            LEFT JOIN varda_maksutietohuoltajuussuhde mahu ON mahu.huoltajuussuhde_id = hu.id
+            LEFT JOIN varda_maksutieto ma ON ma.id = mahu.maksutieto_id
+        ''' if self.is_huoltajatiedot_permissions else ''
+        join_clause = f'{vakatiedot_join} {huoltajatiedot_join}'
 
-        return queryset.annotate(**annotations).filter(self.get_include_filter(annotations)).order_by('-muutos_pvm', 'henkilo__sukunimi')
+        raw_query = f'''
+            SELECT la.*, {annotation_query}
+            FROM varda_lapsi la
+            LEFT JOIN varda_henkilo he ON he.id = la.henkilo_id
+            {join_clause}
+            WHERE (la.vakatoimija_id = %s OR la.oma_organisaatio_id = %s OR la.paos_organisaatio_id = %s)
+                  {search_filter}
+            GROUP BY la.id, he.sukunimi
+            HAVING {filter_query}
+            ORDER BY la.muutos_pvm DESC, he.sukunimi
+        '''
+
+        return Lapsi.objects.raw(raw_query, [*parameter_list, self.vakajarjestaja_id, self.vakajarjestaja_id,
+                                             self.vakajarjestaja_id, *search_parameter_list, *parameter_list])
 
 
 @auditlogclass
@@ -758,72 +754,53 @@ class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
         if not user.is_superuser and not user_group_qs.exists():
             raise Http404()
 
-    def get_error_tuples(self):
+    def get_error_nested_list(self):
         today = datetime.date.today()
-        return {
-            ErrorMessages.PS008: (
-                self.get_annotation_for_filter(
-                    Q(henkilo__tutkinnot__vakajarjestaja=F('vakajarjestaja')) & Q(palvelussuhteet__isnull=True),
-                    'id'
-                ),
-                Tyontekija.__name__.lower()
-            ),
-            ErrorMessages.TA014: (
-                self.get_annotation_for_filter(
-                    Q(palvelussuhteet__isnull=False) & Q(palvelussuhteet__tyoskentelypaikat__isnull=True),
-                    'palvelussuhteet__id'
-                ),
-                Palvelussuhde.__name__.lower()
-            ),
-            ErrorMessages.TU004: (
-                self.get_annotation_for_filter(
-                    Q(id__in=Subquery(
-                        Tyontekija.objects.filter(vakajarjestaja=self.vakajarjestaja_id)
-                        .exclude(henkilo__tutkinnot__vakajarjestaja=self.vakajarjestaja_id).values('id'))),
-                    'id'
-                ),
-                Tyontekija.__name__.lower()
-            ),
-            ErrorMessages.TA008: (
-                self.get_annotation_for_filter(
-                    Q(palvelussuhteet__alkamis_pvm__gt=F('palvelussuhteet__tyoskentelypaikat__alkamis_pvm')),
-                    'palvelussuhteet__tyoskentelypaikat__id'
-                ),
-                Tyoskentelypaikka.__name__.lower()
-            ),
-            ErrorMessages.TA006: (
-                self.get_annotation_for_filter(
-                    Q(palvelussuhteet__paattymis_pvm__lt=F('palvelussuhteet__tyoskentelypaikat__paattymis_pvm')),
-                    'palvelussuhteet__tyoskentelypaikat__id'
-                ),
-                Tyoskentelypaikka.__name__.lower()
-            ),
-            ErrorMessages.TA013: (
-                self.get_annotation_for_filter(
-                    Q(palvelussuhteet__paattymis_pvm__isnull=False) &
-                    Q(palvelussuhteet__tyoskentelypaikat__isnull=False) &
-                    Q(palvelussuhteet__tyoskentelypaikat__paattymis_pvm__isnull=True),
-                    'palvelussuhteet__tyoskentelypaikat__id'
-                ),
-                Tyoskentelypaikka.__name__.lower()
-            ),
-            ErrorMessages.TA016: (
-                self.get_annotation_for_filter(
-                    Q(palvelussuhteet__tyoskentelypaikat__toimipaikka__paattymis_pvm__lt=F('palvelussuhteet__tyoskentelypaikat__paattymis_pvm')) |
-                    (Q(palvelussuhteet__tyoskentelypaikat__toimipaikka__paattymis_pvm__lt=today) &
-                     Q(palvelussuhteet__tyoskentelypaikat__paattymis_pvm__isnull=True)),
-                    'palvelussuhteet__tyoskentelypaikat__id'
-                ),
-                Tyoskentelypaikka.__name__.lower()
-            )
-        }
+
+        # [[ErrorMessages, filter condition, parameters[], ID lookup, model name for ID lookup]]
+        return [
+            [ErrorMessages.PS008, 'tu.id IS NOT NULL AND pasu.id IS NULL', [], 'ty.id', Tyontekija.get_name()],
+            [ErrorMessages.TA014, 'pasu.id IS NOT NULL AND typa.id IS NULL', [], 'pasu.id', Palvelussuhde.get_name()],
+            [ErrorMessages.TU004, 'tu.id IS NULL', [], 'ty.id', Tyontekija.get_name()],
+            [ErrorMessages.TA008, 'pasu.alkamis_pvm > typa.alkamis_pvm', [], 'typa.id', Tyoskentelypaikka.get_name()],
+            [ErrorMessages.TA006, 'pasu.paattymis_pvm < typa.paattymis_pvm', [], 'typa.id', Tyoskentelypaikka.get_name()],
+            [ErrorMessages.TA013, '''pasu.paattymis_pvm IS NOT NULL AND typa.id IS NOT NULL AND
+             typa.paattymis_pvm IS NULL''', [], 'typa.id', Tyoskentelypaikka.get_name()],
+            [ErrorMessages.TA016, '''tp.paattymis_pvm < typa.paattymis_pvm OR
+             (tp.paattymis_pvm < %s AND typa.paattymis_pvm IS NULL)''', [today], 'typa.id',
+             Tyoskentelypaikka.get_name()],
+            [ErrorMessages.HE017, 'he.vtj_yksiloity = FALSE', [], 'ty.id', Tyontekija.get_name()],
+            [ErrorMessages.PS009, '''pasu.alkamis_pvm <= %s AND
+             (pasu.paattymis_pvm IS NULL OR pasu.paattymis_pvm >= %s) AND typa.id IS NOT NULL AND
+             NOT EXISTS(SELECT id FROM varda_tyoskentelypaikka WHERE palvelussuhde_id = pasu.id AND
+              alkamis_pvm <= %s AND (paattymis_pvm IS NULL OR paattymis_pvm >= %s)) AND
+             NOT EXISTS(SELECT id FROM varda_pidempipoissaolo WHERE palvelussuhde_id = pasu.id AND
+              alkamis_pvm <= %s AND (paattymis_pvm IS NULL OR paattymis_pvm >= %s))''',
+             [today, today, today, today, today, today], 'pasu.id', Palvelussuhde.get_name()]
+        ]
 
     def get_queryset(self):
-        queryset = Tyontekija.objects.filter(vakajarjestaja=self.vakajarjestaja_id)
-        queryset = self.filter_queryset(queryset)
+        errors = self.get_errors()
+        annotation_query, filter_query, parameter_list = self.get_sql_content(errors)
+        search_filter, search_parameter_list = self.get_search_filter()
 
-        annotations = self.get_annotations()
-        return queryset.annotate(**annotations).filter(self.get_include_filter(annotations)).order_by('-muutos_pvm', 'henkilo__sukunimi')
+        raw_query = f'''
+            SELECT ty.*, {annotation_query}
+            FROM varda_tyontekija ty
+            LEFT JOIN varda_henkilo he ON he.id = ty.henkilo_id
+            LEFT JOIN varda_palvelussuhde pasu ON pasu.tyontekija_id = ty.id
+            LEFT JOIN varda_tyoskentelypaikka typa ON typa.palvelussuhde_id = pasu.id
+            LEFT JOIN varda_toimipaikka tp ON tp.id = typa.toimipaikka_id
+            LEFT JOIN varda_tutkinto tu ON tu.henkilo_id = ty.henkilo_id AND tu.vakajarjestaja_id = ty.vakajarjestaja_id
+            WHERE ty.vakajarjestaja_id = %s
+                  {search_filter}
+            GROUP BY ty.id, he.sukunimi
+            HAVING {filter_query}
+            ORDER BY ty.muutos_pvm DESC, he.sukunimi
+        '''
+
+        return Tyontekija.objects.raw(raw_query, [*parameter_list, self.vakajarjestaja_id, *search_parameter_list,
+                                                  *parameter_list])
 
 
 @auditlogclass
@@ -855,114 +832,88 @@ class ErrorReportToimipaikatViewSet(AbstractErrorReportViewSet):
         if not self.is_vakatiedot_permissions and not self.is_tyontekijatiedot_permissions:
             raise Http404()
 
-    def get_error_tuples(self):
+    def get_error_nested_list(self):
         today = datetime.date.today()
 
-        vakatiedot_error_tuples = {
-            ErrorMessages.TO002: (
-                self.get_annotation_for_filter(
-                    Q(paattymis_pvm__lt=F('toiminnallisetpainotukset__paattymis_pvm')),
-                    'toiminnallisetpainotukset__id'
-                ),
-                ToiminnallinenPainotus.__name__.lower()
-            ),
-            ErrorMessages.TO003: (
-                self.get_annotation_for_filter(
-                    Q(paattymis_pvm__isnull=False) &
-                    Q(toiminnallisetpainotukset__isnull=False) &
-                    Q(toiminnallisetpainotukset__paattymis_pvm__isnull=True),
-                    'toiminnallisetpainotukset__id'
-                ),
-                ToiminnallinenPainotus.__name__.lower()
-            ),
-            ErrorMessages.TO004: (
-                self.get_annotation_for_filter(Q(toiminnallinenpainotus_kytkin=False) &
-                                               Q(toiminnallisetpainotukset__isnull=False),
-                                               'id'),
-                Toimipaikka.__name__.lower()
-            ),
-            ErrorMessages.TO005: (
-                self.get_annotation_for_filter(Q(toiminnallinenpainotus_kytkin=True) &
-                                               Q(toiminnallisetpainotukset__isnull=True),
-                                               'id'),
-                Toimipaikka.__name__.lower()
-            ),
-            ErrorMessages.KP002: (
-                self.get_annotation_for_filter(
-                    Q(paattymis_pvm__lt=F('kielipainotukset__paattymis_pvm')),
-                    'kielipainotukset__id'
-                ),
-                KieliPainotus.__name__.lower()
-            ),
-            ErrorMessages.KP003: (
-                self.get_annotation_for_filter(
-                    Q(paattymis_pvm__isnull=False) &
-                    Q(kielipainotukset__isnull=False) &
-                    Q(kielipainotukset__paattymis_pvm__isnull=True),
-                    'kielipainotukset__id'
-                ),
-                KieliPainotus.__name__.lower()
-            ),
-            ErrorMessages.KP004: (
-                self.get_annotation_for_filter(Q(kielipainotus_kytkin=False) &
-                                               Q(kielipainotukset__isnull=False),
-                                               'id'),
-                Toimipaikka.__name__.lower()
-            ),
-            ErrorMessages.KP005: (
-                self.get_annotation_for_filter(Q(kielipainotus_kytkin=True) &
-                                               Q(kielipainotukset__isnull=True),
-                                               'id'),
-                Toimipaikka.__name__.lower()
-            ),
-            ErrorMessages.TP020: (
-                self.get_annotation_for_filter(Q(varhaiskasvatuspaikat=0) &
-                                               Q(varhaiskasvatussuhteet__alkamis_pvm__lte=today) &
-                                               (Q(varhaiskasvatussuhteet__paattymis_pvm__gte=today) |
-                                                Q(varhaiskasvatussuhteet__paattymis_pvm__isnull=True)),
-                                               'id'),
-                Toimipaikka.__name__.lower()
-            ),
-            ErrorMessages.TP021: (
-                self.get_annotation_for_filter(Q(paattymis_pvm__lt=F('varhaiskasvatussuhteet__paattymis_pvm')) |
-                                               (Q(paattymis_pvm__lt=today) &
-                                                Q(varhaiskasvatussuhteet__isnull=False) &
-                                                Q(varhaiskasvatussuhteet__paattymis_pvm__isnull=True)),
-                                               'id'),
-                Toimipaikka.__name__.lower()
-            )
-        }
+        # [[ErrorMessages, filter condition, parameters[], ID lookup, model name for ID lookup]]
+        vakatiedot_error_nested_list = [
+            [ErrorMessages.TO002, 'tp.paattymis_pvm < topa.paattymis_pvm', [], 'topa.id',
+             ToiminnallinenPainotus.get_name()],
+            [ErrorMessages.TO003, 'tp.paattymis_pvm IS NOT NULL AND topa.id IS NOT NULL AND topa.paattymis_pvm IS NULL',
+             [], 'topa.id', ToiminnallinenPainotus.get_name()],
+            [ErrorMessages.TO004, 'tp.toiminnallinenpainotus_kytkin = FALSE AND topa.id IS NOT NULL', [], 'tp.id',
+             Toimipaikka.get_name()],
+            [ErrorMessages.TO005, 'tp.toiminnallinenpainotus_kytkin = TRUE AND topa.id IS NULL', [], 'tp.id',
+             Toimipaikka.get_name()],
+            [ErrorMessages.KP002, 'tp.paattymis_pvm < kipa.paattymis_pvm', [], 'kipa.id', KieliPainotus.get_name()],
+            [ErrorMessages.KP003, 'tp.paattymis_pvm IS NOT NULL AND kipa.id IS NOT NULL AND kipa.paattymis_pvm IS NULL',
+             [], 'kipa.id', KieliPainotus.get_name()],
+            [ErrorMessages.KP004, 'tp.kielipainotus_kytkin = FALSE AND kipa.id IS NOT NULL', [], 'tp.id',
+             Toimipaikka.get_name()],
+            [ErrorMessages.KP005, 'tp.kielipainotus_kytkin = TRUE AND kipa.id IS NULL', [], 'tp.id',
+             Toimipaikka.get_name()],
+            [ErrorMessages.TP020, '''tp.varhaiskasvatuspaikat = 0 AND vasu.alkamis_pvm <= %s AND
+             (vasu.paattymis_pvm IS NULL OR vasu.paattymis_pvm >= %s)''', [today, today], 'tp.id',
+             Toimipaikka.get_name()],
+            [ErrorMessages.TP021, '''tp.paattymis_pvm < vasu.paattymis_pvm OR
+             (tp.paattymis_pvm < %s AND vasu.id IS NOT NULL AND vasu.paattymis_pvm IS NULL)''', [today], 'tp.id',
+             Toimipaikka.get_name()],
+            [ErrorMessages.TP027, '''tp.alkamis_pvm > kj_code.paattymis_pvm OR
+             tp.paattymis_pvm > kj_code.paattymis_pvm OR (tp.paattymis_pvm IS NULL AND kj_code.paattymis_pvm < %s)''',
+             [today], 'tp.id', Toimipaikka.get_name()]
+        ]
 
-        tyontekijatiedot_error_tuples = {
-            ErrorMessages.TP022: (
-                self.get_annotation_for_filter(Q(paattymis_pvm__lt=F('tyoskentelypaikat__paattymis_pvm')) |
-                                               (Q(paattymis_pvm__lt=today) &
-                                                Q(tyoskentelypaikat__isnull=False) &
-                                                Q(tyoskentelypaikat__paattymis_pvm__isnull=True)),
-                                               'id'),
-                Toimipaikka.__name__.lower()
-            ),
-            ErrorMessages.TP023: (
-                self.get_annotation_for_filter(Q(tyoskentelypaikat__isnull=True) &
-                                               Q(alkamis_pvm__lte=today) &
-                                               (Q(paattymis_pvm__gte=today) | Q(paattymis_pvm__isnull=True)),
-                                               'id'),
-                Toimipaikka.__name__.lower()
-            )
-        }
+        # [[ErrorMessages, filter condition, parameters[], ID lookup, model name for ID lookup]]
+        tyontekijatiedot_error_nested_list = [
+            [ErrorMessages.TP022, '''tp.paattymis_pvm < typa.paattymis_pvm OR
+             (tp.paattymis_pvm < %s AND typa.id IS NOT NULL AND typa.paattymis_pvm IS NULL)''', [today], 'tp.id',
+             Toimipaikka.get_name()],
+            [ErrorMessages.TP023, '''typa.id IS NULL AND tp.varhaiskasvatuspaikat != 0 AND tp.alkamis_pvm <= %s AND
+             (tp.paattymis_pvm IS NULL OR tp.paattymis_pvm >= %s)''', [today, today], 'tp.id', Toimipaikka.get_name()]
+        ]
 
-        vakatiedot_dict = vakatiedot_error_tuples if self.is_vakatiedot_permissions else {}
-        tyontekijatiedot_dict = (tyontekijatiedot_error_tuples
+        vakatiedot_list = vakatiedot_error_nested_list if self.is_vakatiedot_permissions else []
+        tyontekijatiedot_list = (tyontekijatiedot_error_nested_list
                                  if self.is_vakatiedot_permissions or self.is_tyontekijatiedot_permissions
-                                 else {})
-        return {**vakatiedot_dict, **tyontekijatiedot_dict}
+                                 else [])
+        return [*vakatiedot_list, *tyontekijatiedot_list]
 
     def get_queryset(self):
-        queryset = Toimipaikka.objects.filter(vakajarjestaja=self.vakajarjestaja_id)
-        queryset = self.filter_queryset(queryset)
+        errors = self.get_errors()
+        annotation_query, filter_query, parameter_list = self.get_sql_content(errors)
+        search_filter, search_parameter_list = self.get_search_filter()
 
-        annotations = self.get_annotations()
-        return queryset.annotate(**annotations).filter(self.get_include_filter(annotations)).order_by('-muutos_pvm', 'nimi')
+        # If user has partial permissions, only join required tables
+        vakatiedot_join = '''
+            LEFT JOIN varda_toiminnallinenpainotus topa ON topa.toimipaikka_id = tp.id
+            LEFT JOIN varda_kielipainotus kipa ON kipa.toimipaikka_id = tp.id
+            LEFT JOIN varda_varhaiskasvatussuhde vasu ON vasu.toimipaikka_id = tp.id
+            LEFT JOIN varda_z2_code kj_code ON kj_code.koodisto_id = %s AND
+                LOWER(kj_code.code_value) = LOWER(tp.kasvatusopillinen_jarjestelma_koodi)
+        ''' if self.is_vakatiedot_permissions else ''
+        tyontekijatiedot_join = '''
+            LEFT JOIN varda_tyoskentelypaikka typa ON typa.toimipaikka_id = tp.id
+        ''' if self.is_vakatiedot_permissions or self.is_tyontekijatiedot_permissions else ''
+        join_clause = f'{vakatiedot_join} {tyontekijatiedot_join}'
+
+        kj_koodisto_id = getattr(Z2_Koodisto.objects
+                                 .filter(name=Koodistot.kasvatusopillinen_jarjestelma_koodit.value)
+                                 .first(), 'id', None)
+        join_parameter_list = [kj_koodisto_id] if self.is_vakatiedot_permissions else []
+
+        raw_query = f'''
+            SELECT tp.*, {annotation_query}
+            FROM varda_toimipaikka tp
+            {join_clause}
+            WHERE tp.vakajarjestaja_id = %s
+                  {search_filter}
+            GROUP BY tp.id
+            HAVING {filter_query}
+            ORDER BY tp.muutos_pvm DESC, tp.nimi
+        '''
+
+        return Toimipaikka.objects.raw(raw_query, [*parameter_list, *join_parameter_list, self.vakajarjestaja_id,
+                                                   *search_parameter_list, *parameter_list])
 
 
 @auditlogclass

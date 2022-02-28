@@ -722,6 +722,7 @@ def create_henkilot():
         katuosoite='Keilaranta 14',
         postinumero='02101',
         postitoimipaikka='Espoo',
+        vtj_yksiloity=True,
         changed_by=tester_user
     )
 
@@ -741,6 +742,7 @@ def create_henkilot():
         katuosoite='Torikatu 11 as 1',
         postinumero='53100',
         postitoimipaikka='Lappeenranta',
+        vtj_yksiloity=True,
         changed_by=tester_user
     )
 
@@ -760,6 +762,7 @@ def create_henkilot():
         katuosoite='Helsinkitie 1',
         postinumero='00109',
         postitoimipaikka='Helsinki',
+        vtj_yksiloity=True,
         changed_by=tester_user
     )
 
@@ -779,6 +782,7 @@ def create_henkilot():
         katuosoite='Torikatu 11 as 1',
         postinumero='53100',
         postitoimipaikka='Lappeenranta',
+        vtj_yksiloity=True,
         changed_by=tester_user
     )
 
@@ -798,6 +802,7 @@ def create_henkilot():
         katuosoite='Torikatu 11 as 1',
         postinumero='53100',
         postitoimipaikka='Lappeenranta',
+        vtj_yksiloity=True,
         changed_by=tester_user
     )
 
@@ -817,6 +822,7 @@ def create_henkilot():
         katuosoite='Mannertie 5',
         postinumero='02100',
         postitoimipaikka='Espoo',
+        vtj_yksiloity=True,
         changed_by=tester_user
     )
 
@@ -836,6 +842,7 @@ def create_henkilot():
         katuosoite='Keilaranta 14',
         postinumero='02101',
         postitoimipaikka='Espoo',
+        vtj_yksiloity=True,
         changed_by=tester2_user
     )
 
@@ -855,6 +862,7 @@ def create_henkilot():
         katuosoite='Keilaranta 14',
         postinumero='02101',
         postitoimipaikka='Espoo',
+        vtj_yksiloity=True,
         changed_by=tester2_user
     )
 
@@ -874,6 +882,7 @@ def create_henkilot():
         katuosoite='Keilaranta 14',
         postinumero='02101',
         postitoimipaikka='Espoo',
+        vtj_yksiloity=True,
         changed_by=tester2_user
     )
 
@@ -892,6 +901,7 @@ def create_henkilot():
         katuosoite='Keilaranta 14',
         postinumero='02101',
         postitoimipaikka='Espoo',
+        vtj_yksiloity=True,
         changed_by=tester2_user
     )
 
@@ -911,6 +921,7 @@ def create_henkilot():
         katuosoite='Koivukuja 14',
         postinumero='02101',
         postitoimipaikka='Espoo',
+        vtj_yksiloity=True,
         changed_by=tester2_user
     )
 
@@ -930,6 +941,7 @@ def create_henkilot():
         katuosoite='Koivukuja 14',
         postinumero='02101',
         postitoimipaikka='Espoo',
+        vtj_yksiloity=True,
         changed_by=tester2_user
     )
 
@@ -949,6 +961,7 @@ def create_henkilot():
         katuosoite='Kannistokatu 14',
         postinumero='02101',
         postitoimipaikka='Espoo',
+        vtj_yksiloity=True,
         changed_by=tester2_user
     )
 
@@ -968,6 +981,7 @@ def create_henkilot():
         katuosoite='Kannistokatu 14',
         postinumero='02101',
         postitoimipaikka='Espoo',
+        vtj_yksiloity=True,
         changed_by=tester2_user
     )
 
@@ -987,6 +1001,7 @@ def create_henkilot():
         katuosoite='Koivukuja 4',
         postinumero='01230',
         postitoimipaikka='Vantaa',
+        vtj_yksiloity=True,
         changed_by=tester_user
     )
 
@@ -1006,6 +1021,7 @@ def create_henkilot():
         katuosoite='Koivukuja 4',
         postinumero='01230',
         postitoimipaikka='Vantaa',
+        vtj_yksiloity=True,
         changed_by=tester_user
     )
 
@@ -1018,6 +1034,7 @@ def create_henkilot():
         kutsumanimi='Aatu',
         sukunimi='Uraputki',
         syntyma_pvm='2000-04-02',
+        vtj_yksiloity=True,
         changed_by=tester_user
     )
 
@@ -1030,6 +1047,7 @@ def create_henkilot():
         sukunimi='Uraputki',
         syntyma_pvm='2000-04-02',
         henkilo_oid='1.2.246.562.24.2431884920042',
+        vtj_yksiloity=True,
         changed_by=tester2_user
     )
 
@@ -1042,6 +1060,7 @@ def create_henkilot():
         sukunimi='Uraputki',
         syntyma_pvm='2000-04-02',
         henkilo_oid='1.2.246.562.24.2431884920043',
+        vtj_yksiloity=True,
         changed_by=tester_user
     )
 
@@ -1054,6 +1073,7 @@ def create_henkilot():
         kutsumanimi='Daniella',
         sukunimi='Uraputki',
         syntyma_pvm='2000-04-02',
+        vtj_yksiloity=True,
         changed_by=tester_user
     )
 
@@ -1066,6 +1086,7 @@ def create_henkilot():
         kutsumanimi='Döner',
         sukunimi='Kebab',
         syntyma_pvm='2000-07-21',
+        vtj_yksiloity=True,
         changed_by=tester_user
     )
 
@@ -1085,6 +1106,7 @@ def create_henkilot():
         katuosoite='Mikontie 15',
         postinumero='12345',
         postitoimipaikka='Espoo',
+        vtj_yksiloity=True,
         changed_by=tester_user
     )
 
@@ -1104,6 +1126,7 @@ def create_henkilot():
         katuosoite='Mikontie 15',
         postinumero='12345',
         postitoimipaikka='Espoo',
+        vtj_yksiloity=True,
         changed_by=tester_user
     )
 
@@ -1123,6 +1146,7 @@ def create_henkilot():
         katuosoite='Kalliokatu 28 B 2',
         postinumero='12345',
         postitoimipaikka='Testilä',
+        vtj_yksiloity=True,
         changed_by=tester10_user
     )
 
@@ -1142,6 +1166,7 @@ def create_henkilot():
         katuosoite='Kalliotie 2 A',
         postinumero='12345',
         postitoimipaikka='Testilä',
+        vtj_yksiloity=True,
         changed_by=tester10_user
     )
 
@@ -1161,6 +1186,7 @@ def create_henkilot():
         katuosoite='Kallioväylä 3',
         postinumero='12345',
         postitoimipaikka='Testilä',
+        vtj_yksiloity=True,
         changed_by=tester10_user
     )
 
@@ -1180,6 +1206,7 @@ def create_henkilot():
         katuosoite='Lintukuja 4 A 13',
         postinumero='12345',
         postitoimipaikka='Testilä',
+        vtj_yksiloity=True,
         changed_by=tester11_user
     )
 
@@ -1199,6 +1226,7 @@ def create_henkilot():
         katuosoite='Taavintie 4 C 1',
         postinumero='12345',
         postitoimipaikka='Testilä',
+        vtj_yksiloity=True,
         changed_by=tester11_user
     )
 
@@ -1218,6 +1246,7 @@ def create_henkilot():
         katuosoite='Kalliokatu 28 B 2',
         postinumero='12345',
         postitoimipaikka='Testilä',
+        vtj_yksiloity=True,
         changed_by=tester10_user
     )
 
@@ -1237,6 +1266,7 @@ def create_henkilot():
         katuosoite='Kalliokatu 28 B 2',
         postinumero='12345',
         postitoimipaikka='Testilä',
+        vtj_yksiloity=True,
         changed_by=tester10_user
     )
 
@@ -1256,6 +1286,7 @@ def create_henkilot():
         katuosoite='Taavintie 4 C 1',
         postinumero='12345',
         postitoimipaikka='Testilä',
+        vtj_yksiloity=True,
         changed_by=tester10_user
     )
 
@@ -1275,6 +1306,7 @@ def create_henkilot():
         katuosoite='Taavintie 4 C 1',
         postinumero='12345',
         postitoimipaikka='Testilä',
+        vtj_yksiloity=True,
         changed_by=tester10_user
     )
 
@@ -1294,6 +1326,7 @@ def create_henkilot():
         katuosoite='Tukkarinkatu 4c',
         postinumero='12345',
         postitoimipaikka='Testilä',
+        vtj_yksiloity=True,
         changed_by=tester2_user
     )
 
@@ -1313,6 +1346,7 @@ def create_henkilot():
         katuosoite='Duunarintie 1 A',
         postinumero='12345',
         postitoimipaikka='Testilä',
+        vtj_yksiloity=True,
         changed_by=tester10_user
     )
 
@@ -1332,6 +1366,7 @@ def create_henkilot():
         katuosoite='Duunarintie 1 A',
         postinumero='12345',
         postitoimipaikka='Testilä',
+        vtj_yksiloity=True,
         changed_by=tester11_user
     )
 

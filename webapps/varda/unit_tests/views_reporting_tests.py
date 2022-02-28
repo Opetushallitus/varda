@@ -9,11 +9,12 @@ from django.utils import timezone
 from rest_framework import status
 
 from varda.enums.change_type import ChangeType
+from varda.enums.koodistot import Koodistot
 from varda.misc import decrypt_henkilotunnus
 from varda.models import (Henkilo, Huoltaja, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto, Palvelussuhde,
                           PaosToiminta, PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija,
                           TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka, Tutkinto, Tyontekija,
-                          Tyoskentelypaikka, VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde)
+                          Tyoskentelypaikka, VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z2_Code)
 from varda.organisation_transformations import transfer_toimipaikat_to_vakajarjestaja
 from varda.unit_tests.test_utils import (assert_status_code, assert_validation_error, mock_admin_user,
                                          mock_date_decorator_factory, SetUpTestClient)
@@ -1002,8 +1003,9 @@ class VardaViewsReportingTests(TestCase):
         vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
         lapsi = Lapsi.objects.get(vakatoimija=vakajarjestaja, henkilo__henkilo_oid='1.2.246.562.24.8925547856499')
 
-        # Make Lapsi over 8 years old
-        Henkilo.objects.filter(lapsi=lapsi).update(syntyma_pvm=datetime.date(year=2000, month=1, day=1))
+        # Make Henkilo over 8 years old and not yksiloity
+        Henkilo.objects.filter(lapsi=lapsi).update(syntyma_pvm=datetime.date(year=2000, month=1, day=1),
+                                                   vtj_yksiloity=False)
 
         # Make Varhaiskasvatussuhde start before Varhaiskasvatuspaatos
         # and remove paattymis_pvm from Varhaiskasvatuspaatos and Varhaiskasvatussuhde
@@ -1020,10 +1022,11 @@ class VardaViewsReportingTests(TestCase):
         client = SetUpTestClient('tester10').client()
 
         resp_1 = client.get(url)
-        self._verify_error_report_result(resp_1, ['VP013', 'VP002'])
+        self._verify_error_report_result(resp_1, ['VP013', 'VP002', 'HE017'])
 
-        Henkilo.objects.filter(lapsi=lapsi).update(syntyma_pvm=datetime.date(year=2017, month=1, day=1))
-
+        # Make Henkilo under 8 years old and yksiloity so that errors are not raised
+        Henkilo.objects.filter(lapsi=lapsi).update(syntyma_pvm=datetime.date(year=2017, month=1, day=1),
+                                                   vtj_yksiloity=True)
         # Set alkamis_pvm for Varhaiskasvatussuhde so that error is not raised
         Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=lapsi).update(alkamis_pvm=today)
 
@@ -1076,6 +1079,7 @@ class VardaViewsReportingTests(TestCase):
         resp = client.get(f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-lapset/')
         self._verify_error_report_result(resp, ['MA016', 'VP013'])
 
+    @mock_date_decorator_factory('varda.viewsets_reporting.datetime', '2022-01-01')
     def test_api_error_report_tyontekijat(self):
         vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.93957375488')
         tyontekija = Tyontekija.objects.get(vakajarjestaja=vakajarjestaja, henkilo__henkilo_oid='1.2.246.562.24.2431884920041')
@@ -1083,56 +1087,89 @@ class VardaViewsReportingTests(TestCase):
         client = SetUpTestClient('henkilosto_tallentaja_93957375488').client()
         url = f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-tyontekijat/'
 
+        # Make Henkilo not yksiloity
+        Henkilo.objects.filter(tyontekijat=tyontekija).update(vtj_yksiloity=False)
+
         # Make Tyoskentelypaikka start before Palvelussuhde
         # and remove paattymis_pvm from Palvelussuhde and Tyoskentelypaikka
-        today = datetime.date.today()
+        today = datetime.date(year=2022, month=1, day=1)
         yesterday = today - datetime.timedelta(days=1)
         Palvelussuhde.objects.filter(tyontekija=tyontekija).update(alkamis_pvm=today, paattymis_pvm=None)
         Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija).update(alkamis_pvm=yesterday,
                                                                                       paattymis_pvm=None)
-        resp_1 = client.get(url)
-        self._verify_error_report_result(resp_1, ['TA008'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['TA008', 'HE017'])
 
+        # Make Henkilo yksiloity so that error is not raised
+        Henkilo.objects.filter(tyontekijat=tyontekija).update(vtj_yksiloity=True)
         # Set alkamis_pvm for Tyoskentelypaikka so that error is not raised
         Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija).update(alkamis_pvm=today)
 
         # Set paattymis_pvm for Palvelussuhde
         Palvelussuhde.objects.filter(tyontekija=tyontekija).update(paattymis_pvm=today)
-        resp_2 = client.get(url)
-        self._verify_error_report_result(resp_2, ['TA013'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['TA013'])
 
         # Set paattymis_pvm for Tyoskentelypaikka to be after Palvelussuhde
         tomorrow = today + datetime.timedelta(days=1)
         Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija).update(paattymis_pvm=tomorrow)
-        resp_3 = client.get(url)
-        self._verify_error_report_result(resp_3, ['TA006'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['TA006'])
 
         Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija).update(paattymis_pvm=today)
 
         # Set paattymis_pvm for Tyoskentelypaikka related Toimipaikka
         Toimipaikka.objects.filter(tyoskentelypaikat__palvelussuhde__tyontekija=tyontekija).update(paattymis_pvm=yesterday)
-        resp_4 = client.get(url)
-        self._verify_error_report_result(resp_4, ['TA016'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['TA016'])
         Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija).update(paattymis_pvm=None)
         Palvelussuhde.objects.filter(tyontekija=tyontekija).update(paattymis_pvm=None)
-        resp_5 = client.get(url)
-        self._verify_error_report_result(resp_5, ['TA016'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['TA016'])
+
+        # Remove paattymis_pvm from Toimipaikka so that error is not raised
+        Toimipaikka.objects.filter(tyoskentelypaikat__palvelussuhde__tyontekija=tyontekija).update(paattymis_pvm=None)
+
+        # Create situations where active Palvelussuhde does not have active Tyoskentelypaikka or PidempiPoissaolo
+        palvelussuhde_tunniste = 'testing-palvelussuhde5'
+        tyoskentelypaikka_1_tunniste = 'testing-tyoskentylypaikka5-1'
+        tyoskentelypaikka_2_tunniste = 'testing-tyoskentylypaikka5-2'
+        pidempi_poissaolo_tunniste = 'pidempi_poissaolo500'
+        Tyoskentelypaikka.objects.filter(tunniste=tyoskentelypaikka_1_tunniste).update(paattymis_pvm=yesterday)
+        resp = client.get(url)
+        self._verify_error_report_result(resp, [])
+        Tyoskentelypaikka.objects.filter(tunniste=tyoskentelypaikka_2_tunniste).update(paattymis_pvm=yesterday)
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['PS009'])
+        pidempi_poissaolo = {
+            'lahdejarjestelma': '1',
+            'palvelussuhde_tunniste': palvelussuhde_tunniste,
+            'alkamis_pvm': '2022-01-01',
+            'paattymis_pvm': '2023-01-01',
+            'tunniste': pidempi_poissaolo_tunniste
+        }
+        assert_status_code(client.post('/api/henkilosto/v1/pidemmatpoissaolot/', pidempi_poissaolo), status.HTTP_201_CREATED)
+        resp = client.get(url)
+        self._verify_error_report_result(resp, [])
+        PidempiPoissaolo.objects.filter(tunniste=pidempi_poissaolo_tunniste).update(alkamis_pvm='2022-06-01')
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['PS009'])
 
         # Remove Tyoskentelypaikka
         Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija).delete()
-        resp_6 = client.get(url)
-        self._verify_error_report_result(resp_6, ['TA014'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['TA014'])
 
         # Remove Palvelussuhde (PidempiPoissaolo must be removed as well)
         PidempiPoissaolo.objects.filter(palvelussuhde__tyontekija=tyontekija).delete()
         Palvelussuhde.objects.filter(tyontekija=tyontekija).delete()
-        resp_7 = client.get(url)
-        self._verify_error_report_result(resp_7, ['PS008'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['PS008'])
 
         # Remove Tutkinto
         Tutkinto.objects.filter(vakajarjestaja=vakajarjestaja, henkilo=tyontekija.henkilo).delete()
-        resp_8 = client.get(url)
-        self._verify_error_report_result(resp_8, ['TU004'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['TU004'])
 
     def test_api_error_report_tyontekijat_no_permissions(self):
         vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
@@ -1153,24 +1190,75 @@ class VardaViewsReportingTests(TestCase):
         resp_no_permissions_3 = client_no_permissions_3.get(url)
         assert_status_code(resp_no_permissions_3, status.HTTP_404_NOT_FOUND)
 
-    def test_api_error_report_lapset_filter(self):
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+    def test_api_error_report_filter(self):
+        vakajarjestaja_1 = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        vakajarjestaja_2 = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.93957375488')
         Varhaiskasvatussuhde.objects.filter(tunniste='testing-varhaiskasvatussuhde3').update(alkamis_pvm='2017-01-01')
 
-        url = f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-lapset/'
-        client = SetUpTestClient('tester2').client()
+        lapsi_url = f'/api/v1/vakajarjestajat/{vakajarjestaja_1.id}/error-report-lapset/'
+        lapsi_client = SetUpTestClient('tester2').client()
 
-        resp_1 = client.get(url)
-        assert_status_code(resp_1, status.HTTP_200_OK)
-        resp_1_string = resp_1.content.decode('utf8')
-        self.assertIn('VP002', resp_1_string)
-        self.assertIn('VP013', resp_1_string)
+        resp = lapsi_client.get(lapsi_url)
+        assert_status_code(resp, status.HTTP_200_OK)
+        resp_string = resp.content.decode('utf8')
+        self.assertIn('VP002', resp_string)
+        self.assertIn('VP013', resp_string)
+        self.assertIn('1.2.246.562.24.6815981182311', resp_string)
+        self.assertIn('1.2.246.562.24.49084901392', resp_string)
 
-        resp_2 = client.get(f'{url}?error=VP002')
-        assert_status_code(resp_2, status.HTTP_200_OK)
-        resp_2_string = resp_2.content.decode('utf8')
-        self.assertNotIn('VP013', resp_2_string)
-        self.assertIn('VP002', resp_2_string)
+        resp = lapsi_client.get(f'{lapsi_url}?error=VP002')
+        assert_status_code(resp, status.HTTP_200_OK)
+        resp_string = resp.content.decode('utf8')
+        self.assertNotIn('VP013', resp_string)
+        self.assertIn('VP002', resp_string)
+
+        resp = lapsi_client.get(f'{lapsi_url}?search=1.2.246.562.24.49084901392')
+        assert_status_code(resp, status.HTTP_200_OK)
+        resp_string = resp.content.decode('utf8')
+        self.assertNotIn('1.2.246.562.24.6815981182311', resp_string)
+        self.assertIn('1.2.246.562.24.49084901392', resp_string)
+
+        toimipaikka_client = SetUpTestClient('pkvakajarjestaja2').client()
+        toimipaikka_url = f'/api/v1/vakajarjestajat/{vakajarjestaja_2.id}/error-report-toimipaikat/'
+        resp = toimipaikka_client.get(toimipaikka_url)
+        assert_status_code(resp, status.HTTP_200_OK)
+        resp_string = resp.content.decode('utf8')
+        self.assertIn('TP023', resp_string)
+        self.assertIn('TO005', resp_string)
+        self.assertIn('KP005', resp_string)
+        self.assertIn('Espoo yksityinen', resp_string)
+        self.assertIn('Espoo_3', resp_string)
+
+        resp = toimipaikka_client.get(f'{toimipaikka_url}?error=TP023&search=Espoo_3')
+        assert_status_code(resp, status.HTTP_200_OK)
+        resp_string = resp.content.decode('utf8')
+        self.assertNotIn('TO005', resp_string)
+        self.assertNotIn('KP005', resp_string)
+        self.assertNotIn('Espoo yksityinen', resp_string)
+        self.assertIn('TP023', resp_string)
+        self.assertIn('Espoo_3', resp_string)
+
+        tyontekija_client = SetUpTestClient('tyontekija_tallentaja').client()
+        tyontekija_url = f'/api/v1/vakajarjestajat/{vakajarjestaja_1.id}/error-report-tyontekijat/'
+        resp = tyontekija_client.get(tyontekija_url)
+        assert_status_code(resp, status.HTTP_200_OK)
+        resp_string = resp.content.decode('utf8')
+        self.assertIn('TA014', resp_string)
+        self.assertIn('PS008', resp_string)
+        self.assertIn('Calervo', resp_string)
+        self.assertIn('Bella', resp_string)
+
+        resp = tyontekija_client.get(f'{tyontekija_url}?error=TA014')
+        assert_status_code(resp, status.HTTP_200_OK)
+        resp_string = resp.content.decode('utf8')
+        self.assertIn('TA014', resp_string)
+        self.assertNotIn('PS008', resp_string)
+
+        resp = tyontekija_client.get(f'{tyontekija_url}?search=BeL')
+        assert_status_code(resp, status.HTTP_200_OK)
+        resp_string = resp.content.decode('utf8')
+        self.assertNotIn('Calervo', resp_string)
+        self.assertIn('Bella', resp_string)
 
     def test_api_error_report_toimipaikat_no_errors(self):
         client = SetUpTestClient('tester10').client()
@@ -1179,21 +1267,51 @@ class VardaViewsReportingTests(TestCase):
         assert_status_code(resp_no_errors, status.HTTP_200_OK)
         self.assertEqual(json.loads(resp_no_errors.content)['count'], 0)
 
+    @mock_date_decorator_factory('varda.viewsets_reporting.datetime', '2022-01-01')
     def test_api_error_report_toimipaikat(self):
-        today = datetime.date.today()
+        today = datetime.date(year=2022, month=1, day=1)
+        yesterday = today - datetime.timedelta(days=1)
+        tomorrow = today + datetime.timedelta(days=1)
         client = SetUpTestClient('tester10').client()
         vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
         toimipaikka = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.6727877596658')
         url = f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-toimipaikat/'
+
+        # Create situations where toimipaikka has passive kasvatusopillinen_jarjestelma_koodi
+        toimipaikka.kasvatusopillinen_jarjestelma_koodi = 'kj99'
+        toimipaikka.save()
+        kj99_code = Z2_Code.objects.get(koodisto__name=Koodistot.kasvatusopillinen_jarjestelma_koodit.value,
+                                        code_value__iexact='kj99')
+        # Is passive today but Toimipaikka is still active
+        kj99_code.paattymis_pvm = yesterday
+        kj99_code.save()
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['TP027'])
+        # Ends before Toimipaikka starts
+        kj99_code.paattymis_pvm = '2018-04-30'
+        kj99_code.save()
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['TP027'])
+        # Ends before Toimipaikka ends
+        kj99_code.paattymis_pvm = '2020-04-30'
+        kj99_code.save()
+        toimipaikka.paattymis_pvm = '2030-01-01'
+        toimipaikka.save()
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['TP027'])
+
+        # Reset paattymis_pvm and kasvatusopillinen_jarjestelma_koodi so that errors are not raised
+        toimipaikka.paattymis_pvm = None
+        toimipaikka.kasvatusopillinen_jarjestelma_koodi = 'kj03'
+        toimipaikka.save()
 
         # Set toiminnallinenpainotus_kytkin and kielipainotus_kytkin True when Toimipaikka does not have
         # painotus objects
         toimipaikka.toiminnallinenpainotus_kytkin = True
         toimipaikka.kielipainotus_kytkin = True
         toimipaikka.save()
-        resp_1 = client.get(url)
-        assert_status_code(resp_1, status.HTTP_200_OK)
-        self._verify_error_report_result(resp_1, ['TO005', 'KP005'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['TO005', 'KP005'])
 
         # Set toiminnallinenpainotus_kytkin and kielipainotus_kytkin False when Toimipaikka has painotus objects
         ToiminnallinenPainotus.objects.create(toimipaikka=toimipaikka, toimintapainotus_koodi='TP01', alkamis_pvm=today,
@@ -1203,34 +1321,29 @@ class VardaViewsReportingTests(TestCase):
         toimipaikka.toiminnallinenpainotus_kytkin = False
         toimipaikka.kielipainotus_kytkin = False
         toimipaikka.save()
-        resp_2 = client.get(url)
-        assert_status_code(resp_2, status.HTTP_200_OK)
-        self._verify_error_report_result(resp_2, ['TO004', 'KP004'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['TO004', 'KP004'])
 
         toimipaikka.toiminnallinenpainotus_kytkin = True
         toimipaikka.kielipainotus_kytkin = True
 
         # Set paattymis_pvm for Toimipaikka while painotus, vakasuhde, and tyoskentelypaikka objects do not have it
-        yesterday = today - datetime.timedelta(days=1)
         ToiminnallinenPainotus.objects.filter(toimipaikka=toimipaikka).update(paattymis_pvm=None)
         KieliPainotus.objects.filter(toimipaikka=toimipaikka).update(paattymis_pvm=None)
         Varhaiskasvatussuhde.objects.filter(toimipaikka=toimipaikka).update(paattymis_pvm=None)
         Tyoskentelypaikka.objects.filter(toimipaikka=toimipaikka).update(paattymis_pvm=None)
         toimipaikka.paattymis_pvm = yesterday
         toimipaikka.save()
-        resp_3 = client.get(url)
-        assert_status_code(resp_3, status.HTTP_200_OK)
-        self._verify_error_report_result(resp_3, ['TO003', 'KP003', 'TP021', 'TP022'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['TO003', 'KP003', 'TP021', 'TP022'])
 
         # Set paattymis_pvm of painotus, vakasuhde, and tyoskentelypaikka objects to be tomorrow
-        tomorrow = today + datetime.timedelta(days=1)
         ToiminnallinenPainotus.objects.filter(toimipaikka=toimipaikka).update(paattymis_pvm=tomorrow)
         KieliPainotus.objects.filter(toimipaikka=toimipaikka).update(paattymis_pvm=tomorrow)
         Varhaiskasvatussuhde.objects.filter(toimipaikka=toimipaikka).update(paattymis_pvm=tomorrow)
         Tyoskentelypaikka.objects.filter(toimipaikka=toimipaikka).update(paattymis_pvm=tomorrow)
-        resp_4 = client.get(url)
-        assert_status_code(resp_4, status.HTTP_200_OK)
-        self._verify_error_report_result(resp_4, ['TO002', 'KP002', 'TP021', 'TP022'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['TO002', 'KP002', 'TP021', 'TP022'])
 
         toimipaikka.paattymis_pvm = today
         toimipaikka.save()
@@ -1239,21 +1352,23 @@ class VardaViewsReportingTests(TestCase):
         Varhaiskasvatussuhde.objects.filter(toimipaikka=toimipaikka).update(paattymis_pvm=today)
         Tyoskentelypaikka.objects.filter(toimipaikka=toimipaikka).update(paattymis_pvm=today)
 
+        # Remove tyoskentelypaikat when Toimipaikka is active
+        toimipaikka.tyoskentelypaikat.all().delete()
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['TP023'])
+
         # Set varhaiskasvatuspaikat to 0 when there are active Varhaiskasvatussuhde objects
         Varhaiskasvatussuhde.objects.filter(toimipaikka=toimipaikka).update(paattymis_pvm=tomorrow)
         toimipaikka.varhaiskasvatuspaikat = 0
         toimipaikka.save()
-        # Remove tyoskentelypaikat when Toimipaikka is active
-        toimipaikka.tyoskentelypaikat.all().delete()
-        resp_5 = client.get(url)
-        assert_status_code(resp_5, status.HTTP_200_OK)
-        self._verify_error_report_result(resp_5, ['TP020', 'TP021', 'TP023'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['TP020', 'TP021'])
 
     def _verify_error_report_result(self, response, error_code_list):
         assert_status_code(response, status.HTTP_200_OK)
         response_json = json.loads(response.content)
 
-        if not isinstance(error_code_list[0], list):
+        if len(error_code_list) > 0 and not isinstance(error_code_list[0], list):
             error_code_list = [error_code_list]
 
         self.assertEqual(len(response_json['results']), len(error_code_list))

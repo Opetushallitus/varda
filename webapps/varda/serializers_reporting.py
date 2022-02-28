@@ -159,16 +159,18 @@ class AbstractErrorReportSerializer(serializers.ModelSerializer):
     errors = serializers.SerializerMethodField()
 
     @swagger_serializer_method(serializer_or_field=AbstractErrorReportErrorsSerializer)
-    def get_errors(self, obj):
+    def get_errors(self, instance):
         # This function parses the list of errors from different error attributes in the object.
         error_list = []
-        for error_key, error_tuple in self.context['view'].get_error_tuples().items():
-            error_attr = getattr(obj, error_key.value['error_code'], '')
+        for view_error_list in self.context['view'].get_errors():
+            error_dict = view_error_list[0].value
+            error_attr = (getattr(instance, error_dict['error_code'].lower(), '') or
+                          getattr(instance, error_dict['error_code'], ''))
             if error_attr is not None and error_attr != '':
                 model_id_list = error_attr.split(',')
                 error_list.append({
-                    **error_key.value,
-                    'model_name': error_tuple[1],
+                    **error_dict,
+                    'model_name': view_error_list[4],
                     'model_id_list': [int(model_id) for model_id in set(model_id_list)]
                 })
         return error_list

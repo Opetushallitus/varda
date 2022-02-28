@@ -1076,9 +1076,9 @@ class Z2_Code(AbstractModel):
 class Z2_CodeTranslation(AbstractModel):
     code = models.ForeignKey(Z2_Code, related_name='translations', on_delete=models.PROTECT)
     language = models.CharField(max_length=10)
-    name = models.CharField(max_length=256, blank=True)
-    description = models.CharField(max_length=2048, blank=True)
-    short_name = models.CharField(max_length=256, blank=True)
+    name = models.TextField(blank=True)
+    description = models.TextField(blank=True)
+    short_name = models.TextField(blank=True)
 
     class Meta:
         verbose_name_plural = 'Varda code translations'
