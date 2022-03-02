@@ -214,7 +214,7 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
   }
 
   setDeletePermission() {
-    this.deletePermission = this.toimipaikkaAccess.lapsitiedot.tallentaja && this.toimipaikkaAccess.huoltajatiedot.tallentaja;
+    this.deletePermission = !!this.toimipaikkaAccess.lapsitiedot.tallentaja;
     if (this.lapsi.paos_organisaatio_oid && this.lapsi.tallentaja_organisaatio_oid !== this.selectedVakajarjestaja.organisaatio_oid) {
       this.deletePermission = false;
     }

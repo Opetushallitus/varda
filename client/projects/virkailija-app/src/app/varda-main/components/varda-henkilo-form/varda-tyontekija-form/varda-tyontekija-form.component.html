@@ -53,13 +53,7 @@
       </app-varda-tyontekija-taydennyskoulutukset>
     </ng-container>
 
-
-
-
-
-    <ng-container *ngIf="toimipaikkaAccess.taydennyskoulutustiedot.tallentaja
-                && toimipaikkaAccess.tyontekijatiedot.tallentaja">
-
+    <ng-container *ngIf="toimipaikkaAccess.tyontekijatiedot.tallentaja">
       <app-varda-error-field [errors]="deleteTyontekijaErrors"></app-varda-error-field>
       <app-varda-delete-henkilo *ngIf="tyontekija?.id"
                                 [instructionText]="i18n.tyontekija_instruction_delete | translate"
