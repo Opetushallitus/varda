@@ -152,9 +152,9 @@ class KelaEtuusmaksatusLopettaneetViewSet(GenericViewSet, ListModelMixin):
     def create_filters_for_data(self, muutos_pvm_gte, muutos_pvm_lte):
         common_filters = _create_common_kela_filters()
 
-        muutos_pvm_filter = Q(muutos_pvm__gte=muutos_pvm_gte)
+        muutos_pvm_filter = Q(history_date__gte=muutos_pvm_gte)
         if muutos_pvm_lte:
-            muutos_pvm_filter = muutos_pvm_filter & Q(muutos_pvm__lte=muutos_pvm_lte)
+            muutos_pvm_filter = muutos_pvm_filter & Q(history_date__lte=muutos_pvm_lte)
 
         return common_filters & muutos_pvm_filter
 
@@ -176,7 +176,9 @@ class KelaEtuusmaksatusLopettaneetViewSet(GenericViewSet, ListModelMixin):
 
         dataset_filters = self.create_filters_for_data(muutos_pvm_gte, muutos_pvm_lte)
 
-        # get the status before muutos_pvm
+        # get the latest changed objects and their status before muutos_pvm
+        latest_changed_objects = Varhaiskasvatussuhde.history.filter(dataset_filters)
+        id_filter = Q(id__in=latest_changed_objects.values('id'))
         latest_end_dates = (Varhaiskasvatussuhde.history.filter(Q(id=OuterRef('id')) &
                                                                 Q(history_date__lt=muutos_pvm_gte)
                                                                 ).order_by('-history_id'))
@@ -186,7 +188,7 @@ class KelaEtuusmaksatusLopettaneetViewSet(GenericViewSet, ListModelMixin):
                                                                                    then=Subquery(latest_end_dates.values('paattymis_pvm')[:1])),
                                                                               default=Cast(Value('0001-01-01'), output_field=DateField()),
                                                                               output_field=DateField()))
-                                            .filter(dataset_filters &
+                                            .filter(id_filter &
                                                     Q(last_paattymis_pvm__isnull=True) &
                                                     Q(paattymis_pvm__isnull=False))
                                             .values('varhaiskasvatuspaatos__lapsi_id', 'paattymis_pvm',
