@@ -817,7 +817,7 @@ def parse_toimipaikka_id_list(user, toimipaikka_ids_string, required_permission_
         oid_list = [toimipaikka.organisaatio_oid, toimipaikka.vakajarjestaja.organisaatio_oid]
 
         if include_paos:
-            paos_oid_list = set(PaosToiminta.objects.filter(Q(paos_toimipaikka=toimipaikka) & Q(voimassa_kytkin=True))
+            paos_oid_list = set(PaosToiminta.objects.filter(Q(paos_toimipaikka=toimipaikka))
                                 .values_list('oma_organisaatio__organisaatio_oid', flat=True))
             oid_list.extend(paos_oid_list)
 
