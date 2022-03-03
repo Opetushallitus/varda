@@ -5,12 +5,13 @@ from functools import reduce
 
 import coreapi
 import coreschema
+import django_filters.rest_framework as django_filters
 from django.contrib.postgres.aggregates import StringAgg
-from django.db.models import Q, Case, When, Subquery, OuterRef, CharField, Value
-from django.db.models.functions import Concat
+from django.contrib.postgres.fields import ArrayField
+from django.db.models import Q, Case, TextField, When, Subquery, OuterRef, CharField, Value
+from django.db.models.functions import Cast, Concat, Lower
 from django.http import Http404
 from django.template import loader
-from django_filters import rest_framework as djangofilters
 from django_filters.constants import EMPTY_VALUES
 from rest_framework.filters import BaseFilterBackend
 
@@ -75,7 +76,7 @@ class CustomParametersFilterBackend(BaseFilterBackend):
         return template.render({'fields': getattr(view, 'custom_parameters', ())})
 
 
-class CustomCharFilter(djangofilters.CharFilter):
+class CustomCharFilter(django_filters.CharFilter):
     """
     Custom CharFilter which can be used to filter the query with EMPTY string,
     e.g. /api/v1/toimipaikat/?oid_tunniste=EMPTY
@@ -91,7 +92,7 @@ class CustomCharFilter(djangofilters.CharFilter):
         return qs.distinct() if self.distinct else qs
 
 
-class KunnallinenKytkinFilter(djangofilters.BooleanFilter):
+class KunnallinenKytkinFilter(django_filters.BooleanFilter):
     def filter(self, qs, value):
         if value is None:
             return qs
@@ -101,7 +102,7 @@ class KunnallinenKytkinFilter(djangofilters.BooleanFilter):
             return qs.filter(~Q(yritysmuoto__in=VakaJarjestaja.get_kuntatyypit()))
 
 
-class OrganisaatioFieldFilter(djangofilters.CharFilter):
+class OrganisaatioFieldFilter(django_filters.CharFilter):
     def filter(self, qs, value):
         if value.isdigit():
             self.field_name += '__id'
@@ -111,7 +112,7 @@ class OrganisaatioFieldFilter(djangofilters.CharFilter):
         return super().filter(qs, value)
 
 
-class HenkiloFieldFilter(djangofilters.CharFilter):
+class HenkiloFieldFilter(django_filters.CharFilter):
     def filter(self, qs, value):
         if value.isdigit():
             return qs.filter(henkilo=int(value))
@@ -121,7 +122,20 @@ class HenkiloFieldFilter(djangofilters.CharFilter):
             return qs
 
 
-class NoneDateFromToRangeFilter(djangofilters.DateFromToRangeFilter):
+class CaseInsensitiveContainsFilter(django_filters.BaseCSVFilter):
+    def filter(self, qs, value):
+        if not isinstance(value, list) and not isinstance(value, tuple):
+            return qs
+
+        value = [single_value.lower() for single_value in value]
+        field_name = f'i{self.field_name}'
+        # Annotate new field that is ArrayField but all items are lowercase
+        return (qs.annotate(**{field_name: Cast(Lower(Cast(self.field_name, output_field=TextField())),
+                                                output_field=ArrayField(base_field=TextField()))})
+                .filter(**{f'{field_name}__contains': value}))
+
+
+class NoneDateFromToRangeFilter(django_filters.DateFromToRangeFilter):
     """
     DateFromToRangeFilter that also returns results with undefined date with keyword _after
     """
@@ -156,50 +170,50 @@ class NoneDateFromToRangeFilter(djangofilters.DateFromToRangeFilter):
         return qs
 
 
-class VakaJarjestajaFilter(djangofilters.FilterSet):
-    nimi = djangofilters.CharFilter(field_name='nimi', lookup_expr='icontains')
-    y_tunnus = djangofilters.CharFilter(field_name='y_tunnus', lookup_expr='exact')
-    organisaatio_oid = CustomCharFilter(field_name='organisaatio_oid', lookup_expr='exact')
-    kunta_koodi = djangofilters.CharFilter(field_name='kunta_koodi', lookup_expr='exact')
-    sahkopostiosoite = CustomCharFilter(field_name='sahkopostiosoite', lookup_expr='exact')
-    kayntiosoite = djangofilters.CharFilter(field_name='kayntiosoite', lookup_expr='icontains')
-    kayntiosoite_postitoimipaikka = djangofilters.CharFilter(field_name='kayntiosoite_postitoimipaikka', lookup_expr='icontains')
-    kayntiosoite_postinumero = djangofilters.CharFilter(field_name='kayntiosoite_postinumero', lookup_expr='exact')
-    postiosoite = djangofilters.CharFilter(field_name='postiosoite', lookup_expr='icontains')
-    postitoimipaikka = djangofilters.CharFilter(field_name='postitoimipaikka', lookup_expr='icontains')
-    postinumero = djangofilters.CharFilter(field_name='postinumero', lookup_expr='exact')
-    puhelinnumero = CustomCharFilter(field_name='puhelinnumero', lookup_expr='exact')
-    ytjkieli = djangofilters.CharFilter(field_name='ytjkieli', lookup_expr='exact')
+class VakaJarjestajaFilter(django_filters.FilterSet):
+    nimi = django_filters.CharFilter(lookup_expr='icontains')
+    y_tunnus = django_filters.CharFilter(lookup_expr='exact')
+    organisaatio_oid = CustomCharFilter(lookup_expr='exact')
+    kunta_koodi = django_filters.CharFilter(lookup_expr='iexact')
+    sahkopostiosoite = CustomCharFilter(lookup_expr='iexact')
+    kayntiosoite = django_filters.CharFilter(lookup_expr='icontains')
+    kayntiosoite_postitoimipaikka = django_filters.CharFilter(lookup_expr='icontains')
+    kayntiosoite_postinumero = django_filters.CharFilter(lookup_expr='exact')
+    postiosoite = django_filters.CharFilter(lookup_expr='icontains')
+    postitoimipaikka = django_filters.CharFilter(lookup_expr='icontains')
+    postinumero = django_filters.CharFilter(lookup_expr='exact')
+    puhelinnumero = CustomCharFilter(lookup_expr='exact')
+    ytjkieli = django_filters.CharFilter(lookup_expr='iexact')
     kunnallinen_kytkin = KunnallinenKytkinFilter(label='kunnallinen_kytkin')
-    alkamis_pvm = djangofilters.DateFilter(field_name='alkamis_pvm', lookup_expr='gte')
-    paattymis_pvm = djangofilters.DateFilter(field_name='paattymis_pvm', lookup_expr='gte')
-    muutos_pvm = djangofilters.DateTimeFilter(field_name='muutos_pvm', lookup_expr='gte')
+    alkamis_pvm = django_filters.DateFilter(lookup_expr='gte')
+    paattymis_pvm = django_filters.DateFilter(lookup_expr='gte')
+    muutos_pvm = django_filters.DateTimeFilter(lookup_expr='gte')
 
     class Meta:
         model = VakaJarjestaja
         fields = []
 
 
-class ToimipaikkaFilter(djangofilters.FilterSet):
-    id = djangofilters.NumberFilter(lookup_expr='exact')
-    nimi = djangofilters.CharFilter(field_name='nimi', lookup_expr='icontains')
-    organisaatio_oid = CustomCharFilter(field_name='organisaatio_oid', lookup_expr='exact')
-    kayntiosoite = djangofilters.CharFilter(field_name='kayntiosoite', lookup_expr='icontains')
-    kayntiosoite_postitoimipaikka = djangofilters.CharFilter(field_name='kayntiosoite_postitoimipaikka', lookup_expr='icontains')
-    kayntiosoite_postinumero = djangofilters.CharFilter(field_name='kayntiosoite_postinumero', lookup_expr='exact')
-    postiosoite = djangofilters.CharFilter(field_name='postiosoite', lookup_expr='icontains')
-    postitoimipaikka = djangofilters.CharFilter(field_name='postitoimipaikka', lookup_expr='icontains')
-    postinumero = djangofilters.CharFilter(field_name='postinumero', lookup_expr='exact')
-    puhelinnumero = CustomCharFilter(field_name='puhelinnumero', lookup_expr='exact')
-    sahkopostiosoite = CustomCharFilter(field_name='sahkopostiosoite', lookup_expr='exact')
-    kasvatusopillinen_jarjestelma_koodi = CustomCharFilter(field_name='kasvatusopillinen_jarjestelma_koodi', lookup_expr='exact')
-    toimintamuoto_koodi = CustomCharFilter(field_name='toimintamuoto_koodi', lookup_expr='exact')
-    asiointikieli_koodi = djangofilters.BaseCSVFilter(field_name='asiointikieli_koodi', lookup_expr='contains')
-    jarjestamismuoto_koodi = djangofilters.BaseCSVFilter(field_name='jarjestamismuoto_koodi', lookup_expr='contains')
-    varhaiskasvatuspaikat = djangofilters.NumberFilter(field_name='varhaiskasvatuspaikat', lookup_expr='gte')
-    alkamis_pvm = djangofilters.DateFromToRangeFilter(field_name='alkamis_pvm')
-    paattymis_pvm = NoneDateFromToRangeFilter(field_name='paattymis_pvm')
-    muutos_pvm = djangofilters.DateTimeFilter(field_name='muutos_pvm', lookup_expr='gte')
+class ToimipaikkaFilter(django_filters.FilterSet):
+    id = django_filters.NumberFilter(lookup_expr='exact')
+    nimi = django_filters.CharFilter(lookup_expr='icontains')
+    organisaatio_oid = CustomCharFilter(lookup_expr='exact')
+    kayntiosoite = django_filters.CharFilter(lookup_expr='icontains')
+    kayntiosoite_postitoimipaikka = django_filters.CharFilter(lookup_expr='icontains')
+    kayntiosoite_postinumero = django_filters.CharFilter(lookup_expr='exact')
+    postiosoite = django_filters.CharFilter(lookup_expr='icontains')
+    postitoimipaikka = django_filters.CharFilter(lookup_expr='icontains')
+    postinumero = django_filters.CharFilter(lookup_expr='exact')
+    puhelinnumero = CustomCharFilter(lookup_expr='exact')
+    sahkopostiosoite = CustomCharFilter(lookup_expr='iexact')
+    kasvatusopillinen_jarjestelma_koodi = CustomCharFilter(lookup_expr='iexact')
+    toimintamuoto_koodi = CustomCharFilter(lookup_expr='iexact')
+    asiointikieli_koodi = CaseInsensitiveContainsFilter()
+    jarjestamismuoto_koodi = CaseInsensitiveContainsFilter()
+    varhaiskasvatuspaikat = django_filters.NumberFilter(lookup_expr='gte')
+    alkamis_pvm = django_filters.DateFromToRangeFilter()
+    paattymis_pvm = NoneDateFromToRangeFilter()
+    muutos_pvm = django_filters.DateTimeFilter(lookup_expr='gte')
     vakajarjestaja = OrganisaatioFieldFilter()
 
     class Meta:
@@ -207,32 +221,32 @@ class ToimipaikkaFilter(djangofilters.FilterSet):
         fields = []
 
 
-class ToiminnallinenPainotusFilter(djangofilters.FilterSet):
-    toimintapainotus_koodi = djangofilters.CharFilter(field_name='toimintapainotus_koodi', lookup_expr='exact')
-    alkamis_pvm = djangofilters.DateFilter(field_name='alkamis_pvm', lookup_expr='gte')
-    paattymis_pvm = djangofilters.DateFilter(field_name='paattymis_pvm', lookup_expr='gte')
-    muutos_pvm = djangofilters.DateTimeFilter(field_name='muutos_pvm', lookup_expr='gte')
+class ToiminnallinenPainotusFilter(django_filters.FilterSet):
+    toimintapainotus_koodi = django_filters.CharFilter(lookup_expr='iexact')
+    alkamis_pvm = django_filters.DateFilter(lookup_expr='gte')
+    paattymis_pvm = django_filters.DateFilter(lookup_expr='gte')
+    muutos_pvm = django_filters.DateTimeFilter(lookup_expr='gte')
 
     class Meta:
         model = ToiminnallinenPainotus
         fields = []
 
 
-class KieliPainotusFilter(djangofilters.FilterSet):
-    kielipainotus_koodi = djangofilters.CharFilter(field_name='kielipainotus_koodi', lookup_expr='exact')
-    alkamis_pvm = djangofilters.DateFilter(field_name='alkamis_pvm', lookup_expr='gte')
-    paattymis_pvm = djangofilters.DateFilter(field_name='paattymis_pvm', lookup_expr='gte')
-    muutos_pvm = djangofilters.DateTimeFilter(field_name='muutos_pvm', lookup_expr='gte')
+class KieliPainotusFilter(django_filters.FilterSet):
+    kielipainotus_koodi = django_filters.CharFilter(lookup_expr='iexact')
+    alkamis_pvm = django_filters.DateFilter(lookup_expr='gte')
+    paattymis_pvm = django_filters.DateFilter(lookup_expr='gte')
+    muutos_pvm = django_filters.DateTimeFilter(lookup_expr='gte')
 
     class Meta:
         model = KieliPainotus
         fields = []
 
 
-class YksiloimattomatHenkilotFilter(djangofilters.FilterSet):
-    henkilotunnus = CustomCharFilter(field_name='henkilotunnus', lookup_expr='exact')
-    henkilo_oid = CustomCharFilter(field_name='henkilo_oid', lookup_expr='exact')
-    vakatoimija_oid = djangofilters.CharFilter(method='filter_vakatoimija_oid')
+class YksiloimattomatHenkilotFilter(django_filters.FilterSet):
+    henkilotunnus = CustomCharFilter(lookup_expr='iexact')
+    henkilo_oid = CustomCharFilter(lookup_expr='exact')
+    vakatoimija_oid = django_filters.CharFilter(method='filter_vakatoimija_oid')
 
     class Meta:
         model = Henkilo
@@ -243,186 +257,186 @@ class YksiloimattomatHenkilotFilter(djangofilters.FilterSet):
                                Q(tyontekijat__vakajarjestaja__organisaatio_oid=value))
 
 
-class LapsiFilter(djangofilters.FilterSet):
-    paos_kytkin = djangofilters.BooleanFilter(field_name='paos_kytkin', lookup_expr='exact')
-    muutos_pvm = djangofilters.DateTimeFilter(field_name='muutos_pvm', lookup_expr='gte')
+class LapsiFilter(django_filters.FilterSet):
+    paos_kytkin = django_filters.BooleanFilter(lookup_expr='exact')
+    muutos_pvm = django_filters.DateTimeFilter(lookup_expr='gte')
 
     class Meta:
         model = Lapsi
         fields = []
 
 
-class HuoltajaFilter(djangofilters.FilterSet):
-    muutos_pvm = djangofilters.DateTimeFilter(field_name='muutos_pvm', lookup_expr='gte')
+class HuoltajaFilter(django_filters.FilterSet):
+    muutos_pvm = django_filters.DateTimeFilter(lookup_expr='gte')
 
     class Meta:
         model = Huoltaja
         fields = []
 
 
-class MaksutietoFilter(djangofilters.FilterSet):
-    lapsi = djangofilters.NumberFilter(field_name='huoltajuussuhteet__lapsi__id', lookup_expr='exact', label='lapsi_id')
-    maksun_peruste_koodi = djangofilters.CharFilter(field_name='maksun_peruste_koodi', lookup_expr='exact')
-    alkamis_pvm = djangofilters.DateFilter(field_name='alkamis_pvm', lookup_expr='gte')
-    paattymis_pvm = djangofilters.DateFilter(field_name='paattymis_pvm', lookup_expr='gte')
+class MaksutietoFilter(django_filters.FilterSet):
+    lapsi = django_filters.NumberFilter(field_name='huoltajuussuhteet__lapsi__id', lookup_expr='exact', label='lapsi_id')
+    maksun_peruste_koodi = django_filters.CharFilter(lookup_expr='iexact')
+    alkamis_pvm = django_filters.DateFilter(lookup_expr='gte')
+    paattymis_pvm = django_filters.DateFilter(lookup_expr='gte')
 
     class Meta:
         model = Maksutieto
         fields = []
 
 
-class PaosToimintaFilter(djangofilters.FilterSet):
-    oma_organisaatio = OrganisaatioFieldFilter(field_name='oma_organisaatio', lookup_expr='exact')
-    paos_organisaatio = OrganisaatioFieldFilter(field_name='paos_organisaatio', lookup_expr='exact')
-    paos_toimipaikka = OrganisaatioFieldFilter(field_name='paos_toimipaikka', lookup_expr='exact')
-    voimassa_kytkin = djangofilters.BooleanFilter(field_name='voimassa_kytkin', lookup_expr='exact')
+class PaosToimintaFilter(django_filters.FilterSet):
+    oma_organisaatio = OrganisaatioFieldFilter(lookup_expr='exact')
+    paos_organisaatio = OrganisaatioFieldFilter(lookup_expr='exact')
+    paos_toimipaikka = OrganisaatioFieldFilter(lookup_expr='exact')
+    voimassa_kytkin = django_filters.BooleanFilter(lookup_expr='exact')
 
     class Meta:
         model = PaosToiminta
         fields = []
 
 
-class PaosOikeusFilter(djangofilters.FilterSet):
-    jarjestaja_kunta_organisaatio = OrganisaatioFieldFilter(field_name='jarjestaja_kunta_organisaatio', lookup_expr='exact')
-    tuottaja_organisaatio = OrganisaatioFieldFilter(field_name='tuottaja_organisaatio', lookup_expr='exact')
+class PaosOikeusFilter(django_filters.FilterSet):
+    jarjestaja_kunta_organisaatio = OrganisaatioFieldFilter(lookup_expr='exact')
+    tuottaja_organisaatio = OrganisaatioFieldFilter(lookup_expr='exact')
 
     class Meta:
         model = PaosOikeus
         fields = []
 
 
-class VarhaiskasvatuspaatosFilter(djangofilters.FilterSet):
-    lapsi = djangofilters.NumberFilter(field_name='lapsi__id', lookup_expr='exact')
-    vuorohoito_kytkin = djangofilters.BooleanFilter(field_name='vuorohoito_kytkin', lookup_expr='exact')
-    pikakasittely_kytkin = djangofilters.BooleanFilter(field_name='pikakasittely_kytkin', lookup_expr='exact')
-    tuntimaara_viikossa = djangofilters.NumberFilter(field_name='tuntimaara_viikossa', lookup_expr='gte')
-    paivittainen_vaka_kytkin = djangofilters.BooleanFilter(field_name='paivittainen_vaka_kytkin', lookup_expr='exact')
-    kokopaivainen_vaka_kytkin = djangofilters.BooleanFilter(field_name='kokopaivainen_vaka_kytkin', lookup_expr='exact')
-    tilapainen_vaka_kytkin = djangofilters.BooleanFilter(field_name='tilapainen_vaka_kytkin', lookup_expr='exact')
-    jarjestamismuoto_koodi = djangofilters.CharFilter(field_name='jarjestamismuoto_koodi', lookup_expr='exact')
-    hakemus_pvm = djangofilters.DateFilter(field_name='hakemus_pvm', lookup_expr='gte')
-    alkamis_pvm = djangofilters.DateFilter(field_name='alkamis_pvm', lookup_expr='gte')
-    paattymis_pvm = djangofilters.DateFilter(field_name='paattymis_pvm', lookup_expr='gte')
-    muutos_pvm = djangofilters.DateTimeFilter(field_name='muutos_pvm', lookup_expr='gte')
+class VarhaiskasvatuspaatosFilter(django_filters.FilterSet):
+    lapsi = django_filters.NumberFilter(field_name='lapsi__id', lookup_expr='exact')
+    vuorohoito_kytkin = django_filters.BooleanFilter(lookup_expr='exact')
+    pikakasittely_kytkin = django_filters.BooleanFilter(lookup_expr='exact')
+    tuntimaara_viikossa = django_filters.NumberFilter(lookup_expr='gte')
+    paivittainen_vaka_kytkin = django_filters.BooleanFilter(lookup_expr='exact')
+    kokopaivainen_vaka_kytkin = django_filters.BooleanFilter(lookup_expr='exact')
+    tilapainen_vaka_kytkin = django_filters.BooleanFilter(lookup_expr='exact')
+    jarjestamismuoto_koodi = django_filters.CharFilter(lookup_expr='iexact')
+    hakemus_pvm = django_filters.DateFilter(lookup_expr='gte')
+    alkamis_pvm = django_filters.DateFilter(lookup_expr='gte')
+    paattymis_pvm = django_filters.DateFilter(lookup_expr='gte')
+    muutos_pvm = django_filters.DateTimeFilter(lookup_expr='gte')
 
     class Meta:
         model = Varhaiskasvatuspaatos
         fields = []
 
 
-class VarhaiskasvatussuhdeFilter(djangofilters.FilterSet):
-    varhaiskasvatuspaatos = djangofilters.NumberFilter(field_name='varhaiskasvatuspaatos__id', lookup_expr='exact')
-    alkamis_pvm = djangofilters.DateFilter(field_name='alkamis_pvm', lookup_expr='gte')
-    paattymis_pvm = djangofilters.DateFilter(field_name='paattymis_pvm', lookup_expr='gte')
-    muutos_pvm = djangofilters.DateTimeFilter(field_name='muutos_pvm', lookup_expr='gte')
+class VarhaiskasvatussuhdeFilter(django_filters.FilterSet):
+    varhaiskasvatuspaatos = django_filters.NumberFilter(field_name='varhaiskasvatuspaatos__id', lookup_expr='exact')
+    alkamis_pvm = django_filters.DateFilter(lookup_expr='gte')
+    paattymis_pvm = django_filters.DateFilter(lookup_expr='gte')
+    muutos_pvm = django_filters.DateTimeFilter(lookup_expr='gte')
 
     class Meta:
         model = Varhaiskasvatussuhde
         fields = []
 
 
-class TilapainenHenkilostoFilter(djangofilters.FilterSet):
-    vakajarjestaja = OrganisaatioFieldFilter(field_name='vakajarjestaja')
-    vuosi = djangofilters.NumberFilter(field_name='kuukausi__year', lookup_expr='exact')
-    kuukausi = djangofilters.NumberFilter(field_name='kuukausi__month', lookup_expr='exact')
+class TilapainenHenkilostoFilter(django_filters.FilterSet):
+    vakajarjestaja = OrganisaatioFieldFilter()
+    vuosi = django_filters.NumberFilter(field_name='kuukausi__year', lookup_expr='exact')
+    kuukausi = django_filters.NumberFilter(field_name='kuukausi__month', lookup_expr='exact')
 
     class Meta:
         model = TilapainenHenkilosto
         fields = []
 
 
-class TutkintoFilter(djangofilters.FilterSet):
-    henkilo = HenkiloFieldFilter(field_name='henkilo')
-    tutkinto_koodi = djangofilters.CharFilter(field_name='tutkinto_koodi', lookup_expr='exact')
-    vakajarjestaja = OrganisaatioFieldFilter(field_name='vakajarjestaja')
+class TutkintoFilter(django_filters.FilterSet):
+    henkilo = HenkiloFieldFilter()
+    tutkinto_koodi = django_filters.CharFilter(lookup_expr='iexact')
+    vakajarjestaja = OrganisaatioFieldFilter()
 
     class Meta:
         model = Tutkinto
         fields = []
 
 
-class PalvelussuhdeFilter(djangofilters.FilterSet):
-    tyontekija = djangofilters.NumberFilter(field_name='tyontekija__id', lookup_expr='exact')
-    tyosuhde_koodi = djangofilters.CharFilter(field_name='tyosuhde_koodi', lookup_expr='exact')
-    tyoaika_koodi = djangofilters.CharFilter(field_name='tyoaika_koodi', lookup_expr='exact')
-    tutkinto_koodi = djangofilters.CharFilter(field_name='tutkinto_koodi', lookup_expr='exact')
-    alkamis_pvm = djangofilters.DateFilter(field_name='alkamis_pvm', lookup_expr='gte')
-    paattymis_pvm = djangofilters.DateFilter(field_name='paattymis_pvm', lookup_expr='gte')
-    lahdejarjestelma = djangofilters.CharFilter(field_name='lahdejarjestelma', lookup_expr='exact')
-    tunniste = djangofilters.CharFilter(field_name='tunniste', lookup_expr='exact')
+class PalvelussuhdeFilter(django_filters.FilterSet):
+    tyontekija = django_filters.NumberFilter(field_name='tyontekija__id', lookup_expr='exact')
+    tyosuhde_koodi = django_filters.CharFilter(lookup_expr='iexact')
+    tyoaika_koodi = django_filters.CharFilter(lookup_expr='iexact')
+    tutkinto_koodi = django_filters.CharFilter(lookup_expr='iexact')
+    alkamis_pvm = django_filters.DateFilter(lookup_expr='gte')
+    paattymis_pvm = django_filters.DateFilter(lookup_expr='gte')
+    lahdejarjestelma = django_filters.CharFilter(lookup_expr='iexact')
+    tunniste = django_filters.CharFilter(lookup_expr='exact')
 
     class Meta:
         model = Palvelussuhde
         fields = []
 
 
-class TyoskentelypaikkaFilter(djangofilters.FilterSet):
-    palvelussuhde = djangofilters.NumberFilter(field_name='palvelussuhde__id', lookup_expr='exact')
-    toimipaikka = djangofilters.NumberFilter(field_name='toimipaikka__id', lookup_expr='exact')
-    tehtavanimike_koodi = djangofilters.CharFilter(field_name='tehtavanimike_koodi', lookup_expr='exact')
-    kelpoisuus_kytkin = djangofilters.BooleanFilter(field_name='kelpoisuus_kytkin', lookup_expr='exact')
-    kiertava_tyontekija_kytkin = djangofilters.BooleanFilter(field_name='kiertava_tyontekija_kytkin', lookup_expr='exact')
-    alkamis_pvm = djangofilters.DateFilter(field_name='alkamis_pvm', lookup_expr='gte')
-    paattymis_pvm = djangofilters.DateFilter(field_name='paattymis_pvm', lookup_expr='gte')
-    lahdejarjestelma = djangofilters.CharFilter(field_name='lahdejarjestelma', lookup_expr='exact')
-    tunniste = djangofilters.CharFilter(field_name='tunniste', lookup_expr='exact')
+class TyoskentelypaikkaFilter(django_filters.FilterSet):
+    palvelussuhde = django_filters.NumberFilter(field_name='palvelussuhde__id', lookup_expr='exact')
+    toimipaikka = django_filters.NumberFilter(field_name='toimipaikka__id', lookup_expr='exact')
+    tehtavanimike_koodi = django_filters.CharFilter(lookup_expr='iexact')
+    kelpoisuus_kytkin = django_filters.BooleanFilter(lookup_expr='exact')
+    kiertava_tyontekija_kytkin = django_filters.BooleanFilter(lookup_expr='exact')
+    alkamis_pvm = django_filters.DateFilter(lookup_expr='gte')
+    paattymis_pvm = django_filters.DateFilter(lookup_expr='gte')
+    lahdejarjestelma = django_filters.CharFilter(lookup_expr='iexact')
+    tunniste = django_filters.CharFilter(lookup_expr='exact')
 
     class Meta:
         model = Tyoskentelypaikka
         fields = []
 
 
-class PidempiPoissaoloFilter(djangofilters.FilterSet):
-    palvelussuhde = djangofilters.NumberFilter(field_name='palvelussuhde__id', lookup_expr='exact')
-    alkamis_pvm = djangofilters.DateFilter(field_name='alkamis_pvm', lookup_expr='gte')
-    paattymis_pvm = djangofilters.DateFilter(field_name='paattymis_pvm', lookup_expr='gte')
-    lahdejarjestelma = djangofilters.CharFilter(field_name='lahdejarjestelma', lookup_expr='exact')
-    tunniste = djangofilters.CharFilter(field_name='tunniste', lookup_expr='exact')
+class PidempiPoissaoloFilter(django_filters.FilterSet):
+    palvelussuhde = django_filters.NumberFilter(field_name='palvelussuhde__id', lookup_expr='exact')
+    alkamis_pvm = django_filters.DateFilter(lookup_expr='gte')
+    paattymis_pvm = django_filters.DateFilter(lookup_expr='gte')
+    lahdejarjestelma = django_filters.CharFilter(lookup_expr='iexact')
+    tunniste = django_filters.CharFilter(lookup_expr='exact')
 
     class Meta:
         model = PidempiPoissaolo
         fields = []
 
 
-class TaydennyskoulutusFilter(djangofilters.FilterSet):
-    tyontekija = djangofilters.NumberFilter(field_name='tyontekijat', lookup_expr='exact', distinct=True)
-    henkilo_oid = djangofilters.CharFilter(field_name='tyontekijat__henkilo__henkilo_oid', lookup_expr='exact', distinct=True)
-    vakajarjestaja_oid = djangofilters.CharFilter(field_name='tyontekijat__vakajarjestaja__organisaatio_oid', lookup_expr='exact', distinct=True)
-    nimi = djangofilters.CharFilter(field_name='nimi', lookup_expr='icontains')
-    suoritus_pvm = djangofilters.NumberFilter(field_name='suoritus_pvm', lookup_expr='exact')
-    koulutuspaivia = djangofilters.NumberFilter(field_name='koulutuspaivia', lookup_expr='exact')
-    lahdejarjestelma = djangofilters.CharFilter(field_name='lahdejarjestelma', lookup_expr='exact')
-    tunniste = djangofilters.CharFilter(field_name='tunniste', lookup_expr='exact')
+class TaydennyskoulutusFilter(django_filters.FilterSet):
+    tyontekija = django_filters.NumberFilter(field_name='tyontekijat', lookup_expr='exact', distinct=True)
+    henkilo_oid = django_filters.CharFilter(field_name='tyontekijat__henkilo__henkilo_oid', lookup_expr='exact', distinct=True)
+    vakajarjestaja_oid = django_filters.CharFilter(field_name='tyontekijat__vakajarjestaja__organisaatio_oid', lookup_expr='exact', distinct=True)
+    nimi = django_filters.CharFilter(lookup_expr='icontains')
+    suoritus_pvm = django_filters.NumberFilter(lookup_expr='exact')
+    koulutuspaivia = django_filters.NumberFilter(lookup_expr='exact')
+    lahdejarjestelma = django_filters.CharFilter(lookup_expr='iexact')
+    tunniste = django_filters.CharFilter(lookup_expr='exact')
 
     class Meta:
         model = Taydennyskoulutus
         fields = []
 
 
-class TaydennyskoulutusTyontekijaListFilter(djangofilters.FilterSet):
-    vakajarjestaja_oid = djangofilters.CharFilter(field_name='vakajarjestaja__organisaatio_oid', lookup_expr='exact', distinct=True, label='vakajarjestaja_oid')
-    henkilo_oid = djangofilters.CharFilter(field_name='henkilo__henkilo_oid', lookup_expr='exact', label='henkilo_oid')
-    toimipaikka_oid = djangofilters.CharFilter(field_name='palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid', lookup_expr='exact', distinct=True, label='toimipaikka_oid')
+class TaydennyskoulutusTyontekijaListFilter(django_filters.FilterSet):
+    vakajarjestaja_oid = django_filters.CharFilter(field_name='vakajarjestaja__organisaatio_oid', lookup_expr='exact', distinct=True, label='vakajarjestaja_oid')
+    henkilo_oid = django_filters.CharFilter(field_name='henkilo__henkilo_oid', lookup_expr='exact', label='henkilo_oid')
+    toimipaikka_oid = django_filters.CharFilter(field_name='palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid', lookup_expr='exact', distinct=True, label='toimipaikka_oid')
 
     class Meta:
         model: TaydennyskoulutusTyontekija
         fields = []
 
 
-class TyontekijaFilter(djangofilters.FilterSet):
-    vakajarjestaja_id = djangofilters.NumberFilter(field_name='vakajarjestaja__id', lookup_expr='exact', label='vakajarjestaja_id')
-    vakajarjestaja_oid = djangofilters.CharFilter(field_name='vakajarjestaja__organisaatio_oid', lookup_expr='exact', label='vakajarjestaja_oid')
-    henkilo_id = djangofilters.NumberFilter(field_name='henkilo__id', lookup_expr='exact', label='henkilo_id')
-    henkilo_oid = djangofilters.CharFilter(field_name='henkilo__henkilo_oid', lookup_expr='exact', label='henkilo_oid')
+class TyontekijaFilter(django_filters.FilterSet):
+    vakajarjestaja_id = django_filters.NumberFilter(field_name='vakajarjestaja__id', lookup_expr='exact', label='vakajarjestaja_id')
+    vakajarjestaja_oid = django_filters.CharFilter(field_name='vakajarjestaja__organisaatio_oid', lookup_expr='exact', label='vakajarjestaja_oid')
+    henkilo_id = django_filters.NumberFilter(field_name='henkilo__id', lookup_expr='exact', label='henkilo_id')
+    henkilo_oid = django_filters.CharFilter(field_name='henkilo__henkilo_oid', lookup_expr='exact', label='henkilo_oid')
 
     class Meta:
         model = Tyontekija
         fields = []
 
 
-class UiTyontekijaFilter(djangofilters.FilterSet):
+class UiTyontekijaFilter(django_filters.FilterSet):
     """
-    Can't utilize djangofilters provided filters (e.g. CharFilter), because all filters need to be inside a single
+    Can't utilize django_filters provided filters (e.g. CharFilter), because all filters need to be inside a single
     .filter() call. If we had multiple .filter() calls, we might get tyontekija that has selected tehtavanimike in
     other toimipaikka, than the ones selected. For example, user has selected toimipaikat=1,2&tehtavanimike=001, we
     may get tyontekija that has tyoskentelypaikka in toimipaikka=1 with tehtavanimike=002 and in toimipaikka=3 with
@@ -527,9 +541,9 @@ class UiTyontekijaFilter(djangofilters.FilterSet):
                                                                                        'id')
 
 
-class UiAllVakajarjestajaFilter(djangofilters.FilterSet):
-    tyyppi = djangofilters.CharFilter(method='filter_tyyppi')
-    search = djangofilters.CharFilter(method='filter_search')
+class UiAllVakajarjestajaFilter(django_filters.FilterSet):
+    tyyppi = django_filters.CharFilter(method='filter_tyyppi')
+    search = django_filters.CharFilter(method='filter_search')
 
     def filter_tyyppi(self, queryset, name, value):
         if value in ['yksityinen', 'kunnallinen']:
@@ -546,26 +560,26 @@ class UiAllVakajarjestajaFilter(djangofilters.FilterSet):
                                Q(organisaatio_oid=value) | Q(y_tunnus=value) | Q(kunta_koodi__in=matching_kunta_koodit))
 
 
-class KelaEtuusmaksatusFilter(djangofilters.FilterSet):
-    kunta_koodi = djangofilters.CharFilter(field_name='varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi', lookup_expr='exact', label='kotikunta_koodi')
-    syntyma_pvm = djangofilters.DateFilter(field_name='varhaiskasvatuspaatos__lapsi__henkilo__syntyma_pvm', lookup_expr='gte', label='syntyma_pvm')
+class KelaEtuusmaksatusFilter(django_filters.FilterSet):
+    kunta_koodi = django_filters.CharFilter(field_name='varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi', lookup_expr='exact', label='kotikunta_koodi')
+    syntyma_pvm = django_filters.DateFilter(field_name='varhaiskasvatuspaatos__lapsi__henkilo__syntyma_pvm', lookup_expr='gte', label='syntyma_pvm')
 
     class Meta:
         model: Varhaiskasvatussuhde
         fields = []
 
 
-class TiedonsiirtoFilter(djangofilters.FilterSet):
-    timestamp = djangofilters.IsoDateTimeFromToRangeFilter()
-    request_url = djangofilters.CharFilter(lookup_expr='icontains')
-    request_method = djangofilters.CharFilter(lookup_expr='iexact')
-    request_body = djangofilters.CharFilter(lookup_expr='icontains')
-    response_body = djangofilters.CharFilter(lookup_expr='icontains')
-    response_code = djangofilters.NumberFilter(lookup_expr='exact')
-    lahdejarjestelma = djangofilters.CharFilter(lookup_expr='exact')
-    username = djangofilters.CharFilter(lookup_expr='iexact', field_name='user__username')
-    successful = djangofilters.BooleanFilter(method='filter_successful')
-    search_target = djangofilters.CharFilter(method='filter_target')
+class TiedonsiirtoFilter(django_filters.FilterSet):
+    timestamp = django_filters.IsoDateTimeFromToRangeFilter()
+    request_url = django_filters.CharFilter(lookup_expr='icontains')
+    request_method = django_filters.CharFilter(lookup_expr='iexact')
+    request_body = django_filters.CharFilter(lookup_expr='icontains')
+    response_body = django_filters.CharFilter(lookup_expr='icontains')
+    response_code = django_filters.NumberFilter(lookup_expr='exact')
+    lahdejarjestelma = django_filters.CharFilter(lookup_expr='exact')
+    username = django_filters.CharFilter(lookup_expr='iexact', field_name='user__username')
+    successful = django_filters.BooleanFilter(method='filter_successful')
+    search_target = django_filters.CharFilter(method='filter_target')
 
     def filter_successful(self, queryset, name, value):
         if value:
@@ -615,24 +629,24 @@ class TiedonsiirtoFilter(djangofilters.FilterSet):
                 )).filter(search_filter))
 
 
-class ExcelReportFilter(djangofilters.FilterSet):
+class ExcelReportFilter(django_filters.FilterSet):
     vakajarjestaja = OrganisaatioFieldFilter()
     toimipaikka = OrganisaatioFieldFilter()
-    user_id = djangofilters.NumberFilter(field_name='user__id')
-    username = djangofilters.NumberFilter(lookup_expr='iexact', field_name='user__username')
-    status = djangofilters.CharFilter()
-    report_type = djangofilters.CharFilter()
+    user_id = django_filters.NumberFilter(field_name='user__id')
+    username = django_filters.NumberFilter(lookup_expr='iexact', field_name='user__username')
+    status = django_filters.CharFilter()
+    report_type = django_filters.CharFilter()
 
 
-class TransferOutageReportFilter(djangofilters.FilterSet):
+class TransferOutageReportFilter(django_filters.FilterSet):
     vakajarjestaja = OrganisaatioFieldFilter()
-    lahdejarjestelma = djangofilters.CharFilter(lookup_expr='exact')
-    username = djangofilters.CharFilter(lookup_expr='icontains', field_name='user__username')
+    lahdejarjestelma = django_filters.CharFilter(lookup_expr='iexact')
+    username = django_filters.CharFilter(lookup_expr='icontains', field_name='user__username')
 
 
-class RequestSummaryFilter(djangofilters.FilterSet):
-    summary_date = djangofilters.DateFromToRangeFilter()
+class RequestSummaryFilter(django_filters.FilterSet):
+    summary_date = django_filters.DateFromToRangeFilter()
     vakajarjestaja = OrganisaatioFieldFilter()
-    lahdejarjestelma = djangofilters.CharFilter(lookup_expr='exact')
-    username = djangofilters.CharFilter(lookup_expr='icontains', field_name='user__username')
-    request_url_simple = djangofilters.CharFilter(lookup_expr='icontains')
+    lahdejarjestelma = django_filters.CharFilter(lookup_expr='iexact')
+    username = django_filters.CharFilter(lookup_expr='icontains', field_name='user__username')
+    request_url_simple = django_filters.CharFilter(lookup_expr='icontains')
