@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.39 (03.03.2022)
+- OPHVARDA-2421: Lapsen ja työntekijän poisto tallennusoikeuksilla
+
 1.5.38 (24.02.2022)
 - OPHVARDA-2319: Näytä lisää -toiminnallisuus
 
