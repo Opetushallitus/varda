@@ -1212,6 +1212,10 @@ class VardaViewsReportingTests(TestCase):
         self.assertNotIn('VP013', resp_string)
         self.assertIn('VP002', resp_string)
 
+        resp = lapsi_client.get(f'{lapsi_url}?error=noerrorlikethis')
+        assert_status_code(resp, status.HTTP_200_OK)
+        self.assertEqual(0, len(json.loads(resp.content)['results']))
+
         resp = lapsi_client.get(f'{lapsi_url}?search=1.2.246.562.24.49084901392')
         assert_status_code(resp, status.HTTP_200_OK)
         resp_string = resp.content.decode('utf8')
@@ -1238,6 +1242,10 @@ class VardaViewsReportingTests(TestCase):
         self.assertIn('TP023', resp_string)
         self.assertIn('Espoo_3', resp_string)
 
+        resp = toimipaikka_client.get(f'{toimipaikka_url}?error=noerrorlikethis')
+        assert_status_code(resp, status.HTTP_200_OK)
+        self.assertEqual(0, len(json.loads(resp.content)['results']))
+
         tyontekija_client = SetUpTestClient('tyontekija_tallentaja').client()
         tyontekija_url = f'/api/v1/vakajarjestajat/{vakajarjestaja_1.id}/error-report-tyontekijat/'
         resp = tyontekija_client.get(tyontekija_url)
@@ -1253,6 +1261,10 @@ class VardaViewsReportingTests(TestCase):
         resp_string = resp.content.decode('utf8')
         self.assertIn('TA014', resp_string)
         self.assertNotIn('PS008', resp_string)
+
+        resp = tyontekija_client.get(f'{tyontekija_url}?error=noerrorlikethis')
+        assert_status_code(resp, status.HTTP_200_OK)
+        self.assertEqual(0, len(json.loads(resp.content)['results']))
 
         resp = tyontekija_client.get(f'{tyontekija_url}?search=BeL')
         assert_status_code(resp, status.HTTP_200_OK)

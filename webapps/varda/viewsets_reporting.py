@@ -705,6 +705,10 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
 
     def get_queryset(self):
         errors = self.get_errors()
+        if not errors:
+            # No errors in filtered query
+            return Lapsi.objects.none()
+
         annotation_query, filter_query, parameter_list = self.get_sql_content(errors)
         search_filter, search_parameter_list = self.get_search_filter()
 
@@ -783,6 +787,10 @@ class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
 
     def get_queryset(self):
         errors = self.get_errors()
+        if not errors:
+            # No errors in filtered query
+            return Tyontekija.objects.none()
+
         annotation_query, filter_query, parameter_list = self.get_sql_content(errors)
         search_filter, search_parameter_list = self.get_search_filter()
 
@@ -882,6 +890,10 @@ class ErrorReportToimipaikatViewSet(AbstractErrorReportViewSet):
 
     def get_queryset(self):
         errors = self.get_errors()
+        if not errors:
+            # No errors in filtered query
+            return Toimipaikka.objects.none()
+
         annotation_query, filter_query, parameter_list = self.get_sql_content(errors)
         search_filter, search_parameter_list = self.get_search_filter()
 
