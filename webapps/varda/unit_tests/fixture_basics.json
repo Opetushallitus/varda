@@ -115,7 +115,7 @@
     "model": "django_celery_beat.crontabschedule",
     "pk": 7,
     "fields": {
-      "minute": "00",
+      "minute": "0",
       "hour": "19",
       "day_of_week": "*",
       "day_of_month": "*",
@@ -127,7 +127,7 @@
     "model": "django_celery_beat.crontabschedule",
     "pk": 8,
     "fields": {
-      "minute": "00",
+      "minute": "0",
       "hour": "0",
       "day_of_week": "*",
       "day_of_month": "*",
@@ -139,7 +139,7 @@
     "model": "django_celery_beat.crontabschedule",
     "pk": 9,
     "fields": {
-      "minute": "00",
+      "minute": "0",
       "hour": "23",
       "day_of_week": "*",
       "day_of_month": "*",
@@ -151,11 +151,23 @@
     "model": "django_celery_beat.crontabschedule",
     "pk": 10,
     "fields": {
-      "minute": "00",
+      "minute": "0",
       "hour": "4,16",
       "day_of_week": "*",
       "day_of_month": "*",
       "month_of_year": "*",
+      "timezone": "UTC"
+    }
+  },
+  {
+    "model": "django_celery_beat.crontabschedule",
+    "pk": 11,
+    "fields": {
+      "minute": "0",
+      "hour": "0",
+      "day_of_week": "0",
+      "day_of_month": "1",
+      "month_of_year": "1",
       "timezone": "UTC"
     }
   },
@@ -706,6 +718,31 @@
       "last_run_at": null,
       "total_run_count": 0,
       "date_changed": "2021-10-01T16:00:00.000Z",
+      "description": ""
+    }
+  },
+  {
+    "model": "django_celery_beat.periodictask",
+    "pk": 24,
+    "fields": {
+      "name": "reset_superuser_permissions",
+      "task": "varda.tasks.reset_superuser_permissions_task",
+      "interval": null,
+      "crontab": 11,
+      "solar": null,
+      "args": "[]",
+      "kwargs": "{}",
+      "queue": null,
+      "exchange": null,
+      "routing_key": null,
+      "priority": null,
+      "one_off": false,
+      "start_time": null,
+      "expires": null,
+      "enabled": true,
+      "last_run_at": null,
+      "total_run_count": 0,
+      "date_changed": "2022-03-01T16:00:00.000Z",
       "description": ""
     }
   }

@@ -8,9 +8,9 @@ from django.utils import timezone
 from rest_framework import status
 
 from varda.models import (Lapsi, Huoltaja, Maksutieto, Varhaiskasvatussuhde, Varhaiskasvatuspaatos, Henkilo,
-                          VakaJarjestaja, Huoltajuussuhde, Z5_AuditLog)
+                          VakaJarjestaja, Huoltajuussuhde, Z3_AdditionalCasUserFields, Z5_AuditLog)
 from varda.tasks import (delete_huoltajat_without_relations_task, delete_henkilot_without_relations_task,
-                         general_monitoring_task)
+                         general_monitoring_task, reset_superuser_permissions_task)
 from varda.unit_tests.test_utils import SetUpTestClient, assert_status_code
 
 
@@ -150,7 +150,25 @@ class TaskTests(TestCase):
         self.assertEqual(henkilo_qs.count(), 4)
         self.assertFalse(Henkilo.objects.filter(id=henkilo_1_id).exists())
 
-    def test_general_monitoring_task(self):
+    def test_general_monitoring_task_users(self):
+        Z3_AdditionalCasUserFields.objects.all().update(approved_oph_staff=True)
+        with self.assertLogs('varda.tasks', level='ERROR') as cm:
+            general_monitoring_task.delay()
+            self.assertEqual(cm.output, ['ERROR:varda.tasks:There are too many users with approved_oph_staff=True.'])
+        Z3_AdditionalCasUserFields.objects.all().update(approved_oph_staff=False)
+
+        User.objects.all().update(is_superuser=True)
+        with self.assertLogs('varda.tasks', level='ERROR') as cm:
+            general_monitoring_task.delay()
+            self.assertEqual(cm.output, ['ERROR:varda.tasks:There are too many users with is_staff=True or '
+                                         'is_superuser=True.'])
+        User.objects.all().update(is_superuser=False, is_staff=True)
+        with self.assertLogs('varda.tasks', level='ERROR') as cm:
+            general_monitoring_task.delay()
+            self.assertEqual(cm.output, ['ERROR:varda.tasks:There are too many users with is_staff=True or '
+                                         'is_superuser=True.'])
+
+    def test_general_monitoring_task_pages(self):
         user = User.objects.get(username='tester2')
         user_luovutuspalvelu = User.objects.get(username='kela_luovutuspalvelu')
 
@@ -174,3 +192,13 @@ class TaskTests(TestCase):
         Z5_AuditLog.objects.filter(user=user).update(user=user_luovutuspalvelu)
         with self.assertNoLogs('varda.tasks', level='ERROR'):
             general_monitoring_task.delay()
+
+    def test_reset_superuser_permissions_task(self):
+        user_qs = User.objects.filter(username='tester2')
+        user = user_qs.first()
+        user.is_superuser = True
+        user.save()
+
+        reset_superuser_permissions_task.delay()
+        self.assertEqual(user_qs.first().is_superuser, False)
+        self.assertEqual(user_qs.first().is_staff, False)

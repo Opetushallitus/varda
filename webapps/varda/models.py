@@ -34,7 +34,7 @@ class AbstractModel(models.Model):
         abstract = True
 
     def __str__(self):
-        return str(self.id)
+        return str(self.pk)
 
     @classmethod
     def get_name(cls):
@@ -1094,7 +1094,8 @@ class Z3_AdditionalCasUserFields(AbstractModel):
     etunimet = models.CharField(max_length=100, blank=True, null=True)
     kutsumanimi = models.CharField(max_length=100, blank=True, null=True)
     sukunimi = models.CharField(max_length=100, blank=True, null=True)
-    huollettava_oid_list = ArrayField(models.CharField(max_length=50, blank=True, validators=[validators.validate_henkilo_oid]), null=True, validators=[validators.validate_arrayfield])
+    huollettava_oid_list = ArrayField(models.CharField(max_length=50, blank=True, validators=[validators.validate_henkilo_oid]),
+                                      null=True, blank=True, validators=[validators.validate_arrayfield])
     asiointikieli_koodi = models.CharField(max_length=3, blank=True)
     approved_oph_staff = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
@@ -1241,7 +1242,7 @@ class Z6_RequestCount(AbstractModel):
 
 class Z7_AdditionalUserFields(AbstractModel):
     user = models.OneToOneField(User, related_name='additional_user_fields', on_delete=models.PROTECT, primary_key=True)
-    password_changed_timestamp = models.DateTimeField()
+    password_changed_timestamp = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name_plural = 'Additional user fields'

@@ -5,14 +5,12 @@ from functools import wraps
 
 from celery import shared_task
 from django.conf import settings
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.postgres.aggregates import StringAgg
 from django.core.cache import cache
 from django.core.management import call_command
 from django.db import connection, transaction
-from django.db.models import (Case, Count, DateField, F, ForeignObjectRel, Func, IntegerField, ManyToManyField,
-                              OuterRef, Q, Subquery, Value, When)
+from django.db.models import (Case, Count, DateField, F, Func, IntegerField, Q, Value, When)
 from django.db.models.functions import Cast
 from django.utils import timezone
 from guardian.models import GroupObjectPermission, UserObjectPermission
@@ -29,14 +27,14 @@ from varda.enums.reporting import ReportStatus
 from varda.excel_export import delete_excel_reports_earlier_than
 from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
 from varda.misc import memory_efficient_queryset_iterator
-from varda.models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto,
-                          MaksutietoHuoltajuussuhde, Palvelussuhde, PaosOikeus, PaosToiminta, PidempiPoissaolo,
-                          Taydennyskoulutus, TaydennyskoulutusTyontekija, TilapainenHenkilosto, ToiminnallinenPainotus,
-                          Toimipaikka, Tutkinto, Tyontekija, Tyoskentelypaikka, VakaJarjestaja, Varhaiskasvatuspaatos,
-                          Varhaiskasvatussuhde, YearlyReportSummary, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet,
-                          Z5_AuditLog, Z6_LastRequest, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary)
+from varda.models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Maksutieto,
+                          MaksutietoHuoltajuussuhde, Palvelussuhde, Taydennyskoulutus, TaydennyskoulutusTyontekija,
+                          Toimipaikka, Tyontekija, VakaJarjestaja, Varhaiskasvatuspaatos, YearlyReportSummary,
+                          Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog, Z6_LastRequest,
+                          Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary)
 from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups
 from varda.permissions import assign_object_level_permissions_for_instance, delete_object_permissions_explicitly
+
 
 logger = logging.getLogger(__name__)
 
@@ -569,8 +567,12 @@ def general_monitoring_task():
     """
     This task is used to perform various monitoring tasks
     """
+    # Check that number of super/staff users does not exceed limit
+    if User.objects.filter(Q(is_staff=True) | Q(is_superuser=True)).count() > settings.STAFF_USER_LIMIT:
+        logger.error('There are too many users with is_staff=True or is_superuser=True.')
+
     # Check that number of OPH users does not exceed limit
-    if Z3_AdditionalCasUserFields.objects.filter(approved_oph_staff=True).count() > 5:
+    if Z3_AdditionalCasUserFields.objects.filter(approved_oph_staff=True).count() > settings.OPH_USER_LIMIT:
         logger.error('There are too many users with approved_oph_staff=True.')
 
     # Check that an API is not systematically browsed through using the page-parameter
@@ -661,50 +663,6 @@ def init_related_object_changed_table_task():
                 FROM varda_maksutietohuoltajuussuhde mhs
                 LEFT JOIN varda_huoltajuussuhde hs ON hs.id = mhs.huoltajuussuhde_id;
             ''')
-
-
-@shared_task
-@single_instance_task(timeout_in_minutes=8 * 60)
-def delete_toimipaikka_paakayttaja_groups():
-    """
-    TEMPORARY FUNCTION
-    """
-    with transaction.atomic():
-        toimipaikka_oid_qs = Toimipaikka.objects.exclude(organisaatio_oid='').values('organisaatio_oid')
-        group_qs = (Group.objects
-                    .annotate(oid=Func(F('name'), Value(r'.*_(\d.*)'), Value(r'\1'), function='regexp_replace'))
-                    .filter(oid__in=Subquery(toimipaikka_oid_qs), name__contains='PAAKAYTTAJA'))
-        logger.info(f'Deleting {group_qs.count()} toimipaikka PAAKAYTTAJA groups')
-        group_qs.delete()
-
-
-@shared_task
-@single_instance_task(timeout_in_minutes=8 * 60)
-def create_missing_delete_events():
-    """
-    TEMPORARY FUNCTION
-    """
-    now = timezone.now()
-    for model in (Henkilo, Lapsi, Huoltaja, Huoltajuussuhde, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Toimipaikka):
-        # Gets list of object IDs that are missing a delete-event
-        with transaction.atomic():
-            qs = (model.history.values('id')
-                  .annotate(history_type_list=StringAgg('history_type', ','),
-                            live_id=Subquery(model.objects.filter(id=OuterRef('id')).values('id')))
-                  .filter(~(Q(history_type_list__contains='+') & Q(history_type_list__contains='-')) &
-                          Q(live_id__isnull=True))
-                  .values_list('id', flat=True))
-
-            for object_id in qs:
-                # Get the last history record
-                history_object = model.history.filter(id=object_id).order_by('-history_date').first()
-                # Create delete event
-                history_object.history_id = None
-                history_object.history_date = now
-                history_object.history_type = '-'
-                history_object.save()
-
-            logger.info(f'Created missing delete events for {qs.count()} {model.get_name()} objects.')
 
 
 @shared_task
@@ -819,34 +777,12 @@ def create_yearly_reporting_summary(user_id, vakajarjestaja_id, tilasto_pvm, poi
 
 @shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
-def create_missing_history_events():
+def reset_superuser_permissions_task():
     """
-    TEMPORARY FUNCTION
+    Sets is_superuser and is_staff fields False for CAS users that have either field as True.
     """
-    for model in (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
-                  Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto, Huoltajuussuhde, MaksutietoHuoltajuussuhde,
-                  PaosToiminta, PaosOikeus, Tyontekija, TilapainenHenkilosto, Tutkinto, Palvelussuhde,
-                  Tyoskentelypaikka, PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija,):
-        # Get list of database column names for model
-        field_name_list = [field.get_attname_column()[1] for field in model._meta.get_fields()
-                           if not isinstance(field, ForeignObjectRel) and not isinstance(field, ManyToManyField)]
-        # Build filter for finding differences between live object and last history object
-        where_filter = ' OR '.join([f'mo.{field_name} IS DISTINCT FROM hismo.{field_name}'
-                                    for field_name in field_name_list])
-        # Get last history object for each instance and look for differences in column values
-        raw_query = f'''
-            SELECT mo.* FROM varda_{model.get_name()} mo
-            LEFT JOIN
-                (SELECT DISTINCT ON (id) * FROM varda_historical{model.get_name()}
-                 ORDER BY id, history_date DESC) hismo ON hismo.id = mo.id
-            WHERE {where_filter}
-            ORDER BY mo.id;
-        '''
-
-        index = 0
-        for instance in model.objects.raw(raw_query).iterator():
-            # Save instance so that a new historical record is created
-            instance.save()
-            index += 1
-
-        logger.info(f'Created missing history event for {index} {model.get_name()} objects.')
+    for user in User.objects.filter(Q(is_superuser=True) | Q(is_staff=True)):
+        if hasattr(user, 'additional_cas_user_fields'):
+            user.is_superuser = False
+            user.is_staff = False
+            user.save()

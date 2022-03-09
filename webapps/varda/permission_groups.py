@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
@@ -464,7 +465,7 @@ def add_oph_staff_to_vakajarjestaja_katselija_groups():
     """
     approved_oph_staff_query = Z3_AdditionalCasUserFields.objects.filter(approved_oph_staff=True)
     # Check that number of OPH users does not exceed limit
-    if approved_oph_staff_query.count() > 5:
+    if approved_oph_staff_query.count() > settings.OPH_USER_LIMIT:
         error_msg = 'There are too many users with approved_oph_staff=True.'
         logger.error(error_msg)
         raise ValidationError(error_msg)
