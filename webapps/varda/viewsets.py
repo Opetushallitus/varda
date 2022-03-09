@@ -54,10 +54,9 @@ from varda.permission_groups import (assign_object_level_permissions, create_per
                                      assign_vakajarjestaja_vakatiedot_paos_permissions,
                                      assign_toimipaikka_vakatiedot_paos_permissions,
                                      assign_object_permissions_to_all_henkilosto_groups)
-from varda.permissions import (get_ids_user_has_permissions_by_type, throw_if_not_tallentaja_permissions,
+from varda.permissions import (throw_if_not_tallentaja_permissions,
                                check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement,
                                check_if_user_has_paakayttaja_permissions, ReadAdminOrOPHUser, CustomModelPermissions,
-                               user_belongs_to_correct_group_combinations,
                                user_has_huoltajatieto_tallennus_permissions_to_correct_organization,
                                grant_or_deny_access_to_paos_toimipaikka, user_has_tallentaja_permission_in_organization,
                                auditlogclass, save_audit_log, ToimipaikkaPermissions, get_toimipaikka_or_404, auditlog,
@@ -1177,51 +1176,23 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
         """
         Poista yhden lapsen kaikki varhaiskasvatustiedot (varhaiskasvatussuhteet, varhaiskasvatuspäätökset, maksutiedot)
         """
-        instance = self.get_object()
-        if instance.paos_kytkin:
-            paos_oikeus = (PaosOikeus.objects
-                           .filter(jarjestaja_kunta_organisaatio=instance.oma_organisaatio,
-                                   tuottaja_organisaatio=instance.paos_organisaatio, voimassa_kytkin=True).first())
-            organisaatio_oid = paos_oikeus.tallentaja_organisaatio.organisaatio_oid if paos_oikeus else None
-        else:
-            organisaatio_oid = instance.vakatoimija.organisaatio_oid
-        if not organisaatio_oid:
-            logger.error(f'Failed to delete all data of Lapsi {instance.id}')
-            raise Http404
-
         user = self.request.user
-        permission_group_combinations = [[Z4_CasKayttoOikeudet.PALVELUKAYTTAJA],
-                                         [Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA]]
-        has_vakajarjestaja_permission = user_belongs_to_correct_group_combinations(user, organisaatio_oid,
-                                                                                   permission_group_combinations)
+        instance = self.get_object()
 
-        vakasuhde_qs = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=instance)
-        vakapaatos_qs = instance.varhaiskasvatuspaatokset.all()
-        maksutieto_qs = Maksutieto.objects.filter(huoltajuussuhteet__lapsi=instance)
-        if not user.is_superuser and not has_vakajarjestaja_permission:
-            # Verify that User has delete permissions to everything related to Lapsi object (Toimipaikka permissions)
-            vakasuhde_id_set = set(vakasuhde_qs.values_list('id', flat=True))
-            user_vakasuhde_id_set = set(get_ids_user_has_permissions_by_type(user, Varhaiskasvatussuhde,
-                                                                             permission_type='delete'))
-            vakapaatos_id_set = set(vakapaatos_qs.values_list('id', flat=True))
-            user_vakapaatos_id_set = set(get_ids_user_has_permissions_by_type(user, Varhaiskasvatuspaatos,
-                                                                              permission_type='delete'))
-            maksutieto_id_set = set(maksutieto_qs.values_list('id', flat=True))
-            user_maksutieto_id_set = set(get_ids_user_has_permissions_by_type(user, Maksutieto,
-                                                                              permission_type='delete'))
-            if (not vakasuhde_id_set.issubset(user_vakasuhde_id_set) or
-                    not vakapaatos_id_set.issubset(user_vakapaatos_id_set) or
-                    not maksutieto_id_set.issubset(user_maksutieto_id_set)):
-                raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
+        vakasuhde_qs = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=instance).distinct('id')
+        vakapaatos_qs = instance.varhaiskasvatuspaatokset.all().distinct('id')
+        maksutieto_qs = Maksutieto.objects.filter(huoltajuussuhteet__lapsi=instance).distinct('id')
 
         with transaction.atomic():
-            for vakasuhde in vakasuhde_qs:
-                vakasuhde.delete()
-            for vakapaatos in vakapaatos_qs:
-                vakapaatos.delete()
-            for maksutieto in maksutieto_qs:
-                maksutieto.maksutiedot_huoltajuussuhteet.all().delete()
-                maksutieto.delete()
+            for object_list in [vakasuhde_qs, vakapaatos_qs, maksutieto_qs]:
+                for object_instance in object_list:
+                    # Verify that user has permission to delete object
+                    delete_permission = f'delete_{type(object_instance).get_name()}'
+                    if not user.has_perm(delete_permission, object_instance):
+                        raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
+                    if type(object_instance) == Maksutieto:
+                        object_instance.maksutiedot_huoltajuussuhteet.all().delete()
+                    object_instance.delete()
             instance.huoltajuussuhteet.all().delete()
             instance.delete()
             delete_cache_keys_related_model('henkilo', instance.henkilo.id)

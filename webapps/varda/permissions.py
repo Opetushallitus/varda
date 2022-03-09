@@ -16,7 +16,7 @@ from rest_framework import permissions, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from varda.enums.error_messages import ErrorMessages
-from varda.misc import flatten_nested_list, path_parse
+from varda.misc import path_parse
 from varda.models import (VakaJarjestaja, Toimipaikka, Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
                           PaosToiminta, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog,
                           LoginCertificate, Maksutieto, Tyontekija, Tyoskentelypaikka, TaydennyskoulutusTyontekija)
@@ -684,27 +684,6 @@ def user_permission_groups_in_organization(user, organisaatio_oid, permission_gr
 def user_permission_groups_in_organizations(user, oid_list, permission_group_list):
     group_name_list = [f'{group}_{oid}' for oid in oid_list for group in permission_group_list]
     return user.groups.filter(name__in=group_name_list)
-
-
-def user_belongs_to_correct_group_combinations(user, organisaatio_oid, permission_group_nested_list):
-    """
-    Check if user belongs to a correct combination of groups. Takes a nested list as argument that defines different
-    combinations.
-    :param user: User object
-    :param organisaatio_oid: organisaatio OID
-    :param permission_group_nested_list: e.g. [[Z4_CasKayttoOikeudet.PALVELUKAYTTAJA],
-           [Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA]]
-    :return: boolean, True if user belongs to at least one correct group combination, else False
-    """
-    permission_group_list_flat = flatten_nested_list(permission_group_nested_list)
-    user_group_name_set = set(user_permission_groups_in_organizations(user, organisaatio_oid, permission_group_list_flat)
-                              .values_list('name', flat=True))
-
-    for group_combination in permission_group_nested_list:
-        group_name_set = {f'{group}_{organisaatio_oid}' for group in group_combination}
-        if group_name_set.issubset(user_group_name_set):
-            return True
-    return False
 
 
 def toimipaikka_tallentaja_pidempipoissaolo_has_perm_to_add(user, vakajarjestaja_oid, validated_data):

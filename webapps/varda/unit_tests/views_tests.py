@@ -5213,6 +5213,63 @@ class VardaViewsTests(TestCase):
         assert_status_code(resp, status.HTTP_204_NO_CONTENT)
         self._verify_lapsi_data_deletion(lapsi_data)
 
+    def test_lapsi_delete_all_paos_jarjestaja(self):
+        mock_admin_user('tester2')
+        admin_client = SetUpTestClient('tester2').client()
+
+        paos_oikeus = PaosOikeus.objects.get(jarjestaja_kunta_organisaatio__organisaatio_oid='1.2.246.562.10.34683023489',
+                                             tuottaja_organisaatio__organisaatio_oid='1.2.246.562.10.93957375488')
+        paos_oikeus_patch = {
+            'tallentaja_organisaatio_oid': '1.2.246.562.10.93957375488'
+        }
+        assert_status_code(admin_client.patch(f'/api/v1/paos-oikeudet/{paos_oikeus.id}/', paos_oikeus_patch), status.HTTP_200_OK)
+
+        client = SetUpTestClient('pkvakajarjestaja1').client()
+        lapsi = Lapsi.objects.get(tunniste='testing-lapsi4')
+
+        url = f'/api/v1/lapset/{lapsi.lahdejarjestelma}:{lapsi.tunniste}/delete-all/'
+        resp = client.delete(url)
+        # No delete permission to Lapsi object
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
+        assert_validation_error(resp, 'errors', 'PE006', 'User does not have permission to perform this action.')
+
+        paos_oikeus_patch = {
+            'tallentaja_organisaatio_oid': '1.2.246.562.10.34683023489'
+        }
+        assert_status_code(admin_client.patch(f'/api/v1/paos-oikeudet/{paos_oikeus.id}/', paos_oikeus_patch), status.HTTP_200_OK)
+
+        lapsi_data = self._get_data_ids_for_lapsi(lapsi)
+        resp = client.delete(url)
+        assert_status_code(resp, status.HTTP_204_NO_CONTENT)
+        self._verify_lapsi_data_deletion(lapsi_data)
+
+    def test_lapsi_delete_all_paos_tuottaja(self):
+        mock_admin_user('tester2')
+        admin_client = SetUpTestClient('tester2').client()
+        paos_oikeus = PaosOikeus.objects.get(jarjestaja_kunta_organisaatio__organisaatio_oid='1.2.246.562.10.93957375484',
+                                             tuottaja_organisaatio__organisaatio_oid='1.2.246.562.10.93957375488')
+        paos_oikeus_patch = {
+            'tallentaja_organisaatio_oid': '1.2.246.562.10.93957375488'
+        }
+        assert_status_code(admin_client.patch(f'/api/v1/paos-oikeudet/{paos_oikeus.id}/', paos_oikeus_patch), status.HTTP_200_OK)
+
+        client = SetUpTestClient('pkvakajarjestaja2').client()
+        lapsi = Lapsi.objects.get(tunniste='testing-lapsi5')
+
+        url = f'/api/v1/lapset/{lapsi.lahdejarjestelma}:{lapsi.tunniste}/delete-all/'
+        resp = client.delete(url)
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
+        assert_validation_error(resp, 'errors', 'PE002', 'User does not have permissions to delete this object.')
+
+        for maksutieto in Maksutieto.objects.filter(huoltajuussuhteet__lapsi=lapsi):
+            maksutieto.maksutiedot_huoltajuussuhteet.all().delete()
+            maksutieto.delete()
+
+        lapsi_data = self._get_data_ids_for_lapsi(lapsi)
+        resp = client.delete(url)
+        assert_status_code(resp, status.HTTP_204_NO_CONTENT)
+        self._verify_lapsi_data_deletion(lapsi_data)
+
     def test_lapsi_delete_all_vakajarjestaja(self):
         user = User.objects.get(username='tester5')
         client = SetUpTestClient('tester5').client()

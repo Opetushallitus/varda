@@ -26,12 +26,10 @@ from varda.models import (VakaJarjestaja, TilapainenHenkilosto, Tutkinto, Tyonte
 from varda.permission_groups import (assign_object_permissions_to_tyontekija_groups,
                                      assign_object_permissions_to_tilapainenhenkilosto_groups,
                                      assign_object_permissions_to_taydennyskoulutus_groups)
-from varda.permissions import (CustomModelPermissions, delete_object_permissions_explicitly,
-                               get_ids_user_has_permissions_by_type, is_user_permission,
+from varda.permissions import (CustomModelPermissions, delete_object_permissions_explicitly, is_user_permission,
                                is_correct_taydennyskoulutus_tyontekija_permission, get_tyontekija_vakajarjestaja_oid,
                                filter_authorized_taydennyskoulutus_tyontekijat_list, auditlog, auditlogclass,
-                               user_belongs_to_correct_group_combinations, user_permission_groups_in_organization,
-                               HenkilostohakuPermissions,
+                               user_permission_groups_in_organization, HenkilostohakuPermissions,
                                get_tyontekija_filters_for_taydennyskoulutus_groups,
                                toimipaikka_tallentaja_pidempipoissaolo_has_perm_to_add,
                                get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus, is_oph_staff,
@@ -173,59 +171,40 @@ class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
         Poista yhden tyontekijän kaikki henkilöstötiedot (palvelussuhteet, tyoskentelypaikat, pidemmät poissaolot,
         täydennyskoulutukset, tutkinnot)
         """
-        instance = self.get_object()
         user = self.request.user
-        permission_group_combinations = [[Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
-                                          Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA]]
-        organisaatio_oid = instance.vakajarjestaja.organisaatio_oid
-        has_vakajarjestaja_permission = user_belongs_to_correct_group_combinations(user, organisaatio_oid,
-                                                                                   permission_group_combinations)
+        instance = self.get_object()
 
-        tyoskentelypaikka_qs = Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=instance)
-        pidempi_poissaolo_qs = PidempiPoissaolo.objects.filter(palvelussuhde__tyontekija=instance)
-        palvelussuhde_qs = instance.palvelussuhteet.all()
-        tutkinto_qs = Tutkinto.objects.filter(vakajarjestaja=instance.vakajarjestaja, henkilo=instance.henkilo)
-        taydennyskoulutus_qs = Taydennyskoulutus.objects.filter(tyontekijat=instance)
-        if not user.is_superuser and not has_vakajarjestaja_permission:
-            # Verify that User has delete permissions to everything related to Tyontekija object
-            # (Toimipaikka permissions)
-            tyoskentelypaikka_id_set = set(tyoskentelypaikka_qs.values_list('id', flat=True))
-            user_tyoskentelypaikka_id_set = set(get_ids_user_has_permissions_by_type(user, Tyoskentelypaikka,
-                                                                                     permission_type='delete'))
-            pidempi_poissaolo_id_set = set(pidempi_poissaolo_qs.values_list('id', flat=True))
-            user_pidempi_poissaolo_id_set = set(get_ids_user_has_permissions_by_type(user, PidempiPoissaolo,
-                                                                                     permission_type='delete'))
-            palvelussuhde_id_set = set(palvelussuhde_qs.values_list('id', flat=True))
-            user_palvelussuhde_id_set = set(get_ids_user_has_permissions_by_type(user, Palvelussuhde,
-                                                                                 permission_type='delete'))
-            tutkinto_id_set = set(tutkinto_qs.values_list('id', flat=True))
-            user_tutkinto_id_set = set(get_ids_user_has_permissions_by_type(user, Tutkinto, permission_type='delete'))
+        # Taydennyskoulutus permissions are more complicated and require custom logic
+        taydennyskoulutus_tyontekija_qs = instance.taydennyskoulutukset_tyontekijat.all()
+        has_taydennyskoulutus_permissions = is_correct_taydennyskoulutus_tyontekija_permission(
+            user, taydennyskoulutus_tyontekija_qs, throws=False
+        )
+        if not has_taydennyskoulutus_permissions:
+            # Raise PermissionDenied if user does not have delete permission to all TaydennyskoulutusTyontekija objects
+            raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
 
-            # Taydennyskoulutus Toimipaikka permissions are more complicated and require custom logic
-            taydennyskoulutus_tyontekija_qs = instance.taydennyskoulutukset_tyontekijat.all()
-            has_taydennyskoulutus_permissions = is_correct_taydennyskoulutus_tyontekija_permission(user, taydennyskoulutus_tyontekija_qs, throws=False)
-
-            if (not tyoskentelypaikka_id_set.issubset(user_tyoskentelypaikka_id_set) or
-                    not pidempi_poissaolo_id_set.issubset(user_pidempi_poissaolo_id_set) or
-                    not palvelussuhde_id_set.issubset(user_palvelussuhde_id_set) or
-                    not tutkinto_id_set.issubset(user_tutkinto_id_set) or
-                    not has_taydennyskoulutus_permissions):
-                raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
+        tyoskentelypaikka_qs = Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=instance).distinct('id')
+        pidempi_poissaolo_qs = PidempiPoissaolo.objects.filter(palvelussuhde__tyontekija=instance).distinct('id')
+        palvelussuhde_qs = instance.palvelussuhteet.distinct('id')
+        tutkinto_qs = Tutkinto.objects.filter(vakajarjestaja=instance.vakajarjestaja, henkilo=instance.henkilo).distinct('id')
+        taydennyskoulutus_qs = Taydennyskoulutus.objects.filter(tyontekijat=instance).distinct('id')
 
         with transaction.atomic():
-            for tyoskentelypaikka in tyoskentelypaikka_qs:
-                tyoskentelypaikka.delete()
-            for pidempi_poissaolo in pidempi_poissaolo_qs:
-                pidempi_poissaolo.delete()
-            for palvelussuhde in palvelussuhde_qs:
-                palvelussuhde.delete()
-            for tutkinto in tutkinto_qs:
-                tutkinto.delete()
-            for taydennyskoulutus in taydennyskoulutus_qs:
-                taydennyskoulutus.taydennyskoulutukset_tyontekijat.filter(tyontekija=instance).delete()
-                if taydennyskoulutus.taydennyskoulutukset_tyontekijat.all().count() == 0:
-                    # Taydennyskoulutus object did not have other related Tyontekija objects
-                    taydennyskoulutus.delete()
+            for object_list in [tyoskentelypaikka_qs, pidempi_poissaolo_qs, palvelussuhde_qs, tutkinto_qs,
+                                taydennyskoulutus_qs]:
+                for object_instance in object_list:
+                    # Verify that user has permission to delete object
+                    delete_permission = f'delete_{type(object_instance).get_name()}'
+                    if not user.has_perm(delete_permission, object_instance):
+                        raise PermissionDenied({'errors': [ErrorMessages.PE002.value]})
+                    if type(object_instance) == Taydennyskoulutus:
+                        # Custom logic for Taydennyskoulutus objects
+                        object_instance.taydennyskoulutukset_tyontekijat.filter(tyontekija=instance).delete()
+                        if object_instance.taydennyskoulutukset_tyontekijat.all().count() == 0:
+                            # Taydennyskoulutus object did not have other related Tyontekija objects
+                            object_instance.delete()
+                    else:
+                        object_instance.delete()
             instance.delete()
             delete_cache_keys_related_model('henkilo', instance.henkilo.id)
             delete_cache_keys_related_model('vakajarjestaja', instance.vakajarjestaja.id)
