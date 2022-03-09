@@ -1,4 +1,7 @@
+from django.conf import settings
+from django.utils.decorators import method_decorator
 from django.utils.deprecation import MiddlewareMixin
+from django.views.decorators.debug import sensitive_post_parameters
 
 
 class AdditionalHeadersMiddleware(MiddlewareMixin):
@@ -28,3 +31,12 @@ class AdditionalHeadersMiddleware(MiddlewareMixin):
             response['X-Proxied-From'] = 'varda-backend'
 
         return response
+
+
+class SensitiveMiddleware(MiddlewareMixin):
+    """
+    Makes sure certain sensitive post parameters are never included in error messages
+    """
+    @method_decorator(sensitive_post_parameters(*settings.SENSITIVE_POST_PARAMETERS))
+    def __call__(self, *args, **kwargs):
+        return super().__call__(*args, **kwargs)

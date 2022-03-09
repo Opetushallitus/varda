@@ -76,6 +76,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'varda.custom_middleware.SensitiveMiddleware',
     'validate_cas_proxy_url.middleware.ValidateCASProxyURL',
     'log_request_id.middleware.RequestIDMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -444,6 +445,9 @@ ALLAS_USER_FILES_BUCKET = None
 
 # Java application
 JAVA_URL = 'http://localhost:8080'
+
+# POST parameters that are replaced in error messages
+SENSITIVE_POST_PARAMETERS = ['password']
 
 """
 TODO: This does not currently work. Login fails with 403 forbidden.
