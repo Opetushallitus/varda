@@ -151,7 +151,7 @@ export class VardaFormValidators {
         return validationObj;
       }
 
-      const matchAllowedChars = trimmedValue.match(/^[a-zà-öø-ÿåäöÅÄÖA-ZÀ-ÖØ-ß',-.`´\s-]+$/);
+      const matchAllowedChars = trimmedValue.match(/^[a-zà-öø-ÿåäöÅÄÖA-ZÀ-ÖØ-ß',-.`´\s-*/]+$/);
       return matchAllowedChars ? null : validationObj;
     } catch (e) {
       return null;

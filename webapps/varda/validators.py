@@ -388,7 +388,7 @@ def validate_henkilo_oid(oid):
 
 
 def validate_nimi(nimi):
-    if not bool(re.match("^[a-zà-öø-ÿåäöÅÄÖA-ZÀ-ÖØ-ß',-.`´ ]+$", nimi)):
+    if not bool(re.match("^[a-zà-öø-ÿåäöÅÄÖA-ZÀ-ÖØ-ß',-.`´*/ ]+$", nimi)):
         raise ValidationErrorRest([ErrorMessages.HE012.value])
     if nimi.startswith('-') or nimi.endswith('-') or '--' in nimi:
         raise ValidationErrorRest([ErrorMessages.HE013.value])
