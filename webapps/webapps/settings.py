@@ -40,7 +40,6 @@ DEBUG = True
 SECRET_KEY = DEFAULT_SECRET_KEY_FOR_TESTING_ONLY
 
 DEFAULT_CACHE_INVALIDATION_TIME = 54000  # 15 hours
-BASIC_AUTHENTICATION_LOGIN_INTERVAL_IN_SECONDS = 300  # 5 minutes
 SESSION_COOKIE_AGE = 43200  # 12 hours
 FERNET_SECRET_KEY = os.getenv('FERNET_SECRET_KEY', DEFAULT_FERNET_KEY_FOR_TESTING_ONLY)
 
@@ -310,8 +309,8 @@ REST_FRAMEWORK = {
         'varda.custom_renderer.ShowFiltersBrowsableAPIRenderer',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
+        'varda.custom_auth.CustomSessionAuthentication',
+        'varda.custom_auth.CustomTokenAuthentication',
         'varda.custom_auth.CustomBasicAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': [

@@ -13,6 +13,13 @@ from varda.misc import decrypt_henkilotunnus, hash_string
 from varda.models import Henkilo
 
 
+TEST_CACHE_SETTINGS = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'
+    }
+}
+
+
 def assert_status_code(response, expected_code, extra_message=None):
     if response.status_code != expected_code:
         content = response.content.decode('utf-8')
@@ -88,7 +95,7 @@ class SetUpTestClient:
 
 
 def base64_encoding(string_to_be_encoded):
-    return base64.b64encode(bytes(string_to_be_encoded, "utf-8")).decode("utf-8")
+    return base64.b64encode(bytes(string_to_be_encoded, 'utf-8')).decode('utf-8')
 
 
 def mock_admin_user(username):

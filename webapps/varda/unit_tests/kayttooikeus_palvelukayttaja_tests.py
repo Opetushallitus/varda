@@ -1,7 +1,7 @@
 import responses
 from django.conf import settings
 from django.contrib.auth.models import User, Group
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -30,7 +30,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
                 ]
             }
         ]
-        self._mock_responses(organisaatiot, organisaatio_oid, username)
+        mock_cas_palvelukayttaja_responses(organisaatiot, username)
         basic_auth_token = base64_encoding('{}:password'.format(username))
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION='Basic {}'.format(basic_auth_token))
@@ -68,7 +68,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
             'HTTP_X_SSL_Authenticated': 'SUCCESS',
             'HTTP_X_SSL_User_DN': 'CN=kela cert,O=user1 company,ST=Some-State,C=FI',
         }
-        self._mock_responses(organisaatiot, organisaatio_oid, username)
+        mock_cas_palvelukayttaja_responses(organisaatiot, username)
         basic_auth_token = base64_encoding('{}:password'.format(username))
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION='Basic {}'.format(basic_auth_token))
@@ -113,7 +113,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
                 ],
             },
         ]
-        self._mock_responses(organisaatiot, organisaatio_oid, username)
+        mock_cas_palvelukayttaja_responses(organisaatiot, username)
         basic_auth_token = base64_encoding('{}:password'.format(username))
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION='Basic {}'.format(basic_auth_token))
@@ -160,7 +160,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
                 ]
             }
         ]
-        self._mock_responses(organisaatiot, organisaatio_oid, username)
+        mock_cas_palvelukayttaja_responses(organisaatiot, username)
         basic_auth_token = base64_encoding('{}:password'.format(username))
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION='Basic {}'.format(basic_auth_token))
@@ -213,7 +213,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
                 ]
             }
         ]
-        self._mock_responses(organisaatiot, organisaatio_oid, username)
+        mock_cas_palvelukayttaja_responses(organisaatiot, username)
         basic_auth_token = base64_encoding('{}:password'.format(username))
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION='Basic {}'.format(basic_auth_token))
@@ -248,7 +248,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
     def test_palvelukayttaja_no_active_organisaatio(self):
         username = 'palvelukayttaja'
         organisaatiot = []
-        self._mock_responses(organisaatiot, None, username)
+        mock_cas_palvelukayttaja_responses(organisaatiot, username)
         basic_auth_token = base64_encoding('{}:password'.format(username))
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION='Basic {}'.format(basic_auth_token))
@@ -281,12 +281,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
                 ],
             },
         ]
-        self._mock_responses(organisaatiot, organisaatio_oid, username)
-        responses.add(responses.GET,
-                      'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oid={}'.format(
-                          organisaatio_oid2),
-                      json={'numHits': 1, 'organisaatiot': self._get_parikkala_organisaatio_json(organisaatio_oid2)},
-                      status=status.HTTP_200_OK)
+        mock_cas_palvelukayttaja_responses(organisaatiot, username)
         basic_auth_token = base64_encoding('{}:password'.format(username))
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION='Basic {}'.format(basic_auth_token))
@@ -303,13 +298,13 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
                 'organisaatioOid': organisaatio_oid,
                 'kayttooikeudet': [
                     {
-                        'palvelu': 'VARDA',
+                        'palvelu': 'KOSKI',
                         'oikeus': Z4_CasKayttoOikeudet.KATSELIJA,
                     },
                 ]
             }
         ]
-        self._mock_responses(organisaatiot, None, username)
+        mock_cas_palvelukayttaja_responses(organisaatiot, username)
         basic_auth_token = base64_encoding('{}:password'.format(username))
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION='Basic {}'.format(basic_auth_token))
@@ -318,7 +313,6 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         assert_validation_error(resp_apikey, 'errors', 'PE008', 'User does not have permissions to just one active organization.')
 
     @responses.activate
-    @override_settings(BASIC_AUTHENTICATION_LOGIN_INTERVAL_IN_SECONDS=0)
     def test_multiple_palvelukayttaja_different_permissions(self):
         organisaatio_oid = '1.2.246.562.10.27580498759'
         vakajarjestaja_qs = VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid)
@@ -337,7 +331,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
             }
         ]
 
-        self._mock_responses(mock_response_1, organisaatio_oid, username_1)
+        mock_cas_palvelukayttaja_responses(mock_response_1, username_1)
         basic_auth_token_1 = base64_encoding(f'{username_1}:password')
 
         client.credentials(HTTP_AUTHORIZATION='Basic {}'.format(basic_auth_token_1))
@@ -362,7 +356,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         ]
 
         responses.reset()
-        self._mock_responses(mock_response_2, organisaatio_oid, username_2)
+        mock_cas_palvelukayttaja_responses(mock_response_2, username_2)
         basic_auth_token_2 = base64_encoding(f'{username_2}:password')
 
         client.credentials(HTTP_AUTHORIZATION='Basic {}'.format(basic_auth_token_2))
@@ -378,38 +372,30 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
     def test_service_user_cas_login(self):
         organisaatio_oid = '1.2.246.562.10.27580498759'
         username = 'tester-no-known-privileges'
-        henkilo_oid = '1.2.246.562.24.10000000001'
-        user_data_json = [
+        organisaatiot = [
             {
-                'oidHenkilo': henkilo_oid,
-                'username': username,
-                'kayttajaTyyppi': 'PALVELU',
-                'organisaatiot': [
+                'organisaatioOid': organisaatio_oid,
+                'kayttooikeudet': [
                     {
-                        'organisaatioOid': organisaatio_oid,
-                        'kayttooikeudet': [
-                            {
-                                'palvelu': 'VARDA',
-                                'oikeus': Z4_CasKayttoOikeudet.TALLENTAJA
-                            },
-                            {
-                                'palvelu': 'VARDA',
-                                'oikeus': Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA
-                            },
-                            {
-                                'palvelu': 'VARDA',
-                                'oikeus': Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA
-                            },
-                            {
-                                'palvelu': 'VARDA',
-                                'oikeus': Z4_CasKayttoOikeudet.PALVELUKAYTTAJA
-                            }
-                        ]
+                        'palvelu': 'VARDA',
+                        'oikeus': Z4_CasKayttoOikeudet.TALLENTAJA
+                    },
+                    {
+                        'palvelu': 'VARDA',
+                        'oikeus': Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA
+                    },
+                    {
+                        'palvelu': 'VARDA',
+                        'oikeus': Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA
+                    },
+                    {
+                        'palvelu': 'VARDA',
+                        'oikeus': Z4_CasKayttoOikeudet.PALVELUKAYTTAJA
                     }
                 ]
             }
         ]
-        self._mock_cas_responses(user_data_json, organisaatio_oid, username, henkilo_oid)
+        mock_cas_palvelukayttaja_responses(organisaatiot, username)
         user = User.objects.get(username=username)
         kayttooikeuspalvelu.set_permissions_for_cas_user(user.id)
 
@@ -432,69 +418,71 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         expected_integraatio = (TietosisaltoRyhma.TYONTEKIJATIEDOT.value, TietosisaltoRyhma.VAKATIEDOT.value,)
         self.assertCountEqual(vakajarjestaja.integraatio_organisaatio, expected_integraatio)
 
-    def _mock_responses(self, organisaatiot, organisaatio_oid, username):
-        responses.add(responses.GET,
-                      'https://virkailija.testiopintopolku.fi/kayttooikeus-service/henkilo/current/omattiedot',
-                      json=self._get_kayttooikeudet_json(organisaatiot, username),
-                      status=status.HTTP_200_OK)
-        responses.add(responses.GET,
-                      'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oid={}'.format(
-                          organisaatio_oid),
-                      json={'numHits': 1, 'organisaatiot': self._get_parikkala_organisaatio_json(organisaatio_oid)},
-                      status=status.HTTP_200_OK)
-
-    def _mock_cas_responses(self, user_data, organisaatio_oid, username, henkilo_oid):
-        responses.add(responses.GET,
-                      f'https://virkailija.testiopintopolku.fi/kayttooikeus-service/henkilo/kayttajatunnus={username}',
-                      json={'oid': henkilo_oid, 'kayttajaTyyppi': Kayttajatyyppi.PALVELU.value},
-                      status=status.HTTP_200_OK)
-        responses.add(responses.GET,
-                      f'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/{henkilo_oid}',
-                      json={},
-                      status=status.HTTP_200_OK)
-        responses.add(responses.GET,
-                      f'https://virkailija.testiopintopolku.fi/kayttooikeus-service/kayttooikeus/kayttaja?oidHenkilo={henkilo_oid}',
-                      json=user_data,
-                      status=status.HTTP_200_OK)
-        responses.add(responses.GET,
-                      'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oid={}'.format(
-                          organisaatio_oid),
-                      json={'numHits': 1, 'organisaatiot': self._get_parikkala_organisaatio_json(organisaatio_oid)},
-                      status=status.HTTP_200_OK)
-
-    def _get_kayttooikeudet_json(self, organisaatiot, username):
-        kayttooikeus_json = {
-            'oidHenkilo': 'oid',
-            'username': username,
-            'kayttajaTyyppi': 'PALVELU',
-            'organisaatiot': organisaatiot,
-        }
-        return kayttooikeus_json
-
-    def _get_parikkala_organisaatio_json(self, organisaatio_oid):
-        organisaatio_json = [
-            {
-                'oid': organisaatio_oid,
-                'alkuPvm': 1093467600000,
-                'parentOid': '1.2.246.562.10.00000000001',
-                'parentOidPath': '1.2.246.562.10.27580498759/1.2.246.562.10.00000000001',
-                'ytunnus': '1913642-6',
-                'toimipistekoodi': '',
-                'match': True,
-                'nimi': {
-                    'fi': 'PARIKKALAN KUNTA'
-                },
-                'kieletUris': ['oppilaitoksenopetuskieli_1#1'],
-                'kotipaikkaUri': 'kunta_580',
-                'children': [],
-                'aliOrganisaatioMaara': 290,
-                'organisaatiotyypit': ['organisaatiotyyppi_01', 'organisaatiotyyppi_07'],
-                'status': 'AKTIIVINEN'
-            }
-        ]
-        return organisaatio_json
-
     def _assert_user_permissiongroups(self, expected_group_names, username):
         user = User.objects.get(username=username)
         group_names = Group.objects.filter(user=user).values_list('name', flat=True)
         self.assertCountEqual(expected_group_names, group_names)
+
+
+def mock_cas_palvelukayttaja_responses(organisaatiot, username, henkilo_oid='1.2.246.562.24.10000000001'):
+    responses.add(responses.GET,
+                  'https://virkailija.testiopintopolku.fi/kayttooikeus-service/henkilo/current/omattiedot',
+                  json=_get_kayttooikeudet_json(organisaatiot, username, henkilo_oid),
+                  status=status.HTTP_200_OK)
+    responses.add(responses.POST,
+                  'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/findbyoids',
+                  json=[{'oid': organisaatio['organisaatioOid'], 'tyypit': ['organisaatiotyyppi_07'], 'status': 'AKTIIVINEN'}
+                        for organisaatio in organisaatiot],
+                  status=status.HTTP_200_OK)
+    responses.add(responses.GET,
+                  f'https://virkailija.testiopintopolku.fi/kayttooikeus-service/kayttooikeus/kayttaja?oidHenkilo={henkilo_oid}',
+                  json=[_get_kayttooikeudet_json(organisaatiot, username, henkilo_oid)],
+                  status=status.HTTP_200_OK)
+    responses.add(responses.GET,
+                  f'https://virkailija.testiopintopolku.fi/kayttooikeus-service/henkilo/kayttajatunnus={username}',
+                  json={'oid': henkilo_oid, 'kayttajaTyyppi': Kayttajatyyppi.PALVELU.value},
+                  status=status.HTTP_200_OK)
+    responses.add(responses.GET,
+                  f'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/{henkilo_oid}',
+                  json={},
+                  status=status.HTTP_200_OK)
+    for organisaatio in organisaatiot:
+        organisaatio_oid = organisaatio['organisaatioOid']
+        responses.add(responses.GET,
+                      f'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oid={organisaatio_oid}',
+                      json={'numHits': 1, 'organisaatiot': _get_parikkala_organisaatio_json(organisaatio_oid)},
+                      status=status.HTTP_200_OK)
+
+
+def _get_kayttooikeudet_json(organisaatiot, username, henkilo_oid):
+    kayttooikeus_json = {
+        'oidHenkilo': henkilo_oid,
+        'username': username,
+        'kayttajaTyyppi': 'PALVELU',
+        'organisaatiot': organisaatiot,
+    }
+    return kayttooikeus_json
+
+
+def _get_parikkala_organisaatio_json(organisaatio_oid):
+    organisaatio_json = [
+        {
+            'oid': organisaatio_oid,
+            'alkuPvm': 1093467600000,
+            'parentOid': '1.2.246.562.10.00000000001',
+            'parentOidPath': '1.2.246.562.10.27580498759/1.2.246.562.10.00000000001',
+            'ytunnus': '1913642-6',
+            'toimipistekoodi': '',
+            'match': True,
+            'nimi': {
+                'fi': 'PARIKKALAN KUNTA'
+            },
+            'kieletUris': ['oppilaitoksenopetuskieli_1#1'],
+            'kotipaikkaUri': 'kunta_580',
+            'children': [],
+            'aliOrganisaatioMaara': 290,
+            'organisaatiotyypit': ['organisaatiotyyppi_01', 'organisaatiotyyppi_07'],
+            'status': 'AKTIIVINEN'
+        }
+    ]
+    return organisaatio_json

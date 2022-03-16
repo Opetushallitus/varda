@@ -1,14 +1,22 @@
 import json
+import re
+import time
+from math import isclose
+from unittest.mock import patch
 
 import responses
+from django.conf import settings
 from django.contrib.auth.models import Group, User
-from django.test import TestCase
+from django.core.cache import cache
+from django.test import TestCase, override_settings
 
 from rest_framework import status
+from rest_framework.test import APIClient
 
-from varda.models import Z5_AuditLog, VakaJarjestaja
-from varda.unit_tests.test_utils import (assert_status_code, SetUpTestClient, assert_validation_error,
-                                         post_henkilo_to_get_permissions)
+from varda.models import Z4_CasKayttoOikeudet, Z5_AuditLog, VakaJarjestaja
+from varda.unit_tests.kayttooikeus_palvelukayttaja_tests import mock_cas_palvelukayttaja_responses
+from varda.unit_tests.test_utils import (assert_status_code, base64_encoding, TEST_CACHE_SETTINGS, SetUpTestClient,
+                                         assert_validation_error, post_henkilo_to_get_permissions)
 
 
 class VardaPermissionsTests(TestCase):
@@ -751,25 +759,136 @@ class VardaPermissionsTests(TestCase):
             resp = client.get(url)
             assert_status_code(resp, status.HTTP_404_NOT_FOUND)
 
-    """
-    TODO: Reporting related permissions
-    """
-    """
-    def test_permissions_reporting_root_url_anonymous(self):
-        resp = self.client.get('/reporting/api/v1/')
-        assert_status_code(resp, 200)
+    rest_throttle_settings = settings.REST_FRAMEWORK.copy()
+    rest_throttle_settings['DEFAULT_THROTTLE_RATES']['anon'] = '5/hour'
 
-    def test_permissions_reporting_url_anonymous(self):
-        resp = self.client.get('/reporting/api/v1/lapset-ryhmittain/')
-        assert_status_code(resp, 403)
+    @override_settings(CACHES=TEST_CACHE_SETTINGS)
+    @override_settings(REST_FRAMEWORK=rest_throttle_settings)
+    @responses.activate
+    def test_auth_throttle_basic(self):
+        cache.clear()
+        limit = 5
+        responses.add(responses.POST,
+                      'https://virkailija.testiopintopolku.fi/kayttooikeus-service/henkilo/current/omattiedot/',
+                      status=status.HTTP_401_UNAUTHORIZED)
+        client = APIClient()
 
-    def test_permissions_reporting_url_authenticated(self):
-        client = SetUpTestClient('tester2').client()
-        resp = client.get('/reporting/api/v1/lapset-ryhmittain/')
-        assert_status_code(resp, 403)
+        for i in range(limit):
+            resp = client.get('/api/user/apikey/', **{'HTTP_AUTHORIZATION': 'Basic dGVzdDp0ZXN0'})
+            assert_status_code(resp, status.HTTP_403_FORBIDDEN)
+            assert_validation_error(resp, 'errors', 'PE007', 'User authentication failed.')
 
-    def test_permissions_reporting_url_antero_user(self):
-        client = SetUpTestClient('antero_platform').client()
-        resp = client.get('/reporting/api/v1/lapset-ryhmittain/')
-        assert_status_code(resp, 200)
-    """
+        resp = client.get('/api/user/apikey/', **{'HTTP_AUTHORIZATION': 'Basic dGVzdDp0ZXN0'})
+        assert_status_code(resp, status.HTTP_429_TOO_MANY_REQUESTS)
+        assert_validation_error(resp, 'errors', 'DY008')
+        self._assert_throttle_seconds_close(resp)
+
+        # Perform successful authentication
+        responses.reset()
+        organisaatiot = [
+            {
+                'organisaatioOid': '1.2.246.562.10.93957375488',
+                'kayttooikeudet': [
+                    {
+                        'palvelu': 'VARDA',
+                        'oikeus': Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                    },
+                ]
+            }
+        ]
+        mock_cas_palvelukayttaja_responses(organisaatiot, 'tester')
+
+        base64_string = base64_encoding('tester:password')
+        resp = client.get('/api/user/apikey/', **{'HTTP_AUTHORIZATION': f'Basic {base64_string}'})
+        assert_status_code(resp, status.HTTP_429_TOO_MANY_REQUESTS)
+        assert_validation_error(resp, 'errors', 'DY008')
+        self._assert_throttle_seconds_close(resp)
+
+        with patch('rest_framework.throttling.SimpleRateThrottle.timer') as mock_time:
+            # SimpleRateThrottle.timer() returns one hour later
+            mock_time.return_value = time.time() + (60 * 60)
+            for i in range(limit + 5):
+                # Successful authentications don't affect throttling
+                resp = client.get('/api/user/apikey/', **{'HTTP_AUTHORIZATION': f'Basic {base64_string}'})
+                assert_status_code(resp, status.HTTP_200_OK)
+
+    @override_settings(CACHES=TEST_CACHE_SETTINGS)
+    @override_settings(REST_FRAMEWORK=rest_throttle_settings)
+    def test_auth_throttle_token(self):
+        cache.clear()
+        limit = 5
+
+        token_client = SetUpTestClient('tester').client()
+        token = json.loads(token_client.get('/api/user/apikey/').content)['token']
+
+        client = APIClient()
+
+        for i in range(limit):
+            resp = client.get('/api/v1/vakajarjestajat/', **{'HTTP_AUTHORIZATION': 'Token dGVzdDp0ZXN0'})
+            assert_status_code(resp, status.HTTP_403_FORBIDDEN)
+            assert_validation_error(resp, 'errors', 'PE007', 'User authentication failed.')
+
+        resp = client.get('/api/v1/vakajarjestajat/', **{'HTTP_AUTHORIZATION': 'Token dGVzdDp0ZXN0'})
+        assert_status_code(resp, status.HTTP_429_TOO_MANY_REQUESTS)
+        assert_validation_error(resp, 'errors', 'DY008')
+        self._assert_throttle_seconds_close(resp)
+
+        # Perform successful authentication
+        resp = client.get('/api/v1/vakajarjestajat/', **{'HTTP_AUTHORIZATION': f'Token {token}'})
+        assert_status_code(resp, status.HTTP_429_TOO_MANY_REQUESTS)
+        assert_validation_error(resp, 'errors', 'DY008')
+        self._assert_throttle_seconds_close(resp)
+
+        with patch('rest_framework.throttling.SimpleRateThrottle.timer') as mock_time:
+            # SimpleRateThrottle.timer() returns one hour later
+            mock_time.return_value = time.time() + (60 * 60)
+            for i in range(limit + 5):
+                # Successful authentications don't affect throttling
+                resp = client.get('/api/v1/vakajarjestajat/', **{'HTTP_AUTHORIZATION': f'Token {token}'})
+                assert_status_code(resp, status.HTTP_200_OK)
+
+    @override_settings(CACHES=TEST_CACHE_SETTINGS)
+    @override_settings(REST_FRAMEWORK=rest_throttle_settings)
+    def test_auth_throttle_session(self):
+        cache.clear()
+        limit = 5
+
+        session_client = APIClient()
+        session_client.force_login(User.objects.get(username='tester'))
+        session_key = session_client.session.session_key
+
+        client = APIClient()
+        client.cookies[settings.SESSION_COOKIE_NAME] = 'invalid_session_key'
+
+        for i in range(limit):
+            resp = client.get('/api/v1/toimipaikat/')
+            assert_status_code(resp, status.HTTP_403_FORBIDDEN)
+            # Invalid session_key raises NotAuthenticated instead of AuthenticationFailed
+            assert_validation_error(resp, 'errors', 'PE007', 'User authentication failed.')
+
+        resp = client.get('/api/v1/toimipaikat/')
+        assert_status_code(resp, status.HTTP_429_TOO_MANY_REQUESTS)
+        assert_validation_error(resp, 'errors', 'DY008')
+        self._assert_throttle_seconds_close(resp)
+
+        # Perform successful authentication
+        client.cookies[settings.SESSION_COOKIE_NAME] = session_key
+
+        resp = client.get('/api/v1/toimipaikat/')
+        assert_status_code(resp, status.HTTP_429_TOO_MANY_REQUESTS)
+        assert_validation_error(resp, 'errors', 'DY008')
+        self._assert_throttle_seconds_close(resp)
+
+        with patch('rest_framework.throttling.SimpleRateThrottle.timer') as mock_time:
+            # SimpleRateThrottle.timer() returns one hour later
+            mock_time.return_value = time.time() + (60 * 60)
+            for i in range(limit + 5):
+                # Successful authentications don't affect throttling
+                resp = client.get('/api/v1/toimipaikat/')
+                assert_status_code(resp, status.HTTP_200_OK)
+
+    def _assert_throttle_seconds_close(self, resp, compare_to=60 * 60, error_margin=10):
+        throttle_regex = re.compile(r'again in ([\d]+) second')
+        error_description = json.loads(resp.content)['errors'][0]['description']
+        seconds = int(throttle_regex.search(error_description).group(1))
+        self.assertTrue(isclose(seconds, compare_to, abs_tol=error_margin))

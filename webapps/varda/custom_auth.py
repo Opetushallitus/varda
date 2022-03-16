@@ -7,7 +7,7 @@ import os
 import requests
 import uuid
 
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.backends import ModelBackend
@@ -17,8 +17,10 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone as django_timezone
 from django_cas_ng.signals import cas_user_logout
 from rest_framework import exceptions
-from rest_framework.authentication import BasicAuthentication
+from rest_framework.authentication import BasicAuthentication, SessionAuthentication, TokenAuthentication
 from rest_framework.authtoken.models import Token
+from rest_framework.exceptions import AuthenticationFailed, Throttled
+from rest_framework.throttling import AnonRateThrottle
 
 from varda import kayttooikeuspalvelu
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
@@ -131,7 +133,47 @@ cas_user_logout.connect(cas_logout_handler)
 task_prerun.connect(celery_task_prerun_signal_handler)
 
 
-class CustomBasicAuthentication(BasicAuthentication):
+class AuthenticateAnonThrottleMixin(AnonRateThrottle):
+    def get_cache_key(self, request, view):
+        return self.cache_format % {
+            'scope': self.scope,
+            'ident': self.get_ident(request)
+        }
+
+    def remove_previous_request(self):
+        """
+        Remove previously recorded request and update cache
+        """
+        if self.history:
+            del self.history[0]
+            self.cache.set(self.key, self.history, self.duration)
+
+    def authenticate(self, request):
+        """
+        Function used to override rest_framework.authentication.BaseAuthentication.authenticate.
+        Rest Framework only performs throttle after request has been authenticated, which means that throttle never
+        kicks in if user uses invalid credentials. This function performs anonymous throttle before authentication.
+        """
+        # Check throttle before trying to authenticate
+        allow_request = self.allow_request(request, None)
+        if not allow_request:
+            # Throttle exceeded
+            wait_time = self.wait()
+            raise Throttled(wait=wait_time)
+
+        result = super().authenticate(request)
+
+        if type(self) == CustomSessionAuthentication and result is None and settings.SESSION_COOKIE_NAME in request.COOKIES:
+            # Authentication was successful if no exception is raised. However, SessionAuthentication does not raise
+            # exception, so make sure that if session cookie is present, result can't be None.
+            raise AuthenticationFailed()
+
+        # Remove successful request from throttle history so that it does not affect following throttle functions
+        self.remove_previous_request()
+        return result
+
+
+class CustomBasicAuthentication(AuthenticateAnonThrottleMixin, BasicAuthentication):
     """
     Custom: allow basic authentication only for fetching token (apikey)
     This is used ONLY for palvelukayttaja-authentication.
@@ -173,7 +215,7 @@ class CustomBasicAuthentication(BasicAuthentication):
             raise exceptions.AuthenticationFailed(msg)
 
         cas_henkilo_kayttajaTyyppi = omattiedot['kayttajaTyyppi']
-        if cas_henkilo_kayttajaTyyppi != 'PALVELU':
+        if cas_henkilo_kayttajaTyyppi != Kayttajatyyppi.PALVELU.value:
             msg = _('Did not find an active palvelukayttaja-profile.')
             raise exceptions.AuthenticationFailed(msg)
 
@@ -233,12 +275,6 @@ class CustomBasicAuthentication(BasicAuthentication):
             raise exceptions.AuthenticationFailed(_('User inactive or deleted.'))
 
         """
-        Should we ratelimit the user. We do not want to let the users call this api-endpoint too frequently.
-        There should be no use case to fetch the token more frequently than ~once a day.
-        """
-        self.ratelimit_basic_auth_user(user)
-
-        """
         Add/Update miscellaneous user-fields
         """
         Z3_AdditionalCasUserFields.objects.update_or_create(user=user, defaults={'kayttajatyyppi': cas_henkilo_kayttajaTyyppi, 'henkilo_oid': cas_henkilo_oid})
@@ -255,19 +291,13 @@ class CustomBasicAuthentication(BasicAuthentication):
 
         return user, None
 
-    def ratelimit_basic_auth_user(self, user):
-        try:
-            user_details_obj = Z3_AdditionalCasUserFields.objects.get(user=user)
-        except Z3_AdditionalCasUserFields.DoesNotExist:
-            user_details_obj = None
 
-        if user_details_obj is not None:
-            user_details_last_modified = user_details_obj.last_modified
-            time_now = datetime.now(timezone.utc)
-            time_difference_in_seconds = (time_now - user_details_last_modified) / timedelta(seconds=1)
-            if time_difference_in_seconds < settings.BASIC_AUTHENTICATION_LOGIN_INTERVAL_IN_SECONDS:
-                available_in_seconds = int(settings.BASIC_AUTHENTICATION_LOGIN_INTERVAL_IN_SECONDS - time_difference_in_seconds)
-                raise exceptions.Throttled(wait=available_in_seconds)
+class CustomSessionAuthentication(AuthenticateAnonThrottleMixin, SessionAuthentication):
+    pass
+
+
+class CustomTokenAuthentication(AuthenticateAnonThrottleMixin, TokenAuthentication):
+    pass
 
 
 class PasswordExpirationModelBackend(ModelBackend):
