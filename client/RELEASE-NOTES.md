@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.5.40 (17.03.2022)
+- OPHVARDA-2430: Erikoismerkkien salliminen henkilön nimessä
+
 1.5.39 (03.03.2022)
 - OPHVARDA-2421: Lapsen ja työntekijän poisto tallennusoikeuksilla
 
