@@ -47,16 +47,13 @@ class KelaEtuusmaksatusAloittaneetSerializer(serializers.Serializer):
 
 
 class KelaEtuusmaksatusLopettaneetSerializer(serializers.Serializer):
-    kotikunta_koodi = serializers.SerializerMethodField()
+    kotikunta_koodi = serializers.CharField()
     henkilotunnus = serializers.SerializerMethodField()
     tietue = serializers.CharField(default='L', initial='L')
     vakasuhde_paattymis_pvm = serializers.DateField(source='paattymis_pvm')
 
-    def get_henkilotunnus(self, data):
-        return decrypt_henkilotunnus(data['varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus'])
-
-    def get_kotikunta_koodi(self, data):
-        return data['varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi']
+    def get_henkilotunnus(self, instance):
+        return decrypt_henkilotunnus(instance.henkilotunnus)
 
     class Meta:
         model = Varhaiskasvatussuhde
