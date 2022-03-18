@@ -142,8 +142,10 @@ class AuthenticateAnonThrottleMixin(AnonRateThrottle):
 
     def remove_previous_request(self):
         """
-        Remove previously recorded request and update cache
+        Remove previously recorded request and update cache. Get history from cache again, because it may be out of
+        sync when doing concurrent requests rapidly.
         """
+        self.history = self.cache.get(self.key, [])
         if self.history:
             del self.history[0]
             self.cache.set(self.key, self.history, self.duration)
