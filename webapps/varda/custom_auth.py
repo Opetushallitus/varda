@@ -140,16 +140,6 @@ class AuthenticateAnonThrottleMixin(AnonRateThrottle):
             'ident': self.get_ident(request)
         }
 
-    def remove_previous_request(self):
-        """
-        Remove previously recorded request and update cache. Get history from cache again, because it may be out of
-        sync when doing concurrent requests rapidly.
-        """
-        self.history = self.cache.get(self.key, [])
-        if self.history:
-            del self.history[0]
-            self.cache.set(self.key, self.history, self.duration)
-
     def authenticate(self, request):
         """
         Function used to override rest_framework.authentication.BaseAuthentication.authenticate.
@@ -163,16 +153,39 @@ class AuthenticateAnonThrottleMixin(AnonRateThrottle):
             wait_time = self.wait()
             raise Throttled(wait=wait_time)
 
-        result = super().authenticate(request)
+        result = None
+        exception = None
+        try:
+            result = super().authenticate(request)
+        except AuthenticationFailed as e:
+            exception = e
 
         if type(self) == CustomSessionAuthentication and result is None and settings.SESSION_COOKIE_NAME in request.COOKIES:
             # Authentication was successful if no exception is raised. However, SessionAuthentication does not raise
             # exception, so make sure that if session cookie is present, result can't be None.
-            raise AuthenticationFailed()
+            exception = AuthenticationFailed()
 
-        # Remove successful request from throttle history so that it does not affect following throttle functions
-        self.remove_previous_request()
+        if exception:
+            # Authentication has failed
+            # Re-fetch history to combat race condition
+            self.history = self.cache.get(self.key, [])
+            # Update entry to cache so that it is counted against throttle in following requests
+            self.history.insert(0, self.now)
+            self.cache.set(self.key, self.history, self.duration)
+            # Raise AuthenticationFailed exception
+            raise exception
+
+        # Authentication was successful and was not throttled
         return result
+
+    def throttle_success(self):
+        """
+        Override SimpleRateThrottle.throttle_success so that timestamp is not added to cache here.
+        Timestamp is only added on failed authentication request to prevent race condition from occurring
+        in high volume production environment.
+        """
+        self.cache.set(self.key, self.history, self.duration)
+        return True
 
 
 class CustomBasicAuthentication(AuthenticateAnonThrottleMixin, BasicAuthentication):
