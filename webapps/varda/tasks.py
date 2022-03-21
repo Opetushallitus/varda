@@ -75,11 +75,6 @@ def add(x, y):
     return x + y
 
 
-"""
-Use acks_late=True for the task-decoration, unless periodic task which always gets called with the same arguments.
-"""
-
-
 @shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
 def run_management_commands():
@@ -90,7 +85,7 @@ def run_management_commands():
     call_command('django_cas_ng_clean_sessions', verbosity=0)
 
 
-@shared_task(acks_late=True)
+@shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
 def remove_all_auth_tokens():
     from rest_framework.authtoken.models import Token
@@ -143,13 +138,13 @@ def update_all_organisaatio_service_originated_organisations_task():
     organisaatiopalvelu.update_all_organisaatio_service_organisations()
 
 
-@shared_task(acks_late=True)
+@shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
 def update_henkilot_with_oid():
     oppijanumerorekisteri.fetch_henkilot_with_oid()
 
 
-@shared_task(acks_late=True)
+@shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
 def update_henkilo_data_by_oid(henkilo_oid, henkilo_id, is_fetch_huoltajat=False):
     oppijanumerorekisteri.fetch_henkilo_data_by_oid(henkilo_oid, henkilo_id)
@@ -197,7 +192,7 @@ def guardian_clean_orphan_object_permissions():
                 delete_object_permissions_explicitly(model_class, permission.object_pk)
 
 
-@shared_task(acks_late=True)
+@shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
 def change_paos_tallentaja_organization_task(jarjestaja_kunta_organisaatio_id, tuottaja_organisaatio_id,
                                              tallentaja_organisaatio_id, voimassa_kytkin):
@@ -224,7 +219,7 @@ def remove_address_information_from_tyontekijat_only_task():
         henkilo.save()
 
 
-@shared_task(acks_late=True)
+@shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
 def assign_taydennyskoulutus_permissions_for_toimipaikka_task(vakajarjestaja_oid, toimipaikka_oid):
     """
@@ -238,7 +233,7 @@ def assign_taydennyskoulutus_permissions_for_toimipaikka_task(vakajarjestaja_oid
      ]
 
 
-@shared_task(acks_late=True)
+@shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
 def assign_taydennyskoulutus_permissions_for_all_toimipaikat_task(vakajarjestaja_oid, taydennyskoulutus_id):
     taydennyskoulutus = Taydennyskoulutus.objects.get(id=taydennyskoulutus_id)
