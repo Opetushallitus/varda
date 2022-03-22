@@ -17,14 +17,14 @@
   <i class="material-icons" alt="">arrow_downward</i>
 </div>
 
-<ng-container *ngIf="!toimipaikkaForm">
+<ng-container *ngIf="!formGroup">
   <app-varda-error-field [errors]="toimipaikkaFormErrors"></app-varda-error-field>
   <mat-progress-spinner diameter="40"
                         mode="indeterminate"
                         color="accent"></mat-progress-spinner>
 </ng-container>
 <div #formContent
-     *ngIf="toimipaikkaForm"
+     *ngIf="formGroup"
      class="modal-body toimipaikka-form-content">
   <div class="modal-form-intro">
     {{ i18n.toimipaikka_intro_paragraph | translate }}
@@ -37,13 +37,13 @@
          [href]="i18n.toimipaikka_edit_link_href | translate">{{ i18n.toimipaikka_edit_link_text | translate }}</a>
     </div>
   </div>
-  <form [formGroup]="toimipaikkaForm"
-        (submit)="saveToimipaikka(toimipaikkaForm)"
+  <form [formGroup]="formGroup"
+        (submit)="saveToimipaikka(formGroup)"
         autocomplete="off">
     <fieldset>
       <legend>{{ i18n.toimipaikka_legend_nimi | translate }}</legend>
       <app-varda-form-field name="nimi"
-                            [form]="toimipaikkaForm"
+                            [form]="formGroup"
                             [label]="i18n.toimipaikka_nimi | translate"
                             [errorText]="i18n.toimipaikka_error_nimi | translate"
                             [placeholder]="i18n.toimipaikka_placeholder_nimi | translate"
@@ -56,7 +56,7 @@
 
       <app-varda-form-field name="organisaatio_oid"
                             *ngIf="toimipaikka?.organisaatio_oid"
-                            [form]="toimipaikkaForm"
+                            [form]="formGroup"
                             [label]="i18n.toimipaikka_oid | translate">
         <span>{{ toimipaikka.organisaatio_oid }}</span>
       </app-varda-form-field>
@@ -68,7 +68,7 @@
           <legend>{{ i18n.toimipaikka_legend_yhteystiedot | translate }}</legend>
         </mat-expansion-panel-header>
         <app-varda-form-field name="kayntiosoite"
-                              [form]="toimipaikkaForm"
+                              [form]="formGroup"
                               [label]="i18n.toimipaikka_kayntiosoite | translate"
                               [errorText]="i18n.toimipaikka_error_kayntiosoite | translate"
                               [placeholder]="i18n.toimipaikka_placeholder_kayntiosoite | translate"
@@ -81,7 +81,7 @@
         </app-varda-form-field>
 
         <app-varda-form-field name="kayntiosoite_postinumero"
-                              [form]="toimipaikkaForm"
+                              [form]="formGroup"
                               [label]="i18n.toimipaikka_kayntiosoite_postinumero | translate"
                               [errorText]="i18n.toimipaikka_error_kayntiosoite_postinumero | translate"
                               [placeholder]="i18n.toimipaikka_placeholder_kayntiosoite_postinumero | translate"
@@ -105,7 +105,7 @@
         </app-varda-form-field>
 
         <app-varda-form-field name="kayntiosoite_postitoimipaikka"
-                              [form]="toimipaikkaForm"
+                              [form]="formGroup"
                               [label]="i18n.toimipaikka_kayntiosoite_postitoimipaikka | translate"
                               [errorText]="i18n.toimipaikka_error_kayntiosoite_postitoimipaikka | translate"
                               [placeholder]="i18n.toimipaikka_placeholder_kayntiosoite_postitoimipaikka | translate"
@@ -118,12 +118,12 @@
         </app-varda-form-field>
 
         <app-varda-form-field name="postiosoite"
-                              [form]="toimipaikkaForm"
+                              [form]="formGroup"
                               [label]="i18n.toimipaikka_postiosoite | translate"
                               [errorText]="i18n.toimipaikka_error_postiosoite | translate"
                               [placeholder]="i18n.toimipaikka_placeholder_postiosoite | translate"
                               [instructionText]="i18n.toimipaikka_instruction_postiosoite | translate">
-          <mat-checkbox [disabled]="!toimipaikkaForm.value.kayntiosoite_postitoimipaikka"
+          <mat-checkbox [disabled]="!formGroup.value.kayntiosoite_postitoimipaikka"
                         [checked]="postiosoiteToggleBoolean"
                         *ngIf="isEdit"
                         (change)="togglePostinumero($event)">{{ i18n.toimipaikka_postiosoite_checkbox | translate }}
@@ -136,7 +136,7 @@
         </app-varda-form-field>
 
         <app-varda-form-field name="postinumero"
-                              [form]="toimipaikkaForm"
+                              [form]="formGroup"
                               [label]="i18n.toimipaikka_postinumero | translate"
                               [errorText]="i18n.toimipaikka_error_postinumero | translate"
                               [placeholder]="i18n.toimipaikka_placeholder_postinumero | translate"
@@ -160,7 +160,7 @@
         </app-varda-form-field>
 
         <app-varda-form-field name="postitoimipaikka"
-                              [form]="toimipaikkaForm"
+                              [form]="formGroup"
                               [label]="i18n.toimipaikka_postitoimipaikka | translate"
                               [errorText]="i18n.toimipaikka_error_postitoimipaikka | translate"
                               [placeholder]="i18n.toimipaikka_placeholder_postitoimipaikka | translate"
@@ -174,7 +174,7 @@
 
 
         <app-varda-form-field name="kunta_koodi"
-                              [form]="toimipaikkaForm"
+                              [form]="formGroup"
                               [label]="i18n.toimipaikka_kunta_koodi | translate"
                               [errorText]="i18n.toimipaikka_error_kunta_koodi | translate"
                               [instructionText]="i18n.toimipaikka_instruction_kunta_koodi | translate">
@@ -194,7 +194,7 @@
         </app-varda-form-field>
 
         <app-varda-form-field name="puhelinnumero"
-                              [form]="toimipaikkaForm"
+                              [form]="formGroup"
                               [label]="i18n.toimipaikka_puhelinnumero | translate"
                               [errorText]="i18n.toimipaikka_error_puhelinnumero | translate"
                               [placeholder]="i18n.toimipaikka_placeholder_puhelinnumero | translate"
@@ -206,7 +206,7 @@
         </app-varda-form-field>
 
         <app-varda-form-field name="sahkopostiosoite"
-                              [form]="toimipaikkaForm"
+                              [form]="formGroup"
                               [label]="i18n.toimipaikka_sahkopostiosoite | translate"
                               [errorText]="i18n.toimipaikka_error_sahkopostiosoite | translate"
                               [placeholder]="i18n.toimipaikka_placeholder_sahkopostiosoite | translate"
@@ -231,7 +231,7 @@
              mat-expansion-panel-content>
           <app-varda-form-error-list [errors]="errorList"></app-varda-form-error-list>
           <app-varda-form-field name="toimintamuoto_koodi"
-                                [form]="toimipaikkaForm"
+                                [form]="formGroup"
                                 [label]="i18n.toimipaikka_toimintamuoto_koodi | translate"
                                 [errorText]="i18n.toimipaikka_error_toimintamuoto_koodi | translate"
                                 [instructionText]="i18n.toimipaikka_instruction_toimintamuoto_koodi | translate">
@@ -251,12 +251,12 @@
           </app-varda-form-field>
 
           <app-varda-form-field name="jarjestamismuoto_koodi"
-                                [form]="toimipaikkaForm"
+                                [form]="formGroup"
                                 [label]="i18n.toimipaikka_jarjestamismuoto_koodi | translate"
                                 [errorText]="i18n.toimipaikka_error_jarjestamismuoto_koodi | translate"
                                 [instructionText]="i18n.toimipaikka_instruction_jarjestamismuoto_koodi | translate">
             <ng-container *ngIf="!isEdit; else showTrigger">
-              <div *ngFor="let koodi of toimipaikkaForm.controls.jarjestamismuoto_koodi.value"
+              <div *ngFor="let koodi of formGroup.controls.jarjestamismuoto_koodi.value"
                    [libKoodistoValue]="koodistoEnum.jarjestamismuoto"
                    format="long"
                    class="ml-2">{{ koodi }}</div>
@@ -270,11 +270,11 @@
                 <mat-select-trigger>
                   <span libKoodistoValue="vardajarjestamismuoto"
                         format="long"
-                        *ngIf="toimipaikkaForm.controls.jarjestamismuoto_koodi?.value?.length === 1; else jmList">
-                    {{ toimipaikkaForm.controls.jarjestamismuoto_koodi?.value }}
+                        *ngIf="formGroup.controls.jarjestamismuoto_koodi?.value?.length === 1; else jmList">
+                    {{ formGroup.controls.jarjestamismuoto_koodi?.value }}
                   </span>
                   <ng-template #jmList>
-                    {{ toimipaikkaForm.controls.jarjestamismuoto_koodi?.value?.join(", ") }}
+                    {{ formGroup.controls.jarjestamismuoto_koodi?.value?.join(", ") }}
                   </ng-template>
                 </mat-select-trigger>
                 <ng-container *ngIf="jarjestamismuotoOptions$ | async as jarjestamismuotoOptions">
@@ -288,26 +288,25 @@
             </ng-template>
           </app-varda-form-field>
           <app-varda-form-field name="asiointikieli_koodi"
-                                [form]="toimipaikkaForm"
+                                [form]="formGroup"
                                 [label]="i18n.toimipaikka_asiointikieli_koodi | translate"
                                 [errorText]="i18n.toimipaikka_error_asiointikieli_koodi | translate"
                                 [instructionText]="i18n.toimipaikka_instruction_asiointikieli_koodi | translate">
-            <mat-select #fieldItem
-                        placeholder="-- {{ i18n.choose | translate }} --"
+            <mat-select placeholder="-- {{ i18n.choose | translate }} --"
                         multiple
                         class="oph-input oph-select"
                         formControlName="asiointikieli_koodi">
               <mat-optgroup [label]="i18n.painotukset_kielipainotus_yleiset | translate">
                 <ng-container *ngFor="let option of kielikoodisto | slice:0:10">
-                  <mat-option [value]="option.code_value" [libKoodistoValue]="koodistoEnum.kieli" format="long">
-                    {{ option.code_value }}
+                  <mat-option [value]="option.code_value" >
+                    <span [libKoodistoValue]="koodistoEnum.kieli" format="long">{{ option.code_value }}</span>
                   </mat-option>
                 </ng-container>
               </mat-optgroup>
               <mat-optgroup [label]="i18n.painotukset_kielipainotus_muut | translate">
                 <ng-container *ngFor="let option of kielikoodisto | slice:10">
-                  <mat-option [value]="option.code_value" [libKoodistoValue]="koodistoEnum.kieli" format="long">
-                    {{ option.code_value }}
+                  <mat-option [value]="option.code_value">
+                    <span [libKoodistoValue]="koodistoEnum.kieli" format="long">{{ option.code_value }}</span>
                   </mat-option>
                 </ng-container>
               </mat-optgroup>
@@ -315,7 +314,7 @@
           </app-varda-form-field>
 
           <app-varda-form-field name="kasvatusopillinen_jarjestelma_koodi"
-                                [form]="toimipaikkaForm"
+                                [form]="formGroup"
                                 [label]="i18n.toimipaikka_kasvatusopillinen_jarjestelma_koodi | translate"
                                 [errorText]="i18n.toimipaikka_error_kasvatusopillinen_jarjestelma_koodi | translate"
                                 [instructionText]="i18n.toimipaikka_instruction_kasvatusopillinen_jarjestelma_koodi | translate">
@@ -335,7 +334,7 @@
           </app-varda-form-field>
 
           <app-varda-form-field name="varhaiskasvatuspaikat"
-                                [form]="toimipaikkaForm"
+                                [form]="formGroup"
                                 [label]="i18n.toimipaikka_varhaiskasvatuspaikat | translate"
                                 [errorText]="i18n.toimipaikka_error_varhaiskasvatuspaikat | translate"
                                 [instructionText]="i18n.toimipaikka_instruction_varhaiskasvatuspaikat | translate">
@@ -349,7 +348,7 @@
           </app-varda-form-field>
 
           <app-varda-form-field name="alkamis_pvm"
-                                [form]="toimipaikkaForm"
+                                [form]="formGroup"
                                 [label]="i18n.toimipaikka_alkamis_pvm | translate"
                                 [errorText]="i18n.toimipaikka_error_alkamis_pvm | translate"
                                 [instructionText]="i18n.toimipaikka_instruction_alkamis_pvm | translate">
@@ -359,12 +358,13 @@
           </app-varda-form-field>
 
           <app-varda-form-field name="paattymis_pvm"
-                                [form]="toimipaikkaForm"
+                                [form]="formGroup"
                                 [label]="i18n.toimipaikka_paattymis_pvm | translate"
                                 [errorText]="i18n.toimipaikka_error_paattymis_pvm | translate"
                                 [instructionText]="i18n.toimipaikka_instruction_paattymis_pvm | translate">
             <app-varda-datepicker #fieldItem
                                   [min]="minEndDate"
+                                  (dateChange)="endDateChange($event.value)"
                                   formControlName='paattymis_pvm'></app-varda-datepicker>
           </app-varda-form-field>
         </div>
@@ -372,8 +372,8 @@
     </fieldset>
 
     <fieldset>
-      <app-toimipaikka-painotukset [toimipaikka]="toimipaikka"
-                                   [kielikoodisto]="kielikoodisto"
+      <app-toimipaikka-painotukset [kielikoodisto]="kielikoodisto"
+                                   [toimipaikka]="toimipaikkaKooste"
                                    [saveAccess]="tallentajaAccess"
                                    [isEdit]="isEdit"
                                    [minStartDate]="minEndDate"
@@ -383,7 +383,7 @@
 
     <app-varda-error-field [errors]="toimipaikkaFormErrors"></app-varda-error-field>
 
-    <app-varda-action-row [saveDisabled]="toimipaikkaForm.pristine || (isSubmitting | async)"
+    <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
                           [saveAccess]="tallentajaAccess"
                           [formExists]="!!toimipaikka"
                           [isEdit]="isEdit"

@@ -44,7 +44,6 @@ import {
 import { AuthService } from '../core/auth/auth.service';
 import { AuthGuard } from '../core/auth/auth.guard';
 import { RoleGuard } from '../core/auth/role.guard';
-import { VardaHenkiloService } from './services/varda-henkilo.service';
 import { MatTableModule } from '@angular/material/table';
 import { VardaSharedModule } from 'varda-shared';
 import { VardaPaosManagementContainerComponent } from './components/varda-paos-management-container/varda-paos-management-container.component';
@@ -230,8 +229,7 @@ import { VardaYearlyReportComponent } from './components/varda-raportit/varda-ye
     AuthService,
     AuthGuard,
     RoleGuard,
-    BrowserNotSupportedGuard,
-    VardaHenkiloService
+    BrowserNotSupportedGuard
   ]
 })
 export class VardaMainModule { }

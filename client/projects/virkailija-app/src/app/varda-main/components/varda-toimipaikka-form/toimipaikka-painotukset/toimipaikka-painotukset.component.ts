@@ -1,13 +1,15 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
-import { VardaUtilityService } from 'projects/virkailija-app/src/app/core/services/varda-utility.service';
 import { VardaVakajarjestajaApiService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja-api.service';
-import { VardaToimipaikkaDTO } from 'projects/virkailija-app/src/app/utilities/models';
-import { KielipainotusDTO, ToiminnallinenPainotusDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
+import {
+  KielipainotusDTO,
+  ToiminnallinenPainotusDTO,
+  ToimipaikkaKooste
+} from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
-import { Observable } from 'rxjs';
-import { CodeDTO, KoodistoDTO, KoodistoEnum, KoodistoSortBy, VardaKoodistoService } from 'varda-shared';
+import { CodeDTO } from 'varda-shared';
+import { sortByAlkamisPvm } from '../../../../utilities/helper-functions';
 
 interface NumberOfDisplayed {
   kielipainotus: number;
@@ -19,77 +21,71 @@ interface NumberOfDisplayed {
   templateUrl: './toimipaikka-painotukset.component.html',
   styleUrls: ['./toimipaikka-painotukset.component.css', '../varda-toimipaikka-form.component.css']
 })
-export class ToimipaikkaPainotuksetComponent implements OnChanges {
-  @Input() toimipaikka: VardaToimipaikkaDTO;
+export class ToimipaikkaPainotuksetComponent implements OnInit {
+  @Input() toimipaikka: ToimipaikkaKooste;
   @Input() kielikoodisto: Array<CodeDTO>;
   @Input() saveAccess: boolean;
   @Input() isEdit: boolean;
   @Input() errorService: VardaErrorMessageService;
   @Input() minStartDate: Date;
   @Input() maxEndDate: Date;
+
   i18n = VirkailijaTranslations;
-  kielipainotukset: Array<KielipainotusDTO> = [];
-  toimintapainotukset: Array<ToiminnallinenPainotusDTO> = [];
-  toimintapainotuksetKoodisto$: Observable<KoodistoDTO>;
+  kielipainotusList: Array<KielipainotusDTO> = [];
+  toiminnallinenPainotusList: Array<ToiminnallinenPainotusDTO> = [];
   addKielipainotusBoolean: boolean;
   addToimintapainotusBoolean: boolean;
-
   numberOfDisplayed: NumberOfDisplayed = {kielipainotus: 0, toiminnallinenpainotus: 0};
 
   constructor(
     private snackBarService: VardaSnackBarService,
-    private vakajarjestajaApiService: VardaVakajarjestajaApiService,
-    private koodistoService: VardaKoodistoService,
-    private utilityService: VardaUtilityService
-  ) {
-    this.toimintapainotuksetKoodisto$ = this.koodistoService.getKoodisto(KoodistoEnum.toiminnallinenpainotus, KoodistoSortBy.name);
+    private vakajarjestajaApiService: VardaVakajarjestajaApiService
+  ) { }
 
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes.toimipaikka?.currentValue?.id && !changes.toimipaikka?.previousValue?.id) {
-      this.getKielipainotukset();
-      this.getToimintapainotukset();
+  ngOnInit() {
+    const activeToimipaikka = this.vakajarjestajaApiService.activeToimipaikka.getValue();
+    if (activeToimipaikka) {
+      this.kielipainotusList = activeToimipaikka.kielipainotukset.sort(sortByAlkamisPvm);
+      this.toiminnallinenPainotusList = activeToimipaikka.toiminnalliset_painotukset.sort(sortByAlkamisPvm);
     }
   }
 
-  getKielipainotukset() {
-    this.vakajarjestajaApiService.getKielipainotukset(this.toimipaikka.id).subscribe({
-      next: kielipainotuksetData => {
-        this.kielipainotukset = kielipainotuksetData.results;
-        this.utilityService.sortByAlkamisPaattymisPvm(this.kielipainotukset);
-      },
-      error: err => console.error(err)
-    });
+  addKielipainotus(kielipainotus: KielipainotusDTO) {
+    this.kielipainotusList = this.kielipainotusList.filter(obj => obj.id !== kielipainotus.id);
+    this.kielipainotusList.push(kielipainotus);
+    this.kielipainotusList = this.kielipainotusList.sort(sortByAlkamisPvm);
+    this.updateActiveToimipaikka();
   }
 
-  getToimintapainotukset() {
-    this.vakajarjestajaApiService.getToimintapainotukset(this.toimipaikka.id).subscribe({
-      next: toimintapainotuksetData => {
-        this.toimintapainotukset = toimintapainotuksetData.results;
-        this.utilityService.sortByAlkamisPaattymisPvm(this.toimintapainotukset);
-      },
-      error: err => console.error(err)
-    });
+  deleteKielipainotus(objectId: number) {
+    this.kielipainotusList = this.kielipainotusList.filter(obj => obj.id !== objectId);
+    this.updateActiveToimipaikka();
   }
 
-  closeKielipainotus(refresh?: boolean, hideAddKielipainotus?: boolean) {
-    if (hideAddKielipainotus) {
-      this.addKielipainotusBoolean = false;
-    }
-
-    if (refresh) {
-      this.getKielipainotukset();
-    }
+  addToiminnallinenPainotus(toiminnallinenPainotus: ToiminnallinenPainotusDTO) {
+    this.toiminnallinenPainotusList = this.toiminnallinenPainotusList.filter(obj => obj.id !== toiminnallinenPainotus.id);
+    this.toiminnallinenPainotusList.push(toiminnallinenPainotus);
+    this.toiminnallinenPainotusList = this.toiminnallinenPainotusList.sort(sortByAlkamisPvm);
+    this.updateActiveToimipaikka();
   }
 
-  closeToimintapainotus(refresh?: boolean, hideAddToimintapainotus?: boolean) {
-    if (hideAddToimintapainotus) {
-      this.addToimintapainotusBoolean = false;
-    }
+  deleteToiminnallinenPainotus(objectId: number) {
+    this.toiminnallinenPainotusList = this.toiminnallinenPainotusList.filter(obj => obj.id !== objectId);
+    this.updateActiveToimipaikka();
+  }
 
-    if (refresh) {
-      this.getToimintapainotukset();
-    }
+  updateActiveToimipaikka() {
+    const activeToimipaikka = this.vakajarjestajaApiService.activeToimipaikka.getValue();
+    activeToimipaikka.kielipainotukset = this.kielipainotusList;
+    activeToimipaikka.toiminnalliset_painotukset = this.toiminnallinenPainotusList;
+    this.vakajarjestajaApiService.activeToimipaikka.next(activeToimipaikka);
+  }
+
+  hideAddKielipainotus() {
+    this.addKielipainotusBoolean = false;
+  }
+
+  hideAddToiminnallinenPainotus() {
+    this.addToimintapainotusBoolean = false;
   }
 }

@@ -1,7 +1,6 @@
 import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { UserAccess } from '../../../utilities/models/varda-user-access.model';
-import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { AuthService } from '../../../core/auth/auth.service';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
 import { VardaVakajarjestajaUi } from '../../../utilities/models';
@@ -22,14 +21,14 @@ import { PageEvent } from '@angular/material/paginator';
 })
 export class VardaTaydennyskoulutusComponent implements OnInit, OnDestroy {
   @ViewChild(MatSort, { static: true }) tableSort: MatSort;
+
   i18n = VirkailijaTranslations;
   toimijaAccess: UserAccess;
-  toimipaikkaAccessIfAny: UserAccess;
   selectedVakajarjestaja: VardaVakajarjestajaUi;
   selectedTaydennyskoulutus: VardaTaydennyskoulutusDTO;
   formValuesChanged: Observable<boolean>;
 
-  displayedColumns = ['nimi', 'osallistuja_lkm', 'suoritus_pvm', 'koulutuspaivia'];
+  displayedColumns = ['nimi', 'taydennyskoulutus_tyontekijat_count', 'suoritus_pvm', 'koulutuspaivia'];
   fullTaydennyskoulutusData: Array<VardaTaydennyskoulutusDTO>;
   taydennyskoulutusData: MatTableDataSource<VardaTaydennyskoulutusDTO>;
   subscriptions: Array<Subscription> = [];
@@ -39,7 +38,6 @@ export class VardaTaydennyskoulutusComponent implements OnInit, OnDestroy {
     page: 1,
     count: 0
   };
-
 
   constructor(
     private authService: AuthService,
@@ -83,12 +81,7 @@ export class VardaTaydennyskoulutusComponent implements OnInit, OnDestroy {
     const searchParams = { vakajarjestaja_oid: this.vakajarjestajaService.getSelectedVakajarjestaja().organisaatio_oid };
     this.henkilostoService.getTaydennyskoulutukset(searchParams).subscribe({
       next: taydennyskoulutukset => {
-        this.fullTaydennyskoulutusData = taydennyskoulutukset.map(
-          taydennyskoulutus => {
-            const osallistujaSet = new Set(taydennyskoulutus.taydennyskoulutus_tyontekijat.map(tyontekijaNimike => tyontekijaNimike.henkilo_oid));
-            return { ...taydennyskoulutus, osallistuja_lkm: osallistujaSet.size };
-          });
-
+        this.fullTaydennyskoulutusData = taydennyskoulutukset;
         this.searchTaydennyskoulutukset();
         this.taydennyskoulutusData.sort = this.tableSort;
       },
@@ -118,6 +111,5 @@ export class VardaTaydennyskoulutusComponent implements OnInit, OnDestroy {
     this.taydennyskoulutusData = new MatTableDataSource<VardaTaydennyskoulutusDTO>([
       ...sortedData.filter((tyontekija, index) => index >= minIndex && index < maxIndex)
     ]);
-
   }
 }

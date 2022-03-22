@@ -4,19 +4,20 @@
     <legend>{{ i18n.painotukset_kielipainotukset | translate }}</legend>
   </mat-expansion-panel-header>
 
-  <div *ngIf="!kielipainotukset?.length"
+  <div *ngIf="!kielipainotusList?.length"
        class="no-results">{{ i18n.painotukset_ei_kielipainotuksia | translate }}</div>
   <mat-accordion>
-    <app-kielipainotus *ngFor="let kielipainotus of kielipainotukset | slice:0:numberOfDisplayed.kielipainotus"
+    <app-kielipainotus *ngFor="let painotus of kielipainotusList | slice:0:numberOfDisplayed.kielipainotus"
                        [kielikoodisto]="kielikoodisto"
                        [minStartDate]="minStartDate"
                        [maxEndDate]="maxEndDate"
                        [toimipaikka]="toimipaikka"
-                       [painotus]="kielipainotus"
-                       (closeEmitter)="closeKielipainotus($event)"
-                       [saveAccess]="saveAccess"></app-kielipainotus>
-    <app-varda-show-more-less *ngIf="kielipainotukset" [showMoreKey]="i18n.painotukset_kielipainotukset_show_more"
-                              [(numberOfDisplayed)]="numberOfDisplayed.kielipainotus" [numberOfItems]="kielipainotukset.length">
+                       [painotus]="painotus"
+                       [saveAccess]="saveAccess"
+                       (addObject)="addKielipainotus($event)"
+                       (deleteObject)="deleteKielipainotus($event)"></app-kielipainotus>
+    <app-varda-show-more-less *ngIf="kielipainotusList" [showMoreKey]="i18n.painotukset_kielipainotukset_show_more"
+                              [(numberOfDisplayed)]="numberOfDisplayed.kielipainotus" [numberOfItems]="kielipainotusList.length">
     </app-varda-show-more-less>
     <app-kielipainotus *ngIf="addKielipainotusBoolean"
                        [kielikoodisto]="kielikoodisto"
@@ -24,7 +25,9 @@
                        [maxEndDate]="maxEndDate"
                        [saveAccess]="saveAccess"
                        [toimipaikka]="toimipaikka"
-                       (closeEmitter)="closeKielipainotus($event, true)"></app-kielipainotus>
+                       (addObject)="addKielipainotus($event)"
+                       (deleteObject)="deleteKielipainotus($event)"
+                       (closeEmitter)="hideAddKielipainotus()"></app-kielipainotus>
   </mat-accordion>
   <button class="varda-text-button" id="add-kielipainotus"
           *ngIf="isEdit && !addKielipainotusBoolean && saveAccess"
@@ -41,27 +44,28 @@
     <legend>{{ i18n.painotukset_toimintapainotukset | translate }}</legend>
   </mat-expansion-panel-header>
 
-  <div *ngIf="!toimintapainotukset?.length"
+  <div *ngIf="!toiminnallinenPainotusList?.length"
        class="no-results">{{ i18n.painotukset_ei_toimintapainotuksia | translate }}</div>
   <mat-accordion>
-    <app-toimintapainotus *ngFor="let toimintapainotus of toimintapainotukset | slice:0:numberOfDisplayed.toiminnallinenpainotus"
-                          [toimintakoodisto]="toimintapainotuksetKoodisto$ | async"
+    <app-toimintapainotus *ngFor="let painotus of toiminnallinenPainotusList | slice:0:numberOfDisplayed.toiminnallinenpainotus"
                           [minStartDate]="minStartDate"
                           [maxEndDate]="maxEndDate"
                           [toimipaikka]="toimipaikka"
-                          [painotus]="toimintapainotus"
-                          (closeEmitter)="closeToimintapainotus($event)"
-                          [saveAccess]="isEdit && saveAccess"></app-toimintapainotus>
-    <app-varda-show-more-less *ngIf="toimintapainotukset" [showMoreKey]="i18n.painotukset_toimintapainotukset_show_more"
-                              [(numberOfDisplayed)]="numberOfDisplayed.toiminnallinenpainotus" [numberOfItems]="toimintapainotukset.length">
+                          [painotus]="painotus"
+                          [saveAccess]="isEdit && saveAccess"
+                          (addObject)="addToiminnallinenPainotus($event)"
+                          (deleteObject)="deleteToiminnallinenPainotus($event)"></app-toimintapainotus>
+    <app-varda-show-more-less *ngIf="toiminnallinenPainotusList" [showMoreKey]="i18n.painotukset_toimintapainotukset_show_more"
+                              [(numberOfDisplayed)]="numberOfDisplayed.toiminnallinenpainotus" [numberOfItems]="toiminnallinenPainotusList.length">
     </app-varda-show-more-less>
     <app-toimintapainotus *ngIf="addToimintapainotusBoolean"
-                          [toimintakoodisto]="toimintapainotuksetKoodisto$ | async"
                           [minStartDate]="minStartDate"
                           [maxEndDate]="maxEndDate"
                           [saveAccess]="isEdit && saveAccess"
                           [toimipaikka]="toimipaikka"
-                          (closeEmitter)="closeToimintapainotus($event, true)"></app-toimintapainotus>
+                          (addObject)="addToiminnallinenPainotus($event)"
+                          (deleteObject)="deleteToiminnallinenPainotus($event)"
+                          (closeEmitter)="hideAddToiminnallinenPainotus()"></app-toimintapainotus>
   </mat-accordion>
   <button class="varda-text-button" id="add-toiminnallinenpainotus"
           *ngIf="isEdit && !addToimintapainotusBoolean && saveAccess"

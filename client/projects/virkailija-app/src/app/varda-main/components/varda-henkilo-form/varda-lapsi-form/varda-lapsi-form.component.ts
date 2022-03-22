@@ -1,4 +1,4 @@
-import { Component, OnChanges, OnDestroy, Input, Output, SimpleChanges, EventEmitter } from '@angular/core';
+import { Component, OnDestroy, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatRadioChange } from '@angular/material/radio';
 import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
@@ -12,14 +12,15 @@ import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core
 import { VardaHenkiloDTO, VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';
 import { LapsiListDTO, VardaLapsiDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-lapsi-dto.model';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
-import { VardaTutkintoDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tutkinto-dto.model';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
-import { Subscription, Observable, BehaviorSubject } from 'rxjs';
+import { Subscription, Observable, BehaviorSubject, finalize } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { TranslateService } from '@ngx-translate/core';
 import { HenkiloRooliEnum } from 'projects/virkailija-app/src/app/utilities/models/enums/henkilorooli.enum';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
+import { VardaKoosteApiService } from '../../../../core/services/varda-kooste-api.service';
+import { LapsiKooste } from '../../../../utilities/models/dto/varda-henkilohaku-dto.model';
 
 
 @Component({
@@ -30,7 +31,7 @@ import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/mode
     './varda-lapsi-form.component.css'
   ]
 })
-export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
+export class VardaLapsiFormComponent implements OnInit, OnDestroy {
   @Input() henkilo: VardaHenkiloDTO;
   @Input() lapsi: LapsiListDTO;
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
@@ -44,17 +45,16 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
   paosJarjestajaKunnat$ = new BehaviorSubject<Array<VardaVakajarjestajaUi>>(null);
   selectedVakajarjestaja: VardaVakajarjestajaUi;
   selectedToimipaikka: VardaToimipaikkaMinimalDto;
-
-  subscriptions: Array<Subscription> = [];
   toimipaikkaAccess: UserAccess;
-  henkilonTutkinnot: Array<VardaTutkintoDTO>;
   lapsiFormErrors: Observable<Array<ErrorTree>>;
   deleteLapsiErrors: Observable<Array<ErrorTree>>;
-  isSubmitting = new BehaviorSubject<boolean>(false);
+  isSubmitting = false;
   deletePermission: boolean;
+  lapsiKooste: LapsiKooste;
 
-  private lapsiErrorService: VardaErrorMessageService;
-  private deleteLapsiErrorService: VardaErrorMessageService;
+  private errorMessageService: VardaErrorMessageService;
+  private deleteErrorMessageService: VardaErrorMessageService;
+  private subscriptions: Array<Subscription> = [];
 
   constructor(
     private authService: AuthService,
@@ -63,34 +63,34 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
     private lapsiService: VardaLapsiService,
     private modalService: VardaModalService,
     private snackBarService: VardaSnackBarService,
+    private koosteService: VardaKoosteApiService,
     translateService: TranslateService
   ) {
-    this.lapsiErrorService = new VardaErrorMessageService(translateService);
-    this.deleteLapsiErrorService = new VardaErrorMessageService(translateService);
+    this.errorMessageService = new VardaErrorMessageService(translateService);
+    this.deleteErrorMessageService = new VardaErrorMessageService(translateService);
 
-    this.lapsiFormErrors = this.lapsiErrorService.initErrorList();
-    this.deleteLapsiErrors = this.deleteLapsiErrorService.initErrorList();
+    this.lapsiFormErrors = this.errorMessageService.initErrorList();
+    this.deleteLapsiErrors = this.deleteErrorMessageService.initErrorList();
 
     this.selectedVakajarjestaja = this.vardaVakajarjestajaService.getSelectedVakajarjestaja();
     this.subscriptions.push(this.modalService.getFormValuesChanged().subscribe(formValuesChanged => this.valuesChanged.emit(formValuesChanged)));
   }
 
-  ngOnDestroy() {
-    this.subscriptions.forEach(subscription => subscription.unsubscribe());
-  }
-
-  ngOnChanges(changes: SimpleChanges) {
+  ngOnInit() {
+    this.lapsiService.activeLapsi.next(null);
     this.toimipaikkaAccess = this.authService.getUserAccess(this.henkilonToimipaikka?.organisaatio_oid);
     this.valuesChanged.emit(false);
+    this.lapsiService.initFormErrorList(this.selectedVakajarjestaja.id, this.lapsi);
 
-    if (!this.lapsi.id) {
+    if (!this.lapsi?.id) {
       this.initLapsiForm();
     } else {
+      this.getLapsiKooste();
       this.setDeletePermission();
     }
 
-    this.lapsiService.initFormErrorList(this.selectedVakajarjestaja.id, this.lapsi);
-    this.subscriptions.push(this.lapsiService.listenLapsiListUpdate().subscribe(() => this.lapsiService.initFormErrorList(this.selectedVakajarjestaja.id, this.lapsi)));
+    this.subscriptions.push(this.lapsiService.listenLapsiListUpdate().subscribe(() =>
+      this.lapsiService.initFormErrorList(this.selectedVakajarjestaja.id, this.lapsi)));
   }
 
   initLapsiForm() {
@@ -129,18 +129,7 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
       this.lapsiForm.get('oma_organisaatio').setValue(null);
       this.lapsiForm.get('oma_organisaatio').clearValidators();
     }
-
     this.lapsiForm.get('oma_organisaatio').updateValueAndValidity();
-  }
-
-  fetchPaosJarjestajat(toimipaikkaId: number) {
-    this.lapsiForm.get('oma_organisaatio').setValue(null);
-
-    this.paosService.getPaosJarjestajat(this.vardaVakajarjestajaService.getSelectedVakajarjestaja().id, toimipaikkaId)
-      .subscribe({
-        next: paosJarjestajaData => this.paosJarjestajaKunnat$.next(paosJarjestajaData),
-        error: err => this.lapsiErrorService.handleError(err, this.snackBarService),
-      });
   }
 
   changePaosOrganisaatio(omaOrganisaatioUrl?: string) {
@@ -154,45 +143,63 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
     this.lapsiForm.get('oma_organisaatio').setValue(omaOrganisaatioUrl);
   }
 
-  luoLapsi(form: FormGroup) {
+  fetchPaosJarjestajat(toimipaikkaId: number) {
+    this.lapsiForm.get('oma_organisaatio').setValue(null);
+
+    this.subscriptions.push(
+      this.paosService.getPaosJarjestajat(this.vardaVakajarjestajaService.getSelectedVakajarjestaja().id, toimipaikkaId)
+        .subscribe({
+          next: paosJarjestajaData => this.paosJarjestajaKunnat$.next(paosJarjestajaData),
+          error: err => this.errorMessageService.handleError(err, this.snackBarService),
+        })
+    );
+  }
+
+  createLapsi(form: FormGroup) {
     form.markAllAsTouched();
-    this.lapsiErrorService.resetErrorList();
+    this.errorMessageService.resetErrorList();
 
     if (VardaErrorMessageService.formIsValid(form)) {
       const vardaCreateLapsiDTO: VardaLapsiDTO = {
         ...form.value
       };
-      this.isSubmitting.next(true);
+      this.isSubmitting = true;
 
-      this.lapsiService.createLapsi(vardaCreateLapsiDTO).subscribe({
-        next: lapsiData => {
-          this.snackBarService.success(this.i18n.lapsi_save_success);
-          this.lapsiService.sendLapsiListUpdate();
+      this.subscriptions.push(
+        this.lapsiService.createLapsi(vardaCreateLapsiDTO).pipe(
+          finalize(() => setTimeout(() => this.isSubmitting = false, 500))
+        ).subscribe({
+          next: lapsiData => {
+            this.snackBarService.success(this.i18n.lapsi_save_success);
+            this.lapsiService.sendLapsiListUpdate();
 
-          this.lapsi = this.createLapsiListDTO(lapsiData);
-          this.setDeletePermission();
-        },
-        error: err => this.lapsiErrorService.handleError(err, this.snackBarService)
-      }).add(() => setTimeout(() => this.isSubmitting.next(false), 500));
+            this.lapsi = this.createLapsiListDTO(lapsiData);
+            this.getLapsiKooste();
+            this.setDeletePermission();
+          },
+          error: err => this.errorMessageService.handleError(err, this.snackBarService)
+        })
+      );
     }
-
   }
 
-  poistaLapsi() {
-    this.lapsiService.deleteLapsi(this.lapsi.id).subscribe({
-      next: () => {
-        this.modalService.setModalCloseWithoutConfirmation(true);
-        this.lapsiService.sendLapsiListUpdate();
-        this.modalService.setModalOpen(false);
-        this.snackBarService.warning(this.i18n.lapsi_delete_success);
-      },
-      error: err => this.deleteLapsiErrorService.handleError(err, this.snackBarService)
-    });
+  deleteLapsi() {
+    this.subscriptions.push(
+      this.lapsiService.deleteLapsi(this.lapsi.id).subscribe({
+        next: () => {
+          this.modalService.setModalCloseWithoutConfirmation(true);
+          this.lapsiService.sendLapsiListUpdate();
+          this.modalService.setModalOpen(false);
+          this.snackBarService.warning(this.i18n.lapsi_delete_success);
+        },
+        error: err => this.deleteErrorMessageService.handleError(err, this.snackBarService)
+      })
+    );
   }
 
   createLapsiListDTO(lapsiDTO: VardaLapsiDTO): LapsiListDTO {
     const henkiloID = lapsiDTO.henkilo.split('/').filter(Boolean).pop();
-    const lapsi: LapsiListDTO = {
+    return {
       id: lapsiDTO.id,
       url: lapsiDTO.url,
       henkilo_id: parseInt(henkiloID, 10),
@@ -209,8 +216,20 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
       tallentaja_organisaatio_oid: lapsiDTO.oma_organisaatio_oid ? this.selectedVakajarjestaja.organisaatio_oid : null,
       toimipaikat: [],
     };
+  }
 
-    return lapsi;
+  getLapsiKooste() {
+    if (this.lapsi?.id) {
+      this.subscriptions.push(
+        this.koosteService.getLapsiKooste(this.lapsi.id).subscribe({
+          next: result => {
+            this.lapsiService.activeLapsi.next(result);
+            this.lapsiKooste = result;
+          },
+          error: err => this.errorMessageService.handleError(err, this.snackBarService)
+        })
+      );
+    }
   }
 
   setDeletePermission() {
@@ -218,5 +237,10 @@ export class VardaLapsiFormComponent implements OnChanges, OnDestroy {
     if (this.lapsi.paos_organisaatio_oid && this.lapsi.tallentaja_organisaatio_oid !== this.selectedVakajarjestaja.organisaatio_oid) {
       this.deletePermission = false;
     }
+  }
+
+  ngOnDestroy() {
+    this.subscriptions.forEach(subscription => subscription.unsubscribe());
+    this.lapsiService.activeLapsi.next(null);
   }
 }

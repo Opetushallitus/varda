@@ -104,7 +104,7 @@
           {{ i18n.painotukset_kielipainotus_save_pending | translate }}
         </div>
         <app-varda-action-row *ngIf="!savePending"
-                              [saveDisabled]="formGroup.pristine || (isSubmitting | async)"
+                              [saveDisabled]="formGroup.pristine || isSubmitting"
                               [saveAccess]="saveAccess"
                               [formExists]="!!painotus"
                               [isEdit]="isEdit"

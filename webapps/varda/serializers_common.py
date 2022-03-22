@@ -169,7 +169,11 @@ class AbstractCustomRelatedField(serializers.Field):
 
             check_permission = getattr(parent_field, 'check_permission', None)
             if ((check_permission and not user.has_perm(check_permission, referenced_object)) or
-                    not user_belongs_to_correct_groups(parent_field, user, referenced_object)):
+                    not user_belongs_to_correct_groups(
+                        user, referenced_object, permission_groups=getattr(parent_field, 'permission_groups', ()),
+                        accept_toimipaikka_permission=getattr(parent_field, 'accept_toimipaikka_permission', False),
+                        check_paos=getattr(parent_field, 'check_paos', False)
+            )):
                 # Masking 403 as object not found
                 referenced_object = AbstractCustomRelatedField._does_not_exist
 
@@ -274,7 +278,11 @@ class PermissionCheckedHLFieldMixin:
         user = self.context['request'].user
 
         if (not user.has_perm(self.check_permission, hlfield_object) or
-                not user_belongs_to_correct_groups(self, user, hlfield_object)):
+                not user_belongs_to_correct_groups(
+                    user, hlfield_object, permission_groups=getattr(self, 'permission_groups', ()),
+                    accept_toimipaikka_permission=getattr(self, 'accept_toimipaikka_permission', False),
+                    check_paos=getattr(self, 'check_paos', False)
+        )):
             self.fail('does_not_exist')
 
         return hlfield_object

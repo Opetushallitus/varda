@@ -24,15 +24,7 @@ export abstract class VardaFormListAbstractComponent {
     setTimeout(() => this.objectElements.last.element.nativeElement.scrollIntoView({ behavior: 'smooth' }), 100);
   }
 
-  closeObject(refreshObjects?: boolean, hideAddObject?: boolean) {
-    if (hideAddObject) {
-      this.addObjectBoolean = false;
-    }
-
-    if (refreshObjects) {
-      this.getObjects();
-    }
+  hideAddObject() {
+    this.addObjectBoolean = false;
   }
-
-  abstract getObjects(): void;
 }

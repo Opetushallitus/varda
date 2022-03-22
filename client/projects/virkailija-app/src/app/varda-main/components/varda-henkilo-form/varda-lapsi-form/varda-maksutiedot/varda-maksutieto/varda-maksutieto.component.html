@@ -177,7 +177,7 @@
           </ng-template>
         </div>
 
-        <app-varda-action-row [saveDisabled]="formGroup.pristine || (isSubmitting | async)"
+        <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
                               [saveAccess]="toimipaikkaAccess?.huoltajatiedot.tallentaja"
                               [formExists]="!!maksutieto"
                               [isEdit]="isEdit"

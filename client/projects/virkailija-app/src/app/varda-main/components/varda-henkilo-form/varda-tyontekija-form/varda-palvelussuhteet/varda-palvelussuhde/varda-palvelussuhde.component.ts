@@ -1,15 +1,10 @@
-import { Component, OnInit, OnChanges, Input, Output, EventEmitter, ElementRef, OnDestroy } from '@angular/core';
-import { VardaPalvelussuhdeDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-palvelussuhde-dto.model';
-import { VardaTyoskentelypaikkaDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tyoskentelypaikka-dto.model';
-import { VardaPoissaoloDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-poissolo-dto.model';
+import { Component, OnInit, Input, Output, EventEmitter, ElementRef, OnDestroy } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import * as moment from 'moment';
-import { VardaTutkintoDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tutkinto-dto.model';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
-import { TyontekijaListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tyontekija-dto.model';
-import { BehaviorSubject, Observable, Subscription } from 'rxjs';
+import { finalize, Observable, Subscription } from 'rxjs';
 import { VardaErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
@@ -20,6 +15,12 @@ import { Moment } from 'moment';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
+import {
+  TyontekijaPalvelussuhde, TyontekijaPidempiPoissaolo,
+  TyontekijaTutkinto, TyontekijaTyoskentelypaikka
+} from '../../../../../../utilities/models/dto/varda-henkilohaku-dto.model';
+import { sortByAlkamisPvm } from '../../../../../../utilities/helper-functions';
+import { VardaPalvelussuhdeDTO } from '../../../../../../utilities/models/dto/varda-tyontekija-dto.model';
 
 @Component({
   selector: 'app-varda-palvelussuhde',
@@ -31,26 +32,29 @@ import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-acco
     '../../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractComponent implements OnInit, OnChanges, OnDestroy {
-  @Input() tyontekija: TyontekijaListDTO;
+export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractComponent implements OnInit, OnDestroy {
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
   @Input() toimipaikkaAccess: UserAccess;
-  @Input() palvelussuhde: VardaPalvelussuhdeDTO;
-  @Input() henkilonTutkinnot: Array<VardaTutkintoDTO>;
-  @Output() changedPalvelussuhde = new EventEmitter<boolean>(true);
+  @Input() palvelussuhde: TyontekijaPalvelussuhde;
+  @Output() addObject = new EventEmitter<TyontekijaPalvelussuhde>(true);
+  @Output() deleteObject = new EventEmitter<number>(true);
+
   element: ElementRef;
-  tyoskentelypaikat: Array<VardaTyoskentelypaikkaDTO>;
-  poissaolot: Array<VardaPoissaoloDTO>;
   addTyoskentelypaikkaBoolean: boolean;
   addPoissaoloBoolean: boolean;
-  isSubmitting = new BehaviorSubject<boolean>(false);
+  isSubmitting = false;
   palvelussuhdeFormErrors: Observable<Array<ErrorTree>>;
-  subscriptions: Array<Subscription> = [];
   tyosuhdeKoodisto: KoodistoDTO;
   tyoaikaKoodisto: KoodistoDTO;
+  tutkintoList: Array<TyontekijaTutkinto> = [];
   minEndDate: Date;
   koodistoEnum = KoodistoEnum;
+  tyontekijaId: number;
+  tyoskentelypaikkaList: Array<TyontekijaTyoskentelypaikka> = [];
+  pidempiPoissaoloList: Array<TyontekijaPidempiPoissaolo> = [];
+
   private henkilostoErrorService: VardaErrorMessageService;
+  private subscriptions: Array<Subscription> = [];
 
   constructor(
     private el: ElementRef,
@@ -67,54 +71,51 @@ export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractCompo
 
     this.koodistoService.getKoodisto(KoodistoEnum.tyosuhde).subscribe(koodisto => this.tyosuhdeKoodisto = koodisto);
     this.koodistoService.getKoodisto(KoodistoEnum.tyoaika).subscribe(koodisto => this.tyoaikaKoodisto = koodisto);
+
+    this.tyontekijaId = this.henkilostoService.activeTyontekija.getValue().id;
   }
 
   ngOnInit() {
-    const oletustutkinto = this.henkilonTutkinnot.length === 1 ? this.henkilonTutkinnot[0].tutkinto_koodi : null;
     this.formGroup = new FormGroup({
       id: new FormControl(this.palvelussuhde?.id),
-      lahdejarjestelma: new FormControl(this.palvelussuhde?.lahdejarjestelma || Lahdejarjestelma.kayttoliittyma),
-      tyontekija: new FormControl(this.palvelussuhde?.tyontekija || `/api/henkilosto/v1/tyontekijat/${this.tyontekija.id}/`),
+      lahdejarjestelma: new FormControl(Lahdejarjestelma.kayttoliittyma),
+      tyontekija: new FormControl(this.henkilostoService.getTyontekijaUrl(this.tyontekijaId)),
       toimipaikka_oid: new FormControl(this.palvelussuhde ? null : this.henkilonToimipaikka?.organisaatio_oid),
       alkamis_pvm: new FormControl(this.palvelussuhde ? moment(this.palvelussuhde?.alkamis_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
       paattymis_pvm: new FormControl(this.palvelussuhde?.paattymis_pvm ? moment(this.palvelussuhde?.paattymis_pvm, VardaDateService.vardaApiDateFormat) : null),
       tyoaika_koodi: new FormControl(this.palvelussuhde?.tyoaika_koodi, Validators.required),
       tyosuhde_koodi: new FormControl(this.palvelussuhde?.tyosuhde_koodi, Validators.required),
       tyoaika_viikossa: new FormControl(this.palvelussuhde?.tyoaika_viikossa, [Validators.pattern('^\\d+([,.]\\d{1,2})?$'), Validators.max(50), Validators.required]),
-      tutkinto_koodi: new FormControl(this.palvelussuhde?.tutkinto_koodi || oletustutkinto, Validators.required),
+      tutkinto_koodi: new FormControl(this.palvelussuhde?.tutkinto_koodi || null, Validators.required),
     });
-
-    if (!this.toimipaikkaAccess.tyontekijatiedot.tallentaja || this.palvelussuhde) {
-      this.disableForm();
-    } else {
-      this.enableForm();
-    }
-
-    this.checkFormErrors(this.henkilostoService, 'palvelussuhde', this.palvelussuhde?.id);
-    this.initDateFilters();
 
     this.subscriptions.push(
       this.formGroup.statusChanges
         .pipe(filter(() => !this.formGroup.pristine), distinctUntilChanged())
-        .subscribe(() => this.modalService.setFormValuesChanged(true))
+        .subscribe(() => this.modalService.setFormValuesChanged(true)),
+      this.henkilostoService.tutkintoChanged.subscribe(() => {
+        this.tutkintoList = this.henkilostoService.activeTyontekija.getValue().tutkinnot;
+        if (this.tutkintoList.length === 1) {
+          this.formGroup.controls.tutkinto_koodi.setValue(this.tutkintoList[0].tutkinto_koodi);
+        }
+      })
     );
-  }
 
-  ngOnDestroy() {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
-  }
-
-  ngOnChanges() {
     if (this.palvelussuhde) {
-      this.getTyoskentelypaikat();
-      this.getPoissaolot();
+      this.disableForm();
+      this.tyoskentelypaikkaList = this.palvelussuhde.tyoskentelypaikat.sort(sortByAlkamisPvm);
+      this.pidempiPoissaoloList = this.palvelussuhde.pidemmatpoissaolot.sort(sortByAlkamisPvm);
     } else {
-      this.togglePanel(true, undefined, true);
+      this.enableForm();
+      this.togglePanel(true);
     }
+
+    this.checkFormErrors(this.henkilostoService, 'palvelussuhde', this.palvelussuhde?.id);
+    this.initDateFilters();
   }
 
   savePalvelussuhde(form: FormGroup): void {
-    this.isSubmitting.next(true);
+    this.isSubmitting = true;
     form.markAllAsTouched();
     this.henkilostoErrorService.resetErrorList();
 
@@ -125,78 +126,89 @@ export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractCompo
         paattymis_pvm: form.value.paattymis_pvm?.isValid() ? form.value.paattymis_pvm.format(VardaDateService.vardaApiDateFormat) : null
       };
 
-      if (this.palvelussuhde) {
-        this.henkilostoService.updatePalvelussuhde(palvelussuhdeDTO).subscribe({
-          next: palvelussuhdeData => {
-            this.changedPalvelussuhde.emit();
+      const observable = this.palvelussuhde ? this.henkilostoService.updatePalvelussuhde(palvelussuhdeDTO) :
+        this.henkilostoService.createPalvelussuhde(palvelussuhdeDTO);
+      this.subscriptions.push(
+        observable.pipe(
+          finalize(() => this.disableSubmit())
+        ).subscribe({
+          next: result => {
+            if (!this.palvelussuhde) {
+              // Close panel if object was created
+              this.togglePanel(false);
+            }
+
             this.snackBarService.success(this.i18n.palvelussuhde_save_success);
             this.henkilostoService.sendHenkilostoListUpdate();
+            this.palvelussuhde = {...result, tyoskentelypaikat: this.tyoskentelypaikkaList,
+              pidemmatpoissaolot: this.pidempiPoissaoloList};
+            this.addObject.emit(this.palvelussuhde);
           },
           error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
-        }).add(() => this.disableSubmit());
-      } else {
-        this.henkilostoService.createPalvelussuhde(palvelussuhdeDTO).subscribe({
-          next: palvelussuhdeData => {
-            this.togglePanel(false, true, true);
-            this.snackBarService.success(this.i18n.palvelussuhde_save_success);
-          },
-          error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
-        }).add(() => this.disableSubmit());
-      }
-
+        })
+      );
     } else {
       this.disableSubmit();
     }
   }
 
-  closePoissaolo(refresh?: boolean, hideAddPoissaolo?: boolean): void {
-    if (hideAddPoissaolo) {
-      this.addPoissaoloBoolean = false;
-    }
-
-    if (refresh) {
-      this.getPoissaolot();
-    }
-  }
-
-  getPoissaolot(): void {
-    this.henkilostoService.getPoissaolot(this.palvelussuhde.id).subscribe({
-      next: poissaoloData => this.poissaolot = poissaoloData,
-      error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
-    });
-  }
-
   deletePalvelussuhde(): void {
-    this.henkilostoService.deletePalvelussuhde(this.palvelussuhde.id).subscribe({
-      next: deleted => {
-        this.togglePanel(false, true, true);
-        this.snackBarService.warning(this.i18n.palvelussuhde_delete_success);
-      },
-      error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
-    });
+    this.subscriptions.push(
+      this.henkilostoService.deletePalvelussuhde(this.palvelussuhde.id).subscribe({
+        next: () => {
+          this.togglePanel(false);
+          this.snackBarService.warning(this.i18n.palvelussuhde_delete_success);
+          this.henkilostoService.sendHenkilostoListUpdate();
+          this.deleteObject.emit(this.palvelussuhde.id);
+        },
+        error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
+      })
+    );
   }
 
-  getTyoskentelypaikat(): void {
-    this.henkilostoService.getTyoskentelypaikat(this.palvelussuhde.id).subscribe({
-      next: tyoskentelypaikkaData => {
-        this.tyoskentelypaikat = tyoskentelypaikkaData;
-      },
-      error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
-    });
+  addTyoskentelypaikka(tyoskentelypaikka: TyontekijaTyoskentelypaikka) {
+    this.tyoskentelypaikkaList = this.tyoskentelypaikkaList.filter(obj => obj.id !== tyoskentelypaikka.id);
+    this.tyoskentelypaikkaList.push(tyoskentelypaikka);
+    this.tyoskentelypaikkaList = this.tyoskentelypaikkaList.sort(sortByAlkamisPvm);
+    this.updateActiveTyontekija();
+    this.henkilostoService.tyoskentelypaikkaChanged.next(true);
   }
 
-  closeTyoskentelypaikka(refresh?: boolean, hideAddTyoskentelypaikka?: boolean): void {
-    if (hideAddTyoskentelypaikka) {
-      this.addTyoskentelypaikkaBoolean = false;
-    }
+  deleteTyoskentelypaikka(objectId: number) {
+    this.tyoskentelypaikkaList = this.tyoskentelypaikkaList.filter(obj => obj.id !== objectId);
+    this.updateActiveTyontekija();
+  }
 
-    if (refresh) {
-      this.getTyoskentelypaikat();
-    }
+  addPidempiPoissaolo(pidempiPoissaolo: TyontekijaPidempiPoissaolo) {
+    this.pidempiPoissaoloList = this.pidempiPoissaoloList.filter(obj => obj.id !== pidempiPoissaolo.id);
+    this.pidempiPoissaoloList.push(pidempiPoissaolo);
+    this.pidempiPoissaoloList = this.pidempiPoissaoloList.sort(sortByAlkamisPvm);
+    this.updateActiveTyontekija();
+  }
+
+  deletePidempiPoissaolo(objectId: number) {
+    this.pidempiPoissaoloList = this.pidempiPoissaoloList.filter(obj => obj.id !== objectId);
+    this.updateActiveTyontekija();
+  }
+
+  updateActiveTyontekija() {
+    const activeTyontekija = this.henkilostoService.activeTyontekija.getValue();
+    const activePalvelussuhde = activeTyontekija.palvelussuhteet.find(obj => obj.id === this.palvelussuhde.id);
+    activePalvelussuhde.tyoskentelypaikat = this.tyoskentelypaikkaList;
+    activePalvelussuhde.pidemmatpoissaolot = this.pidempiPoissaoloList;
+    this.henkilostoService.activeTyontekija.next(activeTyontekija);
+  }
+
+  hideAddPidempiPoissaolo(): void {
+    this.addPoissaoloBoolean = false;
+  }
+
+  hideAddTyoskentelypaikka(): void {
+    this.addTyoskentelypaikkaBoolean = false;
   }
 
   disableSubmit() {
-    setTimeout(() => this.isSubmitting.next(false), 500);
+    setTimeout(() => this.isSubmitting = false, 500);
   }
 
   enableForm() {
@@ -215,7 +227,7 @@ export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractCompo
     setTimeout(() => this.formGroup.controls.paattymis_pvm?.updateValueAndValidity(), 100);
   }
 
-  sendUpdateList() {
-    this.henkilostoService.sendHenkilostoListUpdate();
+  ngOnDestroy() {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 }

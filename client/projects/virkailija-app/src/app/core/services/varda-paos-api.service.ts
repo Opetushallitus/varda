@@ -5,19 +5,14 @@ import { environment } from 'projects/virkailija-app/src/environments/environmen
 import { PaosToimintaCreateDto, PaosToimintaDto, PaosToimintatietoDto, PaosToimipaikkaDto, PaosToimipaikkatietoDto, PaosVakajarjestajaDto } from '../../utilities/models/dto/varda-paos-dto';
 import { VardaApiService } from './varda-api.service';
 import { AllVakajarjestajaSearchDto } from '../../utilities/models/varda-vakajarjestaja.model';
-import { VardaToimipaikkaSearchDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { VardaVakajarjestajaUi } from '../../utilities/models';
-
-
 
 @Injectable()
 export class VardaPaosApiService {
-
   private apiPath = `${environment.vardaAppUrl}/api/v1`;
   private uiPath = `${environment.vardaAppUrl}/api/ui`;
 
   constructor(private http: LoadingHttpService) { }
-
 
   getPaosToimipaikat(vakajarjestajaId: number): Observable<Array<PaosToimipaikkatietoDto>> {
     return this.http.getAllResults(`${this.apiPath}/vakajarjestajat/${vakajarjestajaId}/paos-toimipaikat/`, environment.vardaAppUrl);
@@ -32,7 +27,7 @@ export class VardaPaosApiService {
     return this.http.getAllResults(url, environment.vardaAppUrl, searchDto);
   }
 
-  getAllPaosToimipaikat(id: number, searchDto: VardaToimipaikkaSearchDto): Observable<Array<PaosToimipaikkaDto>> {
+  getAllPaosToimipaikat(id: number, searchDto: Record<string, any>): Observable<Array<PaosToimipaikkaDto>> {
     const url = `${this.uiPath}/vakajarjestajat/${id}/all-toimipaikat/`;
     return this.http.getAllResults(url, environment.vardaAppUrl, searchDto);
   }
@@ -57,5 +52,4 @@ export class VardaPaosApiService {
     const savingToimijaUrl = VardaApiService.getVakajarjestajaUrlFromId(savingToimijaId);
     return this.http.put(url, { tallentaja_organisaatio: savingToimijaUrl });
   }
-
 }

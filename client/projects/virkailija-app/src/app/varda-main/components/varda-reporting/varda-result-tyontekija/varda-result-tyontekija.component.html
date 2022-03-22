@@ -207,10 +207,11 @@
         {{i18n.katsele_tietoja_error_invalid_permissions | translate}}
       </div>
       <ng-template #validTaydennyskoulutusPermissionsContainer>
-        <div class="varda-text-secondary d-block" *ngIf="taydennyskoulutusList.length === 0">
+        <div class="varda-text-secondary d-block" *ngIf="tyontekijaKooste.taydennyskoulutukset.length === 0">
           {{i18n.katsele_tietoja_tyontekija_no_taydennyskoulutukset | translate}}
         </div>
-        <mat-expansion-panel *ngFor="let taydennyskoulutus of taydennyskoulutusList | slice:0:numberOfDisplayed.taydennyskoulutus" class="taydennyskoulutus-panel blue-panel">
+        <mat-expansion-panel *ngFor="let taydennyskoulutus of tyontekijaKooste.taydennyskoulutukset | slice:0:numberOfDisplayed.taydennyskoulutus"
+                             class="taydennyskoulutus-panel blue-panel">
           <mat-expansion-panel-header>
             <mat-panel-title>
               {{getDateDisplayValue(taydennyskoulutus.suoritus_pvm)}}
@@ -248,10 +249,10 @@
             </table>
           </div>
         </mat-expansion-panel>
-        <app-varda-show-more-less *ngIf="taydennyskoulutusList"
+        <app-varda-show-more-less *ngIf="tyontekijaKooste.taydennyskoulutukset"
                                   [showMoreKey]="i18n.taydennyskoulutukset_show_more"
                                   [(numberOfDisplayed)]="numberOfDisplayed.taydennyskoulutus"
-                                  [numberOfItems]="taydennyskoulutusList.length">
+                                  [numberOfItems]="tyontekijaKooste.taydennyskoulutukset.length">
         </app-varda-show-more-less>
       </ng-template>
     </div>

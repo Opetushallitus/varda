@@ -2,7 +2,8 @@ import logging
 
 from django.core.cache import cache
 from django.db import transaction
-from django.db.models import ProtectedError, Q
+from django.db.models import BooleanField, Case, Exists, F, OuterRef, ProtectedError, Q, Value, When
+from django.db.models.functions import Lower
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -29,8 +30,8 @@ from varda.permission_groups import (assign_object_permissions_to_tyontekija_gro
 from varda.permissions import (CustomModelPermissions, delete_object_permissions_explicitly, is_user_permission,
                                is_correct_taydennyskoulutus_tyontekija_permission, get_tyontekija_vakajarjestaja_oid,
                                filter_authorized_taydennyskoulutus_tyontekijat_list, auditlog, auditlogclass,
-                               user_permission_groups_in_organization, HenkilostohakuPermissions,
-                               get_tyontekija_filters_for_taydennyskoulutus_groups,
+                               user_belongs_to_correct_groups, user_permission_groups_in_organization,
+                               HenkilostohakuPermissions, get_tyontekija_filters_for_taydennyskoulutus_groups,
                                toimipaikka_tallentaja_pidempipoissaolo_has_perm_to_add,
                                get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus, is_oph_staff,
                                assign_tyontekija_henkilo_permissions, assign_tyoskentelypaikka_henkilo_permissions,
@@ -266,15 +267,39 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
                                                                                           [Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
                                                                                            Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA])
         if not is_superuser_or_oph_staff and not taydennyskoulutus_organization_groups_qs.exists():
-            available_tehtavanimike_codes = get_available_tehtavanimike_codes_for_user(user, tyontekija)
-            taydennyskoulutus_filter = (taydennyskoulutus_filter &
-                                        Q(taydennyskoulutus__id__in=get_object_ids_for_user_by_model(user, 'taydennyskoulutus')) &
-                                        Q(tehtavanimike_koodi__in=available_tehtavanimike_codes))
+            available_tehtavanimike_codes = [code.lower() for code in get_available_tehtavanimike_codes_for_user(user, tyontekija)]
+            taydennyskoulutus_id_list = get_object_ids_for_user_by_model(user, 'taydennyskoulutus')
+            taydennyskoulutus_filter &= Q(taydennyskoulutus__id__in=taydennyskoulutus_id_list)
+            if not user_belongs_to_correct_groups(user, tyontekija.vakajarjestaja, accept_toimipaikka_permission=True,
+                                                  permission_groups=[Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA]):
+                # User does not have add_taydennyskoulutus permission in Toimipaikka of Vakajarjestaja so return only
+                # TaydennyskoulutusTyontekija objects that have correct tehtavanimike_koodi
+                taydennyskoulutus_filter &= Q(tehtavanimike_koodi__in=available_tehtavanimike_codes)
+        else:
+            # User has permissions to all tehtavanimike codes
+            available_tehtavanimike_codes = [code.lower() for code in
+                                             Tyoskentelypaikka.objects.filter(palvelussuhde__in=palvelussuhteet)
+                                                 .values_list('tehtavanimike_koodi', flat=True)]
 
-        taydennyskoulutukset = (TaydennyskoulutusTyontekija.objects
-                                .filter(taydennyskoulutus_filter)
-                                .distinct()
-                                .order_by('-taydennyskoulutus__suoritus_pvm'))
+        taydennyskoulutukset = (
+            TaydennyskoulutusTyontekija.objects.filter(taydennyskoulutus_filter).annotate(
+                contains_other_tyontekija=Exists(
+                    TaydennyskoulutusTyontekija.objects
+                    .filter(taydennyskoulutus=OuterRef('taydennyskoulutus'))
+                    .exclude(tyontekija=tyontekija)
+                ),
+                tehtavanimike_koodi_lower=Lower(F('tehtavanimike_koodi')),
+                read_only=Case(
+                    When(
+                        tehtavanimike_koodi_lower__in=available_tehtavanimike_codes,
+                        then=Value(False)
+                    ),
+                    output_field=BooleanField(),
+                    default=Value(True)
+                )
+            )
+            .order_by('-taydennyskoulutus__suoritus_pvm')
+        )
         tyontekija_data['taydennyskoulutukset'] = taydennyskoulutukset
 
         # Get tutkinnot

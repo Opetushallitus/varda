@@ -340,7 +340,7 @@ class Lapsi(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
         """
         :return: True if lapsi is yksityinen, otherwise False
         """
-        return self.vakatoimija and not self.vakatoimija.kunnallinen_kytkin
+        return self.vakatoimija is not None and not self.vakatoimija.kunnallinen_kytkin
 
     def save(self, *args, **kwargs):
         try:

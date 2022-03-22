@@ -1,29 +1,49 @@
 import { Lahdejarjestelma } from '../enums/hallinnointijarjestelma';
 
 export interface VardaTaydennyskoulutusDTO {
+  id: number;
+  url: string;
+  nimi: string;
+  suoritus_pvm: string;
+  koulutuspaivia: number;
+  taydennyskoulutus_tyontekijat: Array<VardaTaydennyskoulutusTyontekijaDTO>;
+  taydennyskoulutus_tyontekijat_count: number;
+  lahdejarjestelma: Lahdejarjestelma;
+  tunniste: string | null;
+  muutos_pvm: string;
+}
+
+export interface VardaTaydennyskoulutusSaveDTO {
   id?: number;
-  url?: string;
   nimi?: string;
   suoritus_pvm?: string;
   koulutuspaivia?: number;
-  taydennyskoulutus_tyontekijat?: Array<VardaTaydennyskoulutusTyontekijaDTO>;
-  taydennyskoulutus_tyontekijat_add?: Array<VardaTaydennyskoulutusTyontekijaDTO>;
-  taydennyskoulutus_tyontekijat_remove?: Array<VardaTaydennyskoulutusTyontekijaDTO>;
-  taydennyskoulutus_tyontekijat_count?: number;
-  muutos_pvm?: string;
+  taydennyskoulutus_tyontekijat?: Array<VardaTaydennyskoulutusTyontekijaSaveDTO>;
+  taydennyskoulutus_tyontekijat_add?: Array<VardaTaydennyskoulutusTyontekijaSaveDTO>;
+  taydennyskoulutus_tyontekijat_remove?: Array<VardaTaydennyskoulutusTyontekijaSaveDTO>;
   lahdejarjestelma?: Lahdejarjestelma;
-  tunniste?: string;
-  osallistuja_lkm?: number;
+  tunniste?: string | null;
 }
 
 export interface VardaTaydennyskoulutusTyontekijaDTO {
-  tyontekija?: string;
   tehtavanimike_koodi: string;
-  henkilo_oid?: string;
-  vakajarjestaja_oid?: string;
-  lahdejarjestelma?: Lahdejarjestelma;
+  tyontekija: string;
+  henkilo_oid: string;
+  vakajarjestaja: string;
+  vakajarjestaja_oid: string;
+  lahdejarjestelma: Lahdejarjestelma;
+  tunniste: string | null;
 }
 
+export interface VardaTaydennyskoulutusTyontekijaSaveDTO {
+  tehtavanimike_koodi: string;
+  tyontekija?: string;
+  henkilo_oid?: string;
+  vakajarjestaja?: string;
+  vakajarjestaja_oid?: string;
+  lahdejarjestelma?: Lahdejarjestelma;
+  tunniste?: string | null;
+}
 
 export interface VardaTaydennyskoulutusTyontekijaListDTO {
   tehtavanimike_koodit: Array<string>;

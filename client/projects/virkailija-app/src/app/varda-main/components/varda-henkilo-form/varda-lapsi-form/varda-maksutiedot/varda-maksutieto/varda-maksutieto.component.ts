@@ -7,21 +7,17 @@ import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaFormValidators } from 'projects/virkailija-app/src/app/shared/validators/varda-form-validators';
-import { LapsiListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-lapsi-dto.model';
-import {
-  HuoltajaDTO,
-  VardaMaksutietoDTO
-} from 'projects/virkailija-app/src/app/utilities/models/dto/varda-maksutieto-dto.model';
+import { VardaMaksutietoSaveDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-lapsi-dto.model';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
-import { BehaviorSubject, Observable, Subscription } from 'rxjs';
+import { finalize, Observable, Subscription } from 'rxjs';
 import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { VardaKoodistoService, VardaDateService } from 'varda-shared';
 import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { VardaMaksutietoHuoltajaComponent } from './varda-maksutieto-huoltaja/varda-maksutieto-huoltaja.component';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
-
+import { LapsiKoosteMaksutieto } from '../../../../../../utilities/models/dto/varda-henkilohaku-dto.model';
 
 @Component({
   selector: 'app-varda-maksutieto',
@@ -34,23 +30,25 @@ import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-acco
   ]
 })
 export class VardaMaksutietoComponent extends VardaFormAccordionAbstractComponent implements OnInit, OnDestroy {
-  @Input() lapsi: LapsiListDTO;
-  @Input() toimipaikkaAccess: UserAccess;
-  @Input() maksutieto: VardaMaksutietoDTO;
-  @Input() yksityinenBoolean: boolean;
-  @Output() changedMaksutieto = new EventEmitter<boolean>(true);
   @ViewChildren(VardaMaksutietoHuoltajaComponent) huoltajaElements: QueryList<VardaMaksutietoHuoltajaComponent>;
+  @Input() toimipaikkaAccess: UserAccess;
+  @Input() maksutieto: LapsiKoosteMaksutieto;
+  @Input() yksityinenBoolean: boolean;
+  @Output() addObject = new EventEmitter<LapsiKoosteMaksutieto>(true);
+  @Output() deleteObject = new EventEmitter<number>(true);
+
   element: ElementRef;
   huoltajat: FormArray;
   maksutietoFormErrors: Observable<Array<ErrorTree>>;
-  subscriptions: Array<Subscription> = [];
   maksunperusteKoodisto: KoodistoDTO;
   huoltajaSaveStatus: { success: number; failure: number };
   minEndDate: Date;
   disableForMaksuttomuus = false;
-  isSubmitting = new BehaviorSubject<boolean>(false);
+  isSubmitting = false;
   koodistoEnum = KoodistoEnum;
-  private henkilostoErrorService: VardaErrorMessageService;
+
+  private errorMessageService: VardaErrorMessageService;
+  private subscriptions: Array<Subscription> = [];
 
   constructor(
     private el: ElementRef,
@@ -62,20 +60,15 @@ export class VardaMaksutietoComponent extends VardaFormAccordionAbstractComponen
   ) {
     super(modalService);
     this.element = this.el;
-    this.henkilostoErrorService = new VardaErrorMessageService(translateService);
-    this.maksutietoFormErrors = this.henkilostoErrorService.initErrorList();
-    this.koodistoService.getKoodisto(KoodistoEnum.maksunperuste).subscribe(koodisto => this.maksunperusteKoodisto = koodisto);
+    this.errorMessageService = new VardaErrorMessageService(translateService);
+    this.maksutietoFormErrors = this.errorMessageService.initErrorList();
   }
 
   ngOnInit() {
-    if (!this.maksutieto) {
-      this.togglePanel(true, undefined, true);
-    }
-
     this.formGroup = new FormGroup({
       id: new FormControl(this.maksutieto?.id),
-      lahdejarjestelma: new FormControl(this.maksutieto?.lahdejarjestelma || Lahdejarjestelma.kayttoliittyma),
-      lapsi: new FormControl(this.maksutieto?.lapsi || `/api/v1/lapset/${this.lapsi.id}/`),
+      lahdejarjestelma: new FormControl(Lahdejarjestelma.kayttoliittyma),
+      lapsi: new FormControl(this.lapsiService.getLapsiUrl(this.lapsiService.activeLapsi.getValue().id)),
       alkamis_pvm: new FormControl(this.maksutieto ? moment(this.maksutieto?.alkamis_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
       paattymis_pvm: new FormControl(this.maksutieto?.paattymis_pvm ? moment(this.maksutieto?.paattymis_pvm, VardaDateService.vardaApiDateFormat) : null),
       maksun_peruste_koodi: new FormControl(this.maksutieto?.maksun_peruste_koodi.toLocaleUpperCase(), [Validators.required]),
@@ -86,39 +79,34 @@ export class VardaMaksutietoComponent extends VardaFormAccordionAbstractComponen
     });
 
     this.huoltajat = this.formGroup.get('huoltajat') as FormArray;
-    if (!this.maksutieto) {
-      this.addHuoltaja();
-    } else {
-      this.checkFormErrors(this.lapsiService, 'maksutieto', this.maksutieto.id);
-    }
-
-    if (!this.toimipaikkaAccess.huoltajatiedot.tallentaja || this.maksutieto) {
+    if (this.maksutieto) {
       this.disableForm();
+      this.checkFormErrors(this.lapsiService, 'maksutieto', this.maksutieto.id);
     } else {
+      this.togglePanel(true);
+      this.addHuoltaja();
       this.enableForm();
     }
 
     this.subscriptions.push(
       this.formGroup.statusChanges
         .pipe(filter(() => !this.formGroup.pristine), distinctUntilChanged())
-        .subscribe(() => this.modalService.setFormValuesChanged(true))
+        .subscribe(() => this.modalService.setFormValuesChanged(true)),
+      this.koodistoService.getKoodisto(KoodistoEnum.maksunperuste).subscribe(koodisto =>
+        this.maksunperusteKoodisto = koodisto)
     );
   }
 
-  ngOnDestroy() {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
-  }
-
   saveMaksutieto(form: FormGroup): void {
-    this.isSubmitting.next(true);
+    this.isSubmitting = true;
     form.markAllAsTouched();
-    this.henkilostoErrorService.resetErrorList();
+    this.errorMessageService.resetErrorList();
 
     if (this.huoltajat.invalid) {
       this.disableSubmit();
       setTimeout(() => this.huoltajaElements.first.element.nativeElement.scrollIntoView({ behavior: 'smooth' }), 100);
     } else if (VardaErrorMessageService.formIsValid(form)) {
-      const maksutietoDTO: VardaMaksutietoDTO = {
+      const maksutietoDTO: VardaMaksutietoSaveDTO = {
         ...form.value,
         alkamis_pvm: form.value.alkamis_pvm?.format(VardaDateService.vardaApiDateFormat) || this.maksutieto?.alkamis_pvm,
         paattymis_pvm: form.value.paattymis_pvm?.isValid() ? form.value.paattymis_pvm.format(VardaDateService.vardaApiDateFormat) : null
@@ -133,40 +121,52 @@ export class VardaMaksutietoComponent extends VardaFormAccordionAbstractComponen
         delete maksutietoDTO.huoltajat;
       }
 
-      const apiFunction = this.maksutieto ? this.lapsiService.updateMaksutieto(maksutietoDTO) : this.lapsiService.createMaksutieto(maksutietoDTO);
-      apiFunction.subscribe({
-        next: maksutietoData => {
-          this.huoltajaSaveStatus = {
-            success: maksutietoData.tallennetut_huoltajat_count,
-            failure: maksutietoData.ei_tallennetut_huoltajat_count
-          };
-          this.snackBarService.success(this.i18n.maksutieto_save_success);
-          this.disableForm();
+      const observable = this.maksutieto ? this.lapsiService.updateMaksutieto(maksutietoDTO) :
+        this.lapsiService.createMaksutieto(maksutietoDTO);
+      this.subscriptions.push(
+        observable.pipe(
+          finalize(() => this.disableSubmit())
+        ).subscribe({
+          next: result => {
+            this.huoltajaSaveStatus = {
+              success: result.tallennetut_huoltajat_count,
+              failure: result.ei_tallennetut_huoltajat_count
+            };
+            this.snackBarService.success(this.i18n.maksutieto_save_success);
+            this.disableForm();
 
-          setTimeout(() => {
-            this.huoltajaSaveStatus = null;
-            this.togglePanel(false, true, true);
-          }, 5000);
-        },
-        error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
-      }).add(() => this.disableSubmit());
+            this.maksutieto = result;
+            setTimeout(() => {
+              this.huoltajaSaveStatus = null;
+              this.togglePanel(false);
+              this.lapsiService.sendLapsiListUpdate();
+              this.addObject.emit(this.maksutieto);
+            }, 5000);
+          },
+          error: err => this.errorMessageService.handleError(err, this.snackBarService)
+        })
+      );
     } else {
       this.disableSubmit();
     }
   }
 
   deleteMaksutieto(): void {
-    this.lapsiService.deleteMaksutieto(this.maksutieto.id).subscribe({
-      next: deleted => {
-        this.togglePanel(false, true, true);
-        this.snackBarService.warning(this.i18n.maksutieto_delete_success);
-      },
-      error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
-    });
+    this.subscriptions.push(
+      this.lapsiService.deleteMaksutieto(this.maksutieto.id).subscribe({
+        next: () => {
+          this.togglePanel(false);
+          this.snackBarService.warning(this.i18n.maksutieto_delete_success);
+          this.lapsiService.sendLapsiListUpdate();
+          this.deleteObject.emit(this.maksutieto.id);
+        },
+        error: err => this.errorMessageService.handleError(err, this.snackBarService)
+      })
+    );
   }
 
   disableSubmit() {
-    setTimeout(() => this.isSubmitting.next(false), 500);
+    setTimeout(() => this.isSubmitting = false, 500);
   }
 
   enableForm() {
@@ -222,7 +222,7 @@ export class VardaMaksutietoComponent extends VardaFormAccordionAbstractComponen
     setTimeout(() => this.formGroup.controls.paattymis_pvm?.updateValueAndValidity(), 100);
   }
 
-  sendUpdateList() {
-    this.lapsiService.sendLapsiListUpdate();
+  ngOnDestroy() {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 }

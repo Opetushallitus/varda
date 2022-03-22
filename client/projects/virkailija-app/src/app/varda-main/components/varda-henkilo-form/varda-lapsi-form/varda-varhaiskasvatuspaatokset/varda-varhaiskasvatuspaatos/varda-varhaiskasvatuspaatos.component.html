@@ -16,7 +16,7 @@
                            (closed)="togglePanel(false)"
                            #matPanel>
         <mat-expansion-panel-header>
-          <mat-panel-title *ngIf="varhaiskasvatuspaatos; else addVarhaiskasvatussuhde">
+          <mat-panel-title *ngIf="varhaiskasvatuspaatos">
             <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
             <span *ngIf="!varhaiskasvatuspaatos.paattymis_pvm; else hasPaattymispvm">
               {{ i18n.varhaiskasvatuspaatos_alkaen_PVM | translate: {pvm: varhaiskasvatuspaatos.alkamis_pvm | vardaDate} }}
@@ -28,14 +28,11 @@
               </span>
             </ng-template>
           </mat-panel-title>
-
-          <ng-template #addVarhaiskasvatussuhde>
-            <mat-panel-title>
+          <mat-panel-title *ngIf="!varhaiskasvatuspaatos">
               <span>
                 {{ i18n.varhaiskasvatuspaatokset_lisaa_varhaiskasvatuspaatos | translate }}
               </span>
-            </mat-panel-title>
-          </ng-template>
+          </mat-panel-title>
         </mat-expansion-panel-header>
         <form [formGroup]="formGroup"
               autocomplete="off"
@@ -177,7 +174,7 @@
           </ng-container>
           <app-varda-error-field [errors]="varhaiskasvatuspaatosFormErrors"></app-varda-error-field>
 
-          <app-varda-action-row [saveDisabled]="formGroup.pristine || (isSubmitting | async)"
+          <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
                                 [saveAccess]="lapsitiedotTallentaja"
                                 [formExists]="!!varhaiskasvatuspaatos"
                                 [isEdit]="isEdit"
@@ -189,35 +186,37 @@
     </div>
 
     <ng-container *ngIf="varhaiskasvatuspaatos">
-      <div *ngIf="varhaiskasvatussuhteet"
-           [class.tree-border]="varhaiskasvatussuhteet.length"
+      <div *ngIf="varhaiskasvatussuhdeList"
+           [class.tree-border]="varhaiskasvatussuhdeList.length"
            [class.no-save]="!lapsitiedotTallentaja"
            class="poissaolot tyontekija-panel-content">
         <h3 class="oph-h3">{{ i18n.varhaiskasvatuspaatos_varhaiskasvatussuhteet_varhaiskasvatuspaatoksessa | translate
           }}
-          <span *ngIf="varhaiskasvatussuhteet.length">({{ varhaiskasvatussuhteet.length }})</span>
+          <span *ngIf="varhaiskasvatussuhdeList.length">({{ varhaiskasvatussuhdeList.length }})</span>
         </h3>
 
         <div class="missing-info"
-             *ngIf="varhaiskasvatussuhteet.length === 0">
+             *ngIf="varhaiskasvatussuhdeList.length === 0">
           <mat-icon alt="">error_outline</mat-icon>
           {{ i18n.varhaiskasvatuspaatos_ei_varhaiskasvatussuhteita | translate }}
         </div>
 
         <mat-accordion>
-          <app-varda-varhaiskasvatussuhde *ngFor="let varhaiskasvatussuhde of varhaiskasvatussuhteet"
+          <app-varda-varhaiskasvatussuhde *ngFor="let varhaiskasvatussuhde of varhaiskasvatussuhdeList"
                                           [henkilonToimipaikka]="henkilonToimipaikka"
                                           [varhaiskasvatuspaatos]="varhaiskasvatuspaatos"
                                           [lapsitiedotTallentaja]="lapsitiedotTallentaja"
                                           [varhaiskasvatussuhde]="varhaiskasvatussuhde"
-                                          (closeEmitter)="closeVarhaiskasvatussuhde($event)">
+                                          (addObject)="addVarhaiskasvatussuhde($event)"
+                                          (deleteObject)="deleteVarhaiskasvatussuhte($event)">
           </app-varda-varhaiskasvatussuhde>
           <app-varda-varhaiskasvatussuhde *ngIf="addVarhaiskasvatussuhdeBoolean"
                                           [henkilonToimipaikka]="henkilonToimipaikka"
                                           [varhaiskasvatuspaatos]="varhaiskasvatuspaatos"
                                           [lapsitiedotTallentaja]="lapsitiedotTallentaja"
-                                          [lapsi]="lapsi"
-                                          (closeEmitter)="closeVarhaiskasvatussuhde($event, true)">
+                                          (addObject)="addVarhaiskasvatussuhde($event)"
+                                          (deleteObject)="deleteVarhaiskasvatussuhte($event)"
+                                          (closeEmitter)="hideAddVarhaiskasvatussuhde()">
           </app-varda-varhaiskasvatussuhde>
         </mat-accordion>
 

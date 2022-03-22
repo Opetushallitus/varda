@@ -1639,11 +1639,12 @@ class ToimipaikanLapsetKatseluSerializer(serializers.Serializer):
 
 
 class LapsiKoosteVarhaiskasvatussuhdeSerializer(serializers.HyperlinkedModelSerializer):
-    toimipaikka_nimi = serializers.ReadOnlyField(source='toimipaikka.nimi')
+    toimipaikka_oid = serializers.CharField(source='toimipaikka.organisaatio_oid', read_only=True)
+    toimipaikka_nimi = serializers.CharField(source='toimipaikka.nimi', read_only=True)
 
     class Meta:
         model = Varhaiskasvatussuhde
-        fields = ('id', 'alkamis_pvm', 'paattymis_pvm', 'toimipaikka', 'toimipaikka_nimi',
+        fields = ('id', 'alkamis_pvm', 'paattymis_pvm', 'toimipaikka', 'toimipaikka_oid', 'toimipaikka_nimi',
                   'varhaiskasvatuspaatos', 'lahdejarjestelma', 'tunniste', 'muutos_pvm',)
 
 
@@ -1678,15 +1679,23 @@ class LapsiKoosteMaksutietoSerializer(serializers.HyperlinkedModelSerializer):
 
 class LapsiKoosteSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
-    oma_organisaatio_nimi = serializers.ReadOnlyField(source='oma_organisaatio.nimi', allow_null=True)
-    paos_organisaatio_nimi = serializers.ReadOnlyField(source='paos_organisaatio.nimi', allow_null=True)
+    vakatoimija_id = serializers.IntegerField(source='vakatoimija.id', read_only=True, allow_null=True)
+    vakatoimija_oid = serializers.CharField(source='vakatoimija.organisaatio_oid', read_only=True, allow_null=True)
+    vakatoimija_nimi = serializers.CharField(source='vakatoimija.nimi', read_only=True, allow_null=True)
+    oma_organisaatio_id = serializers.IntegerField(source='oma_organisaatio.id', read_only=True, allow_null=True)
+    oma_organisaatio_oid = serializers.CharField(source='oma_organisaatio.organisaatio_oid', read_only=True, allow_null=True)
+    oma_organisaatio_nimi = serializers.CharField(source='oma_organisaatio.nimi', read_only=True, allow_null=True)
+    paos_organisaatio_id = serializers.IntegerField(source='paos_organisaatio.id', read_only=True, allow_null=True)
+    paos_organisaatio_oid = serializers.CharField(source='paos_organisaatio.organisaatio_oid', read_only=True, allow_null=True)
+    paos_organisaatio_nimi = serializers.CharField(source='paos_organisaatio.nimi', read_only=True, allow_null=True)
+    tallentaja_organisaatio_oid = serializers.CharField(read_only=True, allow_null=True)
     yksityinen_kytkin = serializers.BooleanField(read_only=True)
-    henkilo = LapsiKoosteHenkiloSerializer(many=False)
-    varhaiskasvatuspaatokset = LapsiKoosteVarhaiskasvatuspaatosSerializer(many=True)
-    varhaiskasvatussuhteet = LapsiKoosteVarhaiskasvatussuhdeSerializer(many=True)
-    maksutiedot = LapsiKoosteMaksutietoSerializer(many=True)
-    lahdejarjestelma = serializers.ReadOnlyField()
-    tunniste = serializers.ReadOnlyField()
+    henkilo = LapsiKoosteHenkiloSerializer(many=False, read_only=True)
+    varhaiskasvatuspaatokset = LapsiKoosteVarhaiskasvatuspaatosSerializer(many=True, read_only=True)
+    varhaiskasvatussuhteet = LapsiKoosteVarhaiskasvatussuhdeSerializer(many=True, read_only=True)
+    maksutiedot = LapsiKoosteMaksutietoSerializer(many=True, read_only=True)
+    lahdejarjestelma = serializers.CharField(read_only=True)
+    tunniste = serializers.CharField(read_only=True)
 
 
 class NestedPaosOikeusSerializer(serializers.ModelSerializer):

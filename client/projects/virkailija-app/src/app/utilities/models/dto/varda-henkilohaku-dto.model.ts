@@ -1,18 +1,3 @@
-import {VardaHenkiloDTO} from './varda-henkilo-dto.model';
-
-export class HenkilohakuResultDTO {
-  id: number;
-  url: string;
-  henkilo: VardaHenkiloDTO;
-  maksutiedot: Array<string>;
-  toimipaikat: Array<{nimi: string; nimi_sv: string; organisaatio_oid: string }>;
-}
-
-export enum HenkilohakuType {
-  lapset = 'lapset',
-  tyontekija = 'tyontekijat',
-}
-
 export enum FilterStatus {
   kaikki = 'kaikki',
   voimassaOlevat = 'voimassaolevat',
@@ -26,15 +11,7 @@ export enum FilterObject {
   maksutiedot = 'maksutiedot'
 }
 
-export class HenkilohakuSearchDTO {
-  search: string;
-  type: HenkilohakuType;
-  filter_status: FilterStatus;
-  filter_object: FilterObject;
-  page?: number;
-}
-
-export class LapsiByToimipaikkaDTO {
+export interface LapsiByToimipaikkaDTO {
   etunimet: string;
   sukunimi: string;
   syntyma_pvm: string;
@@ -45,45 +22,57 @@ export class LapsiByToimipaikkaDTO {
   lapsi_url: string;
 }
 
-export class LapsiKooste {
-  id?: number;
+export interface LapsiKooste {
+  id: number;
   yksityinen_kytkin: boolean;
   henkilo: LapsiKoosteHenkilo;
   varhaiskasvatuspaatokset: Array<LapsiKoosteVakapaatos>;
-  varhaiskasvatussuhteet: Array<LapsiKoosteVakasuhde>;
   maksutiedot: Array<LapsiKoosteMaksutieto>;
-  oma_organisaatio_nimi?: string;
-  paos_organisaatio_nimi?: string;
+  vakatoimija_id: number | null;
+  vakatoimija_oid: string | null;
+  vakatoimija_nimi: string | null;
+  oma_organisaatio_id: number | null;
+  oma_organisaatio_oid: string | null;
+  oma_organisaatio_nimi: string | null;
+  paos_organisaatio_id: number | null;
+  paos_organisaatio_oid: string | null;
+  paos_organisaatio_nimi: string | null;
+  tallentaja_organisaatio_oid: string | null;
 }
 
-export class LapsiKoosteHenkilo {
+export interface LapsiKoosteRaw extends Omit<LapsiKooste, 'varhaiskasvatuspaatokset'> {
+  varhaiskasvatuspaatokset: Array<LapsiKoosteVakapaatosRaw>;
+  varhaiskasvatussuhteet: Array<LapsiKoosteVakasuhde>;
+}
+
+export interface LapsiKoosteHenkilo {
+  id: number;
   etunimet: string;
   kutsumanimi: string;
   sukunimi: string;
-  id: number;
   henkilo_oid: string;
   syntyma_pvm: string;
   turvakielto: boolean;
 }
 
-export class LapsiKoosteHuoltaja {
+export interface LapsiKoosteHuoltaja {
   henkilo_oid: string;
   etunimet: string;
   sukunimi: string;
 }
 
-export class LapsiKoosteMaksutieto {
+export interface LapsiKoosteMaksutieto {
   id: number;
   maksun_peruste_koodi: string;
-  palveluseteli_arvo: number;
-  asiakasmaksu: number;
+  palveluseteli_arvo: string;
+  asiakasmaksu: string;
   perheen_koko: number;
   alkamis_pvm: string;
   paattymis_pvm: string;
   huoltajat: Array<LapsiKoosteHuoltaja>;
 }
 
-export class LapsiKoosteVakapaatos {
+export interface LapsiKoosteVakapaatos {
   id: number;
   alkamis_pvm: string;
   paattymis_pvm: string;
@@ -95,17 +84,22 @@ export class LapsiKoosteVakapaatos {
   kokopaivainen_vaka_kytkin: boolean;
   vuorohoito_kytkin: boolean;
   pikakasittely_kytkin: boolean;
+  varhaiskasvatussuhteet: Array<LapsiKoosteVakasuhde>;
 }
 
-export class LapsiKoosteVakasuhde {
+export type LapsiKoosteVakapaatosRaw = Omit<LapsiKoosteVakapaatos, 'varhaiskasvatussuhteet'>;
+
+export interface LapsiKoosteVakasuhde {
   id: number;
   alkamis_pvm: string;
   paattymis_pvm: string;
+  toimipaikka: string;
+  toimipaikka_oid: string;
   toimipaikka_nimi: string;
   varhaiskasvatuspaatos: string;
 }
 
-export class TyontekijaByToimipaikkaDTO {
+export interface TyontekijaByToimipaikkaDTO {
   etunimet: string;
   sukunimi: string;
   henkilo_oid: string;
@@ -114,7 +108,7 @@ export class TyontekijaByToimipaikkaDTO {
   tyontekija_url: string;
 }
 
-export class TyontekijaKooste {
+export interface TyontekijaKooste {
   id: number;
   vakajarjestaja_id: number;
   vakajarjestaja_nimi: string;
@@ -124,12 +118,16 @@ export class TyontekijaKooste {
   palvelussuhteet: Array<TyontekijaPalvelussuhde>;
 }
 
-export class TyontekijaTutkinto {
+export interface TyontekijaKoosteRaw extends Omit<TyontekijaKooste, 'taydennyskoulutukset'> {
+  taydennyskoulutukset: Array<TyontekijaTaydennyskoulutusRaw>;
+}
+
+export interface TyontekijaTutkinto {
   id: number;
   tutkinto_koodi: string;
 }
 
-export class TyontekijaHenkilo {
+export interface TyontekijaHenkilo {
   id: number;
   etunimet: string;
   sukunimi: string;
@@ -137,23 +135,21 @@ export class TyontekijaHenkilo {
   turvakielto: string;
 }
 
-export class TyontekijaTaydennyskoulutusCombined {
+export interface TyontekijaTaydennyskoulutus {
   id: number;
   tehtavanimikeList: Array<string>;
   nimi: string;
   suoritus_pvm: string;
   koulutuspaivia: number;
+  contains_other_tyontekija: boolean;
+  read_only?: boolean;
 }
 
-export class TyontekijaTaydennyskoulutus {
-  id: number;
+export interface TyontekijaTaydennyskoulutusRaw extends Omit<TyontekijaTaydennyskoulutus, 'tehtavanimikeList'> {
   tehtavanimike_koodi: string;
-  nimi: string;
-  suoritus_pvm: string;
-  koulutuspaivia: number;
 }
 
-export class TyontekijaPalvelussuhde {
+export interface TyontekijaPalvelussuhde {
   id: number;
   tyosuhde_koodi: string;
   tyoaika_koodi: string;
@@ -165,9 +161,10 @@ export class TyontekijaPalvelussuhde {
   pidemmatpoissaolot: Array<TyontekijaPidempiPoissaolo>;
 }
 
-export class TyontekijaTyoskentelypaikka {
+export interface TyontekijaTyoskentelypaikka {
   id: number;
   toimipaikka_id: number;
+  toimipaikka_oid: string;
   toimipaikka_nimi: string;
   tehtavanimike_koodi: string;
   kelpoisuus_kytkin: boolean;
@@ -176,7 +173,7 @@ export class TyontekijaTyoskentelypaikka {
   paattymis_pvm: string;
 }
 
-export class TyontekijaPidempiPoissaolo {
+export interface TyontekijaPidempiPoissaolo {
   id: number;
   alkamis_pvm: string;
   paattymis_pvm: string;

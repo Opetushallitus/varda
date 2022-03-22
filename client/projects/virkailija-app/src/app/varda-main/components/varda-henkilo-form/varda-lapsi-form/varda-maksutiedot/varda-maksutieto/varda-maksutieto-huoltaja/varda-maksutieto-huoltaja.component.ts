@@ -2,15 +2,10 @@ import { Component, Input, OnInit, Output, EventEmitter, ElementRef } from '@ang
 import { FormGroup } from '@angular/forms';
 import { MatRadioChange } from '@angular/material/radio';
 import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
-import { HuoltajaDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-maksutieto-dto.model';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { Observable } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
-
-export interface HuoltajaFormResponse {
-  index: number;
-  formGroup: FormGroup;
-}
+import { HuoltajaDTO } from '../../../../../../../utilities/models/dto/varda-lapsi-dto.model';
 
 @Component({
   selector: 'app-varda-maksutieto-huoltaja',
@@ -33,15 +28,16 @@ export class VardaMaksutietoHuoltajaComponent implements OnInit {
   i18n = VirkailijaTranslations;
   element: ElementRef;
   maksutietoFormErrors: Observable<Array<ErrorTree>>;
-  private henkilostoErrorService: VardaErrorMessageService;
+
+  private errorMessageService: VardaErrorMessageService;
 
   constructor(
     private el: ElementRef,
     translateService: TranslateService
   ) {
     this.element = this.el;
-    this.henkilostoErrorService = new VardaErrorMessageService(translateService);
-    this.maksutietoFormErrors = this.henkilostoErrorService.initErrorList();
+    this.errorMessageService = new VardaErrorMessageService(translateService);
+    this.maksutietoFormErrors = this.errorMessageService.initErrorList();
   }
 
   ngOnInit() {

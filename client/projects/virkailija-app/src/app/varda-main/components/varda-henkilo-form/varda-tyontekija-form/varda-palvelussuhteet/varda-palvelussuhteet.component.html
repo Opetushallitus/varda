@@ -1,4 +1,4 @@
-<ng-container *ngIf="palvelussuhteet">
+<ng-container *ngIf="palvelussuhdeList">
   <mat-expansion-panel class="palvelussuhteet mt-4 main-section"
                        (opened)="togglePanel(true)"
                        (closed)="togglePanel(false)"
@@ -7,11 +7,11 @@
       <mat-panel-title>
         <h2 class="varda-fieldset-legend">
           {{ i18n.palvelussuhteet | translate }}
-          <span *ngIf="palvelussuhteet?.length">({{ palvelussuhteet.length }})</span>
+          <span *ngIf="palvelussuhdeList.length">({{ palvelussuhdeList.length }})</span>
         </h2>
       </mat-panel-title>
       <ng-container *ngIf="toimipaikkaAccess?.tyontekijatiedot.tallentaja">
-        <mat-panel-description *ngIf="palvelussuhteet.length">
+        <mat-panel-description *ngIf="palvelussuhdeList.length">
           <button class="varda-text-button" id="add-palvelussuhde"
                   (keydown.enter)="initObject()"
                   (click)="initObject()">
@@ -31,7 +31,7 @@
       </ng-container>
 
       <ng-container *ngIf="toimipaikkaAccess.tyontekijatiedot.katselija">
-        <div *ngIf="!palvelussuhteet.length"
+        <div *ngIf="!palvelussuhdeList.length"
              class="ei-palvelussuhteita"
              role="alert">
           <div class="missing-info"
@@ -49,23 +49,21 @@
         </div>
 
         <mat-accordion class="accordion-large-margin">
-          <app-varda-palvelussuhde [toimipaikkaAccess]="toimipaikkaAccess"
+          <app-varda-palvelussuhde *ngFor="let palvelussuhde of palvelussuhdeList | slice:0:numberOfDisplayed"
+                                   [toimipaikkaAccess]="toimipaikkaAccess"
                                    [henkilonToimipaikka]="henkilonToimipaikka"
-                                   [tyontekija]="tyontekija"
                                    [palvelussuhde]="palvelussuhde"
-                                   [henkilonTutkinnot]="henkilonTutkinnot"
-                                   (changedPalvelussuhde)="getObjects()"
-                                   (closeEmitter)="closeObject($event)"
-                                   *ngFor="let palvelussuhde of palvelussuhteet | slice:0:numberOfDisplayed"></app-varda-palvelussuhde>
-          <app-varda-show-more-less *ngIf="palvelussuhteet" [showMoreKey]="i18n.palvelussuhteet_show_more"
-                                    [(numberOfDisplayed)]="numberOfDisplayed" [numberOfItems]="palvelussuhteet.length">
+                                   (addObject)="addPalvelussuhde($event)"
+                                   (deleteObject)="deletePalvelussuhde($event)"></app-varda-palvelussuhde>
+          <app-varda-show-more-less *ngIf="palvelussuhdeList" [showMoreKey]="i18n.palvelussuhteet_show_more"
+                                    [(numberOfDisplayed)]="numberOfDisplayed" [numberOfItems]="palvelussuhdeList.length">
           </app-varda-show-more-less>
           <app-varda-palvelussuhde *ngIf="addObjectBoolean && toimipaikkaAccess.tyontekijatiedot.tallentaja"
                                    [henkilonToimipaikka]="henkilonToimipaikka"
-                                   [tyontekija]="tyontekija"
                                    [toimipaikkaAccess]="toimipaikkaAccess"
-                                   [henkilonTutkinnot]="henkilonTutkinnot"
-                                   (closeEmitter)="closeObject($event, true)"></app-varda-palvelussuhde>
+                                   (addObject)="addPalvelussuhde($event)"
+                                   (deleteObject)="deletePalvelussuhde($event)"
+                                   (closeEmitter)="hideAddObject()"></app-varda-palvelussuhde>
         </mat-accordion>
       </ng-container>
     </div>

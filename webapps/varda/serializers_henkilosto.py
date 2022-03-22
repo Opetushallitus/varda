@@ -642,6 +642,7 @@ class TaydennyskoulutusSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
+    id = serializers.IntegerField(read_only=True)
     taydennyskoulutus_tyontekijat = NestedTaydennyskoulutusTyontekijaSerializer(required=False, allow_empty=False, many=True, source='taydennyskoulutukset_tyontekijat')
     taydennyskoulutus_tyontekijat_add = NestedTaydennyskoulutusTyontekijaSerializer(write_only=True, required=False, allow_empty=False, many=True)
     taydennyskoulutus_tyontekijat_remove = NestedTaydennyskoulutusTyontekijaSerializer(write_only=True, required=False, allow_empty=False, many=True)
@@ -798,7 +799,7 @@ def _get_permission_checked_henkilosto_tyontekija_objects(serializer_instance, q
         queryset = queryset.filter(id__in=get_object_ids_for_user_by_model(user, model_name))
 
     filtered_list = []
-    for instance in queryset.all():
+    for instance in queryset.all().order_by('-alkamis_pvm'):
         filtered_list.append(super(serializer_instance.__class__, serializer_instance).to_representation(instance))
     return filtered_list
 
@@ -819,14 +820,16 @@ class TyontekijaKoosteTaydennyskoulutusSerializer(serializers.ModelSerializer):
     nimi = serializers.CharField(source='taydennyskoulutus.nimi')
     suoritus_pvm = serializers.CharField(source='taydennyskoulutus.suoritus_pvm')
     koulutuspaivia = serializers.CharField(source='taydennyskoulutus.koulutuspaivia')
+    contains_other_tyontekija = serializers.BooleanField()
+    read_only = serializers.BooleanField()
     lahdejarjestelma = serializers.CharField(source='taydennyskoulutus.lahdejarjestelma')
     tunniste = serializers.CharField(source='taydennyskoulutus.tunniste')
     muutos_pvm = serializers.ReadOnlyField(source='taydennyskoulutus.muutos_pvm')
 
     class Meta:
         model = TaydennyskoulutusTyontekija
-        fields = ('id', 'tehtavanimike_koodi', 'nimi', 'suoritus_pvm', 'koulutuspaivia', 'lahdejarjestelma', 'tunniste',
-                  'muutos_pvm')
+        fields = ('id', 'tehtavanimike_koodi', 'nimi', 'suoritus_pvm', 'koulutuspaivia', 'contains_other_tyontekija',
+                  'read_only', 'lahdejarjestelma', 'tunniste', 'muutos_pvm')
 
 
 class TyontekijaKoosteTutkintoSerializer(serializers.ModelSerializer):

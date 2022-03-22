@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
 import * as moment from 'moment';
@@ -7,9 +7,10 @@ import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/servi
 import { VardaVakajarjestajaApiService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja-api.service';
 import { ToiminnallinenPainotusDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
-import { KoodistoDTO, VardaDateService } from 'varda-shared';
+import { KoodistoDTO, KoodistoEnum, KoodistoSortBy, VardaDateService, VardaKoodistoService } from 'varda-shared';
 import { PainotusAbstractComponent } from '../painotus.abstract';
 import { VardaModalService } from '../../../../../core/services/varda-modal.service';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-toimintapainotus',
@@ -20,23 +21,31 @@ import { VardaModalService } from '../../../../../core/services/varda-modal.serv
     '../../varda-toimipaikka-form.component.css'
   ]
 })
-export class ToimintapainotusComponent extends PainotusAbstractComponent<ToiminnallinenPainotusDTO> {
-  @Input() toimintakoodisto: KoodistoDTO;
+export class ToimintapainotusComponent extends PainotusAbstractComponent<ToiminnallinenPainotusDTO> implements OnInit {
+  toiminnallinenPainotusKoodisto: KoodistoDTO;
 
   constructor(
     protected translateService: TranslateService,
     protected vakajarjestajaApiService: VardaVakajarjestajaApiService,
     protected snackBarService: VardaSnackBarService,
+    private koodistoService: VardaKoodistoService,
     modalService: VardaModalService,
   ) {
     super(translateService, vakajarjestajaApiService, snackBarService, modalService);
+  }
+
+  ngOnInit() {
+    super.ngOnInit();
+    this.subscriptions.push(
+      this.koodistoService.getKoodisto(KoodistoEnum.toiminnallinenpainotus, KoodistoSortBy.name).subscribe(result =>
+        this.toiminnallinenPainotusKoodisto = result)
+    );
   }
 
   initForm() {
     this.formGroup = new FormGroup({
       lahdejarjestelma: new FormControl(this.painotus?.lahdejarjestelma || Lahdejarjestelma.kayttoliittyma),
       id: new FormControl(this.painotus?.id),
-      toimipaikka: new FormControl(this.toimipaikka?.url),
       toimintapainotus_koodi: new FormControl(this.painotus?.toimintapainotus_koodi, Validators.required),
       alkamis_pvm: new FormControl(this.painotus ? moment(this.painotus?.alkamis_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
       paattymis_pvm: new FormControl(
@@ -48,51 +57,66 @@ export class ToimintapainotusComponent extends PainotusAbstractComponent<Toiminn
     this.checkFormErrors(this.vakajarjestajaApiService, 'toiminnallinenpainotus', this.painotus?.id);
   }
 
-  deletePainotus() {
-    this.vakajarjestajaApiService.deleteToimintapainotus(this.painotus.id).subscribe({
-      next: deleted => {
-        this.togglePanel(false, true, true);
-        this.snackBarService.warning(this.i18n.painotukset_toimintapainotus_delete_success);
-      },
-      error: err => this.errorService.handleError(err, this.snackBarService)
-    });
-  }
-
   savePainotus(form: FormGroup, wasPending?: boolean) {
-    this.isSubmitting.next(true);
+    this.isSubmitting = true;
     form.markAllAsTouched();
     this.errorService.resetErrorList();
 
     if (VardaErrorMessageService.formIsValid(form)) {
-      const toimintapainotusJson: ToiminnallinenPainotusDTO = {
+      const painotusJson: ToiminnallinenPainotusDTO = {
         ...form.value,
-        toimipaikka: this.toimipaikka?.url,
+        toimipaikka: this.toimipaikka?.id ? this.vakajarjestajaApiService.getToimipaikkaUrl(this.toimipaikka.id) : null,
         alkamis_pvm: form.value.alkamis_pvm.format(VardaDateService.vardaApiDateFormat),
         paattymis_pvm: form.value.paattymis_pvm?.format(VardaDateService.vardaApiDateFormat) || null
       };
 
       if (!this.toimipaikka?.id) {
         this.savePending = true;
-        this.painotus = { ...toimintapainotusJson };
+        this.painotus = { ...painotusJson };
         return this.disableForm();
       }
 
-      const updatePainotus = this.painotus ? this.vakajarjestajaApiService.updateToimintapainotus(toimintapainotusJson) : this.vakajarjestajaApiService.createToimintapainotus(toimintapainotusJson);
+      const observable = this.painotus && !wasPending ? this.vakajarjestajaApiService.updateToimintapainotus(painotusJson) :
+        this.vakajarjestajaApiService.createToimintapainotus(painotusJson);
+      this.subscriptions.push(
+        observable.pipe(
+          finalize(() => this.disableSubmit())
+        ).subscribe({
+          next: result => {
+            if (!this.painotus || wasPending) {
+              // Close panel if object was created
+              this.togglePanel(false);
+            }
 
-      updatePainotus.subscribe({
-        next: toimintapainotusData => {
-          this.togglePanel(false, true, true);
-          this.snackBarService.success(this.i18n.painotukset_toimintapainotus_save_success);
-        },
-        error: err => {
-          this.errorService.handleError(err, this.snackBarService);
-          if (wasPending) {
-            this.disableForm();
+            this.snackBarService.success(this.i18n.painotukset_toimintapainotus_save_success);
+            this.vakajarjestajaApiService.sendToimipaikkaListUpdate();
+            this.painotus = result;
+            this.addObject.emit(this.painotus);
+          },
+          error: err => {
+            this.errorService.handleError(err, this.snackBarService);
+            if (wasPending) {
+              this.enableForm();
+            }
           }
-        }
-      }).add(() => this.disableSubmit());
+        })
+      );
     } else {
       this.disableSubmit();
     }
+  }
+
+  deletePainotus() {
+    this.subscriptions.push(
+      this.vakajarjestajaApiService.deleteToimintapainotus(this.painotus.id).subscribe({
+        next: () => {
+          this.togglePanel(false);
+          this.snackBarService.warning(this.i18n.painotukset_toimintapainotus_delete_success);
+          this.vakajarjestajaApiService.sendToimipaikkaListUpdate();
+          this.deleteObject.emit(this.painotus.id);
+        },
+        error: err => this.errorService.handleError(err, this.snackBarService)
+      })
+    );
   }
 }

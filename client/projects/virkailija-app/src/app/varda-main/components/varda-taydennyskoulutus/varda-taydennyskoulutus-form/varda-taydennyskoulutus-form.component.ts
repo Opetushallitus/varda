@@ -2,7 +2,12 @@ import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
-import { VardaTaydennyskoulutusDTO, VardaTaydennyskoulutusTyontekijaDTO, VardaTaydennyskoulutusTyontekijaListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-taydennyskoulutus-dto.model';
+import {
+  VardaTaydennyskoulutusDTO, VardaTaydennyskoulutusSaveDTO,
+  VardaTaydennyskoulutusTyontekijaDTO,
+  VardaTaydennyskoulutusTyontekijaListDTO,
+  VardaTaydennyskoulutusTyontekijaSaveDTO
+} from 'projects/virkailija-app/src/app/utilities/models/dto/varda-taydennyskoulutus-dto.model';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { VardaErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { BehaviorSubject, Observable } from 'rxjs';
@@ -24,7 +29,8 @@ export class VardaTaydennyskoulutusFormComponent implements OnInit {
   @Input() taydennyskoulutus: VardaTaydennyskoulutusDTO;
   @Input() userAccess: UserAccess;
   @Output() refreshList = new EventEmitter<boolean>(true);
-  currentOsallistujat: Array<VardaTaydennyskoulutusTyontekijaDTO> = [];
+
+  currentOsallistujat: Array<VardaTaydennyskoulutusTyontekijaSaveDTO> = [];
   tyontekijaList: Array<VardaTaydennyskoulutusTyontekijaListDTO>;
   i18n = VirkailijaTranslations;
   taydennyskoulutusForm: FormGroup;
@@ -35,6 +41,7 @@ export class VardaTaydennyskoulutusFormComponent implements OnInit {
   limitedEditAccess: boolean;
   firstAllowedDate = VardaDateService.henkilostoReleaseDate;
   isLoading = new BehaviorSubject<boolean>(false);
+
   private henkilostoErrorService: VardaErrorMessageService;
 
   constructor(
@@ -86,7 +93,7 @@ export class VardaTaydennyskoulutusFormComponent implements OnInit {
 
     if (VardaErrorMessageService.formIsValid(form) && this.checkRoster()) {
       this.isLoading.next(true);
-      const taydennyskoulutusJson: VardaTaydennyskoulutusDTO = {
+      const taydennyskoulutusJson: VardaTaydennyskoulutusSaveDTO = {
         ...form.value,
         suoritus_pvm: form.value.suoritus_pvm.format(VardaDateService.vardaApiDateFormat)
       };
@@ -151,7 +158,7 @@ export class VardaTaydennyskoulutusFormComponent implements OnInit {
   }
 
 
-  selectOsallistujat(osallistujat: Array<VardaTaydennyskoulutusTyontekijaDTO>) {
+  selectOsallistujat(osallistujat: Array<VardaTaydennyskoulutusTyontekijaSaveDTO>) {
     this.currentOsallistujat = osallistujat;
     if (JSON.stringify(osallistujat) !== JSON.stringify(this.taydennyskoulutus?.taydennyskoulutus_tyontekijat)) {
       this.taydennyskoulutusForm.markAsDirty();
@@ -193,7 +200,7 @@ export class VardaTaydennyskoulutusFormComponent implements OnInit {
     return !withoutNimike;
   }
 
-  fillTyontekijat(taydennyskoulutusJson: VardaTaydennyskoulutusDTO): void {
+  fillTyontekijat(taydennyskoulutusJson: VardaTaydennyskoulutusSaveDTO): void {
     const toRemove = this.taydennyskoulutus.taydennyskoulutus_tyontekijat.filter(existingTyontekija =>
       !this.currentOsallistujat.find(
         osallistuja => osallistuja.henkilo_oid === existingTyontekija.henkilo_oid && osallistuja.tehtavanimike_koodi === existingTyontekija.tehtavanimike_koodi

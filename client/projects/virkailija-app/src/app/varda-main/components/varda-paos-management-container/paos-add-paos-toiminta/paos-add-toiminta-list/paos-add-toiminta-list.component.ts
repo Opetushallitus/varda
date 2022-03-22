@@ -19,7 +19,7 @@ export class PaosAddToimintaListComponent implements OnInit {
   @Input() isVardaPaakayttaja: boolean;
 
   i18n = VirkailijaTranslations;
-  filteredToimipaikat: Array<VardaToimipaikkaDTO>;
+  filteredToimipaikat: Array<PaosToimipaikkaDto>;
 
   constructor(private paosService: VardaPaosApiService,
     private paosToimintaService: PaosToimintaService) { }

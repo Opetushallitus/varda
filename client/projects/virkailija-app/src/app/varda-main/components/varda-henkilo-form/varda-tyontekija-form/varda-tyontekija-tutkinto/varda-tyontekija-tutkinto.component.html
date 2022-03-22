@@ -1,8 +1,7 @@
-<form [formGroup]=""
-      class="tutkintoSection">
+<form class="tutkintoSection">
   <h2 class="varda-fieldset-legend">
     {{ i18n.tutkinnot | translate }} <span
-          *ngIf="henkilonTutkinnot?.getValue().length > 1">({{henkilonTutkinnot.getValue().length}})</span>
+          *ngIf="tutkintoList.length > 1">({{tutkintoList.length}})</span>
   </h2>
   <ng-container *ngIf="!toimipaikkaAccess.tyontekijatiedot.katselija">
     <div role="alert">
@@ -16,9 +15,9 @@
                           mode="indeterminate"></mat-progress-spinner>
     <ng-template #tutkinnotLoaded>
       <ul>
-        <ng-container *ngFor="let tutkinto of henkilonTutkinnot | async; index as i;">
+        <ng-container *ngFor="let tutkinto of tutkintoList; index as i;">
           <li *ngIf="i < tutkintoViewLimit || henkilonTutkinnotExpand">
-            <span tabindex="0" [libKoodistoValue]="koodistoEnum.tutkinto" format="long">{{ tutkinto.tutkinto_koodi }}</span>
+            <span tabindex="0" [libKoodistoValue]="KoodistoEnum.tutkinto" format="long">{{ tutkinto.tutkinto_koodi }}</span>
             <ng-container *ngIf="toimipaikkaAccess.tyontekijatiedot.tallentaja">
             <span class="tutkintoEdit"
                   (click)="tutkinto.edit = !tutkinto.edit">
@@ -46,7 +45,7 @@
             </ng-container>
           </li>
         </ng-container>
-        <ng-container *ngIf="henkilonTutkinnot?.getValue().length > tutkintoViewLimit">
+        <ng-container *ngIf="tutkintoList.length > tutkintoViewLimit">
           <li *ngIf="!henkilonTutkinnotExpand">
             <button class="varda-text-button"
                     (click)="henkilonTutkinnotExpand = true">
@@ -65,13 +64,13 @@
       </ul>
 
       <ng-container *ngIf="!toimipaikkaAccess.tyontekijatiedot.tallentaja">
-        <div *ngIf="henkilonTutkinnot.getValue().length === 0">
+        <div *ngIf="tutkintoList.length === 0">
           {{ i18n.tutkinnot_ei_tutkintoja | translate }}
         </div>
       </ng-container>
       <ng-container *ngIf="toimipaikkaAccess.tyontekijatiedot.tallentaja">
         <div class="modal-form-intro"
-             *ngIf="henkilonTutkinnot?.getValue().length === 0">
+             *ngIf="tutkintoList.length === 0">
           {{ i18n.tutkinnot_lisaa_ylin_tutkinto | translate }}
         </div>
 
@@ -99,7 +98,7 @@
                           disabled>-- {{ i18n.choose | translate }} --</mat-option>
               <mat-option *ngFor="let tutkintoOption of tutkintoOptions"
                           [value]="tutkintoOption.code_value"
-                          [libKoodistoValue]="koodistoEnum.tutkinto"
+                          [libKoodistoValue]="KoodistoEnum.tutkinto"
                           format="long">
                 {{ tutkintoOption.code_value }}
               </mat-option>
@@ -107,7 +106,7 @@
           </mat-form-field>
           <div class="action-button-wrapper">
             <button class="varda-button varda-button-wide responsive-md"
-                    [disabled]="!tutkintoForm.valid || (isSubmitting | async)"
+                    [disabled]="!tutkintoForm.valid || isSubmitting"
                     type="submit">
               {{ i18n.save | translate}}
             </button>

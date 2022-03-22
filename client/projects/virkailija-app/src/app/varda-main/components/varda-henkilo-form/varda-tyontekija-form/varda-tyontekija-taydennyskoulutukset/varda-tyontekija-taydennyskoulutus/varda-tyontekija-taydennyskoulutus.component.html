@@ -76,13 +76,13 @@
           <mat-select #fieldItem
                       placeholder="-- {{ i18n.choose | translate }} --"
                       multiple
-                      *ngIf="tehtavanimikkeet?.codes.length > 0; else eiNimikkeita"
+                      *ngIf="tehtavanimikeOptions?.length > 0; else eiNimikkeita"
                       class="oph-input oph-select"
                       formControlName="tehtavanimike_koodit">
-            <ng-container *ngIf="tehtavanimikkeet">
-              <mat-option *ngFor="let nimike of tehtavanimikkeet.codes"
-                          [value]="nimike.code_value">
-                <span [libKoodistoValue]="koodistoEnum.tehtavanimike" format="long">{{ nimike.code_value }}</span>
+            <ng-container *ngIf="tehtavanimikeOptions">
+              <mat-option *ngFor="let code of tehtavanimikeOptions"
+                          [value]="code.code_value">
+                <span [libKoodistoValue]="koodistoEnum.tehtavanimike" format="long">{{ code.code_value }}</span>
               </mat-option>
               <mat-option *ngFor="let disabledNimike of disabledTehtavanimikeCodes"
                           [value]="disabledNimike" disabled>
@@ -106,7 +106,7 @@
 
         <app-varda-error-field [errors]="taydennyskoulutusFormErrors"></app-varda-error-field>
 
-        <app-varda-action-row [saveDisabled]="formGroup.pristine || (isSubmitting | async)"
+        <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
                               [saveAccess]="toimipaikkaAccess?.taydennyskoulutustiedot.tallentaja"
                               [formExists]="!!taydennyskoulutus"
                               [isEdit]="isEdit"

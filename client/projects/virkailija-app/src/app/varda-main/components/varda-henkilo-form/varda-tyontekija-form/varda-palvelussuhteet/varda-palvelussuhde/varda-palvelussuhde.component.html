@@ -112,7 +112,7 @@
                     formControlName="tutkinto_koodi">
               <option [value]="null"
                       disabled>-- {{ i18n.tutkinnot_valitse_ylin_tutkinto | translate }} --</option>
-              <option *ngFor="let tutkinto of henkilonTutkinnot"
+              <option *ngFor="let tutkinto of tutkintoList"
                       [value]="tutkinto.tutkinto_koodi"
                       [libKoodistoValue]="koodistoEnum.tutkinto"
                       format="long">
@@ -123,7 +123,7 @@
 
           <app-varda-error-field [errors]="palvelussuhdeFormErrors"></app-varda-error-field>
 
-          <app-varda-action-row [saveDisabled]="formGroup.pristine || (isSubmitting | async)"
+          <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
                                 [saveAccess]="toimipaikkaAccess?.tyontekijatiedot.tallentaja"
                                 [formExists]="!!palvelussuhde"
                                 [isEdit]="isEdit"
@@ -135,35 +135,37 @@
     </div>
 
     <ng-container *ngIf="palvelussuhde">
-      <div *ngIf="tyoskentelypaikat"
-           [class.tree-border]="tyoskentelypaikat.length || poissaolot?.length"
+      <div *ngIf="tyoskentelypaikkaList"
+           [class.tree-border]="tyoskentelypaikkaList.length || pidempiPoissaoloList?.length"
            [class.no-save2]="!toimipaikkaAccess.tyontekijatiedot.tallentaja"
-           [class.has-poissaolo]="poissaolot?.length || addPoissaoloBoolean"
+           [class.has-poissaolo]="pidempiPoissaoloList?.length || addPoissaoloBoolean"
            class="tyoskentelypaikat tyontekija-panel-content">
         <h3 class="oph-h3">{{i18n.palvelussuhde_tyoskentelypaikat_palvelussuhteessa | translate }}
-          <span *ngIf="tyoskentelypaikat.length > 1">({{ tyoskentelypaikat.length }})</span>
+          <span *ngIf="tyoskentelypaikkaList.length > 1">({{ tyoskentelypaikkaList.length }})</span>
         </h3>
 
         <div class="missing-info"
-             *ngIf="tyoskentelypaikat.length === 0">
+             *ngIf="tyoskentelypaikkaList.length === 0">
           <mat-icon alt="">error_outline</mat-icon>
           {{ i18n.palvelussuhde_ei_tyoskentelypaikkoja | translate }}
         </div>
 
-
         <mat-accordion>
-          <app-varda-tyoskentelypaikka *ngFor="let tyoskentelypaikka of tyoskentelypaikat"
+          <app-varda-tyoskentelypaikka *ngFor="let tyoskentelypaikka of tyoskentelypaikkaList"
                                        [palvelussuhde]="palvelussuhde"
                                        [toimipaikkaAccess]="toimipaikkaAccess"
                                        [henkilonToimipaikka]="henkilonToimipaikka"
                                        [tyoskentelypaikka]="tyoskentelypaikka"
-                                       (closeEmitter)="closeTyoskentelypaikka($event)">
+                                       (addObject)="addTyoskentelypaikka($event)"
+                                       (deleteObject)="deleteTyoskentelypaikka($event)">
           </app-varda-tyoskentelypaikka>
           <app-varda-tyoskentelypaikka *ngIf="addTyoskentelypaikkaBoolean"
                                        [palvelussuhde]="palvelussuhde"
                                        [toimipaikkaAccess]="toimipaikkaAccess"
                                        [henkilonToimipaikka]="henkilonToimipaikka"
-                                       (closeEmitter)="closeTyoskentelypaikka($event, true)">
+                                       (addObject)="addTyoskentelypaikka($event)"
+                                       (deleteObject)="deleteTyoskentelypaikka($event)"
+                                       (closeEmitter)="hideAddTyoskentelypaikka()">
           </app-varda-tyoskentelypaikka>
         </mat-accordion>
 
@@ -174,30 +176,33 @@
         </button>
       </div>
 
-      <div *ngIf="poissaolot"
-           [class.tree-border]="poissaolot.length"
+      <div *ngIf="pidempiPoissaoloList"
+           [class.tree-border]="pidempiPoissaoloList.length"
            [class.no-save]="!toimipaikkaAccess.tyontekijatiedot.tallentaja"
            class="poissaolot tyontekija-panel-content">
         <h3 class="oph-h3">{{ i18n.palvelussuhde_poissaolot_palvelussuhteessa | translate }}
-          <span *ngIf="poissaolot.length > 1">({{ poissaolot.length }})</span>
+          <span *ngIf="pidempiPoissaoloList.length > 1">({{ pidempiPoissaoloList.length }})</span>
         </h3>
 
-        <div *ngIf="poissaolot.length === 0 && !toimipaikkaAccess.tyontekijatiedot.tallentaja">
+        <div *ngIf="pidempiPoissaoloList.length === 0 && !toimipaikkaAccess.tyontekijatiedot.tallentaja">
           {{ i18n.palvelussuhde_ei_poissaoloja | translate }}
         </div>
 
         <mat-accordion>
-          <app-varda-poissaolo *ngFor="let poissaolo of poissaolot"
+          <app-varda-poissaolo *ngFor="let poissaolo of pidempiPoissaoloList"
                                [henkilonToimipaikka]="henkilonToimipaikka"
                                [palvelussuhde]="palvelussuhde"
                                [toimipaikkaAccess]="toimipaikkaAccess"
-                               [poissaolo]="poissaolo"
-                               (closeEmitter)="closePoissaolo($event)"></app-varda-poissaolo>
+                               [pidempiPoissaolo]="poissaolo"
+                               (addObject)="addPidempiPoissaolo($event)"
+                               (deleteObject)="deletePidempiPoissaolo($event)"></app-varda-poissaolo>
           <app-varda-poissaolo *ngIf="addPoissaoloBoolean"
                                [henkilonToimipaikka]="henkilonToimipaikka"
                                [palvelussuhde]="palvelussuhde"
                                [toimipaikkaAccess]="toimipaikkaAccess"
-                               (closeEmitter)="closePoissaolo($event, true)">
+                               (addObject)="addPidempiPoissaolo($event)"
+                               (deleteObject)="deletePidempiPoissaolo($event)"
+                               (closeEmitter)="hideAddPidempiPoissaolo()">
           </app-varda-poissaolo>
         </mat-accordion>
 

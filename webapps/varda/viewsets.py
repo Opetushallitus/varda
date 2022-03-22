@@ -2296,6 +2296,7 @@ class NestedLapsiKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListModelM
         lapsi_data = {
             'id': lapsi.id,
             'yksityinen_kytkin': lapsi.yksityinen_kytkin,
+            'vakatoimija': lapsi.vakatoimija,
             'oma_organisaatio': lapsi.oma_organisaatio,
             'paos_organisaatio': lapsi.paos_organisaatio,
             'henkilo': lapsi.henkilo,
@@ -2303,13 +2304,17 @@ class NestedLapsiKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListModelM
             'tunniste': lapsi.tunniste,
         }
 
-        oma_organisaatio_oid = None
         paos_organisaatio_oid = None
+        tallentaja_organisaatio_oid = None
         if lapsi.vakatoimija:
             oma_organisaatio_oid = lapsi.vakatoimija.organisaatio_oid
-        elif lapsi.oma_organisaatio and lapsi.paos_organisaatio:
+        else:
             oma_organisaatio_oid = lapsi.oma_organisaatio.organisaatio_oid
             paos_organisaatio_oid = lapsi.paos_organisaatio.organisaatio_oid
+            tallentaja_organisaatio_oid = PaosOikeus.objects.filter(
+                jarjestaja_kunta_organisaatio=lapsi.oma_organisaatio, tuottaja_organisaatio=lapsi.paos_organisaatio,
+                voimassa_kytkin=True).values_list('tallentaja_organisaatio__organisaatio_oid', flat=True).first()
+        lapsi_data['tallentaja_organisaatio_oid'] = tallentaja_organisaatio_oid
 
         # Get vakapaatokset
         vakapaatos_filter = Q(lapsi=lapsi)

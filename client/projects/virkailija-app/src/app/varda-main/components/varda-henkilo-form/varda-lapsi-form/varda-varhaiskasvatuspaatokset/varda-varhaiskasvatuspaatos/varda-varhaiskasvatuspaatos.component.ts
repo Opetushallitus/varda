@@ -1,4 +1,4 @@
-import { Component, OnInit, OnChanges, Input, Output, EventEmitter, ElementRef, OnDestroy } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, ElementRef, OnDestroy } from '@angular/core';
 import { FormGroup, FormControl, Validators, AbstractControl, ValidatorFn } from '@angular/forms';
 import * as moment from 'moment';
 import { Moment } from 'moment';
@@ -7,16 +7,20 @@ import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
-import { VardaVakajarjestajaUi, VardaVarhaiskasvatuspaatosDTO, VardaVarhaiskasvatussuhdeDTO } from 'projects/virkailija-app/src/app/utilities/models';
-import { LapsiListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-lapsi-dto.model';
+import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
-import { BehaviorSubject, Observable, Subscription } from 'rxjs';
+import { finalize, Observable, Subscription } from 'rxjs';
 import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { VardaKoodistoService, VardaDateService } from 'varda-shared';
 import { KoodistoEnum, CodeDTO } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
+import {
+  LapsiKoosteVakapaatos, LapsiKoosteVakasuhde
+} from '../../../../../../utilities/models/dto/varda-henkilohaku-dto.model';
+import { sortByAlkamisPvm } from '../../../../../../utilities/helper-functions';
+import { VardaVarhaiskasvatuspaatosDTO } from '../../../../../../utilities/models/dto/varda-lapsi-dto.model';
 
 
 interface JarjestamismuodotCode extends CodeDTO {
@@ -35,26 +39,30 @@ export const kunnallisetJarjestamismuodot = ['JM01', 'JM02', 'JM03'];
     '../../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstractComponent implements OnInit, OnChanges, OnDestroy {
-  @Input() lapsi: LapsiListDTO;
+export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstractComponent implements OnInit, OnDestroy {
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
   @Input() lapsitiedotTallentaja: boolean;
-  @Input() varhaiskasvatuspaatos: VardaVarhaiskasvatuspaatosDTO;
-  @Output() changedVarhaiskasvatuspaatos = new EventEmitter<boolean>(true);
+  @Input() varhaiskasvatuspaatos: LapsiKoosteVakapaatos;
+  @Output() addObject = new EventEmitter<LapsiKoosteVakapaatos>(true);
+  @Output() deleteObject = new EventEmitter<number>(true);
+
   koodistoEnum = KoodistoEnum;
   element: ElementRef;
-  varhaiskasvatussuhteet: Array<VardaVarhaiskasvatussuhdeDTO>;
   addVarhaiskasvatussuhdeBoolean: boolean;
   selectedVakajarjestaja: VardaVakajarjestajaUi;
-  isSubmitting = new BehaviorSubject<boolean>(false);
+  isSubmitting = false;
   varhaiskasvatuspaatosFormErrors: Observable<Array<ErrorTree>>;
-  subscriptions: Array<Subscription> = [];
   jarjestamismuotoKoodisto: Array<JarjestamismuodotCode>;
   tilapainenVarhaiskasvatusBoolean: boolean;
   minStartDate: Date;
   minEndDate: Date;
-  private henkilostoErrorService: VardaErrorMessageService;
+  varhaiskasvatussuhdeList: Array<LapsiKoosteVakasuhde> = [];
+  lapsiId: number;
+  isPaos: boolean;
+
+  private errorMessageService: VardaErrorMessageService;
   private tilapainenValidator = ((): ValidatorFn => (control: AbstractControl) => control.value ? null : {tilapainen: true})();
+  private subscriptions: Array<Subscription> = [];
 
   constructor(
     private el: ElementRef,
@@ -67,24 +75,24 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
   ) {
     super(modalService);
     this.element = this.el;
-    this.henkilostoErrorService = new VardaErrorMessageService(translateService);
-    this.varhaiskasvatuspaatosFormErrors = this.henkilostoErrorService.initErrorList();
-
+    this.errorMessageService = new VardaErrorMessageService(translateService);
+    this.varhaiskasvatuspaatosFormErrors = this.errorMessageService.initErrorList();
     this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
+
+    const activeLapsi = this.lapsiService.activeLapsi.getValue();
+    this.lapsiId = activeLapsi.id;
+    this.isPaos = !!activeLapsi.paos_organisaatio_oid;
   }
 
-
   ngOnInit() {
-    this.koodistoService.getKoodisto(KoodistoEnum.jarjestamismuoto).subscribe(koodisto => this.handleJarjestamismuodot(koodisto.codes));
-
     this.formGroup = new FormGroup({
       id: new FormControl(this.varhaiskasvatuspaatos?.id),
-      lahdejarjestelma: new FormControl(this.varhaiskasvatuspaatos?.lahdejarjestelma || Lahdejarjestelma.kayttoliittyma),
-      lapsi: new FormControl(this.varhaiskasvatuspaatos?.lapsi || `/api/v1/lapset/${this.lapsi.id}/`),
+      lahdejarjestelma: new FormControl(Lahdejarjestelma.kayttoliittyma),
+      lapsi: new FormControl(this.lapsiService.getLapsiUrl(this.lapsiId)),
       toimipaikka_oid: new FormControl(this.varhaiskasvatuspaatos ? null : this.henkilonToimipaikka?.organisaatio_oid),
       hakemus_pvm: new FormControl(this.varhaiskasvatuspaatos ? moment(this.varhaiskasvatuspaatos?.hakemus_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
       alkamis_pvm: new FormControl(this.varhaiskasvatuspaatos ? moment(this.varhaiskasvatuspaatos?.alkamis_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
-      paattymis_pvm: new FormControl(this.varhaiskasvatuspaatos ? moment(this.varhaiskasvatuspaatos?.paattymis_pvm, VardaDateService.vardaApiDateFormat) : null),
+      paattymis_pvm: new FormControl(this.varhaiskasvatuspaatos?.paattymis_pvm ? moment(this.varhaiskasvatuspaatos?.paattymis_pvm, VardaDateService.vardaApiDateFormat) : null),
       jarjestamismuoto_koodi: new FormControl(this.varhaiskasvatuspaatos?.jarjestamismuoto_koodi.toLocaleUpperCase(), Validators.required),
       vuorohoito_kytkin: new FormControl(this.varhaiskasvatuspaatos?.vuorohoito_kytkin, Validators.required),
       paivittainen_vaka_kytkin: new FormControl(this.varhaiskasvatuspaatos?.paivittainen_vaka_kytkin, Validators.required),
@@ -94,14 +102,13 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
     });
 
     if (this.varhaiskasvatuspaatos) {
+      this.varhaiskasvatussuhdeList = this.varhaiskasvatuspaatos.varhaiskasvatussuhteet.sort(sortByAlkamisPvm);
+      this.disableForm();
       this.changeJarjestamismuoto(this.varhaiskasvatuspaatos.jarjestamismuoto_koodi);
       this.checkFormErrors(this.lapsiService, 'varhaiskasvatuspaatos', this.varhaiskasvatuspaatos?.id);
-    }
-
-    if (!this.lapsitiedotTallentaja || this.varhaiskasvatuspaatos) {
-      this.disableForm();
     } else {
       this.enableForm();
+      this.togglePanel(true);
     }
 
     this.initDateFilters();
@@ -111,26 +118,16 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
         .pipe(filter(() => !this.formGroup.pristine), distinctUntilChanged())
         .subscribe(() => this.modalService.setFormValuesChanged(true)),
       this.formGroup.get('tilapainen_vaka_kytkin').valueChanges
-        .subscribe((value: boolean) => this.tilapainenVakaChange(value))
+        .subscribe((value: boolean) => this.tilapainenVakaChange(value)),
+      this.koodistoService.getKoodisto(KoodistoEnum.jarjestamismuoto).subscribe(koodisto =>
+        this.handleJarjestamismuodot(koodisto.codes))
     );
   }
 
-  ngOnDestroy() {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
-  }
-
-  ngOnChanges() {
-    if (this.varhaiskasvatuspaatos) {
-      this.getVarhaiskasvatussuhteet();
-    } else {
-      this.togglePanel(true, undefined, true);
-    }
-  }
-
   saveVarhaiskasvatuspaatos(form: FormGroup): void {
-    this.isSubmitting.next(true);
+    this.isSubmitting = true;
     form.markAllAsTouched();
-    this.henkilostoErrorService.resetErrorList();
+    this.errorMessageService.resetErrorList();
 
     if (VardaErrorMessageService.formIsValid(form)) {
       const varhaiskasvatuspaatosDTO: VardaVarhaiskasvatuspaatosDTO = {
@@ -140,61 +137,70 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
         paattymis_pvm: form.value.paattymis_pvm?.isValid() ? form.value.paattymis_pvm.format(VardaDateService.vardaApiDateFormat) : null
       };
 
-      if (this.varhaiskasvatuspaatos) {
-        this.lapsiService.updateVarhaiskasvatuspaatos(varhaiskasvatuspaatosDTO).subscribe({
-          next: varhaiskasvatuspaatosData => {
-            this.changedVarhaiskasvatuspaatos.emit();
+      const observable = this.varhaiskasvatuspaatos ? this.lapsiService.updateVarhaiskasvatuspaatos(varhaiskasvatuspaatosDTO) :
+        this.lapsiService.createVarhaiskasvatuspaatos(varhaiskasvatuspaatosDTO);
+      this.subscriptions.push(
+        observable.pipe(
+          finalize(() => this.disableSubmit())
+        ).subscribe({
+          next: result => {
+            if (!this.varhaiskasvatuspaatos) {
+              // Close panel if object was created
+              this.togglePanel(false);
+            }
+
             this.snackBarService.success(this.i18n.varhaiskasvatuspaatos_save_success);
             this.lapsiService.sendLapsiListUpdate();
+            this.varhaiskasvatuspaatos = {...result, varhaiskasvatussuhteet: this.varhaiskasvatussuhdeList};
+            this.addObject.emit(this.varhaiskasvatuspaatos);
           },
-          error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
-        }).add(() => this.disableSubmit());
-      } else {
-        this.lapsiService.createVarhaiskasvatuspaatos(varhaiskasvatuspaatosDTO).subscribe({
-          next: varhaiskasvatuspaatosData => {
-            this.togglePanel(false, true, true);
-            this.snackBarService.success(this.i18n.varhaiskasvatuspaatos_save_success);
-          },
-          error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
-        }).add(() => this.disableSubmit());
-      }
-
+          error: err => this.errorMessageService.handleError(err, this.snackBarService)
+        })
+      );
     } else {
       this.disableSubmit();
     }
   }
 
   deleteVarhaiskasvatuspaatos(): void {
-    this.lapsiService.deleteVarhaiskasvatuspaatos(this.varhaiskasvatuspaatos.id).subscribe({
-      next: deleted => {
-        this.togglePanel(false, true, true);
-        this.snackBarService.warning(this.i18n.varhaiskasvatuspaatos_delete_success);
-      },
-      error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
-    });
+    this.subscriptions.push(
+      this.lapsiService.deleteVarhaiskasvatuspaatos(this.varhaiskasvatuspaatos.id).subscribe({
+        next: () => {
+          this.togglePanel(false);
+          this.snackBarService.warning(this.i18n.varhaiskasvatuspaatos_delete_success);
+          this.lapsiService.sendLapsiListUpdate();
+          this.deleteObject.emit(this.varhaiskasvatuspaatos.id);
+        },
+        error: err => this.errorMessageService.handleError(err, this.snackBarService)
+      })
+    );
   }
 
-  getVarhaiskasvatussuhteet(): void {
-    this.lapsiService.getVarhaiskasvatussuhteet(this.varhaiskasvatuspaatos.id).subscribe({
-      next: varhaiskasvatussuhdeData => {
-        this.varhaiskasvatussuhteet = varhaiskasvatussuhdeData;
-      },
-      error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
-    });
+  hideAddVarhaiskasvatussuhde() {
+    this.addVarhaiskasvatussuhdeBoolean = false;
   }
 
-  closeVarhaiskasvatussuhde(refresh?: boolean, hideAddVarhaiskasvatussuhde?: boolean): void {
-    if (hideAddVarhaiskasvatussuhde) {
-      this.addVarhaiskasvatussuhdeBoolean = false;
-    }
+  addVarhaiskasvatussuhde(varhaiskasvatussuhde: LapsiKoosteVakasuhde) {
+    this.varhaiskasvatussuhdeList = this.varhaiskasvatussuhdeList.filter(obj => obj.id !== varhaiskasvatussuhde.id);
+    this.varhaiskasvatussuhdeList.push(varhaiskasvatussuhde);
+    this.varhaiskasvatussuhdeList = this.varhaiskasvatussuhdeList.sort(sortByAlkamisPvm);
+    this.updateActiveLapsi();
+  }
 
-    if (refresh) {
-      this.getVarhaiskasvatussuhteet();
-    }
+  deleteVarhaiskasvatussuhte(objectId: number) {
+    this.varhaiskasvatussuhdeList = this.varhaiskasvatussuhdeList.filter(obj => obj.id !== objectId);
+    this.updateActiveLapsi();
+  }
+
+  updateActiveLapsi() {
+    const activeLapsi = this.lapsiService.activeLapsi.getValue();
+    const activeVarhaiskasvatuspaatos = activeLapsi.varhaiskasvatuspaatokset.find(obj => obj.id === this.varhaiskasvatuspaatos.id);
+    activeVarhaiskasvatuspaatos.varhaiskasvatussuhteet = this.varhaiskasvatussuhdeList;
+    this.lapsiService.activeLapsi.next(activeLapsi);
   }
 
   disableSubmit() {
-    setTimeout(() => this.isSubmitting.next(false), 2500);
+    setTimeout(() => this.isSubmitting = false, 2500);
   }
 
   enableForm() {
@@ -221,7 +227,7 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
       acceptedMuotoLista = acceptedMuotoLista.filter(jarjestamismuoto => jarjestamismuoto !== 'JM01');
     }
 
-    if (this.lapsi.paos_organisaatio_oid) { // paos-kytkin tarjoaa pelkkää JM02/03
+    if (this.isPaos) { // paos-kytkin tarjoaa pelkkää JM02/03
       acceptedMuotoLista = acceptedMuotoLista.filter(jarjestamismuoto => ['JM02', 'JM03'].includes(jarjestamismuoto));
     } else { // poistetaan eipaoskytkin lapselta jm02/03
       acceptedMuotoLista = acceptedMuotoLista.filter(jarjestamismuoto => !['JM02', 'JM03'].includes(jarjestamismuoto));
@@ -236,7 +242,7 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
 
   changeJarjestamismuoto(jarjestamismuoto: string) {
     this.tilapainenVarhaiskasvatusBoolean = kunnallisetJarjestamismuodot.includes(jarjestamismuoto.toLocaleUpperCase());
-    if (this.tilapainenVarhaiskasvatusBoolean) {
+    if (this.tilapainenVarhaiskasvatusBoolean && this.isEdit) {
       this.formGroup.get('tilapainen_vaka_kytkin').enable();
     } else {
       this.formGroup.get('tilapainen_vaka_kytkin').disable();
@@ -285,7 +291,7 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
     setTimeout(() => this.formGroup.controls.paattymis_pvm?.updateValueAndValidity(), 100);
   }
 
-  sendUpdateList() {
-    this.lapsiService.sendLapsiListUpdate();
+  ngOnDestroy() {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 }

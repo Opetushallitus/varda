@@ -1,11 +1,14 @@
-import { OnInit, Component, ViewChild, Input, Output, EventEmitter, SimpleChanges, OnChanges } from '@angular/core';
+import { Component, ViewChild, Input, Output, EventEmitter, SimpleChanges, OnChanges } from '@angular/core';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
-import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
-import { VardaTaydennyskoulutusTyontekijaListDTO, VardaTaydennyskoulutusTyontekijaDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-taydennyskoulutus-dto.model';
+import {
+  VardaTaydennyskoulutusTyontekijaListDTO,
+  VardaTaydennyskoulutusTyontekijaDTO,
+  VardaTaydennyskoulutusTyontekijaSaveDTO
+} from 'projects/virkailija-app/src/app/utilities/models/dto/varda-taydennyskoulutus-dto.model';
 import { SelectionModel } from '@angular/cdk/collections';
 import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
 import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';
@@ -25,8 +28,9 @@ export class VardaTaydennyskoulutusOsallistujaListComponent implements OnChanges
   @Input() osallistujat: Array<VardaTaydennyskoulutusTyontekijaDTO>;
   @Input() isDisabled: boolean;
   @Input() userAccess: UserAccess;
-  @Output() selectOsallistujat = new EventEmitter<Array<VardaTaydennyskoulutusTyontekijaDTO>>(true);
+  @Output() selectOsallistujat = new EventEmitter<Array<VardaTaydennyskoulutusTyontekijaSaveDTO>>(true);
   @Output() openTyontekijatList = new EventEmitter<boolean>(true);
+
   i18n = VirkailijaTranslations;
   selectedToimipaikka: VardaToimipaikkaMinimalDto;
   selectedVakajarjestaja: VardaVakajarjestajaUi;
@@ -37,8 +41,7 @@ export class VardaTaydennyskoulutusOsallistujaListComponent implements OnChanges
   tableSelection = new SelectionModel<VardaTaydennyskoulutusTyontekijaListDTO>(true, []);
 
   constructor(
-    private vakaJarjestajaService: VardaVakajarjestajaService,
-    private authService: AuthService
+    private vakaJarjestajaService: VardaVakajarjestajaService
   ) {
     this.selectedVakajarjestaja = vakaJarjestajaService.getSelectedVakajarjestaja();
 
@@ -87,7 +90,6 @@ export class VardaTaydennyskoulutusOsallistujaListComponent implements OnChanges
     return `${this.tableSelection.isSelected(row) ? 'deselect' : 'select'} row ${row.nimi}`;
   }
 
-
   removeOsallistuja(poistettuOsallistuja: VardaTaydennyskoulutusTyontekijaListDTO) {
     const osallistujat = [...this.osallistujat.filter(osallistuja => osallistuja.henkilo_oid !== poistettuOsallistuja.henkilo_oid)];
     this.selectOsallistujat.emit(osallistujat);
@@ -98,7 +100,6 @@ export class VardaTaydennyskoulutusOsallistujaListComponent implements OnChanges
     const osallistujat = this.osallistujat.filter(osallistuja => !henkilo_oids.includes(osallistuja.henkilo_oid));
     this.selectOsallistujat.emit(osallistujat);
   }
-
 
   changeValitutNimikkeet(tyontekija: VardaTaydennyskoulutusTyontekijaListDTO) {
     const withoutTyontekijaOsallistujat = this.osallistujat.filter(osallistuja => osallistuja.henkilo_oid !== tyontekija.henkilo_oid);
@@ -115,5 +116,4 @@ export class VardaTaydennyskoulutusOsallistujaListComponent implements OnChanges
 
     this.selectOsallistujat.emit([...withoutTyontekijaOsallistujat, ...tyontekijaOsallistumiset]);
   }
-
 }

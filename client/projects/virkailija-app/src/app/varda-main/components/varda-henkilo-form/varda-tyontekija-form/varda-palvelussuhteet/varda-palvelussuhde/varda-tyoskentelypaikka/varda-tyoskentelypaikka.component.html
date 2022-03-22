@@ -149,7 +149,7 @@
 
         <app-varda-error-field [errors]="palvelussuhdeFormErrors"></app-varda-error-field>
 
-        <app-varda-action-row [saveDisabled]="formGroup.pristine || (isSubmitting | async)"
+        <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
                               [saveAccess]="toimipaikkaAccess?.tyontekijatiedot.tallentaja"
                               [formExists]="!!tyoskentelypaikka"
                               [isEdit]="isEdit"

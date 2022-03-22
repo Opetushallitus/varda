@@ -41,7 +41,7 @@
                       placeholder="-- {{ i18n.choose | translate }} --"
                       class="oph-input oph-select"
                       formControlName="toimintapainotus_koodi">
-            <mat-option *ngFor="let option of toimintakoodisto.codes"
+            <mat-option *ngFor="let option of toiminnallinenPainotusKoodisto?.codes"
                         [value]="option.code_value"
                         [libKoodistoValue]="koodistoEnum.toiminnallinenpainotus"
                         format="long">
@@ -91,7 +91,7 @@
         </div>
 
         <app-varda-action-row *ngIf="!savePending"
-                              [saveDisabled]="formGroup.pristine || (isSubmitting | async)"
+                              [saveDisabled]="formGroup.pristine || isSubmitting"
                               [saveAccess]="saveAccess"
                               [formExists]="!!painotus"
                               [isEdit]="isEdit"

@@ -2,14 +2,12 @@
   <div class="modal-form-intro"
        aria-role="info">
     <div>{{ i18n.lapsi_intro_paragraph_1 | translate }}</div>
-    <div>{{ i18n.lapsi_intro_paragraph_2 | translate }}
-      <a [href]="i18n.lapsi_intro_link_1_href | translate"
+    <div><a [href]="i18n.lapsi_intro_link_1_href | translate"
          target="_blank">
         {{ i18n.lapsi_intro_link_1_text | translate }}
       </a>
     </div>
-    <div>{{ i18n.lapsi_intro_paragraph_3 | translate }}
-      <a [href]="i18n.lapsi_intro_link_2_href | translate"
+    <div><a [href]="i18n.lapsi_intro_link_2_href | translate"
          target="_blank">
         {{ i18n.lapsi_intro_link_2_text | translate }}
       </a>
@@ -55,113 +53,108 @@
     </div>
   </form>
 
-  <ng-container *ngIf="lapsi.id; else createLapsi">
+  <ng-container *ngIf="lapsi.id && lapsiKooste">
     <app-varda-varhaiskasvatuspaatokset [henkilonToimipaikka]="selectedToimipaikka || henkilonToimipaikka"
-                                        [selectedVakajarjestaja]="selectedVakajarjestaja"
-                                        [toimipaikkaAccess]="toimipaikkaAccess"
-                                        [lapsi]="lapsi"></app-varda-varhaiskasvatuspaatokset>
+                                        [toimipaikkaAccess]="toimipaikkaAccess">
+    </app-varda-varhaiskasvatuspaatokset>
+    <app-varda-maksutiedot [toimipaikkaAccess]="toimipaikkaAccess"></app-varda-maksutiedot>
 
-    <app-varda-maksutiedot [toimipaikkaAccess]="toimipaikkaAccess"
-                           [selectedVakajarjestaja]="selectedVakajarjestaja"
-                           [lapsi]="lapsi"></app-varda-maksutiedot>
+    <ng-container *ngIf="deletePermission">
+      <app-varda-error-field [errors]="deleteLapsiErrors"></app-varda-error-field>
+      <app-varda-delete-henkilo *ngIf="lapsi?.id"
+                                [instructionText]="i18n.lapsi_instruction_delete | translate"
+                                [deleteText]="i18n.henkilo_poista_lapsi | translate"
+                                (deleteAction)="deleteLapsi()">
+      </app-varda-delete-henkilo>
+    </ng-container>
   </ng-container>
 
-  <ng-template #createLapsi>
-    <mat-expansion-panel class="main-section create-lapsi mt-4"
-                         [expanded]="true"
-                         [hideToggle]="true"
-                         [disabled]="true">
-      <mat-expansion-panel-header>
-        <h2>{{ i18n.lapsi_create | translate }}</h2>
-      </mat-expansion-panel-header>
-      <form [formGroup]="lapsiForm"
-            (submit)="luoLapsi(lapsiForm)">
-        <div class="modal-form-intro"
-             aria-role="info">
-          {{ i18n.lapsi_instruction_create | translate }}
-        </div>
-        <app-varda-form-field name="paos_kytkin"
+  <mat-expansion-panel *ngIf="!lapsi?.id"
+                       class="main-section create-lapsi mt-4"
+                       [expanded]="true"
+                       [hideToggle]="true"
+                       [disabled]="true">
+    <mat-expansion-panel-header>
+      <h2>{{ i18n.lapsi_create | translate }}</h2>
+    </mat-expansion-panel-header>
+    <form [formGroup]="lapsiForm"
+          (submit)="createLapsi(lapsiForm)">
+      <div class="modal-form-intro"
+           aria-role="info">
+        {{ i18n.lapsi_instruction_create | translate }}
+      </div>
+      <app-varda-form-field name="paos_kytkin"
+                            [form]="lapsiForm"
+                            [label]="i18n.lapsi_paos_kytkin | translate"
+                            [errorText]="i18n.lapsi_error_paos_kytkin | translate"
+                            [instructionText]="i18n.lapsi_instruction_paos_kytkin | translate">
+        <mat-radio-group #fieldItem
+                         (change)="changePaosKytkin($event)"
+                         formControlName="paos_kytkin">
+          <mat-radio-button [value]="false">{{ i18n.no | translate }}</mat-radio-button>
+          <mat-radio-button [value]="true">{{ i18n.yes | translate }}</mat-radio-button>
+        </mat-radio-group>
+      </app-varda-form-field>
+      <ng-container *ngIf="lapsiForm.controls.paos_kytkin.value">
+        <app-varda-form-field name="paos_jarjestaja_toimipaikka"
                               [form]="lapsiForm"
-                              [label]="i18n.lapsi_paos_kytkin | translate"
-                              [errorText]="i18n.lapsi_error_paos_kytkin | translate"
-                              [instructionText]="i18n.lapsi_instruction_paos_kytkin | translate">
-          <mat-radio-group #fieldItem
-                           (change)="changePaosKytkin($event)"
-                           formControlName="paos_kytkin">
-            <mat-radio-button [value]="false">{{ i18n.no | translate }}</mat-radio-button>
-            <mat-radio-button [value]="true">{{ i18n.yes | translate }}</mat-radio-button>
-          </mat-radio-group>
+                              [label]="i18n.lapsi_liittyva_toimipaikka | translate"
+                              [errorText]="i18n.lapsi_error_liittyva_toimipaikka | translate"
+                              [instructionText]="i18n.lapsi_instruction_liittyva_toimipaikka | translate">
+          <select #fieldItem
+                  *ngIf="!henkilonToimipaikka; else toimipaikkaText"
+                  class="oph-input oph-select"
+                  formControlName="paos_jarjestaja_toimipaikka">
+            <option [value]="null"
+                    disabled>-- {{ i18n.choose | translate }} --</option>
+            <option *ngFor="let toimipaikka of paosToimipaikat"
+                    [value]="toimipaikka.id">
+              {{ toimipaikka.nimi }}
+            </option>
+          </select>
+          <ng-template #toimipaikkaText>
+            <span class="mb-2">{{ henkilonToimipaikka.nimi }}</span>
+          </ng-template>
         </app-varda-form-field>
-        <ng-container *ngIf="lapsiForm.controls.paos_kytkin.value">
-          <app-varda-form-field name="paos_jarjestaja_toimipaikka"
+
+        <ng-container *ngIf="paosJarjestajaKunnat$ | async as paosJarjestajaKunnat">
+          <app-varda-form-field name="oma_organisaatio"
                                 [form]="lapsiForm"
-                                [label]="i18n.lapsi_liittyva_toimipaikka | translate"
-                                [errorText]="i18n.lapsi_error_liittyva_toimipaikka | translate"
-                                [instructionText]="i18n.lapsi_instruction_liittyva_toimipaikka | translate">
+                                [label]="i18n.lapsi_jarjestava_organisaatio | translate"
+                                [errorText]="i18n.lapsi_error_jarjestava_organisaatio | translate"
+                                [instructionText]="i18n.lapsi_instruction_jarjestava_organisaatio | translate">
             <select #fieldItem
-                    *ngIf="!henkilonToimipaikka; else toimipaikkaText"
                     class="oph-input oph-select"
-                    formControlName="paos_jarjestaja_toimipaikka">
+                    (change)="changePaosOrganisaatio($event.target.value)"
+                    [class.oph-red]="!paosJarjestajaKunnat.length"
+                    formControlName="oma_organisaatio">
               <option [value]="null"
-                      disabled>-- {{ i18n.choose | translate }} --</option>
-              <option *ngFor="let toimipaikka of paosToimipaikat"
-                      [value]="toimipaikka.id">
-                {{ toimipaikka.nimi }}
+                      disabled>
+                <span *ngIf="paosJarjestajaKunnat.length; else eiPaosJarjestajia">
+                  -- {{ i18n.choose | translate }} --
+                </span>
+                <ng-template #eiPaosJarjestajia>
+                  {{ i18n.lapsi_ei_valittavia_paos_jarjestajia | translate }}
+                </ng-template>
+              </option>
+              <option *ngFor="let vakajarjestaja of paosJarjestajaKunnat"
+                      [value]="vakajarjestaja.url">
+                {{ vakajarjestaja.nimi }}
               </option>
             </select>
-            <ng-template #toimipaikkaText>
-              <span class="mb-2">{{ henkilonToimipaikka.nimi }}</span>
-            </ng-template>
           </app-varda-form-field>
-
-          <ng-container *ngIf="paosJarjestajaKunnat$ | async as paosJarjestajaKunnat">
-            <app-varda-form-field name="oma_organisaatio"
-                                  [form]="lapsiForm"
-                                  [label]="i18n.lapsi_jarjestava_organisaatio | translate"
-                                  [errorText]="i18n.lapsi_error_jarjestava_organisaatio | translate"
-                                  [instructionText]="i18n.lapsi_instruction_jarjestava_organisaatio | translate">
-              <select #fieldItem
-                      class="oph-input oph-select"
-                      (change)="changePaosOrganisaatio($event.target.value)"
-                      [class.oph-red]="!paosJarjestajaKunnat.length"
-                      formControlName="oma_organisaatio">
-                <option [value]="null"
-                        disabled>
-                  <span *ngIf="paosJarjestajaKunnat.length; else eiPaosJarjestajia">
-                    -- {{ i18n.choose | translate }} --
-                  </span>
-                  <ng-template #eiPaosJarjestajia>
-                    {{ i18n.lapsi_ei_valittavia_paos_jarjestajia | translate }}
-                  </ng-template>
-                </option>
-                <option *ngFor="let vakajarjestaja of paosJarjestajaKunnat"
-                        [value]="vakajarjestaja.url">
-                  {{ vakajarjestaja.nimi }}
-                </option>
-              </select>
-            </app-varda-form-field>
-          </ng-container>
         </ng-container>
+      </ng-container>
 
-        <app-varda-error-field [errors]="lapsiFormErrors"></app-varda-error-field>
+      <app-varda-error-field [errors]="lapsiFormErrors"></app-varda-error-field>
 
-        <button class="varda-button responsive-md mt-4"
-                [disabled]="isSubmitting | async"
-                type="submit"
-                id="submit-lapsi">
-          <mat-icon alt="">add</mat-icon>
-          {{ i18n.lapsi_create | translate }}
-        </button>
-      </form>
-    </mat-expansion-panel>
-  </ng-template>
-
-  <ng-container *ngIf="deletePermission">
-    <app-varda-error-field [errors]="deleteLapsiErrors"></app-varda-error-field>
-    <app-varda-delete-henkilo *ngIf="lapsi?.id"
-                              [instructionText]="i18n.lapsi_instruction_delete | translate"
-                              [deleteText]="i18n.henkilo_poista_lapsi | translate"
-                              (deleteAction)="poistaLapsi()">
-    </app-varda-delete-henkilo>
-  </ng-container>
+      <button class="varda-button responsive-md mt-4"
+              [disabled]="isSubmitting"
+              type="submit"
+              id="submit-lapsi">
+        <mat-icon alt="">add</mat-icon>
+        {{ i18n.lapsi_create | translate }}
+      </button>
+    </form>
+  </mat-expansion-panel>
 </ng-container>

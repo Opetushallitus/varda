@@ -10,6 +10,7 @@ import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/mode
 import { CodeDTO, VardaDateService } from 'varda-shared';
 import { PainotusAbstractComponent } from '../painotus.abstract';
 import { VardaModalService } from '../../../../../core/services/varda-modal.service';
+import { finalize } from 'rxjs';
 @Component({
   selector: 'app-kielipainotus',
   templateUrl: './kielipainotus.component.html',
@@ -35,7 +36,6 @@ export class KielipainotusComponent extends PainotusAbstractComponent<Kielipaino
     this.formGroup = new FormGroup({
       lahdejarjestelma: new FormControl(this.painotus?.lahdejarjestelma || Lahdejarjestelma.kayttoliittyma),
       id: new FormControl(this.painotus?.id),
-      toimipaikka: new FormControl(this.toimipaikka?.url),
       kielipainotus_koodi: new FormControl(this.painotus?.kielipainotus_koodi, Validators.required),
       alkamis_pvm: new FormControl(this.painotus ? moment(this.painotus?.alkamis_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
       paattymis_pvm: new FormControl(
@@ -47,51 +47,66 @@ export class KielipainotusComponent extends PainotusAbstractComponent<Kielipaino
     this.checkFormErrors(this.vakajarjestajaApiService, 'kielipainotus', this.painotus?.id);
   }
 
-  deletePainotus() {
-    this.vakajarjestajaApiService.deleteKielipainotus(this.painotus.id).subscribe({
-      next: deleted => {
-        this.togglePanel(false, true, true);
-        this.snackBarService.warning(this.i18n.painotukset_kielipainotus_delete_success);
-      },
-      error: err => this.errorService.handleError(err, this.snackBarService)
-    });
-  }
-
   savePainotus(form: FormGroup, wasPending?: boolean) {
-    this.isSubmitting.next(true);
+    this.isSubmitting = true;
     form.markAllAsTouched();
     this.errorService.resetErrorList();
 
     if (VardaErrorMessageService.formIsValid(form)) {
-      const kielipainotusJson: KielipainotusDTO = {
+      const painotusJson: KielipainotusDTO = {
         ...form.value,
-        toimipaikka: this.toimipaikka?.url,
+        toimipaikka: this.toimipaikka?.id ? this.vakajarjestajaApiService.getToimipaikkaUrl(this.toimipaikka.id) : null,
         alkamis_pvm: form.value.alkamis_pvm.format(VardaDateService.vardaApiDateFormat),
         paattymis_pvm: form.value.paattymis_pvm?.format(VardaDateService.vardaApiDateFormat) || null
       };
 
       if (!this.toimipaikka?.id) {
         this.savePending = true;
-        this.painotus = { ...kielipainotusJson };
+        this.painotus = { ...painotusJson };
         return this.disableForm();
       }
 
-      const updatePainotus = this.painotus ? this.vakajarjestajaApiService.updateKielipainotus(kielipainotusJson) : this.vakajarjestajaApiService.createKielipainotus(kielipainotusJson);
+      const observable = this.painotus && !wasPending ? this.vakajarjestajaApiService.updateKielipainotus(painotusJson) :
+        this.vakajarjestajaApiService.createKielipainotus(painotusJson);
+      this.subscriptions.push(
+        observable.pipe(
+          finalize(() => this.disableSubmit())
+        ).subscribe({
+          next: result => {
+            if (!this.painotus || wasPending) {
+              // Close panel if object was created
+              this.togglePanel(false);
+            }
 
-      updatePainotus.subscribe({
-        next: kielipainotusData => {
-          this.togglePanel(false, true, true);
-          this.snackBarService.success(this.i18n.painotukset_kielipainotus_save_success);
-        },
-        error: err => {
-          this.errorService.handleError(err, this.snackBarService);
-          if (wasPending) {
-            this.disableForm();
+            this.snackBarService.success(this.i18n.painotukset_kielipainotus_save_success);
+            this.vakajarjestajaApiService.sendToimipaikkaListUpdate();
+            this.painotus = result;
+            this.addObject.emit(this.painotus);
+          },
+          error: err => {
+            this.errorService.handleError(err, this.snackBarService);
+            if (wasPending) {
+              this.enableForm();
+            }
           }
-        }
-      }).add(() => this.disableSubmit());
+        })
+      );
     } else {
       this.disableSubmit();
     }
+  }
+
+  deletePainotus() {
+    this.subscriptions.push(
+      this.vakajarjestajaApiService.deleteKielipainotus(this.painotus.id).subscribe({
+        next: () => {
+          this.togglePanel(false);
+          this.snackBarService.warning(this.i18n.painotukset_kielipainotus_delete_success);
+          this.vakajarjestajaApiService.sendToimipaikkaListUpdate();
+          this.deleteObject.emit(this.painotus.id);
+        },
+        error: err => this.errorService.handleError(err, this.snackBarService)
+      })
+    );
   }
 }

@@ -2,18 +2,22 @@ import { Injectable } from '@angular/core';
 import { LoadingHttpService } from 'varda-shared';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { environment } from 'projects/virkailija-app/src/environments/environment';
-import { VardaLapsiDTO, VardaVarhaiskasvatuspaatosDTO, VardaVarhaiskasvatussuhdeDTO } from '../../utilities/models';
 import { HenkiloListDTO } from '../../utilities/models/dto/varda-henkilo-dto.model';
 import { VardaPageDto } from '../../utilities/models/dto/varda-page-dto';
-import { VardaMaksutietoDTO } from '../../utilities/models/dto/varda-maksutieto-dto.model';
 import { HenkiloSearchFilter } from '../../varda-main/components/varda-main-frame/henkilo-section.abstract';
 import { VardaRaportitService } from './varda-raportit.service';
-import { LapsiListDTO } from '../../utilities/models/dto/varda-lapsi-dto.model';
+import {
+  LapsiListDTO, VardaLapsiDTO,
+  VardaMaksutietoDTO,
+  VardaMaksutietoSaveDTO, VardaVarhaiskasvatuspaatosDTO, VardaVarhaiskasvatussuhdeDTO
+} from '../../utilities/models/dto/varda-lapsi-dto.model';
 import { PuutteellinenErrorDTO } from '../../utilities/models/dto/varda-puutteellinen-dto.model';
+import { LapsiKooste } from '../../utilities/models/dto/varda-henkilohaku-dto.model';
 
 
 @Injectable()
 export class VardaLapsiService {
+  activeLapsi = new BehaviorSubject<LapsiKooste>(null);
 
   private apiPath = `${environment.vardaAppUrl}/api/v1`;
   private updateLapsiList$ = new Subject();
@@ -24,6 +28,13 @@ export class VardaLapsiService {
     private raportitService: VardaRaportitService
   ) { }
 
+  getLapsiUrl(id: number) {
+    return `/api/v1/lapset/${id}/`;
+  }
+
+  getVarhaiskasvatuspaatosUrl(id: number) {
+    return `/api/v1/varhaiskasvatuspaatokset/${id}/`;
+  }
 
   // listeners
   listenLapsiListUpdate(): Observable<any> {
@@ -89,18 +100,17 @@ export class VardaLapsiService {
     return this.http.getAllResults(`${this.apiPath}/maksutiedot/`, environment.vardaAppUrl, { lapsi: lapsiId });
   }
 
-  createMaksutieto(maksutietoDTO: VardaMaksutietoDTO): Observable<VardaMaksutietoDTO> {
+  createMaksutieto(maksutietoDTO: VardaMaksutietoSaveDTO): Observable<VardaMaksutietoDTO> {
     return this.http.post(`${this.apiPath}/maksutiedot/`, maksutietoDTO);
   }
 
-  updateMaksutieto(maksutietoDTO: VardaMaksutietoDTO): Observable<VardaMaksutietoDTO> {
+  updateMaksutieto(maksutietoDTO: VardaMaksutietoSaveDTO): Observable<VardaMaksutietoDTO> {
     return this.http.put(`${this.apiPath}/maksutiedot/${maksutietoDTO.id}/`, maksutietoDTO);
   }
 
   deleteMaksutieto(maksutietoId: number): Observable<void> {
     return this.http.delete(`${this.apiPath}/maksutiedot/${maksutietoId}/`);
   }
-
 
   initFormErrorList(vakajarjestajaID: number, lapsi: LapsiListDTO) {
     this.lapsiFormErrorList.next([]);

@@ -123,7 +123,7 @@
             </mat-expansion-panel>
             <div class="toimipaikan-lapset-container-margin-bottom vakasuhteet-wrapper">
               <div class="tree-child-container"
-                   *ngFor="let vakasuhde of getVakasuhteetForVakapaatos(vakapaatos.id)">
+                   *ngFor="let vakasuhde of vakapaatos.varhaiskasvatussuhteet">
                 <mat-expansion-panel class="vakasuhde-panel white-panel tree-child">
                   <mat-expansion-panel-header class="toimipaikan-lapset-header">
                     <mat-panel-title>

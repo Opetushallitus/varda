@@ -20,9 +20,6 @@ export class AuthService {
   selectedVakajarjestaja: VardaVakajarjestajaUi;
   allToimipaikat: Array<VardaToimipaikkaMinimalDto>;
   loggedInUserKayttooikeudet: Array<Kayttooikeus> = [];
-  loggedInUserAfterAuthCheckUrl: string;
-  selectedOrganisationLevelKayttooikeusRole: string;
-  hasToimipaikkaLevelTallentajaRole: boolean;
   redirectUrl: string;
   isAdminUser = false;
   isOPHUser = false;
@@ -47,7 +44,7 @@ export class AuthService {
     });
   }
 
-  initUserAccess(toimipaikat: Array<VardaToimipaikkaDTO>): void {
+  initUserAccess(toimipaikat: Array<VardaToimipaikkaMinimalDto>): void {
     this.loggedInUserVakajarjestajaLevelKayttooikeudet = this.loggedInUserKayttooikeudet.filter(kayttooikeus =>
       kayttooikeus.organisaatio === this.selectedVakajarjestaja.organisaatio_oid
     );

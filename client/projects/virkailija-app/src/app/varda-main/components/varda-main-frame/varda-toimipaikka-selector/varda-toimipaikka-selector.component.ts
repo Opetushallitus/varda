@@ -47,31 +47,31 @@ export class VardaToimipaikkaSelectorComponent implements OnInit, OnDestroy {
 
     this.subscriptions.push(
       this.vardaVakajarjestajaService.getToimipaikat().subscribe({
-        next: toimipaikat => this.initToimipaikat(this.vardaVakajarjestajaService.getFilteredToimipaikat().katselijaToimipaikat),
+        next: () => {
+          this.toimipaikat = this.vardaVakajarjestajaService.getFilteredToimipaikat().katselijaToimipaikat
+            .sort((a, b) => a.nimi.toLowerCase().localeCompare(b.nimi.toLowerCase(), 'fi'));
+          if (this.toimipaikat.length === 0) {
+            this.activeToimipaikka = null;
+            this.emitToimipaikkaChange(this.activeToimipaikka);
+            return;
+          }
+
+          const previousToimipaikkaOid = localStorage.getItem(VardaCookieEnum.previous_toimipaikka);
+          this.activeToimipaikka = this.toimipaikat.find(toimipaikka => toimipaikka.organisaatio_oid === previousToimipaikkaOid) || null;
+
+          if (!this.activeToimipaikka && (this.toimipaikat.length === 1 ||
+            (!this.anyToimijaKatselija && this.toimipaikat.length > 0))) {
+            // Automatically select first toimipaikka if previous toimipaikka was not found and there is only 1 result,
+            // or user does not have organization level permissions
+            this.activeToimipaikka = this.toimipaikat[0];
+            this.emitToimipaikkaChange(this.activeToimipaikka);
+          } else {
+            this.emitToimipaikkaChange(this.activeToimipaikka);
+          }
+        },
         error: err => console.error(err)
       })
     );
-  }
-
-  initToimipaikat(toimipaikat: Array<VardaToimipaikkaMinimalDto>): void {
-    this.toimipaikat = toimipaikat;
-    if (this.toimipaikat.length === 0) {
-      this.activeToimipaikka = null;
-      this.emitToimipaikkaChange(this.activeToimipaikka);
-      return;
-    }
-
-    if (this.toimipaikat.length === 1 || (!this.anyToimijaKatselija && this.toimipaikat.length > 0)) {
-      this.activeToimipaikka = this.toimipaikat[0];
-      this.emitToimipaikkaChange(this.activeToimipaikka);
-      return;
-    }
-
-    this.toimipaikat = this.toimipaikat.sort((a, b) => a.nimi.toLowerCase().localeCompare(b.nimi.toLowerCase(), 'fi'));
-
-    const previousToimipaikkaOID = localStorage.getItem(VardaCookieEnum.previous_toimipaikka);
-    this.activeToimipaikka = this.toimipaikat.find(toimipaikka => toimipaikka.organisaatio_oid === previousToimipaikkaOID) || null;
-    this.emitToimipaikkaChange(this.activeToimipaikka);
   }
 
   openToimipaikka(toimipaikka: VardaToimipaikkaMinimalDto): void {
@@ -98,10 +98,9 @@ export class VardaToimipaikkaSelectorComponent implements OnInit, OnDestroy {
   updateToimipaikat(toimipaikka: VardaToimipaikkaDTO): void {
     if (toimipaikka?.id) {
       this.vakajarjestajaApiService.getToimipaikat(this.selectedVakajarjestaja.id).subscribe({
-        next: toimipaikat => {
-          this.activeToimipaikka = this.toimipaikat.find(paikka => paikka.id === toimipaikka.id) || this.activeToimipaikka;
-          this.setToimipaikka(this.activeToimipaikka);
-          this.vardaVakajarjestajaService.setToimipaikat(toimipaikat);
+        next: result => {
+          this.setPreviousToimipaikka(toimipaikka.organisaatio_oid);
+          this.vardaVakajarjestajaService.setToimipaikat(result);
         },
         error: err => console.error(err)
       });
@@ -110,9 +109,13 @@ export class VardaToimipaikkaSelectorComponent implements OnInit, OnDestroy {
 
   setToimipaikka(toimipaikka: VardaToimipaikkaMinimalDto): void {
     if (toimipaikka) {
-      localStorage.setItem(VardaCookieEnum.previous_toimipaikka, toimipaikka.organisaatio_oid);
+      this.setPreviousToimipaikka(toimipaikka.organisaatio_oid);
     }
     this.emitToimipaikkaChange(toimipaikka);
+  }
+
+  setPreviousToimipaikka(organisaatioOid: string) {
+    localStorage.setItem(VardaCookieEnum.previous_toimipaikka, organisaatioOid);
   }
 
   emitToimipaikkaChange(activeToimipaikka?: VardaToimipaikkaMinimalDto): void {

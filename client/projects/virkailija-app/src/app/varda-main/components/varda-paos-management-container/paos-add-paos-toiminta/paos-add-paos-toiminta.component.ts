@@ -3,7 +3,6 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { VardaApiService } from '../../../../core/services/varda-api.service';
 import { AllVakajarjestajaSearchDto, VardaVakajarjestaja } from '../../../../utilities/models/varda-vakajarjestaja.model';
 import { PaosToimintaCreateDto, PaosToimipaikkaDto, PaosVakajarjestajaDto } from '../../../../utilities/models/dto/varda-paos-dto';
-import { VardaToimipaikkaSearchDto } from '../../../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { PaosCreateEvent, PaosToimintaService } from '../paos-toiminta.service';
 import { Subscription } from 'rxjs';
 import { VardaPaosApiService } from 'projects/virkailija-app/src/app/core/services/varda-paos-api.service';
@@ -90,7 +89,7 @@ export class PaosAddPaosToimintaComponent implements OnInit, OnDestroy {
   }
 
   searchToimipaikat(vakajarjestaja: VardaVakajarjestaja) {
-    const searchDto = new VardaToimipaikkaSearchDto();
+    const searchDto = {};
     this.paosService.getAllPaosToimipaikat(vakajarjestaja.id, searchDto).subscribe({
       next: toimipaikat => {
         this.toimipaikatById = { [vakajarjestaja.id]: toimipaikat.sort((a, b) => a.nimi.localeCompare(b.nimi, 'fi')) };

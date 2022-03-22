@@ -14,7 +14,7 @@ import { VardaModalService } from '../../../core/services/varda-modal.service';
 })
 export class VardaFormAccordionAbstractComponent {
   @ViewChild('matPanel') matPanel: MatExpansionPanel;
-  @Output() closeEmitter = new EventEmitter<boolean>(true);
+  @Output() closeEmitter = new EventEmitter();
 
   i18n = VirkailijaTranslations;
   formGroup: FormGroup;
@@ -32,23 +32,18 @@ export class VardaFormAccordionAbstractComponent {
     }
   }
 
-  togglePanel(open: boolean, refreshList?: boolean, forceState?: boolean) {
-    if (forceState) {
-      setTimeout(() => {
-        if (open) {
-          this.matPanel?.open();
-        } else {
-          this.matPanel?.close();
-        }
-      }, 100);
-    }
-
-    if (!open || refreshList) {
-      this.disableForm();
-      this.closeEmitter?.emit(refreshList);
-      if (refreshList) {
-        this.sendUpdateList();
+  togglePanel(open: boolean) {
+    setTimeout(() => {
+      if (open) {
+        this.matPanel?.open();
+      } else {
+        this.matPanel?.close();
       }
+    }, 100);
+
+    if (!open) {
+      this.disableForm();
+      this.closeEmitter?.emit();
     }
   }
 
@@ -57,6 +52,4 @@ export class VardaFormAccordionAbstractComponent {
     this.formGroup.disable();
     this.modalService.setFormValuesChanged(false);
   }
-
-  sendUpdateList() { }
 }

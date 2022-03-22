@@ -33,7 +33,7 @@
       <form [formGroup]="formGroup"
             (submit)="saveVarhaiskasvatussuhde(formGroup)">
         <app-varda-form-error-list [errors]="errorList"></app-varda-form-error-list>
-        <app-varda-form-field name="toimipaikka"
+        <app-varda-form-field name="toimipaikka_oid"
                               [form]="formGroup"
                               [label]="i18n.varhaiskasvatussuhde_toimipaikka | translate"
                               [errorText]="i18n.varhaiskasvatussuhde_error_toimipaikka | translate"
@@ -46,13 +46,13 @@
 
           <ng-template #toimipaikkaSelector>
             <select #fieldItem
-                    *ngIf="!formGroup.controls.toimipaikka.disabled"
+                    *ngIf="!formGroup.controls.toimipaikka_oid.disabled"
                     class="oph-input oph-select"
-                    formControlName="toimipaikka">
+                    formControlName="toimipaikka_oid">
               <option [value]="null"
                       disabled>-- {{ i18n.choose | translate }} --</option>
               <option *ngFor="let toimipaikka of toimipaikat"
-                      [value]="toimipaikka.url">
+                      [value]="toimipaikka.organisaatio_oid">
                 {{ toimipaikka.nimi }}
               </option>
             </select>
@@ -94,7 +94,7 @@
 
         <app-varda-error-field [errors]="varhaiskasvatussuhdeFormErrors"></app-varda-error-field>
 
-        <app-varda-action-row [saveDisabled]="formGroup.pristine || (isSubmitting | async)"
+        <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
                               [saveAccess]="lapsitiedotTallentaja"
                               [formExists]="!!varhaiskasvatussuhde"
                               [isEdit]="isEdit"

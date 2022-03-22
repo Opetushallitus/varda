@@ -2,23 +2,27 @@ import { Injectable } from '@angular/core';
 import { LoadingHttpService } from 'varda-shared';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { TyontekijaListDTO, VardaTyontekijaDTO } from '../../utilities/models/dto/varda-tyontekija-dto.model';
-import { VardaTutkintoDTO } from '../../utilities/models/dto/varda-tutkinto-dto.model';
+import {
+  TyontekijaListDTO, VardaPalvelussuhdeDTO, VardaPidempiPoissaoloDTO,
+  VardaTutkintoDTO,
+  VardaTyontekijaDTO, VardaTyoskentelypaikkaDTO
+} from '../../utilities/models/dto/varda-tyontekija-dto.model';
 import { VardaPageDto } from '../../utilities/models/dto/varda-page-dto';
-import { VardaPalvelussuhdeDTO } from '../../utilities/models/dto/varda-palvelussuhde-dto.model';
 import { VardaTaydennyskoulutusDTO, VardaTaydennyskoulutusTyontekijaListDTO } from '../../utilities/models/dto/varda-taydennyskoulutus-dto.model';
-import { VardaTyoskentelypaikkaDTO } from '../../utilities/models/dto/varda-tyoskentelypaikka-dto.model';
-import { VardaPoissaoloDTO } from '../../utilities/models/dto/varda-poissolo-dto.model';
 import { HenkiloListDTO } from '../../utilities/models/dto/varda-henkilo-dto.model';
 import { VardaTilapainenHenkiloDTO } from '../../utilities/models/dto/varda-tilapainen-henkilo-dto.model';
 import { HenkiloSearchFilter } from '../../varda-main/components/varda-main-frame/henkilo-section.abstract';
 import { VardaRaportitService } from './varda-raportit.service';
 import { PuutteellinenErrorDTO } from '../../utilities/models/dto/varda-puutteellinen-dto.model';
+import { TyontekijaKooste } from '../../utilities/models/dto/varda-henkilohaku-dto.model';
 
 @Injectable()
 export class VardaHenkilostoApiService {
-  private henkilostoApiPath = `${environment.vardaAppUrl}/api/henkilosto/v1`;
+  activeTyontekija = new BehaviorSubject<TyontekijaKooste>(null);
+  tutkintoChanged = new BehaviorSubject<boolean>(true);
+  tyoskentelypaikkaChanged = new BehaviorSubject<boolean>(true);
 
+  private henkilostoApiPath = `${environment.vardaAppUrl}/api/henkilosto/v1`;
   private updateHenkilostoList$ = new Subject();
   private tyontekijaFormErrorList = new BehaviorSubject<Array<PuutteellinenErrorDTO>>(null);
 
@@ -27,12 +31,20 @@ export class VardaHenkilostoApiService {
     private raportitService: VardaRaportitService
   ) { }
 
+  getTyontekijaUrl(id: number) {
+    return `/api/henkilosto/v1/tyontekijat/${id}/`;
+  }
+
+  getPalvelussuhdeUrl(id: number) {
+    return `/api/henkilosto/v1/palvelussuhteet/${id}/`;
+  }
+
   // tyontekija
   getVakajarjestajaTyontekijat(vakajarjestajaId: number, tyontekijaSearchFilter: HenkiloSearchFilter): Observable<VardaPageDto<HenkiloListDTO>> {
     return this.http.get(`${environment.vardaAppUrl}/api/ui/vakajarjestajat/${vakajarjestajaId}/tyontekija-list/`, tyontekijaSearchFilter);
   }
 
-  createTyontekija(tyontekijaDTO: VardaTyontekijaDTO): Observable<VardaTyontekijaDTO> {
+  createTyontekija(tyontekijaDTO: Record<string, any>): Observable<VardaTyontekijaDTO> {
     return this.http.post(`${this.henkilostoApiPath}/tyontekijat/`, tyontekijaDTO);
   }
 
@@ -41,11 +53,7 @@ export class VardaHenkilostoApiService {
   }
 
   // tutkinnot
-  getTutkinnot(henkiloOid: string, vakajarjestajaOid: string): Observable<Array<VardaTutkintoDTO>> {
-    return this.http.getAllResults(`${this.henkilostoApiPath}/tutkinnot/`, environment.vardaAppUrl, { henkilo: henkiloOid, vakajarjestaja: vakajarjestajaOid });
-  }
-
-  createTutkinto(tutkintoDTO: VardaTutkintoDTO): Observable<VardaTutkintoDTO> {
+  createTutkinto(tutkintoDTO: Record<string, any>): Observable<VardaTutkintoDTO> {
     return this.http.post(`${this.henkilostoApiPath}/tutkinnot/`, tutkintoDTO);
   }
 
@@ -54,15 +62,11 @@ export class VardaHenkilostoApiService {
   }
 
   // palvelussuhteet
-  getPalvelussuhteet(tyontekijaId: number): Observable<Array<VardaPalvelussuhdeDTO>> {
-    return this.http.getAllResults(`${this.henkilostoApiPath}/palvelussuhteet/`, environment.vardaAppUrl, { tyontekija: tyontekijaId });
-  }
-
-  createPalvelussuhde(palvelussuhdeDTO: VardaPalvelussuhdeDTO): Observable<VardaPalvelussuhdeDTO> {
+  createPalvelussuhde(palvelussuhdeDTO: Record<string, any>): Observable<VardaPalvelussuhdeDTO> {
     return this.http.post(`${this.henkilostoApiPath}/palvelussuhteet/`, palvelussuhdeDTO);
   }
 
-  updatePalvelussuhde(palvelussuhdeDTO: VardaPalvelussuhdeDTO): Observable<VardaPalvelussuhdeDTO> {
+  updatePalvelussuhde(palvelussuhdeDTO: Record<string, any>): Observable<VardaPalvelussuhdeDTO> {
     return this.http.put(`${this.henkilostoApiPath}/palvelussuhteet/${palvelussuhdeDTO.id}/`, palvelussuhdeDTO);
   }
 
@@ -71,15 +75,11 @@ export class VardaHenkilostoApiService {
   }
 
   // tyoskentelypaikat
-  getTyoskentelypaikat(palvelussuhdeId: number): Observable<Array<VardaTyoskentelypaikkaDTO>> {
-    return this.http.getAllResults(`${this.henkilostoApiPath}/tyoskentelypaikat/`, environment.vardaAppUrl, { palvelussuhde: palvelussuhdeId });
-  }
-
-  createTyoskentelypaikka(tyoskentelypaikkaDTO: VardaTyoskentelypaikkaDTO): Observable<VardaTyoskentelypaikkaDTO> {
+  createTyoskentelypaikka(tyoskentelypaikkaDTO: Record<string, any>): Observable<VardaTyoskentelypaikkaDTO> {
     return this.http.post(`${this.henkilostoApiPath}/tyoskentelypaikat/`, tyoskentelypaikkaDTO);
   }
 
-  updateTyoskentelypaikka(tyoskentelypaikkaDTO: VardaTyoskentelypaikkaDTO): Observable<VardaTyoskentelypaikkaDTO> {
+  updateTyoskentelypaikka(tyoskentelypaikkaDTO: Record<string, any>): Observable<VardaTyoskentelypaikkaDTO> {
     return this.http.put(`${this.henkilostoApiPath}/tyoskentelypaikat/${tyoskentelypaikkaDTO.id}/`, tyoskentelypaikkaDTO);
   }
 
@@ -88,15 +88,11 @@ export class VardaHenkilostoApiService {
   }
 
   // poissaolot
-  getPoissaolot(palvelussuhdeId: number): Observable<Array<VardaPoissaoloDTO>> {
-    return this.http.getAllResults(`${this.henkilostoApiPath}/pidemmatpoissaolot/`, environment.vardaAppUrl, { palvelussuhde: palvelussuhdeId });
-  }
-
-  createPoissaolo(poissaoloDTO: VardaPoissaoloDTO): Observable<VardaPoissaoloDTO> {
+  createPoissaolo(poissaoloDTO: Record<string, any>): Observable<VardaPidempiPoissaoloDTO> {
     return this.http.post(`${this.henkilostoApiPath}/pidemmatpoissaolot/`, poissaoloDTO);
   }
 
-  updatePoissaolo(poissaoloDTO: VardaPoissaoloDTO): Observable<VardaPoissaoloDTO> {
+  updatePoissaolo(poissaoloDTO: Record<string, any>): Observable<VardaPidempiPoissaoloDTO> {
     return this.http.put(`${this.henkilostoApiPath}/pidemmatpoissaolot/${poissaoloDTO.id}/`, poissaoloDTO);
   }
 
@@ -109,11 +105,11 @@ export class VardaHenkilostoApiService {
     return this.http.getAllResults(`${this.henkilostoApiPath}/taydennyskoulutukset/`, environment.vardaAppUrl, searchParams);
   }
 
-  createTaydennyskoulutus(taydennyskoulutusDTO: VardaTaydennyskoulutusDTO): Observable<VardaTaydennyskoulutusDTO> {
+  createTaydennyskoulutus(taydennyskoulutusDTO: Record<string, any>): Observable<VardaTaydennyskoulutusDTO> {
     return this.http.post(`${this.henkilostoApiPath}/taydennyskoulutukset/`, taydennyskoulutusDTO);
   }
 
-  updateTaydennyskoulutus(taydennyskoulutusDTO: VardaTaydennyskoulutusDTO): Observable<VardaTaydennyskoulutusDTO> {
+  updateTaydennyskoulutus(taydennyskoulutusDTO: Record<string, any>): Observable<VardaTaydennyskoulutusDTO> {
     return this.http.put(`${this.henkilostoApiPath}/taydennyskoulutukset/${taydennyskoulutusDTO.id}/`, taydennyskoulutusDTO);
   }
 
@@ -130,7 +126,7 @@ export class VardaHenkilostoApiService {
     return this.http.get(`${this.henkilostoApiPath}/tilapainen-henkilosto/?vuosi=${year}&vakajarjestaja=${vakajarjestaja_oid}`);
   }
 
-  saveTilapainenHenkilostoByMonth(tilapainenHenkilostoByMonth: VardaTilapainenHenkiloDTO): Observable<any> {
+  saveTilapainenHenkilostoByMonth(tilapainenHenkilostoByMonth: Record<string, any>): Observable<VardaTilapainenHenkiloDTO> {
     if (tilapainenHenkilostoByMonth.url) {
       return this.http.put(`${this.henkilostoApiPath}/tilapainen-henkilosto/${tilapainenHenkilostoByMonth.id}/`, tilapainenHenkilostoByMonth);
     } else {

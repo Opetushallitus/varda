@@ -1,33 +1,37 @@
 import {
   Component,
-  OnInit,
-  Input,
   ElementRef,
-  ViewChild,
-  AfterViewInit,
-  OnDestroy,
+  EventEmitter,
+  Input,
   OnChanges,
-  SimpleChanges
+  OnDestroy,
+  OnInit,
+  Output,
+  SimpleChanges,
+  ViewChild
 } from '@angular/core';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
-import { VardaTutkintoDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tutkinto-dto.model';
-import { VardaTaydennyskoulutusDTO, VardaTaydennyskoulutusTyontekijaDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-taydennyskoulutus-dto.model';
+import { VardaTaydennyskoulutusDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-taydennyskoulutus-dto.model';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
-import { FormGroup, FormControl, Validators } from '@angular/forms';
-import { BehaviorSubject, Observable, Subscription } from 'rxjs';
-import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
-import * as moment from 'moment';
-import { TyontekijaListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tyontekija-dto.model';
-import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { finalize, Observable, Subscription, throwError } from 'rxjs';
+import {
+  ErrorTree,
+  VardaErrorMessageService
+} from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaFormValidators } from 'projects/virkailija-app/src/app/shared/validators/varda-form-validators';
 import { MatExpansionPanelHeader } from '@angular/material/expansion';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
-import { filter, distinctUntilChanged } from 'rxjs/operators';
+import { catchError, distinctUntilChanged, filter } from 'rxjs/operators';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
-import { VardaDateService } from 'varda-shared';
+import { CodeDTO, KoodistoEnum, VardaDateService } from 'varda-shared';
+import { TyontekijaTaydennyskoulutus } from '../../../../../../utilities/models/dto/varda-henkilohaku-dto.model';
+import { VardaVakajarjestajaUi } from '../../../../../../utilities/models/varda-vakajarjestaja-ui.model';
+import { VardaVakajarjestajaService } from '../../../../../../core/services/varda-vakajarjestaja.service';
+import * as moment from 'moment';
 
 @Component({
   selector: 'app-varda-tyontekija-taydennyskoulutus',
@@ -39,28 +43,33 @@ import { VardaDateService } from 'varda-shared';
     '../../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordionAbstractComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
-  @Input() toimipaikkaAccess: UserAccess;
-  @Input() tyontekija: TyontekijaListDTO;
-  @Input() taydennyskoulutus: VardaTaydennyskoulutusDTO;
-  @Input() tehtavanimikkeet: KoodistoDTO;
-  @Input() henkilonTutkinnot: Array<VardaTutkintoDTO>;
+export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordionAbstractComponent implements OnInit, OnChanges, OnDestroy {
   @ViewChild(MatExpansionPanelHeader) panelHeader: MatExpansionPanelHeader;
+  @Input() toimipaikkaAccess: UserAccess;
+  @Input() taydennyskoulutus: TyontekijaTaydennyskoulutus;
+  @Input() tehtavanimikeOptions: Array<CodeDTO>;
+  @Output() addObject = new EventEmitter<TyontekijaTaydennyskoulutus>(true);
+  @Output() deleteObject = new EventEmitter<number>(true);
+
   element: ElementRef;
-  subscriptions: Array<Subscription> = [];
   koodistoEnum = KoodistoEnum;
-  tehtavanimike_koodit: Array<string>;
   disabledTehtavanimikeCodes: Array<string> = [];
-  isSubmitting = new BehaviorSubject<boolean>(false);
+  isSubmitting = false;
   taydennyskoulutusFormErrors: Observable<Array<ErrorTree>>;
   limitedEditAccess: boolean;
   firstAllowedDate = VardaDateService.henkilostoReleaseDate;
+  tyontekijaId: number;
+  henkiloOid: string;
+  selectedVakajarjestaja: VardaVakajarjestajaUi;
+
   private henkilostoErrorService: VardaErrorMessageService;
+  private subscriptions: Array<Subscription> = [];
 
   constructor(
     private el: ElementRef,
     private henkilostoService: VardaHenkilostoApiService,
     private snackBarService: VardaSnackBarService,
+    private vakajarjestajaService: VardaVakajarjestajaService,
     translateService: TranslateService,
     modalService: VardaModalService
   ) {
@@ -68,144 +77,158 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
     this.element = this.el;
     this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.taydennyskoulutusFormErrors = this.henkilostoErrorService.initErrorList();
-
   }
 
   ngOnInit() {
-    if (!this.taydennyskoulutus) {
-      this.togglePanel(true, undefined, true);
-    }
-
-    this.tehtavanimike_koodit = this.taydennyskoulutus?.taydennyskoulutus_tyontekijat.
-      filter(tyontekija => tyontekija.henkilo_oid === this.tyontekija.henkilo_oid)
-      .map(tyontekija => tyontekija.tehtavanimike_koodi) || [];
-    this.initDisabledTehtavanimikeCodes();
-
     this.formGroup = new FormGroup({
       id: new FormControl(this.taydennyskoulutus?.id),
-      lahdejarjestelma: new FormControl(this.taydennyskoulutus?.lahdejarjestelma || Lahdejarjestelma.kayttoliittyma),
+      lahdejarjestelma: new FormControl(Lahdejarjestelma.kayttoliittyma),
       nimi: new FormControl(this.taydennyskoulutus?.nimi, Validators.required),
       koulutuspaivia: new FormControl(this.taydennyskoulutus?.koulutuspaivia, [Validators.required, Validators.min(0.5), Validators.max(160), VardaFormValidators.remainderOf(0.5)]),
       suoritus_pvm: new FormControl(this.taydennyskoulutus ? moment(this.taydennyskoulutus?.suoritus_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
-      tehtavanimike_koodit: new FormControl(this.tehtavanimike_koodit, Validators.required),
+      tehtavanimike_koodit: new FormControl(this.taydennyskoulutus?.tehtavanimikeList || [], Validators.required),
     });
 
-    const tyontekijaNimikeCount = this.taydennyskoulutus?.taydennyskoulutus_tyontekijat.filter(nimike => nimike.henkilo_oid === this.tyontekija.henkilo_oid).length;
-    this.limitedEditAccess = this.taydennyskoulutus?.taydennyskoulutus_tyontekijat_count !== tyontekijaNimikeCount;
-
-    if (!this.toimipaikkaAccess.taydennyskoulutustiedot.tallentaja || this.taydennyskoulutus) {
-      this.disableForm();
-    } else {
-      this.enableForm();
-    }
-  }
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes.tehtavanimikkeet) {
-      this.initDisabledTehtavanimikeCodes();
-    }
-  }
-
-  ngOnDestroy() {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
-  }
-
-  ngAfterViewInit() {
-    if (!this.taydennyskoulutus) {
-      this.panelHeader?.focus();
-    }
+    const activeTyontekija = this.henkilostoService.activeTyontekija.getValue();
+    this.tyontekijaId = activeTyontekija.id;
+    this.henkiloOid = activeTyontekija.henkilo.henkilo_oid;
+    this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
+    this.limitedEditAccess = this.taydennyskoulutus?.contains_other_tyontekija;
+    this.setDisabledTehtavanimikeCodes();
 
     this.subscriptions.push(
       this.formGroup.statusChanges
         .pipe(filter(() => !this.formGroup.pristine), distinctUntilChanged())
         .subscribe(() => this.modalService.setFormValuesChanged(true))
     );
-  }
 
-  initDisabledTehtavanimikeCodes() {
-    if (this.tehtavanimikkeet && this.tehtavanimike_koodit) {
-      this.disabledTehtavanimikeCodes = this.tehtavanimike_koodit.filter(value =>
-        !this.tehtavanimikkeet.codes.some(code => code.code_value.toLocaleLowerCase() === value.toLocaleLowerCase())
-      );
+    if (this.taydennyskoulutus) {
+      this.disableForm();
+    } else {
+      this.enableForm();
+      this.togglePanel(true);
+      this.panelHeader?.focus();
     }
   }
 
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes.tehtavanimikeOptions) {
+      // We do not want this to be called before ngOnInit is called
+      setTimeout(() => {
+        // Reset tehtavanimike_koodit values just in case
+        this.formGroup.controls.tehtavanimike_koodit.setValue(this.taydennyskoulutus?.tehtavanimikeList || []);
+        this.setDisabledTehtavanimikeCodes();
+      });
+    }
+  }
+
+  setDisabledTehtavanimikeCodes() {
+    this.disabledTehtavanimikeCodes = this.formGroup.controls.tehtavanimike_koodit.value.filter(value =>
+      !this.tehtavanimikeOptions.some(code => code.code_value.toLowerCase() === value.toLowerCase()));
+  }
+
   saveTaydennyskoulutus(form: FormGroup) {
-    this.isSubmitting.next(true);
+    this.isSubmitting = true;
     form.markAllAsTouched();
     this.henkilostoErrorService.resetErrorList();
 
     if (VardaErrorMessageService.formIsValid(form)) {
-      const taydennyskoulutusJson: VardaTaydennyskoulutusDTO = {
+      const taydennyskoulutusJson = {
         ...form.value,
         suoritus_pvm: form.value.suoritus_pvm.format(VardaDateService.vardaApiDateFormat)
       };
 
-      const tehtavanimikkeetToAdd = this.compareTehtavanimikkeet(form.value.tehtavanimike_koodit, this.tehtavanimike_koodit);
-      const tehtavanimikkeetToRemove = this.compareTehtavanimikkeet(this.tehtavanimike_koodit, form.value.tehtavanimike_koodit);
-
+      let observable;
       if (this.taydennyskoulutus) {
+        const tehtavanimikkeetToAdd = this.compareCodeLists(form.value.tehtavanimike_koodit, this.taydennyskoulutus.tehtavanimikeList);
+        const tehtavanimikkeetToRemove = this.compareCodeLists(this.taydennyskoulutus.tehtavanimikeList, form.value.tehtavanimike_koodit);
         if (tehtavanimikkeetToAdd.length) {
           taydennyskoulutusJson.taydennyskoulutus_tyontekijat_add = tehtavanimikkeetToAdd;
         }
-
         if (tehtavanimikkeetToRemove.length) {
           taydennyskoulutusJson.taydennyskoulutus_tyontekijat_remove = tehtavanimikkeetToRemove;
         }
-
-        this.henkilostoService.updateTaydennyskoulutus(taydennyskoulutusJson).subscribe({
-          next: () => this.togglePanel(false, true, true),
-          error: err => this.henkilostoErrorService.handleError(err)
-        }).add(() => this.disableSubmit());
+        observable = this.henkilostoService.updateTaydennyskoulutus(taydennyskoulutusJson);
       } else {
-        taydennyskoulutusJson.taydennyskoulutus_tyontekijat = tehtavanimikkeetToAdd;
-
-        this.henkilostoService.createTaydennyskoulutus(taydennyskoulutusJson).subscribe({
-          next: () => this.togglePanel(false, true, true),
-          error: err => this.henkilostoErrorService.handleError(err)
-        }).add(() => this.disableSubmit());
+        taydennyskoulutusJson.taydennyskoulutus_tyontekijat = this.compareCodeLists(form.value.tehtavanimike_koodit, []);
+        observable = this.henkilostoService.createTaydennyskoulutus(taydennyskoulutusJson);
       }
 
+      this.subscriptions.push(
+        observable.pipe(
+          finalize(() => this.disableSubmit())
+        ).subscribe({
+          next: (result: VardaTaydennyskoulutusDTO) => {
+            if (!this.taydennyskoulutus) {
+              // Close panel if object was created
+              this.togglePanel(false);
+            }
+            this.snackBarService.success(this.i18n.taydennyskoulutus_save_success);
+            this.henkilostoService.sendHenkilostoListUpdate();
+
+            // Rebuild Taydennyskoulutus object as kooste result
+            this.taydennyskoulutus = {
+              id: result.id,
+              tehtavanimikeList: result.taydennyskoulutus_tyontekijat.reduce((filtered, obj) => {
+                if (obj.vakajarjestaja_oid === this.selectedVakajarjestaja.organisaatio_oid &&
+                  obj.henkilo_oid === this.henkiloOid) {
+                  filtered.push(obj.tehtavanimike_koodi);
+                }
+                return filtered;
+              }, []),
+              nimi: result.nimi,
+              suoritus_pvm: result.suoritus_pvm,
+              koulutuspaivia: result.koulutuspaivia,
+              contains_other_tyontekija: !!this.taydennyskoulutus?.contains_other_tyontekija
+            };
+
+            // Result may contain tehtavanimike codes that were not present previously,
+            // kooste API returns only codes that user has permissions to
+            this.formGroup.controls.tehtavanimike_koodit.setValue(this.taydennyskoulutus.tehtavanimikeList);
+            this.setDisabledTehtavanimikeCodes();
+            this.addObject.emit(this.taydennyskoulutus);
+          },
+          error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
+        })
+      );
     } else {
       this.disableSubmit();
     }
   }
 
-  deleteTaydennyskoulutus(nimikkeetToDelete?: Array<VardaTaydennyskoulutusTyontekijaDTO>): void {
+  deleteTaydennyskoulutus(): void {
     const taydennyskoulutusJson: VardaTaydennyskoulutusDTO = {
       ...this.formGroup.value,
       suoritus_pvm: this.formGroup.value.suoritus_pvm.format(VardaDateService.vardaApiDateFormat),
-      taydennyskoulutus_tyontekijat_remove: nimikkeetToDelete || this.compareTehtavanimikkeet(this.tehtavanimike_koodit)
+      taydennyskoulutus_tyontekijat_remove: this.compareCodeLists(this.taydennyskoulutus.tehtavanimikeList, [])
     };
 
-    this.henkilostoService.updateTaydennyskoulutus(taydennyskoulutusJson).subscribe({
-      next: () => {
-        this.togglePanel(false, true, true);
-        this.snackBarService.warning(this.i18n.taydennyskoulutus_delete_success);
-      },
-      error: err => {
-        try {
-          const lastPersonError = err.error.taydennyskoulutus_tyontekijat_remove.find(error => error.error_code === 'TK013');
-          if (lastPersonError) {
-            this.henkilostoService.deleteTaydennyskoulutus(this.taydennyskoulutus.id).subscribe({
-              next: deleted => {
-                this.togglePanel(false, true, true);
-                this.snackBarService.warning(this.i18n.taydennyskoulutus_delete_success);
-              },
-              error: subErr => this.henkilostoErrorService.handleError(subErr, this.snackBarService)
-            });
+    this.subscriptions.push(
+      this.henkilostoService.updateTaydennyskoulutus(taydennyskoulutusJson).pipe(
+        catchError(err => {
+          if (err?.error?.taydennyskoulutus_tyontekijat_remove instanceof Array &&
+            err.error.taydennyskoulutus_tyontekijat_remove.find(error => error.error_code === 'TK013')) {
+            // Error because Taydennyskoulutus would be left empty, so delete the whole Taydennyskoulutus
+            return this.henkilostoService.deleteTaydennyskoulutus(this.taydennyskoulutus.id);
           } else {
-            this.henkilostoErrorService.handleError(err, this.snackBarService);
+            // Rethrow any other error
+            return throwError(() => err);
           }
-        } catch (catchErr) {
-          this.henkilostoErrorService.handleError(err, this.snackBarService);
-        }
-      }
-    });
+        })
+      ).subscribe({
+        next: () => {
+          this.togglePanel(false);
+          this.snackBarService.warning(this.i18n.taydennyskoulutus_delete_success);
+          this.henkilostoService.sendHenkilostoListUpdate();
+          this.deleteObject.emit(this.taydennyskoulutus.id);
+        },
+        error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
+      })
+    );
   }
 
   disableSubmit() {
-    setTimeout(() => this.isSubmitting.next(false), 500);
+    setTimeout(() => this.isSubmitting = false, 500);
   }
 
   enableForm() {
@@ -213,12 +236,14 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
     this.formGroup.enable();
   }
 
-  compareTehtavanimikkeet(newNimikkeet: Array<string>, existingNimikkeet: Array<string> = []): Array<VardaTaydennyskoulutusTyontekijaDTO> {
-    const comparableNimikkeet = newNimikkeet.filter(nimikekoodi => !existingNimikkeet.includes(nimikekoodi)).map(nimikekoodi => ({
-        tyontekija: this.tyontekija.url,
-        tehtavanimike_koodi: nimikekoodi
-      }));
+  compareCodeLists(newCodes: Array<string>, existingCodes: Array<string> = []): Record<string, any> {
+    return newCodes.filter(tehtavanimike => !existingCodes.includes(tehtavanimike)).map(tehtavanimike => ({
+      tyontekija: this.henkilostoService.getTyontekijaUrl(this.tyontekijaId),
+      tehtavanimike_koodi: tehtavanimike
+    }));
+  }
 
-    return comparableNimikkeet;
+  ngOnDestroy() {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 }

@@ -702,33 +702,37 @@ def user_has_vakajarjestaja_level_permission(user, organisaatio_oid, permission_
                               Q(permissions__codename__exact=permission_name)).exists()
 
 
-def user_belongs_to_correct_groups(field, user, field_object):
+def user_belongs_to_correct_groups(user, instance, permission_groups=(), accept_toimipaikka_permission=False,
+                                   check_paos=False):
     """
     Verifies that given user belongs to pre-defined permission groups.
     Used in ensuring that, for example, if user has vaka permissions to one VakaJarjestaja and henkilosto permissions
     to another VakaJarjestaja, user cannot create Tyontekija objects to VakaJarjestaja with only vaka permissions.
     :param user: User object instance
-    :param field: PermissionCheckedHLFieldMixin instance
-    :param field_object: VakaJarjestaja or Toimipaikka object instance
+    :param instance: VakaJarjestaja or Toimipaikka object instance
+    :param permission_groups: list of accepted Z4_CasKayttoOikeudet group
+    :param accept_toimipaikka_permission: if instance is VakaJarjestaja, permissions in related Toimipaikka groups are
+           also accepted
+    :param check_paos: if instance is Toimipaikka, permissions in related PAOS-organizations are also accepted
     :return: True if user belongs to correct permission groups or if no specific groups are defined, else False
     """
-    if not user.is_superuser and not is_oph_staff(user) and getattr(field, 'permission_groups', None):
+    if not user.is_superuser and not is_oph_staff(user) and permission_groups:
         oid_list = []
-        if isinstance(field_object, Toimipaikka):
-            oid_list = [field_object.organisaatio_oid, field_object.vakajarjestaja.organisaatio_oid]
-            if getattr(field, 'check_paos', False):
+        if isinstance(instance, Toimipaikka):
+            oid_list = [instance.organisaatio_oid, instance.vakajarjestaja.organisaatio_oid]
+            if check_paos:
                 # Include VakaJarjestaja objects that have permissions to this Toimipaikka via PAOS
-                paos_organisaatio_oid_list = (PaosToiminta.objects.filter(paos_toimipaikka=field_object,
+                paos_organisaatio_oid_list = (PaosToiminta.objects.filter(paos_toimipaikka=instance,
                                                                           voimassa_kytkin=True)
                                               .values_list('oma_organisaatio__organisaatio_oid', flat=True))
                 oid_list.extend(paos_organisaatio_oid_list)
-        elif isinstance(field_object, VakaJarjestaja):
-            oid_list = [field_object.organisaatio_oid]
-            if hasattr(field, 'accept_toimipaikka_permission') and field.accept_toimipaikka_permission:
+        elif isinstance(instance, VakaJarjestaja):
+            oid_list = [instance.organisaatio_oid]
+            if accept_toimipaikka_permission:
                 # User can also have permissions to Toimipaikka of specified VakaJarjestaja
-                toimipaikka_oid_list = list(field_object.toimipaikat.values_list('organisaatio_oid', flat=True))
+                toimipaikka_oid_list = list(instance.toimipaikat.values_list('organisaatio_oid', flat=True))
                 oid_list = oid_list + toimipaikka_oid_list
-        return user_permission_groups_in_organizations(user, oid_list, field.permission_groups).exists()
+        return user_permission_groups_in_organizations(user, oid_list, permission_groups).exists()
     else:
         # User is admin, oph_staff or permission groups not specified
         return True

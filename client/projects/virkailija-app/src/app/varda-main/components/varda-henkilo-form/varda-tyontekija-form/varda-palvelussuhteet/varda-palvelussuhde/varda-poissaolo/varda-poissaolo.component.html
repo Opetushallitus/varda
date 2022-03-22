@@ -1,20 +1,20 @@
 <ng-container *ngIf="formGroup">
-  <div [id]="'poissaolo_'+ poissaolo?.id"
+  <div [id]="'poissaolo_'+ pidempiPoissaolo?.id"
        class="tyoskentelypaikka poissaolo">
-    <app-robo-id [tunniste]="poissaolo?.id"
+    <app-robo-id [tunniste]="pidempiPoissaolo?.id"
                  nimi="poissaolo"
-                 [alkamis_pvm]="poissaolo?.alkamis_pvm"
-                 [paattymis_pvm]="poissaolo?.paattymis_pvm"></app-robo-id>
+                 [alkamis_pvm]="pidempiPoissaolo?.alkamis_pvm"
+                 [paattymis_pvm]="pidempiPoissaolo?.paattymis_pvm"></app-robo-id>
 
     <mat-expansion-panel (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)"
                          #matPanel>
       <mat-expansion-panel-header>
         <mat-panel-title>
-          <span *ngIf="poissaolo; else addPoissaolo">
+          <span *ngIf="pidempiPoissaolo; else addPoissaolo">
             <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
             {{ i18n.poissaolo | translate }}
-            {{poissaolo.alkamis_pvm | vardaDate }} - {{poissaolo.paattymis_pvm | vardaDate }}
+            {{pidempiPoissaolo.alkamis_pvm | vardaDate }} - {{pidempiPoissaolo.paattymis_pvm | vardaDate }}
           </span>
           <ng-template #addPoissaolo>
             <span>{{ i18n.palvelussuhde_lisaa_poissaolo | translate }}</span>
@@ -55,9 +55,9 @@
 
         <app-varda-error-field [errors]="poissaoloFormErrors"></app-varda-error-field>
 
-        <app-varda-action-row [saveDisabled]="formGroup.pristine || (isSubmitting | async)"
+        <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
                               [saveAccess]="toimipaikkaAccess?.tyontekijatiedot.tallentaja"
-                              [formExists]="!!poissaolo"
+                              [formExists]="!!pidempiPoissaolo"
                               [isEdit]="isEdit"
                               (togglePanel)="togglePanel($event)"
                               (deleteForm)="deletePoissaolo()"
