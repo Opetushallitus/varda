@@ -96,6 +96,7 @@ export class VardaTyontekijaTutkintoComponent implements OnInit, OnChanges, OnDe
 
   ngOnChanges(changes: SimpleChanges) {
     this.tyontekijaExists = !!this.tyontekija.id;
+    this.addTutkinto = !this.tyontekijaExists;
   }
 
   updateTutkintoOptions() {
