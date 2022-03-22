@@ -328,7 +328,11 @@ REST_FRAMEWORK = {
         'sustained_modify': '100000/day',
         'burst_strict': '5/second',
         'sustained_strict': '500/day',
-        'public': '50/hour'
+        'public': '50/hour',
+        'auth': '10/hour',
+        # Bigger rate for token authentication as it is essential for integrations and integrations sometimes send
+        # invalid tokens
+        'auth_token': '100/hour'
     },
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',

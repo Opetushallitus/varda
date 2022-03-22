@@ -134,6 +134,8 @@ task_prerun.connect(celery_task_prerun_signal_handler)
 
 
 class AuthenticateAnonThrottleMixin(AnonRateThrottle):
+    scope = 'auth'
+
     def get_cache_key(self, request, view):
         return self.cache_format % {
             'scope': self.scope,
@@ -312,7 +314,7 @@ class CustomSessionAuthentication(AuthenticateAnonThrottleMixin, SessionAuthenti
 
 
 class CustomTokenAuthentication(AuthenticateAnonThrottleMixin, TokenAuthentication):
-    pass
+    scope = 'auth_token'
 
 
 class PasswordExpirationModelBackend(ModelBackend):

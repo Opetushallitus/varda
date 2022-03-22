@@ -760,7 +760,8 @@ class VardaPermissionsTests(TestCase):
             assert_status_code(resp, status.HTTP_404_NOT_FOUND)
 
     rest_throttle_settings = settings.REST_FRAMEWORK.copy()
-    rest_throttle_settings['DEFAULT_THROTTLE_RATES']['anon'] = '5/hour'
+    rest_throttle_settings['DEFAULT_THROTTLE_RATES']['auth'] = '5/hour'
+    rest_throttle_settings['DEFAULT_THROTTLE_RATES']['auth_token'] = '7/hour'
 
     @override_settings(CACHES=TEST_CACHE_SETTINGS)
     @override_settings(REST_FRAMEWORK=rest_throttle_settings)
@@ -816,7 +817,7 @@ class VardaPermissionsTests(TestCase):
     @override_settings(REST_FRAMEWORK=rest_throttle_settings)
     def test_auth_throttle_token(self):
         cache.clear()
-        limit = 5
+        limit = 7
 
         token_client = SetUpTestClient('tester').client()
         token = json.loads(token_client.get('/api/user/apikey/').content)['token']
