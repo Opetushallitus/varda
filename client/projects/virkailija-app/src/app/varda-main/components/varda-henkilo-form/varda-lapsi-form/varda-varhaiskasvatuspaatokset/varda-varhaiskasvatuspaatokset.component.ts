@@ -41,6 +41,8 @@ export class VardaVarhaiskasvatuspaatoksetComponent extends VardaFormListAbstrac
     if (activeLapsi.paos_organisaatio_oid && activeLapsi.tallentaja_organisaatio_oid !== selectedVakajarjestaja.organisaatio_oid) {
       this.lapsitiedotTallentaja = false;
     }
+
+    this.addObjectBoolean = this.varhaiskasvatuspaatosList.length === 0;
   }
 
   addVarhaiskasvatuspaatos(varhaiskasvatuspaatos: LapsiKoosteVakapaatos) {
