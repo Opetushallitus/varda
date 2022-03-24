@@ -214,15 +214,13 @@ def create_initial_template_groups():
     vakajarjestaja_katselija_permissions = get_vakajarjestaja_katselija_permissions()
     toimipaikka_tallentaja_permissions = get_toimipaikka_tallentaja_permissions()
     toimipaikka_katselija_permissions = vakajarjestaja_katselija_permissions.copy()
-    oph_staff_permissions = []
 
     group_permission_array = [
         ('vakajarjestaja_palvelukayttaja', vakajarjestaja_palvelukayttaja_permissions),
         ('vakajarjestaja_tallentaja', vakajarjestaja_tallentaja_permissions),
         ('vakajarjestaja_katselija', vakajarjestaja_katselija_permissions),
         ('toimipaikka_tallentaja', toimipaikka_tallentaja_permissions),
-        ('toimipaikka_katselija', toimipaikka_katselija_permissions),
-        ('oph_staff', oph_staff_permissions)
+        ('toimipaikka_katselija', toimipaikka_katselija_permissions)
     ]
 
     _create_groups_with_permissions(group_permission_array)
@@ -302,6 +300,14 @@ def create_raportit_template_groups():
     raporttien_katselija_permissions = get_raporttien_katselija_permissions()
     group_permissions_list = [
         ('vakajarjestaja_raporttien_katselija', raporttien_katselija_permissions)
+    ]
+    _create_groups_with_permissions(group_permissions_list)
+
+
+def create_extra_template_groups():
+    group_permissions_list = [
+        ('yllapitaja', []),
+        ('luovutuspalvelu', [])
     ]
     _create_groups_with_permissions(group_permissions_list)
 

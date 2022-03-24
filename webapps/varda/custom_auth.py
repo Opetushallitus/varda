@@ -272,7 +272,6 @@ class CustomBasicAuthentication(AuthenticateAnonThrottleMixin, BasicAuthenticati
 
         cas_username = omattiedot['username']
         cas_henkilo_oid = omattiedot['oidHenkilo']
-        cas_henkilo_organisaatiot = omattiedot['organisaatiot']
 
         # Do we have the user in our DB. If not, create it.
         try:
@@ -296,7 +295,7 @@ class CustomBasicAuthentication(AuthenticateAnonThrottleMixin, BasicAuthenticati
         """
         Z3_AdditionalCasUserFields.objects.update_or_create(user=user, defaults={'kayttajatyyppi': cas_henkilo_kayttajaTyyppi, 'henkilo_oid': cas_henkilo_oid})
 
-        set_service_user_permissions(user, permissions_by_organization=cas_henkilo_organisaatiot)
+        set_service_user_permissions(user, cas_henkilo_oid)
 
         is_cert_auth, common_name = get_certificate_login_info(request)
         # We are making sure user authenticates this way before accessing certificate required apis. This is cleared

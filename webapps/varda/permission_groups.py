@@ -8,8 +8,9 @@ from django.db.models import Q
 from guardian.shortcuts import assign_perm, remove_perm
 from rest_framework.exceptions import ValidationError
 
+from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
 from varda.misc import get_json_from_external_service
-from varda.models import Toimipaikka, VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Lapsi
+from varda.models import Toimipaikka, VakaJarjestaja, Z4_CasKayttoOikeudet, Lapsi
 
 
 logger = logging.getLogger(__name__)
@@ -83,7 +84,7 @@ def get_organization_type(organisaatio_oid):
         return "organisaatiotyyppi_08"
 
 
-def create_permission_groups_for_organisaatio(organisaatio_oid, vakajarjestaja=True, organisaatio_data=None):
+def create_permission_groups_for_organisaatio(organisaatio_oid, organisaatiotyyppi):
     PAAKAYTTAJA = Z4_CasKayttoOikeudet.PAAKAYTTAJA
     TALLENTAJA = Z4_CasKayttoOikeudet.TALLENTAJA
     KATSELIJA = Z4_CasKayttoOikeudet.KATSELIJA
@@ -113,27 +114,30 @@ def create_permission_groups_for_organisaatio(organisaatio_oid, vakajarjestaja=T
                             HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA, HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
                             TOIMIJATIEDOT_KATSELIJA, TOIMIJATIEDOT_TALLENTAJA, RAPORTTIEN_KATSELIJA]
 
-    if vakajarjestaja:
+    roles = []
+    if organisaatiotyyppi == Organisaatiotyyppi.VAKAJARJESTAJA.value:
         roles = roles_vakajarjestaja
-    else:
+    elif organisaatiotyyppi == Organisaatiotyyppi.TOIMIPAIKKA.value:
         # toimipaikka -> drop PALVELUKAYTTAJA, PAAKAYTTAJA, HENKILOSTO_TILAPAISET, TOIMIJATIEDOT, RAPORTIT
         excluded_roles = [PALVELUKAYTTAJA, PAAKAYTTAJA,
                           HENKILOSTO_TILAPAISET_TALLENTAJA, HENKILOSTO_TILAPAISET_KATSELIJA,
                           TOIMIJATIEDOT_TALLENTAJA, TOIMIJATIEDOT_KATSELIJA,
                           RAPORTTIEN_KATSELIJA]
         roles = [role for role in roles_vakajarjestaja if role not in excluded_roles]
+    elif organisaatiotyyppi == Organisaatiotyyppi.MUU.value:
+        # muu (OPH, Kela...) -> LUOVUTUSPALVELU
+        roles = [Z4_CasKayttoOikeudet.LUOVUTUSPALVELU]
+        if organisaatio_oid == settings.OPETUSHALLITUS_ORGANISAATIO_OID:
+            roles.append(Z4_CasKayttoOikeudet.YLLAPITAJA)
 
     for role in roles:
-        group_name = role + "_" + organisaatio_oid
+        group_name = f'{role}_{organisaatio_oid}'
         try:
             Group.objects.get(name=group_name)  # group's name is unique
         except Group.DoesNotExist:
-            if organisaatio_data:
-                organization_type = 'organisaatiotyyppi_07' if 'organisaatiotyyppi_07' in organisaatio_data['tyypit'] else 'organisaatiotyyppi_08'
-            else:
-                organization_type = get_organization_type(organisaatio_oid)
-            if organization_type in ['organisaatiotyyppi_07', 'organisaatiotyyppi_08']:
-                create_permission_group(role, organisaatio_oid, organization_type)
+            if organisaatiotyyppi in [Organisaatiotyyppi.VAKAJARJESTAJA.value, Organisaatiotyyppi.TOIMIPAIKKA.value,
+                                      Organisaatiotyyppi.MUU.value]:
+                create_permission_group(role, organisaatio_oid, organisaatiotyyppi)
             else:
                 logger.warning('User tried to login to non-valid organisation {}. Not creating permission group {}.'
                                .format(organisaatio_oid, group_name))
@@ -212,20 +216,31 @@ def create_permission_group(role, organisaatio_oid, organization_type):
         HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA: 'toimipaikka_henkilosto_taydennyskoulutus_katselija',
     }
 
+    group_templates_muu = {
+        Z4_CasKayttoOikeudet.YLLAPITAJA: 'yllapitaja',
+        Z4_CasKayttoOikeudet.LUOVUTUSPALVELU: 'luovutuspalvelu'
+    }
+
     """
+    organisaatiotyyppi_05 == 'Muu organisaatio'
     organisaatiotyyppi_07 == 'Varhaiskasvatuksen jarjestaja'
     organisaatiotyyppi_08 == 'Varhaiskasvatuksen toimipaikka'
     Ref: https://github.com/Opetushallitus/organisaatio/blob/master/organisaatio-service/src/main/resources/db/migration/V084__organisaatio_tyypit.sql
     """
-    if organization_type == 'organisaatiotyyppi_07':
+    if organization_type == Organisaatiotyyppi.VAKAJARJESTAJA.value:
         group_template_name = group_templates_vakajarjestaja[role]
-    else:  # organization_type == 'organisaatiotyyppi_08':
+    elif organization_type == Organisaatiotyyppi.TOIMIPAIKKA.value:
         group_template_name = group_templates_toimipaikka[role]
+    elif organization_type == Organisaatiotyyppi.MUU.value:
+        group_template_name = group_templates_muu[role]
+    else:
+        logger.error(f'Creating permission group for {organization_type} is not allowed.')
+        return None
 
     """
     Finally copy the template and create a new permission_group.
     """
-    new_name_of_permission_group = role + '_' + organisaatio_oid
+    new_name_of_permission_group = f'{role}_{organisaatio_oid}'
 
     group_template = Group.objects.get(name=group_template_name)
     group_template_permissions = group_template.permissions.all()
@@ -458,22 +473,32 @@ def get_all_permission_groups_for_organization(organisaatio_oid):
     return Group.objects.filter(name__endswith=organisaatio_oid)
 
 
-def add_oph_staff_to_vakajarjestaja_katselija_groups():
+def add_oph_staff_to_vakajarjestaja_katselija_groups(user_id=None, organisaatio_oid=None):
     """
-    Select users with "approved_oph_staff:True" -> Add them KATSELIJA-permissions to every vakajarjestaja.
+    Select users belonging to VARDA-YLLAPITAJA group -> Add them KATSELIJA-permissions to every vakajarjestaja.
     I.e. exclude toimipaikka_oid-groups below.
     """
-    approved_oph_staff_query = Z3_AdditionalCasUserFields.objects.filter(approved_oph_staff=True)
-    # Check that number of OPH users does not exceed limit
-    if approved_oph_staff_query.count() > settings.OPH_USER_LIMIT:
-        error_msg = 'There are too many users with approved_oph_staff=True.'
+    group_obj = Group.objects.filter(name=get_oph_yllapitaja_group_name()).first()
+    if not group_obj:
+        logger.error('OPH staff group does not exist.')
+        return None
+    user_qs = group_obj.user_set.all()
+
+    if user_qs.count() > settings.OPH_USER_LIMIT:
+        # Check that number of OPH users does not exceed limit
+        error_msg = 'There are too many OPH staff users.'
         logger.error(error_msg)
         raise ValidationError(error_msg)
 
-    vakajarjestaja_oids = VakaJarjestaja.objects.values_list('organisaatio_oid', flat=True).exclude(organisaatio_oid=None)
+    if user_id:
+        user_qs = user_qs.filter(id=user_id)
+
+    vakajarjestaja_oids = ([organisaatio_oid] if organisaatio_oid else
+                           VakaJarjestaja.objects.values_list('organisaatio_oid', flat=True)
+                           .exclude(Q(organisaatio_oid=None) | Q(organisaatio_oid='')))
     org_oid_query = Q()
-    for organisaatio_oid in vakajarjestaja_oids:
-        org_oid_query |= Q(name__endswith=organisaatio_oid)
+    for org_oid in vakajarjestaja_oids:
+        org_oid_query |= Q(name__endswith=org_oid)
 
     katselija_condition = (Q(name__startswith='VARDA-KATSELIJA') |
                            Q(name__startswith='HUOLTAJATIETO_KATSELU') |
@@ -481,12 +506,14 @@ def add_oph_staff_to_vakajarjestaja_katselija_groups():
                            Q(name__startswith='HENKILOSTO_TILAPAISET_KATSELIJA') |
                            Q(name__startswith='HENKILOSTO_TYONTEKIJA_KATSELIJA') |
                            Q(name__startswith='VARDA_TOIMIJATIEDOT_KATSELIJA') |
-                           Q(name__startswith='VARDA_RAPORTTIEN_KATSELIJA')
-                           )
+                           Q(name__startswith='VARDA_RAPORTTIEN_KATSELIJA'))
     katselija_groups_query = Group.objects.filter(katselija_condition, org_oid_query)
 
-    for approved_oph_staff_member_obj in approved_oph_staff_query:
-        user = approved_oph_staff_member_obj.user
+    for user in user_qs:
         if not user.is_superuser:  # Superuser has permissions anyhow
             for katselija_group in katselija_groups_query:
                 katselija_group.user_set.add(user)
+
+
+def get_oph_yllapitaja_group_name():
+    return f'{Z4_CasKayttoOikeudet.YLLAPITAJA}_{settings.OPETUSHALLITUS_ORGANISAATIO_OID}'

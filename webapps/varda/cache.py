@@ -11,7 +11,7 @@ from hashlib import sha1
 from rest_framework.exceptions import NotFound
 from varda.misc import intersection, path_parse, hash_string
 from varda.pagination import CustomPagination, get_requested_page_and_query_params
-from varda.permissions import get_object_ids_user_has_view_permissions
+from varda.permissions import get_object_ids_user_has_view_permissions, is_oph_staff
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -249,10 +249,9 @@ def cached_list_response(original_list_viewset, user, request_full_path,
     This is needed for cache invalidation.
     """
     original_queryset = original_list_viewset.filter_queryset(original_list_viewset.queryset)
-    # Handling oph-staff users through regular object permissions effectively causes all object ids of this type in
-    # db  to be fetched to cache.
-    additional_details = getattr(user, 'additional_cas_user_fields', None)
-    if user.is_superuser or getattr(additional_details, 'approved_oph_staff', False):  # No caching for superuser
+    # Handling OPH staff users through regular object permissions effectively causes all object ids of this type in
+    # db to be fetched to cache. No caching for superuser or OPH staff.
+    if user.is_superuser or is_oph_staff(user):
         page = original_list_viewset.paginate_queryset(original_queryset)
     else:
         request_full_path, query_params = path_parse(request_full_path)

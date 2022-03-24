@@ -5,7 +5,7 @@ from functools import wraps
 
 from celery import shared_task
 from django.conf import settings
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.management import call_command
@@ -30,9 +30,9 @@ from varda.misc import memory_efficient_queryset_iterator
 from varda.models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Maksutieto,
                           MaksutietoHuoltajuussuhde, Palvelussuhde, Taydennyskoulutus, TaydennyskoulutusTyontekija,
                           Toimipaikka, Tyontekija, VakaJarjestaja, Varhaiskasvatuspaatos, YearlyReportSummary,
-                          Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog, Z6_LastRequest,
-                          Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary)
-from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups
+                          Z4_CasKayttoOikeudet, Z5_AuditLog, Z6_LastRequest, Z6_RequestCount, Z6_RequestLog,
+                          Z6_RequestSummary)
+from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups, get_oph_yllapitaja_group_name
 from varda.permissions import assign_object_level_permissions_for_instance, delete_object_permissions_explicitly
 
 
@@ -94,8 +94,9 @@ def remove_all_auth_tokens():
 
 @shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
-def update_oph_staff_to_vakajarjestaja_groups():
-    permission_groups.add_oph_staff_to_vakajarjestaja_katselija_groups()
+def update_oph_staff_to_vakajarjestaja_groups(user_id=None, organisaatio_oid=None):
+    permission_groups.add_oph_staff_to_vakajarjestaja_katselija_groups(user_id=user_id,
+                                                                       organisaatio_oid=organisaatio_oid)
 
 
 @shared_task
@@ -567,8 +568,9 @@ def general_monitoring_task():
         logger.error('There are too many users with is_staff=True or is_superuser=True.')
 
     # Check that number of OPH users does not exceed limit
-    if Z3_AdditionalCasUserFields.objects.filter(approved_oph_staff=True).count() > settings.OPH_USER_LIMIT:
-        logger.error('There are too many users with approved_oph_staff=True.')
+    oph_yllapitaja_group = Group.objects.filter(name=get_oph_yllapitaja_group_name()).first()
+    if oph_yllapitaja_group and oph_yllapitaja_group.user_set.count() > settings.OPH_USER_LIMIT:
+        logger.error('There are too many OPH staff users.')
 
     # Check that an API is not systematically browsed through using the page-parameter
     # This task is run every hour so check the last 2 hours
@@ -781,3 +783,14 @@ def reset_superuser_permissions_task():
             user.is_superuser = False
             user.is_staff = False
             user.save()
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def create_oph_yllapitaja_group():
+    """
+    TEMPORARY FUNCTION
+    """
+    Group.objects.get_or_create(name=get_oph_yllapitaja_group_name())
+    # Delete old oph_staff group
+    Group.objects.filter(name='oph_staff').delete()

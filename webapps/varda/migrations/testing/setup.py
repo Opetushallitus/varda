@@ -223,9 +223,10 @@ def add_test_user_permissions():
 
 def create_vakajarjestajat():
     from django.contrib.auth.models import User
+    from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
+    from varda.models import VakaJarjestaja
     from varda.permission_groups import (assign_permissions_to_vakajarjestaja_obj,
                                          create_permission_groups_for_organisaatio)
-    from varda.models import VakaJarjestaja
 
     tester_user = User.objects.get(username='tester')
     tester2_user = User.objects.get(username='tester2')
@@ -353,15 +354,15 @@ def create_vakajarjestajat():
 
     for vakajarjestaja in vakajarjestaja_list:
         organisaatio_oid = vakajarjestaja.organisaatio_oid
-        create_permission_groups_for_organisaatio(organisaatio_oid, vakajarjestaja=True,
-                                                  organisaatio_data={'tyypit': ['organisaatiotyyppi_07']})
+        create_permission_groups_for_organisaatio(organisaatio_oid, Organisaatiotyyppi.VAKAJARJESTAJA.value)
         assign_permissions_to_vakajarjestaja_obj(organisaatio_oid)
 
 
 def create_toimipaikat_and_painotukset():
     from django.contrib.auth.models import User
-    from varda.permission_groups import assign_permissions_to_toimipaikka_obj, create_permission_groups_for_organisaatio
+    from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
     from varda.models import Toimipaikka, VakaJarjestaja
+    from varda.permission_groups import assign_permissions_to_toimipaikka_obj, create_permission_groups_for_organisaatio
 
     tester_user = User.objects.get(username='tester')
     tester2_user = User.objects.get(username='tester2')
@@ -651,8 +652,7 @@ def create_toimipaikat_and_painotukset():
 
     for toimipaikka in toimipaikka_list:
         organisaatio_oid = toimipaikka.organisaatio_oid
-        create_permission_groups_for_organisaatio(organisaatio_oid, vakajarjestaja=False,
-                                                  organisaatio_data={'tyypit': ['organisaatiotyyppi_08']})
+        create_permission_groups_for_organisaatio(organisaatio_oid, Organisaatiotyyppi.TOIMIPAIKKA.value)
         assign_permissions_to_toimipaikka_obj(toimipaikka.organisaatio_oid, toimipaikka.vakajarjestaja.organisaatio_oid)
 
     toiminnallinen_painotus_list = (
@@ -2157,7 +2157,6 @@ def create_user_data():
         kayttajatyyppi='VIRKAILIJA',
         henkilo_oid='1.2.345678910',
         asiointikieli_koodi='sv',
-        approved_oph_staff=False,
         last_modified='2019-01-24 12:00:00+1459'
     )
 
@@ -2166,7 +2165,6 @@ def create_user_data():
         kayttajatyyppi='VIRKAILIJA',
         henkilo_oid='1.2.246.562.24.6722258949565',
         asiointikieli_koodi='fi',
-        approved_oph_staff=False,
         last_modified='2019-01-24 12:00:00+1459'
     )
 
@@ -2175,7 +2173,6 @@ def create_user_data():
         kayttajatyyppi='VIRKAILIJA',
         henkilo_oid='',
         asiointikieli_koodi='fi',
-        approved_oph_staff=False,
         last_modified='2020-10-06 12:00:00+1459'
     )
 
@@ -2184,7 +2181,6 @@ def create_user_data():
         kayttajatyyppi='VIRKAILIJA',
         henkilo_oid='1.2.345678001',
         asiointikieli_koodi='fi',
-        approved_oph_staff=False,
         last_modified='2019-01-24 12:00:00+1459'
     )
 
@@ -2193,7 +2189,6 @@ def create_user_data():
         kayttajatyyppi='VIRKAILIJA',
         henkilo_oid='1.2.345679001',
         asiointikieli_koodi='fi',
-        approved_oph_staff=False,
         last_modified='2019-01-24 12:00:00+1459'
     )
 
@@ -2202,7 +2197,6 @@ def create_user_data():
         kayttajatyyppi='VIRKAILIJA',
         henkilo_oid='',
         asiointikieli_koodi='fi',
-        approved_oph_staff=False,
         last_modified='2019-01-24 12:00:00+1459'
     )
 
@@ -2211,7 +2205,6 @@ def create_user_data():
         kayttajatyyppi='VIRKAILIJA',
         henkilo_oid='1.2.345680001',
         asiointikieli_koodi='fi',
-        approved_oph_staff=False,
         last_modified='2019-01-24 12:00:00+1459'
     )
 
@@ -2220,7 +2213,6 @@ def create_user_data():
         kayttajatyyppi='VIRKAILIJA',
         henkilo_oid='1.2.345680002',
         asiointikieli_koodi='fi',
-        approved_oph_staff=False,
         last_modified='2019-01-24 12:00:00+1459'
     )
 
@@ -2229,7 +2221,6 @@ def create_user_data():
         kayttajatyyppi='PALVELU',
         henkilo_oid='',
         asiointikieli_koodi='fi',
-        approved_oph_staff=False,
         last_modified='2019-01-24 12:00:00+1459'
     )
 
@@ -2238,7 +2229,6 @@ def create_user_data():
         kayttajatyyppi='PALVELU',
         henkilo_oid='',
         asiointikieli_koodi='fi',
-        approved_oph_staff=False,
         last_modified='2019-01-24 12:00:00+1459'
     )
 
@@ -2470,8 +2460,9 @@ def create_onr_lapsi_huoltajat(create_all_vakajarjestajat=False):
     """
     from django.contrib.auth.models import Group, User
     from guardian.shortcuts import assign_perm
+    from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
     from varda.models import Lapsi
-    from varda.organisaatiopalvelu import create_vakajarjestaja_using_oid
+    from varda.organisaatiopalvelu import create_organization_using_oid
 
     print('Adding lapset + huoltajat (from ONR) in test data.')
 
@@ -2559,7 +2550,7 @@ def create_onr_lapsi_huoltajat(create_all_vakajarjestajat=False):
 
     vakajarjestaja_oids = get_vakajarjestaja_oids(create_all_vakajarjestajat)
     for organisaatio_oid in vakajarjestaja_oids:
-        create_vakajarjestaja_using_oid(organisaatio_oid, 2)
+        create_organization_using_oid(organisaatio_oid, Organisaatiotyyppi.VAKAJARJESTAJA.value, 2)
 
         group_tallentaja = Group.objects.get(name='VARDA-TALLENTAJA_' + organisaatio_oid)
         group_katselija = Group.objects.get(name='VARDA-KATSELIJA_' + organisaatio_oid)

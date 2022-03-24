@@ -20,7 +20,8 @@ from varda.misc import path_parse
 from varda.models import (VakaJarjestaja, Toimipaikka, Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
                           PaosToiminta, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog,
                           LoginCertificate, Maksutieto, Tyontekija, Tyoskentelypaikka, TaydennyskoulutusTyontekija)
-from varda.permission_groups import assign_object_level_permissions, remove_object_level_permissions
+from varda.permission_groups import (assign_object_level_permissions, get_oph_yllapitaja_group_name,
+                                     remove_object_level_permissions)
 
 
 logger = logging.getLogger(__name__)
@@ -773,8 +774,7 @@ def is_oph_staff(user):
     :param user: User object
     :return: boolean
     """
-    additional_details = getattr(user, 'additional_cas_user_fields', None)
-    return getattr(additional_details, 'approved_oph_staff', False)
+    return user.groups.filter(name=get_oph_yllapitaja_group_name()).exists()
 
 
 def parse_toimipaikka_id_list(user, toimipaikka_ids_string, required_permission_groups, include_paos=False):

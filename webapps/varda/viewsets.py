@@ -33,6 +33,7 @@ from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid,
 from varda.custom_swagger import IntegerIdSchema
 from varda.enums.error_messages import ErrorMessages
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
+from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
 from varda.exceptions.conflict_error import ConflictError
 from varda.filters import CustomParametersFilterBackend, CustomParameter
 from varda.kayttooikeuspalvelu import set_user_info_from_onr
@@ -66,11 +67,10 @@ from varda.permissions import (throw_if_not_tallentaja_permissions,
                                assign_object_level_permissions_for_instance)
 from varda.related_object_validations import toimipaikka_is_valid_to_organisaatiopalvelu
 from varda.request_logging import request_log_viewset_decorator_factory
-from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer,
-                               UpdateHenkiloWithOidSerializer, UpdateOphStaffSerializer, ClearCacheSerializer,
-                               ActiveUserSerializer, AuthTokenSerializer, VakaJarjestajaSerializer,
-                               ToimipaikkaSerializer, ToiminnallinenPainotusSerializer, KieliPainotusSerializer,
-                               HaeHenkiloSerializer, HenkiloSerializer, HenkiloSerializerAdmin,
+from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer, UpdateHenkiloWithOidSerializer,
+                               ClearCacheSerializer, ActiveUserSerializer, AuthTokenSerializer,
+                               VakaJarjestajaSerializer, ToimipaikkaSerializer, ToiminnallinenPainotusSerializer,
+                               KieliPainotusSerializer, HaeHenkiloSerializer, HenkiloSerializer, HenkiloSerializerAdmin,
                                YksiloimattomatHenkilotSerializer, LapsiSerializer, LapsiSerializerAdmin,
                                HuoltajaSerializer, HuoltajuussuhdeSerializer, MaksutietoSerializer,
                                MaksutietoUpdateSerializer, VarhaiskasvatuspaatosSerializer,
@@ -79,8 +79,7 @@ from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer,
                                PaosToimipaikatSerializer, PaosOikeusSerializer, LapsiKoosteSerializer, UserSerializer,
                                ToimipaikkaKoosteSerializer, ToimipaikkaUpdateSerializer,
                                PulssiVakajarjestajatSerializer, MaksutietoPostSerializer)
-from varda.tasks import (update_oph_staff_to_vakajarjestaja_groups,
-                         assign_taydennyskoulutus_permissions_for_toimipaikka_task)
+from varda.tasks import assign_taydennyskoulutus_permissions_for_toimipaikka_task
 from webapps.api_throttles import (BurstRateThrottleStrict, SustainedRateThrottleStrict)
 
 
@@ -135,31 +134,6 @@ class UpdateHenkiloWithOid(GenericViewSet, CreateModelMixin):
     def perform_create(self, serializer):
         fetch_henkilo_with_oid(serializer.validated_data['henkilo_oid'])
         return {'result': 'Henkilo-data fetched.'}
-
-
-class UpdateOphStaff(GenericViewSet, CreateModelMixin):
-    """
-    create:
-        Päivitä henkilön OPH-staff status.
-    """
-    queryset = Henkilo.objects.none()
-    serializer_class = UpdateOphStaffSerializer
-    permission_classes = (permissions.IsAdminUser, )
-
-    def create(self, request, *args, **kwargs):
-        user = request.user
-        if user.is_anonymous:
-            raise NotAuthenticated('Not authenticated.')
-        else:
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            result = self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
-            return Response(result, status=status.HTTP_200_OK, headers=headers)
-
-    def perform_create(self, serializer):
-        update_oph_staff_to_vakajarjestaja_groups.delay()
-        return {'result': 'Update-task started.'}
 
 
 class ClearCacheViewSet(GenericViewSet, CreateModelMixin):
@@ -621,7 +595,8 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
                 """
                 New organization, let's create pre-defined permission_groups for it.
                 """
-                create_permission_groups_for_organisaatio(toimipaikka_organisaatio_oid, vakajarjestaja=False)
+                create_permission_groups_for_organisaatio(toimipaikka_organisaatio_oid,
+                                                          Organisaatiotyyppi.TOIMIPAIKKA.value)
 
                 vakajarjestaja_obj = VakaJarjestaja.objects.get(id=vakajarjestaja_id)
                 vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
@@ -2575,15 +2550,10 @@ class HenkilohakuLapset(GenericViewSet, ListModelMixin):
 
     def set_filter_backends(self, request):
         """
-        Do not check for object-level permissions from OPH-admins. Otherwise the query timeouts.
+        Do not check for object-level permissions from OPH staff. Otherwise the query timeouts.
         """
-        cas_user_obj_found = True
-        try:
-            cas_user_obj = Z3_AdditionalCasUserFields.objects.get(user=request.user)
-        except Z3_AdditionalCasUserFields.DoesNotExist:
-            cas_user_obj_found = False
-
-        if not cas_user_obj_found or not cas_user_obj.approved_oph_staff:
+        user = request.user
+        if not user.is_superuser and not is_oph_staff(user):
             self.filter_backends += (ObjectPermissionsFilter,)
 
     def list(self, request, *args, **kwargs):

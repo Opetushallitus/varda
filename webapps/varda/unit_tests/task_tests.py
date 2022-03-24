@@ -2,13 +2,14 @@ import datetime
 import json
 
 import responses
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, User
 from django.test import TestCase
 from django.utils import timezone
 from rest_framework import status
 
 from varda.models import (Lapsi, Huoltaja, Maksutieto, Varhaiskasvatussuhde, Varhaiskasvatuspaatos, Henkilo,
-                          VakaJarjestaja, Huoltajuussuhde, Z3_AdditionalCasUserFields, Z5_AuditLog)
+                          VakaJarjestaja, Huoltajuussuhde, Z5_AuditLog)
+from varda.permission_groups import get_oph_yllapitaja_group_name
 from varda.tasks import (delete_huoltajat_without_relations_task, delete_henkilot_without_relations_task,
                          general_monitoring_task, reset_superuser_permissions_task)
 from varda.unit_tests.test_utils import SetUpTestClient, assert_status_code
@@ -151,11 +152,12 @@ class TaskTests(TestCase):
         self.assertFalse(Henkilo.objects.filter(id=henkilo_1_id).exists())
 
     def test_general_monitoring_task_users(self):
-        Z3_AdditionalCasUserFields.objects.all().update(approved_oph_staff=True)
+        oph_group, created = Group.objects.update_or_create(name=get_oph_yllapitaja_group_name())
+        oph_group.user_set.add(*User.objects.all())
         with self.assertLogs('varda.tasks', level='ERROR') as cm:
             general_monitoring_task.delay()
-            self.assertEqual(cm.output, ['ERROR:varda.tasks:There are too many users with approved_oph_staff=True.'])
-        Z3_AdditionalCasUserFields.objects.all().update(approved_oph_staff=False)
+            self.assertEqual(cm.output, ['ERROR:varda.tasks:There are too many OPH staff users.'])
+        oph_group.user_set.clear()
 
         User.objects.all().update(is_superuser=True)
         with self.assertLogs('varda.tasks', level='ERROR') as cm:

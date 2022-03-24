@@ -68,34 +68,6 @@ class UpdateHenkiloWithOidSerializer(serializers.Serializer):
         return attrs
 
 
-class UpdateOphStaffSerializer(serializers.Serializer):
-    virkailija_id = serializers.IntegerField(write_only=True, required=True)
-    result = serializers.CharField(read_only=True)
-
-    def validate(self, attrs):
-        virkailija_id = attrs.get('virkailija_id')
-        if virkailija_id < 1:
-            raise serializers.ValidationError({'virkailija_id': [ErrorMessages.AD001.value]})
-
-        try:
-            user = User.objects.get(id=virkailija_id)
-        except User.DoesNotExist:
-            raise serializers.ValidationError({'virkailija_id': [ErrorMessages.AD002.value]})
-
-        try:
-            oph_staff_user_obj = Z3_AdditionalCasUserFields.objects.get(user=user)
-        except Z3_AdditionalCasUserFields.DoesNotExist:
-            raise serializers.ValidationError({'virkailija_id': [ErrorMessages.AD003.value]})
-
-        if not user.groups.filter(name='oph_staff').exists():
-            raise serializers.ValidationError({'virkailija_id': [ErrorMessages.AD004.value]})
-
-        oph_staff_user_obj.approved_oph_staff = True
-        oph_staff_user_obj.save()
-
-        return attrs
-
-
 class ClearCacheSerializer(serializers.Serializer):
     clear_cache = serializers.CharField(write_only=True, required=True)
     result = serializers.CharField(read_only=True)

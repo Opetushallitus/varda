@@ -1,7 +1,7 @@
 import logging
 
 from django.conf import settings
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 from django.db.models import Q
@@ -10,15 +10,17 @@ from rest_framework.exceptions import AuthenticationFailed
 
 from varda.cache import delete_cached_user_permissions_for_model
 from varda.clients import organisaatio_client
-from varda.clients.organisaatio_client import is_not_valid_vaka_organization_in_organisaatiopalvelu
 from varda.enums.error_messages import ErrorMessages
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
+from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
 from varda.enums.tietosisalto_ryhma import TietosisaltoRyhma
 from varda.exceptions.invalid_koodi_uri_exception import InvalidKoodiUriException
 from varda.misc import get_json_from_external_service, get_reply_json
 from varda.models import Toimipaikka, VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, LoginCertificate
-from varda.organisaatiopalvelu import create_toimipaikka_using_oid, create_vakajarjestaja_using_oid
+from varda.organisaatiopalvelu import create_toimipaikka_using_oid, create_organization_using_oid
 from varda.permission_groups import get_permission_group
+from varda.permissions import is_oph_staff
+from varda.tasks import update_oph_staff_to_vakajarjestaja_groups
 
 
 logger = logging.getLogger(__name__)
@@ -40,9 +42,8 @@ def set_permissions_for_cas_user(user_id):
         LoginCertificate.objects.filter(user=user).update(user=None)
 
     henkilo_oid, kayttajatyyppi = set_user_info_for_cas_user(user)
-
     if kayttajatyyppi == Kayttajatyyppi.PALVELU.value:
-        set_service_user_permissions(user, henkilo_oid=henkilo_oid)
+        set_service_user_permissions(user, henkilo_oid)
     else:
         set_user_kayttooikeudet(henkilo_oid, user)
 
@@ -99,38 +100,44 @@ def set_user_kayttooikeudet(henkilo_oid, user):
     model_name = 'vakajarjestaja'
     delete_cached_user_permissions_for_model(user.id, model_name)
 
-    """
-    If user is OPH-staff, let the permissions be as they are, and exit.
-    """
-    additional_details = getattr(user, 'additional_cas_user_fields', None)
-    if getattr(additional_details, 'approved_oph_staff', False):
+    # Get current permissions
+    permissions_by_organization_list = _get_organizations_and_perm_groups_of_user(henkilo_oid)
+
+    # If user is still OPH-staff, let the permissions be as they are, and exit.
+    is_oph_yllapitaja = False
+    for permissions_by_organization in permissions_by_organization_list:
+        organisaatio_oid = permissions_by_organization['organization_data']['oid']
+        permissions = permissions_by_organization['permissions']
+        if (organisaatio_oid == settings.OPETUSHALLITUS_ORGANISAATIO_OID and
+                Z4_CasKayttoOikeudet.YLLAPITAJA in permissions):
+            is_oph_yllapitaja = True
+            break
+    if is_oph_staff(user) and is_oph_yllapitaja:
         return None
 
-    """
-    We need to delete the 'kayttooikeus' groups first (there might be removed access rights).
-    Delete + creation is not handled in one atomic-transaction since it involves
-    multiple queries to other systems, and this might leave transactions open for too long time.
-    These DB-actions are not viewed as critical, since if something goes wrong here, the next
-    login should already fix the possible problem.
-    """
+    # We need to delete the 'kayttooikeus' groups first (there might be removed access rights).
+    # Delete + creation is not handled in one atomic-transaction since it involves
+    # multiple queries to other systems, and this might leave transactions open for too long time.
+    # These DB-actions are not viewed as critical, since if something goes wrong here, the next
+    # login should already fix the possible problem.
     Z4_CasKayttoOikeudet.objects.filter(user=user).delete()
-    user.groups.clear()  # Remove the permission_groups from user. TODO: If there will be other groups also, then delete only the permission-groups here.
+    # Remove the permission_groups from user.
+    # If there will be other groups also, then delete only the permission-groups here.
+    user.groups.clear()
 
-    """
-    Also, remove the possible vakajarjestaja-object level permissions from user. These are
-    special-permissions given to Toimipaikka-permission level user. See more info below.
-    https://django-guardian.readthedocs.io/en/stable/userguide/caveats.html
-    """
+    # Also, remove the possible vakajarjestaja-object level permissions from user. These are
+    # special-permissions given to Toimipaikka-permission level user. See more info below.
+    # https://django-guardian.readthedocs.io/en/stable/userguide/caveats.html
     filters = Q(content_type=ContentType.objects.get_for_model(VakaJarjestaja), user_id=user.id)
     UserObjectPermission.objects.filter(filters).delete()
 
-    """
-    After removal, let's set the user permissions.
-    """
-    user_organisation_permission_and_data_list = _get_organizations_and_perm_groups_of_user(henkilo_oid, user)
-    for permission_group_list, organisation_data in user_organisation_permission_and_data_list:
-        varda_permissions = [perm['oikeus'] for perm in permission_group_list if perm['palvelu'] == 'VARDA']
-        fetch_permissions_roles_for_organization(user.id, henkilo_oid, organisation_data, varda_permissions)
+    # After removal, let's set the user permissions.
+    for permissions_by_organization in permissions_by_organization_list:
+        fetch_permissions_roles_for_organization(user.id, henkilo_oid, permissions_by_organization['organization_data'],
+                                                 permissions_by_organization['permissions'])
+
+    if is_oph_yllapitaja:
+        update_oph_staff_to_vakajarjestaja_groups.delay(user_id=user.id)
 
 
 def set_user_permissions(user, organisation, role):
@@ -214,6 +221,12 @@ def fetch_permissions_roles_for_organization(user_id, henkilo_oid, organisation,
 
     roles = [role_vakatiedot, role_huoltajatiedot, role_paakayttaja, role_tyontekija, role_taydennyskoulutus,
              role_tilapainenhenkilosto, role_toimijatiedot, role_raportit]
+
+    # Check if user has VARDA-YLLAPITAJA permission
+    if (organization_oid == settings.OPETUSHALLITUS_ORGANISAATIO_OID and
+            Z4_CasKayttoOikeudet.YLLAPITAJA in permission_group_list):
+        roles.append(Z4_CasKayttoOikeudet.YLLAPITAJA)
+
     if all(role is None for role in roles):
         return None
 
@@ -222,8 +235,7 @@ def fetch_permissions_roles_for_organization(user_id, henkilo_oid, organisation,
     and user has some varda-permission role there.
     """
     try:
-        organization_type_vakajarjestaja = organisaatio_client.is_vakajarjestaja(organisation)
-        create_vakajarjestaja_or_toimipaikka_if_needed(organization_type_vakajarjestaja, organization_oid, user.id)
+        create_organization_or_toimipaikka_if_needed(organisation, user.id)
     except (InvalidKoodiUriException, KeyError, StopIteration):
         logger.warning('Organisaatio {0} creation failed for henkilo {1}. Skipping role creation.'
                        .format(organization_oid, henkilo_oid))
@@ -232,19 +244,21 @@ def fetch_permissions_roles_for_organization(user_id, henkilo_oid, organisation,
     [set_user_permissions(user, organisation, role) for role in roles if role is not None]
 
 
-def create_vakajarjestaja_or_toimipaikka_if_needed(organization_type_vakajarjestaja, organization_oid, user_id):
-    if organization_type_vakajarjestaja:
-        if not VakaJarjestaja.objects.filter(organisaatio_oid=organization_oid).exists():
+def create_organization_or_toimipaikka_if_needed(organization, user_id):
+    organisaatio_oid = organization['oid']
+    if organisaatio_client.is_of_type(organization, Organisaatiotyyppi.VAKAJARJESTAJA.value, Organisaatiotyyppi.MUU.value):
+        if not VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid).exists():
             """
-            VakaJarjestaja doesn't exist yet, let's create it.
+            Organization doesn't exist yet, let's create it.
             """
-            create_vakajarjestaja_using_oid(organization_oid, user_id)
-    else:  # organization_type is 'vakatoimipaikka'
-        if not Toimipaikka.objects.filter(organisaatio_oid=organization_oid).exists():
+            organisaatiotyyppi = organisaatio_client.get_organization_type(organization)
+            create_organization_using_oid(organisaatio_oid, organisaatiotyyppi, user_id)
+    elif organisaatio_client.is_of_type(organization, Organisaatiotyyppi.TOIMIPAIKKA.value):
+        if not Toimipaikka.objects.filter(organisaatio_oid=organisaatio_oid).exists():
             """
             Toimipaikka doesn't exist yet, let's create it.
             """
-            create_toimipaikka_using_oid(organization_oid, user_id)
+            create_toimipaikka_using_oid(organisaatio_oid, user_id)
 
 
 def get_user_data(henkilo_oid):
@@ -339,32 +353,36 @@ def select_highest_kayttooikeusrooli(kayttooikeusrooli_list, organization_oid, t
     return next(iter([role for role in args if role in kayttooikeusrooli_list]), None)
 
 
-def _get_organizations_and_perm_groups_of_user(henkilo_oid, user):
+def _get_organizations_and_perm_groups_of_user(henkilo_oid):
     """
-    Fetch user permissions and organisation data for organisations user har permissions
+    Fetch user permissions and organisation data for organisations user has permissions to. Exclude organizations and
+    permissions not related to Varda.
     :param henkilo_oid: user henkilo oid
-    :param user: local user object
-    :return: tuple(list(kayttooikeudet), dict(organisaatio_data))
+    :return: [{organization_data: {}, permissions: []}, {...}]
     """
-    organisaatio_kayttooikeudet = _get_permissions_by_organization(henkilo_oid)
-    if organisaatio_kayttooikeudet is None:
-        # Error while getting permissions
-        return {}, {}
+    permissions_by_organization_list = _get_permissions_by_organization(henkilo_oid)
+    if permissions_by_organization_list is None:
+        logger.error(f'Could not get user permissions for OID {henkilo_oid}')
+        return []
 
-    kayttooikeudet_by_organisaatio_oid = [user_info for user_info in organisaatio_kayttooikeudet if len(user_info['kayttooikeudet']) > 0]
-    organisaatio_oids = [user_info['organisaatioOid'] for user_info in kayttooikeudet_by_organisaatio_oid]
-    organisations = organisaatio_client.get_multiple_organisaatio(organisaatio_oids)
-    valid_organisation_oids = [org['oid'] for org in organisations if organisaatio_client.is_valid_vaka_organization(org)]
-    organisation_data_dict = {org['oid']: org for org in organisations}
-    if settings.OPETUSHALLITUS_ORGANISAATIO_OID in organisaatio_oids:
-        oph_staff_group = Group.objects.get(name='oph_staff')
-        oph_staff_group.user_set.add(user)
+    organisaatio_oid_list = []
+    permissions_by_organisaatio_oid = {}
+    for permissions_by_organization in permissions_by_organization_list:
+        organisaatio_oid = permissions_by_organization['organisaatioOid']
+        # Exclude permissions not related to Varda
+        permissions = [permission['oikeus'] for permission in permissions_by_organization['kayttooikeudet']
+                       if permission['palvelu'] == 'VARDA']
+        if len(permissions) > 0:
+            organisaatio_oid_list.append(organisaatio_oid)
+            permissions_by_organisaatio_oid[organisaatio_oid] = permissions
 
-    return ((kayttooikeus['kayttooikeudet'], organisation_data_dict[organisaatio_oid])
-            for kayttooikeus
-            in kayttooikeudet_by_organisaatio_oid
-            if (organisaatio_oid := kayttooikeus['organisaatioOid']) in valid_organisation_oids
-            )
+    organization_data_list = organisaatio_client.get_multiple_organisaatio(organisaatio_oid_list)
+    data_by_organisaatio_oid = {organization_data['oid']: organization_data
+                                for organization_data in organization_data_list
+                                if organisaatio_client.is_valid_organization(organization_data)}
+
+    return [{'organization_data': organization_data, 'permissions': permissions_by_organisaatio_oid[organisaatio_oid]}
+            for organisaatio_oid, organization_data in data_by_organisaatio_oid.items()]
 
 
 def _get_permissions_by_organization(henkilo_oid):
@@ -378,74 +396,57 @@ def _get_permissions_by_organization(henkilo_oid):
     return first_user.get('organisaatiot', [])
 
 
-def set_service_user_permissions(user, permissions_by_organization=None, henkilo_oid=None):
-    if permissions_by_organization is None:
-        # Coming from CAS login
-        if henkilo_oid:
-            permissions_by_organization = _get_permissions_by_organization(henkilo_oid)
-            if permissions_by_organization is None:
-                # Error while getting permissions
-                return
-        else:
-            logger.error(f'Service user with id: {user.id}, does not have an OID.')
-            return
-
+def set_service_user_permissions(user, henkilo_oid):
     # Delete old permissions as some of them may have been removed
     Z4_CasKayttoOikeudet.objects.filter(user=user).delete()
+    user.groups.clear()
 
-    valid_permissions_by_organization = _exclude_non_valid_permissions(permissions_by_organization)
+    if not henkilo_oid:
+        logger.error(f'Service user with id: {user.id} does not have an OID.')
+        return None
 
-    if len(valid_permissions_by_organization) == 1:
-        # PALVELUKAYTTAJA should have permissions only to one organization.
-        organization = valid_permissions_by_organization[0]
-        organisaatio_oid = organization['organisaatioOid']
-        permission_list = [permission['oikeus'] for permission in organization['kayttooikeudet']]
-        _create_or_update_vakajarjestaja(permission_list, organisaatio_oid, user)
+    permissions_by_organization_list = _get_organizations_and_perm_groups_of_user(henkilo_oid)
 
-        # Clear user's permission groups
-        user.groups.clear()
-        for permission in permission_list:
-            organization_specific_permission_group = get_permission_group(permission, organisaatio_oid)
-            if organization_specific_permission_group is not None:
-                # Assign the user to this permission group
-                organization_specific_permission_group.user_set.add(user)
-    else:
+    if len(permissions_by_organization_list) != 1:
         # Decline access to Varda if the service user doesn't have correct permissions to VARDA-service
-        # in one active vaka-organization.
+        # in one active organization.
         raise AuthenticationFailed({'errors': [ErrorMessages.PE008.value]})
 
+    organization_data = permissions_by_organization_list[0]['organization_data']
+    permissions = permissions_by_organization_list[0]['permissions']
 
-def _exclude_non_valid_permissions(permissions_by_organization):
+    if not organisaatio_client.is_of_type(organization_data, Organisaatiotyyppi.VAKAJARJESTAJA.value,
+                                          Organisaatiotyyppi.MUU.value):
+        logger.error(f'Service user with id: {user.id} does not have permissions to a top level organization.')
+        return None
+
+    permissions = _exclude_non_valid_permissions(permissions)
+    organisaatio_oid = organization_data['oid']
+
+    _create_or_update_organization_for_service_user(permissions, organization_data, user)
+    for permission in permissions:
+        organization_specific_permission_group = get_permission_group(permission, organisaatio_oid)
+        if organization_specific_permission_group is not None:
+            # Assign the user to this permission group
+            organization_specific_permission_group.user_set.add(user)
+
+
+def _exclude_non_valid_permissions(permission_list):
     accepted_service_user_permissions = (Z4_CasKayttoOikeudet.PALVELUKAYTTAJA, Z4_CasKayttoOikeudet.TALLENTAJA,
                                          Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,
                                          Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
                                          Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,
                                          Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA,
-                                         Z4_CasKayttoOikeudet.TOIMIJATIEDOT_TALLENTAJA,)
-    for organization in permissions_by_organization:
-        # Filter out permissions we are not interested in
-        organization['kayttooikeudet'] = [permission for permission in organization['kayttooikeudet']
-                                          if permission['palvelu'] == 'VARDA' and
-                                          (permission['oikeus'] in accepted_service_user_permissions or
-                                           _is_opetushallitus_accepted_permission(organization['organisaatioOid'],
-                                                                                  permission['oikeus']))]
-    valid_permissions_by_organization = [organization for organization in permissions_by_organization
-                                         if organization['kayttooikeudet'] and
-                                         not is_not_valid_vaka_organization_in_organisaatiopalvelu(organization['organisaatioOid'],
-                                                                                                   must_be_vakajarjestaja=True)]
-    return valid_permissions_by_organization
+                                         Z4_CasKayttoOikeudet.TOIMIJATIEDOT_TALLENTAJA,
+                                         Z4_CasKayttoOikeudet.LUOVUTUSPALVELU)
+    return [permission for permission in permission_list if permission in accepted_service_user_permissions]
 
 
-def _is_opetushallitus_accepted_permission(organisaatio_oid, permission_group_name):
-    return (organisaatio_oid == settings.OPETUSHALLITUS_ORGANISAATIO_OID and
-            permission_group_name == Z4_CasKayttoOikeudet.LUOVUTUSPALVELU)
-
-
-def _create_or_update_vakajarjestaja(permission_list, organisaatio_oid, user):
+def _create_or_update_organization_for_service_user(permission_list, organization_data, user):
     """
     Creates vakajarjestaja if one does not exist yet. Marks vakajarjestaja integraatio organisaatio if needed.
     :param permission_list: List of permission strings user has for accessing varda
-    :param organisaatio_oid: Oid of the vakajarjestaja user has permissions to
+    :param organization_data: Oid of the vakajarjestaja user has permissions to
     :param user: user logging in
     """
     # Having any of these permissions means that it is allowed to transfer that data only via integration
@@ -459,12 +460,12 @@ def _create_or_update_vakajarjestaja(permission_list, organisaatio_oid, user):
         Z4_CasKayttoOikeudet.TOIMIJATIEDOT_TALLENTAJA: TietosisaltoRyhma.TOIMIJATIEDOT.value
     }
 
+    organisaatio_oid = organization_data['oid']
     for permission in permission_list:
         k, created = Z4_CasKayttoOikeudet.objects.get_or_create(user=user, organisaatio_oid=organisaatio_oid,
                                                                 kayttooikeus=permission)
         if not created:
-            logger.info('Already had permission {} for user: {}, organisaatio_oid: {}'
-                        .format(permission, user.username, organisaatio_oid))
+            logger.info(f'Already had permission {permission} for user: {user.username}, organisaatio_oid: {organisaatio_oid}')
     vakajarjestaja_obj = VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid).first()
     integration_flags_set = {integraatio_permissions.get(permission) for permission in permission_list
                              if permission in integraatio_permissions}
@@ -477,4 +478,6 @@ def _create_or_update_vakajarjestaja(permission_list, organisaatio_oid, user):
             vakajarjestaja_obj.save()
     else:
         # VakaJarjestaja doesn't exist yet, let's create it.
-        create_vakajarjestaja_using_oid(organisaatio_oid, user.id, integraatio_organisaatio=tuple(integration_flags_set))
+        organisaatiotyyppi = organisaatio_client.get_organization_type(organization_data)
+        create_organization_using_oid(organisaatio_oid, organisaatiotyyppi, user.id,
+                                      integraatio_organisaatio=tuple(integration_flags_set))

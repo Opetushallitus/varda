@@ -1097,7 +1097,6 @@ class Z3_AdditionalCasUserFields(AbstractModel):
     huollettava_oid_list = ArrayField(models.CharField(max_length=50, blank=True, validators=[validators.validate_henkilo_oid]),
                                       null=True, blank=True, validators=[validators.validate_arrayfield])
     asiointikieli_koodi = models.CharField(max_length=3, blank=True)
-    approved_oph_staff = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -1122,6 +1121,7 @@ class Z4_CasKayttoOikeudet(AbstractModel):
     TOIMIJATIEDOT_TALLENTAJA = 'VARDA_TOIMIJATIEDOT_TALLENTAJA'
     RAPORTTIEN_KATSELIJA = 'VARDA_RAPORTTIEN_KATSELIJA'
     LUOVUTUSPALVELU = 'VARDA_LUOVUTUSPALVELU'
+    YLLAPITAJA = 'VARDA-YLLAPITAJA'
     KAYTTOOIKEUSROOLIT = (
         (PAAKAYTTAJA, 'Varda-Pääkäyttäjä'),
         (TALLENTAJA, 'Varda-Tallentaja'),
@@ -1139,6 +1139,7 @@ class Z4_CasKayttoOikeudet(AbstractModel):
         (TOIMIJATIEDOT_TALLENTAJA, 'Varda-Toimijatietojen tallentaja'),
         (RAPORTTIEN_KATSELIJA, 'Varda-Raporttien katselija'),
         (LUOVUTUSPALVELU, 'VARDA_LUOVUTUSPALVELU'),
+        (YLLAPITAJA, 'VARDA-ylläpitäjä')
     )
 
     user = models.ForeignKey(User, related_name='kayttooikeudet', on_delete=models.PROTECT)

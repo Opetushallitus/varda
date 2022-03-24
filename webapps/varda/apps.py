@@ -8,10 +8,11 @@ from django.db.models.signals import post_migrate, post_save, pre_delete, pre_sa
 from django.utils import timezone
 
 from varda.constants import ALIVE_BOOT_TIME_CACHE_KEY, ALIVE_SEQ_CACHE_KEY
-from varda.migrations.production.setup import (clear_old_permissions, create_henkilosto_template_groups,
-                                               create_huoltajatiedot_template_groups, create_oph_luovutuspalvelu_group,
-                                               create_paos_template_groups, create_raportit_template_groups,
-                                               create_toimijatiedot_template_groups, load_initial_data)
+from varda.migrations.production.setup import (clear_old_permissions, create_extra_template_groups,
+                                               create_henkilosto_template_groups, create_huoltajatiedot_template_groups,
+                                               create_oph_luovutuspalvelu_group, create_paos_template_groups,
+                                               create_raportit_template_groups, create_toimijatiedot_template_groups,
+                                               load_initial_data)
 from varda.migrations.testing.setup import (create_initial_koodisto_data, create_postinumero_koodisto_data,
                                             create_virhe_koodisto_data, create_yritysmuoto_koodisto_data,
                                             load_testing_data)
@@ -72,7 +73,9 @@ def run_post_migration_tasks(sender, **kwargs):
             '0037_auto_20201126_1055': [create_virhe_koodisto_data],
             '0038_auto_20201201_1237': [create_raportit_template_groups],
             '0045_auto_20210318_0953': [create_oph_luovutuspalvelu_group],
-            '0060_yritysmuoto': [create_yritysmuoto_koodisto_data, load_dev_testing_data]
+            '0060_yritysmuoto': [create_yritysmuoto_koodisto_data],
+            '0065_remove_z3_additionalcasuserfields_approved_oph_staff_and_more': [create_extra_template_groups,
+                                                                                   load_dev_testing_data]
         }
 
         for migration_plan_tuple in kwargs['plan']:

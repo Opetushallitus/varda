@@ -12,7 +12,7 @@ import time
 import zipfile
 
 from django.conf import settings
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import User
 from django.contrib.sessions.models import Session
 from django.db import connection
 from django.db.models import Max
@@ -21,10 +21,9 @@ from json.decoder import JSONDecodeError
 from pathlib import Path
 from timeit import default_timer as timer
 
-from varda.enums.kayttajatyyppi import Kayttajatyyppi
-from varda.models import (Henkilo, HistoricalHenkilo, Toimipaikka, VakaJarjestaja, YearlyReportSummary,
-                          Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog, Z6_RequestLog,
-                          Z7_AdditionalUserFields, Z8_ExcelReport, Z8_ExcelReportLog)
+from varda.models import (Henkilo, Toimipaikka, VakaJarjestaja, YearlyReportSummary, Z3_AdditionalCasUserFields,
+                          Z4_CasKayttoOikeudet, Z5_AuditLog, Z6_RequestLog, Z7_AdditionalUserFields, Z8_ExcelReport,
+                          Z8_ExcelReportLog)
 
 
 logger = logging.getLogger(__name__)
@@ -118,8 +117,7 @@ def get_test_accounts():
     empty_test_accounts = {
         'admin_users': [],
         'local_staff_users': [],
-        'oph_superusers': [],
-        'oph_staff_users': []
+        'oph_superusers': []
     }
     return empty_test_accounts
 
@@ -145,13 +143,7 @@ def add_local_staff(local_staff_users):
         user.save()
 
 
-def add_oph_staff(oph_superusers, oph_staff_users):
-    try:
-        oph_group = Group.objects.get(name='oph_staff')
-    except Group.DoesNotExist:
-        logger.warning('oph_staff group missing.')
-        return None
-
+def add_oph_staff(oph_superusers):
     for oph_superuser in oph_superusers:
         user_id = oph_superuser['user_id']
         user = User.objects.get(id=user_id)
@@ -161,23 +153,6 @@ def add_oph_staff(oph_superusers, oph_staff_users):
         user.is_active = True
         user.save()
         user.set_unusable_password()
-
-    for oph_staff_user in oph_staff_users:
-        user_id = oph_staff_user['user_id']
-        user = User.objects.get(id=user_id)
-        user.username = oph_staff_user['username']
-        user.is_staff = True
-        user.is_active = True
-        user.save()
-        user.set_unusable_password()
-        oph_group.user_set.add(user)
-        Z3_AdditionalCasUserFields.objects.create(
-            user=user,
-            kayttajatyyppi=Kayttajatyyppi.VIRKAILIJA,
-            henkilo_oid=oph_staff_user['henkilo_oid'],
-            asiointikieli_koodi='fi',
-            approved_oph_staff=True
-        )
 
 
 def finalize_data_dump():
@@ -192,7 +167,7 @@ def finalize_data_dump():
     logger.info('Removing unnecessary data.')
 
     Session.objects.all().delete()
-    HistoricalHenkilo.objects.all().delete()
+    Henkilo.history.all().delete()
     Z3_AdditionalCasUserFields.objects.all().delete()
     Z4_CasKayttoOikeudet.objects.all().delete()
     Z5_AuditLog.objects.all().delete()
@@ -217,7 +192,7 @@ def finalize_data_dump():
     test_accounts = get_test_accounts()
     add_admin_users(test_accounts['admin_users'])
     add_local_staff(test_accounts['local_staff_users'])
-    add_oph_staff(test_accounts['oph_superusers'], test_accounts['oph_staff_users'])
+    add_oph_staff(test_accounts['oph_superusers'])
 
 
 def fetch_generated_data_and_verify_checksum():

@@ -292,33 +292,32 @@ def update_all_vakajarjestaja_permissiongroups():
     Needs to be run after permission template changes.
     :return: None
     """
-    from varda.clients.organisaatio_client import get_multiple_organisaatio
+    from varda.clients.organisaatio_client import get_multiple_organisaatio, get_organization_type
+    from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
     from varda.models import Toimipaikka, VakaJarjestaja
     from varda.permission_groups import (assign_permissions_to_toimipaikka_obj,
                                          assign_permissions_to_vakajarjestaja_obj,
                                          create_permission_groups_for_organisaatio)
 
     logger.info('Starting setting vakajarjestaja permissions')
-    all_vakajarjestaja_oids = VakaJarjestaja.objects.exclude(organisaatio_oid__exact='').values_list('organisaatio_oid', flat=True)
+    all_vakajarjestaja_oids = (VakaJarjestaja.objects.exclude(organisaatio_oid__exact='')
+                               .values_list('organisaatio_oid', flat=True))
     vakajarjestaja_oid_chunks = list_to_chunks(all_vakajarjestaja_oids, 100)
     for vakajarjestaja_oid_chunk in vakajarjestaja_oid_chunks:
-        vakajarjestaja_data_list = {organisaatio['oid']: organisaatio for organisaatio in get_multiple_organisaatio(vakajarjestaja_oid_chunk)}
+        vakajarjestaja_data_list = {organisaatio['oid']: organisaatio
+                                    for organisaatio in get_multiple_organisaatio(vakajarjestaja_oid_chunk)}
         for vakajarjestaja_oid in vakajarjestaja_oid_chunk:
-            create_permission_groups_for_organisaatio(vakajarjestaja_oid,
-                                                      vakajarjestaja=True,
-                                                      organisaatio_data=vakajarjestaja_data_list.get(vakajarjestaja_oid))
+            organisaatiotyyppi = get_organization_type(vakajarjestaja_data_list.get(vakajarjestaja_oid))
+            create_permission_groups_for_organisaatio(vakajarjestaja_oid, organisaatiotyyppi)
             assign_permissions_to_vakajarjestaja_obj(vakajarjestaja_oid)
     logger.info('Finished setting vakajarjestaja permissions.')
     logger.info('Setting toimipaikka permissions.')
-    toimipaikka_oid_tuples = Toimipaikka.objects.exclude(organisaatio_oid__exact='').values_list('organisaatio_oid', 'vakajarjestaja__organisaatio_oid')
+    toimipaikka_oid_tuples = (Toimipaikka.objects.exclude(organisaatio_oid__exact='')
+                              .values_list('organisaatio_oid', 'vakajarjestaja__organisaatio_oid'))
     toimipaikka_oid_chunks = list_to_chunks(toimipaikka_oid_tuples, 100)
     for oid_tuple_chunk in toimipaikka_oid_chunks:
-        toimipaikka_oid_list = [oid_tuple[0] for oid_tuple in oid_tuple_chunk]
-        toimipaikka_data_dict = {organisaatio['oid']: organisaatio for organisaatio in get_multiple_organisaatio(toimipaikka_oid_list)}
         for toimipaikka_oid, vakajarjestaja_oid in oid_tuple_chunk:
-            create_permission_groups_for_organisaatio(toimipaikka_oid,
-                                                      vakajarjestaja=False,
-                                                      organisaatio_data=toimipaikka_data_dict.get(toimipaikka_oid))
+            create_permission_groups_for_organisaatio(toimipaikka_oid, Organisaatiotyyppi.TOIMIPAIKKA.value)
             assign_permissions_to_toimipaikka_obj(toimipaikka_oid, vakajarjestaja_oid)
     logger.info('Finished setting toimipaikka permissions')
 

@@ -5,6 +5,7 @@ import requests
 from django.conf import settings
 
 from varda.enums.koodistot import Koodistot
+from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
 from varda.models import Z2_Code
 from varda.oph_yhteiskayttopalvelu_autentikaatio import get_contenttype_header
 from varda.misc import get_json_from_external_service, post_json_to_external_service, put_json_to_external_service
@@ -40,8 +41,8 @@ def _parse_organisaatio_data(response, organisaatio_oid):
         kieli = 'fi'  # current default value
     try:
         nimi = response['nimi'][kieli]
-        kayntios = response['kayntiosoite']
-        postios = response['postiosoite']
+        kayntios = response.get('kayntiosoite', {})
+        postios = response.get('postiosoite', {})
     except (KeyError, ValueError) as e:
         logger.error('Could not parse organisaatio data for vakajarjestaja {} with cause {}'
                      .format(organisaatio_oid, e))
@@ -55,13 +56,13 @@ def _parse_organisaatio_data(response, organisaatio_oid):
             'nimi': nimi,
             'ytunnus': response.get('ytunnus', ''),
             'organisaatio_oid': response['oid'],
-            'kunta_koodi': response['kotipaikkaUri'].split('_')[1],
-            'kayntiosoite': kayntios['osoite'],
-            'kayntiosoite_postinumero': kayntios['postinumeroUri'].split('_')[1],
-            'kayntiosoite_postitoimipaikka': kayntios['postitoimipaikka'],
-            'postiosoite': postios['osoite'],
-            'postinumero': postios['postinumeroUri'].split('_')[1],
-            'postitoimipaikka': postios['postitoimipaikka'],
+            'kunta_koodi': response.get('kotipaikkaUri', '_').split('_')[1],
+            'kayntiosoite': kayntios.get('osoite', ''),
+            'kayntiosoite_postinumero': kayntios.get('postinumeroUri', '_').split('_')[1],
+            'kayntiosoite_postitoimipaikka': kayntios.get('postitoimipaikka', ''),
+            'postiosoite': postios.get('osoite', ''),
+            'postinumero': postios.get('postinumeroUri', '_').split('_')[1],
+            'postitoimipaikka': postios.get('postitoimipaikka', ''),
             'ytjkieli': kieli,
             'yritysmuoto': yritysmuoto_code.code_value if yritysmuoto_code else '0',
             'alkamis_pvm': response['alkuPvm'],
@@ -98,62 +99,50 @@ def get_parent_oid(child_oid):
         return organization_data['parentOid']
 
 
-def is_not_valid_vaka_organization_in_organisaatiopalvelu(organisaatio_oid, must_be_vakajarjestaja=False):
-    """
-    We need to exclude the organizations which don't have a label
-    'Varhaiskasvatuksen jarjestaja',  i.e. 'organisaatiotyyppi_07' or
-    'Varhaiskasvatuksen toimipaikka', i.e. 'organisaatiotyyppi_08'
-    Ref: https://github.com/Opetushallitus/organisaatio/blob/master/organisaatio-service/src/main/resources/db/migration/V084__organisaatio_tyypit.sql
-
-    If you need to check explicitly that the organization is not 'Varhaiskasvatuksen jarjestaja', set the must_be_vakajarjestaja to True.
-    """
-    if organisaatio_oid == settings.OPETUSHALLITUS_ORGANISAATIO_OID:
-        return False
-    organisaatio_url = ORGANISAATIOPALVELU_API_V4 + 'hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oid=' + organisaatio_oid
-    reply_msg = get_json_from_external_service(SERVICE_NAME, organisaatio_url, auth=True)
-    if not reply_msg['is_ok']:
-        return True
-
-    reply_json = reply_msg['json_msg']
-
-    if 'numHits' not in reply_json or ('numHits' in reply_json and reply_json['numHits'] != 1):
-        if organisaatio_oid != settings.OPETUSHALLITUS_ORGANISAATIO_OID:
-            logger.warning('No organization hit for: /' + SERVICE_NAME + organisaatio_url)
-        return True
-
-    try:
-        organization_data = reply_json['organisaatiot'][0]
-    except IndexError:
-        logger.error('Problem with organization: /' + SERVICE_NAME + organisaatio_url)
-        return None
-    if 'organisaatiotyypit' not in organization_data or 'status' not in organization_data:
-        logger.error('Organisaatio missing required data: /' + SERVICE_NAME + organisaatio_url)
-        return True
-    return _is_not_valid_vaka_organization(organization_data, must_be_vakajarjestaja)
-
-
-def _is_not_valid_vaka_organization(organization_data, must_be_vakajarjestaja=False):
+def _is_valid_vaka_organization(organization_data, must_be_vakajarjestaja=False):
     if not organization_data:
         logger.error('Organisaatio data not found')
-        return True
+        return False
     if 'organisaatiotyypit' not in organization_data and 'tyypit' not in organization_data or 'status' not in organization_data:
         logger.error('Organisaatio missing required data: {}'.format(organization_data['oid']))
-        return True
-    if not is_of_type(organization_data, 'organisaatiotyyppi_07', 'organisaatiotyyppi_08'):
-        return True
-    if must_be_vakajarjestaja and not is_of_type(organization_data, 'organisaatiotyyppi_07'):
-        return True
+        return False
+    if not is_of_type(organization_data, Organisaatiotyyppi.VAKAJARJESTAJA.value, Organisaatiotyyppi.TOIMIPAIKKA.value):
+        return False
+    if must_be_vakajarjestaja and not is_of_type(organization_data, Organisaatiotyyppi.VAKAJARJESTAJA.value):
+        return False
 
     # Is valid organization
-    return False
+    return True
 
 
 def is_valid_vaka_organization(organization_data, must_be_vakajarjestaja=False):
-    return not _is_not_valid_vaka_organization(organization_data, must_be_vakajarjestaja)
+    return _is_valid_vaka_organization(organization_data, must_be_vakajarjestaja)
+
+
+def is_valid_organization(organization_data):
+    valid_vaka_organization = is_valid_vaka_organization(organization_data)
+    # Valid organization can also be of type MUU (organisaatiotyyppi_05)
+    return valid_vaka_organization or is_of_type(organization_data, Organisaatiotyyppi.MUU.value)
+
+
+def get_organization_types(organization_data):
+    return organization_data.get('tyypit', []) + organization_data.get('organisaatiotyypit', [])
+
+
+def get_organization_type(organization_data):
+    organization_types = get_organization_types(organization_data)
+    if Organisaatiotyyppi.VAKAJARJESTAJA.value in organization_types:
+        return Organisaatiotyyppi.VAKAJARJESTAJA.value
+    elif Organisaatiotyyppi.TOIMIPAIKKA.value in organization_types:
+        return Organisaatiotyyppi.TOIMIPAIKKA.value
+    elif Organisaatiotyyppi.MUU.value in organization_types:
+        return Organisaatiotyyppi.MUU.value
+    else:
+        return None
 
 
 def is_of_type(organisation_data, *args):
-    organisation_types = organisation_data.get('tyypit', []) + organisation_data.get('organisaatiotyypit', [])
+    organisation_types = get_organization_types(organisation_data)
     return any(org_type in args for org_type in organisation_types)
 
 
@@ -179,7 +168,7 @@ def organization_is_vakajarjestaja(organisaatio_oid):
         logger.error('Organisaatio missing required data: /' + SERVICE_NAME + organisaatio_url)
         return True
 
-    return is_of_type(organization_data, 'organisaatiotyyppi_07')
+    return is_of_type(organization_data, Organisaatiotyyppi.VAKAJARJESTAJA.value)
 
 
 def is_vakajarjestaja(organisation):
@@ -189,7 +178,7 @@ def is_vakajarjestaja(organisation):
     :param organisation: Organisation data
     :return: Is organisation vakajarjestaja
     """
-    return is_of_type(organisation, 'organisaatiotyyppi_07')
+    return is_of_type(organisation, Organisaatiotyyppi.VAKAJARJESTAJA.value)
 
 
 def check_if_toimipaikka_exists_by_name(toimipaikka_name, parent_oid):

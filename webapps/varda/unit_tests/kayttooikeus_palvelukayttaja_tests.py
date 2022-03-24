@@ -446,12 +446,6 @@ def mock_cas_palvelukayttaja_responses(organisaatiot, username, henkilo_oid='1.2
                   f'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/{henkilo_oid}',
                   json={},
                   status=status.HTTP_200_OK)
-    for organisaatio in organisaatiot:
-        organisaatio_oid = organisaatio['organisaatioOid']
-        responses.add(responses.GET,
-                      f'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oid={organisaatio_oid}',
-                      json={'numHits': 1, 'organisaatiot': _get_parikkala_organisaatio_json(organisaatio_oid)},
-                      status=status.HTTP_200_OK)
 
 
 def _get_kayttooikeudet_json(organisaatiot, username, henkilo_oid):
@@ -462,27 +456,3 @@ def _get_kayttooikeudet_json(organisaatiot, username, henkilo_oid):
         'organisaatiot': organisaatiot,
     }
     return kayttooikeus_json
-
-
-def _get_parikkala_organisaatio_json(organisaatio_oid):
-    organisaatio_json = [
-        {
-            'oid': organisaatio_oid,
-            'alkuPvm': 1093467600000,
-            'parentOid': '1.2.246.562.10.00000000001',
-            'parentOidPath': '1.2.246.562.10.27580498759/1.2.246.562.10.00000000001',
-            'ytunnus': '1913642-6',
-            'toimipistekoodi': '',
-            'match': True,
-            'nimi': {
-                'fi': 'PARIKKALAN KUNTA'
-            },
-            'kieletUris': ['oppilaitoksenopetuskieli_1#1'],
-            'kotipaikkaUri': 'kunta_580',
-            'children': [],
-            'aliOrganisaatioMaara': 290,
-            'organisaatiotyypit': ['organisaatiotyyppi_01', 'organisaatiotyyppi_07'],
-            'status': 'AKTIIVINEN'
-        }
-    ]
-    return organisaatio_json
