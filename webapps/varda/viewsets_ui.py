@@ -27,7 +27,7 @@ from varda.custom_swagger import ActionPaginationSwaggerAutoSchema
 from varda.filters import CustomParametersFilterBackend, CustomParameter
 from varda.misc_queries import get_paos_toimipaikat
 from varda.misc_viewsets import ExtraKwargsFilterBackend, parse_query_parameter
-from varda.models import (Toimipaikka, VakaJarjestaja, PaosToiminta, PaosOikeus, Lapsi, Henkilo,
+from varda.models import (Toimipaikka, Organisaatio, PaosToiminta, PaosOikeus, Lapsi, Henkilo,
                           Tyontekija, Z4_CasKayttoOikeudet)
 from varda.pagination import ChangeablePageSizePagination, ChangeablePageSizePaginationLarge
 from varda.permissions import (CustomModelPermissions, get_taydennyskoulutus_tyontekija_group_organisaatio_oids,
@@ -36,8 +36,8 @@ from varda.permissions import (CustomModelPermissions, get_taydennyskoulutus_tyo
                                user_permission_groups_in_organization,
                                get_tyontekija_filters_for_taydennyskoulutus_groups,
                                user_has_vakajarjestaja_level_permission, is_oph_staff, parse_toimipaikka_id_list)
-from varda.serializers import PaosToimipaikkaSerializer, PaosVakaJarjestajaSerializer
-from varda.serializers_ui import (VakaJarjestajaUiSerializer, ToimipaikkaUiSerializer, UiLapsiSerializer,
+from varda.serializers import PaosToimipaikkaSerializer, PaosOrganisaatioSerializer
+from varda.serializers_ui import (OrganisaatioUiSerializer, ToimipaikkaUiSerializer, UiLapsiSerializer,
                                   TyontekijaHenkiloUiSerializer, LapsihakuHenkiloUiSerializer,
                                   UiTyontekijaSerializer)
 
@@ -45,8 +45,8 @@ from varda.serializers_ui import (VakaJarjestajaUiSerializer, ToimipaikkaUiSeria
 def parse_vakajarjestaja(user, vakajarjestaja_id):
     if not vakajarjestaja_id.isdigit():
         raise Http404
-    vakajarjestaja_qs = VakaJarjestaja.objects.filter(pk=vakajarjestaja_id)
-    if not vakajarjestaja_qs.exists() or not user.has_perm('view_vakajarjestaja', vakajarjestaja_qs.first()):
+    vakajarjestaja_qs = Organisaatio.objects.filter(pk=vakajarjestaja_id)
+    if not vakajarjestaja_qs.exists() or not user.has_perm('view_organisaatio', vakajarjestaja_qs.first()):
         raise Http404
 
     return vakajarjestaja_qs.first()
@@ -58,18 +58,18 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
     list:
         Nouda vakajarjestajien nimet
     """
-    serializer_class = VakaJarjestajaUiSerializer
-    queryset = VakaJarjestaja.objects.none()
+    serializer_class = OrganisaatioUiSerializer
+    queryset = Organisaatio.objects.none()
 
     def list(self, request, *args, **kwargs):
         user = request.user
         if user.is_superuser:
-            queryset = VakaJarjestaja.objects.all().order_by('nimi')
+            queryset = Organisaatio.objects.all().order_by('nimi')
         else:
-            model_name = 'vakajarjestaja'
+            model_name = 'organisaatio'
             content_type = ContentType.objects.get(model=model_name)
             vakajarjestaja_ids = get_object_ids_user_has_permissions(user, model_name, content_type)
-            queryset = VakaJarjestaja.objects.filter(id__in=vakajarjestaja_ids).order_by('nimi')
+            queryset = Organisaatio.objects.filter(id__in=vakajarjestaja_ids).order_by('nimi')
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -204,7 +204,7 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
         context = {}
         user = self.request.user
         vakajarjestaja_pk = self.kwargs['pk']
-        vakajarjestaja_oid = VakaJarjestaja.objects.filter(pk=vakajarjestaja_pk).values_list('organisaatio_oid', flat=True).first()
+        vakajarjestaja_oid = Organisaatio.objects.filter(pk=vakajarjestaja_pk).values_list('organisaatio_oid', flat=True).first()
         group_name_prefixes = ['VARDA-TALLENTAJA_', 'VARDA-KATSELIJA_', 'HUOLTAJATIETO_']
         user_organisaatio_oids = [] if user.is_superuser else get_organisaatio_oids_from_groups(user, *group_name_prefixes)
         toimipaikka_oids = None
@@ -274,13 +274,13 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
             'request': self.request,
             'format': self.format_kwarg,
             'view': self,
-            'vakajarjestaja_pk': self.kwargs.get('vakajarjestaja_pk', None)
+            'organisaatio_pk': self.kwargs.get('organisaatio_pk', None)
         }
 
     def get_vakajarjestaja(self, request, vakajarjestaja_pk=None):
-        vakajarjestaja = get_object_or_404(VakaJarjestaja.objects.all(), pk=vakajarjestaja_pk)
+        vakajarjestaja = get_object_or_404(Organisaatio.objects.all(), pk=vakajarjestaja_pk)
         user = request.user
-        if user.has_perm('view_vakajarjestaja', vakajarjestaja):
+        if user.has_perm('view_organisaatio', vakajarjestaja):
             return vakajarjestaja
         else:
             raise Http404
@@ -294,7 +294,7 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
             raise Http404
 
     def list(self, request, *args, **kwargs):
-        self.vakajarjestaja_id = kwargs.get('vakajarjestaja_pk', None)
+        self.vakajarjestaja_id = kwargs.get('organisaatio_pk', None)
         if not self.vakajarjestaja_id.isdigit():
             raise Http404
 
@@ -306,15 +306,15 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
     @auditlog
     @action(methods=['get'], detail=True, url_path='paos-jarjestajat', url_name='paos_jarjestajat')
     @swagger_auto_schema(auto_schema=ActionPaginationSwaggerAutoSchema,
-                         responses={status.HTTP_200_OK: VakaJarjestajaUiSerializer(many=True)})
-    def paos_jarjestajat(self, request, vakajarjestaja_pk=None, pk=None):
+                         responses={status.HTTP_200_OK: OrganisaatioUiSerializer(many=True)})
+    def paos_jarjestajat(self, request, organisaatio_pk=None, pk=None):
         """
         Nouda vakajärjestäjän paos-järjestäjät annettuun toimipaikkaan
 
         Hakee ne paos toimintaa järjestävät kunnat joiden puolesta annettu toimija hoitaa tallennustehtäviä annettuun
         paos-toimipaikkaan.
         """
-        vakajarjestaja = self.get_vakajarjestaja(request, vakajarjestaja_pk)
+        vakajarjestaja = self.get_vakajarjestaja(request, organisaatio_pk)
         toimipaikka = self.get_toimipaikka(request, pk)
         kunta_qs = PaosToiminta.objects.filter(paos_toimipaikka=toimipaikka,
                                                voimassa_kytkin=True).values_list('oma_organisaatio_id', flat=True)
@@ -323,9 +323,9 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
                                                       voimassa_kytkin=True)
                             .values_list('jarjestaja_kunta_organisaatio', flat=True)
                             )
-        jarjestaja_qs = VakaJarjestaja.objects.filter(id__in=jarjestaja_id_qs).order_by('id')
+        jarjestaja_qs = Organisaatio.objects.filter(id__in=jarjestaja_id_qs).order_by('id')
         page = self.paginate_queryset(jarjestaja_qs)
-        serializer = VakaJarjestajaUiSerializer(page, many=True, context={'request': request})
+        serializer = OrganisaatioUiSerializer(page, many=True, context={'request': request})
         return self.get_paginated_response(serializer.data)
 
 
@@ -341,13 +341,13 @@ class NestedAllToimipaikkaViewSet(GenericViewSet, ListModelMixin):
     search_fields = ['nimi', 'nimi_sv']
 
     def list(self, request, *args, **kwargs):
-        vakajarjestaja_id = self.kwargs.get('vakajarjestaja_pk', None)
-        if not vakajarjestaja_id or not vakajarjestaja_id.isdigit() or not get_object_or_404(VakaJarjestaja, pk=vakajarjestaja_id):
+        vakajarjestaja_id = self.kwargs.get('organisaatio_pk', None)
+        if not vakajarjestaja_id or not vakajarjestaja_id.isdigit() or not get_object_or_404(Organisaatio, pk=vakajarjestaja_id):
             raise Http404
         return super(NestedAllToimipaikkaViewSet, self).list(request, *args, **kwargs)
 
     def get_queryset(self, **kwargs):
-        vakajarjestaja_id = self.kwargs.get('vakajarjestaja_pk', None)
+        vakajarjestaja_id = self.kwargs.get('organisaatio_pk', None)
         if not vakajarjestaja_id or not vakajarjestaja_id.isdigit():
             vakajarjestaja_id = None
         # Return only paos toimipaikat
@@ -365,9 +365,9 @@ class AllVakajarjestajaViewSet(GenericViewSet, ListModelMixin):
     *  tyyppi = 'yksityinen' tai 'kunnallinen'
     *  search = str
     """
-    queryset = VakaJarjestaja.objects.all().order_by('id')
+    queryset = Organisaatio.objects.all().order_by('id')
     permission_classes = (IsVardaPaakayttaja, )
-    serializer_class = PaosVakaJarjestajaSerializer
+    serializer_class = PaosOrganisaatioSerializer
     filter_backends = (DjangoFilterBackend, )
     filterset_class = filters.UiAllVakajarjestajaFilter
 
@@ -527,7 +527,7 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
     def list(self, request, *args, **kwargs):
         user = request.user
 
-        vakajarjestaja_obj = parse_vakajarjestaja(user, kwargs['vakajarjestaja_pk'])
+        vakajarjestaja_obj = parse_vakajarjestaja(user, kwargs['organisaatio_pk'])
         self.vakajarjestaja_id = vakajarjestaja_obj.id
         self.vakajarjestaja_oid = vakajarjestaja_obj.organisaatio_oid
 
@@ -674,7 +674,7 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
     def list(self, request, *args, **kwargs):
         user = self.request.user
 
-        vakajarjestaja_obj = parse_vakajarjestaja(user, kwargs['vakajarjestaja_pk'])
+        vakajarjestaja_obj = parse_vakajarjestaja(user, kwargs['organisaatio_pk'])
         self.vakajarjestaja_id = vakajarjestaja_obj.id
         self.vakajarjestaja_oid = vakajarjestaja_obj.organisaatio_oid
 

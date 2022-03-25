@@ -10,7 +10,7 @@ from rest_framework import status
 from varda.unit_tests.test_utils import (assert_status_code, SetUpTestClient, assert_validation_error,
                                          post_henkilo_to_get_permissions, mock_date_decorator_factory,
                                          date_side_effect, timedelta_side_effect)
-from varda.models import (VakaJarjestaja, Henkilo, Tyontekija, Palvelussuhde, Tyoskentelypaikka, Toimipaikka,
+from varda.models import (Organisaatio, Henkilo, Tyontekija, Palvelussuhde, Tyoskentelypaikka, Toimipaikka,
                           TilapainenHenkilosto, Taydennyskoulutus, TaydennyskoulutusTyontekija, PidempiPoissaolo,
                           Tutkinto, Z4_CasKayttoOikeudet)
 from varda.viewsets_henkilosto import TyontekijaViewSet
@@ -42,7 +42,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         tyontekija_oid = '1.2.246.562.24.2431884920044'
         tyontekija_obj = Tyontekija.objects.filter(henkilo__henkilo_oid=tyontekija_oid).first()
         tyontekija_henkilo_id = tyontekija_obj.henkilo.id
-        vakajarjestaja_obj = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid)
+        vakajarjestaja_obj = Organisaatio.objects.get(organisaatio_oid=vakajarjestaja_oid)
         vakajarjestaja_id = vakajarjestaja_obj.id
         expected_count = Tyontekija.objects.filter(vakajarjestaja__organisaatio_oid=vakajarjestaja_oid).count()
 
@@ -449,7 +449,7 @@ class VardaHenkilostoViewSetTests(TestCase):
     def test_api_push_tilapainen_henkilosto_delete(self):
         # No user has permissions to this
         admin_user = User.objects.get(username='credadmin')
-        vakajarjestaja_tester = VakaJarjestaja.objects.filter(nimi='Tester organisaatio')[0]
+        vakajarjestaja_tester = Organisaatio.objects.filter(nimi='Tester organisaatio')[0]
         tilapainen = TilapainenHenkilosto.objects.create(vakajarjestaja=vakajarjestaja_tester,
                                                          kuukausi='2019-09-01',
                                                          tuntimaara=10.0,
@@ -720,7 +720,7 @@ class VardaHenkilostoViewSetTests(TestCase):
     @mock_date_decorator_factory(datetime_path, '2020-12-01')
     def test_api_tilapainen_henkilosto_filter(self):
         vakajarjestaja_oid = '1.2.246.562.10.34683023489'
-        vakajarjestaja_id = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid).id
+        vakajarjestaja_id = Organisaatio.objects.get(organisaatio_oid=vakajarjestaja_oid).id
 
         tilapainen_henkilosto = {
             'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
@@ -2893,7 +2893,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         self.assertEqual(len(tyontekija_filtered_content.get('results')), correct_jarjestaja_tyontekija_count)
 
     def test_taydennyskoulutus_toimipaikka_permissions(self):
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.93957375488')
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.93957375488')
         tyontekija = Tyontekija.objects.filter(vakajarjestaja=vakajarjestaja).first()
 
         client_toimipaikka = SetUpTestClient('taydennyskoulutus_toimipaikka_tallentaja').client()
@@ -3104,8 +3104,8 @@ class VardaHenkilostoViewSetTests(TestCase):
     def test_tyontekija_vakajarjestaja_permission_group(self):
         # If user has vaka permissions in one organization and henkilosto permissions in another organization,
         # user should not be able to create a Tyontekija in the organization with only vaka permissions
-        vakajarjestaja_vaka = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
-        vakajarjestaja_henkilosto = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.93957375488')
+        vakajarjestaja_vaka = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        vakajarjestaja_henkilosto = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.93957375488')
         user = User.objects.get(username='tester2')
 
         # Give user tyontekija permissions in another organization
@@ -3149,7 +3149,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         palvelussuhde = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde5')
         user = User.objects.get(username='tyontekija_toimipaikka_tallentaja')
 
-        # Give user VakaJarjestaja level vaka permissions in same organization
+        # Give user Organisaatio level vaka permissions in same organization
         permission_group = Group.objects.get(name='VARDA-TALLENTAJA_1.2.246.562.10.93957375488')
         user.groups.add(permission_group)
 

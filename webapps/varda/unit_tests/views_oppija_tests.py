@@ -3,7 +3,7 @@ import json
 from django.test import TestCase
 from rest_framework import status
 
-from varda.models import Z3_AdditionalCasUserFields, Z5_AuditLog, Henkilo, VakaJarjestaja
+from varda.models import Z3_AdditionalCasUserFields, Z5_AuditLog, Henkilo, Organisaatio
 from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, assert_validation_error
 from django.contrib.auth.models import User
 from varda.custom_auth import _oppija_post_login_handler
@@ -225,7 +225,7 @@ class VardaOppijaViewsTests(TestCase):
         vakajarjestaja_oid = '1.2.246.562.10.93957375484'
         client_suomifi_tester = self._create_oppija_cas_user_and_assert_huoltaja_oid(huoltaja_oid, lapsi_oid)
         # add end date
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid)
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid=vakajarjestaja_oid)
         vakajarjestaja_nimi = vakajarjestaja.nimi
         vakajarjestaja.paattymis_pvm = '2019-01-01'
         vakajarjestaja.save()

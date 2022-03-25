@@ -52,7 +52,7 @@ class ErrorMessages(enum.Enum):
     DY009 = get_error_dict('DY009', 'Ensure that there are no more than {} digits before the decimal point.')
     DY010 = get_error_dict('DY010', 'Request could not be parsed: {}')
 
-    # VakaJarjestaja errors, prefix: VJ
+    # Organisaatio errors, prefix: VJ
     VJ001 = get_error_dict('VJ001', 'Cannot delete Vakajarjestaja. There are objects referencing it that need to be deleted first.')
     VJ002 = get_error_dict('VJ002', 'yritysmuoto is not one of the permitted values.')
     VJ003 = get_error_dict('VJ003', 'y_tunnus length is incorrect.')
@@ -87,9 +87,9 @@ class ErrorMessages(enum.Enum):
     TP021 = get_error_dict('TP021', 'There are Varhaiskasvatussuhde objects linked to this Toimipaikka which are active longer than Toimipaikka itself.')
     TP022 = get_error_dict('TP022', 'There are Tyoskentelypaikka objects linked to this Toimipaikka which are active longer than Toimipaikka itself.')
     TP023 = get_error_dict('TP023', 'Toimipaikka is active but there are no Tyoskentelypaikka objects linked to it.')
-    TP024 = get_error_dict('TP024', 'Toimipaikka must have paattymis_pvm because VakaJarjestaja is not active.')
-    TP025 = get_error_dict('TP025', 'alkamis_pvm must be before or equal to VakaJarjestaja paattymis_pvm.')
-    TP026 = get_error_dict('TP026', 'paattymis_pvm must be before or equal to VakaJarjestaja paattymis_pvm.')
+    TP024 = get_error_dict('TP024', 'Toimipaikka must have paattymis_pvm because Organisaatio is not active.')
+    TP025 = get_error_dict('TP025', 'alkamis_pvm must be before or equal to Organisaatio paattymis_pvm.')
+    TP026 = get_error_dict('TP026', 'paattymis_pvm must be before or equal to Organisaatio paattymis_pvm.')
     TP027 = get_error_dict('TP027', 'kasvatusopillinen_jarjestelma_koodi is not active during the time period.')
 
     # ToiminnallinenPainotus errors, prefix: TO
@@ -136,7 +136,7 @@ class ErrorMessages(enum.Enum):
     LA008 = get_error_dict('LA008', 'oma_organisaatio cannot be same as paos_organisaatio.')
     LA009 = get_error_dict('LA009', 'Combination of henkilo and vakatoimija fields should be unique.')
     LA010 = get_error_dict('LA010', 'Combination of henkilo, oma_organisaatio and paos_organisaatio fields should be unique.')
-    LA011 = get_error_dict('LA011', 'Lapsi already has Varhaiskasvatussuhde objects linked to different VakaJarjestaja.')
+    LA011 = get_error_dict('LA011', 'Lapsi already has Varhaiskasvatussuhde objects linked to different Organisaatio.')
     LA012 = get_error_dict('LA012', 'This Henkilo is already referenced by Tyontekija objects.')
     LA013 = get_error_dict('LA013', 'This Henkilo is already referenced by Huoltaja object.')
 
@@ -350,7 +350,7 @@ class ErrorMessages(enum.Enum):
     MI016 = get_error_dict('MI016', 'A server error occurred. Team is investigating this.')
     MI017 = get_error_dict('MI017', 'Query parameters are invalid.')
     MI018 = get_error_dict('MI018', 'lahdejarjestelma field is required if tunniste field is not empty.')
-    MI019 = get_error_dict('MI019', 'Given Toimipaikka does not belong to the correct VakaJarjestaja.')
+    MI019 = get_error_dict('MI019', 'Given Toimipaikka does not belong to the correct Organisaatio.')
 
     # Nginx errors
     NG001 = get_error_dict('NG001', 'Session is required.')

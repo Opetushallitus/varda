@@ -60,7 +60,7 @@ router_ui = routers.DefaultRouter()
 router_ui.register(r'vakajarjestajat', viewsets_ui.UiVakajarjestajatViewSet, basename='hae-vakajarjestajat')
 
 router = routers.DefaultRouter()
-router.register(r'vakajarjestajat', viewsets.VakaJarjestajaViewSet)
+router.register(r'vakajarjestajat', viewsets.OrganisaatioViewSet)
 router.register(r'toimipaikat', viewsets.ToimipaikkaViewSet)
 router.register(r'toiminnallisetpainotukset', viewsets.ToiminnallinenPainotusViewSet)
 router.register(r'kielipainotukset', viewsets.KieliPainotusViewSet)
@@ -75,7 +75,7 @@ router.register(r'paos-oikeudet', viewsets.PaosOikeusViewSet)
 
 # Nested routers are needed to support e.g. /api/v1/vakajarjestajat/33/toimipaikat/
 
-nested_vakajarjestaja_router_ui = nested_routers.NestedSimpleRouter(router, r'vakajarjestajat', lookup='vakajarjestaja')
+nested_vakajarjestaja_router_ui = nested_routers.NestedSimpleRouter(router, r'vakajarjestajat', lookup='organisaatio')
 # /api/ui/vakajarjestajat/{id}/toimipaikat/
 nested_vakajarjestaja_router_ui.register(r'toimipaikat', viewsets_ui.NestedToimipaikkaViewSet)
 # /api/ui/vakajarjestajat/{id}/lapset/
@@ -83,7 +83,7 @@ nested_vakajarjestaja_router_ui.register(r'lapset', viewsets_ui.UiNestedLapsiVie
 # /api/ui/vakajarjestajat/{id}/tyontekijat/
 nested_vakajarjestaja_router_ui.register(r'tyontekijat', viewsets_ui.UiNestedTyontekijaViewSet)
 # /api/ui/vakajarjestajat/<id>/all-toimipaikat/
-all_toimipaikat_router = nested_routers.NestedSimpleRouter(router, r'vakajarjestajat', lookup='vakajarjestaja')
+all_toimipaikat_router = nested_routers.NestedSimpleRouter(router, r'vakajarjestajat', lookup='organisaatio')
 all_toimipaikat_router.register(r'all-toimipaikat', viewsets_ui.NestedAllToimipaikkaViewSet)
 # /api/ui/toimipaikat/
 ui_toimipaikat_router = routers.SimpleRouter()
@@ -93,10 +93,10 @@ ui_toimipaikat_router.register(r'toimipaikat', viewsets.ToimipaikkaViewSet)
 vakajarjestaja_router = routers.SimpleRouter()
 vakajarjestaja_router.register(r'all-vakajarjestajat', viewsets_ui.AllVakajarjestajaViewSet, basename='all-vakajarjestajat')
 # /api/v1/vakajarjestajat/{id}/toimipaikat/
-nested_vakajarjestaja_router = nested_routers.NestedSimpleRouter(router, r'vakajarjestajat', lookup='vakajarjestaja')
+nested_vakajarjestaja_router = nested_routers.NestedSimpleRouter(router, r'vakajarjestajat', lookup='organisaatio')
 nested_vakajarjestaja_router.register(r'toimipaikat', viewsets.NestedToimipaikkaViewSet)
 # /api/v1/vakajarjestajat/{id}/yhteenveto/
-nested_vakajarjestaja_router.register(r'yhteenveto', viewsets.NestedVakajarjestajaYhteenvetoViewSet)
+nested_vakajarjestaja_router.register(r'yhteenveto', viewsets.NestedOrganisaatioYhteenvetoViewSet)
 # /api/v1/vakajarjestajat/{id}/henkilohaku/
 nested_vakajarjestaja_router.register('henkilohaku/lapset', viewsets.HenkilohakuLapset)
 # /api/v1/vakajarjestajat/{id}/error-report-lapset/

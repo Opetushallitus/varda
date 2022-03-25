@@ -39,8 +39,8 @@ from varda.filters import (CustomParameter, CustomParametersFilterBackend, Excel
 from varda.misc import encrypt_string
 from varda.misc_queries import get_related_object_changed_id_qs
 from varda.misc_viewsets import ViewSetValidator
-from varda.models import (KieliPainotus, Lapsi, Maksutieto, Palvelussuhde, PaosOikeus, PaosToiminta,
-                          ToiminnallinenPainotus, Toimipaikka, Tyontekija, Tyoskentelypaikka, VakaJarjestaja,
+from varda.models import (KieliPainotus, Lapsi, Maksutieto, Organisaatio, Palvelussuhde, PaosOikeus, PaosToiminta,
+                          ToiminnallinenPainotus, Toimipaikka, Tyontekija, Tyoskentelypaikka,
                           Varhaiskasvatuspaatos, Varhaiskasvatussuhde, YearlyReportSummary, Z2_Code,
                           Z2_Koodisto, Z4_CasKayttoOikeudet, Z6_LastRequest, Z6_RequestLog, Z6_RequestSummary,
                           Z8_ExcelReport)
@@ -410,11 +410,11 @@ class TiedonsiirtotilastoViewSet(GenericViewSet, ListModelMixin):
 
     def get_vakatoimijat(self, kunnat_filter, voimassa_filter):
         if kunnat_filter is None:
-            return VakaJarjestaja.objects.filter(voimassa_filter)
+            return Organisaatio.objects.filter(voimassa_filter)
         elif kunnat_filter:
-            return VakaJarjestaja.objects.filter(voimassa_filter & Q(yritysmuoto__in=YRITYSMUOTO_KUNTA))
+            return Organisaatio.objects.filter(voimassa_filter & Q(yritysmuoto__in=YRITYSMUOTO_KUNTA))
         else:
-            return VakaJarjestaja.objects.filter(voimassa_filter & ~Q(yritysmuoto__in=YRITYSMUOTO_KUNTA))
+            return Organisaatio.objects.filter(voimassa_filter & ~Q(yritysmuoto__in=YRITYSMUOTO_KUNTA))
 
     def get_toimipaikat(self, vakatoimijat, voimassa_filter):
         return Toimipaikka.objects.filter(voimassa_filter & Q(vakajarjestaja__in=vakatoimijat))
@@ -579,15 +579,15 @@ class AbstractErrorReportViewSet(GenericViewSet, ListModelMixin):
                 if not error_search_term or error_search_term.lower() in error_list[0].value['error_code'].lower()]
 
     def get_vakajarjestaja_object(self, vakajarjestaja_id):
-        vakajarjestaja_obj = get_object_or_404(VakaJarjestaja.objects.all(), pk=vakajarjestaja_id)
-        if self.request.user.has_perm('view_vakajarjestaja', vakajarjestaja_obj):
+        vakajarjestaja_obj = get_object_or_404(Organisaatio.objects.all(), pk=vakajarjestaja_id)
+        if self.request.user.has_perm('view_organisaatio', vakajarjestaja_obj):
             self.vakajarjestaja_oid = vakajarjestaja_obj.organisaatio_oid
             self.vakajarjestaja_id = vakajarjestaja_id
         else:
             raise Http404()
 
     def list(self, request, *args, **kwargs):
-        self.get_vakajarjestaja_object(kwargs.get('vakajarjestaja_pk', None))
+        self.get_vakajarjestaja_object(kwargs.get('organisaatio_pk', None))
         self.verify_permissions()
         return super(AbstractErrorReportViewSet, self).list(request, *args, **kwargs)
 
@@ -619,7 +619,7 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
     serializer_class = ErrorReportLapsetSerializer
     queryset = Lapsi.objects.none()
     swagger_schema = IntegerIdSchema
-    swagger_path_model = VakaJarjestaja
+    swagger_path_model = Organisaatio
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -727,7 +727,7 @@ class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
     serializer_class = ErrorReportTyontekijatSerializer
     queryset = Tyontekija.objects.none()
     swagger_schema = IntegerIdSchema
-    swagger_path_model = VakaJarjestaja
+    swagger_path_model = Organisaatio
 
     def verify_permissions(self):
         user = self.request.user
@@ -1207,12 +1207,12 @@ class TkBaseViewSet(GenericViewSet, ListModelMixin):
 
 @auditlogclass
 class TkOrganisaatiot(TkBaseViewSet):
-    queryset = VakaJarjestaja.objects.none()
+    queryset = Organisaatio.objects.none()
     serializer_class = TkOrganisaatiotSerializer
 
     def get_queryset(self):
-        id_qs = get_related_object_changed_id_qs(VakaJarjestaja.get_name(), self.datetime_gt, self.datetime_lte)
-        return (VakaJarjestaja.history
+        id_qs = get_related_object_changed_id_qs(Organisaatio.get_name(), self.datetime_gt, self.datetime_lte)
+        return (Organisaatio.history
                 .filter(id__in=Subquery(id_qs), history_date__lte=self.datetime_lte)
                 .distinct('id').order_by('id', '-history_date'))
 
@@ -1250,9 +1250,9 @@ class YearlyReportingDataSummaryViewSet(GenericViewSet, CreateModelMixin):
     def return_vakajarjestaja(self, parameter):
         try:
             parameter = int(parameter)
-            return VakaJarjestaja.objects.filter(id=parameter).first()
+            return Organisaatio.objects.filter(id=parameter).first()
         except ValueError:
-            return VakaJarjestaja.objects.filter(organisaatio_oid=parameter).first()
+            return Organisaatio.objects.filter(organisaatio_oid=parameter).first()
 
     def check_user_permissions(self, user, vakajarjestaja_obj, full_query):
         if not user.is_superuser and not is_oph_staff(user):

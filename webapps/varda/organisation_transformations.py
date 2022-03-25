@@ -21,8 +21,8 @@ from varda.permissions import (delete_object_permissions_explicitly, assign_obje
 def transfer_toimipaikat_to_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja):
     """
     Transfer all Toimipaikka objects from old_vakajarjestaja to new_vakajarjestaja.
-    :param new_vakajarjestaja: VakaJarjestaja object to which Toimipaikka objects are transferred
-    :param old_vakajarjestaja: VakaJarjestaja object from which Toimipaikka objects are transferred
+    :param new_vakajarjestaja: Organisaatio object to which Toimipaikka objects are transferred
+    :param old_vakajarjestaja: Organisaatio object from which Toimipaikka objects are transferred
     """
     _verify_transfer_is_supported(new_vakajarjestaja, old_vakajarjestaja)
     with transaction.atomic():
@@ -65,7 +65,7 @@ def _transfer_toimipaikka_permissions_to_new_vakajarjestaja(new_vakajarjestaja, 
         # Delete permissions
         delete_object_permissions_explicitly(Toimipaikka, toimipaikka.id)
 
-        # Chance VakaJarjestaja reference of Toimipaikka
+        # Change Organisaatio reference of Toimipaikka
         toimipaikka.vakajarjestaja = new_vakajarjestaja
         toimipaikka.save()
 
@@ -96,9 +96,9 @@ def _get_vakajarjestaja_lapset_qs(vakajarjestaja):
 def _transfer_lapsi_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja):
     """
     Parent method for transferring Lapsi related permissions (Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-    Huoltajuussuhde, Maksutieto) to new VakaJarjestaja
-    :param new_vakajarjestaja: VakaJarjestaja object which Lapsi related data is transferred to
-    :param old_vakajarjestaja: VakaJarjestaja object which Lapsi related data is transferred from
+    Huoltajuussuhde, Maksutieto) to new Organisaatio
+    :param new_vakajarjestaja: Organisaatio object which Lapsi related data is transferred to
+    :param old_vakajarjestaja: Organisaatio object which Lapsi related data is transferred from
     """
     lapsi_qs = _get_vakajarjestaja_lapset_qs(old_vakajarjestaja)
     existing_lapsi_qs = _get_vakajarjestaja_lapset_qs(new_vakajarjestaja)
@@ -199,9 +199,9 @@ def _transfer_maksutieto_permissions_to_new_vakajarjestaja(new_vakajarjestaja, t
 def _transfer_tyontekija_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja):
     """
     Parent method for transferring Tyontekija related permissions (Tyontekija, Tutkinto, Palvelussuhde,
-    Tyoskentelypaikka, PidempiPoissaolo, Taydennyskoulutus) and TilapainenHenkilosto to new VakaJarjestaja
-    :param new_vakajarjestaja: VakaJarjestaja object which Tyontekija related data is transferred to
-    :param old_vakajarjestaja: VakaJarjestaja object which Tyontekija related data is transferred from
+    Tyoskentelypaikka, PidempiPoissaolo, Taydennyskoulutus) and TilapainenHenkilosto to new Organisaatio
+    :param new_vakajarjestaja: Organisaatio object which Tyontekija related data is transferred to
+    :param old_vakajarjestaja: Organisaatio object which Tyontekija related data is transferred from
     """
     _transfer_tilapainen_henkilosto_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja)
     _transfer_taydennyskoulutus_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja)

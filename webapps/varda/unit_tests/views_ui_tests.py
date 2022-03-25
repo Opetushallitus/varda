@@ -7,7 +7,7 @@ from guardian.shortcuts import assign_perm
 from rest_framework import status
 
 from varda.misc import hash_string
-from varda.models import VakaJarjestaja, Tyontekija, Henkilo, Lapsi, Toimipaikka, Palvelussuhde
+from varda.models import Organisaatio, Tyontekija, Henkilo, Lapsi, Toimipaikka, Palvelussuhde
 from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, post_henkilo_to_get_permissions
 
 
@@ -18,7 +18,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         client = SetUpTestClient('tyontekija_tallentaja').client()
         vakajarjestaja_oid = '1.2.246.562.10.34683023489'
         expected_henkilo_count = Tyontekija.objects.filter(vakajarjestaja__organisaatio_oid=vakajarjestaja_oid).count()
-        vakajarjestaja_id = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_oid).values_list('id', flat=True).first()
+        vakajarjestaja_id = Organisaatio.objects.filter(organisaatio_oid=vakajarjestaja_oid).values_list('id', flat=True).first()
         resp = client.get('/api/ui/vakajarjestajat/{}/tyontekija-list/'.format(vakajarjestaja_id))
         assert_status_code(resp, status.HTTP_200_OK)
         resp_content = json.loads(resp.content)
@@ -29,7 +29,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
         vakajarjestaja_oid = '1.2.246.562.10.34683023489'
         expected_henkilo_count = Tyontekija.objects.filter(vakajarjestaja__organisaatio_oid=vakajarjestaja_oid).count()
-        vakajarjestaja_id = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_oid).values_list('id', flat=True).first()
+        vakajarjestaja_id = Organisaatio.objects.filter(organisaatio_oid=vakajarjestaja_oid).values_list('id', flat=True).first()
         resp = client.get('/api/ui/vakajarjestajat/{}/tyontekija-list/'.format(vakajarjestaja_id))
         assert_status_code(resp, status.HTTP_200_OK)
         resp_content = json.loads(resp.content)
@@ -41,7 +41,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         vakajarjestaja_oid = '1.2.246.562.10.34683023489'
         toimipaikka_oid = '1.2.246.562.10.9395737548815'
         expected_henkilo_count = Tyontekija.objects.filter(palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid=toimipaikka_oid).distinct().count()
-        vakajarjestaja_id = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_oid).values_list('id', flat=True).first()
+        vakajarjestaja_id = Organisaatio.objects.filter(organisaatio_oid=vakajarjestaja_oid).values_list('id', flat=True).first()
         resp = client.get('/api/ui/vakajarjestajat/{}/tyontekija-list/'.format(vakajarjestaja_id))
         assert_status_code(resp, status.HTTP_200_OK)
         resp_content = json.loads(resp.content)
@@ -61,7 +61,7 @@ class VardaHenkilostoViewSetTests(TestCase):
     def test_tyontekija_list_filters(self):
         client = SetUpTestClient('credadmin').client()
         vakajarjestaja_oid = '1.2.246.562.10.34683023489'
-        vakajarjestaja_id = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_oid).values_list('id', flat=True).first()
+        vakajarjestaja_id = Organisaatio.objects.filter(organisaatio_oid=vakajarjestaja_oid).values_list('id', flat=True).first()
         toimipaikka_oid = '1.2.246.562.10.9395737548815'
         toimipaikka_id = Toimipaikka.objects.get(organisaatio_oid=toimipaikka_oid).id
         result_qs = Henkilo.objects.filter(tyontekijat__vakajarjestaja__organisaatio_oid=vakajarjestaja_oid).distinct()
@@ -111,7 +111,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         vakajarjestaja_oid = '1.2.246.562.10.34683023489'
         vakajarjestaja_condition = Q(lapsi__vakatoimija__organisaatio_oid=vakajarjestaja_oid) | Q(lapsi__oma_organisaatio__organisaatio_oid=vakajarjestaja_oid) | Q(lapsi__paos_organisaatio__organisaatio_oid=vakajarjestaja_oid)
         expected_henkilo_count = Henkilo.objects.filter(vakajarjestaja_condition).distinct().count()
-        vakajarjestaja_id = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_oid).values_list('id', flat=True).first()
+        vakajarjestaja_id = Organisaatio.objects.filter(organisaatio_oid=vakajarjestaja_oid).values_list('id', flat=True).first()
         resp = client.get('/api/ui/vakajarjestajat/{}/lapsi-list/'.format(vakajarjestaja_id))
         assert_status_code(resp, status.HTTP_200_OK)
         resp_content = json.loads(resp.content)
@@ -123,7 +123,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         vakajarjestaja_oid = '1.2.246.562.10.34683023489'
         vakajarjestaja_condition = Q(lapsi__vakatoimija__organisaatio_oid=vakajarjestaja_oid) | Q(lapsi__oma_organisaatio__organisaatio_oid=vakajarjestaja_oid) | Q(lapsi__paos_organisaatio__organisaatio_oid=vakajarjestaja_oid)
         expected_henkilo_count = Henkilo.objects.filter(vakajarjestaja_condition).distinct().count()
-        vakajarjestaja_id = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_oid).values_list('id', flat=True).first()
+        vakajarjestaja_id = Organisaatio.objects.filter(organisaatio_oid=vakajarjestaja_oid).values_list('id', flat=True).first()
         resp = client.get('/api/ui/vakajarjestajat/{}/lapsi-list/'.format(vakajarjestaja_id))
         assert_status_code(resp, status.HTTP_200_OK)
         resp_content = json.loads(resp.content)
@@ -135,7 +135,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         vakajarjestaja_oid = '1.2.246.562.10.93957375488'
         toimipaikka_oid = '1.2.246.562.10.9395737548810'
         expected_henkilo_count = Lapsi.objects.filter(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__organisaatio_oid=toimipaikka_oid).distinct().count()
-        vakajarjestaja_id = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_oid).values_list('id', flat=True).first()
+        vakajarjestaja_id = Organisaatio.objects.filter(organisaatio_oid=vakajarjestaja_oid).values_list('id', flat=True).first()
         resp = client.get('/api/ui/vakajarjestajat/{}/lapsi-list/'.format(vakajarjestaja_id))
         assert_status_code(resp, status.HTTP_200_OK)
         resp_content = json.loads(resp.content)
@@ -154,7 +154,7 @@ class VardaHenkilostoViewSetTests(TestCase):
     def test_lapsi_list_filters(self):
         client = SetUpTestClient('credadmin').client()
         vakajarjestaja_oid = '1.2.246.562.10.93957375488'
-        vakajarjestaja_id = VakaJarjestaja.objects.filter(organisaatio_oid=vakajarjestaja_oid).values_list('id', flat=True).first()
+        vakajarjestaja_id = Organisaatio.objects.filter(organisaatio_oid=vakajarjestaja_oid).values_list('id', flat=True).first()
         toimipaikka_oid = '1.2.246.562.10.9395737548810'
         toimipaikka_id = Toimipaikka.objects.get(organisaatio_oid=toimipaikka_oid).id
         vakajarjestaja_condition = Q(lapsi__vakatoimija__organisaatio_oid=vakajarjestaja_oid) | Q(lapsi__oma_organisaatio__organisaatio_oid=vakajarjestaja_oid) | Q(lapsi__paos_organisaatio__organisaatio_oid=vakajarjestaja_oid)
@@ -247,6 +247,22 @@ class VardaHenkilostoViewSetTests(TestCase):
                 'organisaatio_oid': '1.2.246.562.10.52966755795',
                 'kunnallinen_kytkin': True,
                 'y_tunnus': '1428881-8'
+            },
+            {
+                'nimi': 'Kansaneläkelaitos',
+                'id': 7,
+                'url': 'http://testserver/api/v1/vakajarjestajat/7/',
+                'organisaatio_oid': '1.2.246.562.10.2013121014482686198719',
+                'kunnallinen_kytkin': False,
+                'y_tunnus': '0246246-0'
+            },
+            {
+                'nimi': 'Opetushallitus',
+                'id': 8,
+                'url': 'http://testserver/api/v1/vakajarjestajat/8/',
+                'organisaatio_oid': '1.2.246.562.10.00000000001',
+                'kunnallinen_kytkin': False,
+                'y_tunnus': ''
             }
         ]
         self.assertCountEqual(json.loads(resp.content), admin_vakajarjestajat)
@@ -344,7 +360,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         # 1.2.246.562.10.93957375488 as well as own one in both vakajarjestajat.
         client = SetUpTestClient('tester5').client()  # VARDA-TALLENTAJA_1.2.246.562.10.93957375488
         vakajarjestaja_oid = '1.2.246.562.10.93957375488'
-        vakajarjestaja_id = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid).id
+        vakajarjestaja_id = Organisaatio.objects.get(organisaatio_oid=vakajarjestaja_oid).id
         toimipaikka_oid = '1.2.246.562.10.9395737548817'
         toimipaikka_id = Toimipaikka.objects.get(organisaatio_oid=toimipaikka_oid).id
         resp_ui_list_lapset = client.get(f'/api/ui/vakajarjestajat/{vakajarjestaja_id}/lapsi-list/?toimipaikka_id={toimipaikka_id}')
@@ -377,7 +393,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         toimipaikka_id = Toimipaikka.objects.get(organisaatio_oid=toimipaikka_oid).id
         vakajarjestaja_oid = '1.2.246.562.10.93957375488'
         paos_vakajarjestaja_oid = '1.2.246.562.10.34683023489'
-        paos_vakajarjestaja_id = VakaJarjestaja.objects.get(organisaatio_oid=paos_vakajarjestaja_oid)
+        paos_vakajarjestaja_id = Organisaatio.objects.get(organisaatio_oid=paos_vakajarjestaja_oid)
 
         post_henkilo_to_get_permissions(toimipaikka_client, henkilo_oid=henkilo_oid)
 
@@ -523,7 +539,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         self.assertEqual(json.loads(resp_ui_2.content)['count'], 1)
 
     def test_ui_tyontekija_filter_kiertava(self):
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
         kiertavat_count = Tyontekija.objects.filter(palvelussuhteet__tyoskentelypaikat__kiertava_tyontekija_kytkin=True).count()
 
         client = SetUpTestClient('tyontekija_tallentaja').client()

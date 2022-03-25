@@ -266,8 +266,8 @@ def cached_list_response(original_list_viewset, user, request_full_path,
 def invalidate_cache(model_name, object_id):
     cache.delete('{}.{}'.format(model_name, object_id))  # cache-value from serializer, e.g. vakajarjestaja.3
 
-    if model_name == 'vakajarjestaja':
-        cache.delete('{}.{}'.format('vakajarjestaja-ui', object_id))
+    if model_name == 'organisaatio':
+        cache.delete('{}.{}'.format('organisaatio-ui', object_id))
 
     cache_key_list_of_users_for_this_model = create_cache_key(0, model_name + '_cache_user_list')
     list_of_users_for_this_model = cache.get(cache_key_list_of_users_for_this_model)

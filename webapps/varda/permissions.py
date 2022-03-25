@@ -2,7 +2,8 @@ import logging
 from functools import wraps
 
 from django.apps import apps
-from django.contrib.auth.models import Group, Permission
+from django.conf import settings
+from django.contrib.auth.models import AnonymousUser, Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction, IntegrityError
 from django.db.models import IntegerField, Q, Model
@@ -17,12 +18,11 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from varda.enums.error_messages import ErrorMessages
 from varda.misc import path_parse
-from varda.models import (VakaJarjestaja, Toimipaikka, Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
+from varda.models import (Organisaatio, Toimipaikka, Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
                           PaosToiminta, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog,
                           LoginCertificate, Maksutieto, Tyontekija, Tyoskentelypaikka, TaydennyskoulutusTyontekija)
 from varda.permission_groups import (assign_object_level_permissions, get_oph_yllapitaja_group_name,
                                      remove_object_level_permissions)
-
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +70,7 @@ class IsCertificateAccess(permissions.IsAdminUser):
     """
     Allow access to reporting apis for users requiring data. Nginx validates client certificate here.
     """
+
     def has_permission(self, request, view):
         user = request.user
         if super().has_permission(request, view):
@@ -113,6 +114,7 @@ class RaportitPermissions(permissions.BasePermission):
     """
     Allows access to admin, OPH users, and users who belong to a VARDA_RAPORTTIEN_KATSELIJA group
     """
+
     def has_permission(self, request, view):
         user = request.user
 
@@ -132,18 +134,27 @@ def _user_has_certificate_access(user, request):
     :param request: request
     :return: Has user certificate access to current api
     """
-    if user.groups.filter(name__icontains='VARDA_LUOVUTUSPALVELU').exists():
-        api_path = request.path
-        is_cert_auth, common_name = get_certificate_login_info(request)
-        return is_cert_auth and LoginCertificate.objects.filter(api_path=api_path, common_name=common_name, user=user).exists()
-    return False
+    if isinstance(user, AnonymousUser):
+        # No permissions for AnonymousUser (used by Swagger)
+        return False
+
+    is_cert_auth, common_name = get_certificate_login_info(request)
+    login_certificate = LoginCertificate.objects.filter(api_path=request.path, common_name=common_name, user=user).first()
+    if not login_certificate:
+        return False
+
+    # Certificate authentication must be successful and user must have LUOVUTUSPALVELU permissions
+    # in the correct organization specified in LoginCertificate object, or in OPH organisaatio
+    organisaatio_oid_list = [settings.OPETUSHALLITUS_ORGANISAATIO_OID, login_certificate.organisaatio.organisaatio_oid]
+    return is_cert_auth and user_permission_groups_in_organizations(user, organisaatio_oid_list,
+                                                                    [Z4_CasKayttoOikeudet.LUOVUTUSPALVELU]).exists()
 
 
 def get_certificate_login_info(request):
     """
     Checks request if user has certificate login info and returns that.
     :param request: request
-    :return: tuple( common_name, is_cert_auth )
+    :return: tuple(is_cert_auth, common_name)
     """
     is_cert_auth = request.headers.get('X-SSL-Authenticated') == 'SUCCESS'
     subject_string = request.headers.get('X-SSL-User-DN')
@@ -201,8 +212,8 @@ def throw_if_not_tallentaja_permissions(vakajarjestaja_organisaatio_oid, toimipa
             return None
     else:  # PAOS-case, i.e. user might have permission to add lapsi to another organization.
         try:
-            paos_organisaatio = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_organisaatio_oid)
-        except VakaJarjestaja.DoesNotExist:
+            paos_organisaatio = Organisaatio.objects.get(organisaatio_oid=vakajarjestaja_organisaatio_oid)
+        except Organisaatio.DoesNotExist:
             raise ValidationError({'paos_organisaatio': [ErrorMessages.PT009.value]}, code='invalid')
 
         if toimipaikka_obj:
@@ -222,7 +233,8 @@ def throw_if_not_tallentaja_permissions(vakajarjestaja_organisaatio_oid, toimipa
             paos_voimassa_kytkin = paos_oikeus.voimassa_kytkin
 
             if (paos_voimassa_kytkin and
-                    user_has_tallentaja_permission_in_organization(paos_tallentaja_organisaatio.organisaatio_oid, user)):
+                    user_has_tallentaja_permission_in_organization(paos_tallentaja_organisaatio.organisaatio_oid,
+                                                                   user)):
                 """
                 User-organization has tallentaja-permission to paos-toimipaikka, and
                 user has tallentaja-permissions in oma_organisaatio.
@@ -272,6 +284,7 @@ def auditlog(function):
     :param function: Function to be executed
     :return: response from provided function
     """
+
     @wraps(function)  # @action decorator wants function name not to change
     def argument_wrapper(*args, **kwargs):
         generic_view_set_obj = args[0]
@@ -283,6 +296,7 @@ def auditlog(function):
             path = request.get_full_path()
             save_audit_log(user, path)
         return response
+
     return argument_wrapper
 
 
@@ -304,7 +318,8 @@ def auditlogclass(cls):
     return cls
 
 
-def user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, vakajarjestaja_organisaatio_oid, toimipaikka_qs=None):
+def user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, vakajarjestaja_organisaatio_oid,
+                                                                         toimipaikka_qs=None):
     """
     User must be "palvelukayttaja" or have HUOLTAJATIETO_TALLENNUS-permission under the vakajarjestaja/toimipaikka.
     This is needed since user can have permissions to multiple organizations.
@@ -381,16 +396,21 @@ def grant_or_deny_access_to_paos_toimipaikka(voimassa_kytkin, jarjestaja_kunta_o
                                    ))
     # Allow removing toimipaikka access only if there are no children added by jarjestaja else access is left untouched.
     if not voimassa_kytkin:
-        paos_toimipaikka_qs = paos_toimipaikka_qs.exclude(paos_toimipaikka__varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi__oma_organisaatio=jarjestaja_kunta_organisaatio)
+        paos_toimipaikka_qs = paos_toimipaikka_qs.exclude(
+            paos_toimipaikka__varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi__oma_organisaatio=jarjestaja_kunta_organisaatio)
 
-    for paos_toimipaikka in Toimipaikka.objects.filter(id__in=paos_toimipaikka_qs.values_list('paos_toimipaikka__id', flat=True)):
+    for paos_toimipaikka in Toimipaikka.objects.filter(
+            id__in=paos_toimipaikka_qs.values_list('paos_toimipaikka__id', flat=True)):
         if voimassa_kytkin:
-            assign_object_level_permissions(jarjestaja_kunta_organisaatio.organisaatio_oid, Toimipaikka, paos_toimipaikka, paos_kytkin=True)
+            assign_object_level_permissions(jarjestaja_kunta_organisaatio.organisaatio_oid, Toimipaikka,
+                                            paos_toimipaikka, paos_kytkin=True)
         else:
-            remove_object_level_permissions(jarjestaja_kunta_organisaatio.organisaatio_oid, Toimipaikka, paos_toimipaikka, paos_kytkin=True)
+            remove_object_level_permissions(jarjestaja_kunta_organisaatio.organisaatio_oid, Toimipaikka,
+                                            paos_toimipaikka, paos_kytkin=True)
 
 
-def change_paos_tallentaja_organization(jarjestaja_kunta_organisaatio_id, tuottaja_organisaatio_id, tallentaja_organisaatio_id, voimassa_kytkin):
+def change_paos_tallentaja_organization(jarjestaja_kunta_organisaatio_id, tuottaja_organisaatio_id,
+                                        tallentaja_organisaatio_id, voimassa_kytkin):
     """
     Normal situation: change tallentaja and katselija roles between the organizations.
 
@@ -401,23 +421,30 @@ def change_paos_tallentaja_organization(jarjestaja_kunta_organisaatio_id, tuotta
     """
     try:
         with transaction.atomic():
-            jarjestaja_kunta_organisaatio = VakaJarjestaja.objects.get(id=jarjestaja_kunta_organisaatio_id)
-            tuottaja_organisaatio = VakaJarjestaja.objects.get(id=tuottaja_organisaatio_id)
-            tallentaja_organisaatio = VakaJarjestaja.objects.get(id=tallentaja_organisaatio_id)
+            jarjestaja_kunta_organisaatio = Organisaatio.objects.get(id=jarjestaja_kunta_organisaatio_id)
+            tuottaja_organisaatio = Organisaatio.objects.get(id=tuottaja_organisaatio_id)
+            tallentaja_organisaatio = Organisaatio.objects.get(id=tallentaja_organisaatio_id)
             katselija_organisaatio = jarjestaja_kunta_organisaatio if tallentaja_organisaatio == tuottaja_organisaatio else tuottaja_organisaatio
 
-            tallentaja_organisaatio_tallentaja_group = Group.objects.get(name='VARDA-TALLENTAJA_' + tallentaja_organisaatio.organisaatio_oid)
-            tallentaja_organisaatio_palvelukayttaja_group = Group.objects.get(name='VARDA-PALVELUKAYTTAJA_' + tallentaja_organisaatio.organisaatio_oid)
-            tallentaja_organization_permission_groups = [tallentaja_organisaatio_tallentaja_group, tallentaja_organisaatio_palvelukayttaja_group]
+            tallentaja_organisaatio_tallentaja_group = Group.objects.get(
+                name='VARDA-TALLENTAJA_' + tallentaja_organisaatio.organisaatio_oid)
+            tallentaja_organisaatio_palvelukayttaja_group = Group.objects.get(
+                name='VARDA-PALVELUKAYTTAJA_' + tallentaja_organisaatio.organisaatio_oid)
+            tallentaja_organization_permission_groups = [tallentaja_organisaatio_tallentaja_group,
+                                                         tallentaja_organisaatio_palvelukayttaja_group]
 
-            katselija_organisaatio_tallentaja_group = Group.objects.get(name='VARDA-TALLENTAJA_' + katselija_organisaatio.organisaatio_oid)
-            katselija_organisaatio_palvelukayttaja_group = Group.objects.get(name='VARDA-PALVELUKAYTTAJA_' + katselija_organisaatio.organisaatio_oid)
-            katselija_organization_permission_groups = [katselija_organisaatio_tallentaja_group, katselija_organisaatio_palvelukayttaja_group]
+            katselija_organisaatio_tallentaja_group = Group.objects.get(
+                name='VARDA-TALLENTAJA_' + katselija_organisaatio.organisaatio_oid)
+            katselija_organisaatio_palvelukayttaja_group = Group.objects.get(
+                name='VARDA-PALVELUKAYTTAJA_' + katselija_organisaatio.organisaatio_oid)
+            katselija_organization_permission_groups = [katselija_organisaatio_tallentaja_group,
+                                                        katselija_organisaatio_palvelukayttaja_group]
 
             lapsi_qs = (Lapsi
                         .objects
                         .filter(oma_organisaatio=jarjestaja_kunta_organisaatio, paos_organisaatio=tuottaja_organisaatio)
-                        .prefetch_related('varhaiskasvatuspaatokset', 'varhaiskasvatuspaatokset__varhaiskasvatussuhteet'))
+                        .prefetch_related('varhaiskasvatuspaatokset',
+                                          'varhaiskasvatuspaatokset__varhaiskasvatussuhteet'))
             vakapaatos_qs = Varhaiskasvatuspaatos.objects.filter(lapsi__in=lapsi_qs)
             vakasuhde_qs = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__in=vakapaatos_qs)
 
@@ -428,33 +455,51 @@ def change_paos_tallentaja_organization(jarjestaja_kunta_organisaatio_id, tuotta
             """
             for lapsi in lapsi_qs:
                 if voimassa_kytkin:
-                    [remove_perm('change_lapsi', permission_group, lapsi) for permission_group in katselija_organization_permission_groups]
-                    [remove_perm('delete_lapsi', permission_group, lapsi) for permission_group in katselija_organization_permission_groups]
-                    [assign_perm('change_lapsi', permission_group, lapsi) for permission_group in tallentaja_organization_permission_groups]
-                    [assign_perm('delete_lapsi', permission_group, lapsi) for permission_group in tallentaja_organization_permission_groups]
+                    [remove_perm('change_lapsi', permission_group, lapsi) for permission_group in
+                     katselija_organization_permission_groups]
+                    [remove_perm('delete_lapsi', permission_group, lapsi) for permission_group in
+                     katselija_organization_permission_groups]
+                    [assign_perm('change_lapsi', permission_group, lapsi) for permission_group in
+                     tallentaja_organization_permission_groups]
+                    [assign_perm('delete_lapsi', permission_group, lapsi) for permission_group in
+                     tallentaja_organization_permission_groups]
                 else:
-                    [remove_perm('change_lapsi', permission_group, lapsi) for permission_group in tallentaja_organization_permission_groups]
-                    [remove_perm('delete_lapsi', permission_group, lapsi) for permission_group in tallentaja_organization_permission_groups]
+                    [remove_perm('change_lapsi', permission_group, lapsi) for permission_group in
+                     tallentaja_organization_permission_groups]
+                    [remove_perm('delete_lapsi', permission_group, lapsi) for permission_group in
+                     tallentaja_organization_permission_groups]
 
             for vakapaatos in vakapaatos_qs:
                 if voimassa_kytkin:
-                    [remove_perm('change_varhaiskasvatuspaatos', permission_group, vakapaatos) for permission_group in katselija_organization_permission_groups]
-                    [remove_perm('delete_varhaiskasvatuspaatos', permission_group, vakapaatos) for permission_group in katselija_organization_permission_groups]
-                    [assign_perm('change_varhaiskasvatuspaatos', permission_group, vakapaatos) for permission_group in tallentaja_organization_permission_groups]
-                    [assign_perm('delete_varhaiskasvatuspaatos', permission_group, vakapaatos) for permission_group in tallentaja_organization_permission_groups]
+                    [remove_perm('change_varhaiskasvatuspaatos', permission_group, vakapaatos) for permission_group in
+                     katselija_organization_permission_groups]
+                    [remove_perm('delete_varhaiskasvatuspaatos', permission_group, vakapaatos) for permission_group in
+                     katselija_organization_permission_groups]
+                    [assign_perm('change_varhaiskasvatuspaatos', permission_group, vakapaatos) for permission_group in
+                     tallentaja_organization_permission_groups]
+                    [assign_perm('delete_varhaiskasvatuspaatos', permission_group, vakapaatos) for permission_group in
+                     tallentaja_organization_permission_groups]
                 else:
-                    [remove_perm('change_varhaiskasvatuspaatos', permission_group, vakapaatos) for permission_group in tallentaja_organization_permission_groups]
-                    [remove_perm('delete_varhaiskasvatuspaatos', permission_group, vakapaatos) for permission_group in tallentaja_organization_permission_groups]
+                    [remove_perm('change_varhaiskasvatuspaatos', permission_group, vakapaatos) for permission_group in
+                     tallentaja_organization_permission_groups]
+                    [remove_perm('delete_varhaiskasvatuspaatos', permission_group, vakapaatos) for permission_group in
+                     tallentaja_organization_permission_groups]
 
             for vakasuhde in vakasuhde_qs:
                 if voimassa_kytkin:
-                    [remove_perm('change_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in katselija_organization_permission_groups]
-                    [remove_perm('delete_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in katselija_organization_permission_groups]
-                    [assign_perm('change_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in tallentaja_organization_permission_groups]
-                    [assign_perm('delete_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in tallentaja_organization_permission_groups]
+                    [remove_perm('change_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in
+                     katselija_organization_permission_groups]
+                    [remove_perm('delete_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in
+                     katselija_organization_permission_groups]
+                    [assign_perm('change_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in
+                     tallentaja_organization_permission_groups]
+                    [assign_perm('delete_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in
+                     tallentaja_organization_permission_groups]
                 else:
-                    [remove_perm('change_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in tallentaja_organization_permission_groups]
-                    [remove_perm('delete_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in tallentaja_organization_permission_groups]
+                    [remove_perm('change_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in
+                     tallentaja_organization_permission_groups]
+                    [remove_perm('delete_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in
+                     tallentaja_organization_permission_groups]
 
                 # Assign or remove Toimipaikka specific permissions
                 toimipaikka_group = Group.objects.get(name='VARDA-TALLENTAJA_' + vakasuhde.toimipaikka.organisaatio_oid)
@@ -475,10 +520,10 @@ def change_paos_tallentaja_organization(jarjestaja_kunta_organisaatio_id, tuotta
                     remove_perm('delete_varhaiskasvatuspaatos', toimipaikka_group, vakapaatos)
                     remove_perm('change_varhaiskasvatussuhde', toimipaikka_group, vakasuhde)
                     remove_perm('delete_varhaiskasvatussuhde', toimipaikka_group, vakasuhde)
-    except VakaJarjestaja.DoesNotExist:
-        logger.error('Could not find one of the VakaJarjestajat: {}, {}, {}'.format(jarjestaja_kunta_organisaatio_id,
-                                                                                    tuottaja_organisaatio_id,
-                                                                                    tallentaja_organisaatio_id))
+    except Organisaatio.DoesNotExist:
+        logger.error('Could not find one of the Organisaatiot: {}, {}, {}'.format(jarjestaja_kunta_organisaatio_id,
+                                                                                  tuottaja_organisaatio_id,
+                                                                                  tallentaja_organisaatio_id))
 
 
 def delete_object_permissions_explicitly(model, instance_id):
@@ -519,14 +564,16 @@ def get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus(taydennyskoulutus
     """
     # Transform taydennyskoulutus_tyontekija_list to the following format:
     # [{'tyontekija': 1, 'tehtavanimike_koodi': '12345'}]
-    if taydennyskoulutus_tyontekija_list and isinstance(taydennyskoulutus_tyontekija_list[0], TaydennyskoulutusTyontekija):
+    if taydennyskoulutus_tyontekija_list and isinstance(taydennyskoulutus_tyontekija_list[0],
+                                                        TaydennyskoulutusTyontekija):
         taydennyskoulutus_tyontekija_list = [model_to_dict(taydennyskoulutus_tyontekija,
                                                            fields=['tehtavanimike_koodi', 'tyontekija'])
                                              for taydennyskoulutus_tyontekija in taydennyskoulutus_tyontekija_list]
     else:
-        taydennyskoulutus_tyontekija_list = [{'tehtavanimike_koodi': taydennyskoulutus_tyontekija['tehtavanimike_koodi'],
-                                              'tyontekija': taydennyskoulutus_tyontekija['tyontekija'].id}
-                                             for taydennyskoulutus_tyontekija in taydennyskoulutus_tyontekija_list]
+        taydennyskoulutus_tyontekija_list = [
+            {'tehtavanimike_koodi': taydennyskoulutus_tyontekija['tehtavanimike_koodi'],
+             'tyontekija': taydennyskoulutus_tyontekija['tyontekija'].id}
+            for taydennyskoulutus_tyontekija in taydennyskoulutus_tyontekija_list]
 
     tyontekija_id_list = [taydennyskoulutus_tyontekija['tyontekija']
                           for taydennyskoulutus_tyontekija in taydennyskoulutus_tyontekija_list]
@@ -555,7 +602,8 @@ def is_correct_taydennyskoulutus_tyontekija_permission(user, taydennyskoulutus_t
         # No TaydennyskoulutusTyontekija objects provided, return True (user has permissions to nothing)
         return True
 
-    tyontekija_id_list, toimipaikka_oid_list_list = get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus(taydennyskoulutus_tyontekija_list)
+    tyontekija_id_list, toimipaikka_oid_list_list = get_tyontekija_and_toimipaikka_lists_for_taydennyskoulutus(
+        taydennyskoulutus_tyontekija_list)
 
     permission_format = 'HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA_{}'
     vakajarjestaja_oid = get_tyontekija_vakajarjestaja_oid(Tyontekija.objects.filter(id__in=tyontekija_id_list))
@@ -563,7 +611,8 @@ def is_correct_taydennyskoulutus_tyontekija_permission(user, taydennyskoulutus_t
     if not is_user_permission(user, permission_format.format(vakajarjestaja_oid)):
         # Check if user has toimipaikka level permissions
         for toimipaikka_oid_list in toimipaikka_oid_list_list:
-            if not any(is_user_permission(user, permission_format.format(toimipaikka_oid)) for toimipaikka_oid in toimipaikka_oid_list):
+            if not any(is_user_permission(user, permission_format.format(toimipaikka_oid)) for toimipaikka_oid in
+                       toimipaikka_oid_list):
                 # User does not have permissions to any toimipaikka with this tehtavanimike
                 if throws:
                     raise PermissionDenied({'errors': [ErrorMessages.TK014.value]})
@@ -609,7 +658,8 @@ def get_tyontekija_filters_for_taydennyskoulutus_groups(user, prefix=''):
     organisaatio_oids = get_organisaatio_oids_from_groups(user, 'HENKILOSTO_TAYDENNYSKOULUTUS_')
     # We can't distinguish vakajarjestaja oids from toimipaikka oids but since oids are unique it doesn't matter
     return (Q(**{prefix + 'vakajarjestaja__organisaatio_oid__in': organisaatio_oids}) |
-            Q(**{prefix + 'palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid__in': organisaatio_oids})), organisaatio_oids
+            Q(**{
+                prefix + 'palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid__in': organisaatio_oids})), organisaatio_oids
 
 
 def filter_authorized_taydennyskoulutus_tyontekijat_list(data, user):
@@ -707,10 +757,10 @@ def user_belongs_to_correct_groups(user, instance, permission_groups=(), accept_
                                    check_paos=False):
     """
     Verifies that given user belongs to pre-defined permission groups.
-    Used in ensuring that, for example, if user has vaka permissions to one VakaJarjestaja and henkilosto permissions
-    to another VakaJarjestaja, user cannot create Tyontekija objects to VakaJarjestaja with only vaka permissions.
+    Used in ensuring that, for example, if user has vaka permissions to one Organisaatio and henkilosto permissions
+    to another Organisaatio, user cannot create Tyontekija objects to Organisaatio with only vaka permissions.
     :param user: User object instance
-    :param instance: VakaJarjestaja or Toimipaikka object instance
+    :param instance: Organisaatio or Toimipaikka object instance
     :param permission_groups: list of accepted Z4_CasKayttoOikeudet group
     :param accept_toimipaikka_permission: if instance is VakaJarjestaja, permissions in related Toimipaikka groups are
            also accepted
@@ -722,15 +772,15 @@ def user_belongs_to_correct_groups(user, instance, permission_groups=(), accept_
         if isinstance(instance, Toimipaikka):
             oid_list = [instance.organisaatio_oid, instance.vakajarjestaja.organisaatio_oid]
             if check_paos:
-                # Include VakaJarjestaja objects that have permissions to this Toimipaikka via PAOS
+                # Include Organisaatio objects that have permissions to this Toimipaikka via PAOS
                 paos_organisaatio_oid_list = (PaosToiminta.objects.filter(paos_toimipaikka=instance,
                                                                           voimassa_kytkin=True)
                                               .values_list('oma_organisaatio__organisaatio_oid', flat=True))
                 oid_list.extend(paos_organisaatio_oid_list)
-        elif isinstance(instance, VakaJarjestaja):
+        elif isinstance(instance, Organisaatio):
             oid_list = [instance.organisaatio_oid]
             if accept_toimipaikka_permission:
-                # User can also have permissions to Toimipaikka of specified VakaJarjestaja
+                # User can also have permissions to Toimipaikka of specified Organisaatio
                 toimipaikka_oid_list = list(instance.toimipaikat.values_list('organisaatio_oid', flat=True))
                 oid_list = oid_list + toimipaikka_oid_list
         return user_permission_groups_in_organizations(user, oid_list, permission_groups).exists()
@@ -757,7 +807,7 @@ def get_vakajarjestajat_filter_for_raportit(request):
     for vakajarjestaja_id in vakajarjestaja_ids_splitted:
         if not vakajarjestaja_id.isdigit():
             continue
-        vakajarjestaja_qs = VakaJarjestaja.objects.filter(id=vakajarjestaja_id)
+        vakajarjestaja_qs = Organisaatio.objects.filter(id=vakajarjestaja_id)
         if not vakajarjestaja_qs.exists():
             continue
         vakajarjestaja_obj = vakajarjestaja_qs.first()

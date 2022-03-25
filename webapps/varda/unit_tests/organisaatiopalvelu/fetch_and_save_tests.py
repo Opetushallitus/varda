@@ -5,7 +5,7 @@ from django.test import TestCase
 
 from varda import organisaatiopalvelu
 from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
-from varda.models import Toimipaikka, ToiminnallinenPainotus, KieliPainotus, VakaJarjestaja
+from varda.models import Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Organisaatio
 from varda.organisaatiopalvelu import fetch_and_save_toimipaikka_data
 
 
@@ -70,7 +70,7 @@ class TestFetchAndSaveToimipaikkaData(TestCase):
                       status=200)
         vakajarjestaja_id = 1
         organisaatiopalvelu.fetch_organisaatio_info(vakajarjestaja_id)
-        vakajarjestaja = VakaJarjestaja.objects.get(id=vakajarjestaja_id)
+        vakajarjestaja = Organisaatio.objects.get(id=vakajarjestaja_id)
         self.assertEqual(vakajarjestaja.nimi, 'Päiväkoti nallekarhu')
         self.assertEqual(vakajarjestaja.organisaatio_oid, '1.2.246.562.10.34683023489')
         self.assertEqual(vakajarjestaja.y_tunnus, '8500570-7')
@@ -93,7 +93,7 @@ class TestFetchAndSaveToimipaikkaData(TestCase):
                       status=200)
         vakajarjestaja_id = 1
         organisaatiopalvelu.fetch_organisaatio_info(vakajarjestaja_id)
-        vakajarjestaja = VakaJarjestaja.objects.get(id=vakajarjestaja_id)
+        vakajarjestaja = Organisaatio.objects.get(id=vakajarjestaja_id)
         self.assertEqual(vakajarjestaja.paattymis_pvm, datetime.date(2020, 8, 1))
 
     def __create_painotus_dict(self, toimintapainotus_koodi, alkamis_pvm, paattymis_pvm, changed_by_id):

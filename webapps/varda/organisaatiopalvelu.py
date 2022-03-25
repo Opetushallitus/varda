@@ -20,11 +20,10 @@ from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
 from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
 from varda.exceptions.invalid_koodi_uri_exception import InvalidKoodiUriException
 from varda.misc import list_to_chunks
-from varda.models import Toimipaikka, VakaJarjestaja, KieliPainotus, ToiminnallinenPainotus, Aikaleima
+from varda.models import Toimipaikka, Organisaatio, KieliPainotus, ToiminnallinenPainotus, Aikaleima
 from varda.permission_groups import (assign_permissions_to_vakajarjestaja_obj, assign_permissions_to_toimipaikka_obj,
                                      create_permission_groups_for_organisaatio, assign_organisation_group_permissions)
 from varda.related_object_validations import toimipaikka_is_valid_to_organisaatiopalvelu
-
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +41,7 @@ def vakajarjestaja_changed(vakajarjestaja, vakajarjestaja_original):
             vakajarjestaja.kayntiosoite_postinumero == vakajarjestaja_original.kayntiosoite_postinumero and
             vakajarjestaja.kayntiosoite_postitoimipaikka == vakajarjestaja_original.kayntiosoite_postitoimipaikka and
             vakajarjestaja.yritysmuoto == vakajarjestaja_original.yritysmuoto and
+            set(vakajarjestaja.organisaatiotyyppi) == set(vakajarjestaja_original.organisaatiotyyppi) and
             vakajarjestaja.ytjkieli == vakajarjestaja_original.ytjkieli):
         return False  # no changes made
     return True
@@ -66,6 +66,7 @@ def update_vakajarjestaja(vakajarjestaja, result_organisaatiopalvelu):
     vakajarjestaja.ytjkieli = result_organisaatiopalvelu['ytjkieli']
     vakajarjestaja.yritysmuoto = result_organisaatiopalvelu['yritysmuoto']
     vakajarjestaja.alkamis_pvm = result_organisaatiopalvelu['alkamis_pvm']
+    vakajarjestaja.organisaatiotyyppi = result_organisaatiopalvelu['organisaatiotyyppi']
 
     paattymis_pvm = result_organisaatiopalvelu['paattymis_pvm']
     # paattymis_pvm can have a null-value in VARDA
@@ -95,9 +96,9 @@ def fetch_organisaatio_info(vakajarjestaja_id=None):
     This function can be used to fetch data for one organization (with vakajarjestaja_id) or for all organizations in db.
     """
     if vakajarjestaja_id is None:
-        vakajarjestajat = VakaJarjestaja.objects.all()
+        vakajarjestajat = Organisaatio.objects.all()
     else:
-        vakajarjestajat = [VakaJarjestaja.objects.get(id=vakajarjestaja_id)]
+        vakajarjestajat = [Organisaatio.objects.get(id=vakajarjestaja_id)]
 
     for vakajarjestaja in vakajarjestajat:
         organisaatio_oid = vakajarjestaja.organisaatio_oid
@@ -120,11 +121,11 @@ def create_organization_using_oid(organisaatio_oid, organisaatiotyyppi, user_id,
         logger.error('User does not exist: user_id' + str(user_id))
         return None
 
-    organization_tuple = VakaJarjestaja.objects.get_or_create(organisaatio_oid=organisaatio_oid,
-                                                              defaults={
-                                                                  'changed_by': user,
-                                                                  'integraatio_organisaatio': integraatio_organisaatio
-                                                              })
+    organization_tuple = Organisaatio.objects.get_or_create(organisaatio_oid=organisaatio_oid,
+                                                            defaults={
+                                                                'changed_by': user,
+                                                                'integraatio_organisaatio': integraatio_organisaatio
+                                                            })
     organization_obj = organization_tuple[0]
     organization_created = organization_tuple[1]
 
@@ -144,10 +145,10 @@ def get_vakajarjestaja(organisaatio_oid, user_id):
     if parent_oid is None:
         logger.error('Did not get parent_oid for: ' + organisaatio_oid)
     else:
-        vakajarjestaja_query = VakaJarjestaja.objects.filter(organisaatio_oid=parent_oid)
+        vakajarjestaja_query = Organisaatio.objects.filter(organisaatio_oid=parent_oid)
         if len(vakajarjestaja_query) == 0:
             create_organization_using_oid(parent_oid, Organisaatiotyyppi.VAKAJARJESTAJA.value, user_id)
-            new_vakajarjestaja_query = VakaJarjestaja.objects.filter(organisaatio_oid=parent_oid)
+            new_vakajarjestaja_query = Organisaatio.objects.filter(organisaatio_oid=parent_oid)
             if len(new_vakajarjestaja_query) == 1:
                 return new_vakajarjestaja_query[0]
         elif len(vakajarjestaja_query) == 1:
@@ -210,8 +211,10 @@ def get_koodi_from_uri(uri, required=True):
 def _fill_varhaiskasvatustiedot(reply_json, toimipaikka_obj):
     vaka_tiedot = reply_json['varhaiskasvatuksenToimipaikkaTiedot']
     toimipaikka_obj.toimintamuoto_koodi = get_koodi_from_uri(vaka_tiedot['toimintamuoto'])
-    toimipaikka_obj.kasvatusopillinen_jarjestelma_koodi = get_koodi_from_uri(vaka_tiedot['kasvatusopillinenJarjestelma'])
-    toimipaikka_obj.jarjestamismuoto_koodi = list(map(lambda muoto: get_koodi_from_uri(muoto), vaka_tiedot['varhaiskasvatuksenJarjestamismuodot']))
+    toimipaikka_obj.kasvatusopillinen_jarjestelma_koodi = get_koodi_from_uri(
+        vaka_tiedot['kasvatusopillinenJarjestelma'])
+    toimipaikka_obj.jarjestamismuoto_koodi = list(
+        map(lambda muoto: get_koodi_from_uri(muoto), vaka_tiedot['varhaiskasvatuksenJarjestamismuodot']))
     toimipaikka_obj.varhaiskasvatuspaikat = vaka_tiedot['paikkojenLukumaara']
 
     KieliPainotus.objects.filter(toimipaikka=toimipaikka_obj).delete()
@@ -221,7 +224,8 @@ def _fill_varhaiskasvatustiedot(reply_json, toimipaikka_obj):
 
     ToiminnallinenPainotus.objects.filter(toimipaikka=toimipaikka_obj).delete()
     toimintapainotukset_json = vaka_tiedot.get('varhaiskasvatuksenToiminnallinenpainotukset', [])
-    toimintapainotukset = set(map(lambda toiminta: create_toiminnallinenpainotus(toimipaikka_obj.id, toiminta), toimintapainotukset_json))
+    toimintapainotukset = set(
+        map(lambda toiminta: create_toiminnallinenpainotus(toimipaikka_obj.id, toiminta), toimintapainotukset_json))
     toimipaikka_obj.toiminnallinenpainotus_kytkin = len(toimintapainotukset) > 0
 
 
@@ -240,8 +244,10 @@ def _fill_yhteystiedot(reply_json, toimipaikka_obj):
     toimipaikka_obj.postitoimipaikka = postiosoite['postitoimipaikka']
 
     # Choose the first ones. (there might be multiple same type with different languages)
-    toimipaikka_obj.puhelinnumero = next(iter([y['numero'] for y in reply_json['yhteystiedot'] if 'tyyppi' in y.keys() and y['tyyppi'] == 'puhelin']))
-    toimipaikka_obj.sahkopostiosoite = next(iter([y['email'] for y in reply_json['yhteystiedot'] if 'email' in y.keys()]))
+    toimipaikka_obj.puhelinnumero = next(
+        iter([y['numero'] for y in reply_json['yhteystiedot'] if 'tyyppi' in y.keys() and y['tyyppi'] == 'puhelin']))
+    toimipaikka_obj.sahkopostiosoite = next(
+        iter([y['email'] for y in reply_json['yhteystiedot'] if 'email' in y.keys()]))
 
 
 def create_kielipainotus(toimipaikka_id, kieli):
@@ -310,7 +316,8 @@ def create_toimipaikka_using_oid(toimipaikka_organisaatio_oid, user_id):
         if toimipaikka_created:
             # This needs to be done before fetch and save save so toimipaikka has permission group to assign for kieli-
             # and toiminnallinenpainotus
-            create_permission_groups_for_organisaatio(toimipaikka_organisaatio_oid, Organisaatiotyyppi.TOIMIPAIKKA.value)
+            create_permission_groups_for_organisaatio(toimipaikka_organisaatio_oid,
+                                                      Organisaatiotyyppi.TOIMIPAIKKA.value)
             fetch_and_save_toimipaikka_data(toimipaikka_obj)
             # New organization, let's create pre-defined permission_groups for it
             assign_permissions_to_toimipaikka_obj(toimipaikka_organisaatio_oid, vakajarjestaja.organisaatio_oid)
@@ -319,8 +326,9 @@ def create_toimipaikka_using_oid(toimipaikka_organisaatio_oid, user_id):
 
 
 def check_if_toimipaikka_exists_in_organisaatiopalvelu(vakajarjestaja_id, toimipaikka_name):
-    vakajarjestaja_obj = VakaJarjestaja.objects.get(id=vakajarjestaja_id)
-    toimipaikka_exists_already, oids = check_if_toimipaikka_exists_by_name(toimipaikka_name, vakajarjestaja_obj.organisaatio_oid)
+    vakajarjestaja_obj = Organisaatio.objects.get(id=vakajarjestaja_id)
+    toimipaikka_exists_already, oids = check_if_toimipaikka_exists_by_name(toimipaikka_name,
+                                                                           vakajarjestaja_obj.organisaatio_oid)
     if not toimipaikka_exists_already:
         return
     elif len(oids) == 0:
@@ -330,7 +338,7 @@ def check_if_toimipaikka_exists_in_organisaatiopalvelu(vakajarjestaja_id, toimip
 
 
 def get_toimipaikka_json(toimipaikka_validated_data, vakajarjestaja_id):
-    vakajarjestaja = VakaJarjestaja.objects.get(id=vakajarjestaja_id)
+    vakajarjestaja = Organisaatio.objects.get(id=vakajarjestaja_id)
     parent_oid = vakajarjestaja.organisaatio_oid
 
     kayntiosoite_fi = {
@@ -351,7 +359,8 @@ def get_toimipaikka_json(toimipaikka_validated_data, vakajarjestaja_id):
     postiosoite_sv = {**postiosoite_fi, 'kieli': 'kieli_sv#1'}
     kayntiosoite_en = {
         'osoiteTyyppi': 'ulkomainen_kaynti',
-        'osoite': toimipaikka_validated_data['kayntiosoite'] + ', ' + toimipaikka_validated_data['kayntiosoite_postinumero'] + ' ' + toimipaikka_validated_data['kayntiosoite_postitoimipaikka'],
+        'osoite': toimipaikka_validated_data['kayntiosoite'] + ', ' + toimipaikka_validated_data[
+            'kayntiosoite_postinumero'] + ' ' + toimipaikka_validated_data['kayntiosoite_postitoimipaikka'],
         'kieli': 'kieli_en#1'
     }
     postiosoite_en = {
@@ -373,13 +382,16 @@ def get_toimipaikka_json(toimipaikka_validated_data, vakajarjestaja_id):
     email_en = {**email_fi, 'kieli': 'kieli_en#1'}
     puhelin_en = {**puhelin_fi, 'kieli': 'kieli_en#1'}
 
-    kasvatusopillinen_jarjestelma = 'vardakasvatusopillinenjarjestelma_' + toimipaikka_validated_data['kasvatusopillinen_jarjestelma_koodi'].lower()
+    kasvatusopillinen_jarjestelma = 'vardakasvatusopillinenjarjestelma_' + toimipaikka_validated_data[
+        'kasvatusopillinen_jarjestelma_koodi'].lower()
     toimintamuoto = 'vardatoimintamuoto_' + toimipaikka_validated_data['toimintamuoto_koodi'].lower()
-    jarjestamismuoto = ['vardajarjestamismuoto_' + koodi.lower() for koodi in toimipaikka_validated_data['jarjestamismuoto_koodi']]
+    jarjestamismuoto = ['vardajarjestamismuoto_' + koodi.lower() for koodi in
+                        toimipaikka_validated_data['jarjestamismuoto_koodi']]
     varhaiskasvatuspaikat = toimipaikka_validated_data['varhaiskasvatuspaikat']
     alkamis_pvm = str(toimipaikka_validated_data['alkamis_pvm'])
-    paattymis_pvm = (str(toimipaikka_validated_data['paattymis_pvm']) if 'paattymis_pvm' in toimipaikka_validated_data and
-                     toimipaikka_validated_data['paattymis_pvm'] is not None else None)
+    paattymis_pvm = (str(toimipaikka_validated_data['paattymis_pvm'])
+                     if 'paattymis_pvm' in toimipaikka_validated_data and
+                        toimipaikka_validated_data['paattymis_pvm'] is not None else None)
     kunta_koodi = 'kunta_' + toimipaikka_validated_data['kunta_koodi']
 
     piilotettu = toimipaikka_validated_data['toimintamuoto_koodi'].lower() in ['tm02', 'tm03']
@@ -508,7 +520,8 @@ def get_toimipaikka_update_json(saved_toimipaikka_obj, old_toimipaikka):
     new_toimipaikka_json = copy.deepcopy(old_toimipaikka)
 
     alkamis_pvm = str(saved_toimipaikka_obj.alkamis_pvm)
-    paattymis_pvm = str(saved_toimipaikka_obj.paattymis_pvm) if saved_toimipaikka_obj.paattymis_pvm is not None else None
+    paattymis_pvm = str(
+        saved_toimipaikka_obj.paattymis_pvm) if saved_toimipaikka_obj.paattymis_pvm is not None else None
     new_toimipaikka_json['kotipaikkaUri'] = 'kunta_' + saved_toimipaikka_obj.kunta_koodi
     new_toimipaikka_json['alkuPvm'] = alkamis_pvm
     new_toimipaikka_json['lakkautusPvm'] = paattymis_pvm
@@ -543,13 +556,16 @@ def update_nimet(new_toimipaikka_json, toimipaikka_obj):
 def update_vakatieto(new_toimipaikka_json, toimipaikka_obj):
     toimipaikka_id = toimipaikka_obj.id
     vakatieto = new_toimipaikka_json.get('varhaiskasvatuksenToimipaikkaTiedot', {})
-    vakatieto['kasvatusopillinenJarjestelma'] = 'vardakasvatusopillinenjarjestelma_' + toimipaikka_obj.kasvatusopillinen_jarjestelma_koodi.lower()
+    vakatieto[
+        'kasvatusopillinenJarjestelma'] = 'vardakasvatusopillinenjarjestelma_' + toimipaikka_obj.kasvatusopillinen_jarjestelma_koodi.lower()
     vakatieto['toimintamuoto'] = 'vardatoimintamuoto_' + toimipaikka_obj.toimintamuoto_koodi.lower()
-    vakatieto['varhaiskasvatuksenJarjestamismuodot'] = ['vardajarjestamismuoto_' + koodi.lower() for koodi in toimipaikka_obj.jarjestamismuoto_koodi]
+    vakatieto['varhaiskasvatuksenJarjestamismuodot'] = ['vardajarjestamismuoto_' + koodi.lower() for koodi in
+                                                        toimipaikka_obj.jarjestamismuoto_koodi]
     vakatieto['paikkojenLukumaara'] = toimipaikka_obj.varhaiskasvatuspaikat
     # These have separate update api
     vakatieto['varhaiskasvatuksenKielipainotukset'] = get_kielipainotukset_in_toimipaikka(toimipaikka_id)
-    vakatieto['varhaiskasvatuksenToiminnallinenpainotukset'] = get_toiminnallisetpainotukset_in_toimipaikka(toimipaikka_id)
+    vakatieto['varhaiskasvatuksenToiminnallinenpainotukset'] = get_toiminnallisetpainotukset_in_toimipaikka(
+        toimipaikka_id)
     new_toimipaikka_json['varhaiskasvatuksenToimipaikkaTiedot'] = vakatieto
 
 
@@ -588,7 +604,8 @@ def update_yhteystiedot(new_toimipaikka_json, toimipaikka_obj):
     }
     upsert_yhteystieto(ulkomainen_posti_template,
                        yhteystiedot,
-                       lambda _yhteystieto: 'osoiteTyyppi' in _yhteystieto and 'ulkomainen_posti' == _yhteystieto['osoiteTyyppi'],
+                       lambda _yhteystieto: 'osoiteTyyppi' in _yhteystieto and 'ulkomainen_posti' == _yhteystieto[
+                           'osoiteTyyppi'],
                        ['kieli_en#1'])
     # Käyntiosoite
     kaynti_template = {
@@ -609,7 +626,8 @@ def update_yhteystiedot(new_toimipaikka_json, toimipaikka_obj):
     }
     upsert_yhteystieto(ulkomainen_posti_template,
                        yhteystiedot,
-                       lambda _yhteystieto: 'osoiteTyyppi' in _yhteystieto and 'ulkomainen_kaynti' == _yhteystieto['osoiteTyyppi'],
+                       lambda _yhteystieto: 'osoiteTyyppi' in _yhteystieto and 'ulkomainen_kaynti' == _yhteystieto[
+                           'osoiteTyyppi'],
                        ['kieli_en#1'])
     new_toimipaikka_json['yhteystiedot'] = yhteystiedot
 
@@ -625,7 +643,8 @@ def upsert_yhteystieto(yhteystieto_template, yhteystiedot, condition, lang_urls)
     """
     [yhteystieto.update(copy.copy(yhteystieto_template)) for yhteystieto in yhteystiedot if condition(yhteystieto)]
     existing_yhteystieto_lang_urls = [yhteystieto['kieli'] for yhteystieto in yhteystiedot if condition(yhteystieto)]
-    new_emails = [create_yhteystieto(yhteystieto_template, lang_url) for lang_url in lang_urls if lang_url not in existing_yhteystieto_lang_urls]
+    new_emails = [create_yhteystieto(yhteystieto_template, lang_url) for lang_url in lang_urls if
+                  lang_url not in existing_yhteystieto_lang_urls]
     yhteystiedot.extend(new_emails)
 
 
@@ -669,13 +688,16 @@ def get_toiminnallisetpainotukset_in_toimipaikka(toimipaikka_id):
 
     for toiminnallinenpainotus in queryset:
         painotus = {}
-        painotus['toiminnallinenpainotus'] = 'vardatoiminnallinenpainotus_' + toiminnallinenpainotus.toimintapainotus_koodi.lower()
+        painotus[
+            'toiminnallinenpainotus'] = 'vardatoiminnallinenpainotus_' + toiminnallinenpainotus.toimintapainotus_koodi.lower()
         painotus['alkupvm'] = str(toiminnallinenpainotus.alkamis_pvm)
-        painotus['loppupvm'] = str(toiminnallinenpainotus.paattymis_pvm) if toiminnallinenpainotus.paattymis_pvm else None
+        painotus['loppupvm'] = str(
+            toiminnallinenpainotus.paattymis_pvm) if toiminnallinenpainotus.paattymis_pvm else None
         toiminnallisetpainotukset.append(painotus)
 
     if not toiminnallisetpainotukset:  # Add default
-        toiminnallisetpainotukset.append({'toiminnallinenpainotus': 'vardatoiminnallinenpainotus_tp98', 'alkupvm': str(datetime.date.today())})
+        toiminnallisetpainotukset.append(
+            {'toiminnallinenpainotus': 'vardatoiminnallinenpainotus_tp98', 'alkupvm': str(datetime.date.today())})
     return toiminnallisetpainotukset
 
 
@@ -732,17 +754,15 @@ def update_toimipaikat_in_organisaatiopalvelu():
     toimipaikka_changed_qs = (toimipaikka_base_qs
                               .filter(muutos_pvm__gt=start_datetime)
                               .annotate(update_time_difference=ExpressionWrapper(F('muutos_pvm') - F('luonti_pvm'), output_field=DurationField()))
-                              .filter(update_time_difference__gt=datetime.timedelta(microseconds=100 * 1000))  # greater than 100 mseconds difference
-                              )
+                              # greater than 100 mseconds difference
+                              .filter(update_time_difference__gt=datetime.timedelta(microseconds=100 * 1000)))
 
     toimipaikka_kielipainotus_changed_qs = (toimipaikka_base_qs
                                             .filter(kielipainotukset__muutos_pvm__gt=start_datetime)
-                                            .annotate(update_time_difference=ExpressionWrapper(F('muutos_pvm') - F('luonti_pvm'), output_field=DurationField()))
-                                            )
+                                            .annotate(update_time_difference=ExpressionWrapper(F('muutos_pvm') - F('luonti_pvm'), output_field=DurationField())))
     toimipaikka_toiminnallinenpainotus_changed_qs = (toimipaikka_base_qs
                                                      .filter(toiminnallisetpainotukset__muutos_pvm__gt=start_datetime)
-                                                     .annotate(update_time_difference=ExpressionWrapper(F('muutos_pvm') - F('luonti_pvm'), output_field=DurationField()))
-                                                     )
+                                                     .annotate(update_time_difference=ExpressionWrapper(F('muutos_pvm') - F('luonti_pvm'), output_field=DurationField())))
 
     """
     Let's use the history-type to find the removals:
@@ -762,12 +782,12 @@ def update_toimipaikat_in_organisaatiopalvelu():
                                                  .values_list('toimipaikka_id', flat=True)
                                                  )
 
-    history_deleted_painotukset_union = history_kielipainotus_deleted_qs.union(history_toiminnallinenpainotus_deleted_qs)
+    history_deleted_painotukset_union = history_kielipainotus_deleted_qs.union(
+        history_toiminnallinenpainotus_deleted_qs)
 
     toimipaikka_deleted_painotukset_qs = (toimipaikka_base_qs
                                           .filter(id__in=history_deleted_painotukset_union)
-                                          .annotate(update_time_difference=ExpressionWrapper(F('muutos_pvm') - F('luonti_pvm'), output_field=DurationField()))
-                                          )
+                                          .annotate(update_time_difference=ExpressionWrapper(F('muutos_pvm') - F('luonti_pvm'), output_field=DurationField())))
 
     result_qs = toimipaikka_changed_qs.union(toimipaikka_kielipainotus_changed_qs,
                                              toimipaikka_toiminnallinenpainotus_changed_qs,
@@ -807,7 +827,8 @@ def _update_toimipaikka_chunk(oid_chunk):
     for toimipaikka in toimipaikka_objs:
         organisaatio = organisaatios_data.get(toimipaikka.organisaatio_oid, None)
         if organisaatio is None:
-            logger.error('Organisaatio-service managed toimipaikka not found from organisaatio-service with oid %s', toimipaikka.organisaatio_oid)
+            logger.error('Organisaatio-service managed toimipaikka not found from organisaatio-service with oid %s',
+                         toimipaikka.organisaatio_oid)
         else:
             _fill_toimipaikka_data(organisaatio, toimipaikka)
             varda_system_user = User.objects.get(username='varda_system')

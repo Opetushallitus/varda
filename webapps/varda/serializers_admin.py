@@ -2,7 +2,7 @@ from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 
 from varda.misc import hash_string
-from varda.models import (VakaJarjestaja, Toimipaikka, Maksutieto, Henkilo, Varhaiskasvatussuhde, Tyontekija,
+from varda.models import (Organisaatio, Toimipaikka, Maksutieto, Henkilo, Varhaiskasvatussuhde, Tyontekija,
                           Tyoskentelypaikka)
 
 
@@ -32,7 +32,7 @@ class AnonymisointiYhteenvetoSerializer(serializers.Serializer):
         return Henkilo.objects.count()
 
     def get_no_of_vakajarjestajat(self, request):
-        return VakaJarjestaja.objects.count()
+        return Organisaatio.objects.count()
 
     def get_no_of_toimipaikat(self, request):
         return Toimipaikka.objects.count()

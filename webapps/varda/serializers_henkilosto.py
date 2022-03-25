@@ -7,7 +7,7 @@ from varda import validators
 from varda.cache import caching_to_representation, get_object_ids_for_user_by_model
 from varda.enums.error_messages import ErrorMessages
 from varda.misc_viewsets import ViewSetValidator
-from varda.models import (Henkilo, TilapainenHenkilosto, Tutkinto, Tyontekija, VakaJarjestaja, Palvelussuhde,
+from varda.models import (Henkilo, TilapainenHenkilosto, Tutkinto, Tyontekija, Organisaatio, Palvelussuhde,
                           Tyoskentelypaikka, Toimipaikka, PidempiPoissaolo, TaydennyskoulutusTyontekija,
                           Taydennyskoulutus, Z4_CasKayttoOikeudet)
 from varda.permissions import (is_correct_taydennyskoulutus_tyontekija_permission,
@@ -17,7 +17,7 @@ from varda.related_object_validations import (create_date_range, date_range_over
                                               check_if_admin_mutable_object_is_changed, check_overlapping_palvelussuhde,
                                               check_overlapping_tyoskentelypaikka, check_overlapping_pidempi_poissaolo,
                                               check_if_immutable_object_is_changed)
-from varda.serializers_common import (OidRelatedField, TunnisteRelatedField, VakaJarjestajaPermissionCheckedHLField,
+from varda.serializers_common import (OidRelatedField, TunnisteRelatedField, OrganisaatioPermissionCheckedHLField,
                                       PermissionCheckedHLFieldMixin, ToimipaikkaPermissionCheckedHLField,
                                       OptionalToimipaikkaMixin, HenkiloPermissionCheckedHLField)
 from varda.validators import (validate_paattymispvm_same_or_after_alkamispvm, validate_paivamaara1_after_paivamaara2,
@@ -55,7 +55,8 @@ class PalvelussuhdePermissionCheckedHLField(PermissionCheckedHLFieldMixin, seria
 
 class TyontekijaOptionalToimipaikkaMixin(OptionalToimipaikkaMixin):
     toimipaikka = ToimipaikkaPermissionCheckedHLField(view_name='toimipaikka-detail', required=False, write_only=True,
-                                                      permission_groups=[Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA])
+                                                      permission_groups=[
+                                                          Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA])
 
 
 class TyontekijaSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.HyperlinkedModelSerializer):
@@ -66,10 +67,11 @@ class TyontekijaSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.Hyper
                                   parent_attribute='henkilo_oid',
                                   prevalidator=validators.validate_henkilo_oid,
                                   either_required=True)
-    vakajarjestaja = VakaJarjestajaPermissionCheckedHLField(view_name='vakajarjestaja-detail', required=False,
-                                                            permission_groups=[Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA],
-                                                            accept_toimipaikka_permission=True)
-    vakajarjestaja_oid = OidRelatedField(object_type=VakaJarjestaja,
+    vakajarjestaja = OrganisaatioPermissionCheckedHLField(view_name='organisaatio-detail', required=False,
+                                                          permission_groups=[
+                                                              Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA],
+                                                          accept_toimipaikka_permission=True)
+    vakajarjestaja_oid = OidRelatedField(object_type=Organisaatio,
                                          parent_field='vakajarjestaja',
                                          parent_attribute='organisaatio_oid',
                                          prevalidator=validators.validate_organisaatio_oid,
@@ -106,9 +108,10 @@ class TyontekijaSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.Hyper
 
 class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.IntegerField(read_only=True)
-    vakajarjestaja = VakaJarjestajaPermissionCheckedHLField(view_name='vakajarjestaja-detail', required=False,
-                                                            permission_groups=[Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA])
-    vakajarjestaja_oid = OidRelatedField(object_type=VakaJarjestaja,
+    vakajarjestaja = OrganisaatioPermissionCheckedHLField(view_name='organisaatio-detail', required=False,
+                                                          permission_groups=[
+                                                              Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA])
+    vakajarjestaja_oid = OidRelatedField(object_type=Organisaatio,
                                          parent_field='vakajarjestaja',
                                          parent_attribute='organisaatio_oid',
                                          prevalidator=validators.validate_organisaatio_oid,
@@ -155,7 +158,8 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
         kuukausi = data['kuukausi']
         if kuukausi < self._get_first_day_of_month(vakajarjestaja.alkamis_pvm):
             validator.error('kuukausi', ErrorMessages.TH002.value)
-        if vakajarjestaja.paattymis_pvm is not None and kuukausi > self._get_last_day_of_month(vakajarjestaja.paattymis_pvm):
+        if vakajarjestaja.paattymis_pvm is not None and kuukausi > self._get_last_day_of_month(
+                vakajarjestaja.paattymis_pvm):
             validator.error('kuukausi', ErrorMessages.TH003.value)
 
     def validate_workers_and_working_hours(self, data, validator):
@@ -202,10 +206,11 @@ class TutkintoSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.Hyperli
                                   parent_attribute='henkilo_oid',
                                   prevalidator=validators.validate_henkilo_oid,
                                   either_required=True)
-    vakajarjestaja = VakaJarjestajaPermissionCheckedHLField(view_name='vakajarjestaja-detail', required=False,
-                                                            permission_groups=[Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA],
-                                                            accept_toimipaikka_permission=True)
-    vakajarjestaja_oid = OidRelatedField(object_type=VakaJarjestaja,
+    vakajarjestaja = OrganisaatioPermissionCheckedHLField(view_name='organisaatio-detail', required=False,
+                                                          permission_groups=[
+                                                              Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA],
+                                                          accept_toimipaikka_permission=True)
+    vakajarjestaja_oid = OidRelatedField(object_type=Organisaatio,
                                          parent_field='vakajarjestaja',
                                          parent_attribute='organisaatio_oid',
                                          prevalidator=validators.validate_organisaatio_oid,
@@ -242,7 +247,7 @@ class PalvelussuhdeSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.Hy
     class Meta:
         model = Palvelussuhde
         exclude = ('changed_by', 'luonti_pvm')
-        read_only_fields = ('muutos_pvm', )
+        read_only_fields = ('muutos_pvm',)
 
     @caching_to_representation('palvelussuhde')
     def to_representation(self, instance):
@@ -294,7 +299,8 @@ class TyoskentelypaikkaSerializer(serializers.HyperlinkedModelSerializer):
                                                   prevalidator=validators.validate_tunniste,
                                                   either_required=True)
     toimipaikka = ToimipaikkaPermissionCheckedHLField(required=False, allow_null=True, view_name='toimipaikka-detail',
-                                                      permission_groups=[Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA])
+                                                      permission_groups=[
+                                                          Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA])
     toimipaikka_oid = OidRelatedField(object_type=Toimipaikka,
                                       parent_field='toimipaikka',
                                       parent_attribute='organisaatio_oid',
@@ -305,7 +311,7 @@ class TyoskentelypaikkaSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Tyoskentelypaikka
         exclude = ('changed_by', 'luonti_pvm')
-        read_only_fields = ('muutos_pvm', )
+        read_only_fields = ('muutos_pvm',)
 
     @caching_to_representation('tyoskentelypaikka')
     def to_representation(self, instance):
@@ -358,22 +364,26 @@ def validate_tyoskentelypaikka_dates(validated_data, palvelussuhde, validator):
     tyoskentelypaikka_paattymis_pvm = validated_data.get('paattymis_pvm', None)
     tyoskentelypaikka_alkamis_pvm = validated_data.get('alkamis_pvm', None)
     if tyoskentelypaikka_paattymis_pvm:
-        if (palvelussuhde.paattymis_pvm is not None and not validators.validate_paivamaara1_before_paivamaara2(tyoskentelypaikka_paattymis_pvm, palvelussuhde.paattymis_pvm, can_be_same=True)):
+        if (palvelussuhde.paattymis_pvm is not None and not validators.validate_paivamaara1_before_paivamaara2(
+                tyoskentelypaikka_paattymis_pvm, palvelussuhde.paattymis_pvm, can_be_same=True)):
             validator.error('paattymis_pvm', ErrorMessages.TA006.value)
         if not validate_paivamaara1_after_paivamaara2(tyoskentelypaikka_paattymis_pvm, '2020-09-01', can_be_same=True):
             validator.error('paattymis_pvm', ErrorMessages.TA007.value)
     elif palvelussuhde.paattymis_pvm:
         validator.error('paattymis_pvm', ErrorMessages.TA013.value)
 
-    if not validators.validate_paivamaara1_after_paivamaara2(tyoskentelypaikka_alkamis_pvm, palvelussuhde.alkamis_pvm, can_be_same=True):
+    if not validators.validate_paivamaara1_after_paivamaara2(tyoskentelypaikka_alkamis_pvm, palvelussuhde.alkamis_pvm,
+                                                             can_be_same=True):
         validator.error('alkamis_pvm', ErrorMessages.TA008.value)
-    if not validators.validate_paivamaara1_before_paivamaara2(tyoskentelypaikka_alkamis_pvm, palvelussuhde.paattymis_pvm, can_be_same=True):
+    if not validators.validate_paivamaara1_before_paivamaara2(tyoskentelypaikka_alkamis_pvm,
+                                                              palvelussuhde.paattymis_pvm, can_be_same=True):
         validator.error('alkamis_pvm', ErrorMessages.TA009.value)
 
 
 def validate_overlapping_kiertavyys(data, palvelussuhde, kiertava_tyontekija_kytkin, validator):
     inverse_kiertava_kytkin = not kiertava_tyontekija_kytkin
-    related_palvelussuhde_tyoskentelypaikat = Tyoskentelypaikka.objects.filter(palvelussuhde=palvelussuhde, kiertava_tyontekija_kytkin=inverse_kiertava_kytkin)
+    related_palvelussuhde_tyoskentelypaikat = Tyoskentelypaikka.objects.filter(palvelussuhde=palvelussuhde,
+                                                                               kiertava_tyontekija_kytkin=inverse_kiertava_kytkin)
 
     range_this = create_date_range(data['alkamis_pvm'], data.get('paattymis_pvm', None))
     for item in related_palvelussuhde_tyoskentelypaikat:
@@ -428,12 +438,13 @@ class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
                                                   prevalidator=validators.validate_tunniste,
                                                   either_required=True)
     alkamis_pvm = serializers.DateField(required=True)
-    paattymis_pvm = serializers.DateField(required=True, validators=[validators.validate_pidempi_poissaolo_paattymis_pvm])
+    paattymis_pvm = serializers.DateField(required=True,
+                                          validators=[validators.validate_pidempi_poissaolo_paattymis_pvm])
 
     class Meta:
         model = PidempiPoissaolo
         exclude = ('changed_by', 'luonti_pvm')
-        read_only_fields = ('muutos_pvm', )
+        read_only_fields = ('muutos_pvm',)
 
     @caching_to_representation('pidempipoissaolo')
     def to_representation(self, instance):
@@ -478,18 +489,21 @@ class PermissionCheckedTaydennyskoulutusTyontekijaListSerializer(serializers.Lis
         super(PermissionCheckedTaydennyskoulutusTyontekijaListSerializer, self).update(instance, validated_data)
 
     def to_internal_value(self, data):
-        taydennyskoulutus_tyontekija_dicts = super(PermissionCheckedTaydennyskoulutusTyontekijaListSerializer, self).to_internal_value(data)
+        taydennyskoulutus_tyontekija_dicts = super(PermissionCheckedTaydennyskoulutusTyontekijaListSerializer,
+                                                   self).to_internal_value(data)
         with ViewSetValidator() as validator:
             # Validate all provided tyontekijat exist and mutate 'tyontekija' field to data.
             for index, taydennyskoulutus_tyontekija in enumerate(taydennyskoulutus_tyontekija_dicts):
-                taydennyskoulutus_tyontekija['tyontekija'] = self._find_tyontekija(taydennyskoulutus_tyontekija, validator, index)
+                taydennyskoulutus_tyontekija['tyontekija'] = self._find_tyontekija(taydennyskoulutus_tyontekija,
+                                                                                   validator, index)
                 if validator.messages:
                     break
 
             if not validator.messages:
                 # All tyontekijat found so check permissions
                 user = self.context['request'].user
-                if not is_correct_taydennyskoulutus_tyontekija_permission(user, taydennyskoulutus_tyontekija_dicts, throws=False):
+                if not is_correct_taydennyskoulutus_tyontekija_permission(user, taydennyskoulutus_tyontekija_dicts,
+                                                                          throws=False):
                     validator.error('0', ErrorMessages.TK001.value)
 
         return taydennyskoulutus_tyontekija_dicts
@@ -501,7 +515,8 @@ class PermissionCheckedTaydennyskoulutusTyontekijaListSerializer(serializers.Lis
             checked_data, organisaatio_oids = filter_authorized_taydennyskoulutus_tyontekijat(data, user)
             if not organisaatio_oids:
                 return []
-            return super(PermissionCheckedTaydennyskoulutusTyontekijaListSerializer, self).to_representation(checked_data)
+            return super(PermissionCheckedTaydennyskoulutusTyontekijaListSerializer, self).to_representation(
+                checked_data)
         return super(PermissionCheckedTaydennyskoulutusTyontekijaListSerializer, self).to_representation(data)
 
     def _find_tyontekija(self, data, validator, index):
@@ -520,7 +535,8 @@ class PermissionCheckedTaydennyskoulutusTyontekijaListSerializer(serializers.Lis
             return None
 
         if henkilo_oid is not None:
-            tyontekija = self._find_tyontekija_by_henkilo_oid(validator, henkilo_oid, vakajarjestaja_oid, index, tyontekija)
+            tyontekija = self._find_tyontekija_by_henkilo_oid(validator, henkilo_oid, vakajarjestaja_oid, index,
+                                                              tyontekija)
 
         if tunniste is not None:
             tyontekija = self._find_tyontekija_by_tunniste(validator, tunniste, lahdejarjestelma, index, tyontekija)
@@ -532,7 +548,8 @@ class PermissionCheckedTaydennyskoulutusTyontekijaListSerializer(serializers.Lis
 
     def _find_tyontekija_by_henkilo_oid(self, validator, henkilo_oid, vakajarjestaja_oid, index, tyontekija=None):
         try:
-            tyontekija_by_henkilo_oid = Tyontekija.objects.get(henkilo__henkilo_oid=henkilo_oid, vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
+            tyontekija_by_henkilo_oid = Tyontekija.objects.get(henkilo__henkilo_oid=henkilo_oid,
+                                                               vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
         except Tyontekija.DoesNotExist:
             validator.error_nested([index, 'henkilo_oid'], ErrorMessages.TK004.value)
             return
@@ -556,8 +573,10 @@ class PermissionCheckedTaydennyskoulutusTyontekijaListSerializer(serializers.Lis
 class NestedTaydennyskoulutusTyontekijaSerializer(serializers.ModelSerializer):
     tyontekija = TyontekijaHLField(required=False, view_name='tyontekija-detail')
     henkilo_oid = serializers.CharField(max_length=50, required=False, validators=[validators.validate_henkilo_oid])
-    vakajarjestaja_oid = serializers.CharField(max_length=50, required=False, validators=[validators.validate_organisaatio_oid])
-    lahdejarjestelma = serializers.CharField(max_length=2, required=False, validators=[validators.validate_lahdejarjestelma_koodi])
+    vakajarjestaja_oid = serializers.CharField(max_length=50, required=False,
+                                               validators=[validators.validate_organisaatio_oid])
+    lahdejarjestelma = serializers.CharField(max_length=2, required=False,
+                                             validators=[validators.validate_lahdejarjestelma_koodi])
     tunniste = serializers.CharField(max_length=120, required=False, validators=[validators.validate_tunniste])
 
     class Meta:
@@ -601,13 +620,16 @@ class NestedTaydennyskoulutusTyontekijaSerializer(serializers.ModelSerializer):
                 validator.error('tehtavanimike_koodi', ErrorMessages.GE001.value)
                 return
 
-            if not Tyontekija.objects.filter(id=tyontekija.id, palvelussuhteet__tyoskentelypaikat__tehtavanimike_koodi=tehtavanimike_koodi).exists():
+            if not Tyontekija.objects.filter(id=tyontekija.id,
+                                             palvelussuhteet__tyoskentelypaikat__tehtavanimike_koodi=tehtavanimike_koodi).exists():
                 validator.error('tehtavanimike_koodi', ErrorMessages.TK008.value)
 
 
 class TaydennyskoulutusSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.IntegerField(read_only=True)
-    taydennyskoulutus_tyontekijat = NestedTaydennyskoulutusTyontekijaSerializer(required=True, allow_empty=False, many=True, source='taydennyskoulutukset_tyontekijat')
+    taydennyskoulutus_tyontekijat = NestedTaydennyskoulutusTyontekijaSerializer(required=True, allow_empty=False,
+                                                                                many=True,
+                                                                                source='taydennyskoulutukset_tyontekijat')
     taydennyskoulutus_tyontekijat_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -630,7 +652,8 @@ class TaydennyskoulutusSerializer(serializers.HyperlinkedModelSerializer):
 
     def validate(self, data):
         with ViewSetValidator() as validator:
-            tyontekija_set = {(tyontekija['tyontekija'].id, tyontekija['tehtavanimike_koodi']) for tyontekija in data['taydennyskoulutukset_tyontekijat']}
+            tyontekija_set = {(tyontekija['tyontekija'].id, tyontekija['tehtavanimike_koodi']) for tyontekija in
+                              data['taydennyskoulutukset_tyontekijat']}
             if len(tyontekija_set) != len(data['taydennyskoulutukset_tyontekijat']):
                 validator.error('taydennyskoulutus_tyontekijat', ErrorMessages.TK010.value)
 
@@ -643,9 +666,13 @@ class TaydennyskoulutusSerializer(serializers.HyperlinkedModelSerializer):
 
 class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.IntegerField(read_only=True)
-    taydennyskoulutus_tyontekijat = NestedTaydennyskoulutusTyontekijaSerializer(required=False, allow_empty=False, many=True, source='taydennyskoulutukset_tyontekijat')
-    taydennyskoulutus_tyontekijat_add = NestedTaydennyskoulutusTyontekijaSerializer(write_only=True, required=False, allow_empty=False, many=True)
-    taydennyskoulutus_tyontekijat_remove = NestedTaydennyskoulutusTyontekijaSerializer(write_only=True, required=False, allow_empty=False, many=True)
+    taydennyskoulutus_tyontekijat = NestedTaydennyskoulutusTyontekijaSerializer(required=False, allow_empty=False,
+                                                                                many=True,
+                                                                                source='taydennyskoulutukset_tyontekijat')
+    taydennyskoulutus_tyontekijat_add = NestedTaydennyskoulutusTyontekijaSerializer(write_only=True, required=False,
+                                                                                    allow_empty=False, many=True)
+    taydennyskoulutus_tyontekijat_remove = NestedTaydennyskoulutusTyontekijaSerializer(write_only=True, required=False,
+                                                                                       allow_empty=False, many=True)
     taydennyskoulutus_tyontekijat_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -656,11 +683,13 @@ class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
         instance = self.instance
 
         with ViewSetValidator() as validator:
-            if 'taydennyskoulutukset_tyontekijat' in data and ('taydennyskoulutus_tyontekijat_add' in data or 'taydennyskoulutus_tyontekijat_remove' in data):
+            if 'taydennyskoulutukset_tyontekijat' in data and (
+                    'taydennyskoulutus_tyontekijat_add' in data or 'taydennyskoulutus_tyontekijat_remove' in data):
                 validator.error('taydennyskoulutus_tyontekijat', ErrorMessages.TK009.value)
 
             if 'taydennyskoulutukset_tyontekijat' in data:
-                tyontekijat_set = {(tyontekija['tyontekija'].id, tyontekija['tehtavanimike_koodi']) for tyontekija in data['taydennyskoulutukset_tyontekijat']}
+                tyontekijat_set = {(tyontekija['tyontekija'].id, tyontekija['tehtavanimike_koodi']) for tyontekija in
+                                   data['taydennyskoulutukset_tyontekijat']}
                 if len(tyontekijat_set) != len(data['taydennyskoulutukset_tyontekijat']):
                     validator.error('taydennyskoulutus_tyontekijat', ErrorMessages.TK010.value)
 
@@ -679,24 +708,28 @@ class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
         """
         tyontekijat_add = data.get('taydennyskoulutus_tyontekijat_add', [])
         with ViewSetValidator() as validator:
-            tyontekijat_add_set = {(tyontekija['tyontekija'].id, tyontekija['tehtavanimike_koodi']) for tyontekija in tyontekijat_add}
+            tyontekijat_add_set = {(tyontekija['tyontekija'].id, tyontekija['tehtavanimike_koodi']) for tyontekija in
+                                   tyontekijat_add}
             if len(tyontekijat_add_set) != len(tyontekijat_add):
                 validator.error('taydennyskoulutus_tyontekijat_add', ErrorMessages.TK010.value)
             for tyontekija in tyontekijat_add:
                 if instance.taydennyskoulutukset_tyontekijat.filter(tyontekija=tyontekija['tyontekija'].id,
-                                                                    tehtavanimike_koodi=tyontekija['tehtavanimike_koodi']).exists():
+                                                                    tehtavanimike_koodi=tyontekija[
+                                                                        'tehtavanimike_koodi']).exists():
                     validator.error('taydennyskoulutus_tyontekijat_add', ErrorMessages.TK011.value)
         return len(tyontekijat_add) > 0
 
     def _validate_tyontekijat_remove(self, instance, data, is_new_tyontekijat_added):
         if 'taydennyskoulutus_tyontekijat_remove' in data:
             with ViewSetValidator() as validator:
-                tyontekijat_remove_set = {(tyontekija['tyontekija'].id, tyontekija['tehtavanimike_koodi']) for tyontekija in data['taydennyskoulutus_tyontekijat_remove']}
+                tyontekijat_remove_set = {(tyontekija['tyontekija'].id, tyontekija['tehtavanimike_koodi']) for
+                                          tyontekija in data['taydennyskoulutus_tyontekijat_remove']}
                 if len(tyontekijat_remove_set) != len(data['taydennyskoulutus_tyontekijat_remove']):
                     validator.error('taydennyskoulutus_tyontekijat_remove', ErrorMessages.TK010.value)
                 for tyontekija in data['taydennyskoulutus_tyontekijat_remove']:
                     if not instance.taydennyskoulutukset_tyontekijat.filter(tyontekija=tyontekija['tyontekija'].id,
-                                                                            tehtavanimike_koodi=tyontekija['tehtavanimike_koodi']).exists():
+                                                                            tehtavanimike_koodi=tyontekija[
+                                                                                'tehtavanimike_koodi']).exists():
                         validator.error('taydennyskoulutus_tyontekijat_remove', ErrorMessages.TK012.value)
                 if len(tyontekijat_remove_set) == instance.taydennyskoulutukset_tyontekijat.count() and not is_new_tyontekijat_added:
                     validator.error('taydennyskoulutus_tyontekijat_remove', ErrorMessages.TK013.value)
@@ -731,7 +764,8 @@ class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
             tyontekijat_remove = validated_data.pop('taydennyskoulutus_tyontekijat_remove', [])
             for tyontekija_remove in tyontekijat_remove:
                 instance.taydennyskoulutukset_tyontekijat.filter(tyontekija=tyontekija_remove['tyontekija'],
-                                                                 tehtavanimike_koodi=tyontekija_remove['tehtavanimike_koodi']).delete()
+                                                                 tehtavanimike_koodi=tyontekija_remove[
+                                                                     'tehtavanimike_koodi']).delete()
 
 
 class TaydennyskoulutusTyontekijaListSerializer(serializers.ModelSerializer):

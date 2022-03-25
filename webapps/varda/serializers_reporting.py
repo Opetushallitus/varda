@@ -22,10 +22,10 @@ from varda.misc_queries import get_history_value_subquery, get_related_object_ch
 from varda.models import (Henkilo, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto, MaksutietoHuoltajuussuhde,
                           Palvelussuhde, PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Tutkinto,
                           Tyoskentelypaikka, TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka, Tyontekija,
-                          VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, YearlyReportSummary,
+                          Organisaatio, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, YearlyReportSummary,
                           Z4_CasKayttoOikeudet, Z6_LastRequest, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary,
                           Z8_ExcelReport, Z9_RelatedObjectChanged)
-from varda.serializers import ToimipaikkaHLField, VakaJarjestajaPermissionCheckedHLField
+from varda.serializers import ToimipaikkaHLField, OrganisaatioPermissionCheckedHLField
 from varda.serializers_common import OidRelatedField
 
 
@@ -274,9 +274,9 @@ class TiedonsiirtoYhteenvetoSerializer(serializers.Serializer):
 class ExcelReportSerializer(serializers.ModelSerializer):
     report_type = serializers.CharField()
     language = serializers.CharField()
-    vakajarjestaja = VakaJarjestajaPermissionCheckedHLField(view_name='vakajarjestaja-detail', required=False,
-                                                            permission_groups=[Z4_CasKayttoOikeudet.RAPORTTIEN_KATSELIJA])
-    vakajarjestaja_oid = OidRelatedField(object_type=VakaJarjestaja,
+    vakajarjestaja = OrganisaatioPermissionCheckedHLField(view_name='organisaatio-detail', required=False,
+                                                          permission_groups=[Z4_CasKayttoOikeudet.RAPORTTIEN_KATSELIJA])
+    vakajarjestaja_oid = OidRelatedField(object_type=Organisaatio,
                                          parent_field='vakajarjestaja',
                                          parent_attribute='organisaatio_oid',
                                          prevalidator=validators.validate_organisaatio_oid,
@@ -366,7 +366,7 @@ class DuplicateLapsiSerializer(serializers.Serializer):
 
     def to_representation(self, instance):
         instance['henkilo'] = Henkilo.objects.get(id=instance['henkilo'])
-        instance['vakatoimija'] = VakaJarjestaja.objects.get(id=instance['vakatoimija'])
+        instance['vakatoimija'] = Organisaatio.objects.get(id=instance['vakatoimija'])
         instance['lapsi_list'] = instance['henkilo'].lapsi.filter(vakatoimija=instance['vakatoimija'])
         return super().to_representation(instance)
 
@@ -571,11 +571,11 @@ class TkOrganisaatiotSerializer(TkBaseSerializer, serializers.ModelSerializer):
     tilapainen_henkilosto = serializers.SerializerMethodField()
 
     class Meta:
-        model = VakaJarjestaja
+        model = Organisaatio
         fields = ('id', 'action', 'nimi', 'organisaatio_oid', 'y_tunnus', 'kunta_koodi', 'sahkopostiosoite',
                   'kayntiosoite', 'kayntiosoite_postinumero', 'kayntiosoite_postitoimipaikka', 'postiosoite',
-                  'postinumero', 'postitoimipaikka', 'puhelinnumero', 'ytjkieli', 'yritysmuoto', 'alkamis_pvm',
-                  'paattymis_pvm', 'toimipaikat', 'tilapainen_henkilosto')
+                  'postinumero', 'postitoimipaikka', 'puhelinnumero', 'ytjkieli', 'yritysmuoto', 'organisaatiotyyppi',
+                  'alkamis_pvm', 'paattymis_pvm', 'toimipaikat', 'tilapainen_henkilosto')
 
     @swagger_serializer_method(serializer_or_field=TkToimipaikkaSerializer)
     def get_toimipaikat(self, instance):

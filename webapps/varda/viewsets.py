@@ -40,7 +40,7 @@ from varda.kayttooikeuspalvelu import set_user_info_from_onr
 from varda.misc import CustomServerErrorException, encrypt_string, hash_string, update_painotus_kytkin
 from varda.misc_queries import get_paos_toimipaikat
 from varda.misc_viewsets import IncreasedModifyThrottleMixin, ObjectByTunnisteMixin
-from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, PaosToiminta,
+from varda.models import (Organisaatio, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, PaosToiminta,
                           Lapsi, Huoltaja, Huoltajuussuhde, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto,
                           PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Tyontekija, Palvelussuhde,
                           Taydennyskoulutus, Tyoskentelypaikka, TilapainenHenkilosto, Tutkinto,
@@ -69,12 +69,12 @@ from varda.related_object_validations import toimipaikka_is_valid_to_organisaati
 from varda.request_logging import request_log_viewset_decorator_factory
 from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer, UpdateHenkiloWithOidSerializer,
                                ClearCacheSerializer, ActiveUserSerializer, AuthTokenSerializer,
-                               VakaJarjestajaSerializer, ToimipaikkaSerializer, ToiminnallinenPainotusSerializer,
+                               OrganisaatioSerializer, ToimipaikkaSerializer, ToiminnallinenPainotusSerializer,
                                KieliPainotusSerializer, HaeHenkiloSerializer, HenkiloSerializer, HenkiloSerializerAdmin,
                                YksiloimattomatHenkilotSerializer, LapsiSerializer, LapsiSerializerAdmin,
                                HuoltajaSerializer, HuoltajuussuhdeSerializer, MaksutietoSerializer,
                                MaksutietoUpdateSerializer, VarhaiskasvatuspaatosSerializer,
-                               VarhaiskasvatussuhdeSerializer, VakaJarjestajaYhteenvetoSerializer,
+                               VarhaiskasvatussuhdeSerializer, OrganisaatioYhteenvetoSerializer,
                                HenkilohakuLapsetSerializer, PaosToimintaSerializer, PaosToimijatSerializer,
                                PaosToimipaikatSerializer, PaosOikeusSerializer, LapsiKoosteSerializer, UserSerializer,
                                ToimipaikkaKoosteSerializer, ToimipaikkaUpdateSerializer,
@@ -331,7 +331,7 @@ class PulssiVakajarjestajat(GenericViewSet, ListModelMixin):
     @swagger_auto_schema(responses={status.HTTP_200_OK: PulssiVakajarjestajatSerializer(many=False)})
     def list(self, request, *args, **kwargs):
         return Response(
-            {'number_of_vakajarjestajat': VakaJarjestaja.objects.count()}
+            {'number_of_vakajarjestajat': Organisaatio.objects.count()}
         )
 
 
@@ -487,7 +487,7 @@ When a new instance is created (POST-request), we give object-level permissions 
 
 @auditlogclass
 @request_log_viewset_decorator_factory()
-class VakaJarjestajaViewSet(IncreasedModifyThrottleMixin, ModelViewSet):
+class OrganisaatioViewSet(IncreasedModifyThrottleMixin, ModelViewSet):
     """
     list:
         Nouda kaikki vakajarjestajat.
@@ -508,9 +508,9 @@ class VakaJarjestajaViewSet(IncreasedModifyThrottleMixin, ModelViewSet):
         Päivitä yhden vakajarjestajan kaikki kentät.
     """
     filter_backends = (DjangoFilterBackend,)
-    filterset_class = filters.VakaJarjestajaFilter
-    queryset = VakaJarjestaja.objects.all().order_by('id')
-    serializer_class = VakaJarjestajaSerializer
+    filterset_class = filters.OrganisaatioFilter
+    queryset = Organisaatio.objects.all().order_by('id')
+    serializer_class = OrganisaatioSerializer
     permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
 
     def list(self, request, *args, **kwargs):
@@ -589,8 +589,8 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
 
                 serializer.validated_data['organisaatio_oid'] = toimipaikka_organisaatio_oid
                 saved_object = serializer.save(changed_by=user)
-                delete_cache_keys_related_model('vakajarjestaja', saved_object.vakajarjestaja.id)
-                cache.delete('vakajarjestaja_yhteenveto_' + str(saved_object.vakajarjestaja.id))
+                delete_cache_keys_related_model('organisaatio', saved_object.vakajarjestaja.id)
+                cache.delete('organisaatio_yhteenveto_' + str(saved_object.vakajarjestaja.id))
 
                 """
                 New organization, let's create pre-defined permission_groups for it.
@@ -598,7 +598,7 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
                 create_permission_groups_for_organisaatio(toimipaikka_organisaatio_oid,
                                                           Organisaatiotyyppi.TOIMIPAIKKA.value)
 
-                vakajarjestaja_obj = VakaJarjestaja.objects.get(id=vakajarjestaja_id)
+                vakajarjestaja_obj = Organisaatio.objects.get(id=vakajarjestaja_id)
                 vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
                 assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Toimipaikka, saved_object)
                 assign_object_permissions_to_all_henkilosto_groups(toimipaikka_organisaatio_oid, Toimipaikka, saved_object)
@@ -619,8 +619,8 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
     def perform_update(self, serializer):
         user = self.request.user
         saved_object = serializer.save(changed_by=user)
-        delete_cache_keys_related_model('vakajarjestaja', saved_object.vakajarjestaja.id)
-        cache.delete('vakajarjestaja_yhteenveto_' + str(saved_object.vakajarjestaja.id))
+        delete_cache_keys_related_model('organisaatio', saved_object.vakajarjestaja.id)
+        cache.delete('organisaatio_yhteenveto_' + str(saved_object.vakajarjestaja.id))
 
     @auditlog
     @action(methods=['get'], detail=True, permission_classes=(CustomModelPermissions, CustomObjectPermissions,))
@@ -676,7 +676,7 @@ class ToiminnallinenPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnis
             saved_object = serializer.save(changed_by=user)
             self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
             delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
-            cache.delete('vakajarjestaja_yhteenveto_' + str(saved_object.toimipaikka.vakajarjestaja.id))
+            cache.delete('organisaatio_yhteenveto_' + str(saved_object.toimipaikka.vakajarjestaja.id))
             assign_object_level_permissions(vakajarjestaja_organisaatio_oid, ToiminnallinenPainotus, saved_object)
             assign_object_level_permissions(toimipaikka_organisaatio_oid, ToiminnallinenPainotus, saved_object)
 
@@ -698,7 +698,7 @@ class ToiminnallinenPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnis
             instance.delete()
             self._toggle_toimipaikka_kytkin(toimipaikka)
             delete_cache_keys_related_model('toimipaikka', instance.toimipaikka.id)
-            cache.delete('vakajarjestaja_yhteenveto_' + str(instance.toimipaikka.vakajarjestaja.id))
+            cache.delete('organisaatio_yhteenveto_' + str(instance.toimipaikka.vakajarjestaja.id))
 
 
 @auditlogclass
@@ -747,7 +747,7 @@ class KieliPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
             saved_object = serializer.save(changed_by=user)
             self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
             delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
-            cache.delete('vakajarjestaja_yhteenveto_' + str(saved_object.toimipaikka.vakajarjestaja.id))
+            cache.delete('organisaatio_yhteenveto_' + str(saved_object.toimipaikka.vakajarjestaja.id))
             assign_object_level_permissions(vakajarjestaja_organisaatio_oid, KieliPainotus, saved_object)
             assign_object_level_permissions(toimipaikka_organisaatio_oid, KieliPainotus, saved_object)
 
@@ -769,7 +769,7 @@ class KieliPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
             instance.delete()
             self._toggle_toimipaikka_kytkin(toimipaikka)
             delete_cache_keys_related_model('toimipaikka', instance.toimipaikka.id)
-            cache.delete('vakajarjestaja_yhteenveto_' + str(instance.toimipaikka.vakajarjestaja.id))
+            cache.delete('organisaatio_yhteenveto_' + str(instance.toimipaikka.vakajarjestaja.id))
 
 
 class HaeHenkiloViewSet(GenericViewSet, CreateModelMixin):
@@ -984,7 +984,7 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
         try:
             with transaction.atomic():
                 saved_object = serializer.save(changed_by=user)
-                # Give user object level permissions to Henkilo object, until we can determine related VakaJarjestaja
+                # Give user object level permissions to Henkilo object, until we can determine related Organisaatio
                 # from Lapsi or Tyontekija object
                 self._assign_henkilo_permissions(user, saved_object)
 
@@ -1253,7 +1253,7 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
         No need to delete the related-lapsi cache, since user cannot change the lapsi-relation.
         """
         self.delete_list_of_toimipaikan_lapset_cache(self.get_toimipaikka_ids(saved_object))
-        self.delete_vakajarjestaja_yhteenveto_cache(saved_object)
+        self.delete_organisaatio_yhteenveto_cache(saved_object)
 
     def perform_destroy(self, instance):
         lapsi_id = instance.lapsi.id
@@ -1279,10 +1279,10 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
         for toimipaikka_id in toimipaikka_id_list:
             delete_toimipaikan_lapset_cache(str(toimipaikka_id))
 
-    def delete_vakajarjestaja_yhteenveto_cache(self, vakapaatos_obj):
+    def delete_organisaatio_yhteenveto_cache(self, vakapaatos_obj):
         vakasuhde = vakapaatos_obj.varhaiskasvatussuhteet.all().first()
         if vakasuhde is not None:
-            cache.delete('vakajarjestaja_yhteenveto_' + str(vakasuhde.toimipaikka.vakajarjestaja.id))
+            cache.delete('organisaatio_yhteenveto_' + str(vakasuhde.toimipaikka.vakajarjestaja.id))
 
 
 @auditlogclass
@@ -1378,7 +1378,7 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
             delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
             delete_cache_keys_related_model('varhaiskasvatuspaatos', saved_object.varhaiskasvatuspaatos.id)
             delete_toimipaikan_lapset_cache(str(saved_object.toimipaikka.id))
-            cache.delete('vakajarjestaja_yhteenveto_' + str(saved_object.toimipaikka.vakajarjestaja.id))
+            cache.delete('organisaatio_yhteenveto_' + str(saved_object.toimipaikka.vakajarjestaja.id))
 
             varhaiskasvatussuhde_obj = saved_object
             varhaiskasvatuspaatos_obj = varhaiskasvatussuhde_obj.varhaiskasvatuspaatos
@@ -1388,7 +1388,7 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
                 tallentaja_organisaatio_oid = paos_oikeus.tallentaja_organisaatio.organisaatio_oid
                 self.assign_paos_lapsi_permissions(lapsi_obj, varhaiskasvatussuhde_obj, varhaiskasvatuspaatos_obj,
                                                    toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid)
-                cache.delete('vakajarjestaja_yhteenveto_' + str(lapsi_obj.oma_organisaatio.id))
+                cache.delete('organisaatio_yhteenveto_' + str(lapsi_obj.oma_organisaatio.id))
             else:
                 # Not PAOS-lapsi (i.e. normal case)
                 try:
@@ -1411,19 +1411,19 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
         saved_object = serializer.save(changed_by=user)
         # No need to delete the related-object caches. User cannot change toimipaikka or varhaiskasvatuspaatos.
         delete_toimipaikan_lapset_cache(str(saved_object.toimipaikka.id))
-        cache.delete('vakajarjestaja_yhteenveto_' + str(saved_object.toimipaikka.vakajarjestaja.id))
+        cache.delete('organisaatio_yhteenveto_' + str(saved_object.toimipaikka.vakajarjestaja.id))
         lapsi_obj = saved_object.varhaiskasvatuspaatos.lapsi
         if lapsi_obj.paos_kytkin:
-            cache.delete('vakajarjestaja_yhteenveto_' + str(lapsi_obj.oma_organisaatio.id))
+            cache.delete('organisaatio_yhteenveto_' + str(lapsi_obj.oma_organisaatio.id))
 
     def perform_destroy(self, instance):
         delete_toimipaikan_lapset_cache(str(instance.toimipaikka.id))
-        cache.delete('vakajarjestaja_yhteenveto_' + str(instance.toimipaikka.vakajarjestaja.id))
+        cache.delete('organisaatio_yhteenveto_' + str(instance.toimipaikka.vakajarjestaja.id))
         delete_cache_keys_related_model('toimipaikka', instance.toimipaikka.id)
         delete_cache_keys_related_model('varhaiskasvatuspaatos', instance.varhaiskasvatuspaatos.id)
         lapsi_obj = instance.varhaiskasvatuspaatos.lapsi
         if lapsi_obj.paos_kytkin:
-            cache.delete('vakajarjestaja_yhteenveto_' + str(lapsi_obj.oma_organisaatio.id))
+            cache.delete('organisaatio_yhteenveto_' + str(lapsi_obj.oma_organisaatio.id))
         instance.delete()
 
 
@@ -1500,7 +1500,7 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
         with transaction.atomic():
             saved_object = serializer.save(changed_by=user)
             vakajarjestaja = lapsi.vakatoimija or lapsi.oma_organisaatio
-            cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja.id))
+            cache.delete('organisaatio_yhteenveto_' + str(vakajarjestaja.id))
             self.assign_permissions_for_maksutieto_obj(lapsi, vakajarjestaja, toimipaikka_qs, saved_object)
 
     @transaction.atomic
@@ -1517,7 +1517,7 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
         serializer.save(changed_by=user)
 
         vakajarjestaja = lapsi_object.vakatoimija or lapsi_object.oma_organisaatio
-        cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja.id))
+        cache.delete('organisaatio_yhteenveto_' + str(vakajarjestaja.id))
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -1532,7 +1532,7 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
         self.perform_destroy(instance)
 
         vakajarjestaja = lapsi_object.vakatoimija or lapsi_object.oma_organisaatio
-        cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja.id))
+        cache.delete('organisaatio_yhteenveto_' + str(vakajarjestaja.id))
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -1772,13 +1772,13 @@ Nested viewsets, e.g. /api/v1/vakajarjestajat/33/toimipaikat/
 
 
 @auditlogclass
-class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
+class NestedOrganisaatioYhteenvetoViewSet(GenericViewSet, ListModelMixin):
     """
     list:
         Nouda varhaiskasvatustoimijan yhteenvetotiedot
     """
-    queryset = VakaJarjestaja.objects.all()
-    serializer_class = VakaJarjestajaYhteenvetoSerializer
+    queryset = Organisaatio.objects.all()
+    serializer_class = OrganisaatioYhteenvetoSerializer
     permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
     pagination_class = None
     swagger_schema = IntegerIdSchema
@@ -1793,16 +1793,16 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
                 (Q(**{prefix + 'paattymis_pvm__isnull': True}) | Q(**{prefix + 'paattymis_pvm__gte': self.today})))
 
     @transaction.atomic
-    @swagger_auto_schema(responses={status.HTTP_200_OK: VakaJarjestajaYhteenvetoSerializer(many=False)})
+    @swagger_auto_schema(responses={status.HTTP_200_OK: OrganisaatioYhteenvetoSerializer(many=False)})
     def list(self, request, *args, **kwargs):
         self.today = datetime.datetime.now()
 
-        self.kwargs['pk'] = self.kwargs['vakajarjestaja_pk']
+        self.kwargs['pk'] = self.kwargs['organisaatio_pk']
         self.vakajarjestaja_id = self.kwargs['pk']
         if not self.vakajarjestaja_id.isdigit():
             raise Http404
         vakajarjestaja_obj = self.get_object()
-        data = cache.get('vakajarjestaja_yhteenveto_' + self.vakajarjestaja_id)
+        data = cache.get('organisaatio_yhteenveto_' + self.vakajarjestaja_id)
         if data is None:
             data = {
                 'vakajarjestaja_nimi': vakajarjestaja_obj.nimi,
@@ -1825,7 +1825,7 @@ class NestedVakajarjestajaYhteenvetoViewSet(GenericViewSet, ListModelMixin):
                 'tilapainen_henkilosto_maara_kuluva_vuosi': self.get_tilapainen_henkilosto_maara_this_year(),
                 'tilapainen_henkilosto_tunnit_kuluva_vuosi': self.get_tilapainen_henkilosto_tunnit_this_year()
             }
-            cache.set('vakajarjestaja_yhteenveto_' + self.vakajarjestaja_id, data, 8 * 60 * 60)
+            cache.set('organisaatio_yhteenveto_' + self.vakajarjestaja_id, data, 8 * 60 * 60)
 
         serializer = self.get_serializer(data, many=False)
         return Response(serializer.data)
@@ -2116,24 +2116,24 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
     serializer_class = ToimipaikkaSerializer
     permission_classes = (CustomModelPermissions,)
     swagger_schema = IntegerIdSchema
-    swagger_path_model = VakaJarjestaja
+    swagger_path_model = Organisaatio
 
     def get_vakajarjestaja(self, request, vakajarjestaja_pk=None):
-        vakajarjestaja = get_object_or_404(VakaJarjestaja.objects.all(), pk=vakajarjestaja_pk)
+        vakajarjestaja = get_object_or_404(Organisaatio.objects.all(), pk=vakajarjestaja_pk)
         user = request.user
-        if user.has_perm('view_vakajarjestaja', vakajarjestaja):
+        if user.has_perm('view_organisaatio', vakajarjestaja):
             return vakajarjestaja
         else:
             raise Http404
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
-        if not kwargs['vakajarjestaja_pk'].isdigit():
+        if not kwargs['organisaatio_pk'].isdigit():
             raise Http404
 
-        vakajarjestaja_obj = self.get_vakajarjestaja(request, vakajarjestaja_pk=kwargs['vakajarjestaja_pk'])
+        vakajarjestaja_obj = self.get_vakajarjestaja(request, vakajarjestaja_pk=kwargs['organisaatio_pk'])
         paos_toimipaikat = get_paos_toimipaikat(vakajarjestaja_obj)
-        qs_own_toimipaikat = Q(vakajarjestaja=kwargs['vakajarjestaja_pk'])
+        qs_own_toimipaikat = Q(vakajarjestaja=kwargs['organisaatio_pk'])
         qs_paos_toimipaikat = Q(id__in=paos_toimipaikat)
         toimipaikka_filter = qs_own_toimipaikat | qs_paos_toimipaikat
 
@@ -2408,25 +2408,25 @@ class NestedVakajarjestajaPaosToimijatViewSet(GenericViewSet, ListModelMixin):
     """
     filter_backends = (ObjectPermissionsFilter,)
     filterset_class = None
-    queryset = VakaJarjestaja.objects.none()
+    queryset = Organisaatio.objects.none()
     serializer_class = PaosToimijatSerializer
     permission_classes = (CustomModelPermissions,)
     today = datetime.datetime.now()
     swagger_schema = IntegerIdSchema
 
     def get_vakajarjestaja(self, vakajarjestaja_pk=None):
-        vakajarjestaja = get_object_or_404(VakaJarjestaja.objects.all(), pk=vakajarjestaja_pk)
+        vakajarjestaja = get_object_or_404(Organisaatio.objects.all(), pk=vakajarjestaja_pk)
         user = self.request.user
-        if user.has_perm('view_vakajarjestaja', vakajarjestaja):
+        if user.has_perm('view_organisaatio', vakajarjestaja):
             return vakajarjestaja
         else:
             raise Http404
 
     def list(self, request, *args, **kwargs):
-        if not self.kwargs['vakajarjestaja_pk'].isdigit():
+        if not self.kwargs['organisaatio_pk'].isdigit():
             raise Http404
 
-        vakajarjestaja_obj = self.get_vakajarjestaja(vakajarjestaja_pk=self.kwargs['vakajarjestaja_pk'])
+        vakajarjestaja_obj = self.get_vakajarjestaja(vakajarjestaja_pk=self.kwargs['organisaatio_pk'])
 
         paos_toiminnat = PaosToiminta.objects.filter(
             Q(voimassa_kytkin=True) &
@@ -2455,22 +2455,22 @@ class NestedVakajarjestajaPaosToimipaikatViewSet(GenericViewSet, ListModelMixin)
     """
     filter_backends = (ObjectPermissionsFilter, )
     filterset_class = None
-    queryset = VakaJarjestaja.objects.none()
+    queryset = Organisaatio.objects.none()
     serializer_class = PaosToimipaikatSerializer
     permission_classes = (CustomModelPermissions,)
     today = datetime.datetime.now()
     swagger_schema = IntegerIdSchema
 
     def get_vakajarjestaja(self, vakajarjestaja_pk=None):
-        vakajarjestaja = get_object_or_404(VakaJarjestaja.objects.all(), pk=vakajarjestaja_pk)
+        vakajarjestaja = get_object_or_404(Organisaatio.objects.all(), pk=vakajarjestaja_pk)
         user = self.request.user
-        if user.has_perm('view_vakajarjestaja', vakajarjestaja):
+        if user.has_perm('view_organisaatio', vakajarjestaja):
             return vakajarjestaja
         else:
             raise Http404
 
     def list(self, request, *args, **kwargs):
-        if not self.kwargs['vakajarjestaja_pk'].isdigit():
+        if not self.kwargs['organisaatio_pk'].isdigit():
             raise Http404
 
         query_params = self.request.query_params
@@ -2478,7 +2478,7 @@ class NestedVakajarjestajaPaosToimipaikatViewSet(GenericViewSet, ListModelMixin)
         organisaatio_oid_filter = query_params.get('organisaatio_oid')
         toimija_nimi_filter = query_params.get('toimija_nimi')
 
-        vakajarjestaja_obj = self.get_vakajarjestaja(vakajarjestaja_pk=self.kwargs['vakajarjestaja_pk'])
+        vakajarjestaja_obj = self.get_vakajarjestaja(vakajarjestaja_pk=self.kwargs['organisaatio_pk'])
         paos_toiminta_qs = PaosToiminta.objects.filter(
             Q(voimassa_kytkin=True) &
             Q(oma_organisaatio=vakajarjestaja_obj, paos_toimipaikka__isnull=False)
@@ -2533,8 +2533,8 @@ class HenkilohakuLapset(GenericViewSet, ListModelMixin):
         if getattr(self, 'swagger_fake_view', False):
             # Swagger crashes if 404 is thrown from get_object_or_404
             return ()
-        vakajarjestaja_id = self.kwargs.get('vakajarjestaja_pk', None)
-        vakajarjestaja_obj = get_object_or_404(VakaJarjestaja, pk=vakajarjestaja_id)
+        vakajarjestaja_id = self.kwargs.get('organisaatio_pk', None)
+        vakajarjestaja_obj = get_object_or_404(Organisaatio, pk=vakajarjestaja_id)
         paos_toimipaikat = get_paos_toimipaikat(vakajarjestaja_obj, is_only_active_paostoiminta_included=False)
         qs_own_toimipaikat = Q(vakajarjestaja=vakajarjestaja_obj)
         qs_paos_toimipaikat = Q(id__in=paos_toimipaikat)
@@ -2558,8 +2558,8 @@ class HenkilohakuLapset(GenericViewSet, ListModelMixin):
 
     def list(self, request, *args, **kwargs):
         # Only for throwing not found so swagger doesn't throw tartum.
-        vakajarjestaja_id = self.kwargs.get('vakajarjestaja_pk', None)
-        if not vakajarjestaja_id or not vakajarjestaja_id.isdigit() or not get_object_or_404(VakaJarjestaja, pk=vakajarjestaja_id):
+        vakajarjestaja_id = self.kwargs.get('organisaatio_pk', None)
+        if not vakajarjestaja_id or not vakajarjestaja_id.isdigit() or not get_object_or_404(Organisaatio, pk=vakajarjestaja_id):
             raise NotFound
         self.set_filter_backends(request)
         return super(HenkilohakuLapset, self).list(request, *args, **kwargs)

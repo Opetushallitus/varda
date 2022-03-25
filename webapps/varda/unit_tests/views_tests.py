@@ -11,8 +11,9 @@ from guardian.core import ObjectPermissionChecker
 from rest_framework import status
 from rest_framework.exceptions import ValidationError as ValidationErrorRest
 
+from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
 from varda.misc import hash_string, encrypt_string
-from varda.models import (VakaJarjestaja, Toimipaikka, PaosOikeus, Huoltaja, Huoltajuussuhde, Henkilo,
+from varda.models import (Organisaatio, Toimipaikka, PaosOikeus, Huoltaja, Huoltajuussuhde, Henkilo,
                           Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto, ToiminnallinenPainotus,
                           KieliPainotus, PaosToiminta, Z2_Code, MaksutietoHuoltajuussuhde, Z4_CasKayttoOikeudet)
 from varda.permission_groups import assign_object_level_permissions
@@ -276,10 +277,10 @@ class VardaViewsTests(TestCase):
     def test_post_vakajarjestaja_with_invalid_yritysmuoto(self):
         user = User.objects.get(username='tester')
         with self.assertRaises(ValidationErrorRest) as validation_error:
-            vakajarjestaja = VakaJarjestaja(
-                nimi='Tester2 organisaatio',
+            organisaatio = Organisaatio.objects.create(
+                nimi='Tester200 organisaatio',
                 y_tunnus='8500570-7',
-                organisaatio_oid='1.2.246.562.10.34683023490',
+                organisaatio_oid='1.2.246.562.10.34683023481',
                 kunta_koodi='091',
                 sahkopostiosoite='organization@domain.com',
                 kayntiosoite='Testerkatu 2',
@@ -290,13 +291,14 @@ class VardaViewsTests(TestCase):
                 postinumero='00001',
                 puhelinnumero='+358101234567',
                 yritysmuoto='1000',
+                integraatio_organisaatio=[],
+                organisaatiotyyppi=[Organisaatiotyyppi.VAKAJARJESTAJA.value],
                 alkamis_pvm='2017-02-03',
                 paattymis_pvm=None,
-                changed_by=user,
-                integraatio_organisaatio=[]
+                changed_by=user
             )
-            vakajarjestaja.full_clean()
-            vakajarjestaja.save()
+            organisaatio.full_clean()
+            organisaatio.save()
         self.assertIn('KO003', str(validation_error.exception))
 
     def test_api_push_non_unique_henkilo_etunimi_correct_sukunimi_wrong(self):
@@ -818,7 +820,7 @@ class VardaViewsTests(TestCase):
         resp = client.post('/api/v1/henkilot/', henkilo)
         self.assertEqual(resp.status_code, 200)
         henkilo_url = json.loads(resp.content)['url']
-        vakajarjestaja_id_34683023489 = VakaJarjestaja.objects.filter(organisaatio_oid=test_org_34683023489).first().id
+        vakajarjestaja_id_34683023489 = Organisaatio.objects.filter(organisaatio_oid=test_org_34683023489).first().id
 
         lapsi = {
             'henkilo': henkilo_url,
@@ -953,7 +955,7 @@ class VardaViewsTests(TestCase):
         self.assertEqual(resp.status_code, 201)
         henkilo_url = json.loads(resp.content)['url']
 
-        vakajarjestaja_id_34683023489 = VakaJarjestaja.objects.filter(organisaatio_oid=test_org_34683023489).first().id
+        vakajarjestaja_id_34683023489 = Organisaatio.objects.filter(organisaatio_oid=test_org_34683023489).first().id
         lapsi = {
             'henkilo': henkilo_url,
             'vakatoimija': 'http://testserver/api/v1/vakajarjestajat/{}/'.format(vakajarjestaja_id_34683023489),
@@ -1112,7 +1114,7 @@ class VardaViewsTests(TestCase):
         assert_status_code(resp, 201)
         henkilo_url = json.loads(resp.content)['url']
 
-        vakajarjestaja_id_93957375488 = VakaJarjestaja.objects.filter(organisaatio_oid=test_org_93957375488).first().id
+        vakajarjestaja_id_93957375488 = Organisaatio.objects.filter(organisaatio_oid=test_org_93957375488).first().id
         lapsi = {
             'henkilo': henkilo_url,
             'vakatoimija': 'http://testserver/api/v1/vakajarjestajat/{}/'.format(vakajarjestaja_id_93957375488),
@@ -1182,7 +1184,7 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp2 = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
-        assert_validation_error(resp2, 'toimipaikka', 'MI019', 'Given Toimipaikka does not belong to the correct VakaJarjestaja.')
+        assert_validation_error(resp2, 'toimipaikka', 'MI019', 'Given Toimipaikka does not belong to the correct Organisaatio.')
         assert_status_code(resp2, 400)
 
     def test_api_push_lapsi_duplicate(self):
@@ -1291,7 +1293,7 @@ class VardaViewsTests(TestCase):
         }
         resp3 = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         assert_status_code(resp3, 400)
-        assert_validation_error(resp3, 'toimipaikka', 'MI019', 'Given Toimipaikka does not belong to the correct VakaJarjestaja.')
+        assert_validation_error(resp3, 'toimipaikka', 'MI019', 'Given Toimipaikka does not belong to the correct Organisaatio.')
 
         varhaiskasvatussuhde = {
             'toimipaikka': 'http://testserver/api/v1/toimipaikat/1/',
@@ -1518,7 +1520,8 @@ class VardaViewsTests(TestCase):
                     'sahkopostiosoite': 'organization@domain.com',
                     'ipv4_osoitteet': None,
                     'ipv6_osoitteet': None,
-                    'puhelinnumero': '+358101234567'
+                    'puhelinnumero': '+358101234567',
+                    'organisaatiotyyppi': [Organisaatiotyyppi.VAKAJARJESTAJA.value]
                 }
             ]
         }
@@ -1900,13 +1903,13 @@ class VardaViewsTests(TestCase):
         result = json.loads(resp.content)
         count = result['count']
         kunnallinen_kytkin = result['results'][0]['kunnallinen_kytkin']
-        self.assertEqual(count, 2)
+        self.assertEqual(count, 4)
         self.assertEqual(kunnallinen_kytkin, False)
 
         resp = client.get('/api/v1/vakajarjestajat/')
         result = json.loads(resp.content)
         count = result['count']
-        self.assertEqual(count, 6)
+        self.assertEqual(count, 8)
 
     def test_push_incorrect_varhaiskasvatuspaatos_tuntimaara(self):
         varhaiskasvatuspaatos = {
@@ -2325,7 +2328,7 @@ class VardaViewsTests(TestCase):
             sukunimi='Nieminen',
             changed_by=adminuser
         )
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
         lapsi = Lapsi.objects.create(
             henkilo=lapsi_henkilo,
             changed_by=adminuser,
@@ -2718,7 +2721,7 @@ class VardaViewsTests(TestCase):
         assert_status_code(resp, 201)
         henkilo_url = json.loads(resp.content)['url']
 
-        vakajarjestaja_id_34683023489 = VakaJarjestaja.objects.filter(organisaatio_oid=test_org_34683023489).first().id
+        vakajarjestaja_id_34683023489 = Organisaatio.objects.filter(organisaatio_oid=test_org_34683023489).first().id
         lapsi = {
             'henkilo': henkilo_url,
             'vakatoimija': 'http://testserver/api/v1/vakajarjestajat/{}/'.format(vakajarjestaja_id_34683023489),
@@ -2745,7 +2748,7 @@ class VardaViewsTests(TestCase):
     def test_api_maksutieto_multiple_huoltaja_list_admin(self):
         # Maksutieto should only be listed once even if it has multiple huoltajat and lapsi-filter is used
         # (related object filter, many-to-many relationship)
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
         lapsi = Lapsi.objects.get(henkilo__henkilo_oid='1.2.246.562.24.6779627637492', vakatoimija=vakajarjestaja)
 
         mock_admin_user('tester2')
@@ -3085,7 +3088,7 @@ class VardaViewsTests(TestCase):
                                 'tallentaja_organisaatio must be either jarjestaja_kunta_organisaatio or tuottaja_organisaatio.')
 
     def test_push_incorrect_puhelinnumero(self):
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
         puhelinnumero_list = ['+359400987654', '+35850123123.']
         client = SetUpTestClient('tester2').client()
 
@@ -3314,7 +3317,7 @@ class VardaViewsTests(TestCase):
     @mock.patch('varda.organisaatiopalvelu.create_organisaatio',
                 mock_create_organisaatio)
     def test_api_toimipaikka_add_valid(self):
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
 
         toimipaikka = {
             'vakajarjestaja': f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/',
@@ -3345,7 +3348,7 @@ class VardaViewsTests(TestCase):
     @mock.patch('varda.organisaatiopalvelu.check_if_toimipaikka_exists_by_name',
                 mock_check_if_toimipaikka_exists_by_name)
     def test_api_toimipaikka_add_duplicate_name(self):
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
 
         toimipaikka = {
             'vakajarjestaja': f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/',
@@ -3527,7 +3530,7 @@ class VardaViewsTests(TestCase):
     @mock.patch('varda.organisaatiopalvelu.check_if_toimipaikka_exists_by_name',
                 mock_check_if_toimipaikka_exists_by_name)
     def test_api_toimipaikka_lahdejarjestelma_tunniste_not_unique(self):
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
 
         toimipaikka = {
             'vakajarjestaja': f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/',
@@ -3560,7 +3563,7 @@ class VardaViewsTests(TestCase):
     @mock.patch('varda.organisaatiopalvelu.check_if_toimipaikka_exists_by_name',
                 mock_check_if_toimipaikka_exists_by_name)
     def test_api_toimipaikka_missing_lahdejarjestelma(self):
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
 
         toimipaikka = {
             'vakajarjestaja': f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/',
@@ -4706,7 +4709,7 @@ class VardaViewsTests(TestCase):
         lapsi['toimipaikka_oid'] = toimipaikka_oid_2
         resp_lapsi_2 = client.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp_lapsi_2, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp_lapsi_2, 'toimipaikka', 'MI019', 'Given Toimipaikka does not belong to the correct VakaJarjestaja.')
+        assert_validation_error(resp_lapsi_2, 'toimipaikka', 'MI019', 'Given Toimipaikka does not belong to the correct Organisaatio.')
 
         lapsi['toimipaikka_oid'] = toimipaikka_oid_1
         resp_lapsi_3 = client.post('/api/v1/lapset/', lapsi)
@@ -4726,7 +4729,7 @@ class VardaViewsTests(TestCase):
         }
         resp_vakapaatos_1 = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos)
         assert_status_code(resp_vakapaatos_1, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp_vakapaatos_1, 'toimipaikka', 'MI019', 'Given Toimipaikka does not belong to the correct VakaJarjestaja.')
+        assert_validation_error(resp_vakapaatos_1, 'toimipaikka', 'MI019', 'Given Toimipaikka does not belong to the correct Organisaatio.')
 
         vakapaatos['toimipaikka_oid'] = toimipaikka_oid_1
         resp_vakapaatos_2 = client.post('/api/v1/varhaiskasvatuspaatokset/', vakapaatos)
@@ -4740,7 +4743,7 @@ class VardaViewsTests(TestCase):
         }
         resp_vakasuhde_1 = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
         assert_status_code(resp_vakasuhde_1, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp_vakasuhde_1, 'toimipaikka', 'MI019', 'Given Toimipaikka does not belong to the correct VakaJarjestaja.')
+        assert_validation_error(resp_vakasuhde_1, 'toimipaikka', 'MI019', 'Given Toimipaikka does not belong to the correct Organisaatio.')
 
         vakasuhde['toimipaikka_oid'] = toimipaikka_oid_1
         resp_vakasuhde_2 = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
@@ -4910,28 +4913,28 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
 
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid)
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid=vakajarjestaja_oid)
         vakajarjestaja.paattymis_pvm = '2021-07-01'
         vakajarjestaja.save()
 
         client = SetUpTestClient('tester2').client()
         resp_1 = client.post('/api/v1/toimipaikat/', toimipaikka)
         assert_status_code(resp_1, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp_1, 'alkamis_pvm', 'TP025', 'alkamis_pvm must be before or equal to VakaJarjestaja paattymis_pvm.')
+        assert_validation_error(resp_1, 'alkamis_pvm', 'TP025', 'alkamis_pvm must be before or equal to Organisaatio paattymis_pvm.')
 
         vakajarjestaja.paattymis_pvm = '2021-05-31'
         vakajarjestaja.save()
         toimipaikka['alkamis_pvm'] = '2021-05-01'
         resp_2 = client.post('/api/v1/toimipaikat/', toimipaikka)
         assert_status_code(resp_2, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp_2, 'paattymis_pvm', 'TP024', 'Toimipaikka must have paattymis_pvm because VakaJarjestaja is not active.')
+        assert_validation_error(resp_2, 'paattymis_pvm', 'TP024', 'Toimipaikka must have paattymis_pvm because Organisaatio is not active.')
 
         vakajarjestaja.paattymis_pvm = '2021-07-01'
         vakajarjestaja.save()
         toimipaikka['paattymis_pvm'] = '2021-08-01'
         resp_2 = client.post('/api/v1/toimipaikat/', toimipaikka)
         assert_status_code(resp_2, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp_2, 'paattymis_pvm', 'TP026', 'paattymis_pvm must be before or equal to VakaJarjestaja paattymis_pvm.')
+        assert_validation_error(resp_2, 'paattymis_pvm', 'TP026', 'paattymis_pvm must be before or equal to Organisaatio paattymis_pvm.')
 
     @responses.activate
     def test_henkilo_lapsi_duplicate_already_exists(self):

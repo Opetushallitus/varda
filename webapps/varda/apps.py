@@ -74,8 +74,8 @@ def run_post_migration_tasks(sender, **kwargs):
             '0038_auto_20201201_1237': [create_raportit_template_groups],
             '0045_auto_20210318_0953': [create_oph_luovutuspalvelu_group],
             '0060_yritysmuoto': [create_yritysmuoto_koodisto_data],
-            '0065_remove_z3_additionalcasuserfields_approved_oph_staff_and_more': [create_extra_template_groups,
-                                                                                   load_dev_testing_data]
+            '0065_remove_z3_additionalcasuserfields_approved_oph_staff_and_more': [create_extra_template_groups],
+            '0066_organisaatio': [load_dev_testing_data]
         }
 
         for migration_plan_tuple in kwargs['plan']:
@@ -275,20 +275,20 @@ def handle_related_object_change(model_name, instance, history_type):
     from varda.models import (Henkilo, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto, MaksutietoHuoltajuussuhde,
                               Palvelussuhde, PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija,
                               TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka, Tutkinto, Tyontekija,
-                              Tyoskentelypaikka, VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde)
+                              Tyoskentelypaikka, Organisaatio, Varhaiskasvatuspaatos, Varhaiskasvatussuhde)
 
     receiver_dict = {
-        VakaJarjestaja.get_name(): partial(update_related_object_change, model_name=VakaJarjestaja.get_name(),
-                                           path_to_id=('id',)),
+        Organisaatio.get_name(): partial(update_related_object_change, model_name=Organisaatio.get_name(),
+                                         path_to_id=('id',)),
         Toimipaikka.get_name(): partial(update_related_object_change, model_name=Toimipaikka.get_name(),
-                                        path_to_id=('id',), parent_model_name=VakaJarjestaja.get_name(),
+                                        path_to_id=('id',), parent_model_name=Organisaatio.get_name(),
                                         path_to_parent_id=('vakajarjestaja_id',)),
         ToiminnallinenPainotus.get_name(): partial(update_related_object_change, model_name=Toimipaikka.get_name(),
                                                    path_to_id=('toimipaikka_id',),
-                                                   parent_model_name=VakaJarjestaja.get_name(),
+                                                   parent_model_name=Organisaatio.get_name(),
                                                    path_to_parent_id=('toimipaikka', 'vakajarjestaja_id',)),
         KieliPainotus.get_name(): partial(update_related_object_change, model_name=Toimipaikka.get_name(),
-                                          path_to_id=('toimipaikka_id',), parent_model_name=VakaJarjestaja.get_name(),
+                                          path_to_id=('toimipaikka_id',), parent_model_name=Organisaatio.get_name(),
                                           path_to_parent_id=('toimipaikka', 'vakajarjestaja_id',)),
         Henkilo.get_name(): partial(update_related_object_change_henkilo),
         Lapsi.get_name(): partial(update_related_object_change, model_name=Lapsi.get_name(), path_to_id=('id',)),
@@ -326,7 +326,7 @@ def handle_related_object_change(model_name, instance, history_type):
                                                         path_to_id=('tyontekija_id',),
                                                         parent_model_name=Taydennyskoulutus.get_name(),
                                                         path_to_parent_id=('taydennyskoulutus_id',)),
-        TilapainenHenkilosto.get_name(): partial(update_related_object_change, model_name=VakaJarjestaja.get_name(),
+        TilapainenHenkilosto.get_name(): partial(update_related_object_change, model_name=Organisaatio.get_name(),
                                                  path_to_id=('vakajarjestaja_id',))
     }
 
@@ -400,12 +400,12 @@ class VardaConfig(AppConfig):
     def ready(self):
         post_migrate.connect(run_post_migration_tasks, sender=self)
 
-        pre_save.connect(receiver_pre_save, sender='varda.VakaJarjestaja')
+        pre_save.connect(receiver_pre_save, sender='varda.Organisaatio')
         pre_save.connect(receiver_pre_save, sender='varda.PaosOikeus')
         pre_save.connect(receiver_pre_save_user, sender='auth.User')
 
         post_save.connect(receiver_save_user, sender='auth.User')
-        post_save.connect(receiver_save, sender='varda.VakaJarjestaja')
+        post_save.connect(receiver_save, sender='varda.Organisaatio')
         post_save.connect(receiver_save, sender='varda.Toimipaikka')
         post_save.connect(receiver_save, sender='varda.ToiminnallinenPainotus')
         post_save.connect(receiver_save, sender='varda.KieliPainotus')
@@ -427,7 +427,7 @@ class VardaConfig(AppConfig):
         post_save.connect(receiver_save, sender='varda.Taydennyskoulutus')
         post_save.connect(receiver_save, sender='varda.TaydennyskoulutusTyontekija')
 
-        pre_delete.connect(receiver_pre_delete, sender='varda.VakaJarjestaja')
+        pre_delete.connect(receiver_pre_delete, sender='varda.Organisaatio')
         pre_delete.connect(receiver_pre_delete, sender='varda.Toimipaikka')
         pre_delete.connect(receiver_pre_delete, sender='varda.ToiminnallinenPainotus')
         pre_delete.connect(receiver_pre_delete, sender='varda.KieliPainotus')

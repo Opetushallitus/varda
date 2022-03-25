@@ -8,7 +8,7 @@ from rest_framework.test import APIClient
 from varda import kayttooikeuspalvelu
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.enums.tietosisalto_ryhma import TietosisaltoRyhma
-from varda.models import Z4_CasKayttoOikeudet, VakaJarjestaja
+from varda.models import Z4_CasKayttoOikeudet, Organisaatio
 from varda.unit_tests.test_utils import assert_status_code, base64_encoding, assert_validation_error
 
 
@@ -46,7 +46,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         expected_group_names = ['VARDA-PALVELUKAYTTAJA_1.2.246.562.10.27580498759']
         self._assert_user_permissiongroups(expected_group_names, username)
 
-        jarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=organisaatio_oid)
+        jarjestaja = Organisaatio.objects.get(organisaatio_oid=organisaatio_oid)
         self.assertEqual(jarjestaja.integraatio_organisaatio, [TietosisaltoRyhma.VAKATIEDOT.value])
 
     @responses.activate
@@ -84,7 +84,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         expected_group_names = ['VARDA_LUOVUTUSPALVELU_{}'.format(organisaatio_oid)]
         self._assert_user_permissiongroups(expected_group_names, username)
 
-        jarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=organisaatio_oid)
+        jarjestaja = Organisaatio.objects.get(organisaatio_oid=organisaatio_oid)
         self.assertEqual(jarjestaja.integraatio_organisaatio, [])
 
         kela_api_response = client.get('/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/', **headers)
@@ -133,7 +133,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         ]
         self._assert_user_permissiongroups(expected_group_names, username)
 
-        jarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=organisaatio_oid)
+        jarjestaja = Organisaatio.objects.get(organisaatio_oid=organisaatio_oid)
         expected_integraatio = [
             TietosisaltoRyhma.TILAPAINENHENKILOSTOTIEDOT.value,
             TietosisaltoRyhma.TYONTEKIJATIEDOT.value,
@@ -179,7 +179,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         ]
         self._assert_user_permissiongroups(expected_group_names, username)
 
-        jarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=organisaatio_oid)
+        jarjestaja = Organisaatio.objects.get(organisaatio_oid=organisaatio_oid)
         self.assertEqual(jarjestaja.integraatio_organisaatio, [TietosisaltoRyhma.VAKATIEDOT.value])
 
     @responses.activate
@@ -235,7 +235,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         ]
         self._assert_user_permissiongroups(expected_group_names, username)
 
-        jarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=organisaatio_oid)
+        jarjestaja = Organisaatio.objects.get(organisaatio_oid=organisaatio_oid)
         expected_integraatio = [
             TietosisaltoRyhma.TYONTEKIJATIEDOT.value,
             TietosisaltoRyhma.TAYDENNYSKOULUTUSTIEDOT.value,
@@ -315,7 +315,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
     @responses.activate
     def test_multiple_palvelukayttaja_different_permissions(self):
         organisaatio_oid = '1.2.246.562.10.27580498759'
-        vakajarjestaja_qs = VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid)
+        vakajarjestaja_qs = Organisaatio.objects.filter(organisaatio_oid=organisaatio_oid)
         client = APIClient()
 
         username_1 = 'palvelukayttaja1'
@@ -414,7 +414,7 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         )
         self.assertCountEqual(cas_permissions, expected_cas_permissions)
 
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=organisaatio_oid)
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid=organisaatio_oid)
         expected_integraatio = (TietosisaltoRyhma.TYONTEKIJATIEDOT.value, TietosisaltoRyhma.VAKATIEDOT.value,)
         self.assertCountEqual(vakajarjestaja.integraatio_organisaatio, expected_integraatio)
 

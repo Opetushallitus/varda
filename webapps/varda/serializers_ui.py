@@ -7,7 +7,7 @@ from guardian.shortcuts import get_objects_for_user
 from rest_framework import serializers
 
 from varda.cache import caching_to_representation
-from varda.models import (PaosOikeus, PaosToiminta, Toimipaikka, VakaJarjestaja, Henkilo, Tyontekija, Tyoskentelypaikka,
+from varda.models import (PaosOikeus, PaosToiminta, Toimipaikka, Organisaatio, Henkilo, Tyontekija, Tyoskentelypaikka,
                           Lapsi, Varhaiskasvatussuhde)
 from varda.permissions import get_taydennyskoulutus_tyontekija_group_organisaatio_oids, get_toimipaikat_group_has_access
 
@@ -16,17 +16,17 @@ UI serializers
 """
 
 
-class VakaJarjestajaUiSerializer(serializers.HyperlinkedModelSerializer):
+class OrganisaatioUiSerializer(serializers.HyperlinkedModelSerializer):
     kunnallinen_kytkin = serializers.BooleanField(read_only=True)
 
     class Meta:
-        model = VakaJarjestaja
+        model = Organisaatio
         fields = ('nimi', 'id', 'url', 'organisaatio_oid', 'kunnallinen_kytkin', 'y_tunnus')
         read_only_fields = ('nimi', 'id', 'organisaatio_oid', 'kunnallinen_kytkin', 'y_tunnus')
 
-    @caching_to_representation('vakajarjestaja-ui')
+    @caching_to_representation('organisaatio-ui')
     def to_representation(self, instance):
-        return super(VakaJarjestajaUiSerializer, self).to_representation(instance)
+        return super(OrganisaatioUiSerializer, self).to_representation(instance)
 
 
 class ToimipaikkaUiSerializer(serializers.HyperlinkedModelSerializer):
@@ -58,14 +58,14 @@ class ToimipaikkaUiSerializer(serializers.HyperlinkedModelSerializer):
 
     @swagger_serializer_method(serializer_or_field=serializers.BooleanField)
     def get_paos_toimipaikka_kytkin(self, toimipaikka_obj):
-        return not int(self.context.get('vakajarjestaja_pk')) == toimipaikka_obj['vakajarjestaja__id']
+        return not int(self.context.get('organisaatio_pk')) == toimipaikka_obj['vakajarjestaja__id']
 
     @swagger_serializer_method(serializer_or_field=serializers.CharField)
     def get_paos_oma_organisaatio_url(self, toimipaikka_obj):
         if self.get_paos_toimipaikka_kytkin(toimipaikka_obj):
             request = self.context.get('request')
-            return request.build_absolute_uri(reverse('vakajarjestaja-detail',
-                                                      kwargs={'pk': int(self.context.get('vakajarjestaja_pk'))}))
+            return request.build_absolute_uri(reverse('organisaatio-detail',
+                                                      kwargs={'pk': int(self.context.get('organisaatio_pk'))}))
         else:
             return ''
 
@@ -73,7 +73,7 @@ class ToimipaikkaUiSerializer(serializers.HyperlinkedModelSerializer):
     def get_paos_organisaatio_url(self, toimipaikka_obj):
         if self.get_paos_toimipaikka_kytkin(toimipaikka_obj):
             request = self.context.get('request')
-            return request.build_absolute_uri(reverse('vakajarjestaja-detail',
+            return request.build_absolute_uri(reverse('organisaatio-detail',
                                                       kwargs={'pk': toimipaikka_obj['vakajarjestaja__id']}))
         else:
             return ''

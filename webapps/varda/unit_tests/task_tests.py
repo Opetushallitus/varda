@@ -8,7 +8,7 @@ from django.utils import timezone
 from rest_framework import status
 
 from varda.models import (Lapsi, Huoltaja, Maksutieto, Varhaiskasvatussuhde, Varhaiskasvatuspaatos, Henkilo,
-                          VakaJarjestaja, Huoltajuussuhde, Z5_AuditLog)
+                          Organisaatio, Huoltajuussuhde, Z5_AuditLog)
 from varda.permission_groups import get_oph_yllapitaja_group_name
 from varda.tasks import (delete_huoltajat_without_relations_task, delete_henkilot_without_relations_task,
                          general_monitoring_task, reset_superuser_permissions_task)
@@ -60,7 +60,7 @@ class TaskTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         client_tyontekija = SetUpTestClient('tyontekija_tallentaja').client()
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
         henkilo_id_list = []
 
         # Create Henkilo without related objects

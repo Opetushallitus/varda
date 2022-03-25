@@ -13,7 +13,7 @@ from django.test import TestCase, override_settings
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from varda.models import Z4_CasKayttoOikeudet, Z5_AuditLog, VakaJarjestaja
+from varda.models import Z4_CasKayttoOikeudet, Z5_AuditLog, Organisaatio
 from varda.unit_tests.kayttooikeus_palvelukayttaja_tests import mock_cas_palvelukayttaja_responses
 from varda.unit_tests.test_utils import (assert_status_code, base64_encoding, TEST_CACHE_SETTINGS, SetUpTestClient,
                                          assert_validation_error, post_henkilo_to_get_permissions)
@@ -225,7 +225,7 @@ class VardaPermissionsTests(TestCase):
             'sukunimi': 'Mattson',
         }
         organisaatio_oid_34683023489 = '1.2.246.562.10.34683023489'
-        vakajarjestaja_id_34683023489 = VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid_34683023489).first().id
+        vakajarjestaja_id_34683023489 = Organisaatio.objects.filter(organisaatio_oid=organisaatio_oid_34683023489).first().id
 
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
@@ -242,7 +242,7 @@ class VardaPermissionsTests(TestCase):
         assert_status_code(resp, status.HTTP_201_CREATED)
 
         organisaatio_oid_93957375488 = '1.2.246.562.10.93957375488'
-        vakajarjestaja_id_93957375488 = VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid_93957375488).first().id
+        vakajarjestaja_id_93957375488 = Organisaatio.objects.filter(organisaatio_oid=organisaatio_oid_93957375488).first().id
         vakajarjestaja_url_93957375488 = 'http://testserver/api/v1/vakajarjestajat/{}/'.format(vakajarjestaja_id_93957375488)
         lapsi.update({'vakatoimija': vakajarjestaja_url_93957375488})
 
@@ -369,7 +369,7 @@ class VardaPermissionsTests(TestCase):
     def test_try_to_change_henkilo(self):
         client = SetUpTestClient('tester').client()
         organisaatio_oid = '1.2.246.562.10.93957375488'
-        vakajarjestaja_id = VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid).first().id
+        vakajarjestaja_id = Organisaatio.objects.filter(organisaatio_oid=organisaatio_oid).first().id
         post_henkilo_to_get_permissions(client, henkilo_id=8)
         lapsi = {
             'henkilo': 'http://testserver/api/v1/henkilot/8/',
@@ -501,7 +501,7 @@ class VardaPermissionsTests(TestCase):
         self.assertEqual(len(json.loads(resp.content)['varhaiskasvatuspaatokset_top']), 0)
 
     def test_toimijatiedot_update(self):
-        vakajarjestaja_qs = VakaJarjestaja.objects.filter(organisaatio_oid='1.2.246.562.10.34683023489')
+        vakajarjestaja_qs = Organisaatio.objects.filter(organisaatio_oid='1.2.246.562.10.34683023489')
         new_email = 'test@email.com'
         client = SetUpTestClient('tester2').client()
 

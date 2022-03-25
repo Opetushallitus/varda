@@ -29,7 +29,7 @@ from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
 from varda.misc import memory_efficient_queryset_iterator
 from varda.models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Maksutieto,
                           MaksutietoHuoltajuussuhde, Palvelussuhde, Taydennyskoulutus, TaydennyskoulutusTyontekija,
-                          Toimipaikka, Tyontekija, VakaJarjestaja, Varhaiskasvatuspaatos, YearlyReportSummary,
+                          Toimipaikka, Tyontekija, Organisaatio, Varhaiskasvatuspaatos, YearlyReportSummary,
                           Z4_CasKayttoOikeudet, Z5_AuditLog, Z6_LastRequest, Z6_RequestCount, Z6_RequestLog,
                           Z6_RequestSummary)
 from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups, get_oph_yllapitaja_group_name
@@ -596,11 +596,11 @@ def general_monitoring_task():
 def init_related_object_changed_table_task():
     related_change_tuple = (
         (
-            VakaJarjestaja.get_name(), 'id', VakaJarjestaja.get_name(), 'id', None, None,
+            Organisaatio.get_name(), 'id', Organisaatio.get_name(), 'id', None, None,
         ),
         (
             Toimipaikka.get_name(), 'id', Toimipaikka.get_name(), 'id',
-            VakaJarjestaja.get_name(), 'vakajarjestaja_id',
+            Organisaatio.get_name(), 'vakajarjestaja_id',
         ),
         (
             Lapsi.get_name(), 'id', Lapsi.get_name(), 'id', None, None,
@@ -678,8 +678,8 @@ def create_yearly_reporting_summary(user_id, vakajarjestaja_id, tilasto_pvm, poi
         vakajarjestaja_obj = None
         with connection.cursor() as cursor:
             filters = [poiminta_pvm, tilasto_pvm, tilasto_pvm]
-            base_query = """select count(distinct(hvj.id)) from varda_historicalvakajarjestaja hvj
-                            join (select distinct on (id) id, history_type from varda_historicalvakajarjestaja
+            base_query = """select count(distinct(hvj.id)) from varda_historicalorganisaatio hvj
+                            join (select distinct on (id) id, history_type from varda_historicalorganisaatio
                             where history_date <= %s order by id, history_date desc) last_hvj
                             on hvj.id = last_hvj.id where last_hvj.history_type <> '-' and
                             hvj.alkamis_pvm <= %s and (hvj.paattymis_pvm >= %s or hvj.paattymis_pvm is Null)
@@ -688,7 +688,7 @@ def create_yearly_reporting_summary(user_id, vakajarjestaja_id, tilasto_pvm, poi
             row = cursor.fetchone()
             vakajarjestaja_count = row[0]
     else:
-        vakajarjestaja_obj = VakaJarjestaja.objects.get(id=vakajarjestaja_id)
+        vakajarjestaja_obj = Organisaatio.objects.get(id=vakajarjestaja_id)
         vakajarjestaja_count = 1
 
     vakajarjestaja_active = get_vakajarjestaja_is_active(vakajarjestaja_obj, tilasto_pvm, full_query)

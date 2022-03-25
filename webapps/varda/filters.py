@@ -17,7 +17,7 @@ from rest_framework.filters import BaseFilterBackend
 
 from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
 from varda.enums.koodistot import Koodistot
-from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
+from varda.models import (Organisaatio, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
                           Maksutieto, PaosToiminta, PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
                           TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
                           PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Z2_Code,
@@ -97,9 +97,9 @@ class KunnallinenKytkinFilter(django_filters.BooleanFilter):
         if value is None:
             return qs
         elif value:
-            return qs.filter(yritysmuoto__in=VakaJarjestaja.get_kuntatyypit())
+            return qs.filter(yritysmuoto__in=Organisaatio.get_kuntatyypit())
         elif not value:
-            return qs.filter(~Q(yritysmuoto__in=VakaJarjestaja.get_kuntatyypit()))
+            return qs.filter(~Q(yritysmuoto__in=Organisaatio.get_kuntatyypit()))
 
 
 class OrganisaatioFieldFilter(django_filters.CharFilter):
@@ -170,7 +170,7 @@ class NoneDateFromToRangeFilter(django_filters.DateFromToRangeFilter):
         return qs
 
 
-class VakaJarjestajaFilter(django_filters.FilterSet):
+class OrganisaatioFilter(django_filters.FilterSet):
     nimi = django_filters.CharFilter(lookup_expr='icontains')
     y_tunnus = django_filters.CharFilter(lookup_expr='exact')
     organisaatio_oid = CustomCharFilter(lookup_expr='exact')
@@ -190,7 +190,7 @@ class VakaJarjestajaFilter(django_filters.FilterSet):
     muutos_pvm = django_filters.DateTimeFilter(lookup_expr='gte')
 
     class Meta:
-        model = VakaJarjestaja
+        model = Organisaatio
         fields = []
 
 
@@ -547,7 +547,7 @@ class UiAllVakajarjestajaFilter(django_filters.FilterSet):
 
     def filter_tyyppi(self, queryset, name, value):
         if value in ['yksityinen', 'kunnallinen']:
-            condition = Q(yritysmuoto__in=VakaJarjestaja.get_kuntatyypit())
+            condition = Q(yritysmuoto__in=Organisaatio.get_kuntatyypit())
             queryset = queryset.filter(condition) if value == 'kunnallinen' else queryset.exclude(condition)
 
         return queryset

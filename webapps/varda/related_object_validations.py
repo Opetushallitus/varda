@@ -8,7 +8,7 @@ from django.db.models import Q
 from rest_framework.exceptions import ValidationError
 
 from varda.enums.error_messages import ErrorMessages
-from varda.models import (VakaJarjestaja, Henkilo, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Lapsi, Huoltaja,
+from varda.models import (Organisaatio, Henkilo, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Lapsi, Huoltaja,
                           Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Palvelussuhde, Tyoskentelypaikka,
                           PidempiPoissaolo, ToiminnallinenPainotus, KieliPainotus, Maksutieto)
 
@@ -82,7 +82,7 @@ def check_if_user_has_add_toimipaikka_permissions_under_vakajarjestaja(vakajarje
         return None
 
     # Kayttaja == "VIRKAILIJA"
-    vakajarjestaja = VakaJarjestaja.objects.get(id=vakajarjestaja_id)
+    vakajarjestaja = Organisaatio.objects.get(id=vakajarjestaja_id)
     organisaatio_oid = vakajarjestaja.organisaatio_oid
     if (not Z4_CasKayttoOikeudet.objects
                                 .filter(user_id=user.id)
@@ -134,7 +134,7 @@ def check_if_admin_mutable_object_is_changed(user, instance, data, key, **kwargs
 def check_if_immutable_object_is_changed(instance, data, key, compare_id=True):
     """
     Use this function to determine if some value has changed in PUT/PATCH requests compared to the existing object.
-    By default id-field is used in comparison (e.g. id of Lapsi, VakaJarjestaja, Toimipaikka...), use compare_id=False
+    By default id-field is used in comparison (e.g. id of Lapsi, Organisaatio, Toimipaikka...), use compare_id=False
     to compare values directly.
     :param instance: object instance
     :param data: new data dictionary

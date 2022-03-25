@@ -16,7 +16,7 @@ from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
 from varda.enums.tietosisalto_ryhma import TietosisaltoRyhma
 from varda.exceptions.invalid_koodi_uri_exception import InvalidKoodiUriException
 from varda.misc import get_json_from_external_service, get_reply_json
-from varda.models import Toimipaikka, VakaJarjestaja, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, LoginCertificate
+from varda.models import Toimipaikka, Organisaatio, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, LoginCertificate
 from varda.organisaatiopalvelu import create_toimipaikka_using_oid, create_organization_using_oid
 from varda.permission_groups import get_permission_group
 from varda.permissions import is_oph_staff
@@ -97,7 +97,7 @@ def set_user_kayttooikeudet(henkilo_oid, user):
     """
     Clear vakajarjestaja-ui cache.
     """
-    model_name = 'vakajarjestaja'
+    model_name = 'organisaatio'
     delete_cached_user_permissions_for_model(user.id, model_name)
 
     # Get current permissions
@@ -128,7 +128,7 @@ def set_user_kayttooikeudet(henkilo_oid, user):
     # Also, remove the possible vakajarjestaja-object level permissions from user. These are
     # special-permissions given to Toimipaikka-permission level user. See more info below.
     # https://django-guardian.readthedocs.io/en/stable/userguide/caveats.html
-    filters = Q(content_type=ContentType.objects.get_for_model(VakaJarjestaja), user_id=user.id)
+    filters = Q(content_type=ContentType.objects.get_for_model(Organisaatio), user_id=user.id)
     UserObjectPermission.objects.filter(filters).delete()
 
     # After removal, let's set the user permissions.
@@ -247,7 +247,7 @@ def fetch_permissions_roles_for_organization(user_id, henkilo_oid, organisation,
 def create_organization_or_toimipaikka_if_needed(organization, user_id):
     organisaatio_oid = organization['oid']
     if organisaatio_client.is_of_type(organization, Organisaatiotyyppi.VAKAJARJESTAJA.value, Organisaatiotyyppi.MUU.value):
-        if not VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid).exists():
+        if not Organisaatio.objects.filter(organisaatio_oid=organisaatio_oid).exists():
             """
             Organization doesn't exist yet, let's create it.
             """
@@ -335,8 +335,8 @@ def select_highest_kayttooikeusrooli(kayttooikeusrooli_list, organization_oid, t
     vakajarjestaja_obj = None
 
     try:
-        vakajarjestaja_obj = VakaJarjestaja.objects.get(organisaatio_oid=organization_oid)
-    except VakaJarjestaja.DoesNotExist:
+        vakajarjestaja_obj = Organisaatio.objects.get(organisaatio_oid=organization_oid)
+    except Organisaatio.DoesNotExist:
         try:
             toimipaikka_obj = Toimipaikka.objects.get(organisaatio_oid=organization_oid)
             vakajarjestaja_obj = toimipaikka_obj.vakajarjestaja
@@ -466,7 +466,7 @@ def _create_or_update_organization_for_service_user(permission_list, organizatio
                                                                 kayttooikeus=permission)
         if not created:
             logger.info(f'Already had permission {permission} for user: {user.username}, organisaatio_oid: {organisaatio_oid}')
-    vakajarjestaja_obj = VakaJarjestaja.objects.filter(organisaatio_oid=organisaatio_oid).first()
+    vakajarjestaja_obj = Organisaatio.objects.filter(organisaatio_oid=organisaatio_oid).first()
     integration_flags_set = {integraatio_permissions.get(permission) for permission in permission_list
                              if permission in integraatio_permissions}
     if vakajarjestaja_obj:
@@ -477,7 +477,7 @@ def _create_or_update_organization_for_service_user(permission_list, organizatio
             vakajarjestaja_obj.integraatio_organisaatio = tuple(existing_integration_flags_set.union(integration_flags_set))
             vakajarjestaja_obj.save()
     else:
-        # VakaJarjestaja doesn't exist yet, let's create it.
+        # Organisaatio doesn't exist yet, let's create it.
         organisaatiotyyppi = organisaatio_client.get_organization_type(organization_data)
         create_organization_using_oid(organisaatio_oid, organisaatiotyyppi, user.id,
                                       integraatio_organisaatio=tuple(integration_flags_set))

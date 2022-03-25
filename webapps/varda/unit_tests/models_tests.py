@@ -6,8 +6,8 @@ from rest_framework.exceptions import ValidationError
 
 from varda import validators
 from varda.enums.koodistot import Koodistot
-from varda.filters import VakaJarjestajaFilter, LapsiFilter
-from varda.models import (VakaJarjestaja, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Huoltaja,
+from varda.filters import OrganisaatioFilter, LapsiFilter
+from varda.models import (Organisaatio, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Huoltaja,
                           Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z2_Koodisto, Z2_Code)
 
 
@@ -15,7 +15,7 @@ class VardaModelsTests(TestCase):
     fixtures = ['varda/unit_tests/fixture_basics.json']
 
     def test_vakajarjestajat(self):
-        test_vakajarjestaja = VakaJarjestaja.objects.get(pk=1).nimi
+        test_vakajarjestaja = Organisaatio.objects.get(pk=1).nimi
         self.assertEqual(test_vakajarjestaja, 'Tester2 organisaatio')
 
     def test_toimipaikat(self):
@@ -56,8 +56,8 @@ class VardaModelsTests(TestCase):
         test_koodisto = Z2_Koodisto.objects.get(name=Koodistot.toiminnallinen_painotus_koodit.value)
         self.assertEqual(Z2_Code.objects.filter(koodisto=test_koodisto).count(), 11)
 
-    def test_VakaJarjestajaFilter_is_FilterSet(self):
-        of = VakaJarjestajaFilter()
+    def test_OrganisaatioFilter_is_FilterSet(self):
+        of = OrganisaatioFilter()
         self.assertIsInstance(of, FilterSet)
 
     def test_LapsiFilter_contains_filters(self):
@@ -65,7 +65,7 @@ class VardaModelsTests(TestCase):
         self.assertIn('filters', dir(lf))
 
     def test_ytjkieli(self):
-        vakajarjestaja = VakaJarjestaja.objects.filter(ytjkieli='FI')
+        vakajarjestaja = Organisaatio.objects.filter(ytjkieli='FI')
         self.assertEqual(vakajarjestaja[0].nimi, 'Tester organisaatio')
 
     def test_organisaatio_oid_1(self):

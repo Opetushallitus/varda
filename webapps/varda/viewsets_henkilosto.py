@@ -22,7 +22,7 @@ from varda.enums.error_messages import ErrorMessages
 from varda.exceptions.conflict_error import ConflictError
 from varda.misc import flatten_nested_list
 from varda.misc_viewsets import IncreasedModifyThrottleMixin, ObjectByTunnisteMixin
-from varda.models import (VakaJarjestaja, TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
+from varda.models import (Organisaatio, TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
                           PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Z4_CasKayttoOikeudet)
 from varda.permission_groups import (assign_object_permissions_to_tyontekija_groups,
                                      assign_object_permissions_to_tilapainenhenkilosto_groups,
@@ -132,8 +132,8 @@ class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
                     self._assign_toimipaikka_permissions(toimipaikka_oid, tyontekija_obj)
 
                 delete_cache_keys_related_model('henkilo', tyontekija_obj.henkilo.id)
-                delete_cache_keys_related_model('vakajarjestaja', tyontekija_obj.vakajarjestaja.id)
-                cache.delete('vakajarjestaja_yhteenveto_' + str(tyontekija_obj.vakajarjestaja.id))
+                delete_cache_keys_related_model('organisaatio', tyontekija_obj.vakajarjestaja.id)
+                cache.delete('organisaatio_yhteenveto_' + str(tyontekija_obj.vakajarjestaja.id))
 
                 henkilo = tyontekija_obj.henkilo
                 self.remove_address_information_from_henkilo(henkilo)
@@ -151,7 +151,7 @@ class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
         user = self.request.user
         with transaction.atomic():
             tyontekija_obj = serializer.save(changed_by=user)
-            cache.delete('vakajarjestaja_yhteenveto_' + str(tyontekija_obj.vakajarjestaja.id))
+            cache.delete('organisaatio_yhteenveto_' + str(tyontekija_obj.vakajarjestaja.id))
 
     def perform_destroy(self, tyontekija):
         if Tutkinto.objects.filter(vakajarjestaja=tyontekija.vakajarjestaja, henkilo=tyontekija.henkilo).exists():
@@ -163,8 +163,8 @@ class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
             except ProtectedError:
                 raise ValidationError({'errors': [ErrorMessages.TY002.value]})
             delete_cache_keys_related_model('henkilo', tyontekija.henkilo.id)
-            delete_cache_keys_related_model('vakajarjestaja', tyontekija.vakajarjestaja.id)
-            cache.delete('vakajarjestaja_yhteenveto_' + str(tyontekija.vakajarjestaja.id))
+            delete_cache_keys_related_model('organisaatio', tyontekija.vakajarjestaja.id)
+            cache.delete('organisaatio_yhteenveto_' + str(tyontekija.vakajarjestaja.id))
 
     @action(methods=['delete'], detail=True, url_path='delete-all')
     def delete_all(self, request, pk=None):
@@ -208,8 +208,8 @@ class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
                         object_instance.delete()
             instance.delete()
             delete_cache_keys_related_model('henkilo', instance.henkilo.id)
-            delete_cache_keys_related_model('vakajarjestaja', instance.vakajarjestaja.id)
-            cache.delete('vakajarjestaja_yhteenveto_' + str(instance.vakajarjestaja.id))
+            delete_cache_keys_related_model('organisaatio', instance.vakajarjestaja.id)
+            cache.delete('organisaatio_yhteenveto_' + str(instance.vakajarjestaja.id))
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -353,17 +353,17 @@ class TilapainenHenkilostoViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
             tilapainenhenkilosto_obj = serializer.save(changed_by=user)
             vakajarjestaja_oid = tilapainenhenkilosto_obj.vakajarjestaja.organisaatio_oid
             assign_object_permissions_to_tilapainenhenkilosto_groups(vakajarjestaja_oid, TilapainenHenkilosto, tilapainenhenkilosto_obj)
-            cache.delete('vakajarjestaja_yhteenveto_' + str(tilapainenhenkilosto_obj.vakajarjestaja.id))
+            cache.delete('organisaatio_yhteenveto_' + str(tilapainenhenkilosto_obj.vakajarjestaja.id))
 
     def perform_update(self, serializer):
         user = self.request.user
         tilapainenhenkilosto = serializer.save(changed_by=user)
-        cache.delete('vakajarjestaja_yhteenveto_' + str(tilapainenhenkilosto.vakajarjestaja.id))
+        cache.delete('organisaatio_yhteenveto_' + str(tilapainenhenkilosto.vakajarjestaja.id))
 
     def perform_destroy(self, tilapainenhenkilosto):
         with transaction.atomic():
             delete_object_permissions_explicitly(TilapainenHenkilosto, tilapainenhenkilosto)
-            cache.delete('vakajarjestaja_yhteenveto_' + str(tilapainenhenkilosto.vakajarjestaja.id))
+            cache.delete('organisaatio_yhteenveto_' + str(tilapainenhenkilosto.vakajarjestaja.id))
             tilapainenhenkilosto.delete()
 
 
@@ -416,7 +416,7 @@ class TutkintoViewSet(IncreasedModifyThrottleMixin, CreateModelMixin, RetrieveMo
         assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Tutkinto, tutkinto)
         self._assign_toimipaikka_permissions(tutkinto, validated_data)
         self._assign_all_toimipaikka_permissions(tutkinto)
-        cache.delete('vakajarjestaja_yhteenveto_' + str(validated_data['vakajarjestaja'].id))
+        cache.delete('organisaatio_yhteenveto_' + str(validated_data['vakajarjestaja'].id))
 
     def _assign_toimipaikka_permissions(self, tutkinto, validated_data):
         toimipaikka_oid = validated_data.get('toimipaikka') and validated_data.get('toimipaikka').organisaatio_oid
@@ -446,7 +446,7 @@ class TutkintoViewSet(IncreasedModifyThrottleMixin, CreateModelMixin, RetrieveMo
             delete_object_permissions_explicitly(Tutkinto, tutkinto)
             tutkinto.delete()
             delete_cache_keys_related_model('henkilo', henkilo.id)
-            cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja.id))
+            cache.delete('organisaatio_yhteenveto_' + str(vakajarjestaja.id))
 
     @action(methods=['delete'], detail=False)
     @swagger_auto_schema(manual_parameters=[
@@ -542,13 +542,13 @@ class PalvelussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
             assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Palvelussuhde, palvelussuhde)
             if toimipaikka_oid:
                 assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, Palvelussuhde, palvelussuhde)
-            cache.delete('vakajarjestaja_yhteenveto_' + str(palvelussuhde.tyontekija.vakajarjestaja.id))
+            cache.delete('organisaatio_yhteenveto_' + str(palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def perform_update(self, serializer):
         user = self.request.user
         self._throw_if_not_all_tyoskentelypaikka_permissions()
         palvelussuhde = serializer.save(changed_by=user)
-        cache.delete('vakajarjestaja_yhteenveto_' + str(palvelussuhde.tyontekija.vakajarjestaja.id))
+        cache.delete('organisaatio_yhteenveto_' + str(palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def perform_destroy(self, palvelussuhde):
         self._throw_if_not_all_tyoskentelypaikka_permissions()
@@ -560,7 +560,7 @@ class PalvelussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
                 raise ValidationError({'errors': [ErrorMessages.PS001.value]})
 
             delete_cache_keys_related_model('tyontekija', palvelussuhde.tyontekija.id)
-            cache.delete('vakajarjestaja_yhteenveto_' + str(palvelussuhde.tyontekija.vakajarjestaja.id))
+            cache.delete('organisaatio_yhteenveto_' + str(palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def _throw_if_not_all_tyoskentelypaikka_permissions(self):
         """
@@ -653,7 +653,7 @@ class TyoskentelypaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
                 assign_tyoskentelypaikka_henkilo_permissions(tyoskentelypaikka)
 
             delete_cache_keys_related_model('palvelussuhde', tyoskentelypaikka.palvelussuhde.id)
-            cache.delete('vakajarjestaja_yhteenveto_' + str(tyoskentelypaikka.palvelussuhde.tyontekija.vakajarjestaja.id))
+            cache.delete('organisaatio_yhteenveto_' + str(tyoskentelypaikka.palvelussuhde.tyontekija.vakajarjestaja.id))
             if tyoskentelypaikka.toimipaikka:
                 delete_cache_keys_related_model('toimipaikka', tyoskentelypaikka.toimipaikka.id)
 
@@ -667,7 +667,7 @@ class TyoskentelypaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
             self._validate_relation_to_taydennyskoulutus(tyoskentelypaikka, ErrorMessages.TA015.value)
 
         tyoskentelypaikka = serializer.save(changed_by=user)
-        cache.delete('vakajarjestaja_yhteenveto_' + str(tyoskentelypaikka.palvelussuhde.tyontekija.vakajarjestaja.id))
+        cache.delete('organisaatio_yhteenveto_' + str(tyoskentelypaikka.palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def perform_destroy(self, tyoskentelypaikka):
         self._validate_relation_to_taydennyskoulutus(tyoskentelypaikka, ErrorMessages.TA002.value)
@@ -680,7 +680,7 @@ class TyoskentelypaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
                 raise ValidationError({'errors': [ErrorMessages.TA003.value]})
 
             delete_cache_keys_related_model('palvelussuhde', tyoskentelypaikka.palvelussuhde.id)
-            cache.delete('vakajarjestaja_yhteenveto_' + str(tyoskentelypaikka.palvelussuhde.tyontekija.vakajarjestaja.id))
+            cache.delete('organisaatio_yhteenveto_' + str(tyoskentelypaikka.palvelussuhde.tyontekija.vakajarjestaja.id))
             if tyoskentelypaikka.toimipaikka:
                 delete_cache_keys_related_model('toimipaikka', tyoskentelypaikka.toimipaikka.id)
 
@@ -735,12 +735,12 @@ class PidempiPoissaoloViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixi
                 assign_object_permissions_to_tyontekija_groups(toimipaikka_oid, PidempiPoissaolo, pidempipoissaolo)
 
             delete_cache_keys_related_model('palvelussuhde', pidempipoissaolo.palvelussuhde.id)
-            cache.delete('vakajarjestaja_yhteenveto_' + str(pidempipoissaolo.palvelussuhde.tyontekija.vakajarjestaja.id))
+            cache.delete('organisaatio_yhteenveto_' + str(pidempipoissaolo.palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def perform_update(self, serializer):
         pidempipoissaolo = serializer.save(changed_by=self.request.user)
         delete_cache_keys_related_model('palvelussuhde', pidempipoissaolo.palvelussuhde.id)
-        cache.delete('vakajarjestaja_yhteenveto_' + str(pidempipoissaolo.palvelussuhde.tyontekija.vakajarjestaja.id))
+        cache.delete('organisaatio_yhteenveto_' + str(pidempipoissaolo.palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def perform_destroy(self, pidempipoissaolo):
         with transaction.atomic():
@@ -750,7 +750,7 @@ class PidempiPoissaoloViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixi
             except ProtectedError:
                 raise ValidationError({'errors': [ErrorMessages.PP001.value]})
             delete_cache_keys_related_model('palvelussuhde', pidempipoissaolo.palvelussuhde.id)
-            cache.delete('vakajarjestaja_yhteenveto_' + str(pidempipoissaolo.palvelussuhde.tyontekija.vakajarjestaja.id))
+            cache.delete('organisaatio_yhteenveto_' + str(pidempipoissaolo.palvelussuhde.tyontekija.vakajarjestaja.id))
 
 
 @auditlogclass
@@ -836,8 +836,8 @@ class TaydennyskoulutusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
 
                 for tyontekija in tyontekijat.all():
                     delete_cache_keys_related_model('tyontekija', tyontekija.id)
-                vakajarjestaja_obj = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid)
-                cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja_obj.id))
+                vakajarjestaja_obj = Organisaatio.objects.get(organisaatio_oid=vakajarjestaja_oid)
+                cache.delete('organisaatio_yhteenveto_' + str(vakajarjestaja_obj.id))
 
                 # Assign permissions for all toimipaikat of vakajarjestaja in a task so that it doesn't block execution
                 transaction.on_commit(lambda: assign_taydennyskoulutus_permissions_for_all_toimipaikat_task
@@ -867,8 +867,8 @@ class TaydennyskoulutusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
                 delete_cache_keys_related_model('tyontekija', tyontekija.id)
 
             vakajarjestaja_oid = get_tyontekija_vakajarjestaja_oid(tyontekijat)
-            vakajarjestaja_obj = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid)
-            cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja_obj.id))
+            vakajarjestaja_obj = Organisaatio.objects.get(organisaatio_oid=vakajarjestaja_oid)
+            cache.delete('organisaatio_yhteenveto_' + str(vakajarjestaja_obj.id))
 
     def perform_destroy(self, taydennyskoulutus):
         user = self.request.user
@@ -886,5 +886,5 @@ class TaydennyskoulutusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
             for tyontekija_id in tyontekija_id_list:
                 delete_cache_keys_related_model('tyontekija', tyontekija_id)
 
-            vakajarjestaja_obj = VakaJarjestaja.objects.get(organisaatio_oid=vakajarjestaja_oid)
-            cache.delete('vakajarjestaja_yhteenveto_' + str(vakajarjestaja_obj.id))
+            vakajarjestaja_obj = Organisaatio.objects.get(organisaatio_oid=vakajarjestaja_oid)
+            cache.delete('organisaatio_yhteenveto_' + str(vakajarjestaja_obj.id))

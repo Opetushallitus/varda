@@ -21,7 +21,7 @@ from json.decoder import JSONDecodeError
 from pathlib import Path
 from timeit import default_timer as timer
 
-from varda.models import (Henkilo, Toimipaikka, VakaJarjestaja, YearlyReportSummary, Z3_AdditionalCasUserFields,
+from varda.models import (Henkilo, Toimipaikka, Organisaatio, YearlyReportSummary, Z3_AdditionalCasUserFields,
                           Z4_CasKayttoOikeudet, Z5_AuditLog, Z6_RequestLog, Z7_AdditionalUserFields, Z8_ExcelReport,
                           Z8_ExcelReportLog)
 
@@ -159,7 +159,7 @@ def finalize_data_dump():
     """
     - Remove historical-henkilot
     - Remove Z3, Z4, Z5, Z6, Z7, Z8
-    - Remove users 3 & 4, plus references to VakaJarjestaja + Toimipaikka
+    - Remove users 3 & 4, plus references to Organisaatio + Toimipaikka
     - Load testdata (fixtures), huoltajat etc.
     """
     logger.info('Finalizing the data dump.')
@@ -178,7 +178,7 @@ def finalize_data_dump():
     YearlyReportSummary.objects.all().delete()
 
     user = User.objects.get(id=2)
-    vakajarjestaja_1 = VakaJarjestaja.objects.get(id=1)
+    vakajarjestaja_1 = Organisaatio.objects.get(id=1)
     vakajarjestaja_1.changed_by = user
     vakajarjestaja_1.save()
     toimipaikka_1 = Toimipaikka.objects.get(id=1)

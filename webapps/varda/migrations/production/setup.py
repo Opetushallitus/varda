@@ -24,7 +24,7 @@ def get_vaka_tallentaja_permissions():
         'add_toimipaikka',
         'change_toimipaikka',
         'view_toimipaikka',
-        'view_vakajarjestaja',
+        'view_organisaatio',
         'add_varhaiskasvatuspaatos',
         'change_varhaiskasvatuspaatos',
         'delete_varhaiskasvatuspaatos',
@@ -42,7 +42,7 @@ def get_huoltajatiedot_tallentaja_permissions():
         'change_maksutieto',
         'delete_maksutieto',
         'view_maksutieto',
-        'view_vakajarjestaja',
+        'view_organisaatio',
         'view_toimipaikka',
         'view_kielipainotus',
         'view_toiminnallinenpainotus',
@@ -54,7 +54,7 @@ def get_huoltajatiedot_tallentaja_permissions():
 def get_huoltajatiedot_katselija_permissions():
     return [
         'view_maksutieto',
-        'view_vakajarjestaja',
+        'view_organisaatio',
         'view_toimipaikka',
         'view_kielipainotus',
         'view_toiminnallinenpainotus',
@@ -87,7 +87,7 @@ def get_tyontekija_tallentaja_permissions():
         'change_tutkinto',
         'delete_tutkinto',
         'view_tutkinto',
-        'view_vakajarjestaja',
+        'view_organisaatio',
         'view_toimipaikka',
     ]
 
@@ -100,7 +100,7 @@ def get_tyontekija_katselija_permissions():
         'view_palvelussuhde',
         'view_pidempipoissaolo',
         'view_tutkinto',
-        'view_vakajarjestaja',
+        'view_organisaatio',
         'view_toimipaikka',
     ]
 
@@ -111,7 +111,7 @@ def get_taydennyskoulutus_tallentaja_permissions():
         'change_taydennyskoulutus',
         'delete_taydennyskoulutus',
         'view_taydennyskoulutus',
-        'view_vakajarjestaja',
+        'view_organisaatio',
         'view_toimipaikka',
     ]
 
@@ -119,7 +119,7 @@ def get_taydennyskoulutus_tallentaja_permissions():
 def get_taydennyskoulutus_katselija_permissions():
     return [
         'view_taydennyskoulutus',
-        'view_vakajarjestaja',
+        'view_organisaatio',
         'view_toimipaikka',
     ]
 
@@ -130,33 +130,33 @@ def get_tilapainen_henkilosto_tallentaja_permissions():
         'change_tilapainenhenkilosto',
         'delete_tilapainenhenkilosto',
         'view_tilapainenhenkilosto',
-        'view_vakajarjestaja',
+        'view_organisaatio',
     ]
 
 
 def get_tilapainen_henkilosto_katselija_permissions():
     return [
         'view_tilapainenhenkilosto',
-        'view_vakajarjestaja',
+        'view_organisaatio',
     ]
 
 
 def get_toimijatiedot_katselija_permissions():
     return [
-        'view_vakajarjestaja'
+        'view_organisaatio'
     ]
 
 
 def get_toimijatiedot_tallentaja_permissions():
     return [
-        'view_vakajarjestaja',
-        'change_vakajarjestaja'
+        'view_organisaatio',
+        'change_organisaatio'
     ]
 
 
 def get_raporttien_katselija_permissions():
     return [
-        'view_vakajarjestaja'
+        'view_organisaatio'
     ]
 
 

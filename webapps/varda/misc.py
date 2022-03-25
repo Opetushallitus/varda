@@ -21,7 +21,7 @@ from rest_framework.exceptions import APIException
 
 from varda.enums.error_messages import ErrorMessages
 from varda.helper_functions import hide_hetu
-from varda.models import Henkilo, MaksutietoHuoltajuussuhde, VakaJarjestaja
+from varda.models import Henkilo, MaksutietoHuoltajuussuhde, Organisaatio
 from varda.oph_yhteiskayttopalvelu_autentikaatio import get_authentication_header, get_contenttype_header
 
 logger = logging.getLogger(__name__)
@@ -294,13 +294,13 @@ def update_all_vakajarjestaja_permissiongroups():
     """
     from varda.clients.organisaatio_client import get_multiple_organisaatio, get_organization_type
     from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
-    from varda.models import Toimipaikka, VakaJarjestaja
+    from varda.models import Toimipaikka, Organisaatio
     from varda.permission_groups import (assign_permissions_to_toimipaikka_obj,
                                          assign_permissions_to_vakajarjestaja_obj,
                                          create_permission_groups_for_organisaatio)
 
     logger.info('Starting setting vakajarjestaja permissions')
-    all_vakajarjestaja_oids = (VakaJarjestaja.objects.exclude(organisaatio_oid__exact='')
+    all_vakajarjestaja_oids = (Organisaatio.objects.exclude(organisaatio_oid__exact='')
                                .values_list('organisaatio_oid', flat=True))
     vakajarjestaja_oid_chunks = list_to_chunks(all_vakajarjestaja_oids, 100)
     for vakajarjestaja_oid_chunk in vakajarjestaja_oid_chunks:
@@ -375,8 +375,8 @@ def get_user_vakajarjestaja(user):
                             if (match := regex_pattern.fullmatch(group_name)) and match.group(1)}
 
     # organisaatio_oid might be that of Vakajarjestaja or Toimipaikka
-    vakajarjestaja_qs = VakaJarjestaja.objects.filter(Q(organisaatio_oid__in=organisaatio_oid_set) |
-                                                      Q(toimipaikat__organisaatio_oid__in=organisaatio_oid_set)).distinct()
+    vakajarjestaja_qs = Organisaatio.objects.filter(Q(organisaatio_oid__in=organisaatio_oid_set) |
+                                                    Q(toimipaikat__organisaatio_oid__in=organisaatio_oid_set)).distinct()
     if not vakajarjestaja_qs.exists() or vakajarjestaja_qs.count() > 1:
         # User has permissions to multiple Vakajarjestaja or has no permissions at all
         logger.warning(f'Could not determine Vakajarjestaja for user: {user}')

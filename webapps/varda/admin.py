@@ -6,7 +6,7 @@ from simple_history.admin import SimpleHistoryAdmin
 
 from .models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, KieliPainotus, Lapsi, LoginCertificate,
                      Maksutieto, Tyoskentelypaikka, Palvelussuhde, PaosOikeus, PaosToiminta, TilapainenHenkilosto,
-                     ToiminnallinenPainotus, Toimipaikka, Tutkinto, Tyontekija, VakaJarjestaja, Varhaiskasvatuspaatos,
+                     ToiminnallinenPainotus, Toimipaikka, Tutkinto, Tyontekija, Organisaatio, Varhaiskasvatuspaatos,
                      Varhaiskasvatussuhde, PidempiPoissaolo, Taydennyskoulutus, YearlyReportSummary,
                      Z3_AdditionalCasUserFields, Z7_AdditionalUserFields)
 
@@ -15,7 +15,7 @@ class AdminWithGuardianAndHistory(GuardedModelAdmin, SimpleHistoryAdmin):
     pass
 
 
-class VakajarjestajaAdmin(AdminWithGuardianAndHistory):
+class OrganisaatioAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'nimi', 'organisaatio_oid',)
     search_fields = ('=id', 'nimi', '=organisaatio_oid',)
     raw_id_fields = ('changed_by',)
@@ -237,9 +237,13 @@ class AuthUserAdmin(ModelAdmin):
 
 
 class LoginCertificateAdmin(AdminWithGuardianAndHistory):
-    list_display = ('id', 'organisation_name', 'api_path',)
-    search_fields = ('=id', 'organisation_name', 'api_path',)
-    raw_id_fields = ('user',)
+    list_display = ('id', 'get_organisaatio_oid', 'api_path',)
+    search_fields = ('=id', '=organisaatio__organisaatio_oid', 'api_path',)
+    raw_id_fields = ('user', 'organisaatio',)
+
+    @display(ordering='organisaatio__organisaatio_oid', description='organisaatio_oid')
+    def get_organisaatio_oid(self, instance):
+        return instance.organisaatio.organisaatio_oid
 
 
 class Z3_AdditionalCasUserFieldsAdmin(ModelAdmin):
@@ -257,7 +261,7 @@ class Z7_AdditionalUserFieldsAdmin(ModelAdmin):
 admin.site.unregister(User)
 
 admin.site.register(User, AuthUserAdmin)
-admin.site.register(VakaJarjestaja, VakajarjestajaAdmin)
+admin.site.register(Organisaatio, OrganisaatioAdmin)
 admin.site.register(Toimipaikka, ToimipaikkaAdmin)
 admin.site.register(ToiminnallinenPainotus, ToiminnallinenPainotusAdmin)
 admin.site.register(KieliPainotus, KieliPainotusAdmin)

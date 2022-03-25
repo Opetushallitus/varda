@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.test import TestCase
 from rest_framework import serializers, status
 
-from varda.models import (VakaJarjestaja, Toimipaikka, Varhaiskasvatussuhde, Varhaiskasvatuspaatos, Maksutieto, Lapsi,
+from varda.models import (Organisaatio, Toimipaikka, Varhaiskasvatussuhde, Varhaiskasvatuspaatos, Maksutieto, Lapsi,
                           Henkilo, ToiminnallinenPainotus, KieliPainotus, PidempiPoissaolo, Tyoskentelypaikka,
                           Palvelussuhde, Tutkinto, Tyontekija, Taydennyskoulutus, TilapainenHenkilosto)
 from varda.organisation_transformations import transfer_toimipaikat_to_vakajarjestaja
@@ -20,8 +20,8 @@ class OrganisationTransformationsTests(TestCase):
         old_vakajarjestaja_oid = '1.2.246.562.10.57294396385'
         new_vakajarjestaja_oid = '1.2.246.562.10.52966755795'
 
-        old_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=old_vakajarjestaja_oid)
-        new_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=new_vakajarjestaja_oid)
+        old_vakajarjestaja = Organisaatio.objects.get(organisaatio_oid=old_vakajarjestaja_oid)
+        new_vakajarjestaja = Organisaatio.objects.get(organisaatio_oid=new_vakajarjestaja_oid)
 
         permission_id_list_nested_before_old = self._get_id_list_nested_for_vakajarjestaja(old_vakajarjestaja)
         permission_id_list_nested_before_new = self._get_id_list_nested_for_vakajarjestaja(new_vakajarjestaja)
@@ -30,8 +30,8 @@ class OrganisationTransformationsTests(TestCase):
         self._assert_organization_has_permissions(old_vakajarjestaja_oid, permission_id_list_nested_before_old, has_permissions=True)
         self._assert_organization_has_permissions(new_vakajarjestaja_oid, permission_id_list_nested_before_old, has_permissions=False)
 
-        # Transfer Toimipaikat of VakaJarjestaja 1.2.246.562.10.57294396385 to
-        # VakaJarjestaja 1.2.246.562.10.52966755795
+        # Transfer Toimipaikat of Organisaatio 1.2.246.562.10.57294396385 to
+        # Organisaatio 1.2.246.562.10.52966755795
         transfer_toimipaikat_to_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja)
 
         # Assert permissions after transfer
@@ -53,8 +53,8 @@ class OrganisationTransformationsTests(TestCase):
         old_vakajarjestaja_oid = '1.2.246.562.10.57294396385'
         new_vakajarjestaja_oid = '1.2.246.562.10.52966755795'
 
-        old_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=old_vakajarjestaja_oid)
-        new_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=new_vakajarjestaja_oid)
+        old_vakajarjestaja = Organisaatio.objects.get(organisaatio_oid=old_vakajarjestaja_oid)
+        new_vakajarjestaja = Organisaatio.objects.get(organisaatio_oid=new_vakajarjestaja_oid)
 
         lapsi_henkilo_oid = '1.2.246.562.24.6779627637492'
         lapsi_henkilo = Henkilo.objects.get(henkilo_oid=lapsi_henkilo_oid)
@@ -95,8 +95,8 @@ class OrganisationTransformationsTests(TestCase):
         vakasuhde_resp = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
         assert_status_code(vakasuhde_resp, status.HTTP_201_CREATED)
 
-        # Transfer Toimipaikat of VakaJarjestaja 1.2.246.562.10.57294396385 to
-        # VakaJarjestaja 1.2.246.562.10.52966755795
+        # Transfer Toimipaikat of Organisaatio 1.2.246.562.10.57294396385 to
+        # Organisaatio 1.2.246.562.10.52966755795
         transfer_toimipaikat_to_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja)
 
         # Assert old lapsi object doesn't exist
@@ -118,8 +118,8 @@ class OrganisationTransformationsTests(TestCase):
         toimipaikka_oid = '1.2.246.562.10.6727877596658'
         paos_henkilo_oid = '1.2.246.562.24.58672764848'
 
-        paos_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=paos_vakajarjestaja_oid)
-        oma_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=oma_vakajarjestaja_oid)
+        paos_vakajarjestaja = Organisaatio.objects.get(organisaatio_oid=paos_vakajarjestaja_oid)
+        oma_vakajarjestaja = Organisaatio.objects.get(organisaatio_oid=oma_vakajarjestaja_oid)
         toimipaikka = Toimipaikka.objects.get(organisaatio_oid=toimipaikka_oid)
         paos_henkilo = Henkilo.objects.get(henkilo_oid=paos_henkilo_oid)
 
@@ -194,8 +194,8 @@ class OrganisationTransformationsTests(TestCase):
         old_vakajarjestaja_oid = '1.2.246.562.10.57294396385'
         new_vakajarjestaja_oid = '1.2.246.562.10.52966755795'
 
-        old_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=old_vakajarjestaja_oid)
-        new_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=new_vakajarjestaja_oid)
+        old_vakajarjestaja = Organisaatio.objects.get(organisaatio_oid=old_vakajarjestaja_oid)
+        new_vakajarjestaja = Organisaatio.objects.get(organisaatio_oid=new_vakajarjestaja_oid)
 
         tyontekija_henkilo_oid = '1.2.246.562.24.4645229637988'
         tyontekija_henkilo = Henkilo.objects.get(henkilo_oid=tyontekija_henkilo_oid)
@@ -251,8 +251,8 @@ class OrganisationTransformationsTests(TestCase):
         tyoskentelypaikka_resp = client.post('/api/henkilosto/v1/tyoskentelypaikat/', tyoskentelypaikka)
         assert_status_code(tyoskentelypaikka_resp, status.HTTP_201_CREATED)
 
-        # Transfer Toimipaikat of VakaJarjestaja 1.2.246.562.10.57294396385 to
-        # VakaJarjestaja 1.2.246.562.10.52966755795
+        # Transfer Toimipaikat of Organisaatio 1.2.246.562.10.57294396385 to
+        # Organisaatio 1.2.246.562.10.52966755795
         transfer_toimipaikat_to_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja)
 
         # Assert old Tyontekija object doesn't exist
@@ -277,8 +277,8 @@ class OrganisationTransformationsTests(TestCase):
         old_vakajarjestaja_oid = '1.2.246.562.10.57294396385'
         new_vakajarjestaja_oid = '1.2.246.562.10.52966755795'
 
-        old_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=old_vakajarjestaja_oid)
-        new_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid=new_vakajarjestaja_oid)
+        old_vakajarjestaja = Organisaatio.objects.get(organisaatio_oid=old_vakajarjestaja_oid)
+        new_vakajarjestaja = Organisaatio.objects.get(organisaatio_oid=new_vakajarjestaja_oid)
 
         old_tilapainen_henkilosto = TilapainenHenkilosto.objects.get(tunniste='testing-tilapainenhenkilosto2')
         old_tilapainen_henkilosto.kuukausi = datetime.date(year=2020, month=9, day=1)

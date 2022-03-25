@@ -7,18 +7,6 @@ from varda.enums.tietosisalto_ryhma import TietosisaltoRyhma
 logger = logging.getLogger(__name__)
 
 
-def add_groups_with_permissions():
-    from django.contrib.auth.models import Group, Permission
-    group_permission_array = [
-        ('VARDA_LUOVUTUSPALVELU_1.2.246.562.10.15869252719', [])
-    ]
-
-    for group_tuple in group_permission_array:
-        group_obj = Group.objects.create(name=group_tuple[0])
-        group_permissions = Permission.objects.filter(codename__in=group_tuple[1])
-        group_obj.permissions.add(*group_permissions)
-
-
 def add_test_users():
     from django.contrib.auth.models import User
     from rest_framework.authtoken.models import Token
@@ -105,7 +93,7 @@ def add_test_user_permissions():
     group_taydennys_tallentaja_vakajarjestaja_52966755795 = Group.objects.get(name='HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA_1.2.246.562.10.52966755795')
     group_toimijatiedot_tallentaja_34683023489 = Group.objects.get(name='VARDA_TOIMIJATIEDOT_TALLENTAJA_1.2.246.562.10.34683023489')
     group_raporttien_katselija_34683023489 = Group.objects.get(name='VARDA_RAPORTTIEN_KATSELIJA_1.2.246.562.10.34683023489')
-    group_kela_luovutuspalvelu = Group.objects.get(name='VARDA_LUOVUTUSPALVELU_1.2.246.562.10.15869252719')
+    group_kela_luovutuspalvelu = Group.objects.get(name='VARDA_LUOVUTUSPALVELU_1.2.246.562.10.2013121014482686198719')
 
     user_tester = User.objects.get(username='tester')
     user_tester.groups.add(group_tallentaja_toimipaikka_1)
@@ -222,9 +210,10 @@ def add_test_user_permissions():
 
 
 def create_vakajarjestajat():
+    from django.conf import settings
     from django.contrib.auth.models import User
     from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
-    from varda.models import VakaJarjestaja
+    from varda.models import Organisaatio
     from varda.permission_groups import (assign_permissions_to_vakajarjestaja_obj,
                                          create_permission_groups_for_organisaatio)
 
@@ -234,9 +223,11 @@ def create_vakajarjestajat():
     tester_e2e_user = User.objects.get(username='tester-e2e')
     tester10_user = User.objects.get(username='tester10')
     tester11_user = User.objects.get(username='tester11')
+    kela_user = User.objects.get(username='kela_luovutuspalvelu')
+    admin_user = User.objects.get(username='credadmin')
 
-    vakajarjestaja_list = (
-        VakaJarjestaja.objects.create(
+    organisaatio_list = (
+        Organisaatio.objects.create(
             nimi='Tester2 organisaatio',
             y_tunnus='8500570-7',
             organisaatio_oid='1.2.246.562.10.34683023489',
@@ -253,9 +244,10 @@ def create_vakajarjestajat():
             alkamis_pvm='2017-02-03',
             paattymis_pvm=None,
             changed_by=tester2_user,
-            integraatio_organisaatio=[TietosisaltoRyhma.VAKATIEDOT.value]
+            integraatio_organisaatio=[TietosisaltoRyhma.VAKATIEDOT.value],
+            organisaatiotyyppi=[Organisaatiotyyppi.VAKAJARJESTAJA.value]
         ),
-        VakaJarjestaja.objects.create(
+        Organisaatio.objects.create(
             nimi='Tester organisaatio',
             y_tunnus='1825748-8',
             organisaatio_oid='1.2.246.562.10.93957375488',
@@ -273,9 +265,10 @@ def create_vakajarjestajat():
             ytjkieli='FI',
             yritysmuoto='16',
             changed_by=tester_user,
-            integraatio_organisaatio=[]
+            integraatio_organisaatio=[],
+            organisaatiotyyppi=[Organisaatiotyyppi.VAKAJARJESTAJA.value]
         ),
-        VakaJarjestaja.objects.create(
+        Organisaatio.objects.create(
             nimi='varda-testi organisaatio',
             y_tunnus='2617455-1',
             organisaatio_oid='1.2.246.562.10.93957375486',
@@ -291,9 +284,10 @@ def create_vakajarjestajat():
             alkamis_pvm='2018-09-13',
             paattymis_pvm=None,
             changed_by=varda_testi_user,
-            integraatio_organisaatio=[]
+            integraatio_organisaatio=[],
+            organisaatiotyyppi=[Organisaatiotyyppi.VAKAJARJESTAJA.value]
         ),
-        VakaJarjestaja.objects.create(
+        Organisaatio.objects.create(
             nimi='Frontti organisaatio',
             y_tunnus='2156233-6',
             organisaatio_oid='1.2.246.562.10.93957375484',
@@ -310,9 +304,10 @@ def create_vakajarjestajat():
             alkamis_pvm='2018-09-25',
             paattymis_pvm=None,
             changed_by=tester_e2e_user,
-            integraatio_organisaatio=[]
+            integraatio_organisaatio=[],
+            organisaatiotyyppi=[Organisaatiotyyppi.VAKAJARJESTAJA.value]
         ),
-        VakaJarjestaja.objects.create(
+        Organisaatio.objects.create(
             nimi='Tester 10 organisaatio',
             y_tunnus='8685083-0',
             organisaatio_oid='1.2.246.562.10.57294396385',
@@ -329,9 +324,10 @@ def create_vakajarjestajat():
             alkamis_pvm='2019-01-01',
             paattymis_pvm=None,
             changed_by=tester10_user,
-            integraatio_organisaatio=[]
+            integraatio_organisaatio=[],
+            organisaatiotyyppi=[Organisaatiotyyppi.VAKAJARJESTAJA.value]
         ),
-        VakaJarjestaja.objects.create(
+        Organisaatio.objects.create(
             nimi='Tester 11 organisaatio',
             y_tunnus='1428881-8',
             organisaatio_oid='1.2.246.562.10.52966755795',
@@ -348,20 +344,61 @@ def create_vakajarjestajat():
             alkamis_pvm='2019-02-01',
             paattymis_pvm=None,
             changed_by=tester11_user,
-            integraatio_organisaatio=[]
+            integraatio_organisaatio=[],
+            organisaatiotyyppi=[Organisaatiotyyppi.VAKAJARJESTAJA.value]
         ),
+        Organisaatio.objects.create(
+            nimi='Kansaneläkelaitos',
+            y_tunnus='0246246-0',
+            organisaatio_oid='1.2.246.562.10.2013121014482686198719',
+            kunta_koodi='091',
+            sahkopostiosoite='',
+            kayntiosoite='',
+            kayntiosoite_postinumero='',
+            kayntiosoite_postitoimipaikka='',
+            postiosoite='',
+            postitoimipaikka='',
+            postinumero='',
+            puhelinnumero='',
+            yritysmuoto='48',
+            alkamis_pvm='1979-01-02',
+            paattymis_pvm=None,
+            changed_by=kela_user,
+            integraatio_organisaatio=[],
+            organisaatiotyyppi=[Organisaatiotyyppi.MUU.value]
+        ),
+        Organisaatio.objects.create(
+            nimi='Opetushallitus',
+            y_tunnus='',
+            organisaatio_oid=settings.OPETUSHALLITUS_ORGANISAATIO_OID,
+            kunta_koodi='',
+            sahkopostiosoite='',
+            kayntiosoite='',
+            kayntiosoite_postinumero='',
+            kayntiosoite_postitoimipaikka='',
+            postiosoite='',
+            postitoimipaikka='',
+            postinumero='',
+            puhelinnumero='',
+            yritysmuoto='0',
+            alkamis_pvm='1970-01-01',
+            paattymis_pvm=None,
+            changed_by=admin_user,
+            integraatio_organisaatio=[],
+            organisaatiotyyppi=[Organisaatiotyyppi.MUU.value]
+        )
     )
 
-    for vakajarjestaja in vakajarjestaja_list:
-        organisaatio_oid = vakajarjestaja.organisaatio_oid
-        create_permission_groups_for_organisaatio(organisaatio_oid, Organisaatiotyyppi.VAKAJARJESTAJA.value)
+    for organisaatio in organisaatio_list:
+        organisaatio_oid = organisaatio.organisaatio_oid
+        create_permission_groups_for_organisaatio(organisaatio_oid, organisaatio.organisaatiotyyppi[0])
         assign_permissions_to_vakajarjestaja_obj(organisaatio_oid)
 
 
 def create_toimipaikat_and_painotukset():
     from django.contrib.auth.models import User
     from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
-    from varda.models import Toimipaikka, VakaJarjestaja
+    from varda.models import Toimipaikka, Organisaatio
     from varda.permission_groups import assign_permissions_to_toimipaikka_obj, create_permission_groups_for_organisaatio
 
     tester_user = User.objects.get(username='tester')
@@ -370,11 +407,11 @@ def create_toimipaikat_and_painotukset():
     tester10_user = User.objects.get(username='tester10')
     tester11_user = User.objects.get(username='tester11')
 
-    vakajarjestaja_tester_obj = VakaJarjestaja.objects.filter(nimi='Tester organisaatio')[0]
-    vakajarjestaja_tester2_obj = VakaJarjestaja.objects.filter(nimi='Tester2 organisaatio')[0]
-    vakajarjestaja_4_obj = VakaJarjestaja.objects.get(id=4)
-    vakajarjestaja_57294396385 = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
-    vakajarjestaja_52966755795 = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.52966755795')
+    vakajarjestaja_tester_obj = Organisaatio.objects.filter(nimi='Tester organisaatio')[0]
+    vakajarjestaja_tester2_obj = Organisaatio.objects.filter(nimi='Tester2 organisaatio')[0]
+    vakajarjestaja_4_obj = Organisaatio.objects.get(id=4)
+    vakajarjestaja_57294396385 = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
+    vakajarjestaja_52966755795 = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.52966755795')
 
     toimipaikka_list = (
         Toimipaikka.objects.create(
@@ -3070,14 +3107,17 @@ def create_aikaleima():
 
 
 def create_login_certs():
-    from varda.models import LoginCertificate
     from django.contrib.auth.models import User
+    from varda.models import LoginCertificate, Organisaatio
+
     user = User.objects.get(username='kela_luovutuspalvelu')
-    LoginCertificate.objects.update_or_create(organisation_name='kela', api_path='/api/reporting/v1/kela/etuusmaksatus/aloittaneet/', common_name='kela cert', user=user)
-    LoginCertificate.objects.update_or_create(organisation_name='kela', api_path='/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', common_name='kela cert', user=user)
-    LoginCertificate.objects.update_or_create(organisation_name='kela', api_path='/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/', common_name='kela cert', user=user)
-    LoginCertificate.objects.update_or_create(organisation_name='kela', api_path='/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', common_name='kela cert', user=user)
-    LoginCertificate.objects.update_or_create(organisation_name='kela', api_path='/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/', common_name='kela cert', user=user)
+    kela_organisaatio = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.2013121014482686198719')
+
+    LoginCertificate.objects.update_or_create(organisaatio=kela_organisaatio, api_path='/api/reporting/v1/kela/etuusmaksatus/aloittaneet/', common_name='kela cert', user=user)
+    LoginCertificate.objects.update_or_create(organisaatio=kela_organisaatio, api_path='/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', common_name='kela cert', user=user)
+    LoginCertificate.objects.update_or_create(organisaatio=kela_organisaatio, api_path='/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/', common_name='kela cert', user=user)
+    LoginCertificate.objects.update_or_create(organisaatio=kela_organisaatio, api_path='/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', common_name='kela cert', user=user)
+    LoginCertificate.objects.update_or_create(organisaatio=kela_organisaatio, api_path='/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/', common_name='kela cert', user=user)
 
 
 def create_test_data():
@@ -3114,7 +3154,6 @@ def create_test_data():
 
 
 def load_testing_data():
-    add_groups_with_permissions()
     add_test_users()
     create_test_data()
     add_test_user_permissions()

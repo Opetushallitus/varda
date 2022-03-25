@@ -71,15 +71,15 @@ UPDATE varda_toimipaikka SET sahkopostiosoite = concat('email-', trunc(random() 
 
 
 
--- Table: varda_vakajarjestaja
+-- Table: varda_organisaatio
 -- Columns: nimi, sahkopostiosoite, kayntiosoite, kayntiosoite_postinumero, kayntiosoite_postitoimipaikka, postiosoite, postinumero, postitoimipaikka, puhelinnumero, alkamis_pvm, paattymis_pvm
 
 -- sahkopostiosoite (generate random strings)
-UPDATE varda_vakajarjestaja SET sahkopostiosoite = concat('email-', trunc(random() * 8999 + 1000)::text, '@example.com');
+UPDATE varda_organisaatio SET sahkopostiosoite = concat('email-', trunc(random() * 8999 + 1000)::text, '@example.com');
 
 
 -- puhelinnumero (generate random strings)
-UPDATE varda_vakajarjestaja SET puhelinnumero = concat('+358', trunc(random() * 899999999 + 100000000)::text);
+UPDATE varda_organisaatio SET puhelinnumero = concat('+358', trunc(random() * 899999999 + 100000000)::text);
 
 
 
@@ -90,8 +90,8 @@ SET nimi = t.nimi, nimi_sv = t.nimi_sv, kayntiosoite = t.kayntiosoite, kayntioso
 FROM varda_toimipaikka t
 WHERE varda_historicaltoimipaikka.id = t.id;
 
--- Table: varda_historicalvakajarjestaja
-UPDATE varda_historicalvakajarjestaja
+-- Table: varda_historicalorganisaatio
+UPDATE varda_historicalorganisaatio
 SET sahkopostiosoite = t.sahkopostiosoite, puhelinnumero = t.puhelinnumero
-FROM varda_vakajarjestaja t
-WHERE varda_historicalvakajarjestaja.id = t.id;
+FROM varda_organisaatio t
+WHERE varda_historicalorganisaatio.id = t.id;

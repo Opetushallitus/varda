@@ -14,7 +14,7 @@ from varda.misc import decrypt_henkilotunnus
 from varda.models import (Henkilo, Huoltaja, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto, Palvelussuhde,
                           PaosToiminta, PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija,
                           TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka, Tutkinto, Tyontekija,
-                          Tyoskentelypaikka, VakaJarjestaja, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z2_Code)
+                          Tyoskentelypaikka, Organisaatio, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z2_Code)
 from varda.organisation_transformations import transfer_toimipaikat_to_vakajarjestaja
 from varda.unit_tests.test_utils import (assert_status_code, assert_validation_error, mock_admin_user,
                                          mock_date_decorator_factory, SetUpTestClient)
@@ -952,17 +952,17 @@ class VardaViewsReportingTests(TestCase):
         self.assertEqual(resp_content['count'], existing_poistetut_count)
 
     def test_api_error_report_lapset(self):
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
         client = SetUpTestClient('tester10').client()
         resp_empty = client.get(f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-lapset/')
         assert_status_code(resp_empty, status.HTTP_200_OK)
         self.assertEqual(json.loads(resp_empty.content)['count'], 0)
 
     def test_api_error_report_lapset_no_permissions(self):
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.93957375488')
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.93957375488')
         url = f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-lapset/'
 
-        # No permissions to VakaJarjestaja
+        # No permissions to Organisaatio
         client_no_permissions_1 = SetUpTestClient('tester10').client()
         resp_no_permissions_1 = client_no_permissions_1.get(url)
         assert_status_code(resp_no_permissions_1, status.HTTP_404_NOT_FOUND)
@@ -978,7 +978,7 @@ class VardaViewsReportingTests(TestCase):
         assert_status_code(resp_no_permissions_2, status.HTTP_404_NOT_FOUND)
 
     def test_api_error_report_lapset_huoltajatiedot(self):
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
         lapsi = Lapsi.objects.get(vakatoimija=vakajarjestaja, henkilo__henkilo_oid='1.2.246.562.24.6779627637492')
 
         # Make Lapsi over 8 years old
@@ -1000,7 +1000,7 @@ class VardaViewsReportingTests(TestCase):
 
     @mock_date_decorator_factory('varda.viewsets_reporting.datetime', '2021-01-01')
     def test_api_error_report_lapset_vakatiedot(self):
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
         lapsi = Lapsi.objects.get(vakatoimija=vakajarjestaja, henkilo__henkilo_oid='1.2.246.562.24.8925547856499')
 
         # Make Henkilo over 8 years old and not yksiloity
@@ -1063,7 +1063,7 @@ class VardaViewsReportingTests(TestCase):
         self._verify_error_report_result(resp_7, ['VP012'])
 
     def test_api_error_report_lapset_huoltajatiedot_vakatiedot(self):
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
         lapsi = Lapsi.objects.get(vakatoimija=vakajarjestaja, henkilo__henkilo_oid='1.2.246.562.24.6779627637492')
 
         # Make Lapsi over 8 years old
@@ -1081,7 +1081,7 @@ class VardaViewsReportingTests(TestCase):
 
     @mock_date_decorator_factory('varda.viewsets_reporting.datetime', '2022-01-01')
     def test_api_error_report_tyontekijat(self):
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.93957375488')
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.93957375488')
         tyontekija = Tyontekija.objects.get(vakajarjestaja=vakajarjestaja, henkilo__henkilo_oid='1.2.246.562.24.2431884920041')
 
         client = SetUpTestClient('henkilosto_tallentaja_93957375488').client()
@@ -1172,7 +1172,7 @@ class VardaViewsReportingTests(TestCase):
         self._verify_error_report_result(resp, ['TU004'])
 
     def test_api_error_report_tyontekijat_no_permissions(self):
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
         url = f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-tyontekijat/'
 
         # No view_tyontekija permissions
@@ -1185,14 +1185,14 @@ class VardaViewsReportingTests(TestCase):
         resp_no_permissions_2 = client_no_permissions_2.get(url)
         assert_status_code(resp_no_permissions_2, status.HTTP_404_NOT_FOUND)
 
-        # No permissions to correct VakaJarjestaja
+        # No permissions to correct Organisaatio
         client_no_permissions_3 = SetUpTestClient('henkilosto_tallentaja_93957375488').client()
         resp_no_permissions_3 = client_no_permissions_3.get(url)
         assert_status_code(resp_no_permissions_3, status.HTTP_404_NOT_FOUND)
 
     def test_api_error_report_filter(self):
-        vakajarjestaja_1 = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
-        vakajarjestaja_2 = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.93957375488')
+        vakajarjestaja_1 = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        vakajarjestaja_2 = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.93957375488')
         Varhaiskasvatussuhde.objects.filter(tunniste='testing-varhaiskasvatussuhde3').update(alkamis_pvm='2017-01-01')
 
         lapsi_url = f'/api/v1/vakajarjestajat/{vakajarjestaja_1.id}/error-report-lapset/'
@@ -1274,7 +1274,7 @@ class VardaViewsReportingTests(TestCase):
 
     def test_api_error_report_toimipaikat_no_errors(self):
         client = SetUpTestClient('tester10').client()
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
         resp_no_errors = client.get(f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-toimipaikat/')
         assert_status_code(resp_no_errors, status.HTTP_200_OK)
         self.assertEqual(json.loads(resp_no_errors.content)['count'], 0)
@@ -1285,7 +1285,7 @@ class VardaViewsReportingTests(TestCase):
         yesterday = today - datetime.timedelta(days=1)
         tomorrow = today + datetime.timedelta(days=1)
         client = SetUpTestClient('tester10').client()
-        vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
         toimipaikka = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.6727877596658')
         url = f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-toimipaikat/'
 
@@ -1452,7 +1452,7 @@ class VardaViewsReportingTests(TestCase):
                     toiminnallinen_painotus_count += len(toimipaikka['toiminnalliset_painotukset'])
             url = response['next']
 
-        self.assertEqual(VakaJarjestaja.objects.count(), vakajarjestaja_count)
+        self.assertEqual(Organisaatio.objects.count(), vakajarjestaja_count)
         self.assertEqual(Toimipaikka.objects.count(), toimipaikka_count)
         self.assertEqual(KieliPainotus.objects.count(), kielipainotus_count)
         self.assertEqual(ToiminnallinenPainotus.objects.count(), toiminnallinen_painotus_count)
@@ -1474,7 +1474,7 @@ class VardaViewsReportingTests(TestCase):
         client = SetUpTestClient('tester2').client()
 
         datetime_gt = _get_iso_datetime_now()
-        vakajarjestaja_id = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.93957375488').id
+        vakajarjestaja_id = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.93957375488').id
         toimipaikka_id = Toimipaikka.objects.get(tunniste='testing-toimipaikka1').id
         kielipainotus = {
             'toimipaikka_tunniste': 'testing-toimipaikka1',
@@ -1516,7 +1516,7 @@ class VardaViewsReportingTests(TestCase):
         client = SetUpTestClient('tester2').client()
 
         datetime_gt = _get_iso_datetime_now()
-        vakajarjestaja_id = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.34683023489').id
+        vakajarjestaja_id = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.34683023489').id
         toimipaikka = {
             'vakajarjestaja': f'/api/v1/vakajarjestajat/{vakajarjestaja_id}/',
             'nimi': 'Uusi toimipaikka',
@@ -2356,8 +2356,8 @@ class VardaViewsReportingTests(TestCase):
         mock_admin_user('tester2')
         client = SetUpTestClient('tester2').client()
 
-        new_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
-        old_vakajarjestaja = VakaJarjestaja.objects.get(organisaatio_oid='1.2.246.562.10.52966755795')
+        new_vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
+        old_vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.52966755795')
 
         # Initiate complicated situation with overlapping Lapsi and Tyontekija objects
         toimipaikka_id_list = list(Toimipaikka.objects.filter(vakajarjestaja=old_vakajarjestaja)

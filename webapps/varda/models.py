@@ -16,9 +16,11 @@ from varda.enums.aikaleima_avain import AikaleimaAvain
 from varda.enums.batcherror_type import BatchErrorType
 from varda.enums.error_messages import ErrorMessages
 from varda.enums.hallinnointijarjestelma import Hallinnointijarjestelma
+from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
 
-# Get an instance of a logger
+
 logger = logging.getLogger(__name__)
+
 
 """
 Preserve the order of the tables (to keep the logical structure coherent):
@@ -51,7 +53,12 @@ class UniqueLahdejarjestelmaTunnisteMixin:
             raise integrity_error
 
 
-class VakaJarjestaja(AbstractModel):
+class CustomOrganisaatioManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(organisaatiotyyppi__contains=[Organisaatiotyyppi.VAKAJARJESTAJA.value])
+
+
+class Organisaatio(AbstractModel):
     nimi = models.CharField(max_length=400, blank=False)
     y_tunnus = models.CharField(max_length=20, unique=False, validators=[validators.validate_y_tunnus])
     organisaatio_oid = models.CharField(max_length=50, unique=True, blank=True, null=True, validators=[validators.validate_organisaatio_oid])
@@ -71,10 +78,14 @@ class VakaJarjestaja(AbstractModel):
     alkamis_pvm = models.DateField(blank=True, null=True)
     paattymis_pvm = models.DateField(default=None, blank=True, null=True)
     integraatio_organisaatio = ArrayField(models.CharField(max_length=50), blank=True)  # This is needed for permissions checking
+    organisaatiotyyppi = ArrayField(models.CharField(max_length=50), default=list)
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
     changed_by = models.ForeignKey('auth.User', related_name='vakajarjestajat', on_delete=models.PROTECT)
     history = HistoricalRecords()
+
+    objects = models.Manager()
+    vakajarjestajat = CustomOrganisaatioManager()
 
     @property
     def audit_loggable(self):
@@ -95,7 +106,7 @@ class VakaJarjestaja(AbstractModel):
 
     @property
     def kunnallinen_kytkin(self):
-        return self.yritysmuoto in VakaJarjestaja.get_kuntatyypit()
+        return self.yritysmuoto in Organisaatio.get_kuntatyypit()
 
     @staticmethod
     def get_kuntatyypit():
@@ -106,11 +117,11 @@ class VakaJarjestaja(AbstractModel):
         return YRITYSMUOTO_KUNTA
 
     class Meta:
-        verbose_name_plural = 'vakajarjestajat'
+        verbose_name_plural = 'organisaatiot'
 
 
 class Toimipaikka(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
-    vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='toimipaikat', on_delete=models.PROTECT)
+    vakajarjestaja = models.ForeignKey(Organisaatio, related_name='toimipaikat', on_delete=models.PROTECT)
     nimi = models.CharField(max_length=200, blank=False)
     nimi_sv = models.CharField(max_length=200, blank=True)
     organisaatio_oid = models.CharField(max_length=50, blank=True, validators=[validators.validate_organisaatio_oid])
@@ -307,9 +318,9 @@ class Henkilo(AbstractModel):
 
 class Lapsi(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
     henkilo = models.ForeignKey(Henkilo, related_name='lapsi', on_delete=models.PROTECT)
-    vakatoimija = models.ForeignKey(VakaJarjestaja, related_name='lapsi_vakatoimija', on_delete=models.PROTECT, null=True)
-    oma_organisaatio = models.ForeignKey(VakaJarjestaja, related_name='paos_lapsi_oma_organisaatio', on_delete=models.PROTECT, null=True)
-    paos_organisaatio = models.ForeignKey(VakaJarjestaja, related_name='paos_lapsi_paos_organisaatio', on_delete=models.PROTECT, null=True)
+    vakatoimija = models.ForeignKey(Organisaatio, related_name='lapsi_vakatoimija', on_delete=models.PROTECT, null=True)
+    oma_organisaatio = models.ForeignKey(Organisaatio, related_name='paos_lapsi_oma_organisaatio', on_delete=models.PROTECT, null=True)
+    paos_organisaatio = models.ForeignKey(Organisaatio, related_name='paos_lapsi_paos_organisaatio', on_delete=models.PROTECT, null=True)
     paos_kytkin = models.BooleanField(default=False)
     lahdejarjestelma = models.CharField(null=True, max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
     tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
@@ -552,9 +563,9 @@ class MaksutietoHuoltajuussuhde(AbstractModel):
 
 
 class PaosToiminta(AbstractModel):
-    oma_organisaatio = models.ForeignKey(VakaJarjestaja, related_name='paos_toiminnat_oma_organisaatio',
+    oma_organisaatio = models.ForeignKey(Organisaatio, related_name='paos_toiminnat_oma_organisaatio',
                                          on_delete=models.PROTECT)
-    paos_organisaatio = models.ForeignKey(VakaJarjestaja, related_name='paos_toiminnat_paos_organisaatio',
+    paos_organisaatio = models.ForeignKey(Organisaatio, related_name='paos_toiminnat_paos_organisaatio',
                                           on_delete=models.PROTECT, null=True, blank=True)
     paos_toimipaikka = models.ForeignKey(Toimipaikka, related_name='paos_toiminnat_paos_toimipaikka',
                                          on_delete=models.PROTECT, null=True, blank=True)
@@ -587,9 +598,9 @@ class PaosToiminta(AbstractModel):
 
 
 class PaosOikeus(AbstractModel):
-    jarjestaja_kunta_organisaatio = models.ForeignKey(VakaJarjestaja, related_name='paos_oikeudet_jarjestaja_kunta', on_delete=models.PROTECT)
-    tuottaja_organisaatio = models.ForeignKey(VakaJarjestaja, related_name='paos_oikeudet_tuottaja', on_delete=models.PROTECT)
-    tallentaja_organisaatio = models.ForeignKey(VakaJarjestaja, related_name='paos_oikeudet_tallentaja_organisaatio', on_delete=models.PROTECT)
+    jarjestaja_kunta_organisaatio = models.ForeignKey(Organisaatio, related_name='paos_oikeudet_jarjestaja_kunta', on_delete=models.PROTECT)
+    tuottaja_organisaatio = models.ForeignKey(Organisaatio, related_name='paos_oikeudet_tuottaja', on_delete=models.PROTECT)
+    tallentaja_organisaatio = models.ForeignKey(Organisaatio, related_name='paos_oikeudet_tallentaja_organisaatio', on_delete=models.PROTECT)
     voimassa_kytkin = models.BooleanField(default=False)
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
@@ -620,7 +631,7 @@ class PaosOikeus(AbstractModel):
 
 class Tyontekija(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
     henkilo = models.ForeignKey(Henkilo, related_name='tyontekijat', on_delete=models.PROTECT)
-    vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='tyontekijat', on_delete=models.PROTECT)
+    vakajarjestaja = models.ForeignKey(Organisaatio, related_name='tyontekijat', on_delete=models.PROTECT)
     lahdejarjestelma = models.CharField(max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
     tunniste = models.CharField(max_length=120, null=True, blank=True, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
@@ -659,7 +670,7 @@ class Tyontekija(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
 
 
 class TilapainenHenkilosto(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
-    vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='tilapainen_henkilosto', on_delete=models.PROTECT)
+    vakajarjestaja = models.ForeignKey(Organisaatio, related_name='tilapainen_henkilosto', on_delete=models.PROTECT)
     kuukausi = models.DateField()
     tuntimaara = models.DecimalField(max_digits=8, decimal_places=2)
     tyontekijamaara = models.IntegerField()
@@ -693,7 +704,7 @@ class TilapainenHenkilosto(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
 
 class Tutkinto(AbstractModel):
     henkilo = models.ForeignKey(Henkilo, related_name='tutkinnot', on_delete=models.PROTECT)
-    vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='tutkinnot', on_delete=models.PROTECT, null=True, blank=True)
+    vakajarjestaja = models.ForeignKey(Organisaatio, related_name='tutkinnot', on_delete=models.PROTECT, null=True, blank=True)
     tutkinto_koodi = models.CharField(max_length=10, validators=[validators.validate_tutkinto_koodi])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
@@ -949,17 +960,17 @@ class BatchError(AbstractModel):
 
 
 class LoginCertificate(AbstractModel):
-    organisation_name = models.CharField(max_length=50)
+    organisaatio = models.ForeignKey(Organisaatio, null=True, default=None, related_name='logincertificates', on_delete=models.PROTECT)
     api_path = models.CharField(max_length=200)
     common_name = models.CharField(max_length=500)
-    user = models.ForeignKey(User, null=True, related_name='logincertificate', on_delete=models.PROTECT)
+    user = models.ForeignKey(User, null=True, related_name='logincertificates', on_delete=models.PROTECT)
 
     class Meta:
         verbose_name_plural = 'Login certificates'
 
 
 class YearlyReportSummary(AbstractModel):
-    vakajarjestaja = models.ForeignKey(VakaJarjestaja, null=True, related_name='yearlyreportsummary', on_delete=models.PROTECT)
+    vakajarjestaja = models.ForeignKey(Organisaatio, null=True, related_name='yearlyreportsummary', on_delete=models.PROTECT)
     status = models.CharField(max_length=50)
     tilasto_pvm = models.DateField()
     poiminta_pvm = models.DateTimeField(null=True)
@@ -1170,7 +1181,7 @@ class Z6_RequestLog(AbstractModel):
     target_model = models.CharField(null=True, max_length=100)
     target_id = models.IntegerField(null=True)
     lahdejarjestelma = models.CharField(null=True, max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
-    vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='request_log', on_delete=models.PROTECT, null=True)
+    vakajarjestaja = models.ForeignKey(Organisaatio, related_name='request_log', on_delete=models.PROTECT, null=True)
     user = models.ForeignKey(User, related_name='request_log', on_delete=models.PROTECT)
     timestamp = models.DateTimeField(auto_now=True)
 
@@ -1186,7 +1197,7 @@ class Z6_RequestLog(AbstractModel):
 
 class Z6_LastRequest(AbstractModel):
     user = models.ForeignKey(User, related_name='last_requests', on_delete=models.PROTECT)
-    vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='last_requests', on_delete=models.PROTECT, null=True)
+    vakajarjestaja = models.ForeignKey(Organisaatio, related_name='last_requests', on_delete=models.PROTECT, null=True)
     lahdejarjestelma = models.CharField(null=True, max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
     last_successful = models.DateTimeField(null=True)
     last_unsuccessful = models.DateTimeField(null=True)
@@ -1201,7 +1212,7 @@ class Z6_LastRequest(AbstractModel):
 
 class Z6_RequestSummary(AbstractModel):
     user = models.ForeignKey(User, related_name='request_summaries', on_delete=models.PROTECT, null=True)
-    vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='request_summaries', on_delete=models.PROTECT, null=True)
+    vakajarjestaja = models.ForeignKey(Organisaatio, related_name='request_summaries', on_delete=models.PROTECT, null=True)
     lahdejarjestelma = models.CharField(null=True, max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
     request_url_simple = models.CharField(null=True, max_length=200)
     summary_date = models.DateField()
@@ -1259,7 +1270,7 @@ class Z8_ExcelReport(AbstractModel):
     target_date_start = models.DateField(null=True)
     target_date_end = models.DateField(null=True)
     language = models.CharField(max_length=2)
-    vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='excel_reports', on_delete=models.PROTECT)
+    vakajarjestaja = models.ForeignKey(Organisaatio, related_name='excel_reports', on_delete=models.PROTECT)
     toimipaikka = models.ForeignKey(Toimipaikka, null=True, related_name='excel_reports', on_delete=models.PROTECT)
     user = models.ForeignKey(User, related_name='excel_reports', on_delete=models.PROTECT)
     timestamp = models.DateTimeField(auto_now=True)
@@ -1274,7 +1285,7 @@ class Z8_ExcelReportLog(AbstractModel):
     target_date = models.DateField(null=True)
     target_date_start = models.DateField(null=True)
     target_date_end = models.DateField(null=True)
-    vakajarjestaja = models.ForeignKey(VakaJarjestaja, related_name='excel_report_logs', on_delete=models.PROTECT)
+    vakajarjestaja = models.ForeignKey(Organisaatio, related_name='excel_report_logs', on_delete=models.PROTECT)
     toimipaikka = models.ForeignKey(Toimipaikka, null=True, related_name='excel_report_logs', on_delete=models.PROTECT)
     user = models.ForeignKey(User, related_name='excel_report_logs', on_delete=models.PROTECT)
     started_timestamp = models.DateTimeField()

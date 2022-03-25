@@ -66,7 +66,8 @@ def _parse_organisaatio_data(response, organisaatio_oid):
             'ytjkieli': kieli,
             'yritysmuoto': yritysmuoto_code.code_value if yritysmuoto_code else '0',
             'alkamis_pvm': response['alkuPvm'],
-            'paattymis_pvm': response.get('lakkautusPvm', '')
+            'paattymis_pvm': response.get('lakkautusPvm', ''),
+            'organisaatiotyyppi': response.get('tyypit', []),
         }
     except (KeyError, ValueError) as e:
         logger.error('Could not parse organisaatio data for vakajarjestaja {} with cause {}'

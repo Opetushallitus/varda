@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from varda.enums.error_messages import ErrorMessages
-from varda.models import VakaJarjestaja, Toimipaikka, Henkilo
+from varda.models import Organisaatio, Toimipaikka, Henkilo
 from varda.permissions import user_belongs_to_correct_groups
 from varda.validators import validate_organisaatio_oid
 
@@ -288,21 +288,21 @@ class PermissionCheckedHLFieldMixin:
         return hlfield_object
 
 
-class VakaJarjestajaHLField(serializers.HyperlinkedRelatedField):
+class OrganisaatioHLField(serializers.HyperlinkedRelatedField):
     """
     https://medium.com/django-rest-framework/limit-related-data-choices-with-django-rest-framework-c54e96f5815e
     """
     def get_queryset(self):
         user = self.context['request'].user
         if user.is_authenticated:
-            queryset = VakaJarjestaja.objects.all().order_by('id')
+            queryset = Organisaatio.objects.all().order_by('id')
         else:
-            queryset = VakaJarjestaja.objects.none()
+            queryset = Organisaatio.objects.none()
         return queryset
 
 
-class VakaJarjestajaPermissionCheckedHLField(PermissionCheckedHLFieldMixin, VakaJarjestajaHLField):
-    check_permission = 'view_vakajarjestaja'
+class OrganisaatioPermissionCheckedHLField(PermissionCheckedHLFieldMixin, OrganisaatioHLField):
+    check_permission = 'view_organisaatio'
     permission_groups = []
     accept_toimipaikka_permission = False
 
@@ -310,7 +310,7 @@ class VakaJarjestajaPermissionCheckedHLField(PermissionCheckedHLFieldMixin, Vaka
         self.permission_groups = kwargs.pop('permission_groups', [])
         self.accept_toimipaikka_permission = kwargs.pop('accept_toimipaikka_permission', False)
 
-        super(VakaJarjestajaPermissionCheckedHLField, self).__init__(*args, **kwargs)
+        super(OrganisaatioPermissionCheckedHLField, self).__init__(*args, **kwargs)
 
 
 class ToimipaikkaHLField(serializers.HyperlinkedRelatedField):
