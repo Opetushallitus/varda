@@ -1,5 +1,7 @@
 import os
+from urllib.parse import urlparse
 
+from django.conf import settings
 from rest_framework import status
 
 from varda.monkey_patch import knox_views
@@ -19,7 +21,16 @@ def set_api_token_cookie(request, response, next_page):
     """
     Send cookie (i.e. modify the response) only for allowed redirects/domains.
     """
-    allowed_client_domain = get_allowed_client_domain(next_page)
+    allowed_client_domain = None
+    if settings.CAS_ACCEPT_PROXY_URL_FROM_HEADER:
+        proxyurl = request.META.get('HTTP_' + settings.CAS_ACCEPT_PROXY_URL_FROM_HEADER, None)
+        if proxyurl is not None:
+            parsed_uri = urlparse(proxyurl)
+            allowed_client_domain = '{uri.netloc}'.format(uri=parsed_uri)
+
+    if allowed_client_domain is None:
+        allowed_client_domain = get_allowed_client_domain(next_page)
+
     if allowed_client_domain:
         secure = True
         if allowed_client_domain == 'localhost':

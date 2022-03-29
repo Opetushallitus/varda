@@ -1,4 +1,7 @@
+import hashlib
+
 from django.conf import settings
+from django.core.exceptions import MiddlewareNotUsed
 from django.utils.decorators import method_decorator
 from django.utils.deprecation import MiddlewareMixin
 from django.views.decorators.debug import sensitive_post_parameters
@@ -40,3 +43,23 @@ class SensitiveMiddleware(MiddlewareMixin):
     @method_decorator(sensitive_post_parameters(*settings.SENSITIVE_POST_PARAMETERS))
     def __call__(self, *args, **kwargs):
         return super().__call__(*args, **kwargs)
+
+
+class ValidateCASProxyURL(MiddlewareMixin):
+    def __init__(self, get_response):
+        # If there is no header set to accept
+        if not settings.CAS_ACCEPT_PROXY_URL_FROM_HEADER:
+            raise MiddlewareNotUsed('No CAS Proxy URL header configured')
+        super().__init__(get_response)
+
+    def __call__(self, request):
+        # Validate the proxy url header if provided
+        proxyurl = request.META.get('HTTP_' + settings.CAS_ACCEPT_PROXY_URL_FROM_HEADER, None)
+        hashvalue = request.META.get('HTTP_' + settings.CAS_ACCEPT_PROXY_URL_FROM_HEADER + '_HASH', '')
+        if (proxyurl is not None and (not hashvalue or
+                                      hashvalue != hashlib.sha1(settings.CAS_SALT.encode('utf-8') +
+                                                                proxyurl.encode('utf-8')).hexdigest())):
+            # Header(s) doesn't exist or invalid - remove the header
+            del request.META['HTTP_' + settings.CAS_ACCEPT_PROXY_URL_FROM_HEADER]
+
+        return super().__call__(request)

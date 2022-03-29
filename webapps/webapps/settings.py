@@ -79,6 +79,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'varda.custom_middleware.SensitiveMiddleware',
+    'varda.custom_middleware.ValidateCASProxyURL',
     'log_request_id.middleware.RequestIDMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -436,6 +437,8 @@ CAS_LOGGED_MSG = None
 CAS_VERSION = 3
 CAS_RETRY_LOGIN = False
 CAS_SALT = os.environ.get('VARDA_SALT', DEFAULT_CAS_SALT_FOR_TESTING_ONLY)
+# Validation hash must be in header CAS_NEXT_HASH
+CAS_ACCEPT_PROXY_URL_FROM_HEADER = 'CAS_NEXT'
 
 # CAS-oppija-authentication (OPH autentikointipalvelu) see cas_settings.py for mapping
 OPPIJA_CAS_SERVER_URL = OPPIJA_OPINTOPOLKU_DOMAIN + '/cas-oppija/'

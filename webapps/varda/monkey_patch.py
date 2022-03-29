@@ -1,9 +1,18 @@
+from django.conf import settings
+
 from varda.cas.cas_settings import settings as oppija_cas_settings
-from varda.cas.misc_cas import is_local_url_decorator
+from varda.cas.misc_cas import get_service_url_decorator, is_local_url_decorator
 from varda.misc import load_in_new_module, TemporaryObject
 
 
-def init_django_cas_ng_views(views_module):
+def init_django_cas_ng_views(views_module, utils_module, cas_settings):
+    views_module.settings = cas_settings
+
+    # Override utils imports
+    views_module.get_cas_client = utils_module.get_cas_client
+    views_module.get_redirect_url = utils_module.get_redirect_url
+    views_module.get_service_url = utils_module.get_service_url
+
     # Override is_local_url to disallow redirection to third party sites
     views_module.is_local_url = is_local_url_decorator(views_module.is_local_url)
 
@@ -20,25 +29,33 @@ def init_django_cas_ng_views(views_module):
     views_module.LoginView = LoginView
 
 
+def init_django_cas_ng_utils(utils_module, cas_settings):
+    utils_module.django_settings = cas_settings
+
+    # Override get_service_url to enable CAS_ACCEPT_PROXY_URL_FROM_HEADER
+    utils_module.get_service_url = get_service_url_decorator(utils_module.get_service_url,
+                                                             utils_module.get_redirect_url, cas_settings)
+
+
+def init_django_cas_ng_backends(backends_module, utils_module, cas_settings):
+    backends_module.settings = cas_settings
+
+    # Override utils imports
+    backends_module.get_cas_client = utils_module.get_cas_client
+
+
+cas_utils = load_in_new_module('django_cas_ng.utils', 'varda_cas_ng.utils')
 cas_views = load_in_new_module('django_cas_ng.views', 'varda_cas_ng.views')
-init_django_cas_ng_views(cas_views)
+init_django_cas_ng_utils(cas_utils, settings)
+init_django_cas_ng_views(cas_views, cas_utils, settings)
 
 
 oppija_cas_backends = load_in_new_module('django_cas_ng.backends', 'varda_oppija_cas_ng.backends')
 oppija_cas_utils = load_in_new_module('django_cas_ng.utils', 'varda_oppija_cas_ng.utils')
 oppija_cas_views = load_in_new_module('varda_cas_ng.views', 'varda_oppija_cas_ng.views')
-init_django_cas_ng_views(oppija_cas_views)
-
-# Oppija CAS has different settings
-oppija_cas_utils.django_settings = oppija_cas_settings
-
-oppija_cas_backends.settings = oppija_cas_settings
-oppija_cas_backends.get_cas_client = oppija_cas_utils.get_cas_client
-
-oppija_cas_views.settings = oppija_cas_settings
-oppija_cas_views.get_cas_client = oppija_cas_utils.get_cas_client
-oppija_cas_views.get_redirect_url = oppija_cas_utils.get_redirect_url
-oppija_cas_views.get_service_url = oppija_cas_utils.get_service_url
+init_django_cas_ng_utils(oppija_cas_utils, oppija_cas_settings)
+init_django_cas_ng_views(oppija_cas_views, oppija_cas_utils, oppija_cas_settings)
+init_django_cas_ng_backends(oppija_cas_backends, oppija_cas_utils, oppija_cas_settings)
 
 
 # Monkey patch knox.views so that user_logged_in and user_logged_out signals are not sent
