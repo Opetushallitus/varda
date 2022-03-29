@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 import hashlib
 import os
 import sys
+from datetime import timedelta
 
 from django.utils.translation import gettext_lazy as _
 from logging.handlers import SysLogHandler
@@ -67,9 +68,8 @@ INSTALLED_APPS = [
     'django_celery_results',
     'django_celery_beat',
     'django_cas_ng',
-    'rest_framework.authtoken',
+    'knox',
     'log_request_id',
-    'validate_cas_proxy_url',
     'corsheaders',
     'token_resolved',
     'django.contrib.postgres',
@@ -79,7 +79,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'varda.custom_middleware.SensitiveMiddleware',
-    'validate_cas_proxy_url.middleware.ValidateCASProxyURL',
     'log_request_id.middleware.RequestIDMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -341,6 +340,12 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'varda.exception_handler.varda_exception_handler',
 }
 
+REST_KNOX = {
+    'TOKEN_TTL': timedelta(hours=24),
+    'AUTH_HEADER_PREFIX': 'Token',
+    'TOKEN_LIMIT_PER_USER': 10
+}
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/dev/topics/i18n/
@@ -430,19 +435,11 @@ CAS_LOGIN_MSG = None
 CAS_LOGGED_MSG = None
 CAS_VERSION = 3
 CAS_RETRY_LOGIN = False
+CAS_SALT = os.environ.get('VARDA_SALT', DEFAULT_CAS_SALT_FOR_TESTING_ONLY)
 
 # CAS-oppija-authentication (OPH autentikointipalvelu) see cas_settings.py for mapping
 OPPIJA_CAS_SERVER_URL = OPPIJA_OPINTOPOLKU_DOMAIN + '/cas-oppija/'
-OPPIJA_CAS_CREATE_USER = True
-OPPIJA_CAS_LOGIN_MSG = None
-OPPIJA_CAS_LOGGED_MSG = None
-OPPIJA_CAS_VERSION = 3
-OPPIJA_CAS_RETRY_LOGIN = False
 OPPIJA_CAS_APPLY_ATTRIBUTES_TO_USER = True
-
-# Validation hash must be in header CAS_NEXT_HASH
-CAS_ACCEPT_PROXY_URL_FROM_HEADER = 'CAS_NEXT'
-CAS_SALT = os.environ.get('VARDA_SALT', DEFAULT_CAS_SALT_FOR_TESTING_ONLY)
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 

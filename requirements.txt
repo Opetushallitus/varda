@@ -7,6 +7,7 @@ cryptography==36.0.*  # BSD-license
 Django==4.0.*  # BSD-license
 django-cas-ng==4.3.*  # BSD-license
 # django-celery-beat==2.2.*  # BSD-license
+# Fixes https://github.com/celery/django-celery-beat/issues/465, waiting for release
 git+https://github.com/celery/django-celery-beat.git@fc83e70a6cd15a9ef7c9c1ed10bcf3a7866bd3c8
 django-celery-results==2.2.*  # BSD-license
 django-cors-headers==3.11.*  # MIT-license
@@ -17,6 +18,7 @@ django-guardian==2.4.*  # BSD-license
 django-pg-bulk-update==3.6.*  # BSD-license
 django-pylibmc==0.6.*  # BSD-license
 django-ratelimit==3.0.*  # Apache 2.0-license
+django-rest-knox==4.2.*  # MIT-license
 django-simple-history==3.0.*  # BSD-license
 django-spaghetti-and-meatballs==0.4.*  # MIT-license
 djangorestframework==3.13.*  # BSD-license
@@ -25,6 +27,7 @@ drf-nested-routers==0.93.*  # Apache 2.0-license
 drf-yasg==1.20.*  # BSD 3-Clause License
 flake8==4.0.*  # MIT-license
 # flower==1.0.*  # BSD-license
+# Fixes https://github.com/mher/flower/issues/1066, waiting for release
 git+https://github.com/mher/flower.git@ad5258b4beff6620ba0ea54ebbed5f69091f1300
 gunicorn==20.1.*  # MIT-license
 itypes==1.2.*  # BSD-license
@@ -37,6 +40,8 @@ psycopg2==2.9.*  # LGPL with exceptions or ZPL
 pycodestyle==2.8.*  # Expat license (same as MIT)
 pyflakes==2.4.*  # MIT-license
 pylibmc==1.6.*  # BSD 3-Clause License
+# Overrides django-cas-ng dependency, fixes https://github.com/python-cas/python-cas/issues/46, waiting for release
+git+https://github.com/python-cas/python-cas.git@c1eb3f30c464fa889a13c800d101629e446e87b6
 PyYAML==6.0  # MIT-license
 requests==2.27.*  # Apache 2.0-license
 simplejson==3.17.*  # MIT-license

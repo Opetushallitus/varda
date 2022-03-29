@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import json
 import logging
-import os
 
 import requests
 import uuid
@@ -12,43 +11,25 @@ from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.models import User
-from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone as django_timezone
-from django_cas_ng.signals import cas_user_logout
+from knox.auth import TokenAuthentication
 from rest_framework import exceptions
-from rest_framework.authentication import BasicAuthentication, SessionAuthentication, TokenAuthentication
-from rest_framework.authtoken.models import Token
+from rest_framework.authentication import BasicAuthentication, SessionAuthentication
 from rest_framework.exceptions import AuthenticationFailed, Throttled
 from rest_framework.throttling import AnonRateThrottle
 
-from varda import kayttooikeuspalvelu
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.kayttooikeuspalvelu import set_service_user_permissions
 from varda.oph_yhteiskayttopalvelu_autentikaatio import get_authentication_header
 from varda.models import Z3_AdditionalCasUserFields, Z7_AdditionalUserFields, LoginCertificate
 from varda.permissions import get_certificate_login_info
-from webapps.celery import app
-from celery.signals import task_prerun
-from log_request_id import local
 
 
 logger = logging.getLogger(__name__)
 
 
-def login_handler(sender, user, request, **kwargs):
-    """
-    Actions to be performed for the logged in user:
-    - We need to check the user permissions for each non-local user explicitly from Kayttooikeuspalvelu.
-    """
-    if request.method == 'GET':  # GET-request means CAS / POST-request '/api-auth/login/' would mean local account.
-        if request.resolver_match.view_name == 'oppija_cas_ng_login':
-            _oppija_post_login_handler(user)
-        else:
-            kayttooikeuspalvelu.set_permissions_for_cas_user(user.id)
-
-
-def _oppija_post_login_handler(user):
+def oppija_post_login_handler(user):
     """
     Handles oppija cas logged in user privileges givin parent. ALlows login even if lapsi or huoltaja oid doesn't exist.
     :param user: user with attributes personOid and impersonatorPersonOid
@@ -83,54 +64,6 @@ def _oppija_post_login_handler(user):
                                                                 'huollettava_oid_list': huollettava_oid_list,
                                                                 'kayttajatyyppi': kayttajatyyppi,
                                                             })
-
-
-def logout_handler(sender, user, request, **kwargs):
-    """
-    user - The user instance that just logged out or None if the user was not authenticated.
-
-    Actions to be performed for the logged out user:
-    - We need to delete the auth-token from the user.
-    """
-    if user is not None:
-        Token.objects.get_or_create(user=user)[0].delete()
-
-
-def cas_logout_handler(sender, user, session, ticket, **kwargs):
-    if user is None or user.is_anonymous:
-        pass
-    else:
-        Token.objects.get_or_create(user=user)[0].delete()
-
-
-def celery_task_prerun_signal_handler(task_id, **kwargs):
-    """
-    Check for periodic tasks: we want to run periodic task only for varda-0 POD.
-    See Kubernetes Statefulesets for more information.
-    Additionally: New request_id for celery tasks from celery task_id.
-    """
-    splitted_hostname = os.environ['HOSTNAME'].split('-')
-    if len(splitted_hostname) == 2:
-        hostname = splitted_hostname[1]  # e.g. varda-0 --> 0
-    else:
-        hostname = None
-
-    local.request_id = task_id.replace('-', '')
-    if 'periodic_task' in kwargs and kwargs['periodic_task'] and hostname != '0':
-        """
-        If not the first (0) POD, cancel periodic task
-
-        TODO: Seems like revoking is currently not working: https://github.com/celery/celery/issues/4300
-        However, this is not a huge deal, since we stop running the task for others than pod-0.
-        """
-        app.control.revoke(task_id)
-
-
-# Catch signals
-user_logged_in.connect(login_handler)
-user_logged_out.connect(logout_handler)
-cas_user_logout.connect(cas_logout_handler)
-task_prerun.connect(celery_task_prerun_signal_handler)
 
 
 class AuthenticateAnonThrottleMixin(AnonRateThrottle):

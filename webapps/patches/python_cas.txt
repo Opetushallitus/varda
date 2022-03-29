@@ -1,4 +1,0 @@
-Target: https://github.com/python-cas/python-cas
-
-Fixes: https://github.com/python-cas/python-cas/issues/46
-

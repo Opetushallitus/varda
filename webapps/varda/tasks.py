@@ -14,6 +14,7 @@ from django.db.models import (Case, Count, DateField, F, Func, IntegerField, Q, 
 from django.db.models.functions import Cast
 from django.utils import timezone
 from guardian.models import GroupObjectPermission, UserObjectPermission
+from knox.models import AuthToken
 
 from varda import koodistopalvelu, oppijanumerorekisteri
 from varda import organisaatiopalvelu
@@ -88,8 +89,11 @@ def run_management_commands():
 @shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
 def remove_all_auth_tokens():
-    from rest_framework.authtoken.models import Token
-    Token.objects.all().delete()
+    """
+    Delete all API tokens periodically so that users are forced to re-login and permission updates are fetched from
+    Opintopolku.
+    """
+    AuthToken.objects.all().delete()
 
 
 @shared_task

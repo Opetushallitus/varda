@@ -174,15 +174,10 @@ class AuthTokenSerializer(serializers.Serializer):
     refresh_token = serializers.BooleanField(write_only=True, label=_('Refresh token'))
     token = serializers.CharField(read_only=True)
 
-    def validate(self, attrs):
-        refresh = attrs.get('refresh_token')
-
-        if refresh:
-            pass
-        else:
+    def validate(self, data):
+        if not data.get('refresh_token', None):
             raise serializers.ValidationError({'errors': [ErrorMessages.MI001.value]}, code='invalid')
-
-        return attrs
+        return data
 
 
 class ExternalPermissionsSerializer(serializers.Serializer):

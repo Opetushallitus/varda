@@ -1,9 +1,11 @@
 import functools
 import hashlib
+import importlib
 import json
 import logging
 import operator
 import re
+import sys
 from collections import Counter
 from time import sleep
 from urllib.parse import urlparse
@@ -417,3 +419,12 @@ def get_nested_value(instance, field_list):
     for field in field_list:
         instance = getattr(instance, field)
     return instance
+
+
+def load_in_new_module(library_name, name):
+    spec = importlib.util.find_spec(library_name)
+    library_copy = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(library_copy)
+    sys.modules[name] = library_copy
+    del spec
+    return library_copy

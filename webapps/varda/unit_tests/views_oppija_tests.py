@@ -6,7 +6,7 @@ from rest_framework import status
 from varda.models import Z3_AdditionalCasUserFields, Z5_AuditLog, Henkilo, Organisaatio
 from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, assert_validation_error
 from django.contrib.auth.models import User
-from varda.custom_auth import _oppija_post_login_handler
+from varda.custom_auth import oppija_post_login_handler
 
 
 class VardaOppijaViewsTests(TestCase):
@@ -17,7 +17,7 @@ class VardaOppijaViewsTests(TestCase):
         user_suomifi = User.objects.create(username='suomi.fi#010280-952L#010215A951T', is_staff=False, is_active=True)
         user_suomifi.personOid = '1.2.246.562.24.86012997950'
         user_suomifi.impersonatorPersonOid = '1.2.246.562.24.1234567890'
-        _oppija_post_login_handler(user_suomifi)
+        oppija_post_login_handler(user_suomifi)
 
         client_suomifi_tester = SetUpTestClient('suomi.fi#010280-952L#010215A951T').client()
 
@@ -267,7 +267,7 @@ class VardaOppijaViewsTests(TestCase):
                                                               is_active=True)
         user_suomifi.personOid = lapsi_oid
         user_suomifi.impersonatorPersonOid = huoltaja_oid
-        _oppija_post_login_handler(user_suomifi)
+        oppija_post_login_handler(user_suomifi)
 
         additional_cas_user_fields = Z3_AdditionalCasUserFields.objects.filter(user=user_suomifi).first()
         expected_huoltaja_oid = additional_cas_user_fields.henkilo_oid
@@ -398,7 +398,7 @@ class VardaOppijaViewsTests(TestCase):
     def _create_oppija_cas_user_and_assert_henkilo_oid(self, henkilo_oid, assert_oid=True):
         user_suomifi = User.objects.create(username='suomi.fi#060570-601B', is_staff=False, is_active=True)
         user_suomifi.personOid = henkilo_oid
-        _oppija_post_login_handler(user_suomifi)
+        oppija_post_login_handler(user_suomifi)
 
         if assert_oid:
             expected_henkilo_oid = Z3_AdditionalCasUserFields.objects.get(user=user_suomifi).henkilo_oid

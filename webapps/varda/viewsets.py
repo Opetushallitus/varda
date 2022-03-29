@@ -13,8 +13,9 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from guardian.shortcuts import assign_perm
+from knox.models import AuthToken
 from rest_framework import permissions, status
-from rest_framework.authtoken.models import Token
+from rest_framework.authentication import get_authorization_header
 from rest_framework.decorators import action
 from rest_framework.exceptions import (NotAuthenticated, NotFound, PermissionDenied, ValidationError)
 from rest_framework.filters import SearchFilter
@@ -25,6 +26,7 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_guardian.filters import ObjectPermissionsFilter
 
 from varda import filters, validators, permission_groups
+from varda.api_token import KnoxLoginView
 from varda.cache import (cached_list_response, delete_toimipaikan_lapset_cache, delete_cache_keys_related_model,
                          get_object_ids_for_user_by_model)
 from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid,
@@ -45,6 +47,7 @@ from varda.models import (Organisaatio, Toimipaikka, ToiminnallinenPainotus, Kie
                           PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Tyontekija, Palvelussuhde,
                           Taydennyskoulutus, Tyoskentelypaikka, TilapainenHenkilosto, Tutkinto,
                           MaksutietoHuoltajuussuhde)
+from varda.monkey_patch import knox_views
 from varda.oppijanumerorekisteri import fetch_henkilo_with_oid, save_henkilo_to_db
 from varda.organisaatiopalvelu import (check_if_toimipaikka_exists_in_organisaatiopalvelu,
                                        create_toimipaikka_in_organisaatiopalvelu)
@@ -376,34 +379,41 @@ class ApikeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin):
     create:
         Päivitä käyttäjän apikey.
     """
-    queryset = Token.objects.none()
+    queryset = AuthToken.objects.none()
     permission_classes = (permissions.IsAuthenticated, )
     serializer_class = AuthTokenSerializer
     pagination_class = None
 
+    def get_token_from_request(self):
+        if (self.request.auth and
+                (auth_header := get_authorization_header(self.request).decode('utf-8').split())[0].lower() == 'token'):
+            return auth_header[1]
+        return None
+
     @swagger_auto_schema(responses={'200': AuthTokenSerializer(many=False)})
     def list(self, request, *args, **kwargs):
-        user = request.user
-        token = Token.objects.get_or_create(user=user)
-        return Response({'token': token[0].key})
-
-    @auditlog
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        new_token = self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(new_token, status=status.HTTP_201_CREATED, headers=headers)
+        if auth_token := self.get_token_from_request():
+            # Token is present, return current token
+            return Response(self.get_serializer({'token': auth_token}, many=False).data)
+        # Token not present create new token and return it
+        response = KnoxLoginView().post(request)
+        return Response(self.get_serializer(response.data, many=False).data)
 
     @transaction.atomic
     def perform_create(self, serializer):
+        # Create a new token for the user, and delete the current one if present
+        if self.get_token_from_request():
+            knox_views.LogoutView().post(self.request)
+        response = KnoxLoginView().post(self.request)
+        del response.data['expiry']
+        serializer._data = response.data
+
+    @action(methods=['delete'], detail=False, url_path='delete-all')
+    def delete_all(self, request):
         """
-        Create a new token for the user, and delete the old one.
+        Delete all active API tokens for User.
         """
-        user = self.request.user
-        Token.objects.get(user=user).delete()
-        token = Token.objects.get_or_create(user=user)
-        return {'token': token[0].key}
+        return knox_views.LogoutAllView().post(request)
 
 
 class ExternalPermissionsViewSet(GenericViewSet, CreateModelMixin):

@@ -15,7 +15,6 @@ Including another URLconf
 """
 import re
 
-import django_cas_ng.views as django_cas_ng_views
 from django.apps import apps
 from django.conf import settings
 from django.contrib import admin
@@ -32,10 +31,10 @@ from rest_framework_nested import routers as nested_routers
 
 from varda import (views, viewsets, viewsets_admin, viewsets_henkilosto, viewsets_julkinen, viewsets_oppija,
                    viewsets_reporting, viewsets_ui)
-from varda.cas.misc_cas import is_local_url_decorator
 from varda.cas.oppija_cas_views import OppijaCasLoginView
 from varda.constants import SWAGGER_DESCRIPTION
 from varda.custom_swagger import PublicSchemaGenerator, PublicSwaggerRenderer
+from varda.monkey_patch import cas_views, oppija_cas_views
 
 schema_view = get_schema_view(title='VARDA API', renderer_classes=[CoreJSONRenderer])
 router_admin = routers.DefaultRouter()
@@ -242,17 +241,14 @@ model_visualization_view = xframe_options(
     )
 )
 
-# Monkey patch django_cas_ng.views.is_local_url function to prevent redirection to third party services
-django_cas_ng_views.is_local_url = is_local_url_decorator(django_cas_ng_views.is_local_url)
-
 urlpatterns = [
     re_path(r'^$', views.index, name='index'),
     re_path(r'^admin/', admin.site.urls),
-    re_path(r'^accounts/login$', django_cas_ng_views.LoginView.as_view(), name='cas_ng_login'),
-    re_path(r'^accounts/logout$', django_cas_ng_views.LogoutView.as_view(), name='cas_ng_logout'),
-    re_path(r'^accounts/callback$', django_cas_ng_views.CallbackView.as_view(), name='cas_ng_proxy_callback'),
+    re_path(r'^accounts/login$', cas_views.LoginView.as_view(), name='cas_ng_login'),
+    re_path(r'^accounts/logout$', cas_views.LogoutView.as_view(), name='cas_ng_logout'),
+    re_path(r'^accounts/callback$', cas_views.CallbackView.as_view(), name='cas_ng_proxy_callback'),
     re_path(r'^accounts/huoltaja-login$', OppijaCasLoginView.as_view(), name='oppija_cas_ng_login'),
-    re_path(r'^accounts/huoltaja-logout$', django_cas_ng_views.LogoutView.as_view(), name='oppija_cas_ng_logout'),
+    re_path(r'^accounts/huoltaja-logout$', oppija_cas_views.LogoutView.as_view(), name='oppija_cas_ng_logout'),
     re_path(r'^accounts/password-reset/?$', auth_views.PasswordResetView.as_view(), name='admin_password_reset'),
     re_path(r'^accounts/password-reset/done/?$', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
     re_path(r'^accounts/reset/(?P<uidb64>.+)/(?P<token>.+)/?$', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),

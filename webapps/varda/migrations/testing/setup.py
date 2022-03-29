@@ -9,11 +9,8 @@ logger = logging.getLogger(__name__)
 
 def add_test_users():
     from django.contrib.auth.models import User
-    from rest_framework.authtoken.models import Token
 
-    user_tester = User.objects.create(username='tester', password='pbkdf2_sha256$120000$4IdDHxUJJSE6$N18zHZK02yA3KxNeTcDS4t6Ytsn2ZOLO6QLDXNT/8Yo=')
-    Token.objects.create(user=user_tester, key='916b7ca8f1687ec3462b4a35d0c5c6da0dbeedf3')
-
+    User.objects.create(username='tester', password='pbkdf2_sha256$120000$4IdDHxUJJSE6$N18zHZK02yA3KxNeTcDS4t6Ytsn2ZOLO6QLDXNT/8Yo=')
     User.objects.create(username='tester2', password='pbkdf2_sha256$120000$gNFFj5K8ZgTu$quUQQlMXZCs+1mG+nbBpTS/VXRZAy47XkR7EoioNLkQ=')
     User.objects.create(username='tester3', password='pbkdf2_sha256$150000$kfJSJbENiF5k$tZ3aa9ErAy1Ciszx40KdRMU787p7HnKHjVOQ+lzDF7U=')
     User.objects.create(username='tester4', password='pbkdf2_sha256$150000$LFrFAT6FakMM$VuLb0n11tVR0tlIBAmykLWP4an5zv4XWseGHJDlnsWk=')

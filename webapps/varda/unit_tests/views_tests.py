@@ -4,12 +4,14 @@ from unittest import mock
 from unittest.mock import patch
 
 import responses
+from django.conf import settings
 
 from django.contrib.auth.models import Group, User
 from django.test import TestCase
 from guardian.core import ObjectPermissionChecker
 from rest_framework import status
 from rest_framework.exceptions import ValidationError as ValidationErrorRest
+from rest_framework.test import APIClient
 
 from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
 from varda.misc import hash_string, encrypt_string
@@ -151,30 +153,60 @@ class VardaViewsTests(TestCase):
 
     def test_api_get_token_anonymous(self):
         resp = self.client.get('/api/user/apikey/')
-        assert_status_code(resp, 403)
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
         assert_validation_error(resp, 'errors', 'PE005', 'Authentication credentials were not provided.')
 
     def test_api_get_token_authenticated(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/user/apikey/')
-        assert_status_code(resp, 200)
-        self.assertEqual(json.loads(resp.content), {'token': '916b7ca8f1687ec3462b4a35d0c5c6da0dbeedf3'})
+        assert_status_code(resp, status.HTTP_200_OK)
 
     def test_api_refresh_token_anonymous(self):
         data = {
             'refresh_token': True
         }
         resp = self.client.post('/api/user/apikey/', data)
-        assert_status_code(resp, 403)
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
 
     def test_api_refresh_token_authenticated(self):
+        user = User.objects.get(username='tester')
         data = {
             'refresh_token': True
         }
         client = SetUpTestClient('tester').client()
-        resp = client.post('/api/user/apikey/', data)
-        assert_status_code(resp, 201)
-        self.assertNotEqual(json.loads(resp.content)['token'], '916b7ca8f1687ec3462b4a35d0c5c6da0dbeedf3')
+        resp = client.get('/api/user/apikey/')
+        assert_status_code(resp, status.HTTP_200_OK)
+        token_1 = json.loads(resp.content)['token']
+
+        token_client = APIClient()
+        resp = token_client.post('/api/user/apikey/', data, **{'HTTP_AUTHORIZATION': f'Token {token_1}'})
+        assert_status_code(resp, status.HTTP_201_CREATED)
+        token_2 = json.loads(resp.content)['token']
+        self.assertNotEqual(token_1, token_2)
+        self.assertEqual(user.auth_token_set.all().count(), 1)
+
+    def test_api_refresh_token_multiple(self):
+        user = User.objects.get(username='tester')
+        client = SetUpTestClient('tester').client()
+
+        token_limit_per_user = settings.REST_KNOX['TOKEN_LIMIT_PER_USER']
+        token_set = set()
+        for i in range(token_limit_per_user):
+            resp = client.get('/api/user/apikey/')
+            assert_status_code(resp, status.HTTP_200_OK)
+            token_set.add(json.loads(resp.content)['token'])
+
+        self.assertEqual(len(token_set), token_limit_per_user)
+        self.assertEqual(user.auth_token_set.all().count(), token_limit_per_user)
+
+        resp = client.get('/api/user/apikey/')
+        assert_status_code(resp, status.HTTP_200_OK)
+        token_set.add(json.loads(resp.content)['token'])
+        self.assertEqual(len(token_set), token_limit_per_user + 1)
+        self.assertEqual(user.auth_token_set.all().count(), token_limit_per_user)
+
+        assert_status_code(client.delete('/api/user/apikey/delete-all/'), status.HTTP_204_NO_CONTENT)
+        self.assertEqual(user.auth_token_set.all().count(), 0)
 
     def test_api_refresh_token_authenticated_faulty_input(self):
         data = {
@@ -182,14 +214,14 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/user/apikey/', data)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'MI001', 'Token was not refreshed.')
 
     def test_api_refresh_token_authenticated_faulty_input_2(self):
         data = {}
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/user/apikey/', data)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'MI001', 'Token was not refreshed.')
 
     def test_api_vakajarjestajat(self):

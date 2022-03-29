@@ -1,13 +1,18 @@
 import os
 from functools import partial
 
+from celery.signals import task_prerun
 from django.apps import AppConfig
 from django.conf import settings
+from django.contrib.auth import user_logged_in, user_logged_out
 from django.core.cache import cache
 from django.db.models.signals import post_migrate, post_save, pre_delete, pre_save
 from django.utils import timezone
+from django_cas_ng.signals import cas_user_logout
 
 from varda.constants import ALIVE_BOOT_TIME_CACHE_KEY, ALIVE_SEQ_CACHE_KEY
+from varda.custom_signal_handlers import (cas_logout_handler, celery_task_prerun_signal_handler, login_handler,
+                                          logout_handler)
 from varda.migrations.production.setup import (clear_old_permissions, create_extra_template_groups,
                                                create_henkilosto_template_groups, create_huoltajatiedot_template_groups,
                                                create_oph_luovutuspalvelu_group, create_paos_template_groups,
@@ -399,6 +404,11 @@ class VardaConfig(AppConfig):
 
     def ready(self):
         post_migrate.connect(run_post_migration_tasks, sender=self)
+
+        user_logged_in.connect(login_handler)
+        user_logged_out.connect(logout_handler)
+        cas_user_logout.connect(cas_logout_handler)
+        task_prerun.connect(celery_task_prerun_signal_handler)
 
         pre_save.connect(receiver_pre_save, sender='varda.Organisaatio')
         pre_save.connect(receiver_pre_save, sender='varda.PaosOikeus')

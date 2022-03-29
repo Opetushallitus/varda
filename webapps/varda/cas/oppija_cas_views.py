@@ -1,42 +1,6 @@
-import importlib.util
-import sys
-
 from rest_framework import status
 
-from varda.cas.cas_settings import settings
-from varda.cas.misc_cas import is_local_url_decorator
-from varda.constants import OPINTOPOLKU_HEADERS
-
-
-def load_in_new_module(library_name, name):
-    spec = importlib.util.find_spec(library_name)
-    cas_oppija_specific_library = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(cas_oppija_specific_library)
-    sys.modules['varda_cas_oppija_' + name] = cas_oppija_specific_library
-    del spec
-    return cas_oppija_specific_library
-
-
-# Loading in separate module to avoid conflicting with django settings and monkey patch
-cas_oppija_views = load_in_new_module('django_cas_ng.views', 'views')
-cas_oppija_views.is_local_url = is_local_url_decorator(cas_oppija_views.is_local_url)
-cas_oppija_utils = load_in_new_module('django_cas_ng.utils', 'utils')
-cas_oppija_backends = load_in_new_module('django_cas_ng.backends', 'backends')
-
-# Overriding these for Caller-Id and CSRF decoration
-cas = load_in_new_module('cas', 'cas')
-requests_api = load_in_new_module('requests.api', 'requests_api')
-
-
-def get_with_callerid(url, params=None, **kwargs):
-    kwargs.setdefault('allow_redirects', True)
-    old_headers = kwargs.get('headers', {})
-    headers = {**old_headers, **OPINTOPOLKU_HEADERS}
-    return requests_api.request('get', url, params=params, headers=headers, **kwargs)
-
-
-requests_api.get = get_with_callerid
-cas.requests = requests_api
+from varda.monkey_patch import oppija_cas_backends, oppija_cas_views
 
 
 def get_login_forward_decorator(function):
@@ -63,37 +27,21 @@ def get_login_forward_decorator(function):
     return wrap_decorator
 
 
-class OppijaCasLoginView(cas_oppija_views.LoginView):
+# No need to override logout view settings since we can use the same one as normal CAS
+# No need for fallback view since it's unlikely Varda would need to validate proxy granting tickets.
+class OppijaCasLoginView(oppija_cas_views.LoginView):
     """
     django_cas_ng does not support multiple cas filters so we need to instantiate one by ourselves.
     """
-    def __init__(self, **kwargs):
-        super(OppijaCasLoginView, self).__init__(**kwargs)
-
-        # Monkey patching django settings super class module uses
-        cas_oppija_views.settings = settings
-        cas_oppija_utils.django_settings = settings
-        cas_oppija_views.get_cas_client = cas_oppija_utils.get_cas_client
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.get = get_login_forward_decorator(self.get)
 
 
-# No need to override logout view settings since we can use the same one as virkailija-cas
-
-# No need for fallback view since it's unlikely varda would need to validate proxy granting tickets.
-
-
-class OppijaCASBackend(cas_oppija_backends.CASBackend):
+class OppijaCASBackend(oppija_cas_backends.CASBackend):
     """
     Backend that validates cas tickets against cas-oppija.
     """
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        # Monkey patch utils import to use our version
-        cas_oppija_utils.django_settings = settings
-        cas_oppija_utils.CASClient = cas.CASClient
-        cas_oppija_backends.get_cas_client = cas_oppija_utils.get_cas_client
-        cas_oppija_backends.settings = settings
 
     def authenticate(self, request, ticket, service):
         if request.resolver_match.view_name == 'oppija_cas_ng_login':
