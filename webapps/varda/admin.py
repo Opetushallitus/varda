@@ -243,7 +243,7 @@ class LoginCertificateAdmin(AdminWithGuardianAndHistory):
 
     @display(ordering='organisaatio__organisaatio_oid', description='organisaatio_oid')
     def get_organisaatio_oid(self, instance):
-        return instance.organisaatio.organisaatio_oid
+        return getattr(instance.organisaatio, 'organisaatio_oid', None)
 
 
 class Z3_AdditionalCasUserFieldsAdmin(ModelAdmin):

@@ -145,7 +145,8 @@ def _user_has_certificate_access(user, request):
 
     # Certificate authentication must be successful and user must have LUOVUTUSPALVELU permissions
     # in the correct organization specified in LoginCertificate object, or in OPH organisaatio
-    organisaatio_oid_list = [settings.OPETUSHALLITUS_ORGANISAATIO_OID, login_certificate.organisaatio.organisaatio_oid]
+    organisaatio_oid_list = [settings.OPETUSHALLITUS_ORGANISAATIO_OID,
+                             getattr(login_certificate.organisaatio, 'organisaatio_oid', None)]
     return is_cert_auth and user_permission_groups_in_organizations(user, organisaatio_oid_list,
                                                                     [Z4_CasKayttoOikeudet.LUOVUTUSPALVELU]).exists()
 
@@ -733,7 +734,7 @@ def user_permission_groups_in_organization(user, organisaatio_oid, permission_gr
 
 
 def user_permission_groups_in_organizations(user, oid_list, permission_group_list):
-    group_name_list = [f'{group}_{oid}' for oid in oid_list for group in permission_group_list]
+    group_name_list = [f'{group}_{oid}' for oid in oid_list if oid for group in permission_group_list]
     return user.groups.filter(name__in=group_name_list)
 
 
