@@ -23,7 +23,7 @@ def is_local_url_decorator(original_function):
 
 def get_service_url_decorator(original_function, get_redirect_url, cas_settings):
     """
-    Decorator that is used to override django_cas_ng.views.is_local_url. service_url is fetched from header in
+    Decorator that is used to override django_cas_ng.utils.get_service_url. service_url is fetched from header in
     Opintopolku environments.
     :param original_function: django_cas_ng.utils.get_service_url
     :param get_redirect_url: django_cas_ng.utils.get_redirect_url

@@ -1,6 +1,10 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.6.0 (30.03.2022)
+- OPHVARDA-2407: Syötä tietoja lomakkeiden optimointi
+- OPHVARDA-2441: Tietoturvapäivityksiä
+
 1.5.40 (17.03.2022)
 - OPHVARDA-2430: Erikoismerkkien salliminen henkilön nimessä
 
