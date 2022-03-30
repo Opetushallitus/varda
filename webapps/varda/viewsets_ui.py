@@ -365,7 +365,7 @@ class AllVakajarjestajaViewSet(GenericViewSet, ListModelMixin):
     *  tyyppi = 'yksityinen' tai 'kunnallinen'
     *  search = str
     """
-    queryset = Organisaatio.objects.all().order_by('id')
+    queryset = Organisaatio.vakajarjestajat.all().order_by('id')
     permission_classes = (IsVardaPaakayttaja, )
     serializer_class = PaosOrganisaatioSerializer
     filter_backends = (DjangoFilterBackend, )

@@ -291,8 +291,8 @@ class OrganisaatioSerializer(serializers.HyperlinkedModelSerializer):
         exclude = ('ytjkieli', 'integraatio_organisaatio', 'luonti_pvm', 'changed_by',)
         read_only_fields = ('id', 'nimi', 'y_tunnus', 'yritysmuoto', 'kunnallinen_kytkin', 'organisaatio_oid',
                             'kunta_koodi', 'kayntiosoite', 'kayntiosoite_postinumero', 'kayntiosoite_postitoimipaikka',
-                            'postiosoite', 'postinumero', 'postitoimipaikka', 'alkamis_pvm', 'paattymis_pvm',
-                            'muutos_pvm',)
+                            'postiosoite', 'postinumero', 'postitoimipaikka', 'organisaatiotyyppi', 'alkamis_pvm',
+                            'paattymis_pvm', 'muutos_pvm',)
 
     @caching_to_representation('organisaatio')
     def to_representation(self, instance):

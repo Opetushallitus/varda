@@ -420,7 +420,7 @@ def get_top_results(request, queryset, permission_group_list, oid_list):
     :param request: request object
     :param queryset: base queryset
     :param permission_group_list: List of accepted permission groups (Z4_CasKayttoOikeudet values)
-    :param oid_list: list of accepted OIDs (e.g. VakaJarjestaja, Toimipaikka)
+    :param oid_list: list of accepted OIDs (e.g. Organisaatio, Toimipaikka)
     :return: List of object URIs
     """
     items_to_show = 3

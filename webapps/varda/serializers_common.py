@@ -295,9 +295,9 @@ class OrganisaatioHLField(serializers.HyperlinkedRelatedField):
     def get_queryset(self):
         user = self.context['request'].user
         if user.is_authenticated:
-            queryset = Organisaatio.objects.all().order_by('id')
+            queryset = Organisaatio.vakajarjestajat.all().order_by('id')
         else:
-            queryset = Organisaatio.objects.none()
+            queryset = Organisaatio.vakajarjestajat.none()
         return queryset
 
 

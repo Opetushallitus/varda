@@ -763,7 +763,7 @@ def user_belongs_to_correct_groups(user, instance, permission_groups=(), accept_
     :param user: User object instance
     :param instance: Organisaatio or Toimipaikka object instance
     :param permission_groups: list of accepted Z4_CasKayttoOikeudet group
-    :param accept_toimipaikka_permission: if instance is VakaJarjestaja, permissions in related Toimipaikka groups are
+    :param accept_toimipaikka_permission: if instance is Organisaatio, permissions in related Toimipaikka groups are
            also accepted
     :param check_paos: if instance is Toimipaikka, permissions in related PAOS-organizations are also accepted
     :return: True if user belongs to correct permission groups or if no specific groups are defined, else False
