@@ -47,32 +47,32 @@ class VardaViewsTests(TestCase):
 
     def test_index(self):
         resp = self.client.get('/')
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
 
     def test_authentication_page(self):
         resp = self.client.get('/api-auth/login/')
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
 
     def test_release_notes(self):
         resp = self.client.get('/varda/release-notes/')
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
 
     def test_swagger_not_authenticated(self):
         resp = self.client.get('/varda/swagger/')
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
 
     def test_swagger_authenticated(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/varda/swagger/')
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
 
     def test_varda_index(self):
         resp = self.client.get('/varda/')
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
 
     def test_api_root_not_authenticated(self):
         resp = self.client.get('/api/v1/')
-        assert_status_code(resp, 403)
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
 
     def test_api_root_authenticated(self):
         client = SetUpTestClient('tester').client()
@@ -91,34 +91,34 @@ class VardaViewsTests(TestCase):
             'paos-toiminnat': 'http://testserver/api/v1/paos-toiminnat/',
             'paos-oikeudet': 'http://testserver/api/v1/paos-oikeudet/'
         }
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
         self.assertEqual(json.loads(resp.content), api_root)
 
     def test_api_schema(self):
         resp = self.client.get('/api/v1/schema/')
-        assert_status_code(resp, 403)
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
 
     def test_api_wrong_address(self):
         resp = self.client.get('/api/v1/wrong_address/')
-        assert_status_code(resp, 404)
+        assert_status_code(resp, status.HTTP_404_NOT_FOUND)
 
     def test_api_users_admin(self):
         client = SetUpTestClient('credadmin').client()
         resp = client.get('/api/admin/users/')
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
 
     def test_api_users_authenticated_but_not_admin(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/admin/users/')
-        assert_status_code(resp, 403)
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
 
     def test_api_users_not_authenticated(self):
         resp = self.client.get('/api/admin/users/')
-        assert_status_code(resp, 403)
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
 
     def test_api_get_user_data_anonymous(self):
         resp = self.client.get('/api/user/data/')
-        assert_status_code(resp, 403)
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
         assert_validation_error(resp, 'errors', 'PE005', 'Authentication credentials were not provided.')
 
     def test_api_get_user_data_authenticated(self):
@@ -148,7 +148,7 @@ class VardaViewsTests(TestCase):
                        ],
                        'username': 'tester'
                        }
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
         self.assertCountEqual(json.loads(resp.content), result_json)
 
     def test_api_get_token_anonymous(self):
@@ -227,12 +227,12 @@ class VardaViewsTests(TestCase):
     def test_api_vakajarjestajat(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/vakajarjestajat/')
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
 
     def test_api_toimipaikat(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/toimipaikat/')
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
 
     def test_api_toimipaikat_with_empty_oid(self):
         """
@@ -259,12 +259,12 @@ class VardaViewsTests(TestCase):
     def test_api_toimipaikat_permissions_3(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/toimipaikat/1/')
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
 
     def test_api_toimipaikat_permissions_4(self):
         client = SetUpTestClient('tester2').client()
         resp = client.get('/api/v1/toimipaikat/1/')
-        assert_status_code(resp, 404)
+        assert_status_code(resp, status.HTTP_404_NOT_FOUND)
 
     def test_api_toimipaikat_filtering_successful(self):
         client = SetUpTestClient('tester').client()
@@ -284,7 +284,7 @@ class VardaViewsTests(TestCase):
     def test_api_toiminnallisetpainotukset(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/toiminnallisetpainotukset/')
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
 
     def test_api_toiminnallisetpainotukset_filtering(self):
         client = SetUpTestClient('tester').client()
@@ -294,7 +294,7 @@ class VardaViewsTests(TestCase):
     def test_api_kielipainotukset(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/kielipainotukset/')
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
 
     def test_api_kielipainotukset_filtering(self):
         client = SetUpTestClient('tester').client()
@@ -354,7 +354,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
         self.assertEqual(json.loads(resp.content), expected_response)
 
     def test_api_push_non_unique_henkilo_etunimi_correct_sukunimi_wrong_small_letters(self):
@@ -378,7 +378,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
         self.assertEqual(json.loads(resp.content), expected_response)
 
     def test_api_push_non_unique_henkilo_etunimi_wrong_sukunimi_correct(self):
@@ -402,7 +402,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
         self.assertEqual(json.loads(resp.content), expected_response)
 
     def test_api_push_non_unique_henkilo_etunimi_wrong_sukunimi_correct_small_letters(self):
@@ -426,7 +426,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
         self.assertEqual(json.loads(resp.content), expected_response)
 
     def test_api_push_non_unique_henkilo_etunimi_wrong_sukunimi_wrong(self):
@@ -438,7 +438,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'HE001', 'Person data does not match with the entered data.')
 
     def test_api_push_incorrect_varhaiskasvatuspaatos_date_sequence(self):
@@ -457,7 +457,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', vaka_paatos)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'hakemus_pvm', 'VP001', 'hakemus_pvm must be before or equal to alkamis_pvm.')
 
     def test_api_push_incorrect_varhaiskasvatussuhde_date_sequence(self):
@@ -470,7 +470,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/varhaiskasvatussuhteet/', vaka_suhde)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'paattymis_pvm', 'MI004', 'paattymis_pvm must be equal to or after alkamis_pvm.')
 
     def test_api_push_incorrect_henkilo(self):  # wrong henkilotunnus-beginning
@@ -482,7 +482,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'henkilotunnus', 'HE007', 'Incorrect henkilotunnus date.')
 
     def test_api_push_incorrect_henkilo_2(self):  # wrong henkilotunnus-end; should end with P
@@ -494,7 +494,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'henkilotunnus', 'HE008', 'ID number or control character is incorrect.')
 
     def test_api_push_incorrect_henkilo_3(self):  # empty kutsumanimi
@@ -506,7 +506,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'kutsumanimi', 'GE003', 'This field may not be blank.')
 
     def test_api_push_incorrect_henkilo_4(self):  # missing kutsumanimi
@@ -517,7 +517,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'kutsumanimi', 'GE001', 'This field is required.')
 
     def test_api_push_incorrect_henkilo_5(self):  # wrong kutsumanimi
@@ -529,7 +529,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'kutsumanimi', 'HE011', 'kutsumanimi is not valid.')
 
     def test_api_push_henkilo_oid_etunimi_correct_sukunimi_wrong(self):
@@ -553,7 +553,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
         self.assertEqual(json.loads(resp.content), expected_response)
 
     def test_api_push_henkilo_oid_etunimi_wrong_sukunimi_correct(self):
@@ -577,7 +577,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
         self.assertEqual(json.loads(resp.content), expected_response)
 
     def test_api_push_henkilo_oid_etunimi_wrong_sukunimi_wrong(self):
@@ -589,7 +589,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'HE001', 'Person data does not match with the entered data.')
 
     @responses.activate
@@ -612,7 +612,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
 
     @responses.activate
     def test_api_push_henkilo_oid_not_yksiloity_in_oppijanumerorekisteri(self):
@@ -629,7 +629,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'henkilo_oid', 'HE002', 'Unfortunately this Henkilo cannot be added. Is the Henkilo yksiloity?')
 
     @responses.activate
@@ -647,7 +647,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
 
     @responses.activate
     def test_api_push_henkilo_oid_has_yksiloityhenkilotunnus_in_oppijanumerorekisteri(self):
@@ -664,7 +664,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
 
     @responses.activate
     def test_api_push_henkilo_oid_successful(self):
@@ -686,13 +686,13 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
         self.assertIn('http://testserver/api/v1/henkilot/', json.loads(resp.content)['url'])
 
     def test_api_varhaiskasvatussuhteet(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/varhaiskasvatussuhteet/')
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
 
     def test_api_varhaiskasvatussuhteet_filtering(self):
         client = SetUpTestClient('tester').client()
@@ -702,66 +702,66 @@ class VardaViewsTests(TestCase):
     def test_api_lapset(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/lapset/')
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
 
     def test_hae_henkilo_empty_data(self):
         data = {}
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/hae-henkilo/', data)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'HE004', 'Either henkilotunnus or henkilo_oid is needed, but not both.')
 
     def test_hae_henkilo_missing_keys(self):
         data = {'foo': 12}
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/hae-henkilo/', data)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'HE004', 'Either henkilotunnus or henkilo_oid is needed, but not both.')
 
     def test_hae_henkilo_faulty_inputs(self):
         data = {'henkilotunnus': 'string', 'henkilo_oid': 'string'}
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/hae-henkilo/', data)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'HE004', 'Either henkilotunnus or henkilo_oid is needed, but not both.')
 
     def test_hae_henkilo_not_found_oid(self):
         data = {'henkilo_oid': '1.2.246.562.24.47279942111'}
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/hae-henkilo/', data)
-        assert_status_code(resp, 404)
+        assert_status_code(resp, status.HTTP_404_NOT_FOUND)
         assert_validation_error(resp, 'errors', 'MI015', 'Not found.')
 
     def test_hae_henkilo_not_found_henkilotunnus(self):
         data = {'henkilotunnus': '290381-213W'}
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/hae-henkilo/', data)
-        assert_status_code(resp, 404)
+        assert_status_code(resp, status.HTTP_404_NOT_FOUND)
         assert_validation_error(resp, 'errors', 'MI015', 'Not found.')
 
     def test_hae_henkilo_found_oid(self):
         data = {'henkilo_oid': '1.2.246.562.24.49084901392'}
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/hae-henkilo/', data)
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
         self.assertEqual(json.loads(resp.content)['url'], 'http://testserver/api/v1/henkilot/7/')
 
     def test_hae_henkilo_found_henkilotunnus(self):
         data = {'henkilotunnus': '010114A0013'}
         client = SetUpTestClient('tester5').client()
         resp = client.post('/api/v1/hae-henkilo/', data)
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
         self.assertEqual(json.loads(resp.content)['url'], 'http://testserver/api/v1/henkilot/2/')
 
     def test_hae_henkilo_anonymous(self):
         data = {'henkilotunnus': '020476-321F'}
         resp = self.client.post('/api/v1/hae-henkilo/', data)
-        assert_status_code(resp, 403)
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
 
     def test_api_huoltajat(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/admin/huoltajat/')
-        assert_status_code(resp, 403)
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
 
     def test_api_huoltajat_filtering(self):
         # TO-DO: fix filtering
@@ -772,7 +772,7 @@ class VardaViewsTests(TestCase):
     def test_api_varhaiskasvatuspaatokset(self):
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/varhaiskasvatuspaatokset/')
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
 
     def test_api_varhaiskasvatuspaatokset_filtering(self):
         client = SetUpTestClient('tester').client()
@@ -850,7 +850,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
         henkilo_url = json.loads(resp.content)['url']
         vakajarjestaja_id_34683023489 = Organisaatio.objects.filter(organisaatio_oid=test_org_34683023489).first().id
 
@@ -862,7 +862,7 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/lapset/', json.dumps(lapsi), content_type='application/json')
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
 
     def test_api_oid_related_field_create_lapsi_with_oids(self):
         client = SetUpTestClient('tester2').client()
@@ -890,7 +890,7 @@ class VardaViewsTests(TestCase):
         }
 
         resp = client.put('/api/v1/lapset/4/', json.dumps(data), content_type='application/json')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'oma_organisaatio', 'GE013', 'Changing of this field is not allowed.')
 
     def test_api_oid_related_field_lapsi_no_paos_organisaatio(self):
@@ -906,7 +906,7 @@ class VardaViewsTests(TestCase):
         }
 
         resp = client.put('/api/v1/lapset/4/', json.dumps(data), content_type='application/json')
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_api_oid_related_field_lapsi_one_with_oid_one_with_url(self):
         client = SetUpTestClient('tester2').client()
@@ -926,11 +926,11 @@ class VardaViewsTests(TestCase):
     def test_api_oid_related_field_lapsi_roundtrip(self):
         client = SetUpTestClient('tester2').client()
         resp = client.get('/api/v1/lapset/4/?format=json')
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = json.loads(resp.content)
 
         resp = client.put('/api/v1/lapset/4/', json.dumps(data), content_type='application/json')
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
     def test_api_oid_related_field_lapsi_different_values_error(self):
         client = SetUpTestClient('tester2').client()
@@ -947,7 +947,7 @@ class VardaViewsTests(TestCase):
         }
 
         resp = client.put('/api/v1/lapset/4/', json.dumps(data), content_type='application/json')
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_api_oid_related_field_lapsi_invalid_oma_organisaatio_oid(self):
         client = SetUpTestClient('tester2').client()
@@ -962,7 +962,7 @@ class VardaViewsTests(TestCase):
         }
 
         resp = client.put('/api/v1/lapset/4/', json.dumps(data), content_type='application/json')
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     @responses.activate
     def test_api_oid_related_field_varhaiskasvatuspaatos_toimipaikka_field_required(self):
@@ -984,7 +984,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         henkilo_url = json.loads(resp.content)['url']
 
         vakajarjestaja_id_34683023489 = Organisaatio.objects.filter(organisaatio_oid=test_org_34683023489).first().id
@@ -994,7 +994,7 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp2 = client.post('/api/v1/lapset/', lapsi)
-        self.assertEqual(resp2.status_code, 201)
+        self.assertEqual(resp2.status_code, status.HTTP_201_CREATED)
         lapsi_url = json.loads(resp2.content)['url']
 
         varhaiskasvatuspaatos = {
@@ -1007,7 +1007,7 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp3 = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
-        self.assertEqual(resp3.status_code, 201)
+        self.assertEqual(resp3.status_code, status.HTTP_201_CREATED)
         varhaiskasvatuspaatos_url = json.loads(resp3.content)['url']
 
         varhaiskasvatussuhde = {
@@ -1017,7 +1017,7 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp4 = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
-        self.assertEqual(resp4.status_code, 400)
+        self.assertEqual(resp4.status_code, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp4, 'toimipaikka_oid', 'RF001', 'Either this field or the parent field is required.')
 
     def test_api_push_lapsi_valid_henkilo_oid(self):
@@ -1033,7 +1033,7 @@ class VardaViewsTests(TestCase):
         }
 
         resp = client.post('/api/v1/lapset/', lapsi)
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
 
         url_pattern = 'http://testserver/api/v1/henkilot/{0}/'
         resp_henkilo_url = json.loads(resp.content)['henkilo']
@@ -1048,7 +1048,7 @@ class VardaViewsTests(TestCase):
         }
 
         resp = client.post('/api/v1/lapset/', lapsi)
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_api_update_lapsi_vakatoimija(self):
         vakajarjestaja_oid_correct = '1.2.246.562.10.34683023489'
@@ -1143,7 +1143,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester5').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
         henkilo_url = json.loads(resp.content)['url']
 
         vakajarjestaja_id_93957375488 = Organisaatio.objects.filter(organisaatio_oid=test_org_93957375488).first().id
@@ -1153,7 +1153,7 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp2 = client.post('/api/v1/lapset/', lapsi)
-        assert_status_code(resp2, 201)
+        assert_status_code(resp2, status.HTTP_201_CREATED)
         lapsi_url = json.loads(resp2.content)['url']
 
         varhaiskasvatuspaatos = {
@@ -1165,7 +1165,7 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp3 = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
-        assert_status_code(resp3, 201)
+        assert_status_code(resp3, status.HTTP_201_CREATED)
         varhaiskasvatuspaatos_url = json.loads(resp3.content)['url']
 
         toimipaikka_oid = '1.2.246.562.10.9395737548810'
@@ -1177,20 +1177,20 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
 
     def test_api_push_lapsi_not_found_henkilo(self):
         client = SetUpTestClient('tester').client()
         henkilo_url = '/api/v1/henkilot/11111/'
         resp = client.get(henkilo_url)
-        assert_status_code(resp, 404)
+        assert_status_code(resp, status.HTTP_404_NOT_FOUND)
 
         lapsi = {
             'henkilo': henkilo_url,
             'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/lapset/', lapsi)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'henkilo', 'GE008', 'Invalid hyperlink, object does not exist.')
 
     def test_api_push_lapsi_under_different_vakajarjestaja(self):
@@ -1206,7 +1206,7 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
         vakapaatos_url = json.loads(resp.content)['url']
 
         varhaiskasvatussuhde = {
@@ -1217,7 +1217,7 @@ class VardaViewsTests(TestCase):
         }
         resp2 = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         assert_validation_error(resp2, 'toimipaikka', 'MI019', 'Given Toimipaikka does not belong to the correct Organisaatio.')
-        assert_status_code(resp2, 400)
+        assert_status_code(resp2, status.HTTP_400_BAD_REQUEST)
 
     def test_api_push_lapsi_duplicate(self):
         client = SetUpTestClient('tester2').client()
@@ -1255,7 +1255,7 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/lapset/', lapsi)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'LA007', 'For PAOS, both oma_organisaatio and paos_organisaatio are required.')
 
         lapsi = {
@@ -1264,7 +1264,7 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp2 = client.post('/api/v1/lapset/', lapsi)
-        assert_status_code(resp2, 400)
+        assert_status_code(resp2, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp2, 'errors', 'LA007', 'For PAOS, both oma_organisaatio and paos_organisaatio are required.')
 
     def test_api_push_lapsi_incorrect_paos_2(self):
@@ -1277,7 +1277,7 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/lapset/', lapsi)
-        assert_status_code(resp, 403)
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
         assert_validation_error(resp, 'errors', 'PO003', 'There is no active PaosOikeus.')
 
     def test_api_push_lapsi_correct_paos(self):
@@ -1301,7 +1301,7 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/lapset/', lapsi)
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
         lapsi_url = json.loads(resp.content)['url']
 
         varhaiskasvatuspaatos = {
@@ -1314,7 +1314,7 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp2 = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
-        assert_status_code(resp2, 201)
+        assert_status_code(resp2, status.HTTP_201_CREATED)
         vakapaatos_url = json.loads(resp2.content)['url']
 
         varhaiskasvatussuhde = {
@@ -1324,7 +1324,7 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp3 = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
-        assert_status_code(resp3, 400)
+        assert_status_code(resp3, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp3, 'toimipaikka', 'MI019', 'Given Toimipaikka does not belong to the correct Organisaatio.')
 
         varhaiskasvatussuhde = {
@@ -1335,7 +1335,7 @@ class VardaViewsTests(TestCase):
         }
         resp4 = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         assert_validation_error(resp4, 'errors', 'PT010', 'There is no active PaosToiminta to this Toimipaikka.')
-        assert_status_code(resp4, 400)
+        assert_status_code(resp4, status.HTTP_400_BAD_REQUEST)
 
         varhaiskasvatussuhde = {
             'toimipaikka': 'http://testserver/api/v1/toimipaikat/5/',
@@ -1344,7 +1344,7 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp5 = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
-        assert_status_code(resp5, 201)
+        assert_status_code(resp5, status.HTTP_201_CREATED)
 
     def test_api_push_paos_lapsi_duplicate(self):
         client = SetUpTestClient('tester2').client()
@@ -1356,10 +1356,10 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/lapset/', lapsi)
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
 
         resp2 = client.post('/api/v1/lapset/', lapsi)
-        assert_status_code(resp2, 200)  # Lapsi is already added
+        assert_status_code(resp2, status.HTTP_200_OK)  # Lapsi is already added
         self.assertEqual(json.loads(resp2.content)['henkilo'], 'http://testserver/api/v1/henkilot/1/')
 
     def test_api_push_vakapaatos_paos_lapsi(self):
@@ -1379,7 +1379,7 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/lapset/', lapsi)
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
         lapsi_url = json.loads(resp.content)['url']
 
         varhaiskasvatuspaatos = {
@@ -1393,11 +1393,11 @@ class VardaViewsTests(TestCase):
         }
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
         assert_validation_error(resp, 'jarjestamismuoto_koodi', 'VP005', 'Invalid code for PAOS Lapsi.')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
 
         varhaiskasvatuspaatos['jarjestamismuoto_koodi'] = 'jm02'
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
 
     def test_api_push_vakapaatos_non_paos_lapsi(self):
         varhaiskasvatuspaatos = {
@@ -1410,7 +1410,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'jarjestamismuoto_koodi', 'VP006', 'Invalid code for non-PAOS Lapsi.')
 
     def test_api_get_huoltaja_by_varhaiskasvatuspaatos(self):
@@ -1434,7 +1434,7 @@ class VardaViewsTests(TestCase):
             'loggedInUserOid': '1.2.34567891'
         }
         resp = client.post('/api/onr/external-permissions/', post_data)
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
         self.assertEqual(json.loads(resp.content), expected_response)
 
     def test_api_external_permissions_no_person(self):
@@ -1450,7 +1450,7 @@ class VardaViewsTests(TestCase):
             'loggedInUserOid': '1.2.345678910'
         }
         resp = client.post('/api/onr/external-permissions/', post_data)
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
         self.assertEqual(json.loads(resp.content), expected_response)
 
     def test_api_external_permissions_multiple_person(self):
@@ -1478,7 +1478,7 @@ class VardaViewsTests(TestCase):
             'loggedInUserOid': '1.2.246.562.24.6722258949565'
         }
         resp = client.post('/api/onr/external-permissions/', post_data)
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
         self.assertEqual(json.loads(resp.content), expected_response)
 
     def test_api_external_permissions_has_permission(self):
@@ -1494,7 +1494,7 @@ class VardaViewsTests(TestCase):
             'loggedInUserOid': '1.2.345678910'
         }
         resp = client.post('/api/onr/external-permissions/', post_data)
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
         self.assertEqual(json.loads(resp.content), expected_response)
 
     @responses.activate
@@ -1512,7 +1512,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
         henkilo_url = json.loads(resp.content)['url']
 
         huoltaja = {
@@ -1520,7 +1520,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('credadmin').client()
         resp1 = client.post('/api/admin/huoltajat/', huoltaja)
-        assert_status_code(resp1, 405)
+        assert_status_code(resp1, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_api_get_vakajarjestaja_json(self):
         vakajarjestaja_json = {
@@ -1615,6 +1615,20 @@ class VardaViewsTests(TestCase):
         content.pop('muutos_pvm', None)
         self.assertEqual(content, toimipaikka_json)
 
+    def test_api_get_toimipaikat_filter(self):
+        mock_admin_user('tester2')
+        client = SetUpTestClient('tester2').client()
+
+        resp = client.get('/api/v1/toimipaikat/?id=test')
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'id', 'GE025', 'This field must be a number.')
+
+        resp = client.get('/api/v1/toimipaikat/?id=1')
+        assert_status_code(resp, status.HTTP_200_OK)
+        results = json.loads(resp.content)['results']
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['id'], 1)
+
     def test_api_get_henkilo_syntyma_pvm(self):
         client = SetUpTestClient('tester').client()
         post_henkilo_to_get_permissions(client, henkilo_id=1)
@@ -1632,7 +1646,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/vakajarjestajat/', org)
-        assert_status_code(resp, 403)
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
 
     def test_api_push_incorrect_ipv4_address(self):
         org = {
@@ -1651,7 +1665,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('credadmin').client()
         resp = client.post('/api/v1/vakajarjestajat/', org)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, ['ipv4_osoitteet', '0'], 'VJ007', 'Not a valid IPv4-address.')
 
     def test_api_push_incorrect_ipv6_address(self):
@@ -1672,8 +1686,20 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('credadmin').client()
         resp = client.post('/api/v1/vakajarjestajat/', org)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, ['ipv6_osoitteet', '0'], 'VJ008', 'Not a valid IPv6-address.')
+
+    def test_api_push_incorrect_email(self):
+        client = SetUpTestClient('tester10').client()
+
+        vakajarjestaja_patch = {
+            'sahkopostiosoite': 'fake@helsinki.f'
+        }
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
+
+        resp = client.patch(f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/', vakajarjestaja_patch)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'sahkopostiosoite', 'GE024', 'This field must be an email address.')
 
     def test_api_push_incorrect_jarjestamismuoto_koodi(self):
         varhaiskasvatuspaatos = {
@@ -1686,7 +1712,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'jarjestamismuoto_koodi', 'KO002', 'Code cannot have special characters.')
 
     @responses.activate
@@ -1714,7 +1740,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/toimipaikat/', toimipaikka)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'TP007', 'Could not check duplicates from Organisaatiopalvelu. Please try again later.')
 
     def test_api_push_incorrect_toimipaikka(self):
@@ -1740,22 +1766,22 @@ class VardaViewsTests(TestCase):
 
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/toimipaikat/', toimipaikka)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'kayntiosoite', 'GE001', 'This field is required.')
 
         toimipaikka['kayntiosoite'] = ''
         resp2 = client.post('/api/v1/toimipaikat/', toimipaikka)
-        assert_status_code(resp2, 400)
+        assert_status_code(resp2, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp2, 'kayntiosoite', 'GE003', 'This field may not be blank.')
 
         toimipaikka['kayntiosoite'] = 'Jo'
         resp3 = client.post('/api/v1/toimipaikat/', toimipaikka)
-        assert_status_code(resp3, 400)
+        assert_status_code(resp3, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp3, 'kayntiosoite', 'DY002', 'Ensure this field has at least 3 characters.')
 
         toimipaikka['kayntiosoite'] = '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901'
         resp4 = client.post('/api/v1/toimipaikat/', toimipaikka)
-        assert_status_code(resp4, 400)
+        assert_status_code(resp4, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp4, 'kayntiosoite', 'DY001', 'Ensure this field has no more than 100 characters.')
 
     def test_api_push_incorrect_toimintamuoto(self):
@@ -1781,7 +1807,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/toimipaikat/', toimipaikka)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'toimintamuoto_koodi', 'KO003', 'Not a valid code.')
 
     def test_api_push_incorrect_kasvatusopillinen_jarjestelma(self):
@@ -1807,7 +1833,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/toimipaikat/', toimipaikka)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'kasvatusopillinen_jarjestelma_koodi', 'KO001', 'Code cannot have spaces.')
 
     def test_toimipaikka_incorrect_jarjestamismuoto(self):
@@ -1857,7 +1883,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/toiminnallisetpainotukset/', toiminnallinenpainotus)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'toimintapainotus_koodi', 'KO003', 'Not a valid code.')
 
     def test_push_api_incorrect_kieli_koodi(self):
@@ -1869,7 +1895,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/kielipainotukset/', kielipainotus)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'kielipainotus_koodi', 'KO003', 'Not a valid code.')
 
     def test_push_api_incorrect_kielipainotus(self):
@@ -1881,7 +1907,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/kielipainotukset/', kielipainotus)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'KP001', 'KieliPainotus with this kielipainotus_koodi already exists '
                                                          'for toimipaikka on the given date range.')
 
@@ -1895,7 +1921,7 @@ class VardaViewsTests(TestCase):
 
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/kielipainotukset/', kielipainotus)
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
 
     def test_push_api_incorrect_toiminnallinenpainotus(self):
         toiminnallinenpainotus = {
@@ -1906,7 +1932,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/toiminnallisetpainotukset/', toiminnallinenpainotus)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'TO001', 'ToiminnallinenPainotus with this toimintapainotus_koodi '
                                                          'already exists for toimipaikka on the given date range.')
 
@@ -1920,7 +1946,7 @@ class VardaViewsTests(TestCase):
 
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/toiminnallisetpainotukset/', toiminnallinenpainotus)
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
 
     def test_api_filter_vakajarjestajat_kunnallinen_kytkin(self):
         client = SetUpTestClient('credadmin').client()
@@ -1955,7 +1981,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', json.dumps(varhaiskasvatuspaatos), content_type='application/json')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'tuntimaara_viikossa', 'DY005', 'Ensure this value is less than or equal to 120.')
 
     def test_push_api_varhaiskasvatuspaatos_pikakasittely_kytkin_true(self):
@@ -1971,7 +1997,7 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', json.dumps(varhaiskasvatuspaatos), content_type='application/json')
         json_data = json.loads(resp.content)
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
         self.assertEqual(json_data['pikakasittely_kytkin'], True)
 
     def test_push_api_varhaiskasvatuspaatos_pikakasittely_kytkin_false(self):
@@ -1987,7 +2013,7 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/varhaiskasvatuspaatokset/', json.dumps(varhaiskasvatuspaatos), content_type='application/json')
         json_data = json.loads(resp.content)
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
         self.assertEqual(json_data['pikakasittely_kytkin'], False)
 
     def test_push_api_varhaiskasvatuspaatos_date_validation(self):
@@ -2024,7 +2050,7 @@ class VardaViewsTests(TestCase):
 
             data = json.dumps(varhaiskasvatuspaatos)
             resp = client.post('/api/v1/varhaiskasvatuspaatokset/', data=data, content_type='application/json')
-            assert_status_code(resp, 201)
+            assert_status_code(resp, status.HTTP_201_CREATED)
 
             id = json.loads(resp.content)['id']
             Varhaiskasvatuspaatos.objects.get(id=id).delete()
@@ -2038,12 +2064,12 @@ class VardaViewsTests(TestCase):
 
             data = json.dumps(varhaiskasvatuspaatos)
             resp = client.post('/api/v1/varhaiskasvatuspaatokset/', data=data, content_type='application/json')
-            assert_status_code(resp, 400)
+            assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
 
     def test_delete_varhaiskasvatuspaatos(self):
         client = SetUpTestClient('tester').client()
         resp = client.delete('/api/v1/varhaiskasvatuspaatokset/1/')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'VP004', 'Cannot delete Varhaiskasvatuspaatos. There are objects '
                                                          'referencing it that need to be deleted first.')
 
@@ -2081,7 +2107,7 @@ class VardaViewsTests(TestCase):
 
             data = json.dumps(varhaiskasvatussuhde)
             resp = client.post('/api/v1/varhaiskasvatussuhteet/', data=data, content_type='application/json')
-            assert_status_code(resp, 201)
+            assert_status_code(resp, status.HTTP_201_CREATED)
 
             id = json.loads(resp.content)['id']
             Varhaiskasvatussuhde.objects.get(id=id).delete()
@@ -2094,7 +2120,7 @@ class VardaViewsTests(TestCase):
 
             data = json.dumps(varhaiskasvatussuhde)
             resp = client.post('/api/v1/varhaiskasvatussuhteet/', data=data, content_type='application/json')
-            assert_status_code(resp, 400)
+            assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
 
     def test_api_get_maksutieto(self):
         """
@@ -2129,7 +2155,7 @@ class VardaViewsTests(TestCase):
 
         client = SetUpTestClient('tester').client()
         resp = client.get('/api/v1/maksutiedot/1/')
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
         self.assertEqual(json.loads(resp.content), expected_response)
 
     def test_push_api_maksutieto_missing_huoltajat(self):
@@ -2146,7 +2172,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, ['huoltajat', 'errors'], 'GE005', 'This list may not be empty.')
 
     def test_push_api_maksutieto_missing_huoltaja_hetu_or_oid(self):
@@ -2163,7 +2189,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, ['huoltajat', '0', 'errors'], 'HE004', 'Either henkilotunnus or henkilo_oid is needed, but not both.')
 
     def test_push_api_maksutieto_correct_format_1(self):
@@ -2184,7 +2210,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
 
         returned_data = json.loads(resp.content)
         returned_id = returned_data['id']
@@ -2240,7 +2266,7 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester').client()
         client.delete('/api/v1/maksutiedot/1/')  # remove 1 maksutieto, otherwise error: more than two active maksutieto
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
 
         returned_data = json.loads(resp.content)
         returned_id = returned_data['id']
@@ -2297,7 +2323,7 @@ class VardaViewsTests(TestCase):
 
         client = SetUpTestClient('tester').client()
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
 
         resp_result = json.loads(resp.content)
         self.assertEqual(resp_result['palveluseteli_arvo'], None)
@@ -2488,7 +2514,7 @@ class VardaViewsTests(TestCase):
             )
 
             resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
-            assert_status_code(resp, 201)
+            assert_status_code(resp, status.HTTP_201_CREATED)
 
             id = json.loads(resp.content)['id']
             MaksutietoHuoltajuussuhde.objects.filter(maksutieto_id=id).delete()
@@ -2501,7 +2527,7 @@ class VardaViewsTests(TestCase):
             )
 
             resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
-            assert_status_code(resp, 400)
+            assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
 
         # to test ending date validations every vakapaatos needs to have paattymis_pvm
         vakapaatos_2.paattymis_pvm = '2025-01-01'
@@ -2520,7 +2546,7 @@ class VardaViewsTests(TestCase):
             )
 
             resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
-            assert_status_code(resp, 201)
+            assert_status_code(resp, status.HTTP_201_CREATED)
 
             id = json.loads(resp.content)['id']
             MaksutietoHuoltajuussuhde.objects.filter(maksutieto_id=id).delete()
@@ -2540,7 +2566,7 @@ class VardaViewsTests(TestCase):
             )
 
             resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
-            assert_status_code(resp, 400)
+            assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
 
     def test_push_api_maksutieto_too_many_active(self):
         maksutieto = {
@@ -2562,7 +2588,7 @@ class VardaViewsTests(TestCase):
         maksutieto = json.dumps(maksutieto)
         client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         resp = client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'MA004', 'Lapsi already has 2 overlapping Maksutieto on the given date range.')
 
     def test_push_api_maksutieto_duplicate_hetus(self):
@@ -2585,7 +2611,7 @@ class VardaViewsTests(TestCase):
         maksutieto = json.dumps(maksutieto)
         client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         resp = client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'huoltajat', 'MA017', 'Duplicate huoltajat detected.')
 
     def test_push_api_maksutieto_duplicate_henkilo_oids(self):
@@ -2608,7 +2634,7 @@ class VardaViewsTests(TestCase):
         maksutieto = json.dumps(maksutieto)
         client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         resp = client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'huoltajat', 'MA017', 'Duplicate huoltajat detected.')
 
     def test_push_api_maksutieto_missing_alkamis_pvm(self):
@@ -2630,7 +2656,7 @@ class VardaViewsTests(TestCase):
         maksutieto = json.dumps(maksutieto)
         client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         resp = client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'alkamis_pvm', 'GE001', 'This field is required.')
 
     def test_push_api_maksutieto_incorrect_paattymis_pvm(self):
@@ -2653,7 +2679,7 @@ class VardaViewsTests(TestCase):
         maksutieto = json.dumps(maksutieto)
         client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         resp = client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'paattymis_pvm', 'MI004', 'paattymis_pvm must be equal to or after alkamis_pvm.')
 
     def test_push_api_correct_maksutieto_for_one_day(self):
@@ -2674,7 +2700,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
 
     def test_push_api_maksutieto_too_many_active_long_timeframe(self):
         maksutieto = {
@@ -2694,7 +2720,7 @@ class VardaViewsTests(TestCase):
         maksutieto = json.dumps(maksutieto)
         client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         resp = client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'MA004', 'Lapsi already has 2 overlapping Maksutieto on the given date range.')
 
     def test_push_api_maksutieto_too_many_active_short_timeframe(self):
@@ -2715,7 +2741,7 @@ class VardaViewsTests(TestCase):
         maksutieto = json.dumps(maksutieto)
         client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
         resp = client.post('/api/v1/maksutiedot/', maksutieto, content_type='application/json')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'MA004', 'Lapsi already has 2 overlapping Maksutieto on the given date range.')
 
     def test_push_api_maksutieto_no_matching_huoltajat(self):
@@ -2732,7 +2758,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'huoltajat', 'MA003', 'No matching huoltaja found.')
 
     @responses.activate
@@ -2750,7 +2776,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/henkilot/', henkilo)
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
         henkilo_url = json.loads(resp.content)['url']
 
         vakajarjestaja_id_34683023489 = Organisaatio.objects.filter(organisaatio_oid=test_org_34683023489).first().id
@@ -2760,7 +2786,7 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp2 = client.post('/api/v1/lapset/', lapsi)
-        assert_status_code(resp2, 201)
+        assert_status_code(resp2, status.HTTP_201_CREATED)
         lapsi_url = json.loads(resp2.content)['url']
         maksutieto = {
             'huoltajat': [{'henkilotunnus': '110494-9153', 'etunimet': 'Jukka', 'sukunimi': 'Pekkarinen'}],
@@ -2774,7 +2800,7 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
         resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'MA009', 'Lapsi does not have Varhaiskasvatussuhde. Add Varhaiskasvatussuhde before adding Maksutieto.')
 
     def test_api_maksutieto_multiple_huoltaja_list_admin(self):
@@ -2820,7 +2846,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester3').client()
         resp = client.post('/api/v1/paos-toiminnat/', json.dumps(paos_toiminta), content_type='application/json')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'PT004', 'Combination of oma_organisaatio and paos_organisaatio fields should be unique.')
 
     def test_push_duplicate_paos_toiminta_2(self):
@@ -2830,7 +2856,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester4').client()
         resp = client.post('/api/v1/paos-toiminnat/', paos_toiminta)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'PT005', 'Combination of oma_organisaatio and paos_toimipaikka fields should be unique.')
 
     def test_delete_paos_toiminta_with_toimija_and_push_correct_paos_toiminta_organisaatio(self):
@@ -2860,7 +2886,7 @@ class VardaViewsTests(TestCase):
             'paos_organisaatio': 'http://localhost:8000/api/v1/vakajarjestajat/1/'
         }
         resp = client.post('/api/v1/paos-toiminnat/', paos_toiminta)
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
 
     def test_delete_paostoiminta_with_toimija_view_access_stays_if_children_in_toimipaikka(self):
         client = SetUpTestClient('tester2').client()
@@ -2936,7 +2962,7 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester3').client()
         paos_toiminta = json.dumps(paos_toiminta)
         resp = client.post('/api/v1/paos-toiminnat/', paos_toiminta, content_type='application/json')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'paos_organisaatio', 'PT008', 'paos_organisaatio must be kunta or kuntayhtyma.')
 
     def test_push_incorrect_paos_toiminta_toimipaikka(self):  # Not possible to vakajarjestaja's own toimipaikka
@@ -2947,7 +2973,7 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester4').client()
         paos_toiminta = json.dumps(paos_toiminta)
         resp = client.post('/api/v1/paos-toiminnat/', paos_toiminta, content_type='application/json')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'paos_toimipaikka', 'PT002', 'paos_toimipaikka cannot be in oma_organisaatio.')
 
     def test_push_incorrect_paos_toiminta_toimipaikka_2(self):
@@ -2959,7 +2985,7 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester4').client()
         paos_toiminta = json.dumps(paos_toiminta)
         resp = client.post('/api/v1/paos-toiminnat/', paos_toiminta, content_type='application/json')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'paos_toimipaikka', 'PT003', 'jarjestamismuoto_koodi is not jm02 or jm03.')
 
     def test_push_correct_paos_toiminta_toimipaikka(self):
@@ -2970,7 +2996,7 @@ class VardaViewsTests(TestCase):
         client = SetUpTestClient('tester4').client()
         paos_toiminta = json.dumps(paos_toiminta)
         resp = client.post('/api/v1/paos-toiminnat/', paos_toiminta, content_type='application/json')
-        assert_status_code(resp, 201)
+        assert_status_code(resp, status.HTTP_201_CREATED)
 
     def test_paos_toiminta_voimassa_kytkin_organisation_first(self):
         """
@@ -2983,7 +3009,7 @@ class VardaViewsTests(TestCase):
         }
         client_tester3 = SetUpTestClient('tester3').client()
         resp_1 = client_tester3.delete('/api/v1/paos-toiminnat/1/')  # duplicate must be removed first
-        assert_status_code(resp_1, 204)
+        assert_status_code(resp_1, status.HTTP_204_NO_CONTENT)
 
         """
         VARDA_PAAKAYTTAJA from vakajarjestaja ID=1 requests permission for VARDA_TALLENTAJA or VARDA_PALVELUKAYTTAJA
@@ -2995,20 +3021,20 @@ class VardaViewsTests(TestCase):
         }
         client_tester4 = SetUpTestClient('tester4').client()
         resp_2 = client_tester4.delete('/api/v1/paos-toiminnat/2/')  # duplicate must be removed first
-        assert_status_code(resp_2, 204)
+        assert_status_code(resp_2, status.HTTP_204_NO_CONTENT)
 
         paos_toiminta_organisaatio = json.dumps(paos_toiminta_organisaatio)
         resp_organisaatio = client_tester3.post('/api/v1/paos-toiminnat/', paos_toiminta_organisaatio, content_type='application/json')
         resp_voimassa_kytkin = client_tester3.get('/api/v1/paos-oikeudet/1/')
         resp_voimassa_kytkin = json.loads(resp_voimassa_kytkin.content)['voimassa_kytkin']
-        assert_status_code(resp_organisaatio, 201)
+        assert_status_code(resp_organisaatio, status.HTTP_201_CREATED)
         self.assertEqual(resp_voimassa_kytkin, False)
 
         paos_toiminta_toimipaikka = json.dumps(paos_toiminta_toimipaikka)
         resp_toimipaikka = client_tester4.post('/api/v1/paos-toiminnat/', paos_toiminta_toimipaikka, content_type='application/json')
         resp_voimassa_kytkin = client_tester4.get('/api/v1/paos-oikeudet/1/')
         resp_voimassa_kytkin = json.loads(resp_voimassa_kytkin.content)['voimassa_kytkin']
-        assert_status_code(resp_toimipaikka, 201)
+        assert_status_code(resp_toimipaikka, status.HTTP_201_CREATED)
         self.assertEqual(resp_voimassa_kytkin, True)
 
         resp_organisaatio_id = json.loads(resp_organisaatio.content)['id']
@@ -3021,7 +3047,7 @@ class VardaViewsTests(TestCase):
         VARDA_PAAKAYTTAJA from vakajarjestaja ID=2 removes permission to add lapset to their toimipaikat
         """
         remove_voimassa_kytkin = client_tester3.delete(path)
-        assert_status_code(remove_voimassa_kytkin, 204)
+        assert_status_code(remove_voimassa_kytkin, status.HTTP_204_NO_CONTENT)
 
         """
         Verify that voimassa_kytkin returns to false because of the removal of the organisation permission
@@ -3098,7 +3124,7 @@ class VardaViewsTests(TestCase):
         tallentaja_organisaatio = json.dumps(tallentaja_organisaatio)
         resp_paos_oikeus = client_tester4.patch('/api/v1/paos-oikeudet/1/', tallentaja_organisaatio, content_type='application/json')
         resp_paos_oikeus_tallentaja_organisaatio = json.loads(resp_paos_oikeus.content)['tallentaja_organisaatio']
-        assert_status_code(resp_paos_oikeus, 200)
+        assert_status_code(resp_paos_oikeus, status.HTTP_200_OK)
         self.assertEqual(resp_paos_oikeus_tallentaja_organisaatio, 'http://testserver/api/v1/vakajarjestajat/2/')
 
     def test_paos_oikeus_change_tallentaja_organisaatio_already_is_same(self):
@@ -3106,7 +3132,7 @@ class VardaViewsTests(TestCase):
         tallentaja_organisaatio = {'tallentaja_organisaatio': '/api/v1/vakajarjestajat/1/'}
         tallentaja_organisaatio = json.dumps(tallentaja_organisaatio)
         resp_paos_oikeus = client_tester4.patch('/api/v1/paos-oikeudet/1/', tallentaja_organisaatio, content_type='application/json')
-        assert_status_code(resp_paos_oikeus, 400)
+        assert_status_code(resp_paos_oikeus, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp_paos_oikeus, 'tallentaja_organisaatio', 'PO002',
                                 'tallentaja_organisaatio is already the same as requested.')
 
@@ -3115,7 +3141,7 @@ class VardaViewsTests(TestCase):
         tallentaja_organisaatio = {'tallentaja_organisaatio': '/api/v1/vakajarjestajat/4/'}
         tallentaja_organisaatio = json.dumps(tallentaja_organisaatio)
         resp_paos_oikeus = client_tester4.patch('/api/v1/paos-oikeudet/1/', tallentaja_organisaatio, content_type='application/json')
-        assert_status_code(resp_paos_oikeus, 400)
+        assert_status_code(resp_paos_oikeus, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp_paos_oikeus, 'tallentaja_organisaatio', 'PO001',
                                 'tallentaja_organisaatio must be either jarjestaja_kunta_organisaatio or tuottaja_organisaatio.')
 
@@ -3135,25 +3161,25 @@ class VardaViewsTests(TestCase):
     def test_api_delete_toimipaikka_1(self):
         client = SetUpTestClient('tester').client()
         resp = client.delete('/api/v1/toimipaikat/1/')
-        assert_status_code(resp, 403)
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
         assert_validation_error(resp, 'errors', 'PE006', 'User does not have permission to perform this action.')
 
     def test_api_delete_toimipaikka_2(self):
         client = SetUpTestClient('tester2').client()
         resp = client.delete('/api/v1/toimipaikat/3/')
-        assert_status_code(resp, 403)
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
         assert_validation_error(resp, 'errors', 'PE006', 'User does not have permission to perform this action.')
 
     def test_api_delete_lapsi_1(self):
         client = SetUpTestClient('tester').client()
         resp = client.delete('/api/v1/lapset/1/')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'LA003', 'Cannot delete Lapsi. There are Maksutieto objects referencing it that need to be deleted first.')
 
     def test_api_delete_lapsi_2(self):
         client = SetUpTestClient('tester2').client()
         resp = client.delete('/api/v1/lapset/4/')
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'LA004', 'Cannot delete Lapsi. There are objects referencing it that need to be deleted first.')
 
     def test_api_delete_lapsi_3(self):
@@ -3163,7 +3189,7 @@ class VardaViewsTests(TestCase):
         client.delete('/api/v1/varhaiskasvatussuhteet/1:testing-varhaiskasvatussuhde4/')
         client.delete('/api/v1/varhaiskasvatuspaatokset/1:testing-varhaiskasvatuspaatos4/')
         resp = client.delete('/api/v1/lapset/1:testing-lapsi4/')
-        assert_status_code(resp, 204)
+        assert_status_code(resp, status.HTTP_204_NO_CONTENT)
 
     def test_api_push_overlapping_varhaiskasvatuspaatos(self):
         client = SetUpTestClient('tester10').client()
@@ -3263,7 +3289,7 @@ class VardaViewsTests(TestCase):
         client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
         resp = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
-        assert_status_code(resp, 400)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'errors', 'VS013',
                                 'Lapsi already has 3 overlapping Varhaiskasvatussuhde on the given date range.')
 
@@ -3295,7 +3321,7 @@ class VardaViewsTests(TestCase):
             'tilapainen_henkilosto_maara_kuluva_vuosi': None,
             'tilapainen_henkilosto_tunnit_kuluva_vuosi': None
         }
-        assert_status_code(resp, 200)
+        assert_status_code(resp, status.HTTP_200_OK)
         self.assertEqual(json.loads(resp.content), accepted_response)
 
     """ organisaatiopalvelu-integraatio
@@ -3321,7 +3347,7 @@ class VardaViewsTests(TestCase):
         }
         client = SetUpTestClient('tester2').client()
         resp = client.post('/api/v1/toimipaikat/', toimipaikka)
-        assert_status_code(resp, 400)  # TODO: Change this when Org.palvelu-mocking is done! (Original: 201)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)  # TODO: Change this when Org.palvelu-mocking is done! (Original: 201)
     """
 
     def test_api_filter_asiointikieli_1(self):

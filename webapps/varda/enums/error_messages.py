@@ -38,6 +38,8 @@ class ErrorMessages(enum.Enum):
     GE021 = get_error_dict('GE021', 'Both datetime field filters are required.')
     GE022 = get_error_dict('GE022', 'Greater than date filter value needs to be before less than date filter.')
     GE023 = get_error_dict('GE023', 'This field must be a string.')
+    GE024 = get_error_dict('GE024', 'This field must be an email address.')
+    GE025 = get_error_dict('GE025', 'This field must be a number.')
 
     # Dynamic errors, prefix: DY
     # If dynamic errors are added or changed, changes should be reflected in frontend virkailija-app parseDynamicValue

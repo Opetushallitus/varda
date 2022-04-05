@@ -89,6 +89,8 @@ def add_test_user_permissions():
     group_tilapaiset_tallentaja_vakajarjestaja_52966755795 = Group.objects.get(name='HENKILOSTO_TILAPAISET_TALLENTAJA_1.2.246.562.10.52966755795')
     group_taydennys_tallentaja_vakajarjestaja_52966755795 = Group.objects.get(name='HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA_1.2.246.562.10.52966755795')
     group_toimijatiedot_tallentaja_34683023489 = Group.objects.get(name='VARDA_TOIMIJATIEDOT_TALLENTAJA_1.2.246.562.10.34683023489')
+    group_toimijatiedot_tallentaja_57294396385 = Group.objects.get(name='VARDA_TOIMIJATIEDOT_TALLENTAJA_1.2.246.562.10.57294396385')
+    group_toimijatiedot_tallentaja_52966755795 = Group.objects.get(name='VARDA_TOIMIJATIEDOT_TALLENTAJA_1.2.246.562.10.52966755795')
     group_raporttien_katselija_34683023489 = Group.objects.get(name='VARDA_RAPORTTIEN_KATSELIJA_1.2.246.562.10.34683023489')
     group_kela_luovutuspalvelu = Group.objects.get(name='VARDA_LUOVUTUSPALVELU_1.2.246.562.10.2013121014482686198719')
 
@@ -189,6 +191,7 @@ def add_test_user_permissions():
     user_tester10.groups.add(group_tyontekija_tallentaja_vakajarjestaja_57294396385)
     user_tester10.groups.add(group_tilapaiset_tallentaja_vakajarjestaja_57294396385)
     user_tester10.groups.add(group_taydennys_tallentaja_vakajarjestaja_57294396385)
+    user_tester10.groups.add(group_toimijatiedot_tallentaja_57294396385)
 
     user_tester11 = User.objects.get(username='tester11')
     user_tester11.groups.add(group_paakayttaja_vakajarjestaja_52966755795)
@@ -197,6 +200,7 @@ def add_test_user_permissions():
     user_tester11.groups.add(group_tyontekija_tallentaja_vakajarjestaja_52966755795)
     user_tester11.groups.add(group_tilapaiset_tallentaja_vakajarjestaja_52966755795)
     user_tester11.groups.add(group_taydennys_tallentaja_vakajarjestaja_52966755795)
+    user_tester11.groups.add(group_toimijatiedot_tallentaja_52966755795)
 
     henkilosto_tallentaja_93957375488 = User.objects.get(username='henkilosto_tallentaja_93957375488')
     henkilosto_tallentaja_93957375488.groups.add(group_tyontekija_tallentaja_vakajarjestaja2)
