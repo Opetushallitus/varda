@@ -13,10 +13,12 @@ from django.db.models.functions import Cast, Concat, Lower
 from django.http import Http404
 from django.template import loader
 from django_filters.constants import EMPTY_VALUES
+from rest_framework.fields import BooleanField
 from rest_framework.filters import BaseFilterBackend
 
 from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
 from varda.enums.koodistot import Koodistot
+from varda.misc_viewsets import parse_query_parameter
 from varda.models import (Organisaatio, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
                           Maksutieto, PaosToiminta, PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
                           TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
@@ -492,12 +494,12 @@ class UiTyontekijaFilter(django_filters.FilterSet):
         voimassaolo = str.lower(voimassaolo)
 
         if voimassaolo == 'alkanut':
-            return Q(**{prefix + 'alkamis_pvm__gte': alkamis_pvm}) & Q(**{prefix + 'alkamis_pvm__lte': paattymis_pvm})
+            return Q(**{f'{prefix}alkamis_pvm__gte': alkamis_pvm}) & Q(**{f'{prefix}alkamis_pvm__lte': paattymis_pvm})
         elif voimassaolo == 'paattynyt':
-            return Q(**{prefix + 'paattymis_pvm__gte': alkamis_pvm}) & Q(**{prefix + 'paattymis_pvm__lte': paattymis_pvm})
+            return Q(**{f'{prefix}paattymis_pvm__gte': alkamis_pvm}) & Q(**{f'{prefix}paattymis_pvm__lte': paattymis_pvm})
         elif voimassaolo == 'voimassa':
-            return (Q(**{prefix + 'alkamis_pvm__lte': alkamis_pvm}) &
-                    (Q(**{prefix + 'paattymis_pvm__gte': paattymis_pvm}) | Q(**{prefix + 'paattymis_pvm__isnull': True})))
+            return (Q(**{f'{prefix}alkamis_pvm__lte': alkamis_pvm}) &
+                    (Q(**{f'{prefix}paattymis_pvm__gte': paattymis_pvm}) | Q(**{f'{prefix}paattymis_pvm__isnull': True})))
 
     def apply_kiertava_filter(self, tyontekija_filter):
         kiertava_arg = self.request.query_params.get('kiertava', '').lower()
@@ -511,7 +513,7 @@ class UiTyontekijaFilter(django_filters.FilterSet):
         user = self.request.user
         query_params = self.request.query_params
 
-        tyontekija_filter = Q()
+        tyontekija_filter = self.get_rajaus_filters()
 
         required_permission_groups = (Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
                                       Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
@@ -523,22 +525,94 @@ class UiTyontekijaFilter(django_filters.FilterSet):
             tyontekija_filter = Q(palvelussuhteet__tyoskentelypaikat__toimipaikka__id__in=toimipaikka_id_list)
         tyontekija_filter = self.apply_kiertava_filter(tyontekija_filter)
 
-        tehtavanimike_arg = query_params.get('tehtavanimike', None)
-        if tehtavanimike_arg:
+        if tehtavanimike_arg := query_params.get('tehtavanimike', None):
             tyontekija_filter = tyontekija_filter & Q(palvelussuhteet__tyoskentelypaikat__tehtavanimike_koodi__iexact=tehtavanimike_arg)
 
-        tutkinto_arg = query_params.get('tutkinto', None)
-        if tutkinto_arg:
+        if tutkinto_arg := query_params.get('tutkinto', None):
             tyontekija_filter = tyontekija_filter & Q(palvelussuhteet__tutkinto_koodi__iexact=tutkinto_arg)
 
-        tyosuhde_arg = query_params.get('tyosuhde', None)
-        if tyosuhde_arg:
+        if tyosuhde_arg := query_params.get('tyosuhde', None):
             tyontekija_filter = tyontekija_filter & Q(palvelussuhteet__tyosuhde_koodi__iexact=tyosuhde_arg)
 
         # Apply custom filters
-        return queryset.filter(tyontekija_filter & self.get_rajaus_filters()).distinct('henkilo__sukunimi',
-                                                                                       'henkilo__etunimet',
-                                                                                       'id')
+        return queryset.filter(tyontekija_filter).distinct('henkilo__sukunimi', 'henkilo__etunimet', 'id')
+
+
+class UiLapsiFilter(django_filters.FilterSet):
+    """
+    Can't utilize djangofilters provided filters (e.g. CharFilter), because all filters need to be inside a single
+    .filter() call. For example if we had multiple filter() calls, user has selected
+    toimipaikat=1,2&rajaus=vakasuhteet&voimassaolo=voimassa&alkamis_pvm=2022-01-01&paattymis_pvm=2022-01-01
+    we may get lapsi that has passive varhaiskasvatussuhde in toimipaikka=1 and
+    active varhaiskasvatussuhde in toimipaikka=3.
+    """
+    class Meta:
+        model = Lapsi
+        fields = []
+
+    def get_rajaus_filters(self):
+        query_params = self.request.query_params
+        rajaus = query_params.get('rajaus', None)
+        voimassaolo = query_params.get('voimassaolo', None)
+        alkamis_pvm = query_params.get('alkamis_pvm', None)
+        paattymis_pvm = query_params.get('paattymis_pvm', None)
+
+        if not rajaus or not voimassaolo or not alkamis_pvm or not paattymis_pvm:
+            return Q()
+
+        rajaus = str.lower(rajaus)
+        voimassaolo = str.lower(voimassaolo)
+
+        try:
+            alkamis_pvm = datetime.strptime(alkamis_pvm, '%Y-%m-%d').date()
+            paattymis_pvm = datetime.strptime(paattymis_pvm, '%Y-%m-%d').date()
+        except ValueError:
+            raise Http404
+
+        prefixes = {
+            'vakasuhteet': 'varhaiskasvatuspaatokset__varhaiskasvatussuhteet__',
+            'vakapaatokset': 'varhaiskasvatuspaatokset__',
+            'maksutiedot': 'huoltajuussuhteet__maksutiedot__'
+        }
+
+        if rajaus in ['vakasuhteet', 'vakapaatokset', 'maksutiedot']:
+            prefix = prefixes[rajaus]
+        else:
+            return Q()
+
+        if voimassaolo == 'alkanut':
+            return Q(**{f'{prefix}alkamis_pvm__gte': alkamis_pvm}) & Q(**{f'{prefix}alkamis_pvm__lte': paattymis_pvm})
+        elif voimassaolo == 'paattynyt':
+            return Q(**{f'{prefix}paattymis_pvm__gte': alkamis_pvm}) & Q(**{f'{prefix}paattymis_pvm__lte': paattymis_pvm})
+        elif voimassaolo == 'voimassa':
+            # First set of brackets enables multiline so we need double for query: x and (y or z)
+            return (Q(**{f'{prefix}alkamis_pvm__lte': alkamis_pvm}) &
+                    (Q(**{f'{prefix}paattymis_pvm__gte': paattymis_pvm}) | Q(**{f'{prefix}paattymis_pvm__isnull': True})))
+
+    def filter_queryset(self, queryset):
+        user = self.request.user
+        query_params = self.request.query_params
+
+        lapsi_filter = self.get_rajaus_filters()
+
+        required_permission_groups = (Z4_CasKayttoOikeudet.KATSELIJA, Z4_CasKayttoOikeudet.TALLENTAJA,
+                                      Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
+                                      Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,)
+        toimipaikka_id_list = parse_toimipaikka_id_list(user, query_params.get('toimipaikat', ''),
+                                                        required_permission_groups, include_paos=True)
+        if len(toimipaikka_id_list) > 0:
+            lapsi_filter &= Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__id__in=toimipaikka_id_list)
+
+        if maksun_peruste_arg := query_params.get('maksun_peruste', None):
+            lapsi_filter &= Q(huoltajuussuhteet__maksutiedot__maksun_peruste_koodi__iexact=maksun_peruste_arg)
+
+        if (palveluseteli_arg := query_params.get('palveluseteli', None)) and palveluseteli_arg is not None:
+            palveluseteli = parse_query_parameter(palveluseteli_arg, BooleanField)
+            lapsi_filter &= (Q(huoltajuussuhteet__maksutiedot__palveluseteli_arvo__gt=0) if palveluseteli else
+                             (Q(huoltajuussuhteet__maksutiedot__palveluseteli_arvo__isnull=True) |
+                              Q(huoltajuussuhteet__maksutiedot__palveluseteli_arvo=0)))
+
+        return queryset.filter(lapsi_filter).distinct('henkilo__sukunimi', 'henkilo__etunimet', 'id')
 
 
 class UiAllVakajarjestajaFilter(django_filters.FilterSet):

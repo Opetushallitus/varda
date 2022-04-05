@@ -1,9 +1,6 @@
-import datetime
-
 from operator import itemgetter
 
 from django.contrib.contenttypes.models import ContentType
-from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Prefetch, Q, Subquery
 from django.http import Http404
@@ -21,7 +18,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from varda import filters
-from varda.cache import create_cache_key, get_object_ids_user_has_permissions
+from varda.cache import get_object_ids_for_user_by_model, get_object_ids_user_has_permissions
 from varda.cas.varda_permissions import IsVardaPaakayttaja
 from varda.custom_swagger import ActionPaginationSwaggerAutoSchema
 from varda.filters import CustomParametersFilterBackend, CustomParameter
@@ -35,7 +32,7 @@ from varda.permissions import (CustomModelPermissions, get_taydennyskoulutus_tyo
                                HenkilostohakuPermissions, LapsihakuPermissions, auditlog, auditlogclass,
                                user_permission_groups_in_organization,
                                get_tyontekija_filters_for_taydennyskoulutus_groups,
-                               user_has_vakajarjestaja_level_permission, is_oph_staff, parse_toimipaikka_id_list)
+                               user_has_vakajarjestaja_level_permission, is_oph_staff)
 from varda.serializers import PaosToimipaikkaSerializer, PaosOrganisaatioSerializer
 from varda.serializers_ui import (OrganisaatioUiSerializer, ToimipaikkaUiSerializer, UiLapsiSerializer,
                                   TyontekijaHenkiloUiSerializer, LapsihakuHenkiloUiSerializer,
@@ -241,12 +238,11 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
         self.vakajarjestaja_obj = None
         self.vakajarjestaja_oid = ''
 
-    def get_toimipaikka_ids_user_has_view_permissions(self):
-        model_name = 'toimipaikka'
-        content_type = ContentType.objects.get(model=model_name)
-        return get_object_ids_user_has_permissions(self.request.user, model_name, content_type)
-
     def get_queryset(self):
+        if not self.vakajarjestaja_id:
+            # Not coming from .list (coming from CustomModelPermissions)
+            return Toimipaikka.objects.none()
+
         paos_toimipaikat = get_paos_toimipaikat(self.vakajarjestaja_obj, is_only_active_paostoiminta_included=False)
         qs_own_toimipaikat = Q(vakajarjestaja=self.vakajarjestaja_id)
         qs_paos_toimipaikat = Q(id__in=paos_toimipaikat)
@@ -258,7 +254,7 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
                                                                                        'view_toimipaikka')
         if not user.is_superuser and not has_vakajarjestaja_level_permission:
             # Get only toimipaikat user has object level permissions to
-            toimipaikka_ids_user_has_view_permissions = self.get_toimipaikka_ids_user_has_view_permissions()
+            toimipaikka_ids_user_has_view_permissions = get_object_ids_for_user_by_model(user, Toimipaikka.get_name())
             toimipaikka_filter = toimipaikka_filter & Q(id__in=toimipaikka_ids_user_has_view_permissions)
 
         return (Toimipaikka.objects.filter(toimipaikka_filter)
@@ -392,8 +388,9 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
         maksun_peruste=str
         palveluseteli=boolean
     """
-    filter_backends = (CustomParametersFilterBackend, SearchFilter,)
     queryset = Lapsi.objects.none()
+    filter_backends = (CustomParametersFilterBackend, DjangoFilterBackend, SearchFilter,)
+    filterset_class = filters.UiLapsiFilter
     search_fields = ('henkilo__etunimet',
                      'henkilo__sukunimi',
                      '=henkilo__henkilotunnus_unique_hash',
@@ -428,143 +425,38 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
         super().__init__(*args, **kwargs)
         self.vakajarjestaja_id = None
         self.vakajarjestaja_oid = ''
-        self.toimipaikka_id_list = []
-
-    def get_lapsi_object_ids_user_has_view_permissions(self):
-        model_name = 'lapsi'
-        content_type = ContentType.objects.get(model=model_name)
-        return get_object_ids_user_has_permissions(self.request.user, model_name, content_type)
-
-    def apply_rajaus_filters(self, vakasuhde_filter):
-        query_params = self.request.query_params
-        rajaus = query_params.get('rajaus', None)
-        voimassaolo = query_params.get('voimassaolo', None)
-        alkamis_pvm = query_params.get('alkamis_pvm', None)
-        paattymis_pvm = query_params.get('paattymis_pvm', None)
-
-        if not rajaus or not voimassaolo or not alkamis_pvm or not paattymis_pvm:
-            return vakasuhde_filter
-
-        rajaus = str.lower(rajaus)
-        voimassaolo = str.lower(voimassaolo)
-
-        try:
-            alkamis_pvm = datetime.datetime.strptime(alkamis_pvm, '%Y-%m-%d').date()
-            paattymis_pvm = datetime.datetime.strptime(paattymis_pvm, '%Y-%m-%d').date()
-        except ValueError:
-            raise Http404
-
-        if rajaus == 'vakasuhteet':
-            prefix = 'varhaiskasvatuspaatokset__varhaiskasvatussuhteet__'
-        elif rajaus == 'vakapaatokset':
-            prefix = 'varhaiskasvatuspaatokset__'
-        elif rajaus == 'maksutiedot':
-            prefix = 'huoltajuussuhteet__maksutiedot__'
-        else:
-            return vakasuhde_filter
-
-        if voimassaolo == 'alkanut':
-            vakasuhde_filter = (vakasuhde_filter & Q(**{prefix + 'alkamis_pvm__gte': alkamis_pvm}) &
-                                Q(**{prefix + 'alkamis_pvm__lte': paattymis_pvm}))
-        elif voimassaolo == 'paattynyt':
-            vakasuhde_filter = (vakasuhde_filter & Q(**{prefix + 'paattymis_pvm__gte': alkamis_pvm}) &
-                                Q(**{prefix + 'paattymis_pvm__lte': paattymis_pvm}))
-        elif voimassaolo == 'voimassa':
-            # First set of brackets enables multiline so we need double for query: x and (y or z)
-            vakasuhde_filter = (vakasuhde_filter & Q(**{prefix + 'alkamis_pvm__lte': alkamis_pvm}) &
-                                ((Q(**{prefix + 'paattymis_pvm__gte': paattymis_pvm})) |
-                                Q(**{prefix + 'paattymis_pvm__isnull': True})))
-
-        return vakasuhde_filter
-
-    def apply_filters(self, lapsi_filter):
-        lapsi_filter = self.apply_rajaus_filters(lapsi_filter)
-
-        query_params = self.request.query_params
-        maksun_peruste_koodi = query_params.get('maksun_peruste', None)
-        palveluseteli = query_params.get('palveluseteli', None)
-
-        if maksun_peruste_koodi:
-            lapsi_filter &= Q(huoltajuussuhteet__maksutiedot__maksun_peruste_koodi__iexact=maksun_peruste_koodi)
-
-        if palveluseteli is not None:
-            palveluseteli_boolean = True if palveluseteli == 'true' else False
-            lapsi_filter &= (Q(huoltajuussuhteet__maksutiedot__palveluseteli_arvo__gt=0) if palveluseteli_boolean else
-                             (Q(huoltajuussuhteet__maksutiedot__palveluseteli_arvo__isnull=True) |
-                              Q(huoltajuussuhteet__maksutiedot__palveluseteli_arvo=0)))
-
-        return lapsi_filter
 
     def get_queryset(self):
-        if len(self.toimipaikka_id_list) > 0:
-            # If paos-lapsi, return only the ones that are linked to this vakajarjestaja
-            lapsi_filter = (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__id__in=self.toimipaikka_id_list) &
-                            (Q(oma_organisaatio=self.vakajarjestaja_id) | Q(paos_organisaatio=self.vakajarjestaja_id) |
-                             Q(vakatoimija=self.vakajarjestaja_id)))
-        else:
-            lapsi_filter = (Q(vakatoimija=self.vakajarjestaja_id) | Q(oma_organisaatio=self.vakajarjestaja_id) |
-                            Q(paos_organisaatio=self.vakajarjestaja_id))
+        if not self.vakajarjestaja_id:
+            # Not coming from .list (coming from CustomModelPermissions)
+            return Lapsi.objects.none()
 
-        lapsi_organization_groups_qs = user_permission_groups_in_organization(self.request.user, self.vakajarjestaja_oid,
-                                                                              [Z4_CasKayttoOikeudet.KATSELIJA,
-                                                                               Z4_CasKayttoOikeudet.TALLENTAJA,
-                                                                               Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
-                                                                               Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA])
-        # Get all children for superuser and vakajarjestaja level permissions
-        if not self.request.user.is_superuser and not lapsi_organization_groups_qs.exists():
-            lapsi_object_ids_user_has_view_permissions = self.get_lapsi_object_ids_user_has_view_permissions()
-            lapsi_filter = (lapsi_filter & Q(id__in=lapsi_object_ids_user_has_view_permissions))
+        user = self.request.user
 
-        lapsi_filter = self.apply_filters(lapsi_filter)
+        lapsi_filter = (Q(vakatoimija=self.vakajarjestaja_id) | Q(oma_organisaatio=self.vakajarjestaja_id) |
+                        Q(paos_organisaatio=self.vakajarjestaja_id))
+
+        lapsi_organization_groups_qs = user_permission_groups_in_organization(
+            user, self.vakajarjestaja_oid,
+            [Z4_CasKayttoOikeudet.KATSELIJA, Z4_CasKayttoOikeudet.TALLENTAJA,
+             Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA, Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA]
+        )
+        # Get all Lapsi objects for superuser, OPH and vakajarjestaja level permissions
+        if not user.is_superuser and not is_oph_staff(user) and not lapsi_organization_groups_qs.exists():
+            lapsi_object_ids_user_has_view_permissions = get_object_ids_for_user_by_model(user, Lapsi.get_name())
+            lapsi_filter &= Q(id__in=lapsi_object_ids_user_has_view_permissions)
 
         return Lapsi.objects.filter(lapsi_filter).order_by('henkilo__sukunimi', 'henkilo__etunimet')
 
-    def get_lapset_in_toimipaikat_queryset(self):
-        return (self.filter_queryset(self.get_queryset())
-                .distinct('henkilo__sukunimi', 'henkilo__etunimet', 'id'))
-
     @transaction.atomic
     def list(self, request, *args, **kwargs):
-        user = request.user
+        user = self.request.user
 
         vakajarjestaja_obj = parse_vakajarjestaja(user, kwargs['organisaatio_pk'])
         self.vakajarjestaja_id = vakajarjestaja_obj.id
         self.vakajarjestaja_oid = vakajarjestaja_obj.organisaatio_oid
 
-        required_permission_groups = (Z4_CasKayttoOikeudet.KATSELIJA, Z4_CasKayttoOikeudet.TALLENTAJA,
-                                      Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
-                                      Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,)
-        self.toimipaikka_id_list = parse_toimipaikka_id_list(user, request.query_params.get('toimipaikat', ''),
-                                                             required_permission_groups, include_paos=True)
-
-        """
-        We can differentiate results based on e.g. user-id, and this is needed since queryset
-        can be different for one toimipaikka, depending on user permissions.
-        """
-        toimipaikka_cache_key = create_cache_key(user.id, request.get_full_path())
-        queryset = cache.get(toimipaikka_cache_key)
-        if queryset is None:
-            # Set toimipaikan_lapset-cache for all request toimipaikat
-            for toimipaikka_id in self.toimipaikka_id_list:
-                key_for_list_of_all_toimipaikka_cache_keys = 'toimipaikan_lapset_' + toimipaikka_id
-                list_of_all_toimipaikka_cache_keys = cache.get(key_for_list_of_all_toimipaikka_cache_keys)
-                if list_of_all_toimipaikka_cache_keys is None:
-                    list_of_all_toimipaikka_cache_keys = []
-                if toimipaikka_cache_key not in list_of_all_toimipaikka_cache_keys:
-                    list_of_all_toimipaikka_cache_keys.append(toimipaikka_cache_key)
-                cache.set(key_for_list_of_all_toimipaikka_cache_keys, list_of_all_toimipaikka_cache_keys, 8 * 60 * 60)
-
-            queryset = self.get_lapset_in_toimipaikat_queryset()
-            cache.set(toimipaikka_cache_key, queryset, 8 * 60 * 60)
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        # Pagination is disabled
-        serializer = self.get_serializer(queryset.distinct(), many=True)
-        return Response(serializer.data)
+        return super().list(request, args, kwargs)
 
 
 @auditlogclass
@@ -637,31 +529,34 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
         self.vakajarjestaja_oid = ''
         self.has_vakajarjestaja_tyontekija_permissions = False
 
-    def get_tyontekija_ids_user_has_view_permissions(self):
-        model_name = 'tyontekija'
-        content_type = ContentType.objects.get(model=model_name)
-        return get_object_ids_user_has_permissions(self.request.user, model_name, content_type)
-
     def get_queryset(self):
+        if not self.vakajarjestaja_id:
+            # Not coming from .list (coming from CustomModelPermissions)
+            return Tyontekija.objects.none()
+
         tyontekija_filter = Q(vakajarjestaja__id=self.vakajarjestaja_id)
 
-        tyontekija_organization_groups_qs = user_permission_groups_in_organization(self.request.user, self.vakajarjestaja_oid,
-                                                                                   [Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
-                                                                                    Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA])
+        tyontekija_organization_groups_qs = user_permission_groups_in_organization(
+            self.request.user, self.vakajarjestaja_oid,
+            [Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
+             Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA]
+        )
 
         user = self.request.user
         is_superuser_or_oph_staff = user.is_superuser or is_oph_staff(user)
         self.has_vakajarjestaja_tyontekija_permissions = is_superuser_or_oph_staff or tyontekija_organization_groups_qs.exists()
 
-        taydennyskoulutus_organization_groups_qs = user_permission_groups_in_organization(self.request.user, self.vakajarjestaja_oid,
-                                                                                          [Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,
-                                                                                           Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA])
+        taydennyskoulutus_organization_groups_qs = user_permission_groups_in_organization(
+            self.request.user, self.vakajarjestaja_oid,
+            [Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,
+             Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA]
+        )
 
-        # Get all tyontekijat for superuser, oph user, and vakajarjestaja level permissions
+        # Get all Tyontekija objects for superuser, OPH and vakajarjestaja level permissions
         if not self.has_vakajarjestaja_tyontekija_permissions and not taydennyskoulutus_organization_groups_qs.exists():
-            # Get only tyontekijat user has object permissions to, or tyontekijat that belong to user's
+            # Get only Tyontekija objects user has object permissions to, or objects that belong to user's
             # taydennyskoulutus groups
-            tyontekija_ids_user_has_view_permissions = self.get_tyontekija_ids_user_has_view_permissions()
+            tyontekija_ids_user_has_view_permissions = get_object_ids_for_user_by_model(user, Tyontekija.get_name())
             tyontekija_taydennyskoulutus_filters, organisaatio_oids = get_tyontekija_filters_for_taydennyskoulutus_groups(self.request.user)
             tyontekija_filter = (tyontekija_filter & (Q(id__in=tyontekija_ids_user_has_view_permissions) | tyontekija_taydennyskoulutus_filters))
 
@@ -678,4 +573,4 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
         self.vakajarjestaja_id = vakajarjestaja_obj.id
         self.vakajarjestaja_oid = vakajarjestaja_obj.organisaatio_oid
 
-        return super(UiNestedTyontekijaViewSet, self).list(request, args, kwargs)
+        return super().list(request, args, kwargs)
