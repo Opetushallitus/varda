@@ -5,10 +5,10 @@ from guardian.admin import GuardedModelAdmin
 from simple_history.admin import SimpleHistoryAdmin
 
 from .models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, KieliPainotus, Lapsi, LoginCertificate,
-                     Maksutieto, Tyoskentelypaikka, Palvelussuhde, PaosOikeus, PaosToiminta, TilapainenHenkilosto,
-                     ToiminnallinenPainotus, Toimipaikka, Tutkinto, Tyontekija, Organisaatio, Varhaiskasvatuspaatos,
-                     Varhaiskasvatussuhde, PidempiPoissaolo, Taydennyskoulutus, YearlyReportSummary,
-                     Z3_AdditionalCasUserFields, Z7_AdditionalUserFields)
+                     Maksutieto, MaksutietoHuoltajuussuhde, TaydennyskoulutusTyontekija, Tyoskentelypaikka,
+                     Palvelussuhde, PaosOikeus, PaosToiminta, TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka,
+                     Tutkinto, Tyontekija, Organisaatio, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, PidempiPoissaolo,
+                     Taydennyskoulutus, YearlyReportSummary, Z3_AdditionalCasUserFields, Z7_AdditionalUserFields)
 
 
 class AdminWithGuardianAndHistory(GuardedModelAdmin, SimpleHistoryAdmin):
@@ -107,6 +107,12 @@ class MaksutietoAdmin(AdminWithGuardianAndHistory):
         return instance.huoltajuussuhteet.first().lapsi.id
 
 
+class MaksutietoHuoltajuussuhdeAdmin(AdminWithGuardianAndHistory):
+    list_display = ('id', 'maksutieto', 'huoltajuussuhde',)
+    search_fields = ('=id', '=maksutieto__id', '=huoltajuussuhde__id',)
+    raw_id_fields = ('maksutieto', 'huoltajuussuhde', 'changed_by',)
+
+
 class PaosToimintaAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'get_oma_organisaatio_oid', 'get_paos_organisaatio_oid', 'get_paos_toimipaikka_oid',)
     search_fields = ('=id', '=oma_organisaatio__organisaatio_oid', '=paos_organisaatio__organisaatio_oid',
@@ -196,6 +202,12 @@ class TaydennyskoulutusAdmin(AdminWithGuardianAndHistory):
     raw_id_fields = ('changed_by',)
 
 
+class TaydennyskoulutusTyontekijaAdmin(AdminWithGuardianAndHistory):
+    list_display = ('id', 'taydennyskoulutus', 'tyontekija',)
+    search_fields = ('=id', '=taydennyskoulutus__id', '=tyontekija__id',)
+    raw_id_fields = ('taydennyskoulutus', 'tyontekija', 'changed_by',)
+
+
 class TilapainenHenkilostoAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'get_vakajarjestaja_oid',)
     search_fields = ('=id', '=vakajarjestaja__organisaatio_oid',)
@@ -272,6 +284,7 @@ admin.site.register(Huoltajuussuhde, HuoltajuussuhdeAdmin)
 admin.site.register(Varhaiskasvatuspaatos, VarhaiskasvatuspaatosAdmin)
 admin.site.register(Varhaiskasvatussuhde, VarhaiskasvatussuhdeAdmin)
 admin.site.register(Maksutieto, MaksutietoAdmin)
+admin.site.register(MaksutietoHuoltajuussuhde, MaksutietoHuoltajuussuhdeAdmin)
 admin.site.register(PaosToiminta, PaosToimintaAdmin)
 admin.site.register(PaosOikeus, PaosOikeusAdmin)
 admin.site.register(Tyontekija, TyontekijaAdmin)
@@ -281,6 +294,7 @@ admin.site.register(Palvelussuhde, PalvelussuhdeAdmin)
 admin.site.register(Tyoskentelypaikka, TyoskentelypaikkaAdmin)
 admin.site.register(PidempiPoissaolo, PidempipoissaoloAdmin)
 admin.site.register(Taydennyskoulutus, TaydennyskoulutusAdmin)
+admin.site.register(TaydennyskoulutusTyontekija, TaydennyskoulutusTyontekijaAdmin)
 admin.site.register(YearlyReportSummary, AdminWithGuardianAndHistory)
 admin.site.register(Aikaleima, AdminWithGuardianAndHistory)
 admin.site.register(BatchError, BatchErrorAdmin)
