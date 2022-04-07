@@ -142,7 +142,7 @@ def _add_henkilo_to_oppijanumerorekisteri(etunimet, kutsumanimi, sukunimi, henki
     elif henkilotunnus:
         henkilo = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string(henkilotunnus))
         henkilo_id = henkilo.id
-        added_by = henkilo.changed_by.username
+        added_by = henkilo.history.last().history_user.username
         henkilotunnus_prefix_hided = henkilotunnus and 'DDMMYY' + henkilotunnus[-5:]
         logger.error("Couldn't add a new henkilo to Oppijanumerorekisteri. Henkilotunnus: {}. Id: {}. Added by: {}"
                      .format(henkilotunnus_prefix_hided, henkilo_id, added_by))

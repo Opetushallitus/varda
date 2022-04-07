@@ -668,14 +668,13 @@ def init_related_object_changed_table_task():
 
 @shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
-def create_yearly_reporting_summary(user_id, vakajarjestaja_id, tilasto_pvm, poiminta_pvm, full_query, history_q):
+def create_yearly_reporting_summary(vakajarjestaja_id, tilasto_pvm, poiminta_pvm, full_query, history_q):
     from varda.misc_queries import (get_vakajarjestaja_is_active, get_toimipaikat, get_kielipainotukset, get_toiminnalliset_painotukset,
                                     get_vakasuhteet, get_omat_vakasuhteet, get_paos_vakasuhteet, get_vakapaatokset,
                                     get_omat_vakapaatokset, get_paos_vakapaatokset, get_vuorohoito_vakapaatokset,
                                     get_omat_vuorohoito_vakapaatokset, get_paos_vuorohoito_vakapaatokset, get_lapset,
                                     get_omat_lapset, get_paos_lapset, get_henkilot, get_maksutiedot)
 
-    user = User.objects.get(id=user_id)
     tilasto_pvm = datetime.datetime.strptime(tilasto_pvm, '%Y-%m-%dT%H:%M:%S').date()
 
     if full_query:
@@ -769,8 +768,7 @@ def create_yearly_reporting_summary(user_id, vakajarjestaja_id, tilasto_pvm, poi
         'paos_maksutieto_count': paos_maksutiedot_yhteensa,
         'paos_maksutieto_mp01_count': paos_maksutiedot_yhteensa_mp1,
         'paos_maksutieto_mp02_count': paos_maksutiedot_yhteensa_mp2,
-        'paos_maksutieto_mp03_count': paos_maksutiedot_yhteensa_mp3,
-        'changed_by': user
+        'paos_maksutieto_mp03_count': paos_maksutiedot_yhteensa_mp3
     }
 
     YearlyReportSummary.objects.update_or_create(vakajarjestaja=vakajarjestaja_obj, tilasto_pvm=tilasto_pvm, defaults=updated_values)

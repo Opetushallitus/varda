@@ -189,8 +189,7 @@ def _transfer_maksutieto_permissions_to_new_vakajarjestaja(new_vakajarjestaja, t
             for maksutieto_huoltajuussuhde in maksutieto.maksutiedot_huoltajuussuhteet.all():
                 huoltajuussuhde = Huoltajuussuhde.objects.get(lapsi=existing_lapsi,
                                                               huoltaja=maksutieto_huoltajuussuhde.huoltajuussuhde.huoltaja)
-                MaksutietoHuoltajuussuhde.objects.create(huoltajuussuhde=huoltajuussuhde, maksutieto=maksutieto,
-                                                         changed_by=maksutieto_huoltajuussuhde.changed_by)
+                MaksutietoHuoltajuussuhde.objects.create(huoltajuussuhde=huoltajuussuhde, maksutieto=maksutieto)
 
         # Save Maksutieto without modifications so that new historical record is created
         maksutieto.save()
@@ -355,8 +354,7 @@ def _transfer_taydennyskoulutus_permissions_to_new_vakajarjestaja(new_vakajarjes
                 # Taydennyskoulutus object and remove the old one
                 TaydennyskoulutusTyontekija.objects.create(taydennyskoulutus=taydennyskoulutus,
                                                            tehtavanimike_koodi=taydennyskoulutus_tyontekija.tehtavanimike_koodi,
-                                                           tyontekija=existing_tyontekija,
-                                                           changed_by=taydennyskoulutus_tyontekija.changed_by)
+                                                           tyontekija=existing_tyontekija)
                 taydennyskoulutus_tyontekija.delete()
 
         # Assign permissions after changes have been made

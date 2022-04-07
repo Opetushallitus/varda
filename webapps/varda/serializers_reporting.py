@@ -966,4 +966,4 @@ class YearlyReportingDataSummarySerializer(serializers.ModelSerializer):
                             'yhteensa_maksutieto_mp01_count', 'yhteensa_maksutieto_mp02_count', 'yhteensa_maksutieto_mp03_count',
                             'oma_maksutieto_count', 'oma_maksutieto_mp01_count', 'oma_maksutieto_mp02_count', 'oma_maksutieto_mp03_count',
                             'paos_maksutieto_count', 'paos_maksutieto_mp01_count', 'paos_maksutieto_mp02_count', 'paos_maksutieto_mp03_count')
-        exclude = ('luonti_pvm', 'muutos_pvm', 'changed_by')
+        exclude = ('luonti_pvm', 'muutos_pvm')

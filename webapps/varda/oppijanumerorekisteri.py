@@ -14,12 +14,13 @@ from varda.enums.batcherror_type import BatchErrorType
 from varda.enums.yhteystieto import Yhteystietoryhmatyyppi, YhteystietoAlkupera, YhteystietoTyyppi
 from varda.misc import (CustomServerErrorException, encrypt_string, get_json_from_external_service,
                         hash_string)
-from varda.models import Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Aikaleima, BatchError, User
+from varda.models import Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Aikaleima, BatchError
 
-# Get an instance of a logger
+
 logger = logging.getLogger(__name__)
 
-SERVICE_NAME = "oppijanumerorekisteri-service"
+
+SERVICE_NAME = 'oppijanumerorekisteri-service'
 
 
 def batch_error_decorator(batch_error_type):
@@ -45,7 +46,7 @@ def batch_error_decorator(batch_error_type):
     return decorator
 
 
-def save_henkilo_to_db(henkilo_id, henkilo_json, changed=False):
+def save_henkilo_to_db(henkilo_id, henkilo_json):
     henkilo = Henkilo.objects.get(id=henkilo_id)
 
     # Field mapping: first field is Oppijanumerorekisteri - second attribute-name in Varda
@@ -86,12 +87,7 @@ def save_henkilo_to_db(henkilo_id, henkilo_json, changed=False):
             henkilo.syntyma_pvm = None
         _set_address_to_henkilo(henkilo_json, henkilo)
 
-    if changed:
-        varda_system_user = User.objects.get(username='varda_system')
-        henkilo.changed_by = varda_system_user
-        henkilo.save()
-    else:
-        henkilo.save()
+    henkilo.save()
 
 
 def _set_address_to_henkilo(henkilo_json, henkilo):
@@ -102,26 +98,26 @@ def _set_address_to_henkilo(henkilo_json, henkilo):
     :return: None
     """
     address_fields = {
-        YhteystietoTyyppi.YHTEYSTIETO_KATUOSOITE.value: "katuosoite",
-        YhteystietoTyyppi.YHTEYSTIETO_POSTINUMERO.value: "postinumero",
-        YhteystietoTyyppi.YHTEYSTIETO_KAUPUNKI.value: "postitoimipaikka"
+        YhteystietoTyyppi.YHTEYSTIETO_KATUOSOITE.value: 'katuosoite',
+        YhteystietoTyyppi.YHTEYSTIETO_POSTINUMERO.value: 'postinumero',
+        YhteystietoTyyppi.YHTEYSTIETO_KAUPUNKI.value: 'postitoimipaikka'
     }
-    address_group_list = henkilo_json.get("yhteystiedotRyhma", [])
+    address_group_list = henkilo_json.get('yhteystiedotRyhma', [])
     address_groups = [address_group
                       for address_group
                       in address_group_list
-                      if Yhteystietoryhmatyyppi.VTJ_VAKINAINEN_KOTIMAINEN_OSOITE.value == address_group.get("ryhmaKuvaus", None) and
-                      YhteystietoAlkupera.VTJ.value == address_group.get("ryhmaAlkuperaTieto", None) and
-                      any(yhteystieto.get("yhteystietoArvo", False)  # Empty string evaluates falsy
+                      if Yhteystietoryhmatyyppi.VTJ_VAKINAINEN_KOTIMAINEN_OSOITE.value == address_group.get('ryhmaKuvaus', None) and
+                      YhteystietoAlkupera.VTJ.value == address_group.get('ryhmaAlkuperaTieto', None) and
+                      any(yhteystieto.get('yhteystietoArvo', False)  # Empty string evaluates falsy
                           for yhteystieto
-                          in address_group.get("yhteystieto", [])
-                          if yhteystieto.get("yhteystietoTyyppi", None) in address_fields.keys())
+                          in address_group.get('yhteystieto', [])
+                          if yhteystieto.get('yhteystietoTyyppi', None) in address_fields.keys())
                       ]
-    address_list = next(iter(address_groups), {}).get("yhteystieto", [])
-    [setattr(henkilo, address_fields[address["yhteystietoTyyppi"]], address.get("yhteystietoArvo", ''))
+    address_list = next(iter(address_groups), {}).get('yhteystieto', [])
+    [setattr(henkilo, address_fields[address['yhteystietoTyyppi']], address.get('yhteystietoArvo', ''))
      for address
      in address_list
-     if address.get("yhteystietoTyyppi", None) in address_fields.keys()
+     if address.get('yhteystietoTyyppi', None) in address_fields.keys()
      ]
 
 
@@ -141,7 +137,7 @@ def _fetch_henkilo_data_by_oid(henkilo_oid, henkilo_id, henkilo_data=None):
     if not henkilo_data:
         henkilo_data = get_henkilo_data_by_oid(henkilo_oid)
     if henkilo_data:
-        save_henkilo_to_db(henkilo_id, henkilo_data, changed=True)
+        save_henkilo_to_db(henkilo_id, henkilo_data)
     else:
         raise RequestException('Could not get data from oppijanumerorekisteri for henkilo {} {}'
                                .format(henkilo_id, henkilo_oid))
@@ -158,7 +154,7 @@ def fetch_henkilot_with_oid():
     """
     from varda.tasks import update_henkilo_data_by_oid
 
-    henkilo_id_oid_tuples = Henkilo.objects.exclude(henkilo_oid="").values_list('id', 'henkilo_oid')
+    henkilo_id_oid_tuples = Henkilo.objects.exclude(henkilo_oid='').values_list('id', 'henkilo_oid')
     for henkilo_id, henkilo_oid in henkilo_id_oid_tuples:
         update_henkilo_data_by_oid.apply_async(args=[henkilo_oid, henkilo_id],
                                                kwargs={'is_fetch_huoltajat': True},
@@ -175,9 +171,9 @@ def fetch_henkilo_with_oid(henkilo_oid):
     try:
         henkilo = Henkilo.objects.get(henkilo_oid=henkilo_oid)
     except Henkilo.DoesNotExist:
-        raise NotFound(detail="Henkilo was not found.", code=404)
+        raise NotFound(detail='Henkilo was not found.', code=404)
     except Henkilo.MultipleObjectsReturned:  # This should never be possible
-        logger.error("Multiple of henkilot was found with henkilo_oid: " + henkilo_oid)
+        logger.error('Multiple of henkilot was found with henkilo_oid: ' + henkilo_oid)
         raise CustomServerErrorException
     _fetch_henkilo_data_by_oid(henkilo_oid, henkilo.id)
 
@@ -213,7 +209,7 @@ def fetch_and_update_modified_henkilot():
             except Henkilo.DoesNotExist:
                 continue  # This is ok. No further actions needed.
             except Henkilo.MultipleObjectsReturned as e:  # This should never be possible
-                logger.error("Multiple of henkilot was found with henkilo_oid: " + oppijanumero)
+                logger.error('Multiple of henkilot was found with henkilo_oid: ' + oppijanumero)
                 [_create_or_update_henkilo_obj_batch_error(henkilo, e, BatchErrorType.HENKILOTIETO_UPDATE)
                  for henkilo
                  in Henkilo.objects.filter(henkilo_oid=oppijanumero)
@@ -297,7 +293,7 @@ def _get_huoltajat_from_onr(henkilo_id):
                        '1.2.246.562.24.88057101673',
                        ]
     henkilo_lapsi_obj = Henkilo.objects.get(id=henkilo_id)
-    if (henkilo_lapsi_obj.henkilo_oid == "" or
+    if (henkilo_lapsi_obj.henkilo_oid == '' or
             (not settings.PRODUCTION_ENV and henkilo_lapsi_obj.henkilo_oid not in test_lapsi_oids)):
         return []
 
@@ -316,7 +312,7 @@ def fetch_huoltajat():
     no_of_lapset_without_huoltajuussuhteet = lapset_without_huoltajuussuhteet.count()
     logger.info(f'Number of lapset without huoltajuussuhteet: {no_of_lapset_without_huoltajuussuhteet}.')
     for henkilo_obj in lapset_without_huoltajuussuhteet:
-        if henkilo_obj.henkilo_oid != "":
+        if henkilo_obj.henkilo_oid != '':
             try:
                 _fetch_lapsen_huoltajat(henkilo_obj.id)
             except IntegrityError as ie:
@@ -343,32 +339,20 @@ def _fetch_lapsen_huoltajat(henkilo_id):
 
 @transaction.atomic
 def _update_lapsi_huoltaja(lapsi_id, huoltaja_master_data):
-    varda_system_user = User.objects.get(username='varda_system')
     lapsi_obj = Lapsi.objects.get(id=lapsi_id)
     # Oid should be used alone as unique identifier in query since hetu can change
     oid = huoltaja_master_data['oidHenkilo']
-    default_henkilo = {
-        'henkilo_oid': oid,
-        'changed_by': varda_system_user,
-    }
+    default_henkilo = {'henkilo_oid': oid}
     # Create henkilo stub for updating if not already exist
     henkilo_huoltaja_obj, henkilo_huoltaja_created = (Henkilo.objects.select_for_update(nowait=True)
                                                       .filter(henkilo_oid=oid)
-                                                      .get_or_create(defaults=default_henkilo)
-                                                      )
+                                                      .get_or_create(defaults=default_henkilo))
     # Update henkilo
     _fetch_henkilo_data_by_oid(oid, henkilo_huoltaja_obj.id, huoltaja_master_data)
 
-    huoltaja_obj, huoltaja_created = (Huoltaja.objects
-                                      .get_or_create(henkilo=henkilo_huoltaja_obj,
-                                                     defaults={
-                                                         'changed_by': varda_system_user,
-                                                     })
-                                      )
+    huoltaja_obj, huoltaja_created = Huoltaja.objects.get_or_create(henkilo=henkilo_huoltaja_obj)
 
     Huoltajuussuhde.objects.update_or_create(lapsi=lapsi_obj,
                                              huoltaja=huoltaja_obj,
-                                             defaults={
-                                                 'changed_by': varda_system_user,
-                                                 'voimassa_kytkin': True,  # ONR returns only valid huoltaja
-                                             })
+                                             # ONR returns only valid huoltaja
+                                             defaults={'voimassa_kytkin': True})

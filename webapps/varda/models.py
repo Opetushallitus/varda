@@ -43,6 +43,29 @@ class AbstractModel(models.Model):
         return cls.__name__.lower()
 
 
+def get_history_user(request, **kwargs):
+    """
+    Override simple_history.models._default_get_user. If user cannot be determined
+    from authenticated request, set user as varda_system user (e.g. periodic tasks).
+    """
+    try:
+        user = request.user
+    except AttributeError:
+        user = None
+
+    if not user:
+        user = User.objects.filter(username='varda_system').first()
+    return user
+
+
+class HistoryAbstractModel(AbstractModel):
+    history = HistoricalRecords(inherit=True, get_user=get_history_user)
+    audit_loggable = True
+
+    class Meta:
+        abstract = True
+
+
 class UniqueLahdejarjestelmaTunnisteMixin:
     def save(self, *args, **kwargs):
         try:
@@ -58,7 +81,7 @@ class CustomOrganisaatioManager(models.Manager):
         return super().get_queryset().filter(organisaatiotyyppi__contains=[Organisaatiotyyppi.VAKAJARJESTAJA.value])
 
 
-class Organisaatio(AbstractModel):
+class Organisaatio(HistoryAbstractModel):
     nimi = models.CharField(max_length=400, blank=False)
     y_tunnus = models.CharField(max_length=20, unique=False, validators=[validators.validate_y_tunnus])
     organisaatio_oid = models.CharField(max_length=50, unique=True, blank=True, null=True, validators=[validators.validate_organisaatio_oid])
@@ -81,23 +104,9 @@ class Organisaatio(AbstractModel):
     organisaatiotyyppi = ArrayField(models.CharField(max_length=50), default=list)
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='vakajarjestajat', on_delete=models.PROTECT)
-    history = HistoricalRecords()
 
     objects = models.Manager()
     vakajarjestajat = CustomOrganisaatioManager()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     @property
     def toimipaikat_top(self):
@@ -120,7 +129,7 @@ class Organisaatio(AbstractModel):
         verbose_name_plural = 'organisaatiot'
 
 
-class Toimipaikka(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
+class Toimipaikka(UniqueLahdejarjestelmaTunnisteMixin, HistoryAbstractModel):
     vakajarjestaja = models.ForeignKey(Organisaatio, related_name='toimipaikat', on_delete=models.PROTECT)
     nimi = models.CharField(max_length=200, blank=False)
     nimi_sv = models.CharField(max_length=200, blank=True)
@@ -150,20 +159,6 @@ class Toimipaikka(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
     tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='toimipaikat', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     @property
     def varhaiskasvatussuhteet_top(self):
@@ -190,7 +185,7 @@ class Toimipaikka(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
         ]
 
 
-class ToiminnallinenPainotus(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
+class ToiminnallinenPainotus(UniqueLahdejarjestelmaTunnisteMixin, HistoryAbstractModel):
     toimipaikka = models.ForeignKey(Toimipaikka, related_name='toiminnallisetpainotukset', on_delete=models.PROTECT)
     toimintapainotus_koodi = models.CharField(max_length=6, blank=False, null=False, validators=[validators.validate_toimintapainotus_koodi])
     alkamis_pvm = models.DateField(blank=False, null=False)
@@ -199,20 +194,6 @@ class ToiminnallinenPainotus(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel)
     tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='toiminnallisetpainotukset', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     class Meta:
         verbose_name_plural = 'toiminnalliset painotukset'
@@ -223,7 +204,7 @@ class ToiminnallinenPainotus(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel)
         ]
 
 
-class KieliPainotus(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
+class KieliPainotus(UniqueLahdejarjestelmaTunnisteMixin, HistoryAbstractModel):
     toimipaikka = models.ForeignKey(Toimipaikka, related_name='kielipainotukset', on_delete=models.PROTECT)
     kielipainotus_koodi = models.CharField(max_length=4, blank=False, null=False, validators=[validators.validate_kieli_koodi])
     alkamis_pvm = models.DateField(blank=False, null=False)
@@ -232,20 +213,6 @@ class KieliPainotus(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
     tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='kielipainotukset', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     class Meta:
         verbose_name_plural = 'kielipainotukset'
@@ -256,7 +223,7 @@ class KieliPainotus(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
         ]
 
 
-class Henkilo(AbstractModel):
+class Henkilo(HistoryAbstractModel):
     henkilotunnus = models.CharField(max_length=120, blank=True)  # Currently encrypted hetu-length is 100 characters
     henkilotunnus_unique_hash = models.CharField(max_length=80, blank=True)  # This is used for checking uniqueness (64 characters)
     syntyma_pvm = models.DateField(default=None, blank=True, null=True)
@@ -275,20 +242,6 @@ class Henkilo(AbstractModel):
     postitoimipaikka = models.CharField(max_length=100, blank=True)
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='henkilot', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     def save(self, *args, **kwargs):
         try:
@@ -316,7 +269,7 @@ class Henkilo(AbstractModel):
         ]
 
 
-class Lapsi(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
+class Lapsi(UniqueLahdejarjestelmaTunnisteMixin, HistoryAbstractModel):
     henkilo = models.ForeignKey(Henkilo, related_name='lapsi', on_delete=models.PROTECT)
     vakatoimija = models.ForeignKey(Organisaatio, related_name='lapsi_vakatoimija', on_delete=models.PROTECT, null=True)
     oma_organisaatio = models.ForeignKey(Organisaatio, related_name='paos_lapsi_oma_organisaatio', on_delete=models.PROTECT, null=True)
@@ -326,20 +279,6 @@ class Lapsi(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
     tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='lapset', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     @property
     def varhaiskasvatuspaatokset_top(self):
@@ -383,26 +322,16 @@ class Lapsi(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
         ]
 
 
-class Huoltaja(AbstractModel):
+class Huoltaja(HistoryAbstractModel):
     henkilo = models.OneToOneField(Henkilo, related_name='huoltaja', on_delete=models.PROTECT)
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='huoltajat', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     class Meta:
         verbose_name_plural = 'huoltajat'
 
 
-class Varhaiskasvatuspaatos(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
+class Varhaiskasvatuspaatos(UniqueLahdejarjestelmaTunnisteMixin, HistoryAbstractModel):
     lapsi = models.ForeignKey(Lapsi, related_name='varhaiskasvatuspaatokset', on_delete=models.PROTECT)
     vuorohoito_kytkin = models.BooleanField(default=False)
     pikakasittely_kytkin = models.BooleanField(default=False)
@@ -418,20 +347,6 @@ class Varhaiskasvatuspaatos(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
     tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='varhaiskasvatuspaatokset', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     @property
     def varhaiskasvatussuhteet_top(self):
@@ -447,7 +362,7 @@ class Varhaiskasvatuspaatos(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
         ]
 
 
-class Varhaiskasvatussuhde(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
+class Varhaiskasvatussuhde(UniqueLahdejarjestelmaTunnisteMixin, HistoryAbstractModel):
     toimipaikka = models.ForeignKey(Toimipaikka, related_name='varhaiskasvatussuhteet', on_delete=models.PROTECT)
     varhaiskasvatuspaatos = models.ForeignKey(Varhaiskasvatuspaatos, related_name='varhaiskasvatussuhteet', on_delete=models.PROTECT)
     alkamis_pvm = models.DateField(blank=False, null=False, validators=[validators.validate_vaka_date])
@@ -456,20 +371,6 @@ class Varhaiskasvatussuhde(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
     tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='varhaiskasvatussuhteet', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     class Meta:
         verbose_name_plural = 'varhaiskasvatussuhteet'
@@ -480,7 +381,7 @@ class Varhaiskasvatussuhde(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
         ]
 
 
-class Maksutieto(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
+class Maksutieto(UniqueLahdejarjestelmaTunnisteMixin, HistoryAbstractModel):
     yksityinen_jarjestaja = models.BooleanField(default=False)
     maksun_peruste_koodi = models.CharField(max_length=5, blank=False, validators=[validators.validate_maksun_peruste_koodi])
     palveluseteli_arvo = models.DecimalField(max_digits=6, decimal_places=2, default=0.00, blank=True, null=True, validators=[MinValueValidator(0.0)])
@@ -492,20 +393,6 @@ class Maksutieto(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
     tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='maksutiedot', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     class Meta:
         verbose_name_plural = 'maksutiedot'
@@ -516,53 +403,29 @@ class Maksutieto(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
         ]
 
 
-class Huoltajuussuhde(AbstractModel):
+class Huoltajuussuhde(HistoryAbstractModel):
     lapsi = models.ForeignKey(Lapsi, related_name='huoltajuussuhteet', on_delete=models.PROTECT)
     huoltaja = models.ForeignKey(Huoltaja, related_name='huoltajuussuhteet', on_delete=models.PROTECT)
     voimassa_kytkin = models.BooleanField(default=True)
     maksutiedot = models.ManyToManyField(Maksutieto, related_name='huoltajuussuhteet', through='MaksutietoHuoltajuussuhde', blank=True)
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='huoltajuussuhteet', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     class Meta:
         verbose_name_plural = 'huoltajuussuhteet'
 
 
-class MaksutietoHuoltajuussuhde(AbstractModel):
+class MaksutietoHuoltajuussuhde(HistoryAbstractModel):
     huoltajuussuhde = models.ForeignKey(Huoltajuussuhde, related_name='maksutiedot_huoltajuussuhteet', on_delete=models.PROTECT)
     maksutieto = models.ForeignKey(Maksutieto, related_name='maksutiedot_huoltajuussuhteet', on_delete=models.PROTECT)
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='maksutiedot_huoltajuussuhteet', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     class Meta:
         verbose_name_plural = 'maksutiedot huoltajuussuhteet'
 
 
-class PaosToiminta(AbstractModel):
+class PaosToiminta(HistoryAbstractModel):
     oma_organisaatio = models.ForeignKey(Organisaatio, related_name='paos_toiminnat_oma_organisaatio',
                                          on_delete=models.PROTECT)
     paos_organisaatio = models.ForeignKey(Organisaatio, related_name='paos_toiminnat_paos_organisaatio',
@@ -572,20 +435,6 @@ class PaosToiminta(AbstractModel):
     voimassa_kytkin = models.BooleanField(default=True)
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='paos_toiminnat', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     class Meta:
         verbose_name_plural = 'Paos-toiminnat'
@@ -597,27 +446,13 @@ class PaosToiminta(AbstractModel):
         ]
 
 
-class PaosOikeus(AbstractModel):
+class PaosOikeus(HistoryAbstractModel):
     jarjestaja_kunta_organisaatio = models.ForeignKey(Organisaatio, related_name='paos_oikeudet_jarjestaja_kunta', on_delete=models.PROTECT)
     tuottaja_organisaatio = models.ForeignKey(Organisaatio, related_name='paos_oikeudet_tuottaja', on_delete=models.PROTECT)
     tallentaja_organisaatio = models.ForeignKey(Organisaatio, related_name='paos_oikeudet_tallentaja_organisaatio', on_delete=models.PROTECT)
     voimassa_kytkin = models.BooleanField(default=False)
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='paos_oikeudet', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     class Meta:
         verbose_name_plural = 'Paos-oikeudet'
@@ -629,27 +464,13 @@ class PaosOikeus(AbstractModel):
         ]
 
 
-class Tyontekija(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
+class Tyontekija(UniqueLahdejarjestelmaTunnisteMixin, HistoryAbstractModel):
     henkilo = models.ForeignKey(Henkilo, related_name='tyontekijat', on_delete=models.PROTECT)
     vakajarjestaja = models.ForeignKey(Organisaatio, related_name='tyontekijat', on_delete=models.PROTECT)
     lahdejarjestelma = models.CharField(max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
     tunniste = models.CharField(max_length=120, null=True, blank=True, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='tyontekijat', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     def save(self, *args, **kwargs):
         try:
@@ -669,7 +490,7 @@ class Tyontekija(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
         ]
 
 
-class TilapainenHenkilosto(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
+class TilapainenHenkilosto(UniqueLahdejarjestelmaTunnisteMixin, HistoryAbstractModel):
     vakajarjestaja = models.ForeignKey(Organisaatio, related_name='tilapainen_henkilosto', on_delete=models.PROTECT)
     kuukausi = models.DateField()
     tuntimaara = models.DecimalField(max_digits=8, decimal_places=2)
@@ -678,20 +499,6 @@ class TilapainenHenkilosto(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
     tunniste = models.CharField(max_length=120, null=True, blank=True, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='tilapainen_henkilosto', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     class Meta:
         verbose_name_plural = 'tilapainen henkilosto'
@@ -702,26 +509,12 @@ class TilapainenHenkilosto(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
         ]
 
 
-class Tutkinto(AbstractModel):
+class Tutkinto(HistoryAbstractModel):
     henkilo = models.ForeignKey(Henkilo, related_name='tutkinnot', on_delete=models.PROTECT)
     vakajarjestaja = models.ForeignKey(Organisaatio, related_name='tutkinnot', on_delete=models.PROTECT, null=True, blank=True)
     tutkinto_koodi = models.CharField(max_length=10, validators=[validators.validate_tutkinto_koodi])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='tutkinnot', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     def save(self, *args, **kwargs):
         try:
@@ -738,7 +531,7 @@ class Tutkinto(AbstractModel):
         ]
 
 
-class Palvelussuhde(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
+class Palvelussuhde(UniqueLahdejarjestelmaTunnisteMixin, HistoryAbstractModel):
     tyontekija = models.ForeignKey(Tyontekija, related_name='palvelussuhteet', on_delete=models.PROTECT)
     tyosuhde_koodi = models.CharField(max_length=50, validators=[validators.validate_tyosuhde_koodi])
     tyoaika_koodi = models.CharField(max_length=50, validators=[validators.validate_tyoaika_koodi])
@@ -748,23 +541,8 @@ class Palvelussuhde(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
     paattymis_pvm = models.DateField(default=None, blank=True, null=True, validators=[validators.validate_palvelussuhde_paattymis_pvm])
     lahdejarjestelma = models.CharField(max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
     tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
-
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='palvelussuhteet', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     class Meta:
         verbose_name_plural = 'palvelussuhteet'
@@ -775,7 +553,7 @@ class Palvelussuhde(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
         ]
 
 
-class Tyoskentelypaikka(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
+class Tyoskentelypaikka(UniqueLahdejarjestelmaTunnisteMixin, HistoryAbstractModel):
     palvelussuhde = models.ForeignKey(Palvelussuhde, related_name='tyoskentelypaikat', on_delete=models.PROTECT)
     toimipaikka = models.ForeignKey(Toimipaikka, blank=True, null=True, related_name='tyoskentelypaikat', on_delete=models.PROTECT)
     tehtavanimike_koodi = models.CharField(max_length=120, validators=[validators.validate_tehtavanimike_koodi])
@@ -785,23 +563,8 @@ class Tyoskentelypaikka(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
     paattymis_pvm = models.DateField(default=None, blank=True, null=True)
     lahdejarjestelma = models.CharField(max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
     tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
-
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='tyoskentelypaikat', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     class Meta:
         verbose_name_plural = 'tyoskentelypaikat'
@@ -816,29 +579,14 @@ def paattymis_pvm_default():
     return '9999-01-01'
 
 
-class PidempiPoissaolo(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
+class PidempiPoissaolo(UniqueLahdejarjestelmaTunnisteMixin, HistoryAbstractModel):
     palvelussuhde = models.ForeignKey(Palvelussuhde, related_name='pidemmatpoissaolot', on_delete=models.PROTECT)
     alkamis_pvm = models.DateField()
     paattymis_pvm = models.DateField(default=paattymis_pvm_default, validators=[validators.validate_pidempi_poissaolo_paattymis_pvm])
     lahdejarjestelma = models.CharField(max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
     tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
-
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='pidemmatpoissaolot', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     class Meta:
         verbose_name_plural = 'pidemmatpoissaolot'
@@ -849,7 +597,7 @@ class PidempiPoissaolo(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
         ]
 
 
-class Taydennyskoulutus(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
+class Taydennyskoulutus(UniqueLahdejarjestelmaTunnisteMixin, HistoryAbstractModel):
     tyontekijat = models.ManyToManyField(Tyontekija, through='TaydennyskoulutusTyontekija', related_name='taydennyskoulutukset')
     nimi = models.CharField(max_length=120)
     suoritus_pvm = models.DateField(validators=[validators.validate_taydennyskoulutus_suoritus_pvm])
@@ -859,20 +607,6 @@ class Taydennyskoulutus(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
     tunniste = models.CharField(null=True, blank=True, max_length=120, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='taydennyskoulutukset', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     class Meta:
         verbose_name_plural = 'taydennyskoulutukset'
@@ -883,26 +617,12 @@ class Taydennyskoulutus(UniqueLahdejarjestelmaTunnisteMixin, AbstractModel):
         ]
 
 
-class TaydennyskoulutusTyontekija(AbstractModel):
+class TaydennyskoulutusTyontekija(HistoryAbstractModel):
     tyontekija = models.ForeignKey(Tyontekija, related_name='taydennyskoulutukset_tyontekijat', on_delete=models.PROTECT)
     taydennyskoulutus = models.ForeignKey(Taydennyskoulutus, related_name='taydennyskoulutukset_tyontekijat', on_delete=models.PROTECT)
     tehtavanimike_koodi = models.CharField(max_length=20, validators=[validators.validate_tehtavanimike_koodi])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', related_name='taydennyskoulutukset_tyontekijat', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     class Meta:
         verbose_name_plural = 'taydennyskoulutukset tyontekijat'
@@ -969,7 +689,7 @@ class LoginCertificate(AbstractModel):
         verbose_name_plural = 'Login certificates'
 
 
-class YearlyReportSummary(AbstractModel):
+class YearlyReportSummary(HistoryAbstractModel):
     vakajarjestaja = models.ForeignKey(Organisaatio, null=True, related_name='yearlyreportsummary', on_delete=models.PROTECT)
     status = models.CharField(max_length=50)
     tilasto_pvm = models.DateField()
@@ -1008,20 +728,6 @@ class YearlyReportSummary(AbstractModel):
     paos_maksutieto_mp03_count = models.IntegerField(null=True)
     luonti_pvm = models.DateTimeField(auto_now_add=True)
     muutos_pvm = models.DateTimeField(auto_now=True)
-    changed_by = models.ForeignKey('auth.User', null=True, related_name='yearlyreportsummary', on_delete=models.PROTECT)
-    history = HistoricalRecords()
-
-    @property
-    def audit_loggable(self):
-        return True
-
-    @property
-    def _history_user(self):
-        return self.changed_by
-
-    @_history_user.setter
-    def _history_user(self, value):
-        self.changed_by = value
 
     class Meta:
         verbose_name_plural = 'yearlyreportsummaries'

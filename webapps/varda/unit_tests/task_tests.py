@@ -99,8 +99,8 @@ class TaskTests(TestCase):
         henkilo_3_id = json.loads(resp_3.content)['id']
         henkilo_id_list.append(henkilo_3_id)
 
-        huoltaja = Huoltaja.objects.create(henkilo_id=henkilo_3_id, changed_by_id=1)
-        Huoltajuussuhde.objects.create(huoltaja=huoltaja, lapsi_id=lapsi_id, changed_by_id=1)
+        huoltaja = Huoltaja.objects.create(henkilo_id=henkilo_3_id)
+        Huoltajuussuhde.objects.create(huoltaja=huoltaja, lapsi_id=lapsi_id)
 
         # Create Henkilo with Tyontekija
         responses.reset()
@@ -138,8 +138,8 @@ class TaskTests(TestCase):
         resp_5_2 = client_tyontekija.post('/api/henkilosto/v1/tyontekijat/', tyontekija_json)
         assert_status_code(resp_5_2, 201)
 
-        huoltaja = Huoltaja.objects.create(henkilo_id=henkilo_5_id, changed_by_id=1)
-        Huoltajuussuhde.objects.create(huoltaja=huoltaja, lapsi_id=lapsi_id, changed_by_id=1)
+        huoltaja = Huoltaja.objects.create(henkilo_id=henkilo_5_id)
+        Huoltajuussuhde.objects.create(huoltaja=huoltaja, lapsi_id=lapsi_id)
 
         delete_henkilot_without_relations_task.delay()
         henkilo_qs = Henkilo.objects.filter(id__in=henkilo_id_list)

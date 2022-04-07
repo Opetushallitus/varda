@@ -448,14 +448,12 @@ class VardaHenkilostoViewSetTests(TestCase):
     @mock_date_decorator_factory(datetime_path, '2020-12-01')
     def test_api_push_tilapainen_henkilosto_delete(self):
         # No user has permissions to this
-        admin_user = User.objects.get(username='credadmin')
         vakajarjestaja_tester = Organisaatio.objects.filter(nimi='Tester organisaatio')[0]
         tilapainen = TilapainenHenkilosto.objects.create(vakajarjestaja=vakajarjestaja_tester,
                                                          kuukausi='2019-09-01',
                                                          tuntimaara=10.0,
                                                          tyontekijamaara=10,
-                                                         lahdejarjestelma='1',
-                                                         changed_by=admin_user)
+                                                         lahdejarjestelma='1')
 
         client = SetUpTestClient('tilapaiset_tallentaja').client()
 

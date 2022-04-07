@@ -4,7 +4,6 @@ import json
 import logging
 import uuid
 
-from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import F, DurationField, ExpressionWrapper
 from django.utils import timezone
@@ -72,8 +71,6 @@ def update_vakajarjestaja(vakajarjestaja, result_organisaatiopalvelu):
     # paattymis_pvm can have a null-value in VARDA
     vakajarjestaja.paattymis_pvm = paattymis_pvm or None
     if vakajarjestaja_changed(vakajarjestaja, vakajarjestaja_original):
-        varda_system_user = User.objects.get(username='varda_system')
-        vakajarjestaja.changed_by = varda_system_user
         vakajarjestaja.save()
 
 
@@ -110,20 +107,14 @@ def fetch_organisaatio_info(vakajarjestaja_id=None):
             update_vakajarjestaja(vakajarjestaja, result_organisaatiopalvelu)
 
 
-def create_organization_using_oid(organisaatio_oid, organisaatiotyyppi, user_id, integraatio_organisaatio=None):
+def create_organization_using_oid(organisaatio_oid, organisaatiotyyppi, integraatio_organisaatio=None):
     from varda.tasks import update_oph_staff_to_vakajarjestaja_groups
 
     if not integraatio_organisaatio:
         integraatio_organisaatio = []
-    try:
-        user = User.objects.get(id=user_id)
-    except User.DoesNotExist:
-        logger.error('User does not exist: user_id' + str(user_id))
-        return None
 
     organization_tuple = Organisaatio.objects.get_or_create(organisaatio_oid=organisaatio_oid,
                                                             defaults={
-                                                                'changed_by': user,
                                                                 'integraatio_organisaatio': integraatio_organisaatio
                                                             })
     organization_obj = organization_tuple[0]
@@ -140,14 +131,14 @@ def create_organization_using_oid(organisaatio_oid, organisaatiotyyppi, user_id,
         logger.warning('Vakajarjestaja was already created with organisaatio-oid: ' + organisaatio_oid)
 
 
-def get_vakajarjestaja(organisaatio_oid, user_id):
+def get_vakajarjestaja(organisaatio_oid):
     parent_oid = get_parent_oid(organisaatio_oid)
     if parent_oid is None:
         logger.error('Did not get parent_oid for: ' + organisaatio_oid)
     else:
         vakajarjestaja_query = Organisaatio.objects.filter(organisaatio_oid=parent_oid)
         if len(vakajarjestaja_query) == 0:
-            create_organization_using_oid(parent_oid, Organisaatiotyyppi.VAKAJARJESTAJA.value, user_id)
+            create_organization_using_oid(parent_oid, Organisaatiotyyppi.VAKAJARJESTAJA.value)
             new_vakajarjestaja_query = Organisaatio.objects.filter(organisaatio_oid=parent_oid)
             if len(new_vakajarjestaja_query) == 1:
                 return new_vakajarjestaja_query[0]
@@ -255,8 +246,7 @@ def create_kielipainotus(toimipaikka_id, kieli):
     kielipainotus = KieliPainotus.objects.create(toimipaikka=toimipaikka_obj,
                                                  kielipainotus_koodi=get_koodi_from_uri(kieli['kielipainotus']).upper(),
                                                  alkamis_pvm=kieli['alkupvm'],
-                                                 paattymis_pvm=kieli.get('loppupvm', None),
-                                                 changed_by=toimipaikka_obj.changed_by)
+                                                 paattymis_pvm=kieli.get('loppupvm', None))
     assign_organisation_group_permissions(KieliPainotus,
                                           kielipainotus,
                                           toimipaikka_obj.vakajarjestaja.organisaatio_oid,
@@ -272,8 +262,7 @@ def create_toiminnallinenpainotus(toimipaikka_id, toiminnallinen):
     toimintapainotus = ToiminnallinenPainotus.objects.create(toimipaikka=toimipaikka_obj,
                                                              toimintapainotus_koodi=painotus,
                                                              alkamis_pvm=alkupvm,
-                                                             paattymis_pvm=loppupvm,
-                                                             changed_by=toimipaikka_obj.changed_by)
+                                                             paattymis_pvm=loppupvm)
     assign_organisation_group_permissions(ToiminnallinenPainotus,
                                           toimintapainotus,
                                           toimipaikka_obj.vakajarjestaja.organisaatio_oid,
@@ -281,14 +270,9 @@ def create_toiminnallinenpainotus(toimipaikka_id, toiminnallinen):
     return toimintapainotus
 
 
-def create_toimipaikka_using_oid(toimipaikka_organisaatio_oid, user_id):
-    try:
-        user = User.objects.get(id=user_id)
-    except User.DoesNotExist:
-        logger.error('User does not exist: user_id' + str(user_id))
-        return
+def create_toimipaikka_using_oid(toimipaikka_organisaatio_oid):
 
-    vakajarjestaja = get_vakajarjestaja(toimipaikka_organisaatio_oid, user_id)
+    vakajarjestaja = get_vakajarjestaja(toimipaikka_organisaatio_oid)
     if vakajarjestaja is None:
         return
 
@@ -305,7 +289,6 @@ def create_toimipaikka_using_oid(toimipaikka_organisaatio_oid, user_id):
                                                               vakajarjestaja=vakajarjestaja,
                                                               defaults={
                                                                   'nimi': uuids,
-                                                                  'changed_by': user,
                                                                   'asiointikieli_koodi': ['FI'],
                                                                   'jarjestamismuoto_koodi': [''],
                                                                   'varhaiskasvatuspaikat': 1,
@@ -831,8 +814,6 @@ def _update_toimipaikka_chunk(oid_chunk):
                          toimipaikka.organisaatio_oid)
         else:
             _fill_toimipaikka_data(organisaatio, toimipaikka)
-            varda_system_user = User.objects.get(username='varda_system')
-            toimipaikka.changed_by = varda_system_user
             toimipaikka.save()
 
 

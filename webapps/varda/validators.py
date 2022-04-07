@@ -475,7 +475,7 @@ def fill_missing_fields_for_validations(data, instance):
     :return:
     """
     instance_dictionary = model_to_dict(instance)
-    excluded_fields = ['muutos_pvm', 'changed_by', ]
+    excluded_fields = ('muutos_pvm',)
     for field in instance_dictionary:
         if field not in data and field not in excluded_fields:
             data[field] = getattr(instance, field)
@@ -490,7 +490,7 @@ def validate_instance_uniqueness(model, data, error, instance_id=None, ignore_fi
     :param instance_id: existing instance ID
     :param ignore_fields: Model specific fields that are excluded in validation
     """
-    ignore_fields_list = (('id', 'lahdejarjestelma', 'tunniste', 'luonti_pvm', 'muutos_pvm', 'changed_by',) +
+    ignore_fields_list = (('id', 'lahdejarjestelma', 'tunniste', 'luonti_pvm', 'muutos_pvm',) +
                           ignore_fields)
     qs_filter = Q()
     for model_field in model._meta.get_fields():

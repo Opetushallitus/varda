@@ -115,7 +115,6 @@ class VardaPaosTests(TestCase):
         client_tester9 = SetUpTestClient('tester9').client()  # huoltaja_tallentaja toimipaikka_5
         client_pk_vakajarjestaja_1 = SetUpTestClient('pkvakajarjestaja1').client()  # vakajarjestaja_1 palvelukayttaja
         client_pk_vakajarjestaja_2 = SetUpTestClient('pkvakajarjestaja2').client()  # vakajarjestaja_2 palvelukayttaja
-        user_admin = User.objects.get(username='credadmin')
 
         data_henkilo = {
             'henkilotunnus': '071119A884T',
@@ -169,9 +168,9 @@ class VardaPaosTests(TestCase):
         henkilo_huoltaja = Henkilo.objects.get(id=14)
         lapsi_obj = Lapsi.objects.get(id=lapsi_id)
 
-        huoltaja_obj = Huoltaja.objects.create(henkilo=henkilo_huoltaja, changed_by=user_admin)
+        huoltaja_obj = Huoltaja.objects.create(henkilo=henkilo_huoltaja)
 
-        Huoltajuussuhde.objects.create(huoltaja=huoltaja_obj, lapsi=lapsi_obj, changed_by=user_admin)
+        Huoltajuussuhde.objects.create(huoltaja=huoltaja_obj, lapsi=lapsi_obj)
 
         data_maksutieto = {
             'huoltajat': [

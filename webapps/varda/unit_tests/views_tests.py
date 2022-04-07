@@ -307,7 +307,6 @@ class VardaViewsTests(TestCase):
         self.assertEqual(json.loads(resp.content)['count'], 3)
 
     def test_post_vakajarjestaja_with_invalid_yritysmuoto(self):
-        user = User.objects.get(username='tester')
         with self.assertRaises(ValidationErrorRest) as validation_error:
             organisaatio = Organisaatio.objects.create(
                 nimi='Tester200 organisaatio',
@@ -326,8 +325,7 @@ class VardaViewsTests(TestCase):
                 integraatio_organisaatio=[],
                 organisaatiotyyppi=[Organisaatiotyyppi.VAKAJARJESTAJA.value],
                 alkamis_pvm='2017-02-03',
-                paattymis_pvm=None,
-                changed_by=user
+                paattymis_pvm=None
             )
             organisaatio.full_clean()
             organisaatio.save()
@@ -2370,7 +2368,6 @@ class VardaViewsTests(TestCase):
         * Create a vakapaatos for 2021- and link to a toimipaikka
         * Give permissions to each of these for the tester user's org
         """
-        adminuser = User.objects.filter(username='credadmin')[0]
         client = SetUpTestClient('tester').client()
         oid_of_client = '1.2.246.562.10.9395737548810'
 
@@ -2383,13 +2380,11 @@ class VardaViewsTests(TestCase):
             henkilo_oid='1.2.246.562.24.158201550073654912',
             etunimet='Juniori',
             kutsumanimi='Juniori',
-            sukunimi='Nieminen',
-            changed_by=adminuser
+            sukunimi='Nieminen'
         )
         vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
         lapsi = Lapsi.objects.create(
             henkilo=lapsi_henkilo,
-            changed_by=adminuser,
             lahdejarjestelma='1',
             vakatoimija=vakajarjestaja,
         )
@@ -2402,8 +2397,7 @@ class VardaViewsTests(TestCase):
             henkilo_oid='1.2.246.562.24.158201550073654911',
             etunimet='Seniori',
             kutsumanimi='Seniori',
-            sukunimi='Nieminen',
-            changed_by=adminuser
+            sukunimi='Nieminen'
         )
         huoltaja_obj = {
             'henkilotunnus': huoltaja_hetu,
@@ -2413,16 +2407,14 @@ class VardaViewsTests(TestCase):
         }
         assign_object_level_permissions(oid_of_client, Henkilo, huoltaja_henkilo)
         huoltaja = Huoltaja.objects.create(
-            henkilo=huoltaja_henkilo,
-            changed_by=adminuser
+            henkilo=huoltaja_henkilo
         )
         assign_object_level_permissions(oid_of_client, Huoltaja, huoltaja)
 
         hs = Huoltajuussuhde.objects.create(
             huoltaja=huoltaja,
             lapsi=lapsi,
-            voimassa_kytkin=True,
-            changed_by=adminuser
+            voimassa_kytkin=True
         )
         assign_object_level_permissions(oid_of_client, Huoltajuussuhde, hs)
 
@@ -2435,7 +2427,6 @@ class VardaViewsTests(TestCase):
             alkamis_pvm='2018-01-01',
             paattymis_pvm='2019-12-31',
             hakemus_pvm='2017-11-01',
-            changed_by=adminuser,
             lahdejarjestelma='1',
         )
         assign_object_level_permissions(oid_of_client, Varhaiskasvatuspaatos, vakapaatos)
@@ -2445,7 +2436,6 @@ class VardaViewsTests(TestCase):
             varhaiskasvatuspaatos=vakapaatos,
             alkamis_pvm='2018-01-01',
             paattymis_pvm='2019-12-31',
-            changed_by=adminuser,
             lahdejarjestelma='1',
         )
         assign_object_level_permissions(oid_of_client, Varhaiskasvatussuhde, vakasuhde)
@@ -2456,7 +2446,6 @@ class VardaViewsTests(TestCase):
             jarjestamismuoto_koodi='jm02',
             alkamis_pvm='2021-01-01',
             hakemus_pvm='2017-11-01',
-            changed_by=adminuser,
             lahdejarjestelma='1',
         )
         assign_object_level_permissions(oid_of_client, Varhaiskasvatuspaatos, vakapaatos_2)
@@ -2465,7 +2454,6 @@ class VardaViewsTests(TestCase):
             toimipaikka=toimipaikka_1,
             varhaiskasvatuspaatos=vakapaatos_2,
             alkamis_pvm='2021-01-01',
-            changed_by=adminuser,
             lahdejarjestelma='1',
         )
         assign_object_level_permissions(oid_of_client, Varhaiskasvatussuhde, vakasuhde_2)

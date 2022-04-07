@@ -90,7 +90,6 @@ class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
                 # If lahdejarjestelma or tunniste have been changed, update change
                 tyontekija_obj.lahdejarjestelma = validated_data['lahdejarjestelma']
                 tyontekija_obj.tunniste = validated_data.get('tunniste', None)
-                tyontekija_obj.changed_by = self.request.user
                 tyontekija_obj.save()
             # Make sure that ConflictError is not raised inside a transaction, otherwise permission changes
             # are rolled back
@@ -123,7 +122,7 @@ class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
 
         try:
             with transaction.atomic():
-                tyontekija_obj = serializer.save(changed_by=user)
+                tyontekija_obj = serializer.save()
 
                 vakajarjestaja_oid = vakajarjestaja.organisaatio_oid
                 assign_tyontekija_henkilo_permissions(tyontekija_obj, user=user, toimipaikka_oid=toimipaikka_oid)
@@ -148,9 +147,8 @@ class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
             raise validation_error
 
     def perform_update(self, serializer):
-        user = self.request.user
         with transaction.atomic():
-            tyontekija_obj = serializer.save(changed_by=user)
+            tyontekija_obj = serializer.save()
             cache.delete('organisaatio_yhteenveto_' + str(tyontekija_obj.vakajarjestaja.id))
 
     def perform_destroy(self, tyontekija):
@@ -349,15 +347,13 @@ class TilapainenHenkilostoViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
 
     def perform_create(self, serializer):
         with transaction.atomic():
-            user = self.request.user
-            tilapainenhenkilosto_obj = serializer.save(changed_by=user)
+            tilapainenhenkilosto_obj = serializer.save()
             vakajarjestaja_oid = tilapainenhenkilosto_obj.vakajarjestaja.organisaatio_oid
             assign_object_permissions_to_tilapainenhenkilosto_groups(vakajarjestaja_oid, TilapainenHenkilosto, tilapainenhenkilosto_obj)
             cache.delete('organisaatio_yhteenveto_' + str(tilapainenhenkilosto_obj.vakajarjestaja.id))
 
     def perform_update(self, serializer):
-        user = self.request.user
-        tilapainenhenkilosto = serializer.save(changed_by=user)
+        tilapainenhenkilosto = serializer.save()
         cache.delete('organisaatio_yhteenveto_' + str(tilapainenhenkilosto.vakajarjestaja.id))
 
     def perform_destroy(self, tilapainenhenkilosto):
@@ -406,10 +402,9 @@ class TutkintoViewSet(IncreasedModifyThrottleMixin, CreateModelMixin, RetrieveMo
             raise ConflictError(self.get_serializer(tutkinto).data, status_code=status.HTTP_200_OK)
 
     def perform_create(self, serializer):
-        user = self.request.user
         validated_data = serializer.validated_data
         self.return_henkilo_already_has_tutkinto(validated_data)
-        tutkinto = serializer.save(changed_by=user)
+        tutkinto = serializer.save()
         delete_cache_keys_related_model('henkilo', tutkinto.henkilo.id)
 
         vakajarjestaja_oid = validated_data['vakajarjestaja'].organisaatio_oid
@@ -535,8 +530,7 @@ class PalvelussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
         toimipaikka_oid = validated_data.get('toimipaikka') and validated_data.get('toimipaikka').organisaatio_oid
 
         with transaction.atomic():
-            user = self.request.user
-            palvelussuhde = serializer.save(changed_by=user)
+            palvelussuhde = serializer.save()
             delete_cache_keys_related_model('tyontekija', palvelussuhde.tyontekija.id)
             vakajarjestaja_oid = validated_data['tyontekija'].vakajarjestaja.organisaatio_oid
             assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Palvelussuhde, palvelussuhde)
@@ -545,9 +539,8 @@ class PalvelussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
             cache.delete('organisaatio_yhteenveto_' + str(palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def perform_update(self, serializer):
-        user = self.request.user
         self._throw_if_not_all_tyoskentelypaikka_permissions()
-        palvelussuhde = serializer.save(changed_by=user)
+        palvelussuhde = serializer.save()
         cache.delete('organisaatio_yhteenveto_' + str(palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def perform_destroy(self, palvelussuhde):
@@ -634,7 +627,7 @@ class TyoskentelypaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
             raise PermissionDenied({'errors': [ErrorMessages.TA001.value]})
 
         with transaction.atomic():
-            tyoskentelypaikka = serializer.save(changed_by=user)
+            tyoskentelypaikka = serializer.save()
             assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, Tyoskentelypaikka, tyoskentelypaikka)
             if tyoskentelypaikka.toimipaikka:
                 toimipaikka_oid = tyoskentelypaikka.toimipaikka.organisaatio_oid
@@ -658,15 +651,13 @@ class TyoskentelypaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
                 delete_cache_keys_related_model('toimipaikka', tyoskentelypaikka.toimipaikka.id)
 
     def perform_update(self, serializer):
-        user = self.request.user
-
         tyoskentelypaikka = self.get_object()
         validated_data = serializer.validated_data
         if tyoskentelypaikka.tehtavanimike_koodi != validated_data.get('tehtavanimike_koodi', None):
             # Validate relation to Taydennyskoulutus objects if tehtavanimike_koodi has been changed
             self._validate_relation_to_taydennyskoulutus(tyoskentelypaikka, ErrorMessages.TA015.value)
 
-        tyoskentelypaikka = serializer.save(changed_by=user)
+        tyoskentelypaikka = serializer.save()
         cache.delete('organisaatio_yhteenveto_' + str(tyoskentelypaikka.palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def perform_destroy(self, tyoskentelypaikka):
@@ -724,7 +715,7 @@ class PidempiPoissaoloViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixi
             vakajarjestaja_oid = palvelussuhde.tyontekija.vakajarjestaja.organisaatio_oid
             if not toimipaikka_tallentaja_pidempipoissaolo_has_perm_to_add(user, vakajarjestaja_oid, validated_data):
                 raise ValidationError({'tyoskentelypaikka': [ErrorMessages.PP002.value]})
-            pidempipoissaolo = serializer.save(changed_by=user)
+            pidempipoissaolo = serializer.save()
             assign_object_permissions_to_tyontekija_groups(vakajarjestaja_oid, PidempiPoissaolo, pidempipoissaolo)
 
             # Assign Toimipaikka permissions
@@ -738,7 +729,7 @@ class PidempiPoissaoloViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixi
             cache.delete('organisaatio_yhteenveto_' + str(pidempipoissaolo.palvelussuhde.tyontekija.vakajarjestaja.id))
 
     def perform_update(self, serializer):
-        pidempipoissaolo = serializer.save(changed_by=self.request.user)
+        pidempipoissaolo = serializer.save()
         delete_cache_keys_related_model('palvelussuhde', pidempipoissaolo.palvelussuhde.id)
         cache.delete('organisaatio_yhteenveto_' + str(pidempipoissaolo.palvelussuhde.tyontekija.vakajarjestaja.id))
 
@@ -818,8 +809,7 @@ class TaydennyskoulutusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
 
     def perform_create(self, serializer):
         with transaction.atomic():
-            user = self.request.user
-            taydennyskoulutus = serializer.save(changed_by=user)
+            taydennyskoulutus = serializer.save()
             tyontekijat = taydennyskoulutus.tyontekijat
             if tyontekijat.exists:
                 vakajarjestaja_oid = get_tyontekija_vakajarjestaja_oid(tyontekijat)
@@ -859,7 +849,7 @@ class TaydennyskoulutusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
             for tyontekija in taydennyskoulutus.tyontekijat.all():
                 delete_cache_keys_related_model('tyontekija', tyontekija.id)
 
-            updated_taydennyskoulutus = serializer.save(changed_by=user)
+            updated_taydennyskoulutus = serializer.save()
 
             # Delete cache keys from new tyontekijat (some may be added)
             tyontekijat = updated_taydennyskoulutus.tyontekijat.all()

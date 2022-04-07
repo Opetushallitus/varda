@@ -1303,14 +1303,14 @@ class YearlyReportingDataSummaryViewSet(GenericViewSet, CreateModelMixin):
             poiminta_pvm = poiminta_pvm or datetime.datetime.now(datetime.timezone.utc)
             clear_fields = [field for field in model_to_dict(summary_obj) if field not in ['id', 'vakajarjestaja', 'tilasto_pvm',
                                                                                            'status', 'poiminta_pvm', 'muutos_pvm',
-                                                                                           'luonti_pvm', 'changed_by']]
+                                                                                           'luonti_pvm']]
             for field in clear_fields:
                 setattr(summary_obj, field, None)
             summary_obj.status = ReportStatus.PENDING.value
             summary_obj.poiminta_pvm = poiminta_pvm
             summary_obj.save()
             vakajarjestaja_id = getattr(vakajarjestaja_obj, 'id', None)
-            create_yearly_reporting_summary.delay(user.id, vakajarjestaja_id, tilasto_pvm, poiminta_pvm, full_query, history_q)
+            create_yearly_reporting_summary.delay(vakajarjestaja_id, tilasto_pvm, poiminta_pvm, full_query, history_q)
 
         serializer = self.get_serializer(model_to_dict(summary_obj))
         headers = self.get_success_headers(serializer.data)

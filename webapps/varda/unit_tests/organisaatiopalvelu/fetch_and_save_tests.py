@@ -1,6 +1,7 @@
 import datetime
 
 import responses
+from django.contrib.auth.models import User
 from django.test import TestCase
 
 from varda import organisaatiopalvelu
@@ -42,23 +43,22 @@ class TestFetchAndSaveToimipaikkaData(TestCase):
         self.assertEqual(toimipaikka.kielipainotus_kytkin, True)
         self.assertEqual(toimipaikka.alkamis_pvm, datetime.date(2018, 10, 1))
         self.assertEqual(toimipaikka.paattymis_pvm, None)
-        # Not assigned in this method but when toimipaikka is created
-        self.assertEqual(toimipaikka.changed_by_id, 3)
+        self.assertEqual(toimipaikka.history.last().history_user_id, User.objects.get(username='varda_system').id)
         self.assertEqual(toimipaikka.hallinnointijarjestelma, str(Hallinnointijarjestelma.ORGANISAATIO))
 
         painotus_dicts = list((ToiminnallinenPainotus.objects
                                .all()
                                .filter(toimipaikka=toimipaikka)
-                               .values('toimintapainotus_koodi', 'alkamis_pvm', 'paattymis_pvm', 'changed_by_id')))
-        painotus_expected = [self.__create_painotus_dict('tp01', datetime.date(2018, 10, 1), None, 3)]
+                               .values('toimintapainotus_koodi', 'alkamis_pvm', 'paattymis_pvm')))
+        painotus_expected = [self.__create_painotus_dict('tp01', datetime.date(2018, 10, 1), None)]
         self.assertCountEqual(painotus_dicts, painotus_expected)
         kieli_dicts = list((KieliPainotus.objects
                             .all()
                             .filter(toimipaikka=toimipaikka)
-                            .values('kielipainotus_koodi', 'alkamis_pvm', 'paattymis_pvm', 'changed_by_id')))
+                            .values('kielipainotus_koodi', 'alkamis_pvm', 'paattymis_pvm')))
         kieli_expected = [
-            self.__create_kieli_dict('BH', datetime.date(2018, 10, 1), datetime.date(2018, 10, 18), 3),
-            self.__create_kieli_dict('BG', datetime.date(2018, 10, 1), None, 3)
+            self.__create_kieli_dict('BH', datetime.date(2018, 10, 1), datetime.date(2018, 10, 18)),
+            self.__create_kieli_dict('BG', datetime.date(2018, 10, 1), None)
         ]
         self.assertCountEqual(kieli_dicts, kieli_expected)
 
@@ -96,11 +96,11 @@ class TestFetchAndSaveToimipaikkaData(TestCase):
         vakajarjestaja = Organisaatio.objects.get(id=vakajarjestaja_id)
         self.assertEqual(vakajarjestaja.paattymis_pvm, datetime.date(2020, 8, 1))
 
-    def __create_painotus_dict(self, toimintapainotus_koodi, alkamis_pvm, paattymis_pvm, changed_by_id):
-        return {'toimintapainotus_koodi': toimintapainotus_koodi, 'alkamis_pvm': alkamis_pvm, 'paattymis_pvm': paattymis_pvm, 'changed_by_id': changed_by_id}
+    def __create_painotus_dict(self, toimintapainotus_koodi, alkamis_pvm, paattymis_pvm):
+        return {'toimintapainotus_koodi': toimintapainotus_koodi, 'alkamis_pvm': alkamis_pvm, 'paattymis_pvm': paattymis_pvm}
 
-    def __create_kieli_dict(self, kielipainotus_koodi, alkamis_pvm, paattymis_pvm, changed_by_id):
-        return {'kielipainotus_koodi': kielipainotus_koodi, 'alkamis_pvm': alkamis_pvm, 'paattymis_pvm': paattymis_pvm, 'changed_by_id': changed_by_id}
+    def __create_kieli_dict(self, kielipainotus_koodi, alkamis_pvm, paattymis_pvm):
+        return {'kielipainotus_koodi': kielipainotus_koodi, 'alkamis_pvm': alkamis_pvm, 'paattymis_pvm': paattymis_pvm}
 
     @staticmethod
     def get_organisaatio_json(vakajarjestaja=False, paattymis_pvm=None, oid='1.2.246.562.10.34683023489'):

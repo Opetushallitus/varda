@@ -212,20 +212,10 @@ def add_test_user_permissions():
 
 def create_vakajarjestajat():
     from django.conf import settings
-    from django.contrib.auth.models import User
     from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
     from varda.models import Organisaatio
     from varda.permission_groups import (assign_permissions_to_vakajarjestaja_obj,
                                          create_permission_groups_for_organisaatio)
-
-    tester_user = User.objects.get(username='tester')
-    tester2_user = User.objects.get(username='tester2')
-    varda_testi_user = User.objects.get(username='varda-testi')
-    tester_e2e_user = User.objects.get(username='tester-e2e')
-    tester10_user = User.objects.get(username='tester10')
-    tester11_user = User.objects.get(username='tester11')
-    kela_user = User.objects.get(username='kela_luovutuspalvelu')
-    admin_user = User.objects.get(username='credadmin')
 
     organisaatio_list = (
         Organisaatio.objects.create(
@@ -244,7 +234,6 @@ def create_vakajarjestajat():
             yritysmuoto='41',
             alkamis_pvm='2017-02-03',
             paattymis_pvm=None,
-            changed_by=tester2_user,
             integraatio_organisaatio=[TietosisaltoRyhma.VAKATIEDOT.value],
             organisaatiotyyppi=[Organisaatiotyyppi.VAKAJARJESTAJA.value]
         ),
@@ -265,7 +254,6 @@ def create_vakajarjestajat():
             paattymis_pvm=None,
             ytjkieli='FI',
             yritysmuoto='16',
-            changed_by=tester_user,
             integraatio_organisaatio=[],
             organisaatiotyyppi=[Organisaatiotyyppi.VAKAJARJESTAJA.value]
         ),
@@ -284,7 +272,6 @@ def create_vakajarjestajat():
             puhelinnumero='+358451234567',
             alkamis_pvm='2018-09-13',
             paattymis_pvm=None,
-            changed_by=varda_testi_user,
             integraatio_organisaatio=[],
             organisaatiotyyppi=[Organisaatiotyyppi.VAKAJARJESTAJA.value]
         ),
@@ -304,7 +291,6 @@ def create_vakajarjestajat():
             yritysmuoto='42',
             alkamis_pvm='2018-09-25',
             paattymis_pvm=None,
-            changed_by=tester_e2e_user,
             integraatio_organisaatio=[],
             organisaatiotyyppi=[Organisaatiotyyppi.VAKAJARJESTAJA.value]
         ),
@@ -324,7 +310,6 @@ def create_vakajarjestajat():
             yritysmuoto='42',
             alkamis_pvm='2019-01-01',
             paattymis_pvm=None,
-            changed_by=tester10_user,
             integraatio_organisaatio=[],
             organisaatiotyyppi=[Organisaatiotyyppi.VAKAJARJESTAJA.value]
         ),
@@ -344,7 +329,6 @@ def create_vakajarjestajat():
             yritysmuoto='42',
             alkamis_pvm='2019-02-01',
             paattymis_pvm=None,
-            changed_by=tester11_user,
             integraatio_organisaatio=[],
             organisaatiotyyppi=[Organisaatiotyyppi.VAKAJARJESTAJA.value]
         ),
@@ -364,7 +348,6 @@ def create_vakajarjestajat():
             yritysmuoto='48',
             alkamis_pvm='1979-01-02',
             paattymis_pvm=None,
-            changed_by=kela_user,
             integraatio_organisaatio=[],
             organisaatiotyyppi=[Organisaatiotyyppi.MUU.value]
         ),
@@ -384,7 +367,6 @@ def create_vakajarjestajat():
             yritysmuoto='0',
             alkamis_pvm='1970-01-01',
             paattymis_pvm=None,
-            changed_by=admin_user,
             integraatio_organisaatio=[],
             organisaatiotyyppi=[Organisaatiotyyppi.MUU.value]
         )
@@ -397,16 +379,9 @@ def create_vakajarjestajat():
 
 
 def create_toimipaikat_and_painotukset():
-    from django.contrib.auth.models import User
     from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
     from varda.models import Toimipaikka, Organisaatio
     from varda.permission_groups import assign_permissions_to_toimipaikka_obj, create_permission_groups_for_organisaatio
-
-    tester_user = User.objects.get(username='tester')
-    tester2_user = User.objects.get(username='tester2')
-    tester_e2e_user = User.objects.get(username='tester-e2e')
-    tester10_user = User.objects.get(username='tester10')
-    tester11_user = User.objects.get(username='tester11')
 
     vakajarjestaja_tester_obj = Organisaatio.objects.filter(nimi='Tester organisaatio')[0]
     vakajarjestaja_tester2_obj = Organisaatio.objects.filter(nimi='Tester2 organisaatio')[0]
@@ -438,7 +413,6 @@ def create_toimipaikat_and_painotukset():
             kielipainotus_kytkin=True,
             alkamis_pvm='2017-02-03',
             paattymis_pvm=None,
-            changed_by=tester_user,
             hallinnointijarjestelma='ORGANISAATIO',
             lahdejarjestelma='1',
             tunniste='testing-toimipaikka1'
@@ -466,7 +440,6 @@ def create_toimipaikat_and_painotukset():
             kielipainotus_kytkin=False,
             alkamis_pvm='2017-08-02',
             paattymis_pvm=None,
-            changed_by=tester2_user,
             lahdejarjestelma='1',
             tunniste='testing-toimipaikka2'
         ),
@@ -493,7 +466,6 @@ def create_toimipaikat_and_painotukset():
             kielipainotus_kytkin=False,
             alkamis_pvm='2015-08-22',
             paattymis_pvm=None,
-            changed_by=tester2_user,
             lahdejarjestelma='1',
             tunniste='testing-toimipaikka3'
         ),
@@ -520,7 +492,6 @@ def create_toimipaikat_and_painotukset():
             kielipainotus_kytkin=True,
             alkamis_pvm='2017-01-03',
             paattymis_pvm=None,
-            changed_by=tester_user,
             lahdejarjestelma='1',
             tunniste='testing-toimipaikka4'
         ),
@@ -547,7 +518,6 @@ def create_toimipaikat_and_painotukset():
             kielipainotus_kytkin=True,
             alkamis_pvm='2017-01-03',
             paattymis_pvm=None,
-            changed_by=tester_user,
             lahdejarjestelma='1',
             tunniste='testing-toimipaikka5'
         ),
@@ -574,7 +544,6 @@ def create_toimipaikat_and_painotukset():
             kielipainotus_kytkin=True,
             alkamis_pvm='2017-01-03',
             paattymis_pvm=None,
-            changed_by=tester_e2e_user,
             lahdejarjestelma='1',
             tunniste='testing-toimipaikka6'
         ),
@@ -601,7 +570,6 @@ def create_toimipaikat_and_painotukset():
             kielipainotus_kytkin=False,
             alkamis_pvm='2020-02-20',
             paattymis_pvm=None,
-            changed_by=tester_user,
             lahdejarjestelma='1',
             tunniste='testing-toimipaikka7'
         ),
@@ -628,7 +596,6 @@ def create_toimipaikat_and_painotukset():
             kielipainotus_kytkin=False,
             alkamis_pvm='2018-05-01',
             paattymis_pvm=None,
-            changed_by=tester10_user,
             lahdejarjestelma='1',
             tunniste='testing-toimipaikka8'
         ),
@@ -655,7 +622,6 @@ def create_toimipaikat_and_painotukset():
             kielipainotus_kytkin=False,
             alkamis_pvm='2018-09-01',
             paattymis_pvm=None,
-            changed_by=tester10_user,
             lahdejarjestelma='1',
             tunniste='testing-toimipaikka9'
         ),
@@ -682,7 +648,6 @@ def create_toimipaikat_and_painotukset():
             kielipainotus_kytkin=False,
             alkamis_pvm='2019-03-01',
             paattymis_pvm=None,
-            changed_by=tester11_user,
             lahdejarjestelma='1',
             tunniste='testing-toimipaikka10'
         )
@@ -735,14 +700,8 @@ def create_toimipaikat_and_painotukset():
 
 
 def create_henkilot():
-    from django.contrib.auth.models import User
     from varda.models import Henkilo
     from varda.misc import hash_string
-
-    tester_user = User.objects.get(username='tester')
-    tester2_user = User.objects.get(username='tester2')
-    tester10_user = User.objects.get(username='tester10')
-    tester11_user = User.objects.get(username='tester11')
 
     # 120456-123C
     Henkilo.objects.create(
@@ -760,8 +719,7 @@ def create_henkilot():
         katuosoite='Keilaranta 14',
         postinumero='02101',
         postitoimipaikka='Espoo',
-        vtj_yksiloity=True,
-        changed_by=tester_user
+        vtj_yksiloity=True
     )
 
     # 010114A0013
@@ -780,8 +738,7 @@ def create_henkilot():
         katuosoite='Torikatu 11 as 1',
         postinumero='53100',
         postitoimipaikka='Lappeenranta',
-        vtj_yksiloity=True,
-        changed_by=tester_user
+        vtj_yksiloity=True
     )
 
     # 120516A123V
@@ -800,8 +757,7 @@ def create_henkilot():
         katuosoite='Helsinkitie 1',
         postinumero='00109',
         postitoimipaikka='Helsinki',
-        vtj_yksiloity=True,
-        changed_by=tester_user
+        vtj_yksiloity=True
     )
 
     # 020476-321F
@@ -820,8 +776,7 @@ def create_henkilot():
         katuosoite='Torikatu 11 as 1',
         postinumero='53100',
         postitoimipaikka='Lappeenranta',
-        vtj_yksiloity=True,
-        changed_by=tester_user
+        vtj_yksiloity=True
     )
 
     # 120386-109V
@@ -840,8 +795,7 @@ def create_henkilot():
         katuosoite='Torikatu 11 as 1',
         postinumero='53100',
         postitoimipaikka='Lappeenranta',
-        vtj_yksiloity=True,
-        changed_by=tester_user
+        vtj_yksiloity=True
     )
 
     # 130266-915J
@@ -860,8 +814,7 @@ def create_henkilot():
         katuosoite='Mannertie 5',
         postinumero='02100',
         postitoimipaikka='Espoo',
-        vtj_yksiloity=True,
-        changed_by=tester_user
+        vtj_yksiloity=True
     )
 
     # 170334-130B
@@ -880,8 +833,7 @@ def create_henkilot():
         katuosoite='Keilaranta 14',
         postinumero='02101',
         postitoimipaikka='Espoo',
-        vtj_yksiloity=True,
-        changed_by=tester2_user
+        vtj_yksiloity=True
     )
 
     # 110548-316P
@@ -900,8 +852,7 @@ def create_henkilot():
         katuosoite='Keilaranta 14',
         postinumero='02101',
         postitoimipaikka='Espoo',
-        vtj_yksiloity=True,
-        changed_by=tester2_user
+        vtj_yksiloity=True
     )
 
     # 120699-985W
@@ -920,8 +871,7 @@ def create_henkilot():
         katuosoite='Keilaranta 14',
         postinumero='02101',
         postitoimipaikka='Espoo',
-        vtj_yksiloity=True,
-        changed_by=tester2_user
+        vtj_yksiloity=True
     )
 
     Henkilo.objects.create(
@@ -939,8 +889,7 @@ def create_henkilot():
         katuosoite='Keilaranta 14',
         postinumero='02101',
         postitoimipaikka='Espoo',
-        vtj_yksiloity=True,
-        changed_by=tester2_user
+        vtj_yksiloity=True
     )
 
     # 220616A322J
@@ -959,8 +908,7 @@ def create_henkilot():
         katuosoite='Koivukuja 14',
         postinumero='02101',
         postitoimipaikka='Espoo',
-        vtj_yksiloity=True,
-        changed_by=tester2_user
+        vtj_yksiloity=True
     )
 
     # 291090-398U
@@ -979,8 +927,7 @@ def create_henkilot():
         katuosoite='Koivukuja 14',
         postinumero='02101',
         postitoimipaikka='Espoo',
-        vtj_yksiloity=True,
-        changed_by=tester2_user
+        vtj_yksiloity=True
     )
 
     # 071119A884T
@@ -999,8 +946,7 @@ def create_henkilot():
         katuosoite='Kannistokatu 14',
         postinumero='02101',
         postitoimipaikka='Espoo',
-        vtj_yksiloity=True,
-        changed_by=tester2_user
+        vtj_yksiloity=True
     )
 
     # 291180-7071
@@ -1019,8 +965,7 @@ def create_henkilot():
         katuosoite='Kannistokatu 14',
         postinumero='02101',
         postitoimipaikka='Espoo',
-        vtj_yksiloity=True,
-        changed_by=tester2_user
+        vtj_yksiloity=True
     )
 
     # 010280-952L Huoltaja jolla lapsi 010215A951T
@@ -1039,8 +984,7 @@ def create_henkilot():
         katuosoite='Koivukuja 4',
         postinumero='01230',
         postitoimipaikka='Vantaa',
-        vtj_yksiloity=True,
-        changed_by=tester_user
+        vtj_yksiloity=True
     )
 
     # huoltajan lapsi 010215A951T
@@ -1059,8 +1003,7 @@ def create_henkilot():
         katuosoite='Koivukuja 4',
         postinumero='01230',
         postitoimipaikka='Vantaa',
-        vtj_yksiloity=True,
-        changed_by=tester_user
+        vtj_yksiloity=True
     )
 
     # Henkilo (020400A925B) that is a Tyontekija and has a Palvelussuhde and a Tyoskentelypaikka
@@ -1072,8 +1015,7 @@ def create_henkilot():
         kutsumanimi='Aatu',
         sukunimi='Uraputki',
         syntyma_pvm='2000-04-02',
-        vtj_yksiloity=True,
-        changed_by=tester_user
+        vtj_yksiloity=True
     )
 
     # Henkilo (020400A926C) that is a Tyontekija and has two Palvelussuhde
@@ -1085,8 +1027,7 @@ def create_henkilot():
         sukunimi='Uraputki',
         syntyma_pvm='2000-04-02',
         henkilo_oid='1.2.246.562.24.2431884920042',
-        vtj_yksiloity=True,
-        changed_by=tester2_user
+        vtj_yksiloity=True
     )
 
     #  Henkilo (020400A927D) that is a Tyontekija
@@ -1098,8 +1039,7 @@ def create_henkilot():
         sukunimi='Uraputki',
         syntyma_pvm='2000-04-02',
         henkilo_oid='1.2.246.562.24.2431884920043',
-        vtj_yksiloity=True,
-        changed_by=tester_user
+        vtj_yksiloity=True
     )
 
     # Henkilo (020400A928E) that is a Tyontekija
@@ -1111,8 +1051,7 @@ def create_henkilot():
         kutsumanimi='Daniella',
         sukunimi='Uraputki',
         syntyma_pvm='2000-04-02',
-        vtj_yksiloity=True,
-        changed_by=tester_user
+        vtj_yksiloity=True
     )
 
     # Henkilo (210700A919U) that is a Tyontekija
@@ -1124,8 +1063,7 @@ def create_henkilot():
         kutsumanimi='Döner',
         sukunimi='Kebab',
         syntyma_pvm='2000-07-21',
-        vtj_yksiloity=True,
-        changed_by=tester_user
+        vtj_yksiloity=True
     )
 
     # 290116A331A
@@ -1144,8 +1082,7 @@ def create_henkilot():
         katuosoite='Mikontie 15',
         postinumero='12345',
         postitoimipaikka='Espoo',
-        vtj_yksiloity=True,
-        changed_by=tester_user
+        vtj_yksiloity=True
     )
 
     # 260980-642C
@@ -1164,8 +1101,7 @@ def create_henkilot():
         katuosoite='Mikontie 15',
         postinumero='12345',
         postitoimipaikka='Espoo',
-        vtj_yksiloity=True,
-        changed_by=tester_user
+        vtj_yksiloity=True
     )
 
     # 010116A807L
@@ -1184,8 +1120,7 @@ def create_henkilot():
         katuosoite='Kalliokatu 28 B 2',
         postinumero='12345',
         postitoimipaikka='Testilä',
-        vtj_yksiloity=True,
-        changed_by=tester10_user
+        vtj_yksiloity=True
     )
 
     # 141117A020X
@@ -1204,8 +1139,7 @@ def create_henkilot():
         katuosoite='Kalliotie 2 A',
         postinumero='12345',
         postitoimipaikka='Testilä',
-        vtj_yksiloity=True,
-        changed_by=tester10_user
+        vtj_yksiloity=True
     )
 
     # 130317A706Y
@@ -1224,8 +1158,7 @@ def create_henkilot():
         katuosoite='Kallioväylä 3',
         postinumero='12345',
         postitoimipaikka='Testilä',
-        vtj_yksiloity=True,
-        changed_by=tester10_user
+        vtj_yksiloity=True
     )
 
     # 120617A273S
@@ -1244,8 +1177,7 @@ def create_henkilot():
         katuosoite='Lintukuja 4 A 13',
         postinumero='12345',
         postitoimipaikka='Testilä',
-        vtj_yksiloity=True,
-        changed_by=tester11_user
+        vtj_yksiloity=True
     )
 
     # 241217A5155
@@ -1264,8 +1196,7 @@ def create_henkilot():
         katuosoite='Taavintie 4 C 1',
         postinumero='12345',
         postitoimipaikka='Testilä',
-        vtj_yksiloity=True,
-        changed_by=tester11_user
+        vtj_yksiloity=True
     )
 
     # 130780-753Y
@@ -1284,8 +1215,7 @@ def create_henkilot():
         katuosoite='Kalliokatu 28 B 2',
         postinumero='12345',
         postitoimipaikka='Testilä',
-        vtj_yksiloity=True,
-        changed_by=tester10_user
+        vtj_yksiloity=True
     )
 
     # 010177-0520
@@ -1304,8 +1234,7 @@ def create_henkilot():
         katuosoite='Kalliokatu 28 B 2',
         postinumero='12345',
         postitoimipaikka='Testilä',
-        vtj_yksiloity=True,
-        changed_by=tester10_user
+        vtj_yksiloity=True
     )
 
     # 241093-031J
@@ -1324,8 +1253,7 @@ def create_henkilot():
         katuosoite='Taavintie 4 C 1',
         postinumero='12345',
         postitoimipaikka='Testilä',
-        vtj_yksiloity=True,
-        changed_by=tester10_user
+        vtj_yksiloity=True
     )
 
     # 240219A149T
@@ -1344,8 +1272,7 @@ def create_henkilot():
         katuosoite='Taavintie 4 C 1',
         postinumero='12345',
         postitoimipaikka='Testilä',
-        vtj_yksiloity=True,
-        changed_by=tester10_user
+        vtj_yksiloity=True
     )
 
     # 271020A212F
@@ -1364,8 +1291,7 @@ def create_henkilot():
         katuosoite='Tukkarinkatu 4c',
         postinumero='12345',
         postitoimipaikka='Testilä',
-        vtj_yksiloity=True,
-        changed_by=tester2_user
+        vtj_yksiloity=True
     )
 
     # 150245-855F
@@ -1384,8 +1310,7 @@ def create_henkilot():
         katuosoite='Duunarintie 1 A',
         postinumero='12345',
         postitoimipaikka='Testilä',
-        vtj_yksiloity=True,
-        changed_by=tester10_user
+        vtj_yksiloity=True
     )
 
     # 100646-792P
@@ -1404,19 +1329,15 @@ def create_henkilot():
         katuosoite='Duunarintie 1 A',
         postinumero='12345',
         postitoimipaikka='Testilä',
-        vtj_yksiloity=True,
-        changed_by=tester11_user
+        vtj_yksiloity=True
     )
 
 
 def _create_lapsi_and_related_data(lapsi, huoltaja_list=(), vakapaatos_list=(), maksutieto_list=()):
-    from django.contrib.auth.models import User
     from django.db.models import Q
     from varda.constants import HETU_REGEX
     from varda.misc import hash_string
     from varda.models import Huoltaja, Henkilo, Huoltajuussuhde
-
-    credadmin = User.objects.get(username='credadmin')
 
     resp_lapsi = _make_post_request('/api/v1/lapset/', lapsi)
     lapsi_id = json.loads(resp_lapsi.content)['id']
@@ -1425,10 +1346,8 @@ def _create_lapsi_and_related_data(lapsi, huoltaja_list=(), vakapaatos_list=(), 
         huoltaja_filter = (Q(henkilotunnus_unique_hash=hash_string(huoltaja_identifier))
                            if HETU_REGEX.fullmatch(huoltaja_identifier)
                            else Q(henkilo_oid=huoltaja_identifier))
-        huoltaja_obj = Huoltaja.objects.get_or_create(henkilo=Henkilo.objects.get(huoltaja_filter),
-                                                      changed_by=credadmin)[0]
-        Huoltajuussuhde.objects.create(huoltaja=huoltaja_obj, lapsi_id=lapsi_id, voimassa_kytkin=True,
-                                       changed_by=credadmin)
+        huoltaja_obj = Huoltaja.objects.get_or_create(henkilo=Henkilo.objects.get(huoltaja_filter))[0]
+        Huoltajuussuhde.objects.create(huoltaja=huoltaja_obj, lapsi_id=lapsi_id, voimassa_kytkin=True)
 
     for vakapaatos in vakapaatos_list:
         vakapaatos_dict = vakapaatos[0]
@@ -2496,15 +2415,13 @@ def create_onr_lapsi_huoltajat(create_all_vakajarjestajat=False):
     """
     https://wiki.eduuni.fi/display/CscVarda/Testihuoltajat
     """
-    from django.contrib.auth.models import Group, User
+    from django.contrib.auth.models import Group
     from guardian.shortcuts import assign_perm
     from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
     from varda.models import Lapsi
     from varda.organisaatiopalvelu import create_organization_using_oid
 
     print('Adding lapset + huoltajat (from ONR) in test data.')
-
-    admin_user = User.objects.get(username='credadmin')
 
     henkilo_1_oid = '1.2.246.562.24.68159811823'
     henkilo_1_hetu = 'gAAAAABeOX1kRyEYLW_6z3YCD3vApCjVNJwR4M-ExlfAKqWLvQJZ__6Ztxqha-S0DmuxjZchXlNN2hVIMisYZLDXXzY2fk1IJQ=='
@@ -2533,8 +2450,7 @@ def create_onr_lapsi_huoltajat(create_all_vakajarjestajat=False):
         'sukupuoli_koodi': 1,
         'katuosoite': '',
         'postinumero': '',
-        'postitoimipaikka': '',
-        'changed_by': admin_user
+        'postitoimipaikka': ''
     }
     henkilo_1_created, henkilo_1 = create_or_update_henkilo(henkilo_1_defaults, henkilo_1_hetu, henkilo_1_hetu_hash, henkilo_1_oid)
 
@@ -2549,8 +2465,7 @@ def create_onr_lapsi_huoltajat(create_all_vakajarjestajat=False):
         'sukupuoli_koodi': 2,
         'katuosoite': '',
         'postinumero': '',
-        'postitoimipaikka': '',
-        'changed_by': admin_user
+        'postitoimipaikka': ''
     }
     henkilo_2_created, henkilo_2 = create_or_update_henkilo(henkilo_2_defaults, henkilo_2_hetu, henkilo_2_hetu_hash, henkilo_2_oid)
 
@@ -2565,8 +2480,7 @@ def create_onr_lapsi_huoltajat(create_all_vakajarjestajat=False):
         'sukupuoli_koodi': 1,
         'katuosoite': '',
         'postinumero': '',
-        'postitoimipaikka': '',
-        'changed_by': admin_user
+        'postitoimipaikka': ''
     }
     henkilo_3_created, henkilo_3 = create_or_update_henkilo(henkilo_3_defaults, henkilo_3_hetu, henkilo_3_hetu_hash, henkilo_3_oid)
 
@@ -2581,14 +2495,13 @@ def create_onr_lapsi_huoltajat(create_all_vakajarjestajat=False):
         'sukupuoli_koodi': 1,
         'katuosoite': '',
         'postinumero': '',
-        'postitoimipaikka': '',
-        'changed_by': admin_user
+        'postitoimipaikka': ''
     }
     henkilo_4_created, henkilo_4 = create_or_update_henkilo(henkilo_4_defaults, henkilo_4_hetu, henkilo_4_hetu_hash, henkilo_4_oid)
 
     vakajarjestaja_oids = get_vakajarjestaja_oids(create_all_vakajarjestajat)
     for organisaatio_oid in vakajarjestaja_oids:
-        create_organization_using_oid(organisaatio_oid, Organisaatiotyyppi.VAKAJARJESTAJA.value, 2)
+        create_organization_using_oid(organisaatio_oid, Organisaatiotyyppi.VAKAJARJESTAJA.value)
 
         group_tallentaja = Group.objects.get(name='VARDA-TALLENTAJA_' + organisaatio_oid)
         group_katselija = Group.objects.get(name='VARDA-KATSELIJA_' + organisaatio_oid)
@@ -2600,34 +2513,22 @@ def create_onr_lapsi_huoltajat(create_all_vakajarjestajat=False):
                                             group_huoltajatiedot_tallentaja, group_huoltajatiedot_katselija]
 
         if henkilo_1_created:
-            lapsi_1 = Lapsi.objects.create(
-                henkilo=henkilo_1,
-                changed_by=admin_user
-            )
+            lapsi_1 = Lapsi.objects.create(henkilo=henkilo_1)
             for permission_group in vakajarjestaja_permission_groups:
                 assign_perm('change_lapsi', permission_group, lapsi_1)
 
         if henkilo_2_created:
-            lapsi_2 = Lapsi.objects.create(
-                henkilo=henkilo_2,
-                changed_by=admin_user
-            )
+            lapsi_2 = Lapsi.objects.create(henkilo=henkilo_2)
             for permission_group in vakajarjestaja_permission_groups:
                 assign_perm('view_lapsi', permission_group, lapsi_2)
 
         if henkilo_3_created:
-            lapsi_3 = Lapsi.objects.create(
-                henkilo=henkilo_3,
-                changed_by=admin_user
-            )
+            lapsi_3 = Lapsi.objects.create(henkilo=henkilo_3)
             for permission_group in vakajarjestaja_permission_groups:
                 assign_perm('view_lapsi', permission_group, lapsi_3)
 
         if henkilo_4_created:
-            lapsi_4 = Lapsi.objects.create(
-                henkilo=henkilo_4,
-                changed_by=admin_user
-            )
+            lapsi_4 = Lapsi.objects.create(henkilo=henkilo_4)
             for permission_group in vakajarjestaja_permission_groups:
                 assign_perm('view_lapsi', permission_group, lapsi_4)
 

@@ -15,10 +15,10 @@ class TestUpdateChangedOrganisaatio(TestCase):
 
     @responses.activate
     def test_update_changed_organisaatios(self):
-        oid_with_changes = "1.2.246.562.10.9395737548810"
+        oid_with_changes = '1.2.246.562.10.9395737548810'
         responses.add(responses.GET,
                       'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v2/muutetut/oid',
-                      json={"oids": [oid_with_changes]},
+                      json={'oids': [oid_with_changes]},
                       status=200)
         # Reuse data defined for another test.
         # The organization service will fetch data for all organizations using this,
@@ -58,22 +58,22 @@ class TestUpdateChangedOrganisaatio(TestCase):
         self.assertEqual(toimipaikka.paattymis_pvm, None)
         # Not assigned in this method but when toimipaikka is created
         # IF a toimipaikka is managed in Organisaatiopalvelu it will be kept up to date by system
-        self.assertEqual(toimipaikka.changed_by_id, varda_system_user_id)
+        self.assertEqual(toimipaikka.history.last().history_user_id, varda_system_user_id)
         self.assertEqual(toimipaikka.hallinnointijarjestelma, str(Hallinnointijarjestelma.ORGANISAATIO))
 
         painotus_dicts = list((ToiminnallinenPainotus.objects
                                .all()
                                .filter(toimipaikka=toimipaikka)
-                               .values('toimintapainotus_koodi', 'alkamis_pvm', 'paattymis_pvm', 'changed_by_id')))
-        painotus_expected = [self.__create_painotus_dict('tp01', datetime.date(2018, 10, 1), None, 3)]
+                               .values('toimintapainotus_koodi', 'alkamis_pvm', 'paattymis_pvm')))
+        painotus_expected = [self.__create_painotus_dict('tp01', datetime.date(2018, 10, 1), None)]
         self.assertCountEqual(painotus_dicts, painotus_expected)
         kieli_dicts = list((KieliPainotus.objects
                             .all()
                             .filter(toimipaikka=toimipaikka)
-                            .values('kielipainotus_koodi', 'alkamis_pvm', 'paattymis_pvm', 'changed_by_id')))
+                            .values('kielipainotus_koodi', 'alkamis_pvm', 'paattymis_pvm')))
         kieli_expected = [
-            self.__create_kieli_dict('BH', datetime.date(2018, 10, 1), datetime.date(2018, 10, 18), 3),
-            self.__create_kieli_dict('BG', datetime.date(2018, 10, 1), None, 3)
+            self.__create_kieli_dict('BH', datetime.date(2018, 10, 1), datetime.date(2018, 10, 18)),
+            self.__create_kieli_dict('BG', datetime.date(2018, 10, 1), None)
         ]
         self.assertCountEqual(kieli_dicts, kieli_expected)
 
@@ -84,12 +84,12 @@ class TestUpdateChangedOrganisaatio(TestCase):
     def test_nothing_changed(self):
         responses.add(responses.GET,
                       'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v2/muutetut/oid',
-                      json={"oids": []},
+                      json={'oids': []},
                       status=200)
         update_all_organisaatio_service_organisations()
 
-    def __create_painotus_dict(self, toimintapainotus_koodi, alkamis_pvm, paattymis_pvm, changed_by_id):
-        return {"toimintapainotus_koodi": toimintapainotus_koodi, "alkamis_pvm": alkamis_pvm, "paattymis_pvm": paattymis_pvm, "changed_by_id": changed_by_id}
+    def __create_painotus_dict(self, toimintapainotus_koodi, alkamis_pvm, paattymis_pvm):
+        return {'toimintapainotus_koodi': toimintapainotus_koodi, 'alkamis_pvm': alkamis_pvm, 'paattymis_pvm': paattymis_pvm}
 
-    def __create_kieli_dict(self, kielipainotus_koodi, alkamis_pvm, paattymis_pvm, changed_by_id):
-        return {"kielipainotus_koodi": kielipainotus_koodi, "alkamis_pvm": alkamis_pvm, "paattymis_pvm": paattymis_pvm, "changed_by_id": changed_by_id}
+    def __create_kieli_dict(self, kielipainotus_koodi, alkamis_pvm, paattymis_pvm):
+        return {'kielipainotus_koodi': kielipainotus_koodi, 'alkamis_pvm': alkamis_pvm, 'paattymis_pvm': paattymis_pvm}

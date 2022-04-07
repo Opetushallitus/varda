@@ -400,8 +400,7 @@ def merge_lapsi_maksutiedot(new_lapsi, old_maksutiedot, new_huoltajuussuhteet, m
 
         new_maksutieto_huoltajat_count = 0
         for new_huoltajuussuhde in maksutieto_new_huoltajuussuhteet:
-            MaksutietoHuoltajuussuhde.objects.create(huoltajuussuhde=new_huoltajuussuhde, maksutieto=maksutieto,
-                                                     changed_by=maksutieto.changed_by)
+            MaksutietoHuoltajuussuhde.objects.create(huoltajuussuhde=new_huoltajuussuhde, maksutieto=maksutieto)
             new_maksutieto_huoltajat_count += 1
 
         if old_maksutieto_huoltaja_count != new_maksutieto_huoltajat_count:

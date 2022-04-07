@@ -526,10 +526,6 @@ class OrganisaatioViewSet(IncreasedModifyThrottleMixin, ModelViewSet):
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
 
-    def perform_update(self, serializer):
-        user = self.request.user
-        serializer.save(changed_by=user)
-
     def perform_destroy(self, instance):
         try:
             instance.delete()
@@ -576,7 +572,6 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
         return cached_list_response(self, request.user, request.get_full_path())
 
     def perform_create(self, serializer):
-        user = self.request.user
         validated_data = serializer.validated_data
         vakajarjestaja_obj = validated_data['vakajarjestaja']
         vakajarjestaja_id = vakajarjestaja_obj.id
@@ -588,7 +583,7 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
         try:
             with transaction.atomic():
                 # Save first internally so we can catch possible IntegrityError before POSTing to Org.palvelu.
-                serializer.save(changed_by=user)
+                serializer.save()
 
                 result = create_toimipaikka_in_organisaatiopalvelu(validated_data)
                 if result['toimipaikka_created']:
@@ -598,7 +593,7 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
                     raise IntegrityError('Org.palvelu-integration')
 
                 serializer.validated_data['organisaatio_oid'] = toimipaikka_organisaatio_oid
-                saved_object = serializer.save(changed_by=user)
+                saved_object = serializer.save()
                 delete_cache_keys_related_model('organisaatio', saved_object.vakajarjestaja.id)
                 cache.delete('organisaatio_yhteenveto_' + str(saved_object.vakajarjestaja.id))
 
@@ -627,8 +622,7 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
             raise ValidationError({'toimipaikka': [ErrorMessages.TP002.value]})
 
     def perform_update(self, serializer):
-        user = self.request.user
-        saved_object = serializer.save(changed_by=user)
+        saved_object = serializer.save()
         delete_cache_keys_related_model('organisaatio', saved_object.vakajarjestaja.id)
         cache.delete('organisaatio_yhteenveto_' + str(saved_object.vakajarjestaja.id))
 
@@ -675,7 +669,6 @@ class ToiminnallinenPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnis
         return cached_list_response(self, request.user, request.get_full_path())
 
     def perform_create(self, serializer):
-        user = self.request.user
         validated_data = serializer.validated_data
         toimipaikka_obj = validated_data['toimipaikka']
         toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
@@ -683,7 +676,7 @@ class ToiminnallinenPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnis
         vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
 
         with transaction.atomic():
-            saved_object = serializer.save(changed_by=user)
+            saved_object = serializer.save()
             self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
             delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
             cache.delete('organisaatio_yhteenveto_' + str(saved_object.toimipaikka.vakajarjestaja.id))
@@ -691,9 +684,8 @@ class ToiminnallinenPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnis
             assign_object_level_permissions(toimipaikka_organisaatio_oid, ToiminnallinenPainotus, saved_object)
 
     def perform_update(self, serializer):
-        user = self.request.user
         with transaction.atomic():
-            saved_object = serializer.save(changed_by=user)
+            saved_object = serializer.save()
             self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
             delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
 
@@ -746,7 +738,6 @@ class KieliPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
         return cached_list_response(self, request.user, request.get_full_path())
 
     def perform_create(self, serializer):
-        user = self.request.user
         validated_data = serializer.validated_data
         toimipaikka_obj = validated_data['toimipaikka']
         toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
@@ -754,7 +745,7 @@ class KieliPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
         vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
 
         with transaction.atomic():
-            saved_object = serializer.save(changed_by=user)
+            saved_object = serializer.save()
             self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
             delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
             cache.delete('organisaatio_yhteenveto_' + str(saved_object.toimipaikka.vakajarjestaja.id))
@@ -762,9 +753,8 @@ class KieliPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
             assign_object_level_permissions(toimipaikka_organisaatio_oid, KieliPainotus, saved_object)
 
     def perform_update(self, serializer):
-        user = self.request.user
         with transaction.atomic():
-            saved_object = serializer.save(changed_by=user)
+            saved_object = serializer.save()
             self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
             delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
 
@@ -993,7 +983,7 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
 
         try:
             with transaction.atomic():
-                saved_object = serializer.save(changed_by=user)
+                saved_object = serializer.save()
                 # Give user object level permissions to Henkilo object, until we can determine related Organisaatio
                 # from Lapsi or Tyontekija object
                 self._assign_henkilo_permissions(user, saved_object)
@@ -1068,7 +1058,6 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
                 # If lahdejarjestelma or tunniste have been changed, update change
                 lapsi_obj.lahdejarjestelma = validated_data['lahdejarjestelma']
                 lapsi_obj.tunniste = validated_data.get('tunniste', None)
-                lapsi_obj.changed_by = user
                 lapsi_obj.save()
             # Make sure that ConflictError is not raised inside a transaction, otherwise permission changes
             # are rolled back
@@ -1082,8 +1071,7 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
                 for huoltajuussuhde in huoltajuussuhteet_qs:
                     Huoltajuussuhde(lapsi=saved_object,
                                     huoltaja=huoltajuussuhde.huoltaja,
-                                    voimassa_kytkin=huoltajuussuhde.voimassa_kytkin,
-                                    changed_by=self.request.user).save()
+                                    voimassa_kytkin=huoltajuussuhde.voimassa_kytkin).save()
                 # huoltajuussuhteet copied, no need to loop through other lapset
                 break
 
@@ -1125,7 +1113,7 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
         try:
             with transaction.atomic():
                 # This can be performed only after all permission checks are done!
-                saved_object = serializer.save(changed_by=user)
+                saved_object = serializer.save()
                 self._assign_permissions_for_lapsi_obj(saved_object, paos_oikeus, toimipaikka_oid)
                 self.copy_huoltajuussuhteet(saved_object)
                 delete_cache_keys_related_model('henkilo', saved_object.henkilo.id)
@@ -1136,10 +1124,6 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
                 # already created and IntegrityError is thrown, so check uniqueness again
                 self.return_lapsi_if_already_created(validated_data, toimipaikka_oid, paos_oikeus)
             raise validation_error
-
-    def perform_update(self, serializer):
-        user = self.request.user
-        serializer.save(changed_by=user)
 
     def perform_destroy(self, instance):
         if Huoltajuussuhde.objects.filter(lapsi__id=instance.id).filter(maksutiedot__isnull=False).exists():
@@ -1229,7 +1213,7 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
             validated_data['pikakasittely_kytkin'] = True
 
         with transaction.atomic():
-            saved_object = serializer.save(changed_by=user)
+            saved_object = serializer.save()
             delete_cache_keys_related_model('lapsi', lapsi.id)
             if lapsi.paos_kytkin:
                 paos_oikeus = check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(lapsi.oma_organisaatio, lapsi.paos_organisaatio)
@@ -1249,7 +1233,6 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
                     assign_object_level_permissions(toimipaikka_oid, Varhaiskasvatuspaatos, saved_object)
 
     def perform_update(self, serializer):
-        user = self.request.user
         validated_data = serializer.validated_data
 
         timediff = validated_data['alkamis_pvm'] - validated_data['hakemus_pvm']
@@ -1258,7 +1241,7 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
         else:
             validated_data['pikakasittely_kytkin'] = False
 
-        saved_object = serializer.save(changed_by=user)
+        saved_object = serializer.save()
         """
         No need to delete the related-lapsi cache, since user cannot change the lapsi-relation.
         """
@@ -1384,7 +1367,7 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
         toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
 
         with transaction.atomic():
-            saved_object = serializer.save(changed_by=user)
+            saved_object = serializer.save()
             delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
             delete_cache_keys_related_model('varhaiskasvatuspaatos', saved_object.varhaiskasvatuspaatos.id)
             delete_toimipaikan_lapset_cache(str(saved_object.toimipaikka.id))
@@ -1417,8 +1400,7 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
             assign_vakasuhde_henkilo_permissions(varhaiskasvatussuhde_obj)
 
     def perform_update(self, serializer):
-        user = self.request.user
-        saved_object = serializer.save(changed_by=user)
+        saved_object = serializer.save()
         # No need to delete the related-object caches. User cannot change toimipaikka or varhaiskasvatuspaatos.
         delete_toimipaikan_lapset_cache(str(saved_object.toimipaikka.id))
         cache.delete('organisaatio_yhteenveto_' + str(saved_object.toimipaikka.vakajarjestaja.id))
@@ -1508,14 +1490,13 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
         Save maksutieto
         """
         with transaction.atomic():
-            saved_object = serializer.save(changed_by=user)
+            saved_object = serializer.save()
             vakajarjestaja = lapsi.vakatoimija or lapsi.oma_organisaatio
             cache.delete('organisaatio_yhteenveto_' + str(vakajarjestaja.id))
             self.assign_permissions_for_maksutieto_obj(lapsi, vakajarjestaja, toimipaikka_qs, saved_object)
 
     @transaction.atomic
     def perform_update(self, serializer):
-        user = self.request.user
         maksutieto_obj = self.get_object()
 
         lapsi_objects = Lapsi.objects.filter(huoltajuussuhteet__maksutiedot__id=maksutieto_obj.id).distinct()
@@ -1524,7 +1505,7 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
             raise CustomServerErrorException
         lapsi_object = lapsi_objects[0]
 
-        serializer.save(changed_by=user)
+        serializer.save()
 
         vakajarjestaja = lapsi_object.vakatoimija or lapsi_object.oma_organisaatio
         cache.delete('organisaatio_yhteenveto_' + str(vakajarjestaja.id))
@@ -1643,7 +1624,7 @@ class PaosToimintaViewSet(IncreasedModifyThrottleMixin, GenericViewSet, ListMode
         with transaction.atomic():
             try:
                 if not serializer.instance:
-                    saved_object = serializer.save(changed_by=user)
+                    saved_object = serializer.save()
                     VARDA_PAAKAYTTAJA = Z4_CasKayttoOikeudet.PAAKAYTTAJA
                     group_name = Group.objects.filter(name=VARDA_PAAKAYTTAJA + '_' + validated_data['oma_organisaatio'].organisaatio_oid)
                     assign_perm('view_paostoiminta', group_name, saved_object)
@@ -1654,7 +1635,7 @@ class PaosToimintaViewSet(IncreasedModifyThrottleMixin, GenericViewSet, ListMode
                         serializer.instance = None
                     else:
                         serializer.instance.voimassa_kytkin = True
-                    serializer.save(changed_by=user)
+                    serializer.save()
 
                 paos_oikeus_old = PaosOikeus.objects.filter(
                     Q(jarjestaja_kunta_organisaatio=jarjestaja_kunta_organisaatio, tuottaja_organisaatio=tuottaja_organisaatio)
@@ -1663,7 +1644,6 @@ class PaosToimintaViewSet(IncreasedModifyThrottleMixin, GenericViewSet, ListMode
                 if paos_oikeus_old:
                     if not paos_oikeus_old.voimassa_kytkin and paos_toiminta_is_active.exists():
                         paos_oikeus_old.voimassa_kytkin = True
-                        paos_oikeus_old.changed_by = user
                         paos_oikeus_old.save()
                     grant_or_deny_access_to_paos_toimipaikka(True, jarjestaja_kunta_organisaatio, tuottaja_organisaatio)
                 elif not paos_oikeus_old:
@@ -1673,8 +1653,7 @@ class PaosToimintaViewSet(IncreasedModifyThrottleMixin, GenericViewSet, ListMode
                         jarjestaja_kunta_organisaatio=jarjestaja_kunta_organisaatio,
                         tuottaja_organisaatio=tuottaja_organisaatio,
                         voimassa_kytkin=False,
-                        tallentaja_organisaatio=tallentaja_organisaatio,
-                        changed_by=user
+                        tallentaja_organisaatio=tallentaja_organisaatio
                     )
                     non_tallentaja_organisation = self.get_non_tallentaja_organisation(tallentaja_organisaatio, jarjestaja_kunta_organisaatio, tuottaja_organisaatio)
                     group_name = Group.objects.filter(name=VARDA_PAAKAYTTAJA + '_' + non_tallentaja_organisation.organisaatio_oid)
@@ -1760,7 +1739,6 @@ class PaosOikeusViewSet(IncreasedModifyThrottleMixin, GenericViewSet, UpdateMode
         return cached_list_response(self, request.user, request.get_full_path())
 
     def perform_update(self, serializer):
-        user = self.request.user
         paos_oikeus_obj = self.get_object()
         validated_data = serializer.validated_data
 
@@ -1773,7 +1751,7 @@ class PaosOikeusViewSet(IncreasedModifyThrottleMixin, GenericViewSet, UpdateMode
             raise ValidationError({'tallentaja_organisaatio': [ErrorMessages.PO002.value]}, code='invalid')
 
         with transaction.atomic():
-            serializer.save(changed_by=user)
+            serializer.save()
 
 
 """

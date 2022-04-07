@@ -58,15 +58,6 @@ def check_if_url_is_valid(list_of_url_segments, model):
         raise ValidationError({model: [ErrorMessages.GE009.value]})
 
 
-def check_if_is_owner_of_related_object(list_of_url_segments, user, model):
-    """
-    See an example of url segments above.
-    """
-    related_object_id = list_of_url_segments[-2]
-    if user != model.objects.get(id=related_object_id).changed_by:
-        raise ValidationError({model: [ErrorMessages.GE008.value]})
-
-
 def check_if_user_has_add_toimipaikka_permissions_under_vakajarjestaja(vakajarjestaja_id, user):
     """
     User must have TALLENTAJA permissions on the vakajarjestaja-level.

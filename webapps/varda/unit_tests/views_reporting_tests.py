@@ -1326,10 +1326,8 @@ class VardaViewsReportingTests(TestCase):
         self._verify_error_report_result(resp, ['TO005', 'KP005'])
 
         # Set toiminnallinenpainotus_kytkin and kielipainotus_kytkin False when Toimipaikka has painotus objects
-        ToiminnallinenPainotus.objects.create(toimipaikka=toimipaikka, toimintapainotus_koodi='TP01', alkamis_pvm=today,
-                                              changed_by_id=1)
-        KieliPainotus.objects.create(toimipaikka=toimipaikka, kielipainotus_koodi='FI', alkamis_pvm=today,
-                                     changed_by_id=1)
+        ToiminnallinenPainotus.objects.create(toimipaikka=toimipaikka, toimintapainotus_koodi='TP01', alkamis_pvm=today)
+        KieliPainotus.objects.create(toimipaikka=toimipaikka, kielipainotus_koodi='FI', alkamis_pvm=today)
         toimipaikka.toiminnallinenpainotus_kytkin = False
         toimipaikka.kielipainotus_kytkin = False
         toimipaikka.save()
@@ -1718,13 +1716,13 @@ class VardaViewsReportingTests(TestCase):
 
         lapsi_id = Lapsi.objects.get(tunniste='testing-lapsi2').id
         henkilo_obj = Henkilo.objects.get(henkilo_oid='1.2.246.562.24.5826267847674')
-        huoltaja_id = Huoltaja.objects.get_or_create(henkilo=henkilo_obj, changed_by_id=1)[0].id
+        huoltaja_id = Huoltaja.objects.get_or_create(henkilo=henkilo_obj)[0].id
 
         datetime_gt = _get_iso_datetime_now()
         # Wait for 0.1 seconds so database action happens after datetime_gt
         time.sleep(0.1)
         huoltajuussuhde_obj = Huoltajuussuhde.objects.create(huoltaja_id=huoltaja_id, lapsi_id=lapsi_id,
-                                                             voimassa_kytkin=True, changed_by_id=1)
+                                                             voimassa_kytkin=True)
         huoltajuussuhde_id = huoltajuussuhde_obj.id
         datetime_lte = _get_iso_datetime_now()
 

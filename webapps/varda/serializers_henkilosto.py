@@ -79,7 +79,7 @@ class TyontekijaSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.Hyper
 
     class Meta:
         model = Tyontekija
-        exclude = ('changed_by', 'luonti_pvm')
+        exclude = ('luonti_pvm',)
 
     @caching_to_representation('tyontekija')
     def to_representation(self, instance):
@@ -119,7 +119,7 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = TilapainenHenkilosto
-        exclude = ('changed_by', 'luonti_pvm')
+        exclude = ('luonti_pvm',)
 
     @caching_to_representation('tilapainenhenkilosto')
     def to_representation(self, instance):
@@ -218,7 +218,7 @@ class TutkintoSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.Hyperli
 
     class Meta:
         model = Tutkinto
-        exclude = ('changed_by', 'luonti_pvm')
+        exclude = ('luonti_pvm',)
 
     @caching_to_representation('tutkinto')
     def to_representation(self, instance):
@@ -246,7 +246,7 @@ class PalvelussuhdeSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.Hy
 
     class Meta:
         model = Palvelussuhde
-        exclude = ('changed_by', 'luonti_pvm')
+        exclude = ('luonti_pvm',)
         read_only_fields = ('muutos_pvm',)
 
     @caching_to_representation('palvelussuhde')
@@ -310,7 +310,7 @@ class TyoskentelypaikkaSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Tyoskentelypaikka
-        exclude = ('changed_by', 'luonti_pvm')
+        exclude = ('luonti_pvm',)
         read_only_fields = ('muutos_pvm',)
 
     @caching_to_representation('tyoskentelypaikka')
@@ -409,7 +409,7 @@ class TyoskentelypaikkaUpdateSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Tyoskentelypaikka
-        exclude = ('changed_by', 'luonti_pvm')
+        exclude = ('luonti_pvm',)
         read_only = ('url', 'palvelussuhde', 'toimipaikka', "kiertava_tyontekija_kytkin", "muutos_pvm",)
 
     @caching_to_representation('tyoskentelypaikka')
@@ -443,7 +443,7 @@ class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = PidempiPoissaolo
-        exclude = ('changed_by', 'luonti_pvm')
+        exclude = ('luonti_pvm',)
         read_only_fields = ('muutos_pvm',)
 
     @caching_to_representation('pidempipoissaolo')
@@ -582,18 +582,15 @@ class NestedTaydennyskoulutusTyontekijaSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaydennyskoulutusTyontekija
         list_serializer_class = PermissionCheckedTaydennyskoulutusTyontekijaListSerializer
-        exclude = ('id', 'taydennyskoulutus', 'changed_by', 'luonti_pvm', 'muutos_pvm')
+        exclude = ('id', 'taydennyskoulutus', 'luonti_pvm', 'muutos_pvm')
 
     def create(self, data):
-        user = self.context['request'].user
-
         tyontekija = data['tyontekija']
         self._validate_tehtavanimike_koodi(data)
 
         return TaydennyskoulutusTyontekija.objects.create(tyontekija=tyontekija,
                                                           tehtavanimike_koodi=data['tehtavanimike_koodi'],
-                                                          taydennyskoulutus=data['taydennyskoulutus'],
-                                                          changed_by=user)
+                                                          taydennyskoulutus=data['taydennyskoulutus'])
 
     @caching_to_representation('taydennyskoulutustyontekija')
     def to_representation(self, instance):
@@ -634,7 +631,7 @@ class TaydennyskoulutusSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Taydennyskoulutus
-        exclude = ('tyontekijat', 'changed_by', 'luonti_pvm')
+        exclude = ('tyontekijat', 'luonti_pvm')
 
     @caching_to_representation('taydennyskoulutus')
     def to_representation(self, instance):
@@ -677,7 +674,7 @@ class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Taydennyskoulutus
-        exclude = ('tyontekijat', 'changed_by', 'luonti_pvm')
+        exclude = ('tyontekijat', 'luonti_pvm')
 
     def validate(self, data):
         instance = self.instance

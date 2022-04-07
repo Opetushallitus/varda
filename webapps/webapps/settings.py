@@ -91,7 +91,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'token_resolved.middleware.AddTokenHeaderMiddleware',
     'csp.middleware.CSPMiddleware',
-    'varda.custom_middleware.AdditionalHeadersMiddleware'
+    'varda.custom_middleware.AdditionalHeadersMiddleware',
+    'simple_history.middleware.HistoryRequestMiddleware'
 ]
 
 ROOT_URLCONF = 'webapps.urls'

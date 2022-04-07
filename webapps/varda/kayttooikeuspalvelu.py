@@ -235,7 +235,7 @@ def fetch_permissions_roles_for_organization(user_id, henkilo_oid, organisation,
     and user has some varda-permission role there.
     """
     try:
-        create_organization_or_toimipaikka_if_needed(organisation, user.id)
+        create_organization_or_toimipaikka_if_needed(organisation)
     except (InvalidKoodiUriException, KeyError, StopIteration):
         logger.warning('Organisaatio {0} creation failed for henkilo {1}. Skipping role creation.'
                        .format(organization_oid, henkilo_oid))
@@ -244,7 +244,7 @@ def fetch_permissions_roles_for_organization(user_id, henkilo_oid, organisation,
     [set_user_permissions(user, organisation, role) for role in roles if role is not None]
 
 
-def create_organization_or_toimipaikka_if_needed(organization, user_id):
+def create_organization_or_toimipaikka_if_needed(organization):
     organisaatio_oid = organization['oid']
     if organisaatio_client.is_of_type(organization, Organisaatiotyyppi.VAKAJARJESTAJA.value, Organisaatiotyyppi.MUU.value):
         if not Organisaatio.objects.filter(organisaatio_oid=organisaatio_oid).exists():
@@ -252,13 +252,13 @@ def create_organization_or_toimipaikka_if_needed(organization, user_id):
             Organization doesn't exist yet, let's create it.
             """
             organisaatiotyyppi = organisaatio_client.get_organization_type(organization)
-            create_organization_using_oid(organisaatio_oid, organisaatiotyyppi, user_id)
+            create_organization_using_oid(organisaatio_oid, organisaatiotyyppi)
     elif organisaatio_client.is_of_type(organization, Organisaatiotyyppi.TOIMIPAIKKA.value):
         if not Toimipaikka.objects.filter(organisaatio_oid=organisaatio_oid).exists():
             """
             Toimipaikka doesn't exist yet, let's create it.
             """
-            create_toimipaikka_using_oid(organisaatio_oid, user_id)
+            create_toimipaikka_using_oid(organisaatio_oid)
 
 
 def get_user_data(henkilo_oid):
@@ -479,5 +479,5 @@ def _create_or_update_organization_for_service_user(permission_list, organizatio
     else:
         # Organisaatio doesn't exist yet, let's create it.
         organisaatiotyyppi = organisaatio_client.get_organization_type(organization_data)
-        create_organization_using_oid(organisaatio_oid, organisaatiotyyppi, user.id,
+        create_organization_using_oid(organisaatio_oid, organisaatiotyyppi,
                                       integraatio_organisaatio=tuple(integration_flags_set))

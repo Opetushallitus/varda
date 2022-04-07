@@ -18,31 +18,29 @@ class AdminWithGuardianAndHistory(GuardedModelAdmin, SimpleHistoryAdmin):
 class OrganisaatioAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'nimi', 'organisaatio_oid',)
     search_fields = ('=id', 'nimi', '=organisaatio_oid',)
-    raw_id_fields = ('changed_by',)
 
 
 class ToimipaikkaAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'nimi', 'organisaatio_oid',)
     search_fields = ('=id', 'nimi', '=organisaatio_oid',)
-    raw_id_fields = ('vakajarjestaja', 'changed_by',)
+    raw_id_fields = ('vakajarjestaja',)
 
 
 class ToiminnallinenPainotusAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'toimintapainotus_koodi', 'toimipaikka',)
     search_fields = ('=id', '=toimintapainotus_koodi', '=toimipaikka__id',)
-    raw_id_fields = ('toimipaikka', 'changed_by',)
+    raw_id_fields = ('toimipaikka',)
 
 
 class KieliPainotusAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'kielipainotus_koodi', 'toimipaikka',)
     search_fields = ('=id', '=kielipainotus_koodi', '=toimipaikka__id',)
-    raw_id_fields = ('toimipaikka', 'changed_by',)
+    raw_id_fields = ('toimipaikka',)
 
 
 class HenkiloAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'etunimet', 'sukunimi', 'henkilo_oid',)
     search_fields = ('=id', 'etunimet', 'sukunimi', '=henkilo_oid',)
-    raw_id_fields = ('changed_by',)
 
 
 class LapsiAdmin(AdminWithGuardianAndHistory):
@@ -50,7 +48,7 @@ class LapsiAdmin(AdminWithGuardianAndHistory):
                     'get_paos_organisaatio_oid',)
     search_fields = ('=id', '=vakatoimija__organisaatio_oid', '=oma_organisaatio__organisaatio_oid',
                      '=paos_organisaatio__organisaatio_oid', '=henkilo__henkilo_oid',)
-    raw_id_fields = ('henkilo', 'vakatoimija', 'oma_organisaatio', 'paos_organisaatio', 'changed_by',)
+    raw_id_fields = ('henkilo', 'vakatoimija', 'oma_organisaatio', 'paos_organisaatio',)
 
     @display(ordering='henkilo__henkilo_oid', description='henkilo_oid')
     def get_henkilo_oid(self, instance):
@@ -72,19 +70,19 @@ class LapsiAdmin(AdminWithGuardianAndHistory):
 class VarhaiskasvatuspaatosAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'lapsi',)
     search_fields = ('=id', '=lapsi__id',)
-    raw_id_fields = ('lapsi', 'changed_by',)
+    raw_id_fields = ('lapsi',)
 
 
 class VarhaiskasvatussuhdeAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'varhaiskasvatuspaatos',)
     search_fields = ('=id', '=varhaiskasvatuspaatos__id',)
-    raw_id_fields = ('toimipaikka', 'varhaiskasvatuspaatos', 'changed_by',)
+    raw_id_fields = ('toimipaikka', 'varhaiskasvatuspaatos',)
 
 
 class HuoltajaAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'get_henkilo_oid',)
     search_fields = ('=id', '=henkilo__henkilo_oid',)
-    raw_id_fields = ('henkilo', 'changed_by',)
+    raw_id_fields = ('henkilo',)
 
     @display(ordering='henkilo__henkilo_oid', description='henkilo_oid')
     def get_henkilo_oid(self, instance):
@@ -94,13 +92,12 @@ class HuoltajaAdmin(AdminWithGuardianAndHistory):
 class HuoltajuussuhdeAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'huoltaja',)
     search_fields = ('=id', '=huoltaja__id',)
-    raw_id_fields = ('lapsi', 'huoltaja', 'changed_by',)
+    raw_id_fields = ('lapsi', 'huoltaja',)
 
 
 class MaksutietoAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'get_lapsi',)
     search_fields = ('=id', '=huoltajuussuhteet__lapsi__id',)
-    raw_id_fields = ('changed_by',)
 
     @display(ordering='huoltajuussuhteet__lapsi__id', description='lapsi')
     def get_lapsi(self, instance):
@@ -110,14 +107,14 @@ class MaksutietoAdmin(AdminWithGuardianAndHistory):
 class MaksutietoHuoltajuussuhdeAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'maksutieto', 'huoltajuussuhde',)
     search_fields = ('=id', '=maksutieto__id', '=huoltajuussuhde__id',)
-    raw_id_fields = ('maksutieto', 'huoltajuussuhde', 'changed_by',)
+    raw_id_fields = ('maksutieto', 'huoltajuussuhde',)
 
 
 class PaosToimintaAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'get_oma_organisaatio_oid', 'get_paos_organisaatio_oid', 'get_paos_toimipaikka_oid',)
     search_fields = ('=id', '=oma_organisaatio__organisaatio_oid', '=paos_organisaatio__organisaatio_oid',
                      '=paos_toimipaikka__organisaatio_oid',)
-    raw_id_fields = ('oma_organisaatio', 'paos_organisaatio', 'paos_toimipaikka', 'changed_by',)
+    raw_id_fields = ('oma_organisaatio', 'paos_organisaatio', 'paos_toimipaikka',)
 
     @display(ordering='oma_organisaatio__organisaatio_oid', description='oma_organisaatio organisaatio_oid')
     def get_oma_organisaatio_oid(self, instance):
@@ -136,7 +133,7 @@ class PaosOikeusAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'get_jarjestaja_kunta_organisaatio_oid', 'get_tuottaja_organisaatio_oid',)
     search_fields = ('=id', '=jarjestaja_kunta_organisaatio__organisaatio_oid',
                      '=tuottaja_organisaatio__organisaatio_oid',)
-    raw_id_fields = ('jarjestaja_kunta_organisaatio', 'tuottaja_organisaatio', 'tallentaja_organisaatio', 'changed_by',)
+    raw_id_fields = ('jarjestaja_kunta_organisaatio', 'tuottaja_organisaatio', 'tallentaja_organisaatio',)
 
     @display(ordering='jarjestaja_kunta_organisaatio__organisaatio_oid',
              description='jarjestaja_kunta_organisaatio organisaatio_oid')
@@ -151,7 +148,7 @@ class PaosOikeusAdmin(AdminWithGuardianAndHistory):
 class TyontekijaAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'get_henkilo_oid', 'get_vakajarjestaja_oid',)
     search_fields = ('=id', '=vakajarjestaja__organisaatio_oid', '=henkilo__henkilo_oid',)
-    raw_id_fields = ('henkilo', 'vakajarjestaja', 'changed_by',)
+    raw_id_fields = ('henkilo', 'vakajarjestaja',)
 
     @display(ordering='henkilo__henkilo_oid', description='henkilo_oid')
     def get_henkilo_oid(self, instance):
@@ -165,7 +162,7 @@ class TyontekijaAdmin(AdminWithGuardianAndHistory):
 class TutkintoAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'get_henkilo_oid', 'get_vakajarjestaja_oid',)
     search_fields = ('=id', '=vakajarjestaja__organisaatio_oid', '=henkilo__henkilo_oid',)
-    raw_id_fields = ('henkilo', 'vakajarjestaja', 'changed_by',)
+    raw_id_fields = ('henkilo', 'vakajarjestaja',)
 
     @display(ordering='henkilo__henkilo_oid', description='henkilo_oid')
     def get_henkilo_oid(self, instance):
@@ -179,13 +176,13 @@ class TutkintoAdmin(AdminWithGuardianAndHistory):
 class PalvelussuhdeAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'tyontekija',)
     search_fields = ('=id', '=tyontekija__id',)
-    raw_id_fields = ('tyontekija', 'changed_by',)
+    raw_id_fields = ('tyontekija',)
 
 
 class TyoskentelypaikkaAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'palvelussuhde', 'get_toimipaikka_organisaatio_oid',)
     search_fields = ('=id', '=palvelussuhde__id', '=toimipaikka__organisaatio_oid',)
-    raw_id_fields = ('palvelussuhde', 'toimipaikka', 'changed_by',)
+    raw_id_fields = ('palvelussuhde', 'toimipaikka',)
 
     @display(ordering='toimipaikka__organisaatio_oid', description='toimipaikka organisaatio_oid')
     def get_toimipaikka_organisaatio_oid(self, instance):
@@ -195,23 +192,23 @@ class TyoskentelypaikkaAdmin(AdminWithGuardianAndHistory):
 class PidempipoissaoloAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'palvelussuhde',)
     search_fields = ('=id', '=palvelussuhde__id',)
-    raw_id_fields = ('palvelussuhde', 'changed_by',)
+    raw_id_fields = ('palvelussuhde',)
 
 
 class TaydennyskoulutusAdmin(AdminWithGuardianAndHistory):
-    raw_id_fields = ('changed_by',)
+    pass
 
 
 class TaydennyskoulutusTyontekijaAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'taydennyskoulutus', 'tyontekija',)
     search_fields = ('=id', '=taydennyskoulutus__id', '=tyontekija__id',)
-    raw_id_fields = ('taydennyskoulutus', 'tyontekija', 'changed_by',)
+    raw_id_fields = ('taydennyskoulutus', 'tyontekija',)
 
 
 class TilapainenHenkilostoAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'get_vakajarjestaja_oid',)
     search_fields = ('=id', '=vakajarjestaja__organisaatio_oid',)
-    raw_id_fields = ('vakajarjestaja', 'changed_by',)
+    raw_id_fields = ('vakajarjestaja',)
 
     @display(ordering='vakajarjestaja__organisaatio_oid', description='vakajarjestaja organisaatio_oid')
     def get_vakajarjestaja_oid(self, instance):

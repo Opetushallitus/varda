@@ -195,7 +195,6 @@ class ExternalPermissionsSerializer(serializers.Serializer):
 
 """
 RelatedField serializers
-Show only relevant options in the dropdown menus (where changed_by=user)
 """
 
 
@@ -288,7 +287,7 @@ class OrganisaatioSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Organisaatio
-        exclude = ('ytjkieli', 'integraatio_organisaatio', 'luonti_pvm', 'changed_by',)
+        exclude = ('ytjkieli', 'integraatio_organisaatio', 'luonti_pvm',)
         read_only_fields = ('id', 'nimi', 'y_tunnus', 'yritysmuoto', 'kunnallinen_kytkin', 'organisaatio_oid',
                             'kunta_koodi', 'kayntiosoite', 'kayntiosoite_postinumero', 'kayntiosoite_postitoimipaikka',
                             'postiosoite', 'postinumero', 'postitoimipaikka', 'organisaatiotyyppi', 'alkamis_pvm',
@@ -331,7 +330,7 @@ class ToimipaikkaSerializer(RequiredLahdejarjestelmaMixin, serializers.Hyperlink
 
     class Meta:
         model = Toimipaikka
-        exclude = ('nimi_sv', 'luonti_pvm', 'changed_by',)
+        exclude = ('nimi_sv', 'luonti_pvm',)
         read_only_fields = ('hallinnointijarjestelma',)
 
     @caching_to_representation('toimipaikka')
@@ -479,7 +478,7 @@ class ToiminnallinenPainotusSerializer(RequiredLahdejarjestelmaMixin, serializer
 
     class Meta:
         model = ToiminnallinenPainotus
-        exclude = ('luonti_pvm', 'changed_by',)
+        exclude = ('luonti_pvm',)
 
     def validate(self, data):
         data = super().validate(data)
@@ -520,7 +519,7 @@ class KieliPainotusSerializer(RequiredLahdejarjestelmaMixin, serializers.Hyperli
 
     class Meta:
         model = KieliPainotus
-        exclude = ('luonti_pvm', 'changed_by',)
+        exclude = ('luonti_pvm',)
 
     def validate(self, data):
         data = super().validate(data)
@@ -568,7 +567,7 @@ class HenkiloSerializer(serializers.HyperlinkedModelSerializer):
         model = Henkilo
         exclude = ('henkilotunnus_unique_hash', 'aidinkieli_koodi', 'sukupuoli_koodi', 'katuosoite', 'vtj_yksiloity',
                    'vtj_yksilointi_yritetty', 'postinumero', 'postitoimipaikka', 'kotikunta_koodi', 'luonti_pvm',
-                   'muutos_pvm', 'changed_by')
+                   'muutos_pvm')
 
     def validate_etunimet(self, value):
         validate_nimi(value)
@@ -772,10 +771,9 @@ class NestedMaksutietoHuoltajaSerializer(serializers.Serializer):
         return data
 
     def create(self, data):
-        user = self.context['request'].user
         huoltajuussuhde_obj = Huoltajuussuhde.objects.get(lapsi=data['lapsi'], huoltaja=data['huoltaja'])
         return MaksutietoHuoltajuussuhde.objects.create(huoltajuussuhde=huoltajuussuhde_obj,
-                                                        maksutieto=data['maksutieto'], changed_by=user)
+                                                        maksutieto=data['maksutieto'])
 
     def validate_etunimet(self, value):
         validate_nimi(value)
@@ -862,7 +860,7 @@ class MaksutietoSerializer(RequiredLahdejarjestelmaMixin, serializers.Hyperlinke
 
     class Meta:
         model = Maksutieto
-        exclude = ('luonti_pvm', 'muutos_pvm', 'changed_by', 'yksityinen_jarjestaja',)
+        exclude = ('luonti_pvm', 'muutos_pvm', 'yksityinen_jarjestaja',)
 
     def to_representation(self, instance):
         setattr(instance, 'lapsi', _get_lapsi_for_maksutieto(instance))
@@ -989,7 +987,7 @@ class MaksutietoUpdateSerializer(RequiredLahdejarjestelmaMixin, serializers.Hype
         model = Maksutieto
         read_only_fields = ('lapsi', 'lapsi_tunniste', 'alkamis_pvm', 'perheen_koko', 'maksun_peruste_koodi',
                             'palveluseteli_arvo', 'asiakasmaksu',)
-        exclude = ('luonti_pvm', 'muutos_pvm', 'changed_by', 'yksityinen_jarjestaja',)
+        exclude = ('luonti_pvm', 'muutos_pvm', 'yksityinen_jarjestaja',)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1095,7 +1093,7 @@ class LapsiSerializer(RequiredLahdejarjestelmaMixin, LapsiOptionalToimipaikkaMix
 
     class Meta:
         model = Lapsi
-        exclude = ('luonti_pvm', 'changed_by')
+        exclude = ('luonti_pvm',)
 
     @caching_to_representation('lapsi')
     def to_representation(self, instance):
@@ -1179,8 +1177,8 @@ class LapsiSerializerAdmin(RequiredLahdejarjestelmaMixin, serializers.Hyperlinke
 
     class Meta:
         model = Lapsi
-        exclude = ('luonti_pvm', 'changed_by',)
-        read_only_fields = ('oma_organisaatio', 'paos_organisaatio', 'paos_kytkin', 'luonti_pvm', 'changed_by')
+        exclude = ('luonti_pvm',)
+        read_only_fields = ('oma_organisaatio', 'paos_organisaatio', 'paos_kytkin', 'luonti_pvm')
 
 
 class HenkilohakuLapsetToimipaikkaSerializer(serializers.ModelSerializer):
@@ -1197,7 +1195,7 @@ class HenkilohakuLapsetSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Lapsi
-        exclude = ('luonti_pvm', 'changed_by', 'muutos_pvm')
+        exclude = ('luonti_pvm', 'muutos_pvm')
 
     @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.URLField()))
     def get_maksutiedot(self, lapsi_obj):
@@ -1250,7 +1248,7 @@ class HuoltajaSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Huoltaja
-        exclude = ('luonti_pvm', 'changed_by',)
+        exclude = ('luonti_pvm',)
 
     @caching_to_representation('huoltaja')
     def to_representation(self, instance):
@@ -1267,7 +1265,7 @@ class HuoltajuussuhdeSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Huoltajuussuhde
-        exclude = ('luonti_pvm', 'changed_by',)
+        exclude = ('luonti_pvm',)
 
 
 class VarhaiskasvatuspaatosSerializer(RequiredLahdejarjestelmaMixin, LapsiOptionalToimipaikkaMixin,
@@ -1286,7 +1284,7 @@ class VarhaiskasvatuspaatosSerializer(RequiredLahdejarjestelmaMixin, LapsiOption
 
     class Meta:
         model = Varhaiskasvatuspaatos
-        exclude = ('luonti_pvm', 'changed_by',)
+        exclude = ('luonti_pvm',)
         read_only_fields = ('pikakasittely_kytkin',)
 
     def validate(self, data):
@@ -1425,7 +1423,7 @@ class VarhaiskasvatussuhdeSerializer(RequiredLahdejarjestelmaMixin, serializers.
 
     class Meta:
         model = Varhaiskasvatussuhde
-        exclude = ('luonti_pvm', 'changed_by',)
+        exclude = ('luonti_pvm',)
 
     def validate(self, data):
         data = super().validate(data)
@@ -1540,7 +1538,7 @@ class PaosToimintaSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = PaosToiminta
-        exclude = ('luonti_pvm', 'changed_by',)
+        exclude = ('luonti_pvm',)
 
     def validate(self, data):
         if ('paos_organisaatio' in data and data['paos_organisaatio'] is not None and
@@ -1574,7 +1572,7 @@ class PaosOikeusSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = PaosOikeus
-        exclude = ('changed_by', 'luonti_pvm')
+        exclude = ('luonti_pvm',)
 
     def validate(self, data):
         if 'tallentaja_organisaatio' not in data:
@@ -1707,7 +1705,7 @@ class PaosToimijatSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = PaosToiminta
         exclude = (
-            'luonti_pvm', 'muutos_pvm', 'changed_by', 'oma_organisaatio', 'paos_organisaatio', 'paos_toimipaikka')
+            'luonti_pvm', 'muutos_pvm', 'oma_organisaatio', 'paos_organisaatio', 'paos_toimipaikka')
 
 
 class PaosToimipaikatSerializer(serializers.HyperlinkedModelSerializer):
@@ -1738,7 +1736,7 @@ class PaosToimipaikatSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = PaosToiminta
         exclude = (
-            'luonti_pvm', 'muutos_pvm', 'changed_by', 'oma_organisaatio', 'paos_organisaatio', 'paos_toimipaikka')
+            'luonti_pvm', 'muutos_pvm', 'oma_organisaatio', 'paos_organisaatio', 'paos_toimipaikka')
 
 
 class PaosOrganisaatioSerializer(serializers.HyperlinkedModelSerializer):
@@ -1784,4 +1782,4 @@ class ToimipaikkaKoosteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Toimipaikka
-        exclude = ('changed_by', 'vakajarjestaja', 'luonti_pvm', 'muutos_pvm',)
+        exclude = ('vakajarjestaja', 'luonti_pvm', 'muutos_pvm',)

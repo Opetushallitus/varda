@@ -177,12 +177,9 @@ def finalize_data_dump():
     Z8_ExcelReportLog.objects.all().delete()
     YearlyReportSummary.objects.all().delete()
 
-    user = User.objects.get(id=2)
     vakajarjestaja_1 = Organisaatio.objects.get(id=1)
-    vakajarjestaja_1.changed_by = user
     vakajarjestaja_1.save()
     toimipaikka_1 = Toimipaikka.objects.get(id=1)
-    toimipaikka_1.changed_by = user
     toimipaikka_1.save()
 
     logger.info('Anonymize the users.')
