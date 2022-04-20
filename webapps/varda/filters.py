@@ -506,7 +506,7 @@ class UiTyontekijaFilter(django_filters.FilterSet):
         # Filter by kiertava_kytkin only with vakajarjestaja level permissions
         if self.has_vakajarjestaja_tyontekija_permissions and (kiertava_arg == 'true' or kiertava_arg == 'false'):
             kiertava_boolean = True if kiertava_arg == 'true' else False
-            return tyontekija_filter | Q(palvelussuhteet__tyoskentelypaikat__kiertava_tyontekija_kytkin=kiertava_boolean)
+            return tyontekija_filter & Q(palvelussuhteet__tyoskentelypaikat__kiertava_tyontekija_kytkin=kiertava_boolean)
         return tyontekija_filter
 
     def filter_queryset(self, queryset):
@@ -522,17 +522,17 @@ class UiTyontekijaFilter(django_filters.FilterSet):
         toimipaikka_id_list = parse_toimipaikka_id_list(user, query_params.get('toimipaikat', ''),
                                                         required_permission_groups)
         if len(toimipaikka_id_list) > 0:
-            tyontekija_filter = Q(palvelussuhteet__tyoskentelypaikat__toimipaikka__id__in=toimipaikka_id_list)
+            tyontekija_filter &= Q(palvelussuhteet__tyoskentelypaikat__toimipaikka__id__in=toimipaikka_id_list)
         tyontekija_filter = self.apply_kiertava_filter(tyontekija_filter)
 
         if tehtavanimike_arg := query_params.get('tehtavanimike', None):
-            tyontekija_filter = tyontekija_filter & Q(palvelussuhteet__tyoskentelypaikat__tehtavanimike_koodi__iexact=tehtavanimike_arg)
+            tyontekija_filter &= Q(palvelussuhteet__tyoskentelypaikat__tehtavanimike_koodi__iexact=tehtavanimike_arg)
 
         if tutkinto_arg := query_params.get('tutkinto', None):
-            tyontekija_filter = tyontekija_filter & Q(palvelussuhteet__tutkinto_koodi__iexact=tutkinto_arg)
+            tyontekija_filter &= Q(palvelussuhteet__tutkinto_koodi__iexact=tutkinto_arg)
 
         if tyosuhde_arg := query_params.get('tyosuhde', None):
-            tyontekija_filter = tyontekija_filter & Q(palvelussuhteet__tyosuhde_koodi__iexact=tyosuhde_arg)
+            tyontekija_filter &= Q(palvelussuhteet__tyosuhde_koodi__iexact=tyosuhde_arg)
 
         # Apply custom filters
         return queryset.filter(tyontekija_filter).distinct('henkilo__sukunimi', 'henkilo__etunimet', 'id')

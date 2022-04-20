@@ -1,5 +1,6 @@
 import datetime
 import logging
+import math
 import re
 from functools import wraps
 
@@ -32,7 +33,7 @@ from varda.models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussu
                           MaksutietoHuoltajuussuhde, Palvelussuhde, Taydennyskoulutus, TaydennyskoulutusTyontekija,
                           Toimipaikka, Tyontekija, Organisaatio, Varhaiskasvatuspaatos, YearlyReportSummary,
                           Z4_CasKayttoOikeudet, Z5_AuditLog, Z6_LastRequest, Z6_RequestCount, Z6_RequestLog,
-                          Z6_RequestSummary)
+                          Z6_RequestSummary, Z9_RelatedObjectChanged)
 from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups, get_oph_yllapitaja_group_name
 from varda.permissions import assign_object_level_permissions_for_instance, delete_object_permissions_explicitly
 
@@ -664,6 +665,360 @@ def init_related_object_changed_table_task():
                 FROM varda_maksutietohuoltajuussuhde mhs
                 LEFT JOIN varda_huoltajuussuhde hs ON hs.id = mhs.huoltajuussuhde_id;
             ''')
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def init_related_object_changed_table_complete_history_task(datetime_param=None):
+    until_datetime = timezone.now()
+    if datetime_param:
+        until_datetime = datetime.datetime.strptime(datetime_param, '%Y-%m-%dT%H:%M:%S%z')
+
+    query_list = [
+        [
+            'varda_historicalorganisaatio',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'organisaatio', org.id, 'organisaatio', org.id, null, null, org.history_date, org.history_type
+                FROM varda_historicalorganisaatio org
+                WHERE org.history_date <= %s AND org.id > %s AND org.id <= %s
+                ORDER BY org.id;
+            '''
+        ],
+        [
+            'varda_historicaltoimipaikka',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'toimipaikka', tp.id, unnest(ARRAY['toimipaikka', 'organisaatio']),
+                    unnest(ARRAY[tp.id, tp.vakajarjestaja_id]), unnest(ARRAY['organisaatio', null]),
+                    unnest(ARRAY[tp.vakajarjestaja_id, null]), tp.history_date, tp.history_type
+                FROM varda_historicaltoimipaikka tp
+                WHERE tp.history_date <= %s AND tp.id > %s AND tp.id <= %s
+                ORDER BY tp.id;
+            '''
+        ],
+        [
+            'varda_historicalkielipainotus',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'kielipainotus', pa.id, unnest(ARRAY['toimipaikka', 'organisaatio']),
+                    unnest(ARRAY[tp.id, tp.vakajarjestaja_id]), unnest(ARRAY['organisaatio', null]),
+                    unnest(ARRAY[tp.vakajarjestaja_id, null]), pa.history_date, pa.history_type
+                FROM varda_historicalkielipainotus pa
+                LEFT JOIN LATERAL
+                    (SELECT DISTINCT ON (id) * FROM varda_historicaltoimipaikka
+                     WHERE id = pa.toimipaikka_id AND history_date <= pa.history_date + interval '30 seconds'
+                     ORDER BY id, history_date DESC) tp ON true
+                WHERE pa.history_date <= %s AND pa.id > %s AND pa.id <= %s
+                ORDER BY pa.id;
+            '''
+        ],
+        [
+            'varda_historicaltoiminnallinenpainotus',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'toiminnallinenpainotus', pa.id, unnest(ARRAY['toimipaikka', 'organisaatio']),
+                    unnest(ARRAY[tp.id, tp.vakajarjestaja_id]), unnest(ARRAY['organisaatio', null]),
+                    unnest(ARRAY[tp.vakajarjestaja_id, null]), pa.history_date, pa.history_type
+                FROM varda_historicaltoiminnallinenpainotus pa
+                LEFT JOIN LATERAL
+                    (SELECT DISTINCT ON (id) * FROM varda_historicaltoimipaikka
+                     WHERE id = pa.toimipaikka_id AND history_date <= pa.history_date + interval '30 seconds'
+                     ORDER BY id, history_date DESC) tp ON true
+                WHERE pa.history_date <= %s AND pa.id > %s AND pa.id <= %s
+                ORDER BY pa.id;
+            '''
+        ],
+        [
+            'varda_historicallapsi',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'lapsi', la.id, 'lapsi', la.id, null, null, la.history_date, la.history_type
+                FROM varda_historicallapsi la
+                WHERE la.history_date <= %s AND la.id > %s AND la.id <= %s
+                ORDER BY la.id;
+            '''
+        ],
+        [
+            'varda_historicalvarhaiskasvatuspaatos',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'varhaiskasvatuspaatos', pa.id, unnest(ARRAY['varhaiskasvatuspaatos', 'lapsi']),
+                    unnest(ARRAY[pa.id, pa.lapsi_id]), unnest(ARRAY['lapsi', null]),
+                    unnest(ARRAY[pa.lapsi_id, null]), pa.history_date, pa.history_type
+                FROM varda_historicalvarhaiskasvatuspaatos pa
+                WHERE pa.history_date <= %s AND pa.id > %s AND pa.id <= %s
+                ORDER BY pa.id;
+            '''
+        ],
+        [
+            'varda_historicalvarhaiskasvatussuhde',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'varhaiskasvatussuhde', su.id, unnest(ARRAY['varhaiskasvatuspaatos', 'lapsi']),
+                    unnest(ARRAY[pa.id, pa.lapsi_id]), unnest(ARRAY['lapsi', null]),
+                    unnest(ARRAY[pa.lapsi_id, null]), su.history_date, su.history_type
+                FROM varda_historicalvarhaiskasvatussuhde su
+                LEFT JOIN LATERAL
+                    (SELECT DISTINCT ON (id) * FROM varda_historicalvarhaiskasvatuspaatos
+                     WHERE id = su.varhaiskasvatuspaatos_id AND history_date <= su.history_date + interval '30 seconds'
+                     ORDER BY id, history_date DESC) pa ON true
+                WHERE su.history_date <= %s AND su.id > %s AND su.id <= %s
+                ORDER BY su.id;
+            '''
+        ],
+        # Maksutieto, Lapsi can be determined only for ~ events
+        # (for + and - events MaksutietoHuoltajuussuhde objects do not exist)
+        # MaksutietoHuoltajuussuhde history is incomplete so exclude rows which have NULL lapsi_id
+        [
+            'varda_historicalmaksutieto',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'maksutietohuoltajuussuhde', mahu.id, 'lapsi', hu.lapsi_id, 'maksutieto', ma.id,
+                    ma.history_date, ma.history_type
+                FROM varda_historicalmaksutieto ma
+                LEFT JOIN LATERAL
+                    (SELECT DISTINCT ON (id) * FROM varda_historicalmaksutietohuoltajuussuhde
+                     WHERE maksutieto_id = ma.id AND history_date <= ma.history_date
+                     ORDER BY id, history_date DESC) mahu ON true
+                LEFT JOIN LATERAL
+                    (SELECT DISTINCT ON (id) * FROM varda_historicalhuoltajuussuhde
+                     WHERE id = mahu.huoltajuussuhde_id AND history_date <= ma.history_date
+                     ORDER BY id, history_date DESC) hu ON true
+                WHERE ma.history_type = '~' AND ma.history_date <= %s AND hu.lapsi_id IS NOT NULL
+                    AND mahu.history_type != '-' AND ma.id > %s AND ma.id <= %s
+                ORDER BY ma.id;
+            '''
+        ],
+        # Huoltajuussuhde, no history_date filtering for varda_historicalhuoltajuussuhde as dates are out of sync
+        # with varda_historicalmaksutietohuoltajuussuhde, and lapsi_id cannot change for Huoltajuussuhde object
+        [
+            'varda_historicalmaksutietohuoltajuussuhde',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'maksutietohuoltajuussuhde', mahu.id, 'lapsi', hu.lapsi_id, 'maksutieto', mahu.maksutieto_id,
+                    mahu.history_date, mahu.history_type
+                FROM varda_historicalmaksutietohuoltajuussuhde mahu
+                LEFT JOIN LATERAL
+                    (SELECT DISTINCT ON (id) * FROM varda_historicalhuoltajuussuhde
+                     WHERE id = mahu.huoltajuussuhde_id
+                     ORDER BY id) hu ON true
+                WHERE mahu.history_date <= %s AND mahu.id > %s AND mahu.id <= %s
+                ORDER BY mahu.id;
+            '''
+        ],
+        [
+            'varda_historicalhuoltajuussuhde',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'huoltajuussuhde', hu.id, 'lapsi', hu.lapsi_id, null, null, hu.history_date, hu.history_type
+                FROM varda_historicalhuoltajuussuhde hu
+                WHERE hu.history_date <= %s AND hu.id > %s AND hu.id <= %s
+                ORDER BY hu.id;
+            '''
+        ],
+        [
+            'varda_historicaltyontekija',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'tyontekija', ty.id, 'tyontekija', ty.id, null, null, ty.history_date, ty.history_type
+                FROM varda_historicaltyontekija ty
+                WHERE ty.history_date <= %s AND ty.id > %s AND ty.id <= %s
+                ORDER BY ty.id;
+            '''
+        ],
+        # Tutkinto, longer time frame since when transferring Toimipaikka objects from one Organisaatio to another,
+        # Tutkinto objects are modified first, before Tyontekija objects
+        [
+            'varda_historicaltutkinto',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'tutkinto', tu.id, 'tyontekija', ty.id, null, null, tu.history_date, tu.history_type
+                FROM varda_historicaltutkinto tu
+                LEFT JOIN LATERAL
+                    (SELECT * FROM varda_historicaltyontekija
+                     WHERE vakajarjestaja_id = tu.vakajarjestaja_id AND henkilo_id = tu.henkilo_id
+                        AND history_date <= tu.history_date + interval '5 minutes'
+                     ORDER BY id, history_date DESC LIMIT 1) ty ON true
+                WHERE tu.history_date <= %s AND tu.id > %s AND tu.id <= %s
+                ORDER BY tu.id;
+            '''
+        ],
+        [
+            'varda_historicalpalvelussuhde',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'palvelussuhde', pa.id, unnest(ARRAY['palvelussuhde', 'tyontekija']),
+                    unnest(ARRAY[pa.id, pa.tyontekija_id]), unnest(ARRAY['tyontekija', null]),
+                    unnest(ARRAY[pa.tyontekija_id, null]), pa.history_date, pa.history_type
+                FROM varda_historicalpalvelussuhde pa
+                WHERE pa.history_date <= %s AND pa.id > %s AND pa.id <= %s
+                ORDER BY pa.id;
+            '''
+        ],
+        [
+            'varda_historicaltyoskentelypaikka',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'tyoskentelypaikka', typ.id, unnest(ARRAY['palvelussuhde', 'tyontekija']),
+                    unnest(ARRAY[pa.id, pa.tyontekija_id]), unnest(ARRAY['tyontekija', null]),
+                    unnest(ARRAY[pa.tyontekija_id, null]), typ.history_date, typ.history_type
+                FROM varda_historicaltyoskentelypaikka typ
+                LEFT JOIN LATERAL
+                    (SELECT DISTINCT ON (id) * FROM varda_historicalpalvelussuhde
+                     WHERE id = typ.palvelussuhde_id AND history_date <= typ.history_date + interval '30 seconds'
+                     ORDER BY id, history_date DESC) pa ON true
+                WHERE typ.history_date <= %s AND typ.id > %s AND typ.id <= %s
+                ORDER BY typ.id;
+            '''
+        ],
+        [
+            'varda_historicalpidempipoissaolo',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'pidempipoissaolo', pi.id, unnest(ARRAY['palvelussuhde', 'tyontekija']),
+                    unnest(ARRAY[pa.id, pa.tyontekija_id]), unnest(ARRAY['tyontekija', null]),
+                    unnest(ARRAY[pa.tyontekija_id, null]), pi.history_date, pi.history_type
+                FROM varda_historicalpidempipoissaolo pi
+                LEFT JOIN LATERAL
+                    (SELECT DISTINCT ON (id) * FROM varda_historicalpalvelussuhde
+                     WHERE id = pi.palvelussuhde_id AND history_date <= pi.history_date + interval '30 seconds'
+                     ORDER BY id, history_date DESC) pa ON true
+                WHERE pi.history_date <= %s AND pi.id > %s AND pi.id <= %s
+                ORDER BY pi.id;
+            '''
+        ],
+        # Taydennyskoulutus, Tyontekijat can be determined only for ~ events
+        # (for + and - events TaydennyskoulutusTyontekija objects do not exist)
+        [
+            'varda_historicaltaydennyskoulutus',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'taydennyskoulutustyontekija', taty.id, 'tyontekija', taty.tyontekija_id,
+                    'taydennyskoulutus', ta.id, ta.history_date, ta.history_type
+                FROM varda_historicaltaydennyskoulutus ta
+                LEFT JOIN LATERAL
+                    (SELECT DISTINCT ON (id) * FROM varda_historicaltaydennyskoulutustyontekija
+                     WHERE taydennyskoulutus_id = ta.id AND history_date <= ta.history_date
+                     ORDER BY id, history_date DESC) taty ON true
+                WHERE ta.history_type = '~' AND ta.history_date <= %s AND taty.history_type != '-'
+                     AND ta.id > %s AND ta.id <= %s
+                ORDER BY ta.id;
+            '''
+        ],
+        [
+            'varda_historicaltaydennyskoulutustyontekija',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'taydennyskoulutustyontekija', taty.id, 'tyontekija', taty.tyontekija_id, 'taydennyskoulutus',
+                    taty.taydennyskoulutus_id, taty.history_date, taty.history_type
+                FROM varda_historicaltaydennyskoulutustyontekija taty
+                WHERE taty.history_date <= %s AND taty.id > %s AND taty.id <= %s
+                ORDER BY taty.id;
+            '''
+        ],
+        [
+            'varda_historicaltilapainenhenkilosto',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'tilapainenhenkilosto', ti.id, 'organisaatio', ti.vakajarjestaja_id, null, null,
+                    ti.history_date, ti.history_type
+                FROM varda_historicaltilapainenhenkilosto ti
+                WHERE ti.history_date <= %s AND ti.id > %s AND ti.id <= %s
+                ORDER BY ti.id;
+            '''
+        ],
+        [
+            'varda_historicalhenkilo',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'lapsi', la.id, 'lapsi', la.id, null, null, he.history_date, he.history_type
+                FROM varda_historicalhenkilo he
+                LEFT JOIN LATERAL
+                    (SELECT DISTINCT ON (id) * FROM varda_historicallapsi
+                     WHERE henkilo_id = he.id AND history_date <= he.history_date
+                     ORDER BY id, history_date DESC) la ON true
+                WHERE he.history_type = '~' AND he.history_date <= %s AND la.id IS NOT NULL
+                    AND la.history_type != '-' AND he.id > %s AND he.id <= %s
+                ORDER BY he.id;
+            '''
+        ],
+        [
+            'varda_historicalhenkilo',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'huoltajuussuhde', hu.id, 'lapsi', hu.lapsi_id, null, null, he.history_date, he.history_type
+                FROM varda_historicalhenkilo he
+                LEFT JOIN LATERAL
+                    (SELECT DISTINCT ON (id) * FROM varda_historicalhuoltaja
+                     WHERE henkilo_id = he.id AND history_date <= he.history_date
+                     ORDER BY id, history_date DESC) huo ON true
+                LEFT JOIN LATERAL
+                    (SELECT DISTINCT ON (id) * FROM varda_historicalhuoltajuussuhde
+                     WHERE huoltaja_id = huo.id AND history_date <= he.history_date
+                     ORDER BY id, history_date DESC) hu ON TRUE
+                WHERE he.history_type = '~' AND he.history_date <= %s AND hu.lapsi_id IS NOT NULL
+                    AND huo.history_type != '-' AND hu.history_type != '-' AND he.id > %s AND he.id <= %s
+                ORDER BY he.id;
+            '''
+        ],
+        [
+            'varda_historicalhenkilo',
+            '''
+                INSERT INTO varda_z9_relatedobjectchanged (trigger_model_name, trigger_instance_id, model_name,
+                    instance_id, parent_model_name, parent_instance_id, changed_timestamp, history_type)
+                SELECT 'tyontekija', ty.id, 'tyontekija', ty.id, null, null, he.history_date, he.history_type
+                FROM varda_historicalhenkilo he
+                LEFT JOIN LATERAL
+                    (SELECT DISTINCT ON (id) * FROM varda_historicaltyontekija
+                     WHERE henkilo_id = he.id AND history_date <= he.history_date
+                     ORDER BY id, history_date DESC) ty ON true
+                WHERE he.history_type = '~' AND he.history_date <= %s AND ty.id IS NOT NULL
+                    AND ty.history_type != '-' AND he.id > %s AND he.id <= %s
+                ORDER BY he.id;
+            '''
+        ]
+    ]
+
+    # Delete old RelatedObjectChanged events as they are rebuilt
+    Z9_RelatedObjectChanged.objects.filter(changed_timestamp__lte=until_datetime).delete()
+
+    with connection.cursor() as cursor:
+        for query in query_list:
+            table = query[0]
+            raw_query = query[1]
+
+            # These queries are very expensive in production, so process 100 000 objects at a time
+            # Get the highest ID number and round it up to the next 100 000
+            cursor.execute(f'SELECT MAX(id) FROM {table};')
+            max_object_id = cursor.fetchone()[0]
+            object_limit = int(math.ceil(max_object_id / 100000.0)) * 100000 + 1
+
+            last_index = 0
+            for index in range(100000, object_limit, 100000):
+                cursor.execute(raw_query, [until_datetime, last_index, index])
+                logger.info(f'Z9_RelatedObjectChanged table: {table}, id range: {last_index} - {index}, rowcount: {cursor.rowcount}')
+                last_index = index
 
 
 @shared_task

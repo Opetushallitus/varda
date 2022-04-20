@@ -1347,7 +1347,8 @@ def _create_lapsi_and_related_data(lapsi, huoltaja_list=(), vakapaatos_list=(), 
                            if HETU_REGEX.fullmatch(huoltaja_identifier)
                            else Q(henkilo_oid=huoltaja_identifier))
         huoltaja_obj = Huoltaja.objects.get_or_create(henkilo=Henkilo.objects.get(huoltaja_filter))[0]
-        Huoltajuussuhde.objects.create(huoltaja=huoltaja_obj, lapsi_id=lapsi_id, voimassa_kytkin=True)
+        Huoltajuussuhde.objects.get_or_create(huoltaja=huoltaja_obj, lapsi_id=lapsi_id,
+                                              defaults={'voimassa_kytkin': True})
 
     for vakapaatos in vakapaatos_list:
         vakapaatos_dict = vakapaatos[0]

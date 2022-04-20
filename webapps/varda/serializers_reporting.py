@@ -631,13 +631,13 @@ class TkVakapaatosSerializer(TkBaseSerializer, serializers.ModelSerializer):
 
 
 class TkHuoltajuussuhdeSerializer(TkBaseSerializer, serializers.ModelSerializer):
-    etunimet = serializers.CharField(source='henkilo_instance.etunimet')
-    sukunimi = serializers.CharField(source='henkilo_instance.sukunimi')
-    henkilo_oid = serializers.CharField(source='henkilo_instance.henkilo_oid')
+    etunimet = serializers.CharField(source='henkilo_instance.etunimet', allow_null=True)
+    sukunimi = serializers.CharField(source='henkilo_instance.sukunimi', allow_null=True)
+    henkilo_oid = serializers.CharField(source='henkilo_instance.henkilo_oid', allow_null=True)
     henkilotunnus = serializers.SerializerMethodField()
-    katuosoite = serializers.CharField(source='henkilo_instance.katuosoite')
-    postinumero = serializers.CharField(source='henkilo_instance.postinumero')
-    postitoimipaikka = serializers.CharField(source='henkilo_instance.postitoimipaikka')
+    katuosoite = serializers.CharField(source='henkilo_instance.katuosoite', allow_null=True)
+    postinumero = serializers.CharField(source='henkilo_instance.postinumero', allow_null=True)
+    postitoimipaikka = serializers.CharField(source='henkilo_instance.postitoimipaikka', allow_null=True)
 
     class Meta:
         model = Huoltajuussuhde
@@ -647,17 +647,19 @@ class TkHuoltajuussuhdeSerializer(TkBaseSerializer, serializers.ModelSerializer)
 
     def to_representation(self, instance):
         # Get henkilo data from history table or actual table (history is incomplete in test environments)
-        henkilo = Henkilo.history.filter(id=instance.henkilo_id).distinct('id').order_by('id', '-history_date').first()
+        henkilo = (Henkilo.history.filter(id=instance.henkilo_id, history_date__lte=self.datetime_lte).distinct('id')
+                   .order_by('id', '-history_date').first())
         if not henkilo:
             henkilo = Henkilo.objects.filter(id=instance.henkilo_id).first()
-        self.secondary_muutos_pvm = henkilo.muutos_pvm
+        self.secondary_muutos_pvm = getattr(henkilo, 'muutos_pvm', None)
         instance.henkilo_instance = henkilo
 
         return super().to_representation(instance)
 
     def get_henkilotunnus(self, instance):
-        return decrypt_henkilotunnus(instance.henkilo_instance.henkilotunnus,
-                                     henkilo_id=instance.henkilo_instance.id, raise_error=False)
+        henkilotunnus = getattr(instance.henkilo_instance, 'henkilotunnus', None)
+        henkilo_id = getattr(instance.henkilo_instance, 'id', None)
+        return decrypt_henkilotunnus(henkilotunnus, henkilo_id=henkilo_id, raise_error=False)
 
 
 class TkMaksutietoHuoltajaSerializer(serializers.Serializer):
@@ -699,17 +701,17 @@ class TkMaksutietoSerializer(TkBaseSerializer, serializers.ModelSerializer):
 
 
 class TkVakatiedotSerializer(TkBaseSerializer, serializers.ModelSerializer):
-    etunimet = serializers.CharField(source='henkilo_instance.etunimet')
-    sukunimi = serializers.CharField(source='henkilo_instance.sukunimi')
-    henkilo_oid = serializers.CharField(source='henkilo_instance.henkilo_oid')
+    etunimet = serializers.CharField(source='henkilo_instance.etunimet', allow_null=True)
+    sukunimi = serializers.CharField(source='henkilo_instance.sukunimi', allow_null=True)
+    henkilo_oid = serializers.CharField(source='henkilo_instance.henkilo_oid', allow_null=True)
     henkilotunnus = serializers.SerializerMethodField()
-    syntyma_pvm = serializers.DateField(source='henkilo_instance.syntyma_pvm')
-    sukupuoli_koodi = serializers.CharField(source='henkilo_instance.sukupuoli_koodi')
-    aidinkieli_koodi = serializers.CharField(source='henkilo_instance.aidinkieli_koodi')
-    kotikunta_koodi = serializers.CharField(source='henkilo_instance.kotikunta_koodi')
-    katuosoite = serializers.CharField(source='henkilo_instance.katuosoite')
-    postinumero = serializers.CharField(source='henkilo_instance.postinumero')
-    postitoimipaikka = serializers.CharField(source='henkilo_instance.postitoimipaikka')
+    syntyma_pvm = serializers.DateField(source='henkilo_instance.syntyma_pvm', allow_null=True)
+    sukupuoli_koodi = serializers.CharField(source='henkilo_instance.sukupuoli_koodi', allow_null=True)
+    aidinkieli_koodi = serializers.CharField(source='henkilo_instance.aidinkieli_koodi', allow_null=True)
+    kotikunta_koodi = serializers.CharField(source='henkilo_instance.kotikunta_koodi', allow_null=True)
+    katuosoite = serializers.CharField(source='henkilo_instance.katuosoite', allow_null=True)
+    postinumero = serializers.CharField(source='henkilo_instance.postinumero', allow_null=True)
+    postitoimipaikka = serializers.CharField(source='henkilo_instance.postitoimipaikka', allow_null=True)
     varhaiskasvatuspaatokset = serializers.SerializerMethodField()
     huoltajat = serializers.SerializerMethodField()
     maksutiedot = serializers.SerializerMethodField()
@@ -724,10 +726,11 @@ class TkVakatiedotSerializer(TkBaseSerializer, serializers.ModelSerializer):
 
     def to_representation(self, instance):
         # Get henkilo data from history table or actual table (history is incomplete in test environments)
-        henkilo = Henkilo.history.filter(id=instance.henkilo_id).distinct('id').order_by('id', '-history_date').first()
+        henkilo = (Henkilo.history.filter(id=instance.henkilo_id, history_date__lte=self.datetime_lte)
+                   .distinct('id').order_by('id', '-history_date').first())
         if not henkilo:
             henkilo = Henkilo.objects.filter(id=instance.henkilo_id).first()
-        self.secondary_muutos_pvm = henkilo.muutos_pvm
+        self.secondary_muutos_pvm = getattr(henkilo, 'muutos_pvm', None)
         instance.henkilo_instance = henkilo
 
         # varda_historicallapsi does not contain all vakatoimija_id changes because the field has been updated
@@ -739,8 +742,9 @@ class TkVakatiedotSerializer(TkBaseSerializer, serializers.ModelSerializer):
         return lapsi
 
     def get_henkilotunnus(self, instance):
-        return decrypt_henkilotunnus(instance.henkilo_instance.henkilotunnus,
-                                     henkilo_id=instance.henkilo_instance.id, raise_error=False)
+        henkilotunnus = getattr(instance.henkilo_instance, 'henkilotunnus', None)
+        henkilo_id = getattr(instance.henkilo_instance, 'id', None)
+        return decrypt_henkilotunnus(henkilotunnus, henkilo_id=henkilo_id, raise_error=False)
 
     @swagger_serializer_method(serializer_or_field=TkVakapaatosSerializer)
     def get_varhaiskasvatuspaatokset(self, instance):
@@ -874,13 +878,13 @@ class TkTaydennyskoulutusSerializer(TkBaseSerializer, serializers.ModelSerialize
 
 
 class TkHenkilostotiedotSerializer(TkBaseSerializer, serializers.ModelSerializer):
-    etunimet = serializers.CharField(source='henkilo_instance.etunimet')
-    sukunimi = serializers.CharField(source='henkilo_instance.sukunimi')
-    henkilo_oid = serializers.CharField(source='henkilo_instance.henkilo_oid')
+    etunimet = serializers.CharField(source='henkilo_instance.etunimet', allow_null=True)
+    sukunimi = serializers.CharField(source='henkilo_instance.sukunimi', allow_null=True)
+    henkilo_oid = serializers.CharField(source='henkilo_instance.henkilo_oid', allow_null=True)
     henkilotunnus = serializers.SerializerMethodField()
-    syntyma_pvm = serializers.DateField(source='henkilo_instance.syntyma_pvm')
-    aidinkieli_koodi = serializers.CharField(source='henkilo_instance.aidinkieli_koodi')
-    sukupuoli_koodi = serializers.CharField(source='henkilo_instance.sukupuoli_koodi')
+    syntyma_pvm = serializers.DateField(source='henkilo_instance.syntyma_pvm', allow_null=True)
+    aidinkieli_koodi = serializers.CharField(source='henkilo_instance.aidinkieli_koodi', allow_null=True)
+    sukupuoli_koodi = serializers.CharField(source='henkilo_instance.sukupuoli_koodi', allow_null=True)
     tutkinnot = serializers.SerializerMethodField()
     palvelussuhteet = serializers.SerializerMethodField()
     taydennyskoulutukset = serializers.SerializerMethodField()
@@ -894,18 +898,20 @@ class TkHenkilostotiedotSerializer(TkBaseSerializer, serializers.ModelSerializer
 
     def to_representation(self, instance):
         # Get henkilo data from history table or actual table (history is incomplete in test environments)
-        henkilo = Henkilo.history.filter(id=instance.henkilo_id).distinct('id').order_by('id', '-history_date').first()
+        henkilo = (Henkilo.history.filter(id=instance.henkilo_id, history_date__lte=self.datetime_lte)
+                   .distinct('id').order_by('id', '-history_date').first())
         if not henkilo:
             henkilo = Henkilo.objects.filter(id=instance.henkilo_id).first()
         instance.henkilo_instance = henkilo
-        self.secondary_muutos_pvm = henkilo.muutos_pvm
+        self.secondary_muutos_pvm = getattr(henkilo, 'muutos_pvm', None)
         self.context['tyontekija_id'] = instance.id
 
         return super().to_representation(instance)
 
     def get_henkilotunnus(self, instance):
-        return decrypt_henkilotunnus(instance.henkilo_instance.henkilotunnus,
-                                     henkilo_id=instance.henkilo_instance.id, raise_error=False)
+        henkilotunnus = getattr(instance.henkilo_instance, 'henkilotunnus', None)
+        henkilo_id = getattr(instance.henkilo_instance, 'id', None)
+        return decrypt_henkilotunnus(henkilotunnus, henkilo_id=henkilo_id, raise_error=False)
 
     @swagger_serializer_method(serializer_or_field=TkTutkintoSerializer)
     def get_tutkinnot(self, instance):
