@@ -442,6 +442,7 @@ def update_request_summary_table_task():
 
             # QuerySet that groups Z6_RequestLog instances by defined fields and a simplified URL
             # e.g. /api/v1/varhaiskasvatuspaatokset/123/ -> /api/v1/varhaiskasvatuspaatokset/*/
+            # PostgreSQL specific functionality (regexp_replace)
             request_log_qs = (Z6_RequestLog.objects
                               .values(*values, 'timestamp__date')
                               .annotate(request_url_simple=Case(When(request_url__regex=r'^.*\/(\d*(:.*)?|[\d.]*)\/.*$',
@@ -582,6 +583,7 @@ def general_monitoring_task():
     # Exclude LUOVUTUSPALVELU users
     # Exclude error-report-x paths
     two_hours_ago = timezone.now() - datetime.timedelta(hours=2)
+    # PostgreSQL specific functionality (regexp_replace)
     page_queryset = (Z5_AuditLog.objects
                      .exclude(user__groups__name__icontains=Z4_CasKayttoOikeudet.LUOVUTUSPALVELU)
                      .exclude(successful_get_request_path__icontains='error-report-')

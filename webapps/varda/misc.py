@@ -61,14 +61,14 @@ def decrypt_henkilotunnus(encrypted_henkilotunnus, henkilo_id=None, raise_error=
     try:
         resolved_token = f.decrypt(encrypted_henkilotunnus.encode('utf-8'))
     except TypeError:
-        logger.error(f'Decrypt henkilotunnus: Fernet token is not bytes. Henkilo.id: {henkilo_id}')
         if raise_error:
+            logger.error(f'Decrypt henkilotunnus: Fernet token is not bytes. Henkilo.id: {henkilo_id}')
             raise CustomServerErrorException
         else:
             return None
     except InvalidToken:
-        logger.error(f'Decrypt henkilotunnus: Invalid token. Henkilo.id: {henkilo_id}')
         if raise_error:
+            logger.error(f'Decrypt henkilotunnus: Invalid token. Henkilo.id: {henkilo_id}')
             raise CustomServerErrorException
         else:
             return None

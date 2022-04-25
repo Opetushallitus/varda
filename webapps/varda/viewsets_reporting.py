@@ -6,7 +6,7 @@ from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser, User
 from django.contrib.postgres.aggregates import ArrayAgg
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models import (Case, Count, DateField, F, FloatField, IntegerField, OuterRef, Q, Subquery, Sum,
                               Value, When)
 from django.db.models.functions import Cast
@@ -1203,6 +1203,17 @@ class TkBaseViewSet(GenericViewSet, ListModelMixin):
                         setattr(self, field_name, datetime.datetime.strptime(field_value, datetime_format))
                     except ValueError:
                         validator.error(field_name, ErrorMessages.GE020.value)
+
+    @transaction.atomic
+    def dispatch(self, request, *args, **kwargs):
+        with connection.cursor() as cursor:
+            # Increase work_mem temporarily as Tilastokeskus queries have expensive sorts with large page_size or
+            # time frame. Sorts are slow if PostgreSQL has to perform them on disk when work_mem is not sufficent.
+            # Default work_mem is 4MB.
+            # dispatch function is decorated with transaction.atomic so that SET LOCAL only applies here
+            # PostgreSQL specific functionality (SET LOCAL work_mem)
+            cursor.execute('SET LOCAL work_mem = %s;', ['64MB'])
+        return super().dispatch(request, *args, **kwargs)
 
 
 @auditlogclass
