@@ -39,6 +39,7 @@ import { VardaPuutteellisetLapsetComponent } from './components/varda-raportit/v
 import { VardaPuutteellisetTyontekijatComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-tyontekijat/puutteelliset-tyontekijat.component';
 import { VardaRequestSummaryComponent } from './components/varda-raportit/varda-request-summary/varda-request-summary.component';
 import { VardaYearlyReportComponent } from './components/varda-raportit/varda-yearly-report/varda-yearly-report.component';
+import { VardaSetPaattymisPvmComponent } from './components/varda-set-paattymis-pvm/varda-set-paattymis-pvm.component';
 
 const routes: Routes = [
   {
@@ -314,6 +315,14 @@ const routes: Routes = [
                 redirectTo: 'puutteelliset-tiedot'
               }
             ]
+          },
+          {
+            path: 'paata-tiedot',
+            component: VardaSetPaattymisPvmComponent,
+            data: {
+              title: VirkailijaTranslations.paata_tiedot,
+              roles: [UserAccessKeys.oph]
+            }
           },
         ]
       },

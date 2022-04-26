@@ -1,4 +1,5 @@
 import datetime
+import json
 import logging
 import math
 import re
@@ -22,13 +23,14 @@ from varda import organisaatiopalvelu
 from varda import permission_groups
 from varda import permissions
 from varda.audit_log import audit_log
-from varda.cache import invalidate_cache
+from varda.cache import delete_paattymis_pvm_cache, invalidate_cache, set_paattymis_pvm_cache
 from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
 from varda.enums.aikaleima_avain import AikaleimaAvain
 from varda.enums.reporting import ReportStatus
 from varda.excel_export import delete_excel_reports_earlier_than
 from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
 from varda.misc import hash_string, memory_efficient_queryset_iterator
+from varda.misc_operations import set_paattymis_pvm_for_vakajarjestaja_data
 from varda.models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Maksutieto,
                           MaksutietoHuoltajuussuhde, Palvelussuhde, Taydennyskoulutus, TaydennyskoulutusTyontekija,
                           Toimipaikka, Tyontekija, Organisaatio, Varhaiskasvatuspaatos, YearlyReportSummary,
@@ -1167,3 +1169,28 @@ def hash_cas_oppija_usernames():
             user.save()
         except IntegrityError as error:
             logger.error(f'Error hashing user {user.id}: {error}')
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def set_paattymis_pvm_for_vakajarjestaja_data_task(vakajarjestaja_id, paattymis_pvm, identifier):
+    try:
+        paattymis_pvm = datetime.datetime.strptime(paattymis_pvm, '%Y-%m-%d').date()
+    except ValueError:
+        logger.error(f'Could not parse paattymis_pvm: {paattymis_pvm}')
+        return None
+
+    vakajarjestaja = Organisaatio.objects.filter(id=vakajarjestaja_id).first()
+    if not vakajarjestaja:
+        logger.error(f'Could not find vakajarjestaja with id: {vakajarjestaja_id}')
+        return None
+
+    try:
+        result = set_paattymis_pvm_for_vakajarjestaja_data(vakajarjestaja, paattymis_pvm)
+        result['status'] = ReportStatus.FINISHED.value
+        set_paattymis_pvm_cache(identifier, result)
+        logger.info(f'Set paattymis_pvm {paattymis_pvm} for data of vakajarjestaja with ID '
+                    f'{vakajarjestaja_id}: {json.dumps(result)}')
+    except Exception as exception:
+        delete_paattymis_pvm_cache(identifier)
+        raise exception

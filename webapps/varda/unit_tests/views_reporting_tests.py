@@ -1286,7 +1286,7 @@ class VardaViewsReportingTests(TestCase):
         tomorrow = today + datetime.timedelta(days=1)
         client = SetUpTestClient('tester10').client()
         vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
-        toimipaikka = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.6727877596658')
+        toimipaikka = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.2565458382544')
         url = f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-toimipaikat/'
 
         # Create situations where toimipaikka has passive kasvatusopillinen_jarjestelma_koodi

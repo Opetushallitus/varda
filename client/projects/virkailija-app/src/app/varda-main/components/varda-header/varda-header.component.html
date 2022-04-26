@@ -92,6 +92,14 @@
                       aria-ignore="true">warning</mat-icon>
             <span>{{i18n.raportit | translate }}</span>
           </a>
+          <a *ngIf="toimipaikkaAccessToAnyToimipaikka.oph.katselija"
+             routerLink="/paata-tiedot"
+             (keydown.tab)="$event.stopPropagation()"
+             (keydown.shift.tab)="$event.stopPropagation()"
+             mat-menu-item
+             appHighContrast>
+            <span>{{i18n.paata_tiedot | translate }}</span>
+          </a>
         </mat-menu>
       </li>
       <li class="varda-header-nav-item-container">

@@ -4,6 +4,8 @@ from rest_framework import serializers
 from varda.misc import hash_string
 from varda.models import (Organisaatio, Toimipaikka, Maksutieto, Henkilo, Varhaiskasvatussuhde, Tyontekija,
                           Tyoskentelypaikka)
+from varda.serializers_common import OidRelatedField, OrganisaatioPermissionCheckedHLField
+from varda.validators import validate_organisaatio_oid
 
 
 class AnonymisointiYhteenvetoHenkiloSerializer(serializers.Serializer):
@@ -104,3 +106,25 @@ class AnonymisointiYhteenvetoSerializer(serializers.Serializer):
     def get_last_henkilo(self, request):
         last_henkilo_id = self.get_last_henkilo_id(request)
         return self.get_henkilo_data(last_henkilo_id)
+
+
+class SetPaattymisPvmPostSerializer(serializers.Serializer):
+    vakajarjestaja = OrganisaatioPermissionCheckedHLField(view_name='organisaatio-detail', required=False,
+                                                          write_only=True)
+    vakajarjestaja_oid = OidRelatedField(object_type=Organisaatio, parent_field='vakajarjestaja',
+                                         parent_attribute='organisaatio_oid', prevalidator=validate_organisaatio_oid,
+                                         either_required=True, write_only=True)
+    paattymis_pvm = serializers.DateField(write_only=True)
+    identifier = serializers.CharField(read_only=True)
+
+
+class SetPaattymisPvmGetSerializer(serializers.Serializer):
+    status = serializers.CharField(read_only=True)
+    toimipaikka = serializers.IntegerField(read_only=True)
+    kielipainotus = serializers.IntegerField(read_only=True)
+    toiminnallinenpainotus = serializers.IntegerField(read_only=True)
+    varhaiskasvatuspaatos = serializers.IntegerField(read_only=True)
+    varhaiskasvatussuhde = serializers.IntegerField(read_only=True)
+    maksutieto = serializers.IntegerField(read_only=True)
+    palvelussuhde = serializers.IntegerField(read_only=True)
+    tyoskentelypaikka = serializers.IntegerField(read_only=True)

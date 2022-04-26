@@ -47,6 +47,7 @@ router_admin.register(r'clear-cache', viewsets.ClearCacheViewSet, basename='clea
 router_admin.register(r'hae-yksiloimattomat', viewsets.HaeYksiloimattomatHenkilotViewSet, basename='hae-yksiloimattomat')
 router_admin.register(r'anonymisointi-yhteenveto', viewsets_admin.AnonymisointiYhteenvetoViewSet, basename='anonymisointi-yhteenveto')
 router_admin.register(r'duplicate-lapsi-objects', viewsets_reporting.DuplicateLapsiViewSet, basename='duplicate-lapsi-objects')
+router_admin.register(r'set-paattymis-pvm', viewsets_admin.SetPaattymisPvmViewSet, basename='set-paattymis-pvm')
 
 router_user = routers.DefaultRouter()
 router_user.register(r'data', viewsets.ActiveUserViewSet)

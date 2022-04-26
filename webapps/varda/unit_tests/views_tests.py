@@ -3468,7 +3468,7 @@ class VardaViewsTests(TestCase):
         assert_status_code(resp_yksityinen, status.HTTP_201_CREATED)
 
     def test_api_toiminnallinen_painotus_update_kytkin(self):
-        toimipaikka_oid = '1.2.246.562.10.6727877596658'
+        toimipaikka_oid = '1.2.246.562.10.2565458382544'
         toimipaikka_qs = Toimipaikka.objects.filter(organisaatio_oid=toimipaikka_oid)
         toimipaikka_id = toimipaikka_qs.first().id
 
@@ -3521,7 +3521,7 @@ class VardaViewsTests(TestCase):
         self.assertFalse(toimipaikka_qs.first().toiminnallinenpainotus_kytkin)
 
     def test_api_kielipainotus_update_kytkin(self):
-        toimipaikka_oid = '1.2.246.562.10.6727877596658'
+        toimipaikka_oid = '1.2.246.562.10.2565458382544'
         toimipaikka_qs = Toimipaikka.objects.filter(organisaatio_oid=toimipaikka_oid)
         toimipaikka_id = toimipaikka_qs.first().id
 

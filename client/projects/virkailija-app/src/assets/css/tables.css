@@ -65,3 +65,12 @@
 .varda-table-cell-wide {
   width: 70%;
 }
+
+.mat-table {
+  font-family: var(--font-family-base);
+  width: 100%;
+}
+
+.mat-table .mat-header-cell {
+  font-size: 0.8em;
+}

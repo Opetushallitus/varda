@@ -3,10 +3,6 @@
   width: 100%;
 }
 
-.mat-table.excel-table .mat-header-cell {
-  font-size: 0.8em;
-}
-
 .mat-table.excel-table .mat-cell {
   font-size: 0.85em;
 }

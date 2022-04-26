@@ -64,15 +64,6 @@ h3 {
   font-family: inherit;
 }
 
-.mat-table {
-  font-family: var(--font-family-base);
-  width: 100%;
-}
-
-.varda-reporting-wrapper .mat-header-cell {
-  font-size: 14px;
-}
-
 .varda-field-label {
   font-weight: bold;
 }
@@ -336,7 +327,7 @@ tr.selected-row .mat-cell {
   color: var(--black);
 }
 
-.blue-panel, .blue-panel .mat-table {
+.varda-reporting-wrapper .blue-panel, .varda-reporting-wrapper .blue-panel .mat-table {
   background: var(--blue-lighten-4);
 }
 

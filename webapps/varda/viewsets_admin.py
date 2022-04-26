@@ -1,13 +1,26 @@
+import logging
+import uuid
+
+from django.http import Http404
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
-from rest_framework.mixins import ListModelMixin
+from rest_framework.mixins import ListModelMixin, CreateModelMixin, RetrieveModelMixin
 from rest_framework import permissions, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.viewsets import GenericViewSet
 
+from varda.cache import get_paattymis_pvm_cache, set_paattymis_pvm_cache
 from varda.enums.error_messages import ErrorMessages
+from varda.enums.reporting import ReportStatus
 from varda.models import Henkilo
-from varda.serializers_admin import AnonymisointiYhteenvetoSerializer
+from varda.permissions import AdminOrOPHUser, auditlogclass
+from varda.request_logging import request_log_viewset_decorator_factory
+from varda.serializers_admin import (AnonymisointiYhteenvetoSerializer, SetPaattymisPvmPostSerializer,
+                                     SetPaattymisPvmGetSerializer)
+from varda.tasks import set_paattymis_pvm_for_vakajarjestaja_data_task
+
+
+logger = logging.getLogger(__name__)
 
 
 class AnonymisointiYhteenvetoViewSet(GenericViewSet, ListModelMixin):
@@ -65,3 +78,47 @@ class AnonymisointiYhteenvetoViewSet(GenericViewSet, ListModelMixin):
         self.validate_query_params()
         serializer = self.get_serializer(request)
         return Response(serializer.data)
+
+
+@auditlogclass
+@request_log_viewset_decorator_factory()
+class SetPaattymisPvmViewSet(GenericViewSet, RetrieveModelMixin, CreateModelMixin):
+    permission_classes = (AdminOrOPHUser,)
+
+    def get_queryset(self):
+        return None
+
+    def get_serializer_class(self):
+        request = self.request
+        if request.method == 'POST':
+            return SetPaattymisPvmPostSerializer
+        return SetPaattymisPvmGetSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        vakajarjestaja = data['vakajarjestaja']
+        paattymis_pvm = data['paattymis_pvm']
+
+        identifier = uuid.uuid4()
+        set_paattymis_pvm_cache(identifier, {'status': ReportStatus.CREATING.value})
+        paattymis_pvm_str = paattymis_pvm.strftime('%Y-%m-%d')
+        set_paattymis_pvm_for_vakajarjestaja_data_task.delay(vakajarjestaja.id, paattymis_pvm_str, identifier)
+
+        headers = self.get_success_headers(serializer.data)
+        result = {'identifier': identifier}
+        return Response(self.get_serializer(result).data, status=status.HTTP_200_OK, headers=headers)
+
+    def retrieve(self, request, *args, **kwargs):
+        identifier = self.kwargs.get(self.lookup_url_kwarg or self.lookup_field, None)
+        if not identifier:
+            raise Http404
+
+        result = get_paattymis_pvm_cache(identifier)
+        if not result:
+            # Cache entry does not exist, task is not running or cache has been cleared
+            raise ValidationError({'errors': [ErrorMessages.AD006.value]})
+
+        return Response(self.get_serializer(result).data)

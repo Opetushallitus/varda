@@ -19,10 +19,6 @@
   display: block;
 }
 
-.mat-table {
-  width: 100%;
-}
-
 .mat-table th.mat-header-cell:not(:first-of-type),
 .mat-table td.mat-cell:not(:first-of-type) {
   padding-left: 0.5em;

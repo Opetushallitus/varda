@@ -311,6 +311,7 @@ class ErrorMessages(enum.Enum):
     AD003 = get_error_dict('AD003', 'User with this ID is not a CAS user.')
     AD004 = get_error_dict('AD004', 'User with this ID is not in oph_staff group.')
     AD005 = get_error_dict('AD005', 'You must approve with yes.')
+    AD006 = get_error_dict('AD006', 'Event with this ID was not found. Ask developers for clarification.')
 
     # Localisation errors, prefix: LO
     LO001 = get_error_dict('LO001', 'category URL parameter is required.')

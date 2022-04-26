@@ -434,7 +434,7 @@ def create_toimipaikat_and_painotukset():
             kasvatusopillinen_jarjestelma_koodi='kj03',
             toimintamuoto_koodi='tm01',
             asiointikieli_koodi=['FI', 'SV'],
-            jarjestamismuoto_koodi=['jm01'],
+            jarjestamismuoto_koodi=['jm01', 'jm02', 'jm03'],
             varhaiskasvatuspaikat=200,
             toiminnallinenpainotus_kytkin=False,
             kielipainotus_kytkin=False,
@@ -672,6 +672,13 @@ def create_toimipaikat_and_painotukset():
             'alkamis_pvm': '2017-12-29',
             'lahdejarjestelma': '1',
             'tunniste': 'testing-toiminnallinenpainotus2'
+        },
+        {
+            'toimipaikka_oid': '1.2.246.562.10.6727877596658',
+            'toimintapainotus_koodi': 'tp01',
+            'alkamis_pvm': '2020-12-29',
+            'lahdejarjestelma': '1',
+            'tunniste': 'testing-toiminnallinenpainotus3'
         }
     )
 
@@ -692,6 +699,13 @@ def create_toimipaikat_and_painotukset():
             'alkamis_pvm': '2017-12-30',
             'lahdejarjestelma': '1',
             'tunniste': 'testing-kielipainotus2'
+        },
+        {
+            'toimipaikka_oid': '1.2.246.562.10.6727877596658',
+            'kielipainotus_koodi': 'SV',
+            'alkamis_pvm': '2020-12-30',
+            'lahdejarjestelma': '1',
+            'tunniste': 'testing-kielipainotus3'
         }
     )
 
@@ -2725,7 +2739,7 @@ def create_henkilosto():
                         'kelpoisuus_kytkin': True,
                         'kiertava_tyontekija_kytkin': False,
                         'lahdejarjestelma': '1',
-                        'tunniste': 'testing-tyoskentylypaikka4'
+                        'tunniste': 'testing-tyoskentelypaikka4'
                     },
                 ),
                 (),

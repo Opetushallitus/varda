@@ -352,3 +352,15 @@ def set_localisation_cache(category, locale, data, cached_time=settings.DEFAULT_
         cache.set('lokalisointi.{0}.{1}'.format(category, locale.lower()), cache_data, cached_time)
     else:
         cache.set('lokalisointi.{}'.format(category), cache_data, cached_time)
+
+
+def set_paattymis_pvm_cache(identifier, data, cached_time=settings.DEFAULT_CACHE_INVALIDATION_TIME):
+    cache.set(f'paattymis_pvm_{identifier}', data, cached_time)
+
+
+def get_paattymis_pvm_cache(identifier):
+    return cache.get(f'paattymis_pvm_{identifier}', None)
+
+
+def delete_paattymis_pvm_cache(identifier):
+    return cache.delete(f'paattymis_pvm_{identifier}')

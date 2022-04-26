@@ -17,6 +17,7 @@ class VardaOrganisaatiopalveluTests(TestCase):
     toimipaikka_1_organisaatio_oid = '1.2.246.562.10.9395737548810'
     toimipaikka_2_organisaatio_oid = '1.2.246.562.10.9395737548815'
     toimipaikka_4_organisaatio_oid = '1.2.246.562.10.9395737548811'
+    toimipaikka_6727877596658_organisaatio_oid = '1.2.246.562.10.6727877596658'
 
     org_palvelu_url = settings.OPINTOPOLKU_DOMAIN + '/organisaatio-service/rest/organisaatio/v4/'
     oid_regex = '([0-2])((\\.0)|(\\.[1-9][0-9]*))*'
@@ -445,6 +446,8 @@ class VardaOrganisaatiopalveluTests(TestCase):
                       json={}, status=200)
         responses.add(responses.PUT, re.compile(self.org_palvelu_url + self.toimipaikka_2_regex),
                       json={}, status=200)
+        responses.add(responses.PUT, re.compile(self.org_palvelu_url + self.toimipaikka_6727877596658_organisaatio_oid),
+                      json={}, status=200)
 
         aikaleima_before_update = '2020-03-05 12:00:00+0000'
         aikaleima, created = Aikaleima.objects.get_or_create(avain=AikaleimaAvain.ORGANISAATIOS_VARDA_LAST_UPDATE.name)
@@ -475,7 +478,7 @@ class VardaOrganisaatiopalveluTests(TestCase):
             if call.request.method == 'PUT' and oid not in organizations_after_update:
                 organizations_after_update.append(oid)
 
-        organizations_1_4 = [self.toimipaikka_4_organisaatio_oid]
+        organizations_1_4 = [self.toimipaikka_6727877596658_organisaatio_oid, self.toimipaikka_4_organisaatio_oid]
         organizations_1_2_4 = organizations_1_4 + [self.toimipaikka_2_organisaatio_oid]
 
         self.assertListEqual(organizations_1_4, sorted(organizations_before_update))

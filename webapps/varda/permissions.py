@@ -89,6 +89,11 @@ class ReadAdminOrOPHUser(permissions.BasePermission):
         return bool(request.user and request.method == 'GET' and (user.is_superuser or is_oph_staff(user)))
 
 
+class AdminOrOPHUser(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user and (request.user.is_superuser or is_oph_staff(request.user))
+
+
 class LapsihakuPermissions(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user

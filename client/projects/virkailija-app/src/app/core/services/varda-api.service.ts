@@ -6,6 +6,10 @@ import { LoadingHttpService, VardaUserDTO } from 'varda-shared';
 import { VardaHenkiloDTO } from '../../utilities/models';
 import { VardaApiServiceInterface } from 'varda-shared/lib/models/vardaApiService.interface';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
+import {
+  VardaSetPaattymisPvmDTO,
+  VardaSetPaattymisPvmPostDTO, VardaSetPaattymisPvmPostResultDTO
+} from '../../utilities/models/dto/varda-set-paattymis-pvm-dto.model';
 
 @Injectable()
 export class VardaApiService implements VardaApiServiceInterface {
@@ -95,4 +99,11 @@ export class VardaApiService implements VardaApiServiceInterface {
     return url;
   }
 
+  postSetPaattymisPvm(params: VardaSetPaattymisPvmPostDTO): Observable<VardaSetPaattymisPvmPostResultDTO> {
+    return this.http.post(`${environment.vardaAppUrl}/api/admin/set-paattymis-pvm/`, params);
+  }
+
+  getSetPaattymisPvm(identifier: string): Observable<VardaSetPaattymisPvmDTO> {
+    return this.http.get(`${environment.vardaAppUrl}/api/admin/set-paattymis-pvm/${identifier}/`);
+  }
 }

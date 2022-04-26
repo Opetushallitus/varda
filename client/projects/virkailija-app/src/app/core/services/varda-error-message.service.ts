@@ -118,10 +118,10 @@ export class VardaErrorMessageService {
       errorTranslation = this.getErrorTranslation(error);
       if (errorTranslation) {
         // If translation was found, show: errorTranslation (errorCode)
-        errorTranslation = errorTranslation + ` (${errorCode})`;
+        errorTranslation = `${errorTranslation} (${errorCode})`;
       } else {
-        // If no translation was found, show: errorCode
-        errorTranslation = errorCode;
+        // If no translation was found, show: error.description (errorCode)
+        errorTranslation = `${error.description} (${errorCode})`;
       }
       if (errorCode.startsWith('DY')) {
         dynamicValue = this.parseDynamicValue(errorCode, error.description);

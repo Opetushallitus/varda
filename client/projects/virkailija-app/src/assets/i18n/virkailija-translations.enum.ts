@@ -366,6 +366,7 @@ export enum VirkailijaTranslations {
   poissaolo_save_success = 'poissaolo.save-success',
 
   tyoskentelypaikka = 'tyoskentelypaikka',
+  tyoskentelypaikka_plural = 'tyoskentelypaikka.plural',
   tyoskentelypaikka_delete_success = 'tyoskentelypaikka.delete-success',
   tyoskentelypaikka_save_success = 'tyoskentelypaikka.save-success',
   tyoskentelypaikka_alkaen_PVM = 'tyoskentelypaikka.tyoskentelypaikka-alkaen-PVM',
@@ -937,4 +938,12 @@ export enum VirkailijaTranslations {
   yearly_report_all = 'yearly-report.all',
   yearly_report_own = 'yearly-report.own',
   yearly_report_paos = 'yearly-report.paos',
+
+  paata_tiedot = 'paata-tiedot',
+  paata_tiedot_instructions = 'paata-tiedot.instructions',
+  paata_tiedot_save = 'paata-tiedot.save',
+  paata_tiedot_confirm = 'paata-tiedot.confirm',
+  paata_tiedot_confirm_prompt_1 = 'paata-tiedot.confirm-prompt.1',
+  paata_tiedot_confirm_prompt_2 = 'paata-tiedot.confirm-prompt.2',
+  paata_tiedot_result = 'paata-tiedot.result',
 }
