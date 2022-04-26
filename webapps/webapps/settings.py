@@ -406,13 +406,15 @@ CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
 
 # Content-Secure Policy, Keep our policy as strict as possible
-CSP_DEFAULT_SRC = ("'self'",)
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'", 'maxcdn.bootstrapcdn.com', 'fonts.gstatic.com',
-                 'fonts.googleapis.com', 'cdnjs.cloudflare.com')
-CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", 'cdnjs.cloudflare.com')
-CSP_FONT_SRC = ("'self'", 'maxcdn.bootstrapcdn.com', 'fonts.gstatic.com', 'fonts.googleapis.com')
+# Strict nonce policy for scripts https://csp.withgoogle.com/docs/strict-csp.html
+# Impossible to implement strict policy for styles, fonts and images as there are many places that do not support it,
+# e.g. Django admin, DRF yasg/Swagger and DRF browsable API
+CSP_INCLUDE_NONCE_IN = ('script-src',)
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", 'maxcdn.bootstrapcdn.com', 'fonts.googleapis.com',)
+CSP_FONT_SRC = ("'self'", 'maxcdn.bootstrapcdn.com', 'fonts.gstatic.com',)
 CSP_IMG_SRC = ("'self'", 'data:')
 CSP_OBJECT_SRC = ("'none'",)
+CSP_BASE_URI = ("'none'",)
 
 CSRF_COOKIE_HTTPONLY = True
 

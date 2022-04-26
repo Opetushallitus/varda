@@ -2,8 +2,32 @@
 {% load static %}
 {% load i18n %}
 
+<!--
+  Override script block to add CSP nonce
+  https://github.com/encode/django-rest-framework/blob/b1004a47334a0dd1929e6d50b8f7ff6badc959f4/rest_framework/templates/rest_framework/base.html#L289
+-->
+{% block script %}
+  <script nonce="{{request.csp_nonce}}">
+    window.drf = {
+      csrfHeaderName: "{{ csrf_header_name|default:'X-CSRFToken' }}",
+      csrfToken: "{% if request %}{{ csrf_token }}{% endif %}"
+    };
+  </script>
+  <script nonce="{{request.csp_nonce}}" src="{% static "rest_framework/js/jquery-3.5.1.min.js" %}"></script>
+  <script nonce="{{request.csp_nonce}}" src="{% static "rest_framework/js/ajax-form.js" %}"></script>
+  <script nonce="{{request.csp_nonce}}" src="{% static "rest_framework/js/csrf.js" %}"></script>
+  <script nonce="{{request.csp_nonce}}" src="{% static "rest_framework/js/bootstrap.min.js" %}"></script>
+  <script nonce="{{request.csp_nonce}}" src="{% static "rest_framework/js/prettify-min.js" %}"></script>
+  <script nonce="{{request.csp_nonce}}" src="{% static "rest_framework/js/default.js" %}"></script>
+  <script nonce="{{request.csp_nonce}}">
+    $(document).ready(function() {
+      $('form').ajaxForm();
+    });
+  </script>
+{% endblock %}
+
 {% block bootstrap_theme %}
-    <link rel="stylesheet" href="{% static 'rest_framework/css/yeti.bootstrap.min.css' %}" type="text/css">
+  <link rel="stylesheet" href="{% static 'rest_framework/css/yeti.bootstrap.min.css' %}" type="text/css">
 {% endblock %}
 
 {% block bootstrap_navbar_variant %}{% endblock %}

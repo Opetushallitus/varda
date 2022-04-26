@@ -4,14 +4,14 @@ with custom visjs settings
 -->
 {% load static %}
 {% block extra_scripts %}
-  <script src="//cdnjs.cloudflare.com/ajax/libs/vis/4.20.0/vis.min.js"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.20.0/vis.min.css" rel="stylesheet" type="text/css" />
+  <script nonce="{{request.csp_nonce}}" src="//cdnjs.cloudflare.com/ajax/libs/vis/4.20.0/vis.min.js"></script>
+  <link href="{% static 'styles/vis_4_20_0.min.css' %}" rel="stylesheet" type="text/css" />
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
 {% endblock %}
 <div id="visualization"></div>
 
-<script>
+<script nonce="{{request.csp_nonce}}">
   const vakatiedot_models = ['lapsi', 'varhaiskasvatuspaatos', 'varhaiskasvatussuhde', 'huoltaja', 'huoltajuussuhde',
     'maksutieto', 'kielipainotus', 'toiminnallinenpainotus', 'paostoiminta', 'paosoikeus'];
   const henkilosto_models = ['tyontekija', 'tutkinto', 'palvelussuhde', 'tyoskentelypaikka', 'pidempipoissaolo',

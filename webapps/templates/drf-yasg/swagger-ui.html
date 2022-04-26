@@ -1,5 +1,19 @@
 {% extends 'drf-yasg/swagger-ui.html' %}
 {% load static %}
+
+<!--
+  Override script block to add CSP nonce
+  https://github.com/axnsan12/drf-yasg/blob/d9700dbf8cc80d725a7db485c2d4446c19c29840/src/drf_yasg/templates/drf-yasg/swagger-ui.html#L41
+-->
+{% block main_scripts %}
+  <script nonce="{{request.csp_nonce}}" src="{% static 'drf-yasg/swagger-ui-dist/swagger-ui-bundle.js' %}"></script>
+  <script nonce="{{request.csp_nonce}}" src="{% static 'drf-yasg/swagger-ui-dist/swagger-ui-standalone-preset.js' %}"></script>
+  <script nonce="{{request.csp_nonce}}" src="{% static 'drf-yasg/insQ.min.js' %}"></script>
+  <script nonce="{{request.csp_nonce}}" src="{% static 'drf-yasg/immutable.min.js' %}"></script>
+  <script nonce="{{request.csp_nonce}}" src="{% static 'drf-yasg/swagger-ui-init.js' %}"></script>
+{% endblock %}
+
+<!-- Add iframeResizer used by public app -->
 {% block extra_scripts %}
-  <script src="{% static 'scripts/iframeResizer.contentWindow.min.js' %}"></script>
+  <script nonce="{{request.csp_nonce}}" src="{% static 'scripts/iframeResizer.contentWindow.min.js' %}"></script>
 {% endblock %}
