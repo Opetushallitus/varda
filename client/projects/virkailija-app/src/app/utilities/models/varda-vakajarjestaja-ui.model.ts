@@ -5,4 +5,7 @@ export class VardaVakajarjestajaUi {
   organisaatio_oid?: string;
   kunnallinen_kytkin?: boolean;
   y_tunnus?: string;
+  alkamis_pvm?: string;
+  paattymis_pvm?: string;
+  active?: boolean;
 }

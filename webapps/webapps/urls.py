@@ -56,6 +56,7 @@ router_pulssi = routers.DefaultRouter()
 router_pulssi.register(r'vakajarjestajat', viewsets.PulssiVakajarjestajat, basename='hae-vakajarjestajat')
 
 router_ui = routers.DefaultRouter()
+# /api/ui/vakajarjestajat/
 router_ui.register(r'vakajarjestajat', viewsets_ui.UiVakajarjestajatViewSet, basename='hae-vakajarjestajat')
 
 router = routers.DefaultRouter()

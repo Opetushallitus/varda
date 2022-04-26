@@ -10,7 +10,10 @@
          [routerLink]="['/paos-hallinta']">{{ i18n.paos | translate }}</a>
     </nav>
 
-    <h2 class="oph-h3">{{ selectedVakajarjestaja.nimi }}</h2>
+    <h2 class="oph-h3">
+      {{ selectedVakajarjestaja.nimi }}
+      <span *ngIf="!selectedVakajarjestaja.active" class="badge badge-secondary">{{ i18n.passive | translate }}</span>
+    </h2>
   </div>
   <section class="toimipaikka-selector-section">
     <label for="toimipaikkaSelectorSelect"

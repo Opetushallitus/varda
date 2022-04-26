@@ -59,7 +59,10 @@ export const vakajarjestajatUIStub: Array<VardaVakajarjestajaUi> = [
     nimi: 'Sotkamo',
     y_tunnus: '0214958-9',
     organisaatio_oid: '1.2.246.562.10.67019405222',
-    kunnallinen_kytkin: true
+    kunnallinen_kytkin: true,
+    alkamis_pvm: '2000-01-01',
+    paattymis_pvm: null,
+    active: true
   },
   {
     url: 'https://localhost:8000/api/v1/vakajarjestajat/11/',
@@ -67,7 +70,10 @@ export const vakajarjestajatUIStub: Array<VardaVakajarjestajaUi> = [
     nimi: 'Kajaanin kaupunki',
     y_tunnus: '0214958-9',
     organisaatio_oid: '1.2.246.562.10.67019405611',
-    kunnallinen_kytkin: true
+    kunnallinen_kytkin: true,
+    alkamis_pvm: '2000-01-01',
+    paattymis_pvm: null,
+    active: true
   },
   {
     url: 'https://localhost:8000/api/v1/vakajarjestajat/10/',
@@ -75,6 +81,9 @@ export const vakajarjestajatUIStub: Array<VardaVakajarjestajaUi> = [
     nimi: 'Vakatoimija10',
     y_tunnus: '0214958-9',
     organisaatio_oid: '1.2.246.562.10.67019405633',
-    kunnallinen_kytkin: false
+    kunnallinen_kytkin: false,
+    alkamis_pvm: '2000-01-01',
+    paattymis_pvm: null,
+    active: true
   },
 ];

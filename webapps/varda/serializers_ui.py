@@ -1,3 +1,4 @@
+import datetime
 from operator import itemgetter
 
 from django.db.models import Q
@@ -18,15 +19,23 @@ UI serializers
 
 class OrganisaatioUiSerializer(serializers.HyperlinkedModelSerializer):
     kunnallinen_kytkin = serializers.BooleanField(read_only=True)
+    active = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Organisaatio
-        fields = ('nimi', 'id', 'url', 'organisaatio_oid', 'kunnallinen_kytkin', 'y_tunnus')
-        read_only_fields = ('nimi', 'id', 'organisaatio_oid', 'kunnallinen_kytkin', 'y_tunnus')
+        fields = ('nimi', 'id', 'url', 'organisaatio_oid', 'kunnallinen_kytkin', 'y_tunnus', 'alkamis_pvm',
+                  'paattymis_pvm', 'active')
+        read_only_fields = ('nimi', 'id', 'organisaatio_oid', 'kunnallinen_kytkin', 'y_tunnus', 'alkamis_pvm',
+                            'paattymis_pvm', 'active')
 
     @caching_to_representation('organisaatio-ui')
     def to_representation(self, instance):
         return super(OrganisaatioUiSerializer, self).to_representation(instance)
+
+    @swagger_serializer_method(serializer_or_field=serializers.BooleanField)
+    def get_active(self, instance):
+        today = datetime.date.today()
+        return False if (instance.alkamis_pvm and instance.alkamis_pvm > today) or (instance.paattymis_pvm and instance.paattymis_pvm < today) else True
 
 
 class ToimipaikkaUiSerializer(serializers.HyperlinkedModelSerializer):

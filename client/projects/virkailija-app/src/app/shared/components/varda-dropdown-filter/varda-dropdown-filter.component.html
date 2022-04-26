@@ -1,22 +1,22 @@
 <div role="button"
      class="varda-dropdown-filter"
-     (keydown.enter)="list.length > 1 ? trigger.openMenu(): trigger.closeMenu()"
-     (click)="list.length > 1 ? trigger.openMenu(): trigger.closeMenu()"
-     [class.no-pointer]="list.length === 1"
+     (keydown.enter)="totalCount > 1 ? trigger.openMenu(): trigger.closeMenu()"
+     (click)="totalCount > 1 ? trigger.openMenu(): trigger.closeMenu()"
+     [class.no-pointer]="totalCount === 1"
      tabindex="0"
      aria.has-popup="menu"
      [mat-menu-trigger-for]="dropdown">
   <span>{{ label }}</span>
-  <mat-icon *ngIf="list.length > 1 && !trigger.menuOpen">arrow_drop_down</mat-icon>
+  <mat-icon *ngIf="totalCount > 1 && !trigger.menuOpen">arrow_drop_down</mat-icon>
   <mat-icon *ngIf="trigger.menuOpen">arrow_drop_up</mat-icon>
 </div>
-<mat-menu #dropdown>
-  <ul role="menu" #unorderedList
+<mat-menu #dropdown class="varda-vakajarjestaja-menu">
+  <ul role="menu"
       (keydown)="$event.stopPropagation()"
       (click)="$event.stopPropagation()"
       (keydown.tab)="$event.stopPropagation()">
     <li class="dropdownFilterSearch"
-        *ngIf="list.length > 10">
+        *ngIf="totalCount > 10">
       <input type="text"
              #dropdownFilterInput
              class="oph-input"
@@ -33,10 +33,11 @@
         class="dropdownFilterEmpty">
       {{ noResults }}
     </li>
-    <ng-container *ngFor="let item of filteredList">
-      <li mat-menu-item
-          class='item'
-          (click)='selectItem(item)'>{{ item[filterBy[0]] }}</li>
-    </ng-container>
+  </ul>
+  <ul role="menu" *ngFor="let group of filteredList" [ngClass]="group.className">
+    <li *ngIf="group.name" class="group-title">{{group.name | translate}}</li>
+    <li *ngFor="let item of group.items" mat-menu-item
+        class="item"
+        (click)="selectItem(item)">{{ item[filterBy[0]] }}</li>
   </ul>
 </mat-menu>

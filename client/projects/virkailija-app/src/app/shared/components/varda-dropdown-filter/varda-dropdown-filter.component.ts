@@ -1,4 +1,14 @@
-import { Component, OnInit, Input, ViewChild, EventEmitter, Output, ElementRef, OnDestroy } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnDestroy,
+  OnInit,
+  Output,
+  ViewChild,
+  ViewEncapsulation
+} from '@angular/core';
 import { MatMenuTrigger } from '@angular/material/menu';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
@@ -7,11 +17,12 @@ import { debounceTime } from 'rxjs/operators';
 @Component({
   selector: 'app-varda-dropdown-filter',
   templateUrl: './varda-dropdown-filter.component.html',
-  styleUrls: ['./varda-dropdown-filter.component.css']
+  styleUrls: ['./varda-dropdown-filter.component.css'],
+  encapsulation: ViewEncapsulation.None
 })
-export class VardaDropdownFilterComponent implements OnInit, OnDestroy {
+export class VardaDropdownFilterComponent<T> implements OnInit, OnDestroy {
   @Input() filterBy: Array<string>;
-  @Input() list: Array<Record<string, string>>;
+  @Input() list: Array<{name?: string; className?: string; items: Array<T>}>;
   @Input() label: string;
   @Input() ariaLabel: string;
   @Input() placeholder: string;
@@ -21,14 +32,19 @@ export class VardaDropdownFilterComponent implements OnInit, OnDestroy {
   @ViewChild(MatMenuTrigger, { static: true }) trigger: MatMenuTrigger;
   subscriptions: Array<Subscription> = [];
   showDropdown: boolean;
-  filteredList: Array<Record<string, string>>;
+  filteredList: Array<{name?: string; className?: string; items: Array<T>}>;
   filterText = '';
   searchFieldChanged = new Subject<boolean>();
+  totalCount = 0;
 
   constructor() { }
 
   ngOnInit() {
     this.filteredList = this.list;
+    this.list.forEach(group => {
+      this.totalCount += group.items.length;
+    });
+
     this.trigger.menuClosed.subscribe({
       next: closed => this.showDropdown = false,
       error: err => console.error(err),
@@ -60,10 +76,21 @@ export class VardaDropdownFilterComponent implements OnInit, OnDestroy {
       return this.filteredList = this.list;
     }
     text = text.toLowerCase().trim();
-    this.filteredList = this.list.filter(item => this.filterBy.some(key => item[key] && item[key].toLowerCase().includes(text)));
 
-    if (this.filteredList.length === 1 && enter) {
-      setTimeout(() => this.selectItem(this.filteredList[0]), 500);
+    let resultCount = 0;
+    this.filteredList = this.list.reduce((reducedList, originalGroup) => {
+      // Make a copy of the original group
+      const group = {...originalGroup};
+      group.items = group.items.filter(item => this.filterBy.some(key => item[key] && item[key].toLowerCase().includes(text)));
+      if (group.items.length > 0) {
+        reducedList.push(group);
+        resultCount += group.items.length;
+      }
+      return reducedList;
+    }, []);
+
+    if (resultCount === 1 && enter) {
+      setTimeout(() => this.selectItem(this.filteredList[0].items[0]), 500);
     }
   }
 

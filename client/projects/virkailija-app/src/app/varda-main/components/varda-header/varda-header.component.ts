@@ -23,6 +23,7 @@ export class VardaHeaderComponent implements OnChanges, OnDestroy {
   @Input() toimipaikkaAccessToAnyToimipaikka: UserAccess;
   tilapainenHenkilostoOnly: boolean;
   vakajarjestajat: Array<VardaVakajarjestajaUi>;
+  vakajarjestajaGroups: Array<{name?: string; className?: string; items: Array<VardaVakajarjestajaUi>}> = [];
   i18n = VirkailijaTranslations;
   toimipaikkaSelected: boolean;
   showRaportitBoolean: boolean;
@@ -39,7 +40,6 @@ export class VardaHeaderComponent implements OnChanges, OnDestroy {
     private authService: AuthService,
     private dialog: MatDialog,
   ) {
-
     this.tilapainenHenkilostoOnly = this.authService.hasAccessOnlyTo([UserAccessKeys.tilapainenHenkilosto], true);
 
     this.subscriptions.push(
@@ -53,10 +53,31 @@ export class VardaHeaderComponent implements OnChanges, OnDestroy {
       })
     );
 
-
     this.vardaVakajarjestajaService.getVakajarjestajat().pipe(filter(Boolean)).subscribe((vakajarjestajat: Array<VardaVakajarjestajaUi>) => {
       this.vakajarjestajat = vakajarjestajat;
       this.vakajarjestajat.sort((a, b) => a.nimi?.localeCompare(b.nimi, 'fi'));
+
+      const activeVakajarjestajaList: Array<VardaVakajarjestajaUi> = [];
+      const passiveVakajarjestajaList: Array<VardaVakajarjestajaUi> = [];
+      this.vakajarjestajat.forEach(vakajarjestaja => {
+        if (vakajarjestaja.active) {
+          activeVakajarjestajaList.push(vakajarjestaja);
+        } else {
+          passiveVakajarjestajaList.push(vakajarjestaja);
+        }
+      });
+
+      this.vakajarjestajaGroups = [];
+      if (activeVakajarjestajaList.length > 0) {
+        this.vakajarjestajaGroups.push({items: activeVakajarjestajaList});
+      }
+      if (passiveVakajarjestajaList.length > 0) {
+        this.vakajarjestajaGroups.push({
+          name: this.i18n.passive_plural,
+          className: 'passive-vakajarjestaja-list',
+          items: passiveVakajarjestajaList
+        });
+      }
     });
 
     this.puutteellisetWarning = this.raportitService.showPuutteellisetError$;

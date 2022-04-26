@@ -49,6 +49,8 @@ export enum VirkailijaTranslations {
   lahdejarjestelma = 'lahdejarjestelma',
   turvakielto = 'turvakielto',
   username = 'username',
+  passive_plural = 'passive.plural',
+  passive = 'passive',
 
   versio_VALUE = 'versio.VALUE',
   accessibility_info = 'accessibility.info',

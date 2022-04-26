@@ -5,10 +5,13 @@
   <div class="varda-card-top">
     <div class="row align-items-baseline">
       <div class="col-auto">
-        <label class="varda-text-large">{{selectedVakajarjestaja.nimi}}</label>
+        <span class="varda-text-large">
+          {{selectedVakajarjestaja.nimi}}
+          <span *ngIf="!selectedVakajarjestaja.active" class="badge badge-secondary">{{ i18n.passive | translate }}</span>
+        </span>
       </div>
       <div class="col">
-        <label class="varda-text-secondary">{{selectedVakajarjestaja.organisaatio_oid}}</label>
+        <span class="varda-text-secondary">{{selectedVakajarjestaja.organisaatio_oid}}</span>
       </div>
     </div>
     <nav mat-tab-nav-bar>

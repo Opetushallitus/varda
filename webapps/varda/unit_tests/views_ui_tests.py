@@ -195,6 +195,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         self.assertEqual(len(resp_content['results']), 2)
 
     def test_api_ui_vakajarjestajat(self):
+        self.maxDiff = None
         client = SetUpTestClient('credadmin').client()
         resp = client.get('/api/ui/vakajarjestajat/')
         assert_status_code(resp, 200)
@@ -206,7 +207,10 @@ class VardaHenkilostoViewSetTests(TestCase):
                 'url': 'http://testserver/api/v1/vakajarjestajat/4/',
                 'organisaatio_oid': '1.2.246.562.10.93957375484',
                 'kunnallinen_kytkin': True,
-                'y_tunnus': '2156233-6'
+                'y_tunnus': '2156233-6',
+                'alkamis_pvm': '2018-09-25',
+                'paattymis_pvm': None,
+                'active': True
             },
             {
                 'nimi': 'Tester organisaatio',
@@ -214,7 +218,10 @@ class VardaHenkilostoViewSetTests(TestCase):
                 'url': 'http://testserver/api/v1/vakajarjestajat/2/',
                 'organisaatio_oid': '1.2.246.562.10.93957375488',
                 'kunnallinen_kytkin': False,
-                'y_tunnus': '1825748-8'
+                'y_tunnus': '1825748-8',
+                'alkamis_pvm': '2017-02-03',
+                'paattymis_pvm': None,
+                'active': True
             },
             {
                 'nimi': 'Tester2 organisaatio',
@@ -222,7 +229,10 @@ class VardaHenkilostoViewSetTests(TestCase):
                 'url': 'http://testserver/api/v1/vakajarjestajat/1/',
                 'organisaatio_oid': '1.2.246.562.10.34683023489',
                 'kunnallinen_kytkin': True,
-                'y_tunnus': '8500570-7'
+                'y_tunnus': '8500570-7',
+                'alkamis_pvm': '2017-02-03',
+                'paattymis_pvm': None,
+                'active': True
             },
             {
                 'nimi': 'varda-testi organisaatio',
@@ -230,7 +240,10 @@ class VardaHenkilostoViewSetTests(TestCase):
                 'url': 'http://testserver/api/v1/vakajarjestajat/3/',
                 'organisaatio_oid': '1.2.246.562.10.93957375486',
                 'kunnallinen_kytkin': False,
-                'y_tunnus': '2617455-1'
+                'y_tunnus': '2617455-1',
+                'alkamis_pvm': '2018-09-13',
+                'paattymis_pvm': None,
+                'active': True
             },
             {
                 'nimi': 'Tester 10 organisaatio',
@@ -238,7 +251,10 @@ class VardaHenkilostoViewSetTests(TestCase):
                 'url': 'http://testserver/api/v1/vakajarjestajat/5/',
                 'organisaatio_oid': '1.2.246.562.10.57294396385',
                 'kunnallinen_kytkin': True,
-                'y_tunnus': '8685083-0'
+                'y_tunnus': '8685083-0',
+                'alkamis_pvm': '2019-01-01',
+                'paattymis_pvm': None,
+                'active': True
             },
             {
                 'nimi': 'Tester 11 organisaatio',
@@ -246,7 +262,10 @@ class VardaHenkilostoViewSetTests(TestCase):
                 'url': 'http://testserver/api/v1/vakajarjestajat/6/',
                 'organisaatio_oid': '1.2.246.562.10.52966755795',
                 'kunnallinen_kytkin': True,
-                'y_tunnus': '1428881-8'
+                'y_tunnus': '1428881-8',
+                'alkamis_pvm': '2019-02-01',
+                'paattymis_pvm': None,
+                'active': True
             },
             {
                 'nimi': 'Kansaneläkelaitos',
@@ -254,7 +273,10 @@ class VardaHenkilostoViewSetTests(TestCase):
                 'url': 'http://testserver/api/v1/vakajarjestajat/7/',
                 'organisaatio_oid': '1.2.246.562.10.2013121014482686198719',
                 'kunnallinen_kytkin': False,
-                'y_tunnus': '0246246-0'
+                'y_tunnus': '0246246-0',
+                'alkamis_pvm': '1979-01-02',
+                'paattymis_pvm': None,
+                'active': True
             },
             {
                 'nimi': 'Opetushallitus',
@@ -262,7 +284,10 @@ class VardaHenkilostoViewSetTests(TestCase):
                 'url': 'http://testserver/api/v1/vakajarjestajat/8/',
                 'organisaatio_oid': '1.2.246.562.10.00000000001',
                 'kunnallinen_kytkin': False,
-                'y_tunnus': ''
+                'y_tunnus': '',
+                'alkamis_pvm': '1970-01-01',
+                'paattymis_pvm': None,
+                'active': True
             }
         ]
         self.assertCountEqual(json.loads(resp.content), admin_vakajarjestajat)

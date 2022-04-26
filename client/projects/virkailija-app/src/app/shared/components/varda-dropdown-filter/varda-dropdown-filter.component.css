@@ -28,22 +28,22 @@
   cursor: default;
 }
 
-ul {
+.varda-vakajarjestaja-menu ul {
   list-style-type: none;
   padding-left: 0px;
   margin-bottom: 0;
 }
 
-ul li {
+.varda-vakajarjestaja-menu ul li {
   margin: 0.25em 0;
   padding: 0 1em;
 }
 
-ul li.dropdownFilterEmpty {
+.varda-vakajarjestaja-menu ul li.dropdownFilterEmpty {
   color: var(--red);
 }
 
-ul li.dropdownFilterSearch {
+.varda-vakajarjestaja-menu ul li.dropdownFilterSearch {
   position: sticky;
   background-color: var(--white);
   top: 0;
@@ -52,7 +52,7 @@ ul li.dropdownFilterSearch {
   display: block;
 }
 
-ul li.item:hover {
+.varda-vakajarjestaja-menu ul li.item:hover {
   background-color: var(--blue-lighten-1);
   color: var(--white);
   cursor: pointer;
@@ -60,4 +60,13 @@ ul li.item:hover {
 
 mat-menu-panel {
   min-width: 200px;
+}
+
+.varda-vakajarjestaja-menu .group-title {
+  font-weight: bold;
+  padding-top: 1em;
+}
+
+.varda-vakajarjestaja-menu ul.passive-vakajarjestaja-list {
+  background: var(--gray-lighten-6);
 }
