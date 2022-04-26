@@ -1,6 +1,10 @@
 from rest_framework import status
 
-from varda.monkey_patch import oppija_cas_backends, oppija_cas_views
+from varda.monkey_patch import cas_backends, oppija_cas_backends, oppija_cas_views
+
+
+class CASBackend(cas_backends.CASBackend):
+    pass
 
 
 def get_login_forward_decorator(function):

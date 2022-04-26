@@ -57,7 +57,7 @@ class ValidateCASProxyURL(MiddlewareMixin):
         proxyurl = request.META.get('HTTP_' + settings.CAS_ACCEPT_PROXY_URL_FROM_HEADER, None)
         hashvalue = request.META.get('HTTP_' + settings.CAS_ACCEPT_PROXY_URL_FROM_HEADER + '_HASH', '')
         if (proxyurl is not None and (not hashvalue or
-                                      hashvalue != hashlib.sha1(settings.CAS_SALT.encode('utf-8') +
+                                      hashvalue != hashlib.sha1(settings.CAS_API_SALT.encode('utf-8') +
                                                                 proxyurl.encode('utf-8')).hexdigest())):
             # Header(s) doesn't exist or invalid - remove the header
             del request.META['HTTP_' + settings.CAS_ACCEPT_PROXY_URL_FROM_HEADER]

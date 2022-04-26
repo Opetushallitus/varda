@@ -17,7 +17,7 @@ SWAGGER_DESCRIPTION = ('This page contains an interactive documentation of Varda
                        'Some fields (e.g. *_koodi) are validated against related list of codes: '
                        'https://virkailija.opintopolku.fi/varda/julkinen/koodistot')
 
-HETU_REGEX = re.compile('(\\d{6})([A+\\-])(\\d{3}[0-9A-FHJ-NPR-Y])')
+HETU_REGEX = re.compile(r'(\d{6})([A+\-])(\d{3}[0-9A-FHJ-NPR-Y])')
 
 ALIVE_BOOT_TIME_CACHE_KEY = 'alive_boot_time'
 ALIVE_SEQ_CACHE_KEY = 'alive_seq'

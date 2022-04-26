@@ -31,7 +31,7 @@ from rest_framework_nested import routers as nested_routers
 
 from varda import (views, viewsets, viewsets_admin, viewsets_henkilosto, viewsets_julkinen, viewsets_oppija,
                    viewsets_reporting, viewsets_ui)
-from varda.cas.oppija_cas_views import OppijaCasLoginView
+from varda.cas.cas_components import OppijaCasLoginView
 from varda.constants import SWAGGER_DESCRIPTION
 from varda.custom_swagger import PublicSchemaGenerator, PublicSwaggerRenderer
 from varda.monkey_patch import cas_views, oppija_cas_views

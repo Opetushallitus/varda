@@ -10,7 +10,7 @@ from django.contrib.auth.models import Group, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.management import call_command
-from django.db import connection, transaction
+from django.db import connection, IntegrityError, transaction
 from django.db.models import (Case, Count, DateField, F, Func, IntegerField, Q, Value, When)
 from django.db.models.functions import Cast
 from django.utils import timezone
@@ -28,7 +28,7 @@ from varda.enums.aikaleima_avain import AikaleimaAvain
 from varda.enums.reporting import ReportStatus
 from varda.excel_export import delete_excel_reports_earlier_than
 from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
-from varda.misc import memory_efficient_queryset_iterator
+from varda.misc import hash_string, memory_efficient_queryset_iterator
 from varda.models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Maksutieto,
                           MaksutietoHuoltajuussuhde, Palvelussuhde, Taydennyskoulutus, TaydennyskoulutusTyontekija,
                           Toimipaikka, Tyontekija, Organisaatio, Varhaiskasvatuspaatos, YearlyReportSummary,
@@ -1153,3 +1153,17 @@ def create_oph_yllapitaja_group():
     Group.objects.get_or_create(name=get_oph_yllapitaja_group_name())
     # Delete old oph_staff group
     Group.objects.filter(name='oph_staff').delete()
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def hash_cas_oppija_usernames():
+    """
+    TEMPORARY FUNCTION
+    """
+    for user in User.objects.filter(username__regex=r'^.*(\d{6})([A+\-])(\d{3}[0-9A-FHJ-NPR-Y]).*$').iterator():
+        try:
+            user.username = f'cas#{hash_string(user.username)}'
+            user.save()
+        except IntegrityError as error:
+            logger.error(f'Error hashing user {user.id}: {error}')

@@ -157,8 +157,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 AUTHENTICATION_BACKENDS = (
     'varda.custom_auth.PasswordExpirationModelBackend',  # default override
     'guardian.backends.ObjectPermissionBackend',
-    'varda.cas.oppija_cas_views.OppijaCASBackend',  # Before CASBackend because has view check
-    'django_cas_ng.backends.CASBackend',
+    'varda.cas.cas_components.OppijaCASBackend',  # Before CASBackend because has view check
+    'varda.cas.cas_components.CASBackend',
 )
 ANONYMOUS_USER_NAME = 'anonymous'
 ANONYMIZATION_CHECKER_USER_NAME = 'varda_anonymisointi_tarkistus'
@@ -439,7 +439,8 @@ CAS_LOGIN_MSG = None
 CAS_LOGGED_MSG = None
 CAS_VERSION = 3
 CAS_RETRY_LOGIN = False
-CAS_SALT = os.environ.get('VARDA_SALT', DEFAULT_CAS_SALT_FOR_TESTING_ONLY)
+# Hide salt from debug report https://docs.djangoproject.com/en/4.0/ref/settings/#std:setting-DEBUG
+CAS_API_SALT = os.environ.get('VARDA_SALT', DEFAULT_CAS_SALT_FOR_TESTING_ONLY)
 # Validation hash must be in header CAS_NEXT_HASH
 CAS_ACCEPT_PROXY_URL_FROM_HEADER = 'CAS_NEXT'
 
