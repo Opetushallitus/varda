@@ -1,7 +1,7 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { AppComponent } from './app.component';
-import { TranslateService, LangChangeEvent } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import { AuthService } from './core/auth/auth.service';
 import { VardaDomService } from './core/services/varda-dom.service';
 import { EMPTY, Observable, of } from 'rxjs';
@@ -9,7 +9,7 @@ import { VardaApiService } from './core/services/varda-api.service';
 import { CookieService } from 'ngx-cookie-service';
 import { VardaVakajarjestajaService } from './core/services/varda-vakajarjestaja.service';
 import { Router } from '@angular/router';
-import { LoadingHttpService, VardaKoodistoService } from 'varda-shared';
+import { LoadingHttpService, LoginService, VardaKoodistoService } from 'varda-shared';
 
 describe('AppComponent', () => {
   let component: AppComponent;
@@ -32,6 +32,7 @@ describe('AppComponent', () => {
         { provide: Router, useValue: { events: EMPTY, navigate: () => { }, routerState: {} } },
         { provide: CookieService, useValue: {} },
         { provide: VardaApiService, useValue: {} },
+        { provide: LoginService, useValue: { getCurrentUser: () => of(null), setUsername: () => { }, initBroadcastChannel: () => { } } },
         { provide: TranslateService, useValue: { use: () => { }, getBrowserLang: () => { }, setDefaultLang: () => { }, get: () => EMPTY } },
         { provide: LoadingHttpService, useValue: { isLoading: () => { }, isLoadingWithDebounce: () => { } } },
         { provide: VardaKoodistoService, useValue: { initKoodistot: () => { } } },
@@ -53,4 +54,8 @@ describe('AppComponent', () => {
     fixture.detectChanges();
   });
 
+  it('should create the app', () => {
+    const app = fixture.debugElement.componentInstance;
+    expect(app).toBeTruthy();
+  });
 });

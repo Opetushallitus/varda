@@ -15,9 +15,8 @@ import * as moment from 'moment';
 import {
   AbstractControl,
   ControlValueAccessor,
-  FormControl,
   NG_VALIDATORS,
-  NG_VALUE_ACCESSOR,
+  NG_VALUE_ACCESSOR, ValidationErrors,
   Validator
 } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
@@ -62,6 +61,8 @@ export class VardaDatepickerComponent implements OnInit, ControlValueAccessor, V
   @Input() attrAriaRequired?: boolean;
   @Input() attrAriaDescribedBy?: string;
   @Input() attrDataParentContainer?: string;
+  @Input() errorMap?: Array<{ key: string; value: string }> = [];
+  @Input() isTouched?: boolean;
   @Output() readonly dateInput: EventEmitter<VardaDatepickerEvent> = new EventEmitter<VardaDatepickerEvent>();
   @Output() readonly dateChange: EventEmitter<VardaDatepickerEvent> = new EventEmitter<VardaDatepickerEvent>();
   // Emit true if focusin, false if focusout
@@ -152,7 +153,7 @@ export class VardaDatepickerComponent implements OnInit, ControlValueAccessor, V
     this.disabled = isDisabled;
   }
 
-  validate(control: FormControl) {
+  validate(control: AbstractControl): ValidationErrors | null {
     if (this.pickerControl) {
       return this.pickerControl.validator(control);
     }

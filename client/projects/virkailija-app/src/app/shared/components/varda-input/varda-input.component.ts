@@ -34,7 +34,7 @@ export class VardaInputComponent implements ControlValueAccessor, Validator {
   @Input() required? = false;
   @Input() readonly? = false;
   @Input() minlength?: number;
-  @Input() errorMap?: Array<{ key: string; value: string }>;
+  @Input() errorMap?: Array<{ key: string; value: string }> = [];
   @Output() readonly keydownEnter: EventEmitter<Event> = new EventEmitter<Event>();
 
   disabled = false;

@@ -15,6 +15,7 @@ export enum VirkailijaTranslations {
   hide = 'hide',
   all = 'all',
   search = 'search',
+  required_field = 'required-field',
 
   save_success = 'save-success',
 
@@ -802,6 +803,8 @@ export enum VirkailijaTranslations {
   tiedonsiirrot_placeholder_request_body = 'tiedonsiirrot.placeholder.request-body',
   tiedonsiirrot_placeholder_username = 'tiedonsiirrot.placeholder.username',
   tiedonsiirrot_kaikki_lahdejarjestelmat = 'tiedonsiirrot.kaikki-lahdejarjestelmat',
+  tiedonsiirrot_timestamp_error_short = 'tiedonsiirrot.timestamp.error.short',
+  tiedonsiirrot_timestamp_error_order = 'tiedonsiirrot.timestamp.error.order',
 
   tiedonsiirrot_yhteenveto_date = 'tiedonsiirrot.yhteenveto.date',
   tiedonsiirrot_yhteenveto_successful = 'tiedonsiirrot.yhteenveto.successful',

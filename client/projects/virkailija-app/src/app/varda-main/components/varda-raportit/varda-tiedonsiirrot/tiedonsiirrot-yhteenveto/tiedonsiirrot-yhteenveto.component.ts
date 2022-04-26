@@ -7,6 +7,8 @@ import { VardaRaportitService } from 'projects/virkailija-app/src/app/core/servi
 import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
 import { VardaTiedonsiirtoYhteenvetoDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tiedonsiirto-dto.model';
 import { AbstractTiedonsiirrotSectionsComponent } from '../tiedonsiirrot-sections.abstract';
+import * as moment from 'moment';
+import { FormControl, FormGroup } from '@angular/forms';
 
 
 @Component({
@@ -38,11 +40,18 @@ export class VardaTiedonsiirrotYhteenvetoComponent extends AbstractTiedonsiirrot
     protected raportitService: VardaRaportitService,
   ) {
     super(authService, translateService, route, vakajarjestajaService, raportitService);
+
+    this.resetTimestampFormGroup();
   }
 
   getPage(firstPage?: boolean) {
+    if (!this.validateFilters()) {
+      // Filters are not valid
+      return;
+    }
+
     this.yhteenvedot = null;
-    this.isLoading.next(true);
+    this.isLoading = true;
 
     if (firstPage) {
       this.searchFilter.cursor = null;
@@ -55,7 +64,14 @@ export class VardaTiedonsiirrotYhteenvetoComponent extends AbstractTiedonsiirrot
         this.yhteenvedot = new MatTableDataSource(yhteenvetoData.results);
       },
       error: (err) => this.errorService.handleError(err)
-    }).add(() => setTimeout(() => this.isLoading.next(false), 500));
+    }).add(() => setTimeout(() => this.isLoading = false, 500));
   }
 
+  resetTimestampFormGroup() {
+    this.timestampFormGroup = new FormGroup({
+      timestampAfter: new FormControl(moment().subtract(6, 'days')),
+      timestampBefore: new FormControl(moment())
+    });
+    this.timestampAfterChange(this.timestampFormGroup.controls.timestampAfter.value);
+  }
 }

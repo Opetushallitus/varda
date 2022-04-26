@@ -20,7 +20,7 @@
   <div class="varda-table-column-selector">
     <ng-container *ngFor="let column of columnFields">
       <mat-checkbox (change)="toggleColumn()"
-                    [disabled]="column.disabled || (isLoading | async)"
+                    [disabled]="column.disabled || isLoading"
                     [(ngModel)]="column.selected">
         {{ column.name | translate }}
       </mat-checkbox>
@@ -45,13 +45,31 @@
             *matHeaderCellDef>
           <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_aikaleima"
                                           [multiline]="true"
-                                          (resetFilter)="searchFilter.timestamp_after = null; searchFilter.timestamp_before = null"
+                                          [formGroup]="timestampFormGroup"
+                                          (resetFilter)="resetTimestampFormGroup()"
                                           (submitFilter)="getPage(true)">
-            <app-varda-datepicker [(ngModel)]="searchFilter.timestamp_after"
-                                  [placeholder]="i18n.tiedonsiirrot_placeholder_timestamp_after | translate">
+            <app-varda-datepicker formControlName="timestampAfter"
+                                  [placeholder]="i18n.tiedonsiirrot_placeholder_timestamp_after | translate"
+                                  [required]="true"
+                                  [isTouched]="timestampFormGroup.controls.timestampAfter.touched"
+                                  [errorMap]="[
+                                    { key: 'required', value: i18n.required_field },
+                                    { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                                  ]"
+                                  (dateChange)="timestampAfterChange($event.value)">
             </app-varda-datepicker>
-            <app-varda-datepicker [(ngModel)]="searchFilter.timestamp_before"
-                                  [placeholder]="i18n.tiedonsiirrot_placeholder_timestamp_before | translate">
+            <app-varda-datepicker formControlName="timestampBefore"
+                                  [placeholder]="i18n.tiedonsiirrot_placeholder_timestamp_before | translate"
+                                  [required]="true"
+                                  [min]="timestampBeforeRange.min"
+                                  [max]="timestampBeforeRange.max"
+                                  [isTouched]="timestampFormGroup.controls.timestampBefore.touched"
+                                  [errorMap]="[
+                                    { key: 'required', value: i18n.required_field },
+                                    { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format },
+                                    { key: 'matDatepickerMin', value: i18n.tiedonsiirrot_timestamp_error_order },
+                                    { key: 'matDatepickerMax', value: i18n.tiedonsiirrot_timestamp_error_short }
+                                  ]">
             </app-varda-datepicker>
           </app-tiedonsiirto-filter-header>
         </th>
@@ -256,12 +274,12 @@
     </table>
     <div class="ml-1"
          *ngIf="tiedonsiirrot?.data.length === 0">{{ i18n.yksiloimattomat_ei_hakutuloksia | translate }}</div>
-    <mat-progress-bar *ngIf="isLoading | async"
+    <mat-progress-bar *ngIf="isLoading"
                       mode="indeterminate"
                       color="accent"></mat-progress-bar>
     <app-varda-error-field [errors]="formErrors"></app-varda-error-field>
 
-    <mat-paginator [disabled]="isLoading | async"
+    <mat-paginator [disabled]="isLoading"
                    [length]="resultCount"
                    [pageSize]="searchFilter.page_size"
                    (page)="changePage($event)"

@@ -37,11 +37,11 @@ export class VardaRaportitService {
     return this.http.get(`${this.adminApiPath}/hae-yksiloimattomat/`, searchFilter);
   }
 
-  getTiedonsiirrotYhteenveto(searchFilter: TiedonsiirrotSearchFilter): Observable<VardaPageDto<VardaTiedonsiirtoYhteenvetoDTO>> {
+  getTiedonsiirrotYhteenveto(searchFilter: Record<string, any>): Observable<VardaPageDto<VardaTiedonsiirtoYhteenvetoDTO>> {
     return this.http.get(`${this.reportingApi}/v1/tiedonsiirto/yhteenveto/`, searchFilter);
   }
 
-  getTiedonsiirrot(searchFilter: TiedonsiirrotSearchFilter): Observable<VardaPageDto<VardaTiedonsiirtoDTO>> {
+  getTiedonsiirrot(searchFilter: Record<string, any>): Observable<VardaPageDto<VardaTiedonsiirtoDTO>> {
     return this.http.get(`${this.reportingApi}/v1/tiedonsiirto/`, searchFilter);
   }
 

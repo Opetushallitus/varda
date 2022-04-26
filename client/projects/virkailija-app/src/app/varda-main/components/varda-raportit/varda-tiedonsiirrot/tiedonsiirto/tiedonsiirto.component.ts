@@ -10,9 +10,10 @@ import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core
 import { VardaTiedonsiirtoDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tiedonsiirto-dto.model';
 import { Observable } from 'rxjs';
 import { KoodistoDTO, KoodistoEnum, VardaKoodistoService } from 'varda-shared';
-import { AbstractTiedonsiirrotSectionsComponent, TiedonsiirrotColumnFields, TiedonsiirrotSearchFilter } from '../tiedonsiirrot-sections.abstract';
+import { AbstractTiedonsiirrotSectionsComponent, TiedonsiirrotColumnFields } from '../tiedonsiirrot-sections.abstract';
 import { TiedonsiirtoDialogComponent, TiedonsiirtoDialogData } from '../tiedonsiirto-dialog/tiedonsiirto-dialog.component';
 import * as moment from 'moment';
+import { FormControl, FormGroup } from '@angular/forms';
 
 
 @Component({
@@ -40,12 +41,6 @@ export class VardaTiedonsiirtoComponent extends AbstractTiedonsiirrotSectionsCom
     { key: 'lahdejarjestelma', name: this.i18n.lahdejarjestelma, selected: true },
   ];
 
-  searchFilter: TiedonsiirrotSearchFilter = {
-    ...this.searchFilter,
-    timestamp_after: moment(),
-    timestamp_before: moment(),
-  };
-
   constructor(
     private dialog: MatDialog,
     private snackBarService: VardaSnackBarService,
@@ -60,9 +55,9 @@ export class VardaTiedonsiirtoComponent extends AbstractTiedonsiirrotSectionsCom
     super(authService, translateService, route, vakajarjestajaService, raportitService);
 
     const path = this.router.url.split('?').shift().split('/').pop();
-
     this.searchFilter.successful = path === 'onnistuneet';
 
+    this.resetTimestampFormGroup();
 
     if (this.searchFilter.successful) {
       this.columnFields.find(field => field.key === 'error').selected = false;
@@ -80,8 +75,13 @@ export class VardaTiedonsiirtoComponent extends AbstractTiedonsiirrotSectionsCom
   }
 
   getPage(firstPage?: boolean) {
+    if (!this.validateFilters()) {
+      // Filters are not valid
+      return;
+    }
+
     this.tiedonsiirrot = null;
-    this.isLoading.next(true);
+    this.isLoading = true;
 
     if (firstPage) {
       this.searchFilter.cursor = null;
@@ -94,7 +94,7 @@ export class VardaTiedonsiirtoComponent extends AbstractTiedonsiirrotSectionsCom
         this.tiedonsiirrot = this.mapTiedonsiirrot(tiedonsiirrotData.results);
       },
       error: (err) => this.errorService.handleError(err, this.snackBarService)
-    }).add(() => setTimeout(() => this.isLoading.next(false), 500));
+    }).add(() => setTimeout(() => this.isLoading = false, 500));
   }
 
   openJSON(tiedonsiirto: VardaTiedonsiirtoDTO) {
@@ -123,5 +123,13 @@ export class VardaTiedonsiirtoComponent extends AbstractTiedonsiirrotSectionsCom
   toggleReasonsExpand() {
     this.expandResponse = !this.expandResponse;
     this.tiedonsiirrot.data.forEach(tiedonsiirto => tiedonsiirto.response_list.forEach(response => response.expand = this.expandResponse));
+  }
+
+  resetTimestampFormGroup() {
+    this.timestampFormGroup = new FormGroup({
+      timestampAfter: new FormControl(moment()),
+      timestampBefore: new FormControl(moment())
+    });
+    this.timestampAfterChange(this.timestampFormGroup.controls.timestampAfter.value);
   }
 }

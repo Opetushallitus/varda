@@ -10,7 +10,7 @@ import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core
 import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
-import { Subscription, BehaviorSubject, Observable } from 'rxjs';
+import { Subscription, Observable } from 'rxjs';
 import { KoodistoEnum, VardaDateService } from 'varda-shared';
 import { VardaPageDto } from '../../../../utilities/models/dto/varda-page-dto';
 import {
@@ -18,6 +18,7 @@ import {
   VardaTiedonsiirtoYhteenvetoDTO
 } from '../../../../utilities/models/dto/varda-tiedonsiirto-dto.model';
 import handyScroll from 'handy-scroll';
+import { FormGroup } from '@angular/forms';
 
 
 export interface TiedonsiirrotSearchFilter {
@@ -27,8 +28,6 @@ export interface TiedonsiirrotSearchFilter {
   search?: string;
   vakajarjestajat?: Array<number>;
   successful?: boolean;
-  timestamp_after?: string | Moment;
-  timestamp_before?: string | Moment;
   request_url?: string;
   request_method?: string;
   request_body?: string;
@@ -53,27 +52,24 @@ export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, 
   @ViewChild('tiedonsiirtoPaginator') tiedonsiirtoPaginator: MatPaginator;
   @ViewChild('scrollContainer') scrollContainer: ElementRef;
   @ViewChild('tiedonsiirtoTable', { read: ElementRef }) tiedonsiirtoTable: ElementRef;
-  isLoading = new BehaviorSubject<boolean>(true);
+
+  isLoading = false;
   toimijaAccess: UserAccess;
   i18n = VirkailijaTranslations;
   subscriptions: Array<Subscription> = [];
   formErrors: Observable<Array<ErrorTree>>;
   displayedColumns: Array<string>;
   selectedVakajarjestaja: VardaVakajarjestajaUi;
-  vakajarjestajat$: Observable<Array<VardaVakajarjestajaUi>>;
   koodistoEnum = KoodistoEnum;
   resultCount = 0;
   nextCursor = null;
   prevCursor = null;
-
   searchFilter: TiedonsiirrotSearchFilter = {
     page_size: 20,
     cursor: null,
     reverse: null,
     vakajarjestajat: [],
     successful: null,
-    timestamp_after: null,
-    timestamp_before: null,
     request_url: null,
     request_method: null,
     request_body: null,
@@ -83,6 +79,9 @@ export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, 
     username: null,
     search_target: null,
   };
+  timestampBeforeRange: { min: Date; max: Date } = { min: null, max: null };
+  timestampFormGroup: FormGroup;
+
   protected errorService: VardaErrorMessageService;
   private resizeObserver: ResizeObserver;
   abstract columnFields: Array<TiedonsiirrotColumnFields>;
@@ -149,29 +148,23 @@ export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, 
   }
 
   toggleColumn() {
-    this.isLoading.next(true);
+    this.isLoading = true;
     setTimeout(() => {
       const columns = this.columnFields.filter(field => field.selected).map(field => field.key);
       this.displayedColumns = columns;
-      this.isLoading.next(false);
+      this.isLoading = false;
     }, 500);
   }
 
-  getSearchFilter(): TiedonsiirrotSearchFilter {
-    const returnFilter: TiedonsiirrotSearchFilter = {
+  getSearchFilter(): Record<string, any> {
+    const returnFilter: Record<string, any> = {
       page_size: 20,
+      timestamp_after: this.timestampFormGroup.controls.timestampAfter.value.format(`${VardaDateService.vardaApiDateFormat}T00:00:00`),
+      timestamp_before: this.timestampFormGroup.controls.timestampBefore.value.format(`${VardaDateService.vardaApiDateFormat}T23:59:59`)
     };
 
     Object.entries(this.searchFilter).filter(([key, value]) => typeof value === 'boolean' || value)
       .forEach(([key, value]) => returnFilter[key] = Array.isArray(value) ? value.join(',') : value);
-
-    if (returnFilter.timestamp_after) {
-      returnFilter.timestamp_after = (returnFilter.timestamp_after as Moment).format(`${VardaDateService.vardaApiDateFormat}T00:00:00`);
-    }
-
-    if (returnFilter.timestamp_before) {
-      returnFilter.timestamp_before = (returnFilter.timestamp_before as Moment).format(`${VardaDateService.vardaApiDateFormat}T23:59:59`);
-    }
 
     return returnFilter;
   }
@@ -210,6 +203,24 @@ export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, 
     handyScroll.update(this.scrollContainer.nativeElement);
   }
 
+  validateFilters() {
+    const after = this.timestampFormGroup.controls.timestampAfter.value;
+    const before = this.timestampFormGroup.controls.timestampBefore.value;
+    if (!after || !before || !after.isValid() || !before.isValid() ||
+      !this.timestampFormGroup.controls.timestampAfter.valid || !this.timestampFormGroup.controls.timestampBefore.valid) {
+      this.timestampFormGroup.controls.timestampBefore.markAsTouched();
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  timestampAfterChange(timestampAfter: Moment) {
+    this.timestampBeforeRange.min = timestampAfter?.toDate();
+    this.timestampBeforeRange.max = timestampAfter?.clone().add(6, 'days').toDate();
+    setTimeout(() => this.timestampFormGroup.controls.timestampBefore.updateValueAndValidity());
+  }
+
   private extractCursorFromUrl(url: string): string {
     if (!url || typeof url !== 'string') {
       return null;
@@ -219,4 +230,5 @@ export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, 
   }
 
   abstract getPage(firstPage?: boolean): void;
+  abstract resetTimestampFormGroup(): void;
 }
