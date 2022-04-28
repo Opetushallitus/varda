@@ -1,6 +1,11 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.6.1 (28.04.2022)
+- OPHVARDA-2412: Tiedonsiirtoraportin päivämäärärajaus ja tietoturvapäivityksiä
+- OPHVARDA-2385: Päättyneiden toimijoiden visualisointi
+- OPHVARDA-2395: OPH: Kaikkien tiettojen päättäminen
+
 1.6.0 (30.03.2022)
 - OPHVARDA-2407: Syötä tietoja lomakkeiden optimointi
 - OPHVARDA-2441: Tietoturvapäivityksiä
