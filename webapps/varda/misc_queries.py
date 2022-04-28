@@ -1,6 +1,6 @@
-from django.contrib.postgres.aggregates import StringAgg
+from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import connection
-from django.db.models import OuterRef, Q, Subquery, Value
+from django.db.models import OuterRef, Q, Subquery
 from rest_framework.reverse import reverse
 
 from varda.cache import get_object_ids_for_user_by_model
@@ -35,8 +35,8 @@ def get_related_object_changed_id_qs(model_name, datetime_gt, datetime_lte, addi
             .values('model_name', 'instance_id', 'trigger_model_name', 'trigger_instance_id')
             .filter(model_name=model_name, changed_timestamp__gt=datetime_gt, changed_timestamp__lte=datetime_lte,
                     **additional_filters)
-            .annotate(history_type_list=StringAgg('history_type', ',', default=Value('')))
-            .filter(~(Q(history_type_list__contains='+') & Q(history_type_list__contains='-')))
+            .annotate(history_type_array=ArrayAgg('history_type', distinct=True))
+            .exclude(history_type_array__contains=['+', '-'])
             .values_list(return_value, flat=True).distinct())
 
 

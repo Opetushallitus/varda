@@ -1020,9 +1020,15 @@ class Z9_RelatedObjectChanged(AbstractModel):
 
     class Meta:
         indexes = [
-            Index(fields=['model_name', 'changed_timestamp']),
+            # Used by misc_queries.get_related_object_changed_id_qs to get list of IDs with true
+            # (not add+delete) changes, PostgreSQL specific functionality (include)
+            Index(name='varda_z9_mod_time_covering', fields=['model_name', 'changed_timestamp'],
+                  include=['instance_id', 'trigger_model_name', 'trigger_instance_id', 'history_type']),
+            # Used in serializers to get lower level changed objects (e.g. Varhaiskasvatuspaatos, Palvelussuhde objects)
             Index(fields=['model_name', 'parent_instance_id', 'changed_timestamp']),
+            # Used in serializers to get Maksutieto and Taydennyskoulutus objects
             Index(fields=['model_name', 'instance_id', 'trigger_model_name', 'changed_timestamp']),
+            # Used in serializers to get parent values for objects to determine MOVED state
             Index(fields=['parent_model_name', 'parent_instance_id', 'changed_timestamp'])
         ]
         verbose_name_plural = 'Related object changed'
