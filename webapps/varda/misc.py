@@ -218,10 +218,10 @@ def get_json_from_external_service(service_name, http_url_suffix, auth=True, lar
 
 
 def post_json_to_external_service(service_name, http_url_suffix, data_json, expected_status_code, auth=True,
-                                  reply_type='json'):
+                                  reply_type='json', large_query=False):
     request_type = 'post'
     return send_request_to_external_service(request_type, service_name, http_url_suffix, expected_status_code, auth,
-                                            reply_type=reply_type, data_json=data_json)
+                                            reply_type=reply_type, data_json=data_json, large_query=large_query)
 
 
 def put_json_to_external_service(service_name, http_url_suffix, data_json, expected_status_code):

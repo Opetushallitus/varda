@@ -24,18 +24,20 @@ from varda import permission_groups
 from varda import permissions
 from varda.audit_log import audit_log
 from varda.cache import delete_paattymis_pvm_cache, invalidate_cache, set_paattymis_pvm_cache
+from varda.clients.oppijanumerorekisteri_client import fetch_henkilo_data_for_oid_list
 from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
 from varda.enums.aikaleima_avain import AikaleimaAvain
+from varda.enums.koodistot import Koodistot
 from varda.enums.reporting import ReportStatus
 from varda.excel_export import delete_excel_reports_earlier_than
 from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
-from varda.misc import hash_string, memory_efficient_queryset_iterator
+from varda.misc import hash_string, list_to_chunks, memory_efficient_queryset_iterator
 from varda.misc_operations import set_paattymis_pvm_for_vakajarjestaja_data
 from varda.models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Maksutieto,
                           MaksutietoHuoltajuussuhde, Palvelussuhde, Taydennyskoulutus, TaydennyskoulutusTyontekija,
                           Toimipaikka, Tyontekija, Organisaatio, Varhaiskasvatuspaatos, YearlyReportSummary,
-                          Z4_CasKayttoOikeudet, Z5_AuditLog, Z6_LastRequest, Z6_RequestCount, Z6_RequestLog,
-                          Z6_RequestSummary, Z9_RelatedObjectChanged)
+                          Z2_CodeTranslation, Z4_CasKayttoOikeudet, Z5_AuditLog, Z6_LastRequest, Z6_RequestCount,
+                          Z6_RequestLog, Z6_RequestSummary, Z9_RelatedObjectChanged)
 from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups, get_oph_yllapitaja_group_name
 from varda.permissions import assign_object_level_permissions_for_instance, delete_object_permissions_explicitly
 
@@ -61,9 +63,10 @@ def single_instance_task(timeout_in_minutes=8 * 60):
             lock_timeout_in_seconds = timeout_in_minutes * 60
             if cache.add(lock_id, 'true', lock_timeout_in_seconds):  # 'true' is never used value for the key
                 try:
-                    func(*args, **kwargs)
+                    result = func(*args, **kwargs)
                 finally:
                     cache.delete(lock_id)
+                return result
             else:
                 logger.error('Task already running with lock_id {}'.format(lock_id))
         return decorator_wrapper
@@ -1194,3 +1197,62 @@ def set_paattymis_pvm_for_vakajarjestaja_data_task(vakajarjestaja_id, paattymis_
     except Exception as exception:
         delete_paattymis_pvm_cache(identifier)
         raise exception
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def get_ukranian_child_statistics(active_since='2022-02-24'):
+    """
+    Get number of Ukranian children per each municipality that started in vaka after active_since parameter
+    TEMPORARY FUNCTION
+    """
+    try:
+        active_since = datetime.datetime.strptime(active_since, '%Y-%m-%d').date()
+    except ValueError:
+        logger.error(f'Could not parse active_since: {active_since}')
+        return None
+
+    # Get list of henkilo_oid that have active Varhaiskasvatuspaatos and Varhaiskasvatussuhde after active since
+    # and no previous Varhaiskasvatuspaatos objects
+    today = datetime.datetime.today()
+    oid_list = (Henkilo.objects
+                .filter(Q(lapsi__varhaiskasvatuspaatokset__alkamis_pvm__gte=active_since) &
+                        (Q(lapsi__varhaiskasvatuspaatokset__paattymis_pvm__isnull=True) |
+                         Q(lapsi__varhaiskasvatuspaatokset__paattymis_pvm__gt=today)) &
+                        Q(lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm__gte=active_since) &
+                        (Q(lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True) |
+                         Q(lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__gt=today)))
+                .exclude(lapsi__varhaiskasvatuspaatokset__alkamis_pvm__lt=active_since)
+                .distinct('henkilo_oid').values_list('henkilo_oid', flat=True))
+    oid_chunk_list = list_to_chunks(oid_list, 5000)
+
+    valid_oid_list = []
+    for oid_chunk in oid_chunk_list:
+        result = fetch_henkilo_data_for_oid_list(oid_chunk)
+        for henkilo_data in result:
+            for kansalaisuus in henkilo_data.get('kansalaisuus', []):
+                # https://koodistot.suomi.fi/codescheme;registryCode=jhs;schemeCode=valtio_1_20120101
+                if kansalaisuus['kansalaisuusKoodi'] == '804':
+                    valid_oid_list.append(henkilo_data['oidHenkilo'])
+                    break
+
+    kunta_dict = {'total': {'amount': len(valid_oid_list)}}
+    for henkilo_oid in valid_oid_list:
+        kunta_code_list = (Toimipaikka.objects
+                           .filter(varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi__henkilo__henkilo_oid=henkilo_oid)
+                           .distinct('kunta_koodi').values_list('kunta_koodi', flat=True))
+        for kunta_code in kunta_code_list:
+            kunta_translation = getattr(Z2_CodeTranslation.objects
+                                        .filter(language__iexact='fi', code__code_value=kunta_code,
+                                                code__koodisto__name=Koodistot.kunta_koodit.value).first(),
+                                        'name', None)
+            kunta_dict[kunta_code] = {'name': kunta_translation,
+                                      'amount': kunta_dict.get(kunta_code, {}).get('amount', 0) + 1}
+
+    result_str = 'kunta_koodi,kunta_nimi,lapsi_lkm'
+    for key, value in kunta_dict.items():
+        name = value.get('name', '')
+        amount = value.get('amount', '')
+        result_str += f';{key},{name},{amount}'
+
+    return result_str

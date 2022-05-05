@@ -6,10 +6,10 @@ from rest_framework import status
 from varda.misc import get_json_from_external_service, get_reply_json, hash_string, post_json_to_external_service
 from varda.models import Henkilo
 
-# Get an instance of a logger
+
 logger = logging.getLogger(__name__)
 
-SERVICE_NAME = "oppijanumerorekisteri-service"
+SERVICE_NAME = 'oppijanumerorekisteri-service'
 
 
 def get_henkilo_by_henkilotunnus(henkilotunnus, etunimet, kutsumanimi, sukunimi):
@@ -93,10 +93,10 @@ def get_or_create_henkilo_by_henkilotunnus(henkilotunnus, etunimet, kutsumanimi,
     }
     """
     reply_msg = get_json_from_external_service(SERVICE_NAME, '/henkilo/hetu={}'.format(henkilotunnus), auth=True)
-    default_henkilo_query_error_result = {"new_henkilo": False, "result": None}
+    default_henkilo_query_error_result = {'new_henkilo': False, 'result': None}
 
-    if reply_msg["is_ok"]:
-        return {"new_henkilo": False, "result": reply_msg["json_msg"]}
+    if reply_msg['is_ok']:
+        return {'new_henkilo': False, 'result': reply_msg['json_msg']}
     else:
         """
         Henkilo was not found by henkilotunnus. Let's add it to Oppijanumerorekisteri.
@@ -108,7 +108,7 @@ def get_or_create_henkilo_by_henkilotunnus(henkilotunnus, etunimet, kutsumanimi,
 
 
 def add_henkilo_to_oppijanumerorekisteri(etunimet, kutsumanimi, sukunimi, henkilotunnus=None):
-    default_henkilo_query_error_result = {"new_henkilo": False, "result": None}
+    default_henkilo_query_error_result = {'new_henkilo': False, 'result': None}
     if henkilotunnus:
         new_henkilo_oid_in_oppijanumerorekisteri = _add_henkilo_to_oppijanumerorekisteri(etunimet, kutsumanimi, sukunimi, henkilotunnus=henkilotunnus)
     else:
@@ -116,7 +116,7 @@ def add_henkilo_to_oppijanumerorekisteri(etunimet, kutsumanimi, sukunimi, henkil
     if new_henkilo_oid_in_oppijanumerorekisteri is None:
         return default_henkilo_query_error_result
     else:
-        return {"new_henkilo": True, "result": get_henkilo_data_by_oid(new_henkilo_oid_in_oppijanumerorekisteri)}
+        return {'new_henkilo': True, 'result': get_henkilo_data_by_oid(new_henkilo_oid_in_oppijanumerorekisteri)}
 
 
 def _add_henkilo_to_oppijanumerorekisteri(etunimet, kutsumanimi, sukunimi, henkilotunnus=None):
@@ -129,22 +129,22 @@ def _add_henkilo_to_oppijanumerorekisteri(etunimet, kutsumanimi, sukunimi, henki
     :return: Oid of created henkilo or None
     """
     new_henkilo = {
-        "etunimet": etunimet,
-        "kutsumanimi": kutsumanimi,
-        "sukunimi": sukunimi
+        'etunimet': etunimet,
+        'kutsumanimi': kutsumanimi,
+        'sukunimi': sukunimi
     }
     if henkilotunnus:
-        new_henkilo["hetu"] = henkilotunnus
+        new_henkilo['hetu'] = henkilotunnus
 
     reply_msg = post_json_to_external_service(SERVICE_NAME, '/henkilo/', json.dumps(new_henkilo), status.HTTP_201_CREATED, auth=True, reply_type='text')
-    if reply_msg["is_ok"]:
-        return reply_msg["json_msg"]
+    if reply_msg['is_ok']:
+        return reply_msg['json_msg']
     elif henkilotunnus:
         henkilo = Henkilo.objects.get(henkilotunnus_unique_hash=hash_string(henkilotunnus))
         henkilo_id = henkilo.id
         added_by = henkilo.history.last().history_user.username
         henkilotunnus_prefix_hided = henkilotunnus and 'DDMMYY' + henkilotunnus[-5:]
-        logger.error("Couldn't add a new henkilo to Oppijanumerorekisteri. Henkilotunnus: {}. Id: {}. Added by: {}"
+        logger.error('Couldn\'t add a new henkilo to Oppijanumerorekisteri. Henkilotunnus: {}. Id: {}. Added by: {}'
                      .format(henkilotunnus_prefix_hided, henkilo_id, added_by))
         return None
 
@@ -225,10 +225,10 @@ def get_henkilo_data_by_oid(oid):
     """
     reply_msg = get_json_from_external_service(SERVICE_NAME, '/henkilo/{}/master'.format(oid), auth=True)
 
-    if reply_msg["is_ok"]:
-        return reply_msg["json_msg"]
+    if reply_msg['is_ok']:
+        return reply_msg['json_msg']
     else:
-        logger.error("Couldn't fetch henkilo with oid: {}".format(oid))
+        logger.error('Couldn\'t fetch henkilo with oid: {}'.format(oid))
         return None
 
 
@@ -242,7 +242,7 @@ def get_henkilot_changed_since(start_datetime, offset, amount=5000):
     """
     url = '/s2s/changedSince/{}?amount={}&offset={}'.format(start_datetime, amount, offset)
     response = get_json_from_external_service(SERVICE_NAME, url, large_query=True)
-    return get_reply_json(is_ok=response["is_ok"], json_msg=response["json_msg"])
+    return get_reply_json(is_ok=response['is_ok'], json_msg=response['json_msg'])
 
 
 def get_huoltajasuhde_changed_child_oids(start_datetime, offset, amount=5000):
@@ -255,7 +255,7 @@ def get_huoltajasuhde_changed_child_oids(start_datetime, offset, amount=5000):
     """
     url = '/henkilo/huoltajasuhdemuutokset/alkaen/{}?amount={}&offset={}'.format(start_datetime, amount, offset)
     response = get_json_from_external_service(SERVICE_NAME, url, large_query=True)
-    return get_reply_json(is_ok=response["is_ok"], json_msg=response["json_msg"])
+    return get_reply_json(is_ok=response['is_ok'], json_msg=response['json_msg'])
 
 
 def fetch_changed_huoltajuussuhteet(start_datetime):
@@ -332,3 +332,60 @@ def fetch_changed_henkilot(start_datetime):
             logger.error('Changed henkilot: We got more than we requested. Received: {}, Requested: {}'
                          .format(len_of_fetched_henkilo_oids, amount))
             return get_reply_json(is_ok=False, json_msg=None)
+
+
+def fetch_henkilo_data_for_oid_list(oid_list):
+    """
+    Returns list of henkilo data for list of OIDs
+    Example of return JSON:
+    [
+        {
+            "oidHenkilo": "1.2.246.562.24.40599396777",
+            "hetu": "010113A9072",
+            "kaikkiHetut": [],
+            "passivoitu": false,
+            "etunimet": "Jan-Olof Testi",
+            "kutsumanimi": "Jan-Olof",
+            "sukunimi": "Vuori-Testi",
+            "aidinkieli": {
+                "kieliKoodi": "fi",
+                "kieliTyyppi": "suomi"
+            },
+            "asiointiKieli": null,
+            "kansalaisuus": [
+                {
+                    "kansalaisuusKoodi": "246"
+                }
+            ],
+            "kasittelijaOid": "1.2.246.562.24.66631583590",
+            "syntymaaika": "2013-01-01",
+            "sukupuoli": "1",
+            "kotikunta": null,
+            "oppijanumero": "1.2.246.562.24.40599396777",
+            "turvakielto": false,
+            "eiSuomalaistaHetua": false,
+            "yksiloity": false,
+            "yksiloityVTJ": true,
+            "yksilointiYritetty": true,
+            "duplicate": false,
+            "created": 1542376370546,
+            "modified": 1584058500126,
+            "vtjsynced": null,
+            "yhteystiedotRyhma": [],
+            "yksilointivirheet": [],
+            "kielisyys": [],
+            "henkiloTyyppi": "OPPIJA"
+        }
+    ]
+    :param oid_list: list of OID identifiers
+    :return: list of henkilo data
+    """
+
+    reply_msg = post_json_to_external_service(SERVICE_NAME, '/henkilo/henkilotByHenkiloOidList', json.dumps(oid_list),
+                                              status.HTTP_200_OK, large_query=True)
+    json_msg = reply_msg['json_msg']
+    if reply_msg['is_ok']:
+        return json_msg
+    else:
+        logger.error(f'Error fetching henkilo data for OID list: {json_msg}')
+        return []
