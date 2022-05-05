@@ -164,22 +164,25 @@ class KelaEtuusmaksatusLopettaneetViewSet(GenericViewSet, ListModelMixin):
             muutos_pvm_gte = validate_kela_api_datetimefield(muutos_pvm_gte, now, 'muutos_pvm_gte')
             muutos_pvm_lte = now
 
-        return (Varhaiskasvatussuhde.objects.raw('''SELECT DISTINCT ON (vas.id) vas.id,
-                                                    vas.paattymis_pvm, he.henkilotunnus, he.kotikunta_koodi
+        return (Varhaiskasvatussuhde.objects.raw('''SELECT DISTINCT ON (vas.id) vas.id, vas.paattymis_pvm,
+                                                        he.henkilotunnus, he.kotikunta_koodi
                                                     FROM varda_varhaiskasvatussuhde vas
-                                                    INNER JOIN varda_varhaiskasvatuspaatos vap ON vas.varhaiskasvatuspaatos_id=vap.id
-                                                    INNER JOIN varda_lapsi la ON vap.lapsi_id=la.id
-                                                    INNER JOIN varda_henkilo he ON  la.henkilo_id=he.id
-                                                    INNER JOIN (select distinct on (id) id, paattymis_pvm from varda_historicalvarhaiskasvatussuhde
-                                                                where history_date < %s order by id, history_date desc) last_vas
-                                                    on last_vas.id = vas.id
-                                                    WHERE vas.muutos_pvm >= %s and vas.muutos_pvm <= %s
-                                                    AND lower(vap.jarjestamismuoto_koodi) in ('jm01', 'jm02', 'jm03')
+                                                    INNER JOIN varda_varhaiskasvatuspaatos vap ON vas.varhaiskasvatuspaatos_id = vap.id
+                                                    INNER JOIN varda_lapsi la ON vap.lapsi_id = la.id
+                                                    INNER JOIN varda_henkilo he ON la.henkilo_id = he.id
+                                                    INNER JOIN LATERAL (
+                                                        SELECT id, paattymis_pvm
+                                                        FROM varda_historicalvarhaiskasvatussuhde
+                                                        WHERE history_date < %s AND id = vas.id
+                                                        ORDER BY id, history_date DESC LIMIT 1
+                                                    ) last_vas ON true
+                                                    WHERE vas.muutos_pvm >= %s AND vas.muutos_pvm <= %s
+                                                    AND LOWER(vap.jarjestamismuoto_koodi) IN ('jm01', 'jm02', 'jm03')
                                                     AND vap.luonti_pvm >= '2021-01-04'
-                                                    AND tilapainen_vaka_kytkin='f' AND he.henkilotunnus <> ''
-                                                    AND last_vas.paattymis_pvm is NULL
-                                                    AND vas.paattymis_pvm is not NULL
-                                                    ORDER BY vas.id ASC''', [muutos_pvm_gte, muutos_pvm_gte, muutos_pvm_lte]))
+                                                    AND vap.tilapainen_vaka_kytkin = 'f' AND he.henkilotunnus != ''
+                                                    AND last_vas.paattymis_pvm IS NULL
+                                                    AND vas.paattymis_pvm IS NOT NULL
+                                                    ORDER BY vas.id ASC;''', [muutos_pvm_gte, muutos_pvm_gte, muutos_pvm_lte]))
 
 
 @auditlogclass
