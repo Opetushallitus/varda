@@ -4,10 +4,9 @@ import responses
 from unittest.mock import patch, MagicMock
 
 from django.contrib.auth.models import User, Group
-from django.test import TestCase
 from rest_framework import status
 
-from varda.unit_tests.test_utils import (assert_status_code, SetUpTestClient, assert_validation_error,
+from varda.unit_tests.test_utils import (assert_status_code, RollbackTestCase, SetUpTestClient, assert_validation_error,
                                          post_henkilo_to_get_permissions, mock_date_decorator_factory,
                                          date_side_effect, timedelta_side_effect)
 from varda.models import (Organisaatio, Henkilo, Tyontekija, Palvelussuhde, Tyoskentelypaikka, Toimipaikka,
@@ -19,7 +18,7 @@ from varda.viewsets_henkilosto import TyontekijaViewSet
 datetime_path = 'varda.serializers_henkilosto.datetime'
 
 
-class VardaHenkilostoViewSetTests(TestCase):
+class VardaHenkilostoViewSetTests(RollbackTestCase):
     fixtures = ['varda/unit_tests/fixture_basics.json']
 
     def test_api_push_tyontekija_correct(self):
@@ -2155,59 +2154,75 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija1')
 
-        taydennyskoulutus = {
-            'taydennyskoulutus_tyontekijat': [{'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '39407'}],
-            'nimi': 'Ensiapukoulutus',
-            'suoritus_pvm': '2020-09-14',
-            'koulutuspaivia': '1.5',
-            'lahdejarjestelma': '1',
-        }
-
-        resp = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus), content_type='application/json')
-        assert_status_code(resp, status.HTTP_201_CREATED)
-        saved_taydennyskoulutus = json.loads(resp.content)
-
-        # Check that what was saved is also returned.
-        # The serializer populates additional fields, so they must be added here
-        taydennyskoulutus.update({
-            'taydennyskoulutus_tyontekijat': [{
-                'tyontekija': f'http://testserver/api/henkilosto/v1/tyontekijat/{tyontekija.id}/',
-                'tehtavanimike_koodi': '39407',
+        for version in ['v1', 'v2']:
+            taydennyskoulutus = {
+                'taydennyskoulutus_tyontekijat': [
+                    {'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '39407'}
+                ],
+                'nimi': 'Ensiapukoulutus',
+                'suoritus_pvm': '2020-09-14',
+                'koulutuspaivia': '1.5',
                 'lahdejarjestelma': '1',
-                'tunniste': 'testing-tyontekija1',
-                'henkilo_oid': '1.2.246.562.24.2431884920041',
-                'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
-            }],
-        })
+            }
 
-        for key, value in taydennyskoulutus.items():
-            self.assertEqual(value, saved_taydennyskoulutus[key], key)
+            resp = client.post(f'/api/henkilosto/{version}/taydennyskoulutukset/', json.dumps(taydennyskoulutus),
+                               content_type='application/json')
+            assert_status_code(resp, status.HTTP_201_CREATED)
+            saved_taydennyskoulutus = json.loads(resp.content)
+
+            # Check that what was saved is also returned.
+            # The serializer populates additional fields, so they must be added here
+            taydennyskoulutus.update({
+                'taydennyskoulutus_tyontekijat': [{
+                    'tyontekija': f'http://testserver/api/henkilosto/v1/tyontekijat/{tyontekija.id}/',
+                    'tehtavanimike_koodi': '39407',
+                    'lahdejarjestelma': '1',
+                    'tunniste': 'testing-tyontekija1',
+                    'henkilo_oid': '1.2.246.562.24.2431884920041',
+                    'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
+                }],
+            })
+
+            for key, value in taydennyskoulutus.items():
+                self.assertEqual(value, saved_taydennyskoulutus[key], key)
+
+            self.reset_db()
 
     def test_taydennyskoulutus_add_correct_oid(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
 
         tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija1')
 
-        taydennyskoulutus = {
-            'taydennyskoulutus_tyontekijat': [{'henkilo_oid': tyontekija.henkilo.henkilo_oid, 'vakajarjestaja_oid': tyontekija.vakajarjestaja.organisaatio_oid, 'tehtavanimike_koodi': '39407'}],
-            'nimi': 'Ensiapukoulutus',
-            'suoritus_pvm': '2020-09-14',
-            'koulutuspaivia': '1.5',
-            'lahdejarjestelma': '1',
-        }
+        for version in ['v1', 'v2']:
+            taydennyskoulutus = {
+                'taydennyskoulutus_tyontekijat': [
+                    {
+                        'henkilo_oid': tyontekija.henkilo.henkilo_oid,
+                        'vakajarjestaja_oid': tyontekija.vakajarjestaja.organisaatio_oid,
+                        'tehtavanimike_koodi': '39407'
+                    }
+                ],
+                'nimi': 'Ensiapukoulutus',
+                'suoritus_pvm': '2020-09-14',
+                'koulutuspaivia': '1.5',
+                'lahdejarjestelma': '1',
+            }
 
-        resp = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus), content_type='application/json')
-        assert_status_code(resp, status.HTTP_201_CREATED)
-        saved_taydennyskoulutus = json.loads(resp.content)
+            resp = client.post(f'/api/henkilosto/{version}/taydennyskoulutukset/', json.dumps(taydennyskoulutus),
+                               content_type='application/json')
+            assert_status_code(resp, status.HTTP_201_CREATED)
+            saved_taydennyskoulutus = json.loads(resp.content)
 
-        # Check tyontekijat separately
-        taydennyskoulutus.pop('taydennyskoulutus_tyontekijat')
-        tyontekijat = saved_taydennyskoulutus.pop('taydennyskoulutus_tyontekijat')
-        self.assertEqual(tyontekijat[0]['tyontekija'], f'http://testserver/api/henkilosto/v1/tyontekijat/{tyontekija.id}/')
+            # Check tyontekijat separately
+            taydennyskoulutus.pop('taydennyskoulutus_tyontekijat')
+            tyontekijat = saved_taydennyskoulutus.pop('taydennyskoulutus_tyontekijat')
+            self.assertEqual(tyontekijat[0]['tyontekija'], f'http://testserver/api/henkilosto/v1/tyontekijat/{tyontekija.id}/')
 
-        # Check rest of the fields against the original request
-        for key, value in taydennyskoulutus.items():
-            self.assertEqual(value, saved_taydennyskoulutus[key], key)
+            # Check rest of the fields against the original request
+            for key, value in taydennyskoulutus.items():
+                self.assertEqual(value, saved_taydennyskoulutus[key], key)
+
+            self.reset_db()
 
     def test_taydennyskoulutus_add_correct_many(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
@@ -2215,27 +2230,31 @@ class VardaHenkilostoViewSetTests(TestCase):
         tyontekija1 = Tyontekija.objects.get(tunniste='testing-tyontekija1')
         tyontekija4 = Tyontekija.objects.get(tunniste='testing-tyontekija4')
 
-        taydennyskoulutus = {
-            'taydennyskoulutus_tyontekijat': [
-                {'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija1.id}/', 'tehtavanimike_koodi': '39407'},
-                {'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija4.id}/', 'tehtavanimike_koodi': '77826'},
-            ],
-            'nimi': 'Ensiapukoulutus',
-            'suoritus_pvm': '2020-09-14',
-            'koulutuspaivia': '1.5',
-            'lahdejarjestelma': '1',
-        }
+        for version in ['v1', 'v2']:
+            taydennyskoulutus = {
+                'taydennyskoulutus_tyontekijat': [
+                    {'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija1.id}/', 'tehtavanimike_koodi': '39407'},
+                    {'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija4.id}/', 'tehtavanimike_koodi': '77826'},
+                ],
+                'nimi': 'Ensiapukoulutus',
+                'suoritus_pvm': '2020-09-14',
+                'koulutuspaivia': '1.5',
+                'lahdejarjestelma': '1',
+            }
 
-        resp = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus), content_type='application/json')
-        assert_status_code(resp, status.HTTP_201_CREATED)
-        saved_taydennyskoulutus = json.loads(resp.content)
+            resp = client.post(f'/api/henkilosto/{version}/taydennyskoulutukset/', json.dumps(taydennyskoulutus),
+                               content_type='application/json')
+            assert_status_code(resp, status.HTTP_201_CREATED)
+            saved_taydennyskoulutus = json.loads(resp.content)
 
-        # Check tyontekijat
-        tyontekijat = saved_taydennyskoulutus.pop('taydennyskoulutus_tyontekijat')
-        self.assertEqual(tyontekijat[0]['tyontekija'], f'http://testserver/api/henkilosto/v1/tyontekijat/{tyontekija1.id}/')
-        self.assertEqual(tyontekijat[0]['tehtavanimike_koodi'], '39407')
-        self.assertEqual(tyontekijat[1]['tyontekija'], f'http://testserver/api/henkilosto/v1/tyontekijat/{tyontekija4.id}/')
-        self.assertEqual(tyontekijat[1]['tehtavanimike_koodi'], '77826')
+            # Check tyontekijat
+            tyontekijat = saved_taydennyskoulutus.pop('taydennyskoulutus_tyontekijat')
+            self.assertEqual(tyontekijat[0]['tyontekija'], f'http://testserver/api/henkilosto/v1/tyontekijat/{tyontekija1.id}/')
+            self.assertEqual(tyontekijat[0]['tehtavanimike_koodi'], '39407')
+            self.assertEqual(tyontekijat[1]['tyontekija'], f'http://testserver/api/henkilosto/v1/tyontekijat/{tyontekija4.id}/')
+            self.assertEqual(tyontekijat[1]['tehtavanimike_koodi'], '77826')
+
+            self.reset_db()
 
     def test_taydennyskoulutus_get_filtering(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
@@ -2243,52 +2262,56 @@ class VardaHenkilostoViewSetTests(TestCase):
         tyontekija1 = Tyontekija.objects.get(tunniste='testing-tyontekija1')
         tyontekija4 = Tyontekija.objects.get(tunniste='testing-tyontekija4')
 
-        taydennyskoulutus = {
-            'taydennyskoulutus_tyontekijat': [{'tyontekija': f'http://testserver/api/henkilosto/v1/tyontekijat/{tyontekija1.id}/', 'tehtavanimike_koodi': '39407'}],
-            'nimi': 'Ensiapukoulutus',
-            'suoritus_pvm': '2020-09-14',
-            'koulutuspaivia': '1.5',
-            'lahdejarjestelma': '1',
-        }
+        for version in ['v1', 'v2']:
+            base_url = f'/api/henkilosto/{version}/taydennyskoulutukset/'
+            taydennyskoulutus = {
+                'taydennyskoulutus_tyontekijat': [{'tyontekija': f'http://testserver/api/henkilosto/v1/tyontekijat/{tyontekija1.id}/', 'tehtavanimike_koodi': '39407'}],
+                'nimi': 'Ensiapukoulutus',
+                'suoritus_pvm': '2020-09-14',
+                'koulutuspaivia': '1.5',
+                'lahdejarjestelma': '1',
+            }
 
-        resp = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus), content_type='application/json')
-        assert_status_code(resp, status.HTTP_201_CREATED)
+            resp = client.post(base_url, json.dumps(taydennyskoulutus), content_type='application/json')
+            assert_status_code(resp, status.HTTP_201_CREATED)
 
-        taydennyskoulutus.update({
-            'nimi': 'Kakkoskoulutus',
-        })
-        resp = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus), content_type='application/json')
-        assert_status_code(resp, status.HTTP_201_CREATED)
+            taydennyskoulutus.update({
+                'nimi': 'Kakkoskoulutus',
+            })
+            resp = client.post(base_url, json.dumps(taydennyskoulutus), content_type='application/json')
+            assert_status_code(resp, status.HTTP_201_CREATED)
 
-        taydennyskoulutus.update({
-            'taydennyskoulutus_tyontekijat': [{'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija4.id}/', 'tehtavanimike_koodi': '77826'}],
-            'nimi': 'Kolmoskoulutus',
-        })
-        resp = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus), content_type='application/json')
-        assert_status_code(resp, status.HTTP_201_CREATED)
+            taydennyskoulutus.update({
+                'taydennyskoulutus_tyontekijat': [{'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija4.id}/', 'tehtavanimike_koodi': '77826'}],
+                'nimi': 'Kolmoskoulutus',
+            })
+            resp = client.post(base_url, json.dumps(taydennyskoulutus), content_type='application/json')
+            assert_status_code(resp, status.HTTP_201_CREATED)
 
-        # Check koulutukset of first tyontekija
-        resp = client.get(f'/api/henkilosto/v1/taydennyskoulutukset/?tyontekija={tyontekija1.id}', content_type='application/json')
-        assert_status_code(resp, status.HTTP_200_OK)
-        resp_data = json.loads(resp.content)
-        self.assertEqual(resp_data['count'], 3)
-        koulutus_nimet = [k['nimi'] for k in resp_data['results']]
-        self.assertIn('Ensiapukoulutus', koulutus_nimet)
-        self.assertIn('Kakkoskoulutus', koulutus_nimet)
+            # Check koulutukset of first tyontekija
+            resp = client.get(f'{base_url}?tyontekija={tyontekija1.id}', content_type='application/json')
+            assert_status_code(resp, status.HTTP_200_OK)
+            resp_data = json.loads(resp.content)
+            self.assertEqual(resp_data['count'], 3)
+            koulutus_nimet = [k['nimi'] for k in resp_data['results']]
+            self.assertIn('Ensiapukoulutus', koulutus_nimet)
+            self.assertIn('Kakkoskoulutus', koulutus_nimet)
 
-        # Check the same one, but with a different query
-        resp = client.get(f'/api/henkilosto/v1/taydennyskoulutukset/?henkilo_oid={tyontekija1.henkilo.henkilo_oid}&vakajarjestaja_oid={tyontekija1.vakajarjestaja.organisaatio_oid}', content_type='application/json')
-        assert_status_code(resp, status.HTTP_200_OK)
-        resp_data2 = json.loads(resp.content)
-        self.assertEqual(resp_data, resp_data2)
+            # Check the same one, but with a different query
+            resp = client.get(f'{base_url}?henkilo_oid={tyontekija1.henkilo.henkilo_oid}&vakajarjestaja_oid={tyontekija1.vakajarjestaja.organisaatio_oid}', content_type='application/json')
+            assert_status_code(resp, status.HTTP_200_OK)
+            resp_data2 = json.loads(resp.content)
+            self.assertEqual(resp_data, resp_data2)
 
-        # Check koulutukset of second tyontekija
-        resp = client.get(f'/api/henkilosto/v1/taydennyskoulutukset/?tyontekija={tyontekija4.id}', content_type='application/json')
-        assert_status_code(resp, status.HTTP_200_OK)
-        resp_data = json.loads(resp.content)
-        self.assertEqual(resp_data['count'], 2)
-        koulutus_nimet = [k['nimi'] for k in resp_data['results']]
-        self.assertIn('Kolmoskoulutus', koulutus_nimet)
+            # Check koulutukset of second tyontekija
+            resp = client.get(f'{base_url}?tyontekija={tyontekija4.id}', content_type='application/json')
+            assert_status_code(resp, status.HTTP_200_OK)
+            resp_data = json.loads(resp.content)
+            self.assertEqual(resp_data['count'], 2)
+            koulutus_nimet = [k['nimi'] for k in resp_data['results']]
+            self.assertIn('Kolmoskoulutus', koulutus_nimet)
+
+            self.reset_db()
 
     def test_taydennyskoulutus_add_incorrect_tehtavanimike(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
@@ -2308,34 +2331,44 @@ class VardaHenkilostoViewSetTests(TestCase):
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, ['tehtavanimike_koodi'], 'TK008', 'Tyontekija does not have given tehtavanimike_koodi.')
 
+        # In v2 tehtavanimike_koodi is validated earlier
+        resp = client.post('/api/henkilosto/v2/taydennyskoulutukset/', json.dumps(taydennyskoulutus), content_type='application/json')
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, ['taydennyskoulutus_tyontekijat', '0', 'errors'], 'TK016',
+                                'At least 1 valid Tyontekija is required (Tyontekija not found or tehtavanimike_koodi is incorrect).')
+
     def test_taydennyskoulutus_add_incorrect_koulutuspaivia(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
 
         tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija1')
 
-        taydennyskoulutus_1 = {
-            'taydennyskoulutus_tyontekijat': [{'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '39407'}],
-            'nimi': 'Ensiapukoulutus',
-            'suoritus_pvm': '2020-09-14',
-            'koulutuspaivia': '1.7',  # Must be % 0.5
-            'lahdejarjestelma': '1',
-        }
+        for version in ['v1', 'v2']:
+            url = f'/api/henkilosto/{version}/taydennyskoulutukset/'
+            taydennyskoulutus_1 = {
+                'taydennyskoulutus_tyontekijat': [{'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '39407'}],
+                'nimi': 'Ensiapukoulutus',
+                'suoritus_pvm': '2020-09-14',
+                'koulutuspaivia': '1.7',  # Must be % 0.5
+                'lahdejarjestelma': '1',
+            }
 
-        resp_1 = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus_1), content_type='application/json')
-        assert_status_code(resp_1, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp_1, 'koulutuspaivia', 'GE018', 'Invalid decimal step.')
+            resp_1 = client.post(url, json.dumps(taydennyskoulutus_1), content_type='application/json')
+            assert_status_code(resp_1, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp_1, 'koulutuspaivia', 'GE018', 'Invalid decimal step.')
 
-        taydennyskoulutus_2 = {
-            'taydennyskoulutus_tyontekijat': [{'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '39407'}],
-            'nimi': 'Ensiapukoulutus',
-            'suoritus_pvm': '2020-09-14',
-            'koulutuspaivia': '160.5',  # Must be < 160
-            'lahdejarjestelma': '1',
-        }
+            taydennyskoulutus_2 = {
+                'taydennyskoulutus_tyontekijat': [{'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '39407'}],
+                'nimi': 'Ensiapukoulutus',
+                'suoritus_pvm': '2020-09-14',
+                'koulutuspaivia': '160.5',  # Must be < 160
+                'lahdejarjestelma': '1',
+            }
 
-        resp_2 = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus_2), content_type='application/json')
-        assert_status_code(resp_2, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp_2, 'koulutuspaivia', 'DY005', 'Ensure this value is less than or equal to 160.')
+            resp_2 = client.post(url, json.dumps(taydennyskoulutus_2), content_type='application/json')
+            assert_status_code(resp_2, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp_2, 'koulutuspaivia', 'DY005', 'Ensure this value is less than or equal to 160.')
+
+            self.reset_db()
 
     def test_taydennyskoulutus_add_invalid_tyontekija(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
@@ -2348,84 +2381,116 @@ class VardaHenkilostoViewSetTests(TestCase):
                 {'lahdejarjestelma': 1, 'tunniste': 'unknown_tyontekija'},
                 ['taydennyskoulutus_tyontekijat', '0', 'tunniste'],
                 'TK006',
-                'Could not find Tyontekija matching the given (lahdejarjestelma, tunniste).'
+                'Could not find Tyontekija matching the given (lahdejarjestelma, tunniste).',
+                ['v1']
+            ],
+            [
+                {'lahdejarjestelma': 1, 'tunniste': 'unknown_tyontekija'},
+                ['taydennyskoulutus_tyontekijat', '0', 'errors'],
+                'TK016',
+                'At least 1 valid Tyontekija is required (Tyontekija not found or tehtavanimike_koodi is incorrect).',
+                ['v2']
             ],
             [
                 {'tunniste': 'unknown_tyontekija'},
                 ['taydennyskoulutus_tyontekijat', '0', 'tunniste'],
                 'TK003',
-                'Either both lahdejarjestelma and tunniste, or neither must be given.'
+                'Either both lahdejarjestelma and tunniste, or neither must be given.',
+                ['v1', 'v2']
             ],
             [
                 {'henkilo_oid': '1.2.246.562.24.2431884920040', 'vakajarjestaja_oid': '1.2.246.562.10.34683023489'},
                 ['taydennyskoulutus_tyontekijat', '0', 'henkilo_oid'],
                 'TK004',
-                'Could not find Tyontekija matching the given (henkilo_oid, vakajarjestaja_oid).'
+                'Could not find Tyontekija matching the given (henkilo_oid, vakajarjestaja_oid).',
+                ['v1']
+            ],
+            [
+                {'henkilo_oid': '1.2.246.562.24.2431884920040', 'vakajarjestaja_oid': '1.2.246.562.10.34683023489'},
+                ['taydennyskoulutus_tyontekijat', '0', 'errors'],
+                'TK016',
+                'At least 1 valid Tyontekija is required (Tyontekija not found or tehtavanimike_koodi is incorrect).',
+                ['v2']
             ],
             [
                 {'henkilo_oid': '1.2.246.562.24.2431884920040'},
                 ['taydennyskoulutus_tyontekijat', '0', 'henkilo_oid'],
                 'TK002',
-                'Either both henkilo_oid and vakajarjestaja_oid, or neither must be given.'
+                'Either both henkilo_oid and vakajarjestaja_oid, or neither must be given.',
+                ['v1', 'v2']
             ],
             [
                 {},
                 ['taydennyskoulutus_tyontekijat', '0', 'tyontekija'],
                 'TK001',
-                'Tyontekija not specified. Use (tyontekija), (henkilo_oid, vakajarjestaja_oid) or (lahdejarjestelma, tunniste).'
+                'Tyontekija not specified. Use (tyontekija), (henkilo_oid, vakajarjestaja_oid) or (lahdejarjestelma, tunniste).',
+                ['v1', 'v2']
             ],
             [
                 {'tyontekija': '/api/henkilosto/v1/tyontekijat/1000000/'},
                 ['taydennyskoulutus_tyontekijat', '0', 'tyontekija'],
                 'GE008',
-                'Invalid hyperlink, object does not exist.'
+                'Invalid hyperlink, object does not exist.',
+                ['v1', 'v2']
             ],
             [
                 {'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija1.id}/',
                  'henkilo_oid': tyontekija2.henkilo.henkilo_oid, 'vakajarjestaja_oid': tyontekija2.vakajarjestaja.organisaatio_oid},
                 ['taydennyskoulutus_tyontekijat', '0', 'henkilo_oid'],
                 'TK005',
-                'henkilo_oid does not refer to the same Tyontekija as URL.'
+                'henkilo_oid does not refer to the same Tyontekija as URL.',
+                ['v1', 'v2']
             ],
             [
                 {'henkilo_oid': tyontekija1.henkilo.henkilo_oid, 'vakajarjestaja_oid': tyontekija1.vakajarjestaja.organisaatio_oid,
                  'tunniste': tyontekija2.tunniste, 'lahdejarjestelma': tyontekija2.lahdejarjestelma},
                 ['taydennyskoulutus_tyontekijat', '0', 'tunniste'],
                 'TK007',
-                'Tunniste does not refer to the same Tyontekija as URL or henkilo_oid.'
+                'Tunniste does not refer to the same Tyontekija as URL or henkilo_oid.',
+                ['v1', 'v2']
             ],
         ]
 
-        for data, error_path, expected_error_code, expected_error_msg in cases:
-            taydennyskoulutus = {
-                'taydennyskoulutus_tyontekijat': [{'tehtavanimike_koodi': '39407', **data}],
-                'nimi': 'Ensiapukoulutus',
-                'suoritus_pvm': '2020-09-14',
-                'koulutuspaivia': '1.5',
-                'lahdejarjestelma': '1',
-            }
-            resp = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus), content_type='application/json')
-            assert_status_code(resp, 400, data)
-            assert_validation_error(resp, error_path, expected_error_code, expected_error_msg, data)
+        for version in ['v1', 'v2']:
+            for data, error_path, expected_error_code, expected_error_msg, versions in cases:
+                if version not in versions:
+                    continue
+                taydennyskoulutus = {
+                    'taydennyskoulutus_tyontekijat': [{'tehtavanimike_koodi': '39407', **data}],
+                    'nimi': 'Ensiapukoulutus',
+                    'suoritus_pvm': '2020-09-14',
+                    'koulutuspaivia': '1.5',
+                    'lahdejarjestelma': '1',
+                }
+                resp = client.post(f'/api/henkilosto/{version}/taydennyskoulutukset/', json.dumps(taydennyskoulutus),
+                                   content_type='application/json')
+                assert_status_code(resp, 400, data)
+                assert_validation_error(resp, error_path, expected_error_code, expected_error_msg, data)
+
+            self.reset_db()
 
     def test_taydennyskoulutus_add_duplicate(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
 
         tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija1')
 
-        taydennyskoulutus = {
-            'taydennyskoulutus_tyontekijat': [
-                {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/'},
-                {'tehtavanimike_koodi': '39407', 'henkilo_oid': tyontekija.henkilo.henkilo_oid, 'vakajarjestaja_oid': tyontekija.vakajarjestaja.organisaatio_oid}
-            ],
-            'nimi': 'Ensiapukoulutus',
-            'suoritus_pvm': '2020-09-14',
-            'koulutuspaivia': '1.5',
-            'lahdejarjestelma': '1',
-        }
-        resp = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus), content_type='application/json')
-        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp, 'taydennyskoulutus_tyontekijat', 'TK010', 'Duplicates detected.')
+        for version in ['v1', 'v2']:
+            taydennyskoulutus = {
+                'taydennyskoulutus_tyontekijat': [
+                    {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/'},
+                    {'tehtavanimike_koodi': '39407', 'henkilo_oid': tyontekija.henkilo.henkilo_oid, 'vakajarjestaja_oid': tyontekija.vakajarjestaja.organisaatio_oid}
+                ],
+                'nimi': 'Ensiapukoulutus',
+                'suoritus_pvm': '2020-09-14',
+                'koulutuspaivia': '1.5',
+                'lahdejarjestelma': '1',
+            }
+            resp = client.post(f'/api/henkilosto/{version}/taydennyskoulutukset/', json.dumps(taydennyskoulutus),
+                               content_type='application/json')
+            assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp, 'taydennyskoulutus_tyontekijat', 'TK010', 'Duplicates detected.')
+
+            self.reset_db()
 
     def test_taydennyskoulutus_update_tyontekijat_correct(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
@@ -2434,41 +2499,45 @@ class VardaHenkilostoViewSetTests(TestCase):
         tyontekija_1_obj = Tyontekija.objects.get(tunniste='testing-tyontekija1')
         tyontekija_4_obj = Tyontekija.objects.get(tunniste='testing-tyontekija4')
 
-        taydennyskoulutus_put = {
-            'taydennyskoulutus_tyontekijat': [
-                {
-                    'tehtavanimike_koodi': '39407',
-                    'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'
-                },
-                {
-                    'tehtavanimike_koodi': '77826',
-                    'henkilo_oid': tyontekija_4_obj.henkilo.henkilo_oid,
-                    'vakajarjestaja_oid': tyontekija_4_obj.vakajarjestaja.organisaatio_oid
-                }
-            ],
-            'nimi': 'Testikoulutus',
-            'suoritus_pvm': '2020-09-01',
-            'koulutuspaivia': '2',
-            'lahdejarjestelma': '1',
-            'tunniste': 'testing-taydennyskoulutus1'
-        }
-        resp_put = client.put(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
-                              json.dumps(taydennyskoulutus_put), content_type='application/json')
-        assert_status_code(resp_put, status.HTTP_200_OK)
-        self.assertEqual(taydennyskoulutus_qs.first().taydennyskoulutukset_tyontekijat.first().tehtavanimike_koodi, '39407')
-        self.assertEqual(taydennyskoulutus_qs.first().koulutuspaivia, 2)
+        for version in ['v1', 'v2']:
+            url_base = f'/api/henkilosto/{version}/taydennyskoulutukset/'
+            taydennyskoulutus_put = {
+                'taydennyskoulutus_tyontekijat': [
+                    {
+                        'tehtavanimike_koodi': '39407',
+                        'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'
+                    },
+                    {
+                        'tehtavanimike_koodi': '77826',
+                        'henkilo_oid': tyontekija_4_obj.henkilo.henkilo_oid,
+                        'vakajarjestaja_oid': tyontekija_4_obj.vakajarjestaja.organisaatio_oid
+                    }
+                ],
+                'nimi': 'Testikoulutus',
+                'suoritus_pvm': '2020-09-01',
+                'koulutuspaivia': '2',
+                'lahdejarjestelma': '1',
+                'tunniste': 'testing-taydennyskoulutus1'
+            }
+            resp_put = client.put(f'{url_base}{taydennyskoulutus_qs.first().id}/', json.dumps(taydennyskoulutus_put),
+                                  content_type='application/json')
+            assert_status_code(resp_put, status.HTTP_200_OK)
+            self.assertEqual(taydennyskoulutus_qs.first().taydennyskoulutukset_tyontekijat.first().tehtavanimike_koodi, '39407')
+            self.assertEqual(taydennyskoulutus_qs.first().koulutuspaivia, 2)
 
-        taydennyskoulutus_patch = {
-            'taydennyskoulutus_tyontekijat': [
-                {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'},
-                {'tehtavanimike_koodi': '64212', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'},
-                {'tehtavanimike_koodi': '77826', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_4_obj.id}/'}
-            ]
-        }
-        resp_patch = client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
-                                  json.dumps(taydennyskoulutus_patch), content_type='application/json')
-        assert_status_code(resp_patch, status.HTTP_200_OK)
-        self.assertEqual(taydennyskoulutus_qs.first().taydennyskoulutukset_tyontekijat.first().tehtavanimike_koodi, '39407')
+            taydennyskoulutus_patch = {
+                'taydennyskoulutus_tyontekijat': [
+                    {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'},
+                    {'tehtavanimike_koodi': '64212', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'},
+                    {'tehtavanimike_koodi': '77826', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_4_obj.id}/'}
+                ]
+            }
+            resp_patch = client.patch(f'{url_base}{taydennyskoulutus_qs.first().id}/',
+                                      json.dumps(taydennyskoulutus_patch), content_type='application/json')
+            assert_status_code(resp_patch, status.HTTP_200_OK)
+            self.assertEqual(taydennyskoulutus_qs.first().taydennyskoulutukset_tyontekijat.first().tehtavanimike_koodi, '39407')
+
+            self.reset_db()
 
     def test_taydennyskoulutus_update_tyontekijat_incorrect(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
@@ -2478,6 +2547,7 @@ class VardaHenkilostoViewSetTests(TestCase):
         tyontekija_4_obj = Tyontekija.objects.get(tunniste='testing-tyontekija4')
 
         # Tyontekija does not have tehtavanimike_koodi
+        # 1 valid and 1 invalid, v2 accepts also invalid values if there's at least 1 valid tyontekija
         taydennyskoulutus_put = {
             'taydennyskoulutus_tyontekijat': [
                 {
@@ -2499,74 +2569,88 @@ class VardaHenkilostoViewSetTests(TestCase):
         resp_put = client.put(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
                               json.dumps(taydennyskoulutus_put), content_type='application/json')
         assert_status_code(resp_put, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_put, 'tehtavanimike_koodi', 'TK008', 'Tyontekija does not have given tehtavanimike_koodi.')
 
-        # Invalid tehtavanimike_koodi
-        taydennyskoulutus_patch_1 = {
-            'taydennyskoulutus_tyontekijat': [
-                {'tehtavanimike_koodi': 'test', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
-            ]
-        }
-        resp_patch_1 = client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
-                                    json.dumps(taydennyskoulutus_patch_1), content_type='application/json')
-        assert_status_code(resp_patch_1, status.HTTP_400_BAD_REQUEST)
+        for version in ['v1', 'v2']:
+            url_base = f'/api/henkilosto/{version}/taydennyskoulutukset/'
+            # Invalid tehtavanimike_koodi
+            taydennyskoulutus_patch = {
+                'taydennyskoulutus_tyontekijat': [
+                    {'tehtavanimike_koodi': 'test', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
+                ]
+            }
+            resp_patch = client.patch(f'{url_base}{taydennyskoulutus_qs.first().id}/',
+                                      json.dumps(taydennyskoulutus_patch), content_type='application/json')
+            assert_status_code(resp_patch, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp_patch, ['taydennyskoulutus_tyontekijat', '0', 'tehtavanimike_koodi'],
+                                    'KO003', 'Not a valid code.')
 
-        # Duplicates
-        taydennyskoulutus_patch_2 = {
-            'taydennyskoulutus_tyontekijat': [
-                {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'},
-                {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
-            ]
-        }
-        resp_patch_2 = client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
-                                    json.dumps(taydennyskoulutus_patch_2), content_type='application/json')
-        assert_status_code(resp_patch_2, status.HTTP_400_BAD_REQUEST)
+            # Duplicates
+            taydennyskoulutus_patch = {
+                'taydennyskoulutus_tyontekijat': [
+                    {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'},
+                    {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
+                ]
+            }
+            resp_patch = client.patch(f'{url_base}{taydennyskoulutus_qs.first().id}/',
+                                      json.dumps(taydennyskoulutus_patch), content_type='application/json')
+            assert_status_code(resp_patch, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp_patch, 'taydennyskoulutus_tyontekijat', 'TK010', 'Duplicates detected.')
 
-        # tyontekijat and tyontekijat_remove
-        taydennyskoulutus_patch_3 = {
-            'taydennyskoulutus_tyontekijat': [
-                {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
-            ],
-            'taydennyskoulutus_tyontekijat_remove': [
-                {'tehtavanimike_koodi': '77826', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_4_obj.id}/'}
-            ]
-        }
-        resp_patch_3 = client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
-                                    json.dumps(taydennyskoulutus_patch_3), content_type='application/json')
-        assert_status_code(resp_patch_3, status.HTTP_400_BAD_REQUEST)
+            # tyontekijat and tyontekijat_remove
+            taydennyskoulutus_patch = {
+                'taydennyskoulutus_tyontekijat': [
+                    {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
+                ],
+                'taydennyskoulutus_tyontekijat_remove': [
+                    {'tehtavanimike_koodi': '77826', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_4_obj.id}/'}
+                ]
+            }
+            resp_patch = client.patch(f'{url_base}{taydennyskoulutus_qs.first().id}/',
+                                      json.dumps(taydennyskoulutus_patch), content_type='application/json')
+            assert_status_code(resp_patch, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp_patch, 'taydennyskoulutus_tyontekijat', 'TK009',
+                                    'taydennyskoulutus_tyontekijat_add and taydennyskoulutus_tyontekijat_remove fields cannot be used if taydennyskoulutus_tyontekijat is provided.')
 
-        # Delete TaydennyskoulutusTyontekija so that we can potentially add it again
-        TaydennyskoulutusTyontekija.objects.get(tyontekija=tyontekija_1_obj,
-                                                taydennyskoulutus__tunniste='testing-taydennyskoulutus1',
-                                                tehtavanimike_koodi='64212').delete()
+            # Delete TaydennyskoulutusTyontekija so that we can potentially add it again
+            TaydennyskoulutusTyontekija.objects.get(tyontekija=tyontekija_1_obj,
+                                                    taydennyskoulutus__tunniste='testing-taydennyskoulutus1',
+                                                    tehtavanimike_koodi='64212').delete()
 
-        # tyontekijat and tyontekijat_add
-        taydennyskoulutus_patch_4 = {
-            'taydennyskoulutus_tyontekijat': [
-                {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
-            ],
-            'taydennyskoulutus_tyontekijat_add': [
-                {'tehtavanimike_koodi': '64212', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
-            ]
-        }
-        resp_patch_4 = client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
-                                    json.dumps(taydennyskoulutus_patch_4), content_type='application/json')
-        assert_status_code(resp_patch_4, status.HTTP_400_BAD_REQUEST)
+            # tyontekijat and tyontekijat_add
+            taydennyskoulutus_patch = {
+                'taydennyskoulutus_tyontekijat': [
+                    {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
+                ],
+                'taydennyskoulutus_tyontekijat_add': [
+                    {'tehtavanimike_koodi': '64212', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
+                ]
+            }
+            resp_patch = client.patch(f'{url_base}{taydennyskoulutus_qs.first().id}/',
+                                      json.dumps(taydennyskoulutus_patch), content_type='application/json')
+            assert_status_code(resp_patch, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp_patch, 'taydennyskoulutus_tyontekijat', 'TK009',
+                                    'taydennyskoulutus_tyontekijat_add and taydennyskoulutus_tyontekijat_remove fields cannot be used if taydennyskoulutus_tyontekijat is provided.')
 
-        # tyontekijat and tyontekijat_add and tyontekijat_remove
-        taydennyskoulutus_patch_5 = {
-            'taydennyskoulutus_tyontekijat': [
-                {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
-            ],
-            'taydennyskoulutus_tyontekijat_add': [
-                {'tehtavanimike_koodi': '64212', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
-            ],
-            'taydennyskoulutus_tyontekijat_remove': [
-                {'tehtavanimike_koodi': '77826', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_4_obj.id}/'}
-            ]
-        }
-        resp_patch_5 = client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
-                                    json.dumps(taydennyskoulutus_patch_5), content_type='application/json')
-        assert_status_code(resp_patch_5, status.HTTP_400_BAD_REQUEST)
+            # tyontekijat and tyontekijat_add and tyontekijat_remove
+            taydennyskoulutus_patch = {
+                'taydennyskoulutus_tyontekijat': [
+                    {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
+                ],
+                'taydennyskoulutus_tyontekijat_add': [
+                    {'tehtavanimike_koodi': '64212', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
+                ],
+                'taydennyskoulutus_tyontekijat_remove': [
+                    {'tehtavanimike_koodi': '77826', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_4_obj.id}/'}
+                ]
+            }
+            resp_patch = client.patch(f'{url_base}{taydennyskoulutus_qs.first().id}/',
+                                      json.dumps(taydennyskoulutus_patch), content_type='application/json')
+            assert_status_code(resp_patch, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp_patch, 'taydennyskoulutus_tyontekijat', 'TK009',
+                                    'taydennyskoulutus_tyontekijat_add and taydennyskoulutus_tyontekijat_remove fields cannot be used if taydennyskoulutus_tyontekijat is provided.')
+
+            self.reset_db()
 
     def test_taydennyskoulutus_update_tyontekijat_add_correct(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
@@ -2574,27 +2658,30 @@ class VardaHenkilostoViewSetTests(TestCase):
         taydennyskoulutus_qs = Taydennyskoulutus.objects.filter(lahdejarjestelma=1, tunniste='testing-taydennyskoulutus1')
         tyontekija_1_obj = Tyontekija.objects.get(tunniste='testing-tyontekija1')
 
-        # Delete TaydennyskoulutusTyontekija so that we can add it again
-        TaydennyskoulutusTyontekija.objects.get(tyontekija=tyontekija_1_obj,
-                                                taydennyskoulutus__tunniste='testing-taydennyskoulutus1',
-                                                tehtavanimike_koodi='64212').delete()
+        for version in ['v1', 'v2']:
+            # Delete TaydennyskoulutusTyontekija so that we can add it again
+            TaydennyskoulutusTyontekija.objects.get(tyontekija=tyontekija_1_obj,
+                                                    taydennyskoulutus__tunniste='testing-taydennyskoulutus1',
+                                                    tehtavanimike_koodi='64212').delete()
 
-        taydennyskoulutus_put = {
-            'taydennyskoulutus_tyontekijat_add': [
-                {'tehtavanimike_koodi': '64212', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
-            ],
-            'nimi': 'Testikoulutus',
-            'suoritus_pvm': '2020-09-01',
-            'koulutuspaivia': '1.5',
-            'lahdejarjestelma': '1',
-            'tunniste': 'testing-taydennyskoulutus1'
-        }
-        resp_put = client.put(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
-                              json.dumps(taydennyskoulutus_put), content_type='application/json')
-        assert_status_code(resp_put, status.HTTP_200_OK)
-        taydennyskoulutus_tyontekija_qs = taydennyskoulutus_qs.first().taydennyskoulutukset_tyontekijat.filter(tyontekija=tyontekija_1_obj)
-        self.assertEqual(taydennyskoulutus_tyontekija_qs[0].tehtavanimike_koodi, '39407')
-        self.assertEqual(taydennyskoulutus_tyontekija_qs[1].tehtavanimike_koodi, '64212')
+            taydennyskoulutus_put = {
+                'taydennyskoulutus_tyontekijat_add': [
+                    {'tehtavanimike_koodi': '64212', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
+                ],
+                'nimi': 'Testikoulutus',
+                'suoritus_pvm': '2020-09-01',
+                'koulutuspaivia': '1.5',
+                'lahdejarjestelma': '1',
+                'tunniste': 'testing-taydennyskoulutus1'
+            }
+            resp_put = client.put(f'/api/henkilosto/{version}/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
+                                  json.dumps(taydennyskoulutus_put), content_type='application/json')
+            assert_status_code(resp_put, status.HTTP_200_OK)
+            taydennyskoulutus_tyontekija_qs = taydennyskoulutus_qs.first().taydennyskoulutukset_tyontekijat.filter(tyontekija=tyontekija_1_obj)
+            self.assertEqual(taydennyskoulutus_tyontekija_qs[0].tehtavanimike_koodi, '39407')
+            self.assertEqual(taydennyskoulutus_tyontekija_qs[1].tehtavanimike_koodi, '64212')
+
+            self.reset_db()
 
     def test_taydennyskoulutus_update_tyontekijat_add_incorrect(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
@@ -2602,51 +2689,62 @@ class VardaHenkilostoViewSetTests(TestCase):
         taydennyskoulutus_qs = Taydennyskoulutus.objects.filter(lahdejarjestelma=1, tunniste='testing-taydennyskoulutus1')
         tyontekija_1_obj = Tyontekija.objects.get(tunniste='testing-tyontekija1')
 
-        # Delete TaydennyskoulutusTyontekija so that we can add it again
-        TaydennyskoulutusTyontekija.objects.get(tyontekija=tyontekija_1_obj,
-                                                taydennyskoulutus__tunniste='testing-taydennyskoulutus1',
-                                                tehtavanimike_koodi='64212').delete()
-
-        # Duplicate
-        taydennyskoulutus_patch_1 = {
-            'taydennyskoulutus_tyontekijat_add': [
-                {'tehtavanimike_koodi': '64212', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'},
-                {'tehtavanimike_koodi': '64212', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
-            ]
-        }
-        resp_patch_1 = client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
-                                    json.dumps(taydennyskoulutus_patch_1), content_type='application/json')
-        assert_status_code(resp_patch_1, status.HTTP_400_BAD_REQUEST)
-
-        # Invalid tehtavanimike_koodi
-        taydennyskoulutus_patch_2 = {
-            'taydennyskoulutus_tyontekijat_add': [
-                {'tehtavanimike_koodi': 'test', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
-            ]
-        }
-        resp_patch_2 = client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
-                                    json.dumps(taydennyskoulutus_patch_2), content_type='application/json')
-        assert_status_code(resp_patch_2, status.HTTP_400_BAD_REQUEST)
-
         # Tyontekija doesn't have tehtavanimike_koodi
-        taydennyskoulutus_patch_3 = {
+        # V2 can be successful even if taydennyskoulutus_tyontekijat_add has 0 valid tyontekija
+        taydennyskoulutus_patch = {
             'taydennyskoulutus_tyontekijat_add': [
                 {'tehtavanimike_koodi': '77826', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
             ]
         }
-        resp_patch_3 = client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
-                                    json.dumps(taydennyskoulutus_patch_3), content_type='application/json')
-        assert_status_code(resp_patch_3, status.HTTP_400_BAD_REQUEST)
+        resp_patch = client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
+                                  json.dumps(taydennyskoulutus_patch), content_type='application/json')
+        assert_status_code(resp_patch, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_patch, 'tehtavanimike_koodi', 'TK008', 'Tyontekija does not have given tehtavanimike_koodi.')
 
-        # Already exists
-        taydennyskoulutus_patch_4 = {
-            'taydennyskoulutus_tyontekijat_add': [
-                {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
-            ]
-        }
-        resp_patch_4 = client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
-                                    json.dumps(taydennyskoulutus_patch_4), content_type='application/json')
-        assert_status_code(resp_patch_4, status.HTTP_400_BAD_REQUEST)
+        for version in ['v1', 'v2']:
+            base_url = f'/api/henkilosto/{version}/taydennyskoulutukset/'
+            # Delete TaydennyskoulutusTyontekija so that we can add it again
+            TaydennyskoulutusTyontekija.objects.get(tyontekija=tyontekija_1_obj,
+                                                    taydennyskoulutus__tunniste='testing-taydennyskoulutus1',
+                                                    tehtavanimike_koodi='64212').delete()
+
+            # Duplicate
+            taydennyskoulutus_patch = {
+                'taydennyskoulutus_tyontekijat_add': [
+                    {'tehtavanimike_koodi': '64212', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'},
+                    {'tehtavanimike_koodi': '64212', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
+                ]
+            }
+            resp_patch = client.patch(f'{base_url}{taydennyskoulutus_qs.first().id}/',
+                                      json.dumps(taydennyskoulutus_patch), content_type='application/json')
+            assert_status_code(resp_patch, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp_patch, 'taydennyskoulutus_tyontekijat_add', 'TK010', 'Duplicates detected.')
+
+            # Invalid tehtavanimike_koodi
+            taydennyskoulutus_patch = {
+                'taydennyskoulutus_tyontekijat_add': [
+                    {'tehtavanimike_koodi': 'test', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
+                ]
+            }
+            resp_patch = client.patch(f'{base_url}{taydennyskoulutus_qs.first().id}/',
+                                      json.dumps(taydennyskoulutus_patch), content_type='application/json')
+            assert_status_code(resp_patch, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp_patch, ['taydennyskoulutus_tyontekijat_add', '0', 'tehtavanimike_koodi'],
+                                    'KO003', 'Not a valid code.')
+
+            # Already exists
+            taydennyskoulutus_patch = {
+                'taydennyskoulutus_tyontekijat_add': [
+                    {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
+                ]
+            }
+            resp_patch = client.patch(f'{base_url}{taydennyskoulutus_qs.first().id}/',
+                                      json.dumps(taydennyskoulutus_patch), content_type='application/json')
+            assert_status_code(resp_patch, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp_patch, 'taydennyskoulutus_tyontekijat_add', 'TK011',
+                                    'Tyontekija cannot have same Taydennyskoulutus more than once.')
+
+            self.reset_db()
 
     def test_taydennyskoulutus_update_tyontekijat_remove_correct(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
@@ -2657,30 +2755,34 @@ class VardaHenkilostoViewSetTests(TestCase):
 
         tyontekijat_count_original = taydennyskoulutus_qs.first().taydennyskoulutukset_tyontekijat.count()
 
-        taydennyskoulutus_put = {
-            'taydennyskoulutus_tyontekijat_remove': [
-                {'tehtavanimike_koodi': '64212', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
-            ],
-            'nimi': 'Testikoulutus',
-            'suoritus_pvm': '2020-09-01',
-            'koulutuspaivia': '1.5',
-            'lahdejarjestelma': '1',
-            'tunniste': 'testing-taydennyskoulutus1'
-        }
-        resp_put = client.put(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
-                              json.dumps(taydennyskoulutus_put), content_type='application/json')
-        assert_status_code(resp_put, status.HTTP_200_OK)
-        self.assertEqual(tyontekijat_count_original - 1, len(json.loads(resp_put.content)['taydennyskoulutus_tyontekijat']))
+        for version in ['v1', 'v2']:
+            base_url = f'/api/henkilosto/{version}/taydennyskoulutukset/'
+            taydennyskoulutus_put = {
+                'taydennyskoulutus_tyontekijat_remove': [
+                    {'tehtavanimike_koodi': '64212', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
+                ],
+                'nimi': 'Testikoulutus',
+                'suoritus_pvm': '2020-09-01',
+                'koulutuspaivia': '1.5',
+                'lahdejarjestelma': '1',
+                'tunniste': 'testing-taydennyskoulutus1'
+            }
+            resp_put = client.put(f'{base_url}{taydennyskoulutus_qs.first().id}/', json.dumps(taydennyskoulutus_put),
+                                  content_type='application/json')
+            assert_status_code(resp_put, status.HTTP_200_OK)
+            self.assertEqual(tyontekijat_count_original - 1, len(json.loads(resp_put.content)['taydennyskoulutus_tyontekijat']))
 
-        taydennyskoulutus_patch = {
-            'taydennyskoulutus_tyontekijat_remove': [
-                {'tehtavanimike_koodi': '77826', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_4_obj.id}/'}
-            ]
-        }
-        resp_patch = client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
-                                  json.dumps(taydennyskoulutus_patch), content_type='application/json')
-        assert_status_code(resp_patch, status.HTTP_200_OK)
-        self.assertEqual(tyontekijat_count_original - 2, len(json.loads(resp_patch.content)['taydennyskoulutus_tyontekijat']))
+            taydennyskoulutus_patch = {
+                'taydennyskoulutus_tyontekijat_remove': [
+                    {'tehtavanimike_koodi': '77826', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_4_obj.id}/'}
+                ]
+            }
+            resp_patch = client.patch(f'{base_url}{taydennyskoulutus_qs.first().id}/',
+                                      json.dumps(taydennyskoulutus_patch), content_type='application/json')
+            assert_status_code(resp_patch, status.HTTP_200_OK)
+            self.assertEqual(tyontekijat_count_original - 2, len(json.loads(resp_patch.content)['taydennyskoulutus_tyontekijat']))
+
+            self.reset_db()
 
     def test_taydennyskoulutus_update_tyontekijat_remove_incorrect(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
@@ -2689,31 +2791,39 @@ class VardaHenkilostoViewSetTests(TestCase):
         tyontekija_1_obj = Tyontekija.objects.get(tunniste='testing-tyontekija1')
         tyontekija_4_obj = Tyontekija.objects.get(tunniste='testing-tyontekija4')
 
-        # Delete TaydennyskoulutusTyontekija for tyontekija_1
-        TaydennyskoulutusTyontekija.objects.get(tyontekija=tyontekija_1_obj,
-                                                taydennyskoulutus__tunniste='testing-taydennyskoulutus1',
-                                                tehtavanimike_koodi='64212').delete()
+        for version in ['v1', 'v2']:
+            base_url = f'/api/henkilosto/{version}/taydennyskoulutukset/'
+            # Delete TaydennyskoulutusTyontekija for tyontekija_1
+            TaydennyskoulutusTyontekija.objects.get(tyontekija=tyontekija_1_obj,
+                                                    taydennyskoulutus__tunniste='testing-taydennyskoulutus1',
+                                                    tehtavanimike_koodi='64212').delete()
 
-        # Tyontekija doesn't have this taydennyskoulutus
-        taydennyskoulutus_patch_1 = {
-            'taydennyskoulutus_tyontekijat_remove': [
-                {'tehtavanimike_koodi': '64212', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
-            ]
-        }
-        resp_patch_1 = client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
-                                    json.dumps(taydennyskoulutus_patch_1), content_type='application/json')
-        assert_status_code(resp_patch_1, status.HTTP_400_BAD_REQUEST)
+            # Tyontekija doesn't have this taydennyskoulutus
+            taydennyskoulutus_patch = {
+                'taydennyskoulutus_tyontekijat_remove': [
+                    {'tehtavanimike_koodi': '64212', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
+                ]
+            }
+            resp_patch = client.patch(f'{base_url}{taydennyskoulutus_qs.first().id}/',
+                                      json.dumps(taydennyskoulutus_patch), content_type='application/json')
+            assert_status_code(resp_patch, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp_patch, 'taydennyskoulutus_tyontekijat_remove', 'TK012',
+                                    'Tyontekija must have this Taydennyskoulutus.')
 
-        # Removing all tyontekijat
-        taydennyskoulutus_patch_2 = {
-            'taydennyskoulutus_tyontekijat_remove': [
-                {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'},
-                {'tehtavanimike_koodi': '77826', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_4_obj.id}/'}
-            ]
-        }
-        resp_patch_2 = client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
-                                    json.dumps(taydennyskoulutus_patch_2), content_type='application/json')
-        assert_status_code(resp_patch_2, status.HTTP_400_BAD_REQUEST)
+            # Removing all tyontekijat
+            taydennyskoulutus_patch = {
+                'taydennyskoulutus_tyontekijat_remove': [
+                    {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'},
+                    {'tehtavanimike_koodi': '77826', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_4_obj.id}/'}
+                ]
+            }
+            resp_patch = client.patch(f'{base_url}{taydennyskoulutus_qs.first().id}/',
+                                      json.dumps(taydennyskoulutus_patch), content_type='application/json')
+            assert_status_code(resp_patch, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp_patch, 'taydennyskoulutus_tyontekijat_remove', 'TK013',
+                                    'Cannot delete all Tyontekija objects from Taydennyskoulutus.')
+
+            self.reset_db()
 
     def test_taydennyskoulutus_update_remove_all(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
@@ -2722,28 +2832,34 @@ class VardaHenkilostoViewSetTests(TestCase):
         tyontekija_1_obj = Tyontekija.objects.get(tunniste='testing-tyontekija1')
         tyontekija_2_obj = Tyontekija.objects.get(tunniste='testing-tyontekija2')
 
-        # Taydennyskoulutus does not have other tyontekijat
-        taydennyskoulutus_patch_1 = {
-            'taydennyskoulutus_tyontekijat_remove': [
-                {'tehtavanimike_koodi': '77826', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_2_obj.id}/'}
-            ]
-        }
-        resp_patch_1 = client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_obj.id}/',
-                                    json.dumps(taydennyskoulutus_patch_1), content_type='application/json')
-        assert_status_code(resp_patch_1, status.HTTP_400_BAD_REQUEST)
+        for version in ['v1', 'v2']:
+            base_url = f'/api/henkilosto/{version}/taydennyskoulutukset/'
+            # Taydennyskoulutus does not have other tyontekijat
+            taydennyskoulutus_patch = {
+                'taydennyskoulutus_tyontekijat_remove': [
+                    {'tehtavanimike_koodi': '77826', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_2_obj.id}/'}
+                ]
+            }
+            resp_patch = client.patch(f'{base_url}{taydennyskoulutus_obj.id}/', json.dumps(taydennyskoulutus_patch),
+                                      content_type='application/json')
+            assert_status_code(resp_patch, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp_patch, 'taydennyskoulutus_tyontekijat_remove', 'TK013',
+                                    'Cannot delete all Tyontekija objects from Taydennyskoulutus.')
 
-        # Other tyontekija added in same request
-        taydennyskoulutus_patch_2 = {
-            'taydennyskoulutus_tyontekijat_remove': [
-                {'tehtavanimike_koodi': '77826', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_2_obj.id}/'}
-            ],
-            'taydennyskoulutus_tyontekijat_add': [
-                {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
-            ]
-        }
-        resp_patch_2 = client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_obj.id}/',
-                                    json.dumps(taydennyskoulutus_patch_2), content_type='application/json')
-        assert_status_code(resp_patch_2, status.HTTP_200_OK)
+            # Other tyontekija added in same request
+            taydennyskoulutus_patch = {
+                'taydennyskoulutus_tyontekijat_remove': [
+                    {'tehtavanimike_koodi': '77826', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_2_obj.id}/'}
+                ],
+                'taydennyskoulutus_tyontekijat_add': [
+                    {'tehtavanimike_koodi': '39407', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
+                ]
+            }
+            resp_patch = client.patch(f'{base_url}{taydennyskoulutus_obj.id}/', json.dumps(taydennyskoulutus_patch),
+                                      content_type='application/json')
+            assert_status_code(resp_patch, status.HTTP_200_OK)
+
+            self.reset_db()
 
     def test_taydennyskoulutus_update_tyontekijat_add_and_remove_correct(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
@@ -2752,31 +2868,38 @@ class VardaHenkilostoViewSetTests(TestCase):
         tyontekija_1_obj = Tyontekija.objects.get(tunniste='testing-tyontekija1')
         tyontekija_4_obj = Tyontekija.objects.get(tunniste='testing-tyontekija4')
 
-        # Delete TaydennyskoulutusTyontekija so that we can add it again
-        TaydennyskoulutusTyontekija.objects.get(tyontekija=tyontekija_4_obj,
-                                                taydennyskoulutus__tunniste='testing-taydennyskoulutus1',
-                                                tehtavanimike_koodi='77826').delete()
+        for version in ['v1', 'v2']:
+            # Delete TaydennyskoulutusTyontekija so that we can add it again
+            TaydennyskoulutusTyontekija.objects.get(tyontekija=tyontekija_4_obj,
+                                                    taydennyskoulutus__tunniste='testing-taydennyskoulutus1',
+                                                    tehtavanimike_koodi='77826').delete()
 
-        taydennyskoulutus_patch = {
-            'taydennyskoulutus_tyontekijat_add': [
-                {'tehtavanimike_koodi': '77826', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_4_obj.id}/'}
-            ],
-            'taydennyskoulutus_tyontekijat_remove': [
-                {'tehtavanimike_koodi': '64212', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
-            ]
-        }
-        resp_patch = client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
-                                  json.dumps(taydennyskoulutus_patch), content_type='application/json')
-        assert_status_code(resp_patch, status.HTTP_200_OK)
-        self.assertEqual(taydennyskoulutus_qs.first().taydennyskoulutukset_tyontekijat.count(), 2)
-        self.assertEqual(taydennyskoulutus_qs.first()
-                         .taydennyskoulutukset_tyontekijat.filter(tehtavanimike_koodi__in=['39407', '77826']).count(), 2)
+            taydennyskoulutus_patch = {
+                'taydennyskoulutus_tyontekijat_add': [
+                    {'tehtavanimike_koodi': '77826', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_4_obj.id}/'}
+                ],
+                'taydennyskoulutus_tyontekijat_remove': [
+                    {'tehtavanimike_koodi': '64212', 'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_1_obj.id}/'}
+                ]
+            }
+            resp_patch = client.patch(f'/api/henkilosto/{version}/taydennyskoulutukset/{taydennyskoulutus_qs.first().id}/',
+                                      json.dumps(taydennyskoulutus_patch), content_type='application/json')
+            assert_status_code(resp_patch, status.HTTP_200_OK)
+            self.assertEqual(taydennyskoulutus_qs.first().taydennyskoulutukset_tyontekijat.count(), 2)
+            self.assertEqual(taydennyskoulutus_qs.first().taydennyskoulutukset_tyontekijat
+                             .filter(tehtavanimike_koodi__in=['39407', '77826']).count(), 2)
+
+            self.reset_db()
 
     def test_taydennyskoulutus_delete_correct(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
         taydennyskoulutus_obj = Taydennyskoulutus.objects.get(tunniste='testing-taydennyskoulutus1')
-        resp_delete = client.delete(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_obj.id}/')
-        assert_status_code(resp_delete, status.HTTP_204_NO_CONTENT)
+
+        for version in ['v1', 'v2']:
+            resp_delete = client.delete(f'/api/henkilosto/{version}/taydennyskoulutukset/{taydennyskoulutus_obj.id}/')
+            assert_status_code(resp_delete, status.HTTP_204_NO_CONTENT)
+
+            self.reset_db()
 
     def test_taydennyskoulutus_lahdejarjestelma_tunniste_get_put_patch_delete(self):
         lahdejarjestelma = '1'
@@ -2785,110 +2908,115 @@ class VardaHenkilostoViewSetTests(TestCase):
         taydennyskoulutus = Taydennyskoulutus.objects.get(lahdejarjestelma=lahdejarjestelma, tunniste=tunniste)
 
         client = SetUpTestClient('credadmin').client()
-        taydennyskoulutus_url = f'/api/henkilosto/v1/taydennyskoulutukset/{lahdejarjestelma}:{tunniste}/'
-        resp_taydennyskoulutus_get = client.get(taydennyskoulutus_url)
-        assert_status_code(resp_taydennyskoulutus_get, status.HTTP_200_OK)
-        self.assertEqual(taydennyskoulutus.id, json.loads(resp_taydennyskoulutus_get.content)['id'])
 
-        resp_taydennyskoulutus_get_404 = client.get('/api/henkilosto/v1/taydennyskoulutukset/5:no/')
-        assert_status_code(resp_taydennyskoulutus_get_404, status.HTTP_404_NOT_FOUND)
+        for version in ['v1', 'v2']:
+            taydennyskoulutus_url = f'/api/henkilosto/{version}/taydennyskoulutukset/{lahdejarjestelma}:{tunniste}/'
+            resp_taydennyskoulutus_get = client.get(taydennyskoulutus_url)
+            assert_status_code(resp_taydennyskoulutus_get, status.HTTP_200_OK)
+            self.assertEqual(taydennyskoulutus.id, json.loads(resp_taydennyskoulutus_get.content)['id'])
 
-        taydennyskoulutus_put = {
-            'taydennyskoulutus_tyontekijat': [
-                {
-                    'lahdejarjestelma': '1',
-                    'tunniste': 'testing-tyontekija1',
-                    'tehtavanimike_koodi': '39407'
-                }
-            ],
-            'nimi': 'Testikoulutus',
-            'suoritus_pvm': '2020-09-01',
-            'koulutuspaivia': '1.5',
-            'lahdejarjestelma': '1',
-            'tunniste': 'testing-taydennyskoulutus1'
-        }
-        resp_taydennyskoulutus_put = client.put(taydennyskoulutus_url, json.dumps(taydennyskoulutus_put),
-                                                content_type='application/json')
-        assert_status_code(resp_taydennyskoulutus_put, status.HTTP_200_OK)
+            resp_taydennyskoulutus_get_404 = client.get(f'/api/henkilosto/{version}/taydennyskoulutukset/5:no/')
+            assert_status_code(resp_taydennyskoulutus_get_404, status.HTTP_404_NOT_FOUND)
 
-        taydennyskoulutus_patch = {
-            'suoritus_pvm': '2020-11-01',
-            'koulutuspaivia': '3.5'
-        }
-        resp_taydennyskoulutus_patch = client.patch(taydennyskoulutus_url, taydennyskoulutus_patch)
-        assert_status_code(resp_taydennyskoulutus_patch, status.HTTP_200_OK)
+            taydennyskoulutus_put = {
+                'taydennyskoulutus_tyontekijat': [
+                    {
+                        'lahdejarjestelma': '1',
+                        'tunniste': 'testing-tyontekija1',
+                        'tehtavanimike_koodi': '39407'
+                    }
+                ],
+                'nimi': 'Testikoulutus',
+                'suoritus_pvm': '2020-09-01',
+                'koulutuspaivia': '1.5',
+                'lahdejarjestelma': '1',
+                'tunniste': 'testing-taydennyskoulutus1'
+            }
+            resp_taydennyskoulutus_put = client.put(taydennyskoulutus_url, json.dumps(taydennyskoulutus_put),
+                                                    content_type='application/json')
+            assert_status_code(resp_taydennyskoulutus_put, status.HTTP_200_OK)
 
-        resp_taydennyskoulutus_delete = client.delete(taydennyskoulutus_url)
-        assert_status_code(resp_taydennyskoulutus_delete, status.HTTP_204_NO_CONTENT)
+            taydennyskoulutus_patch = {
+                'suoritus_pvm': '2020-11-01',
+                'koulutuspaivia': '3.5'
+            }
+            resp_taydennyskoulutus_patch = client.patch(taydennyskoulutus_url, taydennyskoulutus_patch)
+            assert_status_code(resp_taydennyskoulutus_patch, status.HTTP_200_OK)
 
-        self.assertFalse(Taydennyskoulutus.objects.filter(id=taydennyskoulutus.id).exists())
+            resp_taydennyskoulutus_delete = client.delete(taydennyskoulutus_url)
+            assert_status_code(resp_taydennyskoulutus_delete, status.HTTP_204_NO_CONTENT)
+
+            self.assertFalse(Taydennyskoulutus.objects.filter(id=taydennyskoulutus.id).exists())
+
+            self.reset_db()
 
     def test_taydennyskoulutus_invalid_tyontekija_permission_create(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
 
         tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija5')
 
-        taydennyskoulutus = {
-            'taydennyskoulutus_tyontekijat': [{'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '39407'}],
-            'nimi': 'Ensiapukoulutus',
-            'suoritus_pvm': '2020-09-14',
-            'koulutuspaivia': '1.5',
-            'lahdejarjestelma': '1',
-        }
+        for version in ['v1', 'v2']:
+            taydennyskoulutus = {
+                'taydennyskoulutus_tyontekijat': [
+                    {'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '77826'}
+                ],
+                'nimi': 'Ensiapukoulutus',
+                'suoritus_pvm': '2020-09-14',
+                'koulutuspaivia': '1.5',
+                'lahdejarjestelma': '1',
+            }
 
-        resp = client.post('/api/henkilosto/v1/taydennyskoulutukset/', json.dumps(taydennyskoulutus), content_type='application/json')
-        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
-        error_path = ['taydennyskoulutus_tyontekijat', '0']
-        expected_error_code = 'TK001'
-        expected_error_msg = 'Tyontekija not specified. Use (tyontekija), (henkilo_oid, vakajarjestaja_oid) or (lahdejarjestelma, tunniste).'
-        assert_validation_error(resp, error_path, expected_error_code, expected_error_msg)
+            resp = client.post(f'/api/henkilosto/{version}/taydennyskoulutukset/', json.dumps(taydennyskoulutus),
+                               content_type='application/json')
+            assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp, ['taydennyskoulutus_tyontekijat', '0', 'errors'], 'TK001',
+                                    'Tyontekija not specified. Use (tyontekija), (henkilo_oid, vakajarjestaja_oid) or (lahdejarjestelma, tunniste).')
 
     def test_taydennyskoulutus_tyontekija_list(self):
         client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
         vakajarjestaja_oid = '1.2.246.562.10.34683023489'
         correct_taydennyskoulutus_count = (Taydennyskoulutus.objects
                                            .filter(taydennyskoulutukset_tyontekijat__tyontekija__vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
-                                           .distinct()
-                                           .count()
-                                           )
+                                           .distinct().count())
         correct_jarjestaja_tyontekija_count = (Tyontekija.objects
-                                               .filter(vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
-                                               .count()
-                                               )
-        taydennyskoulutus_list_resp = client.get('/api/henkilosto/v1/taydennyskoulutukset/')
-        assert_status_code(taydennyskoulutus_list_resp, status.HTTP_200_OK)
-        taydennyskoulutus_content = json.loads(taydennyskoulutus_list_resp.content)
-        # Only taydennyskoulutukset user has permission to are returned
-        self.assertEqual(taydennyskoulutus_content.get('count'), correct_taydennyskoulutus_count)
-        self.assertEqual(len(taydennyskoulutus_content.get('results')), correct_taydennyskoulutus_count)
-        tyontekija_list_resp = client.get('/api/henkilosto/v1/taydennyskoulutukset/tyontekija-list/')
-        assert_status_code(tyontekija_list_resp, status.HTTP_200_OK)
-        tyontekija_content = json.loads(tyontekija_list_resp.content)
+                                               .filter(vakajarjestaja__organisaatio_oid=vakajarjestaja_oid).count())
 
-        # Only taydennyskoulutustyontekijat user has permission to are returned
-        self.assertEqual(tyontekija_content.get('count'), correct_jarjestaja_tyontekija_count)
-        self.assertEqual(len(tyontekija_content.get('results')), correct_jarjestaja_tyontekija_count)
+        for version in ['v1', 'v2']:
+            taydennyskoulutus_list_resp = client.get(f'/api/henkilosto/{version}/taydennyskoulutukset/')
+            assert_status_code(taydennyskoulutus_list_resp, status.HTTP_200_OK)
+            taydennyskoulutus_content = json.loads(taydennyskoulutus_list_resp.content)
+            # Only taydennyskoulutukset user has permission to are returned
+            self.assertEqual(taydennyskoulutus_content.get('count'), correct_taydennyskoulutus_count)
+            self.assertEqual(len(taydennyskoulutus_content.get('results')), correct_taydennyskoulutus_count)
+            tyontekija_list_resp = client.get(f'/api/henkilosto/{version}/taydennyskoulutukset/tyontekija-list/')
+            assert_status_code(tyontekija_list_resp, status.HTTP_200_OK)
+            tyontekija_content = json.loads(tyontekija_list_resp.content)
+
+            # Only taydennyskoulutustyontekijat user has permission to are returned
+            self.assertEqual(tyontekija_content.get('count'), correct_jarjestaja_tyontekija_count)
+            self.assertEqual(len(tyontekija_content.get('results')), correct_jarjestaja_tyontekija_count)
 
     def test_taydennyskoulutus_tyontekija_list_filter(self):
         client = SetUpTestClient('credadmin').client()
         vakajarjestaja_oid = '1.2.246.562.10.93957375488'
         correct_tyontekija_count = Tyontekija.objects.all().count()
-        tyontekija_list_resp = client.get('/api/henkilosto/v1/taydennyskoulutukset/tyontekija-list/')
-        assert_status_code(tyontekija_list_resp, status.HTTP_200_OK)
-        tyontekija_content = json.loads(tyontekija_list_resp.content)
-        self.assertEqual(tyontekija_content.get('count'), correct_tyontekija_count)
-        self.assertEqual(len(tyontekija_content.get('results')), correct_tyontekija_count)
 
-        correct_jarjestaja_tyontekija_count = (Tyontekija.objects
-                                               .filter(vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
-                                               .count()
-                                               )
-        tyontekija_list_filtered_resp = client.get('/api/henkilosto/v1/taydennyskoulutukset/tyontekija-list/?vakajarjestaja_oid={}'
-                                                   .format(vakajarjestaja_oid))
-        assert_status_code(tyontekija_list_filtered_resp, status.HTTP_200_OK)
-        tyontekija_filtered_content = json.loads(tyontekija_list_filtered_resp.content)
-        self.assertEqual(tyontekija_filtered_content.get('count'), correct_jarjestaja_tyontekija_count)
-        self.assertEqual(len(tyontekija_filtered_content.get('results')), correct_jarjestaja_tyontekija_count)
+        for version in ['v1', 'v2']:
+            tyontekija_list_resp = client.get(f'/api/henkilosto/{version}/taydennyskoulutukset/tyontekija-list/')
+            assert_status_code(tyontekija_list_resp, status.HTTP_200_OK)
+            tyontekija_content = json.loads(tyontekija_list_resp.content)
+            self.assertEqual(tyontekija_content.get('count'), correct_tyontekija_count)
+            self.assertEqual(len(tyontekija_content.get('results')), correct_tyontekija_count)
+
+            correct_jarjestaja_tyontekija_count = (Tyontekija.objects
+                                                   .filter(vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
+                                                   .count()
+                                                   )
+            tyontekija_list_filtered_resp = client.get(f'/api/henkilosto/{version}/taydennyskoulutukset/tyontekija-list/?vakajarjestaja_oid={vakajarjestaja_oid}')
+            assert_status_code(tyontekija_list_filtered_resp, status.HTTP_200_OK)
+            tyontekija_filtered_content = json.loads(tyontekija_list_filtered_resp.content)
+            self.assertEqual(tyontekija_filtered_content.get('count'), correct_jarjestaja_tyontekija_count)
+            self.assertEqual(len(tyontekija_filtered_content.get('results')), correct_jarjestaja_tyontekija_count)
 
     def test_taydennyskoulutus_toimipaikka_permissions(self):
         vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.93957375488')
@@ -2897,61 +3025,207 @@ class VardaHenkilostoViewSetTests(TestCase):
         client_toimipaikka = SetUpTestClient('taydennyskoulutus_toimipaikka_tallentaja').client()
         client_jarjestaja = SetUpTestClient('henkilosto_tallentaja_93957375488').client()
 
-        taydennyskoulutus_1 = {
+        for version in ['v1', 'v2']:
+            base_url = f'/api/henkilosto/{version}/taydennyskoulutukset/'
+            taydennyskoulutus_1 = {
+                'taydennyskoulutus_tyontekijat': [
+                    {'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '43525'}
+                ],
+                'nimi': 'Testikoulutus 1',
+                'suoritus_pvm': '2020-09-14',
+                'koulutuspaivia': '1.5',
+                'lahdejarjestelma': '1',
+            }
+            resp = client_toimipaikka.post(base_url, json.dumps(taydennyskoulutus_1), content_type='application/json')
+            assert_status_code(resp, status.HTTP_201_CREATED)
+            taydennyskoulutus_1_id = json.loads(resp.content).get('id')
+
+            taydennyskoulutus_1_patch = {
+                'taydennyskoulutus_tyontekijat_add': [
+                    {'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '77826'}
+                ]
+            }
+            resp_patch = client_toimipaikka.patch(f'{base_url}{taydennyskoulutus_1_id}/',
+                                                  json.dumps(taydennyskoulutus_1_patch),
+                                                  content_type='application/json')
+            assert_status_code(resp_patch, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp_patch, ['taydennyskoulutus_tyontekijat_add', '0', 'errors'], 'TK001',
+                                    'Tyontekija not specified. Use (tyontekija), (henkilo_oid, vakajarjestaja_oid) or (lahdejarjestelma, tunniste).')
+            resp_patch = client_jarjestaja.patch(f'{base_url}{taydennyskoulutus_1_id}/',
+                                                 json.dumps(taydennyskoulutus_1_patch), content_type='application/json')
+            assert_status_code(resp_patch, status.HTTP_200_OK)
+
+            resp_delete = client_toimipaikka.delete(f'{base_url}{taydennyskoulutus_1_id}/')
+            assert_status_code(resp_delete, status.HTTP_403_FORBIDDEN)
+            assert_validation_error(resp_delete, 'errors', 'TK014', 'Insufficient permissions to Taydennyskoulutus related Tyontekija objects.')
+
+            resp_delete = client_jarjestaja.delete(f'{base_url}{taydennyskoulutus_1_id}/')
+            assert_status_code(resp_delete, status.HTTP_204_NO_CONTENT)
+
+            taydennyskoulutus_2 = {
+                'taydennyskoulutus_tyontekijat': [
+                    {'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '43525'}
+                ],
+                'nimi': 'Testikoulutus 2',
+                'suoritus_pvm': '2020-09-14',
+                'koulutuspaivia': '1.5',
+                'lahdejarjestelma': '1',
+            }
+            resp = client_toimipaikka.post(base_url, json.dumps(taydennyskoulutus_2), content_type='application/json')
+            assert_status_code(resp, status.HTTP_201_CREATED)
+            taydennyskoulutus_2_id = json.loads(resp.content).get('id')
+
+            resp_delete = client_toimipaikka.delete(f'{base_url}{taydennyskoulutus_2_id}/')
+            assert_status_code(resp_delete, status.HTTP_204_NO_CONTENT)
+
+            self.reset_db()
+
+    def test_taydennyskoulutus_create_v2(self):
+        client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
+
+        taydennyskoulutus = {
             'taydennyskoulutus_tyontekijat': [
-                {'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '43525'}
+                {'tyontekija': '/api/henkilosto/v1/tyontekijat/999/', 'tehtavanimike_koodi': '43525'}
             ],
-            'nimi': 'Testikoulutus 1',
-            'suoritus_pvm': '2020-09-14',
+            'nimi': 'Testikoulutus 200',
+            'suoritus_pvm': '2022-01-01',
             'koulutuspaivia': '1.5',
             'lahdejarjestelma': '1',
         }
-        resp_1 = client_toimipaikka.post('/api/henkilosto/v1/taydennyskoulutukset/',
-                                         json.dumps(taydennyskoulutus_1),
-                                         content_type='application/json')
-        assert_status_code(resp_1, status.HTTP_201_CREATED)
-        taydennyskoulutus_1_id = json.loads(resp_1.content).get('id')
 
-        taydennyskoulutus_1_patch = {
+        resp = client.post('/api/henkilosto/v2/taydennyskoulutukset/', json.dumps(taydennyskoulutus),
+                           content_type='application/json')
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, ['taydennyskoulutus_tyontekijat', '0', 'tyontekija'], 'GE008',
+                                'Invalid hyperlink, object does not exist.')
+
+        taydennyskoulutus['taydennyskoulutus_tyontekijat'] = [
+            # No such Tyontekija exists
+            {
+                'henkilo_oid': '1.2.246.562.24.5826267847674',
+                'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
+                'tehtavanimike_koodi': '43525'
+            },
+            # No such Tyontekija exists
+            {'tunniste': 'testing-tyontekija1', 'lahdejarjestelma': '2', 'tehtavanimike_koodi': '43525'},
+            # Tyontekija exists but wrong tehtavanimike_koodi
+            {'tunniste': 'testing-tyontekija4', 'lahdejarjestelma': '1', 'tehtavanimike_koodi': '39407'}
+        ]
+
+        resp = client.post('/api/henkilosto/v2/taydennyskoulutukset/', json.dumps(taydennyskoulutus),
+                           content_type='application/json')
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, ['taydennyskoulutus_tyontekijat', '0', 'errors'], 'TK016',
+                                'At least 1 valid Tyontekija is required (Tyontekija not found or tehtavanimike_koodi is incorrect).')
+
+        incorrect_tyontekija_list = [*taydennyskoulutus['taydennyskoulutus_tyontekijat']]
+        taydennyskoulutus['taydennyskoulutus_tyontekijat'].append(
+            {'tunniste': 'testing-tyontekija1', 'lahdejarjestelma': '1', 'tehtavanimike_koodi': '39407'}
+        )
+        resp = client.post('/api/henkilosto/v2/taydennyskoulutukset/', json.dumps(taydennyskoulutus),
+                           content_type='application/json')
+        assert_status_code(resp, status.HTTP_201_CREATED)
+        failed_tyontekija_list = json.loads(resp.content)['taydennyskoulutus_tyontekijat_failed']
+        self.assertEqual(len(failed_tyontekija_list), 3)
+        self.assertCountEqual(failed_tyontekija_list, incorrect_tyontekija_list)
+
+    def test_taydennyskoulutus_update_v2(self):
+        client = SetUpTestClient('taydennyskoulutus_tallentaja').client()
+
+        url = '/api/henkilosto/v2/taydennyskoulutukset/1:testing-taydennyskoulutus1/'
+
+        taydennyskoulutus_put = {
+            'taydennyskoulutus_tyontekijat': [
+                {'lahdejarjestelma': '1', 'tunniste': 'testing-tyontekija1', 'tehtavanimike_koodi': '64212'},
+                {'lahdejarjestelma': '1', 'tunniste': 'testing-tyontekija4', 'tehtavanimike_koodi': '77826'}
+            ],
+            'nimi': 'Testikoulutus 200',
+            'suoritus_pvm': '2022-01-01',
+            'koulutuspaivia': '1.5',
+            'lahdejarjestelma': '1',
+        }
+
+        resp = client.put(url, json.dumps(taydennyskoulutus_put), content_type='application/json')
+        self._assert_taydennyskoulutus_tyontekijat_failed(resp, [], 2)
+
+        taydennyskoulutus_patch = {
             'taydennyskoulutus_tyontekijat_add': [
-                {'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '77826'}
+                # No such Tyontekija exists
+                {
+                    'henkilo_oid': '1.2.246.562.24.5826267847674',
+                    'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
+                    'tehtavanimike_koodi': '43525'
+                },
+                # Tyontekija exists but wrong tehtavanimike_koodi
+                {'tunniste': 'testing-tyontekija4', 'lahdejarjestelma': '1', 'tehtavanimike_koodi': '39407'}
             ]
         }
-        resp_patch_1 = client_toimipaikka.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_1_id}/',
-                                                json.dumps(taydennyskoulutus_1_patch),
-                                                content_type='application/json')
-        assert_status_code(resp_patch_1, status.HTTP_400_BAD_REQUEST)
-        assert_validation_error(resp_patch_1, ['taydennyskoulutus_tyontekijat_add', '0'], 'TK001',
-                                'Tyontekija not specified. Use (tyontekija), (henkilo_oid, vakajarjestaja_oid) or (lahdejarjestelma, tunniste).')
-        resp_patch_2 = client_jarjestaja.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_1_id}/',
-                                               json.dumps(taydennyskoulutus_1_patch),
-                                               content_type='application/json')
-        assert_status_code(resp_patch_2, status.HTTP_200_OK)
 
-        resp_delete_1 = client_toimipaikka.delete(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_1_id}/')
-        assert_status_code(resp_delete_1, status.HTTP_403_FORBIDDEN)
-        assert_validation_error(resp_delete_1, 'errors', 'TK014', 'Insufficient permissions to Taydennyskoulutus related Tyontekija objects.')
+        resp = client.patch(url, json.dumps(taydennyskoulutus_patch), content_type='application/json')
+        # No Tyontekija objects found but save is still successful
+        self._assert_taydennyskoulutus_tyontekijat_failed(resp, taydennyskoulutus_patch['taydennyskoulutus_tyontekijat_add'], 2)
 
-        resp_delete_2 = client_jarjestaja.delete(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_1_id}/')
-        assert_status_code(resp_delete_2, status.HTTP_204_NO_CONTENT)
+        incorrect_tyontekija_list = [*taydennyskoulutus_patch['taydennyskoulutus_tyontekijat_add']]
+        taydennyskoulutus_patch['taydennyskoulutus_tyontekijat_add'].append(
+            {'tunniste': 'testing-tyontekija1', 'lahdejarjestelma': '1', 'tehtavanimike_koodi': '39407'}
+        )
+        resp = client.patch(url, json.dumps(taydennyskoulutus_patch), content_type='application/json')
+        self._assert_taydennyskoulutus_tyontekijat_failed(resp, incorrect_tyontekija_list, 3)
 
-        taydennyskoulutus_2 = {
-            'taydennyskoulutus_tyontekijat': [
-                {'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/', 'tehtavanimike_koodi': '43525'}
-            ],
-            'nimi': 'Testikoulutus 2',
-            'suoritus_pvm': '2020-09-14',
-            'koulutuspaivia': '1.5',
-            'lahdejarjestelma': '1',
+        taydennyskoulutus_patch = {
+            'taydennyskoulutus_tyontekijat_remove': [
+                # No such Tyontekija exists
+                {'tunniste': 'testing-tyontekija1', 'lahdejarjestelma': '2', 'tehtavanimike_koodi': '43525'},
+                # Tyontekija exists but wrong tehtavanimike_koodi
+                {'tunniste': 'testing-tyontekija4', 'lahdejarjestelma': '1', 'tehtavanimike_koodi': '39407'}
+            ]
         }
-        resp_2 = client_toimipaikka.post('/api/henkilosto/v1/taydennyskoulutukset/',
-                                         json.dumps(taydennyskoulutus_2),
-                                         content_type='application/json')
-        assert_status_code(resp_2, status.HTTP_201_CREATED)
-        taydennyskoulutus_2_id = json.loads(resp_2.content).get('id')
+        resp = client.patch(url, json.dumps(taydennyskoulutus_patch), content_type='application/json')
+        # No Tyontekija objects found
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, ['taydennyskoulutus_tyontekijat_remove', '0', 'errors'], 'TK016',
+                                'At least 1 valid Tyontekija is required (Tyontekija not found or tehtavanimike_koodi is incorrect).')
 
-        resp_delete_3 = client_toimipaikka.delete(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_2_id}/')
-        assert_status_code(resp_delete_3, status.HTTP_204_NO_CONTENT)
+        incorrect_tyontekija_list = [*taydennyskoulutus_patch['taydennyskoulutus_tyontekijat_remove']]
+        taydennyskoulutus_patch['taydennyskoulutus_tyontekijat_remove'].append(
+            {'tunniste': 'testing-tyontekija1', 'lahdejarjestelma': '1', 'tehtavanimike_koodi': '39407'}
+        )
+        resp = client.patch(url, json.dumps(taydennyskoulutus_patch), content_type='application/json')
+        self._assert_taydennyskoulutus_tyontekijat_failed(resp, incorrect_tyontekija_list, 2)
+
+        taydennyskoulutus_patch = {
+            'taydennyskoulutus_tyontekijat_add': [
+                # No such Tyontekija exists
+                {
+                    'henkilo_oid': '1.2.246.562.24.5826267847674',
+                    'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
+                    'tehtavanimike_koodi': '43525'
+                },
+            ],
+            'taydennyskoulutus_tyontekijat_remove': [
+                # No such Tyontekija exists
+                {'tunniste': 'testing-tyontekija1', 'lahdejarjestelma': '2', 'tehtavanimike_koodi': '43525'},
+                {'lahdejarjestelma': '1', 'tunniste': 'testing-tyontekija4', 'tehtavanimike_koodi': '77826'}
+            ]
+        }
+        incorrect_tyontekija_list = [
+            {
+                'henkilo_oid': '1.2.246.562.24.5826267847674',
+                'vakajarjestaja_oid': '1.2.246.562.10.34683023489',
+                'tehtavanimike_koodi': '43525'
+            },
+            {'tunniste': 'testing-tyontekija1', 'lahdejarjestelma': '2', 'tehtavanimike_koodi': '43525'}
+        ]
+        resp = client.patch(url, json.dumps(taydennyskoulutus_patch), content_type='application/json')
+        self._assert_taydennyskoulutus_tyontekijat_failed(resp, incorrect_tyontekija_list, 1)
+
+    def _assert_taydennyskoulutus_tyontekijat_failed(self, resp, invalid_tyontekija_list, saved_tyontekija_count):
+        assert_status_code(resp, status.HTTP_200_OK)
+        resp_json = json.loads(resp.content)
+        failed_tyontekija_list = resp_json['taydennyskoulutus_tyontekijat_failed']
+        self.assertEqual(len(failed_tyontekija_list), len(invalid_tyontekija_list))
+        self.assertCountEqual(failed_tyontekija_list, invalid_tyontekija_list)
+        self.assertEqual(len(resp_json['taydennyskoulutus_tyontekijat']), saved_tyontekija_count)
 
     def test_toimipaikka_tyontekija_create_all(self):
         client_tyontekija_tallentaja = SetUpTestClient('tyontekija_toimipaikka_tallentaja').client()
@@ -3047,24 +3321,25 @@ class VardaHenkilostoViewSetTests(TestCase):
         self._assert_create_and_list(client_tyontekija_katselija, client_tyontekija_tallentaja, pidempipoissaolo, '/api/henkilosto/v1/pidemmatpoissaolot/')
 
         # Taydennyskoulutus
-        client_koulutus_katselija = SetUpTestClient('taydennyskoulutus_toimipaikka_katselija').client()
-        client_koulutus_tallentaja = SetUpTestClient('taydennyskoulutus_toimipaikka_tallentaja').client()
-        taydennyskoulutus_list_resp = client_koulutus_tallentaja.get('/api/henkilosto/v1/taydennyskoulutukset/')
-        taydennyskoulutus_count_before = json.loads(taydennyskoulutus_list_resp.content).get('count')
-        taydennyskoulutus_list_resp = client_koulutus_katselija.get('/api/henkilosto/v1/taydennyskoulutukset/')
-        self.assertEqual(json.loads(taydennyskoulutus_list_resp.content).get('count'), taydennyskoulutus_count_before)
-        taydennyskoulutus = {
-            'taydennyskoulutus_tyontekijat': [{'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_id}/', 'tehtavanimike_koodi': '39407'}],
-            'nimi': 'Ensiapukoulutus',
-            'suoritus_pvm': '2020-09-14',
-            'koulutuspaivia': '1.5',
-            'lahdejarjestelma': '1',
-        }
-        self._assert_create_and_list(client_koulutus_katselija,
-                                     client_koulutus_tallentaja,
-                                     taydennyskoulutus,
-                                     '/api/henkilosto/v1/taydennyskoulutukset/',
-                                     taydennyskoulutus_count_before + 1)
+        for version in ['v1', 'v2']:
+            client_koulutus_katselija = SetUpTestClient('taydennyskoulutus_toimipaikka_katselija').client()
+            client_koulutus_tallentaja = SetUpTestClient('taydennyskoulutus_toimipaikka_tallentaja').client()
+            taydennyskoulutus_list_resp = client_koulutus_tallentaja.get(f'/api/henkilosto/{version}/taydennyskoulutukset/')
+            taydennyskoulutus_count_before = json.loads(taydennyskoulutus_list_resp.content).get('count')
+            taydennyskoulutus_list_resp = client_koulutus_katselija.get(f'/api/henkilosto/{version}/taydennyskoulutukset/')
+            self.assertEqual(json.loads(taydennyskoulutus_list_resp.content).get('count'), taydennyskoulutus_count_before)
+            taydennyskoulutus = {
+                'taydennyskoulutus_tyontekijat': [
+                    {'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija_id}/', 'tehtavanimike_koodi': '39407'}
+                ],
+                'nimi': 'Ensiapukoulutus',
+                'suoritus_pvm': '2020-09-14',
+                'koulutuspaivia': '1.5',
+                'lahdejarjestelma': '1',
+            }
+            self._assert_create_and_list(client_koulutus_katselija, client_koulutus_tallentaja, taydennyskoulutus,
+                                         f'/api/henkilosto/{version}/taydennyskoulutukset/',
+                                         taydennyskoulutus_count_before + 1)
 
     def _assert_create_and_list(self, client_katselija, client_tallentaja, create_dict, api_url, expected_count=1):
         """

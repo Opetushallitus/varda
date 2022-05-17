@@ -294,6 +294,7 @@ class ErrorMessages(enum.Enum):
     TK013 = get_error_dict('TK013', 'Cannot delete all Tyontekija objects from Taydennyskoulutus.')
     TK014 = get_error_dict('TK014', 'Insufficient permissions to Taydennyskoulutus related Tyontekija objects.')
     TK015 = get_error_dict('TK015', 'suoritus_pvm must be equal to or after 2020-09-01.')
+    TK016 = get_error_dict('TK016', 'At least 1 valid Tyontekija is required (Tyontekija not found or tehtavanimike_koodi is incorrect).')
 
     # Permission/Authentication errors, prefix: PE
     PE001 = get_error_dict('PE001', 'User does not have permissions to change this object.')

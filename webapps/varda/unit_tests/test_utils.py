@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -151,3 +152,9 @@ def mock_date_decorator_factory(datetime_path, mock_date):
                 return original_function(*args, **kwargs)
         return _mock_date_wrapper
     return _mock_date_decorator
+
+
+class RollbackTestCase(TestCase):
+    def reset_db(self):
+        self._fixture_teardown()
+        self._fixture_setup()

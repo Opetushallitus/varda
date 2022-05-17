@@ -206,6 +206,9 @@ nested_tyontekija_router = nested_routers.NestedSimpleRouter(router_henkilosto, 
 # /api/henkilosto/v1/tyontekijat/{id}/kooste/
 nested_tyontekija_router.register(r'kooste', viewsets_henkilosto.NestedTyontekijaKoosteViewSet)
 
+router_henkilosto_v2 = routers.DefaultRouter()
+router_henkilosto_v2.register(r'taydennyskoulutukset', viewsets_henkilosto.TaydennyskoulutusV2ViewSet, basename='taydennyskoulutukset-v2')
+
 # Routes for Julkinen-URLs
 router_julkinen = routers.DefaultRouter()
 # /api/julkinen/v1/koodistot/
@@ -279,6 +282,7 @@ urlpatterns = [
     re_path(r'^varda/', include('varda.urls'), name='varda'),
     re_path(r'^api/henkilosto/v1/', include(router_henkilosto.urls), name='api-henkilosto-v1'),
     re_path(r'^api/henkilosto/v1/', include(nested_tyontekija_router.urls), name='api-nested-tyontekija-v1'),
+    re_path(r'^api/henkilosto/v2/', include(router_henkilosto_v2.urls), name='api-henkilosto-v2'),
     re_path(r'^api/oppija/v1/', include(router_oppija.urls), name='api-oppija-v1'),
     re_path(r'^api/julkinen/v1/', include(router_julkinen.urls), name='api-julkinen-v1'),
     re_path(r'^api/julkinen/v1/swagger/$', public_swagger_view, name='swagger-public'),

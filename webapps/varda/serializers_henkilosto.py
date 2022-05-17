@@ -1,4 +1,5 @@
 import datetime
+import json
 
 from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
@@ -83,7 +84,7 @@ class TyontekijaSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.Hyper
 
     @caching_to_representation('tyontekija')
     def to_representation(self, instance):
-        return super(TyontekijaSerializer, self).to_representation(instance)
+        return super().to_representation(instance)
 
     def validate(self, data):
         with ViewSetValidator() as validator:
@@ -123,7 +124,7 @@ class TilapainenHenkilostoSerializer(serializers.HyperlinkedModelSerializer):
 
     @caching_to_representation('tilapainenhenkilosto')
     def to_representation(self, instance):
-        return super(TilapainenHenkilostoSerializer, self).to_representation(instance)
+        return super().to_representation(instance)
 
     def validate(self, data):
         with ViewSetValidator() as validator:
@@ -222,7 +223,7 @@ class TutkintoSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.Hyperli
 
     @caching_to_representation('tutkinto')
     def to_representation(self, instance):
-        return super(TutkintoSerializer, self).to_representation(instance)
+        return super().to_representation(instance)
 
     def validate(self, data):
         with ViewSetValidator() as validator:
@@ -251,7 +252,7 @@ class PalvelussuhdeSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.Hy
 
     @caching_to_representation('palvelussuhde')
     def to_representation(self, instance):
-        return super(PalvelussuhdeSerializer, self).to_representation(instance)
+        return super().to_representation(instance)
 
     def validate(self, data):
         with ViewSetValidator() as validator:
@@ -315,7 +316,7 @@ class TyoskentelypaikkaSerializer(serializers.HyperlinkedModelSerializer):
 
     @caching_to_representation('tyoskentelypaikka')
     def to_representation(self, instance):
-        return super(TyoskentelypaikkaSerializer, self).to_representation(instance)
+        return super().to_representation(instance)
 
     def validate(self, data):
         instance = self.instance
@@ -414,7 +415,7 @@ class TyoskentelypaikkaUpdateSerializer(serializers.HyperlinkedModelSerializer):
 
     @caching_to_representation('tyoskentelypaikka')
     def to_representation(self, instance):
-        return super(TyoskentelypaikkaUpdateSerializer, self).to_representation(instance)
+        return super().to_representation(instance)
 
     def validate(self, data):
         tyoskentelypaikka = self.instance
@@ -448,7 +449,7 @@ class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
 
     @caching_to_representation('pidempipoissaolo')
     def to_representation(self, instance):
-        return super(PidempiPoissaoloSerializer, self).to_representation(instance)
+        return super().to_representation(instance)
 
     def validate(self, data):
         if not self.instance:
@@ -486,11 +487,10 @@ class PidempiPoissaoloSerializer(serializers.HyperlinkedModelSerializer):
 
 class PermissionCheckedTaydennyskoulutusTyontekijaListSerializer(serializers.ListSerializer):
     def update(self, instance, validated_data):
-        super(PermissionCheckedTaydennyskoulutusTyontekijaListSerializer, self).update(instance, validated_data)
+        super().update(instance, validated_data)
 
     def to_internal_value(self, data):
-        taydennyskoulutus_tyontekija_dicts = super(PermissionCheckedTaydennyskoulutusTyontekijaListSerializer,
-                                                   self).to_internal_value(data)
+        taydennyskoulutus_tyontekija_dicts = super().to_internal_value(data)
         with ViewSetValidator() as validator:
             # Validate all provided tyontekijat exist and mutate 'tyontekija' field to data.
             for index, taydennyskoulutus_tyontekija in enumerate(taydennyskoulutus_tyontekija_dicts):
@@ -504,7 +504,7 @@ class PermissionCheckedTaydennyskoulutusTyontekijaListSerializer(serializers.Lis
                 user = self.context['request'].user
                 if not is_correct_taydennyskoulutus_tyontekija_permission(user, taydennyskoulutus_tyontekija_dicts,
                                                                           throws=False):
-                    validator.error('0', ErrorMessages.TK001.value)
+                    validator.error_nested([0, 'errors'], ErrorMessages.TK001.value)
 
         return taydennyskoulutus_tyontekija_dicts
 
@@ -515,9 +515,8 @@ class PermissionCheckedTaydennyskoulutusTyontekijaListSerializer(serializers.Lis
             checked_data, organisaatio_oids = filter_authorized_taydennyskoulutus_tyontekijat(data, user)
             if not organisaatio_oids:
                 return []
-            return super(PermissionCheckedTaydennyskoulutusTyontekijaListSerializer, self).to_representation(
-                checked_data)
-        return super(PermissionCheckedTaydennyskoulutusTyontekijaListSerializer, self).to_representation(data)
+            return super().to_representation(checked_data)
+        return super().to_representation(data)
 
     def _find_tyontekija(self, data, validator, index):
         henkilo_oid = data.get('henkilo_oid', None)
@@ -596,7 +595,7 @@ class NestedTaydennyskoulutusTyontekijaSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         tyontekija = instance.tyontekija
 
-        instance = super(NestedTaydennyskoulutusTyontekijaSerializer, self).to_representation(instance)
+        instance = super().to_representation(instance)
         instance['henkilo_oid'] = tyontekija.henkilo.henkilo_oid
         instance['vakajarjestaja_oid'] = tyontekija.vakajarjestaja.organisaatio_oid
         instance['lahdejarjestelma'] = tyontekija.lahdejarjestelma
@@ -623,10 +622,11 @@ class NestedTaydennyskoulutusTyontekijaSerializer(serializers.ModelSerializer):
 
 
 class TaydennyskoulutusSerializer(serializers.HyperlinkedModelSerializer):
+    tk_tyontekija_serializer = NestedTaydennyskoulutusTyontekijaSerializer
+
     id = serializers.IntegerField(read_only=True)
-    taydennyskoulutus_tyontekijat = NestedTaydennyskoulutusTyontekijaSerializer(required=True, allow_empty=False,
-                                                                                many=True,
-                                                                                source='taydennyskoulutukset_tyontekijat')
+    taydennyskoulutus_tyontekijat = tk_tyontekija_serializer(required=True, allow_empty=False, many=True,
+                                                             source='taydennyskoulutukset_tyontekijat')
     taydennyskoulutus_tyontekijat_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -635,7 +635,7 @@ class TaydennyskoulutusSerializer(serializers.HyperlinkedModelSerializer):
 
     @caching_to_representation('taydennyskoulutus')
     def to_representation(self, instance):
-        return super(TaydennyskoulutusSerializer, self).to_representation(instance)
+        return super().to_representation(instance)
 
     def create(self, validated_data):
         tyontekijat = validated_data.pop('taydennyskoulutukset_tyontekijat', [])
@@ -643,7 +643,7 @@ class TaydennyskoulutusSerializer(serializers.HyperlinkedModelSerializer):
 
         for tyontekija in tyontekijat:
             tyontekija['taydennyskoulutus'] = taydennyskoulutus
-            NestedTaydennyskoulutusTyontekijaSerializer(context=self._context).create(tyontekija)
+            self.tk_tyontekija_serializer(context=self._context).create(tyontekija)
 
         return taydennyskoulutus
 
@@ -662,14 +662,15 @@ class TaydennyskoulutusSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
+    tk_tyontekija_serializer = NestedTaydennyskoulutusTyontekijaSerializer
+
     id = serializers.IntegerField(read_only=True)
-    taydennyskoulutus_tyontekijat = NestedTaydennyskoulutusTyontekijaSerializer(required=False, allow_empty=False,
-                                                                                many=True,
-                                                                                source='taydennyskoulutukset_tyontekijat')
-    taydennyskoulutus_tyontekijat_add = NestedTaydennyskoulutusTyontekijaSerializer(write_only=True, required=False,
-                                                                                    allow_empty=False, many=True)
-    taydennyskoulutus_tyontekijat_remove = NestedTaydennyskoulutusTyontekijaSerializer(write_only=True, required=False,
-                                                                                       allow_empty=False, many=True)
+    taydennyskoulutus_tyontekijat = tk_tyontekija_serializer(required=False, allow_empty=False, many=True,
+                                                             source='taydennyskoulutukset_tyontekijat')
+    taydennyskoulutus_tyontekijat_add = tk_tyontekija_serializer(write_only=True, required=False, allow_empty=False,
+                                                                 many=True)
+    taydennyskoulutus_tyontekijat_remove = tk_tyontekija_serializer(write_only=True, required=False, allow_empty=False,
+                                                                    many=True)
     taydennyskoulutus_tyontekijat_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -693,7 +694,7 @@ class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
         is_new_tyontekijat_added = self._validate_tyontekijat_add(instance, data)
         self._validate_tyontekijat_remove(instance, data, is_new_tyontekijat_added)
 
-        return super(TaydennyskoulutusUpdateSerializer, self).validate(data)
+        return super().validate(data)
 
     @swagger_serializer_method(serializer_or_field=serializers.IntegerField())
     def get_taydennyskoulutus_tyontekijat_count(self, instance):
@@ -749,13 +750,13 @@ class TaydennyskoulutusUpdateSerializer(serializers.HyperlinkedModelSerializer):
             tyontekijat = validated_data.pop('taydennyskoulutukset_tyontekijat', [])
             for tyontekija in tyontekijat:
                 tyontekija['taydennyskoulutus'] = instance
-                NestedTaydennyskoulutusTyontekijaSerializer(context=self._context).create(tyontekija)
+                self.tk_tyontekija_serializer(context=self._context).create(tyontekija)
 
         if 'taydennyskoulutus_tyontekijat_add' in validated_data:
             tyontekijat_add = validated_data.pop('taydennyskoulutus_tyontekijat_add', [])
             for tyontekija_add in tyontekijat_add:
                 tyontekija_add['taydennyskoulutus'] = instance
-                NestedTaydennyskoulutusTyontekijaSerializer(context=self._context).create(tyontekija_add)
+                self.tk_tyontekija_serializer(context=self._context).create(tyontekija_add)
 
         if 'taydennyskoulutus_tyontekijat_remove' in validated_data:
             tyontekijat_remove = validated_data.pop('taydennyskoulutus_tyontekijat_remove', [])
@@ -778,6 +779,111 @@ class TaydennyskoulutusTyontekijaListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tyontekija
         fields = ('henkilo_etunimet', 'henkilo_sukunimi', 'henkilo_oid', 'tehtavanimike_koodit')
+
+
+class PermissionCheckedTaydennyskoulutusTyontekijaListV2Serializer(PermissionCheckedTaydennyskoulutusTyontekijaListSerializer):
+    def to_internal_value(self, data):
+        # Call PermissionCheckedTaydennyskoulutusTyontekijaListSerializer super,
+        # which calls ListSerializer.to_internal_value
+        taydennyskoulutus_tyontekija_dicts = super(PermissionCheckedTaydennyskoulutusTyontekijaListSerializer, self).to_internal_value(data)
+        valid_tyontekija_dicts = []
+        invalid_tyontekija_dicts = []
+
+        with ViewSetValidator() as validator:
+            # Validate all provided tyontekijat exist and mutate 'tyontekija' field to data.
+            for index, taydennyskoulutus_tyontekija in enumerate(taydennyskoulutus_tyontekija_dicts):
+                taydennyskoulutus_tyontekija['tyontekija'] = self._find_tyontekija(taydennyskoulutus_tyontekija,
+                                                                                   validator, index)
+                if validator.messages:
+                    error_string = json.dumps(validator.messages)
+                    if (ErrorMessages.TK004.value['error_code'] in error_string or
+                            ErrorMessages.TK006.value['error_code'] in error_string):
+                        # Reset error messages as 'Tyontekija not found' is not counted as error
+                        validator.messages = {}
+                        invalid_tyontekija_dicts.append(data[index])
+                    else:
+                        # Any other error than 'Tyontekija not found' error, stop processing
+                        break
+                elif self._validate_tehtavanimike_koodi(taydennyskoulutus_tyontekija):
+                    # No errors and tyontekija + tehtavanimike was found
+                    valid_tyontekija_dicts.append(taydennyskoulutus_tyontekija)
+                else:
+                    # Tyontekija was found but tehtavanimike_koodi was not found for this Tyontekija
+                    invalid_tyontekija_dicts.append(data[index])
+
+            is_partial_update_field = self.child._kwargs.get('is_partial_update_field', False)
+            if not validator.messages and not is_partial_update_field and len(valid_tyontekija_dicts) == 0:
+                # No errors but valid_tyontekija_dicts is empty and field is not taydennyskoulutus_tyontekijat_add,
+                # which could be empty
+                validator.error_nested([0, 'errors'], ErrorMessages.TK016.value)
+
+            if not validator.messages:
+                # Still no errors (or only 'Tyontekija not found' errors)
+                user = self.context['request'].user
+                if not is_correct_taydennyskoulutus_tyontekija_permission(user, valid_tyontekija_dicts, throws=False):
+                    validator.error_nested([0, 'errors'], ErrorMessages.TK001.value)
+
+        self.context['invalid_tyontekija_dicts'] = self.context.get('invalid_tyontekija_dicts', []) + invalid_tyontekija_dicts
+        return valid_tyontekija_dicts
+
+    def _validate_tehtavanimike_koodi(self, data):
+        tyontekija = data.get('tyontekija', None)
+        tehtavanimike_koodi = data.get('tehtavanimike_koodi', None)
+        return (Tyontekija.objects
+                .filter(id=getattr(tyontekija, 'id', None),
+                        palvelussuhteet__tyoskentelypaikat__tehtavanimike_koodi=tehtavanimike_koodi)
+                .exists())
+
+
+class NestedTaydennyskoulutusTyontekijaV2Serializer(NestedTaydennyskoulutusTyontekijaSerializer):
+    class Meta(NestedTaydennyskoulutusTyontekijaSerializer.Meta):
+        list_serializer_class = PermissionCheckedTaydennyskoulutusTyontekijaListV2Serializer
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('is_partial_update_field', False)
+        super().__init__(*args, **kwargs)
+
+
+class TaydennyskoulutusV2Serializer(TaydennyskoulutusSerializer):
+    tk_tyontekija_serializer = NestedTaydennyskoulutusTyontekijaV2Serializer
+
+    taydennyskoulutus_tyontekijat = tk_tyontekija_serializer(required=True, allow_empty=False, many=True,
+                                                             source='taydennyskoulutukset_tyontekijat')
+
+    class Meta(TaydennyskoulutusSerializer.Meta):
+        pass
+
+
+class TaydennyskoulutusCreateV2Serializer(TaydennyskoulutusV2Serializer):
+    tk_tyontekija_serializer = NestedTaydennyskoulutusTyontekijaV2Serializer
+
+    taydennyskoulutus_tyontekijat_failed = serializers.SerializerMethodField(read_only=True)
+
+    class Meta(TaydennyskoulutusV2Serializer.Meta):
+        pass
+
+    @swagger_serializer_method(serializer_or_field=tk_tyontekija_serializer(many=True, read_only=True))
+    def get_taydennyskoulutus_tyontekijat_failed(self, instance):
+        return self.context.get('invalid_tyontekija_dicts', [])
+
+
+class TaydennyskoulutusUpdateV2Serializer(TaydennyskoulutusUpdateSerializer):
+    tk_tyontekija_serializer = NestedTaydennyskoulutusTyontekijaV2Serializer
+
+    taydennyskoulutus_tyontekijat = tk_tyontekija_serializer(required=False, allow_empty=False, many=True,
+                                                             source='taydennyskoulutukset_tyontekijat')
+    taydennyskoulutus_tyontekijat_add = tk_tyontekija_serializer(write_only=True, required=False, allow_empty=False,
+                                                                 many=True, is_partial_update_field=True)
+    taydennyskoulutus_tyontekijat_remove = tk_tyontekija_serializer(write_only=True, required=False,
+                                                                    allow_empty=False, many=True)
+    taydennyskoulutus_tyontekijat_failed = serializers.SerializerMethodField(read_only=True)
+
+    class Meta(TaydennyskoulutusUpdateSerializer.Meta):
+        pass
+
+    @swagger_serializer_method(serializer_or_field=tk_tyontekija_serializer(many=True, read_only=True))
+    def get_taydennyskoulutus_tyontekijat_failed(self, instance):
+        return self.context.get('invalid_tyontekija_dicts', [])
 
 
 class TyontekijaKoosteHenkiloSerializer(serializers.ModelSerializer):

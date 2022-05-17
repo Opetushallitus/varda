@@ -17,25 +17,6 @@ from varda.permissions import get_object_ids_user_has_view_permissions, is_oph_s
 logger = logging.getLogger(__name__)
 
 
-def get_model_name_from_view_name(view_name):
-    """
-    Get model_name from view_name: e.g. Vaka Jarjestaja List, return -> 'vakajarjestaja'
-    Or Vaka Jarjestaja Instance, return -> 'vakajarjestaja'
-    Or Nested Toimipaikka List, return -> 'toimipaikka'
-    """
-    splitted_view_name = view_name.replace(' ', '').lower()
-    if splitted_view_name.endswith('instance'):
-        return splitted_view_name.split('instance')[0]
-    elif splitted_view_name == 'nestedlapsenvarhaiskasvatussuhdelist':
-        return 'varhaiskasvatussuhde'
-    elif splitted_view_name == 'nestedvarhaiskasvatussuhdetoimipaikkalist':
-        return 'varhaiskasvatussuhde'
-    elif splitted_view_name.startswith('nested'):
-        return splitted_view_name.split('nested')[1][:-4]
-    else:
-        return splitted_view_name.split('list')[0]
-
-
 def create_cache_key(id, unique_string):
     """
     An example
@@ -190,7 +171,7 @@ def get_cached_page_for_non_superuser(original_list_viewset, user, request_full_
 
     view_name = original_list_viewset.get_view_name()
     nested_viewset = True if view_name.startswith('Nested') else False  # Requires always the filtering below
-    model_name = get_model_name_from_view_name(view_name)
+    model_name = original_queryset.model.get_name()
     try:
         content_type = ContentType.objects.get(model=model_name)
     except ContentType.DoesNotExist:

@@ -37,12 +37,13 @@ from varda.permissions import (CustomModelPermissions, delete_object_permissions
                                assign_tyontekija_henkilo_permissions, assign_tyoskentelypaikka_henkilo_permissions,
                                CustomObjectPermissions, get_available_tehtavanimike_codes_for_user)
 from varda.request_logging import request_log_viewset_decorator_factory
-from varda.serializers_henkilosto import (TyoskentelypaikkaSerializer, PalvelussuhdeSerializer,
-                                          PidempiPoissaoloSerializer,
-                                          TilapainenHenkilostoSerializer, TutkintoSerializer, TyontekijaSerializer,
-                                          TyoskentelypaikkaUpdateSerializer, TaydennyskoulutusSerializer,
-                                          TaydennyskoulutusUpdateSerializer, TaydennyskoulutusTyontekijaListSerializer,
-                                          TyontekijaKoosteSerializer)
+from varda.serializers_henkilosto import (TaydennyskoulutusCreateV2Serializer, TaydennyskoulutusUpdateV2Serializer,
+                                          TaydennyskoulutusV2Serializer,
+                                          TyoskentelypaikkaSerializer, PalvelussuhdeSerializer,
+                                          PidempiPoissaoloSerializer, TilapainenHenkilostoSerializer,
+                                          TutkintoSerializer, TyontekijaSerializer, TyoskentelypaikkaUpdateSerializer,
+                                          TaydennyskoulutusSerializer, TaydennyskoulutusUpdateSerializer,
+                                          TaydennyskoulutusTyontekijaListSerializer, TyontekijaKoosteSerializer)
 from varda.tasks import assign_taydennyskoulutus_permissions_for_all_toimipaikat_task, update_henkilo_data_by_oid
 
 logger = logging.getLogger(__name__)
@@ -878,3 +879,16 @@ class TaydennyskoulutusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
 
             vakajarjestaja_obj = Organisaatio.objects.get(organisaatio_oid=vakajarjestaja_oid)
             cache.delete('organisaatio_yhteenveto_' + str(vakajarjestaja_obj.id))
+
+
+class TaydennyskoulutusV2ViewSet(TaydennyskoulutusViewSet):
+    def get_serializer_class(self):
+        request = self.request
+        if self.action == 'tyontekija_list':
+            return TaydennyskoulutusTyontekijaListSerializer
+        if request.method == 'PUT' or request.method == 'PATCH':
+            return TaydennyskoulutusUpdateV2Serializer
+        elif request.method == 'POST':
+            return TaydennyskoulutusCreateV2Serializer
+        else:
+            return TaydennyskoulutusV2Serializer
