@@ -16,35 +16,21 @@ import { sortByAlkamisPvm } from '../../../../../utilities/helper-functions';
     '../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaPalvelussuhteetComponent extends VardaFormListAbstractComponent implements OnInit {
+export class VardaPalvelussuhteetComponent extends VardaFormListAbstractComponent<TyontekijaPalvelussuhde> implements OnInit {
   @ViewChildren(VardaPalvelussuhdeComponent) objectElements: QueryList<VardaPalvelussuhdeComponent>;
   @Input() toimipaikkaAccess: UserAccess;
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
-
-  palvelussuhdeList: Array<TyontekijaPalvelussuhde> = [];
 
   constructor(private henkilostoService: VardaHenkilostoApiService) {
     super();
   }
 
   ngOnInit() {
-    this.palvelussuhdeList = this.henkilostoService.activeTyontekija.getValue().palvelussuhteet.sort(sortByAlkamisPvm);
+    this.objectList = this.henkilostoService.activeTyontekija.getValue().palvelussuhteet.sort(sortByAlkamisPvm);
   }
 
-  addPalvelussuhde(palvelussuhde: TyontekijaPalvelussuhde) {
-    this.palvelussuhdeList = this.palvelussuhdeList.filter(obj => obj.id !== palvelussuhde.id);
-    this.palvelussuhdeList.push(palvelussuhde);
-    this.palvelussuhdeList = this.palvelussuhdeList.sort(sortByAlkamisPvm);
-    this.updateActiveTyontekija();
-  }
-
-  deletePalvelussuhde(objectId: number) {
-    this.palvelussuhdeList = this.palvelussuhdeList.filter(obj => obj.id !== objectId);
-    this.updateActiveTyontekija();
-  }
-
-  updateActiveTyontekija() {
+  updateActiveObject() {
     const activeTyontekija = this.henkilostoService.activeTyontekija.getValue();
-    this.henkilostoService.activeTyontekija.next({...activeTyontekija, palvelussuhteet: this.palvelussuhdeList});
+    this.henkilostoService.activeTyontekija.next({...activeTyontekija, palvelussuhteet: this.objectList});
   }
 }

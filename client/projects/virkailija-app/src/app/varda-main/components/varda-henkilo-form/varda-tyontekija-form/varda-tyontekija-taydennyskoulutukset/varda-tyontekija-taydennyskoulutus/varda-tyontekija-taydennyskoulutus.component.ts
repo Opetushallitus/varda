@@ -1,26 +1,14 @@
-import {
-  Component,
-  ElementRef,
-  EventEmitter,
-  Input,
-  OnChanges,
-  OnDestroy,
-  OnInit,
-  Output,
-  SimpleChanges,
-  ViewChild
-} from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VardaTaydennyskoulutusDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-taydennyskoulutus-dto.model';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { finalize, Observable, Subscription, throwError } from 'rxjs';
+import { finalize, Observable, throwError } from 'rxjs';
 import {
   ErrorTree,
   VardaErrorMessageService
 } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaFormValidators } from 'projects/virkailija-app/src/app/shared/validators/varda-form-validators';
-import { MatExpansionPanelHeader } from '@angular/material/expansion';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { catchError, distinctUntilChanged, filter } from 'rxjs/operators';
@@ -43,10 +31,8 @@ import * as moment from 'moment';
     '../../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordionAbstractComponent implements OnInit, OnChanges, OnDestroy {
-  @ViewChild(MatExpansionPanelHeader) panelHeader: MatExpansionPanelHeader;
+export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordionAbstractComponent<TyontekijaTaydennyskoulutus> implements OnInit, OnChanges {
   @Input() toimipaikkaAccess: UserAccess;
-  @Input() taydennyskoulutus: TyontekijaTaydennyskoulutus;
   @Input() tehtavanimikeOptions: Array<CodeDTO>;
   @Output() addObject = new EventEmitter<TyontekijaTaydennyskoulutus>(true);
   @Output() deleteObject = new EventEmitter<number>(true);
@@ -54,7 +40,6 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
   element: ElementRef;
   koodistoEnum = KoodistoEnum;
   disabledTehtavanimikeCodes: Array<string> = [];
-  isSubmitting = false;
   taydennyskoulutusFormErrors: Observable<Array<ErrorTree>>;
   limitedEditAccess: boolean;
   firstAllowedDate = VardaDateService.henkilostoReleaseDate;
@@ -63,7 +48,6 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
   selectedVakajarjestaja: VardaVakajarjestajaUi;
 
   private henkilostoErrorService: VardaErrorMessageService;
-  private subscriptions: Array<Subscription> = [];
 
   constructor(
     private el: ElementRef,
@@ -80,20 +64,13 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
   }
 
   ngOnInit() {
-    this.formGroup = new FormGroup({
-      id: new FormControl(this.taydennyskoulutus?.id),
-      lahdejarjestelma: new FormControl(Lahdejarjestelma.kayttoliittyma),
-      nimi: new FormControl(this.taydennyskoulutus?.nimi, Validators.required),
-      koulutuspaivia: new FormControl(this.taydennyskoulutus?.koulutuspaivia, [Validators.required, Validators.min(0.5), Validators.max(160), VardaFormValidators.remainderOf(0.5)]),
-      suoritus_pvm: new FormControl(this.taydennyskoulutus ? moment(this.taydennyskoulutus?.suoritus_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
-      tehtavanimike_koodit: new FormControl(this.taydennyskoulutus?.tehtavanimikeList || [], Validators.required),
-    });
+    super.ngOnInit();
 
     const activeTyontekija = this.henkilostoService.activeTyontekija.getValue();
     this.tyontekijaId = activeTyontekija.id;
     this.henkiloOid = activeTyontekija.henkilo.henkilo_oid;
     this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
-    this.limitedEditAccess = this.taydennyskoulutus?.contains_other_tyontekija;
+    this.limitedEditAccess = this.currentObject?.contains_other_tyontekija;
     this.setDisabledTehtavanimikeCodes();
 
     this.subscriptions.push(
@@ -101,14 +78,17 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
         .pipe(filter(() => !this.formGroup.pristine), distinctUntilChanged())
         .subscribe(() => this.modalService.setFormValuesChanged(true))
     );
+  }
 
-    if (this.taydennyskoulutus) {
-      this.disableForm();
-    } else {
-      this.enableForm();
-      this.togglePanel(true);
-      this.panelHeader?.focus();
-    }
+  initForm() {
+    this.formGroup = new FormGroup({
+      id: new FormControl(this.currentObject?.id),
+      lahdejarjestelma: new FormControl(Lahdejarjestelma.kayttoliittyma),
+      nimi: new FormControl(this.currentObject?.nimi, Validators.required),
+      koulutuspaivia: new FormControl(this.currentObject?.koulutuspaivia, [Validators.required, Validators.min(0.5), Validators.max(160), VardaFormValidators.remainderOf(0.5)]),
+      suoritus_pvm: new FormControl(this.currentObject ? moment(this.currentObject?.suoritus_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
+      tehtavanimike_koodit: new FormControl(this.currentObject?.tehtavanimikeList || [], Validators.required),
+    });
   }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -116,7 +96,7 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
       // We do not want this to be called before ngOnInit is called
       setTimeout(() => {
         // Reset tehtavanimike_koodit values just in case
-        this.formGroup.controls.tehtavanimike_koodit.setValue(this.taydennyskoulutus?.tehtavanimikeList || []);
+        this.formGroup.controls.tehtavanimike_koodit.setValue(this.currentObject?.tehtavanimikeList || []);
         this.setDisabledTehtavanimikeCodes();
       });
     }
@@ -139,9 +119,9 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
       };
 
       let observable;
-      if (this.taydennyskoulutus) {
-        const tehtavanimikkeetToAdd = this.compareCodeLists(form.value.tehtavanimike_koodit, this.taydennyskoulutus.tehtavanimikeList);
-        const tehtavanimikkeetToRemove = this.compareCodeLists(this.taydennyskoulutus.tehtavanimikeList, form.value.tehtavanimike_koodit);
+      if (this.currentObject) {
+        const tehtavanimikkeetToAdd = this.compareCodeLists(form.value.tehtavanimike_koodit, this.currentObject.tehtavanimikeList);
+        const tehtavanimikkeetToRemove = this.compareCodeLists(this.currentObject.tehtavanimikeList, form.value.tehtavanimike_koodit);
         if (tehtavanimikkeetToAdd.length) {
           taydennyskoulutusJson.taydennyskoulutus_tyontekijat_add = tehtavanimikkeetToAdd;
         }
@@ -159,7 +139,7 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
           finalize(() => this.disableSubmit())
         ).subscribe({
           next: (result: VardaTaydennyskoulutusDTO) => {
-            if (!this.taydennyskoulutus) {
+            if (!this.currentObject) {
               // Close panel if object was created
               this.togglePanel(false);
             }
@@ -167,7 +147,7 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
             this.henkilostoService.sendHenkilostoListUpdate();
 
             // Rebuild Taydennyskoulutus object as kooste result
-            this.taydennyskoulutus = {
+            this.currentObject = {
               id: result.id,
               tehtavanimikeList: result.taydennyskoulutus_tyontekijat.reduce((filtered, obj) => {
                 if (obj.vakajarjestaja_oid === this.selectedVakajarjestaja.organisaatio_oid &&
@@ -179,14 +159,14 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
               nimi: result.nimi,
               suoritus_pvm: result.suoritus_pvm,
               koulutuspaivia: result.koulutuspaivia,
-              contains_other_tyontekija: !!this.taydennyskoulutus?.contains_other_tyontekija
+              contains_other_tyontekija: !!this.currentObject?.contains_other_tyontekija
             };
 
             // Result may contain tehtavanimike codes that were not present previously,
             // kooste API returns only codes that user has permissions to
-            this.formGroup.controls.tehtavanimike_koodit.setValue(this.taydennyskoulutus.tehtavanimikeList);
+            this.formGroup.controls.tehtavanimike_koodit.setValue(this.currentObject.tehtavanimikeList);
             this.setDisabledTehtavanimikeCodes();
-            this.addObject.emit(this.taydennyskoulutus);
+            this.addObject.emit(this.currentObject);
           },
           error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
         })
@@ -200,7 +180,7 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
     const taydennyskoulutusJson: VardaTaydennyskoulutusDTO = {
       ...this.formGroup.value,
       suoritus_pvm: this.formGroup.value.suoritus_pvm.format(VardaDateService.vardaApiDateFormat),
-      taydennyskoulutus_tyontekijat_remove: this.compareCodeLists(this.taydennyskoulutus.tehtavanimikeList, [])
+      taydennyskoulutus_tyontekijat_remove: this.compareCodeLists(this.currentObject.tehtavanimikeList, [])
     };
 
     this.subscriptions.push(
@@ -209,7 +189,7 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
           if (err?.error?.taydennyskoulutus_tyontekijat_remove instanceof Array &&
             err.error.taydennyskoulutus_tyontekijat_remove.find(error => error.error_code === 'TK013')) {
             // Error because Taydennyskoulutus would be left empty, so delete the whole Taydennyskoulutus
-            return this.henkilostoService.deleteTaydennyskoulutus(this.taydennyskoulutus.id);
+            return this.henkilostoService.deleteTaydennyskoulutus(this.currentObject.id);
           } else {
             // Rethrow any other error
             return throwError(() => err);
@@ -220,20 +200,11 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
           this.togglePanel(false);
           this.snackBarService.warning(this.i18n.taydennyskoulutus_delete_success);
           this.henkilostoService.sendHenkilostoListUpdate();
-          this.deleteObject.emit(this.taydennyskoulutus.id);
+          this.deleteObject.emit(this.currentObject.id);
         },
         error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
       })
     );
-  }
-
-  disableSubmit() {
-    setTimeout(() => this.isSubmitting = false, 500);
-  }
-
-  enableForm() {
-    this.isEdit = true;
-    this.formGroup.enable();
   }
 
   compareCodeLists(newCodes: Array<string>, existingCodes: Array<string> = []): Record<string, any> {
@@ -241,9 +212,5 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
       tyontekija: this.henkilostoService.getTyontekijaUrl(this.tyontekijaId),
       tehtavanimike_koodi: tehtavanimike
     }));
-  }
-
-  ngOnDestroy() {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 }

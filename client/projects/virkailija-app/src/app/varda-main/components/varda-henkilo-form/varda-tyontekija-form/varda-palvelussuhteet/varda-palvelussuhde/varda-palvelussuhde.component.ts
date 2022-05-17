@@ -1,10 +1,10 @@
-import { Component, OnInit, Input, Output, EventEmitter, ElementRef, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ElementRef, OnInit } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import * as moment from 'moment';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
-import { finalize, Observable, Subscription } from 'rxjs';
+import { finalize, Observable } from 'rxjs';
 import { VardaErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
@@ -32,17 +32,15 @@ import { VardaPalvelussuhdeDTO } from '../../../../../../utilities/models/dto/va
     '../../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractComponent implements OnInit, OnDestroy {
+export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractComponent<TyontekijaPalvelussuhde> implements OnInit {
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
   @Input() toimipaikkaAccess: UserAccess;
-  @Input() palvelussuhde: TyontekijaPalvelussuhde;
   @Output() addObject = new EventEmitter<TyontekijaPalvelussuhde>(true);
   @Output() deleteObject = new EventEmitter<number>(true);
 
   element: ElementRef;
   addTyoskentelypaikkaBoolean: boolean;
   addPoissaoloBoolean: boolean;
-  isSubmitting = false;
   palvelussuhdeFormErrors: Observable<Array<ErrorTree>>;
   tyosuhdeKoodisto: KoodistoDTO;
   tyoaikaKoodisto: KoodistoDTO;
@@ -54,7 +52,6 @@ export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractCompo
   pidempiPoissaoloList: Array<TyontekijaPidempiPoissaolo> = [];
 
   private henkilostoErrorService: VardaErrorMessageService;
-  private subscriptions: Array<Subscription> = [];
 
   constructor(
     private el: ElementRef,
@@ -76,18 +73,8 @@ export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractCompo
   }
 
   ngOnInit() {
-    this.formGroup = new FormGroup({
-      id: new FormControl(this.palvelussuhde?.id),
-      lahdejarjestelma: new FormControl(Lahdejarjestelma.kayttoliittyma),
-      tyontekija: new FormControl(this.henkilostoService.getTyontekijaUrl(this.tyontekijaId)),
-      toimipaikka_oid: new FormControl(this.palvelussuhde ? null : this.henkilonToimipaikka?.organisaatio_oid),
-      alkamis_pvm: new FormControl(this.palvelussuhde ? moment(this.palvelussuhde?.alkamis_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
-      paattymis_pvm: new FormControl(this.palvelussuhde?.paattymis_pvm ? moment(this.palvelussuhde?.paattymis_pvm, VardaDateService.vardaApiDateFormat) : null),
-      tyoaika_koodi: new FormControl(this.palvelussuhde?.tyoaika_koodi, Validators.required),
-      tyosuhde_koodi: new FormControl(this.palvelussuhde?.tyosuhde_koodi, Validators.required),
-      tyoaika_viikossa: new FormControl(this.palvelussuhde?.tyoaika_viikossa, [Validators.pattern('^\\d+([,.]\\d{1,2})?$'), Validators.max(50), Validators.required]),
-      tutkinto_koodi: new FormControl(this.palvelussuhde?.tutkinto_koodi || null, Validators.required),
-    });
+    super.ngOnInit();
+    this.checkFormErrors(this.henkilostoService, 'palvelussuhde', this.currentObject?.id);
 
     this.subscriptions.push(
       this.formGroup.statusChanges
@@ -101,16 +88,26 @@ export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractCompo
       })
     );
 
-    if (this.palvelussuhde) {
-      this.disableForm();
-      this.tyoskentelypaikkaList = this.palvelussuhde.tyoskentelypaikat.sort(sortByAlkamisPvm);
-      this.pidempiPoissaoloList = this.palvelussuhde.pidemmatpoissaolot.sort(sortByAlkamisPvm);
-    } else {
-      this.enableForm();
-      this.togglePanel(true);
+    if (this.objectExists()) {
+      this.tyoskentelypaikkaList = this.currentObject.tyoskentelypaikat.sort(sortByAlkamisPvm);
+      this.pidempiPoissaoloList = this.currentObject.pidemmatpoissaolot.sort(sortByAlkamisPvm);
     }
+  }
 
-    this.checkFormErrors(this.henkilostoService, 'palvelussuhde', this.palvelussuhde?.id);
+  initForm() {
+    this.formGroup = new FormGroup({
+      id: new FormControl(this.currentObject?.id),
+      lahdejarjestelma: new FormControl(Lahdejarjestelma.kayttoliittyma),
+      tyontekija: new FormControl(this.henkilostoService.getTyontekijaUrl(this.tyontekijaId)),
+      toimipaikka_oid: new FormControl(this.currentObject ? null : this.henkilonToimipaikka?.organisaatio_oid),
+      alkamis_pvm: new FormControl(this.currentObject?.alkamis_pvm ? moment(this.currentObject?.alkamis_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
+      paattymis_pvm: new FormControl(this.currentObject?.paattymis_pvm ? moment(this.currentObject?.paattymis_pvm, VardaDateService.vardaApiDateFormat) : null),
+      tyoaika_koodi: new FormControl(this.currentObject?.tyoaika_koodi, Validators.required),
+      tyosuhde_koodi: new FormControl(this.currentObject?.tyosuhde_koodi, Validators.required),
+      tyoaika_viikossa: new FormControl(this.currentObject?.tyoaika_viikossa, [Validators.pattern('^\\d+([,.]\\d{1,2})?$'), Validators.max(50), Validators.required]),
+      tutkinto_koodi: new FormControl(this.currentObject?.tutkinto_koodi || null, Validators.required),
+    });
+
     this.initDateFilters();
   }
 
@@ -126,23 +123,23 @@ export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractCompo
         paattymis_pvm: form.value.paattymis_pvm?.isValid() ? form.value.paattymis_pvm.format(VardaDateService.vardaApiDateFormat) : null
       };
 
-      const observable = this.palvelussuhde ? this.henkilostoService.updatePalvelussuhde(palvelussuhdeDTO) :
+      const observable = this.objectExists() ? this.henkilostoService.updatePalvelussuhde(palvelussuhdeDTO) :
         this.henkilostoService.createPalvelussuhde(palvelussuhdeDTO);
       this.subscriptions.push(
         observable.pipe(
           finalize(() => this.disableSubmit())
         ).subscribe({
           next: result => {
-            if (!this.palvelussuhde) {
+            if (!this.objectExists()) {
               // Close panel if object was created
               this.togglePanel(false);
             }
 
             this.snackBarService.success(this.i18n.palvelussuhde_save_success);
             this.henkilostoService.sendHenkilostoListUpdate();
-            this.palvelussuhde = {...result, tyoskentelypaikat: this.tyoskentelypaikkaList,
+            this.currentObject = {...result, tyoskentelypaikat: this.tyoskentelypaikkaList,
               pidemmatpoissaolot: this.pidempiPoissaoloList};
-            this.addObject.emit(this.palvelussuhde);
+            this.addObject.emit(this.currentObject);
           },
           error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
         })
@@ -154,12 +151,12 @@ export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractCompo
 
   deletePalvelussuhde(): void {
     this.subscriptions.push(
-      this.henkilostoService.deletePalvelussuhde(this.palvelussuhde.id).subscribe({
+      this.henkilostoService.deletePalvelussuhde(this.currentObject.id).subscribe({
         next: () => {
           this.togglePanel(false);
           this.snackBarService.warning(this.i18n.palvelussuhde_delete_success);
           this.henkilostoService.sendHenkilostoListUpdate();
-          this.deleteObject.emit(this.palvelussuhde.id);
+          this.deleteObject.emit(this.currentObject.id);
         },
         error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
       })
@@ -193,7 +190,7 @@ export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractCompo
 
   updateActiveTyontekija() {
     const activeTyontekija = this.henkilostoService.activeTyontekija.getValue();
-    const activePalvelussuhde = activeTyontekija.palvelussuhteet.find(obj => obj.id === this.palvelussuhde.id);
+    const activePalvelussuhde = activeTyontekija.palvelussuhteet.find(obj => obj.id === this.currentObject.id);
     activePalvelussuhde.tyoskentelypaikat = this.tyoskentelypaikkaList;
     activePalvelussuhde.pidemmatpoissaolot = this.pidempiPoissaoloList;
     this.henkilostoService.activeTyontekija.next(activeTyontekija);
@@ -207,27 +204,14 @@ export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractCompo
     this.addTyoskentelypaikkaBoolean = false;
   }
 
-  disableSubmit() {
-    setTimeout(() => this.isSubmitting = false, 500);
-  }
-
-  enableForm() {
-    this.isEdit = true;
-    this.formGroup.enable();
-  }
-
   initDateFilters() {
-    if (this.palvelussuhde?.alkamis_pvm) {
-      this.minEndDate = new Date(this.palvelussuhde.alkamis_pvm);
+    if (this.currentObject?.alkamis_pvm) {
+      this.minEndDate = new Date(this.currentObject.alkamis_pvm);
     }
   }
 
   startDateChange(startDate: Moment) {
     this.minEndDate = startDate?.clone().toDate();
     setTimeout(() => this.formGroup.controls.paattymis_pvm?.updateValueAndValidity(), 100);
-  }
-
-  ngOnDestroy() {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 }

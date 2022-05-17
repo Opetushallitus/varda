@@ -31,7 +31,7 @@ import { VardaKoosteApiService } from '../../../core/services/varda-kooste-api.s
   templateUrl: './varda-toimipaikka-form.component.html',
   styleUrls: ['./varda-toimipaikka-form.component.css']
 })
-export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractComponent implements OnInit, OnDestroy {
+export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractComponent<ToimipaikkaKooste> implements OnInit, OnDestroy {
   @ViewChild('formContent') formContent: ElementRef;
   @Input() toimipaikka: VardaToimipaikkaMinimalDto;
   @Output() saveToimipaikkaFormSuccess = new EventEmitter<VardaToimipaikkaDTO>(true);
@@ -42,9 +42,7 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
   tallentajaAccess: boolean;
   selectedVakajarjestaja: VardaVakajarjestajaUi;
   showFormContinuesWarning: boolean;
-  formGroup: FormGroup;
   toimipaikkaFormErrors: Observable<Array<ErrorTree>>;
-  isSubmitting = false;
   minEndDate: Date;
   maxEndDate: Date;
   toimintamuotoOptions$: Observable<KoodistoDTO>;
@@ -59,7 +57,6 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
   toimipaikkaKooste: ToimipaikkaKooste;
 
   private errorService: VardaErrorMessageService;
-  private subscriptions: Array<Subscription> = [];
   private formGroupSubscriptions: Array<Subscription> = [];
 
   constructor(
@@ -132,18 +129,9 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
   }
 
   disableForm() {
-    this.isEdit = false;
-    this.formGroup.disable();
+    super.disableForm();
+
     this.valuesChanged.emit(false);
-  }
-
-  enableForm() {
-    this.isEdit = true;
-    this.formGroup.enable();
-  }
-
-  disableSubmit() {
-    setTimeout(() => this.isSubmitting = false, 500);
   }
 
   initForm() {
@@ -324,8 +312,9 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
   }
 
   ngOnDestroy() {
+    super.ngOnDestroy();
+
     this.vakajarjestajaApiService.activeToimipaikka.next(null);
-    this.subscriptions.forEach(sub => sub.unsubscribe());
     this.formGroupSubscriptions.forEach(sub => sub.unsubscribe());
   }
 }

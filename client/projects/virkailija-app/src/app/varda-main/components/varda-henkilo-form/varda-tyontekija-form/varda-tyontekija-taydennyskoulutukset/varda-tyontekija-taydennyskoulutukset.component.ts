@@ -20,14 +20,15 @@ import { switchMap } from 'rxjs/operators';
     '../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaTyontekijaTaydennyskoulutuksetComponent extends VardaFormListAbstractComponent implements OnInit, OnDestroy {
+export class VardaTyontekijaTaydennyskoulutuksetComponent extends VardaFormListAbstractComponent<TyontekijaTaydennyskoulutus> implements OnInit, OnDestroy {
   @ViewChildren(VardaTyontekijaTaydennyskoulutusComponent) objectElements: QueryList<VardaTyontekijaTaydennyskoulutusComponent>;
   @Input() toimipaikkaAccess: UserAccess;
 
-  taydennyskoulutusList: Array<TyontekijaTaydennyskoulutus> = [];
   tehtavanimikeCodes: Array<CodeDTO> = [];
   tehtavanimikeOptions: Array<CodeDTO> = [];
   tehtavanimikeList: Array<string> = [];
+
+  sortByFunction = sortBySuoritusPvm;
 
   private subscriptions: Array<Subscription> = [];
 
@@ -41,7 +42,7 @@ export class VardaTyontekijaTaydennyskoulutuksetComponent extends VardaFormListA
   }
 
   ngOnInit() {
-    this.taydennyskoulutusList = this.henkilostoService.activeTyontekija.getValue().taydennyskoulutukset.sort(sortBySuoritusPvm);
+    this.objectList = this.henkilostoService.activeTyontekija.getValue().taydennyskoulutukset.sort(sortBySuoritusPvm);
 
     const selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
     const henkiloOid = this.henkilostoService.activeTyontekija.getValue().henkilo.henkilo_oid;
@@ -78,21 +79,9 @@ export class VardaTyontekijaTaydennyskoulutuksetComponent extends VardaFormListA
     )).sort(sortByName);
   }
 
-  addTaydennyskoulutus(taydennyskoulutus: TyontekijaTaydennyskoulutus) {
-    this.taydennyskoulutusList = this.taydennyskoulutusList.filter(obj => obj.id !== taydennyskoulutus.id);
-    this.taydennyskoulutusList.push(taydennyskoulutus);
-    this.taydennyskoulutusList = this.taydennyskoulutusList.sort(sortBySuoritusPvm);
-    this.updateActiveTyontekija();
-  }
-
-  deleteTaydennyskoulutus(objectId: number) {
-    this.taydennyskoulutusList = this.taydennyskoulutusList.filter(obj => obj.id !== objectId);
-    this.updateActiveTyontekija();
-  }
-
-  updateActiveTyontekija() {
+  updateActiveObject() {
     const activeTyontekija = this.henkilostoService.activeTyontekija.getValue();
-    this.henkilostoService.activeTyontekija.next({...activeTyontekija, taydennyskoulutukset: this.taydennyskoulutusList});
+    this.henkilostoService.activeTyontekija.next({...activeTyontekija, taydennyskoulutukset: this.objectList});
   }
 
   ngOnDestroy() {

@@ -5,7 +5,6 @@ import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/var
 import { VardaVarhaiskasvatuspaatosComponent } from './varda-varhaiskasvatuspaatos/varda-varhaiskasvatuspaatos.component';
 import { VardaFormListAbstractComponent } from '../../varda-form-list-abstract.component';
 import { LapsiKoosteVakapaatos } from '../../../../../utilities/models/dto/varda-henkilohaku-dto.model';
-import { sortByAlkamisPvm } from '../../../../../utilities/helper-functions';
 import { VardaVakajarjestajaService } from '../../../../../core/services/varda-vakajarjestaja.service';
 
 @Component({
@@ -17,12 +16,11 @@ import { VardaVakajarjestajaService } from '../../../../../core/services/varda-v
     '../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaVarhaiskasvatuspaatoksetComponent extends VardaFormListAbstractComponent implements OnInit {
+export class VardaVarhaiskasvatuspaatoksetComponent extends VardaFormListAbstractComponent<LapsiKoosteVakapaatos> implements OnInit {
   @ViewChildren(VardaVarhaiskasvatuspaatosComponent) objectElements: QueryList<VardaVarhaiskasvatuspaatosComponent>;
   @Input() toimipaikkaAccess: UserAccess;
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
 
-  varhaiskasvatuspaatosList: Array<LapsiKoosteVakapaatos> = [];
   lapsitiedotTallentaja: boolean;
 
   constructor(
@@ -34,7 +32,7 @@ export class VardaVarhaiskasvatuspaatoksetComponent extends VardaFormListAbstrac
 
   ngOnInit() {
     const activeLapsi = this.lapsiService.activeLapsi.getValue();
-    this.varhaiskasvatuspaatosList = activeLapsi.varhaiskasvatuspaatokset;
+    this.objectList = activeLapsi.varhaiskasvatuspaatokset;
     this.lapsitiedotTallentaja = this.toimipaikkaAccess.lapsitiedot.tallentaja;
 
     const selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
@@ -42,23 +40,11 @@ export class VardaVarhaiskasvatuspaatoksetComponent extends VardaFormListAbstrac
       this.lapsitiedotTallentaja = false;
     }
 
-    this.addObjectBoolean = this.varhaiskasvatuspaatosList.length === 0;
+    this.addObjectBoolean = this.objectList.length === 0;
   }
 
-  addVarhaiskasvatuspaatos(varhaiskasvatuspaatos: LapsiKoosteVakapaatos) {
-    this.varhaiskasvatuspaatosList = this.varhaiskasvatuspaatosList.filter(obj => obj.id !== varhaiskasvatuspaatos.id);
-    this.varhaiskasvatuspaatosList.push(varhaiskasvatuspaatos);
-    this.varhaiskasvatuspaatosList = this.varhaiskasvatuspaatosList.sort(sortByAlkamisPvm);
-    this.updateActiveLapsi();
-  }
-
-  deleteVarhaiskasvatuspaatos(objectId: number) {
-    this.varhaiskasvatuspaatosList = this.varhaiskasvatuspaatosList.filter(obj => obj.id !== objectId);
-    this.updateActiveLapsi();
-  }
-
-  updateActiveLapsi() {
+  updateActiveObject() {
     const activeLapsi = this.lapsiService.activeLapsi.getValue();
-    this.lapsiService.activeLapsi.next({...activeLapsi, varhaiskasvatuspaatokset: this.varhaiskasvatuspaatosList});
+    this.lapsiService.activeLapsi.next({...activeLapsi, varhaiskasvatuspaatokset: this.objectList});
   }
 }

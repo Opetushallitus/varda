@@ -51,6 +51,7 @@ export enum VirkailijaTranslations {
   username = 'username',
   passive_plural = 'passive.plural',
   passive = 'passive',
+  use_as_copy = 'use-as-copy',
 
   versio_VALUE = 'versio.VALUE',
   accessibility_info = 'accessibility.info',

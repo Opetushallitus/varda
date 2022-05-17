@@ -138,6 +138,7 @@ export class VardaDatepickerComponent implements OnInit, ControlValueAccessor, V
   }
 
   writeValue(value: any) {
+    this.pickerControl?.reset();
     this.matDateModel = value;
   }
 

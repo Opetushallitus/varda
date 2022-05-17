@@ -1,24 +1,24 @@
 <ng-container *ngIf="formGroup">
-  <div [id]="'taydennyskoulutus_'+ taydennyskoulutus?.id"
+  <div [id]="'taydennyskoulutus_'+ currentObject?.id"
        class="taydennyskoulutus">
-    <app-robo-id [tunniste]="taydennyskoulutus?.id"
+    <app-robo-id [tunniste]="currentObject?.id"
                  nimi="taydennyskoulutus"
-                 [alkamis_pvm]="taydennyskoulutus?.suoritus_pvm"></app-robo-id>
+                 [alkamis_pvm]="currentObject?.suoritus_pvm"></app-robo-id>
 
     <mat-expansion-panel #matPanel
                          (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)">
       <mat-expansion-panel-header>
-        <mat-panel-title *ngIf="taydennyskoulutus">
+        <mat-panel-title *ngIf="currentObject">
           <span>
-            {{taydennyskoulutus.suoritus_pvm | vardaDate}}
-            <i>{{taydennyskoulutus.nimi }}</i>
-            <span> ({{ i18n.taydennyskoulutus_COUNT_paivaa | translate: { count: taydennyskoulutus.koulutuspaivia } }})
+            {{currentObject.suoritus_pvm | vardaDate}}
+            <i>{{currentObject.nimi }}</i>
+            <span> ({{ i18n.taydennyskoulutus_COUNT_paivaa | translate: { count: currentObject.koulutuspaivia } }})
             </span>
           </span>
         </mat-panel-title>
 
-        <mat-panel-title *ngIf="!taydennyskoulutus">
+        <mat-panel-title *ngIf="!currentObject">
           <span>
             {{ i18n.taydennyskoulutukset_lisaa_taydennyskoulutus | translate }}
           </span>
@@ -108,7 +108,7 @@
 
         <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
                               [saveAccess]="toimipaikkaAccess?.taydennyskoulutustiedot.tallentaja"
-                              [formExists]="!!taydennyskoulutus"
+                              [formExists]="!!currentObject"
                               [isEdit]="isEdit"
                               (togglePanel)="togglePanel($event)"
                               (deleteForm)="deleteTaydennyskoulutus()"

@@ -1,4 +1,16 @@
-import { Component, Input, ContentChildren, QueryList, AfterContentInit, ElementRef, ContentChild, ViewChild, OnDestroy } from '@angular/core';
+import {
+  Component,
+  Input,
+  ContentChildren,
+  QueryList,
+  ElementRef,
+  ContentChild,
+  ViewChild,
+  OnDestroy,
+  OnChanges,
+  SimpleChanges,
+  AfterContentInit, OnInit
+} from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { VardaField, } from '../../../utilities/models';
 import { MatRadioGroup, MatRadioButton } from '@angular/material/radio';
@@ -16,7 +28,7 @@ export interface FormFieldErrorMap {
   templateUrl: './varda-form-field.component.html',
   styleUrls: ['./varda-form-field.component.css']
 })
-export class VardaFormFieldComponent implements AfterContentInit, OnDestroy {
+export class VardaFormFieldComponent implements OnInit, AfterContentInit, OnChanges, OnDestroy {
   @Input() label: string;
   @Input() name: string;
   @Input() errorText: string;
@@ -57,24 +69,52 @@ export class VardaFormFieldComponent implements AfterContentInit, OnDestroy {
     this.showInstructionText = true;
   }
 
-  ngOnDestroy() {
-    this.subscriptions.forEach(subscription => subscription?.unsubscribe());
-  }
-
-  ngAfterContentInit() {
+  ngOnInit() {
     this.placeholder = this.placeholder || this.label;
     this.labelId = `${this.name}-label-${Math.random().toString(36)}`;
     this.errorRef = `${this.name}-error`;
     this.instructionRef = `${this.name}-instruction`;
+  }
 
-    if (this.form) {
-      this.formControl = this.form.get(this.name) as FormControl;
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes.form) {
+      this.initialize();
+    }
+  }
+
+  ngAfterContentInit() {
+    this.initialize();
+  }
+
+  initialize() {
+    this.subscriptions.forEach(subscription => subscription.unsubscribe());
+
+    if (this.childComponents) {
+      // Monitor childComponent changes (view and edit modes can use different components)
+      this.subscriptions.push(
+        this.childComponents.changes.subscribe(() => setTimeout(() => this.initialize()))
+      );
+    }
+
+    this.formControl = this.form.get(this.name) as FormControl;
+    this.subscriptions.push(
       this.formControl.statusChanges.subscribe(change => {
         if (this.formControl.hasError('scrollTo')) {
           this.formField?.nativeElement.scrollIntoView({ behavior: 'smooth' });
         }
-      });
-    }
+      })
+    );
+
+    this.childComponents?.filter(childEl => childEl.nativeElement).forEach(childEl => {
+      childEl.nativeElement.name = childEl.nativeElement.name || this.name;
+      childEl.nativeElement.placeholder = this.placeholder;
+      childEl.nativeElement.setAttribute('aria-labelledby', this.labelId);
+      childEl.nativeElement.setAttribute('robot', this.name);
+      this.subscriptions.push(
+        fromEvent(childEl.nativeElement, 'focus').subscribe(() => this.focusStatus$.next(true)),
+        fromEvent(childEl.nativeElement, 'blur').subscribe(() => this.focusStatus$.next(false))
+      );
+    });
 
     if (this.radioGroup) {
       this.subscriptions.push(this.formControl.valueChanges.subscribe((change: Observable<boolean>) => {
@@ -87,18 +127,12 @@ export class VardaFormFieldComponent implements AfterContentInit, OnDestroy {
     } else if (this.select) {
       this.subscriptions.push(
         this.select._openedStream.subscribe(() => this.focusStatus$.next(true)),
-        this.select._closedStream.subscribe(() => this.focusStatus$.next(false)),
+        this.select._closedStream.subscribe(() => this.focusStatus$.next(false))
       );
     }
+  }
 
-    this.childComponents.filter(childEl => childEl.nativeElement).forEach(childEl => {
-      childEl.nativeElement.name = childEl.nativeElement.name || this.name;
-      childEl.nativeElement.placeholder = this.placeholder;
-      childEl.nativeElement.setAttribute('aria-labelledby', this.labelId);
-      childEl.nativeElement.setAttribute('robot', this.name);
-      this.subscriptions.push(fromEvent(childEl.nativeElement, 'focus').subscribe(() => this.focusStatus$.next(true)));
-      this.subscriptions.push(fromEvent(childEl.nativeElement, 'blur').subscribe(() => this.focusStatus$.next(false)));
-    });
+  ngOnDestroy() {
+    this.subscriptions.forEach(subscription => subscription?.unsubscribe());
   }
 }
-

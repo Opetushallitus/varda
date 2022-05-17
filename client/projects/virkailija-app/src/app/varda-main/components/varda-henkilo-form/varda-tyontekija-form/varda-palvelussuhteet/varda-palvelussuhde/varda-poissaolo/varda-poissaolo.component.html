@@ -1,20 +1,20 @@
 <ng-container *ngIf="formGroup">
-  <div [id]="'poissaolo_'+ pidempiPoissaolo?.id"
+  <div [id]="'poissaolo_'+ currentObject?.id"
        class="tyoskentelypaikka poissaolo">
-    <app-robo-id [tunniste]="pidempiPoissaolo?.id"
+    <app-robo-id [tunniste]="currentObject?.id"
                  nimi="poissaolo"
-                 [alkamis_pvm]="pidempiPoissaolo?.alkamis_pvm"
-                 [paattymis_pvm]="pidempiPoissaolo?.paattymis_pvm"></app-robo-id>
+                 [alkamis_pvm]="currentObject?.alkamis_pvm"
+                 [paattymis_pvm]="currentObject?.paattymis_pvm"></app-robo-id>
 
     <mat-expansion-panel (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)"
                          #matPanel>
       <mat-expansion-panel-header>
         <mat-panel-title>
-          <span *ngIf="pidempiPoissaolo; else addPoissaolo">
+          <span *ngIf="currentObject; else addPoissaolo">
             <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
             {{ i18n.poissaolo | translate }}
-            {{pidempiPoissaolo.alkamis_pvm | vardaDate }} - {{pidempiPoissaolo.paattymis_pvm | vardaDate }}
+            {{currentObject.alkamis_pvm | vardaDate }} - {{currentObject.paattymis_pvm | vardaDate }}
           </span>
           <ng-template #addPoissaolo>
             <span>{{ i18n.palvelussuhde_lisaa_poissaolo | translate }}</span>
@@ -57,7 +57,7 @@
 
         <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
                               [saveAccess]="toimipaikkaAccess?.tyontekijatiedot.tallentaja"
-                              [formExists]="!!pidempiPoissaolo"
+                              [formExists]="!!currentObject"
                               [isEdit]="isEdit"
                               (togglePanel)="togglePanel($event)"
                               (deleteForm)="deletePoissaolo()"

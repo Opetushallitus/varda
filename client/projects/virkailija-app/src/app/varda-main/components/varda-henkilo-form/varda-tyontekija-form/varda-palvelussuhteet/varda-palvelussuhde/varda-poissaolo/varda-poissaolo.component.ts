@@ -1,12 +1,11 @@
-import { Component, OnInit, Input, ViewChild, OnDestroy, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import * as moment from 'moment';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
-import { finalize, Observable, Subscription } from 'rxjs';
+import { finalize, Observable } from 'rxjs';
 import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
-import { MatExpansionPanelHeader } from '@angular/material/expansion';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { VardaDateService } from 'varda-shared';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
@@ -31,21 +30,17 @@ import { VardaPidempiPoissaoloDTO } from '../../../../../../../utilities/models/
     '../../../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaPoissaoloComponent extends VardaFormAccordionAbstractComponent implements OnInit, OnDestroy {
-  @ViewChild(MatExpansionPanelHeader) panelHeader: MatExpansionPanelHeader;
+export class VardaPoissaoloComponent extends VardaFormAccordionAbstractComponent<TyontekijaPidempiPoissaolo> implements OnInit {
   @Input() toimipaikkaAccess: UserAccess;
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
   @Input() palvelussuhde: TyontekijaPalvelussuhde;
-  @Input() pidempiPoissaolo: TyontekijaPidempiPoissaolo;
   @Output() addObject = new EventEmitter<TyontekijaPidempiPoissaolo>(true);
   @Output() deleteObject = new EventEmitter<number>(true);
 
-  isSubmitting = false;
   endDateRange = { min: VardaDateService.henkilostoReleaseDate, max: null };
   poissaoloFormErrors: Observable<Array<ErrorTree>>;
 
   private henkilostoErrorService: VardaErrorMessageService;
-  private subscriptions: Array<Subscription> = [];
 
   constructor(
     private henkilostoService: VardaHenkilostoApiService,
@@ -59,13 +54,7 @@ export class VardaPoissaoloComponent extends VardaFormAccordionAbstractComponent
   }
 
   ngOnInit() {
-    this.formGroup = new FormGroup({
-      id: new FormControl(this.pidempiPoissaolo?.id),
-      lahdejarjestelma: new FormControl(Lahdejarjestelma.kayttoliittyma),
-      palvelussuhde: new FormControl(this.henkilostoService.getPalvelussuhdeUrl(this.palvelussuhde.id)),
-      alkamis_pvm: new FormControl(this.pidempiPoissaolo ? moment(this.pidempiPoissaolo?.alkamis_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
-      paattymis_pvm: new FormControl(this.pidempiPoissaolo ? moment(this.pidempiPoissaolo?.paattymis_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
-    });
+    super.ngOnInit();
 
     this.subscriptions.push(
       this.formGroup.statusChanges
@@ -73,15 +62,17 @@ export class VardaPoissaoloComponent extends VardaFormAccordionAbstractComponent
         .subscribe(() => this.modalService.setFormValuesChanged(true))
     );
 
-    if (this.pidempiPoissaolo) {
-      this.disableForm();
-    } else {
-      this.enableForm();
-      this.togglePanel(true);
-      this.panelHeader?.focus();
-    }
+    this.checkFormErrors(this.henkilostoService, 'pidempipoissaolo', this.currentObject?.id);
+  }
 
-    this.checkFormErrors(this.henkilostoService, 'pidempipoissaolo', this.pidempiPoissaolo?.id);
+  initForm() {
+    this.formGroup = new FormGroup({
+      id: new FormControl(this.currentObject?.id),
+      lahdejarjestelma: new FormControl(Lahdejarjestelma.kayttoliittyma),
+      palvelussuhde: new FormControl(this.henkilostoService.getPalvelussuhdeUrl(this.palvelussuhde.id)),
+      alkamis_pvm: new FormControl(this.currentObject ? moment(this.currentObject?.alkamis_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
+      paattymis_pvm: new FormControl(this.currentObject ? moment(this.currentObject?.paattymis_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
+    });
   }
 
   savePoissaolo(form: FormGroup) {
@@ -96,22 +87,22 @@ export class VardaPoissaoloComponent extends VardaFormAccordionAbstractComponent
         paattymis_pvm: form.value.paattymis_pvm.format(VardaDateService.vardaApiDateFormat)
       };
 
-      const observable = this.pidempiPoissaolo ? this.henkilostoService.updatePoissaolo(poissaoloJson) :
+      const observable = this.currentObject ? this.henkilostoService.updatePoissaolo(poissaoloJson) :
         this.henkilostoService.createPoissaolo(poissaoloJson);
       this.subscriptions.push(
         observable.pipe(
           finalize(() => this.disableSubmit())
         ).subscribe({
           next: result => {
-            if (!this.pidempiPoissaolo) {
+            if (!this.currentObject) {
               // Close panel if object was created
               this.togglePanel(false);
             }
             this.snackBarService.success(this.i18n.poissaolo_save_success);
             this.henkilostoService.sendHenkilostoListUpdate();
 
-            this.pidempiPoissaolo = result;
-            this.addObject.emit(this.pidempiPoissaolo);
+            this.currentObject = result;
+            this.addObject.emit(this.currentObject);
           },
           error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
         })
@@ -123,25 +114,16 @@ export class VardaPoissaoloComponent extends VardaFormAccordionAbstractComponent
 
   deletePoissaolo(): void {
     this.subscriptions.push(
-      this.henkilostoService.deletePoissaolo(this.pidempiPoissaolo.id).subscribe({
+      this.henkilostoService.deletePoissaolo(this.currentObject.id).subscribe({
         next: () => {
           this.togglePanel(false);
           this.snackBarService.warning(this.i18n.poissaolo_delete_success);
           this.henkilostoService.sendHenkilostoListUpdate();
-          this.deleteObject.emit(this.pidempiPoissaolo.id);
+          this.deleteObject.emit(this.currentObject.id);
         },
         error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
       })
     );
-  }
-
-  disableSubmit() {
-    setTimeout(() => this.isSubmitting = false, 500);
-  }
-
-  enableForm() {
-    this.isEdit = true;
-    this.formGroup.enable();
   }
 
   startDateChange(startDate: Moment) {
@@ -152,9 +134,5 @@ export class VardaPoissaoloComponent extends VardaFormAccordionAbstractComponent
     }
 
     setTimeout(() => this.formGroup.controls.paattymis_pvm?.updateValueAndValidity(), 100);
-  }
-
-  ngOnDestroy() {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 }

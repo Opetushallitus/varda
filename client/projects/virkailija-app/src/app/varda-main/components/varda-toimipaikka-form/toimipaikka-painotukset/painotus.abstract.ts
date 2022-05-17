@@ -1,14 +1,4 @@
-import {
-  Component,
-  EventEmitter,
-  Input,
-  OnChanges,
-  OnDestroy,
-  OnInit,
-  Output,
-  SimpleChanges,
-  ViewChild
-} from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { FormGroup, Validators } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
 import * as moment from 'moment';
@@ -16,19 +6,16 @@ import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaVakajarjestajaApiService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja-api.service';
 import { ToimipaikkaKooste } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
-import { Observable, Subscription } from 'rxjs';
+import { Observable } from 'rxjs';
 import { KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
-import { MatExpansionPanel } from '@angular/material/expansion';
 import { VardaFormAccordionAbstractComponent } from '../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 import { VardaModalService } from '../../../../core/services/varda-modal.service';
 
 @Component({
   template: '',
 })
-export abstract class PainotusAbstractComponent<T> extends VardaFormAccordionAbstractComponent implements OnInit, OnChanges, OnDestroy {
-  @ViewChild('matPanel') matPanel: MatExpansionPanel;
+export abstract class PainotusAbstractComponent<T> extends VardaFormAccordionAbstractComponent<T> implements OnInit, OnChanges {
   @Input() toimipaikka: ToimipaikkaKooste;
-  @Input() painotus: T;
   @Input() saveAccess: boolean;
   @Input() minStartDate: Date;
   @Input() maxEndDate: Date;
@@ -36,14 +23,12 @@ export abstract class PainotusAbstractComponent<T> extends VardaFormAccordionAbs
   @Output() deleteObject = new EventEmitter<number>(true);
 
   koodistoEnum = KoodistoEnum;
-  isSubmitting = false;
   startDateRange = { min: null, max: null };
   endDateRange = { min: null, max: null };
   savePending: boolean;
   formErrors: Observable<Array<ErrorTree>>;
 
   protected errorService: VardaErrorMessageService;
-  protected subscriptions: Array<Subscription> = [];
 
   constructor(
     protected translateService: TranslateService,
@@ -57,15 +42,7 @@ export abstract class PainotusAbstractComponent<T> extends VardaFormAccordionAbs
   }
 
   ngOnInit() {
-    this.initForm();
-    this.initDateFilters();
-
-    if (this.painotus) {
-      this.disableForm();
-    } else {
-      this.togglePanel(true);
-      this.enableForm();
-    }
+    super.ngOnInit();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -78,7 +55,7 @@ export abstract class PainotusAbstractComponent<T> extends VardaFormAccordionAbs
       if (changes.toimipaikka?.currentValue?.id && !changes.toimipaikka?.previousValue?.id) {
         // Toimipaikka was created so start saving painotus objects
         if (this.savePending) {
-          this.painotus = null;
+          this.currentObject = null;
           this.enableForm();
           this.savePainotus(this.formGroup, true);
         }
@@ -86,14 +63,10 @@ export abstract class PainotusAbstractComponent<T> extends VardaFormAccordionAbs
     }
   }
 
-  disableSubmit() {
-    setTimeout(() => this.isSubmitting = false, 500);
-  }
-
   enableForm() {
-    this.isEdit = true;
+    super.enableForm();
+
     this.savePending = false;
-    this.formGroup.enable();
   }
 
   initDateFilters() {
@@ -117,11 +90,6 @@ export abstract class PainotusAbstractComponent<T> extends VardaFormAccordionAbs
     setTimeout(() => this.formGroup.controls.paattymis_pvm?.updateValueAndValidity(), 100);
   }
 
-  ngOnDestroy() {
-    this.subscriptions.forEach(subscription => subscription.unsubscribe());
-  }
-
-  abstract initForm(): void;
   abstract savePainotus(form: FormGroup, wasPending?: boolean): void;
   abstract deletePainotus(): void;
 }

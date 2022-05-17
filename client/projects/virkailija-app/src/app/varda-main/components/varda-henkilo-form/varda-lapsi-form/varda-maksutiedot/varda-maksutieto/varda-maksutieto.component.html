@@ -1,28 +1,27 @@
 <ng-container *ngIf="formGroup">
-  <div [id]="'maksutieto_' + maksutieto?.id"
+  <div [id]="'maksutieto_' + currentObject?.id"
        class="maksutieto taydennyskoulutus">
-    <app-robo-id [tunniste]="maksutieto?.id"
+    <app-robo-id [tunniste]="currentObject?.id"
                  nimi="maksutieto"
-                 [alkamis_pvm]="maksutieto?.alkamis_pvm"
-                 [paattymis_pvm]="maksutieto?.paattymis_pvm"></app-robo-id>
+                 [alkamis_pvm]="currentObject?.alkamis_pvm"
+                 [paattymis_pvm]="currentObject?.paattymis_pvm"></app-robo-id>
 
     <mat-expansion-panel #matPanel
                          (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)">
       <mat-expansion-panel-header>
-        <mat-panel-title *ngIf="maksutieto; else addMaksutieto">
+        <mat-panel-title *ngIf="objectExists(); else addMaksutieto">
           <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
-          <span *ngIf="!maksutieto.paattymis_pvm; else hasPaattymispvm">
-            {{ i18n.maksutieto_alkaen_PVM | translate: {pvm: maksutieto.alkamis_pvm | vardaDate} }}
+          <span *ngIf="!currentObject.paattymis_pvm; else hasPaattymispvm">
+            {{ i18n.maksutieto_alkaen_PVM | translate: {pvm: currentObject.alkamis_pvm | vardaDate} }}
           </span>
           <ng-template #hasPaattymispvm>
-            <span *ngIf="maksutieto.paattymis_pvm">
+            <span *ngIf="currentObject.paattymis_pvm">
               {{ i18n.maksutieto | translate }}
-              {{maksutieto.alkamis_pvm | vardaDate }} - {{maksutieto.paattymis_pvm | vardaDate }}
+              {{currentObject.alkamis_pvm | vardaDate }} - {{currentObject.paattymis_pvm | vardaDate }}
             </span>
           </ng-template>
         </mat-panel-title>
-
         <ng-template #addMaksutieto>
           <mat-panel-title>
             <span>
@@ -30,14 +29,22 @@
             </span>
           </mat-panel-title>
         </ng-template>
+        <ng-container *ngIf="toimipaikkaAccess?.huoltajatiedot.tallentaja && objectExists()">
+          <button type="button"
+                  robot="copy-button"
+                  class="copy-button varda-button varda-button-small secondary"
+                  (click)="useAsCopy($event)">
+            {{ i18n.use_as_copy | translate }}
+          </button>
+        </ng-container>
       </mat-expansion-panel-header>
       <form [formGroup]="formGroup"
             (submit)="saveMaksutieto(formGroup)"
             autocomplete="off">
         <app-varda-form-error-list [errors]="errorList"></app-varda-form-error-list>
         <div class="huoltajat">
-          <ng-container *ngIf="maksutieto">
-            <app-varda-maksutieto-huoltaja *ngFor="let huoltaja of maksutieto.huoltajat; let i = index"
+          <ng-container *ngIf="objectExists()">
+            <app-varda-maksutieto-huoltaja *ngFor="let huoltaja of currentObject.huoltajat; let i = index"
                                            [indexNr]="i"
                                            [huoltaja]="huoltaja">
             </app-varda-maksutieto-huoltaja>
@@ -47,7 +54,7 @@
               <app-varda-maksutieto-huoltaja *ngFor="let huoltajaFormGroup of huoltajat.controls, let i = index"
                                              [huoltajaForm]="huoltajaFormGroup"
                                              [indexNr]="i"
-                                             [showDeleteButton]="huoltajat.controls.length > 1 || maksutieto !== undefined"
+                                             [showDeleteButton]="huoltajat.controls.length > 1 || objectExists()"
                                              (removeHuoltaja)="removeHuoltajaForm($event)">
               </app-varda-maksutieto-huoltaja>
             </ng-container>
@@ -66,9 +73,9 @@
                               [label]="i18n.maksutieto_maksunperuste_koodi | translate"
                               [errorText]="i18n.maksutieto_error_maksunperuste_koodi | translate"
                               [instructionText]="i18n.maksutieto_instruction_maksunperuste_koodi | translate">
-          <div *ngIf="maksutieto; else maksunPerusteSelect"
+          <div *ngIf="objectExists(); else maksunPerusteSelect"
                [libKoodistoValue]="koodistoEnum.maksunperuste"
-               format="long">{{ maksutieto.maksun_peruste_koodi }}</div>
+               format="long">{{ currentObject.maksun_peruste_koodi }}</div>
           <ng-template #maksunPerusteSelect>
             <mat-select #fieldItem
                         *ngIf="maksunperusteKoodisto?.codes.length > 0"
@@ -179,7 +186,7 @@
 
         <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
                               [saveAccess]="toimipaikkaAccess?.huoltajatiedot.tallentaja"
-                              [formExists]="!!maksutieto"
+                              [formExists]="objectExists()"
                               [isEdit]="isEdit"
                               (togglePanel)="togglePanel($event)"
                               (deleteForm)="deleteMaksutieto()"

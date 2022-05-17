@@ -1,4 +1,4 @@
-<ng-container *ngIf="varhaiskasvatuspaatosList">
+<ng-container *ngIf="objectList">
   <mat-expansion-panel class="palvelussuhteet mt-4 main-section"
                        (opened)="togglePanel(true)"
                        (closed)="togglePanel(false)"
@@ -7,11 +7,11 @@
       <mat-panel-title>
         <h2 class="varda-fieldset-legend">
           {{ i18n.varhaiskasvatuspaatokset | translate }}
-          <span *ngIf="varhaiskasvatuspaatosList?.length">({{ varhaiskasvatuspaatosList.length }})</span>
+          <span *ngIf="objectList?.length">({{ objectList.length }})</span>
         </h2>
       </mat-panel-title>
       <ng-container *ngIf="lapsitiedotTallentaja">
-        <mat-panel-description *ngIf="varhaiskasvatuspaatosList.length">
+        <mat-panel-description *ngIf="objectList.length">
           <button class="varda-text-button" id="add-varhaiskasvatuspaatos"
                   (keydown.enter)="initObject()"
                   (click)="initObject()">
@@ -31,7 +31,7 @@
       </ng-container>
 
       <ng-container *ngIf="toimipaikkaAccess.lapsitiedot.katselija">
-        <div *ngIf="!varhaiskasvatuspaatosList.length"
+        <div *ngIf="!objectList.length"
              class="ei-palvelussuhteita"
              role="alert">
           <p class="missing-info">
@@ -49,21 +49,21 @@
         </div>
 
         <mat-accordion class="accordion-large-margin">
-          <app-varda-varhaiskasvatuspaatos *ngFor="let varhaiskasvatuspaatos of varhaiskasvatuspaatosList | slice:0:numberOfDisplayed"
+          <app-varda-varhaiskasvatuspaatos *ngFor="let varhaiskasvatuspaatos of objectList | slice:0:numberOfDisplayed"
                                            [lapsitiedotTallentaja]="lapsitiedotTallentaja"
-                                           [varhaiskasvatuspaatos]="varhaiskasvatuspaatos"
+                                           [currentObject]="varhaiskasvatuspaatos"
                                            [henkilonToimipaikka]="henkilonToimipaikka"
-                                           (addObject)="addVarhaiskasvatuspaatos($event)"
-                                           (deleteObject)="deleteVarhaiskasvatuspaatos($event)">
+                                           (addObject)="addObject($event)"
+                                           (deleteObject)="deleteObject($event)">
           </app-varda-varhaiskasvatuspaatos>
-          <app-varda-show-more-less *ngIf="varhaiskasvatuspaatosList" [showMoreKey]="i18n.varhaiskasvatuspaatokset_show_more"
-                                    [(numberOfDisplayed)]="numberOfDisplayed" [numberOfItems]="varhaiskasvatuspaatosList.length">
+          <app-varda-show-more-less *ngIf="objectList" [showMoreKey]="i18n.varhaiskasvatuspaatokset_show_more"
+                                    [(numberOfDisplayed)]="numberOfDisplayed" [numberOfItems]="objectList.length">
           </app-varda-show-more-less>
           <app-varda-varhaiskasvatuspaatos *ngIf="addObjectBoolean && lapsitiedotTallentaja"
                                            [lapsitiedotTallentaja]="lapsitiedotTallentaja"
                                            [henkilonToimipaikka]="henkilonToimipaikka"
-                                           (addObject)="addVarhaiskasvatuspaatos($event)"
-                                           (deleteObject)="deleteVarhaiskasvatuspaatos($event)"
+                                           (addObject)="addObject($event)"
+                                           (deleteObject)="deleteObject($event)"
                                            (closeEmitter)="hideAddObject()">
           </app-varda-varhaiskasvatuspaatos>
         </mat-accordion>

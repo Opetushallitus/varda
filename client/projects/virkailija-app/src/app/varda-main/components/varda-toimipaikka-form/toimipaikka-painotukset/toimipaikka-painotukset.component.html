@@ -12,7 +12,7 @@
                        [minStartDate]="minStartDate"
                        [maxEndDate]="maxEndDate"
                        [toimipaikka]="toimipaikka"
-                       [painotus]="painotus"
+                       [currentObject]="painotus"
                        [saveAccess]="saveAccess"
                        (addObject)="addKielipainotus($event)"
                        (deleteObject)="deleteKielipainotus($event)"></app-kielipainotus>
@@ -51,7 +51,7 @@
                           [minStartDate]="minStartDate"
                           [maxEndDate]="maxEndDate"
                           [toimipaikka]="toimipaikka"
-                          [painotus]="painotus"
+                          [currentObject]="painotus"
                           [saveAccess]="isEdit && saveAccess"
                           (addObject)="addToiminnallinenPainotus($event)"
                           (deleteObject)="deleteToiminnallinenPainotus($event)"></app-toimintapainotus>

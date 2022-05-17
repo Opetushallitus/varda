@@ -19,11 +19,10 @@ import { VardaVakajarjestajaService } from '../../../../../core/services/varda-v
     '../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaMaksutiedotComponent extends VardaFormListAbstractComponent implements OnInit {
+export class VardaMaksutiedotComponent extends VardaFormListAbstractComponent<LapsiKoosteMaksutieto> implements OnInit {
   @ViewChildren(VardaMaksutietoComponent) objectElements: QueryList<VardaMaksutietoComponent>;
   @Input() toimipaikkaAccess: UserAccess;
 
-  maksutietoList: Array<LapsiKoosteMaksutieto>;
   tehtavanimikkeet: KoodistoDTO;
   maksutietoOikeus: boolean;
   selectedVakajarjestaja: VardaVakajarjestajaUi;
@@ -37,7 +36,7 @@ export class VardaMaksutiedotComponent extends VardaFormListAbstractComponent im
 
   ngOnInit() {
     this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
-    this.maksutietoList = this.lapsiService.activeLapsi.getValue().maksutiedot.sort(sortByAlkamisPvm);
+    this.objectList = this.lapsiService.activeLapsi.getValue().maksutiedot.sort(sortByAlkamisPvm);
     // enable maksutiedot for non-paos and your own paos-kids
     const activeLapsi = this.lapsiService.activeLapsi.getValue();
     if (!activeLapsi.oma_organisaatio_oid || activeLapsi.oma_organisaatio_oid === this.selectedVakajarjestaja.organisaatio_oid) {
@@ -45,20 +44,8 @@ export class VardaMaksutiedotComponent extends VardaFormListAbstractComponent im
     }
   }
 
-  addMaksutieto(maksutieto: LapsiKoosteMaksutieto) {
-    this.maksutietoList = this.maksutietoList.filter(obj => obj.id !== maksutieto.id);
-    this.maksutietoList.push(maksutieto);
-    this.maksutietoList = this.maksutietoList.sort(sortByAlkamisPvm);
-    this.updateActiveLapsi();
-  }
-
-  deleteMaksutieto(objectId: number) {
-    this.maksutietoList = this.maksutietoList.filter(obj => obj.id !== objectId);
-    this.updateActiveLapsi();
-  }
-
-  updateActiveLapsi() {
+  updateActiveObject() {
     const activeLapsi = this.lapsiService.activeLapsi.getValue();
-    this.lapsiService.activeLapsi.next({...activeLapsi, maksutiedot: this.maksutietoList});
+    this.lapsiService.activeLapsi.next({...activeLapsi, maksutiedot: this.objectList});
   }
 }

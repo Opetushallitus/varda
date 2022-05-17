@@ -1,31 +1,31 @@
 <ng-container *ngIf="formGroup">
-  <div [id]="'varhaiskasvatussuhde_' + varhaiskasvatussuhde?.id"
+  <div [id]="'varhaiskasvatussuhde_' + currentObject?.id"
        class="tyoskentelypaikka">
-    <app-robo-id [tunniste]="varhaiskasvatussuhde?.id"
+    <app-robo-id [tunniste]="currentObject?.id"
                  nimi="varhaiskasvatussuhde"
-                 [alkamis_pvm]="varhaiskasvatussuhde?.alkamis_pvm"
-                 [paattymis_pvm]="varhaiskasvatussuhde?.paattymis_pvm"></app-robo-id>
+                 [alkamis_pvm]="currentObject?.alkamis_pvm"
+                 [paattymis_pvm]="currentObject?.paattymis_pvm"></app-robo-id>
 
     <mat-expansion-panel #matPanel
                          (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)">
       <mat-expansion-panel-header>
-        <mat-panel-title *ngIf="varhaiskasvatussuhde">
+        <mat-panel-title *ngIf="currentObject">
           <h4>
             <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
             <span appToimipaikkaNimi>
-              {{ varhaiskasvatussuhde.toimipaikka_oid }}
+              {{ currentObject.toimipaikka_oid }}
             </span>
-            <span *ngIf="!varhaiskasvatussuhde.paattymis_pvm">
-              {{ i18n.tyoskentelypaikka_alkaen_PVM | translate: {pvm: varhaiskasvatussuhde.alkamis_pvm | vardaDate} }}
+            <span *ngIf="!currentObject.paattymis_pvm">
+              {{ i18n.tyoskentelypaikka_alkaen_PVM | translate: {pvm: currentObject.alkamis_pvm | vardaDate} }}
             </span>
-            <span *ngIf="varhaiskasvatussuhde.paattymis_pvm">
-              {{varhaiskasvatussuhde.alkamis_pvm | vardaDate}} -
-              {{varhaiskasvatussuhde.paattymis_pvm | vardaDate}}
+            <span *ngIf="currentObject.paattymis_pvm">
+              {{currentObject.alkamis_pvm | vardaDate}} -
+              {{currentObject.paattymis_pvm | vardaDate}}
             </span>
           </h4>
         </mat-panel-title>
-        <mat-panel-title *ngIf="!varhaiskasvatussuhde">
+        <mat-panel-title *ngIf="!currentObject">
           <h4>{{ i18n.varhaiskasvatuspaatos_lisaa_varhaiskasvatussuhde | translate }}</h4>
         </mat-panel-title>
       </mat-expansion-panel-header>
@@ -38,10 +38,10 @@
                               [label]="i18n.varhaiskasvatussuhde_toimipaikka | translate"
                               [errorText]="i18n.varhaiskasvatussuhde_error_toimipaikka | translate"
                               [instructionText]="i18n.varhaiskasvatussuhde_instruction_toimipaikka | translate">
-          <div *ngIf="varhaiskasvatussuhde; else toimipaikkaSelector"
+          <div *ngIf="currentObject; else toimipaikkaSelector"
                class="my-3"
                appToimipaikkaNimi>
-            {{ varhaiskasvatussuhde.toimipaikka_oid }}
+            {{ currentObject.toimipaikka_oid }}
           </div>
 
           <ng-template #toimipaikkaSelector>
@@ -96,7 +96,7 @@
 
         <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
                               [saveAccess]="lapsitiedotTallentaja"
-                              [formExists]="!!varhaiskasvatussuhde"
+                              [formExists]="!!currentObject"
                               [isEdit]="isEdit"
                               (togglePanel)="togglePanel($event)"
                               (deleteForm)="deleteVarhaiskasvatussuhde()"

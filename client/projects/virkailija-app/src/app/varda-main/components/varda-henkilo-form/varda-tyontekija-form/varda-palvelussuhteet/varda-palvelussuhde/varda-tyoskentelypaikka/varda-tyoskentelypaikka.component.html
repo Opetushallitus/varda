@@ -1,36 +1,36 @@
 <ng-container *ngIf="formGroup">
-  <div [id]="'tyoskentelypaikka_'+ tyoskentelypaikka?.id"
+  <div [id]="'tyoskentelypaikka_'+ currentObject?.id"
        class="tyoskentelypaikka">
-    <app-robo-id [tunniste]="tyoskentelypaikka?.id"
+    <app-robo-id [tunniste]="currentObject?.id"
                  nimi="tyoskentelypaikka"
-                 [alkamis_pvm]="tyoskentelypaikka?.alkamis_pvm"
-                 [paattymis_pvm]="tyoskentelypaikka?.paattymis_pvm"></app-robo-id>
+                 [alkamis_pvm]="currentObject?.alkamis_pvm"
+                 [paattymis_pvm]="currentObject?.paattymis_pvm"></app-robo-id>
 
     <mat-expansion-panel (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)"
                          #matPanel>
       <mat-expansion-panel-header>
-        <mat-panel-title *ngIf="tyoskentelypaikka">
+        <mat-panel-title *ngIf="currentObject">
           <h4>
             <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
-            <span *ngIf="tyoskentelypaikka.toimipaikka_oid"
+            <span *ngIf="currentObject.toimipaikka_oid"
                   appToimipaikkaNimi>
-              {{ tyoskentelypaikka.toimipaikka_oid }}
+              {{ currentObject.toimipaikka_oid }}
             </span>
-            <span *ngIf="!tyoskentelypaikka.toimipaikka_oid">
+            <span *ngIf="!currentObject.toimipaikka_oid">
               {{ i18n.tyoskentelypaikka_kiertava_kytkin | translate }}
             </span>
-            <span *ngIf="!tyoskentelypaikka.paattymis_pvm">
-              {{ i18n.tyoskentelypaikka_alkaen_PVM | translate: {pvm: tyoskentelypaikka.alkamis_pvm | vardaDate} }},
+            <span *ngIf="!currentObject.paattymis_pvm">
+              {{ i18n.tyoskentelypaikka_alkaen_PVM | translate: {pvm: currentObject.alkamis_pvm | vardaDate} }},
             </span>
-            <span *ngIf="tyoskentelypaikka.paattymis_pvm">
-              {{tyoskentelypaikka.alkamis_pvm | vardaDate}} -
-              {{tyoskentelypaikka.paattymis_pvm | vardaDate}},
+            <span *ngIf="currentObject.paattymis_pvm">
+              {{currentObject.alkamis_pvm | vardaDate}} -
+              {{currentObject.paattymis_pvm | vardaDate}},
             </span>
-            <i [libKoodistoValue]="koodistoEnum.tehtavanimike">{{ tyoskentelypaikka.tehtavanimike_koodi }}</i>
+            <i [libKoodistoValue]="koodistoEnum.tehtavanimike">{{ currentObject.tehtavanimike_koodi }}</i>
           </h4>
         </mat-panel-title>
-        <mat-panel-title *ngIf="!tyoskentelypaikka">
+        <mat-panel-title *ngIf="!currentObject">
           <h4>{{ i18n.palvelussuhde_lisaa_tyoskentelypaikka | translate }}</h4>
         </mat-panel-title>
       </mat-expansion-panel-header>
@@ -151,7 +151,7 @@
 
         <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
                               [saveAccess]="toimipaikkaAccess?.tyontekijatiedot.tallentaja"
-                              [formExists]="!!tyoskentelypaikka"
+                              [formExists]="!!currentObject"
                               [isEdit]="isEdit"
                               (togglePanel)="togglePanel($event)"
                               (deleteForm)="deleteTyoskentelypaikka()"

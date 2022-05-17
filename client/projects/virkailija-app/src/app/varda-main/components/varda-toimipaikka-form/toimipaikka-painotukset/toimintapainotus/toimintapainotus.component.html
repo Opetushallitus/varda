@@ -1,24 +1,24 @@
 <ng-container *ngIf="formGroup">
-  <div [id]="'toimintapainotus_'+ painotus?.id"
+  <div [id]="'toimintapainotus_'+ currentObject?.id"
        class="painotus">
-    <app-robo-id [tunniste]="painotus?.id"
+    <app-robo-id [tunniste]="currentObject?.id"
                  nimi="toimintapainotus"
-                 [alkamis_pvm]="painotus?.alkamis_pvm"
-                 [paattymis_pvm]="painotus?.paattymis_pvm"></app-robo-id>
+                 [alkamis_pvm]="currentObject?.alkamis_pvm"
+                 [paattymis_pvm]="currentObject?.paattymis_pvm"></app-robo-id>
     <mat-expansion-panel #matPanel
                          [hideToggle]="savePending"
                          (opened)="togglePanel(true)"
                          (closed)="togglePanel(false)">
       <mat-expansion-panel-header>
-        <mat-panel-title *ngIf="painotus; else addPainotus">
+        <mat-panel-title *ngIf="currentObject; else addPainotus">
           <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
           <span [libKoodistoValue]="koodistoEnum.toiminnallinenpainotus"
-                format="long">{{ painotus.toimintapainotus_koodi }}</span>&nbsp;
-          <span *ngIf="!painotus.paattymis_pvm; else hasPaattymispvm">
-            {{ i18n.alkaen_PVM | translate: {pvm: painotus.alkamis_pvm | vardaDate} }}
+                format="long">{{ currentObject.toimintapainotus_koodi }}</span>&nbsp;
+          <span *ngIf="!currentObject.paattymis_pvm; else hasPaattymispvm">
+            {{ i18n.alkaen_PVM | translate: {pvm: currentObject.alkamis_pvm | vardaDate} }}
           </span>
           <ng-template #hasPaattymispvm>
-            <span>{{painotus.alkamis_pvm | vardaDate }} - {{painotus.paattymis_pvm | vardaDate }}</span>
+            <span>{{currentObject.alkamis_pvm | vardaDate }} - {{currentObject.paattymis_pvm | vardaDate }}</span>
           </ng-template>
         </mat-panel-title>
 
@@ -93,7 +93,7 @@
         <app-varda-action-row *ngIf="!savePending"
                               [saveDisabled]="formGroup.pristine || isSubmitting"
                               [saveAccess]="saveAccess"
-                              [formExists]="!!painotus"
+                              [formExists]="!!currentObject"
                               [isEdit]="isEdit"
                               (togglePanel)="togglePanel($event)"
                               (deleteForm)="deletePainotus()"

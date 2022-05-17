@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, Output, EventEmitter, ElementRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ElementRef, SimpleChanges, OnChanges } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { MatRadioChange } from '@angular/material/radio';
 import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
@@ -18,7 +18,7 @@ import { HuoltajaDTO } from '../../../../../../../utilities/models/dto/varda-lap
     '../../../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaMaksutietoHuoltajaComponent implements OnInit {
+export class VardaMaksutietoHuoltajaComponent implements OnChanges {
   @Input() huoltaja: HuoltajaDTO;
   @Input() huoltajaForm: FormGroup;
   @Input() indexNr: number;
@@ -40,14 +40,18 @@ export class VardaMaksutietoHuoltajaComponent implements OnInit {
     this.maksutietoFormErrors = this.errorMessageService.initErrorList();
   }
 
-  ngOnInit() {
-    if (this.huoltajaForm) {
-      this.huoltajaForm.controls.henkilo_oid.disable();
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes.huoltajaForm) {
+      this.changeIdentifierControlState(this.huoltajaForm.controls.addWithSsnOrOid.value);
     }
   }
 
   addWithSsnOrOidChanged(radioEvent: MatRadioChange): void {
-    if (radioEvent.value) {
+    this.changeIdentifierControlState(radioEvent.value);
+  }
+
+  changeIdentifierControlState(addWithSsn: boolean) {
+    if (addWithSsn === true) {
       this.huoltajaForm.controls.henkilotunnus.enable();
       this.huoltajaForm.controls.henkilo_oid.disable();
     } else {

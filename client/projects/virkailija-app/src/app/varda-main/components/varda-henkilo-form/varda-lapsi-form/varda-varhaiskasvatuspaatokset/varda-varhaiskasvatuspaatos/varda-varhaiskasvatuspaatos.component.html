@@ -1,34 +1,34 @@
-<div [id]="'varhaiskasvatuspaatos-'+ varhaiskasvatuspaatos?.id">
+<div [id]="'varhaiskasvatuspaatos-'+ currentObject?.id">
   <ng-container *ngIf="formGroup">
-    <div [id]="'varhaiskasvatuspaatos_'+ varhaiskasvatuspaatos?.id"
+    <div [id]="'varhaiskasvatuspaatos_'+ currentObject?.id"
          class="palvelussuhde">
-      <app-robo-id [tunniste]="varhaiskasvatuspaatos?.id"
+      <app-robo-id [tunniste]="currentObject?.id"
                    nimi="varhaiskasvatuspaatos"
-                   [alkamis_pvm]="varhaiskasvatuspaatos?.alkamis_pvm"
-                   [paattymis_pvm]="varhaiskasvatuspaatos?.paattymis_pvm"></app-robo-id>
+                   [alkamis_pvm]="currentObject?.alkamis_pvm"
+                   [paattymis_pvm]="currentObject?.paattymis_pvm"></app-robo-id>
 
       <mat-icon class="d-none d-md-block"
                 alt="">assignment</mat-icon>
 
-      <mat-expansion-panel [id]="'varhaiskasvatuspaatos-panel_' + varhaiskasvatuspaatos?.id"
+      <mat-expansion-panel [id]="'varhaiskasvatuspaatos-panel_' + currentObject?.id"
                            [class.before-icon]="true"
                            (opened)="togglePanel(true)"
                            (closed)="togglePanel(false)"
                            #matPanel>
         <mat-expansion-panel-header>
-          <mat-panel-title *ngIf="varhaiskasvatuspaatos">
+          <mat-panel-title *ngIf="currentObject">
             <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
-            <span *ngIf="!varhaiskasvatuspaatos.paattymis_pvm; else hasPaattymispvm">
-              {{ i18n.varhaiskasvatuspaatos_alkaen_PVM | translate: {pvm: varhaiskasvatuspaatos.alkamis_pvm | vardaDate} }}
+            <span *ngIf="!currentObject.paattymis_pvm; else hasPaattymispvm">
+              {{ i18n.varhaiskasvatuspaatos_alkaen_PVM | translate: {pvm: currentObject.alkamis_pvm | vardaDate} }}
             </span>
             <ng-template #hasPaattymispvm>
-              <span *ngIf="varhaiskasvatuspaatos.paattymis_pvm">
+              <span *ngIf="currentObject.paattymis_pvm">
                 {{ i18n.varhaiskasvatuspaatos | translate }}
-                {{ varhaiskasvatuspaatos.alkamis_pvm | vardaDate }} - {{ varhaiskasvatuspaatos.paattymis_pvm | vardaDate }}
+                {{ currentObject.alkamis_pvm | vardaDate }} - {{ currentObject.paattymis_pvm | vardaDate }}
               </span>
             </ng-template>
           </mat-panel-title>
-          <mat-panel-title *ngIf="!varhaiskasvatuspaatos">
+          <mat-panel-title *ngIf="!currentObject">
               <span>
                 {{ i18n.varhaiskasvatuspaatokset_lisaa_varhaiskasvatuspaatos | translate }}
               </span>
@@ -176,7 +176,7 @@
 
           <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
                                 [saveAccess]="lapsitiedotTallentaja"
-                                [formExists]="!!varhaiskasvatuspaatos"
+                                [formExists]="!!currentObject"
                                 [isEdit]="isEdit"
                                 (togglePanel)="togglePanel($event)"
                                 (deleteForm)="deleteVarhaiskasvatuspaatos()"
@@ -185,7 +185,7 @@
       </mat-expansion-panel>
     </div>
 
-    <ng-container *ngIf="varhaiskasvatuspaatos">
+    <ng-container *ngIf="currentObject">
       <div *ngIf="varhaiskasvatussuhdeList"
            [class.tree-border]="varhaiskasvatussuhdeList.length"
            [class.no-save]="!lapsitiedotTallentaja"
@@ -204,15 +204,15 @@
         <mat-accordion>
           <app-varda-varhaiskasvatussuhde *ngFor="let varhaiskasvatussuhde of varhaiskasvatussuhdeList"
                                           [henkilonToimipaikka]="henkilonToimipaikka"
-                                          [varhaiskasvatuspaatos]="varhaiskasvatuspaatos"
+                                          [varhaiskasvatuspaatos]="currentObject"
                                           [lapsitiedotTallentaja]="lapsitiedotTallentaja"
-                                          [varhaiskasvatussuhde]="varhaiskasvatussuhde"
+                                          [currentObject]="varhaiskasvatussuhde"
                                           (addObject)="addVarhaiskasvatussuhde($event)"
                                           (deleteObject)="deleteVarhaiskasvatussuhte($event)">
           </app-varda-varhaiskasvatussuhde>
           <app-varda-varhaiskasvatussuhde *ngIf="addVarhaiskasvatussuhdeBoolean"
                                           [henkilonToimipaikka]="henkilonToimipaikka"
-                                          [varhaiskasvatuspaatos]="varhaiskasvatuspaatos"
+                                          [varhaiskasvatuspaatos]="currentObject"
                                           [lapsitiedotTallentaja]="lapsitiedotTallentaja"
                                           (addObject)="addVarhaiskasvatussuhde($event)"
                                           (deleteObject)="deleteVarhaiskasvatussuhte($event)"

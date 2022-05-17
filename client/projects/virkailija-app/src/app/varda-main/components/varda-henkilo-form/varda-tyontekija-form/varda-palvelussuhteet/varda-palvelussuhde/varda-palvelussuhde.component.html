@@ -1,30 +1,30 @@
-<div [id]="'palvelussuhde-'+ palvelussuhde?.id">
+<div [id]="'palvelussuhde-'+ currentObject?.id">
   <ng-container *ngIf="formGroup">
-    <div [id]="'palvelussuhde_'+ palvelussuhde?.id"
+    <div [id]="'palvelussuhde_'+ currentObject?.id"
          class="palvelussuhde">
-      <app-robo-id [tunniste]="palvelussuhde?.id"
+      <app-robo-id [tunniste]="currentObject?.id"
                    nimi="palvelussuhde"
-                   [alkamis_pvm]="palvelussuhde?.alkamis_pvm"
-                   [paattymis_pvm]="palvelussuhde?.paattymis_pvm"></app-robo-id>
+                   [alkamis_pvm]="currentObject?.alkamis_pvm"
+                   [paattymis_pvm]="currentObject?.paattymis_pvm"></app-robo-id>
 
       <mat-icon class="d-none d-md-block"
                 alt="">assignment</mat-icon>
 
-      <mat-expansion-panel [id]="'palvelussuhde-panel_'+ palvelussuhde?.id"
+      <mat-expansion-panel [id]="'palvelussuhde-panel_'+ currentObject?.id"
                            [class.before-icon]="true"
                            (opened)="togglePanel(true)"
                            (closed)="togglePanel(false)"
                            #matPanel>
         <mat-expansion-panel-header>
-          <mat-panel-title *ngIf="palvelussuhde; else addPalvelussuhde">
+          <mat-panel-title *ngIf="objectExists(); else addPalvelussuhde">
             <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
-            <span *ngIf="!palvelussuhde.paattymis_pvm; else hasPaattymispvm">
-              {{ i18n.palvelussuhde_alkaen_PVM | translate: {pvm: palvelussuhde.alkamis_pvm | vardaDate} }}
+            <span *ngIf="!currentObject.paattymis_pvm; else hasPaattymispvm">
+              {{ i18n.palvelussuhde_alkaen_PVM | translate: {pvm: currentObject.alkamis_pvm | vardaDate} }}
             </span>
             <ng-template #hasPaattymispvm>
-              <span *ngIf="palvelussuhde.paattymis_pvm">
+              <span *ngIf="currentObject.paattymis_pvm">
                 {{ i18n.palvelussuhde | translate }}
-                {{palvelussuhde.alkamis_pvm | vardaDate }} - {{palvelussuhde.paattymis_pvm | vardaDate }}
+                {{currentObject.alkamis_pvm | vardaDate }} - {{currentObject.paattymis_pvm | vardaDate }}
               </span>
             </ng-template>
           </mat-panel-title>
@@ -36,6 +36,15 @@
               </span>
             </mat-panel-title>
           </ng-template>
+
+          <ng-container *ngIf="toimipaikkaAccess?.tyontekijatiedot.tallentaja && objectExists()">
+            <button type="button"
+                    robot="copy-button"
+                    class="copy-button varda-button varda-button-small secondary"
+                    (click)="useAsCopy($event)">
+              {{ i18n.use_as_copy | translate }}
+            </button>
+          </ng-container>
         </mat-expansion-panel-header>
         <form [formGroup]="formGroup"
               (submit)="savePalvelussuhde(formGroup)">
@@ -125,7 +134,7 @@
 
           <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
                                 [saveAccess]="toimipaikkaAccess?.tyontekijatiedot.tallentaja"
-                                [formExists]="!!palvelussuhde"
+                                [formExists]="objectExists()"
                                 [isEdit]="isEdit"
                                 (togglePanel)="togglePanel($event)"
                                 (deleteForm)="deletePalvelussuhde()"
@@ -134,7 +143,7 @@
       </mat-expansion-panel>
     </div>
 
-    <ng-container *ngIf="palvelussuhde">
+    <ng-container *ngIf="objectExists()">
       <div *ngIf="tyoskentelypaikkaList"
            [class.tree-border]="tyoskentelypaikkaList.length || pidempiPoissaoloList?.length"
            [class.no-save2]="!toimipaikkaAccess.tyontekijatiedot.tallentaja"
@@ -152,15 +161,15 @@
 
         <mat-accordion>
           <app-varda-tyoskentelypaikka *ngFor="let tyoskentelypaikka of tyoskentelypaikkaList"
-                                       [palvelussuhde]="palvelussuhde"
+                                       [palvelussuhde]="currentObject"
                                        [toimipaikkaAccess]="toimipaikkaAccess"
                                        [henkilonToimipaikka]="henkilonToimipaikka"
-                                       [tyoskentelypaikka]="tyoskentelypaikka"
+                                       [currentObject]="tyoskentelypaikka"
                                        (addObject)="addTyoskentelypaikka($event)"
                                        (deleteObject)="deleteTyoskentelypaikka($event)">
           </app-varda-tyoskentelypaikka>
           <app-varda-tyoskentelypaikka *ngIf="addTyoskentelypaikkaBoolean"
-                                       [palvelussuhde]="palvelussuhde"
+                                       [palvelussuhde]="currentObject"
                                        [toimipaikkaAccess]="toimipaikkaAccess"
                                        [henkilonToimipaikka]="henkilonToimipaikka"
                                        (addObject)="addTyoskentelypaikka($event)"
@@ -191,14 +200,14 @@
         <mat-accordion>
           <app-varda-poissaolo *ngFor="let poissaolo of pidempiPoissaoloList"
                                [henkilonToimipaikka]="henkilonToimipaikka"
-                               [palvelussuhde]="palvelussuhde"
+                               [palvelussuhde]="currentObject"
                                [toimipaikkaAccess]="toimipaikkaAccess"
-                               [pidempiPoissaolo]="poissaolo"
+                               [currentObject]="poissaolo"
                                (addObject)="addPidempiPoissaolo($event)"
                                (deleteObject)="deletePidempiPoissaolo($event)"></app-varda-poissaolo>
           <app-varda-poissaolo *ngIf="addPoissaoloBoolean"
                                [henkilonToimipaikka]="henkilonToimipaikka"
-                               [palvelussuhde]="palvelussuhde"
+                               [palvelussuhde]="currentObject"
                                [toimipaikkaAccess]="toimipaikkaAccess"
                                (addObject)="addPidempiPoissaolo($event)"
                                (deleteObject)="deletePidempiPoissaolo($event)"

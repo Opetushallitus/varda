@@ -81,7 +81,6 @@ import { TiedonsiirtoDialogComponent } from './components/varda-raportit/varda-t
 import { PuutteellisetDialogComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-dialog/puutteelliset-dialog.component';
 import { VardaFormErrorIconComponent } from './components/varda-form-error-icon/varda-form-error-icon.component';
 import { VardaFormErrorListComponent } from './components/varda-form-error-list/varda-form-error-list.component';
-import { VardaFormAccordionAbstractComponent } from './components/varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 import { TiedonsiirtoFilterHeaderComponent } from './components/varda-raportit/varda-tiedonsiirrot/tiedonsiirto-filter-header/tiedonsiirto-filter-header.component';
 import { TiedonsiirtoFilterComponent } from './components/varda-raportit/varda-tiedonsiirrot/tiedonsiirto-filter/tiedonsiirto-filter.component';
 import { PuutteellisetListComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-list/puutteelliset-list.component';
@@ -180,7 +179,6 @@ import { VardaSetPaattymisPvmComponent } from './components/varda-set-paattymis-
     PuutteellisetDialogComponent,
     VardaFormErrorIconComponent,
     VardaFormErrorListComponent,
-    VardaFormAccordionAbstractComponent,
     TiedonsiirtoFilterHeaderComponent,
     TiedonsiirtoFilterComponent,
     PuutteellisetListComponent,

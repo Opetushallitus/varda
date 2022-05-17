@@ -292,7 +292,8 @@
                                 [label]="i18n.toimipaikka_asiointikieli_koodi | translate"
                                 [errorText]="i18n.toimipaikka_error_asiointikieli_koodi | translate"
                                 [instructionText]="i18n.toimipaikka_instruction_asiointikieli_koodi | translate">
-            <mat-select placeholder="-- {{ i18n.choose | translate }} --"
+            <mat-select #fieldItem
+                        placeholder="-- {{ i18n.choose | translate }} --"
                         multiple
                         class="oph-input oph-select"
                         formControlName="asiointikieli_koodi">

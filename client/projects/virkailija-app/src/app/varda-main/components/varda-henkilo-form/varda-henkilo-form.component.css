@@ -167,6 +167,11 @@ mat-panel-description>.varda-text-button .mat-icon:first-child {
   height: calc(100% + 5rem);
 }
 
+.copy-button {
+  margin-right: 1em;
+  width: auto;
+}
+
 @media (max-width: 767px) {
   .action-button-wrapper>* {
     width: 100%;

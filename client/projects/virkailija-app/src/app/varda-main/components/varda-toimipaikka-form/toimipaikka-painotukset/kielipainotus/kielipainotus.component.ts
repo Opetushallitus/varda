@@ -34,17 +34,19 @@ export class KielipainotusComponent extends PainotusAbstractComponent<Kielipaino
 
   initForm() {
     this.formGroup = new FormGroup({
-      lahdejarjestelma: new FormControl(this.painotus?.lahdejarjestelma || Lahdejarjestelma.kayttoliittyma),
-      id: new FormControl(this.painotus?.id),
-      kielipainotus_koodi: new FormControl(this.painotus?.kielipainotus_koodi, Validators.required),
-      alkamis_pvm: new FormControl(this.painotus ? moment(this.painotus?.alkamis_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
+      lahdejarjestelma: new FormControl(this.currentObject?.lahdejarjestelma || Lahdejarjestelma.kayttoliittyma),
+      id: new FormControl(this.currentObject?.id),
+      kielipainotus_koodi: new FormControl(this.currentObject?.kielipainotus_koodi, Validators.required),
+      alkamis_pvm: new FormControl(this.currentObject ? moment(this.currentObject?.alkamis_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
       paattymis_pvm: new FormControl(
-        this.painotus?.paattymis_pvm ? moment(this.painotus?.paattymis_pvm, VardaDateService.vardaApiDateFormat) : null,
+        this.currentObject?.paattymis_pvm ? moment(this.currentObject?.paattymis_pvm, VardaDateService.vardaApiDateFormat) : null,
         this.toimipaikka?.paattymis_pvm ? Validators.required : null
       ),
     });
 
-    this.checkFormErrors(this.vakajarjestajaApiService, 'kielipainotus', this.painotus?.id);
+    this.initDateFilters();
+
+    this.checkFormErrors(this.vakajarjestajaApiService, 'kielipainotus', this.currentObject?.id);
   }
 
   savePainotus(form: FormGroup, wasPending?: boolean) {
@@ -62,26 +64,26 @@ export class KielipainotusComponent extends PainotusAbstractComponent<Kielipaino
 
       if (!this.toimipaikka?.id) {
         this.savePending = true;
-        this.painotus = { ...painotusJson };
+        this.currentObject = { ...painotusJson };
         return this.disableForm();
       }
 
-      const observable = this.painotus && !wasPending ? this.vakajarjestajaApiService.updateKielipainotus(painotusJson) :
+      const observable = this.currentObject && !wasPending ? this.vakajarjestajaApiService.updateKielipainotus(painotusJson) :
         this.vakajarjestajaApiService.createKielipainotus(painotusJson);
       this.subscriptions.push(
         observable.pipe(
           finalize(() => this.disableSubmit())
         ).subscribe({
           next: result => {
-            if (!this.painotus || wasPending) {
+            if (!this.currentObject || wasPending) {
               // Close panel if object was created
               this.togglePanel(false);
             }
 
             this.snackBarService.success(this.i18n.painotukset_kielipainotus_save_success);
             this.vakajarjestajaApiService.sendToimipaikkaListUpdate();
-            this.painotus = result;
-            this.addObject.emit(this.painotus);
+            this.currentObject = result;
+            this.addObject.emit(this.currentObject);
           },
           error: err => {
             this.errorService.handleError(err, this.snackBarService);
@@ -98,12 +100,12 @@ export class KielipainotusComponent extends PainotusAbstractComponent<Kielipaino
 
   deletePainotus() {
     this.subscriptions.push(
-      this.vakajarjestajaApiService.deleteKielipainotus(this.painotus.id).subscribe({
+      this.vakajarjestajaApiService.deleteKielipainotus(this.currentObject.id).subscribe({
         next: () => {
           this.togglePanel(false);
           this.snackBarService.warning(this.i18n.painotukset_kielipainotus_delete_success);
           this.vakajarjestajaApiService.sendToimipaikkaListUpdate();
-          this.deleteObject.emit(this.painotus.id);
+          this.deleteObject.emit(this.currentObject.id);
         },
         error: err => this.errorService.handleError(err, this.snackBarService)
       })
