@@ -669,7 +669,8 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
             [ErrorMessages.VS015, '''tp.paattymis_pvm < vasu.paattymis_pvm OR
              (tp.paattymis_pvm < %s AND vasu.paattymis_pvm IS NULL)''', [today], 'vasu.id',
              Varhaiskasvatussuhde.get_name()],
-            [ErrorMessages.HE017, 'he.vtj_yksiloity = FALSE', [], 'la.id', Lapsi.get_name()]
+            [ErrorMessages.HE017, "he.henkilotunnus != '' AND he.vtj_yksiloity = FALSE", [], 'la.id', Lapsi.get_name()],
+            [ErrorMessages.HE018, "he.henkilotunnus = ''", [], 'la.id', Lapsi.get_name()]
         ]
 
         # Do not get Maksutieto related errors for Lapsi objects for which vakajarjestaja is paos_organisaatio
@@ -759,7 +760,8 @@ class ErrorReportTyontekijatViewSet(AbstractErrorReportViewSet):
             [ErrorMessages.TA016, '''tp.paattymis_pvm < typa.paattymis_pvm OR
              (tp.paattymis_pvm < %s AND typa.paattymis_pvm IS NULL)''', [today], 'typa.id',
              Tyoskentelypaikka.get_name()],
-            [ErrorMessages.HE017, 'he.vtj_yksiloity = FALSE', [], 'ty.id', Tyontekija.get_name()],
+            [ErrorMessages.HE017, "he.henkilotunnus != '' AND he.vtj_yksiloity = FALSE", [], 'ty.id', Tyontekija.get_name()],
+            [ErrorMessages.HE018, "he.henkilotunnus = ''", [], 'ty.id', Tyontekija.get_name()],
             [ErrorMessages.PS009, '''pasu.alkamis_pvm <= %s AND
              (pasu.paattymis_pvm IS NULL OR pasu.paattymis_pvm >= %s) AND typa.id IS NOT NULL AND
              NOT EXISTS(SELECT id FROM varda_tyoskentelypaikka WHERE palvelussuhde_id = pasu.id AND

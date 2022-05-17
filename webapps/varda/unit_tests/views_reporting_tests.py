@@ -1021,8 +1021,8 @@ class VardaViewsReportingTests(TestCase):
         url = f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-lapset/'
         client = SetUpTestClient('tester10').client()
 
-        resp_1 = client.get(url)
-        self._verify_error_report_result(resp_1, ['VP013', 'VP002', 'HE017'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['VP013', 'VP002', 'HE017'])
 
         # Make Henkilo under 8 years old and yksiloity so that errors are not raised
         Henkilo.objects.filter(lapsi=lapsi).update(syntyma_pvm=datetime.date(year=2017, month=1, day=1),
@@ -1030,37 +1030,46 @@ class VardaViewsReportingTests(TestCase):
         # Set alkamis_pvm for Varhaiskasvatussuhde so that error is not raised
         Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=lapsi).update(alkamis_pvm=today)
 
+        # Henkilo is missing henkilotunnus
+        Henkilo.objects.filter(lapsi=lapsi).update(henkilotunnus='')
+
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['HE018'])
+
+        # Set henkilotunnus for henkilo so that error is not raised
+        Henkilo.objects.filter(lapsi=lapsi).update(henkilotunnus='henkilotunnus')
+
         # Set paattymis_pvm for Varhaiskasvatuspaatos
         Varhaiskasvatuspaatos.objects.filter(lapsi=lapsi).update(paattymis_pvm=today)
-        resp_2 = client.get(url)
-        self._verify_error_report_result(resp_2, ['VS012'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['VS012'])
 
         # Set paattymis_pvm for Varhaiskasvatussuhde to be after Varhaiskasvatuspaatos
         tomorrow = today + datetime.timedelta(days=1)
         Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=lapsi).update(paattymis_pvm=tomorrow)
-        resp_3 = client.get(url)
-        self._verify_error_report_result(resp_3, ['VP003'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['VP003'])
 
         Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=lapsi).update(paattymis_pvm=today)
 
         # Set paattymis_pvm for Varhaiskasvatussuhde related Toimipaikka
         Toimipaikka.objects.filter(organisaatio_oid='1.2.246.562.10.2565458382544').update(paattymis_pvm=yesterday)
-        resp_4 = client.get(url)
-        self._verify_error_report_result(resp_4, ['VS015'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['VS015'])
         Varhaiskasvatuspaatos.objects.filter(lapsi=lapsi).update(paattymis_pvm=None)
         Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=lapsi).update(paattymis_pvm=None)
-        resp_5 = client.get(url)
-        self._verify_error_report_result(resp_5, ['VS015'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['VS015'])
 
         # Remove Varhaiskasvatussuhde
         Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=lapsi).delete()
-        resp_6 = client.get(url)
-        self._verify_error_report_result(resp_6, ['VS014'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['VS014'])
 
         # Remove Varhaiskasvatuspaatos
         Varhaiskasvatuspaatos.objects.filter(lapsi=lapsi).delete()
-        resp_7 = client.get(url)
-        self._verify_error_report_result(resp_7, ['VP012'])
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['VP012'])
 
     def test_api_error_report_lapset_huoltajatiedot_vakatiedot(self):
         vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
@@ -1104,6 +1113,15 @@ class VardaViewsReportingTests(TestCase):
         Henkilo.objects.filter(tyontekijat=tyontekija).update(vtj_yksiloity=True)
         # Set alkamis_pvm for Tyoskentelypaikka so that error is not raised
         Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=tyontekija).update(alkamis_pvm=today)
+
+        # Henkilo is missing henkilotunnus
+        Henkilo.objects.filter(tyontekijat=tyontekija).update(henkilotunnus='')
+
+        resp = client.get(url)
+        self._verify_error_report_result(resp, ['HE018'])
+
+        # Set henkilotunnus for Henkilo so that error is not raised
+        Henkilo.objects.filter(tyontekijat=tyontekija).update(henkilotunnus='henkilotunnus')
 
         # Set paattymis_pvm for Palvelussuhde
         Palvelussuhde.objects.filter(tyontekija=tyontekija).update(paattymis_pvm=today)

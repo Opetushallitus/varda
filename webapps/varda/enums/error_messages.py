@@ -126,6 +126,7 @@ class ErrorMessages(enum.Enum):
     HE015 = get_error_dict('HE015', 'Henkilo with this henkilo_oid already exists.')
     HE016 = get_error_dict('HE016', 'Combination of henkilo_oid and henkilotunnus fields should be unique.')
     HE017 = get_error_dict('HE017', 'Henkilo was not found from VTJ. Create Henkilo again using correct data.')
+    HE018 = get_error_dict('HE018', 'Henkilo is missing national identification number.')
 
     # Lapsi errors, prefix: LA
     LA001 = get_error_dict('LA001', 'Error while creating Lapsi.')
