@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.6.2 (19.05.2022)
+- OPHVARDA-2440: Maksutiedon ja palvelussuhteen kopiointi
+
 1.6.1 (28.04.2022)
 - OPHVARDA-2412: Tiedonsiirtoraportin päivämäärärajaus ja tietoturvapäivityksiä
 - OPHVARDA-2385: Päättyneiden toimijoiden visualisointi
