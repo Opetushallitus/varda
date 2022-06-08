@@ -16,8 +16,10 @@
                        [saveAccess]="saveAccess"
                        (addObject)="addKielipainotus($event)"
                        (deleteObject)="deleteKielipainotus($event)"></app-kielipainotus>
-    <app-varda-show-more-less *ngIf="kielipainotusList" [showMoreKey]="i18n.painotukset_kielipainotukset_show_more"
-                              [(numberOfDisplayed)]="numberOfDisplayed.kielipainotus" [numberOfItems]="kielipainotusList.length">
+    <app-varda-show-more-less #showMoreLessKielipainotus *ngIf="kielipainotusList"
+                              [showMoreKey]="i18n.painotukset_kielipainotukset_show_more"
+                              [(numberOfDisplayed)]="numberOfDisplayed.kielipainotus"
+                              [numberOfItems]="kielipainotusList.length">
     </app-varda-show-more-less>
     <app-kielipainotus *ngIf="addKielipainotusBoolean"
                        [kielikoodisto]="kielikoodisto"
@@ -55,8 +57,10 @@
                           [saveAccess]="isEdit && saveAccess"
                           (addObject)="addToiminnallinenPainotus($event)"
                           (deleteObject)="deleteToiminnallinenPainotus($event)"></app-toimintapainotus>
-    <app-varda-show-more-less *ngIf="toiminnallinenPainotusList" [showMoreKey]="i18n.painotukset_toimintapainotukset_show_more"
-                              [(numberOfDisplayed)]="numberOfDisplayed.toiminnallinenpainotus" [numberOfItems]="toiminnallinenPainotusList.length">
+    <app-varda-show-more-less #showMoreLessToiminnallinenPainotus *ngIf="toiminnallinenPainotusList"
+                              [showMoreKey]="i18n.painotukset_toimintapainotukset_show_more"
+                              [(numberOfDisplayed)]="numberOfDisplayed.toiminnallinenpainotus"
+                              [numberOfItems]="toiminnallinenPainotusList.length">
     </app-varda-show-more-less>
     <app-toimintapainotus *ngIf="addToimintapainotusBoolean"
                           [minStartDate]="minStartDate"

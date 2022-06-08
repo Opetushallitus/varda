@@ -1,15 +1,16 @@
-import { Component, Input, OnDestroy, OnInit, QueryList, ViewChildren } from '@angular/core';
+import { Component, Input, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
 import { VardaTyontekijaTaydennyskoulutusComponent } from './varda-tyontekija-taydennyskoulutus/varda-tyontekija-taydennyskoulutus.component';
 import { CodeDTO, KoodistoEnum, VardaKoodistoService } from 'varda-shared';
-import { Subscription } from 'rxjs';
 import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaFormListAbstractComponent } from '../../varda-form-list-abstract.component';
 import { TyontekijaTaydennyskoulutus } from '../../../../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { sortByName, sortBySuoritusPvm } from '../../../../../utilities/helper-functions';
 import { switchMap } from 'rxjs/operators';
+import { VardaUtilityService } from '../../../../../core/services/varda-utility.service';
+import { ModelNameEnum } from '../../../../../utilities/models/enums/model-name.enum';
 
 @Component({
   selector: 'app-varda-tyontekija-taydennyskoulutukset',
@@ -20,25 +21,25 @@ import { switchMap } from 'rxjs/operators';
     '../../varda-henkilo-form.component.css'
   ]
 })
-export class VardaTyontekijaTaydennyskoulutuksetComponent extends VardaFormListAbstractComponent<TyontekijaTaydennyskoulutus> implements OnInit, OnDestroy {
+export class VardaTyontekijaTaydennyskoulutuksetComponent extends VardaFormListAbstractComponent<TyontekijaTaydennyskoulutus> implements OnInit {
   @ViewChildren(VardaTyontekijaTaydennyskoulutusComponent) objectElements: QueryList<VardaTyontekijaTaydennyskoulutusComponent>;
   @Input() toimipaikkaAccess: UserAccess;
 
   tehtavanimikeCodes: Array<CodeDTO> = [];
   tehtavanimikeOptions: Array<CodeDTO> = [];
   tehtavanimikeList: Array<string> = [];
+  modelName = ModelNameEnum.TAYDENNYSKOULUTUS;
 
   sortByFunction = sortBySuoritusPvm;
-
-  private subscriptions: Array<Subscription> = [];
 
   constructor(
     private koodistoService: VardaKoodistoService,
     private henkilostoService: VardaHenkilostoApiService,
     private vakajarjestajaService: VardaVakajarjestajaService,
     private snackBarService: VardaSnackBarService,
+    utilityService: VardaUtilityService
   ) {
-    super();
+    super(utilityService);
   }
 
   ngOnInit() {
@@ -82,9 +83,5 @@ export class VardaTyontekijaTaydennyskoulutuksetComponent extends VardaFormListA
   updateActiveObject() {
     const activeTyontekija = this.henkilostoService.activeTyontekija.getValue();
     this.henkilostoService.activeTyontekija.next({...activeTyontekija, taydennyskoulutukset: this.objectList});
-  }
-
-  ngOnDestroy() {
-    this.subscriptions.forEach(subscription => subscription.unsubscribe());
   }
 }

@@ -2,9 +2,17 @@ import { Injectable } from '@angular/core';
 import { VardaFieldSet } from '../../utilities/models';
 import { environment } from '../../../environments/environment';
 import { sha256 } from 'js-sha256';
+import { BehaviorSubject } from 'rxjs';
+import { ModelNameEnum } from '../../utilities/models/enums/model-name.enum';
+
+interface FocusObject {
+  type: ModelNameEnum;
+  id: number;
+}
 
 @Injectable()
 export class VardaUtilityService {
+  private focusObjectSubject = new BehaviorSubject<FocusObject>(null);
 
   constructor() { }
 
@@ -74,5 +82,13 @@ export class VardaUtilityService {
       const compareB = b.paattymis_pvm ? `${b.alkamis_pvm}-${b.paattymis_pvm}` : `X${b.alkamis_pvm}`;
       return compareB.localeCompare(compareA);
     });
+  }
+
+  getFocusObjectSubject() {
+    return this.focusObjectSubject;
+  }
+
+  setFocusObjectSubject(focusObject: FocusObject) {
+    this.focusObjectSubject.next(focusObject);
   }
 }

@@ -1,26 +1,33 @@
-import { Component, Input, Output, EventEmitter, ElementRef, OnInit } from '@angular/core';
-import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { Component, ElementRef, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
 import * as moment from 'moment';
+import { Moment } from 'moment';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { finalize, Observable } from 'rxjs';
-import { VardaErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
+import {
+  ErrorTree,
+  VardaErrorMessageService
+} from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
-import { VardaKoodistoService, VardaDateService } from 'varda-shared';
+import { VardaDateService, VardaKoodistoService } from 'varda-shared';
 import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
-import { filter, distinctUntilChanged } from 'rxjs/operators';
-import { Moment } from 'moment';
+import { distinctUntilChanged, filter } from 'rxjs/operators';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 import {
-  TyontekijaPalvelussuhde, TyontekijaPidempiPoissaolo,
-  TyontekijaTutkinto, TyontekijaTyoskentelypaikka
+  TyontekijaPalvelussuhde,
+  TyontekijaPidempiPoissaolo,
+  TyontekijaTutkinto,
+  TyontekijaTyoskentelypaikka
 } from '../../../../../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { sortByAlkamisPvm } from '../../../../../../utilities/helper-functions';
 import { VardaPalvelussuhdeDTO } from '../../../../../../utilities/models/dto/varda-tyontekija-dto.model';
+import { VardaUtilityService } from '../../../../../../core/services/varda-utility.service';
+import { ModelNameEnum } from '../../../../../../utilities/models/enums/model-name.enum';
 
 @Component({
   selector: 'app-varda-palvelussuhde',
@@ -50,6 +57,7 @@ export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractCompo
   tyontekijaId: number;
   tyoskentelypaikkaList: Array<TyontekijaTyoskentelypaikka> = [];
   pidempiPoissaoloList: Array<TyontekijaPidempiPoissaolo> = [];
+  modelName = ModelNameEnum.PALVELUSSUHDE;
 
   private henkilostoErrorService: VardaErrorMessageService;
 
@@ -58,10 +66,12 @@ export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractCompo
     private henkilostoService: VardaHenkilostoApiService,
     private koodistoService: VardaKoodistoService,
     private snackBarService: VardaSnackBarService,
+    utilityService: VardaUtilityService,
     translateService: TranslateService,
     modalService: VardaModalService
   ) {
-    super(modalService);
+    super(modalService, utilityService);
+    this.apiService = this.henkilostoService;
     this.element = this.el;
     this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.palvelussuhdeFormErrors = this.henkilostoErrorService.initErrorList();
@@ -74,12 +84,8 @@ export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractCompo
 
   ngOnInit() {
     super.ngOnInit();
-    this.checkFormErrors(this.henkilostoService, 'palvelussuhde', this.currentObject?.id);
 
     this.subscriptions.push(
-      this.formGroup.statusChanges
-        .pipe(filter(() => !this.formGroup.pristine), distinctUntilChanged())
-        .subscribe(() => this.modalService.setFormValuesChanged(true)),
       this.henkilostoService.tutkintoChanged.subscribe(() => {
         this.tutkintoList = this.henkilostoService.activeTyontekija.getValue().tutkinnot;
         if (this.tutkintoList.length === 1) {
@@ -169,11 +175,13 @@ export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractCompo
     this.tyoskentelypaikkaList = this.tyoskentelypaikkaList.sort(sortByAlkamisPvm);
     this.updateActiveTyontekija();
     this.henkilostoService.tyoskentelypaikkaChanged.next(true);
+    this.utilityService.setFocusObjectSubject({type: ModelNameEnum.TYOSKENTELYPAIKKA, id: tyoskentelypaikka.id});
   }
 
   deleteTyoskentelypaikka(objectId: number) {
     this.tyoskentelypaikkaList = this.tyoskentelypaikkaList.filter(obj => obj.id !== objectId);
     this.updateActiveTyontekija();
+    this.utilityService.setFocusObjectSubject(null);
   }
 
   addPidempiPoissaolo(pidempiPoissaolo: TyontekijaPidempiPoissaolo) {
@@ -181,11 +189,13 @@ export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractCompo
     this.pidempiPoissaoloList.push(pidempiPoissaolo);
     this.pidempiPoissaoloList = this.pidempiPoissaoloList.sort(sortByAlkamisPvm);
     this.updateActiveTyontekija();
+    this.utilityService.setFocusObjectSubject({type: ModelNameEnum.PIDEMPI_POISSAOLO, id: pidempiPoissaolo.id});
   }
 
   deletePidempiPoissaolo(objectId: number) {
     this.pidempiPoissaoloList = this.pidempiPoissaoloList.filter(obj => obj.id !== objectId);
     this.updateActiveTyontekija();
+    this.utilityService.setFocusObjectSubject(null);
   }
 
   updateActiveTyontekija() {

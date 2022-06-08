@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, ViewChildren, QueryList } from '@angular/core';
+import { Component, Input, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VardaPalvelussuhdeComponent } from './varda-palvelussuhde/varda-palvelussuhde.component';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
@@ -6,6 +6,8 @@ import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/util
 import { VardaFormListAbstractComponent } from '../../varda-form-list-abstract.component';
 import { TyontekijaPalvelussuhde } from '../../../../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { sortByAlkamisPvm } from '../../../../../utilities/helper-functions';
+import { VardaUtilityService } from '../../../../../core/services/varda-utility.service';
+import { ModelNameEnum } from '../../../../../utilities/models/enums/model-name.enum';
 
 @Component({
   selector: 'app-varda-palvelussuhteet',
@@ -21,11 +23,14 @@ export class VardaPalvelussuhteetComponent extends VardaFormListAbstractComponen
   @Input() toimipaikkaAccess: UserAccess;
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
 
-  constructor(private henkilostoService: VardaHenkilostoApiService) {
-    super();
+  modelName = ModelNameEnum.PALVELUSSUHDE;
+
+  constructor(private henkilostoService: VardaHenkilostoApiService, utilityService: VardaUtilityService) {
+    super(utilityService);
   }
 
   ngOnInit() {
+  	super.ngOnInit();
     this.objectList = this.henkilostoService.activeTyontekija.getValue().palvelussuhteet.sort(sortByAlkamisPvm);
   }
 

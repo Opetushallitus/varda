@@ -1,11 +1,16 @@
-import { Component, QueryList } from '@angular/core';
+import { Component, OnInit, OnDestroy, QueryList, ViewChild } from '@angular/core';
 import { VirkailijaTranslations } from '../../../../assets/i18n/virkailija-translations.enum';
 import { sortByAlkamisPvm } from '../../../utilities/helper-functions';
+import { Subscription } from 'rxjs';
+import { VardaShowMoreLessComponent } from '../../../shared/components/varda-show-more-less/varda-show-more-less.component';
+import { VardaUtilityService } from '../../../core/services/varda-utility.service';
+import { ModelNameEnum } from '../../../utilities/models/enums/model-name.enum';
 
 @Component({
   template: ''
 })
-export abstract class VardaFormListAbstractComponent<T extends {id?: number}> {
+export abstract class VardaFormListAbstractComponent<T extends {id?: number}> implements OnInit, OnDestroy {
+  @ViewChild(VardaShowMoreLessComponent) showMoreLessComponent: VardaShowMoreLessComponent;
   abstract objectElements: QueryList<any>;
 
   objectList: Array<T>;
@@ -14,10 +19,23 @@ export abstract class VardaFormListAbstractComponent<T extends {id?: number}> {
   addObjectBoolean: boolean;
   numberOfDisplayed = 0;
   baseObject: any = null;
+  modelName: ModelNameEnum;
 
   sortByFunction = sortByAlkamisPvm;
 
-  protected constructor() { }
+  protected subscriptions: Array<Subscription> = [];
+
+  protected constructor(protected utilityService: VardaUtilityService) { }
+
+  ngOnInit() {
+    this.subscriptions.push(
+      this.utilityService.getFocusObjectSubject().subscribe(focusObject => {
+        if (focusObject?.type === this.modelName) {
+          this.showUntil(this.objectList.findIndex(object => object.id === focusObject.id));
+        }
+      })
+    );
+  }
 
   togglePanel(open: boolean) {
     this.expandPanel = open;
@@ -52,11 +70,24 @@ export abstract class VardaFormListAbstractComponent<T extends {id?: number}> {
     this.objectList.push(object);
     this.objectList = this.objectList.sort(this.sortByFunction);
     this.updateActiveObject();
+    this.utilityService.setFocusObjectSubject({type: this.modelName, id: object.id});
   }
 
   deleteObject(objectId: number) {
     this.objectList = this.objectList.filter(obj => obj.id !== objectId);
     this.updateActiveObject();
+    this.utilityService.setFocusObjectSubject(null);
+  }
+
+  showUntil(index: number) {
+    if (index !== -1 && this.numberOfDisplayed < index + 1) {
+      this.showMoreLessComponent?.showMore();
+      setTimeout(() => this.showUntil(index), 100);
+    }
+  }
+
+  ngOnDestroy() {
+    this.subscriptions.forEach(subscription => subscription.unsubscribe());
   }
 
   abstract updateActiveObject();

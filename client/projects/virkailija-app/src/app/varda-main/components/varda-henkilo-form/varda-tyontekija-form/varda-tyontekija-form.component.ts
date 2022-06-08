@@ -14,6 +14,7 @@ import { Subscription, Observable, finalize } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaKoosteApiService } from '../../../../core/services/varda-kooste-api.service';
 import { TyontekijaKooste } from '../../../../utilities/models/dto/varda-henkilohaku-dto.model';
+import { VardaUtilityService } from '../../../../core/services/varda-utility.service';
 
 
 @Component({
@@ -39,7 +40,7 @@ export class VardaTyontekijaFormComponent implements OnInit, OnDestroy {
   selectedVakajarjestaja: VardaVakajarjestajaUi;
   isLoading = false;
 
-  private henkilostoErrorService: VardaErrorMessageService;
+  private errorService: VardaErrorMessageService;
   private deleteTyontekijaErrorService: VardaErrorMessageService;
   private subscriptions: Array<Subscription> = [];
 
@@ -50,13 +51,14 @@ export class VardaTyontekijaFormComponent implements OnInit, OnDestroy {
     private koosteService: VardaKoosteApiService,
     private modalService: VardaModalService,
     private snackBarService: VardaSnackBarService,
-    private translateService: TranslateService
+    private translateService: TranslateService,
+    private utilityService: VardaUtilityService
   ) {
     this.selectedVakajarjestaja = this.vardaVakajarjestajaService.getSelectedVakajarjestaja();
-    this.henkilostoErrorService = new VardaErrorMessageService(this.translateService);
+    this.errorService = new VardaErrorMessageService(this.translateService);
     this.deleteTyontekijaErrorService = new VardaErrorMessageService(this.translateService);
 
-    this.tyontekijaFormErrors = this.henkilostoErrorService.initErrorList();
+    this.tyontekijaFormErrors = this.errorService.initErrorList();
     this.deleteTyontekijaErrors = this.deleteTyontekijaErrorService.initErrorList();
 
     this.subscriptions.push(this.modalService.getFormValuesChanged().subscribe(formValuesChanged => this.valuesChanged.emit(formValuesChanged)));
@@ -86,7 +88,7 @@ export class VardaTyontekijaFormComponent implements OnInit, OnDestroy {
             this.henkilostoService.activeTyontekija.next(result);
             this.tyontekijaKooste = result;
           },
-          error: err => this.henkilostoErrorService.handleError(err, this.snackBarService)
+          error: err => this.errorService.handleError(err, this.snackBarService)
         })
       );
     }
@@ -112,5 +114,6 @@ export class VardaTyontekijaFormComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.subscriptions.forEach(subscription => subscription.unsubscribe());
     this.henkilostoService.activeTyontekija.next(null);
+    this.utilityService.setFocusObjectSubject(null);
   }
 }

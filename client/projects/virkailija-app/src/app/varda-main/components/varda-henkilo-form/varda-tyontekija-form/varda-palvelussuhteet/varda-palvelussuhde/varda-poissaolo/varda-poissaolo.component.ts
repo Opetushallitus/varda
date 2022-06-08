@@ -1,16 +1,18 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
-import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
 import * as moment from 'moment';
+import { Moment } from 'moment';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
 import { finalize, Observable } from 'rxjs';
-import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
+import {
+  ErrorTree,
+  VardaErrorMessageService
+} from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { VardaDateService } from 'varda-shared';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
-import { filter, distinctUntilChanged } from 'rxjs/operators';
-import { Moment } from 'moment';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
@@ -19,6 +21,8 @@ import {
   TyontekijaPidempiPoissaolo
 } from '../../../../../../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { VardaPidempiPoissaoloDTO } from '../../../../../../../utilities/models/dto/varda-tyontekija-dto.model';
+import { VardaUtilityService } from '../../../../../../../core/services/varda-utility.service';
+import { ModelNameEnum } from '../../../../../../../utilities/models/enums/model-name.enum';
 
 @Component({
   selector: 'app-varda-poissaolo',
@@ -39,30 +43,25 @@ export class VardaPoissaoloComponent extends VardaFormAccordionAbstractComponent
 
   endDateRange = { min: VardaDateService.henkilostoReleaseDate, max: null };
   poissaoloFormErrors: Observable<Array<ErrorTree>>;
+  modelName = ModelNameEnum.PIDEMPI_POISSAOLO;
 
   private henkilostoErrorService: VardaErrorMessageService;
 
   constructor(
     private henkilostoService: VardaHenkilostoApiService,
     private snackBarService: VardaSnackBarService,
+    utilityService: VardaUtilityService,
     translateService: TranslateService,
     modalService: VardaModalService
   ) {
-    super(modalService);
+    super(modalService, utilityService);
+    this.apiService = this.henkilostoService;
     this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.poissaoloFormErrors = this.henkilostoErrorService.initErrorList();
   }
 
   ngOnInit() {
     super.ngOnInit();
-
-    this.subscriptions.push(
-      this.formGroup.statusChanges
-        .pipe(filter(() => !this.formGroup.pristine), distinctUntilChanged())
-        .subscribe(() => this.modalService.setFormValuesChanged(true))
-    );
-
-    this.checkFormErrors(this.henkilostoService, 'pidempipoissaolo', this.currentObject?.id);
   }
 
   initForm() {

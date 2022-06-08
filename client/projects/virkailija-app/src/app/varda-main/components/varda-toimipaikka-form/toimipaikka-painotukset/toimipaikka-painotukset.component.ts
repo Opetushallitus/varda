@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaVakajarjestajaApiService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja-api.service';
@@ -10,6 +10,10 @@ import {
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { CodeDTO } from 'varda-shared';
 import { sortByAlkamisPvm } from '../../../../utilities/helper-functions';
+import { VardaUtilityService } from '../../../../core/services/varda-utility.service';
+import { Subscription } from 'rxjs';
+import { VardaShowMoreLessComponent } from '../../../../shared/components/varda-show-more-less/varda-show-more-less.component';
+import { ModelNameEnum } from '../../../../utilities/models/enums/model-name.enum';
 
 interface NumberOfDisplayed {
   kielipainotus: number;
@@ -21,7 +25,9 @@ interface NumberOfDisplayed {
   templateUrl: './toimipaikka-painotukset.component.html',
   styleUrls: ['./toimipaikka-painotukset.component.css', '../varda-toimipaikka-form.component.css']
 })
-export class ToimipaikkaPainotuksetComponent implements OnInit {
+export class ToimipaikkaPainotuksetComponent implements OnInit, OnDestroy {
+  @ViewChild('showMoreLessKielipainotus') showMoreLessComponentKielipainotus: VardaShowMoreLessComponent;
+  @ViewChild('showMoreLessToiminnallinenPainotus') showMoreLessComponentToiminnallinenPainotus: VardaShowMoreLessComponent;
   @Input() toimipaikka: ToimipaikkaKooste;
   @Input() kielikoodisto: Array<CodeDTO>;
   @Input() saveAccess: boolean;
@@ -37,9 +43,12 @@ export class ToimipaikkaPainotuksetComponent implements OnInit {
   addToimintapainotusBoolean: boolean;
   numberOfDisplayed: NumberOfDisplayed = {kielipainotus: 0, toiminnallinenpainotus: 0};
 
+  private subscriptions: Array<Subscription> = [];
+
   constructor(
     private snackBarService: VardaSnackBarService,
-    private vakajarjestajaApiService: VardaVakajarjestajaApiService
+    private vakajarjestajaApiService: VardaVakajarjestajaApiService,
+    private utilityService: VardaUtilityService
   ) { }
 
   ngOnInit() {
@@ -48,6 +57,17 @@ export class ToimipaikkaPainotuksetComponent implements OnInit {
       this.kielipainotusList = activeToimipaikka.kielipainotukset.sort(sortByAlkamisPvm);
       this.toiminnallinenPainotusList = activeToimipaikka.toiminnalliset_painotukset.sort(sortByAlkamisPvm);
     }
+
+    this.subscriptions.push(
+      this.utilityService.getFocusObjectSubject().subscribe(focusObject => {
+        if (focusObject?.type === ModelNameEnum.TOIMINNALLINEN_PAINOTUS) {
+          this.showUntil(ModelNameEnum.TOIMINNALLINEN_PAINOTUS,
+            this.toiminnallinenPainotusList.findIndex(object => object.id === focusObject.id));
+        } else if (focusObject?.type === ModelNameEnum.KIELIPAINOTUS) {
+          this.showUntil(ModelNameEnum.KIELIPAINOTUS, this.kielipainotusList.findIndex(object => object.id === focusObject.id));
+        }
+      })
+    );
   }
 
   addKielipainotus(kielipainotus: KielipainotusDTO) {
@@ -55,11 +75,13 @@ export class ToimipaikkaPainotuksetComponent implements OnInit {
     this.kielipainotusList.push(kielipainotus);
     this.kielipainotusList = this.kielipainotusList.sort(sortByAlkamisPvm);
     this.updateActiveToimipaikka();
+    this.utilityService.setFocusObjectSubject({type: ModelNameEnum.KIELIPAINOTUS, id: kielipainotus.id});
   }
 
   deleteKielipainotus(objectId: number) {
     this.kielipainotusList = this.kielipainotusList.filter(obj => obj.id !== objectId);
     this.updateActiveToimipaikka();
+    this.utilityService.setFocusObjectSubject(null);
   }
 
   addToiminnallinenPainotus(toiminnallinenPainotus: ToiminnallinenPainotusDTO) {
@@ -67,11 +89,13 @@ export class ToimipaikkaPainotuksetComponent implements OnInit {
     this.toiminnallinenPainotusList.push(toiminnallinenPainotus);
     this.toiminnallinenPainotusList = this.toiminnallinenPainotusList.sort(sortByAlkamisPvm);
     this.updateActiveToimipaikka();
+    this.utilityService.setFocusObjectSubject({type: ModelNameEnum.TOIMINNALLINEN_PAINOTUS, id: toiminnallinenPainotus.id});
   }
 
   deleteToiminnallinenPainotus(objectId: number) {
     this.toiminnallinenPainotusList = this.toiminnallinenPainotusList.filter(obj => obj.id !== objectId);
     this.updateActiveToimipaikka();
+    this.utilityService.setFocusObjectSubject(null);
   }
 
   updateActiveToimipaikka() {
@@ -87,5 +111,19 @@ export class ToimipaikkaPainotuksetComponent implements OnInit {
 
   hideAddToiminnallinenPainotus() {
     this.addToimintapainotusBoolean = false;
+  }
+
+  showUntil(type: ModelNameEnum, index: number) {
+    const numberOfDisplayed = this.numberOfDisplayed[type];
+    const showMoreLessComponent = type === ModelNameEnum.KIELIPAINOTUS ? this.showMoreLessComponentKielipainotus :
+      this.showMoreLessComponentToiminnallinenPainotus;
+    if (index !== -1 && numberOfDisplayed < index + 1) {
+      showMoreLessComponent?.showMore();
+      setTimeout(() => this.showUntil(type, index), 100);
+    }
+  }
+
+  ngOnDestroy() {
+    this.subscriptions.forEach(subscription => subscription.unsubscribe());
   }
 }

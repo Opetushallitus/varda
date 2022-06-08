@@ -1,4 +1,4 @@
-import { Component, Output, ViewChild, EventEmitter, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, Output, ViewChild, EventEmitter, ElementRef, OnDestroy, OnInit, Input } from '@angular/core';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
 import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
 import { PuutteellinenErrorDTO } from '../../../utilities/models/dto/varda-puutteellinen-dto.model';
@@ -8,13 +8,17 @@ import { VirkailijaTranslations } from '../../../../assets/i18n/virkailija-trans
 import { FormGroup } from '@angular/forms';
 import { VardaModalService } from '../../../core/services/varda-modal.service';
 import { Subscription } from 'rxjs';
+import { ModelNameEnum } from '../../../utilities/models/enums/model-name.enum';
+import { VardaUtilityService } from '../../../core/services/varda-utility.service';
+import { distinctUntilChanged, filter } from 'rxjs/operators';
 
 @Component({
   template: ''
 })
 export abstract class VardaFormAccordionAbstractComponent<T extends {id?: number}> implements OnInit, OnDestroy {
   @ViewChild(MatExpansionPanelHeader) panelHeader: MatExpansionPanelHeader;
-  @ViewChild('matPanel') matPanel: MatExpansionPanel;
+  @ViewChild('matPanel', { read: MatExpansionPanel }) matPanel: MatExpansionPanel;
+  @ViewChild('matPanel', { read: ElementRef }) matPanelElement: ElementRef;
   @Input() currentObject: T;
   @Output() closeEmitter = new EventEmitter();
   @Output() setBaseObject = new EventEmitter<any>();
@@ -23,11 +27,13 @@ export abstract class VardaFormAccordionAbstractComponent<T extends {id?: number
   formGroup: FormGroup;
   isEdit: boolean;
   isSubmitting = false;
+  modelName: ModelNameEnum;
 
   protected errorList: Array<PuutteellinenErrorDTO>;
   protected subscriptions: Array<Subscription> = [];
+  protected apiService: VardaLapsiService | VardaHenkilostoApiService | VardaVakajarjestajaApiService;
 
-  constructor(protected modalService: VardaModalService) { }
+  constructor(protected modalService: VardaModalService, protected utilityService: VardaUtilityService) { }
 
   ngOnInit() {
     this.initForm();
@@ -44,12 +50,25 @@ export abstract class VardaFormAccordionAbstractComponent<T extends {id?: number
       // Object is created from a copy so it can be saved immediately
       this.formGroup.markAsDirty();
     }
+
+    this.subscriptions.push(
+      this.formGroup.statusChanges
+        .pipe(filter(() => !this.formGroup.pristine), distinctUntilChanged())
+        .subscribe(() => this.modalService.setFormValuesChanged(true)),
+      this.utilityService.getFocusObjectSubject().subscribe(focusObject => {
+        if (focusObject?.type === this.modelName && focusObject.id === this.currentObject?.id) {
+          this.scrollToPanel();
+        }
+      })
+    );
+    this.checkFormErrors();
   }
 
-  checkFormErrors(apiService: VardaLapsiService | VardaHenkilostoApiService | VardaVakajarjestajaApiService, modelName: string, modelID: number) {
-    if (modelID) {
-      apiService.getFormErrorList().subscribe(errorList => {
-        this.errorList = errorList.filter(error => error.model_name === modelName && error.model_id_list.includes(modelID));
+  checkFormErrors() {
+    if (this.objectExists()) {
+      this.apiService.getFormErrorList().subscribe(errorList => {
+        this.errorList = errorList.filter(error => error.model_name === this.modelName &&
+          error.model_id_list.includes(this.currentObject.id));
       });
     }
   }
@@ -93,6 +112,16 @@ export abstract class VardaFormAccordionAbstractComponent<T extends {id?: number
 
   objectExists() {
     return !!this.currentObject?.id;
+  }
+
+  scrollToPanel() {
+    setTimeout(() => {
+      this.togglePanel(true);
+      setTimeout(() => {
+        this.matPanelElement?.nativeElement?.scrollIntoView();
+        this.panelHeader?.focus();
+      }, 200);
+    }, 200);
   }
 
   ngOnDestroy() {

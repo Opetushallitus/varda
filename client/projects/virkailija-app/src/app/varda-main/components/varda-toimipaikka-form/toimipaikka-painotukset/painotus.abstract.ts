@@ -10,6 +10,7 @@ import { Observable } from 'rxjs';
 import { KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { VardaFormAccordionAbstractComponent } from '../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 import { VardaModalService } from '../../../../core/services/varda-modal.service';
+import { VardaUtilityService } from '../../../../core/services/varda-utility.service';
 
 @Component({
   template: '',
@@ -23,8 +24,8 @@ export abstract class PainotusAbstractComponent<T> extends VardaFormAccordionAbs
   @Output() deleteObject = new EventEmitter<number>(true);
 
   koodistoEnum = KoodistoEnum;
-  startDateRange = { min: null, max: null };
-  endDateRange = { min: null, max: null };
+  startDateRange = {min: null, max: null};
+  endDateRange = {min: null, max: null};
   savePending: boolean;
   formErrors: Observable<Array<ErrorTree>>;
 
@@ -35,8 +36,10 @@ export abstract class PainotusAbstractComponent<T> extends VardaFormAccordionAbs
     protected vakajarjestajaApiService: VardaVakajarjestajaApiService,
     protected snackBarService: VardaSnackBarService,
     modalService: VardaModalService,
+    utilityService: VardaUtilityService
   ) {
-    super(modalService);
+    super(modalService, utilityService);
+    this.apiService = this.vakajarjestajaApiService;
     this.errorService = new VardaErrorMessageService(translateService);
     this.formErrors = this.errorService.initErrorList();
   }
@@ -65,7 +68,6 @@ export abstract class PainotusAbstractComponent<T> extends VardaFormAccordionAbs
 
   enableForm() {
     super.enableForm();
-
     this.savePending = false;
   }
 

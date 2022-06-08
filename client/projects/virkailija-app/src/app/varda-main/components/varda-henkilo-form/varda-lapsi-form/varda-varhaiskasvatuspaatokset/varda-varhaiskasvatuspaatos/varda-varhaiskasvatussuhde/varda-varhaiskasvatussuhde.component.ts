@@ -1,19 +1,21 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
-import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
 import * as moment from 'moment';
 import { Moment } from 'moment';
 import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
-import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
+import {
+  ErrorTree,
+  VardaErrorMessageService
+} from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
-import { UserAccess, SaveAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
-import { Observable, finalize } from 'rxjs';
-import { filter, distinctUntilChanged } from 'rxjs/operators';
-import { KoodistoDTO, VardaKoodistoService, KoodistoEnum, VardaDateService } from 'varda-shared';
+import { SaveAccess, UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
+import { finalize, Observable } from 'rxjs';
+import { KoodistoDTO, KoodistoEnum, VardaDateService, VardaKoodistoService } from 'varda-shared';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 import {
@@ -21,6 +23,8 @@ import {
   LapsiKoosteVakasuhde
 } from '../../../../../../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { VardaVarhaiskasvatussuhdeDTO } from '../../../../../../../utilities/models/dto/varda-lapsi-dto.model';
+import { VardaUtilityService } from '../../../../../../../core/services/varda-utility.service';
+import { ModelNameEnum } from '../../../../../../../utilities/models/enums/model-name.enum';
 
 @Component({
   selector: 'app-varda-varhaiskasvatussuhde',
@@ -46,6 +50,7 @@ export class VardaVarhaiskasvatussuhdeComponent extends VardaFormAccordionAbstra
   startDateRange = { min: null, max: null };
   endDateRange = { min: null, max: null };
   varhaiskasvatussuhdeFormErrors: Observable<Array<ErrorTree>>;
+  modelName = ModelNameEnum.VARHAISKASVATUSSUHDE;
 
   private errorMessageService: VardaErrorMessageService;
 
@@ -55,10 +60,12 @@ export class VardaVarhaiskasvatussuhdeComponent extends VardaFormAccordionAbstra
     private koodistoService: VardaKoodistoService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private snackBarService: VardaSnackBarService,
+    utilityService: VardaUtilityService,
     translateService: TranslateService,
     modalService: VardaModalService
   ) {
-    super(modalService);
+    super(modalService, utilityService);
+    this.apiService = this.lapsiService;
     this.toimijaAccess = this.authService.getUserAccess();
     this.errorMessageService = new VardaErrorMessageService(translateService);
     this.varhaiskasvatussuhdeFormErrors = this.errorMessageService.initErrorList();
@@ -68,8 +75,6 @@ export class VardaVarhaiskasvatussuhdeComponent extends VardaFormAccordionAbstra
 
   ngOnInit() {
     super.ngOnInit();
-
-    this.checkFormErrors(this.lapsiService, 'varhaiskasvatussuhde', this.currentObject?.id);
 
     const filteredToimipaikat = this.vardaVakajarjestajaService.getFilteredToimipaikat();
     if (this.lapsitiedotTallentaja) {
@@ -92,12 +97,6 @@ export class VardaVarhaiskasvatussuhdeComponent extends VardaFormAccordionAbstra
         this.toimipaikat = this.toimipaikat.filter(toimipaikka => toimipaikka.paos_organisaatio_oid === activeLapsi.paos_organisaatio_oid);
       }
     }
-
-    this.subscriptions.push(
-      this.formGroup.statusChanges
-        .pipe(filter(() => !this.formGroup.pristine), distinctUntilChanged())
-        .subscribe(() => this.modalService.setFormValuesChanged(true))
-    );
   }
 
   initForm() {

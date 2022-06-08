@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, ViewChildren, QueryList } from '@angular/core';
+import { Component, Input, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
 import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
@@ -8,6 +8,8 @@ import { VardaFormListAbstractComponent } from '../../varda-form-list-abstract.c
 import { LapsiKoosteMaksutieto } from '../../../../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { sortByAlkamisPvm } from '../../../../../utilities/helper-functions';
 import { VardaVakajarjestajaService } from '../../../../../core/services/varda-vakajarjestaja.service';
+import { VardaUtilityService } from '../../../../../core/services/varda-utility.service';
+import { ModelNameEnum } from '../../../../../utilities/models/enums/model-name.enum';
 
 
 @Component({
@@ -26,15 +28,18 @@ export class VardaMaksutiedotComponent extends VardaFormListAbstractComponent<La
   tehtavanimikkeet: KoodistoDTO;
   maksutietoOikeus: boolean;
   selectedVakajarjestaja: VardaVakajarjestajaUi;
+  modelName = ModelNameEnum.MAKSUTIETO;
 
   constructor(
     private lapsiService: VardaLapsiService,
-    private vakajarjestajaService: VardaVakajarjestajaService
+    private vakajarjestajaService: VardaVakajarjestajaService,
+    utilityService: VardaUtilityService
   ) {
-    super();
+    super(utilityService);
   }
 
   ngOnInit() {
+    super.ngOnInit();
     this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
     this.objectList = this.lapsiService.activeLapsi.getValue().maksutiedot.sort(sortByAlkamisPvm);
     // enable maksutiedot for non-paos and your own paos-kids

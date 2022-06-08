@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, ViewChildren, QueryList } from '@angular/core';
+import { Component, Input, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
@@ -6,6 +6,8 @@ import { VardaVarhaiskasvatuspaatosComponent } from './varda-varhaiskasvatuspaat
 import { VardaFormListAbstractComponent } from '../../varda-form-list-abstract.component';
 import { LapsiKoosteVakapaatos } from '../../../../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { VardaVakajarjestajaService } from '../../../../../core/services/varda-vakajarjestaja.service';
+import { VardaUtilityService } from '../../../../../core/services/varda-utility.service';
+import { ModelNameEnum } from '../../../../../utilities/models/enums/model-name.enum';
 
 @Component({
   selector: 'app-varda-varhaiskasvatuspaatokset',
@@ -22,15 +24,18 @@ export class VardaVarhaiskasvatuspaatoksetComponent extends VardaFormListAbstrac
   @Input() henkilonToimipaikka: VardaToimipaikkaMinimalDto;
 
   lapsitiedotTallentaja: boolean;
+  modelName = ModelNameEnum.VARHAISKASVATUSPAATOS;
 
   constructor(
     private lapsiService: VardaLapsiService,
-    private vakajarjestajaService: VardaVakajarjestajaService
+    private vakajarjestajaService: VardaVakajarjestajaService,
+    utilityService: VardaUtilityService
   ) {
-    super();
+    super(utilityService);
   }
 
   ngOnInit() {
+    super.ngOnInit();
     const activeLapsi = this.lapsiService.activeLapsi.getValue();
     this.objectList = activeLapsi.varhaiskasvatuspaatokset;
     this.lapsitiedotTallentaja = this.toimipaikkaAccess.lapsitiedot.tallentaja;

@@ -1,20 +1,22 @@
-import { Component, Input, Inject, Output, EventEmitter, OnInit } from '@angular/core';
-import { UserAccess, SaveAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
+import { Component, EventEmitter, Inject, Input, OnInit, Output } from '@angular/core';
+import { SaveAccess, UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
 import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
-import { FormGroup, Validators, FormControl } from '@angular/forms';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
 import * as moment from 'moment';
+import { Moment } from 'moment';
 import { DOCUMENT } from '@angular/common';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
-import { VardaKoodistoService, VardaDateService } from 'varda-shared';
+import { VardaDateService, VardaKoodistoService } from 'varda-shared';
 import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
-import { VardaErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
+import {
+  ErrorTree,
+  VardaErrorMessageService
+} from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { finalize, Observable } from 'rxjs';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
-import { filter, distinctUntilChanged } from 'rxjs/operators';
-import { Moment } from 'moment';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
@@ -23,6 +25,8 @@ import {
   TyontekijaTyoskentelypaikka
 } from '../../../../../../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { VardaTyoskentelypaikkaDTO } from '../../../../../../../utilities/models/dto/varda-tyontekija-dto.model';
+import { VardaUtilityService } from '../../../../../../../core/services/varda-utility.service';
+import { ModelNameEnum } from '../../../../../../../utilities/models/enums/model-name.enum';
 
 @Component({
   selector: 'app-varda-tyoskentelypaikka',
@@ -48,6 +52,7 @@ export class VardaTyoskentelypaikkaComponent extends VardaFormAccordionAbstractC
   endDateRange = { min: null, max: null };
   koodistoEnum = KoodistoEnum;
   palvelussuhdeFormErrors: Observable<Array<ErrorTree>>;
+  modelName = ModelNameEnum.TYOSKENTELYPAIKKA;
 
   private henkilostoErrorService: VardaErrorMessageService;
 
@@ -58,10 +63,12 @@ export class VardaTyoskentelypaikkaComponent extends VardaFormAccordionAbstractC
     private koodistoService: VardaKoodistoService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private snackBarService: VardaSnackBarService,
+    utilityService: VardaUtilityService,
     translateService: TranslateService,
     modalService: VardaModalService
   ) {
-    super(modalService);
+    super(modalService, utilityService);
+    this.apiService = this.henkilostoService;
     this.toimijaAccess = this.authService.getUserAccess();
     this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.palvelussuhdeFormErrors = this.henkilostoErrorService.initErrorList();
@@ -70,13 +77,6 @@ export class VardaTyoskentelypaikkaComponent extends VardaFormAccordionAbstractC
   ngOnInit() {
     super.ngOnInit();
 
-    this.subscriptions.push(
-      this.formGroup.statusChanges
-        .pipe(filter(() => !this.formGroup.pristine), distinctUntilChanged())
-        .subscribe(() => this.modalService.setFormValuesChanged(true)),
-      this.koodistoService.getKoodisto(KoodistoEnum.tehtavanimike).subscribe(koodisto => this.tehtavanimikkeet = koodisto)
-    );
-
     if (this.toimipaikkaAccess.tyontekijatiedot.tallentaja) {
       this.toimipaikat = this.authService.getAuthorizedToimipaikat(this.vardaVakajarjestajaService.getFilteredToimipaikat().tallentajaToimipaikat, SaveAccess.tyontekijatiedot);
       this.toimipaikat = this.toimipaikat.filter(toimipaikka => toimipaikka.organisaatio_oid);
@@ -84,7 +84,10 @@ export class VardaTyoskentelypaikkaComponent extends VardaFormAccordionAbstractC
       this.toimipaikat = this.vardaVakajarjestajaService.getFilteredToimipaikat().toimipaikat;
     }
 
-    this.checkFormErrors(this.henkilostoService, 'tyoskentelypaikka', this.currentObject?.id);
+    this.subscriptions.push(
+      this.koodistoService.getKoodisto(KoodistoEnum.tehtavanimike).subscribe(koodisto =>
+        this.tehtavanimikkeet = koodisto)
+    );
   }
 
   initForm() {

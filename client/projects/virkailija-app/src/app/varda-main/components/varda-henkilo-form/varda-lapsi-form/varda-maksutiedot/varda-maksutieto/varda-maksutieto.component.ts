@@ -2,7 +2,10 @@ import { Component, Input, Output, ViewChildren, EventEmitter, ElementRef, Query
 import { FormGroup, FormControl, Validators, FormArray } from '@angular/forms';
 import * as moment from 'moment';
 import { Moment } from 'moment';
-import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
+import {
+  ErrorTree,
+  VardaErrorMessageService
+} from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
@@ -14,13 +17,14 @@ import {
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { finalize, Observable } from 'rxjs';
-import { filter, distinctUntilChanged } from 'rxjs/operators';
 import { VardaKoodistoService, VardaDateService } from 'varda-shared';
 import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { VardaMaksutietoHuoltajaComponent } from './varda-maksutieto-huoltaja/varda-maksutieto-huoltaja.component';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 import { LapsiKoosteMaksutieto } from '../../../../../../utilities/models/dto/varda-henkilohaku-dto.model';
+import { VardaUtilityService } from '../../../../../../core/services/varda-utility.service';
+import { ModelNameEnum } from '../../../../../../utilities/models/enums/model-name.enum';
 
 @Component({
   selector: 'app-varda-maksutieto',
@@ -47,6 +51,7 @@ export class VardaMaksutietoComponent extends VardaFormAccordionAbstractComponen
   minEndDate: Date;
   disableForMaksuttomuus = false;
   koodistoEnum = KoodistoEnum;
+  modelName = ModelNameEnum.MAKSUTIETO;
 
   private errorMessageService: VardaErrorMessageService;
 
@@ -55,10 +60,12 @@ export class VardaMaksutietoComponent extends VardaFormAccordionAbstractComponen
     private lapsiService: VardaLapsiService,
     private koodistoService: VardaKoodistoService,
     private snackBarService: VardaSnackBarService,
+    utilityService: VardaUtilityService,
     translateService: TranslateService,
     modalService: VardaModalService
   ) {
-    super(modalService);
+    super(modalService, utilityService);
+    this.apiService = this.lapsiService;
     this.element = this.el;
     this.errorMessageService = new VardaErrorMessageService(translateService);
     this.maksutietoFormErrors = this.errorMessageService.initErrorList();
@@ -68,9 +75,6 @@ export class VardaMaksutietoComponent extends VardaFormAccordionAbstractComponen
     super.ngOnInit();
 
     this.subscriptions.push(
-      this.formGroup.statusChanges
-        .pipe(filter(() => !this.formGroup.pristine), distinctUntilChanged())
-        .subscribe(() => this.modalService.setFormValuesChanged(true)),
       this.koodistoService.getKoodisto(KoodistoEnum.maksunperuste).subscribe(koodisto =>
         this.maksunperusteKoodisto = koodisto)
     );
@@ -91,9 +95,7 @@ export class VardaMaksutietoComponent extends VardaFormAccordionAbstractComponen
     });
 
     this.huoltajat = this.formGroup.get('huoltajat') as FormArray;
-    if (this.objectExists()) {
-      this.checkFormErrors(this.lapsiService, 'maksutieto', this.currentObject.id);
-    } else {
+    if (!this.objectExists()) {
       if (this.currentObject?.huoltajat.length > 0) {
         this.currentObject.huoltajat.forEach(huoltaja => this.addHuoltaja(huoltaja));
       } else {

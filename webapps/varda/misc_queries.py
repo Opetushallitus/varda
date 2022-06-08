@@ -1,31 +1,35 @@
+from django.contrib.auth.models import Group
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import connection
 from django.db.models import OuterRef, Q, Subquery
+from guardian.shortcuts import get_objects_for_group
 from rest_framework.reverse import reverse
 
 from varda.cache import get_object_ids_for_user_by_model
 from varda.models import (Henkilo, KieliPainotus, Lapsi, PaosOikeus, PaosToiminta, Toimipaikka, ToiminnallinenPainotus,
-                          Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z9_RelatedObjectChanged)
+                          Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z4_CasKayttoOikeudet, Z9_RelatedObjectChanged)
 from varda.permissions import is_oph_staff, user_permission_groups_in_organizations
 
 
 def get_paos_toimipaikat(vakajarjestaja_obj, is_only_active_paostoiminta_included=True):
-    tuottaja_organization_ids = (PaosOikeus
-                                 .objects
-                                 .filter(jarjestaja_kunta_organisaatio=vakajarjestaja_obj)
-                                 .values_list('tuottaja_organisaatio__id', flat=True))
+    tuottaja_organization_ids = (PaosOikeus.objects.filter(jarjestaja_kunta_organisaatio=vakajarjestaja_obj)
+                                 .values_list('tuottaja_organisaatio_id', flat=True))
 
-    tuottaja_organizations_toimipaikka_ids = (Toimipaikka
-                                              .objects
+    tuottaja_organizations_toimipaikka_ids = (Toimipaikka.objects
                                               .filter(vakajarjestaja__id__in=tuottaja_organization_ids)
                                               .values_list('id', flat=True))
-    paostoiminta_condition = Q(oma_organisaatio=vakajarjestaja_obj) & Q(paos_toimipaikka__id__in=tuottaja_organizations_toimipaikka_ids)
+    paostoiminta_condition = Q(oma_organisaatio=vakajarjestaja_obj) & Q(paos_toimipaikka_id__in=tuottaja_organizations_toimipaikka_ids)
+
+    # Get list of Toimipaikka IDs organization KATSELIJA group has permissions to just in case
+    # (no other way to make sure two-way PAOS agreement has been established)
+    if group := Group.objects.filter(name=f'{Z4_CasKayttoOikeudet.KATSELIJA}_{vakajarjestaja_obj.organisaatio_oid}').first():
+        toimipaikka_permission_ids = (get_objects_for_group(group, 'varda.view_toimipaikka', accept_global_perms=False)
+                                      .values_list('id', flat=True))
+        paostoiminta_condition &= Q(paos_toimipaikka_id__in=toimipaikka_permission_ids)
+
     if is_only_active_paostoiminta_included:
-        paostoiminta_condition = paostoiminta_condition & Q(voimassa_kytkin=True)
-    return (PaosToiminta
-            .objects
-            .filter(paostoiminta_condition)
-            .values_list('paos_toimipaikka', flat=True))
+        paostoiminta_condition &= Q(voimassa_kytkin=True)
+    return PaosToiminta.objects.filter(paostoiminta_condition).values_list('paos_toimipaikka', flat=True)
 
 
 def get_related_object_changed_id_qs(model_name, datetime_gt, datetime_lte, additional_filters=None,

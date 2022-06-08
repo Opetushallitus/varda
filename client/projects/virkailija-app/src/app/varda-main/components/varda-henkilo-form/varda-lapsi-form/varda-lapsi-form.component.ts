@@ -21,6 +21,7 @@ import { HenkiloRooliEnum } from 'projects/virkailija-app/src/app/utilities/mode
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { VardaKoosteApiService } from '../../../../core/services/varda-kooste-api.service';
 import { LapsiKooste } from '../../../../utilities/models/dto/varda-henkilohaku-dto.model';
+import { VardaUtilityService } from '../../../../core/services/varda-utility.service';
 
 
 @Component({
@@ -64,6 +65,7 @@ export class VardaLapsiFormComponent implements OnInit, OnDestroy {
     private modalService: VardaModalService,
     private snackBarService: VardaSnackBarService,
     private koosteService: VardaKoosteApiService,
+    private utilityService: VardaUtilityService,
     translateService: TranslateService
   ) {
     this.errorMessageService = new VardaErrorMessageService(translateService);
@@ -242,5 +244,6 @@ export class VardaLapsiFormComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.subscriptions.forEach(subscription => subscription.unsubscribe());
     this.lapsiService.activeLapsi.next(null);
+    this.utilityService.setFocusObjectSubject(null);
   }
 }

@@ -1,5 +1,5 @@
-import { Component, Input } from '@angular/core';
-import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { Component, Input, OnInit } from '@angular/core';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
 import * as moment from 'moment';
 import { VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
@@ -11,6 +11,9 @@ import { CodeDTO, VardaDateService } from 'varda-shared';
 import { PainotusAbstractComponent } from '../painotus.abstract';
 import { VardaModalService } from '../../../../../core/services/varda-modal.service';
 import { finalize } from 'rxjs';
+import { VardaUtilityService } from '../../../../../core/services/varda-utility.service';
+import { ModelNameEnum } from '../../../../../utilities/models/enums/model-name.enum';
+
 @Component({
   selector: 'app-kielipainotus',
   templateUrl: './kielipainotus.component.html',
@@ -20,16 +23,23 @@ import { finalize } from 'rxjs';
     '../../varda-toimipaikka-form.component.css'
   ]
 })
-export class KielipainotusComponent extends PainotusAbstractComponent<KielipainotusDTO> {
+export class KielipainotusComponent extends PainotusAbstractComponent<KielipainotusDTO> implements OnInit {
   @Input() kielikoodisto: Array<CodeDTO>;
+
+  modelName = ModelNameEnum.KIELIPAINOTUS;
 
   constructor(
     protected translateService: TranslateService,
     protected vakajarjestajaApiService: VardaVakajarjestajaApiService,
     protected snackBarService: VardaSnackBarService,
-    modalService: VardaModalService,
+    utilityService: VardaUtilityService,
+    modalService: VardaModalService
   ) {
-    super(translateService, vakajarjestajaApiService, snackBarService, modalService);
+    super(translateService, vakajarjestajaApiService, snackBarService, modalService, utilityService);
+  }
+
+  ngOnInit() {
+    super.ngOnInit();
   }
 
   initForm() {
@@ -45,8 +55,6 @@ export class KielipainotusComponent extends PainotusAbstractComponent<Kielipaino
     });
 
     this.initDateFilters();
-
-    this.checkFormErrors(this.vakajarjestajaApiService, 'kielipainotus', this.currentObject?.id);
   }
 
   savePainotus(form: FormGroup, wasPending?: boolean) {

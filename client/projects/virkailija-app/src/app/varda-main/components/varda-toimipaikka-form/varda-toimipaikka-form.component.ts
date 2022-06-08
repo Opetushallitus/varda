@@ -6,8 +6,13 @@ import * as moment from 'moment';
 import { Moment } from 'moment';
 import { finalize, Observable, Subscription } from 'rxjs';
 import { distinctUntilChanged, filter, map, take } from 'rxjs/operators';
-import { VardaKoodistoService, VardaDateService } from 'varda-shared';
-import { CodeDTO, KoodistoDTO, KoodistoEnum, KoodistoSortBy } from 'projects/varda-shared/src/lib/models/koodisto-models';
+import { VardaDateService, VardaKoodistoService } from 'varda-shared';
+import {
+  CodeDTO,
+  KoodistoDTO,
+  KoodistoEnum,
+  KoodistoSortBy
+} from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ErrorTree, VardaErrorMessageService } from '../../../core/services/varda-error-message.service';
 import { VardaSnackBarService } from '../../../core/services/varda-snackbar.service';
@@ -25,6 +30,8 @@ import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 import { VardaFormAccordionAbstractComponent } from '../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 import { VardaModalService } from '../../../core/services/varda-modal.service';
 import { VardaKoosteApiService } from '../../../core/services/varda-kooste-api.service';
+import { VardaUtilityService } from '../../../core/services/varda-utility.service';
+import { ModelNameEnum } from '../../../utilities/models/enums/model-name.enum';
 
 @Component({
   selector: 'app-varda-toimipaikka-form',
@@ -55,6 +62,7 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
   filteredPostitoimipaikat: Array<CodeDTO> = [];
   postiosoiteToggleBoolean = false;
   toimipaikkaKooste: ToimipaikkaKooste;
+  modelName = ModelNameEnum.TOIMIPAIKKA;
 
   private errorService: VardaErrorMessageService;
   private formGroupSubscriptions: Array<Subscription> = [];
@@ -67,9 +75,11 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
     private koodistoService: VardaKoodistoService,
     private translateService: TranslateService,
     private koosteService: VardaKoosteApiService,
-    modalService: VardaModalService,
+    utilityService: VardaUtilityService,
+    modalService: VardaModalService
   ) {
-    super(modalService);
+    super(modalService, utilityService);
+    this.apiService = this.vakajarjestajaApiService;
     this.errorService = new VardaErrorMessageService(this.translateService);
     this.toimijaAccess = this.authService.getUserAccess();
     this.toimipaikkaFormErrors = this.errorService.initErrorList();
@@ -186,7 +196,7 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
       )
     );
 
-    this.checkFormErrors(this.vakajarjestajaApiService, 'toimipaikka', this.toimipaikka?.id);
+    this.checkFormErrors();
   }
 
   getToimipaikkaKooste() {
@@ -316,5 +326,6 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
 
     this.vakajarjestajaApiService.activeToimipaikka.next(null);
     this.formGroupSubscriptions.forEach(sub => sub.unsubscribe());
+    this.utilityService.setFocusObjectSubject(null);
   }
 }

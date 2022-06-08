@@ -1,8 +1,11 @@
-import { Component, Input, Output, EventEmitter, ElementRef, OnInit } from '@angular/core';
-import { FormGroup, FormControl, Validators, AbstractControl, ValidatorFn } from '@angular/forms';
+import { Component, ElementRef, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { AbstractControl, FormControl, FormGroup, ValidatorFn, Validators } from '@angular/forms';
 import * as moment from 'moment';
 import { Moment } from 'moment';
-import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
+import {
+  ErrorTree,
+  VardaErrorMessageService
+} from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
@@ -11,16 +14,18 @@ import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { finalize, Observable } from 'rxjs';
-import { filter, distinctUntilChanged } from 'rxjs/operators';
-import { VardaKoodistoService, VardaDateService } from 'varda-shared';
-import { KoodistoEnum, CodeDTO } from 'projects/varda-shared/src/lib/models/koodisto-models';
+import { VardaDateService, VardaKoodistoService } from 'varda-shared';
+import { CodeDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 import {
-  LapsiKoosteVakapaatos, LapsiKoosteVakasuhde
+  LapsiKoosteVakapaatos,
+  LapsiKoosteVakasuhde
 } from '../../../../../../utilities/models/dto/varda-henkilohaku-dto.model';
 import { sortByAlkamisPvm } from '../../../../../../utilities/helper-functions';
 import { VardaVarhaiskasvatuspaatosDTO } from '../../../../../../utilities/models/dto/varda-lapsi-dto.model';
+import { VardaUtilityService } from '../../../../../../core/services/varda-utility.service';
+import { ModelNameEnum } from '../../../../../../utilities/models/enums/model-name.enum';
 
 
 interface JarjestamismuodotCode extends CodeDTO {
@@ -57,6 +62,7 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
   varhaiskasvatussuhdeList: Array<LapsiKoosteVakasuhde> = [];
   lapsiId: number;
   isPaos: boolean;
+  modelName = ModelNameEnum.VARHAISKASVATUSPAATOS;
 
   private errorMessageService: VardaErrorMessageService;
   private tilapainenValidator = ((): ValidatorFn => (control: AbstractControl) => control.value ? null : {tilapainen: true})();
@@ -68,9 +74,11 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
     private vakajarjestajaService: VardaVakajarjestajaService,
     private snackBarService: VardaSnackBarService,
     private translateService: TranslateService,
+    utilityService: VardaUtilityService,
     modalService: VardaModalService
   ) {
-    super(modalService);
+    super(modalService, utilityService);
+    this.apiService = this.lapsiService;
     this.element = this.el;
     this.errorMessageService = new VardaErrorMessageService(translateService);
     this.varhaiskasvatuspaatosFormErrors = this.errorMessageService.initErrorList();
@@ -85,9 +93,6 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
     super.ngOnInit();
 
     this.subscriptions.push(
-      this.formGroup.statusChanges
-        .pipe(filter(() => !this.formGroup.pristine), distinctUntilChanged())
-        .subscribe(() => this.modalService.setFormValuesChanged(true)),
       this.formGroup.get('tilapainen_vaka_kytkin').valueChanges
         .subscribe((value: boolean) => this.tilapainenVakaChange(value)),
       this.koodistoService.getKoodisto(KoodistoEnum.jarjestamismuoto).subscribe(koodisto =>
@@ -116,7 +121,6 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
       this.varhaiskasvatussuhdeList = this.currentObject.varhaiskasvatussuhteet.sort(sortByAlkamisPvm);
       this.disableForm();
       this.changeJarjestamismuoto(this.currentObject.jarjestamismuoto_koodi);
-      this.checkFormErrors(this.lapsiService, 'varhaiskasvatuspaatos', this.currentObject?.id);
     }
 
     this.initDateFilters();
@@ -183,11 +187,13 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
     this.varhaiskasvatussuhdeList.push(varhaiskasvatussuhde);
     this.varhaiskasvatussuhdeList = this.varhaiskasvatussuhdeList.sort(sortByAlkamisPvm);
     this.updateActiveLapsi();
+    this.utilityService.setFocusObjectSubject({type: ModelNameEnum.VARHAISKASVATUSSUHDE, id: varhaiskasvatussuhde.id});
   }
 
   deleteVarhaiskasvatussuhte(objectId: number) {
     this.varhaiskasvatussuhdeList = this.varhaiskasvatussuhdeList.filter(obj => obj.id !== objectId);
     this.updateActiveLapsi();
+    this.utilityService.setFocusObjectSubject(null);
   }
 
   updateActiveLapsi() {

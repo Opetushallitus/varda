@@ -11,7 +11,7 @@ import {
 import { VardaFormValidators } from 'projects/virkailija-app/src/app/shared/validators/varda-form-validators';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
-import { catchError, distinctUntilChanged, filter } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
@@ -20,6 +20,8 @@ import { TyontekijaTaydennyskoulutus } from '../../../../../../utilities/models/
 import { VardaVakajarjestajaUi } from '../../../../../../utilities/models/varda-vakajarjestaja-ui.model';
 import { VardaVakajarjestajaService } from '../../../../../../core/services/varda-vakajarjestaja.service';
 import * as moment from 'moment';
+import { VardaUtilityService } from '../../../../../../core/services/varda-utility.service';
+import { ModelNameEnum } from '../../../../../../utilities/models/enums/model-name.enum';
 
 @Component({
   selector: 'app-varda-tyontekija-taydennyskoulutus',
@@ -46,6 +48,7 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
   tyontekijaId: number;
   henkiloOid: string;
   selectedVakajarjestaja: VardaVakajarjestajaUi;
+  modelName = ModelNameEnum.TAYDENNYSKOULUTUS;
 
   private henkilostoErrorService: VardaErrorMessageService;
 
@@ -54,10 +57,12 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
     private henkilostoService: VardaHenkilostoApiService,
     private snackBarService: VardaSnackBarService,
     private vakajarjestajaService: VardaVakajarjestajaService,
+    utilityService: VardaUtilityService,
     translateService: TranslateService,
     modalService: VardaModalService
   ) {
-    super(modalService);
+    super(modalService, utilityService);
+    this.apiService = this.henkilostoService;
     this.element = this.el;
     this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.taydennyskoulutusFormErrors = this.henkilostoErrorService.initErrorList();
@@ -72,12 +77,6 @@ export class VardaTyontekijaTaydennyskoulutusComponent extends VardaFormAccordio
     this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
     this.limitedEditAccess = this.currentObject?.contains_other_tyontekija;
     this.setDisabledTehtavanimikeCodes();
-
-    this.subscriptions.push(
-      this.formGroup.statusChanges
-        .pipe(filter(() => !this.formGroup.pristine), distinctUntilChanged())
-        .subscribe(() => this.modalService.setFormValuesChanged(true))
-    );
   }
 
   initForm() {
