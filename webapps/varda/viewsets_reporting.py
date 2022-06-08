@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib.auth.models import AnonymousUser, User
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import connection, transaction
-from django.db.models import (Case, Count, DateField, F, FloatField, IntegerField, OuterRef, Q, Subquery, Sum,
+from django.db.models import (Case, Count, DateField, F, FloatField, IntegerField, Max, OuterRef, Q, Subquery, Sum,
                               Value, When)
 from django.db.models.functions import Cast
 from django.forms.models import model_to_dict
@@ -19,7 +19,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.filters import SearchFilter
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
@@ -41,9 +41,8 @@ from varda.misc_queries import get_related_object_changed_id_qs
 from varda.misc_viewsets import ViewSetValidator
 from varda.models import (KieliPainotus, Lapsi, Maksutieto, Organisaatio, Palvelussuhde, PaosOikeus, PaosToiminta,
                           ToiminnallinenPainotus, Toimipaikka, Tyontekija, Tyoskentelypaikka,
-                          Varhaiskasvatuspaatos, Varhaiskasvatussuhde, YearlyReportSummary, Z2_Code,
-                          Z2_Koodisto, Z4_CasKayttoOikeudet, Z6_LastRequest, Z6_RequestLog, Z6_RequestSummary,
-                          Z8_ExcelReport)
+                          Varhaiskasvatuspaatos, Varhaiskasvatussuhde, YearlyReportSummary, Z2_Koodisto,
+                          Z4_CasKayttoOikeudet, Z6_LastRequest, Z6_RequestLog, Z6_RequestSummary, Z8_ExcelReport)
 from varda.pagination import (ChangeablePageSizePagination, ChangeableReportingPageSizePagination, DateCursorPagination,
                               DateReverseCursorPagination, IdCursorPagination, IdReverseCursorPagination,
                               TkCursorPagination)
@@ -56,12 +55,11 @@ from varda.serializers_reporting import (DuplicateLapsiSerializer, ErrorReportLa
                                          KelaEtuusmaksatusKorjaustiedotPoistetutSerializer,
                                          KelaEtuusmaksatusKorjaustiedotSerializer,
                                          KelaEtuusmaksatusLopettaneetSerializer,
-                                         KelaEtuusmaksatusMaaraaikaisetSerializer,
-                                         LahdejarjestelmaTransferOutageReportSerializer, RequestSummaryGroupSerializer,
+                                         KelaEtuusmaksatusMaaraaikaisetSerializer, RequestSummaryGroupSerializer,
                                          RequestSummarySerializer, TiedonsiirtoSerializer,
                                          TiedonsiirtotilastoSerializer, TiedonsiirtoYhteenvetoSerializer,
                                          TkHenkilostotiedotSerializer, TkOrganisaatiotSerializer,
-                                         TkVakatiedotSerializer, UserTransferOutageReportSerializer,
+                                         TkVakatiedotSerializer, TransferOutageReportSerializer,
                                          YearlyReportingDataSummarySerializer)
 from varda.tasks import create_yearly_reporting_summary
 from varda.validators import validate_kela_api_datetimefield
@@ -1057,14 +1055,20 @@ class DuplicateLapsiViewSet(GenericViewSet, ListModelMixin):
 
 
 @auditlogclass
-class AbstractTransferOutageReportViewSet(GenericViewSet, ListModelMixin):
+class TransferOutageReportViewSet(GenericViewSet, ListModelMixin):
     permission_classes = (ReadAdminOrOPHUser,)
     pagination_class = ChangeablePageSizePagination
-    filter_backends = (CustomParametersFilterBackend,)
+    filterset_class = TransferOutageReportFilter
+    serializer_class = TransferOutageReportSerializer
+    filter_backends = (CustomParametersFilterBackend, DjangoFilterBackend, OrderingFilter,)
+    ordering_fields = ('last_successful_max', 'last_unsuccessful_max',)
+    ordering = ('last_successful_max',)
     custom_parameters = (CustomParameter(name='timestamp_before', required=False, location='query', data_type='string',
                                          description='ISO Date (YYYY-MM-DD)'),
                          CustomParameter(name='timestamp_after', required=False, location='query', data_type='string',
-                                         description='ISO Date (YYYY-MM-DD)'),)
+                                         description='ISO Date (YYYY-MM-DD)'),
+                         CustomParameter(name='group_by', required=True, location='query', data_type='string',
+                                         description='palvelukayttaja/organisaatio/lahdejarjestelma'))
 
     def parse_filters(self):
         filters = Q()
@@ -1074,7 +1078,7 @@ class AbstractTransferOutageReportViewSet(GenericViewSet, ListModelMixin):
                 timestamp_before_datetime = datetime.datetime.strptime(timestamp_before, '%Y-%m-%d')
                 timestamp_before_datetime += datetime.timedelta(days=1)
                 timestamp_before_datetime = timestamp_before_datetime.replace(tzinfo=datetime.timezone.utc)
-                filters = Q(last_successful__gt=timestamp_before_datetime)
+                filters = Q(last_successful_max__gt=timestamp_before_datetime)
             except ValueError:
                 raise ValidationError({'timestamp_before': [ErrorMessages.GE006.value]})
 
@@ -1084,41 +1088,37 @@ class AbstractTransferOutageReportViewSet(GenericViewSet, ListModelMixin):
                 timestamp_after_datetime = timestamp_after_datetime.replace(tzinfo=datetime.timezone.utc)
 
                 if timestamp_before:
-                    filters |= Q(last_successful__lt=timestamp_after_datetime)
+                    filters |= Q(last_successful_max__lt=timestamp_after_datetime)
                 else:
-                    filters = Q(last_successful__lt=timestamp_after_datetime)
+                    filters = Q(last_successful_max__lt=timestamp_after_datetime)
             except ValueError:
                 raise ValidationError({'timestamp_after': [ErrorMessages.GE006.value]})
         return filters
 
-
-@auditlogclass
-class UserTransferOutageReportViewSet(AbstractTransferOutageReportViewSet):
-    filter_backends = (CustomParametersFilterBackend, DjangoFilterBackend,)
-    filterset_class = TransferOutageReportFilter
-    serializer_class = UserTransferOutageReportSerializer
-
     def get_queryset(self):
         request_filters = self.parse_filters()
+        additional_filters = Q()
+        match self.request.query_params.get('group_by', None):
+            case 'palvelukayttaja':
+                group_by_value = 'user'
+                last_values = ('user__id', 'user__username',)
+                additional_filters = Q(user__additional_cas_user_fields__kayttajatyyppi=Kayttajatyyppi.PALVELU.value)
+            case 'organisaatio':
+                group_by_value = 'vakajarjestaja'
+                last_values = ('vakajarjestaja__id', 'vakajarjestaja__nimi', 'vakajarjestaja__organisaatio_oid',)
+            case 'lahdejarjestelma':
+                group_by_value = 'lahdejarjestelma'
+                last_values = ('lahdejarjestelma',)
+            case _:
+                raise ValidationError({'group_by': [ErrorMessages.GE001.value]})
 
-        return Z6_LastRequest.objects.filter(Q(user__additional_cas_user_fields__kayttajatyyppi=Kayttajatyyppi.PALVELU.value) &
-                                             request_filters).order_by('user')
-
-
-@auditlogclass
-class LahdejarjestelmaTransferOutageReportViewSet(AbstractTransferOutageReportViewSet):
-    serializer_class = LahdejarjestelmaTransferOutageReportSerializer
-
-    def get_queryset(self):
-        request_filters = self.parse_filters()
-
-        lahdejarjestelma_list = (Z2_Code.objects.filter(koodisto__name=Koodistot.lahdejarjestelma_koodit.value)
-                                 .values_list('code_value', flat=True))
-        active_lahdejarjestelma_list = (Z6_LastRequest.objects.filter(~Q(request_filters) &
-                                                                      Q(last_successful__isnull=False))
-                                        .values_list('lahdejarjestelma', flat=True).distinct())
-        inactive_lahdejarjestelma_set = set(lahdejarjestelma_list).difference(set(active_lahdejarjestelma_list))
-        return sorted(list(inactive_lahdejarjestelma_set), key=lambda x: int(x))
+        return (Z6_LastRequest.objects
+                .values(group_by_value)
+                .filter(additional_filters & Q(**{f'{group_by_value}__isnull': False}))
+                .annotate(last_successful_max=Max('last_successful'),
+                          last_unsuccessful_max=Max('last_unsuccessful'))
+                .filter(request_filters)
+                .values(*last_values, 'last_successful_max', 'last_unsuccessful_max'))
 
 
 @auditlogclass

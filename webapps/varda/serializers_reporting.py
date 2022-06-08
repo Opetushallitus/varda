@@ -23,8 +23,8 @@ from varda.models import (Henkilo, Huoltajuussuhde, KieliPainotus, Lapsi, Maksut
                           Palvelussuhde, PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Tutkinto,
                           Tyoskentelypaikka, TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka, Tyontekija,
                           Organisaatio, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, YearlyReportSummary,
-                          Z4_CasKayttoOikeudet, Z6_LastRequest, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary,
-                          Z8_ExcelReport, Z9_RelatedObjectChanged)
+                          Z4_CasKayttoOikeudet, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary, Z8_ExcelReport,
+                          Z9_RelatedObjectChanged)
 from varda.serializers import ToimipaikkaHLField, OrganisaatioPermissionCheckedHLField
 from varda.serializers_common import OidRelatedField
 
@@ -378,34 +378,15 @@ class DuplicateLapsiSerializer(serializers.Serializer):
             return None
 
 
-class LahdejarjestelmaTransferOutageReportSerializer(serializers.Serializer):
-    lahdejarjestelma = serializers.SerializerMethodField()
-    last_successful = serializers.SerializerMethodField()
-    last_unsuccessful = serializers.SerializerMethodField()
-
-    def get_lahdejarjestelma(self, instance):
-        return instance
-
-    def get_last_successful(self, instance):
-        return getattr(Z6_LastRequest.objects.filter(lahdejarjestelma=instance, last_successful__isnull=False)
-                       .order_by('-last_successful').first(), 'last_successful', None)
-
-    def get_last_unsuccessful(self, instance):
-        return getattr(Z6_LastRequest.objects.filter(lahdejarjestelma=instance, last_unsuccessful__isnull=False)
-                       .order_by('-last_unsuccessful').first(), 'last_unsuccessful', None)
-
-
-class UserTransferOutageReportSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField(source='user.id')
-    username = serializers.CharField(source='user.username')
-    vakajarjestaja_id = serializers.IntegerField(source='vakajarjestaja.id', allow_null=True)
-    vakajarjestaja_nimi = serializers.CharField(source='vakajarjestaja.nimi', allow_null=True)
-    vakajarjestaja_oid = serializers.CharField(source='vakajarjestaja.organisaatio_oid', allow_null=True)
-
-    class Meta:
-        model = Z6_LastRequest
-        fields = ('user_id', 'username', 'vakajarjestaja_id', 'vakajarjestaja_nimi', 'vakajarjestaja_oid',
-                  'lahdejarjestelma', 'last_successful', 'last_unsuccessful')
+class TransferOutageReportSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField(source='user__id', allow_null=True)
+    username = serializers.CharField(source='user__username', allow_null=True)
+    vakajarjestaja_id = serializers.IntegerField(source='vakajarjestaja__id', allow_null=True)
+    vakajarjestaja_nimi = serializers.CharField(source='vakajarjestaja__nimi', allow_null=True)
+    vakajarjestaja_oid = serializers.CharField(source='vakajarjestaja__organisaatio_oid', allow_null=True)
+    lahdejarjestelma = serializers.CharField(allow_null=True)
+    last_successful_max = serializers.DateTimeField(allow_null=True)
+    last_unsuccessful_max = serializers.DateTimeField(allow_null=True)
 
 
 class RequestCountSerializer(serializers.ModelSerializer):

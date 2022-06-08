@@ -754,11 +754,6 @@ def toimipaikka_tallentaja_pidempipoissaolo_has_perm_to_add(user, vakajarjestaja
                                                 ).exists()
 
 
-def user_has_vakajarjestaja_level_permission(user, organisaatio_oid, permission_name):
-    return user.groups.filter(Q(name__endswith=organisaatio_oid) &
-                              Q(permissions__codename__exact=permission_name)).exists()
-
-
 def user_belongs_to_correct_groups(user, instance, permission_groups=(), accept_toimipaikka_permission=False,
                                    check_paos=False):
     """

@@ -42,7 +42,6 @@ class VardaViewsReportingTests(TestCase):
             'tiedonsiirto/yhteenveto': 'http://testserver/api/reporting/v1/tiedonsiirto/yhteenveto/',
             'tiedonsiirtotilasto': 'http://testserver/api/reporting/v1/tiedonsiirtotilasto/',
             'transfer-outage': 'http://testserver/api/reporting/v1/transfer-outage/',
-            'transfer-outage-lahdejarjestelma': 'http://testserver/api/reporting/v1/transfer-outage-lahdejarjestelma/',
             'request-summary': 'http://testserver/api/reporting/v1/request-summary/',
             'yearly-reporting-summary': 'http://testserver/api/reporting/v1/yearly-reporting-summary/'
         })

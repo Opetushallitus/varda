@@ -1,12 +1,18 @@
 <main class="transfer-outage-section">
   <mat-button-toggle-group aria-role="navigation"
                            name="transferOutageCategory"
-                           [value]="activeLink"
-                           [attr.aria-label]="i18n.tiedonsiirrot_navigointi_label | translate">
-    <mat-button-toggle routerLink="user"
-                       value="user">
+                           class="wrap-md"
+                           [attr.aria-label]="i18n.tiedonsiirrot_navigointi_label | translate"
+                           [(ngModel)]="searchFilter.group_by">
+    <mat-button-toggle routerLink="palvelukayttaja"
+                       value="palvelukayttaja">
       <mat-icon aria-ignore>person</mat-icon>
       {{ i18n.transfer_outage_service_user | translate }}
+    </mat-button-toggle>
+    <mat-button-toggle routerLink="organisaatio"
+                       value="organisaatio">
+      <mat-icon aria-ignore>home</mat-icon>
+      {{ i18n.vakajarjestaja | translate }}
     </mat-button-toggle>
     <mat-button-toggle routerLink="lahdejarjestelma"
                        value="lahdejarjestelma">
@@ -21,13 +27,23 @@
 
   <form class="transfer-outage-form">
     <div class="row">
-      <div class="col varda-date-range-container">
+      <div class="col-12">
+        <mat-checkbox name="displayAllCheckbox"
+                      class="varda-checkbox"
+                      [(ngModel)]="displayAll"
+                      labelPosition="after"
+                      (change)="displayAllChange()">
+          <span class="oph-bold">{{i18n.transfer_outage_display_all | translate}}</span>
+        </mat-checkbox>
+      </div>
+      <div class="col varda-date-range-container margin-top">
         <div class="row varda-date-range-row">
           <div class="col">
             <app-varda-datepicker #timestampAfter="ngModel"
                                   [name]="'filterTimestampAfter'"
                                   [(ngModel)]="searchFilter.timestamp_after"
-                                  [required]="false">
+                                  [required]="false"
+                                  [disabled]="displayAll">
             </app-varda-datepicker>
             <div aria-live="assertive"
                  class="varda-error-message-block"
@@ -41,7 +57,8 @@
             <app-varda-datepicker #timestampBefore="ngModel"
                                   [name]="'filterTimestampBefore'"
                                   [(ngModel)]="searchFilter.timestamp_before"
-                                  [required]="false">
+                                  [required]="false"
+                                  [disabled]="displayAll">
             </app-varda-datepicker>
             <div aria-live="assertive"
                  class="varda-error-message-block"
@@ -52,8 +69,8 @@
           </div>
         </div>
       </div>
-      <div class="col-md-auto">
-        <button class="varda-button varda-icon-button search-button margin-top-md"
+      <div class="col-md-auto margin-top">
+        <button class="varda-button varda-icon-button search-button"
                 type="button"
                 (click)="searchTransferOutage()"
                 [disabled]="isLoading | async">
@@ -65,8 +82,8 @@
   </form>
 
   <div class="table-responsive">
-    <table mat-table
-           [dataSource]="result">
+    <table mat-table matSort matSortActive="last_successful_max" matSortDirection="asc"
+           (matSortChange)="sortChange($event)" [dataSource]="result">
       <ng-container matColumnDef="username">
         <th mat-header-cell *matHeaderCellDef>
           <app-tiedonsiirto-filter-header [label]="i18n.username"
@@ -102,8 +119,7 @@
           <app-tiedonsiirto-filter-header [label]="i18n.lahdejarjestelma"
                                           [multiline]="true"
                                           (reset)="searchFilter.lahdejarjestelma = null"
-                                          (submit)="searchTransferOutage()"
-                                          *ngIf="activeLink === 'user'; else lahdejarjestelmaNoFilter">
+                                          (submit)="searchTransferOutage()">
             <select *ngIf="lahdejarjestelmaKoodisto | async as lahdejarjestelmat"
                     class="oph-input oph-select"
                     (change)="searchTransferOutage()"
@@ -115,17 +131,16 @@
               </option>
             </select>
           </app-tiedonsiirto-filter-header>
-          <ng-template #lahdejarjestelmaNoFilter>{{ i18n.lahdejarjestelma | translate }}</ng-template>
         </th>
         <td mat-cell *matCellDef="let instance" [libKoodistoValue]="koodistoEnum.lahdejarjestelma" format="long"> {{ instance.lahdejarjestelma }} </td>
       </ng-container>
-      <ng-container matColumnDef="lastSuccessful">
-        <th mat-header-cell *matHeaderCellDef>{{ i18n.transfer_outage_last_successful | translate }}</th>
-        <td mat-cell *matCellDef="let instance"> {{ instance.last_successful | vardaLongDate }} </td>
+      <ng-container matColumnDef="last_successful_max">
+        <th mat-header-cell mat-sort-header *matHeaderCellDef>{{ i18n.transfer_outage_last_successful | translate }}</th>
+        <td mat-cell *matCellDef="let instance"> {{ instance.last_successful_max | vardaLongDate }} </td>
       </ng-container>
-      <ng-container matColumnDef="lastUnsuccessful">
-        <th mat-header-cell *matHeaderCellDef>{{ i18n.transfer_outage_last_unsuccessful | translate }}</th>
-        <td mat-cell *matCellDef="let instance"> {{ instance.last_unsuccessful | vardaLongDate }} </td>
+      <ng-container matColumnDef="last_unsuccessful_max">
+        <th mat-header-cell mat-sort-header *matHeaderCellDef>{{ i18n.transfer_outage_last_unsuccessful | translate }}</th>
+        <td mat-cell *matCellDef="let instance"> {{ instance.last_unsuccessful_max | vardaLongDate }} </td>
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>

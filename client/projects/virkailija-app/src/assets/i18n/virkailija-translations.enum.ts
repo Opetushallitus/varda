@@ -884,6 +884,7 @@ export enum VirkailijaTranslations {
   transfer_outage_service_user = 'transfer-outage.service-user',
   transfer_outage_last_successful = 'transfer-outage.last-successful',
   transfer_outage_last_unsuccessful = 'transfer-outage.last-unsuccessful',
+  transfer_outage_display_all = 'transfer-outage.display-all',
 
   request_summary = 'request-summary',
   request_summary_instructions = 'request-summary.instructions',

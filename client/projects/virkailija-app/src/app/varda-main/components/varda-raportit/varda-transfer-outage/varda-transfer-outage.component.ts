@@ -5,14 +5,13 @@ import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { VardaRaportitService } from '../../../../core/services/varda-raportit.service';
 import { VirkailijaTranslations } from '../../../../../assets/i18n/virkailija-translations.enum';
 import { ErrorTree, VardaErrorMessageService } from '../../../../core/services/varda-error-message.service';
-import {
-  TransferOutageUser,
-  TransferOutageSearchFilter, TransferOutageLahdejarjestelma
-} from '../../../../utilities/models/dto/varda-transfer-outage-dto.model';
+import { TransferOutage, TransferOutageSearchFilter } from '../../../../utilities/models/dto/varda-transfer-outage-dto.model';
 import * as moment from 'moment';
 import { filter } from 'rxjs/operators';
 import { NavigationEnd, Router } from '@angular/router';
 import { KoodistoDTO, KoodistoEnum, VardaKoodistoService, VardaDateService } from 'varda-shared';
+import { Sort } from '@angular/material/sort';
+import { Moment } from 'moment';
 
 
 @Component({
@@ -28,10 +27,12 @@ export class VardaTransferOutageComponent implements OnInit, OnDestroy {
   koodistoEnum = KoodistoEnum;
 
   subscriptions: Array<Subscription> = [];
-  activeLink = 'user';
 
   lahdejarjestelmaKoodisto: Observable<KoodistoDTO>;
 
+  displayAll = false;
+  oldTimestampBefore: Moment;
+  oldTimestampAfter: Moment;
   searchFilter: TransferOutageSearchFilter = {
     count: 0,
     page: 1,
@@ -40,9 +41,11 @@ export class VardaTransferOutageComponent implements OnInit, OnDestroy {
     timestamp_after: moment().subtract(7, 'days'),
     username: null,
     vakajarjestaja: null,
-    lahdejarjestelma: null
+    lahdejarjestelma: null,
+    ordering: 'last_successful_max',
+    group_by: 'palvelukayttaja',
   };
-  result: Array<TransferOutageUser> | Array<TransferOutageLahdejarjestelma>;
+  result: Array<TransferOutage>;
 
   private errorService: VardaErrorMessageService;
 
@@ -55,6 +58,8 @@ export class VardaTransferOutageComponent implements OnInit, OnDestroy {
   ) {
     this.errorService = new VardaErrorMessageService(this.translateService);
     this.errors = this.errorService.initErrorList();
+    this.oldTimestampAfter = this.searchFilter.timestamp_after;
+    this.oldTimestampBefore = this.searchFilter.timestamp_before;
   }
 
   ngOnInit() {
@@ -77,7 +82,9 @@ export class VardaTransferOutageComponent implements OnInit, OnDestroy {
 
     const parsedFilter: Record<string, unknown> = {
       page: this.searchFilter.page,
-      page_size: this.searchFilter.page_size
+      page_size: this.searchFilter.page_size,
+      group_by: this.searchFilter.group_by,
+      ordering: this.searchFilter.ordering
     };
 
     if (this.searchFilter.timestamp_after && this.searchFilter.timestamp_after.isValid()) {
@@ -100,20 +107,19 @@ export class VardaTransferOutageComponent implements OnInit, OnDestroy {
       parsedFilter.vakajarjestaja = this.searchFilter.vakajarjestaja;
     }
 
-    let apiFunction;
-    switch (this.activeLink) {
-      case 'lahdejarjestelma':
-        this.displayedColumns = ['lahdejarjestelma', 'lastSuccessful', 'lastUnsuccessful'];
-        apiFunction = this.raportitService.getTransferOutageLahdejarjestelma(parsedFilter);
+    switch (this.searchFilter.group_by) {
+      case 'organisaatio':
+        this.displayedColumns = ['vakajarjestajaOid', 'vakajarjestajaName', 'last_successful_max', 'last_unsuccessful_max'];
         break;
-      case 'user':
+      case 'lahdejarjestelma':
+        this.displayedColumns = ['lahdejarjestelma', 'last_successful_max', 'last_unsuccessful_max'];
+        break;
+      case 'palvelukayttaja':
       default:
-        this.displayedColumns = ['username', 'vakajarjestajaOid', 'vakajarjestajaName', 'lahdejarjestelma',
-          'lastSuccessful', 'lastUnsuccessful'];
-        apiFunction = this.raportitService.getTransferOutageUser(parsedFilter);
+        this.displayedColumns = ['username', 'last_successful_max', 'last_unsuccessful_max'];
     }
 
-    apiFunction.subscribe({
+    this.raportitService.getTransferOutage(parsedFilter).subscribe({
       next: data => {
         this.result = data.results;
         this.searchFilter.count = data.count;
@@ -133,8 +139,31 @@ export class VardaTransferOutageComponent implements OnInit, OnDestroy {
     this.getTransferOutage();
   }
 
+  sortChange(sort: Sort) {
+    if (!sort.direction) {
+      this.searchFilter.ordering = 'last_successful_max';
+    } else {
+      this.searchFilter.ordering = `${sort.direction === 'desc' ? '-' : ''}${sort.active}`;
+    }
+    this.searchTransferOutage();
+  }
+
+  displayAllChange() {
+    if (this.displayAll) {
+      this.oldTimestampAfter = this.searchFilter.timestamp_after;
+      this.oldTimestampBefore = this.searchFilter.timestamp_before;
+      const tomorrow = moment().add(1, 'days');
+      this.searchFilter.timestamp_after = tomorrow;
+      this.searchFilter.timestamp_before = tomorrow;
+    } else {
+      this.searchFilter.timestamp_after = this.oldTimestampAfter;
+      this.searchFilter.timestamp_before = this.oldTimestampBefore;
+    }
+    this.searchTransferOutage();
+  }
+
   setPage() {
-    this.activeLink = this.router.url.split('?').shift().split('/').pop();
+    this.searchFilter.group_by = this.router.url.split('?').shift().split('/').pop();
     this.getTransferOutage();
   }
 }

@@ -572,3 +572,28 @@ class VardaHenkilostoViewSetTests(TestCase):
         assert_status_code(resp, status.HTTP_200_OK)
         resp_json = json.loads(resp.content)
         self.assertEqual(resp_json['count'], kiertavat_count)
+
+    def test_ui_toimipaikat(self):
+        client = SetUpTestClient('tester2').client()
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+
+        resp = client.get(f'/api/ui/vakajarjestajat/{vakajarjestaja.id}/toimipaikat/')
+        assert_status_code(resp, status.HTTP_200_OK)
+        results = json.loads(resp.content)['results']
+
+        result_oid_set = {toimipaikka['organisaatio_oid'] for toimipaikka in results}
+        actual_oid_set = {'1.2.246.562.10.9395737548815', '', '1.2.246.562.10.9395737548817',
+                          '1.2.246.562.10.9395737548812'}
+        self.assertSetEqual(result_oid_set, actual_oid_set)
+
+    def test_ui_toimipaikat_paos_henkilosto(self):
+        client = SetUpTestClient('tyontekija_tallentaja').client()
+        vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+
+        resp = client.get(f'/api/ui/vakajarjestajat/{vakajarjestaja.id}/toimipaikat/')
+        assert_status_code(resp, status.HTTP_200_OK)
+        results = json.loads(resp.content)['results']
+
+        result_oid_set = {toimipaikka['organisaatio_oid'] for toimipaikka in results}
+        actual_oid_set = {'1.2.246.562.10.9395737548815', ''}
+        self.assertSetEqual(result_oid_set, actual_oid_set)

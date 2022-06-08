@@ -229,9 +229,14 @@ const routes: Routes = [
                 },
                 children: [
                   {
-                    path: 'user',
+                    path: 'palvelukayttaja',
                     component: VardaTransferOutageComponent,
                     data: { title: VirkailijaTranslations.transfer_outage_service_user }
+                  },
+                  {
+                    path: 'organisaatio',
+                    component: VardaTransferOutageComponent,
+                    data: { title: VirkailijaTranslations.vakajarjestaja }
                   },
                   {
                     path: 'lahdejarjestelma',
@@ -241,7 +246,7 @@ const routes: Routes = [
                   {
                     path: '',
                     pathMatch: 'full',
-                    redirectTo: 'user'
+                    redirectTo: 'palvelukayttaja'
                   },
                 ]
               },

@@ -9,20 +9,17 @@ export interface TransferOutageSearchFilter {
   vakajarjestaja?: string;
   lahdejarjestelma?: string;
   username?: string;
+  ordering?: string;
+  group_by: string;
 }
 
-export interface TransferOutageUser {
-  user_id: number;
-  username: string;
-  vakajarjestaja_id: number;
-  vakajarjestaja_nimi: string;
-  vakajarjestaja_oid: string;
-  last_successful: string;
-  last_unsuccessful: string;
-}
-
-export interface TransferOutageLahdejarjestelma {
-  lahdejarjestelma: string;
-  last_successful: string;
-  last_unsuccessful: string;
+export interface TransferOutage {
+  user_id?: number;
+  username?: string;
+  vakajarjestaja_id?: number;
+  vakajarjestaja_nimi?: string;
+  vakajarjestaja_oid?: string;
+  lahdejarjestelma?: string;
+  last_successful_max?: string;
+  last_unsuccessful_max?: string;
 }

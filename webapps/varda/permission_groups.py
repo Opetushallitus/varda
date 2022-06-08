@@ -16,6 +16,12 @@ from varda.models import Toimipaikka, Organisaatio, Z4_CasKayttoOikeudet, Lapsi
 logger = logging.getLogger(__name__)
 
 
+vaka_permission_groups = [Z4_CasKayttoOikeudet.KATSELIJA, Z4_CasKayttoOikeudet.TALLENTAJA,
+                          Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
+                          Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,
+                          Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA]
+
+
 def assign_permissions_to_vakajarjestaja_obj(vakajarjestaja_organisaatio_oid):
     vakajarjestaja_query = Organisaatio.objects.filter(organisaatio_oid=vakajarjestaja_organisaatio_oid)
     if len(vakajarjestaja_query) == 1:
@@ -421,16 +427,16 @@ def assign_object_level_permissions(organisaatio_oid, model_class, model_obj, pa
     if not organisaatio_oid:
         return
 
-    all_organization_permission_groups = get_permission_groups_for_organization(organisaatio_oid)
+    all_organization_permission_groups = get_vaka_permission_groups_for_organization(organisaatio_oid)
     _assign_or_remove_object_level_permissions(model_class, model_obj, all_organization_permission_groups, paos_kytkin, assign=True)
 
 
 def remove_object_level_permissions(organisaatio_oid, model_class, model_obj, paos_kytkin=False):
-    all_organization_permission_groups = get_permission_groups_for_organization(organisaatio_oid)
+    all_organization_permission_groups = get_vaka_permission_groups_for_organization(organisaatio_oid)
     _assign_or_remove_object_level_permissions(model_class, model_obj, all_organization_permission_groups, paos_kytkin, assign=False)
 
 
-def get_permission_groups_for_organization(organisaatio_oid):
+def get_vaka_permission_groups_for_organization(organisaatio_oid):
     """
     Let's find all the groups for organization, where group_name has one of the roles in it.
     We do not want to include possibly other groups in this search.

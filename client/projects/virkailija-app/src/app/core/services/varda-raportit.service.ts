@@ -12,10 +12,7 @@ import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { VardaExcelReportDTO, VardaExcelReportPostDTO } from '../../utilities/models/dto/varda-excel-report-dto.model';
 import { PuutteellinenToimipaikkaListDTO } from '../../utilities/models/dto/varda-puutteellinen-dto.model';
-import {
-  TransferOutageLahdejarjestelma,
-  TransferOutageUser
-} from '../../utilities/models/dto/varda-transfer-outage-dto.model';
+import { TransferOutage } from '../../utilities/models/dto/varda-transfer-outage-dto.model';
 import { VardaPaginatorParams } from '../../utilities/models/varda-paginator-params.model';
 import { RequestSummary } from '../../utilities/models/dto/varda-request-summary-dto.model';
 import {
@@ -101,12 +98,8 @@ export class VardaRaportitService {
     return this.http.get(url, undefined, undefined, {responseType: 'arraybuffer'});
   }
 
-  getTransferOutageUser(searchFilter: Record<string, unknown>): Observable<VardaPageDto<TransferOutageUser>> {
+  getTransferOutage(searchFilter: Record<string, unknown>): Observable<VardaPageDto<TransferOutage>> {
     return this.http.get(`${this.reportingApi}/v1/transfer-outage/`, searchFilter);
-  }
-
-  getTransferOutageLahdejarjestelma(searchFilter: Record<string, unknown>): Observable<VardaPageDto<TransferOutageLahdejarjestelma>> {
-    return this.http.get(`${this.reportingApi}/v1/transfer-outage-lahdejarjestelma/`, searchFilter);
   }
 
   getRequestSummary(searchFilter: Record<string, unknown>): Observable<VardaPageDto<RequestSummary>> {

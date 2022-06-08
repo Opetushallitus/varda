@@ -153,9 +153,7 @@ router_reporting.register(r'tiedonsiirto/yhteenveto', viewsets_reporting.Tiedons
 # /api/reporting/v1/excel-reports/
 router_reporting.register(r'excel-reports', viewsets_reporting.ExcelReportViewSet, basename='excel-reports')
 # /api/reporting/v1/transfer-outage/
-router_reporting.register(r'transfer-outage', viewsets_reporting.UserTransferOutageReportViewSet, basename='transfer-outage')
-# /api/reporting/v1/transfer-outage-lahdejarjestelma/
-router_reporting.register(r'transfer-outage-lahdejarjestelma', viewsets_reporting.LahdejarjestelmaTransferOutageReportViewSet, basename='transfer-outage-lahdejarjestelma')
+router_reporting.register(r'transfer-outage', viewsets_reporting.TransferOutageReportViewSet, basename='transfer-outage')
 # /api/reporting/v1/request-summary/
 router_reporting.register(r'request-summary', viewsets_reporting.RequestSummaryViewSet, basename='request-summary')
 # /api/reporting/v1/yearly-reporting-summary/
