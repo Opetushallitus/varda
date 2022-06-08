@@ -1,5 +1,5 @@
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { CodeDTO, KoodistoDTO, KoodistoEnum, VardaKoodistoService } from 'varda-shared';
+import { CodeDTO, KoodistoDTO, KoodistoEnum, KoodistoSortBy, VardaKoodistoService } from 'varda-shared';
 import { VirkailijaTranslations } from '../../../../assets/i18n/virkailija-translations.enum';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { BreakpointObserver } from '@angular/cdk/layout';
@@ -114,7 +114,7 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
   }
 
   getKoodistoFromKoodistoService(name: KoodistoEnum): Observable<KoodistoDTO> {
-    return this.koodistoService.getKoodisto(name);
+    return this.koodistoService.getKoodisto(name, KoodistoSortBy.name);
   }
 
   getCodeUiString(code: CodeDTO | null): string {

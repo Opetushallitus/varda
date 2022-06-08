@@ -1,8 +1,8 @@
-<input #inputObject
+<input #inputObject="ngModel"
        class="oph-input"
        [name]="name"
        [id]="id"
-       [class.oph-input-has-error]="!vardaInput.valid && vardaInput.touched"
+       [class.oph-input-has-error]="!inputObject.valid && inputObject.touched"
        [type]="type"
        [minlength]="minlength"
        [required]="required"
@@ -12,10 +12,9 @@
        [(ngModel)]="inputValue"
        (keydown.enter)="onKeydownEnter($event)"
        (blur)="onBlur()"
-       (input)="onInput($event)"
-       #vardaInput="ngModel">
-<div class="oph-field-text oph-error" *ngIf="errorMap.length > 0 && !vardaInput.valid && vardaInput.touched && vardaInput.errors">
+       (input)="onInput($event)">
+<div class="oph-field-text oph-error" *ngIf="errorMap.length > 0 && !inputObject.valid && inputObject.touched && inputObject.errors">
   <ng-container *ngFor="let errorItem of errorMap">
-    <span *ngIf="vardaInput.errors.hasOwnProperty(errorItem.key)">{{ errorItem.value | translate }}</span>
+    <span *ngIf="inputObject.errors.hasOwnProperty(errorItem.key)">{{ errorItem.value | translate }}</span>
   </ng-container>
 </div>

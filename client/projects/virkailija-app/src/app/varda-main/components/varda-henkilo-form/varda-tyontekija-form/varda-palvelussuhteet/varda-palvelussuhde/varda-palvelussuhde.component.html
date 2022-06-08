@@ -116,18 +116,20 @@
                                 [label]="i18n.palvelussuhde_tutkinto | translate"
                                 [errorText]="i18n.palvelussuhde_error_tutkinto | translate"
                                 [instructionText]="i18n.palvelussuhde_instruction_tutkinto | translate">
-            <select #fieldItem
-                    class="oph-input oph-select"
-                    formControlName="tutkinto_koodi">
-              <option [value]="null"
-                      disabled>-- {{ i18n.tutkinnot_valitse_ylin_tutkinto | translate }} --</option>
-              <option *ngFor="let tutkinto of tutkintoList"
-                      [value]="tutkinto.tutkinto_koodi"
-                      [libKoodistoValue]="koodistoEnum.tutkinto"
-                      format="long">
-                {{ tutkinto.tutkinto_koodi }}
-              </option>
-            </select>
+            <div class="oph-select-container" [attr.disabled]="formGroup.controls.tutkinto_koodi.disabled">
+              <select #fieldItem
+                      class="oph-input oph-select"
+                      formControlName="tutkinto_koodi">
+                <option [value]="null"
+                        disabled>-- {{ i18n.tutkinnot_valitse_ylin_tutkinto | translate }} --</option>
+                <option *ngFor="let tutkinto of tutkintoList"
+                        [value]="tutkinto.tutkinto_koodi"
+                        [libKoodistoValue]="koodistoEnum.tutkinto"
+                        format="long">
+                  {{ tutkinto.tutkinto_koodi }}
+                </option>
+              </select>
+            </div>
           </app-varda-form-field>
 
           <app-varda-error-field [errors]="palvelussuhdeFormErrors"></app-varda-error-field>

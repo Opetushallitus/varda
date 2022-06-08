@@ -37,32 +37,33 @@
                               [label]="i18n.painotukset_kielipainotus_koodi | translate"
                               [errorText]="i18n.painotukset_error_kielipainotus_koodi | translate"
                               [instructionText]="i18n.painotukset_instruction_kielipainotus_koodi | translate">
-          <mat-select #fieldItem
-                      placeholder="-- {{ i18n.choose | translate }} --"
-                      class="oph-input oph-select"
-                      formControlName="kielipainotus_koodi">
-            <mat-optgroup [label]="i18n.painotukset_kielipainotus_yleiset | translate">
-              <ng-container *ngFor="let option of kielikoodisto; let index = index">
-                <mat-option *ngIf="index < 10"
-                            [value]="option.code_value"
-                            [libKoodistoValue]="koodistoEnum.kieli"
-                            format="long">
-                  {{ option.code_value }}
-                </mat-option>
-              </ng-container>
-            </mat-optgroup>
-            <mat-optgroup [label]="i18n.painotukset_kielipainotus_muut | translate">
-              <ng-container *ngFor="let option of kielikoodisto; let index = index">
-                <mat-option *ngIf="index >= 10"
-                            [value]="option.code_value"
-                            [libKoodistoValue]="koodistoEnum.kieli"
-                            format="long">
-                  {{ option.code_value }}
-                </mat-option>
-              </ng-container>
-            </mat-optgroup>
-          </mat-select>
-
+          <div class="oph-select-container">
+            <mat-select #fieldItem
+                        placeholder="-- {{ i18n.choose | translate }} --"
+                        class="oph-input oph-select"
+                        formControlName="kielipainotus_koodi">
+              <mat-optgroup [label]="i18n.painotukset_kielipainotus_yleiset | translate">
+                <ng-container *ngFor="let option of kielikoodisto; let index = index">
+                  <mat-option *ngIf="index < 10"
+                              [value]="option.code_value"
+                              [libKoodistoValue]="koodistoEnum.kieli"
+                              format="long">
+                    {{ option.code_value }}
+                  </mat-option>
+                </ng-container>
+              </mat-optgroup>
+              <mat-optgroup [label]="i18n.painotukset_kielipainotus_muut | translate">
+                <ng-container *ngFor="let option of kielikoodisto; let index = index">
+                  <mat-option *ngIf="index >= 10"
+                              [value]="option.code_value"
+                              [libKoodistoValue]="koodistoEnum.kieli"
+                              format="long">
+                    {{ option.code_value }}
+                  </mat-option>
+                </ng-container>
+              </mat-optgroup>
+            </mat-select>
+          </div>
         </app-varda-form-field>
 
         <app-varda-form-field name="alkamis_pvm"

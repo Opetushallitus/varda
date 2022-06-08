@@ -15,7 +15,7 @@ import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/util
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { SaveAccess, UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { finalize, Observable } from 'rxjs';
-import { KoodistoDTO, KoodistoEnum, VardaDateService, VardaKoodistoService } from 'varda-shared';
+import { KoodistoDTO, KoodistoEnum, KoodistoSortBy, VardaDateService, VardaKoodistoService } from 'varda-shared';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 import {
@@ -69,7 +69,6 @@ export class VardaVarhaiskasvatussuhdeComponent extends VardaFormAccordionAbstra
     this.toimijaAccess = this.authService.getUserAccess();
     this.errorMessageService = new VardaErrorMessageService(translateService);
     this.varhaiskasvatussuhdeFormErrors = this.errorMessageService.initErrorList();
-    this.koodistoService.getKoodisto(KoodistoEnum.tehtavanimike).subscribe(koodisto => this.tehtavanimikkeet = koodisto);
     this.initToimipaikat();
   }
 
@@ -97,6 +96,11 @@ export class VardaVarhaiskasvatussuhdeComponent extends VardaFormAccordionAbstra
         this.toimipaikat = this.toimipaikat.filter(toimipaikka => toimipaikka.paos_organisaatio_oid === activeLapsi.paos_organisaatio_oid);
       }
     }
+
+    this.subscriptions.push(
+      this.koodistoService.getKoodisto(KoodistoEnum.tehtavanimike, KoodistoSortBy.name).subscribe(koodisto =>
+        this.tehtavanimikkeet = koodisto)
+    );
   }
 
   initForm() {

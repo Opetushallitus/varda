@@ -92,19 +92,21 @@
                    class="ml-2 my-2">{{ formGroup.controls.jarjestamismuoto_koodi?.value }}</div>
             </ng-container>
             <ng-template #showTrigger>
-              <select #fieldItem
-                      (ngModelChange)="changeJarjestamismuoto($event)"
-                      class="oph-input oph-select"
-                      formControlName="jarjestamismuoto_koodi">
-                <option [value]="null"
-                        disabled>-- {{ i18n.choose | translate }} --</option>
-                <option *ngFor="let jarjestamismuoto of jarjestamismuotoKoodisto"
-                        [disabled]="jarjestamismuoto.disabled"
-                        [value]="jarjestamismuoto.code_value">
-                  <span *ngIf="jarjestamismuoto.disabled">x </span>
-                  <span [libKoodistoValue]="koodistoEnum.jarjestamismuoto" format="long">{{ jarjestamismuoto.code_value }}</span>
-                </option>
-              </select>
+              <div class="oph-select-container" [attr.disabled]="formGroup.controls.jarestamismuoto_koodi?.disabled">
+                <select #fieldItem
+                        (ngModelChange)="changeJarjestamismuoto($event)"
+                        class="oph-input oph-select"
+                        formControlName="jarjestamismuoto_koodi">
+                  <option [value]="null"
+                          disabled>-- {{ i18n.choose | translate }} --</option>
+                  <option *ngFor="let jarjestamismuoto of jarjestamismuotoKoodisto"
+                          [disabled]="jarjestamismuoto.disabled"
+                          [value]="jarjestamismuoto.code_value">
+                    <span *ngIf="jarjestamismuoto.disabled">x </span>
+                    <span [libKoodistoValue]="koodistoEnum.jarjestamismuoto" format="long">{{ jarjestamismuoto.code_value }}</span>
+                  </option>
+                </select>
+              </div>
             </ng-template>
           </app-varda-form-field>
 

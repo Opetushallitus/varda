@@ -1,18 +1,13 @@
 import { Directive, ElementRef, Input, AfterContentInit, OnChanges, SimpleChanges } from '@angular/core';
 import { VardaKoodistoService } from '../koodisto.service';
 import { KoodistoEnum } from '../models/koodisto-models';
-import { VardaDateService } from '../varda-date.service';
-import { CommonTranslations } from '../../common-translations.enum';
-import { HelperService } from '../helper.service';
-
-export type CodeFormat = 'short' | 'long';
 
 @Directive({
   selector: '[libKoodistoValue]'
 })
 export class KoodistoValueDirective implements AfterContentInit, OnChanges {
   @Input() value: string;
-  @Input() format: CodeFormat = 'short';
+  @Input() format: 'short' | 'long' = 'short';
 
   private koodistoType: KoodistoEnum;
   @Input()
@@ -21,17 +16,12 @@ export class KoodistoValueDirective implements AfterContentInit, OnChanges {
   }
 
   private elem: HTMLInputElement;
-  private i18n = CommonTranslations;
-  private disabledSinceString = '';
 
   constructor(
     private el: ElementRef,
-    private koodistoService: VardaKoodistoService,
-    private dateService: VardaDateService,
-    private helperService: HelperService
+    private koodistoService: VardaKoodistoService
   ) {
     this.elem = el.nativeElement;
-    this.disabledSinceString = this.helperService.getTranslation(this.i18n.code_disabled_since);
   }
 
   ngAfterContentInit() {
@@ -48,21 +38,7 @@ export class KoodistoValueDirective implements AfterContentInit, OnChanges {
 
     this.koodistoService.getCodeValueFromKoodisto(this.koodistoType, codeValue).subscribe({
       next: code => {
-        let result = '';
-
-        if (!code) {
-          result = codeValue;
-        } else if (this.format === 'long') {
-          let suffix = '';
-          if (!code.active) {
-            suffix = `, ${this.disabledSinceString} ${this.dateService.apiDateToUiDate(code.paattymis_pvm)}`;
-          }
-          result = `${code.name} (${codeValue}${suffix})`;
-        } else {
-          result = code.name;
-        }
-
-        this.elem.textContent = result;
+        this.elem.textContent = code ? this.koodistoService.getCodeFormattedValue(this.format, code) : codeValue;
       },
       error: err => console.error(err)
     });

@@ -57,6 +57,7 @@ import { BrowserNotSupportedGuard } from '../varda-main/components/public-compon
 import { RoboIdComponent } from './components/robo-id/robo-id.component';
 import { VardaInputComponent } from './components/varda-input/varda-input.component';
 import { VardaShowMoreLessComponent } from './components/varda-show-more-less/varda-show-more-less.component';
+import { ScrollingModule } from '@angular/cdk/scrolling';
 
 const cookieConfig: NgcCookieConsentConfig = {
   cookie: {
@@ -111,6 +112,7 @@ const cookieConfig: NgcCookieConsentConfig = {
     MatTabsModule,
     MatChipsModule,
     MatButtonToggleModule,
+    ScrollingModule,
     TranslateModule,
     NgcCookieConsentModule.forRoot(cookieConfig)
   ],

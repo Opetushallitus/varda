@@ -1,26 +1,46 @@
-<div [class.oph-invalid-container]="isInvalid || isOptionInvalid()">
+<div [class.oph-invalid-container]="(isInvalid || isOptionInvalid()) && textInput.touched" class="varda-autocomplete-selector">
   <div class="oph-select-container" [attr.disabled]="disabled">
     <input class="oph-input autocomplete-input"
+           [class.input-null-option]="isNullOption"
            type="text"
-           #textInput
            [placeholder]="placeholder"
            [matAutocomplete]="autocomplete"
            (input)="inputChange($event)"
-           [disabled]="disabled">
+           [disabled]="disabled"
+           (blur)="propagateTouch()"
+           #textInput="ngModel"
+           [(ngModel)]="inputValue">
   </div>
-  <mat-autocomplete #autocomplete="matAutocomplete" (optionSelected)="autocompleteSelected($event)">
-    <mat-option *ngIf="isNullOption" [value]="nullValue">{{nullOptionLabel}}</mat-option>
-    <mat-option *ngIf="isNoResults" disabled>{{ i18n.katsele_tietoja_no_results | translate}}</mat-option>
-    <mat-option *ngFor="let option of filteredOptions | async"
-                [value]="option"
-                [title]="getFormattedOption(option)">
-      {{getFormattedOption(option)}}
-    </mat-option>
+  <mat-autocomplete #autocomplete="matAutocomplete"
+                    (optionSelected)="autocompleteSelected($event)"
+                    (opened)="autocompleteOpened()">
+    <ng-container *ngIf="options.length < 100; else virtualScroller">
+      <mat-option *ngIf="isNullOption" [value]="nullValue">{{nullOptionLabel}}</mat-option>
+      <mat-option *ngIf="isNoResults" disabled>{{ i18n.katsele_tietoja_no_results | translate}}</mat-option>
+      <mat-option *ngFor="let option of filteredOptions | async"
+                  [value]="option"
+                  [title]="getFormattedOption(option)">
+        {{getFormattedOption(option)}}
+      </mat-option>
+    </ng-container>
+    <ng-template #virtualScroller>
+      <cdk-virtual-scroll-viewport itemSize="25"
+                                   class="virtual-viewport"
+                                   [style.height.px]="viewportHeight">
+        <mat-option *ngIf="isNullOption" [value]="nullValue">{{nullOptionLabel}}</mat-option>
+        <mat-option *ngIf="isNoResults" disabled>{{ i18n.katsele_tietoja_no_results | translate}}</mat-option>
+        <mat-option *cdkVirtualFor="let option of filteredOptions | async"
+                    [value]="option"
+                    [title]="getFormattedOption(option)">
+          {{getFormattedOption(option)}}
+        </mat-option>
+      </cdk-virtual-scroll-viewport>
+    </ng-template>
   </mat-autocomplete>
   <div class="varda-error-message-block"
        aria-live="assertive"
        role="alert"
-       *ngIf="isInvalid || isOptionInvalid()">
+       *ngIf="(isInvalid || isOptionInvalid()) && invalidInputLabel && textInput.touched">
     <p>{{invalidInputLabel}}</p>
   </div>
 </div>

@@ -40,7 +40,8 @@
 </div>
 
 <div #formContent
-     class="modal-body varda-modal-body">
+     class="modal-body varda-modal-body"
+     cdkScrollable>
   <div class="varda-modal-form-wrapper">
     <div class="varda-modal-form-content">
       <form *ngIf="!currentHenkilo && !henkilonSuhde.henkilo_oid; else singleError"

@@ -9,7 +9,8 @@ import {
   OnDestroy,
   OnChanges,
   SimpleChanges,
-  AfterContentInit, OnInit
+  AfterViewInit,
+  OnInit
 } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { VardaField, } from '../../../utilities/models';
@@ -28,7 +29,7 @@ export interface FormFieldErrorMap {
   templateUrl: './varda-form-field.component.html',
   styleUrls: ['./varda-form-field.component.css']
 })
-export class VardaFormFieldComponent implements OnInit, AfterContentInit, OnChanges, OnDestroy {
+export class VardaFormFieldComponent implements OnInit, AfterViewInit, OnChanges, OnDestroy {
   @Input() label: string;
   @Input() name: string;
   @Input() errorText: string;
@@ -36,12 +37,11 @@ export class VardaFormFieldComponent implements OnInit, AfterContentInit, OnChan
   @Input() error: boolean;
   @Input() placeholder: string;
   @Input() instructionText: string;
-  @Input() hilight: boolean;
   @Input() readOnly: boolean;
   @Input() required: boolean;
-  @Input() form: FormGroup;
+  @Input() form!: FormGroup;
 
-  @ContentChildren('fieldItem') childComponents: QueryList<ElementRef>;
+  @ContentChildren('fieldItem', { descendants: true }) childComponents: QueryList<ElementRef>;
   @ViewChild('formField') formField: ElementRef;
   @ContentChild(MatRadioGroup) radioGroup: MatRadioGroup;
   @ContentChild(MatSelect) select: MatSelect;
@@ -55,18 +55,11 @@ export class VardaFormFieldComponent implements OnInit, AfterContentInit, OnChan
   focusStatus$ = new Subject<boolean>();
   showInstructionText: boolean;
   isRequired: boolean;
+
   private subscriptions: Subscription[] = [];
 
   constructor() {
     this.showInstructionText = false;
-  }
-
-  onBlur(field: VardaField): void {
-    this.showInstructionText = false;
-  }
-
-  onFocus(field: VardaField): void {
-    this.showInstructionText = true;
   }
 
   ngOnInit() {
@@ -78,12 +71,12 @@ export class VardaFormFieldComponent implements OnInit, AfterContentInit, OnChan
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes.form) {
-      this.initialize();
+      setTimeout(() => this.initialize());
     }
   }
 
-  ngAfterContentInit() {
-    this.initialize();
+  ngAfterViewInit() {
+    setTimeout(() => this.initialize());
   }
 
   initialize() {
@@ -130,6 +123,14 @@ export class VardaFormFieldComponent implements OnInit, AfterContentInit, OnChan
         this.select._closedStream.subscribe(() => this.focusStatus$.next(false))
       );
     }
+  }
+
+  onBlur(field: VardaField): void {
+    this.showInstructionText = false;
+  }
+
+  onFocus(field: VardaField): void {
+    this.showInstructionText = true;
   }
 
   ngOnDestroy() {

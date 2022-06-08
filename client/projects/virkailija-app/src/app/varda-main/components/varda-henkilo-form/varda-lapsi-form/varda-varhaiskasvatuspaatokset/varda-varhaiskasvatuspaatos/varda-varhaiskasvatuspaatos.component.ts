@@ -14,7 +14,7 @@ import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { finalize, Observable } from 'rxjs';
-import { VardaDateService, VardaKoodistoService } from 'varda-shared';
+import { KoodistoSortBy, VardaDateService, VardaKoodistoService } from 'varda-shared';
 import { CodeDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
@@ -55,7 +55,7 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
   addVarhaiskasvatussuhdeBoolean: boolean;
   selectedVakajarjestaja: VardaVakajarjestajaUi;
   varhaiskasvatuspaatosFormErrors: Observable<Array<ErrorTree>>;
-  jarjestamismuotoKoodisto: Array<JarjestamismuodotCode>;
+  jarjestamismuotoKoodisto: Array<JarjestamismuodotCode> = [];
   tilapainenVarhaiskasvatusBoolean: boolean;
   minStartDate: Date;
   minEndDate: Date;
@@ -95,7 +95,7 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
     this.subscriptions.push(
       this.formGroup.get('tilapainen_vaka_kytkin').valueChanges
         .subscribe((value: boolean) => this.tilapainenVakaChange(value)),
-      this.koodistoService.getKoodisto(KoodistoEnum.jarjestamismuoto).subscribe(koodisto =>
+      this.koodistoService.getKoodisto(KoodistoEnum.jarjestamismuoto, KoodistoSortBy.name).subscribe(koodisto =>
         this.handleJarjestamismuodot(koodisto.codes))
     );
   }

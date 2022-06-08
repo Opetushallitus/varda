@@ -25,7 +25,8 @@
 </ng-container>
 <div #formContent
      *ngIf="formGroup"
-     class="modal-body toimipaikka-form-content">
+     class="modal-body toimipaikka-form-content"
+     cdkScrollable>
   <div class="modal-form-intro">
     {{ i18n.toimipaikka_intro_paragraph | translate }}
     <div *ngIf="!isEdit">
@@ -86,22 +87,16 @@
                               [errorText]="i18n.toimipaikka_error_kayntiosoite_postinumero | translate"
                               [placeholder]="i18n.toimipaikka_placeholder_kayntiosoite_postinumero | translate"
                               [instructionText]="i18n.toimipaikka_instruction_kayntiosoite_postinumero | translate">
-          <input #fieldItem
-                 type="text"
-                 minlength="5"
-                 maxlength="5"
-                 class="oph-input"
-                 (change)="checkPostiosoiteToggle()"
-                 [matAutocomplete]="kayntiosoite_postinumero"
-                 formControlName="kayntiosoite_postinumero" />
-          <mat-autocomplete #kayntiosoite_postinumero="matAutocomplete">
-            <mat-option *ngFor="let option of filteredKayntiosoitePostitoimipaikat"
-                        [value]="option.code_value"
-                        [libKoodistoValue]="koodistoEnum.posti"
-                        format="long">
-              {{ option.code_value }}
-            </mat-option>
-          </mat-autocomplete>
+          <app-varda-autocomplete-selector #fieldItem
+                                           [options]="postitoimipaikkaCodes"
+                                           [isNullOption]="false"
+                                           [nullValue]="''"
+                                           [koodisto]="koodistoEnum.posti"
+                                           [returnCodeValue]="true"
+                                           [displayCodeValue]="true"
+                                           formControlName="kayntiosoite_postinumero"
+                                           (ngModelChange)="checkPostiosoiteToggle()">
+          </app-varda-autocomplete-selector>
         </app-varda-form-field>
 
         <app-varda-form-field name="kayntiosoite_postitoimipaikka"
@@ -131,7 +126,6 @@
           <input #fieldItem
                  type="text"
                  class="oph-input"
-                 [readonly]="postiosoiteToggleBoolean"
                  formControlName="postiosoite" />
         </app-varda-form-field>
 
@@ -141,22 +135,15 @@
                               [errorText]="i18n.toimipaikka_error_postinumero | translate"
                               [placeholder]="i18n.toimipaikka_placeholder_postinumero | translate"
                               [instructionText]="i18n.toimipaikka_instruction_postinumero | translate">
-          <input #fieldItem
-                 type="text"
-                 minlength="5"
-                 maxlength="5"
-                 class="oph-input"
-                 [matAutocomplete]="postinumero"
-                 [readonly]="postiosoiteToggleBoolean"
-                 formControlName="postinumero" />
-          <mat-autocomplete #postinumero="matAutocomplete">
-            <mat-option *ngFor="let option of filteredPostitoimipaikat"
-                        [value]="option.code_value"
-                        [libKoodistoValue]="koodistoEnum.posti"
-                        format="long">
-              {{ option.code_value }}
-            </mat-option>
-          </mat-autocomplete>
+          <app-varda-autocomplete-selector #fieldItem
+                                           [options]="postitoimipaikkaCodes"
+                                           [isNullOption]="false"
+                                           [nullValue]="''"
+                                           [koodisto]="koodistoEnum.posti"
+                                           [returnCodeValue]="true"
+                                           [displayCodeValue]="true"
+                                           formControlName="postinumero">
+          </app-varda-autocomplete-selector>
         </app-varda-form-field>
 
         <app-varda-form-field name="postitoimipaikka"
@@ -178,19 +165,14 @@
                               [label]="i18n.toimipaikka_kunta_koodi | translate"
                               [errorText]="i18n.toimipaikka_error_kunta_koodi | translate"
                               [instructionText]="i18n.toimipaikka_instruction_kunta_koodi | translate">
-          <ng-container *ngIf="kuntaOptions$ | async as kuntaOptions">
-            <mat-select #fieldItem
-                        placeholder="-- {{ i18n.choose | translate }} --"
-                        class="oph-input oph-select"
-                        formControlName="kunta_koodi">
-              <mat-option *ngFor="let option of kuntaOptions.codes"
-                          [value]="option.code_value"
-                          [libKoodistoValue]="koodistoEnum.kunta"
-                          format="long">
-                {{ option.code_value }}
-              </mat-option>
-            </mat-select>
-          </ng-container>
+          <app-varda-autocomplete-selector #fieldItem
+                                           [options]="kuntaCodes"
+                                           [isNullOption]="false"
+                                           [nullValue]="''"
+                                           [koodisto]="koodistoEnum.kunta"
+                                           [returnCodeValue]="true"
+                                           formControlName="kunta_koodi">
+          </app-varda-autocomplete-selector>
         </app-varda-form-field>
 
         <app-varda-form-field name="puhelinnumero"
@@ -235,19 +217,18 @@
                                 [label]="i18n.toimipaikka_toimintamuoto_koodi | translate"
                                 [errorText]="i18n.toimipaikka_error_toimintamuoto_koodi | translate"
                                 [instructionText]="i18n.toimipaikka_instruction_toimintamuoto_koodi | translate">
-            <ng-container *ngIf="toimintamuotoOptions$ | async as toimintamuotoOptions">
-              <mat-select #fieldItem
-                          placeholder="-- {{ i18n.choose | translate }} --"
-                          class="oph-input oph-select"
-                          formControlName="toimintamuoto_koodi">
-                <mat-option *ngFor="let option of toimintamuotoOptions.codes"
-                            [value]="option.code_value"
-                            [libKoodistoValue]="koodistoEnum.toimintamuoto"
-                            format="long">
-                  {{ option.code_value }}
-                </mat-option>
-              </mat-select>
-            </ng-container>
+            <div class="oph-select-container" [attr.disabled]="!!formGroup.controls.toimintamuoto_koodi.disabled">
+              <select #fieldItem
+                      class="oph-input oph-select"
+                      formControlName="toimintamuoto_koodi">
+                <option [ngValue]="null" disabled selected>-- {{ i18n.choose | translate }} --</option>
+                <option *ngFor="let code of toimintamuotoCodes"
+                        [value]="code.code_value"
+                        [title]="code.name">
+                  <span [libKoodistoValue]="koodistoEnum.toimintamuoto" format="long">{{ code.code_value }}</span>
+                </option>
+              </select>
+            </div>
           </app-varda-form-field>
 
           <app-varda-form-field name="jarjestamismuoto_koodi"
@@ -262,29 +243,29 @@
                    class="ml-2">{{ koodi }}</div>
             </ng-container>
             <ng-template #showTrigger>
-              <mat-select #fieldItem
-                          placeholder="-- {{ i18n.choose | translate }} --"
-                          multiple
-                          class="oph-input oph-select"
-                          formControlName="jarjestamismuoto_koodi">
-                <mat-select-trigger>
-                  <span libKoodistoValue="vardajarjestamismuoto"
-                        format="long"
-                        *ngIf="formGroup.controls.jarjestamismuoto_koodi?.value?.length === 1; else jmList">
-                    {{ formGroup.controls.jarjestamismuoto_koodi?.value }}
-                  </span>
-                  <ng-template #jmList>
-                    {{ formGroup.controls.jarjestamismuoto_koodi?.value?.join(", ") }}
-                  </ng-template>
-                </mat-select-trigger>
-                <ng-container *ngIf="jarjestamismuotoOptions$ | async as jarjestamismuotoOptions">
-                  <mat-option *ngFor="let option of jarjestamismuotoOptions.codes"
+              <div class="oph-select-container" [attr.disabled]="!!formGroup.controls.jarjestamismuoto_koodi.disabled">
+                <mat-select #fieldItem
+                            placeholder="-- {{ i18n.choose | translate }} --"
+                            multiple
+                            class="oph-input oph-select"
+                            formControlName="jarjestamismuoto_koodi">
+                  <mat-select-trigger>
+                    <span libKoodistoValue="vardajarjestamismuoto"
+                          format="long"
+                          *ngIf="formGroup.controls.jarjestamismuoto_koodi?.value?.length === 1; else jmList">
+                      {{ formGroup.controls.jarjestamismuoto_koodi?.value }}
+                    </span>
+                    <ng-template #jmList>
+                      {{ formGroup.controls.jarjestamismuoto_koodi?.value?.join(", ") }}
+                    </ng-template>
+                  </mat-select-trigger>
+                  <mat-option *ngFor="let option of jarjestamismuotoCodes"
                               [value]="option.code_value"
                               [title]="option.name + ' (' + option.code_value + ')'">
                     <span [libKoodistoValue]="koodistoEnum.jarjestamismuoto" format="long">{{ option.code_value }}</span>
                   </mat-option>
-                </ng-container>
-              </mat-select>
+                </mat-select>
+              </div>
             </ng-template>
           </app-varda-form-field>
           <app-varda-form-field name="asiointikieli_koodi"
@@ -292,26 +273,28 @@
                                 [label]="i18n.toimipaikka_asiointikieli_koodi | translate"
                                 [errorText]="i18n.toimipaikka_error_asiointikieli_koodi | translate"
                                 [instructionText]="i18n.toimipaikka_instruction_asiointikieli_koodi | translate">
-            <mat-select #fieldItem
-                        placeholder="-- {{ i18n.choose | translate }} --"
-                        multiple
-                        class="oph-input oph-select"
-                        formControlName="asiointikieli_koodi">
-              <mat-optgroup [label]="i18n.painotukset_kielipainotus_yleiset | translate">
-                <ng-container *ngFor="let option of kielikoodisto | slice:0:10">
-                  <mat-option [value]="option.code_value" >
-                    <span [libKoodistoValue]="koodistoEnum.kieli" format="long">{{ option.code_value }}</span>
-                  </mat-option>
-                </ng-container>
-              </mat-optgroup>
-              <mat-optgroup [label]="i18n.painotukset_kielipainotus_muut | translate">
-                <ng-container *ngFor="let option of kielikoodisto | slice:10">
-                  <mat-option [value]="option.code_value">
-                    <span [libKoodistoValue]="koodistoEnum.kieli" format="long">{{ option.code_value }}</span>
-                  </mat-option>
-                </ng-container>
-              </mat-optgroup>
-            </mat-select>
+            <div class="oph-select-container" [attr.disabled]="!!formGroup.controls.asiointikieli_koodi.disabled">
+              <mat-select #fieldItem
+                          placeholder="-- {{ i18n.choose | translate }} --"
+                          multiple
+                          class="oph-input oph-select"
+                          formControlName="asiointikieli_koodi">
+                <mat-optgroup [label]="i18n.painotukset_kielipainotus_yleiset | translate">
+                  <ng-container *ngFor="let option of kielikoodisto | slice:0:10">
+                    <mat-option [value]="option.code_value">
+                      <span [libKoodistoValue]="koodistoEnum.kieli" format="long">{{ option.code_value }}</span>
+                    </mat-option>
+                  </ng-container>
+                </mat-optgroup>
+                <mat-optgroup [label]="i18n.painotukset_kielipainotus_muut | translate">
+                  <ng-container *ngFor="let option of kielikoodisto | slice:10">
+                    <mat-option [value]="option.code_value">
+                      <span [libKoodistoValue]="koodistoEnum.kieli" format="long">{{ option.code_value }}</span>
+                    </mat-option>
+                  </ng-container>
+                </mat-optgroup>
+              </mat-select>
+            </div>
           </app-varda-form-field>
 
           <app-varda-form-field name="kasvatusopillinen_jarjestelma_koodi"
@@ -319,19 +302,18 @@
                                 [label]="i18n.toimipaikka_kasvatusopillinen_jarjestelma_koodi | translate"
                                 [errorText]="i18n.toimipaikka_error_kasvatusopillinen_jarjestelma_koodi | translate"
                                 [instructionText]="i18n.toimipaikka_instruction_kasvatusopillinen_jarjestelma_koodi | translate">
-            <ng-container *ngIf="kasvatusopillinenOptions$ | async as kasvatusopillinenOptions">
-              <mat-select #fieldItem
-                          placeholder="-- {{ i18n.choose | translate }} --"
-                          class="oph-input oph-select"
-                          formControlName="kasvatusopillinen_jarjestelma_koodi">
-                <mat-option *ngFor="let option of kasvatusopillinenOptions.codes"
-                            [value]="option.code_value"
-                            [libKoodistoValue]="koodistoEnum.kasvatusopillinenjarjestelma"
-                            format="long">
-                  {{ option.code_value }}
-                </mat-option>
-              </mat-select>
-            </ng-container>
+            <div class="oph-select-container" [attr.disabled]="!!formGroup.controls.kasvatusopillinen_jarjestelma_koodi.disabled">
+              <select #fieldItem
+                      class="oph-input oph-select"
+                      formControlName="kasvatusopillinen_jarjestelma_koodi">
+                <option [ngValue]="null" disabled selected>-- {{ i18n.choose | translate }} --</option>
+                <option *ngFor="let code of kasvatusopillinenCodes"
+                        [value]="code.code_value"
+                        [title]="code.name">
+                  <span [libKoodistoValue]="koodistoEnum.kasvatusopillinenjarjestelma" format="long">{{ code.code_value }}</span>
+                </option>
+              </select>
+            </div>
           </app-varda-form-field>
 
           <app-varda-form-field name="varhaiskasvatuspaikat"

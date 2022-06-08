@@ -12,7 +12,7 @@ import {
 } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
-import { VardaDateService, VardaKoodistoService } from 'varda-shared';
+import { KoodistoSortBy, VardaDateService, VardaKoodistoService } from 'varda-shared';
 import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { distinctUntilChanged, filter } from 'rxjs/operators';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
@@ -76,9 +76,6 @@ export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractCompo
     this.henkilostoErrorService = new VardaErrorMessageService(translateService);
     this.palvelussuhdeFormErrors = this.henkilostoErrorService.initErrorList();
 
-    this.koodistoService.getKoodisto(KoodistoEnum.tyosuhde).subscribe(koodisto => this.tyosuhdeKoodisto = koodisto);
-    this.koodistoService.getKoodisto(KoodistoEnum.tyoaika).subscribe(koodisto => this.tyoaikaKoodisto = koodisto);
-
     this.tyontekijaId = this.henkilostoService.activeTyontekija.getValue().id;
   }
 
@@ -91,7 +88,11 @@ export class VardaPalvelussuhdeComponent extends VardaFormAccordionAbstractCompo
         if (this.tutkintoList.length === 1) {
           this.formGroup.controls.tutkinto_koodi.setValue(this.tutkintoList[0].tutkinto_koodi);
         }
-      })
+      }),
+      this.koodistoService.getKoodisto(KoodistoEnum.tyosuhde, KoodistoSortBy.name).subscribe(koodisto =>
+        this.tyosuhdeKoodisto = koodisto),
+      this.koodistoService.getKoodisto(KoodistoEnum.tyoaika, KoodistoSortBy.name).subscribe(koodisto =>
+        this.tyoaikaKoodisto = koodisto)
     );
 
     if (this.objectExists()) {

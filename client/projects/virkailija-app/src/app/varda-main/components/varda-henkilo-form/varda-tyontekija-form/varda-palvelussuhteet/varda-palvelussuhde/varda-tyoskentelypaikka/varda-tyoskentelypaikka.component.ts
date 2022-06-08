@@ -8,7 +8,7 @@ import { Moment } from 'moment';
 import { DOCUMENT } from '@angular/common';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
-import { VardaDateService, VardaKoodistoService } from 'varda-shared';
+import { KoodistoSortBy, VardaDateService, VardaKoodistoService } from 'varda-shared';
 import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import {
   ErrorTree,
@@ -85,7 +85,7 @@ export class VardaTyoskentelypaikkaComponent extends VardaFormAccordionAbstractC
     }
 
     this.subscriptions.push(
-      this.koodistoService.getKoodisto(KoodistoEnum.tehtavanimike).subscribe(koodisto =>
+      this.koodistoService.getKoodisto(KoodistoEnum.tehtavanimike, KoodistoSortBy.name).subscribe(koodisto =>
         this.tehtavanimikkeet = koodisto)
     );
   }

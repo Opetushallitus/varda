@@ -86,24 +86,18 @@
               [formGroup]="tutkintoForm"
               (submit)="createTutkinto(tutkintoForm)"
               class="mt-4">
-          <mat-form-field appereance="standard">
-
-            <mat-label>
-              <mat-icon alt="">school</mat-icon> {{ i18n.tutkinnot_lisaa_tutkinto | translate }}
-            </mat-label>
-            <mat-select panelClass="mt-3"
-                        [class.mb-4]="tutkintoFormErrors | async"
-                        formControlName="tutkinto_koodi">
-              <mat-option [value]="null"
-                          disabled>-- {{ i18n.choose | translate }} --</mat-option>
-              <mat-option *ngFor="let tutkintoOption of tutkintoOptions"
-                          [value]="tutkintoOption.code_value"
-                          [libKoodistoValue]="KoodistoEnum.tutkinto"
-                          format="long">
-                {{ tutkintoOption.code_value }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
+          <label class="oph-label" for="tutkinto-input">{{ i18n.tutkinnot_lisaa_tutkinto | translate }}</label>
+          <app-varda-autocomplete-selector #fieldItem
+                                           id="tutkinto-input"
+                                           [placeholder]="'-- ' + (i18n.choose | translate) + ' --'"
+                                           [invalidInputLabel]="i18n.katsele_tietoja_error_no_tutkinto_selected | translate"
+                                           [options]="tutkintoOptions"
+                                           [isNullOption]="false"
+                                           [nullValue]="''"
+                                           [koodisto]="KoodistoEnum.tutkinto"
+                                           [returnCodeValue]="true"
+                                           formControlName="tutkinto_koodi">
+          </app-varda-autocomplete-selector>
           <div class="action-button-wrapper">
             <button class="varda-button varda-button-wide responsive-md"
                     [disabled]="!tutkintoForm.valid || isSubmitting"

@@ -5,17 +5,28 @@ import {
   Input,
   OnChanges,
   SimpleChanges,
-  ViewChild
+  ViewChild,
+  ViewEncapsulation
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import {
+  ControlValueAccessor,
+  NG_VALUE_ACCESSOR
+} from '@angular/forms';
 import { BehaviorSubject } from 'rxjs';
-import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatAutocompleteSelectedEvent, MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
+import { CodeDTO, KoodistoEnum, VardaKoodistoService } from 'varda-shared';
+import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 
 interface OptionFormat {
   format: string;
   properties: Array<string>;
 }
+
+// Height of mat-option is 48px
+const OPTION_HEIGHT = 48;
+// max-height of mat-autocomplete-panel is 256px
+const MAX_HEIGHT = 256;
 
 @Component({
   selector: 'app-varda-autocomplete-selector',
@@ -27,9 +38,13 @@ interface OptionFormat {
       useExisting: forwardRef(() => VardaAutocompleteSelectorComponent),
       multi: true
     }
-  ]
+  ],
+  encapsulation: ViewEncapsulation.None
 })
 export class VardaAutocompleteSelectorComponent<T> implements ControlValueAccessor, OnChanges {
+  @ViewChild('textInput', {read: ElementRef}) textInput: ElementRef<HTMLInputElement>;
+  @ViewChild('textInput', {read: MatAutocompleteTrigger}) autocompleteTrigger: MatAutocompleteTrigger;
+  @ViewChild(CdkVirtualScrollViewport, {static: true}) virtualViewport: CdkVirtualScrollViewport;
   @Input() optionFormat: OptionFormat = {format: '{0}', properties: null};
   @Input() options: Array<T>;
   @Input() placeholder: string;
@@ -38,46 +53,73 @@ export class VardaAutocompleteSelectorComponent<T> implements ControlValueAccess
   @Input() isNullOption = true;
   @Input() invalidInputLabel = '';
   @Input() disabled = false;
-  @ViewChild('textInput') textInput: ElementRef<HTMLInputElement>;
+  @Input() koodisto: KoodistoEnum;
+  @Input() returnCodeValue = false;
+  @Input() displayCodeValue = false;
+
+  public get nativeElement() {
+    // Return textInput for compatibility with VardaFormFieldComponent
+    return this.textInput?.nativeElement;
+  }
 
   i18n = VirkailijaTranslations;
-  inputValue = '';
   filteredOptions: BehaviorSubject<Array<T>> = new BehaviorSubject<Array<T>>([]);
   selectedOption: T;
   isNoResults = false;
   isInvalid = false;
+  viewportHeight = 0;
+  inputValue: any;
 
-  constructor() { }
+  constructor(private koodistoService: VardaKoodistoService) { }
 
   inputChange(event: Event) {
-    this.isInvalid = false;
-    this.inputValue = '';
-    this.selectedOption = this.nullValue;
-    const targetValue = (event.target as HTMLInputElement).value;
-    const results = this.options.filter(option => this.getFormattedOption(option).toLowerCase().includes(targetValue.toLowerCase()));
+    const targetValue = (event.target as HTMLInputElement).value.toLowerCase();
+    const results = this.options.filter(option => this.getFormattedOption(option).toLowerCase().includes(targetValue));
+    this.isNoResults = results.length === 0;
+    this.setFilteredOptions(results);
 
-    if (results.length === 0) {
-      this.isNoResults = true;
-      this.filteredOptions.next([]);
-    } else {
+    if (results.length === 1 && (this.getFormattedOption(results[0]).toLowerCase() === targetValue ||
+      (this.koodisto && (results[0] as unknown as CodeDTO).code_value.toLowerCase() === targetValue))) {
+      // Select option immediately if there is only 1 result and input matches to option or code_value
+      this.isInvalid = false;
       this.isNoResults = false;
-      this.filteredOptions.next(results);
-    }
-
-    if (targetValue === '') {
-      this.selectedOption = this.nullValue;
-      this.propagateChange(this.nullValue);
+      this.selectedOption = results[0];
+      this.fillTextInput();
+      this.emitValueChanged();
+      this.textInput.nativeElement.blur();
+      this.autocompleteTrigger.closePanel();
+    } else {
+      // 0 or more than 1 results
+      // Set invalid if
+      this.isInvalid = targetValue !== '' || !this.isNullOption;
+      if (this.selectedOption !== this.nullValue) {
+        this.selectedOption = this.nullValue;
+        this.propagateChange(this.nullValue);
+      }
     }
   }
 
   autocompleteSelected(event: MatAutocompleteSelectedEvent) {
     this.isInvalid = false;
-    const option = event.option.value;
-    this.selectedOption = option;
-    this.filteredOptions.next(this.options);
+    this.selectedOption = event.option.value;
+    this.setFilteredOptions(this.options);
     this.textInput.nativeElement.blur();
-    this.propagateChange(option);
-    this.fillTextInput(option);
+    this.emitValueChanged();
+    this.fillTextInput();
+  }
+
+  autocompleteOpened() {
+    this.virtualViewport?.setRenderedContentOffset(0);
+    const index = this.selectedOption === this.nullValue ? 0 : this.filteredOptions.getValue().indexOf(this.selectedOption);
+    setTimeout(() => this.virtualViewport?.scrollToIndex(index));
+  }
+
+  emitValueChanged() {
+    let value = this.selectedOption;
+    if (this.koodisto && this.returnCodeValue) {
+      value = (this.selectedOption as unknown as CodeDTO).code_value as unknown as T;
+    }
+    this.propagateChange(value);
   }
 
   isOptionInvalid(): boolean {
@@ -96,6 +138,10 @@ export class VardaAutocompleteSelectorComponent<T> implements ControlValueAccess
       return '';
     }
 
+    if (this.koodisto) {
+      return this.koodistoService.getCodeFormattedValue('long', option as unknown as CodeDTO);
+    }
+
     let result = this.optionFormat.format;
     if (!this.optionFormat.properties && typeof option === 'string') {
       result = result.replace('{0}', option);
@@ -107,18 +153,26 @@ export class VardaAutocompleteSelectorComponent<T> implements ControlValueAccess
     return result;
   }
 
-  fillTextInput(value: T) {
-    if (this.textInput) {
-      if (value) {
-        this.textInput.nativeElement.value = this.getFormattedOption(value);
+  fillTextInput() {
+    setTimeout(() => {
+      if (!this.textInput) {
+        return;
+      }
+
+      if (this.selectedOption) {
+        if (this.koodisto && this.displayCodeValue) {
+          this.textInput.nativeElement.value = (this.selectedOption as unknown as CodeDTO).code_value;
+        } else {
+          this.textInput.nativeElement.value = this.getFormattedOption(this.selectedOption);
+        }
       } else {
         this.textInput.nativeElement.value = '';
       }
-    }
+    });
   }
 
   reset() {
-    this.filteredOptions.next(this.options);
+    this.setFilteredOptions(this.options);
     this.selectedOption = this.nullValue;
     this.propagateChange(this.nullValue);
 
@@ -128,9 +182,29 @@ export class VardaAutocompleteSelectorComponent<T> implements ControlValueAccess
     }
   }
 
+  setFilteredOptions(items: Array<T>) {
+    this.filteredOptions.next(items);
+
+    let actualHeight = 0;
+    actualHeight += this.isNoResults ? OPTION_HEIGHT : 0;
+    actualHeight += this.isNullOption ? OPTION_HEIGHT : 0;
+    actualHeight += items.length * OPTION_HEIGHT;
+    this.viewportHeight = actualHeight > MAX_HEIGHT ? MAX_HEIGHT : actualHeight;
+  }
+
+  setDisabledState(isDisabled: boolean) {
+    this.disabled = isDisabled;
+  }
+
   writeValue(value: T) {
+    if (this.koodisto && this.returnCodeValue) {
+      const options = this.options as Array<unknown> as Array<CodeDTO>;
+      const valueAsString = value ? value as unknown as string : null;
+      value = options.find(code => code.code_value === valueAsString) as unknown as T;
+    }
+
     this.selectedOption = value;
-    this.fillTextInput(value);
+    this.fillTextInput();
   }
 
   registerOnChange(fn: any) {
@@ -145,6 +219,7 @@ export class VardaAutocompleteSelectorComponent<T> implements ControlValueAccess
     this.reset();
   }
 
+  propagateTouch = () => {};
+
   private propagateChange = (_: any) => {};
-  private propagateTouch = () => {};
 }

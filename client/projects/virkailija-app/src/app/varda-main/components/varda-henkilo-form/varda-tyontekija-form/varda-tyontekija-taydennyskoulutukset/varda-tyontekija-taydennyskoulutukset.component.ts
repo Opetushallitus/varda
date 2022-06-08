@@ -2,7 +2,7 @@ import { Component, Input, OnInit, QueryList, ViewChildren } from '@angular/core
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
 import { VardaTyontekijaTaydennyskoulutusComponent } from './varda-tyontekija-taydennyskoulutus/varda-tyontekija-taydennyskoulutus.component';
-import { CodeDTO, KoodistoEnum, VardaKoodistoService } from 'varda-shared';
+import { CodeDTO, KoodistoEnum, KoodistoSortBy, VardaKoodistoService } from 'varda-shared';
 import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaFormListAbstractComponent } from '../../varda-form-list-abstract.component';
@@ -43,13 +43,14 @@ export class VardaTyontekijaTaydennyskoulutuksetComponent extends VardaFormListA
   }
 
   ngOnInit() {
+    super.ngOnInit();
     this.objectList = this.henkilostoService.activeTyontekija.getValue().taydennyskoulutukset.sort(sortBySuoritusPvm);
 
     const selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
     const henkiloOid = this.henkilostoService.activeTyontekija.getValue().henkilo.henkilo_oid;
 
     this.subscriptions.push(
-      this.koodistoService.getKoodisto(KoodistoEnum.tehtavanimike).subscribe(result => {
+      this.koodistoService.getKoodisto(KoodistoEnum.tehtavanimike, KoodistoSortBy.name).subscribe(result => {
         this.tehtavanimikeCodes = result.codes;
         this.updateTehtavanimikeOptions();
       }),

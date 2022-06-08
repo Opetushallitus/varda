@@ -1,5 +1,14 @@
-import { Component, Input, Output, ViewChildren, EventEmitter, ElementRef, QueryList, OnInit } from '@angular/core';
-import { FormGroup, FormControl, Validators, FormArray } from '@angular/forms';
+import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnInit,
+  Output,
+  QueryList,
+  ViewChildren
+} from '@angular/core';
+import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
 import * as moment from 'moment';
 import { Moment } from 'moment';
 import {
@@ -17,7 +26,7 @@ import {
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { finalize, Observable } from 'rxjs';
-import { VardaKoodistoService, VardaDateService } from 'varda-shared';
+import { KoodistoSortBy, VardaKoodistoService, VardaDateService } from 'varda-shared';
 import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { VardaMaksutietoHuoltajaComponent } from './varda-maksutieto-huoltaja/varda-maksutieto-huoltaja.component';
 import { TranslateService } from '@ngx-translate/core';
@@ -75,7 +84,7 @@ export class VardaMaksutietoComponent extends VardaFormAccordionAbstractComponen
     super.ngOnInit();
 
     this.subscriptions.push(
-      this.koodistoService.getKoodisto(KoodistoEnum.maksunperuste).subscribe(koodisto =>
+      this.koodistoService.getKoodisto(KoodistoEnum.maksunperuste, KoodistoSortBy.name).subscribe(koodisto =>
         this.maksunperusteKoodisto = koodisto)
     );
   }

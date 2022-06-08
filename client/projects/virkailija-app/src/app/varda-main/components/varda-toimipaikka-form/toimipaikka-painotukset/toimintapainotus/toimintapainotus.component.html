@@ -37,18 +37,18 @@
                               [label]="i18n.painotukset_toimintapainotus_koodi | translate"
                               [errorText]="i18n.painotukset_error_toimintapainotus_koodi | translate"
                               [instructionText]="i18n.painotukset_instruction_toimintapainotus_koodi | translate">
-          <mat-select #fieldItem
-                      placeholder="-- {{ i18n.choose | translate }} --"
-                      class="oph-input oph-select"
-                      formControlName="toimintapainotus_koodi">
-            <mat-option *ngFor="let option of toiminnallinenPainotusKoodisto?.codes"
-                        [value]="option.code_value"
-                        [libKoodistoValue]="koodistoEnum.toiminnallinenpainotus"
-                        format="long">
-              {{ option.code_value }}
-            </mat-option>
-          </mat-select>
-
+          <div class="oph-select-container">
+            <select #fieldItem
+                    class="oph-input oph-select"
+                    formControlName="toimintapainotus_koodi">
+              <option [ngValue]="null" disabled selected>-- {{ i18n.choose | translate }} --</option>
+              <option *ngFor="let code of toiminnallinenPainotusKoodisto.codes"
+                      [value]="code.code_value"
+                      [title]="code.name">
+                <span [libKoodistoValue]="koodistoEnum.toiminnallinenpainotus" format="long">{{ code.code_value }}</span>
+              </option>
+            </select>
+          </div>
         </app-varda-form-field>
 
         <app-varda-form-field name="alkamis_pvm"

@@ -45,17 +45,18 @@
           </div>
 
           <ng-template #toimipaikkaSelector>
-            <select #fieldItem
-                    *ngIf="!formGroup.controls.toimipaikka_oid.disabled"
-                    class="oph-input oph-select"
-                    formControlName="toimipaikka_oid">
-              <option [value]="null"
-                      disabled>-- {{ i18n.choose | translate }} --</option>
-              <option *ngFor="let toimipaikka of toimipaikat"
-                      [value]="toimipaikka.organisaatio_oid">
-                {{ toimipaikka.nimi }}
-              </option>
-            </select>
+            <div class="oph-select-container" [attr.disabled]="formGroup.controls.toimipaikka_oid.disabled">
+              <select #fieldItem
+                      class="oph-input oph-select"
+                      formControlName="toimipaikka_oid">
+                <option [value]="null"
+                        disabled>-- {{ i18n.choose | translate }} --</option>
+                <option *ngFor="let toimipaikka of toimipaikat"
+                        [value]="toimipaikka.organisaatio_oid">
+                  {{ toimipaikka.nimi }}
+                </option>
+              </select>
+            </div>
           </ng-template>
         </app-varda-form-field>
         <app-varda-form-field name="alkamis_pvm"

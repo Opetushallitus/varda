@@ -77,19 +77,20 @@
                [libKoodistoValue]="koodistoEnum.maksunperuste"
                format="long">{{ currentObject.maksun_peruste_koodi }}</div>
           <ng-template #maksunPerusteSelect>
-            <mat-select #fieldItem
-                        *ngIf="maksunperusteKoodisto?.codes.length > 0"
-                        (valueChange)="changeMaksunPeruste($event)"
-                        placeholder="-- {{ i18n.choose | translate }} --"
-                        class="oph-input oph-select"
-                        formControlName="maksun_peruste_koodi">
-              <mat-option *ngFor="let maksunperuste of maksunperusteKoodisto.codes"
-                          [value]="maksunperuste.code_value"
-                          [libKoodistoValue]="koodistoEnum.maksunperuste"
-                          format="long">
-                {{ maksunperuste.code_value }}
-              </mat-option>
-            </mat-select>
+            <div class="oph-select-container" [attr.disabled]="formGroup.controls.maksun_peruste_koodi.disabled">
+              <select #fieldItem
+                      *ngIf="maksunperusteKoodisto?.codes.length > 0"
+                      (ngModelChange)="changeMaksunPeruste($event)"
+                      class="oph-input oph-select"
+                      formControlName="maksun_peruste_koodi">
+                <option [value]="null"
+                        disabled>-- {{ i18n.choose | translate }} --</option>
+                <option *ngFor="let maksunperuste of maksunperusteKoodisto.codes"
+                        [value]="maksunperuste.code_value">
+                  <span [libKoodistoValue]="koodistoEnum.maksunperuste" format="long">{{ maksunperuste.code_value }}</span>
+                </option>
+              </select>
+            </div>
           </ng-template>
         </app-varda-form-field>
 

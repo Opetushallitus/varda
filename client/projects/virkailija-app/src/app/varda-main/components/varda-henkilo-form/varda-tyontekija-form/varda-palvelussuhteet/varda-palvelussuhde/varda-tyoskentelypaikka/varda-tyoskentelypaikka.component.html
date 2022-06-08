@@ -57,20 +57,21 @@
                               [label]="i18n.tyoskentelypaikka_tyoskentelypaikka_valitsin | translate"
                               [errorText]="i18n.tyoskentelypaikka_error_tyoskentelypaikka_valitsin | translate"
                               [instructionText]="i18n.tyoskentelypaikka_instruction_tyoskentelypaikka_valitsin | translate">
-          <select #fieldItem
-                  class="oph-input oph-select"
-                  formControlName="toimipaikka_oid">
-            <option value="null"
-                    disabled>-- {{ i18n.choose | translate }} --</option>
-            <ng-container *ngIf="tehtavanimikkeet">
-              <option *ngFor="let toimipaikka of toimipaikat"
-                      [value]="toimipaikka.organisaatio_oid">
-                {{ toimipaikka.nimi }}
-              </option>
-            </ng-container>
-          </select>
+          <div class="oph-select-container" [attr.disabled]="formGroup.controls.toimipaikka_oid.disabled">
+            <select #fieldItem
+                    class="oph-input oph-select"
+                    formControlName="toimipaikka_oid">
+              <option value="null"
+                      disabled>-- {{ i18n.choose | translate }} --</option>
+              <ng-container *ngIf="tehtavanimikkeet">
+                <option *ngFor="let toimipaikka of toimipaikat"
+                        [value]="toimipaikka.organisaatio_oid">
+                  {{ toimipaikka.nimi }}
+                </option>
+              </ng-container>
+            </select>
+          </div>
         </app-varda-form-field>
-
 
         <app-varda-form-field name="alkamis_pvm"
                               [form]="formGroup"
@@ -108,20 +109,22 @@
                               [label]="i18n.tyoskentelypaikka_tehtavanimike | translate"
                               [errorText]="i18n.tyoskentelypaikka_error_tehtavanimike | translate"
                               [instructionText]="i18n.tyoskentelypaikka_instruction_tehtavanimike | translate">
-          <select #fieldItem
-                  class="oph-input oph-select"
-                  formControlName="tehtavanimike_koodi">
-            <option value="null"
-                    disabled>-- {{ i18n.choose | translate }} --</option>
-            <ng-container *ngIf="tehtavanimikkeet">
-              <option *ngFor="let nimike of tehtavanimikkeet.codes"
-                      [value]="nimike.code_value"
-                      [libKoodistoValue]="koodistoEnum.tehtavanimike"
-                      format="long">
-                {{ nimike.code_value }}
-              </option>
-            </ng-container>
-          </select>
+          <div class="oph-select-container" [attr.disabled]="formGroup.controls.tehtavanimike_koodi.disabled">
+            <select #fieldItem
+                    class="oph-input oph-select"
+                    formControlName="tehtavanimike_koodi">
+              <option value="null"
+                      disabled>-- {{ i18n.choose | translate }} --</option>
+              <ng-container *ngIf="tehtavanimikkeet">
+                <option *ngFor="let nimike of tehtavanimikkeet.codes"
+                        [value]="nimike.code_value"
+                        [libKoodistoValue]="koodistoEnum.tehtavanimike"
+                        format="long">
+                  {{ nimike.code_value }}
+                </option>
+              </ng-container>
+            </select>
+          </div>
         </app-varda-form-field>
 
         <div class="oph-field">

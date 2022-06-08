@@ -4,6 +4,9 @@ import { CodeDTO, KoodistoDTO, KoodistoEnum, KoodistoSortBy } from './models/koo
 import { LoadingHttpService } from './loading-http.service';
 import { HttpHeaders } from '@angular/common/http';
 import { SupportedLanguage } from './models/translation-dto';
+import { VardaDateService } from './varda-date.service';
+import { HelperService } from './helper.service';
+import { CommonTranslations } from '../common-translations.enum';
 
 interface KoodistoCache {
   timestamp: number;
@@ -19,9 +22,12 @@ export class VardaKoodistoService {
   private vardaApiUrl: string;
   private koodistot$ = new BehaviorSubject<Array<KoodistoDTO>>(null);
   private koodistoCache = 'varda.koodistoCache';
+  private i18n = CommonTranslations;
 
   constructor(
-    private http: LoadingHttpService
+    private http: LoadingHttpService,
+    private dateService: VardaDateService,
+    private helperService: HelperService
   ) { }
 
   static sortKieliKoodistoByPrimaryLanguages(koodisto: KoodistoDTO) {
@@ -85,7 +91,7 @@ export class VardaKoodistoService {
 
           if (sortBy) {
             foundKoodisto.codes.sort((a, b) =>
-              Number(b.active) - Number(a.active) || a[sortBy].localeCompare(b[sortBy]));
+              Number(b.active) - Number(a.active) || a[sortBy].localeCompare(b[sortBy], 'fi'));
           }
 
           koodistoObs.next(foundKoodisto);
@@ -139,6 +145,19 @@ export class VardaKoodistoService {
   saveCache(koodistoJSON: Array<KoodistoDTO>, lang: SupportedLanguage) {
     this.koodistot$.next(koodistoJSON);
     localStorage.setItem(this.koodistoCache, JSON.stringify({ timestamp: Date.now(), koodistot: koodistoJSON, language: lang }));
+  }
+
+  getCodeFormattedValue(format: 'short' | 'long', code: CodeDTO) {
+    if (format === 'long') {
+      let suffix = '';
+      if (!code.active) {
+        const disabledSinceString = this.helperService.getTranslation(this.i18n.code_disabled_since);
+        suffix = `, ${disabledSinceString} ${this.dateService.apiDateToUiDate(code.paattymis_pvm)}`;
+      }
+      return `${code.name} (${code.code_value}${suffix})`;
+    } else {
+      return code.name;
+    }
   }
 
   private getKoodistot(lang: SupportedLanguage): Observable<Array<KoodistoDTO>> {

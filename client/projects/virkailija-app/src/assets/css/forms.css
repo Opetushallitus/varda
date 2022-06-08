@@ -235,6 +235,19 @@ label.mat-checkbox-layout {
   pointer-events: none;
 }
 
+.oph-select-container .mat-select-arrow-wrapper {
+  display: none;
+}
+
+.oph-select-container .mat-select-trigger {
+  margin: 0.5em 2em 0.5em 0.5em;
+  width: 100%;
+}
+
+.oph-select-container mat-select.oph-select {
+  padding: 0;
+}
+
 @media (max-width: 767px) {
   .form-continues-text-wrapper {
     display: none;

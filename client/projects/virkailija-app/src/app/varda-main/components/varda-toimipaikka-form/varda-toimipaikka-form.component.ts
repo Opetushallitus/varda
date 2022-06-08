@@ -7,12 +7,7 @@ import { Moment } from 'moment';
 import { finalize, Observable, Subscription } from 'rxjs';
 import { distinctUntilChanged, filter, map, take } from 'rxjs/operators';
 import { VardaDateService, VardaKoodistoService } from 'varda-shared';
-import {
-  CodeDTO,
-  KoodistoDTO,
-  KoodistoEnum,
-  KoodistoSortBy
-} from 'projects/varda-shared/src/lib/models/koodisto-models';
+import { CodeDTO, KoodistoEnum, KoodistoSortBy } from 'projects/varda-shared/src/lib/models/koodisto-models';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ErrorTree, VardaErrorMessageService } from '../../../core/services/varda-error-message.service';
 import { VardaSnackBarService } from '../../../core/services/varda-snackbar.service';
@@ -52,14 +47,12 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
   toimipaikkaFormErrors: Observable<Array<ErrorTree>>;
   minEndDate: Date;
   maxEndDate: Date;
-  toimintamuotoOptions$: Observable<KoodistoDTO>;
-  kuntaOptions$: Observable<KoodistoDTO>;
-  jarjestamismuotoOptions$: Observable<KoodistoDTO>;
+  toimintamuotoCodes: Array<CodeDTO> = [];
+  kuntaCodes: Array<CodeDTO> = [];
+  jarjestamismuotoCodes: Array<CodeDTO> = [];
+  kasvatusopillinenCodes: Array<CodeDTO> = [];
+  postitoimipaikkaCodes: Array<CodeDTO> = [];
   kielikoodisto: Array<CodeDTO>;
-  kasvatusopillinenOptions$: Observable<KoodistoDTO>;
-  postitoimipaikkaOptions$: Observable<KoodistoDTO>;
-  filteredKayntiosoitePostitoimipaikat: Array<CodeDTO> = [];
-  filteredPostitoimipaikat: Array<CodeDTO> = [];
   postiosoiteToggleBoolean = false;
   toimipaikkaKooste: ToimipaikkaKooste;
   modelName = ModelNameEnum.TOIMIPAIKKA;
@@ -84,19 +77,6 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
     this.toimijaAccess = this.authService.getUserAccess();
     this.toimipaikkaFormErrors = this.errorService.initErrorList();
     this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
-
-    this.toimintamuotoOptions$ = this.koodistoService.getKoodisto(KoodistoEnum.toimintamuoto, KoodistoSortBy.codeValue);
-    this.kuntaOptions$ = this.koodistoService.getKoodisto(KoodistoEnum.kunta, KoodistoSortBy.codeValue);
-    this.kasvatusopillinenOptions$ = this.koodistoService.getKoodisto(KoodistoEnum.kasvatusopillinenjarjestelma, KoodistoSortBy.codeValue);
-    this.postitoimipaikkaOptions$ = this.koodistoService.getKoodisto(KoodistoEnum.posti, KoodistoSortBy.codeValue);
-
-    // Depending on if current Vakajarjestaja is kunnallinen or yksityinen, exclude jarjestamismuoto options
-    const excludeJarjestamismuotoCodes = this.vakajarjestajaService.getSelectedVakajarjestaja().kunnallinen_kytkin ? ['jm04', 'jm05'] : ['jm01'];
-    this.jarjestamismuotoOptions$ = this.koodistoService.getKoodisto(KoodistoEnum.jarjestamismuoto, KoodistoSortBy.codeValue)
-      .pipe(map(koodisto => {
-        koodisto.codes = koodisto.codes.filter(code => !excludeJarjestamismuotoCodes.includes(code.code_value.toLowerCase()));
-        return koodisto;
-      }));
   }
 
   ngOnInit() {
@@ -115,9 +95,23 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
       this.initForm();
     }
 
+    // Depending on if current Vakajarjestaja is kunnallinen or yksityinen, exclude jarjestamismuoto options
+    const excludeJarjestamismuotoCodes = this.vakajarjestajaService.getSelectedVakajarjestaja().kunnallinen_kytkin ? ['jm04', 'jm05'] : ['jm01'];
     this.subscriptions.push(
       this.vakajarjestajaApiService.listenToimipaikkaListUpdate().subscribe(() =>
         this.vakajarjestajaApiService.initFormErrorList(this.selectedVakajarjestaja.id, this.toimipaikka)),
+      this.koodistoService.getKoodisto(KoodistoEnum.posti, KoodistoSortBy.name).subscribe(result =>
+        this.postitoimipaikkaCodes = result.codes),
+      this.koodistoService.getKoodisto(KoodistoEnum.toimintamuoto, KoodistoSortBy.name).subscribe(result =>
+        this.toimintamuotoCodes = result.codes),
+      this.koodistoService.getKoodisto(KoodistoEnum.kunta, KoodistoSortBy.name).subscribe(result =>
+        this.kuntaCodes = result.codes),
+      this.koodistoService.getKoodisto(KoodistoEnum.kasvatusopillinenjarjestelma, KoodistoSortBy.name).subscribe(result =>
+        this.kasvatusopillinenCodes = result.codes),
+      this.koodistoService.getKoodisto(KoodistoEnum.jarjestamismuoto, KoodistoSortBy.name).pipe(
+        map(result =>
+          result.codes.filter(code => !excludeJarjestamismuotoCodes.includes(code.code_value.toLowerCase())))
+      ).subscribe(result => this.jarjestamismuotoCodes = result),
       this.koodistoService.getKoodisto(KoodistoEnum.kieli, KoodistoSortBy.name).pipe(take(1)).subscribe(kielikoodisto => {
         const languagePriority = ['FI', 'SV', 'SEPO', 'RU', 'ET', 'EN', 'AR', 'SO', 'DE', 'FR', '99'];
         const noPriority = 999;
@@ -219,7 +213,7 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
 
     if (VardaErrorMessageService.formIsValid(form)) {
       const toimipaikkaDTO: VardaToimipaikkaDTO = {
-        ...form.value,
+        ...form.getRawValue(),
         alkamis_pvm: form.value.alkamis_pvm.format(VardaDateService.vardaApiDateFormat),
         paattymis_pvm: form.value.paattymis_pvm?.isValid() ? form.value.paattymis_pvm.format(VardaDateService.vardaApiDateFormat) : null
       };
@@ -254,37 +248,14 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
   }
 
   changePostinumero(postinumero: string, kayntiosoite?: boolean) {
-    this.postitoimipaikkaOptions$.pipe(take(1)).subscribe(postitoimipaikkaOptions => {
-      if (!postinumero) {
-        return;
-      }
+    let postitoimipaikka = this.postitoimipaikkaCodes.find(code =>
+      code.code_value.toLowerCase() === postinumero?.toLowerCase())?.name;
+    postitoimipaikka = postitoimipaikka !== undefined ? postitoimipaikka : null;
 
-      const filteredPostitoimipaikat = postinumero.length > 1 ? postitoimipaikkaOptions.codes.filter(toimipaikka => toimipaikka.code_value.startsWith(postinumero)) : [];
-      const postitoimipaikka = filteredPostitoimipaikat.find(toimipaikka => toimipaikka.code_value === postinumero);
-
-      const kayntiosoiteCtrl = this.formGroup.get('kayntiosoite_postitoimipaikka');
-      const postitoimipaikkaCtrl = this.formGroup.get('postitoimipaikka');
-
-      if (kayntiosoite) {
-        if (postinumero.length === 5 && !postitoimipaikka) {
-          const postinumeroCtrl = this.formGroup.get('kayntiosoite_postinumero');
-          postinumeroCtrl.setValue(postinumero.substr(0, 4));
-          postinumeroCtrl.markAsTouched();
-        }
-        kayntiosoiteCtrl.setValue(postitoimipaikka?.name);
-        kayntiosoiteCtrl.markAsTouched();
-        this.filteredKayntiosoitePostitoimipaikat = postitoimipaikka ? [] : filteredPostitoimipaikat;
-      } else {
-        if (postinumero.length === 5 && !postitoimipaikka) {
-          const postinumeroCtrl = this.formGroup.get('postinumero');
-          postinumeroCtrl.setValue(postinumero.substr(0, 4));
-          postinumeroCtrl.markAsTouched();
-        }
-        postitoimipaikkaCtrl.setValue(postitoimipaikka?.name);
-        postitoimipaikkaCtrl.markAsTouched();
-        this.filteredPostitoimipaikat = postitoimipaikka ? [] : filteredPostitoimipaikat;
-      }
-    });
+    const formControl = kayntiosoite ? this.formGroup.get('kayntiosoite_postitoimipaikka') :
+      this.formGroup.get('postitoimipaikka');
+    formControl.setValue(postitoimipaikka);
+    formControl.markAsTouched();
   }
 
   checkPostiosoiteToggle() {
@@ -300,15 +271,28 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
     } else {
       this.postiosoiteToggleBoolean = false;
     }
+
+    if (this.postiosoiteToggleBoolean) {
+      this.formGroup.get('postiosoite').disable();
+      this.formGroup.get('postinumero').disable();
+    } else {
+      this.formGroup.get('postiosoite').enable();
+      this.formGroup.get('postinumero').enable();
+    }
   }
 
   togglePostinumero(change: MatCheckboxChange) {
     this.postiosoiteToggleBoolean = change.checked;
 
     if (this.postiosoiteToggleBoolean) {
+      this.formGroup.get('postiosoite').disable();
       this.formGroup.get('postiosoite').setValue(this.formGroup.get('kayntiosoite').value);
+      this.formGroup.get('postinumero').disable();
       this.formGroup.get('postinumero').setValue(this.formGroup.get('kayntiosoite_postinumero').value);
       this.formGroup.updateValueAndValidity();
+    } else {
+      this.formGroup.get('postiosoite').enable();
+      this.formGroup.get('postinumero').enable();
     }
   }
 
@@ -319,6 +303,11 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
 
   endDateChange(endDate: Moment) {
     this.maxEndDate = endDate?.clone().toDate();
+  }
+
+  enableForm() {
+    super.enableForm();
+    this.checkPostiosoiteToggle();
   }
 
   ngOnDestroy() {

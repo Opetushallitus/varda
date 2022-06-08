@@ -73,23 +73,26 @@
                               [label]="i18n.taydennyskoulutus_tehtavanimike | translate"
                               [errorText]="i18n.taydennyskoulutus_error_tehtavanimike | translate"
                               [instructionText]="i18n.taydennyskoulutus_instruction_tehtavanimike | translate">
-          <mat-select #fieldItem
-                      placeholder="-- {{ i18n.choose | translate }} --"
-                      multiple
-                      *ngIf="tehtavanimikeOptions?.length > 0; else eiNimikkeita"
-                      class="oph-input oph-select"
-                      formControlName="tehtavanimike_koodit">
-            <ng-container *ngIf="tehtavanimikeOptions">
-              <mat-option *ngFor="let code of tehtavanimikeOptions"
-                          [value]="code.code_value">
-                <span [libKoodistoValue]="koodistoEnum.tehtavanimike" format="long">{{ code.code_value }}</span>
-              </mat-option>
-              <mat-option *ngFor="let disabledNimike of disabledTehtavanimikeCodes"
-                          [value]="disabledNimike" disabled>
-                {{ disabledNimike | koodisto: { koodisto: koodistoEnum.tehtavanimike } | async }}
-              </mat-option>
-            </ng-container>
-          </mat-select>
+          <div class="oph-select-container"
+               [attr.disabled]="formGroup.controls.tehtavanimike_koodit.disabled"
+               *ngIf="tehtavanimikeOptions?.length > 0; else eiNimikkeita">
+            <mat-select #fieldItem
+                        placeholder="-- {{ i18n.choose | translate }} --"
+                        multiple
+                        class="oph-input oph-select"
+                        formControlName="tehtavanimike_koodit">
+              <ng-container *ngIf="tehtavanimikeOptions">
+                <mat-option *ngFor="let code of tehtavanimikeOptions"
+                            [value]="code.code_value">
+                  <span [libKoodistoValue]="koodistoEnum.tehtavanimike" format="long">{{ code.code_value }}</span>
+                </mat-option>
+                <mat-option *ngFor="let disabledNimike of disabledTehtavanimikeCodes"
+                            [value]="disabledNimike" disabled>
+                  {{ disabledNimike | koodisto: { koodisto: koodistoEnum.tehtavanimike } | async }}
+                </mat-option>
+              </ng-container>
+            </mat-select>
+          </div>
           <ng-template #eiNimikkeita>
             <div class="oph-error">
               <mat-icon alt="">error_outline</mat-icon> {{ i18n.taydennyskoulutus_ei_nimikkeita | translate }}
