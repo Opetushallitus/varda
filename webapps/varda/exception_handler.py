@@ -1,9 +1,11 @@
 import logging
 import re
 
+from django.core.cache import cache
 from django.db.models import F
 from rest_framework import status
 from rest_framework.exceptions import ErrorDetail
+from rest_framework.throttling import BaseThrottle
 from rest_framework.views import exception_handler
 
 from varda.enums.error_messages import ErrorMessages, get_error_dict
@@ -87,6 +89,9 @@ def varda_exception_handler(exc, context):
         To achieve consistency, default error messages are transformed to our custom format.
         """
         response.data = _parse_error_messages(response.data, status_code=response.status_code)
+        if response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
+            _log_throttle_error_message(context['request'])
+
     # Catch 404 errors and return generic Varda style error message
     elif response.status_code == status.HTTP_404_NOT_FOUND:
         error_message = ErrorMessages.MI015.value
@@ -246,3 +251,17 @@ def _add_error_translations(error_message):
                     .annotate(description=F('name'))
                     .values('language', 'description'))
     error_message['translations'] = list(translations)
+
+
+def _log_throttle_error_message(request):
+    """
+    Log error message for 429 responses. Only log at most every 30 minutes to prevent spam.
+    """
+    # Use user ID as identifier or IP if user is anonymous
+    identifier = request.user.id or BaseThrottle().get_ident(request)
+    cache_key = f'throttle_error_message_{identifier}'
+    if not cache.get(cache_key):
+        # Cache entry does not exist, we can log
+        logger.error(f'Request throttled for user/IP {identifier}, tried to access {request.path}')
+        # Set cache entry that expires in 60 * 30 seconds
+        cache.set(cache_key, True, 60 * 30)
