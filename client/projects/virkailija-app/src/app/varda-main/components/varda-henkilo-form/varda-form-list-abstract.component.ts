@@ -30,7 +30,7 @@ export abstract class VardaFormListAbstractComponent<T extends {id?: number}> im
   ngOnInit() {
     this.subscriptions.push(
       this.utilityService.getFocusObjectSubject().subscribe(focusObject => {
-        if (focusObject?.type === this.modelName) {
+        if (focusObject?.type === this.modelName && this.objectList) {
           this.showUntil(this.objectList.findIndex(object => object.id === focusObject.id));
         }
       })

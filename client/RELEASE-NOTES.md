@@ -1,6 +1,11 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.6.3 (09.06.2022)
+- OPHVARDA-2396: Tiedonsiirron katkosten raportin jatkokehitys
+- OPHVARDA-2408: Koodistojen järjestys nimen mukaan
+- OPHVARDA-2435: Siirry viimeksi muokattuun objektiin
+
 1.6.2 (19.05.2022)
 - OPHVARDA-2440: Maksutiedon ja palvelussuhteen kopiointi
 

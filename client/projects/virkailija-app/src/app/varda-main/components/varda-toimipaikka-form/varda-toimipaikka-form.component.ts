@@ -54,7 +54,6 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
   postitoimipaikkaCodes: Array<CodeDTO> = [];
   kielikoodisto: Array<CodeDTO>;
   postiosoiteToggleBoolean = false;
-  toimipaikkaKooste: ToimipaikkaKooste;
   modelName = ModelNameEnum.TOIMIPAIKKA;
 
   private errorService: VardaErrorMessageService;
@@ -142,28 +141,28 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
     this.formGroupSubscriptions.forEach(subscription => subscription.unsubscribe());
     this.formGroup = new FormGroup({
       lahdejarjestelma: new FormControl(Lahdejarjestelma.kayttoliittyma),
-      id: new FormControl(this.toimipaikkaKooste?.id),
-      nimi: new FormControl(this.toimipaikkaKooste?.nimi,
+      id: new FormControl(this.currentObject?.id),
+      nimi: new FormControl(this.currentObject?.nimi,
         [Validators.required, Validators.minLength(3), Validators.maxLength(200), VardaFormValidators.hasCharacters(), VardaFormValidators.rejectSpecialChars]),
-      organisaatio_oid: new FormControl(this.toimipaikkaKooste?.organisaatio_oid),
-      kayntiosoite: new FormControl(this.toimipaikkaKooste?.kayntiosoite,
+      organisaatio_oid: new FormControl(this.currentObject?.organisaatio_oid),
+      kayntiosoite: new FormControl(this.currentObject?.kayntiosoite,
         [Validators.required, Validators.minLength(3), Validators.maxLength(100), VardaFormValidators.hasCharacters(), VardaFormValidators.rejectSpecialChars]),
-      kayntiosoite_postinumero: new FormControl(this.toimipaikkaKooste?.kayntiosoite_postinumero, [Validators.required]),
-      kayntiosoite_postitoimipaikka: new FormControl(this.toimipaikkaKooste?.kayntiosoite_postitoimipaikka, [Validators.required]),
-      postiosoite: new FormControl(this.toimipaikkaKooste?.postiosoite,
+      kayntiosoite_postinumero: new FormControl(this.currentObject?.kayntiosoite_postinumero, [Validators.required]),
+      kayntiosoite_postitoimipaikka: new FormControl(this.currentObject?.kayntiosoite_postitoimipaikka, [Validators.required]),
+      postiosoite: new FormControl(this.currentObject?.postiosoite,
         [Validators.required, Validators.minLength(3), Validators.maxLength(100), VardaFormValidators.hasCharacters(), VardaFormValidators.rejectSpecialChars]),
-      postinumero: new FormControl(this.toimipaikkaKooste?.postinumero, [Validators.required]),
-      postitoimipaikka: new FormControl(this.toimipaikkaKooste?.postitoimipaikka, [Validators.required]),
-      kunta_koodi: new FormControl(this.toimipaikkaKooste?.kunta_koodi.toLocaleUpperCase(), [Validators.required]),
-      puhelinnumero: new FormControl(this.toimipaikkaKooste?.puhelinnumero, [Validators.required, VardaFormValidators.validStringFormat.bind(null, { regex: '^(\\+358)[1-9]\\d{5,10}$' })]),
-      sahkopostiosoite: new FormControl(this.toimipaikkaKooste?.sahkopostiosoite, [Validators.required, VardaFormValidators.validStringFormat.bind(null, { regex: '^[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+(\\.[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+)*@[A-Za-z0-9][A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*(\\.[A-Za-z]{2,})$' })]),
-      toimintamuoto_koodi: new FormControl(this.toimipaikkaKooste?.toimintamuoto_koodi.toLocaleUpperCase(), [Validators.required]),
-      jarjestamismuoto_koodi: new FormControl(this.toimipaikkaKooste?.jarjestamismuoto_koodi.map(koodi => koodi.toLocaleUpperCase()), [Validators.required]),
-      asiointikieli_koodi: new FormControl(this.toimipaikkaKooste?.asiointikieli_koodi.map(koodi => koodi.toLocaleUpperCase()), [Validators.required]),
-      kasvatusopillinen_jarjestelma_koodi: new FormControl(this.toimipaikkaKooste?.kasvatusopillinen_jarjestelma_koodi.toLocaleUpperCase() || 'KJ98', [Validators.required]),
-      varhaiskasvatuspaikat: new FormControl(this.toimipaikkaKooste?.varhaiskasvatuspaikat, [Validators.required, Validators.min(0)]),
-      alkamis_pvm: new FormControl(this.toimipaikkaKooste ? moment(this.toimipaikkaKooste?.alkamis_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
-      paattymis_pvm: new FormControl(this.toimipaikkaKooste?.paattymis_pvm ? moment(this.toimipaikkaKooste?.paattymis_pvm, VardaDateService.vardaApiDateFormat) : null),
+      postinumero: new FormControl(this.currentObject?.postinumero, [Validators.required]),
+      postitoimipaikka: new FormControl(this.currentObject?.postitoimipaikka, [Validators.required]),
+      kunta_koodi: new FormControl(this.currentObject?.kunta_koodi.toLocaleUpperCase(), [Validators.required]),
+      puhelinnumero: new FormControl(this.currentObject?.puhelinnumero, [Validators.required, VardaFormValidators.validStringFormat.bind(null, { regex: '^(\\+358)[1-9]\\d{5,10}$' })]),
+      sahkopostiosoite: new FormControl(this.currentObject?.sahkopostiosoite, [Validators.required, VardaFormValidators.validStringFormat.bind(null, { regex: '^[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+(\\.[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+)*@[A-Za-z0-9][A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*(\\.[A-Za-z]{2,})$' })]),
+      toimintamuoto_koodi: new FormControl(this.currentObject?.toimintamuoto_koodi.toLocaleUpperCase(), [Validators.required]),
+      jarjestamismuoto_koodi: new FormControl(this.currentObject?.jarjestamismuoto_koodi.map(koodi => koodi.toLocaleUpperCase()), [Validators.required]),
+      asiointikieli_koodi: new FormControl(this.currentObject?.asiointikieli_koodi.map(koodi => koodi.toLocaleUpperCase()), [Validators.required]),
+      kasvatusopillinen_jarjestelma_koodi: new FormControl(this.currentObject?.kasvatusopillinen_jarjestelma_koodi.toLocaleUpperCase() || 'KJ98', [Validators.required]),
+      varhaiskasvatuspaikat: new FormControl(this.currentObject?.varhaiskasvatuspaikat, [Validators.required, Validators.min(0)]),
+      alkamis_pvm: new FormControl(this.currentObject ? moment(this.currentObject?.alkamis_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
+      paattymis_pvm: new FormControl(this.currentObject?.paattymis_pvm ? moment(this.currentObject?.paattymis_pvm, VardaDateService.vardaApiDateFormat) : null),
       vakajarjestaja: new FormControl(this.selectedVakajarjestaja.url)
     });
 
@@ -197,8 +196,8 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
     this.subscriptions.push(
       this.koosteService.getToimipaikkaKooste(this.toimipaikka?.id).subscribe({
         next: result => {
-          this.toimipaikkaKooste = result;
-          this.vakajarjestajaApiService.activeToimipaikka.next(this.toimipaikkaKooste);
+          this.currentObject = result;
+          this.vakajarjestajaApiService.activeToimipaikka.next(this.currentObject);
           this.initForm();
         },
         error: err => this.errorService.handleError(err, this.snackBarService)
@@ -232,12 +231,12 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
             const activeToimipaikka = this.vakajarjestajaApiService.activeToimipaikka.getValue();
             this.toimipaikka = result;
             this.vakajarjestajaApiService.sendToimipaikkaListUpdate();
-            this.toimipaikkaKooste = {...result, vakajarjestaja_id: this.selectedVakajarjestaja.id,
+            this.currentObject = {...result, vakajarjestaja_id: this.selectedVakajarjestaja.id,
               vakajarjestaja_nimi: this.selectedVakajarjestaja.nimi,
               kielipainotukset: activeToimipaikka?.kielipainotukset || [],
               toiminnalliset_painotukset: activeToimipaikka?.toiminnalliset_painotukset || []};
             this.initForm();
-            this.vakajarjestajaApiService.activeToimipaikka.next(this.toimipaikkaKooste);
+            this.vakajarjestajaApiService.activeToimipaikka.next(this.currentObject);
           },
           error: err => this.errorService.handleError(err, this.snackBarService)
         })

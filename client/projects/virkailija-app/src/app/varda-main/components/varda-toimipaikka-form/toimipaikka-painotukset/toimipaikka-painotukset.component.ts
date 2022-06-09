@@ -60,11 +60,12 @@ export class ToimipaikkaPainotuksetComponent implements OnInit, OnDestroy {
 
     this.subscriptions.push(
       this.utilityService.getFocusObjectSubject().subscribe(focusObject => {
-        if (focusObject?.type === ModelNameEnum.TOIMINNALLINEN_PAINOTUS) {
+        if (focusObject?.type === ModelNameEnum.TOIMINNALLINEN_PAINOTUS && this.toiminnallinenPainotusList) {
           this.showUntil(ModelNameEnum.TOIMINNALLINEN_PAINOTUS,
             this.toiminnallinenPainotusList.findIndex(object => object.id === focusObject.id));
-        } else if (focusObject?.type === ModelNameEnum.KIELIPAINOTUS) {
-          this.showUntil(ModelNameEnum.KIELIPAINOTUS, this.kielipainotusList.findIndex(object => object.id === focusObject.id));
+        } else if (focusObject?.type === ModelNameEnum.KIELIPAINOTUS && this.kielipainotusList) {
+          this.showUntil(ModelNameEnum.KIELIPAINOTUS,
+            this.kielipainotusList.findIndex(object => object.id === focusObject.id));
         }
       })
     );

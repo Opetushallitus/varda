@@ -56,7 +56,7 @@ export class VardaFormFieldComponent implements OnInit, AfterViewInit, OnChanges
   showInstructionText: boolean;
   isRequired: boolean;
 
-  private subscriptions: Subscription[] = [];
+  private subscriptions: Array<Subscription> = [];
 
   constructor() {
     this.showInstructionText = false;
@@ -71,7 +71,7 @@ export class VardaFormFieldComponent implements OnInit, AfterViewInit, OnChanges
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes.form) {
-      setTimeout(() => this.initialize());
+      this.initialize();
     }
   }
 
