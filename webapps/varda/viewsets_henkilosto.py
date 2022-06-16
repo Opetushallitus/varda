@@ -265,8 +265,8 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
         taydennyskoulutus_organization_groups_qs = user_permission_groups_in_organization(user, tyontekija.vakajarjestaja.organisaatio_oid,
                                                                                           [Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
                                                                                            Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA])
+        available_tehtavanimike_codes = [code.lower() for code in get_available_tehtavanimike_codes_for_user(user, tyontekija)]
         if not is_superuser_or_oph_staff and not taydennyskoulutus_organization_groups_qs.exists():
-            available_tehtavanimike_codes = [code.lower() for code in get_available_tehtavanimike_codes_for_user(user, tyontekija)]
             taydennyskoulutus_id_list = get_object_ids_for_user_by_model(user, 'taydennyskoulutus')
             taydennyskoulutus_filter &= Q(taydennyskoulutus__id__in=taydennyskoulutus_id_list)
             if not user_belongs_to_correct_groups(user, tyontekija.vakajarjestaja, accept_toimipaikka_permission=True,
@@ -274,11 +274,6 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
                 # User does not have add_taydennyskoulutus permission in Toimipaikka of Vakajarjestaja so return only
                 # TaydennyskoulutusTyontekija objects that have correct tehtavanimike_koodi
                 taydennyskoulutus_filter &= Q(tehtavanimike_koodi__in=available_tehtavanimike_codes)
-        else:
-            # User has permissions to all tehtavanimike codes
-            available_tehtavanimike_codes = [code.lower() for code in
-                                             Tyoskentelypaikka.objects.filter(palvelussuhde__in=palvelussuhteet)
-                                                 .values_list('tehtavanimike_koodi', flat=True)]
 
         taydennyskoulutukset = (
             TaydennyskoulutusTyontekija.objects.filter(taydennyskoulutus_filter).annotate(
