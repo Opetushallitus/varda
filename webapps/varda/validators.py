@@ -548,7 +548,8 @@ def validate_kela_api_datetimefield(field, now, name):
     # Data can be fetched up to a maximum of 1 year ago
     if field:
         try:
-            field = datetime.datetime.strptime(field, '%Y-%m-%dT%H:%M:%S%z')
+            datetime_format = '%Y-%m-%dT%H:%M:%S.%f%z' if '.' in field else '%Y-%m-%dT%H:%M:%S%z'
+            field = datetime.datetime.strptime(field, datetime_format)
         except ValueError:
             raise ValidationErrorRest({name: [ErrorMessages.GE020.value]})
         if (now.date() - field.date()).days > 365:

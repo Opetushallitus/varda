@@ -1032,3 +1032,28 @@ class Z9_RelatedObjectChanged(AbstractModel):
             Index(fields=['parent_model_name', 'parent_instance_id', 'changed_timestamp'])
         ]
         verbose_name_plural = 'Related object changed'
+
+
+class Z10_KelaVarhaiskasvatussuhde(AbstractModel):
+    varhaiskasvatussuhde_id = models.IntegerField()
+    suhde_luonti_pvm = models.DateTimeField()
+    suhde_alkamis_pvm = models.DateField()
+    suhde_paattymis_pvm = models.DateField(null=True)
+    varhaiskasvatuspaatos_id = models.IntegerField()
+    paatos_luonti_pvm = models.DateTimeField()
+    jarjestamismuoto_koodi = models.CharField(max_length=50)
+    tilapainen_vaka_kytkin = models.BooleanField()
+    lapsi_id = models.IntegerField()
+    henkilo_id = models.IntegerField()
+    has_hetu = models.BooleanField()
+    history_type = models.CharField(max_length=1)
+    history_date = models.DateTimeField()
+
+    class Meta:
+        indexes = [
+            # Used generally in all queries
+            Index(fields=['history_date']),
+            # Used when fetching last instance for specific Varhaiskasvatussuhde object
+            Index(fields=['varhaiskasvatussuhde_id', '-history_date']),
+        ]
+        verbose_name_plural = 'Kela varhaiskasvatussuhteet'

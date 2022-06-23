@@ -23,27 +23,55 @@ from varda.models import (Henkilo, Huoltajuussuhde, KieliPainotus, Lapsi, Maksut
                           Palvelussuhde, PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Tutkinto,
                           Tyoskentelypaikka, TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka, Tyontekija,
                           Organisaatio, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, YearlyReportSummary,
-                          Z4_CasKayttoOikeudet, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary, Z8_ExcelReport,
-                          Z9_RelatedObjectChanged)
+                          Z10_KelaVarhaiskasvatussuhde, Z4_CasKayttoOikeudet, Z6_RequestCount, Z6_RequestLog,
+                          Z6_RequestSummary, Z8_ExcelReport, Z9_RelatedObjectChanged)
 from varda.serializers import ToimipaikkaHLField, OrganisaatioPermissionCheckedHLField
 from varda.serializers_common import OidRelatedField
 
 
-class KelaEtuusmaksatusAloittaneetSerializer(serializers.Serializer):
-    kotikunta_koodi = serializers.SerializerMethodField()
+class KelaBaseSerializer(serializers.Serializer):
+    kotikunta_koodi = serializers.CharField(source='henkilo_instance.kotikunta_koodi')
     henkilotunnus = serializers.SerializerMethodField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'view' in self.context:
+            # view is not present in context in Swagger
+            self.datetime_lte = self.context['view'].datetime_lte
+
+    def to_representation(self, instance):
+        # Get henkilo data from history table or actual table (history is incomplete in test environments)
+        henkilo = (Henkilo.history.filter(id=instance.henkilo_id, history_date__lte=self.datetime_lte).distinct('id')
+                   .order_by('id', '-history_date').first())
+        if not henkilo:
+            henkilo = Henkilo.objects.filter(id=instance.henkilo_id).first()
+        instance.henkilo_instance = henkilo
+
+        return super().to_representation(instance)
+
+    def get_henkilotunnus(self, instance):
+        henkilotunnus = getattr(instance.henkilo_instance, 'henkilotunnus', None)
+        henkilo_id = getattr(instance.henkilo_instance, 'id', None)
+        return decrypt_henkilotunnus(henkilotunnus, henkilo_id=henkilo_id, raise_error=False)
+
+
+class KelaEtuusmaksatusAloittaneetSerializer(KelaBaseSerializer, serializers.ModelSerializer):
     tietue = serializers.CharField(default='A', initial='A')
-    vakasuhde_alkamis_pvm = serializers.DateField(source='alkamis_pvm')
-
-    def get_henkilotunnus(self, data):
-        return decrypt_henkilotunnus(data['varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus'])
-
-    def get_kotikunta_koodi(self, data):
-        return data['varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi']
+    vakasuhde_alkamis_pvm = serializers.DateField(source='suhde_alkamis_pvm')
 
     class Meta:
-        model = Varhaiskasvatussuhde
-        fields = ['henkilotunnus', 'kotikunta_koodi', 'tietue', 'vakasuhde_alkamis_pvm']
+        model = Z10_KelaVarhaiskasvatussuhde
+        fields = ('kotikunta_koodi', 'henkilotunnus', 'tietue', 'vakasuhde_alkamis_pvm')
+
+
+class KelaEtuusmaksatusMaaraaikaisetSerializer(KelaBaseSerializer, serializers.ModelSerializer):
+    tietue = serializers.CharField(default='M', initial='M')
+    vakasuhde_alkamis_pvm = serializers.DateField(source='suhde_alkamis_pvm')
+    vakasuhde_paattymis_pvm = serializers.DateField(source='suhde_paattymis_pvm')
+
+    class Meta:
+        model = Z10_KelaVarhaiskasvatussuhde
+        fields = ('kotikunta_koodi', 'henkilotunnus', 'tietue', 'vakasuhde_alkamis_pvm', 'vakasuhde_paattymis_pvm')
 
 
 class KelaEtuusmaksatusLopettaneetSerializer(serializers.Serializer):
@@ -60,77 +88,51 @@ class KelaEtuusmaksatusLopettaneetSerializer(serializers.Serializer):
         fields = ['henkilotunnus', 'kotikunta_koodi', 'tietue', 'vakasuhde_paattymis_pvm']
 
 
-class KelaEtuusmaksatusMaaraaikaisetSerializer(serializers.Serializer):
-    kotikunta_koodi = serializers.SerializerMethodField()
-    henkilotunnus = serializers.SerializerMethodField()
-    tietue = serializers.CharField(default='M', initial='M')
-    vakasuhde_alkamis_pvm = serializers.DateField(source='alkamis_pvm')
-    vakasuhde_paattymis_pvm = serializers.DateField(source='paattymis_pvm')
-
-    def get_henkilotunnus(self, data):
-        return decrypt_henkilotunnus(data['varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus'])
-
-    def get_kotikunta_koodi(self, data):
-        return data['varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi']
-
-    class Meta:
-        model = Varhaiskasvatussuhde
-        fields = ['henkilotunnus', 'kotikunta_koodi', 'tietue', 'vakasuhde_alkamis_pvm', 'vakasuhde_paattymis_pvm']
-
-
-class KelaEtuusmaksatusKorjaustiedotSerializer(serializers.Serializer):
-    kotikunta_koodi = serializers.SerializerMethodField()
-    henkilotunnus = serializers.SerializerMethodField()
+class KelaEtuusmaksatusKorjaustiedotSerializer(KelaBaseSerializer, serializers.ModelSerializer):
     tietue = serializers.CharField(default='K', initial='K')
     vakasuhde_alkamis_pvm = serializers.SerializerMethodField()
     vakasuhde_paattymis_pvm = serializers.SerializerMethodField()
-    vakasuhde_alkuperainen_alkamis_pvm = serializers.DateField(source='old_alkamis_pvm')
+    vakasuhde_alkuperainen_alkamis_pvm = serializers.SerializerMethodField()
     vakasuhde_alkuperainen_paattymis_pvm = serializers.SerializerMethodField()
 
-    def get_henkilotunnus(self, data):
-        return decrypt_henkilotunnus(data['varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus'])
-
-    def get_kotikunta_koodi(self, data):
-        return data['varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi']
-
-    def get_vakasuhde_alkamis_pvm(self, data):
-        if data['old_alkamis_pvm'].year == 1:
-            return datetime.datetime(1, 1, 1).date()
-        return data['alkamis_pvm']
-
-    def get_vakasuhde_alkuperainen_paattymis_pvm(self, data):
-        if data['old_paattymis_pvm'] is None:
-            return datetime.datetime(1, 1, 1).date()
-        return data['old_paattymis_pvm']
-
-    def get_vakasuhde_paattymis_pvm(self, data):
-        old_paattymis_pvm = self.get_vakasuhde_alkuperainen_paattymis_pvm(data)
-        if old_paattymis_pvm.year == 1:
-            return datetime.datetime(1, 1, 1).date()
-        return data['paattymis_pvm']
-
     class Meta:
-        model = Varhaiskasvatussuhde
-        fields = ['henkilotunnus', 'kotikunta_koodi', 'tietue', 'vakasuhde_alkuperainen_alkamis_pvm',
-                  'vakasuhde_alkamis_pvm', 'vakasuhde_alkuperainen_paattymis_pvm', 'vakasuhde_paattymis_pvm']
+        model = Z10_KelaVarhaiskasvatussuhde
+        fields = ('kotikunta_koodi', 'henkilotunnus', 'tietue', 'vakasuhde_alkamis_pvm', 'vakasuhde_paattymis_pvm',
+                  'vakasuhde_alkuperainen_alkamis_pvm', 'vakasuhde_alkuperainen_paattymis_pvm')
+
+    def get_vakasuhde_alkamis_pvm(self, instance):
+        is_different = instance.suhde_alkamis_pvm != instance.old_suhde_alkamis_pvm
+        return instance.suhde_alkamis_pvm if is_different else datetime.date(1, 1, 1)
+
+    def get_vakasuhde_paattymis_pvm(self, instance):
+        # If paattymis_pvm has been set, it is reported in Lopettaneet, do not report change here
+        is_different = (instance.suhde_paattymis_pvm != instance.old_suhde_paattymis_pvm and
+                        instance.old_suhde_paattymis_pvm is not None)
+        return instance.suhde_paattymis_pvm or datetime.date(1, 1, 1) if is_different else datetime.date(1, 1, 1)
+
+    def get_vakasuhde_alkuperainen_alkamis_pvm(self, instance):
+        is_different = instance.suhde_alkamis_pvm != instance.old_suhde_alkamis_pvm
+        return instance.old_suhde_alkamis_pvm if is_different else datetime.date(1, 1, 1)
+
+    def get_vakasuhde_alkuperainen_paattymis_pvm(self, instance):
+        is_different = instance.suhde_paattymis_pvm != instance.old_suhde_paattymis_pvm
+        return instance.old_suhde_paattymis_pvm or datetime.date(1, 1, 1) if is_different else datetime.date(1, 1, 1)
 
 
-class KelaEtuusmaksatusKorjaustiedotPoistetutSerializer(serializers.Serializer):
-    kotikunta_koodi = serializers.ReadOnlyField()
-    henkilotunnus = serializers.SerializerMethodField()
+class KelaEtuusmaksatusKorjaustiedotPoistetutSerializer(KelaBaseSerializer, serializers.ModelSerializer):
     tietue = serializers.CharField(default='K', initial='K')
-    vakasuhde_alkamis_pvm = serializers.DateField(source='new_alkamis_pvm')
-    vakasuhde_paattymis_pvm = serializers.DateField(source='new_paattymis_pvm')
-    vakasuhde_alkuperainen_alkamis_pvm = serializers.DateField(source='alkamis_pvm')
-    vakasuhde_alkuperainen_paattymis_pvm = serializers.DateField(source='paattymis_pvm')
-
-    def get_henkilotunnus(self, instance):
-        return decrypt_henkilotunnus(instance.henkilotunnus)
+    vakasuhde_alkamis_pvm = serializers.DateField(default='0001-01-01')
+    vakasuhde_paattymis_pvm = serializers.DateField(default='0001-01-01')
+    vakasuhde_alkuperainen_alkamis_pvm = serializers.DateField(source='suhde_alkamis_pvm')
+    vakasuhde_alkuperainen_paattymis_pvm = serializers.SerializerMethodField()
 
     class Meta:
-        model = Varhaiskasvatussuhde
-        fields = ['henkilotunnus', 'kotikunta_koodi', 'tietue', 'vakasuhde_alkuperainen_alkamis_pvm',
-                  'vakasuhde_alkamis_pvm', 'vakasuhde_alkuperainen_paattymis_pvm', 'vakasuhde_paattymis_pvm']
+        model = Z10_KelaVarhaiskasvatussuhde
+        fields = ('kotikunta_koodi', 'henkilotunnus', 'tietue', 'vakasuhde_alkamis_pvm', 'vakasuhde_paattymis_pvm',
+                  'vakasuhde_alkuperainen_alkamis_pvm', 'vakasuhde_alkuperainen_paattymis_pvm')
+
+    def get_vakasuhde_alkuperainen_paattymis_pvm(self, instance):
+        return instance.suhde_paattymis_pvm or datetime.date(1, 1, 1)
 
 
 class TiedonsiirtotilastoSerializer(serializers.Serializer):

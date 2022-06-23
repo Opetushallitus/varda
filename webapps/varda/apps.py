@@ -340,16 +340,39 @@ def handle_related_object_change(model_name, instance, history_type):
         receiver_dict[model_name](instance, timestamp, history_type)
 
 
+def create_kela_varhaiskasvatussuhde(instance, history_type):
+    from varda.models import Z10_KelaVarhaiskasvatussuhde
+
+    vakapaatos = instance.varhaiskasvatuspaatos
+    henkilo = vakapaatos.lapsi.henkilo
+    Z10_KelaVarhaiskasvatussuhde.objects.create(
+        varhaiskasvatussuhde_id=instance.id,
+        suhde_luonti_pvm=instance.luonti_pvm,
+        suhde_alkamis_pvm=instance.alkamis_pvm,
+        suhde_paattymis_pvm=instance.paattymis_pvm,
+        varhaiskasvatuspaatos_id=vakapaatos.id,
+        paatos_luonti_pvm=vakapaatos.luonti_pvm,
+        jarjestamismuoto_koodi=vakapaatos.jarjestamismuoto_koodi,
+        tilapainen_vaka_kytkin=vakapaatos.tilapainen_vaka_kytkin,
+        lapsi_id=instance.varhaiskasvatuspaatos.lapsi_id,
+        henkilo_id=instance.varhaiskasvatuspaatos.lapsi.henkilo_id,
+        has_hetu=henkilo.henkilotunnus != '',
+        history_type=history_type,
+        history_date=timezone.now()
+    )
+
+
 def receiver_save(sender, **kwargs):
     from django.db import transaction
     from varda.cache import invalidate_cache
-    from varda.models import Lapsi
+    from varda.models import Lapsi, Varhaiskasvatussuhde
 
     model_name = sender._meta.model.__name__.lower()
     instance = kwargs['instance']
     instance_id = instance.id
     invalidate_cache(model_name, instance_id)
 
+    history_type = '+' if kwargs['created'] else '~'
     if model_name == Lapsi.get_name():
         with transaction.atomic():
             post_save.disconnect(receiver_save, sender='varda.Lapsi')
@@ -359,12 +382,15 @@ def receiver_save(sender, **kwargs):
                 instance.paos_kytkin = True
             instance.save()
             post_save.connect(receiver_save, sender='varda.Lapsi')
+    elif model_name == Varhaiskasvatussuhde.get_name():
+        create_kela_varhaiskasvatussuhde(instance, history_type)
 
-    handle_related_object_change(model_name, instance, '+' if kwargs['created'] else '~')
+    handle_related_object_change(model_name, instance, history_type)
 
 
 def receiver_pre_delete(sender, **kwargs):
     from varda.cache import invalidate_cache
+    from varda.models import PaosOikeus, Varhaiskasvatussuhde
     from varda.permissions import delete_object_permissions_explicitly
     from varda.tasks import change_paos_tallentaja_organization_task
 
@@ -376,7 +402,8 @@ def receiver_pre_delete(sender, **kwargs):
     invalidate_cache(model_name, instance_id)
     delete_object_permissions_explicitly(model, instance_id)
 
-    if model_name == 'paosoikeus' and instance.voimassa_kytkin:
+    history_type = '-'
+    if model_name == PaosOikeus.get_name() and instance.voimassa_kytkin:
         """
         Deleting the instance is the same as setting the voimassa_kytkin to False (in permission point of view).
         """
@@ -385,8 +412,10 @@ def receiver_pre_delete(sender, **kwargs):
                                                        instance.tuottaja_organisaatio.id,
                                                        instance.tallentaja_organisaatio.id,
                                                        deleted_instance_voimassa_kytkin)
+    elif model_name == Varhaiskasvatussuhde.get_name():
+        create_kela_varhaiskasvatussuhde(instance, history_type)
 
-    handle_related_object_change(model_name, instance, '-')
+    handle_related_object_change(model_name, instance, history_type)
 
 
 def init_alive_log():

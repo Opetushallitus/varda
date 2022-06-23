@@ -12,7 +12,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.management import call_command
 from django.db import connection, IntegrityError, transaction
-from django.db.models import (Case, Count, DateField, F, Func, IntegerField, Q, Value, When)
+from django.db.models import Case, Count, DateField, F, Func, IntegerField, Q, Value, When
 from django.db.models.functions import Cast
 from django.utils import timezone
 from guardian.models import GroupObjectPermission, UserObjectPermission
@@ -35,9 +35,10 @@ from varda.misc import hash_string, list_to_chunks, memory_efficient_queryset_it
 from varda.misc_operations import set_paattymis_pvm_for_vakajarjestaja_data
 from varda.models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Maksutieto,
                           MaksutietoHuoltajuussuhde, Palvelussuhde, Taydennyskoulutus, TaydennyskoulutusTyontekija,
-                          Toimipaikka, Tyontekija, Organisaatio, Varhaiskasvatuspaatos, YearlyReportSummary,
-                          Z2_CodeTranslation, Z4_CasKayttoOikeudet, Z5_AuditLog, Z6_LastRequest, Z6_RequestCount,
-                          Z6_RequestLog, Z6_RequestSummary, Z9_RelatedObjectChanged)
+                          Toimipaikka, Tyontekija, Organisaatio, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
+                          YearlyReportSummary,
+                          Z10_KelaVarhaiskasvatussuhde, Z2_CodeTranslation, Z4_CasKayttoOikeudet, Z5_AuditLog,
+                          Z6_LastRequest, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary, Z9_RelatedObjectChanged)
 from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups, get_oph_yllapitaja_group_name
 from varda.permissions import assign_object_level_permissions_for_instance, delete_object_permissions_explicitly
 
@@ -1256,3 +1257,45 @@ def get_ukranian_child_statistics(active_since='2022-02-24'):
         result_str += f';{key},{name},{amount}'
 
     return result_str
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def init_kela_varhaiskasvatussuhde_table_task(datetime_param=None):
+    history_date_limit = timezone.now()
+    if datetime_param:
+        history_date_limit = datetime.datetime.strptime(datetime_param, '%Y-%m-%dT%H:%M:%S%z')
+
+    # Delete old KelaVarhaiskasvatussuhde instances as they are rebuilt
+    Z10_KelaVarhaiskasvatussuhde.objects.filter(history_date__lte=history_date_limit).delete()
+
+    with connection.cursor() as cursor:
+        # This query is very expensive in production, so process 100 000 objects at a time
+        # Get the highest ID number and round it up to the next 100 000
+        max_object_id = Varhaiskasvatussuhde.history.all().order_by('id').last().id
+        object_limit = int(math.ceil(max_object_id / 100000.0)) * 100000 + 1
+
+        last_index = 0
+        for index in range(100000, object_limit, 100000):
+            cursor.execute(
+                '''
+                    INSERT INTO varda_z10_kelavarhaiskasvatussuhde (varhaiskasvatussuhde_id, suhde_luonti_pvm,
+                        suhde_alkamis_pvm, suhde_paattymis_pvm, varhaiskasvatuspaatos_id, paatos_luonti_pvm,
+                        jarjestamismuoto_koodi, tilapainen_vaka_kytkin, lapsi_id, henkilo_id, has_hetu, history_type,
+                        history_date)
+                    SELECT DISTINCT ON (su.history_id) su.id, su.luonti_pvm, su.alkamis_pvm, su.paattymis_pvm, pa.id,
+                        pa.luonti_pvm, pa.jarjestamismuoto_koodi, pa.tilapainen_vaka_kytkin, la.id, la.henkilo_id,
+                        CASE WHEN he.henkilotunnus = '' OR he.henkilotunnus IS NULL THEN false ELSE true END,
+                        su.history_type, su.history_date
+                    FROM varda_historicalvarhaiskasvatussuhde su
+                    LEFT JOIN varda_historicalvarhaiskasvatuspaatos pa on pa.id = su.varhaiskasvatuspaatos_id AND
+                        pa.history_date <= su.history_date + interval '30 seconds'
+                    LEFT JOIN varda_historicallapsi la on la.id = pa.lapsi_id AND
+                        la.history_date <= su.history_date + interval '30 seconds'
+                    LEFT JOIN varda_historicalhenkilo he on he.id = la.henkilo_id AND
+                        he.history_date <= su.history_date + interval '30 seconds'
+                    WHERE su.history_date <= %s AND su.id > %s AND su.id <= %s
+                    ORDER BY su.history_id, pa.history_date DESC, la.history_date DESC, he.history_date DESC;
+                ''', [history_date_limit, last_index, index])
+            logger.info(f'Z10_KelaVarhaiskasvatussuhde id range: {last_index} - {index}, rowcount: {cursor.rowcount}')
+            last_index = index

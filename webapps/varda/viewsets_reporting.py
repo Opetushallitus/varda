@@ -7,8 +7,7 @@ from django.conf import settings
 from django.contrib.auth.models import AnonymousUser, User
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import connection, transaction
-from django.db.models import (Case, Count, DateField, F, FloatField, IntegerField, Max, OuterRef, Q, Subquery, Sum,
-                              Value, When)
+from django.db.models import Case, Count, DateField, F, FloatField, IntegerField, Max, Q, Subquery, Sum, Value, When
 from django.db.models.functions import Cast
 from django.forms.models import model_to_dict
 from django.http import Http404, HttpResponse
@@ -31,17 +30,16 @@ from varda.enums.error_messages import ErrorMessages
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.enums.koodistot import Koodistot
 from varda.enums.supported_language import SupportedLanguage
-from varda.excel_export import (create_excel_report_task, ExcelReportType, generate_filename,
-                                get_excel_local_file_path)
+from varda.excel_export import create_excel_report_task, ExcelReportType, generate_filename, get_excel_local_file_path
 from varda.enums.reporting import ReportStatus
-from varda.filters import (CustomParameter, CustomParametersFilterBackend, ExcelReportFilter, KelaEtuusmaksatusFilter,
-                           RequestSummaryFilter, TiedonsiirtoFilter, TransferOutageReportFilter)
+from varda.filters import (CustomParameter, CustomParametersFilterBackend, ExcelReportFilter, RequestSummaryFilter,
+                           TiedonsiirtoFilter, TransferOutageReportFilter)
 from varda.misc import encrypt_string
 from varda.misc_queries import get_related_object_changed_id_qs
 from varda.misc_viewsets import ViewSetValidator
 from varda.models import (KieliPainotus, Lapsi, Maksutieto, Organisaatio, Palvelussuhde, PaosOikeus, PaosToiminta,
-                          ToiminnallinenPainotus, Toimipaikka, Tyontekija, Tyoskentelypaikka,
-                          Varhaiskasvatuspaatos, Varhaiskasvatussuhde, YearlyReportSummary, Z2_Koodisto,
+                          ToiminnallinenPainotus, Toimipaikka, Tyontekija, Tyoskentelypaikka, Varhaiskasvatuspaatos,
+                          Varhaiskasvatussuhde, YearlyReportSummary, Z10_KelaVarhaiskasvatussuhde, Z2_Koodisto,
                           Z4_CasKayttoOikeudet, Z6_LastRequest, Z6_RequestLog, Z6_RequestSummary, Z8_ExcelReport)
 from varda.pagination import (ChangeablePageSizePagination, ChangeableReportingPageSizePagination, DateCursorPagination,
                               DateReverseCursorPagination, IdCursorPagination, IdReverseCursorPagination,
@@ -68,64 +66,162 @@ from varda.validators import validate_kela_api_datetimefield
 logger = logging.getLogger(__name__)
 
 
-@auditlogclass
-class KelaEtuusmaksatusAloittaneetViewset(GenericViewSet, ListModelMixin):
+def _get_common_kela_filter_raw(prefix=''):
     """
-    list:
-    nouda ne lapset jotka ovat aloittaneet varhaiskasvatuksessa viikon
-    sisällä tästä päivästä.
+    Common filters for information that is sent to Kela:
+    - Varhaiskasvatussuhde.paattymis_pvm must be None or 18.01.2021 or after
+    - Varhaiskasvatuspaatos.luonti_pvm must be 04.01.2021 or after
+    - Varhaiskasvatuspaatos.jarjestamismuoto_koodi must be jm01, jm02 or jm03
+    - Varhaiskasvatuspaatos.tilapainen_vaka_kytkin must be False
+    - Henkilo must have henkilotunnus
+    :param prefix: table name prefix
+    :return: SQL conditions
+    """
+    return f'''
+        {prefix}tilapainen_vaka_kytkin = false AND {prefix}has_hetu = true AND
+        {prefix}paatos_luonti_pvm >= '2021-01-04' AND
+        LOWER({prefix}jarjestamismuoto_koodi) IN ('jm01', 'jm02', 'jm03') AND
+        ({prefix}suhde_paattymis_pvm IS NULL OR {prefix}suhde_paattymis_pvm >= '2021-01-18')
+    '''
 
-    params:
-        page_size: Change the amount of query results per page
-        luonti_pvm_gte: Fetch created data after given luonti_pvm_gte
-        luonti_pvm_lte: fetch created data from a time window with luonti_pvm_gte
-    """
-    filter_backends = (DjangoFilterBackend,)
-    filterset_class = KelaEtuusmaksatusFilter
-    queryset = Varhaiskasvatussuhde.objects.none()
-    serializer_class = KelaEtuusmaksatusAloittaneetSerializer
+
+class KelaBaseViewSet(GenericViewSet, ListModelMixin):
     permission_classes = (IsCertificateAccess,)
     pagination_class = ChangeablePageSizePagination
+    queryset = Z10_KelaVarhaiskasvatussuhde.objects.none()
+    filter_backends = (CustomParametersFilterBackend,)
+    datetime_gte_field_name = ''
+    datetime_lte_field_name = ''
 
-    def create_filters_for_data(self, luonti_pvm_gte, luonti_pvm_lte):
-        common_filters = _create_common_kela_filters()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        # time window for fetching data
-        luonti_pvm_filter = Q(luonti_pvm__gte=luonti_pvm_gte)
+        self.datetime_gte = None
+        self.datetime_lte = None
 
-        if luonti_pvm_lte:
-            luonti_pvm_filter = luonti_pvm_filter & Q(luonti_pvm__lte=luonti_pvm_lte)
+    @property
+    def custom_parameters(self):
+        return (CustomParameter(name=self.datetime_gte_field_name, required=False, location='query',
+                                data_type='string', description='ISO DateTime (YYYY-MM-DDTHH:MM:SSZ), '
+                                                                'e.g. 2021-01-01T00%3A00%3A00%2B0300'),
+                CustomParameter(name=self.datetime_lte_field_name, required=False, location='query',
+                                data_type='string', description='ISO DateTime (YYYY-MM-DDTHH:MM:SSZ), '
+                                                                'e.g. 2021-01-01T00%3A00%3A00Z'),)
 
-        # paattymis_pvm must be none, vakapaatokset with end date are reported separately
-        paattymis_pvm_filter = Q(paattymis_pvm=None)
+    def initial(self, *args, **kwargs):
+        super().initial(*args, **kwargs)
 
-        return (luonti_pvm_filter &
-                common_filters &
-                paattymis_pvm_filter)
+        now = timezone.now()
+        tomorrow = now + datetime.timedelta(days=1)
+        datetime_gte_param = self.request.query_params.get(self.datetime_gte_field_name, None)
+        datetime_lte_param = self.request.query_params.get(self.datetime_lte_field_name, None)
+
+        if datetime_lte_param and not datetime_gte_param:
+            raise ValidationError({self.datetime_gte_field_name: [ErrorMessages.GE021.value]})
+        if not datetime_lte_param:
+            datetime_lte_param = tomorrow.isoformat()
+
+        self.datetime_gte = validate_kela_api_datetimefield(datetime_gte_param, now, self.datetime_gte_field_name)
+        self.datetime_lte = validate_kela_api_datetimefield(datetime_lte_param, now, self.datetime_lte_field_name)
+        if self.datetime_lte < self.datetime_gte:
+            raise ValidationError({self.datetime_lte_field_name: [ErrorMessages.GE022.value]})
+
+
+@auditlogclass
+class KelaEtuusmaksatusAloittaneetViewset(KelaBaseViewSet):
+    """
+    list:
+        Nouda ne lapset jotka ovat aloittaneet varhaiskasvatuksessa annetulla aikavälillä
+        (varhaiskasvatussuhde on luotu luonti_pvm_gte ja luonti_pvm_lte-välillä)
+    """
+    serializer_class = KelaEtuusmaksatusAloittaneetSerializer
+    datetime_gte_field_name = 'luonti_pvm_gte'
+    datetime_lte_field_name = 'luonti_pvm_lte'
 
     def get_queryset(self):
-        now = datetime.datetime.now().astimezone()
-        luonti_pvm_gte = self.request.query_params.get('luonti_pvm_gte', None)
-        luonti_pvm_lte = self.request.query_params.get('luonti_pvm_lte', None)
+        return Z10_KelaVarhaiskasvatussuhde.objects.raw(f'''
+            /* id column is required for a raw query */
+            SELECT 1 as id, su.henkilo_id, su.suhde_alkamis_pvm,
+                /* Repeat row (count of created Varhaiskasvatussuhde objects with specific dates) -
+                   (count of deleted Varhaiskasvatussuhde objects with same dates) times, negative number = 0 */
+                generate_series(1, COUNT(DISTINCT su.varhaiskasvatussuhde_id) -
+                    COUNT(DISTINCT su_deleted_last_value.varhaiskasvatussuhde_id))
+            /* Get last instances of Varhaiskasvatussuhde objects that have been created within time frame */
+            FROM (
+                SELECT DISTINCT ON (varhaiskasvatussuhde_id) * FROM varda_z10_kelavarhaiskasvatussuhde
+                WHERE suhde_luonti_pvm >= %s AND history_date >= %s AND history_date <= %s
+                ORDER BY varhaiskasvatussuhde_id, history_date DESC
+            ) su
+            /* Get IDs of deleted Varhaiskasvatussuhde objects for Henkilo */
+            LEFT JOIN LATERAL (
+                SELECT DISTINCT ON (varhaiskasvatussuhde_id) varhaiskasvatussuhde_id
+                FROM varda_z10_kelavarhaiskasvatussuhde
+                WHERE history_type = '-' AND suhde_luonti_pvm < %s AND history_date >= %s AND history_date <= %s AND
+                    henkilo_id = su.henkilo_id AND {_get_common_kela_filter_raw()}
+                ORDER BY varhaiskasvatussuhde_id
+            ) su_deleted ON true
+            /* Get last transferred values for deleted Varhaiskasvatussuhde object (matching dates) */
+            LEFT JOIN LATERAL (
+                SELECT * FROM varda_z10_kelavarhaiskasvatussuhde
+                WHERE varhaiskasvatussuhde_id = su_deleted.varhaiskasvatussuhde_id AND history_date < %s
+                ORDER BY history_date DESC LIMIT 1
+            ) su_deleted_last_value ON su_deleted_last_value.suhde_alkamis_pvm = su.suhde_alkamis_pvm AND
+                su_deleted_last_value.suhde_paattymis_pvm IS NOT DISTINCT FROM su.suhde_paattymis_pvm
+            /* Filter out Varhaiskasvatussuhde objects that have been deleted or paattymis_pvm is not None */
+            WHERE su.history_type != '-' AND su.suhde_paattymis_pvm IS NULL AND {_get_common_kela_filter_raw('su.')}
+            GROUP BY su.henkilo_id, su.suhde_alkamis_pvm
+            ORDER BY su.henkilo_id, su.suhde_alkamis_pvm;
+        ''', [self.datetime_gte, self.datetime_gte, self.datetime_lte, self.datetime_gte, self.datetime_gte,
+              self.datetime_lte, self.datetime_gte])
 
-        if luonti_pvm_lte:
-            if not luonti_pvm_gte:
-                raise ValidationError({'luonti_pvm_gte': [ErrorMessages.GE021.value]})
-            luonti_pvm_gte = validate_kela_api_datetimefield(luonti_pvm_gte, now, 'luonti_pvm_gte')
-            luonti_pvm_lte = validate_kela_api_datetimefield(luonti_pvm_lte, now, 'luonti_pvm_lte')
-            if luonti_pvm_lte < luonti_pvm_gte:
-                raise ValidationError({'luonti_pvm_lte': [ErrorMessages.GE022.value]})
-        else:
-            luonti_pvm_gte = validate_kela_api_datetimefield(luonti_pvm_gte, now, 'luonti_pvm_gte')
 
-        dataset_filters = self.create_filters_for_data(luonti_pvm_gte, luonti_pvm_lte)
+@auditlogclass
+class KelaEtuusmaksatusMaaraaikaisetViewSet(KelaBaseViewSet):
+    """
+    list:
+        Nouda ne lapset jotka ovat aloittaneet määräaikaisessa varhaiskasvatuksessa annetulla aikavälillä
+        (varhaiskasvatussuhde on luotu luonti_pvm_gte ja luonti_pvm_lte-välillä)
+    """
+    serializer_class = KelaEtuusmaksatusMaaraaikaisetSerializer
+    datetime_gte_field_name = 'luonti_pvm_gte'
+    datetime_lte_field_name = 'luonti_pvm_lte'
 
-        return (Varhaiskasvatussuhde.objects.select_related('varhaiskasvatuspaatos__lapsi', 'varhaiskasvatuspaatos__lapsi__henkilo')
-                                            .filter(dataset_filters)
-                                            .values('id', 'varhaiskasvatuspaatos__lapsi_id', 'alkamis_pvm',
-                                                    'varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus',
-                                                    'varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi')
-                                            .order_by('id').distinct('id'))
+    def get_queryset(self):
+        return Z10_KelaVarhaiskasvatussuhde.objects.raw(f'''
+            /* id column is required for a raw query */
+            SELECT 1 as id, su.henkilo_id, su.suhde_alkamis_pvm, su.suhde_paattymis_pvm,
+                /* Repeat row (count of created Varhaiskasvatussuhde objects with specific dates) -
+                   (count of deleted Varhaiskasvatussuhde objects with same dates) times, negative number = 0 */
+                generate_series(1, COUNT(DISTINCT su.varhaiskasvatussuhde_id) -
+                    COUNT(DISTINCT su_deleted_last_value.varhaiskasvatussuhde_id))
+            /* Get last instances of Varhaiskasvatussuhde objects that have been created within time frame */
+            FROM (
+                SELECT DISTINCT ON (varhaiskasvatussuhde_id) * FROM varda_z10_kelavarhaiskasvatussuhde
+                WHERE suhde_luonti_pvm >= %s AND history_date >= %s AND history_date <= %s
+                ORDER BY varhaiskasvatussuhde_id, history_date DESC
+            ) su
+            /* Get IDs of deleted Varhaiskasvatussuhde objects for Henkilo */
+            LEFT JOIN LATERAL (
+                SELECT DISTINCT ON (varhaiskasvatussuhde_id) varhaiskasvatussuhde_id
+                FROM varda_z10_kelavarhaiskasvatussuhde
+                WHERE history_type = '-' AND suhde_luonti_pvm < %s AND history_date >= %s AND history_date <= %s AND
+                    henkilo_id = su.henkilo_id AND {_get_common_kela_filter_raw()}
+                ORDER BY varhaiskasvatussuhde_id
+            ) su_deleted ON true
+            /* Get last transferred values for deleted Varhaiskasvatussuhde object (matching dates) */
+            LEFT JOIN LATERAL (
+                SELECT * FROM varda_z10_kelavarhaiskasvatussuhde
+                WHERE varhaiskasvatussuhde_id = su_deleted.varhaiskasvatussuhde_id AND history_date < %s
+                ORDER BY history_date DESC LIMIT 1
+            ) su_deleted_last_value ON su_deleted_last_value.suhde_alkamis_pvm = su.suhde_alkamis_pvm AND
+                su_deleted_last_value.suhde_paattymis_pvm IS NOT DISTINCT FROM su.suhde_paattymis_pvm
+            /* Filter out Varhaiskasvatussuhde objects that have been deleted or paattymis_pvm is None */
+            WHERE su.history_type != '-' AND su.suhde_paattymis_pvm IS NOT NULL AND
+                {_get_common_kela_filter_raw('su.')}
+            GROUP BY su.henkilo_id, su.suhde_alkamis_pvm, su.suhde_paattymis_pvm
+            ORDER BY su.henkilo_id, su.suhde_alkamis_pvm, su.suhde_paattymis_pvm;
+        ''', [self.datetime_gte, self.datetime_gte, self.datetime_lte, self.datetime_gte, self.datetime_gte,
+              self.datetime_lte, self.datetime_gte])
 
 
 @auditlogclass
@@ -184,209 +280,91 @@ class KelaEtuusmaksatusLopettaneetViewSet(GenericViewSet, ListModelMixin):
 
 
 @auditlogclass
-class KelaEtuusmaksatusMaaraaikaisetViewSet(GenericViewSet, ListModelMixin):
+class KelaEtuusmaksatusKorjaustiedotViewSet(KelaBaseViewSet):
     """
     list:
-    nouda ne lapset jotka ovat aloittaneet määräaikaisessa varhaiskasvatuksessa viikon
-    sisällä tästä päivästä.
-
-    params:
-        page_size: Change amount of results per page of response
-        luonti_pvm_gte: Fetch created data after given luonti_pvm_gte
-        luonti_pvm_lte: Fetch created data from a time window with luonti_pvm_gte
+        Nouda ne lapset joiden tietoja on muokattu annetulla aikavälillä
+        (varhaiskasvatussuhdetta on muokattu muutos_pvm_gte ja muutos_pvm_lte-välillä)
     """
-    filter_backends = (DjangoFilterBackend,)
-    filterset_class = KelaEtuusmaksatusFilter
-    queryset = Varhaiskasvatussuhde.history.none()
-    serializer_class = KelaEtuusmaksatusMaaraaikaisetSerializer
-    permission_classes = (IsCertificateAccess,)
-    pagination_class = ChangeablePageSizePagination
-
-    def create_filters_for_data(self, luonti_pvm_gte, luonti_pvm_lte):
-        common_filters = _create_common_kela_filters()
-
-        # time window for fetching data
-        luonti_pvm_filter = Q(luonti_pvm__gte=luonti_pvm_gte)
-        if luonti_pvm_lte:
-            luonti_pvm_filter = luonti_pvm_filter & Q(luonti_pvm__lte=luonti_pvm_lte)
-
-        # maaraaikainen must always have an end date and be active after
-        paattymis_pvm_date_gte = datetime.datetime(2021, 1, 18)
-        paattymis_pvm_filter = Q(paattymis_pvm__gte=paattymis_pvm_date_gte)
-
-        return (luonti_pvm_filter &
-                common_filters &
-                paattymis_pvm_filter)
-
-    def get_queryset(self):
-        now = datetime.datetime.now().astimezone()
-        luonti_pvm_gte = self.request.query_params.get('luonti_pvm_gte', None)
-        luonti_pvm_lte = self.request.query_params.get('luonti_pvm_lte', None)
-
-        if luonti_pvm_lte:
-            if not luonti_pvm_gte:
-                raise ValidationError({'luonti_pvm_gte': [ErrorMessages.GE021.value]})
-            luonti_pvm_gte = validate_kela_api_datetimefield(luonti_pvm_gte, now, 'luonti_pvm_gte')
-            luonti_pvm_lte = validate_kela_api_datetimefield(luonti_pvm_lte, now, 'luonti_pvm_lte')
-            if luonti_pvm_lte < luonti_pvm_gte:
-                raise ValidationError({'luonti_pvm_lte': [ErrorMessages.GE022.value]})
-        else:
-            luonti_pvm_gte = validate_kela_api_datetimefield(luonti_pvm_gte, now, 'luonti_pvm_gte')
-
-        dataset_filters = self.create_filters_for_data(luonti_pvm_gte, luonti_pvm_lte)
-
-        return (Varhaiskasvatussuhde.objects.select_related('varhaiskasvatuspaatos__lapsi', 'varhaiskasvatuspaatos__lapsi__henkilo')
-                                            .filter(dataset_filters)
-                                            .values('id', 'varhaiskasvatuspaatos__lapsi_id', 'alkamis_pvm', 'paattymis_pvm',
-                                                    'varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus',
-                                                    'varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi')
-                                            .order_by('id').distinct('id'))
-
-
-@auditlogclass
-class KelaEtuusmaksatusKorjaustiedotViewSet(GenericViewSet, ListModelMixin):
-    """
-    list:
-    nouda ne lapset joiden tietoihin on tullut muutoksia viimeisen viikon sisällä.
-
-    params:
-        page_size: Change the number of query results per page
-        muutos_pvm_gte: Fetch changed data after given muutos_pvm_gte
-        muutos_pvm_lte: Fetch changed data from a time window with muutos_pvm_gte
-    """
-    filter_backends = (DjangoFilterBackend,)
-    filterset_class = KelaEtuusmaksatusFilter
-    queryset = Varhaiskasvatussuhde.history.none()
     serializer_class = KelaEtuusmaksatusKorjaustiedotSerializer
-    permission_classes = (IsCertificateAccess,)
-    pagination_class = ChangeablePageSizePagination
-
-    def create_filters_for_data(self, muutos_pvm_gte, muutos_pvm_lte):
-        common_filters = _create_common_kela_filters()
-
-        # Only object that have been changed after given date
-        time_window_filter = Q(history_date__gte=muutos_pvm_gte)
-        if muutos_pvm_lte:
-            time_window_filter = time_window_filter & Q(history_date__lte=muutos_pvm_lte)
-
-        # Must be active at or after
-        paattymis_pvm_date_gte = datetime.datetime(2021, 1, 18)
-        paattymis_pvm_filter = (Q(paattymis_pvm__isnull=True) | Q(paattymis_pvm__gte=paattymis_pvm_date_gte))
-
-        history_type_filter = Q(history_type='~')
-
-        return (time_window_filter &
-                paattymis_pvm_filter &
-                history_type_filter &
-                common_filters)
+    datetime_gte_field_name = 'muutos_pvm_gte'
+    datetime_lte_field_name = 'muutos_pvm_lte'
 
     def get_queryset(self):
-        now = datetime.datetime.now().astimezone()
-        muutos_pvm_gte = self.request.query_params.get('muutos_pvm_gte', None)
-        muutos_pvm_lte = self.request.query_params.get('muutos_pvm_lte', None)
-
-        if muutos_pvm_lte:
-            if not muutos_pvm_gte:
-                raise ValidationError({'muutos_pvm_gte': [ErrorMessages.GE021.value]})
-            muutos_pvm_gte = validate_kela_api_datetimefield(muutos_pvm_gte, now, 'muutos_pvm_gte')
-            muutos_pvm_lte = validate_kela_api_datetimefield(muutos_pvm_lte, now, 'muutos_pvm_lte')
-            if muutos_pvm_lte < muutos_pvm_gte:
-                raise ValidationError({'muutos_pvm_lte': [ErrorMessages.GE022.value]})
-        else:
-            muutos_pvm_gte = validate_kela_api_datetimefield(muutos_pvm_gte, now, 'muutos_pvm_gte')
-
-        dataset_filters = self.create_filters_for_data(muutos_pvm_gte, muutos_pvm_lte)
-
-        latest_changed_objects = Varhaiskasvatussuhde.history.filter(dataset_filters)
-        id_filter = Q(id__in=latest_changed_objects.values('id'))
-
-        muutos_pvm_subquery = Varhaiskasvatussuhde.history.filter(id=OuterRef('id'), history_date__lt=muutos_pvm_gte).order_by('-history_id')
-
-        return (Varhaiskasvatussuhde.objects.select_related('varhaiskasvatuspaatos__lapsi', 'varhaiskasvatuspaatos__lapsi__henkilo')
-                                            .annotate(old_alkamis_pvm=(Case(When(alkamis_pvm=Subquery(muutos_pvm_subquery.values('alkamis_pvm')[:1]),
-                                                                                 then=Cast(Value('0001-01-01'), output_field=DateField())),
-                                                                            default=Subquery(muutos_pvm_subquery.values('alkamis_pvm')[:1]),
-                                                                            output_field=DateField())),
-                                                      old_paattymis_pvm=(Case(When(paattymis_pvm=Subquery(muutos_pvm_subquery.values('paattymis_pvm')[:1]),
-                                                                                   then=Cast(Value('0001-01-01'), output_field=DateField())),
-                                                                              default=Subquery(muutos_pvm_subquery.values('paattymis_pvm')[:1]),
-                                                                              output_field=DateField()))
-                                                      )
-                                            .filter(id_filter &
-                                                    ~Q(Q(old_alkamis_pvm='0001-01-01') & Q(old_paattymis_pvm='0001-01-01')) &
-                                                    ~Q(Q(old_alkamis_pvm='0001-01-01') & Q(old_paattymis_pvm__isnull=True)))
-                                            .values('id', 'varhaiskasvatuspaatos__lapsi_id', 'alkamis_pvm', 'paattymis_pvm',
-                                                    'old_alkamis_pvm', 'old_paattymis_pvm',
-                                                    'varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus',
-                                                    'varhaiskasvatuspaatos__lapsi__henkilo__kotikunta_koodi')
-                                            .order_by('id').distinct('id'))
+        return Z10_KelaVarhaiskasvatussuhde.objects.raw(f'''
+            SELECT su.*, su_last_value.suhde_alkamis_pvm AS old_suhde_alkamis_pvm,
+                su_last_value.suhde_paattymis_pvm as old_suhde_paattymis_pvm
+            /* Get last instances of Varhaiskasvatussuhde objects that have been modified within time frame */
+            FROM (
+                SELECT DISTINCT ON (varhaiskasvatussuhde_id) * FROM varda_z10_kelavarhaiskasvatussuhde
+                WHERE suhde_luonti_pvm < %s AND history_date >= %s AND history_date <= %s
+                ORDER BY varhaiskasvatussuhde_id, history_date DESC
+            ) su
+            /* Get last transferred values for modified Varhaiskasvatussuhde object */
+            LEFT JOIN LATERAL (
+                SELECT * FROM varda_z10_kelavarhaiskasvatussuhde
+                WHERE varhaiskasvatussuhde_id = su.varhaiskasvatussuhde_id AND history_date < %s
+                ORDER BY history_date DESC LIMIT 1
+            ) su_last_value ON su.suhde_alkamis_pvm IS DISTINCT FROM su_last_value.suhde_alkamis_pvm OR
+                su.suhde_paattymis_pvm IS DISTINCT FROM su_last_value.suhde_paattymis_pvm
+            /* Filter out Varhaiskasvatussuhde objects that have been deleted or dates have not been changed */
+            WHERE su.history_type != '-' AND {_get_common_kela_filter_raw('su.')} AND su_last_value.id IS NOT NULL
+                /* Cases where only paattymis_pvm is added for Varhaiskasvatussuhde are reported in Lopettaneet */
+                AND NOT (su_last_value.suhde_paattymis_pvm IS NULL AND su.suhde_paattymis_pvm IS NOT NULL
+                    AND su.suhde_alkamis_pvm IS NOT DISTINCT FROM su_last_value.suhde_alkamis_pvm)
+            ORDER BY su.henkilo_id, su.suhde_alkamis_pvm, su.suhde_paattymis_pvm;
+        ''', [self.datetime_gte, self.datetime_gte, self.datetime_lte, self.datetime_gte])
 
 
 @auditlogclass
-class KelaEtuusmaksatusKorjaustiedotPoistetutViewSet(GenericViewSet, ListModelMixin):
+class KelaEtuusmaksatusKorjaustiedotPoistetutViewSet(KelaBaseViewSet):
     """
     list:
-    nouda ne lapset joiden on poistettu viimeisen viikon sisällä.
-
-    params:
-        page_size: Change the amount of query results per page
-        poisto_pvm_gte: Fetch removed data after given poisto_pvm
-        poisto_pvm_lte: Fetch removed data from a time window with poisto_pvm_gte
+        Nouda ne lapset joiden varhaiskasvatussuhde on poistettu annetulla aikavälillä
+        (varhaiskasvatussuhde on poistettu poisto_pvm_gte ja poisto_pvm_lte-välillä)
     """
-    queryset = Varhaiskasvatussuhde.history.none()
     serializer_class = KelaEtuusmaksatusKorjaustiedotPoistetutSerializer
-    permission_classes = (IsCertificateAccess,)
-    pagination_class = ChangeablePageSizePagination
+    datetime_gte_field_name = 'poisto_pvm_gte'
+    datetime_lte_field_name = 'poisto_pvm_lte'
 
     def get_queryset(self):
-        now = datetime.datetime.now().astimezone()
-        poisto_pvm_gte = self.request.query_params.get('poisto_pvm_gte', None)
-        poisto_pvm_lte = self.request.query_params.get('poisto_pvm_lte', None)
-
-        if poisto_pvm_lte:
-            if not poisto_pvm_gte:
-                raise ValidationError({'poisto_pvm_gte': [ErrorMessages.GE021.value]})
-            poisto_pvm_gte = validate_kela_api_datetimefield(poisto_pvm_gte, now, 'poisto_pvm_gte')
-            poisto_pvm_lte = validate_kela_api_datetimefield(poisto_pvm_lte, now, 'muutos_pvm_lte')
-            if poisto_pvm_lte < poisto_pvm_gte:
-                raise ValidationError({'poisto_pvm_lte': [ErrorMessages.GE022.value]})
-        else:
-            poisto_pvm_lte = now
-            poisto_pvm_gte = validate_kela_api_datetimefield(poisto_pvm_gte, now, 'poisto_pvm_gte')
-
-        return (Varhaiskasvatussuhde.history.raw("""select DISTINCT ON (vas.id) vas.id, vas.history_id as history_id, vas.alkamis_pvm as alkamis_pvm, vas.paattymis_pvm as paattymis_pvm,
-                                                    '0001-01-01' as new_alkamis_pvm, '0001-01-01' as new_paattymis_pvm, he.henkilotunnus as henkilotunnus, he.kotikunta_koodi as kotikunta_koodi
-                                                    from varda_historicalvarhaiskasvatussuhde vas
-                                                    join (select id, muutos_pvm from varda_historicalvarhaiskasvatussuhde where history_type='+') luonti on luonti.id = vas.id
-                                                    join (select DISTINCT ON (id) id, lapsi_id from varda_historicalvarhaiskasvatuspaatos
-                                                          where lower(jarjestamismuoto_koodi) in ('jm01', 'jm02', 'jm03') and
-                                                          tilapainen_vaka_kytkin='f' and luonti_pvm >= '2021-01-04' order by id) vap on vap.id = vas.varhaiskasvatuspaatos_id
-                                                    join (select DISTINCT ON (id) id, henkilo_id from varda_historicallapsi order by id) la on la.id = vap.lapsi_id
-                                                    join (select DISTINCT ON (id) id, henkilotunnus, kotikunta_koodi from varda_henkilo where henkilotunnus <> '' order by id) he on he.id = la.henkilo_id
-                                                    where vas.history_date >= %s and vas.history_date <= %s and vas.history_type = '-' and (vas.paattymis_pvm is null or vas.paattymis_pvm >= '2021-01-18') and
-                                                    vas.muutos_pvm > (luonti.muutos_pvm + interval '10 seconds') order by vas.id""", [poisto_pvm_gte, poisto_pvm_lte]))
-
-
-def _create_common_kela_filters():
-    # Making changes here does not affect filters on poistetut and lopettaneet, if you update these check if you need
-    # to update poistetut and lopettaneet as well
-
-    # Kunnallinen
-    jarjestamismuoto_filter = (Q(varhaiskasvatuspaatos__jarjestamismuoto_koodi__iexact='JM01') |
-                               Q(varhaiskasvatuspaatos__jarjestamismuoto_koodi__iexact='JM02') |
-                               Q(varhaiskasvatuspaatos__jarjestamismuoto_koodi__iexact='JM03'))
-
-    # Tilapäinen varhaiskasvatus
-    tilapainen_vaka_filter = Q(varhaiskasvatuspaatos__tilapainen_vaka_kytkin=False)
-
-    # Date from which data is transfered
-    luonti_pvm_date = datetime.date(2021, 1, 4)
-    luonti_pvm_filter = Q(varhaiskasvatuspaatos__luonti_pvm__date__gte=luonti_pvm_date)
-
-    # Only henkilo with hetu
-    hetu_filter = ~Q(varhaiskasvatuspaatos__lapsi__henkilo__henkilotunnus__exact='')
-
-    return jarjestamismuoto_filter & luonti_pvm_filter & tilapainen_vaka_filter & hetu_filter
+        return Z10_KelaVarhaiskasvatussuhde.objects.raw(f'''
+            /* id column is required for a raw query */
+            SELECT 1 as id, su_deleted_last_value.henkilo_id, su_deleted_last_value.suhde_alkamis_pvm,
+                su_deleted_last_value.suhde_paattymis_pvm,
+                /* Repeat row (count of deleted Varhaiskasvatussuhde objects with specific dates) -
+                   (count of created Varhaiskasvatussuhde objects with same dates) times, negative number = 0 */
+                generate_series(1, COUNT(DISTINCT su_deleted.varhaiskasvatussuhde_id) -
+                    COUNT(DISTINCT su_created.varhaiskasvatussuhde_id))
+            /* Get last instances of Varhaiskasvatussuhde objects that have been deleted within time frame */
+            FROM (
+                SELECT DISTINCT ON (varhaiskasvatussuhde_id) varhaiskasvatussuhde_id
+                FROM varda_z10_kelavarhaiskasvatussuhde
+                WHERE history_type = '-' AND suhde_luonti_pvm < %s AND history_date >= %s AND history_date <= %s AND
+                    {_get_common_kela_filter_raw()}
+                ORDER BY varhaiskasvatussuhde_id, history_date DESC
+            ) su_deleted
+            /* Get last transferred values for deleted Varhaiskasvatussuhde object */
+            LEFT JOIN LATERAL (
+                SELECT * FROM varda_z10_kelavarhaiskasvatussuhde
+                WHERE varhaiskasvatussuhde_id = su_deleted.varhaiskasvatussuhde_id AND history_date < %s
+                ORDER BY history_date DESC LIMIT 1
+            ) su_deleted_last_value ON true
+            /* Get created Varhaiskasvatussuhde objects for Henkilo (not deleted and matching dates) */
+            LEFT JOIN LATERAL (
+                SELECT DISTINCT ON (varhaiskasvatussuhde_id) * FROM varda_z10_kelavarhaiskasvatussuhde
+                WHERE suhde_luonti_pvm >= %s AND history_date >= %s AND history_date <= %s AND
+                    henkilo_id = su_deleted_last_value.henkilo_id AND {_get_common_kela_filter_raw()}
+                ORDER BY varhaiskasvatussuhde_id, history_date DESC
+            ) su_created ON su_created.history_type != '-' AND
+                su_created.suhde_alkamis_pvm = su_deleted_last_value.suhde_alkamis_pvm AND
+                su_created.suhde_paattymis_pvm IS NOT DISTINCT FROM su_deleted_last_value.suhde_paattymis_pvm
+            GROUP BY su_deleted_last_value.henkilo_id, su_deleted_last_value.suhde_alkamis_pvm,
+                su_deleted_last_value.suhde_paattymis_pvm
+            ORDER BY su_deleted_last_value.henkilo_id, su_deleted_last_value.suhde_alkamis_pvm,
+                su_deleted_last_value.suhde_paattymis_pvm;
+        ''', [self.datetime_gte, self.datetime_gte, self.datetime_lte, self.datetime_gte, self.datetime_gte,
+              self.datetime_gte, self.datetime_lte])
 
 
 @auditlogclass
