@@ -1277,6 +1277,12 @@ class VardaViewsReportingTests(TestCase):
         resp = client.get(f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-lapset/')
         self._verify_error_report_result(resp, ['MA015', 'MA016'])
 
+        # Set Maksutieto alkamis_pvm to tomorrow, MA015 should not be raised
+        tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+        Maksutieto.objects.filter(huoltajuussuhteet__lapsi=lapsi).update(alkamis_pvm=tomorrow)
+        resp = client.get(f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-lapset/')
+        self._verify_error_report_result(resp, ['MA016'])
+
     @mock_date_decorator_factory('varda.viewsets_reporting.datetime', '2021-01-01')
     def test_api_error_report_lapset_vakatiedot(self):
         vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')

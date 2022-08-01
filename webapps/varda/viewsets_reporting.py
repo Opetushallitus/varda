@@ -653,9 +653,10 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
         # [[ErrorMessages, filter condition, parameters[], ID lookup, model name for ID lookup]]
         huoltajatiedot_error_nested_list = [
             [ErrorMessages.MA015, '''la.paos_organisaatio_id IS DISTINCT FROM %s AND ma.paattymis_pvm IS NULL AND
+             (ma.alkamis_pvm <= %s OR ma.alkamis_pvm IS NULL) AND
              NOT EXISTS(SELECT id FROM varda_varhaiskasvatuspaatos WHERE lapsi_id = la.id AND
               alkamis_pvm <= %s AND (paattymis_pvm IS NULL OR paattymis_pvm >= %s))''',
-             [self.vakajarjestaja_id, today, today], 'ma.id', Maksutieto.get_name()],
+             [self.vakajarjestaja_id, today, today, today], 'ma.id', Maksutieto.get_name()],
             [ErrorMessages.MA016, '''la.paos_organisaatio_id IS DISTINCT FROM %s AND ma.paattymis_pvm IS NULL AND
              he.syntyma_pvm < %s''', [self.vakajarjestaja_id, overage_date], 'ma.id', Maksutieto.get_name()]
         ]
