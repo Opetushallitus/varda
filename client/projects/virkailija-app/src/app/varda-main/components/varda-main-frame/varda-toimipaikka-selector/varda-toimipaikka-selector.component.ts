@@ -108,9 +108,8 @@ export class VardaToimipaikkaSelectorComponent implements OnInit, OnDestroy {
   }
 
   setToimipaikka(toimipaikka: VardaToimipaikkaMinimalDto): void {
-    if (toimipaikka) {
-      this.setPreviousToimipaikka(toimipaikka.organisaatio_oid);
-    }
+    const organisaatioOid = toimipaikka?.organisaatio_oid || null;
+    this.setPreviousToimipaikka(organisaatioOid);
     this.emitToimipaikkaChange(toimipaikka);
   }
 
