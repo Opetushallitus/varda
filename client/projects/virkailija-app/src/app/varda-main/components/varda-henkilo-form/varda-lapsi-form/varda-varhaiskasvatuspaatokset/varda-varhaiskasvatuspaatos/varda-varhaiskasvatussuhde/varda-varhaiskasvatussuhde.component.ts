@@ -60,6 +60,7 @@ export class VardaVarhaiskasvatussuhdeComponent extends VardaFormAccordionAbstra
     private koodistoService: VardaKoodistoService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private snackBarService: VardaSnackBarService,
+    private dateService: VardaDateService,
     utilityService: VardaUtilityService,
     translateService: TranslateService,
     modalService: VardaModalService
@@ -109,8 +110,8 @@ export class VardaVarhaiskasvatussuhdeComponent extends VardaFormAccordionAbstra
       lahdejarjestelma: new FormControl(Lahdejarjestelma.kayttoliittyma),
       varhaiskasvatuspaatos: new FormControl(this.lapsiService.getVarhaiskasvatuspaatosUrl(this.varhaiskasvatuspaatos.id), Validators.required),
       alkamis_pvm: new FormControl(this.currentObject ? moment(this.currentObject?.alkamis_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
-      paattymis_pvm: new FormControl(
-        this.currentObject?.paattymis_pvm ? moment(this.currentObject?.paattymis_pvm, VardaDateService.vardaApiDateFormat) : null,
+      paattymis_pvm: new FormControl(this.objectExists() ? this.dateService.vardaDateToMoment(this.currentObject?.paattymis_pvm) :
+          this.dateService.vardaDateToMoment(this.varhaiskasvatuspaatos.paattymis_pvm),
         this.varhaiskasvatuspaatos.paattymis_pvm ? [Validators.required] : null),
       toimipaikka_oid: new FormControl(this.currentObject?.toimipaikka_oid || this.henkilonToimipaikka?.organisaatio_oid, Validators.required),
     });

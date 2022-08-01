@@ -63,6 +63,7 @@ export class VardaTyoskentelypaikkaComponent extends VardaFormAccordionAbstractC
     private koodistoService: VardaKoodistoService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private snackBarService: VardaSnackBarService,
+    private dateService: VardaDateService,
     utilityService: VardaUtilityService,
     translateService: TranslateService,
     modalService: VardaModalService
@@ -97,8 +98,9 @@ export class VardaTyoskentelypaikkaComponent extends VardaFormAccordionAbstractC
       palvelussuhde: new FormControl(this.henkilostoService.getPalvelussuhdeUrl(this.palvelussuhde.id)),
       toimipaikka_oid: new FormControl(this.currentObject?.toimipaikka_oid || this.henkilonToimipaikka?.organisaatio_oid),
       kiertava_tyontekija_kytkin: new FormControl(this.currentObject?.kiertava_tyontekija_kytkin || false, Validators.required),
-      alkamis_pvm: new FormControl(this.currentObject ? moment(this.currentObject?.alkamis_pvm, VardaDateService.vardaApiDateFormat) : null, Validators.required),
-      paattymis_pvm: new FormControl(this.currentObject?.paattymis_pvm ? moment(this.currentObject?.paattymis_pvm, VardaDateService.vardaApiDateFormat) : null),
+      alkamis_pvm: new FormControl(this.dateService.vardaDateToMoment(this.currentObject?.alkamis_pvm), Validators.required),
+      paattymis_pvm: new FormControl(this.objectExists() ? this.dateService.vardaDateToMoment(this.currentObject?.paattymis_pvm) :
+        this.dateService.vardaDateToMoment(this.palvelussuhde.paattymis_pvm)),
       tehtavanimike_koodi: new FormControl(this.currentObject?.tehtavanimike_koodi, Validators.required),
       kelpoisuus_kytkin: new FormControl(this.currentObject?.kelpoisuus_kytkin, Validators.required),
     });
