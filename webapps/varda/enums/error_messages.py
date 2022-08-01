@@ -238,6 +238,7 @@ class ErrorMessages(enum.Enum):
     PS007 = get_error_dict('PS007', 'paattymis_pvm must be equal to or after 2020-09-01.')
     PS008 = get_error_dict('PS008', 'Tyontekija must have at least one Palvelussuhde.')
     PS009 = get_error_dict('PS009', 'There must be at least one active Tyoskentelypaikka or PidempiPoissaolo object related to an active Palvelussuhde.')
+    PS010 = get_error_dict('PS010', 'Identical Palvelussuhde already exists.')
 
     # Tyoskentelypaikka errors, prefix: TA
     TA001 = get_error_dict('TA001', 'Vakajarjestaja level permissions required for kiertava tyontekija.')

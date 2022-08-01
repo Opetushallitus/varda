@@ -1295,13 +1295,14 @@ class VardaHenkilostoViewSetTests(RollbackTestCase):
 
         tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija3')
 
+        alkamis_pvm = datetime.date(year=2020, month=3, day=1)
         palvelussuhde = {
             'tyontekija': f'/api/henkilosto/v1/tyontekijat/{tyontekija.id}/',
             'tyosuhde_koodi': '1',
             'tyoaika_koodi': '1',
             'tutkinto_koodi': '321901',
             'tyoaika_viikossa': '38.73',
-            'alkamis_pvm': '2020-03-01',
+            'alkamis_pvm': alkamis_pvm.strftime('%Y-%m-%d'),
             'paattymis_pvm': '2021-11-11',
             'lahdejarjestelma': '1',
         }
@@ -1310,6 +1311,8 @@ class VardaHenkilostoViewSetTests(RollbackTestCase):
         for i in range(7):
             resp = client.post('/api/henkilosto/v1/palvelussuhteet/', json.dumps(palvelussuhde), content_type='application/json')
             assert_status_code(resp, status.HTTP_201_CREATED)
+            alkamis_pvm += datetime.timedelta(days=1)
+            palvelussuhde.update(alkamis_pvm=alkamis_pvm.strftime('%Y-%m-%d'))
 
         # The next one will fail
         resp = client.post('/api/henkilosto/v1/palvelussuhteet/', json.dumps(palvelussuhde), content_type='application/json')
@@ -1501,6 +1504,34 @@ class VardaHenkilostoViewSetTests(RollbackTestCase):
 
         self.assertFalse(Tyoskentelypaikka.objects.filter(id=tyoskentelypaikka.id).exists())
         self.assertFalse(Palvelussuhde.objects.filter(id=palvelussuhde.id).exists())
+
+    def test_palvelussuhde_not_unique(self):
+        client = SetUpTestClient('tyontekija_tallentaja').client()
+        palvelussuhde = {
+            'tyontekija_tunniste': 'testing-tyontekija2',
+            'tyosuhde_koodi': '1',
+            'tyoaika_koodi': '1',
+            'tutkinto_koodi': '321901',
+            'tyoaika_viikossa': '38.73',
+            'alkamis_pvm': '2020-03-01',
+            'lahdejarjestelma': '1'
+        }
+
+        resp = client.post('/api/henkilosto/v1/palvelussuhteet/', palvelussuhde)
+        assert_status_code(resp, status.HTTP_201_CREATED)
+
+        resp = client.post('/api/henkilosto/v1/palvelussuhteet/', palvelussuhde)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'errors', 'PS010', 'Identical Palvelussuhde already exists.')
+
+        palvelussuhde['alkamis_pvm'] = '2020-03-02'
+        resp = client.post('/api/henkilosto/v1/palvelussuhteet/', palvelussuhde)
+        assert_status_code(resp, status.HTTP_201_CREATED)
+        palvelussuhde_id = json.loads(resp.content)['id']
+
+        resp = client.patch(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_id}/', {'alkamis_pvm': '2020-03-01'})
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'errors', 'PS010', 'Identical Palvelussuhde already exists.')
 
     def test_tyoskentelypaikka_add_correct(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()

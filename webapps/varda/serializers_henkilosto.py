@@ -21,8 +21,9 @@ from varda.related_object_validations import (create_date_range, date_range_over
 from varda.serializers_common import (OidRelatedField, TunnisteRelatedField, OrganisaatioPermissionCheckedHLField,
                                       PermissionCheckedHLFieldMixin, ToimipaikkaPermissionCheckedHLField,
                                       OptionalToimipaikkaMixin, HenkiloPermissionCheckedHLField)
-from varda.validators import (validate_paattymispvm_same_or_after_alkamispvm, validate_paivamaara1_after_paivamaara2,
-                              parse_paivamaara, fill_missing_fields_for_validations)
+from varda.validators import (validate_instance_uniqueness, validate_paattymispvm_same_or_after_alkamispvm,
+                              validate_paivamaara1_after_paivamaara2, parse_paivamaara,
+                              fill_missing_fields_for_validations)
 
 
 class TyontekijaHLField(serializers.HyperlinkedRelatedField):
@@ -284,6 +285,8 @@ class PalvelussuhdeSerializer(TyontekijaOptionalToimipaikkaMixin, serializers.Hy
                 paattymis_pvm = data.get('paattymis_pvm')
                 validators.validate_tyosuhde_koodi(data['tyosuhde_koodi'], alkamis_pvm, paattymis_pvm)
                 validators.validate_tyoaika_koodi(data['tyoaika_koodi'], alkamis_pvm, paattymis_pvm)
+                validate_instance_uniqueness(Palvelussuhde, data, ErrorMessages.PS010.value,
+                                             instance_id=getattr(self.instance, 'id', None))
         return data
 
     def validate_tutkinto(self, tyontekija, tutkinto_koodi, validator):
