@@ -1055,5 +1055,7 @@ class Z10_KelaVarhaiskasvatussuhde(AbstractModel):
             Index(fields=['history_date']),
             # Used when fetching last instance for specific Varhaiskasvatussuhde object
             Index(fields=['varhaiskasvatussuhde_id', '-history_date']),
+            # Used when fetching matching created/deleted instances for specific Varhaiskasvatussuhde object
+            Index(fields=['henkilo_id', 'suhde_alkamis_pvm', 'suhde_paattymis_pvm']),
         ]
         verbose_name_plural = 'Kela varhaiskasvatussuhteet'
