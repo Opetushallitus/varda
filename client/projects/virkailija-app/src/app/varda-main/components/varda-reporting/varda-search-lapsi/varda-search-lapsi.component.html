@@ -118,7 +118,7 @@
           </app-varda-radio-button-group>
         </div>
         <div class="col-md-auto"
-             *ngIf="!isFiltersInactive">
+             *ngIf="filterParams.rajaus !== rajaus.NONE">
           <label class="oph-bold">{{i18n.katsele_tietoja_filter_time | translate}}</label>
           <div class="row filter-time-container">
             <div class="col-md-auto">
@@ -177,20 +177,45 @@
           </div>
         </div>
         <div class="varda-reporting-row-wrap">
+          <div class="col-md-8 col-lg-6">
+            <label for="lapsiJarjestamismuotoSelect"
+                   class="oph-bold">{{i18n.varhaiskasvatuspaatos_jarjestamismuoto_koodi | translate}}</label>
+            <div class="oph-select-container">
+              <select class="oph-input oph-select"
+                      name="lapsiJarjestamismuotoSelect"
+                      id="lapsiJarjestamismuotoSelect"
+                      (change)="search()"
+                      [(ngModel)]="filterParams.jarjestamismuoto">
+                <option [ngValue]="null">{{i18n.katsele_tietoja_lapsi_jarjestamismuoto_all | translate}}</option>
+                <option *ngFor="let code of jarjestamismuotoCodes"
+                        [ngValue]="code"
+                        [title]="getCodeUiString(code)"
+                        [libKoodistoValue]="koodistoEnum.jarjestamismuoto" format="long">
+                  {{code.code_value}}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="varda-reporting-row-wrap">
           <div class="col-md-6 col-lg-4" *ngIf="filterParams.rajaus === rajaus.MAKSUTIEDOT">
-              <label for="lapsiMaksunPerusteInput"
+              <label for="lapsiMaksunPerusteSelect"
                      class="oph-bold">{{i18n.maksutieto_maksunperuste_koodi | translate}}</label>
-              <app-varda-autocomplete-selector [options]="maksunPerusteCodes"
-                                               id="lapsiMaksunPerusteInput"
-                                               name="lapsiMaksunPerusteInput"
-                                               [optionFormat]="{format: '{0} ({1})', properties:['name', 'code_value']}"
-                                               [nullValue]="null"
-                                               [placeholder]="i18n.katsele_tietoja_lapsi_maksun_peruste_all | translate"
-                                               [nullOptionLabel]="i18n.katsele_tietoja_lapsi_maksun_peruste_all | translate"
-                                               [invalidInputLabel]="i18n.katsele_tietoja_error_no_maksun_peruste_selected | translate"
-                                               [(ngModel)]="filterParams.maksunPeruste"
-                                               (ngModelChange)="autofillOnChange()">
-              </app-varda-autocomplete-selector>
+              <div class="oph-select-container">
+                <select class="oph-input oph-select"
+                        name="lapsiMaksunPerusteSelect"
+                        id="lapsiMaksunPerusteSelect"
+                        (change)="search()"
+                        [(ngModel)]="filterParams.maksunPeruste">
+                  <option [ngValue]="null">{{i18n.katsele_tietoja_lapsi_maksun_peruste_all | translate}}</option>
+                  <option *ngFor="let code of maksunPerusteCodes"
+                          [ngValue]="code"
+                          [title]="getCodeUiString(code)"
+                          [libKoodistoValue]="koodistoEnum.maksunperuste" format="long">
+                    {{code.code_value}}
+                  </option>
+                </select>
+              </div>
           </div>
           <div class="col-md-4 col-lg-3 margin-top-md" *ngIf="filterParams.rajaus === rajaus.MAKSUTIEDOT">
             <label for="lapsiPalveluseteliSelect"
@@ -211,7 +236,7 @@
             <button class="varda-button varda-icon-button filter-clear"
                     type="button"
                     (click)="clearFilters()"
-                    [disabled]="isFiltersInactive">
+                    [disabled]="!isFiltersActive()">
               <mat-icon alt="">delete</mat-icon>
               {{i18n.katsele_tietoja_clear_filters | translate}}
             </button>

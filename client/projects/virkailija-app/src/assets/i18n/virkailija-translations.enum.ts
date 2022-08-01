@@ -495,6 +495,7 @@ export enum VirkailijaTranslations {
   katsele_tietoja_lapsi_vakatiedot = 'katsele-tietoja.lapsi.vakatiedot',
   katsele_tietoja_lapsi_no_vakatiedot = 'katsele-tietoja.lapsi.no-vakatiedot',
   katsele_tietoja_lapsi_no_maksutiedot = 'katsele-tietoja.lapsi.no-maksutiedot',
+  katsele_tietoja_lapsi_jarjestamismuoto_all = 'katsele-tietoja.lapsi.jarjestamismuoto-all',
   katsele_tietoja_lapsi_maksun_peruste_all = 'katsele-tietoja.lapsi.maksun-peruste-all',
   katsele_tietoja_lapsi_palveluseteli = 'katsele-tietoja.lapsi.palveluseteli',
   katsele_tietoja_error_no_maksun_peruste_selected = 'katsele-tietoja.error.no-maksun-peruste-selected',

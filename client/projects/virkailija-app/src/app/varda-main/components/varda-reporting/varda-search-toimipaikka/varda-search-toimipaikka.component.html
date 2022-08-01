@@ -104,7 +104,7 @@
                 </app-varda-radio-button>
               </app-varda-radio-button-group>
             </div>
-            <div class="col varda-date-range-container" *ngIf="!isTimeFilterInactive">
+            <div class="col varda-date-range-container" *ngIf="filterParams.voimassaolo !== voimassaolo.KAIKKI">
               <div class="row varda-date-range-row">
                 <div class="col">
                   <app-varda-datepicker #alkamisPvm="ngModel"
@@ -143,7 +143,7 @@
           <button class="varda-button varda-icon-button filter-clear"
                   type="button"
                   (click)="clearFilters()"
-                  [disabled]="isFiltersInactive">
+                  [disabled]="!isFiltersActive()">
             <mat-icon alt="">delete</mat-icon>
             {{i18n.katsele_tietoja_clear_filters | translate}}
           </button>

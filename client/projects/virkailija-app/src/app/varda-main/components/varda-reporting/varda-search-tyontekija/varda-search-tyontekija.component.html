@@ -263,7 +263,7 @@
             <button class="varda-button varda-icon-button filter-clear"
                     type="button"
                     (click)="clearFilters()"
-                    [disabled]="isFiltersInactive">
+                    [disabled]="!isFiltersActive()">
               <mat-icon alt="">delete</mat-icon>
               {{i18n.katsele_tietoja_clear_filters | translate}}
             </button>

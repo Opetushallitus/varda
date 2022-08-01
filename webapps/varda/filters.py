@@ -612,6 +612,9 @@ class UiLapsiFilter(django_filters.FilterSet):
                              (Q(huoltajuussuhteet__maksutiedot__palveluseteli_arvo__isnull=True) |
                               Q(huoltajuussuhteet__maksutiedot__palveluseteli_arvo=0)))
 
+        if jarjestamismuoto_arg := query_params.get('jarjestamismuoto', None):
+            lapsi_filter &= Q(varhaiskasvatuspaatokset__jarjestamismuoto_koodi__iexact=jarjestamismuoto_arg)
+
         return queryset.filter(lapsi_filter).distinct('henkilo__sukunimi', 'henkilo__etunimet', 'id')
 
 

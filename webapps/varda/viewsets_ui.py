@@ -388,6 +388,7 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
         paattymis_pvm=YYYY-mm-dd
         maksun_peruste=str
         palveluseteli=boolean
+        jarjestamismuoto=str
     """
     queryset = Lapsi.objects.none()
     filter_backends = (CustomParametersFilterBackend, DjangoFilterBackend, SearchFilter,)
@@ -420,7 +421,9 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
                          CustomParameter(name='maksun_peruste', required=False, location='query', data_type='string',
                                          description='Lapsi must have this maksun peruste koodi'),
                          CustomParameter(name='palveluseteli', required=False, location='query', data_type='boolean',
-                                         description='Lapsi has maksutieto with palveluseteli'),)
+                                         description='Lapsi has maksutieto with palveluseteli'),
+                         CustomParameter(name='jarjestamismuoto', required=False, location='query', data_type='string',
+                                         description='Lapsi must have this jarjestamismuoto koodi'),)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -73,7 +73,8 @@ TRANSLATIONS = {
                             'Vuorohoito', 'Tuntimäärä viikossa', 'Tilapäinen (kyllä/ei)', 'Varhaiskasvatussuhteen ID',
                             'Alkamispvm', 'Päättymispvm', 'Toimipaikan nimi', 'Toimipaikan OID', 'Toimipaikan ID',),
         MAKSUTIETO_SHEET_NAME: 'Maksutieto',
-        MAKSUTIETO_HEADERS: ('Oppijanumero', 'Etunimet', 'Sukunimi', 'Hetu', 'Turvakielto', 'Lapsen ID', 'Maksutiedon ID',
+        MAKSUTIETO_HEADERS: ('Oppijanumero', 'Etunimet', 'Sukunimi', 'Hetu', 'Turvakielto', 'Lapsen ID',
+                             'PAOS (kyllä/ei)', 'PAOS-toimijan nimi', 'PAOS-toimijan OID', 'Maksutiedon ID',
                              'Alkamispvm', 'Päättymispvm', 'Perheen koko', 'Maksun perustekoodi', 'Asiakasmaksu',
                              'Palvelusetelin arvo', 'Huoltajan oppijanumero', 'Huoltajan etunimet',
                              'Huoltajan sukunimi',),
@@ -129,9 +130,12 @@ TRANSLATIONS = {
                             'Verksamhetsställets namn', 'Verksamhetsställets OID', 'Verksamhetsställets ID',),
         MAKSUTIETO_SHEET_NAME: 'Avgiftsuppgift',
         MAKSUTIETO_HEADERS: ('Studentnummer', 'Förnamn', 'Efternamn', 'Personbeteckning', 'Spärrmarkering',
-                             'Barnets ID', 'ID för avgiftsuppgiften', 'Begynnelsedatum', 'Slutdatum',
-                             'Familjens storlek', 'Kod för avgiftsgrunden', 'Klientavgift', 'Servicesedelns värde',
-                             'Vårdnadshavarens studentnummer', 'Vårdnadshavarens förnamn', 'Vårdnadshavarens efternamn',),
+                             'Barnets ID', 'Köptjänst-/servicesedelverksamhet (ja/nej)',
+                             'Köptjänst-/servicesedelaktörens namn', 'Köptjänst-/servicesedelaktörens OID',
+                             'ID för avgiftsuppgiften', 'Begynnelsedatum', 'Slutdatum', 'Familjens storlek',
+                             'Kod för avgiftsgrunden', 'Klientavgift', 'Servicesedelns värde',
+                             'Vårdnadshavarens studentnummer', 'Vårdnadshavarens förnamn',
+                             'Vårdnadshavarens efternamn',),
         PUUTTEELLISET_SHEET_NAME: 'Bristfälliga uppgifter',
         PUUTTEELLISET_TOIMIPAIKKA_HEADERS: ('Verksamhetsställets namn', 'Verksamhetsställets OID',
                                             'Verksamhetsställets ID', 'Källsystem', 'Fel', 'Uppgiftsinnehåll',
@@ -417,7 +421,10 @@ def _create_vakatiedot_report(workbook, language, vakajarjestaja_id, toimipaikka
                                    etunimet=F('huoltajuussuhteet__lapsi__henkilo__etunimet'),
                                    sukunimi=F('huoltajuussuhteet__lapsi__henkilo__sukunimi'),
                                    henkilotunnus=F('huoltajuussuhteet__lapsi__henkilo__henkilotunnus'),
-                                   turvakielto=F('huoltajuussuhteet__lapsi__henkilo__turvakielto'))
+                                   turvakielto=F('huoltajuussuhteet__lapsi__henkilo__turvakielto'),
+                                   paos_kytkin=F('huoltajuussuhteet__lapsi__paos_kytkin'),
+                                   paos_organisaatio_nimi=F('huoltajuussuhteet__lapsi__paos_organisaatio__nimi'),
+                                   paos_organisaatio_oid=F('huoltajuussuhteet__lapsi__paos_organisaatio__organisaatio_oid'))
                          .distinct()
                          .order_by('huoltajuussuhteet__lapsi__henkilo__sukunimi',
                                    'huoltajuussuhteet__lapsi__henkilo__etunimet'))
@@ -431,7 +438,9 @@ def _create_vakatiedot_report(workbook, language, vakajarjestaja_id, toimipaikka
             # Lapsi information
             maksutieto_values = [maksutieto.henkilo_oid, maksutieto.etunimet, maksutieto.sukunimi,
                                  decrypt_henkilotunnus(maksutieto.henkilotunnus, henkilo_id=maksutieto.henkilo_id, raise_error=False),
-                                 _get_boolean_translation(translations, maksutieto.turvakielto), maksutieto.lapsi_id]
+                                 _get_boolean_translation(translations, maksutieto.turvakielto), maksutieto.lapsi_id,
+                                 _get_boolean_translation(translations, maksutieto.paos_kytkin),
+                                 maksutieto.paos_organisaatio_nimi, maksutieto.paos_organisaatio_oid]
 
             # Maksutieto information
             maksutieto_values.extend([maksutieto.id, maksutieto.alkamis_pvm, maksutieto.paattymis_pvm,

@@ -68,7 +68,10 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
   };
 
   searchValue: string;
-  isFiltersInactive = false;
+  // Rajaus filters (class, type, date)
+  isFilters1Active = false;
+  // Always active filters
+  isFilters2Active = false;
   isFiltersVisible: boolean;
 
   toimipaikat: Array<VardaToimipaikkaMinimalDto> = [];
@@ -101,7 +104,7 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
   ngOnInit(): void {
     // Hide filters if screen size is small
     this.resizeSubscription = this.breakpointObserver.observe('(min-width: 768px)').subscribe(data => {
-      this.isFiltersVisible = this.isFiltersFilled() || data.matches;
+      this.isFiltersVisible = this.isFilters1Filled() || this.isFilters2Filled() || data.matches;
       this.isSmall = !data.matches;
     });
 
@@ -161,7 +164,8 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
       this.selectedToimipaikat.push(selectedToimipaikka);
 
       // Remove selected option from Autocomplete
-      this.filteredToimipaikkaOptions.next(this.toimipaikat.filter(toimipaikka => toimipaikka.id !== selectedToimipaikka.id && this.selectedToimipaikat.indexOf(toimipaikka) === -1));
+      this.filteredToimipaikkaOptions.next(this.toimipaikat.filter(toimipaikka =>
+        toimipaikka.id !== selectedToimipaikka.id && this.selectedToimipaikat.indexOf(toimipaikka) === -1));
     } else {
       // All toimipaikat selection is applied
       this.isAllToimipaikatSelected = true;
@@ -183,7 +187,8 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
       this.selectedToimipaikat.splice(this.selectedToimipaikat.indexOf(removedToimipaikka), 1);
 
       // Add removed option back to Autocomplete
-      this.filteredToimipaikkaOptions.next(this.toimipaikat.filter(toimipaikka => this.selectedToimipaikat.indexOf(toimipaikka) === -1));
+      this.filteredToimipaikkaOptions.next(this.toimipaikat.filter(toimipaikka =>
+        this.selectedToimipaikat.indexOf(toimipaikka) === -1));
     } else {
       // Reset input if all toimipaikat selection is cleared
       this.isAllToimipaikatSelected = false;
@@ -198,7 +203,9 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
 
   toimipaikkaSelectInputChange(event: Event) {
     const targetValue = (event.target as HTMLInputElement).value;
-    const results = this.toimipaikat.filter(toimipaikka => toimipaikka.nimi.toLowerCase().includes(targetValue.toLowerCase()) && this.selectedToimipaikat.indexOf(toimipaikka) === -1);
+    const results = this.toimipaikat.filter(toimipaikka =>
+      toimipaikka.nimi.toLowerCase().includes(targetValue.toLowerCase()) &&
+      this.selectedToimipaikat.indexOf(toimipaikka) === -1);
 
     if (results.length === 0) {
       this.isNoToimipaikkaResults = true;
@@ -241,6 +248,22 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
     this.resizeSubscription.unsubscribe();
   }
 
-  abstract isFiltersFilled(): boolean;
+  clearFilters() {
+    this.clearFilters1();
+    this.isFilters1Active = false;
+    this.clearFilters2();
+    this.isFilters2Active = false;
+
+    this.search();
+  }
+
+  isFiltersActive(): boolean {
+    return this.isFilters1Active || this.isFilters2Active;
+  }
+
+  abstract isFilters1Filled(): boolean;
+  abstract isFilters2Filled(): boolean;
+  abstract clearFilters1();
+  abstract clearFilters2();
   abstract search(paginatorParams?: PaginatorParams): void;
 }

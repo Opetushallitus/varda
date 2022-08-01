@@ -53,7 +53,8 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
     private dateService: VardaDateService,
   ) {
     super(koodistoService, breakpointObserver, translateService, koosteService, authService, vakajarjestajaService);
-    this.isFiltersInactive = true;
+    this.isFilters1Active = false;
+    this.isFilters2Active = false;
   }
 
   ngOnInit() {
@@ -74,8 +75,6 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
     const searchParams: Record<string, unknown> = {};
     this.setPaginatorParams(searchParams, paginatorParams);
 
-    this.isFiltersInactive = !this.isFiltersFilled();
-    this.isTimeFilterInactive = !this.isTimeFilterFilled();
     this.updateFilterString();
 
     if (this.searchValue) {
@@ -120,18 +119,42 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
   }
 
   filter(): boolean {
-    if (this.isTimeFilterInactive && this.filterParams.voimassaolo !== this.voimassaolo.KAIKKI) {
-      this.filterParams.alkamisPvm = moment();
-      this.filterParams.paattymisPvm = moment();
-      this.isTimeFilterInactive = false;
+    this.isFilters2Active = this.isFilters2Filled();
+    if (!this.isFilters1Active && this.filterParams.voimassaolo !== this.voimassaolo.KAIKKI) {
+      this.fillFilters1();
     } else if (this.filterParams.voimassaolo === this.voimassaolo.KAIKKI) {
-      this.filterParams.alkamisPvm = null;
-      this.filterParams.paattymisPvm = null;
-      this.isTimeFilterInactive = true;
-    } else if (!this.isTimeFilterFilled()) {
+      this.clearFilters1();
+      this.isFilters1Active = false;
+    } else if (!this.isFilters1Filled()) {
       return false;
     }
     return true;
+  }
+
+  fillFilters1() {
+    this.filterParams.alkamisPvm = moment();
+    this.filterParams.paattymisPvm = moment();
+    this.isFilters1Active = false;
+  }
+
+  clearFilters1() {
+    this.filterParams.voimassaolo = this.voimassaolo.KAIKKI;
+    this.filterParams.alkamisPvm = null;
+    this.filterParams.paattymisPvm = null;
+  }
+
+  clearFilters2() {
+    this.filterParams.toimintamuoto = null;
+    this.filterParams.jarjestamismuoto = null;
+  }
+
+  isFilters1Filled(): boolean {
+    return this.filterParams.voimassaolo !== this.voimassaolo.KAIKKI && this.filterParams.alkamisPvm !== null &&
+      this.filterParams.paattymisPvm !== null;
+  }
+
+  isFilters2Filled(): boolean {
+    return this.filterParams.jarjestamismuoto !== null || this.filterParams.toimintamuoto !== null;
   }
 
   updateFilterString() {
@@ -156,26 +179,5 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
     setTimeout(() => {
       this.filterString = this.getFilterString(stringParams);
     });
-  }
-
-  isTimeFilterFilled(): boolean {
-    return this.filterParams.voimassaolo !== this.voimassaolo.KAIKKI && this.filterParams.alkamisPvm !== null &&
-      this.filterParams.paattymisPvm !== null;
-  }
-
-  isFiltersFilled(): boolean {
-    return this.filterParams.voimassaolo !== this.voimassaolo.KAIKKI ||
-      this.filterParams.jarjestamismuoto !== null || this.filterParams.toimintamuoto !== null;
-  }
-
-  clearFilters(): void {
-    this.filterParams.voimassaolo = this.voimassaolo.KAIKKI;
-    this.filterParams.alkamisPvm = null;
-    this.filterParams.paattymisPvm = null;
-    this.filterParams.toimintamuoto = null;
-    this.filterParams.jarjestamismuoto = null;
-    this.isFiltersInactive = true;
-    this.isTimeFilterInactive = true;
-    this.search();
   }
 }

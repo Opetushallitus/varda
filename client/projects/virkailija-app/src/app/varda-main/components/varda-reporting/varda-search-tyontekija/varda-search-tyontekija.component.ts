@@ -53,8 +53,6 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
     tyosuhde: null
   };
 
-  isRajausFiltersInactive = false;
-
   tehtavanimikkeet: Array<CodeDTO> = [];
   filteredTehtavanimikeOptions: BehaviorSubject<Array<CodeDTO>> = new BehaviorSubject([]);
 
@@ -113,11 +111,9 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
     const searchParams: Record<string, unknown> = {};
     this.setPaginatorParams(searchParams, paginatorParams);
 
-    this.isFiltersInactive = !this.isFiltersFilled();
-
     searchParams.search = this.searchValue ? this.searchValue : '';
 
-    if (this.isRajausFiltersFilled()) {
+    if (this.isFilters1Filled()) {
       searchParams.rajaus = this.filterParams.rajaus;
       searchParams.voimassaolo = this.filterParams.voimassaolo;
       searchParams.alkamis_pvm = this.dateService.momentToVardaDate(this.filterParams.alkamisPvm);
@@ -164,59 +160,65 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
   }
 
   filter(): boolean {
-    if (this.isRajausFiltersInactive) {
-      this.isRajausFiltersInactive = false;
-      this.fillRajausFilter();
+    this.isFilters2Active = this.isFilters2Filled();
+    if (!this.isFilters1Active && this.filterParams.rajaus !== this.rajaus.NONE) {
+      this.isFilters1Active = true;
+      this.fillFilters1();
     }
 
     if (this.filterParams.rajaus === this.rajaus.NONE) {
-      this.isRajausFiltersInactive = true;
-      this.clearRajausFilter();
-    } else if (!this.isFiltersFilled()) {
+      this.clearFilters1();
+      this.isFilters1Active = false;
+    } else if (!this.isFilters1Filled()) {
       return false;
     }
     return true;
   }
 
-  fillRajausFilter() {
+  fillFilters1() {
     this.filterParams.voimassaolo = this.voimassaolo.VOIMASSA;
     this.filterParams.alkamisPvm = moment();
     this.filterParams.paattymisPvm = moment();
   }
 
-  clearRajausFilter() {
+  clearFilters() {
+    this.clearFilters1();
+    this.isFilters1Active = false;
+    this.clearFilters2();
+    this.isFilters2Active = false;
+
+    this.search();
+  }
+
+  clearFilters1() {
     this.filterParams.rajaus = this.rajaus.NONE;
     this.filterParams.voimassaolo = null;
     this.filterParams.alkamisPvm = null;
     this.filterParams.paattymisPvm = null;
     this.filterParams.tehtavanimikeTaydennyskoulutus = null;
-    this.isRajausFiltersInactive = true;
   }
 
-  clearFilters() {
+  clearFilters2() {
     this.filterParams.tehtavanimike = null;
     this.filterParams.tutkinto = null;
     this.filterParams.tyosuhde = null;
-    this.isFiltersInactive = true;
-    this.clearRajausFilter();
-    this.search();
   }
 
-  isFiltersFilled(): boolean {
-    return this.isRajausFiltersFilled() || (this.filterParams.rajaus === this.rajaus.NONE &&
-      (this.filterParams.tehtavanimike !== null || this.filterParams.tutkinto !== null || this.filterParams.tyosuhde !== null));
-  }
-
-  isRajausFiltersFilled(): boolean {
+  isFilters1Filled(): boolean {
     return this.filterParams.rajaus !== this.rajaus.NONE &&
       this.filterParams.voimassaolo !== null && this.filterParams.alkamisPvm !== null &&
       this.filterParams.paattymisPvm !== null;
   }
 
+  isFilters2Filled(): boolean {
+    return this.filterParams.tehtavanimike !== null || this.filterParams.tutkinto !== null ||
+      this.filterParams.tyosuhde !== null;
+  }
+
   updateFilterString() {
     const stringParams: Array<FilterStringParam> = [];
 
-    if (this.isRajausFiltersFilled()) {
+    if (this.isFilters1Filled()) {
       stringParams.push({ value: this.filterParams.rajaus, type: FilterStringType.TRANSLATED_STRING });
       if (this.filterParams.rajaus !== this.rajaus.TAYDENNYSKOULUTUKSET) {
         stringParams.push({ value: this.filterParams.voimassaolo, type: FilterStringType.TRANSLATED_STRING, lowercase: true });
