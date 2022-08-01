@@ -53,6 +53,7 @@ class ErrorMessages(enum.Enum):
     DY008 = get_error_dict('DY008', 'Request was throttled. Try again in {} seconds.')
     DY009 = get_error_dict('DY009', 'Ensure that there are no more than {} digits before the decimal point.')
     DY010 = get_error_dict('DY010', 'Request could not be parsed: {}')
+    DY011 = get_error_dict('DY011', 'Invalid JSON payload. Expected {}, but got {}.')
 
     # Organisaatio errors, prefix: VJ
     VJ001 = get_error_dict('VJ001', 'Cannot delete Vakajarjestaja. There are objects referencing it that need to be deleted first.')

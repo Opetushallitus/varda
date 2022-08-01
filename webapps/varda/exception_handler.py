@@ -37,8 +37,8 @@ error_templates = {
                 (re.compile(r'it should contain no more than (\d+)'), ErrorMessages.DY003.value),
             ],
             'min_length': (re.compile(r'at least ([\d.]+) characters'), ErrorMessages.DY002.value),
-            'min_value': (re.compile(r'greater than or equal to ([\d.]+?)[.]'), ErrorMessages.DY004.value),
-            'max_value': (re.compile(r'less than or equal to ([\d.]+?)[.]'), ErrorMessages.DY005.value),
+            'min_value': (re.compile(r'greater than or equal to ([\d.]+?)\.'), ErrorMessages.DY004.value),
+            'max_value': (re.compile(r'less than or equal to ([\d.]+?)\.'), ErrorMessages.DY005.value),
             'max_decimal_places': (re.compile(r'no more than ([\d]+) decimal places'), ErrorMessages.DY006.value),
             'max_digits': (re.compile(r'no more than ([\d]+) digits'), ErrorMessages.DY007.value),
             'max_whole_digits': (re.compile(r'no more than ([\d]+) digits'), ErrorMessages.DY009.value),
@@ -46,6 +46,7 @@ error_templates = {
                 (re.compile(r'JSON parse error - (.*)'), ErrorMessages.DY010.value),
                 (re.compile(r'Multipart form parse error - (.*)'), ErrorMessages.DY010.value)
             ],
+            'invalid': (re.compile(r'Invalid data\. Expected (.*), but got (.*)\.'), ErrorMessages.DY011.value),
         },
         UNIQUE: {
             'Combination of nimi and vakajarjestaja fields should be unique': ErrorMessages.TP001.value,
@@ -217,8 +218,8 @@ def _parse_error_dynamic(message, error_codes):
                 match = regex.search(message)
 
                 if match and match.group(1):
-                    variable = match.group(1)
-                    formatted_description = error_dict.get('description', '').format(variable)
+                    variables = match.groups()
+                    formatted_description = error_dict.get('description', '').format(*variables)
                     new_error_dict = get_error_dict(error_dict.get('error_code', ''), formatted_description)
                     return new_error_dict
     return None
