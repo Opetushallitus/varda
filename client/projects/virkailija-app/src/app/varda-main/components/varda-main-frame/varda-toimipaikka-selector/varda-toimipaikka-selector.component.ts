@@ -10,6 +10,7 @@ import { VardaVakajarjestajaApiService } from 'projects/virkailija-app/src/app/c
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { VardaCookieEnum } from 'projects/virkailija-app/src/app/utilities/models/enums/varda-cookie.enum';
 import { Subscription } from 'rxjs';
+import { AuthService } from '../../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-varda-toimipaikka-selector',
@@ -24,7 +25,6 @@ export class VardaToimipaikkaSelectorComponent implements OnInit, OnDestroy {
   toimipaikat: Array<VardaToimipaikkaMinimalDto>;
   activeToimipaikka: VardaToimipaikkaMinimalDto;
   formToimipaikka: VardaToimipaikkaMinimalDto;
-  toimipaikkaData: VardaToimipaikkaDTO;
   selectedVakajarjestaja: VardaVakajarjestajaUi;
   toimipaikkaFormOpen: boolean;
   hallinnointijarjestelmaTypes = Hallinnointijarjestelma;
@@ -35,6 +35,7 @@ export class VardaToimipaikkaSelectorComponent implements OnInit, OnDestroy {
   constructor(
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private vakajarjestajaApiService: VardaVakajarjestajaApiService,
+    private authService: AuthService
   ) {
     this.selectedVakajarjestaja = this.vardaVakajarjestajaService.getSelectedVakajarjestaja();
   }
@@ -101,6 +102,7 @@ export class VardaToimipaikkaSelectorComponent implements OnInit, OnDestroy {
         next: result => {
           this.setPreviousToimipaikka(toimipaikka.organisaatio_oid);
           this.vardaVakajarjestajaService.setToimipaikat(result);
+          this.authService.initUserPermissions();
         },
         error: err => console.error(err)
       });

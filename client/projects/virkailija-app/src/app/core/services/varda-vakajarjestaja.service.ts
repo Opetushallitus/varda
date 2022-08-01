@@ -49,7 +49,7 @@ export class VardaVakajarjestajaService {
    * @remarks eg. vakajarjestajaService.getFilteredToimipaikat()
    */
   getToimipaikat() {
-    return this.toimipaikat$.asObservable();
+    return this.toimipaikat$;
   }
 
   setToimipaikat(toimipaikat: Array<VardaToimipaikkaMinimalDto>) {

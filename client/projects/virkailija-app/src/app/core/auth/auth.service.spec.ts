@@ -25,7 +25,7 @@ describe('AuthService', () => {
     vakajarjestajaService.setVakajarjestajat(vakajarjestajatUIStub);
     vakajarjestajaService.setSelectedVakajarjestaja(vakajarjestajatUIStub.find(vakaj => vakaj.organisaatio_oid === '1.2.246.562.10.67019405222'));
     vakajarjestajaService.setToimipaikat(toimipaikatMinStub);
-    const kayttoObs = authService.setKayttooikeudet({
+    const kayttoObs = authService.setPermissions({
       kayttajatyyppi: VardaKayttajatyyppi.VIRKAILIJA,
       kayttooikeudet: [
         { organisaatio: '1.2.246.562.10.67019405611', kayttooikeus: VardaKayttooikeusRoles.HENKILOSTO_TYONTEKIJA_TALLENTAJA },
@@ -35,22 +35,19 @@ describe('AuthService', () => {
       ]
     });
 
-    kayttoObs.subscribe(success => authService.initUserAccess(toimipaikatMinStub));
-
-
+    kayttoObs.subscribe(success => authService.initUserPermissions());
   });
 
   it('checking toimipaikkaAccessIfAny', () => {
-    authService.toimipaikkaAccessToAnyToimipaikka$.subscribe(toimipaikkaAccessToAny => {
-      expect(toimipaikkaAccessToAny.tilapainenHenkilosto.katselija).toBeTrue();
-      expect(toimipaikkaAccessToAny.tilapainenHenkilosto.tallentaja).toBeFalse();
-      expect(toimipaikkaAccessToAny.lapsitiedot.tallentaja).toBeTrue();
-      expect(toimipaikkaAccessToAny.taydennyskoulutustiedot.katselija).toBeFalse();
-    });
+    const toimipaikkaAccessToAny = authService.anyUserAccess;
+    expect(toimipaikkaAccessToAny.tilapainenHenkilosto.katselija).toBeTrue();
+    expect(toimipaikkaAccessToAny.tilapainenHenkilosto.tallentaja).toBeFalse();
+    expect(toimipaikkaAccessToAny.lapsitiedot.tallentaja).toBeTrue();
+    expect(toimipaikkaAccessToAny.taydennyskoulutustiedot.katselija).toBeFalse();
   });
 
   it('checking toimijaAccess', () => {
-    const toimijaAccess = authService.getUserAccess();
+    const toimijaAccess = authService.organisaatioUserAccess;
     expect(toimijaAccess.tilapainenHenkilosto.katselija).toBeFalse();
     expect(toimijaAccess.lapsitiedot.tallentaja).toBeTrue();
   });
@@ -61,5 +58,4 @@ describe('AuthService', () => {
     expect(toimijaAccess.tilapainenHenkilosto.tallentaja).toBeFalse();
     expect(toimijaAccess.lapsitiedot.tallentaja).toBeTrue();
   });
-
 });

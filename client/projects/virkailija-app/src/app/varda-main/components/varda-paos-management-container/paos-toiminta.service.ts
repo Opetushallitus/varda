@@ -3,6 +3,7 @@ import { Subject } from 'rxjs';
 import { VirkailijaTranslations } from '../../../../assets/i18n/virkailija-translations.enum';
 import { VardaVakajarjestajaApiService } from '../../../core/services/varda-vakajarjestaja-api.service';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
+import { AuthService } from '../../../core/auth/auth.service';
 
 export enum PaosCreateEvent {
   Toimipaikka,
@@ -39,7 +40,8 @@ export class PaosToimintaService {
 
   constructor(
     private vakajarjestajaApiService: VardaVakajarjestajaApiService,
-    private vakajarjestajaService: VardaVakajarjestajaService
+    private vakajarjestajaService: VardaVakajarjestajaService,
+    private authService: AuthService
   ) {
     this._createdPaosToimintaOrganisaatioUrl = [];
   }
@@ -60,8 +62,11 @@ export class PaosToimintaService {
   }
 
   updateToimipaikkalist() {
-    this.vakajarjestajaApiService.getToimipaikat(this.vakajarjestajaService.getSelectedVakajarjestaja().id).subscribe(
-      toimipaikat => this.vakajarjestajaService.setToimipaikat(toimipaikat)
+    this.vakajarjestajaApiService.getToimipaikat(this.vakajarjestajaService.getSelectedVakajarjestaja().id)
+      .subscribe(toimipaikat => {
+        this.vakajarjestajaService.setToimipaikat(toimipaikat);
+        this.authService.initUserPermissions();
+      }
     );
   }
 

@@ -87,7 +87,7 @@ export class AuthGuard implements CanActivate {
     this.vardaApiService.getUserData().pipe( // get userData to see if you are logged in to opintopolku
       switchMap(userData => {
         this.login.setCurrentUser(userData);
-        return this.authService.setKayttooikeudet(userData); // can throw isPalvelukayttaja-error
+        return this.authService.setPermissions(userData); // can throw isPalvelukayttaja-error
       }),
       // get list of vakajarjestajat
       switchMap(() => this.vakajarjestajaApiService.getVakajarjestajat()),
@@ -100,13 +100,12 @@ export class AuthGuard implements CanActivate {
       }),
       // getToimipaikat ALWAYS returns toimipaikat[]
       switchMap(vakajarjestaja => this.vakajarjestajaApiService.getToimipaikat(vakajarjestaja.id)),
-      switchMap(toimipaikat => { // getToimipaikkaAccessToAnyToimipaikka means userAccess has been set
-        this.vakajarjestajaService.setToimipaikat(toimipaikat);
-        return this.authService.getToimipaikkaAccessToAnyToimipaikka();
-      }),
       take(1)
     ).subscribe({
-      next: toimipaikkaAccessToAnyToimipaikka => {
+      next: toimipaikat => {
+        this.vakajarjestajaService.setToimipaikat(toimipaikat);
+        this.authService.initUserPermissions();
+
         authObserver.next(true);
         authObserver.complete();
       }, error: err => { // redirect errors to our login-failed page
@@ -118,15 +117,11 @@ export class AuthGuard implements CanActivate {
         }
 
         console.error('Login error', err);
+
         authObserver.next(false);
         authObserver.complete();
         this.router.navigate([loginFailedRoute], { fragment });
       }
     });
-
-
   }
-
-
-
 }

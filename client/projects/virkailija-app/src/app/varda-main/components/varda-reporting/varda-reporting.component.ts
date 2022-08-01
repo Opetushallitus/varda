@@ -19,7 +19,6 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
 
   selectedVakajarjestaja: VardaVakajarjestajaUi;
   userAccess: UserAccess;
-  tilapainenHenkilostoOnly: boolean;
   subscriptions: Array<Subscription> = [];
   activeRoute: string;
 
@@ -38,15 +37,7 @@ export class VardaReportingComponent implements OnInit, OnDestroy {
     );
 
     this.selectedVakajarjestaja = this.vardaVakajarjestajaService.getSelectedVakajarjestaja();
-
-    this.subscriptions.push(
-      this.authService.getToimipaikkaAccessToAnyToimipaikka().subscribe({
-        next: accessIfAny => this.userAccess = accessIfAny,
-        error: err => console.error(err)
-      })
-    );
-
-    this.tilapainenHenkilostoOnly = this.authService.hasAccessOnlyTo([UserAccessKeys.tilapainenHenkilosto]);
+    this.userAccess = this.authService.anyUserAccess;
   }
 
   ngOnDestroy() {

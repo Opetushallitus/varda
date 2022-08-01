@@ -25,12 +25,14 @@
     <mat-icon alt="">expand_more</mat-icon>
   </button>
 
-  <div *ngIf="toimipaikkaAccessToAnyToimipaikka"
+  <div *ngIf="userAccess"
        class="collapse navbar-collapse varda-navbar-links"
        id="navbarSupportedContent">
     <ul class="navbar-nav mr-auto"
         *ngIf="vakajarjestajat">
-      <ng-container *ngIf="!tilapainenHenkilostoOnly">
+      <ng-container *ngIf="userAccess.lapsitiedot.tallentaja || userAccess.huoltajatiedot.tallentaja ||
+        userAccess.tyontekijatiedot.tallentaja || userAccess.taydennyskoulutustiedot.tallentaja ||
+        userAccess.oph.katselija">
         <li class="varda-header-nav-item-container"
             [class.active-nav-item]="activeNavItem === 'syota-tietoja'">
           <a routerLink="/syota-tietoja">
@@ -53,7 +55,7 @@
           #trigger="matMenuTrigger"
           [class.active-nav-item]=" activeNavItem === 'vakatoimija'">
         <button class="varda-text-button">
-          <mat-icon *ngIf="puutteellisetWarning | async"
+          <mat-icon *ngIf="showRaportitBoolean && puutteellisetWarning | async"
                     aria-ignore="true"
                     class="warning">warning</mat-icon>
           <span>{{ i18n.toimijan_tiedot | translate }}</span>
@@ -69,13 +71,13 @@
             {{ i18n.yhteystiedot | translate }}
           </a>
           <a routerLink="/paos-hallinta"
-             *ngIf="toimipaikkaAccessToAnyToimipaikka.lapsitiedot.katselija"
+             *ngIf="userAccess.lapsitiedot.katselija"
              (keydown.tab)="$event.stopPropagation()"
              (keydown.shift.tab)="$event.stopPropagation()"
              mat-menu-item>
             {{ i18n.paos | translate }}
           </a>
-          <a *ngIf="toimipaikkaAccessToAnyToimipaikka.tilapainenHenkilosto.katselija"
+          <a *ngIf="userAccess.tilapainenHenkilosto.katselija"
              routerLink="/tilapainen-henkilosto"
              (keydown.tab)="$event.stopPropagation()"
              (keydown.shift.tab)="$event.stopPropagation()"
@@ -92,7 +94,7 @@
                       aria-ignore="true">warning</mat-icon>
             <span>{{i18n.raportit | translate }}</span>
           </a>
-          <a *ngIf="toimipaikkaAccessToAnyToimipaikka.oph.katselija"
+          <a *ngIf="userAccess.oph.katselija"
              routerLink="/paata-tiedot"
              (keydown.tab)="$event.stopPropagation()"
              (keydown.shift.tab)="$event.stopPropagation()"

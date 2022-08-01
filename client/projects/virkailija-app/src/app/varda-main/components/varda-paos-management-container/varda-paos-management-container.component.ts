@@ -26,7 +26,7 @@ export class VardaPaosManagementContainerComponent implements OnInit, OnDestroy 
   ) { }
 
   ngOnInit() {
-    this.isVardaPaakayttaja = this.authService.isCurrentUserSelectedVakajarjestajaRole(VardaKayttooikeusRoles.VARDA_PAAKAYTTAJA);
+    this.isVardaPaakayttaja = this.authService.anyUserAccess.paakayttaja;
     this.errorMessage$ = this.paosToimintaService.errorMessage$;
     this.vakajarjestajaSubscription = this.vakajarjestajaService.listenSelectedVakajarjestaja()
       .subscribe({
@@ -38,5 +38,4 @@ export class VardaPaosManagementContainerComponent implements OnInit, OnDestroy 
   ngOnDestroy(): void {
     this.vakajarjestajaSubscription.unsubscribe();
   }
-
 }

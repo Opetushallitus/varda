@@ -18,19 +18,21 @@
       <a mat-tab-link
          routerLink="toimipaikat"
          [active]="activeRoute === 'toimipaikat'"
-         *ngIf="!tilapainenHenkilostoOnly">
+         *ngIf="userAccess.paakayttaja || userAccess.lapsitiedot.katselija || userAccess.huoltajatiedot.katselija ||
+           userAccess.tyontekijatiedot.katselija || userAccess.taydennyskoulutustiedot.katselija ||
+           userAccess.toimijatiedot.katselija">
         {{i18n.katsele_tietoja_toimipaikat | translate}}
       </a>
       <a mat-tab-link
          routerLink="lapset"
          [active]="activeRoute === 'lapset'"
-         *ngIf="userAccess && (userAccess.paakayttaja || userAccess.lapsitiedot.katselija || userAccess.huoltajatiedot.katselija)">
+         *ngIf="userAccess.paakayttaja || userAccess.lapsitiedot.katselija || userAccess.huoltajatiedot.katselija">
         {{i18n.katsele_tietoja_lapset | translate}}
       </a>
       <a mat-tab-link
          routerLink="tyontekijat"
          [active]="activeRoute === 'tyontekijat'"
-         *ngIf="userAccess && (userAccess.tyontekijatiedot.katselija || userAccess.taydennyskoulutustiedot.katselija)">
+         *ngIf="userAccess.tyontekijatiedot.katselija || userAccess.taydennyskoulutustiedot.katselija">
         {{i18n.katsele_tietoja_tyontekijat | translate}}
       </a>
       <a mat-tab-link

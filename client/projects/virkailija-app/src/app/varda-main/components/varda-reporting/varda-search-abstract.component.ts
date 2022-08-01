@@ -110,10 +110,9 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
 
     this.vakajarjestajaName = this.vakajarjestajaService.getSelectedVakajarjestaja().nimi.trim().toLowerCase();
     this.katselijaToimipaikat = this.vakajarjestajaService.getFilteredToimipaikat().katselijaToimipaikat;
-    this.authService.getToimipaikkaAccessToAnyToimipaikka().subscribe(accessIfAny => {
-      this.userAccess = accessIfAny;
-      this.afterUserAccessInit();
-    });
+
+    this.userAccess = this.authService.anyUserAccess;
+    this.afterUserAccessInit();
   }
 
   getKoodistoFromKoodistoService(name: KoodistoEnum): Observable<KoodistoDTO> {

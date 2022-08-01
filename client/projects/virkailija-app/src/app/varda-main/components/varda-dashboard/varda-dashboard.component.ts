@@ -5,8 +5,8 @@ import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajar
 import { VardaVakajarjestajaUi } from '../../../utilities/models';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { VardaVakajarjestajaApiService } from '../../../core/services/varda-vakajarjestaja-api.service';
-import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 import { of, Subscription } from 'rxjs';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-varda-dashboard',
@@ -16,38 +16,24 @@ import { of, Subscription } from 'rxjs';
 export class VardaDashboardComponent implements OnDestroy {
   i18n = VirkailijaTranslations;
   selectedVakajarjestaja: VardaVakajarjestajaUi;
-  toimipaikkaAccessToAnyToimipaikka: UserAccess;
-  tilapainenHenkilostoOnly: boolean;
   subscriptions: Array<Subscription> = [];
-  ui: {
-    isLoading: boolean;
-    dashboardInitializationError: boolean;
-    alertMsg: VirkailijaTranslations;
-  };
+  showUi = false;
 
   constructor(
     private authService: AuthService,
     private vardaVakajarjestajaService: VardaVakajarjestajaService,
     private vakajarjestajaApiService: VardaVakajarjestajaApiService,
+    private router: Router
   ) {
-    this.ui = {
-      isLoading: null,
-      dashboardInitializationError: false,
-      alertMsg: this.i18n.error_occured
-    };
     this.initListeners();
-  }
-
-
-  ngOnDestroy() {
-    this.subscriptions.forEach(sub => sub.unsubscribe);
   }
 
   initListeners() {
     this.subscriptions.push(
       this.vardaVakajarjestajaService.listenSelectedVakajarjestaja().pipe(
         mergeMap(vakajarjestaja => {
-          this.toimipaikkaAccessToAnyToimipaikka = null;
+          // Hide UI to force component reload
+          this.showUi = false;
           const previousVakajarjestaja = this.selectedVakajarjestaja;
           this.selectedVakajarjestaja = vakajarjestaja;
           // first init or vakajarjestaja is the same as previously
@@ -56,17 +42,20 @@ export class VardaDashboardComponent implements OnDestroy {
           }
           return this.vakajarjestajaApiService.getToimipaikat(vakajarjestaja.id);
         })
-      ).pipe(
-        mergeMap(toimipaikat => {
-          if (toimipaikat) {
-            this.vardaVakajarjestajaService.setToimipaikat(toimipaikat);
-          }
-          return this.authService.getToimipaikkaAccessToAnyToimipaikka();
-        })
-      ).subscribe(toimipaikkaAccessToAnyToimipaikka =>
-        this.toimipaikkaAccessToAnyToimipaikka = toimipaikkaAccessToAnyToimipaikka
-      )
+      ).subscribe(toimipaikat => {
+        if (toimipaikat) {
+          // Organisaatio was changed
+          this.vardaVakajarjestajaService.setToimipaikat(toimipaikat);
+          this.authService.initUserPermissions();
+          // Navigate to default location
+          this.router.navigate(['/']);
+        }
+        this.showUi = true;
+      })
     );
   }
 
+  ngOnDestroy() {
+    this.subscriptions.forEach(sub => sub.unsubscribe);
+  }
 }

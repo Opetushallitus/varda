@@ -68,7 +68,8 @@ const routes: Routes = [
                 UserAccessKeys.huoltajatiedot,
                 UserAccessKeys.tyontekijatiedot,
                 UserAccessKeys.taydennyskoulutustiedot
-              ]
+              ],
+              requireTallentaja: true
             }
           },
           {
