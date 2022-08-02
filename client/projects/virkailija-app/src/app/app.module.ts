@@ -3,7 +3,7 @@ import { NgModule } from '@angular/core';
 import { VardaMainModule } from './varda-main/varda-main.module';
 import { CoreModule } from './core/core.module';
 import { SharedModule } from './shared/shared.module';
-import { RouterModule, Routes } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { HttpClientModule, HttpClient, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
