@@ -12,7 +12,7 @@ from varda.models import (Organisaatio, Toimipaikka, ToiminnallinenPainotus, Kie
 
 
 class VardaModelsTests(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     def test_vakajarjestajat(self):
         test_vakajarjestaja = Organisaatio.objects.get(pk=1).nimi

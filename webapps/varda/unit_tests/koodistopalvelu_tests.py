@@ -44,7 +44,7 @@ def mock_get_koodisto_codes_empty(koodisto_name):
 
 
 class KoodistopalveluTests(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     @mock.patch('varda.clients.koodistopalvelu_client.get_koodisto', mock_get_koodisto)
     @mock.patch('varda.clients.koodistopalvelu_client.get_koodisto_codes', mock_get_koodisto_codes)

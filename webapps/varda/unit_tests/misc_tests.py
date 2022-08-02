@@ -10,7 +10,7 @@ from varda.unit_tests.test_utils import assert_status_code, assert_validation_er
 
 
 class MiscTests(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     @responses.activate
     def test_hetu_crypting(self):

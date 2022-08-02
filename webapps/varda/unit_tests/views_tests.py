@@ -43,7 +43,7 @@ def mock_create_organisaatio(organisaatio_json):
 
 
 class VardaViewsTests(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     def test_index(self):
         resp = self.client.get('/')

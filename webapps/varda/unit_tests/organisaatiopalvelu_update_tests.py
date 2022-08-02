@@ -12,7 +12,7 @@ from varda.organisaatiopalvelu import (get_toimipaikka_update_json, get_toimipai
 
 
 class VardaOrganisaatiopalveluTests(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     toimipaikka_1_organisaatio_oid = '1.2.246.562.10.9395737548810'
     toimipaikka_2_organisaatio_oid = '1.2.246.562.10.9395737548815'

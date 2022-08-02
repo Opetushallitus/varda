@@ -19,7 +19,7 @@ datetime_path = 'varda.serializers_henkilosto.datetime'
 
 
 class VardaHenkilostoViewSetTests(RollbackTestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     def test_api_push_tyontekija_correct(self):
         client_tallentaja = SetUpTestClient('tyontekija_tallentaja').client()

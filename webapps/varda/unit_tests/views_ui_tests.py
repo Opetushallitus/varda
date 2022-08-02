@@ -12,7 +12,7 @@ from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, pos
 
 
 class VardaHenkilostoViewSetTests(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     def test_tyontekija_list_vakajarjestaja_tyontekija_user(self):
         client = SetUpTestClient('tyontekija_tallentaja').client()

@@ -7,7 +7,7 @@ from varda.unit_tests.test_utils import SetUpTestClient
 
 
 class VardaHenkiloViewSetTests(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     @responses.activate
     def test_henkilo_with_multiple_hetu_not_create_duplicate(self):

@@ -12,7 +12,7 @@ from varda.models import Lapsi, Huoltaja, BatchError, Henkilo
 
 
 class TestOppijanumerorekisteriLogic(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
     date_time_regex = r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+0[2|3]00'  # E.g. 2020-02-18T18:23:11+0200
 
     @responses.activate

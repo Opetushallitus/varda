@@ -18,7 +18,7 @@ REAL_CACHE_SETTINGS = {
 
 
 class VardaAdminViewSetTests(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     @override_settings(CACHES=REAL_CACHE_SETTINGS)
     def test_set_paattymis_pvm_not_admin(self):

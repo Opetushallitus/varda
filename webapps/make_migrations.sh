@@ -15,7 +15,7 @@ then
 
   python manage.py makemigrations
   python manage.py migrate
-  python manage.py loaddata varda/unit_tests/fixture_basics.json
+  python manage.py loaddata fixture_basics
   django-admin compilemessages  # To compile translation-messages (.mo files)
 
 fi

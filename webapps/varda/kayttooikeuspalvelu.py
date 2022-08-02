@@ -2,10 +2,7 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
-from django.db.models import Q
-from guardian.models import UserObjectPermission
 from rest_framework.exceptions import AuthenticationFailed
 
 from varda.cache import delete_cached_user_permissions_for_model
@@ -19,7 +16,7 @@ from varda.misc import get_json_from_external_service, get_reply_json
 from varda.models import Toimipaikka, Organisaatio, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, LoginCertificate
 from varda.organisaatiopalvelu import create_toimipaikka_using_oid, create_organization_using_oid
 from varda.permission_groups import get_permission_group
-from varda.permissions import is_oph_staff
+from varda.permissions import delete_all_user_permissions, is_oph_staff
 from varda.tasks import update_oph_staff_to_vakajarjestaja_groups
 
 
@@ -115,21 +112,7 @@ def set_user_kayttooikeudet(henkilo_oid, user):
     if is_oph_staff(user) and is_oph_yllapitaja:
         return None
 
-    # We need to delete the 'kayttooikeus' groups first (there might be removed access rights).
-    # Delete + creation is not handled in one atomic-transaction since it involves
-    # multiple queries to other systems, and this might leave transactions open for too long time.
-    # These DB-actions are not viewed as critical, since if something goes wrong here, the next
-    # login should already fix the possible problem.
-    Z4_CasKayttoOikeudet.objects.filter(user=user).delete()
-    # Remove the permission_groups from user.
-    # If there will be other groups also, then delete only the permission-groups here.
-    user.groups.clear()
-
-    # Also, remove the possible vakajarjestaja-object level permissions from user. These are
-    # special-permissions given to Toimipaikka-permission level user. See more info below.
-    # https://django-guardian.readthedocs.io/en/stable/userguide/caveats.html
-    filters = Q(content_type=ContentType.objects.get_for_model(Organisaatio), user_id=user.id)
-    UserObjectPermission.objects.filter(filters).delete()
+    delete_all_user_permissions(user)
 
     # After removal, let's set the user permissions.
     for permissions_by_organization in permissions_by_organization_list:
@@ -397,15 +380,18 @@ def _get_permissions_by_organization(henkilo_oid):
 
 
 def set_service_user_permissions(user, henkilo_oid):
-    # Delete old permissions as some of them may have been removed
-    Z4_CasKayttoOikeudet.objects.filter(user=user).delete()
-    user.groups.clear()
-
-    if not henkilo_oid:
-        logger.error(f'Service user with id: {user.id} does not have an OID.')
-        return None
-
-    permissions_by_organization_list = _get_organizations_and_perm_groups_of_user(henkilo_oid)
+    # Get current permissions from Käyttöoikeuspalvelu, delete existing permissions in any case (error or success)
+    try:
+        if not henkilo_oid:
+            logger.error(f'Service user with id: {user.id} does not have an OID.')
+            return None
+        permissions_by_organization_list = _get_organizations_and_perm_groups_of_user(henkilo_oid)
+    except Exception as exception:
+        raise exception
+    finally:
+        # Delete existing permissions after getting current ones, so that time without any permissions is short
+        # Service users can use multiple simultaneous instances, so we want user to have permissions at all times
+        delete_all_user_permissions(user)
 
     if len(permissions_by_organization_list) != 1:
         # Decline access to Varda if the service user doesn't have correct permissions to VARDA-service

@@ -934,3 +934,12 @@ def delete_permissions_from_object_instance_by_oid(instance, organisaatio_oid):
     content_type = ContentType.objects.get_for_model(type(instance))
     GroupObjectPermission.objects.filter(content_type=content_type, object_pk=instance.id,
                                          group__name__endswith=organisaatio_oid).delete()
+
+
+def delete_all_user_permissions(user):
+    # Delete Z4_CasKayttoOikeudet related objects (not used, only set and deleted)
+    Z4_CasKayttoOikeudet.objects.filter(user=user).delete()
+    # Clear user group associations
+    user.groups.clear()
+    # Delete user specific permissions (e.g. to Henkilo objects)
+    UserObjectPermission.objects.filter(user=user).delete()

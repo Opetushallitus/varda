@@ -11,7 +11,7 @@ from varda.organisaatiopalvelu import fetch_and_save_toimipaikka_data
 
 
 class TestFetchAndSaveToimipaikkaData(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     @responses.activate
     def test_fetch_and_save_toimipaikka_data(self):

@@ -16,7 +16,7 @@ from varda.unit_tests.test_utils import SetUpTestClient, assert_status_code
 
 
 class TaskTests(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     def test_delete_huoltajat_task(self):
         lapsi = Lapsi.objects.get(tunniste='testing-lapsi14')

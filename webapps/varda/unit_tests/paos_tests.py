@@ -12,7 +12,7 @@ from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, ass
 
 
 class VardaPaosTests(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     def test_paos_toiminnat_with_same_toimipaikka_names(self):
         client = SetUpTestClient('tester4').client()

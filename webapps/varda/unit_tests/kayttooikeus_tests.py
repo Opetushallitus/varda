@@ -8,7 +8,7 @@ from varda.models import Z4_CasKayttoOikeudet
 
 
 class TestKayttooikeus(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     @responses.activate
     def test_paakayttaja_huoltajatietotallentaja_in_integraatioorganisaatio(self):

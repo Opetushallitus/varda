@@ -11,7 +11,7 @@ from varda.unit_tests.organisaatiopalvelu.fetch_and_save_tests import TestFetchA
 
 
 class TestUpdateChangedOrganisaatio(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     @responses.activate
     def test_update_changed_organisaatios(self):

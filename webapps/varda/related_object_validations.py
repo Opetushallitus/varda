@@ -8,11 +8,10 @@ from django.db.models import Q
 from rest_framework.exceptions import ValidationError
 
 from varda.enums.error_messages import ErrorMessages
-from varda.models import (Organisaatio, Henkilo, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Lapsi, Huoltaja,
-                          Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Palvelussuhde, Tyoskentelypaikka,
+from varda.models import (Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Palvelussuhde, Tyoskentelypaikka,
                           PidempiPoissaolo, ToiminnallinenPainotus, KieliPainotus, Maksutieto)
 
-# Get an instance of a logger
+
 logger = logging.getLogger(__name__)
 
 
@@ -44,75 +43,6 @@ def date_range_overlap(range1, range2):
         return True
     else:
         return False
-
-
-def check_if_url_is_valid(list_of_url_segments, model):
-    """
-    url examples:
-     - Absolute: http://localhost:8000/api/v1/vakajarjestajat/6/ ==> ['http:', '', 'localhost:8000', 'api', 'v1', 'vakajarjestajat', '6', '']
-     - Relative: /api/v1/vakajarjestajat/6/ ==> ['', 'api', 'v1', 'vakajarjestajat', '6', '']
-    """
-    if (len(list_of_url_segments) > 1 and
-        ((list_of_url_segments[0].startswith(('http', 'https')) and len(list_of_url_segments) != 8) or
-            (list_of_url_segments[0] == '' and list_of_url_segments[1] == 'api' and len(list_of_url_segments) != 6))):
-        raise ValidationError({model: [ErrorMessages.GE009.value]})
-
-
-def check_if_user_has_add_toimipaikka_permissions_under_vakajarjestaja(vakajarjestaja_id, user):
-    """
-    User must have TALLENTAJA permissions on the vakajarjestaja-level.
-    Or user must be "palvelukayttaja".
-    """
-    validation_error_msg = {'errors': [ErrorMessages.TP009.value]}
-    try:
-        user_details = Z3_AdditionalCasUserFields.objects.get(user=user)
-    except Z3_AdditionalCasUserFields.DoesNotExist:
-        raise ValidationError(validation_error_msg)
-
-    if user_details.kayttajatyyppi == 'PALVELU':
-        return None
-
-    # Kayttaja == "VIRKAILIJA"
-    vakajarjestaja = Organisaatio.objects.get(id=vakajarjestaja_id)
-    organisaatio_oid = vakajarjestaja.organisaatio_oid
-    if (not Z4_CasKayttoOikeudet.objects
-                                .filter(user_id=user.id)
-                                .filter(organisaatio_oid=organisaatio_oid)
-                                .filter(kayttooikeus=Z4_CasKayttoOikeudet.TALLENTAJA)
-                                .exists()):
-        raise ValidationError(validation_error_msg)
-
-
-def check_if_user_has_access_to_henkilo(url, user):
-    model = Henkilo
-    list_of_url_segments = url.split('/')
-    check_if_url_is_valid(list_of_url_segments, model)
-
-    henkilo_id = list_of_url_segments[-2]
-    henkilo = Henkilo.objects.get(id=henkilo_id)
-    if not user.has_perm('view_henkilo', henkilo):
-        raise ValidationError({'henkilo': [ErrorMessages.GE008.value]})
-
-
-def check_if_henkilo_is_changed(path, uusi_henkilo_id, user):
-    """
-    Only admin can change the identity of the Lapsi/Työntekijä/Huoltaja.
-    """
-    model = Henkilo
-    list_of_path_segments = path.split('/')  # Path e.g. /api/v1/henkilot/99/
-    check_if_url_is_valid(list_of_path_segments, model)
-    rooli_id = list_of_path_segments[-2]
-
-    if user.is_superuser:
-        return None
-
-    if 'huoltajat' in path:
-        nykyinen_henkilo_id = Huoltaja.objects.get(id=rooli_id).henkilo.id
-    elif 'lapset' in path:
-        nykyinen_henkilo_id = Lapsi.objects.get(id=rooli_id).henkilo.id
-
-    if uusi_henkilo_id != nykyinen_henkilo_id:
-        raise ValidationError({'henkilo': [ErrorMessages.GE013.value]})
 
 
 def check_if_admin_mutable_object_is_changed(user, instance, data, key, **kwargs):

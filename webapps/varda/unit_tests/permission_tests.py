@@ -20,7 +20,7 @@ from varda.unit_tests.test_utils import (assert_status_code, base64_encoding, TE
 
 
 class VardaPermissionsTests(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     """
     Anonymous cannot see root api.

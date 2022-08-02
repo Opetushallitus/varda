@@ -14,7 +14,7 @@ from varda.unit_tests.test_utils import assert_status_code, post_henkilo_to_get_
 
 
 class OrganisationTransformationsTests(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     def test_toimipaikat_transfer_simple(self):
         old_vakajarjestaja_oid = '1.2.246.562.10.57294396385'

@@ -29,7 +29,7 @@ kela_base_url = '/api/reporting/v1/kela/etuusmaksatus/'
 
 
 class VardaViewsReportingTests(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     """
     Reporting related view-tests

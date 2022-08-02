@@ -6,7 +6,7 @@ from varda.unit_tests.test_utils import SetUpTestClient, assert_status_code
 
 
 class VardaJulkinenViewSetTests(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     def test_api_get_koodistot(self):
         client = SetUpTestClient('tester').client()

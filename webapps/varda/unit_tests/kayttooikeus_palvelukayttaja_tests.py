@@ -1,6 +1,9 @@
+from unittest.mock import patch
+
 import responses
 from django.conf import settings
 from django.contrib.auth.models import User, Group
+from django.core.exceptions import PermissionDenied
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -13,7 +16,7 @@ from varda.unit_tests.test_utils import assert_status_code, base64_encoding, ass
 
 
 class TestPalvelukayttajaKayttooikeus(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     @responses.activate
     def test_palvelukayttaja_can_fetch_working_apikey(self):
@@ -418,6 +421,98 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
         expected_integraatio = (TietosisaltoRyhma.TYONTEKIJATIEDOT.value, TietosisaltoRyhma.VAKATIEDOT.value,)
         self.assertCountEqual(vakajarjestaja.integraatio_organisaatio, expected_integraatio)
 
+    @responses.activate
+    def test_service_user_login_clear_permissions(self):
+        henkilo_oid = '1.2.246.562.24.10000000001'
+        username = 'service-user-test'
+        organisaatio_oid = '1.2.246.562.10.27580498759'
+        mock_response = [
+            {
+                'organisaatioOid': organisaatio_oid,
+                'kayttooikeudet': [
+                    {
+                        'palvelu': 'VARDA',
+                        'oikeus': Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
+                    },
+                ]
+            }
+        ]
+        expected_group_names = ['HENKILOSTO_TYONTEKIJA_TALLENTAJA_1.2.246.562.10.27580498759']
+        client = APIClient()
+        basic_auth_token = base64_encoding(f'{username}:password')
+        client.credentials(HTTP_AUTHORIZATION='Basic {}'.format(basic_auth_token))
+
+        vakajarjestaja_qs = Organisaatio.objects.filter(organisaatio_oid=organisaatio_oid)
+
+        def _successful_login():
+            mock_cas_palvelukayttaja_responses(mock_response, username, henkilo_oid=henkilo_oid)
+            resp_login = client.get('/api/user/apikey/')
+            assert_status_code(resp_login, status.HTTP_200_OK)
+            self._assert_user_permissiongroups(expected_group_names, username)
+            self.assertCountEqual(vakajarjestaja_qs.first().integraatio_organisaatio,
+                                  [TietosisaltoRyhma.TYONTEKIJATIEDOT.value])
+
+        _successful_login()
+
+        # No henkilo_oid -> login succeeds but permissions are cleared
+        responses.reset()
+        mock_cas_palvelukayttaja_responses(mock_response, username, henkilo_oid='')
+        resp = client.get('/api/user/apikey/')
+        assert_status_code(resp, status.HTTP_200_OK)
+        self._assert_user_permissiongroups([], username)
+
+        # Opintopolku API call fails -> login failed and clear permissions
+        responses.reset()
+        _successful_login()
+
+        responses.replace(responses.GET,
+                          f'https://virkailija.testiopintopolku.fi/kayttooikeus-service/kayttooikeus/kayttaja?oidHenkilo={henkilo_oid}',
+                          json={},
+                          status=status.HTTP_400_BAD_REQUEST)
+        resp = client.get('/api/user/apikey/')
+        assert_status_code(resp, status.HTTP_403_FORBIDDEN)
+        assert_validation_error(resp, 'errors', 'PE008', 'User does not have permissions to just one active organization.')
+        self._assert_user_permissiongroups([], username)
+
+        # Exception is raised during process -> login failed and clear permissions
+        responses.reset()
+        _successful_login()
+
+        with patch('varda.kayttooikeuspalvelu._get_organizations_and_perm_groups_of_user') as mock_func:
+            # _get_organizations_and_perm_groups_of_user raises PermissionDenied
+            # (should never be possible, but let's test just in case)
+            mock_func.side_effect = PermissionDenied
+
+            resp = client.get('/api/user/apikey/')
+            assert_status_code(resp, status.HTTP_403_FORBIDDEN)
+            assert_validation_error(resp, 'errors', 'PE006', 'User does not have permission to perform this action.')
+            self._assert_user_permissiongroups([], username)
+
+        # Permissions have changed -> login succeeds but only new permissions remain
+        _successful_login()
+
+        responses.reset()
+        mock_response = [
+            {
+                'organisaatioOid': organisaatio_oid,
+                'kayttooikeudet': [
+                    {
+                        'palvelu': 'VARDA',
+                        'oikeus': Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA,
+                    },
+                ]
+            }
+        ]
+        expected_group_names = ['HENKILOSTO_TILAPAISET_TALLENTAJA_1.2.246.562.10.27580498759']
+
+        mock_cas_palvelukayttaja_responses(mock_response, username, henkilo_oid=henkilo_oid)
+        resp = client.get('/api/user/apikey/')
+        assert_status_code(resp, status.HTTP_200_OK)
+        self._assert_user_permissiongroups(expected_group_names, username)
+        self.assertCountEqual(vakajarjestaja_qs.first().integraatio_organisaatio,
+                              [TietosisaltoRyhma.TYONTEKIJATIEDOT.value,
+                               TietosisaltoRyhma.TILAPAINENHENKILOSTOTIEDOT.value])
+
     def _assert_user_permissiongroups(self, expected_group_names, username):
         user = User.objects.get(username=username)
         group_names = Group.objects.filter(user=user).values_list('name', flat=True)
@@ -452,7 +547,7 @@ def _get_kayttooikeudet_json(organisaatiot, username, henkilo_oid):
     kayttooikeus_json = {
         'oidHenkilo': henkilo_oid,
         'username': username,
-        'kayttajaTyyppi': 'PALVELU',
+        'kayttajaTyyppi': Kayttajatyyppi.PALVELU.value,
         'organisaatiot': organisaatiot,
     }
     return kayttooikeus_json

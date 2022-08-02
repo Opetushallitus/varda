@@ -7,7 +7,7 @@ from token_resolved.middleware import AddTokenHeaderMiddleware
 
 
 class TestAddTokenHeaderMiddleware(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     def setUp(self):
         response = Response()

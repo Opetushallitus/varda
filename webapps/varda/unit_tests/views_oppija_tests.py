@@ -10,7 +10,7 @@ from varda.custom_auth import oppija_post_login_handler
 
 
 class VardaOppijaViewsTests(TestCase):
-    fixtures = ['varda/unit_tests/fixture_basics.json']
+    fixtures = ['fixture_basics']
 
     def test_api_varhaiskasvatustiedot_get_data(self):
         # Mock Huoltaja login
