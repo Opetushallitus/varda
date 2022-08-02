@@ -1,0 +1,28 @@
+<div class="public-header container">
+  <div class="menu-inline">
+    <a routerLink="/" routerLinkActive="active-link">{{translations.menu_pulssi | translate}}</a>
+  </div>
+  <div class="language-selector">
+    <select *ngIf="isSmall | async"
+            [ngModel]="currentLang"
+            (ngModelChange)="changeLanguage($event)"
+            class="form-control">
+      <option [ngValue]="'fi'">{{translations.lang_fi | translate}}</option>
+      <option [ngValue]="'sv'">{{translations.lang_sv | translate}}</option>
+    </select>
+    <div *ngIf="!(isSmall | async)"
+         class="language-wrapper">
+      <a class="language-link"
+         (click)="changeLanguage('fi')"
+         [class.active-language]="currentLang === 'fi'">
+        {{ translations.lang_fi | translate}}
+      </a>
+      /
+      <a class="language-link"
+         (click)="changeLanguage('sv')"
+         [class.active-language]="currentLang === 'sv'">
+        {{translations.lang_sv | translate}}
+      </a>
+    </div>
+  </div>
+</div>

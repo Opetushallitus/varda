@@ -213,6 +213,8 @@ router_julkinen = routers.DefaultRouter()
 router_julkinen.register(r'koodistot', viewsets_julkinen.KoodistotViewSet)
 # /api/julkinen/v1/localisation/
 router_julkinen.register(r'localisation', viewsets_julkinen.LocalisationViewSet, basename='get-localisation')
+# /api/julkinen/v1/pulssi/
+router_julkinen.register(r'pulssi', viewsets_julkinen.PulssiViewSet, basename='get-pulssi')
 
 # In production environment public-app accesses iframes via nginx proxy, so we can use a stricter policy
 xframe_options = xframe_options_sameorigin if settings.PRODUCTION_ENV or settings.QA_ENV else xframe_options_exempt

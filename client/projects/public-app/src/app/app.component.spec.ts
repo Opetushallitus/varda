@@ -1,4 +1,4 @@
-import { TestBed, async } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { EMPTY } from 'rxjs';
@@ -36,7 +36,7 @@ describe('AppComponent', () => {
         },
         {
           provide: TranslateService,
-          useValue: { use: () => { }, getBrowserLang: () => { }, setDefaultLang: () => { }, get: () => EMPTY }
+          useValue: { use: () => { }, getBrowserLang: () => { }, setDefaultLang: () => { }, stream: () => EMPTY }
         },
       ]
     }).compileComponents();

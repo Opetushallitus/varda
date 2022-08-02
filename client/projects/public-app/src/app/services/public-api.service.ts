@@ -11,7 +11,7 @@ import { PublicTranslations } from '../../assets/i18n/translations.enum';
   providedIn: 'root'
 })
 export class PublicApiService implements VardaApiServiceInterface {
-  private julkinenApiPath = `${environment.publicAppUrl}/api/julkinen`;
+  private julkinenApiPath = `${environment.backendUrl}/api/julkinen`;
 
   constructor(private http: LoadingHttpService) { }
 
@@ -22,7 +22,7 @@ export class PublicApiService implements VardaApiServiceInterface {
   }
 
   getLocalizationApi(): string {
-    return `${environment.publicAppUrl}/api/julkinen/v1/localisation`;
+    return `${environment.backendUrl}/api/julkinen/v1/localisation`;
   }
 
   getTranslationCategory(): string {

@@ -1,30 +1,38 @@
-import { Component, Inject, OnInit } from '@angular/core';
-import { TranslateService } from '@ngx-translate/core';
+import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
+import { LangChangeEvent, TranslateService } from '@ngx-translate/core';
 import { DOCUMENT } from '@angular/common';
 import { Observable, Subscription } from 'rxjs';
 import { delay } from 'rxjs/operators';
-import { LoadingHttpService } from 'varda-shared';
+import { LoadingHttpService, VardaKoodistoService, SupportedLanguage, HelperService } from 'varda-shared';
 import { NavigationEnd, Router } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { PublicTranslations } from '../assets/i18n/translations.enum';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   translation = PublicTranslations;
   isLoading: Observable<boolean>;
   private pageTitleTranslations: Array<string>;
   private pageTitleStatic: Array<string>;
   private translationSubscription: Subscription;
+  private subscriptions: Array<Subscription> = [];
 
-  constructor(private translateService: TranslateService,
+  constructor(
+    private translateService: TranslateService,
+    private helperService: HelperService,
+    private koodistoService: VardaKoodistoService,
     private loadingHttpService: LoadingHttpService,
     private router: Router,
     private titleService: Title,
-    @Inject(DOCUMENT) private document: Document) { }
+    @Inject(DOCUMENT) private document: Document
+  ) {
+    this.helperService.setTranslateService(this.translateService);
+  }
 
   ngOnInit(): void {
     const defaultLanguage = this.translateService.getBrowserLang() === 'sv' ? 'sv' : 'fi';
@@ -32,13 +40,25 @@ export class AppComponent implements OnInit {
     this.translateService.use(defaultLanguage);
     this.document.documentElement.lang = defaultLanguage;
 
+    this.koodistoService.initKoodistot(environment.backendUrl, defaultLanguage);
+
     this.isLoading = this.loadingHttpService.isLoading().pipe(delay(200));
 
-    this.router.events.subscribe(event => {
-      if (event instanceof NavigationEnd) {
-        this.parseTitle();
-      }
-    });
+    this.subscriptions.push(
+      this.router.events.subscribe(event => {
+        if (event instanceof NavigationEnd) {
+          this.parseTitle();
+        }
+      }),
+      this.translateService.onLangChange.subscribe((params: LangChangeEvent) => {
+        const newLang = ['fi', 'sv'].includes(params.lang.toLowerCase()) ? params.lang.toLowerCase() : 'fi';
+        this.koodistoService.initKoodistot(environment.backendUrl, newLang as SupportedLanguage);
+      })
+    );
+  }
+
+  ngOnDestroy() {
+    this.subscriptions.forEach(subscription => subscription.unsubscribe());
   }
 
   private parseTitle() {

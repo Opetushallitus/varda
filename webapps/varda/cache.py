@@ -345,3 +345,12 @@ def get_paattymis_pvm_cache(identifier):
 
 def delete_paattymis_pvm_cache(identifier):
     return cache.delete(f'paattymis_pvm_{identifier}')
+
+
+def set_pulssi_cache(data):
+    # Data cached for 10 minutes
+    cache.set('varda_pulssi', data, 60 * 10)
+
+
+def get_pulssi_cache():
+    return cache.get('varda_pulssi', None)

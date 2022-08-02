@@ -38,10 +38,6 @@
     </ng-container>
     </tbody>
   </table>
-  <table *ngIf="isExtraSmall | async">
-    <tbody>
-    </tbody>
-  </table>
 </div>
 <div *ngIf="isExtraSmall | async" class="koodisto-small-wrapper">
   <div *ngFor="let code of codes" class="table-responsive">

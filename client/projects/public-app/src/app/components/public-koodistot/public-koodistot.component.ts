@@ -2,8 +2,8 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subject, Subscription, BehaviorSubject } from 'rxjs';
 import { Router } from '@angular/router';
 import { PublicKoodistotService } from '../../services/public-koodistot.service';
-import { PublicResponsiveService } from '../../services/public-responsive.service';
 import { PublicTranslations } from 'projects/public-app/src/assets/i18n/translations.enum';
+import { ResponsiveService } from 'varda-shared';
 
 @Component({
   selector: 'app-public-koodistot',
@@ -18,7 +18,7 @@ export class PublicKoodistotComponent implements OnInit, OnDestroy {
   private subscriptions: Array<Subscription> = [];
 
   constructor(private router: Router, private publicKoodistotService: PublicKoodistotService,
-              private responsiveService: PublicResponsiveService) { }
+              private responsiveService: ResponsiveService) { }
 
   ngOnInit(): void {
     this.koodistoNames = this.publicKoodistotService.getKoodistoNames();

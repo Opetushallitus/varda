@@ -23,7 +23,7 @@ describe('AppComponent', () => {
         { provide: MatSnackBar, useValue: EMPTY },
         { provide: LoginService, useValue: { getCurrentUser: () => of(null), setUsername: () => { }, initBroadcastChannel: () => { } } },
         { provide: LoadingHttpService, useValue: { isLoading: () => { }, isLoadingWithDebounce: () => { } } },
-        { provide: TranslateService, useValue: { use: () => { }, setDefaultLang: () => { }, getBrowserLang: () => { } } }
+        { provide: TranslateService, useValue: { use: () => { }, setDefaultLang: () => { }, getBrowserLang: () => { }, stream: () => EMPTY } }
       ]
     }).compileComponents();
 

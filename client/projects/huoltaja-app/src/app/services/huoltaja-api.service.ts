@@ -1,9 +1,8 @@
 import { Injectable } from '@angular/core';
-import { LoadingHttpService, UserHuollettavaDTO, VardaUserDTO } from 'varda-shared';
+import { LoadingHttpService, UserHuollettavaDTO, VardaUserDTO, VardaApiServiceInterface } from 'varda-shared';
 import { environment } from '../../environments/environment';
 import { Observable, BehaviorSubject, forkJoin, of } from 'rxjs';
 import { HuoltajaTranslations } from '../../assets/i18n/translations.enum';
-import { VardaApiServiceInterface } from 'projects/varda-shared/src/lib/models/vardaApiService.interface';
 import { HenkilotiedotDTO } from '../utilities/models/dto/henkilo-dto';
 import { catchError, take } from 'rxjs/operators';
 import { HuoltajaRoute } from '../utilities/models/enum/huoltaja-route.enum';

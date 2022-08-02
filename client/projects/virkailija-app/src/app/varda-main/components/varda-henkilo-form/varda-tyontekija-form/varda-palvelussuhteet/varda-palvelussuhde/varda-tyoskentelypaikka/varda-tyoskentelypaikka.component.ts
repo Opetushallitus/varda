@@ -8,8 +8,7 @@ import { Moment } from 'moment';
 import { DOCUMENT } from '@angular/common';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
-import { KoodistoSortBy, VardaDateService, VardaKoodistoService } from 'varda-shared';
-import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
+import { KoodistoSortBy, VardaDateService, VardaKoodistoService, KoodistoDTO, KoodistoEnum } from 'varda-shared';
 import {
   ErrorTree,
   VardaErrorMessageService

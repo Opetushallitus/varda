@@ -1,6 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { VardaDateService } from 'varda-shared';
+import { VardaDateService } from '../varda-date.service';
 
 @Pipe({
   name: 'vardaDate'

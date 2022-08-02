@@ -5,7 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 @Injectable({
   providedIn: 'root'
 })
-export class PublicResponsiveService {
+export class ResponsiveService {
   private isSmallSubject: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   private isExtraSmallSubject: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
 

@@ -444,3 +444,16 @@ def get_top_results(request, queryset, permission_group_list, oid_list):
 def get_history_value_subquery(model, field_name, datetime_param):
     return Subquery(model.history.filter(id=OuterRef('id'), history_date__lte=datetime_param)
                     .distinct('id').order_by('id', '-history_date').values(field_name))
+
+
+def get_active_filter(target_date, prefix=''):
+    """
+    Get Q filter for getting only objects that are currently active. Optionally use prefix to filter on related data.
+    :param target_date: Date object
+    :param prefix: string, e.g. varhaiskasvatuspaatokset (__ added automatically)
+    :return: Q object filter
+    """
+    if prefix and not prefix.endswith('__'):
+        prefix += '__'
+    return (Q(**{f'{prefix}alkamis_pvm__lte': target_date}) &
+            (Q(**{f'{prefix}paattymis_pvm__gte': target_date}) | Q(**{f'{prefix}paattymis_pvm__isnull': True})))

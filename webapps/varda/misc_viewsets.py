@@ -2,7 +2,6 @@ import datetime
 
 from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import fields
 from rest_framework.exceptions import ValidationError
 
 from varda.custom_swagger import TunnisteIdSchema
@@ -159,16 +158,23 @@ class IncreasedModifyThrottleMixin:
         return super().get_throttles()
 
 
-def parse_query_parameter(query_parameter, parameter_type, parameter_name='errors'):
+def parse_query_parameter(parameters, parameter_name, parameter_type):
+    """
+    Parse query parameter to Python value, e.g. bool or date
+    :param parameters: request query_parameters
+    :param parameter_name: name of the parameter
+    :param parameter_type: type of the parameter (rest_framework Field)
+    :return: parsed value, or None if parameter was not present in query
+    """
+    query_parameter = parameters.get(parameter_name, None)
+    if not query_parameter:
+        return None
     if isinstance(query_parameter, str):
-        match parameter_type:
-            # Variable must be expressed as dotted name, otherwise value is 'captured'
-            # https://docs.python.org/3/whatsnew/3.10.html#other-key-features
-            case fields.BooleanField:
-                return True if query_parameter.lower() == 'true' else False
-            case fields.DateField:
-                try:
-                    return datetime.datetime.strptime(query_parameter, '%Y-%m-%d').date()
-                except ValueError:
-                    raise ValidationError({parameter_name: [ErrorMessages.GE006.value]})
+        if parameter_type is bool:
+            return True if query_parameter.lower() == 'true' else False
+        elif parameter_type is datetime.date:
+            try:
+                return datetime.datetime.strptime(query_parameter, '%Y-%m-%d').date()
+            except ValueError:
+                raise ValidationError({parameter_name: [ErrorMessages.GE006.value]})
     return query_parameter

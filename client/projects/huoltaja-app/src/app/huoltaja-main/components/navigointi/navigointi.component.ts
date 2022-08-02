@@ -3,10 +3,9 @@ import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { HuoltajaTranslations } from 'projects/huoltaja-app/src/assets/i18n/translations.enum';
 import { combineLatest, Subscription } from 'rxjs';
 import { filter, take } from 'rxjs/operators';
-import { LoginService, UserHuollettavaDTO, VardaUserDTO } from 'varda-shared';
+import { LoginService, UserHuollettavaDTO, VardaUserDTO, VardaKayttajatyyppi } from 'varda-shared';
 import { HuoltajaApiService } from '../../../services/huoltaja-api.service';
 import { HuoltajaRoute } from '../../../utilities/models/enum/huoltaja-route.enum';
-import { VardaKayttajatyyppi } from '../../../../../../varda-shared/src/lib/models/varda-kayttajatyyppi.enum';
 
 
 @Component({

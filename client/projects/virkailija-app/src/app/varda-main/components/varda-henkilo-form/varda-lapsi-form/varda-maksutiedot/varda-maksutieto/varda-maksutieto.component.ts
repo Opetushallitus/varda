@@ -26,8 +26,7 @@ import {
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { finalize, Observable } from 'rxjs';
-import { KoodistoSortBy, VardaKoodistoService, VardaDateService } from 'varda-shared';
-import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
+import { KoodistoSortBy, VardaKoodistoService, VardaDateService, KoodistoDTO, KoodistoEnum } from 'varda-shared';
 import { VardaMaksutietoHuoltajaComponent } from './varda-maksutieto-huoltaja/varda-maksutieto-huoltaja.component';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';

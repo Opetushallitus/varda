@@ -10,18 +10,15 @@ export class KoodistoValueDirective implements AfterContentInit, OnChanges {
   @Input() format: 'short' | 'long' = 'short';
 
   private koodistoType: KoodistoEnum;
+  private elem: HTMLInputElement;
+
+  constructor(private el: ElementRef, private koodistoService: VardaKoodistoService) {
+    this.elem = el.nativeElement;
+  }
+
   @Input()
   set libKoodistoValue(value: KoodistoEnum) {
     this.koodistoType = value;
-  }
-
-  private elem: HTMLInputElement;
-
-  constructor(
-    private el: ElementRef,
-    private koodistoService: VardaKoodistoService
-  ) {
-    this.elem = el.nativeElement;
   }
 
   ngAfterContentInit() {

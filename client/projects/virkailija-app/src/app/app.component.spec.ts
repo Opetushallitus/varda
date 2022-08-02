@@ -33,7 +33,7 @@ describe('AppComponent', () => {
         { provide: CookieService, useValue: {} },
         { provide: VardaApiService, useValue: {} },
         { provide: LoginService, useValue: { getCurrentUser: () => of(null), setUsername: () => { }, initBroadcastChannel: () => { } } },
-        { provide: TranslateService, useValue: { use: () => { }, getBrowserLang: () => { }, setDefaultLang: () => { }, get: () => EMPTY } },
+        { provide: TranslateService, useValue: { use: () => { }, getBrowserLang: () => { }, setDefaultLang: () => { }, stream: () => EMPTY } },
         { provide: LoadingHttpService, useValue: { isLoading: () => { }, isLoadingWithDebounce: () => { } } },
         { provide: VardaKoodistoService, useValue: { initKoodistot: () => { } } },
       ]

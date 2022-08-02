@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, HostListener } from '@angular/core';
+import { Component, Inject, HostListener } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { Title } from '@angular/platform-browser';
 import { LoadingHttpService, LoginService, SupportedLanguage, HelperService, VardaUserDTO } from 'varda-shared';
@@ -18,7 +18,7 @@ declare const matomoPageChange: any;
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   isLoading: Observable<boolean>;
   translation = HuoltajaTranslations;
 
@@ -37,6 +37,8 @@ export class AppComponent implements OnInit {
     this.loginService.initBroadcastChannel('huoltaja.api.token');
     this.isLoading = this.loadingHttpService.isLoadingWithDebounce();
 
+    this.helperService.setTranslateService(this.translateService);
+
     this.oppijaRaamit.initRaamit();
 
     this.loginService.getCurrentUser().pipe(filter(Boolean), take(1)).subscribe((henkilotiedot: VardaUserDTO) => {
@@ -53,10 +55,6 @@ export class AppComponent implements OnInit {
   @HostListener('document:click', ['$event'])
   documentClick(event: MouseEvent) {
     this.loginService.clearLogoutInterval();
-  }
-
-  ngOnInit() {
-    this.helperService.setTranslateService(this.translateService);
   }
 
   initLanguage() {
@@ -98,5 +96,3 @@ export class AppComponent implements OnInit {
     return data;
   }
 }
-
-

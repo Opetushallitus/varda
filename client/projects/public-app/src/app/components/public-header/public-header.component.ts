@@ -1,9 +1,9 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { DOCUMENT } from '@angular/common';
-import { PublicResponsiveService } from '../../services/public-responsive.service';
 import { BehaviorSubject } from 'rxjs';
 import { PublicTranslations } from 'projects/public-app/src/assets/i18n/translations.enum';
+import { ResponsiveService } from 'varda-shared';
 
 @Component({
   selector: 'app-public-header',
@@ -16,7 +16,7 @@ export class PublicHeaderComponent implements OnInit {
   isSmall: BehaviorSubject<boolean>;
 
   constructor(private translateService: TranslateService,
-              private responsiveService: PublicResponsiveService,
+              private responsiveService: ResponsiveService,
               @Inject(DOCUMENT) private document: Document) { }
 
   ngOnInit(): void {

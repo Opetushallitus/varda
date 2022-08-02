@@ -14,8 +14,7 @@ import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
 import { finalize, Observable } from 'rxjs';
-import { KoodistoSortBy, VardaDateService, VardaKoodistoService } from 'varda-shared';
-import { CodeDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
+import { KoodistoSortBy, VardaDateService, VardaKoodistoService, CodeDTO, KoodistoEnum } from 'varda-shared';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 import {

@@ -15,6 +15,6 @@ export class PublicIframeComponent implements OnChanges {
   constructor(private domSanitizer: DomSanitizer) { }
 
   ngOnChanges(changes: SimpleChanges) {
-    this.trustedUrl = this.domSanitizer.bypassSecurityTrustResourceUrl(`${environment.publicAppUrl}${this.url}`);
+    this.trustedUrl = this.domSanitizer.bypassSecurityTrustResourceUrl(`${environment.backendUrl}${this.url}`);
   }
 }

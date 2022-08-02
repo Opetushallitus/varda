@@ -5,8 +5,7 @@ import { VardaKayttooikeusRoles, VardaToimipaikkaDTO, VardaVakajarjestajaUi } fr
 import { VardaToimipaikkaMinimalDto } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { SaveAccess, UserAccess, ViewAccess } from '../../utilities/models/varda-user-access.model';
 import { environment } from 'projects/huoltaja-app/src/environments/environment';
-import { VardaUserDTO } from 'varda-shared';
-import { VardaKayttajatyyppi } from '../../../../../varda-shared/src/lib/models/varda-kayttajatyyppi.enum';
+import { VardaUserDTO, VardaKayttajatyyppi } from 'varda-shared';
 
 class Kayttooikeus {
   kayttooikeus: VardaKayttooikeusRoles;

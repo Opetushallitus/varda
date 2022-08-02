@@ -1,29 +1,35 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { PublicApiService } from './public-api.service';
-import { LangChangeEvent, TranslateService } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import { KoodistoDto } from '../models/koodisto-dto';
+import { VardaKoodistoService } from 'varda-shared';
+import { filter } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PublicKoodistotService {
-  private currentLang: string;
-  private koodistotObject: Record<string, Array<KoodistoDto>> = {};
   private koodistot: BehaviorSubject<Array<KoodistoDto>> = new BehaviorSubject<Array<KoodistoDto>>([]);
   private koodistoIndexMap: Record<string, number> = {};
   private koodistoNames: BehaviorSubject<Array<string>> = new BehaviorSubject<Array<string>>([]);
   private selectedKoodisto: BehaviorSubject<string> = new BehaviorSubject<string>('');
 
-  constructor(private publicApiService: PublicApiService, private translateService: TranslateService) {
-    this.currentLang = this.determineLanguage(this.translateService.currentLang);
-    this.getKoodistotFromObjectOrApi(this.currentLang);
-    this.translateService.onLangChange.subscribe((params: LangChangeEvent) => {
-      const newLang = this.determineLanguage(params.lang);
-      if (newLang !== this.currentLang) {
-        this.currentLang = newLang;
-        this.getKoodistotFromObjectOrApi(this.currentLang);
-      }
+  constructor(
+    private publicApiService: PublicApiService,
+    private translateService: TranslateService,
+    private koodistoService: VardaKoodistoService,
+  ) {
+    this.koodistoService.getKoodistot().pipe(filter(Boolean)).subscribe(data => {
+      const koodistoNamesList = [];
+
+      data.forEach((value, index) => {
+        this.koodistoIndexMap[value.name] = index;
+        koodistoNamesList.push(value.name);
+      });
+
+      this.koodistoNames.next(koodistoNamesList);
+      this.koodistot.next(data);
     });
   }
 
@@ -67,39 +73,5 @@ export class PublicKoodistotService {
     });
 
     return results;
-  }
-
-  private getKoodistotFromObjectOrApi(lang: string) {
-    if (this.koodistotObject.hasOwnProperty(lang)) {
-      // Don't refetch koodistot
-      this.koodistot.next(this.koodistotObject[lang]);
-    } else {
-      // Get koodistot for this language for the first time
-      this.publicApiService.getKoodistot({lang}).subscribe({
-        next: data => {
-          const koodistoNamesList = [];
-
-          data.forEach((value, index) => {
-            this.koodistoIndexMap[value.name] = index;
-            koodistoNamesList.push(value.name);
-          });
-
-          this.koodistoNames.next(koodistoNamesList);
-          this.koodistotObject[lang] = data;
-          this.koodistot.next(data);
-        },
-        error: e => {
-          // TODO: Handle 429 error (remove special handling from http.service:54)
-        }
-      });
-    }
-  }
-
-  private determineLanguage(lang: string) {
-    lang = lang.toUpperCase();
-    if (!['FI', 'SV', 'EN'].includes(lang)) {
-      lang = 'FI';
-    }
-    return lang;
   }
 }

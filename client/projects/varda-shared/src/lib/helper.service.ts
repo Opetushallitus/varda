@@ -14,7 +14,7 @@ export class HelperService {
   setTranslateService(translateService: TranslateService) {
     this.translateService = translateService;
     const translationKeys = Object.values(CommonTranslations);
-    this.translateService.get(translationKeys).subscribe(values => {
+    this.translateService.stream(translationKeys).subscribe(values => {
       this.translations = values;
     });
   }

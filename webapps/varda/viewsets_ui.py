@@ -1,3 +1,4 @@
+import datetime
 from operator import itemgetter
 
 from django.contrib.contenttypes.models import ContentType
@@ -11,7 +12,6 @@ from drf_yasg.utils import swagger_auto_schema
 from guardian.shortcuts import get_objects_for_user
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.fields import BooleanField, DateField
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import ListModelMixin
 from rest_framework.response import Response
@@ -121,11 +121,9 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
             filter_condition &= Q(palvelussuhteet__tyoskentelypaikat__toimipaikka__id=toimipaikka_id)
         if toimipaikka_oid := query_params.get('toimipaikka_oid', None):
             filter_condition &= Q(palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid=toimipaikka_oid)
-        if kiertava_tyontekija_kytkin := query_params.get('kiertava_tyontekija_kytkin', None):
-            kiertava_tyontekija_kytkin = parse_query_parameter(kiertava_tyontekija_kytkin, BooleanField)
+        if (kiertava_tyontekija_kytkin := parse_query_parameter(query_params, 'kiertava_tyontekija_kytkin', bool)) is not None:
             filter_condition &= Q(palvelussuhteet__tyoskentelypaikat__kiertava_tyontekija_kytkin=kiertava_tyontekija_kytkin)
-        if voimassa_pvm := query_params.get('voimassa_pvm', None):
-            voimassa_pvm = parse_query_parameter(voimassa_pvm, DateField, parameter_name='voimassa_pvm')
+        if (voimassa_pvm := parse_query_parameter(query_params, 'voimassa_pvm', datetime.date)) is not None:
             filter_condition &= (Q(palvelussuhteet__alkamis_pvm__lte=voimassa_pvm) &
                                  (Q(palvelussuhteet__paattymis_pvm__gte=voimassa_pvm) |
                                   Q(palvelussuhteet__paattymis_pvm__isnull=True)))
@@ -176,8 +174,7 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
             filter_condition &= Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__id=toimipaikka_id)
         if toimipaikka_oid := query_params.get('toimipaikka_oid', None):
             filter_condition &= Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__organisaatio_oid=toimipaikka_oid)
-        if voimassa_pvm := query_params.get('voimassa_pvm', None):
-            voimassa_pvm = parse_query_parameter(voimassa_pvm, DateField, parameter_name='voimassa_pvm')
+        if (voimassa_pvm := parse_query_parameter(query_params, 'voimassa_pvm', datetime.date)) is not None:
             filter_condition &= (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm__lte=voimassa_pvm) &
                                  (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__gte=voimassa_pvm) |
                                   Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True)))

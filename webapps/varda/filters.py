@@ -13,7 +13,6 @@ from django.db.models.functions import Cast, Concat, Lower
 from django.http import Http404
 from django.template import loader
 from django_filters.constants import EMPTY_VALUES
-from rest_framework.fields import BooleanField
 from rest_framework.filters import BaseFilterBackend
 
 from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
@@ -606,8 +605,7 @@ class UiLapsiFilter(django_filters.FilterSet):
         if maksun_peruste_arg := query_params.get('maksun_peruste', None):
             lapsi_filter &= Q(huoltajuussuhteet__maksutiedot__maksun_peruste_koodi__iexact=maksun_peruste_arg)
 
-        if (palveluseteli_arg := query_params.get('palveluseteli', None)) and palveluseteli_arg is not None:
-            palveluseteli = parse_query_parameter(palveluseteli_arg, BooleanField)
+        if (palveluseteli := parse_query_parameter(query_params, 'palveluseteli', bool)) is not None:
             lapsi_filter &= (Q(huoltajuussuhteet__maksutiedot__palveluseteli_arvo__gt=0) if palveluseteli else
                              (Q(huoltajuussuhteet__maksutiedot__palveluseteli_arvo__isnull=True) |
                               Q(huoltajuussuhteet__maksutiedot__palveluseteli_arvo=0)))

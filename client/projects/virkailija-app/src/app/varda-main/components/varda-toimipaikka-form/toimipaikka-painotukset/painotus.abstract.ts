@@ -7,7 +7,7 @@ import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/servi
 import { VardaVakajarjestajaApiService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja-api.service';
 import { ToimipaikkaKooste } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { Observable } from 'rxjs';
-import { KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
+import { KoodistoEnum } from 'varda-shared';
 import { VardaFormAccordionAbstractComponent } from '../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';
 import { VardaModalService } from '../../../../core/services/varda-modal.service';
 import { VardaUtilityService } from '../../../../core/services/varda-utility.service';

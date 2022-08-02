@@ -1,6 +1,12 @@
 import datetime
 
-from django.db.models import F, Value, CharField, Q, Case, When, BooleanField
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.db.models import Avg, Count, F, Sum, Value, CharField, Q, Case, When, BooleanField
+from django.db.models.functions import Lower
+from django.utils import timezone
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.mixins import ListModelMixin
 from rest_framework.permissions import AllowAny
@@ -8,12 +14,18 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from varda import koodistopalvelu
-from varda.cache import get_koodistot_cache, set_koodistot_cache
+from varda.cache import get_koodistot_cache, get_pulssi_cache, set_koodistot_cache, set_pulssi_cache
+from varda.constants import YRITYSMUOTO_KUNTA
 from varda.enums.error_messages import ErrorMessages
+from varda.enums.kayttajatyyppi import Kayttajatyyppi
+from varda.enums.koodistot import Koodistot
 from varda.filters import CustomParametersFilterBackend, CustomParameter
 from varda.lokalisointipalvelu import get_localisation_data
-from varda.models import Z2_Koodisto, Z2_Code
-from varda.serializers_julkinen import LocalisationSerializer, KoodistotSerializer
+from varda.misc_queries import get_active_filter
+from varda.misc_viewsets import parse_query_parameter
+from varda.models import (Huoltaja, Lapsi, Maksutieto, Organisaatio, TaydennyskoulutusTyontekija, TilapainenHenkilosto,
+                          Toimipaikka, Tyontekija, Tyoskentelypaikka, Varhaiskasvatuspaatos, Z2_Koodisto, Z2_Code)
+from varda.serializers_julkinen import LocalisationSerializer, KoodistotSerializer, PulssiSerializer
 from webapps.api_throttles import PublicAnonThrottle
 
 
@@ -117,3 +129,203 @@ class LocalisationViewSet(GenericViewSet, ListModelMixin):
             return Response(status=500)
 
         return Response(self.get_serializer(data, many=True).data)
+
+
+class PulssiViewSet(GenericViewSet, ListModelMixin):
+    """
+    list:
+        Get Varda Pulssi
+    """
+    permission_classes = (AllowAny,)
+    throttle_classes = (PublicAnonThrottle,)
+    pagination_class = None
+    serializer_class = PulssiSerializer
+    filter_backends = (CustomParametersFilterBackend,)
+    custom_parameters = (CustomParameter(name='refresh', required=False, location='query', data_type='boolean',
+                                         description='Force result refresh in non prod env'),)
+
+    def get_queryset(self):
+        return None
+
+    def get_data(self):
+        today = timezone.now()
+        active_filter = get_active_filter(today)
+
+        # Organisaatio related information
+        organisaatio_count = Organisaatio.vakajarjestajat.filter(active_filter).count()
+        kunta_count = Organisaatio.vakajarjestajat.filter(active_filter, yritysmuoto__in=YRITYSMUOTO_KUNTA).count()
+        yksityinen_count = (Organisaatio.vakajarjestajat
+                            .filter(active_filter)
+                            .exclude(yritysmuoto__in=YRITYSMUOTO_KUNTA)
+                            .count())
+
+        # Toimipaikka related information
+        toimipaikka_count = Toimipaikka.objects.filter(active_filter).count()
+
+        # Toimipaikka count by toimintamuoto_koodi
+        tm_codes = (Z2_Code.objects
+                    .filter(koodisto__name=Koodistot.toimintamuoto_koodit.value)
+                    .annotate(code_lower=Lower('code_value'))
+                    .values_list('code_lower', flat=True).order_by('code_lower'))
+        tm_annotations = {}
+        for tm_code in tm_codes:
+            tm_annotations[tm_code] = Sum(Case(When(toimintamuoto_koodi__iexact=tm_code, then=1), default=0))
+        # Avoid Django's default group by id with 'temp' field
+        toimipaikka_by_tm = (Toimipaikka.objects
+                             .filter(active_filter)
+                             .annotate(temp=Value(0)).values('temp')
+                             .annotate(**tm_annotations).values(*tm_codes))[0]
+
+        # Toimipaikka count by jarjestamismuoto_koodi
+        jm_codes = (Z2_Code.objects
+                    .filter(koodisto__name=Koodistot.jarjestamismuoto_koodit.value)
+                    .annotate(code_lower=Lower('code_value'))
+                    .values_list('code_lower', flat=True).order_by('code_lower'))
+        jm_annotations = {}
+        for jm_code in jm_codes:
+            jm_annotations[jm_code] = Sum(Case(When(jarjestamismuoto_koodi__icontains=jm_code, then=1), default=0))
+        toimipaikka_by_jm = (Toimipaikka.objects
+                             .filter(active_filter)
+                             .annotate(temp=Value(0)).values('temp')
+                             .annotate(**jm_annotations).values(*jm_codes))[0]
+
+        # Toimipaikka count by kasvatusopillinen_jarjestelma_koodi
+        kj_codes = (Z2_Code.objects
+                    .filter(koodisto__name=Koodistot.kasvatusopillinen_jarjestelma_koodit.value)
+                    .annotate(code_lower=Lower('code_value'))
+                    .values_list('code_lower', flat=True).order_by('code_lower'))
+        kj_annotations = {}
+        for kj_code in kj_codes:
+            kj_annotations[kj_code] = Sum(Case(When(kasvatusopillinen_jarjestelma_koodi__iexact=kj_code, then=1),
+                                               default=0))
+        toimipaikka_by_kj = (Toimipaikka.objects
+                             .filter(active_filter)
+                             .annotate(temp=Value(0)).values('temp')
+                             .annotate(**kj_annotations).values(*kj_codes))[0]
+
+        # Toimipaikka count with active KieliPainotus and ToiminnallinenPainotus
+        kp_voimassa_filter = get_active_filter(today, prefix='kielipainotukset')
+        toimipaikka_with_kp = Toimipaikka.objects.filter(active_filter & kp_voimassa_filter).distinct('id').count()
+        tp_voimassa_filter = get_active_filter(today, prefix='toiminnallisetpainotukset')
+        toimipaikka_with_tp = Toimipaikka.objects.filter(active_filter & tp_voimassa_filter).distinct('id').count()
+
+        # Lapsi related information
+        lapsi_active_filter = get_active_filter(today, prefix='varhaiskasvatuspaatokset__varhaiskasvatussuhteet')
+        lapsi_count = Lapsi.objects.filter(lapsi_active_filter).distinct('henkilo_id').count()
+        vakapaatos_count = Varhaiskasvatuspaatos.objects.filter(active_filter).count()
+        paivittainen_count = (Lapsi.objects
+                              .filter(lapsi_active_filter, varhaiskasvatuspaatokset__paivittainen_vaka_kytkin=True)
+                              .distinct('henkilo_id').count())
+        kokopaivainen_count = (Lapsi.objects
+                               .filter(lapsi_active_filter, varhaiskasvatuspaatokset__kokopaivainen_vaka_kytkin=True)
+                               .distinct('henkilo_id').count())
+        vuorohoito_count = (Lapsi.objects
+                            .filter(lapsi_active_filter, varhaiskasvatuspaatokset__vuorohoito_kytkin=True)
+                            .distinct('henkilo_id').count())
+
+        # Huoltaja related information
+        huoltaja_vakasuhde_prefix = 'huoltajuussuhteet__lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet'
+        huoltaja_lapsi_active_filter = get_active_filter(today, prefix=huoltaja_vakasuhde_prefix)
+        huoltaja_count = (Huoltaja.objects
+                          .filter(huoltaja_lapsi_active_filter, huoltajuussuhteet__voimassa_kytkin=True)
+                          .distinct('henkilo_id').count())
+        asiakasmaksu_avg = Maksutieto.objects.filter(active_filter).aggregate(avg=Avg('asiakasmaksu'))
+
+        # Tyontekija related information
+        tyontekija_active_filter = get_active_filter(today, prefix='palvelussuhteet')
+        tyontekija_count = Tyontekija.objects.filter(tyontekija_active_filter).distinct('henkilo_id').count()
+
+        # Tyoskentelypaikka count by tehtavanimike_koodi
+        tn_codes = (Z2_Code.objects
+                    .filter(koodisto__name=Koodistot.tehtavanimike_koodit.value)
+                    .annotate(code_lower=Lower('code_value'))
+                    .values_list('code_lower', flat=True).order_by('code_lower'))
+        tn_annotations = {}
+        for tn_code in tn_codes:
+            tn_annotations[tn_code] = Sum(Case(When(tehtavanimike_koodi__iexact=tn_code, then=1), default=0))
+        # Count tehtavanimike_koodi per henkilo_id only once, raw query would probably be faster (SELECT FROM subquery)
+        distinct_tp_subquery = (Tyoskentelypaikka.objects
+                                .filter(active_filter)
+                                .distinct('palvelussuhde__tyontekija__henkilo_id', 'tehtavanimike_koodi')
+                                .values('id'))
+        tyoskentelypaikka_by_tn = (Tyoskentelypaikka.objects
+                                   .filter(id__in=distinct_tp_subquery)
+                                   .annotate(temp=Value(0)).values('temp')
+                                   .annotate(**tn_annotations).values(*tn_codes))[0]
+
+        # Tyontekija count with Tyoskentelypaikka in more than 1 Toimipaikka
+        tyontekija_multi_count = (Tyoskentelypaikka.objects
+                                  .filter(active_filter)
+                                  .values('palvelussuhde__tyontekija__henkilo_id')
+                                  .annotate(toimipaikka_count=Count('toimipaikka_id', distinct=True),
+                                            kiertava_count=Sum(Case(When(kiertava_tyontekija_kytkin=True, then=1),
+                                                                    default=0)))
+                                  .filter(Q(toimipaikka_count__gt=1) | Q(kiertava_count__gt=0))
+                                  .values('palvelussuhde__tyontekija__henkilo_id')
+                                  .count())
+
+        # Taydennyskoulutus koulutuspaivia sum
+        # Count taydennyskoulutus per henkilo_id only once, raw query would probably be faster (SELECT FROM suqbuery)
+        distinct_tt_subquery = (TaydennyskoulutusTyontekija.objects
+                                .distinct('tyontekija__henkilo_id', 'taydennyskoulutus_id')
+                                .values('id'))
+        koulutuspaiva_count = (TaydennyskoulutusTyontekija.objects
+                               .filter(id__in=distinct_tt_subquery)
+                               .aggregate(sum=Sum('taydennyskoulutus__koulutuspaivia')))
+
+        # TilapainenHenkilosto tyontekijamaara and tuntimaara sum
+        tilapainen_henkilosto_aggregate = (TilapainenHenkilosto.objects
+                                           .aggregate(tyontekijamaara=Sum('tyontekijamaara'),
+                                                      tuntimaara=Sum('tuntimaara')))
+
+        # Varda UI related data
+        user_count = (User.objects
+                      .annotate(kayttajatyyppi=F('additional_cas_user_fields__kayttajatyyppi'))
+                      .values('kayttajatyyppi')
+                      .annotate(count=Count('kayttajatyyppi')))
+        user_count_dict = {result['kayttajatyyppi']: result['count'] for result in user_count}
+        ui_login_count = user_count_dict.get(Kayttajatyyppi.VIRKAILIJA.value, 0)
+        oppija_login_count = user_count_dict.get(Kayttajatyyppi.OPPIJA_CAS.value, 0)
+        valtuudet_login_count = user_count_dict.get(Kayttajatyyppi.OPPIJA_CAS_VALTUUDET.value, 0)
+
+        # Number of created Varhaiskasvatuspaatos objects with lahdejarjestelma = '1'
+        month_ago = today - datetime.timedelta(days=30)
+        ui_new_paatos_count = (Varhaiskasvatuspaatos.history
+                               .filter(history_type='+', history_date__gte=month_ago, lahdejarjestelma='1')
+                               .count())
+        ui_new_tyontekija_count = (Tyontekija.history
+                                   .filter(history_type='+', history_date__gte=month_ago, lahdejarjestelma='1')
+                                   .count())
+        ui_new_maksutieto_count = (Maksutieto.history
+                                   .filter(history_type='+', history_date__gte=month_ago, lahdejarjestelma='1')
+                                   .count())
+
+        data = {
+            'organisaatio_count': organisaatio_count, 'kunta_count': kunta_count, 'yksityinen_count': yksityinen_count,
+            'toimipaikka_count': toimipaikka_count, 'toimipaikka_by_tm': toimipaikka_by_tm,
+            'toimipaikka_by_jm': toimipaikka_by_jm, 'toimipaikka_by_kj': toimipaikka_by_kj,
+            'toimipaikka_with_kp': toimipaikka_with_kp, 'toimipaikka_with_tp': toimipaikka_with_tp,
+            'lapsi_count': lapsi_count, 'vakapaatos_count': vakapaatos_count, 'paivittainen_count': paivittainen_count,
+            'kokopaivainen_count': kokopaivainen_count, 'vuorohoito_count': vuorohoito_count,
+            'huoltaja_count': huoltaja_count, 'asiakasmaksu_avg': asiakasmaksu_avg['avg'],
+            'tyontekija_count': tyontekija_count, 'tyoskentelypaikka_by_tn': tyoskentelypaikka_by_tn,
+            'tyontekija_multi_count': tyontekija_multi_count, 'koulutuspaiva_count': koulutuspaiva_count['sum'],
+            'tilapainen_henkilosto_tyontekijamaara': tilapainen_henkilosto_aggregate['tyontekijamaara'],
+            'tilapainen_henkilosto_tuntimaara': tilapainen_henkilosto_aggregate['tuntimaara'],
+            'ui_login_count': ui_login_count, 'oppija_login_count': oppija_login_count,
+            'valtuudet_login_count': valtuudet_login_count, 'ui_new_paatos_count': ui_new_paatos_count,
+            'ui_new_tyontekija_count': ui_new_tyontekija_count,
+            'ui_new_maksutieto_count': ui_new_maksutieto_count, 'timestamp': timezone.now()
+        }
+        set_pulssi_cache(data)
+        return data
+
+    @swagger_auto_schema(responses={status.HTTP_200_OK: PulssiSerializer(many=False)})
+    def list(self, request, *args, **kwargs):
+        # Fetch data again only if it is not cached or refresh query parameter is present in non prod env
+        force_refresh = (not settings.PRODUCTION_ENV and
+                         parse_query_parameter(request.query_params, 'refresh', bool) is True)
+        data = get_pulssi_cache()
+        if force_refresh or not data:
+            data = self.get_data()
+        return Response(data=data)

@@ -1,0 +1,16 @@
+<div class="main-wrapper">
+  <header class="main-header">
+    <app-header></app-header>
+  </header>
+  <main>
+    <router-outlet></router-outlet>
+  </main>
+  <footer class="main-footer">
+    <div class="container">
+      <span>{{ translations.site_version | translate: {value: '1.0.0'} }}</span>
+    </div>
+  </footer>
+  <ng-container *ngIf="isLoading | async">
+    <lib-loading-indicator></lib-loading-indicator>
+  </ng-container>
+</div>

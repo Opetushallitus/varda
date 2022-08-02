@@ -4,9 +4,9 @@ import { PublicKoodistotService } from '../../../services/public-koodistot.servi
 import { KoodistoDto } from '../../../models/koodisto-dto';
 import { CodeDto } from '../../../models/code-dto';
 import * as moment from 'moment';
-import { PublicResponsiveService } from '../../../services/public-responsive.service';
 import { BehaviorSubject } from 'rxjs';
 import { PublicTranslations } from 'projects/public-app/src/assets/i18n/translations.enum';
+import { ResponsiveService } from 'varda-shared';
 
 @Component({
   selector: 'app-public-koodistot-detail',
@@ -26,7 +26,7 @@ export class PublicKoodistotDetailComponent implements OnInit, OnDestroy {
   private subscriptions = [];
 
   constructor(private activatedRoute: ActivatedRoute, private publicKoodistotService: PublicKoodistotService,
-              private responsiveService: PublicResponsiveService) { }
+              private responsiveService: ResponsiveService) { }
 
   ngOnInit(): void {
     this.isExtraSmall = this.responsiveService.getIsExtraSmall();

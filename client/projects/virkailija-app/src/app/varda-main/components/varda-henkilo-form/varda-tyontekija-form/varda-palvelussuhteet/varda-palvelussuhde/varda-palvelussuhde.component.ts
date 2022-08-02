@@ -12,9 +12,7 @@ import {
 } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { Lahdejarjestelma } from 'projects/virkailija-app/src/app/utilities/models/enums/hallinnointijarjestelma';
-import { KoodistoSortBy, VardaDateService, VardaKoodistoService } from 'varda-shared';
-import { KoodistoDTO, KoodistoEnum } from 'projects/varda-shared/src/lib/models/koodisto-models';
-import { distinctUntilChanged, filter } from 'rxjs/operators';
+import { KoodistoSortBy, VardaDateService, VardaKoodistoService, KoodistoDTO, KoodistoEnum } from 'varda-shared';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaFormAccordionAbstractComponent } from '../../../../varda-form-accordion-abstract/varda-form-accordion-abstract.component';

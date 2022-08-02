@@ -1,0 +1,175 @@
+<div class="pulssi-wrapper container">
+  <div class="pulssi-header">
+    <h1>{{ translations.menu_pulssi | translate }}</h1>
+    <p>{{ translations.pulssi_description | translate }}</p>
+    <em *ngIf="pulssiData">{{ translations.pulssi_timestamp | translate }}: {{ pulssiData.timestamp | vardaLongDate }}</em>
+  </div>
+  <div class="pulssi-grid" *ngIf="pulssiData">
+    <div class="pulssi-organisaatio">
+      <div class="number-container">
+        <div>{{ pulssiData.organisaatio_count | number:undefined:'fi' }}</div>
+        <div>{{ translations.pulssi_organisaatio | translate }}</div>
+      </div>
+      <div class="pulssi-organisaatio-type">
+        <div class="number-container">
+          <div>{{ pulssiData.kunta_count | number:undefined:'fi' }}</div>
+          <div>{{ translations.pulssi_kunta | translate }}</div>
+        </div>
+        <div class="number-container">
+          <div>{{ pulssiData.yksityinen_count | number:undefined:'fi' }}</div>
+          <div>{{ translations.pulssi_yksityinen | translate }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="pulssi-toimipaikka">
+      <div class="number-container">
+        <div>{{ pulssiData.toimipaikka_count | number:undefined:'fi' }}</div>
+        <div>{{ translations.pulssi_toimipaikka | translate }}</div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <tbody>
+            <tr class="table-subheader">
+              <td colspan="2">{{ translations.pulssi_toimipaikka_toimintamuoto | translate }}</td>
+            </tr>
+            <tr *ngFor="let toimintamuoto of getEntries(pulssiData.toimipaikka_by_tm)"
+                class="subrow">
+              <td [libKoodistoValue]="KoodistoEnum.toimintamuoto" format="long">{{ toimintamuoto[0] }}</td>
+              <td>{{ toimintamuoto[1] | number:undefined:'fi' }}</td>
+            </tr>
+            <tr class="table-subheader">
+              <td colspan="2">{{ translations.pulssi_toimipaikka_jarjestamismuoto | translate }}</td>
+            </tr>
+            <tr *ngFor="let jarjestamismuoto of getEntries(pulssiData.toimipaikka_by_jm)"
+                class="subrow">
+              <td [libKoodistoValue]="KoodistoEnum.jarjestamismuoto" format="long">{{ jarjestamismuoto[0] }}</td>
+              <td>{{ jarjestamismuoto[1] | number:undefined:'fi' }}</td>
+            </tr>
+            <tr class="table-subheader">
+              <td colspan="2">{{ translations.pulssi_toimipaikka_kasvatusopillinen_jarjestelma | translate }}</td>
+            </tr>
+            <tr *ngFor="let kasvatusopillinen_jarjestelma of getEntries(pulssiData.toimipaikka_by_kj)"
+                class="subrow">
+              <td [libKoodistoValue]="KoodistoEnum.kasvatusopillinenjarjestelma" format="long">
+                {{ kasvatusopillinen_jarjestelma[0] }}
+              </td>
+              <td>{{ kasvatusopillinen_jarjestelma[1] | number:undefined:'fi' }}</td>
+            </tr>
+            <tr>
+              <td>{{ translations.pulssi_toimipaikka_toiminnallinen_painotus | translate}}</td>
+              <td>{{ pulssiData.toimipaikka_with_tp | number:undefined:'fi' }}</td>
+            </tr>
+            <tr>
+              <td>{{ translations.pulssi_toimipaikka_kielipainotus | translate}}</td>
+              <td>{{ pulssiData.toimipaikka_with_kp | number:undefined:'fi' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="pulssi-vaka">
+      <div class="number-container">
+        <div>{{ pulssiData.lapsi_count | number:undefined:'fi' }}</div>
+        <div>{{ translations.pulssi_lapsi | translate }}</div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <tbody>
+            <tr>
+              <td>{{ translations.pulssi_varhaiskasvatuspaatos | translate}}</td>
+              <td>{{ pulssiData.vakapaatos_count | number:undefined:'fi' }}</td>
+            </tr>
+            <tr>
+              <td>{{ translations.pulssi_lapsi_paivittainen | translate}}</td>
+              <td>{{ pulssiData.paivittainen_count | number:undefined:'fi' }}</td>
+            </tr>
+            <tr>
+              <td>{{ translations.pulssi_lapsi_kokopaivainen | translate}}</td>
+              <td>{{ pulssiData.kokopaivainen_count | number:undefined:'fi' }}</td>
+            </tr>
+            <tr>
+              <td>{{ translations.pulssi_lapsi_vuorohoito | translate}}</td>
+              <td>{{ pulssiData.vuorohoito_count | number:undefined:'fi' }}</td>
+            </tr>
+            <tr>
+              <td>{{ translations.pulssi_huoltaja | translate}}</td>
+              <td>{{ pulssiData.huoltaja_count | number:undefined:'fi' }}</td>
+            </tr>
+            <tr>
+              <td>{{ translations.pulssi_asiakasmaksu | translate}}</td>
+              <td>{{ pulssiData.asiakasmaksu_avg | number:'1.1-2':'fi' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="pulssi-henkilosto">
+      <div class="number-container">
+        <div>{{ pulssiData.tyontekija_count | number:undefined:'fi' }}</div>
+        <div>{{ translations.pulssi_tyontekija | translate }}</div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <tbody>
+            <tr class="table-subheader">
+              <td colspan="2">{{ translations.pulssi_tyontekija_tehtavanimike | translate }}</td>
+            </tr>
+            <tr *ngFor="let tehtavanimike of getEntries(pulssiData.tyoskentelypaikka_by_tn)"
+                class="subrow">
+              <td [libKoodistoValue]="KoodistoEnum.tehtavanimike" format="long">{{ tehtavanimike[0] }}</td>
+              <td>{{ tehtavanimike[1] | number:undefined:'fi' }}</td>
+            </tr>
+            <tr>
+              <td>{{ translations.pulssi_tyontekija_multi | translate}}</td>
+              <td>{{ pulssiData.tyontekija_multi_count | number:undefined:'fi' }}</td>
+            </tr>
+            <tr>
+              <td>{{ translations.pulssi_koulutuspaiva | translate}}</td>
+              <td>{{ pulssiData.koulutuspaiva_count | number:'1.1-2':'fi' }}</td>
+            </tr>
+            <tr>
+              <td>{{ translations.pulssi_tilapainen_henkilosto_tyontekijamaara | translate}}</td>
+              <td>{{ pulssiData.tilapainen_henkilosto_tyontekijamaara | number:undefined:'fi' }}</td>
+            </tr>
+            <tr>
+              <td>{{ translations.pulssi_tilapainen_henkilosto_tuntimaara | translate}}</td>
+              <td>{{ pulssiData.tilapainen_henkilosto_tuntimaara | number:'1.1-2':'fi' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="pulssi-ui">
+      <div class="number-container">
+        <div>{{ pulssiData.ui_login_count | number:undefined:'fi' }}</div>
+        <div>{{ translations.pulssi_ui_login | translate }}</div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <tbody>
+            <tr>
+              <td>{{ translations.pulssi_ui_new_varhaiskasvatuspaatos | translate}}</td>
+              <td>{{ pulssiData.ui_new_paatos_count | number:undefined:'fi' }}</td>
+            </tr>
+            <tr>
+              <td>{{ translations.pulssi_ui_new_maksutieto | translate}}</td>
+              <td>{{ pulssiData.ui_new_maksutieto_count | number:undefined:'fi' }}</td>
+            </tr>
+            <tr>
+              <td>{{ translations.pulssi_ui_new_tyontekija | translate}}</td>
+              <td>{{ pulssiData.ui_new_tyontekija_count | number:undefined:'fi' }}</td>
+            </tr>
+            <tr>
+              <td>{{ translations.pulssi_kansalainen_login_valtuudet | translate}}</td>
+              <td>{{ pulssiData.valtuudet_login_count | number:undefined:'fi' }}</td>
+            </tr>
+            <tr>
+              <td>{{ translations.pulssi_kansalainen_login | translate}}</td>
+              <td>{{ pulssiData.oppija_login_count | number:undefined:'fi' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

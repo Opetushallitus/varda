@@ -1,0 +1,103 @@
+.pulssi-wrapper {
+  margin-top: 3em;
+  margin-bottom: 3em;
+}
+
+.pulssi-header {
+  margin-bottom: 2em;
+}
+
+.pulssi-header em {
+  font-style: italic;
+  font-size: 14px;
+}
+
+.pulssi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    "organisaatio organisaatio"
+    "toimipaikka vaka"
+    "toimipaikka henkilosto"
+    "ui henkilosto";
+  grid-gap: 2em;
+}
+
+.pulssi-organisaatio {
+  grid-area: organisaatio;
+  display: flex;
+  gap: 1.5em;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.pulssi-organisaatio-type {
+  display: flex;
+  gap: 1.5em;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.pulssi-organisaatio .number-container {
+  margin-bottom: 0;
+}
+
+.pulssi-toimipaikka {
+  grid-area: toimipaikka;
+}
+
+.pulssi-vaka {
+  grid-area: vaka;
+}
+
+.pulssi-henkilosto {
+  grid-area: henkilosto;
+}
+
+.pulssi-ui {
+  grid-area: ui;
+}
+
+.number-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1em;
+}
+
+.number-container div:nth-child(1) {
+  font-size: 2em;
+  font-weight: bold;
+}
+
+.number-container div:nth-child(2) {
+  font-size: 1em;
+}
+
+.pulssi-grid .table {
+  margin-bottom: 0;
+}
+
+.pulssi-grid .table td {
+  padding: 0.25em;
+}
+
+.pulssi-grid .table .table-subheader {
+  font-weight: bold;
+}
+
+.pulssi-grid .table tr.subrow td:nth-child(1) {
+  padding-left: 1em;
+}
+
+@media (max-width: 767px) {
+  .pulssi-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+    "organisaatio"
+    "toimipaikka"
+    "vaka"
+    "henkilosto"
+    "ui";
+  }
+}

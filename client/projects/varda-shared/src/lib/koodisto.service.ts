@@ -21,7 +21,7 @@ export class VardaKoodistoService {
   private static primaryLanguages = ['FI', 'SV', 'SEPO', 'RU', 'ET', 'EN', 'AR', 'SO', 'DE', 'FR'];
   private vardaApiUrl: string;
   private koodistot$ = new BehaviorSubject<Array<KoodistoDTO>>(null);
-  private koodistoCache = 'varda.koodistoCache';
+  private cacheKeyBase = 'varda.koodistoCache';
   private i18n = CommonTranslations;
 
   constructor(
@@ -125,12 +125,13 @@ export class VardaKoodistoService {
   }
 
   checkCache(lang: SupportedLanguage) {
-    const existingCache: KoodistoCache = JSON.parse(localStorage.getItem(this.koodistoCache));
-    if (Date.now() - existingCache?.timestamp < 300000 && existingCache.language === lang) {
+    const cacheKey = `${this.cacheKeyBase}.${lang}`;
+    const existingCache: KoodistoCache = JSON.parse(localStorage.getItem(cacheKey));
+    if (Date.now() - existingCache?.timestamp < 300000) {
       return this.koodistot$.next(existingCache.koodistot);
     } else {
-      this.getKoodistot(lang).subscribe({
-        next: koodistoJSON => this.saveCache(koodistoJSON, lang),
+      this.getKoodistotFromApi(lang).subscribe({
+        next: koodistoJSON => this.saveCache(koodistoJSON, cacheKey),
         error: err => {
           if (existingCache) {
             this.koodistot$.next(existingCache.koodistot);
@@ -142,9 +143,9 @@ export class VardaKoodistoService {
     }
   }
 
-  saveCache(koodistoJSON: Array<KoodistoDTO>, lang: SupportedLanguage) {
+  saveCache(koodistoJSON: Array<KoodistoDTO>, cacheKey: string) {
     this.koodistot$.next(koodistoJSON);
-    localStorage.setItem(this.koodistoCache, JSON.stringify({ timestamp: Date.now(), koodistot: koodistoJSON, language: lang }));
+    localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), koodistot: koodistoJSON }));
   }
 
   getCodeFormattedValue(format: 'short' | 'long', code: CodeDTO) {
@@ -160,7 +161,11 @@ export class VardaKoodistoService {
     }
   }
 
-  private getKoodistot(lang: SupportedLanguage): Observable<Array<KoodistoDTO>> {
+  getKoodistot() {
+    return this.koodistot$;
+  }
+
+  private getKoodistotFromApi(lang: SupportedLanguage): Observable<Array<KoodistoDTO>> {
     return this.http.get(`${this.vardaApiUrl}/api/julkinen/v1/koodistot/?lang=${lang}`, null, new HttpHeaders());
   }
 }

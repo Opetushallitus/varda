@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaDomService } from './core/services/varda-dom.service';
 import { DOCUMENT } from '@angular/common';
@@ -18,7 +18,7 @@ declare const matomoPageChange: any;
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   isLoading: Observable<boolean>;
 
   constructor(
@@ -43,9 +43,9 @@ export class AppComponent implements OnInit {
     });
 
     this.isLoading = this.loadingHttpService.isLoadingWithDebounce();
-  }
 
-  ngOnInit() { }
+    this.helperService.setTranslateService(this.translateService);
+  }
 
   setTitle(router: Router): void {
     const titles: Array<string> = [...this.getTitle(router.routerState, router.routerState.root).reverse(), 'Varda'];
@@ -87,8 +87,6 @@ export class AppComponent implements OnInit {
       this.setTitle(this.router);
       this.koodistoService.initKoodistot(environment.vardaAppUrl, userLanguage);
       this.loginService.initLogoutInterval(90 * 60, this.translateService, this.apiService.getLogoutCasUrl());
-
-      this.helperService.setTranslateService(this.translateService);
     });
   }
 }
