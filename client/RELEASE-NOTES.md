@@ -1,6 +1,13 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.6.4 (05.08.2022)
+- OPHVARDA-2476: PAOS-lasten maksutietojen raportoinnin jatkokehitys
+- OPHVARDA-2486: Viimeisin toimipaikka -valinnan nollaus
+- OPHVARDA-2437: Ehdota varhaiskasvatussuhteen ja työskentelypaikan päättymispäivää
+- OPHVARDA-2459: Käyttöoikeuksien refaktorointi
+- OPHVARDA-2494: Angular-päivitys (v13 -> v14)
+
 1.6.3 (09.06.2022)
 - OPHVARDA-2396: Tiedonsiirron katkosten raportin jatkokehitys
 - OPHVARDA-2408: Koodistojen järjestys nimen mukaan
