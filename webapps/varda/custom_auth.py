@@ -42,10 +42,13 @@ def oppija_post_login_handler(user):
                           else Kayttajatyyppi.OPPIJA_CAS.value)
 
         if kayttajatyyppi == Kayttajatyyppi.OPPIJA_CAS_VALTUUDET.value:
-            etunimi = getattr(user, 'impersonatorGivenName', '')
-            sukunimi = getattr(user, 'impersonatorSn', '')
+            # impersonator-fields are in invalid array string format, e.g. '[Testi]', so remove [ and ] characters
+            etunimi = getattr(user, 'impersonatorGivenName', '').replace('[', '').replace(']', '')
+            sukunimi = getattr(user, 'impersonatorSn', '').replace('[', '').replace(']', '')
             # Huoltaja OID
             henkilo_oid = getattr(user, 'impersonatorPersonOid', None)
+            if isinstance(henkilo_oid, str):
+                henkilo_oid = henkilo_oid.replace('[', '').replace(']', '')
             # Lapsi OID
             huollettava_oid_list = [user.personOid]
         else:

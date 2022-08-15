@@ -16,7 +16,7 @@ class VardaOppijaViewsTests(TestCase):
         # Mock Huoltaja login
         user_suomifi = User.objects.create(username='suomi.fi#010280-952L#010215A951T', is_staff=False, is_active=True)
         user_suomifi.personOid = '1.2.246.562.24.86012997950'
-        user_suomifi.impersonatorPersonOid = '1.2.246.562.24.1234567890'
+        user_suomifi.impersonatorPersonOid = '[1.2.246.562.24.1234567890]'
         oppija_post_login_handler(user_suomifi)
 
         client_suomifi_tester = SetUpTestClient('suomi.fi#010280-952L#010215A951T').client()
@@ -266,7 +266,7 @@ class VardaOppijaViewsTests(TestCase):
                                                               is_staff=False,
                                                               is_active=True)
         user_suomifi.personOid = lapsi_oid
-        user_suomifi.impersonatorPersonOid = huoltaja_oid
+        user_suomifi.impersonatorPersonOid = None if huoltaja_oid is None else f'[{huoltaja_oid}]'
         oppija_post_login_handler(user_suomifi)
 
         additional_cas_user_fields = Z3_AdditionalCasUserFields.objects.filter(user=user_suomifi).first()

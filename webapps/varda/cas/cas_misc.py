@@ -47,3 +47,25 @@ def get_service_url_decorator(original_function, get_redirect_url, cas_settings)
             return service
         return original_function(*args, **kwargs)
     return get_service_url_wrapper
+
+
+def get_redirect_url_decorator(original_function):
+    """
+    Decorator that is used to override django_cas_ng.utils.get_redirect_url. CAS-Oppija returns an url encoded
+    parameters (service), which is encoded differently depending if the session already exists or not. We want to
+    normalize the URL so that it is not double encoded.
+    :param original_function: django_cas_ng.utils.get_redirect_url
+    :return: decorator function
+    """
+    @wraps(original_function)
+    def get_redirect_url_wrapper(*args, **kwargs):
+        request = args[0]
+        # Unquote path and reset request.GET("next")
+        full_path = request.get_full_path()
+        full_path = parse.unquote(full_path)
+        url_query = parse.urlsplit(full_path).query
+        url_query_dict = parse.parse_qs(url_query)
+        # parse.parse_qs returns values in a list, e.g. {'next': ['/varda/'], 'valtuudet': ['true']}
+        next_field = (url_query_dict.get(REDIRECT_FIELD_NAME, None) or [None])[0]
+        return next_field or original_function(request)
+    return get_redirect_url_wrapper

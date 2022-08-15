@@ -3,9 +3,21 @@ import re
 from django.conf import settings
 
 from varda.cas.cas_settings import settings as oppija_cas_settings
-from varda.cas.cas_misc import get_service_url_decorator, is_local_url_decorator
+from varda.cas.cas_misc import get_redirect_url_decorator, get_service_url_decorator, is_local_url_decorator
 from varda.constants import HETU_REGEX
 from varda.misc import hash_string, load_in_new_module, TemporaryObject
+
+
+def init_django_cas_ng_utils(utils_module, cas_settings):
+    utils_module.django_settings = cas_settings
+
+    # Override get_redirect_url to normalize URL by unquoting it
+    # CAS-Oppija / Suomi.fi encodes URL differently in different scenarios
+    utils_module.get_redirect_url = get_redirect_url_decorator(utils_module.get_redirect_url)
+
+    # Override get_service_url to enable CAS_ACCEPT_PROXY_URL_FROM_HEADER
+    utils_module.get_service_url = get_service_url_decorator(utils_module.get_service_url,
+                                                             utils_module.get_redirect_url, cas_settings)
 
 
 def init_django_cas_ng_views(views_module, utils_module, cas_settings):
@@ -30,14 +42,6 @@ def init_django_cas_ng_views(views_module, utils_module, cas_settings):
 
     # Override LoginView so that API token is set to a cookie after login
     views_module.LoginView = LoginView
-
-
-def init_django_cas_ng_utils(utils_module, cas_settings):
-    utils_module.django_settings = cas_settings
-
-    # Override get_service_url to enable CAS_ACCEPT_PROXY_URL_FROM_HEADER
-    utils_module.get_service_url = get_service_url_decorator(utils_module.get_service_url,
-                                                             utils_module.get_redirect_url, cas_settings)
 
 
 def init_django_cas_ng_backends(backends_module, utils_module, cas_settings):
