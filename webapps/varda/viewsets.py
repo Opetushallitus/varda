@@ -324,11 +324,12 @@ class PulssiVakajarjestajat(GenericViewSet, ListModelMixin):
     permission_classes = (permissions.AllowAny, )
     pagination_class = None
     throttle_classes = ()  # TODO: Add ratelimit for Pulssi
+    queryset = Organisaatio.objects.all()
 
     @swagger_auto_schema(responses={status.HTTP_200_OK: PulssiVakajarjestajatSerializer(many=False)})
     def list(self, request, *args, **kwargs):
         return Response(
-            {'number_of_vakajarjestajat': Organisaatio.objects.count()}
+            {'number_of_vakajarjestajat': self.get_queryset().count()}
         )
 
 
