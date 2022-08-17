@@ -409,7 +409,7 @@ def validate_toimipaikan_nimi(toimipaikan_nimi):
     if (toimipaikan_nimi.startswith(tuple(special_characters_full)) or
             toimipaikan_nimi.endswith(tuple(special_characters_partial)) or
             '  ' in toimipaikan_nimi):
-        raise ValidationErrorRest({'nimi': ErrorMessages.TP016.value})
+        raise ValidationErrorRest({'nimi': [ErrorMessages.TP016.value]})
 
 
 def validate_tunniste(tunniste):
