@@ -41,8 +41,6 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
       paattymisPvm: moment()
     };
 
-  isTimeFilterInactive = false;
-
   constructor(
     koodistoService: VardaKoodistoService,
     breakpointObserver: BreakpointObserver,
@@ -121,6 +119,7 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
   filter(): boolean {
     this.isFilters2Active = this.isFilters2Filled();
     if (!this.isFilters1Active && this.filterParams.voimassaolo !== this.voimassaolo.KAIKKI) {
+      this.isFilters1Active = true;
       this.fillFilters1();
     } else if (this.filterParams.voimassaolo === this.voimassaolo.KAIKKI) {
       this.clearFilters1();
@@ -134,7 +133,6 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
   fillFilters1() {
     this.filterParams.alkamisPvm = moment();
     this.filterParams.paattymisPvm = moment();
-    this.isFilters1Active = false;
   }
 
   clearFilters1() {
