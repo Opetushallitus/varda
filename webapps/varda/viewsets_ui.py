@@ -188,8 +188,8 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
         user = self.request.user
         permission_qs = user_permission_groups_in_organization(
             user, self.vakajarjestaja_oid,
-            [Z4_CasKayttoOikeudet.PALVELUKAYTTAJA, Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.KATSELIJA,
-             Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA, Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA]
+            # Huoltajatieto groups do not have permissions to Lapsi objects where organisaatio is paos_organisaatio
+            [Z4_CasKayttoOikeudet.PALVELUKAYTTAJA, Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.KATSELIJA]
         )
         return user.is_superuser or is_oph_staff(user) or permission_qs.exists()
 
@@ -440,10 +440,10 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
 
         lapsi_organization_groups_qs = user_permission_groups_in_organization(
             user, self.vakajarjestaja_oid,
-            [Z4_CasKayttoOikeudet.KATSELIJA, Z4_CasKayttoOikeudet.TALLENTAJA,
-             Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA, Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA]
+            [Z4_CasKayttoOikeudet.PALVELUKAYTTAJA, Z4_CasKayttoOikeudet.KATSELIJA, Z4_CasKayttoOikeudet.TALLENTAJA]
         )
-        # Get all Lapsi objects for superuser, OPH and vakajarjestaja level permissions
+        # Get all Lapsi objects for superuser, OPH and vakajarjestaja level KATSELIJA/TALLENTAJA permissions
+        # Huoltajatieto groups do not have permissions to Lapsi objects where organisaatio is paos_organisaatio
         if not user.is_superuser and not is_oph_staff(user) and not lapsi_organization_groups_qs.exists():
             lapsi_object_ids_user_has_view_permissions = get_object_ids_for_user_by_model(user, Lapsi.get_name())
             lapsi_filter &= Q(id__in=lapsi_object_ids_user_has_view_permissions)

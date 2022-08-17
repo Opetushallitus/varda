@@ -166,7 +166,7 @@
 
     <div class="toimipaikan-lapset-container-margin-bottom">
       <h3 class="oph-bold">{{i18n.maksutiedot | translate}}</h3>
-      <div class="varda-text-secondary d-block" *ngIf="!userAccess.huoltajatiedot.katselija; else validHuoltajaPermissionsContainer">
+      <div class="varda-text-secondary d-block" *ngIf="!isMaksutietoPermission(); else validHuoltajaPermissionsContainer">
         {{i18n.katsele_tietoja_error_invalid_permissions | translate}}
       </div>
       <ng-template #validHuoltajaPermissionsContainer>

@@ -12,6 +12,7 @@ from django.db.models import Case, Count, DateField, F, Func, Q, Value, When
 from django.db.models.functions import Cast
 from django.utils import timezone
 from guardian.models import GroupObjectPermission, UserObjectPermission
+from guardian.shortcuts import remove_perm
 from knox.models import AuthToken
 
 from varda import koodistopalvelu, oppijanumerorekisteri
@@ -1175,3 +1176,29 @@ def init_kela_varhaiskasvatussuhde_table_task(datetime_param=None):
                 ''', [history_date_limit, last_index, index])
             logger.info(f'Z10_KelaVarhaiskasvatussuhde id range: {last_index} - {index}, rowcount: {cursor.rowcount}')
             last_index = index
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def delete_paos_huoltajatieto_permissions():
+    """
+    TEMPORARY FUNCTION
+    """
+    for lapsi in Lapsi.objects.filter(paos_kytkin=True).iterator():
+        is_own_lapsi = (Lapsi.objects.exclude(id=lapsi.id)
+                        .filter(Q(henkilo=lapsi.henkilo) &
+                                (Q(vakatoimija=lapsi.paos_organisaatio) | Q(oma_organisaatio=lapsi.paos_organisaatio)))
+                        .exists())
+        paos_organisaatio_oid = lapsi.paos_organisaatio.organisaatio_oid
+        toimipaikka_oid_list = set(Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=lapsi)
+                                   .values_list('toimipaikka__organisaatio_oid', flat=True))
+        oid_list = [paos_organisaatio_oid, *toimipaikka_oid_list]
+
+        z4_groups = [Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA, Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA]
+        group_name_list = [f'{group}_{oid}' for oid in oid_list if oid for group in z4_groups]
+        group_qs = Group.objects.filter(name__in=group_name_list)
+
+        for group in group_qs:
+            remove_perm('view_lapsi', group, lapsi)
+            if not is_own_lapsi:
+                remove_perm('view_henkilo', group, lapsi.henkilo)
