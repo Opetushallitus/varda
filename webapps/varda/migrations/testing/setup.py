@@ -214,8 +214,8 @@ def create_vakajarjestajat():
     from django.conf import settings
     from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
     from varda.models import Organisaatio
-    from varda.permission_groups import (assign_permissions_to_vakajarjestaja_obj,
-                                         create_permission_groups_for_organisaatio)
+    from varda.permissions import assign_organisaatio_permissions
+    from varda.permission_groups import create_permission_groups_for_organisaatio
 
     organisaatio_list = (
         Organisaatio.objects.create(
@@ -375,13 +375,14 @@ def create_vakajarjestajat():
     for organisaatio in organisaatio_list:
         organisaatio_oid = organisaatio.organisaatio_oid
         create_permission_groups_for_organisaatio(organisaatio_oid, organisaatio.organisaatiotyyppi[0])
-        assign_permissions_to_vakajarjestaja_obj(organisaatio_oid)
+        assign_organisaatio_permissions(organisaatio)
 
 
 def create_toimipaikat_and_painotukset():
     from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
     from varda.models import Toimipaikka, Organisaatio
-    from varda.permission_groups import assign_permissions_to_toimipaikka_obj, create_permission_groups_for_organisaatio
+    from varda.permissions import assign_toimipaikka_permissions
+    from varda.permission_groups import create_permission_groups_for_organisaatio
 
     vakajarjestaja_tester_obj = Organisaatio.objects.filter(nimi='Tester organisaatio')[0]
     vakajarjestaja_tester2_obj = Organisaatio.objects.filter(nimi='Tester2 organisaatio')[0]
@@ -656,7 +657,7 @@ def create_toimipaikat_and_painotukset():
     for toimipaikka in toimipaikka_list:
         organisaatio_oid = toimipaikka.organisaatio_oid
         create_permission_groups_for_organisaatio(organisaatio_oid, Organisaatiotyyppi.TOIMIPAIKKA.value)
-        assign_permissions_to_toimipaikka_obj(toimipaikka.organisaatio_oid, toimipaikka.vakajarjestaja.organisaatio_oid)
+        assign_toimipaikka_permissions(toimipaikka)
 
     toiminnallinen_painotus_list = (
         {

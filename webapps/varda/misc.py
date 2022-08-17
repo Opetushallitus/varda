@@ -14,6 +14,7 @@ import requests
 from celery import shared_task
 from cryptography.fernet import Fernet, InvalidToken
 from django.conf import settings
+from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
@@ -297,9 +298,8 @@ def update_all_vakajarjestaja_permissiongroups():
     from varda.clients.organisaatio_client import get_multiple_organisaatio, get_organization_type
     from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
     from varda.models import Toimipaikka, Organisaatio
-    from varda.permission_groups import (assign_permissions_to_toimipaikka_obj,
-                                         assign_permissions_to_vakajarjestaja_obj,
-                                         create_permission_groups_for_organisaatio)
+    from varda.permissions import assign_organisaatio_permissions, assign_toimipaikka_permissions
+    from varda.permission_groups import create_permission_groups_for_organisaatio
 
     logger.info('Starting setting vakajarjestaja permissions')
     all_vakajarjestaja_oids = (Organisaatio.objects.exclude(organisaatio_oid__exact='')
@@ -311,16 +311,16 @@ def update_all_vakajarjestaja_permissiongroups():
         for vakajarjestaja_oid in vakajarjestaja_oid_chunk:
             organisaatiotyyppi = get_organization_type(vakajarjestaja_data_list.get(vakajarjestaja_oid))
             create_permission_groups_for_organisaatio(vakajarjestaja_oid, organisaatiotyyppi)
-            assign_permissions_to_vakajarjestaja_obj(vakajarjestaja_oid)
+            assign_organisaatio_permissions(Organisaatio.objects.get(organisaatio_oid=vakajarjestaja_oid))
     logger.info('Finished setting vakajarjestaja permissions.')
     logger.info('Setting toimipaikka permissions.')
-    toimipaikka_oid_tuples = (Toimipaikka.objects.exclude(organisaatio_oid__exact='')
-                              .values_list('organisaatio_oid', 'vakajarjestaja__organisaatio_oid'))
-    toimipaikka_oid_chunks = list_to_chunks(toimipaikka_oid_tuples, 100)
-    for oid_tuple_chunk in toimipaikka_oid_chunks:
-        for toimipaikka_oid, vakajarjestaja_oid in oid_tuple_chunk:
+    toimipaikka_oid_list = (Toimipaikka.objects.exclude(organisaatio_oid__exact='')
+                            .values_list('organisaatio_oid', flat=True))
+    toimipaikka_oid_chunks = list_to_chunks(toimipaikka_oid_list, 100)
+    for toimipaikka_oid_chunk in toimipaikka_oid_chunks:
+        for toimipaikka_oid in toimipaikka_oid_chunk:
             create_permission_groups_for_organisaatio(toimipaikka_oid, Organisaatiotyyppi.TOIMIPAIKKA.value)
-            assign_permissions_to_toimipaikka_obj(toimipaikka_oid, vakajarjestaja_oid)
+            assign_toimipaikka_permissions(Toimipaikka.objects.get(organisaatio_oid=toimipaikka_oid))
     logger.info('Finished setting toimipaikka permissions')
 
 
@@ -387,10 +387,7 @@ def get_user_vakajarjestaja(user):
     return vakajarjestaja_qs.first()
 
 
-def merge_lapsi_maksutiedot(new_lapsi, old_maksutiedot, new_huoltajuussuhteet, merged_lapsi_toimipaikat):
-    from varda.models import Maksutieto
-    from varda.permissions import assign_object_level_permissions
-
+def merge_lapsi_maksutiedot(new_lapsi, old_maksutiedot, new_huoltajuussuhteet):
     for maksutieto in old_maksutiedot:
         maksutieto_old_huoltajuussuhteet = maksutieto.huoltajuussuhteet.all()
         # We need to evaluate the queryset before .clear() otherwise the queryset will end up empty
@@ -406,13 +403,6 @@ def merge_lapsi_maksutiedot(new_lapsi, old_maksutiedot, new_huoltajuussuhteet, m
         if old_maksutieto_huoltaja_count != new_maksutieto_huoltajat_count:
             raise ValueError(f'Error transferring huoltajuussuhteet on maksutieto {maksutieto} to new child {new_lapsi}')
 
-        # Vakatoimija stays the same but old_child and new_child might have different toimipaikkas
-        for oid in merged_lapsi_toimipaikat:
-            assign_object_level_permissions(oid, Maksutieto, maksutieto)
-
-        # Save Maksutieto without modifications so that new historical record is created
-        maksutieto.save()
-
 
 def get_nested_value(instance, field_list):
     for field in field_list:
@@ -427,3 +417,31 @@ def load_in_new_module(library_name, name):
     sys.modules[name] = library_copy
     del spec
     return library_copy
+
+
+def single_instance_task(timeout_in_minutes=8 * 60):
+    """
+    Decorator for celery task lock. Does not allow executing same task again if it's already running with matching id.
+    Note: Uses django memcached as non persistent storage which could be culled or crash losing all locks!
+    Note: Relies that task execution time is less than given timeout
+    Note: Args should be ids that contain no whitespaces since those will be parsed off
+    :param timeout_in_minutes: Time in minutes when lock will be released at latest. Should be greater than maximum task run time.
+    :return: Decorated function
+    """
+    def decorator(func):
+        @functools.wraps(func)  # preserves func.__name__
+        def decorator_wrapper(*args, **kwargs):
+            arg_values = '{}{}'.format(args, kwargs)
+            cache_key_suffix = re.sub(r'\s+', '', arg_values)  # whitespaces are not allowed in cache keys
+            lock_id = 'celery-single-instance-{}-{}'.format(func.__name__, cache_key_suffix)
+            lock_timeout_in_seconds = timeout_in_minutes * 60
+            if cache.add(lock_id, 'true', lock_timeout_in_seconds):  # 'true' is never used value for the key
+                try:
+                    result = func(*args, **kwargs)
+                finally:
+                    cache.delete(lock_id)
+                return result
+            else:
+                logger.error('Task already running with lock_id {}'.format(lock_id))
+        return decorator_wrapper
+    return decorator

@@ -1,14 +1,18 @@
+import logging
+
 from django.contrib.auth.models import Group
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import connection
 from django.db.models import OuterRef, Q, Subquery
 from guardian.shortcuts import get_objects_for_group
+from rest_framework.exceptions import APIException
 from rest_framework.reverse import reverse
 
-from varda.cache import get_object_ids_for_user_by_model
 from varda.models import (Henkilo, KieliPainotus, Lapsi, PaosOikeus, PaosToiminta, Toimipaikka, ToiminnallinenPainotus,
                           Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z4_CasKayttoOikeudet, Z9_RelatedObjectChanged)
-from varda.permissions import is_oph_staff, user_permission_groups_in_organizations
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_paos_toimipaikat(vakajarjestaja_obj, is_only_active_paostoiminta_included=True):
@@ -427,6 +431,10 @@ def get_top_results(request, queryset, permission_group_list, oid_list):
     :param oid_list: list of accepted OIDs (e.g. Organisaatio, Toimipaikka)
     :return: List of object URIs
     """
+    # Import locally to avoid circular import
+    from varda.cache import get_object_ids_for_user_by_model
+    from varda.permissions import is_oph_staff, user_permission_groups_in_organizations
+
     items_to_show = 3
     user = request.user
     queryset_model_name = queryset.model.__name__.lower()
@@ -457,3 +465,43 @@ def get_active_filter(target_date, prefix=''):
         prefix += '__'
     return (Q(**{f'{prefix}alkamis_pvm__lte': target_date}) &
             (Q(**{f'{prefix}paattymis_pvm__gte': target_date}) | Q(**{f'{prefix}paattymis_pvm__isnull': True})))
+
+
+def get_tallentaja_organisaatio_oid_for_paos_lapsi(lapsi):
+    """
+    Get organisaatio_oid of Organisaatio that is responsible for saving data of PAOS lapsi
+    :param lapsi: Lapsi instance
+    :return: organisaatio_oid of Organisaatio
+    """
+    paos_oikeus = (PaosOikeus.objects
+                   .filter(jarjestaja_kunta_organisaatio=lapsi.oma_organisaatio,
+                           tuottaja_organisaatio=lapsi.paos_organisaatio, voimassa_kytkin=True)
+                   .first())
+    return paos_oikeus.tallentaja_organisaatio.organisaatio_oid if paos_oikeus else None
+
+
+def get_lapsi_for_maksutieto(maksutieto):
+    """
+    Get Lapsi object instance that is related to provided Maksutieto object
+    :param maksutieto: Maksutieto instance
+    :return: Lapsi instance
+    """
+    lapsi_qs = maksutieto.huoltajuussuhteet.values_list('lapsi_id', flat=True).distinct('lapsi_id').order_by('lapsi_id')
+    if lapsi_qs.count() != 1:
+        logger.error(f'Could not find just one related Lapsi object for Maksutieto with ID: {maksutieto.id}')
+        raise APIException
+    return Lapsi.objects.get(id=lapsi_qs.first())
+
+
+def get_organisaatio_oid_for_taydennyskoulutus(taydennyskoulutus):
+    """
+    Get organisaatio_oid of Organisaatio that is related to provided Taydennyskoulutus object
+    :param taydennyskoulutus: Taydennyskoulutus instance
+    :return: organisaatio_oid of Organisaatio
+    """
+    vakajarjestaja_oid_qs = (taydennyskoulutus.tyontekijat.values_list('vakajarjestaja__organisaatio_oid', flat=True)
+                             .distinct('vakajarjestaja__organisaatio_oid').order_by('vakajarjestaja__organisaatio_oid'))
+    if len(vakajarjestaja_oid_qs) != 1:
+        logger.error(f'Could not find just one related Organisaatio for Taydennyskoulutus with ID: {taydennyskoulutus.id}')
+        raise APIException
+    return vakajarjestaja_oid_qs.first()

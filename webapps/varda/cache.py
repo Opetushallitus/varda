@@ -71,7 +71,7 @@ def get_object_ids_user_has_permissions(user, model_name, content_type,
     cache_key_objs_user_has_permissions = create_cache_key(user.id, model_name + '_obj_permissions')
     object_ids_user_has_permissions = cache.get(cache_key_objs_user_has_permissions)
     if object_ids_user_has_permissions is None:
-        object_ids_user_has_permissions = get_object_ids_user_has_view_permissions(user, model_name, content_type)
+        object_ids_user_has_permissions = get_object_ids_user_has_view_permissions(user, model_name)
         cache.set(cache_key_objs_user_has_permissions, object_ids_user_has_permissions, cached_time)
 
         cache_key_list_of_users_for_this_model = create_cache_key(0, model_name + '_cache_user_list')
@@ -354,3 +354,7 @@ def set_pulssi_cache(data):
 
 def get_pulssi_cache():
     return cache.get('varda_pulssi', None)
+
+
+def delete_organisaatio_yhteenveto_cache(organisaatio_id):
+    cache.delete(f'organisaatio_yhteenveto_{organisaatio_id}')

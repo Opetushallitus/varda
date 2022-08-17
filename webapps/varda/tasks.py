@@ -2,17 +2,13 @@ import datetime
 import json
 import logging
 import math
-import re
-from functools import wraps
 
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth.models import Group, User
-from django.contrib.contenttypes.models import ContentType
-from django.core.cache import cache
 from django.core.management import call_command
-from django.db import connection, IntegrityError, transaction
-from django.db.models import Case, Count, DateField, F, Func, IntegerField, Q, Value, When
+from django.db import connection, transaction
+from django.db.models import Case, Count, DateField, F, Func, Q, Value, When
 from django.db.models.functions import Cast
 from django.utils import timezone
 from guardian.models import GroupObjectPermission, UserObjectPermission
@@ -23,7 +19,7 @@ from varda import organisaatiopalvelu
 from varda import permission_groups
 from varda import permissions
 from varda.audit_log import audit_log
-from varda.cache import delete_paattymis_pvm_cache, invalidate_cache, set_paattymis_pvm_cache
+from varda.cache import delete_paattymis_pvm_cache, set_paattymis_pvm_cache
 from varda.clients.oppijanumerorekisteri_client import fetch_henkilo_data_for_oid_list
 from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
 from varda.enums.aikaleima_avain import AikaleimaAvain
@@ -31,47 +27,18 @@ from varda.enums.koodistot import Koodistot
 from varda.enums.reporting import ReportStatus
 from varda.excel_export import delete_excel_reports_earlier_than
 from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
-from varda.misc import hash_string, list_to_chunks, memory_efficient_queryset_iterator
+from varda.misc import list_to_chunks, memory_efficient_queryset_iterator, single_instance_task
 from varda.misc_operations import set_paattymis_pvm_for_vakajarjestaja_data
 from varda.models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, Lapsi, Maksutieto,
                           MaksutietoHuoltajuussuhde, Palvelussuhde, Taydennyskoulutus, TaydennyskoulutusTyontekija,
                           Toimipaikka, Tyontekija, Organisaatio, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
-                          YearlyReportSummary,
-                          Z10_KelaVarhaiskasvatussuhde, Z2_CodeTranslation, Z4_CasKayttoOikeudet, Z5_AuditLog,
-                          Z6_LastRequest, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary, Z9_RelatedObjectChanged)
-from varda.permission_groups import assign_object_permissions_to_taydennyskoulutus_groups, get_oph_yllapitaja_group_name
-from varda.permissions import assign_object_level_permissions_for_instance, delete_object_permissions_explicitly
-
+                          YearlyReportSummary, Z10_KelaVarhaiskasvatussuhde, Z2_CodeTranslation, Z4_CasKayttoOikeudet,
+                          Z5_AuditLog, Z6_LastRequest, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary,
+                          Z9_RelatedObjectChanged)
+from varda.permission_groups import get_oph_yllapitaja_group_name
+from varda.permissions import reassign_all_lapsi_permissions
 
 logger = logging.getLogger(__name__)
-
-
-def single_instance_task(timeout_in_minutes=8 * 60):
-    """
-    Decorator for celery task lock. Does not allow executing same task again if it's already running with matching id.
-    Note: Uses django memcached as non persistent storage which could be culled or crash losing all locks!
-    Note: Relies that task execution time is less than given timeout
-    Note: Args should be ids that contain no whitespaces since those will be parsed off
-    :param timeout_in_minutes: Time in minutes when lock will be released at latest. Should be greater than maximum task run time.
-    :return: Decorated function
-    """
-    def decorator(func):
-        @wraps(func)  # preserves func.__name__
-        def decorator_wrapper(*args, **kwargs):
-            arg_values = '{}{}'.format(args, kwargs)
-            cache_key_suffix = re.sub(r'\s+', '', arg_values)  # whitespaces are not allowed in cache keys
-            lock_id = 'celery-single-instance-{}-{}'.format(func.__name__, cache_key_suffix)
-            lock_timeout_in_seconds = timeout_in_minutes * 60
-            if cache.add(lock_id, 'true', lock_timeout_in_seconds):  # 'true' is never used value for the key
-                try:
-                    result = func(*args, **kwargs)
-                finally:
-                    cache.delete(lock_id)
-                return result
-            else:
-                logger.error('Task already running with lock_id {}'.format(lock_id))
-        return decorator_wrapper
-    return decorator
 
 
 @shared_task
@@ -193,23 +160,23 @@ def send_alive_log_to_aws_task():
 def guardian_clean_orphan_object_permissions():
     """
     Delete orphan permission instances that were not deleted for some reason when object was deleted
+    Object permissions need to be deleted explicitly:
+    https://django-guardian.readthedocs.io/en/stable/userguide/caveats.html
     """
     for permission_model in (UserObjectPermission, GroupObjectPermission,):
         permission_qs = (permission_model.objects
                          .distinct('object_pk', 'content_type')
                          .order_by('object_pk', 'content_type'))
-        for permission in memory_efficient_queryset_iterator(permission_qs, chunk_size=2000):
+        for permission in permission_qs.iterator():
             model_class = permission.content_type.model_class()
             if not model_class.objects.filter(id=permission.object_pk).exists():
-                delete_object_permissions_explicitly(model_class, permission.object_pk)
+                permission.delete()
 
 
 @shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
-def change_paos_tallentaja_organization_task(jarjestaja_kunta_organisaatio_id, tuottaja_organisaatio_id,
-                                             tallentaja_organisaatio_id, voimassa_kytkin):
-    permissions.change_paos_tallentaja_organization(jarjestaja_kunta_organisaatio_id, tuottaja_organisaatio_id,
-                                                    tallentaja_organisaatio_id, voimassa_kytkin)
+def change_paos_tallentaja_organization_task(jarjestaja_organisaatio_id, tuottaja_organisaatio_id):
+    permissions.reassign_paos_permissions(jarjestaja_organisaatio_id, tuottaja_organisaatio_id)
 
 
 @shared_task
@@ -229,32 +196,6 @@ def remove_address_information_from_tyontekijat_only_task():
     for henkilo in henkilot:
         henkilo.remove_address_information()
         henkilo.save()
-
-
-@shared_task
-@single_instance_task(timeout_in_minutes=8 * 60)
-def assign_taydennyskoulutus_permissions_for_toimipaikka_task(vakajarjestaja_oid, toimipaikka_oid):
-    """
-    Assign object level permissions to all taydennyskoulutukset of given vakajarjestaja for toimipaikka level groups
-    :param vakajarjestaja_oid: OID of vakajarjestaja
-    :param toimipaikka_oid: OID of toimipaikka
-    """
-    taydennyskoulutukset = Taydennyskoulutus.objects.filter(tyontekijat__vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
-    [assign_object_permissions_to_taydennyskoulutus_groups(toimipaikka_oid, Taydennyskoulutus, taydennyskoulutus)
-     for taydennyskoulutus in taydennyskoulutukset
-     ]
-
-
-@shared_task
-@single_instance_task(timeout_in_minutes=8 * 60)
-def assign_taydennyskoulutus_permissions_for_all_toimipaikat_task(vakajarjestaja_oid, taydennyskoulutus_id):
-    taydennyskoulutus = Taydennyskoulutus.objects.get(id=taydennyskoulutus_id)
-    toimipaikka_oid_list = (Toimipaikka.objects.filter(vakajarjestaja__organisaatio_oid=vakajarjestaja_oid)
-                            .values_list('organisaatio_oid', flat=True))
-    [assign_object_permissions_to_taydennyskoulutus_groups(toimipaikka_oid, Taydennyskoulutus, taydennyskoulutus)
-     for toimipaikka_oid in toimipaikka_oid_list]
-
-    invalidate_cache(Taydennyskoulutus.get_name(), taydennyskoulutus_id)
 
 
 @shared_task
@@ -280,39 +221,6 @@ def delete_request_log_older_than_arg_days_task(days):
     timestamp_lower_limit = timestamp_lower_limit.replace(tzinfo=datetime.timezone.utc)
 
     Z6_RequestLog.objects.filter(timestamp__lt=timestamp_lower_limit).delete()
-
-
-@shared_task
-@single_instance_task(timeout_in_minutes=8 * 60)
-def fix_orphan_vakatiedot_permissions():
-    """
-    Before Lapsi required vakatoimija-field, Vakajarjestaja-level permissions were set after first Varhaiskasvatussuhde
-    was added for Lapsi (we got Vakajarjestaja via Toimipaikka). If Varhaiskasvatussuhde has not been created, there are
-    Lapsi and Varhaiskasvatuspaatos objects that only users who created them have access to.
-
-    Here we go through every such object and assign permissions for Vakajarjestaja groups if vakatoimija-field of Lapsi
-    is filled.
-    """
-    lapsi_content_type_id = ContentType.objects.get_for_model(Lapsi).id
-    orphan_lapsi_id_list = (UserObjectPermission.objects.filter(content_type=lapsi_content_type_id)
-                            .annotate(object_id=Cast('object_pk', IntegerField()))
-                            .distinct('object_id').values_list('object_id', flat=True))
-    lapsi_qs = Lapsi.objects.filter(vakatoimija__isnull=False, id__in=orphan_lapsi_id_list).distinct()
-    for lapsi in lapsi_qs:
-        with transaction.atomic():
-            UserObjectPermission.objects.filter(content_type=lapsi_content_type_id, object_pk=lapsi.id).delete()
-            assign_object_level_permissions_for_instance(lapsi, (lapsi.vakatoimija.organisaatio_oid,))
-
-    vakapaatos_content_type_id = ContentType.objects.get_for_model(Varhaiskasvatuspaatos).id
-    orphan_vakapaatos_id_list = (UserObjectPermission.objects.filter(content_type=vakapaatos_content_type_id)
-                                 .annotate(object_id=Cast('object_pk', IntegerField()))
-                                 .distinct('object_id').values_list('object_id', flat=True))
-    vakapaatos_qs = Varhaiskasvatuspaatos.objects.filter(lapsi__vakatoimija__isnull=False,
-                                                         id__in=orphan_vakapaatos_id_list).distinct()
-    for vakapaatos in vakapaatos_qs:
-        with transaction.atomic():
-            UserObjectPermission.objects.filter(content_type=vakapaatos_content_type_id, object_pk=vakapaatos.id).delete()
-            assign_object_level_permissions_for_instance(vakapaatos, (vakapaatos.lapsi.vakatoimija.organisaatio_oid,))
 
 
 @shared_task
@@ -546,21 +454,14 @@ def merge_duplicate_child(merge_list):
                     old_vakapaatos.lapsi = new_lapsi
                     old_vakapaatos.save()
 
-                merged_lapsi_toimipaikat = (Toimipaikka.objects
-                                                       .filter(Q(varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi=old_lapsi) |
-                                                               Q(varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi=new_lapsi))
-                                                       .exclude(organisaatio_oid__exact='')
-                                                       .values_list('organisaatio_oid', flat=True)
-                                                       .distinct())
-
                 old_maksutiedot = Maksutieto.objects.filter(huoltajuussuhteet__lapsi=old_lapsi).distinct('id')
                 new_huoltajuussuhteet = Huoltajuussuhde.objects.filter(lapsi=new_lapsi)
-
-                merge_lapsi_maksutiedot(new_lapsi, old_maksutiedot, new_huoltajuussuhteet, merged_lapsi_toimipaikat)
+                merge_lapsi_maksutiedot(new_lapsi, old_maksutiedot, new_huoltajuussuhteet)
 
                 MaksutietoHuoltajuussuhde.objects.filter(huoltajuussuhde__lapsi=old_lapsi).delete()
                 old_lapsi.huoltajuussuhteet.all().delete()
                 old_lapsi.delete()
+                reassign_all_lapsi_permissions(new_lapsi)
                 merged_lapsi_counter += 1
 
         except IntegrityError:
@@ -1148,31 +1049,6 @@ def reset_superuser_permissions_task():
             user.is_superuser = False
             user.is_staff = False
             user.save()
-
-
-@shared_task
-@single_instance_task(timeout_in_minutes=8 * 60)
-def create_oph_yllapitaja_group():
-    """
-    TEMPORARY FUNCTION
-    """
-    Group.objects.get_or_create(name=get_oph_yllapitaja_group_name())
-    # Delete old oph_staff group
-    Group.objects.filter(name='oph_staff').delete()
-
-
-@shared_task
-@single_instance_task(timeout_in_minutes=8 * 60)
-def hash_cas_oppija_usernames():
-    """
-    TEMPORARY FUNCTION
-    """
-    for user in User.objects.filter(username__regex=r'^.*(\d{6})([A+\-])(\d{3}[0-9A-FHJ-NPR-Y]).*$').iterator():
-        try:
-            user.username = f'cas#{hash_string(user.username)}'
-            user.save()
-        except IntegrityError as error:
-            logger.error(f'Error hashing user {user.id}: {error}')
 
 
 @shared_task

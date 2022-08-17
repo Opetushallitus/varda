@@ -18,7 +18,7 @@ from varda.misc import hash_string, encrypt_string
 from varda.models import (Organisaatio, Toimipaikka, PaosOikeus, Huoltaja, Huoltajuussuhde, Henkilo,
                           Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto, ToiminnallinenPainotus,
                           KieliPainotus, PaosToiminta, Z2_Code, MaksutietoHuoltajuussuhde, Z4_CasKayttoOikeudet)
-from varda.permission_groups import assign_object_level_permissions
+from varda.permissions import assign_lapsi_permissions
 from varda.unit_tests.test_utils import (assert_status_code, SetUpTestClient, assert_validation_error, mock_admin_user,
                                          post_henkilo_to_get_permissions, mock_date_decorator_factory)
 from varda.viewsets import HenkiloViewSet, LapsiViewSet
@@ -2369,7 +2369,6 @@ class VardaViewsTests(TestCase):
         * Give permissions to each of these for the tester user's org
         """
         client = SetUpTestClient('tester').client()
-        oid_of_client = '1.2.246.562.10.9395737548810'
 
         lapsi_hetu = '180210A9437'
         huoltaja_hetu = '180200A941K'
@@ -2388,8 +2387,6 @@ class VardaViewsTests(TestCase):
             lahdejarjestelma='1',
             vakatoimija=vakajarjestaja,
         )
-        assign_object_level_permissions(oid_of_client, Henkilo, lapsi_henkilo)
-        assign_object_level_permissions(oid_of_client, Lapsi, lapsi)
 
         huoltaja_henkilo = Henkilo.objects.create(
             henkilotunnus=encrypt_string(huoltaja_hetu),
@@ -2405,18 +2402,15 @@ class VardaViewsTests(TestCase):
             'sukunimi': huoltaja_henkilo.sukunimi,
             'kutsumanimi': huoltaja_henkilo.kutsumanimi
         }
-        assign_object_level_permissions(oid_of_client, Henkilo, huoltaja_henkilo)
         huoltaja = Huoltaja.objects.create(
             henkilo=huoltaja_henkilo
         )
-        assign_object_level_permissions(oid_of_client, Huoltaja, huoltaja)
 
-        hs = Huoltajuussuhde.objects.create(
+        Huoltajuussuhde.objects.create(
             huoltaja=huoltaja,
             lapsi=lapsi,
             voimassa_kytkin=True
         )
-        assign_object_level_permissions(oid_of_client, Huoltajuussuhde, hs)
 
         toimipaikka_1 = Toimipaikka.objects.get(organisaatio_oid='1.2.246.562.10.9395737548815')
 
@@ -2429,16 +2423,14 @@ class VardaViewsTests(TestCase):
             hakemus_pvm='2017-11-01',
             lahdejarjestelma='1',
         )
-        assign_object_level_permissions(oid_of_client, Varhaiskasvatuspaatos, vakapaatos)
 
-        vakasuhde = Varhaiskasvatussuhde.objects.create(
+        Varhaiskasvatussuhde.objects.create(
             toimipaikka=toimipaikka_1,
             varhaiskasvatuspaatos=vakapaatos,
             alkamis_pvm='2018-01-01',
             paattymis_pvm='2019-12-31',
             lahdejarjestelma='1',
         )
-        assign_object_level_permissions(oid_of_client, Varhaiskasvatussuhde, vakasuhde)
 
         vakapaatos_2 = Varhaiskasvatuspaatos.objects.create(
             lapsi=lapsi,
@@ -2448,15 +2440,14 @@ class VardaViewsTests(TestCase):
             hakemus_pvm='2017-11-01',
             lahdejarjestelma='1',
         )
-        assign_object_level_permissions(oid_of_client, Varhaiskasvatuspaatos, vakapaatos_2)
 
-        vakasuhde_2 = Varhaiskasvatussuhde.objects.create(
+        Varhaiskasvatussuhde.objects.create(
             toimipaikka=toimipaikka_1,
             varhaiskasvatuspaatos=vakapaatos_2,
             alkamis_pvm='2021-01-01',
             lahdejarjestelma='1',
         )
-        assign_object_level_permissions(oid_of_client, Varhaiskasvatussuhde, vakasuhde_2)
+        assign_lapsi_permissions(lapsi, reassign=True)
 
         """
         Now the test setup is finally done.

@@ -20,9 +20,11 @@ from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
 from varda.exceptions.invalid_koodi_uri_exception import InvalidKoodiUriException
 from varda.misc import list_to_chunks
 from varda.models import Toimipaikka, Organisaatio, KieliPainotus, ToiminnallinenPainotus, Aikaleima
-from varda.permission_groups import (assign_permissions_to_vakajarjestaja_obj, assign_permissions_to_toimipaikka_obj,
-                                     create_permission_groups_for_organisaatio, assign_organisation_group_permissions)
+from varda.permission_groups import create_permission_groups_for_organisaatio
+from varda.permissions import (assign_kielipainotus_permissions, assign_organisaatio_permissions,
+                               assign_toiminnallinen_painotus_permissions, assign_toimipaikka_permissions)
 from varda.related_object_validations import toimipaikka_is_valid_to_organisaatiopalvelu
+
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +126,7 @@ def create_organization_using_oid(organisaatio_oid, organisaatiotyyppi, integraa
         fetch_organisaatio_info(vakajarjestaja_id=organization_obj.id)
         # New organization, let's create pre-defined permission_groups for it
         create_permission_groups_for_organisaatio(organisaatio_oid, organisaatiotyyppi)
-        assign_permissions_to_vakajarjestaja_obj(organisaatio_oid)
+        assign_organisaatio_permissions(organization_obj)
         # Update permissions for OPH staff users
         update_oph_staff_to_vakajarjestaja_groups.delay(organisaatio_oid=organisaatio_oid)
     else:
@@ -243,14 +245,11 @@ def _fill_yhteystiedot(reply_json, toimipaikka_obj):
 
 def create_kielipainotus(toimipaikka_id, kieli):
     toimipaikka_obj = Toimipaikka.objects.select_related('vakajarjestaja').get(id=toimipaikka_id)
-    kielipainotus = KieliPainotus.objects.create(toimipaikka=toimipaikka_obj,
-                                                 kielipainotus_koodi=get_koodi_from_uri(kieli['kielipainotus']).upper(),
-                                                 alkamis_pvm=kieli['alkupvm'],
-                                                 paattymis_pvm=kieli.get('loppupvm', None))
-    assign_organisation_group_permissions(KieliPainotus,
-                                          kielipainotus,
-                                          toimipaikka_obj.vakajarjestaja.organisaatio_oid,
-                                          toimipaikka_obj.organisaatio_oid)
+    kielipainotus = (KieliPainotus.objects
+                     .create(toimipaikka=toimipaikka_obj,
+                             kielipainotus_koodi=get_koodi_from_uri(kieli['kielipainotus']).upper(),
+                             alkamis_pvm=kieli['alkupvm'], paattymis_pvm=kieli.get('loppupvm', None)))
+    assign_kielipainotus_permissions(kielipainotus)
     return kielipainotus
 
 
@@ -259,19 +258,14 @@ def create_toiminnallinenpainotus(toimipaikka_id, toiminnallinen):
     alkupvm = toiminnallinen['alkupvm']
     loppupvm = toiminnallinen.get('loppupvm', None)
     painotus = get_koodi_from_uri(toiminnallinen['toiminnallinenpainotus'])
-    toimintapainotus = ToiminnallinenPainotus.objects.create(toimipaikka=toimipaikka_obj,
-                                                             toimintapainotus_koodi=painotus,
-                                                             alkamis_pvm=alkupvm,
-                                                             paattymis_pvm=loppupvm)
-    assign_organisation_group_permissions(ToiminnallinenPainotus,
-                                          toimintapainotus,
-                                          toimipaikka_obj.vakajarjestaja.organisaatio_oid,
-                                          toimipaikka_obj.organisaatio_oid)
-    return toimintapainotus
+    toiminnallinen_painotus = (ToiminnallinenPainotus.objects
+                               .create(toimipaikka=toimipaikka_obj, toimintapainotus_koodi=painotus,
+                                       alkamis_pvm=alkupvm, paattymis_pvm=loppupvm))
+    assign_toiminnallinen_painotus_permissions(toiminnallinen_painotus)
+    return toiminnallinen_painotus
 
 
 def create_toimipaikka_using_oid(toimipaikka_organisaatio_oid):
-
     vakajarjestaja = get_vakajarjestaja(toimipaikka_organisaatio_oid)
     if vakajarjestaja is None:
         return
@@ -297,13 +291,13 @@ def create_toimipaikka_using_oid(toimipaikka_organisaatio_oid):
         toimipaikka_obj = toimipaikka_tuple[0]
         toimipaikka_created = toimipaikka_tuple[1]
         if toimipaikka_created:
-            # This needs to be done before fetch and save save so toimipaikka has permission group to assign for kieli-
-            # and toiminnallinenpainotus
+            # New organization, let's create pre-defined permission groups for it
+            # This needs to be done before fetch and save so Toimipaikka has permission groups to assign
+            # for KieliPainotus and ToiminnallinenPainotus objects
             create_permission_groups_for_organisaatio(toimipaikka_organisaatio_oid,
                                                       Organisaatiotyyppi.TOIMIPAIKKA.value)
             fetch_and_save_toimipaikka_data(toimipaikka_obj)
-            # New organization, let's create pre-defined permission_groups for it
-            assign_permissions_to_toimipaikka_obj(toimipaikka_organisaatio_oid, vakajarjestaja.organisaatio_oid)
+            assign_toimipaikka_permissions(toimipaikka_obj)
         else:
             logger.warning('Toimipaikka was already created with organisaatio-oid: ' + toimipaikka_organisaatio_oid)
 

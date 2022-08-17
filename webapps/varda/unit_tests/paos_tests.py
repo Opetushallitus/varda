@@ -6,8 +6,7 @@ from django.test import TestCase
 from guardian.models import GroupObjectPermission
 from rest_framework import status
 
-from varda.models import Toimipaikka, PaosOikeus, Huoltaja, Huoltajuussuhde, Henkilo, Lapsi
-from varda.permissions import change_paos_tallentaja_organization
+from varda.models import Organisaatio, Toimipaikka, PaosOikeus, Huoltaja, Huoltajuussuhde, Henkilo, Lapsi
 from varda.unit_tests.test_utils import assert_status_code, SetUpTestClient, assert_validation_error
 
 
@@ -187,8 +186,10 @@ class VardaPaosTests(TestCase):
             'lahdejarjestelma': '1',
         }
 
+        # No view permission to Lapsi because only Huoltajatieto group
         resp_maksutieto_tester7 = client_tester7.post('/api/v1/maksutiedot/', json.dumps(data_maksutieto), content_type='application/json')
-        assert_status_code(resp_maksutieto_tester7, status.HTTP_403_FORBIDDEN)
+        assert_status_code(resp_maksutieto_tester7, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp_maksutieto_tester7, 'lapsi', 'GE008', 'Invalid hyperlink, object does not exist.')
 
         resp_maksutieto_pk_vakajarjestaja_2 = client_pk_vakajarjestaja_2.post('/api/v1/maksutiedot/', json.dumps(data_maksutieto), content_type='application/json')
         assert_status_code(resp_maksutieto_pk_vakajarjestaja_2, status.HTTP_403_FORBIDDEN)
@@ -289,9 +290,14 @@ class VardaPaosTests(TestCase):
 
         Test that GET works even if PUT fails.
         """
-        tester2_client = SetUpTestClient('tester2').client()  # tallentaja_vakajarjestaja_1
-        tester5_client = SetUpTestClient('tester5').client()  # tallentaja_vakajarjestaja_2
-        tester8_client = SetUpTestClient('tester8').client()  # tallentaja_toimipaikka_5
+        # tallentaja_vakajarjestaja_1
+        tester2_client = SetUpTestClient('tester2').client()
+        # paakayttaja_vakajarjestaja_1
+        tester_4_client = SetUpTestClient('tester4').client()
+        # tallentaja_vakajarjestaja_2
+        tester5_client = SetUpTestClient('tester5').client()
+        # tallentaja_toimipaikka_5
+        tester8_client = SetUpTestClient('tester8').client()
 
         resp = tester2_client.get('/api/v1/varhaiskasvatussuhteet/4/')
         vakasuhde_4 = resp.content
@@ -304,15 +310,16 @@ class VardaPaosTests(TestCase):
         self._test_paos_get_put('/api/v1/varhaiskasvatuspaatokset/4/', vakapaatos_4, edit_client_list=(tester2_client,),
                                 no_edit_client_list=(tester5_client, tester8_client,))
 
-        """
-        Change paos-tallentaja.
-        """
-        jarjestaja_kunta_organisaatio_id = 1
-        tuottaja_organisaatio_id = 2
-        tallentaja_organisaatio_id = 2  # This is now changed (from 1 -> 2)
-        voimassa_kytkin = True
-        change_paos_tallentaja_organization(jarjestaja_kunta_organisaatio_id, tuottaja_organisaatio_id,
-                                            tallentaja_organisaatio_id, voimassa_kytkin)
+        # Change paos-tallentaja
+        jarjestaja_organisaatio = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        tuottaja_organisaatio = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.93957375488')
+        paos_oikeus = PaosOikeus.objects.get(jarjestaja_kunta_organisaatio=jarjestaja_organisaatio,
+                                             tuottaja_organisaatio=tuottaja_organisaatio)
+        paos_oikeus_patch = {
+            'tallentaja_organisaatio_oid': tuottaja_organisaatio.organisaatio_oid
+        }
+        assert_status_code(tester_4_client.patch(f'/api/v1/paos-oikeudet/{paos_oikeus.id}/', paos_oikeus_patch),
+                           status.HTTP_200_OK)
 
         self._test_paos_get_put('/api/v1/varhaiskasvatussuhteet/4/', vakasuhde_4,
                                 edit_client_list=(tester5_client, tester8_client,),
@@ -321,12 +328,8 @@ class VardaPaosTests(TestCase):
                                 edit_client_list=(tester5_client, tester8_client,),
                                 no_edit_client_list=(tester2_client,))
 
-        """
-        Disable the paos-link between the organizations.
-        """
-        voimassa_kytkin = False  # Finally check that no one can update the vakasuhde anymore
-        change_paos_tallentaja_organization(jarjestaja_kunta_organisaatio_id, tuottaja_organisaatio_id,
-                                            tallentaja_organisaatio_id, voimassa_kytkin)
+        # Disable the paos-link between the organizations
+        paos_oikeus.delete()
 
         self._test_paos_get_put('/api/v1/varhaiskasvatussuhteet/4/', vakasuhde_4,
                                 no_edit_client_list=(tester2_client, tester5_client, tester8_client,))

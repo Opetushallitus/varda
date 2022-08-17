@@ -6,7 +6,7 @@ from django.apps import AppConfig
 from django.conf import settings
 from django.contrib.auth import user_logged_in, user_logged_out
 from django.core.cache import cache
-from django.db.models.signals import post_migrate, post_save, pre_delete, pre_save
+from django.db.models.signals import post_delete, post_migrate, post_save, pre_delete, pre_save
 from django.utils import timezone
 from django_cas_ng.signals import cas_user_logout
 
@@ -137,36 +137,6 @@ def receiver_pre_save_user(**kwargs):
         Z7_AdditionalUserFields.objects.update_or_create(user=instance, defaults={'password_changed_timestamp': now})
 
 
-def receiver_pre_save(sender, **kwargs):
-    from django.db import transaction
-    from varda.tasks import change_paos_tallentaja_organization_task
-
-    model_name = sender._meta.model.__name__.lower()
-    instance = kwargs['instance']
-
-    with transaction.atomic():
-        if model_name == 'paosoikeus':
-            """
-            We need to change permissions (due to PAOS) to other organization if voimassa_kytkin changes.
-            """
-            instance_id = instance.id
-            if instance_id is None:
-                """
-                This is a new instance. New instance has voimassa_kytkin always False ==> Nothing to do.
-                """
-                pass
-            else:
-                """
-                Update of an existing PaosOikeus-obj.
-                tallentaja_organization changed.
-                """
-                new_instance_voimassa_kytkin = instance.voimassa_kytkin
-                change_paos_tallentaja_organization_task.delay(instance.jarjestaja_kunta_organisaatio.id,
-                                                               instance.tuottaja_organisaatio.id,
-                                                               instance.tallentaja_organisaatio.id,
-                                                               new_instance_voimassa_kytkin)
-
-
 def tutkinto_tyontekija_id_lookup(instance):
     from varda.models import Tyontekija
 
@@ -276,7 +246,7 @@ def update_related_object_change_taydennyskoulutus(instance, timestamp, history_
                                                parent_instance_id=taydennyskoulutus_tyontekija.taydennyskoulutus_id)
 
 
-def handle_related_object_change(model_name, instance, history_type):
+def handle_related_object_change(instance, history_type):
     from varda.models import (Henkilo, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto, MaksutietoHuoltajuussuhde,
                               Palvelussuhde, PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija,
                               TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka, Tutkinto, Tyontekija,
@@ -335,6 +305,7 @@ def handle_related_object_change(model_name, instance, history_type):
                                                  path_to_id=('vakajarjestaja_id',))
     }
 
+    model_name = type(instance).get_name()
     if model_name in receiver_dict:
         timestamp = timezone.now()
         receiver_dict[model_name](instance, timestamp, history_type)
@@ -362,18 +333,19 @@ def create_kela_varhaiskasvatussuhde(instance, history_type):
     )
 
 
-def receiver_save(sender, **kwargs):
+def receiver_save(**kwargs):
     from django.db import transaction
     from varda.cache import invalidate_cache
-    from varda.models import Lapsi, Varhaiskasvatussuhde
+    from varda.models import Lapsi, PaosOikeus, Varhaiskasvatussuhde
+    from varda.tasks import change_paos_tallentaja_organization_task
 
-    model_name = sender._meta.model.__name__.lower()
     instance = kwargs['instance']
-    instance_id = instance.id
-    invalidate_cache(model_name, instance_id)
+    model_name = type(instance).get_name()
+    invalidate_cache(model_name, instance.id)
 
     history_type = '+' if kwargs['created'] else '~'
-    if model_name == Lapsi.get_name():
+
+    if isinstance(instance, Lapsi):
         with transaction.atomic():
             post_save.disconnect(receiver_save, sender='varda.Lapsi')
             if instance.paos_organisaatio is None:
@@ -382,40 +354,45 @@ def receiver_save(sender, **kwargs):
                 instance.paos_kytkin = True
             instance.save()
             post_save.connect(receiver_save, sender='varda.Lapsi')
-    elif model_name == Varhaiskasvatussuhde.get_name():
+    elif isinstance(instance, Varhaiskasvatussuhde):
         create_kela_varhaiskasvatussuhde(instance, history_type)
+    elif isinstance(instance, PaosOikeus):
+        # tallentaja_organisaatio has been changed, run permission changes
+        change_paos_tallentaja_organization_task.delay(instance.jarjestaja_kunta_organisaatio_id,
+                                                       instance.tuottaja_organisaatio_id)
 
-    handle_related_object_change(model_name, instance, history_type)
+    handle_related_object_change(instance, history_type)
 
 
-def receiver_pre_delete(sender, **kwargs):
+def receiver_pre_delete(**kwargs):
     from varda.cache import invalidate_cache
-    from varda.models import PaosOikeus, Varhaiskasvatussuhde
-    from varda.permissions import delete_object_permissions_explicitly
-    from varda.tasks import change_paos_tallentaja_organization_task
+    from varda.models import Varhaiskasvatussuhde
+    from varda.permissions import delete_object_permissions
 
-    model = sender._meta.model
-    model_name = model.__name__.lower()
     instance = kwargs['instance']
-    instance_id = instance.id
+    model_name = type(instance).get_name()
+    invalidate_cache(model_name, instance.id)
 
-    invalidate_cache(model_name, instance_id)
-    delete_object_permissions_explicitly(model, instance_id)
+    delete_object_permissions(instance)
 
     history_type = '-'
-    if model_name == PaosOikeus.get_name() and instance.voimassa_kytkin:
-        """
-        Deleting the instance is the same as setting the voimassa_kytkin to False (in permission point of view).
-        """
-        deleted_instance_voimassa_kytkin = False
-        change_paos_tallentaja_organization_task.delay(instance.jarjestaja_kunta_organisaatio.id,
-                                                       instance.tuottaja_organisaatio.id,
-                                                       instance.tallentaja_organisaatio.id,
-                                                       deleted_instance_voimassa_kytkin)
-    elif model_name == Varhaiskasvatussuhde.get_name():
+    if isinstance(instance, Varhaiskasvatussuhde):
         create_kela_varhaiskasvatussuhde(instance, history_type)
 
-    handle_related_object_change(model_name, instance, history_type)
+    handle_related_object_change(instance, history_type)
+
+
+def receiver_post_delete(**kwargs):
+    from varda.models import PaosOikeus
+    from varda.tasks import change_paos_tallentaja_organization_task
+
+    instance = kwargs['instance']
+
+    if isinstance(instance, PaosOikeus):
+        # PaosOikeus has been deleted so nobody is tallentaja_organisaato, run permission changes
+        # (jarjestaja_kunta_organisaatio and tuottaja_organisaatio only have view permissions)
+        change_paos_tallentaja_organization_task.delay(instance.jarjestaja_kunta_organisaatio_id,
+                                                       instance.tuottaja_organisaatio_id)
 
 
 def init_alive_log():
@@ -439,8 +416,6 @@ class VardaConfig(AppConfig):
         cas_user_logout.connect(cas_logout_handler)
         task_prerun.connect(celery_task_prerun_signal_handler)
 
-        pre_save.connect(receiver_pre_save, sender='varda.Organisaatio')
-        pre_save.connect(receiver_pre_save, sender='varda.PaosOikeus')
         pre_save.connect(receiver_pre_save_user, sender='auth.User')
 
         post_save.connect(receiver_save_user, sender='auth.User')
@@ -487,5 +462,7 @@ class VardaConfig(AppConfig):
         pre_delete.connect(receiver_pre_delete, sender='varda.PidempiPoissaolo')
         pre_delete.connect(receiver_pre_delete, sender='varda.Taydennyskoulutus')
         pre_delete.connect(receiver_pre_delete, sender='varda.TaydennyskoulutusTyontekija')
+
+        post_delete.connect(receiver_post_delete, sender='varda.PaosOikeus')
 
         init_alive_log()

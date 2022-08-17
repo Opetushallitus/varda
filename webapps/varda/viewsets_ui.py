@@ -27,12 +27,11 @@ from varda.misc_viewsets import ExtraKwargsFilterBackend, parse_query_parameter
 from varda.models import (Toimipaikka, Organisaatio, PaosToiminta, PaosOikeus, Lapsi, Henkilo,
                           Tyontekija, Z4_CasKayttoOikeudet)
 from varda.pagination import ChangeablePageSizePagination, ChangeablePageSizePaginationLarge
-from varda.permission_groups import vaka_permission_groups
 from varda.permissions import (CustomModelPermissions, get_taydennyskoulutus_tyontekija_group_organisaatio_oids,
                                get_toimipaikat_group_has_access, get_organisaatio_oids_from_groups,
                                HenkilostohakuPermissions, LapsihakuPermissions, auditlog, auditlogclass,
                                user_permission_groups_in_organization,
-                               get_tyontekija_filters_for_taydennyskoulutus_groups, is_oph_staff)
+                               get_tyontekija_filters_for_taydennyskoulutus_groups, is_oph_staff, VAKA_GROUPS)
 from varda.serializers import PaosToimipaikkaSerializer, PaosOrganisaatioSerializer
 from varda.serializers_ui import (OrganisaatioUiSerializer, ToimipaikkaUiSerializer, UiLapsiSerializer,
                                   TyontekijaHenkiloUiSerializer, LapsihakuHenkiloUiSerializer,
@@ -249,7 +248,7 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
         # Only vaka groups have permissions to PAOS Toimipaikka objects
         user = self.request.user
         vaka_group_qs = user_permission_groups_in_organization(self.request.user, self.vakajarjestaja_oid,
-                                                               vaka_permission_groups)
+                                                               VAKA_GROUPS)
         if not user.is_superuser and not is_oph_staff(user) and not vaka_group_qs.exists():
             # Get only toimipaikat user has object level permissions to
             toimipaikka_ids_user_has_view_permissions = get_object_ids_for_user_by_model(user, Toimipaikka.get_name())

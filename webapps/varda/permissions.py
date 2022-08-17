@@ -1,12 +1,13 @@
 import logging
 from functools import wraps
 
+from celery import shared_task
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser, Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction, IntegrityError
-from django.db.models import IntegerField, Q, Model
+from django.db.models import IntegerField, Q, Model, QuerySet
 from django.db.models.functions import Cast
 from django.forms import model_to_dict
 from django.http import Http404
@@ -17,14 +18,32 @@ from rest_framework import permissions, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from varda.enums.error_messages import ErrorMessages
-from varda.misc import path_parse
-from varda.models import (Organisaatio, Toimipaikka, Lapsi, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
+from varda.misc import path_parse, single_instance_task
+from varda.misc_queries import (get_lapsi_for_maksutieto, get_organisaatio_oid_for_taydennyskoulutus,
+                                get_tallentaja_organisaatio_oid_for_paos_lapsi)
+from varda.models import (Organisaatio, Taydennyskoulutus, Toimipaikka, Lapsi, Tutkinto, Varhaiskasvatussuhde,
                           PaosToiminta, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog,
                           LoginCertificate, Maksutieto, Tyontekija, Tyoskentelypaikka, TaydennyskoulutusTyontekija)
-from varda.permission_groups import (assign_object_level_permissions, get_oph_yllapitaja_group_name,
-                                     remove_object_level_permissions)
+from varda.permission_groups import get_oph_yllapitaja_group_name
+
 
 logger = logging.getLogger(__name__)
+
+
+VAKA_GROUPS = (Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA, Z4_CasKayttoOikeudet.KATSELIJA,
+               Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
+               Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,)
+VAKA_PAOS_TUOTTAJA_GROUPS = (Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                             Z4_CasKayttoOikeudet.KATSELIJA, Z4_CasKayttoOikeudet.TALLENTAJA,)
+HENKILOSTO_GROUPS = (Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
+                     Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
+                     Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
+                     Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,
+                     Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_KATSELIJA,
+                     Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA)
+GENERAL_GROUPS = (Z4_CasKayttoOikeudet.TOIMIJATIEDOT_KATSELIJA, Z4_CasKayttoOikeudet.TOIMIJATIEDOT_TALLENTAJA,
+                  Z4_CasKayttoOikeudet.RAPORTTIEN_KATSELIJA, Z4_CasKayttoOikeudet.LUOVUTUSPALVELU,
+                  Z4_CasKayttoOikeudet.YLLAPITAJA)
 
 
 # https://github.com/rpkilby/django-rest-framework-guardian
@@ -356,7 +375,7 @@ def user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, v
     return False
 
 
-def get_object_ids_user_has_view_permissions(user, model_name, content_type):
+def get_object_ids_user_has_view_permissions(user, model_name):
     model = apps.get_model('varda', model_name)
     return get_ids_user_has_permissions_by_type(user, model)
 
@@ -380,178 +399,6 @@ def get_ids_user_has_permissions_by_type(user, model, permission_type='view'):
                                            .order_by('object_pk_as_int'))
 
     return list(all_object_ids_user_has_permissions)
-
-
-def grant_or_deny_access_to_paos_toimipaikka(voimassa_kytkin, jarjestaja_kunta_organisaatio, tuottaja_organisaatio):
-    """
-    Either grant permissions to jarjestaja_kunta_organisaatio to access tuottaja_organisaatio-paos-toimipaikat, or deny the access.
-    Based on the value of voimassa_kytkin:
-    True ==> Grant
-    False => Deny
-    """
-    tuottaja_organization_toimipaikka_ids = (Toimipaikka
-                                             .objects
-                                             .filter(vakajarjestaja=tuottaja_organisaatio)
-                                             .values_list('id', flat=True))
-
-    paos_toimipaikka_qs = (PaosToiminta
-                           .objects
-                           .filter(Q(voimassa_kytkin=True) &
-                                   Q(oma_organisaatio=jarjestaja_kunta_organisaatio) &
-                                   Q(paos_toimipaikka__id__in=tuottaja_organization_toimipaikka_ids)
-                                   ))
-    # Allow removing toimipaikka access only if there are no children added by jarjestaja else access is left untouched.
-    if not voimassa_kytkin:
-        paos_toimipaikka_qs = paos_toimipaikka_qs.exclude(
-            paos_toimipaikka__varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi__oma_organisaatio=jarjestaja_kunta_organisaatio)
-
-    for paos_toimipaikka in Toimipaikka.objects.filter(
-            id__in=paos_toimipaikka_qs.values_list('paos_toimipaikka__id', flat=True)):
-        if voimassa_kytkin:
-            assign_object_level_permissions(jarjestaja_kunta_organisaatio.organisaatio_oid, Toimipaikka,
-                                            paos_toimipaikka, paos_kytkin=True)
-        else:
-            remove_object_level_permissions(jarjestaja_kunta_organisaatio.organisaatio_oid, Toimipaikka,
-                                            paos_toimipaikka, paos_kytkin=True)
-
-
-def change_paos_tallentaja_organization(jarjestaja_kunta_organisaatio_id, tuottaja_organisaatio_id,
-                                        tallentaja_organisaatio_id, voimassa_kytkin):
-    """
-    Normal situation: change tallentaja and katselija roles between the organizations.
-
-    This function can also be used to remove tallentaja-permissions from the current tallentaja-organization.
-    If voimassa_kytkin is False -> Remove tallentaja-permissions from the current tallentaja-organization.
-    I.e. both of the organizations will have katselija-permissions.
-    This can happen e.g. if paos_agreement is not active anymore.
-    """
-    try:
-        with transaction.atomic():
-            jarjestaja_kunta_organisaatio = Organisaatio.objects.get(id=jarjestaja_kunta_organisaatio_id)
-            tuottaja_organisaatio = Organisaatio.objects.get(id=tuottaja_organisaatio_id)
-            tallentaja_organisaatio = Organisaatio.objects.get(id=tallentaja_organisaatio_id)
-            katselija_organisaatio = jarjestaja_kunta_organisaatio if tallentaja_organisaatio == tuottaja_organisaatio else tuottaja_organisaatio
-
-            tallentaja_organisaatio_tallentaja_group = Group.objects.get(
-                name='VARDA-TALLENTAJA_' + tallentaja_organisaatio.organisaatio_oid)
-            tallentaja_organisaatio_palvelukayttaja_group = Group.objects.get(
-                name='VARDA-PALVELUKAYTTAJA_' + tallentaja_organisaatio.organisaatio_oid)
-            tallentaja_organization_permission_groups = [tallentaja_organisaatio_tallentaja_group,
-                                                         tallentaja_organisaatio_palvelukayttaja_group]
-
-            katselija_organisaatio_tallentaja_group = Group.objects.get(
-                name='VARDA-TALLENTAJA_' + katselija_organisaatio.organisaatio_oid)
-            katselija_organisaatio_palvelukayttaja_group = Group.objects.get(
-                name='VARDA-PALVELUKAYTTAJA_' + katselija_organisaatio.organisaatio_oid)
-            katselija_organization_permission_groups = [katselija_organisaatio_tallentaja_group,
-                                                        katselija_organisaatio_palvelukayttaja_group]
-
-            lapsi_qs = (Lapsi
-                        .objects
-                        .filter(oma_organisaatio=jarjestaja_kunta_organisaatio, paos_organisaatio=tuottaja_organisaatio)
-                        .prefetch_related('varhaiskasvatuspaatokset',
-                                          'varhaiskasvatuspaatokset__varhaiskasvatussuhteet'))
-            vakapaatos_qs = Varhaiskasvatuspaatos.objects.filter(lapsi__in=lapsi_qs)
-            vakasuhde_qs = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__in=vakapaatos_qs)
-
-            """
-            Katselija_organisaatio had the tallentaja-permission previously.
-            => We need to remove change & delete -permissions from katselija_organisaatio
-            => And similarly, we need to assign change & delete -permissions to tallentaja_organisaatio.
-            """
-            for lapsi in lapsi_qs:
-                if voimassa_kytkin:
-                    [remove_perm('change_lapsi', permission_group, lapsi) for permission_group in
-                     katselija_organization_permission_groups]
-                    [remove_perm('delete_lapsi', permission_group, lapsi) for permission_group in
-                     katselija_organization_permission_groups]
-                    [assign_perm('change_lapsi', permission_group, lapsi) for permission_group in
-                     tallentaja_organization_permission_groups]
-                    [assign_perm('delete_lapsi', permission_group, lapsi) for permission_group in
-                     tallentaja_organization_permission_groups]
-                else:
-                    [remove_perm('change_lapsi', permission_group, lapsi) for permission_group in
-                     tallentaja_organization_permission_groups]
-                    [remove_perm('delete_lapsi', permission_group, lapsi) for permission_group in
-                     tallentaja_organization_permission_groups]
-
-            for vakapaatos in vakapaatos_qs:
-                if voimassa_kytkin:
-                    [remove_perm('change_varhaiskasvatuspaatos', permission_group, vakapaatos) for permission_group in
-                     katselija_organization_permission_groups]
-                    [remove_perm('delete_varhaiskasvatuspaatos', permission_group, vakapaatos) for permission_group in
-                     katselija_organization_permission_groups]
-                    [assign_perm('change_varhaiskasvatuspaatos', permission_group, vakapaatos) for permission_group in
-                     tallentaja_organization_permission_groups]
-                    [assign_perm('delete_varhaiskasvatuspaatos', permission_group, vakapaatos) for permission_group in
-                     tallentaja_organization_permission_groups]
-                else:
-                    [remove_perm('change_varhaiskasvatuspaatos', permission_group, vakapaatos) for permission_group in
-                     tallentaja_organization_permission_groups]
-                    [remove_perm('delete_varhaiskasvatuspaatos', permission_group, vakapaatos) for permission_group in
-                     tallentaja_organization_permission_groups]
-
-            for vakasuhde in vakasuhde_qs:
-                if voimassa_kytkin:
-                    [remove_perm('change_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in
-                     katselija_organization_permission_groups]
-                    [remove_perm('delete_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in
-                     katselija_organization_permission_groups]
-                    [assign_perm('change_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in
-                     tallentaja_organization_permission_groups]
-                    [assign_perm('delete_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in
-                     tallentaja_organization_permission_groups]
-                else:
-                    [remove_perm('change_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in
-                     tallentaja_organization_permission_groups]
-                    [remove_perm('delete_varhaiskasvatussuhde', permission_group, vakasuhde) for permission_group in
-                     tallentaja_organization_permission_groups]
-
-                # Assign or remove Toimipaikka specific permissions
-                toimipaikka_group = Group.objects.get(name='VARDA-TALLENTAJA_' + vakasuhde.toimipaikka.organisaatio_oid)
-                vakapaatos = vakasuhde.varhaiskasvatuspaatos
-                lapsi = vakapaatos.lapsi
-                if voimassa_kytkin and vakasuhde.toimipaikka.vakajarjestaja.id == tallentaja_organisaatio_id:
-                    # If toimipaikka belongs to tallentaja_organisaatio, assign permissions for Toimipaikka level groups
-                    assign_perm('change_lapsi', toimipaikka_group, lapsi)
-                    assign_perm('delete_lapsi', toimipaikka_group, lapsi)
-                    assign_perm('change_varhaiskasvatuspaatos', toimipaikka_group, vakapaatos)
-                    assign_perm('delete_varhaiskasvatuspaatos', toimipaikka_group, vakapaatos)
-                    assign_perm('change_varhaiskasvatussuhde', toimipaikka_group, vakasuhde)
-                    assign_perm('delete_varhaiskasvatussuhde', toimipaikka_group, vakasuhde)
-                else:
-                    remove_perm('change_lapsi', toimipaikka_group, lapsi)
-                    remove_perm('delete_lapsi', toimipaikka_group, lapsi)
-                    remove_perm('change_varhaiskasvatuspaatos', toimipaikka_group, vakapaatos)
-                    remove_perm('delete_varhaiskasvatuspaatos', toimipaikka_group, vakapaatos)
-                    remove_perm('change_varhaiskasvatussuhde', toimipaikka_group, vakasuhde)
-                    remove_perm('delete_varhaiskasvatussuhde', toimipaikka_group, vakasuhde)
-    except Organisaatio.DoesNotExist:
-        logger.error('Could not find one of the Organisaatiot: {}, {}, {}'.format(jarjestaja_kunta_organisaatio_id,
-                                                                                  tuottaja_organisaatio_id,
-                                                                                  tallentaja_organisaatio_id))
-
-
-def delete_object_permissions_explicitly(model, instance_id):
-    """
-    Object permissions need to be deleted explicitly:
-    https://django-guardian.readthedocs.io/en/stable/userguide/caveats.html
-    """
-    filters = {'content_type': ContentType.objects.get_for_model(model).id, 'object_pk': instance_id}
-    UserObjectPermission.objects.filter(**filters).delete()
-    GroupObjectPermission.objects.filter(**filters).delete()
-
-
-def assign_object_level_permissions_for_instance(instance, oid_list=()):
-    for organization_oid in oid_list:
-        assign_object_level_permissions(organization_oid, type(instance), instance)
-
-
-def assign_maksutieto_permissions(vakajarjestaja_oid, instance, toimipaikka_oid_list=()):
-    assign_object_level_permissions(vakajarjestaja_oid, Maksutieto, instance)
-    for toimipaikka_oid in toimipaikka_oid_list:
-        if toimipaikka_oid:
-            assign_object_level_permissions(toimipaikka_oid, Maksutieto, instance)
 
 
 def object_ids_organization_has_permissions_to(organisaatio_oid, model):
@@ -862,74 +709,6 @@ def parse_toimipaikka_id_list(user, toimipaikka_ids_string, required_permission_
     return toimipaikka_id_list
 
 
-def assign_henkilo_permissions_for_vaka_groups(oid_list, henkilo_object):
-    permission_group_list = (Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
-                             Z4_CasKayttoOikeudet.KATSELIJA, Z4_CasKayttoOikeudet.TALLENTAJA,
-                             Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
-                             Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,)
-    _assign_henkilo_permissions_for_groups(permission_group_list, oid_list, henkilo_object)
-
-
-def assign_henkilo_permissions_for_tyontekija_groups(oid_list, henkilo_object):
-    permission_group_list = (Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
-                             Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,)
-    _assign_henkilo_permissions_for_groups(permission_group_list, oid_list, henkilo_object)
-
-
-def _assign_henkilo_permissions_for_groups(permission_group_list, oid_list, henkilo_object):
-    permission_name = 'view_henkilo'
-    view_henkilo_permission = Permission.objects.get(codename=permission_name)
-
-    group_name_list = [f'{group}_{oid}' for oid in oid_list for group in permission_group_list]
-    group_qs = Group.objects.filter(name__in=group_name_list)
-
-    for group in group_qs:
-        assign_perm(view_henkilo_permission, group, henkilo_object)
-
-
-def assign_lapsi_henkilo_permissions(lapsi, user=None, toimipaikka_oid=None):
-    if lapsi.vakatoimija:
-        oid_list = [lapsi.vakatoimija.organisaatio_oid]
-    elif lapsi.oma_organisaatio and lapsi.paos_organisaatio:
-        oid_list = [lapsi.oma_organisaatio.organisaatio_oid, lapsi.paos_organisaatio.organisaatio_oid]
-    else:
-        oid_list = []
-    if toimipaikka_oid:
-        oid_list.append(toimipaikka_oid)
-
-    henkilo = lapsi.henkilo
-    assign_henkilo_permissions_for_vaka_groups(oid_list, henkilo)
-
-    if user:
-        # Remove permission from user since they are now set on Vakajarjestaja level
-        remove_perm('view_henkilo', user, henkilo)
-
-
-def assign_vakasuhde_henkilo_permissions(vakasuhde):
-    oid_list = (vakasuhde.toimipaikka.organisaatio_oid,)
-    henkilo = vakasuhde.varhaiskasvatuspaatos.lapsi.henkilo
-    assign_henkilo_permissions_for_vaka_groups(oid_list, henkilo)
-
-
-def assign_tyontekija_henkilo_permissions(tyontekija, user=None, toimipaikka_oid=None):
-    oid_list = [tyontekija.vakajarjestaja.organisaatio_oid]
-    if toimipaikka_oid:
-        oid_list.append(toimipaikka_oid)
-
-    henkilo = tyontekija.henkilo
-    assign_henkilo_permissions_for_tyontekija_groups(oid_list, henkilo)
-
-    if user:
-        # Remove permission from user since they are now set on Vakajarjestaja level
-        remove_perm('view_henkilo', user, henkilo)
-
-
-def assign_tyoskentelypaikka_henkilo_permissions(tyoskentelypaikka):
-    oid_list = (tyoskentelypaikka.toimipaikka.organisaatio_oid,)
-    henkilo = tyoskentelypaikka.palvelussuhde.tyontekija.henkilo
-    assign_henkilo_permissions_for_tyontekija_groups(oid_list, henkilo)
-
-
 def delete_permissions_from_object_instance_by_oid(instance, organisaatio_oid):
     content_type = ContentType.objects.get_for_model(type(instance))
     GroupObjectPermission.objects.filter(content_type=content_type, object_pk=instance.id,
@@ -943,3 +722,625 @@ def delete_all_user_permissions(user):
     user.groups.clear()
     # Delete user specific permissions (e.g. to Henkilo objects)
     UserObjectPermission.objects.filter(user=user).delete()
+
+
+def delete_object_permissions(instance):
+    """
+    Delete object permissions explicitly
+    :param instance: object instance
+    """
+    content_type = ContentType.objects.get_for_model(type(instance))
+    filters = {'content_type': content_type, 'object_pk': instance.id}
+    UserObjectPermission.objects.filter(**filters).delete()
+    GroupObjectPermission.objects.filter(**filters).delete()
+
+
+def assign_or_remove_object_permissions(instance, oid_list, permission_groups, view_only=False, assign=False):
+    """
+    Assign or remove object permissions for instance
+    :param instance: object instance
+    :param oid_list: list of organisaatio_oid values of Organisaatio or Toimipaikka objects
+    :param permission_groups: list of Z4_CasKayttoOikeudet values
+    :param view_only: assign only view-permissions
+    :param assign: flag to assign or remove permissions
+    """
+    # Get list of group names in the format '{group_name}_{organisaatio_oid}'
+    group_name_list = [f'{group}_{oid}' for oid in oid_list if oid for group in permission_groups]
+    group_qs = Group.objects.filter(name__in=group_name_list)
+
+    instance_model = instance.model if isinstance(instance, QuerySet) else type(instance)
+    content_type = ContentType.objects.get_for_model(instance_model)
+    for group in group_qs:
+        # Get all permissions that group has for this type of object (view, add, change, delete)
+        model_specific_permissions_for_group = group.permissions.filter(content_type=content_type)
+        for permission in model_specific_permissions_for_group:
+            if view_only and not permission.codename.startswith('view_'):
+                # view_only parameter is True and permission is not view-permission, so continue to next permission
+                continue
+            if assign:
+                assign_perm(permission, group, obj=instance)
+            else:
+                remove_perm(permission, group, obj=instance)
+
+
+def assign_general_object_permissions(instance, oid_list, view_only=False):
+    assign_or_remove_object_permissions(instance, oid_list, VAKA_GROUPS + HENKILOSTO_GROUPS + GENERAL_GROUPS,
+                                        view_only=view_only, assign=True)
+
+
+def assign_vaka_object_permissions(instance, oid_list, view_only=False, paos_tuottaja=False):
+    # Huoltajatieto groups of PAOS tuottaja does not have any permissions to PAOS lapsi
+    permission_groups = VAKA_PAOS_TUOTTAJA_GROUPS if paos_tuottaja else VAKA_GROUPS
+    assign_or_remove_object_permissions(instance, oid_list, permission_groups, view_only=view_only, assign=True)
+
+
+def remove_vaka_object_permissions(instance, oid_list):
+    assign_or_remove_object_permissions(instance, oid_list, VAKA_GROUPS, assign=False)
+
+
+def assign_henkilosto_object_permissions(instance, oid_list, view_only=False):
+    assign_or_remove_object_permissions(instance, oid_list, HENKILOSTO_GROUPS, view_only=view_only, assign=True)
+
+
+@transaction.atomic
+def assign_organisaatio_permissions(organisaatio, reassign=False):
+    """
+    Assign object permissions for Organisaatio instance
+    :param organisaatio: Organisaatio instance
+    :param reassign: delete old permissions before assignment
+    """
+    if reassign:
+        delete_object_permissions(organisaatio)
+
+    # Organisaatio level permissions for Organisaatio object
+    assign_general_object_permissions(organisaatio, (organisaatio.organisaatio_oid,))
+
+    # Assign permissions for all Toimipaikat of Organisaatio in a task so that it doesn't block execution
+    assign_organisaatio_all_toimipaikka_permissions.delay(organisaatio.id)
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def assign_organisaatio_all_toimipaikka_permissions(organisaatio_id):
+    organisaatio = Organisaatio.objects.get(id=organisaatio_id)
+    toimipaikka_oid_qs = organisaatio.toimipaikat.values_list('organisaatio_oid', flat=True)
+    assign_general_object_permissions(organisaatio, toimipaikka_oid_qs)
+
+
+@transaction.atomic
+def assign_toimipaikka_permissions(toimipaikka, reassign=False):
+    """
+    Assign object permissions for Toimipaikka instance
+    :param toimipaikka: Toimipaikka instance
+    :param reassign: delete old permissions before assignment
+    """
+    if reassign:
+        delete_object_permissions(toimipaikka)
+        # Also reassign ToiminnallinenPainotus and KieliPainotus permissions
+        toiminnallinen_painotus_qs = toimipaikka.toiminnallisetpainotukset.all()
+        for toiminnallinen_painotus in toiminnallinen_painotus_qs:
+            assign_toiminnallinen_painotus_permissions(toiminnallinen_painotus, reassign=True)
+        kielipainotus_qs = toimipaikka.kielipainotukset.all()
+        for kielipainotus in kielipainotus_qs:
+            assign_kielipainotus_permissions(kielipainotus, reassign=True)
+
+    # Organisaatio and Toimipaikka level permissions for Toimipaikka object
+    assign_general_object_permissions(toimipaikka, (toimipaikka.organisaatio_oid,
+                                                    toimipaikka.vakajarjestaja.organisaatio_oid,))
+    # Toimipaikka level permissions for related Organisaatio object
+    assign_general_object_permissions(toimipaikka.vakajarjestaja, (toimipaikka.organisaatio_oid,))
+
+    # Assign PAOS related permissions (in case of reassignment)
+    paos_toiminta_qs = (PaosToiminta.objects.filter(paos_toimipaikka=toimipaikka)
+                        .values_list('oma_organisaatio_id', flat=True)
+                        .distinct('oma_organisaatio_id').order_by('oma_organisaatio_id'))
+    for jarjestaja_organisaatio_id in paos_toiminta_qs:
+        paos_oikeus = PaosOikeus.objects.filter(jarjestaja_kunta_organisaatio_id=jarjestaja_organisaatio_id,
+                                                tuottaja_organisaatio=toimipaikka.vakajarjestaja,
+                                                voimassa_kytkin=True)
+        varhaiskasvatussuhde_qs = (Varhaiskasvatussuhde.objects
+                                   .filter(toimipaikka=toimipaikka,
+                                           varhaiskasvatuspaatos__lapsi__oma_organisaatio_id=jarjestaja_organisaatio_id))
+        if paos_oikeus.exists() or varhaiskasvatussuhde_qs.exists():
+            # If paos_oikeus voimassa_kytkin is True or there are related Lapsi objects in this Toimipaikka,
+            # assign view permission for oma_organisaatio on Organisaatio level
+            jarjestaja_organisaatio = Organisaatio.objects.get(id=jarjestaja_organisaatio_id)
+            assign_vaka_object_permissions(toimipaikka, (jarjestaja_organisaatio.organisaatio_oid,), view_only=True)
+
+    # Assign permissions for all Taydennyskoulutukset of Organisaatio in a task so that it doesn't block execution
+    assign_all_taydennyskoulutus_toimipaikka_permissions.delay(toimipaikka.vakajarjestaja.organisaatio_oid,
+                                                               toimipaikka.organisaatio_oid)
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def assign_all_taydennyskoulutus_toimipaikka_permissions(organisaatio_oid, toimipaikka_oid):
+    taydennyskoulutus_qs = (Taydennyskoulutus.objects
+                            .filter(tyontekijat__vakajarjestaja__organisaatio_oid=organisaatio_oid)
+                            .distinct('id').order_by('id'))
+    assign_henkilosto_object_permissions(taydennyskoulutus_qs, (toimipaikka_oid,))
+
+
+@transaction.atomic
+def assign_toiminnallinen_painotus_permissions(toiminnallinen_painotus, reassign=False):
+    """
+    Assign object permissions for ToiminnallinenPainotus instance
+    :param toiminnallinen_painotus: ToiminnallinenPainotus instance
+    :param reassign: delete old permissions before assignment
+    """
+    if reassign:
+        delete_object_permissions(toiminnallinen_painotus)
+
+    # Organisaatio and Toimipaikka level permissions for ToiminnallinenPainotus object
+    assign_vaka_object_permissions(toiminnallinen_painotus,
+                                   (toiminnallinen_painotus.toimipaikka.organisaatio_oid,
+                                    toiminnallinen_painotus.toimipaikka.vakajarjestaja.organisaatio_oid,))
+
+
+@transaction.atomic
+def assign_kielipainotus_permissions(kielipainotus, reassign=False):
+    """
+    Assign object permissions for KieliPainotus instance
+    :param kielipainotus: KieliPainotus instance
+    :param reassign: delete old permissions before assignment
+    """
+    if reassign:
+        delete_object_permissions(kielipainotus)
+
+    # Organisaatio and Toimipaikka level permissions for KieliPainotus object
+    assign_vaka_object_permissions(kielipainotus, (kielipainotus.toimipaikka.organisaatio_oid,
+                                                   kielipainotus.toimipaikka.vakajarjestaja.organisaatio_oid,))
+
+
+@transaction.atomic
+def assign_henkilo_permissions(henkilo, user):
+    """
+    Assign object permissions for Henkilo instance
+    :param henkilo: Henkilo instance
+    :param user: User object
+    """
+    if not user.has_perm('view_henkilo', henkilo):
+        # Don't assign user specific permissions if user already has a permission via permission group
+        assign_perm('view_henkilo', user, henkilo)
+
+
+@transaction.atomic
+def assign_lapsi_permissions(lapsi, toimipaikka_oid=None, user=None, reassign=False):
+    """
+    Assign object permissions for Lapsi instance
+    :param lapsi: Lapsi instance
+    :param toimipaikka_oid: Optional organisaatio_oid of Toimipaikka for setting Toimipaikka level permissions
+    :param user: User object, if provided, user permissions to related Henkilo objects are removed as they are now set
+        on Organisaatio and Toimipaikka level
+    :param reassign: delete old permissions before assignment
+    """
+    if reassign:
+        delete_object_permissions(lapsi)
+        # Also reassign Varhaiskasvatuspaatos permissions so we get Toimipaikka level permissions back
+        for vakapaatos in lapsi.varhaiskasvatuspaatokset.all():
+            assign_varhaiskasvatuspaatos_permissions(vakapaatos, reassign=True)
+
+    henkilo = lapsi.henkilo
+    if lapsi.paos_kytkin:
+        tallentaja_oid = get_tallentaja_organisaatio_oid_for_paos_lapsi(lapsi)
+        jarjestaja_oid = lapsi.oma_organisaatio.organisaatio_oid
+        tuottaja_oid = lapsi.paos_organisaatio.organisaatio_oid
+        is_not_tuottaja_tallentaja = tuottaja_oid != tallentaja_oid
+        is_not_jarjestaja_tallentaja = jarjestaja_oid != tallentaja_oid
+
+        # Organisaatio and Toimipaikka level permissions for Lapsi object
+        assign_vaka_object_permissions(lapsi, (toimipaikka_oid, tuottaja_oid,),
+                                       view_only=is_not_tuottaja_tallentaja, paos_tuottaja=True)
+        assign_vaka_object_permissions(lapsi, (jarjestaja_oid,), view_only=is_not_jarjestaja_tallentaja)
+        # Organisaatio and Toimipaikka level permissions for Henkilo object
+        assign_vaka_object_permissions(henkilo, (toimipaikka_oid, tuottaja_oid,),
+                                       view_only=is_not_tuottaja_tallentaja, paos_tuottaja=True)
+        assign_vaka_object_permissions(henkilo, (jarjestaja_oid,), view_only=is_not_jarjestaja_tallentaja)
+    else:
+        # Organisaatio and Toimipaikka level permissions for Lapsi object
+        assign_vaka_object_permissions(lapsi, (toimipaikka_oid, lapsi.vakatoimija.organisaatio_oid,))
+        # Organisaatio and Toimipaikka level permissions for Henkilo object
+        assign_vaka_object_permissions(henkilo, (toimipaikka_oid, lapsi.vakatoimija.organisaatio_oid,))
+
+    if user:
+        # Remove permission from user since they are now set on Organisaatio (and Toimipaikka) level
+        remove_perm('view_henkilo', user, henkilo)
+
+
+@transaction.atomic
+def assign_varhaiskasvatuspaatos_permissions(vakapaatos, toimipaikka_oid=None, reassign=False):
+    """
+    Assign object permissions for Varhaiskasvatuspaatos instance
+    :param vakapaatos: Varhaiskasvatuspaatos instance
+    :param toimipaikka_oid: Optional organisaatio_oid of Toimipaikka for setting Toimipaikka level permissions
+    :param reassign: delete old permissions before assignment
+    """
+    if reassign:
+        delete_object_permissions(vakapaatos)
+        # Also reassign Varhaiskasvatussuhde permissions so we get Toimipaikka level permissions back
+        for vakasuhde in vakapaatos.varhaiskasvatussuhteet.all():
+            assign_varhaiskasvatussuhde_permissions(vakasuhde, reassign=True)
+
+    lapsi = vakapaatos.lapsi
+    if lapsi.paos_kytkin:
+        tallentaja_oid = get_tallentaja_organisaatio_oid_for_paos_lapsi(lapsi)
+        jarjestaja_oid = lapsi.oma_organisaatio.organisaatio_oid
+        tuottaja_oid = lapsi.paos_organisaatio.organisaatio_oid
+
+        # Organisaatio and Toimipaikka level permissions for Varhaiskasvatuspaatos object
+        assign_vaka_object_permissions(vakapaatos, (toimipaikka_oid, tuottaja_oid,),
+                                       view_only=tuottaja_oid != tallentaja_oid, paos_tuottaja=True)
+        assign_vaka_object_permissions(vakapaatos, (jarjestaja_oid,), view_only=jarjestaja_oid != tallentaja_oid)
+    else:
+        # Organisaatio and Toimipaikka level permissions for Varhaiskasvatuspaatos object
+        assign_vaka_object_permissions(vakapaatos, (toimipaikka_oid, lapsi.vakatoimija.organisaatio_oid,))
+
+
+@transaction.atomic
+def assign_varhaiskasvatussuhde_permissions(vakasuhde, reassign=False):
+    """
+    Assign object permissions for Varhaiskasvatussuhde instance
+    :param vakasuhde: Varhaiskasvatussuhde instance
+    :param reassign: delete old permissions before assignment
+    """
+    if reassign:
+        delete_object_permissions(vakasuhde)
+
+    toimipaikka_oid = vakasuhde.toimipaikka.organisaatio_oid
+    lapsi = vakasuhde.varhaiskasvatuspaatos.lapsi
+    if lapsi.paos_kytkin:
+        tallentaja_oid = get_tallentaja_organisaatio_oid_for_paos_lapsi(lapsi)
+        jarjestaja_oid = lapsi.oma_organisaatio.organisaatio_oid
+        tuottaja_oid = lapsi.paos_organisaatio.organisaatio_oid
+        is_not_tuottaja_tallentaja = tuottaja_oid != tallentaja_oid
+
+        # Organisaatio and Toimipaikka level permissions for Varhaiskasvatussuhde object
+        assign_vaka_object_permissions(vakasuhde, (toimipaikka_oid, tuottaja_oid,),
+                                       view_only=is_not_tuottaja_tallentaja, paos_tuottaja=True)
+        assign_vaka_object_permissions(vakasuhde, (jarjestaja_oid,), view_only=jarjestaja_oid != tallentaja_oid)
+        # Toimipaikka level permissions for Varhaiskasvatuspaatos, Lapsi and Henkilo objects
+        # (Organisaatio level permissions have already been set)
+        assign_vaka_object_permissions(vakasuhde.varhaiskasvatuspaatos, (toimipaikka_oid,),
+                                       view_only=is_not_tuottaja_tallentaja, paos_tuottaja=True)
+        assign_vaka_object_permissions(lapsi, (toimipaikka_oid,), view_only=is_not_tuottaja_tallentaja,
+                                       paos_tuottaja=True)
+        assign_vaka_object_permissions(lapsi.henkilo, (toimipaikka_oid,), view_only=is_not_tuottaja_tallentaja,
+                                       paos_tuottaja=True)
+    else:
+        # Organisaatio and Toimipaikka level permissions for Varhaiskasvatussuhde object
+        assign_vaka_object_permissions(vakasuhde, (toimipaikka_oid, lapsi.vakatoimija.organisaatio_oid,))
+        # Toimipaikka level permissions for Varhaiskasvatuspaatos, Lapsi and Henkilo objects
+        # (Organisaatio level permissions have already been set)
+        assign_vaka_object_permissions(vakasuhde.varhaiskasvatuspaatos, (toimipaikka_oid,))
+        assign_vaka_object_permissions(lapsi, (toimipaikka_oid,))
+        assign_vaka_object_permissions(lapsi.henkilo, (toimipaikka_oid,))
+        # Toimipaikka has permissions to all Maksutieto objects of Lapsi
+        maksutieto_qs = Maksutieto.objects.filter(huoltajuussuhteet__lapsi=lapsi).distinct('id').order_by('id')
+        assign_vaka_object_permissions(maksutieto_qs, (toimipaikka_oid,))
+
+
+@transaction.atomic
+def assign_maksutieto_permissions(maksutieto, reassign=False):
+    """
+    Assign object permissions for Maksutieto instance
+    :param maksutieto: Maksutieto instance
+    :param reassign: delete old permissions before assignment
+    """
+    if reassign:
+        delete_object_permissions(maksutieto)
+
+    lapsi = get_lapsi_for_maksutieto(maksutieto)
+    if lapsi.paos_kytkin:
+        # Organisaatio level permissions for Maksutieto object
+        # Only oma_organisaatio (PAOS järjestäjä) has permissions to Maksutieto objects
+        assign_vaka_object_permissions(maksutieto, (lapsi.oma_organisaatio.organisaatio_oid,))
+    else:
+        # Organisaatio level permissions for Maksutieto object
+        assign_vaka_object_permissions(maksutieto, (lapsi.vakatoimija.organisaatio_oid,))
+        # Toimipaikka level permissions for Maksutieto object
+        # (all Varhaiskasvatussuhde Toimipaikat have permissions to all Maksutieto objects of Lapsi)
+        toimipaikka_oid_qs = (Toimipaikka.objects
+                              .filter(varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi=lapsi)
+                              .values_list('organisaatio_oid', flat=True)
+                              .distinct('organisaatio_oid').order_by('organisaatio_oid'))
+        assign_vaka_object_permissions(maksutieto, toimipaikka_oid_qs)
+
+
+@transaction.atomic
+def reassign_all_lapsi_permissions(lapsi):
+    """
+    Remove and assign all permissions related to Lapsi instance
+    :param lapsi: Lapsi instance
+    """
+    # This function also reassigns Varhaiskasvatuspaatos and Varhaiskasvatussuhde permissions
+    assign_lapsi_permissions(lapsi, reassign=True)
+
+    maksutieto_qs = Maksutieto.objects.filter(huoltajuussuhteet__lapsi=lapsi).distinct('id').order_by('id')
+    for maksutieto in maksutieto_qs:
+        assign_maksutieto_permissions(maksutieto, reassign=True)
+
+
+@transaction.atomic
+def assign_paos_toiminta_permissions(paos_toiminta, reassign=False):
+    """
+    Assign object permissions for PaosToiminta instance
+    :param paos_toiminta: PaosToiminta instance
+    :param reassign: delete old permissions before assignment
+    """
+    jarjestaja_organisaatio = (paos_toiminta.oma_organisaatio if paos_toiminta.paos_toimipaikka else
+                               paos_toiminta.paos_organisaatio)
+    tuottaja_organisaatio = (paos_toiminta.paos_toimipaikka.vakajarjestaja if paos_toiminta.paos_toimipaikka else
+                             paos_toiminta.oma_organisaatio)
+    paos_oikeus = (PaosOikeus.objects
+                   .filter(jarjestaja_kunta_organisaatio=jarjestaja_organisaatio,
+                           tuottaja_organisaatio=tuottaja_organisaatio)
+                   .first())
+
+    if reassign:
+        remove_paos_toiminta_permissions(paos_toiminta)
+        delete_object_permissions(paos_toiminta)
+        if paos_oikeus:
+            delete_object_permissions(paos_oikeus)
+
+    # Organisaatio level permissions for PaosToiminta object
+    assign_vaka_object_permissions(paos_toiminta, (paos_toiminta.oma_organisaatio.organisaatio_oid,))
+    if paos_oikeus and paos_oikeus.voimassa_kytkin:
+        # Organisaatio level permissions for jarjestaja_organisaatio to PAOS Toimipaikka objects
+        # (two way agreement has been made as PaosOikeus voimassa_kytkin is True)
+        paos_toiminta_qs = (PaosToiminta.objects
+                            .filter(voimassa_kytkin=True, oma_organisaatio=jarjestaja_organisaatio,
+                                    paos_toimipaikka__vakajarjestaja=tuottaja_organisaatio)
+                            .values_list('paos_toimipaikka_id', flat=True)
+                            .distinct('paos_toimipaikka_id').order_by('paos_toimipaikka_id'))
+        paos_toimipaikka_qs = Toimipaikka.objects.filter(id__in=paos_toiminta_qs)
+        assign_vaka_object_permissions(paos_toimipaikka_qs, (jarjestaja_organisaatio.organisaatio_oid,), view_only=True)
+
+    paos_oikeus = (PaosOikeus.objects
+                   .filter(jarjestaja_kunta_organisaatio=jarjestaja_organisaatio,
+                           tuottaja_organisaatio=tuottaja_organisaatio))
+    if paos_oikeus:
+        # Organisaatio level permissions for PaosOikeus object
+        # (jarjestaja_organisaatio has full permissions, tuottaja_organisaatio has only view permissions)
+        assign_vaka_object_permissions(paos_oikeus, (jarjestaja_organisaatio.organisaatio_oid,))
+        assign_vaka_object_permissions(paos_oikeus, (tuottaja_organisaatio.organisaatio_oid,), view_only=True)
+
+
+@transaction.atomic
+def remove_paos_toiminta_permissions(paos_toiminta):
+    """
+    Remove object permissions for PaosToiminta instance
+    :param paos_toiminta: PaosToiminta instance
+    """
+    jarjestaja_organisaatio = (paos_toiminta.oma_organisaatio if paos_toiminta.paos_toimipaikka else
+                               paos_toiminta.paos_organisaatio)
+    tuottaja_organisaatio = (paos_toiminta.paos_toimipaikka.vakajarjestaja if paos_toiminta.paos_toimipaikka else
+                             paos_toiminta.oma_organisaatio)
+
+    if (paos_toiminta.paos_toimipaikka and
+            not Varhaiskasvatussuhde.objects
+                                    .filter(toimipaikka=paos_toiminta.paos_toimipaikka,
+                                            varhaiskasvatuspaatos__lapsi__oma_organisaatio=jarjestaja_organisaatio)
+                                    .exists()):
+        # paos_toimipaikka is known and there are no Lapsi objects related to that Toimipaikka,
+        # permissions can be removed
+        remove_vaka_object_permissions(paos_toiminta.paos_toimipaikka,
+                                       (jarjestaja_organisaatio.organisaatio_oid,))
+    elif paos_toiminta.paos_organisaatio:
+        # Remove permissions to each Toimipaikka object that have not related Lapsi objects
+        paos_toiminta_qs = (PaosToiminta.objects
+                            .filter(voimassa_kytkin=True, oma_organisaatio=jarjestaja_organisaatio,
+                                    paos_toimipaikka__vakajarjestaja=tuottaja_organisaatio)
+                            # Written as unpacked dict to prevent long line
+                            .exclude(**{'paos_toimipaikka__varhaiskasvatussuhteet__varhaiskasvatuspaatos__'
+                                        'lapsi__oma_organisaatio': jarjestaja_organisaatio})
+                            .values_list('paos_toimipaikka_id', flat=True)
+                            .distinct('paos_toimipaikka_id').order_by('paos_toimipaikka_id'))
+        paos_toimipaikka_qs = Toimipaikka.objects.filter(id__in=paos_toiminta_qs)
+        remove_vaka_object_permissions(paos_toimipaikka_qs, (jarjestaja_organisaatio.organisaatio_oid,))
+
+
+@transaction.atomic
+def reassign_paos_permissions(jarjestaja_organisaatio_id, tuottaja_organisaatio_id):
+    """
+    Normal situation: change tallentaja and katselija roles between the organizations.
+
+    This function can also be used to remove tallentaja-permissions from the current tallentaja-organization.
+    If voimassa_kytkin is False -> Remove tallentaja-permissions from the current tallentaja-organization.
+    I.e. both of the organizations will have katselija-permissions.
+    This can happen e.g. if paos_agreement is not active anymore.
+    """
+    lapsi_qs = Lapsi.objects.filter(oma_organisaatio_id=jarjestaja_organisaatio_id,
+                                    paos_organisaatio_id=tuottaja_organisaatio_id)
+    for lapsi in lapsi_qs:
+        reassign_all_lapsi_permissions(lapsi)
+
+
+@transaction.atomic
+def assign_tyontekija_permissions(tyontekija, toimipaikka_oid=None, user=None, reassign=False):
+    """
+    Assign object permissions for Tyontekija instance
+    :param tyontekija: Tyontekija instance
+    :param toimipaikka_oid: Optional organisaatio_oid of Toimipaikka for setting Toimipaikka level permissions
+    :param user: User object, if provided, user permissions to related Henkilo objects are removed as they are now set
+        on Organisaatio and Toimipaikka level
+    :param reassign: delete old permissions before assignment
+    """
+    if reassign:
+        delete_object_permissions(tyontekija)
+        # Also reassign Palvelussuhde permissions so we get Toimipaikka level permissions back
+        for palvelussuhde in tyontekija.palvelussuhteet.all():
+            assign_palvelussuhde_permissions(palvelussuhde, reassign=True)
+
+    # Organisaatio and Toimipaikka level permissions for Tyontekija object
+    assign_henkilosto_object_permissions(tyontekija, (tyontekija.vakajarjestaja.organisaatio_oid, toimipaikka_oid,))
+    # Organisaatio and Toimipaikka level permissions for Henkilo object
+    assign_henkilosto_object_permissions(tyontekija.henkilo,
+                                         (tyontekija.vakajarjestaja.organisaatio_oid, toimipaikka_oid,))
+    # Toimipaikka has permissions to all Tutkinto objects of Tyontekija (if provided)
+    tutkinto_qs = Tutkinto.objects.filter(vakajarjestaja=tyontekija.vakajarjestaja, henkilo=tyontekija.henkilo)
+    assign_henkilosto_object_permissions(tutkinto_qs, (toimipaikka_oid,))
+
+    if user:
+        # Remove permission from user since they are now set on Organisaatio (and Toimipaikka) level
+        remove_perm('view_henkilo', user, tyontekija.henkilo)
+
+
+@transaction.atomic
+def assign_tutkinto_permissions(tutkinto, toimipaikka_oid=None, reassign=False):
+    """
+    Assign object permissions for Tutkinto instance
+    :param tutkinto: Tutkinto instance
+    :param toimipaikka_oid: Optional organisaatio_oid of Toimipaikka for setting Toimipaikka level permissions
+    :param reassign: delete old permissions before assignment
+    """
+    if reassign:
+        delete_object_permissions(tutkinto)
+
+    # Organisaatio and Toimipaikka level permissions for Tutkinto object
+    assign_henkilosto_object_permissions(tutkinto, (tutkinto.vakajarjestaja.organisaatio_oid, toimipaikka_oid,))
+    # Rest of the Toimipaikka level permissions for Tutkinto object
+    # (all Tyoskentelypaikka Toimipaikat have permissions to all Tutkinto objects of Tyontekija)
+    toimipaikka_oid_qs = (Toimipaikka.objects
+                          .filter(tyoskentelypaikat__palvelussuhde__tyontekija__vakajarjestaja=tutkinto.vakajarjestaja,
+                                  tyoskentelypaikat__palvelussuhde__tyontekija__henkilo=tutkinto.henkilo)
+                          .values_list('organisaatio_oid', flat=True)
+                          .distinct('organisaatio_oid').order_by('organisaatio_oid'))
+    assign_henkilosto_object_permissions(tutkinto, toimipaikka_oid_qs)
+
+
+@transaction.atomic
+def assign_palvelussuhde_permissions(palvelussuhde, toimipaikka_oid=None, reassign=False):
+    """
+    Assign object permissions for Palvelussuhde instance
+    :param palvelussuhde: Palvelussuhde instance
+    :param toimipaikka_oid: Optional organisaatio_oid of Toimipaikka for setting Toimipaikka level permissions
+    :param reassign: delete old permissions before assignment
+    """
+    if reassign:
+        delete_object_permissions(palvelussuhde)
+        # Also reassign Tyoskentelypaikka and PidempiPoissaolo permissions so we get Toimipaikka level permissions back
+        for tyoskentelypaikka in palvelussuhde.tyoskentelypaikat.all():
+            assign_tyoskentelypaikka_permissions(tyoskentelypaikka, reassign=True)
+        for pidempi_poissaolo in palvelussuhde.pidemmatpoissaolot.all():
+            assign_pidempi_poissaolo_permissions(pidempi_poissaolo, reassign=True)
+
+    # Organisaatio and Toimipaikka level permissions for Palvelussuhde object
+    assign_henkilosto_object_permissions(palvelussuhde,
+                                         (palvelussuhde.tyontekija.vakajarjestaja.organisaatio_oid, toimipaikka_oid,))
+
+
+@transaction.atomic
+def assign_tyoskentelypaikka_permissions(tyoskentelypaikka, reassign=False):
+    """
+    Assign object permissions for Tyoskentelypaikka instance
+    :param tyoskentelypaikka: Tyoskentelypaikka instance
+    :param reassign: delete old permissions before assignment
+    """
+    if reassign:
+        delete_object_permissions(tyoskentelypaikka)
+
+    # Tyoskentelypaikka does not have related Toimipaikka if kiertava_tyontekija_kytkin is True
+    toimipaikka_oid = getattr(tyoskentelypaikka.toimipaikka, 'organisaatio_oid', None)
+    tyontekija = tyoskentelypaikka.palvelussuhde.tyontekija
+
+    # Organisaatio and Toimipaikka level permissions for Tyoskentelypaikka object
+    assign_henkilosto_object_permissions(tyoskentelypaikka,
+                                         (tyontekija.vakajarjestaja.organisaatio_oid, toimipaikka_oid,))
+    # Toimipaikka level permissions for Palvelussuhde, Tyontekija and Henkilo objects
+    # (Organisaatio level permissions have already been set)
+    assign_henkilosto_object_permissions(tyoskentelypaikka.palvelussuhde, (toimipaikka_oid,))
+    assign_henkilosto_object_permissions(tyontekija, (toimipaikka_oid,))
+    assign_henkilosto_object_permissions(tyontekija.henkilo, (toimipaikka_oid,))
+    # Toimipaikka has permissions to all PidempiPoissaolo objects of related Palvelussuhde
+    pidempi_poissaolo_qs = tyoskentelypaikka.palvelussuhde.pidemmatpoissaolot.all()
+    assign_henkilosto_object_permissions(pidempi_poissaolo_qs, (toimipaikka_oid,))
+    # Toimipaikka has permissions to all Tutkinto objects of Tyontekija
+    tutkinto_qs = Tutkinto.objects.filter(vakajarjestaja=tyontekija.vakajarjestaja, henkilo=tyontekija.henkilo)
+    assign_henkilosto_object_permissions(tutkinto_qs, (toimipaikka_oid,))
+
+
+@transaction.atomic
+def assign_pidempi_poissaolo_permissions(pidempi_poissaolo, reassign=False):
+    """
+    Assign object permissions for PidempiPoissaolo instance
+    :param pidempi_poissaolo: PidempiPoissaolo instance
+    :param reassign: delete old permissions before assignment
+    """
+    if reassign:
+        delete_object_permissions(pidempi_poissaolo)
+
+    palvelussuhde = pidempi_poissaolo.palvelussuhde
+    # Organisaatio level permissions for PidempiPoissaolo object
+    assign_henkilosto_object_permissions(pidempi_poissaolo, (palvelussuhde.tyontekija.vakajarjestaja.organisaatio_oid,))
+    # Toimipaikka level permissions for PidempiPoissaolo object
+    # (all Tyoskentelypaikka Toimipaikat have permissions to all PidempiPoissaolo objects of related Palvelussuhde)
+    toimipaikka_oid_qs = (palvelussuhde.tyoskentelypaikat
+                          .values_list('toimipaikka__organisaatio_oid', flat=True)
+                          .distinct('toimipaikka__organisaatio_oid').order_by('toimipaikka__organisaatio_oid'))
+    assign_henkilosto_object_permissions(pidempi_poissaolo, toimipaikka_oid_qs)
+
+
+@transaction.atomic
+def assign_taydennyskoulutus_permissions(taydennyskoulutus, reassign=False):
+    """
+    Assign object permissions for Taydennyskoulutus instance
+    :param taydennyskoulutus: Taydennyskoulutus instance
+    :param reassign: delete old permissions before assignment
+    """
+    if reassign:
+        delete_object_permissions(taydennyskoulutus)
+
+    organisaatio_oid = get_organisaatio_oid_for_taydennyskoulutus(taydennyskoulutus)
+    # Organisaatio level permissions for Taydennyskoulutus object
+    assign_henkilosto_object_permissions(taydennyskoulutus, (organisaatio_oid,))
+    # Toimipaikka level permissions for Taydennyskoulutus object
+    # (all Toimipaikat of related Organisaatio have permissions to all Taydennyskoulutus objects)
+    # First, assign permissions to Toimipaikat directly related to this Taydennyskoulutus
+    toimipaikka_oid_qs = (taydennyskoulutus.tyontekijat
+                          .values_list('palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid', flat=True)
+                          .distinct('palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid')
+                          .order_by('palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid'))
+    assign_henkilosto_object_permissions(taydennyskoulutus, toimipaikka_oid_qs)
+    # Assign permissions for all Toimipaikat of Organisaatio in a task so that it doesn't block execution
+    assign_taydennyskoulutus_all_toimipaikka_permissions.delay(taydennyskoulutus.id, organisaatio_oid)
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def assign_taydennyskoulutus_all_toimipaikka_permissions(taydennyskoulutus_id, organisaatio_oid):
+    from varda.cache import invalidate_cache
+
+    taydennyskoulutus = Taydennyskoulutus.objects.get(id=taydennyskoulutus_id)
+    toimipaikka_oid_qs = (Toimipaikka.objects.filter(vakajarjestaja__organisaatio_oid=organisaatio_oid)
+                          .values_list('organisaatio_oid', flat=True))
+    assign_henkilosto_object_permissions(taydennyskoulutus, toimipaikka_oid_qs)
+    invalidate_cache(Taydennyskoulutus.get_name(), taydennyskoulutus_id)
+
+
+@transaction.atomic
+def reassign_all_tyontekija_permissions(tyontekija):
+    """
+    Remove and assign all permissions related to Tyontekija instance
+    :param tyontekija: Tyontekija instance
+    """
+    # This function also reassigns Palvelussuhde, Tyoskentelypaikka and PidempiPoissaolo permissions
+    assign_tyontekija_permissions(tyontekija, reassign=True)
+
+    tutkinto_qs = Tutkinto.objects.filter(vakajarjestaja=tyontekija.vakajarjestaja, henkilo=tyontekija.henkilo)
+    for tutkinto in tutkinto_qs:
+        assign_tutkinto_permissions(tutkinto, reassign=True)
+
+
+@transaction.atomic
+def assign_tilapainen_henkilosto_permissions(tilapainen_henkilosto, reassign=False):
+    """
+    Assign object permissions for TilapainenHenkilosto intsance
+    :param tilapainen_henkilosto: TilapainenHenkilosto instance
+    :param reassign: delete old permissions before assignment
+    """
+    if reassign:
+        delete_object_permissions(tilapainen_henkilosto)
+
+    # Organisaatio level permissions for TilapainenHenkilosto object
+    assign_henkilosto_object_permissions(tilapainen_henkilosto,
+                                         (tilapainen_henkilosto.vakajarjestaja.organisaatio_oid,))

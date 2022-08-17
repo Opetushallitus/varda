@@ -2,92 +2,48 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth.models import Group
-from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Q
-from guardian.shortcuts import assign_perm, remove_perm
 from rest_framework.exceptions import ValidationError
 
 from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
 from varda.misc import get_json_from_external_service
-from varda.models import Toimipaikka, Organisaatio, Z4_CasKayttoOikeudet, Lapsi
+from varda.models import Organisaatio, Z4_CasKayttoOikeudet
 
 
 logger = logging.getLogger(__name__)
-
-
-vaka_permission_groups = [Z4_CasKayttoOikeudet.KATSELIJA, Z4_CasKayttoOikeudet.TALLENTAJA,
-                          Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
-                          Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,
-                          Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA]
-
-
-def assign_permissions_to_vakajarjestaja_obj(vakajarjestaja_organisaatio_oid):
-    vakajarjestaja_query = Organisaatio.objects.filter(organisaatio_oid=vakajarjestaja_organisaatio_oid)
-    if len(vakajarjestaja_query) == 1:
-        vakajarjestaja_obj = vakajarjestaja_query[0]
-        assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Organisaatio, vakajarjestaja_obj)
-        assign_object_permissions_to_all_henkilosto_groups(vakajarjestaja_organisaatio_oid, Organisaatio, vakajarjestaja_obj)
-    else:
-        logger.error('Organisaatio: Could not assign obj-level permissions to: ' + vakajarjestaja_organisaatio_oid)
-
-
-def assign_permissions_to_toimipaikka_obj(toimipaikka_organisaatio_oid, vakajarjestaja_organisaatio_oid):
-    toimipaikka_query = Toimipaikka.objects.filter(organisaatio_oid=toimipaikka_organisaatio_oid)
-    if len(toimipaikka_query) == 1:
-        toimipaikka_obj = toimipaikka_query[0]
-        assign_permissions_for_toimipaikka(toimipaikka_obj, vakajarjestaja_organisaatio_oid)
-    else:
-        logger.error('Toimipaikka: Could not assign obj-level permissions to: ' + toimipaikka_organisaatio_oid)
-
-
-def assign_permissions_for_toimipaikka(toimipaikka, vakajarjestaja_oid):
-    with transaction.atomic():
-        # Assign permissions to Organisaatio permission groups
-        assign_object_level_permissions(vakajarjestaja_oid, Toimipaikka, toimipaikka)
-        assign_object_permissions_to_all_henkilosto_groups(vakajarjestaja_oid, Toimipaikka, toimipaikka)
-
-        if toimipaikka_oid := toimipaikka.organisaatio_oid:
-            # Assign permissions to Toimipaikka permission groups
-            assign_object_level_permissions(toimipaikka_oid, Toimipaikka, toimipaikka)
-            assign_object_permissions_to_all_henkilosto_groups(toimipaikka_oid, Toimipaikka, toimipaikka)
-
-            # Assign view_vakajarjestaja permission for Toimipaikka permission groups
-            vakajarjestaja_obj = toimipaikka.vakajarjestaja
-            assign_object_level_permissions(toimipaikka_oid, Organisaatio, vakajarjestaja_obj)
-            assign_object_permissions_to_all_henkilosto_groups(toimipaikka_oid, Organisaatio, vakajarjestaja_obj)
 
 
 def get_organization_type(organisaatio_oid):
     """
     We know that organization is vaka-organization but we want to know which type.
     """
-    service_name = "organisaatio-service"
-    organisaatio_url = "/rest/organisaatio/v4/hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oid=" + organisaatio_oid
+    service_name = 'organisaatio-service'
+    organisaatio_url = '/rest/organisaatio/v4/hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oid=' + organisaatio_oid
     reply_msg = get_json_from_external_service(service_name, organisaatio_url)
-    if not reply_msg["is_ok"]:
+    if not reply_msg['is_ok']:
         return True
 
-    reply_json = reply_msg["json_msg"]
+    reply_json = reply_msg['json_msg']
 
-    if "numHits" not in reply_json or ("numHits" in reply_json and reply_json["numHits"] != 1):
+    if 'numHits' not in reply_json or ('numHits' in reply_json and reply_json['numHits'] != 1):
         logger.warning('No organization hit for: /' + service_name + organisaatio_url)
         return True
 
     try:
-        organization_data = reply_json["organisaatiot"][0]
+        organization_data = reply_json['organisaatiot'][0]
     except IndexError:
         logger.error('Problem with organization: /' + service_name + organisaatio_url)
         return None
 
-    if "organisaatiotyypit" not in organization_data:
+    if 'organisaatiotyypit' not in organization_data:
         logger.error('Organisaatio missing rquired data: /' + service_name + organisaatio_url)
         return True
 
-    if "organisaatiotyyppi_07" in organization_data["organisaatiotyypit"]:
-        return "organisaatiotyyppi_07"
-    else:  # "organisaatiotyyppi_08" in organization_data["organisaatiotyypit"]:
-        return "organisaatiotyyppi_08"
+    if 'organisaatiotyyppi_07' in organization_data['organisaatiotyypit']:
+        return 'organisaatiotyyppi_07'
+    else:  # 'organisaatiotyyppi_08' in organization_data['organisaatiotyypit']:
+        return 'organisaatiotyyppi_08'
 
 
 def create_permission_groups_for_organisaatio(organisaatio_oid, organisaatiotyyppi):
@@ -156,7 +112,7 @@ def get_permission_group(role, organisaatio_oid):
     :param organisaatio_oid: organisation where permission group is in
     :return: Group object or None
     """
-    group_name = role + "_" + organisaatio_oid
+    group_name = role + '_' + organisaatio_oid
     try:
         permission_group = Group.objects.get(name=group_name)  # group's name is unique
     except Group.DoesNotExist:
@@ -260,217 +216,6 @@ def create_permission_group(role, organisaatio_oid, organization_type):
 
         for permission in group_template_permissions:
             group_new.permissions.add(permission)
-
-
-def assign_organisation_group_permissions(model, instance, vakajarjestaja_oid, toimipaikka_oid=None):
-    """
-    Assings varhaiskasvatuksen jarjestaja and toimipaikka group permissions to object instance
-    :param model: Model of the instance
-    :param instance: Object instance of the model
-    :param vakajarjestaja_oid: Organisation oid of varhaiskasvatuksen jarjestaja over given toimipaikka
-    :param toimipaikka_oid: organisaatio oid of toimipaikka under given varhaiskasvatuksen jarjestaja
-    :return: None
-    """
-    assign_object_level_permissions(vakajarjestaja_oid, model, instance)
-    if toimipaikka_oid is not None:
-        assign_object_level_permissions(toimipaikka_oid, model, instance)
-
-
-def _assign_or_remove_object_level_permissions(model_class, model_obj, permission_groups, paos_kytkin=True, assign=True):
-    """
-    Assign or remove permissions for the permissions allowed in given permission groups. This depends on the template
-    used to create the permission group.
-    :param model_class: Type of the given model_obj eg. Lapsi
-    :param model_obj: Instance of the given model type
-    :param permission_groups: Permission groups that get/lose the permissions group template defines eg. katselija group
-    has only view permissions
-    :param paos_kytkin: skip other but view permissions
-    :param assign: boolean do we assign permissions. Otherwise remove.
-    :return: None
-    """
-    content_type_obj = ContentType.objects.get_for_model(model_class)
-    for permission_group in permission_groups:
-        model_specific_permissions_for_group = permission_group.permissions.filter(content_type=content_type_obj.id)
-        for permission in model_specific_permissions_for_group:
-            if paos_kytkin and permission.codename != 'view_' + model_class._meta.model.__name__.lower():
-                continue
-            if assign:
-                assign_perm(permission, permission_group, model_obj)
-            else:
-                remove_perm(permission, permission_group, model_obj)
-
-
-def assign_vakajarjestaja_lapsi_paos_permissions(oma_organisaatio_oid, paos_organisaatio_oid, tallentaja_organisaatio_oid,
-                                                 lapsi_obj):
-    # Huoltajatieto katselija and tallentaja need view permission for lapsi to be able to view/modify his maksutiedot
-    vakajarjestaja_lapsi_obj_katselija_group_roles = [Z4_CasKayttoOikeudet.KATSELIJA,
-                                                      Z4_CasKayttoOikeudet.TALLENTAJA,
-                                                      Z4_CasKayttoOikeudet.PAAKAYTTAJA,
-                                                      Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
-                                                      Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
-                                                      Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA]
-    vakajarjestaja_lapsi_obj_tallentaja_group_roles = [Z4_CasKayttoOikeudet.TALLENTAJA,
-                                                       Z4_CasKayttoOikeudet.PALVELUKAYTTAJA]
-    _assign_paos_vakajarjestaja_permissions(oma_organisaatio_oid, paos_organisaatio_oid, tallentaja_organisaatio_oid,
-                                            Lapsi, lapsi_obj, vakajarjestaja_lapsi_obj_katselija_group_roles,
-                                            vakajarjestaja_lapsi_obj_tallentaja_group_roles)
-
-
-def assign_vakajarjestaja_vakatiedot_paos_permissions(oma_organisaatio_oid, paos_organisaatio_oid, tallentaja_organisaatio_oid,
-                                                      model_class, saved_obj):
-    vakajarjestaja_vakatiedot_katselija_group_roles = [Z4_CasKayttoOikeudet.KATSELIJA,
-                                                       Z4_CasKayttoOikeudet.TALLENTAJA,
-                                                       Z4_CasKayttoOikeudet.PAAKAYTTAJA,
-                                                       Z4_CasKayttoOikeudet.PALVELUKAYTTAJA]
-    vakajarjestaja_vakatiedot_tallentaja_group_roles = [Z4_CasKayttoOikeudet.TALLENTAJA,
-                                                        Z4_CasKayttoOikeudet.PALVELUKAYTTAJA]
-    _assign_paos_vakajarjestaja_permissions(oma_organisaatio_oid, paos_organisaatio_oid, tallentaja_organisaatio_oid,
-                                            model_class, saved_obj, vakajarjestaja_vakatiedot_katselija_group_roles,
-                                            vakajarjestaja_vakatiedot_tallentaja_group_roles)
-
-
-def assign_toimipaikka_lapsi_paos_permissions(paos_toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid, saved_object):
-    toimipaikka_lapsi_obj_katselija_group_roles = [Z4_CasKayttoOikeudet.KATSELIJA,
-                                                   Z4_CasKayttoOikeudet.TALLENTAJA,
-                                                   Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
-                                                   Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA]
-    toimipaikka_lapsi_obj_tallentaja_group_roles = [Z4_CasKayttoOikeudet.TALLENTAJA]
-    _assign_toimipaikka_paos_permissions(paos_toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid,
-                                         toimipaikka_lapsi_obj_tallentaja_group_roles, toimipaikka_lapsi_obj_katselija_group_roles,
-                                         Lapsi, saved_object)
-
-
-def assign_toimipaikka_vakatiedot_paos_permissions(paos_toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid,
-                                                   model_class, saved_object):
-    toimipaikka_vakatiedot_katselija_group_roles = [Z4_CasKayttoOikeudet.KATSELIJA,
-                                                    Z4_CasKayttoOikeudet.TALLENTAJA]
-    toimipaikka_vakatiedot_tallentaja_group_roles = [Z4_CasKayttoOikeudet.TALLENTAJA]
-    _assign_toimipaikka_paos_permissions(paos_toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid,
-                                         toimipaikka_vakatiedot_tallentaja_group_roles, toimipaikka_vakatiedot_katselija_group_roles,
-                                         model_class, saved_object)
-
-
-def _assign_paos_vakajarjestaja_permissions(oma_organisaatio_oid, paos_organisaatio_oid, tallentaja_organisaatio_oid,
-                                            model_class, saved_object, katselija_group_roles, tallentaja_group_roles):
-    """
-    Assign view and modify permissions for permission groups of given paos organisations depending which one has
-    tallentaja role which receives modify permissions. Other one receives only view permissions.
-    :param oma_organisaatio_oid: oma_organisaatio oid
-    :param paos_organisaatio_oid: paos_organisaatio oid
-    :param tallentaja_organisaatio_oid: tallentaja_organisaatio oid
-    :param model_class: Class of the model that permissions are being assigned to
-    :param saved_object: object the permissions are assigned to
-    :param katselija_group_roles: Z4_CasKayttoOikeudet permissions that should be given view access
-    :param tallentaja_group_roles: Z4_CasKayttoOikeudet permissions that should be given write/delete access
-    :return: None
-    """
-    model_name = model_class._meta.model.__name__.lower()
-    group_organisation_oids = [oma_organisaatio_oid, paos_organisaatio_oid]
-
-    katselija_permission_groups = get_permission_groups(group_organisation_oids, katselija_group_roles)
-
-    tallentaja_permission_groups = get_permission_groups(group_organisation_oids, tallentaja_group_roles, tallentaja_organisaatio_oid)
-
-    [assign_perm('view_' + model_name, group, saved_object) for group in katselija_permission_groups]
-    [assign_perm('change_' + model_name, group, saved_object) for group in tallentaja_permission_groups]
-    [assign_perm('delete_' + model_name, group, saved_object) for group in tallentaja_permission_groups]
-
-
-def _assign_toimipaikka_paos_permissions(paos_toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid,
-                                         toimipaikka_tallentaja_group_roles, toimipaikka_katselija_group_roles,
-                                         model_class, saved_object):
-    model_name = model_class._meta.model.__name__.lower()
-    tallentaja = Toimipaikka.objects.filter(organisaatio_oid=paos_toimipaikka_organisaatio_oid,
-                                            vakajarjestaja__organisaatio_oid=tallentaja_organisaatio_oid).exists()
-
-    toimipaikka_katselija_groups = get_permission_groups([paos_toimipaikka_organisaatio_oid], toimipaikka_katselija_group_roles)
-
-    [assign_perm('view_' + model_name, group, saved_object) for group in toimipaikka_katselija_groups]
-
-    if tallentaja:
-        toimipaikka_tallentaja_groups = get_permission_groups([paos_toimipaikka_organisaatio_oid], toimipaikka_tallentaja_group_roles)
-        [assign_perm('change_' + model_name, group, saved_object) for group in toimipaikka_tallentaja_groups]
-        [assign_perm('delete_' + model_name, group, saved_object) for group in toimipaikka_tallentaja_groups]
-
-
-def get_permission_groups(group_organisation_oids, group_roles, tallentaja_organisaatio_oid=None):
-    group_names = [f'{group_role}_{group_organisation_oid}'
-                   for group_role in group_roles
-                   for group_organisation_oid in group_organisation_oids
-                   if not tallentaja_organisaatio_oid or tallentaja_organisaatio_oid == group_organisation_oid]
-    return Group.objects.filter(name__in=group_names)
-
-
-def assign_object_permissions_to_all_henkilosto_groups(organisaatio_oid, model_class, model_obj):
-    _assign_object_permissions_to_groups('HENKILOSTO_', organisaatio_oid, model_class, model_obj)
-
-
-def assign_object_permissions_to_tyontekija_groups(organisaatio_oid, model_class, model_obj):
-    _assign_object_permissions_to_groups('HENKILOSTO_TYONTEKIJA_', organisaatio_oid, model_class, model_obj)
-
-
-def assign_object_permissions_to_tilapainenhenkilosto_groups(organisaatio_oid, model_class, model_obj):
-    _assign_object_permissions_to_groups('HENKILOSTO_TILAPAISET_', organisaatio_oid, model_class, model_obj)
-
-
-def assign_object_permissions_to_taydennyskoulutus_groups(organisaatio_oid, model_class, model_obj):
-    _assign_object_permissions_to_groups('HENKILOSTO_TAYDENNYSKOULUTUS_', organisaatio_oid, model_class, model_obj)
-
-
-def _assign_object_permissions_to_groups(group_name_prefix, group_name_suffix, model_class, model_obj):
-    if group_name_prefix and group_name_suffix:
-        taydennyskoulutus_groups = Group.objects.filter(name__startswith=group_name_prefix, name__endswith=group_name_suffix)
-        _assign_or_remove_object_level_permissions(model_class, model_obj, taydennyskoulutus_groups, paos_kytkin=False, assign=True)
-
-
-def assign_object_level_permissions(organisaatio_oid, model_class, model_obj, paos_kytkin=False):
-    if not organisaatio_oid:
-        return
-
-    all_organization_permission_groups = get_vaka_permission_groups_for_organization(organisaatio_oid)
-    _assign_or_remove_object_level_permissions(model_class, model_obj, all_organization_permission_groups, paos_kytkin, assign=True)
-
-
-def remove_object_level_permissions(organisaatio_oid, model_class, model_obj, paos_kytkin=False):
-    all_organization_permission_groups = get_vaka_permission_groups_for_organization(organisaatio_oid)
-    _assign_or_remove_object_level_permissions(model_class, model_obj, all_organization_permission_groups, paos_kytkin, assign=False)
-
-
-def get_vaka_permission_groups_for_organization(organisaatio_oid):
-    """
-    Let's find all the groups for organization, where group_name has one of the roles in it.
-    We do not want to include possibly other groups in this search.
-
-    First, if organisaatio_oid is empty, return no permissions.
-    """
-    permission_groups = []
-    if organisaatio_oid is None or organisaatio_oid == '':
-        return permission_groups
-
-    PAAKAYTTAJA = Z4_CasKayttoOikeudet.PAAKAYTTAJA
-    TALLENTAJA = Z4_CasKayttoOikeudet.TALLENTAJA
-    KATSELIJA = Z4_CasKayttoOikeudet.KATSELIJA
-    PALVELUKAYTTAJA = Z4_CasKayttoOikeudet.PALVELUKAYTTAJA
-
-    HUOLTAJATIEDOT_TALLENTAJA = Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA
-    HUOLTAJATIEDOT_KATSELIJA = Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA
-
-    TOIMIJATIEDOT_KATSELIJA = Z4_CasKayttoOikeudet.TOIMIJATIEDOT_KATSELIJA
-    TOIMIJATIEDOT_TALLENTAJA = Z4_CasKayttoOikeudet.TOIMIJATIEDOT_TALLENTAJA
-
-    RAPORTTIEN_KATSELIJA = Z4_CasKayttoOikeudet.RAPORTTIEN_KATSELIJA
-
-    roles = [PAAKAYTTAJA, TALLENTAJA, KATSELIJA, PALVELUKAYTTAJA,
-             HUOLTAJATIEDOT_TALLENTAJA, HUOLTAJATIEDOT_KATSELIJA,
-             TOIMIJATIEDOT_KATSELIJA, TOIMIJATIEDOT_TALLENTAJA,
-             RAPORTTIEN_KATSELIJA]
-
-    all_organization_groups = Group.objects.filter(name__endswith=organisaatio_oid)
-    for group in all_organization_groups:
-        if any(x in group.name for x in roles):
-            permission_groups.append(group)
-
-    return permission_groups
 
 
 def get_all_permission_groups_for_organization(organisaatio_oid):

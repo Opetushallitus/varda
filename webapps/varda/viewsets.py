@@ -25,12 +25,11 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_guardian.filters import ObjectPermissionsFilter
 
-from varda import filters, validators, permission_groups
+from varda import filters, validators
 from varda.api_token import KnoxLoginView
-from varda.cache import (cached_list_response, delete_toimipaikan_lapset_cache, delete_cache_keys_related_model,
-                         get_object_ids_for_user_by_model)
-from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid,
-                                                        add_henkilo_to_oppijanumerorekisteri,
+from varda.cache import (cached_list_response, delete_organisaatio_yhteenveto_cache, delete_toimipaikan_lapset_cache,
+                         delete_cache_keys_related_model, get_object_ids_for_user_by_model)
+from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid, add_henkilo_to_oppijanumerorekisteri,
                                                         get_henkilo_by_henkilotunnus)
 from varda.custom_swagger import IntegerIdSchema
 from varda.enums.error_messages import ErrorMessages
@@ -52,23 +51,19 @@ from varda.oppijanumerorekisteri import fetch_henkilo_with_oid, save_henkilo_to_
 from varda.organisaatiopalvelu import (check_if_toimipaikka_exists_in_organisaatiopalvelu,
                                        create_toimipaikka_in_organisaatiopalvelu)
 from varda.pagination import ChangeableReportingPageSizePagination
-from varda.permission_groups import (assign_object_level_permissions, create_permission_groups_for_organisaatio,
-                                     assign_toimipaikka_lapsi_paos_permissions,
-                                     assign_vakajarjestaja_lapsi_paos_permissions,
-                                     assign_vakajarjestaja_vakatiedot_paos_permissions,
-                                     assign_toimipaikka_vakatiedot_paos_permissions,
-                                     assign_object_permissions_to_all_henkilosto_groups)
-from varda.permissions import (throw_if_not_tallentaja_permissions,
+from varda.permission_groups import create_permission_groups_for_organisaatio
+from varda.permissions import (assign_henkilo_permissions, assign_kielipainotus_permissions, assign_lapsi_permissions,
+                               assign_maksutieto_permissions, assign_paos_toiminta_permissions,
+                               assign_toiminnallinen_painotus_permissions, assign_toimipaikka_permissions,
+                               assign_varhaiskasvatuspaatos_permissions, assign_varhaiskasvatussuhde_permissions,
+                               remove_paos_toiminta_permissions, throw_if_not_tallentaja_permissions,
                                check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement,
                                check_if_user_has_paakayttaja_permissions, ReadAdminOrOPHUser, CustomModelPermissions,
                                user_has_huoltajatieto_tallennus_permissions_to_correct_organization,
-                               grant_or_deny_access_to_paos_toimipaikka, user_has_tallentaja_permission_in_organization,
-                               auditlogclass, save_audit_log, ToimipaikkaPermissions, get_toimipaikka_or_404, auditlog,
-                               is_oph_staff, user_permission_groups_in_organizations,
-                               user_permission_groups_in_organization, CustomObjectPermissions,
-                               assign_lapsi_henkilo_permissions, assign_vakasuhde_henkilo_permissions,
-                               assign_object_level_permissions_for_instance)
-from varda.related_object_validations import toimipaikka_is_valid_to_organisaatiopalvelu
+                               user_has_tallentaja_permission_in_organization, auditlogclass, save_audit_log,
+                               ToimipaikkaPermissions, get_toimipaikka_or_404, auditlog, is_oph_staff,
+                               user_permission_groups_in_organizations, user_permission_groups_in_organization,
+                               CustomObjectPermissions)
 from varda.request_logging import request_log_viewset_decorator_factory
 from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer, UpdateHenkiloWithOidSerializer,
                                ClearCacheSerializer, ActiveUserSerializer, AuthTokenSerializer,
@@ -82,7 +77,6 @@ from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer, U
                                PaosToimipaikatSerializer, PaosOikeusSerializer, LapsiKoosteSerializer, UserSerializer,
                                ToimipaikkaKoosteSerializer, ToimipaikkaUpdateSerializer,
                                PulssiVakajarjestajatSerializer, MaksutietoPostSerializer)
-from varda.tasks import assign_taydennyskoulutus_permissions_for_toimipaikka_task
 from webapps.api_throttles import (BurstRateThrottleStrict, SustainedRateThrottleStrict)
 
 
@@ -577,9 +571,7 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
         vakajarjestaja_id = vakajarjestaja_obj.id
 
         check_if_toimipaikka_exists_in_organisaatiopalvelu(vakajarjestaja_id, validated_data['nimi'])
-        """
-        Toimipaikka was not found in Organisaatiopalvelu. We can POST it there.
-        """
+        # Toimipaikka was not found in Organisaatiopalvelu. We can POST it there.
         try:
             with transaction.atomic():
                 # Save first internally so we can catch possible IntegrityError before POSTing to Org.palvelu.
@@ -589,42 +581,26 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
                 if result['toimipaikka_created']:
                     toimipaikka_organisaatio_oid = result['organisaatio_oid']
                 else:
-                    # transaction.set_rollback(True)  This would be otherwise nice but the user wouldn't get an error-msg.
                     raise IntegrityError('Org.palvelu-integration')
 
                 serializer.validated_data['organisaatio_oid'] = toimipaikka_organisaatio_oid
-                saved_object = serializer.save()
-                delete_cache_keys_related_model('organisaatio', saved_object.vakajarjestaja.id)
-                cache.delete('organisaatio_yhteenveto_' + str(saved_object.vakajarjestaja.id))
 
-                """
-                New organization, let's create pre-defined permission_groups for it.
-                """
+                saved_object = serializer.save()
+                # New organization, let's create pre-defined permission_groups for it.
                 create_permission_groups_for_organisaatio(toimipaikka_organisaatio_oid,
                                                           Organisaatiotyyppi.TOIMIPAIKKA.value)
+                assign_toimipaikka_permissions(saved_object)
 
-                vakajarjestaja_obj = Organisaatio.objects.get(id=vakajarjestaja_id)
-                vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
-                assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Toimipaikka, saved_object)
-                assign_object_permissions_to_all_henkilosto_groups(toimipaikka_organisaatio_oid, Toimipaikka, saved_object)
-                assign_object_level_permissions(toimipaikka_organisaatio_oid, Toimipaikka, saved_object)
-                assign_object_permissions_to_all_henkilosto_groups(vakajarjestaja_organisaatio_oid, Toimipaikka, saved_object)
-
-                """
-                Assign permissions to all taydennyskoulutukset of vakajarjestaja in a task
-                so that it doesn't block execution
-                """
-                assign_taydennyskoulutus_permissions_for_toimipaikka_task.delay(vakajarjestaja_organisaatio_oid,
-                                                                                toimipaikka_organisaatio_oid)
+                delete_cache_keys_related_model(Organisaatio.get_name(), saved_object.vakajarjestaja.id)
+                delete_organisaatio_yhteenveto_cache(saved_object.vakajarjestaja.id)
         except IntegrityError as e:
-            logger.error('Could not create a toimipaikka in Org.Palvelu. Data: {}. Error: {}.'
-                         .format(validated_data, e.__cause__))
+            logger.error(f'Could not create a toimipaikka in Org.Palvelu. Data: {validated_data}. Error: {e.__cause__}.')
             raise ValidationError({'toimipaikka': [ErrorMessages.TP002.value]})
 
     def perform_update(self, serializer):
         saved_object = serializer.save()
-        delete_cache_keys_related_model('organisaatio', saved_object.vakajarjestaja.id)
-        cache.delete('organisaatio_yhteenveto_' + str(saved_object.vakajarjestaja.id))
+        delete_cache_keys_related_model(Organisaatio.get_name(), saved_object.vakajarjestaja.id)
+        delete_organisaatio_yhteenveto_cache(saved_object.vakajarjestaja.id)
 
     @auditlog
     @action(methods=['get'], detail=True, permission_classes=(CustomModelPermissions, CustomObjectPermissions,))
@@ -668,39 +644,34 @@ class ToiminnallinenPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnis
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
 
+    @transaction.atomic
     def perform_create(self, serializer):
-        validated_data = serializer.validated_data
-        toimipaikka_obj = validated_data['toimipaikka']
-        toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
-        vakajarjestaja_obj = toimipaikka_obj.vakajarjestaja
-        vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
+        saved_object = serializer.save()
+        assign_toiminnallinen_painotus_permissions(saved_object)
+        self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
 
-        with transaction.atomic():
-            saved_object = serializer.save()
-            self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
-            delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
-            cache.delete('organisaatio_yhteenveto_' + str(saved_object.toimipaikka.vakajarjestaja.id))
-            assign_object_level_permissions(vakajarjestaja_organisaatio_oid, ToiminnallinenPainotus, saved_object)
-            assign_object_level_permissions(toimipaikka_organisaatio_oid, ToiminnallinenPainotus, saved_object)
+        delete_cache_keys_related_model(Toimipaikka.get_name(), saved_object.toimipaikka.id)
+        delete_organisaatio_yhteenveto_cache(saved_object.toimipaikka.vakajarjestaja.id)
 
+    @transaction.atomic
     def perform_update(self, serializer):
-        with transaction.atomic():
-            saved_object = serializer.save()
-            self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
-            delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
+        saved_object = serializer.save()
+        self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
+        delete_cache_keys_related_model(Toimipaikka.get_name(), saved_object.toimipaikka.id)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @transaction.atomic
     def perform_destroy(self, instance):
-        with transaction.atomic():
-            toimipaikka = instance.toimipaikka
-            instance.delete()
-            self._toggle_toimipaikka_kytkin(toimipaikka)
-            delete_cache_keys_related_model('toimipaikka', instance.toimipaikka.id)
-            cache.delete('organisaatio_yhteenveto_' + str(instance.toimipaikka.vakajarjestaja.id))
+        toimipaikka = instance.toimipaikka
+        instance.delete()
+        self._toggle_toimipaikka_kytkin(toimipaikka)
+
+        delete_cache_keys_related_model(Toimipaikka.get_name(), instance.toimipaikka.id)
+        delete_organisaatio_yhteenveto_cache(instance.toimipaikka.vakajarjestaja.id)
 
 
 @auditlogclass
@@ -737,39 +708,34 @@ class KieliPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
 
+    @transaction.atomic
     def perform_create(self, serializer):
-        validated_data = serializer.validated_data
-        toimipaikka_obj = validated_data['toimipaikka']
-        toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
-        vakajarjestaja_obj = toimipaikka_obj.vakajarjestaja
-        vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
+        saved_object = serializer.save()
+        assign_kielipainotus_permissions(saved_object)
+        self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
 
-        with transaction.atomic():
-            saved_object = serializer.save()
-            self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
-            delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
-            cache.delete('organisaatio_yhteenveto_' + str(saved_object.toimipaikka.vakajarjestaja.id))
-            assign_object_level_permissions(vakajarjestaja_organisaatio_oid, KieliPainotus, saved_object)
-            assign_object_level_permissions(toimipaikka_organisaatio_oid, KieliPainotus, saved_object)
+        delete_cache_keys_related_model(Toimipaikka.get_name(), saved_object.toimipaikka.id)
+        delete_organisaatio_yhteenveto_cache(saved_object.toimipaikka.vakajarjestaja.id)
 
+    @transaction.atomic
     def perform_update(self, serializer):
-        with transaction.atomic():
-            saved_object = serializer.save()
-            self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
-            delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
+        saved_object = serializer.save()
+        self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
+        delete_cache_keys_related_model(Toimipaikka.get_name(), saved_object.toimipaikka.id)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @transaction.atomic
     def perform_destroy(self, instance):
-        with transaction.atomic():
-            toimipaikka = instance.toimipaikka
-            instance.delete()
-            self._toggle_toimipaikka_kytkin(toimipaikka)
-            delete_cache_keys_related_model('toimipaikka', instance.toimipaikka.id)
-            cache.delete('organisaatio_yhteenveto_' + str(instance.toimipaikka.vakajarjestaja.id))
+        toimipaikka = instance.toimipaikka
+        instance.delete()
+        self._toggle_toimipaikka_kytkin(toimipaikka)
+
+        delete_cache_keys_related_model(Toimipaikka.get_name(), instance.toimipaikka.id)
+        delete_organisaatio_yhteenveto_cache(instance.toimipaikka.vakajarjestaja.id)
 
 
 class HaeHenkiloViewSet(GenericViewSet, CreateModelMixin):
@@ -876,7 +842,7 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
         henkilo_etunimet_list_lowercase = [x.lower() for x in henkilo_etunimet_list]
         if set(etunimet_list_lowercase) & set(henkilo_etunimet_list_lowercase) or sukunimi.lower() == henkilo.sukunimi.lower():
             # Set permissions to Henkilo object for current user
-            self._assign_henkilo_permissions(self.request.user, henkilo)
+            assign_henkilo_permissions(henkilo, self.request.user)
             # Make sure that ConflictError is not raised inside a transaction, otherwise permission changes
             # are rolled back
             raise ConflictError(self.get_serializer(henkilo).data, status_code=status.HTTP_200_OK)
@@ -986,7 +952,7 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
                 saved_object = serializer.save()
                 # Give user object level permissions to Henkilo object, until we can determine related Organisaatio
                 # from Lapsi or Tyontekija object
-                self._assign_henkilo_permissions(user, saved_object)
+                assign_henkilo_permissions(saved_object, user)
 
                 henkilo_id = serializer.data['id']
                 if henkilo_data is not None:
@@ -1052,7 +1018,7 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
         if lapsi_obj:
             if toimipaikka_oid:
                 # Assign permissions again to include Toimipaikka related groups
-                self._assign_permissions_for_lapsi_obj(lapsi_obj, paos_oikeus, toimipaikka_oid)
+                assign_lapsi_permissions(lapsi_obj, toimipaikka_oid=toimipaikka_oid, user=user)
             if (validated_data['lahdejarjestelma'] != lapsi_obj.lahdejarjestelma or
                     validated_data.get('tunniste', None) != lapsi_obj.tunniste):
                 # If lahdejarjestelma or tunniste have been changed, update change
@@ -1074,19 +1040,6 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
                                     voimassa_kytkin=huoltajuussuhde.voimassa_kytkin).save()
                 # huoltajuussuhteet copied, no need to loop through other lapset
                 break
-
-    def _assign_permissions_for_lapsi_obj(self, lapsi, paos_oikeus, toimipaikka_oid):
-        if lapsi.paos_kytkin and paos_oikeus:
-            tallentaja_organisaatio_oid = paos_oikeus.tallentaja_organisaatio.organisaatio_oid
-            assign_vakajarjestaja_lapsi_paos_permissions(lapsi.oma_organisaatio.organisaatio_oid,
-                                                         lapsi.paos_organisaatio.organisaatio_oid,
-                                                         tallentaja_organisaatio_oid, lapsi)
-            if toimipaikka_oid:
-                assign_toimipaikka_lapsi_paos_permissions(toimipaikka_oid, tallentaja_organisaatio_oid, lapsi)
-        elif lapsi.vakatoimija:
-            assign_object_level_permissions_for_instance(lapsi, (lapsi.vakatoimija.organisaatio_oid, toimipaikka_oid,))
-
-        assign_lapsi_henkilo_permissions(lapsi, user=self.request.user, toimipaikka_oid=toimipaikka_oid)
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -1114,9 +1067,9 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
             with transaction.atomic():
                 # This can be performed only after all permission checks are done!
                 saved_object = serializer.save()
-                self._assign_permissions_for_lapsi_obj(saved_object, paos_oikeus, toimipaikka_oid)
+                assign_lapsi_permissions(saved_object, toimipaikka_oid=toimipaikka_oid, user=user)
                 self.copy_huoltajuussuhteet(saved_object)
-                delete_cache_keys_related_model('henkilo', saved_object.henkilo.id)
+                delete_cache_keys_related_model(Henkilo.get_name(), saved_object.henkilo.id)
         except ValidationError as validation_error:
             validation_error_message = str(validation_error.detail)
             if 'LA009' in validation_error_message or 'LA010' in validation_error_message:
@@ -1138,7 +1091,7 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
             except ProtectedError:
                 raise ValidationError({'errors': [ErrorMessages.LA004.value]})
 
-            delete_cache_keys_related_model('henkilo', instance.henkilo.id)
+            delete_cache_keys_related_model(Henkilo.get_name(), instance.henkilo.id)
 
     @action(methods=['delete'], detail=True, url_path='delete-all')
     def delete_all(self, request, pk=None):
@@ -1164,7 +1117,7 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
                     object_instance.delete()
             instance.huoltajuussuhteet.all().delete()
             instance.delete()
-            delete_cache_keys_related_model('henkilo', instance.henkilo.id)
+            delete_cache_keys_related_model(Henkilo.get_name(), instance.henkilo.id)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -1203,7 +1156,6 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
         user = self.request.user
         validated_data = serializer.validated_data
         lapsi = validated_data['lapsi']
-        toimipaikka_oid = validated_data.get('toimipaikka') and validated_data.get('toimipaikka').organisaatio_oid
 
         if validated_data['vuorohoito_kytkin']:
             validated_data['paivittainen_vaka_kytkin'] = None
@@ -1213,24 +1165,16 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
             validated_data['pikakasittely_kytkin'] = True
 
         with transaction.atomic():
-            saved_object = serializer.save()
-            delete_cache_keys_related_model('lapsi', lapsi.id)
             if lapsi.paos_kytkin:
                 paos_oikeus = check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(lapsi.oma_organisaatio, lapsi.paos_organisaatio)
                 if not user_has_tallentaja_permission_in_organization(paos_oikeus.tallentaja_organisaatio.organisaatio_oid, user):
                     raise PermissionDenied({'errors': [ErrorMessages.PE003.value]})
-                oma_organisaatio_oid = lapsi.oma_organisaatio.organisaatio_oid
-                paos_organisaatio_oid = lapsi.paos_organisaatio.organisaatio_oid
-                tallentaja_organisaatio_oid = paos_oikeus.tallentaja_organisaatio.organisaatio_oid
-                assign_vakajarjestaja_vakatiedot_paos_permissions(oma_organisaatio_oid, paos_organisaatio_oid, tallentaja_organisaatio_oid,
-                                                                  Varhaiskasvatuspaatos, saved_object)
-                if toimipaikka_oid:
-                    assign_toimipaikka_vakatiedot_paos_permissions(toimipaikka_oid, tallentaja_organisaatio_oid,
-                                                                   Varhaiskasvatuspaatos, saved_object)
-            elif lapsi.vakatoimija:
-                assign_object_level_permissions(lapsi.vakatoimija.organisaatio_oid, Varhaiskasvatuspaatos, saved_object)
-                if toimipaikka_oid:
-                    assign_object_level_permissions(toimipaikka_oid, Varhaiskasvatuspaatos, saved_object)
+
+            varhaiskasvatuspaatos = serializer.save()
+            toimipaikka_oid = validated_data.get('toimipaikka') and validated_data.get('toimipaikka').organisaatio_oid
+            assign_varhaiskasvatuspaatos_permissions(varhaiskasvatuspaatos, toimipaikka_oid=toimipaikka_oid)
+
+            delete_cache_keys_related_model(Lapsi.get_name(), lapsi.id)
 
     def perform_update(self, serializer):
         validated_data = serializer.validated_data
@@ -1254,7 +1198,7 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
             instance.delete()
         except ProtectedError:
             raise ValidationError({'errors': [ErrorMessages.VP004.value]})
-        delete_cache_keys_related_model('lapsi', lapsi_id)
+        delete_cache_keys_related_model(Lapsi.get_name(), lapsi_id)
         """
         No need to delete toimipaikan_lapset or vakajarjestaja_yhteenveto caches.
         For this object to be deleted, the vakasuhteet must have been first deleted.
@@ -1275,7 +1219,7 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
     def delete_organisaatio_yhteenveto_cache(self, vakapaatos_obj):
         vakasuhde = vakapaatos_obj.varhaiskasvatussuhteet.all().first()
         if vakasuhde is not None:
-            cache.delete('organisaatio_yhteenveto_' + str(vakasuhde.toimipaikka.vakajarjestaja.id))
+            delete_organisaatio_yhteenveto_cache(vakasuhde.toimipaikka.vakajarjestaja.id)
 
 
 @auditlogclass
@@ -1309,50 +1253,6 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
 
-    def assign_paos_lapsi_permissions(self, lapsi_obj, varhaiskasvatussuhde_obj, varhaiskasvatuspaatos_obj,
-                                      toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid):
-        oma_organisaatio_oid = lapsi_obj.oma_organisaatio.organisaatio_oid
-        paos_organisaatio_oid = lapsi_obj.paos_organisaatio.organisaatio_oid
-        assign_vakajarjestaja_lapsi_paos_permissions(oma_organisaatio_oid,
-                                                     paos_organisaatio_oid,
-                                                     tallentaja_organisaatio_oid,
-                                                     lapsi_obj)
-        assign_vakajarjestaja_vakatiedot_paos_permissions(oma_organisaatio_oid,
-                                                          paos_organisaatio_oid,
-                                                          tallentaja_organisaatio_oid,
-                                                          Varhaiskasvatuspaatos,
-                                                          varhaiskasvatuspaatos_obj)
-        assign_vakajarjestaja_vakatiedot_paos_permissions(oma_organisaatio_oid,
-                                                          paos_organisaatio_oid,
-                                                          tallentaja_organisaatio_oid,
-                                                          Varhaiskasvatussuhde,
-                                                          varhaiskasvatussuhde_obj)
-        assign_toimipaikka_lapsi_paos_permissions(toimipaikka_organisaatio_oid,
-                                                  tallentaja_organisaatio_oid,
-                                                  lapsi_obj)
-        assign_toimipaikka_vakatiedot_paos_permissions(toimipaikka_organisaatio_oid,
-                                                       tallentaja_organisaatio_oid,
-                                                       Varhaiskasvatuspaatos,
-                                                       varhaiskasvatuspaatos_obj)
-        assign_toimipaikka_vakatiedot_paos_permissions(toimipaikka_organisaatio_oid,
-                                                       tallentaja_organisaatio_oid,
-                                                       Varhaiskasvatussuhde,
-                                                       varhaiskasvatussuhde_obj)
-
-    def assign_non_paos_lapsi_permissions(self, lapsi_obj, varhaiskasvatussuhde_obj, varhaiskasvatuspaatos_obj,
-                                          vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid):
-        """
-        Add group-level permissions (vakajarjestaja & toimipaikka)
-        """
-        assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Varhaiskasvatussuhde, varhaiskasvatussuhde_obj)
-        assign_object_level_permissions(vakajarjestaja_organisaatio_oid, Varhaiskasvatuspaatos, varhaiskasvatuspaatos_obj)
-        assign_object_level_permissions_for_instance(lapsi_obj, (vakajarjestaja_organisaatio_oid,
-                                                                 toimipaikka_organisaatio_oid,))
-        if toimipaikka_organisaatio_oid:
-            # TODO: Add these to every case after dummy-toimipaikat are removed.
-            assign_object_level_permissions(toimipaikka_organisaatio_oid, Varhaiskasvatussuhde, varhaiskasvatussuhde_obj)
-            assign_object_level_permissions(toimipaikka_organisaatio_oid, Varhaiskasvatuspaatos, varhaiskasvatuspaatos_obj)
-
     def perform_create(self, serializer):
         user = self.request.user
         validated_data = serializer.validated_data
@@ -1361,62 +1261,41 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
         vakajarjestaja_organisaatio_oid = vakajarjestaja_obj.organisaatio_oid
         lapsi_obj = validated_data['varhaiskasvatuspaatos'].lapsi
 
-        is_paos_lapsi = lapsi_obj.paos_kytkin
         throw_if_not_tallentaja_permissions(vakajarjestaja_organisaatio_oid, toimipaikka_obj, user,
                                             lapsi_obj.oma_organisaatio)
-        toimipaikka_organisaatio_oid = toimipaikka_obj.organisaatio_oid
 
         with transaction.atomic():
-            saved_object = serializer.save()
-            delete_cache_keys_related_model('toimipaikka', saved_object.toimipaikka.id)
-            delete_cache_keys_related_model('varhaiskasvatuspaatos', saved_object.varhaiskasvatuspaatos.id)
-            delete_toimipaikan_lapset_cache(str(saved_object.toimipaikka.id))
-            cache.delete('organisaatio_yhteenveto_' + str(saved_object.toimipaikka.vakajarjestaja.id))
+            varhaiskasvatussuhde = serializer.save()
+            assign_varhaiskasvatussuhde_permissions(varhaiskasvatussuhde)
 
-            varhaiskasvatussuhde_obj = saved_object
-            varhaiskasvatuspaatos_obj = varhaiskasvatussuhde_obj.varhaiskasvatuspaatos
-
-            if is_paos_lapsi:
-                paos_oikeus = check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement(lapsi_obj.oma_organisaatio, lapsi_obj.paos_organisaatio)
-                tallentaja_organisaatio_oid = paos_oikeus.tallentaja_organisaatio.organisaatio_oid
-                self.assign_paos_lapsi_permissions(lapsi_obj, varhaiskasvatussuhde_obj, varhaiskasvatuspaatos_obj,
-                                                   toimipaikka_organisaatio_oid, tallentaja_organisaatio_oid)
-                cache.delete('organisaatio_yhteenveto_' + str(lapsi_obj.oma_organisaatio.id))
-            else:
-                # Not PAOS-lapsi (i.e. normal case)
-                try:
-                    self.assign_non_paos_lapsi_permissions(lapsi_obj, varhaiskasvatussuhde_obj, varhaiskasvatuspaatos_obj,
-                                                           vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid)
-
-                    # Assign Maksutieto permissions
-                    maksutieto_qs = Maksutieto.objects.filter(huoltajuussuhteet__lapsi=lapsi_obj).distinct('id')
-                    for maksutieto in maksutieto_qs:
-                        assign_object_level_permissions(toimipaikka_organisaatio_oid, Maksutieto, maksutieto)
-                except Group.DoesNotExist:
-                    logger.error('Missing Group for toimija {} and toimipaikka {}'
-                                 .format(vakajarjestaja_organisaatio_oid, toimipaikka_organisaatio_oid))
-                    raise CustomServerErrorException
-
-            assign_vakasuhde_henkilo_permissions(varhaiskasvatussuhde_obj)
+            delete_cache_keys_related_model(Toimipaikka.get_name(), varhaiskasvatussuhde.toimipaikka.id)
+            delete_cache_keys_related_model(Varhaiskasvatuspaatos.get_name(),
+                                            varhaiskasvatussuhde.varhaiskasvatuspaatos.id)
+            delete_toimipaikan_lapset_cache(str(varhaiskasvatussuhde.toimipaikka.id))
+            delete_organisaatio_yhteenveto_cache(varhaiskasvatussuhde.toimipaikka.vakajarjestaja.id)
+            if lapsi_obj.oma_organisaatio:
+                delete_organisaatio_yhteenveto_cache(lapsi_obj.oma_organisaatio.id)
 
     def perform_update(self, serializer):
         saved_object = serializer.save()
+
         # No need to delete the related-object caches. User cannot change toimipaikka or varhaiskasvatuspaatos.
         delete_toimipaikan_lapset_cache(str(saved_object.toimipaikka.id))
-        cache.delete('organisaatio_yhteenveto_' + str(saved_object.toimipaikka.vakajarjestaja.id))
+        delete_organisaatio_yhteenveto_cache(saved_object.toimipaikka.vakajarjestaja.id)
         lapsi_obj = saved_object.varhaiskasvatuspaatos.lapsi
         if lapsi_obj.paos_kytkin:
-            cache.delete('organisaatio_yhteenveto_' + str(lapsi_obj.oma_organisaatio.id))
+            delete_organisaatio_yhteenveto_cache(lapsi_obj.oma_organisaatio.id)
 
     def perform_destroy(self, instance):
+        instance.delete()
+
         delete_toimipaikan_lapset_cache(str(instance.toimipaikka.id))
-        cache.delete('organisaatio_yhteenveto_' + str(instance.toimipaikka.vakajarjestaja.id))
-        delete_cache_keys_related_model('toimipaikka', instance.toimipaikka.id)
-        delete_cache_keys_related_model('varhaiskasvatuspaatos', instance.varhaiskasvatuspaatos.id)
+        delete_organisaatio_yhteenveto_cache(instance.toimipaikka.vakajarjestaja.id)
+        delete_cache_keys_related_model(Toimipaikka.get_name(), instance.toimipaikka.id)
+        delete_cache_keys_related_model(Varhaiskasvatuspaatos.get_name(), instance.varhaiskasvatuspaatos.id)
         lapsi_obj = instance.varhaiskasvatuspaatos.lapsi
         if lapsi_obj.paos_kytkin:
-            cache.delete('organisaatio_yhteenveto_' + str(lapsi_obj.oma_organisaatio.id))
-        instance.delete()
+            delete_organisaatio_yhteenveto_cache(lapsi_obj.oma_organisaatio.id)
 
 
 @auditlogclass
@@ -1460,24 +1339,10 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
     def list(self, request, *args, **kwargs):
         return cached_list_response(self, request.user, request.get_full_path())
 
-    def assign_permissions_for_maksutieto_obj(self, lapsi, vakajarjestaja, toimipaikka_qs, saved_object):
-        """
-        Add group-level permissions (vakajarjestaja & toimipaikka)
-        In case of PAOS only oma_organisaatio (kunta/kuntayhtyma) has permissions to add, edit and delete
-        """
-        if lapsi.paos_kytkin:
-            assign_object_level_permissions(vakajarjestaja.organisaatio_oid, Maksutieto, saved_object)
-        else:
-            assign_object_level_permissions(vakajarjestaja.organisaatio_oid, Maksutieto, saved_object)
-            for toimipaikka in toimipaikka_qs:
-                if toimipaikka_is_valid_to_organisaatiopalvelu(toimipaikka_obj=toimipaikka):
-                    assign_object_level_permissions(toimipaikka.organisaatio_oid, Maksutieto, saved_object)
-
     def perform_create(self, serializer):
         user = self.request.user
         lapsi = serializer.validated_data['lapsi']
 
-        toimipaikka_qs = None
         if lapsi.paos_kytkin:
             if not user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, lapsi.oma_organisaatio.organisaatio_oid):
                 raise PermissionDenied({'errors': [ErrorMessages.MA010.value]})
@@ -1491,9 +1356,10 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
         """
         with transaction.atomic():
             saved_object = serializer.save()
+            assign_maksutieto_permissions(saved_object)
+
             vakajarjestaja = lapsi.vakatoimija or lapsi.oma_organisaatio
-            cache.delete('organisaatio_yhteenveto_' + str(vakajarjestaja.id))
-            self.assign_permissions_for_maksutieto_obj(lapsi, vakajarjestaja, toimipaikka_qs, saved_object)
+            delete_organisaatio_yhteenveto_cache(vakajarjestaja.id)
 
     @transaction.atomic
     def perform_update(self, serializer):
@@ -1501,21 +1367,22 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
 
         lapsi_objects = Lapsi.objects.filter(huoltajuussuhteet__maksutiedot__id=maksutieto_obj.id).distinct()
         if len(lapsi_objects) != 1:
-            logger.error('Error getting lapsi for maksutieto ' + str(maksutieto_obj.id))
+            logger.error(f'Error getting lapsi for maksutieto {maksutieto_obj.id}')
             raise CustomServerErrorException
         lapsi_object = lapsi_objects[0]
 
         serializer.save()
 
         vakajarjestaja = lapsi_object.vakatoimija or lapsi_object.oma_organisaatio
-        cache.delete('organisaatio_yhteenveto_' + str(vakajarjestaja.id))
+        delete_organisaatio_yhteenveto_cache(vakajarjestaja.id)
 
+    @transaction.atomic
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
 
         lapsi_objects = Lapsi.objects.filter(huoltajuussuhteet__maksutiedot=instance).distinct()
         if len(lapsi_objects) != 1:
-            logger.error('Error getting lapsi when deleting maksutieto ' + str(instance.id))
+            logger.error(f'Error getting lapsi when deleting maksutieto {instance.id}')
             raise CustomServerErrorException
         lapsi_object = lapsi_objects[0]
 
@@ -1523,7 +1390,7 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
         self.perform_destroy(instance)
 
         vakajarjestaja = lapsi_object.vakatoimija or lapsi_object.oma_organisaatio
-        cache.delete('organisaatio_yhteenveto_' + str(vakajarjestaja.id))
+        delete_organisaatio_yhteenveto_cache(vakajarjestaja.id)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -1580,18 +1447,6 @@ class PaosToimintaViewSet(IncreasedModifyThrottleMixin, GenericViewSet, ListMode
 
         return paos_toiminta_is_active_q
 
-    def get_default_tallentaja_organisaatio(self, validated_data):
-        oma_organisaatio = validated_data['oma_organisaatio']
-        if 'paos_organisaatio' in validated_data and validated_data['paos_organisaatio'] is not None:
-            paos_organisaatio = validated_data['paos_organisaatio']
-            return paos_organisaatio
-        return oma_organisaatio
-
-    def get_non_tallentaja_organisation(self, tallentaja_organisaatio, jarjestaja_kunta_organisaatio, tuottaja_organisaatio):
-        if jarjestaja_kunta_organisaatio != tallentaja_organisaatio:
-            return jarjestaja_kunta_organisaatio
-        return tuottaja_organisaatio
-
     def get_jarjestaja_kunta_organisaatio(self, validated_data):
         if 'paos_toimipaikka' in validated_data and validated_data['paos_toimipaikka'] is not None:
             return validated_data['oma_organisaatio']
@@ -1624,45 +1479,33 @@ class PaosToimintaViewSet(IncreasedModifyThrottleMixin, GenericViewSet, ListMode
         with transaction.atomic():
             try:
                 if not serializer.instance:
-                    saved_object = serializer.save()
-                    VARDA_PAAKAYTTAJA = Z4_CasKayttoOikeudet.PAAKAYTTAJA
-                    group_name = Group.objects.filter(name=VARDA_PAAKAYTTAJA + '_' + validated_data['oma_organisaatio'].organisaatio_oid)
-                    assign_perm('view_paostoiminta', group_name, saved_object)
-                    assign_perm('delete_paostoiminta', group_name, saved_object)
+                    paos_toiminta = serializer.save()
                 else:
                     if serializer.instance.voimassa_kytkin:
                         # This will cause IntegrityError to be raised on save
                         serializer.instance = None
                     else:
                         serializer.instance.voimassa_kytkin = True
-                    serializer.save()
+                    paos_toiminta = serializer.save()
 
-                paos_oikeus_old = PaosOikeus.objects.filter(
+                paos_oikeus = PaosOikeus.objects.filter(
                     Q(jarjestaja_kunta_organisaatio=jarjestaja_kunta_organisaatio, tuottaja_organisaatio=tuottaja_organisaatio)
                 ).first()  # Either None or the actual paos-oikeus obj
 
-                if paos_oikeus_old:
-                    if not paos_oikeus_old.voimassa_kytkin and paos_toiminta_is_active.exists():
-                        paos_oikeus_old.voimassa_kytkin = True
-                        paos_oikeus_old.save()
-                    grant_or_deny_access_to_paos_toimipaikka(True, jarjestaja_kunta_organisaatio, tuottaja_organisaatio)
-                elif not paos_oikeus_old:
+                if paos_oikeus:
+                    if not paos_oikeus.voimassa_kytkin and paos_toiminta_is_active.exists():
+                        paos_oikeus.voimassa_kytkin = True
+                        paos_oikeus.save()
+                else:
                     # Only one half is accepted so no toimipaikka permissions will be granted here
-                    tallentaja_organisaatio = self.get_default_tallentaja_organisaatio(validated_data)
-                    paos_oikeus_new = PaosOikeus.objects.create(
+                    PaosOikeus.objects.create(
                         jarjestaja_kunta_organisaatio=jarjestaja_kunta_organisaatio,
                         tuottaja_organisaatio=tuottaja_organisaatio,
                         voimassa_kytkin=False,
-                        tallentaja_organisaatio=tallentaja_organisaatio
+                        tallentaja_organisaatio=jarjestaja_kunta_organisaatio
                     )
-                    non_tallentaja_organisation = self.get_non_tallentaja_organisation(tallentaja_organisaatio, jarjestaja_kunta_organisaatio, tuottaja_organisaatio)
-                    group_name = Group.objects.filter(name=VARDA_PAAKAYTTAJA + '_' + non_tallentaja_organisation.organisaatio_oid)
-                    assign_perm('view_paosoikeus', group_name, paos_oikeus_new)
-                    # set permission for kunta to change
-                    group_name = Group.objects.filter(name=VARDA_PAAKAYTTAJA + '_' + tallentaja_organisaatio.organisaatio_oid)
-                    assign_perm('view_paosoikeus', group_name, paos_oikeus_new)
-                    assign_perm('change_paosoikeus', group_name, paos_oikeus_new)
 
+                assign_paos_toiminta_permissions(paos_toiminta)
             except IntegrityError as e:
                 if 'oma_organisaatio_paos_organisaatio_unique_constraint' in str(e):
                     msg = {'errors': [ErrorMessages.PT004.value]}
@@ -1686,14 +1529,11 @@ class PaosToimintaViewSet(IncreasedModifyThrottleMixin, GenericViewSet, ListMode
                 paos_oikeus_object = PaosOikeus.objects.filter(
                     Q(jarjestaja_kunta_organisaatio=instance.paos_organisaatio, tuottaja_organisaatio=instance.oma_organisaatio)
                 ).first()
-                # Remove view access to all toimipaikka where jarjestaja has not added any children
-                grant_or_deny_access_to_paos_toimipaikka(False, paos_oikeus_object.jarjestaja_kunta_organisaatio, paos_oikeus_object.tuottaja_organisaatio)
                 is_delete = True
             elif instance.paos_toimipaikka is not None:
                 # Remove view access to this toimipaikka if jarjestaja has not added any children there
                 if not Varhaiskasvatussuhde.objects.filter(toimipaikka=instance.paos_toimipaikka,
                                                            varhaiskasvatuspaatos__lapsi__oma_organisaatio=instance.oma_organisaatio).exists():
-                    permission_groups.remove_object_level_permissions(instance.oma_organisaatio.organisaatio_oid, Toimipaikka, instance.paos_toimipaikka, paos_kytkin=True)
                     is_delete = True
                 paos_toimipaikka_count = PaosToiminta.objects.filter(
                     Q(voimassa_kytkin=True) &
@@ -1704,6 +1544,8 @@ class PaosToimintaViewSet(IncreasedModifyThrottleMixin, GenericViewSet, ListMode
                     paos_oikeus_object = PaosOikeus.objects.filter(
                         Q(jarjestaja_kunta_organisaatio=instance.oma_organisaatio, tuottaja_organisaatio=instance.paos_toimipaikka.vakajarjestaja)
                     ).first()
+
+            remove_paos_toiminta_permissions(instance)
 
             instance.voimassa_kytkin = False
             instance.delete() if is_delete else instance.save()
