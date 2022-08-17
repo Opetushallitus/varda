@@ -28,10 +28,9 @@ export class AuthService {
 
   constructor(private vakajarjestajaService: VardaVakajarjestajaService) { }
 
-  initUserPermissions(): void {
-    // This function should be called each time VardaVakajarjestajaService.setToimipaikat() is called
+  initUserPermissions(toimipaikkaList: Array<VardaToimipaikkaMinimalDto>): void {
     this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
-    this.toimipaikkaList = this.vakajarjestajaService.getToimipaikat().getValue();
+    this.toimipaikkaList = toimipaikkaList;
 
     this.organisaatioPermissions = this.userPermissions.filter(permission =>
       permission.organisaatio === this.selectedVakajarjestaja.organisaatio_oid

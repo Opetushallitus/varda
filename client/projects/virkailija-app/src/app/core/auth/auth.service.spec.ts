@@ -35,7 +35,7 @@ describe('AuthService', () => {
       ]
     });
 
-    kayttoObs.subscribe(success => authService.initUserPermissions());
+    kayttoObs.subscribe(success => authService.initUserPermissions(toimipaikatMinStub));
   });
 
   it('checking toimipaikkaAccessIfAny', () => {

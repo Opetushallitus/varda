@@ -63,10 +63,7 @@ export class PaosToimintaService {
 
   updateToimipaikkalist() {
     this.vakajarjestajaApiService.getToimipaikat(this.vakajarjestajaService.getSelectedVakajarjestaja().id)
-      .subscribe(toimipaikat => {
-        this.vakajarjestajaService.setToimipaikat(toimipaikat);
-        this.authService.initUserPermissions();
-      }
+      .subscribe(toimipaikat => this.vakajarjestajaService.setToimipaikat(toimipaikat)
     );
   }
 

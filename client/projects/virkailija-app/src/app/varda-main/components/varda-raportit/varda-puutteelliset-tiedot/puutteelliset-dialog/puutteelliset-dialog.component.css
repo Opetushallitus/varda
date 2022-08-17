@@ -17,6 +17,8 @@
 
 .puutteelliset-dialog-header .mat-icon {
   font-size: 2rem;
+  height: auto;
+  width: auto;
 }
 
 .puutteelliset-dialog-content .mat-dialog-title {

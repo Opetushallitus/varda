@@ -46,7 +46,6 @@ export class VardaDashboardComponent implements OnDestroy {
         if (toimipaikat) {
           // Organisaatio was changed
           this.vardaVakajarjestajaService.setToimipaikat(toimipaikat);
-          this.authService.initUserPermissions();
           // Navigate to default location
           this.router.navigate(['/']);
         }

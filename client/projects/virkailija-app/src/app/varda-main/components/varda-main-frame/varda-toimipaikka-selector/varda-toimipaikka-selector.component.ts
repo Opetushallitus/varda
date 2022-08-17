@@ -102,7 +102,6 @@ export class VardaToimipaikkaSelectorComponent implements OnInit, OnDestroy {
         next: result => {
           this.setPreviousToimipaikka(toimipaikka.organisaatio_oid);
           this.vardaVakajarjestajaService.setToimipaikat(result);
-          this.authService.initUserPermissions();
         },
         error: err => console.error(err)
       });

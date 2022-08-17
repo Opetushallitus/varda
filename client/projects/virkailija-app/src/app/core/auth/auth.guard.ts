@@ -104,8 +104,6 @@ export class AuthGuard implements CanActivate {
     ).subscribe({
       next: toimipaikat => {
         this.vakajarjestajaService.setToimipaikat(toimipaikat);
-        this.authService.initUserPermissions();
-
         authObserver.next(true);
         authObserver.complete();
       }, error: err => { // redirect errors to our login-failed page

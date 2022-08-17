@@ -1,10 +1,9 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, of, Subject, tap } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { LoadingHttpService } from 'varda-shared';
 import { environment } from '../../../environments/environment';
 import { VardaVakajarjestaja, VardaVakajarjestajaUi } from '../../utilities/models';
-import { VardaPageDto } from '../../utilities/models/dto/varda-page-dto';
 import {
   KielipainotusDTO,
   ToiminnallinenPainotusDTO,
@@ -14,6 +13,7 @@ import {
 } from '../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { PuutteellinenErrorDTO } from '../../utilities/models/dto/varda-puutteellinen-dto.model';
 import { VardaRaportitService } from './varda-raportit.service';
+import { AuthService } from '../auth/auth.service';
 
 
 @Injectable()
@@ -27,7 +27,11 @@ export class VardaVakajarjestajaApiService {
   private updateToimipaikkaList$ = new Subject();
   private toimipaikkaFormErrorList = new BehaviorSubject<Array<PuutteellinenErrorDTO>>([]);
 
-  constructor(private http: LoadingHttpService, private raportitService: VardaRaportitService) { }
+  constructor(
+    private http: LoadingHttpService,
+    private raportitService: VardaRaportitService,
+    private authService: AuthService
+  ) { }
 
   getToimipaikkaUrl(id) {
     return `/api/v1/toimipaikat/${id}/`;
@@ -51,11 +55,12 @@ export class VardaVakajarjestajaApiService {
       `${this.vardaUiPath}/vakajarjestajat/${vakajarjestajaId}/toimipaikat/`,
       environment.vardaAppUrl,
       { page_size: 500, ...searchFilters }
-    ).pipe(catchError((err: Error) => of([])));
-  }
-
-  getToimipaikka(toimipaikkaId: number): Observable<VardaToimipaikkaDTO> {
-    return this.http.get(`${this.toimipaikatApiPath}/${toimipaikkaId}/`);
+    ).pipe(
+      tap(toimipaikat => {
+        this.authService.initUserPermissions(toimipaikat);
+      }),
+      catchError((err: Error) => of([]))
+    );
   }
 
   createToimipaikka(toimipaikkaDTO: VardaToimipaikkaDTO): Observable<VardaToimipaikkaDTO> {
@@ -64,18 +69,6 @@ export class VardaVakajarjestajaApiService {
 
   updateToimipaikka(toimipaikkaDTO: VardaToimipaikkaDTO): Observable<VardaToimipaikkaDTO> {
     return this.http.put(`${this.toimipaikatApiPath}/${toimipaikkaDTO.id}/`, toimipaikkaDTO);
-  }
-
-  patchToimipaikka(toimipaikkaDTO: VardaToimipaikkaDTO): Observable<VardaToimipaikkaDTO> {
-    return this.http.patch(`${this.toimipaikatApiPath}/${toimipaikkaDTO.id}/`, toimipaikkaDTO);
-  }
-
-  deleteToimipaikka(toimipaikkaId: number): Observable<void> {
-    return this.http.delete(`${this.toimipaikatApiPath}/${toimipaikkaId}/`);
-  }
-
-  getKielipainotukset(toimipaikkaId: number): Observable<VardaPageDto<KielipainotusDTO>> {
-    return this.http.get(`${environment.vardaApiUrl}/toimipaikat/${toimipaikkaId}/kielipainotukset/`);
   }
 
   createKielipainotus(kielipainotusDTO: KielipainotusDTO): Observable<KielipainotusDTO> {
@@ -88,10 +81,6 @@ export class VardaVakajarjestajaApiService {
 
   deleteKielipainotus(kielipainotusId: number): Observable<void> {
     return this.http.delete(`${environment.vardaApiUrl}/kielipainotukset/${kielipainotusId}/`);
-  }
-
-  getToimintapainotukset(toimipaikkaId: number): Observable<VardaPageDto<ToiminnallinenPainotusDTO>> {
-    return this.http.get(`${environment.vardaApiUrl}/toimipaikat/${toimipaikkaId}/toiminnallisetpainotukset/`);
   }
 
   createToimintapainotus(toimintapainotusDTO: ToiminnallinenPainotusDTO): Observable<ToiminnallinenPainotusDTO> {
