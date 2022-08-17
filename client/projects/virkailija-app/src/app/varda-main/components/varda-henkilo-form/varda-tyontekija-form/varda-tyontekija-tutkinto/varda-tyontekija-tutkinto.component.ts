@@ -124,7 +124,8 @@ export class VardaTyontekijaTutkintoComponent implements OnInit, OnChanges, OnDe
                 henkilo_id: this.henkilo.id,
                 henkilo_oid: result.henkilo_oid,
                 rooli: HenkiloRooliEnum.tyontekija,
-                tyoskentelypaikat: []
+                is_missing_data: true,
+                tehtavanimikkeet: []
               };
               this.snackBarService.success(this.i18n.tyontekija_save_success);
               this.henkilostoService.sendHenkilostoListUpdate();

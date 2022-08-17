@@ -48,20 +48,18 @@
                 <mat-icon alt="">perm_identity</mat-icon>
               </td>
               <td>{{ henkilo.sukunimi }} {{ henkilo.etunimet }}</td>
-              <td *ngIf="tyontekija.tyoskentelypaikat.length === 0; else tyoskentelypaikat"
+              <td *ngIf="tyontekija.is_missing_data"
                   class="henkilo-warning">
                 <mat-icon alt="">error_outline</mat-icon>
                 {{ i18n.henkilo_tyontekija_tiedot_puuttuu | translate }}
               </td>
-              <ng-template #tyoskentelypaikat>
-                <td>
-                  <div *ngFor="let koodi of tyontekija.tehtavanimikkeet; let index = index; let last = last">
+              <td *ngIf="tyontekija.tehtavanimikkeet?.length > 0">
+                <div *ngFor="let koodi of tyontekija.tehtavanimikkeet; let index = index; let last = last">
                     <span *ngIf="index < 2"
                           libKoodistoValue="vardatehtavanimike">{{ koodi }}</span>
-                    <span *ngIf="index === 1 && !last"> (+{{tyontekija.tehtavanimikkeet.length - 2}})</span>
-                  </div>
-                </td>
-              </ng-template>
+                  <span *ngIf="index === 1 && !last"> (+{{tyontekija.tehtavanimikkeet.length - 2}})</span>
+                </div>
+              </td>
             </tr>
           </ng-container>
         </ng-container>

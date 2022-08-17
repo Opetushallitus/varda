@@ -3,18 +3,24 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatRadioChange } from '@angular/material/radio';
 import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
 import { VardaApiService } from 'projects/virkailija-app/src/app/core/services/varda-api.service';
-import { VardaErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
+import {
+  ErrorTree,
+  VardaErrorMessageService
+} from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
 import { VardaModalService } from 'projects/virkailija-app/src/app/core/services/varda-modal.service';
 import { VardaPaosApiService } from 'projects/virkailija-app/src/app/core/services/varda-paos-api.service';
 import { VardaSnackBarService } from 'projects/virkailija-app/src/app/core/services/varda-snackbar.service';
 import { VardaVakajarjestajaService } from 'projects/virkailija-app/src/app/core/services/varda-vakajarjestaja.service';
 import { VardaHenkiloDTO, VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';
-import { LapsiListDTO, VardaLapsiDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-lapsi-dto.model';
+import {
+  LapsiListDTO,
+  VardaLapsiDTO
+} from 'projects/virkailija-app/src/app/utilities/models/dto/varda-lapsi-dto.model';
 import { VardaToimipaikkaMinimalDto } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-toimipaikka-dto.model';
 import { UserAccess } from 'projects/virkailija-app/src/app/utilities/models/varda-user-access.model';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
-import { Subscription, Observable, BehaviorSubject, finalize } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription, finalize } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { TranslateService } from '@ngx-translate/core';
 import { HenkiloRooliEnum } from 'projects/virkailija-app/src/app/utilities/models/enums/henkilorooli.enum';
@@ -216,7 +222,7 @@ export class VardaLapsiFormComponent implements OnInit, OnDestroy {
       paos_organisaatio_oid: lapsiDTO.paos_organisaatio_oid,
       paos_organisaatio_nimi: lapsiDTO.paos_organisaatio_nimi,
       tallentaja_organisaatio_oid: lapsiDTO.oma_organisaatio_oid ? this.selectedVakajarjestaja.organisaatio_oid : null,
-      toimipaikat: [],
+      is_missing_data: true
     };
   }
 

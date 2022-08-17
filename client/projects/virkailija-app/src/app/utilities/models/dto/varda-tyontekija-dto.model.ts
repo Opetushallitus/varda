@@ -19,7 +19,7 @@ export interface TyontekijaListDTO {
   henkilo_id?: number;
   henkilo_oid?: string;
   rooli: HenkiloRooliEnum;
-  tyoskentelypaikat?: Array<TyontekijaListTyoskentelypaikkaDTO>;
+  is_missing_data?: boolean;
   tehtavanimikkeet?: Array<string>;
   etunimet?: string;
   sukunimi?: string;

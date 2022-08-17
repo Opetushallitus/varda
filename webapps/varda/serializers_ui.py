@@ -1,20 +1,14 @@
 import datetime
-from operator import itemgetter
 
 from django.db.models import Q
 from django.urls import reverse
 from drf_yasg.utils import swagger_serializer_method
-from guardian.shortcuts import get_objects_for_user
 from rest_framework import serializers
 
 from varda.cache import caching_to_representation
 from varda.models import (PaosOikeus, PaosToiminta, Toimipaikka, Organisaatio, Henkilo, Tyontekija, Tyoskentelypaikka,
                           Lapsi, Varhaiskasvatussuhde)
-from varda.permissions import get_taydennyskoulutus_tyontekija_group_organisaatio_oids, get_toimipaikat_group_has_access
-
-"""
-UI serializers
-"""
+from varda.permissions import get_available_tehtavanimike_codes_for_user
 
 
 class OrganisaatioUiSerializer(serializers.HyperlinkedModelSerializer):
@@ -133,73 +127,33 @@ class UiLapsiSerializer(serializers.HyperlinkedModelSerializer):
                   'paos_organisaatio_nimi', 'lapsi_id', 'lapsi_url')
 
 
-class PermissionCheckedTyoskentelypaikkaUiListSerializer(serializers.ListSerializer):
-    def update(self, instance, validated_data):
-        super(PermissionCheckedTyoskentelypaikkaUiListSerializer, self).update(instance, validated_data)
-
-    def to_representation(self, tyoskentelypaikat):
-        """
-        Filter tyontekijat user has no permission.
-        :param tyoskentelypaikat: Queryset of tyontekijat
-        :return: Dict of serialized tyontekijat
-        """
-        user = self.context['request'].user
-        vakajarjestaja_pk = self.context['view'].kwargs['pk']
-        organisaatio_oids = get_taydennyskoulutus_tyontekija_group_organisaatio_oids(user)
-        filter_condition = Q(palvelussuhde__tyontekija__vakajarjestaja=vakajarjestaja_pk)
-        if not user.is_superuser:
-            filter_condition = (Q(palvelussuhde__tyontekija__vakajarjestaja__organisaatio_oid__in=organisaatio_oids) |
-                                Q(toimipaikka__organisaatio_oid__in=organisaatio_oids))
-            # user with tyontekija toimipaikka permissions might have object level permissions to tyontekijat without tyoskentelypaikka
-            if get_toimipaikat_group_has_access(user, vakajarjestaja_pk, 'HENKILOSTO_TYONTEKIJA_').exists():
-                tyontekijat_object_level_permission = get_objects_for_user(user, 'view_tyontekija', klass=Tyontekija, accept_global_perms=False)
-                filter_condition = filter_condition | Q(palvelussuhde__tyontekija__in=tyontekijat_object_level_permission)
-        tyoskentelypaikat = tyoskentelypaikat.filter(filter_condition).order_by('-alkamis_pvm')
-        return super(PermissionCheckedTyoskentelypaikkaUiListSerializer, self).to_representation(tyoskentelypaikat)
-
-
-class TyoskentelypaikatUiSerializer(serializers.HyperlinkedModelSerializer):
-    toimipaikka_oid = serializers.CharField(source='toimipaikka.organisaatio_oid', allow_null=True)
-    toimipaikka_nimi = serializers.CharField(source='toimipaikka.nimi', allow_null=True)
-
-    class Meta:
-        model = Tyoskentelypaikka
-        fields = ('id', 'url', 'toimipaikka_oid', 'toimipaikka_nimi', 'kiertava_tyontekija_kytkin', 'tehtavanimike_koodi', 'alkamis_pvm')
-        list_serializer_class = PermissionCheckedTyoskentelypaikkaUiListSerializer
-
-
-class TyontekijatUiListSerializer(serializers.ListSerializer):
-    def to_representation(self, tyontekijat):
-        vakajarjestaja_pk = self.context['view'].kwargs['pk']
-        return super(TyontekijatUiListSerializer, self).to_representation(tyontekijat.filter(vakajarjestaja=vakajarjestaja_pk))
-
-
-class TyontekijatUiSerializer(serializers.HyperlinkedModelSerializer):
-    tyoskentelypaikat = serializers.SerializerMethodField()
+class TyontekijaUiSerializer(serializers.HyperlinkedModelSerializer):
+    tehtavanimikkeet = serializers.SerializerMethodField()
+    is_missing_data = serializers.SerializerMethodField()
 
     class Meta:
         model = Tyontekija
-        fields = ('id', 'url', 'tyoskentelypaikat')
-        list_serializer_class = TyontekijatUiListSerializer
+        fields = ('id', 'url', 'tehtavanimikkeet', 'is_missing_data')
 
-    @swagger_serializer_method(serializer_or_field=TyoskentelypaikatUiSerializer)
-    def get_tyoskentelypaikat(self, tyontekija):
-        tyoskentelypaikat = Tyoskentelypaikka.objects.filter(palvelussuhde__in=tyontekija.palvelussuhteet.all())
-        return TyoskentelypaikatUiSerializer(instance=tyoskentelypaikat, many=True, context=self.context).data
+    @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.CharField()))
+    def get_tehtavanimikkeet(self, instance):
+        user = self.context['request'].user
+        return get_available_tehtavanimike_codes_for_user(
+            user, instance, has_permissions=self.context['has_organisaatio_level_permissions'],
+            organisaatio_oid_list=self.context['organisaatio_oid_list']
+        )
+
+    @swagger_serializer_method(serializer_or_field=serializers.BooleanField)
+    def get_is_missing_data(self, instance):
+        return not Tyoskentelypaikka.objects.filter(palvelussuhde__tyontekija=instance).exists()
 
 
 class TyontekijaHenkiloUiSerializer(serializers.HyperlinkedModelSerializer):
-    tyontekijat = TyontekijatUiSerializer(many=True)
+    tyontekijat = TyontekijaUiSerializer(many=True)
 
     class Meta:
         model = Henkilo
         fields = ('id', 'url', 'henkilo_oid', 'etunimet', 'sukunimi', 'tyontekijat')
-
-
-class LapsihakuToimipaikkaUiSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = Toimipaikka
-        fields = ('id', 'url', 'organisaatio_oid', 'nimi', )
 
 
 class LapsihakuLapsetUiSerializer(serializers.HyperlinkedModelSerializer):
@@ -210,31 +164,12 @@ class LapsihakuLapsetUiSerializer(serializers.HyperlinkedModelSerializer):
     paos_organisaatio_oid = serializers.CharField(source='paos_organisaatio.organisaatio_oid', allow_null=True)
     paos_organisaatio_nimi = serializers.CharField(source='paos_organisaatio.nimi', allow_null=True)
     tallentaja_organisaatio_oid = serializers.SerializerMethodField(allow_null=True)
-    toimipaikat = serializers.SerializerMethodField()
+    is_missing_data = serializers.SerializerMethodField()
 
     class Meta:
         model = Lapsi
         fields = ('id', 'url', 'vakatoimija_oid', 'vakatoimija_nimi', 'oma_organisaatio_oid', 'oma_organisaatio_nimi',
-                  'paos_organisaatio_oid', 'paos_organisaatio_nimi', 'tallentaja_organisaatio_oid', 'toimipaikat')
-
-    @swagger_serializer_method(serializer_or_field=LapsihakuToimipaikkaUiSerializer)
-    def get_toimipaikat(self, lapsi):
-        permission_context = self.context
-        vakasuhteet = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__in=lapsi.varhaiskasvatuspaatokset.all())
-        toimipaikat_condition = Q(varhaiskasvatussuhteet__in=vakasuhteet)
-        # Since we are flattening these here manually it breaks nested filtering possibility in LapsihakuUiFilter
-        toimipaikka_oid = self.context['request'].query_params.get('toimipaikka_oid')
-        if toimipaikka_oid:
-            toimipaikat_condition = toimipaikat_condition & Q(organisaatio_oid=toimipaikka_oid)
-        toimipaikka_id = self.context['request'].query_params.get('toimipaikka_id')
-        if toimipaikka_id:
-            toimipaikat_condition = toimipaikat_condition & Q(id=toimipaikka_id)
-        toimipaikat = Toimipaikka.objects.filter(toimipaikat_condition).distinct()
-        is_superuser, vakajarjestaja_oid, user_organisaatio_oids = itemgetter('is_superuser', 'vakajarjestaja_oid', 'user_organisaatio_oids')(permission_context)
-        if not is_superuser and vakajarjestaja_oid not in user_organisaatio_oids:
-            toimipaikka_oids = permission_context['toimipaikka_oids']
-            toimipaikat = toimipaikat.filter(organisaatio_oid__in=toimipaikka_oids)
-        return LapsihakuToimipaikkaUiSerializer(instance=toimipaikat, many=True, context=self.context).data
+                  'paos_organisaatio_oid', 'paos_organisaatio_nimi', 'tallentaja_organisaatio_oid', 'is_missing_data')
 
     def get_tallentaja_organisaatio_oid(self, lapsi):
         if lapsi.oma_organisaatio and lapsi.paos_organisaatio:
@@ -244,6 +179,10 @@ class LapsihakuLapsetUiSerializer(serializers.HyperlinkedModelSerializer):
             if paos_oikeus:
                 return paos_oikeus.tallentaja_organisaatio.organisaatio_oid
         return None
+
+    @swagger_serializer_method(serializer_or_field=serializers.BooleanField)
+    def get_is_missing_data(self, instance):
+        return not Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=instance).exists()
 
 
 class LapsihakuHenkiloUiSerializer(serializers.HyperlinkedModelSerializer):

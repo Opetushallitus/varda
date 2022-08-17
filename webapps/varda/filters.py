@@ -21,9 +21,8 @@ from varda.misc_viewsets import parse_query_parameter
 from varda.models import (Organisaatio, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, Lapsi, Huoltaja,
                           Maksutieto, PaosToiminta, PaosOikeus, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
                           TilapainenHenkilosto, Tutkinto, Tyontekija, Palvelussuhde, Tyoskentelypaikka,
-                          PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Z2_Code,
-                          Z4_CasKayttoOikeudet)
-from varda.permissions import parse_toimipaikka_id_list
+                          PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Z2_Code)
+from varda.permissions import parse_toimipaikka_id_list, TYONTEKIJA_GROUPS, VAKA_GROUPS
 
 
 class CustomParameter:
@@ -514,12 +513,7 @@ class UiTyontekijaFilter(django_filters.FilterSet):
 
         tyontekija_filter = self.get_rajaus_filters()
 
-        required_permission_groups = (Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
-                                      Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
-                                      Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
-                                      Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,)
-        toimipaikka_id_list = parse_toimipaikka_id_list(user, query_params.get('toimipaikat', ''),
-                                                        required_permission_groups)
+        toimipaikka_id_list = parse_toimipaikka_id_list(user, query_params.get('toimipaikat', ''), TYONTEKIJA_GROUPS)
         if len(toimipaikka_id_list) > 0:
             tyontekija_filter &= Q(palvelussuhteet__tyoskentelypaikat__toimipaikka__id__in=toimipaikka_id_list)
         tyontekija_filter = self.apply_kiertava_filter(tyontekija_filter)
@@ -594,11 +588,8 @@ class UiLapsiFilter(django_filters.FilterSet):
 
         lapsi_filter = self.get_rajaus_filters()
 
-        required_permission_groups = (Z4_CasKayttoOikeudet.KATSELIJA, Z4_CasKayttoOikeudet.TALLENTAJA,
-                                      Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
-                                      Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,)
         toimipaikka_id_list = parse_toimipaikka_id_list(user, query_params.get('toimipaikat', ''),
-                                                        required_permission_groups, include_paos=True)
+                                                        VAKA_GROUPS, include_paos=True)
         if len(toimipaikka_id_list) > 0:
             lapsi_filter &= Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__id__in=toimipaikka_id_list)
 

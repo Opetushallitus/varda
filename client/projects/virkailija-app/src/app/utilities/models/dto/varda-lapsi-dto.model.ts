@@ -31,16 +31,9 @@ export interface LapsiListDTO {
   paos_organisaatio_oid: string;
   paos_organisaatio_nimi: string;
   tallentaja_organisaatio_oid: string;
-  toimipaikat: Array<LapsiListToimipaikkaDTO>;
   etunimet: string;
   sukunimi: string;
-}
-
-export interface LapsiListToimipaikkaDTO {
-  id: number;
-  url: string;
-  organisaatio_oid: string;
-  nimi: string;
+  is_missing_data?: boolean;
 }
 
 export interface VardaVarhaiskasvatuspaatosDTO {

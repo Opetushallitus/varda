@@ -41,6 +41,10 @@ HENKILOSTO_GROUPS = (Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
                      Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,
                      Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_KATSELIJA,
                      Z4_CasKayttoOikeudet.HENKILOSTO_TILAPAISET_TALLENTAJA)
+TYONTEKIJA_GROUPS = (Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
+                     Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
+                     Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
+                     Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,)
 GENERAL_GROUPS = (Z4_CasKayttoOikeudet.TOIMIJATIEDOT_KATSELIJA, Z4_CasKayttoOikeudet.TOIMIJATIEDOT_TALLENTAJA,
                   Z4_CasKayttoOikeudet.RAPORTTIEN_KATSELIJA, Z4_CasKayttoOikeudet.LUOVUTUSPALVELU,
                   Z4_CasKayttoOikeudet.YLLAPITAJA)
@@ -473,19 +477,19 @@ def is_correct_taydennyskoulutus_tyontekija_permission(user, taydennyskoulutus_t
     return True
 
 
-def get_available_tehtavanimike_codes_for_user(user, tyontekija):
-    if (user.is_superuser or is_oph_staff(user) or
-            user_permission_groups_in_organization(user, tyontekija.vakajarjestaja.organisaatio_oid,
-                                                   (Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
-                                                    Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA,)).exists()):
+def get_available_tehtavanimike_codes_for_user(user, tyontekija, has_permissions=False, organisaatio_oid_list=()):
+    permission_qs = user_permission_groups_in_organization(user, tyontekija.vakajarjestaja.organisaatio_oid,
+                                                           TYONTEKIJA_GROUPS)
+    if user.is_superuser or is_oph_staff(user) or has_permissions or permission_qs.exists():
         # User has Vakajarjestaja level permissions, return all tehtavanimike codes
-        tehtavanimike_set = set(tyontekija.palvelussuhteet.all().values_list('tyoskentelypaikat__tehtavanimike_koodi',
-                                                                             flat=True))
+        tehtavanimike_set = set(tyontekija.palvelussuhteet.all()
+                                .values_list('tyoskentelypaikat__tehtavanimike_koodi', flat=True))
     else:
-        organisaatio_oid_set = get_organisaatio_oids_from_groups(user, 'HENKILOSTO_TAYDENNYSKOULUTUS_')
+        if not organisaatio_oid_list:
+            organisaatio_oid_list = get_taydennyskoulutus_tyontekija_group_organisaatio_oids(user)
         tehtavanimike_set = set(Tyoskentelypaikka.objects
-                                .filter((Q(toimipaikka__organisaatio_oid__in=organisaatio_oid_set) |
-                                         Q(toimipaikka__vakajarjestaja__organisaatio_oid__in=organisaatio_oid_set)) &
+                                .filter((Q(toimipaikka__organisaatio_oid__in=organisaatio_oid_list) |
+                                         Q(toimipaikka__vakajarjestaja__organisaatio_oid__in=organisaatio_oid_list)) &
                                         Q(palvelussuhde__tyontekija=tyontekija))
                                 .values_list('tehtavanimike_koodi', flat=True))
     # Discard None just in case
@@ -499,9 +503,7 @@ def get_tyontekija_vakajarjestaja_oid(tyontekijat):
     :param tyontekijat: taydennyskoulutus instance related tyontekijat
     :return: vakajarjestaja oid or None
     """
-    vakajarjestaja_oids = (tyontekijat.values_list('vakajarjestaja__organisaatio_oid', flat=True)
-                           .distinct()
-                           )
+    vakajarjestaja_oids = tyontekijat.values_list('vakajarjestaja__organisaatio_oid', flat=True).distinct()
     if len(vakajarjestaja_oids) > 1 or not vakajarjestaja_oids:
         raise IntegrityError('Täydennyskoulutus has tyontekijat on multiple vakatoimijat')
     return vakajarjestaja_oids.first()
@@ -552,20 +554,6 @@ def get_taydennyskoulutus_tyontekija_group_organisaatio_oids(user):
     :return: List of organisaatio oids (mixed vakajarjestaja and toimipaikka oids)
     """
     return get_organisaatio_oids_from_groups(user, 'HENKILOSTO_TAYDENNYSKOULUTUS_', 'HENKILOSTO_TYONTEKIJA_')
-
-
-def get_toimipaikat_group_has_access(user, vakajarjestaja_pk, *group_name_prefixes):
-    """
-    Check is user toimipaikka level access to given permission groups
-    :param user: User who's toimipaikka permissions are checked
-    :param vakajarjestaja_pk: id for vakajarjestaja which toimipaikka must be under
-    :param group_name_prefixes: List of group_name prefix
-    :return: queryset containing toimipaikat user has access
-    """
-    organisaatio_oids = get_organisaatio_oids_from_groups(user, *group_name_prefixes)
-    toimipaikat_qs = Toimipaikka.objects.filter(organisaatio_oid__in=organisaatio_oids,
-                                                vakajarjestaja=vakajarjestaja_pk)
-    return toimipaikat_qs
 
 
 def get_toimipaikka_or_404(user, toimipaikka_pk=None):

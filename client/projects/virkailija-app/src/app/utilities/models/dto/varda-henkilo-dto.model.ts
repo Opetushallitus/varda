@@ -26,7 +26,6 @@ export interface HenkiloListDTO {
   tyontekijat?: Array<TyontekijaListDTO>;
   lapset?: Array<LapsiListDTO>;
   expanded?: boolean;
-
   lapsi_id?: number;
   tyontekija_id?: number;
   errors?: Array<PuutteellinenErrorDTO>;

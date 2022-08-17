@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { HenkiloRooliEnum } from 'projects/virkailija-app/src/app/utilities/models/enums/henkilorooli.enum';
 import { HenkiloListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-henkilo-dto.model';
 import { TyontekijaListDTO } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-tyontekija-dto.model';
@@ -13,7 +13,7 @@ import { KoodistoEnum } from 'varda-shared';
   templateUrl: './varda-henkilo-list.component.html',
   styleUrls: ['./varda-henkilo-list.component.css']
 })
-export class VardaHenkiloListComponent implements OnInit {
+export class VardaHenkiloListComponent {
   @Input() henkiloList: Array<HenkiloListDTO>;
   @Input() henkiloRooli: HenkiloRooliEnum;
   @Output() openHenkiloForm = new EventEmitter<LapsiListDTO | TyontekijaListDTO>(true);
@@ -25,12 +25,6 @@ export class VardaHenkiloListComponent implements OnInit {
     protected vakajarjestajService: VardaVakajarjestajaService
   ) {
     this.selectedVakajarjestaja = this.vakajarjestajService.getSelectedVakajarjestaja();
-  }
-
-  ngOnInit() {
-    if (this.henkiloRooli === HenkiloRooliEnum.tyontekija) {
-      this.initTehtavanimikkeet();
-    }
   }
 
   clickItem(henkilo: HenkiloListDTO) {
@@ -53,16 +47,5 @@ export class VardaHenkiloListComponent implements OnInit {
     if (suhde.oma_organisaatio_oid) {
       return suhde.oma_organisaatio_oid === this.selectedVakajarjestaja.organisaatio_oid ? suhde.paos_organisaatio_nimi : suhde.oma_organisaatio_nimi;
     }
-
-  }
-
-  initTehtavanimikkeet() {
-    this.henkiloList.forEach(henkilo => henkilo.tyontekijat.forEach(tyontekija => {
-      const tehtavanimikkeet = new Set(tyontekija.tyoskentelypaikat.sort(
-        (a, b) => b.alkamis_pvm.localeCompare(a.alkamis_pvm)
-      ).map(tyopaikka => tyopaikka.tehtavanimike_koodi));
-
-      tyontekija.tehtavanimikkeet = Array.from(tehtavanimikkeet);
-    }));
   }
 }

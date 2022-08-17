@@ -1,5 +1,4 @@
 import datetime
-from operator import itemgetter
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
@@ -9,7 +8,6 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from guardian.shortcuts import get_objects_for_user
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
@@ -28,8 +26,8 @@ from varda.models import (Toimipaikka, Organisaatio, PaosToiminta, PaosOikeus, L
                           Tyontekija, Z4_CasKayttoOikeudet)
 from varda.pagination import ChangeablePageSizePagination, ChangeablePageSizePaginationLarge
 from varda.permissions import (CustomModelPermissions, get_taydennyskoulutus_tyontekija_group_organisaatio_oids,
-                               get_toimipaikat_group_has_access, get_organisaatio_oids_from_groups,
-                               HenkilostohakuPermissions, LapsihakuPermissions, auditlog, auditlogclass,
+                               HenkilostohakuPermissions, LapsihakuPermissions, auditlog,
+                               auditlogclass, TYONTEKIJA_GROUPS, user_belongs_to_correct_groups,
                                user_permission_groups_in_organization,
                                get_tyontekija_filters_for_taydennyskoulutus_groups, is_oph_staff, VAKA_GROUPS)
 from varda.serializers import PaosToimipaikkaSerializer, PaosOrganisaatioSerializer
@@ -38,14 +36,16 @@ from varda.serializers_ui import (OrganisaatioUiSerializer, ToimipaikkaUiSeriali
                                   UiTyontekijaSerializer)
 
 
-def parse_vakajarjestaja(user, vakajarjestaja_id):
+def parse_vakajarjestaja(user, vakajarjestaja_id, permission_group_list):
     if not vakajarjestaja_id.isdigit():
         raise Http404
-    vakajarjestaja_qs = Organisaatio.objects.filter(pk=vakajarjestaja_id)
-    if not vakajarjestaja_qs.exists() or not user.has_perm('view_organisaatio', vakajarjestaja_qs.first()):
+    vakajarjestaja = Organisaatio.objects.filter(pk=vakajarjestaja_id).first()
+    if (not vakajarjestaja or not user.has_perm('view_organisaatio', vakajarjestaja) or
+        not user_belongs_to_correct_groups(user, vakajarjestaja, permission_groups=permission_group_list,
+                                           accept_toimipaikka_permission=True)):
         raise Http404
 
-    return vakajarjestaja_qs.first()
+    return vakajarjestaja
 
 
 @auditlogclass
@@ -56,6 +56,10 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
     """
     serializer_class = OrganisaatioUiSerializer
     queryset = Organisaatio.objects.none()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.vakajarjestaja_oid = None
 
     def list(self, request, *args, **kwargs):
         user = request.user
@@ -89,6 +93,9 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
         # Putting this to keyword arguments raises exception
         self.search_fields = ['etunimet', 'sukunimi', '=henkilotunnus_unique_hash', '=henkilo_oid']
 
+        vakajarjestaja = parse_vakajarjestaja(self.request.user, pk, TYONTEKIJA_GROUPS)
+        self.vakajarjestaja_oid = vakajarjestaja.organisaatio_oid
+
         # Use subquery to fetch the required Henkilo objects, and to filter the related Tyontekija objects
         tyontekija_filter = self.get_tyontekija_filters(pk)
         tyontekija_id_subquery = Tyontekija.objects.filter(tyontekija_filter).distinct().values('id')
@@ -100,20 +107,15 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
         return super().list(request, pk=pk)
 
     def get_tyontekija_filters(self, vakajarjestaja_id):
+        user = self.request.user
+
         filter_condition = Q(vakajarjestaja=vakajarjestaja_id)
 
-        user = self.request.user
-        if not user.is_superuser:
-            organisaatio_oids = get_taydennyskoulutus_tyontekija_group_organisaatio_oids(user)
-            permission_filter = (Q(vakajarjestaja__organisaatio_oid__in=organisaatio_oids) |
-                                 Q(palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid__in=organisaatio_oids))
-            # user with tyontekija toimipaikka permissions might have object level permissions to tyontekijat
-            # without tyoskentelypaikka
-            if get_toimipaikat_group_has_access(user, vakajarjestaja_id, 'HENKILOSTO_TYONTEKIJA_').exists():
-                tyontekijat_object_level_permission = get_objects_for_user(user, 'view_tyontekija', klass=Tyontekija,
-                                                                           accept_global_perms=False)
-                permission_filter |= Q(id__in=tyontekijat_object_level_permission)
-            filter_condition &= permission_filter
+        if not self._has_organisaatio_level_henkilosto_permissions():
+            # No organisaatio level permissions, get results based on object permissions
+            tyontekija_id_list = get_object_ids_for_user_by_model(user, Tyontekija.get_name())
+            taydennyskoulutus_filters, organisaatio_oids = get_tyontekija_filters_for_taydennyskoulutus_groups(user)
+            filter_condition &= Q(id__in=tyontekija_id_list) | taydennyskoulutus_filters
 
         query_params = self.request.query_params
         if toimipaikka_id := query_params.get('toimipaikka_id', None):
@@ -145,28 +147,30 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
                              openapi.Parameter('voimassa_pvm', openapi.IN_QUERY, type=openapi.TYPE_STRING)
                          ])
     def lapsi_list(self, request, pk=None):
-        """
-        Query-parametrit:
-            *  toimipaikka_id = int
-            *  toimipaikka_oid = str
-            *  voimassa_pvm = iso date string esim. "2020-01-01"
-        """
         # Putting this to keyword arguments raises exception
         self.search_fields = ['etunimet', 'sukunimi', '=henkilotunnus_unique_hash', '=henkilo_oid']
+
+        vakajarjestaja = parse_vakajarjestaja(self.request.user, pk, VAKA_GROUPS)
+        self.vakajarjestaja_oid = vakajarjestaja.organisaatio_oid
 
         # Use subquery to fetch the required Henkilo objects, and to filter the related Lapsi objects
         lapsi_filter = self.get_lapsi_filter(pk)
         lapsi_id_subquery = Lapsi.objects.filter(lapsi_filter).distinct().values('id')
-        self.queryset = (self.queryset
-                         .filter(lapsi__id__in=Subquery(lapsi_id_subquery))
-                         .prefetch_related(Prefetch('lapsi',
-                                                    queryset=Lapsi.objects.filter(id__in=Subquery(lapsi_id_subquery)).distinct()))
-                         .order_by('sukunimi', 'etunimet').distinct())
+        prefetch_lapsi = Prefetch('lapsi', queryset=Lapsi.objects.filter(id__in=Subquery(lapsi_id_subquery)).distinct())
+        self.queryset = (self.queryset.filter(lapsi__id__in=Subquery(lapsi_id_subquery))
+                         .prefetch_related(prefetch_lapsi).order_by('sukunimi', 'etunimet').distinct())
         return super().list(request, pk=pk)
 
     def get_lapsi_filter(self, vakajarjestaja_id):
+        user = self.request.user
+
         filter_condition = (Q(vakatoimija=vakajarjestaja_id) | Q(oma_organisaatio=vakajarjestaja_id) |
                             Q(paos_organisaatio=vakajarjestaja_id))
+
+        if not self._has_organisaatio_level_vaka_permissions():
+            # No organisaatio level permissions, get results based on object permissions
+            lapsi_id_list = get_object_ids_for_user_by_model(user, Lapsi.get_name())
+            filter_condition &= Q(id__in=lapsi_id_list)
 
         query_params = self.request.query_params
         if toimipaikka_id := query_params.get('toimipaikka_id', None):
@@ -178,37 +182,35 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
                                  (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__gte=voimassa_pvm) |
                                   Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True)))
 
-        permission_context = self._get_lapsi_permission_context()
-        is_superuser, vakajarjestaja_oid, user_organisaatio_oids = itemgetter('is_superuser', 'vakajarjestaja_oid', 'user_organisaatio_oids')(permission_context)
-        if not is_superuser and vakajarjestaja_oid not in user_organisaatio_oids:
-            toimipaikka_oids = permission_context['toimipaikka_oids']
-            # Check toimipaikka level. Since object level permissions for lapset without toimipaikka are not set
-            # we don't check it here.
-            filter_condition &= Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__organisaatio_oid__in=toimipaikka_oids)
         return filter_condition
 
-    def get_serializer_context(self):
-        context = super(UiVakajarjestajatViewSet, self).get_serializer_context()
-        if self.action == 'lapsi_list':
-            context = {**context, **self._get_lapsi_permission_context()}
-        return context
-
-    def _get_lapsi_permission_context(self):
-        context = {}
+    def _has_organisaatio_level_vaka_permissions(self):
         user = self.request.user
-        vakajarjestaja_pk = self.kwargs['pk']
-        vakajarjestaja_oid = Organisaatio.objects.filter(pk=vakajarjestaja_pk).values_list('organisaatio_oid', flat=True).first()
-        group_name_prefixes = ['VARDA-TALLENTAJA_', 'VARDA-KATSELIJA_', 'HUOLTAJATIETO_']
-        user_organisaatio_oids = [] if user.is_superuser else get_organisaatio_oids_from_groups(user, *group_name_prefixes)
-        toimipaikka_oids = None
-        if not user.is_superuser and vakajarjestaja_oid not in user_organisaatio_oids:
-            toimipaikka_oids = get_toimipaikat_group_has_access(user, vakajarjestaja_pk, *group_name_prefixes).values_list('organisaatio_oid', flat=True)
-        context.update({
-            'is_superuser': user.is_superuser,
-            'vakajarjestaja_oid': vakajarjestaja_oid,
-            'user_organisaatio_oids': user_organisaatio_oids,
-            'toimipaikka_oids': toimipaikka_oids,
-        })
+        permission_qs = user_permission_groups_in_organization(
+            user, self.vakajarjestaja_oid,
+            [Z4_CasKayttoOikeudet.PALVELUKAYTTAJA, Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.KATSELIJA,
+             Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA, Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA]
+        )
+        return user.is_superuser or is_oph_staff(user) or permission_qs.exists()
+
+    def _has_organisaatio_level_henkilosto_permissions(self):
+        user = self.request.user
+        permission_qs = user_permission_groups_in_organization(
+            user, self.vakajarjestaja_oid,
+            [Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA, Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
+             Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA, Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA]
+        )
+        return user.is_superuser or is_oph_staff(user) or permission_qs.exists()
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        user = self.request.user
+        if self.action == 'tyontekija_list':
+            has_organisaatio_level_permissions = self._has_organisaatio_level_henkilosto_permissions()
+            organisaatio_oid_list = ([] if has_organisaatio_level_permissions else
+                                     get_taydennyskoulutus_tyontekija_group_organisaatio_oids(user))
+            context = {**context, 'has_organisaatio_level_permissions': has_organisaatio_level_permissions,
+                       'organisaatio_oid_list': organisaatio_oid_list}
         return context
 
 
@@ -452,7 +454,7 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
     def list(self, request, *args, **kwargs):
         user = self.request.user
 
-        vakajarjestaja_obj = parse_vakajarjestaja(user, kwargs['organisaatio_pk'])
+        vakajarjestaja_obj = parse_vakajarjestaja(user, kwargs['organisaatio_pk'], VAKA_GROUPS)
         self.vakajarjestaja_id = vakajarjestaja_obj.id
         self.vakajarjestaja_oid = vakajarjestaja_obj.organisaatio_oid
 
@@ -569,7 +571,7 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
     def list(self, request, *args, **kwargs):
         user = self.request.user
 
-        vakajarjestaja_obj = parse_vakajarjestaja(user, kwargs['organisaatio_pk'])
+        vakajarjestaja_obj = parse_vakajarjestaja(user, kwargs['organisaatio_pk'], TYONTEKIJA_GROUPS)
         self.vakajarjestaja_id = vakajarjestaja_obj.id
         self.vakajarjestaja_oid = vakajarjestaja_obj.organisaatio_oid
 

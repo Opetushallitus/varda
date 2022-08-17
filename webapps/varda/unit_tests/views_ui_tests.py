@@ -396,17 +396,18 @@ class VardaHenkilostoViewSetTests(TestCase):
         self.assertEqual(len(lapset_results), 1)
         lapset_result = lapset_results[0]
         expected_results = {
+            'id': 8,
+            'url': 'http://testserver/api/v1/lapset/8/',
             'vakatoimija_oid': None,
+            'vakatoimija_nimi': None,
             'oma_organisaatio_oid': '1.2.246.562.10.34683023489',
+            'oma_organisaatio_nimi': 'Tester2 organisaatio',
             'paos_organisaatio_oid': '1.2.246.562.10.93957375488',
+            'paos_organisaatio_nimi': 'Tester organisaatio',
+            'tallentaja_organisaatio_oid': '1.2.246.562.10.34683023489',
+            'is_missing_data': False
         }
-        self.assertTrue(expected_results.items() <= lapset_result.items())
-        self.assertEqual(len(lapset_result['toimipaikat']), 1)
-        expected_toimipaikka_results = {
-            'organisaatio_oid': toimipaikka_oid,
-        }
-        toimipaikka_result = lapset_result['toimipaikat'][0]
-        self.assertTrue(expected_toimipaikka_results.items() <= toimipaikka_result.items())
+        self.assertDictEqual(expected_results, lapset_result)
 
     def test_api_lapset_paos_permissions(self):
         # PAOS-organisaatio should not see non-PAOS Lapsi objects in selected Toimipaikka
