@@ -1,6 +1,12 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.6.5 (18.08.2022)
+- OPHVARDA-2415: Paranna syötä tietoja -hakujen suorituskykyä
+- OPHVARDA-2417: Poista oikeudet lapseen PAOS-huoltajatiedot-ryhmiltä
+- OPHVARDA-2503: Korjaa Robot-testit
+- OPHVARDA-2504: Korjaa katsele tietoja toimipaikan päivämäärähaku
+
 1.6.4 (05.08.2022)
 - OPHVARDA-2476: PAOS-lasten maksutietojen raportoinnin jatkokehitys
 - OPHVARDA-2486: Viimeisin toimipaikka -valinnan nollaus

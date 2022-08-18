@@ -118,6 +118,8 @@ mat-panel-description>.varda-text-button .mat-icon:first-child {
   vertical-align: middle;
   line-height: 3.0rem;
   font-size: 2rem;
+  width: auto;
+  height: auto;
 }
 
 .palvelussuhde>.mat-expansion-panel {
