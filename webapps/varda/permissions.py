@@ -1290,7 +1290,10 @@ def assign_taydennyskoulutus_permissions(taydennyskoulutus, reassign=False):
                           .order_by('palvelussuhteet__tyoskentelypaikat__toimipaikka__organisaatio_oid'))
     assign_henkilosto_object_permissions(taydennyskoulutus, toimipaikka_oid_qs)
     # Assign permissions for all Toimipaikat of Organisaatio in a task so that it doesn't block execution
-    assign_taydennyskoulutus_all_toimipaikka_permissions.delay(taydennyskoulutus.id, organisaatio_oid)
+    # Start after transaction has been committed, so that Taydennyskoulutus will exist in database
+    transaction.on_commit(
+        lambda: assign_taydennyskoulutus_all_toimipaikka_permissions.delay(taydennyskoulutus.id, organisaatio_oid)
+    )
 
 
 @shared_task
