@@ -56,10 +56,10 @@ export class VardaVakajarjestajaApiService {
       environment.vardaAppUrl,
       { page_size: 500, ...searchFilters }
     ).pipe(
+      catchError((err: Error) => of([])),
       tap(toimipaikat => {
         this.authService.initUserPermissions(toimipaikat);
-      }),
-      catchError((err: Error) => of([]))
+      })
     );
   }
 
