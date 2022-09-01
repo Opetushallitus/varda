@@ -36,7 +36,7 @@ from varda.filters import (CustomParameter, CustomParametersFilterBackend, Excel
                            TiedonsiirtoFilter, TransferOutageReportFilter)
 from varda.misc import encrypt_string
 from varda.misc_queries import get_related_object_changed_id_qs
-from varda.misc_viewsets import ViewSetValidator
+from varda.misc_viewsets import parse_query_parameter, ViewSetValidator
 from varda.models import (KieliPainotus, Lapsi, Maksutieto, Organisaatio, Palvelussuhde, PaosOikeus, PaosToiminta,
                           ToiminnallinenPainotus, Toimipaikka, Tyontekija, Tyoskentelypaikka, Varhaiskasvatuspaatos,
                           Varhaiskasvatussuhde, YearlyReportSummary, Z10_KelaVarhaiskasvatussuhde, Z2_Koodisto,
@@ -45,7 +45,7 @@ from varda.pagination import (ChangeablePageSizePagination, ChangeableReportingP
                               DateReverseCursorPagination, IdCursorPagination, IdReverseCursorPagination,
                               TkCursorPagination)
 from varda.permissions import (auditlogclass, get_vakajarjestajat_filter_for_raportit, is_oph_staff,
-                               IsCertificateAccess, is_user_permission, RaportitPermissions, ReadAdminOrOPHUser,
+                               IsCertificateAccess, RaportitPermissions, ReadAdminOrOPHUser,
                                user_permission_groups_in_organization)
 from varda.serializers_reporting import (DuplicateLapsiSerializer, ErrorReportLapsetSerializer,
                                          ErrorReportToimipaikatSerializer, ErrorReportTyontekijatSerializer,
@@ -1242,70 +1242,65 @@ class YearlyReportingDataSummaryViewSet(GenericViewSet, CreateModelMixin):
     queryset = YearlyReportSummary.objects.none()
     serializer_class = YearlyReportingDataSummarySerializer
 
-    def return_vakajarjestaja(self, parameter):
-        try:
-            parameter = int(parameter)
-            return Organisaatio.objects.filter(id=parameter).first()
-        except ValueError:
-            return Organisaatio.objects.filter(organisaatio_oid=parameter).first()
-
     def check_user_permissions(self, user, vakajarjestaja_obj, full_query):
         if not user.is_superuser and not is_oph_staff(user):
             if full_query:
                 raise ValidationError({'vakajarjestaja': [ErrorMessages.PE003.value]})
-            if vakajarjestaja_obj and not is_user_permission(user, Z4_CasKayttoOikeudet.RAPORTTIEN_KATSELIJA + '_' + vakajarjestaja_obj.organisaatio_oid):
+            if (vakajarjestaja_obj and
+                    not user_permission_groups_in_organization(user, vakajarjestaja_obj.organisaatio_oid,
+                                                               [Z4_CasKayttoOikeudet.RAPORTTIEN_KATSELIJA]).exists()):
                 raise ValidationError({'vakajarjestaja': [ErrorMessages.PE003.value]})
 
     def create(self, request, *args, **kwargs):
-        last_year = datetime.date.today().year - 1
-        user = self.request.user
         data = self.request.data
-        vakajarjestaja = data.get('vakajarjestaja_input')
-        tilastovuosi = data.get('tilastovuosi', last_year)
-        poiminta_pvm = data.get('poiminta_pvm')
-        history_q = False
-        timediff = None
-
-        serializer = self.get_serializer(data=request.data)
+        # Validate input data, raise exceptions
+        serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
 
-        full_query = True if vakajarjestaja.lower() == 'all' else False
-        vakajarjestaja_obj = self.return_vakajarjestaja(vakajarjestaja)
+        vakajarjestaja_obj = None
+        vakajarjestaja_arg = data.get('vakajarjestaja_input')
+        full_query = True if (vakajarjestaja_arg and vakajarjestaja_arg.lower() == 'all') else False
+        if not full_query:
+            vakajarjestaja_obj = (Organisaatio.objects
+                                  .filter(Q(id=vakajarjestaja_arg) | Q(organisaatio_oid=vakajarjestaja_arg))
+                                  .first())
 
         if not vakajarjestaja_obj and not full_query:
             raise ValidationError({'vakajarjestaja': [ErrorMessages.MI015.value]})
 
-        self.check_user_permissions(user, vakajarjestaja_obj, full_query)
+        self.check_user_permissions(self.request.user, vakajarjestaja_obj, full_query)
 
+        last_year = datetime.date.today().year - 1
+        tilastovuosi_arg = data.get('tilastovuosi', last_year)
         try:
-            tilasto_pvm = datetime.date(int(tilastovuosi), 12, 31)
+            tilasto_pvm = datetime.date(int(tilastovuosi_arg), 12, 31)
         except ValueError:
             raise ValidationError({'tilastovuosi': [ErrorMessages.GE010.value]})
 
-        if poiminta_pvm:
-            try:
-                poiminta_pvm = datetime.datetime.strptime(poiminta_pvm, '%Y-%m-%dT%H:%M:%S%z')
-                history_q = True
-            except ValueError:
-                raise ValidationError({'poiminta_pvm': [ErrorMessages.GE020.value]})
+        poiminta_pvm = parse_query_parameter(data, 'poiminta_pvm', datetime.datetime)
 
-        summary_obj, created = YearlyReportSummary.objects.get_or_create(vakajarjestaja=vakajarjestaja_obj, tilasto_pvm=tilasto_pvm)
+        summary_obj, created = YearlyReportSummary.objects.get_or_create(vakajarjestaja=vakajarjestaja_obj,
+                                                                         tilasto_pvm=tilasto_pvm)
 
+        timediff = None
         if not created and poiminta_pvm is not None:
+            # If report already exists, get difference between this and previous poiminta_pvm
             timediff = abs(summary_obj.poiminta_pvm - poiminta_pvm)
 
         if created or (timediff is not None and timediff > datetime.timedelta(minutes=30)):
+            # Generate new report if it is created for the first time or if the difference between this and previous
+            # poiminta_pvm is more than 30 minutes
             poiminta_pvm = poiminta_pvm or datetime.datetime.now(datetime.timezone.utc)
-            clear_fields = [field for field in model_to_dict(summary_obj) if field not in ['id', 'vakajarjestaja', 'tilasto_pvm',
-                                                                                           'status', 'poiminta_pvm', 'muutos_pvm',
-                                                                                           'luonti_pvm']]
+            clear_fields = [field for field in model_to_dict(summary_obj) if field not in
+                            ['id', 'vakajarjestaja', 'tilasto_pvm', 'status', 'poiminta_pvm',
+                             'muutos_pvm', 'luonti_pvm']]
             for field in clear_fields:
                 setattr(summary_obj, field, None)
             summary_obj.status = ReportStatus.PENDING.value
             summary_obj.poiminta_pvm = poiminta_pvm
             summary_obj.save()
             vakajarjestaja_id = getattr(vakajarjestaja_obj, 'id', None)
-            create_yearly_reporting_summary.delay(vakajarjestaja_id, tilasto_pvm, poiminta_pvm, full_query, history_q)
+            create_yearly_reporting_summary.delay(tilasto_pvm, poiminta_pvm, vakajarjestaja_id)
 
         serializer = self.get_serializer(model_to_dict(summary_obj))
         headers = self.get_success_headers(serializer.data)

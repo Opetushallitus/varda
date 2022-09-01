@@ -177,4 +177,9 @@ def parse_query_parameter(parameters, parameter_name, parameter_type):
                 return datetime.datetime.strptime(query_parameter, '%Y-%m-%d').date()
             except ValueError:
                 raise ValidationError({parameter_name: [ErrorMessages.GE006.value]})
+        elif parameter_type is datetime.datetime:
+            try:
+                return datetime.datetime.strptime(query_parameter, '%Y-%m-%dT%H:%M:%S%z')
+            except ValueError:
+                raise ValidationError({parameter_name: [ErrorMessages.GE020.value]})
     return query_parameter
