@@ -45,7 +45,7 @@ def add_test_users():
 
 
 def add_test_user_permissions():
-    from django.contrib.auth.models import Group, Permission, User
+    from django.contrib.auth.models import Group, User
 
     group_palvelukayttaja = Group.objects.get(name='vakajarjestaja_palvelukayttaja')
     group_palvelukayttaja_vakajarjestaja_1 = Group.objects.get(name='VARDA-PALVELUKAYTTAJA_1.2.246.562.10.34683023489')
@@ -101,8 +101,6 @@ def add_test_user_permissions():
     user_tester.groups.add(group_tallentaja_toimipaikka_2935996863483)
     user_tester.groups.add(group_huoltajatiedot_tallentaja_toimipaikka_2935996863483)
     user_tester.groups.add(group_huoltajatiedot_tallentaja_vakajarjestaja_1)
-    add_toimipaikka_permission = Permission.objects.get(codename='add_toimipaikka')
-    user_tester.user_permissions.add(add_toimipaikka_permission)  # Needed for varda/examples/add_toimipaikka -test
 
     user_tester2 = User.objects.get(username='tester2')
     user_tester2.groups.add(group_tallentaja_vakajarjestaja_1)

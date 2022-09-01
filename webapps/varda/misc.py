@@ -24,8 +24,9 @@ from rest_framework.exceptions import APIException
 
 from varda.enums.error_messages import ErrorMessages
 from varda.helper_functions import hide_hetu
-from varda.models import Henkilo, MaksutietoHuoltajuussuhde, Organisaatio
+from varda.models import Henkilo, Organisaatio
 from varda.oph_yhteiskayttopalvelu_autentikaatio import get_authentication_header, get_contenttype_header
+
 
 logger = logging.getLogger(__name__)
 
@@ -385,23 +386,6 @@ def get_user_vakajarjestaja(user):
         return None
 
     return vakajarjestaja_qs.first()
-
-
-def merge_lapsi_maksutiedot(new_lapsi, old_maksutiedot, new_huoltajuussuhteet):
-    for maksutieto in old_maksutiedot:
-        maksutieto_old_huoltajuussuhteet = maksutieto.huoltajuussuhteet.all()
-        # We need to evaluate the queryset before .clear() otherwise the queryset will end up empty
-        maksutieto_old_huoltaja_ids = set(maksutieto_old_huoltajuussuhteet.values_list('huoltaja_id', flat=True).distinct())
-        maksutieto_new_huoltajuussuhteet = new_huoltajuussuhteet.filter(huoltaja_id__in=maksutieto_old_huoltaja_ids)
-        old_maksutieto_huoltaja_count = maksutieto_old_huoltajuussuhteet.count()
-
-        new_maksutieto_huoltajat_count = 0
-        for new_huoltajuussuhde in maksutieto_new_huoltajuussuhteet:
-            MaksutietoHuoltajuussuhde.objects.create(huoltajuussuhde=new_huoltajuussuhde, maksutieto=maksutieto)
-            new_maksutieto_huoltajat_count += 1
-
-        if old_maksutieto_huoltaja_count != new_maksutieto_huoltajat_count:
-            raise ValueError(f'Error transferring huoltajuussuhteet on maksutieto {maksutieto} to new child {new_lapsi}')
 
 
 def get_nested_value(instance, field_list):

@@ -101,8 +101,7 @@ def _transfer_lapsi_permissions_to_new_vakajarjestaja(new_vakajarjestaja, old_va
                 delete_permissions_from_object_instance_by_oid(lapsi.henkilo, old_vakajarjestaja.organisaatio_oid)
 
         if existing_lapsi:
-            _transfer_vakapaatos_permissions_to_new_vakajarjestaja(lapsi, existing_lapsi)
-            _transfer_maksutieto_permissions_to_new_vakajarjestaja(lapsi, existing_lapsi)
+            transfer_vaka_data_to_different_lapsi(lapsi, existing_lapsi)
             # Lapsi related data was transferred to an existing Lapsi object, so delete the old one
             MaksutietoHuoltajuussuhde.objects.filter(huoltajuussuhde__lapsi=lapsi).delete()
             Huoltajuussuhde.objects.filter(lapsi=lapsi).delete()
@@ -236,3 +235,8 @@ def _transfer_taydennyskoulutus_permissions_to_new_vakajarjestaja(taydennyskoulu
 
 def _raise_error(msg):
     raise serializers.ValidationError({'errors': [msg]})
+
+
+def transfer_vaka_data_to_different_lapsi(old_lapsi, new_lapsi):
+    _transfer_vakapaatos_permissions_to_new_vakajarjestaja(old_lapsi, new_lapsi)
+    _transfer_maksutieto_permissions_to_new_vakajarjestaja(old_lapsi, new_lapsi)

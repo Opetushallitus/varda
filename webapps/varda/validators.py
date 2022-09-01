@@ -519,7 +519,7 @@ def validate_alkamis_pvm_before_paattymis_pvm(data):
         raise ValidationErrorRest({'paattymis_pvm': [ErrorMessages.MI003.value]})
 
 
-def validate_merge_duplicate_child_list(merge_list):
+def validate_nested_list_with_two_ints(merge_list):
     if not isinstance(merge_list, list):
         raise TypeError('Invalid list, please check the format')
 
@@ -528,20 +528,6 @@ def validate_merge_duplicate_child_list(merge_list):
             raise TypeError('List is not a list of lists, please check the input format')
         if len(unit) != 2 or not isinstance(unit[0], int) or not isinstance(unit[1], int):
             raise TypeError(f'List length is not equal to two or contains non-integer values {unit}')
-
-
-def validate_merge_duplicate_child_lapsi_objs(new_lapsi, old_lapsi):
-    error_msg = None
-    if new_lapsi.henkilo_id != old_lapsi.henkilo_id or new_lapsi.vakatoimija_id != old_lapsi.vakatoimija_id:
-        error_msg = f'Tried to merge a child with two different henkilo or vakatoimija. Old lapsi:{old_lapsi.id} new lapsi:{new_lapsi.id}'
-
-    if new_lapsi.id == old_lapsi.id:
-        error_msg = f'Cannot merge lapsi with ID {new_lapsi.id} with itself'
-
-    if not error_msg:
-        return {'is_ok': True, 'error_msg': error_msg}
-
-    return {'is_ok': False, 'error_msg': error_msg}
 
 
 def validate_kela_api_datetimefield(field, now, name):
