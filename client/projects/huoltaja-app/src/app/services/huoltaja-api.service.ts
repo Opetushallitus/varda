@@ -6,7 +6,11 @@ import { HuoltajaTranslations } from '../../assets/i18n/translations.enum';
 import { HenkilotiedotDTO } from '../utilities/models/dto/henkilo-dto';
 import { catchError, take } from 'rxjs/operators';
 import { HuoltajaRoute } from '../utilities/models/enum/huoltaja-route.enum';
-import { HuoltajatiedotDTO } from '../utilities/models/dto/huoltajuussuhde-dto';
+import {
+  HuoltajatiedotDTO,
+  HuoltajatiedotSimpleDTO,
+  HuoltajuussuhdeSimpleDTO
+} from '../utilities/models/dto/huoltajuussuhde-dto';
 import { VarhaiskasvatustiedotDTO } from '../utilities/models/dto/lapsi-dto';
 import { TyontekijatiedotDTO } from '../utilities/models/dto/tyontekija-dto';
 import { Router } from '@angular/router';
@@ -23,7 +27,7 @@ export class HuoltajaApiService implements VardaApiServiceInterface {
   private henkilot$ = new BehaviorSubject<Array<UserHuollettavaDTO>>(null);
   private henkilotiedot$ = new BehaviorSubject<HenkilotiedotDTO>(null); // the user or child selected
   private varhaiskasvatustiedot$ = new BehaviorSubject<VarhaiskasvatustiedotDTO>(null);
-  private huoltajatiedot$ = new BehaviorSubject<HuoltajatiedotDTO>(null);
+  private huoltajatiedot$ = new BehaviorSubject<HuoltajatiedotSimpleDTO>(null);
   private tyontekijatiedot$ = new BehaviorSubject<TyontekijatiedotDTO>(null);
 
   constructor(
@@ -62,7 +66,7 @@ export class HuoltajaApiService implements VardaApiServiceInterface {
         next: (results) => {
           const henkilotiedot: HenkilotiedotDTO = results.henkilotiedot;
           const varhaiskasvatustiedot: VarhaiskasvatustiedotDTO = results.varhaiskasvatustiedot;
-          const huoltajatiedot: HuoltajatiedotDTO = results.huoltajatiedot;
+          const huoltajatiedot: HuoltajatiedotSimpleDTO = this.combineHuoltajatiedot(results.huoltajatiedot);
           const tyontekijatiedot: TyontekijatiedotDTO = results.tyontekijatiedot;
 
           this.henkilotiedot$.next(henkilotiedot);
@@ -102,6 +106,36 @@ export class HuoltajaApiService implements VardaApiServiceInterface {
     );
   }
 
+  combineHuoltajatiedot(huoltajatiedot?: HuoltajatiedotDTO): HuoltajatiedotSimpleDTO {
+    if (!huoltajatiedot) {
+      return null;
+    }
+
+    // Merge huoltajuussuhde objects based on henkilo_id and vakatoimija_id/oma_organisaatio_id
+    const huoltajuussuhdeList = huoltajatiedot.huoltajuussuhteet?.reduce(
+      (previousValue: Array<HuoltajuussuhdeSimpleDTO>, currentValue) => {
+        const existingHuoltajuussuhde = previousValue.find(huoltajuussuhde =>
+          huoltajuussuhde.lapsi_henkilo_id === currentValue.lapsi_henkilo_id &&
+          huoltajuussuhde.organisaatio_id === (currentValue.vakatoimija_id || currentValue.oma_organisaatio_id));
+
+        if (existingHuoltajuussuhde) {
+          existingHuoltajuussuhde.maksutiedot.push(...currentValue.maksutiedot);
+        } else {
+          previousValue.push({
+            ...currentValue,
+            organisaatio_id: currentValue.vakatoimija_id || currentValue.oma_organisaatio_id,
+            organisaatio_nimi: currentValue.vakatoimija_nimi || currentValue.oma_organisaatio_nimi
+          });
+        }
+        return previousValue;
+      }, []);
+
+    return {
+      huoltaja_id: huoltajatiedot.huoltaja_id,
+      huoltajuussuhteet: huoltajuussuhdeList
+    };
+  }
+
   setHenkilot(henkilot: Array<UserHuollettavaDTO>) {
     this.henkilot$.next(henkilot);
   }
@@ -118,7 +152,7 @@ export class HuoltajaApiService implements VardaApiServiceInterface {
     return this.varhaiskasvatustiedot$.asObservable();
   }
 
-  getHuoltajatiedot(): Observable<HuoltajatiedotDTO> {
+  getHuoltajatiedot(): Observable<HuoltajatiedotSimpleDTO> {
     return this.huoltajatiedot$.asObservable();
   }
 

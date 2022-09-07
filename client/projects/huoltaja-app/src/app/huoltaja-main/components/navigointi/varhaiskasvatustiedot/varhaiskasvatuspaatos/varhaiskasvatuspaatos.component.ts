@@ -4,7 +4,9 @@ import { LapsiDTO } from 'projects/huoltaja-app/src/app/utilities/models/dto/lap
 import { VarhaiskasvatuspaatosDTO } from 'projects/huoltaja-app/src/app/utilities/models/dto/varhaiskasvatuspaatos-dto';
 import { HuoltajaTranslations } from 'projects/huoltaja-app/src/assets/i18n/translations.enum';
 import { KoodistoEnum } from 'varda-shared';
-import { VarhaiskasvatustiedotContactDialogComponent } from '../../../utility-components/contact-dialog/varhaiskasvatustiedot-contact-dialog/varhaiskasvatustiedot-contact-dialog.component';
+import {
+  VarhaiskasvatustiedotContactDialogComponent
+} from '../../../utility-components/contact-dialog/varhaiskasvatustiedot-contact-dialog/varhaiskasvatustiedot-contact-dialog.component';
 
 @Component({
   selector: 'app-varhaiskasvatuspaatos',
@@ -17,7 +19,7 @@ export class VarhaiskasvatuspaatosComponent implements OnInit {
   @Input() oma_organisaatio_sahkoposti: string;
   i18n = HuoltajaTranslations;
   koodistoEnum = KoodistoEnum;
-  toimipaikkaList: Array<string> = [];
+  toimipaikkaValue: string;
   isKunnallinen = false;
 
 
@@ -26,9 +28,10 @@ export class VarhaiskasvatuspaatosComponent implements OnInit {
   ngOnInit() {
     this.isKunnallinen = ['jm01', 'jm02', 'jm03'].includes(this.vakapaatos.jarjestamismuoto_koodi.toLocaleLowerCase());
 
-    this.toimipaikkaList = this.vakapaatos.varhaiskasvatussuhteet.map(vakasuhde => vakasuhde.toimipaikka.toimipaikka_nimi)
+    const toimipaikkaList = this.vakapaatos.varhaiskasvatussuhteet.map(vakasuhde => vakasuhde.toimipaikka.toimipaikka_nimi)
       .filter((toimipaikka, index, arr) => arr.lastIndexOf(toimipaikka) === index)
       .sort((a, b) => a.localeCompare(b));
+    this.toimipaikkaValue = toimipaikkaList.join(', ');
 
     this.sortVarhaiskasvatussuhteet();
   }
@@ -56,5 +59,4 @@ export class VarhaiskasvatuspaatosComponent implements OnInit {
       return sortByB.localeCompare(sortByA);
     });
   }
-
 }

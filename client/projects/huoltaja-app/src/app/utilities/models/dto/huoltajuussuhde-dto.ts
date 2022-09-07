@@ -3,6 +3,10 @@ export interface HuoltajatiedotDTO {
   huoltajuussuhteet: Array<HuoltajuussuhdeDTO>;
 }
 
+export interface HuoltajatiedotSimpleDTO extends Omit<HuoltajatiedotDTO, 'huoltajuussuhteet'> {
+  huoltajuussuhteet: Array<HuoltajuussuhdeSimpleDTO>;
+}
+
 export interface MaksutietoDTO {
   id: number;
   yksityinen_jarjestaja: boolean;
@@ -33,6 +37,17 @@ export interface HuoltajuussuhdeDTO {
   paos_organisaatio_oid?: string;
   paos_organisaatio_nimi?: string;
   voimassa_kytkin: boolean;
+  maksutiedot: Array<MaksutietoDTO>;
+  yhteysosoite: string;
+}
+
+export interface HuoltajuussuhdeSimpleDTO {
+  aktiivinen_toimija: boolean;
+  lapsi_etunimet: string;
+  lapsi_sukunimi: string;
+  lapsi_henkilo_id: number;
+  organisaatio_id: number;
+  organisaatio_nimi: string;
   maksutiedot: Array<MaksutietoDTO>;
   yhteysosoite: string;
 }

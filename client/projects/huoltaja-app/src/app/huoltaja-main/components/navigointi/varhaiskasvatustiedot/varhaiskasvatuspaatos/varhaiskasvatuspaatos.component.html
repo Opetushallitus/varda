@@ -2,12 +2,12 @@
                      (opened)="togglePanel(vakapaatos)"
                      (closed)="togglePanel(vakapaatos)"
                      hideToggle="false">
-  <mat-expansion-panel-header class="huoltaja-header vakapaatos-header">
+  <mat-expansion-panel-header>
     <mat-panel-title [attr.aria-expanded]="vakapaatos.toggle_expanded">
       <app-expansion-panel-title [title]="i18n.varhaiskasvatuspaatos"
                                  [startDate]="vakapaatos.alkamis_pvm"
                                  [endDate]="vakapaatos.paattymis_pvm"
-                                 [secondaryTitle]="toimipaikkaList"
+                                 [secondaryTitle]="toimipaikkaValue"
                                  [expanded]="vakapaatos.toggle_expanded">
       </app-expansion-panel-title>
     </mat-panel-title>

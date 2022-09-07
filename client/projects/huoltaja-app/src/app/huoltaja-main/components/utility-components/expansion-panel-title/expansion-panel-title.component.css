@@ -5,7 +5,7 @@
 .expansion-panel-title-grid {
   display: inline-grid;
   justify-content: stretch;
-  grid-template-columns: [matIcon] 20px [title] auto [range] 1fr [secondaryTitle] 2fr [toggle] 40px;
+  grid-template-columns: [matIcon] 20px [title] 1fr [range] 180px [secondaryTitle] 2fr [toggle] 40px;
   width: calc(100% - 0.5rem);
   height: 100%;
   column-gap: 1.5rem;
