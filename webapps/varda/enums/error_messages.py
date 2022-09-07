@@ -197,6 +197,7 @@ class ErrorMessages(enum.Enum):
     MA016 = get_error_dict('MA016', 'Maksutieto must have paattymis_pvm because Lapsi is over 8 years old.')
     MA017 = get_error_dict('MA017', 'Duplicate huoltajat detected.')
     MA018 = get_error_dict('MA018', 'Huoltaja is already linked to this Maksutieto.')
+    MA019 = get_error_dict('MA019', 'paattymis_pvm must be equal to or after 2019-09-01 for kunnallinen Lapsi.')
 
     # PaosToiminta errors, prefix: PT
     PT001 = get_error_dict('PT001', 'oma_organisaatio cannot be the same as paos_organisaatio.')
@@ -358,6 +359,8 @@ class ErrorMessages(enum.Enum):
     MI017 = get_error_dict('MI017', 'Query parameters are invalid.')
     MI018 = get_error_dict('MI018', 'lahdejarjestelma field is required if tunniste field is not empty.')
     MI019 = get_error_dict('MI019', 'Given Toimipaikka does not belong to the correct Organisaatio.')
+    MI020 = get_error_dict('MI020', 'paattymis_pvm must be equal to or after 2020-01-01 for yksityinen Lapsi.')
+    MI021 = get_error_dict('MI021', 'paattymis_pvm must be equal to or after 2019-01-01 for kunnallinen Lapsi.')
 
     # Nginx errors
     NG001 = get_error_dict('NG001', 'Session is required.')

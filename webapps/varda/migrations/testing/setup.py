@@ -1411,7 +1411,7 @@ def create_lapset():
                     {
                         'toimipaikka_oid': '1.2.246.562.10.9395737548810',
                         'alkamis_pvm': '2017-02-11',
-                        'paattymis_pvm': '2018-02-24',
+                        'paattymis_pvm': '2020-02-24',
                         'lahdejarjestelma': '1',
                         'tunniste': 'testing-varhaiskasvatussuhde1'
                     },
@@ -1672,7 +1672,7 @@ def create_lapset():
                     'jarjestamismuoto_koodi': 'jm04',
                     'hakemus_pvm': '2018-01-01',
                     'alkamis_pvm': '2018-01-11',
-                    'paattymis_pvm': '2019-12-22',
+                    'paattymis_pvm': '2020-02-01',
                     'lahdejarjestelma': '1',
                     'tunniste': 'testing-varhaiskasvatuspaatos7'
                 },
@@ -1680,14 +1680,14 @@ def create_lapset():
                     {
                         'toimipaikka_oid': '1.2.246.562.10.9395737548811',
                         'alkamis_pvm': '2018-09-05',
-                        'paattymis_pvm': '2019-04-20',
+                        'paattymis_pvm': '2020-01-20',
                         'lahdejarjestelma': '1',
                         'tunniste': 'testing-varhaiskasvatussuhde7'
                     },
                     {
                         'toimipaikka_oid': '1.2.246.562.10.9395737548810',
                         'alkamis_pvm': '2018-05-01',
-                        'paattymis_pvm': '2019-10-24',
+                        'paattymis_pvm': '2020-01-24',
                         'lahdejarjestelma': '1',
                         'tunniste': 'testing-varhaiskasvatussuhde8'
                     }

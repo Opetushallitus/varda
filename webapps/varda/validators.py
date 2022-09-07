@@ -3,11 +3,11 @@ import ipaddress
 import re
 import decimal
 from django.conf import settings
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q, CharField
 from django.forms.models import model_to_dict
 from django.utils.deconstruct import deconstructible
-from rest_framework.exceptions import ValidationError as ValidationErrorRest
+from rest_framework.exceptions import ValidationError
 
 from varda.enums.error_messages import ErrorMessages
 from varda.enums.koodistot import Koodistot
@@ -18,13 +18,13 @@ def validate_email(email):
     # with an exception: domain name must start with [A-Za-z0-9]
     email_regex = re.compile(r'^[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+(\.[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+)*@[A-Za-z0-9][A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*(\.[A-Za-z]{2,})$')
     if not email_regex.fullmatch(email):
-        raise ValidationErrorRest([ErrorMessages.GE024.value])
+        raise ValidationError([ErrorMessages.GE024.value])
 
 
 def validate_henkilotunnus_or_oid_needed(validated_data):
     if ('henkilotunnus' not in validated_data and 'henkilo_oid' not in validated_data or
             'henkilotunnus' in validated_data and 'henkilo_oid' in validated_data):
-        raise ValidationErrorRest({'errors': [ErrorMessages.HE004.value]})
+        raise ValidationError({'errors': [ErrorMessages.HE004.value]})
 
 
 def validate_henkilotunnus(henkilotunnus):
@@ -32,7 +32,7 @@ def validate_henkilotunnus(henkilotunnus):
     Validate the date, the middle character, and the identification part.
     """
     if len(henkilotunnus) != 11:
-        raise ValidationErrorRest({'henkilotunnus': [ErrorMessages.HE005.value]})
+        raise ValidationError({'henkilotunnus': [ErrorMessages.HE005.value]})
     day = henkilotunnus[:2]
     month = henkilotunnus[2:4]
     year = henkilotunnus[4:6]
@@ -40,7 +40,7 @@ def validate_henkilotunnus(henkilotunnus):
 
     check_tilapainen_hetu(henkilotunnus)
     if century not in ('-', 'A'):
-        raise ValidationErrorRest({'henkilotunnus': [ErrorMessages.HE006.value]})
+        raise ValidationError({'henkilotunnus': [ErrorMessages.HE006.value]})
     if century == '-':
         cent = '19'
     else:
@@ -51,7 +51,7 @@ def validate_henkilotunnus(henkilotunnus):
         if delta.days <= 0:
             raise Exception()
     except Exception:
-        raise ValidationErrorRest({'henkilotunnus': [ErrorMessages.HE007.value]})
+        raise ValidationError({'henkilotunnus': [ErrorMessages.HE007.value]})
     checknumber = henkilotunnus[:6] + henkilotunnus[7:10]
     check = henkilotunnus[10]
     code = '0123456789ABCDEFHJKLMNPRSTUVWXY'
@@ -60,7 +60,7 @@ def validate_henkilotunnus(henkilotunnus):
         if check != code[remainder]:
             raise Exception()
     except Exception:
-        raise ValidationErrorRest({'henkilotunnus': [ErrorMessages.HE008.value]})
+        raise ValidationError({'henkilotunnus': [ErrorMessages.HE008.value]})
 
 
 def check_tilapainen_hetu(henkilotunnus):
@@ -70,7 +70,7 @@ def check_tilapainen_hetu(henkilotunnus):
             if individual_number < 2 or individual_number > 899:
                 raise Exception()
         except Exception:
-            raise ValidationErrorRest({'henkilotunnus': [ErrorMessages.HE009.value]})
+            raise ValidationError({'henkilotunnus': [ErrorMessages.HE009.value]})
 
 
 def validate_kutsumanimi(etunimet, kutsumanimi):
@@ -82,7 +82,7 @@ def validate_kutsumanimi(etunimet, kutsumanimi):
     splitted_kutsumanimi_array = kutsumanimi.split(' ')
     kutsumanimi_array = list(filter(None, splitted_kutsumanimi_array))  # Remove empty, i.e. ''
     if len(kutsumanimi_array) != 1:
-        raise ValidationErrorRest({'kutsumanimi': [ErrorMessages.HE010.value]})
+        raise ValidationError({'kutsumanimi': [ErrorMessages.HE010.value]})
     validated_kutsumanimi = kutsumanimi_array[0].lower()
 
     splitted_etunimet_array = etunimet.split(' ')
@@ -99,7 +99,7 @@ def validate_kutsumanimi(etunimet, kutsumanimi):
         if etunimi.lower() == validated_kutsumanimi:
             return
 
-    raise ValidationErrorRest({'kutsumanimi': [ErrorMessages.HE011.value]})
+    raise ValidationError({'kutsumanimi': [ErrorMessages.HE011.value]})
 
 
 def validate_postinumero(postinumero):
@@ -109,7 +109,7 @@ def validate_postinumero(postinumero):
     if (len(postinumero) == 5) and postinumero.isnumeric() and postinumero != '00000':
         pass
     else:
-        raise ValidationErrorRest([ErrorMessages.MI005.value])
+        raise ValidationError([ErrorMessages.MI005.value])
 
 
 def validate_y_tunnus(y_tunnus):
@@ -117,11 +117,11 @@ def validate_y_tunnus(y_tunnus):
     Validation of y-tunnus: http://tarkistusmerkit.teppovuori.fi/
     """
     if len(y_tunnus) != 9:
-        raise ValidationErrorRest([ErrorMessages.VJ003.value])
+        raise ValidationError([ErrorMessages.VJ003.value])
     tunnus = y_tunnus[:7]
     hyphen = y_tunnus[7]
     if hyphen != '-':
-        raise ValidationErrorRest([ErrorMessages.VJ004.value])
+        raise ValidationError([ErrorMessages.VJ004.value])
     check = y_tunnus[8]
     multiplier = [7, 9, 10, 5, 8, 4, 2]
     try:
@@ -130,18 +130,18 @@ def validate_y_tunnus(y_tunnus):
         if remainder == 0:
             checknumber = 0
         elif remainder == 1:
-            raise ValidationErrorRest([ErrorMessages.VJ005.value])
+            raise ValidationError([ErrorMessages.VJ005.value])
         else:
             checknumber = 11 - remainder
         if checknumber != int(check):
-            raise ValidationErrorRest([ErrorMessages.VJ006.value])
+            raise ValidationError([ErrorMessages.VJ006.value])
     except Exception:
-        raise ValidationErrorRest([ErrorMessages.VJ006.value])
+        raise ValidationError([ErrorMessages.VJ006.value])
 
 
 def validate_arrayfield(provided_array):
     if not len(provided_array):
-        raise ValidationErrorRest([ErrorMessages.GE017.value])
+        raise ValidationError([ErrorMessages.GE017.value])
 
 
 def validate_ipv4_address(ip_address):
@@ -149,7 +149,7 @@ def validate_ipv4_address(ip_address):
         try:
             ipaddress.ip_network(ip_address)
         except ValueError:
-            raise ValidationErrorRest([ErrorMessages.VJ007.value])
+            raise ValidationError([ErrorMessages.VJ007.value])
 
 
 def validate_ipv6_address(ip_address):
@@ -157,15 +157,15 @@ def validate_ipv6_address(ip_address):
         try:
             ipaddress.ip_network(ip_address)
         except ValueError:
-            raise ValidationErrorRest([ErrorMessages.VJ008.value])
+            raise ValidationError([ErrorMessages.VJ008.value])
 
 
 def validate_koodi_in_general(koodi):
     splitted_koodi = koodi.split(' ')
     if len(splitted_koodi) > 1:
-        raise ValidationErrorRest([ErrorMessages.KO001.value])
+        raise ValidationError([ErrorMessages.KO001.value])
     if not koodi.isalnum():
-        raise ValidationErrorRest([ErrorMessages.KO002.value])
+        raise ValidationError([ErrorMessages.KO002.value])
 
 
 def validate_z2_koodi(code_value, koodisto_name, alkamis_pvm=None, paattymis_pvm=None, field_name=None,
@@ -177,7 +177,7 @@ def validate_z2_koodi(code_value, koodisto_name, alkamis_pvm=None, paattymis_pvm
     if koodisto_qs.exists:
         koodi_qs = Z2_Code.objects.filter(koodisto=koodisto_qs.first(), code_value__iexact=code_value)
         if not koodi_qs.exists():
-            raise ValidationErrorRest([ErrorMessages.KO003.value])
+            raise ValidationError([ErrorMessages.KO003.value])
         koodi_instance = koodi_qs.first()
 
         code_starts_after_start = False if paattymis_pvm_only else (alkamis_pvm and koodi_instance.alkamis_pvm > alkamis_pvm)
@@ -185,9 +185,9 @@ def validate_z2_koodi(code_value, koodisto_name, alkamis_pvm=None, paattymis_pvm
         code_ends_before_end = paattymis_pvm and koodi_instance.paattymis_pvm and koodi_instance.paattymis_pvm < paattymis_pvm
 
         if code_starts_after_start or code_ends_before_start or code_ends_before_end:
-            raise ValidationErrorRest({field_name: [ErrorMessages.KO005.value]})
+            raise ValidationError({field_name: [ErrorMessages.KO005.value]})
     else:
-        raise ValidationErrorRest([ErrorMessages.KO004.value])
+        raise ValidationError([ErrorMessages.KO004.value])
 
 
 def validate_maksun_peruste_koodi(maksun_peruste_koodi, alkamis_pvm=None, paattymis_pvm=None,
@@ -280,25 +280,25 @@ def validate_IBAN_koodi(IBAN_koodi):
     try:
         IBAN = IBAN_koodi.replace(' ', '')
         if len(IBAN) != 18:
-            raise ValidationErrorRest([ErrorMessages.VJ009.value])
+            raise ValidationError([ErrorMessages.VJ009.value])
         if IBAN[:2].lower() != 'fi':
-            raise ValidationErrorRest([ErrorMessages.VJ009.value])
+            raise ValidationError([ErrorMessages.VJ009.value])
         IBA = IBAN[4:] + '1518' + IBAN[2:4]
         check = int(IBA) % 97
         if check != 1:
-            raise ValidationErrorRest([ErrorMessages.VJ009.value])
-    except (TypeError, ValueError, ValidationError):
-        raise ValidationErrorRest([ErrorMessages.VJ009.value])
+            raise ValidationError([ErrorMessages.VJ009.value])
+    except (TypeError, ValueError, DjangoValidationError):
+        raise ValidationError([ErrorMessages.VJ009.value])
 
 
 def validate_puhelinnumero(puhelinnumero):
     puhelinnumero = puhelinnumero.replace('-', '')
     puhelinnumero = puhelinnumero.replace(' ', '')
     if not puhelinnumero:
-        raise ValidationErrorRest([ErrorMessages.GE001.value])
+        raise ValidationError([ErrorMessages.GE001.value])
     puhelinnumero_regex = re.compile(r'^(\+358)[1-9][0-9]{5,10}')
     if not puhelinnumero_regex.fullmatch(puhelinnumero):
-        raise ValidationErrorRest([ErrorMessages.MI006.value])
+        raise ValidationError([ErrorMessages.MI006.value])
 
 
 def parse_paivamaara(paivamaara, default=None):
@@ -335,7 +335,24 @@ def validate_paattymispvm_same_or_after_alkamispvm(validated_data):
     if 'paattymis_pvm' in validated_data and validated_data['paattymis_pvm'] is not None:
         if not validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], validated_data['paattymis_pvm'], can_be_same=True):
             msg = {'paattymis_pvm': [ErrorMessages.MI004.value]}
-            raise ValidationErrorRest(msg)
+            raise ValidationError(msg)
+
+
+def validate_vaka_paattymis_pvm(is_yksityinen, paattymis_pvm):
+    """
+    Check that paattymis_pvm is after a certain date, different for yksityinen and kunnallinen Lapsi.
+    :param is_yksityinen: True if Lapsi is yksityinen, else False (kunnallinen)
+    :param paattymis_pvm: date
+    :return: raise error if paattymis_pvm is not valid
+    """
+    if is_yksityinen:
+        paattymis_pvm_limit = datetime.date(2020, 1, 1)
+        paattymis_pvm_error = ErrorMessages.MI020.value
+    else:
+        paattymis_pvm_limit = datetime.date(2019, 1, 1)
+        paattymis_pvm_error = ErrorMessages.MI021.value
+    if paattymis_pvm and paattymis_pvm < paattymis_pvm_limit:
+        raise ValidationError({'paattymis_pvm': [paattymis_pvm_error]})
 
 
 def validate_dates_within_toimipaikka(validated_data, toimipaikka_obj):
@@ -344,25 +361,25 @@ def validate_dates_within_toimipaikka(validated_data, toimipaikka_obj):
     """
     if 'alkamis_pvm' in validated_data:
         if not validate_paivamaara1_before_paivamaara2(validated_data['alkamis_pvm'], toimipaikka_obj.paattymis_pvm):
-            raise ValidationErrorRest({'alkamis_pvm': [ErrorMessages.TP010.value]})
+            raise ValidationError({'alkamis_pvm': [ErrorMessages.TP010.value]})
         if not validate_paivamaara1_after_paivamaara2(validated_data['alkamis_pvm'], toimipaikka_obj.alkamis_pvm, can_be_same=True):
-            raise ValidationErrorRest({'alkamis_pvm': [ErrorMessages.TP011.value]})
+            raise ValidationError({'alkamis_pvm': [ErrorMessages.TP011.value]})
     if 'paattymis_pvm' in validated_data:
         if not validate_paivamaara1_before_paivamaara2(validated_data['paattymis_pvm'], toimipaikka_obj.paattymis_pvm, can_be_same=True):
-            raise ValidationErrorRest({'paattymis_pvm': [ErrorMessages.TP012.value]})
+            raise ValidationError({'paattymis_pvm': [ErrorMessages.TP012.value]})
 
 
 def validate_oid(oid, field_name):
     oid_sections = oid.split('.')
     if len(oid_sections) != 6:
-        raise ValidationErrorRest({field_name: [ErrorMessages.MI007.value]})
+        raise ValidationError({field_name: [ErrorMessages.MI007.value]})
     oph_part = '.'.join(oid_sections[:4])
     identifier = oid_sections[-1]
     if oph_part != '1.2.246.562':
-        raise ValidationErrorRest({field_name: [ErrorMessages.MI008.value]})
+        raise ValidationError({field_name: [ErrorMessages.MI008.value]})
     oidpattern = re.compile('^[1-9]{1}[0-9]{10,21}$')
     if not oidpattern.match(identifier):
-        raise ValidationErrorRest({field_name: [ErrorMessages.MI009.value]})
+        raise ValidationError({field_name: [ErrorMessages.MI009.value]})
 
 
 def validate_organisaatio_oid(oid):
@@ -370,7 +387,7 @@ def validate_organisaatio_oid(oid):
     validate_oid(oid, field_name)
     oid_sections = oid.split('.')
     if oid_sections[4] != '10':
-        raise ValidationErrorRest({field_name: [ErrorMessages.MI010.value]})
+        raise ValidationError({field_name: [ErrorMessages.MI010.value]})
 
 
 def validate_henkilo_oid(oid):
@@ -378,14 +395,14 @@ def validate_henkilo_oid(oid):
     validate_oid(oid, field_name)
     oid_sections = oid.split('.')
     if oid_sections[4] != '24':
-        raise ValidationErrorRest({field_name: [ErrorMessages.MI011.value]})
+        raise ValidationError({field_name: [ErrorMessages.MI011.value]})
 
 
 def validate_nimi(nimi):
     if not bool(re.match("^[a-zà-öø-ÿåäöÅÄÖA-ZÀ-ÖØ-ß',-.`´*/ ]+$", nimi)):
-        raise ValidationErrorRest([ErrorMessages.HE012.value])
+        raise ValidationError([ErrorMessages.HE012.value])
     if nimi.startswith('-') or nimi.endswith('-') or '--' in nimi:
-        raise ValidationErrorRest([ErrorMessages.HE013.value])
+        raise ValidationError([ErrorMessages.HE013.value])
 
 
 def validate_toimipaikan_nimi(toimipaikan_nimi):
@@ -395,21 +412,21 @@ def validate_toimipaikan_nimi(toimipaikan_nimi):
     # Important to have dash "-" in the end of the regex below
     toimipaikan_nimi_clean = re.sub(r'[/&’\'`´+(),.-]', '', toimipaikan_nimi)
     if not toimipaikan_nimi_clean.replace(' ', '').isalnum():
-        raise ValidationErrorRest({'nimi': [ErrorMessages.TP013.value]})
+        raise ValidationError({'nimi': [ErrorMessages.TP013.value]})
 
     # Checking for name length (min 2)
     if len(toimipaikan_nimi) < 2:
-        raise ValidationErrorRest({'nimi': [ErrorMessages.TP014.value]})
+        raise ValidationError({'nimi': [ErrorMessages.TP014.value]})
 
     # Checking for consecutive repeating special characters (max 2)
     toimipaikan_nimi_simple = re.sub(r'[/&’\'`´+(),.-]', '0', toimipaikan_nimi)
     if '000' in toimipaikan_nimi_simple:
-        raise ValidationErrorRest({'nimi': [ErrorMessages.TP015.value]})
+        raise ValidationError({'nimi': [ErrorMessages.TP015.value]})
 
     if (toimipaikan_nimi.startswith(tuple(special_characters_full)) or
             toimipaikan_nimi.endswith(tuple(special_characters_partial)) or
             '  ' in toimipaikan_nimi):
-        raise ValidationErrorRest({'nimi': [ErrorMessages.TP016.value]})
+        raise ValidationError({'nimi': [ErrorMessages.TP016.value]})
 
 
 def validate_tunniste(tunniste):
@@ -417,7 +434,7 @@ def validate_tunniste(tunniste):
     is_hetu = True
     try:
         validate_henkilotunnus(tunniste)
-    except ValidationErrorRest:
+    except ValidationError:
         is_hetu = False
 
     # Validate allowed characters
@@ -425,31 +442,31 @@ def validate_tunniste(tunniste):
     is_valid_characters = pattern.fullmatch(tunniste)
 
     if is_hetu or not is_valid_characters:
-        raise ValidationErrorRest([ErrorMessages.MI012.value])
+        raise ValidationError([ErrorMessages.MI012.value])
 
 
 def validate_vaka_date(date):
     date_limit = datetime.date(2000, 1, 1)
     if not validate_paivamaara1_after_paivamaara2(date, date_limit, can_be_same=True):
-        raise ValidationErrorRest([ErrorMessages.MI014.value])
+        raise ValidationError([ErrorMessages.MI014.value])
 
 
 def validate_taydennyskoulutus_suoritus_pvm(date):
     date_limit = datetime.date(2020, 9, 1)
     if not validate_paivamaara1_after_paivamaara2(date, date_limit, can_be_same=True):
-        raise ValidationErrorRest([ErrorMessages.TK015.value])
+        raise ValidationError([ErrorMessages.TK015.value])
 
 
 def validate_palvelussuhde_paattymis_pvm(date):
     date_limit = datetime.date(2020, 9, 1)
     if not validate_paivamaara1_after_paivamaara2(date, date_limit, can_be_same=True):
-        raise ValidationErrorRest([ErrorMessages.PS007.value])
+        raise ValidationError([ErrorMessages.PS007.value])
 
 
 def validate_pidempi_poissaolo_paattymis_pvm(date):
     date_limit = datetime.date(2020, 9, 1)
     if not validate_paivamaara1_after_paivamaara2(date, date_limit, can_be_same=True):
-        raise ValidationErrorRest([ErrorMessages.PP008.value])
+        raise ValidationError([ErrorMessages.PP008.value])
 
 
 @deconstructible
@@ -461,7 +478,7 @@ class create_validate_decimal_steps:
 
     def __call__(self, value):
         if value % self.stepsize != 0:
-            raise ValidationErrorRest([ErrorMessages.GE018.value])
+            raise ValidationError([ErrorMessages.GE018.value])
 
     def __eq__(self, other):
         return self.stepsize == other.stepsize
@@ -508,7 +525,7 @@ def validate_instance_uniqueness(model, data, error, instance_id=None, ignore_fi
         qs_filter &= ~Q(id=instance_id)
 
     if model.objects.filter(qs_filter).exists():
-        raise ValidationErrorRest({'errors': [error]})
+        raise ValidationError({'errors': [error]})
 
 
 def validate_alkamis_pvm_before_paattymis_pvm(data):
@@ -516,7 +533,7 @@ def validate_alkamis_pvm_before_paattymis_pvm(data):
     paattymis_pvm = data.get('paattymis_pvm', None)
 
     if paattymis_pvm and not validate_paivamaara1_before_paivamaara2(alkamis_pvm, paattymis_pvm):
-        raise ValidationErrorRest({'paattymis_pvm': [ErrorMessages.MI003.value]})
+        raise ValidationError({'paattymis_pvm': [ErrorMessages.MI003.value]})
 
 
 def validate_nested_list_with_two_ints(merge_list):
@@ -537,9 +554,9 @@ def validate_kela_api_datetimefield(field, now, name):
             datetime_format = '%Y-%m-%dT%H:%M:%S.%f%z' if '.' in field else '%Y-%m-%dT%H:%M:%S%z'
             field = datetime.datetime.strptime(field, datetime_format)
         except ValueError:
-            raise ValidationErrorRest({name: [ErrorMessages.GE020.value]})
+            raise ValidationError({name: [ErrorMessages.GE020.value]})
         if (now.date() - field.date()).days > 365:
-            raise ValidationErrorRest({name: [ErrorMessages.GE019.value]})
+            raise ValidationError({name: [ErrorMessages.GE019.value]})
     else:
         field = now - datetime.timedelta(days=7)
     return field

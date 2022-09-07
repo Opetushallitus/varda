@@ -73,7 +73,7 @@ class VardaOppijaViewsTests(TestCase):
                         {
                             'alkamis_pvm': '2018-01-11',
                             'hakemus_pvm': '2018-01-01',
-                            'paattymis_pvm': '2019-12-22',
+                            'paattymis_pvm': '2020-02-01',
                             'paivittainen_vaka_kytkin': True,
                             'kokopaivainen_vaka_kytkin': False,
                             'tilapainen_vaka_kytkin': False,
@@ -84,7 +84,7 @@ class VardaOppijaViewsTests(TestCase):
                             'varhaiskasvatussuhteet': [
                                 {
                                     'alkamis_pvm': '2018-05-01',
-                                    'paattymis_pvm': '2019-10-24',
+                                    'paattymis_pvm': '2020-01-24',
                                     'toimipaikka': {
                                         'toimipaikka_nimi': 'Espoo',
                                         'toimipaikka_kunta_koodi': '091'
@@ -93,7 +93,7 @@ class VardaOppijaViewsTests(TestCase):
                                 },
                                 {
                                     'alkamis_pvm': '2018-09-05',
-                                    'paattymis_pvm': '2019-04-20',
+                                    'paattymis_pvm': '2020-01-20',
                                     'toimipaikka': {
                                         'toimipaikka_nimi': 'Espoo_2',
                                         'toimipaikka_kunta_koodi': '091'

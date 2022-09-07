@@ -825,8 +825,14 @@ def _validate_maksutieto_dates(data, lapsi_obj=None):
                                                                          can_be_same=True):
                     raise ValidationError({'paattymis_pvm': [ErrorMessages.MA007.value]})
 
-    if lapsi.yksityinen_kytkin and paattymis_pvm and paattymis_pvm < datetime.date(2020, 9, 1):
-        raise ValidationError({'paattymis_pvm': [ErrorMessages.MA014.value]})
+    if lapsi.yksityinen_kytkin:
+        paattymis_pvm_limit = datetime.date(2020, 9, 1)
+        paattymis_pvm_error = ErrorMessages.MA014.value
+    else:
+        paattymis_pvm_limit = datetime.date(2019, 9, 1)
+        paattymis_pvm_error = ErrorMessages.MA019.value
+    if paattymis_pvm and paattymis_pvm < paattymis_pvm_limit:
+        raise ValidationError({'paattymis_pvm': [paattymis_pvm_error]})
 
 
 def _validate_maksutieto_overlap(data, lapsi_obj=None, maksutieto_id=None):
@@ -1315,7 +1321,7 @@ class VarhaiskasvatuspaatosSerializer(RequiredLahdejarjestelmaMixin, LapsiOption
         jarjestamismuoto_koodi = data['jarjestamismuoto_koodi'].lower()
         lapsi_obj = data['lapsi']
 
-        self._validate_dates(data)
+        self._validate_dates(lapsi_obj, data)
         self._validate_paos_specific_data(lapsi_obj, jarjestamismuoto_koodi)
         self._validate_jarjestamismuoto(lapsi_obj, jarjestamismuoto_koodi)
         self._validate_vuorohoito(data)
@@ -1365,12 +1371,14 @@ class VarhaiskasvatuspaatosSerializer(RequiredLahdejarjestelmaMixin, LapsiOption
                 # Tilapainen vaka_kytkin if required, however not in PATCH
                 raise serializers.ValidationError({'tilapainen_vaka_kytkin': [ErrorMessages.VP014.value]})
 
-    def _validate_dates(self, data):
+    def _validate_dates(self, lapsi_obj, data):
         hakemus_pvm = data['hakemus_pvm']
         alkamis_pvm = data['alkamis_pvm']
+        paattymis_pvm = data.get('paattymis_pvm', None)
         if not validators.validate_paivamaara1_before_paivamaara2(hakemus_pvm, alkamis_pvm, can_be_same=True):
             raise ValidationError({'hakemus_pvm': [ErrorMessages.VP001.value]})
         validators.validate_paattymispvm_same_or_after_alkamispvm(data)
+        validators.validate_vaka_paattymis_pvm(lapsi_obj.yksityinen_kytkin, paattymis_pvm)
 
     @caching_to_representation('varhaiskasvatuspaatos')
     def to_representation(self, instance):
@@ -1494,6 +1502,7 @@ class VarhaiskasvatussuhdeSerializer(RequiredLahdejarjestelmaMixin, serializers.
             raise ValidationError({'alkamis_pvm': [ErrorMessages.VS011.value]})
 
         validators.validate_paattymispvm_same_or_after_alkamispvm(data)
+        validators.validate_vaka_paattymis_pvm(data['varhaiskasvatuspaatos'].lapsi.yksityinen_kytkin, paattymis_pvm)
         if paattymis_pvm:
             if not validators.validate_paivamaara1_before_paivamaara2(paattymis_pvm, vakapaatos.paattymis_pvm,
                                                                       can_be_same=True):

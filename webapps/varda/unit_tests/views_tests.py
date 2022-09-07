@@ -13,6 +13,7 @@ from rest_framework import status
 from rest_framework.exceptions import ValidationError as ValidationErrorRest
 from rest_framework.test import APIClient
 
+from varda.enums.error_messages import ErrorMessages
 from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
 from varda.misc import hash_string, encrypt_string
 from varda.models import (Organisaatio, Toimipaikka, PaosOikeus, Huoltaja, Huoltajuussuhde, Henkilo,
@@ -2031,12 +2032,20 @@ class VardaViewsTests(TestCase):
         ]
 
         fail_cases = [
-            ('2017-02-01', '2016-02-01', None),          # application after start
-            ('2017-02-01', '2017-12-31', '2017-11-30'),  # end before start
-            ('1999-01-01', '2017-02-01', None),          # application before 2000
-            ('1998-01-01', '1998-02-02', '1999-02-02'),  # all before 2000
-            (None, '2018-07-01', None),                  # application missing, start ok
-            (None, None, None),                          # all missing
+            # application after start
+            ('2017-02-01', '2016-02-01', None, 'hakemus_pvm', ErrorMessages.VP001.value),
+            # end before start
+            ('2017-02-01', '2017-12-31', '2017-11-30', 'paattymis_pvm', ErrorMessages.MI004.value),
+            # application before 2000
+            ('1999-01-01', '2017-02-01', None, 'hakemus_pvm', ErrorMessages.MI014.value),
+            # all before 2000
+            ('1998-01-01', '1998-02-02', '1999-02-02', 'hakemus_pvm', ErrorMessages.MI014.value),
+            # application missing, start ok
+            (None, '2018-07-01', None, 'hakemus_pvm', ErrorMessages.GE002.value),
+            # all missing
+            (None, None, None, 'hakemus_pvm', ErrorMessages.GE002.value),
+            # end before 2020 (yksityinen lapsi)
+            ('2019-01-01', '2019-01-01', '2019-12-31', 'paattymis_pvm', ErrorMessages.MI020.value),
         ]
 
         for (application, start, end) in ok_cases:
@@ -2053,7 +2062,7 @@ class VardaViewsTests(TestCase):
             id = json.loads(resp.content)['id']
             Varhaiskasvatuspaatos.objects.get(id=id).delete()
 
-        for (application, start, end) in fail_cases:
+        for (application, start, end, error_key, error_message) in fail_cases:
             varhaiskasvatuspaatos.update(
                 hakemus_pvm=application,
                 alkamis_pvm=start,
@@ -2063,6 +2072,25 @@ class VardaViewsTests(TestCase):
             data = json.dumps(varhaiskasvatuspaatos)
             resp = client.post('/api/v1/varhaiskasvatuspaatokset/', data=data, content_type='application/json')
             assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp, error_key, error_message['error_code'], error_message['description'])
+
+    def test_push_api_varhaiskasvatuspaatos_date_validation_kunnallinen(self):
+        client = SetUpTestClient('tester2').client()
+        varhaiskasvatuspaatos = {
+            'lapsi_tunniste': 'testing-lapsi3',
+            'vuorohoito_kytkin': False,
+            'tuntimaara_viikossa': 30,
+            'jarjestamismuoto_koodi': 'jm01',
+            'hakemus_pvm': '2018-11-01',
+            'alkamis_pvm': '2018-11-01',
+            'paattymis_pvm': '2018-12-01',
+            'lahdejarjestelma': '1'
+        }
+
+        resp = client.post('/api/v1/varhaiskasvatuspaatokset/', varhaiskasvatuspaatos)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'paattymis_pvm', 'MI021',
+                                'paattymis_pvm must be equal to or after 2019-01-01 for kunnallinen Lapsi.')
 
     def test_delete_varhaiskasvatuspaatos(self):
         client = SetUpTestClient('tester').client()
@@ -2080,21 +2108,33 @@ class VardaViewsTests(TestCase):
             'lahdejarjestelma': '1',
         }
 
-        # varhaiskasvatuspaatos with id 1: alkamis_pvm=2017-02-11, paattymis_pvm=2018-02-24
+        # varhaiskasvatuspaatos with id 1: alkamis_pvm=2017-02-11, paattymis_pvm=2022-02-24
 
         ok_cases = [
-            ('2017-10-14', '2018-02-12'),  # All correct
+            ('2017-10-14', '2020-02-12'),  # All correct
         ]
 
         fail_cases = [
-            ('2017-04-01', None),          # No end date (vakapaatos has end date)
-            ('2016-02-01', None),          # start before vakapaatos start
-            ('2016-02-01', '2023-11-30'),  # start before vakapaatos start and end after vakapaatos end
-            ('2017-12-31', '2023-11-30'),  # end after vakapaatos end
-            ('1999-03-01', None),          # start before 2000
-            ('1998-02-02', '1999-02-02'),  # all before 2000
-            (None, '2023-01-01'),          # start missing
-            (None, None),                  # all missing
+            # No end date (vakapaatos has end date)
+            ('2017-04-01', None, 'paattymis_pvm', ErrorMessages.VS012.value),
+            # start before vakapaatos start
+            ('2016-02-01', None, 'alkamis_pvm', ErrorMessages.VP002.value),
+            # start before vakapaatos start and end after vakapaatos end
+            ('2016-02-01', '2023-11-30', 'alkamis_pvm', ErrorMessages.VP002.value),
+            # end after vakapaatos end
+            ('2017-12-31', '2023-11-30', 'paattymis_pvm', ErrorMessages.VP003.value),
+            # start after vakapaatos end
+            ('2022-12-31', None, 'alkamis_pvm', ErrorMessages.VS011.value),
+            # start before 2000
+            ('1999-03-01', None, 'alkamis_pvm', ErrorMessages.MI014.value),
+            # all before 2000
+            ('1998-02-02', '1999-02-02', 'alkamis_pvm', ErrorMessages.MI014.value),
+            # start missing
+            (None, '2023-01-01', 'alkamis_pvm', ErrorMessages.GE002.value),
+            # all missing
+            (None, None, 'alkamis_pvm', ErrorMessages.GE002.value),
+            # end before 2020 (yksityinen lapsi)
+            ('2019-01-01', '2019-12-31', 'paattymis_pvm', ErrorMessages.MI020.value),
         ]
 
         for (start, end) in ok_cases:
@@ -2110,7 +2150,7 @@ class VardaViewsTests(TestCase):
             id = json.loads(resp.content)['id']
             Varhaiskasvatussuhde.objects.get(id=id).delete()
 
-        for (start, end) in fail_cases:
+        for (start, end, error_key, error_message) in fail_cases:
             varhaiskasvatussuhde.update(
                 alkamis_pvm=start,
                 paattymis_pvm=end
@@ -2119,6 +2159,22 @@ class VardaViewsTests(TestCase):
             data = json.dumps(varhaiskasvatussuhde)
             resp = client.post('/api/v1/varhaiskasvatussuhteet/', data=data, content_type='application/json')
             assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp, error_key, error_message['error_code'], error_message['description'])
+
+    def test_push_api_varhaiskasvatussuhde_date_validation_kunnallinen(self):
+        client = SetUpTestClient('tester2').client()
+        varhaiskasvatussuhde = {
+            'varhaiskasvatuspaatos_tunniste': 'testing-varhaiskasvatuspaatos3',
+            'toimipaikka_tunniste': 'testing-toimipaikka2',
+            'lahdejarjestelma': '1',
+            'alkamis_pvm': '2018-11-01',
+            'paattymis_pvm': '2018-12-01'
+        }
+
+        resp = client.post('/api/v1/varhaiskasvatussuhteet/', varhaiskasvatussuhde)
+        assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+        assert_validation_error(resp, 'paattymis_pvm', 'MI021',
+                                'paattymis_pvm must be equal to or after 2019-01-01 for kunnallinen Lapsi.')
 
     def test_api_get_maksutieto(self):
         """
@@ -2456,7 +2512,7 @@ class VardaViewsTests(TestCase):
         """
 
         ok_cases = [
-            ('2018-02-01', '2018-07-01'),  # Within first vaka
+            ('2018-02-01', '2019-09-01'),  # Within first vaka
             ('2018-01-01', '2019-12-31'),  # Exactly the first vaka
             ('2018-02-01', '2021-02-01'),  # Within first and second vaka
             ('2020-02-01', '2020-11-01'),  # Between vakas (move to fail cases after whenever stage 2 is implemented)
@@ -2466,12 +2522,20 @@ class VardaViewsTests(TestCase):
         ]
 
         fail_cases = [
-            ('2017-02-01', None),          # Before first vaka
-            ('2017-02-01', '2017-12-31'),  # Before first vaka
-            ('2017-02-01', '2017-02-01'),  # Start before first vaka
-            ('1998-02-02', '1999-02-02'),  # Start and end before 2000
-            (None, '2018-07-01'),          # Start missing, end ok
-            (None, None),                  # Both missing
+            # Before first vaka
+            ('2017-02-01', None, 'alkamis_pvm', ErrorMessages.MA005.value),
+            # Before first vaka
+            ('2017-02-01', '2017-12-31', 'alkamis_pvm', ErrorMessages.MA005.value),
+            # Start before first vaka
+            ('2017-02-01', '2017-02-01', 'alkamis_pvm', ErrorMessages.MA005.value),
+            # Start and end before 2000
+            ('1998-02-02', '1999-02-02', 'alkamis_pvm', ErrorMessages.MI014.value),
+            # Start missing, end ok
+            (None, '2018-07-01', 'alkamis_pvm', ErrorMessages.GE002.value),
+            # Both missing
+            (None, None, 'alkamis_pvm', ErrorMessages.GE002.value),
+            # End before 2019-09 (kunnallinen lapsi)
+            ('2018-02-01', '2019-02-01', 'paattymis_pvm', ErrorMessages.MA019.value),
         ]
 
         maksutieto = {
@@ -2499,7 +2563,7 @@ class VardaViewsTests(TestCase):
             MaksutietoHuoltajuussuhde.objects.filter(maksutieto_id=id).delete()
             Maksutieto.objects.get(id=id).delete()
 
-        for (start, end) in fail_cases:
+        for (start, end, error_key, error_message) in fail_cases:
             maksutieto.update(
                 alkamis_pvm=start,
                 paattymis_pvm=end
@@ -2507,6 +2571,7 @@ class VardaViewsTests(TestCase):
 
             resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
             assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp, error_key, error_message['error_code'], error_message['description'])
 
         # to test ending date validations every vakapaatos needs to have paattymis_pvm
         vakapaatos_2.paattymis_pvm = '2025-01-01'
@@ -2532,13 +2597,17 @@ class VardaViewsTests(TestCase):
             Maksutieto.objects.get(id=id).delete()
 
         close_ended_fail_cases = [
-            ('2017-12-31', '2025-01-02'),  # Before first vakapaatos and after the end of the second vakapaatos
-            ('2018-01-01', '2025-01-02'),  # Ending after second vakapaatos
-            ('2017-12-31', '2025-01-01'),  # Before first vakapaatos
-            ('2025-01-03', '2025-01-05'),  # After both vakapaatos dates
+            # Before first vakapaatos and after the end of the second vakapaatos
+            ('2017-12-31', '2025-01-02', 'alkamis_pvm', ErrorMessages.MA005.value),
+            # Ending after second vakapaatos
+            ('2018-01-01', '2025-01-02', 'paattymis_pvm', ErrorMessages.MA007.value),
+            # Before first vakapaatos
+            ('2017-12-31', '2025-01-01', 'alkamis_pvm', ErrorMessages.MA005.value),
+            # After both vakapaatos dates
+            ('2025-01-03', '2025-01-05', 'alkamis_pvm', ErrorMessages.MA006.value),
         ]
 
-        for (start, end) in close_ended_fail_cases:
+        for (start, end, error_key, error_message) in close_ended_fail_cases:
             maksutieto.update(
                 alkamis_pvm=start,
                 paattymis_pvm=end
@@ -2546,6 +2615,7 @@ class VardaViewsTests(TestCase):
 
             resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
             assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp, error_key, error_message['error_code'], error_message['description'])
 
     def test_push_api_maksutieto_too_many_active(self):
         maksutieto = {
@@ -5341,7 +5411,7 @@ class VardaViewsTests(TestCase):
             'varhaiskasvatuspaatos_tunniste': 'testing-varhaiskasvatuspaatos1',
             'toimipaikka_oid': toimipaikka_oid,
             'alkamis_pvm': '2017-02-11',
-            'paattymis_pvm': '2018-02-24',
+            'paattymis_pvm': '2020-02-24',
             'lahdejarjestelma': '1'
         }
         resp = client_vakajarjestaja.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
