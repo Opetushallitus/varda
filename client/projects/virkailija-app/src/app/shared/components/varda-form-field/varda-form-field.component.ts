@@ -13,11 +13,14 @@ import {
   OnInit
 } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
-import { VardaField, } from '../../../utilities/models';
 import { MatRadioGroup, MatRadioButton } from '@angular/material/radio';
 import { VardaDatepickerComponent } from '../varda-datepicker/varda-datepicker.component';
 import { Subscription, Subject, Observable, fromEvent } from 'rxjs';
-import { MatSelect } from '@angular/material/select';
+import { MatSelect, MatSelectChange } from '@angular/material/select';
+import { Element } from '@angular/compiler';
+import {
+  VardaAutocompleteSelectorComponent
+} from '../varda-autocomplete-selector/varda-autocomplete-selector.component';
 
 export interface FormFieldErrorMap {
   key: string;
@@ -41,7 +44,8 @@ export class VardaFormFieldComponent implements OnInit, AfterViewInit, OnChanges
   @Input() required: boolean;
   @Input() form!: FormGroup;
 
-  @ContentChildren('fieldItem', { descendants: true }) childComponents: QueryList<ElementRef>;
+  @ContentChildren('fieldItem', { descendants: true }) childComponents:
+    QueryList<ElementRef | MatSelect | VardaAutocompleteSelectorComponent<any>>;
   @ViewChild('formField') formField: ElementRef;
   @ContentChild(MatRadioGroup) radioGroup: MatRadioGroup;
   @ContentChild(MatSelect) select: MatSelect;
@@ -54,7 +58,6 @@ export class VardaFormFieldComponent implements OnInit, AfterViewInit, OnChanges
   formControl: FormControl;
   focusStatus$ = new Subject<boolean>();
   showInstructionText: boolean;
-  isRequired: boolean;
 
   private subscriptions: Array<Subscription> = [];
 
@@ -98,14 +101,23 @@ export class VardaFormFieldComponent implements OnInit, AfterViewInit, OnChanges
       })
     );
 
-    this.childComponents?.filter(childEl => childEl.nativeElement).forEach(childEl => {
-      childEl.nativeElement.name = childEl.nativeElement.name || this.name;
-      childEl.nativeElement.placeholder = this.placeholder;
-      childEl.nativeElement.setAttribute('aria-labelledby', this.labelId);
-      childEl.nativeElement.setAttribute('robot', this.name);
+    this.childComponents?.reduce((previousValue, currentValue) => {
+      if (currentValue instanceof ElementRef && currentValue.nativeElement) {
+        previousValue.push(currentValue.nativeElement);
+      } else if (currentValue instanceof MatSelect && currentValue._elementRef?.nativeElement) {
+        previousValue.push(currentValue._elementRef.nativeElement);
+      } else if (currentValue instanceof VardaAutocompleteSelectorComponent && currentValue.textInput?.nativeElement) {
+        previousValue.push(currentValue.textInput.nativeElement);
+      }
+      return previousValue;
+    }, []).forEach(nativeElement => {
+      nativeElement.name = nativeElement.name || this.name;
+      nativeElement.placeholder = this.placeholder;
+      nativeElement.setAttribute('aria-labelledby', this.labelId);
+      nativeElement.setAttribute('robot', this.name);
       this.subscriptions.push(
-        fromEvent(childEl.nativeElement, 'focus').subscribe(() => this.focusStatus$.next(true)),
-        fromEvent(childEl.nativeElement, 'blur').subscribe(() => this.focusStatus$.next(false))
+        fromEvent(nativeElement, 'focus').subscribe(() => this.focusStatus$.next(true)),
+        fromEvent(nativeElement, 'blur').subscribe(() => this.focusStatus$.next(false))
       );
     });
 
@@ -117,20 +129,7 @@ export class VardaFormFieldComponent implements OnInit, AfterViewInit, OnChanges
     } else if (this.datePicker) {
       this.datePicker.attrName = this.datePicker.attrName || this.name;
       this.subscriptions.push(this.datePicker.focusObservable().subscribe(value => this.focusStatus$.next(value)));
-    } else if (this.select) {
-      this.subscriptions.push(
-        this.select._openedStream.subscribe(() => this.focusStatus$.next(true)),
-        this.select._closedStream.subscribe(() => this.focusStatus$.next(false))
-      );
     }
-  }
-
-  onBlur(field: VardaField): void {
-    this.showInstructionText = false;
-  }
-
-  onFocus(field: VardaField): void {
-    this.showInstructionText = true;
   }
 
   ngOnDestroy() {

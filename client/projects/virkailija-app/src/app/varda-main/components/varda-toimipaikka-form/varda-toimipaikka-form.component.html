@@ -243,7 +243,7 @@
                    class="ml-2">{{ koodi }}</div>
             </ng-container>
             <ng-template #showTrigger>
-              <div class="oph-select-container" [attr.disabled]="!!formGroup.controls.jarjestamismuoto_koodi.disabled">
+              <app-varda-select>
                 <mat-select #fieldItem
                             placeholder="-- {{ i18n.choose | translate }} --"
                             multiple
@@ -256,7 +256,7 @@
                       {{ formGroup.controls.jarjestamismuoto_koodi?.value }}
                     </span>
                     <ng-template #jmList>
-                      {{ formGroup.controls.jarjestamismuoto_koodi?.value?.join(", ") }}
+                      {{ formGroup.controls.jarjestamismuoto_koodi?.value?.join(', ') }}
                     </ng-template>
                   </mat-select-trigger>
                   <mat-option *ngFor="let option of jarjestamismuotoCodes"
@@ -265,7 +265,7 @@
                     <span [libKoodistoValue]="koodistoEnum.jarjestamismuoto" format="long">{{ option.code_value }}</span>
                   </mat-option>
                 </mat-select>
-              </div>
+              </app-varda-select>
             </ng-template>
           </app-varda-form-field>
           <app-varda-form-field name="asiointikieli_koodi"
@@ -273,7 +273,7 @@
                                 [label]="i18n.toimipaikka_asiointikieli_koodi | translate"
                                 [errorText]="i18n.toimipaikka_error_asiointikieli_koodi | translate"
                                 [instructionText]="i18n.toimipaikka_instruction_asiointikieli_koodi | translate">
-            <div class="oph-select-container" [attr.disabled]="!!formGroup.controls.asiointikieli_koodi.disabled">
+            <app-varda-select>
               <mat-select #fieldItem
                           placeholder="-- {{ i18n.choose | translate }} --"
                           multiple
@@ -294,7 +294,7 @@
                   </ng-container>
                 </mat-optgroup>
               </mat-select>
-            </div>
+            </app-varda-select>
           </app-varda-form-field>
 
           <app-varda-form-field name="kasvatusopillinen_jarjestelma_koodi"

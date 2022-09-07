@@ -214,15 +214,6 @@ label.mat-checkbox-layout {
   border-top-color: var(--red-lighten-2);
 }
 
-.transparent-disable.mat-select-disabled {
-  border-width: 0;
-  box-shadow: none;
-}
-
-.transparent-disable.mat-select-disabled .mat-select-value {
-  color: var(--black);
-}
-
 .mat-expansion-panel-header .mat-content {
   flex-wrap: wrap;
 }
@@ -240,7 +231,8 @@ label.mat-checkbox-layout {
 }
 
 .oph-select-container .mat-select-trigger {
-  margin: 0.5em 2em 0.5em 0.5em;
+  padding: 0.5em 2em 0.5em 0.5em;
+  height: 2.125em;
   width: 100%;
 }
 

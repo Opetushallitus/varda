@@ -1,0 +1,8 @@
+.transparent-disable.mat-select-disabled {
+  border-width: 0;
+  box-shadow: none;
+}
+
+.transparent-disable.mat-select-disabled .mat-select-value {
+  color: var(--black);
+}

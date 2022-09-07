@@ -57,11 +57,6 @@ export class VardaAutocompleteSelectorComponent<T> implements ControlValueAccess
   @Input() returnCodeValue = false;
   @Input() displayCodeValue = false;
 
-  public get nativeElement() {
-    // Return textInput for compatibility with VardaFormFieldComponent
-    return this.textInput?.nativeElement;
-  }
-
   i18n = VirkailijaTranslations;
   filteredOptions: BehaviorSubject<Array<T>> = new BehaviorSubject<Array<T>>([]);
   selectedOption: T;

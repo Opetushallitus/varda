@@ -37,7 +37,7 @@
                               [label]="i18n.painotukset_kielipainotus_koodi | translate"
                               [errorText]="i18n.painotukset_error_kielipainotus_koodi | translate"
                               [instructionText]="i18n.painotukset_instruction_kielipainotus_koodi | translate">
-          <div class="oph-select-container">
+          <app-varda-select>
             <mat-select #fieldItem
                         placeholder="-- {{ i18n.choose | translate }} --"
                         class="oph-input oph-select"
@@ -63,7 +63,7 @@
                 </ng-container>
               </mat-optgroup>
             </mat-select>
-          </div>
+          </app-varda-select>
         </app-varda-form-field>
 
         <app-varda-form-field name="alkamis_pvm"

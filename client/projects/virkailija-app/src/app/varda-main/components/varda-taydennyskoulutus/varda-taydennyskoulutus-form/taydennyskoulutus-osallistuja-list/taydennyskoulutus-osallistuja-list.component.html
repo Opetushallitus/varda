@@ -56,18 +56,20 @@
           class="wide-cell"
           *matCellDef="let row">
         <div>
-          <mat-select #fieldItem
-                      placeholder="-- {{ i18n.choose | translate }} --"
-                      multiple
-                      class="oph-input oph-select transparent-disable"
-                      (selectionChange)="changeValitutNimikkeet(row)"
-                      [disabled]="isDisabled"
-                      [(ngModel)]="row.valitut_nimikkeet">
-            <mat-option *ngFor="let tehtavanimike_koodi of row.tehtavanimike_koodit"
-                        [value]="tehtavanimike_koodi">
-              <span libKoodistoValue="vardatehtavanimike">{{ tehtavanimike_koodi }}</span>
-            </mat-option>
-          </mat-select>
+          <app-varda-select>
+            <mat-select #fieldItem
+                        placeholder="-- {{ i18n.choose | translate }} --"
+                        multiple
+                        class="oph-input oph-select transparent-disable"
+                        (selectionChange)="changeValitutNimikkeet(row)"
+                        [disabled]="isDisabled"
+                        [(ngModel)]="row.valitut_nimikkeet">
+              <mat-option *ngFor="let tehtavanimike_koodi of row.tehtavanimike_koodit"
+                          [value]="tehtavanimike_koodi">
+                <span libKoodistoValue="vardatehtavanimike">{{ tehtavanimike_koodi }}</span>
+              </mat-option>
+            </mat-select>
+          </app-varda-select>
           <span *ngIf="row.valitut_nimikkeet?.length > 1">({{row.valitut_nimikkeet.length}})</span>
         </div>
         <div *ngIf="!row.valitut_nimikkeet[0]"

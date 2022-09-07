@@ -57,6 +57,7 @@ import { RoboIdComponent } from './components/robo-id/robo-id.component';
 import { VardaInputComponent } from './components/varda-input/varda-input.component';
 import { VardaShowMoreLessComponent } from './components/varda-show-more-less/varda-show-more-less.component';
 import { ScrollingModule } from '@angular/cdk/scrolling';
+import { VardaSelectComponent } from './varda-select/varda-select.component';
 
 const cookieConfig: NgcCookieConsentConfig = {
   cookie: {
@@ -139,6 +140,7 @@ const cookieConfig: NgcCookieConsentConfig = {
     RoboIdComponent,
     VardaInputComponent,
     VardaShowMoreLessComponent,
+    VardaSelectComponent
   ],
   providers: [
     BrowserNotSupportedGuard,
@@ -220,6 +222,7 @@ const cookieConfig: NgcCookieConsentConfig = {
     RoboIdComponent,
     VardaInputComponent,
     VardaShowMoreLessComponent,
+    VardaSelectComponent,
   ],
   entryComponents: [VardaDatepickerHeaderComponent]
 })

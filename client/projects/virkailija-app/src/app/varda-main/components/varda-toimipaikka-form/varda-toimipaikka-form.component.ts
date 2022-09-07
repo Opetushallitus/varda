@@ -270,7 +270,7 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
       this.postiosoiteToggleBoolean = false;
     }
 
-    if (this.postiosoiteToggleBoolean) {
+    if (this.postiosoiteToggleBoolean || !this.isEdit) {
       this.formGroup.get('postiosoite').disable();
       this.formGroup.get('postinumero').disable();
     } else {

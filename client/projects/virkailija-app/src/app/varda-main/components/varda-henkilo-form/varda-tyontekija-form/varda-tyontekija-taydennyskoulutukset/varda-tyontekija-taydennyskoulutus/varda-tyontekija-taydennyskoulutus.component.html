@@ -73,9 +73,7 @@
                               [label]="i18n.taydennyskoulutus_tehtavanimike | translate"
                               [errorText]="i18n.taydennyskoulutus_error_tehtavanimike | translate"
                               [instructionText]="i18n.taydennyskoulutus_instruction_tehtavanimike | translate">
-          <div class="oph-select-container"
-               [attr.disabled]="formGroup.controls.tehtavanimike_koodit.disabled"
-               *ngIf="tehtavanimikeOptions?.length > 0; else eiNimikkeita">
+          <app-varda-select *ngIf="tehtavanimikeOptions?.length > 0; else eiNimikkeita">
             <mat-select #fieldItem
                         placeholder="-- {{ i18n.choose | translate }} --"
                         multiple
@@ -92,7 +90,7 @@
                 </mat-option>
               </ng-container>
             </mat-select>
-          </div>
+          </app-varda-select>
           <ng-template #eiNimikkeita>
             <div class="oph-error">
               <mat-icon alt="">error_outline</mat-icon> {{ i18n.taydennyskoulutus_ei_nimikkeita | translate }}
